@@ -1,0 +1,123 @@
+
+import React, { createContext, useContext, useState, useEffect } from 'react';
+import { User, AuthState } from '../types/auth.types';
+import { authService } from '../services/authService';
+
+interface AuthContextType extends AuthState {
+  login: (email: string, pass: string) => Promise<void>;
+  register: (email: string, pass: string) => Promise<void>;
+  logout: () => Promise<void>;
+  requestPasswordReset: (email: string) => Promise<void>;
+  resetPassword: (password: string, token?: string) => Promise<void>;
+  signInWithOAuth: (provider: 'google' | 'github' | 'azure') => Promise<void>;
+}
+
+const AuthContext = createContext<AuthContextType | undefined>(undefined);
+
+const getErrorMessage = (err: unknown): string => {
+  if (err instanceof Error) return err.message;
+  if (typeof err === 'string') return err;
+  return 'An unexpected error occurred';
+};
+
+export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const [state, setState] = useState<AuthState>({
+    user: null,
+    isAuthenticated: false,
+    isLoading: true,
+    error: null,
+  });
+
+  useEffect(() => {
+    const initAuth = async () => {
+      try {
+        const user = await authService.getCurrentUser();
+        if (user) {
+          setState(s => ({ ...s, user, isAuthenticated: true, isLoading: false }));
+        } else {
+          setState(s => ({ ...s, isLoading: false }));
+        }
+      } catch (err) {
+        console.error('Auth initialization error:', err);
+        setState(s => ({ ...s, isLoading: false, error: 'Failed to restore session' }));
+      }
+    };
+    initAuth();
+  }, []);
+
+  const login = async (email: string, pass: string) => {
+    setState(s => ({ ...s, isLoading: true, error: null }));
+    try {
+      const user = await authService.login(email, pass);
+      setState({ user, isAuthenticated: true, isLoading: false, error: null });
+    } catch (err: unknown) {
+      const message = getErrorMessage(err);
+      setState(s => ({ ...s, isLoading: false, error: message }));
+      throw err;
+    }
+  };
+
+  const register = async (email: string, pass: string) => {
+    setState(s => ({ ...s, isLoading: true, error: null }));
+    try {
+      const user = await authService.register(email, pass);
+      setState({ user, isAuthenticated: true, isLoading: false, error: null });
+    } catch (err: unknown) {
+      const message = getErrorMessage(err);
+      setState(s => ({ ...s, isLoading: false, error: message }));
+      throw err;
+    }
+  };
+
+  const logout = async () => {
+    try {
+      await authService.logout();
+    } catch (e) {
+      console.error("Logout error", e);
+    }
+    setState({ user: null, isAuthenticated: false, isLoading: false, error: null });
+  };
+
+  const requestPasswordReset = async (email: string) => {
+    // We don't set global loading state here to avoid unmounting components aggressively
+    // if using this from a non-global layout. But for pages it's fine.
+    try {
+      await authService.requestPasswordReset(email);
+    } catch (err: unknown) {
+      // Re-throw so component can handle UI feedback
+      throw err;
+    }
+  };
+
+  const resetPassword = async (password: string, token?: string) => {
+    try {
+      await authService.resetPassword(password, token);
+    } catch (err: unknown) {
+      throw err;
+    }
+  };
+
+  const signInWithOAuth = async (provider: 'google' | 'github' | 'azure') => {
+    try {
+      await authService.signInWithOAuth(provider);
+      // OAuth flow redirects, so we don't necessarily need to set state here,
+      // but if there's a delay before redirect, loading state is good.
+    } catch (err: unknown) {
+      const message = getErrorMessage(err);
+      setState(s => ({ ...s, error: message }));
+      throw err;
+    }
+  }
+
+  return (
+    <AuthContext.Provider value={{ ...state, login, register, logout, requestPasswordReset, resetPassword, signInWithOAuth }}>
+      {children}
+    </AuthContext.Provider>
+  );
+};
+
+export const useAuth = () => {
+  const context = useContext(AuthContext);
+  if (!context) throw new Error('useAuth must be used within AuthProvider');
+  return context;
+};
