@@ -1,0 +1,24 @@
+{
+  "name": "connectlens",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.86.0",
+    "lucide-react": "0.344.0",
+    "react": "18.3.1",
+    "react-dom": "^18.3.1",
+    "react-router-dom": "6.22.3"
+  },
+  "devDependencies": {
+    "@types/node": "^22.14.0",
+    "@vitejs/plugin-react": "^5.1.1",
+    "typescript": "~5.8.2",
+    "vite": "^6.2.0"
+  }
+}
