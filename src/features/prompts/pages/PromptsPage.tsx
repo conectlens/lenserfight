@@ -1,4 +1,5 @@
-import React, { useEffect, useState } from 'react';
+
+import React, { useEffect, useState, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { promptsService } from '../../../services/promptsService';
 import { PromptTemplateViewModel } from '../../../types/prompts.types';
@@ -14,11 +15,19 @@ import { useLenser } from '../../../context/LenserContext';
 import { CreateLenserProfileModal } from '../../lenser/components/CreateLenserProfileModal';
 import { useAuth } from '../../../context/AuthContext';
 
+const PAGE_SIZE = 12;
+
 export const PromptsPage: React.FC = () => {
   const navigate = useNavigate();
   const [prompts, setPrompts] = useState<PromptTemplateViewModel[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   
+  // Pagination
+  const [page, setPage] = useState(0);
+  const [hasMore, setHasMore] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const observer = useRef<IntersectionObserver | null>(null);
+
   // Filters state
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedTag, setSelectedTag] = useState<string | null>(null);
@@ -35,44 +44,81 @@ export const PromptsPage: React.FC = () => {
     submit 
   } = useCreatePrompt();
   
-  const { hasLenser } = useLenser();
+  const { hasLenser, lenser } = useLenser();
   const { isAuthenticated } = useAuth();
   const [showProfileModal, setShowProfileModal] = useState(false);
 
-  const fetchPrompts = async () => {
-    setIsLoading(true);
+  // Intersection Observer callback
+  const lastElementRef = useCallback((node: HTMLDivElement) => {
+    if (isLoading || loadingMore) return;
+    if (observer.current) observer.current.disconnect();
+    
+    observer.current = new IntersectionObserver(entries => {
+      if (entries[0].isIntersecting && hasMore) {
+        setPage(prev => prev + 1);
+      }
+    });
+    
+    if (node) observer.current.observe(node);
+  }, [isLoading, loadingMore, hasMore]);
+
+  // Core fetch function
+  const fetchPrompts = async (pageNum: number, reset = false) => {
     try {
+      if (reset) setIsLoading(true);
+      else setLoadingMore(true);
+
+      const offset = pageNum * PAGE_SIZE;
+      const currentLenserId = lenser?.id;
       let data: PromptTemplateViewModel[] = [];
       
       if (searchQuery) {
-        data = await promptsService.search(searchQuery);
+        data = await promptsService.search(searchQuery, currentLenserId, offset, PAGE_SIZE);
       } else if (selectedTag) {
-        data = await promptsService.filter(selectedTag);
+        data = await promptsService.filter(selectedTag, currentLenserId, offset, PAGE_SIZE);
       } else {
-        data = await promptsService.getPrompts(); // gets all
+        // sort logic is usually handled by backend via sort param, but service has separate sort method.
+        // Assuming sort() method supports paginated fetch.
+        // If sortOrder changes, we should use that specific method or pass sort param to a unified fetch.
+        // Service structure implies separate methods.
+        if (sortOrder) {
+             data = await promptsService.sort(sortOrder, currentLenserId, offset, PAGE_SIZE);
+        } else {
+             data = await promptsService.getPrompts(currentLenserId, offset, PAGE_SIZE);
+        }
       }
 
-      // Client-side Sort
-      if (sortOrder === 'newest') {
-        data.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+      if (data.length === 0) {
+          setHasMore(false);
+          if (reset) setPrompts([]);
       } else {
-        data.sort((a, b) => b.usageCount - a.usageCount);
+          setPrompts(prev => reset ? data : [...prev, ...data]);
+          if (data.length < PAGE_SIZE) setHasMore(false);
       }
 
-      setPrompts(data);
     } catch (error) {
       console.error("Failed to load prompts", error);
     } finally {
       setIsLoading(false);
+      setLoadingMore(false);
     }
   };
 
+  // Effect for filter changes (Reset)
   useEffect(() => {
     const timer = setTimeout(() => {
-        fetchPrompts();
+        setPage(0);
+        setHasMore(true);
+        fetchPrompts(0, true);
     }, 300);
     return () => clearTimeout(timer);
-  }, [searchQuery, selectedTag, sortOrder]);
+  }, [searchQuery, selectedTag, sortOrder, lenser?.id]);
+
+  // Effect for Load More
+  useEffect(() => {
+      if (page === 0) return; // Handled by reset effect
+      fetchPrompts(page, false);
+  }, [page]);
 
   const handleCreateClick = () => {
     if (!isAuthenticated) {
@@ -87,7 +133,8 @@ export const PromptsPage: React.FC = () => {
   };
 
   const handleCreateSuccess = () => {
-    fetchPrompts(); // Refresh grid
+    setPage(0);
+    fetchPrompts(0, true); // Refresh grid
   };
 
   return (
@@ -134,6 +181,17 @@ export const PromptsPage: React.FC = () => {
         isLoading={isLoading} 
         onOpen={(id) => navigate(`/prompts/${id}`)} 
       />
+      
+      {/* Intersection Anchor & Loader */}
+      <div ref={lastElementRef} className="h-4"></div>
+      {loadingMore && (
+          <div className="py-4 flex justify-center">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+          </div>
+      )}
+      {!hasMore && prompts.length > 0 && (
+          <p className="text-center text-gray-400 text-sm py-8">No more prompts to load</p>
+      )}
 
       {/* Create Modal */}
       <CreatePromptModal 

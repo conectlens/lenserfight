@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { PromptTemplateViewModel } from '../../../types/prompts.types';
 import { PromptRelatedCard } from './PromptRelatedCard';
@@ -7,9 +8,22 @@ interface PromptRelatedListProps {
   prompts: PromptTemplateViewModel[];
   onOpen: (id: string) => void;
   isLoading: boolean;
+  // Owner actions are typically not needed for 'Related' (algorithm) lists, 
+  // but if related items belong to user they might want to edit.
+  // We make them optional.
+  isOwner?: boolean; 
+  onEdit?: (id: string) => void;
+  onDelete?: (id: string) => void;
 }
 
-export const PromptRelatedList: React.FC<PromptRelatedListProps> = ({ prompts, onOpen, isLoading }) => {
+export const PromptRelatedList: React.FC<PromptRelatedListProps> = ({ 
+  prompts, 
+  onOpen, 
+  isLoading,
+  isOwner,
+  onEdit,
+  onDelete
+}) => {
   if (isLoading) {
     return (
       <div className="space-y-4">
@@ -35,7 +49,16 @@ export const PromptRelatedList: React.FC<PromptRelatedListProps> = ({ prompts, o
       ) : (
         <div className="flex flex-col gap-4">
           {prompts.map(prompt => (
-            <PromptRelatedCard key={prompt.id} prompt={prompt} onClick={onOpen} />
+            <PromptRelatedCard 
+                key={prompt.id} 
+                prompt={prompt} 
+                onClick={onOpen}
+                // Check if the prompt belongs to current user if generic isOwner passed, 
+                // OR we rely on parent to know if these are "my" related prompts.
+                // Usually related prompts are mixed. 
+                // We'll leave it disabled for general related list unless specifically requested by passing handlers
+                isOwner={false} 
+            />
           ))}
         </div>
       )}

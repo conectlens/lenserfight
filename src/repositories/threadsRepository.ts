@@ -1,67 +1,68 @@
+
 import { ThreadRecord, TagRecord, ThreadReplyRecord, CreateThreadDTO } from '../types/threads.types';
 import { supabase } from '../utils/supabase';
+import { storage } from '../utils/storage';
+import { TagRepositoryPort } from './tagRepository'; // Implicit dep for types, but we use raw storage in mock
 
 // --- Port (Interface) ---
 export interface ThreadsRepositoryPort {
   createThread(dto: CreateThreadDTO): Promise<ThreadRecord>;
-  getAllThreads(): Promise<ThreadRecord[]>;
+  getAllThreads(offset?: number, limit?: number): Promise<ThreadRecord[]>;
+  getThreadsByTag(tagSlug: string, offset?: number, limit?: number): Promise<ThreadRecord[]>;
   getThreadById(id: string): Promise<ThreadRecord | null>;
   getThreadTags(threadId: string): Promise<TagRecord[]>;
-  getThreadReactionCount(threadId: string): Promise<number>;
   getThreadReplies(threadId: string): Promise<ThreadReplyRecord[]>;
+  getReplyById(replyId: string): Promise<ThreadReplyRecord | null>;
   getTrendingTags(limit: number): Promise<string[]>;
+  createReply(threadId: string, lenserId: string, content: string, parentReplyId?: string): Promise<ThreadReplyRecord>;
+  updateThread(id: string, dto: Partial<CreateThreadDTO>): Promise<ThreadRecord>;
+  deleteThread(id: string): Promise<void>;
 }
 
 // --- Mock Implementation ---
 export class MockThreadsRepository implements ThreadsRepositoryPort {
-  
-  // In-memory storage for the session
-  private threads: ThreadRecord[] = [
-    {
-      id: 'thread-1',
-      lenser_id: 'lenser-1',
-      title: 'Mastering a Minimalist Digital Toolkit for Enhanced Focus',
-      content: "The key to a productive and creative workflow lies not in the multitude of tools, but in the mastery of a few. How do you all approach minimizing your digital toolkit to enhance focus and reduce cognitive load? I've been experimenting with a single note-taking app and a focused task manager, and the clarity has been remarkable. Looking for principles, strategies, and app recommendations that align with a minimalist philosophy.",
-      visibility: 'public',
-      view_count: 120,
-      reply_count: 5,
-      created_at: new Date(Date.now() - 1000 * 60 * 60 * 2).toISOString(), // 2 hours ago
-      updated_at: new Date().toISOString(),
-      prompt_data: {
-        title: "The One-App Challenge",
-        description: "For one week, try to manage all your tasks, notes, and reminders using a single, versatile application. Document your experience, noting the benefits and drawbacks of this consolidated approach.",
-        actionLabel: "View Prompt"
-      }
-    },
-    {
-      id: 'thread-2',
-      lenser_id: 'lenser-2',
-      title: 'Learnings from a Week of Digital Detox',
-      content: "I unplugged completely for 7 days. The results were not what I expected at all, and it completely changed my perspective on work-life balance and the role of technology in my daily routines.",
-      visibility: 'public',
-      view_count: 340,
-      reply_count: 12,
-      created_at: new Date(Date.now() - 1000 * 60 * 60 * 8).toISOString(), // 8 hours ago
-      updated_at: new Date().toISOString(),
-    },
-    {
-      id: 'thread-3',
-      lenser_id: 'lenser-1',
-      title: 'The Future of Remote Work Tools',
-      content: "As we move into 2025, the landscape of collaboration tools is shifting. Here are my top 5 predictions for what will stick and what will fade away.",
-      visibility: 'public',
-      view_count: 85,
-      reply_count: 2,
-      created_at: new Date(Date.now() - 1000 * 60 * 60 * 24).toISOString(), // 1 day ago
-      updated_at: new Date().toISOString(),
-    }
-  ];
+  private THREADS_KEY = 'mock_threads_db';
+  private THREAD_TAGS_KEY = 'mock_thread_tags'; // Junction table key
+  private TAGS_KEY = 'mock_tags';
+  private REPLIES_KEY = 'mock_replies_db';
 
-  // Mock tags association map
-  private threadTags: Record<string, TagRecord[]> = {};
+  constructor() {
+    this.seed();
+  }
+
+  private seed() {
+    if (!storage.getItem(this.THREADS_KEY)) {
+        const initialThreads = [
+            {
+              id: 'thread-1',
+              lenser_id: 'lenser-1',
+              title: 'Mastering a Minimalist Digital Toolkit for Enhanced Focus',
+              content: "The key to a productive and creative workflow lies not in the multitude of tools, but in the mastery of a few.",
+              visibility: 'public',
+              view_count: 120,
+              reply_count: 0,
+              created_at: new Date(Date.now() - 1000 * 60 * 60 * 2).toISOString(),
+              updated_at: new Date().toISOString(),
+            }
+        ];
+        storage.setItem(this.THREADS_KEY, JSON.stringify(initialThreads));
+    }
+  }
+
+  private getThreads(): ThreadRecord[] {
+      return JSON.parse(storage.getItem(this.THREADS_KEY) || '[]');
+  }
+
+  private getThreadTagsData(): { thread_id: string, tag_id: string }[] {
+      return JSON.parse(storage.getItem(this.THREAD_TAGS_KEY) || '[]');
+  }
+
+  private getReplies(): ThreadReplyRecord[] {
+      return JSON.parse(storage.getItem(this.REPLIES_KEY) || '[]');
+  }
 
   async createThread(dto: CreateThreadDTO): Promise<ThreadRecord> {
-    await new Promise(resolve => setTimeout(resolve, 800));
+    await new Promise(resolve => setTimeout(resolve, 600));
 
     const newThread: ThreadRecord = {
       id: `thread-${Date.now()}`,
@@ -75,113 +76,216 @@ export class MockThreadsRepository implements ThreadsRepositoryPort {
       updated_at: new Date().toISOString(),
     };
 
-    this.threads.unshift(newThread);
+    const threads = this.getThreads();
+    threads.unshift(newThread);
+    storage.setItem(this.THREADS_KEY, JSON.stringify(threads));
 
+    // Handle Tags (DTO now contains real UUIDs from Service)
     if (dto.tagIds.length > 0) {
-      this.threadTags[newThread.id] = dto.tagIds.map((tag, index) => ({
-        id: `tag-${Date.now()}-${index}`,
-        name: tag,
-        slug: tag.toLowerCase().replace(/\s+/g, '-'),
-        created_at: new Date().toISOString()
-      }));
+      const junctionData = this.getThreadTagsData();
+      dto.tagIds.forEach(tagId => {
+          junctionData.push({ thread_id: newThread.id, tag_id: tagId });
+      });
+      storage.setItem(this.THREAD_TAGS_KEY, JSON.stringify(junctionData));
     }
 
     return newThread;
   }
 
-  async getAllThreads(): Promise<ThreadRecord[]> {
-    await new Promise(resolve => setTimeout(resolve, 600));
-    // Filter strictly for public threads for the feed
-    return this.threads.filter(t => t.visibility === 'public');
+  async getAllThreads(offset = 0, limit = 10): Promise<ThreadRecord[]> {
+    await new Promise(resolve => setTimeout(resolve, 400));
+    const replies = this.getReplies();
+    const all = this.getThreads()
+        .filter(t => t.visibility === 'public')
+        .map(t => ({
+            ...t,
+            reply_count: replies.filter(r => r.thread_id === t.id).length
+        }));
+    return all.slice(offset, offset + limit);
+  }
+
+  async getThreadsByTag(tagSlug: string, offset = 0, limit = 10): Promise<ThreadRecord[]> {
+      await new Promise(resolve => setTimeout(resolve, 400));
+      
+      // Get Tag ID from slug first
+      const allTags = JSON.parse(storage.getItem(this.TAGS_KEY) || '[]');
+      const tag = allTags.find((t: any) => t.slug === tagSlug);
+      
+      if (!tag) return [];
+
+      // Find threads with this tag_id
+      const junctionData = this.getThreadTagsData();
+      const threadIds = junctionData.filter(j => j.tag_id === tag.id).map(j => j.thread_id);
+
+      const replies = this.getReplies();
+      const filtered = this.getThreads()
+        .filter(t => threadIds.includes(t.id) && t.visibility === 'public')
+        .map(t => ({
+            ...t,
+            reply_count: replies.filter(r => r.thread_id === t.id).length
+        }));
+      
+      return filtered.slice(offset, offset + limit);
   }
 
   async getThreadById(id: string): Promise<ThreadRecord | null> {
-    const all = this.threads; // Can access private via ID in this simplified mock
-    return all.find(t => t.id === id) || null;
+    const thread = this.getThreads().find(t => t.id === id);
+    if (!thread) return null;
+    const replies = this.getReplies();
+    return {
+        ...thread,
+        reply_count: replies.filter(r => r.thread_id === thread.id).length
+    };
   }
 
   async getThreadTags(threadId: string): Promise<TagRecord[]> {
-    await new Promise(resolve => setTimeout(resolve, 100));
+    const junctionData = this.getThreadTagsData();
+    const tagIds = junctionData.filter(j => j.thread_id === threadId).map(j => j.tag_id);
     
-    if (this.threadTags[threadId]) {
-      return this.threadTags[threadId];
-    }
-
-    if (threadId === 'thread-1') {
-      return [
-        { id: 'tag-1', slug: 'productivity', name: 'Productivity', created_at: '' },
-        { id: 'tag-2', slug: 'uiux', name: 'UI/UX', created_at: '' },
-        { id: 'tag-3', slug: 'research', name: 'Research', created_at: '' },
-      ];
-    }
-    if (threadId === 'thread-2') {
-      return [
-        { id: 'tag-4', slug: 'mindfulness', name: 'Mindfulness', created_at: '' },
-        { id: 'tag-5', slug: 'habits', name: 'Habits', created_at: '' },
-      ];
-    }
-    return [{ id: 'tag-6', slug: 'tech', name: 'Tech', created_at: '' }];
-  }
-
-  async getThreadReactionCount(threadId: string): Promise<number> {
-    await new Promise(resolve => setTimeout(resolve, 50));
-    if (threadId === 'thread-1') return 128;
-    if (threadId === 'thread-2') return 142;
-    if (this.threads.find(t => t.id === threadId)) return 0;
-    return 15;
+    const allTags = JSON.parse(storage.getItem(this.TAGS_KEY) || '[]');
+    return allTags.filter((t: any) => tagIds.includes(t.id));
   }
 
   async getThreadReplies(threadId: string): Promise<ThreadReplyRecord[]> {
     await new Promise(resolve => setTimeout(resolve, 300));
-    if (threadId === 'thread-1') {
-      return [
-        {
-          id: 'reply-1',
-          thread_id: 'thread-1',
-          lenser_id: 'lenser-seneca',
-          content: "An excellent point. I find that time-blocking and disabling all non-essential notifications are the most effective strategies. The tool itself is secondary to the discipline of its use.",
-          reaction_count: 45,
-          created_at: new Date(Date.now() - 1000 * 60 * 60 * 1).toISOString() 
-        },
-        {
-          id: 'reply-2',
-          thread_id: 'thread-1',
-          lenser_id: 'lenser-epictetus',
-          content: "Agreed. The focus should be on principles, not products. The best tool is the one that disappears, allowing the work to come to the forefront. I use plain text files and a simple folder structure; it's foolproof and timeless.",
-          reaction_count: 82,
-          created_at: new Date(Date.now() - 1000 * 60 * 45).toISOString() 
-        }
-      ];
-    }
-    return [];
+    return this.getReplies()
+        .filter(r => r.thread_id === threadId)
+        .sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
+  }
+
+  async getReplyById(replyId: string): Promise<ThreadReplyRecord | null> {
+    return this.getReplies().find(r => r.id === replyId) || null;
+  }
+
+  async createReply(threadId: string, lenserId: string, content: string, parentReplyId?: string): Promise<ThreadReplyRecord> {
+      await new Promise(resolve => setTimeout(resolve, 400));
+      const newReply: ThreadReplyRecord = {
+          id: `reply-${Date.now()}`,
+          thread_id: threadId,
+          lenser_id: lenserId,
+          content,
+          parent_reply_id: parentReplyId,
+          reaction_count: 0,
+          created_at: new Date().toISOString()
+      };
+      
+      const replies = this.getReplies();
+      replies.push(newReply);
+      storage.setItem(this.REPLIES_KEY, JSON.stringify(replies));
+      
+      return newReply;
   }
 
   async getTrendingTags(limit: number): Promise<string[]> {
-      await new Promise(resolve => setTimeout(resolve, 200));
-      return ['focus', 'deepwork', 'journaling', 'systems', 'health', 'uiux', 'minimalism'];
+      // Mock simple return
+      return ['productivity', 'health', 'ai'];
+  }
+
+  async updateThread(id: string, dto: Partial<CreateThreadDTO>): Promise<ThreadRecord> {
+      await new Promise(resolve => setTimeout(resolve, 500));
+      const threads = this.getThreads();
+      const index = threads.findIndex(t => t.id === id);
+      if (index === -1) throw new Error("Thread not found");
+
+      const updated = {
+          ...threads[index],
+          ...dto,
+          updated_at: new Date().toISOString()
+      };
+      threads[index] = updated;
+      storage.setItem(this.THREADS_KEY, JSON.stringify(threads));
+
+      if (dto.tagIds) {
+          let junctionData = this.getThreadTagsData();
+          junctionData = junctionData.filter(j => j.thread_id !== id);
+          dto.tagIds.forEach(tagId => {
+              junctionData.push({ thread_id: id, tag_id: tagId });
+          });
+          storage.setItem(this.THREAD_TAGS_KEY, JSON.stringify(junctionData));
+      }
+
+      return updated;
+  }
+
+  async deleteThread(id: string): Promise<void> {
+      await new Promise(resolve => setTimeout(resolve, 400));
+      const threads = this.getThreads();
+      const filtered = threads.filter(t => t.id !== id);
+      storage.setItem(this.THREADS_KEY, JSON.stringify(filtered));
   }
 }
 
-// --- Supabase Implementation (Stub) ---
+// --- Supabase Implementation ---
 export class SupabaseThreadsRepository implements ThreadsRepositoryPort {
   
   async createThread(dto: CreateThreadDTO): Promise<ThreadRecord> {
-    const { data, error } = await supabase.from('threads').insert({ lenser_id: dto.lenserId, title: dto.title, content: dto.content, visibility: dto.visibility }).select().single();
+    // 1. Create Thread
+    const { data: thread, error } = await supabase.from('threads')
+        .insert({ 
+            lenser_id: dto.lenserId, 
+            title: dto.title, 
+            content: dto.content, 
+            visibility: dto.visibility 
+        })
+        .select().single();
+    
     if (error) throw error;
-    return data as ThreadRecord;
+
+    // 2. Insert Tags (Junction) - dto.tagIds are now UUIDs
+    if (dto.tagIds && dto.tagIds.length > 0) {
+        const junctionInserts = dto.tagIds.map(tagId => ({
+            thread_id: thread.id,
+            tag_id: tagId
+        }));
+        const { error: tagError } = await supabase.from('thread_tags').insert(junctionInserts);
+        if (tagError) console.error("Failed to link tags", tagError);
+    }
+
+    return thread as ThreadRecord;
   }
 
-  async getAllThreads(): Promise<ThreadRecord[]> {
-    // Filter strictly for public threads
-    const { data, error } = await supabase.from('threads').select('*').eq('visibility', 'public').order('created_at', { ascending: false });
+  async getAllThreads(offset = 0, limit = 10): Promise<ThreadRecord[]> {
+    const { data, error } = await supabase
+        .from('threads')
+        .select('*, thread_replies(count)')
+        .eq('visibility', 'public')
+        .order('created_at', { ascending: false })
+        .range(offset, offset + limit - 1);
     if (error) throw error;
-    return data as ThreadRecord[];
+    return (data as any[]).map(t => ({
+        ...t,
+        reply_count: t.thread_replies ? t.thread_replies[0]?.count || 0 : 0
+    })) as ThreadRecord[];
+  }
+
+  async getThreadsByTag(tagSlug: string, offset = 0, limit = 10): Promise<ThreadRecord[]> {
+      // Query through the join table
+      const { data, error } = await supabase
+        .from('threads')
+        .select('*, thread_tags!inner(tag_id, tags!inner(slug)), thread_replies(count)')
+        .eq('visibility', 'public')
+        .eq('thread_tags.tags.slug', tagSlug)
+        .order('created_at', { ascending: false })
+        .range(offset, offset + limit - 1);
+
+      if (error) throw error;
+      
+      return (data as any[]).map(t => ({
+        ...t,
+        reply_count: t.thread_replies ? t.thread_replies[0]?.count || 0 : 0
+    })) as ThreadRecord[];
   }
 
   async getThreadById(id: string): Promise<ThreadRecord | null> {
-    const { data, error } = await supabase.from('threads').select('*').eq('id', id).single();
+    const { data, error } = await supabase
+        .from('threads')
+        .select('*, thread_replies(count)')
+        .eq('id', id)
+        .single();
     if (error) throw error;
-    return data as ThreadRecord;
+    const thread = data as any;
+    thread.reply_count = thread.thread_replies ? thread.thread_replies[0]?.count || 0 : 0;
+    return thread as ThreadRecord;
   }
 
   async getThreadTags(threadId: string): Promise<TagRecord[]> {
@@ -191,20 +295,61 @@ export class SupabaseThreadsRepository implements ThreadsRepositoryPort {
     return data.map(d => d.tags) as TagRecord[];
   }
 
-  async getThreadReactionCount(threadId: string): Promise<number> {
-    const { count, error } = await supabase.from('thread_reactions').select('*', { count: 'exact', head: true }).eq('thread_id', threadId);
-    if (error) throw error;
-    return count || 0;
-  }
-
   async getThreadReplies(threadId: string): Promise<ThreadReplyRecord[]> {
      const { data, error } = await supabase.from('thread_replies').select('*').eq('thread_id', threadId).order('created_at', { ascending: true });
     if (error) throw error;
     return data as ThreadReplyRecord[];
   }
 
+  async getReplyById(replyId: string): Promise<ThreadReplyRecord | null> {
+      const { data, error } = await supabase.from('thread_replies').select('*').eq('id', replyId).single();
+      if (error) return null;
+      return data as ThreadReplyRecord;
+  }
+
+  async createReply(threadId: string, lenserId: string, content: string, parentReplyId?: string): Promise<ThreadReplyRecord> {
+      const { data, error } = await supabase.from('thread_replies').insert({
+          thread_id: threadId,
+          lenser_id: lenserId,
+          content,
+          parent_reply_id: parentReplyId
+      }).select().single();
+      if (error) throw error;
+      return data as ThreadReplyRecord;
+  }
+
   async getTrendingTags(limit: number): Promise<string[]> {
-      // Very naive implementation
       return ['productivity', 'ai', 'design'];
+  }
+
+  async updateThread(id: string, dto: Partial<CreateThreadDTO>): Promise<ThreadRecord> {
+      const { data, error } = await supabase.from('threads')
+        .update({
+            title: dto.title,
+            content: dto.content,
+            visibility: dto.visibility,
+            updated_at: new Date().toISOString()
+        })
+        .eq('id', id)
+        .select()
+        .single();
+      
+      if (error) throw error;
+
+      if (dto.tagIds) {
+          await supabase.from('thread_tags').delete().eq('thread_id', id);
+          const junctionInserts = dto.tagIds.map(tagId => ({
+            thread_id: id,
+            tag_id: tagId
+          }));
+          await supabase.from('thread_tags').insert(junctionInserts);
+      }
+
+      return data as ThreadRecord;
+  }
+
+  async deleteThread(id: string): Promise<void> {
+      const { error } = await supabase.from('threads').delete().eq('id', id);
+      if (error) throw error;
   }
 }

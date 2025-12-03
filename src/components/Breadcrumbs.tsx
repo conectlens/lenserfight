@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { useLocation, Link } from 'react-router-dom';
 import { ChevronRight } from 'lucide-react';
@@ -6,11 +7,13 @@ const routeNameMap: Record<string, string> = {
   app: 'Home',
   prompts: 'Prompts',
   threads: 'Threads',
-  lenser: 'Lenser', // Updated from Profile
+  lenser: 'Lenser',
   login: 'Login',
   register: 'Register',
   'forgot-password': 'Forgot Password',
-  'reset-password': 'Reset Password'
+  'reset-password': 'Reset Password',
+  settings: 'Settings',
+  notifications: 'Notifications'
 };
 
 const nonLinkableRoutes = ['lenser', 'threads'];

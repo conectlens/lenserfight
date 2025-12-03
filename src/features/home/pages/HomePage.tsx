@@ -1,4 +1,5 @@
-import React, { useEffect, useState } from 'react';
+
+import React, { useEffect, useState, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ThreadsList } from '../components/ThreadsList';
 import { threadsService } from '../../../services/threadsService';
@@ -10,11 +11,13 @@ import { Lenser } from '../../../types/lenser.types';
 import { TagBadge } from '../../../components/TagBadge';
 import { Card } from '../../../components/Card';
 import { Button } from '../../../components/Button';
-import { Plus, ChevronRight } from 'lucide-react';
+import { Plus, ChevronRight, MessageSquareOff } from 'lucide-react';
 import { CreateThreadModal } from '../../threads/components/CreateThreadModal';
 import { useLenser } from '../../../context/LenserContext';
 import { CreateLenserProfileModal } from '../../lenser/components/CreateLenserProfileModal';
 import { useAuth } from '../../../context/AuthContext';
+
+const PAGE_SIZE = 10;
 
 export const HomePage: React.FC = () => {
   const [threads, setThreads] = useState<ThreadFeedItem[]>([]);
@@ -23,44 +26,82 @@ export const HomePage: React.FC = () => {
   const [activeLensers, setActiveLensers] = useState<Lenser[]>([]);
   
   const [loading, setLoading] = useState(true);
+  const [page, setPage] = useState(0);
+  const [hasMore, setHasMore] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
+
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
-  const { hasLenser } = useLenser();
+  const { hasLenser, lenser } = useLenser();
   const { isAuthenticated } = useAuth();
   const navigate = useNavigate();
+  const observer = useRef<IntersectionObserver | null>(null);
 
-  const loadFeed = async () => {
-    try {
-      const data = await threadsService.getThreadsFeed();
-      setThreads(data);
-    } catch (error) {
-      console.error("Failed to load threads", error);
-    }
-  };
-
-  const loadSidebarData = async () => {
-      try {
-          const [prompts, tags, lensers] = await Promise.all([
-              promptsService.getTopPrompts(3),
-              threadsService.getTrendingTags(6),
-              lenserService.getRecentlyActiveLensers(4)
-          ]);
-          setTopPrompts(prompts);
-          setTrendingTags(tags);
-          setActiveLensers(lensers);
-      } catch (error) {
-          console.error("Failed to load sidebar data", error);
+  const lastThreadElementRef = useCallback((node: HTMLDivElement) => {
+    if (loading || loadingMore) return;
+    if (observer.current) observer.current.disconnect();
+    
+    observer.current = new IntersectionObserver(entries => {
+      if (entries[0].isIntersecting && hasMore) {
+        setPage(prev => prev + 1);
       }
-  };
+    });
+    
+    if (node) observer.current.observe(node);
+  }, [loading, loadingMore, hasMore]);
 
+  // Combined fetch for initial load to prevent empty state flicker
   useEffect(() => {
     const init = async () => {
         setLoading(true);
-        await Promise.all([loadFeed(), loadSidebarData()]);
-        setLoading(false);
+        try {
+            const [prompts, tags, lensers, initialThreads] = await Promise.all([
+                promptsService.getTopPrompts(3),
+                threadsService.getTrendingTags(6),
+                lenserService.getRecentlyActiveLensers(4),
+                threadsService.getThreadsFeed(lenser?.id, 0, PAGE_SIZE)
+            ]);
+            
+            setTopPrompts(prompts);
+            setTrendingTags(tags);
+            setActiveLensers(lensers);
+            setThreads(initialThreads);
+            setHasMore(initialThreads.length === PAGE_SIZE);
+            setPage(0);
+        } catch (error) {
+            console.error("Failed to load home data", error);
+        } finally {
+            setLoading(false);
+        }
     };
     init();
-  }, []);
+  }, [lenser?.id]); // Re-run if user context changes to update reaction states
+
+  // Infinite Scroll Effect
+  useEffect(() => {
+      if (page === 0) return; // Initial load handled above
+      
+      const loadMore = async () => {
+          setLoadingMore(true);
+          try {
+              const offset = page * PAGE_SIZE;
+              const newThreads = await threadsService.getThreadsFeed(lenser?.id, offset, PAGE_SIZE);
+              
+              if (newThreads.length === 0) {
+                  setHasMore(false);
+              } else {
+                  setThreads(prev => [...prev, ...newThreads]);
+                  if (newThreads.length < PAGE_SIZE) setHasMore(false);
+              }
+          } catch (e) {
+              console.error("Failed to load more threads", e);
+          } finally {
+              setLoadingMore(false);
+          }
+      };
+      
+      loadMore();
+  }, [page, lenser?.id]);
 
   const handleOpenThread = (id: string) => {
     navigate(`/threads/${id}`);
@@ -79,9 +120,14 @@ export const HomePage: React.FC = () => {
     setIsCreateModalOpen(true);
   };
 
-  const handleCreateSuccess = () => {
+  const handleCreateSuccess = async () => {
+    // Reset and reload
     setLoading(true);
-    loadFeed().then(() => setLoading(false));
+    setPage(0);
+    const refreshed = await threadsService.getThreadsFeed(lenser?.id, 0, PAGE_SIZE);
+    setThreads(refreshed);
+    setHasMore(refreshed.length === PAGE_SIZE);
+    setLoading(false);
   };
 
   const SidebarSkeleton = () => (
@@ -108,17 +154,10 @@ export const HomePage: React.FC = () => {
                ))}
            </div>
       </div>
-      <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 h-32 animate-pulse">
-            <div className="h-4 bg-gray-200 rounded w-1/2 mb-4"></div>
-            <div className="flex gap-2 flex-wrap">
-                <div className="h-6 w-16 bg-gray-200 rounded-full"></div>
-                <div className="h-6 w-20 bg-gray-200 rounded-full"></div>
-                <div className="h-6 w-14 bg-gray-200 rounded-full"></div>
-                <div className="h-6 w-24 bg-gray-200 rounded-full"></div>
-            </div>
-      </div>
     </div>
   );
+
+  const isEmpty = !loading && threads.length === 0;
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 max-w-7xl mx-auto">
@@ -129,22 +168,55 @@ export const HomePage: React.FC = () => {
         {/* Feed Header / Create Action */}
         <div className="flex items-center justify-between mb-6">
             <h1 className="text-2xl font-bold text-gray-900">Your Feed</h1>
-            <div className="w-auto">
-                <Button 
-                    onClick={handleCreateClick} 
-                    className="flex items-center gap-2 px-4 py-2 w-auto"
-                >
-                    <Plus size={18} />
-                    New Post
-                </Button>
-            </div>
+            {!isEmpty && (
+                <div className="w-auto">
+                    <Button 
+                        onClick={handleCreateClick} 
+                        className="flex items-center gap-2 px-4 py-2 w-auto"
+                    >
+                        <Plus size={18} />
+                        New Post
+                    </Button>
+                </div>
+            )}
         </div>
 
-        <ThreadsList 
-          threads={threads} 
-          isLoading={loading} 
-          onOpenThread={handleOpenThread} 
-        />
+        {isEmpty ? (
+            <div className="bg-white rounded-2xl border border-gray-200 border-dashed p-10 py-16 flex flex-col items-center justify-center text-center shadow-sm">
+                <div className="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center mb-4 text-gray-400">
+                    <MessageSquareOff size={32} strokeWidth={1.5} />
+                </div>
+                <h3 className="text-xl font-bold text-gray-900 mb-2">No posts yet</h3>
+                <p className="text-gray-500 max-w-sm mb-8 leading-relaxed">
+                    Your feed is currently quiet. Be the first to start a conversation, share an idea, or ask a question to the community.
+                </p>
+                <div className="w-auto">
+                    <Button onClick={handleCreateClick} className="flex items-center gap-2 px-6">
+                        <Plus size={18} />
+                        Create Post
+                    </Button>
+                </div>
+            </div>
+        ) : (
+            <div className="space-y-6">
+                <ThreadsList 
+                  threads={threads} 
+                  isLoading={loading} 
+                  onOpenThread={handleOpenThread} 
+                />
+                
+                {/* Intersection Anchor & Loading Indicator */}
+                <div ref={lastThreadElementRef} className="h-4"></div>
+                {loadingMore && (
+                    <div className="py-4 flex justify-center">
+                        <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary"></div>
+                    </div>
+                )}
+                {!hasMore && threads.length > 0 && !loading && (
+                    <p className="text-center text-gray-400 text-sm py-4">You've reached the end</p>
+                )}
+            </div>
+        )}
       </div>
 
       {/* Right Sidebar Widgets */}
@@ -175,7 +247,7 @@ export const HomePage: React.FC = () => {
                   </div>
                 </Card>
 
-                {/* Recently Active Lensers - Redesigned to User Cards */}
+                {/* Recently Active Lensers */}
                 <Card className="p-6">
                   <h3 className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-4">Recently Active Lensers</h3>
                   <div className="space-y-4">
@@ -203,7 +275,11 @@ export const HomePage: React.FC = () => {
                   <h3 className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-4">Trending Tags</h3>
                   <div className="flex flex-wrap gap-2">
                     {trendingTags.map(tag => (
-                      <TagBadge key={tag} label={tag} className="cursor-pointer hover:bg-gray-200 transition-colors" />
+                      <TagBadge 
+                        key={tag} 
+                        label={tag} 
+                        onClick={() => navigate(`/tags/${tag.toLowerCase()}`)}
+                      />
                     ))}
                   </div>
                 </Card>

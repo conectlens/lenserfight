@@ -3,19 +3,22 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { SidebarItem } from './SidebarItem';
 import { useLenser } from '../../context/LenserContext';
 import { FeedbackModal } from '../../features/feedback/components/FeedbackModal';
+import { notificationService } from '../../services/notificationService';
+import { Avatar } from '../../components/Avatar';
 import { 
   Home, 
   Compass, 
   MoreHorizontal,
   Settings,
-  LifeBuoy,
   LogOut,
   Lightbulb,
   User,
   Sparkles,
-  MessageSquarePlus
+  MessageSquarePlus,
+  Bell
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
+import { FEATURES } from '../../config/runtimeConfig';
 
 interface SidebarProps {
   isOpen: boolean;
@@ -33,8 +36,18 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, isMobile, onCloseMobil
   const dropdownRef = useRef<HTMLDivElement>(null);
   const buttonRef = useRef<HTMLButtonElement>(null);
 
-  // Feedback Modal State
+  const [unreadCount, setUnreadCount] = useState(0);
   const [isFeedbackOpen, setIsFeedbackOpen] = useState(false);
+
+  useEffect(() => {
+    const fetchNotifications = async () => {
+        if (lenser && FEATURES.NOTIFICATIONS) {
+            const count = await notificationService.getUnreadCount();
+            setUnreadCount(count);
+        }
+    };
+    fetchNotifications();
+  }, [lenser, location.pathname]);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -55,10 +68,8 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, isMobile, onCloseMobil
     };
   }, [isDropdownOpen]);
   
-  // Desktop: Sticky column
   const desktopWidthClass = isOpen ? 'w-64' : 'w-20';
   
-  // Added 'flex flex-col' to ensure spacing works correctly
   const containerClass = isMobile
     ? `fixed inset-y-0 left-0 h-full w-64 bg-gray-50 z-50 shadow-2xl transform transition-transform duration-300 ease-out flex flex-col ${isOpen ? 'translate-x-0' : '-translate-x-full'}`
     : `sticky top-0 h-screen flex-shrink-0 bg-gray-50 border-r border-gray-200 transition-all duration-300 ease-in-out flex flex-col ${desktopWidthClass}`;
@@ -83,7 +94,6 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, isMobile, onCloseMobil
     if (isMobile) onCloseMobile();
   };
 
-  // Helper to determine if we show text labels
   const showLabels = isOpen || isMobile;
 
   return (
@@ -96,23 +106,23 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, isMobile, onCloseMobil
       )}
 
       <aside className={containerClass}>
-        {/* Header / Logo */}
         <div className={`h-16 flex items-center px-4 flex-shrink-0 ${!showLabels ? 'justify-center' : ''}`}>
           <div 
             className="flex items-center gap-3 cursor-pointer group w-full"
             onClick={handleLogoClick}
             title="Go Home"
           >
-            <div className={`w-8 h-8 rounded-lg bg-yellow-300 flex items-center justify-center flex-shrink-0 transition-transform group-hover:scale-105`}>
-               <svg className="w-5 h-5 text-gray-900" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <circle cx="12" cy="12" r="6" strokeWidth="2" />
-               </svg>
+            <div className={`w-10 h-10 flex items-center justify-center flex-shrink-0 transition-transform group-hover:scale-105`}>
+               <img 
+                 src="https://cdn.lenserfight.conectlens.com/brand/lenserfight-logo.png" 
+                 alt="LenserFight Logo" 
+                 className="w-full h-full object-contain"
+               />
             </div>
-            {showLabels && <span className="font-bold text-lg tracking-tight text-gray-900 truncate">ConnectLens</span>}
+            {showLabels && <span className="font-bold text-lg tracking-tight text-gray-900 truncate">LenserFight</span>}
           </div>
         </div>
 
-        {/* Navigation */}
         <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto scrollbar-hide flex flex-col">
            <SidebarItem 
              onClick={() => handleNavigation('/app')}
@@ -130,21 +140,17 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, isMobile, onCloseMobil
              collapsed={!showLabels} 
            />
            
+           {/* Enabled Explore/Tags Link */}
            <SidebarItem 
-             onClick={handleProfileClick}
-             icon={<User size={20} />} 
-             label="Profile" 
-             isActive={lenser ? location.pathname === `/lenser/${lenser.handle}` : false} 
+             onClick={() => handleNavigation('/tags')}
+             icon={<Compass size={20} />} 
+             label="Explore Topics" 
+             isActive={location.pathname.startsWith('/tags')}
              collapsed={!showLabels} 
            />
-
-           <SidebarItem icon={<Compass size={20} />} label="Explore" collapsed={!showLabels} />
         </nav>
 
-        {/* Footer: Feedback Button & User Profile */}
         <div className="flex-shrink-0 px-3 pb-3 pt-2 border-t border-gray-200 bg-gray-50 mt-auto">
-          
-          {/* Feedback Button - Pinned above user */}
           <div className="mb-2">
               <SidebarItem 
                 onClick={() => setIsFeedbackOpen(true)}
@@ -165,12 +171,8 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, isMobile, onCloseMobil
               `}
             >
                <div className="relative flex-shrink-0" onClick={lenser ? handleProfileClick : undefined}>
-                  <img 
-                    src={lenser?.avatar_url || "https://ui-avatars.com/api/?name=Guest&background=random"} 
-                    alt="Avatar" 
-                    className="w-9 h-9 rounded-full object-cover bg-gray-200" 
-                  />
-                  {lenser && <div className="absolute bottom-0 right-0 w-2.5 h-2.5 bg-green-500 border-2 border-white rounded-full"></div>}
+                  <Avatar src={lenser?.avatar_url} size="sm" className="!w-9 !h-9" />
+                  {lenser && FEATURES.NOTIFICATIONS && <div className={`absolute bottom-0 right-0 w-2.5 h-2.5 border-2 border-white rounded-full ${unreadCount > 0 ? 'bg-red-500' : 'bg-green-500'}`}></div>}
                </div>
                
                {showLabels && (
@@ -188,9 +190,10 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, isMobile, onCloseMobil
                         e.stopPropagation();
                         setIsDropdownOpen(!isDropdownOpen);
                       }}
-                      className={`p-1.5 rounded-lg transition-colors ${isDropdownOpen ? 'bg-gray-200 text-gray-900' : 'text-gray-400 hover:text-gray-900 hover:bg-gray-100'}`}
+                      className={`p-1.5 rounded-lg transition-colors relative ${isDropdownOpen ? 'bg-gray-200 text-gray-900' : 'text-gray-400 hover:text-gray-900 hover:bg-gray-100'}`}
                    >
                       <MoreHorizontal size={18} />
+                      {FEATURES.NOTIFICATIONS && unreadCount > 0 && <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full border border-white"></span>}
                    </button>
 
                    {isDropdownOpen && (
@@ -203,19 +206,45 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, isMobile, onCloseMobil
                           <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Account</p>
                        </div>
                        <div className="p-1">
+                          <button 
+                            className="w-full text-left px-3 py-2 rounded-lg text-sm text-gray-700 hover:bg-gray-50 hover:text-gray-900 flex items-center gap-3 transition-colors"
+                            onClick={() => {
+                                setIsDropdownOpen(false);
+                                handleProfileClick();
+                            }}
+                          >
+                             <User size={16} className="text-gray-400" />
+                             My Profile
+                          </button>
+                         
+                         {FEATURES.NOTIFICATIONS && (
+                           <button 
+                             className="w-full text-left px-3 py-2 rounded-lg text-sm text-gray-700 hover:bg-gray-50 hover:text-gray-900 flex items-center gap-3 transition-colors"
+                             onClick={() => {
+                               setIsDropdownOpen(false);
+                               navigate('/settings', { state: { tab: 'Notifications' } });
+                             }}
+                           >
+                             <div className="relative">
+                               <Bell size={16} className="text-gray-400" />
+                               {unreadCount > 0 && <span className="absolute -top-0.5 -right-0.5 w-2 h-2 bg-red-500 rounded-full"></span>}
+                             </div>
+                             <span className="flex-1">Notifications</span>
+                             {unreadCount > 0 && (
+                                 <span className="bg-red-500 text-white text-[10px] font-bold px-1.5 rounded-full h-4 flex items-center justify-center">{unreadCount}</span>
+                             )}
+                           </button>
+                         )}
+
                          <button 
                            className="w-full text-left px-3 py-2 rounded-lg text-sm text-gray-700 hover:bg-gray-50 hover:text-gray-900 flex items-center gap-3 transition-colors"
-                           onClick={() => setIsDropdownOpen(false)}
+                           onClick={() => {
+                               setIsDropdownOpen(false);
+                               navigate('/settings');
+                           }}
                          >
                            <Settings size={16} className="text-gray-400" />
                            Settings
-                         </button>
-                         <button 
-                           className="w-full text-left px-3 py-2 rounded-lg text-sm text-gray-700 hover:bg-gray-50 hover:text-gray-900 flex items-center gap-3 transition-colors"
-                           onClick={() => setIsDropdownOpen(false)}
-                         >
-                           <LifeBuoy size={16} className="text-gray-400" />
-                           Help & Support
                          </button>
                        </div>
                        <div className="h-px bg-gray-100 my-0"></div>
@@ -237,7 +266,6 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, isMobile, onCloseMobil
                )}
             </div>
 
-            {/* CTA Overlay when no Lenser Profile */}
             {!lenser && (
               <div className="absolute inset-0 flex items-center justify-center p-2 z-10 bg-gray-50/50 backdrop-blur-[1px]">
                    <button 
@@ -257,7 +285,6 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, isMobile, onCloseMobil
         </div>
       </aside>
 
-      {/* Global Feedback Modal */}
       <FeedbackModal 
         isOpen={isFeedbackOpen} 
         onClose={() => setIsFeedbackOpen(false)} 

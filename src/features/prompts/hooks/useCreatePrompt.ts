@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { promptsService } from '../../../services/promptsService';
 import { useLenser } from '../../../context/LenserContext';
@@ -8,6 +9,7 @@ export const useCreatePrompt = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [editId, setEditId] = useState<string | null>(null);
 
   // Form State
   const [title, setTitle] = useState('');
@@ -15,13 +17,26 @@ export const useCreatePrompt = () => {
   const [tags, setTags] = useState<string[]>([]);
   const [visibility, setVisibility] = useState<VisibilityEnum>('private');
 
-  const openModal = () => setIsOpen(true);
+  const openModal = (initialData?: any) => {
+      if (initialData) {
+          setEditId(initialData.id);
+          setTitle(initialData.title);
+          setContent(initialData.content || ''); // In real app, might need to fetch full content if list item is partial
+          setTags(initialData.tags?.map((t: any) => t.name) || []);
+          setVisibility(initialData.visibility || 'public');
+      } else {
+          resetForm();
+      }
+      setIsOpen(true);
+  };
+
   const closeModal = () => {
     setIsOpen(false);
     resetForm();
   };
 
   const resetForm = () => {
+    setEditId(null);
     setTitle('');
     setContent('');
     setTags([]);
@@ -38,22 +53,27 @@ export const useCreatePrompt = () => {
     setIsSubmitting(true);
     setError(null);
 
-    const dto: CreatePromptDTO = {
+    const dto: Partial<CreatePromptDTO> = {
       title,
       content,
       tagIds: tags,
       visibility,
       lenserId: lenser.id,
-      // Optional description logic could be added here if we had a dedicated field
       description: null 
     };
 
     try {
-      await promptsService.createPrompt(dto);
+      if (editId) {
+          await promptsService.updatePrompt(editId, dto, lenser.id);
+      } else {
+          // @ts-ignore - full DTO required for create
+          await promptsService.createPrompt(dto as CreatePromptDTO);
+      }
+      
       if (onSuccess) onSuccess();
       closeModal();
     } catch (err: any) {
-      setError(err.message || "Failed to create prompt.");
+      setError(err.message || "Failed to save prompt.");
     } finally {
       setIsSubmitting(false);
     }
@@ -75,6 +95,7 @@ export const useCreatePrompt = () => {
     },
     isSubmitting,
     error,
-    submit
+    submit,
+    isEditMode: !!editId
   };
 };

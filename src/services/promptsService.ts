@@ -1,6 +1,10 @@
+
 import { getPromptsRepository } from '../adapters/promptsAdapter';
 import { getLenserRepository } from '../adapters/lenserAdapter';
+import { reactionService } from './reactionService';
 import { PromptTemplateViewModel, PromptTemplateDetailViewModel, PromptTemplateRecord, CreatePromptDTO } from '../types/prompts.types';
+import { tagService } from './tagService';
+import { tagActivityService } from './tagActivityService';
 
 const promptsRepo = getPromptsRepository();
 const lenserRepo = getLenserRepository();
@@ -29,23 +33,23 @@ const enrichPrompt = async (prompt: PromptTemplateRecord): Promise<PromptTemplat
 };
 
 export const promptsService = {
-  getPrompts: async (): Promise<PromptTemplateViewModel[]> => {
-    const records = await promptsRepo.getAll();
+  getPrompts: async (currentLenserId?: string, offset = 0, limit = 10): Promise<PromptTemplateViewModel[]> => {
+    const records = await promptsRepo.getAll(currentLenserId, offset, limit);
     return Promise.all(records.map(enrichPrompt));
   },
 
-  search: async (query: string): Promise<PromptTemplateViewModel[]> => {
-    const records = await promptsRepo.search(query);
+  search: async (query: string, currentLenserId?: string, offset = 0, limit = 10): Promise<PromptTemplateViewModel[]> => {
+    const records = await promptsRepo.search(query, currentLenserId, offset, limit);
     return Promise.all(records.map(enrichPrompt));
   },
 
-  filter: async (tagSlug: string | null): Promise<PromptTemplateViewModel[]> => {
-    const records = await promptsRepo.filterByTag(tagSlug);
+  filter: async (tagSlug: string | null, currentLenserId?: string, offset = 0, limit = 10): Promise<PromptTemplateViewModel[]> => {
+    const records = await promptsRepo.filterByTag(tagSlug, currentLenserId, offset, limit);
     return Promise.all(records.map(enrichPrompt));
   },
 
-  sort: async (order: "newest" | "popular"): Promise<PromptTemplateViewModel[]> => {
-    const records = await promptsRepo.sort(order);
+  sort: async (order: "newest" | "popular", currentLenserId?: string, offset = 0, limit = 10): Promise<PromptTemplateViewModel[]> => {
+    const records = await promptsRepo.sort(order, currentLenserId, offset, limit);
     return Promise.all(records.map(enrichPrompt));
   },
 
@@ -54,23 +58,37 @@ export const promptsService = {
       return Promise.all(records.map(enrichPrompt));
   },
 
+  getAuthorPrompts: async (lenserId: string): Promise<PromptTemplateViewModel[]> => {
+    const records = await lenserRepo.getPromptsByLenser(lenserId);
+    return Promise.all(records.map(enrichPrompt));
+  },
+
   getPromptDetail: async (id: string, viewerLenserId?: string): Promise<PromptTemplateDetailViewModel | null> => {
     const record = await promptsRepo.getById(id);
     if (!record) return null;
 
+    // Access Control Check for Private Prompts
+    if (record.visibility === 'private' && record.lenser_id !== viewerLenserId) {
+        throw new Error("401"); // Unauthorized
+    }
+
     const baseViewModel = await enrichPrompt(record);
-    const reactions = await promptsRepo.getReactions(id);
+    const summary = await reactionService.getReactionSummary('prompt_template', id, viewerLenserId);
 
     const reactionCounts = {
-      like: reactions.filter(r => r.reaction === 'like').length,
-      love: reactions.filter(r => r.reaction === 'love').length,
-      clap: reactions.filter(r => r.reaction === 'clap').length,
-      saved: reactions.filter(r => r.reaction === 'saved').length,
+      like: summary.counts['like'] || 0,
+      love: summary.counts['love'] || 0,
+      clap: summary.counts['clap'] || 0,
+      saved: summary.counts['saved'] || 0,
     };
 
-    let isSaved = false;
-    if (viewerLenserId) {
-      isSaved = reactions.some(r => r.lenser_id === viewerLenserId && r.reaction === 'saved');
+    const isSaved = summary.userReactions.includes('saved');
+
+    // Record View Activity for Tags
+    if (baseViewModel.tags.length > 0) {
+        Promise.all(baseViewModel.tags.map(t => 
+            tagActivityService.recordView(t.id, 'prompt', id, viewerLenserId)
+        )).catch(() => {});
     }
 
     return {
@@ -97,12 +115,15 @@ export const promptsService = {
     await promptsRepo.createUsageEvent(id, 'copied', lenserId);
   },
 
-  savePrompt: async (id: string, lenserId: string): Promise<void> => {
-    await promptsRepo.addReaction(id, lenserId, 'saved');
+  toggleSavePrompt: async (id: string, lenserId: string): Promise<boolean> => {
+     // 'saved' is handled as a reaction in the new system
+     const result = await reactionService.toggleReaction('prompt_template', id, lenserId, 'saved');
+     return result.added;
   },
 
-  unsavePrompt: async (id: string, lenserId: string): Promise<void> => {
-    await promptsRepo.removeReaction(id, lenserId, 'saved');
+  toggleReaction: async (id: string, lenserId: string, reaction: 'like' | 'love' | 'clap') => {
+      const result = await reactionService.toggleReaction('prompt_template', id, lenserId, reaction);
+      return result.summary;
   },
 
   createPrompt: async (input: CreatePromptDTO): Promise<PromptTemplateRecord> => {
@@ -120,6 +141,47 @@ export const promptsService = {
         input.description = input.content.substring(0, 100) + (input.content.length > 100 ? '...' : '');
     }
 
-    return promptsRepo.createPrompt(input);
+    // 1. Resolve Tag Names to IDs
+    const resolvedTags = await tagService.upsertTags(input.tagIds);
+    const realTagIds = resolvedTags.map(t => t.id);
+
+    // 2. Create Prompt
+    const prompt = await promptsRepo.createPrompt({
+        ...input,
+        tagIds: realTagIds
+    });
+
+    // 3. Record Activity
+    Promise.all(realTagIds.map(tagId => 
+        tagActivityService.recordActivity(tagId, 'prompt', prompt.id, input.lenserId, 'created')
+    )).catch(console.error);
+
+    return prompt;
+  },
+
+  updatePrompt: async (id: string, input: Partial<CreatePromptDTO>, lenserId: string): Promise<PromptTemplateRecord> => {
+      const existing = await promptsRepo.getById(id);
+      if (!existing) throw new Error("Prompt not found");
+      if (existing.lenser_id !== lenserId) throw new Error("Unauthorized to edit this prompt");
+
+      let realTagIds: string[] | undefined = undefined;
+      if (input.tagIds) {
+          const resolvedTags = await tagService.upsertTags(input.tagIds);
+          realTagIds = resolvedTags.map(t => t.id);
+      }
+
+      if (input.content && !input.description) {
+          input.description = input.content.substring(0, 100) + (input.content.length > 100 ? '...' : '');
+      }
+
+      return promptsRepo.updatePrompt(id, { ...input, tagIds: realTagIds });
+  },
+
+  deletePrompt: async (id: string, lenserId: string): Promise<void> => {
+      const existing = await promptsRepo.getById(id);
+      if (!existing) throw new Error("Prompt not found");
+      if (existing.lenser_id !== lenserId) throw new Error("Unauthorized to delete this prompt");
+
+      await promptsRepo.deletePrompt(id);
   }
 };

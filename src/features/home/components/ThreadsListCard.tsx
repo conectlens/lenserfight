@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card } from '../../../components/Card';
@@ -5,14 +6,18 @@ import { Avatar } from '../../../components/Avatar';
 import { TagBadge } from '../../../components/TagBadge';
 import { ThreadFeedItem } from '../../../types/threads.types';
 import { timeAgo } from '../../../utils/dateUtils';
-import { ThumbsUp, MessageSquare } from 'lucide-react';
+import { ArrowUp, MessageSquare, Pencil, Trash2 } from 'lucide-react';
+import { MentionRenderer } from '../../../components/MentionRenderer';
 
 interface ThreadsListCardProps {
   thread: ThreadFeedItem;
   onOpen: (id: string) => void;
+  isOwner?: boolean;
+  onEdit?: (id: string) => void;
+  onDelete?: (id: string) => void;
 }
 
-export const ThreadsListCard: React.FC<ThreadsListCardProps> = ({ thread, onOpen }) => {
+export const ThreadsListCard: React.FC<ThreadsListCardProps> = ({ thread, onOpen, isOwner, onEdit, onDelete }) => {
   const navigate = useNavigate();
 
   const handleUserClick = (e: React.MouseEvent) => {
@@ -20,16 +25,47 @@ export const ThreadsListCard: React.FC<ThreadsListCardProps> = ({ thread, onOpen
     navigate(`/lenser/${thread.author.handle}`);
   };
 
+  const handleEdit = (e: React.MouseEvent) => {
+      e.stopPropagation();
+      if (onEdit) onEdit(thread.id);
+  };
+
+  const handleDelete = (e: React.MouseEvent) => {
+      e.stopPropagation();
+      if (onDelete) onDelete(thread.id);
+  };
+
   return (
-    <div onClick={() => onOpen(thread.id)} className="cursor-pointer group">
-      <Card className="hover:shadow-md transition-all duration-200 border-gray-200 group-hover:border-primary/40">
+    <div onClick={() => onOpen(thread.id)} className="cursor-pointer group relative">
+      <Card className="hover:shadow-md transition-all duration-200 border-gray-200 group-hover:border-primary/40 relative">
+        
+        {/* Owner Actions */}
+        {isOwner && (
+            <div className="absolute top-4 right-4 flex gap-2 z-20 opacity-0 group-hover:opacity-100 transition-opacity">
+                <button 
+                    onClick={handleEdit}
+                    className="p-1.5 bg-white border border-gray-200 text-gray-500 hover:text-blue-600 hover:border-blue-200 rounded-lg shadow-sm transition-colors"
+                    title="Edit Thread"
+                >
+                    <Pencil size={14} />
+                </button>
+                <button 
+                    onClick={handleDelete}
+                    className="p-1.5 bg-white border border-gray-200 text-gray-500 hover:text-red-600 hover:border-red-200 rounded-lg shadow-sm transition-colors"
+                    title="Delete Thread"
+                >
+                    <Trash2 size={14} />
+                </button>
+            </div>
+        )}
+
         <div className="flex items-start gap-4">
           {/* Author Avatar */}
           <div onClick={handleUserClick} className="flex-shrink-0 hover:opacity-80 transition-opacity z-10">
              <Avatar src={thread.author.avatarUrl} alt={thread.author.displayName} size="md" />
           </div>
           
-          <div className="flex-1 min-w-0">
+          <div className="flex-1 min-w-0 pr-8">
             {/* Header: Name and Time */}
             <div className="flex items-center justify-between mb-1">
               <div className="flex items-center gap-2">
@@ -50,21 +86,28 @@ export const ThreadsListCard: React.FC<ThreadsListCardProps> = ({ thread, onOpen
             </h2>
 
             {/* Content Preview */}
-            <p className="text-gray-600 mb-4 line-clamp-3 leading-relaxed">
-              {thread.content}
-            </p>
+            <div className="text-gray-600 mb-4 line-clamp-3 leading-relaxed pointer-events-none">
+              <MentionRenderer content={thread.content} plainText={true} />
+            </div>
 
             {/* Tags */}
             <div className="flex flex-wrap gap-2 mb-4">
               {thread.tags.map(tag => (
-                <TagBadge key={tag.id} label={tag.name} />
+                <TagBadge 
+                  key={tag.id} 
+                  label={tag.name} 
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    navigate(`/tags/${tag.slug}`);
+                  }}
+                />
               ))}
             </div>
 
             {/* Footer: Reactions */}
             <div className="flex items-center gap-6 pt-2 border-t border-gray-50">
-              <div className="flex items-center text-gray-500 font-medium text-sm">
-                <ThumbsUp className="w-4 h-4 mr-2" />
+              <div className={`flex items-center font-medium text-sm transition-colors ${thread.userHasReacted ? 'text-primary-700 font-bold' : 'text-gray-500'}`}>
+                <ArrowUp className={`w-4 h-4 mr-2 ${thread.userHasReacted ? 'stroke-[3px]' : ''}`} />
                 <span>{thread.reactionCount}</span>
               </div>
               <div className="flex items-center text-gray-500 font-medium text-sm">

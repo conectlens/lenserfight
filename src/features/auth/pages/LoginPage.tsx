@@ -9,14 +9,15 @@ import { useFormValidation } from '../../../hooks/useFormValidation';
 import { isRequired, isEmail } from '../../../utils/validation';
 import { FormError } from '../../../components/FormError';
 import { Eye, EyeOff, ArrowLeft, Check } from 'lucide-react';
+import { isMock } from '../../../config/runtimeConfig';
 
 export const LoginPage: React.FC = () => {
   const { login, signInWithOAuth } = useAuth();
   const navigate = useNavigate();
   
   const [formData, setFormData] = useState({
-    email: '',
-    password: ''
+    email: isMock ? 'demo@example.com' : '',
+    password: isMock ? 'password' : ''
   });
 
   const { errors, validate, clearError, setErrors } = useFormValidation<typeof formData>({

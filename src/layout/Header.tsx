@@ -1,6 +1,9 @@
-import React from 'react';
-import { Menu, MoreHorizontal } from 'lucide-react';
+
+import React, { useState } from 'react';
+import { Menu, MoreHorizontal, Share2 } from 'lucide-react';
 import { Breadcrumbs } from '../components/Breadcrumbs';
+import { useShareContext } from '../context/ShareContext';
+import { ShareModal } from '../components/ShareModal';
 
 interface HeaderProps {
   onToggleSidebar: () => void;
@@ -8,6 +11,9 @@ interface HeaderProps {
 }
 
 export const Header: React.FC<HeaderProps> = ({ onToggleSidebar, isSidebarOpen }) => {
+  const { shareConfig } = useShareContext();
+  const [isShareModalOpen, setIsShareModalOpen] = useState(false);
+
   return (
     <header className="sticky top-0 z-30 flex items-center justify-between px-4 py-3 bg-gray-50/95 backdrop-blur-sm transition-all duration-200 w-full">
       <div className="flex items-center gap-4 flex-1 min-w-0">
@@ -22,7 +28,17 @@ export const Header: React.FC<HeaderProps> = ({ onToggleSidebar, isSidebarOpen }
         <Breadcrumbs />
       </div>
 
-      <div className="flex items-center flex-shrink-0 pl-2">
+      <div className="flex items-center flex-shrink-0 pl-2 gap-1">
+        {shareConfig && (
+          <button 
+              onClick={() => setIsShareModalOpen(true)}
+              className="p-2 rounded-lg text-gray-400 hover:bg-gray-200 hover:text-gray-900 transition-colors"
+              aria-label="Share"
+              title="Share"
+          >
+              <Share2 size={20} />
+          </button>
+        )}
         <button 
             className="p-2 rounded-lg text-gray-400 hover:bg-gray-200 hover:text-gray-900 transition-colors"
             aria-label="Page Options"
@@ -30,6 +46,17 @@ export const Header: React.FC<HeaderProps> = ({ onToggleSidebar, isSidebarOpen }
             <MoreHorizontal size={20} />
         </button>
       </div>
+
+      {shareConfig && (
+        <ShareModal 
+            isOpen={isShareModalOpen}
+            onClose={() => setIsShareModalOpen(false)}
+            title={shareConfig.title}
+            resourceType={shareConfig.resourceType}
+            resourceId={shareConfig.resourceId}
+            slug={shareConfig.slug}
+        />
+      )}
     </header>
   );
 };

@@ -1,5 +1,5 @@
 import { getLenserRepository } from '../adapters/lenserAdapter';
-import { Lenser, CreateLenserDTO, LenserStats, LenserActivityPoint } from '../types/lenser.types';
+import { Lenser, CreateLenserDTO, LenserStats, LenserActivityPoint, ActionRecord, NetworkUser } from '../types/lenser.types';
 import { PromptTemplateRecord } from '../types/prompts.types';
 import { ThreadRecord } from '../types/threads.types';
 
@@ -14,6 +14,11 @@ export const lenserService = {
   createLenserProfile: async (userId: string, data: CreateLenserDTO): Promise<Lenser> => {
     if (!userId) throw new Error("User ID is required");
     return lenserRepo.createLenser(userId, data);
+  },
+
+  updateLenserProfile: async (userId: string, data: Partial<Lenser>): Promise<Lenser> => {
+    if (!userId) throw new Error("User ID is required");
+    return lenserRepo.updateLenser(userId, data);
   },
 
   getLenserByHandle: async (handle: string): Promise<Lenser | null> => {
@@ -38,5 +43,13 @@ export const lenserService = {
 
   getRecentlyActiveLensers: async (limit: number = 5): Promise<Lenser[]> => {
       return lenserRepo.getRecentlyActive(limit);
+  },
+
+  getLenserActions: async (lenserId: string): Promise<ActionRecord[]> => {
+      return lenserRepo.getLenserActions(lenserId);
+  },
+
+  getLenserNetwork: async (lenserId: string, type: 'followers' | 'following', page: number): Promise<NetworkUser[]> => {
+      return lenserRepo.getLenserNetwork(lenserId, type, page);
   }
 };
