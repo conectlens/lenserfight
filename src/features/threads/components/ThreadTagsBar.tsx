@@ -1,4 +1,5 @@
 import React from 'react';
+import { useNavigate } from 'react-router-dom';
 import { TagRecord } from '../../../types/threads.types';
 
 interface ThreadTagsBarProps {
@@ -6,15 +7,18 @@ interface ThreadTagsBarProps {
 }
 
 export const ThreadTagsBar: React.FC<ThreadTagsBarProps> = ({ tags }) => {
+  const navigate = useNavigate();
+
   return (
     <div className="flex flex-wrap gap-2">
       {tags.map(tag => (
-        <span 
+        <button 
           key={tag.id} 
-          className="inline-flex items-center px-4 py-1.5 rounded-full text-sm font-medium bg-gray-100 text-gray-800"
+          onClick={() => navigate(`/tags/${tag.slug}`)}
+          className="inline-flex items-center px-4 py-1.5 rounded-full text-sm font-medium bg-gray-100 text-gray-800 hover:bg-gray-200 transition-colors"
         >
           {tag.name}
-        </span>
+        </button>
       ))}
     </div>
   );

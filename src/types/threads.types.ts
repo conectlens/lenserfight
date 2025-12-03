@@ -46,17 +46,18 @@ export interface ThreadTagRecord {
 export interface ThreadReplyRecord {
   id: string;
   thread_id: string;
+  parent_reply_id?: string | null;
   lenser_id: string;
   content: string;
   reaction_count: number;
   created_at: string;
+  deleted_at?: string | null;
 }
 
 export interface ThreadReactionRecord {
   id: string;
   thread_id: string;
   lenser_id: string;
-  reaction: ReactionType;
   created_at: string;
 }
 
@@ -76,6 +77,7 @@ export interface ThreadFeedItem {
   reactionCount: number;
   replyCount: number;
   createdAt: string;
+  userHasReacted: boolean;
 }
 
 export interface ThreadReplyViewModel {
@@ -84,6 +86,8 @@ export interface ThreadReplyViewModel {
   content: string;
   createdAt: string;
   reactionCount: number;
+  isDeleted: boolean;
+  replies?: ThreadReplyViewModel[]; // For nesting
 }
 
 export interface ThreadDetailViewModel {
@@ -94,6 +98,7 @@ export interface ThreadDetailViewModel {
   author: ThreadAuthor;
   tags: TagRecord[];
   reactionCount: number;
+  userHasReacted: boolean;
   replies: ThreadReplyViewModel[];
   promptBlock?: PromptData;
 }

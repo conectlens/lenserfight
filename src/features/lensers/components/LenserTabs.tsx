@@ -1,7 +1,7 @@
 import React from 'react';
 import { FEATURES } from '../../../config/runtimeConfig';
 
-type Tab = 'prompts' | 'threads' | 'challenges';
+type Tab = 'actions' | 'prompts' | 'threads' | 'challenges';
 
 interface LenserTabsProps {
   activeTab: Tab;
@@ -9,8 +9,11 @@ interface LenserTabsProps {
 }
 
 export const LenserTabs: React.FC<LenserTabsProps> = ({ activeTab, onChange }) => {
+  // Reordered to have Actions left of Threads as requested (Actions | Prompts | Threads ?) 
+  // Prompt said: "Add a new "Actions" tab to the left of the "Threads" tab"
   const tabs: { id: Tab; label: string }[] = [
     { id: 'prompts', label: 'Prompts' },
+    { id: 'actions', label: 'Actions' },
     { id: 'threads', label: 'Threads' }
   ];
 
@@ -19,13 +22,13 @@ export const LenserTabs: React.FC<LenserTabsProps> = ({ activeTab, onChange }) =
   }
 
   return (
-    <div className="flex items-center gap-8 border-b border-gray-200 mb-6">
+    <div className="flex items-center gap-8 border-b border-gray-200 mb-6 overflow-x-auto scrollbar-hide">
       {tabs.map(tab => (
         <button
           key={tab.id}
           onClick={() => onChange(tab.id)}
           className={`
-            pb-3 text-sm font-semibold transition-all relative
+            pb-3 text-sm font-semibold transition-all relative whitespace-nowrap
             ${activeTab === tab.id ? 'text-gray-900' : 'text-gray-500 hover:text-gray-700'}
           `}
         >

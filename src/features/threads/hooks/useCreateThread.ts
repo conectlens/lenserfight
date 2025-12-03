@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { threadsService } from '../../../services/threadsService';
 import { useLenser } from '../../../context/LenserContext';
@@ -13,7 +14,8 @@ export const useCreateThread = () => {
     content: string, 
     tags: string[],
     visibility: Visibility,
-    onSuccess: () => void
+    onSuccess: () => void,
+    editId?: string | null
   ) => {
     if (!lenser) {
       setError("You must have a Lenser profile to post.");
@@ -24,16 +26,22 @@ export const useCreateThread = () => {
     setError(null);
 
     try {
-      await threadsService.createThread({
-        title,
-        content,
-        tagIds: tags,
-        lenserId: lenser.id,
-        visibility
-      });
+      if (editId) {
+          await threadsService.updateThread(editId, {
+              title, content, tagIds: tags, visibility, lenserId: lenser.id
+          }, lenser.id);
+      } else {
+          await threadsService.createThread({
+            title,
+            content,
+            tagIds: tags,
+            lenserId: lenser.id,
+            visibility
+          });
+      }
       onSuccess();
     } catch (err: any) {
-      setError(err.message || "Failed to create thread.");
+      setError(err.message || "Failed to save thread.");
     } finally {
       setIsSubmitting(false);
     }

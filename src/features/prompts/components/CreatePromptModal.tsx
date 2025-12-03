@@ -24,6 +24,7 @@ interface CreatePromptModalProps {
   };
   isSubmitting: boolean;
   error: string | null;
+  isEditMode?: boolean;
 }
 
 export const CreatePromptModal: React.FC<CreatePromptModalProps> = ({
@@ -32,11 +33,10 @@ export const CreatePromptModal: React.FC<CreatePromptModalProps> = ({
   onSubmit,
   form,
   isSubmitting,
-  error
+  error,
+  isEditMode
 }) => {
   
-  // Define validation rules based on current form state keys
-  // Note: We need to map the parent's generic setters to object state for the hook to check against
   const formValues = {
     title: form.title,
     content: form.content,
@@ -46,7 +46,7 @@ export const CreatePromptModal: React.FC<CreatePromptModalProps> = ({
   const { errors, validate, clearError } = useFormValidation<typeof formValues>({
     title: [isRequired(), minLength(3, "Title must be at least 3 characters")],
     content: [isRequired(), minLength(10, "Content must be at least 10 characters")],
-    tags: [] // Optional
+    tags: []
   });
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -56,7 +56,6 @@ export const CreatePromptModal: React.FC<CreatePromptModalProps> = ({
     }
   };
 
-  // Wrapper to clear errors when parent updates state
   const handleTitleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     form.setTitle(e.target.value);
     clearError('title');
@@ -68,10 +67,9 @@ export const CreatePromptModal: React.FC<CreatePromptModalProps> = ({
   };
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title="Create Prompt">
+    <Modal isOpen={isOpen} onClose={onClose} title={isEditMode ? "Edit Prompt" : "Create Prompt"}>
       <form onSubmit={handleSubmit} className="space-y-6" noValidate>
         
-        {/* Title Input */}
         <div className="space-y-2">
           <label className="text-sm font-bold text-gray-500 uppercase tracking-wider">Title</label>
           <input
@@ -84,7 +82,6 @@ export const CreatePromptModal: React.FC<CreatePromptModalProps> = ({
           <FormError message={errors.title} />
         </div>
 
-        {/* Content Textarea */}
         <div className="space-y-2">
           <label className="text-sm font-bold text-gray-500 uppercase tracking-wider">Prompt</label>
           <textarea
@@ -98,10 +95,8 @@ export const CreatePromptModal: React.FC<CreatePromptModalProps> = ({
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {/* Tags */}
           <PromptTagInput tags={form.tags} onChange={form.setTags} />
 
-          {/* Visibility */}
           <div className="space-y-2">
             <label className="text-sm font-bold text-gray-500 uppercase tracking-wider">Visibility</label>
             <div className="relative">
@@ -124,7 +119,6 @@ export const CreatePromptModal: React.FC<CreatePromptModalProps> = ({
 
         {error && <div className="text-red-500 text-sm bg-red-50 p-3 rounded-lg">{error}</div>}
 
-        {/* Footer Buttons */}
         <div className="flex gap-3 pt-4 justify-end">
           <Button 
             type="button" 
@@ -141,7 +135,7 @@ export const CreatePromptModal: React.FC<CreatePromptModalProps> = ({
             isLoading={isSubmitting}
             className="w-auto px-6 shadow-md"
           >
-            Save Prompt
+            {isEditMode ? 'Update Prompt' : 'Save Prompt'}
           </Button>
         </div>
       </form>

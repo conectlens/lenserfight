@@ -10,6 +10,7 @@ interface LenserContextType {
   error: string | null;
   loadLenserProfile: () => Promise<void>;
   createLenserProfile: (data: CreateLenserDTO) => Promise<void>;
+  updateLenserProfile: (data: Partial<Lenser>) => Promise<void>;
 }
 
 const LenserContext = createContext<LenserContextType | undefined>(undefined);
@@ -56,10 +57,22 @@ export const LenserProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     }
   };
 
+  const updateLenserProfile = async (data: Partial<Lenser>) => {
+      if (!user) return;
+      // We don't set global loading here to avoid full page refresh flicker for small updates
+      try {
+          const updated = await lenserService.updateLenserProfile(user.id, data);
+          setLenser(updated);
+      } catch (err: any) {
+          setError(err.message || 'Failed to update profile');
+          throw err;
+      }
+  };
+
   const hasLenser = !!lenser;
 
   return (
-    <LenserContext.Provider value={{ lenser, hasLenser, isLoading, error, loadLenserProfile, createLenserProfile }}>
+    <LenserContext.Provider value={{ lenser, hasLenser, isLoading, error, loadLenserProfile, createLenserProfile, updateLenserProfile }}>
       {children}
     </LenserContext.Provider>
   );

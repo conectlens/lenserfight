@@ -5,7 +5,7 @@ import { authService } from '../services/authService';
 
 interface AuthContextType extends AuthState {
   login: (email: string, pass: string) => Promise<void>;
-  register: (email: string, pass: string) => Promise<void>;
+  register: (email: string, pass: string, displayName?: string) => Promise<void>;
   logout: () => Promise<void>;
   requestPasswordReset: (email: string) => Promise<void>;
   resetPassword: (password: string, token?: string) => Promise<void>;
@@ -57,10 +57,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  const register = async (email: string, pass: string) => {
+  const register = async (email: string, pass: string, displayName?: string) => {
     setState(s => ({ ...s, isLoading: true, error: null }));
     try {
-      const user = await authService.register(email, pass);
+      const user = await authService.register(email, pass, displayName ? { display_name: displayName } : undefined);
       setState({ user, isAuthenticated: true, isLoading: false, error: null });
     } catch (err: unknown) {
       const message = getErrorMessage(err);

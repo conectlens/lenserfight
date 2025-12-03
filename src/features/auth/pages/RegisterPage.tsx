@@ -9,15 +9,19 @@ import { useFormValidation } from '../../../hooks/useFormValidation';
 import { isRequired, isEmail, minLength } from '../../../utils/validation';
 import { FormError } from '../../../components/FormError';
 import { ArrowLeft, Check, X } from 'lucide-react';
+import { Modal } from '../../../components/Modal';
+import { isMock } from '../../../config/runtimeConfig';
 
 export const RegisterPage: React.FC = () => {
   const { register, logout } = useAuth();
   const navigate = useNavigate();
   
   const [formData, setFormData] = useState({
-    email: '',
-    password: '',
-    confirmPassword: ''
+    displayName: isMock ? 'New User' : '',
+    email: isMock ? `newuser_${Date.now()}@example.com` : '',
+    password: isMock ? 'Password123!' : '',
+    confirmPassword: isMock ? 'Password123!' : '',
+    agreeTerms: isMock ? true : false
   });
 
   const [passwordStrength, setPasswordStrength] = useState({
@@ -28,6 +32,9 @@ export const RegisterPage: React.FC = () => {
     hasNumber: false,
     hasSpecial: false
   });
+
+  // Policy Modal State
+  const [policyModal, setPolicyModal] = useState<{ isOpen: boolean; title: string; content: React.ReactNode } | null>(null);
 
   useEffect(() => {
     const p = formData.password;
@@ -66,20 +73,22 @@ export const RegisterPage: React.FC = () => {
   };
 
   const { errors, validate, clearError, setErrors } = useFormValidation<typeof formData>({
+    displayName: [isRequired()],
     email: [isRequired(), isEmail()],
-    // We remove standard minLength validator and use our custom logic if we want strict blocking,
-    // or we can keep it simple and block on submit if score < 5.
-    // For this implementation, I will rely on the visual indicator for guidance but enforce in validation.
     password: [passwordValidator], 
-    confirmPassword: [isRequired()]
+    confirmPassword: [isRequired()],
+    // Manual check for agreeTerms in submit
   });
 
   const [loading, setLoading] = useState(false);
   const [apiError, setApiError] = useState<string | null>(null);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
+    const { name, value, type, checked } = e.target;
+    setFormData(prev => ({ 
+      ...prev, 
+      [name]: type === 'checkbox' ? checked : value 
+    }));
     clearError(name as keyof typeof formData);
     if (name === 'password') clearError('confirmPassword'); 
   };
@@ -96,9 +105,14 @@ export const RegisterPage: React.FC = () => {
       return;
     }
 
+    if (!formData.agreeTerms) {
+      setApiError("You must agree to the terms and conditions.");
+      return;
+    }
+
     setLoading(true);
     try {
-      await register(formData.email, formData.password);
+      await register(formData.email, formData.password, formData.displayName);
       
       // Simulating Email Verification Requirement
       window.alert("Registration successful! Please check your email to approve your account.");
@@ -109,6 +123,40 @@ export const RegisterPage: React.FC = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  const openPolicy = (type: 'Terms' | 'Privacy' | 'Cookies') => {
+    let content = <p>Content loading...</p>;
+    if (type === 'Terms') {
+        content = (
+            <div className="space-y-4 text-sm text-gray-600">
+                <p><strong>1. Introduction</strong><br/>Welcome to ConnectLens. By using our website, you agree to these terms.</p>
+                <p><strong>2. Usage</strong><br/>You agree to use the platform for lawful purposes only.</p>
+                <p><strong>3. Content</strong><br/>You retain rights to content you create, but grant us a license to display it.</p>
+            </div>
+        );
+    } else if (type === 'Privacy') {
+        content = (
+            <div className="space-y-4 text-sm text-gray-600">
+                <p><strong>1. Data Collection</strong><br/>We collect information you provide directly to us.</p>
+                <p><strong>2. Usage of Data</strong><br/>We use your data to provide and improve our services.</p>
+                <p><strong>3. Third Parties</strong><br/>We do not sell your personal data to third parties.</p>
+            </div>
+        );
+    } else {
+        content = (
+            <div className="space-y-4 text-sm text-gray-600">
+                <p><strong>1. What are cookies?</strong><br/>Cookies are small text files stored on your device.</p>
+                <p><strong>2. How we use them</strong><br/>We use cookies for authentication and analytics.</p>
+            </div>
+        );
+    }
+
+    setPolicyModal({
+        isOpen: true,
+        title: `${type} Policy`,
+        content
+    });
   };
 
   // Helper for strength bar
@@ -135,6 +183,19 @@ export const RegisterPage: React.FC = () => {
       </div>
       <AuthCard title="Create Account" subtitle="Join the community today">
         <form onSubmit={handleSubmit} className="space-y-4" noValidate>
+          <div>
+            <InputField
+              label="Display Name"
+              name="displayName"
+              type="text"
+              placeholder="Your full name"
+              value={formData.displayName}
+              onChange={handleChange}
+              className={errors.displayName ? 'border-red-500 focus:border-red-500 focus:ring-red-200' : ''}
+            />
+            <FormError message={errors.displayName} />
+          </div>
+
           <div>
             <InputField
               label="Email"
@@ -180,7 +241,6 @@ export const RegisterPage: React.FC = () => {
                 </div>
             )}
             
-            {/* We show error if validation fails on submit, but the strength meter is the main guide */}
             <FormError message={errors.password} />
           </div>
 
@@ -197,6 +257,38 @@ export const RegisterPage: React.FC = () => {
             <FormError message={errors.confirmPassword} />
           </div>
 
+          {/* Terms Checkbox - Redesigned */}
+          <div className="flex items-start gap-3 mt-3">
+            <label className="flex items-start gap-3 cursor-pointer group">
+              <div className="relative flex items-center mt-0.5">
+                <input
+                  type="checkbox"
+                  name="agreeTerms"
+                  checked={formData.agreeTerms}
+                  onChange={handleChange}
+                  className="peer sr-only"
+                />
+                <span className="w-5 h-5 rounded border-2 border-gray-300 bg-white peer-checked:bg-primary peer-checked:border-primary peer-focus:ring-2 peer-focus:ring-primary/30 transition-all flex items-center justify-center text-white">
+                    <Check className="w-3.5 h-3.5" strokeWidth={3} />
+                </span>
+              </div>
+              <div className="text-sm leading-tight text-gray-600">
+                I agree to the{' '}
+                <button type="button" onClick={() => openPolicy('Terms')} className="font-semibold text-gray-900 hover:underline">
+                  Terms and Conditions
+                </button>
+                ,{' '}
+                <button type="button" onClick={() => openPolicy('Privacy')} className="font-semibold text-gray-900 hover:underline">
+                  Privacy Policy
+                </button>
+                {' '}and{' '}
+                <button type="button" onClick={() => openPolicy('Cookies')} className="font-semibold text-gray-900 hover:underline">
+                  Cookie Policy
+                </button>.
+              </div>
+            </label>
+          </div>
+
           {apiError && <div className="text-red-500 text-sm bg-red-50 p-3 rounded-lg">{apiError}</div>}
 
           <Button type="submit" isLoading={loading} className="mt-2 text-base font-semibold">
@@ -208,6 +300,25 @@ export const RegisterPage: React.FC = () => {
           Already have an account? <Link to="/login" className="font-medium text-gray-900 hover:underline">Sign In</Link>
         </div>
       </AuthCard>
+
+      {/* Policy Modal */}
+      {policyModal && (
+        <Modal 
+            isOpen={policyModal.isOpen} 
+            onClose={() => setPolicyModal(null)} 
+            title={policyModal.title}
+            canClose={true}
+        >
+            <div className="max-h-[60vh] overflow-y-auto pr-2">
+                {policyModal.content}
+            </div>
+            <div className="mt-6 flex justify-end">
+                <Button onClick={() => setPolicyModal(null)} className="w-auto">
+                    Close
+                </Button>
+            </div>
+        </Modal>
+      )}
     </div>
   );
 };

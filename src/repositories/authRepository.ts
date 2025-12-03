@@ -6,7 +6,7 @@ import { storage } from '../utils/storage';
 // --- Port (Interface) ---
 export interface AuthRepositoryPort {
   login(email: string, password: string): Promise<User>;
-  register(email: string, password: string): Promise<User>;
+  register(email: string, password: string, metadata?: { display_name?: string }): Promise<User>;
   logout(): Promise<void>;
   getCurrentUser(): Promise<User | null>;
   requestPasswordReset(email: string): Promise<void>;
@@ -32,7 +32,7 @@ export class MockAuthRepository implements AuthRepositoryPort {
         email: 'demo@example.com',
         password: 'password',
         created_at: new Date().toISOString(),
-        raw_user_meta_data: {},
+        raw_user_meta_data: { display_name: 'Demo User' },
         last_sign_in_at: new Date().toISOString(),
       };
       storage.setItem(this.USERS_DB_KEY, JSON.stringify([demoUser]));
@@ -63,7 +63,7 @@ export class MockAuthRepository implements AuthRepositoryPort {
     return safeUser as User;
   }
 
-  async register(email: string, password: string): Promise<User> {
+  async register(email: string, password: string, metadata?: { display_name?: string }): Promise<User> {
     await new Promise(resolve => setTimeout(resolve, 800));
     
     const usersJson = storage.getItem(this.USERS_DB_KEY);
@@ -78,7 +78,7 @@ export class MockAuthRepository implements AuthRepositoryPort {
       email,
       password, // Store password for mock authentication
       created_at: new Date().toISOString(),
-      raw_user_meta_data: {},
+      raw_user_meta_data: metadata || {},
       last_sign_in_at: new Date().toISOString(),
     };
     
@@ -191,8 +191,14 @@ export class SupabaseAuthRepository implements AuthRepositoryPort {
     return data.user as unknown as User; 
   }
 
-  async register(email: string, password: string): Promise<User> {
-    const { data, error } = await supabase.auth.signUp({ email, password });
+  async register(email: string, password: string, metadata?: { display_name?: string }): Promise<User> {
+    const { data, error } = await supabase.auth.signUp({ 
+        email, 
+        password,
+        options: {
+            data: metadata
+        }
+    });
     if (error) throw error;
     if (!data.user) throw new Error("No user returned");
     return data.user as unknown as User;

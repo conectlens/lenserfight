@@ -1,229 +1,166 @@
+
 import { 
   PromptTemplateRecord, 
-  PromptTemplateReactionRecord, 
   PromptTemplateUsageRecord,
-  ReactionEnum,
   CreatePromptDTO
 } from '../types/prompts.types';
 import { TagRecord } from '../types/threads.types';
 import { supabase } from '../utils/supabase';
+import { storage } from '../utils/storage';
 
 // --- Port (Interface) ---
 export interface PromptsRepositoryPort {
-  getAll(): Promise<PromptTemplateRecord[]>;
-  search(query: string): Promise<PromptTemplateRecord[]>;
-  filterByTag(tagSlug: string | null): Promise<PromptTemplateRecord[]>;
-  sort(order: "newest" | "popular"): Promise<PromptTemplateRecord[]>;
+  getAll(currentLenserId?: string, offset?: number, limit?: number): Promise<PromptTemplateRecord[]>;
+  search(query: string, currentLenserId?: string, offset?: number, limit?: number): Promise<PromptTemplateRecord[]>;
+  filterByTag(tagSlug: string | null, currentLenserId?: string, offset?: number, limit?: number): Promise<PromptTemplateRecord[]>;
+  sort(order: "newest" | "popular", currentLenserId?: string, offset?: number, limit?: number): Promise<PromptTemplateRecord[]>;
   getTopPrompts(limit: number): Promise<PromptTemplateRecord[]>;
   getById(id: string): Promise<PromptTemplateRecord | null>;
   getTags(templateId: string): Promise<TagRecord[]>;
-  getReactions(templateId: string): Promise<PromptTemplateReactionRecord[]>;
   getUsage(templateId: string): Promise<PromptTemplateUsageRecord[]>;
   createUsageEvent(templateId: string, action: string, lenserId: string): Promise<void>;
-  addReaction(templateId: string, lenserId: string, reaction: ReactionEnum): Promise<void>;
-  removeReaction(templateId: string, lenserId: string, reaction: ReactionEnum): Promise<void>;
   createPrompt(input: CreatePromptDTO): Promise<PromptTemplateRecord>;
+  updatePrompt(id: string, input: Partial<CreatePromptDTO>): Promise<PromptTemplateRecord>;
+  deletePrompt(id: string): Promise<void>;
 }
 
 // --- Mock Implementation ---
 export class MockPromptsRepository implements PromptsRepositoryPort {
+  private PROMPTS_KEY = 'mock_prompts_db';
+  private PROMPT_TAGS_KEY = 'mock_prompt_tags';
+  private TAGS_KEY = 'mock_tags';
+  private USAGE_KEY = 'mock_prompt_usage_db';
   
-  // Mock Data Store
-  private prompts: PromptTemplateRecord[] = [
-    {
-      id: 'prompt-1',
-      lenser_id: 'lenser-1',
-      title: 'The Art of Storytelling in Product Design',
-      description: 'A framework for weaving compelling narratives into product experiences.',
-      content: "Introduction:\nStart with the 'Why'. Define the core problem your product solves in emotional terms.\n\nThe Conflict:\nDescribe the user's current struggle. What is the villain in their story? (e.g., complexity, wasted time).\n\nThe Resolution:\nPresent your product as the magical tool that helps the hero (user) overcome the villain.\n\nCall to Action:\nInvite them to start their new journey.",
-      visibility: 'public',
-      usage_count: 145,
-      created_at: new Date(Date.now() - 1000 * 60 * 60 * 24 * 2).toISOString(),
-      updated_at: new Date().toISOString()
-    },
-    {
-      id: 'prompt-2',
-      lenser_id: 'lenser-2',
-      title: 'UX Writing for Onboarding Flows',
-      description: 'Create clear, concise, and encouraging text for new user onboarding.',
-      content: "Step 1: Welcome\n[Warm Greeting] + [Value Prop]\n\nStep 2: Setup\n[Action Instruction] + [Benefit of Action]\n\nStep 3: Success\n[Celebration] + [Next Step]",
-      visibility: 'public',
-      usage_count: 89,
-      created_at: new Date(Date.now() - 1000 * 60 * 60 * 5).toISOString(),
-      updated_at: new Date().toISOString()
-    },
-    {
-      id: 'prompt-3',
-      lenser_id: 'lenser-1',
-      title: 'Crafting a Compelling Brand Narrative',
-      description: 'Define your brand voice, tone, and key messaging pillars.',
-      content: "Brand Archetype: [Select Archetype]\n\nVoice Characteristics:\n1. [Trait 1]\n2. [Trait 2]\n\nTagline Options:\n- Option A\n- Option B",
-      visibility: 'public',
-      usage_count: 320,
-      created_at: new Date(Date.now() - 1000 * 60 * 60 * 24 * 5).toISOString(),
-      updated_at: new Date().toISOString()
-    },
-    {
-      id: 'prompt-4',
-      lenser_id: 'lenser-seneca',
-      title: 'Generating Viral Marketing Hooks',
-      description: 'Formulas for creating attention-grabbing headlines and social media hooks.',
-      content: "The 'How To' Hook:\nHow to [Benefit] without [Pain Point].\n\nThe 'Secret' Hook:\nThe secret to [Desirable Outcome] that [Authority] doesn't want you to know.\n\nThe 'Listicle' Hook:\n7 ways to [Action] for [Result].",
-      visibility: 'public',
-      usage_count: 56,
-      created_at: new Date(Date.now() - 1000 * 60 * 60 * 12).toISOString(),
-      updated_at: new Date().toISOString()
-    },
-    {
-      id: 'prompt-5',
-      lenser_id: 'lenser-2',
-      title: 'Product Descriptions that Convert',
-      description: 'Write product descriptions that focus on benefits over features.',
-      content: "Feature: [Feature Name]\nBenefit: [What it does for user]\nEmotional Payoff: [How it makes them feel]\n\nDraft:\n[Combine the above into a 2-sentence paragraph]",
-      visibility: 'public',
-      usage_count: 210,
-      created_at: new Date(Date.now() - 1000 * 60 * 60 * 24 * 10).toISOString(),
-      updated_at: new Date().toISOString()
-    },
-    {
-      id: 'prompt-6',
-      lenser_id: 'lenser-1',
-      title: 'React Component Generator',
-      description: 'Generate boilerplate for React components with TypeScript interfaces and Tailwind CSS.',
-      content: "Component Name: [Name]\nProps: [List of Props]\nStyle: Tailwind\n\nOutput the full .tsx file.",
-      visibility: 'public',
-      usage_count: 412,
-      created_at: new Date(Date.now() - 1000 * 60 * 60 * 24 * 1).toISOString(),
-      updated_at: new Date().toISOString()
-    }
-  ];
-
-  private tags: TagRecord[] = [
-    { id: 'tag-1', slug: 'uiux', name: 'UI/UX', created_at: '' },
-    { id: 'tag-2', slug: 'marketing', name: 'Marketing', created_at: '' },
-    { id: 'tag-3', slug: 'copywriting', name: 'Copywriting', created_at: '' },
-    { id: 'tag-4', slug: 'development', name: 'Development', created_at: '' },
-  ];
-
-  // Template ID -> Tag ID[]
-  private templateTags: Record<string, string[]> = {
-    'prompt-1': ['tag-1', 'tag-2', 'tag-3'],
-    'prompt-2': ['tag-1', 'tag-3'],
-    'prompt-3': ['tag-2', 'tag-3'],
-    'prompt-4': ['tag-2', 'tag-3'],
-    'prompt-5': ['tag-2', 'tag-3'],
-    'prompt-6': ['tag-4'],
-  };
-
-  private reactions: PromptTemplateReactionRecord[] = [];
-  private usages: PromptTemplateUsageRecord[] = [];
-
   constructor() {
-    this.reactions.push(
-      { id: 'rx-1', template_id: 'prompt-1', lenser_id: 'other-1', reaction: 'like', created_at: new Date().toISOString() },
-      { id: 'rx-2', template_id: 'prompt-1', lenser_id: 'other-2', reaction: 'saved', created_at: new Date().toISOString() }
-    );
+      this.seed();
   }
 
-  async getAll(): Promise<PromptTemplateRecord[]> {
+  private seed() {
+      if (!storage.getItem(this.PROMPTS_KEY)) {
+        const initialPrompts = [
+            {
+              id: 'prompt-1',
+              lenser_id: 'lenser-1',
+              title: 'The Art of Storytelling in Product Design',
+              description: 'A framework for weaving compelling narratives into product experiences.',
+              content: "Introduction...",
+              visibility: 'public',
+              usage_count: 145,
+              created_at: new Date(Date.now() - 1000 * 60 * 60 * 24 * 2).toISOString(),
+              updated_at: new Date().toISOString()
+            }
+        ];
+        storage.setItem(this.PROMPTS_KEY, JSON.stringify(initialPrompts));
+      }
+  }
+
+  private getPrompts(): PromptTemplateRecord[] {
+      return JSON.parse(storage.getItem(this.PROMPTS_KEY) || '[]');
+  }
+
+  private getPromptTagsData(): { template_id: string, tag_id: string }[] {
+      return JSON.parse(storage.getItem(this.PROMPT_TAGS_KEY) || '[]');
+  }
+
+  // Helper to check visibility including private ownership
+  private isVisible(p: PromptTemplateRecord, currentLenserId?: string): boolean {
+    return p.visibility === 'public' || (!!currentLenserId && p.lenser_id === currentLenserId);
+  }
+
+  private paginate(data: PromptTemplateRecord[], offset = 0, limit = 10): PromptTemplateRecord[] {
+      return data.slice(offset, offset + limit);
+  }
+
+  async getAll(currentLenserId?: string, offset = 0, limit = 10): Promise<PromptTemplateRecord[]> {
     await new Promise(resolve => setTimeout(resolve, 400));
-    return this.prompts.filter(p => p.visibility === 'public');
+    const all = this.getPrompts().filter(p => this.isVisible(p, currentLenserId));
+    return this.paginate(all, offset, limit);
   }
 
-  async search(query: string): Promise<PromptTemplateRecord[]> {
+  async search(query: string, currentLenserId?: string, offset = 0, limit = 10): Promise<PromptTemplateRecord[]> {
     await new Promise(resolve => setTimeout(resolve, 400));
     const lowerQ = query.toLowerCase();
-    return this.prompts.filter(p => 
-      p.visibility === 'public' && (
+    const filtered = this.getPrompts().filter(p => 
+      this.isVisible(p, currentLenserId) && (
       p.title.toLowerCase().includes(lowerQ) || 
       (p.description && p.description.toLowerCase().includes(lowerQ)))
     );
+    return this.paginate(filtered, offset, limit);
   }
 
-  async filterByTag(tagSlug: string | null): Promise<PromptTemplateRecord[]> {
+  async filterByTag(tagSlug: string | null, currentLenserId?: string, offset = 0, limit = 10): Promise<PromptTemplateRecord[]> {
     await new Promise(resolve => setTimeout(resolve, 400));
-    const visiblePrompts = this.prompts.filter(p => p.visibility === 'public');
-    if (!tagSlug) return visiblePrompts;
+    const visiblePrompts = this.getPrompts().filter(p => this.isVisible(p, currentLenserId));
+    if (!tagSlug) return this.paginate(visiblePrompts, offset, limit);
 
-    const tag = this.tags.find(t => t.slug === tagSlug);
+    const allTags = JSON.parse(storage.getItem(this.TAGS_KEY) || '[]');
+    const tag = allTags.find((t: any) => t.slug === tagSlug);
     if (!tag) return [];
 
-    return visiblePrompts.filter(p => {
-      const pTags = this.templateTags[p.id] || [];
-      return pTags.includes(tag.id);
-    });
+    const junctionData = this.getPromptTagsData();
+    const promptIds = junctionData.filter(j => j.tag_id === tag.id).map(j => j.template_id);
+
+    return this.paginate(visiblePrompts.filter(p => promptIds.includes(p.id)), offset, limit);
   }
 
-  async sort(order: "newest" | "popular"): Promise<PromptTemplateRecord[]> {
+  async sort(order: "newest" | "popular", currentLenserId?: string, offset = 0, limit = 10): Promise<PromptTemplateRecord[]> {
     await new Promise(resolve => setTimeout(resolve, 400));
-    const sorted = this.prompts.filter(p => p.visibility === 'public');
+    const sorted = this.getPrompts().filter(p => this.isVisible(p, currentLenserId));
     if (order === 'newest') {
-      return sorted.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+      sorted.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
     } else {
-      return sorted.sort((a, b) => b.usage_count - a.usage_count);
+      sorted.sort((a, b) => b.usage_count - a.usage_count);
     }
+    return this.paginate(sorted, offset, limit);
   }
 
   async getTopPrompts(limit: number): Promise<PromptTemplateRecord[]> {
       await new Promise(resolve => setTimeout(resolve, 300));
-      // Just hardcode the 'best' ones for the widget to ensure they look good, filtering strictly public
-      const topIds = ['prompt-6', 'prompt-3', 'prompt-1'];
-      return this.prompts.filter(p => topIds.includes(p.id) && p.visibility === 'public');
+      return this.getPrompts()
+          .filter(p => p.visibility === 'public')
+          .sort((a, b) => b.usage_count - a.usage_count)
+          .slice(0, limit);
   }
 
   async getById(id: string): Promise<PromptTemplateRecord | null> {
     await new Promise(resolve => setTimeout(resolve, 300));
-    return this.prompts.find(p => p.id === id) || null;
+    return this.getPrompts().find(p => p.id === id) || null;
   }
 
   async getTags(templateId: string): Promise<TagRecord[]> {
     await new Promise(resolve => setTimeout(resolve, 200));
-    const tagIds = this.templateTags[templateId] || [];
-    return this.tags.filter(t => tagIds.includes(t.id));
-  }
-
-  async getReactions(templateId: string): Promise<PromptTemplateReactionRecord[]> {
-    await new Promise(resolve => setTimeout(resolve, 200));
-    return this.reactions.filter(r => r.template_id === templateId);
+    const junctionData = this.getPromptTagsData();
+    const tagIds = junctionData.filter(j => j.template_id === templateId).map(j => j.tag_id);
+    
+    const allTags = JSON.parse(storage.getItem(this.TAGS_KEY) || '[]');
+    return allTags.filter((t: any) => tagIds.includes(t.id));
   }
 
   async getUsage(templateId: string): Promise<PromptTemplateUsageRecord[]> {
-    await new Promise(resolve => setTimeout(resolve, 200));
-    return this.usages.filter(u => u.template_id === templateId);
+    const usages = JSON.parse(storage.getItem(this.USAGE_KEY) || '[]');
+    return usages.filter((u: any) => u.template_id === templateId);
   }
 
   async createUsageEvent(templateId: string, action: string, lenserId: string): Promise<void> {
     await new Promise(resolve => setTimeout(resolve, 300));
-    this.usages.push({
+    
+    const usages = JSON.parse(storage.getItem(this.USAGE_KEY) || '[]');
+    usages.push({
       id: `use-${Date.now()}`,
       template_id: templateId,
       lenser_id: lenserId,
       action,
       created_at: new Date().toISOString()
     });
-    const prompt = this.prompts.find(p => p.id === templateId);
+    storage.setItem(this.USAGE_KEY, JSON.stringify(usages));
+
+    // Update count on prompt record
+    const prompts = this.getPrompts();
+    const prompt = prompts.find(p => p.id === templateId);
     if (prompt) {
       prompt.usage_count += 1;
+      storage.setItem(this.PROMPTS_KEY, JSON.stringify(prompts));
     }
-  }
-
-  async addReaction(templateId: string, lenserId: string, reaction: ReactionEnum): Promise<void> {
-    await new Promise(resolve => setTimeout(resolve, 200));
-    const existing = this.reactions.find(r => r.template_id === templateId && r.lenser_id === lenserId && r.reaction === reaction);
-    if (existing) return;
-
-    this.reactions.push({
-      id: `rx-${Date.now()}`,
-      template_id: templateId,
-      lenser_id: lenserId,
-      reaction,
-      created_at: new Date().toISOString()
-    });
-  }
-
-  async removeReaction(templateId: string, lenserId: string, reaction: ReactionEnum): Promise<void> {
-    await new Promise(resolve => setTimeout(resolve, 200));
-    this.reactions = this.reactions.filter(r => !(r.template_id === templateId && r.lenser_id === lenserId && r.reaction === reaction));
   }
 
   async createPrompt(input: CreatePromptDTO): Promise<PromptTemplateRecord> {
@@ -241,50 +178,101 @@ export class MockPromptsRepository implements PromptsRepositoryPort {
       updated_at: new Date().toISOString(),
     };
 
-    this.prompts.unshift(newPrompt);
+    const prompts = this.getPrompts();
+    prompts.unshift(newPrompt);
+    storage.setItem(this.PROMPTS_KEY, JSON.stringify(prompts));
 
+    // Store Tag Relations (tagIds are UUIDs now)
     if (input.tagIds && input.tagIds.length > 0) {
-      const newTagIds: string[] = [];
-      input.tagIds.forEach((tagStr, idx) => {
-        const existingTag = this.tags.find(t => t.name.toLowerCase() === tagStr.toLowerCase());
-        if (existingTag) {
-           newTagIds.push(existingTag.id);
-        } else {
-           const newTag = {
-             id: `tag-${Date.now()}-${idx}`,
-             name: tagStr,
-             slug: tagStr.toLowerCase().replace(/\s+/g, '-'),
-             created_at: new Date().toISOString()
-           };
-           this.tags.push(newTag);
-           newTagIds.push(newTag.id);
-        }
+      const junctionData = this.getPromptTagsData();
+      input.tagIds.forEach(tagId => {
+          junctionData.push({ template_id: newPrompt.id, tag_id: tagId });
       });
-      
-      this.templateTags[newPrompt.id] = newTagIds;
+      storage.setItem(this.PROMPT_TAGS_KEY, JSON.stringify(junctionData));
     }
 
     return newPrompt;
   }
+
+  async updatePrompt(id: string, input: Partial<CreatePromptDTO>): Promise<PromptTemplateRecord> {
+    await new Promise(resolve => setTimeout(resolve, 500));
+    const prompts = this.getPrompts();
+    const index = prompts.findIndex(p => p.id === id);
+    if (index === -1) throw new Error("Prompt not found");
+
+    const updated = {
+        ...prompts[index],
+        ...input,
+        // Don't update usage_count or timestamps via basic update typically
+        updated_at: new Date().toISOString()
+    };
+    
+    prompts[index] = updated as PromptTemplateRecord;
+    storage.setItem(this.PROMPTS_KEY, JSON.stringify(prompts));
+
+    // Update tags if provided
+    if (input.tagIds) {
+        let junctionData = this.getPromptTagsData();
+        // Remove old tags
+        junctionData = junctionData.filter(j => j.template_id !== id);
+        // Add new
+        input.tagIds.forEach(tagId => {
+            junctionData.push({ template_id: id, tag_id: tagId });
+        });
+        storage.setItem(this.PROMPT_TAGS_KEY, JSON.stringify(junctionData));
+    }
+
+    return updated as PromptTemplateRecord;
+  }
+
+  async deletePrompt(id: string): Promise<void> {
+    await new Promise(resolve => setTimeout(resolve, 400));
+    const prompts = this.getPrompts();
+    const filtered = prompts.filter(p => p.id !== id);
+    storage.setItem(this.PROMPTS_KEY, JSON.stringify(filtered));
+  }
 }
 
-// --- Supabase Implementation (Stub) ---
+// --- Supabase Implementation ---
 export class SupabasePromptsRepository implements PromptsRepositoryPort {
-  async getAll(): Promise<PromptTemplateRecord[]> {
-    const { data, error } = await supabase.from('prompt_templates').select('*').eq('visibility', 'public');
+  async getAll(currentLenserId?: string, offset = 0, limit = 10): Promise<PromptTemplateRecord[]> {
+    const builder = supabase.from('prompt_templates').select('*').range(offset, offset + limit - 1);
+    const { data, error } = await builder;
     if (error) throw error;
     return data as PromptTemplateRecord[];
   }
 
-  async search(query: string): Promise<PromptTemplateRecord[]> {
-    const { data, error } = await supabase.from('prompt_templates').select('*').ilike('title', `%${query}%`).eq('visibility', 'public');
+  async search(query: string, currentLenserId?: string, offset = 0, limit = 10): Promise<PromptTemplateRecord[]> {
+    const { data, error } = await supabase.from('prompt_templates')
+        .select('*')
+        .ilike('title', `%${query}%`)
+        .range(offset, offset + limit - 1);
     if (error) throw error;
     return data as PromptTemplateRecord[];
   }
 
-  async filterByTag(tagSlug: string | null): Promise<PromptTemplateRecord[]> { return []; }
+  async filterByTag(tagSlug: string | null, currentLenserId?: string, offset = 0, limit = 10): Promise<PromptTemplateRecord[]> {
+    if (!tagSlug) return this.getAll(currentLenserId, offset, limit);
+    
+    const { data, error } = await supabase
+        .from('prompt_templates')
+        .select('*, prompt_template_tags!inner(tag_id, tags!inner(slug))')
+        .eq('prompt_template_tags.tags.slug', tagSlug)
+        .range(offset, offset + limit - 1);
 
-  async sort(order: "newest" | "popular"): Promise<PromptTemplateRecord[]> { return []; }
+    if (error) throw error;
+    return data as PromptTemplateRecord[];
+  }
+
+  async sort(order: "newest" | "popular", currentLenserId?: string, offset = 0, limit = 10): Promise<PromptTemplateRecord[]> {
+    const builder = supabase.from('prompt_templates').select('*');
+    if (order === 'newest') builder.order('created_at', { ascending: false });
+    else builder.order('usage_count', { ascending: false });
+    
+    const { data, error } = await builder.range(offset, offset + limit - 1);
+    if (error) throw error;
+    return data as PromptTemplateRecord[];
+  }
 
   async getTopPrompts(limit: number): Promise<PromptTemplateRecord[]> {
       const { data, error } = await supabase.from('prompt_templates').select('*').eq('visibility', 'public').order('usage_count', { ascending: false }).limit(limit);
@@ -305,12 +293,6 @@ export class SupabasePromptsRepository implements PromptsRepositoryPort {
     return data.map(d => d.tags);
   }
 
-  async getReactions(templateId: string): Promise<PromptTemplateReactionRecord[]> {
-     const { data, error } = await supabase.from('prompt_template_reactions').select('*').eq('template_id', templateId);
-     if (error) throw error;
-     return data as PromptTemplateReactionRecord[];
-  }
-
   async getUsage(templateId: string): Promise<PromptTemplateUsageRecord[]> {
     const { data, error } = await supabase.from('prompt_template_usage').select('*').eq('template_id', templateId);
      if (error) throw error;
@@ -322,19 +304,62 @@ export class SupabasePromptsRepository implements PromptsRepositoryPort {
     if (error) throw error;
   }
 
-  async addReaction(templateId: string, lenserId: string, reaction: ReactionEnum): Promise<void> {
-    const { error } = await supabase.from('prompt_template_reactions').insert({ template_id: templateId, lenser_id: lenserId, reaction });
-    if (error) throw error;
-  }
-
-  async removeReaction(templateId: string, lenserId: string, reaction: ReactionEnum): Promise<void> {
-    const { error } = await supabase.from('prompt_template_reactions').delete().match({ template_id: templateId, lenser_id: lenserId, reaction });
-    if (error) throw error;
-  }
-
   async createPrompt(input: CreatePromptDTO): Promise<PromptTemplateRecord> {
-    const { data, error } = await supabase.from('prompt_templates').insert({ lenser_id: input.lenserId, title: input.title, description: input.description, content: input.content, visibility: input.visibility }).select().single();
+    const { data: prompt, error } = await supabase.from('prompt_templates')
+        .insert({ 
+            lenser_id: input.lenserId, 
+            title: input.title, 
+            description: input.description, 
+            content: input.content, 
+            visibility: input.visibility 
+        })
+        .select().single();
     if (error) throw error;
-    return data as PromptTemplateRecord;
+
+    if (input.tagIds && input.tagIds.length > 0) {
+        const junctionInserts = input.tagIds.map(tagId => ({
+            template_id: prompt.id,
+            tag_id: tagId
+        }));
+        const { error: tagError } = await supabase.from('prompt_template_tags').insert(junctionInserts);
+        if (tagError) console.error("Failed to link tags", tagError);
+    }
+
+    return prompt as PromptTemplateRecord;
+  }
+
+  async updatePrompt(id: string, input: Partial<CreatePromptDTO>): Promise<PromptTemplateRecord> {
+      const { data, error } = await supabase
+        .from('prompt_templates')
+        .update({
+            title: input.title,
+            description: input.description,
+            content: input.content,
+            visibility: input.visibility,
+            updated_at: new Date().toISOString()
+        })
+        .eq('id', id)
+        .select()
+        .single();
+      
+      if (error) throw error;
+
+      if (input.tagIds) {
+          // Delete old
+          await supabase.from('prompt_template_tags').delete().eq('template_id', id);
+          // Insert new
+          const junctionInserts = input.tagIds.map(tagId => ({
+            template_id: id,
+            tag_id: tagId
+          }));
+          await supabase.from('prompt_template_tags').insert(junctionInserts);
+      }
+
+      return data as PromptTemplateRecord;
+  }
+
+  async deletePrompt(id: string): Promise<void> {
+      const { error } = await supabase.from('prompt_templates').delete().eq('id', id);
+      if (error) throw error;
   }
 }

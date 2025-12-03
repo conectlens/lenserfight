@@ -1,5 +1,6 @@
+
 import React from 'react';
-import { HashRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { HashRouter, Routes, Route, Navigate, BrowserRouter } from 'react-router-dom';
 import { LoginPage } from '../features/auth/pages/LoginPage';
 import { RegisterPage } from '../features/auth/pages/RegisterPage';
 import { ForgotPasswordPage } from '../features/auth/pages/ForgotPasswordPage';
@@ -10,13 +11,20 @@ import { ThreadDetailPage } from '../features/threads/pages/ThreadDetailPage';
 import { PromptsPage } from '../features/prompts/pages/PromptsPage';
 import { PromptDetailPage } from '../features/prompts/pages/PromptDetailPage';
 import { LenserProfilePage } from '../features/lensers/pages/LenserProfilePage';
+import { SettingsPage } from '../features/settings/pages/SettingsPage';
+import { TagCloudPage } from '../features/tags/pages/TagCloudPage';
+import { TagDetailPage } from '../features/tags/pages/TagDetailPage';
+import { ShortLinkRedirect } from '../features/share/pages/ShortLinkRedirect';
 
 export const AppRouter: React.FC = () => {
   return (
-    <HashRouter>
+    <BrowserRouter>
       <Routes>
         <Route path="/" element={<Navigate to="/app" replace />} />
         
+        {/* Short Link Redirect Route */}
+        <Route path="/s/:shortId" element={<ShortLinkRedirect />} />
+
         <Route path="/login" element={<LoginPage />} />
         <Route path="/register" element={<RegisterPage />} />
         <Route path="/forgot-password" element={<ForgotPasswordPage />} />
@@ -59,6 +67,24 @@ export const AppRouter: React.FC = () => {
         />
         
         <Route 
+          path="/tags" 
+          element={
+            <DashboardLayout>
+              <TagCloudPage />
+            </DashboardLayout>
+          } 
+        />
+
+        <Route 
+          path="/tags/:slug" 
+          element={
+            <DashboardLayout>
+              <TagDetailPage />
+            </DashboardLayout>
+          } 
+        />
+        
+        <Route 
           path="/lenser/:handle" 
           element={
             <DashboardLayout>
@@ -66,10 +92,19 @@ export const AppRouter: React.FC = () => {
             </DashboardLayout>
           } 
         />
+
+        <Route 
+          path="/settings" 
+          element={
+            <DashboardLayout>
+              <SettingsPage />
+            </DashboardLayout>
+          } 
+        />
         
         {/* Default Redirect: Catch all unknown routes and send to /app */}
         <Route path="*" element={<Navigate to="/app" replace />} />
       </Routes>
-    </HashRouter>
+    </BrowserRouter>
   );
 };

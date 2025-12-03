@@ -9,8 +9,8 @@ export const authService = {
     return authRepo.login(email, password);
   },
 
-  register: async (email: string, password: string): Promise<User> => {
-    return authRepo.register(email, password);
+  register: async (email: string, password: string, metadata?: { display_name?: string }): Promise<User> => {
+    return authRepo.register(email, password, metadata);
   },
 
   logout: async (): Promise<void> => {

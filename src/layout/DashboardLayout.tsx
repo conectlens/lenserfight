@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Sidebar } from './Sidebar/Sidebar';
 import { Header } from './Header';
+import { Footer } from './Footer';
 import { useLenser } from '../context/LenserContext';
 import { CreateLenserProfileModal } from '../features/lenser/components/CreateLenserProfileModal';
 import { useAuth } from '../context/AuthContext';
@@ -19,13 +20,20 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) =>
 
   // Modal State
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
+  // Session tracking to avoid forcing modal after close
+  const [hasDismissedProfileModal, setHasDismissedProfileModal] = useState(false);
 
   // Handle initial modal open state for authenticated users without profile
   useEffect(() => {
-    if (isAuthenticated && !lenserLoading && !hasLenser) {
+    // Only show if:
+    // 1. Authenticated
+    // 2. Lenser data fully loaded (not loading)
+    // 3. User does NOT have a lenser profile
+    // 4. User has NOT dismissed it this session
+    if (isAuthenticated && !lenserLoading && !hasLenser && !hasDismissedProfileModal) {
       setIsProfileModalOpen(true);
     }
-  }, [isAuthenticated, lenserLoading, hasLenser]);
+  }, [isAuthenticated, lenserLoading, hasLenser, hasDismissedProfileModal]);
 
   // Responsive handler
   useEffect(() => {
@@ -56,7 +64,13 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) =>
       navigate('/login');
       return;
     }
+    setHasDismissedProfileModal(false); // Explicit click resets dismissal
     setIsProfileModalOpen(true);
+  };
+
+  const handleCloseProfileModal = () => {
+      setIsProfileModalOpen(false);
+      setHasDismissedProfileModal(true);
   };
 
   if (authLoading) {
@@ -87,16 +101,19 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) =>
           />
 
           {/* Scrollable Content */}
-          <main className="flex-1 overflow-y-auto scrollbar-hide p-4 lg:p-6 pb-20">
-             <div className="max-w-7xl mx-auto w-full">
-                {children || <div className="text-gray-400 text-center mt-20">No content provided</div>}
+          <main className="flex-1 overflow-y-auto scrollbar-hide flex flex-col">
+             <div className="flex-1 p-4 lg:p-6">
+                <div className="max-w-7xl mx-auto w-full h-full">
+                    {children || <div className="text-gray-400 text-center mt-20">No content provided</div>}
+                </div>
              </div>
+             <Footer />
           </main>
 
        </div>
 
        {isProfileModalOpen && isAuthenticated && !hasLenser && (
-         <CreateLenserProfileModal onClose={() => setIsProfileModalOpen(false)} />
+         <CreateLenserProfileModal onClose={handleCloseProfileModal} />
        )}
     </div>
   );
