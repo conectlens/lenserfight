@@ -351,14 +351,27 @@ export class SupabaseThreadsRepository implements ThreadsRepositoryPort {
   }
 
   async getTrendingTags(limit: number): Promise<string[]> {
-      const { data } = await supabase
+      // Fix for PGRST108: Select relation explicitly to allow count
+      // Fetch a batch and sort client-side to be safe against DB view dependencies
+      const { data, error } = await supabase
         .from('tags')
-        .select('name')
-        .order('count', { ascending: false, foreignTable: 'thread_tags' } as any) // Assuming we added count to tags too, else fall back
-        .limit(limit);
+        .select('name, thread_tags(count)')
+        .limit(50);
       
-      // Fallback to simple RPC or client sort if complex
-      return [];
+      if (error) {
+          console.warn("Failed to fetch trending tags:", error);
+          return [];
+      }
+
+      const tags = (data || []).map((t: any) => ({
+          name: t.name,
+          count: t.thread_tags?.[0]?.count || 0
+      }));
+
+      return tags
+          .sort((a, b) => b.count - a.count)
+          .slice(0, limit)
+          .map(t => t.name);
   }
 
   async updateThread(id: string, dto: Partial<CreateThreadDTO>): Promise<ThreadRecord> {

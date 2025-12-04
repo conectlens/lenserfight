@@ -33,7 +33,7 @@ export class MockAuthRepository implements AuthRepositoryPort {
         email: 'demo@example.com',
         password: 'password',
         created_at: new Date().toISOString(),
-        raw_user_meta_data: { display_name: 'Demo User' },
+        user_metadata: { display_name: 'Demo User' },
         last_sign_in_at: new Date().toISOString(),
       };
       storage.setItem(this.USERS_DB_KEY, JSON.stringify([demoUser]));
@@ -79,7 +79,7 @@ export class MockAuthRepository implements AuthRepositoryPort {
       email,
       password, // Store password for mock authentication
       created_at: new Date().toISOString(),
-      raw_user_meta_data: metadata || {},
+      user_metadata: metadata || {},
       last_sign_in_at: new Date().toISOString(),
     };
     
