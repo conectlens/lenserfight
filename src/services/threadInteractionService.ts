@@ -43,6 +43,7 @@ export const threadInteractionService = {
         content: record.content,
         createdAt: record.created_at,
         reactionCount: 0,
+        userHasReacted: false,
         isDeleted: false,
         author: {
             id: author?.id || 'unknown',
@@ -77,6 +78,8 @@ export const threadInteractionService = {
     const viewModels: (ThreadReplyViewModel & { parentId?: string | null })[] = records.map(r => {
         const author = authorsMap.get(r.lenser_id);
         const reactionData = reactionsMap.get(r.id);
+        const userReactions = reactionData?.userReactions || [];
+        const hasReacted = userReactions.includes('like');
         
         // Handle Soft Delete Presentation
         const isDeleted = !!r.deleted_at;
@@ -88,9 +91,7 @@ export const threadInteractionService = {
             content,
             createdAt: r.created_at,
             reactionCount: reactionData ? reactionData.total : 0,
-            // We could add 'userHasReacted' to ViewModel if UI supported highlighting replies liked by user
-            // For now, assuming UI just shows count or simple toggle state. 
-            // We'll augment the VM type implicitly here if needed, but existing type handles reactionCount.
+            userHasReacted: hasReacted,
             isDeleted,
             replies: [], // init
             author: {
@@ -119,6 +120,27 @@ export const threadInteractionService = {
             rootReplies.push(vm);
         }
     });
+
+    // 5. Sort - Like Count DESC, then Date DESC (Newest First)
+    const sortReplies = (items: ThreadReplyViewModel[]) => {
+        items.sort((a, b) => {
+            // Primary: Like Count Descending
+            if (b.reactionCount !== a.reactionCount) {
+                return b.reactionCount - a.reactionCount;
+            }
+            // Secondary: Date Descending (Newest first)
+            return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+        });
+
+        // Recurse for nested replies
+        items.forEach(item => {
+            if (item.replies && item.replies.length > 0) {
+                sortReplies(item.replies);
+            }
+        });
+    };
+
+    sortReplies(rootReplies);
 
     return rootReplies;
   }

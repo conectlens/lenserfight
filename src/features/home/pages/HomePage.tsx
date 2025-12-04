@@ -61,9 +61,12 @@ export const HomePage: React.FC = () => {
     setIsCreateModalOpen(true);
   };
 
-  const handleCreateSuccess = () => {
-    // In React Query v5 we would invalidate queries here, but simpler to just reload page or let auto-refetch handle it
-    window.location.reload(); 
+  const handleCreateSuccess = (newThreadId?: string) => {
+    if (newThreadId) {
+        navigate(`/threads/${newThreadId}`);
+    } else {
+        window.location.reload(); 
+    }
   };
 
   // --- Helper Components ---

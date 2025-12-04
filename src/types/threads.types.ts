@@ -1,3 +1,4 @@
+
 import { Lenser } from './lenser.types';
 
 export type Visibility = 'public' | 'private' | 'followers';
@@ -88,6 +89,7 @@ export interface ThreadReplyViewModel {
   content: string;
   createdAt: string;
   reactionCount: number;
+  userHasReacted: boolean;
   isDeleted: boolean;
   replies?: ThreadReplyViewModel[];
 }
