@@ -21,6 +21,7 @@ export interface PromptsRepositoryPort {
   createPrompt(input: CreatePromptDTO): Promise<PromptTemplateRecord>;
   updatePrompt(id: string, input: Partial<CreatePromptDTO>): Promise<PromptTemplateRecord>;
   deletePrompt(id: string): Promise<void>;
+  updateReactionTotals(id: string, totals: Record<string, number>): Promise<void>;
 }
 
 // Fallback data for Mock Mode
@@ -197,6 +198,15 @@ export class MockPromptsRepository implements PromptsRepositoryPort {
       const prompts = this.getPrompts().filter(p => p.id !== id);
       this.savePrompts(prompts);
   };
+
+  updateReactionTotals = async (id: string, totals: Record<string, number>) => {
+      const prompts = this.getPrompts();
+      const idx = prompts.findIndex(p => p.id === id);
+      if (idx !== -1) {
+          prompts[idx].reaction_totals = totals;
+          this.savePrompts(prompts);
+      }
+  };
 }
 
 // --- Supabase Implementation ---
@@ -361,6 +371,14 @@ export class SupabasePromptsRepository implements PromptsRepositoryPort {
 
   async deletePrompt(id: string): Promise<void> {
       const { error } = await supabase.from('prompt_templates').delete().eq('id', id);
+      if (error) throw error;
+  }
+
+  async updateReactionTotals(id: string, totals: Record<string, number>): Promise<void> {
+      const { error } = await supabase
+        .from('prompt_templates')
+        .update({ reaction_totals: totals })
+        .eq('id', id);
       if (error) throw error;
   }
 }
