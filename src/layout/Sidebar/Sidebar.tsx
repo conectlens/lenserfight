@@ -314,7 +314,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, isMobile, onCloseMobil
                              className="w-full text-left px-3 py-2 rounded-lg text-sm text-gray-700 hover:bg-gray-50 hover:text-gray-900 flex items-center gap-3 transition-colors"
                              onClick={() => {
                                setIsDropdownOpen(false);
-                               navigate('/settings', { state: { tab: 'Notifications' } });
+                               navigate('/settings/notifications');
                              }}
                            >
                              <div className="relative">
@@ -332,7 +332,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, isMobile, onCloseMobil
                            className="w-full text-left px-3 py-2 rounded-lg text-sm text-gray-700 hover:bg-gray-50 hover:text-gray-900 flex items-center gap-3 transition-colors"
                            onClick={() => {
                                setIsDropdownOpen(false);
-                               navigate('/settings');
+                               navigate('/settings/account');
                            }}
                          >
                            <Settings size={16} className="text-gray-400" />

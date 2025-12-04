@@ -6,6 +6,7 @@ import { storage } from '../utils/storage';
 // --- Port (Interface) ---
 export interface FeedbackRepositoryPort {
   submitFeedback(dto: SubmitFeedbackDTO): Promise<Feedback>;
+  getUserFeedbacks(userId: string, offset?: number, limit?: number): Promise<{ data: Feedback[]; count: number }>;
 }
 
 // --- Mock Implementation ---
@@ -37,6 +38,20 @@ export class MockFeedbackRepository implements FeedbackRepositoryPort {
 
     return newFeedback;
   }
+
+  async getUserFeedbacks(userId: string, offset = 0, limit = 5): Promise<{ data: Feedback[]; count: number }> {
+    await new Promise(resolve => setTimeout(resolve, 600));
+    const all = JSON.parse(storage.getItem(this.STORAGE_KEY) || '[]');
+    const userFeedbacks = all.filter((f: Feedback) => f.user_id === userId);
+    
+    // Sort descending by created_at
+    userFeedbacks.sort((a: Feedback, b: Feedback) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+    
+    return {
+        data: userFeedbacks.slice(offset, offset + limit),
+        count: userFeedbacks.length
+    };
+  }
 }
 
 // --- Supabase Implementation ---
@@ -58,5 +73,17 @@ export class SupabaseFeedbackRepository implements FeedbackRepositoryPort {
 
     if (error) throw error;
     return data as Feedback;
+  }
+
+  async getUserFeedbacks(userId: string, offset = 0, limit = 5): Promise<{ data: Feedback[]; count: number }> {
+    const { data, error, count } = await supabase
+        .from('feedback')
+        .select('*', { count: 'exact' })
+        .eq('user_id', userId)
+        .order('created_at', { ascending: false })
+        .range(offset, offset + limit - 1);
+        
+    if (error) throw error;
+    return { data: data as Feedback[], count: count || 0 };
   }
 }
