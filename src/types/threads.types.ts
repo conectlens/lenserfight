@@ -1,3 +1,4 @@
+
 import { Lenser } from './lenser.types';
 
 export type Visibility = 'public' | 'private' | 'followers';
@@ -12,7 +13,7 @@ export interface PromptData {
 export interface CreateThreadDTO {
   title: string;
   content: string;
-  tagIds: string[]; // For the mock, we will treat these as tag names or IDs
+  tagIds: string[];
   lenserId: string;
   visibility: Visibility;
 }
@@ -25,10 +26,11 @@ export interface ThreadRecord {
   visibility: Visibility;
   view_count: number;
   reply_count: number;
+  reaction_totals?: Record<string, number>; // JSONB from DB
   created_at: string;
   updated_at: string;
   thumbnail_url?: string;
-  prompt_data?: PromptData; // Optional embedded prompt
+  prompt_data?: PromptData;
 }
 
 export interface TagRecord {
@@ -49,7 +51,8 @@ export interface ThreadReplyRecord {
   parent_reply_id?: string | null;
   lenser_id: string;
   content: string;
-  reaction_count: number;
+  reaction_totals?: Record<string, number>; // JSONB from DB
+  // reaction_count is no longer a direct column, computed from totals
   created_at: string;
   deleted_at?: string | null;
 }
@@ -78,6 +81,7 @@ export interface ThreadFeedItem {
   replyCount: number;
   createdAt: string;
   userHasReacted: boolean;
+  visibility: Visibility;
 }
 
 export interface ThreadReplyViewModel {
@@ -86,8 +90,9 @@ export interface ThreadReplyViewModel {
   content: string;
   createdAt: string;
   reactionCount: number;
+  userHasReacted: boolean;
   isDeleted: boolean;
-  replies?: ThreadReplyViewModel[]; // For nesting
+  replies?: ThreadReplyViewModel[];
 }
 
 export interface ThreadDetailViewModel {
@@ -101,4 +106,5 @@ export interface ThreadDetailViewModel {
   userHasReacted: boolean;
   replies: ThreadReplyViewModel[];
   promptBlock?: PromptData;
+  visibility: Visibility;
 }

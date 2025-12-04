@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { memo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { PromptTemplateViewModel } from '../../../types/prompts.types';
 import { Avatar } from '../../../components/Avatar';
@@ -14,7 +14,7 @@ interface PromptCardProps {
   onDelete?: (id: string) => void;
 }
 
-export const PromptCard: React.FC<PromptCardProps> = ({ prompt, onClick, isOwner, onEdit, onDelete }) => {
+export const PromptCard: React.FC<PromptCardProps> = memo(({ prompt, onClick, isOwner, onEdit, onDelete }) => {
   const navigate = useNavigate();
 
   const handleUserClick = (e: React.MouseEvent) => {
@@ -37,10 +37,8 @@ export const PromptCard: React.FC<PromptCardProps> = ({ prompt, onClick, isOwner
         onClick={() => onClick(prompt.id)}
         className="group relative bg-white rounded-xl border border-gray-200 p-6 flex flex-col transition-all duration-300 hover:shadow-xl hover:-translate-y-1 hover:border-primary/40 cursor-pointer overflow-hidden h-full"
     >
-      {/* Visual Accent - Top Bar to simulate document header/binding */}
       <div className="absolute top-0 left-0 w-full h-1.5 bg-gray-100 group-hover:bg-primary transition-colors duration-300" />
 
-      {/* Owner Actions */}
       {isOwner && (
           <div className="absolute top-4 right-4 flex gap-2 z-20 opacity-0 group-hover:opacity-100 transition-opacity">
               <button 
@@ -60,7 +58,6 @@ export const PromptCard: React.FC<PromptCardProps> = ({ prompt, onClick, isOwner
           </div>
       )}
 
-      {/* Header */}
       <div className="flex justify-between items-start mb-4 pt-2">
           <h3 className="text-xl font-bold text-gray-900 leading-tight group-hover:text-primary-800 transition-colors pr-8">
             {prompt.title}
@@ -72,14 +69,12 @@ export const PromptCard: React.FC<PromptCardProps> = ({ prompt, onClick, isOwner
           )}
       </div>
 
-      {/* Content Preview (Minimalist text document style) */}
       <div className="mb-6 flex-1">
         <p className="text-gray-500 text-sm leading-relaxed font-normal line-clamp-3">
           {prompt.description || "No description provided."}
         </p>
       </div>
 
-      {/* Tags - Very Minimal Dots/Pills */}
       <div className="flex flex-wrap gap-2 mb-6">
         {prompt.tags.slice(0, 3).map(tag => (
           <span 
@@ -98,7 +93,6 @@ export const PromptCard: React.FC<PromptCardProps> = ({ prompt, onClick, isOwner
         )}
       </div>
 
-      {/* Footer: Author & Stats */}
       <div className="flex items-center justify-between pt-4 border-t border-gray-50 mt-auto">
           <div 
             className="flex items-center gap-2 group/author z-10" 
@@ -117,4 +111,4 @@ export const PromptCard: React.FC<PromptCardProps> = ({ prompt, onClick, isOwner
       </div>
     </div>
   );
-};
+});

@@ -1,5 +1,7 @@
+
 import React, { useState, KeyboardEvent } from 'react';
 import { X } from 'lucide-react';
+import { TagNamingService } from '../../../services/tagNamingService';
 
 interface ThreadTagInputProps {
   tags: string[];
@@ -12,9 +14,14 @@ export const ThreadTagInput: React.FC<ThreadTagInputProps> = ({ tags, onChange }
   const handleKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
     if ((e.key === 'Enter' || e.key === ',') && input.trim()) {
       e.preventDefault();
-      const newTag = input.trim().replace(/^#/, ''); // remove hash if user types it
-      if (!tags.includes(newTag)) {
-        onChange([...tags, newTag]);
+      
+      const { name, isValid } = TagNamingService.normalize(input);
+      
+      if (isValid) {
+        // Prevent duplicates in UI list
+        if (!tags.some(t => TagNamingService.normalize(t).slug === TagNamingService.normalize(name).slug)) {
+          onChange([...tags, name]);
+        }
       }
       setInput('');
     } else if (e.key === 'Backspace' && !input && tags.length > 0) {
