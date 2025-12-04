@@ -70,7 +70,7 @@ export const AIResultsSection: React.FC<AIResultsSectionProps> = ({ promptId }) 
   }, [promptId, lenser?.id, mediaFilter, modelFilter]);
 
   // Infinite Scroll Observer
-  const lastElementRef = useCallback((node: HTMLDivElement) => {
+  const lastElementRef = useCallback((node: HTMLDivElement | null) => {
     if (loading) return;
     if (observer.current) observer.current.disconnect();
     
