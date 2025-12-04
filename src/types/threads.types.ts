@@ -81,6 +81,7 @@ export interface ThreadFeedItem {
   replyCount: number;
   createdAt: string;
   userHasReacted: boolean;
+  visibility: Visibility;
 }
 
 export interface ThreadReplyViewModel {
@@ -105,4 +106,5 @@ export interface ThreadDetailViewModel {
   userHasReacted: boolean;
   replies: ThreadReplyViewModel[];
   promptBlock?: PromptData;
+  visibility: Visibility;
 }

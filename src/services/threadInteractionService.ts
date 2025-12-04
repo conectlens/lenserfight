@@ -4,6 +4,7 @@ import { getLenserRepository } from '../adapters/lenserAdapter';
 import { reactionService } from './reactionService';
 import { ThreadReplyViewModel } from '../types/threads.types';
 import { MentionParser } from '../utils/mentionParser';
+import { contentModerationService } from './contentModerationService';
 
 const threadsRepo = getThreadsRepository();
 const lenserRepo = getLenserRepository();
@@ -12,32 +13,28 @@ export const threadInteractionService = {
   
   toggleThreadReaction: async (threadId: string, lenserId: string): Promise<{ added: boolean, newCount: number }> => {
     if (!lenserId) throw new Error("Must be logged in to react");
-    
-    // Use unified service (default to 'like' for threads main reaction)
     const { added, summary } = await reactionService.toggleReaction('thread', threadId, lenserId, 'like');
-    
     return { added, newCount: summary.total };
   },
 
   toggleReplyReaction: async (replyId: string, lenserId: string): Promise<{ added: boolean, newCount: number }> => {
     if (!lenserId) throw new Error("Must be logged in to react");
-    
-    // Use unified service for reply
     const { added, summary } = await reactionService.toggleReaction('thread_reply', replyId, lenserId, 'like');
-    
     return { added, newCount: summary.total };
   },
 
   postReply: async (threadId: string, lenserId: string, content: string, parentReplyId?: string): Promise<ThreadReplyViewModel> => {
     if (!content.trim()) throw new Error("Reply cannot be empty");
     
-    // Pure Fabrication: Sanitize/Parse content before saving
+    // Moderation Check
+    // TODO: moderation policy will not be used in the beta version
+    // await contentModerationService.validate(content);
+
     const cleanedContent = MentionParser.cleanContent(content); 
 
     const record = await threadsRepo.createReply(threadId, lenserId, cleanedContent, parentReplyId);
     const author = await lenserRepo.getLenserById(lenserId);
 
-    // Return view model immediately for UI append
     return {
         id: record.id,
         content: record.content,
@@ -124,15 +121,12 @@ export const threadInteractionService = {
     // 5. Sort - Like Count DESC, then Date DESC (Newest First)
     const sortReplies = (items: ThreadReplyViewModel[]) => {
         items.sort((a, b) => {
-            // Primary: Like Count Descending
             if (b.reactionCount !== a.reactionCount) {
                 return b.reactionCount - a.reactionCount;
             }
-            // Secondary: Date Descending (Newest first)
             return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
         });
 
-        // Recurse for nested replies
         items.forEach(item => {
             if (item.replies && item.replies.length > 0) {
                 sortReplies(item.replies);

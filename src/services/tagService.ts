@@ -2,6 +2,7 @@
 import { getTagRepository } from '../adapters/tagAdapter';
 import { TagUsage, TagRecord } from '../types/tags.types';
 import { TagNamingService } from './tagNamingService';
+import { contentModerationService } from './contentModerationService';
 
 const tagRepo = getTagRepository();
 
@@ -37,6 +38,10 @@ export const tagService = {
   upsertTags: async (names: string[]): Promise<TagRecord[]> => {
       if (!names || names.length === 0) return [];
       
+      // Moderation Check - tags are often abused
+      // TODO: moderation policy will not be used in the beta version
+      // await contentModerationService.validate(...names);
+
       // Use TagNamingService to normalize and deduplicate by slug
       const slugMap = new Map<string, string>();
       names.forEach(n => {

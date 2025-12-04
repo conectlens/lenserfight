@@ -5,6 +5,7 @@ import { getReactionRepository } from '../adapters/reactionAdapter';
 import { ThreadFeedItem, ThreadDetailViewModel, ThreadRecord, Visibility, CreateThreadDTO } from '../types/threads.types';
 import { threadInteractionService } from './threadInteractionService';
 import { tagService } from './tagService';
+import { contentModerationService } from './contentModerationService';
 
 const threadsRepo = getThreadsRepository();
 const lenserRepo = getLenserRepository();
@@ -12,12 +13,20 @@ const reactionRepo = getReactionRepository();
 
 export const threadsService = {
   createThread: async (input: { title: string; content: string; tagIds: string[]; lenserId: string; visibility: Visibility }): Promise<ThreadRecord> => {
+    // Moderation Check
+    // TODO: moderation policy will not be used in the beta version
+    // await contentModerationService.validate(input.title, input.content);
+
     const resolvedTags = await tagService.upsertTags(input.tagIds);
     const realTagIds = resolvedTags.map(t => t.id);
     return threadsRepo.createThread({ ...input, tagIds: realTagIds });
   },
 
   updateThread: async (id: string, input: Partial<CreateThreadDTO>, lenserId: string): Promise<ThreadRecord> => {
+      // Moderation Check
+      // TODO: moderation policy will not be used in the beta version
+      // await contentModerationService.validate(input.title, input.content);
+
       let realTagIds: string[] | undefined = undefined;
       if (input.tagIds) {
           const resolvedTags = await tagService.upsertTags(input.tagIds);
@@ -43,11 +52,9 @@ export const threadsService = {
   },
 
   getThreadsByAuthor: async (authorId: string, currentUserId?: string, offset = 0, limit = 10): Promise<ThreadFeedItem[]> => {
-    // Note: To optimize, repo should have a dedicated getByAuthor method, but for now filtering is acceptable
-    // if records are returned fully populated.
-    const records = await threadsRepo.getAllThreads(offset, limit); 
-    // In production, use threadsRepo.getByAuthor(authorId) to avoid over-fetching
-    return threadsService._mapToFeedItems(records.filter((t: any) => t.lenser_id === authorId), currentUserId);
+    const includePrivate = authorId === currentUserId;
+    const records = await threadsRepo.getByAuthor(authorId, offset, limit, includePrivate);
+    return threadsService._mapToFeedItems(records, currentUserId);
   },
 
   // Pure Mapper: Converts DB Join Result -> Domain Model + Batch Reaction State
@@ -86,7 +93,8 @@ export const threadsService = {
             reactionCount: totalReactions,
             replyCount: record.reply_count || 0,
             createdAt: record.created_at,
-            userHasReacted: userReactedIds.has(record.id)
+            userHasReacted: userReactedIds.has(record.id),
+            visibility: record.visibility
         };
     });
   },
@@ -97,6 +105,12 @@ export const threadsService = {
 
     const record: any = await threadsRepo.getThreadById(threadId);
     if (!record) return null;
+
+    if (record.visibility === 'private') {
+        if (!currentUserId || record.lenser_id !== currentUserId) {
+            throw new Error("401"); 
+        }
+    }
 
     // Check main thread reaction
     let userHasReacted = false;
@@ -127,7 +141,8 @@ export const threadsService = {
         reactionCount: totalReactions,
         userHasReacted: userHasReacted,
         replies: replies,
-        promptBlock: record.prompt_data
+        promptBlock: record.prompt_data,
+        visibility: record.visibility
     };
   },
 

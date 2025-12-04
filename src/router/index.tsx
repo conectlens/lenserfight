@@ -82,6 +82,16 @@ export const AppRouter: React.FC = () => {
             </DashboardLayout>
           } 
         />
+
+        {/* Route for Tag Detail with Tab (threads/prompts) */}
+        <Route 
+          path="/tags/:slug/:tab" 
+          element={
+            <DashboardLayout>
+              <TagDetailPage />
+            </DashboardLayout>
+          } 
+        />
         
         {/* Profile Routes with Tabs */}
         <Route 

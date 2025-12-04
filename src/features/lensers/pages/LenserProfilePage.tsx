@@ -453,7 +453,7 @@ export const LenserProfilePage: React.FC = () => {
                             icon={FolderOpen} 
                             message="No prompts created yet." 
                             action={isOwner && (
-                                <Button onClick={() => openPromptModal()} className="w-auto flex items-center gap-2">
+                                <Button onClick={() => openPromptModal()} className="!w-auto flex items-center gap-2">
                                     <Plus size={16} /> Create Prompt
                                 </Button>
                             )}
@@ -483,7 +483,7 @@ export const LenserProfilePage: React.FC = () => {
                             icon={MessageSquare} 
                             message="No threads posted yet."
                             action={isOwner && (
-                                <Button onClick={() => setIsThreadModalOpen(true)} className="w-auto flex items-center gap-2">
+                                <Button onClick={() => setIsThreadModalOpen(true)} className="!w-auto flex items-center gap-2">
                                     <Plus size={16} /> Create Thread
                                 </Button>
                             )}

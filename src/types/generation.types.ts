@@ -14,17 +14,30 @@ export interface MediaLibraryItem {
   created_at: string;
 }
 
+export type ProviderEnum = 'openai' | 'anthropic' | 'google' | 'meta' | 'midjourney' | 'stability' | 'mistral' | 'other';
+export type AICapabilityEnum = 'text_generation' | 'image_generation' | 'video_generation' | 'audio_generation';
+export type PricingTierEnum = 'free' | 'paid' | 'enterprise';
+
 export interface AIModel {
-  id: string;
+  id: string; // uuid
+  slug: string;
   name: string;
-  description?: string;
-  is_active?: boolean;
+  provider: ProviderEnum;
+  version?: string | null;
+  provider_url?: string | null;
+  description: string;
+  capabilities: AICapabilityEnum[];
+  temperature: number;
+  max_tokens: number;
+  pricing_tier?: PricingTierEnum | null;
+  is_public: boolean;
+  created_at: string;
 }
 
 export interface AIGeneration {
   id: string;
   lenser_id: string;
-  ai_model_id: string; // e.g., 'gpt-4', 'midjourney-v6'
+  ai_model_id: string; // references ai_models(id)
   prompt_template_id: string;
   media_id: string;
   media?: MediaLibraryItem; // Joined data
@@ -51,15 +64,3 @@ export interface GenerationFilterOptions {
   mediaKind?: MediaKind | 'all';
   aiModelId?: string | 'all';
 }
-
-// Using valid UUIDs to prevent PostgreSQL 22P02 errors
-export const AI_MODELS = [
-  { id: '00000000-0000-0000-0000-000000000001', label: 'Midjourney' },
-  { id: '00000000-0000-0000-0000-000000000002', label: 'DALL·E 3' },
-  { id: '00000000-0000-0000-0000-000000000003', label: 'Stable Diffusion' },
-  { id: '00000000-0000-0000-0000-000000000004', label: 'ChatGPT' },
-  { id: '00000000-0000-0000-0000-000000000005', label: 'Claude' },
-  { id: '00000000-0000-0000-0000-000000000006', label: 'Grok' },
-  { id: '00000000-0000-0000-0000-000000000007', label: 'Runway Gen-2' },
-  { id: '00000000-0000-0000-0000-000000000008', label: 'Sora' }
-];
