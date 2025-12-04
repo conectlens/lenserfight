@@ -1,5 +1,7 @@
+
 import React, { useState, KeyboardEvent } from 'react';
 import { X, Plus } from 'lucide-react';
+import { TagNamingService } from '../../../services/tagNamingService';
 
 interface PromptTagInputProps {
   tags: string[];
@@ -12,9 +14,13 @@ export const PromptTagInput: React.FC<PromptTagInputProps> = ({ tags, onChange }
   const handleKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
     if ((e.key === 'Enter' || e.key === ',') && input.trim()) {
       e.preventDefault();
-      const newTag = input.trim().replace(/^#/, '');
-      if (!tags.includes(newTag)) {
-        onChange([...tags, newTag]);
+      
+      const { name, isValid } = TagNamingService.normalize(input);
+      
+      if (isValid) {
+        if (!tags.some(t => TagNamingService.normalize(t).slug === TagNamingService.normalize(name).slug)) {
+          onChange([...tags, name]);
+        }
       }
       setInput('');
     } else if (e.key === 'Backspace' && !input && tags.length > 0) {

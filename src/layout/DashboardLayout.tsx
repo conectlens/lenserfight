@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Sidebar } from './Sidebar/Sidebar';
 import { Header } from './Header';
@@ -14,28 +15,23 @@ interface DashboardLayoutProps {
 export const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [isMobile, setIsMobile] = useState(false);
-  const { hasLenser, isLoading: lenserLoading } = useLenser();
+  const { hasLenser, isLoading: lenserLoading, cachedProfileExists } = useLenser();
   const { isAuthenticated, isLoading: authLoading } = useAuth();
   const navigate = useNavigate();
 
   // Modal State
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
-  // Session tracking to avoid forcing modal after close
   const [hasDismissedProfileModal, setHasDismissedProfileModal] = useState(false);
 
-  // Handle initial modal open state for authenticated users without profile
   useEffect(() => {
-    // Only show if:
-    // 1. Authenticated
-    // 2. Lenser data fully loaded (not loading)
-    // 3. User does NOT have a lenser profile
-    // 4. User has NOT dismissed it this session
+    // Suppress modal if we know from cache that profile exists
+    if (cachedProfileExists) return;
+
     if (isAuthenticated && !lenserLoading && !hasLenser && !hasDismissedProfileModal) {
       setIsProfileModalOpen(true);
     }
-  }, [isAuthenticated, lenserLoading, hasLenser, hasDismissedProfileModal]);
+  }, [isAuthenticated, lenserLoading, hasLenser, hasDismissedProfileModal, cachedProfileExists]);
 
-  // Responsive handler
   useEffect(() => {
     const handleResize = () => {
       const mobile = window.innerWidth < 1024;
@@ -64,7 +60,7 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) =>
       navigate('/login');
       return;
     }
-    setHasDismissedProfileModal(false); // Explicit click resets dismissal
+    setHasDismissedProfileModal(false);
     setIsProfileModalOpen(true);
   };
 
@@ -83,7 +79,6 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) =>
 
   return (
     <div className="flex h-screen bg-gray-50 overflow-hidden">
-       {/* Sidebar - Positioned left */}
        <Sidebar 
          isOpen={sidebarOpen} 
          isMobile={isMobile} 
@@ -91,28 +86,23 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) =>
          onOpenProfileSetup={handleOpenProfileSetup}
        />
 
-       {/* Main Content Area - Flex Column */}
        <div className="flex-1 flex flex-col min-w-0 h-full overflow-hidden relative">
-          
-          {/* Global Sticky Header */}
           <Header 
             onToggleSidebar={() => setSidebarOpen(!sidebarOpen)}
             isSidebarOpen={sidebarOpen}
           />
 
-          {/* Scrollable Content */}
           <main className="flex-1 overflow-y-auto scrollbar-hide flex flex-col">
-             <div className="flex-1 p-4 lg:p-6">
-                <div className="max-w-7xl mx-auto w-full h-full">
-                    {children || <div className="text-gray-400 text-center mt-20">No content provided</div>}
-                </div>
+             {/* Unified Container Layout - The Single Source of Truth for Page Margins */}
+             <div className="flex-1 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+                {children || <div className="text-gray-400 text-center mt-20">No content provided</div>}
              </div>
              <Footer />
           </main>
 
        </div>
 
-       {isProfileModalOpen && isAuthenticated && !hasLenser && (
+       {isProfileModalOpen && isAuthenticated && !hasLenser && !cachedProfileExists && (
          <CreateLenserProfileModal onClose={handleCloseProfileModal} />
        )}
     </div>

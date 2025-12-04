@@ -24,11 +24,15 @@ export const useThreadDetailController = (threadId?: string) => {
         if (data) {
           setThread(data);
         } else {
-            setThread(null);
+            setError("404");
         }
-      } catch (err) {
-        console.error(err);
-        setError("Failed to load thread.");
+      } catch (err: any) {
+        if (err.message === '401') {
+            setError("401");
+        } else {
+            console.error(err);
+            setError("Failed to load thread.");
+        }
       } finally {
         setLoading(false);
       }
@@ -69,31 +73,37 @@ export const useThreadDetailController = (threadId?: string) => {
         });
     };
 
+    // Optimistic Update
     setThread(prev => {
         if (!prev) return null;
         return {
             ...prev,
             replies: updateReplyInTree(prev.replies, replyId, (r) => ({
                 ...r,
-                reactionCount: r.reactionCount + 1
+                // If user already liked, decrease count, else increase
+                reactionCount: r.userHasReacted ? r.reactionCount - 1 : r.reactionCount + 1,
+                userHasReacted: !r.userHasReacted
             }))
         };
     });
 
     try {
         const result = await threadInteractionService.toggleReplyReaction(replyId, lenser.id);
+        // Correct state with actual server response
         setThread(prev => {
             if (!prev) return null;
             return {
                 ...prev,
                 replies: updateReplyInTree(prev.replies, replyId, (r) => ({
                     ...r,
-                    reactionCount: result.newCount
+                    reactionCount: result.newCount,
+                    userHasReacted: result.added
                 }))
             };
         });
     } catch (e) {
         console.error(e);
+        // Fallback or error handling logic could go here
     }
   };
 
