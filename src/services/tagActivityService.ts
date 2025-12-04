@@ -32,5 +32,31 @@ export const tagActivityService = {
         actor_id: userId
       };
       await tagRepo.recordActivity(event);
+  },
+
+  /**
+   * Records multiple view events efficiently in one transaction.
+   * Used by controllers on page load.
+   */
+  recordBatchView: async (tagIds: string[], entityType: ContentType, entityId: string, userId?: string) => {
+      if (!tagIds || tagIds.length === 0) return;
+      
+      const events: TagActivityEventDTO[] = tagIds.map(tagId => ({
+          tag_id: tagId,
+          entity_type: entityType,
+          entity_id: entityId,
+          activity_type: 'viewed',
+          actor_id: userId
+      }));
+
+      await tagRepo.recordBatchActivity(events);
+  },
+
+  /**
+   * Records a batch of arbitrary activity events.
+   */
+  recordBatchActivity: async (events: TagActivityEventDTO[]) => {
+      if (!events || events.length === 0) return;
+      await tagRepo.recordBatchActivity(events);
   }
 };
