@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { AIGeneration, AI_MODELS } from '../../../types/generation.types';
+import { AIGeneration, AIModel } from '../../../types/generation.types';
 import { Button } from '../../../components/Button';
 import { ExternalLink, Calendar, X } from 'lucide-react';
 
@@ -8,13 +8,14 @@ interface GenerationPreviewModalProps {
   isOpen: boolean;
   onClose: () => void;
   generation: AIGeneration | null;
+  models?: AIModel[];
 }
 
-export const GenerationPreviewModal: React.FC<GenerationPreviewModalProps> = ({ isOpen, onClose, generation }) => {
+export const GenerationPreviewModal: React.FC<GenerationPreviewModalProps> = ({ isOpen, onClose, generation, models = [] }) => {
   if (!generation || !generation.media) return null;
 
   const { media } = generation;
-  const modelLabel = AI_MODELS.find(m => m.id === generation.ai_model_id)?.label || generation.ai_model_id;
+  const modelLabel = models.find(m => m.id === generation.ai_model_id)?.name || 'Unknown Model';
 
   if (!isOpen) return null;
 

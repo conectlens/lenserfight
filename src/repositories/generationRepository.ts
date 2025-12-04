@@ -1,7 +1,18 @@
 
-import { AIGeneration, CreateGenerationDTO, MediaLibraryItem, GenerationFilterOptions, AIModel, AI_MODELS } from '../types/generation.types';
+import { AIGeneration, CreateGenerationDTO, MediaLibraryItem, GenerationFilterOptions, AIModel } from '../types/generation.types';
 import { supabase } from '../utils/supabase';
 import { storage } from '../utils/storage';
+
+const MOCK_AI_MODELS: AIModel[] = [
+  { id: '9039013c-9394-4b47-9721-396459345228', slug: 'gpt-4o', name: 'GPT-4o', provider: 'openai', description: 'OpenAI flagship model', capabilities: ['text_generation', 'image_generation'], temperature: 0.7, max_tokens: 128000, is_public: true, created_at: new Date().toISOString() },
+  { id: '1839013c-9394-4b47-9721-396459345229', slug: 'claude-3-5-sonnet', name: 'Claude 3.5 Sonnet', provider: 'anthropic', description: 'Anthropic most intelligent model', capabilities: ['text_generation'], temperature: 0.7, max_tokens: 200000, is_public: true, created_at: new Date().toISOString() },
+  { id: '2839013c-9394-4b47-9721-396459345220', slug: 'midjourney-v6', name: 'Midjourney v6', provider: 'midjourney', description: 'High fidelity image generation', capabilities: ['image_generation'], temperature: 1, max_tokens: 0, is_public: true, created_at: new Date().toISOString() },
+  { id: '3839013c-9394-4b47-9721-396459345221', slug: 'gemini-1-5-pro', name: 'Gemini 1.5 Pro', provider: 'google', description: 'Google multimodal model', capabilities: ['text_generation', 'image_generation'], temperature: 0.7, max_tokens: 1000000, is_public: true, created_at: new Date().toISOString() },
+  { id: '4839013c-9394-4b47-9721-396459345222', slug: 'dall-e-3', name: 'DALL·E 3', provider: 'openai', description: 'OpenAI image generation', capabilities: ['image_generation'], temperature: 1, max_tokens: 0, is_public: true, created_at: new Date().toISOString() },
+  { id: '5839013c-9394-4b47-9721-396459345223', slug: 'stable-diffusion-3', name: 'Stable Diffusion 3', provider: 'stability', description: 'Stability AI image model', capabilities: ['image_generation'], temperature: 1, max_tokens: 0, is_public: true, created_at: new Date().toISOString() },
+  { id: '6839013c-9394-4b47-9721-396459345224', slug: 'sora', name: 'Sora', provider: 'openai', description: 'Text to video model', capabilities: ['video_generation'], temperature: 1, max_tokens: 0, is_public: true, created_at: new Date().toISOString() },
+  { id: '7839013c-9394-4b47-9721-396459345225', slug: 'runway-gen-2', name: 'Runway Gen-2', provider: 'other', description: 'Video generation model', capabilities: ['video_generation'], temperature: 1, max_tokens: 0, is_public: true, created_at: new Date().toISOString() }
+];
 
 export interface GenerationRepositoryPort {
   getGenerationsForPrompt(promptId: string, lenserId: string, options?: GenerationFilterOptions): Promise<AIGeneration[]>;
@@ -19,10 +30,7 @@ export class MockGenerationRepository implements GenerationRepositoryPort {
   }
 
   private seed() {
-    // Seed some initial data for demo if empty
-    if (!storage.getItem(this.GENERATIONS_KEY)) {
-       // Seed logic can remain or be expanded
-    }
+    // Seed logic if needed
   }
 
   private getGenerations(): AIGeneration[] {
@@ -121,8 +129,7 @@ export class MockGenerationRepository implements GenerationRepositoryPort {
 
   async getAIModels(): Promise<AIModel[]> {
     await new Promise(resolve => setTimeout(resolve, 200));
-    // Return the constant values (now UUIDs) for mock consistency
-    return AI_MODELS.map(m => ({ id: m.id, name: m.label }));
+    return MOCK_AI_MODELS;
   }
 }
 
@@ -208,7 +215,6 @@ export class SupabaseGenerationRepository implements GenerationRepositoryPort {
     const { data, error } = await supabase
       .from('ai_models')
       .select('*')
-      .eq('is_active', true)
       .order('name', { ascending: true });
 
     if (error) {

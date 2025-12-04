@@ -9,6 +9,7 @@ export interface ThreadsRepositoryPort {
   getAllThreads(offset?: number, limit?: number): Promise<ThreadRecord[]>;
   getThreadsByTag(tagSlug: string, offset?: number, limit?: number): Promise<ThreadRecord[]>;
   getThreadById(id: string): Promise<ThreadRecord | null>;
+  getByAuthor(lenserId: string, offset?: number, limit?: number, includePrivate?: boolean): Promise<ThreadRecord[]>;
   getThreadTags(threadId: string): Promise<TagRecord[]>;
   getThreadReplies(threadId: string): Promise<ThreadReplyRecord[]>;
   getReplyById(replyId: string): Promise<ThreadReplyRecord | null>;
@@ -24,7 +25,7 @@ export class MockThreadsRepository implements ThreadsRepositoryPort {
   private THREADS_KEY = 'mock_threads_db';
   private THREAD_TAGS_KEY = 'mock_thread_tags';
   private TAGS_KEY = 'mock_tags';
-  private LENSERS_KEY = 'mock_lenser_'; // Partial prefix match logic needed or use index
+  private INDEX_KEY = 'mock_lensers_index';
 
   private getThreads(): ThreadRecord[] {
     return JSON.parse(storage.getItem(this.THREADS_KEY) || '[]');
@@ -48,9 +49,14 @@ export class MockThreadsRepository implements ThreadsRepositoryPort {
 
   // Helper to mimic join
   private enrichThread(t: ThreadRecord) {
-    const lenserJson = storage.getItem(this.LENSERS_KEY + t.lenser_id);
-    // Fallback if not found in individual key, check index (simplified)
-    let author: any = lenserJson ? JSON.parse(lenserJson) : { display_name: 'Unknown User', handle: 'unknown' };
+    const indexJson = storage.getItem(this.INDEX_KEY);
+    const index = indexJson ? JSON.parse(indexJson) : [];
+    let author = index.find((l: any) => l.id === t.lenser_id);
+    
+    if (!author) {
+       // Fallback logic if needed, but index lookup is primary
+       author = { display_name: 'Unknown User', handle: 'unknown' };
+    }
     
     // Get Tags
     const allTags = this.getTags();
@@ -127,6 +133,16 @@ export class MockThreadsRepository implements ThreadsRepositoryPort {
   getThreadById = async (id: string): Promise<ThreadRecord | null> => {
     const t = this.getThreads().find(th => th.id === id);
     return t ? this.enrichThread(t) : null;
+  };
+
+  getByAuthor = async (lenserId: string, offset = 0, limit = 10, includePrivate = false): Promise<ThreadRecord[]> => {
+    await new Promise(resolve => setTimeout(resolve, 400));
+    let threads = this.getThreads().filter(t => t.lenser_id === lenserId);
+    if (!includePrivate) {
+        threads = threads.filter(t => t.visibility === 'public');
+    }
+    threads.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+    return threads.slice(offset, offset + limit).map(t => this.enrichThread(t));
   };
 
   getThreadTags = async (threadId: string): Promise<TagRecord[]> => {
@@ -253,6 +269,23 @@ export class SupabaseThreadsRepository implements ThreadsRepositoryPort {
         .eq('id', id)
         .single();
     
+    if (error) throw error;
+    return data as any;
+  }
+
+  async getByAuthor(lenserId: string, offset = 0, limit = 10, includePrivate = false): Promise<ThreadRecord[]> {
+    let query = supabase
+        .from('threads')
+        .select(this.threadSelect)
+        .eq('lenser_id', lenserId)
+        .order('created_at', { ascending: false })
+        .range(offset, offset + limit - 1);
+
+    if (!includePrivate) {
+        query = query.eq('visibility', 'public');
+    }
+
+    const { data, error } = await query;
     if (error) throw error;
     return data as any;
   }

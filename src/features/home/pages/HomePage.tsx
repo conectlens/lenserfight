@@ -132,12 +132,12 @@ export const HomePage: React.FC = () => {
            <div className="space-y-6 lg:pt-[52px]">
                 {/* Top Prompts Widget */}
                 <Card className="p-0 overflow-hidden bg-white">
-                  <div className="py-4 border-b border-gray-100 bg-gray-50/50">
+                  <div className="px-6 py-4 border-b border-gray-100 bg-gray-50/50">
                     <h3 className="text-xs font-bold text-gray-500 uppercase tracking-wider">Top Prompts</h3>
                   </div>
-                  <div className="py-2">
+                  <div className="p-2">
                     {promptsLoading ? (
-                        <div className="pb-2 space-y-3">
+                        <div className="p-4 space-y-3">
                             <div className="h-10 bg-gray-100 rounded animate-pulse"></div>
                             <div className="h-10 bg-gray-100 rounded animate-pulse"></div>
                         </div>

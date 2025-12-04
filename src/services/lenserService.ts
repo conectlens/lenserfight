@@ -5,15 +5,14 @@ import { Lenser, CreateLenserDTO, LenserStats, LenserActivityPoint, ActionRecord
 import { PromptTemplateRecord } from '../types/prompts.types';
 import { ThreadRecord } from '../types/threads.types';
 import { shareService } from './shareService';
+import { contentModerationService } from './contentModerationService';
 
 const lenserRepo = getLenserRepository();
-const shareRepo = getShareRepository(); // Direct repo access for simple resolve
+const shareRepo = getShareRepository(); 
 
-// Helper to enrich lenser profile with share link display name
 const enrichLenserProfile = async (lenser: Lenser | null): Promise<Lenser | null> => {
     if (!lenser || !lenser.website_url) return lenser;
 
-    // Check if website_url is a short link from this domain
     const appDomain = window.location.host;
     if (lenser.website_url.includes(appDomain) && lenser.website_url.includes('/s/')) {
         try {
@@ -41,30 +40,33 @@ export const lenserService = {
 
   createLenserProfile: async (userId: string, data: CreateLenserDTO): Promise<Lenser> => {
     if (!userId) throw new Error("User ID is required");
+    
+    // Moderation Check
+    // TODO: moderation policy will not be used in the beta version
+    // await contentModerationService.validate(data.handle, data.display_name, data.bio);
+
     return lenserRepo.createLenser(userId, data);
   },
 
   updateLenserProfile: async (userId: string, data: Partial<Lenser>): Promise<Lenser> => {
     if (!userId) throw new Error("User ID is required");
 
-    // Intercept website URL to create a tracking link
+    // Moderation Check
+    // TODO: moderation policy will not be used in the beta version
+    // await contentModerationService.validate(data.display_name, data.headline, data.bio);
+
     if (data.website_url) {
       let url = data.website_url.trim();
       
-      // Ensure absolute URL
       if (!/^https?:\/\//i.test(url)) {
           url = `https://${url}`;
       }
 
-      // Check if it's already a tracking link from this domain to avoid infinite recursion
       const appDomain = window.location.host; 
       const isTrackingLink = url.includes(appDomain) && url.includes('/s/');
 
       if (!isTrackingLink && url.length > 0) {
           try {
-              // Generate a tracking link
-              // resourceId must be UUID for DB constraint, so we use random UUID and put real URL in meta
-              // We store the original URL as displayName
               const link = await shareService.createLink({
                   resourceType: 'external',
                   resourceId: crypto.randomUUID(), 
@@ -78,17 +80,14 @@ export const lenserService = {
               data.website_url = shareService.getShareUrl(link.short_id);
           } catch (error) {
               console.warn("Failed to generate tracking link for profile website", error);
-              // Fallback to absolute URL if shortening fails
               data.website_url = url; 
           }
       } else {
-          // Normalize existing or untracked URL
           data.website_url = url;
       }
     }
 
     const updated = await lenserRepo.updateLenser(userId, data);
-    // Return enriched version immediately if possible, or just updated
     return enrichLenserProfile(updated) as Promise<Lenser>;
   },
 

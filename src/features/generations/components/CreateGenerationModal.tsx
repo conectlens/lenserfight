@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { Modal } from '../../../components/Modal';
 import { Button } from '../../../components/Button';
 import { SelectField } from '../../../components/SelectField';
-import { AI_MODELS, CreateGenerationDTO, MediaKind, AIGeneration, AIModel } from '../../../types/generation.types';
+import { CreateGenerationDTO, MediaKind, AIGeneration, AIModel } from '../../../types/generation.types';
 import { InputField } from '../../auth/components/InputField';
 import { useLenser } from '../../../context/LenserContext';
 import { generationService } from '../../../services/generationService';
@@ -52,16 +52,9 @@ export const CreateGenerationModal: React.FC<CreateGenerationModalProps> = ({
             setIsLoadingModels(true);
             try {
                 const models = await generationService.getAIModels();
-                if (models.length > 0) {
-                    setAvailableModels(models);
-                } else {
-                    // Fallback to static list if empty
-                    setAvailableModels(AI_MODELS.map(m => ({ id: m.id, name: m.label })));
-                }
+                setAvailableModels(models);
             } catch (e) {
                 console.error("Failed to load AI models", e);
-                // Fallback
-                setAvailableModels(AI_MODELS.map(m => ({ id: m.id, name: m.label })));
             } finally {
                 setIsLoadingModels(false);
             }
