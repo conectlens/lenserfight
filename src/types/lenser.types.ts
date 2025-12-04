@@ -22,6 +22,7 @@ export interface Lenser {
   website_url?: string;
   website_display_name?: string;
   visibility?: 'public' | 'private';
+  is_in_waiting_list?: boolean;
   created_at: string;
   updated_at?: string;
   join_order?: number; // Immutable rank from lenser_join_log
