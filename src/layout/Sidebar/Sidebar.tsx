@@ -223,7 +223,6 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, isMobile, onCloseMobil
                className={`
                  !my-0 
                  border border-[#121212] 
-                 bg-[#121212]/5 
                  text-[#121212] font-bold 
                  hover:bg-transparent 
                  hover:shadow-md 
@@ -243,7 +242,6 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, isMobile, onCloseMobil
                 className={`
                   !my-0 
                   border border-[#121212] 
-                  bg-[#121212]/5 
                   text-[#121212] font-bold 
                   hover:bg-transparent
                   hover:shadow-md
