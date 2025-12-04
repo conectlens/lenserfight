@@ -1,41 +1,53 @@
 
 import React, { useState, useEffect } from 'react';
-import { useLocation } from 'react-router-dom';
+import { useLocation, Link, useParams, useNavigate } from 'react-router-dom';
+import { useQuery } from '@tanstack/react-query';
 import { useLenser } from '../../../context/LenserContext';
 import { useAuth } from '../../../context/AuthContext';
 import { Avatar } from '../../../components/Avatar';
 import { Button } from '../../../components/Button';
 import { InputField } from '../../auth/components/InputField';
 import { notificationService } from '../../../services/notificationService';
+import { feedbackService } from '../../../services/feedbackService';
 import { Notification } from '../../../types/notification.types';
+import { Feedback } from '../../../types/feedback.types';
 import { timeAgo } from '../../../utils/dateUtils';
 import { Card } from '../../../components/Card';
+import { Table, Column } from '../../../components/Table';
 import { AvatarSelectionModal } from '../../lensers/components/AvatarSelectionModal';
-import { ExternalLink, Check, Camera, Eye, Lock } from 'lucide-react';
+import { ExternalLink, Check, Camera, Eye, Lock, MessageSquareDashed } from 'lucide-react';
 import { FEATURES } from '../../../config/runtimeConfig';
 
+const FEEDBACK_PAGE_SIZE = 5;
+
 export const SettingsPage: React.FC = () => {
-  const { lenser, updateLenserProfile } = useLenser();
-  const { user } = useAuth();
+  const { tab } = useParams<{ tab: string }>();
+  const navigate = useNavigate();
   const location = useLocation();
+  const { lenser, updateLenserProfile } = useLenser();
+  const { user, isAuthenticated, isLoading: authLoading } = useAuth();
   
-  // Tab State
-  const [activeTab, setActiveTab] = useState('Profile');
-  const tabs = ['Account', 'Profile'];
-  
+  // Auth Guard
+  useEffect(() => {
+    if (!authLoading && !isAuthenticated) {
+      navigate('/login', { state: { from: location } });
+    }
+  }, [authLoading, isAuthenticated, navigate, location]);
+
+  // Tab Logic
+  const validTabs = ['account', 'profile'];
   if (FEATURES.NOTIFICATIONS) {
-      tabs.push('Notifications');
+      validTabs.push('notifications');
   }
 
-  // Handle navigation state for tabs
+  const activeTab = validTabs.includes(tab?.toLowerCase() || '') ? tab?.toLowerCase() : 'account';
+
+  // Redirect invalid tabs to account
   useEffect(() => {
-    if (location.state && (location.state as any).tab) {
-        const targetTab = (location.state as any).tab;
-        if (tabs.includes(targetTab)) {
-            setActiveTab(targetTab);
-        }
-    }
-  }, [location.state]);
+      if (!authLoading && isAuthenticated && tab && !validTabs.includes(tab.toLowerCase())) {
+          navigate('/settings/account', { replace: true });
+      }
+  }, [tab, authLoading, isAuthenticated, navigate]);
 
   // Profile Form State
   const [formData, setFormData] = useState({
@@ -52,6 +64,18 @@ export const SettingsPage: React.FC = () => {
   const [notifLoading, setNotifLoading] = useState(false);
   const [notifTab, setNotifTab] = useState<'All' | 'Unread'>('All');
 
+  // Feedbacks State (React Query)
+  const [feedbackPage, setFeedbackPage] = useState(1);
+  const { 
+    data: feedbackData, 
+    isLoading: feedbackLoading 
+  } = useQuery({
+    queryKey: ['feedbacks', user?.id, feedbackPage],
+    queryFn: () => user?.id ? feedbackService.getUserFeedbacks(user.id, feedbackPage, FEEDBACK_PAGE_SIZE) : { data: [], total: 0 },
+    enabled: !!user?.id && activeTab === 'account',
+    staleTime: 1000 * 60 * 5 // 5 minutes
+  });
+
   useEffect(() => {
       if (lenser) {
           setFormData({
@@ -64,7 +88,7 @@ export const SettingsPage: React.FC = () => {
   }, [lenser]);
 
   useEffect(() => {
-      if (activeTab === 'Notifications' && FEATURES.NOTIFICATIONS) {
+      if (activeTab === 'notifications' && FEATURES.NOTIFICATIONS) {
           loadNotifications();
       }
   }, [activeTab]);
@@ -120,6 +144,47 @@ export const SettingsPage: React.FC = () => {
       return true;
   });
 
+  // Table Columns for Feedback
+  const feedbackColumns: Column<Feedback>[] = [
+    {
+        header: '#',
+        render: (_, index) => <span className="text-gray-400 font-mono text-xs">{(feedbackPage - 1) * FEEDBACK_PAGE_SIZE + index + 1}</span>,
+        className: 'w-12'
+    },
+    {
+        header: 'Product Tag',
+        accessor: 'product_tag',
+        render: (item) => (
+            <span className={`inline-flex px-2 py-0.5 rounded-full text-xs font-medium border ${
+                item.product_tag === 'Bug' ? 'bg-red-50 text-red-600 border-red-100' :
+                item.product_tag === 'Feature Request' ? 'bg-purple-50 text-purple-600 border-purple-100' :
+                'bg-gray-100 text-gray-600 border-gray-200'
+            }`}>
+                {item.product_tag || 'General'}
+            </span>
+        )
+    },
+    {
+        header: 'Message',
+        accessor: 'message',
+        render: (item) => (
+            <span className="block truncate max-w-[200px] md:max-w-xs text-gray-600" title={item.message || ''}>
+                {item.message}
+            </span>
+        )
+    },
+    {
+        header: 'Date',
+        accessor: 'created_at',
+        render: (item) => <span className="text-gray-500 text-xs">{new Date(item.created_at).toLocaleDateString()}</span>,
+        className: 'text-right'
+    }
+  ];
+
+  if (authLoading || !isAuthenticated) {
+      return null; // Or a loader, but router usually handles the flicker or we can render nothing while redirecting
+  }
+
   return (
     <div className="max-w-6xl mx-auto py-8">
        <h1 className="text-3xl font-bold text-gray-900 mb-8">Settings</h1>
@@ -127,38 +192,38 @@ export const SettingsPage: React.FC = () => {
        <div className="flex flex-col md:flex-row gap-12">
            {/* Sidebar */}
            <div className="w-full md:w-64 flex-shrink-0 space-y-1">
-               {tabs.map(tab => (
+               {validTabs.map(t => (
                    <button
-                       key={tab}
-                       onClick={() => setActiveTab(tab)}
-                       className={`w-full text-left px-4 py-2.5 rounded-lg text-sm font-medium transition-colors ${
-                           activeTab === tab 
+                       key={t}
+                       onClick={() => navigate(`/settings/${t}`)}
+                       className={`w-full text-left px-4 py-2.5 rounded-lg text-sm font-medium transition-colors capitalize ${
+                           activeTab === t
                            ? 'bg-gray-100 text-gray-900' 
                            : 'text-gray-500 hover:bg-gray-50 hover:text-gray-900'
                        }`}
                    >
-                       {tab}
+                       {t}
                    </button>
                ))}
                
                {/* External Link Style Tabs */}
                <div className="pt-4 border-t border-gray-100 mt-4 space-y-1">
-                   <a
-                       href="/privacy"
+                   <Link
+                       to="/legal/privacy"
                        target="_blank"
                        rel="noopener noreferrer"
                        className="flex items-center justify-between w-full text-left px-4 py-2.5 rounded-lg text-sm font-medium text-gray-500 hover:bg-gray-50 hover:text-gray-900 transition-colors"
                    >
                        Privacy & Security <ExternalLink size={14} />
-                   </a>
-                   <a
-                       href="/terms"
+                   </Link>
+                   <Link
+                       to="/legal/terms"
                        target="_blank"
                        rel="noopener noreferrer"
                        className="flex items-center justify-between w-full text-left px-4 py-2.5 rounded-lg text-sm font-medium text-gray-500 hover:bg-gray-50 hover:text-gray-900 transition-colors"
                    >
                        Terms & Conditions <ExternalLink size={14} />
-                   </a>
+                   </Link>
                </div>
            </div>
 
@@ -166,9 +231,9 @@ export const SettingsPage: React.FC = () => {
            <div className="flex-1 max-w-2xl">
                
                {/* ACCOUNT TAB */}
-               {activeTab === 'Account' && (
+               {activeTab === 'account' && (
                    <div>
-                       <h2 className="text-xl font-bold text-gray-900 mb-2">Account</h2>
+                       <h2 className="text-xl font-bold text-gray-900 mb-2">ConnectLens Account</h2>
                        <p className="text-sm text-gray-500 mb-8 border-b border-gray-100 pb-6">
                            Manage your account credentials and basic information.
                        </p>
@@ -178,10 +243,10 @@ export const SettingsPage: React.FC = () => {
                                <label className="block text-sm font-medium text-gray-700 mb-1.5">Registered Name</label>
                                <input 
                                    disabled 
-                                   value={user?.raw_user_meta_data?.display_name || 'N/A'} 
+                                   value={user?.user_metadata?.display_name || 'N/A'} 
                                    className="w-full px-4 py-2.5 rounded-lg border border-gray-200 bg-gray-50 text-gray-500"
                                />
-                               <p className="text-xs text-gray-400 mt-1">This is the name used for account recovery and billing, stored in identity provider.</p>
+                               <p className="text-xs text-gray-400 mt-1">This is the name used for account recovery, access ConnectLens products and platforms, stored in identity provider.</p>
                            </div>
 
                            <div>
@@ -210,12 +275,39 @@ export const SettingsPage: React.FC = () => {
                                    className="w-full px-4 py-2.5 rounded-lg border border-gray-200 bg-gray-50 text-gray-500"
                                />
                            </div>
+                           
+                           {/* Divider before My Feedbacks */}
+                           <div className="w-full h-px bg-gray-100 mt-8 mb-8"></div>
+
+                           {/* My Feedbacks Section */}
+                           <div>
+                               <h3 className="text-lg font-bold text-gray-900 mb-4">My Feedbacks</h3>
+                               <Table 
+                                   columns={feedbackColumns}
+                                   data={feedbackData?.data || []}
+                                   keyExtractor={(item) => item.id}
+                                   isLoading={feedbackLoading}
+                                   pagination={{
+                                       currentPage: feedbackPage,
+                                       totalPages: Math.ceil((feedbackData?.total || 0) / FEEDBACK_PAGE_SIZE),
+                                       onPageChange: setFeedbackPage
+                                   }}
+                                   emptyState={
+                                       <div className="flex flex-col items-center justify-center py-12 text-center bg-gray-50/50 rounded-xl border border-dashed border-gray-200">
+                                           <div className="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center mb-3 text-gray-400">
+                                               <MessageSquareDashed size={24} />
+                                           </div>
+                                           <p className="text-sm font-medium text-gray-500">No feedback sent yet.</p>
+                                       </div>
+                                   }
+                               />
+                           </div>
                        </div>
                    </div>
                )}
 
                {/* PROFILE TAB */}
-               {activeTab === 'Profile' && (
+               {activeTab === 'profile' && (
                    <div>
                        <h2 className="text-xl font-bold text-gray-900 mb-2">Public Profile</h2>
                        <p className="text-sm text-gray-500 mb-8 border-b border-gray-100 pb-6">
@@ -245,6 +337,8 @@ export const SettingsPage: React.FC = () => {
                                    name="displayName"
                                    value={formData.displayName}
                                    onChange={handleProfileChange}
+                                   required
+                                   maxLength={50}
                                />
 
                                <div>
@@ -321,7 +415,7 @@ export const SettingsPage: React.FC = () => {
                )}
 
                {/* NOTIFICATIONS TAB */}
-               {activeTab === 'Notifications' && FEATURES.NOTIFICATIONS && (
+               {activeTab === 'notifications' && FEATURES.NOTIFICATIONS && (
                    <div>
                        <div className="flex items-center justify-between mb-2">
                            <h2 className="text-xl font-bold text-gray-900">Notifications</h2>

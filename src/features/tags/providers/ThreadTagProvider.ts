@@ -8,7 +8,8 @@ export class ThreadTagProvider implements TagContentProvider {
 
   async listByTag(tagSlug: string, sort: SortOption, currentLenserId?: string): Promise<TaggedContentItem[]> {
     // Threads service might use currentLenserId for reaction state in the future, passing it through is good practice
-    const threads = await threadsService.getThreadsByTag(tagSlug, currentLenserId);
+    // Fetch up to 50 threads to populate the grid adequately
+    const threads = await threadsService.getThreadsByTag(tagSlug, currentLenserId, 0, 50);
     
     const sorted = [...threads];
     if (sort === 'newest') {

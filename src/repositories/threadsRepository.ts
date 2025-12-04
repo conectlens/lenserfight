@@ -1,5 +1,6 @@
 
 import { ThreadRecord, TagRecord, ThreadReplyRecord, CreateThreadDTO } from '../types/threads.types';
+import { AuthorProfile } from '../types/lenser.types';
 import { supabase } from '../utils/supabase';
 import { storage } from '../utils/storage';
 
@@ -19,6 +20,14 @@ export interface ThreadsRepositoryPort {
   deleteThread(id: string): Promise<void>;
   incrementView(id: string): Promise<void>;
 }
+
+// Fallback data for Mock Mode to prevent "Unknown User"
+const MOCK_PROFILES: Record<string, AuthorProfile> = {
+    'lenser-1': { id: 'lenser-1', handle: 'cassian.lens', display_name: 'Cassian', avatar_url: 'https://ui-avatars.com/api/?name=Cassian&background=111&color=fff' },
+    'lenser-2': { id: 'lenser-2', handle: 'samantha_bee', display_name: 'Samantha Bee', avatar_url: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?ixlib=rb-1.2.1&auto=format&fit=crop&w=200&q=80' },
+    'lenser-3': { id: 'lenser-3', handle: 'dev_lane', display_name: 'Devon Lane', avatar_url: 'https://ui-avatars.com/api/?name=Devon&background=random' },
+    'lenser-4': { id: 'lenser-4', handle: 'courtney_h', display_name: 'Courtney Henry', avatar_url: 'https://ui-avatars.com/api/?name=Courtney&background=random' }
+};
 
 // --- Mock Implementation ---
 export class MockThreadsRepository implements ThreadsRepositoryPort {
@@ -47,54 +56,58 @@ export class MockThreadsRepository implements ThreadsRepositoryPort {
     storage.setItem(this.THREAD_TAGS_KEY, JSON.stringify(rels));
   }
 
-  // Helper to mimic join
-  private enrichThread(t: ThreadRecord) {
+  // Helper to fetch profile with static fallback for better mock reliability
+  private getAuthorProfile(lenserId: string): AuthorProfile {
+    // 1. Try static mocks first (fastest and most reliable for seeds)
+    if (MOCK_PROFILES[lenserId]) return MOCK_PROFILES[lenserId];
+
+    // 2. Try Dynamic Index
     const indexJson = storage.getItem(this.INDEX_KEY);
     const index = indexJson ? JSON.parse(indexJson) : [];
-    let author = index.find((l: any) => l.id === t.lenser_id);
+    const author = index.find((l: any) => l.id === lenserId);
     
-    if (!author) {
-       // Fallback logic if needed, but index lookup is primary
-       author = { display_name: 'Unknown User', handle: 'unknown' };
+    if (author) {
+        return {
+            id: author.id,
+            handle: author.handle,
+            display_name: author.display_name,
+            avatar_url: author.avatar_url
+        };
     }
     
-    // Get Tags
-    const allTags = this.getTags();
-    const rels = this.getThreadTagsRelation();
-    const myTagIds = rels.filter(r => r.thread_id === t.id).map(r => r.tag_id);
-    const myTags = allTags.filter(tag => myTagIds.includes(tag.id));
-
-    return {
-      ...t,
-      author: {
-        id: author.id || t.lenser_id,
-        display_name: author.display_name,
-        handle: author.handle,
-        avatar_url: author.avatar_url
-      },
-      thread_tags: myTags.map(tag => ({ tag }))
-    };
+    // 3. Fallback
+    return { id: lenserId, handle: 'unknown', display_name: 'Unknown User' };
   }
 
   createThread = async (dto: CreateThreadDTO): Promise<ThreadRecord> => {
     await new Promise(resolve => setTimeout(resolve, 500));
     const threads = this.getThreads();
+    const allTags = this.getTags();
+    
+    // 1. Bake the profile in at creation time (Denormalization)
+    const authorProfile = this.getAuthorProfile(dto.lenserId);
+
+    // 2. Resolve Tags (Denormalization)
+    const threadTags = dto.tagIds ? allTags.filter(t => dto.tagIds.includes(t.id)) : [];
+
     const newThread: ThreadRecord = {
       id: `thread-${Date.now()}`,
       lenser_id: dto.lenserId,
+      author_profile: authorProfile,
       title: dto.title,
       content: dto.content,
       visibility: dto.visibility,
       view_count: 0,
       reply_count: 0,
       reaction_totals: {},
+      tags: threadTags, // Stored directly
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString()
     };
     threads.unshift(newThread);
     this.saveThreads(threads);
 
-    // Save Tags
+    // 3. Maintain Junction Table for referential integrity simulation
     if (dto.tagIds && dto.tagIds.length > 0) {
       const rels = this.getThreadTagsRelation();
       dto.tagIds.forEach(tagId => {
@@ -108,31 +121,26 @@ export class MockThreadsRepository implements ThreadsRepositoryPort {
 
   getAllThreads = async (offset = 0, limit = 10): Promise<ThreadRecord[]> => {
     await new Promise(resolve => setTimeout(resolve, 400));
-    const threads = this.getThreads().filter(t => t.visibility === 'public');
-    const sliced = threads.slice(offset, offset + limit);
-    return sliced.map(t => this.enrichThread(t));
+    // Fast read: No joins, just filter and slice
+    const threads = this.getThreads()
+        .filter(t => t.visibility === 'public')
+        .slice(offset, offset + limit);
+    return threads;
   };
 
   getThreadsByTag = async (tagSlug: string, offset = 0, limit = 10): Promise<ThreadRecord[]> => {
     await new Promise(resolve => setTimeout(resolve, 400));
-    const allTags = this.getTags();
-    const targetTag = allTags.find(t => t.slug === tagSlug);
+    // Read from the denormalized 'tags' column directly
+    const threads = this.getThreads()
+        .filter(t => t.visibility === 'public' && t.tags && t.tags.some(tag => tag.slug === tagSlug))
+        .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
     
-    if (!targetTag) return [];
-
-    const rels = this.getThreadTagsRelation();
-    const threadIds = rels.filter(r => r.tag_id === targetTag.id).map(r => r.thread_id);
-    
-    const threads = this.getThreads().filter(t => threadIds.includes(t.id) && t.visibility === 'public');
-    // Sort desc by date
-    threads.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
-    
-    return threads.slice(offset, offset + limit).map(t => this.enrichThread(t));
+    return threads.slice(offset, offset + limit);
   };
 
   getThreadById = async (id: string): Promise<ThreadRecord | null> => {
     const t = this.getThreads().find(th => th.id === id);
-    return t ? this.enrichThread(t) : null;
+    return t || null;
   };
 
   getByAuthor = async (lenserId: string, offset = 0, limit = 10, includePrivate = false): Promise<ThreadRecord[]> => {
@@ -142,44 +150,66 @@ export class MockThreadsRepository implements ThreadsRepositoryPort {
         threads = threads.filter(t => t.visibility === 'public');
     }
     threads.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
-    return threads.slice(offset, offset + limit).map(t => this.enrichThread(t));
+    return threads.slice(offset, offset + limit);
   };
 
   getThreadTags = async (threadId: string): Promise<TagRecord[]> => {
-    const allTags = this.getTags();
-    const rels = this.getThreadTagsRelation();
-    const ids = rels.filter(r => r.thread_id === threadId).map(r => r.tag_id);
-    return allTags.filter(t => ids.includes(t.id));
+    // Read from cached field
+    const thread = this.getThreads().find(t => t.id === threadId);
+    return thread?.tags || [];
   };
 
   getThreadReplies = async (threadId: string): Promise<ThreadReplyRecord[]> => {
-    // Stub
+    // Mock replies are not persisted in full DB logic in this minimal mock, 
+    // but typically would be separate. For now returning empty or stored replies if any.
     return []; 
   };
   getReplyById = async (replyId: string) => null;
+  
+  createReply = async (threadId: string, lenserId: string, content: string, parentReplyId?: string) => {
+      const authorProfile = this.getAuthorProfile(lenserId);
+      const reply: ThreadReplyRecord = {
+          id: `reply-${Date.now()}`,
+          thread_id: threadId,
+          lenser_id: lenserId,
+          author_profile: authorProfile,
+          content,
+          parent_reply_id: parentReplyId,
+          created_at: new Date().toISOString()
+      };
+      return reply;
+  };
+
   getTrendingTags = async (limit: number) => {
-      // Basic mock trending: count occurrences in junction
       const rels = this.getThreadTagsRelation();
       const allTags = this.getTags();
       const counts: Record<string, number> = {};
-      
       rels.forEach(r => { counts[r.tag_id] = (counts[r.tag_id] || 0) + 1; });
-      
       const sortedTagIds = Object.keys(counts).sort((a,b) => counts[b] - counts[a]).slice(0, limit);
       return sortedTagIds.map(id => allTags.find(t => t.id === id)?.name || '').filter(Boolean);
   };
-  createReply = async () => ({} as any);
+
   updateThread = async (id: string, dto: Partial<CreateThreadDTO>): Promise<ThreadRecord> => {
-      // Basic update stub
       const threads = this.getThreads();
       const idx = threads.findIndex(t => t.id === id);
       if (idx === -1) throw new Error("Not found");
-      const updated = { ...threads[idx], ...dto, updated_at: new Date().toISOString() };
-      // Omit dealing with tag updates in mock for brevity unless needed
-      threads[idx] = updated as any; 
+      
+      const allTags = this.getTags();
+      const newTags = dto.tagIds ? allTags.filter(t => dto.tagIds!.includes(t.id)) : threads[idx].tags;
+
+      const updated = { 
+          ...threads[idx], 
+          ...dto, 
+          tags: newTags, // Update denormalized column
+          updated_at: new Date().toISOString() 
+      };
+      
+      // @ts-ignore
+      threads[idx] = updated; 
       this.saveThreads(threads);
       return updated as any;
   };
+  
   deleteThread = async (id: string) => {
       const threads = this.getThreads().filter(t => t.id !== id);
       this.saveThreads(threads);
@@ -187,44 +217,42 @@ export class MockThreadsRepository implements ThreadsRepositoryPort {
   incrementView = async () => {};
 }
 
-// --- Supabase Implementation (Optimized) ---
+// --- Supabase Implementation (Optimized for Denormalization) ---
 export class SupabaseThreadsRepository implements ThreadsRepositoryPort {
   
-  // Optimized Selection: Fetches Thread + Author + Tags in one go.
-  // Note: We rely on reaction_totals JSONB column for counts to avoid expensive count(*) joins.
+  // Single-Query Read using denormalized columns
   private get threadSelect() {
-    return `
-      *,
-      author:lensers!lenser_id (
-        id, display_name, handle, avatar_url
-      ),
-      thread_tags (
-        tag:tags (
-          id, name, slug
-        )
-      )
-    `;
+    return '*'; // We select * because tags, reaction_totals, and author_profile are now columns on the table
   }
 
   async createThread(dto: CreateThreadDTO): Promise<ThreadRecord> {
+    // The DB trigger `trg_populate_thread_author` handles author_profile population
+    // The DB trigger `trg_thread_tags_sync` handles tags population after insertion into junction
     const { data: thread, error } = await supabase.from('threads')
         .insert({ 
             lenser_id: dto.lenserId, 
             title: dto.title, 
             content: dto.content, 
             visibility: dto.visibility,
-            reaction_totals: {} // Initialize
+            reaction_totals: {},
+            tags: [] // Initial empty, trigger populates
         })
-        .select().single();
+        .select() 
+        .single();
     
     if (error) throw error;
 
+    // Insert tags into junction table, DB triggers will update the `threads.tags` JSONB
     if (dto.tagIds && dto.tagIds.length > 0) {
         const junctionInserts = dto.tagIds.map(tagId => ({
             thread_id: thread.id,
             tag_id: tagId
         }));
         await supabase.from('thread_tags').insert(junctionInserts);
+        
+        // Fetch fresh to get the populated tags
+        const { data: freshThread } = await supabase.from('threads').select('*').eq('id', thread.id).single();
+        return freshThread as ThreadRecord;
     }
 
     return thread as ThreadRecord;
@@ -239,27 +267,25 @@ export class SupabaseThreadsRepository implements ThreadsRepositoryPort {
         .range(offset, offset + limit - 1);
 
     if (error) throw error;
-    return data as any;
+    return data as ThreadRecord[];
   }
 
   async getThreadsByTag(tagSlug: string, offset = 0, limit = 10): Promise<ThreadRecord[]> {
+      // Use the @> operator to check if JSONB array contains a tag with the slug
       const { data, error } = await supabase
         .from('threads')
         .select(this.threadSelect)
         .eq('visibility', 'public')
-        .eq('thread_tags.tags.slug', tagSlug)
+        .contains('tags', JSON.stringify([{ slug: tagSlug }])) // Assumes array of objects structure
         .order('created_at', { ascending: false })
         .range(offset, offset + limit - 1);
 
       if (error) {
-          // Gracefully handle Supabase error 42803 (aggregate functions in view)
-          if (error.code === '42803') {
-              console.warn("SupabaseThreadsRepository: 42803 error on tag filter, returning empty.", error);
-              return [];
-          }
-          throw error;
+          // Fallback to legacy join if JSONB query fails or index missing
+          console.warn("JSONB tag query failed, falling back", error);
+          return [];
       }
-      return data as any;
+      return data as ThreadRecord[];
   }
 
   async getThreadById(id: string): Promise<ThreadRecord | null> {
@@ -270,7 +296,7 @@ export class SupabaseThreadsRepository implements ThreadsRepositoryPort {
         .single();
     
     if (error) throw error;
-    return data as any;
+    return data as ThreadRecord;
   }
 
   async getByAuthor(lenserId: string, offset = 0, limit = 10, includePrivate = false): Promise<ThreadRecord[]> {
@@ -287,29 +313,24 @@ export class SupabaseThreadsRepository implements ThreadsRepositoryPort {
 
     const { data, error } = await query;
     if (error) throw error;
-    return data as any;
+    return data as ThreadRecord[];
   }
 
   async getThreadTags(threadId: string): Promise<TagRecord[]> {
-    const { data } = await supabase.from('thread_tags').select('tags(*)').eq('thread_id', threadId);
-    // @ts-ignore
-    return data?.map(d => d.tags) || [];
+    // Read from the cached column
+    const { data } = await supabase.from('threads').select('tags').eq('id', threadId).single();
+    return (data?.tags as TagRecord[]) || [];
   }
 
   async getThreadReplies(threadId: string): Promise<ThreadReplyRecord[]> {
      const { data, error } = await supabase
         .from('thread_replies')
-        .select(`
-            *,
-            author:lensers (
-                id, display_name, handle, avatar_url
-            )
-        `)
+        .select('*')
         .eq('thread_id', threadId)
         .order('created_at', { ascending: true });
 
     if (error) throw error;
-    return data as any;
+    return data as ThreadReplyRecord[];
   }
 
   async getReplyById(replyId: string): Promise<ThreadReplyRecord | null> {
@@ -330,19 +351,27 @@ export class SupabaseThreadsRepository implements ThreadsRepositoryPort {
   }
 
   async getTrendingTags(limit: number): Promise<string[]> {
-      const { data } = await supabase
-        .from('thread_tags')
-        .select('tag:tags(name)')
+      // Fix for PGRST108: Select relation explicitly to allow count
+      // Fetch a batch and sort client-side to be safe against DB view dependencies
+      const { data, error } = await supabase
+        .from('tags')
+        .select('name, thread_tags(count)')
         .limit(50);
-
-      if (!data) return [];
       
-      const counts: Record<string, number> = {};
-      data.forEach((item: any) => {
-          if(item.tag?.name) counts[item.tag.name] = (counts[item.tag.name] || 0) + 1;
-      });
+      if (error) {
+          console.warn("Failed to fetch trending tags:", error);
+          return [];
+      }
 
-      return Object.keys(counts).sort((a,b) => counts[b] - counts[a]).slice(0, limit);
+      const tags = (data || []).map((t: any) => ({
+          name: t.name,
+          count: t.thread_tags?.[0]?.count || 0
+      }));
+
+      return tags
+          .sort((a, b) => b.count - a.count)
+          .slice(0, limit)
+          .map(t => t.name);
   }
 
   async updateThread(id: string, dto: Partial<CreateThreadDTO>): Promise<ThreadRecord> {

@@ -1,8 +1,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
-import { promptsService } from '../../../services/promptsService';
-import { PromptTemplateDetailViewModel, PromptTemplateViewModel } from '../../../types/prompts.types';
+import { usePromptDetailController } from '../hooks/usePromptDetailController';
 import { useLenser } from '../../../context/LenserContext';
 import { useAuth } from '../../../context/AuthContext';
 import { useShareContext } from '../../../context/ShareContext';
@@ -18,6 +17,8 @@ import { useCreatePrompt } from '../hooks/useCreatePrompt';
 import { CreatePromptModal } from '../components/CreatePromptModal';
 import { ConfirmModal } from '../../../components/ConfirmModal';
 import { SEOHead } from '../../../components/SEOHead';
+import { Button } from '../../../components/Button';
+import { promptsService } from '../../../services/promptsService';
 
 export const PromptDetailPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -26,26 +27,28 @@ export const PromptDetailPage: React.FC = () => {
   const { lenser, hasLenser } = useLenser();
   const { isAuthenticated, isLoading: authLoading } = useAuth();
   const { setShareConfig } = useShareContext();
-  const { setPageActions } = useUI();
+  const { setPageActions, setPageTitle } = useUI();
   
-  const [prompt, setPrompt] = useState<PromptTemplateDetailViewModel | null>(null);
-  const [relatedPrompts, setRelatedPrompts] = useState<PromptTemplateViewModel[]>([]);
-  const [authorPrompts, setAuthorPrompts] = useState<PromptTemplateViewModel[]>([]);
-  const [loading, setLoading] = useState(true);
+  // -- Controller --
+  const { 
+    prompt, 
+    relatedPrompts, 
+    authorPrompts, 
+    isLoading, 
+    error, 
+    actions 
+  } = usePromptDetailController(id);
+
+  // -- UI State --
   const [showProfileModal, setShowProfileModal] = useState(false);
-  
-  // Access Control State
-  const [isUnauthorized, setIsUnauthorized] = useState(false);
-  
-  // Action States
   const [isSaving, setIsSaving] = useState(false);
   
-  // Delete State
+  // -- Modals State --
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [deleteTargetId, setDeleteTargetId] = useState<string | null>(null);
 
-  // Create Prompt Hook
+  // -- Create/Edit Hook --
   const { 
     isOpen: isCreateOpen, 
     openModal: openCreateModal, 
@@ -57,58 +60,32 @@ export const PromptDetailPage: React.FC = () => {
     isEditMode
   } = useCreatePrompt();
 
+  // Redirect if unauthenticated
   useEffect(() => {
     if (!authLoading && !isAuthenticated) {
       navigate('/login', { state: { from: location } });
     }
   }, [authLoading, isAuthenticated, navigate, location]);
 
-  const fetchData = async () => {
-    if (!id || !isAuthenticated) return;
-    
-    setLoading(true);
-    setIsUnauthorized(false);
-    window.scrollTo(0, 0);
-    try {
-      const detail = await promptsService.getPromptDetail(id, lenser?.id);
-      setPrompt(detail);
-      
-      const [related, authorP] = await Promise.all([
-          promptsService.getRelatedPrompts(id),
-          detail ? promptsService.getAuthorPrompts(detail.author.id) : Promise.resolve([])
-      ]);
-      
-      setRelatedPrompts(related);
-      setAuthorPrompts(authorP.filter(p => p.id !== id).slice(0, 5));
-
-    } catch (err: any) {
-      if (err.message === '401') {
-          setIsUnauthorized(true);
-      } else {
-          console.error(err);
-      }
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    if (!authLoading) fetchData();
-  }, [id, lenser?.id, isAuthenticated, authLoading]);
-
-  // Register Share Config
+  // Sync Metadata (Title, Share)
   useEffect(() => {
     if (prompt) {
+        setPageTitle(prompt.title);
         setShareConfig({
             title: prompt.title,
             resourceType: 'prompt',
             resourceId: prompt.id
         });
+    } else {
+        setPageTitle(null);
     }
-    return () => setShareConfig(null);
-  }, [prompt, setShareConfig]);
+    return () => {
+        setShareConfig(null);
+        setPageTitle(null);
+    };
+  }, [prompt, setShareConfig, setPageTitle]);
 
-  // Hoist Actions
+  // Page Actions (Owner Only)
   const isOwner = lenser && prompt && prompt.author.id === lenser.id;
   useEffect(() => {
     if (isOwner && prompt) {
@@ -122,6 +99,8 @@ export const PromptDetailPage: React.FC = () => {
     return () => setPageActions([]);
   }, [isOwner, prompt, setPageActions]);
 
+  // -- Handlers --
+
   const ensureProfile = (): boolean => {
     if (!hasLenser) {
       setShowProfileModal(true);
@@ -132,64 +111,25 @@ export const PromptDetailPage: React.FC = () => {
 
   const handleCopy = async () => {
     if (!prompt || !ensureProfile() || !lenser) return;
-    
     try {
       await navigator.clipboard.writeText(prompt.content);
-      await promptsService.copyPrompt(prompt.id, lenser.id);
-      
-      // Update local count
-      setPrompt(prev => prev ? {
-          ...prev,
-          reactionCounts: {
-              ...prev.reactionCounts,
-              copy: prev.reactionCounts.copy + 1
-          }
-      } : null);
+      await actions.copyPrompt();
     } catch (e) {
       console.error("Copy failed", e);
     }
   };
 
   const handleSave = async () => {
-    if (!prompt || !ensureProfile() || !lenser) return;
-
+    if (!ensureProfile()) return;
     setIsSaving(true);
     try {
-      const isNowSaved = await promptsService.toggleSavePrompt(prompt.id, lenser.id);
-      
-      // Update state optimistically but also respect the boolean returned by the robust toggle
-      setPrompt(prev => {
-          if (!prev) return null;
-          // Calculate new count based on toggle result
-          const currentCount = prev.reactionCounts.saved;
-          // If we added it, increment. If we removed it, decrement. 
-          // Careful not to go below 0 or desync if original state was already skewed.
-          const newCount = isNowSaved ? currentCount + 1 : Math.max(0, currentCount - 1);
-          
-          return {
-            ...prev,
-            isSaved: isNowSaved,
-            reactionCounts: {
-                ...prev.reactionCounts,
-                saved: newCount
-            }
-          };
-      });
-      
-      // Optional: Refetch detail to sync exact counts from DB if critical
-      // promptsService.getPromptDetail(prompt.id, lenser.id).then(updated => {
-      //    if(updated) setPrompt(updated);
-      // });
-
+      await actions.savePrompt();
     } catch (e) {
-      console.error("Save failed", e);
-      alert("Could not update save status. Please try again.");
+      alert("Failed to save.");
     } finally {
       setIsSaving(false);
     }
   };
-
-  const handlePromptClick = (targetId: string) => navigate(`/prompts/${targetId}`);
 
   const handleCreateClick = () => {
     if (ensureProfile()) openCreateModal();
@@ -200,27 +140,20 @@ export const PromptDetailPage: React.FC = () => {
     const editId = targetId || prompt?.id;
     
     if (editId) {
-        if (prompt && editId === prompt.id) {
-             openCreateModal({
-                id: prompt.id,
-                title: prompt.title,
-                content: prompt.content,
-                tags: prompt.tags,
-                visibility: prompt.visibility
-            });
-        } else {
-            promptsService.getPromptDetail(editId, lenser?.id).then(detail => {
-                if (detail) {
-                    openCreateModal({
-                        id: detail.id,
-                        title: detail.title,
-                        content: detail.content,
-                        tags: detail.tags,
-                        visibility: detail.visibility
-                    });
-                }
-            });
-        }
+        // Since we have data in controller, pass it directly if it matches to avoid fetch? 
+        // Or trust the hook's cache. 
+        // Simplest is to fetch fresh for edit form to ensure latest state.
+        promptsService.getPromptDetail(editId, lenser?.id).then(detail => {
+            if (detail) {
+                openCreateModal({
+                    id: detail.id,
+                    title: detail.title,
+                    content: detail.content,
+                    tags: detail.tags,
+                    visibility: detail.visibility
+                });
+            }
+        });
     }
   };
 
@@ -239,8 +172,9 @@ export const PromptDetailPage: React.FC = () => {
           if (prompt && deleteTargetId === prompt.id) {
               navigate('/prompts');
           } else {
-              const authorP = await promptsService.getAuthorPrompts(prompt!.author.id);
-              setAuthorPrompts(authorP.filter(p => p.id !== prompt!.id).slice(0, 5));
+              // Just close, react query refetch handled if we invalidated, 
+              // but since author list is static in this view, we might need manual invalidation or refresh.
+              window.location.reload(); 
           }
       } catch (e) {
           console.error(e);
@@ -250,15 +184,19 @@ export const PromptDetailPage: React.FC = () => {
       }
   };
 
-  const handleCreateSubmit = (id: string) => {
-      if (isEditMode && prompt && id === prompt.id) {
-          fetchData();
+  const handleCreateSubmit = (newId: string) => {
+      if (isEditMode && prompt && newId === prompt.id) {
+          // React Query invalidation would happen if we used mutation, 
+          // forcing reload for simplicity in this iteration
+          window.location.reload();
       } else {
-          navigate(`/prompts/${id}`);
+          navigate(`/prompts/${newId}`);
       }
   };
 
-  if (authLoading || (isAuthenticated && loading)) {
+  // -- Render States --
+
+  if (authLoading || (isAuthenticated && isLoading)) {
     return (
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 animate-pulse">
         <div className="lg:col-span-8 space-y-8">
@@ -274,9 +212,7 @@ export const PromptDetailPage: React.FC = () => {
     );
   }
 
-  if (!isAuthenticated) return null;
-
-  if (isUnauthorized) {
+  if (error === '401') {
     return (
         <div className="flex flex-col items-center justify-center min-h-[60vh]">
             <div className="bg-red-50 p-6 rounded-full mb-6">
@@ -290,7 +226,7 @@ export const PromptDetailPage: React.FC = () => {
     );
   }
 
-  if (!prompt) {
+  if (!prompt || error === '404') {
     return (
       <div className="flex flex-col items-center justify-center min-h-[50vh]">
         <h2 className="text-2xl font-bold text-gray-900 mb-2">Prompt Not Found</h2>
@@ -300,6 +236,8 @@ export const PromptDetailPage: React.FC = () => {
       </div>
     );
   }
+
+  // -- Main Render --
 
   return (
     <div>
@@ -321,7 +259,6 @@ export const PromptDetailPage: React.FC = () => {
              <PromptBodyViewer content={prompt.content} onCopy={handleCopy} />
           </div>
 
-          {/* New AI Generations Section */}
           <div className="max-w-[860px] mx-auto">
              <AIResultsSection promptId={prompt.id} />
           </div>
@@ -331,8 +268,8 @@ export const PromptDetailPage: React.FC = () => {
           <PromptAuthorList 
             prompts={authorPrompts} 
             authorName={prompt.author.displayName}
-            onOpen={handlePromptClick}
-            isLoading={loading}
+            onOpen={(id) => navigate(`/prompts/${id}`)}
+            isLoading={isLoading}
             onCreateClick={handleCreateClick}
             isOwner={isOwner}
             onEdit={handleEditClick}
@@ -341,8 +278,8 @@ export const PromptDetailPage: React.FC = () => {
 
           <PromptRelatedList 
             prompts={relatedPrompts} 
-            onOpen={handlePromptClick}
-            isLoading={loading}
+            onOpen={(id) => navigate(`/prompts/${id}`)}
+            isLoading={isLoading}
           />
         </div>
       </div>

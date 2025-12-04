@@ -21,6 +21,9 @@ const getErrorMessage = (err: unknown): string => {
   return 'An unexpected error occurred';
 };
 
+// Key used in LenserContext
+const LENSER_CACHE_KEY = 'lenser_profile_data_v1';
+
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [state, setState] = useState<AuthState>({
     user: null,
@@ -30,13 +33,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   });
 
   useEffect(() => {
+    // 1. Initial Load from persisted session or repo
     const initAuth = async () => {
       try {
         const user = await authService.getCurrentUser();
         if (user) {
           setState(s => ({ ...s, user, isAuthenticated: true, isLoading: false }));
         } else {
-          setState(s => ({ ...s, isLoading: false }));
+          setState(s => ({ ...s, user: null, isAuthenticated: false, isLoading: false }));
         }
       } catch (err) {
         console.error('Auth initialization error:', err);
@@ -44,6 +48,24 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
     };
     initAuth();
+
+    // 2. Subscribe to auth state changes (Supabase specific events like token refresh)
+    const unsubscribe = authService.onAuthStateChange((user) => {
+      setState(s => {
+        // Prevent state updates if user object is identical (by ID) to avoid downstream re-renders
+        if (s.user?.id === user?.id) return s;
+        return {
+          ...s,
+          user,
+          isAuthenticated: !!user,
+          isLoading: false
+        };
+      });
+    });
+
+    return () => {
+      unsubscribe();
+    };
   }, []);
 
   const login = async (email: string, pass: string) => {
@@ -76,17 +98,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     } catch (e) {
       console.error("Logout error", e);
     }
+    // Clear legacy flags and new cache
     storage.removeItem('lenser_has_profile');
+    storage.removeItem(LENSER_CACHE_KEY);
+    
     setState({ user: null, isAuthenticated: false, isLoading: false, error: null });
   };
 
   const requestPasswordReset = async (email: string) => {
-    // We don't set global loading state here to avoid unmounting components aggressively
-    // if using this from a non-global layout. But for pages it's fine.
     try {
       await authService.requestPasswordReset(email);
     } catch (err: unknown) {
-      // Re-throw so component can handle UI feedback
       throw err;
     }
   };
@@ -102,8 +124,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const signInWithOAuth = async (provider: 'google' | 'github' | 'azure') => {
     try {
       await authService.signInWithOAuth(provider);
-      // OAuth flow redirects, so we don't necessarily need to set state here,
-      // but if there's a delay before redirect, loading state is good.
     } catch (err: unknown) {
       const message = getErrorMessage(err);
       setState(s => ({ ...s, error: message }));

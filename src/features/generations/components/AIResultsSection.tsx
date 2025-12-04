@@ -31,6 +31,8 @@ export const AIResultsSection: React.FC<AIResultsSectionProps> = ({ promptId }) 
 
   // Available Models for Filter
   const [availableModels, setAvailableModels] = useState<AIModel[]>([]);
+  const [modelsLoaded, setModelsLoaded] = useState(false);
+  const [isLoadingModels, setIsLoadingModels] = useState(false);
 
   // Modal & Delete State
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
@@ -38,18 +40,21 @@ export const AIResultsSection: React.FC<AIResultsSectionProps> = ({ promptId }) 
   const [deleteTarget, setDeleteTarget] = useState<string | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
 
-  // Load models on mount
-  useEffect(() => {
-      const loadModels = async () => {
-          try {
-              const models = await generationService.getAIModels();
-              setAvailableModels(models);
-          } catch (e) {
-              console.warn("Failed to load models for filter", e);
-          }
-      };
-      loadModels();
-  }, []);
+  // Lazy Load Models
+  const handleLoadModels = async () => {
+      if (modelsLoaded || isLoadingModels) return;
+      
+      setIsLoadingModels(true);
+      try {
+          const models = await generationService.getAIModels();
+          setAvailableModels(models);
+          setModelsLoaded(true);
+      } catch (e) {
+          console.warn("Failed to load models for filter", e);
+      } finally {
+          setIsLoadingModels(false);
+      }
+  };
 
   // Fetch Logic
   const fetchGenerations = async (pageNum: number, reset = false) => {
@@ -182,6 +187,7 @@ export const AIResultsSection: React.FC<AIResultsSectionProps> = ({ promptId }) 
                 <SelectField 
                     value={modelFilter}
                     onChange={setModelFilter}
+                    onOpen={handleLoadModels}
                     options={[
                         { value: 'all', label: 'All Models' },
                         ...availableModels.map(m => ({ value: m.id, label: m.name }))

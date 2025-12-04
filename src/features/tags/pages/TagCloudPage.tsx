@@ -19,41 +19,34 @@ const NodeGraphBackground: React.FC = () => {
     let height = canvas.height = canvas.parentElement?.clientHeight || window.innerHeight;
 
     const particles: { x: number; y: number; vx: number; vy: number }[] = [];
-    // Lower density for minimalism
-    const particleCount = Math.min(Math.floor((width * height) / 15000), 50); 
+    const particleCount = Math.min(Math.floor((width * height) / 20000), 40); 
     const connectionDistance = Math.min(width, height) * 0.15 + 30; 
 
-    // Initialize particles
     for (let i = 0; i < particleCount; i++) {
       particles.push({
         x: Math.random() * width,
         y: Math.random() * height,
-        vx: (Math.random() - 0.5) * 0.3,
-        vy: (Math.random() - 0.5) * 0.3
+        vx: (Math.random() - 0.5) * 0.2,
+        vy: (Math.random() - 0.5) * 0.2
       });
     }
 
     const draw = () => {
       ctx.clearRect(0, 0, width, height);
-      
-      // Updated colors for better visibility on light theme
-      ctx.fillStyle = '#9CA3AF'; // gray-400
-      ctx.strokeStyle = '#9CA3AF'; // gray-400
+      ctx.fillStyle = '#E5E7EB'; // gray-200
+      ctx.strokeStyle = '#E5E7EB'; // gray-200
 
       particles.forEach((p, i) => {
         p.x += p.vx;
         p.y += p.vy;
 
-        // Bounce off edges gently
         if (p.x < 0 || p.x > width) p.vx *= -1;
         if (p.y < 0 || p.y > height) p.vy *= -1;
 
-        // Draw Node
         ctx.beginPath();
         ctx.arc(p.x, p.y, 2, 0, Math.PI * 2);
         ctx.fill();
 
-        // Draw Connections
         for (let j = i + 1; j < particles.length; j++) {
           const p2 = particles[j];
           const dx = p.x - p2.x;
@@ -62,12 +55,12 @@ const NodeGraphBackground: React.FC = () => {
 
           if (dist < connectionDistance) {
             ctx.beginPath();
-            ctx.globalAlpha = 0.4 * (1 - (dist / connectionDistance)); 
+            ctx.globalAlpha = 0.3 * (1 - (dist / connectionDistance)); 
             ctx.lineWidth = 1;
             ctx.moveTo(p.x, p.y);
             ctx.lineTo(p2.x, p2.y);
             ctx.stroke();
-            ctx.globalAlpha = 1.0; // Reset
+            ctx.globalAlpha = 1.0;
           }
         }
       });
@@ -91,7 +84,7 @@ const NodeGraphBackground: React.FC = () => {
     };
   }, []);
 
-  return <canvas ref={canvasRef} className="absolute inset-0 w-full h-full pointer-events-none" />;
+  return <canvas ref={canvasRef} className="absolute inset-0 w-full h-full pointer-events-none opacity-50" />;
 };
 
 export const TagCloudPage: React.FC = () => {
@@ -113,25 +106,23 @@ export const TagCloudPage: React.FC = () => {
   }, []);
 
   return (
-    // Minimalist full-height container with no visible boundaries
-    <div className="relative w-full h-[80vh] flex items-center justify-center overflow-hidden">
+    <div className="relative w-full min-h-[80vh] flex flex-col items-center justify-center overflow-hidden bg-gray-50/30">
       <SEOHead type="tag-cloud" />
       <NodeGraphBackground />
       
-      <div className="relative z-10 w-full max-w-5xl mx-auto px-4 flex flex-col items-center justify-center">
+      <div className="relative z-10 w-full max-w-7xl mx-auto px-4 py-12 flex flex-col items-center">
         {isLoading ? (
-           // Abstract subtle loading pulse
-           <div className="flex gap-2 opacity-30">
-              <div className="w-16 h-6 bg-gray-300 rounded-full animate-pulse"></div>
-              <div className="w-24 h-6 bg-gray-300 rounded-full animate-pulse delay-75"></div>
-              <div className="w-12 h-6 bg-gray-300 rounded-full animate-pulse delay-150"></div>
+           <div className="flex gap-3 opacity-30 items-center justify-center h-64">
+              <div className="w-4 h-4 bg-gray-400 rounded-full animate-bounce"></div>
+              <div className="w-4 h-4 bg-gray-400 rounded-full animate-bounce delay-75"></div>
+              <div className="w-4 h-4 bg-gray-400 rounded-full animate-bounce delay-150"></div>
            </div>
         ) : tags.length > 0 ? (
-           <div className="animate-in fade-in zoom-in duration-1000 ease-out">
+           <div className="w-full animate-in fade-in zoom-in duration-700 ease-out">
                <TagCloud tags={tags} />
            </div>
         ) : (
-           <div className="text-gray-300 font-light text-sm tracking-widest uppercase">No topics found</div>
+           <div className="text-gray-300 font-light text-sm tracking-widest uppercase mt-20">No topics found</div>
         )}
       </div>
     </div>

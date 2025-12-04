@@ -1,6 +1,6 @@
 
 import React, { useState, useCallback, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { PromptsGrid } from '../components/PromptsGrid';
 import { PromptsSearchBar } from '../components/PromptsSearchBar';
 import { PromptsTagFilter } from '../components/PromptsTagFilter';
@@ -17,6 +17,7 @@ import { SEOHead } from '../../../components/SEOHead';
 
 export const PromptsPage: React.FC = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const { hasLenser } = useLenser();
   const { isAuthenticated } = useAuth();
   
@@ -65,7 +66,7 @@ export const PromptsPage: React.FC = () => {
 
   const handleCreateClick = () => {
     if (!isAuthenticated) {
-      navigate('/login');
+      navigate('/login', { state: { from: location } });
       return;
     }
     if (!hasLenser) {
