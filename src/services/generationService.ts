@@ -1,6 +1,6 @@
 
 import { getGenerationRepository } from '../adapters/generationAdapter';
-import { CreateGenerationDTO, AIGeneration, GenerationFilterOptions } from '../types/generation.types';
+import { CreateGenerationDTO, AIGeneration, GenerationFilterOptions, AIModel } from '../types/generation.types';
 
 const repo = getGenerationRepository();
 
@@ -18,5 +18,9 @@ export const generationService = {
   deleteGeneration: async (id: string, lenserId: string): Promise<void> => {
     // In a real app, we might verify ownership again here or rely on RLS/Repo logic
     return repo.deleteGeneration(id);
+  },
+
+  getAIModels: async (): Promise<AIModel[]> => {
+    return repo.getAIModels();
   }
 };

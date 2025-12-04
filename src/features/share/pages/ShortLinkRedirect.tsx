@@ -25,8 +25,14 @@ export const ShortLinkRedirect: React.FC = () => {
                     window.location.href = result.url;
                     return;
                 }
+                
+                // Fix: ensure internal navigation uses the correct path (replacing /app with / if needed in data)
+                let targetUrl = result.url;
+                if (targetUrl === '/app') targetUrl = '/';
+                if (targetUrl.startsWith('/app/')) targetUrl = targetUrl.replace('/app', '');
+
                 // Internal navigation
-                navigate(result.url, { replace: true });
+                navigate(targetUrl, { replace: true });
             } else {
                 setError("Link not found or expired.");
             }
@@ -43,7 +49,7 @@ export const ShortLinkRedirect: React.FC = () => {
           <div className="min-h-screen flex flex-col items-center justify-center bg-gray-50 p-4">
               <h1 className="text-2xl font-bold text-gray-900 mb-2">Oops!</h1>
               <p className="text-gray-600">{error}</p>
-              <button onClick={() => navigate('/app')} className="mt-6 text-primary-700 font-medium hover:underline">
+              <button onClick={() => navigate('/')} className="mt-6 text-primary-700 font-medium hover:underline">
                   Go Home
               </button>
           </div>

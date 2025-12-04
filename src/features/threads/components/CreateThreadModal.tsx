@@ -16,7 +16,7 @@ import { Globe, Users, Lock } from 'lucide-react';
 interface CreateThreadModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSuccess: () => void;
+  onSuccess: (id?: string) => void;
   initialData?: {
       id: string;
       title: string;
@@ -86,8 +86,8 @@ export const CreateThreadModal: React.FC<CreateThreadModalProps> = ({ isOpen, on
     e.preventDefault();
     if (!title) return; 
 
-    await createThread(title, content, tags, visibility, () => {
-        onSuccess();
+    await createThread(title, content, tags, visibility, (id) => {
+        onSuccess(id);
         onClose();
     }, initialData?.id);
   };

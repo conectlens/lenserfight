@@ -20,7 +20,6 @@ export const AppRouter: React.FC = () => {
   return (
     <BrowserRouter>
       <Routes>
-        <Route path="/" element={<Navigate to="/app" replace />} />
         
         {/* Short Link Redirect Route */}
         <Route path="/s/:shortId" element={<ShortLinkRedirect />} />
@@ -31,7 +30,7 @@ export const AppRouter: React.FC = () => {
         <Route path="/reset-password" element={<ResetPasswordPage />} />
         
         <Route 
-          path="/app" 
+          path="/" 
           element={
             <DashboardLayout>
               <HomePage />
@@ -111,8 +110,8 @@ export const AppRouter: React.FC = () => {
           } 
         />
         
-        {/* Default Redirect: Catch all unknown routes and send to /app */}
-        <Route path="*" element={<Navigate to="/app" replace />} />
+        {/* Default Redirect: Catch all unknown routes and send to / */}
+        <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </BrowserRouter>
   );

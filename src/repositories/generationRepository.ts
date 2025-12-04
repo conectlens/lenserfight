@@ -1,5 +1,5 @@
 
-import { AIGeneration, CreateGenerationDTO, MediaLibraryItem, GenerationFilterOptions } from '../types/generation.types';
+import { AIGeneration, CreateGenerationDTO, MediaLibraryItem, GenerationFilterOptions, AIModel } from '../types/generation.types';
 import { supabase } from '../utils/supabase';
 import { storage } from '../utils/storage';
 
@@ -7,6 +7,7 @@ export interface GenerationRepositoryPort {
   getGenerationsForPrompt(promptId: string, lenserId: string, options?: GenerationFilterOptions): Promise<AIGeneration[]>;
   createGeneration(data: CreateGenerationDTO): Promise<AIGeneration>;
   deleteGeneration(id: string): Promise<void>;
+  getAIModels(): Promise<AIModel[]>;
 }
 
 export class MockGenerationRepository implements GenerationRepositoryPort {
@@ -117,6 +118,20 @@ export class MockGenerationRepository implements GenerationRepositoryPort {
     allGens = allGens.filter(g => g.id !== id);
     storage.setItem(this.GENERATIONS_KEY, JSON.stringify(allGens));
   }
+
+  async getAIModels(): Promise<AIModel[]> {
+    await new Promise(resolve => setTimeout(resolve, 200));
+    return [
+      { id: 'midjourney', name: 'Midjourney' },
+      { id: 'dalle-3', name: 'DALL·E 3' },
+      { id: 'stable-diffusion', name: 'Stable Diffusion' },
+      { id: 'chatgpt', name: 'ChatGPT' },
+      { id: 'claude', name: 'Claude' },
+      { id: 'grok', name: 'Grok' },
+      { id: 'runway', name: 'Runway Gen-2' },
+      { id: 'sora', name: 'Sora' }
+    ];
+  }
 }
 
 export class SupabaseGenerationRepository implements GenerationRepositoryPort {
@@ -195,5 +210,19 @@ export class SupabaseGenerationRepository implements GenerationRepositoryPort {
   async deleteGeneration(id: string): Promise<void> {
     const { error } = await supabase.from('ai_generations').delete().eq('id', id);
     if (error) throw error;
+  }
+
+  async getAIModels(): Promise<AIModel[]> {
+    const { data, error } = await supabase
+      .from('ai_models')
+      .select('*')
+      .eq('is_active', true)
+      .order('name', { ascending: true });
+
+    if (error) {
+       console.warn("Failed to fetch ai_models, returning empty list.", error);
+       return [];
+    }
+    return data as AIModel[];
   }
 }

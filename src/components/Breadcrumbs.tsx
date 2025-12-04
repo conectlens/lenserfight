@@ -5,7 +5,6 @@ import { ChevronRight } from 'lucide-react';
 import { useUI } from '../context/UIContext';
 
 const routeNameMap: Record<string, string> = {
-  app: 'Home',
   prompts: 'Prompts',
   threads: 'Threads',
   lenser: 'Lenser',
@@ -26,16 +25,13 @@ export const Breadcrumbs: React.FC = () => {
 
   return (
     <nav className="flex items-center text-sm font-medium text-gray-500 overflow-hidden whitespace-nowrap mask-linear-fade">
-      <Link to="/app" className="hover:text-gray-900 transition-colors flex-shrink-0">
+      <Link to="/" className={`${location.pathname === '/' ? 'text-gray-900 font-semibold' : 'hover:text-gray-900'} transition-colors flex-shrink-0`}>
         Home
       </Link>
       
-      {pathnames.length > 0 && pathnames[0] !== 'app' && (
+      {pathnames.length > 0 && (
         <>
            {pathnames.map((value, index) => {
-             // Skip 'app' if it appears later for some reason
-             if (value === 'app') return null;
-
              const to = `/${pathnames.slice(0, index + 1).join('/')}`;
              const isLast = index === pathnames.length - 1;
              

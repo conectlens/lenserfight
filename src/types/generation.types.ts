@@ -14,6 +14,13 @@ export interface MediaLibraryItem {
   created_at: string;
 }
 
+export interface AIModel {
+  id: string;
+  name: string;
+  description?: string;
+  is_active?: boolean;
+}
+
 export interface AIGeneration {
   id: string;
   lenser_id: string;

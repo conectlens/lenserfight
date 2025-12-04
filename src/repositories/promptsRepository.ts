@@ -23,18 +23,152 @@ export interface PromptsRepositoryPort {
 
 // --- Mock Implementation ---
 export class MockPromptsRepository implements PromptsRepositoryPort {
-  // Keeping simplified mock implementation for compatibility
   private PROMPTS_KEY = 'mock_prompts_db';
-  getAll = async () => [];
-  search = async () => [];
-  filterByTag = async () => [];
-  sort = async () => [];
-  getTopPrompts = async () => [];
-  getById = async () => null;
-  getTags = async () => [];
-  createPrompt = async (i: any) => i;
-  updatePrompt = async (i: any) => i;
-  deletePrompt = async () => {};
+  private PROMPT_TAGS_KEY = 'mock_prompt_tags';
+  private TAGS_KEY = 'mock_tags';
+  private LENSERS_KEY = 'mock_lenser_';
+
+  private getPrompts(): PromptTemplateRecord[] {
+    return JSON.parse(storage.getItem(this.PROMPTS_KEY) || '[]');
+  }
+
+  private savePrompts(prompts: PromptTemplateRecord[]) {
+    storage.setItem(this.PROMPTS_KEY, JSON.stringify(prompts));
+  }
+
+  private getAllTags(): TagRecord[] {
+    return JSON.parse(storage.getItem(this.TAGS_KEY) || '[]');
+  }
+
+  private getPromptTagsRelation(): { template_id: string, tag_id: string }[] {
+    return JSON.parse(storage.getItem(this.PROMPT_TAGS_KEY) || '[]');
+  }
+
+  private savePromptTagsRelation(rels: { template_id: string, tag_id: string }[]) {
+    storage.setItem(this.PROMPT_TAGS_KEY, JSON.stringify(rels));
+  }
+
+  private enrich(p: PromptTemplateRecord) {
+    const lenserJson = storage.getItem(this.LENSERS_KEY + p.lenser_id);
+    let author: any = lenserJson ? JSON.parse(lenserJson) : { display_name: 'Unknown', handle: 'unknown' };
+
+    const allTags = this.getAllTags();
+    const rels = this.getPromptTagsRelation();
+    const myTagIds = rels.filter(r => r.template_id === p.id).map(r => r.tag_id);
+    const myTags = allTags.filter(tag => myTagIds.includes(tag.id));
+
+    return {
+      ...p,
+      author: {
+        id: author.id || p.lenser_id,
+        display_name: author.display_name,
+        handle: author.handle,
+        avatar_url: author.avatar_url
+      },
+      prompt_template_tags: myTags.map(tag => ({ tag }))
+    };
+  }
+
+  getAll = async (offset = 0, limit = 10) => {
+    await new Promise(resolve => setTimeout(resolve, 400));
+    const prompts = this.getPrompts().filter(p => p.visibility === 'public');
+    prompts.sort((a,b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+    return prompts.slice(offset, offset + limit).map(p => this.enrich(p));
+  };
+
+  search = async (query: string, offset = 0, limit = 10) => {
+    await new Promise(resolve => setTimeout(resolve, 300));
+    const q = query.toLowerCase();
+    const prompts = this.getPrompts()
+        .filter(p => p.visibility === 'public' && (p.title.toLowerCase().includes(q) || p.content.toLowerCase().includes(q)));
+    return prompts.slice(offset, offset + limit).map(p => this.enrich(p));
+  };
+
+  filterByTag = async (tagSlug: string | null, offset = 0, limit = 10) => {
+    await new Promise(resolve => setTimeout(resolve, 300));
+    if (!tagSlug) return this.getAll(offset, limit);
+
+    const allTags = this.getAllTags();
+    const targetTag = allTags.find(t => t.slug === tagSlug);
+    if (!targetTag) return [];
+
+    const rels = this.getPromptTagsRelation();
+    const ids = rels.filter(r => r.tag_id === targetTag.id).map(r => r.template_id);
+    const prompts = this.getPrompts().filter(p => ids.includes(p.id) && p.visibility === 'public');
+    
+    return prompts.slice(offset, offset + limit).map(p => this.enrich(p));
+  };
+
+  sort = async (order: "newest" | "popular", offset = 0, limit = 10) => {
+    const prompts = this.getPrompts().filter(p => p.visibility === 'public');
+    if (order === 'newest') {
+        prompts.sort((a,b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+    } else {
+        // Mock popular
+        prompts.sort((a,b) => (b.reaction_totals?.copy || 0) - (a.reaction_totals?.copy || 0));
+    }
+    return prompts.slice(offset, offset + limit).map(p => this.enrich(p));
+  };
+
+  getTopPrompts = async (limit: number) => {
+      const prompts = this.getPrompts().filter(p => p.visibility === 'public');
+      prompts.sort((a,b) => (b.reaction_totals?.copy || 0) - (a.reaction_totals?.copy || 0));
+      return prompts.slice(0, limit).map(p => this.enrich(p));
+  };
+
+  getById = async (id: string) => {
+    const p = this.getPrompts().find(i => i.id === id);
+    return p ? this.enrich(p) : null;
+  };
+
+  getTags = async (templateId: string) => {
+    const rels = this.getPromptTagsRelation();
+    const allTags = this.getAllTags();
+    const ids = rels.filter(r => r.template_id === templateId).map(r => r.tag_id);
+    return allTags.filter(t => ids.includes(t.id));
+  };
+
+  createPrompt = async (input: CreatePromptDTO) => {
+    await new Promise(resolve => setTimeout(resolve, 500));
+    const prompts = this.getPrompts();
+    const newPrompt: PromptTemplateRecord = {
+        id: `prompt-${Date.now()}`,
+        lenser_id: input.lenserId,
+        title: input.title,
+        description: input.description,
+        content: input.content,
+        visibility: input.visibility,
+        reaction_totals: {},
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+    };
+    prompts.unshift(newPrompt);
+    this.savePrompts(prompts);
+
+    if (input.tagIds && input.tagIds.length > 0) {
+        const rels = this.getPromptTagsRelation();
+        input.tagIds.forEach(tagId => {
+            rels.push({ template_id: newPrompt.id, tag_id: tagId });
+        });
+        this.savePromptTagsRelation(rels);
+    }
+    return newPrompt;
+  };
+
+  updatePrompt = async (id: string, input: Partial<CreatePromptDTO>) => {
+      const prompts = this.getPrompts();
+      const idx = prompts.findIndex(p => p.id === id);
+      if (idx === -1) throw new Error("Not found");
+      const updated = { ...prompts[idx], ...input, updated_at: new Date().toISOString() };
+      prompts[idx] = updated as any;
+      this.savePrompts(prompts);
+      return updated as any;
+  };
+
+  deletePrompt = async (id: string) => {
+      const prompts = this.getPrompts().filter(p => p.id !== id);
+      this.savePrompts(prompts);
+  };
 }
 
 // --- Supabase Implementation ---
@@ -89,7 +223,14 @@ export class SupabasePromptsRepository implements PromptsRepositoryPort {
         .eq('prompt_template_tags.tags.slug', tagSlug)
         .range(offset, offset + limit - 1);
 
-    if (error) throw error;
+    if (error) {
+        // Gracefully handle Supabase error 42803 (aggregate functions in view)
+        if (error.code === '42803') {
+            console.warn("SupabasePromptsRepository: 42803 error on tag filter, returning empty.", error);
+            return [];
+        }
+        throw error;
+    }
     return data as any;
   }
 
