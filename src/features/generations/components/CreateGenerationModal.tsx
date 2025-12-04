@@ -1,8 +1,9 @@
+
 import React, { useState, useEffect } from 'react';
 import { Modal } from '../../../components/Modal';
 import { Button } from '../../../components/Button';
 import { SelectField } from '../../../components/SelectField';
-import { AI_MODELS, CreateGenerationDTO, MediaKind, AIGeneration } from '../../../types/generation.types';
+import { AI_MODELS, CreateGenerationDTO, MediaKind, AIGeneration, AIModel } from '../../../types/generation.types';
 import { InputField } from '../../auth/components/InputField';
 import { useLenser } from '../../../context/LenserContext';
 import { generationService } from '../../../services/generationService';
@@ -32,15 +33,40 @@ export const CreateGenerationModal: React.FC<CreateGenerationModalProps> = ({
   const [content, setContent] = useState(''); // Text body or URL
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  
+  const [availableModels, setAvailableModels] = useState<AIModel[]>([]);
+  const [isLoadingModels, setIsLoadingModels] = useState(false);
 
-  // Reset on open
+  // Fetch models on mount
   useEffect(() => {
     if (isOpen) {
+        // Reset form
         setModelId('');
         setChatUrl('');
         setResultType('text');
         setContent('');
         setError(null);
+
+        // Fetch models
+        const fetchModels = async () => {
+            setIsLoadingModels(true);
+            try {
+                const models = await generationService.getAIModels();
+                if (models.length > 0) {
+                    setAvailableModels(models);
+                } else {
+                    // Fallback to static list if empty
+                    setAvailableModels(AI_MODELS.map(m => ({ id: m.id, name: m.label })));
+                }
+            } catch (e) {
+                console.error("Failed to load AI models", e);
+                // Fallback
+                setAvailableModels(AI_MODELS.map(m => ({ id: m.id, name: m.label })));
+            } finally {
+                setIsLoadingModels(false);
+            }
+        };
+        fetchModels();
     }
   }, [isOpen]);
 
@@ -116,9 +142,10 @@ export const CreateGenerationModal: React.FC<CreateGenerationModalProps> = ({
                 label="AI Model"
                 value={modelId}
                 onChange={setModelId}
-                options={AI_MODELS.map(m => ({ value: m.id, label: m.label }))}
-                placeholder="Select Model (e.g. Midjourney)"
+                options={availableModels.map(m => ({ value: m.id, label: m.name }))}
+                placeholder={isLoadingModels ? "Loading models..." : "Select Model (e.g. Midjourney)"}
                 required
+                disabled={isLoadingModels}
             />
 
             <InputField

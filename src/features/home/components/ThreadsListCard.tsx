@@ -82,7 +82,7 @@ export const ThreadsListCard: React.FC<ThreadsListCardProps> = memo(({ thread, o
             </h2>
 
             <div className="text-gray-600 mb-4 line-clamp-3 leading-relaxed pointer-events-none">
-              <MentionRenderer content={thread.content} plainText={true} />
+              <MentionRenderer content={thread.content} simple={true} />
             </div>
 
             <div className="flex flex-wrap gap-2 mb-4">

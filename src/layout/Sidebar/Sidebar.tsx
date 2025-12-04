@@ -80,7 +80,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, isMobile, onCloseMobil
   const showOverlay = isMobile && isOpen;
 
   const handleLogoClick = () => {
-    navigate('/app');
+    navigate('/');
   };
 
   const handleNavigation = (path: string) => {
@@ -159,10 +159,10 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, isMobile, onCloseMobil
 
         <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto scrollbar-hide flex flex-col">
            <SidebarItem 
-             onClick={() => handleNavigation('/app')}
+             onClick={() => handleNavigation('/')}
              icon={<Home size={20} />} 
              label="Home" 
-             isActive={location.pathname === '/app'} 
+             isActive={location.pathname === '/'} 
              collapsed={!showLabels} 
            />
            
