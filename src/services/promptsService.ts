@@ -12,10 +12,10 @@ const promptsRepo = getPromptsRepository();
 const lenserRepo = getLenserRepository();
 const reactionRepo = getReactionRepository();
 
-// Use author_profile from record directly
+// Use author_profile and tags from record directly
 const mapToViewModels = async (records: any[], currentLenserId?: string): Promise<PromptTemplateViewModel[]> => {
     return records.map(record => {
-        const tags = record.prompt_template_tags?.map((pt: any) => pt.tag) || [];
+        const tags = record.tags || []; // Use denormalized tags
         const profile = record.author_profile || { id: 'unknown', handle: 'unknown', display_name: 'Unknown', avatar_url: null };
         
         return {
@@ -90,9 +90,6 @@ export const promptsService = {
     };
 
     const isSaved = summary.userReactions.includes('saved');
-
-    // NOTE: Tag viewing logging removed from here to separate concerns.
-    // It is now handled by the Controller.
 
     return {
       ...viewModel,
