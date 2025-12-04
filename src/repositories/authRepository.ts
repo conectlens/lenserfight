@@ -131,7 +131,7 @@ export class MockAuthRepository implements AuthRepositoryPort {
     console.group("MOCK EMAIL SERVICE");
     console.log(`To: ${email}`);
     console.log(`Subject: Password Reset Request`);
-    console.log(`Link: ${window.location.origin}/reset-password?token=${token}`);
+    console.log(`Link: ${window.location.origin}/#/reset-password?token=${token}`);
     console.groupEnd();
   }
 
@@ -215,7 +215,7 @@ export class SupabaseAuthRepository implements AuthRepositoryPort {
 
   async requestPasswordReset(email: string): Promise<void> {
     const { error } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: `${window.location.origin}/reset-password`,
+      redirectTo: `${window.location.origin}/#/reset-password`,
     });
     if (error) throw error;
   }

@@ -9,6 +9,7 @@ import { useFormValidation } from '../../../hooks/useFormValidation';
 import { isRequired, minLength } from '../../../utils/validation';
 import { FormError } from '../../../components/FormError';
 import { ArrowLeft } from 'lucide-react';
+import { PasswordStrengthMeter } from '../components/PasswordStrengthMeter';
 
 export const ResetPasswordPage: React.FC = () => {
   const { resetPassword } = useAuth();
@@ -91,6 +92,7 @@ export const ResetPasswordPage: React.FC = () => {
             onChange={handleChange}
             className={errors.password ? 'border-red-500 focus:border-red-500 focus:ring-red-200' : ''}
           />
+          <PasswordStrengthMeter password={formData.password} />
           <FormError message={errors.password} />
         </div>
 

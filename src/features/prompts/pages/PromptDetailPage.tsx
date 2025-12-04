@@ -156,16 +156,34 @@ export const PromptDetailPage: React.FC = () => {
     setIsSaving(true);
     try {
       const isNowSaved = await promptsService.toggleSavePrompt(prompt.id, lenser.id);
-      setPrompt(prev => prev ? {
-          ...prev,
-          isSaved: isNowSaved,
-          reactionCounts: {
-              ...prev.reactionCounts,
-              saved: isNowSaved ? prev.reactionCounts.saved + 1 : prev.reactionCounts.saved - 1
-          }
-      } : null);
+      
+      // Update state optimistically but also respect the boolean returned by the robust toggle
+      setPrompt(prev => {
+          if (!prev) return null;
+          // Calculate new count based on toggle result
+          const currentCount = prev.reactionCounts.saved;
+          // If we added it, increment. If we removed it, decrement. 
+          // Careful not to go below 0 or desync if original state was already skewed.
+          const newCount = isNowSaved ? currentCount + 1 : Math.max(0, currentCount - 1);
+          
+          return {
+            ...prev,
+            isSaved: isNowSaved,
+            reactionCounts: {
+                ...prev.reactionCounts,
+                saved: newCount
+            }
+          };
+      });
+      
+      // Optional: Refetch detail to sync exact counts from DB if critical
+      // promptsService.getPromptDetail(prompt.id, lenser.id).then(updated => {
+      //    if(updated) setPrompt(updated);
+      // });
+
     } catch (e) {
       console.error("Save failed", e);
+      alert("Could not update save status. Please try again.");
     } finally {
       setIsSaving(false);
     }

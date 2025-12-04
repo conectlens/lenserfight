@@ -57,28 +57,53 @@ export const reactionService = {
   ): Promise<{ added: boolean; summary: ReactionSummary }> => {
     reactionService.validateTarget(targetType);
 
-    // Check if exists
+    // Optimistic check
     const existing = await reactionRepo.getUserReaction(targetType, targetId, lenserId);
-    const hasReacted = existing.some(r => r.reaction === reaction);
+    let hasReacted = existing.some(r => r.reaction === reaction);
+    let added = false;
 
-    if (hasReacted) {
-      await reactionRepo.removeReaction(targetType, targetId, lenserId, reaction);
-    } else {
-      await reactionRepo.addReaction(targetType, targetId, lenserId, reaction);
+    try {
+      if (hasReacted) {
+        await reactionRepo.removeReaction(targetType, targetId, lenserId, reaction);
+        added = false;
+      } else {
+        try {
+          await reactionRepo.addReaction(targetType, targetId, lenserId, reaction);
+          added = true;
+        } catch (e: any) {
+          // Handle Duplicate Key Error (Race condition or Stale state)
+          // Code 23505 is PostgreSQL unique constraint violation
+          if (e.code === '23505' || e.message?.includes('duplicate key') || e.details?.includes('already exists')) {
+            console.warn("Reaction already exists despite check, toggling to remove.");
+            await reactionRepo.removeReaction(targetType, targetId, lenserId, reaction);
+            added = false;
+          } else {
+            throw e;
+          }
+        }
+      }
+    } catch (err) {
+      console.error("Toggle reaction failed", err);
+      throw err;
     }
 
     // Return fresh summary for UI update
     const summary = await reactionService.getReactionSummary(targetType, targetId, lenserId);
     
     return {
-      added: !hasReacted,
+      added,
       summary
     };
   },
 
   recordReaction: async (targetType: TargetType, targetId: string, lenserId: string, reaction: ReactionType): Promise<void> => {
     reactionService.validateTarget(targetType);
-    await reactionRepo.addReaction(targetType, targetId, lenserId, reaction);
+    try {
+      await reactionRepo.addReaction(targetType, targetId, lenserId, reaction);
+    } catch (e: any) {
+      // Ignore duplicates for simple recording (e.g. copy)
+      if (e.code !== '23505') throw e;
+    }
   },
 
   getUserActivityFeed: async (lenserId: string, offset = 0, limit = 20): Promise<ActivityFeedItem[]> => {

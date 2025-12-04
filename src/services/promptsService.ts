@@ -6,6 +6,7 @@ import { reactionService } from './reactionService';
 import { PromptTemplateViewModel, PromptTemplateDetailViewModel, PromptTemplateRecord, CreatePromptDTO } from '../types/prompts.types';
 import { tagService } from './tagService';
 import { tagActivityService } from './tagActivityService';
+import { contentModerationService } from './contentModerationService';
 
 const promptsRepo = getPromptsRepository();
 const lenserRepo = getLenserRepository();
@@ -62,12 +63,9 @@ export const promptsService = {
   },
 
   getAuthorPrompts: async (lenserId: string, offset = 0, limit = 10, viewerId?: string): Promise<PromptTemplateViewModel[]> => {
-    // Current repo implementation doesn't have getAuthorPrompts with eager loading yet, 
-    // but the `filterByLenser` logic usually resides in repo.
-    // For now we reuse getAll logic or assume filtering happened.
-    // Ideally we add getByLenser to repo. Using getAll + Filter for now as stub.
-    const records = await promptsRepo.getAll(offset, limit); 
-    return mapToViewModels(records.filter((p: any) => p.lenser_id === lenserId));
+    const includePrivate = lenserId === viewerId;
+    const records = await promptsRepo.getByAuthor(lenserId, offset, limit, includePrivate);
+    return mapToViewModels(records);
   },
 
   getPromptDetail: async (id: string, viewerLenserId?: string): Promise<PromptTemplateDetailViewModel | null> => {
@@ -142,6 +140,10 @@ export const promptsService = {
         input.description = input.content.substring(0, 100) + (input.content.length > 100 ? '...' : '');
     }
 
+    // Moderation Check
+    // TODO: moderation policy will not be used in the beta version
+    // await contentModerationService.validate(input.title, input.description, input.content);
+
     const resolvedTags = await tagService.upsertTags(input.tagIds);
     const realTagIds = resolvedTags.map(t => t.id);
 
@@ -162,14 +164,18 @@ export const promptsService = {
       if (!existing) throw new Error("Prompt not found");
       if (existing.lenser_id !== lenserId) throw new Error("Unauthorized to edit this prompt");
 
+      if (input.content && !input.description) {
+          input.description = input.content.substring(0, 100) + (input.content.length > 100 ? '...' : '');
+      }
+
+      // Moderation Check
+      // TODO: moderation policy will not be used in the beta version
+      // await contentModerationService.validate(input.title, input.description, input.content);
+
       let realTagIds: string[] | undefined = undefined;
       if (input.tagIds) {
           const resolvedTags = await tagService.upsertTags(input.tagIds);
           realTagIds = resolvedTags.map(t => t.id);
-      }
-
-      if (input.content && !input.description) {
-          input.description = input.content.substring(0, 100) + (input.content.length > 100 ? '...' : '');
       }
 
       return promptsRepo.updatePrompt(id, { ...input, tagIds: realTagIds });
