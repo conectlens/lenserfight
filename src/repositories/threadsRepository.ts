@@ -243,11 +243,22 @@ export class SupabaseThreadsRepository implements ThreadsRepositoryPort {
   }
 
   async getThreadsByTag(tagSlug: string, offset = 0, limit = 10): Promise<ThreadRecord[]> {
+      // Use !inner join to filter threads that actually have the tag
       const { data, error } = await supabase
         .from('threads')
-        .select(this.threadSelect)
+        .select(`
+            *,
+            author:lensers!lenser_id (
+                id, display_name, handle, avatar_url
+            ),
+            thread_tags!inner (
+                tag:tags!inner (
+                    id, name, slug
+                )
+            )
+        `)
         .eq('visibility', 'public')
-        .eq('thread_tags.tags.slug', tagSlug)
+        .eq('thread_tags.tag.slug', tagSlug)
         .order('created_at', { ascending: false })
         .range(offset, offset + limit - 1);
 
