@@ -5,12 +5,13 @@ import { ThreadsList } from '../components/ThreadsList';
 import { TagBadge } from '../../../components/TagBadge';
 import { Card } from '../../../components/Card';
 import { Button } from '../../../components/Button';
-import { Plus, ChevronRight, MessageSquareOff, AlertCircle, UserX, Tag } from 'lucide-react';
+import { Plus, ChevronRight, MessageSquareOff, AlertCircle, UserX, Tag, Sparkles } from 'lucide-react';
 import { CreateThreadModal } from '../../threads/components/CreateThreadModal';
 import { CreateLenserProfileModal } from '../../lenser/components/CreateLenserProfileModal';
 import { useLenser } from '../../../context/LenserContext';
 import { useAuth } from '../../../context/AuthContext';
 import { useThreadsFeed, useTopPrompts, useTrendingTags, useLatestLensers } from '../../../hooks/useThreads';
+import { SEOHead } from '../../../components/SEOHead';
 
 export const HomePage: React.FC = () => {
   const navigate = useNavigate();
@@ -79,6 +80,7 @@ export const HomePage: React.FC = () => {
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 max-w-7xl mx-auto">
+      <SEOHead type="home" />
       
       {/* Main Feed Column */}
       <div className="lg:col-span-8">
@@ -126,20 +128,24 @@ export const HomePage: React.FC = () => {
       </div>
 
       {/* Right Sidebar Widgets */}
-      <div className="hidden lg:block lg:col-span-4">
-           <div className="space-y-6 pt-[52px]">
+      <div className="lg:col-span-4 mt-8 lg:mt-0">
+           <div className="space-y-6 lg:pt-[52px]">
                 {/* Top Prompts Widget */}
                 <Card className="p-0 overflow-hidden bg-white">
-                  <div className="px-6 py-4 border-b border-gray-100 bg-gray-50/50">
+                  <div className="py-4 border-b border-gray-100 bg-gray-50/50">
                     <h3 className="text-xs font-bold text-gray-500 uppercase tracking-wider">Top Prompts</h3>
                   </div>
-                  <div className="p-2">
+                  <div className="py-2">
                     {promptsLoading ? (
-                        <div className="p-4 space-y-3">
+                        <div className="pb-2 space-y-3">
                             <div className="h-10 bg-gray-100 rounded animate-pulse"></div>
                             <div className="h-10 bg-gray-100 rounded animate-pulse"></div>
                         </div>
-                    ) : topPrompts?.map((prompt) => (
+                    ) : !topPrompts || topPrompts.length === 0 ? (
+                        <div>
+                            <MinimalAlert icon={Sparkles} text="No top prompts yet" />
+                        </div>
+                    ) : topPrompts.map((prompt) => (
                       <div 
                             key={prompt.id} 
                             onClick={() => navigate(`/prompts/${prompt.id}`)}
@@ -152,9 +158,9 @@ export const HomePage: React.FC = () => {
                   </div>
                 </Card>
 
-                {/* New Arrivals Widget */}
+                {/* New Lensers Widget */}
                 <Card className="p-6">
-                  <h3 className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-4">New Arrivals</h3>
+                  <h3 className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-4">New Lensers</h3>
                   {lensersLoading ? (
                       <div className="space-y-3">
                           {[1,2,3].map(i => <div key={i} className="flex gap-2"><div className="w-8 h-8 bg-gray-200 rounded-full"></div><div className="flex-1 bg-gray-100 rounded h-8"></div></div>)}

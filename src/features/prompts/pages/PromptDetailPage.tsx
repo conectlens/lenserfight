@@ -17,6 +17,7 @@ import { CreateLenserProfileModal } from '../../lenser/components/CreateLenserPr
 import { useCreatePrompt } from '../hooks/useCreatePrompt';
 import { CreatePromptModal } from '../components/CreatePromptModal';
 import { ConfirmModal } from '../../../components/ConfirmModal';
+import { SEOHead } from '../../../components/SEOHead';
 
 export const PromptDetailPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -284,6 +285,8 @@ export const PromptDetailPage: React.FC = () => {
 
   return (
     <div>
+      <SEOHead type="prompt" data={prompt} />
+      
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-12">
         <div className="lg:col-span-8">
           <div className="max-w-[860px] mx-auto">

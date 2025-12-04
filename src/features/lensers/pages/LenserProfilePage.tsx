@@ -20,12 +20,14 @@ import { CreatePromptModal } from '../../prompts/components/CreatePromptModal';
 import { CreateThreadModal } from '../../threads/components/CreateThreadModal';
 import { useCreatePrompt } from '../../prompts/hooks/useCreatePrompt';
 import { useCreateThread } from '../../threads/hooks/useCreateThread';
-import { FolderOpen, MessageSquare, Trophy, Activity } from 'lucide-react';
+import { FolderOpen, MessageSquare, Trophy, Activity, Plus } from 'lucide-react';
 import { FEATURES } from '../../../config/runtimeConfig';
 import { useAuth } from '../../../context/AuthContext';
 import { useLenser } from '../../../context/LenserContext';
 import { useShareContext } from '../../../context/ShareContext';
 import { ConfirmModal } from '../../../components/ConfirmModal';
+import { Button } from '../../../components/Button';
+import { SEOHead } from '../../../components/SEOHead';
 
 type TabType = 'actions' | 'prompts' | 'threads' | 'challenges';
 
@@ -226,7 +228,7 @@ export const LenserProfilePage: React.FC = () => {
               fetchTabData(activeTab, 0);
           }
       }
-  }, [activeTab, lenser?.id, currentUserLenser?.id]); // Also depend on viewer ID to refresh privates on login
+  }, [activeTab, lenser?.id, currentUserLenser?.id]);
 
   // 5. Infinite Scroll Observer
   const lastElementRef = useCallback((node: HTMLDivElement) => {
@@ -235,7 +237,6 @@ export const LenserProfilePage: React.FC = () => {
     
     observer.current = new IntersectionObserver(entries => {
       if (entries[0].isIntersecting && hasMore) {
-        // Use functional state to ensure we get the latest page
         const nextPage = page + 1;
         fetchTabData(activeTab, nextPage);
       }
@@ -285,7 +286,6 @@ export const LenserProfilePage: React.FC = () => {
       }
   };
 
-  // Update a single item in cache without refetching
   const updateCacheItem = (tab: TabType, itemId: string, updater: (item: any) => any) => {
       setTabCache(prev => {
           const tabState = prev[tab];
@@ -297,7 +297,6 @@ export const LenserProfilePage: React.FC = () => {
       });
   };
 
-  // Remove item from cache
   const removeCacheItem = (tab: TabType, itemId: string) => {
       setTabCache(prev => {
           const tabState = prev[tab];
@@ -331,17 +330,13 @@ export const LenserProfilePage: React.FC = () => {
       }
   };
 
-  // Callback after successful edit/create
   const handleMutationSuccess = (tab: TabType) => {
-      // For simplicity on create/full edit, we refresh the specific tab
       fetchTabData(tab, 0, true);
   };
 
   const handlePromptSubmit = (id: string) => {
-      navigate(`/prompts/${id}`);
+      handleMutationSuccess('prompts');
   };
-
-  // --- Renderers ---
 
   const SkeletonLoader = () => {
       if (activeTab === 'prompts') {
@@ -361,12 +356,13 @@ export const LenserProfilePage: React.FC = () => {
       return <div className="space-y-4">{[1, 2, 3].map(i => <div key={i} className="h-20 bg-gray-200 rounded-xl animate-pulse"></div>)}</div>;
   };
 
-  const EmptyState = ({ icon: Icon, message }: { icon: any, message: string }) => (
+  const EmptyState = ({ icon: Icon, message, action }: { icon: any, message: string, action?: React.ReactNode }) => (
     <div className="flex flex-col items-center justify-center py-20 text-center animate-in fade-in duration-500 bg-gray-50/50 rounded-2xl border border-gray-100 border-dashed">
         <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mb-4 text-gray-300">
             <Icon size={32} />
         </div>
-        <p className="text-gray-500 font-medium">{message}</p>
+        <p className="text-gray-500 font-medium mb-4">{message}</p>
+        {action}
     </div>
   );
 
@@ -397,6 +393,8 @@ export const LenserProfilePage: React.FC = () => {
 
   return (
     <div className="max-w-7xl mx-auto pb-12">
+      <SEOHead type="profile" data={{ lenser, stats }} />
+      
       <LenserProfileHeader 
         lenser={lenser} 
         stats={stats} 
@@ -404,23 +402,24 @@ export const LenserProfilePage: React.FC = () => {
         onProfileUpdate={handleProfileUpdate}
       />
       
-      {/* Pass Join Order for Rank display */}
       {stats && (
-        <div className="px-6 md:px-0">
+        <div className="px-4 md:px-0">
             <LenserStatsRow stats={stats} joinOrder={lenser.join_order} />
         </div>
       )}
       
       {FEATURES.LENSER_ACTIVITY && (
-        <div className="px-6 md:px-0">
+        <div className="px-4 md:px-0">
            <LenserActivityHeatmap data={activity} />
         </div>
       )}
       
-      <div className="px-6 md:px-0">
-          <LenserTabs activeTab={activeTab} onChange={handleTabChange} />
+      <div className="px-0 md:px-0">
+          <div className="px-4 md:px-0">
+            <LenserTabs activeTab={activeTab} onChange={handleTabChange} />
+          </div>
           
-          <div className="min-h-[300px]">
+          <div className="min-h-[300px] px-4 md:px-0">
             {/* Actions Tab */}
             {activeTab === 'actions' && (
                 <>
@@ -450,7 +449,15 @@ export const LenserProfilePage: React.FC = () => {
                             ))}
                         </div>
                     ) : (
-                        !loadingTab && <EmptyState icon={FolderOpen} message="No prompts created yet." />
+                        !loadingTab && <EmptyState 
+                            icon={FolderOpen} 
+                            message="No prompts created yet." 
+                            action={isOwner && (
+                                <Button onClick={() => openPromptModal()} className="w-auto flex items-center gap-2">
+                                    <Plus size={16} /> Create Prompt
+                                </Button>
+                            )}
+                        />
                     )}
                 </>
             )}
@@ -472,7 +479,15 @@ export const LenserProfilePage: React.FC = () => {
                             ))}
                         </div>
                     ) : (
-                        !loadingTab && <EmptyState icon={MessageSquare} message="No threads posted yet." />
+                        !loadingTab && <EmptyState 
+                            icon={MessageSquare} 
+                            message="No threads posted yet."
+                            action={isOwner && (
+                                <Button onClick={() => setIsThreadModalOpen(true)} className="w-auto flex items-center gap-2">
+                                    <Plus size={16} /> Create Thread
+                                </Button>
+                            )}
+                        />
                     )}
                 </>
             )}

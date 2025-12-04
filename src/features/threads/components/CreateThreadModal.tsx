@@ -11,7 +11,7 @@ import { RichMentionInput, RichMentionInputHandle } from '../../../components/Ri
 import { promptsService } from '../../../services/promptsService';
 import { PromptTemplateViewModel } from '../../../types/prompts.types';
 import { SelectField } from '../../../components/SelectField';
-import { Globe, Users, Lock } from 'lucide-react';
+import { Globe, Lock } from 'lucide-react';
 
 interface CreateThreadModalProps {
   isOpen: boolean;
@@ -124,7 +124,6 @@ export const CreateThreadModal: React.FC<CreateThreadModalProps> = ({ isOpen, on
 
   const visibilityOptions = [
       { value: 'public', label: 'Public', icon: Globe },
-      { value: 'followers', label: 'Followers Only', icon: Users },
       { value: 'private', label: 'Private', icon: Lock }
   ];
 

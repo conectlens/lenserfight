@@ -1,5 +1,5 @@
 
-import { AIGeneration, CreateGenerationDTO, MediaLibraryItem, GenerationFilterOptions, AIModel } from '../types/generation.types';
+import { AIGeneration, CreateGenerationDTO, MediaLibraryItem, GenerationFilterOptions, AIModel, AI_MODELS } from '../types/generation.types';
 import { supabase } from '../utils/supabase';
 import { storage } from '../utils/storage';
 
@@ -121,16 +121,8 @@ export class MockGenerationRepository implements GenerationRepositoryPort {
 
   async getAIModels(): Promise<AIModel[]> {
     await new Promise(resolve => setTimeout(resolve, 200));
-    return [
-      { id: 'midjourney', name: 'Midjourney' },
-      { id: 'dalle-3', name: 'DALL·E 3' },
-      { id: 'stable-diffusion', name: 'Stable Diffusion' },
-      { id: 'chatgpt', name: 'ChatGPT' },
-      { id: 'claude', name: 'Claude' },
-      { id: 'grok', name: 'Grok' },
-      { id: 'runway', name: 'Runway Gen-2' },
-      { id: 'sora', name: 'Sora' }
-    ];
+    // Return the constant values (now UUIDs) for mock consistency
+    return AI_MODELS.map(m => ({ id: m.id, name: m.label }));
   }
 }
 
