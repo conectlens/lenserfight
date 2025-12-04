@@ -178,7 +178,7 @@ export const SettingsPage: React.FC = () => {
                                <label className="block text-sm font-medium text-gray-700 mb-1.5">Registered Name</label>
                                <input 
                                    disabled 
-                                   value={user?.raw_user_meta_data?.display_name || 'N/A'} 
+                                   value={user?.user_metadata?.display_name || 'N/A'} 
                                    className="w-full px-4 py-2.5 rounded-lg border border-gray-200 bg-gray-50 text-gray-500"
                                />
                                <p className="text-xs text-gray-400 mt-1">This is the name used for account recovery and billing, stored in identity provider.</p>
