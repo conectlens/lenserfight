@@ -19,10 +19,8 @@ export interface ThreadsRepositoryPort {
   incrementView(id: string): Promise<void>;
 }
 
-// --- Mock Implementation (Kept simplified for compatibility) ---
+// --- Mock Implementation ---
 export class MockThreadsRepository implements ThreadsRepositoryPort {
-  // ... (Mock implementation remains largely same for offline dev, but omitted for brevity as focus is Supabase optimization)
-  // Returning dummy implementation to satisfy interface for the refactor scope
   private THREADS_KEY = 'mock_threads_db';
   createThread = async (dto: any) => ({ ...dto, id: 'mock', created_at: new Date().toISOString() });
   getAllThreads = async () => [];
@@ -41,7 +39,8 @@ export class MockThreadsRepository implements ThreadsRepositoryPort {
 // --- Supabase Implementation (Optimized) ---
 export class SupabaseThreadsRepository implements ThreadsRepositoryPort {
   
-  // Helper for common selection fields to ensure DTO compatibility
+  // Optimized Selection: Fetches Thread + Author + Tags in one go.
+  // Note: We rely on reaction_totals JSONB column for counts to avoid expensive count(*) joins.
   private get threadSelect() {
     return `
       *,
@@ -62,7 +61,8 @@ export class SupabaseThreadsRepository implements ThreadsRepositoryPort {
             lenser_id: dto.lenserId, 
             title: dto.title, 
             content: dto.content, 
-            visibility: dto.visibility 
+            visibility: dto.visibility,
+            reaction_totals: {} // Initialize
         })
         .select().single();
     
@@ -80,7 +80,6 @@ export class SupabaseThreadsRepository implements ThreadsRepositoryPort {
   }
 
   async getAllThreads(offset = 0, limit = 10): Promise<ThreadRecord[]> {
-    // SINGLE QUERY: Fetches Thread + Author + Tags in one go
     const { data, error } = await supabase
         .from('threads')
         .select(this.threadSelect)
@@ -89,11 +88,10 @@ export class SupabaseThreadsRepository implements ThreadsRepositoryPort {
         .range(offset, offset + limit - 1);
 
     if (error) throw error;
-    return data as any; // Type casting handled in service layer mapper
+    return data as any;
   }
 
   async getThreadsByTag(tagSlug: string, offset = 0, limit = 10): Promise<ThreadRecord[]> {
-      // Use !inner to filter parent rows based on child condition
       const { data, error } = await supabase
         .from('threads')
         .select(this.threadSelect)
@@ -117,7 +115,6 @@ export class SupabaseThreadsRepository implements ThreadsRepositoryPort {
     return data as any;
   }
 
-  // Deprecated usage in optimized flow, but kept for interface compat
   async getThreadTags(threadId: string): Promise<TagRecord[]> {
     const { data } = await supabase.from('thread_tags').select('tags(*)').eq('thread_id', threadId);
     // @ts-ignore
@@ -125,7 +122,6 @@ export class SupabaseThreadsRepository implements ThreadsRepositoryPort {
   }
 
   async getThreadReplies(threadId: string): Promise<ThreadReplyRecord[]> {
-     // Fetch replies + authors + reaction counts in one go
      const { data, error } = await supabase
         .from('thread_replies')
         .select(`
@@ -159,15 +155,10 @@ export class SupabaseThreadsRepository implements ThreadsRepositoryPort {
   }
 
   async getTrendingTags(limit: number): Promise<string[]> {
-      // Use RPC for aggregation to be strictly performant
-      // Fallback to optimized select if RPC not available
-      const oneWeekAgo = new Date();
-      oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
-
       const { data } = await supabase
         .from('thread_tags')
         .select('tag:tags(name)')
-        .limit(50); // Just sample recent tags for now to avoid heavy aggregation on client
+        .limit(50);
 
       if (!data) return [];
       

@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { AIGeneration } from '../../../types/generation.types';
 import { MediaCard } from './MediaCard';
@@ -11,7 +10,7 @@ interface GenerationMasonryGridProps {
   onPreview: (gen: AIGeneration) => void;
   isLoading: boolean;
   hasMore: boolean;
-  loadRef: React.RefObject<HTMLDivElement>;
+  loadRef: React.Ref<HTMLDivElement>;
 }
 
 export const GenerationMasonryGrid: React.FC<GenerationMasonryGridProps> = ({ 

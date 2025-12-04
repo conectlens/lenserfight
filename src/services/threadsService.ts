@@ -1,13 +1,14 @@
 
 import { getThreadsRepository } from '../adapters/threadsAdapter';
 import { getLenserRepository } from '../adapters/lenserAdapter';
+import { getReactionRepository } from '../adapters/reactionAdapter';
 import { ThreadFeedItem, ThreadDetailViewModel, ThreadRecord, Visibility, CreateThreadDTO } from '../types/threads.types';
 import { threadInteractionService } from './threadInteractionService';
 import { tagService } from './tagService';
-import { reactionService } from './reactionService';
 
 const threadsRepo = getThreadsRepository();
 const lenserRepo = getLenserRepository();
+const reactionRepo = getReactionRepository();
 
 export const threadsService = {
   createThread: async (input: { title: string; content: string; tagIds: string[]; lenserId: string; visibility: Visibility }): Promise<ThreadRecord> => {
@@ -17,7 +18,6 @@ export const threadsService = {
   },
 
   updateThread: async (id: string, input: Partial<CreateThreadDTO>, lenserId: string): Promise<ThreadRecord> => {
-      // Validation logic remains...
       let realTagIds: string[] | undefined = undefined;
       if (input.tagIds) {
           const resolvedTags = await tagService.upsertTags(input.tagIds);
@@ -43,17 +43,26 @@ export const threadsService = {
   },
 
   getThreadsByAuthor: async (authorId: string, currentUserId?: string, offset = 0, limit = 10): Promise<ThreadFeedItem[]> => {
-    // Re-use getAllThreads but filter - usually handled by specific repo method, using standard for now
+    // Note: To optimize, repo should have a dedicated getByAuthor method, but for now filtering is acceptable
+    // if records are returned fully populated.
     const records = await threadsRepo.getAllThreads(offset, limit); 
+    // In production, use threadsRepo.getByAuthor(authorId) to avoid over-fetching
     return threadsService._mapToFeedItems(records.filter((t: any) => t.lenser_id === authorId), currentUserId);
   },
 
-  // Pure Mapper: Converts DB Join Result -> Domain Model
+  // Pure Mapper: Converts DB Join Result -> Domain Model + Batch Reaction State
   _mapToFeedItems: async (records: any[], currentUserId?: string): Promise<ThreadFeedItem[]> => {
-    // We can fetch user reactions in bulk here if needed, but for now we rely on the 
-    // basic reaction counts. 
-    // Ideally: const userReactions = await reactionService.getBatchUserReactions(recordIds, currentUserId);
-    
+    if (records.length === 0) return [];
+
+    // 1. Batch fetch user reactions if logged in (O(1) request)
+    let userReactedIds = new Set<string>();
+    if (currentUserId) {
+        const ids = records.map(r => r.id);
+        const reactions = await reactionRepo.getBatchUserReactions('thread', ids, currentUserId);
+        reactions.forEach(r => userReactedIds.add(r.target_id));
+    }
+
+    // 2. Map in memory
     return records.map(record => {
         // Map Tags from Junction (Supabase format: thread_tags: [{ tag: { ... } }])
         const tags = record.thread_tags?.map((tt: any) => tt.tag) || [];
@@ -76,7 +85,7 @@ export const threadsService = {
             reactionCount: totalReactions,
             replyCount: record.reply_count || 0,
             createdAt: record.created_at,
-            userHasReacted: false // Pending: Add bulk 'checkUserReaction' logic if critical
+            userHasReacted: userReactedIds.has(record.id)
         };
     });
   },
@@ -85,20 +94,23 @@ export const threadsService = {
     // Fire & Forget View Count
     threadsRepo.incrementView(threadId).catch(() => {});
 
-    // Single Deep Fetch for main thread data
     const record: any = await threadsRepo.getThreadById(threadId);
     if (!record) return null;
 
-    // Fetch replies separately (paginated usually, but here we get all)
-    // The repository already joins authors for replies
     const repliesRecords = await threadsRepo.getThreadReplies(threadId);
     
-    // Map Replies
+    // Check main thread reaction
+    let userHasReacted = false;
+    if (currentUserId) {
+        const [reaction] = await reactionRepo.getUserReaction('thread', threadId, currentUserId);
+        userHasReacted = !!reaction;
+    }
+
     const replies = repliesRecords.map((r: any) => ({
         id: r.id,
         content: r.content,
         createdAt: r.created_at,
-        reactionCount: 0, // Simplified for brevity
+        reactionCount: 0, 
         isDeleted: !!r.deleted_at,
         author: {
             id: r.author?.id,
@@ -106,8 +118,12 @@ export const threadsService = {
             handle: r.author?.handle,
             avatarUrl: r.author?.avatar_url
         },
-        replies: [] // Recursive structure built by interactionService if needed
+        replies: []
     }));
+
+    // Aggregate counts
+    const reactionCounts = record.reaction_totals || {};
+    const totalReactions = Object.values(reactionCounts).reduce((a: any, b: any) => a + b, 0) as number;
 
     return {
         id: record.id,
@@ -121,9 +137,9 @@ export const threadsService = {
             handle: record.author?.handle
         },
         tags: record.thread_tags?.map((tt: any) => tt.tag) || [],
-        reactionCount: 0, // aggregate from totals
-        userHasReacted: false,
-        replies: replies, // Flat for now, tree builder is in UI helper
+        reactionCount: totalReactions,
+        userHasReacted: userHasReacted,
+        replies: replies,
         promptBlock: record.prompt_data
     };
   },
