@@ -65,7 +65,8 @@ export const threadsService = {
     // 2. Map in memory
     return records.map(record => {
         // Map Tags from Junction (Supabase format: thread_tags: [{ tag: { ... } }])
-        const tags = record.thread_tags?.map((tt: any) => tt.tag) || [];
+        // Filter out any potential nulls from join
+        const tags = (record.thread_tags?.map((tt: any) => tt.tag) || []).filter((t: any) => !!t);
         
         // Use reaction_totals JSONB from DB directly
         const reactionCounts = record.reaction_totals || {};
@@ -97,8 +98,6 @@ export const threadsService = {
     const record: any = await threadsRepo.getThreadById(threadId);
     if (!record) return null;
 
-    const repliesRecords = await threadsRepo.getThreadReplies(threadId);
-    
     // Check main thread reaction
     let userHasReacted = false;
     if (currentUserId) {
@@ -106,20 +105,8 @@ export const threadsService = {
         userHasReacted = !!reaction;
     }
 
-    const replies = repliesRecords.map((r: any) => ({
-        id: r.id,
-        content: r.content,
-        createdAt: r.created_at,
-        reactionCount: 0, 
-        isDeleted: !!r.deleted_at,
-        author: {
-            id: r.author?.id,
-            displayName: r.author?.display_name,
-            handle: r.author?.handle,
-            avatarUrl: r.author?.avatar_url
-        },
-        replies: []
-    }));
+    // Delegate reply fetching to interaction service for tree building + advanced stats
+    const replies = await threadInteractionService.getReplyTree(threadId, currentUserId);
 
     // Aggregate counts
     const reactionCounts = record.reaction_totals || {};
@@ -136,7 +123,7 @@ export const threadsService = {
             avatarUrl: record.author?.avatar_url,
             handle: record.author?.handle
         },
-        tags: record.thread_tags?.map((tt: any) => tt.tag) || [],
+        tags: (record.thread_tags?.map((tt: any) => tt.tag) || []).filter((t: any) => !!t),
         reactionCount: totalReactions,
         userHasReacted: userHasReacted,
         replies: replies,

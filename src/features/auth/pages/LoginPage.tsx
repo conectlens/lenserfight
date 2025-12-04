@@ -44,7 +44,7 @@ export const LoginPage: React.FC = () => {
     setLoading(true);
     try {
       await login(formData.email, formData.password);
-      navigate('/app');
+      navigate('/');
     } catch (err: any) {
       setApiError(err.message || "Failed to sign in");
     } finally {
@@ -64,7 +64,7 @@ export const LoginPage: React.FC = () => {
   return (
     <div className="relative">
       <div className="absolute top-4 left-4 z-10">
-        <Link to="/app" className="flex items-center gap-2 text-sm font-medium text-gray-600 hover:text-gray-900 transition-colors bg-white/50 backdrop-blur-sm px-4 py-2 rounded-lg hover:bg-white/80">
+        <Link to="/" className="flex items-center gap-2 text-sm font-medium text-gray-600 hover:text-gray-900 transition-colors bg-white/50 backdrop-blur-sm px-4 py-2 rounded-lg hover:bg-white/80">
            <ArrowLeft size={16} />
            Back to Dashboard
         </Link>
