@@ -91,11 +91,8 @@ export const promptsService = {
 
     const isSaved = summary.userReactions.includes('saved');
 
-    if (viewModel.tags.length > 0) {
-        Promise.all(viewModel.tags.map(t => 
-            tagActivityService.recordView(t.id, 'prompt', id, viewerLenserId)
-        )).catch(() => {});
-    }
+    // NOTE: Tag viewing logging removed from here to separate concerns.
+    // It is now handled by the Controller.
 
     return {
       ...viewModel,
@@ -152,9 +149,16 @@ export const promptsService = {
         tagIds: realTagIds
     });
 
-    Promise.all(realTagIds.map(tagId => 
-        tagActivityService.recordActivity(tagId, 'prompt', prompt.id, input.lenserId, 'created')
-    )).catch(console.error);
+    // Batch logging for create
+    tagActivityService.recordBatchActivity(
+        realTagIds.map(tagId => ({
+            tag_id: tagId,
+            entity_type: 'prompt',
+            entity_id: prompt.id,
+            activity_type: 'created',
+            actor_id: input.lenserId
+        }))
+    ).catch(console.error);
 
     return prompt;
   },
