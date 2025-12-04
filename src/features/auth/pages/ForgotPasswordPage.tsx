@@ -62,9 +62,6 @@ export const ForgotPasswordPage: React.FC = () => {
                 <p className="text-gray-600 mb-6">
                     If an account exists for <strong>{formData.email}</strong>, you will receive instructions to reset your password.
                 </p>
-                <div className="bg-blue-50 text-blue-800 text-xs p-3 rounded-lg mb-6 text-left">
-                    <strong>Mock Mode Tip:</strong> Check your browser console (F12) for the reset link.
-                </div>
                 <Link to="/login">
                     <Button>Return to Sign In</Button>
                 </Link>
@@ -73,45 +70,44 @@ export const ForgotPasswordPage: React.FC = () => {
     );
   }
 
+  const backButton = (
+    <Link to="/" className="inline-flex items-center gap-2 text-sm font-semibold text-gray-500 hover:text-gray-900 transition-all bg-white/80 backdrop-blur-md px-4 py-2.5 rounded-full hover:bg-white shadow-sm border border-gray-200/50 hover:border-gray-300 w-auto">
+       <ArrowLeft size={16} />
+       Dive into the arena
+    </Link>
+  );
+
   return (
-    <div className="relative">
-      <div className="absolute top-4 left-4 z-10">
-        <Link to="/" className="flex items-center gap-2 text-sm font-medium text-gray-600 hover:text-gray-900 transition-colors bg-white/50 backdrop-blur-sm px-4 py-2 rounded-lg hover:bg-white/80">
-           <ArrowLeft size={16} />
-           Back to Dashboard
+    <AuthCard title="Reset Password" subtitle="Enter your email to receive instructions" backButton={backButton}>
+      <form onSubmit={handleSubmit} className="space-y-6" noValidate>
+        <div>
+          <InputField
+            label="Email Address"
+            name="email"
+            type="email"
+            placeholder="Enter your email"
+            value={formData.email}
+            onChange={handleChange}
+            className={errors.email ? 'border-red-500 focus:border-red-500 focus:ring-red-200' : ''}
+          />
+          <FormError message={errors.email} />
+        </div>
+
+        {apiError && <div className="text-red-500 text-sm bg-red-50 p-3 rounded-lg">{apiError}</div>}
+
+        <Button type="submit" isLoading={loading} className="mt-2 text-base font-semibold">
+          Send Reset Link
+        </Button>
+      </form>
+      
+      <div className="mt-8 text-center text-sm text-gray-500 font-medium">
+        <Link to="/login" className="flex items-center justify-center gap-2 text-gray-900 hover:text-primary-700 hover:underline transition-colors">
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+            </svg>
+            Back to Sign In
         </Link>
       </div>
-      <AuthCard title="Reset Password" subtitle="Enter your email to receive instructions">
-        <form onSubmit={handleSubmit} className="space-y-6" noValidate>
-          <div>
-            <InputField
-              label="Email Address"
-              name="email"
-              type="email"
-              placeholder="Enter your email"
-              value={formData.email}
-              onChange={handleChange}
-              className={errors.email ? 'border-red-500 focus:border-red-500 focus:ring-red-200' : ''}
-            />
-            <FormError message={errors.email} />
-          </div>
-
-          {apiError && <div className="text-red-500 text-sm bg-red-50 p-3 rounded-lg">{apiError}</div>}
-
-          <Button type="submit" isLoading={loading} className="mt-2 text-base font-semibold">
-            Send Reset Link
-          </Button>
-        </form>
-        
-        <div className="mt-8 text-center text-sm text-gray-500">
-          <Link to="/login" className="font-medium text-gray-900 hover:underline flex items-center justify-center gap-2">
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
-              </svg>
-              Back to Sign In
-          </Link>
-        </div>
-      </AuthCard>
-    </div>
+    </AuthCard>
   );
 };

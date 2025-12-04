@@ -52,13 +52,14 @@ export interface GenerationFilterOptions {
   aiModelId?: string | 'all';
 }
 
+// Using valid UUIDs to prevent PostgreSQL 22P02 errors
 export const AI_MODELS = [
-  { id: 'midjourney', label: 'Midjourney' },
-  { id: 'dalle-3', label: 'DALL·E 3' },
-  { id: 'stable-diffusion', label: 'Stable Diffusion' },
-  { id: 'chatgpt', label: 'ChatGPT' },
-  { id: 'claude', label: 'Claude' },
-  { id: 'grok', label: 'Grok' },
-  { id: 'runway', label: 'Runway Gen-2' },
-  { id: 'sora', label: 'Sora' }
+  { id: '00000000-0000-0000-0000-000000000001', label: 'Midjourney' },
+  { id: '00000000-0000-0000-0000-000000000002', label: 'DALL·E 3' },
+  { id: '00000000-0000-0000-0000-000000000003', label: 'Stable Diffusion' },
+  { id: '00000000-0000-0000-0000-000000000004', label: 'ChatGPT' },
+  { id: '00000000-0000-0000-0000-000000000005', label: 'Claude' },
+  { id: '00000000-0000-0000-0000-000000000006', label: 'Grok' },
+  { id: '00000000-0000-0000-0000-000000000007', label: 'Runway Gen-2' },
+  { id: '00000000-0000-0000-0000-000000000008', label: 'Sora' }
 ];

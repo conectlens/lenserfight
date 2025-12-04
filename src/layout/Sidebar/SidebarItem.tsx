@@ -30,6 +30,7 @@ export const SidebarItem: React.FC<SidebarItemProps> = ({
                 ? 'cursor-not-allowed opacity-60 hover:bg-transparent animate-pulse-gold'
                 : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
         }
+        ${collapsed ? 'justify-center' : ''}
         ${className}
       `}
       title={collapsed ? (isComingSoon ? "Coming Soon" : label) : undefined}

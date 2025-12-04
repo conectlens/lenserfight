@@ -215,22 +215,37 @@ export class SupabasePromptsRepository implements PromptsRepositoryPort {
   async filterByTag(tagSlug: string | null, offset = 0, limit = 10): Promise<PromptTemplateRecord[]> {
     if (!tagSlug) return this.getAll(offset, limit);
     
-    // Filtering by deep relation
-    const { data, error } = await supabase
-        .from('prompt_templates')
-        .select(`${this.promptSelect}, prompt_template_tags!inner(tag:tags!inner(slug))`)
-        .eq('visibility', 'public')
-        .eq('prompt_template_tags.tags.slug', tagSlug)
+    // Step 1: Get Tag ID
+    const { data: tag } = await supabase
+        .from('tags')
+        .select('id')
+        .eq('slug', tagSlug)
+        .single();
+
+    if (!tag) return [];
+
+    // Step 2: Get Template IDs from Junction Table
+    // We paginate on the junction table to get the most recent additions for this tag
+    const { data: junctionData, error: junctionError } = await supabase
+        .from('prompt_template_tags')
+        .select('template_id')
+        .eq('tag_id', tag.id)
+        .order('created_at', { ascending: false })
         .range(offset, offset + limit - 1);
 
-    if (error) {
-        // Gracefully handle Supabase error 42803 (aggregate functions in view)
-        if (error.code === '42803') {
-            console.warn("SupabasePromptsRepository: 42803 error on tag filter, returning empty.", error);
-            return [];
-        }
-        throw error;
-    }
+    if (junctionError || !junctionData || junctionData.length === 0) return [];
+
+    const templateIds = junctionData.map(r => r.template_id);
+
+    // Step 3: Fetch Full Details for these IDs
+    const { data, error } = await supabase
+        .from('prompt_templates')
+        .select(this.promptSelect)
+        .in('id', templateIds)
+        .eq('visibility', 'public')
+        .order('created_at', { ascending: false });
+
+    if (error) throw error;
     return data as any;
   }
 

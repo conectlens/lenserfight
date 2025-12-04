@@ -3,6 +3,7 @@ import React, { useEffect, useState, useRef } from 'react';
 import { TagUsage } from '../../../types/tags.types';
 import { tagService } from '../../../services/tagService';
 import { TagCloud } from '../components/TagCloud';
+import { SEOHead } from '../../../components/SEOHead';
 
 const NodeGraphBackground: React.FC = () => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -35,9 +36,9 @@ const NodeGraphBackground: React.FC = () => {
     const draw = () => {
       ctx.clearRect(0, 0, width, height);
       
-      // Very low contrast colors for subtle background
-      ctx.fillStyle = '#E5E7EB'; // gray-200
-      ctx.strokeStyle = '#E5E7EB'; // gray-200
+      // Updated colors for better visibility on light theme
+      ctx.fillStyle = '#9CA3AF'; // gray-400
+      ctx.strokeStyle = '#9CA3AF'; // gray-400
 
       particles.forEach((p, i) => {
         p.x += p.vx;
@@ -90,7 +91,7 @@ const NodeGraphBackground: React.FC = () => {
     };
   }, []);
 
-  return <canvas ref={canvasRef} className="absolute inset-0 w-full h-full pointer-events-none opacity-50" />;
+  return <canvas ref={canvasRef} className="absolute inset-0 w-full h-full pointer-events-none" />;
 };
 
 export const TagCloudPage: React.FC = () => {
@@ -114,6 +115,7 @@ export const TagCloudPage: React.FC = () => {
   return (
     // Minimalist full-height container with no visible boundaries
     <div className="relative w-full h-[80vh] flex items-center justify-center overflow-hidden">
+      <SEOHead type="tag-cloud" />
       <NodeGraphBackground />
       
       <div className="relative z-10 w-full max-w-5xl mx-auto px-4 flex flex-col items-center justify-center">

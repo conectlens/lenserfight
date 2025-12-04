@@ -15,9 +15,8 @@ export interface ReactionRepositoryPort {
 
 export class MockReactionRepository implements ReactionRepositoryPort {
   private STORAGE_KEY = 'mock_reactions_db';
-  private THREADS_KEY = 'mock_threads_db';
   
-  constructor() {} // Seed logic omitted for brevity
+  constructor() {} 
 
   private getStore(): ReactionRecord[] {
     return JSON.parse(storage.getItem(this.STORAGE_KEY) || '[]');
@@ -32,7 +31,6 @@ export class MockReactionRepository implements ReactionRepositoryPort {
   }
 
   async getBatchUserReactions(targetType: TargetType, targetIds: string[], lenserId: string): Promise<ReactionRecord[]> {
-      // Mock batch implementation
       return this.getStore().filter(r => r.target_type === targetType && r.lenser_id === lenserId && targetIds.includes(r.target_id));
   }
 
@@ -50,11 +48,23 @@ export class MockReactionRepository implements ReactionRepositoryPort {
   }
 
   async countReactions(targetType: TargetType, targetId: string): Promise<ReactionCount[]> {
-      return []; // Simplification
+      const store = this.getStore();
+      const relevant = store.filter(r => r.target_type === targetType && r.target_id === targetId);
+      
+      const counts: Record<string, number> = {};
+      relevant.forEach(r => {
+          counts[r.reaction] = (counts[r.reaction] || 0) + 1;
+      });
+      
+      return Object.entries(counts).map(([reaction, count]) => ({ reaction: reaction as ReactionType, count }));
   }
 
   async getUserHistory(lenserId: string, offset = 0, limit = 20): Promise<ReactionRecord[]> {
-      return [];
+      const store = this.getStore();
+      return store
+        .filter(r => r.lenser_id === lenserId)
+        .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+        .slice(offset, offset + limit);
   }
 }
 
@@ -97,8 +107,23 @@ export class SupabaseReactionRepository implements ReactionRepositoryPort {
   }
 
   async countReactions(targetType: TargetType, targetId: string): Promise<ReactionCount[]> {
-    // Optimized: Read reaction_totals JSONB from entity tables if applicable, but explicit count here just in case
-    return [];
+    const { data, error } = await supabase
+        .from('reactions')
+        .select('reaction')
+        .eq('target_type', targetType)
+        .eq('target_id', targetId);
+        
+    if (error) {
+        console.error("Error counting reactions:", error);
+        return [];
+    }
+    
+    const counts: Record<string, number> = {};
+    data.forEach((row: any) => {
+        counts[row.reaction] = (counts[row.reaction] || 0) + 1;
+    });
+    
+    return Object.entries(counts).map(([reaction, count]) => ({ reaction: reaction as ReactionType, count }));
   }
 
   async getUserHistory(lenserId: string, offset = 0, limit = 20): Promise<ReactionRecord[]> {
