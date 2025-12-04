@@ -1,5 +1,5 @@
 
-import { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { promptsService } from '../../../services/promptsService';
 import { PromptTemplateViewModel } from '../../../types/prompts.types';
 import { getCaretCoordinates } from '../../../utils/textareaUtils';
@@ -74,12 +74,24 @@ export const useMentionController = () => {
   ) => {
     if (mentionStartPos === -1) return;
 
+    // Create the structured token
+    const token = MentionParser.createPromptToken(prompt.id);
+
+    // Check for duplicates in the *existing* content
+    // We check against the full content, but ignoring the partial text we are currently typing to replace.
+    // However, simplest check is: if the token is ALREADY in the text, we block it.
+    // The current mention being typed (e.g. "@pro") is not yet a token, so a simple includes check on the token string is safe.
+    if (currentContent.includes(token)) {
+        setIsMentioning(false);
+        setSuggestions([]);
+        // Optional: Trigger a toast or UI feedback here
+        console.warn("Prompt already mentioned");
+        return;
+    }
+
     const beforeMention = currentContent.substring(0, mentionStartPos);
     // We assume the cursor is at the end of the query
     const afterCursor = currentContent.substring(textareaRef.current?.selectionStart || mentionStartPos);
-    
-    // Create the structured token
-    const token = MentionParser.createPromptToken(prompt.id);
     
     const newValue = `${beforeMention}${token} ${afterCursor}`; // Add a space after
     setValue(newValue);

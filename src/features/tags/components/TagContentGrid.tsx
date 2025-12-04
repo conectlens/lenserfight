@@ -53,6 +53,9 @@ export const TagContentGrid: React.FC<TagContentGridProps> = ({ items, loading }
            
            if (item.type === 'thread') {
                const thread = item.data as ThreadFeedItem;
+               // Safely handle tags in case of null entries in array
+               const safeTags = (thread.tags || []).filter(t => !!t);
+
                return (
                    <div key={item.id} onClick={() => navigate(`/threads/${item.id}`)} className="cursor-pointer group h-full">
                        <Card className="h-full flex flex-col hover:shadow-lg transition-all border-gray-200 hover:border-primary/40 p-6">
@@ -65,10 +68,10 @@ export const TagContentGrid: React.FC<TagContentGridProps> = ({ items, loading }
                                {thread.title}
                            </h3>
                            <div className="text-sm text-gray-500 line-clamp-3 mb-4 flex-1 leading-relaxed">
-                               <MentionRenderer content={thread.content} plainText={true} />
+                               <MentionRenderer content={thread.content} simple={true} />
                            </div>
                            <div className="flex items-center gap-2 mb-4">
-                               {thread.tags.slice(0, 2).map(t => (
+                               {safeTags.slice(0, 2).map(t => (
                                    <TagBadge key={t.id} label={t.name} className="py-0.5 px-2 text-[10px] bg-gray-100 text-gray-600" />
                                ))}
                            </div>

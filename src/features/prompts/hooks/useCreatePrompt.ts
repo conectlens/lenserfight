@@ -44,7 +44,7 @@ export const useCreatePrompt = () => {
     setError(null);
   };
 
-  const submit = async (onSuccess?: () => void) => {
+  const submit = async (onSuccess?: (id: string) => void) => {
     if (!lenser) {
       setError("You must have a Lenser profile to create a prompt.");
       return;
@@ -63,14 +63,18 @@ export const useCreatePrompt = () => {
     };
 
     try {
+      let resultId: string;
+      
       if (editId) {
-          await promptsService.updatePrompt(editId, dto, lenser.id);
+          const updated = await promptsService.updatePrompt(editId, dto, lenser.id);
+          resultId = updated.id;
       } else {
           // @ts-ignore - full DTO required for create
-          await promptsService.createPrompt(dto as CreatePromptDTO);
+          const created = await promptsService.createPrompt(dto as CreatePromptDTO);
+          resultId = created.id;
       }
       
-      if (onSuccess) onSuccess();
+      if (onSuccess) onSuccess(resultId);
       closeModal();
     } catch (err: any) {
       setError(err.message || "Failed to save prompt.");

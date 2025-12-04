@@ -1,3 +1,4 @@
+
 import { SharedLink, CreateLinkDTO, ShareEvent, ResolveLinkResult } from '../types/share.types';
 import { supabase } from '../utils/supabase';
 import { storage } from '../utils/storage';
@@ -39,7 +40,8 @@ export class MockShareRepository implements ShareRepositoryPort {
       experiment_key: dto.experimentKey || null,
       experiment_variant: dto.experimentVariant || null,
       meta: dto.meta || {},
-      created_at: new Date().toISOString()
+      created_at: new Date().toISOString(),
+      display_name: dto.displayName || null
     };
 
     links.push(newLink);
@@ -59,24 +61,29 @@ export class MockShareRepository implements ShareRepositoryPort {
     if (!link) return null;
 
     let path = '/app';
-    switch (link.resource_type) {
-        case 'prompt':
-            path = `/prompts/${link.resource_id}`; // Use ID since mock router expects ID primarily
-            break;
-        case 'thread':
-            path = `/threads/${link.resource_id}`;
-            break;
-        case 'profile':
-            path = `/lenser/${link.slug || link.resource_id}`;
-            break;
-        case 'arena':
-        case 'challenge':
-            path = '/app'; // Fallback for unimplemented features
-            break;
+    if (link.resource_type === 'external') {
+        // Prefer meta.targetUrl if available, falling back to resource_id (legacy/mock)
+        path = link.meta?.targetUrl || link.resource_id; 
+    } else {
+        switch (link.resource_type) {
+            case 'prompt':
+                path = `/prompts/${link.resource_id}`;
+                break;
+            case 'thread':
+                path = `/threads/${link.resource_id}`;
+                break;
+            case 'profile':
+                path = `/lenser/${link.slug || link.resource_id}`;
+                break;
+            case 'arena':
+            case 'challenge':
+                path = '/app';
+                break;
+        }
     }
 
     return {
-        url: path, // In mock, this is relative route
+        url: path,
         link
     };
   }
@@ -114,7 +121,6 @@ export class MockShareRepository implements ShareRepositoryPort {
 
 export class SupabaseShareRepository implements ShareRepositoryPort {
   async createLink(dto: CreateLinkDTO, creatorLenserId: string): Promise<SharedLink> {
-    // Call Edge Function to safely create and log
     const { data, error } = await supabase.functions.invoke('create-link', {
         body: { ...dto, creatorLenserId }
     });
@@ -124,18 +130,20 @@ export class SupabaseShareRepository implements ShareRepositoryPort {
   }
 
   async resolveLink(shortId: string): Promise<ResolveLinkResult | null> {
-    // Client-side resolve (public RLS) just to get the link data if needed
-    // But redirection usually happens via the Short Link Edge Function directly.
-    // If we are calling this, we might be doing client-side navigation.
-    const { data, error } = await supabase.from('shared_links').select('*').eq('short_id', shortId).single();
+    // Use Edge Function 'resolve-link' to bypass RLS policies on the shared_links table.
+    // This allows public access to shared links.
+    const { data, error } = await supabase.functions.invoke('resolve-link', {
+        body: { shortId }
+    });
     
     if (error || !data) return null;
     
     const link = data as SharedLink;
     let path = '/';
     
-    // Canonical mapping logic matching Edge Function
-    if (link.resource_type === 'prompt') {
+    if (link.resource_type === 'external') {
+        path = link.meta?.targetUrl || link.resource_id; // Check meta first for real URLs stored under UUID resource_id
+    } else if (link.resource_type === 'prompt') {
         path = `/prompts/${link.slug || link.resource_id}`;
     } else if (link.resource_type === 'thread') {
         path = `/threads/${link.resource_id}`;
@@ -143,7 +151,6 @@ export class SupabaseShareRepository implements ShareRepositoryPort {
         path = `/lenser/${link.slug || link.resource_id}`;
     }
 
-    // In a real app, this URL might be absolute.
     return {
         url: path,
         link
@@ -151,7 +158,6 @@ export class SupabaseShareRepository implements ShareRepositoryPort {
   }
 
   async logEvent(shortId: string, eventType: 'opened', viewerData: Partial<ShareEvent>): Promise<void> {
-    // Client invokes analytics function to log open event safely (hashed IP etc)
     await supabase.functions.invoke('log-share-event', {
         body: { shortId, eventType, ...viewerData }
     });

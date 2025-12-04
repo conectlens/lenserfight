@@ -1,16 +1,25 @@
 
-import React from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import React, { useEffect } from 'react';
+import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { useTagDetailController } from '../hooks/useTagDetailController';
 import { TagHeader } from '../components/TagHeader';
 import { TagFilterBar } from '../components/TagFilterBar';
 import { TagContentGrid } from '../components/TagContentGrid';
-import { ChevronLeft } from 'lucide-react';
+import { useAuth } from '../../../context/AuthContext';
+import { SEOHead } from '../../../components/SEOHead';
 
 export const TagDetailPage: React.FC = () => {
   const { slug } = useParams<{ slug: string }>();
   const navigate = useNavigate();
+  const location = useLocation();
+  const { isAuthenticated, isLoading: authLoading } = useAuth();
   
+  useEffect(() => {
+    if (!authLoading && !isAuthenticated) {
+        navigate('/login', { state: { from: location }, replace: true });
+    }
+  }, [authLoading, isAuthenticated, navigate, location]);
+
   const { 
     tag, 
     items, 
@@ -18,9 +27,17 @@ export const TagDetailPage: React.FC = () => {
     filter, 
     setFilter, 
     sort, 
-    setSort,
+    setSort, 
     availableFilters 
   } = useTagDetailController(slug);
+
+  if (authLoading || (!isAuthenticated && !authLoading)) {
+      return (
+        <div className="min-h-screen flex items-center justify-center">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+        </div>
+      );
+  }
 
   if (!loading && !tag) {
       return (
@@ -34,18 +51,9 @@ export const TagDetailPage: React.FC = () => {
   }
 
   return (
-    <div className="max-w-7xl mx-auto pb-20 px-4 sm:px-6">
-        {/* Navigation */}
-        <div className="py-6">
-            <button 
-                onClick={() => navigate('/tags')} 
-                className="flex items-center text-sm font-medium text-gray-500 hover:text-gray-900 transition-colors"
-            >
-                <ChevronLeft size={16} className="mr-1" />
-                Back to Topics
-            </button>
-        </div>
-
+    <div className="w-full">
+        <SEOHead type="tag" data={tag} />
+        
         {/* Header Block */}
         {tag ? (
             <TagHeader tag={tag} totalItems={items.length} />

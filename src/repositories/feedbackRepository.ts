@@ -1,3 +1,4 @@
+
 import { Feedback, SubmitFeedbackDTO } from '../types/feedback.types';
 import { supabase } from '../utils/supabase';
 import { storage } from '../utils/storage';
@@ -41,12 +42,13 @@ export class MockFeedbackRepository implements FeedbackRepositoryPort {
 // --- Supabase Implementation ---
 export class SupabaseFeedbackRepository implements FeedbackRepositoryPort {
   async submitFeedback(dto: SubmitFeedbackDTO): Promise<Feedback> {
+    // We omit user_id here. Supabase RLS policies should automatically attach the authenticated user's ID
+    // or defaults to NULL if anonymous, based on `auth.uid()`.
     const { data, error } = await supabase
       .from('feedback')
       .insert({
         product_tag: dto.product_tag,
         page: dto.page,
-        user_id: dto.user_id,
         message: dto.message,
         start_date: dto.start_date,
         end_date: dto.end_date

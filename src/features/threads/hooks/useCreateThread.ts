@@ -14,7 +14,7 @@ export const useCreateThread = () => {
     content: string, 
     tags: string[],
     visibility: Visibility,
-    onSuccess: () => void,
+    onSuccess: (id: string) => void,
     editId?: string | null
   ) => {
     if (!lenser) {
@@ -26,23 +26,28 @@ export const useCreateThread = () => {
     setError(null);
 
     try {
+      let resultId: string;
       if (editId) {
-          await threadsService.updateThread(editId, {
+          const updated = await threadsService.updateThread(editId, {
               title, content, tagIds: tags, visibility, lenserId: lenser.id
           }, lenser.id);
+          resultId = updated.id;
       } else {
-          await threadsService.createThread({
+          const created = await threadsService.createThread({
             title,
             content,
             tagIds: tags,
             lenserId: lenser.id,
             visibility
           });
+          resultId = created.id;
       }
-      onSuccess();
+      
+      // Mark as done before calling onSuccess
+      setIsSubmitting(false);
+      onSuccess(resultId);
     } catch (err: any) {
       setError(err.message || "Failed to save thread.");
-    } finally {
       setIsSubmitting(false);
     }
   };
