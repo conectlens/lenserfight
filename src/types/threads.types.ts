@@ -18,6 +18,13 @@ export interface CreateThreadDTO {
   visibility: Visibility;
 }
 
+export interface TagRecord {
+  id: string;
+  slug: string;
+  name: string;
+  created_at?: string; // Optional for denormalized JSONB
+}
+
 export interface ThreadRecord {
   id: string;
   lenser_id: string;
@@ -28,17 +35,11 @@ export interface ThreadRecord {
   view_count: number;
   reply_count: number;
   reaction_totals?: Record<string, number>; // JSONB from DB
+  tags: TagRecord[]; // Denormalized JSONB
   created_at: string;
   updated_at: string;
   thumbnail_url?: string;
   prompt_data?: PromptData;
-}
-
-export interface TagRecord {
-  id: string;
-  slug: string;
-  name: string;
-  created_at: string;
 }
 
 export interface ThreadTagRecord {

@@ -15,11 +15,41 @@ export interface ReactionRepositoryPort {
 
 export class MockReactionRepository implements ReactionRepositoryPort {
   private STORAGE_KEY = 'mock_reactions_db';
+  private THREADS_KEY = 'mock_threads_db';
+  private PROMPTS_KEY = 'mock_prompts_db';
   
   constructor() {} 
 
   private getStore(): ReactionRecord[] {
     return JSON.parse(storage.getItem(this.STORAGE_KEY) || '[]');
+  }
+
+  // --- Trigger Simulation Logic ---
+  private updateParentTotals(targetType: TargetType, targetId: string) {
+      const store = this.getStore();
+      const relevant = store.filter(r => r.target_type === targetType && r.target_id === targetId);
+      
+      const counts: Record<string, number> = {};
+      relevant.forEach(r => {
+          counts[r.reaction] = (counts[r.reaction] || 0) + 1;
+      });
+
+      if (targetType === 'thread') {
+          const threads = JSON.parse(storage.getItem(this.THREADS_KEY) || '[]');
+          const idx = threads.findIndex((t: any) => t.id === targetId);
+          if (idx !== -1) {
+              threads[idx].reaction_totals = counts;
+              storage.setItem(this.THREADS_KEY, JSON.stringify(threads));
+          }
+      } else if (targetType === 'prompt_template') {
+          const prompts = JSON.parse(storage.getItem(this.PROMPTS_KEY) || '[]');
+          const idx = prompts.findIndex((p: any) => p.id === targetId);
+          if (idx !== -1) {
+              prompts[idx].reaction_totals = counts;
+              storage.setItem(this.PROMPTS_KEY, JSON.stringify(prompts));
+          }
+      }
+      // Replies also have reaction_totals usually, but for simplicity limiting to main entities in mock
   }
 
   async getReactionsFor(targetType: TargetType, targetId: string): Promise<ReactionRecord[]> {
@@ -39,12 +69,19 @@ export class MockReactionRepository implements ReactionRepositoryPort {
     const newReaction = { id: `rx-${Date.now()}`, lenser_id: lenserId, target_type: targetType, target_id: targetId, reaction, created_at: new Date().toISOString() };
     store.push(newReaction);
     storage.setItem(this.STORAGE_KEY, JSON.stringify(store));
+    
+    // Trigger update
+    this.updateParentTotals(targetType, targetId);
+    
     return newReaction;
   }
 
   async removeReaction(targetType: TargetType, targetId: string, lenserId: string, reaction: ReactionType): Promise<void> {
     const store = this.getStore().filter(r => !(r.lenser_id === lenserId && r.target_type === targetType && r.target_id === targetId && r.reaction === reaction));
     storage.setItem(this.STORAGE_KEY, JSON.stringify(store));
+    
+    // Trigger update
+    this.updateParentTotals(targetType, targetId);
   }
 
   async countReactions(targetType: TargetType, targetId: string): Promise<ReactionCount[]> {

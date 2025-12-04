@@ -14,7 +14,7 @@ export interface PromptTemplateRecord {
   content: string;
   visibility: VisibilityEnum;
   reaction_totals?: Record<string, number>; // JSONB
-  save_count?: number; 
+  tags: TagRecord[]; // Denormalized JSONB
   created_at: string;
   updated_at: string;
 }
