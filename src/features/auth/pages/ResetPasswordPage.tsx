@@ -8,11 +8,12 @@ import { Button } from '../../../components/Button';
 import { useFormValidation } from '../../../hooks/useFormValidation';
 import { isRequired, minLength } from '../../../utils/validation';
 import { FormError } from '../../../components/FormError';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, AlertCircle } from 'lucide-react';
 import { PasswordStrengthMeter } from '../components/PasswordStrengthMeter';
+import { isMock } from '../../../config/runtimeConfig';
 
 export const ResetPasswordPage: React.FC = () => {
-  const { resetPassword } = useAuth();
+  const { resetPassword, isAuthenticated, isLoading: isAuthLoading } = useAuth();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   
@@ -78,6 +79,36 @@ export const ResetPasswordPage: React.FC = () => {
        Dive into the arena
     </Link>
   );
+
+  // Check for session in real auth mode (Supabase)
+  // If not mock, and loading is done, and user is not authenticated, show error.
+  if (!isMock && !isAuthLoading && !isAuthenticated) {
+    return (
+      <AuthCard title="Reset Password" subtitle="Session Error" backButton={backButton}>
+        <div className="flex flex-col items-center justify-center text-center py-6">
+            <div className="bg-red-50 p-4 rounded-full mb-4">
+                <AlertCircle className="w-8 h-8 text-red-500" />
+            </div>
+            <h3 className="text-lg font-bold text-gray-900 mb-2">Auth session missing!</h3>
+            <p className="text-gray-500 mb-6 text-sm max-w-xs mx-auto">
+                We couldn't verify your identity. Please try clicking the reset link again or request a new one.
+            </p>
+            <Link to="/forgot-password" className="w-full">
+                <Button>Request New Link</Button>
+            </Link>
+        </div>
+      </AuthCard>
+    );
+  }
+
+  // Optional: Loading state for auth check to prevent flash of form
+  if (!isMock && isAuthLoading) {
+      return (
+        <div className="min-h-screen flex items-center justify-center bg-gray-50">
+            <div className="animate-spin rounded-full h-8 w-8 border-4 border-primary border-t-transparent"></div>
+        </div>
+      );
+  }
 
   return (
     <AuthCard title="Set New Password" subtitle="Choose a strong password for your account" backButton={backButton}>
