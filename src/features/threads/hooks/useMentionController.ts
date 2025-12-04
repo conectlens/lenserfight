@@ -1,5 +1,5 @@
 
-import { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { promptsService } from '../../../services/promptsService';
 import { PromptTemplateViewModel } from '../../../types/prompts.types';
 import { getCaretCoordinates } from '../../../utils/textareaUtils';

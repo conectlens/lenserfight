@@ -1,4 +1,5 @@
-import React, { useEffect, useState } from 'react';
+
+import React, { useEffect, useState, useRef, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { lenserService } from '../../../services/lenserService';
 import { reactionService } from '../../../services/reactionService';
@@ -19,31 +20,77 @@ import { CreatePromptModal } from '../../prompts/components/CreatePromptModal';
 import { CreateThreadModal } from '../../threads/components/CreateThreadModal';
 import { useCreatePrompt } from '../../prompts/hooks/useCreatePrompt';
 import { useCreateThread } from '../../threads/hooks/useCreateThread';
-import { FolderOpen, MessageSquare, Trophy } from 'lucide-react';
+import { FolderOpen, MessageSquare, Trophy, Activity } from 'lucide-react';
 import { FEATURES } from '../../../config/runtimeConfig';
 import { useAuth } from '../../../context/AuthContext';
+import { useLenser } from '../../../context/LenserContext';
 import { useShareContext } from '../../../context/ShareContext';
 import { ConfirmModal } from '../../../components/ConfirmModal';
 
+type TabType = 'actions' | 'prompts' | 'threads' | 'challenges';
+
+interface TabState {
+  data: any[];
+  page: number;
+  hasMore: boolean;
+  isLoaded: boolean;
+}
+
+const INITIAL_TAB_STATE: TabState = {
+  data: [],
+  page: 0,
+  hasMore: true,
+  isLoaded: false
+};
+
+// Route param mapping
+const TAB_MAP: Record<string, TabType> = {
+  t: 'threads',
+  p: 'prompts',
+  a: 'actions',
+  c: 'challenges'
+};
+
+const REVERSE_TAB_MAP: Record<string, string> = {
+  threads: 't',
+  prompts: 'p',
+  actions: 'a',
+  challenges: 'c'
+};
+
+const PAGE_SIZE = 9;
+
 export const LenserProfilePage: React.FC = () => {
-  const { handle } = useParams<{ handle: string }>();
+  const { handle, tab: routeTab } = useParams<{ handle: string; tab?: string }>();
   const navigate = useNavigate();
   const { user } = useAuth();
+  const { lenser: currentUserLenser } = useLenser(); // Get current logged-in lenser for ID
   const { setShareConfig } = useShareContext();
   
+  // Profile Data
   const [lenser, setLenser] = useState<Lenser | null>(null);
   const [stats, setStats] = useState<LenserStats | null>(null);
   const [activity, setActivity] = useState<LenserActivityPoint[]>([]);
-  
-  // Use ViewModels instead of raw Records for full UI support (tags, authors)
-  const [prompts, setPrompts] = useState<PromptTemplateViewModel[]>([]);
-  const [threads, setThreads] = useState<ThreadFeedItem[]>([]);
-  const [actions, setActions] = useState<ActivityFeedItem[]>([]);
-  
-  const [activeTab, setActiveTab] = useState<'actions' | 'prompts' | 'threads' | 'challenges'>('prompts');
-  const [isLoading, setIsLoading] = useState(true);
+  const [loadingProfile, setLoadingProfile] = useState(true);
 
-  // Prompt Edit Logic
+  // Cache State - Stores data for all tabs to avoid refetching
+  const [tabCache, setTabCache] = useState<Record<TabType, TabState>>({
+    threads: { ...INITIAL_TAB_STATE },
+    prompts: { ...INITIAL_TAB_STATE },
+    actions: { ...INITIAL_TAB_STATE },
+    challenges: { ...INITIAL_TAB_STATE }
+  });
+
+  const [loadingTab, setLoadingTab] = useState(false);
+  const observer = useRef<IntersectionObserver | null>(null);
+
+  // Active Tab Logic
+  const activeTab: TabType = routeTab && TAB_MAP[routeTab] ? TAB_MAP[routeTab] : 'threads';
+  
+  // Derived state for current view
+  const { data: items, page, hasMore, isLoaded } = tabCache[activeTab];
+
+  // Controller Hooks
   const { 
     isOpen: isPromptModalOpen, 
     openModal: openPromptModal, 
@@ -55,66 +102,56 @@ export const LenserProfilePage: React.FC = () => {
     isEditMode: isPromptEditMode
   } = useCreatePrompt();
 
-  // Thread Edit Logic
-  const {
-      createThread: submitThread // Reuse hook logic for update call within modal
-  } = useCreateThread();
+  const { createThread: submitThread } = useCreateThread();
   const [isThreadModalOpen, setIsThreadModalOpen] = useState(false);
   const [editingThread, setEditingThread] = useState<any>(null);
 
-  // Delete Logic
   const [deleteTarget, setDeleteTarget] = useState<{ id: string; type: 'prompt' | 'thread' } | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
 
-  // Check ownership
   const isOwner = !!(user && lenser && user.id === lenser.user_id);
 
-  const fetchData = async () => {
-    if (!handle) return;
-    setIsLoading(true);
-    try {
-      const lenserData = await lenserService.getLenserByHandle(handle);
-      if (!lenserData) {
-          return;
-      }
-      setLenser(lenserData);
-
-      const promises: Promise<any>[] = [
-           lenserService.getLenserStats(lenserData.id),
-           // Fetch enriched data via main services filtered by author
-           promptsService.getAuthorPrompts(lenserData.id),
-           // For threads, we need a way to get enriched author threads. 
-           threadsService.getThreadsFeed(user?.id).then(all => all.filter(t => t.author.handle === lenserData.handle)),
-           reactionService.getUserActivityFeed(lenserData.id)
-      ];
-
-      if (FEATURES.LENSER_ACTIVITY) {
-           promises.push(lenserService.getLenserActivity(lenserData.id));
-      }
-
-      const results = await Promise.all(promises);
-      
-      setStats(results[0]);
-      setPrompts(results[1]);
-      setThreads(results[2]);
-      setActions(results[3]);
-      
-      if (FEATURES.LENSER_ACTIVITY && results[4]) {
-          setActivity(results[4]);
-      }
-
-    } catch (err) {
-      console.error(err);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
+  // 1. Fetch Profile & Stats (Only on handle change)
   useEffect(() => {
-    fetchData();
-  }, [handle, user?.id]);
+    if (!handle) return;
+    
+    // Reset cache when profile changes
+    setTabCache({
+        threads: { ...INITIAL_TAB_STATE },
+        prompts: { ...INITIAL_TAB_STATE },
+        actions: { ...INITIAL_TAB_STATE },
+        challenges: { ...INITIAL_TAB_STATE }
+    });
+    
+    const fetchProfile = async () => {
+      setLoadingProfile(true);
+      try {
+        const lenserData = await lenserService.getLenserByHandle(handle);
+        if (!lenserData) {
+            setLoadingProfile(false);
+            return;
+        }
+        setLenser(lenserData);
 
-  // Register Share Config
+        // Fetch stats & activity
+        const [statsData, activityData] = await Promise.all([
+             lenserService.getLenserStats(lenserData.id),
+             FEATURES.LENSER_ACTIVITY ? lenserService.getLenserActivity(lenserData.id) : Promise.resolve([])
+        ]);
+        
+        setStats(statsData);
+        setActivity(activityData);
+      } catch (err) {
+        console.error("Profile load error", err);
+      } finally {
+        setLoadingProfile(false);
+      }
+    };
+    
+    fetchProfile();
+  }, [handle]);
+
+  // 2. Share Config
   useEffect(() => {
     if (lenser) {
         setShareConfig({
@@ -127,15 +164,100 @@ export const LenserProfilePage: React.FC = () => {
     return () => setShareConfig(null);
   }, [lenser, setShareConfig]);
 
-  const handleProfileUpdate = (updatedLenser: Lenser) => {
-    setLenser(updatedLenser);
+  // 3. Tab Data Fetching Strategy
+  const fetchTabData = async (targetTab: TabType, pageNum: number, refresh = false) => {
+      if (!lenser) return;
+      
+      // Prevent fetching if already loaded and not refreshing/paginating
+      if (!refresh && tabCache[targetTab].isLoaded && pageNum === 0) return;
+
+      // Only show global loading if it's the first load or a hard refresh
+      if (pageNum === 0) setLoadingTab(true);
+
+      try {
+          const offset = pageNum * PAGE_SIZE;
+          let newItems: any[] = [];
+          
+          // Pass currentUserLenser.id as viewerId to allow fetching private items if owner
+          const viewerId = currentUserLenser?.id;
+
+          switch (targetTab) {
+              case 'prompts':
+                  newItems = await promptsService.getAuthorPrompts(lenser.id, offset, PAGE_SIZE, viewerId);
+                  break;
+              case 'threads':
+                  newItems = await threadsService.getThreadsByAuthor(lenser.id, viewerId, offset, PAGE_SIZE);
+                  break;
+              case 'actions':
+                  newItems = await reactionService.getUserActivityFeed(lenser.id, offset, PAGE_SIZE);
+                  break;
+              case 'challenges':
+                  newItems = []; // Not implemented
+                  break;
+          }
+
+          setTabCache(prev => {
+              const currentData = prev[targetTab].data;
+              const updatedData = refresh || pageNum === 0 ? newItems : [...currentData, ...newItems];
+              
+              return {
+                  ...prev,
+                  [targetTab]: {
+                      data: updatedData,
+                      page: pageNum,
+                      hasMore: newItems.length === PAGE_SIZE,
+                      isLoaded: true
+                  }
+              };
+          });
+
+      } catch (e) {
+          console.error(`Failed to fetch ${targetTab}`, e);
+      } finally {
+          setLoadingTab(false);
+      }
   };
 
-  // --- Prompt Actions ---
+  // 4. Trigger Fetch on Tab Change if needed
+  useEffect(() => {
+      if (lenser) {
+          // If not loaded yet, fetch initial data
+          if (!tabCache[activeTab].isLoaded) {
+              fetchTabData(activeTab, 0);
+          }
+      }
+  }, [activeTab, lenser?.id, currentUserLenser?.id]); // Also depend on viewer ID to refresh privates on login
+
+  // 5. Infinite Scroll Observer
+  const lastElementRef = useCallback((node: HTMLDivElement) => {
+    if (loadingTab) return;
+    if (observer.current) observer.current.disconnect();
+    
+    observer.current = new IntersectionObserver(entries => {
+      if (entries[0].isIntersecting && hasMore) {
+        // Use functional state to ensure we get the latest page
+        const nextPage = page + 1;
+        fetchTabData(activeTab, nextPage);
+      }
+    });
+    
+    if (node) observer.current.observe(node);
+  }, [loadingTab, hasMore, activeTab, page, lenser?.id]);
+
+  // Navigation Handler
+  const handleTabChange = (newTab: TabType) => {
+      if (newTab === activeTab) return;
+      const code = REVERSE_TAB_MAP[newTab];
+      navigate(`/lenser/${handle}/${code}`);
+  };
+
+  // Actions
+  const handleProfileUpdate = (updatedLenser: Lenser) => setLenser(updatedLenser);
+
   const handleEditPrompt = (id: string) => {
-      const promptToEdit = prompts.find(p => p.id === id);
+      const promptToEdit = items.find((p: any) => p.id === id);
       if (promptToEdit) {
-          promptsService.getPromptDetail(id, user?.id).then(detail => {
+          promptsService.getPromptDetail(id, currentUserLenser?.id).then(detail => {
               if (detail) {
                   openPromptModal({
                       id: detail.id,
@@ -149,44 +271,58 @@ export const LenserProfilePage: React.FC = () => {
       }
   };
 
-  const handleDeletePromptClick = (id: string) => {
-      setDeleteTarget({ id, type: 'prompt' });
-  };
-
-  // --- Thread Actions ---
   const handleEditThread = (id: string) => {
-      const threadToEdit = threads.find(t => t.id === id);
+      const threadToEdit = items.find((t: any) => t.id === id);
       if (threadToEdit) {
-          // Flatten tags to strings for the modal
           setEditingThread({
               id: threadToEdit.id,
               title: threadToEdit.title,
               content: threadToEdit.content,
-              tags: threadToEdit.tags.map(t => t.name),
+              tags: threadToEdit.tags.map((t: any) => t.name),
               visibility: 'public' 
           });
           setIsThreadModalOpen(true);
       }
   };
 
-  const handleDeleteThreadClick = (id: string) => {
-      setDeleteTarget({ id, type: 'thread' });
+  // Update a single item in cache without refetching
+  const updateCacheItem = (tab: TabType, itemId: string, updater: (item: any) => any) => {
+      setTabCache(prev => {
+          const tabState = prev[tab];
+          const newData = tabState.data.map(item => item.id === itemId ? updater(item) : item);
+          return {
+              ...prev,
+              [tab]: { ...tabState, data: newData }
+          };
+      });
   };
 
-  // --- Confirm Delete ---
+  // Remove item from cache
+  const removeCacheItem = (tab: TabType, itemId: string) => {
+      setTabCache(prev => {
+          const tabState = prev[tab];
+          const newData = tabState.data.filter(item => item.id !== itemId);
+          return {
+              ...prev,
+              [tab]: { ...tabState, data: newData }
+          };
+      });
+  };
+
   const confirmDelete = async () => {
       if (!deleteTarget || !lenser) return;
       setIsDeleting(true);
       try {
           if (deleteTarget.type === 'prompt') {
               await promptsService.deletePrompt(deleteTarget.id, lenser.id);
+              removeCacheItem('prompts', deleteTarget.id);
+              alert('Prompt deleted successfully.');
           } else {
               await threadsService.deleteThread(deleteTarget.id, lenser.id);
+              removeCacheItem('threads', deleteTarget.id);
+              alert('Thread deleted successfully.');
           }
-          // Do not redirect, just close and refresh
           setDeleteTarget(null);
-          await fetchData();
-          alert(`${deleteTarget.type === 'prompt' ? 'Prompt' : 'Thread'} deleted successfully.`);
       } catch (e) {
           console.error(e);
           alert("Failed to delete item.");
@@ -195,7 +331,46 @@ export const LenserProfilePage: React.FC = () => {
       }
   };
 
-  if (isLoading) {
+  // Callback after successful edit/create
+  const handleMutationSuccess = (tab: TabType) => {
+      // For simplicity on create/full edit, we refresh the specific tab
+      fetchTabData(tab, 0, true);
+  };
+
+  const handlePromptSubmit = (id: string) => {
+      navigate(`/prompts/${id}`);
+  };
+
+  // --- Renderers ---
+
+  const SkeletonLoader = () => {
+      if (activeTab === 'prompts') {
+          return (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {[1, 2, 3].map(i => <div key={i} className="h-64 bg-gray-200 rounded-xl animate-pulse"></div>)}
+            </div>
+          );
+      }
+      if (activeTab === 'threads') {
+          return (
+            <div className="space-y-6">
+                {[1, 2].map(i => <div key={i} className="h-48 bg-gray-200 rounded-2xl animate-pulse"></div>)}
+            </div>
+          );
+      }
+      return <div className="space-y-4">{[1, 2, 3].map(i => <div key={i} className="h-20 bg-gray-200 rounded-xl animate-pulse"></div>)}</div>;
+  };
+
+  const EmptyState = ({ icon: Icon, message }: { icon: any, message: string }) => (
+    <div className="flex flex-col items-center justify-center py-20 text-center animate-in fade-in duration-500 bg-gray-50/50 rounded-2xl border border-gray-100 border-dashed">
+        <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mb-4 text-gray-300">
+            <Icon size={32} />
+        </div>
+        <p className="text-gray-500 font-medium">{message}</p>
+    </div>
+  );
+
+  if (loadingProfile) {
     return (
         <div className="max-w-7xl mx-auto py-8 px-4">
              <div className="animate-pulse space-y-8">
@@ -220,15 +395,6 @@ export const LenserProfilePage: React.FC = () => {
     );
   }
 
-  const EmptyState = ({ icon: Icon, message }: { icon: any, message: string }) => (
-    <div className="flex flex-col items-center justify-center py-20 text-center animate-in fade-in duration-500">
-        <div className="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center mb-4 text-gray-300">
-            <Icon size={32} />
-        </div>
-        <p className="text-gray-500 font-medium">{message}</p>
-    </div>
-  );
-
   return (
     <div className="max-w-7xl mx-auto pb-12">
       <LenserProfileHeader 
@@ -238,7 +404,12 @@ export const LenserProfilePage: React.FC = () => {
         onProfileUpdate={handleProfileUpdate}
       />
       
-      {stats && <div className="px-6 md:px-0"><LenserStatsRow stats={stats} /></div>}
+      {/* Pass Join Order for Rank display */}
+      {stats && (
+        <div className="px-6 md:px-0">
+            <LenserStatsRow stats={stats} joinOrder={lenser.join_order} />
+        </div>
+      )}
       
       {FEATURES.LENSER_ACTIVITY && (
         <div className="px-6 md:px-0">
@@ -247,55 +418,79 @@ export const LenserProfilePage: React.FC = () => {
       )}
       
       <div className="px-6 md:px-0">
-          <LenserTabs activeTab={activeTab} onChange={setActiveTab} />
+          <LenserTabs activeTab={activeTab} onChange={handleTabChange} />
           
           <div className="min-h-[300px]">
+            {/* Actions Tab */}
             {activeTab === 'actions' && (
-               <LenserActionsList actions={actions} />
+                <>
+                    {items.length > 0 ? (
+                        <LenserActionsList actions={items as ActivityFeedItem[]} />
+                    ) : (
+                        !loadingTab && <EmptyState icon={Activity} message="No recent activity." />
+                    )}
+                </>
             )}
 
+            {/* Prompts Tab */}
             {activeTab === 'prompts' && (
-                prompts.length > 0 ? (
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 gap-6">
-                        {prompts.map(prompt => (
-                            <div key={prompt.id} className="h-full">
-                                <PromptCard 
-                                    prompt={prompt} 
-                                    onClick={(id) => navigate(`/prompts/${id}`)}
-                                    isOwner={isOwner}
-                                    onEdit={handleEditPrompt}
-                                    onDelete={handleDeletePromptClick}
-                                />
-                            </div>
-                        ))}
-                    </div>
-                ) : (
-                    <EmptyState icon={FolderOpen} message="No prompts created yet." />
-                )
+                <>
+                    {items.length > 0 ? (
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 gap-6">
+                            {items.map(prompt => (
+                                <div key={prompt.id} className="h-full">
+                                    <PromptCard 
+                                        prompt={prompt as PromptTemplateViewModel} 
+                                        onClick={(id) => navigate(`/prompts/${id}`)}
+                                        isOwner={isOwner}
+                                        onEdit={handleEditPrompt}
+                                        onDelete={() => setDeleteTarget({ id: prompt.id, type: 'prompt' })}
+                                    />
+                                </div>
+                            ))}
+                        </div>
+                    ) : (
+                        !loadingTab && <EmptyState icon={FolderOpen} message="No prompts created yet." />
+                    )}
+                </>
             )}
             
+            {/* Threads Tab */}
             {activeTab === 'threads' && (
-                threads.length > 0 ? (
-                    <div className="space-y-6">
-                        {threads.map(thread => (
-                            <ThreadsListCard 
-                                key={thread.id} 
-                                thread={thread}
-                                onOpen={(id) => navigate(`/threads/${id}`)}
-                                isOwner={isOwner}
-                                onEdit={handleEditThread}
-                                onDelete={handleDeleteThreadClick}
-                            />
-                        ))}
-                    </div>
-                ) : (
-                    <EmptyState icon={MessageSquare} message="No threads posted yet." />
-                )
+                <>
+                    {items.length > 0 ? (
+                        <div className="space-y-6">
+                            {items.map(thread => (
+                                <ThreadsListCard 
+                                    key={thread.id} 
+                                    thread={thread as ThreadFeedItem}
+                                    onOpen={(id) => navigate(`/threads/${id}`)}
+                                    isOwner={isOwner}
+                                    onEdit={handleEditThread}
+                                    onDelete={() => setDeleteTarget({ id: thread.id, type: 'thread' })}
+                                />
+                            ))}
+                        </div>
+                    ) : (
+                        !loadingTab && <EmptyState icon={MessageSquare} message="No threads posted yet." />
+                    )}
+                </>
             )}
             
-            {FEATURES.CHALLENGES_TAB && activeTab === 'challenges' && (
+            {/* Challenges Tab (Placeholder) */}
+            {activeTab === 'challenges' && (
                 <EmptyState icon={Trophy} message="No challenge history available." />
             )}
+
+            {/* Loading Indicator / Skeleton */}
+            {loadingTab && (
+                <div className="mt-6">
+                    <SkeletonLoader />
+                </div>
+            )}
+
+            {/* Infinite Scroll Anchor */}
+            <div ref={lastElementRef} className="h-4" />
           </div>
       </div>
 
@@ -303,7 +498,7 @@ export const LenserProfilePage: React.FC = () => {
       <CreatePromptModal 
         isOpen={isPromptModalOpen}
         onClose={closePromptModal}
-        onSubmit={() => submitPrompt(fetchData)}
+        onSubmit={() => submitPrompt(handlePromptSubmit)}
         form={promptForm}
         isSubmitting={isPromptSubmitting}
         error={promptError}
@@ -313,7 +508,7 @@ export const LenserProfilePage: React.FC = () => {
       <CreateThreadModal
         isOpen={isThreadModalOpen}
         onClose={() => { setIsThreadModalOpen(false); setEditingThread(null); }}
-        onSuccess={fetchData}
+        onSuccess={() => handleMutationSuccess('threads')}
         initialData={editingThread}
       />
 
