@@ -173,19 +173,20 @@ export const RegisterPage: React.FC = () => {
     </div>
   );
 
+  const backButton = (
+    <Link to="/" className="inline-flex items-center gap-2 text-sm font-semibold text-gray-500 hover:text-gray-900 transition-all bg-white/80 backdrop-blur-md px-4 py-2.5 rounded-full hover:bg-white shadow-sm border border-gray-200/50 hover:border-gray-300 w-auto">
+       <ArrowLeft size={16} />
+       Dive into the arena
+    </Link>
+  );
+
   return (
-    <div className="relative">
-      <div className="absolute top-4 left-4 z-10">
-        <Link to="/" className="flex items-center gap-2 text-sm font-medium text-gray-600 hover:text-gray-900 transition-colors bg-white/50 backdrop-blur-sm px-4 py-2 rounded-lg hover:bg-white/80">
-           <ArrowLeft size={16} />
-           Back to Dashboard
-        </Link>
-      </div>
-      <AuthCard title="Create Account" subtitle="Join the community today">
+    <>
+      <AuthCard title="Create Account" subtitle="Join the community today" backButton={backButton}>
         <form onSubmit={handleSubmit} className="space-y-4" noValidate>
           <div>
             <InputField
-              label="Display Name"
+              label="Name"
               name="displayName"
               type="text"
               placeholder="Your full name"
@@ -268,9 +269,8 @@ export const RegisterPage: React.FC = () => {
                   onChange={handleChange}
                   className="peer sr-only"
                 />
-                <span className="w-5 h-5 rounded border-2 border-gray-300 bg-white peer-checked:bg-primary peer-checked:border-primary peer-focus:ring-2 peer-focus:ring-primary/30 transition-all flex items-center justify-center text-white">
-                    <Check className="w-3.5 h-3.5" strokeWidth={3} />
-                </span>
+                <div className="w-5 h-5 rounded border-2 border-gray-300 bg-white peer-checked:bg-primary peer-checked:border-primary peer-focus:ring-2 peer-focus:ring-primary/30 transition-all"></div>
+                <Check className="w-3.5 h-3.5 text-gray-900 absolute left-[3px] top-[3px] opacity-0 peer-checked:opacity-100 transition-opacity pointer-events-none" strokeWidth={3.5} />
               </div>
               <div className="text-sm leading-tight text-gray-600">
                 I agree to the{' '}
@@ -289,15 +289,20 @@ export const RegisterPage: React.FC = () => {
             </label>
           </div>
 
-          {apiError && <div className="text-red-500 text-sm bg-red-50 p-3 rounded-lg">{apiError}</div>}
+          {apiError && (
+            <div className="flex items-start gap-2 bg-red-50 border border-red-100 p-3 rounded-xl text-red-600 text-sm mt-4">
+                <span className="mt-0.5">⚠️</span>
+                {apiError}
+            </div>
+          )}
 
-          <Button type="submit" isLoading={loading} className="mt-2 text-base font-semibold">
+          <Button type="submit" isLoading={loading} className="mt-4 py-3 text-base font-bold shadow-lg shadow-primary/20">
             Sign Up
           </Button>
         </form>
         
-        <div className="mt-8 text-center text-sm text-gray-500">
-          Already have an account? <Link to="/login" className="font-medium text-gray-900 hover:underline">Sign In</Link>
+        <div className="mt-8 text-center text-sm text-gray-500 font-medium">
+          Already have an account? <Link to="/login" className="ml-1 text-gray-900 hover:text-primary-700 font-bold hover:underline transition-colors">Sign In</Link>
         </div>
       </AuthCard>
 
@@ -319,6 +324,6 @@ export const RegisterPage: React.FC = () => {
             </div>
         </Modal>
       )}
-    </div>
+    </>
   );
 };

@@ -57,13 +57,13 @@ export const Breadcrumbs: React.FC = () => {
 
              return (
                <React.Fragment key={to}>
-                 <ChevronRight size={14} className="mx-2 flex-shrink-0 text-gray-400" />
+                 <ChevronRight size={14} className={`mx-2 flex-shrink-0 text-gray-400 ${!isLast ? 'hidden sm:block' : ''}`} />
                  {isLast || isNotLinkable ? (
-                   <span className={`${isLast ? 'text-gray-900 font-semibold' : 'text-gray-500'} truncate max-w-[150px] sm:max-w-[300px]`}>
+                   <span className={`${isLast ? 'text-gray-900 font-semibold' : 'text-gray-500 hidden sm:inline'} truncate max-w-[150px] sm:max-w-[300px]`}>
                      {displayName}
                    </span>
                  ) : (
-                   <Link to={to} className="hover:text-gray-900 transition-colors flex-shrink-0">
+                   <Link to={to} className="hover:text-gray-900 transition-colors flex-shrink-0 hidden sm:inline">
                      {displayName}
                    </Link>
                  )}

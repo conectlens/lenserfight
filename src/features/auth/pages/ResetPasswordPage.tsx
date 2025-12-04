@@ -71,49 +71,48 @@ export const ResetPasswordPage: React.FC = () => {
     }
   };
 
+  const backButton = (
+    <Link to="/" className="inline-flex items-center gap-2 text-sm font-semibold text-gray-500 hover:text-gray-900 transition-all bg-white/80 backdrop-blur-md px-4 py-2.5 rounded-full hover:bg-white shadow-sm border border-gray-200/50 hover:border-gray-300 w-auto">
+       <ArrowLeft size={16} />
+       Dive into the arena
+    </Link>
+  );
+
   return (
-    <div className="relative">
-      <div className="absolute top-4 left-4 z-10">
-        <Link to="/" className="flex items-center gap-2 text-sm font-medium text-gray-600 hover:text-gray-900 transition-colors bg-white/50 backdrop-blur-sm px-4 py-2 rounded-lg hover:bg-white/80">
-           <ArrowLeft size={16} />
-           Back to Dashboard
-        </Link>
-      </div>
-      <AuthCard title="Set New Password" subtitle="Choose a strong password for your account">
-        <form onSubmit={handleSubmit} className="space-y-4" noValidate>
-          <div>
-            <InputField
-              label="New Password"
-              name="password"
-              type="password"
-              placeholder="Enter new password"
-              value={formData.password}
-              onChange={handleChange}
-              className={errors.password ? 'border-red-500 focus:border-red-500 focus:ring-red-200' : ''}
-            />
-            <FormError message={errors.password} />
-          </div>
+    <AuthCard title="Set New Password" subtitle="Choose a strong password for your account" backButton={backButton}>
+      <form onSubmit={handleSubmit} className="space-y-4" noValidate>
+        <div>
+          <InputField
+            label="New Password"
+            name="password"
+            type="password"
+            placeholder="Enter new password"
+            value={formData.password}
+            onChange={handleChange}
+            className={errors.password ? 'border-red-500 focus:border-red-500 focus:ring-red-200' : ''}
+          />
+          <FormError message={errors.password} />
+        </div>
 
-          <div>
-            <InputField
-              label="Confirm Password"
-              name="confirmPassword"
-              type="password"
-              placeholder="Confirm new password"
-              value={formData.confirmPassword}
-              onChange={handleChange}
-              className={errors.confirmPassword ? 'border-red-500 focus:border-red-500 focus:ring-red-200' : ''}
-            />
-            <FormError message={errors.confirmPassword} />
-          </div>
+        <div>
+          <InputField
+            label="Confirm Password"
+            name="confirmPassword"
+            type="password"
+            placeholder="Confirm new password"
+            value={formData.confirmPassword}
+            onChange={handleChange}
+            className={errors.confirmPassword ? 'border-red-500 focus:border-red-500 focus:ring-red-200' : ''}
+          />
+          <FormError message={errors.confirmPassword} />
+        </div>
 
-          {apiError && <div className="text-red-500 text-sm bg-red-50 p-3 rounded-lg">{apiError}</div>}
+        {apiError && <div className="text-red-500 text-sm bg-red-50 p-3 rounded-lg">{apiError}</div>}
 
-          <Button type="submit" isLoading={loading} className="mt-2 text-base font-semibold">
-            Update Password
-          </Button>
-        </form>
-      </AuthCard>
-    </div>
+        <Button type="submit" isLoading={loading} className="mt-2 text-base font-semibold">
+          Update Password
+        </Button>
+      </form>
+    </AuthCard>
   );
 };

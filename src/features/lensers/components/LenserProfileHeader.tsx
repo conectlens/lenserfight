@@ -240,9 +240,11 @@ export const LenserProfileHeader: React.FC<LenserProfileHeaderProps> = ({ lenser
                             <p className="font-medium text-gray-800 mt-2 md:mt-0">{lenser.headline}</p>
                         )}
                         
-                        <p className="text-sm md:text-base text-gray-600 leading-relaxed max-w-3xl whitespace-pre-wrap">
-                            {lenser.bio || (isOwner ? "Add a bio to tell your story." : "")}
-                        </p>
+                        {lenser.bio && (
+                            <p className="text-sm md:text-base text-gray-600 leading-relaxed max-w-3xl whitespace-pre-wrap">
+                                {lenser.bio}
+                            </p>
+                        )}
 
                         <div className="flex flex-wrap items-center justify-center md:justify-start gap-4 mt-2">
                             {lenser.website_url && (

@@ -6,6 +6,7 @@ import { TagHeader } from '../components/TagHeader';
 import { TagFilterBar } from '../components/TagFilterBar';
 import { TagContentGrid } from '../components/TagContentGrid';
 import { useAuth } from '../../../context/AuthContext';
+import { SEOHead } from '../../../components/SEOHead';
 
 export const TagDetailPage: React.FC = () => {
   const { slug } = useParams<{ slug: string }>();
@@ -26,7 +27,7 @@ export const TagDetailPage: React.FC = () => {
     filter, 
     setFilter, 
     sort, 
-    setSort,
+    setSort, 
     availableFilters 
   } = useTagDetailController(slug);
 
@@ -51,6 +52,8 @@ export const TagDetailPage: React.FC = () => {
 
   return (
     <div className="w-full">
+        <SEOHead type="tag" data={tag} />
+        
         {/* Header Block */}
         {tag ? (
             <TagHeader tag={tag} totalItems={items.length} />

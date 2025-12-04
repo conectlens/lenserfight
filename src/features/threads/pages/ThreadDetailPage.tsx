@@ -15,6 +15,7 @@ import { useUI } from '../../../context/UIContext';
 import { CreateThreadModal } from '../components/CreateThreadModal';
 import { threadsService } from '../../../services/threadsService';
 import { ConfirmModal } from '../../../components/ConfirmModal';
+import { SEOHead } from '../../../components/SEOHead';
 
 export const ThreadDetailPage: React.FC = () => {
   const { threadId } = useParams<{ threadId: string }>();
@@ -161,6 +162,8 @@ export const ThreadDetailPage: React.FC = () => {
 
   return (
     <div className="max-w-4xl mx-auto">
+      <SEOHead type="thread" data={thread} />
+      
       <ThreadDetailCard 
         thread={thread} 
         onToggleReaction={handleToggleReaction}
