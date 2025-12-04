@@ -15,7 +15,7 @@ interface DashboardLayoutProps {
 export const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [isMobile, setIsMobile] = useState(false);
-  const { hasLenser, isLoading: lenserLoading, cachedProfileExists } = useLenser();
+  const { hasLenser, isLoading: lenserLoading } = useLenser();
   const { isAuthenticated, isLoading: authLoading } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
@@ -33,13 +33,10 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) =>
   }, [location.pathname]);
 
   useEffect(() => {
-    // Suppress modal if we know from cache that profile exists
-    if (cachedProfileExists) return;
-
     if (isAuthenticated && !lenserLoading && !hasLenser && !hasDismissedProfileModal) {
       setIsProfileModalOpen(true);
     }
-  }, [isAuthenticated, lenserLoading, hasLenser, hasDismissedProfileModal, cachedProfileExists]);
+  }, [isAuthenticated, lenserLoading, hasLenser, hasDismissedProfileModal]);
 
   useEffect(() => {
     const handleResize = () => {
@@ -111,7 +108,7 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) =>
 
        </div>
 
-       {isProfileModalOpen && isAuthenticated && !hasLenser && !cachedProfileExists && (
+       {isProfileModalOpen && isAuthenticated && !hasLenser && (
          <CreateLenserProfileModal onClose={handleCloseProfileModal} />
        )}
     </div>
