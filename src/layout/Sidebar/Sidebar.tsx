@@ -43,15 +43,23 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, isMobile, onCloseMobil
   const [unreadCount, setUnreadCount] = useState(0);
   const [isFeedbackOpen, setIsFeedbackOpen] = useState(false);
 
+  // Optimized notification fetch: only runs when lenser ID changes or on mount
   useEffect(() => {
+    if (!lenser || !FEATURES.NOTIFICATIONS) return;
+
+    let isMounted = true;
     const fetchNotifications = async () => {
-        if (lenser && FEATURES.NOTIFICATIONS) {
+        try {
             const count = await notificationService.getUnreadCount();
-            setUnreadCount(count);
+            if (isMounted) setUnreadCount(count);
+        } catch (e) {
+            console.error("Failed to fetch sidebar notifications", e);
         }
     };
     fetchNotifications();
-  }, [lenser]);
+
+    return () => { isMounted = false; };
+  }, [lenser?.id]); // Dependency on ID ensures we only refetch if user changes
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
