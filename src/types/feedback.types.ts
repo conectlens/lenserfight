@@ -1,3 +1,4 @@
+
 export interface Feedback {
   id: string;
   product_tag?: string | null;
@@ -19,3 +20,8 @@ export interface SubmitFeedbackDTO {
 }
 
 export type FeedbackTag = 'Bug' | 'Feature Request' | 'General' | 'UI/UX' | 'Other';
+
+export interface FeedbackResponse {
+  data: Feedback[];
+  total: number;
+}

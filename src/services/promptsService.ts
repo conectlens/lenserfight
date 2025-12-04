@@ -12,11 +12,11 @@ const promptsRepo = getPromptsRepository();
 const lenserRepo = getLenserRepository();
 const reactionRepo = getReactionRepository();
 
-// Replaced single enrich with batch map
+// Use author_profile and tags from record directly
 const mapToViewModels = async (records: any[], currentLenserId?: string): Promise<PromptTemplateViewModel[]> => {
     return records.map(record => {
-        // Map nested data from Supabase join
-        const tags = record.prompt_template_tags?.map((pt: any) => pt.tag) || [];
+        const tags = record.tags || []; // Use denormalized tags
+        const profile = record.author_profile || { id: 'unknown', handle: 'unknown', display_name: 'Unknown', avatar_url: null };
         
         return {
             id: record.id,
@@ -26,10 +26,10 @@ const mapToViewModels = async (records: any[], currentLenserId?: string): Promis
             createdAt: record.created_at,
             visibility: record.visibility,
             author: {
-                id: record.author?.id || 'unknown',
-                displayName: record.author?.display_name || 'Unknown',
-                handle: record.author?.handle || 'unknown',
-                avatarUrl: record.author?.avatar_url
+                id: profile.id || record.lenser_id,
+                displayName: profile.display_name,
+                handle: profile.handle,
+                avatarUrl: profile.avatar_url
             },
             tags: tags
         };
@@ -91,12 +91,6 @@ export const promptsService = {
 
     const isSaved = summary.userReactions.includes('saved');
 
-    if (viewModel.tags.length > 0) {
-        Promise.all(viewModel.tags.map(t => 
-            tagActivityService.recordView(t.id, 'prompt', id, viewerLenserId)
-        )).catch(() => {});
-    }
-
     return {
       ...viewModel,
       content: record.content,
@@ -122,13 +116,31 @@ export const promptsService = {
   },
 
   toggleSavePrompt: async (id: string, lenserId: string): Promise<boolean> => {
-     const result = await reactionService.toggleReaction('prompt_template', id, lenserId, 'saved');
-     return result.added;
+     // 1. Toggle reaction entry
+     const { added, summary } = await reactionService.toggleReaction('prompt_template', id, lenserId, 'saved');
+     
+     // 2. Sync updated counts to reaction_totals JSONB column
+     // This ensures we use the correct column (reaction_totals) instead of save_count
+     try {
+         await promptsRepo.updateReactionTotals(id, summary.counts);
+     } catch (e) {
+         console.warn("Failed to sync reaction_totals", e);
+     }
+
+     return added;
   },
 
   toggleReaction: async (id: string, lenserId: string, reaction: 'like' | 'love' | 'clap') => {
-      const result = await reactionService.toggleReaction('prompt_template', id, lenserId, reaction);
-      return result.summary;
+      const { added, summary } = await reactionService.toggleReaction('prompt_template', id, lenserId, reaction);
+      
+      // Also sync totals for other reactions to keep JSONB fresh
+      try {
+          await promptsRepo.updateReactionTotals(id, summary.counts);
+      } catch (e) {
+          console.warn("Failed to sync reaction_totals", e);
+      }
+
+      return summary;
   },
 
   createPrompt: async (input: CreatePromptDTO): Promise<PromptTemplateRecord> => {
@@ -152,9 +164,16 @@ export const promptsService = {
         tagIds: realTagIds
     });
 
-    Promise.all(realTagIds.map(tagId => 
-        tagActivityService.recordActivity(tagId, 'prompt', prompt.id, input.lenserId, 'created')
-    )).catch(console.error);
+    // Batch logging for create
+    tagActivityService.recordBatchActivity(
+        realTagIds.map(tagId => ({
+            tag_id: tagId,
+            entity_type: 'prompt',
+            entity_id: prompt.id,
+            activity_type: 'created',
+            actor_id: input.lenserId
+        }))
+    ).catch(console.error);
 
     return prompt;
   },
@@ -167,10 +186,6 @@ export const promptsService = {
       if (input.content && !input.description) {
           input.description = input.content.substring(0, 100) + (input.content.length > 100 ? '...' : '');
       }
-
-      // Moderation Check
-      // TODO: moderation policy will not be used in the beta version
-      // await contentModerationService.validate(input.title, input.description, input.content);
 
       let realTagIds: string[] | undefined = undefined;
       if (input.tagIds) {

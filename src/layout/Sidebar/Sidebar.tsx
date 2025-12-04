@@ -18,7 +18,8 @@ import {
   MessageSquarePlus,
   Bell,
   Eye,
-  Brain
+  Brain,
+  Rocket
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { FEATURES } from '../../config/runtimeConfig';
@@ -42,15 +43,23 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, isMobile, onCloseMobil
   const [unreadCount, setUnreadCount] = useState(0);
   const [isFeedbackOpen, setIsFeedbackOpen] = useState(false);
 
+  // Optimized notification fetch: only runs when lenser ID changes or on mount
   useEffect(() => {
+    if (!lenser || !FEATURES.NOTIFICATIONS) return;
+
+    let isMounted = true;
     const fetchNotifications = async () => {
-        if (lenser && FEATURES.NOTIFICATIONS) {
+        try {
             const count = await notificationService.getUnreadCount();
-            setUnreadCount(count);
+            if (isMounted) setUnreadCount(count);
+        } catch (e) {
+            console.error("Failed to fetch sidebar notifications", e);
         }
     };
     fetchNotifications();
-  }, [lenser, location.pathname]);
+
+    return () => { isMounted = false; };
+  }, [lenser?.id]); // Dependency on ID ensures we only refetch if user changes
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -203,15 +212,41 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, isMobile, onCloseMobil
         </nav>
 
         <div className="flex-shrink-0 px-3 pb-3 pt-2 bg-gray-50 mt-auto space-y-3">
-          {/* Feedback Block */}
-          <div className={`rounded-xl border border-gray-200 transition-all duration-700 ${!showLabels ? 'bg-transparent border-none' : 'bg-gray-100/80 p-1 animate-ambient-glow'}`}>
+          {/* Waiting List Button */}
+          <div className={`${!showLabels ? '' : 'animate-in slide-in-from-bottom-2 duration-500'}`}>
+             <SidebarItem 
+               onClick={() => handleNavigation('/waiting-list')}
+               icon={<Rocket size={20} className="text-[#121212]" />}
+               label="Join Waitlist"
+               isActive={location.pathname === '/waiting-list'}
+               collapsed={!showLabels}
+               className={`
+                 !my-0 
+                 border border-[#121212] 
+                 text-[#121212] font-bold 
+                 hover:bg-transparent 
+                 hover:shadow-md 
+                 transition-all
+               `}
+             />
+          </div>
+
+          {/* Feedback Button */}
+          <div className={`${!showLabels ? '' : 'animate-in slide-in-from-bottom-3 duration-500 delay-75'}`}>
               <SidebarItem 
                 onClick={() => setIsFeedbackOpen(true)}
-                icon={<MessageSquarePlus size={20} />} 
+                icon={<MessageSquarePlus size={20} className="text-[#121212]" />} 
                 label="Send Feedback" 
                 isActive={false} 
                 collapsed={!showLabels}
-                className={`!my-0 ${!showLabels ? 'text-gray-400 hover:text-primary-600' : 'text-gray-600 hover:text-gray-900 hover:bg-white/60'}`}
+                className={`
+                  !my-0 
+                  border border-[#121212] 
+                  text-[#121212] font-bold 
+                  hover:bg-transparent
+                  hover:shadow-md
+                  transition-all
+                `}
               />
           </div>
 
@@ -277,7 +312,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, isMobile, onCloseMobil
                              className="w-full text-left px-3 py-2 rounded-lg text-sm text-gray-700 hover:bg-gray-50 hover:text-gray-900 flex items-center gap-3 transition-colors"
                              onClick={() => {
                                setIsDropdownOpen(false);
-                               navigate('/settings', { state: { tab: 'Notifications' } });
+                               navigate('/settings/notifications');
                              }}
                            >
                              <div className="relative">
@@ -295,7 +330,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, isMobile, onCloseMobil
                            className="w-full text-left px-3 py-2 rounded-lg text-sm text-gray-700 hover:bg-gray-50 hover:text-gray-900 flex items-center gap-3 transition-colors"
                            onClick={() => {
                                setIsDropdownOpen(false);
-                               navigate('/settings');
+                               navigate('/settings/account');
                            }}
                          >
                            <Settings size={16} className="text-gray-400" />
