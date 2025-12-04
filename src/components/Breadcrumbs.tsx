@@ -2,9 +2,9 @@
 import React from 'react';
 import { useLocation, Link } from 'react-router-dom';
 import { ChevronRight } from 'lucide-react';
+import { useUI } from '../context/UIContext';
 
 const routeNameMap: Record<string, string> = {
-  app: 'Home',
   prompts: 'Prompts',
   threads: 'Threads',
   lenser: 'Lenser',
@@ -20,31 +20,35 @@ const nonLinkableRoutes = ['lenser', 'threads'];
 
 export const Breadcrumbs: React.FC = () => {
   const location = useLocation();
+  const { pageTitle } = useUI();
   const pathnames = location.pathname.split('/').filter((x) => x);
 
   return (
     <nav className="flex items-center text-sm font-medium text-gray-500 overflow-hidden whitespace-nowrap mask-linear-fade">
-      <Link to="/app" className="hover:text-gray-900 transition-colors flex-shrink-0">
+      <Link to="/" className={`${location.pathname === '/' ? 'text-gray-900 font-semibold' : 'hover:text-gray-900'} transition-colors flex-shrink-0`}>
         Home
       </Link>
       
-      {pathnames.length > 0 && pathnames[0] !== 'app' && (
+      {pathnames.length > 0 && (
         <>
            {pathnames.map((value, index) => {
-             // Skip 'app' if it appears later for some reason
-             if (value === 'app') return null;
-
              const to = `/${pathnames.slice(0, index + 1).join('/')}`;
              const isLast = index === pathnames.length - 1;
              
              // Simple formatting: generic mapping or capitalize
              let displayName = routeNameMap[value];
+             
              if (!displayName) {
-                // Heuristic for IDs: if it contains numbers/dashes and is long, treat as "Detail" or truncate
-                if (value.length > 15 || /\d/.test(value)) {
-                    displayName = 'Detail';
+                // Check if this is the active page and we have a specific title override
+                if (isLast && pageTitle) {
+                    displayName = pageTitle;
                 } else {
-                    displayName = value.charAt(0).toUpperCase() + value.slice(1);
+                    // Heuristic for IDs: if it contains numbers/dashes and is long, treat as "Detail" or truncate
+                    if (value.length > 15 || /\d/.test(value)) {
+                        displayName = 'Detail';
+                    } else {
+                        displayName = value.charAt(0).toUpperCase() + value.slice(1);
+                    }
                 }
              }
 
@@ -53,13 +57,13 @@ export const Breadcrumbs: React.FC = () => {
 
              return (
                <React.Fragment key={to}>
-                 <ChevronRight size={14} className="mx-2 flex-shrink-0 text-gray-400" />
+                 <ChevronRight size={14} className={`mx-2 flex-shrink-0 text-gray-400 ${!isLast ? 'hidden sm:block' : ''}`} />
                  {isLast || isNotLinkable ? (
-                   <span className={`${isLast ? 'text-gray-900 font-semibold' : 'text-gray-500'} truncate max-w-[150px] sm:max-w-[200px]`}>
+                   <span className={`${isLast ? 'text-gray-900 font-semibold' : 'text-gray-500 hidden sm:inline'} truncate max-w-[150px] sm:max-w-[300px]`}>
                      {displayName}
                    </span>
                  ) : (
-                   <Link to={to} className="hover:text-gray-900 transition-colors flex-shrink-0">
+                   <Link to={to} className="hover:text-gray-900 transition-colors flex-shrink-0 hidden sm:inline">
                      {displayName}
                    </Link>
                  )}

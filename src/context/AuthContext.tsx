@@ -2,6 +2,7 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { User, AuthState } from '../types/auth.types';
 import { authService } from '../services/authService';
+import { storage } from '../utils/storage';
 
 interface AuthContextType extends AuthState {
   login: (email: string, pass: string) => Promise<void>;
@@ -75,6 +76,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     } catch (e) {
       console.error("Logout error", e);
     }
+    storage.removeItem('lenser_has_profile');
     setState({ user: null, isAuthenticated: false, isLoading: false, error: null });
   };
 

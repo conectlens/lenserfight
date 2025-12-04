@@ -1,141 +1,148 @@
 
 import { getThreadsRepository } from '../adapters/threadsAdapter';
 import { getLenserRepository } from '../adapters/lenserAdapter';
-import { reactionService } from './reactionService';
+import { getReactionRepository } from '../adapters/reactionAdapter';
 import { ThreadFeedItem, ThreadDetailViewModel, ThreadRecord, Visibility, CreateThreadDTO } from '../types/threads.types';
 import { threadInteractionService } from './threadInteractionService';
 import { tagService } from './tagService';
-import { tagActivityService } from './tagActivityService';
+import { contentModerationService } from './contentModerationService';
 
 const threadsRepo = getThreadsRepository();
 const lenserRepo = getLenserRepository();
+const reactionRepo = getReactionRepository();
 
 export const threadsService = {
   createThread: async (input: { title: string; content: string; tagIds: string[]; lenserId: string; visibility: Visibility }): Promise<ThreadRecord> => {
-    if (!input.title || input.title.trim() === '') {
-      throw new Error("Thread title is required.");
-    }
-    if (!input.lenserId) {
-      throw new Error("User must be logged in with a profile to post.");
-    }
-    
-    // 1. Resolve Tag Names to Real Tag IDs
-    // The input.tagIds coming from UI are actually Strings (names).
+    // Moderation Check
+    // TODO: moderation policy will not be used in the beta version
+    // await contentModerationService.validate(input.title, input.content);
+
     const resolvedTags = await tagService.upsertTags(input.tagIds);
     const realTagIds = resolvedTags.map(t => t.id);
-
-    // 2. Create Thread
-    const thread = await threadsRepo.createThread({
-      ...input,
-      tagIds: realTagIds // Replace names with IDs
-    });
-
-    // 3. Record Activity for Trend Score
-    // We fire this asynchronously to not block UI
-    Promise.all(realTagIds.map(tagId => 
-      tagActivityService.recordActivity(tagId, 'thread', thread.id, input.lenserId, 'created')
-    )).catch(console.error);
-
-    return thread;
+    return threadsRepo.createThread({ ...input, tagIds: realTagIds });
   },
 
   updateThread: async (id: string, input: Partial<CreateThreadDTO>, lenserId: string): Promise<ThreadRecord> => {
-      const existing = await threadsRepo.getThreadById(id);
-      if (!existing) throw new Error("Thread not found");
-      if (existing.lenser_id !== lenserId) throw new Error("Unauthorized to edit this thread");
+      // Moderation Check
+      // TODO: moderation policy will not be used in the beta version
+      // await contentModerationService.validate(input.title, input.content);
 
       let realTagIds: string[] | undefined = undefined;
       if (input.tagIds) {
           const resolvedTags = await tagService.upsertTags(input.tagIds);
           realTagIds = resolvedTags.map(t => t.id);
       }
-
       return threadsRepo.updateThread(id, { ...input, tagIds: realTagIds });
   },
 
   deleteThread: async (id: string, lenserId: string): Promise<void> => {
-      const existing = await threadsRepo.getThreadById(id);
-      if (!existing) throw new Error("Thread not found");
-      if (existing.lenser_id !== lenserId) throw new Error("Unauthorized to delete this thread");
-
       await threadsRepo.deleteThread(id);
   },
 
+  // --- OPTIMIZED FETCH METHODS ---
+
   getThreadsFeed: async (currentUserId?: string, offset = 0, limit = 10): Promise<ThreadFeedItem[]> => {
-    const threads = await threadsRepo.getAllThreads(offset, limit);
-    return threadsService._enrichThreads(threads, currentUserId);
+    const records = await threadsRepo.getAllThreads(offset, limit);
+    return threadsService._mapToFeedItems(records, currentUserId);
   },
 
   getThreadsByTag: async (slug: string, currentUserId?: string, offset = 0, limit = 10): Promise<ThreadFeedItem[]> => {
-    const threads = await threadsRepo.getThreadsByTag(slug, offset, limit);
-    return threadsService._enrichThreads(threads, currentUserId);
+    const records = await threadsRepo.getThreadsByTag(slug, offset, limit);
+    return threadsService._mapToFeedItems(records, currentUserId);
   },
 
-  // Helper to DRY up enrichment logic
-  _enrichThreads: async (threads: ThreadRecord[], currentUserId?: string): Promise<ThreadFeedItem[]> => {
-    const feedItems = await Promise.all(
-      threads.map(async (thread) => {
-        const [author, tags, reactionSummary] = await Promise.all([
-          lenserRepo.getLenserById(thread.lenser_id),
-          threadsRepo.getThreadTags(thread.id),
-          reactionService.getReactionSummary('thread', thread.id, currentUserId)
-        ]);
+  getThreadsByAuthor: async (authorId: string, currentUserId?: string, offset = 0, limit = 10): Promise<ThreadFeedItem[]> => {
+    const includePrivate = authorId === currentUserId;
+    const records = await threadsRepo.getByAuthor(authorId, offset, limit, includePrivate);
+    return threadsService._mapToFeedItems(records, currentUserId);
+  },
+
+  // Pure Mapper: Converts DB Join Result -> Domain Model + Batch Reaction State
+  _mapToFeedItems: async (records: any[], currentUserId?: string): Promise<ThreadFeedItem[]> => {
+    if (records.length === 0) return [];
+
+    // 1. Batch fetch user reactions if logged in (O(1) request)
+    let userReactedIds = new Set<string>();
+    if (currentUserId) {
+        const ids = records.map(r => r.id);
+        const reactions = await reactionRepo.getBatchUserReactions('thread', ids, currentUserId);
+        reactions.forEach(r => userReactedIds.add(r.target_id));
+    }
+
+    // 2. Map in memory
+    return records.map(record => {
+        // Map Tags from Junction (Supabase format: thread_tags: [{ tag: { ... } }])
+        // Filter out any potential nulls from join
+        const tags = (record.thread_tags?.map((tt: any) => tt.tag) || []).filter((t: any) => !!t);
+        
+        // Use reaction_totals JSONB from DB directly
+        const reactionCounts = record.reaction_totals || {};
+        const totalReactions = Object.values(reactionCounts).reduce((a: any, b: any) => a + b, 0) as number;
 
         return {
-          id: thread.id,
-          author: {
-            id: author?.id || 'unknown',
-            displayName: author?.display_name || 'Unknown User',
-            avatarUrl: author?.avatar_url,
-            handle: author?.handle || 'unknown',
-          },
-          title: thread.title,
-          content: thread.content,
-          tags: tags,
-          reactionCount: reactionSummary.total,
-          userHasReacted: reactionSummary.userReactions.length > 0,
-          replyCount: thread.reply_count,
-          createdAt: thread.created_at,
+            id: record.id,
+            author: {
+                id: record.author?.id || 'unknown',
+                displayName: record.author?.display_name || 'Unknown',
+                avatarUrl: record.author?.avatar_url,
+                handle: record.author?.handle || 'unknown',
+            },
+            title: record.title,
+            content: record.content,
+            tags: tags,
+            reactionCount: totalReactions,
+            replyCount: record.reply_count || 0,
+            createdAt: record.created_at,
+            userHasReacted: userReactedIds.has(record.id),
+            visibility: record.visibility
         };
-      })
-    );
-    return feedItems;
+    });
   },
 
   getThreadDetail: async (threadId: string, currentUserId?: string): Promise<ThreadDetailViewModel | null> => {
-    const thread = await threadsRepo.getThreadById(threadId);
-    if (!thread) return null;
+    // Fire & Forget View Count
+    threadsRepo.incrementView(threadId).catch(() => {});
 
-    const [author, tags, reactionSummary, replies] = await Promise.all([
-      lenserRepo.getLenserById(thread.lenser_id),
-      threadsRepo.getThreadTags(thread.id),
-      reactionService.getReactionSummary('thread', thread.id, currentUserId),
-      threadInteractionService.getReplyTree(thread.id, currentUserId)
-    ]);
-    
-    // Record view activity for tags if it's a detail view
-    // Only if we have tags
-    if (tags.length > 0) {
-        // Fire and forget
-        Promise.all(tags.map(t => tagActivityService.recordView(t.id, 'thread', thread.id, currentUserId))).catch(() => {});
+    const record: any = await threadsRepo.getThreadById(threadId);
+    if (!record) return null;
+
+    if (record.visibility === 'private') {
+        if (!currentUserId || record.lenser_id !== currentUserId) {
+            throw new Error("401"); 
+        }
     }
 
+    // Check main thread reaction
+    let userHasReacted = false;
+    if (currentUserId) {
+        const [reaction] = await reactionRepo.getUserReaction('thread', threadId, currentUserId);
+        userHasReacted = !!reaction;
+    }
+
+    // Delegate reply fetching to interaction service for tree building + advanced stats
+    const replies = await threadInteractionService.getReplyTree(threadId, currentUserId);
+
+    // Aggregate counts
+    const reactionCounts = record.reaction_totals || {};
+    const totalReactions = Object.values(reactionCounts).reduce((a: any, b: any) => a + b, 0) as number;
+
     return {
-        id: thread.id,
-        title: thread.title,
-        content: thread.content,
-        createdAt: thread.created_at,
+        id: record.id,
+        title: record.title,
+        content: record.content,
+        createdAt: record.created_at,
         author: {
-            id: author?.id || 'unknown',
-            displayName: author?.display_name || 'Unknown',
-            avatarUrl: author?.avatar_url,
-            handle: author?.handle || 'unknown'
+            id: record.author?.id,
+            displayName: record.author?.display_name,
+            avatarUrl: record.author?.avatar_url,
+            handle: record.author?.handle
         },
-        tags,
-        reactionCount: reactionSummary.total,
-        userHasReacted: reactionSummary.userReactions.length > 0,
-        replies,
-        promptBlock: thread.prompt_data
+        tags: (record.thread_tags?.map((tt: any) => tt.tag) || []).filter((t: any) => !!t),
+        reactionCount: totalReactions,
+        userHasReacted: userHasReacted,
+        replies: replies,
+        promptBlock: record.prompt_data,
+        visibility: record.visibility
     };
   },
 

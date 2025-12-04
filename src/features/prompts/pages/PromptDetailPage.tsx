@@ -6,17 +6,18 @@ import { PromptTemplateDetailViewModel, PromptTemplateViewModel } from '../../..
 import { useLenser } from '../../../context/LenserContext';
 import { useAuth } from '../../../context/AuthContext';
 import { useShareContext } from '../../../context/ShareContext';
-import { ChevronLeft, Lock, Pencil, Trash2 } from 'lucide-react';
+import { useUI } from '../../../context/UIContext';
+import { Lock, Pencil, Trash2 } from 'lucide-react';
 import { PromptDetailHeader } from '../components/PromptDetailHeader';
-import { PromptDetailContent } from '../components/PromptDetailContent';
-import { PromptActionBar } from '../components/PromptActionBar';
+import { PromptBodyViewer } from '../components/PromptBodyViewer';
 import { PromptRelatedList } from '../components/PromptRelatedList';
 import { PromptAuthorList } from '../components/PromptAuthorList';
+import { AIResultsSection } from '../../generations/components/AIResultsSection';
 import { CreateLenserProfileModal } from '../../lenser/components/CreateLenserProfileModal';
 import { useCreatePrompt } from '../hooks/useCreatePrompt';
 import { CreatePromptModal } from '../components/CreatePromptModal';
-import { ActionMenu } from '../../../components/ActionMenu';
 import { ConfirmModal } from '../../../components/ConfirmModal';
+import { SEOHead } from '../../../components/SEOHead';
 
 export const PromptDetailPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -25,6 +26,7 @@ export const PromptDetailPage: React.FC = () => {
   const { lenser, hasLenser } = useLenser();
   const { isAuthenticated, isLoading: authLoading } = useAuth();
   const { setShareConfig } = useShareContext();
+  const { setPageActions } = useUI();
   
   const [prompt, setPrompt] = useState<PromptTemplateDetailViewModel | null>(null);
   const [relatedPrompts, setRelatedPrompts] = useState<PromptTemplateViewModel[]>([]);
@@ -36,7 +38,6 @@ export const PromptDetailPage: React.FC = () => {
   const [isUnauthorized, setIsUnauthorized] = useState(false);
   
   // Action States
-  const [isCopying, setIsCopying] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   
   // Delete State
@@ -44,7 +45,7 @@ export const PromptDetailPage: React.FC = () => {
   const [isDeleting, setIsDeleting] = useState(false);
   const [deleteTargetId, setDeleteTargetId] = useState<string | null>(null);
 
-  // Create Prompt Hook (Controller for Create/Edit)
+  // Create Prompt Hook
   const { 
     isOpen: isCreateOpen, 
     openModal: openCreateModal, 
@@ -56,7 +57,6 @@ export const PromptDetailPage: React.FC = () => {
     isEditMode
   } = useCreatePrompt();
 
-  // Enforce Auth
   useEffect(() => {
     if (!authLoading && !isAuthenticated) {
       navigate('/login', { state: { from: location } });
@@ -64,8 +64,7 @@ export const PromptDetailPage: React.FC = () => {
   }, [authLoading, isAuthenticated, navigate, location]);
 
   const fetchData = async () => {
-    if (!id) return;
-    if (!isAuthenticated) return; 
+    if (!id || !isAuthenticated) return;
     
     setLoading(true);
     setIsUnauthorized(false);
@@ -93,11 +92,8 @@ export const PromptDetailPage: React.FC = () => {
     }
   };
 
-  // Initial Load
   useEffect(() => {
-    if (!authLoading) {
-      fetchData();
-    }
+    if (!authLoading) fetchData();
   }, [id, lenser?.id, isAuthenticated, authLoading]);
 
   // Register Share Config
@@ -112,7 +108,20 @@ export const PromptDetailPage: React.FC = () => {
     return () => setShareConfig(null);
   }, [prompt, setShareConfig]);
 
-  // Action Handlers
+  // Hoist Actions
+  const isOwner = lenser && prompt && prompt.author.id === lenser.id;
+  useEffect(() => {
+    if (isOwner && prompt) {
+        setPageActions([
+            { label: 'Edit Prompt', icon: <Pencil size={16} />, onClick: () => handleEditClick(prompt.id) },
+            { label: 'Delete Prompt', icon: <Trash2 size={16} />, onClick: () => handleDeleteClick(prompt.id), variant: 'danger' }
+        ]);
+    } else {
+        setPageActions([]);
+    }
+    return () => setPageActions([]);
+  }, [isOwner, prompt, setPageActions]);
+
   const ensureProfile = (): boolean => {
     if (!hasLenser) {
       setShowProfileModal(true);
@@ -124,14 +133,20 @@ export const PromptDetailPage: React.FC = () => {
   const handleCopy = async () => {
     if (!prompt || !ensureProfile() || !lenser) return;
     
-    setIsCopying(true);
     try {
       await navigator.clipboard.writeText(prompt.content);
       await promptsService.copyPrompt(prompt.id, lenser.id);
-      setTimeout(() => setIsCopying(false), 2000);
+      
+      // Update local count
+      setPrompt(prev => prev ? {
+          ...prev,
+          reactionCounts: {
+              ...prev.reactionCounts,
+              copy: prev.reactionCounts.copy + 1
+          }
+      } : null);
     } catch (e) {
       console.error("Copy failed", e);
-      setIsCopying(false);
     }
   };
 
@@ -142,44 +157,49 @@ export const PromptDetailPage: React.FC = () => {
     try {
       const isNowSaved = await promptsService.toggleSavePrompt(prompt.id, lenser.id);
       
+      // Update state optimistically but also respect the boolean returned by the robust toggle
       setPrompt(prev => {
           if (!prev) return null;
+          // Calculate new count based on toggle result
+          const currentCount = prev.reactionCounts.saved;
+          // If we added it, increment. If we removed it, decrement. 
+          // Careful not to go below 0 or desync if original state was already skewed.
+          const newCount = isNowSaved ? currentCount + 1 : Math.max(0, currentCount - 1);
+          
           return {
-              ...prev,
-              isSaved: isNowSaved,
-              reactionCounts: {
-                  ...prev.reactionCounts,
-                  saved: isNowSaved ? prev.reactionCounts.saved + 1 : prev.reactionCounts.saved - 1
-              }
+            ...prev,
+            isSaved: isNowSaved,
+            reactionCounts: {
+                ...prev.reactionCounts,
+                saved: newCount
+            }
           };
       });
+      
+      // Optional: Refetch detail to sync exact counts from DB if critical
+      // promptsService.getPromptDetail(prompt.id, lenser.id).then(updated => {
+      //    if(updated) setPrompt(updated);
+      // });
 
     } catch (e) {
       console.error("Save failed", e);
+      alert("Could not update save status. Please try again.");
     } finally {
       setIsSaving(false);
     }
   };
 
-  const handlePromptClick = (targetId: string) => {
-    navigate(`/prompts/${targetId}`);
-  };
+  const handlePromptClick = (targetId: string) => navigate(`/prompts/${targetId}`);
 
   const handleCreateClick = () => {
-    if (ensureProfile()) {
-        openCreateModal();
-    }
+    if (ensureProfile()) openCreateModal();
   };
 
   const handleEditClick = (targetId?: string) => {
     if (!ensureProfile()) return;
-    
-    // Determine which prompt to edit. If targetId provided (from sidebar list), use that.
-    // Otherwise check if current main prompt is edit target.
     const editId = targetId || prompt?.id;
     
     if (editId) {
-        // If editing current page prompt, we have data. 
         if (prompt && editId === prompt.id) {
              openCreateModal({
                 id: prompt.id,
@@ -189,9 +209,6 @@ export const PromptDetailPage: React.FC = () => {
                 visibility: prompt.visibility
             });
         } else {
-            // Editing sidebar item, might need to fetch detail first if data is incomplete in list view
-            // But list view model usually has enough for edit modal init, or we fetch.
-            // For now, fetch to be safe and get full content
             promptsService.getPromptDetail(editId, lenser?.id).then(detail => {
                 if (detail) {
                     openCreateModal({
@@ -214,41 +231,42 @@ export const PromptDetailPage: React.FC = () => {
 
   const confirmDelete = async () => {
       if (!deleteTargetId || !lenser) return;
-      
       setIsDeleting(true);
       try {
           await promptsService.deletePrompt(deleteTargetId, lenser.id);
           setIsDeleteModalOpen(false);
           
           if (prompt && deleteTargetId === prompt.id) {
-              // Deleted the main prompt being viewed
-              alert("Prompt deleted successfully.");
               navigate('/prompts');
           } else {
-              // Deleted a sidebar item
-              alert("Prompt deleted.");
-              // Refresh lists
               const authorP = await promptsService.getAuthorPrompts(prompt!.author.id);
               setAuthorPrompts(authorP.filter(p => p.id !== prompt!.id).slice(0, 5));
           }
       } catch (e) {
-          console.error("Failed to delete", e);
-          alert("Failed to delete prompt");
+          console.error(e);
       } finally {
           setIsDeleting(false);
           setDeleteTargetId(null);
       }
   };
 
+  const handleCreateSubmit = (id: string) => {
+      if (isEditMode && prompt && id === prompt.id) {
+          fetchData();
+      } else {
+          navigate(`/prompts/${id}`);
+      }
+  };
+
   if (authLoading || (isAuthenticated && loading)) {
     return (
-      <div className="max-w-7xl mx-auto py-8 px-4 grid grid-cols-1 lg:grid-cols-12 gap-12">
-        <div className="lg:col-span-8 space-y-8 animate-pulse">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 animate-pulse">
+        <div className="lg:col-span-8 space-y-8">
            <div className="h-8 w-32 bg-gray-200 rounded"></div>
            <div className="h-16 w-3/4 bg-gray-200 rounded"></div>
            <div className="h-64 w-full bg-gray-200 rounded"></div>
         </div>
-        <div className="hidden lg:block lg:col-span-4 space-y-6 animate-pulse">
+        <div className="hidden lg:block lg:col-span-4 space-y-6">
            <div className="h-8 w-40 bg-gray-200 rounded"></div>
            <div className="h-20 w-full bg-gray-200 rounded"></div>
         </div>
@@ -260,18 +278,12 @@ export const PromptDetailPage: React.FC = () => {
 
   if (isUnauthorized) {
     return (
-        <div className="flex flex-col items-center justify-center min-h-[60vh] px-4">
+        <div className="flex flex-col items-center justify-center min-h-[60vh]">
             <div className="bg-red-50 p-6 rounded-full mb-6">
                 <Lock className="w-12 h-12 text-red-500" />
             </div>
             <h2 className="text-3xl font-bold text-gray-900 mb-3">Access Denied</h2>
-            <p className="text-gray-500 mb-8 text-center max-w-md text-lg">
-                This prompt is private. Only the author can view it.
-            </p>
-            <button 
-                onClick={() => navigate('/prompts')}
-                className="text-primary-700 hover:text-primary-900 font-semibold text-lg hover:underline transition-all"
-            >
+            <button onClick={() => navigate('/prompts')} className="text-primary-700 hover:underline">
                 Return to Library
             </button>
       </div>
@@ -282,67 +294,39 @@ export const PromptDetailPage: React.FC = () => {
     return (
       <div className="flex flex-col items-center justify-center min-h-[50vh]">
         <h2 className="text-2xl font-bold text-gray-900 mb-2">Prompt Not Found</h2>
-        <button 
-            onClick={() => navigate('/prompts')}
-            className="text-primary hover:underline font-medium"
-        >
+        <button onClick={() => navigate('/prompts')} className="text-primary hover:underline">
             Return to Library
         </button>
       </div>
     );
   }
 
-  // Determine ownership by matching current lenser id with prompt author id
-  const isOwner = lenser && prompt.author.id === lenser.id;
-
-  const menuActions = isOwner ? [
-      { label: 'Edit Prompt', icon: <Pencil size={16} />, onClick: () => handleEditClick() },
-      { label: 'Delete Prompt', icon: <Trash2 size={16} />, onClick: () => handleDeleteClick(prompt.id), variant: 'danger' as const }
-  ] : [];
-
   return (
-    <div className="max-w-7xl mx-auto pb-12">
-      {/* Header Row with Back & Actions */}
-      <div className="flex items-center justify-between mb-8">
-        <button 
-          onClick={() => navigate('/prompts')} 
-          className="flex items-center text-gray-500 hover:text-gray-900 transition-colors font-medium"
-        >
-          <ChevronLeft className="w-5 h-5 mr-1" />
-          Back to Library
-        </button>
-
-        {isOwner && (
-            <ActionMenu actions={menuActions} />
-        )}
-      </div>
-
+    <div>
+      <SEOHead type="prompt" data={prompt} />
+      
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-12">
-        {/* Main Content Column */}
         <div className="lg:col-span-8">
           <div className="max-w-[860px] mx-auto">
-            <PromptDetailHeader prompt={prompt} />
+            <PromptDetailHeader 
+                prompt={prompt} 
+                onSave={handleSave}
+                isSaved={prompt.isSaved}
+                isSaving={isSaving}
+                saveCount={prompt.reactionCounts.saved}
+            />
           </div>
           
-          {/* Visual Divider */}
-          <div className="flex items-center gap-4 py-8 max-w-[860px] mx-auto">
-             <div className="h-px bg-gray-200 flex-1"></div>
-             <span className="text-xs font-semibold text-gray-400 uppercase tracking-widest">Prompt Body</span>
-             <div className="h-px bg-gray-200 flex-1"></div>
+          <div className="mb-8">
+             <PromptBodyViewer content={prompt.content} onCopy={handleCopy} />
           </div>
 
-          <PromptDetailContent content={prompt.content} />
-
-          <PromptActionBar 
-            onCopy={handleCopy} 
-            onSave={handleSave} 
-            isSaved={prompt.isSaved}
-            isCopying={isCopying}
-            isSaving={isSaving}
-          />
+          {/* New AI Generations Section */}
+          <div className="max-w-[860px] mx-auto">
+             <AIResultsSection promptId={prompt.id} />
+          </div>
         </div>
 
-        {/* Right Sidebar */}
         <div className="lg:col-span-4 border-t lg:border-t-0 border-gray-100 pt-8 lg:pt-0">
           <PromptAuthorList 
             prompts={authorPrompts} 
@@ -363,23 +347,20 @@ export const PromptDetailPage: React.FC = () => {
         </div>
       </div>
 
-      {/* Create/Edit Prompt Modal */}
       <CreatePromptModal 
         isOpen={isCreateOpen}
         onClose={closeCreateModal}
-        onSubmit={() => submitCreate(fetchData)} // Refresh data on success
+        onSubmit={() => submitCreate(handleCreateSubmit)}
         form={createForm}
         isSubmitting={isCreateSubmitting}
         error={createError}
         isEditMode={isEditMode}
       />
 
-      {/* Profile Setup Modal */}
       {showProfileModal && (
         <CreateLenserProfileModal onClose={() => setShowProfileModal(false)} />
       )}
 
-      {/* Delete Confirmation */}
       <ConfirmModal
         isOpen={isDeleteModalOpen}
         onClose={() => setIsDeleteModalOpen(false)}

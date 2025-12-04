@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
 import { useLenser } from '../../../context/LenserContext';
@@ -95,7 +96,7 @@ export const SettingsPage: React.FC = () => {
       }
   };
 
-  const handleAvatarUpdate = async (url: string) => {
+  const handleAvatarUpdate = async (url: string | null) => {
       if (!lenser) return;
       setIsSaving(true);
       try {
@@ -221,8 +222,9 @@ export const SettingsPage: React.FC = () => {
                            This information will be displayed publicly on your Lenser profile.
                        </p>
 
-                       <div className="flex flex-col sm:flex-row gap-8 mb-8">
-                           <div className="flex-shrink-0">
+                       {/* Avatar Section - Centered on Mobile */}
+                       <div className="flex flex-col sm:flex-row items-center sm:items-start gap-8 mb-8">
+                           <div className="flex-shrink-0 flex flex-col items-center">
                                <div className="relative group cursor-pointer" onClick={() => setShowAvatarModal(true)}>
                                    <Avatar src={lenser?.avatar_url} alt={lenser?.display_name} className="!w-24 !h-24 sm:!w-32 sm:!h-32" />
                                    <div className="absolute inset-0 bg-black/40 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
@@ -237,7 +239,7 @@ export const SettingsPage: React.FC = () => {
                                </button>
                            </div>
 
-                           <div className="flex-1 space-y-6">
+                           <div className="flex-1 space-y-6 w-full">
                                <InputField 
                                    label="Display name" 
                                    name="displayName"
@@ -272,19 +274,15 @@ export const SettingsPage: React.FC = () => {
                                 />
                             </div>
 
-                            <div>
+                            <div className="relative">
                                 <label className="block text-sm font-medium text-gray-700 mb-1.5">Profile Visibility</label>
-                                <div className="grid grid-cols-2 gap-4">
+                                {/* Blurred/Disabled Container */}
+                                <div className="grid grid-cols-2 gap-4 blur-[2px] opacity-60 pointer-events-none select-none relative">
                                     <button
                                         type="button"
-                                        onClick={() => setFormData(p => ({ ...p, visibility: 'public' }))}
-                                        className={`flex items-center gap-3 p-4 border rounded-xl transition-all ${
-                                            formData.visibility === 'public' 
-                                            ? 'border-primary bg-primary/5 ring-1 ring-primary' 
-                                            : 'border-gray-200 hover:border-gray-300'
-                                        }`}
+                                        className={`flex items-center gap-3 p-4 border rounded-xl transition-all border-primary bg-primary/5 ring-1 ring-primary`}
                                     >
-                                        <div className={`p-2 rounded-full ${formData.visibility === 'public' ? 'bg-primary/20 text-gray-900' : 'bg-gray-100 text-gray-500'}`}>
+                                        <div className={`p-2 rounded-full bg-primary/20 text-gray-900`}>
                                             <Eye size={20} />
                                         </div>
                                         <div className="text-left">
@@ -295,14 +293,9 @@ export const SettingsPage: React.FC = () => {
                                     
                                     <button
                                         type="button"
-                                        onClick={() => setFormData(p => ({ ...p, visibility: 'private' }))}
-                                        className={`flex items-center gap-3 p-4 border rounded-xl transition-all ${
-                                            formData.visibility === 'private' 
-                                            ? 'border-primary bg-primary/5 ring-1 ring-primary' 
-                                            : 'border-gray-200 hover:border-gray-300'
-                                        }`}
+                                        className={`flex items-center gap-3 p-4 border rounded-xl transition-all border-gray-200`}
                                     >
-                                        <div className={`p-2 rounded-full ${formData.visibility === 'private' ? 'bg-primary/20 text-gray-900' : 'bg-gray-100 text-gray-500'}`}>
+                                        <div className={`p-2 rounded-full bg-gray-100 text-gray-500`}>
                                             <Lock size={20} />
                                         </div>
                                         <div className="text-left">
@@ -310,6 +303,12 @@ export const SettingsPage: React.FC = () => {
                                             <p className="text-xs text-gray-500">Only visible to you</p>
                                         </div>
                                     </button>
+                                </div>
+                                {/* Overlay */}
+                                <div className="absolute inset-0 flex items-center justify-center z-10 top-6">
+                                    <span className="bg-gray-900 text-white text-xs font-bold px-3 py-1.5 rounded-full shadow-lg">
+                                        Coming Soon
+                                    </span>
                                 </div>
                             </div>
                        </div>
