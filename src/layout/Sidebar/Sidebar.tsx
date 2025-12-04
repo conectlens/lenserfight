@@ -146,7 +146,14 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, isMobile, onCloseMobil
                  className="w-full h-full object-contain"
                />
             </div>
-            {showLabels && <span className="font-bold text-lg tracking-tight text-gray-900 truncate">LenserFight</span>}
+            {showLabels && (
+                <div className="relative">
+                    <span className="font-bold text-lg tracking-tight text-gray-900 truncate">LenserFight</span>
+                    <span className="absolute -bottom-2.5 -right-8 bg-primary text-gray-900 text-[9px] font-bold px-1.5 py-0.5 rounded border border-yellow-300 shadow-sm leading-none tracking-wide">
+                        BETA
+                    </span>
+                </div>
+            )}
           </div>
         </div>
 
