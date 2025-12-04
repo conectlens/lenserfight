@@ -35,19 +35,26 @@ export const Breadcrumbs: React.FC = () => {
              const to = `/${pathnames.slice(0, index + 1).join('/')}`;
              const isLast = index === pathnames.length - 1;
              
-             // Simple formatting: generic mapping or capitalize
+             // 1. Try generic mapping (e.g. "settings" -> "Settings")
              let displayName = routeNameMap[value];
              
              if (!displayName) {
-                // Check if this is the active page and we have a specific title override
+                // 2. If it's the active page, prefer the explicit pageTitle from Context
                 if (isLast && pageTitle) {
                     displayName = pageTitle;
                 } else {
-                    // Heuristic for IDs: if it contains numbers/dashes and is long, treat as "Detail" or truncate
-                    if (value.length > 15 || /\d/.test(value)) {
+                    // 3. Heuristic Fallback: 
+                    // Only use "Detail" if it looks like a UUID or is very long/numeric.
+                    // Otherwise, pretty-print the slug (e.g. "react-js" -> "React Js")
+                    const isLikelyId = value.length > 20 || (value.length > 10 && /\d/.test(value));
+                    
+                    if (isLikelyId) {
                         displayName = 'Detail';
                     } else {
-                        displayName = value.charAt(0).toUpperCase() + value.slice(1);
+                        // Capitalize and replace hyphens with spaces
+                        displayName = value
+                            .replace(/-/g, ' ')
+                            .replace(/\b\w/g, (char) => char.toUpperCase());
                     }
                 }
              }

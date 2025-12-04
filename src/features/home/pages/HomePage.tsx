@@ -1,6 +1,6 @@
 
 import React, { useCallback, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { ThreadsList } from '../components/ThreadsList';
 import { TagBadge } from '../../../components/TagBadge';
 import { Card } from '../../../components/Card';
@@ -15,6 +15,7 @@ import { SEOHead } from '../../../components/SEOHead';
 
 export const HomePage: React.FC = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const { hasLenser } = useLenser();
   const { isAuthenticated } = useAuth();
   
@@ -57,7 +58,7 @@ export const HomePage: React.FC = () => {
   const handleOpenThread = (id: string) => navigate(`/threads/${id}`);
 
   const handleCreateClick = () => {
-    if (!isAuthenticated) return navigate('/login');
+    if (!isAuthenticated) return navigate('/login', { state: { from: location } });
     if (!hasLenser) return setIsProfileModalOpen(true);
     setIsCreateModalOpen(true);
   };
@@ -145,7 +146,9 @@ export const HomePage: React.FC = () => {
                         <div>
                             <MinimalAlert icon={Sparkles} text="No top prompts yet" />
                         </div>
-                    ) : topPrompts.map((prompt) => (
+                    ) : [...topPrompts]
+                        .sort((a, b) => b.usageCount - a.usageCount)
+                        .map((prompt) => (
                       <div 
                             key={prompt.id} 
                             onClick={() => navigate(`/prompts/${prompt.id}`)}

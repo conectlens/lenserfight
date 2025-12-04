@@ -84,7 +84,7 @@ export const RegisterPage: React.FC = () => {
       // Simulating Email Verification Requirement
       window.alert("Registration successful! Please check your email to approve your account.");
       await logout();
-      navigate('/login');
+      navigate('/welcome');
     } catch (err: any) {
       setApiError(err.message || "Failed to register");
     } finally {
