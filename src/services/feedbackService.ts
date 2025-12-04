@@ -1,6 +1,6 @@
 
 import { getFeedbackRepository } from '../adapters/feedbackAdapter';
-import { SubmitFeedbackDTO } from '../types/feedback.types';
+import { SubmitFeedbackDTO, FeedbackResponse } from '../types/feedback.types';
 import { contentModerationService } from './contentModerationService';
 
 const feedbackRepo = getFeedbackRepository();
@@ -34,5 +34,11 @@ export const feedbackService = {
 
     // 4. Submit
     await feedbackRepo.submitFeedback(dto);
+  },
+
+  getUserFeedbacks: async (userId: string, page = 1, limit = 5): Promise<FeedbackResponse> => {
+      const offset = (page - 1) * limit;
+      const { data, count } = await feedbackRepo.getUserFeedbacks(userId, offset, limit);
+      return { data, total: count };
   }
 };

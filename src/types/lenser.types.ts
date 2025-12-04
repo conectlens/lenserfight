@@ -2,6 +2,13 @@
 import { PromptTemplateRecord } from './prompts.types';
 import { ThreadRecord } from './threads.types';
 
+export interface AuthorProfile {
+  id: string;
+  handle: string;
+  display_name: string;
+  avatar_url?: string | null;
+}
+
 export interface Lenser {
   id: string; // uuid
   user_id: string; // references auth.users.id
@@ -15,6 +22,7 @@ export interface Lenser {
   website_url?: string;
   website_display_name?: string;
   visibility?: 'public' | 'private';
+  is_in_waiting_list?: boolean;
   created_at: string;
   updated_at?: string;
   join_order?: number; // Immutable rank from lenser_join_log

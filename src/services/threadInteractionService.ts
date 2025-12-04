@@ -1,6 +1,7 @@
 
 import { getThreadsRepository } from '../adapters/threadsAdapter';
 import { getLenserRepository } from '../adapters/lenserAdapter';
+import { getReactionRepository } from '../adapters/reactionAdapter';
 import { reactionService } from './reactionService';
 import { ThreadReplyViewModel } from '../types/threads.types';
 import { MentionParser } from '../utils/mentionParser';
@@ -8,6 +9,7 @@ import { contentModerationService } from './contentModerationService';
 
 const threadsRepo = getThreadsRepository();
 const lenserRepo = getLenserRepository();
+const reactionRepo = getReactionRepository();
 
 export const threadInteractionService = {
   
@@ -33,7 +35,9 @@ export const threadInteractionService = {
     const cleanedContent = MentionParser.cleanContent(content); 
 
     const record = await threadsRepo.createReply(threadId, lenserId, cleanedContent, parentReplyId);
-    const author = await lenserRepo.getLenserById(lenserId);
+    
+    // Use author_profile directly from record
+    const profile = record.author_profile || { id: 'unknown', handle: 'unknown', display_name: 'Unknown', avatar_url: null };
 
     return {
         id: record.id,
@@ -43,10 +47,10 @@ export const threadInteractionService = {
         userHasReacted: false,
         isDeleted: false,
         author: {
-            id: author?.id || 'unknown',
-            displayName: author?.display_name || 'Unknown',
-            handle: author?.handle || 'unknown',
-            avatarUrl: author?.avatar_url
+            id: profile.id || lenserId,
+            displayName: profile.display_name,
+            handle: profile.handle,
+            avatarUrl: profile.avatar_url
         }
     };
   },
@@ -54,31 +58,38 @@ export const threadInteractionService = {
   getReplyTree: async (threadId: string, currentLenserId?: string): Promise<ThreadReplyViewModel[]> => {
     const records = await threadsRepo.getThreadReplies(threadId);
     
-    // 1. Fetch all authors
-    const uniqueLenserIds = Array.from(new Set(records.map(r => r.lenser_id)));
-    const authorsMap = new Map();
-    await Promise.all(uniqueLenserIds.map(async (id) => {
-        const l = await lenserRepo.getLenserById(id);
-        if (l) authorsMap.set(id, l);
-    }));
+    // Optimization: Batch Fetch User Reactions
+    // Instead of calling reactionService.getReactionSummary for every reply (N+1 queries),
+    // we fetch user status in one batch and use denormalized reaction_totals for counts.
+    let userReactedIds = new Set<string>();
+    
+    if (currentLenserId && records.length > 0) {
+        const replyIds = records.map(r => r.id);
+        try {
+            const reactions = await reactionRepo.getBatchUserReactions('thread_reply', replyIds, currentLenserId);
+            reactions.forEach(r => {
+                // Assuming 'like' is the primary reaction displayed on replies
+                if (r.reaction === 'like') {
+                    userReactedIds.add(r.target_id);
+                }
+            });
+        } catch (e) {
+            console.error("Failed to batch fetch reactions", e);
+        }
+    }
 
-    // 2. Fetch all reaction summaries in parallel
-    const reactionSummaries = await Promise.all(
-        records.map(r => reactionService.getReactionSummary('thread_reply', r.id, currentLenserId))
-    );
-    const reactionsMap = new Map();
-    records.forEach((r, idx) => {
-        reactionsMap.set(r.id, reactionSummaries[idx]);
-    });
-
-    // 3. Convert to ViewModel (Flat)
     const viewModels: (ThreadReplyViewModel & { parentId?: string | null })[] = records.map(r => {
-        const author = authorsMap.get(r.lenser_id);
-        const reactionData = reactionsMap.get(r.id);
-        const userReactions = reactionData?.userReactions || [];
-        const hasReacted = userReactions.includes('like');
+        const profile = r.author_profile || { id: 'unknown', handle: 'unknown', display_name: 'Unknown', avatar_url: null };
         
-        // Handle Soft Delete Presentation
+        // Calculate totals from denormalized JSONB 'reaction_totals' to avoid separate count queries
+        const reactionCounts = r.reaction_totals || {};
+        const totalReactions = Object.entries(reactionCounts).reduce((acc, [type, count]) => {
+            if (type !== 'saved' && type !== 'copy') return acc + (count as number);
+            return acc;
+        }, 0);
+        
+        const hasReacted = userReactedIds.has(r.id);
+        
         const isDeleted = !!r.deleted_at;
         const content = isDeleted ? "[This comment has been deleted]" : r.content;
 
@@ -87,20 +98,20 @@ export const threadInteractionService = {
             parentId: r.parent_reply_id,
             content,
             createdAt: r.created_at,
-            reactionCount: reactionData ? reactionData.total : 0,
+            reactionCount: totalReactions,
             userHasReacted: hasReacted,
             isDeleted,
             replies: [], // init
             author: {
-                id: author?.id || 'unknown',
-                displayName: author?.display_name || 'Unknown',
-                handle: author?.handle || 'unknown',
-                avatarUrl: author?.avatar_url
+                id: profile.id || r.lenser_id,
+                displayName: profile.display_name,
+                handle: profile.handle,
+                avatarUrl: profile.avatar_url
             }
         };
     });
 
-    // 4. Build Tree
+    // Build Tree
     const rootReplies: ThreadReplyViewModel[] = [];
     const replyMap = new Map<string, ThreadReplyViewModel>();
 
@@ -118,7 +129,7 @@ export const threadInteractionService = {
         }
     });
 
-    // 5. Sort - Like Count DESC, then Date DESC (Newest First)
+    // Sort
     const sortReplies = (items: ThreadReplyViewModel[]) => {
         items.sort((a, b) => {
             if (b.reactionCount !== a.reactionCount) {

@@ -1,6 +1,6 @@
 
 import { getAuthRepository } from '../adapters/authAdapter';
-import { User } from '../types/auth.types';
+import { User, AuthStateChangeCallback } from '../types/auth.types';
 
 const authRepo = getAuthRepository();
 
@@ -31,5 +31,9 @@ export const authService = {
 
   signInWithOAuth: async (provider: 'google' | 'github' | 'azure'): Promise<void> => {
     return authRepo.signInWithOAuth(provider);
+  },
+
+  onAuthStateChange: (callback: AuthStateChangeCallback): (() => void) => {
+    return authRepo.onAuthStateChange(callback);
   }
 };

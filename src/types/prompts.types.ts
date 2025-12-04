@@ -1,5 +1,6 @@
 
 import { TagRecord } from './threads.types';
+import { AuthorProfile } from './lenser.types';
 
 export type VisibilityEnum = 'public' | 'private';
 export type ReactionEnum = 'like' | 'love' | 'clap' | 'saved' | 'copy';
@@ -7,13 +8,13 @@ export type ReactionEnum = 'like' | 'love' | 'clap' | 'saved' | 'copy';
 export interface PromptTemplateRecord {
   id: string;
   lenser_id: string;
+  author_profile: AuthorProfile; // Denormalized JSONB
   title: string;
   description?: string | null;
   content: string;
   visibility: VisibilityEnum;
-  // usage_count removed; rely on reaction_totals['copy']
   reaction_totals?: Record<string, number>; // JSONB
-  save_count?: number; // Maintained by trigger
+  tags: TagRecord[]; // Denormalized JSONB
   created_at: string;
   updated_at: string;
 }

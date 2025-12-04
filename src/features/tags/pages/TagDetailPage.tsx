@@ -6,6 +6,7 @@ import { TagHeader } from '../components/TagHeader';
 import { TagFilterBar } from '../components/TagFilterBar';
 import { TagContentGrid } from '../components/TagContentGrid';
 import { useAuth } from '../../../context/AuthContext';
+import { useUI } from '../../../context/UIContext';
 import { SEOHead } from '../../../components/SEOHead';
 
 export const TagDetailPage: React.FC = () => {
@@ -13,6 +14,7 @@ export const TagDetailPage: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { isAuthenticated, isLoading: authLoading } = useAuth();
+  const { setPageTitle } = useUI();
   
   useEffect(() => {
     if (!authLoading && !isAuthenticated) {
@@ -30,6 +32,15 @@ export const TagDetailPage: React.FC = () => {
     setSort, 
     availableFilters 
   } = useTagDetailController(slug);
+
+  useEffect(() => {
+    if (tag) {
+        setPageTitle(tag.name);
+    } else {
+        setPageTitle(null);
+    }
+    return () => setPageTitle(null);
+  }, [tag, setPageTitle]);
 
   if (authLoading || (!isAuthenticated && !authLoading)) {
       return (
