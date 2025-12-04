@@ -24,11 +24,15 @@ export const useThreadDetailController = (threadId?: string) => {
         if (data) {
           setThread(data);
         } else {
-            setThread(null);
+            setError("404");
         }
-      } catch (err) {
-        console.error(err);
-        setError("Failed to load thread.");
+      } catch (err: any) {
+        if (err.message === '401') {
+            setError("401");
+        } else {
+            console.error(err);
+            setError("Failed to load thread.");
+        }
       } finally {
         setLoading(false);
       }

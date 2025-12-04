@@ -28,15 +28,16 @@ export const reactionService = {
       like: 0,
       love: 0,
       clap: 0,
-      saved: 0
+      saved: 0,
+      copy: 0
     };
     let total = 0;
 
     countsList.forEach(c => {
       counts[c.reaction] = c.count;
-      // We don't usually sum 'saved' into total reaction count for display, but depends on UI requirements.
-      // Assuming 'saved' is private-ish or bookmark style, we might exclude it from "Total Reactions".
-      if (c.reaction !== 'saved') {
+      // Exclude 'saved' and 'copy' from the generic "reaction" count shown in some UIs (like thread upvotes),
+      // or customize based on UI needs. For now, 'copy' is a usage metric, 'saved' is a bookmark.
+      if (c.reaction !== 'saved' && c.reaction !== 'copy') {
           total += c.count;
       }
     });
@@ -75,8 +76,13 @@ export const reactionService = {
     };
   },
 
-  getUserActivityFeed: async (lenserId: string, limit: number = 20): Promise<ActivityFeedItem[]> => {
-      const reactions = await reactionRepo.getUserHistory(lenserId, limit);
+  recordReaction: async (targetType: TargetType, targetId: string, lenserId: string, reaction: ReactionType): Promise<void> => {
+    reactionService.validateTarget(targetType);
+    await reactionRepo.addReaction(targetType, targetId, lenserId, reaction);
+  },
+
+  getUserActivityFeed: async (lenserId: string, offset = 0, limit = 20): Promise<ActivityFeedItem[]> => {
+      const reactions = await reactionRepo.getUserHistory(lenserId, offset, limit);
       
       const enriched = await Promise.all(reactions.map(async (r) => {
           let title = "Unknown Content";

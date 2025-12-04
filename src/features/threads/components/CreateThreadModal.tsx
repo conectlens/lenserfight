@@ -1,3 +1,4 @@
+
 import React, { useState, useRef, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { Modal } from '../../../components/Modal';
@@ -9,6 +10,8 @@ import { MentionAutocompleteList } from './MentionAutocompleteList';
 import { RichMentionInput, RichMentionInputHandle } from '../../../components/RichMentionInput';
 import { promptsService } from '../../../services/promptsService';
 import { PromptTemplateViewModel } from '../../../types/prompts.types';
+import { SelectField } from '../../../components/SelectField';
+import { Globe, Users, Lock } from 'lucide-react';
 
 interface CreateThreadModalProps {
   isOpen: boolean;
@@ -119,6 +122,12 @@ export const CreateThreadModal: React.FC<CreateThreadModalProps> = ({ isOpen, on
       }
   };
 
+  const visibilityOptions = [
+      { value: 'public', label: 'Public', icon: Globe },
+      { value: 'followers', label: 'Followers Only', icon: Users },
+      { value: 'private', label: 'Private', icon: Lock }
+  ];
+
   return (
     <Modal isOpen={isOpen} onClose={handleClose} title={initialData ? "Edit Post" : "Create New Post"}>
       <form onSubmit={handleSubmit} className="space-y-6" onKeyDown={handleKeyDown}>
@@ -171,18 +180,13 @@ export const CreateThreadModal: React.FC<CreateThreadModalProps> = ({ isOpen, on
         <ThreadTagInput tags={tags} onChange={setTags} />
 
         <div className="space-y-2">
-            <label className="text-base font-semibold text-gray-900 block">Visibility</label>
-            <div className="relative">
-              <select
+            <SelectField 
+                label="Visibility"
                 value={visibility}
-                onChange={(e) => setVisibility(e.target.value as Visibility)}
-                className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-gray-900 focus:ring-2 focus:ring-primary/50 focus:border-primary outline-none appearance-none cursor-pointer"
-              >
-                <option value="public">Public</option>
-                <option value="followers">Followers Only</option>
-                <option value="private">Private</option>
-              </select>
-            </div>
+                onChange={(val) => setVisibility(val as Visibility)}
+                options={visibilityOptions}
+                className="w-full"
+            />
         </div>
 
         {error && <div className="text-red-500 text-sm bg-red-50 p-3 rounded-lg">{error}</div>}

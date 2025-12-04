@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { shareService } from '../../../services/shareService';
@@ -19,9 +20,12 @@ export const ShortLinkRedirect: React.FC = () => {
         try {
             const result = await shareService.resolveAndLog(shortId, lenser?.id);
             if (result) {
-                // In HashRouter environment of the mock:
-                // result.url might be `/prompts/123`.
-                // Navigate there.
+                if (result.link.resource_type === 'external') {
+                    // Force absolute redirect for external links
+                    window.location.href = result.url;
+                    return;
+                }
+                // Internal navigation
                 navigate(result.url, { replace: true });
             } else {
                 setError("Link not found or expired.");

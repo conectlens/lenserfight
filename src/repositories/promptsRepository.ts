@@ -1,7 +1,6 @@
 
 import { 
   PromptTemplateRecord, 
-  PromptTemplateUsageRecord,
   CreatePromptDTO
 } from '../types/prompts.types';
 import { TagRecord } from '../types/threads.types';
@@ -10,15 +9,13 @@ import { storage } from '../utils/storage';
 
 // --- Port (Interface) ---
 export interface PromptsRepositoryPort {
-  getAll(currentLenserId?: string, offset?: number, limit?: number): Promise<PromptTemplateRecord[]>;
-  search(query: string, currentLenserId?: string, offset?: number, limit?: number): Promise<PromptTemplateRecord[]>;
-  filterByTag(tagSlug: string | null, currentLenserId?: string, offset?: number, limit?: number): Promise<PromptTemplateRecord[]>;
-  sort(order: "newest" | "popular", currentLenserId?: string, offset?: number, limit?: number): Promise<PromptTemplateRecord[]>;
+  getAll(offset?: number, limit?: number): Promise<PromptTemplateRecord[]>;
+  search(query: string, offset?: number, limit?: number): Promise<PromptTemplateRecord[]>;
+  filterByTag(tagSlug: string | null, offset?: number, limit?: number): Promise<PromptTemplateRecord[]>;
+  sort(order: "newest" | "popular", offset?: number, limit?: number): Promise<PromptTemplateRecord[]>;
   getTopPrompts(limit: number): Promise<PromptTemplateRecord[]>;
   getById(id: string): Promise<PromptTemplateRecord | null>;
   getTags(templateId: string): Promise<TagRecord[]>;
-  getUsage(templateId: string): Promise<PromptTemplateUsageRecord[]>;
-  createUsageEvent(templateId: string, action: string, lenserId: string): Promise<void>;
   createPrompt(input: CreatePromptDTO): Promise<PromptTemplateRecord>;
   updatePrompt(id: string, input: Partial<CreatePromptDTO>): Promise<PromptTemplateRecord>;
   deletePrompt(id: string): Promise<void>;
@@ -29,7 +26,6 @@ export class MockPromptsRepository implements PromptsRepositoryPort {
   private PROMPTS_KEY = 'mock_prompts_db';
   private PROMPT_TAGS_KEY = 'mock_prompt_tags';
   private TAGS_KEY = 'mock_tags';
-  private USAGE_KEY = 'mock_prompt_usage_db';
   
   constructor() {
       this.seed();
@@ -45,7 +41,8 @@ export class MockPromptsRepository implements PromptsRepositoryPort {
               description: 'A framework for weaving compelling narratives into product experiences.',
               content: "Introduction...",
               visibility: 'public',
-              usage_count: 145,
+              reaction_totals: { like: 10, saved: 5, copy: 145 },
+              save_count: 5,
               created_at: new Date(Date.now() - 1000 * 60 * 60 * 24 * 2).toISOString(),
               updated_at: new Date().toISOString()
             }
@@ -62,35 +59,38 @@ export class MockPromptsRepository implements PromptsRepositoryPort {
       return JSON.parse(storage.getItem(this.PROMPT_TAGS_KEY) || '[]');
   }
 
-  // Helper to check visibility including private ownership
-  private isVisible(p: PromptTemplateRecord, currentLenserId?: string): boolean {
-    return p.visibility === 'public' || (!!currentLenserId && p.lenser_id === currentLenserId);
+  private isPublic(p: PromptTemplateRecord): boolean {
+    return p.visibility === 'public';
   }
 
   private paginate(data: PromptTemplateRecord[], offset = 0, limit = 10): PromptTemplateRecord[] {
       return data.slice(offset, offset + limit);
   }
 
-  async getAll(currentLenserId?: string, offset = 0, limit = 10): Promise<PromptTemplateRecord[]> {
+  private getUsageCount(p: PromptTemplateRecord): number {
+      return p.reaction_totals?.copy || 0;
+  }
+
+  async getAll(offset = 0, limit = 10): Promise<PromptTemplateRecord[]> {
     await new Promise(resolve => setTimeout(resolve, 400));
-    const all = this.getPrompts().filter(p => this.isVisible(p, currentLenserId));
+    const all = this.getPrompts().filter(p => this.isPublic(p));
     return this.paginate(all, offset, limit);
   }
 
-  async search(query: string, currentLenserId?: string, offset = 0, limit = 10): Promise<PromptTemplateRecord[]> {
+  async search(query: string, offset = 0, limit = 10): Promise<PromptTemplateRecord[]> {
     await new Promise(resolve => setTimeout(resolve, 400));
     const lowerQ = query.toLowerCase();
     const filtered = this.getPrompts().filter(p => 
-      this.isVisible(p, currentLenserId) && (
+      this.isPublic(p) && (
       p.title.toLowerCase().includes(lowerQ) || 
       (p.description && p.description.toLowerCase().includes(lowerQ)))
     );
     return this.paginate(filtered, offset, limit);
   }
 
-  async filterByTag(tagSlug: string | null, currentLenserId?: string, offset = 0, limit = 10): Promise<PromptTemplateRecord[]> {
+  async filterByTag(tagSlug: string | null, offset = 0, limit = 10): Promise<PromptTemplateRecord[]> {
     await new Promise(resolve => setTimeout(resolve, 400));
-    const visiblePrompts = this.getPrompts().filter(p => this.isVisible(p, currentLenserId));
+    const visiblePrompts = this.getPrompts().filter(p => this.isPublic(p));
     if (!tagSlug) return this.paginate(visiblePrompts, offset, limit);
 
     const allTags = JSON.parse(storage.getItem(this.TAGS_KEY) || '[]');
@@ -103,13 +103,13 @@ export class MockPromptsRepository implements PromptsRepositoryPort {
     return this.paginate(visiblePrompts.filter(p => promptIds.includes(p.id)), offset, limit);
   }
 
-  async sort(order: "newest" | "popular", currentLenserId?: string, offset = 0, limit = 10): Promise<PromptTemplateRecord[]> {
+  async sort(order: "newest" | "popular", offset = 0, limit = 10): Promise<PromptTemplateRecord[]> {
     await new Promise(resolve => setTimeout(resolve, 400));
-    const sorted = this.getPrompts().filter(p => this.isVisible(p, currentLenserId));
+    const sorted = this.getPrompts().filter(p => this.isPublic(p));
     if (order === 'newest') {
       sorted.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
     } else {
-      sorted.sort((a, b) => b.usage_count - a.usage_count);
+      sorted.sort((a, b) => this.getUsageCount(b) - this.getUsageCount(a));
     }
     return this.paginate(sorted, offset, limit);
   }
@@ -118,7 +118,7 @@ export class MockPromptsRepository implements PromptsRepositoryPort {
       await new Promise(resolve => setTimeout(resolve, 300));
       return this.getPrompts()
           .filter(p => p.visibility === 'public')
-          .sort((a, b) => b.usage_count - a.usage_count)
+          .sort((a, b) => this.getUsageCount(b) - this.getUsageCount(a))
           .slice(0, limit);
   }
 
@@ -131,36 +131,8 @@ export class MockPromptsRepository implements PromptsRepositoryPort {
     await new Promise(resolve => setTimeout(resolve, 200));
     const junctionData = this.getPromptTagsData();
     const tagIds = junctionData.filter(j => j.template_id === templateId).map(j => j.tag_id);
-    
     const allTags = JSON.parse(storage.getItem(this.TAGS_KEY) || '[]');
     return allTags.filter((t: any) => tagIds.includes(t.id));
-  }
-
-  async getUsage(templateId: string): Promise<PromptTemplateUsageRecord[]> {
-    const usages = JSON.parse(storage.getItem(this.USAGE_KEY) || '[]');
-    return usages.filter((u: any) => u.template_id === templateId);
-  }
-
-  async createUsageEvent(templateId: string, action: string, lenserId: string): Promise<void> {
-    await new Promise(resolve => setTimeout(resolve, 300));
-    
-    const usages = JSON.parse(storage.getItem(this.USAGE_KEY) || '[]');
-    usages.push({
-      id: `use-${Date.now()}`,
-      template_id: templateId,
-      lenser_id: lenserId,
-      action,
-      created_at: new Date().toISOString()
-    });
-    storage.setItem(this.USAGE_KEY, JSON.stringify(usages));
-
-    // Update count on prompt record
-    const prompts = this.getPrompts();
-    const prompt = prompts.find(p => p.id === templateId);
-    if (prompt) {
-      prompt.usage_count += 1;
-      storage.setItem(this.PROMPTS_KEY, JSON.stringify(prompts));
-    }
   }
 
   async createPrompt(input: CreatePromptDTO): Promise<PromptTemplateRecord> {
@@ -173,7 +145,8 @@ export class MockPromptsRepository implements PromptsRepositoryPort {
       description: input.description,
       content: input.content,
       visibility: input.visibility,
-      usage_count: 0,
+      reaction_totals: { copy: 0, like: 0, saved: 0 },
+      save_count: 0,
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
     };
@@ -182,7 +155,6 @@ export class MockPromptsRepository implements PromptsRepositoryPort {
     prompts.unshift(newPrompt);
     storage.setItem(this.PROMPTS_KEY, JSON.stringify(prompts));
 
-    // Store Tag Relations (tagIds are UUIDs now)
     if (input.tagIds && input.tagIds.length > 0) {
       const junctionData = this.getPromptTagsData();
       input.tagIds.forEach(tagId => {
@@ -203,19 +175,16 @@ export class MockPromptsRepository implements PromptsRepositoryPort {
     const updated = {
         ...prompts[index],
         ...input,
-        // Don't update usage_count or timestamps via basic update typically
         updated_at: new Date().toISOString()
     };
     
     prompts[index] = updated as PromptTemplateRecord;
     storage.setItem(this.PROMPTS_KEY, JSON.stringify(prompts));
 
-    // Update tags if provided
     if (input.tagIds) {
         let junctionData = this.getPromptTagsData();
-        // Remove old tags
+        // Mocking RLS strictness: we replace all tags by deleting old and inserting new
         junctionData = junctionData.filter(j => j.template_id !== id);
-        // Add new
         input.tagIds.forEach(tagId => {
             junctionData.push({ template_id: id, tag_id: tagId });
         });
@@ -235,28 +204,32 @@ export class MockPromptsRepository implements PromptsRepositoryPort {
 
 // --- Supabase Implementation ---
 export class SupabasePromptsRepository implements PromptsRepositoryPort {
-  async getAll(currentLenserId?: string, offset = 0, limit = 10): Promise<PromptTemplateRecord[]> {
-    const builder = supabase.from('prompt_templates').select('*').range(offset, offset + limit - 1);
+  async getAll(offset = 0, limit = 10): Promise<PromptTemplateRecord[]> {
+    const builder = supabase.from('prompt_templates').select('*')
+        .eq('visibility', 'public')
+        .range(offset, offset + limit - 1);
     const { data, error } = await builder;
     if (error) throw error;
     return data as PromptTemplateRecord[];
   }
 
-  async search(query: string, currentLenserId?: string, offset = 0, limit = 10): Promise<PromptTemplateRecord[]> {
+  async search(query: string, offset = 0, limit = 10): Promise<PromptTemplateRecord[]> {
     const { data, error } = await supabase.from('prompt_templates')
         .select('*')
+        .eq('visibility', 'public')
         .ilike('title', `%${query}%`)
         .range(offset, offset + limit - 1);
     if (error) throw error;
     return data as PromptTemplateRecord[];
   }
 
-  async filterByTag(tagSlug: string | null, currentLenserId?: string, offset = 0, limit = 10): Promise<PromptTemplateRecord[]> {
-    if (!tagSlug) return this.getAll(currentLenserId, offset, limit);
+  async filterByTag(tagSlug: string | null, offset = 0, limit = 10): Promise<PromptTemplateRecord[]> {
+    if (!tagSlug) return this.getAll(offset, limit);
     
     const { data, error } = await supabase
         .from('prompt_templates')
         .select('*, prompt_template_tags!inner(tag_id, tags!inner(slug))')
+        .eq('visibility', 'public')
         .eq('prompt_template_tags.tags.slug', tagSlug)
         .range(offset, offset + limit - 1);
 
@@ -264,10 +237,13 @@ export class SupabasePromptsRepository implements PromptsRepositoryPort {
     return data as PromptTemplateRecord[];
   }
 
-  async sort(order: "newest" | "popular", currentLenserId?: string, offset = 0, limit = 10): Promise<PromptTemplateRecord[]> {
-    const builder = supabase.from('prompt_templates').select('*');
+  async sort(order: "newest" | "popular", offset = 0, limit = 10): Promise<PromptTemplateRecord[]> {
+    const builder = supabase.from('prompt_templates').select('*').eq('visibility', 'public');
     if (order === 'newest') builder.order('created_at', { ascending: false });
-    else builder.order('usage_count', { ascending: false });
+    else {
+        // Popularity via copy count stored in reaction_totals JSONB
+        builder.order('reaction_totals->>copy', { ascending: false });
+    }
     
     const { data, error } = await builder.range(offset, offset + limit - 1);
     if (error) throw error;
@@ -275,7 +251,10 @@ export class SupabasePromptsRepository implements PromptsRepositoryPort {
   }
 
   async getTopPrompts(limit: number): Promise<PromptTemplateRecord[]> {
-      const { data, error } = await supabase.from('prompt_templates').select('*').eq('visibility', 'public').order('usage_count', { ascending: false }).limit(limit);
+      const { data, error } = await supabase.from('prompt_templates').select('*')
+        .eq('visibility', 'public')
+        .order('reaction_totals->>copy', { ascending: false })
+        .limit(limit);
       if (error) throw error;
       return data as PromptTemplateRecord[];
   }
@@ -293,18 +272,10 @@ export class SupabasePromptsRepository implements PromptsRepositoryPort {
     return data.map(d => d.tags);
   }
 
-  async getUsage(templateId: string): Promise<PromptTemplateUsageRecord[]> {
-    const { data, error } = await supabase.from('prompt_template_usage').select('*').eq('template_id', templateId);
-     if (error) throw error;
-     return data as PromptTemplateUsageRecord[];
-  }
-
-  async createUsageEvent(templateId: string, action: string, lenserId: string): Promise<void> {
-    const { error } = await supabase.from('prompt_template_usage').insert({ template_id: templateId, action, lenser_id: lenserId });
-    if (error) throw error;
-  }
-
   async createPrompt(input: CreatePromptDTO): Promise<PromptTemplateRecord> {
+    // Note: User ID inferred from Auth context by RLS/Triggers in many setups, 
+    // but explicit lenser_id (profile id) is often required if user != lenser 1:1 in DB logic.
+    // Assuming backend validates lenser_id belongs to auth.uid().
     const { data: prompt, error } = await supabase.from('prompt_templates')
         .insert({ 
             lenser_id: input.lenserId, 
@@ -320,6 +291,7 @@ export class SupabasePromptsRepository implements PromptsRepositoryPort {
         const junctionInserts = input.tagIds.map(tagId => ({
             template_id: prompt.id,
             tag_id: tagId
+            // user_agent: handled by backend/client defaults if needed
         }));
         const { error: tagError } = await supabase.from('prompt_template_tags').insert(junctionInserts);
         if (tagError) console.error("Failed to link tags", tagError);
@@ -345,14 +317,17 @@ export class SupabasePromptsRepository implements PromptsRepositoryPort {
       if (error) throw error;
 
       if (input.tagIds) {
-          // Delete old
+          // Strictly delete then insert. Update is not allowed on junction tables via RLS.
+          // RLS ensures only the owner can delete/insert.
           await supabase.from('prompt_template_tags').delete().eq('template_id', id);
-          // Insert new
-          const junctionInserts = input.tagIds.map(tagId => ({
-            template_id: id,
-            tag_id: tagId
-          }));
-          await supabase.from('prompt_template_tags').insert(junctionInserts);
+          
+          if (input.tagIds.length > 0) {
+              const junctionInserts = input.tagIds.map(tagId => ({
+                template_id: id,
+                tag_id: tagId
+              }));
+              await supabase.from('prompt_template_tags').insert(junctionInserts);
+          }
       }
 
       return data as PromptTemplateRecord;

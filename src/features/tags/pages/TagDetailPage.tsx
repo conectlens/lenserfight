@@ -5,7 +5,6 @@ import { useTagDetailController } from '../hooks/useTagDetailController';
 import { TagHeader } from '../components/TagHeader';
 import { TagFilterBar } from '../components/TagFilterBar';
 import { TagContentGrid } from '../components/TagContentGrid';
-import { ChevronLeft } from 'lucide-react';
 
 export const TagDetailPage: React.FC = () => {
   const { slug } = useParams<{ slug: string }>();
@@ -34,18 +33,7 @@ export const TagDetailPage: React.FC = () => {
   }
 
   return (
-    <div className="max-w-7xl mx-auto pb-20 px-4 sm:px-6">
-        {/* Navigation */}
-        <div className="py-6">
-            <button 
-                onClick={() => navigate('/tags')} 
-                className="flex items-center text-sm font-medium text-gray-500 hover:text-gray-900 transition-colors"
-            >
-                <ChevronLeft size={16} className="mr-1" />
-                Back to Topics
-            </button>
-        </div>
-
+    <div className="w-full">
         {/* Header Block */}
         {tag ? (
             <TagHeader tag={tag} totalItems={items.length} />

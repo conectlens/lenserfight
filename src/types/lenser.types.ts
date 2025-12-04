@@ -1,3 +1,4 @@
+
 import { PromptTemplateRecord } from './prompts.types';
 import { ThreadRecord } from './threads.types';
 
@@ -12,9 +13,22 @@ export interface Lenser {
   headline?: string;
   location?: string;
   website_url?: string;
+  website_display_name?: string;
   visibility?: 'public' | 'private';
   created_at: string;
   updated_at?: string;
+  join_order?: number; // Immutable rank from lenser_join_log
+}
+
+export type SocialPlatform = 'LinkedIn' | 'GitHub' | 'Instagram' | 'Facebook' | 'X' | 'Youtube' | 'Other';
+
+export interface SocialLink {
+  id: string;
+  lenser_id: string;
+  platform: SocialPlatform;
+  url: string;
+  label?: string | null;
+  created_at?: string;
 }
 
 export interface CreateLenserDTO {
@@ -38,28 +52,21 @@ export interface LenserStats {
 }
 
 export interface LenserActivityPoint {
-  date: string; // YYYY-MM-DD
+  date: string;
   count: number;
-}
-
-export interface ReactionRecord {
-  id: string;
-  created_at: string;
-  // simplified for activity tracking
 }
 
 export interface ActionRecord {
   id: string;
-  type: 'saved_prompt' | 'liked_thread' | 'joined_challenge';
-  title: string;
-  targetId: string;
-  date: string;
+  type: string;
+  description: string;
+  created_at: string;
 }
 
 export interface NetworkUser {
   id: string;
   handle: string;
   display_name: string;
-  avatar_url?: string;
+  avatar_url?: string | null;
   is_following: boolean;
 }
