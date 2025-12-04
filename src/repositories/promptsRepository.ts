@@ -75,31 +75,11 @@ export class MockPromptsRepository implements PromptsRepositoryPort {
     return { id: lenserId, handle: 'unknown', display_name: 'Unknown' };
   }
 
-  private enrichPrompt(p: PromptTemplateRecord): PromptTemplateRecord {
-      if (!p.author_profile || p.author_profile.handle === 'unknown') {
-          return { ...p, author_profile: this.getAuthorProfile(p.lenser_id) };
-      }
-      return p;
-  }
-
-  private attachTags(p: PromptTemplateRecord) {
-    const enriched = this.enrichPrompt(p);
-    const allTags = this.getAllTags();
-    const rels = this.getPromptTagsRelation();
-    const myTagIds = rels.filter(r => r.template_id === enriched.id).map(r => r.tag_id);
-    const myTags = allTags.filter(tag => myTagIds.includes(tag.id));
-
-    return {
-      ...enriched,
-      prompt_template_tags: myTags.map(tag => ({ tag }))
-    };
-  }
-
   getAll = async (offset = 0, limit = 10) => {
     await new Promise(resolve => setTimeout(resolve, 400));
     const prompts = this.getPrompts().filter(p => p.visibility === 'public');
     prompts.sort((a,b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
-    return prompts.slice(offset, offset + limit).map(p => this.attachTags(p));
+    return prompts.slice(offset, offset + limit);
   };
 
   search = async (query: string, offset = 0, limit = 10) => {
@@ -107,22 +87,18 @@ export class MockPromptsRepository implements PromptsRepositoryPort {
     const q = query.toLowerCase();
     const prompts = this.getPrompts()
         .filter(p => p.visibility === 'public' && (p.title.toLowerCase().includes(q) || p.content.toLowerCase().includes(q)));
-    return prompts.slice(offset, offset + limit).map(p => this.attachTags(p));
+    return prompts.slice(offset, offset + limit);
   };
 
   filterByTag = async (tagSlug: string | null, offset = 0, limit = 10) => {
     await new Promise(resolve => setTimeout(resolve, 300));
     if (!tagSlug) return this.getAll(offset, limit);
 
-    const allTags = this.getAllTags();
-    const targetTag = allTags.find(t => t.slug === tagSlug);
-    if (!targetTag) return [];
-
-    const rels = this.getPromptTagsRelation();
-    const ids = rels.filter(r => r.tag_id === targetTag.id).map(r => r.template_id);
-    const prompts = this.getPrompts().filter(p => ids.includes(p.id) && p.visibility === 'public');
+    // Read directly from denormalized tags column
+    const prompts = this.getPrompts()
+        .filter(p => p.visibility === 'public' && p.tags && p.tags.some(t => t.slug === tagSlug));
     
-    return prompts.slice(offset, offset + limit).map(p => this.attachTags(p));
+    return prompts.slice(offset, offset + limit);
   };
 
   sort = async (order: "newest" | "popular", offset = 0, limit = 10) => {
@@ -132,13 +108,13 @@ export class MockPromptsRepository implements PromptsRepositoryPort {
     } else {
         prompts.sort((a,b) => (b.reaction_totals?.copy || 0) - (a.reaction_totals?.copy || 0));
     }
-    return prompts.slice(offset, offset + limit).map(p => this.attachTags(p));
+    return prompts.slice(offset, offset + limit);
   };
 
   getTopPrompts = async (limit: number) => {
       const prompts = this.getPrompts().filter(p => p.visibility === 'public');
       prompts.sort((a,b) => (b.reaction_totals?.copy || 0) - (a.reaction_totals?.copy || 0));
-      return prompts.slice(0, limit).map(p => this.attachTags(p));
+      return prompts.slice(0, limit);
   };
 
   getByAuthor = async (lenserId: string, offset = 0, limit = 10, includePrivate = false) => {
@@ -148,25 +124,27 @@ export class MockPromptsRepository implements PromptsRepositoryPort {
         prompts = prompts.filter(p => p.visibility === 'public');
     }
     prompts.sort((a,b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
-    return prompts.slice(offset, offset + limit).map(p => this.attachTags(p));
+    return prompts.slice(offset, offset + limit);
   };
 
   getById = async (id: string) => {
     const p = this.getPrompts().find(i => i.id === id);
-    return p ? this.attachTags(p) : null;
+    return p || null;
   };
 
   getTags = async (templateId: string) => {
-    const rels = this.getPromptTagsRelation();
-    const allTags = this.getAllTags();
-    const ids = rels.filter(r => r.template_id === templateId).map(r => r.tag_id);
-    return allTags.filter(t => ids.includes(t.id));
+    const p = this.getPrompts().find(i => i.id === templateId);
+    return p?.tags || [];
   };
 
   createPrompt = async (input: CreatePromptDTO) => {
     await new Promise(resolve => setTimeout(resolve, 500));
     const prompts = this.getPrompts();
+    const allTags = this.getAllTags();
+    
+    // Denormalization
     const authorProfile = this.getAuthorProfile(input.lenserId);
+    const resolvedTags = input.tagIds ? allTags.filter(t => input.tagIds.includes(t.id)) : [];
 
     const newPrompt: PromptTemplateRecord = {
         id: `prompt-${Date.now()}`,
@@ -177,6 +155,7 @@ export class MockPromptsRepository implements PromptsRepositoryPort {
         content: input.content,
         visibility: input.visibility,
         reaction_totals: {},
+        tags: resolvedTags,
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString()
     };
@@ -190,18 +169,28 @@ export class MockPromptsRepository implements PromptsRepositoryPort {
         });
         this.savePromptTagsRelation(rels);
     }
-    return this.attachTags(newPrompt);
+    return newPrompt;
   };
 
   updatePrompt = async (id: string, input: Partial<CreatePromptDTO>) => {
       const prompts = this.getPrompts();
       const idx = prompts.findIndex(p => p.id === id);
       if (idx === -1) throw new Error("Not found");
-      const updated = { ...prompts[idx], ...input, updated_at: new Date().toISOString() };
+      
+      const allTags = this.getAllTags();
+      const newTags = input.tagIds ? allTags.filter(t => input.tagIds!.includes(t.id)) : prompts[idx].tags;
+
+      const updated = { 
+          ...prompts[idx], 
+          ...input, 
+          tags: newTags, // Update denormalized column
+          updated_at: new Date().toISOString() 
+      };
+      
       // @ts-ignore
       prompts[idx] = updated;
       this.savePrompts(prompts);
-      return this.attachTags(updated as any);
+      return updated as any;
   };
 
   deletePrompt = async (id: string) => {
@@ -213,16 +202,9 @@ export class MockPromptsRepository implements PromptsRepositoryPort {
 // --- Supabase Implementation ---
 export class SupabasePromptsRepository implements PromptsRepositoryPort {
   
-  // Clean select without joins to 'lensers'
+  // Clean select without joins
   private get promptSelect() {
-    return `
-      *,
-      prompt_template_tags (
-        tag:tags (
-          id, name, slug
-        )
-      )
-    `;
+    return '*'; 
   }
 
   async getAll(offset = 0, limit = 10): Promise<PromptTemplateRecord[]> {
@@ -234,7 +216,7 @@ export class SupabasePromptsRepository implements PromptsRepositoryPort {
         .range(offset, offset + limit - 1);
         
     if (error) throw error;
-    return data as any;
+    return data as PromptTemplateRecord[];
   }
 
   async search(query: string, offset = 0, limit = 10): Promise<PromptTemplateRecord[]> {
@@ -245,37 +227,23 @@ export class SupabasePromptsRepository implements PromptsRepositoryPort {
         .ilike('title', `%${query}%`)
         .range(offset, offset + limit - 1);
     if (error) throw error;
-    return data as any;
+    return data as PromptTemplateRecord[];
   }
 
   async filterByTag(tagSlug: string | null, offset = 0, limit = 10): Promise<PromptTemplateRecord[]> {
     if (!tagSlug) return this.getAll(offset, limit);
     
-    // Step 1: Get Tag ID
-    const { data: tag } = await supabase.from('tags').select('id').eq('slug', tagSlug).single();
-    if (!tag) return [];
-
-    // Step 2: Get Template IDs from Junction
-    const { data: junctionData } = await supabase
-        .from('prompt_template_tags')
-        .select('template_id')
-        .eq('tag_id', tag.id)
-        .order('created_at', { ascending: false })
-        .range(offset, offset + limit - 1);
-
-    if (!junctionData || junctionData.length === 0) return [];
-    const templateIds = junctionData.map(r => r.template_id);
-
-    // Step 3: Fetch Full Details
+    // JSONB filter via @> contains operator
     const { data, error } = await supabase
         .from('prompt_templates')
         .select(this.promptSelect)
-        .in('id', templateIds)
         .eq('visibility', 'public')
-        .order('created_at', { ascending: false });
+        .contains('tags', JSON.stringify([{ slug: tagSlug }]))
+        .order('created_at', { ascending: false })
+        .range(offset, offset + limit - 1);
 
     if (error) throw error;
-    return data as any;
+    return data as PromptTemplateRecord[];
   }
 
   async sort(order: "newest" | "popular", offset = 0, limit = 10): Promise<PromptTemplateRecord[]> {
@@ -286,7 +254,7 @@ export class SupabasePromptsRepository implements PromptsRepositoryPort {
     
     const { data, error } = await builder.range(offset, offset + limit - 1);
     if (error) throw error;
-    return data as any;
+    return data as PromptTemplateRecord[];
   }
 
   async getTopPrompts(limit: number): Promise<PromptTemplateRecord[]> {
@@ -297,7 +265,7 @@ export class SupabasePromptsRepository implements PromptsRepositoryPort {
         .order('reaction_totals->>copy', { ascending: false })
         .limit(limit);
       if (error) throw error;
-      return data as any;
+      return data as PromptTemplateRecord[];
   }
 
   async getByAuthor(lenserId: string, offset = 0, limit = 10, includePrivate = false): Promise<PromptTemplateRecord[]> {
@@ -314,7 +282,7 @@ export class SupabasePromptsRepository implements PromptsRepositoryPort {
 
     const { data, error } = await query;
     if (error) throw error;
-    return data as any;
+    return data as PromptTemplateRecord[];
   }
 
   async getById(id: string): Promise<PromptTemplateRecord | null> {
@@ -324,14 +292,13 @@ export class SupabasePromptsRepository implements PromptsRepositoryPort {
         .eq('id', id)
         .single();
     if (error) throw error;
-    return data as any;
+    return data as PromptTemplateRecord;
   }
 
   async getTags(templateId: string): Promise<TagRecord[]> {
-    const { data, error } = await supabase.from('prompt_template_tags').select('tags(*)').eq('template_id', templateId);
-    if (error) throw error;
-    // @ts-ignore
-    return data.map(d => d.tags);
+    // Read cached tags column
+    const { data } = await supabase.from('prompt_templates').select('tags').eq('id', templateId).single();
+    return (data?.tags as TagRecord[]) || [];
   }
 
   async createPrompt(input: CreatePromptDTO): Promise<PromptTemplateRecord> {
@@ -342,7 +309,8 @@ export class SupabasePromptsRepository implements PromptsRepositoryPort {
             description: input.description, 
             content: input.content, 
             visibility: input.visibility,
-            reaction_totals: {} 
+            reaction_totals: {},
+            tags: [] // Trigger populates this
         })
         .select().single();
     if (error) throw error;
@@ -353,6 +321,9 @@ export class SupabasePromptsRepository implements PromptsRepositoryPort {
             tag_id: tagId
         }));
         await supabase.from('prompt_template_tags').insert(junctionInserts);
+        
+        const { data: fresh } = await supabase.from('prompt_templates').select('*').eq('id', prompt.id).single();
+        return fresh as PromptTemplateRecord;
     }
 
     return prompt as PromptTemplateRecord;

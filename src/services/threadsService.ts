@@ -55,7 +55,7 @@ export const threadsService = {
     return threadsService._mapToFeedItems(records, currentUserId);
   },
 
-  // Pure Mapper: Converts DB Record -> Domain Model using internal author_profile
+  // Pure Mapper: Converts DB Record -> Domain Model using internal author_profile and tags
   _mapToFeedItems: async (records: ThreadRecord[], currentUserId?: string): Promise<ThreadFeedItem[]> => {
     if (records.length === 0) return [];
 
@@ -67,14 +67,11 @@ export const threadsService = {
     }
 
     return records.map(record => {
-        // Map Tags (assuming thread_tags structure present in joined fetch if any)
-        // @ts-ignore
-        const tags = (record.thread_tags?.map((tt: any) => tt.tag) || []).filter((t: any) => !!t);
+        const tags = record.tags || []; // Use denormalized tags directly
         
         const reactionCounts = record.reaction_totals || {};
         const totalReactions = Object.values(reactionCounts).reduce((a: any, b: any) => a + b, 0) as number;
 
-        // Uses denormalized profile
         const profile = record.author_profile || { id: 'unknown', handle: 'unknown', display_name: 'Unknown', avatar_url: null };
 
         return {
@@ -130,7 +127,7 @@ export const threadsService = {
             avatarUrl: profile.avatar_url,
             handle: profile.handle
         },
-        tags: (record.thread_tags?.map((tt: any) => tt.tag) || []).filter((t: any) => !!t),
+        tags: record.tags || [],
         reactionCount: totalReactions,
         userHasReacted: userHasReacted,
         replies: replies,
