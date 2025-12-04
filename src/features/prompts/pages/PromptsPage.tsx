@@ -13,6 +13,7 @@ import { useLenser } from '../../../context/LenserContext';
 import { CreateLenserProfileModal } from '../../lenser/components/CreateLenserProfileModal';
 import { useAuth } from '../../../context/AuthContext';
 import { usePromptsFeed } from '../../../hooks/useThreads';
+import { SEOHead } from '../../../components/SEOHead';
 
 export const PromptsPage: React.FC = () => {
   const navigate = useNavigate();
@@ -80,6 +81,8 @@ export const PromptsPage: React.FC = () => {
 
   return (
     <div className="max-w-7xl mx-auto pb-12 px-2 sm:px-4 lg:px-8">
+      <SEOHead type="prompts-list" />
+      
       {/* Page Header */}
       <div className="mb-6 sm:mb-8 mt-2">
         <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">Discover Prompts</h1>
