@@ -12,11 +12,11 @@ const promptsRepo = getPromptsRepository();
 const lenserRepo = getLenserRepository();
 const reactionRepo = getReactionRepository();
 
-// Replaced single enrich with batch map
+// Use author_profile from record directly
 const mapToViewModels = async (records: any[], currentLenserId?: string): Promise<PromptTemplateViewModel[]> => {
     return records.map(record => {
-        // Map nested data from Supabase join
         const tags = record.prompt_template_tags?.map((pt: any) => pt.tag) || [];
+        const profile = record.author_profile || { id: 'unknown', handle: 'unknown', display_name: 'Unknown', avatar_url: null };
         
         return {
             id: record.id,
@@ -26,10 +26,10 @@ const mapToViewModels = async (records: any[], currentLenserId?: string): Promis
             createdAt: record.created_at,
             visibility: record.visibility,
             author: {
-                id: record.author?.id || 'unknown',
-                displayName: record.author?.display_name || 'Unknown',
-                handle: record.author?.handle || 'unknown',
-                avatarUrl: record.author?.avatar_url
+                id: profile.id || record.lenser_id,
+                displayName: profile.display_name,
+                handle: profile.handle,
+                avatarUrl: profile.avatar_url
             },
             tags: tags
         };
@@ -167,10 +167,6 @@ export const promptsService = {
       if (input.content && !input.description) {
           input.description = input.content.substring(0, 100) + (input.content.length > 100 ? '...' : '');
       }
-
-      // Moderation Check
-      // TODO: moderation policy will not be used in the beta version
-      // await contentModerationService.validate(input.title, input.description, input.content);
 
       let realTagIds: string[] | undefined = undefined;
       if (input.tagIds) {

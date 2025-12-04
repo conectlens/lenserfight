@@ -23,3 +23,5 @@ export interface AuthState {
   isLoading: boolean;
   error: string | null;
 }
+
+export type AuthStateChangeCallback = (user: User | null) => void;

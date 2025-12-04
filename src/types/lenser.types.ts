@@ -2,6 +2,13 @@
 import { PromptTemplateRecord } from './prompts.types';
 import { ThreadRecord } from './threads.types';
 
+export interface AuthorProfile {
+  id: string;
+  handle: string;
+  display_name: string;
+  avatar_url?: string | null;
+}
+
 export interface Lenser {
   id: string; // uuid
   user_id: string; // references auth.users.id
