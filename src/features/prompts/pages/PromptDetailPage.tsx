@@ -26,7 +26,7 @@ export const PromptDetailPage: React.FC = () => {
   const { lenser, hasLenser } = useLenser();
   const { isAuthenticated, isLoading: authLoading } = useAuth();
   const { setShareConfig } = useShareContext();
-  const { setPageActions } = useUI();
+  const { setPageActions, setPageTitle } = useUI();
   
   const [prompt, setPrompt] = useState<PromptTemplateDetailViewModel | null>(null);
   const [relatedPrompts, setRelatedPrompts] = useState<PromptTemplateViewModel[]>([]);
@@ -96,17 +96,23 @@ export const PromptDetailPage: React.FC = () => {
     if (!authLoading) fetchData();
   }, [id, lenser?.id, isAuthenticated, authLoading]);
 
-  // Register Share Config
+  // Register Share Config & Page Title
   useEffect(() => {
     if (prompt) {
+        setPageTitle(prompt.title);
         setShareConfig({
             title: prompt.title,
             resourceType: 'prompt',
             resourceId: prompt.id
         });
+    } else {
+        setPageTitle(null);
     }
-    return () => setShareConfig(null);
-  }, [prompt, setShareConfig]);
+    return () => {
+        setShareConfig(null);
+        setPageTitle(null);
+    };
+  }, [prompt, setShareConfig, setPageTitle]);
 
   // Hoist Actions
   const isOwner = lenser && prompt && prompt.author.id === lenser.id;
@@ -175,11 +181,6 @@ export const PromptDetailPage: React.FC = () => {
             }
           };
       });
-      
-      // Optional: Refetch detail to sync exact counts from DB if critical
-      // promptsService.getPromptDetail(prompt.id, lenser.id).then(updated => {
-      //    if(updated) setPrompt(updated);
-      // });
 
     } catch (e) {
       console.error("Save failed", e);

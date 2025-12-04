@@ -28,7 +28,7 @@ export const PromptsTagFilter: React.FC<PromptsTagFilterProps> = ({ selectedTag,
                 : 'bg-white border border-gray-200 text-gray-600 hover:bg-gray-50'}
           `}
         >
-          {filter.label}
+          {filter.label === 'All' ? filter.label : `#${filter.label}`}
         </button>
       ))}
     </div>
