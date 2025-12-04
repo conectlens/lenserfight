@@ -8,7 +8,7 @@ export class PromptTagProvider implements TagContentProvider {
 
   async listByTag(tagSlug: string, sort: SortOption, currentLenserId?: string): Promise<TaggedContentItem[]> {
     // Pass currentLenserId to filter so owners can see their private tagged prompts
-    const prompts = await promptsService.filter(tagSlug, currentLenserId);
+    const prompts = await promptsService.filter(tagSlug, 0, 50);
     
     const sorted = [...prompts];
     if (sort === 'newest') {

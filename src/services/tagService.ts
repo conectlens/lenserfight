@@ -1,6 +1,7 @@
 
 import { getTagRepository } from '../adapters/tagAdapter';
 import { TagUsage, TagRecord } from '../types/tags.types';
+import { TagNamingService } from './tagNamingService';
 
 const tagRepo = getTagRepository();
 
@@ -35,8 +36,17 @@ export const tagService = {
 
   upsertTags: async (names: string[]): Promise<TagRecord[]> => {
       if (!names || names.length === 0) return [];
-      // Deduplicate names case-insensitively
-      const uniqueNames = Array.from(new Set(names.map(n => n.trim()).filter(n => n.length > 0)));
+      
+      // Use TagNamingService to normalize and deduplicate by slug
+      const slugMap = new Map<string, string>();
+      names.forEach(n => {
+          const { name, slug, isValid } = TagNamingService.normalize(n);
+          if (isValid && !slugMap.has(slug)) {
+              slugMap.set(slug, name);
+          }
+      });
+
+      const uniqueNames = Array.from(slugMap.values());
       return tagRepo.upsertTags(uniqueNames);
   }
 };

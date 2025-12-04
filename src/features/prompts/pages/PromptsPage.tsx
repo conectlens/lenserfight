@@ -69,22 +69,21 @@ export const PromptsPage: React.FC = () => {
       else setLoadingMore(true);
 
       const offset = pageNum * PAGE_SIZE;
-      const currentLenserId = lenser?.id;
       let data: PromptTemplateViewModel[] = [];
       
       if (searchQuery) {
-        data = await promptsService.search(searchQuery, currentLenserId, offset, PAGE_SIZE);
+        data = await promptsService.search(searchQuery, offset, PAGE_SIZE);
       } else if (selectedTag) {
-        data = await promptsService.filter(selectedTag, currentLenserId, offset, PAGE_SIZE);
+        data = await promptsService.filter(selectedTag, offset, PAGE_SIZE);
       } else {
         // sort logic is usually handled by backend via sort param, but service has separate sort method.
         // Assuming sort() method supports paginated fetch.
         // If sortOrder changes, we should use that specific method or pass sort param to a unified fetch.
         // Service structure implies separate methods.
         if (sortOrder) {
-             data = await promptsService.sort(sortOrder, currentLenserId, offset, PAGE_SIZE);
+             data = await promptsService.sort(sortOrder, offset, PAGE_SIZE);
         } else {
-             data = await promptsService.getPrompts(currentLenserId, offset, PAGE_SIZE);
+             data = await promptsService.getPrompts(offset, PAGE_SIZE);
         }
       }
 
@@ -132,9 +131,8 @@ export const PromptsPage: React.FC = () => {
     }
   };
 
-  const handleCreateSuccess = () => {
-    setPage(0);
-    fetchPrompts(0, true); // Refresh grid
+  const handleCreateSuccess = (id: string) => {
+    navigate(`/prompts/${id}`);
   };
 
   return (

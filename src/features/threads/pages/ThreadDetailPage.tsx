@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { useThreadDetailController } from '../hooks/useThreadDetailController';
@@ -5,12 +6,12 @@ import { ThreadDetailCard } from '../components/ThreadDetailCard';
 import { ThreadRepliesList } from '../components/ThreadRepliesList';
 import { ReplyComposer } from '../components/ReplyComposer';
 import { Button } from '../../../components/Button';
-import { ChevronLeft, Pencil, Trash2 } from 'lucide-react';
+import { Pencil, Trash2, Lock } from 'lucide-react';
 import { useLenser } from '../../../context/LenserContext';
 import { useAuth } from '../../../context/AuthContext';
 import { CreateLenserProfileModal } from '../../lenser/components/CreateLenserProfileModal';
 import { useShareContext } from '../../../context/ShareContext';
-import { ActionMenu } from '../../../components/ActionMenu';
+import { useUI } from '../../../context/UIContext';
 import { CreateThreadModal } from '../components/CreateThreadModal';
 import { threadsService } from '../../../services/threadsService';
 import { ConfirmModal } from '../../../components/ConfirmModal';
@@ -22,6 +23,7 @@ export const ThreadDetailPage: React.FC = () => {
   const { hasLenser, lenser } = useLenser();
   const { isAuthenticated } = useAuth();
   const { setShareConfig } = useShareContext();
+  const { setPageActions, setPageTitle } = useUI();
   
   const [showProfileModal, setShowProfileModal] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
@@ -37,7 +39,32 @@ export const ThreadDetailPage: React.FC = () => {
     addReply 
   } = useThreadDetailController(threadId);
 
-  // Register share config when thread loads
+  const isOwner = lenser && thread && thread.author.id === lenser.id;
+
+  // Set Page Title and Hoist Actions
+  useEffect(() => {
+    if (thread) {
+        setPageTitle(thread.title);
+    } else {
+        setPageTitle(null);
+    }
+
+    if (isOwner) {
+        setPageActions([
+            { label: 'Edit Thread', icon: <Pencil size={16} />, onClick: () => setIsEditModalOpen(true) },
+            { label: 'Delete Thread', icon: <Trash2 size={16} />, onClick: () => setIsDeleteModalOpen(true), variant: 'danger' }
+        ]);
+    } else {
+        setPageActions([]);
+    }
+    
+    return () => {
+        setPageActions([]);
+        setPageTitle(null);
+    };
+  }, [isOwner, thread, setPageActions, setPageTitle]);
+
+  // Register share config
   useEffect(() => {
     if (thread) {
         setShareConfig({
@@ -79,7 +106,6 @@ export const ThreadDetailPage: React.FC = () => {
       try {
           await threadsService.deleteThread(thread.id, lenser.id);
           setIsDeleteModalOpen(false);
-          alert("Thread deleted successfully.");
           navigate('/app');
       } catch (e) {
           console.error(e);
@@ -90,19 +116,13 @@ export const ThreadDetailPage: React.FC = () => {
       }
   };
 
-  const handleEditClick = () => {
-      if (!thread) return;
-      setIsEditModalOpen(true);
-  };
-
   const handleEditSuccess = () => {
-      // Force reload page to get fresh data
       window.location.reload(); 
   };
 
   if (loading) {
     return (
-      <div className="max-w-4xl mx-auto py-8 px-4">
+      <div className="w-full">
          <div className="animate-pulse space-y-8">
            <div className="bg-gray-200 h-96 rounded-2xl"></div>
            <div className="bg-gray-200 h-32 rounded-2xl"></div>
@@ -111,39 +131,36 @@ export const ThreadDetailPage: React.FC = () => {
     );
   }
 
-  if (error || !thread) {
-    return (
-      <div className="text-center py-20">
-        <h2 className="text-xl font-semibold text-gray-900 mb-2">Thread not found</h2>
-        <Button onClick={() => navigate('/app')} className="w-auto inline-block">
-          Return Home
-        </Button>
-      </div>
-    );
+  if (error) {
+      if (error === '401') {
+          return (
+            <div className="flex flex-col items-center justify-center min-h-[60vh]">
+                <div className="bg-red-50 p-6 rounded-full mb-6">
+                    <Lock className="w-12 h-12 text-red-500" />
+                </div>
+                <h2 className="text-3xl font-bold text-gray-900 mb-3">Access Denied</h2>
+                <p className="text-gray-500 mb-6">This thread is private and you are not authorized to view it.</p>
+                <Button onClick={() => navigate('/app')} className="w-auto inline-block">
+                    Return to Feed
+                </Button>
+            </div>
+          );
+      }
+
+      return (
+        <div className="text-center py-20">
+            <h2 className="text-xl font-semibold text-gray-900 mb-2">Thread not found</h2>
+            <Button onClick={() => navigate('/app')} className="w-auto inline-block">
+            Return Home
+            </Button>
+        </div>
+      );
   }
 
-  // Determine ownership
-  const isOwner = lenser && thread.author.id === lenser.id;
-
-  const menuActions = isOwner ? [
-      { label: 'Edit Thread', icon: <Pencil size={16} />, onClick: handleEditClick },
-      { label: 'Delete Thread', icon: <Trash2 size={16} />, onClick: () => setIsDeleteModalOpen(true), variant: 'danger' as const }
-  ] : [];
+  if (!thread) return null;
 
   return (
-    <div className="max-w-4xl mx-auto pb-20 px-4 sm:px-6">
-      <div className="flex items-center justify-between mb-6">
-        <button 
-          onClick={() => navigate(-1)} 
-          className="flex items-center text-gray-500 hover:text-gray-900 transition-colors"
-        >
-          <ChevronLeft className="w-5 h-5 mr-1" />
-          Back
-        </button>
-
-        {isOwner && <ActionMenu actions={menuActions} />}
-      </div>
-      
+    <div className="max-w-4xl mx-auto">
       <ThreadDetailCard 
         thread={thread} 
         onToggleReaction={handleToggleReaction}
@@ -172,7 +189,6 @@ export const ThreadDetailPage: React.FC = () => {
         <CreateLenserProfileModal onClose={() => setShowProfileModal(false)} />
       )}
 
-      {/* Edit Modal */}
       {isEditModalOpen && (
           <CreateThreadModal
             isOpen={true}
@@ -183,12 +199,11 @@ export const ThreadDetailPage: React.FC = () => {
                 title: thread.title,
                 content: thread.content,
                 tags: thread.tags.map(t => t.name),
-                visibility: 'public' // Simplify mapping for now
+                visibility: 'public'
             }}
           />
       )}
 
-      {/* Delete Confirmation */}
       <ConfirmModal 
         isOpen={isDeleteModalOpen}
         onClose={() => setIsDeleteModalOpen(false)}

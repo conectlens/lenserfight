@@ -1,3 +1,4 @@
+
 import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { SidebarItem } from './SidebarItem';
@@ -7,7 +8,7 @@ import { notificationService } from '../../services/notificationService';
 import { Avatar } from '../../components/Avatar';
 import { 
   Home, 
-  Compass, 
+  Cloud,
   MoreHorizontal,
   Settings,
   LogOut,
@@ -15,7 +16,9 @@ import {
   User,
   Sparkles,
   MessageSquarePlus,
-  Bell
+  Bell,
+  Eye,
+  Brain
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { FEATURES } from '../../config/runtimeConfig';
@@ -98,6 +101,30 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, isMobile, onCloseMobil
 
   return (
     <>
+      <style>{`
+        @keyframes pulse-gold {
+          0%, 100% { background-color: transparent; }
+          50% { background-color: rgba(255, 222, 89, 0.08); }
+        }
+        @keyframes shimmer-slide {
+          0% { transform: translateX(-150%) skewX(-15deg); }
+          20%, 100% { transform: translateX(150%) skewX(-15deg); }
+        }
+        @keyframes ambient-glow {
+          0%, 100% { box-shadow: 0 0 0 rgba(0,0,0,0); border-color: rgba(229, 231, 235, 1); }
+          50% { box-shadow: 0 0 15px rgba(255, 222, 89, 0.15); border-color: rgba(255, 222, 89, 0.4); }
+        }
+        .animate-pulse-gold {
+          animation: pulse-gold 7s ease-in-out infinite;
+        }
+        .animate-shimmer-slide {
+          animation: shimmer-slide 8s ease-in-out infinite;
+        }
+        .animate-ambient-glow {
+          animation: ambient-glow 5s ease-in-out infinite;
+        }
+      `}</style>
+
       {showOverlay && (
         <div 
           className="fixed inset-0 bg-black/20 backdrop-blur-sm z-40 transition-opacity" 
@@ -140,27 +167,48 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, isMobile, onCloseMobil
              collapsed={!showLabels} 
            />
            
-           {/* Enabled Explore/Tags Link */}
            <SidebarItem 
              onClick={() => handleNavigation('/tags')}
-             icon={<Compass size={20} />} 
-             label="Explore Topics" 
+             icon={<Cloud size={20} />} 
+             label="Lens Cloud" 
              isActive={location.pathname.startsWith('/tags')}
              collapsed={!showLabels} 
            />
+
+           {/* Coming Soon Placeholders */}
+           <div className="pt-4 mt-2">
+             <div className="space-y-1">
+               <SidebarItem 
+                 icon={<Eye size={20} />}
+                 label="Lensers" 
+                 isComingSoon
+                 collapsed={!showLabels}
+               />
+               
+               <SidebarItem 
+                 icon={<Brain size={20} />}
+                 label="Lens" 
+                 isComingSoon
+                 collapsed={!showLabels}
+               />
+             </div>
+           </div>
         </nav>
 
-        <div className="flex-shrink-0 px-3 pb-3 pt-2 border-t border-gray-200 bg-gray-50 mt-auto">
-          <div className="mb-2">
+        <div className="flex-shrink-0 px-3 pb-3 pt-2 bg-gray-50 mt-auto space-y-3">
+          {/* Feedback Block */}
+          <div className={`rounded-xl border border-gray-200 transition-all duration-700 ${!showLabels ? 'bg-transparent border-none' : 'bg-gray-100/80 p-1 animate-ambient-glow'}`}>
               <SidebarItem 
                 onClick={() => setIsFeedbackOpen(true)}
                 icon={<MessageSquarePlus size={20} />} 
                 label="Send Feedback" 
                 isActive={false} 
                 collapsed={!showLabels}
-                className="text-gray-500 hover:text-primary-700 hover:bg-yellow-50"
+                className={`!my-0 ${!showLabels ? 'text-gray-400 hover:text-primary-600' : 'text-gray-600 hover:text-gray-900 hover:bg-white/60'}`}
               />
           </div>
+
+          <div className="h-px bg-gray-200 w-full"></div>
 
           <div className="relative">
             <div 

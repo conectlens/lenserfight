@@ -1,8 +1,8 @@
 
 export type TargetType = 'thread' | 'thread_reply' | 'prompt_template';
 
-// 'saved' is treated as a reaction type for prompts to keep the system unified
-export type ReactionType = 'like' | 'love' | 'clap' | 'saved';
+// 'saved' and 'copy' are treated as reaction types for prompts to keep the system unified
+export type ReactionType = 'like' | 'love' | 'clap' | 'saved' | 'copy';
 
 export interface ReactionRecord {
   id: string;

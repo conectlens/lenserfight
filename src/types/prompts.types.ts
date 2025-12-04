@@ -1,7 +1,8 @@
+
 import { TagRecord } from './threads.types';
 
 export type VisibilityEnum = 'public' | 'private';
-export type ReactionEnum = 'like' | 'love' | 'clap' | 'saved';
+export type ReactionEnum = 'like' | 'love' | 'clap' | 'saved' | 'copy';
 
 export interface PromptTemplateRecord {
   id: string;
@@ -10,7 +11,9 @@ export interface PromptTemplateRecord {
   description?: string | null;
   content: string;
   visibility: VisibilityEnum;
-  usage_count: number;
+  // usage_count removed; rely on reaction_totals['copy']
+  reaction_totals?: Record<string, number>; // JSONB
+  save_count?: number; // Maintained by trigger
   created_at: string;
   updated_at: string;
 }
@@ -18,6 +21,8 @@ export interface PromptTemplateRecord {
 export interface PromptTemplateTagRecord {
   template_id: string;
   tag_id: string;
+  created_at?: string;
+  user_agent?: string;
 }
 
 export interface PromptTemplateReactionRecord {
@@ -25,14 +30,6 @@ export interface PromptTemplateReactionRecord {
   template_id: string;
   lenser_id: string;
   reaction: ReactionEnum;
-  created_at: string;
-}
-
-export interface PromptTemplateUsageRecord {
-  id: string;
-  template_id: string;
-  lenser_id: string;
-  action: string; // e.g. "viewed", "used", "copied"
   created_at: string;
 }
 
@@ -51,13 +48,13 @@ export interface PromptTemplateViewModel {
   tags: TagRecord[];
   usageCount: number;
   createdAt: string;
-  visibility: VisibilityEnum; // Added visibility to view model for header
+  visibility: VisibilityEnum;
 }
 
 export interface PromptTemplateDetailViewModel extends PromptTemplateViewModel {
   content: string;
   reactionCounts: Record<ReactionEnum, number>;
-  isSaved: boolean; // Indicates if the viewing user has saved this
+  isSaved: boolean;
 }
 
 export interface CreatePromptDTO {

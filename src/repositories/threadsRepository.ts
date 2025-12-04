@@ -2,7 +2,6 @@
 import { ThreadRecord, TagRecord, ThreadReplyRecord, CreateThreadDTO } from '../types/threads.types';
 import { supabase } from '../utils/supabase';
 import { storage } from '../utils/storage';
-import { TagRepositoryPort } from './tagRepository'; // Implicit dep for types, but we use raw storage in mock
 
 // --- Port (Interface) ---
 export interface ThreadsRepositoryPort {
@@ -17,12 +16,13 @@ export interface ThreadsRepositoryPort {
   createReply(threadId: string, lenserId: string, content: string, parentReplyId?: string): Promise<ThreadReplyRecord>;
   updateThread(id: string, dto: Partial<CreateThreadDTO>): Promise<ThreadRecord>;
   deleteThread(id: string): Promise<void>;
+  incrementView(id: string): Promise<void>;
 }
 
 // --- Mock Implementation ---
 export class MockThreadsRepository implements ThreadsRepositoryPort {
   private THREADS_KEY = 'mock_threads_db';
-  private THREAD_TAGS_KEY = 'mock_thread_tags'; // Junction table key
+  private THREAD_TAGS_KEY = 'mock_thread_tags';
   private TAGS_KEY = 'mock_tags';
   private REPLIES_KEY = 'mock_replies_db';
 
@@ -41,16 +41,29 @@ export class MockThreadsRepository implements ThreadsRepositoryPort {
               visibility: 'public',
               view_count: 120,
               reply_count: 0,
+              reaction_totals: { like: 12, love: 4 },
               created_at: new Date(Date.now() - 1000 * 60 * 60 * 2).toISOString(),
               updated_at: new Date().toISOString(),
             }
         ];
         storage.setItem(this.THREADS_KEY, JSON.stringify(initialThreads));
     }
+
+    if (!storage.getItem(this.THREAD_TAGS_KEY)) {
+        const tags = [
+            { thread_id: 'thread-1', tag_id: 'tag-0' },
+            { thread_id: 'thread-1', tag_id: 'tag-1' }
+        ];
+        storage.setItem(this.THREAD_TAGS_KEY, JSON.stringify(tags));
+    }
   }
 
   private getThreads(): ThreadRecord[] {
       return JSON.parse(storage.getItem(this.THREADS_KEY) || '[]');
+  }
+
+  private saveThreads(threads: ThreadRecord[]) {
+      storage.setItem(this.THREADS_KEY, JSON.stringify(threads));
   }
 
   private getThreadTagsData(): { thread_id: string, tag_id: string }[] {
@@ -72,15 +85,15 @@ export class MockThreadsRepository implements ThreadsRepositoryPort {
       visibility: dto.visibility,
       view_count: 0,
       reply_count: 0,
+      reaction_totals: {},
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
     };
 
     const threads = this.getThreads();
     threads.unshift(newThread);
-    storage.setItem(this.THREADS_KEY, JSON.stringify(threads));
+    this.saveThreads(threads);
 
-    // Handle Tags (DTO now contains real UUIDs from Service)
     if (dto.tagIds.length > 0) {
       const junctionData = this.getThreadTagsData();
       dto.tagIds.forEach(tagId => {
@@ -94,54 +107,35 @@ export class MockThreadsRepository implements ThreadsRepositoryPort {
 
   async getAllThreads(offset = 0, limit = 10): Promise<ThreadRecord[]> {
     await new Promise(resolve => setTimeout(resolve, 400));
-    const replies = this.getReplies();
-    const all = this.getThreads()
+    // Strictly filter public threads for global lists
+    return this.getThreads()
         .filter(t => t.visibility === 'public')
-        .map(t => ({
-            ...t,
-            reply_count: replies.filter(r => r.thread_id === t.id).length
-        }));
-    return all.slice(offset, offset + limit);
+        .slice(offset, offset + limit);
   }
 
   async getThreadsByTag(tagSlug: string, offset = 0, limit = 10): Promise<ThreadRecord[]> {
       await new Promise(resolve => setTimeout(resolve, 400));
       
-      // Get Tag ID from slug first
       const allTags = JSON.parse(storage.getItem(this.TAGS_KEY) || '[]');
       const tag = allTags.find((t: any) => t.slug === tagSlug);
-      
       if (!tag) return [];
 
-      // Find threads with this tag_id
       const junctionData = this.getThreadTagsData();
       const threadIds = junctionData.filter(j => j.tag_id === tag.id).map(j => j.thread_id);
 
-      const replies = this.getReplies();
       const filtered = this.getThreads()
-        .filter(t => threadIds.includes(t.id) && t.visibility === 'public')
-        .map(t => ({
-            ...t,
-            reply_count: replies.filter(r => r.thread_id === t.id).length
-        }));
+        .filter(t => threadIds.includes(t.id) && t.visibility === 'public');
       
       return filtered.slice(offset, offset + limit);
   }
 
   async getThreadById(id: string): Promise<ThreadRecord | null> {
-    const thread = this.getThreads().find(t => t.id === id);
-    if (!thread) return null;
-    const replies = this.getReplies();
-    return {
-        ...thread,
-        reply_count: replies.filter(r => r.thread_id === thread.id).length
-    };
+    return this.getThreads().find(t => t.id === id) || null;
   }
 
   async getThreadTags(threadId: string): Promise<TagRecord[]> {
     const junctionData = this.getThreadTagsData();
     const tagIds = junctionData.filter(j => j.thread_id === threadId).map(j => j.tag_id);
-    
     const allTags = JSON.parse(storage.getItem(this.TAGS_KEY) || '[]');
     return allTags.filter((t: any) => tagIds.includes(t.id));
   }
@@ -165,20 +159,50 @@ export class MockThreadsRepository implements ThreadsRepositoryPort {
           lenser_id: lenserId,
           content,
           parent_reply_id: parentReplyId,
-          reaction_count: 0,
+          reaction_totals: {},
           created_at: new Date().toISOString()
       };
       
+      // Save Reply
       const replies = this.getReplies();
       replies.push(newReply);
       storage.setItem(this.REPLIES_KEY, JSON.stringify(replies));
+
+      // Simulate Trigger: Increment reply_count on Thread
+      const threads = this.getThreads();
+      const threadIndex = threads.findIndex(t => t.id === threadId);
+      if (threadIndex !== -1) {
+          threads[threadIndex].reply_count = (threads[threadIndex].reply_count || 0) + 1;
+          this.saveThreads(threads);
+      }
       
       return newReply;
   }
 
   async getTrendingTags(limit: number): Promise<string[]> {
-      // Mock simple return
-      return ['productivity', 'health', 'ai'];
+      await new Promise(resolve => setTimeout(resolve, 400));
+      const threads = this.getThreads();
+      const threadTags = this.getThreadTagsData();
+      const allTags = JSON.parse(storage.getItem(this.TAGS_KEY) || '[]');
+      const oneWeekAgo = new Date();
+      oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
+
+      const activeThreadIds = threads
+        .filter(t => t.visibility === 'public' && new Date(t.created_at) > oneWeekAgo)
+        .map(t => t.id);
+
+      const counts: Record<string, number> = {};
+      threadTags.forEach(tt => {
+          if (activeThreadIds.includes(tt.thread_id)) {
+              counts[tt.tag_id] = (counts[tt.tag_id] || 0) + 1;
+          }
+      });
+
+      const sortedTagIds = Object.keys(counts).sort((a, b) => counts[b] - counts[a]);
+      return sortedTagIds.slice(0, limit).map(id => {
+          const t = allTags.find((tag: any) => tag.id === id);
+          return t ? t.name : null;
+      }).filter((n): n is string => n !== null);
   }
 
   async updateThread(id: string, dto: Partial<CreateThreadDTO>): Promise<ThreadRecord> {
@@ -193,7 +217,7 @@ export class MockThreadsRepository implements ThreadsRepositoryPort {
           updated_at: new Date().toISOString()
       };
       threads[index] = updated;
-      storage.setItem(this.THREADS_KEY, JSON.stringify(threads));
+      this.saveThreads(threads);
 
       if (dto.tagIds) {
           let junctionData = this.getThreadTagsData();
@@ -211,7 +235,17 @@ export class MockThreadsRepository implements ThreadsRepositoryPort {
       await new Promise(resolve => setTimeout(resolve, 400));
       const threads = this.getThreads();
       const filtered = threads.filter(t => t.id !== id);
-      storage.setItem(this.THREADS_KEY, JSON.stringify(filtered));
+      this.saveThreads(filtered);
+  }
+
+  async incrementView(id: string): Promise<void> {
+      // Simulate RPC
+      const threads = this.getThreads();
+      const t = threads.find(thread => thread.id === id);
+      if (t) {
+          t.view_count = (t.view_count || 0) + 1;
+          this.saveThreads(threads);
+      }
   }
 }
 
@@ -219,7 +253,6 @@ export class MockThreadsRepository implements ThreadsRepositoryPort {
 export class SupabaseThreadsRepository implements ThreadsRepositoryPort {
   
   async createThread(dto: CreateThreadDTO): Promise<ThreadRecord> {
-    // 1. Create Thread
     const { data: thread, error } = await supabase.from('threads')
         .insert({ 
             lenser_id: dto.lenserId, 
@@ -231,7 +264,6 @@ export class SupabaseThreadsRepository implements ThreadsRepositoryPort {
     
     if (error) throw error;
 
-    // 2. Insert Tags (Junction) - dto.tagIds are now UUIDs
     if (dto.tagIds && dto.tagIds.length > 0) {
         const junctionInserts = dto.tagIds.map(tagId => ({
             thread_id: thread.id,
@@ -245,47 +277,38 @@ export class SupabaseThreadsRepository implements ThreadsRepositoryPort {
   }
 
   async getAllThreads(offset = 0, limit = 10): Promise<ThreadRecord[]> {
+    // Strictly filter public threads
     const { data, error } = await supabase
         .from('threads')
-        .select('*, thread_replies(count)')
+        .select('*')
         .eq('visibility', 'public')
         .order('created_at', { ascending: false })
         .range(offset, offset + limit - 1);
     if (error) throw error;
-    return (data as any[]).map(t => ({
-        ...t,
-        reply_count: t.thread_replies ? t.thread_replies[0]?.count || 0 : 0
-    })) as ThreadRecord[];
+    return data as ThreadRecord[];
   }
 
   async getThreadsByTag(tagSlug: string, offset = 0, limit = 10): Promise<ThreadRecord[]> {
-      // Query through the join table
       const { data, error } = await supabase
         .from('threads')
-        .select('*, thread_tags!inner(tag_id, tags!inner(slug)), thread_replies(count)')
+        .select('*, thread_tags!inner(tag_id, tags!inner(slug))')
         .eq('visibility', 'public')
         .eq('thread_tags.tags.slug', tagSlug)
         .order('created_at', { ascending: false })
         .range(offset, offset + limit - 1);
 
       if (error) throw error;
-      
-      return (data as any[]).map(t => ({
-        ...t,
-        reply_count: t.thread_replies ? t.thread_replies[0]?.count || 0 : 0
-    })) as ThreadRecord[];
+      return data as ThreadRecord[];
   }
 
   async getThreadById(id: string): Promise<ThreadRecord | null> {
     const { data, error } = await supabase
         .from('threads')
-        .select('*, thread_replies(count)')
+        .select('*')
         .eq('id', id)
         .single();
     if (error) throw error;
-    const thread = data as any;
-    thread.reply_count = thread.thread_replies ? thread.thread_replies[0]?.count || 0 : 0;
-    return thread as ThreadRecord;
+    return data as ThreadRecord;
   }
 
   async getThreadTags(threadId: string): Promise<TagRecord[]> {
@@ -296,7 +319,11 @@ export class SupabaseThreadsRepository implements ThreadsRepositoryPort {
   }
 
   async getThreadReplies(threadId: string): Promise<ThreadReplyRecord[]> {
-     const { data, error } = await supabase.from('thread_replies').select('*').eq('thread_id', threadId).order('created_at', { ascending: true });
+     const { data, error } = await supabase
+        .from('thread_replies')
+        .select('*')
+        .eq('thread_id', threadId)
+        .order('created_at', { ascending: true });
     if (error) throw error;
     return data as ThreadReplyRecord[];
   }
@@ -319,7 +346,48 @@ export class SupabaseThreadsRepository implements ThreadsRepositoryPort {
   }
 
   async getTrendingTags(limit: number): Promise<string[]> {
-      return ['productivity', 'ai', 'design'];
+      const oneWeekAgo = new Date();
+      oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
+
+      const { data, error } = await supabase
+        .from('thread_tags')
+        .select(`
+            tag_id,
+            threads!inner (
+                created_at,
+                visibility
+            )
+        `)
+        .eq('threads.visibility', 'public')
+        .gt('threads.created_at', oneWeekAgo.toISOString());
+
+      if (error) {
+          console.error("Failed to fetch trending tags", error);
+          return [];
+      }
+
+      if (!data || data.length === 0) return [];
+
+      const counts: Record<string, number> = {};
+      data.forEach((item: any) => {
+          counts[item.tag_id] = (counts[item.tag_id] || 0) + 1;
+      });
+
+      const topIds = Object.keys(counts)
+        .sort((a, b) => counts[b] - counts[a])
+        .slice(0, limit);
+
+      if (topIds.length === 0) return [];
+
+      const { data: tags, error: tagsError } = await supabase
+        .from('tags')
+        .select('id, name')
+        .in('id', topIds);
+
+      if (tagsError) return [];
+
+      const idToName = new Map(tags.map((t: any) => [t.id, t.name]));
+      return topIds.map(id => idToName.get(id)).filter((n): n is string => !!n);
   }
 
   async updateThread(id: string, dto: Partial<CreateThreadDTO>): Promise<ThreadRecord> {
@@ -351,5 +419,10 @@ export class SupabaseThreadsRepository implements ThreadsRepositoryPort {
   async deleteThread(id: string): Promise<void> {
       const { error } = await supabase.from('threads').delete().eq('id', id);
       if (error) throw error;
+  }
+
+  async incrementView(id: string): Promise<void> {
+      const { error } = await supabase.rpc('increment_thread_view', { p_thread_id: id });
+      if (error) console.error("Failed to increment view", error);
   }
 }

@@ -11,7 +11,7 @@ import { Lenser } from '../../../types/lenser.types';
 import { TagBadge } from '../../../components/TagBadge';
 import { Card } from '../../../components/Card';
 import { Button } from '../../../components/Button';
-import { Plus, ChevronRight, MessageSquareOff } from 'lucide-react';
+import { Plus, ChevronRight, MessageSquareOff, AlertCircle, UserX, Tag } from 'lucide-react';
 import { CreateThreadModal } from '../../threads/components/CreateThreadModal';
 import { useLenser } from '../../../context/LenserContext';
 import { CreateLenserProfileModal } from '../../lenser/components/CreateLenserProfileModal';
@@ -23,12 +23,16 @@ export const HomePage: React.FC = () => {
   const [threads, setThreads] = useState<ThreadFeedItem[]>([]);
   const [topPrompts, setTopPrompts] = useState<PromptTemplateViewModel[]>([]);
   const [trendingTags, setTrendingTags] = useState<string[]>([]);
-  const [activeLensers, setActiveLensers] = useState<Lenser[]>([]);
+  const [latestLensers, setLatestLensers] = useState<Lenser[]>([]);
   
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(0);
   const [hasMore, setHasMore] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
+
+  // Error States for Widgets
+  const [tagsError, setTagsError] = useState(false);
+  const [lensersError, setLensersError] = useState(false);
 
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
@@ -55,16 +59,26 @@ export const HomePage: React.FC = () => {
     const init = async () => {
         setLoading(true);
         try {
-            const [prompts, tags, lensers, initialThreads] = await Promise.all([
-                promptsService.getTopPrompts(3),
-                threadsService.getTrendingTags(6),
-                lenserService.getRecentlyActiveLensers(4),
-                threadsService.getThreadsFeed(lenser?.id, 0, PAGE_SIZE)
+            // Parallel fetches with individual error handling for widgets
+            const promptsPromise = promptsService.getTopPrompts(3).catch(() => []);
+            const threadsPromise = threadsService.getThreadsFeed(lenser?.id, 0, PAGE_SIZE).catch(() => []);
+            
+            const tagsPromise = threadsService.getTrendingTags(6)
+                .then(data => { setTrendingTags(data); return data; })
+                .catch(() => { setTagsError(true); return []; });
+
+            const lensersPromise = lenserService.getLatestJoinedLensers(4)
+                .then(data => { setLatestLensers(data); return data; })
+                .catch(() => { setLensersError(true); return []; });
+
+            const [prompts, , , initialThreads] = await Promise.all([
+                promptsPromise,
+                tagsPromise,
+                lensersPromise,
+                threadsPromise
             ]);
             
             setTopPrompts(prompts);
-            setTrendingTags(tags);
-            setActiveLensers(lensers);
             setThreads(initialThreads);
             setHasMore(initialThreads.length === PAGE_SIZE);
             setPage(0);
@@ -157,6 +171,13 @@ export const HomePage: React.FC = () => {
     </div>
   );
 
+  const MinimalAlert = ({ icon: Icon, text }: { icon: any, text: string }) => (
+      <div className="bg-gray-50 border border-gray-100 rounded-lg p-6 flex flex-col items-center justify-center text-center">
+          <Icon className="w-5 h-5 text-gray-400 mb-2" />
+          <span className="text-xs font-medium text-gray-500">{text}</span>
+      </div>
+  );
+
   const isEmpty = !loading && threads.length === 0;
 
   return (
@@ -247,41 +268,58 @@ export const HomePage: React.FC = () => {
                   </div>
                 </Card>
 
-                {/* Recently Active Lensers */}
+                {/* New Arrivals (Latest Joined) Widget */}
                 <Card className="p-6">
-                  <h3 className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-4">Recently Active Lensers</h3>
-                  <div className="space-y-4">
-                      {activeLensers.map((user) => (
-                        <div 
-                            key={user.id} 
-                            className="flex items-center gap-3 group cursor-pointer p-2 -mx-2 hover:bg-gray-50 rounded-lg transition-colors"
-                            onClick={() => navigate(`/lenser/${user.handle}`)}
-                        >
-                          <div className="h-10 w-10 rounded-full ring-2 ring-white bg-gray-200 overflow-hidden flex-shrink-0 border border-gray-100">
-                              <img src={user.avatar_url || ''} alt={user.display_name} className="w-full h-full object-cover" />
-                          </div>
-                          <div className="flex-1 min-w-0">
-                              <p className="text-sm font-semibold text-gray-900 truncate group-hover:text-primary-700 transition-colors">{user.display_name}</p>
-                              <p className="text-xs text-gray-500 truncate">@{user.handle}</p>
-                          </div>
-                          <ChevronRight size={16} className="text-gray-300 group-hover:text-primary transition-colors" />
-                        </div>
-                      ))}
-                  </div>
+                  <h3 className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-4">New Arrivals</h3>
+                  {lensersError ? (
+                      <MinimalAlert icon={AlertCircle} text="Unable to load new members" />
+                  ) : latestLensers.length === 0 ? (
+                      <MinimalAlert icon={UserX} text="No new members yet" />
+                  ) : (
+                      <div className="space-y-4">
+                          {latestLensers.map((user) => (
+                            <div 
+                                key={user.id} 
+                                className="flex items-center gap-3 group cursor-pointer p-2 -mx-2 hover:bg-gray-50 rounded-lg transition-colors"
+                                onClick={() => navigate(`/lenser/${user.handle}`)}
+                            >
+                              <div className="h-10 w-10 rounded-full ring-2 ring-white bg-gray-200 overflow-hidden flex-shrink-0 border border-gray-100">
+                                  <img src={user.avatar_url || ''} alt={user.display_name} className="w-full h-full object-cover" />
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                  <div className="flex items-center gap-1.5">
+                                      <p className="text-sm font-semibold text-gray-900 truncate group-hover:text-primary-700 transition-colors">{user.display_name}</p>
+                                      {user.join_order && (
+                                          <span className="text-[9px] font-mono text-gray-400 border border-gray-200 rounded px-1">#{user.join_order}</span>
+                                      )}
+                                  </div>
+                                  <p className="text-xs text-gray-500 truncate">@{user.handle}</p>
+                              </div>
+                              <ChevronRight size={16} className="text-gray-300 group-hover:text-primary transition-colors" />
+                            </div>
+                          ))}
+                      </div>
+                  )}
                 </Card>
 
                 {/* Trending Tags Widget */}
                 <Card className="p-6">
                   <h3 className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-4">Trending Tags</h3>
-                  <div className="flex flex-wrap gap-2">
-                    {trendingTags.map(tag => (
-                      <TagBadge 
-                        key={tag} 
-                        label={tag} 
-                        onClick={() => navigate(`/tags/${tag.toLowerCase()}`)}
-                      />
-                    ))}
-                  </div>
+                  {tagsError ? (
+                      <MinimalAlert icon={AlertCircle} text="Could not load tags" />
+                  ) : trendingTags.length === 0 ? (
+                      <MinimalAlert icon={Tag} text="No trending topics" />
+                  ) : (
+                      <div className="flex flex-wrap gap-2">
+                        {trendingTags.map(tag => (
+                          <TagBadge 
+                            key={tag} 
+                            label={tag} 
+                            onClick={() => navigate(`/tags/${tag.toLowerCase()}`)}
+                          />
+                        ))}
+                      </div>
+                  )}
                 </Card>
            </div>
         )}

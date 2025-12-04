@@ -1,5 +1,6 @@
-import React, { useRef, useEffect, useState } from 'react';
+import React, { useRef, useEffect } from 'react';
 import { PromptTemplateViewModel } from '../types/prompts.types';
+import { mentionService } from '../services/mentionService';
 
 interface RichMentionInputProps {
   value: string; // The tokenized value from parent
@@ -23,7 +24,8 @@ export const RichMentionInput = React.forwardRef<RichMentionInputHandle, RichMen
 }, ref) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const isTypingMention = useRef(false);
-  const lastKnownValue = useRef(value);
+  // Initialize with empty string so that if initial value is provided, hydration triggers
+  const lastKnownValue = useRef('');
 
   // Helper to get caret coordinates relative to the viewport
   const getCaretCoordinates = () => {
@@ -36,10 +38,7 @@ export const RichMentionInput = React.forwardRef<RichMentionInputHandle, RichMen
     // Fallback if rect is empty (e.g. start of line)
     if (rect.width === 0 && rect.height === 0) {
         if (containerRef.current) {
-            // If text node is empty/start, try to approximate using container
-            // This is a rough fallback
             const containerRect = containerRef.current.getBoundingClientRect();
-            // We might need to look at specific node offset if possible, but for now:
             return { top: rect.top || containerRect.top + 10, left: rect.left || containerRect.left + 10, height: 20 }; 
         }
     }
@@ -51,13 +50,62 @@ export const RichMentionInput = React.forwardRef<RichMentionInputHandle, RichMen
     };
   };
 
-  // Initial sync: set HTML if empty and value provided (mostly for resets)
+  // Hydrate content from value prop (Initial Load / External Reset)
   useEffect(() => {
-    if (containerRef.current && value === '') {
-        containerRef.current.innerHTML = '';
-        lastKnownValue.current = '';
+    if (!containerRef.current) return;
+
+    // Reset case
+    if (value === '') {
+        if (containerRef.current.textContent !== '') {
+            containerRef.current.innerHTML = '';
+            lastKnownValue.current = '';
+        }
+        return;
+    }
+
+    // Hydration Case: Container is empty (initial mount or manual clear) and we have a value.
+    // We check textContent to see if visual DOM is empty.
+    const isContainerEmpty = !containerRef.current.textContent?.trim();
+    
+    // If container is empty but value is set, we need to hydrate.
+    // We also check if value differs from lastKnownValue to avoid re-hydrating during typing loops 
+    // (though isContainerEmpty usually protects against that unless user typed spaces only).
+    if (isContainerEmpty && value !== lastKnownValue.current) {
+        hydrateContent(value);
     }
   }, [value]);
+
+  const hydrateContent = async (text: string) => {
+      try {
+          const segments = await mentionService.resolveContent(text);
+          if (!containerRef.current) return;
+          
+          containerRef.current.innerHTML = '';
+          
+          segments.forEach(segment => {
+              if (segment.type === 'text') {
+                  if (segment.content) {
+                      containerRef.current?.appendChild(document.createTextNode(segment.content));
+                  }
+              } else if (segment.type === 'mention' && segment.id) {
+                  const chip = document.createElement('span');
+                  chip.contentEditable = "false";
+                  chip.className = "inline-flex items-center px-1.5 py-0.5 rounded mx-1 bg-primary/20 text-primary-900 font-medium text-sm select-none align-middle";
+                  chip.setAttribute('data-mention-id', segment.id);
+                  chip.textContent = segment.content || 'Unknown Prompt';
+                  containerRef.current?.appendChild(chip);
+              }
+          });
+          
+          lastKnownValue.current = text;
+      } catch (e) {
+          console.error("Failed to hydrate rich content", e);
+          if (containerRef.current) {
+              containerRef.current.innerText = text;
+              lastKnownValue.current = text;
+          }
+      }
+  };
 
   const handleInput = () => {
     if (!containerRef.current) return;
@@ -79,12 +127,11 @@ export const RichMentionInput = React.forwardRef<RichMentionInputHandle, RichMen
             if (lastAt !== -1) {
                 // Check if valid mention start (start of line or preceded by space)
                 const isStart = lastAt === 0;
-                // We use a safe check for preceding char
                 const isPrecededBySpace = !isStart && /[\s\u00A0]/.test(text[lastAt - 1]);
                 
                 if (isStart || isPrecededBySpace) {
                     const query = text.substring(lastAt + 1, caretPos);
-                    // No spaces allowed in search query to prevent menu getting stuck while typing sentences
+                    // No spaces allowed in search query to prevent menu getting stuck
                     if (!/\s/.test(query)) {
                         const coords = getCaretCoordinates();
                         onMentionSearch(query, { top: coords.top + (coords.height || 20), left: coords.left });
@@ -116,8 +163,6 @@ export const RichMentionInput = React.forwardRef<RichMentionInputHandle, RichMen
     // Helper to walk nodes
     const walk = (node: Node) => {
         if (node.nodeType === Node.TEXT_NODE) {
-            // Replace non-breaking spaces with regular spaces for storage consistency, 
-            // but beware visual cursor jumps if we controlled content (we don't here)
             text += node.textContent;
         } else if (node.nodeType === Node.ELEMENT_NODE) {
             const el = node as HTMLElement;
@@ -127,7 +172,6 @@ export const RichMentionInput = React.forwardRef<RichMentionInputHandle, RichMen
             } else if (el.tagName === 'BR') {
                 text += '\n';
             } else if (el.tagName === 'DIV') {
-                // Chrome adds divs for new lines
                 text += '\n';
                 el.childNodes.forEach(walk);
             } else {
@@ -154,7 +198,6 @@ export const RichMentionInput = React.forwardRef<RichMentionInputHandle, RichMen
     if (!selection) return;
     const range = selection.getRangeAt(0);
 
-    // Identify the text node we are typing in
     const textNode = range.startContainer;
     if (textNode.nodeType === Node.TEXT_NODE) {
         const text = textNode.textContent || '';
@@ -162,29 +205,24 @@ export const RichMentionInput = React.forwardRef<RichMentionInputHandle, RichMen
         const lastAt = text.lastIndexOf('@', caretPos - 1);
         
         if (lastAt !== -1) {
-             // Select the @query part to replace
              range.setStart(textNode, lastAt);
              range.setEnd(textNode, caretPos);
              range.deleteContents();
         }
     }
 
-    // Create the chip
     const chip = document.createElement('span');
     chip.contentEditable = "false";
     chip.className = "inline-flex items-center px-1.5 py-0.5 rounded mx-1 bg-primary/20 text-primary-900 font-medium text-sm select-none align-middle";
     chip.setAttribute('data-mention-id', prompt.id);
     chip.textContent = prompt.title;
 
-    // Insert chip
     range.insertNode(chip);
     
-    // Insert space after to allow continuing typing easily
     const space = document.createTextNode('\u00A0');
     range.setStartAfter(chip);
     range.insertNode(space);
     
-    // Move cursor after space
     range.setStartAfter(space);
     range.setEndAfter(space);
     selection.removeAllRanges();
@@ -209,8 +247,6 @@ export const RichMentionInput = React.forwardRef<RichMentionInputHandle, RichMen
         className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-900 focus:ring-2 focus:ring-primary/50 focus:border-primary outline-none transition-all min-h-[140px] whitespace-pre-wrap overflow-y-auto max-h-[300px]"
         data-placeholder={placeholder}
         onKeyDown={(e) => {
-            // Prevent default enter behavior if menu is open (handled by parent via capture if needed, or bubble)
-            // Parent modal handles arrow keys for menu, we just ensure enter doesn't add newline if menu open
             if (e.key === 'Enter' && isTypingMention.current) {
                 e.preventDefault();
             }
@@ -218,15 +254,3 @@ export const RichMentionInput = React.forwardRef<RichMentionInputHandle, RichMen
     />
   );
 });
-
-// CSS for placeholder
-const style = document.createElement('style');
-style.textContent = `
-  [contenteditable]:empty:before {
-    content: attr(data-placeholder);
-    color: #9ca3af;
-    pointer-events: none;
-    display: block; 
-  }
-`;
-document.head.appendChild(style);

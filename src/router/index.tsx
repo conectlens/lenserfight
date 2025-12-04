@@ -84,8 +84,17 @@ export const AppRouter: React.FC = () => {
           } 
         />
         
+        {/* Profile Routes with Tabs */}
         <Route 
           path="/lenser/:handle" 
+          element={
+            <DashboardLayout>
+              <LenserProfilePage />
+            </DashboardLayout>
+          } 
+        />
+        <Route 
+          path="/lenser/:handle/:tab" 
           element={
             <DashboardLayout>
               <LenserProfilePage />
