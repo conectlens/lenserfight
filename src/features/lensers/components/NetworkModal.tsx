@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState, useRef, useCallback } from 'react';
 import { Modal } from '../../../components/Modal';
 import { Avatar } from '../../../components/Avatar';
@@ -68,7 +69,7 @@ export const NetworkModal: React.FC<NetworkModalProps> = ({ isOpen, onClose, len
 
   return (
     <Modal isOpen={isOpen} onClose={onClose} title={title}>
-      <div className="min-h-[300px] max-h-[60vh] overflow-y-auto -mx-6 px-6">
+      <div className="-mx-6 px-6">
         {users.map((user, index) => (
             <div key={user.id} className="flex items-center justify-between py-3 border-b border-gray-50 last:border-0">
                 <div className="flex items-center gap-3">

@@ -1,29 +1,73 @@
-import React from 'react';
+
+import React, { useEffect, useState } from 'react';
 import { LenserStats } from '../../../types/lenser.types';
 import { Card } from '../../../components/Card';
 import { formatCount } from '../../../utils/numberUtils';
 
 interface LenserStatsRowProps {
   stats: LenserStats;
+  joinOrder?: number;
 }
 
-export const LenserStatsRow: React.FC<LenserStatsRowProps> = ({ stats }) => {
+const AnimatedCounter: React.FC<{ value: number; isRank?: boolean }> = ({ value, isRank }) => {
+  const [count, setCount] = useState(0);
+
+  useEffect(() => {
+    let start = 0;
+    // For rank (e.g. #105), we just animate the number. 
+    // Small numbers animate fast, larger take closer to duration.
+    const duration = 1200; 
+    const startTime = performance.now();
+
+    const animate = (currentTime: number) => {
+      const elapsedTime = currentTime - startTime;
+      const progress = Math.min(elapsedTime / duration, 1);
+      
+      // Easing function: easeOutQuart
+      const ease = 1 - Math.pow(1 - progress, 4);
+      
+      const currentCount = Math.floor(ease * value);
+      setCount(currentCount);
+
+      if (progress < 1) {
+        requestAnimationFrame(animate);
+      } else {
+        setCount(value);
+      }
+    };
+
+    requestAnimationFrame(animate);
+  }, [value]);
+
+  return (
+    <span>
+      {isRank ? `#${count}` : formatCount(count)}
+    </span>
+  );
+};
+
+export const LenserStatsRow: React.FC<LenserStatsRowProps> = ({ stats, joinOrder }) => {
+  // Ordered: Threads, Prompts, Lenser Rank
   const items = [
-    { label: 'Prompts', value: stats.promptsCount },
     { label: 'Threads', value: stats.threadsCount },
-    { label: 'Wins', value: stats.winsCount },
+    { label: 'Prompts', value: stats.promptsCount },
+    { label: 'Lenser Rank', value: joinOrder || 0, isRank: true },
   ];
 
   return (
-    <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mb-8">
+    <div className="grid grid-cols-3 gap-2 md:gap-4 mb-6 md:mb-8">
       {items.map((item) => (
-        <Card key={item.label} className="p-6 flex flex-col justify-between h-32 relative overflow-hidden group hover:shadow-md transition-shadow">
+        <Card key={item.label} className="p-3 md:p-6 flex flex-col justify-center md:justify-between min-h-[80px] md:h-32 relative overflow-hidden group hover:shadow-md transition-shadow text-center md:text-left">
            <div>
-             <span className="text-sm font-medium text-gray-500">{item.label}</span>
-             <div className="mt-2 text-3xl font-bold text-gray-900 leading-none">
-                {formatCount(item.value)}
-                {/* Yellow underline effect */}
-                <div className="h-1.5 w-8 bg-primary mt-2 rounded-full opacity-80"></div>
+             <span className="text-xs md:text-sm font-medium text-gray-500 uppercase tracking-wide md:normal-case md:tracking-normal">{item.label}</span>
+             <div className="mt-1 md:mt-2 text-xl md:text-3xl font-bold text-gray-900 leading-none">
+                {item.value > 0 ? (
+                    <AnimatedCounter value={item.value} isRank={item.isRank} />
+                ) : (
+                    <span>{item.isRank ? '-' : '0'}</span>
+                )}
+                {/* Yellow underline effect - desktop only */}
+                <div className="hidden md:block h-1.5 w-8 bg-primary mt-2 rounded-full opacity-80"></div>
              </div>
            </div>
         </Card>

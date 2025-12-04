@@ -7,6 +7,8 @@ import { VisibilityEnum } from '../../../types/prompts.types';
 import { useFormValidation } from '../../../hooks/useFormValidation';
 import { isRequired, minLength } from '../../../utils/validation';
 import { FormError } from '../../../components/FormError';
+import { SelectField } from '../../../components/SelectField';
+import { Globe, Lock } from 'lucide-react';
 
 interface CreatePromptModalProps {
   isOpen: boolean;
@@ -66,6 +68,11 @@ export const CreatePromptModal: React.FC<CreatePromptModalProps> = ({
     clearError('content');
   };
 
+  const visibilityOptions = [
+      { value: 'public', label: 'Public', icon: Globe },
+      { value: 'private', label: 'Private', icon: Lock }
+  ];
+
   return (
     <Modal isOpen={isOpen} onClose={onClose} title={isEditMode ? "Edit Prompt" : "Create Prompt"}>
       <form onSubmit={handleSubmit} className="space-y-6" noValidate>
@@ -98,22 +105,13 @@ export const CreatePromptModal: React.FC<CreatePromptModalProps> = ({
           <PromptTagInput tags={form.tags} onChange={form.setTags} />
 
           <div className="space-y-2">
-            <label className="text-sm font-bold text-gray-500 uppercase tracking-wider">Visibility</label>
-            <div className="relative">
-              <select
+            <SelectField
+                label="Visibility"
                 value={form.visibility}
-                onChange={(e) => form.setVisibility(e.target.value as VisibilityEnum)}
-                className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-gray-900 focus:ring-2 focus:ring-primary/50 focus:border-primary outline-none appearance-none cursor-pointer"
-              >
-                <option value="private">Private</option>
-                <option value="public">Public</option>
-              </select>
-              <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-gray-500">
-                <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                </svg>
-              </div>
-            </div>
+                onChange={(val) => form.setVisibility(val as VisibilityEnum)}
+                options={visibilityOptions}
+                className="w-full"
+            />
           </div>
         </div>
 

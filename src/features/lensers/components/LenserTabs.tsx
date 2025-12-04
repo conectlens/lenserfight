@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { FEATURES } from '../../../config/runtimeConfig';
 
@@ -9,12 +10,11 @@ interface LenserTabsProps {
 }
 
 export const LenserTabs: React.FC<LenserTabsProps> = ({ activeTab, onChange }) => {
-  // Reordered to have Actions left of Threads as requested (Actions | Prompts | Threads ?) 
-  // Prompt said: "Add a new "Actions" tab to the left of the "Threads" tab"
+  // Order: Threads, Prompts, Actions
   const tabs: { id: Tab; label: string }[] = [
+    { id: 'threads', label: 'Threads' },
     { id: 'prompts', label: 'Prompts' },
-    { id: 'actions', label: 'Actions' },
-    { id: 'threads', label: 'Threads' }
+    { id: 'actions', label: 'Actions' }
   ];
 
   if (FEATURES.CHALLENGES_TAB) {

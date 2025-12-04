@@ -2,6 +2,7 @@
 import { TagUsage, TagActivityEventDTO, TagRecord } from '../types/tags.types';
 import { supabase } from '../utils/supabase';
 import { storage } from '../utils/storage';
+import { TagNamingService } from '../services/tagNamingService';
 
 export interface TagRepositoryPort {
   getAllTagsWithCounts(): Promise<TagUsage[]>;
@@ -14,7 +15,6 @@ export class MockTagRepository implements TagRepositoryPort {
   private TAGS_KEY = 'mock_tags';
   private ACTIVITY_KEY = 'mock_tag_activity';
   
-  // Helper to access other repos' junction tables directly for dynamic counting
   private THREAD_TAGS_KEY = 'mock_thread_tags'; 
   private PROMPT_TAGS_KEY = 'mock_prompt_tags';
 
@@ -25,31 +25,25 @@ export class MockTagRepository implements TagRepositoryPort {
   private seed() {
     if (!storage.getItem(this.TAGS_KEY)) {
       const initialTags = [
-        { name: 'UI/UX', count: 156, trending: 85 },
-        { name: 'Productivity', count: 120, trending: 60 },
-        { name: 'AI', count: 98, trending: 95 },
-        { name: 'Design Systems', count: 87, trending: 40 },
-        { name: 'Marketing', count: 76, trending: 30 },
-        { name: 'React', count: 65, trending: 55 },
-        { name: 'Midjourney', count: 140, trending: 90 },
-        { name: 'ChatGPT', count: 110, trending: 88 }
+        'UI/UX', 'Productivity', 'AI', 'Design Systems', 'Marketing', 'React', 'Midjourney', 'ChatGPT'
       ];
       
-      const records: TagRecord[] = initialTags.map((t, i) => ({
-        id: `tag-${i}`,
-        name: t.name,
-        slug: t.name.toLowerCase().replace(/[^a-z0-9]+/g, '-'),
-        description: `Discussions and prompts related to ${t.name}.`,
-        created_at: new Date().toISOString()
-      }));
+      const records: TagRecord[] = initialTags.map((name, i) => {
+        const { slug } = TagNamingService.normalize(name);
+        return {
+          id: `tag-${i}`,
+          name: name,
+          slug: slug,
+          description: `Discussions and prompts related to ${name}.`,
+          created_at: new Date().toISOString()
+        };
+      });
       
-      // We store simple records, counts are calculated dynamically or via activity cache
       storage.setItem(this.TAGS_KEY, JSON.stringify(records));
       
-      // Initialize activity cache for trending scores
       const activityCache: Record<string, number> = {};
-      initialTags.forEach((t, i) => {
-        activityCache[`tag-${i}`] = t.trending;
+      records.forEach((t, i) => {
+        activityCache[t.id] = Math.floor(Math.random() * 100);
       });
       storage.setItem(this.ACTIVITY_KEY, JSON.stringify(activityCache));
     }
@@ -69,22 +63,28 @@ export class MockTagRepository implements TagRepositoryPort {
     const result: TagRecord[] = [];
     let changed = false;
 
-    names.forEach(name => {
-      const slug = name.toLowerCase().replace(/[^a-z0-9]+/g, '-');
+    // Use Set for unique inputs
+    const uniqueNames = new Set(names);
+
+    for (const rawName of uniqueNames) {
+      const { name, slug, isValid } = TagNamingService.normalize(rawName);
+      
+      if (!isValid) continue;
+
       let existing = allTags.find(t => t.slug === slug);
       
       if (!existing) {
         existing = {
           id: `tag-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`,
-          name: name.trim(),
-          slug,
+          name: name, // First creator defines display casing
+          slug: slug,
           created_at: new Date().toISOString()
         };
         allTags.push(existing);
         changed = true;
       }
       result.push(existing);
-    });
+    }
 
     if (changed) {
       this.saveTags(allTags);
@@ -97,7 +97,6 @@ export class MockTagRepository implements TagRepositoryPort {
     const tags = this.getTags();
     const activityCache = JSON.parse(storage.getItem(this.ACTIVITY_KEY) || '{}');
 
-    // Calculate usage counts from junction tables
     const threadTags = JSON.parse(storage.getItem(this.THREAD_TAGS_KEY) || '[]');
     const promptTags = JSON.parse(storage.getItem(this.PROMPT_TAGS_KEY) || '[]');
 
@@ -115,24 +114,23 @@ export class MockTagRepository implements TagRepositoryPort {
 
   async getTagBySlug(slug: string): Promise<TagUsage | null> {
     await new Promise(resolve => setTimeout(resolve, 200));
+    const normalizedSlug = TagNamingService.normalize(slug).slug;
     const tags = await this.getAllTagsWithCounts();
-    return tags.find(t => t.slug === slug) || null;
+    return tags.find(t => t.slug === normalizedSlug) || null;
   }
 
   async recordActivity(event: TagActivityEventDTO): Promise<void> {
-    await new Promise(resolve => setTimeout(resolve, 100));
-    const activityCache = JSON.parse(storage.getItem(this.ACTIVITY_KEY) || '{}');
-    
-    const currentScore = activityCache[event.tag_id] || 0;
-    // Simple scoring logic for mock
-    let boost = 1;
-    if (event.activity_type === 'created') boost = 10;
-    if (event.activity_type === 'reacted') boost = 2;
-    
-    activityCache[event.tag_id] = currentScore + boost;
-    storage.setItem(this.ACTIVITY_KEY, JSON.stringify(activityCache));
-    
-    console.log(`[Mock] Tag ${event.tag_id} trending score increased by ${boost}`);
+    // Fire and forget
+    setTimeout(() => {
+        const activityCache = JSON.parse(storage.getItem(this.ACTIVITY_KEY) || '{}');
+        const currentScore = activityCache[event.tag_id] || 0;
+        let boost = 1;
+        if (event.activity_type === 'created') boost = 10;
+        if (event.activity_type === 'reacted') boost = 2;
+        
+        activityCache[event.tag_id] = currentScore + boost;
+        storage.setItem(this.ACTIVITY_KEY, JSON.stringify(activityCache));
+    }, 10);
   }
 }
 
@@ -141,23 +139,38 @@ export class SupabaseTagRepository implements TagRepositoryPort {
   async upsertTags(names: string[]): Promise<TagRecord[]> {
     if (names.length === 0) return [];
 
-    const inputs = names.map(name => ({
-      slug: name.toLowerCase().replace(/[^a-z0-9]+/g, '-'),
-      name: name.trim()
-    }));
+    // STRICT: Use TagNamingService for all processing
+    const inputs = names
+      .map(n => TagNamingService.normalize(n))
+      .filter(t => t.isValid)
+      .map(t => ({
+        slug: t.slug,
+        name: t.name
+      }));
 
-    // 1. Upsert tags (Supabase upsert based on slug/name unique constraint)
+    if (inputs.length === 0) return [];
+
+    // Deduplicate by slug
+    const uniqueInputs = Array.from(new Map(inputs.map(item => [item.slug, item])).values());
+
+    // Tags are globally readable and append-only. 
+    // We use upsert with onConflict on 'slug'. 
+    // If it exists, we return it. If not, we insert.
+    // The RLS allows authenticated users to INSERT tags. UPDATE is generally blocked or restricted.
     const { data, error } = await supabase
       .from('tags')
-      .upsert(inputs, { onConflict: 'slug' })
+      .upsert(uniqueInputs, { onConflict: 'slug', ignoreDuplicates: false }) 
       .select();
 
-    if (error) throw error;
+    if (error) {
+        console.error("Tag upsert failed", error);
+        throw error;
+    }
     return data as TagRecord[];
   }
 
   async getAllTagsWithCounts(): Promise<TagUsage[]> {
-    // Try to get from view
+    // Prefer trending summary view if available
     const { data: trendingData, error: trendingError } = await supabase
       .from('tag_trending_summary')
       .select('*');
@@ -170,7 +183,7 @@ export class SupabaseTagRepository implements TagRepositoryPort {
           id: row.tag_id,
           slug: row.slug,
           name: row.name,
-          created_at: new Date().toISOString(),
+          created_at: new Date().toISOString(), // View might not have created_at, dummy it or fetch
           count: 0,
           trendingScore: 0
         };
@@ -211,7 +224,9 @@ export class SupabaseTagRepository implements TagRepositoryPort {
   }
 
   async getTagBySlug(slug: string): Promise<TagUsage | null> {
-    const { data: tagData, error } = await supabase.from('tags').select('*').eq('slug', slug).single();
+    const { slug: normalizedSlug } = TagNamingService.normalize(slug);
+    
+    const { data: tagData, error } = await supabase.from('tags').select('*').eq('slug', normalizedSlug).single();
     if (error || !tagData) return null;
 
     const [threadRes, promptRes] = await Promise.all([
@@ -220,6 +235,7 @@ export class SupabaseTagRepository implements TagRepositoryPort {
     ]);
 
     let trendingScore = 0;
+    // Attempt to get score from materialized view or summary table
     const { data: trendData } = await supabase.from('tag_trending_summary').select('score').eq('tag_id', tagData.id);
     if (trendData) {
         trendingScore = trendData.reduce((acc: number, curr: any) => acc + (curr.score || 0), 0);
@@ -242,6 +258,7 @@ export class SupabaseTagRepository implements TagRepositoryPort {
             actor_id: event.actor_id 
         });
     } catch (e) {
+        // Activity logging failure should not break the app
         console.warn("Failed to record tag activity", e);
     }
   }

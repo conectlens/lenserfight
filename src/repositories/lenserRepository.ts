@@ -1,3 +1,4 @@
+
 import { Lenser, CreateLenserDTO, LenserStats, LenserActivityPoint, ActionRecord, NetworkUser } from '../types/lenser.types';
 import { PromptTemplateRecord } from '../types/prompts.types';
 import { ThreadRecord } from '../types/threads.types';
@@ -12,11 +13,12 @@ export interface LenserRepositoryPort {
   createLenser(userId: string, data: CreateLenserDTO): Promise<Lenser>;
   updateLenser(userId: string, data: Partial<Lenser>): Promise<Lenser>; 
   getRecentlyActive(limit: number): Promise<Lenser[]>;
+  getLatestJoined(limit: number): Promise<Lenser[]>;
   
   // Profile specific
   getLenserStats(lenserId: string): Promise<LenserStats>;
-  getPromptsByLenser(lenserId: string): Promise<PromptTemplateRecord[]>;
-  getThreadsByLenser(lenserId: string): Promise<ThreadRecord[]>;
+  getPromptsByLenser(lenserId: string, offset?: number, limit?: number, viewerId?: string): Promise<PromptTemplateRecord[]>;
+  getThreadsByLenser(lenserId: string, offset?: number, limit?: number, viewerId?: string): Promise<ThreadRecord[]>;
   getActivityTimeline(lenserId: string): Promise<LenserActivityPoint[]>;
   
   // New features
@@ -28,6 +30,7 @@ export interface LenserRepositoryPort {
 export class MockLenserRepository implements LenserRepositoryPort {
   private STORAGE_KEY_PREFIX = 'mock_lenser_';
   private INDEX_KEY = 'mock_lensers_index';
+  private JOIN_LOG_KEY = 'mock_lenser_join_log';
   // Keys from other repos to calculate stats
   private PROMPTS_KEY = 'mock_prompts_db';
   private THREADS_KEY = 'mock_threads_db';
@@ -44,7 +47,8 @@ export class MockLenserRepository implements LenserRepositoryPort {
       banner_url: 'https://images.unsplash.com/photo-1558591710-4b4a1ae0f04d?auto=format&fit=crop&q=80&w=2400',
       website_url: 'https://lenserfight.com',
       visibility: 'public',
-      created_at: new Date().toISOString()
+      created_at: new Date(Date.now() - 100000000).toISOString(),
+      join_order: 1
     },
     {
         id: 'lenser-2',
@@ -57,7 +61,8 @@ export class MockLenserRepository implements LenserRepositoryPort {
         banner_url: 'https://images.unsplash.com/photo-1614850523060-8da1d56ae167?auto=format&fit=crop&q=80&w=2400',
         website_url: 'https://samanthabee.io',
         visibility: 'public',
-        created_at: new Date().toISOString()
+        created_at: new Date(Date.now() - 50000000).toISOString(),
+        join_order: 2
     },
     {
         id: 'lenser-3',
@@ -69,7 +74,8 @@ export class MockLenserRepository implements LenserRepositoryPort {
         avatar_url: 'https://ui-avatars.com/api/?name=Devon&background=random',
         banner_url: null,
         visibility: 'public',
-        created_at: new Date().toISOString()
+        created_at: new Date(Date.now() - 10000000).toISOString(),
+        join_order: 3
     },
     {
         id: 'lenser-4',
@@ -81,32 +87,78 @@ export class MockLenserRepository implements LenserRepositoryPort {
         avatar_url: 'https://ui-avatars.com/api/?name=Courtney&background=random',
         banner_url: null,
         visibility: 'public',
-        created_at: new Date().toISOString()
+        created_at: new Date().toISOString(),
+        join_order: 4
     }
   ];
 
+  constructor() {
+      // Seed initial join log if empty
+      const logJson = storage.getItem(this.JOIN_LOG_KEY);
+      if (!logJson) {
+          const log = this.mockLensers.map(l => ({ lenser_id: l.id, join_order: l.join_order }));
+          storage.setItem(this.JOIN_LOG_KEY, JSON.stringify(log));
+      }
+  }
+
+  private getJoinOrder(lenserId: string): number | undefined {
+      const logJson = storage.getItem(this.JOIN_LOG_KEY);
+      const log: { lenser_id: string, join_order: number }[] = logJson ? JSON.parse(logJson) : [];
+      const entry = log.find(l => l.lenser_id === lenserId);
+      return entry?.join_order;
+  }
+
+  private createJoinLog(lenserId: string): number {
+      const logJson = storage.getItem(this.JOIN_LOG_KEY);
+      const log: { lenser_id: string, join_order: number }[] = logJson ? JSON.parse(logJson) : [];
+      
+      const maxOrder = log.reduce((max, curr) => Math.max(max, curr.join_order), 0);
+      const newOrder = maxOrder + 1;
+      
+      log.push({ lenser_id: lenserId, join_order: newOrder });
+      storage.setItem(this.JOIN_LOG_KEY, JSON.stringify(log));
+      return newOrder;
+  }
+
+  private enrich(lenser: Lenser | null): Lenser | null {
+      if (!lenser) return null;
+      const order = this.getJoinOrder(lenser.id);
+      if (order) return { ...lenser, join_order: order };
+      return lenser;
+  }
+
   async getLenserByUserId(userId: string): Promise<Lenser | null> {
     await new Promise(resolve => setTimeout(resolve, 300));
-    const stored = storage.getItem(this.STORAGE_KEY_PREFIX + userId);
-    if (stored) return JSON.parse(stored);
     
+    // 1. Try Storage
+    const stored = storage.getItem(this.STORAGE_KEY_PREFIX + userId);
+    if (stored) return this.enrich(JSON.parse(stored));
+    
+    // 2. Try Default Mocks
     const mock = this.mockLensers.find(l => l.user_id === userId);
-    if (mock) return mock;
+    if (mock) return this.enrich(mock);
+
+    // 3. Try Index (Fallback)
+    const indexJson = storage.getItem(this.INDEX_KEY);
+    if (indexJson) {
+        const index: Lenser[] = JSON.parse(indexJson);
+        const found = index.find(l => l.user_id === userId);
+        if (found) return this.enrich(found);
+    }
 
     return null;
   }
 
   async getLenserById(id: string): Promise<Lenser | null> {
     await new Promise(resolve => setTimeout(resolve, 200));
-    // Check mocked list first, then local storage index
     const mock = this.mockLensers.find(l => l.id === id);
-    if (mock) return mock;
+    if (mock) return this.enrich(mock);
     
     const indexJson = storage.getItem(this.INDEX_KEY);
     if (indexJson) {
       const index: Lenser[] = JSON.parse(indexJson);
       const found = index.find(l => l.id === id);
-      if (found) return found;
+      if (found) return this.enrich(found);
     }
     
     return null;
@@ -115,17 +167,15 @@ export class MockLenserRepository implements LenserRepositoryPort {
   async getLenserByHandle(handle: string): Promise<Lenser | null> {
     await new Promise(resolve => setTimeout(resolve, 300));
     
-    // Check updated storage first for the current user
     const indexJson = storage.getItem(this.INDEX_KEY);
     if (indexJson) {
         const index: Lenser[] = JSON.parse(indexJson);
         const found = index.find(l => l.handle.toLowerCase() === handle.toLowerCase());
-        if (found) return found;
+        if (found) return this.enrich(found);
     }
 
-    // Then static mocks
     const mock = this.mockLensers.find(l => l.handle.toLowerCase() === handle.toLowerCase());
-    if (mock) return mock;
+    if (mock) return this.enrich(mock);
     
     return null; 
   }
@@ -133,8 +183,13 @@ export class MockLenserRepository implements LenserRepositoryPort {
   async createLenser(userId: string, data: CreateLenserDTO): Promise<Lenser> {
     await new Promise(resolve => setTimeout(resolve, 800));
     
+    const newId = `lenser-${Date.now()}-uuid`;
+    
+    // Create Log Entry FIRST
+    const joinOrder = this.createJoinLog(newId);
+
     const newLenser: Lenser = {
-      id: `lenser-${Date.now()}-uuid`,
+      id: newId,
       user_id: userId,
       handle: data.handle,
       display_name: data.display_name,
@@ -144,6 +199,7 @@ export class MockLenserRepository implements LenserRepositoryPort {
       visibility: 'public',
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
+      join_order: joinOrder
     };
 
     storage.setItem(this.STORAGE_KEY_PREFIX + userId, JSON.stringify(newLenser));
@@ -159,19 +215,26 @@ export class MockLenserRepository implements LenserRepositoryPort {
   async updateLenser(userId: string, data: Partial<Lenser>): Promise<Lenser> {
     await new Promise(resolve => setTimeout(resolve, 500));
     
+    // Use the lookup method to find existing
     let lenser = await this.getLenserByUserId(userId);
+    
+    if (!lenser) {
+        // Double check mock lensers directly in case storage is cold but in-memory mocks exist
+        const mock = this.mockLensers.find(l => l.user_id === userId);
+        if (mock) lenser = this.enrich(mock);
+    }
+
     if (!lenser) throw new Error("Lenser profile not found");
 
     const updatedLenser = { ...lenser, ...data, updated_at: new Date().toISOString() };
     
-    // Update individual storage
+    // Save to User Key
     storage.setItem(this.STORAGE_KEY_PREFIX + userId, JSON.stringify(updatedLenser));
 
-    // Update index
+    // Update Index
     const indexJson = storage.getItem(this.INDEX_KEY);
     let index: Lenser[] = indexJson ? JSON.parse(indexJson) : [];
     
-    // If it's a static mock user, we need to add/update them in the dynamic index
     const idx = index.findIndex(l => l.user_id === userId);
     if (idx !== -1) {
         index[idx] = updatedLenser;
@@ -180,7 +243,7 @@ export class MockLenserRepository implements LenserRepositoryPort {
     }
     storage.setItem(this.INDEX_KEY, JSON.stringify(index));
 
-    // Also update in-memory mock if it exists there
+    // Update In-Memory Mock if applicable
     const mockIdx = this.mockLensers.findIndex(l => l.user_id === userId);
     if (mockIdx !== -1) {
         this.mockLensers[mockIdx] = updatedLenser;
@@ -191,13 +254,33 @@ export class MockLenserRepository implements LenserRepositoryPort {
 
   async getRecentlyActive(limit: number): Promise<Lenser[]> {
       await new Promise(resolve => setTimeout(resolve, 300));
-      return this.mockLensers.slice(0, limit);
+      return this.mockLensers.slice(0, limit).map(l => this.enrich(l)!);
+  }
+
+  async getLatestJoined(limit: number): Promise<Lenser[]> {
+      await new Promise(resolve => setTimeout(resolve, 300));
+      
+      // Combine mock and dynamic for a full list
+      const indexJson = storage.getItem(this.INDEX_KEY);
+      const dynamicLensers: Lenser[] = indexJson ? JSON.parse(indexJson) : [];
+      
+      // Dedup based on ID
+      const all = [...this.mockLensers];
+      dynamicLensers.forEach(d => {
+          if (!all.find(m => m.id === d.id)) {
+              all.push(d);
+          }
+      });
+      
+      const enriched = all.map(l => this.enrich(l)!);
+      
+      // Sort by join_order desc
+      return enriched.sort((a, b) => (b.join_order || 0) - (a.join_order || 0)).slice(0, limit);
   }
 
   async getLenserStats(lenserId: string): Promise<LenserStats> {
     await new Promise(resolve => setTimeout(resolve, 300));
     
-    // Calculate real stats from storage
     const promptsJson = storage.getItem(this.PROMPTS_KEY);
     const prompts: PromptTemplateRecord[] = promptsJson ? JSON.parse(promptsJson) : [];
     
@@ -207,7 +290,6 @@ export class MockLenserRepository implements LenserRepositoryPort {
     const realPromptsCount = prompts.filter(p => p.lenser_id === lenserId).length;
     const realThreadsCount = threads.filter(t => t.lenser_id === lenserId).length;
 
-    // Use random seed for social stats if not implemented yet, or fixed for demo users
     let followers = 0;
     let following = 0;
     let wins = 0;
@@ -224,31 +306,40 @@ export class MockLenserRepository implements LenserRepositoryPort {
     };
   }
 
-  async getPromptsByLenser(lenserId: string): Promise<PromptTemplateRecord[]> {
+  async getPromptsByLenser(lenserId: string, offset = 0, limit = 10, viewerId?: string): Promise<PromptTemplateRecord[]> {
     await new Promise(resolve => setTimeout(resolve, 400));
-    
     const promptsJson = storage.getItem(this.PROMPTS_KEY);
     const allPrompts: PromptTemplateRecord[] = promptsJson ? JSON.parse(promptsJson) : [];
     
-    return allPrompts
-        .filter(p => p.lenser_id === lenserId)
+    const filtered = allPrompts
+        .filter(p => {
+            if (p.lenser_id !== lenserId) return false;
+            if (p.visibility === 'public') return true;
+            return viewerId === lenserId;
+        })
         .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+    
+    return filtered.slice(offset, offset + limit);
   }
 
-  async getThreadsByLenser(lenserId: string): Promise<ThreadRecord[]> {
+  async getThreadsByLenser(lenserId: string, offset = 0, limit = 10, viewerId?: string): Promise<ThreadRecord[]> {
     await new Promise(resolve => setTimeout(resolve, 400));
-    
     const threadsJson = storage.getItem(this.THREADS_KEY);
     const allThreads: ThreadRecord[] = threadsJson ? JSON.parse(threadsJson) : [];
 
-    return allThreads
-        .filter(t => t.lenser_id === lenserId)
+    const filtered = allThreads
+        .filter(t => {
+            if (t.lenser_id !== lenserId) return false;
+            if (t.visibility === 'public') return true;
+            return viewerId === lenserId;
+        })
         .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+    
+    return filtered.slice(offset, offset + limit);
   }
 
   async getActivityTimeline(lenserId: string): Promise<LenserActivityPoint[]> {
     await new Promise(resolve => setTimeout(resolve, 500));
-    // Mock random activity
     const points: LenserActivityPoint[] = [];
     const now = new Date();
     for(let i=0; i < 365; i++) {
@@ -283,27 +374,70 @@ export class MockLenserRepository implements LenserRepositoryPort {
 // --- Supabase Implementation (Stub) ---
 export class SupabaseLenserRepository implements LenserRepositoryPort {
   async getLenserByUserId(userId: string): Promise<Lenser | null> {
-    const { data, error } = await supabase.from('lensers').select('*').eq('user_id', userId).single();
-    if (error) throw error;
-    return data as Lenser;
+    const { data, error } = await supabase.from('lensers')
+        .select('*, lenser_join_log(join_order)')
+        .eq('user_id', userId)
+        .single();
+    
+    if (error) {
+        // PGRST116 indicates no rows returned (not found), which is valid for this method
+        if (error.code === 'PGRST116') return null;
+        throw error;
+    }
+
+    // Map join_order from nested object
+    const lenser = { ...data, join_order: data.lenser_join_log?.join_order };
+    delete lenser.lenser_join_log;
+    return lenser as Lenser;
   }
 
   async getLenserById(id: string): Promise<Lenser | null> {
-    const { data, error } = await supabase.from('lensers').select('*').eq('id', id).single();
-    if (error) throw error;
-    return data as Lenser;
+    const { data, error } = await supabase.from('lensers')
+        .select('*, lenser_join_log(join_order)')
+        .eq('id', id)
+        .single();
+    
+    if (error) {
+        if (error.code === 'PGRST116') return null;
+        throw error;
+    }
+
+    const lenser = { ...data, join_order: data.lenser_join_log?.join_order };
+    delete lenser.lenser_join_log;
+    return lenser as Lenser;
   }
 
   async getLenserByHandle(handle: string): Promise<Lenser | null> {
-    const { data, error } = await supabase.from('lensers').select('*').eq('handle', handle).single();
+    const { data, error } = await supabase.from('lensers')
+        .select('*, lenser_join_log(join_order)')
+        .eq('handle', handle)
+        .single();
+    
     if (error) return null; 
-    return data as Lenser;
+    
+    const lenser = { ...data, join_order: data.lenser_join_log?.join_order };
+    delete lenser.lenser_join_log;
+    return lenser as Lenser;
   }
 
   async createLenser(userId: string, data: CreateLenserDTO): Promise<Lenser> {
     const { data: newLenser, error } = await supabase.from('lensers').insert({ user_id: userId, ...data }).select().single();
     if (error) throw error;
-    return newLenser as Lenser;
+    
+    // Create Join Log Entry
+    const { data: logEntry, error: logError } = await supabase
+        .from('lenser_join_log')
+        .insert({ lenser_id: newLenser.id })
+        .select('join_order')
+        .single();
+        
+    if (logError) {
+        console.error("Failed to create join log", logError);
+        // We don't fail the whole creation, but rank might be missing momentarily
+        return newLenser as Lenser;
+    }
+
+    return { ...newLenser, join_order: logEntry.join_order } as Lenser;
   }
 
   async updateLenser(userId: string, data: Partial<Lenser>): Promise<Lenser> {
@@ -311,20 +445,44 @@ export class SupabaseLenserRepository implements LenserRepositoryPort {
         .from('lensers')
         .update(data)
         .eq('user_id', userId)
-        .select()
+        .select('*, lenser_join_log(join_order)')
         .single();
       if (error) throw error;
-      return updated as Lenser;
+      const lenser = { ...updated, join_order: updated.lenser_join_log?.join_order };
+      delete lenser.lenser_join_log;
+      return lenser as Lenser;
   }
 
   async getRecentlyActive(limit: number): Promise<Lenser[]> {
-     const { data, error } = await supabase.from('lensers').select('*').order('updated_at', { ascending: false }).limit(limit);
+     const { data, error } = await supabase.from('lensers')
+        .select('*, lenser_join_log(join_order)')
+        .order('updated_at', { ascending: false })
+        .limit(limit);
      if (error) throw error;
-     return data as Lenser[];
+     return data.map((d: any) => {
+         const l = { ...d, join_order: d.lenser_join_log?.join_order };
+         delete l.lenser_join_log;
+         return l;
+     }) as Lenser[];
+  }
+
+  async getLatestJoined(limit: number): Promise<Lenser[]> {
+      const { data, error } = await supabase
+        .from('lenser_join_log')
+        .select('join_order, lensers!inner(*)')
+        .order('join_order', { ascending: false })
+        .limit(limit);
+        
+      if (error) throw error;
+      
+      // Map back to Lenser object with injected rank
+      return data.map((row: any) => ({
+          ...row.lensers,
+          join_order: row.join_order
+      })) as Lenser[];
   }
 
   async getLenserStats(lenserId: string): Promise<LenserStats> {
-      // Real implementation would use count queries
       const { count: promptsCount } = await supabase.from('prompt_templates').select('*', { count: 'exact', head: true }).eq('lenser_id', lenserId);
       const { count: threadsCount } = await supabase.from('threads').select('*', { count: 'exact', head: true }).eq('lenser_id', lenserId);
       
@@ -337,18 +495,36 @@ export class SupabaseLenserRepository implements LenserRepositoryPort {
       };
   }
 
-  async getPromptsByLenser(lenserId: string): Promise<PromptTemplateRecord[]> {
-      const { data, error } = await supabase
+  async getPromptsByLenser(lenserId: string, offset = 0, limit = 10, viewerId?: string): Promise<PromptTemplateRecord[]> {
+      let query = supabase
         .from('prompt_templates')
         .select('*')
         .eq('lenser_id', lenserId)
-        .order('created_at', { ascending: false });
+        .order('created_at', { ascending: false })
+        .range(offset, offset + limit - 1);
+        
+      if (viewerId !== lenserId) {
+          query = query.eq('visibility', 'public');
+      }
+      
+      const { data, error } = await query;
       if (error) throw error;
       return data as PromptTemplateRecord[];
   }
 
-  async getThreadsByLenser(lenserId: string): Promise<ThreadRecord[]> {
-      const { data, error } = await supabase.from('threads').select('*').eq('lenser_id', lenserId).order('created_at', { ascending: false });
+  async getThreadsByLenser(lenserId: string, offset = 0, limit = 10, viewerId?: string): Promise<ThreadRecord[]> {
+      let query = supabase
+        .from('threads')
+        .select('*')
+        .eq('lenser_id', lenserId)
+        .order('created_at', { ascending: false })
+        .range(offset, offset + limit - 1);
+
+      if (viewerId !== lenserId) {
+          query = query.eq('visibility', 'public');
+      }
+
+      const { data, error } = await query;
       if (error) throw error;
       return data as ThreadRecord[];
   }

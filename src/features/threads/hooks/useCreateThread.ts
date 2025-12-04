@@ -39,10 +39,13 @@ export const useCreateThread = () => {
             visibility
           });
       }
+      
+      // Mark as done before calling onSuccess, as onSuccess might unmount the component
+      // (e.g., closing the modal or navigating away).
+      setIsSubmitting(false);
       onSuccess();
     } catch (err: any) {
       setError(err.message || "Failed to save thread.");
-    } finally {
       setIsSubmitting(false);
     }
   };

@@ -19,7 +19,7 @@ const enrichPrompt = async (prompt: PromptTemplateRecord): Promise<PromptTemplat
     id: prompt.id,
     title: prompt.title,
     description: prompt.description,
-    usageCount: prompt.usage_count,
+    usageCount: prompt.reaction_totals?.['copy'] || 0, // Explicit mapping from reaction_totals
     createdAt: prompt.created_at,
     visibility: prompt.visibility,
     author: {
@@ -33,23 +33,23 @@ const enrichPrompt = async (prompt: PromptTemplateRecord): Promise<PromptTemplat
 };
 
 export const promptsService = {
-  getPrompts: async (currentLenserId?: string, offset = 0, limit = 10): Promise<PromptTemplateViewModel[]> => {
-    const records = await promptsRepo.getAll(currentLenserId, offset, limit);
+  getPrompts: async (offset = 0, limit = 10): Promise<PromptTemplateViewModel[]> => {
+    const records = await promptsRepo.getAll(offset, limit);
     return Promise.all(records.map(enrichPrompt));
   },
 
-  search: async (query: string, currentLenserId?: string, offset = 0, limit = 10): Promise<PromptTemplateViewModel[]> => {
-    const records = await promptsRepo.search(query, currentLenserId, offset, limit);
+  search: async (query: string, offset = 0, limit = 10): Promise<PromptTemplateViewModel[]> => {
+    const records = await promptsRepo.search(query, offset, limit);
     return Promise.all(records.map(enrichPrompt));
   },
 
-  filter: async (tagSlug: string | null, currentLenserId?: string, offset = 0, limit = 10): Promise<PromptTemplateViewModel[]> => {
-    const records = await promptsRepo.filterByTag(tagSlug, currentLenserId, offset, limit);
+  filter: async (tagSlug: string | null, offset = 0, limit = 10): Promise<PromptTemplateViewModel[]> => {
+    const records = await promptsRepo.filterByTag(tagSlug, offset, limit);
     return Promise.all(records.map(enrichPrompt));
   },
 
-  sort: async (order: "newest" | "popular", currentLenserId?: string, offset = 0, limit = 10): Promise<PromptTemplateViewModel[]> => {
-    const records = await promptsRepo.sort(order, currentLenserId, offset, limit);
+  sort: async (order: "newest" | "popular", offset = 0, limit = 10): Promise<PromptTemplateViewModel[]> => {
+    const records = await promptsRepo.sort(order, offset, limit);
     return Promise.all(records.map(enrichPrompt));
   },
 
@@ -58,8 +58,8 @@ export const promptsService = {
       return Promise.all(records.map(enrichPrompt));
   },
 
-  getAuthorPrompts: async (lenserId: string): Promise<PromptTemplateViewModel[]> => {
-    const records = await lenserRepo.getPromptsByLenser(lenserId);
+  getAuthorPrompts: async (lenserId: string, offset = 0, limit = 10, viewerId?: string): Promise<PromptTemplateViewModel[]> => {
+    const records = await lenserRepo.getPromptsByLenser(lenserId, offset, limit, viewerId);
     return Promise.all(records.map(enrichPrompt));
   },
 
@@ -67,9 +67,10 @@ export const promptsService = {
     const record = await promptsRepo.getById(id);
     if (!record) return null;
 
-    // Access Control Check for Private Prompts
-    if (record.visibility === 'private' && record.lenser_id !== viewerLenserId) {
-        throw new Error("401"); // Unauthorized
+    if (record.visibility === 'private') {
+        if (!viewerLenserId || record.lenser_id !== viewerLenserId) {
+            throw new Error("401"); 
+        }
     }
 
     const baseViewModel = await enrichPrompt(record);
@@ -80,11 +81,12 @@ export const promptsService = {
       love: summary.counts['love'] || 0,
       clap: summary.counts['clap'] || 0,
       saved: summary.counts['saved'] || 0,
+      copy: summary.counts['copy'] || 0,
     };
 
     const isSaved = summary.userReactions.includes('saved');
 
-    // Record View Activity for Tags
+    // Record View Activity
     if (baseViewModel.tags.length > 0) {
         Promise.all(baseViewModel.tags.map(t => 
             tagActivityService.recordView(t.id, 'prompt', id, viewerLenserId)
@@ -112,11 +114,11 @@ export const promptsService = {
   },
 
   copyPrompt: async (id: string, lenserId: string): Promise<void> => {
-    await promptsRepo.createUsageEvent(id, 'copied', lenserId);
+    // Record 'copy' as a reaction
+    await reactionService.recordReaction('prompt_template', id, lenserId, 'copy');
   },
 
   toggleSavePrompt: async (id: string, lenserId: string): Promise<boolean> => {
-     // 'saved' is handled as a reaction in the new system
      const result = await reactionService.toggleReaction('prompt_template', id, lenserId, 'saved');
      return result.added;
   },
@@ -141,17 +143,15 @@ export const promptsService = {
         input.description = input.content.substring(0, 100) + (input.content.length > 100 ? '...' : '');
     }
 
-    // 1. Resolve Tag Names to IDs
+    // Upsert tags using central TagService which uses TagNamingService
     const resolvedTags = await tagService.upsertTags(input.tagIds);
     const realTagIds = resolvedTags.map(t => t.id);
 
-    // 2. Create Prompt
     const prompt = await promptsRepo.createPrompt({
         ...input,
         tagIds: realTagIds
     });
 
-    // 3. Record Activity
     Promise.all(realTagIds.map(tagId => 
         tagActivityService.recordActivity(tagId, 'prompt', prompt.id, input.lenserId, 'created')
     )).catch(console.error);
