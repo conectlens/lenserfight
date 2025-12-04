@@ -1,15 +1,24 @@
 
-import React from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import React, { useEffect } from 'react';
+import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { useTagDetailController } from '../hooks/useTagDetailController';
 import { TagHeader } from '../components/TagHeader';
 import { TagFilterBar } from '../components/TagFilterBar';
 import { TagContentGrid } from '../components/TagContentGrid';
+import { useAuth } from '../../../context/AuthContext';
 
 export const TagDetailPage: React.FC = () => {
   const { slug } = useParams<{ slug: string }>();
   const navigate = useNavigate();
+  const location = useLocation();
+  const { isAuthenticated, isLoading: authLoading } = useAuth();
   
+  useEffect(() => {
+    if (!authLoading && !isAuthenticated) {
+        navigate('/login', { state: { from: location }, replace: true });
+    }
+  }, [authLoading, isAuthenticated, navigate, location]);
+
   const { 
     tag, 
     items, 
@@ -20,6 +29,14 @@ export const TagDetailPage: React.FC = () => {
     setSort,
     availableFilters 
   } = useTagDetailController(slug);
+
+  if (authLoading || !isAuthenticated) {
+      return (
+        <div className="min-h-screen flex items-center justify-center">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+        </div>
+      );
+  }
 
   if (!loading && !tag) {
       return (

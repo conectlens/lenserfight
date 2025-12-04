@@ -130,7 +130,11 @@ export class SupabaseShareRepository implements ShareRepositoryPort {
   }
 
   async resolveLink(shortId: string): Promise<ResolveLinkResult | null> {
-    const { data, error } = await supabase.from('shared_links').select('*').eq('short_id', shortId).single();
+    // Use Edge Function 'resolve-link' to bypass RLS policies on the shared_links table.
+    // This allows public access to shared links.
+    const { data, error } = await supabase.functions.invoke('resolve-link', {
+        body: { shortId }
+    });
     
     if (error || !data) return null;
     
