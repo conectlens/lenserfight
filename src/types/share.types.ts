@@ -1,4 +1,5 @@
-export type ShareResourceType = 'prompt' | 'thread' | 'arena' | 'profile' | 'challenge';
+
+export type ShareResourceType = 'prompt' | 'thread' | 'arena' | 'profile' | 'challenge' | 'external';
 
 export interface SharedLink {
   id: string;
@@ -13,6 +14,7 @@ export interface SharedLink {
   experiment_variant?: string | null;
   meta: Record<string, any>;
   created_at: string;
+  display_name?: string | null;
 }
 
 export interface ShareEvent {
@@ -39,6 +41,7 @@ export interface CreateLinkDTO {
   experimentKey?: string;
   experimentVariant?: string;
   meta?: Record<string, any>;
+  displayName?: string;
 }
 
 export interface ResolveLinkResult {

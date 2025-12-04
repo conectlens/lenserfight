@@ -1,9 +1,11 @@
 
 import React, { useState } from 'react';
-import { Menu, MoreHorizontal, Share2 } from 'lucide-react';
+import { Menu, Share2 } from 'lucide-react';
 import { Breadcrumbs } from '../components/Breadcrumbs';
 import { useShareContext } from '../context/ShareContext';
+import { useUI } from '../context/UIContext';
 import { ShareModal } from '../components/ShareModal';
+import { ActionMenu } from '../components/ActionMenu';
 
 interface HeaderProps {
   onToggleSidebar: () => void;
@@ -12,10 +14,11 @@ interface HeaderProps {
 
 export const Header: React.FC<HeaderProps> = ({ onToggleSidebar, isSidebarOpen }) => {
   const { shareConfig } = useShareContext();
+  const { pageActions } = useUI();
   const [isShareModalOpen, setIsShareModalOpen] = useState(false);
 
   return (
-    <header className="sticky top-0 z-30 flex items-center justify-between px-4 py-3 bg-gray-50/95 backdrop-blur-sm transition-all duration-200 w-full">
+    <header className="sticky top-0 z-30 flex items-center justify-between px-4 py-3 bg-gray-50/95 backdrop-blur-sm transition-all duration-200 w-full border-b border-gray-200/50">
       <div className="flex items-center gap-4 flex-1 min-w-0">
         <button 
           onClick={onToggleSidebar}
@@ -39,12 +42,11 @@ export const Header: React.FC<HeaderProps> = ({ onToggleSidebar, isSidebarOpen }
               <Share2 size={20} />
           </button>
         )}
-        <button 
-            className="p-2 rounded-lg text-gray-400 hover:bg-gray-200 hover:text-gray-900 transition-colors"
-            aria-label="Page Options"
-        >
-            <MoreHorizontal size={20} />
-        </button>
+        
+        {/* Dynamic Action Menu populated by current page */}
+        {pageActions.length > 0 && (
+           <ActionMenu actions={pageActions} />
+        )}
       </div>
 
       {shareConfig && (
