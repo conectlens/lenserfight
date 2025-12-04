@@ -147,8 +147,13 @@ export const AppRouter: React.FC = () => {
           } 
         />
 
+        {/* Settings Routes with Redirect */}
         <Route 
           path="/settings" 
+          element={<Navigate to="/settings/account" replace />} 
+        />
+        <Route 
+          path="/settings/:tab" 
           element={
             <DashboardLayout>
               <SettingsPage />
