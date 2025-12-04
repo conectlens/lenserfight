@@ -1,14 +1,3 @@
 
-export interface WaitingListEntry {
-  id: string;
-  lenser_id: string;
-  email: string;
-  kvkk_approved: boolean;
-  created_at: string;
-}
-
-export interface JoinWaitingListDTO {
-  lenser_id: string;
-  email: string;
-  kvkk_approved: boolean;
-}
+// This file is deprecated. Waiting list status is now handled via Lenser profile property `is_in_waiting_list`.
+export {};

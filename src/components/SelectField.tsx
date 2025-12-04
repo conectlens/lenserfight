@@ -19,6 +19,7 @@ interface SelectFieldProps {
   className?: string;
   required?: boolean;
   dropdownClassName?: string;
+  onOpen?: () => void;
 }
 
 export const SelectField: React.FC<SelectFieldProps> = ({
@@ -31,7 +32,8 @@ export const SelectField: React.FC<SelectFieldProps> = ({
   disabled,
   className = '',
   required,
-  dropdownClassName = ''
+  dropdownClassName = '',
+  onOpen
 }) => {
   const [isOpen, setIsOpen] = useState(false);
   const containerRef = useRef<HTMLButtonElement>(null);
@@ -91,13 +93,17 @@ export const SelectField: React.FC<SelectFieldProps> = ({
   const toggleOpen = () => {
       if (disabled) return;
       
-      if (!isOpen && containerRef.current) {
-          const rect = containerRef.current.getBoundingClientRect();
-          setCoords({
-              top: rect.bottom + window.scrollY + 4, // 4px gap
-              left: rect.left + window.scrollX,
-              width: rect.width
-          });
+      if (!isOpen) {
+          if (onOpen) onOpen();
+
+          if (containerRef.current) {
+              const rect = containerRef.current.getBoundingClientRect();
+              setCoords({
+                  top: rect.bottom + window.scrollY + 4, // 4px gap
+                  left: rect.left + window.scrollX,
+                  width: rect.width
+              });
+          }
       }
       setIsOpen(!isOpen);
   };

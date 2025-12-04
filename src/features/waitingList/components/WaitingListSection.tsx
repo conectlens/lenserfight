@@ -1,50 +1,37 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useLenser } from '../../../context/LenserContext';
 import { useAuth } from '../../../context/AuthContext';
-import { waitingListService } from '../../../services/waitingListService';
 import { Button } from '../../../components/Button';
-import { ArrowRight, CheckCircle, Lock, Sparkles, ShieldCheck, Mail } from 'lucide-react';
+import { ArrowRight, CheckCircle, Lock, Sparkles, ShieldCheck } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 export const WaitingListSection: React.FC = () => {
-  const { lenser, hasLenser } = useLenser();
+  const { lenser, hasLenser, updateLenserProfile } = useLenser();
   const { isAuthenticated } = useAuth();
   
-  const [email, setEmail] = useState('');
   const [kvkkApproved, setKvkkApproved] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isJoined, setIsJoined] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Pre-fill status check
-  useEffect(() => {
-      if (lenser) {
-          const check = async () => {
-              try {
-                  const status = await waitingListService.checkStatus(lenser.id);
-                  setIsJoined(status);
-              } catch (e) {
-                  console.error(e);
-              }
-          };
-          check();
-      }
-  }, [lenser]);
+  const isJoined = lenser?.is_in_waiting_list;
 
   const handleSubmit = async (e: React.FormEvent) => {
       e.preventDefault();
       if (!lenser) return;
       setError(null);
+
+      if (!kvkkApproved) {
+          setError("You must approve the privacy policy to join.");
+          return;
+      }
+
       setIsSubmitting(true);
 
       try {
-          await waitingListService.join({
-              lenser_id: lenser.id,
-              email,
-              kvkk_approved: kvkkApproved
+          await updateLenserProfile({
+              is_in_waiting_list: true
           });
-          setIsJoined(true);
       } catch (err: any) {
           setError(err.message || "Failed to join list.");
       } finally {
@@ -96,27 +83,9 @@ export const WaitingListSection: React.FC = () => {
                 ) : (
                     <form onSubmit={handleSubmit} className="max-w-md mx-auto relative group/form">
                         <div className="flex flex-col gap-6">
-                            <div className="relative transition-transform duration-300 focus-within:-translate-y-1">
-                                <div className="absolute inset-y-0 left-0 pl-5 flex items-center pointer-events-none text-gray-400">
-                                    <Mail size={20} />
-                                </div>
-                                <input
-                                    type="email"
-                                    value={email}
-                                    onChange={(e) => setEmail(e.target.value)}
-                                    placeholder="your@email.com"
-                                    className="w-full pl-12 pr-36 py-5 rounded-2xl border border-gray-200 bg-white shadow-xl shadow-gray-200/40 text-gray-900 placeholder-gray-400 focus:ring-4 focus:ring-primary/10 focus:border-primary/50 outline-none transition-all text-base font-medium"
-                                    required
-                                />
-                                <div className="absolute right-2 top-2 bottom-2">
-                                    <Button 
-                                        type="submit" 
-                                        isLoading={isSubmitting} 
-                                        className="h-full px-6 rounded-xl text-sm font-bold shadow-md bg-gray-900 text-white hover:bg-gray-800"
-                                    >
-                                        Join List
-                                    </Button>
-                                </div>
+                            <div className="bg-blue-50/50 p-4 rounded-2xl border border-blue-100 text-sm text-gray-600 mb-2 text-left">
+                               <p><strong>Authenticated as:</strong> {lenser?.display_name}</p>
+                               <p className="text-xs text-gray-500 mt-1">Your Lenser profile will be marked for priority access.</p>
                             </div>
 
                             <label className="flex items-start gap-3 cursor-pointer group text-left px-2 select-none">
@@ -134,6 +103,14 @@ export const WaitingListSection: React.FC = () => {
                                     I agree to the processing of my personal data in accordance with the <a href="/legal/privacy" target="_blank" className="underline text-gray-900 font-bold hover:text-primary-700 decoration-gray-300">Privacy Policy</a>.
                                 </span>
                             </label>
+
+                            <Button 
+                                type="submit" 
+                                isLoading={isSubmitting} 
+                                className="h-12 px-6 rounded-xl text-sm font-bold shadow-md bg-gray-900 text-white hover:bg-gray-800"
+                            >
+                                Secure My Spot
+                            </Button>
                         </div>
                         {error && (
                             <div className="mt-6 text-sm font-medium text-red-600 bg-red-50 py-3 px-4 rounded-xl flex items-center gap-2 animate-in fade-in slide-in-from-top-2">

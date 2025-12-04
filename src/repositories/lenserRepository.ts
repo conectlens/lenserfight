@@ -47,6 +47,7 @@ export class MockLenserRepository implements LenserRepositoryPort {
       banner_url: 'https://images.unsplash.com/photo-1558591710-4b4a1ae0f04d?auto=format&fit=crop&q=80&w=2400',
       website_url: 'https://lenserfight.com',
       visibility: 'public',
+      is_in_waiting_list: false,
       created_at: new Date(Date.now() - 100000000).toISOString(),
       join_order: 1
     },
@@ -146,6 +147,7 @@ export class MockLenserRepository implements LenserRepositoryPort {
       avatar_url: `https://ui-avatars.com/api/?name=${encodeURIComponent(data.display_name)}&background=random`,
       banner_url: null,
       visibility: 'public',
+      is_in_waiting_list: false,
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
       join_order: joinOrder
