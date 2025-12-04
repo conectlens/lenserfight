@@ -9,6 +9,7 @@ import { useFormValidation } from '../../../hooks/useFormValidation';
 import { isRequired, isEmail } from '../../../utils/validation';
 import { FormError } from '../../../components/FormError';
 import { ArrowLeft } from 'lucide-react';
+import { isMock } from '../../../config/runtimeConfig';
 
 export const ForgotPasswordPage: React.FC = () => {
   const { requestPasswordReset } = useAuth();
@@ -62,6 +63,11 @@ export const ForgotPasswordPage: React.FC = () => {
                 <p className="text-gray-600 mb-6">
                     If an account exists for <strong>{formData.email}</strong>, you will receive instructions to reset your password.
                 </p>
+                {isMock && (
+                    <div className="bg-blue-50 text-blue-800 text-xs p-3 rounded-lg mb-6 text-left">
+                        <strong>Mock Mode Tip:</strong> Check your browser console (F12) for the reset link.
+                    </div>
+                )}
                 <Link to="/login">
                     <Button>Return to Sign In</Button>
                 </Link>

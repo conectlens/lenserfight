@@ -287,8 +287,8 @@ export class MockLenserRepository implements LenserRepositoryPort {
     const threadsJson = storage.getItem(this.THREADS_KEY);
     const threads: ThreadRecord[] = threadsJson ? JSON.parse(threadsJson) : [];
 
-    const realPromptsCount = prompts.filter(p => p.lenser_id === lenserId).length;
-    const realThreadsCount = threads.filter(t => t.lenser_id === lenserId).length;
+    const realPromptsCount = prompts.filter(p => p.lenser_id === lenserId && p.visibility === 'public').length;
+    const realThreadsCount = threads.filter(t => t.lenser_id === lenserId && t.visibility === 'public').length;
 
     let followers = 0;
     let following = 0;
@@ -483,8 +483,17 @@ export class SupabaseLenserRepository implements LenserRepositoryPort {
   }
 
   async getLenserStats(lenserId: string): Promise<LenserStats> {
-      const { count: promptsCount } = await supabase.from('prompt_templates').select('*', { count: 'exact', head: true }).eq('lenser_id', lenserId);
-      const { count: threadsCount } = await supabase.from('threads').select('*', { count: 'exact', head: true }).eq('lenser_id', lenserId);
+      const { count: promptsCount } = await supabase
+        .from('prompt_templates')
+        .select('*', { count: 'exact', head: true })
+        .eq('lenser_id', lenserId)
+        .eq('visibility', 'public');
+        
+      const { count: threadsCount } = await supabase
+        .from('threads')
+        .select('*', { count: 'exact', head: true })
+        .eq('lenser_id', lenserId)
+        .eq('visibility', 'public');
       
       return { 
           promptsCount: promptsCount || 0, 

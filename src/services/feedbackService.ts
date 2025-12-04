@@ -1,11 +1,13 @@
+
 import { getFeedbackRepository } from '../adapters/feedbackAdapter';
 import { SubmitFeedbackDTO } from '../types/feedback.types';
+import { contentModerationService } from './contentModerationService';
 
 const feedbackRepo = getFeedbackRepository();
 
 export const feedbackService = {
   submitFeedback: async (dto: SubmitFeedbackDTO): Promise<void> => {
-    // 1. Validate Message
+    // 1. Validate Message Logic
     if (!dto.message || dto.message.trim().length === 0) {
       throw new Error("Message is required.");
     }
@@ -14,12 +16,10 @@ export const feedbackService = {
     }
 
     // 2. Validate Dates
-    // If end_date is present, start_date must be present (Requirement 4)
     if (dto.end_date && !dto.start_date) {
       throw new Error("Start date is required when an end date is provided.");
     }
 
-    // If both are present, start < end
     if (dto.start_date && dto.end_date) {
       const start = new Date(dto.start_date);
       const end = new Date(dto.end_date);
@@ -28,7 +28,11 @@ export const feedbackService = {
       }
     }
 
-    // 3. Submit
+    // 3. Moderation Check
+    // TODO: moderation policy will not be used in the beta version
+    // await contentModerationService.validate(dto.message);
+
+    // 4. Submit
     await feedbackRepo.submitFeedback(dto);
   }
 };

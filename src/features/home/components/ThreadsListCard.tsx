@@ -6,7 +6,7 @@ import { Avatar } from '../../../components/Avatar';
 import { TagBadge } from '../../../components/TagBadge';
 import { ThreadFeedItem } from '../../../types/threads.types';
 import { timeAgo } from '../../../utils/dateUtils';
-import { ArrowUp, MessageSquare, Pencil, Trash2 } from 'lucide-react';
+import { ArrowUp, MessageSquare, Pencil, Trash2, Lock } from 'lucide-react';
 import { MentionRenderer } from '../../../components/MentionRenderer';
 
 interface ThreadsListCardProps {
@@ -74,6 +74,11 @@ export const ThreadsListCard: React.FC<ThreadsListCardProps> = memo(({ thread, o
                 </span>
                 <span className="text-xs text-gray-400">•</span>
                 <p className="text-xs text-gray-500">{timeAgo(thread.createdAt)}</p>
+                {thread.visibility === 'private' && (
+                    <div className="ml-1 text-gray-400" title="Private Thread">
+                        <Lock size={12} />
+                    </div>
+                )}
               </div>
             </div>
 

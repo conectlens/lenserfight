@@ -1,98 +1,122 @@
 
-import { useState, useEffect, useMemo } from 'react';
-import { TagUsage, TaggedContentItem, SortOption, ContentType, TagContentProvider } from '../../../types/tags.types';
+import { useMemo } from 'react';
+import { useParams, useSearchParams, useNavigate } from 'react-router-dom';
+import { useQuery } from '@tanstack/react-query';
+import { TaggedContentItem, SortOption } from '../../../types/tags.types';
 import { tagService } from '../../../services/tagService';
 import { PromptTagProvider } from '../providers/PromptTagProvider';
 import { ThreadTagProvider } from '../providers/ThreadTagProvider';
 import { useLenser } from '../../../context/LenserContext';
 
-// Extensible provider registry
-const PROVIDERS: TagContentProvider[] = [
-  new ThreadTagProvider(),
-  new PromptTagProvider()
+const promptProvider = new PromptTagProvider();
+const threadProvider = new ThreadTagProvider();
+
+const FILTERS = [
+  { value: 'all', label: 'All' },
+  { value: 'threads', label: 'Threads' },
+  { value: 'prompts', label: 'Prompts' }
 ];
 
 export const useTagDetailController = (slug?: string) => {
   const { lenser } = useLenser();
-  const [tag, setTag] = useState<TagUsage | null>(null);
-  const [items, setItems] = useState<TaggedContentItem[]>([]);
-  const [loading, setLoading] = useState(true);
+  const navigate = useNavigate();
   
-  // View State
-  const [filter, setFilter] = useState<ContentType | 'all'>('all');
-  const [sort, setSort] = useState<SortOption>('trending'); // Default to trending per requirements
+  // URL State
+  const { tab: routeTab } = useParams<{ tab?: string; slug: string }>();
+  const [searchParams, setSearchParams] = useSearchParams();
+  
+  const activeTab = routeTab && ['threads', 'prompts'].includes(routeTab) ? routeTab : 'all';
+  const sortType = (searchParams.get('type') as SortOption) || 'trending';
 
-  useEffect(() => {
-    const fetchData = async () => {
-      if (!slug) return;
-      setLoading(true);
-      setItems([]);
+  // 1. Fetch Tag Metadata
+  const { data: tag, isLoading: loadingTag } = useQuery({
+    queryKey: ['tag', slug],
+    queryFn: () => slug ? tagService.getTagDetails(slug) : null,
+    enabled: !!slug,
+    staleTime: 1000 * 60 * 10 // 10 minutes
+  });
 
-      try {
-        // 1. Fetch Tag Metadata & Stats
-        const tagData = await tagService.getTagDetails(slug);
-        if (!tagData) {
-            setTag(null);
-            return;
-        }
-        setTag(tagData);
+  // 2. Fetch Content (Split queries for independent caching)
+  const shouldFetchPrompts = activeTab === 'all' || activeTab === 'prompts';
+  const shouldFetchThreads = activeTab === 'all' || activeTab === 'threads';
 
-        // 2. Determine Active Providers
-        const activeProviders = filter === 'all' 
-            ? PROVIDERS 
-            : PROVIDERS.filter(p => p.type === filter);
+  const { data: prompts, isLoading: loadingPrompts } = useQuery({
+    queryKey: ['tag-prompts', slug, sortType],
+    queryFn: () => slug ? promptProvider.listByTag(slug, sortType, lenser?.id) : [],
+    enabled: !!slug && shouldFetchPrompts,
+    staleTime: 1000 * 60 * 5, // 5 minutes cache
+  });
 
-        // 3. Fetch Content in Parallel
-        const results = await Promise.all(
-            activeProviders.map(p => p.listByTag(slug, sort, lenser?.id))
-        );
+  const { data: threads, isLoading: loadingThreads } = useQuery({
+    queryKey: ['tag-threads', slug, sortType],
+    queryFn: () => slug ? threadProvider.listByTag(slug, sortType, lenser?.id) : [],
+    enabled: !!slug && shouldFetchThreads,
+    staleTime: 1000 * 60 * 5, // 5 minutes cache
+  });
 
-        // 4. Merge Results
-        const merged = results.flat();
+  // 3. Merge & Sort
+  const items = useMemo(() => {
+    let result: TaggedContentItem[] = [];
 
-        // 5. Final Sort (Consistently merge across providers)
-        if (sort === 'newest') {
-            merged.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
-        } else {
-            // "Popular/Trending" heuristic for mixed content:
-            // Normalize: 1 prompt use ~= 1 thread like ~= 1 thread reply
-            const getScore = (item: TaggedContentItem) => {
-                const uses = item.stats.uses || 0;
-                const likes = item.stats.likes || 0;
-                const replies = item.stats.replies || 0;
-                return uses + likes + replies;
-            };
-            merged.sort((a, b) => getScore(b) - getScore(a));
-        }
-
-        setItems(merged);
-
-      } catch (err) {
-        console.error("Tag Controller Error:", err);
-      } finally {
-        setLoading(false);
+    if (activeTab === 'prompts') {
+      result = prompts || [];
+    } else if (activeTab === 'threads') {
+      result = threads || [];
+    } else {
+      // All
+      result = [...(prompts || []), ...(threads || [])];
+      
+      // We need to re-sort the combined list because fetching separately sorted lists 
+      // and concatenating them doesn't result in a globally sorted list.
+      if (sortType === 'newest') {
+        result.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+      } else {
+        // Trending/Popular heuristic
+        const getScore = (item: TaggedContentItem) => {
+            const uses = item.stats.uses || 0;
+            const likes = item.stats.likes || 0;
+            const replies = item.stats.replies || 0;
+            return uses + likes + replies;
+        };
+        result.sort((a, b) => getScore(b) - getScore(a));
       }
-    };
+    }
+    return result;
+  }, [prompts, threads, activeTab, sortType]);
 
-    fetchData();
-  }, [slug, filter, sort, lenser?.id]);
+  const loading = loadingTag || (shouldFetchPrompts && loadingPrompts) || (shouldFetchThreads && loadingThreads);
 
-  // Derived available filters for UI
-  const availableFilters = useMemo(() => {
-      return [
-          { value: 'all', label: 'All' },
-          ...PROVIDERS.map(p => ({ value: p.type, label: p.label }))
-      ];
-  }, []);
+  // Navigation Handlers
+  const handleTabChange = (newTab: string) => {
+    if (newTab === activeTab) return;
+    
+    // Preserve sort param
+    const sortQuery = sortType !== 'trending' ? `?type=${sortType}` : '';
+    
+    if (newTab === 'all') {
+      navigate(`/tags/${slug}${sortQuery}`);
+    } else {
+      navigate(`/tags/${slug}/${newTab}${sortQuery}`);
+    }
+  };
+
+  const handleSortChange = (newSort: SortOption) => {
+    setSearchParams(prev => {
+      const p = new URLSearchParams(prev);
+      if (newSort === 'trending') p.delete('type');
+      else p.set('type', newSort);
+      return p;
+    });
+  };
 
   return {
     tag,
     items,
     loading,
-    filter,
-    setFilter,
-    sort,
-    setSort,
-    availableFilters
+    filter: activeTab,
+    setFilter: handleTabChange,
+    sort: sortType,
+    setSort: handleSortChange,
+    availableFilters: FILTERS
   };
 };

@@ -2,7 +2,7 @@
 import React, { useEffect, useState, useRef, useCallback } from 'react';
 import { useLenser } from '../../../context/LenserContext';
 import { generationService } from '../../../services/generationService';
-import { AIGeneration, MediaKind, AI_MODELS, AIModel } from '../../../types/generation.types';
+import { AIGeneration, MediaKind, AIModel } from '../../../types/generation.types';
 import { GenerationMasonryGrid } from './GenerationMasonryGrid';
 import { GenerationPreviewModal } from './GenerationPreviewModal';
 import { CreateGenerationModal } from './CreateGenerationModal';
@@ -43,15 +43,9 @@ export const AIResultsSection: React.FC<AIResultsSectionProps> = ({ promptId }) 
       const loadModels = async () => {
           try {
               const models = await generationService.getAIModels();
-              if (models && models.length > 0) {
-                  setAvailableModels(models);
-              } else {
-                  // Fallback to static list (now using valid UUIDs) if API returns empty
-                  setAvailableModels(AI_MODELS.map(m => ({ id: m.id, name: m.label })));
-              }
+              setAvailableModels(models);
           } catch (e) {
-              console.warn("Failed to load models for filter, using fallback", e);
-              setAvailableModels(AI_MODELS.map(m => ({ id: m.id, name: m.label })));
+              console.warn("Failed to load models for filter", e);
           }
       };
       loadModels();
@@ -221,6 +215,7 @@ export const AIResultsSection: React.FC<AIResultsSectionProps> = ({ promptId }) 
             isOpen={!!previewItem}
             onClose={() => setPreviewItem(null)}
             generation={previewItem}
+            models={availableModels}
         />
 
         <ConfirmModal 
