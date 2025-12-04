@@ -18,7 +18,8 @@ import {
   MessageSquarePlus,
   Bell,
   Eye,
-  Brain
+  Brain,
+  Rocket
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { FEATURES } from '../../config/runtimeConfig';
@@ -50,7 +51,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, isMobile, onCloseMobil
         }
     };
     fetchNotifications();
-  }, [lenser, location.pathname]);
+  }, [lenser]);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -203,15 +204,43 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, isMobile, onCloseMobil
         </nav>
 
         <div className="flex-shrink-0 px-3 pb-3 pt-2 bg-gray-50 mt-auto space-y-3">
-          {/* Feedback Block */}
-          <div className={`rounded-xl border border-gray-200 transition-all duration-700 ${!showLabels ? 'bg-transparent border-none' : 'bg-gray-100/80 p-1 animate-ambient-glow'}`}>
+          {/* Waiting List Button */}
+          <div className={`${!showLabels ? '' : 'animate-in slide-in-from-bottom-2 duration-500'}`}>
+             <SidebarItem 
+               onClick={() => handleNavigation('/waiting-list')}
+               icon={<Rocket size={20} className="text-[#121212]" />}
+               label="Join Waitlist"
+               isActive={location.pathname === '/waiting-list'}
+               collapsed={!showLabels}
+               className={`
+                 !my-0 
+                 border border-[#121212] 
+                 bg-[#121212]/5 
+                 text-[#121212] font-bold 
+                 hover:bg-transparent 
+                 hover:shadow-md 
+                 transition-all
+               `}
+             />
+          </div>
+
+          {/* Feedback Button */}
+          <div className={`${!showLabels ? '' : 'animate-in slide-in-from-bottom-3 duration-500 delay-75'}`}>
               <SidebarItem 
                 onClick={() => setIsFeedbackOpen(true)}
-                icon={<MessageSquarePlus size={20} />} 
+                icon={<MessageSquarePlus size={20} className="text-[#121212]" />} 
                 label="Send Feedback" 
                 isActive={false} 
                 collapsed={!showLabels}
-                className={`!my-0 ${!showLabels ? 'text-gray-400 hover:text-primary-600' : 'text-gray-600 hover:text-gray-900 hover:bg-white/60'}`}
+                className={`
+                  !my-0 
+                  border border-[#121212] 
+                  bg-[#121212]/5 
+                  text-[#121212] font-bold 
+                  hover:bg-transparent
+                  hover:shadow-md
+                  transition-all
+                `}
               />
           </div>
 

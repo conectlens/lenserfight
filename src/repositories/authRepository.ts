@@ -1,5 +1,5 @@
 
-import { User } from '../types/auth.types';
+import { User, AuthStateChangeCallback } from '../types/auth.types';
 import { supabase } from '../utils/supabase';
 import { storage } from '../utils/storage';
 
@@ -12,6 +12,7 @@ export interface AuthRepositoryPort {
   requestPasswordReset(email: string): Promise<void>;
   resetPassword(password: string, token?: string): Promise<void>;
   signInWithOAuth(provider: 'google' | 'github' | 'azure'): Promise<void>;
+  onAuthStateChange(callback: AuthStateChangeCallback): () => void;
 }
 
 // --- Mock Implementation ---
@@ -178,6 +179,12 @@ export class MockAuthRepository implements AuthRepositoryPort {
     await new Promise(resolve => setTimeout(resolve, 600));
     alert(`[MOCK] OAuth provider '${provider}' selected.\n\nIn a real app, this would redirect to the identity provider.`);
   }
+
+  onAuthStateChange(callback: AuthStateChangeCallback): () => void {
+    // In Mock mode, real-time auth state isn't strictly necessary as we handle state manually in Context for actions.
+    // We return a no-op unsubscribe function.
+    return () => {};
+  }
 }
 
 // --- Supabase Implementation (Stub) ---
@@ -235,5 +242,12 @@ export class SupabaseAuthRepository implements AuthRepositoryPort {
       }
     });
     if (error) throw error;
+  }
+
+  onAuthStateChange(callback: AuthStateChangeCallback): () => void {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      callback(session?.user as unknown as User || null);
+    });
+    return () => subscription.unsubscribe();
   }
 }
