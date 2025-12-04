@@ -21,6 +21,9 @@ const getErrorMessage = (err: unknown): string => {
   return 'An unexpected error occurred';
 };
 
+// Key used in LenserContext
+const LENSER_CACHE_KEY = 'lenser_profile_data_v1';
+
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [state, setState] = useState<AuthState>({
     user: null,
@@ -95,7 +98,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     } catch (e) {
       console.error("Logout error", e);
     }
+    // Clear legacy flags and new cache
     storage.removeItem('lenser_has_profile');
+    storage.removeItem(LENSER_CACHE_KEY);
+    
     setState({ user: null, isAuthenticated: false, isLoading: false, error: null });
   };
 
