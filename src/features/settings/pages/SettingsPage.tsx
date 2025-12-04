@@ -233,7 +233,7 @@ export const SettingsPage: React.FC = () => {
                {/* ACCOUNT TAB */}
                {activeTab === 'account' && (
                    <div>
-                       <h2 className="text-xl font-bold text-gray-900 mb-2">Account</h2>
+                       <h2 className="text-xl font-bold text-gray-900 mb-2">ConnectLens Account</h2>
                        <p className="text-sm text-gray-500 mb-8 border-b border-gray-100 pb-6">
                            Manage your account credentials and basic information.
                        </p>
@@ -246,7 +246,7 @@ export const SettingsPage: React.FC = () => {
                                    value={user?.user_metadata?.display_name || 'N/A'} 
                                    className="w-full px-4 py-2.5 rounded-lg border border-gray-200 bg-gray-50 text-gray-500"
                                />
-                               <p className="text-xs text-gray-400 mt-1">This is the name used for account recovery and billing, stored in identity provider.</p>
+                               <p className="text-xs text-gray-400 mt-1">This is the name used for account recovery, access ConnectLens products and platforms, stored in identity provider.</p>
                            </div>
 
                            <div>
@@ -337,6 +337,8 @@ export const SettingsPage: React.FC = () => {
                                    name="displayName"
                                    value={formData.displayName}
                                    onChange={handleProfileChange}
+                                   required
+                                   maxLength={50}
                                />
 
                                <div>

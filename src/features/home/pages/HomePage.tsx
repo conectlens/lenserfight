@@ -146,7 +146,9 @@ export const HomePage: React.FC = () => {
                         <div>
                             <MinimalAlert icon={Sparkles} text="No top prompts yet" />
                         </div>
-                    ) : topPrompts.map((prompt) => (
+                    ) : [...topPrompts]
+                        .sort((a, b) => b.usageCount - a.usageCount)
+                        .map((prompt) => (
                       <div 
                             key={prompt.id} 
                             onClick={() => navigate(`/prompts/${prompt.id}`)}
