@@ -414,7 +414,7 @@ export const LenserProfilePage: React.FC = () => {
         </div>
       )}
       
-      <div className="px-0 md:px-0">
+      <div className="px-0 md:px-0 mt-8">
           <div className="px-4 md:px-0">
             <LenserTabs activeTab={activeTab} onChange={handleTabChange} />
           </div>

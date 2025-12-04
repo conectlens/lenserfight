@@ -23,10 +23,6 @@ export const threadsService = {
   },
 
   updateThread: async (id: string, input: Partial<CreateThreadDTO>, lenserId: string): Promise<ThreadRecord> => {
-      // Moderation Check
-      // TODO: moderation policy will not be used in the beta version
-      // await contentModerationService.validate(input.title, input.content);
-
       let realTagIds: string[] | undefined = undefined;
       if (input.tagIds) {
           const resolvedTags = await tagService.upsertTags(input.tagIds);
@@ -39,7 +35,9 @@ export const threadsService = {
       await threadsRepo.deleteThread(id);
   },
 
-  // --- OPTIMIZED FETCH METHODS ---
+  incrementView: async (id: string): Promise<void> => {
+      return threadsRepo.incrementView(id);
+  },
 
   getThreadsFeed: async (currentUserId?: string, offset = 0, limit = 10): Promise<ThreadFeedItem[]> => {
     const records = await threadsRepo.getAllThreads(offset, limit);
@@ -57,11 +55,10 @@ export const threadsService = {
     return threadsService._mapToFeedItems(records, currentUserId);
   },
 
-  // Pure Mapper: Converts DB Join Result -> Domain Model + Batch Reaction State
-  _mapToFeedItems: async (records: any[], currentUserId?: string): Promise<ThreadFeedItem[]> => {
+  // Pure Mapper: Converts DB Record -> Domain Model using internal author_profile
+  _mapToFeedItems: async (records: ThreadRecord[], currentUserId?: string): Promise<ThreadFeedItem[]> => {
     if (records.length === 0) return [];
 
-    // 1. Batch fetch user reactions if logged in (O(1) request)
     let userReactedIds = new Set<string>();
     if (currentUserId) {
         const ids = records.map(r => r.id);
@@ -69,23 +66,24 @@ export const threadsService = {
         reactions.forEach(r => userReactedIds.add(r.target_id));
     }
 
-    // 2. Map in memory
     return records.map(record => {
-        // Map Tags from Junction (Supabase format: thread_tags: [{ tag: { ... } }])
-        // Filter out any potential nulls from join
+        // Map Tags (assuming thread_tags structure present in joined fetch if any)
+        // @ts-ignore
         const tags = (record.thread_tags?.map((tt: any) => tt.tag) || []).filter((t: any) => !!t);
         
-        // Use reaction_totals JSONB from DB directly
         const reactionCounts = record.reaction_totals || {};
         const totalReactions = Object.values(reactionCounts).reduce((a: any, b: any) => a + b, 0) as number;
+
+        // Uses denormalized profile
+        const profile = record.author_profile || { id: 'unknown', handle: 'unknown', display_name: 'Unknown', avatar_url: null };
 
         return {
             id: record.id,
             author: {
-                id: record.author?.id || 'unknown',
-                displayName: record.author?.display_name || 'Unknown',
-                avatarUrl: record.author?.avatar_url,
-                handle: record.author?.handle || 'unknown',
+                id: profile.id || record.lenser_id,
+                displayName: profile.display_name,
+                avatarUrl: profile.avatar_url,
+                handle: profile.handle,
             },
             title: record.title,
             content: record.content,
@@ -100,9 +98,6 @@ export const threadsService = {
   },
 
   getThreadDetail: async (threadId: string, currentUserId?: string): Promise<ThreadDetailViewModel | null> => {
-    // Fire & Forget View Count
-    threadsRepo.incrementView(threadId).catch(() => {});
-
     const record: any = await threadsRepo.getThreadById(threadId);
     if (!record) return null;
 
@@ -112,19 +107,17 @@ export const threadsService = {
         }
     }
 
-    // Check main thread reaction
     let userHasReacted = false;
     if (currentUserId) {
         const [reaction] = await reactionRepo.getUserReaction('thread', threadId, currentUserId);
         userHasReacted = !!reaction;
     }
 
-    // Delegate reply fetching to interaction service for tree building + advanced stats
     const replies = await threadInteractionService.getReplyTree(threadId, currentUserId);
 
-    // Aggregate counts
     const reactionCounts = record.reaction_totals || {};
     const totalReactions = Object.values(reactionCounts).reduce((a: any, b: any) => a + b, 0) as number;
+    const profile = record.author_profile || { id: 'unknown', handle: 'unknown', display_name: 'Unknown', avatar_url: null };
 
     return {
         id: record.id,
@@ -132,10 +125,10 @@ export const threadsService = {
         content: record.content,
         createdAt: record.created_at,
         author: {
-            id: record.author?.id,
-            displayName: record.author?.display_name,
-            avatarUrl: record.author?.avatar_url,
-            handle: record.author?.handle
+            id: profile.id || record.lenser_id,
+            displayName: profile.display_name,
+            avatarUrl: profile.avatar_url,
+            handle: profile.handle
         },
         tags: (record.thread_tags?.map((tt: any) => tt.tag) || []).filter((t: any) => !!t),
         reactionCount: totalReactions,
