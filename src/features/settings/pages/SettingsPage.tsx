@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { useLocation } from 'react-router-dom';
+import { useLocation, Link } from 'react-router-dom';
 import { useLenser } from '../../../context/LenserContext';
 import { useAuth } from '../../../context/AuthContext';
 import { Avatar } from '../../../components/Avatar';
@@ -143,22 +143,22 @@ export const SettingsPage: React.FC = () => {
                
                {/* External Link Style Tabs */}
                <div className="pt-4 border-t border-gray-100 mt-4 space-y-1">
-                   <a
-                       href="/privacy"
+                   <Link
+                       to="/legal/privacy"
                        target="_blank"
                        rel="noopener noreferrer"
                        className="flex items-center justify-between w-full text-left px-4 py-2.5 rounded-lg text-sm font-medium text-gray-500 hover:bg-gray-50 hover:text-gray-900 transition-colors"
                    >
                        Privacy & Security <ExternalLink size={14} />
-                   </a>
-                   <a
-                       href="/terms"
+                   </Link>
+                   <Link
+                       to="/legal/terms"
                        target="_blank"
                        rel="noopener noreferrer"
                        className="flex items-center justify-between w-full text-left px-4 py-2.5 rounded-lg text-sm font-medium text-gray-500 hover:bg-gray-50 hover:text-gray-900 transition-colors"
                    >
                        Terms & Conditions <ExternalLink size={14} />
-                   </a>
+                   </Link>
                </div>
            </div>
 

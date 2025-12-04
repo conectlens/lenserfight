@@ -33,6 +33,12 @@ export const LenserProvider: React.FC<{ children: React.ReactNode }> = ({ childr
 
   const loadLenserProfile = async () => {
     if (!user || !isAuthenticated) return;
+    
+    // Performance Check: Don't refetch if we already have the profile for this user
+    if (lenser && lenser.user_id === user.id) {
+        return;
+    }
+
     setIsLoading(true);
     try {
       const profile = await lenserService.getLenserProfile(user.id);
@@ -62,7 +68,7 @@ export const LenserProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       // We don't clear cache here on simple unmount/auth-check fail to preserve it for reloads, 
       // explicitly clear on logout in AuthContext instead.
     }
-  }, [isAuthenticated, user]);
+  }, [isAuthenticated, user?.id]); // Only dependency on user ID, not object reference
 
   const createLenserProfile = async (data: CreateLenserDTO): Promise<Lenser> => {
     if (!user) throw new Error("User not authenticated");

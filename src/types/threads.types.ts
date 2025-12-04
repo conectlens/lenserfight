@@ -1,5 +1,5 @@
 
-import { Lenser } from './lenser.types';
+import { AuthorProfile } from './lenser.types';
 
 export type Visibility = 'public' | 'private' | 'followers';
 export type ReactionType = 'like' | 'love' | 'clap';
@@ -21,6 +21,7 @@ export interface CreateThreadDTO {
 export interface ThreadRecord {
   id: string;
   lenser_id: string;
+  author_profile: AuthorProfile; // Denormalized JSONB
   title: string;
   content: string;
   visibility: Visibility;
@@ -50,9 +51,9 @@ export interface ThreadReplyRecord {
   thread_id: string;
   parent_reply_id?: string | null;
   lenser_id: string;
+  author_profile: AuthorProfile; // Denormalized JSONB
   content: string;
   reaction_totals?: Record<string, number>; // JSONB from DB
-  // reaction_count is no longer a direct column, computed from totals
   created_at: string;
   deleted_at?: string | null;
 }
