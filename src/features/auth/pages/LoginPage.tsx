@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../../context/AuthContext';
 import { AuthCard } from '../components/AuthCard';
 import { InputField } from '../components/InputField';
@@ -14,6 +14,7 @@ import { isMock } from '../../../config/runtimeConfig';
 export const LoginPage: React.FC = () => {
   const { login, signInWithOAuth } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
   
   const [formData, setFormData] = useState({
     email: isMock ? 'demo@example.com' : '',
@@ -44,7 +45,23 @@ export const LoginPage: React.FC = () => {
     setLoading(true);
     try {
       await login(formData.email, formData.password);
-      navigate('/');
+      
+      // Return URL Mechanism
+      const stateFrom = (location.state as any)?.from;
+      const searchParams = new URLSearchParams(location.search);
+      const returnUrlParam = searchParams.get('return_url');
+
+      let redirectPath = '/';
+
+      if (stateFrom) {
+          // Internal React Router state redirect (preserves objects if needed, here mostly string)
+          redirectPath = stateFrom.pathname + (stateFrom.search || '') + (stateFrom.hash || '');
+      } else if (returnUrlParam) {
+          // Query param redirect (e.g. from external link or manual URL)
+          redirectPath = returnUrlParam;
+      }
+
+      navigate(redirectPath, { replace: true });
     } catch (err: any) {
       setApiError(err.message || "Failed to sign in");
     } finally {
