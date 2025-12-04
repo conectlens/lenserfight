@@ -8,6 +8,7 @@ export interface TagRepositoryPort {
   getAllTagsWithCounts(): Promise<TagUsage[]>;
   getTagBySlug(slug: string): Promise<TagUsage | null>;
   recordActivity(event: TagActivityEventDTO): Promise<void>;
+  recordBatchActivity(events: TagActivityEventDTO[]): Promise<void>;
   upsertTags(names: string[]): Promise<TagRecord[]>;
 }
 
@@ -43,7 +44,7 @@ export class MockTagRepository implements TagRepositoryPort {
       
       const activityCache: Record<string, number> = {};
       records.forEach((t, i) => {
-        activityCache[t.id] = Math.floor(Math.random() * 10); // Small initial random activity
+        activityCache[t.id] = Math.floor(Math.random() * 10);
       });
       storage.setItem(this.ACTIVITY_KEY, JSON.stringify(activityCache));
     }
@@ -96,7 +97,6 @@ export class MockTagRepository implements TagRepositoryPort {
     const tags = this.getTags();
     const activityCache = JSON.parse(storage.getItem(this.ACTIVITY_KEY) || '{}');
 
-    // Read usage from junction tables populated by other repos
     const threadTags = JSON.parse(storage.getItem(this.THREAD_TAGS_KEY) || '[]');
     const promptTags = JSON.parse(storage.getItem(this.PROMPT_TAGS_KEY) || '[]');
 
@@ -105,10 +105,6 @@ export class MockTagRepository implements TagRepositoryPort {
       const promptCount = promptTags.filter((pt: any) => pt.tag_id === tag.id).length;
       
       const count = threadCount + promptCount;
-      // In Mock mode, we allow tags with 0 count if they have activity (random seed) to avoid empty cloud initially
-      // But strictly following user request "List only used tags" usually means count > 0.
-      // However, if the seed data has no usage, cloud is empty. 
-      // We'll trust the seed has activity or usage.
       
       return {
         ...tag,
@@ -126,14 +122,22 @@ export class MockTagRepository implements TagRepositoryPort {
   }
 
   async recordActivity(event: TagActivityEventDTO): Promise<void> {
+    return this.recordBatchActivity([event]);
+  }
+
+  async recordBatchActivity(events: TagActivityEventDTO[]): Promise<void> {
+    // Mock async
     setTimeout(() => {
         const activityCache = JSON.parse(storage.getItem(this.ACTIVITY_KEY) || '{}');
-        const currentScore = activityCache[event.tag_id] || 0;
-        let boost = 1;
-        if (event.activity_type === 'created') boost = 10;
-        if (event.activity_type === 'reacted') boost = 2;
         
-        activityCache[event.tag_id] = currentScore + boost;
+        events.forEach(event => {
+            const currentScore = activityCache[event.tag_id] || 0;
+            let boost = 1;
+            if (event.activity_type === 'created') boost = 10;
+            if (event.activity_type === 'reacted') boost = 2;
+            activityCache[event.tag_id] = currentScore + boost;
+        });
+
         storage.setItem(this.ACTIVITY_KEY, JSON.stringify(activityCache));
     }, 10);
   }
@@ -172,11 +176,11 @@ export class SupabaseTagRepository implements TagRepositoryPort {
     let trendingMap = new Map<string, any>();
 
     try {
-        const { data: trendingData, error: trendingError } = await supabase
+        const { data: trendingData } = await supabase
           .from('tag_trending_summary')
           .select('*');
 
-        if (!trendingError && trendingData) {
+        if (trendingData) {
             trendingData.forEach((row: any) => {
                 trendingMap.set(row.tag_id, row);
             });
@@ -199,15 +203,9 @@ export class SupabaseTagRepository implements TagRepositoryPort {
         if (error) throw error;
         data = fullData;
     } catch (err) {
-        console.warn("Falling back to simple tag select due to error", err);
-        const { data: simpleData, error: simpleError } = await supabase.from('tags').select('*');
-        if (simpleError) {
-            if (simpleError.code === '42803' || simpleError.code === 'PGRST116') {
-                return [];
-            }
-            throw simpleError;
-        }
-        data = simpleData;
+        const { data: simpleData, error } = await supabase.from('tags').select('*');
+        if (error && error.code !== '42803' && error.code !== 'PGRST116') throw error;
+        data = simpleData || [];
     }
 
     return data.map((tag: any) => {
@@ -251,8 +249,8 @@ export class SupabaseTagRepository implements TagRepositoryPort {
 
     let trendingScore = 0;
     try {
-        const { data: trendData, error: trendError } = await supabase.from('tag_trending_summary').select('score').eq('tag_id', tagData.id);
-        if (!trendError && trendData) {
+        const { data: trendData } = await supabase.from('tag_trending_summary').select('score').eq('tag_id', tagData.id);
+        if (trendData) {
             trendingScore = trendData.reduce((acc: number, curr: any) => acc + (curr.score || 0), 0);
         }
     } catch (e) {
@@ -267,14 +265,13 @@ export class SupabaseTagRepository implements TagRepositoryPort {
   }
 
   async recordActivity(event: TagActivityEventDTO): Promise<void> {
+    await this.recordBatchActivity([event]);
+  }
+
+  async recordBatchActivity(events: TagActivityEventDTO[]): Promise<void> {
+    if (events.length === 0) return;
     try {
-        await supabase.from('tag_activity_events').insert({
-            tag_id: event.tag_id,
-            entity_type: event.entity_type,
-            entity_id: event.entity_id,
-            activity_type: event.activity_type,
-            actor_id: event.actor_id 
-        });
+        await supabase.from('tag_activity_events').insert(events);
     } catch (e) {
         console.warn("Failed to record tag activity", e);
     }

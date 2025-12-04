@@ -47,7 +47,7 @@ export const PromptRelatedList: React.FC<PromptRelatedListProps> = ({
             <p className="text-xs text-gray-500 mt-1">We couldn't find any similar templates.</p>
         </div>
       ) : (
-        <div className="flex flex-col gap-4">
+        <div className="flex flex-col gap-3">
           {prompts.map(prompt => (
             <PromptRelatedCard 
                 key={prompt.id} 
@@ -58,6 +58,7 @@ export const PromptRelatedList: React.FC<PromptRelatedListProps> = ({
                 // Usually related prompts are mixed. 
                 // We'll leave it disabled for general related list unless specifically requested by passing handlers
                 isOwner={false} 
+                hideAuthor={true}
             />
           ))}
         </div>
