@@ -1,136 +1,87 @@
-// Deno Edge Function (Supabase) — Corrected Version
+
+// Follow this pattern for Deno Edge Function
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
+declare const Deno: any;
+
 const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-  "Access-Control-Allow-Methods": "POST, OPTIONS",
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-// Generate random short ID
+// Helper to generate random short ID
 function generateShortId(length = 6) {
-  const chars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
-  let out = "";
+  const chars = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+  let result = '';
   for (let i = 0; i < length; i++) {
-    out += chars[Math.floor(Math.random() * chars.length)];
+    result += chars.charAt(Math.floor(Math.random() * chars.length));
   }
-  return out;
+  return result;
 }
 
 serve(async (req) => {
-  // Preflight (CORS)
-  if (req.method === "OPTIONS") {
-    return new Response("ok", { headers: corsHeaders });
+  // Handle CORS preflight requests
+  if (req.method === 'OPTIONS') {
+    return new Response('ok', { headers: corsHeaders });
   }
 
   try {
-    // Parse JSON safely
-    let body;
-    try {
-      body = await req.json();
-    } catch (_) {
-      return new Response(JSON.stringify({ error: "Invalid JSON body" }), {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-        status: 400,
-      });
-    }
+    const supabase = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '' // Service Role for writing events
+    );
 
-    const {
-      resourceType,
-      resourceId,
-      slug,
-      channel,
-      meta,
-      creatorLenserId,
-      displayName,
-    } = body;
+    // Get body
+    const { resourceType, resourceId, slug, channel, meta, creatorLenserId, displayName } = await req.json();
 
     if (!creatorLenserId) {
-      return new Response(JSON.stringify({ error: "Unauthorized" }), {
-        status: 401,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+       return new Response("Unauthorized", { 
+         status: 401,
+         headers: { ...corsHeaders, "Content-Type": "application/json" }
+       });
     }
 
-    const supabaseUrl = Deno.env.get("SUPABASE_URL");
-    const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
-
-    if (!supabaseUrl || !serviceKey) {
-      return new Response(JSON.stringify({ error: "Server misconfigured" }), {
-        status: 500,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
-
-    const supabase = createClient(supabaseUrl, serviceKey);
-
-    // Generate a unique shortId, retry if collision occurs
+    // Generate Unique ID
     let shortId = generateShortId();
-    let isUnique = false;
-
-    for (let i = 0; i < 5; i++) {
-      const { data: existing } = await supabase
-        .from("shared_links")
-        .select("id")
-        .eq("short_id", shortId)
-        .maybeSingle();
-
-      if (!existing) {
-        isUnique = true;
-        break;
-      }
-
-      // Collision – regenerate
-      shortId = generateShortId();
-    }
-
-    if (!isUnique) {
-      return new Response(JSON.stringify({ error: "Failed to generate unique ID" }), {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-        status: 500,
-      });
-    }
-
-    // Insert shared link
+    // In production, loop to ensure uniqueness against DB collisions
+    
+    // Insert Link
     const { data: link, error: linkError } = await supabase
-      .from("shared_links")
+      .from('shared_links')
       .insert({
         short_id: shortId,
         resource_type: resourceType,
-        resource_id: resourceId, // UUID preferred
-        slug: slug ?? null,
+        resource_id: resourceId, // Must be UUID
+        slug: slug,
         creator_lenser_id: creatorLenserId,
-        channel: channel ?? "in_app",
-        meta: meta ?? {},
-        display_name: displayName ?? null,
+        channel: channel || 'in_app',
+        meta: meta || {},
+        display_name: displayName || null
       })
       .select()
       .single();
 
-    if (linkError) {
-      return new Response(JSON.stringify({ error: linkError.message }), {
-        status: 500,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
+    if (linkError) throw linkError;
 
-    // Log generator event
-    await supabase.from("share_events").insert({
-      shared_link_id: link.id,
-      event_type: "generated",
-      viewer_lenser_id: creatorLenserId,
-      user_agent: req.headers.get("user-agent"),
+    // Log Event
+    await supabase.from('share_events').insert({
+        shared_link_id: link.id,
+        event_type: 'generated',
+        viewer_lenser_id: creatorLenserId,
+        user_agent: req.headers.get('user-agent'),
+        // No IP logging for generation usually needed, or hash it if required
     });
 
     return new Response(JSON.stringify(link), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
-      status: 200,
+      status: 200
     });
-  } catch (err: any) {
-    return new Response(JSON.stringify({ error: err?.message ?? "Unknown error" }), {
+
+  } catch (err) {
+    return new Response(JSON.stringify({ error: err.message }), { 
       headers: { ...corsHeaders, "Content-Type": "application/json" },
-      status: 500,
+      status: 500 
     });
   }
 });
