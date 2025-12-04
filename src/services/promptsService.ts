@@ -116,13 +116,31 @@ export const promptsService = {
   },
 
   toggleSavePrompt: async (id: string, lenserId: string): Promise<boolean> => {
-     const result = await reactionService.toggleReaction('prompt_template', id, lenserId, 'saved');
-     return result.added;
+     // 1. Toggle reaction entry
+     const { added, summary } = await reactionService.toggleReaction('prompt_template', id, lenserId, 'saved');
+     
+     // 2. Sync updated counts to reaction_totals JSONB column
+     // This ensures we use the correct column (reaction_totals) instead of save_count
+     try {
+         await promptsRepo.updateReactionTotals(id, summary.counts);
+     } catch (e) {
+         console.warn("Failed to sync reaction_totals", e);
+     }
+
+     return added;
   },
 
   toggleReaction: async (id: string, lenserId: string, reaction: 'like' | 'love' | 'clap') => {
-      const result = await reactionService.toggleReaction('prompt_template', id, lenserId, reaction);
-      return result.summary;
+      const { added, summary } = await reactionService.toggleReaction('prompt_template', id, lenserId, reaction);
+      
+      // Also sync totals for other reactions to keep JSONB fresh
+      try {
+          await promptsRepo.updateReactionTotals(id, summary.counts);
+      } catch (e) {
+          console.warn("Failed to sync reaction_totals", e);
+      }
+
+      return summary;
   },
 
   createPrompt: async (input: CreatePromptDTO): Promise<PromptTemplateRecord> => {
