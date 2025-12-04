@@ -30,6 +30,7 @@ export const PromptDetailHeader: React.FC<PromptDetailHeaderProps> = ({
   });
 
   const hasTags = prompt.tags && prompt.tags.length > 0;
+  const safeSaveCount = saveCount || 0;
 
   return (
     <div className="mb-6">
@@ -55,13 +56,13 @@ export const PromptDetailHeader: React.FC<PromptDetailHeaderProps> = ({
           <Bookmark size={20} className={`transition-transform duration-200 ${isSaved ? 'fill-current' : ''} group-active:scale-95`} />
           
           {/* Compact Corner Badge */}
-          {saveCount > 0 && (
+          {safeSaveCount > 0 && (
             <span className={`
               absolute -top-2 -right-2 min-w-[18px] h-[18px] flex items-center justify-center 
               text-[10px] font-bold rounded-full border-2 border-white px-1 shadow-sm
               ${isSaved ? 'bg-primary text-gray-900' : 'bg-gray-100 text-gray-600'}
             `}>
-              {formatCount(saveCount)}
+              {formatCount(safeSaveCount)}
             </span>
           )}
         </button>
