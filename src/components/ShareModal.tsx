@@ -23,7 +23,6 @@ export const ShareModal: React.FC<ShareModalProps> = ({
 
   useEffect(() => {
     if (isOpen) {
-        // Auto-generate link on open
         generateLink(resourceType, resourceId, slug);
     } else {
         reset();
@@ -52,12 +51,11 @@ export const ShareModal: React.FC<ShareModalProps> = ({
                 url: shortUrl
             });
         } catch (e) {
-            // Share cancelled or failed
+            // Cancelled
         }
     }
   };
 
-  // Social Share Handlers
   const encodedUrl = shortUrl ? encodeURIComponent(shortUrl) : '';
   const encodedTitle = encodeURIComponent(`Check out "${title}" on LenserFight!`);
 
@@ -70,7 +68,7 @@ export const ShareModal: React.FC<ShareModalProps> = ({
             </svg>
         ),
         url: `https://x.com/intent/tweet?text=${encodedTitle}&url=${encodedUrl}`,
-        color: 'hover:bg-black hover:text-white hover:border-black'
+        color: 'hover:bg-black hover:text-white hover:border-black dark:hover:bg-black dark:hover:border-black'
     },
     {
         name: 'Facebook',
@@ -89,15 +87,13 @@ export const ShareModal: React.FC<ShareModalProps> = ({
   return (
     <Modal isOpen={isOpen} onClose={onClose} title="Share">
       <div className="space-y-6">
-         {/* Loading State */}
          {isLoading && (
              <div className="flex flex-col items-center justify-center py-8">
                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mb-2"></div>
-                 <p className="text-gray-500 text-sm">Generating unique link...</p>
+                 <p className="text-gray-500 dark:text-gray-400 text-sm">Generating unique link...</p>
              </div>
          )}
 
-         {/* Error State */}
          {!isLoading && error && (
              <div className="text-center py-4">
                  <p className="text-red-500 mb-2">{error}</p>
@@ -105,21 +101,20 @@ export const ShareModal: React.FC<ShareModalProps> = ({
              </div>
          )}
 
-         {/* Success State */}
          {!isLoading && shortUrl && (
              <>
-                <div className="flex items-center gap-2 p-3 bg-gray-50 border border-gray-200 rounded-xl">
-                    <div className="bg-white p-2 rounded-lg border border-gray-100 text-primary-600">
+                <div className="flex items-center gap-2 p-3 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl">
+                    <div className="bg-white dark:bg-gray-700 p-2 rounded-lg border border-gray-100 dark:border-gray-600 text-primary-600 dark:text-primary-400">
                         <LinkIcon size={18} />
                     </div>
                     <input 
                         readOnly 
                         value={shortUrl} 
-                        className="flex-1 bg-transparent border-none text-sm text-gray-700 focus:ring-0 truncate"
+                        className="flex-1 bg-transparent border-none text-sm text-gray-700 dark:text-gray-200 focus:ring-0 truncate outline-none"
                     />
                     <button 
                         onClick={handleCopy}
-                        className={`p-2 rounded-lg transition-colors ${copied ? 'bg-green-100 text-green-700' : 'hover:bg-gray-200 text-gray-500'}`}
+                        className={`p-2 rounded-lg transition-colors ${copied ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400' : 'hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-500 dark:text-gray-400'}`}
                     >
                         {copied ? <Check size={18} /> : <Copy size={18} />}
                     </button>
@@ -132,7 +127,7 @@ export const ShareModal: React.FC<ShareModalProps> = ({
                             href={link.url} 
                             target="_blank" 
                             rel="noopener noreferrer"
-                            className={`flex items-center justify-center p-3 rounded-xl border border-gray-200 transition-all text-gray-600 ${link.color}`}
+                            className={`flex items-center justify-center p-3 rounded-xl border border-gray-200 dark:border-gray-700 transition-all text-gray-600 dark:text-gray-400 ${link.color}`}
                             title={`Share on ${link.name}`}
                         >
                             {link.icon}
@@ -142,7 +137,7 @@ export const ShareModal: React.FC<ShareModalProps> = ({
                     {navigator.share && (
                         <button 
                             onClick={handleNativeShare}
-                            className="flex items-center justify-center p-3 rounded-xl border border-gray-200 hover:bg-gray-50 transition-all text-gray-600"
+                            className="flex items-center justify-center p-3 rounded-xl border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 transition-all text-gray-600 dark:text-gray-400"
                             title="More sharing options"
                         >
                             <Smartphone size={20} />

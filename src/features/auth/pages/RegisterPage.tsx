@@ -96,7 +96,7 @@ export const RegisterPage: React.FC = () => {
     let content = <p>Content loading...</p>;
     if (type === 'Terms') {
         content = (
-            <div className="space-y-4 text-sm text-gray-600">
+            <div className="space-y-4 text-sm text-gray-600 dark:text-gray-300">
                 <p><strong>1. Introduction</strong><br/>Welcome to ConnectLens. By using our website, you agree to these terms.</p>
                 <p><strong>2. Usage</strong><br/>You agree to use the platform for lawful purposes only.</p>
                 <p><strong>3. Content</strong><br/>You retain rights to content you create, but grant us a license to display it.</p>
@@ -104,7 +104,7 @@ export const RegisterPage: React.FC = () => {
         );
     } else if (type === 'Privacy') {
         content = (
-            <div className="space-y-4 text-sm text-gray-600">
+            <div className="space-y-4 text-sm text-gray-600 dark:text-gray-300">
                 <p><strong>1. Data Collection</strong><br/>We collect information you provide directly to us.</p>
                 <p><strong>2. Usage of Data</strong><br/>We use your data to provide and improve our services.</p>
                 <p><strong>3. Third Parties</strong><br/>We do not sell your personal data to third parties.</p>
@@ -112,7 +112,7 @@ export const RegisterPage: React.FC = () => {
         );
     } else {
         content = (
-            <div className="space-y-4 text-sm text-gray-600">
+            <div className="space-y-4 text-sm text-gray-600 dark:text-gray-300">
                 <p><strong>1. What are cookies?</strong><br/>Cookies are small text files stored on your device.</p>
                 <p><strong>2. How we use them</strong><br/>We use cookies for authentication and analytics.</p>
             </div>
@@ -127,7 +127,7 @@ export const RegisterPage: React.FC = () => {
   };
 
   const backButton = (
-    <Link to="/" className="inline-flex items-center gap-2 text-sm font-semibold text-gray-500 hover:text-gray-900 transition-all bg-white/80 backdrop-blur-md px-4 py-2.5 rounded-full hover:bg-white shadow-sm border border-gray-200/50 hover:border-gray-300 w-auto">
+    <Link to="/" className="inline-flex items-center gap-2 text-sm font-semibold text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white transition-all bg-white/80 dark:bg-gray-800/80 backdrop-blur-md px-4 py-2.5 rounded-full hover:bg-white dark:hover:bg-gray-800 shadow-sm border border-gray-200/50 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600 w-auto">
        <ArrowLeft size={16} />
        Dive into the arena
     </Link>
@@ -203,20 +203,20 @@ export const RegisterPage: React.FC = () => {
                   onChange={handleChange}
                   className="peer sr-only"
                 />
-                <div className="w-5 h-5 rounded border-2 border-gray-300 bg-white peer-checked:bg-primary peer-checked:border-primary peer-focus:ring-2 peer-focus:ring-primary/30 transition-all"></div>
+                <div className="w-5 h-5 rounded border-2 border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 peer-checked:bg-primary peer-checked:border-primary peer-focus:ring-2 peer-focus:ring-primary/30 transition-all"></div>
                 <Check className="w-3.5 h-3.5 text-gray-900 absolute left-[3px] top-[3px] opacity-0 peer-checked:opacity-100 transition-opacity pointer-events-none" strokeWidth={3.5} />
               </div>
-              <div className="text-sm leading-tight text-gray-600">
+              <div className="text-sm leading-tight text-gray-600 dark:text-gray-400">
                 I agree to the{' '}
-                <button type="button" onClick={() => openPolicy('Terms')} className="font-semibold text-gray-900 hover:underline">
+                <button type="button" onClick={() => openPolicy('Terms')} className="font-semibold text-gray-900 dark:text-gray-200 hover:underline">
                   Terms and Conditions
                 </button>
                 ,{' '}
-                <button type="button" onClick={() => openPolicy('Privacy')} className="font-semibold text-gray-900 hover:underline">
+                <button type="button" onClick={() => openPolicy('Privacy')} className="font-semibold text-gray-900 dark:text-gray-200 hover:underline">
                   Privacy Policy
                 </button>
                 {' '}and{' '}
-                <button type="button" onClick={() => openPolicy('Cookies')} className="font-semibold text-gray-900 hover:underline">
+                <button type="button" onClick={() => openPolicy('Cookies')} className="font-semibold text-gray-900 dark:text-gray-200 hover:underline">
                   Cookie Policy
                 </button>.
               </div>
@@ -224,7 +224,7 @@ export const RegisterPage: React.FC = () => {
           </div>
 
           {apiError && (
-            <div className="flex items-start gap-2 bg-red-50 border border-red-100 p-3 rounded-xl text-red-600 text-sm mt-4">
+            <div className="flex items-start gap-2 bg-red-50 dark:bg-red-900/30 border border-red-100 dark:border-red-800 p-3 rounded-xl text-red-600 dark:text-red-400 text-sm mt-4">
                 <span className="mt-0.5">⚠️</span>
                 {apiError}
             </div>
@@ -235,8 +235,8 @@ export const RegisterPage: React.FC = () => {
           </Button>
         </form>
         
-        <div className="mt-8 text-center text-sm text-gray-500 font-medium">
-          Already have an account? <Link to="/login" className="ml-1 text-gray-900 hover:text-primary-700 font-bold hover:underline transition-colors">Sign In</Link>
+        <div className="mt-8 text-center text-sm text-gray-500 dark:text-gray-400 font-medium">
+          Already have an account? <Link to="/login" className="ml-1 text-gray-900 dark:text-gray-200 hover:text-primary-700 dark:hover:text-primary-400 font-bold hover:underline transition-colors">Sign In</Link>
         </div>
       </AuthCard>
 
@@ -248,7 +248,7 @@ export const RegisterPage: React.FC = () => {
             title={policyModal.title}
             canClose={true}
         >
-            <div className="max-h-[60vh] overflow-y-auto pr-2">
+            <div className="max-h-[60vh] overflow-y-auto pr-2 text-gray-600 dark:text-gray-300">
                 {policyModal.content}
             </div>
             <div className="mt-6 flex justify-end">

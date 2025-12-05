@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { useLocation } from 'react-router-dom';
 import { Modal } from '../../../components/Modal';
@@ -21,27 +22,18 @@ export const FeedbackModal: React.FC<FeedbackModalProps> = ({ isOpen, onClose })
   
   const [productTag, setProductTag] = useState<string>('');
   const [message, setMessage] = useState('');
-  // Dates state kept for potential future use or hidden logic, but effectively unused in UI now
-  const [startDate, setStartDate] = useState('');
-  const [endDate, setEndDate] = useState('');
-  
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
 
-  // Quick reset when closing or success
   const handleClose = () => {
-    // We allow closing even if loading to prevent stuck UI, but typically we block interactions via Button disabled state
     onClose();
-    // Reset state after transition
     setTimeout(() => {
         setProductTag('');
         setMessage('');
-        setStartDate('');
-        setEndDate('');
         setError(null);
         setSuccess(false);
-        setIsLoading(false); // Ensure loader is reset
+        setIsLoading(false);
     }, 300);
   };
 
@@ -49,7 +41,6 @@ export const FeedbackModal: React.FC<FeedbackModalProps> = ({ isOpen, onClose })
     e.preventDefault();
     setError(null);
 
-    // Basic UI Validation before service to save a call
     if (!message.trim()) {
         setError("Please enter a message describing your feedback.");
         return;
@@ -61,15 +52,14 @@ export const FeedbackModal: React.FC<FeedbackModalProps> = ({ isOpen, onClose })
       await feedbackService.submitFeedback({
         product_tag: productTag || undefined,
         page: location.pathname,
-        user_id: user?.id || null, // Inject User ID if auth
+        user_id: user?.id || null,
         message: message,
-        start_date: null, // Hidden in UI, passing null
-        end_date: null // Hidden in UI, passing null
+        start_date: null,
+        end_date: null
       });
-      setIsLoading(false); // Stop loading before showing success
+      setIsLoading(false);
       setSuccess(true);
       
-      // Auto close after success
       setTimeout(() => {
           handleClose();
       }, 2000);
@@ -83,11 +73,11 @@ export const FeedbackModal: React.FC<FeedbackModalProps> = ({ isOpen, onClose })
       return (
           <Modal isOpen={isOpen} onClose={handleClose} title="Feedback Sent">
               <div className="flex flex-col items-center justify-center py-8 text-center animate-in fade-in zoom-in duration-300">
-                  <div className="w-16 h-16 bg-green-100 text-green-600 rounded-full flex items-center justify-center mb-4">
+                  <div className="w-16 h-16 bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400 rounded-full flex items-center justify-center mb-4">
                       <CheckCircle size={32} />
                   </div>
-                  <h3 className="text-xl font-bold text-gray-900 mb-2">Thank You!</h3>
-                  <p className="text-gray-500 max-w-xs mx-auto">
+                  <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">Thank You!</h3>
+                  <p className="text-gray-500 dark:text-gray-400 max-w-xs mx-auto">
                       Your feedback has been received and helps us improve the platform.
                   </p>
               </div>
@@ -101,21 +91,21 @@ export const FeedbackModal: React.FC<FeedbackModalProps> = ({ isOpen, onClose })
         
         {/* Topic Selection */}
         <div>
-            <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1.5 flex items-center gap-1.5">
+            <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1.5 flex items-center gap-1.5">
                 <Tag size={12} /> Topic
             </label>
             <div className="relative">
                 <select
                     value={productTag}
                     onChange={(e) => setProductTag(e.target.value)}
-                    className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-gray-900 text-sm focus:ring-2 focus:ring-primary/50 focus:border-primary outline-none appearance-none cursor-pointer"
+                    className="w-full px-4 py-2.5 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl text-gray-900 dark:text-white text-sm focus:ring-2 focus:ring-primary/50 focus:border-primary outline-none appearance-none cursor-pointer"
                 >
-                    <option value="" disabled>Select a topic...</option>
+                    <option value="" disabled className="text-gray-500 dark:text-gray-400">Select a topic...</option>
                     {TAG_OPTIONS.map(tag => (
-                        <option key={tag} value={tag}>{tag}</option>
+                        <option key={tag} value={tag} className="text-gray-900 dark:text-white bg-white dark:bg-gray-800">{tag}</option>
                     ))}
                 </select>
-                <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-gray-500">
+                <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-gray-500 dark:text-gray-400">
                     <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                     </svg>
@@ -125,7 +115,7 @@ export const FeedbackModal: React.FC<FeedbackModalProps> = ({ isOpen, onClose })
 
         {/* Message */}
         <div>
-            <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1.5 flex items-center gap-1.5">
+            <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1.5 flex items-center gap-1.5">
                 <MessageSquare size={12} /> Message <span className="text-red-500">*</span>
             </label>
             <textarea
@@ -133,10 +123,10 @@ export const FeedbackModal: React.FC<FeedbackModalProps> = ({ isOpen, onClose })
                 onChange={(e) => setMessage(e.target.value)}
                 rows={5}
                 placeholder="What's on your mind? Describe the issue or idea..."
-                className={`w-full px-4 py-3 bg-gray-50 border rounded-xl text-gray-900 text-sm placeholder-gray-400 focus:ring-2 focus:ring-primary/50 focus:border-primary outline-none transition-all resize-none ${!message && error ? 'border-red-500' : 'border-gray-200'}`}
+                className={`w-full px-4 py-3 bg-gray-50 dark:bg-gray-800 border rounded-xl text-gray-900 dark:text-white text-sm placeholder-gray-400 dark:placeholder-gray-500 focus:ring-2 focus:ring-primary/50 focus:border-primary outline-none transition-all resize-none ${!message && error ? 'border-red-500' : 'border-gray-200 dark:border-gray-700'}`}
             />
             <div className="flex justify-end mt-1">
-                <span className={`text-[10px] ${message.length > 2000 ? 'text-red-500' : 'text-gray-400'}`}>
+                <span className={`text-[10px] ${message.length > 2000 ? 'text-red-500' : 'text-gray-400 dark:text-gray-500'}`}>
                     {message.length}/2000
                 </span>
             </div>
@@ -150,7 +140,7 @@ export const FeedbackModal: React.FC<FeedbackModalProps> = ({ isOpen, onClose })
                 variant="ghost" 
                 onClick={handleClose}
                 disabled={isLoading}
-                className="text-gray-500 hover:text-gray-700 hover:bg-gray-100"
+                className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800"
             >
                 Cancel
             </Button>
