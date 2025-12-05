@@ -4,8 +4,9 @@ import { TagUsage } from '../../../types/tags.types';
 import { tagService } from '../../../services/tagService';
 import { TagCloud } from '../components/TagCloud';
 import { SEOHead } from '../../../components/SEOHead';
+import { useTheme } from '../../../context/ThemeContext';
 
-const NodeGraphBackground: React.FC = () => {
+const NodeGraphBackground: React.FC<{ theme: 'light' | 'dark' }> = ({ theme }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
   useEffect(() => {
@@ -33,8 +34,11 @@ const NodeGraphBackground: React.FC = () => {
 
     const draw = () => {
       ctx.clearRect(0, 0, width, height);
-      ctx.fillStyle = '#E5E7EB'; // gray-200
-      ctx.strokeStyle = '#E5E7EB'; // gray-200
+      // Adjust color based on theme
+      const color = theme === 'dark' ? '#374151' : '#E5E7EB'; // gray-700 vs gray-200
+      
+      ctx.fillStyle = color;
+      ctx.strokeStyle = color;
 
       particles.forEach((p, i) => {
         p.x += p.vx;
@@ -82,7 +86,7 @@ const NodeGraphBackground: React.FC = () => {
       window.removeEventListener('resize', handleResize);
       cancelAnimationFrame(animationFrameId);
     };
-  }, []);
+  }, [theme]); // Re-run effect when theme changes to update colors
 
   return <canvas ref={canvasRef} className="absolute inset-0 w-full h-full pointer-events-none opacity-50" />;
 };
@@ -90,6 +94,7 @@ const NodeGraphBackground: React.FC = () => {
 export const TagCloudPage: React.FC = () => {
   const [tags, setTags] = useState<TagUsage[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const { theme } = useTheme();
 
   useEffect(() => {
     const fetchTags = async () => {
@@ -106,9 +111,9 @@ export const TagCloudPage: React.FC = () => {
   }, []);
 
   return (
-    <div className="relative w-full min-h-[80vh] flex flex-col items-center justify-center overflow-hidden bg-gray-50/30">
+    <div className="relative w-full min-h-[80vh] flex flex-col items-center justify-center overflow-hidden bg-gray-50/30 dark:bg-gray-900 transition-colors duration-200">
       <SEOHead type="tag-cloud" />
-      <NodeGraphBackground />
+      <NodeGraphBackground theme={theme} />
       
       <div className="relative z-10 w-full max-w-7xl mx-auto px-4 py-12 flex flex-col items-center">
         {isLoading ? (
@@ -122,7 +127,7 @@ export const TagCloudPage: React.FC = () => {
                <TagCloud tags={tags} />
            </div>
         ) : (
-           <div className="text-gray-300 font-light text-sm tracking-widest uppercase mt-20">No topics found</div>
+           <div className="text-gray-300 dark:text-gray-600 font-light text-sm tracking-widest uppercase mt-20">No topics found</div>
         )}
       </div>
     </div>

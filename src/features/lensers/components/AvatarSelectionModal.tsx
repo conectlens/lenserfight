@@ -12,8 +12,6 @@ interface AvatarSelectionModalProps {
   currentUrl?: string | null;
 }
 
-// System generated avatars (using Dicebear for reliable system generation)
-// Generating 30 seeds for diversity
 const SEEDS = [
     'Felix', 'Aneka', 'Zack', 'Sarah', 'Buster', 'Molly', 'Pepper', 'Willow', 'Garfield', 'Salem', 
     'Luna', 'Shadow', 'Max', 'Chloe', 'Jack', 'Bella', 'Rocky', 'Daisy', 'Buddy', 'Lily',
@@ -51,27 +49,27 @@ export const AvatarSelectionModal: React.FC<AvatarSelectionModalProps> = ({ isOp
                     onClick={() => setSelected(url)}
                     className={`
                         relative aspect-square rounded-full overflow-hidden border-2 transition-all p-1 group
-                        ${selected === url ? 'border-primary ring-2 ring-primary/30' : 'border-transparent hover:border-gray-200'}
+                        ${selected === url ? 'border-primary ring-2 ring-primary/30' : 'border-transparent hover:border-gray-200 dark:hover:border-gray-700'}
                     `}
                 >
-                    <img src={url} alt="Avatar option" className="w-full h-full object-cover rounded-full bg-gray-50" />
+                    <img src={url} alt="Avatar option" className="w-full h-full object-cover rounded-full bg-gray-50 dark:bg-gray-700" />
                 </button>
             ))}
         </div>
       </div>
       
-      <div className="flex flex-col sm:flex-row justify-between items-center gap-3 mt-4 pt-4 border-t border-gray-100">
+      <div className="flex flex-col sm:flex-row justify-between items-center gap-3 mt-4 pt-4 border-t border-gray-100 dark:border-gray-700">
           <button 
             type="button"
             onClick={handleRemove}
-            className="text-red-500 text-sm font-medium hover:text-red-600 flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-red-50 transition-colors w-full sm:w-auto justify-center sm:justify-start"
+            className="text-red-500 text-sm font-medium hover:text-red-600 flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors w-full sm:w-auto justify-center sm:justify-start"
             title="Remove Avatar"
           >
               <Trash2 size={16} /> Remove
           </button>
           
           <div className="flex gap-2 w-full sm:w-auto">
-            <Button variant="secondary" onClick={onClose} disabled={isLoading} className="flex-1 sm:w-auto px-4">Cancel</Button>
+            <Button variant="secondary" onClick={onClose} disabled={isLoading} className="flex-1 sm:w-auto px-4 dark:bg-gray-700 dark:text-white dark:border-gray-600 dark:hover:bg-gray-600">Cancel</Button>
             <Button onClick={handleConfirm} isLoading={isLoading} className="flex-1 sm:w-auto px-6">Save</Button>
           </div>
       </div>

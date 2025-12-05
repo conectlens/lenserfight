@@ -33,7 +33,6 @@ export const CreateThreadModal: React.FC<CreateThreadModalProps> = ({ isOpen, on
   const [tags, setTags] = useState<string[]>([]);
   const [visibility, setVisibility] = useState<Visibility>('public');
 
-  // Mention State
   const editorRef = useRef<RichMentionInputHandle>(null);
   const [mentionQuery, setMentionQuery] = useState('');
   const [suggestions, setSuggestions] = useState<PromptTemplateViewModel[]>([]);
@@ -49,7 +48,6 @@ export const CreateThreadModal: React.FC<CreateThreadModalProps> = ({ isOpen, on
               setTags(initialData.tags || []);
               setVisibility(initialData.visibility);
           } else {
-              // Reset form when opening fresh
               setTitle('');
               setContent('');
               setTags([]);
@@ -58,7 +56,6 @@ export const CreateThreadModal: React.FC<CreateThreadModalProps> = ({ isOpen, on
       }
   }, [isOpen, initialData]);
 
-  // Search Effect
   useEffect(() => {
     if (!isMentioning) {
         setSuggestions([]);
@@ -133,14 +130,14 @@ export const CreateThreadModal: React.FC<CreateThreadModalProps> = ({ isOpen, on
         
         <div className="space-y-4">
             <div className="space-y-4">
-                <label className="text-base font-semibold text-gray-900 block">Content</label>
+                <label className="text-base font-semibold text-gray-900 dark:text-gray-100 block">Content</label>
                 
                 <input
                     type="text"
                     value={title}
                     onChange={(e) => setTitle(e.target.value)}
                     placeholder="Title your thread..."
-                    className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-900 placeholder-gray-400 focus:ring-2 focus:ring-primary/50 focus:border-primary outline-none transition-all font-medium text-lg"
+                    className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:ring-2 focus:ring-primary/50 focus:border-primary outline-none transition-all font-medium text-lg"
                     required
                     autoFocus
                 />
@@ -188,7 +185,7 @@ export const CreateThreadModal: React.FC<CreateThreadModalProps> = ({ isOpen, on
             />
         </div>
 
-        {error && <div className="text-red-500 text-sm bg-red-50 p-3 rounded-lg">{error}</div>}
+        {error && <div className="text-red-500 text-sm bg-red-50 dark:bg-red-900/30 p-3 rounded-lg">{error}</div>}
 
         <div className="flex gap-3 pt-2">
             <Button 
@@ -196,7 +193,7 @@ export const CreateThreadModal: React.FC<CreateThreadModalProps> = ({ isOpen, on
                 variant="secondary" 
                 onClick={handleClose}
                 disabled={isSubmitting}
-                className="bg-gray-100 border-transparent hover:bg-gray-200 text-gray-700"
+                className="bg-gray-100 dark:bg-gray-700 border-transparent hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-200"
             >
                 Cancel
             </Button>

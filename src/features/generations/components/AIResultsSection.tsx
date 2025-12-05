@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState, useRef, useCallback } from 'react';
 import { useLenser } from '../../../context/LenserContext';
 import { generationService } from '../../../services/generationService';
@@ -140,15 +139,15 @@ export const AIResultsSection: React.FC<AIResultsSectionProps> = ({ promptId }) 
   if (!hasLenser) return null;
 
   return (
-    <div className="mt-4 pt-4 md:mt-12 md:pt-8 border-t border-gray-100">
+    <div className="mt-4 pt-4 md:mt-12 md:pt-8 border-t border-gray-100 dark:border-gray-800">
         {/* Header & Generate Actions */}
         <div className="flex flex-row justify-between items-center gap-4 mb-6">
             <div>
-                <h3 className="text-lg md:text-xl font-bold text-gray-900 flex items-center gap-2">
+                <h3 className="text-lg md:text-xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
                     <Sparkles size={20} className="text-primary-600" />
                     AI Generations
                 </h3>
-                <p className="hidden md:block text-sm text-gray-500 mt-1">Explore results generated with this prompt.</p>
+                <p className="hidden md:block text-sm text-gray-500 dark:text-gray-400 mt-1">Explore results generated with this prompt.</p>
             </div>
             
             <div className="flex gap-2">
@@ -174,7 +173,7 @@ export const AIResultsSection: React.FC<AIResultsSectionProps> = ({ promptId }) 
                             px-4 py-1.5 rounded-full text-xs font-bold uppercase tracking-wide transition-all whitespace-nowrap
                             ${mediaFilter === type 
                                 ? 'bg-primary text-gray-900 shadow-sm' 
-                                : 'bg-white border border-gray-200 text-gray-500 hover:bg-gray-100'}
+                                : 'bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700'}
                         `}
                     >
                         {type}

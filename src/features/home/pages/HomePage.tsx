@@ -22,7 +22,6 @@ export const HomePage: React.FC = () => {
   const [isCreateModalOpen, setIsCreateModalOpen] = React.useState(false);
   const [isProfileModalOpen, setIsProfileModalOpen] = React.useState(false);
 
-  // --- React Query Hooks (Auto Caching & Background Refresh) ---
   const { 
     data: threadsData, 
     fetchNextPage, 
@@ -35,11 +34,9 @@ export const HomePage: React.FC = () => {
   const { data: trendingTags, isLoading: tagsLoading, isError: tagsError } = useTrendingTags();
   const { data: latestLensers, isLoading: lensersLoading, isError: lensersError } = useLatestLensers();
 
-  // Flatten infinite query pages
   const threads = threadsData?.pages.flatMap(page => page) || [];
   const isEmpty = !threadsLoading && threads.length === 0;
 
-  // --- Intersection Observer for Infinite Scroll ---
   const observer = useRef<IntersectionObserver | null>(null);
   const lastThreadElementRef = useCallback((node: HTMLDivElement) => {
     if (threadsLoading || isFetchingNextPage) return;
@@ -54,7 +51,6 @@ export const HomePage: React.FC = () => {
     if (node) observer.current.observe(node);
   }, [threadsLoading, isFetchingNextPage, hasNextPage, fetchNextPage]);
 
-  // --- Handlers ---
   const handleOpenThread = (id: string) => navigate(`/threads/${id}`);
 
   const handleCreateClick = () => {
@@ -71,11 +67,10 @@ export const HomePage: React.FC = () => {
     }
   };
 
-  // --- Helper Components ---
   const MinimalAlert = ({ icon: Icon, text }: { icon: any, text: string }) => (
-      <div className="bg-gray-50 border border-gray-100 rounded-lg p-6 flex flex-col items-center justify-center text-center">
-          <Icon className="w-5 h-5 text-gray-400 mb-2" />
-          <span className="text-xs font-medium text-gray-500">{text}</span>
+      <div className="bg-gray-50 dark:bg-gray-800 border border-gray-100 dark:border-gray-700 rounded-lg p-6 flex flex-col items-center justify-center text-center">
+          <Icon className="w-5 h-5 text-gray-400 dark:text-gray-500 mb-2" />
+          <span className="text-xs font-medium text-gray-500 dark:text-gray-400">{text}</span>
       </div>
   );
 
@@ -86,7 +81,7 @@ export const HomePage: React.FC = () => {
       {/* Main Feed Column */}
       <div className="lg:col-span-8">
         <div className="flex items-center justify-between mb-6">
-            <h1 className="text-2xl font-bold text-gray-900">Your Feed</h1>
+            <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Your Feed</h1>
             {!isEmpty && (
                 <div className="w-auto">
                     <Button onClick={handleCreateClick} className="flex items-center gap-2 px-4 py-2 w-auto">
@@ -97,12 +92,12 @@ export const HomePage: React.FC = () => {
         </div>
 
         {isEmpty ? (
-            <div className="bg-white rounded-2xl border border-gray-200 border-dashed p-10 py-16 flex flex-col items-center justify-center text-center shadow-sm">
-                <div className="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center mb-4 text-gray-400">
+            <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 border-dashed p-10 py-16 flex flex-col items-center justify-center text-center shadow-sm">
+                <div className="w-16 h-16 bg-gray-50 dark:bg-gray-700 rounded-full flex items-center justify-center mb-4 text-gray-400 dark:text-gray-500">
                     <MessageSquareOff size={32} strokeWidth={1.5} />
                 </div>
-                <h3 className="text-xl font-bold text-gray-900 mb-2">No posts yet</h3>
-                <p className="text-gray-500 max-w-sm mb-8 leading-relaxed">
+                <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">No posts yet</h3>
+                <p className="text-gray-500 dark:text-gray-400 max-w-sm mb-8 leading-relaxed">
                     Your feed is currently quiet. Be the first to start a conversation.
                 </p>
                 <Button onClick={handleCreateClick} className="flex items-center gap-2 px-6 w-auto">
@@ -117,7 +112,6 @@ export const HomePage: React.FC = () => {
                   onOpenThread={handleOpenThread} 
                 />
                 
-                {/* Loader Anchor */}
                 <div ref={lastThreadElementRef} className="h-4"></div>
                 {isFetchingNextPage && (
                     <div className="py-4 flex justify-center">
@@ -132,15 +126,15 @@ export const HomePage: React.FC = () => {
       <div className="lg:col-span-4 mt-8 lg:mt-0">
            <div className="space-y-6 lg:pt-[52px]">
                 {/* Top Prompts Widget */}
-                <Card className="p-0 overflow-hidden bg-white">
-                  <div className="px-6 py-4 border-b border-gray-100 bg-gray-50/50">
-                    <h3 className="text-xs font-bold text-gray-500 uppercase tracking-wider">Top Prompts</h3>
+                <Card className="p-0 overflow-hidden bg-white dark:bg-gray-800">
+                  <div className="px-6 py-4 border-b border-gray-100 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-800/50">
+                    <h3 className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Top Prompts</h3>
                   </div>
                   <div className="p-2">
                     {promptsLoading ? (
                         <div className="p-4 space-y-3">
-                            <div className="h-10 bg-gray-100 rounded animate-pulse"></div>
-                            <div className="h-10 bg-gray-100 rounded animate-pulse"></div>
+                            <div className="h-10 bg-gray-100 dark:bg-gray-700 rounded animate-pulse"></div>
+                            <div className="h-10 bg-gray-100 dark:bg-gray-700 rounded animate-pulse"></div>
                         </div>
                     ) : !topPrompts || topPrompts.length === 0 ? (
                         <div>
@@ -152,10 +146,10 @@ export const HomePage: React.FC = () => {
                       <div 
                             key={prompt.id} 
                             onClick={() => navigate(`/prompts/${prompt.id}`)}
-                            className="p-4 hover:bg-gray-50 rounded-xl cursor-pointer transition-colors"
+                            className="p-4 hover:bg-gray-50 dark:hover:bg-gray-700/50 rounded-xl cursor-pointer transition-colors"
                         >
-                        <p className="text-sm font-medium text-gray-800 line-clamp-2">{prompt.title}</p>
-                        <p className="text-xs text-gray-400 mt-1">{prompt.usageCount} uses</p>
+                        <p className="text-sm font-medium text-gray-800 dark:text-gray-200 line-clamp-2">{prompt.title}</p>
+                        <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">{prompt.usageCount} uses</p>
                       </div>
                     ))}
                   </div>
@@ -163,10 +157,10 @@ export const HomePage: React.FC = () => {
 
                 {/* New Lensers Widget */}
                 <Card className="p-6">
-                  <h3 className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-4">New Lensers</h3>
+                  <h3 className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-4">New Lensers</h3>
                   {lensersLoading ? (
                       <div className="space-y-3">
-                          {[1,2,3].map(i => <div key={i} className="flex gap-2"><div className="w-8 h-8 bg-gray-200 rounded-full"></div><div className="flex-1 bg-gray-100 rounded h-8"></div></div>)}
+                          {[1,2,3].map(i => <div key={i} className="flex gap-2"><div className="w-8 h-8 bg-gray-200 dark:bg-gray-700 rounded-full"></div><div className="flex-1 bg-gray-100 dark:bg-gray-700 rounded h-8"></div></div>)}
                       </div>
                   ) : lensersError ? (
                       <MinimalAlert icon={AlertCircle} text="Error loading members" />
@@ -175,19 +169,19 @@ export const HomePage: React.FC = () => {
                           {latestLensers?.map((user) => (
                             <div 
                                 key={user.id} 
-                                className="flex items-center gap-3 group cursor-pointer p-2 -mx-2 hover:bg-gray-50 rounded-lg transition-colors"
+                                className="flex items-center gap-3 group cursor-pointer p-2 -mx-2 hover:bg-gray-50 dark:hover:bg-gray-700/50 rounded-lg transition-colors"
                                 onClick={() => navigate(`/lenser/${user.handle}`)}
                             >
-                              <div className="h-10 w-10 rounded-full ring-2 ring-white bg-gray-200 overflow-hidden flex-shrink-0 border border-gray-100">
+                              <div className="h-10 w-10 rounded-full ring-2 ring-white dark:ring-gray-800 bg-gray-200 dark:bg-gray-700 overflow-hidden flex-shrink-0 border border-gray-100 dark:border-gray-700">
                                   <img src={user.avatar_url || ''} alt={user.display_name} className="w-full h-full object-cover" />
                               </div>
                               <div className="flex-1 min-w-0">
                                   <div className="flex items-center gap-1.5">
-                                      <p className="text-sm font-semibold text-gray-900 truncate group-hover:text-primary-700 transition-colors">{user.display_name}</p>
+                                      <p className="text-sm font-semibold text-gray-900 dark:text-gray-100 truncate group-hover:text-primary-700 transition-colors">{user.display_name}</p>
                                   </div>
-                                  <p className="text-xs text-gray-500 truncate">@{user.handle}</p>
+                                  <p className="text-xs text-gray-500 dark:text-gray-400 truncate">@{user.handle}</p>
                               </div>
-                              <ChevronRight size={16} className="text-gray-300 group-hover:text-primary transition-colors" />
+                              <ChevronRight size={16} className="text-gray-300 dark:text-gray-600 group-hover:text-primary transition-colors" />
                             </div>
                           ))}
                       </div>
@@ -196,9 +190,9 @@ export const HomePage: React.FC = () => {
 
                 {/* Trending Tags Widget */}
                 <Card className="p-6">
-                  <h3 className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-4">Trending Tags</h3>
+                  <h3 className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-4">Trending Tags</h3>
                   {tagsLoading ? (
-                      <div className="flex gap-2"><div className="w-12 h-6 bg-gray-200 rounded"></div><div className="w-16 h-6 bg-gray-200 rounded"></div></div>
+                      <div className="flex gap-2"><div className="w-12 h-6 bg-gray-200 dark:bg-gray-700 rounded"></div><div className="w-16 h-6 bg-gray-200 dark:bg-gray-700 rounded"></div></div>
                   ) : tagsError || !trendingTags?.length ? (
                       <MinimalAlert icon={Tag} text="No trending topics" />
                   ) : (

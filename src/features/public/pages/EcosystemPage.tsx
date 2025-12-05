@@ -20,38 +20,38 @@ export const EcosystemPage: React.FC = () => {
   ];
 
   const DefinitionCard = ({ title, icon: Icon, description, link }: any) => (
-    <Link to={link} className="group block p-8 rounded-2xl border border-gray-200 hover:border-gray-300 hover:shadow-lg transition-all bg-white relative h-full">
-      <div className="w-12 h-12 bg-gray-50 rounded-xl flex items-center justify-center mb-6 text-gray-900 group-hover:bg-primary group-hover:text-gray-900 transition-colors">
+    <Link to={link} className="group block p-8 rounded-2xl border border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600 hover:shadow-lg transition-all bg-white dark:bg-gray-800 relative h-full">
+      <div className="w-12 h-12 bg-gray-50 dark:bg-gray-700 rounded-xl flex items-center justify-center mb-6 text-gray-900 dark:text-white group-hover:bg-primary group-hover:text-gray-900 transition-colors">
         <Icon size={24} />
       </div>
-      <h3 className="text-xl font-bold text-gray-900 mb-3 flex items-center gap-2">
+      <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-3 flex items-center gap-2">
         {title} <ArrowRight size={18} className="opacity-0 group-hover:opacity-100 transition-opacity -translate-x-2 group-hover:translate-x-0" />
       </h3>
-      <p className="text-gray-500 leading-relaxed">{description}</p>
+      <p className="text-gray-500 dark:text-gray-400 leading-relaxed">{description}</p>
     </Link>
   );
 
   return (
-    <div className="bg-white">
+    <div className="bg-white dark:bg-gray-900 transition-colors duration-200">
       <PublicPageTabs tabs={tabs} />
 
       {isIndex && (
         <div className="pt-20 pb-24">
             {/* Vision Header */}
             <div className="max-w-4xl mx-auto px-6 text-center mb-16">
-                <h1 className="text-4xl md:text-6xl font-black text-gray-900 tracking-tight mb-8 leading-[1.15]">
+                <h1 className="text-4xl md:text-6xl font-black text-gray-900 dark:text-white tracking-tight mb-8 leading-[1.15]">
                     “A new lens. Endless perspectives. One connected world of Lensers.”
                 </h1>
                 
                 {/* Mission */}
                 <div className="max-w-2xl mx-auto">
-                    <div className="inline-block px-3 py-1 bg-gray-100 rounded-full text-xs font-bold uppercase tracking-widest text-gray-500 mb-4">
+                    <div className="inline-block px-3 py-1 bg-gray-100 dark:bg-gray-800 rounded-full text-xs font-bold uppercase tracking-widest text-gray-500 dark:text-gray-400 mb-4">
                         Our Mission
                     </div>
-                    <p className="text-xl md:text-2xl text-gray-800 font-medium leading-relaxed mb-4">
+                    <p className="text-xl md:text-2xl text-gray-800 dark:text-gray-200 font-medium leading-relaxed mb-4">
                         Everyone has a lens — AI too. But Lensers share perspectives.
                     </p>
-                    <p className="text-gray-500 leading-relaxed text-lg">
+                    <p className="text-gray-500 dark:text-gray-400 leading-relaxed text-lg">
                         We build AI-powered tools and intelligent data systems that help people connect, learn deeply, share perspectives, and create productively within the Lenser ecosystem.
                     </p>
                 </div>
@@ -59,7 +59,7 @@ export const EcosystemPage: React.FC = () => {
 
             {/* Manifesto */}
             <div className="max-w-5xl mx-auto px-6 mb-20">
-                <div className="bg-gray-900 text-white rounded-3xl p-8 md:p-16 relative overflow-hidden shadow-2xl">
+                <div className="bg-gray-900 dark:bg-black text-white rounded-3xl p-8 md:p-16 relative overflow-hidden shadow-2xl border border-gray-800">
                     <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-primary/5 rounded-full blur-[120px] pointer-events-none -mr-20 -mt-20"></div>
                     
                     <div className="relative z-10">
@@ -86,8 +86,8 @@ export const EcosystemPage: React.FC = () => {
             {/* Protocol/Definitions Navigation */}
             <div className="max-w-5xl mx-auto px-6">
                 <div className="text-center mb-10">
-                    <h2 className="text-2xl font-bold text-gray-900">Explore the Protocol</h2>
-                    <p className="text-gray-500 mt-2">Understand the actors and mechanisms within the ecosystem.</p>
+                    <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Explore the Protocol</h2>
+                    <p className="text-gray-500 dark:text-gray-400 mt-2">Understand the actors and mechanisms within the ecosystem.</p>
                 </div>
                 <div className="grid md:grid-cols-2 gap-8">
                     <DefinitionCard 
@@ -115,36 +115,36 @@ export const EcosystemPage: React.FC = () => {
           <div className="space-y-16">
             <div className="grid md:grid-cols-2 gap-12 items-center">
                <div className="space-y-6">
-                  <h3 className="text-2xl font-bold text-gray-900">Definition</h3>
-                  <p className="text-gray-600 text-lg leading-relaxed">
+                  <h3 className="text-2xl font-bold text-gray-900 dark:text-white">Definition</h3>
+                  <p className="text-gray-600 dark:text-gray-300 text-lg leading-relaxed">
                     A <strong>Lenser</strong> is the active participant within the ecosystem. It is the entity that wields a Lens to shape an outcome. Unlike a passive user, a Lenser defines intent, context, and constraints.
                   </p>
-                  <p className="text-gray-600 text-lg leading-relaxed">
+                  <p className="text-gray-600 dark:text-gray-300 text-lg leading-relaxed">
                     In LenserFight, identities are visually distinct to ensure transparency in interaction:
                   </p>
                </div>
                
-               <div className="bg-gray-50 rounded-2xl p-8 border border-gray-100 grid gap-6">
+               <div className="bg-gray-50 dark:bg-gray-800 rounded-2xl p-8 border border-gray-100 dark:border-gray-700 grid gap-6">
                   <div className="flex items-start gap-4">
-                      <div className="w-12 h-12 rounded-full bg-gray-200 flex items-center justify-center text-gray-600 flex-shrink-0">
+                      <div className="w-12 h-12 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center text-gray-600 dark:text-gray-300 flex-shrink-0">
                           <div className="flex gap-1">
-                              <div className="w-2 h-2 bg-gray-600 rounded-full"></div>
-                              <div className="w-2 h-2 bg-gray-600 rounded-full"></div>
+                              <div className="w-2 h-2 bg-gray-600 dark:bg-gray-400 rounded-full"></div>
+                              <div className="w-2 h-2 bg-gray-600 dark:bg-gray-400 rounded-full"></div>
                           </div>
                       </div>
                       <div>
-                          <h4 className="font-bold text-gray-900">Human Lenser</h4>
-                          <p className="text-sm text-gray-500 mt-1">Represented by a two-eyed avatar. Originators of intent and subjective creativity.</p>
+                          <h4 className="font-bold text-gray-900 dark:text-white">Human Lenser</h4>
+                          <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Represented by a two-eyed avatar. Originators of intent and subjective creativity.</p>
                       </div>
                   </div>
-                  <div className="w-full h-px bg-gray-200"></div>
+                  <div className="w-full h-px bg-gray-200 dark:bg-gray-700"></div>
                   <div className="flex items-start gap-4">
-                      <div className="w-12 h-12 rounded-full bg-gray-900 flex items-center justify-center text-primary flex-shrink-0">
+                      <div className="w-12 h-12 rounded-full bg-gray-900 dark:bg-black flex items-center justify-center text-primary flex-shrink-0">
                           <div className="w-3 h-3 bg-primary rounded-full"></div>
                       </div>
                       <div>
-                          <h4 className="font-bold text-gray-900">AI Lenser</h4>
-                          <p className="text-sm text-gray-500 mt-1">Represented by a single-eyed yellow character. System-level actors executing complex logic.</p>
+                          <h4 className="font-bold text-gray-900 dark:text-white">AI Lenser</h4>
+                          <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Represented by a single-eyed yellow character. System-level actors executing complex logic.</p>
                       </div>
                   </div>
                </div>
@@ -159,7 +159,7 @@ export const EcosystemPage: React.FC = () => {
           subtitle="The Origin of Perspective."
         >
           <div className="space-y-12">
-            <div className="prose prose-lg text-gray-600 max-w-none">
+            <div className="prose prose-lg text-gray-600 dark:text-gray-300 max-w-none">
                 <p>
                   A <strong>Lens</strong> is dual in nature. Philosophically, it is an "idea-seed"—a core concept or perspective that defines how information is processed. Technically, it acts as the focusing mechanism.
                 </p>
@@ -168,7 +168,7 @@ export const EcosystemPage: React.FC = () => {
                 </p>
             </div>
 
-            <div className="bg-gray-900 text-white rounded-2xl p-10">
+            <div className="bg-gray-900 dark:bg-black text-white rounded-2xl p-10 border border-gray-800">
                 <h3 className="text-xl font-bold mb-6 flex items-center gap-3">
                     <Disc className="text-primary" /> System-Level Lenses (Supported Models)
                 </h3>

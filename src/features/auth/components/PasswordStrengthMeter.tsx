@@ -6,8 +6,8 @@ interface PasswordStrengthMeterProps {
 }
 
 const StrengthItem = ({ fulfilled, label }: { fulfilled: boolean, label: string }) => (
-  <div className={`flex items-center gap-1.5 text-xs transition-colors duration-200 ${fulfilled ? 'text-green-600 font-medium' : 'text-gray-400'}`}>
-      {fulfilled ? <Check size={12} strokeWidth={3} /> : <div className="w-3 h-3 rounded-full border border-gray-300" />}
+  <div className={`flex items-center gap-1.5 text-xs transition-colors duration-200 ${fulfilled ? 'text-green-600 dark:text-green-400 font-medium' : 'text-gray-400 dark:text-gray-500'}`}>
+      {fulfilled ? <Check size={12} strokeWidth={3} /> : <div className="w-3 h-3 rounded-full border border-gray-300 dark:border-gray-600" />}
       {label}
   </div>
 );
@@ -45,7 +45,7 @@ export const PasswordStrengthMeter: React.FC<PasswordStrengthMeterProps> = ({ pa
             {[1, 2, 3, 4, 5].map((i) => (
                 <div 
                     key={i} 
-                    className={`flex-1 rounded-full transition-all duration-300 ${i <= strength.score ? getStrengthColor() : 'bg-gray-100'}`} 
+                    className={`flex-1 rounded-full transition-all duration-300 ${i <= strength.score ? getStrengthColor() : 'bg-gray-100 dark:bg-gray-700'}`} 
                 />
             ))}
         </div>

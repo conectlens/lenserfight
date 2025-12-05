@@ -25,10 +25,10 @@ export const SidebarItem: React.FC<SidebarItemProps> = ({
       className={`
         w-full flex items-center p-3 my-1 rounded-xl transition-all duration-200 group relative overflow-hidden
         ${isActive 
-            ? 'bg-primary/20 text-gray-900 font-semibold' 
+            ? 'bg-primary/20 text-gray-900 dark:text-white font-semibold' 
             : isComingSoon
                 ? 'cursor-not-allowed opacity-60 hover:bg-transparent animate-pulse-gold'
-                : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
+                : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-white'
         }
         ${collapsed ? 'justify-center' : ''}
         ${className}
@@ -44,7 +44,7 @@ export const SidebarItem: React.FC<SidebarItemProps> = ({
         </div>
       )}
 
-      <span className={`flex-shrink-0 z-10 relative ${isActive ? 'text-gray-900' : isComingSoon ? 'text-gray-400' : 'text-gray-500 group-hover:text-gray-900'}`}>
+      <span className={`flex-shrink-0 z-10 relative ${isActive ? 'text-gray-900 dark:text-white' : isComingSoon ? 'text-gray-400 dark:text-gray-600' : 'text-gray-500 dark:text-gray-400 group-hover:text-gray-900 dark:group-hover:text-white'}`}>
         {icon}
       </span>
       
