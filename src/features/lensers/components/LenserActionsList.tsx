@@ -45,20 +45,16 @@ export const LenserActionsList: React.FC<LenserActionsListProps> = ({ actions })
           navigate(`/threads/${item.targetId}`);
       } else if (item.targetType === 'thread_reply') {
            // Currently we don't have deep linking to specific reply, go to thread if possible
-           // But ActivityFeedItem for reply stores replyId as targetId. 
-           // Navigation would need parent thread ID which isn't in ActivityFeedItem yet without extra fetch.
-           // For now, we disable click or just show it.
-           // Ideally ActivityFeedItem should have contextLink.
       }
   };
 
   if (actions.length === 0) {
       return (
         <div className="flex flex-col items-center justify-center py-20 text-center animate-in fade-in">
-            <div className="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center mb-4 text-gray-300">
+            <div className="w-16 h-16 bg-gray-50 dark:bg-gray-800 rounded-full flex items-center justify-center mb-4 text-gray-300 dark:text-gray-600">
                 <Activity size={32} />
             </div>
-            <p className="text-gray-500 font-medium">No recent activity.</p>
+            <p className="text-gray-500 dark:text-gray-400 font-medium">No recent activity.</p>
         </div>
       );
   }
@@ -72,15 +68,15 @@ export const LenserActionsList: React.FC<LenserActionsListProps> = ({ actions })
             // @ts-ignore - onClick binding
             onClick={() => handleClick(action)}
         >
-           <div className="w-10 h-10 rounded-full bg-gray-50 flex items-center justify-center flex-shrink-0">
+           <div className="w-10 h-10 rounded-full bg-gray-50 dark:bg-gray-700/50 flex items-center justify-center flex-shrink-0">
                {getIcon(action.reaction)}
            </div>
            <div className="flex-1 min-w-0">
                <div className="flex justify-between items-start mb-0.5">
-                   <p className="text-sm text-gray-500 font-medium">{getLabel(action.reaction, action.targetType)}</p>
-                   <span className="text-xs text-gray-400 whitespace-nowrap ml-2">{timeAgo(action.createdAt)}</span>
+                   <p className="text-sm text-gray-500 dark:text-gray-400 font-medium">{getLabel(action.reaction, action.targetType)}</p>
+                   <span className="text-xs text-gray-400 dark:text-gray-500 whitespace-nowrap ml-2">{timeAgo(action.createdAt)}</span>
                </div>
-               <p className="text-base font-bold text-gray-900 line-clamp-1 break-words">{action.targetTitle}</p>
+               <p className="text-base font-bold text-gray-900 dark:text-white line-clamp-1 break-words">{action.targetTitle}</p>
            </div>
         </Card>
       ))}

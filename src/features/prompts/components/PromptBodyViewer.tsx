@@ -28,7 +28,7 @@ export const PromptBodyViewer: React.FC<PromptBodyViewerProps> = ({ content, onC
   return (
     <div className="w-full max-w-[860px] mx-auto relative group">
       {/* Container */}
-      <div className="rounded-xl border border-gray-200 bg-white shadow-sm overflow-hidden transition-all hover:shadow-md relative">
+      <div className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 shadow-sm overflow-hidden transition-all hover:shadow-md relative">
         
         {/* Floating Actions */}
         <div className="absolute top-3 right-3 z-10 flex gap-2">
@@ -37,8 +37,8 @@ export const PromptBodyViewer: React.FC<PromptBodyViewerProps> = ({ content, onC
               className={`
                 relative p-2 rounded-lg transition-all duration-200 border shadow-sm group/btn
                 ${copied 
-                  ? 'bg-green-50 text-green-600 border-green-200' 
-                  : 'bg-white text-gray-500 border-gray-200 hover:text-gray-900 hover:border-gray-300'
+                  ? 'bg-green-50 dark:bg-green-900/30 text-green-600 dark:text-green-400 border-green-200 dark:border-green-800' 
+                  : 'bg-white dark:bg-gray-800 text-gray-500 dark:text-gray-400 border-gray-200 dark:border-gray-700 hover:text-gray-900 dark:hover:text-gray-200 hover:border-gray-300 dark:hover:border-gray-600'
                 }
               `}
               aria-label="Copy prompt content"
@@ -59,7 +59,7 @@ export const PromptBodyViewer: React.FC<PromptBodyViewerProps> = ({ content, onC
         </div>
 
         {/* Content */}
-        <pre className="block p-6 pt-10 md:p-8 md:pt-8 overflow-y-auto max-h-[70vh] text-sm md:text-base font-mono leading-7 text-gray-800 bg-white whitespace-pre-wrap break-words scrollbar-thin scrollbar-thumb-gray-200 scrollbar-track-transparent">
+        <pre className="block p-6 pt-10 md:p-8 md:pt-8 overflow-y-auto max-h-[70vh] text-sm md:text-base font-mono leading-7 text-gray-800 dark:text-gray-200 bg-white dark:bg-gray-900 whitespace-pre-wrap break-words scrollbar-thin scrollbar-thumb-gray-200 dark:scrollbar-thumb-gray-700 scrollbar-track-transparent">
           <div className="absolute top-4 left-4 select-none opacity-30 pointer-events-none text-gray-400">
              <Terminal size={16} />
           </div>

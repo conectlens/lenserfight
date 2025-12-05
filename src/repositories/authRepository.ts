@@ -238,7 +238,7 @@ export class SupabaseAuthRepository implements AuthRepositoryPort {
     const { error } = await supabase.auth.signInWithOAuth({
       provider: provider,
       options: {
-        redirectTo: `${window.location.origin}/app`
+        redirectTo: `${window.location.origin}/#/app`
       }
     });
     if (error) throw error;
