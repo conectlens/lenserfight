@@ -9,6 +9,11 @@ export interface AuthorProfile {
   avatar_url?: string | null;
 }
 
+export interface LenserPreferences {
+  theme?: 'light' | 'dark';
+  [key: string]: any; // Forward compatibility
+}
+
 export interface Lenser {
   id: string; // uuid
   user_id: string; // references auth.users.id
@@ -23,6 +28,7 @@ export interface Lenser {
   website_display_name?: string;
   visibility?: 'public' | 'private';
   is_in_waiting_list?: boolean;
+  preferences?: LenserPreferences;
   created_at: string;
   updated_at?: string;
   join_order?: number; // Immutable rank from lenser_join_log

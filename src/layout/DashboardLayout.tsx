@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef } from 'react';
 import { Sidebar } from './Sidebar/Sidebar';
 import { Header } from './Header';
@@ -82,7 +83,7 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) =>
   };
 
   return (
-    <div className="flex h-screen bg-gray-50 overflow-hidden">
+    <div className="flex h-screen bg-gray-50 dark:bg-gray-900 overflow-hidden transition-colors duration-200">
       <Sidebar
         isOpen={sidebarOpen}
         isMobile={isMobile}
@@ -100,7 +101,7 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) =>
           ref={mainContentRef}
           className="flex-1 overflow-y-auto scrollbar-hide flex flex-col"
         >
-          <div className="flex-1 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          <div className="flex-1 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 text-gray-900 dark:text-gray-100">
             {children || (
               <div className="text-gray-400 text-center mt-20">
                 No content provided

@@ -19,7 +19,7 @@ export const ThreadReplyCard: React.FC<ThreadReplyCardProps> = ({ reply, onReply
   const [isReplying, setIsReplying] = useState(false);
 
   if (reply.isDeleted && (!reply.replies || reply.replies.length === 0)) {
-      return null; // Hide completely if deleted and no children
+      return null;
   }
 
   const handleUserClick = (e: React.MouseEvent) => {
@@ -33,26 +33,25 @@ export const ThreadReplyCard: React.FC<ThreadReplyCardProps> = ({ reply, onReply
         <div onClick={handleUserClick} className="cursor-pointer hover:opacity-80 transition-opacity">
             <Avatar src={reply.author.avatarUrl} alt={reply.author.displayName} size="md" className="!w-10 !h-10" />
         </div>
-        {/* Thread line for nested visibility */}
         {reply.replies && reply.replies.length > 0 && (
-           <div className="w-px h-full bg-gray-200 my-2"></div>
+           <div className="w-px h-full bg-gray-200 dark:bg-gray-700 my-2"></div>
         )}
       </div>
       
       <div className="flex-1 min-w-0 pb-6">
-        <div className="bg-gray-50/50 rounded-xl p-4 border border-gray-100">
+        <div className="bg-gray-50/50 dark:bg-gray-800/50 rounded-xl p-4 border border-gray-100 dark:border-gray-700">
             <div className="flex items-center gap-2 mb-2">
               <span 
                 onClick={handleUserClick}
-                className="font-semibold text-gray-900 text-sm cursor-pointer hover:text-primary-700 hover:underline transition-colors"
+                className="font-semibold text-gray-900 dark:text-gray-200 text-sm cursor-pointer hover:text-primary-700 transition-colors hover:underline"
               >
                   {reply.author.displayName}
               </span>
-              <span className="text-xs text-gray-400">•</span>
-              <span className="text-xs text-gray-500">{timeAgo(reply.createdAt)}</span>
+              <span className="text-xs text-gray-400 dark:text-gray-500">•</span>
+              <span className="text-xs text-gray-500 dark:text-gray-400">{timeAgo(reply.createdAt)}</span>
             </div>
 
-            <div className={`text-sm leading-relaxed mb-3 ${reply.isDeleted ? 'text-gray-400 italic' : 'text-gray-800'}`}>
+            <div className={`text-sm leading-relaxed mb-3 ${reply.isDeleted ? 'text-gray-400 italic' : 'text-gray-800 dark:text-gray-300'}`}>
               {reply.isDeleted ? (
                  reply.content
               ) : (
@@ -64,7 +63,7 @@ export const ThreadReplyCard: React.FC<ThreadReplyCardProps> = ({ reply, onReply
                 <div className="flex items-center gap-4">
                     <button 
                         onClick={() => onReactionToggle && onReactionToggle(reply.id)}
-                        className={`flex items-center gap-1.5 transition-colors text-xs font-medium ${reply.userHasReacted ? 'text-primary-700 font-bold' : 'text-gray-500 hover:text-primary-600'}`}
+                        className={`flex items-center gap-1.5 transition-colors text-xs font-medium ${reply.userHasReacted ? 'text-primary-700 font-bold' : 'text-gray-500 dark:text-gray-400 hover:text-primary-600'}`}
                     >
                         <ThumbsUp className={`w-3.5 h-3.5 ${reply.userHasReacted ? 'fill-current' : ''}`} />
                         <span>{reply.reactionCount || 'Like'}</span>
@@ -72,7 +71,7 @@ export const ThreadReplyCard: React.FC<ThreadReplyCardProps> = ({ reply, onReply
                     
                     <button 
                         onClick={() => setIsReplying(!isReplying)}
-                        className="flex items-center gap-1.5 text-gray-500 hover:text-gray-900 transition-colors text-xs font-medium"
+                        className="flex items-center gap-1.5 text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200 transition-colors text-xs font-medium"
                     >
                         <MessageCircle className="w-3.5 h-3.5" />
                         <span>Reply</span>
@@ -92,7 +91,6 @@ export const ThreadReplyCard: React.FC<ThreadReplyCardProps> = ({ reply, onReply
             </div>
         )}
 
-        {/* Nested Replies */}
         {reply.replies && reply.replies.length > 0 && (
             <div className="mt-4 space-y-4">
                 {reply.replies.map(child => (

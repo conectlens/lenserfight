@@ -16,16 +16,16 @@ export const Modal: React.FC<ModalProps> = ({ isOpen, onClose, title, children, 
   return createPortal(
     <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
       <div 
-        className="bg-white rounded-2xl shadow-2xl w-full max-w-md max-h-[calc(100vh-2rem)] flex flex-col relative overflow-hidden transform transition-all"
+        className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-md max-h-[calc(100vh-2rem)] flex flex-col relative overflow-hidden transform transition-all border border-gray-100 dark:border-gray-700"
         role="dialog"
         aria-modal="true"
       >
-        <div className="px-6 py-4 border-b border-gray-100 flex justify-between items-center bg-gray-50/80 backdrop-blur-sm flex-shrink-0 z-10">
-          <h3 className="text-lg font-bold text-gray-900 truncate pr-4">{title}</h3>
+        <div className="px-6 py-4 border-b border-gray-100 dark:border-gray-700 flex justify-between items-center bg-gray-50/80 dark:bg-gray-800/80 backdrop-blur-sm flex-shrink-0 z-10">
+          <h3 className="text-lg font-bold text-gray-900 dark:text-gray-100 truncate pr-4">{title}</h3>
           {canClose && onClose && (
             <button 
                 onClick={onClose} 
-                className="text-gray-400 hover:text-gray-600 p-1.5 rounded-full hover:bg-gray-100 transition-colors flex-shrink-0"
+                className="text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300 p-1.5 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors flex-shrink-0"
                 aria-label="Close"
             >
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -34,7 +34,7 @@ export const Modal: React.FC<ModalProps> = ({ isOpen, onClose, title, children, 
             </button>
           )}
         </div>
-        <div className="p-6 overflow-y-auto overscroll-contain flex-1 w-full">
+        <div className="p-6 overflow-y-auto overscroll-contain flex-1 w-full dark:text-gray-300">
           {children}
         </div>
       </div>

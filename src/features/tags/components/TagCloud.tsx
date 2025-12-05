@@ -38,30 +38,30 @@ export const TagCloud: React.FC<TagCloudProps> = ({ tags }) => {
     // Dynamic Typography & Color Scaling based on Engagement Weight (1-10)
     if (weight >= 9) {
       return {
-        className: 'text-5xl md:text-7xl font-black text-gray-900 z-30 opacity-100 hover:text-primary-600',
+        className: 'text-5xl md:text-7xl font-black text-gray-900 dark:text-white z-30 opacity-100 hover:text-primary-600 dark:hover:text-primary-400',
         scale: 1.1
       };
     }
     if (weight >= 7) {
       return {
-        className: 'text-4xl md:text-6xl font-extrabold text-gray-800 z-20 opacity-95 hover:text-primary-600',
+        className: 'text-4xl md:text-6xl font-extrabold text-gray-800 dark:text-gray-200 z-20 opacity-95 hover:text-primary-600 dark:hover:text-primary-400',
         scale: 1.05
       };
     }
     if (weight >= 5) {
       return {
-        className: 'text-3xl md:text-5xl font-bold text-gray-600 z-10 opacity-80 hover:text-gray-900',
+        className: 'text-3xl md:text-5xl font-bold text-gray-600 dark:text-gray-400 z-10 opacity-80 hover:text-gray-900 dark:hover:text-white',
         scale: 1
       };
     }
     if (weight >= 3) {
       return {
-        className: 'text-xl md:text-3xl font-semibold text-gray-400 z-0 opacity-60 hover:text-gray-700',
+        className: 'text-xl md:text-3xl font-semibold text-gray-400 dark:text-gray-500 z-0 opacity-60 hover:text-gray-700 dark:hover:text-gray-300',
         scale: 0.95
       };
     }
     return {
-      className: 'text-lg md:text-xl font-medium text-gray-300 z-0 opacity-40 hover:text-gray-500 blur-[0.5px] hover:blur-0',
+      className: 'text-lg md:text-xl font-medium text-gray-300 dark:text-gray-600 z-0 opacity-40 hover:text-gray-500 dark:hover:text-gray-400 blur-[0.5px] hover:blur-0',
       scale: 0.9
     };
   };

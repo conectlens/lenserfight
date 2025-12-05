@@ -83,8 +83,8 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, isMobile, onCloseMobil
   const desktopWidthClass = isOpen ? 'w-64' : 'w-20';
   
   const containerClass = isMobile
-    ? `fixed inset-y-0 left-0 h-full w-64 bg-gray-50 z-50 shadow-2xl transform transition-transform duration-300 ease-out flex flex-col ${isOpen ? 'translate-x-0' : '-translate-x-full'}`
-    : `sticky top-0 h-screen flex-shrink-0 bg-gray-50 border-r border-gray-200 transition-all duration-300 ease-in-out flex flex-col ${desktopWidthClass}`;
+    ? `fixed inset-y-0 left-0 h-full w-64 bg-gray-50 dark:bg-gray-900 z-50 shadow-2xl transform transition-transform duration-300 ease-out flex flex-col ${isOpen ? 'translate-x-0' : '-translate-x-full'}`
+    : `sticky top-0 h-screen flex-shrink-0 bg-gray-50 dark:bg-gray-900 border-r border-gray-200 dark:border-gray-800 transition-all duration-300 ease-in-out flex flex-col ${desktopWidthClass}`;
 
   const showOverlay = isMobile && isOpen;
 
@@ -157,7 +157,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, isMobile, onCloseMobil
             </div>
             {showLabels && (
                 <div className="relative">
-                    <span className="font-bold text-lg tracking-tight text-gray-900 truncate">LenserFight</span>
+                    <span className="font-bold text-lg tracking-tight text-gray-900 dark:text-white truncate">LenserFight</span>
                     <span className="absolute -bottom-2.5 -right-8 bg-primary text-gray-900 text-[9px] font-bold px-1.5 py-0.5 rounded border border-yellow-300 shadow-sm leading-none tracking-wide">
                         BETA
                     </span>
@@ -211,19 +211,19 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, isMobile, onCloseMobil
            </div>
         </nav>
 
-        <div className="flex-shrink-0 px-3 pb-3 pt-2 bg-gray-50 mt-auto space-y-3">
+        <div className="flex-shrink-0 px-3 pb-3 pt-2 bg-gray-50 dark:bg-gray-900 mt-auto space-y-3">
           {/* Waiting List Button */}
           <div className={`${!showLabels ? '' : 'animate-in slide-in-from-bottom-2 duration-500'}`}>
              <SidebarItem 
                onClick={() => handleNavigation('/waiting-list')}
-               icon={<Rocket size={20} className="text-[#121212]" />}
+               icon={<Rocket size={20} className="text-[#121212] dark:text-gray-100" />}
                label="Join Waitlist"
                isActive={location.pathname === '/waiting-list'}
                collapsed={!showLabels}
                className={`
                  !my-0 
-                 border border-[#121212] 
-                 text-[#121212] font-bold 
+                 border border-[#121212] dark:border-gray-500
+                 text-[#121212] dark:text-gray-100 font-bold 
                  hover:bg-transparent 
                  hover:shadow-md 
                  transition-all
@@ -235,14 +235,14 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, isMobile, onCloseMobil
           <div className={`${!showLabels ? '' : 'animate-in slide-in-from-bottom-3 duration-500 delay-75'}`}>
               <SidebarItem 
                 onClick={() => setIsFeedbackOpen(true)}
-                icon={<MessageSquarePlus size={20} className="text-[#121212]" />} 
+                icon={<MessageSquarePlus size={20} className="text-[#121212] dark:text-gray-100" />} 
                 label="Send Feedback" 
                 isActive={false} 
                 collapsed={!showLabels}
                 className={`
                   !my-0 
-                  border border-[#121212] 
-                  text-[#121212] font-bold 
+                  border border-[#121212] dark:border-gray-500
+                  text-[#121212] dark:text-gray-100 font-bold 
                   hover:bg-transparent
                   hover:shadow-md
                   transition-all
@@ -250,25 +250,25 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, isMobile, onCloseMobil
               />
           </div>
 
-          <div className="h-px bg-gray-200 w-full"></div>
+          <div className="h-px bg-gray-200 dark:bg-gray-800 w-full"></div>
 
           <div className="relative">
             <div 
               className={`
                   flex items-center p-2 rounded-xl transition-all 
-                  ${!lenser ? 'filter blur-sm select-none opacity-60' : 'hover:bg-white hover:shadow-sm cursor-pointer border border-transparent hover:border-gray-100'}
+                  ${!lenser ? 'filter blur-sm select-none opacity-60' : 'hover:bg-white dark:hover:bg-gray-800 hover:shadow-sm cursor-pointer border border-transparent hover:border-gray-100 dark:hover:border-gray-700'}
                   ${!showLabels ? 'justify-center' : ''}
               `}
             >
                <div className="relative flex-shrink-0" onClick={lenser ? handleProfileClick : undefined}>
                   <Avatar src={lenser?.avatar_url} size="sm" className="!w-9 !h-9" />
-                  {lenser && FEATURES.NOTIFICATIONS && <div className={`absolute bottom-0 right-0 w-2.5 h-2.5 border-2 border-white rounded-full ${unreadCount > 0 ? 'bg-red-500' : 'bg-green-500'}`}></div>}
+                  {lenser && FEATURES.NOTIFICATIONS && <div className={`absolute bottom-0 right-0 w-2.5 h-2.5 border-2 border-white dark:border-gray-900 rounded-full ${unreadCount > 0 ? 'bg-red-500' : 'bg-green-500'}`}></div>}
                </div>
                
                {showLabels && (
                  <div className="ml-3 flex-1 overflow-hidden" onClick={lenser ? handleProfileClick : undefined}>
-                   <p className="text-sm font-semibold text-gray-900 truncate">{lenser?.display_name || "Guest"}</p>
-                   <p className="text-xs text-gray-500 truncate">@{lenser?.handle || "guest"}</p>
+                   <p className="text-sm font-semibold text-gray-900 dark:text-gray-100 truncate">{lenser?.display_name || "Guest"}</p>
+                   <p className="text-xs text-gray-500 dark:text-gray-400 truncate">@{lenser?.handle || "guest"}</p>
                  </div>
                )}
                
@@ -280,7 +280,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, isMobile, onCloseMobil
                         e.stopPropagation();
                         setIsDropdownOpen(!isDropdownOpen);
                       }}
-                      className={`p-1.5 rounded-lg transition-colors relative ${isDropdownOpen ? 'bg-gray-200 text-gray-900' : 'text-gray-400 hover:text-gray-900 hover:bg-gray-100'}`}
+                      className={`p-1.5 rounded-lg transition-colors relative ${isDropdownOpen ? 'bg-gray-200 dark:bg-gray-700 text-gray-900 dark:text-white' : 'text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800'}`}
                    >
                       <MoreHorizontal size={18} />
                       {FEATURES.NOTIFICATIONS && unreadCount > 0 && <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full border border-white"></span>}
@@ -289,15 +289,15 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, isMobile, onCloseMobil
                    {isDropdownOpen && (
                      <div 
                         ref={dropdownRef}
-                        className="absolute bottom-full right-0 mb-2 w-56 bg-white rounded-2xl shadow-xl border border-gray-100 py-1 z-50 overflow-hidden transform origin-bottom-right"
+                        className="absolute bottom-full right-0 mb-2 w-56 bg-white dark:bg-gray-800 rounded-2xl shadow-xl border border-gray-100 dark:border-gray-700 py-1 z-50 overflow-hidden transform origin-bottom-right"
                         onClick={(e) => e.stopPropagation()}
                      >
-                       <div className="px-4 py-3 border-b border-gray-50 bg-gray-50/50">
+                       <div className="px-4 py-3 border-b border-gray-50 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-800/50">
                           <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Account</p>
                        </div>
                        <div className="p-1">
                           <button 
-                            className="w-full text-left px-3 py-2 rounded-lg text-sm text-gray-700 hover:bg-gray-50 hover:text-gray-900 flex items-center gap-3 transition-colors"
+                            className="w-full text-left px-3 py-2 rounded-lg text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white flex items-center gap-3 transition-colors"
                             onClick={() => {
                                 setIsDropdownOpen(false);
                                 handleProfileClick();
@@ -309,7 +309,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, isMobile, onCloseMobil
                          
                          {FEATURES.NOTIFICATIONS && (
                            <button 
-                             className="w-full text-left px-3 py-2 rounded-lg text-sm text-gray-700 hover:bg-gray-50 hover:text-gray-900 flex items-center gap-3 transition-colors"
+                             className="w-full text-left px-3 py-2 rounded-lg text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white flex items-center gap-3 transition-colors"
                              onClick={() => {
                                setIsDropdownOpen(false);
                                navigate('/settings/notifications');
@@ -327,7 +327,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, isMobile, onCloseMobil
                          )}
 
                          <button 
-                           className="w-full text-left px-3 py-2 rounded-lg text-sm text-gray-700 hover:bg-gray-50 hover:text-gray-900 flex items-center gap-3 transition-colors"
+                           className="w-full text-left px-3 py-2 rounded-lg text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white flex items-center gap-3 transition-colors"
                            onClick={() => {
                                setIsDropdownOpen(false);
                                navigate('/settings/account');
@@ -337,14 +337,14 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, isMobile, onCloseMobil
                            Settings
                          </button>
                        </div>
-                       <div className="h-px bg-gray-100 my-0"></div>
+                       <div className="h-px bg-gray-100 dark:bg-gray-700 my-0"></div>
                        <div className="p-1">
                           <button 
                               onClick={() => {
                                 setIsDropdownOpen(false);
                                 logout();
                               }}
-                              className="w-full text-left px-3 py-2 rounded-lg text-sm text-red-600 hover:bg-red-50 flex items-center gap-3 transition-colors"
+                              className="w-full text-left px-3 py-2 rounded-lg text-sm text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 flex items-center gap-3 transition-colors"
                           >
                             <LogOut size={16} />
                             Logout
@@ -357,7 +357,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, isMobile, onCloseMobil
             </div>
 
             {!lenser && (
-              <div className="absolute inset-0 flex items-center justify-center p-2 z-10 bg-gray-50/50 backdrop-blur-[1px]">
+              <div className="absolute inset-0 flex items-center justify-center p-2 z-10 bg-gray-50/50 dark:bg-gray-900/50 backdrop-blur-[1px]">
                    <button 
                       onClick={onOpenProfileSetup}
                       className={`

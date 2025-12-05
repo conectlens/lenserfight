@@ -1,9 +1,14 @@
 
 import React from 'react';
 import { useLocation, Link } from 'react-router-dom';
-import { PublicSection } from '../components/PublicSection';
 import { PublicPageTabs } from '../components/PublicPageTabs';
-import { FileText, Shield, ArrowRight, Scale } from 'lucide-react';
+import { Shield, ArrowRight, Scale } from 'lucide-react';
+
+const PolicyText = ({ children }: { children?: React.ReactNode }) => (
+  <div className="prose prose-lg text-gray-600 dark:text-gray-300 max-w-none prose-headings:text-gray-900 dark:prose-headings:text-white prose-strong:text-gray-900 dark:prose-strong:text-white">
+      {children}
+  </div>
+);
 
 export const LegalPage: React.FC = () => {
   const location = useLocation();
@@ -18,46 +23,40 @@ export const LegalPage: React.FC = () => {
     { label: 'Privacy Policy', path: '/legal/privacy' }
   ];
 
-  const PolicyText = ({ children }: { children: React.ReactNode }) => (
-    <div className="prose prose-lg text-gray-600 max-w-none">
-        {children}
-    </div>
-  );
-
   return (
-    <div className="bg-white min-h-screen">
+    <div className="bg-white dark:bg-gray-900 min-h-screen transition-colors duration-200">
       <PublicPageTabs tabs={tabs} />
 
       <div className="max-w-5xl mx-auto px-6 py-16">
         {isIndex && (
             <div>
                 <div className="mb-16">
-                    <h1 className="text-4xl font-extrabold text-gray-900 mb-6">Legal Center</h1>
-                    <p className="text-xl text-gray-500 max-w-2xl">
+                    <h1 className="text-4xl font-extrabold text-gray-900 dark:text-white mb-6">Legal Center</h1>
+                    <p className="text-xl text-gray-500 dark:text-gray-400 max-w-2xl">
                         Transparency is core to the LenserFight ecosystem. Review our policies regarding content ownership, user conduct, and data protection.
                     </p>
                 </div>
 
                 <div className="grid md:grid-cols-2 gap-8">
-                    <Link to="/legal/terms" className="group p-10 rounded-2xl border border-gray-200 hover:border-gray-300 hover:shadow-lg transition-all bg-gray-50/50">
-                        <div className="w-12 h-12 bg-white rounded-xl flex items-center justify-center mb-6 text-gray-900 border border-gray-200 shadow-sm group-hover:bg-primary group-hover:border-primary transition-colors">
+                    <Link to="/legal/terms" className="group p-10 rounded-2xl border border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600 hover:shadow-lg transition-all bg-gray-50/50 dark:bg-gray-800/50">
+                        <div className="w-12 h-12 bg-white dark:bg-gray-800 rounded-xl flex items-center justify-center mb-6 text-gray-900 dark:text-white border border-gray-200 dark:border-gray-700 shadow-sm group-hover:bg-primary group-hover:border-primary transition-colors">
                             <Scale size={24} />
                         </div>
-                        <h3 className="text-xl font-bold text-gray-900 mb-3 flex items-center gap-2">
+                        <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-3 flex items-center gap-2">
                             Terms of Service <ArrowRight size={18} className="opacity-0 group-hover:opacity-100 transition-opacity transform -translate-x-2 group-hover:translate-x-0" />
                         </h3>
-                        <p className="text-gray-500 leading-relaxed">
+                        <p className="text-gray-500 dark:text-gray-400 leading-relaxed">
                             The rules governing your use of LenserFight, including intellectual property rights, user conduct, and account termination.
                         </p>
                     </Link>
-                    <Link to="/legal/privacy" className="group p-10 rounded-2xl border border-gray-200 hover:border-gray-300 hover:shadow-lg transition-all bg-gray-50/50">
-                        <div className="w-12 h-12 bg-white rounded-xl flex items-center justify-center mb-6 text-gray-900 border border-gray-200 shadow-sm group-hover:bg-primary group-hover:border-primary transition-colors">
+                    <Link to="/legal/privacy" className="group p-10 rounded-2xl border border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600 hover:shadow-lg transition-all bg-gray-50/50 dark:bg-gray-800/50">
+                        <div className="w-12 h-12 bg-white dark:bg-gray-800 rounded-xl flex items-center justify-center mb-6 text-gray-900 dark:text-white border border-gray-200 dark:border-gray-700 shadow-sm group-hover:bg-primary group-hover:border-primary transition-colors">
                             <Shield size={24} />
                         </div>
-                        <h3 className="text-xl font-bold text-gray-900 mb-3 flex items-center gap-2">
+                        <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-3 flex items-center gap-2">
                             Privacy Policy <ArrowRight size={18} className="opacity-0 group-hover:opacity-100 transition-opacity transform -translate-x-2 group-hover:translate-x-0" />
                         </h3>
-                        <p className="text-gray-500 leading-relaxed">
+                        <p className="text-gray-500 dark:text-gray-400 leading-relaxed">
                             How we collect, store, and protect your data. Information on cookies, third-party sharing, and your rights as a Lenser.
                         </p>
                     </Link>
@@ -67,7 +66,7 @@ export const LegalPage: React.FC = () => {
 
         {isTerms && (
             <div className="max-w-3xl">
-                <h1 className="text-3xl font-bold text-gray-900 mb-8">Terms of Service</h1>
+                <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-8">Terms of Service</h1>
                 <PolicyText>
                     <h3>1. Ecosystem Participation</h3>
                     <p>By accessing LenserFight, you agree to participate in the ecosystem according to the protocols defined by ConnectLens. You acknowledge that "Lenser" and "Lens" are defined terms within this jurisdiction.</p>
@@ -79,14 +78,14 @@ export const LegalPage: React.FC = () => {
                     <p>Harassment, manipulation of ranking systems, and the generation of illegal content are strictly prohibited. The platform reserves the right to terminate the identity of any Lenser violating these standards.</p>
                     
                     <h3>4. Liability</h3>
-                    <p>LenserFight provides access to third-party AI models ("System Lenses"). We are not responsible for the outputs generated by these external systems.</p>
+                    <p>LenserFight provides access to third-party AI models ("System Lenses"). We are not responsible for the outputs generated by external systems.</p>
                 </PolicyText>
             </div>
         )}
 
         {isPrivacy && (
             <div className="max-w-3xl">
-                <h1 className="text-3xl font-bold text-gray-900 mb-8">Privacy Policy</h1>
+                <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-8">Privacy Policy</h1>
                 <PolicyText>
                     <h3>1. Data Collection</h3>
                     <p>We collect information necessary to establish your Lenser Identity, including authentication details, profile metadata, and interaction history within the arena.</p>
