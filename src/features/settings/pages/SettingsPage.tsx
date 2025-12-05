@@ -26,7 +26,7 @@ export const SettingsPage: React.FC = () => {
   const location = useLocation();
   const { lenser, updateLenserProfile } = useLenser();
   const { user, isAuthenticated, isLoading: authLoading } = useAuth();
-  
+  console.log(user)
   // Auth Guard
   useEffect(() => {
     if (!authLoading && !isAuthenticated) {
@@ -243,7 +243,7 @@ export const SettingsPage: React.FC = () => {
                                <label className="block text-sm font-medium text-gray-700 mb-1.5">Registered Name</label>
                                <input 
                                    disabled 
-                                   value={user?.user_metadata?.display_name || 'N/A'} 
+                                   value={user?.user_metadata?.display_name || user?.user_metadata?.full_name || 'N/A'} 
                                    className="w-full px-4 py-2.5 rounded-lg border border-gray-200 bg-gray-50 text-gray-500"
                                />
                                <p className="text-xs text-gray-400 mt-1">This is the name used for account recovery, access ConnectLens products and platforms, stored in identity provider.</p>
