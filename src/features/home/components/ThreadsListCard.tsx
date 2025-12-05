@@ -67,7 +67,7 @@ export const ThreadsListCard: React.FC<ThreadsListCardProps> = memo(({ thread, o
               <div className="flex items-center gap-2">
                 <span 
                     onClick={handleUserClick}
-                    className="text-base font-semibold text-gray-900 dark:text-white hover:underline hover:text-deep dark:hover:text-primary-400 cursor-pointer z-10"
+                    className="text-base font-semibold text-gray-900 dark:text-white hover:underline hover:text-deep dark:hover:text-primary cursor-pointer z-10"
                 >
                     {thread.author.displayName}
                 </span>
@@ -81,7 +81,7 @@ export const ThreadsListCard: React.FC<ThreadsListCardProps> = memo(({ thread, o
               </div>
             </div>
 
-            <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-2 leading-tight group-hover:text-deep dark:group-hover:text-primary-400 transition-colors">
+            <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-2 leading-tight group-hover:text-deep dark:group-hover:text-primary transition-colors">
               {thread.title}
             </h2>
 

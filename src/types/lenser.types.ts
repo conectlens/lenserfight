@@ -11,6 +11,7 @@ export interface AuthorProfile {
 
 export interface LenserPreferences {
   theme?: 'light' | 'dark';
+  sidebar_collapsed?: boolean;
   [key: string]: any; // Forward compatibility
 }
 
