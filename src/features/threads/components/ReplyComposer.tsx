@@ -32,8 +32,8 @@ export const ReplyComposer: React.FC<ReplyComposerProps> = ({ onSubmit, placehol
 
   if (!lenser) {
     return (
-      <div className="p-4 bg-gray-50 rounded-xl border border-dashed border-gray-200 text-center">
-        <p className="text-sm text-gray-500">Please sign in to join the conversation.</p>
+      <div className="p-4 bg-gray-50 dark:bg-gray-800 rounded-xl border border-dashed border-gray-200 dark:border-gray-700 text-center">
+        <p className="text-sm text-gray-500 dark:text-gray-400">Please sign in to join the conversation.</p>
       </div>
     );
   }
@@ -51,7 +51,7 @@ export const ReplyComposer: React.FC<ReplyComposerProps> = ({ onSubmit, placehol
              placeholder={placeholder || "Add a reply..."}
              autoFocus={autoFocus}
              rows={3}
-             className="w-full px-4 py-3 bg-white border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary/50 focus:border-primary outline-none transition-all resize-none text-sm text-gray-800"
+             className="w-full px-4 py-3 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-primary/50 focus:border-primary outline-none transition-all resize-none text-sm text-gray-800 dark:text-gray-200 dark:placeholder-gray-500"
           />
         </div>
         <div className="flex justify-end gap-2 mt-2">

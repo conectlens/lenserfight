@@ -34,29 +34,29 @@ export const PromptTagInput: React.FC<PromptTagInputProps> = ({ tags, onChange }
 
   return (
     <div className="flex flex-col gap-2">
-      <label className="text-sm font-bold text-gray-500 uppercase tracking-wider">Tags</label>
-      <div className="flex flex-wrap items-center gap-2 p-2 bg-gray-50 border border-gray-200 rounded-xl focus-within:ring-2 focus-within:ring-primary/50 focus-within:border-primary transition-all min-h-[46px]">
+      <label className="text-sm font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Tags</label>
+      <div className="flex flex-wrap items-center gap-2 p-2 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl focus-within:ring-2 focus-within:ring-primary/50 focus-within:border-primary transition-all min-h-[46px]">
         {tags.map(tag => (
-          <span key={tag} className="flex items-center gap-1 pl-3 pr-2 py-1 bg-white border border-gray-200 text-gray-700 rounded-full text-sm font-medium shadow-sm">
+          <span key={tag} className="flex items-center gap-1 pl-3 pr-2 py-1 bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-gray-700 dark:text-gray-200 rounded-full text-sm font-medium shadow-sm">
             {tag}
             <button
               type="button"
               onClick={() => removeTag(tag)}
-              className="text-gray-400 hover:text-red-500 ml-1 p-0.5 rounded-full hover:bg-red-50 transition-colors"
+              className="text-gray-400 dark:text-gray-400 hover:text-red-500 dark:hover:text-red-400 ml-1 p-0.5 rounded-full hover:bg-red-50 dark:hover:bg-red-900/30 transition-colors"
             >
               <X size={14} />
             </button>
           </span>
         ))}
         <div className="flex items-center flex-1 min-w-[120px]">
-           {!input && tags.length === 0 && <span className="text-gray-400 mr-1"><Plus size={16}/></span>}
+           {!input && tags.length === 0 && <span className="text-gray-400 dark:text-gray-500 mr-1"><Plus size={16}/></span>}
            <input
              type="text"
              value={input}
              onChange={(e) => setInput(e.target.value)}
              onKeyDown={handleKeyDown}
              placeholder={tags.length === 0 ? "Add a tag..." : "Add another..."}
-             className="flex-1 bg-transparent outline-none text-gray-900 placeholder-gray-400 text-sm py-1"
+             className="flex-1 bg-transparent outline-none text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 text-sm py-1"
            />
         </div>
       </div>

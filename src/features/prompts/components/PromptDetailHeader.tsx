@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { PromptTemplateDetailViewModel } from '../../../types/prompts.types';
@@ -36,7 +35,7 @@ export const PromptDetailHeader: React.FC<PromptDetailHeaderProps> = ({
     <div className="mb-6">
       <div className="flex justify-between items-start gap-4">
         {/* Unified Title Hierarchy */}
-        <h1 className="text-2xl md:text-3xl font-bold text-gray-900 mb-4 tracking-tight leading-tight flex-1">
+        <h1 className="text-2xl md:text-3xl font-bold text-gray-900 dark:text-white mb-4 tracking-tight leading-tight flex-1">
           {prompt.title}
         </h1>
 
@@ -47,8 +46,8 @@ export const PromptDetailHeader: React.FC<PromptDetailHeaderProps> = ({
           className={`
             group relative p-2.5 rounded-xl transition-all duration-200 flex-shrink-0 border
             ${isSaved 
-              ? 'bg-primary/10 text-primary-700 border-primary/20 hover:bg-primary/20' 
-              : 'bg-white text-gray-400 border-gray-100 hover:bg-gray-50 hover:text-gray-600 hover:border-gray-200'}
+              ? 'bg-primary/10 text-primary-700 dark:text-primary-400 border-primary/20 hover:bg-primary/20' 
+              : 'bg-white dark:bg-gray-800 text-gray-400 border-gray-100 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-gray-600 dark:hover:text-gray-200 hover:border-gray-200 dark:hover:border-gray-600'}
           `}
           aria-label={isSaved ? "Unsave prompt" : "Save prompt"}
           title={isSaved ? "Unsave" : "Save"}
@@ -59,8 +58,8 @@ export const PromptDetailHeader: React.FC<PromptDetailHeaderProps> = ({
           {safeSaveCount > 0 && (
             <span className={`
               absolute -top-2 -right-2 min-w-[18px] h-[18px] flex items-center justify-center 
-              text-[10px] font-bold rounded-full border-2 border-white px-1 shadow-sm
-              ${isSaved ? 'bg-primary text-gray-900' : 'bg-gray-100 text-gray-600'}
+              text-[10px] font-bold rounded-full border-2 border-white dark:border-gray-900 px-1 shadow-sm
+              ${isSaved ? 'bg-primary text-gray-900' : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300'}
             `}>
               {formatCount(safeSaveCount)}
             </span>
@@ -69,17 +68,17 @@ export const PromptDetailHeader: React.FC<PromptDetailHeaderProps> = ({
       </div>
 
       {/* Metadata Row */}
-      <div className="flex flex-wrap items-center gap-y-3 text-sm text-gray-500">
+      <div className="flex flex-wrap items-center gap-y-3 text-sm text-gray-500 dark:text-gray-400">
         
         <div 
           className="flex items-center gap-2 group cursor-pointer mr-4"
           onClick={() => navigate(`/lenser/${prompt.author.handle}`)}
         >
              <Avatar src={prompt.author.avatarUrl} alt={prompt.author.displayName} size="sm" className="!w-6 !h-6" />
-             <span className="font-semibold text-gray-900 group-hover:text-primary-700 transition-colors">{prompt.author.displayName}</span>
+             <span className="font-semibold text-gray-900 dark:text-gray-200 group-hover:text-primary-700 dark:group-hover:text-primary-400 transition-colors">{prompt.author.displayName}</span>
         </div>
 
-        <span className="text-gray-300 mr-4 hidden sm:inline">|</span>
+        <span className="text-gray-300 dark:text-gray-600 mr-4 hidden sm:inline">|</span>
 
         {hasTags && (
             <>
@@ -88,12 +87,12 @@ export const PromptDetailHeader: React.FC<PromptDetailHeaderProps> = ({
                       <TagBadge 
                         key={tag.id} 
                         label={tag.name} 
-                        className="bg-gray-100 text-gray-700 font-medium px-2.5 py-0.5 text-xs" 
+                        className="bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 font-medium px-2.5 py-0.5 text-xs" 
                         onClick={() => navigate(`/tags/${tag.slug}`)}
                       />
                   ))}
                 </div>
-                <span className="text-gray-300 mr-4 hidden sm:inline">|</span>
+                <span className="text-gray-300 dark:text-gray-600 mr-4 hidden sm:inline">|</span>
             </>
         )}
 
@@ -103,7 +102,7 @@ export const PromptDetailHeader: React.FC<PromptDetailHeaderProps> = ({
               <span className="capitalize text-xs">{prompt.visibility}</span>
             </div>
 
-            <span className="text-gray-300">•</span>
+            <span className="text-gray-300 dark:text-gray-600">•</span>
             
             <span className="text-xs">{formattedDate}</span>
         </div>
