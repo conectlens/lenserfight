@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { shareService } from '../services/shareService';
 import { useLenser } from '../context/LenserContext';
@@ -25,7 +26,8 @@ export const useShareLink = () => {
     setShortUrl(null);
 
     try {
-      const link = await shareService.createLink({
+      // Calls the idempotent service which handles 23505 via repo/edge function fallback
+      const link = await shareService.createOrGetSharedLink({
           resourceType,
           resourceId,
           slug,

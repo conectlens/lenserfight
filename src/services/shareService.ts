@@ -1,12 +1,13 @@
+
 import { getShareRepository } from '../adapters/shareAdapter';
 import { CreateLinkDTO, SharedLink } from '../types/share.types';
 
 const shareRepo = getShareRepository();
 
 export const shareService = {
-  createLink: async (dto: CreateLinkDTO, creatorLenserId: string): Promise<SharedLink> => {
+  createOrGetSharedLink: async (dto: CreateLinkDTO, creatorLenserId: string): Promise<SharedLink> => {
     if (!creatorLenserId) throw new Error("User must be identified to create share links.");
-    return shareRepo.createLink(dto, creatorLenserId);
+    return shareRepo.createOrGetSharedLink(dto, creatorLenserId);
   },
 
   /**
