@@ -67,7 +67,7 @@ export const lenserService = {
 
       if (!isTrackingLink && url.length > 0) {
           try {
-              const link = await shareService.createLink({
+              const link = await shareService.createOrGetSharedLink({
                   resourceType: 'external',
                   resourceId: crypto.randomUUID(), 
                   displayName: url,
