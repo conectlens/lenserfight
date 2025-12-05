@@ -41,7 +41,7 @@ export const PromptRelatedCard: React.FC<PromptRelatedCardProps> = ({
   return (
     <div 
         onClick={() => onClick(prompt.id)}
-        className="flex gap-4 items-center p-4 bg-white rounded-xl border border-gray-100 shadow-[0_2px_8px_rgba(0,0,0,0.04)] hover:shadow-[0_4px_12px_rgba(0,0,0,0.08)] transition-all duration-200 cursor-pointer group relative pr-10"
+        className="flex gap-4 items-center p-4 bg-white dark:bg-gray-800 rounded-xl border border-gray-100 dark:border-gray-700 shadow-sm hover:shadow-md transition-all duration-200 cursor-pointer group relative pr-10"
     >
       {!hideAuthor && (
         <div onClick={(e) => { e.stopPropagation(); navigate(`/lenser/${prompt.author.handle}`) }} className="flex-shrink-0">
@@ -50,13 +50,13 @@ export const PromptRelatedCard: React.FC<PromptRelatedCardProps> = ({
       )}
       
       <div className="flex-1 min-w-0">
-         <h4 className={`font-bold text-gray-900 group-hover:text-primary-600 transition-colors line-clamp-2 ${hideAuthor ? 'text-base' : 'text-sm'}`}>
+         <h4 className={`font-bold text-gray-900 dark:text-gray-100 group-hover:text-primary-600 dark:group-hover:text-primary-400 transition-colors line-clamp-2 ${hideAuthor ? 'text-base' : 'text-sm'}`}>
             {prompt.title}
          </h4>
          {!hideAuthor && (
              <p 
                 onClick={(e) => { e.stopPropagation(); navigate(`/lenser/${prompt.author.handle}`) }}
-                className="text-xs text-gray-500 hover:underline hover:text-gray-700 truncate mt-1"
+                className="text-xs text-gray-500 dark:text-gray-400 hover:underline hover:text-gray-700 dark:hover:text-gray-300 truncate mt-1"
              >
                 by @{prompt.author.handle}
              </p>
@@ -64,7 +64,7 @@ export const PromptRelatedCard: React.FC<PromptRelatedCardProps> = ({
       </div>
 
       {isOwner && (
-          <div className="absolute right-2 top-1/2 -translate-y-1/2" onClick={(e) => e.stopPropagation()}>
+          <div className="absolute right-2 top-1/2 -translate-y-1/2 z-10" onClick={(e) => e.stopPropagation()}>
               <ActionMenu actions={menuActions} />
           </div>
       )}

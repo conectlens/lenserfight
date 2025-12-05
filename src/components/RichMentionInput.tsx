@@ -244,7 +244,7 @@ export const RichMentionInput = React.forwardRef<RichMentionInputHandle, RichMen
         ref={containerRef}
         contentEditable
         onInput={handleInput}
-        className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-900 focus:ring-2 focus:ring-primary/50 focus:border-primary outline-none transition-all min-h-[140px] whitespace-pre-wrap overflow-y-auto max-h-[300px]"
+        className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl text-gray-900 dark:text-white focus:ring-2 focus:ring-primary/50 focus:border-primary outline-none transition-all min-h-[140px] whitespace-pre-wrap overflow-y-auto max-h-[300px]"
         data-placeholder={placeholder}
         onKeyDown={(e) => {
             if (e.key === 'Enter' && isTypingMention.current) {

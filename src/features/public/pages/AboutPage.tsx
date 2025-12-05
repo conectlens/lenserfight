@@ -21,7 +21,7 @@ export const AboutPage: React.FC = () => {
   ];
 
   return (
-    <div className="bg-white">
+    <div className="bg-white dark:bg-gray-900 transition-colors duration-200">
       <PublicPageTabs tabs={tabs} />
 
       {isIndex && (
@@ -30,7 +30,7 @@ export const AboutPage: React.FC = () => {
           subtitle="LenserFight is a competitive ecosystem where creativity, logic, and AI interaction converge."
         >
           <div className="grid md:grid-cols-2 gap-12 mt-4">
-            <div className="text-gray-600 text-lg leading-loose space-y-6">
+            <div className="text-gray-600 dark:text-gray-300 text-lg leading-loose space-y-6">
               <p>
                 In the era of Generative AI, the ability to direct machine intelligence is the defining skill. LenserFight was built to refine this skill through structured competition and verifiable results.
               </p>
@@ -39,15 +39,15 @@ export const AboutPage: React.FC = () => {
               </p>
             </div>
             <div className="flex flex-col gap-6">
-               <Card className="p-8 border border-gray-200 shadow-sm hover:shadow-md transition-shadow">
-                  <h3 className="text-lg font-bold text-gray-900 mb-2">For Creators</h3>
-                  <p className="text-gray-500 leading-relaxed">
+               <Card className="p-8 border border-gray-200 dark:border-gray-700 shadow-sm hover:shadow-md transition-shadow dark:bg-gray-800">
+                  <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-2">For Creators</h3>
+                  <p className="text-gray-500 dark:text-gray-400 leading-relaxed">
                     Build a portfolio of high-impact prompts. Prove your logic in ranked battles and establish your identity as a top-tier Lenser.
                   </p>
                </Card>
-               <Card className="p-8 border border-gray-200 shadow-sm hover:shadow-md transition-shadow">
-                  <h3 className="text-lg font-bold text-gray-900 mb-2">For Developers</h3>
-                  <p className="text-gray-500 leading-relaxed">
+               <Card className="p-8 border border-gray-200 dark:border-gray-700 shadow-sm hover:shadow-md transition-shadow dark:bg-gray-800">
+                  <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-2">For Developers</h3>
+                  <p className="text-gray-500 dark:text-gray-400 leading-relaxed">
                     Integrate stress-tested AI behaviors. Use the Lens Cloud to access a library of deterministic outputs for your applications.
                   </p>
                </Card>
@@ -63,30 +63,30 @@ export const AboutPage: React.FC = () => {
           centered
         >
           <div className="grid md:grid-cols-3 gap-8 mt-16 text-left">
-            <div className="p-6 rounded-2xl bg-gray-50 border border-gray-100">
-              <div className="w-12 h-12 bg-white border border-gray-200 rounded-xl flex items-center justify-center mb-6 text-gray-900 shadow-sm">
+            <div className="p-6 rounded-2xl bg-gray-50 dark:bg-gray-800 border border-gray-100 dark:border-gray-700">
+              <div className="w-12 h-12 bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-xl flex items-center justify-center mb-6 text-gray-900 dark:text-white shadow-sm">
                 <Target size={24} />
               </div>
-              <h3 className="text-lg font-bold text-gray-900 mb-3">Reliability</h3>
-              <p className="text-gray-500 leading-relaxed">
+              <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-3">Reliability</h3>
+              <p className="text-gray-500 dark:text-gray-400 leading-relaxed">
                 Moving beyond hallucination to deterministic, high-quality AI outputs through rigorous community testing and feedback loops.
               </p>
             </div>
-            <div className="p-6 rounded-2xl bg-gray-50 border border-gray-100">
-              <div className="w-12 h-12 bg-white border border-gray-200 rounded-xl flex items-center justify-center mb-6 text-gray-900 shadow-sm">
+            <div className="p-6 rounded-2xl bg-gray-50 dark:bg-gray-800 border border-gray-100 dark:border-gray-700">
+              <div className="w-12 h-12 bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-xl flex items-center justify-center mb-6 text-gray-900 dark:text-white shadow-sm">
                 <Zap size={24} />
               </div>
-              <h3 className="text-lg font-bold text-gray-900 mb-3">Verification</h3>
-              <p className="text-gray-500 leading-relaxed">
+              <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-3">Verification</h3>
+              <p className="text-gray-500 dark:text-gray-400 leading-relaxed">
                 Establishing a standard for prompt effectiveness. We validate logic against multiple models to ensure reproducibility.
               </p>
             </div>
-            <div className="p-6 rounded-2xl bg-gray-50 border border-gray-100">
-              <div className="w-12 h-12 bg-white border border-gray-200 rounded-xl flex items-center justify-center mb-6 text-gray-900 shadow-sm">
+            <div className="p-6 rounded-2xl bg-gray-50 dark:bg-gray-800 border border-gray-100 dark:border-gray-700">
+              <div className="w-12 h-12 bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-xl flex items-center justify-center mb-6 text-gray-900 dark:text-white shadow-sm">
                 <Network size={24} />
               </div>
-              <h3 className="text-lg font-bold text-gray-900 mb-3">Knowledge</h3>
-              <p className="text-gray-500 leading-relaxed">
+              <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-3">Knowledge</h3>
+              <p className="text-gray-500 dark:text-gray-400 leading-relaxed">
                 Democratizing access to advanced techniques like Chain-of-Thought and ReAct through an open, searchable arena.
               </p>
             </div>
@@ -99,7 +99,7 @@ export const AboutPage: React.FC = () => {
           title="Vision 2030" 
           subtitle="An interconnected ecosystem where Lens communities grow from ideas, supported by AI models acting as dynamic lenses for exploration."
         >
-          <div className="bg-gray-900 text-white rounded-3xl p-10 md:p-16 relative overflow-hidden mt-8">
+          <div className="bg-gray-900 text-white rounded-3xl p-10 md:p-16 relative overflow-hidden mt-8 shadow-xl">
              <div className="relative z-10 max-w-2xl">
                 <h3 className="text-3xl font-bold text-primary mb-6">The Universal Protocol</h3>
                 <p className="text-gray-300 leading-loose text-lg mb-8">

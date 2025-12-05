@@ -22,14 +22,14 @@ export const LenserTabs: React.FC<LenserTabsProps> = ({ activeTab, onChange }) =
   }
 
   return (
-    <div className="flex items-center gap-8 border-b border-gray-200 mb-6 overflow-x-auto scrollbar-hide">
+    <div className="flex items-center gap-8 border-b border-gray-200 dark:border-gray-700 mb-6 overflow-x-auto scrollbar-hide">
       {tabs.map(tab => (
         <button
           key={tab.id}
           onClick={() => onChange(tab.id)}
           className={`
             py-3 text-sm font-semibold transition-all relative whitespace-nowrap
-            ${activeTab === tab.id ? 'text-gray-900' : 'text-gray-500 hover:text-gray-700'}
+            ${activeTab === tab.id ? 'text-gray-900 dark:text-white' : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'}
           `}
         >
           {tab.label}

@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { usePromptDetailController } from '../hooks/usePromptDetailController';
@@ -140,9 +139,6 @@ export const PromptDetailPage: React.FC = () => {
     const editId = targetId || prompt?.id;
     
     if (editId) {
-        // Since we have data in controller, pass it directly if it matches to avoid fetch? 
-        // Or trust the hook's cache. 
-        // Simplest is to fetch fresh for edit form to ensure latest state.
         promptsService.getPromptDetail(editId, lenser?.id).then(detail => {
             if (detail) {
                 openCreateModal({
@@ -172,8 +168,6 @@ export const PromptDetailPage: React.FC = () => {
           if (prompt && deleteTargetId === prompt.id) {
               navigate('/prompts');
           } else {
-              // Just close, react query refetch handled if we invalidated, 
-              // but since author list is static in this view, we might need manual invalidation or refresh.
               window.location.reload(); 
           }
       } catch (e) {
@@ -186,8 +180,6 @@ export const PromptDetailPage: React.FC = () => {
 
   const handleCreateSubmit = (newId: string) => {
       if (isEditMode && prompt && newId === prompt.id) {
-          // React Query invalidation would happen if we used mutation, 
-          // forcing reload for simplicity in this iteration
           window.location.reload();
       } else {
           navigate(`/prompts/${newId}`);
@@ -200,13 +192,13 @@ export const PromptDetailPage: React.FC = () => {
     return (
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 animate-pulse">
         <div className="lg:col-span-8 space-y-8">
-           <div className="h-8 w-32 bg-gray-200 rounded"></div>
-           <div className="h-16 w-3/4 bg-gray-200 rounded"></div>
-           <div className="h-64 w-full bg-gray-200 rounded"></div>
+           <div className="h-8 w-32 bg-gray-200 dark:bg-gray-700 rounded"></div>
+           <div className="h-16 w-3/4 bg-gray-200 dark:bg-gray-700 rounded"></div>
+           <div className="h-64 w-full bg-gray-200 dark:bg-gray-700 rounded"></div>
         </div>
         <div className="hidden lg:block lg:col-span-4 space-y-6">
-           <div className="h-8 w-40 bg-gray-200 rounded"></div>
-           <div className="h-20 w-full bg-gray-200 rounded"></div>
+           <div className="h-8 w-40 bg-gray-200 dark:bg-gray-700 rounded"></div>
+           <div className="h-20 w-full bg-gray-200 dark:bg-gray-700 rounded"></div>
         </div>
       </div>
     );
@@ -215,11 +207,11 @@ export const PromptDetailPage: React.FC = () => {
   if (error === '401') {
     return (
         <div className="flex flex-col items-center justify-center min-h-[60vh]">
-            <div className="bg-red-50 p-6 rounded-full mb-6">
+            <div className="bg-red-50 dark:bg-red-900/20 p-6 rounded-full mb-6">
                 <Lock className="w-12 h-12 text-red-500" />
             </div>
-            <h2 className="text-3xl font-bold text-gray-900 mb-3">Access Denied</h2>
-            <button onClick={() => navigate('/prompts')} className="text-primary-700 hover:underline">
+            <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-3">Access Denied</h2>
+            <button onClick={() => navigate('/prompts')} className="text-primary-700 dark:text-primary-400 hover:underline">
                 Return to Library
             </button>
       </div>
@@ -229,7 +221,7 @@ export const PromptDetailPage: React.FC = () => {
   if (!prompt || error === '404') {
     return (
       <div className="flex flex-col items-center justify-center min-h-[50vh]">
-        <h2 className="text-2xl font-bold text-gray-900 mb-2">Prompt Not Found</h2>
+        <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">Prompt Not Found</h2>
         <button onClick={() => navigate('/prompts')} className="text-primary hover:underline">
             Return to Library
         </button>
@@ -264,7 +256,7 @@ export const PromptDetailPage: React.FC = () => {
           </div>
         </div>
 
-        <div className="lg:col-span-4 border-t lg:border-t-0 border-gray-100 pt-8 lg:pt-0">
+        <div className="lg:col-span-4 border-t lg:border-t-0 border-gray-100 dark:border-gray-800 pt-8 lg:pt-0">
           <PromptAuthorList 
             prompts={authorPrompts} 
             authorName={prompt.author.displayName}
