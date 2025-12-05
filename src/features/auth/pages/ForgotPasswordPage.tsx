@@ -77,7 +77,7 @@ export const ForgotPasswordPage: React.FC = () => {
   }
 
   const backButton = (
-    <Link to="/" className="inline-flex items-center gap-2 text-sm font-semibold text-gray-500 hover:text-gray-900 transition-all bg-white/80 backdrop-blur-md px-4 py-2.5 rounded-full hover:bg-white shadow-sm border border-gray-200/50 hover:border-gray-300 w-auto">
+    <Link to="/" className="inline-flex items-center gap-2 text-sm font-semibold text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white transition-all bg-white/80 dark:bg-gray-800/80 backdrop-blur-md px-4 py-2.5 rounded-full hover:bg-white dark:hover:bg-gray-800 shadow-sm border border-gray-200/50 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600 w-auto">
        <ArrowLeft size={16} />
        Dive into the arena
     </Link>
@@ -107,7 +107,7 @@ export const ForgotPasswordPage: React.FC = () => {
       </form>
       
       <div className="mt-8 text-center text-sm text-gray-500 font-medium">
-        <Link to="/login" className="flex items-center justify-center gap-2 text-gray-900 hover:text-primary-700 hover:underline transition-colors">
+        <Link to="/login" className="flex items-center justify-center gap-2 text-gray-900 dark:text-gray-200 hover:text-primary-700 dark:hover:text-primary-400 hover:underline transition-colors">
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
             </svg>

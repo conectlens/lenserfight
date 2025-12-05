@@ -1,3 +1,4 @@
+
 import React from 'react';
 
 interface PromptsTagFilterProps {
@@ -24,8 +25,8 @@ export const PromptsTagFilter: React.FC<PromptsTagFilterProps> = ({ selectedTag,
           className={`
             px-4 py-1.5 rounded-full text-sm font-medium whitespace-nowrap transition-colors flex-shrink-0
             ${selectedTag === filter.value 
-                ? 'bg-gray-900 text-white shadow-sm' 
-                : 'bg-white border border-gray-200 text-gray-600 hover:bg-gray-50'}
+                ? 'bg-primary text-gray-900 shadow-sm font-semibold' 
+                : 'bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'}
           `}
         >
           {filter.label === 'All' ? filter.label : `#${filter.label}`}

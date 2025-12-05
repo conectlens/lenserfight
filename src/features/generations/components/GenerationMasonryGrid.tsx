@@ -27,7 +27,7 @@ export const GenerationMasonryGrid: React.FC<GenerationMasonryGridProps> = ({
     return (
       <div className="columns-2 md:columns-3 lg:columns-4 gap-4 space-y-4">
         {[1, 2, 3, 4, 5, 6].map(i => (
-          <div key={i} className={`break-inside-avoid bg-gray-100 rounded-xl animate-pulse ${i % 2 === 0 ? 'h-48' : 'h-64'}`}></div>
+          <div key={i} className={`break-inside-avoid bg-gray-100 dark:bg-gray-800 rounded-xl animate-pulse ${i % 2 === 0 ? 'h-48' : 'h-64'}`}></div>
         ))}
       </div>
     );
@@ -35,9 +35,9 @@ export const GenerationMasonryGrid: React.FC<GenerationMasonryGridProps> = ({
 
   if (generations.length === 0) {
     return (
-      <div className="text-center py-12 bg-gray-50/50 rounded-xl border border-dashed border-gray-200">
-        <p className="text-sm text-gray-500 font-medium">No results match your filters.</p>
-        <p className="text-xs text-gray-400 mt-1">Try generating something new or changing options.</p>
+      <div className="text-center py-12 bg-gray-50/50 dark:bg-gray-800/50 rounded-xl border border-dashed border-gray-200 dark:border-gray-700">
+        <p className="text-sm text-gray-500 dark:text-gray-400 font-medium">No results match your filters.</p>
+        <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">Try generating something new or changing options.</p>
       </div>
     );
   }

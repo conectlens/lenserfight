@@ -21,8 +21,8 @@ export const PublicLayout: React.FC<PublicLayoutProps> = ({ children }) => {
   };
 
   return (
-    <div className="flex flex-col min-h-screen bg-white text-gray-900 font-sans antialiased">
-      <header className="sticky top-0 z-50 w-full bg-white/90 backdrop-blur-md border-b border-gray-100">
+    <div className="flex flex-col min-h-screen bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 font-sans antialiased transition-colors duration-200">
+      <header className="sticky top-0 z-50 w-full bg-white/90 dark:bg-gray-900/90 backdrop-blur-md border-b border-gray-100 dark:border-gray-800 transition-colors duration-200">
         <div className="max-w-5xl mx-auto px-6 h-20 flex items-center justify-between">
           <div className="flex items-center gap-10">
             <Link to="/" className="flex items-center gap-2.5 group">
@@ -33,13 +33,13 @@ export const PublicLayout: React.FC<PublicLayoutProps> = ({ children }) => {
                    className="w-full h-full object-contain"
                  />
               </div>
-              <span className="font-bold text-xl tracking-tight text-gray-900">LenserFight</span>
+              <span className="font-bold text-xl tracking-tight text-gray-900 dark:text-white">LenserFight</span>
             </Link>
 
-            <nav className="hidden md:flex items-center gap-8 text-[15px] font-medium text-gray-500">
-              <Link to="/about" className={`hover:text-gray-900 transition-colors ${isActive('/about') ? 'text-gray-900' : ''}`}>About</Link>
-              <Link to="/ecosystem" className={`hover:text-gray-900 transition-colors ${isActive('/ecosystem') ? 'text-gray-900' : ''}`}>Ecosystem</Link>
-              <Link to="/legal" className={`hover:text-gray-900 transition-colors ${isActive('/legal') ? 'text-gray-900' : ''}`}>Legal</Link>
+            <nav className="hidden md:flex items-center gap-8 text-[15px] font-medium text-gray-500 dark:text-gray-400">
+              <Link to="/about" className={`hover:text-gray-900 dark:hover:text-white transition-colors ${isActive('/about') ? 'text-gray-900 dark:text-white font-bold' : ''}`}>About</Link>
+              <Link to="/ecosystem" className={`hover:text-gray-900 dark:hover:text-white transition-colors ${isActive('/ecosystem') ? 'text-gray-900 dark:text-white font-bold' : ''}`}>Ecosystem</Link>
+              <Link to="/legal" className={`hover:text-gray-900 dark:hover:text-white transition-colors ${isActive('/legal') ? 'text-gray-900 dark:text-white font-bold' : ''}`}>Legal</Link>
             </nav>
           </div>
 

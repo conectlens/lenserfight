@@ -148,13 +148,13 @@ export const CreateGenerationModal: React.FC<CreateGenerationModalProps> = ({
                 placeholder="https://chat.openai.com/share/..."
                 className="!mb-0"
             />
-            <p className="text-xs text-gray-500 mt-1">Optional. Link to the public chat history for this result.</p>
+            <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Optional. Link to the public chat history for this result.</p>
         </div>
 
         {/* Type Selection */}
         <div className="space-y-2">
-            <label className="block text-sm font-medium text-gray-700">Result Type</label>
-            <div className="flex bg-gray-50 p-1 rounded-xl border border-gray-200">
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Result Type</label>
+            <div className="flex bg-gray-50 dark:bg-gray-800 p-1 rounded-xl border border-gray-200 dark:border-gray-700">
                 {RESULT_TYPES.map(type => (
                     <button
                         key={type.value}
@@ -162,8 +162,8 @@ export const CreateGenerationModal: React.FC<CreateGenerationModalProps> = ({
                         onClick={() => { setResultType(type.value); setContent(''); setError(null); }}
                         className={`flex-1 flex items-center justify-center gap-2 py-2 rounded-lg text-sm font-medium transition-all ${
                             resultType === type.value 
-                            ? 'bg-white text-gray-900 shadow-sm ring-1 ring-gray-200' 
-                            : 'text-gray-500 hover:text-gray-700'
+                            ? 'bg-white dark:bg-gray-700 text-gray-900 dark:text-white shadow-sm ring-1 ring-gray-200 dark:ring-gray-600' 
+                            : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'
                         }`}
                     >
                         <type.icon size={16} />
@@ -177,11 +177,11 @@ export const CreateGenerationModal: React.FC<CreateGenerationModalProps> = ({
         <div className="space-y-4">
             {resultType === 'text' ? (
                 <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1.5">Generated Text</label>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Generated Text</label>
                     <textarea 
                         value={content}
                         onChange={(e) => setContent(e.target.value)}
-                        className="w-full px-4 py-3 bg-white border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary/50 focus:border-primary outline-none transition-all resize-none text-sm leading-relaxed"
+                        className="w-full px-4 py-3 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-primary/50 focus:border-primary outline-none transition-all resize-none text-sm leading-relaxed text-gray-900 dark:text-white"
                         rows={6}
                         placeholder="Paste the output from the AI model here..."
                     />
@@ -196,7 +196,7 @@ export const CreateGenerationModal: React.FC<CreateGenerationModalProps> = ({
                     />
                     
                     {/* Preview Area */}
-                    <div className="mt-4 bg-gray-50 rounded-xl border border-dashed border-gray-300 min-h-[200px] flex items-center justify-center overflow-hidden relative">
+                    <div className="mt-4 bg-gray-50 dark:bg-gray-800 rounded-xl border border-dashed border-gray-300 dark:border-gray-700 min-h-[200px] flex items-center justify-center overflow-hidden relative">
                         {content ? (
                             resultType === 'image' ? (
                                 <img src={content} alt="Preview" className="max-w-full max-h-[300px] object-contain" onError={(e) => (e.currentTarget.style.display = 'none')} />
@@ -204,7 +204,7 @@ export const CreateGenerationModal: React.FC<CreateGenerationModalProps> = ({
                                 <video src={content} controls className="max-w-full max-h-[300px]" onError={(e) => (e.currentTarget.style.display = 'none')} />
                             )
                         ) : (
-                            <div className="text-gray-400 text-sm flex flex-col items-center">
+                            <div className="text-gray-400 dark:text-gray-500 text-sm flex flex-col items-center">
                                 {resultType === 'image' ? <ImageIcon size={32} className="mb-2 opacity-50" /> : <Video size={32} className="mb-2 opacity-50" />}
                                 Preview will appear here
                             </div>
@@ -215,7 +215,7 @@ export const CreateGenerationModal: React.FC<CreateGenerationModalProps> = ({
         </div>
 
         {error && (
-            <div className="p-3 bg-red-50 text-red-600 text-sm rounded-lg flex items-center gap-2">
+            <div className="p-3 bg-red-50 dark:bg-red-900/30 text-red-600 dark:text-red-400 text-sm rounded-lg flex items-center gap-2">
                 <AlertCircle size={16} />
                 {error}
             </div>

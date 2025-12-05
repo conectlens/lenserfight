@@ -29,10 +29,8 @@ export const LenserProfileHeader: React.FC<LenserProfileHeaderProps> = ({ lenser
   
   const [socialLinks, setSocialLinks] = useState<SocialLink[]>([]);
 
-  // Network Modal State
   const [networkType, setNetworkType] = useState<'followers' | 'following' | null>(null);
 
-  // Fetch social links
   useEffect(() => {
       const fetchLinks = async () => {
           try {
@@ -45,10 +43,8 @@ export const LenserProfileHeader: React.FC<LenserProfileHeaderProps> = ({ lenser
       fetchLinks();
   }, [lenser.id]);
 
-  // Refetch when edit modal closes (assuming save happened)
   const handleEditClose = async () => {
       setShowEditModal(false);
-      // Refresh links
       const links = await socialLinksService.getLinks(lenser.id);
       setSocialLinks(links);
   };
@@ -63,7 +59,6 @@ export const LenserProfileHeader: React.FC<LenserProfileHeaderProps> = ({ lenser
           setShowBannerModal(false);
           setShowEditModal(false);
           
-          // Also refresh links in case they were updated
           const links = await socialLinksService.getLinks(lenser.id);
           setSocialLinks(links);
       } catch (e) {
@@ -80,26 +75,26 @@ export const LenserProfileHeader: React.FC<LenserProfileHeaderProps> = ({ lenser
   const showNetworkLinks = FEATURES.NETWORK_LINKS;
 
   const StatsBlock = ({ mobile = false }) => (
-    <div className={`flex items-center gap-3 text-sm ${mobile ? 'justify-center text-gray-600' : 'text-gray-500'}`}>
+    <div className={`flex items-center gap-3 text-sm ${mobile ? 'justify-center text-gray-600 dark:text-gray-400' : 'text-gray-500 dark:text-gray-400'}`}>
         <div 
-        className={`flex items-center gap-1 transition-colors group/stats ${showNetworkLinks ? 'cursor-pointer hover:text-primary-700' : ''}`}
+        className={`flex items-center gap-1 transition-colors group/stats ${showNetworkLinks ? 'cursor-pointer hover:text-primary-700 dark:hover:text-primary-400' : ''}`}
         onClick={showNetworkLinks ? () => setNetworkType('followers') : undefined}
         >
-        <span className={`font-bold text-gray-900 ${showNetworkLinks ? 'group-hover/stats:text-primary-700' : ''}`}>{formatCount(followersCount)}</span>
-        <span className="text-gray-500">Followers</span>
+        <span className={`font-bold text-gray-900 dark:text-gray-100 ${showNetworkLinks ? 'group-hover/stats:text-primary-700 dark:group-hover/stats:text-primary-400' : ''}`}>{formatCount(followersCount)}</span>
+        <span className="text-gray-500 dark:text-gray-400">Followers</span>
         </div>
-        <span className="text-gray-300">•</span>
+        <span className="text-gray-300 dark:text-gray-600">•</span>
         <div 
-        className={`flex items-center gap-1 transition-colors group/stats ${showNetworkLinks ? 'cursor-pointer hover:text-primary-700' : ''}`}
+        className={`flex items-center gap-1 transition-colors group/stats ${showNetworkLinks ? 'cursor-pointer hover:text-primary-700 dark:hover:text-primary-400' : ''}`}
         onClick={showNetworkLinks ? () => setNetworkType('following') : undefined}
         >
-        <span className={`font-bold text-gray-900 ${showNetworkLinks ? 'group-hover/stats:text-primary-700' : ''}`}>{formatCount(followingCount)}</span>
-        <span className="text-gray-500">Following</span>
+        <span className={`font-bold text-gray-900 dark:text-gray-100 ${showNetworkLinks ? 'group-hover/stats:text-primary-700 dark:group-hover/stats:text-primary-400' : ''}`}>{formatCount(followingCount)}</span>
+        <span className="text-gray-500 dark:text-gray-400">Following</span>
         </div>
         {!mobile && (
             <>
-                <span className="text-gray-300">•</span>
-                <span className="text-gray-500 font-medium">@{lenser.handle}</span>
+                <span className="text-gray-300 dark:text-gray-600">•</span>
+                <span className="text-gray-500 dark:text-gray-400 font-medium">@{lenser.handle}</span>
             </>
         )}
     </div>
@@ -127,7 +122,7 @@ export const LenserProfileHeader: React.FC<LenserProfileHeaderProps> = ({ lenser
   return (
     <div className="relative mb-6 md:mb-8">
        {/* Banner Area */}
-       <div className="h-32 md:h-64 rounded-3xl overflow-hidden bg-gray-100 relative z-0 group">
+       <div className="h-32 md:h-64 rounded-3xl overflow-hidden bg-gray-100 dark:bg-gray-800 relative z-0 group">
           {lenser.banner_url ? (
             <img 
               src={lenser.banner_url} 
@@ -135,8 +130,8 @@ export const LenserProfileHeader: React.FC<LenserProfileHeaderProps> = ({ lenser
               className="w-full h-full object-cover"
             />
           ) : (
-            <div className="w-full h-full bg-gradient-to-r from-gray-200 to-gray-300 flex items-center justify-center">
-                <span className="text-gray-400 opacity-50 text-4xl md:text-6xl font-black tracking-tighter mix-blend-overlay">LENSER</span>
+            <div className="w-full h-full bg-gradient-to-r from-gray-200 to-gray-300 dark:from-gray-700 dark:to-gray-800 flex items-center justify-center">
+                <span className="text-gray-400 dark:text-gray-600 opacity-50 text-4xl md:text-6xl font-black tracking-tighter mix-blend-overlay">LENSER</span>
             </div>
           )}
           
@@ -153,13 +148,13 @@ export const LenserProfileHeader: React.FC<LenserProfileHeaderProps> = ({ lenser
 
        {/* Profile Info Card Overlay */}
        <div className="px-0 md:px-6 relative z-10 -mt-6 md:-mt-16">
-          <div className="bg-white md:rounded-2xl shadow-sm border-b md:border border-gray-100 p-6 md:p-8 relative">
+          <div className="bg-white dark:bg-gray-800 md:rounded-2xl shadow-sm border-b md:border border-gray-100 dark:border-gray-700 p-6 md:p-8 relative transition-colors">
             
             {/* Mobile Edit Button */}
             {isOwner && (
                 <button 
                     onClick={() => setShowEditModal(true)}
-                    className="md:hidden absolute top-4 right-4 p-2.5 text-gray-500 hover:bg-gray-50 hover:text-gray-900 rounded-full transition-colors z-20 border border-transparent hover:border-gray-200"
+                    className="md:hidden absolute top-4 right-4 p-2.5 text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white rounded-full transition-colors z-20 border border-transparent hover:border-gray-200 dark:hover:border-gray-600"
                     title="Edit Profile"
                 >
                     <Pencil size={18} />
@@ -173,12 +168,12 @@ export const LenserProfileHeader: React.FC<LenserProfileHeaderProps> = ({ lenser
                       <Avatar 
                           src={lenser.avatar_url} 
                           alt={lenser.display_name} 
-                          className="!w-28 !h-28 md:!w-40 md:!h-40 rounded-full border-4 border-white shadow-md bg-white" 
+                          className="!w-28 !h-28 md:!w-40 md:!h-40 rounded-full border-4 border-white dark:border-gray-800 shadow-md bg-white dark:bg-gray-700 transition-colors" 
                       />
                       
                       {lenser.join_order !== undefined && (
                           <div 
-                              className="absolute -bottom-1 -right-1 md:bottom-1 md:right-1 z-20 bg-gradient-to-r from-yellow-300 via-yellow-400 to-orange-400 border-[3px] border-white shadow-lg px-3 py-1 rounded-full flex items-center justify-center transform transition-transform hover:scale-105 hover:rotate-2 cursor-default group/badge"
+                              className="absolute -bottom-1 -right-1 md:bottom-1 md:right-1 z-20 bg-gradient-to-r from-yellow-300 via-yellow-400 to-orange-400 border-[3px] border-white dark:border-gray-800 shadow-lg px-3 py-1 rounded-full flex items-center justify-center transform transition-transform hover:scale-105 hover:rotate-2 cursor-default group/badge"
                               title={`Member #${lenser.join_order}`}
                           >
                               <div className="flex items-center gap-1">
@@ -211,16 +206,16 @@ export const LenserProfileHeader: React.FC<LenserProfileHeaderProps> = ({ lenser
 
                    <div className="flex flex-col md:flex-row md:items-start justify-between gap-4 w-full mb-1">
                       <div className="flex flex-col gap-1 w-full md:w-auto items-center md:items-start">
-                          <h1 className="text-2xl md:text-3xl font-bold text-gray-900 leading-tight">
+                          <h1 className="text-2xl md:text-3xl font-bold text-gray-900 dark:text-white leading-tight">
                               {lenser.display_name}
                           </h1>
-                          <p className="md:hidden text-gray-500 text-sm font-medium">@{lenser.handle}</p>
+                          <p className="md:hidden text-gray-500 dark:text-gray-400 text-sm font-medium">@{lenser.handle}</p>
                       </div>
                       
                       {isOwner && (
                           <button 
                             onClick={() => setShowEditModal(true)}
-                            className="hidden md:flex items-center gap-2 px-4 py-2 rounded-lg border border-gray-200 hover:bg-gray-50 text-gray-700 font-medium transition-colors mt-2 md:mt-0"
+                            className="hidden md:flex items-center gap-2 px-4 py-2 rounded-lg border border-gray-200 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 font-medium transition-colors mt-2 md:mt-0"
                           >
                               <Pencil size={16} />
                               Edit Profile
@@ -233,15 +228,15 @@ export const LenserProfileHeader: React.FC<LenserProfileHeaderProps> = ({ lenser
                        <StatsBlock mobile />
                    </div>
 
-                   <div className="w-full h-px bg-gray-100 my-2 md:hidden"></div>
+                   <div className="w-full h-px bg-gray-100 dark:bg-gray-700 my-2 md:hidden"></div>
                    
                    <div className="flex flex-col gap-2 mb-3 md:mb-4 w-full">
                         {lenser.headline && (
-                            <p className="font-medium text-gray-800 mt-2 md:mt-0">{lenser.headline}</p>
+                            <p className="font-medium text-gray-800 dark:text-gray-200 mt-2 md:mt-0">{lenser.headline}</p>
                         )}
                         
                         {lenser.bio && (
-                            <p className="text-sm md:text-base text-gray-600 leading-relaxed max-w-3xl whitespace-pre-wrap">
+                            <p className="text-sm md:text-base text-gray-600 dark:text-gray-300 leading-relaxed max-w-3xl whitespace-pre-wrap">
                                 {lenser.bio}
                             </p>
                         )}
@@ -252,7 +247,7 @@ export const LenserProfileHeader: React.FC<LenserProfileHeaderProps> = ({ lenser
                                     href={lenser.website_url} 
                                     target="_blank" 
                                     rel="noopener noreferrer" 
-                                    className="flex items-center gap-1.5 text-sm text-blue-600 hover:underline font-medium"
+                                    className="flex items-center gap-1.5 text-sm text-blue-600 dark:text-blue-400 hover:underline font-medium"
                                 >
                                     <Globe size={14} />
                                     {getWebsiteLabel()}
@@ -262,14 +257,14 @@ export const LenserProfileHeader: React.FC<LenserProfileHeaderProps> = ({ lenser
                             {/* Social Links Row */}
                             {socialLinks.length > 0 && (
                                 <div className="flex items-center gap-3">
-                                    {lenser.website_url && <span className="text-gray-300 text-xs">|</span>}
+                                    {lenser.website_url && <span className="text-gray-300 dark:text-gray-600 text-xs">|</span>}
                                     {socialLinks.map(link => (
                                         <a 
                                             key={link.id} 
                                             href={link.url} 
                                             target="_blank" 
                                             rel="noopener noreferrer"
-                                            className="text-gray-400 hover:text-gray-700 transition-colors p-1 -m-1"
+                                            className="text-gray-400 dark:text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 transition-colors p-1 -m-1"
                                             title={link.label || link.platform}
                                         >
                                             {getPlatformIcon(link.platform)}
