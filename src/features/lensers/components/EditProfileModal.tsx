@@ -65,7 +65,6 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({ isOpen, onCl
   const [websiteUrl, setWebsiteUrl] = useState(currentData.website_url || '');
   const [urlError, setUrlError] = useState<string | null>(null);
 
-  // Social Links State
   const [socialLinks, setSocialLinks] = useState<Partial<SocialLink>[]>([]);
   const [loadingLinks, setLoadingLinks] = useState(false);
   const [linkErrors, setLinkErrors] = useState<Record<number, string>>({});
@@ -76,7 +75,6 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({ isOpen, onCl
             setLoadingLinks(true);
             try {
                 const links = await socialLinksService.getLinks(currentData.id);
-                // Filter out any 'Other' platform links if they exist from legacy data
                 setSocialLinks(links.filter(l => l.platform !== 'Other'));
             } catch (e) {
                 console.error("Failed to load social links", e);
@@ -110,7 +108,6 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({ isOpen, onCl
   const handleAddLink = () => {
       const available = getAvailablePlatforms(-1);
       if (available.length === 0) return;
-      
       setSocialLinks([...socialLinks, { platform: available[0].value, url: '', label: '' }]);
   };
 
@@ -146,7 +143,6 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({ isOpen, onCl
         return;
     }
 
-    // Validate Social Links
     let hasError = false;
     const errors: Record<number, string> = {};
 
@@ -194,6 +190,7 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({ isOpen, onCl
                 onChange={(e) => setDisplayName(e.target.value)}
                 required
                 maxLength={50}
+                className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
             />
             
             <InputField 
@@ -202,19 +199,20 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({ isOpen, onCl
                 onChange={(e) => setHeadline(e.target.value)}
                 placeholder="Role, Title, or Tagline"
                 maxLength={100}
+                className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
             />
 
             <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1.5">Bio</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Bio</label>
                 <textarea
                     value={bio}
                     onChange={(e) => setBio(e.target.value)}
                     rows={3}
                     maxLength={300}
                     placeholder="Tell us about yourself..."
-                    className="w-full px-4 py-2.5 rounded-xl border border-gray-200 bg-white text-gray-900 focus:ring-2 focus:ring-primary/50 focus:border-primary transition-colors outline-none resize-none text-sm"
+                    className="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-primary/50 focus:border-primary transition-colors outline-none resize-none text-sm placeholder-gray-400 dark:placeholder-gray-500"
                 />
-                <div className="text-right text-xs text-gray-400 mt-1">{bio.length}/300</div>
+                <div className="text-right text-xs text-gray-400 dark:text-gray-500 mt-1">{bio.length}/300</div>
             </div>
 
             <InputField 
@@ -226,18 +224,18 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({ isOpen, onCl
                 }}
                 placeholder="https://yoursite.com"
                 error={urlError || undefined}
+                className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
             />
         </div>
 
-        {/* Social Links Section */}
-        <div className="pt-6 border-t border-gray-100">
+        <div className="pt-6 border-t border-gray-100 dark:border-gray-700">
             <div className="flex items-center justify-between mb-4">
-                <label className="block text-sm font-bold text-gray-900">Social Links</label>
+                <label className="block text-sm font-bold text-gray-900 dark:text-white">Social Links</label>
                 {getAvailablePlatforms(-1).length > 0 && (
                     <button 
                         type="button" 
                         onClick={handleAddLink}
-                        className="flex items-center gap-1.5 text-xs font-semibold text-primary-700 hover:text-primary-800 bg-primary/10 hover:bg-primary/20 px-3 py-1.5 rounded-lg transition-colors"
+                        className="flex items-center gap-1.5 text-xs font-semibold text-primary-700 dark:text-primary-400 hover:text-primary-800 dark:hover:text-primary-300 bg-primary/10 hover:bg-primary/20 px-3 py-1.5 rounded-lg transition-colors"
                     >
                         <Plus size={14} strokeWidth={3} /> Add Link
                     </button>
@@ -245,7 +243,7 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({ isOpen, onCl
             </div>
             
             {loadingLinks ? (
-                <div className="text-center py-6 text-xs text-gray-400">Loading links...</div>
+                <div className="text-center py-6 text-xs text-gray-400 dark:text-gray-500">Loading links...</div>
             ) : (
                 <div className="space-y-4">
                     {socialLinks.map((link, index) => (
@@ -271,13 +269,13 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({ isOpen, onCl
                                         value={link.url}
                                         onChange={(e) => handleLinkChange(index, 'url', e.target.value)}
                                         placeholder={URL_VALIDATORS[link.platform!].placeholder}
-                                        className={`w-full px-4 py-2.5 rounded-xl border bg-white text-gray-900 text-sm focus:ring-2 focus:ring-primary/50 focus:border-primary outline-none transition-all placeholder-gray-400 ${linkErrors[index] ? 'border-red-500' : 'border-gray-200'}`}
+                                        className={`w-full px-4 py-2.5 rounded-xl border bg-white dark:bg-gray-800 text-gray-900 dark:text-white text-sm focus:ring-2 focus:ring-primary/50 focus:border-primary outline-none transition-all placeholder-gray-400 dark:placeholder-gray-500 ${linkErrors[index] ? 'border-red-500' : 'border-gray-200 dark:border-gray-700'}`}
                                     />
                                 </div>
                                 <button
                                     type="button"
                                     onClick={() => handleRemoveLink(index)}
-                                    className="p-2.5 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-xl transition-colors border border-transparent hover:border-red-100"
+                                    className="p-2.5 text-gray-400 dark:text-gray-500 hover:text-red-500 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-xl transition-colors border border-transparent hover:border-red-100 dark:hover:border-red-900/30"
                                     title="Remove link"
                                 >
                                     <Trash2 size={18} />
@@ -289,16 +287,16 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({ isOpen, onCl
                         </div>
                     ))}
                     {socialLinks.length === 0 && (
-                        <div className="text-center py-8 border border-dashed border-gray-200 rounded-xl bg-gray-50/30">
-                            <p className="text-sm text-gray-500">Connect your social profiles to build trust.</p>
+                        <div className="text-center py-8 border border-dashed border-gray-200 dark:border-gray-700 rounded-xl bg-gray-50/30 dark:bg-gray-800/30">
+                            <p className="text-sm text-gray-500 dark:text-gray-400">Connect your social profiles to build trust.</p>
                         </div>
                     )}
                 </div>
             )}
         </div>
 
-        <div className="flex justify-end gap-3 pt-6 border-t border-gray-100">
-            <Button type="button" variant="secondary" onClick={onClose} disabled={isLoading} className="w-auto px-6">Cancel</Button>
+        <div className="flex justify-end gap-3 pt-6 border-t border-gray-100 dark:border-gray-700">
+            <Button type="button" variant="secondary" onClick={onClose} disabled={isLoading} className="w-auto px-6 dark:bg-gray-700 dark:text-white dark:border-gray-600 dark:hover:bg-gray-600">Cancel</Button>
             <Button type="submit" isLoading={isLoading} className="w-auto px-6 shadow-md">Save Changes</Button>
         </div>
       </form>

@@ -45,7 +45,6 @@ const INITIAL_TAB_STATE: TabState = {
   isLoaded: false
 };
 
-// Route param mapping
 const TAB_MAP: Record<string, TabType> = {
   t: 'threads',
   p: 'prompts',
@@ -66,16 +65,14 @@ export const LenserProfilePage: React.FC = () => {
   const { handle, tab: routeTab } = useParams<{ handle: string; tab?: string }>();
   const navigate = useNavigate();
   const { user } = useAuth();
-  const { lenser: currentUserLenser } = useLenser(); // Get current logged-in lenser for ID
+  const { lenser: currentUserLenser } = useLenser();
   const { setShareConfig } = useShareContext();
   
-  // Profile Data
   const [lenser, setLenser] = useState<Lenser | null>(null);
   const [stats, setStats] = useState<LenserStats | null>(null);
   const [activity, setActivity] = useState<LenserActivityPoint[]>([]);
   const [loadingProfile, setLoadingProfile] = useState(true);
 
-  // Cache State - Stores data for all tabs to avoid refetching
   const [tabCache, setTabCache] = useState<Record<TabType, TabState>>({
     threads: { ...INITIAL_TAB_STATE },
     prompts: { ...INITIAL_TAB_STATE },
@@ -86,13 +83,10 @@ export const LenserProfilePage: React.FC = () => {
   const [loadingTab, setLoadingTab] = useState(false);
   const observer = useRef<IntersectionObserver | null>(null);
 
-  // Active Tab Logic
   const activeTab: TabType = routeTab && TAB_MAP[routeTab] ? TAB_MAP[routeTab] : 'threads';
   
-  // Derived state for current view
   const { data: items, page, hasMore, isLoaded } = tabCache[activeTab];
 
-  // Controller Hooks
   const { 
     isOpen: isPromptModalOpen, 
     openModal: openPromptModal, 
@@ -104,7 +98,6 @@ export const LenserProfilePage: React.FC = () => {
     isEditMode: isPromptEditMode
   } = useCreatePrompt();
 
-  const { createThread: submitThread } = useCreateThread();
   const [isThreadModalOpen, setIsThreadModalOpen] = useState(false);
   const [editingThread, setEditingThread] = useState<any>(null);
 
@@ -113,11 +106,9 @@ export const LenserProfilePage: React.FC = () => {
 
   const isOwner = !!(user && lenser && user.id === lenser.user_id);
 
-  // 1. Fetch Profile & Stats (Only on handle change)
   useEffect(() => {
     if (!handle) return;
     
-    // Reset cache when profile changes
     setTabCache({
         threads: { ...INITIAL_TAB_STATE },
         prompts: { ...INITIAL_TAB_STATE },
@@ -135,7 +126,6 @@ export const LenserProfilePage: React.FC = () => {
         }
         setLenser(lenserData);
 
-        // Fetch stats & activity
         const [statsData, activityData] = await Promise.all([
              lenserService.getLenserStats(lenserData.id),
              FEATURES.LENSER_ACTIVITY ? lenserService.getLenserActivity(lenserData.id) : Promise.resolve([])
@@ -153,7 +143,6 @@ export const LenserProfilePage: React.FC = () => {
     fetchProfile();
   }, [handle]);
 
-  // 2. Share Config
   useEffect(() => {
     if (lenser) {
         setShareConfig({
@@ -166,21 +155,17 @@ export const LenserProfilePage: React.FC = () => {
     return () => setShareConfig(null);
   }, [lenser, setShareConfig]);
 
-  // 3. Tab Data Fetching Strategy
   const fetchTabData = async (targetTab: TabType, pageNum: number, refresh = false) => {
       if (!lenser) return;
       
-      // Prevent fetching if already loaded and not refreshing/paginating
       if (!refresh && tabCache[targetTab].isLoaded && pageNum === 0) return;
 
-      // Only show global loading if it's the first load or a hard refresh
       if (pageNum === 0) setLoadingTab(true);
 
       try {
           const offset = pageNum * PAGE_SIZE;
           let newItems: any[] = [];
           
-          // Pass currentUserLenser.id as viewerId to allow fetching private items if owner
           const viewerId = currentUserLenser?.id;
 
           switch (targetTab) {
@@ -194,7 +179,7 @@ export const LenserProfilePage: React.FC = () => {
                   newItems = await reactionService.getUserActivityFeed(lenser.id, offset, PAGE_SIZE);
                   break;
               case 'challenges':
-                  newItems = []; // Not implemented
+                  newItems = [];
                   break;
           }
 
@@ -220,17 +205,14 @@ export const LenserProfilePage: React.FC = () => {
       }
   };
 
-  // 4. Trigger Fetch on Tab Change if needed
   useEffect(() => {
       if (lenser) {
-          // If not loaded yet, fetch initial data
           if (!tabCache[activeTab].isLoaded) {
               fetchTabData(activeTab, 0);
           }
       }
   }, [activeTab, lenser?.id, currentUserLenser?.id]);
 
-  // 5. Infinite Scroll Observer
   const lastElementRef = useCallback((node: HTMLDivElement) => {
     if (loadingTab) return;
     if (observer.current) observer.current.disconnect();
@@ -245,14 +227,12 @@ export const LenserProfilePage: React.FC = () => {
     if (node) observer.current.observe(node);
   }, [loadingTab, hasMore, activeTab, page, lenser?.id]);
 
-  // Navigation Handler
   const handleTabChange = (newTab: TabType) => {
       if (newTab === activeTab) return;
       const code = REVERSE_TAB_MAP[newTab];
       navigate(`/lenser/${handle}/${code}`);
   };
 
-  // Actions
   const handleProfileUpdate = (updatedLenser: Lenser) => setLenser(updatedLenser);
 
   const handleEditPrompt = (id: string) => {
@@ -284,17 +264,6 @@ export const LenserProfilePage: React.FC = () => {
           });
           setIsThreadModalOpen(true);
       }
-  };
-
-  const updateCacheItem = (tab: TabType, itemId: string, updater: (item: any) => any) => {
-      setTabCache(prev => {
-          const tabState = prev[tab];
-          const newData = tabState.data.map(item => item.id === itemId ? updater(item) : item);
-          return {
-              ...prev,
-              [tab]: { ...tabState, data: newData }
-          };
-      });
   };
 
   const removeCacheItem = (tab: TabType, itemId: string) => {
@@ -342,26 +311,26 @@ export const LenserProfilePage: React.FC = () => {
       if (activeTab === 'prompts') {
           return (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {[1, 2, 3].map(i => <div key={i} className="h-64 bg-gray-200 rounded-xl animate-pulse"></div>)}
+                {[1, 2, 3].map(i => <div key={i} className="h-64 bg-gray-200 dark:bg-gray-800 rounded-xl animate-pulse"></div>)}
             </div>
           );
       }
       if (activeTab === 'threads') {
           return (
             <div className="space-y-6">
-                {[1, 2].map(i => <div key={i} className="h-48 bg-gray-200 rounded-2xl animate-pulse"></div>)}
+                {[1, 2].map(i => <div key={i} className="h-48 bg-gray-200 dark:bg-gray-800 rounded-2xl animate-pulse"></div>)}
             </div>
           );
       }
-      return <div className="space-y-4">{[1, 2, 3].map(i => <div key={i} className="h-20 bg-gray-200 rounded-xl animate-pulse"></div>)}</div>;
+      return <div className="space-y-4">{[1, 2, 3].map(i => <div key={i} className="h-20 bg-gray-200 dark:bg-gray-800 rounded-xl animate-pulse"></div>)}</div>;
   };
 
   const EmptyState = ({ icon: Icon, message, action }: { icon: any, message: string, action?: React.ReactNode }) => (
-    <div className="flex flex-col items-center justify-center py-20 text-center animate-in fade-in duration-500 bg-gray-50/50 rounded-2xl border border-gray-100 border-dashed">
-        <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mb-4 text-gray-300">
+    <div className="flex flex-col items-center justify-center py-20 text-center animate-in fade-in duration-500 bg-gray-50 dark:bg-gray-800/50 rounded-2xl border border-gray-100 dark:border-gray-700 border-dashed">
+        <div className="w-16 h-16 bg-white dark:bg-gray-700 rounded-full flex items-center justify-center mb-4 text-gray-300 dark:text-gray-500 shadow-sm border border-gray-100 dark:border-gray-600">
             <Icon size={32} />
         </div>
-        <p className="text-gray-500 font-medium mb-4">{message}</p>
+        <p className="text-gray-500 dark:text-gray-400 font-medium mb-4">{message}</p>
         {action}
     </div>
   );
@@ -370,12 +339,12 @@ export const LenserProfilePage: React.FC = () => {
     return (
         <div className="max-w-7xl mx-auto py-8 px-4">
              <div className="animate-pulse space-y-8">
-                 <div className="h-64 bg-gray-200 rounded-3xl"></div>
+                 <div className="h-64 bg-gray-200 dark:bg-gray-800 rounded-3xl"></div>
                  <div className="flex gap-6 mt-4 px-6">
-                     <div className="w-32 h-32 rounded-full bg-gray-200 -mt-20 border-4 border-white"></div>
+                     <div className="w-32 h-32 rounded-full bg-gray-200 dark:bg-gray-800 -mt-20 border-4 border-white dark:border-gray-900"></div>
                      <div className="flex-1 space-y-4 pt-4">
-                         <div className="w-1/3 h-8 bg-gray-200 rounded"></div>
-                         <div className="w-1/4 h-4 bg-gray-200 rounded"></div>
+                         <div className="w-1/3 h-8 bg-gray-200 dark:bg-gray-800 rounded"></div>
+                         <div className="w-1/4 h-4 bg-gray-200 dark:bg-gray-800 rounded"></div>
                      </div>
                  </div>
              </div>
@@ -386,7 +355,7 @@ export const LenserProfilePage: React.FC = () => {
   if (!lenser) {
     return (
         <div className="flex justify-center items-center min-h-[50vh]">
-            <h2 className="text-xl font-bold text-gray-500">Lenser not found</h2>
+            <h2 className="text-xl font-bold text-gray-500 dark:text-gray-400">Lenser not found</h2>
         </div>
     );
   }
@@ -420,7 +389,6 @@ export const LenserProfilePage: React.FC = () => {
           </div>
           
           <div className="min-h-[300px] px-4 md:px-0">
-            {/* Actions Tab */}
             {activeTab === 'actions' && (
                 <>
                     {items.length > 0 ? (
@@ -431,7 +399,6 @@ export const LenserProfilePage: React.FC = () => {
                 </>
             )}
 
-            {/* Prompts Tab */}
             {activeTab === 'prompts' && (
                 <>
                     {items.length > 0 ? (
@@ -462,7 +429,6 @@ export const LenserProfilePage: React.FC = () => {
                 </>
             )}
             
-            {/* Threads Tab */}
             {activeTab === 'threads' && (
                 <>
                     {items.length > 0 ? (
@@ -492,24 +458,20 @@ export const LenserProfilePage: React.FC = () => {
                 </>
             )}
             
-            {/* Challenges Tab (Placeholder) */}
             {activeTab === 'challenges' && (
                 <EmptyState icon={Trophy} message="No challenge history available." />
             )}
 
-            {/* Loading Indicator / Skeleton */}
             {loadingTab && (
                 <div className="mt-6">
                     <SkeletonLoader />
                 </div>
             )}
 
-            {/* Infinite Scroll Anchor */}
             <div ref={lastElementRef} className="h-4" />
           </div>
       </div>
 
-      {/* Edit Modals */}
       <CreatePromptModal 
         isOpen={isPromptModalOpen}
         onClose={closePromptModal}
@@ -527,7 +489,6 @@ export const LenserProfilePage: React.FC = () => {
         initialData={editingThread}
       />
 
-      {/* Delete Confirmation Modal */}
       <ConfirmModal 
         isOpen={!!deleteTarget}
         onClose={() => setDeleteTarget(null)}

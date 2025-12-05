@@ -1,4 +1,3 @@
-
 import React, { useState, useCallback, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { PromptsGrid } from '../components/PromptsGrid';
@@ -86,8 +85,8 @@ export const PromptsPage: React.FC = () => {
       
       {/* Page Header */}
       <div className="mb-6 sm:mb-8 mt-2">
-        <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">Discover Prompts</h1>
-        <p className="text-gray-600 text-base sm:text-lg">
+        <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white mb-2">Discover Prompts</h1>
+        <p className="text-gray-600 dark:text-gray-400 text-base sm:text-lg">
             Find, share, and remix the best AI prompts from the community.
         </p>
       </div>
@@ -134,7 +133,7 @@ export const PromptsPage: React.FC = () => {
           </div>
       )}
       {!hasNextPage && prompts.length > 0 && (
-          <p className="text-center text-gray-400 text-sm py-8">No more prompts to load</p>
+          <p className="text-center text-gray-400 dark:text-gray-500 text-sm py-8">No more prompts to load</p>
       )}
 
       {/* Create Modal */}

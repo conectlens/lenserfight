@@ -71,18 +71,18 @@ export const NetworkModal: React.FC<NetworkModalProps> = ({ isOpen, onClose, len
     <Modal isOpen={isOpen} onClose={onClose} title={title}>
       <div className="-mx-6 px-6">
         {users.map((user, index) => (
-            <div key={user.id} className="flex items-center justify-between py-3 border-b border-gray-50 last:border-0">
+            <div key={user.id} className="flex items-center justify-between py-3 border-b border-gray-50 dark:border-gray-700 last:border-0 dark:text-gray-200">
                 <div className="flex items-center gap-3">
                     <Avatar src={user.avatar_url} size="md" className="!w-10 !h-10" />
                     <div>
-                        <p className="text-sm font-semibold text-gray-900">{user.display_name}</p>
-                        <p className="text-xs text-gray-500">@{user.handle}</p>
+                        <p className="text-sm font-semibold text-gray-900 dark:text-white">{user.display_name}</p>
+                        <p className="text-xs text-gray-500 dark:text-gray-400">@{user.handle}</p>
                     </div>
                 </div>
                 <button 
                     className={`px-3 py-1.5 rounded-full text-xs font-semibold transition-colors ${
                         user.is_following 
-                        ? 'bg-gray-100 text-gray-700 hover:bg-gray-200' 
+                        ? 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600' 
                         : 'bg-primary text-gray-900 hover:bg-yellow-300'
                     }`}
                 >
@@ -97,10 +97,10 @@ export const NetworkModal: React.FC<NetworkModalProps> = ({ isOpen, onClose, len
             <div className="space-y-3 py-3">
                 {[1, 2, 3].map(i => (
                     <div key={i} className="flex items-center gap-3 animate-pulse">
-                        <div className="w-10 h-10 bg-gray-200 rounded-full"></div>
+                        <div className="w-10 h-10 bg-gray-200 dark:bg-gray-700 rounded-full"></div>
                         <div className="flex-1 space-y-2">
-                            <div className="h-3 bg-gray-200 w-24 rounded"></div>
-                            <div className="h-2 bg-gray-200 w-16 rounded"></div>
+                            <div className="h-3 bg-gray-200 dark:bg-gray-700 w-24 rounded"></div>
+                            <div className="h-2 bg-gray-200 dark:bg-gray-700 w-16 rounded"></div>
                         </div>
                     </div>
                 ))}
@@ -109,10 +109,10 @@ export const NetworkModal: React.FC<NetworkModalProps> = ({ isOpen, onClose, len
 
         {!loading && users.length === 0 && (
             <div className="flex flex-col items-center justify-center py-12 text-center">
-                <div className="w-12 h-12 bg-gray-50 rounded-full flex items-center justify-center mb-3 text-gray-300">
+                <div className="w-12 h-12 bg-gray-50 dark:bg-gray-800 rounded-full flex items-center justify-center mb-3 text-gray-300 dark:text-gray-600">
                     <UserX size={24} />
                 </div>
-                <p className="text-gray-500 font-medium text-sm">No {type} found.</p>
+                <p className="text-gray-500 dark:text-gray-400 font-medium text-sm">No {type} found.</p>
             </div>
         )}
       </div>

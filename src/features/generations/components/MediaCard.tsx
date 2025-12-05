@@ -19,20 +19,19 @@ export const MediaCard: React.FC<MediaCardProps> = ({ media, onClick, textPrevie
   };
 
   if (!media) {
-      return <div className="bg-gray-200 rounded-xl w-full h-full animate-pulse min-h-[150px]"></div>;
+      return <div className="bg-gray-200 dark:bg-gray-700 rounded-xl w-full h-full animate-pulse min-h-[150px]"></div>;
   }
 
   // Image Renderer
   if (media.media_kind === 'image') {
     return (
       <div 
-        className="relative w-full group cursor-pointer overflow-hidden rounded-xl bg-gray-100" 
+        className="relative w-full group cursor-pointer overflow-hidden rounded-xl bg-gray-100 dark:bg-gray-800" 
         onClick={handleMediaClick}
-        // Aspect ratio hack if width/height unknown, but usually we just let it fit in masonry
         style={{ aspectRatio: media.width && media.height ? `${media.width}/${media.height}` : 'auto' }}
       >
         {!isLoaded && !imgError && (
-            <div className="absolute inset-0 bg-gray-200 animate-pulse z-10" />
+            <div className="absolute inset-0 bg-gray-200 dark:bg-gray-700 animate-pulse z-10" />
         )}
         
         {!imgError ? (
@@ -45,7 +44,7 @@ export const MediaCard: React.FC<MediaCardProps> = ({ media, onClick, textPrevie
                 loading="lazy"
             />
         ) : (
-            <div className="flex flex-col items-center justify-center py-10 h-full text-gray-400 bg-gray-50">
+            <div className="flex flex-col items-center justify-center py-10 h-full text-gray-400 dark:text-gray-500 bg-gray-50 dark:bg-gray-800">
                 <ImageIcon size={24} />
                 <span className="text-xs mt-2">Failed to load</span>
             </div>
@@ -86,14 +85,14 @@ export const MediaCard: React.FC<MediaCardProps> = ({ media, onClick, textPrevie
   // Text Renderer
   if (media.media_kind === 'text') {
       return (
-        <div className="relative w-full group cursor-pointer overflow-hidden rounded-xl bg-white border border-gray-200 p-5 flex flex-col hover:border-primary/50 transition-colors shadow-sm" onClick={handleMediaClick}>
+        <div className="relative w-full group cursor-pointer overflow-hidden rounded-xl bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 p-5 flex flex-col hover:border-primary/50 dark:hover:border-primary/50 transition-colors shadow-sm" onClick={handleMediaClick}>
             <div className="flex-1 overflow-hidden relative mb-2">
-                <p className="text-[10px] text-gray-400 uppercase tracking-wider mb-2 font-bold">Generated Text</p>
-                <div className="text-xs text-gray-600 line-clamp-6 font-mono leading-relaxed opacity-80 min-h-[80px]">
+                <p className="text-[10px] text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-2 font-bold">Generated Text</p>
+                <div className="text-xs text-gray-600 dark:text-gray-300 line-clamp-6 font-mono leading-relaxed opacity-80 min-h-[80px]">
                     {textPreview || media.file_name}
                 </div>
             </div>
-            <div className="pt-2 border-t border-gray-50 flex justify-between items-center text-gray-400">
+            <div className="pt-2 border-t border-gray-50 dark:border-gray-700 flex justify-between items-center text-gray-400 dark:text-gray-500">
                 <FileText size={14} />
                 <span className="text-[10px]">PREVIEW</span>
             </div>
@@ -116,9 +115,9 @@ export const MediaCard: React.FC<MediaCardProps> = ({ media, onClick, textPrevie
 
   // Fallback
   return (
-    <div className="relative w-full h-full group cursor-pointer overflow-hidden rounded-xl bg-gray-50 border border-gray-200 flex flex-col items-center justify-center text-gray-400 p-4 text-center hover:bg-gray-100 transition-colors min-h-[100px]" onClick={handleMediaClick}>
+    <div className="relative w-full h-full group cursor-pointer overflow-hidden rounded-xl bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 flex flex-col items-center justify-center text-gray-400 dark:text-gray-500 p-4 text-center hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors min-h-[100px]" onClick={handleMediaClick}>
         <FileText size={24} className="mb-2" />
-        <span className="text-xs font-medium text-gray-600 truncate w-full">{media.file_name}</span>
+        <span className="text-xs font-medium text-gray-600 dark:text-gray-300 truncate w-full">{media.file_name}</span>
     </div>
   );
 };

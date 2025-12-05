@@ -60,7 +60,7 @@ export const ThreadReactionBar: React.FC<ThreadReactionBarProps> = ({ count, has
            flex items-center space-x-1.5 px-4 py-1.5 rounded-full border transition-all duration-300 group active:scale-95
            ${hasReacted 
              ? 'bg-primary border-primary text-gray-900 shadow-sm ring-2 ring-primary/20' 
-             : 'bg-white border-gray-200 text-gray-700 hover:bg-gray-50 hover:border-gray-300'}
+             : 'bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 hover:border-gray-300 dark:hover:border-gray-600'}
            disabled:opacity-70 disabled:cursor-not-allowed
          `}
        >

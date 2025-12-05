@@ -125,8 +125,8 @@ export const ThreadDetailPage: React.FC = () => {
     return (
       <div className="w-full">
          <div className="animate-pulse space-y-8">
-           <div className="bg-gray-200 h-96 rounded-2xl"></div>
-           <div className="bg-gray-200 h-32 rounded-2xl"></div>
+           <div className="bg-gray-200 dark:bg-gray-700 h-96 rounded-2xl"></div>
+           <div className="bg-gray-200 dark:bg-gray-700 h-32 rounded-2xl"></div>
          </div>
       </div>
     );

@@ -22,7 +22,7 @@ export const ThreadDetailCard: React.FC<ThreadDetailCardProps> = ({ thread, onTo
   };
 
   return (
-    <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 md:p-8">
+    <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 p-6 md:p-8 transition-colors">
       {/* Header */}
       <div className="flex items-center gap-4 mb-6">
         <div onClick={handleAuthorClick} className="cursor-pointer transition-opacity hover:opacity-80">
@@ -31,26 +31,26 @@ export const ThreadDetailCard: React.FC<ThreadDetailCardProps> = ({ thread, onTo
         <div>
           <h3 
             onClick={handleAuthorClick} 
-            className="text-base font-semibold text-gray-900 cursor-pointer hover:text-primary-700 transition-colors"
+            className="text-base font-semibold text-gray-900 dark:text-white cursor-pointer hover:text-primary-700 dark:hover:text-primary-400 transition-colors"
           >
             {thread.author.displayName}
           </h3>
-          <p className="text-sm text-gray-500">{timeAgo(thread.createdAt)}</p>
+          <p className="text-sm text-gray-500 dark:text-gray-400">{timeAgo(thread.createdAt)}</p>
         </div>
       </div>
 
       {/* Content */}
       <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900 mb-6 leading-tight tracking-tight">
+        <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-6 leading-tight tracking-tight">
           {thread.title}
         </h1>
-        <div className="text-base md:text-lg text-gray-800 leading-relaxed">
+        <div className="text-base md:text-lg text-gray-800 dark:text-gray-200 leading-relaxed">
           <MentionRenderer content={thread.content} />
         </div>
       </div>
 
       {/* Footer: Tags & Actions */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mt-8 pt-6 border-t border-gray-50">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mt-8 pt-6 border-t border-gray-50 dark:border-gray-700">
         <ThreadTagsBar tags={thread.tags} />
         <ThreadReactionBar 
             count={thread.reactionCount} 
