@@ -13,7 +13,7 @@ export const PromptsSortDropdown: React.FC<PromptsSortDropdownProps> = ({ value,
       <select
         value={value}
         onChange={(e) => onChange(e.target.value as any)}
-        className="appearance-none bg-white border border-gray-200 text-gray-700 py-2.5 pl-9 pr-8 rounded-xl text-sm font-medium focus:outline-none focus:ring-2 focus:ring-primary/50 cursor-pointer hover:border-gray-300 transition-colors shadow-sm"
+        className="appearance-none bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-200 py-2.5 pl-9 pr-8 rounded-xl text-sm font-medium focus:outline-none focus:ring-2 focus:ring-primary/50 cursor-pointer hover:border-gray-300 dark:hover:border-gray-600 transition-colors shadow-sm"
       >
         <option value="newest">Newest</option>
         <option value="popular">Popular</option>
