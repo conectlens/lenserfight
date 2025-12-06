@@ -12,6 +12,7 @@ export interface AuthRepositoryPort {
   requestPasswordReset(email: string): Promise<void>;
   resetPassword(password: string, token?: string): Promise<void>;
   signInWithOAuth(provider: 'google' | 'github' | 'azure'): Promise<void>;
+  resendSignupConfirmation(email: string): Promise<void>;
   onAuthStateChange(callback: AuthStateChangeCallback): () => void;
 }
 
@@ -180,6 +181,11 @@ export class MockAuthRepository implements AuthRepositoryPort {
     alert(`[MOCK] OAuth provider '${provider}' selected.\n\nIn a real app, this would redirect to the identity provider.`);
   }
 
+  async resendSignupConfirmation(email: string): Promise<void> {
+    await new Promise(resolve => setTimeout(resolve, 500));
+    console.log(`[Mock] Resending confirmation email to ${email}`);
+  }
+
   onAuthStateChange(callback: AuthStateChangeCallback): () => void {
     // In Mock mode, real-time auth state isn't strictly necessary as we handle state manually in Context for actions.
     // We return a no-op unsubscribe function.
@@ -240,6 +246,14 @@ export class SupabaseAuthRepository implements AuthRepositoryPort {
       options: {
         redirectTo: `${window.location.origin}/#/app`
       }
+    });
+    if (error) throw error;
+  }
+
+  async resendSignupConfirmation(email: string): Promise<void> {
+    const { error } = await supabase.auth.resend({
+      type: 'signup',
+      email: email
     });
     if (error) throw error;
   }

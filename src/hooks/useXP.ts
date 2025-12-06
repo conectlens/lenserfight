@@ -1,7 +1,8 @@
 
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useInfiniteQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { xpService } from '../services/xpService';
 import { useLenser } from '../context/LenserContext';
+import { LeaderboardTimeframe, LeaderboardScope } from '../types/xp.types';
 
 export const useXP = () => {
   const { lenser } = useLenser();
@@ -28,14 +29,12 @@ export const useXP = () => {
     enabled: !!userId,
   });
 
-  // Mutation for manual awards (rarely used directly by UI, usually triggered by other mutations)
   const awardMutation = useMutation({
     mutationFn: (variables: { action: any, ref?: any }) => {
         if (!userId) throw new Error("No user");
         return xpService.award(userId, variables.action, variables.ref);
     },
     onSuccess: (newStats) => {
-        // Optimistic update or invalidation
         queryClient.setQueryData(['xp', 'stats', userId], (old: any) => ({ ...old, ...newStats }));
         queryClient.invalidateQueries({ queryKey: ['xp', 'history', userId] });
     }
@@ -52,10 +51,16 @@ export const useXP = () => {
   };
 };
 
-export const useLeaderboard = () => {
-  return useQuery({
-    queryKey: ['xp', 'leaderboard', 'global'],
-    queryFn: () => xpService.getLeaderboard(),
+export const useLeaderboard = (timeframe: LeaderboardTimeframe, scope: LeaderboardScope) => {
+  const pageSize = 20;
+  return useInfiniteQuery({
+    queryKey: ['xp', 'leaderboard', timeframe, scope],
+    queryFn: ({ pageParam = 0 }) => xpService.getLeaderboard(timeframe, scope, pageSize, pageParam * pageSize),
+    initialPageParam: 0,
+    getNextPageParam: (lastPage, allPages) => {
+        if (lastPage.list.length < pageSize) return undefined;
+        return allPages.length;
+    },
     staleTime: 1000 * 60 * 15 // 15 mins
   });
 };
