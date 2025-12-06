@@ -48,21 +48,18 @@ export const LenserStatsRow: React.FC<LenserStatsRowProps> = ({ stats, xpSummary
   const totalXP = xpSummary?.totalXp || 0;
   const rank = xpSummary?.rank || 0;
 
-  // Level Logic: Use dynamic database bounds if available
+  // Level Logic: Use dynamic database bounds from xp_levels
   let progressPercent = 0;
   
-  if (xpSummary && xpSummary.currentLevelMinXp !== undefined && xpSummary.nextLevelMinXp !== undefined) {
+  if (xpSummary && xpSummary.currentLevelMinXp !== undefined && xpSummary.currentLevelMaxXp !== undefined) {
       const xpInCurrentLevel = totalXP - xpSummary.currentLevelMinXp;
-      const levelSpan = xpSummary.nextLevelMinXp - xpSummary.currentLevelMinXp;
+      const levelSpan = xpSummary.currentLevelMaxXp - xpSummary.currentLevelMinXp;
       
       if (levelSpan > 0) {
           progressPercent = Math.min(100, Math.max(0, (xpInCurrentLevel / levelSpan) * 100));
       } else {
-          progressPercent = 100; // Weird state or max level
+          progressPercent = 100; // Max level or abnormal state
       }
-  } else if (xpSummary && xpSummary.nextLevelMinXp === undefined && xpSummary.currentLevelMinXp !== undefined) {
-      // Max level reached (no next level)
-      progressPercent = 100;
   } else {
       // Fallback Legacy Logic (Mock formula: XP = Level^2 * 100 - approximate)
       // Used only if DB returns incomplete data
