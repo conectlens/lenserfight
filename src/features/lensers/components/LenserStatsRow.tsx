@@ -4,7 +4,7 @@ import { LenserStats } from '../../../types/lenser.types';
 import { XPSummary } from '../../../types/xp.types';
 import { Card } from '../../../components/Card';
 import { formatCount } from '../../../utils/numberUtils';
-import { Trophy, Zap, MessageSquare, Lightbulb } from 'lucide-react';
+import { Trophy, MessageSquare, Lightbulb, Hash } from 'lucide-react';
 
 interface LenserStatsRowProps {
   stats: LenserStats;
@@ -46,13 +46,36 @@ const AnimatedCounter: React.FC<{ value: number; prefix?: string }> = ({ value, 
 export const LenserStatsRow: React.FC<LenserStatsRowProps> = ({ stats, xpSummary }) => {
   const level = xpSummary?.currentLevel || 1;
   const totalXP = xpSummary?.totalXp || 0;
+  const rank = xpSummary?.rank || 0;
 
-  // Level Logic (Mock formula: XP = Level^2 * 100)
-  const currentLevelBaseXP = level * level * 100;
-  const nextLevelBaseXP = (level + 1) * (level + 1) * 100;
-  const xpForNextLevel = nextLevelBaseXP - currentLevelBaseXP;
-  const xpProgress = totalXP - currentLevelBaseXP;
-  const progressPercent = Math.min(100, Math.max(0, (xpProgress / xpForNextLevel) * 100));
+  // Level Logic: Use dynamic database bounds if available
+  let progressPercent = 0;
+  
+  if (xpSummary && xpSummary.currentLevelMinXp !== undefined && xpSummary.nextLevelMinXp !== undefined) {
+      const xpInCurrentLevel = totalXP - xpSummary.currentLevelMinXp;
+      const levelSpan = xpSummary.nextLevelMinXp - xpSummary.currentLevelMinXp;
+      
+      if (levelSpan > 0) {
+          progressPercent = Math.min(100, Math.max(0, (xpInCurrentLevel / levelSpan) * 100));
+      } else {
+          progressPercent = 100; // Weird state or max level
+      }
+  } else if (xpSummary && xpSummary.nextLevelMinXp === undefined && xpSummary.currentLevelMinXp !== undefined) {
+      // Max level reached (no next level)
+      progressPercent = 100;
+  } else {
+      // Fallback Legacy Logic (Mock formula: XP = Level^2 * 100 - approximate)
+      // Used only if DB returns incomplete data
+      const currentLevelBaseXP = (level - 1) * (level - 1) * 100;
+      const nextLevelBaseXP = level * level * 100;
+      // Adjust if level 1
+      const safeCurrent = Math.max(0, currentLevelBaseXP);
+      const safeNext = Math.max(100, nextLevelBaseXP);
+      
+      const xpProgress = totalXP - safeCurrent;
+      const xpNeeded = safeNext - safeCurrent;
+      progressPercent = Math.min(100, Math.max(0, (xpProgress / xpNeeded) * 100));
+  }
 
   const items = [
     { 
@@ -64,9 +87,10 @@ export const LenserStatsRow: React.FC<LenserStatsRowProps> = ({ stats, xpSummary
       progress: progressPercent 
     },
     { 
-      label: 'Total XP', 
-      value: totalXP, 
-      icon: Zap, 
+      label: 'Global Rank', 
+      value: rank,
+      prefix: rank > 0 ? '#' : '',
+      icon: Hash, 
       color: 'text-yellow-600 dark:text-yellow-400', 
       bg: 'bg-yellow-50 dark:bg-yellow-900/20' 
     },
@@ -99,11 +123,11 @@ export const LenserStatsRow: React.FC<LenserStatsRowProps> = ({ stats, xpSummary
            
            <div className="relative z-10">
              <div className={`text-2xl md:text-3xl font-black ${item.color} leading-none tracking-tight`}>
-                <AnimatedCounter value={item.value} />
+                <AnimatedCounter value={item.value} prefix={item.prefix} />
              </div>
              
              {item.progress !== undefined ? (
-               <div className="mt-3 w-full bg-gray-100 dark:bg-gray-700 rounded-full h-1.5 overflow-hidden">
+               <div className="mt-3 w-full bg-gray-100 dark:bg-gray-700 rounded-full h-1.5 overflow-hidden" title={`Progress: ${Math.round(item.progress)}%`}>
                   <div 
                     className="bg-indigo-500 h-full rounded-full transition-all duration-1000 ease-out" 
                     style={{ width: `${item.progress}%` }} 

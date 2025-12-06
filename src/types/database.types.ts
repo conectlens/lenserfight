@@ -19,6 +19,17 @@ export interface Database {
           updated_at: string
         }
       }
+      xp_levels: {
+        Row: {
+          id: string
+          app_id: string
+          level: number
+          min_total_xp: number
+          max_total_xp: number | null
+          metadata: Json | null
+          created_at: string
+        }
+      }
       lenser_badges: {
         Row: {
           id: string
@@ -35,7 +46,7 @@ export interface Database {
         Row: {
           id: string
           lenser_id: string
-          rule_key: string
+          action_key: string
           xp: number
           source: string
           created_at: string
@@ -57,7 +68,7 @@ export interface Database {
         Args: {
           p_lenser_id: string
           p_app_id: string
-          p_rule_key: string
+          p_action_key: string
           p_source: string
           p_source_ref_type?: string
           p_source_ref_id?: string

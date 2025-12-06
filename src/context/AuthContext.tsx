@@ -11,6 +11,7 @@ interface AuthContextType extends AuthState {
   requestPasswordReset: (email: string) => Promise<void>;
   resetPassword: (password: string, token?: string) => Promise<void>;
   signInWithOAuth: (provider: 'google' | 'github' | 'azure') => Promise<void>;
+  resendSignupConfirmation: (email: string) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -129,10 +130,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setState(s => ({ ...s, error: message }));
       throw err;
     }
-  }
+  };
+
+  const resendSignupConfirmation = async (email: string) => {
+    try {
+      await authService.resendSignupConfirmation(email);
+    } catch (err: unknown) {
+      throw err;
+    }
+  };
 
   return (
-    <AuthContext.Provider value={{ ...state, login, register, logout, requestPasswordReset, resetPassword, signInWithOAuth }}>
+    <AuthContext.Provider value={{ ...state, login, register, logout, requestPasswordReset, resetPassword, signInWithOAuth, resendSignupConfirmation }}>
       {children}
     </AuthContext.Provider>
   );

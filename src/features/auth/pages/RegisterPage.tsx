@@ -8,13 +8,13 @@ import { Button } from '../../../components/Button';
 import { useFormValidation } from '../../../hooks/useFormValidation';
 import { isRequired, isEmail } from '../../../utils/validation';
 import { FormError } from '../../../components/FormError';
-import { ArrowLeft, Check } from 'lucide-react';
+import { ArrowLeft, Check, AlertCircle } from 'lucide-react';
 import { Modal } from '../../../components/Modal';
 import { isMock } from '../../../config/runtimeConfig';
 import { PasswordStrengthMeter } from '../components/PasswordStrengthMeter';
 
 export const RegisterPage: React.FC = () => {
-  const { register, logout } = useAuth();
+  const { register, logout, resendSignupConfirmation } = useAuth();
   const navigate = useNavigate();
   
   const [formData, setFormData] = useState({
@@ -49,6 +49,7 @@ export const RegisterPage: React.FC = () => {
 
   const [loading, setLoading] = useState(false);
   const [apiError, setApiError] = useState<string | null>(null);
+  const [showResend, setShowResend] = useState(false);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value, type, checked } = e.target;
@@ -63,6 +64,7 @@ export const RegisterPage: React.FC = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setApiError(null);
+    setShowResend(false);
 
     // Run standard validation
     if (!validate(formData)) return;
@@ -86,7 +88,23 @@ export const RegisterPage: React.FC = () => {
       await logout();
       navigate('/welcome');
     } catch (err: any) {
-      setApiError(err.message || "Failed to register");
+      const msg = err.message || "";
+      if (msg.toLowerCase().includes('already exists') || msg.includes('registered')) {
+          setApiError("This email is already associated with an account.");
+          setShowResend(true);
+          
+          // Attempt to resend confirmation automatically if unconfirmed (based on prompt Requirement 2)
+          // We wrap in try/catch to not block the UI if resend fails (e.g. rate limit)
+          try {
+             await resendSignupConfirmation(formData.email);
+             setApiError("Account already exists. If your email was not confirmed, we have sent another confirmation link.");
+          } catch (resendErr) {
+             // If resend fails (e.g. already confirmed), just stick to the generic error or prompt login
+             console.log("Resend failed or not needed", resendErr);
+          }
+      } else {
+          setApiError(msg || "Failed to register");
+      }
     } finally {
       setLoading(false);
     }
@@ -224,9 +242,18 @@ export const RegisterPage: React.FC = () => {
           </div>
 
           {apiError && (
-            <div className="flex items-start gap-2 bg-red-50 dark:bg-red-900/30 border border-red-100 dark:border-red-800 p-3 rounded-xl text-red-600 dark:text-red-400 text-sm mt-4">
-                <span className="mt-0.5">⚠️</span>
-                {apiError}
+            <div className="flex flex-col gap-2 bg-red-50 dark:bg-red-900/30 border border-red-100 dark:border-red-800 p-4 rounded-xl text-red-600 dark:text-red-400 text-sm mt-4">
+                <div className="flex items-start gap-2">
+                    <AlertCircle size={16} className="mt-0.5 flex-shrink-0" />
+                    <span>{apiError}</span>
+                </div>
+                {showResend && (
+                    <div className="ml-6 mt-1">
+                        <Link to="/login" className="text-xs font-bold underline hover:text-red-800 dark:hover:text-red-300">
+                            Go to Sign In
+                        </Link>
+                    </div>
+                )}
             </div>
           )}
 

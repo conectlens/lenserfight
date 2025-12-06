@@ -19,7 +19,8 @@ import {
   Bell,
   Eye,
   Brain,
-  Rocket
+  Rocket,
+  Trophy
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { FEATURES } from '../../config/runtimeConfig';
@@ -43,7 +44,6 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, isMobile, onCloseMobil
   const [unreadCount, setUnreadCount] = useState(0);
   const [isFeedbackOpen, setIsFeedbackOpen] = useState(false);
 
-  // Optimized notification fetch: only runs when lenser ID changes or on mount
   useEffect(() => {
     if (!lenser || !FEATURES.NOTIFICATIONS) return;
 
@@ -59,7 +59,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, isMobile, onCloseMobil
     fetchNotifications();
 
     return () => { isMounted = false; };
-  }, [lenser?.id]); // Dependency on ID ensures we only refetch if user changes
+  }, [lenser?.id]);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -175,6 +175,14 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, isMobile, onCloseMobil
              collapsed={!showLabels} 
            />
            
+           <SidebarItem 
+             onClick={() => handleNavigation('/leaderboard')}
+             icon={<Trophy size={20} />} 
+             label="Leaderboard" 
+             isActive={location.pathname === '/leaderboard'} 
+             collapsed={!showLabels} 
+           />
+
            <SidebarItem 
              onClick={() => handleNavigation('/prompts')}
              icon={<Lightbulb size={20} />} 
