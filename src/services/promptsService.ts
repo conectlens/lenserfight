@@ -6,6 +6,7 @@ import { reactionService } from './reactionService';
 import { PromptTemplateViewModel, PromptTemplateDetailViewModel, PromptTemplateRecord, CreatePromptDTO } from '../types/prompts.types';
 import { tagService } from './tagService';
 import { tagActivityService } from './tagActivityService';
+import { xpService } from './xpService';
 import { contentModerationService } from './contentModerationService';
 
 const promptsRepo = getPromptsRepository();
@@ -120,7 +121,6 @@ export const promptsService = {
      const { added, summary } = await reactionService.toggleReaction('prompt_template', id, lenserId, 'saved');
      
      // 2. Sync updated counts to reaction_totals JSONB column
-     // This ensures we use the correct column (reaction_totals) instead of save_count
      try {
          await promptsRepo.updateReactionTotals(id, summary.counts);
      } catch (e) {
@@ -133,7 +133,12 @@ export const promptsService = {
   toggleReaction: async (id: string, lenserId: string, reaction: 'like' | 'love' | 'clap') => {
       const { added, summary } = await reactionService.toggleReaction('prompt_template', id, lenserId, reaction);
       
-      // Also sync totals for other reactions to keep JSONB fresh
+      // XP Award
+      if (added) {
+          xpService.notifyReaction(lenserId, id).catch(console.error);
+      }
+
+      // Sync totals
       try {
           await promptsRepo.updateReactionTotals(id, summary.counts);
       } catch (e) {
@@ -174,6 +179,9 @@ export const promptsService = {
             actor_id: input.lenserId
         }))
     ).catch(console.error);
+
+    // Award XP
+    xpService.notifyPromptCreated(input.lenserId, prompt.id).catch(console.error);
 
     return prompt;
   },
