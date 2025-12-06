@@ -18,7 +18,7 @@ export interface XPSummary {
   currentLevel: number;
   rank?: number;
   currentLevelMinXp?: number;
-  nextLevelMinXp?: number;
+  currentLevelMaxXp?: number;
 }
 
 export interface XPEvent {
