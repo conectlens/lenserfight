@@ -4,6 +4,7 @@ import { Lenser, CreateLenserDTO } from '../types/lenser.types';
 import { lenserService } from '../services/lenserService';
 import { useAuth } from './AuthContext';
 import { storage } from '../utils/storage';
+import { xpService } from '../services/xpService';
 
 const CACHE_KEY = 'lenser_profile_data_v1';
 
@@ -36,6 +37,22 @@ export const LenserProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // Helper to grant daily XP only once per day per user
+  const checkAndGrantDailyLogin = async (lenserId: string) => {
+      const key = `lenser_daily_login_${lenserId}`;
+      const today = new Date().toISOString().split('T')[0];
+      const lastLogin = storage.getItem(key);
+
+      if (lastLogin !== today) {
+          try {
+              await xpService.notifyDailyLogin(lenserId);
+              storage.setItem(key, today);
+          } catch (err) {
+              console.warn("XP Daily Login failed", err);
+          }
+      }
+  };
+
   // 2. Load Logic: Handles Cache hits, misses, and revalidation
   const loadLenserProfile = async (force = false) => {
     if (!user || !isAuthenticated) return;
@@ -56,6 +73,8 @@ export const LenserProvider: React.FC<{ children: React.ReactNode }> = ({ childr
                 // Verify validity: must belong to the current authenticated user ID
                 if (cachedProfile && cachedProfile.user_id === user.id) {
                     setLenser(cachedProfile);
+                    // Trigger daily login XP on cache hit as well
+                    checkAndGrantDailyLogin(cachedProfile.id);
                     return; // Skip fetch entirely
                 }
             }
@@ -76,6 +95,8 @@ export const LenserProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       if (profile) {
         setLenser(profile);
         storage.setItem(CACHE_KEY, JSON.stringify(profile));
+        // Trigger daily login XP
+        checkAndGrantDailyLogin(profile.id);
       } else {
         // User is authenticated but has no profile yet
         setLenser(null);
@@ -111,6 +132,9 @@ export const LenserProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       setLenser(newProfile);
       storage.setItem(CACHE_KEY, JSON.stringify(newProfile));
       
+      // Grant Daily Login immediately on creation
+      checkAndGrantDailyLogin(newProfile.id);
+
       return newProfile;
     } catch (err: any) {
       setError(err.message || 'Failed to create profile');
