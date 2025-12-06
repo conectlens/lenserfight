@@ -17,7 +17,8 @@ export interface XPSummary {
   totalXp: number;
   currentLevel: number;
   rank?: number;
-  nextLevelXp?: number; // Calculated on client
+  currentLevelMinXp?: number;
+  nextLevelMinXp?: number;
 }
 
 export interface XPEvent {
@@ -40,11 +41,17 @@ export interface LenserBadge {
 export interface LeaderboardEntry {
   rank: number;
   lenserId: string;
-  displayName: string; // Joined from profile
-  avatarUrl?: string; // Joined from profile
+  displayName: string;
+  handle?: string;
+  avatarUrl?: string;
   totalXp: number;
   level: number;
+  streak?: number; // Days
+  trend?: 'up' | 'down' | 'same';
 }
+
+export type LeaderboardTimeframe = 'weekly' | 'monthly' | 'all_time';
+export type LeaderboardScope = 'global' | 'season';
 
 export interface GrantXPDTO {
   ruleKey: XPRuleKey;

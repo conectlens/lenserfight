@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../../context/AuthContext';
 import { AuthCard } from '../components/AuthCard';
@@ -12,7 +12,7 @@ import { Eye, EyeOff, ArrowLeft, Check } from 'lucide-react';
 import { isMock } from '../../../config/runtimeConfig';
 
 export const LoginPage: React.FC = () => {
-  const { login, signInWithOAuth } = useAuth();
+  const { login, signInWithOAuth, isAuthenticated } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   
@@ -29,6 +29,13 @@ export const LoginPage: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [apiError, setApiError] = useState<string | null>(null);
   const [showPassword, setShowPassword] = useState(false);
+
+  // Redirect if already authenticated
+  useEffect(() => {
+    if (isAuthenticated) {
+      navigate('/', { replace: true });
+    }
+  }, [isAuthenticated, navigate]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -65,6 +72,18 @@ export const LoginPage: React.FC = () => {
     } catch (err: any) {
       setApiError(err.message || "Failed to sign in");
     } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleOAuth = async (provider: 'google' | 'github' | 'azure') => {
+    setLoading(true);
+    setApiError(null);
+    try {
+      await signInWithOAuth(provider);
+      // OAuth redirects the page, so loading state essentially persists until unload
+    } catch (err: any) {
+      setApiError(err.message || `Failed to sign in with ${provider}`);
       setLoading(false);
     }
   };
@@ -155,11 +174,14 @@ export const LoginPage: React.FC = () => {
         </div>
       </div>
 
-      {/* OAuth Buttons - Blurred/Disabled */}
-      <div className="grid grid-cols-3 gap-3 opacity-40 blur-[0.5px] pointer-events-none select-none grayscale relative">
+      {/* OAuth Buttons - Active */}
+      <div className="grid grid-cols-3 gap-3">
         <button 
           type="button"
-          className="flex items-center justify-center py-2.5 border border-gray-200 dark:border-gray-700 rounded-xl bg-gray-50 dark:bg-gray-700 shadow-sm"
+          onClick={() => handleOAuth('google')}
+          disabled={loading}
+          className="flex items-center justify-center py-2.5 border border-gray-200 dark:border-gray-700 rounded-xl bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
+          title="Sign in with Google"
         >
           <svg className="w-5 h-5" viewBox="0 0 24 24">
             <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
@@ -170,7 +192,10 @@ export const LoginPage: React.FC = () => {
         </button>
         <button 
           type="button"
-          className="flex items-center justify-center py-2.5 border border-gray-200 dark:border-gray-700 rounded-xl bg-gray-50 dark:bg-gray-700 shadow-sm"
+          onClick={() => handleOAuth('azure')}
+          disabled={loading}
+          className="flex items-center justify-center py-2.5 border border-gray-200 dark:border-gray-700 rounded-xl bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
+          title="Sign in with Microsoft"
         >
           <svg className="w-5 h-5" viewBox="0 0 21 21">
             <path fill="#f25022" d="M1 1h9v9H1z"/><path fill="#00a4ef" d="M1 11h9v9H1z"/><path fill="#7fba00" d="M11 1h9v9h-9z"/><path fill="#ffb900" d="M11 11h9v9h-9z"/>
@@ -178,7 +203,10 @@ export const LoginPage: React.FC = () => {
         </button>
         <button 
           type="button"
-          className="flex items-center justify-center py-2.5 border border-gray-200 dark:border-gray-700 rounded-xl bg-gray-50 dark:bg-gray-700 shadow-sm"
+          onClick={() => handleOAuth('github')}
+          disabled={loading}
+          className="flex items-center justify-center py-2.5 border border-gray-200 dark:border-gray-700 rounded-xl bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
+          title="Sign in with GitHub"
         >
           <svg className="w-5 h-5 text-gray-800 dark:text-gray-300" fill="currentColor" viewBox="0 0 24 24">
             <path fillRule="evenodd" d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z" clipRule="evenodd" />
