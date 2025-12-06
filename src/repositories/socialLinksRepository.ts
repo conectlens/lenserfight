@@ -60,19 +60,18 @@ export class SupabaseSocialLinksRepository implements SocialLinksRepositoryPort 
   }
 
   async syncLinks(lenserId: string, links: (Omit<SocialLink, 'id' | 'lenser_id' | 'created_at'> & { id?: string })[]): Promise<SocialLink[]> {
-    // 1. Fetch existing IDs to determine deletions
+    // 1. Fetch existing IDs
     const { data: existing, error: fetchError } = await supabase
       .from('lenser_social_links')
       .select('id')
-      .eq('lenser_id', lenserId);
-      
+      .eq('lenser_id', lenserId);      
     if (fetchError) throw fetchError;
 
     const existingIds = existing.map(r => r.id);
     const incomingIds = links.filter(l => l.id).map(l => l.id!);
     const toDelete = existingIds.filter(id => !incomingIds.includes(id));
 
-    // 2. Delete removed links
+    // 2. Delete removed items
     if (toDelete.length > 0) {
       const { error: deleteError } = await supabase
         .from('lenser_social_links')
@@ -81,13 +80,14 @@ export class SupabaseSocialLinksRepository implements SocialLinksRepositoryPort 
       if (deleteError) throw deleteError;
     }
 
-    // 3. Upsert (Insert/Update)
-    // We prepare the payload. For new items (no ID or temp ID), we strip ID to let DB generate UUID.
-    // For existing items, we keep ID to update.
+    // 3. Upsert items
+    const uuidRegex =
+      /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
     const upsertPayload = links.map(link => {
-      const isNew = !link.id || !link.id.includes('-'); // Simple UUID check heuristic or if undefined
+      const hasValidId = typeof link.id === 'string' && uuidRegex.test(link.id);
       return {
-        ...(isNew ? {} : { id: link.id }),
+        ...(hasValidId ? { id: link.id } : {}),
         lenser_id: lenserId,
         platform: link.platform,
         url: link.url,
@@ -102,7 +102,7 @@ export class SupabaseSocialLinksRepository implements SocialLinksRepositoryPort 
       if (upsertError) throw upsertError;
     }
 
-    // 4. Return fresh list
+    // 4. Return updated list
     return this.getLinks(lenserId);
   }
 }

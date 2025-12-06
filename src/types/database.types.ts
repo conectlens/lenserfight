@@ -21,13 +21,12 @@ export interface Database {
       }
       xp_levels: {
         Row: {
-          id: string
+          id: number
           app_id: string
           level: number
           min_total_xp: number
-          max_total_xp: number | null
+          max_total_xp: number
           metadata: Json | null
-          created_at: string
         }
       }
       lenser_badges: {
