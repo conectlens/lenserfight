@@ -30,14 +30,15 @@ export class MockXPRepository implements XPRepositoryPort {
     const data = this.getData();
     
     const currentMin = this.getMockLevelMinXp(data.currentLevel);
-    const nextMin = this.getMockLevelMinXp(data.currentLevel + 1);
+    // Mock Max calculation based on simple formula: L^2 * 100
+    const currentMax = this.getMockLevelMinXp(data.currentLevel + 1);
 
     return {
       totalXp: data.totalXp,
       currentLevel: data.currentLevel,
       rank: 42,
       currentLevelMinXp: currentMin,
-      nextLevelMinXp: nextMin
+      currentLevelMaxXp: currentMax
     };
   }
 
@@ -132,13 +133,13 @@ export class MockXPRepository implements XPRepositoryPort {
     storage.setItem(this.STORAGE_KEY, JSON.stringify(data));
     
     const currentMin = this.getMockLevelMinXp(data.currentLevel);
-    const nextMin = this.getMockLevelMinXp(data.currentLevel + 1);
+    const currentMax = this.getMockLevelMinXp(data.currentLevel + 1);
 
     return { 
         totalXp: data.totalXp, 
         currentLevel: data.currentLevel,
         currentLevelMinXp: currentMin,
-        nextLevelMinXp: nextMin
+        currentLevelMaxXp: currentMax
     };
   }
 }
@@ -166,21 +167,19 @@ export class SupabaseXPRepository implements XPRepositoryPort {
       .eq('lenser_id', lenserId)
       .maybeSingle();
 
-    const { data: levelsData } = await supabase
+    const { data: levelData } = await supabase
         .from('xp_levels')
-        .select('level, min_total_xp')
+        .select('min_total_xp, max_total_xp')
         .eq('app_id', appId)
-        .in('level', [currentLevel, currentLevel + 1]);
-
-    const currentLevelInfo = levelsData?.find(l => l.level === currentLevel);
-    const nextLevelInfo = levelsData?.find(l => l.level === currentLevel + 1);
+        .eq('level', currentLevel)
+        .maybeSingle();
 
     return {
       totalXp: currentTotal,
       currentLevel: currentLevel,
       rank: rankData?.rank,
-      currentLevelMinXp: currentLevelInfo?.min_total_xp ?? 0,
-      nextLevelMinXp: nextLevelInfo?.min_total_xp 
+      currentLevelMinXp: levelData?.min_total_xp ?? 0,
+      currentLevelMaxXp: levelData?.max_total_xp ?? undefined
     };
   }
 
@@ -225,8 +224,6 @@ export class SupabaseXPRepository implements XPRepositoryPort {
   async getLeaderboard(timeframe: LeaderboardTimeframe, scope: LeaderboardScope, limit = 50, offset = 0): Promise<{ list: LeaderboardEntry[], userEntry?: LeaderboardEntry | null }> {
     const viewName = scope === 'season' ? 'vw_xp_leaderboard_season' : 'vw_xp_leaderboard_global';
     
-    // The view returns columns: app_id, rank, lenser_id, total_xp, current_level, user (jsonb)
-    // Note: The view includes a UNION for the current user ("me") if they are not in the top list.
     const { data, error } = await supabase
         .from(viewName)
         .select('*')
@@ -235,13 +232,11 @@ export class SupabaseXPRepository implements XPRepositoryPort {
 
     if (error) throw error;
 
-    // Retrieve current user ID to identify the "me" entry
     const { data: { session } } = await supabase.auth.getSession();
     const currentUserId = session?.user?.id;
 
     let userEntry: LeaderboardEntry | null = null;
     
-    // Map raw data to domain entities
     const allEntries: LeaderboardEntry[] = data.map((row: any) => {
         const userProfile = row.user || {};
         return {
@@ -252,22 +247,14 @@ export class SupabaseXPRepository implements XPRepositoryPort {
             displayName: userProfile.display_name || 'Unknown Lenser',
             handle: userProfile.handle,
             avatarUrl: userProfile.avatar_url,
-            // View doesn't have streak/trend yet, default these
             streak: 0, 
             trend: 'same'
         };
     });
 
-    // If current user is authenticated, attempt to extract their entry
     if (currentUserId) {
         userEntry = allEntries.find(e => e.lenserId === currentUserId) || null;
     }
-
-    // Filter to strictly top N for the list to avoid Showing "Me" at rank 500 inside the main scrolling list 
-    // if I requested page 1 (rank 1-50).
-    // The View's UNION appends "Me" regardless of limit/offset if handled naively, but here we applied range() to the result of the view.
-    // However, typical usage of this view logic implies the View *internally* limits to 100.
-    // If we are paging, we should trust the rank.
     
     return { list: allEntries, userEntry }; 
   }
@@ -287,17 +274,18 @@ export class SupabaseXPRepository implements XPRepositoryPort {
     const result = data[0];
     
     let currentMin = 0;
-    let nextMin: number | undefined;
+    let currentMax: number | undefined;
 
     try {
-        const { data: levels } = await supabase
+        const { data: levelData } = await supabase
             .from('xp_levels')
-            .select('level, min_total_xp')
+            .select('min_total_xp, max_total_xp')
             .eq('app_id', dto.appId)
-            .in('level', [result.level, result.level + 1]);
+            .eq('level', result.level)
+            .maybeSingle();
         
-        currentMin = levels?.find(l => l.level === result.level)?.min_total_xp || 0;
-        nextMin = levels?.find(l => l.level === result.level + 1)?.min_total_xp;
+        currentMin = levelData?.min_total_xp ?? 0;
+        currentMax = levelData?.max_total_xp;
     } catch (e) {
         // ignore
     }
@@ -306,7 +294,7 @@ export class SupabaseXPRepository implements XPRepositoryPort {
       totalXp: result.total_xp,
       currentLevel: result.level,
       currentLevelMinXp: currentMin,
-      nextLevelMinXp: nextLevelInfo?.min_total_xp
+      currentLevelMaxXp: currentMax
     };
   }
 }
