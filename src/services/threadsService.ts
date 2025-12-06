@@ -5,6 +5,7 @@ import { getReactionRepository } from '../adapters/reactionAdapter';
 import { ThreadFeedItem, ThreadDetailViewModel, ThreadRecord, Visibility, CreateThreadDTO } from '../types/threads.types';
 import { threadInteractionService } from './threadInteractionService';
 import { tagService } from './tagService';
+import { xpService } from './xpService';
 import { contentModerationService } from './contentModerationService';
 
 const threadsRepo = getThreadsRepository();
@@ -19,7 +20,12 @@ export const threadsService = {
 
     const resolvedTags = await tagService.upsertTags(input.tagIds);
     const realTagIds = resolvedTags.map(t => t.id);
-    return threadsRepo.createThread({ ...input, tagIds: realTagIds });
+    const thread = await threadsRepo.createThread({ ...input, tagIds: realTagIds });
+    
+    // Award XP
+    xpService.notifyThreadCreated(input.lenserId, thread.id).catch(console.error);
+    
+    return thread;
   },
 
   updateThread: async (id: string, input: Partial<CreateThreadDTO>, lenserId: string): Promise<ThreadRecord> => {
@@ -102,6 +108,11 @@ export const threadsService = {
         if (!currentUserId || record.lenser_id !== currentUserId) {
             throw new Error("401"); 
         }
+    }
+
+    // Award Engagement XP if viewing
+    if (currentUserId) {
+        xpService.notifyThreadEngaged(currentUserId, threadId).catch(console.error);
     }
 
     let userHasReacted = false;

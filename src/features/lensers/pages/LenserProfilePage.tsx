@@ -5,7 +5,9 @@ import { lenserService } from '../../../services/lenserService';
 import { reactionService } from '../../../services/reactionService';
 import { promptsService } from '../../../services/promptsService';
 import { threadsService } from '../../../services/threadsService';
+import { xpService } from '../../../services/xpService';
 import { Lenser, LenserStats, LenserActivityPoint } from '../../../types/lenser.types';
+import { XPSummary } from '../../../types/xp.types';
 import { PromptTemplateViewModel } from '../../../types/prompts.types';
 import { ThreadFeedItem } from '../../../types/threads.types';
 import { ActivityFeedItem } from '../../../types/reactions.types';
@@ -70,6 +72,7 @@ export const LenserProfilePage: React.FC = () => {
   
   const [lenser, setLenser] = useState<Lenser | null>(null);
   const [stats, setStats] = useState<LenserStats | null>(null);
+  const [xpSummary, setXpSummary] = useState<XPSummary | null>(null);
   const [activity, setActivity] = useState<LenserActivityPoint[]>([]);
   const [loadingProfile, setLoadingProfile] = useState(true);
 
@@ -126,13 +129,15 @@ export const LenserProfilePage: React.FC = () => {
         }
         setLenser(lenserData);
 
-        const [statsData, activityData] = await Promise.all([
+        const [statsData, activityData, xpData] = await Promise.all([
              lenserService.getLenserStats(lenserData.id),
-             FEATURES.LENSER_ACTIVITY ? lenserService.getLenserActivity(lenserData.id) : Promise.resolve([])
+             FEATURES.LENSER_ACTIVITY ? lenserService.getLenserActivity(lenserData.id) : Promise.resolve([]),
+             xpService.getStats(lenserData.id)
         ]);
         
         setStats(statsData);
         setActivity(activityData);
+        setXpSummary(xpData);
       } catch (err) {
         console.error("Profile load error", err);
       } finally {
@@ -367,13 +372,14 @@ export const LenserProfilePage: React.FC = () => {
       <LenserProfileHeader 
         lenser={lenser} 
         stats={stats} 
+        xpSummary={xpSummary}
         isOwner={isOwner} 
         onProfileUpdate={handleProfileUpdate}
       />
       
       {stats && (
         <div className="px-4 md:px-0">
-            <LenserStatsRow stats={stats} joinOrder={lenser.join_order} />
+            <LenserStatsRow stats={stats} joinOrder={lenser.join_order} xpSummary={xpSummary} />
         </div>
       )}
       
