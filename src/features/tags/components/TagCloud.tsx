@@ -22,13 +22,20 @@ export const TagCloud: React.FC<TagCloudProps> = ({ tags }) => {
       const translateY = Math.floor(Math.random() * 20) - 10; // -10px to +10px
       const margin = Math.random() * 1.5 + 0.5; // 0.5rem to 2rem spacing
       
+      // Animation parameters for micro-drift
+      const duration = 10 + Math.random() * 10; // 10s - 20s
+      const delay = -1 * Math.random() * 20; // random start offset to desync (-20s to 0s)
+      const x = (Math.random() - 0.5) * 6; // -3px to 3px
+      const y = (Math.random() - 0.5) * 6; // -3px to 3px
+      
       return {
         ...tag,
         visuals: {
           rotation,
           translateY,
           margin,
-          weight
+          weight,
+          drift: { duration, delay, x, y }
         }
       };
     });
@@ -67,31 +74,49 @@ export const TagCloud: React.FC<TagCloudProps> = ({ tags }) => {
   };
 
   return (
-    <div className="flex flex-wrap justify-center items-center content-center w-full min-h-[50vh] py-12 px-4 md:px-16 overflow-visible perspective-1000 gap-4">
-      {cloudTags.map((tag) => {
-        const styles = getTagStyles(tag.visuals.weight);
-        
-        return (
-          <button
-            key={tag.id}
-            onClick={() => navigate(`/tags/${tag.slug}`)}
-            className={`
-              relative cursor-pointer transition-all duration-500 ease-out 
-              hover:scale-110 hover:rotate-0 hover:z-50 hover:opacity-100
-              focus:outline-none focus:scale-110 focus:text-primary-700
-              select-none leading-none tracking-tight
-              ${styles.className}
-            `}
-            style={{
-              transform: `rotate(${tag.visuals.rotation}deg) translateY(${tag.visuals.translateY}px)`,
-              margin: `0 ${tag.visuals.margin}rem`,
-            }}
-            title={`${tag.name}: ${tag.count} uses`}
-          >
-            {tag.name}
-          </button>
-        );
-      })}
-    </div>
+    <>
+      <style>{`
+        @keyframes micro-drift {
+          0%, 100% { transform: translate3d(0,0,0); }
+          50% { transform: translate3d(var(--drift-x), var(--drift-y), 0); }
+        }
+      `}</style>
+      <div className="flex flex-wrap justify-center items-center content-center w-full min-h-[50vh] py-12 px-4 md:px-16 overflow-visible perspective-1000 gap-4">
+        {cloudTags.map((tag) => {
+          const styles = getTagStyles(tag.visuals.weight);
+          
+          return (
+            <button
+              key={tag.id}
+              onClick={() => navigate(`/tags/${tag.slug}`)}
+              className={`
+                relative cursor-pointer transition-all duration-500 ease-out 
+                hover:scale-110 hover:rotate-0 hover:z-50 hover:opacity-100
+                focus:outline-none focus:scale-110 focus:text-primary-700
+                select-none leading-none tracking-tight
+                ${styles.className}
+              `}
+              style={{
+                transform: `rotate(${tag.visuals.rotation}deg) translateY(${tag.visuals.translateY}px)`,
+                margin: `0 ${tag.visuals.margin}rem`,
+              }}
+              title={`${tag.name}: ${tag.count} uses`}
+            >
+              <span
+                style={{
+                  display: 'inline-block',
+                  animation: `micro-drift ${tag.visuals.drift.duration}s ease-in-out ${tag.visuals.drift.delay}s infinite`,
+                  '--drift-x': `${tag.visuals.drift.x}px`,
+                  '--drift-y': `${tag.visuals.drift.y}px`,
+                  willChange: 'transform'
+                } as React.CSSProperties}
+              >
+                {tag.name}
+              </span>
+            </button>
+          );
+        })}
+      </div>
+    </>
   );
 };
