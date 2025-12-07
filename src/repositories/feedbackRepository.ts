@@ -66,9 +66,7 @@ export class SupabaseFeedbackRepository implements FeedbackRepositoryPort {
         message: dto.message,
         start_date: dto.start_date,
         end_date: dto.end_date
-      })
-      .select()
-      .single();
+      });
 
     if (error) throw error;
     return data as Feedback;
