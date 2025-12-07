@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect,useCallback, useState } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { usePromptDetailController } from '../hooks/usePromptDetailController';
 import { useLenser } from '../../../context/LenserContext';
@@ -18,6 +18,9 @@ import { ConfirmModal } from '../../../components/ConfirmModal';
 import { SEOHead } from '../../../components/SEOHead';
 import { Button } from '../../../components/Button';
 import { promptsService } from '../../../services/promptsService';
+import { useQueryClient } from '@tanstack/react-query';
+
+
 
 export const PromptDetailPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -27,6 +30,7 @@ export const PromptDetailPage: React.FC = () => {
   const { isAuthenticated, isLoading: authLoading } = useAuth();
   const { setShareConfig } = useShareContext();
   const { setPageActions, setPageTitle } = useUI();
+  const queryClient = useQueryClient();
   
   // -- Controller --
   const { 
@@ -84,107 +88,116 @@ export const PromptDetailPage: React.FC = () => {
     };
   }, [prompt, setShareConfig, setPageTitle]);
 
+  const ensureProfile = useCallback((): boolean => {
+  if (!hasLenser) {
+    setShowProfileModal(true);
+    return false;
+  }
+  return true;
+}, [hasLenser]);
+
   // Page Actions (Owner Only)
   const isOwner = lenser && prompt && prompt.author.id === lenser.id;
-  useEffect(() => {
-    if (isOwner && prompt) {
-        setPageActions([
-            { label: 'Edit Prompt', icon: <Pencil size={16} />, onClick: () => handleEditClick(prompt.id) },
-            { label: 'Delete Prompt', icon: <Trash2 size={16} />, onClick: () => handleDeleteClick(prompt.id), variant: 'danger' }
-        ]);
-    } else {
-        setPageActions([]);
-    }
-    return () => setPageActions([]);
-  }, [isOwner, prompt, setPageActions]);
+
+const handleCreateClick = useCallback(() => {
+  if (ensureProfile()) openCreateModal();
+}, [ensureProfile, openCreateModal]);
+
+const handleDeleteClick = useCallback((targetId: string) => {
+  setDeleteTargetId(targetId);
+  setIsDeleteModalOpen(true);
+}, []);
+const handleEditClick = useCallback((targetId?: string) => {
+  if (!ensureProfile()) return;
+
+  const editId = targetId || prompt?.id;
+
+  if (editId && lenser) {
+    promptsService.getPromptDetail(editId, lenser.id).then(detail => {
+      if (detail) {
+        openCreateModal({
+          id: detail.id,
+          title: detail.title,
+          content: detail.content,
+          tags: detail.tags,
+          visibility: detail.visibility
+        });
+      }
+    });
+  }
+}, [ensureProfile, prompt, lenser, openCreateModal]);
+
+
+useEffect(() => {
+  if (isOwner && prompt) {
+    setPageActions([
+      { label: 'Edit Prompt', icon: <Pencil size={16} />, onClick: () => handleEditClick(prompt.id) },
+      { label: 'Delete Prompt', icon: <Trash2 size={16} />, onClick: () => handleDeleteClick(prompt.id), variant: 'danger' }
+    ]);
+  } else {
+    setPageActions([]);
+  }
+  return () => setPageActions([]);
+}, [isOwner, prompt?.id, handleEditClick, handleDeleteClick, setPageActions]);
 
   // -- Handlers --
 
-  const ensureProfile = (): boolean => {
-    if (!hasLenser) {
-      setShowProfileModal(true);
-      return false;
+
+const handleCopy = useCallback(async () => {
+  if (!prompt || !ensureProfile() || !lenser) return;
+  try {
+    await navigator.clipboard.writeText(prompt.content);
+    await actions.copyPrompt();
+  } catch (e) {
+    console.error("Copy failed", e);
+  }
+}, [prompt, ensureProfile, lenser, actions]);
+
+const handleSave = useCallback(async () => {
+  if (!ensureProfile()) return;
+  setIsSaving(true);
+  try {
+    await actions.savePrompt();
+  } catch {
+    alert("Failed to save.");
+  } finally {
+    setIsSaving(false);
+  }
+}, [ensureProfile, actions]);
+
+
+
+const confirmDelete = useCallback(async () => {
+  if (!deleteTargetId || !lenser) return;
+  setIsDeleting(true);
+  try {
+    await promptsService.deletePrompt(deleteTargetId, lenser.id);
+
+    setIsDeleteModalOpen(false);
+
+    if (prompt && deleteTargetId === prompt.id) {
+      navigate('/prompts');
+    } else {
+      // sadece ilgili listeleri yeniden getir
+      queryClient.invalidateQueries(['prompt-list']);
+      queryClient.invalidateQueries(['prompt-composite', prompt.id]);
     }
-    return true;
-  };
+  } catch (e) {
+    console.error(e);
+  } finally {
+    setIsDeleting(false);
+    setDeleteTargetId(null);
+  }
+}, [deleteTargetId, lenser, prompt, navigate, queryClient]);
 
-  const handleCopy = async () => {
-    if (!prompt || !ensureProfile() || !lenser) return;
-    try {
-      await navigator.clipboard.writeText(prompt.content);
-      await actions.copyPrompt();
-    } catch (e) {
-      console.error("Copy failed", e);
-    }
-  };
 
-  const handleSave = async () => {
-    if (!ensureProfile()) return;
-    setIsSaving(true);
-    try {
-      await actions.savePrompt();
-    } catch (e) {
-      alert("Failed to save.");
-    } finally {
-      setIsSaving(false);
-    }
-  };
-
-  const handleCreateClick = () => {
-    if (ensureProfile()) openCreateModal();
-  };
-
-  const handleEditClick = (targetId?: string) => {
-    if (!ensureProfile()) return;
-    const editId = targetId || prompt?.id;
-    
-    if (editId) {
-        promptsService.getPromptDetail(editId, lenser?.id).then(detail => {
-            if (detail) {
-                openCreateModal({
-                    id: detail.id,
-                    title: detail.title,
-                    content: detail.content,
-                    tags: detail.tags,
-                    visibility: detail.visibility
-                });
-            }
-        });
-    }
-  };
-
-  const handleDeleteClick = (targetId: string) => {
-      setDeleteTargetId(targetId);
-      setIsDeleteModalOpen(true);
-  };
-
-  const confirmDelete = async () => {
-      if (!deleteTargetId || !lenser) return;
-      setIsDeleting(true);
-      try {
-          await promptsService.deletePrompt(deleteTargetId, lenser.id);
-          setIsDeleteModalOpen(false);
-          
-          if (prompt && deleteTargetId === prompt.id) {
-              navigate('/prompts');
-          } else {
-              window.location.reload(); 
-          }
-      } catch (e) {
-          console.error(e);
-      } finally {
-          setIsDeleting(false);
-          setDeleteTargetId(null);
-      }
-  };
-
-  const handleCreateSubmit = (newId: string) => {
-      if (isEditMode && prompt && newId === prompt.id) {
-          window.location.reload();
-      } else {
-          navigate(`/prompts/${newId}`);
-      }
-  };
+const handleCreateSubmit = useCallback((newId: string) => {
+  if (isEditMode && prompt && newId === prompt.id) {
+    queryClient.invalidateQueries(['prompt-composite', prompt.id]);
+  } else {
+    navigate(`/prompts/${newId}`);
+  }
+}, [isEditMode, prompt, navigate, queryClient]);
 
   // -- Render States --
 
