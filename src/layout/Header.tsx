@@ -19,7 +19,6 @@ export const Header: React.FC<HeaderProps> = ({ onToggleSidebar, isSidebarOpen }
   const { pageActions } = useUI();
   const { lenser } = useLenser();
   const navigate = useNavigate();
-  console.log(lenser)
   const [isShareModalOpen, setIsShareModalOpen] = useState(false);
 
   return (
