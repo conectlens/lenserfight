@@ -61,7 +61,7 @@ export const threadInteractionService = {
     }
 
     // Use author_profile directly from record
-    const profile = record.author_profile || { id: 'unknown', handle: 'unknown', display_name: 'Unknown', avatar_url: null };
+    const profile = (record.author_profile || {}) as any;
 
     return {
         id: record.id,
@@ -72,9 +72,9 @@ export const threadInteractionService = {
         isDeleted: false,
         author: {
             id: profile.id || lenserId,
-            displayName: profile.display_name,
-            handle: profile.handle,
-            avatarUrl: profile.avatar_url
+            displayName: profile.display_name || 'Unknown',
+            handle: profile.handle || 'unknown',
+            avatarUrl: profile.avatar_url || null
         }
     };
   },
@@ -103,7 +103,7 @@ export const threadInteractionService = {
     }
 
     const viewModels: (ThreadReplyViewModel & { parentId?: string | null })[] = records.map(r => {
-        const profile = r.author_profile || { id: 'unknown', handle: 'unknown', display_name: 'Unknown', avatar_url: null };
+        const profile = (r.author_profile || {}) as any;
         
         // Calculate totals from denormalized JSONB 'reaction_totals' to avoid separate count queries
         const reactionCounts = r.reaction_totals || {};
@@ -128,9 +128,9 @@ export const threadInteractionService = {
             replies: [], // init
             author: {
                 id: profile.id || r.lenser_id,
-                displayName: profile.display_name,
-                handle: profile.handle,
-                avatarUrl: profile.avatar_url
+                displayName: profile.display_name || 'Unknown',
+                handle: profile.handle || 'unknown',
+                avatarUrl: profile.avatar_url || null
             }
         };
     });

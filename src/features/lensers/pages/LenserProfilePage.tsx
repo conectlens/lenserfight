@@ -5,7 +5,6 @@ import { lenserService } from '../../../services/lenserService';
 import { reactionService } from '../../../services/reactionService';
 import { promptsService } from '../../../services/promptsService';
 import { threadsService } from '../../../services/threadsService';
-import { xpService } from '../../../services/xpService';
 import { Lenser, LenserStats, LenserActivityPoint } from '../../../types/lenser.types';
 import { XPSummary } from '../../../types/xp.types';
 import { PromptTemplateViewModel } from '../../../types/prompts.types';
@@ -21,7 +20,6 @@ import { ThreadsListCard } from '../../home/components/ThreadsListCard';
 import { CreatePromptModal } from '../../prompts/components/CreatePromptModal';
 import { CreateThreadModal } from '../../threads/components/CreateThreadModal';
 import { useCreatePrompt } from '../../prompts/hooks/useCreatePrompt';
-import { useCreateThread } from '../../threads/hooks/useCreateThread';
 import { FolderOpen, MessageSquare, Trophy, Activity, Plus } from 'lucide-react';
 import { FEATURES } from '../../../config/runtimeConfig';
 import { useAuth } from '../../../context/AuthContext';
@@ -68,11 +66,12 @@ export const LenserProfilePage: React.FC = () => {
   const { handle, tab: routeTab } = useParams<{ handle: string; tab?: string }>();
   const navigate = useNavigate();
   const { user } = useAuth();
-  const { lenser: currentUserLenser } = useLenser();
+  const { lenser: currentUser } = useLenser(); // The currently authenticated user
   const { setShareConfig } = useShareContext();
   const { trackView } = useAnalytics();
   
-  const [lenser, setLenser] = useState<Lenser | null>(null);
+  // The profile being viewed (fetched via handle)
+  const [viewedProfile, setViewedProfile] = useState<Lenser | null>(null);
   const [stats, setStats] = useState<LenserStats | null>(null);
   const [xpSummary, setXpSummary] = useState<XPSummary | null>(null);
   const [activity, setActivity] = useState<LenserActivityPoint[]>([]);
@@ -109,40 +108,77 @@ export const LenserProfilePage: React.FC = () => {
   const [deleteTarget, setDeleteTarget] = useState<{ id: string; type: 'prompt' | 'thread' } | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
 
-  const isOwner = !!(user && lenser && user.id === lenser.user_id);
+  // Ownership Check: Validates if the authenticated user matches the profile handle being viewed
+  const isOwner = !!(
+    currentUser && 
+    handle && 
+    currentUser.handle.toLowerCase() === handle.toLowerCase()
+  );
 
   useEffect(() => {
     if (!handle) return;
     
+    // Reset state on handle change
     setTabCache({
         threads: { ...INITIAL_TAB_STATE },
         prompts: { ...INITIAL_TAB_STATE },
         actions: { ...INITIAL_TAB_STATE },
         challenges: { ...INITIAL_TAB_STATE }
     });
+    setLoadingProfile(true);
     
     const fetchProfile = async () => {
-      setLoadingProfile(true);
       try {
-        const lenserData = await lenserService.getLenserByHandle(handle);
-        if (!lenserData) {
-            setLoadingProfile(false);
+        const fullProfile = await lenserService.getFullProfileByHandle(handle);
+        
+        if (!fullProfile) {
+            setViewedProfile(null);
             return;
         }
-        setLenser(lenserData);
+
+        // Map Full Profile to standard Lenser object
+        const lenserData: Lenser = {
+            id: fullProfile.id,
+            user_id: fullProfile.user_id, // May be undefined in public view
+            handle: fullProfile.handle,
+            display_name: fullProfile.display_name,
+            bio: fullProfile.bio,
+            headline: fullProfile.headline,
+            avatar_url: fullProfile.avatar_url,
+            banner_url: fullProfile.banner_url,
+            website_url: fullProfile.website_url,
+            join_order: fullProfile.join_order,
+            created_at: new Date().toISOString()
+        };
+        
+        setViewedProfile(lenserData);
         
         // Track View
-        trackView('profile', lenserData.id);
+        trackView('profile', fullProfile.id);
 
-        const [statsData, activityData, xpData] = await Promise.all([
-             lenserService.getLenserStats(lenserData.id),
-             FEATURES.LENSER_ACTIVITY ? lenserService.getLenserActivity(lenserData.id) : Promise.resolve([]),
-             xpService.getStats(lenserData.id)
-        ]);
-        
-        setStats(statsData);
-        setActivity(activityData);
-        setXpSummary(xpData);
+        // Map Stats
+        setStats({
+            promptsCount: fullProfile.prompt_count,
+            threadsCount: fullProfile.thread_count,
+            followersCount: fullProfile.follower_count,
+            followingCount: fullProfile.following_count,
+            winsCount: 0
+        });
+
+        // Map XP
+        setXpSummary({
+            totalXp: fullProfile.xp,
+            currentLevel: fullProfile.current_level,
+            rank: fullProfile.global_rank,
+            currentLevelMinXp: fullProfile.xp_min,
+            currentLevelMaxXp: fullProfile.xp_max
+        });
+
+        if (FEATURES.LENSER_ACTIVITY) {
+            const act = await lenserService.getLenserActivity(fullProfile.id);
+            setActivity(act);
+        }
+
       } catch (err) {
         console.error("Profile load error", err);
       } finally {
@@ -154,19 +190,19 @@ export const LenserProfilePage: React.FC = () => {
   }, [handle, trackView]);
 
   useEffect(() => {
-    if (lenser) {
+    if (viewedProfile) {
         setShareConfig({
-            title: lenser.display_name,
+            title: viewedProfile.display_name,
             resourceType: 'profile',
-            resourceId: lenser.id,
-            slug: lenser.handle
+            resourceId: viewedProfile.id,
+            slug: viewedProfile.handle
         });
     }
     return () => setShareConfig(null);
-  }, [lenser, setShareConfig]);
+  }, [viewedProfile, setShareConfig]);
 
   const fetchTabData = async (targetTab: TabType, pageNum: number, refresh = false) => {
-      if (!lenser) return;
+      if (!viewedProfile) return;
       
       if (!refresh && tabCache[targetTab].isLoaded && pageNum === 0) return;
 
@@ -176,17 +212,18 @@ export const LenserProfilePage: React.FC = () => {
           const offset = pageNum * PAGE_SIZE;
           let newItems: any[] = [];
           
-          const viewerId = currentUserLenser?.id;
+          // Viewer ID is used to determine visibility (show private items if owner)
+          const viewerId = currentUser?.id;
 
           switch (targetTab) {
               case 'prompts':
-                  newItems = await promptsService.getAuthorPrompts(lenser.id, offset, PAGE_SIZE, viewerId);
+                  newItems = await promptsService.getAuthorPrompts(viewedProfile.id, offset, PAGE_SIZE, viewerId);
                   break;
               case 'threads':
-                  newItems = await threadsService.getThreadsByAuthor(lenser.id, viewerId, offset, PAGE_SIZE);
+                  newItems = await threadsService.getThreadsByAuthor(viewedProfile.id, viewerId, offset, PAGE_SIZE);
                   break;
               case 'actions':
-                  newItems = await reactionService.getUserActivityFeed(lenser.id, offset, PAGE_SIZE);
+                  newItems = await reactionService.getUserActivityFeed(viewedProfile.id, offset, PAGE_SIZE);
                   break;
               case 'challenges':
                   newItems = [];
@@ -216,12 +253,13 @@ export const LenserProfilePage: React.FC = () => {
   };
 
   useEffect(() => {
-      if (lenser) {
+      if (viewedProfile) {
+          // If tab data not loaded, fetch it
           if (!tabCache[activeTab].isLoaded) {
               fetchTabData(activeTab, 0);
           }
       }
-  }, [activeTab, lenser?.id, currentUserLenser?.id]);
+  }, [activeTab, viewedProfile?.id, currentUser?.id]);
 
   const lastElementRef = useCallback((node: HTMLDivElement) => {
     if (loadingTab) return;
@@ -235,7 +273,7 @@ export const LenserProfilePage: React.FC = () => {
     });
     
     if (node) observer.current.observe(node);
-  }, [loadingTab, hasMore, activeTab, page, lenser?.id]);
+  }, [loadingTab, hasMore, activeTab, page, viewedProfile?.id]);
 
   const handleTabChange = (newTab: TabType) => {
       if (newTab === activeTab) return;
@@ -243,12 +281,12 @@ export const LenserProfilePage: React.FC = () => {
       navigate(`/lenser/${handle}/${code}`);
   };
 
-  const handleProfileUpdate = (updatedLenser: Lenser) => setLenser(updatedLenser);
+  const handleProfileUpdate = (updatedLenser: Lenser) => setViewedProfile(updatedLenser);
 
   const handleEditPrompt = (id: string) => {
       const promptToEdit = items.find((p: any) => p.id === id);
       if (promptToEdit) {
-          promptsService.getPromptDetail(id, currentUserLenser?.id).then(detail => {
+          promptsService.getPromptDetail(id, currentUser?.id).then(detail => {
               if (detail) {
                   openPromptModal({
                       id: detail.id,
@@ -288,15 +326,16 @@ export const LenserProfilePage: React.FC = () => {
   };
 
   const confirmDelete = async () => {
-      if (!deleteTarget || !lenser) return;
+      if (!deleteTarget || !currentUser) return;
       setIsDeleting(true);
       try {
+          // Use current user ID as actor
           if (deleteTarget.type === 'prompt') {
-              await promptsService.deletePrompt(deleteTarget.id, lenser.id);
+              await promptsService.deletePrompt(deleteTarget.id, currentUser.id);
               removeCacheItem('prompts', deleteTarget.id);
               alert('Prompt deleted successfully.');
           } else {
-              await threadsService.deleteThread(deleteTarget.id, lenser.id);
+              await threadsService.deleteThread(deleteTarget.id, currentUser.id);
               removeCacheItem('threads', deleteTarget.id);
               alert('Thread deleted successfully.');
           }
@@ -362,20 +401,23 @@ export const LenserProfilePage: React.FC = () => {
     );
   }
 
-  if (!lenser) {
+  if (!viewedProfile) {
     return (
         <div className="flex justify-center items-center min-h-[50vh]">
-            <h2 className="text-xl font-bold text-gray-500 dark:text-gray-400">Lenser not found</h2>
+            <div className="text-center">
+                <h2 className="text-xl font-bold text-gray-500 dark:text-gray-400 mb-2">Lenser not found</h2>
+                <Button onClick={() => navigate('/')} className="w-auto" variant="ghost">Return Home</Button>
+            </div>
         </div>
     );
   }
 
   return (
     <div className="max-w-7xl mx-auto pb-12">
-      <SEOHead type="profile" data={{ lenser, stats }} />
+      <SEOHead type="profile" data={{ lenser: viewedProfile, stats }} />
       
       <LenserProfileHeader 
-        lenser={lenser} 
+        lenser={viewedProfile} 
         stats={stats} 
         xpSummary={xpSummary}
         isOwner={isOwner} 
@@ -384,7 +426,7 @@ export const LenserProfilePage: React.FC = () => {
       
       {stats && (
         <div className="px-4 md:px-0">
-            <LenserStatsRow stats={stats} joinOrder={lenser.join_order} xpSummary={xpSummary} />
+            <LenserStatsRow stats={stats} joinOrder={viewedProfile.join_order} xpSummary={xpSummary} />
         </div>
       )}
       
