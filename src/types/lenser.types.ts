@@ -9,6 +9,14 @@ export interface AuthorProfile {
   avatar_url?: string | null;
 }
 
+export interface LenserCompactProfile {
+  handle: string;
+  display_name: string;
+  avatar_url: string | null;
+  xp: number;
+  current_level: number;
+}
+
 export interface LenserPreferences {
   theme?: 'light' | 'dark';
   sidebar_collapsed?: boolean;
@@ -17,7 +25,7 @@ export interface LenserPreferences {
 
 export interface Lenser {
   id: string; // uuid
-  user_id: string; // references auth.users.id
+  user_id?: string; // references auth.users.id (Optional in public views)
   handle: string; // unique
   display_name: string;
   bio?: string;
@@ -33,6 +41,45 @@ export interface Lenser {
   created_at: string;
   updated_at?: string;
   join_order?: number; // Immutable rank from lenser_join_log
+  deletion_requested_at?: string | null;
+}
+
+export interface LenserBadge {
+  type: string;
+  category: string;
+  label: string;
+  description: string | null;
+  icon: string | null;
+  awarded_at: string;
+}
+
+export interface LenserFullProfile {
+  // Core Fields
+  id: string;
+  user_id?: string; // Optional in public views
+  handle: string;
+  display_name: string;
+  bio?: string;
+  headline?: string;
+  avatar_url?: string | null;
+  banner_url?: string | null;
+  website_url?: string;
+  status?: string;
+  join_order?: number;
+
+  // Engagement Stats
+  thread_count: number;
+  prompt_count: number;
+  follower_count: number;
+  following_count: number;
+
+  // XP & Gamification
+  xp: number;
+  current_level: number;
+  global_rank: number;
+  xp_min: number;
+  xp_max: number;
+  badges: LenserBadge[];
 }
 
 export type SocialPlatform = 'LinkedIn' | 'GitHub' | 'Instagram' | 'Facebook' | 'X' | 'Youtube' | 'Other';

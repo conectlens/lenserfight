@@ -3,6 +3,7 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 import { User, AuthState } from '../types/auth.types';
 import { authService } from '../services/authService';
 import { storage } from '../utils/storage';
+import { queryClient } from '../lib/react-query';
 
 interface AuthContextType extends AuthState {
   login: (email: string, pass: string) => Promise<void>;
@@ -11,6 +12,7 @@ interface AuthContextType extends AuthState {
   requestPasswordReset: (email: string) => Promise<void>;
   resetPassword: (password: string, token?: string) => Promise<void>;
   signInWithOAuth: (provider: 'google' | 'github' | 'azure') => Promise<void>;
+  resendSignupConfirmation: (email: string) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -23,6 +25,7 @@ const getErrorMessage = (err: unknown): string => {
 
 // Key used in LenserContext
 const LENSER_CACHE_KEY = 'lenser_profile_data_v1';
+const MOCK_AUTH_KEY = 'mock_auth_user';
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [state, setState] = useState<AuthState>({
@@ -98,10 +101,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     } catch (e) {
       console.error("Logout error", e);
     }
-    // Clear legacy flags and new cache
+    
+    // 1. Clear React Query Cache (Removes all cached API responses)
+    queryClient.clear();
+
+    // 2. Clear Local Storage / Persisted State
     storage.removeItem('lenser_has_profile');
     storage.removeItem(LENSER_CACHE_KEY);
+    storage.removeItem(MOCK_AUTH_KEY);
     
+    // 3. Reset Local State
     setState({ user: null, isAuthenticated: false, isLoading: false, error: null });
   };
 
@@ -129,10 +138,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setState(s => ({ ...s, error: message }));
       throw err;
     }
-  }
+  };
+
+  const resendSignupConfirmation = async (email: string) => {
+    try {
+      await authService.resendSignupConfirmation(email);
+    } catch (err: unknown) {
+      throw err;
+    }
+  };
 
   return (
-    <AuthContext.Provider value={{ ...state, login, register, logout, requestPasswordReset, resetPassword, signInWithOAuth }}>
+    <AuthContext.Provider value={{ ...state, login, register, logout, requestPasswordReset, resetPassword, signInWithOAuth, resendSignupConfirmation }}>
       {children}
     </AuthContext.Provider>
   );

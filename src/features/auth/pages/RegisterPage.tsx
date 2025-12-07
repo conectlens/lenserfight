@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../../context/AuthContext';
 import { AuthCard } from '../components/AuthCard';
@@ -8,13 +8,14 @@ import { Button } from '../../../components/Button';
 import { useFormValidation } from '../../../hooks/useFormValidation';
 import { isRequired, isEmail } from '../../../utils/validation';
 import { FormError } from '../../../components/FormError';
-import { ArrowLeft, Check } from 'lucide-react';
+import { ArrowLeft, Check, AlertCircle } from 'lucide-react';
 import { Modal } from '../../../components/Modal';
 import { isMock } from '../../../config/runtimeConfig';
 import { PasswordStrengthMeter } from '../components/PasswordStrengthMeter';
+import { LoadingOverlay } from '../../../components/LoadingOverlay';
 
 export const RegisterPage: React.FC = () => {
-  const { register, logout } = useAuth();
+  const { register, logout, resendSignupConfirmation, isAuthenticated } = useAuth();
   const navigate = useNavigate();
   
   const [formData, setFormData] = useState({
@@ -28,7 +29,6 @@ export const RegisterPage: React.FC = () => {
   // Policy Modal State
   const [policyModal, setPolicyModal] = useState<{ isOpen: boolean; title: string; content: React.ReactNode } | null>(null);
 
-  // Custom password validator for the hook
   const passwordValidator = (value: any) => {
     if (!value) return "Password is required";
     if (value.length < 8) return "Must be at least 8 characters";
@@ -44,11 +44,19 @@ export const RegisterPage: React.FC = () => {
     email: [isRequired(), isEmail()],
     password: [passwordValidator], 
     confirmPassword: [isRequired()],
-    // Manual check for agreeTerms in submit
   });
 
   const [loading, setLoading] = useState(false);
   const [apiError, setApiError] = useState<string | null>(null);
+  const [showResend, setShowResend] = useState(false);
+  const [isSuccess, setIsSuccess] = useState(false);
+
+  // Prevent auto-redirect if we are in the middle of a registration flow
+  useEffect(() => {
+    if (isAuthenticated && !isSuccess && !loading) {
+        navigate('/', { replace: true });
+    }
+  }, [isAuthenticated, isSuccess, loading, navigate]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value, type, checked } = e.target;
@@ -63,8 +71,8 @@ export const RegisterPage: React.FC = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setApiError(null);
+    setShowResend(false);
 
-    // Run standard validation
     if (!validate(formData)) return;
 
     if (formData.password !== formData.confirmPassword) {
@@ -81,13 +89,36 @@ export const RegisterPage: React.FC = () => {
     try {
       await register(formData.email, formData.password, formData.displayName);
       
-      // Simulating Email Verification Requirement
-      window.alert("Registration successful! Please check your email to approve your account.");
-      await logout();
-      navigate('/welcome');
+      // Success State - start overlay
+      setIsSuccess(true);
+
+      // Delay for animation
+      setTimeout(async () => {
+          if (!isMock) {
+             // In real env, we expect email verification, so we logout the session which might have been created
+             await logout();
+             navigate('/welcome'); 
+          } else {
+             await logout(); // Mock also redirects to welcome/waitlist page logic
+             navigate('/welcome');
+          }
+      }, 1500);
+
     } catch (err: any) {
-      setApiError(err.message || "Failed to register");
-    } finally {
+      const msg = err.message || "";
+      if (msg.toLowerCase().includes('already exists') || msg.includes('registered')) {
+          setApiError("This email is already associated with an account.");
+          setShowResend(true);
+          
+          try {
+             await resendSignupConfirmation(formData.email);
+             setApiError("Account already exists. If your email was not confirmed, we have sent another confirmation link.");
+          } catch (resendErr) {
+             console.log("Resend failed or not needed", resendErr);
+          }
+      } else {
+          setApiError(msg || "Failed to register");
+      }
       setLoading(false);
     }
   };
@@ -135,6 +166,8 @@ export const RegisterPage: React.FC = () => {
 
   return (
     <>
+      {isSuccess && <LoadingOverlay isSuccess message="Creating Account..." />}
+
       <AuthCard title="Create Account" subtitle="Join the community today" backButton={backButton}>
         <form onSubmit={handleSubmit} className="space-y-4" noValidate>
           <div>
@@ -145,9 +178,9 @@ export const RegisterPage: React.FC = () => {
               placeholder="Your full name"
               value={formData.displayName}
               onChange={handleChange}
+              error={errors.displayName}
               className={errors.displayName ? 'border-red-500 focus:border-red-500 focus:ring-red-200' : ''}
             />
-            <FormError message={errors.displayName} />
           </div>
 
           <div>
@@ -158,9 +191,9 @@ export const RegisterPage: React.FC = () => {
               placeholder="name@example.com"
               value={formData.email}
               onChange={handleChange}
+              error={errors.email}
               className={errors.email ? 'border-red-500 focus:border-red-500 focus:ring-red-200' : ''}
             />
-            <FormError message={errors.email} />
           </div>
 
           <div>
@@ -171,12 +204,11 @@ export const RegisterPage: React.FC = () => {
               placeholder="Create a password"
               value={formData.password}
               onChange={handleChange}
+              error={errors.password}
               className={errors.password ? 'border-red-500 focus:border-red-500 focus:ring-red-200' : ''}
             />
             
             <PasswordStrengthMeter password={formData.password} />
-            
-            <FormError message={errors.password} />
           </div>
 
           <div>
@@ -187,12 +219,11 @@ export const RegisterPage: React.FC = () => {
               placeholder="Confirm your password"
               value={formData.confirmPassword}
               onChange={handleChange}
+              error={errors.confirmPassword}
               className={errors.confirmPassword ? 'border-red-500 focus:border-red-500 focus:ring-red-200' : ''}
             />
-            <FormError message={errors.confirmPassword} />
           </div>
 
-          {/* Terms Checkbox - Redesigned */}
           <div className="flex items-start gap-3 mt-3">
             <label className="flex items-start gap-3 cursor-pointer group">
               <div className="relative flex items-center mt-0.5">
@@ -206,7 +237,7 @@ export const RegisterPage: React.FC = () => {
                 <div className="w-5 h-5 rounded border-2 border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 peer-checked:bg-primary peer-checked:border-primary peer-focus:ring-2 peer-focus:ring-primary/30 transition-all"></div>
                 <Check className="w-3.5 h-3.5 text-gray-900 absolute left-[3px] top-[3px] opacity-0 peer-checked:opacity-100 transition-opacity pointer-events-none" strokeWidth={3.5} />
               </div>
-              <div className="text-sm leading-tight text-gray-600 dark:text-gray-400">
+              <div className="text-sm leading-tight text-gray-600 dark:text-gray-400 select-none">
                 I agree to the{' '}
                 <button type="button" onClick={() => openPolicy('Terms')} className="font-semibold text-gray-900 dark:text-gray-200 hover:underline">
                   Terms and Conditions
@@ -224,14 +255,23 @@ export const RegisterPage: React.FC = () => {
           </div>
 
           {apiError && (
-            <div className="flex items-start gap-2 bg-red-50 dark:bg-red-900/30 border border-red-100 dark:border-red-800 p-3 rounded-xl text-red-600 dark:text-red-400 text-sm mt-4">
-                <span className="mt-0.5">⚠️</span>
-                {apiError}
+            <div className="flex flex-col gap-2 bg-red-50 dark:bg-red-900/30 border border-red-100 dark:border-red-800 p-4 rounded-xl text-red-600 dark:text-red-400 text-sm mt-4 animate-in fade-in slide-in-from-top-1">
+                <div className="flex items-start gap-2">
+                    <AlertCircle size={16} className="mt-0.5 flex-shrink-0" />
+                    <span>{apiError}</span>
+                </div>
+                {showResend && (
+                    <div className="ml-6 mt-1">
+                        <Link to="/login" className="text-xs font-bold underline hover:text-red-800 dark:hover:text-red-300">
+                            Go to Sign In
+                        </Link>
+                    </div>
+                )}
             </div>
           )}
 
-          <Button type="submit" isLoading={loading} className="mt-4 py-3 text-base font-bold shadow-lg shadow-primary/20">
-            Sign Up
+          <Button type="submit" isLoading={loading} disabled={isSuccess} className="mt-4 py-3 text-base font-bold shadow-lg shadow-primary/20">
+            {isSuccess ? "Signing Up..." : "Sign Up"}
           </Button>
         </form>
         

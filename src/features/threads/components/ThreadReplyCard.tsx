@@ -39,23 +39,30 @@ export const ThreadReplyCard: React.FC<ThreadReplyCardProps> = ({ reply, onReply
       </div>
       
       <div className="flex-1 min-w-0 pb-6">
-        <div className="bg-gray-50/50 dark:bg-gray-800/50 rounded-xl p-4 border border-gray-100 dark:border-gray-700">
+        <div className="bg-gray-50/50 dark:bg-gray-800/50 rounded-xl p-4 border border-gray-100 dark:border-gray-700 overflow-hidden">
             <div className="flex items-center gap-2 mb-2">
               <span 
                 onClick={handleUserClick}
-                className="font-semibold text-gray-900 dark:text-gray-200 text-sm cursor-pointer hover:text-primary-700 transition-colors hover:underline"
+                className="font-semibold text-gray-900 dark:text-gray-200 text-sm cursor-pointer hover:text-primary-700 transition-colors hover:underline truncate"
               >
                   {reply.author.displayName}
               </span>
-              <span className="text-xs text-gray-400 dark:text-gray-500">•</span>
-              <span className="text-xs text-gray-500 dark:text-gray-400">{timeAgo(reply.createdAt)}</span>
+              <span className="text-xs text-gray-400 dark:text-gray-500 flex-shrink-0">•</span>
+              <span className="text-xs text-gray-500 dark:text-gray-400 flex-shrink-0">{timeAgo(reply.createdAt)}</span>
             </div>
 
-            <div className={`text-sm leading-relaxed mb-3 ${reply.isDeleted ? 'text-gray-400 italic' : 'text-gray-800 dark:text-gray-300'}`}>
+            <div className={`mb-3 ${reply.isDeleted ? 'text-gray-400 italic' : 'text-gray-800 dark:text-gray-300'}`}>
               {reply.isDeleted ? (
-                 reply.content
+                 <p className="text-sm whitespace-pre-line break-words break-all">
+                    {reply.content}
+                 </p>
               ) : (
-                 <MentionRenderer content={reply.content} />
+                 <p className="text-sm whitespace-pre-line break-words break-all">
+                    <MentionRenderer 
+                        content={reply.content} 
+                        className="!whitespace-pre-line"
+                    />
+                 </p>
               )}
             </div>
 
