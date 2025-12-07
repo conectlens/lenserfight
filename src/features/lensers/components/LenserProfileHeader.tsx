@@ -36,18 +36,18 @@ export const LenserProfileHeader: React.FC<LenserProfileHeaderProps> = ({ lenser
   useEffect(() => {
       const fetchLinks = async () => {
           try {
-              const links = await socialLinksService.getLinks(lenser.id);
+              const links = await socialLinksService.getLinksByHandle(lenser.handle);
               setSocialLinks(links);
           } catch (e) {
               console.error(e);
           }
       };
       fetchLinks();
-  }, [lenser.id]);
+  }, [lenser.handle]);
 
   const handleEditClose = async () => {
       setShowEditModal(false);
-      const links = await socialLinksService.getLinks(lenser.id);
+      const links = await socialLinksService.getLinksByHandle(lenser.handle);
       setSocialLinks(links);
   };
 
@@ -61,7 +61,7 @@ export const LenserProfileHeader: React.FC<LenserProfileHeaderProps> = ({ lenser
           setShowBannerModal(false);
           setShowEditModal(false);
           
-          const links = await socialLinksService.getLinks(lenser.id);
+          const links = await socialLinksService.getLinksByHandle(lenser.handle);
           setSocialLinks(links);
       } catch (e) {
           console.error("Failed to update profile", e);

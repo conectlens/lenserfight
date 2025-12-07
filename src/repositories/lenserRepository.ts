@@ -1,5 +1,5 @@
 
-import { Lenser, CreateLenserDTO, LenserStats, LenserActivityPoint, ActionRecord, NetworkUser, AuthorProfile } from '../types/lenser.types';
+import { Lenser, CreateLenserDTO, LenserStats, LenserActivityPoint, ActionRecord, NetworkUser, AuthorProfile, LenserFullProfile, LenserCompactProfile } from '../types/lenser.types';
 import { PromptTemplateRecord } from '../types/prompts.types';
 import { ThreadRecord } from '../types/threads.types';
 import { supabase } from '../utils/supabase';
@@ -10,8 +10,10 @@ export interface LenserRepositoryPort {
   getLenserByUserId(userId: string): Promise<Lenser | null>;
   getLenserById(id: string): Promise<Lenser | null>;
   getLenserByHandle(handle: string): Promise<Lenser | null>;
+  getFullProfileByHandle(handle: string): Promise<LenserFullProfile | null>; 
+  getCompactProfile(handle: string): Promise<LenserCompactProfile | null>;
   createLenser(userId: string, data: CreateLenserDTO): Promise<Lenser>;
-  updateLenser(userId: string, data: Partial<Lenser>): Promise<Lenser>; 
+  updateLenser(handle: string, data: Partial<Lenser>): Promise<Lenser>; 
   requestDeletion(userId: string): Promise<void>;
   getRecentlyActive(limit: number): Promise<Lenser[]>;
   getLatestJoined(limit: number): Promise<Lenser[]>;
@@ -172,6 +174,60 @@ export class MockLenserRepository implements LenserRepositoryPort {
     return null; 
   }
 
+  async getFullProfileByHandle(handle: string): Promise<LenserFullProfile | null> {
+    await new Promise(resolve => setTimeout(resolve, 600));
+    const lenser = await this.getLenserByHandle(handle);
+    if (!lenser) return null;
+
+    const stats = await this.getLenserStats(lenser.id);
+    
+    // Mock XP calculation
+    const xp = 1250;
+    const current_level = 4;
+    const min = (current_level - 1) * (current_level - 1) * 100;
+    const max = current_level * current_level * 100;
+
+    return {
+      id: lenser.id,
+      user_id: lenser.user_id,
+      handle: lenser.handle,
+      display_name: lenser.display_name,
+      bio: lenser.bio,
+      headline: lenser.headline,
+      avatar_url: lenser.avatar_url,
+      banner_url: lenser.banner_url,
+      website_url: lenser.website_url,
+      status: 'active',
+      join_order: lenser.join_order,
+      
+      thread_count: stats.threadsCount,
+      prompt_count: stats.promptsCount,
+      follower_count: stats.followersCount,
+      following_count: stats.followingCount,
+      
+      xp: xp,
+      current_level: current_level,
+      global_rank: 42,
+      xp_min: min,
+      xp_max: max,
+      badges: []
+    };
+  }
+
+  async getCompactProfile(handle: string): Promise<LenserCompactProfile | null> {
+    await new Promise(resolve => setTimeout(resolve, 300)); // Fast fetch
+    const lenser = await this.getLenserByHandle(handle);
+    if (!lenser) return null;
+
+    return {
+      handle: lenser.handle,
+      display_name: lenser.display_name,
+      avatar_url: lenser.avatar_url || null,
+      xp: 1250, // Mock XP
+      current_level: 4
+    };
+  }
+
   async createLenser(userId: string, data: CreateLenserDTO): Promise<Lenser> {
     await new Promise(resolve => setTimeout(resolve, 800));
     const newId = `lenser-${Date.now()}-uuid`;
@@ -201,15 +257,15 @@ export class MockLenserRepository implements LenserRepositoryPort {
     return newLenser;
   }
 
-  async updateLenser(userId: string, data: Partial<Lenser>): Promise<Lenser> {
+  async updateLenser(handle: string, data: Partial<Lenser>): Promise<Lenser> {
     await new Promise(resolve => setTimeout(resolve, 500));
     
-    let lenser = await this.getLenserByUserId(userId);
-    if (!lenser) {
-        const mock = this.mockLensers.find(l => l.user_id === userId);
-        if (mock) lenser = this.enrich(mock);
-    }
+    // Resolve ID from handle first for Mock Storage
+    let lenser = await this.getLenserByHandle(handle);
     if (!lenser) throw new Error("Lenser profile not found");
+
+    const userId = lenser.user_id; 
+    if (!userId) throw new Error("Invalid lenser state");
 
     const updatedLenser = { ...lenser, ...data, updated_at: new Date().toISOString() };
     
@@ -268,7 +324,13 @@ export class MockLenserRepository implements LenserRepositoryPort {
 
   async requestDeletion(userId: string): Promise<void> {
     await new Promise(resolve => setTimeout(resolve, 500));
-    await this.updateLenser(userId, { deletion_requested_at: new Date().toISOString() });
+    // For deletion, we still rely on userId as this is a sensitive security action often from account settings
+    // But internally updateLenser uses handle.
+    // In mock, we can cheat and look up.
+    const lenser = await this.getLenserByUserId(userId);
+    if (lenser) {
+        await this.updateLenser(lenser.handle, { deletion_requested_at: new Date().toISOString() });
+    }
   }
 
   async getRecentlyActive(limit: number): Promise<Lenser[]> {
@@ -404,6 +466,37 @@ export class SupabaseLenserRepository implements LenserRepositoryPort {
     return data as Lenser;
   }
 
+  async getFullProfileByHandle(handle: string): Promise<LenserFullProfile | null> {
+    const { data, error } = await supabase
+        .from('lenser_profile_full')
+        .select('*')
+        .eq('handle', handle)
+        .single();
+    
+    if (error) {
+      if (error.code === 'PGRST116') return null;
+      console.error('Failed to fetch full profile:', error);
+      return null;
+    }
+    return data as unknown as LenserFullProfile;
+  }
+
+  async getCompactProfile(handle: string): Promise<LenserCompactProfile | null> {
+    const { data, error } = await supabase
+        .from('lenser_profile_compact')
+        .select('*')
+        .eq('handle', handle)
+        .single();
+    
+    if (error) {
+        if (error.code === 'PGRST116') return null;
+        console.warn('Failed to fetch compact profile', error);
+        return null;
+    }
+    
+    return data as LenserCompactProfile;
+  }
+
   async createLenser(userId: string, data: CreateLenserDTO): Promise<Lenser> {
     const { data: newLenser, error } = await supabase.rpc('create_lenser_secure', {
       p_handle: data.handle,
@@ -419,11 +512,11 @@ export class SupabaseLenserRepository implements LenserRepositoryPort {
     return newLenser as Lenser;
   }
 
-  async updateLenser(userId: string, data: Partial<Lenser>): Promise<Lenser> {
+  async updateLenser(handle: string, data: Partial<Lenser>): Promise<Lenser> {
       const { data: updated, error } = await supabase
         .from('lensers')
         .update(data)
-        .eq('user_id', userId)
+        .eq('handle', handle)
         .select('*')
         .single();
       if (error) throw error;

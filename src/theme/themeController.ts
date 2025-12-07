@@ -1,100 +1,129 @@
-
 import { storage } from '../utils/storage';
 import { getPreferencesRepository } from '../adapters/preferencesAdapter';
 
 export type Theme = 'light' | 'dark';
 
-const THEME_KEY = 'theme';
 const repo = getPreferencesRepository();
 
-// Helper: Validate user input/storage against allowed values
-const isValidTheme = (value: string | null): value is Theme => {
-  return value === 'light' || value === 'dark';
-};
+const THEME_CACHE_TTL_MS = 1000 * 60 * 60 * 24; // 24 hours
+const themeCacheKey = (userId: string) => `theme_pref_cache_${userId}`;
 
-// Helper: Apply to DOM
+interface ThemeCacheEntry {
+  theme: Theme;
+  fetchedAt: number;
+  userId: string;
+}
+
+const isValidTheme = (t: any): t is Theme =>
+  t === 'light' || t === 'dark';
+
 const applyToDOM = (theme: Theme) => {
   const root = document.documentElement;
-  // Always remove the inverse class to ensure clean state
   root.classList.remove(theme === 'dark' ? 'light' : 'dark');
   root.classList.add(theme);
 };
 
-const getSystemTheme = (): Theme => {
-  return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+const getSystemTheme = (): Theme =>
+  window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+
+const readCache = (userId: string): ThemeCacheEntry | null => {
+  try {
+    const raw = storage.getItem(themeCacheKey(userId));
+    if (!raw) return null;
+    const parsed = JSON.parse(raw);
+    if (!parsed || parsed.userId !== userId || !isValidTheme(parsed.theme)) return null;
+    return parsed;
+  } catch {
+    return null;
+  }
+};
+
+const writeCache = (userId: string, theme: Theme) => {
+  const entry: ThemeCacheEntry = {
+    theme,
+    fetchedAt: Date.now(),
+    userId
+  };
+  storage.setItem(themeCacheKey(userId), JSON.stringify(entry));
 };
 
 export const themeController = {
-  /**
-   * Initializes the theme based on the defined precedence rules.
-   * 1. Database (Authenticated user preference) - Wins to ensure sync
-   * 2. LocalStorage (Session/Device preference)
-   * 3. System Preference (Fallback)
-   */
   initTheme: async (userId?: string): Promise<Theme> => {
-    let resolvedTheme: Theme | null = null;
+    // 1) Fast path: localStorage or system
+    let resolved = getSystemTheme();
 
-    // 1. Initial State: Check LocalStorage or System (Synchronous/Fast)
-    // This prevents FOUC (Flash of Unstyled Content) before DB returns
-    const localTheme = storage.getItem(THEME_KEY);
-    
-    if (isValidTheme(localTheme)) {
-      resolvedTheme = localTheme;
-    } else {
-      resolvedTheme = getSystemTheme();
+    const ls = storage.getItem('theme');
+    if (isValidTheme(ls)) {
+      resolved = ls;
     }
-    
-    // Apply immediate best guess
-    applyToDOM(resolvedTheme);
 
-    // 2. Authenticated Sync: Check DB
+    applyToDOM(resolved);
+
+    // 2) Authenticated case → use cached DB preference
     if (userId) {
+      const cached = readCache(userId);
+      
+      if (cached) {
+        const age = Date.now() - cached.fetchedAt;
+        const isFresh = age < THEME_CACHE_TTL_MS;
+
+        resolved = cached.theme;
+        applyToDOM(resolved);
+        storage.setItem('theme', resolved);
+
+        if (isFresh) {
+          return resolved;
+        }
+
+        // stale-while-revalidate → fetch in background
+        repo.getPreferences(userId).then(prefs => {
+          const dbTheme = prefs?.theme;
+          if (isValidTheme(dbTheme)) {
+            writeCache(userId, dbTheme);
+            applyToDOM(dbTheme);
+            storage.setItem('theme', dbTheme);
+          }
+        });
+
+        return resolved;
+      }
+
+      // No cache → fetch from DB
       try {
         const prefs = await repo.getPreferences(userId);
         const dbTheme = prefs?.theme;
-        
+
         if (isValidTheme(dbTheme)) {
-          // If DB has a preference, it overrides local/system to ensure cross-device sync
-          if (dbTheme !== resolvedTheme) {
-            resolvedTheme = dbTheme;
-            applyToDOM(resolvedTheme);
-            storage.setItem(THEME_KEY, resolvedTheme);
-          }
+          resolved = dbTheme;
+          applyToDOM(resolved);
+          storage.setItem('theme', resolved);
+          writeCache(userId, resolved);
         } else {
-          // DB has no preference, persist our current resolved theme to DB
-          // Fire and forget DB update to sync this device's choice
-          repo.updateTheme(userId, resolvedTheme);
+          // Persist current resolved theme to DB (only once)
+          repo.updateTheme(userId, resolved);
+          writeCache(userId, resolved);
         }
-      } catch (e) {
-        console.warn('Failed to fetch theme from DB', e);
+      } catch {
+        // fallback to resolved
       }
-    } else {
-      // Not authenticated, ensure local storage is set to current resolved
-      storage.setItem(THEME_KEY, resolvedTheme);
+
+      return resolved;
     }
 
-    return resolvedTheme;
+    // 3) Unauthenticated
+    storage.setItem('theme', resolved);
+    return resolved;
   },
 
-  /**
-   * Updates the theme globally.
-   * Updates DOM, LocalStorage, and asynchronously updates DB if authenticated.
-   */
   setTheme: (theme: Theme, userId?: string) => {
     if (!isValidTheme(theme)) return;
 
-    // 1. DOM
     applyToDOM(theme);
+    storage.setItem('theme', theme);
 
-    // 2. LocalStorage
-    storage.setItem(THEME_KEY, theme);
-
-    // 3. Database (Secure Update)
     if (userId) {
-      // Fire and forget - don't block UI
-      repo.updateTheme(userId, theme).catch(err => {
-        console.error('Failed to persist theme preference', err);
-      });
+      writeCache(userId, theme);
+      repo.updateTheme(userId, theme).catch(() => {});
     }
   }
 };
