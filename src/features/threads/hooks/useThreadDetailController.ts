@@ -8,6 +8,7 @@ import { ThreadDetailViewModel } from '../../../types/threads.types';
 import { useLenser } from '../../../context/LenserContext';
 import { keys } from '../../../hooks/useThreads';
 import { useAuth } from '../../../context/AuthContext';
+import { reactionService } from '@/src/services/reactionService';
 
 // Immutable reply helpers
 const updateReplyInTree = (
@@ -77,7 +78,6 @@ export const useThreadDetailController = (threadId?: string) => {
   //
   useEffect(() => {
     if (!threadId) return;
-
     if (incrementedThreadViews.has(threadId)) return;
 
     let cancelled = false;
@@ -85,13 +85,11 @@ export const useThreadDetailController = (threadId?: string) => {
 
     const recordView = async () => {
       try {
-        // Domain specific increment
         await threadsService.incrementView(threadId);
-        
-        // Global Analytics log
+
         await analyticsService.trackView('thread', threadId, {
-            userId: user?.id,
-            lenserId: lenser?.id
+          userId: user?.id,
+          lenserId: lenser?.id
         });
       } catch (err) {
         console.error(err);
@@ -112,45 +110,50 @@ export const useThreadDetailController = (threadId?: string) => {
   // 3. Mutations with optimistic updates
   //
 
-  const toggleReactionMutation = useMutation({
-    mutationFn: async () => {
-      if (!threadId || !lenser) return;
-      return threadInteractionService.toggleThreadReaction(threadId, lenser.id);
-    },
-    onMutate: async () => {
-      await queryClient.cancelQueries({
-        queryKey: keys.threads.detail(threadId!)
-      });
+const toggleReactionMutation = useMutation({
+  mutationFn: async () => {
+    return reactionService.toggleReaction(
+      'thread',
+      threadId!,
+      lenser!.id,
+      'like'
+    );
+  },
+  onMutate: async () => {
+    await queryClient.cancelQueries({ queryKey: keys.threads.detail(threadId!) });
 
-      const previousThread =
-        queryClient.getQueryData<ThreadDetailViewModel>(
-          keys.threads.detail(threadId!)
-        );
+    const prev = queryClient.getQueryData<ThreadDetailViewModel>(keys.threads.detail(threadId!));
+    if (!prev) return { prev };
 
-      if (previousThread) {
-        queryClient.setQueryData<ThreadDetailViewModel>(
-          keys.threads.detail(threadId!),
-          {
-            ...previousThread,
-            userHasReacted: !previousThread.userHasReacted,
-            reactionCount: previousThread.userHasReacted
-              ? previousThread.reactionCount - 1
-              : previousThread.reactionCount + 1
-          }
-        );
-      }
+    const toggled = !prev.userHasReacted;
 
-      return { previousThread };
-    },
-    onError: (_err, _vars, context) => {
-      if (context?.previousThread) {
-        queryClient.setQueryData(
-          keys.threads.detail(threadId!),
-          context.previousThread
-        );
-      }
+    queryClient.setQueryData(keys.threads.detail(threadId!), {
+      ...prev,
+      userHasReacted: toggled,
+      reactionCount: prev.reactionCount + (toggled ? 1 : -1)
+    });
+
+    return { prev };
+  },
+  onError: (_e, _v, ctx) => {
+    if (ctx?.prev) {
+      queryClient.setQueryData(keys.threads.detail(threadId!), ctx.prev);
     }
-  });
+  },
+  onSuccess: (result) => {
+    const prev = queryClient.getQueryData<ThreadDetailViewModel>(keys.threads.detail(threadId!));
+    if (!prev) return;
+
+    const finalHas = result.status === 'added';
+
+    queryClient.setQueryData(keys.threads.detail(threadId!), {
+      ...prev,
+      userHasReacted: finalHas
+      // IMPORTANT: DO NOT update reactionCount here
+      // optimistic already did the correct +/- one time
+    });
+  }
+});
 
   const toggleReplyReactionMutation = useMutation({
     mutationFn: async (replyId: string) => {
@@ -238,9 +241,12 @@ export const useThreadDetailController = (threadId?: string) => {
     thread: thread || null,
     loading,
     error: queryError ? (queryError as Error).message : null,
-    toggleReaction: toggleReactionMutation.mutate,
-    toggleReplyReaction: toggleReplyReactionMutation.mutate,
+    toggleReaction: () => toggleReactionMutation.mutate(),
+    toggleReplyReaction: (replyId: string) =>
+      toggleReplyReactionMutation.mutate(replyId),
     addReply: async (content: string, parentId?: string) =>
-      addReplyMutation.mutateAsync({ content, parentId })
+      addReplyMutation.mutateAsync({ content, parentId }),
+    // NEW: expose loading state for the reaction button
+    isLoadingReaction: toggleReactionMutation.isPending
   };
 };
