@@ -51,7 +51,48 @@ export class MockLenserRepository implements LenserRepositoryPort {
       created_at: new Date(Date.now() - 100000000).toISOString(),
       join_order: 1
     },
-    // ... (rest of mock lensers same as before)
+    {
+      id: 'lenser-2',
+      user_id: 'user-2',
+      handle: 'sarah_ai',
+      display_name: 'Sarah Connor',
+      headline: 'Prompt Engineer | Resistance Leader',
+      bio: 'Hunting terminators and optimizing LLMs.',
+      avatar_url: 'https://ui-avatars.com/api/?name=Sarah+Connor&background=e11d48&color=fff',
+      banner_url: null,
+      visibility: 'public',
+      is_in_waiting_list: true,
+      created_at: new Date(Date.now() - 80000000).toISOString(),
+      join_order: 2
+    },
+    {
+      id: 'lenser-3',
+      user_id: 'user-3',
+      handle: 'neo_one',
+      display_name: 'Neo',
+      headline: 'The One',
+      bio: 'I know Kung Fu and Python.',
+      avatar_url: 'https://ui-avatars.com/api/?name=Neo&background=000&color=fff',
+      banner_url: null,
+      visibility: 'public',
+      is_in_waiting_list: true,
+      created_at: new Date(Date.now() - 60000000).toISOString(),
+      join_order: 3
+    },
+    {
+      id: 'lenser-4',
+      user_id: 'user-4',
+      handle: 'trinity_matrix',
+      display_name: 'Trinity',
+      headline: 'Hacker & Pilot',
+      bio: 'Dodging bullets and hallucinations.',
+      avatar_url: 'https://ui-avatars.com/api/?name=Trinity&background=0f172a&color=fff',
+      banner_url: null,
+      visibility: 'public',
+      is_in_waiting_list: false,
+      created_at: new Date(Date.now() - 40000000).toISOString(),
+      join_order: 4
+    }
   ];
 
   constructor() {
@@ -62,9 +103,6 @@ export class MockLenserRepository implements LenserRepositoryPort {
           storage.setItem(this.JOIN_LOG_KEY, JSON.stringify(log));
       }
   }
-
-  // ... (Previous getters getLenserByUserId, etc. remain the same) ...
-  // Re-implementing updateLenser to show trigger logic
 
   private getJoinOrder(lenserId: string): number | undefined {
       const logJson = storage.getItem(this.JOIN_LOG_KEY);
@@ -328,7 +366,7 @@ export class MockLenserRepository implements LenserRepositoryPort {
 export class SupabaseLenserRepository implements LenserRepositoryPort {
   async getLenserByUserId(userId: string): Promise<Lenser | null> {
     const { data, error } = await supabase.from('lensers')
-        .select('*, lenser_join_log(join_order)')
+        .select('*')
         .eq('user_id', userId)
         .single();
     
@@ -336,49 +374,43 @@ export class SupabaseLenserRepository implements LenserRepositoryPort {
         if (error.code === 'PGRST116') return null;
         throw error;
     }
-    const lenser = { ...data, join_order: data.lenser_join_log?.join_order };
-    delete lenser.lenser_join_log;
-    return lenser as Lenser;
+    return data as Lenser;
   }
 
   async getLenserById(id: string): Promise<Lenser | null> {
     const { data, error } = await supabase.from('lensers')
-        .select('*, lenser_join_log(join_order)')
+        .select('*')
         .eq('id', id)
         .single();
     if (error) {
         if (error.code === 'PGRST116') return null;
         throw error;
     }
-    const lenser = { ...data, join_order: data.lenser_join_log?.join_order };
-    delete lenser.lenser_join_log;
-    return lenser as Lenser;
+    return data as Lenser;
   }
 
   async getLenserByHandle(handle: string): Promise<Lenser | null> {
     const { data, error } = await supabase.from('lensers')
-        .select('*, lenser_join_log(join_order)')
+        .select('*')
         .eq('handle', handle)
         .single();
     if (error) return null; 
-    const lenser = { ...data, join_order: data.lenser_join_log?.join_order };
-    delete lenser.lenser_join_log;
-    return lenser as Lenser;
+    return data as Lenser;
   }
 
   async createLenser(userId: string, data: CreateLenserDTO): Promise<Lenser> {
-    const { data: newLenser, error } = await supabase.from('lensers').insert({ user_id: userId, ...data }).select().single();
+    const { data: newLenser, error } = await supabase.rpc('create_lenser_secure', {
+      p_handle: data.handle,
+      p_display_name: data.display_name,
+      p_bio: data.bio || '',
+      p_headline: null 
+    });
+
     if (error) throw error;
-    const { data: logEntry, error: logError } = await supabase
-        .from('lenser_join_log')
-        .insert({ lenser_id: newLenser.id })
-        .select('join_order')
-        .single();
-    if (logError) {
-        console.error("Failed to create join log", logError);
-        return newLenser as Lenser;
-    }
-    return { ...newLenser, join_order: logEntry.join_order } as Lenser;
+    
+    console.log("New lenser:", newLenser);
+
+    return newLenser as Lenser;
   }
 
   async updateLenser(userId: string, data: Partial<Lenser>): Promise<Lenser> {
@@ -386,38 +418,30 @@ export class SupabaseLenserRepository implements LenserRepositoryPort {
         .from('lensers')
         .update(data)
         .eq('user_id', userId)
-        .select('*, lenser_join_log(join_order)')
+        .select('*')
         .single();
       if (error) throw error;
-      const lenser = { ...updated, join_order: updated.lenser_join_log?.join_order };
-      delete lenser.lenser_join_log;
-      return lenser as Lenser;
+      return updated as Lenser;
   }
 
   async getRecentlyActive(limit: number): Promise<Lenser[]> {
      const { data, error } = await supabase.from('lensers')
-        .select('*, lenser_join_log(join_order)')
+        .select('*')
         .order('updated_at', { ascending: false })
         .limit(limit);
      if (error) throw error;
-     return data.map((d: any) => {
-         const l = { ...d, join_order: d.lenser_join_log?.join_order };
-         delete l.lenser_join_log;
-         return l;
-     }) as Lenser[];
+     return data as Lenser[];
   }
 
   async getLatestJoined(limit: number): Promise<Lenser[]> {
+      // Fetch directly from lensers table using the join_order column
       const { data, error } = await supabase
-        .from('lenser_join_log')
-        .select('join_order, lensers!inner(*)')
+        .from('lensers')
+        .select('*')
         .order('join_order', { ascending: false })
         .limit(limit);
       if (error) throw error;
-      return data.map((row: any) => ({
-          ...row.lensers,
-          join_order: row.join_order
-      })) as Lenser[];
+      return data as Lenser[];
   }
 
   async getLenserStats(lenserId: string): Promise<LenserStats> {

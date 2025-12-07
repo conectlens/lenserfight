@@ -5,6 +5,7 @@ import { ThreadsList } from '../components/ThreadsList';
 import { TagBadge } from '../../../components/TagBadge';
 import { Card } from '../../../components/Card';
 import { Button } from '../../../components/Button';
+import { Avatar } from '../../../components/Avatar';
 import { Plus, ChevronRight, MessageSquareOff, AlertCircle, UserX, Tag, Sparkles } from 'lucide-react';
 import { CreateThreadModal } from '../../threads/components/CreateThreadModal';
 import { CreateLenserProfileModal } from '../../lenser/components/CreateLenserProfileModal';
@@ -172,8 +173,8 @@ export const HomePage: React.FC = () => {
                                 className="flex items-center gap-3 group cursor-pointer p-2 -mx-2 hover:bg-gray-50 dark:hover:bg-gray-700/50 rounded-lg transition-colors"
                                 onClick={() => navigate(`/lenser/${user.handle}`)}
                             >
-                              <div className="h-10 w-10 rounded-full ring-2 ring-white dark:ring-gray-800 bg-gray-200 dark:bg-gray-700 overflow-hidden flex-shrink-0 border border-gray-100 dark:border-gray-700">
-                                  <img src={user.avatar_url || ''} alt={user.display_name} className="w-full h-full object-cover" />
+                              <div className="flex-shrink-0">
+                                  <Avatar src={user.avatar_url} alt={user.display_name} size="md" className="!w-10 !h-10 ring-2 ring-white dark:ring-gray-800" />
                               </div>
                               <div className="flex-1 min-w-0">
                                   <div className="flex items-center gap-1.5">
