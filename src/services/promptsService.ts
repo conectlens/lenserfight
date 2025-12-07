@@ -3,7 +3,7 @@ import { getPromptsRepository } from '../adapters/promptsAdapter';
 import { getLenserRepository } from '../adapters/lenserAdapter';
 import { getReactionRepository } from '../adapters/reactionAdapter';
 import { reactionService } from './reactionService';
-import { PromptTemplateViewModel, PromptTemplateDetailViewModel, PromptTemplateRecord, CreatePromptDTO } from '../types/prompts.types';
+import { PromptTemplateViewModel, PromptTemplateDetailViewModel, PromptTemplateRecord, CreatePromptDTO, PromptAuthor } from '../types/prompts.types';
 import { tagService } from './tagService';
 import { tagActivityService } from './tagActivityService';
 import { xpService } from './xpService';
@@ -13,11 +13,20 @@ const promptsRepo = getPromptsRepository();
 const lenserRepo = getLenserRepository();
 const reactionRepo = getReactionRepository();
 
-// Use author_profile and tags from record directly
+// Helper to resolve author from denormalized profile
+const resolveAuthor = (record: any): PromptAuthor => {
+    const profile = record.author_profile || {};
+    return {
+        id: profile.id || record.lenser_id || 'unknown',
+        displayName: profile.display_name || 'Unknown',
+        handle: profile.handle || 'unknown',
+        avatarUrl: profile.avatar_url || null
+    };
+};
+
 const mapToViewModels = async (records: any[], currentLenserId?: string): Promise<PromptTemplateViewModel[]> => {
     return records.map(record => {
         const tags = record.tags || []; // Use denormalized tags
-        const profile = record.author_profile || { id: 'unknown', handle: 'unknown', display_name: 'Unknown', avatar_url: null };
         
         return {
             id: record.id,
@@ -26,12 +35,7 @@ const mapToViewModels = async (records: any[], currentLenserId?: string): Promis
             usageCount: record.reaction_totals?.['copy'] || 0,
             createdAt: record.created_at,
             visibility: record.visibility,
-            author: {
-                id: profile.id || record.lenser_id,
-                displayName: profile.display_name,
-                handle: profile.handle,
-                avatarUrl: profile.avatar_url
-            },
+            author: resolveAuthor(record),
             tags: tags
         };
     });

@@ -3,6 +3,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { SidebarItem } from './SidebarItem';
 import { useLenser } from '../../context/LenserContext';
+import { useSidebarProfile } from '../../hooks/useSidebarProfile';
 import { FeedbackModal } from '../../features/feedback/components/FeedbackModal';
 import { notificationService } from '../../services/notificationService';
 import { Avatar } from '../../components/Avatar';
@@ -33,8 +34,16 @@ interface SidebarProps {
 }
 
 export const Sidebar: React.FC<SidebarProps> = ({ isOpen, isMobile, onCloseMobile, onOpenProfileSetup }) => {
-  const { lenser } = useLenser();
+  // Use LenserContext mainly for the handle/identity bootstrapping
+  const { lenser: authLenser } = useLenser();
   const { logout } = useAuth();
+  
+  // Use optimized hook for display data (XP, Level, Fresh Avatar)
+  const { profile: compactProfile } = useSidebarProfile(authLenser?.handle);
+  
+  // Fallback to authLenser if compact fetch hasn't populated yet to prevent empty state
+  const displayProfile = compactProfile || authLenser;
+
   const navigate = useNavigate();
   const location = useLocation();
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
@@ -45,7 +54,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, isMobile, onCloseMobil
   const [isFeedbackOpen, setIsFeedbackOpen] = useState(false);
 
   useEffect(() => {
-    if (!lenser || !FEATURES.NOTIFICATIONS) return;
+    if (!authLenser || !FEATURES.NOTIFICATIONS) return;
 
     let isMounted = true;
     const fetchNotifications = async () => {
@@ -59,7 +68,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, isMobile, onCloseMobil
     fetchNotifications();
 
     return () => { isMounted = false; };
-  }, [lenser?.id]);
+  }, [authLenser?.id]);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -98,8 +107,8 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, isMobile, onCloseMobil
   };
   
   const handleProfileClick = () => {
-    if (lenser?.handle) {
-        handleNavigation(`/lenser/${lenser.handle}`);
+    if (displayProfile?.handle) {
+        handleNavigation(`/lenser/${displayProfile.handle}`);
     } else {
         onOpenProfileSetup();
     }
@@ -264,23 +273,32 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, isMobile, onCloseMobil
             <div 
               className={`
                   flex items-center p-2 rounded-xl transition-all 
-                  ${!lenser ? 'filter blur-sm select-none opacity-60' : 'hover:bg-white dark:hover:bg-gray-800 hover:shadow-sm cursor-pointer border border-transparent hover:border-gray-100 dark:hover:border-gray-700'}
+                  ${!displayProfile ? 'filter blur-sm select-none opacity-60' : 'hover:bg-white dark:hover:bg-gray-800 hover:shadow-sm cursor-pointer border border-transparent hover:border-gray-100 dark:hover:border-gray-700'}
                   ${!showLabels ? 'justify-center' : ''}
               `}
             >
-               <div className="relative flex-shrink-0" onClick={lenser ? handleProfileClick : undefined}>
-                  <Avatar src={lenser?.avatar_url} size="sm" className="!w-9 !h-9" />
-                  {lenser && FEATURES.NOTIFICATIONS && <div className={`absolute bottom-0 right-0 w-2.5 h-2.5 border-2 border-white dark:border-gray-900 rounded-full ${unreadCount > 0 ? 'bg-red-500' : 'bg-green-500'}`}></div>}
+               <div className="relative flex-shrink-0" onClick={displayProfile ? handleProfileClick : undefined}>
+                  <div className="relative">
+                      <Avatar src={displayProfile?.avatar_url} size="sm" className="!w-9 !h-9" />
+                      {/* Level Badge integrated if compact profile available */}
+                      {compactProfile && compactProfile.current_level > 1 && (
+                          <div className="absolute -bottom-1 -right-1 bg-gray-900 text-white text-[8px] font-bold px-1 rounded-full border border-white dark:border-gray-900 shadow-sm">
+                              {compactProfile.current_level}
+                          </div>
+                      )}
+                  </div>
+                  
+                  {displayProfile && FEATURES.NOTIFICATIONS && <div className={`absolute -top-0.5 -right-0.5 w-2.5 h-2.5 border-2 border-white dark:border-gray-900 rounded-full ${unreadCount > 0 ? 'bg-red-500' : 'hidden'}`}></div>}
                </div>
                
                {showLabels && (
-                 <div className="ml-3 flex-1 overflow-hidden" onClick={lenser ? handleProfileClick : undefined}>
-                   <p className="text-sm font-semibold text-gray-900 dark:text-gray-100 truncate">{lenser?.display_name || "Guest"}</p>
-                   <p className="text-xs text-gray-500 dark:text-gray-400 truncate">@{lenser?.handle || "guest"}</p>
+                 <div className="ml-3 flex-1 overflow-hidden" onClick={displayProfile ? handleProfileClick : undefined}>
+                   <p className="text-sm font-semibold text-gray-900 dark:text-gray-100 truncate">{displayProfile?.display_name || "Guest"}</p>
+                   <p className="text-xs text-gray-500 dark:text-gray-400 truncate">@{displayProfile?.handle || "guest"}</p>
                  </div>
                )}
                
-               {showLabels && lenser && (
+               {showLabels && displayProfile && (
                  <div className="relative">
                    <button 
                       ref={buttonRef}
@@ -365,7 +383,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, isMobile, onCloseMobil
                )}
             </div>
 
-            {!lenser && (
+            {!displayProfile && (
               <div className="absolute inset-0 flex items-center justify-center p-2 z-10 bg-gray-50/50 dark:bg-gray-900/50 backdrop-blur-[1px]">
                    <button 
                       onClick={onOpenProfileSetup}
