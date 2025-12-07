@@ -51,6 +51,7 @@ export class MockLenserRepository implements LenserRepositoryPort {
       website_url: 'https://lenserfight.com',
       visibility: 'public',
       is_in_waiting_list: false,
+      is_super_admin: true,
       created_at: new Date(Date.now() - 100000000).toISOString(),
       join_order: 1
     },
@@ -65,6 +66,7 @@ export class MockLenserRepository implements LenserRepositoryPort {
       banner_url: null,
       visibility: 'public',
       is_in_waiting_list: true,
+      is_super_admin: false,
       created_at: new Date(Date.now() - 80000000).toISOString(),
       join_order: 2
     },
@@ -79,6 +81,7 @@ export class MockLenserRepository implements LenserRepositoryPort {
       banner_url: null,
       visibility: 'public',
       is_in_waiting_list: true,
+      is_super_admin: false,
       created_at: new Date(Date.now() - 60000000).toISOString(),
       join_order: 3
     },
@@ -93,6 +96,7 @@ export class MockLenserRepository implements LenserRepositoryPort {
       banner_url: null,
       visibility: 'public',
       is_in_waiting_list: false,
+      is_super_admin: false,
       created_at: new Date(Date.now() - 40000000).toISOString(),
       join_order: 4
     }
@@ -243,6 +247,7 @@ export class MockLenserRepository implements LenserRepositoryPort {
       banner_url: null,
       visibility: 'public',
       is_in_waiting_list: false,
+      is_super_admin: false,
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
       join_order: joinOrder

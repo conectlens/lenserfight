@@ -28,6 +28,27 @@ import { ContactPage } from '../features/public/pages/ContactPage';
 import { LegalPage } from '../features/public/pages/LegalPage';
 import { WelcomePage } from '../features/public/pages/WelcomePage';
 
+// Admin Pages
+import { AdminLayout } from '../features/admin/layout/AdminLayout';
+import { AdminWelcome } from '../features/admin/pages/AdminWelcome';
+import { AdminAnalytics } from '../features/admin/pages/AdminAnalytics';
+import { AdminUsers } from '../features/admin/pages/AdminUsers';
+import { AdminDesign } from '../features/admin/pages/AdminDesign';
+import { AdminFeedbacks } from '../features/admin/pages/AdminFeedbacks';
+import { AdminWaitlist } from '../features/admin/pages/AdminWaitlist';
+import { AdminContacts } from '../features/admin/pages/AdminContacts';
+
+import { useLenser } from '../context/LenserContext';
+
+// Protected Admin Guard
+const ProtectedAdminRoute = () => {
+  const { lenser, isLoading } = useLenser();
+  
+  if (isLoading) return <div className="flex h-screen items-center justify-center">Loading...</div>;
+  if (!lenser || !lenser.is_super_admin) return <Navigate to="/" replace />;
+  return <Outlet />;
+};
+
 // Wrapper for public routes to apply layout
 const PublicRouteWrapper = () => (
   <PublicLayout>
@@ -181,6 +202,19 @@ export const AppRouter: React.FC = () => {
             </DashboardLayout>
           } 
         />
+
+        {/* ADMIN ROUTES */}
+        <Route element={<ProtectedAdminRoute />}>
+          <Route path="/admin" element={<AdminLayout />}>
+            <Route index element={<AdminWelcome />} />
+            <Route path="analytics" element={<AdminAnalytics />} />
+            <Route path="users" element={<AdminUsers />} />
+            <Route path="design" element={<AdminDesign />} />
+            <Route path="feedbacks" element={<AdminFeedbacks />} />
+            <Route path="waitlist" element={<AdminWaitlist />} />
+            <Route path="contacts" element={<AdminContacts />} />
+          </Route>
+        </Route>
         
         {/* Default Redirect */}
         <Route path="*" element={<Navigate to="/" replace />} />

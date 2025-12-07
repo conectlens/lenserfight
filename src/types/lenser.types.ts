@@ -37,6 +37,7 @@ export interface Lenser {
   website_display_name?: string;
   visibility?: 'public' | 'private';
   is_in_waiting_list?: boolean;
+  is_super_admin?: boolean; // Added for RBAC via Lenser profile
   preferences?: LenserPreferences;
   created_at: string;
   updated_at?: string;
