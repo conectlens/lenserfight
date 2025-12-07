@@ -10,9 +10,10 @@ import { isRequired, isEmail } from '../../../utils/validation';
 import { FormError } from '../../../components/FormError';
 import { ArrowLeft, Check, AlertCircle } from 'lucide-react';
 import { Modal } from '../../../components/Modal';
-import { isMock } from '../../../config/runtimeConfig';
+import { isMock, ENABLE_CAPTCHA, CAPTCHA_SITE_KEY } from '../../../config/runtimeConfig';
 import { PasswordStrengthMeter } from '../components/PasswordStrengthMeter';
 import { LoadingOverlay } from '../../../components/LoadingOverlay';
+import { Turnstile } from '@marsidev/react-turnstile';
 
 export const RegisterPage: React.FC = () => {
   const { register, logout, resendSignupConfirmation, isAuthenticated } = useAuth();
@@ -28,6 +29,7 @@ export const RegisterPage: React.FC = () => {
 
   // Policy Modal State
   const [policyModal, setPolicyModal] = useState<{ isOpen: boolean; title: string; content: React.ReactNode } | null>(null);
+  const [captchaToken, setCaptchaToken] = useState<string | null>(null);
 
   const passwordValidator = (value: any) => {
     if (!value) return "Password is required";
@@ -85,9 +87,14 @@ export const RegisterPage: React.FC = () => {
       return;
     }
 
+    if (ENABLE_CAPTCHA && !captchaToken) {
+        setApiError("Please complete the security check.");
+        return;
+    }
+
     setLoading(true);
     try {
-      await register(formData.email, formData.password, formData.displayName);
+      await register(formData.email, formData.password, formData.displayName, captchaToken || undefined);
       
       // Success State - start overlay
       setIsSuccess(true);
@@ -120,6 +127,7 @@ export const RegisterPage: React.FC = () => {
           setApiError(msg || "Failed to register");
       }
       setLoading(false);
+      if (ENABLE_CAPTCHA) setCaptchaToken(null);
     }
   };
 
@@ -254,6 +262,12 @@ export const RegisterPage: React.FC = () => {
             </label>
           </div>
 
+          {ENABLE_CAPTCHA && (
+            <div className="flex justify-center mt-4">
+              <Turnstile siteKey={CAPTCHA_SITE_KEY} onSuccess={setCaptchaToken} />
+            </div>
+          )}
+
           {apiError && (
             <div className="flex flex-col gap-2 bg-red-50 dark:bg-red-900/30 border border-red-100 dark:border-red-800 p-4 rounded-xl text-red-600 dark:text-red-400 text-sm mt-4 animate-in fade-in slide-in-from-top-1">
                 <div className="flex items-start gap-2">
@@ -270,7 +284,7 @@ export const RegisterPage: React.FC = () => {
             </div>
           )}
 
-          <Button type="submit" isLoading={loading} disabled={isSuccess} className="mt-4 py-3 text-base font-bold shadow-lg shadow-primary/20">
+          <Button type="submit" isLoading={loading} disabled={isSuccess || (ENABLE_CAPTCHA && !captchaToken)} className="mt-4 py-3 text-base font-bold shadow-lg shadow-primary/20">
             {isSuccess ? "Signing Up..." : "Sign Up"}
           </Button>
         </form>

@@ -9,8 +9,9 @@ import { useFormValidation } from '../../../hooks/useFormValidation';
 import { isRequired, isEmail } from '../../../utils/validation';
 import { FormError } from '../../../components/FormError';
 import { Eye, EyeOff, ArrowLeft, Check } from 'lucide-react';
-import { isMock } from '../../../config/runtimeConfig';
+import { isMock, ENABLE_CAPTCHA, CAPTCHA_SITE_KEY } from '../../../config/runtimeConfig';
 import { LoadingOverlay } from '../../../components/LoadingOverlay';
+import { Turnstile } from '@marsidev/react-turnstile';
 
 export const LoginPage: React.FC = () => {
   const { login, signInWithOAuth, isAuthenticated } = useAuth();
@@ -32,6 +33,7 @@ export const LoginPage: React.FC = () => {
   const [apiError, setApiError] = useState<string | null>(null);
   const [showPassword, setShowPassword] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
+  const [captchaToken, setCaptchaToken] = useState<string | null>(null);
 
   // Redirect if already authenticated, BUT NOT if we are currently submitting (waiting for success animation)
   // or if we just finished success (waiting for redirect timeout)
@@ -55,9 +57,14 @@ export const LoginPage: React.FC = () => {
 
     if (!validate(formData)) return;
 
+    if (ENABLE_CAPTCHA && !captchaToken) {
+        setApiError("Please complete the security check.");
+        return;
+    }
+
     setIsSubmitting(true);
     try {
-      await login(formData.email, formData.password);
+      await login(formData.email, formData.password, captchaToken || undefined);
       
       // Success State Trigger - effectively starts the transition animation
       setIsSuccess(true);
@@ -86,6 +93,7 @@ export const LoginPage: React.FC = () => {
     } catch (err: any) {
       setApiError(err.message || "Failed to sign in");
       setIsSubmitting(false); // Only stop loading on error
+      if (ENABLE_CAPTCHA) setCaptchaToken(null); // Reset captcha on error
     }
   };
 
@@ -172,6 +180,12 @@ export const LoginPage: React.FC = () => {
             </Link>
           </div>
 
+          {ENABLE_CAPTCHA && (
+            <div className="flex justify-center my-4">
+              <Turnstile siteKey={CAPTCHA_SITE_KEY} onSuccess={setCaptchaToken} />
+            </div>
+          )}
+
           {apiError && (
             <div className="flex items-start gap-2 bg-red-50 dark:bg-red-900/20 border border-red-100 dark:border-red-800 p-3 rounded-xl text-red-600 dark:text-red-400 text-sm animate-in fade-in slide-in-from-top-1">
                 <span className="mt-0.5">⚠️</span>
@@ -179,7 +193,7 @@ export const LoginPage: React.FC = () => {
             </div>
           )}
 
-          <Button type="submit" isLoading={isSubmitting} disabled={oauthLoading || isSuccess} className="mt-4 py-3 text-base font-bold shadow-lg shadow-primary/20">
+          <Button type="submit" isLoading={isSubmitting} disabled={oauthLoading || isSuccess || (ENABLE_CAPTCHA && !captchaToken)} className="mt-4 py-3 text-base font-bold shadow-lg shadow-primary/20">
             {isSuccess ? "Signing In..." : "Sign In"}
           </Button>
         </form>
