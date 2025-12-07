@@ -9,7 +9,8 @@ import { useFormValidation } from '../../../hooks/useFormValidation';
 import { isRequired, isEmail } from '../../../utils/validation';
 import { FormError } from '../../../components/FormError';
 import { ArrowLeft } from 'lucide-react';
-import { isMock } from '../../../config/runtimeConfig';
+import { isMock, ENABLE_CAPTCHA, CAPTCHA_SITE_KEY } from '../../../config/runtimeConfig';
+import { Turnstile } from '@marsidev/react-turnstile';
 
 export const ForgotPasswordPage: React.FC = () => {
   const { requestPasswordReset } = useAuth();
@@ -25,6 +26,7 @@ export const ForgotPasswordPage: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [apiError, setApiError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
+  const [captchaToken, setCaptchaToken] = useState<string | null>(null);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -39,13 +41,19 @@ export const ForgotPasswordPage: React.FC = () => {
 
     if (!validate(formData)) return;
 
+    if (ENABLE_CAPTCHA && !captchaToken) {
+        setApiError("Please complete the security check.");
+        return;
+    }
+
     setLoading(true);
     try {
-      await requestPasswordReset(formData.email);
+      await requestPasswordReset(formData.email, captchaToken || undefined);
       setSuccess(true);
       // For mock purposes, console.log is handled in repository
     } catch (err: any) {
       setApiError(err.message || "Failed to send reset email");
+      if (ENABLE_CAPTCHA) setCaptchaToken(null);
     } finally {
       setLoading(false);
     }
@@ -99,9 +107,15 @@ export const ForgotPasswordPage: React.FC = () => {
           <FormError message={errors.email} />
         </div>
 
+        {ENABLE_CAPTCHA && (
+            <div className="flex justify-center mt-2">
+                <Turnstile siteKey={CAPTCHA_SITE_KEY} onSuccess={setCaptchaToken} />
+            </div>
+        )}
+
         {apiError && <div className="text-red-500 text-sm bg-red-50 p-3 rounded-lg">{apiError}</div>}
 
-        <Button type="submit" isLoading={loading} className="mt-2 text-base font-semibold">
+        <Button type="submit" isLoading={loading} disabled={ENABLE_CAPTCHA && !captchaToken} className="mt-2 text-base font-semibold">
           Send Reset Link
         </Button>
       </form>
