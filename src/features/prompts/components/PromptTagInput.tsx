@@ -1,7 +1,7 @@
 
 import React, { useState, KeyboardEvent } from 'react';
 import { X, Plus } from 'lucide-react';
-import { TagNamingService } from '../../../services/tagNamingService';
+import { tagService } from '../../../services/tagService';
 
 interface PromptTagInputProps {
   tags: string[];
@@ -10,19 +10,23 @@ interface PromptTagInputProps {
 
 export const PromptTagInput: React.FC<PromptTagInputProps> = ({ tags, onChange }) => {
   const [input, setInput] = useState('');
+  const [loading, setLoading] = useState(false);
 
-  const handleKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
+  const handleKeyDown = async (e: KeyboardEvent<HTMLInputElement>) => {
     if ((e.key === 'Enter' || e.key === ',') && input.trim()) {
       e.preventDefault();
-      
-      const { name, isValid } = TagNamingService.normalize(input);
-      
-      if (isValid) {
-        if (!tags.some(t => TagNamingService.normalize(t).slug === TagNamingService.normalize(name).slug)) {
-          onChange([...tags, name]);
-        }
+      setLoading(true);
+      try {
+          const validTag = await tagService.processUserInput(input);
+          if (!tags.includes(validTag.name)) {
+              onChange([...tags, validTag.name]);
+          }
+          setInput('');
+      } catch (error) {
+          // ignore invalid
+      } finally {
+          setLoading(false);
       }
-      setInput('');
     } else if (e.key === 'Backspace' && !input && tags.length > 0) {
       onChange(tags.slice(0, -1));
     }
@@ -35,7 +39,7 @@ export const PromptTagInput: React.FC<PromptTagInputProps> = ({ tags, onChange }
   return (
     <div className="flex flex-col gap-2">
       <label className="text-sm font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Tags</label>
-      <div className="flex flex-wrap items-center gap-2 p-2 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl focus-within:ring-2 focus-within:ring-primary/50 focus-within:border-primary transition-all min-h-[46px]">
+      <div className={`flex flex-wrap items-center gap-2 p-2 bg-gray-50 dark:bg-gray-800 border ${loading ? 'border-primary' : 'border-gray-200 dark:border-gray-700'} rounded-xl focus-within:ring-2 focus-within:ring-primary/50 focus-within:border-primary transition-all min-h-[46px]`}>
         {tags.map(tag => (
           <span key={tag} className="flex items-center gap-1 pl-3 pr-2 py-1 bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-gray-700 dark:text-gray-200 rounded-full text-sm font-medium shadow-sm">
             {tag}
@@ -57,6 +61,7 @@ export const PromptTagInput: React.FC<PromptTagInputProps> = ({ tags, onChange }
              onKeyDown={handleKeyDown}
              placeholder={tags.length === 0 ? "Add a tag..." : "Add another..."}
              className="flex-1 bg-transparent outline-none text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 text-sm py-1"
+             disabled={loading}
            />
         </div>
       </div>
