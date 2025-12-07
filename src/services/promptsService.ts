@@ -145,21 +145,7 @@ export const promptsService = {
     await reactionService.recordReaction('prompt_template', id, lenserId, 'copy');
   },
 
-  toggleSavePrompt: async (id: string, lenserId: string): Promise<boolean> => {
-     // 1. Toggle reaction entry
-     const { added, summary } = await reactionService.toggleReaction('prompt_template', id, lenserId, 'saved');
-     
-     // 2. Sync updated counts to reaction_totals JSONB column
-     try {
-         await promptsRepo.updateReactionTotals(id, summary.counts);
-     } catch (e) {
-         console.warn("Failed to sync reaction_totals", e);
-     }
-
-     return added;
-  },
-
-  toggleReaction: async (id: string, lenserId: string, reaction: 'like' | 'love' | 'clap') => {
+  toggleReaction: async (id: string, lenserId: string, reaction: 'like' | 'love' | 'clap' | 'saved' ) => {
       const { added, summary } = await reactionService.toggleReaction('prompt_template', id, lenserId, reaction);
       
       // XP Award
