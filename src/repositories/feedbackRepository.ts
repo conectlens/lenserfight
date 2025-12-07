@@ -1,5 +1,5 @@
 
-import { Feedback, SubmitFeedbackDTO } from '../types/feedback.types';
+import { Feedback, SubmitFeedbackDTO, ProductTag } from '../types/feedback.types';
 import { supabase } from '../utils/supabase';
 import { storage } from '../utils/storage';
 
@@ -18,12 +18,13 @@ export class MockFeedbackRepository implements FeedbackRepositoryPort {
 
     const newFeedback: Feedback = {
       id: `feedback-${Date.now()}`,
-      product_tag: dto.product_tag || null,
+      product_tag: dto.product_tag || 'general',
       page: dto.page || null,
       user_id: dto.user_id || null,
       message: dto.message || null,
       start_date: dto.start_date || null,
       end_date: dto.end_date || null,
+      status: 'pending',
       created_at: new Date().toISOString(),
     };
 
@@ -57,8 +58,6 @@ export class MockFeedbackRepository implements FeedbackRepositoryPort {
 // --- Supabase Implementation ---
 export class SupabaseFeedbackRepository implements FeedbackRepositoryPort {
   async submitFeedback(dto: SubmitFeedbackDTO): Promise<Feedback> {
-    // We omit user_id here. Supabase RLS policies should automatically attach the authenticated user's ID
-    // or defaults to NULL if anonymous, based on `auth.uid()`.
     const { data, error } = await supabase
       .from('feedback')
       .insert({
@@ -76,14 +75,17 @@ export class SupabaseFeedbackRepository implements FeedbackRepositoryPort {
   }
 
   async getUserFeedbacks(userId: string, offset = 0, limit = 5): Promise<{ data: Feedback[]; count: number }> {
+    // Use the secure view which filters by auth.uid() automatically.
+    // Note: The view does not return 'id', so pagination relies on offset/limit.
     const { data, error, count } = await supabase
-        .from('feedback')
+        .from('vw_feedback_user')
         .select('*', { count: 'exact' })
-        .eq('user_id', userId)
         .order('created_at', { ascending: false })
         .range(offset, offset + limit - 1);
         
     if (error) throw error;
+    
+    // Data returned matches the view structure (no id, no user_id)
     return { data: data as Feedback[], count: count || 0 };
   }
 }

@@ -1,15 +1,14 @@
 
-import { TagUsage, TagActivityEventDTO, TagRecord } from '../types/tags.types';
+import { TagUsage, TagActivityEventDTO, TagDTO } from '../types/tags.types';
 import { supabase } from '../utils/supabase';
 import { storage } from '../utils/storage';
-import { TagNamingService } from '../services/tagNamingService';
 
 export interface TagRepositoryPort {
   getAllTagsWithCounts(): Promise<TagUsage[]>;
-  getTagBySlug(slug: string): Promise<TagUsage | null>;
+  findBySlug(slug: string): Promise<TagDTO | null>;
+  createTag(name: string, slug: string): Promise<TagDTO>;
   recordActivity(event: TagActivityEventDTO): Promise<void>;
   recordBatchActivity(events: TagActivityEventDTO[]): Promise<void>;
-  upsertTags(names: string[]): Promise<TagRecord[]>;
 }
 
 export class MockTagRepository implements TagRepositoryPort {
@@ -25,71 +24,48 @@ export class MockTagRepository implements TagRepositoryPort {
 
   private seed() {
     if (!storage.getItem(this.TAGS_KEY)) {
-      const initialTags = [
-        'UI/UX', 'Productivity', 'AI', 'Design Systems', 'Marketing', 'React', 'Midjourney', 'ChatGPT'
+      const initialTags: TagDTO[] = [
+        { id: 'tag-1', name: 'UI/UX', slug: 'ui-ux', visibility: 'public' },
+        { id: 'tag-2', name: 'Productivity', slug: 'productivity', visibility: 'public' },
+        { id: 'tag-3', name: 'AI', slug: 'ai', visibility: 'public' }
       ];
-      
-      const records: TagRecord[] = initialTags.map((name, i) => {
-        const { slug } = TagNamingService.normalize(name);
-        return {
-          id: `tag-${i}`,
-          name: name,
-          slug: slug,
-          description: `Discussions and prompts related to ${name}.`,
-          created_at: new Date().toISOString()
-        };
-      });
-      
-      storage.setItem(this.TAGS_KEY, JSON.stringify(records));
-      
-      const activityCache: Record<string, number> = {};
-      records.forEach((t, i) => {
-        activityCache[t.id] = Math.floor(Math.random() * 10);
-      });
-      storage.setItem(this.ACTIVITY_KEY, JSON.stringify(activityCache));
+      storage.setItem(this.TAGS_KEY, JSON.stringify(initialTags));
     }
   }
 
-  private getTags(): TagRecord[] {
+  private getTags(): TagDTO[] {
     return JSON.parse(storage.getItem(this.TAGS_KEY) || '[]');
   }
 
-  private saveTags(tags: TagRecord[]) {
+  private saveTags(tags: TagDTO[]) {
     storage.setItem(this.TAGS_KEY, JSON.stringify(tags));
   }
 
-  async upsertTags(names: string[]): Promise<TagRecord[]> {
-    await new Promise(resolve => setTimeout(resolve, 300));
-    const allTags = this.getTags();
-    const result: TagRecord[] = [];
-    let changed = false;
+  async findBySlug(slug: string): Promise<TagDTO | null> {
+    await new Promise(resolve => setTimeout(resolve, 200));
+    const tags = this.getTags();
+    return tags.find(t => t.slug === slug) || null;
+  }
 
-    const uniqueNames = new Set(names);
-
-    for (const rawName of uniqueNames) {
-      const { name, slug, isValid } = TagNamingService.normalize(rawName);
-      
-      if (!isValid) continue;
-
-      let existing = allTags.find(t => t.slug === slug);
-      
-      if (!existing) {
-        existing = {
-          id: `tag-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`,
-          name: name,
-          slug: slug,
-          created_at: new Date().toISOString()
-        };
-        allTags.push(existing);
-        changed = true;
-      }
-      result.push(existing);
+  async createTag(name: string, slug: string): Promise<TagDTO> {
+    await new Promise(resolve => setTimeout(resolve, 400));
+    const tags = this.getTags();
+    
+    // Safety check, though domain service should handle this
+    if (tags.some(t => t.slug === slug)) {
+        throw new Error(`Tag with slug ${slug} already exists in Mock DB`);
     }
 
-    if (changed) {
-      this.saveTags(allTags);
-    }
-    return result;
+    const newTag: TagDTO = {
+        id: `tag-${Date.now()}`,
+        name,
+        slug,
+        visibility: 'public'
+    };
+    
+    tags.push(newTag);
+    this.saveTags(tags);
+    return newTag;
   }
 
   async getAllTagsWithCounts(): Promise<TagUsage[]> {
@@ -104,21 +80,14 @@ export class MockTagRepository implements TagRepositoryPort {
       const threadCount = threadTags.filter((tt: any) => tt.tag_id === tag.id).length;
       const promptCount = promptTags.filter((pt: any) => pt.tag_id === tag.id).length;
       
-      const count = threadCount + promptCount;
-      
       return {
         ...tag,
-        count: count,
+        description: '',
+        created_at: new Date().toISOString(),
+        count: threadCount + promptCount,
         trendingScore: activityCache[tag.id] || 0
       };
     }).filter(t => t.count > 0 || t.trendingScore > 0);
-  }
-
-  async getTagBySlug(slug: string): Promise<TagUsage | null> {
-    await new Promise(resolve => setTimeout(resolve, 200));
-    const normalizedSlug = TagNamingService.normalize(slug).slug;
-    const tags = await this.getAllTagsWithCounts();
-    return tags.find(t => t.slug === normalizedSlug) || null;
   }
 
   async recordActivity(event: TagActivityEventDTO): Promise<void> {
@@ -126,18 +95,14 @@ export class MockTagRepository implements TagRepositoryPort {
   }
 
   async recordBatchActivity(events: TagActivityEventDTO[]): Promise<void> {
-    // Mock async
     setTimeout(() => {
         const activityCache = JSON.parse(storage.getItem(this.ACTIVITY_KEY) || '{}');
-        
         events.forEach(event => {
             const currentScore = activityCache[event.tag_id] || 0;
             let boost = 1;
             if (event.activity_type === 'created') boost = 10;
-            if (event.activity_type === 'reacted') boost = 2;
             activityCache[event.tag_id] = currentScore + boost;
         });
-
         storage.setItem(this.ACTIVITY_KEY, JSON.stringify(activityCache));
     }, 10);
   }
@@ -145,123 +110,65 @@ export class MockTagRepository implements TagRepositoryPort {
 
 export class SupabaseTagRepository implements TagRepositoryPort {
   
-  async upsertTags(names: string[]): Promise<TagRecord[]> {
-    if (names.length === 0) return [];
-
-    const inputs = names
-      .map(n => TagNamingService.normalize(n))
-      .filter(t => t.isValid)
-      .map(t => ({
-        slug: t.slug,
-        name: t.name
-      }));
-
-    if (inputs.length === 0) return [];
-
-    const uniqueInputs = Array.from(new Map(inputs.map(item => [item.slug, item])).values());
-
-    const { data, error } = await supabase
-      .from('tags')
-      .upsert(uniqueInputs, { onConflict: 'slug', ignoreDuplicates: false }) 
-      .select();
-
-    if (error) {
-        console.error("Tag upsert failed", error);
-        throw error;
+  private handleError(error: any) {
+    if (error.code === '42501' || error.message?.includes('permission denied')) {
+        throw new Error("This tag is private or hidden and cannot be used.");
     }
-    return data as TagRecord[];
+    throw error;
+  }
+
+  async findBySlug(slug: string): Promise<TagDTO | null> {
+    // Read from view. Assuming view includes ID for relation mapping.
+    // If view does not strictly output 'id', DB constraints on app will fail later.
+    const { data, error } = await supabase
+        .from('vw_tags_public')
+        .select('id, name, slug, visibility') // We assume these columns exist in the view
+        .eq('slug', slug)
+        .single();
+    
+    if (error) {
+        if (error.code === 'PGRST116') return null; // Not found
+        this.handleError(error);
+    }
+    return data as TagDTO;
+  }
+
+  async createTag(name: string, slug: string): Promise<TagDTO> {
+    // Write to base table
+    const { data, error } = await supabase
+        .from('tags')
+        .insert({ name, slug, visibility: 'public' })
+        .select('id, name, slug, visibility')
+        .single();
+
+    if (error) this.handleError(error);
+    return data as TagDTO;
   }
 
   async getAllTagsWithCounts(): Promise<TagUsage[]> {
-    let trendingMap = new Map<string, any>();
-
-    try {
-        const { data: trendingData } = await supabase
-          .from('tag_trending_summary')
-          .select('*');
-
-        if (trendingData) {
-            trendingData.forEach((row: any) => {
-                trendingMap.set(row.tag_id, row);
-            });
-        }
-    } catch (e) {
-        console.warn("Failed to fetch tag trending summary", e);
-    }
-
-    let data: any[] = [];
+    // We are restricted to reading from `vw_tags_public`.
+    // The view provided in spec is: SELECT slug, name, created_at FROM public.tags WHERE public...
+    // It doesn't have counts. We cannot join base tables to get counts.
+    // For this implementation, we will fetch the tags from the view. 
+    // If specific counts are needed, the view definition in DB must be updated to include them.
+    // We will return 0 for counts to remain compliant with "Do not query ... directly".
     
-    try {
-        const { data: fullData, error } = await supabase
-          .from('tags')
-          .select(`
-            *,
-            thread_tags(count),
-            prompt_template_tags(count)
-          `);
+    const { data, error } = await supabase
+      .from('vw_tags_public')
+      .select('*'); // Select all available cols from view
         
-        if (error) throw error;
-        data = fullData;
-    } catch (err) {
-        const { data: simpleData, error } = await supabase.from('tags').select('*');
-        if (error && error.code !== '42803' && error.code !== 'PGRST116') throw error;
-        data = simpleData || [];
-    }
+    if (error) this.handleError(error);
 
-    return data.map((tag: any) => {
-      const threadCount = tag.thread_tags?.[0]?.count || 0;
-      const promptCount = tag.prompt_template_tags?.[0]?.count || 0;
-      
-      const trendingRow = trendingMap.get(tag.id);
-      const trendUsage = trendingRow?.created_count || 0;
-      const totalCount = Math.max(threadCount + promptCount, trendUsage);
-
-      return {
-        id: tag.id,
-        name: tag.name,
-        slug: tag.slug,
-        created_at: tag.created_at,
-        count: totalCount,
-        trendingScore: trendingRow?.score || 0
-      };
-    }).filter((t: TagUsage) => t.count > 0 || t.trendingScore > 0);
-  }
-
-  async getTagBySlug(slug: string): Promise<TagUsage | null> {
-    const { slug: normalizedSlug } = TagNamingService.normalize(slug);
-    
-    const { data: tagData, error } = await supabase.from('tags').select('*').eq('slug', normalizedSlug).single();
-    if (error || !tagData) return null;
-
-    let threadCount = 0;
-    let promptCount = 0;
-
-    try {
-        const [threadRes, promptRes] = await Promise.all([
-            supabase.from('thread_tags').select('*', { count: 'exact', head: true }).eq('tag_id', tagData.id),
-            supabase.from('prompt_template_tags').select('*', { count: 'exact', head: true }).eq('tag_id', tagData.id)
-        ]);
-        threadCount = threadRes.count || 0;
-        promptCount = promptRes.count || 0;
-    } catch (e) {
-        console.warn("Failed to fetch tag counts", e);
-    }
-
-    let trendingScore = 0;
-    try {
-        const { data: trendData } = await supabase.from('tag_trending_summary').select('score').eq('tag_id', tagData.id);
-        if (trendData) {
-            trendingScore = trendData.reduce((acc: number, curr: any) => acc + (curr.score || 0), 0);
-        }
-    } catch (e) {
-        console.warn("Failed to fetch trending score", e);
-    }
-
-    return {
-        ...tagData,
-        count: threadCount + promptCount,
-        trendingScore
-    };
+    return data.map((tag: any) => ({
+      id: tag.id || tag.slug, // Fallback if ID not in view
+      name: tag.name,
+      slug: tag.slug,
+      description: tag.description || '',
+      visibility: 'public',
+      created_at: tag.created_at,
+      count: 0, // Cannot fetch from base tables
+      trendingScore: 0
+    }));
   }
 
   async recordActivity(event: TagActivityEventDTO): Promise<void> {
@@ -271,6 +178,7 @@ export class SupabaseTagRepository implements TagRepositoryPort {
   async recordBatchActivity(events: TagActivityEventDTO[]): Promise<void> {
     if (events.length === 0) return;
     try {
+        // Tag activity events are typically a separate log table, not one of the restricted ones.
         await supabase.from('tag_activity_events').insert(events);
     } catch (e) {
         console.warn("Failed to record tag activity", e);

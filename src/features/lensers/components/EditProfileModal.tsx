@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Modal } from '../../../components/Modal';
 import { Button } from '../../../components/Button';
 import { InputField } from '../../auth/components/InputField';
@@ -11,7 +11,7 @@ import { SelectField } from '../../../components/SelectField';
 interface EditProfileModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSave: (data: Partial<Lenser>) => void;
+  onSave: (data: Partial<Lenser>) => Promise<void> | void;
   currentData: Lenser;
   isLoading: boolean;
 }
@@ -68,23 +68,34 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({ isOpen, onCl
   const [socialLinks, setSocialLinks] = useState<Partial<SocialLink>[]>([]);
   const [loadingLinks, setLoadingLinks] = useState(false);
   const [linkErrors, setLinkErrors] = useState<Record<number, string>>({});
+  
+  // Local submitting state for social links sync
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  
+  const isMounted = useRef(true);
+
+  useEffect(() => {
+      isMounted.current = true;
+      return () => { isMounted.current = false; };
+  }, []);
 
   useEffect(() => {
     if (isOpen) {
         const loadLinks = async () => {
             setLoadingLinks(true);
             try {
-                const links = await socialLinksService.getLinks(currentData.id);
+                // Using handle instead of ID
+                const links = await socialLinksService.getLinks(currentData.handle);
                 setSocialLinks(links.filter(l => l.platform !== 'Other'));
             } catch (e) {
                 console.error("Failed to load social links", e);
             } finally {
-                setLoadingLinks(false);
+                if (isMounted.current) setLoadingLinks(false);
             }
         };
         loadLinks();
     }
-  }, [isOpen, currentData.id]);
+  }, [isOpen, currentData.handle]);
 
   const validateUrl = (url: string) => {
     if (!url) return true;
@@ -135,6 +146,8 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({ isOpen, onCl
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (isSubmitting || isLoading || loadingLinks) return;
+
     setUrlError(null);
     setLinkErrors({});
     
@@ -165,10 +178,13 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({ isOpen, onCl
         return;
     }
 
-    try {
-        await socialLinksService.syncLinks(currentData.id, socialLinks as any);
+    setIsSubmitting(true);
 
-        onSave({
+    try {
+        // Using handle instead of ID
+        await socialLinksService.syncLinks(currentData.handle, socialLinks as any);
+
+        await onSave({
             display_name: displayName,
             headline: headline,
             bio: bio,
@@ -177,6 +193,10 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({ isOpen, onCl
     } catch (e) {
         console.error("Failed to save profile", e);
         alert("Failed to save changes. Please check your inputs.");
+    } finally {
+        if (isMounted.current) {
+            setIsSubmitting(false);
+        }
     }
   };
 
@@ -296,8 +316,23 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({ isOpen, onCl
         </div>
 
         <div className="flex justify-end gap-3 pt-6 border-t border-gray-100 dark:border-gray-700">
-            <Button type="button" variant="secondary" onClick={onClose} disabled={isLoading} className="w-auto px-6 dark:bg-gray-700 dark:text-white dark:border-gray-600 dark:hover:bg-gray-600">Cancel</Button>
-            <Button type="submit" isLoading={isLoading} className="w-auto px-6 shadow-md">Save Changes</Button>
+            <Button 
+                type="button" 
+                variant="secondary" 
+                onClick={onClose} 
+                disabled={isLoading || isSubmitting || loadingLinks} 
+                className="w-auto px-6 dark:bg-gray-700 dark:text-white dark:border-gray-600 dark:hover:bg-gray-600"
+            >
+                Cancel
+            </Button>
+            <Button 
+                type="submit" 
+                isLoading={isLoading || isSubmitting} 
+                disabled={isLoading || isSubmitting || loadingLinks}
+                className="w-auto px-6 shadow-md"
+            >
+                Save Changes
+            </Button>
         </div>
       </form>
     </Modal>

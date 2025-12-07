@@ -1,57 +1,124 @@
 
 import { getTagRepository } from '../adapters/tagAdapter';
-import { TagUsage, TagRecord } from '../types/tags.types';
-import { TagNamingService } from './tagNamingService';
-import { contentModerationService } from './contentModerationService';
+import { TagUsage, TagDTO } from '../types/tags.types';
+import { TagValidator } from '../domain/tags/TagValidator';
+import { TagDomainError } from '../domain/tags/TagErrors';
 
 const tagRepo = getTagRepository();
 
+// --- Cache Implementation ---
+interface TagCache {
+  data: TagUsage[];
+  timestamp: number;
+}
+
+const CACHE_TTL = 15 * 60 * 1000; // 15 Minutes
+let globalTagCache: TagCache | null = null;
+
 export const tagService = {
+  
+  /**
+   * The Main Entry Point for User Input.
+   * Orchestrates Validation, Normalization, and Persistence.
+   */
+  processUserInput: async (rawInput: string): Promise<TagDTO> => {
+    // 1. Normalization
+    const name = TagValidator.normalizeName(rawInput);
+    const slug = TagValidator.generateSlug(name);
+
+    // 2. Validation
+    TagValidator.validateDisplayName(name);
+    TagValidator.validateSlug(slug);
+
+    // 3. Domain Logic: Find or Create
+    // Check if tag exists
+    const existingTag = await tagRepo.findBySlug(slug);
+    if (existingTag) {
+        return existingTag;
+    }
+
+    // Create new tag
+    try {
+        const newTag = await tagRepo.createTag(name, slug);
+        // Invalidate cache on creation to ensure cloud is up to date
+        globalTagCache = null; 
+        return newTag;
+    } catch (e: any) {
+        // Race condition handling: If DB constraints catch a duplicate slug that we missed
+        if (e.message?.includes('duplicate key') || e.code === '23505') {
+             const retry = await tagRepo.findBySlug(slug);
+             if (retry) return retry;
+        }
+        throw new TagDomainError(`Failed to create tag: ${e.message}`);
+    }
+  },
+
+  /**
+   * Bulk process function for multiple tags (e.g. from a post creation form)
+   */
+  processBatchInput: async (rawInputs: string[]): Promise<TagDTO[]> => {
+      if (!rawInputs.length) return [];
+      
+      const uniqueInputs = Array.from(new Set(rawInputs.filter(i => !!i?.trim())));
+      const results: TagDTO[] = [];
+
+      for (const input of uniqueInputs) {
+          try {
+              const tag = await tagService.processUserInput(input);
+              results.push(tag);
+          } catch (e) {
+              console.warn(`Skipping invalid tag "${input}":`, e);
+              // We skip invalid tags in batch rather than failing the whole batch
+          }
+      }
+      return results;
+  },
+
+  // Read-only methods used by UI
   getCloud: async (): Promise<TagUsage[]> => {
+    const now = Date.now();
+
+    // Check Cache
+    if (globalTagCache && (now - globalTagCache.timestamp < CACHE_TTL)) {
+        return globalTagCache.data;
+    }
+
+    // Fetch Fresh
     const tags = await tagRepo.getAllTagsWithCounts();
-    
     if (tags.length === 0) return [];
 
-    const useTrending = tags.some(t => t.trendingScore > 0);
-    const getValue = (t: TagUsage) => useTrending ? t.trendingScore : t.count;
-
-    const values = tags.map(getValue);
+    const values = tags.map(t => t.count);
     const min = Math.min(...values);
     const max = Math.max(...values);
-    
     const divisor = max - min === 0 ? 1 : max - min;
 
-    return tags.map(tag => {
-      const val = getValue(tag);
-      const weight = 1 + ((val - min) / divisor) * 9;
-      return {
-        ...tag,
-        weight
-      };
-    }).sort((a, b) => b.trendingScore - a.trendingScore || b.count - a.count);
+    const weightedTags = tags.map(tag => ({
+      ...tag,
+      weight: 1 + ((tag.count - min) / divisor) * 9
+    })).sort((a, b) => b.count - a.count);
+
+    // Update Cache
+    globalTagCache = {
+        data: weightedTags,
+        timestamp: now
+    };
+
+    return weightedTags;
   },
 
   getTagDetails: async (slug: string): Promise<TagUsage | null> => {
-      return tagRepo.getTagBySlug(slug);
-  },
-
-  upsertTags: async (names: string[]): Promise<TagRecord[]> => {
-      if (!names || names.length === 0) return [];
+      // In a real app, this would fetch extended metadata from Repo
+      // For now, we reuse the list + filter, or specific find
+      const dto = await tagRepo.findBySlug(slug);
+      if (!dto) return null;
       
-      // Moderation Check - tags are often abused
-      // TODO: moderation policy will not be used in the beta version
-      // await contentModerationService.validate(...names);
-
-      // Use TagNamingService to normalize and deduplicate by slug
-      const slugMap = new Map<string, string>();
-      names.forEach(n => {
-          const { name, slug, isValid } = TagNamingService.normalize(n);
-          if (isValid && !slugMap.has(slug)) {
-              slugMap.set(slug, name);
-          }
-      });
-
-      const uniqueNames = Array.from(slugMap.values());
-      return tagRepo.upsertTags(uniqueNames);
+      // Enriched structure for UI
+      return {
+          ...dto,
+          id: dto.id,
+          count: 0, 
+          trendingScore: 0,
+          created_at: new Date().toISOString()
+      };
   }
 };

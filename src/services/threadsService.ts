@@ -2,36 +2,58 @@
 import { getThreadsRepository } from '../adapters/threadsAdapter';
 import { getLenserRepository } from '../adapters/lenserAdapter';
 import { getReactionRepository } from '../adapters/reactionAdapter';
-import { ThreadFeedItem, ThreadDetailViewModel, ThreadRecord, Visibility, CreateThreadDTO } from '../types/threads.types';
+import { ThreadFeedItem, ThreadDetailViewModel, ThreadRecord, Visibility, CreateThreadDTO, ThreadAuthor } from '../types/threads.types';
 import { threadInteractionService } from './threadInteractionService';
 import { tagService } from './tagService';
+import { xpService } from './xpService';
 import { contentModerationService } from './contentModerationService';
 
 const threadsRepo = getThreadsRepository();
 const lenserRepo = getLenserRepository();
 const reactionRepo = getReactionRepository();
 
+const resolveAuthor = (record: any): ThreadAuthor => {
+    const profile = record.author_profile || {};
+    return {
+        // ID is preserved for ownership checks (e.g. edit/delete permissions)
+        id: profile.id || record.lenser_id || 'unknown',
+        // Presentation layer attributes strictly from profile snapshot or default
+        displayName: profile.display_name || 'Unknown',
+        handle: profile.handle || 'unknown',
+        avatarUrl: profile.avatar_url || null
+    };
+};
+
 export const threadsService = {
   createThread: async (input: { title: string; content: string; tagIds: string[]; lenserId: string; visibility: Visibility }): Promise<ThreadRecord> => {
-    // Moderation Check
-    // TODO: moderation policy will not be used in the beta version
-    // await contentModerationService.validate(input.title, input.content);
-
-    const resolvedTags = await tagService.upsertTags(input.tagIds);
+    const resolvedTags = await tagService.processBatchInput(input.tagIds);
     const realTagIds = resolvedTags.map(t => t.id);
-    return threadsRepo.createThread({ ...input, tagIds: realTagIds });
+    const thread = await threadsRepo.createThread({ ...input, tagIds: realTagIds });
+    
+    // Award XP
+    xpService.notifyThreadCreated(input.lenserId, thread.id).catch(console.error);
+    
+    return thread;
   },
 
   updateThread: async (id: string, input: Partial<CreateThreadDTO>, lenserId: string): Promise<ThreadRecord> => {
       let realTagIds: string[] | undefined = undefined;
       if (input.tagIds) {
-          const resolvedTags = await tagService.upsertTags(input.tagIds);
+          const resolvedTags = await tagService.processBatchInput(input.tagIds);
           realTagIds = resolvedTags.map(t => t.id);
       }
       return threadsRepo.updateThread(id, { ...input, tagIds: realTagIds });
   },
 
-  deleteThread: async (id: string, lenserId: string): Promise<void> => {
+  deleteThread: async (id: string, lenserHandle: string): Promise<void> => {
+      const existing = await threadsRepo.getThreadById(id);
+      if (!existing) throw new Error("Thread not found");
+      
+      const recordHandle = existing.author_profile?.handle || '';
+      if (recordHandle !== lenserHandle) {
+          throw new Error("Unauthorized to delete this thread");
+      }
+
       await threadsRepo.deleteThread(id);
   },
 
@@ -49,9 +71,17 @@ export const threadsService = {
     return threadsService._mapToFeedItems(records, currentUserId);
   },
 
-  getThreadsByAuthor: async (authorId: string, currentUserId?: string, offset = 0, limit = 10): Promise<ThreadFeedItem[]> => {
-    const includePrivate = authorId === currentUserId;
-    const records = await threadsRepo.getByAuthor(authorId, offset, limit, includePrivate);
+  getThreadsByLenser: async (lenserHandle: string, currentUserId?: string, offset = 0, limit = 10): Promise<ThreadFeedItem[]> => {
+    // Similar check as prompts service for visibility
+    let includePrivate = false;
+    if (currentUserId) {
+        const viewer = await lenserRepo.getLenserById(currentUserId);
+        if (viewer && viewer.handle === lenserHandle) {
+            includePrivate = true;
+        }
+    }
+
+    const records = await threadsRepo.getByLenser(lenserHandle, offset, limit, includePrivate);
     return threadsService._mapToFeedItems(records, currentUserId);
   },
 
@@ -72,16 +102,9 @@ export const threadsService = {
         const reactionCounts = record.reaction_totals || {};
         const totalReactions = Object.values(reactionCounts).reduce((a: any, b: any) => a + b, 0) as number;
 
-        const profile = record.author_profile || { id: 'unknown', handle: 'unknown', display_name: 'Unknown', avatar_url: null };
-
         return {
             id: record.id,
-            author: {
-                id: profile.id || record.lenser_id,
-                displayName: profile.display_name,
-                avatarUrl: profile.avatar_url,
-                handle: profile.handle,
-            },
+            author: resolveAuthor(record),
             title: record.title,
             content: record.content,
             tags: tags,
@@ -104,6 +127,11 @@ export const threadsService = {
         }
     }
 
+    // Award Engagement XP if viewing
+    if (currentUserId) {
+        xpService.notifyThreadEngaged(currentUserId, threadId).catch(console.error);
+    }
+
     let userHasReacted = false;
     if (currentUserId) {
         const [reaction] = await reactionRepo.getUserReaction('thread', threadId, currentUserId);
@@ -114,19 +142,13 @@ export const threadsService = {
 
     const reactionCounts = record.reaction_totals || {};
     const totalReactions = Object.values(reactionCounts).reduce((a: any, b: any) => a + b, 0) as number;
-    const profile = record.author_profile || { id: 'unknown', handle: 'unknown', display_name: 'Unknown', avatar_url: null };
 
     return {
         id: record.id,
         title: record.title,
         content: record.content,
         createdAt: record.created_at,
-        author: {
-            id: profile.id || record.lenser_id,
-            displayName: profile.display_name,
-            avatarUrl: profile.avatar_url,
-            handle: profile.handle
-        },
+        author: resolveAuthor(record),
         tags: record.tags || [],
         reactionCount: totalReactions,
         userHasReacted: userHasReacted,
@@ -138,5 +160,10 @@ export const threadsService = {
 
   getTrendingTags: async (limit: number = 6): Promise<string[]> => {
       return threadsRepo.getTrendingTags(limit);
+  },
+
+  // Backward compatibility alias
+  getThreadsByAuthor: async (lenserHandle: string, currentUserId?: string, offset = 0, limit = 10) => {
+      return threadsService.getThreadsByLenser(lenserHandle, currentUserId, offset, limit);
   }
 };
