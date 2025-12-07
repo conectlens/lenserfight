@@ -15,7 +15,7 @@ export interface PromptsRepositoryPort {
   filterByTag(tagSlug: string | null, offset?: number, limit?: number): Promise<PromptTemplateRecord[]>;
   sort(order: "newest" | "popular", offset?: number, limit?: number): Promise<PromptTemplateRecord[]>;
   getTopPrompts(limit: number): Promise<PromptTemplateRecord[]>;
-  getByAuthor(lenserId: string, offset?: number, limit?: number, includePrivate?: boolean): Promise<PromptTemplateRecord[]>;
+  getByLenser(handle: string, offset?: number, limit?: number, includePrivate?: boolean): Promise<PromptTemplateRecord[]>;
   getById(id: string): Promise<PromptTemplateRecord | null>;
   getTags(templateId: string): Promise<TagRecord[]>;
   createPrompt(input: CreatePromptDTO): Promise<PromptTemplateRecord>;
@@ -118,9 +118,12 @@ export class MockPromptsRepository implements PromptsRepositoryPort {
       return prompts.slice(0, limit);
   };
 
-  getByAuthor = async (lenserId: string, offset = 0, limit = 10, includePrivate = false) => {
+  getByLenser = async (handle: string, offset = 0, limit = 10, includePrivate = false) => {
     await new Promise(resolve => setTimeout(resolve, 400));
-    let prompts = this.getPrompts().filter(p => p.lenser_id === lenserId);
+    
+    // Filter by handle using the denormalized profile
+    let prompts = this.getPrompts().filter(p => p.author_profile?.handle === handle);
+    
     if (!includePrivate) {
         prompts = prompts.filter(p => p.visibility === 'public');
     }
@@ -285,11 +288,11 @@ export class SupabasePromptsRepository implements PromptsRepositoryPort {
       return data as PromptTemplateRecord[];
   }
 
-  async getByAuthor(lenserId: string, offset = 0, limit = 10, includePrivate = false): Promise<PromptTemplateRecord[]> {
+  async getByLenser(handle: string, offset = 0, limit = 10, includePrivate = false): Promise<PromptTemplateRecord[]> {
     let query = supabase
         .from('vw_prompt_templates')
         .select(this.promptSelect)
-        .eq('author_profile->>id', lenserId) // Check note in ThreadsRepo regarding id vs json filter
+        .eq('author_profile->>handle', handle) // Filter by handle in JSONB
         .order('created_at', { ascending: false })
         .range(offset, offset + limit - 1);
 

@@ -26,10 +26,6 @@ const resolveAuthor = (record: any): ThreadAuthor => {
 
 export const threadsService = {
   createThread: async (input: { title: string; content: string; tagIds: string[]; lenserId: string; visibility: Visibility }): Promise<ThreadRecord> => {
-    // Moderation Check
-    // TODO: moderation policy will not be used in the beta version
-    // await contentModerationService.validate(input.title, input.content);
-
     const resolvedTags = await tagService.processBatchInput(input.tagIds);
     const realTagIds = resolvedTags.map(t => t.id);
     const thread = await threadsRepo.createThread({ ...input, tagIds: realTagIds });
@@ -49,7 +45,15 @@ export const threadsService = {
       return threadsRepo.updateThread(id, { ...input, tagIds: realTagIds });
   },
 
-  deleteThread: async (id: string, lenserId: string): Promise<void> => {
+  deleteThread: async (id: string, lenserHandle: string): Promise<void> => {
+      const existing = await threadsRepo.getThreadById(id);
+      if (!existing) throw new Error("Thread not found");
+      
+      const recordHandle = existing.author_profile?.handle || '';
+      if (recordHandle !== lenserHandle) {
+          throw new Error("Unauthorized to delete this thread");
+      }
+
       await threadsRepo.deleteThread(id);
   },
 
@@ -67,9 +71,17 @@ export const threadsService = {
     return threadsService._mapToFeedItems(records, currentUserId);
   },
 
-  getThreadsByAuthor: async (authorId: string, currentUserId?: string, offset = 0, limit = 10): Promise<ThreadFeedItem[]> => {
-    const includePrivate = authorId === currentUserId;
-    const records = await threadsRepo.getByAuthor(authorId, offset, limit, includePrivate);
+  getThreadsByLenser: async (lenserHandle: string, currentUserId?: string, offset = 0, limit = 10): Promise<ThreadFeedItem[]> => {
+    // Similar check as prompts service for visibility
+    let includePrivate = false;
+    if (currentUserId) {
+        const viewer = await lenserRepo.getLenserById(currentUserId);
+        if (viewer && viewer.handle === lenserHandle) {
+            includePrivate = true;
+        }
+    }
+
+    const records = await threadsRepo.getByLenser(lenserHandle, offset, limit, includePrivate);
     return threadsService._mapToFeedItems(records, currentUserId);
   },
 
@@ -148,5 +160,10 @@ export const threadsService = {
 
   getTrendingTags: async (limit: number = 6): Promise<string[]> => {
       return threadsRepo.getTrendingTags(limit);
+  },
+
+  // Backward compatibility alias
+  getThreadsByAuthor: async (lenserHandle: string, currentUserId?: string, offset = 0, limit = 10) => {
+      return threadsService.getThreadsByLenser(lenserHandle, currentUserId, offset, limit);
   }
 };

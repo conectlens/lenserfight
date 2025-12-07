@@ -9,7 +9,7 @@ const threadsRepo = getThreadsRepository();
 const promptsRepo = getPromptsRepository();
 
 export const reactionService = {
-validateTarget: (t: string) => {
+  validateTarget: (t: string) => {
     const valid: TargetType[] = ['thread', 'thread_reply', 'prompt_template'];
     if (!valid.includes(t as TargetType)) throw new Error(`Invalid target`);
   },
@@ -47,7 +47,7 @@ validateTarget: (t: string) => {
     };
   },
 
-    toggleReaction: async (
+  toggleReaction: async (
     targetType: TargetType,
     targetId: string,
     lenserId: string,
@@ -67,8 +67,8 @@ validateTarget: (t: string) => {
     }
   },
 
-  getUserActivityFeed: async (lenserId: string, offset = 0, limit = 20): Promise<ActivityFeedItem[]> => {
-      const reactions = await reactionRepo.getUserHistory(lenserId, offset, limit);
+  getLenserActivityFeed: async (lenserHandle: string, offset = 0, limit = 20): Promise<ActivityFeedItem[]> => {
+      const reactions = await reactionRepo.getLenserHistory(lenserHandle, offset, limit);
       
       const enriched = await Promise.all(reactions.map(async (r) => {
           let title = "Unknown Content";
@@ -103,5 +103,10 @@ validateTarget: (t: string) => {
       }));
 
       return enriched.filter(item => item.targetTitle !== "Unknown Content");
+  },
+
+  // Backward compatibility alias
+  getUserActivityFeed: async (lenserHandle: string, offset = 0, limit = 20) => {
+      return reactionService.getLenserActivityFeed(lenserHandle, offset, limit);
   }
 };

@@ -3,12 +3,12 @@ import { useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { threadsService } from '../../../services/threadsService';
 import { threadInteractionService } from '../../../services/threadInteractionService';
+import { reactionService } from '../../../services/reactionService';
 import { analyticsService } from '../../../services/analyticsService';
 import { ThreadDetailViewModel } from '../../../types/threads.types';
 import { useLenser } from '../../../context/LenserContext';
 import { keys } from '../../../hooks/useThreads';
 import { useAuth } from '../../../context/AuthContext';
-import { reactionService } from '@/src/services/reactionService';
 
 // Immutable reply helpers
 const updateReplyInTree = (
@@ -78,6 +78,7 @@ export const useThreadDetailController = (threadId?: string) => {
   //
   useEffect(() => {
     if (!threadId) return;
+
     if (incrementedThreadViews.has(threadId)) return;
 
     let cancelled = false;
@@ -85,11 +86,13 @@ export const useThreadDetailController = (threadId?: string) => {
 
     const recordView = async () => {
       try {
+        // Domain specific increment
         await threadsService.incrementView(threadId);
-
+        
+        // Global Analytics log
         await analyticsService.trackView('thread', threadId, {
-          userId: user?.id,
-          lenserId: lenser?.id
+            userId: user?.id,
+            lenserId: lenser?.id
         });
       } catch (err) {
         console.error(err);
@@ -110,50 +113,51 @@ export const useThreadDetailController = (threadId?: string) => {
   // 3. Mutations with optimistic updates
   //
 
-const toggleReactionMutation = useMutation({
-  mutationFn: async () => {
-    return reactionService.toggleReaction(
-      'thread',
-      threadId!,
-      lenser!.id,
-      'like'
-    );
-  },
-  onMutate: async () => {
-    await queryClient.cancelQueries({ queryKey: keys.threads.detail(threadId!) });
+  const toggleReactionMutation = useMutation({
+    mutationFn: async () => {
+      if (!threadId || !lenser) throw new Error("Missing context");
+      return reactionService.toggleReaction(
+        'thread',
+        threadId,
+        lenser.id,
+        'like'
+      );
+    },
+    onMutate: async () => {
+      await queryClient.cancelQueries({ queryKey: keys.threads.detail(threadId!) });
 
-    const prev = queryClient.getQueryData<ThreadDetailViewModel>(keys.threads.detail(threadId!));
-    if (!prev) return { prev };
+      const prev = queryClient.getQueryData<ThreadDetailViewModel>(keys.threads.detail(threadId!));
+      if (!prev) return { prev };
 
-    const toggled = !prev.userHasReacted;
+      const toggled = !prev.userHasReacted;
 
-    queryClient.setQueryData(keys.threads.detail(threadId!), {
-      ...prev,
-      userHasReacted: toggled,
-      reactionCount: prev.reactionCount + (toggled ? 1 : -1)
-    });
+      queryClient.setQueryData(keys.threads.detail(threadId!), {
+        ...prev,
+        userHasReacted: toggled,
+        reactionCount: prev.reactionCount + (toggled ? 1 : -1)
+      });
 
-    return { prev };
-  },
-  onError: (_e, _v, ctx) => {
-    if (ctx?.prev) {
-      queryClient.setQueryData(keys.threads.detail(threadId!), ctx.prev);
+      return { prev };
+    },
+    onError: (_e, _v, ctx) => {
+      if (ctx?.prev) {
+        queryClient.setQueryData(keys.threads.detail(threadId!), ctx.prev);
+      }
+    },
+    onSuccess: (result) => {
+      const prev = queryClient.getQueryData<ThreadDetailViewModel>(keys.threads.detail(threadId!));
+      if (!prev) return;
+
+      const finalHas = result.added;
+
+      queryClient.setQueryData(keys.threads.detail(threadId!), {
+        ...prev,
+        userHasReacted: finalHas
+        // IMPORTANT: DO NOT update reactionCount here
+        // optimistic already did the correct +/- one time
+      });
     }
-  },
-  onSuccess: (result) => {
-    const prev = queryClient.getQueryData<ThreadDetailViewModel>(keys.threads.detail(threadId!));
-    if (!prev) return;
-
-    const finalHas = result.status === 'added';
-
-    queryClient.setQueryData(keys.threads.detail(threadId!), {
-      ...prev,
-      userHasReacted: finalHas
-      // IMPORTANT: DO NOT update reactionCount here
-      // optimistic already did the correct +/- one time
-    });
-  }
-});
+  });
 
   const toggleReplyReactionMutation = useMutation({
     mutationFn: async (replyId: string) => {
@@ -241,12 +245,9 @@ const toggleReactionMutation = useMutation({
     thread: thread || null,
     loading,
     error: queryError ? (queryError as Error).message : null,
-    toggleReaction: () => toggleReactionMutation.mutate(),
-    toggleReplyReaction: (replyId: string) =>
-      toggleReplyReactionMutation.mutate(replyId),
+    toggleReaction: toggleReactionMutation.mutate,
+    toggleReplyReaction: toggleReplyReactionMutation.mutate,
     addReply: async (content: string, parentId?: string) =>
-      addReplyMutation.mutateAsync({ content, parentId }),
-    // NEW: expose loading state for the reaction button
-    isLoadingReaction: toggleReactionMutation.isPending
+      addReplyMutation.mutateAsync({ content, parentId })
   };
 };
