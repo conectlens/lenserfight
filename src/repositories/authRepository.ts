@@ -5,11 +5,11 @@ import { storage } from '../utils/storage';
 
 // --- Port (Interface) ---
 export interface AuthRepositoryPort {
-  login(email: string, password: string): Promise<User>;
-  register(email: string, password: string, metadata?: { display_name?: string }): Promise<User>;
+  login(email: string, password: string, captchaToken?: string): Promise<User>;
+  register(email: string, password: string, metadata?: { display_name?: string }, captchaToken?: string): Promise<User>;
   logout(): Promise<void>;
   getCurrentUser(): Promise<User | null>;
-  requestPasswordReset(email: string): Promise<void>;
+  requestPasswordReset(email: string, captchaToken?: string): Promise<void>;
   resetPassword(password: string, token?: string): Promise<void>;
   signInWithOAuth(provider: 'google' | 'github' | 'azure'): Promise<void>;
   resendSignupConfirmation(email: string): Promise<void>;
@@ -41,7 +41,7 @@ export class MockAuthRepository implements AuthRepositoryPort {
     }
   }
 
-  async login(email: string, password: string): Promise<User> {
+  async login(email: string, password: string, captchaToken?: string): Promise<User> {
     // Simulate network delay
     await new Promise(resolve => setTimeout(resolve, 800));
 
@@ -65,7 +65,7 @@ export class MockAuthRepository implements AuthRepositoryPort {
     return safeUser as User;
   }
 
-  async register(email: string, password: string, metadata?: { display_name?: string }): Promise<User> {
+  async register(email: string, password: string, metadata?: { display_name?: string }, captchaToken?: string): Promise<User> {
     await new Promise(resolve => setTimeout(resolve, 800));
     
     const usersJson = storage.getItem(this.USERS_DB_KEY);
@@ -103,7 +103,7 @@ export class MockAuthRepository implements AuthRepositoryPort {
     return stored ? JSON.parse(stored) : null;
   }
 
-  async requestPasswordReset(email: string): Promise<void> {
+  async requestPasswordReset(email: string, captchaToken?: string): Promise<void> {
     await new Promise(resolve => setTimeout(resolve, 600));
 
     // Check if user exists
@@ -195,8 +195,14 @@ export class MockAuthRepository implements AuthRepositoryPort {
 
 // --- Supabase Implementation (Stub) ---
 export class SupabaseAuthRepository implements AuthRepositoryPort {
-  async login(email: string, password: string): Promise<User> {
-    const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+  async login(email: string, password: string, captchaToken?: string): Promise<User> {
+    const { data, error } = await supabase.auth.signInWithPassword({ 
+        email, 
+        password,
+        options: {
+            captchaToken
+        }
+    });
     if (error) throw error;
     if (!data.user) throw new Error("No user returned");
     
@@ -204,12 +210,13 @@ export class SupabaseAuthRepository implements AuthRepositoryPort {
     return data.user as unknown as User; 
   }
 
-  async register(email: string, password: string, metadata?: { display_name?: string }): Promise<User> {
+  async register(email: string, password: string, metadata?: { display_name?: string }, captchaToken?: string): Promise<User> {
     const { data, error } = await supabase.auth.signUp({ 
         email, 
         password,
         options: {
-            data: metadata
+            data: metadata,
+            captchaToken
         }
     });
     if (error) throw error;
@@ -226,9 +233,10 @@ export class SupabaseAuthRepository implements AuthRepositoryPort {
     return (data.user as unknown as User) || null;
   }
 
-  async requestPasswordReset(email: string): Promise<void> {
+  async requestPasswordReset(email: string, captchaToken?: string): Promise<void> {
     const { error } = await supabase.auth.resetPasswordForEmail(email, {
       redirectTo: `${window.location.origin}/#/reset-password`,
+      captchaToken
     });
     if (error) throw error;
   }
