@@ -30,6 +30,7 @@ import { useShareContext } from '../../../context/ShareContext';
 import { ConfirmModal } from '../../../components/ConfirmModal';
 import { Button } from '../../../components/Button';
 import { SEOHead } from '../../../components/SEOHead';
+import { useAnalytics } from '../../../hooks/useAnalytics';
 
 type TabType = 'actions' | 'prompts' | 'threads' | 'challenges';
 
@@ -69,6 +70,7 @@ export const LenserProfilePage: React.FC = () => {
   const { user } = useAuth();
   const { lenser: currentUserLenser } = useLenser();
   const { setShareConfig } = useShareContext();
+  const { trackView } = useAnalytics();
   
   const [lenser, setLenser] = useState<Lenser | null>(null);
   const [stats, setStats] = useState<LenserStats | null>(null);
@@ -128,6 +130,9 @@ export const LenserProfilePage: React.FC = () => {
             return;
         }
         setLenser(lenserData);
+        
+        // Track View
+        trackView('profile', lenserData.id);
 
         const [statsData, activityData, xpData] = await Promise.all([
              lenserService.getLenserStats(lenserData.id),
@@ -146,7 +151,7 @@ export const LenserProfilePage: React.FC = () => {
     };
     
     fetchProfile();
-  }, [handle]);
+  }, [handle, trackView]);
 
   useEffect(() => {
     if (lenser) {

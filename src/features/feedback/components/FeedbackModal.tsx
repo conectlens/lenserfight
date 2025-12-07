@@ -5,7 +5,7 @@ import { Modal } from '../../../components/Modal';
 import { Button } from '../../../components/Button';
 import { useAuth } from '../../../context/AuthContext';
 import { feedbackService } from '../../../services/feedbackService';
-import { FeedbackTag } from '../../../types/feedback.types';
+import { ProductTag } from '../../../types/feedback.types';
 import { FormError } from '../../../components/FormError';
 import { MessageSquare, Tag, CheckCircle } from 'lucide-react';
 
@@ -14,7 +14,13 @@ interface FeedbackModalProps {
   onClose: () => void;
 }
 
-const TAG_OPTIONS: FeedbackTag[] = ['Bug', 'Feature Request', 'UI/UX', 'General', 'Other'];
+const TAG_OPTIONS: { value: ProductTag; label: string }[] = [
+    { value: 'bug', label: 'Bug' },
+    { value: 'feature', label: 'Feature Request' },
+    { value: 'ui_ux', label: 'UI/UX' },
+    { value: 'general', label: 'General' },
+    { value: 'other', label: 'Other' }
+];
 
 export const FeedbackModal: React.FC<FeedbackModalProps> = ({ isOpen, onClose }) => {
   const location = useLocation();
@@ -50,7 +56,7 @@ export const FeedbackModal: React.FC<FeedbackModalProps> = ({ isOpen, onClose })
 
     try {
       await feedbackService.submitFeedback({
-        product_tag: productTag || undefined,
+        product_tag: (productTag as ProductTag) || undefined,
         page: location.pathname,
         user_id: user?.id || null,
         message: message,
@@ -101,8 +107,8 @@ export const FeedbackModal: React.FC<FeedbackModalProps> = ({ isOpen, onClose })
                     className="w-full px-4 py-2.5 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl text-gray-900 dark:text-white text-sm focus:ring-2 focus:ring-primary/50 focus:border-primary outline-none appearance-none cursor-pointer"
                 >
                     <option value="" disabled className="text-gray-500 dark:text-gray-400">Select a topic...</option>
-                    {TAG_OPTIONS.map(tag => (
-                        <option key={tag} value={tag} className="text-gray-900 dark:text-white bg-white dark:bg-gray-800">{tag}</option>
+                    {TAG_OPTIONS.map(opt => (
+                        <option key={opt.value} value={opt.value} className="text-gray-900 dark:text-white bg-white dark:bg-gray-800">{opt.label}</option>
                     ))}
                 </select>
                 <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-gray-500 dark:text-gray-400">

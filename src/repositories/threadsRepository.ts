@@ -1,4 +1,3 @@
-
 import { ThreadRecord, TagRecord, ThreadReplyRecord, CreateThreadDTO } from '../types/threads.types';
 import { AuthorProfile } from '../types/lenser.types';
 import { supabase } from '../utils/supabase';
@@ -217,17 +216,23 @@ export class MockThreadsRepository implements ThreadsRepositoryPort {
   incrementView = async () => {};
 }
 
-// --- Supabase Implementation (Optimized for Denormalization) ---
+// --- Supabase Implementation (Optimized for Views) ---
 export class SupabaseThreadsRepository implements ThreadsRepositoryPort {
   
-  // Single-Query Read using denormalized columns
+  private handleError(error: any) {
+    if (error.code === '42501' || error.message?.includes('permission denied')) {
+        throw new Error("This thread or its associated data is private or hidden and cannot be accessed.");
+    }
+    throw error;
+  }
+
+  // Single-Query Read using denormalized columns from secure VIEW
   private get threadSelect() {
-    return '*'; // We select * because tags, reaction_totals, and author_profile are now columns on the table
+    return '*'; 
   }
 
   async createThread(dto: CreateThreadDTO): Promise<ThreadRecord> {
-    // The DB trigger `trg_populate_thread_author` handles author_profile population
-    // The DB trigger `trg_thread_tags_sync` handles tags population after insertion into junction
+    // Write to base table
     const { data: thread, error } = await supabase.from('threads')
         .insert({ 
             lenser_id: dto.lenserId, 
@@ -235,75 +240,88 @@ export class SupabaseThreadsRepository implements ThreadsRepositoryPort {
             content: dto.content, 
             visibility: dto.visibility,
             reaction_totals: {},
-            tags: [] // Initial empty, trigger populates
+            tags: [] 
         })
         .select() 
         .single();
     
-    if (error) throw error;
+    if (error) this.handleError(error);
 
-    // Insert tags into junction table, DB triggers will update the `threads.tags` JSONB
+    // Insert tags into junction table
     if (dto.tagIds && dto.tagIds.length > 0) {
         const junctionInserts = dto.tagIds.map(tagId => ({
             thread_id: thread.id,
             tag_id: tagId
         }));
-        await supabase.from('thread_tags').insert(junctionInserts);
         
-        // Fetch fresh to get the populated tags
-        const { data: freshThread } = await supabase.from('threads').select('*').eq('id', thread.id).single();
+        const { error: tagError } = await supabase.from('thread_tags').insert(junctionInserts);
+        
+        if (tagError) {
+            // Handle RLS error specifically for tags (e.g. trying to attach a private tag)
+            if (tagError.code === '42501') {
+                console.warn("One or more tags could not be attached due to visibility restrictions.");
+                // We don't block thread creation, but warn.
+            } else {
+                throw tagError;
+            }
+        }
+        
+        // Fetch fresh from VIEW to get the populated tags
+        const { data: freshThread } = await supabase.from('vw_threads').select('*').eq('id', thread.id).single();
         return freshThread as ThreadRecord;
     }
 
-    return thread as ThreadRecord;
+    // Return view representation
+    const { data: finalThread } = await supabase.from('vw_threads').select('*').eq('id', thread.id).single();
+    return finalThread as ThreadRecord;
   }
 
   async getAllThreads(offset = 0, limit = 10): Promise<ThreadRecord[]> {
+    // Query the secure view
     const { data, error } = await supabase
-        .from('threads')
+        .from('vw_threads')
         .select(this.threadSelect)
         .eq('visibility', 'public')
         .order('created_at', { ascending: false })
         .range(offset, offset + limit - 1);
 
-    if (error) throw error;
+    if (error) this.handleError(error);
     return data as ThreadRecord[];
   }
 
   async getThreadsByTag(tagSlug: string, offset = 0, limit = 10): Promise<ThreadRecord[]> {
-      // Use the @> operator to check if JSONB array contains a tag with the slug
+      // Use JSONB containment on the view's 'tags' column
       const { data, error } = await supabase
-        .from('threads')
+        .from('vw_threads')
         .select(this.threadSelect)
         .eq('visibility', 'public')
-        .contains('tags', JSON.stringify([{ slug: tagSlug }])) // Assumes array of objects structure
+        .contains('tags', JSON.stringify([{ slug: tagSlug }])) 
         .order('created_at', { ascending: false })
         .range(offset, offset + limit - 1);
 
-      if (error) {
-          // Fallback to legacy join if JSONB query fails or index missing
-          console.warn("JSONB tag query failed, falling back", error);
-          return [];
-      }
+      if (error) this.handleError(error);
       return data as ThreadRecord[];
   }
 
   async getThreadById(id: string): Promise<ThreadRecord | null> {
     const { data, error } = await supabase
-        .from('threads')
+        .from('vw_threads')
         .select(this.threadSelect)
         .eq('id', id)
         .single();
     
-    if (error) throw error;
+    if (error) {
+        if (error.code === 'PGRST116') return null; // Not found
+        this.handleError(error);
+    }
     return data as ThreadRecord;
   }
 
   async getByAuthor(lenserId: string, offset = 0, limit = 10, includePrivate = false): Promise<ThreadRecord[]> {
     let query = supabase
-        .from('threads')
+        .from('vw_threads')
         .select(this.threadSelect)
-        .eq('lenser_id', lenserId)
+        .eq('author_profile->>id', lenserId) // Use JSONB author profile logic or base column if available. View keeps keys usually.
         .order('created_at', { ascending: false })
         .range(offset, offset + limit - 1);
 
@@ -312,13 +330,13 @@ export class SupabaseThreadsRepository implements ThreadsRepositoryPort {
     }
 
     const { data, error } = await query;
-    if (error) throw error;
+    if (error) this.handleError(error);
     return data as ThreadRecord[];
   }
 
   async getThreadTags(threadId: string): Promise<TagRecord[]> {
-    // Read from the cached column
-    const { data } = await supabase.from('threads').select('tags').eq('id', threadId).single();
+    const { data, error } = await supabase.from('vw_threads').select('tags').eq('id', threadId).single();
+    if (error) return [];
     return (data?.tags as TagRecord[]) || [];
   }
 
@@ -329,7 +347,7 @@ export class SupabaseThreadsRepository implements ThreadsRepositoryPort {
         .eq('thread_id', threadId)
         .order('created_at', { ascending: true });
 
-    if (error) throw error;
+    if (error) this.handleError(error);
     return data as ThreadReplyRecord[];
   }
 
@@ -346,53 +364,41 @@ export class SupabaseThreadsRepository implements ThreadsRepositoryPort {
           content,
           parent_reply_id: parentReplyId
       }).select().single();
-      if (error) throw error;
+      if (error) this.handleError(error);
       return data as ThreadReplyRecord;
   }
 
   async getTrendingTags(limit: number): Promise<string[]> {
-      // Fix for PGRST108: Select relation explicitly to allow count
-      // Fetch a batch and sort client-side to be safe against DB view dependencies
       const { data, error } = await supabase
-        .from('tags')
-        .select('name, thread_tags(count)')
-        .limit(50);
+        .from('vw_tags_public')
+        .select('name')
+        .limit(limit);
       
-      if (error) {
-          console.warn("Failed to fetch trending tags:", error);
-          return [];
-      }
-
-      const tags = (data || []).map((t: any) => ({
-          name: t.name,
-          count: t.thread_tags?.[0]?.count || 0
-      }));
-
-      return tags
-          .sort((a, b) => b.count - a.count)
-          .slice(0, limit)
-          .map(t => t.name);
+      if (error) return [];
+      return data.map((t: any) => t.name);
   }
 
   async updateThread(id: string, dto: Partial<CreateThreadDTO>): Promise<ThreadRecord> {
-      const { data, error } = await supabase.from('threads')
+      // Write to base table
+      const { error } = await supabase.from('threads')
         .update({
             title: dto.title,
             content: dto.content,
             visibility: dto.visibility,
             updated_at: new Date().toISOString()
         })
-        .eq('id', id)
-        .select()
-        .single();
+        .eq('id', id);
       
-      if (error) throw error;
+      if (error) this.handleError(error);
+
+      // Fetch from View
+      const { data } = await supabase.from('vw_threads').select('*').eq('id', id).single();
       return data as ThreadRecord;
   }
 
   async deleteThread(id: string): Promise<void> {
       const { error } = await supabase.from('threads').delete().eq('id', id);
-      if (error) throw error;
+      if (error) this.handleError(error);
   }
 
   async incrementView(id: string): Promise<void> {

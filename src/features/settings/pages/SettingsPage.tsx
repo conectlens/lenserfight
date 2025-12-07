@@ -9,23 +9,53 @@ import { Button } from '../../../components/Button';
 import { InputField } from '../../auth/components/InputField';
 import { notificationService } from '../../../services/notificationService';
 import { feedbackService } from '../../../services/feedbackService';
+import { lenserService } from '../../../services/lenserService';
 import { Notification } from '../../../types/notification.types';
-import { Feedback } from '../../../types/feedback.types';
+import { Feedback, ProductTag, FeedbackStatus } from '../../../types/feedback.types';
 import { timeAgo } from '../../../utils/dateUtils';
 import { Card } from '../../../components/Card';
 import { Table, Column } from '../../../components/Table';
 import { AvatarSelectionModal } from '../../lensers/components/AvatarSelectionModal';
+import { ConfirmModal } from '../../../components/ConfirmModal';
+import { DangerZone } from '../../../components/DangerZone';
 import { ExternalLink, Check, Camera, Eye, Lock, MessageSquareDashed } from 'lucide-react';
 import { FEATURES } from '../../../config/runtimeConfig';
 
 const FEEDBACK_PAGE_SIZE = 5;
+
+const getTagLabel = (tag: ProductTag) => {
+    const map: Record<ProductTag, string> = {
+        bug: 'Bug',
+        feature: 'Feature Request',
+        ui_ux: 'UI/UX',
+        general: 'General',
+        other: 'Other'
+    };
+    return map[tag] || tag;
+};
+
+const getStatusBadge = (status: FeedbackStatus) => {
+    switch (status) {
+        case 'pending':
+            return <span className="inline-flex px-2 py-0.5 rounded-full text-xs font-medium bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-200 border border-yellow-200 dark:border-yellow-800">Pending</span>;
+        case 'reviewed':
+        case 'in_progress': // Handle potential variations
+            return <span className="inline-flex px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-200 border border-blue-200 dark:border-blue-800">In Progress</span>;
+        case 'resolved':
+            return <span className="inline-flex px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-200 border border-green-200 dark:border-green-800">Resolved</span>;
+        case 'rejected':
+            return <span className="inline-flex px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 border border-gray-200 dark:border-gray-700">Closed</span>;
+        default:
+            return <span className="inline-flex px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 border border-gray-200 dark:border-gray-700">{status}</span>;
+    }
+};
 
 export const SettingsPage: React.FC = () => {
   const { tab } = useParams<{ tab: string }>();
   const navigate = useNavigate();
   const location = useLocation();
   const { lenser, updateLenserProfile } = useLenser();
-  const { user, isAuthenticated, isLoading: authLoading } = useAuth();
+  const { user, isAuthenticated, isLoading: authLoading, logout } = useAuth();
   
   // Auth Guard
   useEffect(() => {
@@ -63,6 +93,10 @@ export const SettingsPage: React.FC = () => {
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [notifLoading, setNotifLoading] = useState(false);
   const [notifTab, setNotifTab] = useState<'All' | 'Unread'>('All');
+
+  // Deletion State
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   // Feedbacks State (React Query)
   const [feedbackPage, setFeedbackPage] = useState(1);
@@ -138,6 +172,24 @@ export const SettingsPage: React.FC = () => {
     setNotifications(prev => prev.map(n => ({ ...n, isRead: true })));
   };
 
+  const handleDeleteRequest = async () => {
+      if (!user) return;
+      setIsDeleting(true);
+      try {
+          await lenserService.requestAccountDeletion(user.id);
+          // Auto logout after request
+          await logout();
+          navigate('/login');
+          alert("Account deletion requested. Access restricted.");
+      } catch (e) {
+          console.error("Failed to request deletion", e);
+          alert("Failed to process deletion request.");
+      } finally {
+          setIsDeleting(false);
+          setIsDeleteModalOpen(false);
+      }
+  };
+
   // Filter Notifications
   const filteredNotifications = notifications.filter(n => {
       if (notifTab === 'Unread') return !n.isRead;
@@ -156,11 +208,11 @@ export const SettingsPage: React.FC = () => {
         accessor: 'product_tag',
         render: (item) => (
             <span className={`inline-flex px-2 py-0.5 rounded-full text-xs font-medium border ${
-                item.product_tag === 'Bug' ? 'bg-red-50 dark:bg-red-900/30 text-red-600 dark:text-red-400 border-red-100 dark:border-red-800' :
-                item.product_tag === 'Feature Request' ? 'bg-purple-50 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400 border-purple-100 dark:border-purple-800' :
+                item.product_tag === 'bug' ? 'bg-red-50 dark:bg-red-900/30 text-red-600 dark:text-red-400 border-red-100 dark:border-red-800' :
+                item.product_tag === 'feature' ? 'bg-purple-50 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400 border-purple-100 dark:border-purple-800' :
                 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 border-gray-200 dark:border-gray-600'
             }`}>
-                {item.product_tag || 'General'}
+                {getTagLabel(item.product_tag)}
             </span>
         )
     },
@@ -172,6 +224,11 @@ export const SettingsPage: React.FC = () => {
                 {item.message}
             </span>
         )
+    },
+    {
+        header: 'Status',
+        accessor: 'status',
+        render: (item) => getStatusBadge(item.status)
     },
     {
         header: 'Date',
@@ -267,15 +324,6 @@ export const SettingsPage: React.FC = () => {
                                />
                            </div>
                            
-                           <div>
-                               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Last Sign In</label>
-                               <input 
-                                   disabled 
-                                   value={user?.last_sign_in_at ? new Date(user.last_sign_in_at).toLocaleString() : 'Never'} 
-                                   className="w-full px-4 py-2.5 rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-gray-500 dark:text-gray-400"
-                               />
-                           </div>
-                           
                            {/* Divider before My Feedbacks */}
                            <div className="w-full h-px bg-gray-100 dark:bg-gray-800 mt-8 mb-8"></div>
 
@@ -285,7 +333,8 @@ export const SettingsPage: React.FC = () => {
                                <Table 
                                    columns={feedbackColumns}
                                    data={feedbackData?.data || []}
-                                   keyExtractor={(item) => item.id}
+                                   // Since the view might not return 'id', we use created_at + random fallback as key for list stability
+                                   keyExtractor={(item) => item.id || item.created_at}
                                    isLoading={feedbackLoading}
                                    pagination={{
                                        currentPage: feedbackPage,
@@ -302,6 +351,14 @@ export const SettingsPage: React.FC = () => {
                                    }
                                />
                            </div>
+
+                           {/* Danger Area */}
+                           <DangerZone 
+                               title="Delete Account" 
+                               description="Request to permanently delete your account and all associated data. This action restricts access to the application immediately."
+                               buttonLabel="Delete Account"
+                               onAction={() => setIsDeleteModalOpen(true)}
+                           />
                        </div>
                    </div>
                )}
@@ -411,6 +468,14 @@ export const SettingsPage: React.FC = () => {
                            <Button variant="secondary" className="w-auto px-6">Cancel</Button>
                            <Button onClick={handleProfileSave} isLoading={isSaving} className="w-auto px-6 bg-primary hover:bg-yellow-400">Save changes</Button>
                        </div>
+
+                       {/* Danger Area Duplicate for Visibility */}
+                       <DangerZone 
+                           title="Delete Account" 
+                           description="Request to permanently delete your account and all associated data. This action restricts access to the application immediately."
+                           buttonLabel="Delete Account"
+                           onAction={() => setIsDeleteModalOpen(true)}
+                       />
                    </div>
                )}
 
@@ -487,6 +552,17 @@ export const SettingsPage: React.FC = () => {
            onSelect={handleAvatarUpdate}
            isLoading={isSaving}
            currentUrl={lenser?.avatar_url}
+       />
+
+       {/* Delete Confirmation Modal */}
+       <ConfirmModal 
+           isOpen={isDeleteModalOpen}
+           onClose={() => setIsDeleteModalOpen(false)}
+           onConfirm={handleDeleteRequest}
+           title="Delete Account"
+           message="Are you sure you want to request account deletion? This action will mark your account for deletion and restrict access to the application immediately."
+           confirmLabel="Request Deletion"
+           isLoading={isDeleting}
        />
     </div>
   );
