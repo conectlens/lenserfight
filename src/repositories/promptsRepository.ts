@@ -322,7 +322,9 @@ export class SupabasePromptsRepository implements PromptsRepositoryPort {
   }
 
   async createPrompt(input: CreatePromptDTO): Promise<PromptTemplateRecord> {
-    // Write to base table
+    // Write to base table. 
+    // IMPORTANT: 'tags' column was removed from 'prompt_templates' table. 
+    // We must NOT send it in the insert payload.
     const { data: prompt, error } = await supabase.from('prompt_templates')
         .insert({ 
             lenser_id: input.lenserId, 
@@ -330,10 +332,11 @@ export class SupabasePromptsRepository implements PromptsRepositoryPort {
             description: input.description, 
             content: input.content, 
             visibility: input.visibility,
-            reaction_totals: {},
-            tags: [] 
+            reaction_totals: {}
         })
-        .select().single();
+        .select('id') // Only select ID to allow insert without needing permissions on computed/view columns from base
+        .single();
+        
     if (error) this.handleError(error);
 
     if (input.tagIds && input.tagIds.length > 0) {
@@ -351,25 +354,26 @@ export class SupabasePromptsRepository implements PromptsRepositoryPort {
                 throw tagError;
             }
         }
-        
-        const { data: fresh } = await supabase.from('vw_prompt_templates').select('*').eq('id', prompt.id).single();
-        return fresh as PromptTemplateRecord;
     }
 
-    const { data: finalPrompt } = await supabase.from('vw_prompt_templates').select('*').eq('id', prompt.id).single();
+    // Return full record from View
+    const { data: finalPrompt } = await supabase.from('vw_prompt_templates').select(this.promptSelect).eq('id', prompt.id).single();
     return finalPrompt as PromptTemplateRecord;
   }
 
   async updatePrompt(id: string, input: Partial<CreatePromptDTO>): Promise<PromptTemplateRecord> {
+      // Clean payload construction to avoid sending 'tags' or undefineds
+      const payload: any = {
+          updated_at: new Date().toISOString()
+      };
+      if (input.title !== undefined) payload.title = input.title;
+      if (input.description !== undefined) payload.description = input.description;
+      if (input.content !== undefined) payload.content = input.content;
+      if (input.visibility !== undefined) payload.visibility = input.visibility;
+
       const { error } = await supabase
         .from('prompt_templates')
-        .update({
-            title: input.title,
-            description: input.description,
-            content: input.content,
-            visibility: input.visibility,
-            updated_at: new Date().toISOString()
-        })
+        .update(payload)
         .eq('id', id);
       
       if (error) this.handleError(error);
@@ -388,7 +392,7 @@ export class SupabasePromptsRepository implements PromptsRepositoryPort {
           }
       }
 
-      const { data } = await supabase.from('vw_prompt_templates').select('*').eq('id', id).single();
+      const { data } = await supabase.from('vw_prompt_templates').select(this.promptSelect).eq('id', id).single();
       return data as PromptTemplateRecord;
   }
 

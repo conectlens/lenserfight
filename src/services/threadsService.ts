@@ -2,7 +2,7 @@
 import { getThreadsRepository } from '../adapters/threadsAdapter';
 import { getLenserRepository } from '../adapters/lenserAdapter';
 import { getReactionRepository } from '../adapters/reactionAdapter';
-import { ThreadFeedItem, ThreadDetailViewModel, ThreadRecord, Visibility, CreateThreadDTO } from '../types/threads.types';
+import { ThreadFeedItem, ThreadDetailViewModel, ThreadRecord, Visibility, CreateThreadDTO, ThreadAuthor } from '../types/threads.types';
 import { threadInteractionService } from './threadInteractionService';
 import { tagService } from './tagService';
 import { xpService } from './xpService';
@@ -11,6 +11,18 @@ import { contentModerationService } from './contentModerationService';
 const threadsRepo = getThreadsRepository();
 const lenserRepo = getLenserRepository();
 const reactionRepo = getReactionRepository();
+
+const resolveAuthor = (record: any): ThreadAuthor => {
+    const profile = record.author_profile || {};
+    return {
+        // ID is preserved for ownership checks (e.g. edit/delete permissions)
+        id: profile.id || record.lenser_id || 'unknown',
+        // Presentation layer attributes strictly from profile snapshot or default
+        displayName: profile.display_name || 'Unknown',
+        handle: profile.handle || 'unknown',
+        avatarUrl: profile.avatar_url || null
+    };
+};
 
 export const threadsService = {
   createThread: async (input: { title: string; content: string; tagIds: string[]; lenserId: string; visibility: Visibility }): Promise<ThreadRecord> => {
@@ -78,16 +90,9 @@ export const threadsService = {
         const reactionCounts = record.reaction_totals || {};
         const totalReactions = Object.values(reactionCounts).reduce((a: any, b: any) => a + b, 0) as number;
 
-        const profile = record.author_profile || { id: 'unknown', handle: 'unknown', display_name: 'Unknown', avatar_url: null };
-
         return {
             id: record.id,
-            author: {
-                id: profile.id || record.lenser_id,
-                displayName: profile.display_name,
-                avatarUrl: profile.avatar_url,
-                handle: profile.handle,
-            },
+            author: resolveAuthor(record),
             title: record.title,
             content: record.content,
             tags: tags,
@@ -125,19 +130,13 @@ export const threadsService = {
 
     const reactionCounts = record.reaction_totals || {};
     const totalReactions = Object.values(reactionCounts).reduce((a: any, b: any) => a + b, 0) as number;
-    const profile = record.author_profile || { id: 'unknown', handle: 'unknown', display_name: 'Unknown', avatar_url: null };
 
     return {
         id: record.id,
         title: record.title,
         content: record.content,
         createdAt: record.created_at,
-        author: {
-            id: profile.id || record.lenser_id,
-            displayName: profile.display_name,
-            avatarUrl: profile.avatar_url,
-            handle: profile.handle
-        },
+        author: resolveAuthor(record),
         tags: record.tags || [],
         reactionCount: totalReactions,
         userHasReacted: userHasReacted,

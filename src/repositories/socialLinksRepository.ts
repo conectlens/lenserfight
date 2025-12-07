@@ -4,12 +4,14 @@ import { supabase } from '../utils/supabase';
 import { storage } from '../utils/storage';
 
 export interface SocialLinksRepositoryPort {
-  getLinks(lenserId: string): Promise<SocialLink[]>;
-  syncLinks(lenserId: string, links: (Omit<SocialLink, 'id' | 'lenser_id' | 'created_at'> & { id?: string })[]): Promise<SocialLink[]>;
+  getLinks(handle: string): Promise<SocialLink[]>;
+  getLinksByHandle(handle: string): Promise<SocialLink[]>;
+  syncLinks(handle: string, links: (Omit<SocialLink, 'id' | 'lenser_id' | 'created_at'> & { id?: string })[]): Promise<SocialLink[]>;
 }
 
 export class MockSocialLinksRepository implements SocialLinksRepositoryPort {
   private STORAGE_KEY = 'mock_social_links';
+  private LENSERS_INDEX_KEY = 'mock_lensers_index';
 
   private getAll(): SocialLink[] {
     return JSON.parse(storage.getItem(this.STORAGE_KEY) || '[]');
@@ -19,14 +21,43 @@ export class MockSocialLinksRepository implements SocialLinksRepositoryPort {
     storage.setItem(this.STORAGE_KEY, JSON.stringify(links));
   }
 
-  async getLinks(lenserId: string): Promise<SocialLink[]> {
+  private async getLenserIdByHandle(handle: string): Promise<string | null> {
+    const indexJson = storage.getItem(this.LENSERS_INDEX_KEY);
+    const index = indexJson ? JSON.parse(indexJson) : [];
+    
+    const mockIdMap: Record<string, string> = {
+        'cassian.lens': 'lenser-1',
+        'sarah_ai': 'lenser-2',
+        'neo_one': 'lenser-3',
+        'trinity_matrix': 'lenser-4'
+    };
+    
+    let lenserId = mockIdMap[handle];
+    if (!lenserId) {
+        const found = index.find((l: any) => l.handle === handle);
+        if (found) lenserId = found.id;
+    }
+    return lenserId || null;
+  }
+
+  async getLinks(handle: string): Promise<SocialLink[]> {
     await new Promise(resolve => setTimeout(resolve, 300));
+    const lenserId = await this.getLenserIdByHandle(handle);
+    if (!lenserId) return [];
     return this.getAll().filter(l => l.lenser_id === lenserId);
   }
 
-  async syncLinks(lenserId: string, links: (Omit<SocialLink, 'id' | 'lenser_id' | 'created_at'> & { id?: string })[]): Promise<SocialLink[]> {
+  async getLinksByHandle(handle: string): Promise<SocialLink[]> {
+    // Consolidated logic in mock
+    return this.getLinks(handle);
+  }
+
+  async syncLinks(handle: string, links: (Omit<SocialLink, 'id' | 'lenser_id' | 'created_at'> & { id?: string })[]): Promise<SocialLink[]> {
     await new Promise(resolve => setTimeout(resolve, 500));
     
+    const lenserId = await this.getLenserIdByHandle(handle);
+    if (!lenserId) throw new Error("Lenser not found");
+
     let allLinks = this.getAll();
     // Remove existing links for this user
     allLinks = allLinks.filter(l => l.lenser_id !== lenserId);
@@ -49,18 +80,48 @@ export class MockSocialLinksRepository implements SocialLinksRepositoryPort {
 }
 
 export class SupabaseSocialLinksRepository implements SocialLinksRepositoryPort {
-  async getLinks(lenserId: string): Promise<SocialLink[]> {
+  async getLinks(handle: string): Promise<SocialLink[]> {
+    // Join with lensers to filter by handle, effectively replacing simple select by ID
+    // Note: We need real IDs from lenser_social_links for editing, so we select * from base table
     const { data, error } = await supabase
       .from('lenser_social_links')
-      .select('*')
-      .eq('lenser_id', lenserId);
+      .select('*, lensers!inner(handle)')
+      .eq('lensers.handle', handle);
     
     if (error) throw error;
     return data as SocialLink[];
   }
 
-  async syncLinks(lenserId: string, links: (Omit<SocialLink, 'id' | 'lenser_id' | 'created_at'> & { id?: string })[]): Promise<SocialLink[]> {
-    // 1. Fetch existing IDs
+  async getLinksByHandle(handle: string): Promise<SocialLink[]> {
+    const { data, error } = await supabase
+      .from('lenser_social_links_view')
+      .select('platform, url, label')
+      .eq('handle', handle);
+
+    if (error) throw error;
+
+    return data.map((l: any, i: number) => ({
+      id: `public-link-${i}`,
+      lenser_id: 'public', 
+      platform: l.platform,
+      url: l.url,
+      label: l.label,
+      created_at: new Date().toISOString()
+    })) as SocialLink[];
+  }
+
+  async syncLinks(handle: string, links: (Omit<SocialLink, 'id' | 'lenser_id' | 'created_at'> & { id?: string })[]): Promise<SocialLink[]> {
+    // 1. Resolve Lenser ID from Handle (required for FK insertion)
+    const { data: lenser, error: lenserError } = await supabase
+        .from('lensers')
+        .select('id')
+        .eq('handle', handle)
+        .single();
+    
+    if (lenserError || !lenser) throw new Error("Lenser not found for syncing links");
+    const lenserId = lenser.id;
+
+    // 2. Fetch existing IDs for this user to determine deletions
     const { data: existing, error: fetchError } = await supabase
       .from('lenser_social_links')
       .select('id')
@@ -71,7 +132,7 @@ export class SupabaseSocialLinksRepository implements SocialLinksRepositoryPort 
     const incomingIds = links.filter(l => l.id).map(l => l.id!);
     const toDelete = existingIds.filter(id => !incomingIds.includes(id));
 
-    // 2. Delete removed items
+    // 3. Delete removed items
     if (toDelete.length > 0) {
       const { error: deleteError } = await supabase
         .from('lenser_social_links')
@@ -80,7 +141,7 @@ export class SupabaseSocialLinksRepository implements SocialLinksRepositoryPort 
       if (deleteError) throw deleteError;
     }
 
-    // 3. Upsert items
+    // 4. Upsert items
     const uuidRegex =
       /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
@@ -102,7 +163,7 @@ export class SupabaseSocialLinksRepository implements SocialLinksRepositoryPort 
       if (upsertError) throw upsertError;
     }
 
-    // 4. Return updated list
-    return this.getLinks(lenserId);
+    // 5. Return updated list using handle
+    return this.getLinks(handle);
   }
 }
