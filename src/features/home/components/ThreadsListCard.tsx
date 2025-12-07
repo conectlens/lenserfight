@@ -81,11 +81,11 @@ export const ThreadsListCard: React.FC<ThreadsListCardProps> = memo(({ thread, o
               </div>
             </div>
 
-            <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-2 leading-tight group-hover:text-deep dark:group-hover:text-primary transition-colors">
+            <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-2 leading-tight group-hover:text-deep dark:group-hover:text-primary transition-colors break-words">
               {thread.title}
             </h2>
 
-            <div className="text-gray-600 dark:text-gray-300 mb-4 line-clamp-3 leading-relaxed pointer-events-none">
+            <div className="text-gray-600 dark:text-gray-300 mb-4 line-clamp-3 leading-relaxed pointer-events-none break-words">
               <MentionRenderer content={thread.content} simple={true} />
             </div>
 
