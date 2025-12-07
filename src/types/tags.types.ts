@@ -1,10 +1,20 @@
 
+export type TagVisibility = 'public' | 'private' | 'hidden';
+
 export interface TagRecord {
   id: string;
   slug: string;
   name: string;
   description?: string;
+  visibility: TagVisibility;
   created_at: string;
+}
+
+export interface TagDTO {
+  id: string;
+  name: string;
+  slug: string;
+  visibility: TagVisibility;
 }
 
 export interface TagUsage extends TagRecord {
