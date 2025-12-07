@@ -1,11 +1,13 @@
 
 import React, { useState } from 'react';
-import { Menu, Share2 } from 'lucide-react';
+import { Menu, Share2, Shield } from 'lucide-react';
 import { Breadcrumbs } from '../components/Breadcrumbs';
 import { useShareContext } from '../context/ShareContext';
 import { useUI } from '../context/UIContext';
+import { useLenser } from '../context/LenserContext';
 import { ShareModal } from '../components/ShareModal';
 import { ActionMenu } from '../components/ActionMenu';
+import { useNavigate } from 'react-router-dom';
 
 interface HeaderProps {
   onToggleSidebar: () => void;
@@ -15,6 +17,9 @@ interface HeaderProps {
 export const Header: React.FC<HeaderProps> = ({ onToggleSidebar, isSidebarOpen }) => {
   const { shareConfig } = useShareContext();
   const { pageActions } = useUI();
+  const { lenser } = useLenser();
+  const navigate = useNavigate();
+  console.log(lenser)
   const [isShareModalOpen, setIsShareModalOpen] = useState(false);
 
   return (
@@ -32,6 +37,16 @@ export const Header: React.FC<HeaderProps> = ({ onToggleSidebar, isSidebarOpen }
       </div>
 
       <div className="flex items-center flex-shrink-0 pl-2 gap-1">
+        {lenser?.is_super_admin && (
+            <button
+                onClick={() => navigate('/admin')}
+                className="p-2 rounded-lg text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors mr-1"
+                title="Admin Dashboard"
+            >
+                <Shield size={20} />
+            </button>
+        )}
+
         {shareConfig && (
           <button 
               onClick={() => setIsShareModalOpen(true)}
