@@ -3,7 +3,9 @@ import { useEffect, useRef } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { promptsService } from '../../../services/promptsService';
 import { tagActivityService } from '../../../services/tagActivityService';
+import { analyticsService } from '../../../services/analyticsService';
 import { useLenser } from '../../../context/LenserContext';
+import { useAuth } from '../../../context/AuthContext';
 import { PromptTemplateDetailViewModel, PromptTemplateViewModel } from '../../../types/prompts.types';
 import { keys } from '../../../hooks/useThreads';
 
@@ -15,6 +17,7 @@ interface PromptDetailData {
 
 export const usePromptDetailController = (promptId?: string) => {
   const { lenser } = useLenser();
+  const { user } = useAuth();
   const queryClient = useQueryClient();
   const hasLoggedView = useRef<string | null>(null);
 
@@ -59,13 +62,19 @@ export const usePromptDetailController = (promptId?: string) => {
     if (data?.prompt && promptId && hasLoggedView.current !== promptId) {
         hasLoggedView.current = promptId;
         
-        // Extract tag IDs and fire batch log
+        // 1. Global Page View Log
+        analyticsService.trackView('prompt', promptId, {
+            userId: user?.id,
+            lenserId: lenser?.id
+        });
+
+        // 2. Tag activity logging (Domain specific)
         const tagIds = data.prompt.tags.map(t => t.id);
         if (tagIds.length > 0) {
             tagActivityService.recordBatchView(tagIds, 'prompt', promptId, lenser?.id);
         }
     }
-  }, [data?.prompt, promptId, lenser?.id]);
+  }, [data?.prompt, promptId, lenser?.id, user?.id]);
 
   // Actions
   const updateLocalPrompt = (updater: (prev: PromptTemplateDetailViewModel) => PromptTemplateDetailViewModel) => {

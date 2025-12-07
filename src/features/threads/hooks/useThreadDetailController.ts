@@ -1,10 +1,13 @@
+
 import { useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { threadsService } from '../../../services/threadsService';
 import { threadInteractionService } from '../../../services/threadInteractionService';
+import { analyticsService } from '../../../services/analyticsService';
 import { ThreadDetailViewModel } from '../../../types/threads.types';
 import { useLenser } from '../../../context/LenserContext';
 import { keys } from '../../../hooks/useThreads';
+import { useAuth } from '../../../context/AuthContext';
 
 // Immutable reply helpers
 const updateReplyInTree = (
@@ -44,6 +47,7 @@ const incrementedThreadViews = new Set<string>();
 
 export const useThreadDetailController = (threadId?: string) => {
   const { lenser } = useLenser();
+  const { user } = useAuth();
   const queryClient = useQueryClient();
 
   //
@@ -69,7 +73,7 @@ export const useThreadDetailController = (threadId?: string) => {
   });
 
   //
-  // 2. View Increment — single-call guarantee
+  // 2. View Increment & Analytics — single-call guarantee
   //
   useEffect(() => {
     if (!threadId) return;
@@ -79,9 +83,16 @@ export const useThreadDetailController = (threadId?: string) => {
     let cancelled = false;
     incrementedThreadViews.add(threadId);
 
-    const increment = async () => {
+    const recordView = async () => {
       try {
+        // Domain specific increment
         await threadsService.incrementView(threadId);
+        
+        // Global Analytics log
+        await analyticsService.trackView('thread', threadId, {
+            userId: user?.id,
+            lenserId: lenser?.id
+        });
       } catch (err) {
         console.error(err);
         if (!cancelled) {
@@ -90,12 +101,12 @@ export const useThreadDetailController = (threadId?: string) => {
       }
     };
 
-    increment();
+    recordView();
 
     return () => {
       cancelled = true;
     };
-  }, [threadId]);
+  }, [threadId, user?.id, lenser?.id]);
 
   //
   // 3. Mutations with optimistic updates
