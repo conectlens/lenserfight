@@ -5,12 +5,12 @@ import { User, AuthStateChangeCallback } from '../types/auth.types';
 const authRepo = getAuthRepository();
 
 export const authService = {
-  login: async (email: string, password: string): Promise<User> => {
-    return authRepo.login(email, password);
+  login: async (email: string, password: string, captchaToken?: string): Promise<User> => {
+    return authRepo.login(email, password, captchaToken);
   },
 
-  register: async (email: string, password: string, metadata?: { display_name?: string }): Promise<User> => {
-    return authRepo.register(email, password, metadata);
+  register: async (email: string, password: string, metadata?: { display_name?: string }, captchaToken?: string): Promise<User> => {
+    return authRepo.register(email, password, metadata, captchaToken);
   },
 
   logout: async (): Promise<void> => {
@@ -21,8 +21,8 @@ export const authService = {
     return authRepo.getCurrentUser();
   },
 
-  requestPasswordReset: async (email: string): Promise<void> => {
-    return authRepo.requestPasswordReset(email);
+  requestPasswordReset: async (email: string, captchaToken?: string): Promise<void> => {
+    return authRepo.requestPasswordReset(email, captchaToken);
   },
 
   resetPassword: async (password: string, token?: string): Promise<void> => {
