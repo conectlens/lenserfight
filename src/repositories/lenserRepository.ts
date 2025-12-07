@@ -12,6 +12,7 @@ export interface LenserRepositoryPort {
   getLenserByHandle(handle: string): Promise<Lenser | null>;
   createLenser(userId: string, data: CreateLenserDTO): Promise<Lenser>;
   updateLenser(userId: string, data: Partial<Lenser>): Promise<Lenser>; 
+  requestDeletion(userId: string): Promise<void>;
   getRecentlyActive(limit: number): Promise<Lenser[]>;
   getLatestJoined(limit: number): Promise<Lenser[]>;
   
@@ -265,6 +266,11 @@ export class MockLenserRepository implements LenserRepositoryPort {
     return updatedLenser;
   }
 
+  async requestDeletion(userId: string): Promise<void> {
+    await new Promise(resolve => setTimeout(resolve, 500));
+    await this.updateLenser(userId, { deletion_requested_at: new Date().toISOString() });
+  }
+
   async getRecentlyActive(limit: number): Promise<Lenser[]> {
       await new Promise(resolve => setTimeout(resolve, 300));
       return this.mockLensers.slice(0, limit).map(l => this.enrich(l)!);
@@ -422,6 +428,15 @@ export class SupabaseLenserRepository implements LenserRepositoryPort {
         .single();
       if (error) throw error;
       return updated as Lenser;
+  }
+
+  async requestDeletion(userId: string): Promise<void> {
+      const { error } = await supabase
+        .from("lensers")
+        .update({ deletion_requested_at: new Date().toISOString() })
+        .eq("user_id", userId);
+        
+      if (error) throw error;
   }
 
   async getRecentlyActive(limit: number): Promise<Lenser[]> {

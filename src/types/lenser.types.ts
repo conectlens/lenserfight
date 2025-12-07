@@ -33,6 +33,7 @@ export interface Lenser {
   created_at: string;
   updated_at?: string;
   join_order?: number; // Immutable rank from lenser_join_log
+  deletion_requested_at?: string | null;
 }
 
 export type SocialPlatform = 'LinkedIn' | 'GitHub' | 'Instagram' | 'Facebook' | 'X' | 'Youtube' | 'Other';

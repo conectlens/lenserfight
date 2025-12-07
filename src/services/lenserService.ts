@@ -91,6 +91,11 @@ export const lenserService = {
     return enrichLenserProfile(updated) as Promise<Lenser>;
   },
 
+  requestAccountDeletion: async (userId: string): Promise<void> => {
+    if (!userId) throw new Error("User ID is required");
+    await lenserRepo.requestDeletion(userId);
+  },
+
   getLenserByHandle: async (handle: string): Promise<Lenser | null> => {
     const lenser = await lenserRepo.getLenserByHandle(handle);
     return enrichLenserProfile(lenser);
