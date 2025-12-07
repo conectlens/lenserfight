@@ -18,7 +18,7 @@ export const threadsService = {
     // TODO: moderation policy will not be used in the beta version
     // await contentModerationService.validate(input.title, input.content);
 
-    const resolvedTags = await tagService.upsertTags(input.tagIds);
+    const resolvedTags = await tagService.processBatchInput(input.tagIds);
     const realTagIds = resolvedTags.map(t => t.id);
     const thread = await threadsRepo.createThread({ ...input, tagIds: realTagIds });
     
@@ -31,7 +31,7 @@ export const threadsService = {
   updateThread: async (id: string, input: Partial<CreateThreadDTO>, lenserId: string): Promise<ThreadRecord> => {
       let realTagIds: string[] | undefined = undefined;
       if (input.tagIds) {
-          const resolvedTags = await tagService.upsertTags(input.tagIds);
+          const resolvedTags = await tagService.processBatchInput(input.tagIds);
           realTagIds = resolvedTags.map(t => t.id);
       }
       return threadsRepo.updateThread(id, { ...input, tagIds: realTagIds });
