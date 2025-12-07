@@ -3,7 +3,21 @@ import { ReactionRecord, TargetType, ReactionType, ReactionCount } from '../type
 import { supabase } from '../utils/supabase';
 import { storage } from '../utils/storage';
 
+
 export interface ReactionRepositoryPort {
+    toggleReaction(
+    targetType: TargetType,
+    targetId: string,
+    lenserId: string,
+    reaction: ReactionType
+  ): Promise<{
+    added: boolean;
+    summary: {
+      counts: Record<ReactionType, number>;
+      total: number;
+      userReactions: ReactionType[];
+    };
+  }>;
   getReactionsFor(targetType: TargetType, targetId: string): Promise<ReactionRecord[]>;
   getUserReaction(targetType: TargetType, targetId: string, lenserId: string): Promise<ReactionRecord[]>;
   getBatchUserReactions(targetType: TargetType, targetIds: string[], lenserId: string): Promise<ReactionRecord[]>;
@@ -117,6 +131,32 @@ export class SupabaseReactionRepository implements ReactionRepositoryPort {
     if (error) throw error;
     return data as ReactionRecord[];
   }
+
+  async toggleReaction(
+  targetType: TargetType,
+  targetId: string,
+  lenserId: string,
+  reaction: ReactionType
+): Promise<{
+  added: boolean;
+  summary: {
+    counts: Record<ReactionType, number>;
+    total: number;
+    userReactions: ReactionType[];
+  };
+}> {
+  const { data, error } = await supabase.rpc('toggle_reaction', {
+    p_lenser_id: lenserId,
+    p_target_type: targetType,
+    p_target_id: targetId,
+    p_reaction: reaction,
+  });
+
+  if (error) throw error;
+
+  return data;
+}
+
 
   async getBatchUserReactions(targetType: TargetType, targetIds: string[], lenserId: string): Promise<ReactionRecord[]> {
     if (targetIds.length === 0) return [];
