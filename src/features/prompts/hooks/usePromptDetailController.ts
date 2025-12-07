@@ -1,3 +1,4 @@
+
 import { useEffect, useRef } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { promptsService } from '../../../services/promptsService';
@@ -95,22 +96,17 @@ export const usePromptDetailController = (promptId?: string) => {
   const savePrompt = async (): Promise<boolean> => {
     if (!data?.prompt || !lenser) return false;
 
-    const newSavedState = await promptsService.toggleReaction(data.prompt.id, lenser.id, "saved");
+    const { added, summary } = await promptsService.toggleReaction(data.prompt.id, lenser.id, 'saved');
 
     updateLocalPrompt(prev => {
-      const currentCount = prev.reactionCounts.saved;
-      const newCount = newSavedState
-        ? currentCount + 1
-        : Math.max(0, currentCount - 1);
-
       return {
         ...prev,
-        isSaved: newSavedState,
-        reactionCounts: { ...prev.reactionCounts, saved: newCount },
+        isSaved: added,
+        reactionCounts: { ...prev.reactionCounts, saved: summary.counts.saved },
       };
     });
 
-    return newSavedState;
+    return added;
   };
 
   return {
