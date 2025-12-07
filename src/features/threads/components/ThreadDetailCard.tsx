@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ThreadDetailViewModel } from '../../../types/threads.types';
@@ -41,10 +40,10 @@ export const ThreadDetailCard: React.FC<ThreadDetailCardProps> = ({ thread, onTo
 
       {/* Content */}
       <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-6 leading-tight tracking-tight">
+        <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-6 leading-tight tracking-tight break-words">
           {thread.title}
         </h1>
-        <div className="text-base md:text-lg text-gray-800 dark:text-gray-200 leading-relaxed">
+        <div className="text-base md:text-lg text-gray-800 dark:text-gray-200 leading-relaxed break-words">
           <MentionRenderer content={thread.content} />
         </div>
       </div>

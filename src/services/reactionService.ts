@@ -9,11 +9,9 @@ const threadsRepo = getThreadsRepository();
 const promptsRepo = getPromptsRepository();
 
 export const reactionService = {
-  validateTarget: (targetType: string) => {
-    const validTypes: TargetType[] = ['thread', 'thread_reply', 'prompt_template'];
-    if (!validTypes.includes(targetType as TargetType)) {
-      throw new Error(`Invalid reaction target type: ${targetType}`);
-    }
+  validateTarget: (t: string) => {
+    const valid: TargetType[] = ['thread', 'thread_reply', 'prompt_template'];
+    if (!valid.includes(t as TargetType)) throw new Error(`Invalid target`);
   },
 
   getReactionSummary: async (targetType: TargetType, targetId: string, currentLenserId?: string): Promise<ReactionSummary> => {
@@ -50,50 +48,13 @@ export const reactionService = {
   },
 
   toggleReaction: async (
-    targetType: TargetType, 
-    targetId: string, 
-    lenserId: string, 
+    targetType: TargetType,
+    targetId: string,
+    lenserId: string,
     reaction: ReactionType
-  ): Promise<{ added: boolean; summary: ReactionSummary }> => {
+  ) => {
     reactionService.validateTarget(targetType);
-
-    // Optimistic check
-    const existing = await reactionRepo.getUserReaction(targetType, targetId, lenserId);
-    let hasReacted = existing.some(r => r.reaction === reaction);
-    let added = false;
-
-    try {
-      if (hasReacted) {
-        await reactionRepo.removeReaction(targetType, targetId, lenserId, reaction);
-        added = false;
-      } else {
-        try {
-          await reactionRepo.addReaction(targetType, targetId, lenserId, reaction);
-          added = true;
-        } catch (e: any) {
-          // Handle Duplicate Key Error (Race condition or Stale state)
-          // Code 23505 is PostgreSQL unique constraint violation
-          if (e.code === '23505' || e.message?.includes('duplicate key') || e.details?.includes('already exists')) {
-            console.warn("Reaction already exists despite check, toggling to remove.");
-            await reactionRepo.removeReaction(targetType, targetId, lenserId, reaction);
-            added = false;
-          } else {
-            throw e;
-          }
-        }
-      }
-    } catch (err) {
-      console.error("Toggle reaction failed", err);
-      throw err;
-    }
-
-    // Return fresh summary for UI update
-    const summary = await reactionService.getReactionSummary(targetType, targetId, lenserId);
-    
-    return {
-      added,
-      summary
-    };
+    return reactionRepo.toggleReaction(targetType, targetId, lenserId, reaction);
   },
 
   recordReaction: async (targetType: TargetType, targetId: string, lenserId: string, reaction: ReactionType): Promise<void> => {
@@ -106,8 +67,8 @@ export const reactionService = {
     }
   },
 
-  getUserActivityFeed: async (lenserId: string, offset = 0, limit = 20): Promise<ActivityFeedItem[]> => {
-      const reactions = await reactionRepo.getUserHistory(lenserId, offset, limit);
+  getLenserActivityFeed: async (lenserHandle: string, offset = 0, limit = 20): Promise<ActivityFeedItem[]> => {
+      const reactions = await reactionRepo.getLenserHistory(lenserHandle, offset, limit);
       
       const enriched = await Promise.all(reactions.map(async (r) => {
           let title = "Unknown Content";
@@ -142,5 +103,10 @@ export const reactionService = {
       }));
 
       return enriched.filter(item => item.targetTitle !== "Unknown Content");
+  },
+
+  // Backward compatibility alias
+  getUserActivityFeed: async (lenserHandle: string, offset = 0, limit = 20) => {
+      return reactionService.getLenserActivityFeed(lenserHandle, offset, limit);
   }
 };
