@@ -17,7 +17,9 @@ import { TagCloudPage } from '../features/tags/pages/TagCloudPage';
 import { TagDetailPage } from '../features/tags/pages/TagDetailPage';
 import { ShortLinkRedirect } from '../features/share/pages/ShortLinkRedirect';
 import { WaitingListPage } from '../features/waitingList/pages/WaitingListPage';
+import { LeaderboardPage } from '../features/leaderboard/pages/LeaderboardPage';
 import { ScrollToTop } from '../components/ScrollToTop';
+import { GlobalAnalytics } from '../components/GlobalAnalytics';
 
 // Public Pages
 import { AboutPage } from '../features/public/pages/AboutPage';
@@ -37,6 +39,7 @@ export const AppRouter: React.FC = () => {
   return (
     <BrowserRouter>
       <ScrollToTop />
+      <GlobalAnalytics />
       <Routes>
         
         {/* Short Link Redirect Route (No Layout) */}
@@ -72,6 +75,15 @@ export const AppRouter: React.FC = () => {
           element={
             <DashboardLayout>
               <HomePage />
+            </DashboardLayout>
+          } 
+        />
+
+        <Route 
+          path="/leaderboard" 
+          element={
+            <DashboardLayout>
+              <LeaderboardPage />
             </DashboardLayout>
           } 
         />

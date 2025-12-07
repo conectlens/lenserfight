@@ -1,9 +1,10 @@
 
 import React, { useState, useEffect } from 'react';
 import { Lenser, LenserStats, SocialLink } from '../../../types/lenser.types';
+import { XPSummary } from '../../../types/xp.types';
 import { Avatar } from '../../../components/Avatar';
 import { formatCount } from '../../../utils/numberUtils';
-import { Camera, Pencil, Globe, Link as LinkIcon, Linkedin, Github, Twitter, Instagram, Facebook, Youtube } from 'lucide-react';
+import { Camera, Pencil, Globe, Link as LinkIcon, Linkedin, Github, Twitter, Instagram, Facebook, Youtube, Trophy, Zap } from 'lucide-react';
 import { useLenser } from '../../../context/LenserContext';
 import { AvatarSelectionModal } from './AvatarSelectionModal';
 import { BannerSelectionModal } from './BannerSelectionModal';
@@ -15,11 +16,12 @@ import { socialLinksService } from '../../../services/socialLinksService';
 interface LenserProfileHeaderProps {
   lenser: Lenser;
   stats: LenserStats | null;
+  xpSummary?: XPSummary | null;
   isOwner: boolean;
   onProfileUpdate: (updatedLenser: Lenser) => void;
 }
 
-export const LenserProfileHeader: React.FC<LenserProfileHeaderProps> = ({ lenser, stats, isOwner, onProfileUpdate }) => {
+export const LenserProfileHeader: React.FC<LenserProfileHeaderProps> = ({ lenser, stats, xpSummary, isOwner, onProfileUpdate }) => {
   const { updateLenserProfile } = useLenser();
   
   const [showAvatarModal, setShowAvatarModal] = useState(false);
@@ -34,18 +36,18 @@ export const LenserProfileHeader: React.FC<LenserProfileHeaderProps> = ({ lenser
   useEffect(() => {
       const fetchLinks = async () => {
           try {
-              const links = await socialLinksService.getLinks(lenser.id);
+              const links = await socialLinksService.getLinksByHandle(lenser.handle);
               setSocialLinks(links);
           } catch (e) {
               console.error(e);
           }
       };
       fetchLinks();
-  }, [lenser.id]);
+  }, [lenser.handle]);
 
   const handleEditClose = async () => {
       setShowEditModal(false);
-      const links = await socialLinksService.getLinks(lenser.id);
+      const links = await socialLinksService.getLinksByHandle(lenser.handle);
       setSocialLinks(links);
   };
 
@@ -59,7 +61,7 @@ export const LenserProfileHeader: React.FC<LenserProfileHeaderProps> = ({ lenser
           setShowBannerModal(false);
           setShowEditModal(false);
           
-          const links = await socialLinksService.getLinks(lenser.id);
+          const links = await socialLinksService.getLinksByHandle(lenser.handle);
           setSocialLinks(links);
       } catch (e) {
           console.error("Failed to update profile", e);
@@ -91,6 +93,17 @@ export const LenserProfileHeader: React.FC<LenserProfileHeaderProps> = ({ lenser
         <span className={`font-bold text-gray-900 dark:text-gray-100 ${showNetworkLinks ? 'group-hover/stats:text-primary-700 dark:group-hover/stats:text-primary-400' : ''}`}>{formatCount(followingCount)}</span>
         <span className="text-gray-500 dark:text-gray-400">Following</span>
         </div>
+        
+        {xpSummary && (
+            <>
+                <span className="text-gray-300 dark:text-gray-600">•</span>
+                <div className="flex items-center gap-1.5 text-indigo-600 dark:text-indigo-400 font-semibold">
+                    <Zap size={14} className="fill-current" />
+                    <span>{formatCount(xpSummary.totalXp)} XP</span>
+                </div>
+            </>
+        )}
+
         {!mobile && (
             <>
                 <span className="text-gray-300 dark:text-gray-600">•</span>
@@ -171,6 +184,7 @@ export const LenserProfileHeader: React.FC<LenserProfileHeaderProps> = ({ lenser
                           className="!w-28 !h-28 md:!w-40 md:!h-40 rounded-full border-4 border-white dark:border-gray-800 shadow-md bg-white dark:bg-gray-700 transition-colors" 
                       />
                       
+                      {/* Join Order Badge (Avatar Version - Keep as simple indicator) */}
                       {lenser.join_order !== undefined && (
                           <div 
                               className="absolute -bottom-1 -right-1 md:bottom-1 md:right-1 z-20 bg-gradient-to-r from-yellow-300 via-yellow-400 to-orange-400 border-[3px] border-white dark:border-gray-800 shadow-lg px-3 py-1 rounded-full flex items-center justify-center transform transition-transform hover:scale-105 hover:rotate-2 cursor-default group/badge"
@@ -180,6 +194,23 @@ export const LenserProfileHeader: React.FC<LenserProfileHeaderProps> = ({ lenser
                                   <span className="text-[11px] font-black text-yellow-950 tracking-tight leading-none font-mono">
                                       #{lenser.join_order}
                                   </span>
+                              </div>
+                          </div>
+                      )}
+
+                      {/* Level Badge (Left) */}
+                      {xpSummary && (
+                          <div 
+                              className="absolute -bottom-1 -left-1 md:bottom-1 md:left-1 z-20 bg-white dark:bg-gray-800 border-[3px] border-white dark:border-gray-800 shadow-lg px-2.5 py-1 rounded-full flex items-center justify-center cursor-default transform transition-transform hover:scale-105"
+                              title={`Level ${xpSummary.currentLevel} • ${xpSummary.totalXp} XP`}
+                          >
+                              <div className="flex items-center gap-1.5">
+                                  <div className="bg-indigo-100 dark:bg-indigo-900/50 p-1 rounded-full text-indigo-600 dark:text-indigo-400">
+                                      <Trophy size={10} className="fill-current" />
+                                  </div>
+                                  <div className="flex flex-col leading-none">
+                                      <span className="text-[10px] font-black text-gray-900 dark:text-white tracking-tight">LVL {xpSummary.currentLevel}</span>
+                                  </div>
                               </div>
                           </div>
                       )}
@@ -206,10 +237,30 @@ export const LenserProfileHeader: React.FC<LenserProfileHeaderProps> = ({ lenser
 
                    <div className="flex flex-col md:flex-row md:items-start justify-between gap-4 w-full mb-1">
                       <div className="flex flex-col gap-1 w-full md:w-auto items-center md:items-start">
-                          <h1 className="text-2xl md:text-3xl font-bold text-gray-900 dark:text-white leading-tight">
-                              {lenser.display_name}
-                          </h1>
-                          <p className="md:hidden text-gray-500 dark:text-gray-400 text-sm font-medium">@{lenser.handle}</p>
+                          <div className="flex items-center gap-3 flex-wrap justify-center md:justify-start">
+                              <h1 className="text-2xl md:text-3xl font-bold text-gray-900 dark:text-white leading-tight">
+                                  {lenser.display_name}
+                              </h1>
+                              {/* Modern Professional Join Log Badge */}
+                              {lenser.join_order !== undefined && (
+                                  <div className="hidden md:flex items-center gap-1.5 px-3 py-1 rounded-full bg-gradient-to-b from-white to-gray-50 dark:from-gray-800 dark:to-gray-900 border border-gray-200 dark:border-gray-700 shadow-sm transition-all hover:border-gray-300 dark:hover:border-gray-600 cursor-help" title={`Unique Lenser ID: #${lenser.join_order}`}>
+                                      <span className="w-1.5 h-1.5 rounded-full bg-primary shadow-[0_0_8px_rgba(255,222,89,0.6)]"></span>
+                                      <span className="text-[10px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider font-mono">
+                                          NO. {String(lenser.join_order).padStart(4, '0')}
+                                      </span>
+                                  </div>
+                              )}
+                          </div>
+                          
+                          <div className="flex items-center gap-2 md:hidden mt-1">
+                              <p className="text-gray-500 dark:text-gray-400 text-sm font-medium">@{lenser.handle}</p>
+                              {lenser.join_order !== undefined && (
+                                  <span className="text-[10px] bg-gray-100 dark:bg-gray-800 text-gray-500 px-1.5 py-0.5 rounded border border-gray-200 dark:border-gray-700 font-mono">
+                                      #{lenser.join_order}
+                                  </span>
+                              )}
+                          </div>
+                          <p className="hidden md:block text-gray-500 dark:text-gray-400 text-sm font-medium opacity-0 h-0 w-0 overflow-hidden">@{lenser.handle}</p> {/* Hidden on desktop as it's in stats block */}
                       </div>
                       
                       {isOwner && (

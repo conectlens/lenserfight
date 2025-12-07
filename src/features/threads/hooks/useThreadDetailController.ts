@@ -1,10 +1,14 @@
+
 import { useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { threadsService } from '../../../services/threadsService';
 import { threadInteractionService } from '../../../services/threadInteractionService';
+import { reactionService } from '../../../services/reactionService';
+import { analyticsService } from '../../../services/analyticsService';
 import { ThreadDetailViewModel } from '../../../types/threads.types';
 import { useLenser } from '../../../context/LenserContext';
 import { keys } from '../../../hooks/useThreads';
+import { useAuth } from '../../../context/AuthContext';
 
 // Immutable reply helpers
 const updateReplyInTree = (
@@ -44,6 +48,7 @@ const incrementedThreadViews = new Set<string>();
 
 export const useThreadDetailController = (threadId?: string) => {
   const { lenser } = useLenser();
+  const { user } = useAuth();
   const queryClient = useQueryClient();
 
   //
@@ -69,7 +74,7 @@ export const useThreadDetailController = (threadId?: string) => {
   });
 
   //
-  // 2. View Increment — single-call guarantee
+  // 2. View Increment & Analytics — single-call guarantee
   //
   useEffect(() => {
     if (!threadId) return;
@@ -79,9 +84,16 @@ export const useThreadDetailController = (threadId?: string) => {
     let cancelled = false;
     incrementedThreadViews.add(threadId);
 
-    const increment = async () => {
+    const recordView = async () => {
       try {
+        // Domain specific increment
         await threadsService.incrementView(threadId);
+        
+        // Global Analytics log
+        await analyticsService.trackView('thread', threadId, {
+            userId: user?.id,
+            lenserId: lenser?.id
+        });
       } catch (err) {
         console.error(err);
         if (!cancelled) {
@@ -90,12 +102,12 @@ export const useThreadDetailController = (threadId?: string) => {
       }
     };
 
-    increment();
+    recordView();
 
     return () => {
       cancelled = true;
     };
-  }, [threadId]);
+  }, [threadId, user?.id, lenser?.id]);
 
   //
   // 3. Mutations with optimistic updates
@@ -103,41 +115,47 @@ export const useThreadDetailController = (threadId?: string) => {
 
   const toggleReactionMutation = useMutation({
     mutationFn: async () => {
-      if (!threadId || !lenser) return;
-      return threadInteractionService.toggleThreadReaction(threadId, lenser.id);
+      if (!threadId || !lenser) throw new Error("Missing context");
+      return reactionService.toggleReaction(
+        'thread',
+        threadId,
+        lenser.id,
+        'like'
+      );
     },
     onMutate: async () => {
-      await queryClient.cancelQueries({
-        queryKey: keys.threads.detail(threadId!)
+      await queryClient.cancelQueries({ queryKey: keys.threads.detail(threadId!) });
+
+      const prev = queryClient.getQueryData<ThreadDetailViewModel>(keys.threads.detail(threadId!));
+      if (!prev) return { prev };
+
+      const toggled = !prev.userHasReacted;
+
+      queryClient.setQueryData(keys.threads.detail(threadId!), {
+        ...prev,
+        userHasReacted: toggled,
+        reactionCount: prev.reactionCount + (toggled ? 1 : -1)
       });
 
-      const previousThread =
-        queryClient.getQueryData<ThreadDetailViewModel>(
-          keys.threads.detail(threadId!)
-        );
-
-      if (previousThread) {
-        queryClient.setQueryData<ThreadDetailViewModel>(
-          keys.threads.detail(threadId!),
-          {
-            ...previousThread,
-            userHasReacted: !previousThread.userHasReacted,
-            reactionCount: previousThread.userHasReacted
-              ? previousThread.reactionCount - 1
-              : previousThread.reactionCount + 1
-          }
-        );
-      }
-
-      return { previousThread };
+      return { prev };
     },
-    onError: (_err, _vars, context) => {
-      if (context?.previousThread) {
-        queryClient.setQueryData(
-          keys.threads.detail(threadId!),
-          context.previousThread
-        );
+    onError: (_e, _v, ctx) => {
+      if (ctx?.prev) {
+        queryClient.setQueryData(keys.threads.detail(threadId!), ctx.prev);
       }
+    },
+    onSuccess: (result) => {
+      const prev = queryClient.getQueryData<ThreadDetailViewModel>(keys.threads.detail(threadId!));
+      if (!prev) return;
+
+      const finalHas = result.added;
+
+      queryClient.setQueryData(keys.threads.detail(threadId!), {
+        ...prev,
+        userHasReacted: finalHas
+        // IMPORTANT: DO NOT update reactionCount here
+        // optimistic already did the correct +/- one time
+      });
     }
   });
 
