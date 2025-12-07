@@ -6,10 +6,10 @@ import { storage } from '../utils/storage';
 import { queryClient } from '../lib/react-query';
 
 interface AuthContextType extends AuthState {
-  login: (email: string, pass: string) => Promise<void>;
-  register: (email: string, pass: string, displayName?: string) => Promise<void>;
+  login: (email: string, pass: string, captchaToken?: string) => Promise<void>;
+  register: (email: string, pass: string, displayName?: string, captchaToken?: string) => Promise<void>;
   logout: () => Promise<void>;
-  requestPasswordReset: (email: string) => Promise<void>;
+  requestPasswordReset: (email: string, captchaToken?: string) => Promise<void>;
   resetPassword: (password: string, token?: string) => Promise<void>;
   signInWithOAuth: (provider: 'google' | 'github' | 'azure') => Promise<void>;
   resendSignupConfirmation: (email: string) => Promise<void>;
@@ -71,10 +71,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     };
   }, []);
 
-  const login = async (email: string, pass: string) => {
+  const login = async (email: string, pass: string, captchaToken?: string) => {
     setState(s => ({ ...s, isLoading: true, error: null }));
     try {
-      const user = await authService.login(email, pass);
+      const user = await authService.login(email, pass, captchaToken);
       setState({ user, isAuthenticated: true, isLoading: false, error: null });
     } catch (err: unknown) {
       const message = getErrorMessage(err);
@@ -83,10 +83,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  const register = async (email: string, pass: string, displayName?: string) => {
+  const register = async (email: string, pass: string, displayName?: string, captchaToken?: string) => {
     setState(s => ({ ...s, isLoading: true, error: null }));
     try {
-      const user = await authService.register(email, pass, displayName ? { display_name: displayName } : undefined);
+      const user = await authService.register(email, pass, displayName ? { display_name: displayName } : undefined, captchaToken);
       setState({ user, isAuthenticated: true, isLoading: false, error: null });
     } catch (err: unknown) {
       const message = getErrorMessage(err);
@@ -114,9 +114,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setState({ user: null, isAuthenticated: false, isLoading: false, error: null });
   };
 
-  const requestPasswordReset = async (email: string) => {
+  const requestPasswordReset = async (email: string, captchaToken?: string) => {
     try {
-      await authService.requestPasswordReset(email);
+      await authService.requestPasswordReset(email, captchaToken);
     } catch (err: unknown) {
       throw err;
     }
