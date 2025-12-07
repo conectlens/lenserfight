@@ -4,7 +4,7 @@ import { supabase } from '../utils/supabase';
 import { storage } from '../utils/storage';
 
 export interface ShareRepositoryPort {
-  createLink(dto: CreateLinkDTO, creatorLenserId: string): Promise<SharedLink>;
+  createOrGetSharedLink(dto: CreateLinkDTO, creatorLenserId: string): Promise<SharedLink>;
   resolveLink(shortId: string): Promise<ResolveLinkResult | null>;
   logEvent(shortId: string, eventType: 'opened', viewerData: Partial<ShareEvent>): Promise<void>;
 }
@@ -21,11 +21,23 @@ export class MockShareRepository implements ShareRepositoryPort {
     return JSON.parse(storage.getItem(this.EVENTS_KEY) || '[]');
   }
 
-  async createLink(dto: CreateLinkDTO, creatorLenserId: string): Promise<SharedLink> {
+  async createOrGetSharedLink(dto: CreateLinkDTO, creatorLenserId: string): Promise<SharedLink> {
     await new Promise(resolve => setTimeout(resolve, 400));
     
-    // Deterministic mock short ID logic
     const links = this.getLinks();
+
+    // Idempotency Check: Return existing if matches constraints
+    const existing = links.find(l => 
+        l.resource_type === dto.resourceType && 
+        l.resource_id === dto.resourceId && 
+        l.creator_lenser_id === creatorLenserId
+    );
+
+    if (existing) {
+        return existing;
+    }
+    
+    // Deterministic mock short ID logic
     const shortId = `lnk${(links.length + 1).toString().padStart(3, '0')}`;
     
     const newLink: SharedLink = {
@@ -47,7 +59,7 @@ export class MockShareRepository implements ShareRepositoryPort {
     links.push(newLink);
     storage.setItem(this.LINKS_KEY, JSON.stringify(links));
 
-    // Log generation event
+    // Log generation event only on actual creation
     this.logEvent(shortId, 'generated', { viewer_lenser_id: creatorLenserId });
 
     return newLink;
@@ -120,7 +132,7 @@ export class MockShareRepository implements ShareRepositoryPort {
 }
 
 export class SupabaseShareRepository implements ShareRepositoryPort {
-  async createLink(dto: CreateLinkDTO, creatorLenserId: string): Promise<SharedLink> {
+  async createOrGetSharedLink(dto: CreateLinkDTO, creatorLenserId: string): Promise<SharedLink> {
     const { data, error } = await supabase.functions.invoke('create-link', {
         body: { ...dto, creatorLenserId }
     });

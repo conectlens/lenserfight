@@ -1,11 +1,18 @@
-
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { Lenser, CreateLenserDTO } from '../types/lenser.types';
 import { lenserService } from '../services/lenserService';
 import { useAuth } from './AuthContext';
 import { storage } from '../utils/storage';
+import { xpService } from '../services/xpService';
 
-const CACHE_KEY = 'lenser_profile_data_v1';
+const CACHE_BASE_KEY = 'lenser_profile_cache_v1';
+const CACHE_TTL_MS = 1000 * 60 * 5; // 5 dakika: profil 5 dk boyunca "taze" kabul edilir
+
+interface LenserCacheEntry {
+  userId: string;
+  profile: Lenser;
+  fetchedAt: number; // Date.now()
+}
 
 interface LenserContextType {
   lenser: Lenser | null;
@@ -19,67 +26,136 @@ interface LenserContextType {
 
 const LenserContext = createContext<LenserContextType | undefined>(undefined);
 
-export const LenserProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const { user, isAuthenticated } = useAuth();
-  
-  // 1. Initialize State synchronously from Storage to prevent flicker
-  const [lenser, setLenser] = useState<Lenser | null>(() => {
-    try {
-      const cached = storage.getItem(CACHE_KEY);
-      return cached ? JSON.parse(cached) : null;
-    } catch (e) {
-      console.warn("Failed to parse cached lenser profile", e);
+const getCacheKey = (userId: string) => `${CACHE_BASE_KEY}_${userId}`;
+
+const readCachedProfile = (userId: string): LenserCacheEntry | null => {
+  try {
+    const raw = storage.getItem(getCacheKey(userId));
+    if (!raw) return null;
+
+    const parsed = JSON.parse(raw) as LenserCacheEntry;
+
+    // Kullanıcıya ait olmayan / bozuk cache'i yok say
+    if (!parsed || parsed.userId !== userId || !parsed.profile || !parsed.profile.id) {
       return null;
     }
-  });
 
+    return parsed;
+  } catch (e) {
+    console.warn('Failed to parse lenser cache', e);
+    return null;
+  }
+};
+
+const writeCachedProfile = (userId: string, profile: Lenser) => {
+  try {
+    const safeProfile: Lenser = {
+      ...profile,
+      // localStorage içeriği manipüle edilse bile user_id her zaman auth user ile eşitleniyor
+      user_id: userId,
+    };
+
+    const entry: LenserCacheEntry = {
+      userId,
+      profile: safeProfile,
+      fetchedAt: Date.now(),
+    };
+
+    storage.setItem(getCacheKey(userId), JSON.stringify(entry));
+  } catch (e) {
+    console.warn('Failed to write lenser cache', e);
+  }
+};
+
+const clearCache = (userId: string | null | undefined) => {
+  try {
+    if (!userId) return;
+    storage.removeItem(getCacheKey(userId));
+  } catch {
+    // ignore
+  }
+};
+
+export const LenserProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const { user, isAuthenticated } = useAuth();
+
+  const [lenser, setLenser] = useState<Lenser | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // 2. Load Logic: Handles Cache hits, misses, and revalidation
-  const loadLenserProfile = async (force = false) => {
+  // Günlük XP yalnızca günde bir kez
+  const checkAndGrantDailyLogin = async (lenserId: string) => {
+    const key = `lenser_daily_login_${lenserId}`;
+    const today = new Date().toISOString().split('T')[0];
+    const lastLogin = storage.getItem(key);
+
+    if (lastLogin !== today) {
+      try {
+        await xpService.notifyDailyLogin(lenserId);
+        storage.setItem(key, today);
+      } catch (err) {
+        console.warn('XP Daily Login failed', err);
+      }
+    }
+  };
+
+  const loadLenserProfile = async (force = false): Promise<void> => {
     if (!user || !isAuthenticated) return;
 
-    // 1. Memory Cache Hit
-    // If state is already populated with the correct user data, avoid any further work
-    if (!force && lenser && lenser.user_id === user.id) {
+    const userId = user.id;
+
+    // 1) Bellek: doğru kullanıcıya ait profil varsa ve force değilse direkt kullan
+    if (!force && lenser && lenser.user_id === userId) {
       return;
     }
 
-    // 2. Storage Cache Hit (Double check)
-    // Even if state wasn't ready, check storage again explicitly before network call
-    if (!force) {
-        try {
-            const cachedStr = storage.getItem(CACHE_KEY);
-            if (cachedStr) {
-                const cachedProfile = JSON.parse(cachedStr) as Lenser;
-                // Verify validity: must belong to the current authenticated user ID
-                if (cachedProfile && cachedProfile.user_id === user.id) {
-                    setLenser(cachedProfile);
-                    return; // Skip fetch entirely
-                }
-            }
-        } catch (e) {
-            console.warn("Storage cache check failed", e);
-            // Clean up potentially corrupt data
-            storage.removeItem(CACHE_KEY);
-        }
+    // 2) localStorage cache: TTL kontrolü ile
+    const cached = readCachedProfile(userId);
+
+    if (!force && cached) {
+      const age = Date.now() - cached.fetchedAt;
+      const isFresh = age < CACHE_TTL_MS;
+
+      // Manipülasyon riskine karşı user_id'yi Auth ile zorla
+      const safeProfile: Lenser = {
+        ...cached.profile,
+        user_id: userId,
+      };
+
+      setLenser(safeProfile);
+
+      // Günlük XP (id bazlı olduğu için tekrar çağrı olsa bile guard var)
+      checkAndGrantDailyLogin(safeProfile.id);
+
+      // Cache taze ise DB'ye gitmeye gerek yok
+      if (isFresh) {
+        return;
+      }
+
+      // Stale-while-revalidate:
+      // Kullanıcı hemen cache'i görür, arka planda sessizce revalidate edeceğiz
     }
 
-    // 3. Network Fetch (Fallback)
+    // 3) Network: cache yoksa ya da stale ise
     setIsLoading(true);
     setError(null);
 
     try {
-      const profile = await lenserService.getLenserProfile(user.id);
-      
+      const profile = await lenserService.getLenserProfile(userId);
+
       if (profile) {
-        setLenser(profile);
-        storage.setItem(CACHE_KEY, JSON.stringify(profile));
+        const safeProfile: Lenser = {
+          ...profile,
+          user_id: userId, // Sunucudan da gelse user_id'yi Auth'a sabitliyoruz
+        };
+
+        setLenser(safeProfile);
+        writeCachedProfile(userId, safeProfile);
+        checkAndGrantDailyLogin(safeProfile.id);
       } else {
-        // User is authenticated but has no profile yet
+        // Auth var ama henüz lenser profili yok
         setLenser(null);
-        storage.removeItem(CACHE_KEY);
+        clearCache(userId);
       }
     } catch (err: any) {
       console.error('Profile load error:', err);
@@ -89,29 +165,57 @@ export const LenserProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     }
   };
 
-  // 3. React to Auth Changes
+  // Auth değişimlerine tepki
   useEffect(() => {
     if (isAuthenticated && user) {
-      // Trigger load logic (which now handles caching internally)
+      const userId = user.id;
+
+      // İlk anda: blocking yapmadan cache'i oku
+      const cached = readCachedProfile(userId);
+      if (cached) {
+        const safeProfile: Lenser = {
+          ...cached.profile,
+          user_id: userId,
+        };
+        setLenser(safeProfile);
+        checkAndGrantDailyLogin(safeProfile.id);
+      } else {
+        setLenser(null);
+      }
+
+      // Ardından revalidation (TTL uygunsa DB’ye dokunmadan dönebilir)
       loadLenserProfile();
-    } else if (!isAuthenticated) {
-      // Clear sensitive profile data on logout/unauth
+    } else {
+      // Logout / unauth durumunda profil ve cache'i temizle
+      if (user?.id) {
+        clearCache(user.id);
+      }
       setLenser(null);
-      storage.removeItem(CACHE_KEY);
+      setError(null);
+      setIsLoading(false);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isAuthenticated, user?.id]);
 
   const createLenserProfile = async (data: CreateLenserDTO): Promise<Lenser> => {
-    if (!user) throw new Error("User not authenticated");
+    if (!user) throw new Error('User not authenticated');
+
+    const userId = user.id;
     setIsLoading(true);
+
     try {
-      const newProfile = await lenserService.createLenserProfile(user.id, data);
-      
-      // Update State & Cache
-      setLenser(newProfile);
-      storage.setItem(CACHE_KEY, JSON.stringify(newProfile));
-      
-      return newProfile;
+      const newProfile = await lenserService.createLenserProfile(userId, data);
+
+      const safeProfile: Lenser = {
+        ...newProfile,
+        user_id: userId,
+      };
+
+      setLenser(safeProfile);
+      writeCachedProfile(userId, safeProfile);
+      checkAndGrantDailyLogin(safeProfile.id);
+
+      return safeProfile;
     } catch (err: any) {
       setError(err.message || 'Failed to create profile');
       throw err;
@@ -121,34 +225,43 @@ export const LenserProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   };
 
   const updateLenserProfile = async (data: Partial<Lenser>): Promise<Lenser> => {
-      if (!user) throw new Error("User not authenticated");
-      
-      try {
-          const updated = await lenserService.updateLenserProfile(user.id, data);
-          
-          // Optimistic / Immediate Update of State & Cache
-          setLenser(updated);
-          storage.setItem(CACHE_KEY, JSON.stringify(updated));
-          
-          return updated;
-      } catch (err: any) {
-          setError(err.message || 'Failed to update profile');
-          throw err;
-      }
+    if (!lenser) throw new Error('Lenser profile not found');
+    if (!user) throw new Error('User not authenticated');
+
+    const userId = user.id;
+
+    try {
+      const updated = await lenserService.updateLenserProfile(lenser.handle, data);
+
+      const safeProfile: Lenser = {
+        ...updated,
+        user_id: userId,
+      };
+
+      setLenser(safeProfile);
+      writeCachedProfile(userId, safeProfile);
+
+      return safeProfile;
+    } catch (err: any) {
+      setError(err.message || 'Failed to update profile');
+      throw err;
+    }
   };
 
   const hasLenser = !!lenser;
 
   return (
-    <LenserContext.Provider value={{ 
-      lenser, 
-      hasLenser, 
-      isLoading, 
-      error, 
-      loadLenserProfile, 
-      createLenserProfile, 
-      updateLenserProfile 
-    }}>
+    <LenserContext.Provider
+      value={{
+        lenser,
+        hasLenser,
+        isLoading,
+        error,
+        loadLenserProfile,
+        createLenserProfile,
+        updateLenserProfile,
+      }}
+    >
       {children}
     </LenserContext.Provider>
   );

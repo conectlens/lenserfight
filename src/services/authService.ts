@@ -33,6 +33,10 @@ export const authService = {
     return authRepo.signInWithOAuth(provider);
   },
 
+  resendSignupConfirmation: async (email: string): Promise<void> => {
+    return authRepo.resendSignupConfirmation(email);
+  },
+
   onAuthStateChange: (callback: AuthStateChangeCallback): (() => void) => {
     return authRepo.onAuthStateChange(callback);
   }

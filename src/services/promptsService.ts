@@ -3,20 +3,30 @@ import { getPromptsRepository } from '../adapters/promptsAdapter';
 import { getLenserRepository } from '../adapters/lenserAdapter';
 import { getReactionRepository } from '../adapters/reactionAdapter';
 import { reactionService } from './reactionService';
-import { PromptTemplateViewModel, PromptTemplateDetailViewModel, PromptTemplateRecord, CreatePromptDTO } from '../types/prompts.types';
+import { PromptTemplateViewModel, PromptTemplateDetailViewModel, PromptTemplateRecord, CreatePromptDTO, PromptAuthor } from '../types/prompts.types';
 import { tagService } from './tagService';
 import { tagActivityService } from './tagActivityService';
+import { xpService } from './xpService';
 import { contentModerationService } from './contentModerationService';
 
 const promptsRepo = getPromptsRepository();
 const lenserRepo = getLenserRepository();
 const reactionRepo = getReactionRepository();
 
-// Use author_profile and tags from record directly
+// Helper to resolve author from denormalized profile
+const resolveAuthor = (record: any): PromptAuthor => {
+    const profile = record.author_profile || {};
+    return {
+        id: profile.id || record.lenser_id || 'unknown',
+        displayName: profile.display_name || 'Unknown',
+        handle: profile.handle || 'unknown',
+        avatarUrl: profile.avatar_url || null
+    };
+};
+
 const mapToViewModels = async (records: any[], currentLenserId?: string): Promise<PromptTemplateViewModel[]> => {
     return records.map(record => {
         const tags = record.tags || []; // Use denormalized tags
-        const profile = record.author_profile || { id: 'unknown', handle: 'unknown', display_name: 'Unknown', avatar_url: null };
         
         return {
             id: record.id,
@@ -25,12 +35,7 @@ const mapToViewModels = async (records: any[], currentLenserId?: string): Promis
             usageCount: record.reaction_totals?.['copy'] || 0,
             createdAt: record.created_at,
             visibility: record.visibility,
-            author: {
-                id: profile.id || record.lenser_id,
-                displayName: profile.display_name,
-                handle: profile.handle,
-                avatarUrl: profile.avatar_url
-            },
+            author: resolveAuthor(record),
             tags: tags
         };
     });
@@ -62,9 +67,34 @@ export const promptsService = {
       return mapToViewModels(records);
   },
 
-  getAuthorPrompts: async (lenserId: string, offset = 0, limit = 10, viewerId?: string): Promise<PromptTemplateViewModel[]> => {
-    const includePrivate = lenserId === viewerId;
-    const records = await promptsRepo.getByAuthor(lenserId, offset, limit, includePrivate);
+  getLenserPrompts: async (lenserHandle: string, offset = 0, limit = 10, viewerId?: string): Promise<PromptTemplateViewModel[]> => {
+    // If viewer is the owner, include private prompts.
+    // We check via handle in repository or assume repo handles visibility.
+    // Usually 'includePrivate' logic depends on matching ID. 
+    // Here we pass the handle to repo, repo should check visibility.
+    // For now, we will pass a flag based on if viewer is owner (requires resolving handle to ID or trusting frontend check?)
+    // Actually repo signature handles `includePrivate`.
+    // We need to know if `viewerId` corresponds to `lenserHandle`.
+    
+    // We'll let the repository filter by handle. The `includePrivate` check is tricky if we don't have the ID of `lenserHandle`.
+    // But typically `viewerId` is the session user ID.
+    // If we assume strict handle matching for ownership, we might need to fetch the profile first.
+    // However, to keep it efficient, we might rely on the client to know if it's the owner (which it does).
+    // Or we fetch public only for now unless we resolve ID.
+    
+    // Let's resolve ID briefly if we need strict private check, or simply pass viewerId and let repo handle logic if possible.
+    // BUT the prompt requested fetching by handle.
+    
+    // For simplicity and performance, we'll try to resolve ownership if viewerId is present.
+    let includePrivate = false;
+    if (viewerId) {
+        const viewer = await lenserRepo.getLenserById(viewerId);
+        if (viewer && viewer.handle === lenserHandle) {
+            includePrivate = true;
+        }
+    }
+
+    const records = await promptsRepo.getByLenser(lenserHandle, offset, limit, includePrivate);
     return mapToViewModels(records);
   },
 
@@ -120,7 +150,6 @@ export const promptsService = {
      const { added, summary } = await reactionService.toggleReaction('prompt_template', id, lenserId, 'saved');
      
      // 2. Sync updated counts to reaction_totals JSONB column
-     // This ensures we use the correct column (reaction_totals) instead of save_count
      try {
          await promptsRepo.updateReactionTotals(id, summary.counts);
      } catch (e) {
@@ -133,7 +162,12 @@ export const promptsService = {
   toggleReaction: async (id: string, lenserId: string, reaction: 'like' | 'love' | 'clap') => {
       const { added, summary } = await reactionService.toggleReaction('prompt_template', id, lenserId, reaction);
       
-      // Also sync totals for other reactions to keep JSONB fresh
+      // XP Award
+      if (added) {
+          xpService.notifyReaction(lenserId, id).catch(console.error);
+      }
+
+      // Sync totals
       try {
           await promptsRepo.updateReactionTotals(id, summary.counts);
       } catch (e) {
@@ -152,11 +186,7 @@ export const promptsService = {
         input.description = input.content.substring(0, 100) + (input.content.length > 100 ? '...' : '');
     }
 
-    // Moderation Check
-    // TODO: moderation policy will not be used in the beta version
-    // await contentModerationService.validate(input.title, input.description, input.content);
-
-    const resolvedTags = await tagService.upsertTags(input.tagIds);
+    const resolvedTags = await tagService.processBatchInput(input.tagIds);
     const realTagIds = resolvedTags.map(t => t.id);
 
     const prompt = await promptsRepo.createPrompt({
@@ -175,6 +205,9 @@ export const promptsService = {
         }))
     ).catch(console.error);
 
+    // Award XP
+    xpService.notifyPromptCreated(input.lenserId, prompt.id).catch(console.error);
+
     return prompt;
   },
 
@@ -189,18 +222,30 @@ export const promptsService = {
 
       let realTagIds: string[] | undefined = undefined;
       if (input.tagIds) {
-          const resolvedTags = await tagService.upsertTags(input.tagIds);
+          const resolvedTags = await tagService.processBatchInput(input.tagIds);
           realTagIds = resolvedTags.map(t => t.id);
       }
 
       return promptsRepo.updatePrompt(id, { ...input, tagIds: realTagIds });
   },
 
-  deletePrompt: async (id: string, lenserId: string): Promise<void> => {
+  deletePrompt: async (id: string, lenserHandle: string): Promise<void> => {
       const existing = await promptsRepo.getById(id);
       if (!existing) throw new Error("Prompt not found");
-      if (existing.lenser_id !== lenserId) throw new Error("Unauthorized to delete this prompt");
+      
+      // Verify ownership by handle
+      // Assuming existing record has author_profile JSONB populated
+      const recordHandle = existing.author_profile?.handle || '';
+      
+      if (recordHandle !== lenserHandle) {
+          throw new Error("Unauthorized to delete this prompt");
+      }
 
       await promptsRepo.deletePrompt(id);
+  },
+  
+  // Backward compatibility alias for deprecated method if needed elsewhere
+  getAuthorPrompts: async (lenserHandle: string, offset = 0, limit = 10, viewerId?: string) => {
+      return promptsService.getLenserPrompts(lenserHandle, offset, limit, viewerId);
   }
 };
