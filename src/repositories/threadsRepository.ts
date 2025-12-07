@@ -1,3 +1,4 @@
+
 import { ThreadRecord, TagRecord, ThreadReplyRecord, CreateThreadDTO } from '../types/threads.types';
 import { AuthorProfile } from '../types/lenser.types';
 import { supabase } from '../utils/supabase';
@@ -239,8 +240,8 @@ export class SupabaseThreadsRepository implements ThreadsRepositoryPort {
             title: dto.title, 
             content: dto.content, 
             visibility: dto.visibility,
-            reaction_totals: {},
-            tags: [] 
+            reaction_totals: {}
+            // tags field removed from insert payload as it doesn't exist on base table
         })
         .select() 
         .single();
@@ -390,6 +391,29 @@ export class SupabaseThreadsRepository implements ThreadsRepositoryPort {
         .eq('id', id);
       
       if (error) this.handleError(error);
+
+      // Handle tags relation update
+      if (dto.tagIds) {
+          // Remove all existing tags
+          const { error: deleteError } = await supabase.from('thread_tags').delete().eq('thread_id', id);
+          if (deleteError) this.handleError(deleteError);
+
+          // Add new tags if any
+          if (dto.tagIds.length > 0) {
+              const junctionInserts = dto.tagIds.map(tagId => ({
+                  thread_id: id,
+                  tag_id: tagId
+              }));
+              const { error: tagError } = await supabase.from('thread_tags').insert(junctionInserts);
+              if (tagError) {
+                  // RLS permission handling
+                  if (tagError.code === '42501') {
+                      throw new Error("You can only attach public tags.");
+                  }
+                  throw tagError;
+              }
+          }
+      }
 
       // Fetch from View
       const { data } = await supabase.from('vw_threads').select('*').eq('id', id).single();
