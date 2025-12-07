@@ -95,7 +95,7 @@ export const usePromptDetailController = (promptId?: string) => {
   const savePrompt = async (): Promise<boolean> => {
     if (!data?.prompt || !lenser) return false;
 
-    const newSavedState = await promptsService.toggleSavePrompt(data.prompt.id, lenser.id);
+    const newSavedState = await promptsService.toggleReaction(data.prompt.id, lenser.id, "saved");
 
     updateLocalPrompt(prev => {
       const currentCount = prev.reactionCounts.saved;
