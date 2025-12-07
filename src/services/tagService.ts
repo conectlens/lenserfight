@@ -6,6 +6,15 @@ import { TagDomainError } from '../domain/tags/TagErrors';
 
 const tagRepo = getTagRepository();
 
+// --- Cache Implementation ---
+interface TagCache {
+  data: TagUsage[];
+  timestamp: number;
+}
+
+const CACHE_TTL = 15 * 60 * 1000; // 15 Minutes
+let globalTagCache: TagCache | null = null;
+
 export const tagService = {
   
   /**
@@ -30,7 +39,10 @@ export const tagService = {
 
     // Create new tag
     try {
-        return await tagRepo.createTag(name, slug);
+        const newTag = await tagRepo.createTag(name, slug);
+        // Invalidate cache on creation to ensure cloud is up to date
+        globalTagCache = null; 
+        return newTag;
     } catch (e: any) {
         // Race condition handling: If DB constraints catch a duplicate slug that we missed
         if (e.message?.includes('duplicate key') || e.code === '23505') {
@@ -64,6 +76,14 @@ export const tagService = {
 
   // Read-only methods used by UI
   getCloud: async (): Promise<TagUsage[]> => {
+    const now = Date.now();
+
+    // Check Cache
+    if (globalTagCache && (now - globalTagCache.timestamp < CACHE_TTL)) {
+        return globalTagCache.data;
+    }
+
+    // Fetch Fresh
     const tags = await tagRepo.getAllTagsWithCounts();
     if (tags.length === 0) return [];
 
@@ -72,10 +92,18 @@ export const tagService = {
     const max = Math.max(...values);
     const divisor = max - min === 0 ? 1 : max - min;
 
-    return tags.map(tag => ({
+    const weightedTags = tags.map(tag => ({
       ...tag,
       weight: 1 + ((tag.count - min) / divisor) * 9
     })).sort((a, b) => b.count - a.count);
+
+    // Update Cache
+    globalTagCache = {
+        data: weightedTags,
+        timestamp: now
+    };
+
+    return weightedTags;
   },
 
   getTagDetails: async (slug: string): Promise<TagUsage | null> => {
