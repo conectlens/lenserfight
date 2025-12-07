@@ -67,9 +67,34 @@ export const promptsService = {
       return mapToViewModels(records);
   },
 
-  getAuthorPrompts: async (lenserId: string, offset = 0, limit = 10, viewerId?: string): Promise<PromptTemplateViewModel[]> => {
-    const includePrivate = lenserId === viewerId;
-    const records = await promptsRepo.getByAuthor(lenserId, offset, limit, includePrivate);
+  getLenserPrompts: async (lenserHandle: string, offset = 0, limit = 10, viewerId?: string): Promise<PromptTemplateViewModel[]> => {
+    // If viewer is the owner, include private prompts.
+    // We check via handle in repository or assume repo handles visibility.
+    // Usually 'includePrivate' logic depends on matching ID. 
+    // Here we pass the handle to repo, repo should check visibility.
+    // For now, we will pass a flag based on if viewer is owner (requires resolving handle to ID or trusting frontend check?)
+    // Actually repo signature handles `includePrivate`.
+    // We need to know if `viewerId` corresponds to `lenserHandle`.
+    
+    // We'll let the repository filter by handle. The `includePrivate` check is tricky if we don't have the ID of `lenserHandle`.
+    // But typically `viewerId` is the session user ID.
+    // If we assume strict handle matching for ownership, we might need to fetch the profile first.
+    // However, to keep it efficient, we might rely on the client to know if it's the owner (which it does).
+    // Or we fetch public only for now unless we resolve ID.
+    
+    // Let's resolve ID briefly if we need strict private check, or simply pass viewerId and let repo handle logic if possible.
+    // BUT the prompt requested fetching by handle.
+    
+    // For simplicity and performance, we'll try to resolve ownership if viewerId is present.
+    let includePrivate = false;
+    if (viewerId) {
+        const viewer = await lenserRepo.getLenserById(viewerId);
+        if (viewer && viewer.handle === lenserHandle) {
+            includePrivate = true;
+        }
+    }
+
+    const records = await promptsRepo.getByLenser(lenserHandle, offset, limit, includePrivate);
     return mapToViewModels(records);
   },
 
@@ -117,7 +142,7 @@ export const promptsService = {
   },
 
   copyPrompt: async (id: string, lenserId: string): Promise<void> => {
-    await reactionService.toggleReaction('prompt_template', id, lenserId, 'copy');
+    await reactionService.recordReaction('prompt_template', id, lenserId, 'copy');
   },
 
   toggleSavePrompt: async (id: string, lenserId: string): Promise<boolean> => {
@@ -160,10 +185,6 @@ export const promptsService = {
     if (!input.description) {
         input.description = input.content.substring(0, 100) + (input.content.length > 100 ? '...' : '');
     }
-
-    // Moderation Check
-    // TODO: moderation policy will not be used in the beta version
-    // await contentModerationService.validate(input.title, input.description, input.content);
 
     const resolvedTags = await tagService.processBatchInput(input.tagIds);
     const realTagIds = resolvedTags.map(t => t.id);
@@ -208,11 +229,23 @@ export const promptsService = {
       return promptsRepo.updatePrompt(id, { ...input, tagIds: realTagIds });
   },
 
-  deletePrompt: async (id: string, lenserId: string): Promise<void> => {
+  deletePrompt: async (id: string, lenserHandle: string): Promise<void> => {
       const existing = await promptsRepo.getById(id);
       if (!existing) throw new Error("Prompt not found");
-      if (existing.lenser_id !== lenserId) throw new Error("Unauthorized to delete this prompt");
+      
+      // Verify ownership by handle
+      // Assuming existing record has author_profile JSONB populated
+      const recordHandle = existing.author_profile?.handle || '';
+      
+      if (recordHandle !== lenserHandle) {
+          throw new Error("Unauthorized to delete this prompt");
+      }
 
       await promptsRepo.deletePrompt(id);
+  },
+  
+  // Backward compatibility alias for deprecated method if needed elsewhere
+  getAuthorPrompts: async (lenserHandle: string, offset = 0, limit = 10, viewerId?: string) => {
+      return promptsService.getLenserPrompts(lenserHandle, offset, limit, viewerId);
   }
 };

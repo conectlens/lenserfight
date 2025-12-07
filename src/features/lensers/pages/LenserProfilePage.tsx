@@ -217,13 +217,13 @@ export const LenserProfilePage: React.FC = () => {
 
           switch (targetTab) {
               case 'prompts':
-                  newItems = await promptsService.getAuthorPrompts(viewedProfile.id, offset, PAGE_SIZE, viewerId);
+                  newItems = await promptsService.getLenserPrompts(viewedProfile.handle, offset, PAGE_SIZE, viewerId);
                   break;
               case 'threads':
-                  newItems = await threadsService.getThreadsByAuthor(viewedProfile.id, viewerId, offset, PAGE_SIZE);
+                  newItems = await threadsService.getThreadsByLenser(viewedProfile.handle, viewerId, offset, PAGE_SIZE);
                   break;
               case 'actions':
-                  newItems = await reactionService.getUserActivityFeed(viewedProfile.id, offset, PAGE_SIZE);
+                  newItems = await reactionService.getLenserActivityFeed(viewedProfile.handle, offset, PAGE_SIZE);
                   break;
               case 'challenges':
                   newItems = [];
@@ -259,7 +259,7 @@ export const LenserProfilePage: React.FC = () => {
               fetchTabData(activeTab, 0);
           }
       }
-  }, [activeTab, viewedProfile?.id, currentUser?.id]);
+  }, [activeTab, viewedProfile?.handle, currentUser?.id]);
 
   const lastElementRef = useCallback((node: HTMLDivElement) => {
     if (loadingTab) return;
@@ -273,7 +273,7 @@ export const LenserProfilePage: React.FC = () => {
     });
     
     if (node) observer.current.observe(node);
-  }, [loadingTab, hasMore, activeTab, page, viewedProfile?.id]);
+  }, [loadingTab, hasMore, activeTab, page, viewedProfile?.handle]);
 
   const handleTabChange = (newTab: TabType) => {
       if (newTab === activeTab) return;
@@ -329,13 +329,13 @@ export const LenserProfilePage: React.FC = () => {
       if (!deleteTarget || !currentUser) return;
       setIsDeleting(true);
       try {
-          // Use current user ID as actor
+          // Use current user handle for authorization check in service
           if (deleteTarget.type === 'prompt') {
-              await promptsService.deletePrompt(deleteTarget.id, currentUser.id);
+              await promptsService.deletePrompt(deleteTarget.id, currentUser.handle);
               removeCacheItem('prompts', deleteTarget.id);
               alert('Prompt deleted successfully.');
           } else {
-              await threadsService.deleteThread(deleteTarget.id, currentUser.id);
+              await threadsService.deleteThread(deleteTarget.id, currentUser.handle);
               removeCacheItem('threads', deleteTarget.id);
               alert('Thread deleted successfully.');
           }

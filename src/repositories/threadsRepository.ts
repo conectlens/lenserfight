@@ -10,7 +10,7 @@ export interface ThreadsRepositoryPort {
   getAllThreads(offset?: number, limit?: number): Promise<ThreadRecord[]>;
   getThreadsByTag(tagSlug: string, offset?: number, limit?: number): Promise<ThreadRecord[]>;
   getThreadById(id: string): Promise<ThreadRecord | null>;
-  getByAuthor(lenserId: string, offset?: number, limit?: number, includePrivate?: boolean): Promise<ThreadRecord[]>;
+  getByLenser(handle: string, offset?: number, limit?: number, includePrivate?: boolean): Promise<ThreadRecord[]>;
   getThreadTags(threadId: string): Promise<TagRecord[]>;
   getThreadReplies(threadId: string): Promise<ThreadReplyRecord[]>;
   getReplyById(replyId: string): Promise<ThreadReplyRecord | null>;
@@ -143,9 +143,11 @@ export class MockThreadsRepository implements ThreadsRepositoryPort {
     return t || null;
   };
 
-  getByAuthor = async (lenserId: string, offset = 0, limit = 10, includePrivate = false): Promise<ThreadRecord[]> => {
+  getByLenser = async (handle: string, offset = 0, limit = 10, includePrivate = false): Promise<ThreadRecord[]> => {
     await new Promise(resolve => setTimeout(resolve, 400));
-    let threads = this.getThreads().filter(t => t.lenser_id === lenserId);
+    // Filter by handle using denormalized profile
+    let threads = this.getThreads().filter(t => t.author_profile?.handle === handle);
+    
     if (!includePrivate) {
         threads = threads.filter(t => t.visibility === 'public');
     }
@@ -318,11 +320,11 @@ export class SupabaseThreadsRepository implements ThreadsRepositoryPort {
     return data as ThreadRecord;
   }
 
-  async getByAuthor(lenserId: string, offset = 0, limit = 10, includePrivate = false): Promise<ThreadRecord[]> {
+  async getByLenser(handle: string, offset = 0, limit = 10, includePrivate = false): Promise<ThreadRecord[]> {
     let query = supabase
         .from('vw_threads')
         .select(this.threadSelect)
-        .eq('author_profile->>id', lenserId) // Use JSONB author profile logic or base column if available. View keeps keys usually.
+        .eq('author_profile->>handle', handle) // Use JSONB author profile handle filtering
         .order('created_at', { ascending: false })
         .range(offset, offset + limit - 1);
 
