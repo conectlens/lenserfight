@@ -117,7 +117,7 @@ export const promptsService = {
   },
 
   copyPrompt: async (id: string, lenserId: string): Promise<void> => {
-    await reactionService.recordReaction('prompt_template', id, lenserId, 'copy');
+    await reactionService.toggleReaction('prompt_template', id, lenserId, 'copy');
   },
 
   toggleSavePrompt: async (id: string, lenserId: string): Promise<boolean> => {
