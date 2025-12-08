@@ -2,37 +2,37 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
-
 @theme {
   /* Fonts */
   --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
 
-  /* Brand & palette colors */
+  /* Brand palette */
   --color-primary: #ffde59;
-  --color-deep: #121212;
+  --color-deep: #213f74;
 
-  /* Grayscale / neutrals */
+  /* Gray scale from your tailwind extension */
   --color-gray-50:  #F9FAFB;
-  --color-gray-100: #F3F4F6;
+  --color-gray-100: #EDEDED;
   --color-gray-200: #E5E7EB;
   --color-gray-300: #D1D5DB;
   --color-gray-400: #9CA3AF;
   --color-gray-500: #6B7280;
   --color-gray-600: #4B5563;
-  --color-gray-700: #374151;
-  --color-gray-800: #1F2937;
-  --color-gray-900: #111827;
+  --color-gray-700: #262626; /* border */
+  --color-gray-800: #1A1A1A; /* sidebar/surface */
+  --color-gray-900: #121212; /* main background */
 
-  /* Semantic tokens (light / dark) */
-  --color-light-base:     #F9FAFB;
-  --color-light-surface:  #ffffff;
+  /* Light scheme */
+  --color-light-base:     #ffffff;
+  --color-light-surface:  #F9FAFB;
   --color-light-subtle:   #E5E7EB;
   --color-light-text:     #1F2937;
   --color-light-muted:    #6B7280;
 
+  /* Dark scheme derived from your dark colors */
   --color-dark-base:      #121212;
   --color-dark-surface:   #1A1A1A;
-  --color-dark-subtle:    #2A2A2A;
+  --color-dark-subtle:    #262626;
   --color-dark-text:      #F9FAFB;
   --color-dark-muted:     #9CA3AF;
 }
@@ -48,8 +48,7 @@
   }
 }
 
-
-            body {
+   body {
         font-family: 'Inter', sans-serif;
         overflow-x: hidden; /* Prevent horizontal scrolling */
       }
@@ -89,23 +88,23 @@
       /* Dark mode scrollbar overrides */
       html.dark {
           color-scheme: dark;
-          background-color: #111827; /* Ensure html background matches body dark bg */
+          background-color: #121212; /* Match gray-900 */
       }
       
       html.dark ::-webkit-scrollbar-track {
-          background: #111827; /* Match gray-900 */
+          background: #121212; /* Match gray-900 */
       }
       html.dark ::-webkit-scrollbar-thumb {
           background: #4b5563; /* gray-600 */
           border-radius: 99px;
-          border: 2px solid #111827; /* Match track for padding effect */
+          border: 2px solid #121212; /* Match track for padding effect */
           background-clip: content-box;
       }
       html.dark ::-webkit-scrollbar-thumb:hover {
           background: #6b7280; /* gray-500 */
       }
       html.dark * {
-          scrollbar-color: #4b5563 #111827;
+          scrollbar-color: #4b5563 #121212;
       }
 
       /* Scoped scrollbar for AI Generations & Dropdowns (refined) */
