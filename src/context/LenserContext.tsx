@@ -3,7 +3,6 @@ import { Lenser, CreateLenserDTO } from '../types/lenser.types';
 import { lenserService } from '../services/lenserService';
 import { useAuth } from './AuthContext';
 import { storage } from '../utils/storage';
-import { xpService } from '../services/xpService';
 
 const CACHE_BASE_KEY = 'lenser_profile_cache_v1';
 const CACHE_TTL_MS = 1000 * 60 * 5; // 5 dakika: profil 5 dk boyunca "taze" kabul edilir
@@ -83,22 +82,6 @@ export const LenserProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Günlük XP yalnızca günde bir kez
-  const checkAndGrantDailyLogin = async (lenserId: string) => {
-    const key = `lenser_daily_login_${lenserId}`;
-    const today = new Date().toISOString().split('T')[0];
-    const lastLogin = storage.getItem(key);
-
-    if (lastLogin !== today) {
-      try {
-        await xpService.notifyDailyLogin(lenserId);
-        storage.setItem(key, today);
-      } catch (err) {
-        console.warn('XP Daily Login failed', err);
-      }
-    }
-  };
-
   const loadLenserProfile = async (force = false): Promise<void> => {
     if (!user || !isAuthenticated) return;
 
@@ -124,9 +107,6 @@ export const LenserProvider: React.FC<{ children: React.ReactNode }> = ({ childr
 
       setLenser(safeProfile);
 
-      // Günlük XP (id bazlı olduğu için tekrar çağrı olsa bile guard var)
-      checkAndGrantDailyLogin(safeProfile.id);
-
       // Cache taze ise DB'ye gitmeye gerek yok
       if (isFresh) {
         return;
@@ -151,7 +131,6 @@ export const LenserProvider: React.FC<{ children: React.ReactNode }> = ({ childr
 
         setLenser(safeProfile);
         writeCachedProfile(userId, safeProfile);
-        checkAndGrantDailyLogin(safeProfile.id);
       } else {
         // Auth var ama henüz lenser profili yok
         setLenser(null);
@@ -178,7 +157,6 @@ export const LenserProvider: React.FC<{ children: React.ReactNode }> = ({ childr
           user_id: userId,
         };
         setLenser(safeProfile);
-        checkAndGrantDailyLogin(safeProfile.id);
       } else {
         setLenser(null);
       }
@@ -213,8 +191,6 @@ export const LenserProvider: React.FC<{ children: React.ReactNode }> = ({ childr
 
       setLenser(safeProfile);
       writeCachedProfile(userId, safeProfile);
-      checkAndGrantDailyLogin(safeProfile.id);
-
       return safeProfile;
     } catch (err: any) {
       setError(err.message || 'Failed to create profile');
