@@ -95,22 +95,30 @@ export const usePromptDetailController = (promptId?: string) => {
   const savePrompt = async (): Promise<boolean> => {
     if (!data?.prompt || !lenser) return false;
 
-    const newSavedState = await promptsService.toggleSavePrompt(data.prompt.id, lenser.id);
+    const res = await promptsService.toggleReaction(
+      data.prompt.id,
+      lenser.id,
+      'saved'
+    );
 
     updateLocalPrompt(prev => {
-      const currentCount = prev.reactionCounts.saved;
-      const newCount = newSavedState
-        ? currentCount + 1
-        : Math.max(0, currentCount - 1);
+      const wasSaved = !!prev.isSaved;
+      const nowSaved = !wasSaved;
+      const prevCount = prev.reactionCounts?.saved ?? 0;
 
       return {
         ...prev,
-        isSaved: newSavedState,
-        reactionCounts: { ...prev.reactionCounts, saved: newCount },
+        isSaved: nowSaved,
+        reactionCounts: {
+          ...prev.reactionCounts,
+          saved: nowSaved
+            ? prevCount + 1  // save ekleniyorsa +1
+            : Math.max(0, prevCount - 1) // kaldırılıyorsa -1
+        }
       };
     });
 
-    return newSavedState;
+    return res?.added ?? !data.prompt.isSaved;
   };
 
   return {
