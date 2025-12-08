@@ -102,7 +102,7 @@ export const AppRouter: React.FC = () => {
         />
 
         <Route 
-          path="/leaderboard" 
+          path="/lenserboard" 
           element={
             <DashboardLayout>
               <LeaderboardPage />
@@ -119,8 +119,9 @@ export const AppRouter: React.FC = () => {
           } 
         />
 
+        {/* Updated Route: Prompts -> /len/p */}
         <Route 
-          path="/prompts" 
+          path="/len/p" 
           element={
             <DashboardLayout>
               <PromptsPage />
@@ -129,7 +130,7 @@ export const AppRouter: React.FC = () => {
         />
 
         <Route 
-          path="/prompts/:id" 
+          path="/len/p/:id" 
           element={
             <DashboardLayout>
               <PromptDetailPage />
@@ -137,8 +138,9 @@ export const AppRouter: React.FC = () => {
           } 
         />
         
+        {/* Updated Route: Tags -> /len */}
         <Route 
-          path="/tags" 
+          path="/len" 
           element={
             <DashboardLayout>
               <TagCloudPage />
@@ -147,7 +149,7 @@ export const AppRouter: React.FC = () => {
         />
 
         <Route 
-          path="/tags/:slug" 
+          path="/len/:slug" 
           element={
             <DashboardLayout>
               <TagDetailPage />
@@ -156,7 +158,7 @@ export const AppRouter: React.FC = () => {
         />
 
         <Route 
-          path="/tags/:slug/:tab" 
+          path="/len/:slug/:tab" 
           element={
             <DashboardLayout>
               <TagDetailPage />
@@ -217,6 +219,11 @@ export const AppRouter: React.FC = () => {
           </Route>
         </Route>
         
+        {/* Redirect old routes for backward compatibility/bookmarks */}
+        <Route path="/prompts/*" element={<Navigate to="/len/p" replace />} />
+        <Route path="/tags/*" element={<Navigate to="/len" replace />} />
+        <Route path="/leaderboard" element={<Navigate to="/lenserboard" replace />} />
+
         {/* Default Redirect */}
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>

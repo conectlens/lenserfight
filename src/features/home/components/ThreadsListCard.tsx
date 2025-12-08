@@ -1,3 +1,4 @@
+
 import React, { memo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card } from '../../../components/Card';
@@ -96,7 +97,7 @@ export const ThreadsListCard: React.FC<ThreadsListCardProps> = memo(({ thread, o
                   label={tag.name} 
                   onClick={(e) => {
                     e.stopPropagation();
-                    navigate(`/tags/${tag.slug}`);
+                    navigate(`/len/${tag.slug}`);
                   }}
                 />
               ))}

@@ -92,8 +92,8 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, isMobile, onCloseMobil
   const desktopWidthClass = isOpen ? 'w-64' : 'w-20';
   
   const containerClass = isMobile
-    ? `fixed inset-y-0 left-0 h-full w-64 bg-gray-50 dark:bg-gray-900 z-50 shadow-2xl transform transition-transform duration-300 ease-out flex flex-col ${isOpen ? 'translate-x-0' : '-translate-x-full'}`
-    : `sticky top-0 h-screen flex-shrink-0 bg-gray-50 dark:bg-gray-900 border-r border-gray-200 dark:border-gray-800 transition-all duration-300 ease-in-out flex flex-col ${desktopWidthClass}`;
+    ? `fixed inset-y-0 left-0 h-full w-64 bg-gray-50 dark:bg-gray-800 z-50 shadow-2xl transform transition-transform duration-300 ease-out flex flex-col ${isOpen ? 'translate-x-0' : '-translate-x-full'}`
+    : `sticky top-0 h-screen flex-shrink-0 bg-gray-50 dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 transition-all duration-300 ease-in-out flex flex-col ${desktopWidthClass}`;
 
   const showOverlay = isMobile && isOpen;
 
@@ -185,26 +185,26 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, isMobile, onCloseMobil
            />
            
            <SidebarItem 
-             onClick={() => handleNavigation('/leaderboard')}
+             onClick={() => handleNavigation('/lenserboard')}
              icon={<Trophy size={20} />} 
-             label="Leaderboard" 
-             isActive={location.pathname === '/leaderboard'} 
+             label="LenserBoard" 
+             isActive={location.pathname === '/lenserboard'} 
              collapsed={!showLabels} 
            />
 
            <SidebarItem 
-             onClick={() => handleNavigation('/prompts')}
+             onClick={() => handleNavigation('/len/p')}
              icon={<Lightbulb size={20} />} 
              label="Prompts" 
-             isActive={location.pathname.startsWith('/prompts')} 
+             isActive={location.pathname.startsWith('/len/p')} 
              collapsed={!showLabels} 
            />
            
            <SidebarItem 
-             onClick={() => handleNavigation('/tags')}
+             onClick={() => handleNavigation('/len')}
              icon={<Cloud size={20} />} 
-             label="Lens Cloud" 
-             isActive={location.pathname.startsWith('/tags')}
+             label="Len Cloud" 
+             isActive={location.pathname === '/len' || (location.pathname.startsWith('/len') && !location.pathname.startsWith('/len/p'))}
              collapsed={!showLabels} 
            />
 
@@ -228,7 +228,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, isMobile, onCloseMobil
            </div>
         </nav>
 
-        <div className="flex-shrink-0 px-3 pb-3 pt-2 bg-gray-50 dark:bg-gray-900 mt-auto space-y-3">
+        <div className="flex-shrink-0 px-3 pb-3 pt-2 bg-gray-50 dark:bg-gray-800 mt-auto space-y-3">
           {/* Waiting List Button */}
           <div className={`${!showLabels ? '' : 'animate-in slide-in-from-bottom-2 duration-500'}`}>
              <SidebarItem 
@@ -267,13 +267,13 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, isMobile, onCloseMobil
               />
           </div>
 
-          <div className="h-px bg-gray-200 dark:bg-gray-800 w-full"></div>
+          <div className="h-px bg-gray-200 dark:bg-gray-700 w-full"></div>
 
           <div className="relative">
             <div 
               className={`
                   flex items-center p-2 rounded-xl transition-all 
-                  ${!displayProfile ? 'filter blur-sm select-none opacity-60' : 'hover:bg-white dark:hover:bg-gray-800 hover:shadow-sm cursor-pointer border border-transparent hover:border-gray-100 dark:hover:border-gray-700'}
+                  ${!displayProfile ? 'filter blur-sm select-none opacity-60' : 'hover:bg-white dark:hover:bg-gray-700 hover:shadow-sm cursor-pointer border border-transparent hover:border-gray-100 dark:hover:border-gray-600'}
                   ${!showLabels ? 'justify-center' : ''}
               `}
             >
@@ -306,7 +306,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, isMobile, onCloseMobil
                         e.stopPropagation();
                         setIsDropdownOpen(!isDropdownOpen);
                       }}
-                      className={`p-1.5 rounded-lg transition-colors relative ${isDropdownOpen ? 'bg-gray-200 dark:bg-gray-700 text-gray-900 dark:text-white' : 'text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800'}`}
+                      className={`p-1.5 rounded-lg transition-colors relative ${isDropdownOpen ? 'bg-gray-200 dark:bg-gray-600 text-gray-900 dark:text-white' : 'text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-700'}`}
                    >
                       <MoreHorizontal size={18} />
                       {FEATURES.NOTIFICATIONS && unreadCount > 0 && <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full border border-white"></span>}
@@ -394,7 +394,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, isMobile, onCloseMobil
                       title="Be a Lenser"
                    >
                       <Sparkles size={18} />
-                      {showLabels && <span>Join</span>}
+                      {showLabels && <span>Be Lenser</span>}
                    </button>
               </div>
             )}
