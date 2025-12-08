@@ -48,7 +48,6 @@ export const LenserStatsRow: React.FC<LenserStatsRowProps> = ({ stats, xpSummary
   const totalXP = xpSummary?.totalXp || 0;
   const rank = xpSummary?.rank || 0;
 
-  // Level Logic: Use dynamic database bounds from xp_levels
   let progressPercent = 0;
   
   if (xpSummary && xpSummary.currentLevelMinXp !== undefined && xpSummary.currentLevelMaxXp !== undefined) {
