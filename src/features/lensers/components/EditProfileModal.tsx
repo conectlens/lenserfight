@@ -7,6 +7,7 @@ import { Lenser, SocialLink, SocialPlatform } from '../../../types/lenser.types'
 import { socialLinksService } from '../../../services/socialLinksService';
 import { Plus, Trash2, Github, Linkedin, Facebook, Instagram, Twitter, Youtube } from 'lucide-react';
 import { SelectField } from '../../../components/SelectField';
+import { isValidUrl } from '../../../utils/validation';
 
 interface EditProfileModalProps {
   isOpen: boolean;
@@ -97,17 +98,6 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({ isOpen, onCl
     }
   }, [isOpen, currentData.handle]);
 
-  const validateUrl = (url: string) => {
-    if (!url) return true;
-    try {
-        if (!/^https?:\/\//i.test(url)) return true; 
-        new URL(url);
-        return true;
-    } catch (_) {
-        return false;
-    }
-  };
-
   const getAvailablePlatforms = (currentIndex: number) => {
       const usedPlatforms = socialLinks
         .map((l, i) => i === currentIndex ? null : l.platform)
@@ -151,8 +141,10 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({ isOpen, onCl
     setUrlError(null);
     setLinkErrors({});
     
-    if (websiteUrl && !validateUrl(websiteUrl)) {
-        setUrlError("Please enter a valid URL (e.g. https://example.com)");
+    const trimmedWebsiteUrl = websiteUrl.trim();
+
+    if (trimmedWebsiteUrl && !isValidUrl(trimmedWebsiteUrl)) {
+        setUrlError("Website must be a valid URL starting with http:// or https://");
         return;
     }
 
@@ -188,11 +180,15 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({ isOpen, onCl
             display_name: displayName,
             headline: headline,
             bio: bio,
-            website_url: websiteUrl
+            website_url: trimmedWebsiteUrl || null // Convert empty string to null
         });
-    } catch (e) {
+    } catch (e: any) {
         console.error("Failed to save profile", e);
-        alert("Failed to save changes. Please check your inputs.");
+        if (e.message && (e.message.toLowerCase().includes('website') || e.message.toLowerCase().includes('url'))) {
+            setUrlError(e.message);
+        } else {
+            alert(e.message || "Failed to save changes. Please check your inputs.");
+        }
     } finally {
         if (isMounted.current) {
             setIsSubmitting(false);
