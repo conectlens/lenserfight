@@ -1,3 +1,4 @@
+
 import React, { useEffect } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { useTagDetailController } from '../hooks/useTagDetailController';
@@ -53,7 +54,7 @@ export const TagDetailPage: React.FC = () => {
       return (
           <div className="min-h-[60vh] flex flex-col items-center justify-center">
               <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-4">Topic Not Found</h2>
-              <button onClick={() => navigate('/tags')} className="text-primary-700 dark:text-primary-400 font-medium hover:underline">
+              <button onClick={() => navigate('/len')} className="text-primary-700 dark:text-primary-400 font-medium hover:underline">
                   Return to Explore
               </button>
           </div>

@@ -40,7 +40,7 @@ export const LenserActionsList: React.FC<LenserActionsListProps> = ({ actions })
 
   const handleClick = (item: ActivityFeedItem) => {
       if (item.targetType === 'prompt_template') {
-          navigate(`/prompts/${item.targetId}`);
+          navigate(`/len/p/${item.targetId}`);
       } else if (item.targetType === 'thread') {
           navigate(`/threads/${item.targetId}`);
       } else if (item.targetType === 'thread_reply') {

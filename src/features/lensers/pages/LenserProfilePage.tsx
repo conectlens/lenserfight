@@ -460,7 +460,7 @@ export const LenserProfilePage: React.FC = () => {
                                 <div key={prompt.id} className="h-full">
                                     <PromptCard 
                                         prompt={prompt as PromptTemplateViewModel} 
-                                        onClick={(id) => navigate(`/prompts/${id}`)}
+                                        onClick={(id) => navigate(`/len/p/${id}`)}
                                         isOwner={isOwner}
                                         onEdit={handleEditPrompt}
                                         onDelete={() => setDeleteTarget({ id: prompt.id, type: 'prompt' })}

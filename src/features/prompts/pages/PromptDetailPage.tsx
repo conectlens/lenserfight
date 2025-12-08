@@ -1,3 +1,4 @@
+
 import React, { useEffect, useMemo, useState } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { usePromptDetailController } from '../hooks/usePromptDetailController';
@@ -150,7 +151,7 @@ export const PromptDetailPage: React.FC = () => {
       setIsDeleteModalOpen(false);
 
       if (prompt && deleteTargetId === prompt.id) {
-        navigate('/prompts');
+        navigate('/len/p');
       } else {
         queryClient.invalidateQueries({ queryKey: ['prompt-list'] });
         queryClient.invalidateQueries({ queryKey: ['prompt-composite', prompt.id] });
@@ -165,7 +166,7 @@ export const PromptDetailPage: React.FC = () => {
     if (isEditMode && prompt && newId === prompt.id) {
       queryClient.invalidateQueries({ queryKey: ['prompt-composite', prompt.id] });
     } else {
-      navigate(`/prompts/${newId}`);
+      navigate(`/len/p/${newId}`);
     }
   };
 
@@ -192,7 +193,7 @@ export const PromptDetailPage: React.FC = () => {
           <Lock className="w-12 h-12 text-red-500" />
         </div>
         <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-3">Access Denied</h2>
-        <button onClick={() => navigate('/prompts')} className="text-primary-700 dark:text-primary-400 hover:underline">
+        <button onClick={() => navigate('/len/p')} className="text-primary-700 dark:text-primary-400 hover:underline">
           Return to Library
         </button>
       </div>
@@ -203,7 +204,7 @@ export const PromptDetailPage: React.FC = () => {
     return (
       <div className="flex flex-col items-center justify-center min-h-[50vh]">
         <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">Prompt Not Found</h2>
-        <button onClick={() => navigate('/prompts')} className="text-primary hover:underline">
+        <button onClick={() => navigate('/len/p')} className="text-primary hover:underline">
           Return to Library
         </button>
       </div>
@@ -239,7 +240,7 @@ export const PromptDetailPage: React.FC = () => {
           <PromptAuthorList
             prompts={authorPrompts}
             authorName={prompt.author.displayName}
-            onOpen={(id) => navigate(`/prompts/${id}`)}
+            onOpen={(id) => navigate(`/len/p/${id}`)}
             isLoading={isLoading}
             onCreateClick={handleCreateClick}
             isOwner={isOwner}
@@ -249,7 +250,7 @@ export const PromptDetailPage: React.FC = () => {
 
           <PromptRelatedList
             prompts={relatedPrompts}
-            onOpen={(id) => navigate(`/prompts/${id}`)}
+            onOpen={(id) => navigate(`/len/p/${id}`)}
             isLoading={isLoading}
           />
         </div>
