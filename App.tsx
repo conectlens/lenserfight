@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { QueryClientProvider } from '@tanstack/react-query';
 import { HelmetProvider } from 'react-helmet-async';
@@ -11,6 +10,9 @@ import { ThemeProvider } from './src/context/ThemeContext';
 import { AppRouter } from './src/router';
 import { SessionBoundary } from './src/components/SessionBoundary';
 
+// Lazy load the particle background to improve initial bundle size
+const StarBackground = React.lazy(() => import('./src/components/StarBackground'));
+
 function App() {
   return (
     <HelmetProvider>
@@ -22,7 +24,12 @@ function App() {
               <LenserProvider>
                 <ShareProvider>
                   <UIProvider>
-                    <AppRouter />
+                    <React.Suspense fallback={null}>
+                        <StarBackground />
+                    </React.Suspense>
+                    <div className="relative z-10">
+                        <AppRouter />
+                    </div>
                   </UIProvider>
                 </ShareProvider>
               </LenserProvider>
