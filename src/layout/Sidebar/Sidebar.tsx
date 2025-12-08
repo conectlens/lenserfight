@@ -33,6 +33,18 @@ interface SidebarProps {
   onOpenProfileSetup: () => void;
 }
 
+// Strict route matching helper to prevent overlap (e.g. /len vs /lenser)
+const isRouteActive = (currentPath: string, basePath: string, exact = false) => {
+  // Normalize paths to remove trailing slashes unless it's root
+  const normalize = (p: string) => p.endsWith('/') && p.length > 1 ? p.slice(0, -1) : p;
+  const current = normalize(currentPath);
+  const base = normalize(basePath);
+
+  if (exact) return current === base;
+  // Match exact path OR path starting with base followed by /
+  return current === base || current.startsWith(`${base}/`);
+};
+
 export const Sidebar: React.FC<SidebarProps> = ({ isOpen, isMobile, onCloseMobile, onOpenProfileSetup }) => {
   // Use LenserContext mainly for the handle/identity bootstrapping
   const { lenser: authLenser } = useLenser();
@@ -180,7 +192,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, isMobile, onCloseMobil
              onClick={() => handleNavigation('/')}
              icon={<Home size={20} />} 
              label="Home" 
-             isActive={location.pathname === '/'} 
+             isActive={isRouteActive(location.pathname, '/', true)} 
              collapsed={!showLabels} 
            />
            
@@ -188,7 +200,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, isMobile, onCloseMobil
              onClick={() => handleNavigation('/lenserboard')}
              icon={<Trophy size={20} />} 
              label="LenserBoard" 
-             isActive={location.pathname === '/lenserboard'} 
+             isActive={isRouteActive(location.pathname, '/lenserboard')} 
              collapsed={!showLabels} 
            />
 
@@ -196,7 +208,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, isMobile, onCloseMobil
              onClick={() => handleNavigation('/len/p')}
              icon={<Lightbulb size={20} />} 
              label="Prompts" 
-             isActive={location.pathname.startsWith('/len/p')} 
+             isActive={isRouteActive(location.pathname, '/len/p')} 
              collapsed={!showLabels} 
            />
            
@@ -204,7 +216,8 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, isMobile, onCloseMobil
              onClick={() => handleNavigation('/len')}
              icon={<Cloud size={20} />} 
              label="Len Cloud" 
-             isActive={location.pathname === '/len' || (location.pathname.startsWith('/len') && !location.pathname.startsWith('/len/p'))}
+             // Must match /len root but EXCLUDE /len/p to avoid double activation
+             isActive={isRouteActive(location.pathname, '/len') && !isRouteActive(location.pathname, '/len/p')}
              collapsed={!showLabels} 
            />
 
@@ -235,7 +248,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, isMobile, onCloseMobil
                onClick={() => handleNavigation('/waiting-list')}
                icon={<Rocket size={20} className="text-[#121212] dark:text-gray-100" />}
                label="Join Waitlist"
-               isActive={location.pathname === '/waiting-list'}
+               isActive={isRouteActive(location.pathname, '/waiting-list')}
                collapsed={!showLabels}
                className={`
                  !my-0 
