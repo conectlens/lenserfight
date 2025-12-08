@@ -135,13 +135,7 @@ export const promptsService = {
           xpService.notifyReaction(lenserId, id).catch(console.error);
       }
 
-      // Sync totals
-      try {
-          await promptsRepo.updateReactionTotals(id, summary.counts);
-      } catch (e) {
-          console.warn("Failed to sync reaction_totals", e);
-      }
-
+  
       return { added, summary };
   },
 
