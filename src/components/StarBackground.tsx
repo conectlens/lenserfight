@@ -1,5 +1,6 @@
 import React, { useEffect, useState, useMemo } from 'react';
 import Particles, { initParticlesEngine } from "@tsparticles/react";
+import { type ISourceOptions, MoveDirection, OutMode } from "@tsparticles/engine";
 import { loadSlim } from "@tsparticles/slim";
 import { useTheme } from '../context/ThemeContext';
 
@@ -9,7 +10,6 @@ const StarBackground: React.FC = () => {
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
 
   useEffect(() => {
-    // Using simple promise chaining to handle initialization errors robustly
     initParticlesEngine(async (engine) => {
       await loadSlim(engine);
     }).then(() => {
@@ -25,7 +25,7 @@ const StarBackground: React.FC = () => {
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
-  const options = useMemo(
+  const options: ISourceOptions = useMemo(
     () => ({
       background: {
         color: {
@@ -44,15 +44,22 @@ const StarBackground: React.FC = () => {
         color: { value: "#ffffff" },
         links: { enable: false },
         move: {
-          direction: "none" as const,
+          direction: MoveDirection.none,
           enable: true,
-          outModes: { default: "out" as const },
+          outModes: {
+            default: OutMode.out,
+          },
           random: true,
-          speed: 0.3,
+          speed: 0.2,
           straight: false,
         },
         number: {
-          density: { enable: true, width: 800, height: 800 },
+          density: {
+            enable: true,
+            // Standard v3 config usually infers area, but we keep it simple to avoid type conflicts in strict mode
+            width: 800, 
+            height: 800
+          } as any,
           value: 30,
         },
         opacity: {
@@ -64,7 +71,9 @@ const StarBackground: React.FC = () => {
           }
         },
         shape: { type: "circle" },
-        size: { value: { min: 1, max: 2 } },
+        size: {
+          value: { min: 1, max: 2 },
+        },
       },
       detectRetina: true,
       fullScreen: { enable: false, zIndex: 0 },
@@ -78,7 +87,6 @@ const StarBackground: React.FC = () => {
     <div className="fixed inset-0 pointer-events-none z-0">
         <Particles
             id="tsparticles"
-            // @ts-ignore - options strict typing
             options={options}
             className="w-full h-full"
         />
