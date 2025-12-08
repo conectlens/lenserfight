@@ -1,6 +1,4 @@
 
-import { Database } from './database.types';
-
 export type XPSource = 'system' | 'ai' | 'battle' | 'challenge' | 'daily' | 'social' | 'content';
 
 // Matches the rule_key in xp_rules table
