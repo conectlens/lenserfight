@@ -6,7 +6,6 @@ import { reactionService } from './reactionService';
 import { PromptTemplateViewModel, PromptTemplateDetailViewModel, PromptTemplateRecord, CreatePromptDTO, PromptAuthor } from '../types/prompts.types';
 import { tagService } from './tagService';
 import { tagActivityService } from './tagActivityService';
-import { xpService } from './xpService';
 import { contentModerationService } from './contentModerationService';
 
 const promptsRepo = getPromptsRepository();
@@ -129,13 +128,6 @@ export const promptsService = {
 
   toggleReaction: async (id: string, lenserId: string, reaction: 'like' | 'love' | 'clap' | 'saved') => {
       const { added, summary } = await reactionService.toggleReaction('prompt_template', id, lenserId, reaction);
-      
-      // XP Award
-      if (added) {
-          xpService.notifyReaction(lenserId, id).catch(console.error);
-      }
-
-  
       return { added, summary };
   },
 
@@ -166,10 +158,6 @@ export const promptsService = {
             actor_id: input.lenserId
         }))
     ).catch(console.error);
-
-    // Award XP
-    xpService.notifyPromptCreated(input.lenserId, prompt.id).catch(console.error);
-
     return prompt;
   },
 
