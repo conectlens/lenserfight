@@ -146,7 +146,7 @@ export const HomePage: React.FC = () => {
                         .map((prompt) => (
                       <div 
                             key={prompt.id} 
-                            onClick={() => navigate(`/prompts/${prompt.id}`)}
+                            onClick={() => navigate(`/len/p/${prompt.id}`)}
                             className="p-4 hover:bg-gray-50 dark:hover:bg-gray-700/50 rounded-xl cursor-pointer transition-colors"
                         >
                         <p className="text-sm font-medium text-gray-800 dark:text-gray-200 line-clamp-2">{prompt.title}</p>
@@ -202,7 +202,7 @@ export const HomePage: React.FC = () => {
                           <TagBadge 
                             key={tag} 
                             label={tag} 
-                            onClick={() => navigate(`/tags/${tag.toLowerCase()}`)}
+                            onClick={() => navigate(`/len/${tag.toLowerCase()}`)}
                           />
                         ))}
                       </div>

@@ -1,3 +1,4 @@
+
 import { MentionParser, ContentSegment } from '../utils/mentionParser';
 import { promptsService } from './promptsService';
 
@@ -38,7 +39,7 @@ export const mentionService = {
                   content: prompt.title,
                   id: segment.id,
                   entityType: 'Prompt',
-                  link: `/prompts/${segment.id}`,
+                  link: `/len/p/${segment.id}`,
                   isValid: true
                 } as ResolvedSegment;
               }
