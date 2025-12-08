@@ -1,6 +1,22 @@
 
 export type Validator = (value: any) => string | null;
 
+export const isValidUrl = (url: string): boolean => {
+  try {
+    const parsed = new URL(url);
+    return parsed.protocol === 'http:' || parsed.protocol === 'https:';
+  } catch {
+    return false;
+  }
+};
+
+export const isUrl = (message = "Please enter a valid URL starting with http:// or https://"): Validator => {
+  return (value) => {
+    if (!value) return null; // Let required handle empty checks
+    return isValidUrl(value) ? null : message;
+  };
+};
+
 export const isRequired = (message = "This field is required"): Validator => {
   return (value) => {
     if (value === null || value === undefined || value === '') return message;
