@@ -1,3 +1,4 @@
+
 import React, { useState, useCallback, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { PromptsGrid } from '../components/PromptsGrid';
@@ -76,7 +77,7 @@ export const PromptsPage: React.FC = () => {
   };
 
   const handleCreateSuccess = (id: string) => {
-    navigate(`/prompts/${id}`);
+    navigate(`/len/p/${id}`);
   };
 
   return (
@@ -122,7 +123,7 @@ export const PromptsPage: React.FC = () => {
       <PromptsGrid 
         prompts={prompts} 
         isLoading={isLoading} 
-        onOpen={(id) => navigate(`/prompts/${id}`)} 
+        onOpen={(id) => navigate(`/len/p/${id}`)} 
       />
       
       {/* Intersection Anchor & Loader */}

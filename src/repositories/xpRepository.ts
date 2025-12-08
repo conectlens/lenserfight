@@ -8,7 +8,6 @@ export interface XPRepositoryPort {
   getHistory(lenserId: string, limit?: number): Promise<XPEvent[]>;
   getBadges(lenserId: string): Promise<LenserBadge[]>;
   getLeaderboard(timeframe: LeaderboardTimeframe, scope: LeaderboardScope, limit?: number, offset?: number): Promise<{ list: LeaderboardEntry[], userEntry?: LeaderboardEntry | null }>;
-  grantXP(dto: GrantXPDTO): Promise<XPSummary>;
 }
 
 // --- Mock Implementation ---
@@ -257,44 +256,5 @@ export class SupabaseXPRepository implements XPRepositoryPort {
     }
     
     return { list: allEntries, userEntry }; 
-  }
-
-  async grantXP(dto: GrantXPDTO): Promise<XPSummary> {
-    const { data, error } = await supabase.rpc('grant_xp', {
-      p_lenser_id: dto.lenserId, 
-      p_app_id: dto.appId,
-      p_rule_key: dto.ruleKey,
-      p_source: dto.source,
-      p_source_ref_type: dto.refType,
-      p_source_ref_id: dto.refId
-    });
-
-    if (error) throw error;
-
-    const result = data[0];
-    
-    let currentMin = 0;
-    let currentMax: number | undefined;
-
-    try {
-        const { data: levelData } = await supabase
-            .from('xp_levels')
-            .select('min_total_xp, max_total_xp')
-            .eq('app_id', dto.appId)
-            .eq('level', result.level)
-            .maybeSingle();
-        
-        currentMin = levelData?.min_total_xp ?? 0;
-        currentMax = levelData?.max_total_xp;
-    } catch (e) {
-        // ignore
-    }
-
-    return {
-      totalXp: result.total_xp,
-      currentLevel: result.level,
-      currentLevelMinXp: currentMin,
-      currentLevelMaxXp: currentMax
-    };
   }
 }

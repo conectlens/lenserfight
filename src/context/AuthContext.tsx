@@ -72,7 +72,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, []);
 
   const login = async (email: string, pass: string, captchaToken?: string) => {
-    setState(s => ({ ...s, isLoading: true, error: null }));
+    // We do NOT set isLoading: true here because that triggers SessionBoundary to unmount the app
+    setState(s => ({ ...s, error: null }));
     try {
       const user = await authService.login(email, pass, captchaToken);
       setState({ user, isAuthenticated: true, isLoading: false, error: null });
@@ -84,7 +85,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const register = async (email: string, pass: string, displayName?: string, captchaToken?: string) => {
-    setState(s => ({ ...s, isLoading: true, error: null }));
+    // We do NOT set isLoading: true here because that triggers SessionBoundary to unmount the app
+    setState(s => ({ ...s, error: null }));
     try {
       const user = await authService.register(email, pass, displayName ? { display_name: displayName } : undefined, captchaToken);
       setState({ user, isAuthenticated: true, isLoading: false, error: null });

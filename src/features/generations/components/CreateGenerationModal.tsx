@@ -8,6 +8,7 @@ import { InputField } from '../../auth/components/InputField';
 import { useLenser } from '../../../context/LenserContext';
 import { generationService } from '../../../services/generationService';
 import { Image as ImageIcon, Video, Type, AlertCircle } from 'lucide-react';
+import { isValidUrl } from '../../../utils/validation';
 
 interface CreateGenerationModalProps {
   isOpen: boolean;
@@ -72,7 +73,7 @@ export const CreateGenerationModal: React.FC<CreateGenerationModalProps> = ({
         return;
     }
 
-    if (chatUrl && !/^https?:\/\//i.test(chatUrl)) {
+    if (chatUrl && !isValidUrl(chatUrl)) {
         setError("Original Chat URL must be a valid link starting with http:// or https://");
         return;
     }
@@ -82,9 +83,14 @@ export const CreateGenerationModal: React.FC<CreateGenerationModalProps> = ({
         return;
     }
 
-    // Duplicate Check for Media Types
+    // Validate Media URL for Image/Video
     if (resultType !== 'text') {
         const cleanUrl = content.trim();
+        if (!isValidUrl(cleanUrl)) {
+            setError("Media URL must be a valid link starting with http:// or https://");
+            return;
+        }
+        
         if (existingUrls.includes(cleanUrl)) {
             setError("This media URL has already been added to this prompt.");
             return;
@@ -197,7 +203,7 @@ export const CreateGenerationModal: React.FC<CreateGenerationModalProps> = ({
                     
                     {/* Preview Area */}
                     <div className="mt-4 bg-gray-50 dark:bg-gray-800 rounded-xl border border-dashed border-gray-300 dark:border-gray-700 min-h-[200px] flex items-center justify-center overflow-hidden relative">
-                        {content ? (
+                        {content && isValidUrl(content) ? (
                             resultType === 'image' ? (
                                 <img src={content} alt="Preview" className="max-w-full max-h-[300px] object-contain" onError={(e) => (e.currentTarget.style.display = 'none')} />
                             ) : (
