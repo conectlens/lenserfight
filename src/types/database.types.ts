@@ -62,24 +62,5 @@ export interface Database {
         }
       }
     }
-    Functions: {
-      grant_xp: {
-        Args: {
-          p_lenser_id: string
-          p_app_id: string
-          p_action_key: string
-          p_source: string
-          p_source_ref_type?: string
-          p_source_ref_id?: string
-          p_meta?: Json
-        }
-        Returns: {
-          event_id: string
-          total_xp: number
-          level: number
-          created_at: string
-        }[]
-      }
-    }
   }
 }
