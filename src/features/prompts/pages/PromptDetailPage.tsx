@@ -1,4 +1,4 @@
-import React, { useEffect, useCallback, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { usePromptDetailController } from '../hooks/usePromptDetailController';
 import { useLenser } from '../../../context/LenserContext';
@@ -16,7 +16,6 @@ import { useCreatePrompt } from '../hooks/useCreatePrompt';
 import { CreatePromptModal } from '../components/CreatePromptModal';
 import { ConfirmModal } from '../../../components/ConfirmModal';
 import { SEOHead } from '../../../components/SEOHead';
-import { Button } from '../../../components/Button';
 import { promptsService } from '../../../services/promptsService';
 import { useQueryClient } from '@tanstack/react-query';
 
@@ -29,88 +28,73 @@ export const PromptDetailPage: React.FC = () => {
   const { setShareConfig } = useShareContext();
   const { setPageActions, setPageTitle } = useUI();
   const queryClient = useQueryClient();
-  
-  // -- Controller --
-  const { 
-    prompt, 
-    relatedPrompts, 
-    authorPrompts, 
-    isLoading, 
-    error, 
-    actions 
+
+  const {
+    prompt,
+    relatedPrompts,
+    authorPrompts,
+    isLoading,
+    error,
+    actions
   } = usePromptDetailController(id);
 
-  // -- UI State --
   const [showProfileModal, setShowProfileModal] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
-  
-  // -- Modals State --
+
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [deleteTargetId, setDeleteTargetId] = useState<string | null>(null);
 
-  // -- Create/Edit Hook --
-  const { 
-    isOpen: isCreateOpen, 
-    openModal: openCreateModal, 
-    closeModal: closeCreateModal, 
-    form: createForm, 
-    isSubmitting: isCreateSubmitting, 
-    error: createError, 
+  const {
+    isOpen: isCreateOpen,
+    openModal: openCreateModal,
+    closeModal: closeCreateModal,
+    form: createForm,
+    isSubmitting: isCreateSubmitting,
+    error: createError,
     submit: submitCreate,
     isEditMode
   } = useCreatePrompt();
 
-  // Redirect if unauthenticated
   useEffect(() => {
     if (!authLoading && !isAuthenticated) {
       navigate('/login', { state: { from: location } });
     }
   }, [authLoading, isAuthenticated, navigate, location]);
 
-  // Sync Metadata (Title, Share)
   useEffect(() => {
-    if (prompt) {
-        setPageTitle(prompt.title);
-        setShareConfig({
-            title: prompt.title,
-            resourceType: 'prompt',
-            resourceId: prompt.id
-        });
-    } else {
-        setPageTitle(null);
-    }
-    return () => {
-        setShareConfig(null);
-        setPageTitle(null);
-    };
-  }, [prompt, setShareConfig, setPageTitle]);
+    if (!prompt) return;
+    setPageTitle(prompt.title);
+    setShareConfig({
+      title: prompt.title,
+      resourceType: 'prompt',
+      resourceId: prompt.id
+    });
+  }, [prompt, setPageTitle, setShareConfig]);
 
-  const ensureProfile = useCallback((): boolean => {
+  const ensureProfile = (): boolean => {
     if (!hasLenser) {
       setShowProfileModal(true);
       return false;
     }
     return true;
-  }, [hasLenser]);
+  };
 
-  // Page Actions (Owner Only)
   const isOwner = lenser && prompt && prompt.author.id === lenser.id;
 
-  const handleCreateClick = useCallback(() => {
+  const handleCreateClick = () => {
     if (ensureProfile()) openCreateModal();
-  }, [ensureProfile, openCreateModal]);
+  };
 
-  const handleDeleteClick = useCallback((targetId: string) => {
+  const handleDeleteClick = (targetId: string) => {
     setDeleteTargetId(targetId);
     setIsDeleteModalOpen(true);
-  }, []);
+  };
 
-  const handleEditClick = useCallback((targetId?: string) => {
+  const handleEditClick = (targetId?: string) => {
     if (!ensureProfile()) return;
 
     const editId = targetId || prompt?.id;
-
     if (editId && lenser) {
       promptsService.getPromptDetail(editId, lenser.id).then(detail => {
         if (detail) {
@@ -124,88 +108,78 @@ export const PromptDetailPage: React.FC = () => {
         }
       });
     }
-  }, [ensureProfile, prompt, lenser, openCreateModal]);
+  };
 
-  useEffect(() => {
-    if (isOwner && prompt) {
-      setPageActions([
+  const pageActions = useMemo(() => {
+    if (isOwner && prompt?.id) {
+      return [
         { label: 'Edit Prompt', icon: <Pencil size={16} />, onClick: () => handleEditClick(prompt.id) },
         { label: 'Delete Prompt', icon: <Trash2 size={16} />, onClick: () => handleDeleteClick(prompt.id), variant: 'danger' }
-      ]);
-    } else {
-      setPageActions([]);
+      ];
     }
-    return () => setPageActions([]);
-  }, [isOwner, prompt?.id, handleEditClick, handleDeleteClick, setPageActions]);
+    return [];
+  }, [isOwner, prompt]);
 
-  // -- Handlers --
+  useEffect(() => {
+    setPageActions(pageActions);
+  }, [pageActions, setPageActions]);
 
-  const handleCopy = useCallback(async () => {
+  const handleCopy = async () => {
     if (!prompt || !ensureProfile() || !lenser) return;
     try {
       await navigator.clipboard.writeText(prompt.content);
       await actions.copyPrompt();
-    } catch (e) {
-      console.error("Copy failed", e);
-    }
-  }, [prompt, ensureProfile, lenser, actions]);
+    } catch {}
+  };
 
-  const handleSave = useCallback(async () => {
+  const handleSave = async () => {
     if (!ensureProfile()) return;
     setIsSaving(true);
     try {
       await actions.savePrompt();
-    } catch {
-      alert("Failed to save.");
     } finally {
       setIsSaving(false);
     }
-  }, [ensureProfile, actions]);
+  };
 
-  const confirmDelete = useCallback(async () => {
+  const confirmDelete = async () => {
     if (!deleteTargetId || !lenser) return;
     setIsDeleting(true);
     try {
       await promptsService.deletePrompt(deleteTargetId, lenser.id);
-
       setIsDeleteModalOpen(false);
 
       if (prompt && deleteTargetId === prompt.id) {
         navigate('/prompts');
       } else {
-        // sadece ilgili listeleri yeniden getir
         queryClient.invalidateQueries({ queryKey: ['prompt-list'] });
         queryClient.invalidateQueries({ queryKey: ['prompt-composite', prompt.id] });
       }
-    } catch (e) {
-      console.error(e);
     } finally {
       setIsDeleting(false);
       setDeleteTargetId(null);
     }
-  }, [deleteTargetId, lenser, prompt, navigate, queryClient]);
+  };
 
-  const handleCreateSubmit = useCallback((newId: string) => {
+  const handleCreateSubmit = (newId: string) => {
     if (isEditMode && prompt && newId === prompt.id) {
       queryClient.invalidateQueries({ queryKey: ['prompt-composite', prompt.id] });
     } else {
       navigate(`/prompts/${newId}`);
     }
-  }, [isEditMode, prompt, navigate, queryClient]);
-
-  // -- Render States --
+  };
 
   if (authLoading || (isAuthenticated && isLoading)) {
     return (
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 animate-pulse">
         <div className="lg:col-span-8 space-y-8">
-           <div className="h-8 w-32 bg-gray-200 dark:bg-gray-700 rounded"></div>
-           <div className="h-16 w-3/4 bg-gray-200 dark:bg-gray-700 rounded"></div>
-           <div className="h-64 w-full bg-gray-200 dark:bg-gray-700 rounded"></div>
+          <div className="h-8 w-32 bg-gray-200 dark:bg-gray-700 rounded"></div>
+          <div className="h-16 w-3/4 bg-gray-200 dark:bg-gray-700 rounded"></div>
+          <div className="h-64 w-full bg-gray-200 dark:bg-gray-700 rounded"></div>
         </div>
         <div className="hidden lg:block lg:col-span-4 space-y-6">
-           <div className="h-8 w-40 bg-gray-200 dark:bg-gray-700 rounded"></div>
-           <div className="h-20 w-full bg-gray-200 dark:bg-gray-700 rounded"></div>
+          <div className="h-8 w-40 bg-gray-200 dark:bg-gray-700 rounded"></div>
+          <div className="h-20 w-full bg-gray-200 dark:bg-gray-700 rounded"></div>
         </div>
       </div>
     );
@@ -213,14 +187,14 @@ export const PromptDetailPage: React.FC = () => {
 
   if (error === '401') {
     return (
-        <div className="flex flex-col items-center justify-center min-h-[60vh]">
-            <div className="bg-red-50 dark:bg-red-900/20 p-6 rounded-full mb-6">
-                <Lock className="w-12 h-12 text-red-500" />
-            </div>
-            <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-3">Access Denied</h2>
-            <button onClick={() => navigate('/prompts')} className="text-primary-700 dark:text-primary-400 hover:underline">
-                Return to Library
-            </button>
+      <div className="flex flex-col items-center justify-center min-h-[60vh]">
+        <div className="bg-red-50 dark:bg-red-900/20 p-6 rounded-full mb-6">
+          <Lock className="w-12 h-12 text-red-500" />
+        </div>
+        <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-3">Access Denied</h2>
+        <button onClick={() => navigate('/prompts')} className="text-primary-700 dark:text-primary-400 hover:underline">
+          Return to Library
+        </button>
       </div>
     );
   }
@@ -230,42 +204,40 @@ export const PromptDetailPage: React.FC = () => {
       <div className="flex flex-col items-center justify-center min-h-[50vh]">
         <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">Prompt Not Found</h2>
         <button onClick={() => navigate('/prompts')} className="text-primary hover:underline">
-            Return to Library
+          Return to Library
         </button>
       </div>
     );
   }
 
-  // -- Main Render --
-
   return (
     <div>
       <SEOHead type="prompt" data={prompt} />
-      
+
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-12">
         <div className="lg:col-span-8">
           <div className="max-w-[860px] mx-auto">
-            <PromptDetailHeader 
-                prompt={prompt} 
-                onSave={handleSave}
-                isSaved={prompt.isSaved}
-                isSaving={isSaving}
-                saveCount={prompt.reactionCounts.saved}
+            <PromptDetailHeader
+              prompt={prompt}
+              onSave={handleSave}
+              isSaved={prompt.isSaved}
+              isSaving={isSaving}
+              saveCount={prompt.reactionCounts.saved}
             />
           </div>
-          
+
           <div className="mb-8">
-             <PromptBodyViewer content={prompt.content} onCopy={handleCopy} />
+            <PromptBodyViewer content={prompt.content} onCopy={handleCopy} />
           </div>
 
           <div className="max-w-[860px] mx-auto">
-             <AIResultsSection promptId={prompt.id} />
+            <AIResultsSection promptId={prompt.id} />
           </div>
         </div>
 
         <div className="lg:col-span-4 border-t lg:border-t-0 border-gray-100 dark:border-gray-800 pt-8 lg:pt-0">
-          <PromptAuthorList 
-            prompts={authorPrompts} 
+          <PromptAuthorList
+            prompts={authorPrompts}
             authorName={prompt.author.displayName}
             onOpen={(id) => navigate(`/prompts/${id}`)}
             isLoading={isLoading}
@@ -275,15 +247,15 @@ export const PromptDetailPage: React.FC = () => {
             onDelete={handleDeleteClick}
           />
 
-          <PromptRelatedList 
-            prompts={relatedPrompts} 
+          <PromptRelatedList
+            prompts={relatedPrompts}
             onOpen={(id) => navigate(`/prompts/${id}`)}
             isLoading={isLoading}
           />
         </div>
       </div>
 
-      <CreatePromptModal 
+      <CreatePromptModal
         isOpen={isCreateOpen}
         onClose={closeCreateModal}
         onSubmit={() => submitCreate(handleCreateSubmit)}
