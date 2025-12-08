@@ -13,7 +13,7 @@ export const Footer: React.FC<FooterProps> = ({ isDashboard }) => {
   const { theme, toggleTheme } = useTheme();
 
   return (
-    <footer className="w-full py-12 px-4 mt-auto border-t border-gray-100 bg-white text-gray-500 dark:bg-gray-900 dark:border-gray-800 dark:text-gray-400 transition-colors duration-200">
+    <footer className="w-full py-12 px-4 mt-auto border-t border-gray-100 bg-white text-gray-500 dark:bg-gray-900 dark:border-gray-700 dark:text-gray-400 transition-colors duration-200">
       <div className={`${isDashboard ? 'w-full' : 'max-w-5xl mx-auto px-6'} flex flex-col md:flex-row justify-between items-center gap-8`}>
         
         <div className="flex items-center gap-4">

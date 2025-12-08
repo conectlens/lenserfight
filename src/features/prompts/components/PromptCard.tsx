@@ -81,7 +81,7 @@ export const PromptCard: React.FC<PromptCardProps> = memo(({ prompt, onClick, is
             key={tag.id}
             onClick={(e) => {
                 e.stopPropagation();
-                navigate(`/tags/${tag.slug}`);
+                navigate(`/len/${tag.slug}`);
             }} 
             className="text-[10px] uppercase tracking-wider text-gray-500 dark:text-gray-400 font-semibold bg-gray-50 dark:bg-gray-700/50 px-2 py-1 rounded-md border border-gray-100 dark:border-gray-600 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-gray-700 dark:hover:text-gray-300 transition-colors"
           >

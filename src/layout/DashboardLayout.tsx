@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { Sidebar } from './Sidebar/Sidebar';
 import { Header } from './Header';
@@ -149,7 +148,7 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) =>
   };
 
   return (
-    <div className="flex h-screen bg-gray-50 dark:bg-gray-900 overflow-hidden transition-colors duration-200">
+    <div className="flex h-screen bg-gray-50 dark:bg-transparent overflow-hidden transition-colors duration-200">
       <Sidebar
         isOpen={sidebarOpen}
         isMobile={isMobile}

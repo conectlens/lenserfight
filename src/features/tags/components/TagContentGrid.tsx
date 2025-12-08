@@ -46,7 +46,7 @@ export const TagContentGrid: React.FC<TagContentGridProps> = ({ items, loading }
                const promptVM = item.data as PromptTemplateViewModel;
                return (
                    <div key={item.id} className="h-full">
-                       <PromptCard prompt={promptVM} onClick={(id) => navigate(`/prompts/${id}`)} />
+                       <PromptCard prompt={promptVM} onClick={(id) => navigate(`/len/p/${id}`)} />
                    </div>
                );
            } 

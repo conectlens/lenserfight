@@ -5,9 +5,11 @@ import { ChevronRight } from 'lucide-react';
 import { useUI } from '../context/UIContext';
 
 const routeNameMap: Record<string, string> = {
-  prompts: 'Prompts',
+  len: 'Len Cloud',
+  p: 'Prompts',
   threads: 'Threads',
   lenser: 'Lenser',
+  lenserboard: 'LenserBoard',
   login: 'Login',
   register: 'Register',
   'forgot-password': 'Forgot Password',
