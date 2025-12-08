@@ -6,7 +6,6 @@ import { reactionService } from './reactionService';
 import { ThreadReplyViewModel } from '../types/threads.types';
 import { MentionParser } from '../utils/mentionParser';
 import { contentModerationService } from './contentModerationService';
-import { xpService } from './xpService';
 
 const threadsRepo = getThreadsRepository();
 const lenserRepo = getLenserRepository();
@@ -17,22 +16,12 @@ export const threadInteractionService = {
   toggleThreadReaction: async (threadId: string, lenserId: string): Promise<{ added: boolean, newCount: number }> => {
     if (!lenserId) throw new Error("Must be logged in to react");
     const { added, summary } = await reactionService.toggleReaction('thread', threadId, lenserId, 'like');
-    
-    if (added) {
-        xpService.notifyReaction(lenserId, threadId).catch(console.error);
-    }
-
     return { added, newCount: summary.total };
   },
 
   toggleReplyReaction: async (replyId: string, lenserId: string): Promise<{ added: boolean, newCount: number }> => {
     if (!lenserId) throw new Error("Must be logged in to react");
     const { added, summary } = await reactionService.toggleReaction('thread_reply', replyId, lenserId, 'like');
-    
-    if (added) {
-        xpService.notifyReaction(lenserId, replyId).catch(console.error);
-    }
-
     return { added, newCount: summary.total };
   },
 
@@ -46,19 +35,6 @@ export const threadInteractionService = {
     const cleanedContent = MentionParser.cleanContent(content); 
 
     const record = await threadsRepo.createReply(threadId, lenserId, cleanedContent, parentReplyId);
-    
-    // Award XP to replier
-    xpService.notifyReplyCreated(lenserId, record.id).catch(console.error);
-
-    // Award XP Bonus to thread owner (if not self)
-    try {
-        const thread = await threadsRepo.getThreadById(threadId);
-        if (thread && thread.lenser_id !== lenserId) {
-            xpService.notifyThreadReplyReceived(thread.lenser_id, threadId).catch(console.error);
-        }
-    } catch (e) {
-        console.warn("Failed to grant thread owner XP", e);
-    }
 
     // Use author_profile directly from record
     const profile = (record.author_profile || {}) as any;
@@ -81,12 +57,7 @@ export const threadInteractionService = {
 
   getReplyTree: async (threadId: string, currentLenserId?: string): Promise<ThreadReplyViewModel[]> => {
     const records = await threadsRepo.getThreadReplies(threadId);
-    
-    // Optimization: Batch Fetch User Reactions
-    // Instead of calling reactionService.getReactionSummary for every reply (N+1 queries),
-    // we fetch user status in one batch and use denormalized reaction_totals for counts.
     let userReactedIds = new Set<string>();
-    
     if (currentLenserId && records.length > 0) {
         const replyIds = records.map(r => r.id);
         try {

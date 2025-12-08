@@ -88,7 +88,7 @@ export const TagCloud: React.FC<TagCloudProps> = ({ tags }) => {
           return (
             <button
               key={tag.id}
-              onClick={() => navigate(`/tags/${tag.slug}`)}
+              onClick={() => navigate(`/len/${tag.slug}`)}
               className={`
                 relative cursor-pointer transition-all duration-500 ease-out 
                 hover:scale-110 hover:rotate-0 hover:z-50 hover:opacity-100

@@ -6,7 +6,6 @@ import { reactionService } from './reactionService';
 import { PromptTemplateViewModel, PromptTemplateDetailViewModel, PromptTemplateRecord, CreatePromptDTO, PromptAuthor } from '../types/prompts.types';
 import { tagService } from './tagService';
 import { tagActivityService } from './tagActivityService';
-import { xpService } from './xpService';
 import { contentModerationService } from './contentModerationService';
 
 const promptsRepo = getPromptsRepository();
@@ -68,24 +67,6 @@ export const promptsService = {
   },
 
   getLenserPrompts: async (lenserHandle: string, offset = 0, limit = 10, viewerId?: string): Promise<PromptTemplateViewModel[]> => {
-    // If viewer is the owner, include private prompts.
-    // We check via handle in repository or assume repo handles visibility.
-    // Usually 'includePrivate' logic depends on matching ID. 
-    // Here we pass the handle to repo, repo should check visibility.
-    // For now, we will pass a flag based on if viewer is owner (requires resolving handle to ID or trusting frontend check?)
-    // Actually repo signature handles `includePrivate`.
-    // We need to know if `viewerId` corresponds to `lenserHandle`.
-    
-    // We'll let the repository filter by handle. The `includePrivate` check is tricky if we don't have the ID of `lenserHandle`.
-    // But typically `viewerId` is the session user ID.
-    // If we assume strict handle matching for ownership, we might need to fetch the profile first.
-    // However, to keep it efficient, we might rely on the client to know if it's the owner (which it does).
-    // Or we fetch public only for now unless we resolve ID.
-    
-    // Let's resolve ID briefly if we need strict private check, or simply pass viewerId and let repo handle logic if possible.
-    // BUT the prompt requested fetching by handle.
-    
-    // For simplicity and performance, we'll try to resolve ownership if viewerId is present.
     let includePrivate = false;
     if (viewerId) {
         const viewer = await lenserRepo.getLenserById(viewerId);
@@ -145,36 +126,9 @@ export const promptsService = {
     await reactionService.recordReaction('prompt_template', id, lenserId, 'copy');
   },
 
-  toggleSavePrompt: async (id: string, lenserId: string): Promise<boolean> => {
-     // 1. Toggle reaction entry
-     const { added, summary } = await reactionService.toggleReaction('prompt_template', id, lenserId, 'saved');
-     
-     // 2. Sync updated counts to reaction_totals JSONB column
-     try {
-         await promptsRepo.updateReactionTotals(id, summary.counts);
-     } catch (e) {
-         console.warn("Failed to sync reaction_totals", e);
-     }
-
-     return added;
-  },
-
-  toggleReaction: async (id: string, lenserId: string, reaction: 'like' | 'love' | 'clap') => {
+  toggleReaction: async (id: string, lenserId: string, reaction: 'like' | 'love' | 'clap' | 'saved') => {
       const { added, summary } = await reactionService.toggleReaction('prompt_template', id, lenserId, reaction);
-      
-      // XP Award
-      if (added) {
-          xpService.notifyReaction(lenserId, id).catch(console.error);
-      }
-
-      // Sync totals
-      try {
-          await promptsRepo.updateReactionTotals(id, summary.counts);
-      } catch (e) {
-          console.warn("Failed to sync reaction_totals", e);
-      }
-
-      return summary;
+      return { added, summary };
   },
 
   createPrompt: async (input: CreatePromptDTO): Promise<PromptTemplateRecord> => {
@@ -204,10 +158,6 @@ export const promptsService = {
             actor_id: input.lenserId
         }))
     ).catch(console.error);
-
-    // Award XP
-    xpService.notifyPromptCreated(input.lenserId, prompt.id).catch(console.error);
-
     return prompt;
   },
 

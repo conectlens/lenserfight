@@ -79,7 +79,7 @@ export class MockShareRepository implements ShareRepositoryPort {
     } else {
         switch (link.resource_type) {
             case 'prompt':
-                path = `/prompts/${link.resource_id}`;
+                path = `/len/p/${link.resource_id}`;
                 break;
             case 'thread':
                 path = `/threads/${link.resource_id}`;
@@ -156,7 +156,7 @@ export class SupabaseShareRepository implements ShareRepositoryPort {
     if (link.resource_type === 'external') {
         path = link.meta?.targetUrl || link.resource_id; // Check meta first for real URLs stored under UUID resource_id
     } else if (link.resource_type === 'prompt') {
-        path = `/prompts/${link.slug || link.resource_id}`;
+        path = `/len/p/${link.slug || link.resource_id}`;
     } else if (link.resource_type === 'thread') {
         path = `/threads/${link.resource_id}`;
     } else if (link.resource_type === 'profile') {
