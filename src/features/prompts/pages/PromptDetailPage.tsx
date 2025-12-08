@@ -114,7 +114,7 @@ export const PromptDetailPage: React.FC = () => {
     if (isOwner && prompt?.id) {
       return [
         { label: 'Edit Prompt', icon: <Pencil size={16} />, onClick: () => handleEditClick(prompt.id) },
-        { label: 'Delete Prompt', icon: <Trash2 size={16} />, onClick: () => handleDeleteClick(prompt.id), variant: 'danger' }
+        { label: 'Delete Prompt', icon: <Trash2 size={16} />, onClick: () => handleDeleteClick(prompt.id), variant: 'danger' as const }
       ];
     }
     return [];

@@ -1,4 +1,3 @@
-
 import { useEffect, useRef } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { promptsService } from '../../../services/promptsService';
@@ -93,37 +92,34 @@ export const usePromptDetailController = (promptId?: string) => {
     }));
   };
 
-const savePrompt = async (): Promise<boolean> => {
-  if (!data?.prompt || !lenser) return false;
+  const savePrompt = async (): Promise<boolean> => {
+    if (!data?.prompt || !lenser) return false;
 
-  // backend toggle ateşle, sonucu bekle ama localde kendi mantığını kur
-  const res = await promptsService.toggleReaction(
-    data.prompt.id,
-    lenser.id,
-    'saved'
-  );
+    const res = await promptsService.toggleReaction(
+      data.prompt.id,
+      lenser.id,
+      'saved'
+    );
 
-  updateLocalPrompt(prev => {
-    const wasSaved = !!prev.isSaved;
-    const nowSaved = !wasSaved;
-    const prevCount = prev.reactionCounts?.saved ?? 0;
+    updateLocalPrompt(prev => {
+      const wasSaved = !!prev.isSaved;
+      const nowSaved = !wasSaved;
+      const prevCount = prev.reactionCounts?.saved ?? 0;
 
-    return {
-      ...prev,
-      isSaved: nowSaved,
-      reactionCounts: {
-        ...prev.reactionCounts,
-        saved: nowSaved
-          ? prevCount + 1  // save ekleniyorsa +1
-          : Math.max(0, prevCount - 1) // kaldırılıyorsa -1
-      }
-    };
-  });
+      return {
+        ...prev,
+        isSaved: nowSaved,
+        reactionCounts: {
+          ...prev.reactionCounts,
+          saved: nowSaved
+            ? prevCount + 1  // save ekleniyorsa +1
+            : Math.max(0, prevCount - 1) // kaldırılıyorsa -1
+        }
+      };
+    });
 
-  // yine backend added varsa dön, yoksa kendi nowSaved değerini dön
-  return res?.added ?? !data.prompt.isSaved;
-};
-
+    return res?.added ?? !data.prompt.isSaved;
+  };
 
   return {
     prompt: data?.prompt || null,

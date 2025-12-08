@@ -82,6 +82,7 @@ export const AppRouter: React.FC = () => {
             <Route path="/ecosystem" element={<EcosystemPage />} />
             <Route path="/ecosystem/lens" element={<EcosystemPage />} />
             <Route path="/ecosystem/lenser" element={<EcosystemPage />} />
+            <Route path="/ecosystem/len" element={<EcosystemPage />} />
             
             <Route path="/contact" element={<ContactPage />} />
             
