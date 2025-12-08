@@ -28,6 +28,27 @@ import { ContactPage } from '../features/public/pages/ContactPage';
 import { LegalPage } from '../features/public/pages/LegalPage';
 import { WelcomePage } from '../features/public/pages/WelcomePage';
 
+// Admin Pages
+import { AdminLayout } from '../features/admin/layout/AdminLayout';
+import { AdminWelcome } from '../features/admin/pages/AdminWelcome';
+import { AdminAnalytics } from '../features/admin/pages/AdminAnalytics';
+import { AdminUsers } from '../features/admin/pages/AdminUsers';
+import { AdminDesign } from '../features/admin/pages/AdminDesign';
+import { AdminFeedbacks } from '../features/admin/pages/AdminFeedbacks';
+import { AdminWaitlist } from '../features/admin/pages/AdminWaitlist';
+import { AdminContacts } from '../features/admin/pages/AdminContacts';
+
+import { useLenser } from '../context/LenserContext';
+
+// Protected Admin Guard
+const ProtectedAdminRoute = () => {
+  const { lenser, isLoading } = useLenser();
+  
+  if (isLoading) return <div className="flex h-screen items-center justify-center">Loading...</div>;
+  if (!lenser || !lenser.is_super_admin) return <Navigate to="/" replace />;
+  return <Outlet />;
+};
+
 // Wrapper for public routes to apply layout
 const PublicRouteWrapper = () => (
   <PublicLayout>
@@ -61,6 +82,7 @@ export const AppRouter: React.FC = () => {
             <Route path="/ecosystem" element={<EcosystemPage />} />
             <Route path="/ecosystem/lens" element={<EcosystemPage />} />
             <Route path="/ecosystem/lenser" element={<EcosystemPage />} />
+            <Route path="/ecosystem/len" element={<EcosystemPage />} />
             
             <Route path="/contact" element={<ContactPage />} />
             
@@ -80,7 +102,7 @@ export const AppRouter: React.FC = () => {
         />
 
         <Route 
-          path="/leaderboard" 
+          path="/lenserboard" 
           element={
             <DashboardLayout>
               <LeaderboardPage />
@@ -97,8 +119,9 @@ export const AppRouter: React.FC = () => {
           } 
         />
 
+        {/* Updated Route: Prompts -> /len/p */}
         <Route 
-          path="/prompts" 
+          path="/len/p" 
           element={
             <DashboardLayout>
               <PromptsPage />
@@ -107,7 +130,7 @@ export const AppRouter: React.FC = () => {
         />
 
         <Route 
-          path="/prompts/:id" 
+          path="/len/p/:id" 
           element={
             <DashboardLayout>
               <PromptDetailPage />
@@ -115,8 +138,9 @@ export const AppRouter: React.FC = () => {
           } 
         />
         
+        {/* Updated Route: Tags -> /len */}
         <Route 
-          path="/tags" 
+          path="/len" 
           element={
             <DashboardLayout>
               <TagCloudPage />
@@ -125,7 +149,7 @@ export const AppRouter: React.FC = () => {
         />
 
         <Route 
-          path="/tags/:slug" 
+          path="/len/:slug" 
           element={
             <DashboardLayout>
               <TagDetailPage />
@@ -134,7 +158,7 @@ export const AppRouter: React.FC = () => {
         />
 
         <Route 
-          path="/tags/:slug/:tab" 
+          path="/len/:slug/:tab" 
           element={
             <DashboardLayout>
               <TagDetailPage />
@@ -181,7 +205,25 @@ export const AppRouter: React.FC = () => {
             </DashboardLayout>
           } 
         />
+
+        {/* ADMIN ROUTES */}
+        <Route element={<ProtectedAdminRoute />}>
+          <Route path="/admin" element={<AdminLayout />}>
+            <Route index element={<AdminWelcome />} />
+            <Route path="analytics" element={<AdminAnalytics />} />
+            <Route path="users" element={<AdminUsers />} />
+            <Route path="design" element={<AdminDesign />} />
+            <Route path="feedbacks" element={<AdminFeedbacks />} />
+            <Route path="waitlist" element={<AdminWaitlist />} />
+            <Route path="contacts" element={<AdminContacts />} />
+          </Route>
+        </Route>
         
+        {/* Redirect old routes for backward compatibility/bookmarks */}
+        <Route path="/prompts/*" element={<Navigate to="/len/p" replace />} />
+        <Route path="/tags/*" element={<Navigate to="/len" replace />} />
+        <Route path="/leaderboard" element={<Navigate to="/lenserboard" replace />} />
+
         {/* Default Redirect */}
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>

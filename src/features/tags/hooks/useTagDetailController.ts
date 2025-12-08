@@ -94,9 +94,9 @@ export const useTagDetailController = (slug?: string) => {
     const sortQuery = sortType !== 'trending' ? `?type=${sortType}` : '';
     
     if (newTab === 'all') {
-      navigate(`/tags/${slug}${sortQuery}`);
+      navigate(`/len/${slug}${sortQuery}`);
     } else {
-      navigate(`/tags/${slug}/${newTab}${sortQuery}`);
+      navigate(`/len/${slug}/${newTab}${sortQuery}`);
     }
   };
 
