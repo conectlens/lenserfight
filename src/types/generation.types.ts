@@ -62,5 +62,5 @@ export interface GenerationFilterOptions {
   limit?: number;
   offset?: number;
   mediaKind?: MediaKind | 'all';
-  aiModelId?: string | 'all';
+  aiModelSlug?: string | 'all';
 }
