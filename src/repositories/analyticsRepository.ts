@@ -18,9 +18,7 @@ export class MockAnalyticsRepository implements AnalyticsRepositoryPort {
 
 export class SupabaseAnalyticsRepository implements AnalyticsRepositoryPort {
   async logPageView(dto: LogPageViewDTO): Promise<void> {
-    const { error } = await supabase.rpc("log_page_view", {
-      p_lenser_id: dto.lenserId || null,
-      p_user_id: dto.userId || null,
+    const { error } = await supabase.rpc("fn_log_page_view", {
       p_target_type: dto.targetType,
       p_target_id: dto.targetId || null,
       p_path: dto.path,
