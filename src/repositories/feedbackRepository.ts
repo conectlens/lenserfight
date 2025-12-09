@@ -5,7 +5,7 @@ import { storage } from '../utils/storage';
 
 // --- Port (Interface) ---
 export interface FeedbackRepositoryPort {
-  submitFeedback(dto: SubmitFeedbackDTO): Promise<Feedback>;
+  submitFeedback(dto: SubmitFeedbackDTO): Promise<void>;
   getUserFeedbacks(userId: string, offset?: number, limit?: number): Promise<{ data: Feedback[]; count: number }>;
 }
 
@@ -13,7 +13,7 @@ export interface FeedbackRepositoryPort {
 export class MockFeedbackRepository implements FeedbackRepositoryPort {
   private STORAGE_KEY = 'mock_feedback_db';
 
-  async submitFeedback(dto: SubmitFeedbackDTO): Promise<Feedback> {
+  async submitFeedback(dto: SubmitFeedbackDTO): Promise<void> {
     await new Promise(resolve => setTimeout(resolve, 800)); // Simulate network
 
     const newFeedback: Feedback = {
@@ -36,8 +36,6 @@ export class MockFeedbackRepository implements FeedbackRepositoryPort {
     console.group("Mock Feedback Submitted");
     console.log("Data:", newFeedback);
     console.groupEnd();
-
-    return newFeedback;
   }
 
   async getUserFeedbacks(userId: string, offset = 0, limit = 5): Promise<{ data: Feedback[]; count: number }> {
@@ -57,23 +55,25 @@ export class MockFeedbackRepository implements FeedbackRepositoryPort {
 
 // --- Supabase Implementation ---
 export class SupabaseFeedbackRepository implements FeedbackRepositoryPort {
-  async submitFeedback(dto: SubmitFeedbackDTO): Promise<Feedback> {
-    const { data, error } = await supabase
-      .from('feedback')
-      .insert({
-        product_tag: dto.product_tag,
-        page: dto.page,
-        message: dto.message,
-        start_date: dto.start_date,
-        end_date: dto.end_date
-      })
-      .select()
-      .single();
+  async submitFeedback(dto: SubmitFeedbackDTO) {
+    const { data, error } = await supabase.rpc(
+      'fn_public_submit_feedback',
+      {
+        p_product_tag: dto.product_tag ?? 'general',
+        p_page: dto.page,
+        p_message: dto.message,
+        p_start_date: dto.start_date ?? null,
+        p_end_date: dto.end_date ?? null
+      }
+    );
 
     if (error) throw error;
-    return data as Feedback;
+    if (data) {
+      // data is non-null only if the function caught an error and returned details
+      console.warn("Feedback RPC reported error:", data);
+    }
   }
-
+  
   async getUserFeedbacks(userId: string, offset = 0, limit = 5): Promise<{ data: Feedback[]; count: number }> {
     // Use the secure view which filters by auth.uid() automatically.
     // Note: The view does not return 'id', so pagination relies on offset/limit.
