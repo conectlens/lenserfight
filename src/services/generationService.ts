@@ -10,8 +10,7 @@ export const generationService = {
     return repo.getGenerationsForPrompt(promptId, lenserId, options);
   },
 
-  createGeneration: async (data: CreateGenerationDTO): Promise<AIGeneration> => {
-    if (!data.lenser_id) throw new Error("User must be logged in to save generations.");
+  createGeneration: async (data: CreateGenerationDTO): Promise<void> => {
     return repo.createGeneration(data);
   },
 
