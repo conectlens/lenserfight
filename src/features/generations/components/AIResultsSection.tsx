@@ -66,7 +66,7 @@ export const AIResultsSection: React.FC<AIResultsSectionProps> = ({ promptId }) 
             limit: PAGE_SIZE,
             offset,
             mediaKind: mediaFilter,
-            aiModelId: modelFilter
+            aiModelSlug: modelFilter
         });
 
         if (newItems.length < PAGE_SIZE) {
@@ -189,7 +189,7 @@ export const AIResultsSection: React.FC<AIResultsSectionProps> = ({ promptId }) 
                     onOpen={handleLoadModels}
                     options={[
                         { value: 'all', label: 'All Models' },
-                        ...availableModels.map(m => ({ value: m.id, label: m.name }))
+                        ...availableModels.map(m => ({ value: m.slug, label: m.name }))
                     ]}
                     className="w-full"
                     dropdownClassName="generations-scroll"
