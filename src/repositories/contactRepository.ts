@@ -4,13 +4,13 @@ import { supabase } from '../utils/supabase';
 import { storage } from '../utils/storage';
 
 export interface ContactRepositoryPort {
-  submitMessage(dto: CreateContactDTO): Promise<ContactMessage>;
+  submitMessage(dto: CreateContactDTO): Promise<void>;
 }
 
 export class MockContactRepository implements ContactRepositoryPort {
   private STORAGE_KEY = 'mock_contact_messages';
 
-  async submitMessage(dto: CreateContactDTO): Promise<ContactMessage> {
+  async submitMessage(dto: CreateContactDTO): Promise<void> {
     await new Promise(resolve => setTimeout(resolve, 1000)); // Simulate network
 
     const newMessage: ContactMessage = {
@@ -29,35 +29,19 @@ export class MockContactRepository implements ContactRepositoryPort {
     console.group("Mock Contact Message Submitted");
     console.log("Payload:", newMessage);
     console.groupEnd();
-
-    return newMessage;
   }
 }
 
 export class SupabaseContactRepository implements ContactRepositoryPort {
-  async submitMessage(dto: CreateContactDTO): Promise<ContactMessage> {
-    const { data, error } = await supabase
-      .from('contact_messages')
-      .insert({
-        lenser_id: dto.lenser_id || null,
-        name: dto.name,
-        email: dto.email,
-        subject: dto.subject,
-        message: dto.message,
-        kvkk_approved: dto.kvkk_approved,
-        user_agent: dto.user_agent
-      })
-      .select()
-      .single();
-
-    if (error) {
-      // Handle RLS policy violation specifically for better UX
-      if (error.code === '42501') {
-        throw new Error("Permission denied. Please ensure you have accepted the privacy policy.");
-      }
-      throw error;
-    }
-
-    return data as ContactMessage;
+  async submitMessage(dto: CreateContactDTO): Promise<void> {
+  await supabase.rpc('fn_ops_create_contact', {
+    p_name: dto.name,
+    p_email: dto.email,
+    p_subject: dto.subject,
+    p_message: dto.message,
+    p_kvkk_approved: dto.kvkk_approved,
+    p_ip_address: dto.ip_address ?? null,
+    p_user_agent: dto.user_agent ?? null
+  });
   }
 }
