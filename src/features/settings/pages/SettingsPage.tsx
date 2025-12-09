@@ -176,7 +176,7 @@ export const SettingsPage: React.FC = () => {
       if (!user) return;
       setIsDeleting(true);
       try {
-          await lenserService.requestAccountDeletion(user.id);
+          await lenserService.requestAccountDeletion(user.handle);
           // Auto logout after request
           await logout();
           navigate('/login');

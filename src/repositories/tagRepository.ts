@@ -146,13 +146,6 @@ export class SupabaseTagRepository implements TagRepositoryPort {
   }
 
   async getAllTagsWithCounts(): Promise<TagUsage[]> {
-    // We are restricted to reading from `vw_tags_public`.
-    // The view provided in spec is: SELECT slug, name, created_at FROM public.tags WHERE public...
-    // It doesn't have counts. We cannot join base tables to get counts.
-    // For this implementation, we will fetch the tags from the view. 
-    // If specific counts are needed, the view definition in DB must be updated to include them.
-    // We will return 0 for counts to remain compliant with "Do not query ... directly".
-    
     const { data, error } = await supabase
       .from('vw_tags_public')
       .select('*'); // Select all available cols from view

@@ -50,12 +50,3 @@ export interface LeaderboardEntry {
 
 export type LeaderboardTimeframe = 'weekly' | 'monthly' | 'all_time';
 export type LeaderboardScope = 'global' | 'season';
-
-export interface GrantXPDTO {
-  ruleKey: XPRuleKey;
-  source: XPSource;
-  lenserId: string;
-  appId: string; // Usually fixed per deployment
-  refType?: string;
-  refId?: string;
-}
