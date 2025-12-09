@@ -18,7 +18,6 @@ export interface ThreadsRepositoryPort {
   createReply(threadId: string, lenserId: string, content: string, parentReplyId?: string): Promise<ThreadReplyRecord>;
   updateThread(id: string, dto: Partial<CreateThreadDTO>): Promise<ThreadRecord>;
   deleteThread(id: string): Promise<void>;
-  incrementView(id: string): Promise<void>;
 }
 
 // Fallback data for Mock Mode to prevent "Unknown User"
@@ -216,7 +215,6 @@ export class MockThreadsRepository implements ThreadsRepositoryPort {
       const threads = this.getThreads().filter(t => t.id !== id);
       this.saveThreads(threads);
   };
-  incrementView = async () => {};
 }
 
 // --- Supabase Implementation (Optimized for Views) ---
@@ -270,21 +268,20 @@ export class SupabaseThreadsRepository implements ThreadsRepositoryPort {
         }
         
         // Fetch fresh from VIEW to get the populated tags
-        const { data: freshThread } = await supabase.from('vw_threads').select('*').eq('id', thread.id).single();
+        const { data: freshThread } = await supabase.from('vw_threads_public').select('*').eq('id', thread.id).single();
         return freshThread as ThreadRecord;
     }
 
     // Return view representation
-    const { data: finalThread } = await supabase.from('vw_threads').select('*').eq('id', thread.id).single();
+    const { data: finalThread } = await supabase.from('vw_threads_public').select('*').eq('id', thread.id).single();
     return finalThread as ThreadRecord;
   }
 
   async getAllThreads(offset = 0, limit = 10): Promise<ThreadRecord[]> {
     // Query the secure view
     const { data, error } = await supabase
-        .from('vw_threads')
+        .from('vw_threads_public')
         .select(this.threadSelect)
-        .eq('visibility', 'public')
         .order('created_at', { ascending: false })
         .range(offset, offset + limit - 1);
 
@@ -295,9 +292,8 @@ export class SupabaseThreadsRepository implements ThreadsRepositoryPort {
   async getThreadsByTag(tagSlug: string, offset = 0, limit = 10): Promise<ThreadRecord[]> {
       // Use JSONB containment on the view's 'tags' column
       const { data, error } = await supabase
-        .from('vw_threads')
+        .from('vw_threads_public')
         .select(this.threadSelect)
-        .eq('visibility', 'public')
         .contains('tags', JSON.stringify([{ slug: tagSlug }])) 
         .order('created_at', { ascending: false })
         .range(offset, offset + limit - 1);
@@ -308,7 +304,7 @@ export class SupabaseThreadsRepository implements ThreadsRepositoryPort {
 
   async getThreadById(id: string): Promise<ThreadRecord | null> {
     const { data, error } = await supabase
-        .from('vw_threads')
+        .from('vw_threads_public')
         .select(this.threadSelect)
         .eq('id', id)
         .single();
@@ -322,15 +318,11 @@ export class SupabaseThreadsRepository implements ThreadsRepositoryPort {
 
   async getByLenser(handle: string, offset = 0, limit = 10, includePrivate = false): Promise<ThreadRecord[]> {
     let query = supabase
-        .from('vw_threads')
+        .from('vw_threads_public')
         .select(this.threadSelect)
         .eq('author_profile->>handle', handle) // Use JSONB author profile handle filtering
         .order('created_at', { ascending: false })
         .range(offset, offset + limit - 1);
-
-    if (!includePrivate) {
-        query = query.eq('visibility', 'public');
-    }
 
     const { data, error } = await query;
     if (error) this.handleError(error);
@@ -345,7 +337,7 @@ export class SupabaseThreadsRepository implements ThreadsRepositoryPort {
 
   async getThreadReplies(threadId: string): Promise<ThreadReplyRecord[]> {
      const { data, error } = await supabase
-        .from('thread_replies')
+        .from('vw_thread_replies')
         .select('*')
         .eq('thread_id', threadId)
         .order('created_at', { ascending: true });
@@ -355,13 +347,13 @@ export class SupabaseThreadsRepository implements ThreadsRepositoryPort {
   }
 
   async getReplyById(replyId: string): Promise<ThreadReplyRecord | null> {
-      const { data, error } = await supabase.from('thread_replies').select('*').eq('id', replyId).single();
+      const { data, error } = await supabase.from('vw_thread_replies').select('*').eq('id', replyId).single();
       if (error) return null;
       return data as ThreadReplyRecord;
   }
 
   async createReply(threadId: string, lenserId: string, content: string, parentReplyId?: string): Promise<ThreadReplyRecord> {
-      const { data, error } = await supabase.from('thread_replies').insert({
+      const { data, error } = await supabase.from('vw_thread_replies').insert({
           thread_id: threadId,
           lenser_id: lenserId,
           content,
@@ -425,9 +417,5 @@ export class SupabaseThreadsRepository implements ThreadsRepositoryPort {
   async deleteThread(id: string): Promise<void> {
       const { error } = await supabase.from('threads').delete().eq('id', id);
       if (error) this.handleError(error);
-  }
-
-  async incrementView(id: string): Promise<void> {
-      await supabase.rpc('increment_thread_view', { p_thread_id: id });
   }
 }

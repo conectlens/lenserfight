@@ -1,15 +1,15 @@
 
 import { getAuthRepository } from '../adapters/authAdapter';
-import { User, AuthStateChangeCallback } from '../types/auth.types';
+import { User, AuthStateChangeCallback, UserMetadata } from '../types/auth.types';
 
 const authRepo = getAuthRepository();
 
 export const authService = {
-  login: async (email: string, password: string, captchaToken?: string): Promise<User> => {
-    return authRepo.login(email, password, captchaToken);
+  login: async (email: string, password: string, captchaToken?: string, metadata?: Partial<UserMetadata>): Promise<User> => {
+    return authRepo.login(email, password, captchaToken, metadata);
   },
 
-  register: async (email: string, password: string, metadata?: { display_name?: string }, captchaToken?: string): Promise<User> => {
+  register: async (email: string, password: string, metadata?: UserMetadata, captchaToken?: string): Promise<User> => {
     return authRepo.register(email, password, metadata, captchaToken);
   },
 

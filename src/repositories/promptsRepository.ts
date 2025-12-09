@@ -229,9 +229,8 @@ export class SupabasePromptsRepository implements PromptsRepositoryPort {
 
   async getAll(offset = 0, limit = 10): Promise<PromptTemplateRecord[]> {
     const { data, error } = await supabase
-        .from('vw_prompt_templates')
+        .from('vw_prompt_templates_public')
         .select(this.promptSelect)
-        .eq('visibility', 'public')
         .order('created_at', { ascending: false })
         .range(offset, offset + limit - 1);
         
@@ -241,9 +240,8 @@ export class SupabasePromptsRepository implements PromptsRepositoryPort {
 
   async search(query: string, offset = 0, limit = 10): Promise<PromptTemplateRecord[]> {
     const { data, error } = await supabase
-        .from('vw_prompt_templates')
+        .from('vw_prompt_templates_public')
         .select(this.promptSelect)
-        .eq('visibility', 'public')
         .ilike('title', `%${query}%`)
         .range(offset, offset + limit - 1);
     if (error) this.handleError(error);
@@ -255,9 +253,8 @@ export class SupabasePromptsRepository implements PromptsRepositoryPort {
     
     // JSONB filter via @> contains operator on View
     const { data, error } = await supabase
-        .from('vw_prompt_templates')
+        .from('vw_prompt_templates_public')
         .select(this.promptSelect)
-        .eq('visibility', 'public')
         .contains('tags', JSON.stringify([{ slug: tagSlug }]))
         .order('created_at', { ascending: false })
         .range(offset, offset + limit - 1);
@@ -267,7 +264,7 @@ export class SupabasePromptsRepository implements PromptsRepositoryPort {
   }
 
   async sort(order: "newest" | "popular", offset = 0, limit = 10): Promise<PromptTemplateRecord[]> {
-    let builder = supabase.from('vw_prompt_templates').select(this.promptSelect).eq('visibility', 'public');
+    let builder = supabase.from('vw_prompt_templates_public').select(this.promptSelect);
     
     if (order === 'newest') builder = builder.order('created_at', { ascending: false });
     else builder = builder.order('reaction_totals->>copy', { ascending: false });
@@ -279,9 +276,8 @@ export class SupabasePromptsRepository implements PromptsRepositoryPort {
 
   async getTopPrompts(limit: number): Promise<PromptTemplateRecord[]> {
       const { data, error } = await supabase
-        .from('vw_prompt_templates')
+        .from('vw_prompt_templates_public')
         .select(this.promptSelect)
-        .eq('visibility', 'public')
         .order('reaction_totals->>copy', { ascending: false })
         .limit(limit);
       if (error) this.handleError(error);
@@ -290,15 +286,11 @@ export class SupabasePromptsRepository implements PromptsRepositoryPort {
 
   async getByLenser(handle: string, offset = 0, limit = 10, includePrivate = false): Promise<PromptTemplateRecord[]> {
     let query = supabase
-        .from('vw_prompt_templates')
+        .from('vw_prompt_templates_public')
         .select(this.promptSelect)
         .eq('author_profile->>handle', handle) // Filter by handle in JSONB
         .order('created_at', { ascending: false })
         .range(offset, offset + limit - 1);
-
-    if (!includePrivate) {
-        query = query.eq('visibility', 'public');
-    }
 
     const { data, error } = await query;
     if (error) this.handleError(error);
@@ -307,7 +299,7 @@ export class SupabasePromptsRepository implements PromptsRepositoryPort {
 
   async getById(id: string): Promise<PromptTemplateRecord | null> {
     const { data, error } = await supabase
-        .from('vw_prompt_templates')
+        .from('vw_prompt_templates_public')
         .select(this.promptSelect)
         .eq('id', id)
         .single();
@@ -319,11 +311,13 @@ export class SupabasePromptsRepository implements PromptsRepositoryPort {
   }
 
   async getTags(templateId: string): Promise<TagRecord[]> {
-    const { data, error } = await supabase.from('vw_prompt_templates').select('tags').eq('id', templateId).single();
+    const { data, error } = await supabase.from('vw_prompt_templates_public').select('tags').eq('id', templateId).single();
     if (error) return [];
     return (data?.tags as TagRecord[]) || [];
   }
 
+
+  // TODO: ADD RPC FUNCTİON
   async createPrompt(input: CreatePromptDTO): Promise<PromptTemplateRecord> {
     // Write to base table. 
     // IMPORTANT: 'tags' column was removed from 'prompt_templates' table. 
@@ -360,7 +354,7 @@ export class SupabasePromptsRepository implements PromptsRepositoryPort {
     }
 
     // Return full record from View
-    const { data: finalPrompt } = await supabase.from('vw_prompt_templates').select(this.promptSelect).eq('id', prompt.id).single();
+    const { data: finalPrompt } = await supabase.from('vw_prompt_templates_public').select(this.promptSelect).eq('id', prompt.id).single();
     return finalPrompt as PromptTemplateRecord;
   }
 
@@ -395,7 +389,7 @@ export class SupabasePromptsRepository implements PromptsRepositoryPort {
           }
       }
 
-      const { data } = await supabase.from('vw_prompt_templates').select(this.promptSelect).eq('id', id).single();
+      const { data } = await supabase.from('vw_prompt_templates_public').select(this.promptSelect).eq('id', id).single();
       return data as PromptTemplateRecord;
   }
 

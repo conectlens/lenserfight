@@ -7,19 +7,16 @@ import { storage } from '../utils/storage';
 
 // --- Port (Interface) ---
 export interface LenserRepositoryPort {
-  getLenserByUserId(userId: string): Promise<Lenser | null>;
-  getLenserById(id: string): Promise<Lenser | null>;
+  getCurrentLensers(): Promise<Lenser[]>;
   getLenserByHandle(handle: string): Promise<Lenser | null>;
   getFullProfileByHandle(handle: string): Promise<LenserFullProfile | null>; 
   getCompactProfile(handle: string): Promise<LenserCompactProfile | null>;
-  createLenser(userId: string, data: CreateLenserDTO): Promise<Lenser>;
+  createLenser(handle: string, data: CreateLenserDTO): Promise<Lenser>;
   updateLenser(handle: string, data: Partial<Lenser>): Promise<Lenser>; 
-  requestDeletion(userId: string): Promise<void>;
+  requestDeletion(handle: string): Promise<void>;
   getRecentlyActive(limit: number): Promise<Lenser[]>;
   getLatestJoined(limit: number): Promise<Lenser[]>;
   
-  // Profile specific
-  getLenserStats(lenserId: string): Promise<LenserStats>;
   getPromptsByLenser(lenserId: string, offset?: number, limit?: number, viewerId?: string): Promise<PromptTemplateRecord[]>;
   getThreadsByLenser(lenserId: string, offset?: number, limit?: number, viewerId?: string): Promise<ThreadRecord[]>;
   getActivityTimeline(lenserId: string): Promise<LenserActivityPoint[]>;
@@ -110,6 +107,9 @@ export class MockLenserRepository implements LenserRepositoryPort {
           storage.setItem(this.JOIN_LOG_KEY, JSON.stringify(log));
       }
   }
+  getCurrentLensers(): Promise<Lenser[]> {
+    throw new Error('Method not implemented.');
+  }
 
   private getJoinOrder(lenserId: string): number | undefined {
       const logJson = storage.getItem(this.JOIN_LOG_KEY);
@@ -137,34 +137,6 @@ export class MockLenserRepository implements LenserRepositoryPort {
       return lenser;
   }
 
-  async getLenserByUserId(userId: string): Promise<Lenser | null> {
-    await new Promise(resolve => setTimeout(resolve, 300));
-    const stored = storage.getItem(this.STORAGE_KEY_PREFIX + userId);
-    if (stored) return this.enrich(JSON.parse(stored));
-    const mock = this.mockLensers.find(l => l.user_id === userId);
-    if (mock) return this.enrich(mock);
-    const indexJson = storage.getItem(this.INDEX_KEY);
-    if (indexJson) {
-        const index: Lenser[] = JSON.parse(indexJson);
-        const found = index.find(l => l.user_id === userId);
-        if (found) return this.enrich(found);
-    }
-    return null;
-  }
-
-  async getLenserById(id: string): Promise<Lenser | null> {
-    await new Promise(resolve => setTimeout(resolve, 200));
-    const mock = this.mockLensers.find(l => l.id === id);
-    if (mock) return this.enrich(mock);
-    const indexJson = storage.getItem(this.INDEX_KEY);
-    if (indexJson) {
-      const index: Lenser[] = JSON.parse(indexJson);
-      const found = index.find(l => l.id === id);
-      if (found) return this.enrich(found);
-    }
-    return null;
-  }
-
   async getLenserByHandle(handle: string): Promise<Lenser | null> {
     await new Promise(resolve => setTimeout(resolve, 300));
     const indexJson = storage.getItem(this.INDEX_KEY);
@@ -183,8 +155,6 @@ export class MockLenserRepository implements LenserRepositoryPort {
     const lenser = await this.getLenserByHandle(handle);
     if (!lenser) return null;
 
-    const stats = await this.getLenserStats(lenser.id);
-    
     // Mock XP calculation
     const xp = 1250;
     const current_level = 4;
@@ -204,10 +174,10 @@ export class MockLenserRepository implements LenserRepositoryPort {
       status: 'active',
       join_order: lenser.join_order,
       
-      thread_count: stats.threadsCount,
-      prompt_count: stats.promptsCount,
-      follower_count: stats.followersCount,
-      following_count: stats.followingCount,
+      thread_count: 0,
+      prompt_count: 0,
+      follower_count: 0,
+      following_count: 0,
       
       xp: xp,
       current_level: current_level,
@@ -232,14 +202,14 @@ export class MockLenserRepository implements LenserRepositoryPort {
     };
   }
 
-  async createLenser(userId: string, data: CreateLenserDTO): Promise<Lenser> {
+  async createLenser(handle: string, data: CreateLenserDTO): Promise<Lenser> {
     await new Promise(resolve => setTimeout(resolve, 800));
     const newId = `lenser-${Date.now()}-uuid`;
     const joinOrder = this.createJoinLog(newId);
 
     const newLenser: Lenser = {
       id: newId,
-      user_id: userId,
+      user_id: handle,
       handle: data.handle,
       display_name: data.display_name,
       bio: data.bio || '',
@@ -253,7 +223,7 @@ export class MockLenserRepository implements LenserRepositoryPort {
       join_order: joinOrder
     };
 
-    storage.setItem(this.STORAGE_KEY_PREFIX + userId, JSON.stringify(newLenser));
+    storage.setItem(this.STORAGE_KEY_PREFIX + handle, JSON.stringify(newLenser));
     const indexJson = storage.getItem(this.INDEX_KEY);
     const index: Lenser[] = indexJson ? JSON.parse(indexJson) : [];
     index.push(newLenser);
@@ -327,12 +297,12 @@ export class MockLenserRepository implements LenserRepositoryPort {
     return updatedLenser;
   }
 
-  async requestDeletion(userId: string): Promise<void> {
+  async requestDeletion(handle: string): Promise<void> {
     await new Promise(resolve => setTimeout(resolve, 500));
     // For deletion, we still rely on userId as this is a sensitive security action often from account settings
     // But internally updateLenser uses handle.
     // In mock, we can cheat and look up.
-    const lenser = await this.getLenserByUserId(userId);
+    const lenser = await this.getLenserByHandle(handle);
     if (lenser) {
         await this.updateLenser(lenser.handle, { deletion_requested_at: new Date().toISOString() });
     }
@@ -355,25 +325,6 @@ export class MockLenserRepository implements LenserRepositoryPort {
       });
       const enriched = all.map(l => this.enrich(l)!);
       return enriched.sort((a, b) => (b.join_order || 0) - (a.join_order || 0)).slice(0, limit);
-  }
-
-  async getLenserStats(lenserId: string): Promise<LenserStats> {
-    await new Promise(resolve => setTimeout(resolve, 300));
-    const promptsJson = storage.getItem(this.PROMPTS_KEY);
-    const prompts: any[] = promptsJson ? JSON.parse(promptsJson) : [];
-    const threadsJson = storage.getItem(this.THREADS_KEY);
-    const threads: any[] = threadsJson ? JSON.parse(threadsJson) : [];
-
-    const realPromptsCount = prompts.filter(p => p.lenser_id === lenserId && p.visibility === 'public').length;
-    const realThreadsCount = threads.filter(t => t.lenser_id === lenserId && t.visibility === 'public').length;
-
-    let followers = 0;
-    let following = 0;
-    let wins = 0;
-    if (lenserId === 'lenser-1') { followers = 1500; following = 420; wins = 212; }
-    else if (lenserId === 'lenser-2') { followers = 840; following = 150; wins = 45; }
-
-    return { promptsCount: realPromptsCount, threadsCount: realThreadsCount, followersCount: followers, followingCount: following, winsCount: wins };
   }
 
   async getPromptsByLenser(lenserId: string, offset = 0, limit = 10, viewerId?: string): Promise<PromptTemplateRecord[]> {
@@ -437,33 +388,18 @@ export class MockLenserRepository implements LenserRepositoryPort {
 
 // --- Supabase Implementation ---
 export class SupabaseLenserRepository implements LenserRepositoryPort {
-  async getLenserByUserId(userId: string): Promise<Lenser | null> {
-    const { data, error } = await supabase.from('lensers')
-        .select('*')
-        .eq('user_id', userId)
-        .single();
-    
-    if (error) {
-        if (error.code === 'PGRST116') return null;
-        throw error;
-    }
-    return data as Lenser;
-  }
+  async getCurrentLensers(): Promise<Lenser[]> {
+    const { data, error } = await supabase
+      .from('vw_lensers_profile_compact')
+      .select('*');
 
-  async getLenserById(id: string): Promise<Lenser | null> {
-    const { data, error } = await supabase.from('lensers')
-        .select('*')
-        .eq('id', id)
-        .single();
-    if (error) {
-        if (error.code === 'PGRST116') return null;
-        throw error;
-    }
-    return data as Lenser;
+    if (error) throw error;
+    return data ?? [];
   }
 
   async getLenserByHandle(handle: string): Promise<Lenser | null> {
-    const { data, error } = await supabase.from('lensers')
+    const { data, error } = await supabase
+        .from('vw_lensers_profile_full')
         .select('*')
         .eq('handle', handle)
         .single();
@@ -473,7 +409,7 @@ export class SupabaseLenserRepository implements LenserRepositoryPort {
 
   async getFullProfileByHandle(handle: string): Promise<LenserFullProfile | null> {
     const { data, error } = await supabase
-        .from('lenser_profile_full')
+        .from('vw_lensers_profile_full')
         .select('*')
         .eq('handle', handle)
         .single();
@@ -488,7 +424,7 @@ export class SupabaseLenserRepository implements LenserRepositoryPort {
 
   async getCompactProfile(handle: string): Promise<LenserCompactProfile | null> {
     const { data, error } = await supabase
-        .from('lenser_profile_compact')
+        .from('vw_lensers_profile_compact')
         .select('*')
         .eq('handle', handle)
         .single();
@@ -503,23 +439,21 @@ export class SupabaseLenserRepository implements LenserRepositoryPort {
   }
 
   async createLenser(userId: string, data: CreateLenserDTO): Promise<Lenser> {
-    const { data: newLenser, error } = await supabase.rpc('create_lenser_secure', {
+    const { data: newLenser, error } = await supabase.rpc('fn_lensers_create_profile', {
       p_handle: data.handle,
       p_display_name: data.display_name,
       p_bio: data.bio || '',
       p_headline: null 
     });
-
+    console.log("x")
     if (error) throw error;
-    
-    console.log("New lenser:", newLenser);
-
     return newLenser as Lenser;
   }
 
+  // TODO: RPC IS REQUIRED
   async updateLenser(handle: string, data: Partial<Lenser>): Promise<Lenser> {
       const { data: updated, error } = await supabase
-        .from('lensers')
+        .from('vw_lensers_profile_full')
         .update(data)
         .eq('handle', handle)
         .select('*')
@@ -528,17 +462,18 @@ export class SupabaseLenserRepository implements LenserRepositoryPort {
       return updated as Lenser;
   }
 
-  async requestDeletion(userId: string): Promise<void> {
+  async requestDeletion(handle: string): Promise<void> {
       const { error } = await supabase
-        .from("lensers")
+        .from("vw_lensers_profile_full")
         .update({ deletion_requested_at: new Date().toISOString() })
-        .eq("user_id", userId);
+        .eq("handle", handle);
         
       if (error) throw error;
   }
 
   async getRecentlyActive(limit: number): Promise<Lenser[]> {
-     const { data, error } = await supabase.from('lensers')
+     const { data, error } = await supabase
+        .from('vw_lensers_profile_full')
         .select('*')
         .order('updated_at', { ascending: false })
         .limit(limit);
@@ -549,7 +484,7 @@ export class SupabaseLenserRepository implements LenserRepositoryPort {
   async getLatestJoined(limit: number): Promise<Lenser[]> {
       // Fetch directly from lensers table using the join_order column
       const { data, error } = await supabase
-        .from('lensers')
+        .from('vw_lensers_profile_full')
         .select('*')
         .order('join_order', { ascending: false })
         .limit(limit);
@@ -557,33 +492,17 @@ export class SupabaseLenserRepository implements LenserRepositoryPort {
       return data as Lenser[];
   }
 
-  async getLenserStats(lenserId: string): Promise<LenserStats> {
-      const { count: promptsCount } = await supabase
-        .from('prompt_templates')
-        .select('*', { count: 'exact', head: true })
-        .eq('lenser_id', lenserId)
-        .eq('visibility', 'public');
-        
-      const { count: threadsCount } = await supabase
-        .from('threads')
-        .select('*', { count: 'exact', head: true })
-        .eq('lenser_id', lenserId)
-        .eq('visibility', 'public');
-      
-      return { promptsCount: promptsCount || 0, threadsCount: threadsCount || 0, followersCount: 0, followingCount: 0, winsCount: 0 };
-  }
-
-  async getPromptsByLenser(lenserId: string, offset = 0, limit = 10, viewerId?: string): Promise<PromptTemplateRecord[]> {
+  async getPromptsByLenser(handle: string, offset = 0, limit = 10, viewerId?: string): Promise<PromptTemplateRecord[]> {
       let query = supabase
-        .from('prompt_templates')
+        .from('vw_prompt_templates_public')
         .select('*') // Reads denormalized profile/tags directly
-        .eq('lenser_id', lenserId)
+        .eq('handle', handle)
         .order('created_at', { ascending: false })
         .range(offset, offset + limit - 1);
         
-      if (viewerId !== lenserId) {
-          query = query.eq('visibility', 'public');
-      }
+      // if (viewerId !== lenserId) {
+      //     query = query.eq('visibility', 'public');
+      // }
       
       const { data, error } = await query;
       if (error) throw error;
