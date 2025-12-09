@@ -32,9 +32,18 @@ const enrichLenserProfile = async (lenser: Lenser | null): Promise<Lenser | null
 };
 
 export const lenserService = {
-  getLenserProfile: async (userId: string): Promise<Lenser | null> => {
-    if (!userId) throw new Error("User ID is required");
-    const lenser = await lenserRepo.getLenserByUserId(userId);
+  getLenserProfile: async (): Promise<Lenser | null> => {
+    const lensers = await lenserRepo.getCurrentLensers(); // array
+
+    if (!lensers || lensers.length === 0) return null;
+    const primary = lensers[0];
+
+    return enrichLenserProfile(primary);
+  },
+
+  getLenserProfileByHandle: async (handle: string): Promise<Lenser | null> => {
+    if (!handle) throw new Error("Handle is required");
+    const lenser = await lenserRepo.getLenserByHandle(handle);
     return enrichLenserProfile(lenser);
   },
 
@@ -98,9 +107,9 @@ export const lenserService = {
     return enrichLenserProfile(updated) as Promise<Lenser>;
   },
 
-  requestAccountDeletion: async (userId: string): Promise<void> => {
-    if (!userId) throw new Error("User ID is required");
-    await lenserRepo.requestDeletion(userId);
+  requestAccountDeletion: async (handle: string): Promise<void> => {
+    if (!handle) throw new Error("Handle is required");
+    await lenserRepo.requestDeletion(handle);
   },
 
   getLenserByHandle: async (handle: string): Promise<Lenser | null> => {
@@ -110,10 +119,6 @@ export const lenserService = {
 
   getFullProfileByHandle: async (handle: string): Promise<LenserFullProfile | null> => {
     return lenserRepo.getFullProfileByHandle(handle);
-  },
-
-  getLenserStats: async (lenserId: string): Promise<LenserStats> => {
-    return lenserRepo.getLenserStats(lenserId);
   },
 
   getLenserPrompts: async (lenserId: string, offset = 0, limit = 10, viewerId?: string): Promise<PromptTemplateRecord[]> => {

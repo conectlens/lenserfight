@@ -113,7 +113,7 @@ export class SupabaseSocialLinksRepository implements SocialLinksRepositoryPort 
   async syncLinks(handle: string, links: (Omit<SocialLink, 'id' | 'lenser_id' | 'created_at'> & { id?: string })[]): Promise<SocialLink[]> {
     // 1. Resolve Lenser ID from Handle (required for FK insertion)
     const { data: lenser, error: lenserError } = await supabase
-        .from('lensers')
+        .from('vw_lensers_social_links')
         .select('id')
         .eq('handle', handle)
         .single();
