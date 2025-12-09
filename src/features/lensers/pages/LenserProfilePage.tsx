@@ -64,6 +64,7 @@ const PAGE_SIZE = 9;
 
 export const LenserProfilePage: React.FC = () => {
   const { handle, tab: routeTab } = useParams<{ handle: string; tab?: string }>();
+  console.log("handle", handle);
   const navigate = useNavigate();
   const { user } = useAuth();
   const { lenser: currentUser } = useLenser(); // The currently authenticated user
@@ -129,8 +130,8 @@ export const LenserProfilePage: React.FC = () => {
     
     const fetchProfile = async () => {
       try {
+        console.log(handle);
         const fullProfile = await lenserService.getFullProfileByHandle(handle);
-        
         if (!fullProfile) {
             setViewedProfile(null);
             return;

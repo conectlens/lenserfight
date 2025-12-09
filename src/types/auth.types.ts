@@ -1,5 +1,11 @@
 
 export interface UserMetadata {
+  display_name?: string;
+  preferred_language?: string;
+  ui_language?: string;
+  detected_language?: string;
+  timezone?: string;
+  country?: string;
   [key: string]: any;
 }
 

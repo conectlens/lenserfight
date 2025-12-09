@@ -52,10 +52,6 @@ export const threadsService = {
       await threadsRepo.deleteThread(id);
   },
 
-  incrementView: async (id: string): Promise<void> => {
-      return threadsRepo.incrementView(id);
-  },
-
   getThreadsFeed: async (currentUserId?: string, offset = 0, limit = 10): Promise<ThreadFeedItem[]> => {
     const records = await threadsRepo.getAllThreads(offset, limit);
     return threadsService._mapToFeedItems(records, currentUserId);

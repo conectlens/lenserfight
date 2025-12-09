@@ -86,9 +86,6 @@ export const useThreadDetailController = (threadId?: string) => {
 
     const recordView = async () => {
       try {
-        // Domain specific increment
-        await threadsService.incrementView(threadId);
-        
         // Global Analytics log
         await analyticsService.trackView('thread', threadId, {
             userId: user?.id,

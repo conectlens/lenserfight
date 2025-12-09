@@ -11,11 +11,11 @@ export interface PreferencesRepositoryPort {
 export class MockPreferencesRepository implements PreferencesRepositoryPort {
   private STORAGE_KEY_PREFIX = 'mock_lenser_';
 
-  async updateTheme(userId: string, theme: 'light' | 'dark'): Promise<void> {
+  async updateTheme(theme: 'light' | 'dark'): Promise<void> {
     // Simulate latency
     await new Promise(resolve => setTimeout(resolve, 300));
     
-    const key = this.STORAGE_KEY_PREFIX + userId;
+    const key = this.STORAGE_KEY_PREFIX + "key";
     const stored = storage.getItem(key);
     
     if (stored) {
@@ -41,11 +41,9 @@ export class MockPreferencesRepository implements PreferencesRepositoryPort {
 }
 
 export class SupabasePreferencesRepository implements PreferencesRepositoryPort {
-  async updateTheme(userId: string, theme: 'light' | 'dark'): Promise<void> {
-    // Secure RPC call to perform jsonb_set on the server side.
-    // This strictly limits the update to the 'theme' key within the preferences column.
-    const { error } = await supabase.rpc('update_lenser_theme', {
-      p_user_id: userId,
+  async updateTheme(theme: 'light' | 'dark'): Promise<void> {
+
+    const { error } = await supabase.rpc('fn_lensers_update_theme', {
       p_theme: theme
     });
 
@@ -56,7 +54,7 @@ export class SupabasePreferencesRepository implements PreferencesRepositoryPort 
 
   async getPreferences(userId: string): Promise<LenserPreferences | null> {
     const { data, error } = await supabase
-      .from('lensers')
+      .from('vw_lensers_profile_compact')
       .select('preferences')
       .eq('user_id', userId)
       .single();
