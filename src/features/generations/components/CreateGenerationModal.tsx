@@ -141,7 +141,7 @@ export const CreateGenerationModal: React.FC<CreateGenerationModalProps> = ({
                 label="AI Model"
                 value={modelId}
                 onChange={setModelId}
-                options={availableModels.map(m => ({ value: m.id, label: m.name }))}
+                options={availableModels.map(m => ({ value: m.slug, label: m.name }))}
                 placeholder={isLoadingModels ? "Loading models..." : "Select Model (e.g. Midjourney)"}
                 required
                 disabled={isLoadingModels}
