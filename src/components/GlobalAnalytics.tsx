@@ -24,7 +24,7 @@ export const GlobalAnalytics: React.FC = () => {
       (currentPath.startsWith('/lenser/') && !currentPath.endsWith('/settings'));
 
     if (!isDetailPage) {
-      trackView('page', undefined);
+      trackView('page');
     }
 
   }, [location.pathname, trackView]);

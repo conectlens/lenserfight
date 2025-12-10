@@ -4,9 +4,9 @@ import { supabase } from '../utils/supabase';
 import { storage } from '../utils/storage';
 
 export interface ShareRepositoryPort {
-  createOrGetSharedLink(dto: CreateLinkDTO, creatorLenserId: string): Promise<SharedLink>;
+  createOrGetSharedLink(dto: CreateLinkDTO): Promise<SharedLink>;
   resolveLink(shortId: string): Promise<ResolveLinkResult | null>;
-  logEvent(shortId: string, eventType: 'opened', viewerData: Partial<ShareEvent>): Promise<void>;
+  logEvent(shortId: string, eventType: 'opened', viewerData?: Partial<ShareEvent>): Promise<void>;
 }
 
 export class MockShareRepository implements ShareRepositoryPort {
@@ -21,7 +21,7 @@ export class MockShareRepository implements ShareRepositoryPort {
     return JSON.parse(storage.getItem(this.EVENTS_KEY) || '[]');
   }
 
-  async createOrGetSharedLink(dto: CreateLinkDTO, creatorLenserId: string): Promise<SharedLink> {
+  async createOrGetSharedLink(dto: CreateLinkDTO): Promise<SharedLink> {
     await new Promise(resolve => setTimeout(resolve, 400));
     
     const links = this.getLinks();
@@ -29,8 +29,7 @@ export class MockShareRepository implements ShareRepositoryPort {
     // Idempotency Check: Return existing if matches constraints
     const existing = links.find(l => 
         l.resource_type === dto.resourceType && 
-        l.resource_id === dto.resourceId && 
-        l.creator_lenser_id === creatorLenserId
+        l.resource_id === dto.resourceId
     );
 
     if (existing) {
@@ -46,7 +45,6 @@ export class MockShareRepository implements ShareRepositoryPort {
       resource_type: dto.resourceType,
       resource_id: dto.resourceId,
       slug: dto.slug || null,
-      creator_lenser_id: creatorLenserId,
       channel: dto.channel || 'in_app',
       campaign_key: dto.campaignKey || null,
       experiment_key: dto.experimentKey || null,
@@ -60,7 +58,7 @@ export class MockShareRepository implements ShareRepositoryPort {
     storage.setItem(this.LINKS_KEY, JSON.stringify(links));
 
     // Log generation event only on actual creation
-    this.logEvent(shortId, 'generated', { viewer_lenser_id: creatorLenserId });
+    this.logEvent(shortId, "generated");
 
     return newLink;
   }
@@ -100,7 +98,7 @@ export class MockShareRepository implements ShareRepositoryPort {
     };
   }
 
-  async logEvent(shortId: string, eventType: 'opened' | 'generated', viewerData: Partial<ShareEvent>): Promise<void> {
+  async logEvent(shortId: string, eventType: 'opened' | 'generated', viewerData?: Partial<ShareEvent>): Promise<void> {
     // In mock, we just store it
     const links = this.getLinks();
     const link = links.find(l => l.short_id === shortId);
@@ -111,7 +109,6 @@ export class MockShareRepository implements ShareRepositoryPort {
         id: `evt-${Date.now()}-${Math.random()}`,
         shared_link_id: link.id,
         event_type: eventType,
-        viewer_lenser_id: viewerData.viewer_lenser_id,
         viewer_session_id: viewerData.viewer_session_id || 'mock-session',
         ip_hash: 'mock-hash',
         country: 'Mockland',
@@ -130,48 +127,88 @@ export class MockShareRepository implements ShareRepositoryPort {
     }
   }
 }
-
 export class SupabaseShareRepository implements ShareRepositoryPort {
-  async createOrGetSharedLink(dto: CreateLinkDTO, creatorLenserId: string): Promise<SharedLink> {
-    const { data, error } = await supabase.functions.invoke('create-link', {
-        body: { ...dto, creatorLenserId }
-    });
+
+  // 1. CREATE OR REUSE SHARED LINK
+  async createOrGetSharedLink(
+    dto: CreateLinkDTO,
+  ): Promise<SharedLink> {
     
+  const { data, error } = await supabase.rpc(
+    'fn_analytics_shared_links_create',
+    {
+      p_resource_type: dto.resourceType,
+      p_resource_id: dto.resourceId,            // REQUIRED
+      p_slug: dto.slug ?? null,
+      p_channel: dto.channel ?? "in_app",
+      p_meta: dto.meta ?? {},
+      p_display_name: dto.displayName ?? null
+    }
+  );
+
     if (error) throw error;
     return data as SharedLink;
   }
 
+
+  // 2. RESOLVE SHORT LINK
   async resolveLink(shortId: string): Promise<ResolveLinkResult | null> {
-    // Use Edge Function 'resolve-link' to bypass RLS policies on the shared_links table.
-    // This allows public access to shared links.
-    const { data, error } = await supabase.functions.invoke('resolve-link', {
-        body: { shortId }
-    });
-    
+    const { data, error } = await supabase.rpc(
+      "fn_analytics_shared_links_get",
+      { p_short_id: shortId }
+    );
+
     if (error || !data) return null;
-    
+
     const link = data as SharedLink;
-    let path = '/';
-    
-    if (link.resource_type === 'external') {
-        path = link.meta?.targetUrl || link.resource_id; // Check meta first for real URLs stored under UUID resource_id
-    } else if (link.resource_type === 'prompt') {
+
+    let path = "/";
+
+    switch (link.resource_type) {
+      case "external":
+        path = link.meta?.targetUrl || link.resource_id;
+        break;
+
+      case "prompt":
         path = `/len/p/${link.slug || link.resource_id}`;
-    } else if (link.resource_type === 'thread') {
+        break;
+
+      case "thread":
         path = `/threads/${link.resource_id}`;
-    } else if (link.resource_type === 'profile') {
+        break;
+
+      case "profile":
         path = `/lenser/${link.slug || link.resource_id}`;
+        break;
     }
 
     return {
-        url: path,
-        link
+      url: path,
+      link
     };
   }
 
-  async logEvent(shortId: string, eventType: 'opened', viewerData: Partial<ShareEvent>): Promise<void> {
-    await supabase.functions.invoke('log-share-event', {
-        body: { shortId, eventType, ...viewerData }
-    });
+
+  // 3. LOG AN EVENT
+  async logEvent(
+    shortId: string,
+    eventType: "opened",
+    viewerData: Partial<ShareEvent>
+  ): Promise<void> {
+    
+    const { error } = await supabase.rpc(
+      "fn_analytics_share_events_log",
+      {
+        p_short_id: shortId,
+        p_event_type: eventType,
+        p_ip_hash: viewerData.ip_hash ?? null,
+        p_user_agent: viewerData.user_agent ?? null,
+        p_referer: viewerData.referer ?? null,
+        p_country: viewerData.country ?? null,
+        p_city: viewerData.city ?? null
+      }
+    );
+
+    if (error) throw error;
   }
 }
