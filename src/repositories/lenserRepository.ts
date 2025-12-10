@@ -1,5 +1,5 @@
 
-import { Lenser, CreateLenserDTO, LenserStats, LenserActivityPoint, ActionRecord, NetworkUser, AuthorProfile, LenserFullProfile, LenserCompactProfile } from '../types/lenser.types';
+import { Lenser, CreateLenserDTO, LenserStats, LenserActivityPoint, ActionRecord, NetworkUser, AuthorProfile, LenserFullProfile, LenserCompactProfile, LenserProfileDTO } from '../types/lenser.types';
 import { PromptTemplateRecord } from '../types/prompts.types';
 import { ThreadRecord } from '../types/threads.types';
 import { supabase } from '../utils/supabase';
@@ -7,20 +7,19 @@ import { storage } from '../utils/storage';
 
 // --- Port (Interface) ---
 export interface LenserRepositoryPort {
-  getCurrentLensers(): Promise<Lenser[]>;
-  getLenserByHandle(handle: string): Promise<Lenser | null>;
-  getFullProfileByHandle(handle: string): Promise<LenserFullProfile | null>; 
-  getCompactProfile(handle: string): Promise<LenserCompactProfile | null>;
-  createLenser(handle: string, data: CreateLenserDTO): Promise<Lenser>;
-  updateLenser(handle: string, data: Partial<Lenser>): Promise<Lenser>; 
+  createLenser(data: CreateLenserDTO): Promise<Lenser>;
+  updateLenser(data: Partial<Lenser>): Promise<Lenser>; 
   requestDeletion(handle: string): Promise<void>;
   getRecentlyActive(limit: number): Promise<Lenser[]>;
-  getLatestJoined(limit: number): Promise<Lenser[]>;
+  getLatestJoined(): Promise<Lenser[]>;
   
   getPromptsByLenser(lenserId: string, offset?: number, limit?: number, viewerId?: string): Promise<PromptTemplateRecord[]>;
   getThreadsByLenser(lenserId: string, offset?: number, limit?: number, viewerId?: string): Promise<ThreadRecord[]>;
   getActivityTimeline(lenserId: string): Promise<LenserActivityPoint[]>;
   
+  getPublicLenserProfile(handle: string): Promise<LenserProfileDTO>
+  getAuthenticatedLenser(): Promise<Lenser | null>
+
   // New features
   getLenserActions(lenserId: string): Promise<ActionRecord[]>;
   getLenserNetwork(lenserId: string, type: 'followers' | 'following', page: number): Promise<NetworkUser[]>;
@@ -107,7 +106,10 @@ export class MockLenserRepository implements LenserRepositoryPort {
           storage.setItem(this.JOIN_LOG_KEY, JSON.stringify(log));
       }
   }
-  getCurrentLensers(): Promise<Lenser[]> {
+  getPublicLenserProfile(handle: string): Promise<LenserProfileDTO> {
+    throw new Error('Method not implemented.');
+  }
+  getAuthenticatedLenser(): Promise<Lenser | null> {
     throw new Error('Method not implemented.');
   }
 
@@ -202,14 +204,15 @@ export class MockLenserRepository implements LenserRepositoryPort {
     };
   }
 
-  async createLenser(handle: string, data: CreateLenserDTO): Promise<Lenser> {
+  async createLenser(data: CreateLenserDTO): Promise<Lenser> {
     await new Promise(resolve => setTimeout(resolve, 800));
     const newId = `lenser-${Date.now()}-uuid`;
     const joinOrder = this.createJoinLog(newId);
 
     const newLenser: Lenser = {
       id: newId,
-      user_id: handle,
+      // TODO: FIX THIS
+      user_id: "asdasd",
       handle: data.handle,
       display_name: data.display_name,
       bio: data.bio || '',
@@ -223,7 +226,7 @@ export class MockLenserRepository implements LenserRepositoryPort {
       join_order: joinOrder
     };
 
-    storage.setItem(this.STORAGE_KEY_PREFIX + handle, JSON.stringify(newLenser));
+    storage.setItem(this.STORAGE_KEY_PREFIX + data.handle, JSON.stringify(newLenser));
     const indexJson = storage.getItem(this.INDEX_KEY);
     const index: Lenser[] = indexJson ? JSON.parse(indexJson) : [];
     index.push(newLenser);
@@ -232,11 +235,11 @@ export class MockLenserRepository implements LenserRepositoryPort {
     return newLenser;
   }
 
-  async updateLenser(handle: string, data: Partial<Lenser>): Promise<Lenser> {
+  async updateLenser(data: Partial<Lenser>): Promise<Lenser> {
     await new Promise(resolve => setTimeout(resolve, 500));
     
     // Resolve ID from handle first for Mock Storage
-    let lenser = await this.getLenserByHandle(handle);
+    let lenser = await this.getLenserByHandle(data.handle);
     if (!lenser) throw new Error("Lenser profile not found");
 
     const userId = lenser.user_id; 
@@ -297,15 +300,9 @@ export class MockLenserRepository implements LenserRepositoryPort {
     return updatedLenser;
   }
 
-  async requestDeletion(handle: string): Promise<void> {
-    await new Promise(resolve => setTimeout(resolve, 500));
-    // For deletion, we still rely on userId as this is a sensitive security action often from account settings
-    // But internally updateLenser uses handle.
-    // In mock, we can cheat and look up.
-    const lenser = await this.getLenserByHandle(handle);
-    if (lenser) {
-        await this.updateLenser(lenser.handle, { deletion_requested_at: new Date().toISOString() });
-    }
+  async requestDeletion(): Promise<void> {
+    const { error } = await supabase.rpc('fn_lensers_request_deletion');
+    if (error) throw error;
   }
 
   async getRecentlyActive(limit: number): Promise<Lenser[]> {
@@ -313,8 +310,9 @@ export class MockLenserRepository implements LenserRepositoryPort {
       return this.mockLensers.slice(0, limit).map(l => this.enrich(l)!);
   }
 
-  async getLatestJoined(limit: number): Promise<Lenser[]> {
+  async getLatestJoined(): Promise<Lenser[]> {
       await new Promise(resolve => setTimeout(resolve, 300));
+      const limit = 5;
       const indexJson = storage.getItem(this.INDEX_KEY);
       const dynamicLensers: Lenser[] = indexJson ? JSON.parse(indexJson) : [];
       const all = [...this.mockLensers];
@@ -388,57 +386,38 @@ export class MockLenserRepository implements LenserRepositoryPort {
 
 // --- Supabase Implementation ---
 export class SupabaseLenserRepository implements LenserRepositoryPort {
-  async getCurrentLensers(): Promise<Lenser[]> {
-    const { data, error } = await supabase
-      .from('vw_lensers_profile_compact')
-      .select('*');
+  async getPublicLenserProfile(handle: string): Promise<LenserProfileDTO> {
+    const { data, error } = await supabase.rpc('fn_lensers_get_public_profile', {
+      p_handle: handle
+    });
 
     if (error) throw error;
-    return data ?? [];
-  }
 
-  async getLenserByHandle(handle: string): Promise<Lenser | null> {
+    return {
+      handle: data.handle,
+      display_name: data.display_name,
+      avatar_url: data.avatar_url,
+      banner_url: data.banner_url,
+      headline: data.headline,
+      bio: data.bio,
+      join_order: data.join_order,
+      visibility: data.visibility,
+      total_xp: data.total_xp,
+      current_level: data.current_level,
+      badges: data.badges
+    };
+  };
+
+
+  async getAuthenticatedLenser(): Promise<Lenser | null> {
     const { data, error } = await supabase
-        .from('vw_lensers_profile_full')
-        .select('*')
-        .eq('handle', handle)
-        .single();
-    if (error) return null; 
+      .rpc('fn_lensers_get_authenticated_profile');
+
+    if (error) return null;
     return data as Lenser;
   }
 
-  async getFullProfileByHandle(handle: string): Promise<LenserFullProfile | null> {
-    const { data, error } = await supabase
-        .from('vw_lensers_profile_full')
-        .select('*')
-        .eq('handle', handle)
-        .single();
-    
-    if (error) {
-      if (error.code === 'PGRST116') return null;
-      console.error('Failed to fetch full profile:', error);
-      return null;
-    }
-    return data as unknown as LenserFullProfile;
-  }
-
-  async getCompactProfile(handle: string): Promise<LenserCompactProfile | null> {
-    const { data, error } = await supabase
-        .from('vw_lensers_profile_compact')
-        .select('*')
-        .eq('handle', handle)
-        .single();
-    
-    if (error) {
-        if (error.code === 'PGRST116') return null;
-        console.warn('Failed to fetch compact profile', error);
-        return null;
-    }
-    
-    return data as LenserCompactProfile;
-  }
-
-  async createLenser(userId: string, data: CreateLenserDTO): Promise<Lenser> {
+  async createLenser(data: CreateLenserDTO): Promise<Lenser> {
     const { data: newLenser, error } = await supabase.rpc('fn_lensers_create_profile', {
       p_handle: data.handle,
       p_display_name: data.display_name,
@@ -450,25 +429,26 @@ export class SupabaseLenserRepository implements LenserRepositoryPort {
     return newLenser as Lenser;
   }
 
-  // TODO: RPC IS REQUIRED
-  async updateLenser(handle: string, data: Partial<Lenser>): Promise<Lenser> {
-      const { data: updated, error } = await supabase
-        .from('vw_lensers_profile_full')
-        .update(data)
-        .eq('handle', handle)
-        .select('*')
-        .single();
-      if (error) throw error;
-      return updated as Lenser;
+  async updateLenser(data: Partial<Lenser>): Promise<Lenser> {
+    const { data: updated, error } = await supabase.rpc(
+      'fn_lensers_update_profile',
+      {
+        p_display_name: data.display_name ?? null,
+        p_avatar_url: data.avatar_url ?? null,
+        p_banner_url: data.banner_url ?? null,
+        p_bio: data.bio ?? null,
+        p_headline: data.headline ?? null,
+        p_preferences: data.preferences ?? null
+      }
+    );
+
+    if (error) throw error;
+    return updated as Lenser;
   }
 
-  async requestDeletion(handle: string): Promise<void> {
-      const { error } = await supabase
-        .from("vw_lensers_profile_full")
-        .update({ deletion_requested_at: new Date().toISOString() })
-        .eq("handle", handle);
-        
-      if (error) throw error;
+  async requestDeletion(): Promise<void> {
+    const { error } = await supabase.rpc('fn_lensers_request_deletion');
+    if (error) throw error;
   }
 
   async getRecentlyActive(limit: number): Promise<Lenser[]> {
@@ -481,13 +461,11 @@ export class SupabaseLenserRepository implements LenserRepositoryPort {
      return data as Lenser[];
   }
 
-  async getLatestJoined(limit: number): Promise<Lenser[]> {
+  async getLatestJoined(): Promise<Lenser[]> {
       // Fetch directly from lensers table using the join_order column
       const { data, error } = await supabase
-        .from('vw_lensers_profile_full')
-        .select('*')
-        .order('join_order', { ascending: false })
-        .limit(limit);
+        .from('vw_lensers_public_recent')
+        .select('*');
       if (error) throw error;
       return data as Lenser[];
   }

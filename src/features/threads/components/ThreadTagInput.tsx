@@ -30,7 +30,6 @@ export const ThreadTagInput: React.FC<ThreadTagInputProps> = ({ tags, onChange }
           // Assuming we want to ensure the tag is valid and gets its canonical display name:
           
           const normalizedTag = await tagService.processUserInput(input);
-          
           if (!tags.includes(normalizedTag.name)) {
               onChange([...tags, normalizedTag.name]);
           }

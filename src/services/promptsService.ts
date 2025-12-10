@@ -69,7 +69,7 @@ export const promptsService = {
   getLenserPrompts: async (lenserHandle: string, offset = 0, limit = 10, viewerId?: string): Promise<PromptTemplateViewModel[]> => {
     let includePrivate = false;
     if (viewerId) {
-        const viewer = await lenserRepo.getLenserById(viewerId);
+        const viewer = await lenserRepo.getAuthenticatedLenser();
         if (viewer && viewer.handle === lenserHandle) {
             includePrivate = true;
         }
@@ -134,7 +134,6 @@ export const promptsService = {
   createPrompt: async (input: CreatePromptDTO): Promise<PromptTemplateRecord> => {
     if (!input.title || input.title.trim().length < 3) throw new Error("Title must be at least 3 characters long.");
     if (!input.content || input.content.trim().length < 10) throw new Error("Content must be at least 10 characters long.");
-    if (!input.lenserId) throw new Error("User must be logged in with a profile to create a prompt.");
 
     if (!input.description) {
         input.description = input.content.substring(0, 100) + (input.content.length > 100 ? '...' : '');
