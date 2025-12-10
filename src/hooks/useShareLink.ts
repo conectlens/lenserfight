@@ -32,7 +32,7 @@ export const useShareLink = () => {
           resourceId,
           slug,
           meta
-      }, lenser.id);
+      });
       
       const url = shareService.getShareUrl(link.short_id);
       setShortUrl(url);
