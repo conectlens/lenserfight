@@ -105,7 +105,7 @@ export const SettingsPage: React.FC = () => {
     isLoading: feedbackLoading 
   } = useQuery({
     queryKey: ['feedbacks', user?.id, feedbackPage],
-    queryFn: () => user?.id ? feedbackService.getUserFeedbacks(user.id, feedbackPage, FEEDBACK_PAGE_SIZE) : { data: [], total: 0 },
+    queryFn: () => user?.id ? feedbackService.getUserFeedbacks(feedbackPage, FEEDBACK_PAGE_SIZE) : { data: [], total: 0 },
     enabled: !!user?.id && activeTab === 'account',
     staleTime: 1000 * 60 * 5 // 5 minutes
   });

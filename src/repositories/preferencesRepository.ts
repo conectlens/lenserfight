@@ -52,14 +52,11 @@ export class SupabasePreferencesRepository implements PreferencesRepositoryPort 
     }
   }
 
-  async getPreferences(userId: string): Promise<LenserPreferences | null> {
+  async getPreferences(): Promise<LenserPreferences | null> {
     const { data, error } = await supabase
-      .from('vw_lensers_profile_compact')
-      .select('preferences')
-      .eq('user_id', userId)
-      .single();
+      .rpc('fn_lensers_get_preferences');
 
     if (error) return null;
-    return data?.preferences as LenserPreferences;
+    return data as LenserPreferences;
   }
 }

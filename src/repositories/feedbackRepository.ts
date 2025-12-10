@@ -6,7 +6,7 @@ import { storage } from '../utils/storage';
 // --- Port (Interface) ---
 export interface FeedbackRepositoryPort {
   submitFeedback(dto: SubmitFeedbackDTO): Promise<void>;
-  getUserFeedbacks(userId: string, offset?: number, limit?: number): Promise<{ data: Feedback[]; count: number }>;
+  getUserFeedbacks(offset?: number, limit?: number): Promise<{ data: Feedback[]; count: number }>;
 }
 
 // --- Mock Implementation ---
@@ -38,10 +38,10 @@ export class MockFeedbackRepository implements FeedbackRepositoryPort {
     console.groupEnd();
   }
 
-  async getUserFeedbacks(userId: string, offset = 0, limit = 5): Promise<{ data: Feedback[]; count: number }> {
+  async getUserFeedbacks(offset = 0, limit = 5): Promise<{ data: Feedback[]; count: number }> {
     await new Promise(resolve => setTimeout(resolve, 600));
     const all = JSON.parse(storage.getItem(this.STORAGE_KEY) || '[]');
-    const userFeedbacks = all.filter((f: Feedback) => f.user_id === userId);
+    const userFeedbacks = all.filter((f: Feedback) => f.user_id === "userId");
     
     // Sort descending by created_at
     userFeedbacks.sort((a: Feedback, b: Feedback) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
@@ -74,18 +74,30 @@ export class SupabaseFeedbackRepository implements FeedbackRepositoryPort {
     }
   }
   
-  async getUserFeedbacks(userId: string, offset = 0, limit = 5): Promise<{ data: Feedback[]; count: number }> {
-    // Use the secure view which filters by auth.uid() automatically.
-    // Note: The view does not return 'id', so pagination relies on offset/limit.
-    const { data, error, count } = await supabase
-        .from('vw_feedback_user')
-        .select('*', { count: 'exact' })
-        .order('created_at', { ascending: false })
-        .range(offset, offset + limit - 1);
-        
-    if (error) throw error;
-    
-    // Data returned matches the view structure (no id, no user_id)
-    return { data: data as Feedback[], count: count || 0 };
-  }
+async getUserFeedbacks(offset = 0, limit = 5): Promise<{ data: Feedback[]; count: number }> {
+  const { data, error } = await supabase.rpc(
+    'fn_analytics_product_feedback_list_user_paginated',
+    {
+      p_offset: offset,
+      p_limit: limit,
+    }
+  );
+
+  if (error) throw error;
+
+  const totalCount = data?.length ? data[0].total_count : 0;
+
+  const result = data?.map(row => ({
+    product_tag: row.product_tag,
+    page: row.page,
+    message: row.message,
+    start_date: row.start_date,
+    end_date: row.end_date,
+    status: row.status,
+    created_at: row.created_at
+  })) as Feedback[];
+
+  return { data: result, count: totalCount };
+}
+
 }
