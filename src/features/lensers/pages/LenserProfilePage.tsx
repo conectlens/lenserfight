@@ -137,7 +137,7 @@ export const LenserProfilePage: React.FC = () => {
         setViewedProfile(fullProfile);
         
         // Track View
-        trackView('profile');
+        trackView('profile', handle);
 
         // Map Stats
         setStats({
