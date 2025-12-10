@@ -1,13 +1,33 @@
-
 import { SocialLink, SocialPlatform } from '../types/lenser.types';
 import { supabase } from '../utils/supabase';
 import { storage } from '../utils/storage';
 
 export interface SocialLinksRepositoryPort {
+  /**
+   * Owner view: used on profile settings page.
+   * Should return real IDs from lensers.social_links for editing.
+   */
   getLinks(handle: string): Promise<SocialLink[]>;
+
+  /**
+   * Public view: used on public profile. No real IDs / internal data.
+   */
   getLinksByHandle(handle: string): Promise<SocialLink[]>;
-  syncLinks(handle: string, links: (Omit<SocialLink, 'id' | 'lenser_id' | 'created_at'> & { id?: string })[]): Promise<SocialLink[]>;
+
+  /**
+   * Full sync for the authenticated Lenser.
+   * For Supabase implementation, `handle` is ignored for ownership
+   * (ownership is determined by auth.uid() in RPC).
+   */
+  syncLinks(
+    handle: string,
+    links: (Omit<SocialLink, 'id' | 'lenser_id' | 'created_at'> & { id?: string })[]
+  ): Promise<SocialLink[]>;
 }
+
+/* ------------------------------------------------------------------ */
+/* MOCK IMPLEMENTATION (localStorage)                                 */
+/* ------------------------------------------------------------------ */
 
 export class MockSocialLinksRepository implements SocialLinksRepositoryPort {
   private STORAGE_KEY = 'mock_social_links';
@@ -24,18 +44,18 @@ export class MockSocialLinksRepository implements SocialLinksRepositoryPort {
   private async getLenserIdByHandle(handle: string): Promise<string | null> {
     const indexJson = storage.getItem(this.LENSERS_INDEX_KEY);
     const index = indexJson ? JSON.parse(indexJson) : [];
-    
+
     const mockIdMap: Record<string, string> = {
-        'cassian.lens': 'lenser-1',
-        'sarah_ai': 'lenser-2',
-        'neo_one': 'lenser-3',
-        'trinity_matrix': 'lenser-4'
+      'cassian.lens': 'lenser-1',
+      'sarah_ai': 'lenser-2',
+      'neo_one': 'lenser-3',
+      'trinity_matrix': 'lenser-4'
     };
-    
+
     let lenserId = mockIdMap[handle];
     if (!lenserId) {
-        const found = index.find((l: any) => l.handle === handle);
-        if (found) lenserId = found.id;
+      const found = index.find((l: any) => l.handle === handle);
+      if (found) lenserId = found.id;
     }
     return lenserId || null;
   }
@@ -48,20 +68,23 @@ export class MockSocialLinksRepository implements SocialLinksRepositoryPort {
   }
 
   async getLinksByHandle(handle: string): Promise<SocialLink[]> {
-    // Consolidated logic in mock
+    // For mock we reuse the same logic; in real impl this is public-only.
     return this.getLinks(handle);
   }
 
-  async syncLinks(handle: string, links: (Omit<SocialLink, 'id' | 'lenser_id' | 'created_at'> & { id?: string })[]): Promise<SocialLink[]> {
+  async syncLinks(
+    handle: string,
+    links: (Omit<SocialLink, 'id' | 'lenser_id' | 'created_at'> & { id?: string })[]
+  ): Promise<SocialLink[]> {
     await new Promise(resolve => setTimeout(resolve, 500));
-    
+
     const lenserId = await this.getLenserIdByHandle(handle);
-    if (!lenserId) throw new Error("Lenser not found");
+    if (!lenserId) throw new Error('Lenser not found');
 
     let allLinks = this.getAll();
     // Remove existing links for this user
     allLinks = allLinks.filter(l => l.lenser_id !== lenserId);
-    
+
     // Create new records
     const newLinks: SocialLink[] = links.map(l => ({
       id: l.id && l.id.length > 10 ? l.id : `link-${Date.now()}-${Math.random()}`,
@@ -74,96 +97,81 @@ export class MockSocialLinksRepository implements SocialLinksRepositoryPort {
 
     allLinks.push(...newLinks);
     this.saveAll(allLinks);
-    
+
     return newLinks;
   }
 }
 
+/* ------------------------------------------------------------------ */
+/* SUPABASE IMPLEMENTATION                                            */
+/* ------------------------------------------------------------------ */
+
 export class SupabaseSocialLinksRepository implements SocialLinksRepositoryPort {
+  /**
+   * Owner view — uses vw_lensers_social_links_private.
+   * RLS + view definition ensure that even if a user passes a different handle,
+   * they will only ever see their own links.
+   */
   async getLinks(handle: string): Promise<SocialLink[]> {
-    // Join with lensers to filter by handle, effectively replacing simple select by ID
-    // Note: We need real IDs from lenser_social_links for editing, so we select * from base table
     const { data, error } = await supabase
-      .from('lenser_social_links')
-      .select('*, lensers!inner(handle)')
-      .eq('lensers.handle', handle);
-    
+      .from('vw_lensers_social_links_private')
+      .select('*')
+      .eq('handle', handle);
+
     if (error) throw error;
+    // View should already expose id, lenser_id, platform, url, label, created_at
     return data as SocialLink[];
   }
 
+  /**
+   * Public view — no internal IDs. We map to SocialLink type with
+   * synthetic IDs and lenser_id to keep type consistency on the frontend.
+   */
   async getLinksByHandle(handle: string): Promise<SocialLink[]> {
     const { data, error } = await supabase
-      .from('lenser_social_links_view')
+      .from('vw_lensers_social_links_public')
       .select('platform, url, label')
       .eq('handle', handle);
 
     if (error) throw error;
 
-    return data.map((l: any, i: number) => ({
+    // Map to a safe SocialLink shape (no real ids or lenser_id)
+    return (data || []).map((l: any, i: number) => ({
       id: `public-link-${i}`,
-      lenser_id: 'public', 
-      platform: l.platform,
+      lenser_id: 'public',
+      platform: l.platform as SocialPlatform,
       url: l.url,
       label: l.label,
       created_at: new Date().toISOString()
     })) as SocialLink[];
   }
 
-  async syncLinks(handle: string, links: (Omit<SocialLink, 'id' | 'lenser_id' | 'created_at'> & { id?: string })[]): Promise<SocialLink[]> {
-    // 1. Resolve Lenser ID from Handle (required for FK insertion)
-    const { data: lenser, error: lenserError } = await supabase
-        .from('vw_lensers_social_links')
-        .select('id')
-        .eq('handle', handle)
-        .single();
-    
-    if (lenserError || !lenser) throw new Error("Lenser not found for syncing links");
-    const lenserId = lenser.id;
+  /**
+   * Full sync through RPC.
+   * `handle` is not used for authorization — the RPC resolves lenser_id
+   * via auth.uid() inside Postgres.
+   */
+  async syncLinks(
+    _handle: string,
+    links: (Omit<SocialLink, 'id' | 'lenser_id' | 'created_at'> & { id?: string })[]
+  ): Promise<SocialLink[]> {
+    // Prepare minimal payload: id?, platform, url, label
+    const payload = links.map(l => ({
+      id: l.id ?? null,
+      platform: l.platform,
+      url: l.url,
+      label: l.label
+    }));
 
-    // 2. Fetch existing IDs for this user to determine deletions
-    const { data: existing, error: fetchError } = await supabase
-      .from('lenser_social_links')
-      .select('id')
-      .eq('lenser_id', lenserId);      
-    if (fetchError) throw fetchError;
-
-    const existingIds = existing.map(r => r.id);
-    const incomingIds = links.filter(l => l.id).map(l => l.id!);
-    const toDelete = existingIds.filter(id => !incomingIds.includes(id));
-
-    // 3. Delete removed items
-    if (toDelete.length > 0) {
-      const { error: deleteError } = await supabase
-        .from('lenser_social_links')
-        .delete()
-        .in('id', toDelete);
-      if (deleteError) throw deleteError;
-    }
-
-    // 4. Upsert items
-    const uuidRegex =
-      /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-
-    const upsertPayload = links.map(link => {
-      const hasValidId = typeof link.id === 'string' && uuidRegex.test(link.id);
-      return {
-        ...(hasValidId ? { id: link.id } : {}),
-        lenser_id: lenserId,
-        platform: link.platform,
-        url: link.url,
-        label: link.label
-      };
+    const { error } = await supabase.rpc('fn_lensers_sync_social_links', {
+      p_links: payload
     });
 
-    if (upsertPayload.length > 0) {
-      const { error: upsertError } = await supabase
-        .from('lenser_social_links')
-        .upsert(upsertPayload);
-      if (upsertError) throw upsertError;
-    }
+    if (error) throw error;
 
-    // 5. Return updated list using handle
-    return this.getLinks(handle);
+    // After sync, reload the authenticated user's links via private view.
+    // Caller should pass the current user's handle here.
+    // We ignore _handle for auth, but still use it as a filter to stay consistent.
+    return this.getLinks(_handle);
   }
 }

@@ -6,7 +6,6 @@ const shareRepo = getShareRepository();
 
 export const shareService = {
   createOrGetSharedLink: async (dto: CreateLinkDTO, creatorLenserId: string): Promise<SharedLink> => {
-    if (!creatorLenserId) throw new Error("User must be identified to create share links.");
     return shareRepo.createOrGetSharedLink(dto, creatorLenserId);
   },
 
