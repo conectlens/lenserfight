@@ -169,7 +169,7 @@ export const HomePage: React.FC = () => {
                       <div className="space-y-4">
                           {latestLensers?.map((user) => (
                             <div 
-                                key={user.id} 
+                                key={user.handle} 
                                 className="flex items-center gap-3 group cursor-pointer p-2 -mx-2 hover:bg-gray-50 dark:hover:bg-gray-700/50 rounded-lg transition-colors"
                                 onClick={() => navigate(`/lenser/${user.handle}`)}
                             >
