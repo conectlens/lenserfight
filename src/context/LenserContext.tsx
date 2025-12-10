@@ -121,7 +121,7 @@ export const LenserProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     setError(null);
 
     try {
-      const profile = await lenserService.getLenserProfile();
+      const profile = await lenserService.getAuthenticatedLenser();
       if (profile) {
         const safeProfile: Lenser = {
           ...profile,
@@ -180,11 +180,10 @@ export const LenserProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     setIsLoading(true);
 
     try {
-      const newProfile = await lenserService.createLenserProfile(userId, data);
+      const newProfile = await lenserService.createLenserProfile(data);
 
       const safeProfile: Lenser = {
         ...newProfile,
-        user_id: userId,
       };
 
       setLenser(safeProfile);
@@ -205,7 +204,7 @@ export const LenserProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     const userId = user.id;
 
     try {
-      const updated = await lenserService.updateLenserProfile(lenser.handle, data);
+      const updated = await lenserService.updateLenserProfile(data);
 
       const safeProfile: Lenser = {
         ...updated,

@@ -64,9 +64,7 @@ const PAGE_SIZE = 9;
 
 export const LenserProfilePage: React.FC = () => {
   const { handle, tab: routeTab } = useParams<{ handle: string; tab?: string }>();
-  console.log("handle", handle);
   const navigate = useNavigate();
-  const { user } = useAuth();
   const { lenser: currentUser } = useLenser(); // The currently authenticated user
   const { setShareConfig } = useShareContext();
   const { trackView } = useAnalytics();
@@ -130,53 +128,37 @@ export const LenserProfilePage: React.FC = () => {
     
     const fetchProfile = async () => {
       try {
-        console.log(handle);
-        const fullProfile = await lenserService.getFullProfileByHandle(handle);
+        const fullProfile = await lenserService.getPublicLenserProfile(handle);
         if (!fullProfile) {
             setViewedProfile(null);
             return;
         }
 
-        // Map Full Profile to standard Lenser object
-        const lenserData: Lenser = {
-            id: fullProfile.id,
-            user_id: fullProfile.user_id, // May be undefined in public view
-            handle: fullProfile.handle,
-            display_name: fullProfile.display_name,
-            bio: fullProfile.bio,
-            headline: fullProfile.headline,
-            avatar_url: fullProfile.avatar_url,
-            banner_url: fullProfile.banner_url,
-            website_url: fullProfile.website_url,
-            join_order: fullProfile.join_order,
-            created_at: new Date().toISOString()
-        };
-        
-        setViewedProfile(lenserData);
+        setViewedProfile(fullProfile);
         
         // Track View
-        trackView('profile', fullProfile.id);
+        trackView('profile');
 
         // Map Stats
         setStats({
-            promptsCount: fullProfile.prompt_count,
-            threadsCount: fullProfile.thread_count,
-            followersCount: fullProfile.follower_count,
-            followingCount: fullProfile.following_count,
+            //promptsCount: fullProfile.prompt_count,
+            //threadsCount: fullProfile.thread_count,
+            //followersCount: fullProfile.follower_count,
+            //followingCount: fullProfile.following_count,
             winsCount: 0
         });
 
         // Map XP
         setXpSummary({
-            totalXp: fullProfile.xp,
+            totalXp: fullProfile.total_xp,
             currentLevel: fullProfile.current_level,
-            rank: fullProfile.global_rank,
-            currentLevelMinXp: fullProfile.xp_min,
-            currentLevelMaxXp: fullProfile.xp_max
+            //rank: fullProfile.global_rank,
+            //currentLevelMinXp: fullProfile.xp_min,
+            //currentLevelMaxXp: fullProfile.xp_max
         });
 
         if (FEATURES.LENSER_ACTIVITY) {
-            const act = await lenserService.getLenserActivity(fullProfile.id);
+            const act = await lenserService.getLenserActivity(fullProfile.handle);
             setActivity(act);
         }
 

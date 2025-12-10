@@ -187,101 +187,125 @@ export class MockReactionRepository implements ReactionRepositoryPort {
         .slice(offset, offset + limit);
   }
 }
-
 export class SupabaseReactionRepository implements ReactionRepositoryPort {
-  async getReactionsFor(targetType: TargetType, targetId: string): Promise<ReactionRecord[]> {
-    const { data, error } = await supabase.from('reactions').select('*').eq('target_type', targetType).eq('target_id', targetId);
+  async getReactionsFor(
+    targetType: TargetType,
+    targetId: string
+  ): Promise<ReactionRecord[]> {
+    const { data, error } = await supabase.rpc(
+      'fn_content_reactions_get_for_target',
+      {
+        p_target_type: targetType,
+        p_target_id: targetId
+      }
+    );
+
     if (error) throw error;
-    return data as ReactionRecord[];
+    return (data ?? []) as ReactionRecord[];
   }
 
-  async getUserReaction(targetType: TargetType, targetId: string, lenserId: string): Promise<ReactionRecord[]> {
-    const { data, error } = await supabase.from('reactions').select('*').eq('target_type', targetType).eq('target_id', targetId).eq('lenser_id', lenserId);
+  async getUserReaction(
+    targetType: TargetType,
+    targetId: string
+  ): Promise<ReactionRecord[]> {
+    const { data, error } = await supabase.rpc(
+      'fn_content_reactions_get_user_for_target',
+      {
+        p_target_type: targetType,
+        p_target_id: targetId
+      }
+    );
+
     if (error) throw error;
-    return data as ReactionRecord[];
+    return (data ?? []) as ReactionRecord[];
   }
 
   async toggleReaction(
-  targetType: TargetType,
-  targetId: string,
-  lenserId: string,
-  reaction: ReactionType
-): Promise<{
-  added: boolean;
-  summary: {
-    counts: Record<ReactionType, number>;
-    total: number;
-    userReactions: ReactionType[];
-  };
-}> {
-  const { data, error } = await supabase.rpc('toggle_reaction', {
-    p_lenser_id: lenserId,
-    p_target_type: targetType,
-    p_target_id: targetId,
-    p_reaction: reaction,
-  });
-
-  if (error) throw error;
-
-  return data;
-}
-
-
-  async getBatchUserReactions(targetType: TargetType, targetIds: string[], lenserId: string): Promise<ReactionRecord[]> {
-    if (targetIds.length === 0) return [];
-    
-    const { data, error } = await supabase
-        .from('reactions')
-        .select('*')
-        .eq('target_type', targetType)
-        .eq('lenser_id', lenserId)
-        .in('target_id', targetIds);
-
-    if (error) throw error;
-    return data as ReactionRecord[];
-  }
-
-  async addReaction(targetType: TargetType, targetId: string, lenserId: string, reaction: ReactionType): Promise<ReactionRecord> {
-    const { data, error } = await supabase.from('reactions').insert({ lenser_id: lenserId, target_type: targetType, target_id: targetId, reaction }).select().single();
-    if (error) throw error;
-    return data as ReactionRecord;
-  }
-
-  async removeReaction(targetType: TargetType, targetId: string, lenserId: string, reaction: ReactionType): Promise<void> {
-    const { error } = await supabase.from('reactions').delete().match({ lenser_id: lenserId, target_type: targetType, target_id: targetId, reaction });
-    if (error) throw error;
-  }
-
-  async countReactions(targetType: TargetType, targetId: string): Promise<ReactionCount[]> {
-    const { data, error } = await supabase
-        .from('reactions')
-        .select('reaction')
-        .eq('target_type', targetType)
-        .eq('target_id', targetId);
-        
-    if (error) {
-        console.error("Error counting reactions:", error);
-        return [];
-    }
-    
-    const counts: Record<string, number> = {};
-    data.forEach((row: any) => {
-        counts[row.reaction] = (counts[row.reaction] || 0) + 1;
+    targetType: TargetType,
+    targetId: string,
+    _lenserId: string,          // kept for interface compatibility; ignored
+    reaction: ReactionType
+  ): Promise<{
+    added: boolean;
+    summary: {
+      counts: Record<ReactionType, number>;
+      total: number;
+      userReactions: ReactionType[];
+    };
+  }> {
+    const { data, error } = await supabase.rpc('fn_content_reactions_toggle', {
+      p_target_type: targetType,
+      p_target_id: targetId,
+      p_reaction: reaction
     });
-    
-    return Object.entries(counts).map(([reaction, count]) => ({ reaction: reaction as ReactionType, count }));
+
+    if (error) throw error;
+    return data as any;
   }
 
-  async getLenserHistory(handle: string, offset = 0, limit = 20): Promise<ReactionRecord[]> {
-    // Join with lensers to filter by handle
-    const { data, error } = await supabase
-        .from('reactions')
-        .select('*, lensers!inner(handle)')
-        .eq('lensers.handle', handle)
-        .order('created_at', { ascending: false })
-        .range(offset, offset + limit - 1);
-        
+  async getBatchUserReactions(
+    targetType: TargetType,
+    targetIds: string[],
+    _lenserId: string
+  ): Promise<ReactionRecord[]> {
+    if (targetIds.length === 0) return [];
+
+    const { data, error } = await supabase.rpc(
+      'fn_content_reactions_get_batch_user',
+      {
+        p_target_type: targetType,
+        p_target_ids: targetIds
+      }
+    );
+
     if (error) throw error;
-    return data as ReactionRecord[];
+    return (data ?? []) as ReactionRecord[];
+  }
+
+  // addReaction/removeReaction can be modeled via toggleReaction or separate RPCs if you really need them.
+  // With the unique index, toggle covers both use cases.
+
+  async countReactions(
+    targetType: TargetType,
+    targetId: string
+  ): Promise<ReactionCount[]> {
+    const { data, error } = await supabase.rpc(
+      'fn_content_reactions_get_summary',
+      {
+        p_target_type: targetType,
+        p_target_id: targetId,
+        p_lenser_id: null
+      }
+    );
+
+    if (error) throw error;
+    const summary = data as {
+      counts: Record<string, number>;
+      total: number;
+      userReactions: string[];
+    };
+
+    return Object.entries(summary.counts).map(([reaction, count]) => ({
+      reaction: reaction as ReactionType,
+      count
+    }));
+  }
+
+  async getLenserHistory(
+    handle: string,
+    offset = 0,
+    limit = 20
+  ): Promise<ReactionRecord[]> {
+    const { data, error } = await supabase.rpc(
+      'fn_content_reactions_get_lenser_history',
+      {
+        p_handle: handle,
+        p_offset: offset,
+        p_limit: limit
+      }
+    );
+
+    if (error) throw error;
+    return (data ?? []) as ReactionRecord[];
   }
 }

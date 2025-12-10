@@ -107,74 +107,106 @@ export class MockTagRepository implements TagRepositoryPort {
     }, 10);
   }
 }
-
 export class SupabaseTagRepository implements TagRepositoryPort {
-  
+
   private handleError(error: any) {
-    if (error.code === '42501' || error.message?.includes('permission denied')) {
-        throw new Error("This tag is private or hidden and cannot be used.");
+    if (!error) return;
+
+    if (error.code === '42501' || error?.message?.includes('permission denied')) {
+      throw new Error("This tag is private or you don't have permission to access it.");
     }
+
+    if (error.code === 'PGRST116') {
+      return null;
+    }
+
     throw error;
   }
 
+  /**
+   * FIND TAG BY SLUG
+   * Uses RPC fn_content_tags_get_by_slug
+   */
   async findBySlug(slug: string): Promise<TagDTO | null> {
-    // Read from view. Assuming view includes ID for relation mapping.
-    // If view does not strictly output 'id', DB constraints on app will fail later.
-    const { data, error } = await supabase
-        .from('vw_tags_public')
-        .select('id, name, slug, visibility') // We assume these columns exist in the view
-        .eq('slug', slug)
-        .single();
-    
+    const { data, error } = await supabase.rpc('fn_content_tags_get_by_slug', {
+      p_slug: slug
+    });
+
     if (error) {
-        if (error.code === 'PGRST116') return null; // Not found
-        this.handleError(error);
+      if (error.code === 'PGRST116') return null;
+      this.handleError(error);
     }
+
     return data as TagDTO;
   }
 
+  /**
+   * CREATE TAG — uses fn_content_tags_create
+   */
   async createTag(name: string, slug: string): Promise<TagDTO> {
-    // Write to base table
-    const { data, error } = await supabase
-        .from('tags')
-        .insert({ name, slug, visibility: 'public' })
-        .select('id, name, slug, visibility')
-        .single();
+    const { data: tagId, error } = await supabase.rpc('fn_content_tags_create', {
+      p_name: name,
+      p_slug: slug
+    });
 
     if (error) this.handleError(error);
-    return data as TagDTO;
+
+    const { data: tag, error: fetchError } = await supabase
+      .from('vw_content_tags_public')
+      .select('*')
+      .eq('id', tagId)
+      .single();
+
+    if (fetchError) this.handleError(fetchError);
+
+    return tag as TagDTO;
   }
 
+  /**
+   * GET ALL TAGS WITH COUNTS
+   */
   async getAllTagsWithCounts(): Promise<TagUsage[]> {
     const { data, error } = await supabase
-      .from('vw_tags_public')
-      .select('*'); // Select all available cols from view
-        
+      .from('vw_content_tags_public')
+      .select('*');
+
     if (error) this.handleError(error);
 
-    return data.map((tag: any) => ({
-      id: tag.id || tag.slug, // Fallback if ID not in view
+    return (data ?? []).map((tag: any) => ({
+      id: tag.id,
       name: tag.name,
       slug: tag.slug,
-      description: tag.description || '',
-      visibility: 'public',
+      description: tag.description ?? '',
+      visibility: tag.visibility ?? 'public',
       created_at: tag.created_at,
-      count: 0, // Cannot fetch from base tables
-      trendingScore: 0
-    }));
+      count: tag.usage_count ?? 0,
+      trendingScore: tag.trending_score ?? 0
+    })) as TagUsage[];
   }
 
+  /**
+   * RECORD A SINGLE TAG ACTIVITY EVENT
+   */
   async recordActivity(event: TagActivityEventDTO): Promise<void> {
     await this.recordBatchActivity([event]);
   }
 
+  /**
+   * RECORD MULTIPLE ACTIVITY EVENTS
+   */
   async recordBatchActivity(events: TagActivityEventDTO[]): Promise<void> {
-    if (events.length === 0) return;
+    if (!events.length) return;
+
     try {
-        // Tag activity events are typically a separate log table, not one of the restricted ones.
-        await supabase.from('tag_activity_events').insert(events);
+      const { error } = await supabase
+        .from('tag_activity_events')
+        .insert(events);
+
+      if (error) {
+        console.warn("Failed to record tag activity", error);
+      }
     } catch (e) {
-        console.warn("Failed to record tag activity", e);
+      console.warn("Failed to record tag activity", e);
     }
   }
 }
