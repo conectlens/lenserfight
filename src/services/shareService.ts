@@ -5,8 +5,8 @@ import { CreateLinkDTO, SharedLink } from '../types/share.types';
 const shareRepo = getShareRepository();
 
 export const shareService = {
-  createOrGetSharedLink: async (dto: CreateLinkDTO, creatorLenserId: string): Promise<SharedLink> => {
-    return shareRepo.createOrGetSharedLink(dto, creatorLenserId);
+  createOrGetSharedLink: async (dto: CreateLinkDTO): Promise<SharedLink> => {
+    return shareRepo.createOrGetSharedLink(dto);
   },
 
   /**
@@ -26,11 +26,11 @@ export const shareService = {
     return `${origin}/s/${shortId}`;
   },
 
-  resolveAndLog: async (shortId: string, viewerLenserId?: string) => {
+  resolveAndLog: async (shortId: string) => {
       const result = await shareRepo.resolveLink(shortId);
       if (result) {
           // Fire and forget logging
-          shareRepo.logEvent(shortId, 'opened', { viewer_lenser_id: viewerLenserId });
+          shareRepo.logEvent(shortId, 'opened');
       }
       return result;
   }

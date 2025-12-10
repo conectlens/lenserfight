@@ -7,7 +7,6 @@ export interface SharedLink {
   resource_type: ShareResourceType;
   resource_id: string;
   slug?: string | null;
-  creator_lenser_id: string;
   channel: string;
   campaign_key?: string | null;
   experiment_key?: string | null;
@@ -21,7 +20,6 @@ export interface ShareEvent {
   id: string;
   shared_link_id: string;
   event_type: 'generated' | 'opened';
-  viewer_lenser_id?: string | null;
   viewer_session_id?: string | null;
   ip_hash?: string | null;
   country?: string | null;
