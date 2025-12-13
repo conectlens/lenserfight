@@ -8,7 +8,7 @@ import { Button } from '../../../components/Button';
 import { useFormValidation } from '../../../hooks/useFormValidation';
 import { isRequired, isEmail } from '../../../utils/validation';
 import { FormError } from '../../../components/FormError';
-import { ArrowLeft, Check, AlertCircle } from 'lucide-react';
+import { ArrowLeft, Check, AlertCircle, Globe } from 'lucide-react';
 import { Modal } from '../../../components/Modal';
 import { isMock, ENABLE_CAPTCHA, CAPTCHA_SITE_KEY } from '../../../config/runtimeConfig';
 import { PasswordStrengthMeter } from '../components/PasswordStrengthMeter';
@@ -24,6 +24,7 @@ export const RegisterPage: React.FC = () => {
     email: isMock ? `newuser_${Date.now()}@example.com` : '',
     password: isMock ? 'Password123!' : '',
     confirmPassword: isMock ? 'Password123!' : '',
+    preferredLanguage: 'en',
     agreeTerms: isMock ? true : false
   });
 
@@ -60,11 +61,14 @@ export const RegisterPage: React.FC = () => {
     }
   }, [isAuthenticated, isSuccess, loading, navigate]);
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value, type, checked } = e.target;
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    const { name, value, type } = e.target;
+    // Handle checkbox separately for type safety in setFormData
+    const val = type === 'checkbox' ? (e.target as HTMLInputElement).checked : value;
+    
     setFormData(prev => ({ 
       ...prev, 
-      [name]: type === 'checkbox' ? checked : value 
+      [name]: val
     }));
     clearError(name as keyof typeof formData);
     if (name === 'password') clearError('confirmPassword'); 
@@ -94,7 +98,15 @@ export const RegisterPage: React.FC = () => {
 
     setLoading(true);
     try {
-      await register(formData.email, formData.password, formData.displayName, captchaToken || undefined);
+      await register(
+          formData.email, 
+          formData.password, 
+          { 
+              displayName: formData.displayName,
+              preferredLanguage: formData.preferredLanguage
+          }, 
+          captchaToken || undefined
+      );
       
       // Success State - start overlay
       setIsSuccess(true);
@@ -202,6 +214,31 @@ export const RegisterPage: React.FC = () => {
               error={errors.email}
               className={errors.email ? 'border-red-500 focus:border-red-500 focus:ring-red-200' : ''}
             />
+          </div>
+
+          <div className="mb-4">
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5 flex items-center gap-1">
+                <Globe size={14} /> Preferred Language
+            </label>
+            <div className="relative">
+                <select
+                    name="preferredLanguage"
+                    value={formData.preferredLanguage}
+                    onChange={handleChange}
+                    className="w-full px-4 py-2.5 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-primary/50 focus:border-primary transition-colors outline-none appearance-none cursor-pointer"
+                >
+                    <option value="en">English (US)</option>
+                    <option value="es">Español</option>
+                    <option value="fr">Français</option>
+                    <option value="de">Deutsch</option>
+                    <option value="pt">Português</option>
+                    <option value="tr">Türkçe</option>
+                    <option value="ja">日本語</option>
+                </select>
+                <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-gray-500">
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
+                </div>
+            </div>
           </div>
 
           <div>

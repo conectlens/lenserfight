@@ -1,5 +1,5 @@
 
-import { XPSummary, XPEvent, LenserBadge, LeaderboardEntry, GrantXPDTO, LeaderboardTimeframe, LeaderboardScope } from '../types/xp.types';
+import { XPSummary, XPEvent, LenserBadge, LeaderboardEntry, LeaderboardTimeframe, LeaderboardScope } from '../types/xp.types';
 import { supabase } from '../utils/supabase';
 import { storage } from '../utils/storage';
 
@@ -100,46 +100,6 @@ export class MockXPRepository implements XPRepositoryPort {
     };
 
     return { list: paginatedList, userEntry: myEntry };
-  }
-
-  async grantXP(dto: GrantXPDTO): Promise<XPSummary> {
-    await new Promise(resolve => setTimeout(resolve, 500));
-    const data = this.getData();
-    
-    const xpMap: Record<string, number> = { 
-        'THREAD_CREATED': 50, 
-        'THREAD_REPLY_CREATED': 20, 
-        'REACTION_GIVEN': 5,
-        'THREAD_ENGAGED': 1,
-        'DAILY_LOGIN': 10,
-        'THREAD_REPLY_RECEIVED': 5,
-        'PROMPT_CREATED': 50
-    };
-    const amount = xpMap[dto.ruleKey] || 10;
-
-    data.totalXp += amount;
-    const newLevel = Math.floor(Math.sqrt(data.totalXp / 100)) + 1;
-    data.currentLevel = newLevel;
-    
-    data.history.unshift({
-        id: `evt-${Date.now()}`,
-        action: dto.ruleKey,
-        xp: amount,
-        source: dto.source,
-        createdAt: new Date().toISOString()
-    });
-
-    storage.setItem(this.STORAGE_KEY, JSON.stringify(data));
-    
-    const currentMin = this.getMockLevelMinXp(data.currentLevel);
-    const currentMax = this.getMockLevelMinXp(data.currentLevel + 1);
-
-    return { 
-        totalXp: data.totalXp, 
-        currentLevel: data.currentLevel,
-        currentLevelMinXp: currentMin,
-        currentLevelMaxXp: currentMax
-    };
   }
 }
 

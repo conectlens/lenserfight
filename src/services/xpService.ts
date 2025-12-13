@@ -1,9 +1,10 @@
 
 import { getXPRepository } from '../adapters/xpAdapter';
+import { getLenserRepository } from '../adapters/lenserAdapter';
 import { XPRuleKey, XPSummary, XPEvent, LenserBadge, LeaderboardEntry, XPSource, LeaderboardTimeframe, LeaderboardScope } from '../types/xp.types';
 
 const repo = getXPRepository();
-const APP_ID = '00000000-0000-0000-0000-000000000000'; 
+const lenserRepo = getLenserRepository();
 
 export const xpService = {
   getStats: async (lenserId: string): Promise<XPSummary | null> => {
