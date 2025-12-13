@@ -5,9 +5,10 @@ import { useAuth } from '../../../context/AuthContext';
 import { Button } from '../../../components/Button';
 import { ArrowRight, CheckCircle, Lock, Sparkles, ShieldCheck, Check } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { waitingListService } from '@/src/services/waitingListService';
 
 export const WaitingListSection: React.FC = () => {
-  const { lenser, hasLenser, updateLenserProfile } = useLenser();
+  const { lenser, hasLenser } = useLenser();
   const { isAuthenticated } = useAuth();
   
   const [kvkkApproved, setKvkkApproved] = useState(false);
@@ -29,9 +30,7 @@ export const WaitingListSection: React.FC = () => {
       setIsSubmitting(true);
 
       try {
-          await updateLenserProfile({
-              is_in_waiting_list: true
-          });
+          await waitingListService.toggleWaitingList(kvkkApproved)
       } catch (err: any) {
           setError(err.message || "Failed to join list.");
       } finally {
@@ -109,7 +108,7 @@ export const WaitingListSection: React.FC = () => {
                                 <div className="w-1.5 h-1.5 bg-red-500 rounded-full"></div>
                                 {error}
                             </div>
-                        )}
+                        )}  
                     </form>
                 )
             ) : (

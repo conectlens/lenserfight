@@ -1,7 +1,7 @@
 
 import { getLenserRepository } from '../adapters/lenserAdapter';
 import { getShareRepository } from '../adapters/shareAdapter';
-import { Lenser, CreateLenserDTO, LenserStats, LenserActivityPoint, ActionRecord, NetworkUser, LenserFullProfile } from '../types/lenser.types';
+import { Lenser, CreateLenserDTO, LenserStats, LenserActivityPoint, ActionRecord, NetworkUser, LenserFullProfile, LenserProfileDTO } from '../types/lenser.types';
 import { PromptTemplateRecord } from '../types/prompts.types';
 import { ThreadRecord } from '../types/threads.types';
 import { shareService } from './shareService';
@@ -32,24 +32,27 @@ const enrichLenserProfile = async (lenser: Lenser | null): Promise<Lenser | null
 };
 
 export const lenserService = {
-  getLenserProfile: async (userId: string): Promise<Lenser | null> => {
-    if (!userId) throw new Error("User ID is required");
-    const lenser = await lenserRepo.getLenserByUserId(userId);
+  getAuthenticatedLenser: async (): Promise<Lenser | null> => {
+    const lenser = await lenserRepo.getAuthenticatedLenser(); 
     return enrichLenserProfile(lenser);
   },
 
-  createLenserProfile: async (userId: string, data: CreateLenserDTO): Promise<Lenser> => {
-    if (!userId) throw new Error("User ID is required");
+  getPublicLenserProfile: async (handle: string): Promise<LenserProfileDTO> => {
+    return  await lenserRepo.getPublicLenserProfile(handle);
+  },
+
+  createLenserProfile: async (data: CreateLenserDTO): Promise<Lenser> => {
+    if (!data) throw new Error("Data is required");
     
     // Moderation Check
     // TODO: moderation policy will not be used in the beta version
     // await contentModerationService.validate(data.handle, data.display_name, data.bio);
 
-    return lenserRepo.createLenser(userId, data);
+    return lenserRepo.createLenser(data);
   },
 
-  updateLenserProfile: async (handle: string, data: Partial<Lenser>): Promise<Lenser> => {
-    if (!handle) throw new Error("Lenser handle is required");
+  updateLenserProfile: async (data: Partial<Lenser>): Promise<Lenser> => {
+    if (!data) throw new Error("Lenser handle is required");
 
     // Moderation Check
     // TODO: moderation policy will not be used in the beta version
@@ -75,7 +78,7 @@ export const lenserService = {
                       original_website: true,
                       targetUrl: url
                   }
-              }, handle); // NOTE: createOrGetSharedLink ideally wants creatorLenserId, but usually logic uses user context ID. 
+              }, data.handle); // NOTE: createOrGetSharedLink ideally wants creatorLenserId, but usually logic uses user context ID. 
                           // Here we use handle if repo supports it or just use it as string key. 
                           // However, shareService.createOrGetSharedLink contract says creatorLenserId.
                           // Since updateLenserProfile doesn't strictly need share link creation by handle unless repo updated,
@@ -94,26 +97,13 @@ export const lenserService = {
       }
     }
 
-    const updated = await lenserRepo.updateLenser(handle, data);
+    const updated = await lenserRepo.updateLenser(data);
     return enrichLenserProfile(updated) as Promise<Lenser>;
   },
 
-  requestAccountDeletion: async (userId: string): Promise<void> => {
-    if (!userId) throw new Error("User ID is required");
-    await lenserRepo.requestDeletion(userId);
-  },
-
-  getLenserByHandle: async (handle: string): Promise<Lenser | null> => {
-    const lenser = await lenserRepo.getLenserByHandle(handle);
-    return enrichLenserProfile(lenser);
-  },
-
-  getFullProfileByHandle: async (handle: string): Promise<LenserFullProfile | null> => {
-    return lenserRepo.getFullProfileByHandle(handle);
-  },
-
-  getLenserStats: async (lenserId: string): Promise<LenserStats> => {
-    return lenserRepo.getLenserStats(lenserId);
+  requestAccountDeletion: async (handle: string): Promise<void> => {
+    if (!handle) throw new Error("Handle is required");
+    await lenserRepo.requestDeletion(handle);
   },
 
   getLenserPrompts: async (lenserId: string, offset = 0, limit = 10, viewerId?: string): Promise<PromptTemplateRecord[]> => {
@@ -132,8 +122,8 @@ export const lenserService = {
       return lenserRepo.getRecentlyActive(limit);
   },
 
-  getLatestJoinedLensers: async (limit: number = 5): Promise<Lenser[]> => {
-      return lenserRepo.getLatestJoined(limit);
+  getLatestJoinedLensers: async (): Promise<Lenser[]> => {
+      return lenserRepo.getLatestJoined();
   },
 
   getLenserActions: async (lenserId: string): Promise<ActionRecord[]> => {

@@ -133,3 +133,22 @@ export interface NetworkUser {
   avatar_url?: string | null;
   is_following: boolean;
 }
+
+export interface LenserProfileDTO {
+  handle: string; // unique
+  display_name: string;
+  bio?: string;
+  avatar_url?: string | null;
+  banner_url?: string | null;
+  headline?: string;
+  location?: string;
+  website_url?: string;
+  website_display_name?: string;
+  visibility?: 'public' | 'private';
+  is_in_waiting_list?: boolean;
+  preferences?: LenserPreferences;
+  total_xp: string | null;
+  current_level: string | null;
+  badges: [] | null;
+  join_order?: number; // Immutable rank from lenser_join_log
+}
