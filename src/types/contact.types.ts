@@ -20,4 +20,5 @@ export interface CreateContactDTO {
   message: string;
   kvkk_approved: boolean;
   user_agent?: string;
+  ip_address?: string;
 }

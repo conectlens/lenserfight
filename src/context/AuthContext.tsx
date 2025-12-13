@@ -1,13 +1,19 @@
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { User, AuthState } from '../types/auth.types';
+import { User, AuthState, UserMetadata } from '../types/auth.types';
 import { authService } from '../services/authService';
 import { storage } from '../utils/storage';
 import { queryClient } from '../lib/react-query';
+import { getEnvMetadata } from '../utils/envUtils';
+
+interface RegisterOptions {
+  displayName?: string;
+  preferredLanguage?: string;
+}
 
 interface AuthContextType extends AuthState {
   login: (email: string, pass: string, captchaToken?: string) => Promise<void>;
-  register: (email: string, pass: string, displayName?: string, captchaToken?: string) => Promise<void>;
+  register: (email: string, pass: string, options?: RegisterOptions, captchaToken?: string) => Promise<void>;
   logout: () => Promise<void>;
   requestPasswordReset: (email: string, captchaToken?: string) => Promise<void>;
   resetPassword: (password: string, token?: string) => Promise<void>;
@@ -75,7 +81,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     // We do NOT set isLoading: true here because that triggers SessionBoundary to unmount the app
     setState(s => ({ ...s, error: null }));
     try {
-      const user = await authService.login(email, pass, captchaToken);
+      // Gather fresh environment metadata for the login event
+      const env = await getEnvMetadata();
+      const metadataUpdate: Partial<UserMetadata> = {
+          detected_language: env.detected_language,
+          timezone: env.timezone,
+          country: env.country
+      };
+
+      const user = await authService.login(email, pass, captchaToken, metadataUpdate);
       setState({ user, isAuthenticated: true, isLoading: false, error: null });
     } catch (err: unknown) {
       const message = getErrorMessage(err);
@@ -84,11 +98,22 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  const register = async (email: string, pass: string, displayName?: string, captchaToken?: string) => {
+  const register = async (email: string, pass: string, options?: RegisterOptions, captchaToken?: string) => {
     // We do NOT set isLoading: true here because that triggers SessionBoundary to unmount the app
     setState(s => ({ ...s, error: null }));
     try {
-      const user = await authService.register(email, pass, displayName ? { display_name: displayName } : undefined, captchaToken);
+      // Gather environment metadata for sign up
+      const env = await getEnvMetadata();
+      const metadata: UserMetadata = {
+          display_name: options?.displayName,
+          preferred_language: options?.preferredLanguage,
+          ui_language: options?.preferredLanguage || env.detected_language, // Default UI language to preferred
+          detected_language: env.detected_language,
+          timezone: env.timezone,
+          country: env.country
+      };
+
+      const user = await authService.register(email, pass, metadata, captchaToken);
       setState({ user, isAuthenticated: true, isLoading: false, error: null });
     } catch (err: unknown) {
       const message = getErrorMessage(err);

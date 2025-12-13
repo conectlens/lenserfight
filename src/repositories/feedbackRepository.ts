@@ -5,15 +5,15 @@ import { storage } from '../utils/storage';
 
 // --- Port (Interface) ---
 export interface FeedbackRepositoryPort {
-  submitFeedback(dto: SubmitFeedbackDTO): Promise<Feedback>;
-  getUserFeedbacks(userId: string, offset?: number, limit?: number): Promise<{ data: Feedback[]; count: number }>;
+  submitFeedback(dto: SubmitFeedbackDTO): Promise<void>;
+  getUserFeedbacks(offset?: number, limit?: number): Promise<{ data: Feedback[]; count: number }>;
 }
 
 // --- Mock Implementation ---
 export class MockFeedbackRepository implements FeedbackRepositoryPort {
   private STORAGE_KEY = 'mock_feedback_db';
 
-  async submitFeedback(dto: SubmitFeedbackDTO): Promise<Feedback> {
+  async submitFeedback(dto: SubmitFeedbackDTO): Promise<void> {
     await new Promise(resolve => setTimeout(resolve, 800)); // Simulate network
 
     const newFeedback: Feedback = {
@@ -36,14 +36,12 @@ export class MockFeedbackRepository implements FeedbackRepositoryPort {
     console.group("Mock Feedback Submitted");
     console.log("Data:", newFeedback);
     console.groupEnd();
-
-    return newFeedback;
   }
 
-  async getUserFeedbacks(userId: string, offset = 0, limit = 5): Promise<{ data: Feedback[]; count: number }> {
+  async getUserFeedbacks(offset = 0, limit = 5): Promise<{ data: Feedback[]; count: number }> {
     await new Promise(resolve => setTimeout(resolve, 600));
     const all = JSON.parse(storage.getItem(this.STORAGE_KEY) || '[]');
-    const userFeedbacks = all.filter((f: Feedback) => f.user_id === userId);
+    const userFeedbacks = all.filter((f: Feedback) => f.user_id === "userId");
     
     // Sort descending by created_at
     userFeedbacks.sort((a: Feedback, b: Feedback) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
@@ -57,35 +55,49 @@ export class MockFeedbackRepository implements FeedbackRepositoryPort {
 
 // --- Supabase Implementation ---
 export class SupabaseFeedbackRepository implements FeedbackRepositoryPort {
-  async submitFeedback(dto: SubmitFeedbackDTO): Promise<Feedback> {
-    const { data, error } = await supabase
-      .from('feedback')
-      .insert({
-        product_tag: dto.product_tag,
-        page: dto.page,
-        message: dto.message,
-        start_date: dto.start_date,
-        end_date: dto.end_date
-      })
-      .select()
-      .single();
+  async submitFeedback(dto: SubmitFeedbackDTO) {
+    const { data, error } = await supabase.rpc(
+      'fn_public_submit_feedback',
+      {
+        p_product_tag: dto.product_tag ?? 'general',
+        p_page: dto.page,
+        p_message: dto.message,
+        p_start_date: dto.start_date ?? null,
+        p_end_date: dto.end_date ?? null
+      }
+    );
 
     if (error) throw error;
-    return data as Feedback;
+    if (data) {
+      // data is non-null only if the function caught an error and returned details
+      console.warn("Feedback RPC reported error:", data);
+    }
   }
+  
+async getUserFeedbacks(offset = 0, limit = 5): Promise<{ data: Feedback[]; count: number }> {
+  const { data, error } = await supabase.rpc(
+    'fn_analytics_product_feedback_list_user_paginated',
+    {
+      p_offset: offset,
+      p_limit: limit,
+    }
+  );
 
-  async getUserFeedbacks(userId: string, offset = 0, limit = 5): Promise<{ data: Feedback[]; count: number }> {
-    // Use the secure view which filters by auth.uid() automatically.
-    // Note: The view does not return 'id', so pagination relies on offset/limit.
-    const { data, error, count } = await supabase
-        .from('vw_feedback_user')
-        .select('*', { count: 'exact' })
-        .order('created_at', { ascending: false })
-        .range(offset, offset + limit - 1);
-        
-    if (error) throw error;
-    
-    // Data returned matches the view structure (no id, no user_id)
-    return { data: data as Feedback[], count: count || 0 };
-  }
+  if (error) throw error;
+
+  const totalCount = data?.length ? data[0].total_count : 0;
+
+  const result = data?.map(row => ({
+    product_tag: row.product_tag,
+    page: row.page,
+    message: row.message,
+    start_date: row.start_date,
+    end_date: row.end_date,
+    status: row.status,
+    created_at: row.created_at
+  })) as Feedback[];
+
+  return { data: result, count: totalCount };
+}
+
 }

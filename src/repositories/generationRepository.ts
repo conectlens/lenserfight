@@ -16,7 +16,7 @@ const MOCK_AI_MODELS: AIModel[] = [
 
 export interface GenerationRepositoryPort {
   getGenerationsForPrompt(promptId: string, lenserId: string, options?: GenerationFilterOptions): Promise<AIGeneration[]>;
-  createGeneration(data: CreateGenerationDTO): Promise<AIGeneration>;
+  createGeneration(data: CreateGenerationDTO): Promise<void>;
   deleteGeneration(id: string): Promise<void>;
   getAIModels(): Promise<AIModel[]>;
 }
@@ -47,7 +47,7 @@ export class MockGenerationRepository implements GenerationRepositoryPort {
     const allGens = this.getGenerations();
     const allMedia = this.getMedia();
 
-    const { limit = 20, offset = 0, mediaKind = 'all', aiModelId = 'all' } = options;
+    const { limit = 20, offset = 0, mediaKind = 'all', aiModelSlug = 'all' } = options;
 
     // Filter by prompt
     let filtered = allGens.filter(g => g.prompt_template_id === promptId);
@@ -63,8 +63,8 @@ export class MockGenerationRepository implements GenerationRepositoryPort {
         joined = joined.filter(g => g.media?.media_kind === mediaKind);
     }
 
-    if (aiModelId !== 'all') {
-        joined = joined.filter(g => g.ai_model_id === aiModelId);
+    if (aiModelSlug !== 'all') {
+        joined = joined.filter(g => g.ai_model_id === aiModelSlug);
     }
 
     // Sort by Date Desc
@@ -74,7 +74,7 @@ export class MockGenerationRepository implements GenerationRepositoryPort {
     return joined.slice(offset, offset + limit);
   }
 
-  async createGeneration(dto: CreateGenerationDTO): Promise<AIGeneration> {
+  async createGeneration(dto: CreateGenerationDTO): Promise<void> {
     await new Promise(resolve => setTimeout(resolve, 800));
 
     // 1. Create Media
@@ -107,8 +107,6 @@ export class MockGenerationRepository implements GenerationRepositoryPort {
     const allGens = this.getGenerations();
     allGens.push(newGen);
     storage.setItem(this.GENERATIONS_KEY, JSON.stringify(allGens));
-
-    return newGen;
   }
 
   async deleteGeneration(id: string): Promise<void> {
@@ -135,7 +133,7 @@ export class MockGenerationRepository implements GenerationRepositoryPort {
 
 export class SupabaseGenerationRepository implements GenerationRepositoryPort {
   async getGenerationsForPrompt(promptId: string, lenserId: string, options: GenerationFilterOptions = {}): Promise<AIGeneration[]> {
-    const { limit = 20, offset = 0, mediaKind = 'all', aiModelId = 'all' } = options;
+    const { limit = 20, offset = 0, mediaKind = 'all', aiModelSlug = 'all' } = options;
 
     let query = supabase
         .from('ai_generations')
@@ -147,8 +145,9 @@ export class SupabaseGenerationRepository implements GenerationRepositoryPort {
         .order('created_at', { ascending: false })
         .range(offset, offset + limit - 1);
 
-    if (aiModelId !== 'all') {
-        query = query.eq('ai_model_id', aiModelId);
+    // TODO: USE VIEW HERE
+    if (aiModelSlug !== 'all') {
+        query = query.eq('ai_model_id', aiModelSlug);
     }
 
     if (mediaKind !== 'all') {
@@ -172,38 +171,20 @@ export class SupabaseGenerationRepository implements GenerationRepositoryPort {
     return results;
   }
 
-  async createGeneration(dto: CreateGenerationDTO): Promise<AIGeneration> {
-    // 1. Insert Media
-    const { data: media, error: mediaError } = await supabase
-        .from('media_library')
-        .insert({
-            lenser_id: dto.lenser_id,
-            ...dto.media
-        })
-        .select()
-        .single();
+  async createGeneration(dto: CreateGenerationDTO): Promise<void> {
+    const { error } = await supabase.rpc('fn_ai_create_generation', {
+        p_ai_model_id: dto.ai_model_id,
+        p_prompt_template_id: dto.prompt_template_id,
+        p_media: dto.media,                 // jsonb
+        p_input_text: dto.input_text ?? null,
+        p_visibility: dto.visibility ?? 'private',
+        p_original_chat_url: dto.original_chat_url ?? null,
+      });
 
-    if (mediaError) throw mediaError;
-
-    // 2. Insert Generation
-    const { data: gen, error: genError } = await supabase
-        .from('ai_generations')
-        .insert({
-            lenser_id: dto.lenser_id,
-            ai_model_id: dto.ai_model_id,
-            prompt_template_id: dto.prompt_template_id,
-            media_id: media.id,
-            input_text: dto.input_text,
-            output_type: dto.media.media_kind,
-            visibility: dto.visibility || 'private',
-            original_chat_url: dto.original_chat_url
-        })
-        .select()
-        .single();
-
-    if (genError) throw genError;
-
-    return { ...gen, media } as AIGeneration;
+      if (error) {
+        console.error('Generation failed:', error);
+        throw error;
+      }
   }
 
   async deleteGeneration(id: string): Promise<void> {
@@ -213,9 +194,8 @@ export class SupabaseGenerationRepository implements GenerationRepositoryPort {
 
   async getAIModels(): Promise<AIModel[]> {
     const { data, error } = await supabase
-      .from('ai_models')
-      .select('*')
-      .order('name', { ascending: true });
+      .from('vw_ai_models_public')
+      .select('*');
 
     if (error) {
        console.warn("Failed to fetch ai_models, returning empty list.", error);
