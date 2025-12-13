@@ -88,7 +88,7 @@ export const LenserProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     const userId = user.id;
 
     // 1) Bellek: doğru kullanıcıya ait profil varsa ve force değilse direkt kullan
-    if (!force && lenser && lenser.user_id === userId) {
+    if (!force && lenser && lenser.handle === userId) {
       return;
     }
 
@@ -121,8 +121,7 @@ export const LenserProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     setError(null);
 
     try {
-      const profile = await lenserService.getLenserProfile(userId);
-
+      const profile = await lenserService.getAuthenticatedLenser();
       if (profile) {
         const safeProfile: Lenser = {
           ...profile,
@@ -148,7 +147,6 @@ export const LenserProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   useEffect(() => {
     if (isAuthenticated && user) {
       const userId = user.id;
-
       // İlk anda: blocking yapmadan cache'i oku
       const cached = readCachedProfile(userId);
       if (cached) {
@@ -182,11 +180,10 @@ export const LenserProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     setIsLoading(true);
 
     try {
-      const newProfile = await lenserService.createLenserProfile(userId, data);
+      const newProfile = await lenserService.createLenserProfile(data);
 
       const safeProfile: Lenser = {
         ...newProfile,
-        user_id: userId,
       };
 
       setLenser(safeProfile);
@@ -207,7 +204,7 @@ export const LenserProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     const userId = user.id;
 
     try {
-      const updated = await lenserService.updateLenserProfile(lenser.handle, data);
+      const updated = await lenserService.updateLenserProfile(data);
 
       const safeProfile: Lenser = {
         ...updated,

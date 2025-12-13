@@ -113,7 +113,7 @@ export class SupabaseAdminRepository implements AdminRepositoryPort {
   }
 
   async getUsers(offset: number, limit: number, query?: string): Promise<AdminListResponse<AdminUser>> {
-    let queryBuilder = supabase.from('lensers').select('*', { count: 'exact' });
+    let queryBuilder = supabase.from('vw_lensers_profile_full').select('*', { count: 'exact' });
     
     if (query) {
         queryBuilder = queryBuilder.or(`email.ilike.%${query}%,display_name.ilike.%${query}%`);
@@ -150,7 +150,7 @@ export class SupabaseAdminRepository implements AdminRepositoryPort {
 
   async getWaitlist(offset: number, limit: number): Promise<AdminListResponse<Lenser>> {
     const { data, count, error } = await supabase
-        .from('lensers')
+        .from('vw_lensers_profile_full')
         .select('*', { count: 'exact' })
         .eq('is_in_waiting_list', true)
         .order('created_at', { ascending: false })

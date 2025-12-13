@@ -1,6 +1,10 @@
+import { getWaitingListRepository } from "../adapters/waitingListAdapter";
+
+const repo = getWaitingListRepository();
 
 // This file is deprecated. Waiting list logic is now part of LenserService/LenserContext.
 export const waitingListService = {
-  join: async () => { throw new Error("Deprecated"); },
-  checkStatus: async () => false
+  toggleWaitingList: async (kvkkApproved: boolean): Promise<void> => {
+    return repo.toggleWaitingList(kvkkApproved);
+  },
 };

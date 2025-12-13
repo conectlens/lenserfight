@@ -86,7 +86,7 @@ export const useTrendingTags = () => {
 export const useLatestLensers = () => {
   return useQuery({
     queryKey: keys.lensers.latest,
-    queryFn: () => lenserService.getLatestJoinedLensers(4),
+    queryFn: () => lenserService.getLatestJoinedLensers(),
     staleTime: 1000 * 60 * 5,
   });
 };

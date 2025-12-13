@@ -1,12 +1,12 @@
 
-import { User, AuthStateChangeCallback } from '../types/auth.types';
+import { User, AuthStateChangeCallback, UserMetadata } from '../types/auth.types';
 import { supabase } from '../utils/supabase';
 import { storage } from '../utils/storage';
 
 // --- Port (Interface) ---
 export interface AuthRepositoryPort {
-  login(email: string, password: string, captchaToken?: string): Promise<User>;
-  register(email: string, password: string, metadata?: { display_name?: string }, captchaToken?: string): Promise<User>;
+  login(email: string, password: string, captchaToken?: string, metadata?: Partial<UserMetadata>): Promise<User>;
+  register(email: string, password: string, metadata?: UserMetadata, captchaToken?: string): Promise<User>;
   logout(): Promise<void>;
   getCurrentUser(): Promise<User | null>;
   requestPasswordReset(email: string, captchaToken?: string): Promise<void>;
@@ -34,21 +34,27 @@ export class MockAuthRepository implements AuthRepositoryPort {
         email: 'demo@example.com',
         password: 'password',
         created_at: new Date().toISOString(),
-        user_metadata: { display_name: 'Demo User' },
+        user_metadata: { 
+            display_name: 'Demo User',
+            preferred_language: 'en',
+            timezone: 'UTC',
+            country: 'US'
+        },
         last_sign_in_at: new Date().toISOString(),
       };
       storage.setItem(this.USERS_DB_KEY, JSON.stringify([demoUser]));
     }
   }
 
-  async login(email: string, password: string, captchaToken?: string): Promise<User> {
+  async login(email: string, password: string, captchaToken?: string, metadata?: Partial<UserMetadata>): Promise<User> {
     // Simulate network delay
     await new Promise(resolve => setTimeout(resolve, 800));
 
     const usersJson = storage.getItem(this.USERS_DB_KEY);
     const users: (User & { password: string })[] = usersJson ? JSON.parse(usersJson) : [];
     
-    const user = users.find(u => u.email.toLowerCase() === email.toLowerCase());
+    const userIndex = users.findIndex(u => u.email?.toLowerCase() === email.toLowerCase());
+    const user = users[userIndex];
 
     if (!user) {
       throw new Error('User not registered. Please sign up first.');
@@ -58,6 +64,13 @@ export class MockAuthRepository implements AuthRepositoryPort {
       throw new Error('Invalid credentials');
     }
 
+    // Refresh metadata on login
+    if (metadata) {
+        user.user_metadata = { ...user.user_metadata, ...metadata };
+        users[userIndex] = user;
+        storage.setItem(this.USERS_DB_KEY, JSON.stringify(users));
+    }
+
     // Clone user to avoid returning password field
     const { password: _, ...safeUser } = user;
     
@@ -65,13 +78,13 @@ export class MockAuthRepository implements AuthRepositoryPort {
     return safeUser as User;
   }
 
-  async register(email: string, password: string, metadata?: { display_name?: string }, captchaToken?: string): Promise<User> {
+  async register(email: string, password: string, metadata?: UserMetadata, captchaToken?: string): Promise<User> {
     await new Promise(resolve => setTimeout(resolve, 800));
     
     const usersJson = storage.getItem(this.USERS_DB_KEY);
     const users: (User & { password: string })[] = usersJson ? JSON.parse(usersJson) : [];
 
-    if (users.find(u => u.email.toLowerCase() === email.toLowerCase())) {
+    if (users.find(u => u.email?.toLowerCase() === email.toLowerCase())) {
       throw new Error('User already exists with this email');
     }
     
@@ -105,12 +118,10 @@ export class MockAuthRepository implements AuthRepositoryPort {
 
   async requestPasswordReset(email: string, captchaToken?: string): Promise<void> {
     await new Promise(resolve => setTimeout(resolve, 600));
-    // ... existing logic ...
     return; 
   }
 
   async resetPassword(password: string, token?: string): Promise<void> {
-    // ... existing logic ...
     await new Promise(resolve => setTimeout(resolve, 800));
   }
 
@@ -129,22 +140,35 @@ export class MockAuthRepository implements AuthRepositoryPort {
   }
 }
 
-// --- Supabase Implementation (Stub) ---
+// --- Supabase Implementation ---
 export class SupabaseAuthRepository implements AuthRepositoryPort {
-  async login(email: string, password: string, captchaToken?: string): Promise<User> {
+  async login(email: string, password: string, captchaToken?: string, metadata?: Partial<UserMetadata>): Promise<User> {
     const { data, error } = await supabase.auth.signInWithPassword({ 
         email, 
         password,
         options: { captchaToken }
     });
+    
     if (error) throw error;
     if (!data.user) throw new Error("No user returned");
+    
+    // Refresh transient environment metadata on login
+    if (metadata) {
+        const { data: updateData, error: updateError } = await supabase.auth.updateUser({
+            data: metadata
+        });
+        if (updateError) console.warn("Failed to update user metadata on login", updateError);
+        
+        if (updateData.user) {
+            return updateData.user as unknown as User;
+        }
+    }
     
     const user = data.user as unknown as User;
     return user; 
   }
 
-  async register(email: string, password: string, metadata?: { display_name?: string }, captchaToken?: string): Promise<User> {
+  async register(email: string, password: string, metadata?: UserMetadata, captchaToken?: string): Promise<User> {
     const { data, error } = await supabase.auth.signUp({ 
         email, 
         password,
