@@ -18,7 +18,6 @@ export interface ThreadsRepositoryPort {
   createReply(threadId: string, lenserId: string, content: string, parentReplyId?: string): Promise<ThreadReplyRecord>;
   updateThread(id: string, dto: Partial<CreateThreadDTO>): Promise<ThreadRecord>;
   deleteThread(id: string): Promise<void>;
-  incrementView(id: string): Promise<void>;
 }
 
 // Fallback data for Mock Mode to prevent "Unknown User"
@@ -216,218 +215,262 @@ export class MockThreadsRepository implements ThreadsRepositoryPort {
       const threads = this.getThreads().filter(t => t.id !== id);
       this.saveThreads(threads);
   };
-  incrementView = async () => {};
 }
 
-// --- Supabase Implementation (Optimized for Views) ---
+// --- Supabase Implementation (Optimized for Views + RPC) ---
 export class SupabaseThreadsRepository implements ThreadsRepositoryPort {
-  
+  // All permission issues are normalized to a single message for the UI.
   private handleError(error: any) {
-    if (error.code === '42501' || error.message?.includes('permission denied')) {
-        throw new Error("This thread or its associated data is private or hidden and cannot be accessed.");
+    if (error?.code === '42501' || error?.message?.includes('permission denied')) {
+      throw new Error(
+        'This thread or its associated data is private, hidden, or you do not have permission to access it.'
+      );
     }
+
+    // PGRST116 = "result contains 0 rows" when expecting single()
+    if (error?.code === 'PGRST116') {
+      throw new Error('Requested resource was not found.');
+    }
+
     throw error;
   }
 
   // Single-Query Read using denormalized columns from secure VIEW
   private get threadSelect() {
-    return '*'; 
+    return '*';
   }
 
+  /**
+   * Create a new thread.
+   * Security:
+   * - lenser_id is resolved in DB using auth.uid() inside fn_content_create_thread.
+   * - Frontend cannot spoof lenser_id.
+   */
   async createThread(dto: CreateThreadDTO): Promise<ThreadRecord> {
-    // Write to base table
-    const { data: thread, error } = await supabase.from('threads')
-        .insert({ 
-            lenser_id: dto.lenserId, 
-            title: dto.title, 
-            content: dto.content, 
-            visibility: dto.visibility,
-            reaction_totals: {}
-            // tags field removed from insert payload as it doesn't exist on base table
-        })
-        .select() 
-        .single();
-    
+    const { data: threadId, error } = await supabase.rpc('fn_content_create_thread', {
+      p_title: dto.title,
+      p_content: dto.content,
+      p_visibility: dto.visibility,
+      p_tag_ids: dto.tagIds && dto.tagIds.length > 0 ? dto.tagIds : null
+    });
+
     if (error) this.handleError(error);
 
-    // Insert tags into junction table
-    if (dto.tagIds && dto.tagIds.length > 0) {
-        const junctionInserts = dto.tagIds.map(tagId => ({
-            thread_id: thread.id,
-            tag_id: tagId
-        }));
-        
-        const { error: tagError } = await supabase.from('thread_tags').insert(junctionInserts);
-        
-        if (tagError) {
-            // Handle RLS error specifically for tags (e.g. trying to attach a private tag)
-            if (tagError.code === '42501') {
-                console.warn("One or more tags could not be attached due to visibility restrictions.");
-                // We don't block thread creation, but warn.
-            } else {
-                throw tagError;
-            }
-        }
-        
-        // Fetch fresh from VIEW to get the populated tags
-        const { data: freshThread } = await supabase.from('vw_threads').select('*').eq('id', thread.id).single();
-        return freshThread as ThreadRecord;
-    }
+    // Read from secure public view
+    const { data: threadView, error: viewError } = await supabase
+      .from('vw_content_threads_public')
+      .select(this.threadSelect)
+      .eq('id', threadId)
+      .single();
 
-    // Return view representation
-    const { data: finalThread } = await supabase.from('vw_threads').select('*').eq('id', thread.id).single();
-    return finalThread as ThreadRecord;
+    if (viewError) this.handleError(viewError);
+    return threadView as ThreadRecord;
   }
 
+  /**
+   * List threads (public view, RLS-safe).
+   */
   async getAllThreads(offset = 0, limit = 10): Promise<ThreadRecord[]> {
-    // Query the secure view
     const { data, error } = await supabase
-        .from('vw_threads')
-        .select(this.threadSelect)
-        .eq('visibility', 'public')
-        .order('created_at', { ascending: false })
-        .range(offset, offset + limit - 1);
+      .from('vw_content_threads_public')
+      .select(this.threadSelect)
+      .order('created_at', { ascending: false })
+      .range(offset, offset + limit - 1);
 
     if (error) this.handleError(error);
-    return data as ThreadRecord[];
+    return (data ?? []) as ThreadRecord[];
   }
 
-  async getThreadsByTag(tagSlug: string, offset = 0, limit = 10): Promise<ThreadRecord[]> {
-      // Use JSONB containment on the view's 'tags' column
-      const { data, error } = await supabase
-        .from('vw_threads')
-        .select(this.threadSelect)
-        .eq('visibility', 'public')
-        .contains('tags', JSON.stringify([{ slug: tagSlug }])) 
-        .order('created_at', { ascending: false })
-        .range(offset, offset + limit - 1);
+  /**
+   * List threads by tag slug using JSONB containment on view's tags column.
+   */
+  async getThreadsByTag(
+    tagSlug: string,
+    offset = 0,
+    limit = 10
+  ): Promise<ThreadRecord[]> {
+    const { data, error } = await supabase
+      .from('vw_content_threads_public')
+      .select(this.threadSelect)
+      .contains('tags', JSON.stringify([{ slug: tagSlug }]))
+      .order('created_at', { ascending: false })
+      .range(offset, offset + limit - 1);
 
-      if (error) this.handleError(error);
-      return data as ThreadRecord[];
+    if (error) this.handleError(error);
+    return (data ?? []) as ThreadRecord[];
   }
 
+  /**
+   * Get a single thread by id from public view.
+   */
   async getThreadById(id: string): Promise<ThreadRecord | null> {
     const { data, error } = await supabase
-        .from('vw_threads')
-        .select(this.threadSelect)
-        .eq('id', id)
-        .single();
-    
+      .from('vw_content_threads_public')
+      .select(this.threadSelect)
+      .eq('id', id)
+      .single();
+
     if (error) {
-        if (error.code === 'PGRST116') return null; // Not found
-        this.handleError(error);
+      if (error.code === 'PGRST116') return null; // not found
+      this.handleError(error);
     }
+
     return data as ThreadRecord;
   }
 
-  async getByLenser(handle: string, offset = 0, limit = 10, includePrivate = false): Promise<ThreadRecord[]> {
-    let query = supabase
-        .from('vw_threads')
-        .select(this.threadSelect)
-        .eq('author_profile->>handle', handle) // Use JSONB author profile handle filtering
-        .order('created_at', { ascending: false })
-        .range(offset, offset + limit - 1);
+  /**
+   * List threads for a lenser by handle.
+   * Private/hidden threads are filtered by RLS and view definition.
+   */
+  async getByLenser(
+    handle: string,
+    offset = 0,
+    limit = 10,
+    includePrivate = false // currently ignored; visibility logic is in the view/RLS.
+  ): Promise<ThreadRecord[]> {
+    const { data, error } = await supabase
+      .from('vw_content_threads_public')
+      .select(this.threadSelect)
+      .eq('author_profile->>handle', handle)
+      .order('created_at', { ascending: false })
+      .range(offset, offset + limit - 1);
 
-    if (!includePrivate) {
-        query = query.eq('visibility', 'public');
-    }
-
-    const { data, error } = await query;
     if (error) this.handleError(error);
-    return data as ThreadRecord[];
+    return (data ?? []) as ThreadRecord[];
   }
 
+  /**
+   * Get tags for a thread from the public thread view.
+   * Assumes view exposes a `tags` jsonb column.
+   */
   async getThreadTags(threadId: string): Promise<TagRecord[]> {
-    const { data, error } = await supabase.from('vw_threads').select('tags').eq('id', threadId).single();
+    const { data, error } = await supabase
+      .from('vw_content_threads_public')
+      .select('tags')
+      .eq('id', threadId)
+      .single();
+
     if (error) return [];
-    return (data?.tags as TagRecord[]) || [];
+    return ((data?.tags as TagRecord[]) ?? []) || [];
   }
 
+  /**
+   * Get replies for a thread from the public replies view.
+   * Soft-deleted replies should be handled at view-level (e.g. content = "[deleted]").
+   */
   async getThreadReplies(threadId: string): Promise<ThreadReplyRecord[]> {
-     const { data, error } = await supabase
-        .from('thread_replies')
-        .select('*')
-        .eq('thread_id', threadId)
-        .order('created_at', { ascending: true });
+    const { data, error } = await supabase
+      .from('vw_content_thread_replies_public')
+      .select('*')
+      .eq('thread_id', threadId)
+      .order('created_at', { ascending: true });
 
     if (error) this.handleError(error);
-    return data as ThreadReplyRecord[];
+    return (data ?? []) as ThreadReplyRecord[];
   }
 
   async getReplyById(replyId: string): Promise<ThreadReplyRecord | null> {
-      const { data, error } = await supabase.from('thread_replies').select('*').eq('id', replyId).single();
-      if (error) return null;
-      return data as ThreadReplyRecord;
+    const { data, error } = await supabase
+      .from('vw_content_thread_replies_public')
+      .select('*')
+      .eq('id', replyId)
+      .single();
+
+    if (error) {
+      if (error.code === 'PGRST116') return null;
+      this.handleError(error);
+    }
+
+    return data as ThreadReplyRecord;
   }
 
-  async createReply(threadId: string, lenserId: string, content: string, parentReplyId?: string): Promise<ThreadReplyRecord> {
-      const { data, error } = await supabase.from('thread_replies').insert({
-          thread_id: threadId,
-          lenser_id: lenserId,
-          content,
-          parent_reply_id: parentReplyId
-      }).select().single();
-      if (error) this.handleError(error);
-      return data as ThreadReplyRecord;
+  /**
+   * Create a reply.
+   * Security:
+   * - lenser_id is derived from auth.uid() in fn_content_create_reply.
+   */
+  async createReply(
+    threadId: string,
+    lenserId: string, // intentionally ignored; server resolves author from auth.uid()
+    content: string,
+    parentReplyId?: string
+  ): Promise<ThreadReplyRecord> {
+    const { data: replyId, error } = await supabase.rpc('fn_content_create_reply', {
+      p_thread_id: threadId,
+      p_content: content,
+      p_parent_reply_id: parentReplyId ?? null
+    });
+
+    if (error) this.handleError(error);
+
+    const { data: replyView, error: viewError } = await supabase
+      .from('vw_content_thread_replies_public')
+      .select('*')
+      .eq('id', replyId)
+      .single();
+
+    if (viewError) this.handleError(viewError);
+    return replyView as ThreadReplyRecord;
   }
 
+  /**
+   * Trending tags from public tags view.
+   */
   async getTrendingTags(limit: number): Promise<string[]> {
-      const { data, error } = await supabase
-        .from('vw_tags_public')
-        .select('name')
-        .limit(limit);
-      
-      if (error) return [];
-      return data.map((t: any) => t.name);
+    const { data, error } = await supabase
+      .from('vw_content_tags_public')
+      .select('name')
+      .limit(limit);
+
+    if (error) return [];
+    return (data ?? []).map((t: any) => t.name as string);
   }
 
+  /**
+   * Update a thread via RPC.
+   * Only the owner can update (enforced in fn_content_update_thread).
+   */
   async updateThread(id: string, dto: Partial<CreateThreadDTO>): Promise<ThreadRecord> {
-      // Write to base table
-      const { error } = await supabase.from('threads')
-        .update({
-            title: dto.title,
-            content: dto.content,
-            visibility: dto.visibility,
-            updated_at: new Date().toISOString()
-        })
-        .eq('id', id);
-      
-      if (error) this.handleError(error);
+    const { error } = await supabase.rpc('fn_content_update_thread', {
+      p_thread_id: id,
+      p_title: dto.title ?? null,
+      p_content: dto.content ?? null,
+      p_visibility: dto.visibility ?? null,
+      p_tag_ids: dto.tagIds && dto.tagIds.length > 0 ? dto.tagIds : null
+    });
 
-      // Handle tags relation update
-      if (dto.tagIds) {
-          // Remove all existing tags
-          const { error: deleteError } = await supabase.from('thread_tags').delete().eq('thread_id', id);
-          if (deleteError) this.handleError(deleteError);
+    if (error) this.handleError(error);
 
-          // Add new tags if any
-          if (dto.tagIds.length > 0) {
-              const junctionInserts = dto.tagIds.map(tagId => ({
-                  thread_id: id,
-                  tag_id: tagId
-              }));
-              const { error: tagError } = await supabase.from('thread_tags').insert(junctionInserts);
-              if (tagError) {
-                  // RLS permission handling
-                  if (tagError.code === '42501') {
-                      throw new Error("You can only attach public tags.");
-                  }
-                  throw tagError;
-              }
-          }
-      }
+    const { data: threadView, error: viewError } = await supabase
+      .from('vw_content_threads_public')
+      .select(this.threadSelect)
+      .eq('id', id)
+      .single();
 
-      // Fetch from View
-      const { data } = await supabase.from('vw_threads').select('*').eq('id', id).single();
-      return data as ThreadRecord;
+    if (viewError) this.handleError(viewError);
+    return threadView as ThreadRecord;
   }
 
+  /**
+   * Delete a thread via RPC.
+   * Only the owner can delete (enforced in fn_content_delete_thread).
+   */
   async deleteThread(id: string): Promise<void> {
-      const { error } = await supabase.from('threads').delete().eq('id', id);
-      if (error) this.handleError(error);
+    const { error } = await supabase.rpc('fn_content_delete_thread', {
+      p_thread_id: id
+    });
+
+    if (error) this.handleError(error);
   }
 
-  async incrementView(id: string): Promise<void> {
-      await supabase.rpc('increment_thread_view', { p_thread_id: id });
+  /**
+   * Delete a reply via RPC (soft delete in DB).
+   */
+  async deleteReply(replyId: string): Promise<void> {
+    const { error } = await supabase.rpc('fn_content_delete_reply', {
+      p_reply_id: replyId
+    });
+
+    if (error) this.handleError(error);
   }
 }

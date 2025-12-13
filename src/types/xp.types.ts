@@ -1,6 +1,4 @@
 
-import { Database } from './database.types';
-
 export type XPSource = 'system' | 'ai' | 'battle' | 'challenge' | 'daily' | 'social' | 'content';
 
 // Matches the rule_key in xp_rules table
@@ -52,12 +50,3 @@ export interface LeaderboardEntry {
 
 export type LeaderboardTimeframe = 'weekly' | 'monthly' | 'all_time';
 export type LeaderboardScope = 'global' | 'season';
-
-export interface GrantXPDTO {
-  ruleKey: XPRuleKey;
-  source: XPSource;
-  lenserId: string;
-  appId: string; // Usually fixed per deployment
-  refType?: string;
-  refId?: string;
-}
