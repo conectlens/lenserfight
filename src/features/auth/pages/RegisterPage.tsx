@@ -103,7 +103,7 @@ export const RegisterPage: React.FC = () => {
           formData.password, 
           { 
               displayName: formData.displayName,
-              preferredLanguage: formData.preferredLanguage
+              preferredLanguage: formData.preferredLanguage || "en"
           }, 
           captchaToken || undefined
       );
@@ -214,31 +214,6 @@ export const RegisterPage: React.FC = () => {
               error={errors.email}
               className={errors.email ? 'border-red-500 focus:border-red-500 focus:ring-red-200' : ''}
             />
-          </div>
-
-          <div className="mb-4">
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5 flex items-center gap-1">
-                <Globe size={14} /> Preferred Language
-            </label>
-            <div className="relative">
-                <select
-                    name="preferredLanguage"
-                    value={formData.preferredLanguage}
-                    onChange={handleChange}
-                    className="w-full px-4 py-2.5 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-primary/50 focus:border-primary transition-colors outline-none appearance-none cursor-pointer"
-                >
-                    <option value="en">English (US)</option>
-                    <option value="es">Español</option>
-                    <option value="fr">Français</option>
-                    <option value="de">Deutsch</option>
-                    <option value="pt">Português</option>
-                    <option value="tr">Türkçe</option>
-                    <option value="ja">日本語</option>
-                </select>
-                <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-gray-500">
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
-                </div>
-            </div>
           </div>
 
           <div>
