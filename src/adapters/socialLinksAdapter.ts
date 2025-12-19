@@ -1,10 +1,13 @@
-
-import { SocialLinksRepositoryPort, MockSocialLinksRepository, SupabaseSocialLinksRepository } from '../repositories/socialLinksRepository';
-import { isMock } from '../config/runtimeConfig';
+import { isMock } from '../config/runtimeConfig'
+import {
+  SocialLinksRepositoryPort,
+  MockSocialLinksRepository,
+  SupabaseSocialLinksRepository,
+} from '../repositories/socialLinksRepository'
 
 export const getSocialLinksRepository = (): SocialLinksRepositoryPort => {
   if (isMock) {
-    return new MockSocialLinksRepository();
+    return new MockSocialLinksRepository()
   }
-  return new SupabaseSocialLinksRepository();
-};
+  return new SupabaseSocialLinksRepository()
+}

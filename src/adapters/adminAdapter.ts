@@ -1,10 +1,13 @@
-
-import { AdminRepositoryPort, MockAdminRepository, SupabaseAdminRepository } from '../repositories/adminRepository';
-import { isMock } from '../config/runtimeConfig';
+import { isMock } from '../config/runtimeConfig'
+import {
+  AdminRepositoryPort,
+  MockAdminRepository,
+  SupabaseAdminRepository,
+} from '../repositories/adminRepository'
 
 export const getAdminRepository = (): AdminRepositoryPort => {
   if (isMock) {
-    return new MockAdminRepository();
+    return new MockAdminRepository()
   }
-  return new SupabaseAdminRepository();
-};
+  return new SupabaseAdminRepository()
+}
