@@ -1,35 +1,38 @@
-import React, { useEffect, useState, useMemo } from 'react';
-import Particles, { initParticlesEngine } from "@tsparticles/react";
-import { type ISourceOptions, MoveDirection, OutMode } from "@tsparticles/engine";
-import { loadSlim } from "@tsparticles/slim";
-import { useTheme } from '../context/ThemeContext';
+import { type ISourceOptions, MoveDirection, OutMode } from '@tsparticles/engine'
+import Particles, { initParticlesEngine } from '@tsparticles/react'
+import { loadSlim } from '@tsparticles/slim'
+import React, { useEffect, useState, useMemo } from 'react'
+
+import { useTheme } from '../context/ThemeContext'
 
 const StarBackground: React.FC = () => {
-  const [init, setInit] = useState(false);
-  const { theme } = useTheme();
-  const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
+  const [init, setInit] = useState(false)
+  const { theme } = useTheme()
+  const [isMobile, setIsMobile] = useState(window.innerWidth < 768)
 
   useEffect(() => {
     initParticlesEngine(async (engine) => {
-      await loadSlim(engine);
-    }).then(() => {
-      setInit(true);
-    }).catch(console.error);
-  }, []);
+      await loadSlim(engine)
+    })
+      .then(() => {
+        setInit(true)
+      })
+      .catch(console.error)
+  }, [])
 
   useEffect(() => {
     const handleResize = () => {
-      setIsMobile(window.innerWidth < 768);
-    };
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
-  }, []);
+      setIsMobile(window.innerWidth < 768)
+    }
+    window.addEventListener('resize', handleResize)
+    return () => window.removeEventListener('resize', handleResize)
+  }, [])
 
   const options: ISourceOptions = useMemo(
     () => ({
       background: {
         color: {
-          value: "transparent",
+          value: 'transparent',
         },
       },
       fpsLimit: 60,
@@ -41,7 +44,7 @@ const StarBackground: React.FC = () => {
         },
       },
       particles: {
-        color: { value: "#ffffff" },
+        color: { value: '#ffffff' },
         links: { enable: false },
         move: {
           direction: MoveDirection.none,
@@ -57,8 +60,8 @@ const StarBackground: React.FC = () => {
           density: {
             enable: true,
             // Standard v3 config usually infers area, but we keep it simple to avoid type conflicts in strict mode
-            width: 800, 
-            height: 800
+            width: 800,
+            height: 800,
           } as any,
           value: 30,
         },
@@ -67,10 +70,10 @@ const StarBackground: React.FC = () => {
           animation: {
             enable: true,
             speed: 0.5,
-            sync: false
-          }
+            sync: false,
+          },
         },
-        shape: { type: "circle" },
+        shape: { type: 'circle' },
         size: {
           value: { min: 1, max: 2 },
         },
@@ -78,20 +81,16 @@ const StarBackground: React.FC = () => {
       detectRetina: true,
       fullScreen: { enable: false, zIndex: 0 },
     }),
-    [],
-  );
+    []
+  )
 
-  if (!init || theme !== 'dark' || isMobile) return null;
+  if (!init || theme !== 'dark' || isMobile) return null
 
   return (
     <div className="fixed inset-0 pointer-events-none z-0">
-        <Particles
-            id="tsparticles"
-            options={options}
-            className="w-full h-full"
-        />
+      <Particles id="tsparticles" options={options} className="w-full h-full" />
     </div>
-  );
-};
+  )
+}
 
-export default StarBackground;
+export default StarBackground

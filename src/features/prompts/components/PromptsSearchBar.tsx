@@ -1,9 +1,9 @@
-import React from 'react';
-import { Search } from 'lucide-react';
+import { Search } from 'lucide-react'
+import React from 'react'
 
 interface PromptsSearchBarProps {
-  value: string;
-  onChange: (val: string) => void;
+  value: string
+  onChange: (val: string) => void
 }
 
 export const PromptsSearchBar: React.FC<PromptsSearchBarProps> = ({ value, onChange }) => {
@@ -20,5 +20,5 @@ export const PromptsSearchBar: React.FC<PromptsSearchBarProps> = ({ value, onCha
         onChange={(e) => onChange(e.target.value)}
       />
     </div>
-  );
-};
+  )
+}

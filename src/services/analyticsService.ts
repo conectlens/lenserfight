@@ -1,17 +1,14 @@
+import { getAnalyticsRepository } from '../adapters/analyticsAdapter'
+import { LogPageViewDTO, TargetType } from '../types/analytics.types'
 
-import { getAnalyticsRepository } from '../adapters/analyticsAdapter';
-import { LogPageViewDTO, TargetType } from '../types/analytics.types';
-
-const repo = getAnalyticsRepository();
+const repo = getAnalyticsRepository()
 
 export const analyticsService = {
-  
   trackView: async (
-    targetType: TargetType, 
-    targetId: string | null | undefined, 
-    identity: { userId?: string | null, lenserId?: string | null }
+    targetType: TargetType,
+    targetId: string | null | undefined,
+    identity: { userId?: string | null; lenserId?: string | null }
   ) => {
-    
     const dto: LogPageViewDTO = {
       lenserId: identity.lenserId,
       userId: identity.userId,
@@ -20,9 +17,9 @@ export const analyticsService = {
       path: window.location.pathname,
       referrer: document.referrer || null,
       userAgent: navigator.userAgent,
-      clientIp: null // Backend usually handles this, or can be fetched via service
-    };
+      clientIp: null, // Backend usually handles this, or can be fetched via service
+    }
 
-    return repo.logPageView(dto);
-  }
-};
+    return repo.logPageView(dto)
+  },
+}

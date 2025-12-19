@@ -1,10 +1,13 @@
-
-import { TagRepositoryPort, MockTagRepository, SupabaseTagRepository } from '../repositories/tagRepository';
-import { isMock } from '../config/runtimeConfig';
+import { isMock } from '../config/runtimeConfig'
+import {
+  TagRepositoryPort,
+  MockTagRepository,
+  SupabaseTagRepository,
+} from '../repositories/tagRepository'
 
 export const getTagRepository = (): TagRepositoryPort => {
   if (isMock) {
-    return new MockTagRepository();
+    return new MockTagRepository()
   }
-  return new SupabaseTagRepository();
-};
+  return new SupabaseTagRepository()
+}
