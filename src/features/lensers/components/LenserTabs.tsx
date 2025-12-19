@@ -1,12 +1,12 @@
+import React from 'react'
 
-import React from 'react';
-import { FEATURES } from '../../../config/runtimeConfig';
+import { FEATURES } from '../../../config/runtimeConfig'
 
-type Tab = 'actions' | 'prompts' | 'threads' | 'challenges';
+type Tab = 'actions' | 'prompts' | 'threads' | 'challenges'
 
 interface LenserTabsProps {
-  activeTab: Tab;
-  onChange: (tab: Tab) => void;
+  activeTab: Tab
+  onChange: (tab: Tab) => void
 }
 
 export const LenserTabs: React.FC<LenserTabsProps> = ({ activeTab, onChange }) => {
@@ -14,16 +14,16 @@ export const LenserTabs: React.FC<LenserTabsProps> = ({ activeTab, onChange }) =
   const tabs: { id: Tab; label: string }[] = [
     { id: 'threads', label: 'Threads' },
     { id: 'prompts', label: 'Prompts' },
-    { id: 'actions', label: 'Actions' }
-  ];
+    { id: 'actions', label: 'Actions' },
+  ]
 
   if (FEATURES.CHALLENGES_TAB) {
-    tabs.push({ id: 'challenges', label: 'Challenge History' });
+    tabs.push({ id: 'challenges', label: 'Challenge History' })
   }
 
   return (
     <div className="flex items-center gap-8 border-b border-gray-200 dark:border-gray-700 mb-6 overflow-x-auto scrollbar-hide">
-      {tabs.map(tab => (
+      {tabs.map((tab) => (
         <button
           key={tab.id}
           onClick={() => onChange(tab.id)}
@@ -39,5 +39,5 @@ export const LenserTabs: React.FC<LenserTabsProps> = ({ activeTab, onChange }) =
         </button>
       ))}
     </div>
-  );
-};
+  )
+}

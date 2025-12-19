@@ -1,9 +1,13 @@
-import { LenserRepositoryPort, MockLenserRepository, SupabaseLenserRepository } from '../repositories/lenserRepository';
-import { isMock } from '../config/runtimeConfig';
+import { isMock } from '../config/runtimeConfig'
+import {
+  LenserRepositoryPort,
+  MockLenserRepository,
+  SupabaseLenserRepository,
+} from '../repositories/lenserRepository'
 
 export const getLenserRepository = (): LenserRepositoryPort => {
   if (isMock) {
-    return new MockLenserRepository();
+    return new MockLenserRepository()
   }
-  return new SupabaseLenserRepository();
-};
+  return new SupabaseLenserRepository()
+}

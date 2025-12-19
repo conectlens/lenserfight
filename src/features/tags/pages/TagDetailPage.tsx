@@ -1,95 +1,92 @@
+import React, { useEffect } from 'react'
+import { useParams, useNavigate, useLocation } from 'react-router-dom'
 
-import React, { useEffect } from 'react';
-import { useParams, useNavigate, useLocation } from 'react-router-dom';
-import { useTagDetailController } from '../hooks/useTagDetailController';
-import { TagHeader } from '../components/TagHeader';
-import { TagFilterBar } from '../components/TagFilterBar';
-import { TagContentGrid } from '../components/TagContentGrid';
-import { useAuth } from '../../../context/AuthContext';
-import { useUI } from '../../../context/UIContext';
-import { SEOHead } from '../../../components/SEOHead';
+import { SEOHead } from '../../../components/SEOHead'
+import { useAuth } from '../../../context/AuthContext'
+import { useUI } from '../../../context/UIContext'
+import { TagContentGrid } from '../components/TagContentGrid'
+import { TagFilterBar } from '../components/TagFilterBar'
+import { TagHeader } from '../components/TagHeader'
+import { useTagDetailController } from '../hooks/useTagDetailController'
 
 export const TagDetailPage: React.FC = () => {
-  const { slug } = useParams<{ slug: string }>();
-  const navigate = useNavigate();
-  const location = useLocation();
-  const { isAuthenticated, isLoading: authLoading } = useAuth();
-  const { setPageTitle } = useUI();
-  
+  const { slug } = useParams<{ slug: string }>()
+  const navigate = useNavigate()
+  const location = useLocation()
+  const { isAuthenticated, isLoading: authLoading } = useAuth()
+  const { setPageTitle } = useUI()
+
   useEffect(() => {
     if (!authLoading && !isAuthenticated) {
-        navigate('/login', { state: { from: location }, replace: true });
+      navigate('/login', { state: { from: location }, replace: true })
     }
-  }, [authLoading, isAuthenticated, navigate, location]);
+  }, [authLoading, isAuthenticated, navigate, location])
 
-  const { 
-    tag, 
-    items, 
-    loading, 
-    filter, 
-    setFilter, 
-    sort, 
-    setSort, 
-    availableFilters 
-  } = useTagDetailController(slug);
+  const { tag, items, loading, filter, setFilter, sort, setSort, availableFilters } =
+    useTagDetailController(slug)
 
   useEffect(() => {
     if (tag) {
-        setPageTitle(tag.name);
+      setPageTitle(tag.name)
     } else {
-        setPageTitle(null);
+      setPageTitle(null)
     }
-    return () => setPageTitle(null);
-  }, [tag, setPageTitle]);
+    return () => setPageTitle(null)
+  }, [tag, setPageTitle])
 
   if (authLoading || (!isAuthenticated && !authLoading)) {
-      return (
-        <div className="min-h-screen flex items-center justify-center">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-        </div>
-      );
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+      </div>
+    )
   }
 
   if (!loading && !tag) {
-      return (
-          <div className="min-h-[60vh] flex flex-col items-center justify-center">
-              <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-4">Topic Not Found</h2>
-              <button onClick={() => navigate('/len')} className="text-primary-700 dark:text-primary-400 font-medium hover:underline">
-                  Return to Explore
-              </button>
-          </div>
-      );
+    return (
+      <div className="min-h-[60vh] flex flex-col items-center justify-center">
+        <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-4">Topic Not Found</h2>
+        <button
+          onClick={() => navigate('/len')}
+          className="text-primary-700 dark:text-primary-400 font-medium hover:underline"
+        >
+          Return to Explore
+        </button>
+      </div>
+    )
   }
 
   return (
     <div className="w-full">
-        <SEOHead type="tag" data={tag} />
-        
-        {/* Header Block */}
-        {tag ? (
-            <TagHeader tag={tag} totalItems={items.length} />
-        ) : (
-            <div className="h-48 bg-gray-100 dark:bg-gray-800 rounded-2xl animate-pulse mb-8"></div>
-        )}
+      <SEOHead type="tag" data={tag} />
 
-        {/* Filters & Controls */}
-        <TagFilterBar 
-            filters={availableFilters}
-            activeFilter={filter}
-            onFilterChange={setFilter}
-            activeSort={sort}
-            onSortChange={setSort}
-        />
+      {/* Header Block */}
+      {tag ? (
+        <TagHeader tag={tag} totalItems={items.length} />
+      ) : (
+        <div className="h-48 bg-gray-100 dark:bg-gray-800 rounded-2xl animate-pulse mb-8"></div>
+      )}
 
-        {/* Content Area */}
-        <TagContentGrid items={items} loading={loading} />
+      {/* Filters & Controls */}
+      <TagFilterBar
+        filters={availableFilters}
+        activeFilter={filter}
+        onFilterChange={setFilter}
+        activeSort={sort}
+        onSortChange={setSort}
+      />
 
-        {/* Footer / Pagination Placeholder */}
-        {!loading && items.length > 0 && (
-            <div className="mt-12 flex justify-center">
-                <p className="text-xs text-gray-400 dark:text-gray-600 uppercase tracking-widest font-semibold">End of Results</p>
-            </div>
-        )}
+      {/* Content Area */}
+      <TagContentGrid items={items} loading={loading} />
+
+      {/* Footer / Pagination Placeholder */}
+      {!loading && items.length > 0 && (
+        <div className="mt-12 flex justify-center">
+          <p className="text-xs text-gray-400 dark:text-gray-600 uppercase tracking-widest font-semibold">
+            End of Results
+          </p>
+        </div>
+      )}
     </div>
-  );
-};
+  )
+}

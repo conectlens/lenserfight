@@ -1,27 +1,35 @@
+import { useQuery } from '@tanstack/react-query'
+import React, { useState } from 'react'
 
-import React, { useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
-import { adminService } from '../../../services/adminService';
-import { Table } from '../../../components/Table';
-import { InputField } from '../../auth/components/InputField';
+import { Table } from '../../../components/Table'
+import { adminService } from '../../../services/adminService'
+import { InputField } from '../../auth/components/InputField'
 
 export const AdminUsers: React.FC = () => {
-  const [page, setPage] = useState(1);
-  const [search, setSearch] = useState('');
-  
+  const [page, setPage] = useState(1)
+  const [search, setSearch] = useState('')
+
   const { data, isLoading } = useQuery({
     queryKey: ['admin', 'users', page, search],
     queryFn: () => adminService.getUsers(page, 20, search),
-    keepPreviousData: true
-  });
+    keepPreviousData: true,
+  })
 
   const columns = [
     { header: 'ID', accessor: 'id' as const, className: 'w-24 text-xs font-mono' },
     { header: 'Email', accessor: 'email' as const },
     { header: 'Display Name', accessor: 'display_name' as const },
-    { header: 'Role', render: (u: any) => u.is_super_admin ? <span className="text-xs font-bold text-red-600 bg-red-100 px-2 py-1 rounded">Admin</span> : <span className="text-xs text-gray-600 bg-gray-100 px-2 py-1 rounded">User</span> },
+    {
+      header: 'Role',
+      render: (u: any) =>
+        u.is_super_admin ? (
+          <span className="text-xs font-bold text-red-600 bg-red-100 px-2 py-1 rounded">Admin</span>
+        ) : (
+          <span className="text-xs text-gray-600 bg-gray-100 px-2 py-1 rounded">User</span>
+        ),
+    },
     { header: 'Joined', render: (u: any) => new Date(u.created_at).toLocaleDateString() },
-  ];
+  ]
 
   return (
     <div>
@@ -30,11 +38,11 @@ export const AdminUsers: React.FC = () => {
       </div>
 
       <div className="mb-6 w-full max-w-md">
-        <InputField 
-            label="" 
-            placeholder="Search by email or name..." 
-            value={search} 
-            onChange={(e) => setSearch(e.target.value)} 
+        <InputField
+          label=""
+          placeholder="Search by email or name..."
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
         />
       </div>
 
@@ -44,12 +52,12 @@ export const AdminUsers: React.FC = () => {
         keyExtractor={(item) => item.id}
         isLoading={isLoading}
         pagination={{
-            currentPage: page,
-            totalPages: Math.ceil((data?.total || 0) / 20),
-            onPageChange: setPage
+          currentPage: page,
+          totalPages: Math.ceil((data?.total || 0) / 20),
+          onPageChange: setPage,
         }}
         emptyState={<div className="p-8 text-center text-gray-500">No users found.</div>}
       />
     </div>
-  );
-};
+  )
+}
