@@ -190,20 +190,6 @@ export class MockLenserRepository implements LenserRepositoryPort {
     };
   }
 
-  async getCompactProfile(handle: string): Promise<LenserCompactProfile | null> {
-    await new Promise(resolve => setTimeout(resolve, 300)); // Fast fetch
-    const lenser = await this.getLenserByHandle(handle);
-    if (!lenser) return null;
-
-    return {
-      handle: lenser.handle,
-      display_name: lenser.display_name,
-      avatar_url: lenser.avatar_url || null,
-      xp: 1250, // Mock XP
-      current_level: 4
-    };
-  }
-
   async createLenser(data: CreateLenserDTO): Promise<Lenser> {
     await new Promise(resolve => setTimeout(resolve, 800));
     const newId = `lenser-${Date.now()}-uuid`;
