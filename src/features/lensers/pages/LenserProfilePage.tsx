@@ -139,23 +139,21 @@ export const LenserProfilePage: React.FC = () => {
         // Track View
         trackView('profile', handle);
 
-        // Map Stats
-        setStats({
-            //promptsCount: fullProfile.prompt_count,
-            //threadsCount: fullProfile.thread_count,
-            //followersCount: fullProfile.follower_count,
-            //followingCount: fullProfile.following_count,
-            winsCount: 0
-        });
+setStats({
+  threadsCount: Number(fullProfile.thread_count ?? 0),
+  promptsCount: Number(fullProfile.prompt_count ?? 0),
+  followersCount: Number(fullProfile.follower_count ?? 0),
+  followingCount: Number(fullProfile.following_count ?? 0),
+  winsCount: 0
+});
 
-        // Map XP
-        setXpSummary({
-            totalXp: fullProfile.total_xp,
-            currentLevel: fullProfile.current_level,
-            //rank: fullProfile.global_rank,
-            //currentLevelMinXp: fullProfile.xp_min,
-            //currentLevelMaxXp: fullProfile.xp_max
-        });
+setXpSummary({
+  totalXp: Number(fullProfile.total_xp ?? 0),
+  currentLevel: Number(fullProfile.current_level ?? 1),
+  rank: fullProfile.join_order ?? undefined,
+  currentLevelMinXp: Number(fullProfile.min_xp ?? 0),
+  currentLevelMaxXp: Number(fullProfile.max_xp ?? 0)
+});
 
         if (FEATURES.LENSER_ACTIVITY) {
             const act = await lenserService.getLenserActivity(fullProfile.handle);
