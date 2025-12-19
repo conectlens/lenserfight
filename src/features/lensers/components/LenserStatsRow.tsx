@@ -8,9 +8,9 @@ import { Trophy, MessageSquare, Lightbulb, Hash } from 'lucide-react';
 
 interface LenserStatsRowProps {
   stats: LenserStats;
-  joinOrder?: number;
   xpSummary?: XPSummary | null;
 }
+
 
 const AnimatedCounter: React.FC<{ value: number; prefix?: string }> = ({ value, prefix = '' }) => {
   const [count, setCount] = useState(0);
