@@ -1,17 +1,17 @@
+import { useQuery } from '@tanstack/react-query'
+import React, { useState } from 'react'
 
-import React, { useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
-import { adminService } from '../../../services/adminService';
-import { Table } from '../../../components/Table';
+import { Table } from '../../../components/Table'
+import { adminService } from '../../../services/adminService'
 
 export const AdminContacts: React.FC = () => {
-  const [page, setPage] = useState(1);
+  const [page, setPage] = useState(1)
 
   const { data, isLoading } = useQuery({
     queryKey: ['admin', 'contacts', page],
     queryFn: () => adminService.getContacts(page, 15),
-    keepPreviousData: true
-  });
+    keepPreviousData: true,
+  })
 
   const columns = [
     { header: 'Name', accessor: 'name' as const, className: 'font-medium' },
@@ -19,7 +19,7 @@ export const AdminContacts: React.FC = () => {
     { header: 'Subject', accessor: 'subject' as const },
     { header: 'Message', accessor: 'message' as const, className: 'truncate max-w-xs' },
     { header: 'Date', render: (c: any) => new Date(c.created_at).toLocaleDateString() },
-  ];
+  ]
 
   return (
     <div>
@@ -31,12 +31,12 @@ export const AdminContacts: React.FC = () => {
         keyExtractor={(item) => item.id}
         isLoading={isLoading}
         pagination={{
-            currentPage: page,
-            totalPages: Math.ceil((data?.total || 0) / 15),
-            onPageChange: setPage
+          currentPage: page,
+          totalPages: Math.ceil((data?.total || 0) / 15),
+          onPageChange: setPage,
         }}
         emptyState={<div className="p-8 text-center text-gray-500">No messages found.</div>}
       />
     </div>
-  );
-};
+  )
+}

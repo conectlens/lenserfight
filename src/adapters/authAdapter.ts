@@ -1,9 +1,13 @@
-import { AuthRepositoryPort, MockAuthRepository, SupabaseAuthRepository } from '../repositories/authRepository';
-import { isMock } from '../config/runtimeConfig';
+import { isMock } from '../config/runtimeConfig'
+import {
+  AuthRepositoryPort,
+  MockAuthRepository,
+  SupabaseAuthRepository,
+} from '../repositories/authRepository'
 
 export const getAuthRepository = (): AuthRepositoryPort => {
   if (isMock) {
-    return new MockAuthRepository();
+    return new MockAuthRepository()
   }
-  return new SupabaseAuthRepository();
-};
+  return new SupabaseAuthRepository()
+}
