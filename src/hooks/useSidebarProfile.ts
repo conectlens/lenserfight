@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { LenserCompactProfile } from '../types/lenser.types';
+import { Lenser, LenserCompactProfile } from '../types/lenser.types';
 import { getLenserRepository } from '../adapters/lenserAdapter';
 import { storage } from '../utils/storage';
 
@@ -8,7 +8,7 @@ const TTL_MS = 1000 * 60; // 1 minute
 
 interface CachedCompact {
   fetchedAt: number;
-  profile: LenserCompactProfile;
+  profile: Lenser;
   handle: string;
 }
 
@@ -71,7 +71,7 @@ export const useSidebarProfile = (handle?: string) => {
       if (!cached) setIsLoading(true);
 
       try {
-        const fresh = await lenserRepo.getCompactProfile(handle);
+        const fresh = await lenserRepo.getAuthenticatedLenser();
         if (mounted && fresh) {
           const entry: CachedCompact = {
             fetchedAt: Date.now(),
