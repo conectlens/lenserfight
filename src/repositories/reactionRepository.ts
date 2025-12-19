@@ -21,8 +21,6 @@ export interface ReactionRepositoryPort {
   getReactionsFor(targetType: TargetType, targetId: string): Promise<ReactionRecord[]>;
   getUserReaction(targetType: TargetType, targetId: string, lenserId: string): Promise<ReactionRecord[]>;
   getBatchUserReactions(targetType: TargetType, targetIds: string[], lenserId: string): Promise<ReactionRecord[]>;
-  addReaction(targetType: TargetType, targetId: string, lenserId: string, reaction: ReactionType): Promise<ReactionRecord>;
-  removeReaction(targetType: TargetType, targetId: string, lenserId: string, reaction: ReactionType): Promise<void>;
   countReactions(targetType: TargetType, targetId: string): Promise<ReactionCount[]>;
   getLenserHistory(handle: string, offset?: number, limit?: number): Promise<ReactionRecord[]>;
 }
@@ -96,26 +94,6 @@ export class MockReactionRepository implements ReactionRepositoryPort {
 
   async getBatchUserReactions(targetType: TargetType, targetIds: string[], lenserId: string): Promise<ReactionRecord[]> {
       return this.getStore().filter(r => r.target_type === targetType && r.lenser_id === lenserId && targetIds.includes(r.target_id));
-  }
-
-  async addReaction(targetType: TargetType, targetId: string, lenserId: string, reaction: ReactionType): Promise<ReactionRecord> {
-    const store = this.getStore();
-    const newReaction = { id: `rx-${Date.now()}`, lenser_id: lenserId, target_type: targetType, target_id: targetId, reaction, created_at: new Date().toISOString() };
-    store.push(newReaction);
-    storage.setItem(this.STORAGE_KEY, JSON.stringify(store));
-    
-    // Trigger update
-    this.updateParentTotals(targetType, targetId);
-    
-    return newReaction;
-  }
-
-  async removeReaction(targetType: TargetType, targetId: string, lenserId: string, reaction: ReactionType): Promise<void> {
-    const store = this.getStore().filter(r => !(r.lenser_id === lenserId && r.target_type === targetType && r.target_id === targetId && r.reaction === reaction));
-    storage.setItem(this.STORAGE_KEY, JSON.stringify(store));
-    
-    // Trigger update
-    this.updateParentTotals(targetType, targetId);
   }
 
   async toggleReaction(targetType: TargetType, targetId: string, lenserId: string, reaction: ReactionType) {
