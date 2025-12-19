@@ -1,40 +1,40 @@
-@import "tailwindcss";
+@import 'tailwindcss';
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 @theme {
   /* Fonts */
-  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-sans: 'Inter', ui-sans-serif, system-ui, sans-serif;
 
   /* Brand palette */
   --color-primary: #ffde59;
   --color-deep: #213f74;
 
   /* Gray scale from your tailwind extension */
-  --color-gray-50:  #F9FAFB;
-  --color-gray-100: #EDEDED;
-  --color-gray-200: #E5E7EB;
-  --color-gray-300: #D1D5DB;
-  --color-gray-400: #9CA3AF;
-  --color-gray-500: #6B7280;
-  --color-gray-600: #4B5563;
+  --color-gray-50: #f9fafb;
+  --color-gray-100: #ededed;
+  --color-gray-200: #e5e7eb;
+  --color-gray-300: #d1d5db;
+  --color-gray-400: #9ca3af;
+  --color-gray-500: #6b7280;
+  --color-gray-600: #4b5563;
   --color-gray-700: #262626; /* border */
-  --color-gray-800: #1A1A1A; /* sidebar/surface */
+  --color-gray-800: #1a1a1a; /* sidebar/surface */
   --color-gray-900: #121212; /* main background */
 
   /* Light scheme */
-  --color-light-base:     #ffffff;
-  --color-light-surface:  #F9FAFB;
-  --color-light-subtle:   #E5E7EB;
-  --color-light-text:     #1F2937;
-  --color-light-muted:    #6B7280;
+  --color-light-base: #ffffff;
+  --color-light-surface: #f9fafb;
+  --color-light-subtle: #e5e7eb;
+  --color-light-text: #1f2937;
+  --color-light-muted: #6b7280;
 
   /* Dark scheme derived from your dark colors */
-  --color-dark-base:      #121212;
-  --color-dark-surface:   #1A1A1A;
-  --color-dark-subtle:    #262626;
-  --color-dark-text:      #F9FAFB;
-  --color-dark-muted:     #9CA3AF;
+  --color-dark-base: #121212;
+  --color-dark-surface: #1a1a1a;
+  --color-dark-subtle: #262626;
+  --color-dark-text: #f9fafb;
+  --color-dark-muted: #9ca3af;
 }
 
 @layer base {
@@ -48,93 +48,93 @@
   }
 }
 
-   body {
-        font-family: 'Inter', sans-serif;
-        overflow-x: hidden; /* Prevent horizontal scrolling */
-      }
-      
-      /* Utilities for hiding scrollbars */
-      .scrollbar-hide {
-          -ms-overflow-style: none;  /* IE and Edge */
-          scrollbar-width: none;  /* Firefox */
-      }
-      .scrollbar-hide::-webkit-scrollbar {
-          display: none; /* Chrome, Safari and Opera */
-      }
+body {
+  font-family: 'Inter', sans-serif;
+  overflow-x: hidden; /* Prevent horizontal scrolling */
+}
 
-      /* Global Scrollbar Theme (Light) */
-      ::-webkit-scrollbar {
-          width: 10px;
-          height: 10px;
-      }
-      ::-webkit-scrollbar-track {
-          background: #f5f5f5; 
-      }
-      ::-webkit-scrollbar-thumb {
-          background: #d4d4d4;
-          border-radius: 5px;
-          border: 2px solid #f5f5f5; /* Creates padding effect */
-      }
-      ::-webkit-scrollbar-thumb:hover {
-          background: #c2c2c2;
-      }
-      
-      /* Firefox */
-      * {
-          scrollbar-width: thin;
-          scrollbar-color: #d4d4d4 #f5f5f5;
-      }
+/* Utilities for hiding scrollbars */
+.scrollbar-hide {
+  -ms-overflow-style: none; /* IE and Edge */
+  scrollbar-width: none; /* Firefox */
+}
+.scrollbar-hide::-webkit-scrollbar {
+  display: none; /* Chrome, Safari and Opera */
+}
 
-      /* Dark mode scrollbar overrides */
-      html.dark {
-          color-scheme: dark;
-          background-color: #121212; /* Match gray-900 */
-      }
-      
-      html.dark ::-webkit-scrollbar-track {
-          background: #121212; /* Match gray-900 */
-      }
-      html.dark ::-webkit-scrollbar-thumb {
-          background: #4b5563; /* gray-600 */
-          border-radius: 99px;
-          border: 2px solid #121212; /* Match track for padding effect */
-          background-clip: content-box;
-      }
-      html.dark ::-webkit-scrollbar-thumb:hover {
-          background: #6b7280; /* gray-500 */
-      }
-      html.dark * {
-          scrollbar-color: #4b5563 #121212;
-      }
+/* Global Scrollbar Theme (Light) */
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+::-webkit-scrollbar-track {
+  background: #f5f5f5;
+}
+::-webkit-scrollbar-thumb {
+  background: #d4d4d4;
+  border-radius: 5px;
+  border: 2px solid #f5f5f5; /* Creates padding effect */
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #c2c2c2;
+}
 
-      /* Scoped scrollbar for AI Generations & Dropdowns (refined) */
-      .generations-scroll {
-          scrollbar-width: thin;
-          scrollbar-color: #d6d6d6 #f5f5f5;
-      }
-      .generations-scroll::-webkit-scrollbar {
-          width: 6px;
-          height: 6px;
-      }
-      .generations-scroll::-webkit-scrollbar-track {
-          background: #f5f5f5;
-          border-radius: 4px;
-      }
-      .generations-scroll::-webkit-scrollbar-thumb {
-          background: #d6d6d6;
-          border-radius: 4px;
-      }
-      .generations-scroll::-webkit-scrollbar-thumb:hover {
-          background: #c5c5c5;
-      }
-      
-      /* Dark mode scoped scrollbar */
-      html.dark .generations-scroll {
-          scrollbar-color: #4b5563 transparent;
-      }
-      html.dark .generations-scroll::-webkit-scrollbar-track {
-          background: transparent;
-      }
-      html.dark .generations-scroll::-webkit-scrollbar-thumb {
-          background: #4b5563;
-      }
+/* Firefox */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #d4d4d4 #f5f5f5;
+}
+
+/* Dark mode scrollbar overrides */
+html.dark {
+  color-scheme: dark;
+  background-color: #121212; /* Match gray-900 */
+}
+
+html.dark ::-webkit-scrollbar-track {
+  background: #121212; /* Match gray-900 */
+}
+html.dark ::-webkit-scrollbar-thumb {
+  background: #4b5563; /* gray-600 */
+  border-radius: 99px;
+  border: 2px solid #121212; /* Match track for padding effect */
+  background-clip: content-box;
+}
+html.dark ::-webkit-scrollbar-thumb:hover {
+  background: #6b7280; /* gray-500 */
+}
+html.dark * {
+  scrollbar-color: #4b5563 #121212;
+}
+
+/* Scoped scrollbar for AI Generations & Dropdowns (refined) */
+.generations-scroll {
+  scrollbar-width: thin;
+  scrollbar-color: #d6d6d6 #f5f5f5;
+}
+.generations-scroll::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+.generations-scroll::-webkit-scrollbar-track {
+  background: #f5f5f5;
+  border-radius: 4px;
+}
+.generations-scroll::-webkit-scrollbar-thumb {
+  background: #d6d6d6;
+  border-radius: 4px;
+}
+.generations-scroll::-webkit-scrollbar-thumb:hover {
+  background: #c5c5c5;
+}
+
+/* Dark mode scoped scrollbar */
+html.dark .generations-scroll {
+  scrollbar-color: #4b5563 transparent;
+}
+html.dark .generations-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+html.dark .generations-scroll::-webkit-scrollbar-thumb {
+  background: #4b5563;
+}

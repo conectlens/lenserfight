@@ -1,9 +1,9 @@
-import React from 'react';
-import { SlidersHorizontal } from 'lucide-react';
+import { SlidersHorizontal } from 'lucide-react'
+import React from 'react'
 
 interface PromptsSortDropdownProps {
-  value: 'newest' | 'popular';
-  onChange: (val: 'newest' | 'popular') => void;
+  value: 'newest' | 'popular'
+  onChange: (val: 'newest' | 'popular') => void
 }
 
 export const PromptsSortDropdown: React.FC<PromptsSortDropdownProps> = ({ value, onChange }) => {
@@ -19,5 +19,5 @@ export const PromptsSortDropdown: React.FC<PromptsSortDropdownProps> = ({ value,
         <option value="popular">Popular</option>
       </select>
     </div>
-  );
-};
+  )
+}

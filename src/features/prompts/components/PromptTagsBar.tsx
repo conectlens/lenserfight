@@ -1,20 +1,20 @@
+import React from 'react'
+import { useNavigate } from 'react-router-dom'
 
-import React from 'react';
-import { useNavigate } from 'react-router-dom';
-import { TagRecord } from '../../../types/threads.types';
+import { TagRecord } from '../../../types/threads.types'
 
 interface PromptTagsBarProps {
-  tags: TagRecord[];
+  tags: TagRecord[]
 }
 
 export const PromptTagsBar: React.FC<PromptTagsBarProps> = ({ tags }) => {
-  const navigate = useNavigate();
+  const navigate = useNavigate()
 
   return (
     <div className="flex flex-wrap gap-2">
-      {tags.map(tag => (
-        <button 
-          key={tag.id} 
+      {tags.map((tag) => (
+        <button
+          key={tag.id}
           onClick={() => navigate(`/len/${tag.slug}`)}
           className="inline-flex items-center px-3 py-1 rounded-lg text-sm font-medium bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
         >
@@ -22,5 +22,5 @@ export const PromptTagsBar: React.FC<PromptTagsBarProps> = ({ tags }) => {
         </button>
       ))}
     </div>
-  );
-};
+  )
+}

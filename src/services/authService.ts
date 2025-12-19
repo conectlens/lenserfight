@@ -1,43 +1,52 @@
+import { getAuthRepository } from '../adapters/authAdapter'
+import { User, AuthStateChangeCallback, UserMetadata } from '../types/auth.types'
 
-import { getAuthRepository } from '../adapters/authAdapter';
-import { User, AuthStateChangeCallback, UserMetadata } from '../types/auth.types';
-
-const authRepo = getAuthRepository();
+const authRepo = getAuthRepository()
 
 export const authService = {
-  login: async (email: string, password: string, captchaToken?: string, metadata?: Partial<UserMetadata>): Promise<User> => {
-    return authRepo.login(email, password, captchaToken, metadata);
+  login: async (
+    email: string,
+    password: string,
+    captchaToken?: string,
+    metadata?: Partial<UserMetadata>
+  ): Promise<User> => {
+    return authRepo.login(email, password, captchaToken, metadata)
   },
 
-  register: async (email: string, password: string, metadata?: UserMetadata, captchaToken?: string): Promise<User> => {
-    return authRepo.register(email, password, metadata, captchaToken);
+  register: async (
+    email: string,
+    password: string,
+    metadata?: UserMetadata,
+    captchaToken?: string
+  ): Promise<User> => {
+    return authRepo.register(email, password, metadata, captchaToken)
   },
 
   logout: async (): Promise<void> => {
-    return authRepo.logout();
+    return authRepo.logout()
   },
 
   getCurrentUser: async (): Promise<User | null> => {
-    return authRepo.getCurrentUser();
+    return authRepo.getCurrentUser()
   },
 
   requestPasswordReset: async (email: string, captchaToken?: string): Promise<void> => {
-    return authRepo.requestPasswordReset(email, captchaToken);
+    return authRepo.requestPasswordReset(email, captchaToken)
   },
 
   resetPassword: async (password: string, token?: string): Promise<void> => {
-    return authRepo.resetPassword(password, token);
+    return authRepo.resetPassword(password, token)
   },
 
   signInWithOAuth: async (provider: 'google' | 'github' | 'azure'): Promise<void> => {
-    return authRepo.signInWithOAuth(provider);
+    return authRepo.signInWithOAuth(provider)
   },
 
   resendSignupConfirmation: async (email: string): Promise<void> => {
-    return authRepo.resendSignupConfirmation(email);
+    return authRepo.resendSignupConfirmation(email)
   },
 
   onAuthStateChange: (callback: AuthStateChangeCallback): (() => void) => {
-    return authRepo.onAuthStateChange(callback);
-  }
-};
+    return authRepo.onAuthStateChange(callback)
+  },
+}
