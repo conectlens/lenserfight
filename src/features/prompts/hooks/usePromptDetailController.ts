@@ -6,7 +6,6 @@ import { analyticsService } from '../../../services/analyticsService';
 import { useLenser } from '../../../context/LenserContext';
 import { useAuth } from '../../../context/AuthContext';
 import { PromptTemplateDetailViewModel, PromptTemplateViewModel } from '../../../types/prompts.types';
-import { keys } from '../../../hooks/useThreads';
 
 interface PromptDetailData {
   prompt: PromptTemplateDetailViewModel | null;
@@ -82,7 +81,7 @@ export const usePromptDetailController = (promptId?: string) => {
 
   const copyPrompt = async () => {
     if (!data?.prompt || !lenser) return;
-    await promptsService.copyPrompt(data.prompt.id, lenser.id);
+    await promptsService.toggleReaction(data.prompt.id, lenser.id, "copy");
     updateLocalPrompt(prev => ({
       ...prev,
       reactionCounts: {

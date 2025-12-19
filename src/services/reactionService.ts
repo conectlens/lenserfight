@@ -57,16 +57,6 @@ export const reactionService = {
     return reactionRepo.toggleReaction(targetType, targetId, lenserId, reaction);
   },
 
-  recordReaction: async (targetType: TargetType, targetId: string, lenserId: string, reaction: ReactionType): Promise<void> => {
-    reactionService.validateTarget(targetType);
-    try {
-      await reactionRepo.addReaction(targetType, targetId, lenserId, reaction);
-    } catch (e: any) {
-      // Ignore duplicates for simple recording (e.g. copy)
-      if (e.code !== '23505') throw e;
-    }
-  },
-
   getLenserActivityFeed: async (lenserHandle: string, offset = 0, limit = 20): Promise<ActivityFeedItem[]> => {
       const reactions = await reactionRepo.getLenserHistory(lenserHandle, offset, limit);
       
