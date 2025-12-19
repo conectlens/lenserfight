@@ -1,5 +1,4 @@
-
-import React from 'react';
+import React from 'react'
 
 export const LeaderboardHeader: React.FC = () => {
   return (
@@ -11,5 +10,5 @@ export const LeaderboardHeader: React.FC = () => {
         Top Lensers by XP, Level, and Streaks
       </p>
     </div>
-  );
-};
+  )
+}

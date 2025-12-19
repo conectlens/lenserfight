@@ -1,32 +1,33 @@
+import { Globe, Lock } from 'lucide-react'
+import React from 'react'
 
-import React from 'react';
-import { Modal } from '../../../components/Modal';
-import { Button } from '../../../components/Button';
-import { PromptTagInput } from './PromptTagInput';
-import { VisibilityEnum } from '../../../types/prompts.types';
-import { useFormValidation } from '../../../hooks/useFormValidation';
-import { isRequired, minLength } from '../../../utils/validation';
-import { FormError } from '../../../components/FormError';
-import { SelectField } from '../../../components/SelectField';
-import { Globe, Lock } from 'lucide-react';
+import { Button } from '../../../components/Button'
+import { FormError } from '../../../components/FormError'
+import { Modal } from '../../../components/Modal'
+import { SelectField } from '../../../components/SelectField'
+import { useFormValidation } from '../../../hooks/useFormValidation'
+import { VisibilityEnum } from '../../../types/prompts.types'
+import { isRequired, minLength } from '../../../utils/validation'
+
+import { PromptTagInput } from './PromptTagInput'
 
 interface CreatePromptModalProps {
-  isOpen: boolean;
-  onClose: () => void;
-  onSubmit: () => void;
+  isOpen: boolean
+  onClose: () => void
+  onSubmit: () => void
   form: {
-    title: string;
-    setTitle: (v: string) => void;
-    content: string;
-    setContent: (v: string) => void;
-    tags: string[];
-    setTags: (v: string[]) => void;
-    visibility: VisibilityEnum;
-    setVisibility: (v: VisibilityEnum) => void;
-  };
-  isSubmitting: boolean;
-  error: string | null;
-  isEditMode?: boolean;
+    title: string
+    setTitle: (v: string) => void
+    content: string
+    setContent: (v: string) => void
+    tags: string[]
+    setTags: (v: string[]) => void
+    visibility: VisibilityEnum
+    setVisibility: (v: VisibilityEnum) => void
+  }
+  isSubmitting: boolean
+  error: string | null
+  isEditMode?: boolean
 }
 
 export const CreatePromptModal: React.FC<CreatePromptModalProps> = ({
@@ -36,49 +37,49 @@ export const CreatePromptModal: React.FC<CreatePromptModalProps> = ({
   form,
   isSubmitting,
   error,
-  isEditMode
+  isEditMode,
 }) => {
-  
   const formValues = {
     title: form.title,
     content: form.content,
-    tags: form.tags
-  };
+    tags: form.tags,
+  }
 
   const { errors, validate, clearError } = useFormValidation<typeof formValues>({
-    title: [isRequired(), minLength(3, "Title must be at least 3 characters")],
-    content: [isRequired(), minLength(10, "Content must be at least 10 characters")],
-    tags: []
-  });
+    title: [isRequired(), minLength(3, 'Title must be at least 3 characters')],
+    content: [isRequired(), minLength(10, 'Content must be at least 10 characters')],
+    tags: [],
+  })
 
   const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
+    e.preventDefault()
     if (validate(formValues)) {
-      onSubmit();
+      onSubmit()
     }
-  };
+  }
 
   const handleTitleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    form.setTitle(e.target.value);
-    clearError('title');
-  };
+    form.setTitle(e.target.value)
+    clearError('title')
+  }
 
   const handleContentChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    form.setContent(e.target.value);
-    clearError('content');
-  };
+    form.setContent(e.target.value)
+    clearError('content')
+  }
 
   const visibilityOptions = [
-      { value: 'public', label: 'Public', icon: Globe },
-      { value: 'private', label: 'Private', icon: Lock }
-  ];
+    { value: 'public', label: 'Public', icon: Globe },
+    { value: 'private', label: 'Private', icon: Lock },
+  ]
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title={isEditMode ? "Edit Prompt" : "Create Prompt"}>
+    <Modal isOpen={isOpen} onClose={onClose} title={isEditMode ? 'Edit Prompt' : 'Create Prompt'}>
       <form onSubmit={handleSubmit} className="space-y-6" noValidate>
-        
         <div className="space-y-2">
-          <label className="text-sm font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Title</label>
+          <label className="text-sm font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+            Title
+          </label>
           <input
             type="text"
             value={form.title}
@@ -90,7 +91,9 @@ export const CreatePromptModal: React.FC<CreatePromptModalProps> = ({
         </div>
 
         <div className="space-y-2">
-          <label className="text-sm font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Prompt</label>
+          <label className="text-sm font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+            Prompt
+          </label>
           <textarea
             value={form.content}
             onChange={handleContentChange}
@@ -106,29 +109,33 @@ export const CreatePromptModal: React.FC<CreatePromptModalProps> = ({
 
           <div className="space-y-2">
             <SelectField
-                label="Visibility"
-                value={form.visibility}
-                onChange={(val) => form.setVisibility(val as VisibilityEnum)}
-                options={visibilityOptions}
-                className="w-full"
+              label="Visibility"
+              value={form.visibility}
+              onChange={(val) => form.setVisibility(val as VisibilityEnum)}
+              options={visibilityOptions}
+              className="w-full"
             />
           </div>
         </div>
 
-        {error && <div className="text-red-500 text-sm bg-red-50 dark:bg-red-900/30 p-3 rounded-lg">{error}</div>}
+        {error && (
+          <div className="text-red-500 text-sm bg-red-50 dark:bg-red-900/30 p-3 rounded-lg">
+            {error}
+          </div>
+        )}
 
         <div className="flex gap-3 pt-4 justify-end">
-          <Button 
-            type="button" 
-            variant="secondary" 
+          <Button
+            type="button"
+            variant="secondary"
             onClick={onClose}
             disabled={isSubmitting}
             className="bg-gray-100 dark:bg-gray-700 border-transparent hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-200 w-auto px-6"
           >
             Cancel
           </Button>
-          <Button 
-            type="submit" 
+          <Button
+            type="submit"
             variant="primary"
             isLoading={isSubmitting}
             className="w-auto px-6 shadow-md"
@@ -138,5 +145,5 @@ export const CreatePromptModal: React.FC<CreatePromptModalProps> = ({
         </div>
       </form>
     </Modal>
-  );
-};
+  )
+}

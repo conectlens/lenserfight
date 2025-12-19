@@ -1,23 +1,25 @@
-import React from 'react';
-import { Link, useNavigate, useLocation } from 'react-router-dom';
-import { Footer } from './Footer';
-import { useAuth } from '../context/AuthContext';
+import React from 'react'
+import { Link, useNavigate, useLocation } from 'react-router-dom'
+
+import { useAuth } from '../context/AuthContext'
+
+import { Footer } from './Footer'
 
 interface PublicLayoutProps {
-  children: React.ReactNode;
+  children: React.ReactNode
 }
 
 export const PublicLayout: React.FC<PublicLayoutProps> = ({ children }) => {
-  const navigate = useNavigate();
-  const location = useLocation();
-  const { isAuthenticated } = useAuth();
+  const navigate = useNavigate()
+  const location = useLocation()
+  const { isAuthenticated } = useAuth()
 
   const isActive = (path: string) => {
-    if (path === '/about' && location.pathname.startsWith('/about')) return true;
-    if (path === '/ecosystem' && location.pathname.startsWith('/ecosystem')) return true;
-    if (path === '/legal' && location.pathname.startsWith('/legal')) return true;
-    return false;
-  };
+    if (path === '/about' && location.pathname.startsWith('/about')) return true
+    if (path === '/ecosystem' && location.pathname.startsWith('/ecosystem')) return true
+    if (path === '/legal' && location.pathname.startsWith('/legal')) return true
+    return false
+  }
 
   return (
     <div className="flex flex-col min-h-screen bg-white dark:bg-transparent text-gray-900 dark:text-gray-100 font-sans antialiased transition-colors duration-200">
@@ -26,33 +28,50 @@ export const PublicLayout: React.FC<PublicLayoutProps> = ({ children }) => {
           <div className="flex items-center gap-10">
             <Link to="/" className="flex items-center gap-2.5 group">
               <div className="w-9 h-9 flex items-center justify-center transition-transform group-hover:scale-105">
-                 <img 
-                   src="https://cdn.lenserfight.conectlens.com/brand/lenserfight-logo.png" 
-                   alt="LenserFight" 
-                   className="w-full h-full object-contain"
-                 />
+                <img
+                  src="https://cdn.lenserfight.conectlens.com/brand/lenserfight-logo.png"
+                  alt="LenserFight"
+                  className="w-full h-full object-contain"
+                />
               </div>
-              <span className="font-bold text-xl tracking-tight text-gray-900 dark:text-white">LenserFight</span>
+              <span className="font-bold text-xl tracking-tight text-gray-900 dark:text-white">
+                LenserFight
+              </span>
             </Link>
 
             <nav className="hidden md:flex items-center gap-8 text-[15px] font-medium text-gray-500 dark:text-gray-400">
-              <Link to="/about" className={`hover:text-gray-900 dark:hover:text-white transition-colors ${isActive('/about') ? 'text-gray-900 dark:text-white font-bold' : ''}`}>About</Link>
-              <Link to="/ecosystem" className={`hover:text-gray-900 dark:hover:text-white transition-colors ${isActive('/ecosystem') ? 'text-gray-900 dark:text-white font-bold' : ''}`}>Ecosystem</Link>
-              <Link to="/legal" className={`hover:text-gray-900 dark:hover:text-white transition-colors ${isActive('/legal') ? 'text-gray-900 dark:text-white font-bold' : ''}`}>Legal</Link>
+              <Link
+                to="/about"
+                className={`hover:text-gray-900 dark:hover:text-white transition-colors ${isActive('/about') ? 'text-gray-900 dark:text-white font-bold' : ''}`}
+              >
+                About
+              </Link>
+              <Link
+                to="/ecosystem"
+                className={`hover:text-gray-900 dark:hover:text-white transition-colors ${isActive('/ecosystem') ? 'text-gray-900 dark:text-white font-bold' : ''}`}
+              >
+                Ecosystem
+              </Link>
+              <Link
+                to="/legal"
+                className={`hover:text-gray-900 dark:hover:text-white transition-colors ${isActive('/legal') ? 'text-gray-900 dark:text-white font-bold' : ''}`}
+              >
+                Legal
+              </Link>
             </nav>
           </div>
 
           <div className="flex items-center gap-3">
             {isAuthenticated ? (
-              <button 
-                onClick={() => navigate('/')} 
+              <button
+                onClick={() => navigate('/')}
                 className="h-10 px-6 bg-primary text-gray-900 font-bold text-sm rounded-lg hover:bg-[#ffe170] transition-colors"
               >
                 Enter Arena
               </button>
             ) : (
-              <button 
-                onClick={() => navigate('/login')} 
+              <button
+                onClick={() => navigate('/login')}
                 className="h-10 px-6 bg-primary text-gray-900 font-bold text-sm rounded-lg hover:bg-[#ffe170] shadow-sm hover:shadow transition-all"
               >
                 Join
@@ -62,11 +81,9 @@ export const PublicLayout: React.FC<PublicLayoutProps> = ({ children }) => {
         </div>
       </header>
 
-      <main className="flex-1 w-full">
-        {children}
-      </main>
+      <main className="flex-1 w-full">{children}</main>
 
       <Footer />
     </div>
-  );
-};
+  )
+}
