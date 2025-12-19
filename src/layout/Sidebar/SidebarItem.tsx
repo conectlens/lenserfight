@@ -1,27 +1,26 @@
-
-import React, { useState } from 'react';
-import { Lock } from 'lucide-react';
+import { Lock } from 'lucide-react'
+import React, { useState } from 'react'
 
 interface SidebarItemProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
-  icon: React.ReactNode;
-  label: string;
-  isActive?: boolean;
-  collapsed?: boolean;
-  isComingSoon?: boolean;
+  icon: React.ReactNode
+  label: string
+  isActive?: boolean
+  collapsed?: boolean
+  isComingSoon?: boolean
 }
 
-export const SidebarItem: React.FC<SidebarItemProps> = ({ 
-  icon, 
-  label, 
-  isActive, 
-  collapsed, 
+export const SidebarItem: React.FC<SidebarItemProps> = ({
+  icon,
+  label,
+  isActive,
+  collapsed,
   isComingSoon,
-  className = '', 
+  className = '',
   disabled,
   onClick,
-  ...props 
+  ...props
 }) => {
-  const [isHovered, setIsHovered] = useState(false);
+  const [isHovered, setIsHovered] = useState(false)
 
   // Base layout classes shared by button and div
   const baseClasses = `
@@ -29,14 +28,14 @@ export const SidebarItem: React.FC<SidebarItemProps> = ({
     border
     ${collapsed ? 'justify-center' : ''}
     ${className}
-  `;
+  `
 
   // State-specific styling
-  let variantClasses = '';
-  
+  let variantClasses = ''
+
   if (isActive) {
     // Active State
-    variantClasses = 'bg-primary/20 text-gray-900 dark:text-white font-semibold border-transparent';
+    variantClasses = 'bg-primary/20 text-gray-900 dark:text-white font-semibold border-transparent'
   } else if (isComingSoon) {
     // Locked/Coming Soon State (Redesigned)
     variantClasses = `
@@ -44,7 +43,7 @@ export const SidebarItem: React.FC<SidebarItemProps> = ({
       border-gray-200/60 dark:border-gray-800
       text-gray-400 dark:text-gray-500
       cursor-not-allowed
-    `;
+    `
   } else {
     // Inactive Interactive State
     variantClasses = `
@@ -52,42 +51,36 @@ export const SidebarItem: React.FC<SidebarItemProps> = ({
       text-gray-600 dark:text-gray-400 
       hover:bg-gray-100 dark:hover:bg-gray-800 
       hover:text-gray-900 dark:hover:text-white
-    `;
+    `
   }
 
   const IconWrapper = () => (
     <span className={`flex-shrink-0 z-10 relative ${isComingSoon ? 'opacity-90' : ''}`}>
       {icon}
     </span>
-  );
+  )
 
-  const LabelWrapper = () => (
+  const LabelWrapper = () =>
     !collapsed && (
       <div className="ml-3 flex-1 flex items-center justify-between overflow-hidden z-10">
-          <span className={`truncate ${isComingSoon ? 'font-medium opacity-90' : ''}`}>
-              {label}
-          </span>
-          {isComingSoon && (
-              <Lock 
-                  size={14} 
-                  className="text-gray-400 dark:text-gray-600 ml-2 flex-shrink-0" 
-                  aria-hidden="true"
-              />
-          )}
+        <span className={`truncate ${isComingSoon ? 'font-medium opacity-90' : ''}`}>{label}</span>
+        {isComingSoon && (
+          <Lock
+            size={14}
+            className="text-gray-400 dark:text-gray-600 ml-2 flex-shrink-0"
+            aria-hidden="true"
+          />
+        )}
       </div>
     )
-  );
 
-  const ActiveIndicator = () => (
-    isActive && !collapsed && (
-      <div className="ml-auto w-1.5 h-1.5 rounded-full bg-primary" />
-    )
-  );
+  const ActiveIndicator = () =>
+    isActive && !collapsed && <div className="ml-auto w-1.5 h-1.5 rounded-full bg-primary" />
 
   // If Coming Soon, render as div to handle hover for popover without fighting 'disabled' prop
   if (isComingSoon) {
     return (
-      <div 
+      <div
         className={`${baseClasses} ${variantClasses}`}
         onMouseEnter={() => setIsHovered(true)}
         onMouseLeave={() => setIsHovered(false)}
@@ -97,10 +90,10 @@ export const SidebarItem: React.FC<SidebarItemProps> = ({
         <IconWrapper />
         <LabelWrapper />
         <ActiveIndicator />
-        
+
         {/* Hover Popover */}
-        <div 
-            className={`
+        <div
+          className={`
                 absolute z-50 px-3 py-1.5 
                 bg-gray-900 dark:bg-gray-100 
                 text-white dark:text-gray-900 
@@ -109,29 +102,33 @@ export const SidebarItem: React.FC<SidebarItemProps> = ({
                 transition-all duration-200 ease-out
                 ${isHovered ? 'opacity-100 scale-100' : 'opacity-0 scale-95'}
             `}
-            style={
-                collapsed 
-                ? { 
-                    left: '100%', 
-                    marginLeft: '12px', 
-                    top: '50%', 
-                    transform: isHovered ? 'translateY(-50%) translateX(0)' : 'translateY(-50%) translateX(-4px)' 
-                  }
-                : { 
-                    right: '12px', 
-                    top: '50%', 
-                    transform: isHovered ? 'translateY(-50%) translateX(0)' : 'translateY(-50%) translateX(4px)' 
-                  }
-            }
+          style={
+            collapsed
+              ? {
+                  left: '100%',
+                  marginLeft: '12px',
+                  top: '50%',
+                  transform: isHovered
+                    ? 'translateY(-50%) translateX(0)'
+                    : 'translateY(-50%) translateX(-4px)',
+                }
+              : {
+                  right: '12px',
+                  top: '50%',
+                  transform: isHovered
+                    ? 'translateY(-50%) translateX(0)'
+                    : 'translateY(-50%) translateX(4px)',
+                }
+          }
         >
-            Coming soon
-            {/* Arrow for collapsed tooltip */}
-            {collapsed && (
-                <div className="absolute top-1/2 -left-1 -translate-y-1/2 border-4 border-transparent border-r-gray-900 dark:border-r-gray-100"></div>
-            )}
+          Coming soon
+          {/* Arrow for collapsed tooltip */}
+          {collapsed && (
+            <div className="absolute top-1/2 -left-1 -translate-y-1/2 border-4 border-transparent border-r-gray-900 dark:border-r-gray-100"></div>
+          )}
         </div>
       </div>
-    );
+    )
   }
 
   return (
@@ -146,5 +143,5 @@ export const SidebarItem: React.FC<SidebarItemProps> = ({
       <LabelWrapper />
       <ActiveIndicator />
     </button>
-  );
-};
+  )
+}
