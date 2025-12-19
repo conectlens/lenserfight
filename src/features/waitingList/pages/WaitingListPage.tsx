@@ -1,7 +1,7 @@
+import React from 'react'
 
-import React from 'react';
-import { WaitingListSection } from '../components/WaitingListSection';
-import { SEOHead } from '../../../components/SEOHead';
+import { SEOHead } from '../../../components/SEOHead'
+import { WaitingListSection } from '../components/WaitingListSection'
 
 export const WaitingListPage: React.FC = () => {
   return (
@@ -9,5 +9,5 @@ export const WaitingListPage: React.FC = () => {
       <SEOHead type="default" overrideTitle="Join the Waitlist" />
       <WaitingListSection />
     </div>
-  );
-};
+  )
+}

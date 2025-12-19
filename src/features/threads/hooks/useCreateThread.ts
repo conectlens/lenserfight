@@ -1,60 +1,68 @@
+import { useState } from 'react'
 
-import { useState } from 'react';
-import { threadsService } from '../../../services/threadsService';
-import { useLenser } from '../../../context/LenserContext';
-import { Visibility } from '../../../types/threads.types';
+import { useLenser } from '../../../context/LenserContext'
+import { threadsService } from '../../../services/threadsService'
+import { Visibility } from '../../../types/threads.types'
 
 export const useCreateThread = () => {
-  const { lenser } = useLenser();
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const { lenser } = useLenser()
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
   const createThread = async (
-    title: string, 
-    content: string, 
+    title: string,
+    content: string,
     tags: string[],
     visibility: Visibility,
     onSuccess: (id: string) => void,
     editId?: string | null
   ) => {
     if (!lenser) {
-      setError("You must have a Lenser profile to post.");
-      return;
+      setError('You must have a Lenser profile to post.')
+      return
     }
 
-    setIsSubmitting(true);
-    setError(null);
+    setIsSubmitting(true)
+    setError(null)
 
     try {
-      let resultId: string;
+      let resultId: string
       if (editId) {
-          const updated = await threadsService.updateThread(editId, {
-              title, content, tagIds: tags, visibility, lenserId: lenser.id
-          }, lenser.id);
-          resultId = updated.id;
-      } else {
-          const created = await threadsService.createThread({
+        const updated = await threadsService.updateThread(
+          editId,
+          {
             title,
             content,
             tagIds: tags,
+            visibility,
             lenserId: lenser.id,
-            visibility
-          });
-          resultId = created.id;
+          },
+          lenser.id
+        )
+        resultId = updated.id
+      } else {
+        const created = await threadsService.createThread({
+          title,
+          content,
+          tagIds: tags,
+          lenserId: lenser.id,
+          visibility,
+        })
+        resultId = created.id
       }
-      
+
       // Mark as done before calling onSuccess
-      setIsSubmitting(false);
-      onSuccess(resultId);
+      setIsSubmitting(false)
+      onSuccess(resultId)
     } catch (err: any) {
-      setError(err.message || "Failed to save thread.");
-      setIsSubmitting(false);
+      setError(err.message || 'Failed to save thread.')
+      setIsSubmitting(false)
     }
-  };
+  }
 
   return {
     createThread,
     isSubmitting,
-    error
-  };
-};
+    error,
+  }
+}
