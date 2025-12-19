@@ -122,11 +122,7 @@ export const promptsService = {
     return mapToViewModels(filtered);
   },
 
-  copyPrompt: async (id: string, lenserId: string): Promise<void> => {
-    await reactionService.recordReaction('prompt_template', id, lenserId, 'copy');
-  },
-
-  toggleReaction: async (id: string, lenserId: string, reaction: 'like' | 'love' | 'clap' | 'saved') => {
+  toggleReaction: async (id: string, lenserId: string, reaction: 'like' | 'love' | 'clap' | 'saved' | "copy") => {
       const { added, summary } = await reactionService.toggleReaction('prompt_template', id, lenserId, reaction);
       return { added, summary };
   },
