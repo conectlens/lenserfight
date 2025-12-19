@@ -78,14 +78,7 @@ export const lenserService = {
                       original_website: true,
                       targetUrl: url
                   }
-              }, data.handle); // TODO: NOTE: createOrGetSharedLink ideally wants creatorLenserId, but usually logic uses user context ID. 
-                          // Here we use handle if repo supports it or just use it as string key. 
-                          // However, shareService.createOrGetSharedLink contract says creatorLenserId.
-                          // Since updateLenserProfile doesn't strictly need share link creation by handle unless repo updated,
-                          // we assume shareService accepts handle as valid creator key or we might skip this block if problematic.
-                          // Actually, we should ideally fetch ID from handle if we need ID for share service.
-                          // But assuming shareRepo handles strings generally or we accept risk here.
-                          // For strictly adhering to prompt: we update profile by handle.
+              }); 
               
               data.website_url = shareService.getShareUrl(link.short_id);
           } catch (error) {
