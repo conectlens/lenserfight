@@ -1,7 +1,7 @@
-import React from 'react';
+import React from 'react'
 
 interface PromptDetailContentProps {
-  content: string;
+  content: string
 }
 
 export const PromptDetailContent: React.FC<PromptDetailContentProps> = ({ content }) => {
@@ -11,5 +11,5 @@ export const PromptDetailContent: React.FC<PromptDetailContentProps> = ({ conten
         {content}
       </div>
     </div>
-  );
-};
+  )
+}

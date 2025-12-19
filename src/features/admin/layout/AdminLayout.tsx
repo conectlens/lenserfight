@@ -1,7 +1,7 @@
+import React from 'react'
+import { Outlet } from 'react-router-dom'
 
-import React from 'react';
-import { Outlet } from 'react-router-dom';
-import { AdminSidebar } from '../components/AdminSidebar';
+import { AdminSidebar } from '../components/AdminSidebar'
 
 export const AdminLayout: React.FC = () => {
   return (
@@ -9,9 +9,9 @@ export const AdminLayout: React.FC = () => {
       <AdminSidebar />
       <main className="ml-64 p-8">
         <div className="max-w-6xl mx-auto">
-            <Outlet />
+          <Outlet />
         </div>
       </main>
     </div>
-  );
-};
+  )
+}

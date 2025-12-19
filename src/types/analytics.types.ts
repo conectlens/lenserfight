@@ -1,13 +1,12 @@
-
-export type TargetType = 'page' | 'thread' | 'prompt' | 'profile' | 'tag';
+export type TargetType = 'page' | 'thread' | 'prompt' | 'profile' | 'tag'
 
 export interface LogPageViewDTO {
-  lenserId?: string | null;
-  userId?: string | null;
-  targetType: TargetType;
-  targetId?: string | null;
-  path: string;
-  referrer?: string | null;
-  userAgent: string;
-  clientIp?: string | null;
+  lenserId?: string | null
+  userId?: string | null
+  targetType: TargetType
+  targetId?: string | null
+  path: string
+  referrer?: string | null
+  userAgent: string
+  clientIp?: string | null
 }

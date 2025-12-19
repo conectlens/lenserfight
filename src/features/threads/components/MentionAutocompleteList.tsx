@@ -1,13 +1,14 @@
-import React from 'react';
-import { PromptTemplateViewModel } from '../../../types/prompts.types';
-import { Sparkles } from 'lucide-react';
+import { Sparkles } from 'lucide-react'
+import React from 'react'
+
+import { PromptTemplateViewModel } from '../../../types/prompts.types'
 
 interface MentionAutocompleteListProps {
-  suggestions: PromptTemplateViewModel[];
-  activeIndex: number;
-  onSelect: (prompt: PromptTemplateViewModel) => void;
-  position: { top: number; left: number };
-  visible: boolean;
+  suggestions: PromptTemplateViewModel[]
+  activeIndex: number
+  onSelect: (prompt: PromptTemplateViewModel) => void
+  position: { top: number; left: number }
+  visible: boolean
 }
 
 export const MentionAutocompleteList: React.FC<MentionAutocompleteListProps> = ({
@@ -15,9 +16,9 @@ export const MentionAutocompleteList: React.FC<MentionAutocompleteListProps> = (
   activeIndex,
   onSelect,
   position,
-  visible
+  visible,
 }) => {
-  if (!visible || suggestions.length === 0) return null;
+  if (!visible || suggestions.length === 0) return null
 
   return (
     <div
@@ -38,8 +39,8 @@ export const MentionAutocompleteList: React.FC<MentionAutocompleteListProps> = (
           <li
             key={prompt.id}
             onMouseDown={(e) => {
-                e.preventDefault(); // Prevent blur on input
-                onSelect(prompt);
+              e.preventDefault() // Prevent blur on input
+              onSelect(prompt)
             }}
             className={`
               px-4 py-3 cursor-pointer border-b border-gray-50 last:border-0 transition-colors
@@ -47,19 +48,21 @@ export const MentionAutocompleteList: React.FC<MentionAutocompleteListProps> = (
             `}
           >
             <div className="flex flex-col">
-              <span className={`text-sm font-medium ${index === activeIndex ? 'text-gray-900' : 'text-gray-700'}`}>
+              <span
+                className={`text-sm font-medium ${index === activeIndex ? 'text-gray-900' : 'text-gray-700'}`}
+              >
                 {prompt.title}
               </span>
               <div className="flex justify-between items-center mt-1">
-                 <span className="text-xs text-gray-400">@{prompt.author.handle}</span>
-                 <span className="text-[10px] bg-gray-100 text-gray-500 px-1.5 py-0.5 rounded-full">
-                   {prompt.usageCount} uses
-                 </span>
+                <span className="text-xs text-gray-400">@{prompt.author.handle}</span>
+                <span className="text-[10px] bg-gray-100 text-gray-500 px-1.5 py-0.5 rounded-full">
+                  {prompt.usageCount} uses
+                </span>
               </div>
             </div>
           </li>
         ))}
       </ul>
     </div>
-  );
-};
+  )
+}
