@@ -142,7 +142,10 @@ export interface LenserProfileDTO {
   handle: string // unique
   display_name: string
   avatar_url?: string | null
+  banner_url?: string | null
+
   headline?: string
+  bio?: string
 
   // Status
   status?: 'active' | 'inactive' | 'banned'
