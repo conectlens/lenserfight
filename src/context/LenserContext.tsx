@@ -1,18 +1,19 @@
 import React, { createContext, useContext, useState, useEffect } from 'react'
 
 import { lenserService } from '../services/lenserService'
+import { waitingListService } from '../services/waitingListService'
 import { Lenser, CreateLenserDTO } from '../types/lenser.types'
 import { storage } from '../utils/storage'
 
 import { useAuth } from './AuthContext'
 
 const CACHE_BASE_KEY = 'lenser_profile_cache_v1'
-const CACHE_TTL_MS = 1000 * 60 * 5 // 5 dakika: profil 5 dk boyunca "taze" kabul edilir
+const CACHE_TTL_MS = 1000 * 60 * 5
 
 interface LenserCacheEntry {
   userId: string
   profile: Lenser
-  fetchedAt: number // Date.now()
+  fetchedAt: number
 }
 
 interface LenserContextType {
@@ -20,9 +21,12 @@ interface LenserContextType {
   hasLenser: boolean
   isLoading: boolean
   error: string | null
+  isInWaitingList: boolean | null
+
   loadLenserProfile: (force?: boolean) => Promise<void>
   createLenserProfile: (data: CreateLenserDTO) => Promise<Lenser>
   updateLenserProfile: (data: Partial<Lenser>) => Promise<Lenser>
+  toggleWaitingList: (kvkkApproved: boolean) => Promise<void>
 }
 
 const LenserContext = createContext<LenserContextType | undefined>(undefined)
@@ -33,208 +37,146 @@ const readCachedProfile = (userId: string): LenserCacheEntry | null => {
   try {
     const raw = storage.getItem(getCacheKey(userId))
     if (!raw) return null
-
     const parsed = JSON.parse(raw) as LenserCacheEntry
-
-    // Kullanıcıya ait olmayan / bozuk cache'i yok say
-    if (!parsed || parsed.userId !== userId || !parsed.profile || !parsed.profile.id) {
-      return null
-    }
-
+    if (!parsed || parsed.userId !== userId || !parsed.profile?.id) return null
     return parsed
-  } catch (e) {
-    console.warn('Failed to parse lenser cache', e)
+  } catch {
     return null
   }
 }
 
 const writeCachedProfile = (userId: string, profile: Lenser) => {
   try {
-    const safeProfile: Lenser = {
-      ...profile,
-      // localStorage içeriği manipüle edilse bile user_id her zaman auth user ile eşitleniyor
-      user_id: userId,
-    }
-
-    const entry: LenserCacheEntry = {
-      userId,
-      profile: safeProfile,
-      fetchedAt: Date.now(),
-    }
-
-    storage.setItem(getCacheKey(userId), JSON.stringify(entry))
-  } catch (e) {
-    console.warn('Failed to write lenser cache', e)
-  }
+    storage.setItem(
+      getCacheKey(userId),
+      JSON.stringify({
+        userId,
+        profile: { ...profile, user_id: userId },
+        fetchedAt: Date.now(),
+      })
+    )
+  } catch { }
 }
 
-const clearCache = (userId: string | null | undefined) => {
-  try {
-    if (!userId) return
-    storage.removeItem(getCacheKey(userId))
-  } catch {
-    // ignore
-  }
+const clearCache = (userId?: string | null) => {
+  if (!userId) return
+  storage.removeItem(getCacheKey(userId))
 }
 
 export const LenserProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { user, isAuthenticated } = useAuth()
 
   const [lenser, setLenser] = useState<Lenser | null>(null)
+  const [isInWaitingList, setIsInWaitingList] = useState<boolean | null>(null)
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
   const loadLenserProfile = async (force = false): Promise<void> => {
     if (!user || !isAuthenticated) return
-
     const userId = user.id
 
-    // 1) Bellek: doğru kullanıcıya ait profil varsa ve force değilse direkt kullan
-    if (!force && lenser && lenser.handle === userId) {
-      return
-    }
+    if (!force && lenser) return
 
-    // 2) localStorage cache: TTL kontrolü ile
     const cached = readCachedProfile(userId)
-
     if (!force && cached) {
-      const age = Date.now() - cached.fetchedAt
-      const isFresh = age < CACHE_TTL_MS
-
-      // Manipülasyon riskine karşı user_id'yi Auth ile zorla
-      const safeProfile: Lenser = {
-        ...cached.profile,
-        user_id: userId,
-      }
-
-      setLenser(safeProfile)
-
-      // Cache taze ise DB'ye gitmeye gerek yok
-      if (isFresh) {
-        return
-      }
-
-      // Stale-while-revalidate:
-      // Kullanıcı hemen cache'i görür, arka planda sessizce revalidate edeceğiz
+      setLenser({ ...cached.profile, user_id: userId })
+      if (Date.now() - cached.fetchedAt < CACHE_TTL_MS) return
     }
 
-    // 3) Network: cache yoksa ya da stale ise
     setIsLoading(true)
     setError(null)
 
     try {
       const profile = await lenserService.getAuthenticatedLenser()
       if (profile) {
-        const safeProfile: Lenser = {
-          ...profile,
-          user_id: userId, // Sunucudan da gelse user_id'yi Auth'a sabitliyoruz
-        }
-
+        const safeProfile = { ...profile, user_id: userId }
         setLenser(safeProfile)
         writeCachedProfile(userId, safeProfile)
       } else {
-        // Auth var ama henüz lenser profili yok
         setLenser(null)
         clearCache(userId)
       }
     } catch (err: any) {
-      console.error('Profile load error:', err)
       setError(err.message || 'Failed to load profile')
     } finally {
       setIsLoading(false)
     }
   }
 
-  // Auth değişimlerine tepki
+  const refreshWaitingListStatus = async () => {
+    if (!isAuthenticated || !user) return
+    try {
+      const value = await waitingListService.getIsInWaitingList()
+      setIsInWaitingList(value)
+    } catch {
+      setIsInWaitingList(false)
+    }
+  }
+
   useEffect(() => {
     if (isAuthenticated && user) {
-      const userId = user.id
-      // İlk anda: blocking yapmadan cache'i oku
-      const cached = readCachedProfile(userId)
-      if (cached) {
-        const safeProfile: Lenser = {
-          ...cached.profile,
-          user_id: userId,
-        }
-        setLenser(safeProfile)
-      } else {
-        setLenser(null)
-      }
-
-      // Ardından revalidation (TTL uygunsa DB’ye dokunmadan dönebilir)
+      const cached = readCachedProfile(user.id)
+      if (cached) setLenser({ ...cached.profile, user_id: user.id })
       loadLenserProfile()
+      refreshWaitingListStatus()
     } else {
-      // Logout / unauth durumunda profil ve cache'i temizle
-      if (user?.id) {
-        clearCache(user.id)
-      }
+      clearCache(user?.id)
       setLenser(null)
-      setError(null)
+      setIsInWaitingList(null)
       setIsLoading(false)
+      setError(null)
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isAuthenticated, user?.id])
 
   const createLenserProfile = async (data: CreateLenserDTO): Promise<Lenser> => {
     if (!user) throw new Error('User not authenticated')
-
-    const userId = user.id
     setIsLoading(true)
 
     try {
-      const newProfile = await lenserService.createLenserProfile(data)
-
-      const safeProfile: Lenser = {
-        ...newProfile,
-      }
-
-      setLenser(safeProfile)
-      writeCachedProfile(userId, safeProfile)
-      return safeProfile
-    } catch (err: any) {
-      setError(err.message || 'Failed to create profile')
-      throw err
+      const profile = await lenserService.createLenserProfile(data)
+      setLenser(profile)
+      writeCachedProfile(user.id, profile)
+      await refreshWaitingListStatus()
+      return profile
     } finally {
       setIsLoading(false)
     }
   }
 
   const updateLenserProfile = async (data: Partial<Lenser>): Promise<Lenser> => {
-    if (!lenser) throw new Error('Lenser profile not found')
-    if (!user) throw new Error('User not authenticated')
+    if (!user || !lenser) throw new Error('Invalid state')
 
-    const userId = user.id
-
-    try {
-      const updated = await lenserService.updateLenserProfile(data)
-
-      const safeProfile: Lenser = {
-        ...updated,
-        user_id: userId,
-      }
-
-      setLenser(safeProfile)
-      writeCachedProfile(userId, safeProfile)
-
-      return safeProfile
-    } catch (err: any) {
-      setError(err.message || 'Failed to update profile')
-      throw err
-    }
+    const updated = await lenserService.updateLenserProfile(data)
+    const safe = { ...updated, user_id: user.id }
+    setLenser(safe)
+    writeCachedProfile(user.id, safe)
+    return safe
   }
 
-  const hasLenser = !!lenser
+  const toggleWaitingList = async (kvkkApproved: boolean) => {
+    await waitingListService.toggleWaitingList(kvkkApproved)
+    setIsInWaitingList(true)
+
+    if (lenser && user) {
+      const updated = { ...lenser, is_in_waiting_list: true }
+      setLenser(updated)
+      writeCachedProfile(user.id, updated)
+    }
+  }
 
   return (
     <LenserContext.Provider
       value={{
         lenser,
-        hasLenser,
+        hasLenser: !!lenser,
         isLoading,
         error,
+        isInWaitingList,
         loadLenserProfile,
         createLenserProfile,
         updateLenserProfile,
+        toggleWaitingList,
       }}
     >
       {children}
@@ -243,7 +185,7 @@ export const LenserProvider: React.FC<{ children: React.ReactNode }> = ({ childr
 }
 
 export const useLenser = () => {
-  const context = useContext(LenserContext)
-  if (!context) throw new Error('useLenser must be used within LenserProvider')
-  return context
+  const ctx = useContext(LenserContext)
+  if (!ctx) throw new Error('useLenser must be used within LenserProvider')
+  return ctx
 }
