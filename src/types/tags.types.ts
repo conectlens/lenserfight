@@ -16,13 +16,21 @@ export interface TagDTO {
   visibility: TagVisibility
 }
 
+export type TagInput =
+  | string
+  | {
+      id?: string
+      name?: string
+      slug?: string
+    }
+
 export interface TagUsage extends TagRecord {
   count: number // Total global uses
   trendingScore: number // Calculated score from activity
   weight?: number // Normalized value (1-10) for UI scaling
 }
 
-export type ContentType = 'thread' | 'prompt' | 'challenge' | 'ai_generation' | 'all'
+export type ContentType = 'thread' | 'prompt_template'
 export type SortOption = 'newest' | 'popular' | 'trending'
 
 export interface TaggedContentItem {

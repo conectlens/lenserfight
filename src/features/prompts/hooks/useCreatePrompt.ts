@@ -3,6 +3,7 @@ import { useState } from 'react'
 import { useLenser } from '../../../context/LenserContext'
 import { promptsService } from '../../../services/promptsService'
 import { CreatePromptDTO, VisibilityEnum } from '../../../types/prompts.types'
+import { TagDTO } from '../../../types/tags.types'
 
 export const useCreatePrompt = () => {
   const { lenser } = useLenser()
@@ -14,7 +15,7 @@ export const useCreatePrompt = () => {
   // Form State
   const [title, setTitle] = useState('')
   const [content, setContent] = useState('')
-  const [tags, setTags] = useState<string[]>([])
+  const [tags, setTags] = useState<TagDTO[]>([])
   const [visibility, setVisibility] = useState<VisibilityEnum>('private')
 
   const openModal = (initialData?: any) => {
@@ -22,7 +23,7 @@ export const useCreatePrompt = () => {
       setEditId(initialData.id)
       setTitle(initialData.title)
       setContent(initialData.content || '') // In real app, might need to fetch full content if list item is partial
-      setTags(initialData.tags?.map((t: any) => t.name) || [])
+      setTags(initialData.tags || [])
       setVisibility(initialData.visibility || 'public')
     } else {
       resetForm()
@@ -56,7 +57,7 @@ export const useCreatePrompt = () => {
     const dto: Partial<CreatePromptDTO> = {
       title,
       content,
-      tagIds: tags,
+      tagIds: tags.map((tag) => tag.slug || tag.name),
       visibility,
       lenserId: lenser.id,
       description: null,

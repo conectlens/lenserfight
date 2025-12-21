@@ -44,7 +44,7 @@ export const TagContentGrid: React.FC<TagContentGridProps> = ({ items, loading }
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 animate-in fade-in duration-500">
       {items.map((item) => {
-        if (item.type === 'prompt') {
+        if (item.type === 'prompt_template') {
           const promptVM = item.data as PromptTemplateViewModel
           return (
             <div key={item.id} className="h-full">

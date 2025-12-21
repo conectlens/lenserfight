@@ -7,7 +7,7 @@ import {
 } from '../../../types/tags.types'
 
 export class PromptTagProvider implements TagContentProvider {
-  type: ContentType = 'prompt'
+  type: ContentType = 'prompt_template'
   label = 'Prompts'
 
   async listByTag(
@@ -28,7 +28,7 @@ export class PromptTagProvider implements TagContentProvider {
 
     return sorted.map((p) => ({
       id: p.id,
-      type: 'prompt',
+      type: 'prompt_template',
       title: p.title,
       description: p.description || undefined,
       createdAt: p.createdAt,

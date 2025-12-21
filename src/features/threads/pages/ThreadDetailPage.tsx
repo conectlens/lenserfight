@@ -201,7 +201,7 @@ export const ThreadDetailPage: React.FC = () => {
             id: thread.id,
             title: thread.title,
             content: thread.content,
-            tags: thread.tags.map((t) => t.name),
+            tags: thread.tags,
             visibility: 'public',
           }}
         />

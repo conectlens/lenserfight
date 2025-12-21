@@ -7,6 +7,7 @@ import { Modal } from '../../../components/Modal'
 import { SelectField } from '../../../components/SelectField'
 import { useFormValidation } from '../../../hooks/useFormValidation'
 import { VisibilityEnum } from '../../../types/prompts.types'
+import { TagDTO } from '../../../types/tags.types'
 import { isRequired, minLength } from '../../../utils/validation'
 
 import { PromptTagInput } from './PromptTagInput'
@@ -20,8 +21,8 @@ interface CreatePromptModalProps {
     setTitle: (v: string) => void
     content: string
     setContent: (v: string) => void
-    tags: string[]
-    setTags: (v: string[]) => void
+    tags: TagDTO[]
+    setTags: (v: TagDTO[]) => void
     visibility: VisibilityEnum
     setVisibility: (v: VisibilityEnum) => void
   }

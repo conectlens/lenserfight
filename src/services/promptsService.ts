@@ -184,7 +184,7 @@ export const promptsService = {
       .recordBatchActivity(
         realTagIds.map((tagId) => ({
           tag_id: tagId,
-          entity_type: 'prompt',
+          entity_type: 'prompt_template',
           entity_id: prompt.id,
           activity_type: 'created',
           actor_id: input.lenserId,

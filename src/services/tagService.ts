@@ -1,7 +1,7 @@
 import { getTagRepository } from '../adapters/tagAdapter'
 import { TagDomainError } from '../domain/tags/TagErrors'
 import { TagValidator } from '../domain/tags/TagValidator'
-import { TagUsage, TagDTO } from '../types/tags.types'
+import { TagUsage, TagDTO, TagInput } from '../types/tags.types'
 
 const tagRepo = getTagRepository()
 
@@ -19,32 +19,36 @@ export const tagService = {
    * The Main Entry Point for User Input.
    * Orchestrates Validation, Normalization, and Persistence.
    */
-  processUserInput: async (rawInput: string): Promise<TagDTO> => {
+  processUserInput: async (rawInput: TagInput): Promise<TagDTO> => {
     // 1. Normalization
-    const name = TagValidator.normalizeName(rawInput)
-    const slug = TagValidator.generateSlug(name)
+    const normalizedName = TagValidator.normalizeName(
+      typeof rawInput === 'string' ? rawInput : rawInput.name || rawInput.slug || ''
+    )
+    const normalizedSlug = TagValidator.generateSlug(
+      typeof rawInput === 'string' ? rawInput : rawInput.slug || normalizedName
+    )
 
     // 2. Validation
-    TagValidator.validateDisplayName(name)
-    TagValidator.validateSlug(slug)
+    TagValidator.validateDisplayName(normalizedName)
+    TagValidator.validateSlug(normalizedSlug)
 
     // 3. Domain Logic: Find or Create
     // Check if tag exists
-    const existingTag = await tagRepo.findBySlug(slug)
+    const existingTag = await tagRepo.findBySlug(normalizedSlug)
     if (existingTag) {
       return existingTag
     }
 
     // Create new tag
     try {
-      const newTag = await tagRepo.createTag(name, slug)
+      const newTag = await tagRepo.createTag(normalizedName, normalizedSlug)
       // Invalidate cache on creation to ensure cloud is up to date
       globalTagCache = null
       return newTag
     } catch (e: any) {
       // Race condition handling: If DB constraints catch a duplicate slug that we missed
       if (e.message?.includes('duplicate key') || e.code === '23505') {
-        const retry = await tagRepo.findBySlug(slug)
+        const retry = await tagRepo.findBySlug(normalizedSlug)
         if (retry) return retry
       }
       throw new TagDomainError(`Failed to create tag: ${e.message}`)
@@ -54,18 +58,25 @@ export const tagService = {
   /**
    * Bulk process function for multiple tags (e.g. from a post creation form)
    */
-  processBatchInput: async (rawInputs: string[]): Promise<TagDTO[]> => {
+  processBatchInput: async (rawInputs: TagInput[]): Promise<TagDTO[]> => {
     if (!rawInputs.length) return []
 
-    const uniqueInputs = Array.from(new Set(rawInputs.filter((i) => !!i?.trim())))
+    const uniqueInputs = rawInputs
+      .map((input) =>
+        typeof input === 'string'
+          ? TagValidator.generateSlug(TagValidator.normalizeName(input))
+          : TagValidator.generateSlug(input.slug || input.name || '')
+      )
+      .filter(Boolean)
+    const distinctSlugs = Array.from(new Set(uniqueInputs))
     const results: TagDTO[] = []
 
-    for (const input of uniqueInputs) {
+    for (const slug of distinctSlugs) {
       try {
-        const tag = await tagService.processUserInput(input)
+        const tag = await tagService.processUserInput({ slug })
         results.push(tag)
       } catch (e) {
-        console.warn(`Skipping invalid tag "${input}":`, e)
+        console.warn(`Skipping invalid tag slug "${slug}":`, e)
         // We skip invalid tags in batch rather than failing the whole batch
       }
     }

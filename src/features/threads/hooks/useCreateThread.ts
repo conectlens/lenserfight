@@ -2,6 +2,7 @@ import { useState } from 'react'
 
 import { useLenser } from '../../../context/LenserContext'
 import { threadsService } from '../../../services/threadsService'
+import { TagDTO } from '../../../types/tags.types'
 import { Visibility } from '../../../types/threads.types'
 
 export const useCreateThread = () => {
@@ -12,7 +13,7 @@ export const useCreateThread = () => {
   const createThread = async (
     title: string,
     content: string,
-    tags: string[],
+    tags: TagDTO[],
     visibility: Visibility,
     onSuccess: (id: string) => void,
     editId?: string | null
@@ -33,7 +34,7 @@ export const useCreateThread = () => {
           {
             title,
             content,
-            tagIds: tags,
+            tagIds: tags.map((tag) => tag.slug || tag.name),
             visibility,
             lenserId: lenser.id,
           },
@@ -44,7 +45,7 @@ export const useCreateThread = () => {
         const created = await threadsService.createThread({
           title,
           content,
-          tagIds: tags,
+          tagIds: tags.map((tag) => tag.slug || tag.name),
           lenserId: lenser.id,
           visibility,
         })

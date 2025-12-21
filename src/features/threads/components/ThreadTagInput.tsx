@@ -2,10 +2,11 @@ import { X } from 'lucide-react'
 import React, { useState, KeyboardEvent } from 'react'
 
 import { tagService } from '../../../services/tagService'
+import { TagDTO } from '../../../types/tags.types'
 
 interface ThreadTagInputProps {
-  tags: string[] // These are names
-  onChange: (tags: string[]) => void
+  tags: TagDTO[]
+  onChange: (tags: TagDTO[]) => void
 }
 
 export const ThreadTagInput: React.FC<ThreadTagInputProps> = ({ tags, onChange }) => {
@@ -30,8 +31,8 @@ export const ThreadTagInput: React.FC<ThreadTagInputProps> = ({ tags, onChange }
         // Assuming we want to ensure the tag is valid and gets its canonical display name:
 
         const normalizedTag = await tagService.processUserInput(input)
-        if (!tags.includes(normalizedTag.name)) {
-          onChange([...tags, normalizedTag.name])
+        if (!tags.find((tag) => tag.slug === normalizedTag.slug)) {
+          onChange([...tags, normalizedTag])
         }
         setInput('')
       } catch (err) {
@@ -45,8 +46,8 @@ export const ThreadTagInput: React.FC<ThreadTagInputProps> = ({ tags, onChange }
     }
   }
 
-  const removeTag = (tagToRemove: string) => {
-    onChange(tags.filter((tag) => tag !== tagToRemove))
+  const removeTag = (tagToRemove: TagDTO) => {
+    onChange(tags.filter((tag) => tag.slug !== tagToRemove.slug))
   }
 
   return (
@@ -57,10 +58,10 @@ export const ThreadTagInput: React.FC<ThreadTagInputProps> = ({ tags, onChange }
       >
         {tags.map((tag) => (
           <span
-            key={tag}
+            key={tag.slug}
             className="flex items-center gap-1 px-3 py-1 bg-[#F3F4F6] dark:bg-gray-700 text-gray-800 dark:text-gray-200 rounded-full text-sm font-medium"
           >
-            {tag}
+            {tag.name}
             <button
               type="button"
               onClick={() => removeTag(tag)}

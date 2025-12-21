@@ -2,10 +2,11 @@ import { X, Plus } from 'lucide-react'
 import React, { useState, KeyboardEvent } from 'react'
 
 import { tagService } from '../../../services/tagService'
+import { TagDTO } from '../../../types/tags.types'
 
 interface PromptTagInputProps {
-  tags: string[]
-  onChange: (tags: string[]) => void
+  tags: TagDTO[]
+  onChange: (tags: TagDTO[]) => void
 }
 
 export const PromptTagInput: React.FC<PromptTagInputProps> = ({ tags, onChange }) => {
@@ -18,8 +19,8 @@ export const PromptTagInput: React.FC<PromptTagInputProps> = ({ tags, onChange }
       setLoading(true)
       try {
         const validTag = await tagService.processUserInput(input)
-        if (!tags.includes(validTag.name)) {
-          onChange([...tags, validTag.name])
+        if (!tags.find((tag) => tag.slug === validTag.slug)) {
+          onChange([...tags, validTag])
         }
         setInput('')
       } catch (error) {
@@ -32,8 +33,8 @@ export const PromptTagInput: React.FC<PromptTagInputProps> = ({ tags, onChange }
     }
   }
 
-  const removeTag = (tagToRemove: string) => {
-    onChange(tags.filter((tag) => tag !== tagToRemove))
+  const removeTag = (tagToRemove: TagDTO) => {
+    onChange(tags.filter((tag) => tag.slug !== tagToRemove.slug))
   }
 
   return (
@@ -46,10 +47,10 @@ export const PromptTagInput: React.FC<PromptTagInputProps> = ({ tags, onChange }
       >
         {tags.map((tag) => (
           <span
-            key={tag}
+            key={tag.slug}
             className="flex items-center gap-1 pl-3 pr-2 py-1 bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-gray-700 dark:text-gray-200 rounded-full text-sm font-medium shadow-sm"
           >
-            {tag}
+            {tag.name}
             <button
               type="button"
               onClick={() => removeTag(tag)}

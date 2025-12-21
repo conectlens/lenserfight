@@ -62,14 +62,14 @@ export const usePromptDetailController = (promptId?: string) => {
     if (loggedPromptViews.has(promptId)) return
     loggedPromptViews.add(promptId)
 
-    analyticsService.trackView('prompt', promptId, {
+    analyticsService.trackView('prompt_template', promptId, {
       userId: user?.id,
       lenserId: lenser?.id,
     })
 
     const tagIds = data.prompt.tags.map((t) => t.id)
     if (tagIds.length > 0) {
-      tagActivityService.recordBatchView(tagIds, 'prompt', promptId, lenser?.id)
+      tagActivityService.recordBatchView(tagIds, 'prompt_template', promptId, lenser?.id)
     }
   }, [data?.prompt, promptId, lenser?.id, user?.id])
 

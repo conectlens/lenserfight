@@ -299,7 +299,7 @@ export class SupabaseThreadsRepository implements ThreadsRepositoryPort {
       p_title: dto.title,
       p_content: dto.content,
       p_visibility: dto.visibility,
-      p_tag_ids: dto.tagIds && dto.tagIds.length > 0 ? dto.tagIds : null,
+      p_tag_ids: dto.tagIds ?? null,
     })
 
     if (error) this.handleError(error)
@@ -475,13 +475,13 @@ export class SupabaseThreadsRepository implements ThreadsRepositoryPort {
    * Only the owner can update (enforced in fn_content_update_thread).
    */
   async updateThread(id: string, dto: Partial<CreateThreadDTO>): Promise<ThreadRecord> {
-    const { error } = await supabase.rpc('fn_content_update_thread', {
-      p_thread_id: id,
-      p_title: dto.title ?? null,
-      p_content: dto.content ?? null,
-      p_visibility: dto.visibility ?? null,
-      p_tag_ids: dto.tagIds && dto.tagIds.length > 0 ? dto.tagIds : null,
-    })
+      const { error } = await supabase.rpc('fn_content_update_thread', {
+        p_thread_id: id,
+        p_title: dto.title ?? null,
+        p_content: dto.content ?? null,
+        p_visibility: dto.visibility ?? null,
+        p_tag_ids: dto.tagIds ?? null,
+      })
 
     if (error) this.handleError(error)
 

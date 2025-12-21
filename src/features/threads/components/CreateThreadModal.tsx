@@ -8,6 +8,7 @@ import { RichMentionInput, RichMentionInputHandle } from '../../../components/Ri
 import { SelectField } from '../../../components/SelectField'
 import { promptsService } from '../../../services/promptsService'
 import { PromptTemplateViewModel } from '../../../types/prompts.types'
+import { TagDTO } from '../../../types/tags.types'
 import { Visibility } from '../../../types/threads.types'
 import { useCreateThread } from '../hooks/useCreateThread'
 
@@ -22,7 +23,7 @@ interface CreateThreadModalProps {
     id: string
     title: string
     content: string
-    tags: string[]
+    tags: TagDTO[]
     visibility: Visibility
   } | null
 }
@@ -36,7 +37,7 @@ export const CreateThreadModal: React.FC<CreateThreadModalProps> = ({
   const { createThread, isSubmitting, error } = useCreateThread()
   const [title, setTitle] = useState('')
   const [content, setContent] = useState('')
-  const [tags, setTags] = useState<string[]>([])
+  const [tags, setTags] = useState<TagDTO[]>([])
   const [visibility, setVisibility] = useState<Visibility>('public')
 
   const editorRef = useRef<RichMentionInputHandle>(null)
