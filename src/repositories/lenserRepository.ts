@@ -442,7 +442,6 @@ export class SupabaseLenserRepository implements LenserRepositoryPort {
       headline: data.headline,
       bio: data.bio,
       join_order: data.join_order,
-      visibility: data.visibility,
       total_xp: data.total_xp,
       current_level: data.current_level,
       badges: data.badges,
