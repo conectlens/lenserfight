@@ -48,7 +48,7 @@ export interface AIModel {
 export interface AIGeneration {
   id: string
   lenser_id: string
-  ai_model_id: string // references ai_models(id)
+  ai_model_slug: string // references ai_models(id)
   prompt_template_id: string
   media_id: string
   media?: MediaLibraryItem // Joined data
@@ -62,7 +62,7 @@ export interface AIGeneration {
 export interface CreateGenerationDTO {
   prompt_template_id: string
   lenser_id: string
-  ai_model_id: string
+  ai_model_slug: string
   media: Omit<MediaLibraryItem, 'id' | 'created_at'>
   input_text?: string
   visibility?: 'public' | 'private'
