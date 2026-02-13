@@ -20,7 +20,7 @@ export const GenerationPreviewModal: React.FC<GenerationPreviewModalProps> = ({
   if (!generation || !generation.media) return null
 
   const { media } = generation
-  const modelLabel = models.find((m) => m.id === generation.ai_model_id)?.name || 'Unknown Model'
+  const modelLabel = models.find((m) => m.id === generation.ai_model_slug)?.name || 'Unknown Model'
 
   if (!isOpen) return null
 
