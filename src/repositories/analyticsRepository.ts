@@ -5,15 +5,6 @@ export interface AnalyticsRepositoryPort {
   logPageView(dto: LogPageViewDTO): Promise<void>
 }
 
-export class MockAnalyticsRepository implements AnalyticsRepositoryPort {
-  async logPageView(dto: LogPageViewDTO): Promise<void> {
-    // Simulate network delay
-    // await new Promise(resolve => setTimeout(resolve, 100));
-    console.groupCollapsed(`[Mock Analytics] Page View: ${dto.targetType} @ ${dto.path}`)
-    console.log('Payload:', dto)
-    console.groupEnd()
-  }
-}
 
 export class SupabaseAnalyticsRepository implements AnalyticsRepositoryPort {
   async logPageView(dto: LogPageViewDTO): Promise<void> {

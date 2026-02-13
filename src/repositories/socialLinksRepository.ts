@@ -1,5 +1,4 @@
 import { SocialLink, SocialPlatform } from '../types/lenser.types'
-import { storage } from '../utils/storage'
 import { supabase } from '../utils/supabase'
 
 export interface SocialLinksRepositoryPort {
@@ -23,83 +22,6 @@ export interface SocialLinksRepositoryPort {
     handle: string,
     links: (Omit<SocialLink, 'id' | 'lenser_id' | 'created_at'> & { id?: string })[]
   ): Promise<SocialLink[]>
-}
-
-/* ------------------------------------------------------------------ */
-/* MOCK IMPLEMENTATION (localStorage)                                 */
-/* ------------------------------------------------------------------ */
-
-export class MockSocialLinksRepository implements SocialLinksRepositoryPort {
-  private STORAGE_KEY = 'mock_social_links'
-  private LENSERS_INDEX_KEY = 'mock_lensers_index'
-
-  private getAll(): SocialLink[] {
-    return JSON.parse(storage.getItem(this.STORAGE_KEY) || '[]')
-  }
-
-  private saveAll(links: SocialLink[]) {
-    storage.setItem(this.STORAGE_KEY, JSON.stringify(links))
-  }
-
-  private async getLenserIdByHandle(handle: string): Promise<string | null> {
-    const indexJson = storage.getItem(this.LENSERS_INDEX_KEY)
-    const index = indexJson ? JSON.parse(indexJson) : []
-
-    const mockIdMap: Record<string, string> = {
-      'cassian.lens': 'lenser-1',
-      sarah_ai: 'lenser-2',
-      neo_one: 'lenser-3',
-      trinity_matrix: 'lenser-4',
-    }
-
-    let lenserId = mockIdMap[handle]
-    if (!lenserId) {
-      const found = index.find((l: any) => l.handle === handle)
-      if (found) lenserId = found.id
-    }
-    return lenserId || null
-  }
-
-  async getLinks(handle: string): Promise<SocialLink[]> {
-    await new Promise((resolve) => setTimeout(resolve, 300))
-    const lenserId = await this.getLenserIdByHandle(handle)
-    if (!lenserId) return []
-    return this.getAll().filter((l) => l.lenser_id === lenserId)
-  }
-
-  async getLinksByHandle(handle: string): Promise<SocialLink[]> {
-    // For mock we reuse the same logic; in real impl this is public-only.
-    return this.getLinks(handle)
-  }
-
-  async syncLinks(
-    handle: string,
-    links: (Omit<SocialLink, 'id' | 'lenser_id' | 'created_at'> & { id?: string })[]
-  ): Promise<SocialLink[]> {
-    await new Promise((resolve) => setTimeout(resolve, 500))
-
-    const lenserId = await this.getLenserIdByHandle(handle)
-    if (!lenserId) throw new Error('Lenser not found')
-
-    let allLinks = this.getAll()
-    // Remove existing links for this user
-    allLinks = allLinks.filter((l) => l.lenser_id !== lenserId)
-
-    // Create new records
-    const newLinks: SocialLink[] = links.map((l) => ({
-      id: l.id && l.id.length > 10 ? l.id : `link-${Date.now()}-${Math.random()}`,
-      lenser_id: lenserId,
-      platform: l.platform,
-      url: l.url,
-      label: l.label,
-      created_at: new Date().toISOString(),
-    }))
-
-    allLinks.push(...newLinks)
-    this.saveAll(allLinks)
-
-    return newLinks
-  }
 }
 
 /* ------------------------------------------------------------------ */

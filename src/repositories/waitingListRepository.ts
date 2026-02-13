@@ -7,30 +7,6 @@ export interface WaitingListRepositoryPort {
 
 /**
  * ============================
- * Mock Implementation
- * ============================
- * Used in dev / tests / storybook
- */
-export class MockWaitingListRepository
-  implements WaitingListRepositoryPort {
-  private isInWaitingList = false
-
-  async getIsInWaitingList(): Promise<boolean> {
-    return this.isInWaitingList
-  }
-
-  async toggleWaitingList(kvkkApproved: boolean): Promise<boolean> {
-    if (!kvkkApproved) {
-      throw new Error('KVKK approval is required.')
-    }
-
-    this.isInWaitingList = true
-    return true
-  }
-}
-
-/**
- * ============================
  * Supabase Implementation
  * ============================
  * Information Expert
