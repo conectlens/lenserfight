@@ -37,7 +37,7 @@ export const CreateGenerationModal: React.FC<CreateGenerationModalProps> = ({
   existingUrls = [],
 }) => {
   const { lenser } = useLenser()
-  const [modelId, setModelId] = useState('')
+  const [aiModelSlug, setAIModelSlug] = useState('')
   const [chatUrl, setChatUrl] = useState('')
   const [resultType, setResultType] = useState<MediaKind>('text')
   const [content, setContent] = useState('') // Text body or URL
@@ -51,7 +51,7 @@ export const CreateGenerationModal: React.FC<CreateGenerationModalProps> = ({
   useEffect(() => {
     if (isOpen) {
       // Reset form
-      setModelId('')
+      setAIModelSlug('')
       setChatUrl('')
       setResultType('text')
       setContent('')
@@ -77,7 +77,7 @@ export const CreateGenerationModal: React.FC<CreateGenerationModalProps> = ({
     e.preventDefault()
     if (!lenser) return
 
-    if (!modelId) {
+    if (!aiModelSlug) {
       setError('Please select an AI Model.')
       return
     }
@@ -117,7 +117,7 @@ export const CreateGenerationModal: React.FC<CreateGenerationModalProps> = ({
       const dto: CreateGenerationDTO = {
         lenser_id: lenser.id,
         prompt_template_id: promptId,
-        ai_model_id: modelId,
+        ai_model_slug: aiModelSlug,
         visibility: 'public',
         input_text: resultType === 'text' ? content : undefined, // Store text result here
         original_chat_url: chatUrl || null,
@@ -156,8 +156,8 @@ export const CreateGenerationModal: React.FC<CreateGenerationModalProps> = ({
         <div className="space-y-4">
           <SelectField
             label="AI Model"
-            value={modelId}
-            onChange={setModelId}
+            value={aiModelSlug}
+            onChange={setAIModelSlug}
             options={availableModels.map((m) => ({ value: m.slug, label: m.name }))}
             placeholder={isLoadingModels ? 'Loading models...' : 'Select Model (e.g. Midjourney)'}
             required
@@ -191,11 +191,10 @@ export const CreateGenerationModal: React.FC<CreateGenerationModalProps> = ({
                   setContent('')
                   setError(null)
                 }}
-                className={`flex-1 flex items-center justify-center gap-2 py-2 rounded-lg text-sm font-medium transition-all ${
-                  resultType === type.value
+                className={`flex-1 flex items-center justify-center gap-2 py-2 rounded-lg text-sm font-medium transition-all ${resultType === type.value
                     ? 'bg-white dark:bg-gray-700 text-gray-900 dark:text-white shadow-sm ring-1 ring-gray-200 dark:ring-gray-600'
                     : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'
-                }`}
+                  }`}
               >
                 <type.icon size={16} />
                 {type.label}

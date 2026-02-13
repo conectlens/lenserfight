@@ -29,7 +29,7 @@ export const PublicLayout: React.FC<PublicLayoutProps> = ({ children }) => {
             <Link to="/" className="flex items-center gap-2.5 group">
               <div className="w-9 h-9 flex items-center justify-center transition-transform group-hover:scale-105">
                 <img
-                  src="https://cdn.lenserfight.conectlens.com/brand/lenserfight-logo.png"
+                  src="https://cdn.lenserfight.com/brand/lenserfight-logo.png"
                   alt="LenserFight"
                   className="w-full h-full object-contain"
                 />

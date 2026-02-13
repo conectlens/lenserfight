@@ -157,7 +157,7 @@ export class MockAuthRepository implements AuthRepositoryPort {
   }
 
   onAuthStateChange(callback: AuthStateChangeCallback): () => void {
-    return () => {}
+    return () => { }
   }
 }
 
@@ -222,7 +222,7 @@ export class SupabaseAuthRepository implements AuthRepositoryPort {
 
   async requestPasswordReset(email: string, captchaToken?: string): Promise<void> {
     const { error } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: `${window.location.origin}/#/reset-password`,
+      redirectTo: `${window.location.origin}//reset-password`,
       captchaToken,
     })
     if (error) throw error
@@ -236,7 +236,7 @@ export class SupabaseAuthRepository implements AuthRepositoryPort {
   async signInWithOAuth(provider: 'google' | 'github' | 'azure'): Promise<void> {
     const { error } = await supabase.auth.signInWithOAuth({
       provider: provider,
-      options: { redirectTo: `${window.location.origin}/#/app` },
+      options: { redirectTo: `${window.location.origin}//app` },
     })
     if (error) throw error
   }
