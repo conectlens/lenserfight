@@ -16,7 +16,7 @@ export const AuthCard: React.FC<{
           <div className="relative mb-6">
             <div className="h-24 w-24 flex items-center justify-center bg-white dark:bg-gray-800 rounded-3xl shadow-sm border border-gray-100 dark:border-gray-700 p-4 transition-colors">
               <img
-                src="https://cdn.lenserfight.conectlens.com/brand/lenserfight-logo.png"
+                src="https://cdn.lenserfight.com/brand/lenserfight-logo.png"
                 alt="LenserFight Logo"
                 className="w-full h-full object-contain"
               />

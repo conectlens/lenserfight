@@ -438,11 +438,8 @@ export class SupabaseLenserRepository implements LenserRepositoryPort {
       handle: data.handle,
       display_name: data.display_name,
       avatar_url: data.avatar_url,
-      banner_url: data.banner_url,
       headline: data.headline,
-      bio: data.bio,
       join_order: data.join_order,
-      visibility: data.visibility,
       total_xp: data.total_xp,
       current_level: data.current_level,
       badges: data.badges,
@@ -516,10 +513,6 @@ export class SupabaseLenserRepository implements LenserRepositoryPort {
       .eq('handle', handle)
       .order('created_at', { ascending: false })
       .range(offset, offset + limit - 1)
-
-    // if (viewerId !== lenserId) {
-    //     query = query.eq('visibility', 'public');
-    // }
 
     const { data, error } = await query
     if (error) throw error

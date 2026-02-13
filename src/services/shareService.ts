@@ -10,7 +10,7 @@ export const shareService = {
 
   /**
    * Generates a full URL for the short link.
-   * In Mock mode, it uses window.location.origin + /#/s/ + shortId.
+   * In Mock mode, it uses window.location.origin + //s/ + shortId.
    * In Prod, it would be https://lenserfight.com/s/ + shortId.
    */
   getShareUrl: (shortId: string): string => {
@@ -19,7 +19,7 @@ export const shareService = {
     const isHashRouter = window.location.hash.includes('#')
 
     if (isHashRouter) {
-      return `${origin}/#/s/${shortId}`
+      return `${origin}//s/${shortId}`
     }
     // Production Edge Function URL assumption
     return `${origin}/s/${shortId}`
