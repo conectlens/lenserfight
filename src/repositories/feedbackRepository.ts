@@ -1,5 +1,4 @@
 import { Feedback, SubmitFeedbackDTO } from '../types/feedback.types'
-import { storage } from '../utils/storage'
 import { supabase } from '../utils/supabase'
 
 // --- Port (Interface) ---
@@ -7,55 +6,6 @@ export interface FeedbackRepositoryPort {
   submitFeedback(dto: SubmitFeedbackDTO): Promise<void>
   getUserFeedbacks(offset?: number, limit?: number): Promise<{ data: Feedback[]; count: number }>
 }
-
-// --- Mock Implementation ---
-export class MockFeedbackRepository implements FeedbackRepositoryPort {
-  private STORAGE_KEY = 'mock_feedback_db'
-
-  async submitFeedback(dto: SubmitFeedbackDTO): Promise<void> {
-    await new Promise((resolve) => setTimeout(resolve, 800)) // Simulate network
-
-    const newFeedback: Feedback = {
-      id: `feedback-${Date.now()}`,
-      product_tag: dto.product_tag || 'general',
-      page: dto.page || null,
-      user_id: dto.user_id || null,
-      message: dto.message || null,
-      start_date: dto.start_date || null,
-      end_date: dto.end_date || null,
-      status: 'pending',
-      created_at: new Date().toISOString(),
-    }
-
-    const existingJson = storage.getItem(this.STORAGE_KEY)
-    const existing = existingJson ? JSON.parse(existingJson) : []
-    existing.push(newFeedback)
-    storage.setItem(this.STORAGE_KEY, JSON.stringify(existing))
-
-    console.group('Mock Feedback Submitted')
-    console.log('Data:', newFeedback)
-    console.groupEnd()
-  }
-
-  async getUserFeedbacks(offset = 0, limit = 5): Promise<{ data: Feedback[]; count: number }> {
-    await new Promise((resolve) => setTimeout(resolve, 600))
-    const all = JSON.parse(storage.getItem(this.STORAGE_KEY) || '[]')
-    const userFeedbacks = all.filter((f: Feedback) => f.user_id === 'userId')
-
-    // Sort descending by created_at
-    userFeedbacks.sort(
-      (a: Feedback, b: Feedback) =>
-        new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
-    )
-
-    return {
-      data: userFeedbacks.slice(offset, offset + limit),
-      count: userFeedbacks.length,
-    }
-  }
-}
-
-// --- Supabase Implementation ---
 export class SupabaseFeedbackRepository implements FeedbackRepositoryPort {
   async submitFeedback(dto: SubmitFeedbackDTO) {
     const { data, error } = await supabase.rpc('fn_public_submit_feedback', {
