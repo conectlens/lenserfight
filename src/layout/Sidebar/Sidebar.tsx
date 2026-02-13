@@ -183,7 +183,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
               className={`w-10 h-10 flex items-center justify-center flex-shrink-0 transition-transform group-hover:scale-105`}
             >
               <img
-                src="https://cdn.lenserfight.conectlens.com/brand/lenserfight-logo.png"
+                src="https://cdn.lenserfight.com/brand/lenserfight-logo.png"
                 alt="LenserFight Logo"
                 className="w-full h-full object-contain"
               />

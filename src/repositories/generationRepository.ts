@@ -165,7 +165,7 @@ export class MockGenerationRepository implements GenerationRepositoryPort {
     }
 
     if (aiModelSlug !== 'all') {
-      joined = joined.filter((g) => g.ai_model_id === aiModelSlug)
+      joined = joined.filter((g) => g.ai_model_slug === aiModelSlug)
     }
 
     // Sort by Date Desc
@@ -194,7 +194,7 @@ export class MockGenerationRepository implements GenerationRepositoryPort {
     const newGen: AIGeneration = {
       id: `gen-${Date.now()}`,
       lenser_id: dto.lenser_id,
-      ai_model_id: dto.ai_model_id,
+      ai_model_slug: dto.ai_model_slug,
       prompt_template_id: dto.prompt_template_id,
       media_id: mediaId,
       media: newMedia,
@@ -238,51 +238,40 @@ export class SupabaseGenerationRepository implements GenerationRepositoryPort {
     lenserId: string,
     options: GenerationFilterOptions = {}
   ): Promise<AIGeneration[]> {
-    const { limit = 20, offset = 0, mediaKind = 'all', aiModelSlug = 'all' } = options
+    const {
+      limit = 20,
+      offset = 0,
+      mediaKind = 'all',
+      aiModelSlug = 'all',
+    } = options
 
-    let query = supabase
-      .from('ai_generations')
-      .select(
-        `
-            *,
-            media:media_library(*)
-        `
-      )
-      .eq('prompt_template_id', promptId)
-      .order('created_at', { ascending: false })
-      .range(offset, offset + limit - 1)
+    const { data, error } = await supabase.rpc(
+      'fn_ai_get_generations_for_prompt',
+      {
+        p_prompt_template_id: promptId,
+        p_lenser_id: lenserId,
+        p_limit: limit,
+        p_offset: offset,
+        p_media_kind: mediaKind === 'all' ? null : mediaKind,
+        p_ai_model_slug: aiModelSlug === 'all' ? null : aiModelSlug,
+      }
+    )
 
-    // TODO: USE VIEW HERE
-    if (aiModelSlug !== 'all') {
-      query = query.eq('ai_model_id', aiModelSlug)
+    if (error) {
+      console.error('getGenerationsForPrompt failed:', error)
+      throw error
     }
 
-    if (mediaKind !== 'all') {
-      query = query.eq('media_library.media_kind', mediaKind)
-    }
-
-    const { data, error } = await query
-
-    if (error) throw error
-
-    let results = data.map((d: any) => ({
-      ...d,
-      media: Array.isArray(d.media) ? d.media[0] : d.media,
-    })) as AIGeneration[]
-
-    // Fallback client-side filtering if backend join filter didn't apply perfectly
-    if (mediaKind !== 'all') {
-      results = results.filter((r) => r.media?.media_kind === mediaKind)
-    }
-
-    return results
+    // RPC already returns the correct shape
+    // No joins, no arrays, no post-processing
+    return (data ?? []) as AIGeneration[]
   }
 
   async createGeneration(dto: CreateGenerationDTO): Promise<void> {
     const { error } = await supabase.rpc('fn_ai_create_generation', {
-      p_ai_model_id: dto.ai_model_id,
+      p_ai_model_slug: dto.ai_model_slug,
       p_prompt_template_id: dto.prompt_template_id,
-      p_media: dto.media, // jsonb
+      p_media: dto.media,
       p_input_text: dto.input_text ?? null,
       p_visibility: dto.visibility ?? 'private',
       p_original_chat_url: dto.original_chat_url ?? null,

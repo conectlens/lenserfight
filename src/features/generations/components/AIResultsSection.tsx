@@ -119,7 +119,7 @@ export const AIResultsSection: React.FC<AIResultsSectionProps> = ({ promptId }) 
     if (mediaFilter !== 'all' && newItem.media?.media_kind !== mediaFilter) {
       setMediaFilter('all')
     }
-    if (modelFilter !== 'all' && newItem.ai_model_id !== modelFilter) {
+    if (modelFilter !== 'all' && newItem.ai_model_slug !== modelFilter) {
       setModelFilter('all')
     }
   }
@@ -139,6 +139,7 @@ export const AIResultsSection: React.FC<AIResultsSectionProps> = ({ promptId }) 
   }
 
   // Extract existing URLs for duplicate prevention
+  console.log(generations)
   const existingUrls = generations.map((g) => g.media?.url).filter((url): url is string => !!url)
 
   if (!hasLenser) return null
@@ -178,11 +179,10 @@ export const AIResultsSection: React.FC<AIResultsSectionProps> = ({ promptId }) 
               onClick={() => setMediaFilter(type as MediaKind | 'all')}
               className={`
                             px-4 py-1.5 rounded-full text-xs font-bold uppercase tracking-wide transition-all whitespace-nowrap
-                            ${
-                              mediaFilter === type
-                                ? 'bg-primary text-gray-900 shadow-sm'
-                                : 'bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700'
-                            }
+                            ${mediaFilter === type
+                  ? 'bg-primary text-gray-900 shadow-sm'
+                  : 'bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700'
+                }
                         `}
             >
               {type}
