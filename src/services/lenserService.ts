@@ -47,6 +47,10 @@ export const lenserService = {
     return await lenserRepo.getPublicLenserProfile(handle)
   },
 
+  getLenserByHandle: async (handle: string): Promise<LenserProfileDTO | null> => {
+    return await lenserRepo.getPublicLenserProfile(handle)
+  },
+
   createLenserProfile: async (data: CreateLenserDTO): Promise<Lenser> => {
     if (!data) throw new Error('Data is required')
 
