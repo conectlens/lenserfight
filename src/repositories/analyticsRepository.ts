@@ -1,5 +1,5 @@
 import { LogPageViewDTO } from '../types/analytics.types'
-import { supabase } from '../utils/supabase'
+import { supabase } from '../core/supabase/client'
 
 export interface AnalyticsRepositoryPort {
   logPageView(dto: LogPageViewDTO): Promise<void>

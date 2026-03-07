@@ -1,20 +1,12 @@
-import React, { createContext, useContext, useState, useEffect } from 'react'
+import React, { createContext, useContext } from 'react'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 
+import { queryKeys } from '../lib/queryKeys'
 import { lenserService } from '../services/lenserService'
 import { waitingListService } from '../services/waitingListService'
 import { Lenser, CreateLenserDTO } from '../types/lenser.types'
-import { storage } from '../utils/storage'
 
 import { useAuth } from './AuthContext'
-
-const CACHE_BASE_KEY = 'lenser_profile_cache_v1'
-const CACHE_TTL_MS = 1000 * 60 * 5
-
-interface LenserCacheEntry {
-  userId: string
-  profile: Lenser
-  fetchedAt: number
-}
 
 interface LenserContextType {
   lenser: Lenser | null
@@ -31,148 +23,71 @@ interface LenserContextType {
 
 const LenserContext = createContext<LenserContextType | undefined>(undefined)
 
-const getCacheKey = (userId: string) => `${CACHE_BASE_KEY}_${userId}`
-
-const readCachedProfile = (userId: string): LenserCacheEntry | null => {
-  try {
-    const raw = storage.getItem(getCacheKey(userId))
-    if (!raw) return null
-    const parsed = JSON.parse(raw) as LenserCacheEntry
-    if (!parsed || parsed.userId !== userId || !parsed.profile?.id) return null
-    return parsed
-  } catch {
-    return null
-  }
-}
-
-const writeCachedProfile = (userId: string, profile: Lenser) => {
-  try {
-    storage.setItem(
-      getCacheKey(userId),
-      JSON.stringify({
-        userId,
-        profile: { ...profile, user_id: userId },
-        fetchedAt: Date.now(),
-      })
-    )
-  } catch { }
-}
-
-const clearCache = (userId?: string | null) => {
-  if (!userId) return
-  storage.removeItem(getCacheKey(userId))
-}
-
 export const LenserProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { user, isAuthenticated } = useAuth()
+  const queryClient = useQueryClient()
 
-  const [lenser, setLenser] = useState<Lenser | null>(null)
-  const [isInWaitingList, setIsInWaitingList] = useState<boolean | null>(null)
-  const [isLoading, setIsLoading] = useState(false)
-  const [error, setError] = useState<string | null>(null)
+  const {
+    data: lenser = null,
+    isLoading,
+    error: queryError,
+  } = useQuery<Lenser | null>({
+    queryKey: queryKeys.lenser.authenticated(),
+    queryFn: () => lenserService.getAuthenticatedLenser(),
+    enabled: isAuthenticated && !!user,
+    staleTime: 1000 * 60 * 5,
+  })
+
+  const { data: isInWaitingList = null } = useQuery<boolean | null>({
+    queryKey: queryKeys.waitingList.status(),
+    queryFn: async () => {
+      const result = await waitingListService.getIsInWaitingList()
+      return result ?? null
+    },
+    enabled: isAuthenticated && !!user,
+    staleTime: 1000 * 60 * 5,
+  })
+
+  const error = queryError ? (queryError as Error).message || 'Failed to load profile' : null
 
   const loadLenserProfile = async (force = false): Promise<void> => {
-    if (!user || !isAuthenticated) return
-    const userId = user.id
-
-    if (!force && lenser) return
-
-    const cached = readCachedProfile(userId)
-    if (!force && cached) {
-      setLenser({ ...cached.profile, user_id: userId })
-      if (Date.now() - cached.fetchedAt < CACHE_TTL_MS) return
-    }
-
-    setIsLoading(true)
-    setError(null)
-
-    try {
-      const profile = await lenserService.getAuthenticatedLenser()
-      if (profile) {
-        const safeProfile = { ...profile, user_id: userId }
-        setLenser(safeProfile)
-        writeCachedProfile(userId, safeProfile)
-      } else {
-        setLenser(null)
-        clearCache(userId)
-      }
-    } catch (err: any) {
-      setError(err.message || 'Failed to load profile')
-    } finally {
-      setIsLoading(false)
+    if (force) {
+      await queryClient.invalidateQueries({ queryKey: queryKeys.lenser.authenticated() })
     }
   }
-
-  const refreshWaitingListStatus = async () => {
-    if (!isAuthenticated || !user) return
-    try {
-      const value = await waitingListService.getIsInWaitingList()
-      setIsInWaitingList(value)
-    } catch {
-      setIsInWaitingList(false)
-    }
-  }
-
-  useEffect(() => {
-    if (isAuthenticated && user) {
-      const cached = readCachedProfile(user.id)
-      if (cached) setLenser({ ...cached.profile, user_id: user.id })
-      loadLenserProfile()
-      refreshWaitingListStatus()
-    } else {
-      clearCache(user?.id)
-      setLenser(null)
-      setIsInWaitingList(null)
-      setIsLoading(false)
-      setError(null)
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isAuthenticated, user?.id])
 
   const createLenserProfile = async (data: CreateLenserDTO): Promise<Lenser> => {
-    if (!user) throw new Error('User not authenticated')
-    setIsLoading(true)
-
-    try {
-      const profile = await lenserService.createLenserProfile(data)
-      setLenser(profile)
-      writeCachedProfile(user.id, profile)
-      await refreshWaitingListStatus()
-      return profile
-    } finally {
-      setIsLoading(false)
-    }
+    const profile = await lenserService.createLenserProfile(data)
+    queryClient.setQueryData(queryKeys.lenser.authenticated(), profile)
+    await queryClient.invalidateQueries({ queryKey: queryKeys.waitingList.status() })
+    return profile
   }
 
   const updateLenserProfile = async (data: Partial<Lenser>): Promise<Lenser> => {
-    if (!user || !lenser) throw new Error('Invalid state')
-
     const updated = await lenserService.updateLenserProfile(data)
-    const safe = { ...updated, user_id: user.id }
-    setLenser(safe)
-    writeCachedProfile(user.id, safe)
-    return safe
+    queryClient.setQueryData(queryKeys.lenser.authenticated(), updated)
+    return updated
   }
 
-  const toggleWaitingList = async (kvkkApproved: boolean) => {
+  const toggleWaitingList = async (kvkkApproved: boolean): Promise<void> => {
     await waitingListService.toggleWaitingList(kvkkApproved)
-    setIsInWaitingList(true)
-
-    if (lenser && user) {
-      const updated = { ...lenser, is_in_waiting_list: true }
-      setLenser(updated)
-      writeCachedProfile(user.id, updated)
+    queryClient.setQueryData(queryKeys.waitingList.status(), true)
+    if (lenser) {
+      queryClient.setQueryData(queryKeys.lenser.authenticated(), {
+        ...lenser,
+        is_in_waiting_list: true,
+      })
     }
   }
 
   return (
     <LenserContext.Provider
       value={{
-        lenser,
+        lenser: lenser ?? null,
         hasLenser: !!lenser,
         isLoading,
         error,
-        isInWaitingList,
+        isInWaitingList: isInWaitingList ?? null,
         loadLenserProfile,
         createLenserProfile,
         updateLenserProfile,

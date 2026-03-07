@@ -1,6 +1,6 @@
-import { getAdminRepository } from '../adapters/adminAdapter'
+import { SupabaseAdminRepository } from '../repositories/adminRepository'
 
-const repo = getAdminRepository()
+const repo = new SupabaseAdminRepository()
 
 export const adminService = {
   getDashboardStats: async () => {

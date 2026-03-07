@@ -1,5 +1,5 @@
-import { getLenserRepository } from '../adapters/lenserAdapter'
-import { getShareRepository } from '../adapters/shareAdapter'
+import { SupabaseLenserRepository } from '../repositories/lenserRepository'
+import { SupabaseShareRepository } from '../repositories/shareRepository'
 import {
   Lenser,
   CreateLenserDTO,
@@ -13,8 +13,8 @@ import { ThreadRecord } from '../types/threads.types'
 
 import { shareService } from './shareService'
 
-const lenserRepo = getLenserRepository()
-const shareRepo = getShareRepository()
+const lenserRepo = new SupabaseLenserRepository()
+const shareRepo = new SupabaseShareRepository()
 
 const enrichLenserProfile = async (lenser: Lenser | null): Promise<Lenser | null> => {
   if (!lenser || !lenser.website_url) return lenser
@@ -106,7 +106,7 @@ export const lenserService = {
 
   requestAccountDeletion: async (handle: string): Promise<void> => {
     if (!handle) throw new Error('Handle is required')
-    await lenserRepo.requestDeletion(handle)
+    await lenserRepo.requestDeletion()
   },
 
   getLenserPrompts: async (

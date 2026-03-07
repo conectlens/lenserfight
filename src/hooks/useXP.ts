@@ -1,12 +1,13 @@
 import { useInfiniteQuery } from '@tanstack/react-query'
 
+import { queryKeys } from '../lib/queryKeys'
 import { xpService } from '../services/xpService'
 import { LeaderboardTimeframe, LeaderboardScope } from '../types/xp.types'
 
 export const useLeaderboard = (timeframe: LeaderboardTimeframe, scope: LeaderboardScope) => {
   const pageSize = 20
   return useInfiniteQuery({
-    queryKey: ['xp', 'leaderboard', timeframe, scope],
+    queryKey: queryKeys.xp.leaderboard(timeframe, scope),
     queryFn: ({ pageParam = 0 }) =>
       xpService.getLeaderboard(timeframe, scope, pageSize, pageParam * pageSize),
     initialPageParam: 0,

@@ -1,10 +1,10 @@
 import { useState, useEffect } from 'react'
 
-import { getLenserRepository } from '../adapters/lenserAdapter'
+import { SupabaseLenserRepository } from '../repositories/lenserRepository'
 import { Lenser, LenserCompactProfile } from '../types/lenser.types'
 import { storage } from '../utils/storage'
 
-const lenserRepo = getLenserRepository()
+const lenserRepo = new SupabaseLenserRepository()
 const TTL_MS = 1000 * 60 // 1 minute
 
 interface CachedCompact {

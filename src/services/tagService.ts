@@ -1,9 +1,9 @@
-import { getTagRepository } from '../adapters/tagAdapter'
 import { TagDomainError } from '../domain/tags/TagErrors'
 import { TagValidator } from '../domain/tags/TagValidator'
-import { TagUsage, TagDTO } from '../types/tags.types'
+import { SupabaseTagRepository } from '../repositories/tagRepository'
+import { TagUsage, TagDTO, TagActivityEventDTO, ContentType } from '../types/tags.types'
 
-const tagRepo = getTagRepository()
+const tagRepo = new SupabaseTagRepository()
 
 // --- Cache Implementation ---
 interface TagCache {
@@ -120,5 +120,49 @@ export const tagService = {
       trendingScore: 0,
       created_at: new Date().toISOString(),
     }
+  },
+
+  // --- Activity Recording ---
+
+  recordView: async (tagId: string, entityType: ContentType, entityId: string, userId?: string) => {
+    await tagService.recordActivity(tagId, entityType, entityId, userId, 'viewed')
+  },
+
+  recordReaction: async (tagId: string, entityType: ContentType, entityId: string, userId?: string) => {
+    await tagService.recordActivity(tagId, entityType, entityId, userId, 'reacted')
+  },
+
+  recordActivity: async (
+    tagId: string,
+    entityType: ContentType,
+    entityId: string,
+    userId?: string,
+    type: 'created' | 'viewed' | 'reacted' = 'viewed'
+  ) => {
+    const event: TagActivityEventDTO = {
+      tag_id: tagId,
+      entity_type: entityType,
+      entity_id: entityId,
+      activity_type: type,
+      actor_id: userId,
+    }
+    await tagRepo.recordActivity(event)
+  },
+
+  recordBatchView: async (tagIds: string[], entityType: ContentType, entityId: string, userId?: string) => {
+    if (!tagIds || tagIds.length === 0) return
+    const events: TagActivityEventDTO[] = tagIds.map((tagId) => ({
+      tag_id: tagId,
+      entity_type: entityType,
+      entity_id: entityId,
+      activity_type: 'viewed',
+      actor_id: userId,
+    }))
+    await tagRepo.recordBatchActivity(events)
+  },
+
+  recordBatchActivity: async (events: TagActivityEventDTO[]) => {
+    if (!events || events.length === 0) return
+    await tagRepo.recordBatchActivity(events)
   },
 }

@@ -1,7 +1,7 @@
-import { getContactRepository } from '../adapters/contactAdapter'
+import { SupabaseContactRepository } from '../repositories/contactRepository'
 import { CreateContactDTO } from '../types/contact.types'
 
-const repo = getContactRepository()
+const repo = new SupabaseContactRepository()
 
 export const contactService = {
   submitMessage: async (data: Omit<CreateContactDTO, 'user_agent'>): Promise<void> => {
