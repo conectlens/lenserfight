@@ -1,8 +1,10 @@
 import { Check, X, Loader2 } from 'lucide-react'
 import React, { useState, useEffect } from 'react'
+import { useNavigate } from 'react-router-dom'
 
 import { Button } from '../../../components/Button'
 import { Modal } from '../../../components/Modal'
+import { useAuth } from '../../../context/AuthContext'
 import { useLenser } from '../../../context/LenserContext'
 import { lenserService } from '../../../services/lenserService'
 import { InputField } from '../../auth/components/InputField'
@@ -12,7 +14,9 @@ interface CreateLenserProfileModalProps {
 }
 
 export const CreateLenserProfileModal: React.FC<CreateLenserProfileModalProps> = ({ onClose }) => {
-  const { createLenserProfile, isLoading } = useLenser()
+  const { createLenserProfile, isLoading, hasLenser } = useLenser()
+  const { isAuthenticated, isLoading: authLoading } = useAuth()
+  const navigate = useNavigate()
   const [handle, setHandle] = useState('')
   const [displayName, setDisplayName] = useState('')
   const [error, setError] = useState<string | null>(null)
@@ -22,6 +26,21 @@ export const CreateLenserProfileModal: React.FC<CreateLenserProfileModalProps> =
   const [isCheckingHandle, setIsCheckingHandle] = useState(false)
   const [isHandleUnique, setIsHandleUnique] = useState(false)
   const [suggestions, setSuggestions] = useState<string[]>([])
+
+  // Security Redirect: Only authenticated users without a profile can access this
+  useEffect(() => {
+    if (!authLoading && !isLoading) {
+      if (!isAuthenticated) {
+        navigate('/login')
+        onClose()
+      } else if (hasLenser) {
+        // If they already have a profile, just close
+        onClose()
+      }
+    }
+  }, [authLoading, isLoading, isAuthenticated, hasLenser, navigate, onClose])
+
+  if (authLoading || isLoading || !isAuthenticated || hasLenser) return null
 
   // Real-time validation & Debounced Check
   useEffect(() => {
