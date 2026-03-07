@@ -62,15 +62,30 @@ export class SupabaseThreadsRepository implements ThreadsRepositoryPort {
    * - Frontend cannot spoof lenser_id.
    */
   async createThread(dto: CreateThreadDTO): Promise<ThreadRecord> {
+    // 1. Get default English language ID as fallback
+    const { data: langData } = await supabase.schema('core').from('languages').select('id').eq('code', 'en').single()
+    const defaultLanguageId = langData?.id
+
+    // 2. Insert Base Thread
     const { data: threadInsertData, error } = await supabase.schema('content').from('threads').insert({
-      title: dto.title,
-      content: dto.content,
       visibility: dto.visibility,
       lenser_id: dto.lenserId
     }).select('id').single()
 
     if (error) this.handleError(error)
     const threadId = threadInsertData.id
+
+    // 3. Insert Thread Translation
+    if (defaultLanguageId) {
+      const { error: translationError } = await supabase.schema('content').from('thread_translations').insert({
+        thread_id: threadId,
+        language_id: defaultLanguageId,
+        is_original: true,
+        title: dto.title,
+        content: dto.content
+      })
+      if (translationError) this.handleError(translationError)
+    }
 
     if (dto.tagIds && dto.tagIds.length > 0) {
       const { data: authData } = await supabase.auth.getUser()
@@ -256,13 +271,24 @@ export class SupabaseThreadsRepository implements ThreadsRepositoryPort {
    * Only the owner can update (enforced in fn_content_update_thread).
    */
   async updateThread(id: string, dto: Partial<CreateThreadDTO>): Promise<ThreadRecord> {
-    const updatePayload: any = {}
-    if (dto.title !== undefined) updatePayload.title = dto.title
-    if (dto.content !== undefined) updatePayload.content = dto.content
-    if (dto.visibility !== undefined) updatePayload.visibility = dto.visibility
+    const baseUpdatePayload: any = {}
+    const translationUpdatePayload: any = {}
 
-    if (Object.keys(updatePayload).length > 0) {
-      const { error } = await supabase.schema('content').from('threads').update(updatePayload).eq('id', id)
+    if (dto.visibility !== undefined) baseUpdatePayload.visibility = dto.visibility
+    if (dto.title !== undefined) translationUpdatePayload.title = dto.title
+    if (dto.content !== undefined) translationUpdatePayload.content = dto.content
+
+    if (Object.keys(baseUpdatePayload).length > 0) {
+      const { error } = await supabase.schema('content').from('threads').update(baseUpdatePayload).eq('id', id)
+      if (error) this.handleError(error)
+    }
+
+    if (Object.keys(translationUpdatePayload).length > 0) {
+      // Update the original translation
+      const { error } = await supabase.schema('content').from('thread_translations')
+        .update(translationUpdatePayload)
+        .eq('thread_id', id)
+        .eq('is_original', true)
       if (error) this.handleError(error)
     }
 
