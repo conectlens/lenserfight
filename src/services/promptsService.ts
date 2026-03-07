@@ -1,6 +1,6 @@
-import { getLenserRepository } from '../adapters/lenserAdapter'
-import { getPromptsRepository } from '../adapters/promptsAdapter'
-import { getReactionRepository } from '../adapters/reactionAdapter'
+import { SupabaseLenserRepository } from '../repositories/lenserRepository'
+import { SupabasePromptsRepository } from '../repositories/promptsRepository'
+import { SupabaseReactionRepository } from '../repositories/reactionRepository'
 import {
   PromptTemplateViewModel,
   PromptTemplateDetailViewModel,
@@ -10,12 +10,11 @@ import {
 } from '../types/prompts.types'
 
 import { reactionService } from './reactionService'
-import { tagActivityService } from './tagActivityService'
 import { tagService } from './tagService'
 
-const promptsRepo = getPromptsRepository()
-const lenserRepo = getLenserRepository()
-const reactionRepo = getReactionRepository()
+const promptsRepo = new SupabasePromptsRepository()
+const lenserRepo = new SupabaseLenserRepository()
+const reactionRepo = new SupabaseReactionRepository()
 
 // Helper to resolve author from denormalized profile
 const resolveAuthor = (record: any): PromptAuthor => {
@@ -180,7 +179,7 @@ export const promptsService = {
     })
 
     // Batch logging for create
-    tagActivityService
+    tagService
       .recordBatchActivity(
         realTagIds.map((tagId) => ({
           tag_id: tagId,

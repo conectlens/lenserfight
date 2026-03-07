@@ -1,7 +1,7 @@
 import { AuthorProfile } from '../types/lenser.types'
 import { ThreadRecord, TagRecord, ThreadReplyRecord, CreateThreadDTO } from '../types/threads.types'
 
-import { supabase } from '../utils/supabase'
+import { supabase } from '../core/supabase/client'
 
 // --- Port (Interface) ---
 export interface ThreadsRepositoryPort {

@@ -21,7 +21,7 @@ import { TagDetailPage } from '../features/tags/pages/TagDetailPage'
 import { ShortLinkRedirect } from '../features/share/pages/ShortLinkRedirect'
 import { WaitingListPage } from '../features/waitingList/pages/WaitingListPage'
 import { LeaderboardPage } from '../features/leaderboard/pages/LeaderboardPage'
-import { LenserProfilePage } from '../features/lensers/pages/LenserProfilePage'
+import { LenserProfilePage } from '../features/profile/pages/LenserProfilePage'
 import { PromptDetailPage } from '../features/prompts/pages/PromptDetailPage'
 import { PromptsPage } from '../features/prompts/pages/PromptsPage'
 

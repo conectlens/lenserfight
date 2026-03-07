@@ -19,7 +19,7 @@ import { Feedback, ProductTag, FeedbackStatus } from '../../../types/feedback.ty
 import { Notification } from '../../../types/notification.types'
 import { timeAgo } from '../../../utils/dateUtils'
 import { InputField } from '../../auth/components/InputField'
-import { AvatarSelectionModal } from '../../lensers/components/AvatarSelectionModal'
+import { AvatarSelectionModal } from '../../profile/components/AvatarSelectionModal'
 
 const FEEDBACK_PAGE_SIZE = 5
 
@@ -234,13 +234,12 @@ export const SettingsPage: React.FC = () => {
       accessor: 'product_tag',
       render: (item) => (
         <span
-          className={`inline-flex px-2 py-0.5 rounded-full text-xs font-medium border ${
-            item.product_tag === 'bug'
+          className={`inline-flex px-2 py-0.5 rounded-full text-xs font-medium border ${item.product_tag === 'bug'
               ? 'bg-red-50 dark:bg-red-900/30 text-red-600 dark:text-red-400 border-red-100 dark:border-red-800'
               : item.product_tag === 'feature'
                 ? 'bg-purple-50 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400 border-purple-100 dark:border-purple-800'
                 : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 border-gray-200 dark:border-gray-600'
-          }`}
+            }`}
         >
           {getTagLabel(item.product_tag)}
         </span>
@@ -290,11 +289,10 @@ export const SettingsPage: React.FC = () => {
             <button
               key={t}
               onClick={() => navigate(`/settings/${t}`)}
-              className={`w-full text-left px-4 py-2.5 rounded-lg text-sm font-medium transition-colors capitalize ${
-                activeTab === t
+              className={`w-full text-left px-4 py-2.5 rounded-lg text-sm font-medium transition-colors capitalize ${activeTab === t
                   ? 'bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-white'
                   : 'text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-gray-200'
-              }`}
+                }`}
             >
               {t}
             </button>

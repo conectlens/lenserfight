@@ -2,7 +2,7 @@ import { AuthorProfile } from '../types/lenser.types'
 import { PromptTemplateRecord, CreatePromptDTO } from '../types/prompts.types'
 import { TagRecord } from '../types/threads.types'
 
-import { supabase } from '../utils/supabase'
+import { supabase } from '../core/supabase/client'
 
 // --- Port (Interface) ---
 export interface PromptsRepositoryPort {

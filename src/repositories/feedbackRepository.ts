@@ -1,5 +1,5 @@
 import { Feedback, SubmitFeedbackDTO } from '../types/feedback.types'
-import { supabase } from '../utils/supabase'
+import { supabase } from '../core/supabase/client'
 
 // --- Port (Interface) ---
 export interface FeedbackRepositoryPort {

@@ -1,18 +1,19 @@
-import { useQuery } from '@tanstack/react-query'
+import { useQuery, keepPreviousData } from '@tanstack/react-query'
 import React, { useState } from 'react'
 
 import { Table } from '../../../components/Table'
 import { adminService } from '../../../services/adminService'
+import { AdminListResponse, AdminUser } from '../../../types/admin.types'
 import { InputField } from '../../auth/components/InputField'
 
 export const AdminUsers: React.FC = () => {
   const [page, setPage] = useState(1)
   const [search, setSearch] = useState('')
 
-  const { data, isLoading } = useQuery({
+  const { data, isLoading } = useQuery<AdminListResponse<AdminUser>>({
     queryKey: ['admin', 'users', page, search],
     queryFn: () => adminService.getUsers(page, 20, search),
-    keepPreviousData: true,
+    placeholderData: keepPreviousData,
   })
 
   const columns = [

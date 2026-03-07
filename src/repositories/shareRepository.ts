@@ -1,5 +1,5 @@
 import { SharedLink, CreateLinkDTO, ShareEvent, ResolveLinkResult } from '../types/share.types'
-import { supabase } from '../utils/supabase'
+import { supabase } from '../core/supabase/client'
 
 export interface ShareRepositoryPort {
   createOrGetSharedLink(dto: CreateLinkDTO): Promise<SharedLink>
@@ -62,7 +62,7 @@ export class SupabaseShareRepository implements ShareRepositoryPort {
   async logEvent(
     shortId: string,
     eventType: 'opened',
-    viewerData: Partial<ShareEvent>
+    viewerData: Partial<ShareEvent> = {}
   ): Promise<void> {
     const { error } = await supabase.rpc('fn_analytics_share_events_log', {
       p_short_id: shortId,

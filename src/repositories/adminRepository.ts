@@ -2,7 +2,7 @@ import { AdminAnalyticsData, AdminUser, AdminListResponse } from '../types/admin
 import { ContactMessage } from '../types/contact.types'
 import { Feedback } from '../types/feedback.types'
 import { Lenser } from '../types/lenser.types'
-import { supabase } from '../utils/supabase'
+import { supabase } from '../core/supabase/client'
 
 export interface AdminRepositoryPort {
   getAnalytics(days: number): Promise<AdminAnalyticsData>

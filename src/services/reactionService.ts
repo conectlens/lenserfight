@@ -1,6 +1,6 @@
-import { getPromptsRepository } from '../adapters/promptsAdapter'
-import { getReactionRepository } from '../adapters/reactionAdapter'
-import { getThreadsRepository } from '../adapters/threadsAdapter'
+import { SupabasePromptsRepository } from '../repositories/promptsRepository'
+import { SupabaseReactionRepository } from '../repositories/reactionRepository'
+import { SupabaseThreadsRepository } from '../repositories/threadsRepository'
 import {
   TargetType,
   ReactionType,
@@ -8,9 +8,9 @@ import {
   ActivityFeedItem,
 } from '../types/reactions.types'
 
-const reactionRepo = getReactionRepository()
-const threadsRepo = getThreadsRepository()
-const promptsRepo = getPromptsRepository()
+const reactionRepo = new SupabaseReactionRepository()
+const threadsRepo = new SupabaseThreadsRepository()
+const promptsRepo = new SupabasePromptsRepository()
 
 export const reactionService = {
   validateTarget: (t: string) => {

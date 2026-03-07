@@ -1,17 +1,19 @@
-import { useQuery } from '@tanstack/react-query'
+import { useQuery, keepPreviousData } from '@tanstack/react-query'
 import React, { useState } from 'react'
 
 import { Table } from '../../../components/Table'
 import { adminService } from '../../../services/adminService'
+import { AdminListResponse } from '../../../types/admin.types'
+import { Feedback } from '../../../types/feedback.types'
 
 export const AdminFeedbacks: React.FC = () => {
   const [page, setPage] = useState(1)
   const [filter, setFilter] = useState('all')
 
-  const { data, isLoading } = useQuery({
+  const { data, isLoading } = useQuery<AdminListResponse<Feedback>>({
     queryKey: ['admin', 'feedbacks', page, filter],
     queryFn: () => adminService.getFeedbacks(page, 15, filter),
-    keepPreviousData: true,
+    placeholderData: keepPreviousData,
   })
 
   const columns = [

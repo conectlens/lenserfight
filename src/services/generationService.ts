@@ -1,4 +1,4 @@
-import { getGenerationRepository } from '../adapters/generationAdapter'
+import { SupabaseGenerationRepository } from '../repositories/generationRepository'
 import {
   CreateGenerationDTO,
   AIGeneration,
@@ -6,7 +6,7 @@ import {
   AIModel,
 } from '../types/generation.types'
 
-const repo = getGenerationRepository()
+const repo = new SupabaseGenerationRepository()
 
 export const generationService = {
   getGenerations: async (
