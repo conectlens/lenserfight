@@ -52,6 +52,7 @@ export class SupabaseLenserRepository implements LenserRepositoryPort {
     })
 
     if (error) throw error
+    if (!data) return null as any;
 
     return {
       handle: data.handle,
