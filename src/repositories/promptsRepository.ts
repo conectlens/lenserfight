@@ -171,16 +171,31 @@ export class SupabasePromptsRepository implements PromptsRepositoryPort {
   // -----------------------------------------------------
 
   async createPrompt(input: CreatePromptDTO): Promise<PromptTemplateRecord> {
+    // 1. Get default English language ID as fallback
+    const { data: langData } = await supabase.schema('core').from('languages').select('id').eq('code', 'en').single()
+    const defaultLanguageId = langData?.id
+
+    // 2. Insert Base Prompt Template
     const { data: promptInsertData, error: rpcError } = await supabase.schema('content').from('prompt_templates').insert({
-      title: input.title,
-      description: input.description ?? null,
-      content: input.content,
       visibility: input.visibility,
       lenser_id: input.lenserId
     }).select('id').single()
 
     if (rpcError) this.handleError(rpcError)
     const promptId = promptInsertData.id
+
+    // 3. Insert Prompt Translation
+    if (defaultLanguageId) {
+      const { error: translationError } = await supabase.schema('content').from('prompt_translations').insert({
+        prompt_id: promptId,
+        language_id: defaultLanguageId,
+        is_original: true,
+        title: input.title,
+        description: input.description ?? null,
+        content: input.content
+      })
+      if (translationError) this.handleError(translationError)
+    }
 
     if (input.tagIds?.length) {
       const { data: authData } = await supabase.auth.getUser()
@@ -205,15 +220,25 @@ export class SupabasePromptsRepository implements PromptsRepositoryPort {
   }
 
   async updatePrompt(id: string, input: Partial<CreatePromptDTO>): Promise<PromptTemplateRecord> {
-    const updatePayload: any = {}
-    if (input.title !== undefined) updatePayload.title = input.title
-    if (input.description !== undefined) updatePayload.description = input.description
-    if (input.content !== undefined) updatePayload.content = input.content
-    if (input.visibility !== undefined) updatePayload.visibility = input.visibility
+    const baseUpdatePayload: any = {}
+    const translationUpdatePayload: any = {}
 
-    if (Object.keys(updatePayload).length > 0) {
-      const { error: rpcError } = await supabase.schema('content').from('prompt_templates').update(updatePayload).eq('id', id)
+    if (input.visibility !== undefined) baseUpdatePayload.visibility = input.visibility
+    if (input.title !== undefined) translationUpdatePayload.title = input.title
+    if (input.description !== undefined) translationUpdatePayload.description = input.description
+    if (input.content !== undefined) translationUpdatePayload.content = input.content
+
+    if (Object.keys(baseUpdatePayload).length > 0) {
+      const { error: rpcError } = await supabase.schema('content').from('prompt_templates').update(baseUpdatePayload).eq('id', id)
       if (rpcError) this.handleError(rpcError)
+    }
+
+    if (Object.keys(translationUpdatePayload).length > 0) {
+      const { error } = await supabase.schema('content').from('prompt_translations')
+        .update(translationUpdatePayload)
+        .eq('prompt_id', id)
+        .eq('is_original', true)
+      if (error) this.handleError(error)
     }
 
     if (input.tagIds !== undefined) {
