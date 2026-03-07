@@ -73,26 +73,38 @@ export class SupabaseLenserRepository implements LenserRepositoryPort {
   }
 
   async createLenser(data: CreateLenserDTO): Promise<Lenser> {
-    const { data: newLenser, error } = await supabase.rpc('fn_lensers_create_profile', {
-      p_handle: data.handle,
-      p_display_name: data.display_name,
-      p_bio: data.bio || '',
-      p_headline: null,
-    })
-    console.log('x')
+    const { data: authData } = await supabase.auth.getUser()
+    if (!authData.user) throw new Error('Not authenticated')
+
+    const { data: newLenser, error } = await supabase.schema('lensers').from('profiles').insert({
+      user_id: authData.user.id,
+      handle: data.handle,
+      display_name: data.display_name,
+      bio: data.bio || '',
+      headline: null
+    }).select('*').single()
+
     if (error) throw error
     return newLenser as Lenser
   }
 
   async updateLenser(data: Partial<Lenser>): Promise<Lenser> {
-    const { data: updated, error } = await supabase.rpc('fn_lensers_update_profile', {
-      p_display_name: data.display_name ?? null,
-      p_avatar_url: data.avatar_url ?? null,
-      p_banner_url: data.banner_url ?? null,
-      p_bio: data.bio ?? null,
-      p_headline: data.headline ?? null,
-      p_preferences: data.preferences ?? null,
-    })
+    const { data: authData } = await supabase.auth.getUser()
+    if (!authData.user) throw new Error('Not authenticated')
+
+    const updatePayload: any = {}
+    if (data.display_name !== undefined) updatePayload.display_name = data.display_name
+    if (data.avatar_url !== undefined) updatePayload.avatar_url = data.avatar_url
+    if (data.banner_url !== undefined) updatePayload.banner_url = data.banner_url
+    if (data.bio !== undefined) updatePayload.bio = data.bio
+    if (data.headline !== undefined) updatePayload.headline = data.headline
+    if (data.preferences !== undefined) updatePayload.preferences = data.preferences
+
+    const { data: updated, error } = await supabase.schema('lensers').from('profiles')
+      .update(updatePayload)
+      .eq('user_id', authData.user.id)
+      .select('*')
+      .single()
 
     if (error) throw error
     return updated as Lenser

@@ -8,19 +8,15 @@ export interface FeedbackRepositoryPort {
 }
 export class SupabaseFeedbackRepository implements FeedbackRepositoryPort {
   async submitFeedback(dto: SubmitFeedbackDTO) {
-    const { data, error } = await supabase.rpc('fn_public_submit_feedback', {
-      p_product_tag: dto.product_tag ?? 'general',
-      p_page: dto.page,
-      p_message: dto.message,
-      p_start_date: dto.start_date ?? null,
-      p_end_date: dto.end_date ?? null,
+    const { error } = await supabase.schema('analytics').from('product_feedback').insert({
+      product_tag: dto.product_tag ?? 'general',
+      page: dto.page,
+      message: dto.message,
+      start_date: dto.start_date ?? null,
+      end_date: dto.end_date ?? null,
     })
 
     if (error) throw error
-    if (data) {
-      // data is non-null only if the function caught an error and returned details
-      console.warn('Feedback RPC reported error:', data)
-    }
   }
 
   async getUserFeedbacks(offset = 0, limit = 5): Promise<{ data: Feedback[]; count: number }> {

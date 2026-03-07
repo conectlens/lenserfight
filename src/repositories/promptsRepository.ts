@@ -171,18 +171,27 @@ export class SupabasePromptsRepository implements PromptsRepositoryPort {
   // -----------------------------------------------------
 
   async createPrompt(input: CreatePromptDTO): Promise<PromptTemplateRecord> {
-    const { data: promptId, error: rpcError } = await supabase.rpc(
-      'fn_content_create_prompt_template',
-      {
-        p_title: input.title,
-        p_description: input.description ?? null,
-        p_content: input.content,
-        p_visibility: input.visibility,
-        p_tag_ids: input.tagIds?.length ? input.tagIds : null,
-      }
-    )
+    const { data: promptInsertData, error: rpcError } = await supabase.schema('content').from('prompt_templates').insert({
+      title: input.title,
+      description: input.description ?? null,
+      content: input.content,
+      visibility: input.visibility,
+      lenser_id: input.lenserId
+    }).select('id').single()
 
     if (rpcError) this.handleError(rpcError)
+    const promptId = promptInsertData.id
+
+    if (input.tagIds?.length) {
+      const { data: authData } = await supabase.auth.getUser()
+      const tagRecords = input.tagIds.map(tagId => ({
+        entity_type: 'prompt_template',
+        entity_id: promptId,
+        tag_id: tagId,
+        user_id: authData?.user?.id || null
+      }))
+      await supabase.schema('content').from('tag_map').insert(tagRecords)
+    }
 
     // Fetch from view
     const { data, error } = await supabase
@@ -196,16 +205,30 @@ export class SupabasePromptsRepository implements PromptsRepositoryPort {
   }
 
   async updatePrompt(id: string, input: Partial<CreatePromptDTO>): Promise<PromptTemplateRecord> {
-    const { error: rpcError } = await supabase.rpc('fn_content_update_prompt', {
-      p_id: id,
-      p_title: input.title ?? null,
-      p_description: input.description ?? null,
-      p_content: input.content ?? null,
-      p_visibility: input.visibility ?? null,
-      p_tag_ids: input.tagIds !== undefined ? input.tagIds : null,
-    })
+    const updatePayload: any = {}
+    if (input.title !== undefined) updatePayload.title = input.title
+    if (input.description !== undefined) updatePayload.description = input.description
+    if (input.content !== undefined) updatePayload.content = input.content
+    if (input.visibility !== undefined) updatePayload.visibility = input.visibility
 
-    if (rpcError) this.handleError(rpcError)
+    if (Object.keys(updatePayload).length > 0) {
+      const { error: rpcError } = await supabase.schema('content').from('prompt_templates').update(updatePayload).eq('id', id)
+      if (rpcError) this.handleError(rpcError)
+    }
+
+    if (input.tagIds !== undefined) {
+      await supabase.schema('content').from('tag_map').delete().eq('entity_type', 'prompt_template').eq('entity_id', id)
+      if (input.tagIds.length > 0) {
+        const { data: authData } = await supabase.auth.getUser()
+        const tagRecords = input.tagIds.map(tagId => ({
+          entity_type: 'prompt_template',
+          entity_id: id,
+          tag_id: tagId,
+          user_id: authData?.user?.id || null
+        }))
+        await supabase.schema('content').from('tag_map').insert(tagRecords)
+      }
+    }
 
     const { data, error } = await supabase
       .from('vw_prompt_templates_public')
@@ -218,9 +241,7 @@ export class SupabasePromptsRepository implements PromptsRepositoryPort {
   }
 
   async deletePrompt(id: string): Promise<void> {
-    const { error } = await supabase.rpc('fn_content_delete_prompt', {
-      p_id: id,
-    })
+    const { error } = await supabase.schema('content').from('prompt_templates').delete().eq('id', id)
     if (error) this.handleError(error)
   }
 
