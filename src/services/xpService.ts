@@ -1,5 +1,5 @@
-import { getLenserRepository } from '../adapters/lenserAdapter'
-import { getXPRepository } from '../adapters/xpAdapter'
+import { SupabaseLenserRepository } from '../repositories/lenserRepository'
+import { SupabaseXPRepository } from '../repositories/xpRepository'
 import {
   XPSummary,
   XPEvent,
@@ -9,8 +9,8 @@ import {
   LeaderboardScope,
 } from '../types/xp.types'
 
-const repo = getXPRepository()
-const lenserRepo = getLenserRepository()
+const repo = new SupabaseXPRepository()
+const lenserRepo = new SupabaseLenserRepository()
 
 export const xpService = {
   getStats: async (lenserId: string): Promise<XPSummary | null> => {

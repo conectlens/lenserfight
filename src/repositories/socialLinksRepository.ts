@@ -1,5 +1,5 @@
 import { SocialLink, SocialPlatform } from '../types/lenser.types'
-import { supabase } from '../utils/supabase'
+import { supabase } from '../core/supabase/client'
 
 export interface SocialLinksRepositoryPort {
   /**

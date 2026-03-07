@@ -6,7 +6,7 @@ import {
   LeaderboardTimeframe,
   LeaderboardScope,
 } from '../types/xp.types'
-import { supabase } from '../utils/supabase'
+import { supabase } from '../core/supabase/client'
 
 export interface XPRepositoryPort {
   getXPSummary(lenserId: string): Promise<XPSummary | null>

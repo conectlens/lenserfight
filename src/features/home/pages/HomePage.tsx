@@ -15,7 +15,7 @@ import {
   useTrendingTags,
   useLatestLensers,
 } from '../../../hooks/useThreads'
-import { CreateLenserProfileModal } from '../../lenser/components/CreateLenserProfileModal'
+import { CreateLenserProfileModal } from '../../onboarding/components/CreateLenserProfileModal'
 import { CreateThreadModal } from '../../threads/components/CreateThreadModal'
 import { ThreadsList } from '../components/ThreadsList'
 

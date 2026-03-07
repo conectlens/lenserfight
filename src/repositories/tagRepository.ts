@@ -1,5 +1,5 @@
 import { TagUsage, TagActivityEventDTO, TagDTO } from '../types/tags.types'
-import { supabase } from '../utils/supabase'
+import { supabase } from '../core/supabase/client'
 
 export interface TagRepositoryPort {
   getAllTagsWithCounts(): Promise<TagUsage[]>

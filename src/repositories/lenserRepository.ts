@@ -10,7 +10,7 @@ import {
 } from '../types/lenser.types'
 import { PromptTemplateRecord } from '../types/prompts.types'
 import { ThreadRecord } from '../types/threads.types'
-import { supabase } from '../utils/supabase'
+import { supabase } from '../core/supabase/client'
 
 // --- Port (Interface) ---
 export interface LenserRepositoryPort {
@@ -44,6 +44,7 @@ export interface LenserRepositoryPort {
     type: 'followers' | 'following',
     page: number
   ): Promise<NetworkUser[]>
+  getLenserById(id: string): Promise<Lenser | null>
 }
 export class SupabaseLenserRepository implements LenserRepositoryPort {
   async getPublicLenserProfile(handle: string): Promise<LenserProfileDTO> {
@@ -55,6 +56,7 @@ export class SupabaseLenserRepository implements LenserRepositoryPort {
     if (!data) return null as any;
 
     return {
+      id: data.id,
       handle: data.handle,
       display_name: data.display_name,
       avatar_url: data.avatar_url,
@@ -185,5 +187,10 @@ export class SupabaseLenserRepository implements LenserRepositoryPort {
     page: number
   ): Promise<NetworkUser[]> {
     return []
+  }
+  async getLenserById(id: string): Promise<Lenser | null> {
+    const { data, error } = await supabase.from('vw_lensers_profile_full').select('*').eq('id', id).single()
+    if (error) return null
+    return data as Lenser
   }
 }

@@ -1,16 +1,18 @@
-import { useQuery } from '@tanstack/react-query'
+import { useQuery, keepPreviousData } from '@tanstack/react-query'
 import React, { useState } from 'react'
 
 import { Table } from '../../../components/Table'
 import { adminService } from '../../../services/adminService'
+import { AdminListResponse } from '../../../types/admin.types'
+import { ContactMessage } from '../../../types/contact.types'
 
 export const AdminContacts: React.FC = () => {
   const [page, setPage] = useState(1)
 
-  const { data, isLoading } = useQuery({
+  const { data, isLoading } = useQuery<AdminListResponse<ContactMessage>>({
     queryKey: ['admin', 'contacts', page],
     queryFn: () => adminService.getContacts(page, 15),
-    keepPreviousData: true,
+    placeholderData: keepPreviousData,
   })
 
   const columns = [

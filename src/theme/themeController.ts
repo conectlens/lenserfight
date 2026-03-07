@@ -1,9 +1,9 @@
-import { getPreferencesRepository } from '../adapters/preferencesAdapter'
+import { SupabasePreferencesRepository } from '../repositories/preferencesRepository'
 import { storage } from '../utils/storage'
 
 export type Theme = 'light' | 'dark'
 
-const repo = getPreferencesRepository()
+const repo = new SupabasePreferencesRepository()
 
 const THEME_CACHE_TTL_MS = 1000 * 60 * 60 * 24 // 24 hours
 const themeCacheKey = (userId: string) => `theme_pref_cache_${userId}`
