@@ -1,17 +1,19 @@
-import { useQuery } from '@tanstack/react-query'
+import { useQuery, keepPreviousData } from '@tanstack/react-query'
 import React, { useState } from 'react'
 
 import { Avatar } from '../../../components/Avatar'
 import { Table } from '../../../components/Table'
 import { adminService } from '../../../services/adminService'
+import { AdminListResponse } from '../../../types/admin.types'
+import { Lenser } from '../../../types/lenser.types'
 
 export const AdminWaitlist: React.FC = () => {
   const [page, setPage] = useState(1)
 
-  const { data, isLoading } = useQuery({
+  const { data, isLoading } = useQuery<AdminListResponse<Lenser>>({
     queryKey: ['admin', 'waitlist', page],
     queryFn: () => adminService.getWaitlist(page, 20),
-    keepPreviousData: true,
+    placeholderData: keepPreviousData,
   })
 
   const columns = [

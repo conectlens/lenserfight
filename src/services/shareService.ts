@@ -1,7 +1,7 @@
-import { getShareRepository } from '../adapters/shareAdapter'
+import { SupabaseShareRepository } from '../repositories/shareRepository'
 import { CreateLinkDTO, SharedLink } from '../types/share.types'
 
-const shareRepo = getShareRepository()
+const shareRepo = new SupabaseShareRepository()
 
 export const shareService = {
   createOrGetSharedLink: async (dto: CreateLinkDTO): Promise<SharedLink> => {
@@ -25,7 +25,7 @@ export const shareService = {
     return `${origin}/s/${shortId}`
   },
 
-  resolveAndLog: async (shortId: string) => {
+  resolveAndLog: async (shortId: string, _userId?: string) => {
     const result = await shareRepo.resolveLink(shortId)
     if (result) {
       // Fire and forget logging

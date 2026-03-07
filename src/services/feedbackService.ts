@@ -1,7 +1,7 @@
-import { getFeedbackRepository } from '../adapters/feedbackAdapter'
+import { SupabaseFeedbackRepository } from '../repositories/feedbackRepository'
 import { SubmitFeedbackDTO, FeedbackResponse } from '../types/feedback.types'
 
-const feedbackRepo = getFeedbackRepository()
+const feedbackRepo = new SupabaseFeedbackRepository()
 
 export const feedbackService = {
   submitFeedback: async (dto: SubmitFeedbackDTO): Promise<void> => {

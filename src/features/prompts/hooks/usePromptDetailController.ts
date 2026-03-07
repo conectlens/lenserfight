@@ -5,7 +5,7 @@ import { useAuth } from '../../../context/AuthContext'
 import { useLenser } from '../../../context/LenserContext'
 import { analyticsService } from '../../../services/analyticsService'
 import { promptsService } from '../../../services/promptsService'
-import { tagActivityService } from '../../../services/tagActivityService'
+import { tagService } from '../../../services/tagService'
 import {
   PromptTemplateDetailViewModel,
   PromptTemplateViewModel,
@@ -69,7 +69,7 @@ export const usePromptDetailController = (promptId?: string) => {
 
     const tagIds = data.prompt.tags.map((t) => t.id)
     if (tagIds.length > 0) {
-      tagActivityService.recordBatchView(tagIds, 'prompt', promptId, lenser?.id)
+      tagService.recordBatchView(tagIds, 'prompt', promptId, lenser?.id)
     }
   }, [data?.prompt, promptId, lenser?.id, user?.id])
 

@@ -1,7 +1,7 @@
-import { getAnalyticsRepository } from '../adapters/analyticsAdapter'
+import { SupabaseAnalyticsRepository } from '../repositories/analyticsRepository'
 import { LogPageViewDTO, TargetType } from '../types/analytics.types'
 
-const repo = getAnalyticsRepository()
+const repo = new SupabaseAnalyticsRepository()
 
 export const analyticsService = {
   trackView: async (

@@ -1,5 +1,5 @@
 import { User, AuthStateChangeCallback, UserMetadata } from '../types/auth.types'
-import { supabase } from '../utils/supabase'
+import { supabase } from '../core/supabase/client'
 
 // --- Port (Interface) ---
 export interface AuthRepositoryPort {

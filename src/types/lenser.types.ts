@@ -139,6 +139,7 @@ export interface NetworkUser {
 
 export interface LenserProfileDTO {
   // Identity
+  id: string
   handle: string // unique
   display_name: string
   avatar_url?: string | null

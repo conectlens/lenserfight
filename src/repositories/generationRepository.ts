@@ -6,7 +6,7 @@ import {
   AIModel,
 } from '../types/generation.types'
 
-import { supabase } from '../utils/supabase'
+import { supabase } from '../core/supabase/client'
 
 
 

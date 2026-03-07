@@ -1,5 +1,5 @@
 import { ContactMessage, CreateContactDTO } from '../types/contact.types'
-import { supabase } from '../utils/supabase'
+import { supabase } from '../core/supabase/client'
 
 export interface ContactRepositoryPort {
   submitMessage(dto: CreateContactDTO): Promise<void>

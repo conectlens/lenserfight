@@ -11,7 +11,7 @@ import { useShareContext } from '../../../context/ShareContext'
 import { useUI } from '../../../context/UIContext'
 import { promptsService } from '../../../services/promptsService'
 import { AIResultsSection } from '../../generations/components/AIResultsSection'
-import { CreateLenserProfileModal } from '../../lenser/components/CreateLenserProfileModal'
+import { CreateLenserProfileModal } from '../../onboarding/components/CreateLenserProfileModal'
 import { CreatePromptModal } from '../components/CreatePromptModal'
 import { PromptAuthorList } from '../components/PromptAuthorList'
 import { PromptBodyViewer } from '../components/PromptBodyViewer'
@@ -133,7 +133,7 @@ export const PromptDetailPage: React.FC = () => {
     try {
       await navigator.clipboard.writeText(prompt.content)
       await actions.copyPrompt()
-    } catch {}
+    } catch { }
   }
 
   const handleSave = async () => {

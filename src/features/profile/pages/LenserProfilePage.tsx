@@ -1,5 +1,6 @@
 import { FolderOpen, MessageSquare, Trophy, Activity, Plus } from 'lucide-react'
-import React, { useEffect, useState, useRef, useCallback } from 'react'
+import React, { useEffect, useState, useRef, useCallback, useMemo } from 'react'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { useParams, useNavigate } from 'react-router-dom'
 
 import { Button } from '../../../components/Button'
@@ -9,11 +10,12 @@ import { FEATURES } from '../../../config/runtimeConfig'
 import { useLenser } from '../../../context/LenserContext'
 import { useShareContext } from '../../../context/ShareContext'
 import { useAnalytics } from '../../../hooks/useAnalytics'
+import { queryKeys } from '../../../lib/queryKeys'
 import { lenserService } from '../../../services/lenserService'
 import { promptsService } from '../../../services/promptsService'
 import { reactionService } from '../../../services/reactionService'
 import { threadsService } from '../../../services/threadsService'
-import { Lenser, LenserStats, LenserActivityPoint } from '../../../types/lenser.types'
+import { Lenser, LenserStats, LenserActivityPoint, LenserProfileDTO } from '../../../types/lenser.types'
 import { PromptTemplateViewModel } from '../../../types/prompts.types'
 import { ActivityFeedItem } from '../../../types/reactions.types'
 import { ThreadFeedItem } from '../../../types/threads.types'
@@ -67,13 +69,44 @@ export const LenserProfilePage: React.FC = () => {
   const { lenser: currentUser } = useLenser() // The currently authenticated user
   const { setShareConfig } = useShareContext()
   const { trackView } = useAnalytics()
+  const queryClient = useQueryClient()
 
-  // The profile being viewed (fetched via handle)
-  const [viewedProfile, setViewedProfile] = useState<Lenser | null>(null)
-  const [stats, setStats] = useState<LenserStats | null>(null)
-  const [xpSummary, setXpSummary] = useState<XPSummary | null>(null)
-  const [activity, setActivity] = useState<LenserActivityPoint[]>([])
-  const [loadingProfile, setLoadingProfile] = useState(true)
+  const { data: viewedProfile = null, isLoading: loadingProfile } = useQuery<LenserProfileDTO | null>({
+    queryKey: queryKeys.lenser.profile(handle!),
+    queryFn: async () => {
+      const result = await lenserService.getPublicLenserProfile(handle!)
+      return result ?? null
+    },
+    enabled: !!handle,
+  })
+
+  const { data: activity = [] } = useQuery<LenserActivityPoint[]>({
+    queryKey: queryKeys.lenser.activity(handle!),
+    queryFn: () => lenserService.getLenserActivity(handle!),
+    enabled: !!handle && !!viewedProfile && FEATURES.LENSER_ACTIVITY,
+  })
+
+  const stats = useMemo<LenserStats | null>(() => {
+    if (!viewedProfile) return null
+    return {
+      threadsCount: Number(viewedProfile.thread_count ?? 0),
+      promptsCount: Number(viewedProfile.prompt_count ?? 0),
+      followersCount: Number(viewedProfile.follower_count ?? 0),
+      followingCount: Number(viewedProfile.following_count ?? 0),
+      winsCount: 0,
+    }
+  }, [viewedProfile])
+
+  const xpSummary = useMemo<XPSummary | null>(() => {
+    if (!viewedProfile) return null
+    return {
+      totalXp: Number(viewedProfile.total_xp ?? 0),
+      currentLevel: Number(viewedProfile.current_level ?? 1),
+      rank: viewedProfile.join_order ?? undefined,
+      currentLevelMinXp: Number(viewedProfile.min_xp ?? 0),
+      currentLevelMaxXp: Number(viewedProfile.max_xp ?? 0),
+    }
+  }, [viewedProfile])
 
   const [tabCache, setTabCache] = useState<Record<TabType, TabState>>({
     threads: { ...INITIAL_TAB_STATE },
@@ -116,60 +149,23 @@ export const LenserProfilePage: React.FC = () => {
     currentUser.handle.toLowerCase() === handle.toLowerCase()
   )
 
+  // Reset tab cache when navigating to a different profile
   useEffect(() => {
     if (!handle) return
-
-    // Reset state on handle change
     setTabCache({
       threads: { ...INITIAL_TAB_STATE },
       prompts: { ...INITIAL_TAB_STATE },
       actions: { ...INITIAL_TAB_STATE },
       challenges: { ...INITIAL_TAB_STATE },
     })
-    setLoadingProfile(true)
+  }, [handle])
 
-    const fetchProfile = async () => {
-      try {
-        const fullProfile = await lenserService.getPublicLenserProfile(handle)
-        if (!fullProfile) {
-          setViewedProfile(null)
-          return
-        }
-
-        setViewedProfile(fullProfile)
-
-        // Track View
-        trackView('profile', handle)
-
-        setStats({
-          threadsCount: Number(fullProfile.thread_count ?? 0),
-          promptsCount: Number(fullProfile.prompt_count ?? 0),
-          followersCount: Number(fullProfile.follower_count ?? 0),
-          followingCount: Number(fullProfile.following_count ?? 0),
-          winsCount: 0,
-        })
-
-        setXpSummary({
-          totalXp: Number(fullProfile.total_xp ?? 0),
-          currentLevel: Number(fullProfile.current_level ?? 1),
-          rank: fullProfile.join_order ?? undefined,
-          currentLevelMinXp: Number(fullProfile.min_xp ?? 0),
-          currentLevelMaxXp: Number(fullProfile.max_xp ?? 0),
-        })
-
-        if (FEATURES.LENSER_ACTIVITY) {
-          const act = await lenserService.getLenserActivity(fullProfile.handle)
-          setActivity(act)
-        }
-      } catch (err) {
-        console.error('Profile load error', err)
-      } finally {
-        setLoadingProfile(false)
-      }
+  // Track profile view once loaded
+  useEffect(() => {
+    if (viewedProfile && handle) {
+      trackView('profile', handle)
     }
-
-    fetchProfile()
-  }, [handle, trackView])
+  }, [viewedProfile?.id, handle, trackView])
 
   useEffect(() => {
     if (viewedProfile) {
@@ -279,7 +275,9 @@ export const LenserProfilePage: React.FC = () => {
     navigate(`/lenser/${handle}/${code}`)
   }
 
-  const handleProfileUpdate = (updatedLenser: Lenser) => setViewedProfile(updatedLenser)
+  const handleProfileUpdate = (updatedLenser: Lenser) => {
+    queryClient.setQueryData(queryKeys.lenser.profile(handle!), updatedLenser)
+  }
 
   const handleEditPrompt = (id: string) => {
     const promptToEdit = items.find((p: any) => p.id === id)
