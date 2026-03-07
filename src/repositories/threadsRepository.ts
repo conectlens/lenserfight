@@ -62,14 +62,26 @@ export class SupabaseThreadsRepository implements ThreadsRepositoryPort {
    * - Frontend cannot spoof lenser_id.
    */
   async createThread(dto: CreateThreadDTO): Promise<ThreadRecord> {
-    const { data: threadId, error } = await supabase.rpc('fn_content_create_thread', {
-      p_title: dto.title,
-      p_content: dto.content,
-      p_visibility: dto.visibility,
-      p_tag_ids: dto.tagIds && dto.tagIds.length > 0 ? dto.tagIds : null,
-    })
+    const { data: threadInsertData, error } = await supabase.schema('content').from('threads').insert({
+      title: dto.title,
+      content: dto.content,
+      visibility: dto.visibility,
+      lenser_id: dto.lenserId
+    }).select('id').single()
 
     if (error) this.handleError(error)
+    const threadId = threadInsertData.id
+
+    if (dto.tagIds && dto.tagIds.length > 0) {
+      const { data: authData } = await supabase.auth.getUser()
+      const tagRecords = dto.tagIds.map(tagId => ({
+        entity_type: 'thread',
+        entity_id: threadId,
+        tag_id: tagId,
+        user_id: authData?.user?.id || null
+      }))
+      await supabase.schema('content').from('tag_map').insert(tagRecords)
+    }
 
     // Read from secure public view
     const { data: threadView, error: viewError } = await supabase
@@ -206,13 +218,15 @@ export class SupabaseThreadsRepository implements ThreadsRepositoryPort {
     content: string,
     parentReplyId?: string
   ): Promise<ThreadReplyRecord> {
-    const { data: replyId, error } = await supabase.rpc('fn_content_create_reply', {
-      p_thread_id: threadId,
-      p_content: content,
-      p_parent_reply_id: parentReplyId ?? null,
-    })
+    const { data: replyInsertData, error } = await supabase.schema('content').from('thread_replies').insert({
+      thread_id: threadId,
+      content,
+      parent_reply_id: parentReplyId ?? null,
+      lenser_id: lenserId
+    }).select('id').single()
 
     if (error) this.handleError(error)
+    const replyId = replyInsertData.id
 
     const { data: replyView, error: viewError } = await supabase
       .from('vw_content_thread_replies_public')
@@ -242,15 +256,30 @@ export class SupabaseThreadsRepository implements ThreadsRepositoryPort {
    * Only the owner can update (enforced in fn_content_update_thread).
    */
   async updateThread(id: string, dto: Partial<CreateThreadDTO>): Promise<ThreadRecord> {
-    const { error } = await supabase.rpc('fn_content_update_thread', {
-      p_thread_id: id,
-      p_title: dto.title ?? null,
-      p_content: dto.content ?? null,
-      p_visibility: dto.visibility ?? null,
-      p_tag_ids: dto.tagIds && dto.tagIds.length > 0 ? dto.tagIds : null,
-    })
+    const updatePayload: any = {}
+    if (dto.title !== undefined) updatePayload.title = dto.title
+    if (dto.content !== undefined) updatePayload.content = dto.content
+    if (dto.visibility !== undefined) updatePayload.visibility = dto.visibility
 
-    if (error) this.handleError(error)
+    if (Object.keys(updatePayload).length > 0) {
+      const { error } = await supabase.schema('content').from('threads').update(updatePayload).eq('id', id)
+      if (error) this.handleError(error)
+    }
+
+    if (dto.tagIds !== undefined) {
+      await supabase.schema('content').from('tag_map').delete().eq('entity_type', 'thread').eq('entity_id', id)
+      if (dto.tagIds.length > 0) {
+        const { data: authData } = await supabase.auth.getUser()
+        const tagRecords = dto.tagIds.map(tagId => ({
+          entity_type: 'thread',
+          entity_id: id,
+          tag_id: tagId,
+          user_id: authData?.user?.id || null
+        }))
+        const { error: tagError } = await supabase.schema('content').from('tag_map').insert(tagRecords)
+        if (tagError) this.handleError(tagError)
+      }
+    }
 
     const { data: threadView, error: viewError } = await supabase
       .from('vw_content_threads_public')
@@ -267,9 +296,7 @@ export class SupabaseThreadsRepository implements ThreadsRepositoryPort {
    * Only the owner can delete (enforced in fn_content_delete_thread).
    */
   async deleteThread(id: string): Promise<void> {
-    const { error } = await supabase.rpc('fn_content_delete_thread', {
-      p_thread_id: id,
-    })
+    const { error } = await supabase.schema('content').from('threads').delete().eq('id', id)
 
     if (error) this.handleError(error)
   }
@@ -278,9 +305,7 @@ export class SupabaseThreadsRepository implements ThreadsRepositoryPort {
    * Delete a reply via RPC (soft delete in DB).
    */
   async deleteReply(replyId: string): Promise<void> {
-    const { error } = await supabase.rpc('fn_content_delete_reply', {
-      p_reply_id: replyId,
-    })
+    const { error } = await supabase.schema('content').from('thread_replies').delete().eq('id', replyId)
 
     if (error) this.handleError(error)
   }

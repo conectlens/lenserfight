@@ -8,9 +8,15 @@ export interface PreferencesRepositoryPort {
 
 export class SupabasePreferencesRepository implements PreferencesRepositoryPort {
   async updateTheme(theme: 'light' | 'dark'): Promise<void> {
-    const { error } = await supabase.rpc('fn_lensers_update_theme', {
-      p_theme: theme,
-    })
+    const { data: authData } = await supabase.auth.getUser()
+    if (!authData.user) return
+
+    const { data: profile } = await supabase.schema('lensers').from('profiles').select('id, preferences').eq('user_id', authData.user.id).single()
+    if (!profile) return
+
+    const newPrefs = { ...(profile.preferences as any || {}), theme }
+
+    const { error } = await supabase.schema('lensers').from('profiles').update({ preferences: newPrefs }).eq('id', profile.id)
 
     if (error) {
       console.error('Failed to secure update theme via RPC', error)
