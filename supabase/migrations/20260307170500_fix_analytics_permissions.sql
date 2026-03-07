@@ -74,8 +74,36 @@ GRANT ALL ON ALL TABLES IN SCHEMA analytics, ops, system, billing TO service_rol
 GRANT ALL ON ALL SEQUENCES IN SCHEMA analytics, ops, system, billing TO service_role;
 GRANT ALL ON ALL FUNCTIONS IN SCHEMA analytics, ops, system, billing TO service_role;
 
--- Strictly isolated from API (PostgREST) access
+-- Partially isolated: USAGE allowed, but ALL tables REVOKED by default
 REVOKE ALL ON SCHEMA analytics FROM anon, authenticated;
+GRANT USAGE ON SCHEMA analytics TO anon, authenticated;
+
 REVOKE ALL ON SCHEMA ops FROM anon, authenticated;
 REVOKE ALL ON SCHEMA system FROM anon, authenticated;
 REVOKE ALL ON SCHEMA billing FROM anon, authenticated;
+
+-- =========================================================================
+-- 4. SELECTIVE API EXPOSURE (analytics.product_feedback)
+-- =========================================================================
+
+-- Grant specific table access for feedback
+GRANT INSERT ON analytics.product_feedback TO anon, authenticated;
+GRANT SELECT ON analytics.product_feedback TO authenticated;
+
+-- Grant access to public engagement stats (as per policies in remote_schema)
+GRANT SELECT ON analytics.lenser_stats TO anon, authenticated;
+
+-- Manage Policies for product_feedback
+-- Drop the restrictive 'no_direct_access' that blocks all API traffic
+DROP POLICY IF EXISTS "no_direct_access" ON analytics.product_feedback;
+
+-- Ensure INSERT is allowed for all users (handled securely by set_feedback_user_id trigger)
+CREATE POLICY "p_feedback_insert_public" ON analytics.product_feedback 
+  FOR INSERT TO anon, authenticated 
+  WITH CHECK (true);
+
+-- Ensure users can only see their own feedback (redundant with remote_schema but explicit is better)
+DROP POLICY IF EXISTS "feedback_read_own" ON analytics.product_feedback;
+CREATE POLICY "p_feedback_select_own" ON analytics.product_feedback 
+  FOR SELECT TO authenticated 
+  USING (user_id = auth.uid());
