@@ -1,29 +1,14 @@
 import { useQuery, useInfiniteQuery } from '@tanstack/react-query'
 
 import { useLenser } from '../context/LenserContext'
+import { queryKeys } from '../lib/queryKeys'
 import { lenserService } from '../services/lenserService'
 import { promptsService } from '../services/promptsService'
 import { threadsService } from '../services/threadsService'
 
-// Keys Factory
-export const keys = {
-  threads: {
-    all: ['threads'] as const,
-    feed: () => [...keys.threads.all, 'feed'] as const,
-    detail: (id: string) => [...keys.threads.all, 'detail', id] as const,
-  },
-  prompts: {
-    all: ['prompts'] as const,
-    feed: (filter?: any) => [...keys.prompts.all, 'feed', filter] as const,
-    top: ['prompts', 'top'] as const,
-  },
-  lensers: {
-    latest: ['lensers', 'latest'] as const,
-  },
-  tags: {
-    trending: ['tags', 'trending'] as const,
-  },
-}
+// Re-export for backward compatibility with any imports of `keys` from this file
+const keys = queryKeys
+export { keys }
 
 export const useThreadsFeed = () => {
   const { lenser } = useLenser()
@@ -85,7 +70,7 @@ export const useTrendingTags = () => {
 
 export const useLatestLensers = () => {
   return useQuery({
-    queryKey: keys.lensers.latest,
+    queryKey: queryKeys.lenser.latest,
     queryFn: () => lenserService.getLatestJoinedLensers(),
     staleTime: 1000 * 60 * 5,
   })

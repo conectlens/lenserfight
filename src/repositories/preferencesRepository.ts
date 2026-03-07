@@ -1,5 +1,5 @@
 import { LenserPreferences } from '../types/lenser.types'
-import { supabase } from '../utils/supabase'
+import { supabase } from '../core/supabase/client'
 
 export interface PreferencesRepositoryPort {
   updateTheme(userId: string, theme: 'light' | 'dark'): Promise<void>
@@ -7,7 +7,7 @@ export interface PreferencesRepositoryPort {
 }
 
 export class SupabasePreferencesRepository implements PreferencesRepositoryPort {
-  async updateTheme(theme: 'light' | 'dark'): Promise<void> {
+  async updateTheme(_userId: string, theme: 'light' | 'dark'): Promise<void> {
     const { data: authData } = await supabase.auth.getUser()
     if (!authData.user) return
 
@@ -23,7 +23,7 @@ export class SupabasePreferencesRepository implements PreferencesRepositoryPort 
     }
   }
 
-  async getPreferences(): Promise<LenserPreferences | null> {
+  async getPreferences(_userId: string): Promise<LenserPreferences | null> {
     const { data, error } = await supabase.rpc('fn_lensers_get_preferences')
 
     if (error) return null

@@ -3,7 +3,7 @@ import { useNavigate, useLocation } from 'react-router-dom'
 
 import { useAuth } from '../context/AuthContext'
 import { useLenser } from '../context/LenserContext'
-import { CreateLenserProfileModal } from '../features/lenser/components/CreateLenserProfileModal'
+import { CreateLenserProfileModal } from '../features/onboarding/components/CreateLenserProfileModal'
 import { storage } from '../utils/storage'
 
 import { Footer } from './Footer'

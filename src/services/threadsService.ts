@@ -1,6 +1,6 @@
-import { getLenserRepository } from '../adapters/lenserAdapter'
-import { getReactionRepository } from '../adapters/reactionAdapter'
-import { getThreadsRepository } from '../adapters/threadsAdapter'
+import { SupabaseLenserRepository } from '../repositories/lenserRepository'
+import { SupabaseReactionRepository } from '../repositories/reactionRepository'
+import { SupabaseThreadsRepository } from '../repositories/threadsRepository'
 import {
   ThreadFeedItem,
   ThreadDetailViewModel,
@@ -13,9 +13,9 @@ import {
 import { tagService } from './tagService'
 import { threadInteractionService } from './threadInteractionService'
 
-const threadsRepo = getThreadsRepository()
-const lenserRepo = getLenserRepository()
-const reactionRepo = getReactionRepository()
+const threadsRepo = new SupabaseThreadsRepository()
+const lenserRepo = new SupabaseLenserRepository()
+const reactionRepo = new SupabaseReactionRepository()
 
 const resolveAuthor = (record: any): ThreadAuthor => {
   const profile = record.author_profile || {}

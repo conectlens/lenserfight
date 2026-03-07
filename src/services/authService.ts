@@ -1,7 +1,7 @@
-import { getAuthRepository } from '../adapters/authAdapter'
+import { SupabaseAuthRepository } from '../repositories/authRepository'
 import { User, AuthStateChangeCallback, UserMetadata } from '../types/auth.types'
 
-const authRepo = getAuthRepository()
+const authRepo = new SupabaseAuthRepository()
 
 export const authService = {
   login: async (

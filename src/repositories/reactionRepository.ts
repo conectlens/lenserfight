@@ -1,5 +1,5 @@
 import { ReactionRecord, TargetType, ReactionType, ReactionCount } from '../types/reactions.types'
-import { supabase } from '../utils/supabase'
+import { supabase } from '../core/supabase/client'
 
 export interface ReactionRepositoryPort {
   toggleReaction(
@@ -40,7 +40,11 @@ export class SupabaseReactionRepository implements ReactionRepositoryPort {
     return (data ?? []) as ReactionRecord[]
   }
 
-  async getUserReaction(targetType: TargetType, targetId: string): Promise<ReactionRecord[]> {
+  async getUserReaction(
+    targetType: TargetType,
+    targetId: string,
+    _lenserId: string // used in RPC maybe? or just for port compatibility
+  ): Promise<ReactionRecord[]> {
     const { data, error } = await supabase.rpc('fn_content_reactions_get_user_for_target', {
       p_target_type: targetType,
       p_target_id: targetId,
