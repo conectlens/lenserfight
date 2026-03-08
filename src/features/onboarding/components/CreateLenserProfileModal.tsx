@@ -40,8 +40,6 @@ export const CreateLenserProfileModal: React.FC<CreateLenserProfileModalProps> =
     }
   }, [authLoading, isLoading, isAuthenticated, hasLenser, navigate, onClose])
 
-  if (authLoading || isLoading || !isAuthenticated || hasLenser) return null
-
   // Real-time validation & Debounced Check
   useEffect(() => {
     // Reset states when input changes
@@ -112,6 +110,9 @@ export const CreateLenserProfileModal: React.FC<CreateLenserProfileModalProps> =
 
     return () => clearTimeout(timer)
   }, [handle])
+
+  if (authLoading || isLoading || !isAuthenticated || hasLenser) return null
+
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
