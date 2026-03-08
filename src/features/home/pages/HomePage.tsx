@@ -67,7 +67,7 @@ export const HomePage: React.FC = () => {
   const handleOpenThread = (id: string) => navigate(`/threads/${id}`)
 
   const handleCreateClick = () => {
-    if (!isAuthenticated) return navigate('/login', { state: { from: location } })
+    if (!isAuthenticated) return navigate('/auth/login', { state: { from: location } })
     if (!hasLenser) return setIsProfileModalOpen(true)
     setIsCreateModalOpen(true)
   }
