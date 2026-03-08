@@ -71,7 +71,7 @@ export const ThreadReactionBar: React.FC<ThreadReactionBarProps> = ({
          `}
       >
         <ArrowUp
-          className={`w-4 h-4 transition-transform duration-300 ${hasReacted ? 'stroke-[3px] scale-110' : 'group-hover:-translate-y-0.5'}`}
+          className={`w-4 h-4 transition-all duration-300 ${hasReacted ? 'stroke-[3px] scale-110 text-gray-900' : 'text-gray-600 dark:text-gray-400 group-hover:-translate-y-0.5'}`}
         />
         <span className="text-sm font-bold min-w-[1ch] text-center tabular-nums">
           <RollingNumber value={count} />
