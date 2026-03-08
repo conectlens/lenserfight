@@ -110,9 +110,24 @@ export class SupabaseThreadsRepository implements ThreadsRepositoryPort {
       .from('vw_content_threads_public')
       .select(this.threadSelect)
       .eq('id', threadId)
-      .single()
+      .maybeSingle()
 
     if (viewError) this.handleError(viewError)
+
+    if (!threadView) {
+      // Fallback for private threads
+      return {
+        id: threadId,
+        lenser_id: cleanLenserId,
+        visibility: dto.visibility,
+        created_at: new Date().toISOString(),
+        author_profile: {},
+        tags: [],
+        title: dto.title,
+        content: dto.content,
+      } as unknown as ThreadRecord
+    }
+
     return threadView as unknown as ThreadRecord
   }
 
@@ -254,9 +269,21 @@ export class SupabaseThreadsRepository implements ThreadsRepositoryPort {
       .from('vw_content_thread_replies_public')
       .select('*')
       .eq('id', replyId)
-      .single()
+      .maybeSingle()
 
     if (viewError) this.handleError(viewError)
+
+    if (!replyView) {
+      return {
+        id: replyId,
+        thread_id: threadId,
+        content,
+        parent_reply_id: parentReplyId || null,
+        lenser_id: lenserId,
+        created_at: new Date().toISOString(),
+      } as unknown as ThreadReplyRecord
+    }
+
     return replyView as ThreadReplyRecord
   }
 
@@ -318,9 +345,19 @@ export class SupabaseThreadsRepository implements ThreadsRepositoryPort {
       .from('vw_content_threads_public')
       .select(this.threadSelect)
       .eq('id', id)
-      .single()
+      .maybeSingle()
 
     if (viewError) this.handleError(viewError)
+
+    if (!threadView) {
+      return {
+        id,
+        visibility: dto.visibility,
+        title: dto.title,
+        content: dto.content,
+      } as unknown as ThreadRecord
+    }
+
     return threadView as unknown as ThreadRecord
   }
 
