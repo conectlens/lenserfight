@@ -171,9 +171,20 @@ export class SupabasePromptsRepository implements PromptsRepositoryPort {
   // -----------------------------------------------------
 
   async createPrompt(input: CreatePromptDTO): Promise<PromptTemplateRecord> {
-    // 1. Get default English language ID as fallback
-    const { data: langData } = await supabase.schema('core').from('languages').select('id').eq('code', 'en').single()
-    const defaultLanguageId = langData?.id
+    if (!input.lenserId || input.lenserId === 'undefined') {
+      throw new Error('Valid Lenser ID is required to create a prompt.')
+    }
+
+    // 1. Get user's preferred language ID from their profile (since core schema is unexposed)
+    const { data: profileData, error: profileError } = await supabase
+      .schema('lensers')
+      .from('profiles')
+      .select('preferred_language_id')
+      .eq('id', input.lenserId)
+      .single()
+
+    if (profileError) this.handleError(profileError)
+    const languageId = profileData?.preferred_language_id
 
     // 2. Insert Base Prompt Template
     const { data: promptInsertData, error: rpcError } = await supabase.schema('content').from('prompt_templates').insert({
@@ -185,10 +196,10 @@ export class SupabasePromptsRepository implements PromptsRepositoryPort {
     const promptId = promptInsertData.id
 
     // 3. Insert Prompt Translation
-    if (defaultLanguageId) {
+    if (languageId) {
       const { error: translationError } = await supabase.schema('content').from('prompt_translations').insert({
         prompt_id: promptId,
-        language_id: defaultLanguageId,
+        language_id: languageId,
         is_original: true,
         title: input.title,
         description: input.description ?? null,
