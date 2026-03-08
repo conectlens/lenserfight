@@ -163,7 +163,7 @@ export const ResetPasswordPage: React.FC = () => {
 
       <div className="mt-8 text-center text-sm text-gray-500 font-medium">
         <Link
-          to="/login"
+          to="/auth/login"
           className="flex items-center justify-center gap-2 text-gray-900 dark:text-white hover:text-primary-700 dark:hover:text-primary-400 hover:underline transition-colors"
         >
           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">

@@ -82,7 +82,7 @@ export const ThreadDetailPage: React.FC = () => {
 
   const handleToggleReaction = () => {
     if (!isAuthenticated) {
-      navigate('/login', { state: { from: location } })
+      navigate('/auth/login', { state: { from: location } })
       return
     }
     if (!hasLenser) {
@@ -94,7 +94,7 @@ export const ThreadDetailPage: React.FC = () => {
 
   const handleReplyReaction = (replyId: string) => {
     if (!isAuthenticated) {
-      navigate('/login', { state: { from: location } })
+      navigate('/auth/login', { state: { from: location } })
       return
     }
     if (!hasLenser) {

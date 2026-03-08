@@ -186,7 +186,7 @@ export const WaitingListSection: React.FC = () => {
               </p>
 
               <div className="grid grid-cols-2 gap-4">
-                <Link to="/login">
+                <Link to="/auth/login">
                   <Button variant="secondary" className="w-full">
                     Sign In
                   </Button>

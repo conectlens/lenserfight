@@ -67,7 +67,7 @@ export const PromptsPage: React.FC = () => {
 
   const handleCreateClick = () => {
     if (!isAuthenticated) {
-      navigate('/login', { state: { from: location } })
+      navigate('/auth/login', { state: { from: location } })
       return
     }
     if (!hasLenser) {

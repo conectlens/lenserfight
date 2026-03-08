@@ -31,7 +31,7 @@ export const CreateLenserProfileModal: React.FC<CreateLenserProfileModalProps> =
   useEffect(() => {
     if (!authLoading && !isLoading) {
       if (!isAuthenticated) {
-        navigate('/login')
+        navigate('/auth/login')
         onClose()
       } else if (hasLenser) {
         // If they already have a profile, just close
