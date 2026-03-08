@@ -62,16 +62,14 @@ export class SupabaseThreadsRepository implements ThreadsRepositoryPort {
    * - Frontend cannot spoof lenser_id.
    */
   async createThread(dto: CreateThreadDTO): Promise<ThreadRecord> {
-    if (!dto.lenserId || dto.lenserId === 'undefined') {
-      throw new Error('Valid Lenser ID is required to create a thread.')
-    }
+    const cleanLenserId = !dto.lenserId || dto.lenserId === 'undefined' ? undefined : dto.lenserId
 
     // 1. Get user's preferred language ID from their profile (since core schema is unexposed)
     const { data: profileData, error: profileError } = await supabase
       .schema('lensers')
       .from('profiles')
       .select('preferred_language_id')
-      .eq('id', dto.lenserId)
+      .eq('id', cleanLenserId)
       .single()
 
     if (profileError) this.handleError(profileError)
@@ -80,7 +78,7 @@ export class SupabaseThreadsRepository implements ThreadsRepositoryPort {
     // 2. Insert Base Thread
     const { data: threadInsertData, error: insertError } = await supabase.schema('content').from('threads').insert({
       visibility: dto.visibility,
-      lenser_id: dto.lenserId
+      lenser_id: cleanLenserId
     }).select('id').single()
 
     if (insertError) this.handleError(insertError)
@@ -248,7 +246,7 @@ export class SupabaseThreadsRepository implements ThreadsRepositoryPort {
       thread_id: threadId,
       content,
       parent_reply_id: parentReplyId ?? null,
-      lenser_id: lenserId
+      lenser_id: !lenserId || lenserId === 'undefined' ? undefined : lenserId
     }).select('id').single()
 
     if (error) this.handleError(error)
