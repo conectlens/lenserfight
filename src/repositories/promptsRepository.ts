@@ -177,13 +177,27 @@ export class SupabasePromptsRepository implements PromptsRepositoryPort {
     const cleanLenserId = !input.lenserId || input.lenserId === 'undefined' ? undefined : input.lenserId
 
     // 1. Get user's preferred language ID from their profile (since core schema is unexposed)
-    const { data: profileData } = await supabase
-      .schema('lensers')
-      .from('profiles')
-      .select('preferred_language_id')
-      .eq('id', cleanLenserId)
-      .maybeSingle()
-    const languageId = profileData?.preferred_language_id
+    let languageId: string | undefined
+    if (cleanLenserId) {
+      const { data: profileData } = await supabase
+        .schema('lensers')
+        .from('profiles')
+        .select('preferred_language_id')
+        .eq('id', cleanLenserId)
+        .maybeSingle()
+      languageId = profileData?.preferred_language_id
+    }
+
+    // 1b. Fallback to default language if not set
+    if (!languageId) {
+      const { data: langData } = await supabase
+        .schema('core')
+        .from('languages')
+        .select('id')
+        .eq('is_default', true)
+        .maybeSingle()
+      languageId = langData?.id
+    }
 
     // 2. Insert Base Prompt Template
     const { data: promptInsertData, error: rpcError } = await supabase.schema('content').from('prompt_templates').insert({
@@ -194,7 +208,7 @@ export class SupabasePromptsRepository implements PromptsRepositoryPort {
     if (rpcError) this.handleError(rpcError)
     const promptId = promptInsertData.id
 
-    // 3. Insert Prompt Translation
+    // 3. Insert Prompt Translation (now always attempted with fallback language)
     if (languageId) {
       const { error: translationError } = await supabase.schema('content').from('prompt_translations').insert({
         prompt_id: promptId,
