@@ -1,6 +1,20 @@
-import { QueryClient } from '@tanstack/react-query'
+import { QueryClient, QueryCache, MutationCache } from '@tanstack/react-query'
+
+const handleAuthError = (error: any) => {
+  if (error?.code === 'user_not_found' || error?.message?.includes('User from sub claim in JWT does not exist')) {
+    console.warn('User not found in database (API/Mutation), redirecting to login...')
+    // We use window.location.href for a hard reset of the app state and to ensure it works outside of React components
+    window.location.href = '/auth/login'
+  }
+}
 
 export const queryClient = new QueryClient({
+  queryCache: new QueryCache({
+    onError: handleAuthError,
+  }),
+  mutationCache: new MutationCache({
+    onError: handleAuthError,
+  }),
   defaultOptions: {
     queries: {
       staleTime: 1000 * 60 * 5, // Data is fresh for 5 minutes (prevents immediate refetch)
