@@ -171,16 +171,14 @@ export class SupabasePromptsRepository implements PromptsRepositoryPort {
   // -----------------------------------------------------
 
   async createPrompt(input: CreatePromptDTO): Promise<PromptTemplateRecord> {
-    if (!input.lenserId || input.lenserId === 'undefined') {
-      throw new Error('Valid Lenser ID is required to create a prompt.')
-    }
+    const cleanLenserId = !input.lenserId || input.lenserId === 'undefined' ? undefined : input.lenserId
 
     // 1. Get user's preferred language ID from their profile (since core schema is unexposed)
     const { data: profileData, error: profileError } = await supabase
       .schema('lensers')
       .from('profiles')
       .select('preferred_language_id')
-      .eq('id', input.lenserId)
+      .eq('id', cleanLenserId)
       .single()
 
     if (profileError) this.handleError(profileError)
@@ -189,7 +187,7 @@ export class SupabasePromptsRepository implements PromptsRepositoryPort {
     // 2. Insert Base Prompt Template
     const { data: promptInsertData, error: rpcError } = await supabase.schema('content').from('prompt_templates').insert({
       visibility: input.visibility,
-      lenser_id: input.lenserId
+      lenser_id: cleanLenserId
     }).select('id').single()
 
     if (rpcError) this.handleError(rpcError)
