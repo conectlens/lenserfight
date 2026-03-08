@@ -174,14 +174,12 @@ export class SupabasePromptsRepository implements PromptsRepositoryPort {
     const cleanLenserId = !input.lenserId || input.lenserId === 'undefined' ? undefined : input.lenserId
 
     // 1. Get user's preferred language ID from their profile (since core schema is unexposed)
-    const { data: profileData, error: profileError } = await supabase
+    const { data: profileData } = await supabase
       .schema('lensers')
       .from('profiles')
       .select('preferred_language_id')
       .eq('id', cleanLenserId)
-      .single()
-
-    if (profileError) this.handleError(profileError)
+      .maybeSingle()
     const languageId = profileData?.preferred_language_id
 
     // 2. Insert Base Prompt Template

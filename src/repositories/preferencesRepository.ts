@@ -11,7 +11,7 @@ export class SupabasePreferencesRepository implements PreferencesRepositoryPort 
     const { data: authData } = await supabase.auth.getUser()
     if (!authData.user) return
 
-    const { data: profile } = await supabase.schema('lensers').from('profiles').select('id, preferences').eq('user_id', authData.user.id).single()
+    const { data: profile } = await supabase.schema('lensers').from('profiles').select('id, preferences').eq('user_id', authData.user.id).maybeSingle()
     if (!profile) return
 
     const newPrefs = { ...(profile.preferences as any || {}), theme }
