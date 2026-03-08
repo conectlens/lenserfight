@@ -56,8 +56,19 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         } else {
           setState((s) => ({ ...s, user: null, isAuthenticated: false, isLoading: false }))
         }
-      } catch (err) {
+      } catch (err: any) {
         console.error('Auth initialization error:', err)
+        // If user is not found (e.g. deleted from DB but JWT still exists), redirect to login
+        if (err?.code === 'user_not_found' || err?.message?.includes('User from sub claim in JWT does not exist')) {
+          console.warn('User not found in database, redirecting to login...')
+          // Clear session and redirect
+          await authService.logout()
+          storage.removeItem('lenser_has_profile')
+          storage.removeItem(LENSER_CACHE_KEY)
+          storage.removeItem(MOCK_AUTH_KEY)
+          window.location.href = '/auth/login'
+          return
+        }
         setState((s) => ({ ...s, isLoading: false, error: 'Failed to restore session' }))
       }
     }
