@@ -65,14 +65,12 @@ export class SupabaseThreadsRepository implements ThreadsRepositoryPort {
     const cleanLenserId = !dto.lenserId || dto.lenserId === 'undefined' ? undefined : dto.lenserId
 
     // 1. Get user's preferred language ID from their profile (since core schema is unexposed)
-    const { data: profileData, error: profileError } = await supabase
+    const { data: profileData } = await supabase
       .schema('lensers')
       .from('profiles')
       .select('preferred_language_id')
       .eq('id', cleanLenserId)
-      .single()
-
-    if (profileError) this.handleError(profileError)
+      .maybeSingle()
     const languageId = profileData?.preferred_language_id
 
     // 2. Insert Base Thread
