@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react'
-import { useNavigate, useLocation } from 'react-router-dom'
+import { useNavigate, useLocation, useSearchParams } from 'react-router-dom'
 
 import { useAuth } from '../context/AuthContext'
 import { useLenser } from '../context/LenserContext'
@@ -26,7 +26,8 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) =>
   const navigate = useNavigate()
   const location = useLocation()
 
-  const [isProfileModalOpen, setIsProfileModalOpen] = useState(false)
+  const [searchParams, setSearchParams] = useSearchParams()
+  const isProfileModalOpen = searchParams.get('onboarding') === 'true'
   const [hasDismissedProfileModal, setHasDismissedProfileModal] = useState(false)
 
   // Initialize sidebar state from storage or defaults
@@ -106,8 +107,13 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) =>
 
     const shouldOpen = isAuthenticated && !hasLenser && !hasDismissedProfileModal
 
-    setIsProfileModalOpen(shouldOpen)
-  }, [isReady, isAuthenticated, hasLenser, hasDismissedProfileModal])
+    if (shouldOpen && !isProfileModalOpen) {
+      setSearchParams((prev) => {
+        prev.set('onboarding', 'true')
+        return prev
+      }, { replace: true })
+    }
+  }, [isReady, isAuthenticated, hasLenser, hasDismissedProfileModal, isProfileModalOpen, setSearchParams])
 
   const handleToggleSidebar = () => {
     const newState = !sidebarOpen
@@ -134,16 +140,22 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) =>
 
   const handleOpenProfileSetup = () => {
     if (!isAuthenticated) {
-      navigate('/login')
+      navigate('/auth/login')
       return
     }
     setHasDismissedProfileModal(false)
-    setIsProfileModalOpen(true)
+    setSearchParams((prev) => {
+      prev.set('onboarding', 'true')
+      return prev
+    })
   }
 
   const handleCloseProfileModal = () => {
     setHasDismissedProfileModal(true)
-    setIsProfileModalOpen(false)
+    setSearchParams((prev) => {
+      prev.delete('onboarding')
+      return prev
+    })
   }
 
   return (

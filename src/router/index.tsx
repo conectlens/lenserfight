@@ -65,10 +65,13 @@ export const AppRouter: React.FC = () => {
         <Route path="/s/:shortId" element={<ShortLinkRedirect />} />
 
         {/* Auth Routes (Self-contained Layouts) */}
-        <Route path="/login" element={<LoginPage />} />
-        <Route path="/register" element={<RegisterPage />} />
-        <Route path="/forgot-password" element={<ForgotPasswordPage />} />
-        <Route path="/reset-password" element={<ResetPasswordPage />} />
+        <Route path="/auth">
+          <Route index element={<Navigate to="/auth/login" replace />} />
+          <Route path="login" element={<LoginPage />} />
+          <Route path="register" element={<RegisterPage />} />
+          <Route path="forgot-password" element={<ForgotPasswordPage />} />
+          <Route path="reset-password" element={<ResetPasswordPage />} />
+        </Route>
         <Route
           path="/welcome"
           element={
@@ -222,6 +225,10 @@ export const AppRouter: React.FC = () => {
         </Route>
 
         {/* Redirect old routes for backward compatibility/bookmarks */}
+        <Route path="/login" element={<Navigate to="/auth/login" replace />} />
+        <Route path="/register" element={<Navigate to="/auth/register" replace />} />
+        <Route path="/forgot-password" element={<Navigate to="/auth/forgot-password" replace />} />
+        <Route path="/reset-password" element={<Navigate to="/auth/reset-password" replace />} />
         <Route path="/prompts/*" element={<Navigate to="/len/p" replace />} />
         <Route path="/tags/*" element={<Navigate to="/len" replace />} />
         <Route path="/leaderboard" element={<Navigate to="/lenserboard" replace />} />

@@ -87,7 +87,7 @@ export const ForgotPasswordPage: React.FC = () => {
               <strong>Mock Mode Tip:</strong> Check your browser console (F12) for the reset link.
             </div>
           )}
-          <Link to="/login">
+          <Link to="/auth/login">
             <Button>Return to Sign In</Button>
           </Link>
         </div>
@@ -147,7 +147,7 @@ export const ForgotPasswordPage: React.FC = () => {
 
       <div className="mt-8 text-center text-sm text-gray-500 font-medium">
         <Link
-          to="/login"
+          to="/auth/login"
           className="flex items-center justify-center gap-2 text-gray-900 dark:text-gray-200 hover:text-primary-700 dark:hover:text-primary-400 hover:underline transition-colors"
         >
           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">

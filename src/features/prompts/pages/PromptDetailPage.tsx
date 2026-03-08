@@ -53,7 +53,7 @@ export const PromptDetailPage: React.FC = () => {
 
   useEffect(() => {
     if (!authLoading && !isAuthenticated) {
-      navigate('/login', { state: { from: location } })
+      navigate('/auth/login', { state: { from: location } })
     }
   }, [authLoading, isAuthenticated, navigate, location])
 
