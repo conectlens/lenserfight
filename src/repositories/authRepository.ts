@@ -76,10 +76,12 @@ export class SupabaseAuthRepository implements AuthRepositoryPort {
   }
 
   async getCurrentUser(): Promise<User | null> {
-    const { data } = await supabase.auth.getUser()
+    const { data, error } = await supabase.auth.getUser()
+    if (error) throw error
     const user = data.user as unknown as User
     return user || null
   }
+
 
   async requestPasswordReset(email: string, captchaToken?: string): Promise<void> {
     const { error } = await supabase.auth.resetPasswordForEmail(email, {
