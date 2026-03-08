@@ -25,12 +25,14 @@ export class SupabaseTagRepository implements TagRepositoryPort {
 
   /**
    * FIND TAG BY SLUG
-   * Uses RPC fn_content_tags_get_by_slug
+   * Uses REST API on secure public view
    */
   async findBySlug(slug: string): Promise<TagDTO | null> {
-    const { data, error } = await supabase.rpc('fn_content_tags_get_by_slug', {
-      p_slug: slug,
-    })
+    const { data, error } = await supabase
+      .from('vw_tags_public_stats')
+      .select('id, name, slug, visibility')
+      .eq('slug', slug)
+      .single()
 
     if (error) {
       if (error.code === 'PGRST116') return null
@@ -41,32 +43,83 @@ export class SupabaseTagRepository implements TagRepositoryPort {
   }
 
   /**
-   * CREATE TAG — uses fn_content_tags_create
+   * CREATE TAG — uses REST API for multi-step creation
+   * Security: Follows direct table access patterns with RLS enforcement.
    */
   async createTag(name: string, slug: string): Promise<TagDTO> {
-    const { data: tagId, error } = await supabase.rpc('fn_content_tags_create', {
-      p_name: name,
-      p_slug: slug,
-    })
+    // 1. Resolve language ID from current user profile
+    const {
+      data: { user },
+    } = await supabase.auth.getUser()
+    let languageId: string | null = null
 
-    if (error) this.handleError(error)
+    if (user) {
+      const { data: profile } = await supabase
+        .schema('lensers')
+        .from('profiles')
+        .select('preferred_language_id')
+        .eq('id', user.id)
+        .single()
+      languageId = profile?.preferred_language_id
+    }
 
-    const { data: tag, error: fetchError } = await supabase
-      .from('vw_content_tags_public')
-      .select('*')
-      .eq('id', tagId)
+    // 2. Insert Base Tag
+    const { data: tag, error: tagError } = await supabase
+      .schema('content')
+      .from('tags')
+      .insert({ slug, visibility: 'public' })
+      .select('id')
       .single()
 
-    if (fetchError) this.handleError(fetchError)
+    if (tagError) {
+      if (tagError.code === '23505') {
+        const existing = await this.findBySlug(slug)
+        if (existing) return existing
+      }
+      this.handleError(tagError)
+    }
 
-    return tag as TagDTO
+    const tagId = tag.id
+
+    // 3. Insert Tag Translation
+    if (languageId) {
+      const { error: transError } = await supabase.schema('content').from('tag_translations').insert({
+        tag_id: tagId,
+        language_id: languageId,
+        name: name,
+      })
+      if (transError) {
+        console.error('Failed to create tag translation', transError)
+      }
+    } else {
+      // Opportunistic fallback: Try to get any established language ID from another tag
+      const { data: anyTrans } = await supabase
+        .schema('content')
+        .from('tag_translations')
+        .select('language_id')
+        .limit(1)
+        .maybeSingle()
+
+      if (anyTrans?.language_id) {
+        await supabase.schema('content').from('tag_translations').insert({
+          tag_id: tagId,
+          language_id: anyTrans.language_id,
+          name: name,
+        })
+      }
+    }
+
+    // 4. Return refreshed DTO from view
+    const result = await this.findBySlug(slug)
+    if (!result) throw new Error('Failed to retrieve newly created tag.')
+    return result
   }
 
   /**
    * GET ALL TAGS WITH COUNTS
    */
   async getAllTagsWithCounts(): Promise<TagUsage[]> {
-    const { data, error } = await supabase.from('vw_content_tags_public').select('*')
+    const { data, error } = await supabase.from('vw_tags_public_stats').select('*')
 
     if (error) this.handleError(error)
 
@@ -77,8 +130,8 @@ export class SupabaseTagRepository implements TagRepositoryPort {
       description: tag.description ?? '',
       visibility: tag.visibility ?? 'public',
       created_at: tag.created_at,
-      count: tag.usage_count ?? 0,
-      trendingScore: tag.trending_score ?? 0,
+      count: Number(tag.total_usage ?? 0),
+      trendingScore: Number(tag.trend_score_7d ?? 0),
     })) as TagUsage[]
   }
 
@@ -96,6 +149,8 @@ export class SupabaseTagRepository implements TagRepositoryPort {
     if (!events.length) return
 
     try {
+      // NOTE: analytics schema usage might be restricted; keeping public schema attempt 
+      // or adjusting to 'content' if it's there.
       const { error } = await supabase.from('tag_activity_events').insert(events)
 
       if (error) {
