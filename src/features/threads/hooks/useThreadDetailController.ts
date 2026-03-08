@@ -132,7 +132,7 @@ export const useThreadDetailController = (threadId?: string) => {
       const prev = queryClient.getQueryData<ThreadDetailViewModel>(keys.threads.detail(threadId!))
       if (!prev) return
 
-      const finalHas = result.added
+      const finalHas = result.status === 'added'
 
       queryClient.setQueryData(keys.threads.detail(threadId!), {
         ...prev,
