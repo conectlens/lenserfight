@@ -62,24 +62,35 @@ export class SupabaseThreadsRepository implements ThreadsRepositoryPort {
    * - Frontend cannot spoof lenser_id.
    */
   async createThread(dto: CreateThreadDTO): Promise<ThreadRecord> {
-    // 1. Get default English language ID as fallback
-    const { data: langData } = await supabase.schema('core').from('languages').select('id').eq('code', 'en').single()
-    const defaultLanguageId = langData?.id
+    if (!dto.lenserId || dto.lenserId === 'undefined') {
+      throw new Error('Valid Lenser ID is required to create a thread.')
+    }
+
+    // 1. Get user's preferred language ID from their profile (since core schema is unexposed)
+    const { data: profileData, error: profileError } = await supabase
+      .schema('lensers')
+      .from('profiles')
+      .select('preferred_language_id')
+      .eq('id', dto.lenserId)
+      .single()
+
+    if (profileError) this.handleError(profileError)
+    const languageId = profileData?.preferred_language_id
 
     // 2. Insert Base Thread
-    const { data: threadInsertData, error } = await supabase.schema('content').from('threads').insert({
+    const { data: threadInsertData, error: insertError } = await supabase.schema('content').from('threads').insert({
       visibility: dto.visibility,
       lenser_id: dto.lenserId
     }).select('id').single()
 
-    if (error) this.handleError(error)
+    if (insertError) this.handleError(insertError)
     const threadId = threadInsertData.id
 
     // 3. Insert Thread Translation
-    if (defaultLanguageId) {
+    if (languageId) {
       const { error: translationError } = await supabase.schema('content').from('thread_translations').insert({
         thread_id: threadId,
-        language_id: defaultLanguageId,
+        language_id: languageId,
         is_original: true,
         title: dto.title,
         content: dto.content
