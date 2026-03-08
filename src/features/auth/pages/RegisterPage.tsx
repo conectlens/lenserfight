@@ -115,15 +115,8 @@ export const RegisterPage: React.FC = () => {
       setIsSuccess(true)
 
       // Delay for animation
-      setTimeout(async () => {
-        if (!isMock) {
-          // In real env, we expect email verification, so we logout the session which might have been created
-          await logout()
-          navigate('/welcome')
-        } else {
-          await logout() // Mock also redirects to welcome/waitlist page logic
-          navigate('/welcome')
-        }
+      setTimeout(() => {
+        navigate('/welcome')
       }, 1500)
     } catch (err: any) {
       const msg = err.message || ''
