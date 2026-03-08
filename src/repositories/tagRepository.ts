@@ -44,14 +44,12 @@ export class SupabaseTagRepository implements TagRepositoryPort {
    * CREATE TAG — uses fn_content_tags_create
    */
   async createTag(name: string, slug: string): Promise<TagDTO> {
-    const { data: tagInsertData, error } = await supabase.schema('content').from('tags').insert({
-      name,
-      slug,
-      visibility: 'public'
-    }).select('id').single()
+    const { data: tagId, error } = await supabase.rpc('fn_content_tags_create', {
+      p_name: name,
+      p_slug: slug,
+    })
 
     if (error) this.handleError(error)
-    const tagId = tagInsertData.id
 
     const { data: tag, error: fetchError } = await supabase
       .from('vw_content_tags_public')
