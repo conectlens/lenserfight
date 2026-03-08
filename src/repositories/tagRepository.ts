@@ -149,9 +149,10 @@ export class SupabaseTagRepository implements TagRepositoryPort {
     if (!events.length) return
 
     try {
-      // NOTE: analytics schema usage might be restricted; keeping public schema attempt 
-      // or adjusting to 'content' if it's there.
-      const { error } = await supabase.from('tag_activity_events').insert(events)
+      // Use secure RPC instead of direct internal table access
+      const { error } = await supabase.rpc('fn_tag_activity_log', {
+        p_events: events,
+      })
 
       if (error) {
         console.warn('Failed to record tag activity', error)
