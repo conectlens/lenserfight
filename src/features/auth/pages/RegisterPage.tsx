@@ -354,7 +354,7 @@ export const RegisterPage: React.FC = () => {
               {showResend && (
                 <div className="ml-6 mt-1">
                   <Link
-                    to="/login"
+                    to="/auth/login"
                     className="text-xs font-bold underline hover:text-red-800 dark:hover:text-red-300"
                   >
                     Go to Sign In
@@ -377,7 +377,7 @@ export const RegisterPage: React.FC = () => {
         <div className="mt-8 text-center text-sm text-gray-500 dark:text-gray-400 font-medium">
           Already have an account?{' '}
           <Link
-            to="/login"
+            to="/auth/login"
             className="ml-1 text-gray-900 dark:text-gray-200 hover:text-primary-700 dark:hover:text-primary-400 font-bold hover:underline transition-colors"
           >
             Sign In

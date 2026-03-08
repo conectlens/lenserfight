@@ -24,7 +24,7 @@ interface LenserContextType {
 const LenserContext = createContext<LenserContextType | undefined>(undefined)
 
 export const LenserProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const { user, isAuthenticated } = useAuth()
+  const { user, isAuthenticated, logout } = useAuth()
   const queryClient = useQueryClient()
 
   const {
@@ -49,6 +49,17 @@ export const LenserProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   })
 
   const error = queryError ? (queryError as Error).message || 'Failed to load profile' : null
+
+  // Force logout on invalid JWT sub claim (e.g. user deleted in DB but local session exists)
+  React.useEffect(() => {
+    if (error && (error.includes('sub claim in JWT') || error.includes('user_not_found'))) {
+      const handleInvalidSession = async () => {
+        await logout()
+        window.location.href = '/auth/login'
+      }
+      handleInvalidSession()
+    }
+  }, [error, logout])
 
   const loadLenserProfile = async (force = false): Promise<void> => {
     if (force) {
