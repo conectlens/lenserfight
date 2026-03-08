@@ -59,7 +59,7 @@ export class SupabaseTagRepository implements TagRepositoryPort {
         .from('profiles')
         .select('preferred_language_id')
         .eq('id', user.id)
-        .single()
+        .maybeSingle()
       languageId = profile?.preferred_language_id
     }
 
