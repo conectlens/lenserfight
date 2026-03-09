@@ -103,7 +103,7 @@ export const promptsService = {
     id: string,
     viewerLenserId?: string
   ): Promise<PromptTemplateDetailViewModel | null> => {
-    const record: any = await promptsRepo.getById(id)
+    const record: any = await promptsRepo.getById(id, viewerLenserId)
     if (!record) return null
 
     if (record.visibility === 'private') {
@@ -198,7 +198,7 @@ export const promptsService = {
     input: Partial<CreatePromptDTO>,
     lenserId: string
   ): Promise<PromptTemplateRecord> => {
-    const existing = await promptsRepo.getById(id)
+    const existing = await promptsRepo.getById(id, lenserId)
     if (!existing) throw new Error('Prompt not found')
     if (existing.lenser_id !== lenserId) throw new Error('Unauthorized to edit this prompt')
 
@@ -216,15 +216,11 @@ export const promptsService = {
     return promptsRepo.updatePrompt(id, { ...input, tagIds: realTagIds })
   },
 
-  deletePrompt: async (id: string, lenserHandle: string): Promise<void> => {
-    const existing = await promptsRepo.getById(id)
+  deletePrompt: async (id: string, lenserId: string): Promise<void> => {
+    const existing = await promptsRepo.getById(id, lenserId)
     if (!existing) throw new Error('Prompt not found')
 
-    // Verify ownership by handle
-    // Assuming existing record has author_profile JSONB populated
-    const recordHandle = existing.author_profile?.handle || ''
-
-    if (recordHandle !== lenserHandle) {
+    if (existing.lenser_id !== lenserId) {
       throw new Error('Unauthorized to delete this prompt')
     }
 

@@ -25,7 +25,7 @@ export interface PromptsRepositoryPort {
     limit?: number,
     includePrivate?: boolean
   ): Promise<PromptTemplateRecord[]>
-  getById(id: string): Promise<PromptTemplateRecord | null>
+  getById(id: string, viewerLenserId?: string): Promise<PromptTemplateRecord | null>
   getTags(templateId: string): Promise<TagRecord[]>
   createPrompt(input: CreatePromptDTO): Promise<PromptTemplateRecord>
   updatePrompt(id: string, input: Partial<CreatePromptDTO>): Promise<PromptTemplateRecord>
@@ -144,18 +144,67 @@ export class SupabasePromptsRepository implements PromptsRepositoryPort {
     return data as unknown as PromptTemplateRecord[]
   }
 
-  async getById(id: string): Promise<PromptTemplateRecord | null> {
+  async getById(id: string, viewerLenserId?: string): Promise<PromptTemplateRecord | null> {
     const { data, error } = await supabase
       .from('vw_prompt_templates_public')
       .select(this.promptSelect)
       .eq('id', id)
-      .single()
+      .maybeSingle()
 
     if (error) {
-      if (error.code === 'PGRST116') return null
       this.handleError(error)
     }
-    return data as unknown as PromptTemplateRecord
+    if (data) return data as unknown as PromptTemplateRecord
+
+    // Owner fallback for private prompts not present in public view.
+    if (!viewerLenserId) return null
+
+    const { data: basePrompt, error: baseError } = await supabase
+      .schema('content')
+      .from('prompt_templates')
+      .select('id, lenser_id, visibility, created_at, updated_at')
+      .eq('id', id)
+      .eq('lenser_id', viewerLenserId)
+      .maybeSingle()
+
+    if (baseError) this.handleError(baseError)
+    if (!basePrompt) return null
+
+    const { data: translation, error: translationError } = await supabase
+      .schema('content')
+      .from('prompt_translations')
+      .select('title, description, content')
+      .eq('prompt_id', id)
+      .eq('is_original', true)
+      .maybeSingle()
+
+    if (translationError) this.handleError(translationError)
+
+    const { data: profile } = await supabase
+      .schema('lensers')
+      .from('profiles')
+      .select('id, handle, display_name, avatar_url')
+      .eq('id', viewerLenserId)
+      .maybeSingle()
+
+    return {
+      id: basePrompt.id,
+      lenser_id: basePrompt.lenser_id,
+      visibility: basePrompt.visibility,
+      created_at: basePrompt.created_at,
+      updated_at: basePrompt.updated_at,
+      title: translation?.title || 'Untitled',
+      description: translation?.description ?? null,
+      content: translation?.content || '',
+      author_profile: {
+        id: profile?.id || viewerLenserId,
+        handle: profile?.handle || 'unknown',
+        display_name: profile?.display_name || 'Unknown',
+        avatar_url: profile?.avatar_url || null,
+      } as AuthorProfile,
+      reaction_totals: {},
+      tags: [],
+    } as unknown as PromptTemplateRecord
   }
 
   async getTags(templateId: string): Promise<TagRecord[]> {
@@ -195,8 +244,13 @@ export class SupabasePromptsRepository implements PromptsRepositoryPort {
         .from('languages')
         .select('id')
         .eq('is_default', true)
+        .limit(1)
         .maybeSingle()
       languageId = langData?.id
+    }
+
+    if (!languageId) {
+      throw new Error('No default language configured. Please configure a default language.')
     }
 
     // 2. Insert Base Prompt Template
@@ -208,18 +262,16 @@ export class SupabasePromptsRepository implements PromptsRepositoryPort {
     if (rpcError) this.handleError(rpcError)
     const promptId = promptInsertData.id
 
-    // 3. Insert Prompt Translation (now always attempted with fallback language)
-    if (languageId) {
-      const { error: translationError } = await supabase.schema('content').from('prompt_translations').insert({
-        prompt_id: promptId,
-        language_id: languageId,
-        is_original: true,
-        title: input.title,
-        description: input.description ?? null,
-        content: input.content
-      })
-      if (translationError) this.handleError(translationError)
-    }
+    // 3. Insert Prompt Translation
+    const { error: translationError } = await supabase.schema('content').from('prompt_translations').insert({
+      prompt_id: promptId,
+      language_id: languageId,
+      is_original: true,
+      title: input.title,
+      description: input.description ?? null,
+      content: input.content
+    })
+    if (translationError) this.handleError(translationError)
 
     if (input.tagIds?.length) {
       const { data: authData } = await supabase.auth.getUser()
