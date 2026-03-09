@@ -2,20 +2,21 @@ import { Copy, Check, Terminal } from 'lucide-react'
 import React, { useState } from 'react'
 
 interface PromptBodyViewerProps {
-  content: string
+  content?: string | null
   onCopy?: () => void
 }
 
 export const PromptBodyViewer: React.FC<PromptBodyViewerProps> = ({ content, onCopy }) => {
   const [copied, setCopied] = useState(false)
+  const safeContent = content ?? ''
 
   const handleCopy = async () => {
-    if (!content) return
+    if (!safeContent) return
     try {
       if (onCopy) {
         onCopy()
       } else {
-        await navigator.clipboard.writeText(content)
+        await navigator.clipboard.writeText(safeContent)
       }
       setCopied(true)
       setTimeout(() => setCopied(false), 2000)
@@ -64,7 +65,7 @@ export const PromptBodyViewer: React.FC<PromptBodyViewerProps> = ({ content, onC
           <div className="absolute top-4 left-4 select-none opacity-30 pointer-events-none text-gray-400">
             <Terminal size={16} />
           </div>
-          <code className="pl-6 block">{content}</code>
+          <code className="pl-6 block">{safeContent || 'No prompt content available.'}</code>
         </pre>
       </div>
     </div>
