@@ -1,4 +1,4 @@
-import { Copy, Eye } from 'lucide-react'
+import { Copy, Eye, Lock, Pencil } from 'lucide-react'
 import React from 'react'
 
 import { Avatar } from '../../../components/Avatar'
@@ -12,9 +12,16 @@ import { PromptTagsBar } from './PromptTagsBar'
 interface PromptDetailCardProps {
   prompt: PromptTemplateDetailViewModel
   onUse: () => void
+  canEdit?: boolean
+  onEdit?: () => void
 }
 
-export const PromptDetailCard: React.FC<PromptDetailCardProps> = ({ prompt, onUse }) => {
+export const PromptDetailCard: React.FC<PromptDetailCardProps> = ({
+  prompt,
+  onUse,
+  canEdit = false,
+  onEdit,
+}) => {
   return (
     <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden transition-colors">
       <div className="p-8 border-b border-gray-100 dark:border-gray-700">
@@ -34,7 +41,30 @@ export const PromptDetailCard: React.FC<PromptDetailCardProps> = ({ prompt, onUs
         </div>
 
         {/* Title & Desc */}
-        <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-4">{prompt.title}</h1>
+        <div className="flex items-start justify-between gap-3 mb-4">
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">{prompt.title}</h1>
+          <div className="flex items-center gap-2">
+            {prompt.visibility === 'private' && (
+              <span
+                className="inline-flex items-center gap-1 rounded-full border border-amber-200 bg-amber-50 px-2 py-1 text-[11px] font-semibold uppercase tracking-wide text-amber-700 dark:border-amber-800 dark:bg-amber-900/30 dark:text-amber-300"
+                title="Private prompt"
+              >
+                <Lock size={12} />
+                Private
+              </span>
+            )}
+            {canEdit && onEdit && (
+              <button
+                onClick={onEdit}
+                className="p-2 bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-gray-500 dark:text-gray-300 hover:text-primary-700 hover:border-primary/40 dark:hover:text-primary-400 rounded-lg shadow-sm transition-colors"
+                title="Edit Prompt"
+                aria-label="Edit prompt"
+              >
+                <Pencil size={14} />
+              </button>
+            )}
+          </div>
+        </div>
         {prompt.description && (
           <p className="text-lg text-gray-600 dark:text-gray-300 leading-relaxed mb-6">
             {prompt.description}
