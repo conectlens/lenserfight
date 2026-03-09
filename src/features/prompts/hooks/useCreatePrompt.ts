@@ -53,13 +53,20 @@ export const useCreatePrompt = () => {
     setIsSubmitting(true)
     setError(null)
 
+    const trimmedTitle = title.trim()
+    const trimmedContent = content.trim()
+    const autoDescription =
+      trimmedContent.length > 0
+        ? trimmedContent.substring(0, 100) + (trimmedContent.length > 100 ? '...' : '')
+        : null
+
     const dto: Partial<CreatePromptDTO> = {
-      title,
-      content,
+      title: trimmedTitle,
+      content: trimmedContent,
       tagIds: tags,
       visibility,
       lenserId: lenser.id,
-      description: null,
+      description: autoDescription,
     }
 
     try {

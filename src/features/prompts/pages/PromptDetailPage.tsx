@@ -75,7 +75,7 @@ export const PromptDetailPage: React.FC = () => {
     return true
   }
 
-  const isOwner = lenser && prompt && prompt.author.id === lenser.id
+  const isOwner = !!(lenser && prompt && prompt.author.id === lenser.id)
 
   const handleCreateClick = () => {
     if (ensureProfile()) openCreateModal()
@@ -227,6 +227,8 @@ export const PromptDetailPage: React.FC = () => {
             <PromptDetailHeader
               prompt={prompt}
               onSave={handleSave}
+              onEdit={() => handleEditClick(prompt.id)}
+              canEdit={isOwner}
               isSaved={prompt.isSaved}
               isSaving={isSaving}
               saveCount={prompt.reactionCounts.saved}
