@@ -1,4 +1,4 @@
-import { Globe, Lock, Bookmark, Pencil } from 'lucide-react'
+import { Lock, Bookmark, Pencil } from 'lucide-react'
 import React from 'react'
 import { useNavigate } from 'react-router-dom'
 
@@ -128,13 +128,15 @@ export const PromptDetailHeader: React.FC<PromptDetailHeaderProps> = ({
         )}
 
         <div className="flex items-center gap-4">
-          <div className="flex items-center gap-1.5">
-            {prompt.visibility === 'public' ? <Globe size={14} /> : <Lock size={14} />}
-            <span className="capitalize text-xs">{prompt.visibility}</span>
-          </div>
-
-          <span className="text-gray-300 dark:text-gray-600">•</span>
-
+          {prompt.visibility === 'private' && (
+            <>
+              <div className="flex items-center gap-1.5">
+                <Lock size={14} />
+                <span className="capitalize text-xs">{prompt.visibility}</span>
+              </div>
+              <span className="text-gray-300 dark:text-gray-600">•</span>
+            </>
+          )}
           <span className="text-xs">{formattedDate}</span>
         </div>
       </div>
