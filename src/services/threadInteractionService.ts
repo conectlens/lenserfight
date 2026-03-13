@@ -78,7 +78,7 @@ export const threadInteractionService = {
     threadId: string,
     currentLenserId?: string
   ): Promise<ThreadReplyViewModel[]> => {
-    const records = await threadsRepo.getThreadReplies(threadId)
+    const records = await threadsRepo.getThreadReplies(threadId, currentLenserId)
     const userReactedIds = new Set<string>()
     if (currentLenserId && records.length > 0) {
       const replyIds = records.map((r) => r.id)

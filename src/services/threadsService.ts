@@ -94,21 +94,21 @@ export const threadsService = {
 
   getThreadsByLenser: async (
     lenserHandle: string,
-    currentUserId?: string,
+    viewerLenserId?: string,
     offset = 0,
     limit = 10
   ): Promise<ThreadFeedItem[]> => {
     // Similar check as prompts service for visibility
     let includePrivate = false
-    if (currentUserId) {
-      const viewer = await lenserRepo.getLenserById(currentUserId)
+    if (viewerLenserId) {
+      const viewer = await lenserRepo.getLenserById(viewerLenserId)
       if (viewer && viewer.handle === lenserHandle) {
         includePrivate = true
       }
     }
 
     const records = await threadsRepo.getByLenser(lenserHandle, offset, limit, includePrivate)
-    return threadsService._mapToFeedItems(records, currentUserId)
+    return threadsService._mapToFeedItems(records, viewerLenserId)
   },
 
   // Pure Mapper: Converts DB Record -> Domain Model using internal author_profile and tags
@@ -145,24 +145,24 @@ export const threadsService = {
 
   getThreadDetail: async (
     threadId: string,
-    currentUserId?: string
+    viewerLenserId?: string
   ): Promise<ThreadDetailViewModel | null> => {
-    const record = await threadsRepo.getThreadById(threadId, currentUserId)
+    const record = await threadsRepo.getThreadById(threadId, viewerLenserId)
     if (!record) return null
 
     if (record.visibility === 'private') {
-      if (!currentUserId || record.lenser_id !== currentUserId) {
+      if (!viewerLenserId || record.lenser_id !== viewerLenserId) {
         throw new Error('401')
       }
     }
 
     let userHasReacted = false
-    if (currentUserId) {
-      const [reaction] = await reactionRepo.getUserReaction('thread', threadId, currentUserId)
+    if (viewerLenserId) {
+      const [reaction] = await reactionRepo.getUserReaction('thread', threadId, viewerLenserId)
       userHasReacted = !!reaction
     }
 
-    const replies = await threadInteractionService.getReplyTree(threadId, currentUserId)
+    const replies = await threadInteractionService.getReplyTree(threadId, viewerLenserId)
 
     return {
       id: record.id,
