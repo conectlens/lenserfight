@@ -58,6 +58,20 @@ export class SupabasePromptsRepository implements PromptsRepositoryPort {
     return '*'
   }
 
+  private async getProfileByHandle(handle: string): Promise<AuthorProfile | null> {
+    const { data: profile, error } = await supabase
+      .schema('lensers')
+      .from('profiles')
+      .select('id, handle, display_name, avatar_url')
+      .eq('handle', handle)
+      .maybeSingle()
+
+    if (error) this.handleError(error)
+    if (!profile) return null
+
+    return this.mapProfileToAuthor(profile as Partial<AuthorProfile>, profile.id)
+  }
+
   private mapProfileToAuthor(profile: Partial<AuthorProfile> | null | undefined, fallbackId: string): AuthorProfile {
     return {
       id: profile?.id || fallbackId,
@@ -109,6 +123,21 @@ export class SupabasePromptsRepository implements PromptsRepositoryPort {
       }))
   }
 
+  private async getPromptReactionTotals(promptId: string): Promise<Record<string, number>> {
+    const { data, error } = await supabase
+      .schema('content')
+      .from('prompt_reactions')
+      .select('reaction')
+      .eq('prompt_id', promptId)
+
+    if (error) this.handleError(error)
+
+    return (data ?? []).reduce<Record<string, number>>((totals, row) => {
+      totals[row.reaction] = (totals[row.reaction] ?? 0) + 1
+      return totals
+    }, {})
+  }
+
   private async buildOwnerPromptRecord(
     basePrompt: Pick<PromptTemplateRecord, 'id' | 'lenser_id' | 'visibility' | 'created_at' | 'updated_at'>
   ): Promise<PromptTemplateRecord> {
@@ -125,6 +154,7 @@ export class SupabasePromptsRepository implements PromptsRepositoryPort {
     ])
 
     if (translationResult.error) this.handleError(translationResult.error)
+    const reactionTotals = await this.getPromptReactionTotals(basePrompt.id)
 
     return {
       id: basePrompt.id,
@@ -137,8 +167,17 @@ export class SupabasePromptsRepository implements PromptsRepositoryPort {
       content: translationResult.data?.content || '',
       author_profile: authorProfile,
       tags,
-      reaction_totals: {},
+      reaction_totals: reactionTotals,
     } as PromptTemplateRecord
+  }
+
+  private async hydratePromptRecords(
+    basePrompts: Pick<
+      PromptTemplateRecord,
+      'id' | 'lenser_id' | 'visibility' | 'created_at' | 'updated_at'
+    >[]
+  ): Promise<PromptTemplateRecord[]> {
+    return Promise.all(basePrompts.map((prompt) => this.buildOwnerPromptRecord(prompt)))
   }
 
   // -----------------------------------------------------
@@ -216,77 +255,46 @@ export class SupabasePromptsRepository implements PromptsRepositoryPort {
     limit = 10,
     includePrivate = false
   ): Promise<PromptTemplateRecord[]> {
+    if (includePrivate) {
+      const profile = await this.getProfileByHandle(handle)
+      if (!profile?.id) return []
+
+      const { data: basePrompts, error } = await supabase
+        .schema('content')
+        .from('prompt_templates')
+        .select('id, lenser_id, visibility, created_at, updated_at')
+        .eq('lenser_id', profile.id)
+        .order('created_at', { ascending: false })
+        .range(offset, offset + limit - 1)
+
+      if (error) this.handleError(error)
+      return this.hydratePromptRecords((basePrompts ?? []) as PromptTemplateRecord[])
+    }
+
     const { data, error } = await supabase
       .from('vw_prompt_templates_public')
       .select(this.promptSelect)
       .eq('author_profile->>handle', handle)
       .order('created_at', { ascending: false })
-      .range(0, offset + limit - 1)
+      .range(offset, offset + limit - 1)
 
     if (error) this.handleError(error)
-    const publicPrompts = (data ?? []) as unknown as PromptTemplateRecord[]
-
-    if (!includePrivate) {
-      return publicPrompts.slice(offset, offset + limit)
-    }
-
-    const { data: profile, error: profileError } = await supabase
-      .schema('lensers')
-      .from('profiles')
-      .select('id, handle, display_name, avatar_url')
-      .eq('handle', handle)
-      .maybeSingle()
-
-    if (profileError) this.handleError(profileError)
-    if (!profile?.id) {
-      return publicPrompts.slice(offset, offset + limit)
-    }
-
-    const { data: privatePrompts, error: privateError } = await supabase
-      .schema('content')
-      .from('prompt_templates')
-      .select('id, lenser_id, visibility, created_at, updated_at')
-      .eq('lenser_id', profile.id)
-      .eq('visibility', 'private')
-      .order('created_at', { ascending: false })
-      .range(0, offset + limit - 1)
-
-    if (privateError) this.handleError(privateError)
-
-    const privateRecords = await Promise.all(
-      (privatePrompts ?? []).map((prompt) => this.buildOwnerPromptRecord(prompt))
-    )
-
-    return [...publicPrompts, ...privateRecords]
-      .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
-      .slice(offset, offset + limit)
+    return (data ?? []) as unknown as PromptTemplateRecord[]
   }
 
   async getById(id: string, viewerLenserId?: string): Promise<PromptTemplateRecord | null> {
-    const { data, error } = await supabase
-      .from('vw_prompt_templates_public')
-      .select(this.promptSelect)
-      .eq('id', id)
-      .maybeSingle()
-
-    if (error) {
-      this.handleError(error)
-    }
-    if (data) return data as unknown as PromptTemplateRecord
-
-    // Owner fallback for private prompts not present in public view.
-    if (!viewerLenserId) return null
-
-    const { data: basePrompt, error: baseError } = await supabase
+    const { data: basePrompt, error } = await supabase
       .schema('content')
       .from('prompt_templates')
       .select('id, lenser_id, visibility, created_at, updated_at')
       .eq('id', id)
-      .eq('lenser_id', viewerLenserId)
       .maybeSingle()
 
-    if (baseError) this.handleError(baseError)
+    if (error) this.handleError(error)
     if (!basePrompt) return null
+    if (basePrompt.visibility === 'private' && (!viewerLenserId || basePrompt.lenser_id !== viewerLenserId)) {
+      return null
+    }
 
     const { data: translation, error: translationError } = await supabase
       .schema('content')
