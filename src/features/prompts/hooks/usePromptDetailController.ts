@@ -38,7 +38,7 @@ export const usePromptDetailController = (promptId?: string) => {
 
       const [related, authorP] = await Promise.all([
         promptsService.getRelatedPrompts(promptId),
-        promptsService.getAuthorPrompts(prompt.author.id),
+        promptsService.getAuthorPrompts(prompt.author.handle, 0, 10, lenser?.id),
       ])
 
       return {
