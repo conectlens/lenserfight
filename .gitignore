@@ -57,3 +57,10 @@ Desktop.ini
 .notes
 
 .data/*
+
+
+
+.nx/cache
+.nx/workspace-data
+vite.config.*.timestamp*
+.nx/polygraph
