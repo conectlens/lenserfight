@@ -64,14 +64,14 @@ export class SupabaseThreadsRepository implements ThreadsRepositoryPort {
   async createThread(dto: CreateThreadDTO): Promise<ThreadRecord> {
     const cleanLenserId = !dto.lenserId || dto.lenserId === 'undefined' ? undefined : dto.lenserId
 
-    // 1. Get user's preferred language ID from their profile (since core schema is unexposed)
+    // 1. Resolve the content language from the exposed profile schema.
     const { data: profileData } = await supabase
       .schema('lensers')
       .from('profiles')
-      .select('preferred_language_id')
+      .select('preferred_language')
       .eq('id', cleanLenserId)
       .maybeSingle()
-    const languageId = profileData?.preferred_language_id
+    const languageCode = profileData?.preferred_language || 'en'
 
     // 2. Insert Base Thread
     const { data: threadInsertData, error: insertError } = await supabase.schema('content').from('threads').insert({
@@ -83,16 +83,14 @@ export class SupabaseThreadsRepository implements ThreadsRepositoryPort {
     const threadId = threadInsertData.id
 
     // 3. Insert Thread Translation
-    if (languageId) {
-      const { error: translationError } = await supabase.schema('content').from('thread_translations').insert({
-        thread_id: threadId,
-        language_id: languageId,
-        is_original: true,
-        title: dto.title,
-        content: dto.content
-      })
-      if (translationError) this.handleError(translationError)
-    }
+    const { error: translationError } = await supabase.schema('content').from('thread_translations').insert({
+      thread_id: threadId,
+      language_code: languageCode,
+      is_original: true,
+      title: dto.title,
+      content: dto.content
+    })
+    if (translationError) this.handleError(translationError)
 
     if (dto.tagIds && dto.tagIds.length > 0) {
       const { data: authData } = await supabase.auth.getUser()

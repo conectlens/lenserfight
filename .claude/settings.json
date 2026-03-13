@@ -1,0 +1,16 @@
+{
+    "permissions": {
+        "allow": [
+            "Bash(npm run *)",
+            "Bash(npx supabase migration up)",
+            "Bash(npx supabase start)",
+            "Bash(npx supabase stop)",
+            "Bash(* --version)",
+            "Bash(* --help *)",
+            "Bash(* install)"
+        ],
+        "deny": [
+            "Bash(git push *)"
+        ]
+    }
+}
