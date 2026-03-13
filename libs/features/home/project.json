@@ -1,0 +1,12 @@
+{
+  "name": "feature-home",
+  "$schema": "../../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "libs/features/home/src",
+  "projectType": "library",
+  "tags": [
+    "layer:feature",
+    "feature:home"
+  ],
+  "// targets": "to see all targets run: nx show project feature-home --web",
+  "targets": {}
+}
