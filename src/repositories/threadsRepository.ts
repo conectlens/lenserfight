@@ -1,14 +1,13 @@
+import { supabase } from '../core/supabase/client'
 import { AuthorProfile } from '../types/lenser.types'
 import { ThreadRecord, TagRecord, ThreadReplyRecord, CreateThreadDTO } from '../types/threads.types'
-
-import { supabase } from '../core/supabase/client'
 
 // --- Port (Interface) ---
 export interface ThreadsRepositoryPort {
   createThread(dto: CreateThreadDTO): Promise<ThreadRecord>
   getAllThreads(offset?: number, limit?: number): Promise<ThreadRecord[]>
   getThreadsByTag(tagSlug: string, offset?: number, limit?: number): Promise<ThreadRecord[]>
-  getThreadById(id: string): Promise<ThreadRecord | null>
+  getThreadById(id: string, viewerLenserId?: string): Promise<ThreadRecord | null>
   getByLenser(
     handle: string,
     offset?: number,
@@ -35,15 +34,16 @@ export interface ThreadsRepositoryPort {
 // --- Supabase Implementation (Optimized for Views + RPC) ---
 export class SupabaseThreadsRepository implements ThreadsRepositoryPort {
   // All permission issues are normalized to a single message for the UI.
-  private handleError(error: any) {
-    if (error?.code === '42501' || error?.message?.includes('permission denied')) {
+  private handleError(error: unknown) {
+    const normalizedError = error as { code?: string; message?: string }
+    if (normalizedError?.code === '42501' || normalizedError?.message?.includes('permission denied')) {
       throw new Error(
         'This thread or its associated data is private, hidden, or you do not have permission to access it.'
       )
     }
 
     // PGRST116 = "result contains 0 rows" when expecting single()
-    if (error?.code === 'PGRST116') {
+    if (normalizedError?.code === 'PGRST116') {
       throw new Error('Requested resource was not found.')
     }
 
@@ -53,6 +53,91 @@ export class SupabaseThreadsRepository implements ThreadsRepositoryPort {
   // Single-Query Read using denormalized columns from secure VIEW
   private get threadSelect() {
     return '*'
+  }
+
+  private mapProfileToAuthor(profile: Partial<AuthorProfile> | null | undefined, fallbackId: string): AuthorProfile {
+    return {
+      id: profile?.id || fallbackId,
+      handle: profile?.handle || 'unknown',
+      display_name: profile?.display_name || 'Unknown',
+      avatar_url: profile?.avatar_url || null,
+    } as AuthorProfile
+  }
+
+  private async getProfileById(lenserId: string): Promise<AuthorProfile> {
+    const { data: profile } = await supabase
+      .schema('lensers')
+      .from('profiles')
+      .select('id, handle, display_name, avatar_url')
+      .eq('id', lenserId)
+      .maybeSingle()
+
+    return this.mapProfileToAuthor(profile as Partial<AuthorProfile> | null, lenserId)
+  }
+
+  private async getTagsForEntity(entityType: 'thread' | 'prompt_template', entityId: string): Promise<TagRecord[]> {
+    const { data: tagMapRows, error: tagMapError } = await supabase
+      .schema('content')
+      .from('tag_map')
+      .select('tag_id')
+      .eq('entity_type', entityType)
+      .eq('entity_id', entityId)
+
+    if (tagMapError) this.handleError(tagMapError)
+
+    const tagIds = (tagMapRows ?? []).map((row) => row.tag_id).filter(Boolean)
+    if (tagIds.length === 0) return []
+
+    const { data: tags, error: tagsError } = await supabase
+      .from('vw_tags_public_stats')
+      .select('id, slug, name')
+      .in('id', tagIds)
+
+    if (tagsError) this.handleError(tagsError)
+
+    const tagById = new Map((tags ?? []).map((tag) => [tag.id, tag]))
+    return tagIds
+      .map((id) => tagById.get(id))
+      .filter(Boolean)
+      .map((tag) => ({
+        id: tag.id,
+        slug: tag.slug,
+        name: tag.name,
+      }))
+  }
+
+  private async buildOwnerThreadRecord(
+    baseThread: Pick<ThreadRecord, 'id' | 'lenser_id' | 'visibility' | 'created_at' | 'updated_at'>
+  ): Promise<ThreadRecord> {
+    const [translationResult, authorProfile, tags] = await Promise.all([
+      supabase
+        .schema('content')
+        .from('thread_translations')
+        .select('title, content')
+        .eq('thread_id', baseThread.id)
+        .eq('is_original', true)
+        .maybeSingle(),
+      this.getProfileById(baseThread.lenser_id),
+      this.getTagsForEntity('thread', baseThread.id),
+    ])
+
+    if (translationResult.error) this.handleError(translationResult.error)
+
+    return {
+      id: baseThread.id,
+      lenser_id: baseThread.lenser_id,
+      visibility: baseThread.visibility,
+      created_at: baseThread.created_at,
+      updated_at: baseThread.updated_at,
+      title: translationResult.data?.title || 'Untitled',
+      content: translationResult.data?.content || '',
+      author_profile: authorProfile,
+      tags,
+      reaction_totals: {},
+      reply_count: 0,
+      view_count: 0,
+      prompt_data: undefined,
+    } as ThreadRecord
   }
 
   /**
@@ -161,19 +246,34 @@ export class SupabaseThreadsRepository implements ThreadsRepositoryPort {
   /**
    * Get a single thread by id from public view.
    */
-  async getThreadById(id: string): Promise<ThreadRecord | null> {
+  async getThreadById(id: string, viewerLenserId?: string): Promise<ThreadRecord | null> {
     const { data, error } = await supabase
       .from('vw_content_threads_public')
       .select(this.threadSelect)
       .eq('id', id)
-      .single()
+      .maybeSingle()
 
     if (error) {
       if (error.code === 'PGRST116') return null // not found
       this.handleError(error)
     }
 
-    return data as unknown as ThreadRecord
+    if (data) return data as unknown as ThreadRecord
+
+    if (!viewerLenserId) return null
+
+    const { data: baseThread, error: baseError } = await supabase
+      .schema('content')
+      .from('threads')
+      .select('id, lenser_id, visibility, created_at, updated_at')
+      .eq('id', id)
+      .eq('lenser_id', viewerLenserId)
+      .maybeSingle()
+
+    if (baseError) this.handleError(baseError)
+    if (!baseThread) return null
+
+    return this.buildOwnerThreadRecord(baseThread)
   }
 
   /**
@@ -184,17 +284,52 @@ export class SupabaseThreadsRepository implements ThreadsRepositoryPort {
     handle: string,
     offset = 0,
     limit = 10,
-    includePrivate = false // currently ignored; visibility logic is in the view/RLS.
+    includePrivate = false
   ): Promise<ThreadRecord[]> {
     const { data, error } = await supabase
       .from('vw_content_threads_public')
       .select(this.threadSelect)
       .eq('author_profile->>handle', handle)
       .order('created_at', { ascending: false })
-      .range(offset, offset + limit - 1)
+      .range(0, offset + limit - 1)
 
     if (error) this.handleError(error)
-    return (data ?? []) as unknown as ThreadRecord[]
+    const publicThreads = (data ?? []) as unknown as ThreadRecord[]
+
+    if (!includePrivate) {
+      return publicThreads.slice(offset, offset + limit)
+    }
+
+    const { data: profile, error: profileError } = await supabase
+      .schema('lensers')
+      .from('profiles')
+      .select('id, handle, display_name, avatar_url')
+      .eq('handle', handle)
+      .maybeSingle()
+
+    if (profileError) this.handleError(profileError)
+    if (!profile?.id) {
+      return publicThreads.slice(offset, offset + limit)
+    }
+
+    const { data: privateThreads, error: privateError } = await supabase
+      .schema('content')
+      .from('threads')
+      .select('id, lenser_id, visibility, created_at, updated_at')
+      .eq('lenser_id', profile.id)
+      .eq('visibility', 'private')
+      .order('created_at', { ascending: false })
+      .range(0, offset + limit - 1)
+
+    if (privateError) this.handleError(privateError)
+
+    const privateRecords = await Promise.all(
+      (privateThreads ?? []).map((thread) => this.buildOwnerThreadRecord(thread))
+    )
+
+    return [...publicThreads, ...privateRecords]
+      .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+      .slice(offset, offset + limit)
   }
 
   /**
@@ -295,7 +430,7 @@ export class SupabaseThreadsRepository implements ThreadsRepositoryPort {
       .limit(limit)
 
     if (error) return []
-    return (data ?? []).map((t: any) => t.name as string)
+    return (data ?? []).map((tag) => tag.name as string)
   }
 
   /**
@@ -303,8 +438,8 @@ export class SupabaseThreadsRepository implements ThreadsRepositoryPort {
    * Only the owner can update (enforced in fn_content_update_thread).
    */
   async updateThread(id: string, dto: Partial<CreateThreadDTO>): Promise<ThreadRecord> {
-    const baseUpdatePayload: any = {}
-    const translationUpdatePayload: any = {}
+    const baseUpdatePayload: Partial<Pick<ThreadRecord, 'visibility'>> = {}
+    const translationUpdatePayload: Partial<Pick<ThreadRecord, 'title' | 'content'>> = {}
 
     if (dto.visibility !== undefined) baseUpdatePayload.visibility = dto.visibility
     if (dto.title !== undefined) translationUpdatePayload.title = dto.title
