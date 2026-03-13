@@ -3,7 +3,10 @@
   "$schema": "../../../node_modules/nx/schemas/project-schema.json",
   "sourceRoot": "libs/domain/threads/src",
   "projectType": "library",
-  "tags": [],
+  "tags": [
+    "layer:domain",
+    "domain:threads"
+  ],
   "// targets": "to see all targets run: nx show project threads --web",
   "targets": {}
 }
