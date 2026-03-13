@@ -1,0 +1,128 @@
+import { ThumbsUp, MessageCircle } from 'lucide-react'
+import React, { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
+
+import { Avatar } from '@lenserfight/ui/components'
+import { MentionRenderer } from '@lenserfight/ui/components'
+import { ThreadReplyViewModel } from '@lenserfight/types'
+import { timeAgo } from '@lenserfight/utils/date'
+
+import { ReplyComposer } from './ReplyComposer'
+
+interface ThreadReplyCardProps {
+  reply: ThreadReplyViewModel
+  onReplySubmit: (content: string, parentId: string) => Promise<void>
+  onReactionToggle?: (replyId: string) => void
+}
+
+export const ThreadReplyCard: React.FC<ThreadReplyCardProps> = ({
+  reply,
+  onReplySubmit,
+  onReactionToggle,
+}) => {
+  const navigate = useNavigate()
+  const [isReplying, setIsReplying] = useState(false)
+
+  if (reply.isDeleted && (!reply.replies || reply.replies.length === 0)) {
+    return null
+  }
+
+  const handleUserClick = (e: React.MouseEvent) => {
+    e.stopPropagation()
+    navigate(`/lenser/${reply.author.handle}`)
+  }
+
+  return (
+    <div className="flex gap-3 md:gap-4 group">
+      <div className="flex-shrink-0 flex flex-col items-center">
+        <div
+          onClick={handleUserClick}
+          className="cursor-pointer hover:opacity-80 transition-opacity"
+        >
+          <Avatar
+            src={reply.author.avatarUrl}
+            alt={reply.author.displayName}
+            size="md"
+            className="!w-10 !h-10"
+          />
+        </div>
+        {reply.replies && reply.replies.length > 0 && (
+          <div className="w-px h-full bg-gray-200 dark:bg-gray-700 my-2"></div>
+        )}
+      </div>
+
+      <div className="flex-1 min-w-0 pb-6">
+        <div className="bg-gray-50/50 dark:bg-gray-800/50 rounded-xl p-4 border border-gray-100 dark:border-gray-700 overflow-hidden">
+          <div className="flex items-center gap-2 mb-2">
+            <span
+              onClick={handleUserClick}
+              className="font-semibold text-gray-900 dark:text-gray-200 text-sm cursor-pointer hover:text-primary-700 transition-colors hover:underline truncate"
+            >
+              {reply.author.displayName}
+            </span>
+            <span className="text-xs text-gray-400 dark:text-gray-500 flex-shrink-0">•</span>
+            <span className="text-xs text-gray-500 dark:text-gray-400 flex-shrink-0">
+              {timeAgo(reply.createdAt)}
+            </span>
+          </div>
+
+          <div
+            className={`mb-3 ${reply.isDeleted ? 'text-gray-400 italic' : 'text-gray-800 dark:text-gray-300'}`}
+          >
+            {reply.isDeleted ? (
+              <p className="text-sm whitespace-pre-line break-words break-all">{reply.content}</p>
+            ) : (
+              <p className="text-sm whitespace-pre-line break-words break-all">
+                <MentionRenderer content={reply.content} className="!whitespace-pre-line" />
+              </p>
+            )}
+          </div>
+
+          {!reply.isDeleted && (
+            <div className="flex items-center gap-4">
+              <button
+                onClick={() => onReactionToggle && onReactionToggle(reply.id)}
+                className={`flex items-center gap-1.5 transition-colors text-xs font-medium ${reply.userHasReacted ? 'text-primary-700 font-bold' : 'text-gray-500 dark:text-gray-400 hover:text-primary-600'}`}
+              >
+                <ThumbsUp className={`w-3.5 h-3.5 ${reply.userHasReacted ? 'fill-current' : ''}`} />
+                <span>{reply.reactionCount || 'Like'}</span>
+              </button>
+
+              <button
+                onClick={() => setIsReplying(!isReplying)}
+                className="flex items-center gap-1.5 text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200 transition-colors text-xs font-medium"
+              >
+                <MessageCircle className="w-3.5 h-3.5" />
+                <span>Reply</span>
+              </button>
+            </div>
+          )}
+        </div>
+
+        {isReplying && (
+          <div className="mt-3 ml-2 animate-in fade-in slide-in-from-top-2">
+            <ReplyComposer
+              onSubmit={(content) => onReplySubmit(content, reply.id)}
+              onCancel={() => setIsReplying(false)}
+              autoFocus
+              placeholder={`Reply to ${reply.author.displayName}...`}
+            />
+          </div>
+        )}
+
+        {reply.replies && reply.replies.length > 0 && (
+          <div className="mt-4 space-y-4">
+            {reply.replies.map((child) => (
+              <ThreadReplyCard
+                key={child.id}
+                reply={child}
+                onReplySubmit={onReplySubmit}
+                onReactionToggle={onReactionToggle}
+              />
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  )
+}
