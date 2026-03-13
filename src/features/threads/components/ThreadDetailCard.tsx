@@ -1,3 +1,4 @@
+import { Lock } from 'lucide-react'
 import React from 'react'
 import { useNavigate } from 'react-router-dom'
 
@@ -52,6 +53,18 @@ export const ThreadDetailCard: React.FC<ThreadDetailCardProps> = ({ thread, onTo
           <MentionRenderer content={thread.content} />
         </div>
       </div>
+
+      {thread.visibility === 'private' && (
+        <div className="mb-6">
+          <span
+            className="inline-flex items-center gap-1 rounded-full border border-amber-200 bg-amber-50 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-wide text-amber-700 dark:border-amber-800 dark:bg-amber-900/30 dark:text-amber-300"
+            title="Private thread"
+          >
+            <Lock size={12} />
+            Private
+          </span>
+        </div>
+      )}
 
       {/* Footer: Tags & Actions */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mt-8 pt-6 border-t border-gray-50 dark:border-gray-700">

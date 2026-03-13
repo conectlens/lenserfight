@@ -17,7 +17,11 @@ const threadsRepo = new SupabaseThreadsRepository()
 const lenserRepo = new SupabaseLenserRepository()
 const reactionRepo = new SupabaseReactionRepository()
 
-const resolveAuthor = (record: any): ThreadAuthor => {
+const sumReactionTotals = (reactionTotals?: Record<string, number>): number => {
+  return Object.values(reactionTotals ?? {}).reduce((total, count) => total + count, 0)
+}
+
+const resolveAuthor = (record: Pick<ThreadRecord, 'author_profile' | 'lenser_id'>): ThreadAuthor => {
   const profile = record.author_profile || {}
   return {
     // ID is preserved for ownership checks (e.g. edit/delete permissions)
@@ -46,8 +50,9 @@ export const threadsService = {
   updateThread: async (
     id: string,
     input: Partial<CreateThreadDTO>,
-    lenserId: string
+    _lenserId: string
   ): Promise<ThreadRecord> => {
+    void _lenserId
     let realTagIds: string[] | undefined = undefined
     if (input.tagIds) {
       const resolvedTags = await tagService.processBatchInput(input.tagIds)
@@ -123,19 +128,13 @@ export const threadsService = {
     return records.map((record) => {
       const tags = record.tags || [] // Use denormalized tags directly
 
-      const reactionCounts = record.reaction_totals || {}
-      const totalReactions = Object.values(reactionCounts).reduce(
-        (a: any, b: any) => a + b,
-        0
-      ) as number
-
       return {
         id: record.id,
         author: resolveAuthor(record),
         title: record.title,
         content: record.content,
         tags: tags,
-        reactionCount: totalReactions,
+        reactionCount: sumReactionTotals(record.reaction_totals),
         replyCount: record.reply_count || 0,
         createdAt: record.created_at,
         userHasReacted: userReactedIds.has(record.id),
@@ -148,7 +147,7 @@ export const threadsService = {
     threadId: string,
     currentUserId?: string
   ): Promise<ThreadDetailViewModel | null> => {
-    const record: any = await threadsRepo.getThreadById(threadId)
+    const record = await threadsRepo.getThreadById(threadId, currentUserId)
     if (!record) return null
 
     if (record.visibility === 'private') {
@@ -165,12 +164,6 @@ export const threadsService = {
 
     const replies = await threadInteractionService.getReplyTree(threadId, currentUserId)
 
-    const reactionCounts = record.reaction_totals || {}
-    const totalReactions = Object.values(reactionCounts).reduce(
-      (a: any, b: any) => a + b,
-      0
-    ) as number
-
     return {
       id: record.id,
       title: record.title,
@@ -178,7 +171,7 @@ export const threadsService = {
       createdAt: record.created_at,
       author: resolveAuthor(record),
       tags: record.tags || [],
-      reactionCount: totalReactions,
+      reactionCount: sumReactionTotals(record.reaction_totals),
       userHasReacted: userHasReacted,
       replies: replies,
       promptBlock: record.prompt_data,
