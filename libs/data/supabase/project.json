@@ -1,0 +1,9 @@
+{
+  "name": "supabase",
+  "$schema": "../../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "libs/data/supabase/src",
+  "projectType": "library",
+  "tags": [],
+  "// targets": "to see all targets run: nx show project supabase --web",
+  "targets": {}
+}

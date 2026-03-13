@@ -9,7 +9,34 @@
     "skipLibCheck": true,
     "baseUrl": ".",
     "paths": {
-      "@/*": ["./*"]
+      "@/*": ["./*"],
+      "user": ["libs/domain/user/src/index.ts"],
+      "prompts": ["libs/domain/prompts/src/index.ts"],
+      "threads": ["libs/domain/threads/src/index.ts"],
+      "tags": ["libs/domain/tags/src/index.ts"],
+      "reactions": ["libs/domain/reactions/src/index.ts"],
+      "auth": ["libs/features/auth/src/index.ts"],
+      "profile": ["libs/features/profile/src/index.ts"],
+      "leaderboard": ["libs/features/leaderboard/src/index.ts"],
+      "notifications": ["libs/features/notifications/src/index.ts"],
+      "admin": ["libs/features/admin/src/index.ts"],
+      "components": ["libs/ui/components/src/index.ts"],
+      "layout": ["libs/ui/layout/src/index.ts"],
+      "forms": ["libs/ui/forms/src/index.ts"],
+      "modals": ["libs/ui/modals/src/index.ts"],
+      "theme": ["libs/ui/theme/src/index.ts"],
+      "supabase": ["libs/data/supabase/src/index.ts"],
+      "repositories": ["libs/data/repositories/src/index.ts"],
+      "cache": ["libs/data/cache/src/index.ts"],
+      "date": ["libs/utils/date/src/index.ts"],
+      "validation": ["libs/utils/validation/src/index.ts"],
+      "env": ["libs/utils/env/src/index.ts"],
+      "storage": ["libs/utils/storage/src/index.ts"],
+      "types": ["libs/types/src/index.ts"],
+      "contracts": ["libs/api/contracts/src/index.ts"],
+      "dto": ["libs/api/dto/src/index.ts"],
+      "analytics": ["libs/infra/analytics/src/index.ts"],
+      "moderation": ["libs/infra/moderation/src/index.ts"]
     }
   }
 }
