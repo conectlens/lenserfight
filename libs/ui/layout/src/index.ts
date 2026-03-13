@@ -1,1 +1,2 @@
-export * from './lib/layout'
+export * from './lib/Footer'
+export * from './lib/ScrollToTop'
