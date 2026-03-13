@@ -108,7 +108,7 @@ export const ThreadDetailPage: React.FC = () => {
     if (!thread || !lenser) return
     setIsDeleting(true)
     try {
-      await threadsService.deleteThread(thread.id, lenser.id)
+      await threadsService.deleteThread(thread.id, lenser.handle)
       setIsDeleteModalOpen(false)
       navigate('/app')
     } catch (e) {
@@ -202,7 +202,7 @@ export const ThreadDetailPage: React.FC = () => {
             title: thread.title,
             content: thread.content,
             tags: thread.tags.map((t) => t.name),
-            visibility: 'public',
+            visibility: thread.visibility,
           }}
         />
       )}
