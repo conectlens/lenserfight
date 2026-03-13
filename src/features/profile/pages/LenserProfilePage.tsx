@@ -304,7 +304,7 @@ export const LenserProfilePage: React.FC = () => {
         title: threadToEdit.title,
         content: threadToEdit.content,
         tags: threadToEdit.tags.map((t: any) => t.name),
-        visibility: 'public',
+        visibility: threadToEdit.visibility,
       })
       setIsThreadModalOpen(true)
     }

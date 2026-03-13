@@ -1,8 +1,7 @@
+import { supabase } from '../core/supabase/client'
 import { AuthorProfile } from '../types/lenser.types'
 import { PromptTemplateRecord, CreatePromptDTO } from '../types/prompts.types'
 import { TagRecord } from '../types/threads.types'
-
-import { supabase } from '../core/supabase/client'
 
 // --- Port (Interface) ---
 export interface PromptsRepositoryPort {
@@ -41,14 +40,15 @@ export interface PromptsRepositoryPort {
 // --- Supabase Implementation ---
 // --- Supabase Implementation ---
 export class SupabasePromptsRepository implements PromptsRepositoryPort {
-  private handleError(error: any) {
+  private handleError(error: unknown) {
+    const normalizedError = error as { code?: string; message?: string }
     if (!error) return
-    if (error.code === '42501' || error.message?.includes('permission denied')) {
+    if (normalizedError.code === '42501' || normalizedError.message?.includes('permission denied')) {
       throw new Error(
         'This prompt or its associated data is private or hidden and cannot be accessed.'
       )
     }
-    if (error.code === 'PGRST116') {
+    if (normalizedError.code === 'PGRST116') {
       throw new Error('Requested resource was not found.')
     }
     throw error
@@ -56,6 +56,89 @@ export class SupabasePromptsRepository implements PromptsRepositoryPort {
 
   private get promptSelect() {
     return '*'
+  }
+
+  private mapProfileToAuthor(profile: Partial<AuthorProfile> | null | undefined, fallbackId: string): AuthorProfile {
+    return {
+      id: profile?.id || fallbackId,
+      handle: profile?.handle || 'unknown',
+      display_name: profile?.display_name || 'Unknown',
+      avatar_url: profile?.avatar_url || null,
+    } as AuthorProfile
+  }
+
+  private async getProfileById(lenserId: string): Promise<AuthorProfile> {
+    const { data: profile } = await supabase
+      .schema('lensers')
+      .from('profiles')
+      .select('id, handle, display_name, avatar_url')
+      .eq('id', lenserId)
+      .maybeSingle()
+
+    return this.mapProfileToAuthor(profile as Partial<AuthorProfile> | null, lenserId)
+  }
+
+  private async getTagsForPrompt(promptId: string): Promise<TagRecord[]> {
+    const { data: tagMapRows, error: tagMapError } = await supabase
+      .schema('content')
+      .from('tag_map')
+      .select('tag_id')
+      .eq('entity_type', 'prompt_template')
+      .eq('entity_id', promptId)
+
+    if (tagMapError) this.handleError(tagMapError)
+
+    const tagIds = (tagMapRows ?? []).map((row) => row.tag_id).filter(Boolean)
+    if (tagIds.length === 0) return []
+
+    const { data: tags, error: tagsError } = await supabase
+      .from('vw_tags_public_stats')
+      .select('id, slug, name')
+      .in('id', tagIds)
+
+    if (tagsError) this.handleError(tagsError)
+
+    const tagById = new Map((tags ?? []).map((tag) => [tag.id, tag]))
+    return tagIds
+      .map((id) => tagById.get(id))
+      .filter(Boolean)
+      .map((tag) => ({
+        id: tag.id,
+        slug: tag.slug,
+        name: tag.name,
+      }))
+  }
+
+  private async buildOwnerPromptRecord(
+    basePrompt: Pick<PromptTemplateRecord, 'id' | 'lenser_id' | 'visibility' | 'created_at' | 'updated_at'>
+  ): Promise<PromptTemplateRecord> {
+    const [translationResult, authorProfile, tags] = await Promise.all([
+      supabase
+        .schema('content')
+        .from('prompt_translations')
+        .select('title, description, content')
+        .eq('prompt_id', basePrompt.id)
+        .eq('is_original', true)
+        .maybeSingle(),
+      this.getProfileById(basePrompt.lenser_id),
+      this.getTagsForPrompt(basePrompt.id),
+    ])
+
+    if (translationResult.error) this.handleError(translationResult.error)
+
+    return {
+      id: basePrompt.id,
+      lenser_id: basePrompt.lenser_id,
+      visibility: basePrompt.visibility,
+      created_at: basePrompt.created_at,
+      updated_at: basePrompt.updated_at,
+      title: translationResult.data?.title || 'Untitled',
+      description: translationResult.data?.description ?? null,
+      content: translationResult.data?.content || '',
+      author_profile: authorProfile,
+      tags,
+      reaction_totals: {},
+    } as PromptTemplateRecord
   }
 
   // -----------------------------------------------------
@@ -131,17 +214,52 @@ export class SupabasePromptsRepository implements PromptsRepositoryPort {
     handle: string,
     offset = 0,
     limit = 10,
-    includePrivate = false // ignored unless you build private-author view
+    includePrivate = false
   ): Promise<PromptTemplateRecord[]> {
     const { data, error } = await supabase
       .from('vw_prompt_templates_public')
       .select(this.promptSelect)
       .eq('author_profile->>handle', handle)
       .order('created_at', { ascending: false })
-      .range(offset, offset + limit - 1)
+      .range(0, offset + limit - 1)
 
     if (error) this.handleError(error)
-    return data as unknown as PromptTemplateRecord[]
+    const publicPrompts = (data ?? []) as unknown as PromptTemplateRecord[]
+
+    if (!includePrivate) {
+      return publicPrompts.slice(offset, offset + limit)
+    }
+
+    const { data: profile, error: profileError } = await supabase
+      .schema('lensers')
+      .from('profiles')
+      .select('id, handle, display_name, avatar_url')
+      .eq('handle', handle)
+      .maybeSingle()
+
+    if (profileError) this.handleError(profileError)
+    if (!profile?.id) {
+      return publicPrompts.slice(offset, offset + limit)
+    }
+
+    const { data: privatePrompts, error: privateError } = await supabase
+      .schema('content')
+      .from('prompt_templates')
+      .select('id, lenser_id, visibility, created_at, updated_at')
+      .eq('lenser_id', profile.id)
+      .eq('visibility', 'private')
+      .order('created_at', { ascending: false })
+      .range(0, offset + limit - 1)
+
+    if (privateError) this.handleError(privateError)
+
+    const privateRecords = await Promise.all(
+      (privatePrompts ?? []).map((prompt) => this.buildOwnerPromptRecord(prompt))
+    )
+
+    return [...publicPrompts, ...privateRecords]
+      .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+      .slice(offset, offset + limit)
   }
 
   async getById(id: string, viewerLenserId?: string): Promise<PromptTemplateRecord | null> {
@@ -180,12 +298,8 @@ export class SupabasePromptsRepository implements PromptsRepositoryPort {
 
     if (translationError) this.handleError(translationError)
 
-    const { data: profile } = await supabase
-      .schema('lensers')
-      .from('profiles')
-      .select('id, handle, display_name, avatar_url')
-      .eq('id', viewerLenserId)
-      .maybeSingle()
+    const authorProfile = await this.getProfileById(basePrompt.lenser_id)
+    const tags = await this.getTagsForPrompt(basePrompt.id)
 
     return {
       id: basePrompt.id,
@@ -196,14 +310,9 @@ export class SupabasePromptsRepository implements PromptsRepositoryPort {
       title: translation?.title || 'Untitled',
       description: translation?.description ?? null,
       content: translation?.content || '',
-      author_profile: {
-        id: profile?.id || viewerLenserId,
-        handle: profile?.handle || 'unknown',
-        display_name: profile?.display_name || 'Unknown',
-        avatar_url: profile?.avatar_url || null,
-      } as AuthorProfile,
+      author_profile: authorProfile,
       reaction_totals: {},
-      tags: [],
+      tags,
     } as unknown as PromptTemplateRecord
   }
 
@@ -301,8 +410,10 @@ export class SupabasePromptsRepository implements PromptsRepositoryPort {
   }
 
   async updatePrompt(id: string, input: Partial<CreatePromptDTO>): Promise<PromptTemplateRecord> {
-    const baseUpdatePayload: any = {}
-    const translationUpdatePayload: any = {}
+    const baseUpdatePayload: Partial<Pick<PromptTemplateRecord, 'visibility'>> = {}
+    const translationUpdatePayload: Partial<
+      Pick<PromptTemplateRecord, 'title' | 'description' | 'content'>
+    > = {}
 
     if (input.visibility !== undefined) baseUpdatePayload.visibility = input.visibility
     if (input.title !== undefined) translationUpdatePayload.title = input.title
