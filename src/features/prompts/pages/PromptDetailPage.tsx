@@ -1,7 +1,7 @@
 import { useQueryClient } from '@tanstack/react-query'
 import { Lock, Pencil, Trash2 } from 'lucide-react'
 import React, { useEffect, useMemo, useState } from 'react'
-import { useParams, useNavigate, useLocation } from 'react-router-dom'
+import { useParams, useNavigate } from 'react-router-dom'
 
 import { ConfirmModal } from '../../../components/ConfirmModal'
 import { SEOHead } from '../../../components/SEOHead'
@@ -23,9 +23,8 @@ import { usePromptDetailController } from '../hooks/usePromptDetailController'
 export const PromptDetailPage: React.FC = () => {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
-  const location = useLocation()
   const { lenser, hasLenser } = useLenser()
-  const { isAuthenticated, isLoading: authLoading } = useAuth()
+  const { isLoading: authLoading } = useAuth()
   const { setShareConfig } = useShareContext()
   const { setPageActions, setPageTitle } = useUI()
   const queryClient = useQueryClient()
@@ -50,12 +49,6 @@ export const PromptDetailPage: React.FC = () => {
     submit: submitCreate,
     isEditMode,
   } = useCreatePrompt()
-
-  useEffect(() => {
-    if (!authLoading && !isAuthenticated) {
-      navigate('/auth/login', { state: { from: location } })
-    }
-  }, [authLoading, isAuthenticated, navigate, location])
 
   useEffect(() => {
     if (!prompt) return
@@ -173,7 +166,7 @@ export const PromptDetailPage: React.FC = () => {
     }
   }
 
-  if (authLoading || (isAuthenticated && isLoading)) {
+  if (authLoading || isLoading) {
     return (
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 animate-pulse">
         <div className="lg:col-span-8 space-y-8">

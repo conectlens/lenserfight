@@ -16,12 +16,23 @@ SET is_default = (code = 'en');
 ALTER TABLE lensers.profiles
 ADD COLUMN IF NOT EXISTS preferred_language text;
 
-UPDATE lensers.profiles p
-SET preferred_language = l.code
-FROM core.languages l
-WHERE p.preferred_language IS NULL
-  AND p.preferred_language_id IS NOT NULL
-  AND l.id = p.preferred_language_id;
+DO $$
+BEGIN
+  IF EXISTS (
+    SELECT 1
+    FROM information_schema.columns
+    WHERE table_schema = 'lensers'
+      AND table_name = 'profiles'
+      AND column_name = 'preferred_language_id'
+  ) THEN
+    UPDATE lensers.profiles p
+    SET preferred_language = l.code
+    FROM core.languages l
+    WHERE p.preferred_language IS NULL
+      AND p.preferred_language_id IS NOT NULL
+      AND l.id = p.preferred_language_id;
+  END IF;
+END $$;
 
 UPDATE lensers.profiles
 SET preferred_language = 'en'
@@ -64,8 +75,19 @@ BEGIN
   END IF;
 END $$;
 
-ALTER TABLE lensers.profiles
-ALTER COLUMN preferred_language_id DROP DEFAULT;
+DO $$
+BEGIN
+  IF EXISTS (
+    SELECT 1
+    FROM information_schema.columns
+    WHERE table_schema = 'lensers'
+      AND table_name = 'profiles'
+      AND column_name = 'preferred_language_id'
+  ) THEN
+    ALTER TABLE lensers.profiles
+    ALTER COLUMN preferred_language_id DROP DEFAULT;
+  END IF;
+END $$;
 
 ALTER TABLE lensers.profiles
 DROP COLUMN IF EXISTS preferred_language_id;
