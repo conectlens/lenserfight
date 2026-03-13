@@ -1,0 +1,12 @@
+{
+  "name": "feature-tags",
+  "$schema": "../../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "libs/features/tags/src",
+  "projectType": "library",
+  "tags": [
+    "layer:feature",
+    "feature:tags"
+  ],
+  "// targets": "to see all targets run: nx show project feature-tags --web",
+  "targets": {}
+}

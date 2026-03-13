@@ -1,18 +1,24 @@
 import { QueryClientProvider } from '@tanstack/react-query'
 import React from 'react'
 import { HelmetProvider } from 'react-helmet-async'
+import { queryClient } from '@lenserfight/data/cache'
+import {
+  AuthProvider,
+  SessionBoundary,
+} from '@lenserfight/features/auth'
+import { LenserProvider } from '@lenserfight/features/profile'
+import { ShareProvider } from '@lenserfight/features/share'
+import { UIProvider } from '@lenserfight/ui/components'
+import { ThemeProvider } from '@lenserfight/ui/theme'
 
-import { SessionBoundary } from './components/SessionBoundary'
-import { AuthProvider } from './context/AuthContext'
-import { LenserProvider } from './context/LenserContext'
-import { ShareProvider } from './context/ShareContext'
-import { ThemeProvider } from './context/ThemeContext'
-import { UIProvider } from './context/UIContext'
-import { queryClient } from './lib/react-query'
 import { AppRouter } from './router'
 
 // Lazy load the particle background to improve initial bundle size
-const StarBackground = React.lazy(() => import('./components/StarBackground'))
+const StarBackground = React.lazy(() =>
+  import('@lenserfight/ui/components').then((module) => ({
+    default: module.StarBackground,
+  }))
+)
 
 function App() {
   return (
