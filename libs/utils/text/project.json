@@ -1,0 +1,12 @@
+{
+  "name": "util-text",
+  "$schema": "../../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "libs/utils/text/src",
+  "projectType": "library",
+  "tags": [
+    "layer:utils",
+    "util:text"
+  ],
+  "// targets": "to see all targets run: nx show project util-text --web",
+  "targets": {}
+}
