@@ -64,3 +64,4 @@ Desktop.ini
 .nx/workspace-data
 vite.config.*.timestamp*
 .nx/polygraph
+vitest.config.*.timestamp*
