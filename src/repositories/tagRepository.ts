@@ -47,20 +47,22 @@ export class SupabaseTagRepository implements TagRepositoryPort {
    * Security: Follows direct table access patterns with RLS enforcement.
    */
   async createTag(name: string, slug: string): Promise<TagDTO> {
-    // 1. Resolve language ID from current user profile
+    // 1. Resolve language code from current user profile
     const {
       data: { user },
     } = await supabase.auth.getUser()
-    let languageId: string | null = null
+    let languageCode = 'en'
 
     if (user) {
       const { data: profile } = await supabase
         .schema('lensers')
         .from('profiles')
-        .select('preferred_language_id')
+        .select('preferred_language')
         .eq('id', user.id)
         .maybeSingle()
-      languageId = profile?.preferred_language_id
+      if (profile?.preferred_language) {
+        languageCode = profile.preferred_language
+      }
     }
 
     // 2. Insert Base Tag
@@ -82,31 +84,13 @@ export class SupabaseTagRepository implements TagRepositoryPort {
     const tagId = tag.id
 
     // 3. Insert Tag Translation
-    if (languageId) {
-      const { error: transError } = await supabase.schema('content').from('tag_translations').insert({
-        tag_id: tagId,
-        language_id: languageId,
-        name: name,
-      })
-      if (transError) {
-        console.error('Failed to create tag translation', transError)
-      }
-    } else {
-      // Opportunistic fallback: Try to get any established language ID from another tag
-      const { data: anyTrans } = await supabase
-        .schema('content')
-        .from('tag_translations')
-        .select('language_id')
-        .limit(1)
-        .maybeSingle()
-
-      if (anyTrans?.language_id) {
-        await supabase.schema('content').from('tag_translations').insert({
-          tag_id: tagId,
-          language_id: anyTrans.language_id,
-          name: name,
-        })
-      }
+    const { error: transError } = await supabase.schema('content').from('tag_translations').insert({
+      tag_id: tagId,
+      language_code: languageCode,
+      name: name,
+    })
+    if (transError) {
+      console.error('Failed to create tag translation', transError)
     }
 
     // 4. Return refreshed DTO from view
