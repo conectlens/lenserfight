@@ -15,7 +15,7 @@ export interface ThreadsRepositoryPort {
     includePrivate?: boolean
   ): Promise<ThreadRecord[]>
   getThreadTags(threadId: string): Promise<TagRecord[]>
-  getThreadReplies(threadId: string): Promise<ThreadReplyRecord[]>
+  getThreadReplies(threadId: string, viewerLenserId?: string): Promise<ThreadReplyRecord[]>
   getReplyById(replyId: string): Promise<ThreadReplyRecord | null>
   getTrendingTags(limit: number): Promise<string[]>
   createReply(
@@ -53,6 +53,20 @@ export class SupabaseThreadsRepository implements ThreadsRepositoryPort {
   // Single-Query Read using denormalized columns from secure VIEW
   private get threadSelect() {
     return '*'
+  }
+
+  private async getProfileByHandle(handle: string): Promise<AuthorProfile | null> {
+    const { data: profile, error } = await supabase
+      .schema('lensers')
+      .from('profiles')
+      .select('id, handle, display_name, avatar_url')
+      .eq('handle', handle)
+      .maybeSingle()
+
+    if (error) this.handleError(error)
+    if (!profile) return null
+
+    return this.mapProfileToAuthor(profile as Partial<AuthorProfile>, profile.id)
   }
 
   private mapProfileToAuthor(profile: Partial<AuthorProfile> | null | undefined, fallbackId: string): AuthorProfile {
@@ -106,8 +120,34 @@ export class SupabaseThreadsRepository implements ThreadsRepositoryPort {
       }))
   }
 
+  private async getThreadReactionTotals(threadId: string): Promise<Record<string, number>> {
+    const { data, error } = await supabase
+      .schema('content')
+      .from('thread_reactions')
+      .select('reaction')
+      .eq('thread_id', threadId)
+
+    if (error) this.handleError(error)
+
+    return (data ?? []).reduce<Record<string, number>>((totals, row) => {
+      totals[row.reaction] = (totals[row.reaction] ?? 0) + 1
+      return totals
+    }, {})
+  }
+
   private async buildOwnerThreadRecord(
-    baseThread: Pick<ThreadRecord, 'id' | 'lenser_id' | 'visibility' | 'created_at' | 'updated_at'>
+    baseThread: Pick<
+      ThreadRecord,
+      | 'id'
+      | 'lenser_id'
+      | 'visibility'
+      | 'created_at'
+      | 'updated_at'
+      | 'reply_count'
+      | 'view_count'
+      | 'thumbnail_url'
+      | 'prompt_data'
+    >
   ): Promise<ThreadRecord> {
     const [translationResult, authorProfile, tags] = await Promise.all([
       supabase
@@ -122,6 +162,7 @@ export class SupabaseThreadsRepository implements ThreadsRepositoryPort {
     ])
 
     if (translationResult.error) this.handleError(translationResult.error)
+    const reactionTotals = await this.getThreadReactionTotals(baseThread.id)
 
     return {
       id: baseThread.id,
@@ -133,11 +174,49 @@ export class SupabaseThreadsRepository implements ThreadsRepositoryPort {
       content: translationResult.data?.content || '',
       author_profile: authorProfile,
       tags,
-      reaction_totals: {},
-      reply_count: 0,
-      view_count: 0,
-      prompt_data: undefined,
+      reaction_totals: reactionTotals,
+      reply_count: baseThread.reply_count ?? 0,
+      view_count: baseThread.view_count ?? 0,
+      thumbnail_url: baseThread.thumbnail_url,
+      prompt_data: baseThread.prompt_data,
     } as ThreadRecord
+  }
+
+  private async hydrateThreadRecords(
+    baseThreads: Pick<
+      ThreadRecord,
+      | 'id'
+      | 'lenser_id'
+      | 'visibility'
+      | 'created_at'
+      | 'updated_at'
+      | 'reply_count'
+      | 'view_count'
+      | 'thumbnail_url'
+      | 'prompt_data'
+    >[]
+  ): Promise<ThreadRecord[]> {
+    return Promise.all(baseThreads.map((thread) => this.buildOwnerThreadRecord(thread)))
+  }
+
+  private async getReplyReactionTotals(replyIds: string[]): Promise<Map<string, Record<string, number>>> {
+    if (replyIds.length === 0) return new Map()
+
+    const { data, error } = await supabase
+      .schema('content')
+      .from('thread_reply_reactions')
+      .select('reply_id, reaction')
+      .in('reply_id', replyIds)
+
+    if (error) this.handleError(error)
+
+    const totals = new Map<string, Record<string, number>>()
+    for (const row of data ?? []) {
+      const current = totals.get(row.reply_id) ?? {}
+      current[row.reaction] = (current[row.reaction] ?? 0) + 1
+      totals.set(row.reply_id, current)
+    }
+    return totals
   }
 
   /**
@@ -248,32 +327,22 @@ export class SupabaseThreadsRepository implements ThreadsRepositoryPort {
    */
   async getThreadById(id: string, viewerLenserId?: string): Promise<ThreadRecord | null> {
     const { data, error } = await supabase
-      .from('vw_content_threads_public')
-      .select(this.threadSelect)
+      .schema('content')
+      .from('threads')
+      .select('id, lenser_id, visibility, created_at, updated_at, reply_count, view_count, thumbnail_url, prompt_data')
       .eq('id', id)
       .maybeSingle()
 
     if (error) {
-      if (error.code === 'PGRST116') return null // not found
+      if (error.code === 'PGRST116') return null
       this.handleError(error)
     }
+    if (!data) return null
+    if (data.visibility === 'private' && (!viewerLenserId || data.lenser_id !== viewerLenserId)) {
+      return null
+    }
 
-    if (data) return data as unknown as ThreadRecord
-
-    if (!viewerLenserId) return null
-
-    const { data: baseThread, error: baseError } = await supabase
-      .schema('content')
-      .from('threads')
-      .select('id, lenser_id, visibility, created_at, updated_at')
-      .eq('id', id)
-      .eq('lenser_id', viewerLenserId)
-      .maybeSingle()
-
-    if (baseError) this.handleError(baseError)
-    if (!baseThread) return null
-
-    return this.buildOwnerThreadRecord(baseThread)
+    return this.buildOwnerThreadRecord(data as ThreadRecord)
   }
 
   /**
@@ -286,50 +355,31 @@ export class SupabaseThreadsRepository implements ThreadsRepositoryPort {
     limit = 10,
     includePrivate = false
   ): Promise<ThreadRecord[]> {
+    if (includePrivate) {
+      const profile = await this.getProfileByHandle(handle)
+      if (!profile?.id) return []
+
+      const { data: baseThreads, error } = await supabase
+        .schema('content')
+        .from('threads')
+        .select('id, lenser_id, visibility, created_at, updated_at, reply_count, view_count, thumbnail_url, prompt_data')
+        .eq('lenser_id', profile.id)
+        .order('created_at', { ascending: false })
+        .range(offset, offset + limit - 1)
+
+      if (error) this.handleError(error)
+      return this.hydrateThreadRecords((baseThreads ?? []) as ThreadRecord[])
+    }
+
     const { data, error } = await supabase
       .from('vw_content_threads_public')
       .select(this.threadSelect)
       .eq('author_profile->>handle', handle)
       .order('created_at', { ascending: false })
-      .range(0, offset + limit - 1)
+      .range(offset, offset + limit - 1)
 
     if (error) this.handleError(error)
-    const publicThreads = (data ?? []) as unknown as ThreadRecord[]
-
-    if (!includePrivate) {
-      return publicThreads.slice(offset, offset + limit)
-    }
-
-    const { data: profile, error: profileError } = await supabase
-      .schema('lensers')
-      .from('profiles')
-      .select('id, handle, display_name, avatar_url')
-      .eq('handle', handle)
-      .maybeSingle()
-
-    if (profileError) this.handleError(profileError)
-    if (!profile?.id) {
-      return publicThreads.slice(offset, offset + limit)
-    }
-
-    const { data: privateThreads, error: privateError } = await supabase
-      .schema('content')
-      .from('threads')
-      .select('id, lenser_id, visibility, created_at, updated_at')
-      .eq('lenser_id', profile.id)
-      .eq('visibility', 'private')
-      .order('created_at', { ascending: false })
-      .range(0, offset + limit - 1)
-
-    if (privateError) this.handleError(privateError)
-
-    const privateRecords = await Promise.all(
-      (privateThreads ?? []).map((thread) => this.buildOwnerThreadRecord(thread))
-    )
-
-    return [...publicThreads, ...privateRecords]
-      .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
-      .slice(offset, offset + limit)
+    return (data ?? []) as unknown as ThreadRecord[]
   }
 
   /**
@@ -351,15 +401,41 @@ export class SupabaseThreadsRepository implements ThreadsRepositoryPort {
    * Get replies for a thread from the public replies view.
    * Soft-deleted replies should be handled at view-level (e.g. content = "[deleted]").
    */
-  async getThreadReplies(threadId: string): Promise<ThreadReplyRecord[]> {
-    const { data, error } = await supabase
-      .from('vw_content_thread_replies_public')
-      .select('*')
+  async getThreadReplies(threadId: string, viewerLenserId?: string): Promise<ThreadReplyRecord[]> {
+    const thread = await this.getThreadById(threadId, viewerLenserId)
+    if (!thread) return []
+
+    if (thread.visibility === 'public') {
+      const { data, error } = await supabase
+        .from('vw_content_thread_replies_public')
+        .select('*')
+        .eq('thread_id', threadId)
+        .order('created_at', { ascending: true })
+
+      if (error) this.handleError(error)
+      return (data ?? []) as ThreadReplyRecord[]
+    }
+
+    const { data: replies, error } = await supabase
+      .schema('content')
+      .from('thread_replies')
+      .select('id, thread_id, parent_reply_id, lenser_id, content, created_at, deleted_at')
       .eq('thread_id', threadId)
       .order('created_at', { ascending: true })
 
     if (error) this.handleError(error)
-    return (data ?? []) as ThreadReplyRecord[]
+
+    const replyRows = (replies ?? []) as ThreadReplyRecord[]
+    const [reactionTotals, authorProfiles] = await Promise.all([
+      this.getReplyReactionTotals(replyRows.map((reply) => reply.id)),
+      Promise.all(replyRows.map((reply) => this.getProfileById(reply.lenser_id))),
+    ])
+
+    return replyRows.map((reply, index) => ({
+      ...reply,
+      author_profile: authorProfiles[index],
+      reaction_totals: reactionTotals.get(reply.id) ?? {},
+    }))
   }
 
   async getReplyById(replyId: string): Promise<ThreadReplyRecord | null> {
