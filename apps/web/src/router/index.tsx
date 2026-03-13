@@ -1,41 +1,51 @@
 import React from 'react'
+import { GlobalAnalytics } from '@lenserfight/infra/analytics'
+import {
+  ScrollToTop,
+} from '@lenserfight/ui/layout'
+import {
+  DashboardLayout,
+  PublicLayout,
+} from '@lenserfight/features/shell'
+import {
+  AdminAnalytics,
+  AdminContacts,
+  AdminDesign,
+  AdminFeedbacks,
+  AdminLayout,
+  AdminUsers,
+  AdminWaitlist,
+  AdminWelcome,
+} from '@lenserfight/features/admin'
+import {
+  ForgotPasswordPage,
+  LoginPage,
+  RegisterPage,
+  ResetPasswordPage,
+} from '@lenserfight/features/auth'
+import { HomePage } from '@lenserfight/features/home'
+import { LeaderboardPage } from '@lenserfight/features/leaderboard'
+import { LenserProfilePage, useLenser } from '@lenserfight/features/profile'
+import {
+  PromptDetailPage,
+  PromptsPage,
+} from '@lenserfight/features/prompts'
+import {
+  AboutPage,
+  ContactPage,
+  EcosystemPage,
+  LegalPage,
+  WelcomePage,
+} from '@lenserfight/features/public'
+import { SettingsPage } from '@lenserfight/features/settings'
+import { ShortLinkRedirect } from '@lenserfight/features/share'
+import {
+  TagCloudPage,
+  TagDetailPage,
+} from '@lenserfight/features/tags'
+import { ThreadDetailPage } from '@lenserfight/features/threads'
+import { WaitingListPage } from '@lenserfight/features/waiting-list'
 import { Routes, Route, Navigate, Outlet, BrowserRouter } from 'react-router-dom'
-
-import { GlobalAnalytics } from '../components/GlobalAnalytics'
-import { ScrollToTop } from '../components/ScrollToTop'
-import { useLenser } from '../context/LenserContext'
-import { AdminLayout } from '../features/admin/layout/AdminLayout'
-import { AdminAnalytics } from '../features/admin/pages/AdminAnalytics'
-import { AdminContacts } from '../features/admin/pages/AdminContacts'
-import { AdminDesign } from '../features/admin/pages/AdminDesign'
-import { AdminFeedbacks } from '../features/admin/pages/AdminFeedbacks'
-import { AdminUsers } from '../features/admin/pages/AdminUsers'
-import { AdminWaitlist } from '../features/admin/pages/AdminWaitlist'
-import { AdminWelcome } from '../features/admin/pages/AdminWelcome'
-import { ForgotPasswordPage } from '../features/auth/pages/ForgotPasswordPage'
-import { LoginPage } from '../features/auth/pages/LoginPage'
-import { RegisterPage } from '../features/auth/pages/RegisterPage'
-import { ResetPasswordPage } from '../features/auth/pages/ResetPasswordPage'
-import { HomePage } from '../features/home/pages/HomePage'
-import { TagDetailPage } from '../features/tags/pages/TagDetailPage'
-import { ShortLinkRedirect } from '../features/share/pages/ShortLinkRedirect'
-import { WaitingListPage } from '../features/waitingList/pages/WaitingListPage'
-import { LeaderboardPage } from '../features/leaderboard/pages/LeaderboardPage'
-import { LenserProfilePage } from '../features/profile/pages/LenserProfilePage'
-import { PromptDetailPage } from '../features/prompts/pages/PromptDetailPage'
-import { PromptsPage } from '../features/prompts/pages/PromptsPage'
-
-// Public Pages
-import { AboutPage } from '../features/public/pages/AboutPage'
-import { ContactPage } from '../features/public/pages/ContactPage'
-import { EcosystemPage } from '../features/public/pages/EcosystemPage'
-import { LegalPage } from '../features/public/pages/LegalPage'
-import { WelcomePage } from '../features/public/pages/WelcomePage'
-import { SettingsPage } from '../features/settings/pages/SettingsPage'
-import { TagCloudPage } from '../features/tags/pages/TagCloudPage'
-import { ThreadDetailPage } from '../features/threads/pages/ThreadDetailPage'
-import { DashboardLayout } from '../layout/DashboardLayout'
-import { PublicLayout } from '../layout/PublicLayout'
 
 // Admin Pages
 

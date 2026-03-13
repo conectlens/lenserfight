@@ -1,1 +1,2 @@
-export * from './lib/theme'
+export * from './lib/context/ThemeContext'
+export * from './lib/themeController'
