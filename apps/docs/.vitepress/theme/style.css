@@ -1,5 +1,37 @@
+/*
+  Token source:
+  - Reuse LenserFight’s Tailwind v4 theme tokens so VitePress variables map to project tokens.
+  - This keeps docs styling aligned with the app without redefining colors here.
+*/
+@import '../../../web/src/index.css';
 
-html {
-  font-family: Arial, Helvetica;
+:root {
+  --vp-font-family-base: var(--font-sans);
+
+  /* Brand */
+  --vp-c-brand-1: var(--color-primary);
+  --vp-c-brand-2: var(--color-primary);
+  --vp-c-brand-3: var(--color-primary);
+
+  /* Light surface/text mapping */
+  --vp-c-bg: var(--color-light-base);
+  --vp-c-bg-alt: var(--color-light-surface);
+  --vp-c-bg-elv: var(--color-light-surface);
+  --vp-c-bg-soft: var(--color-light-subtle);
+
+  --vp-c-text-1: var(--color-light-text);
+  --vp-c-text-2: var(--color-light-muted);
+  --vp-c-text-3: var(--color-light-muted);
 }
 
+html.dark {
+  /* Dark surface/text mapping */
+  --vp-c-bg: var(--color-dark-base);
+  --vp-c-bg-alt: var(--color-dark-surface);
+  --vp-c-bg-elv: var(--color-dark-surface);
+  --vp-c-bg-soft: var(--color-dark-subtle);
+
+  --vp-c-text-1: var(--color-dark-text);
+  --vp-c-text-2: var(--color-dark-muted);
+  --vp-c-text-3: var(--color-dark-muted);
+}
