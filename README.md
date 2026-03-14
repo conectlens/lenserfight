@@ -1,204 +1,68 @@
 # LenserFight
 
-LenserFight Web is a Vite-powered web application backed by Supabase, built as part of the **ConnectLens** ecosystem.  
-The project focuses on perspective-driven interaction, gamification, and community mechanics.
+LenserFight is a TypeScript Nx monorepo for a Vite-based web application backed by Supabase, plus a VitePress documentation site.
 
----
+## What is in this repository
 
-## Tech Stack
+- `apps/` contains runnable applications such as the web app and docs site.
+- `libs/` contains shared code for domain, data, UI, and utilities.
+- `docs/` contains the markdown source rendered by the docs site.
+- `supabase/` contains Supabase configuration and migrations when present.
 
-- **Frontend**: Vite (ES Modules)
-- **Backend**: Supabase (PostgreSQL, Auth, RPC, Storage)
-- **Language**: TypeScript / JavaScript
-- **Linting**: ESLint
-- **Formatting**: Prettier
-- **Commit Convention**: Conventional Commits (Commitizen)
-- **Versioning & Changelog**: standard-version (manual, optional)
+## Repository structure
 
----
+```text
+.
+├─ apps/
+│  ├─ web/
+│  └─ docs/
+├─ libs/
+├─ docs/
+├─ supabase/
+└─ README.md
+```
 
-## Project Status
-
-**Pre-MVP / Unstable**
-
-- Features and schemas may change
-- Bugs are expected
-- No public release yet
-- Version numbers are not meaningful at this stage
-
----
-
-## Getting Started
+## Quick start
 
 ### Prerequisites
 
-- Node.js ≥ 18
-- npm ≥ 9
-- A Supabase project (local or cloud)
+- Node.js 20
+- npm
+- A Supabase project, either local or cloud-hosted
 
----
-
-### Installation
+### Install dependencies
 
 ```bash
-npm install
+npm ci
 ```
 
-## Environment Variables
+### Configure environment variables
 
-This project uses **Vite environment variables**.
+Copy `.env.example` to `.env` and set the required application values for Supabase, the app base URL, and any public client-side keys.
 
-Create a `.env` file in the project root using `.env.example` as a reference.
-
-```env
-# Supabase
-VITE_SUPABASE_URL=https://your-project-id.supabase.co
-VITE_SUPABASE_ANON_KEY=your-public-anon-key
-
-# App
-VITE_APP_BASE_URL=http://localhost:3000
-
-# Cloudflare Turnstile
-VITE_CAPTCHA_SITE_KEY=your-turnstile-site-key
-```
-
-### Notes
-
-* `VITE_SUPABASE_ANON_KEY` is safe to expose in the frontend
-  Security is enforced via Supabase **Row Level Security (RLS)**.
-* The Turnstile **secret key must never be exposed** in the frontend.
-* Do **not** commit `.env` files.
-
----
-
-## Development
-
-### Run the development server
+### Run the web app
 
 ```bash
-npm run dev
+npm exec nx serve web
 ```
 
-The app will be available at:
-
-```
-http://localhost:5173
-```
-
----
-
-## Build & Preview
+### Run the docs site
 
 ```bash
-npm run build
-npm run preview
+npm exec nx run docs:serve
 ```
 
----
+## Documentation and community
 
-## Scripts
-
-| Command            | Description                           |
-| ------------------ | ------------------------------------- |
-| `npm run dev`      | Start Vite dev server                 |
-| `npm run build`    | Build for production                  |
-| `npm run preview`  | Preview production build              |
-| `npm run lint`     | Run ESLint                            |
-| `npm run lint:fix` | Auto-fix lint issues                  |
-| `npm run format`   | Format code with Prettier             |
-| `npm run release`  | Generate version + changelog (manual) |
-
----
-
-## Code Quality
-
-### ESLint
-
-* Removes unused imports automatically
-* Enforces import ordering
-* Prevents unused variables (except `_`-prefixed)
-
-### Prettier
-
-* Handles formatting only
-* ESLint is the source of truth for structural rules
-
----
-
-## Commit Convention
-
-This project follows **Conventional Commits**.
-
-Examples:
-
-```
-feat(xp): add weekly leaderboard
-fix(auth): prevent refresh token loop
-chore(lint): auto-fix imports
-```
-
-To create commits interactively:
-
-```bash
-npx cz
-```
-
-This ensures consistent history and enables automated changelog generation.
-
----
-
-## Changelog & Releases
-
-* `CHANGELOG.md` is generated using `standard-version`
-* Releases are **manual and intentional**
-* Not required during early development
-
-When the project reaches beta or first users:
-
-```bash
-npm run release
-git push --follow-tags
-```
-
-This will:
-
-* update `CHANGELOG.md`
-* bump version
-* create a git tag
-
----
-
-## Supabase Usage
-
-Supabase is used for:
-
-* Authentication
-* PostgreSQL database
-* Row Level Security (RLS)
-* RPC functions and triggers
-* Analytics and XP-related logic
-
-Schema and policies are subject to change during pre-MVP.
-
----
-
-## Security
-
-* All sensitive access is enforced via Supabase RLS
-* Public keys are intentionally public
-* Secrets must remain server-side only
-
----
+- Docs site: `https://docs.lenserfight.com`
+- Docs entry page: `docs/index.md`
+- Installation guide: `docs/tutorials/installation.md`
+- Quickstart guide: `docs/tutorials/quickstart.md`
+- Contributing guide: `CONTRIBUTING.md` or `docs/community/contributing.md`
+- Code of conduct: `CODE_OF_CONDUCT.md` or `docs/community/code-of-conduct.md`
+- Security policy: `SECURITY.md` or `docs/community/security.md`
+- Support guide: `SUPPORT.md` or `docs/community/support.md`
 
 ## License
 
-
-All rights reserved.
-
----
-
-## ConnectLens
-
-LenserFight is part of the **ConnectLens ecosystem**, focused on building trust-based, perspective-driven communities using modern web technologies.
-
-```
+No open-source license has been selected yet. Until a `LICENSE` file is added, assume the source code and documentation are not licensed for reuse.
