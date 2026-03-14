@@ -1,0 +1,7 @@
+interface:
+  display_name: "Supabase Schema Reviewer"
+  short_description: "Review Supabase/Postgres schema design, table ownership, normalization, defaults, relationships, and migration coherence. Use for new tables, column design, view design, schema cleanup, and database modeling decisions."
+  icon_small: "../../assets/apple-icon-small.png"
+  icon_large: "../../assets/apple-icon.png"
+  brand_color: "#ffde59"
+  default_prompt: "Review schema design and migration coherence; recommend constraints, naming, and modeling fixes."
