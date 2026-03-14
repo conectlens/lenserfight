@@ -1,0 +1,12 @@
+{
+  "name": "modals",
+  "$schema": "../../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "libs/ui/modals/src",
+  "projectType": "library",
+  "tags": [
+    "layer:ui",
+    "ui:modals"
+  ],
+  "// targets": "to see all targets run: nx show project modals --web",
+  "targets": {}
+}

@@ -1,0 +1,12 @@
+{
+  "name": "reactions",
+  "$schema": "../../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "libs/domain/reactions/src",
+  "projectType": "library",
+  "tags": [
+    "layer:domain",
+    "domain:reactions"
+  ],
+  "// targets": "to see all targets run: nx show project reactions --web",
+  "targets": {}
+}
