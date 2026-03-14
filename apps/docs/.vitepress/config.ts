@@ -22,7 +22,7 @@ export default defineConfig({
       { text: 'Concepts', link: '/explanations/architecture-overview' },
       { text: 'Reference', link: '/reference/configuration' },
       { text: 'Architecture', link: '/architecture/domain-map' },
-      { text: 'Contributing', link: '/contributing/development-setup' },
+      { text: 'Community', link: '/community/contributing' },
     ],
 
     aside: true,
@@ -76,12 +76,14 @@ export default defineConfig({
         ],
       },
       {
-        text: 'Contributing',
+        text: 'Community',
         items: [
-          { text: 'Development Setup', link: '/contributing/development-setup' },
-          { text: 'Coding Standards', link: '/contributing/coding-standards' },
-          { text: 'Branching', link: '/contributing/branching' },
-          { text: 'Release Process', link: '/contributing/release-process' },
+          { text: 'Contributing', link: '/community/contributing' },
+          { text: 'Branching', link: '/community/branching' },
+          { text: 'Code of Conduct', link: '/community/code-of-conduct' },
+          { text: 'Security', link: '/community/security' },
+          { text: 'Support', link: '/community/support' },
+          { text: 'Contributors', link: '/community/contributors' },
         ],
       },
     ],
