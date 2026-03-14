@@ -1,0 +1,7 @@
+interface:
+  display_name: "Unit Test Planner"
+  short_description: "Plan test coverage by layer, risk, and behavior. Use when adding features, fixing regressions, or deciding what to test in domain, data, UI, and integration layers."
+  icon_small: "../../assets/apple-icon-small.png"
+  icon_large: "../../assets/apple-icon.png"
+  brand_color: "#ffde59"
+  default_prompt: "Plan minimal layered test coverage by risk and behavior with clear priorities."

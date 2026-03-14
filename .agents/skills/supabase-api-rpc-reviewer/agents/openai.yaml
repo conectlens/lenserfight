@@ -1,0 +1,7 @@
+interface:
+  display_name: "Supabase API RPC Reviewer"
+  short_description: "Review Supabase SQL functions, RPC exposure, return contracts, and API-facing database surfaces. Use for public API design, function hardening, response stability, and deciding between direct table access and RPC."
+  icon_small: "../../assets/apple-icon-small.png"
+  icon_large: "../../assets/apple-icon.png"
+  brand_color: "#ffde59"
+  default_prompt: "Review Supabase functions/RPC exposure and return contracts; recommend the safest interface."

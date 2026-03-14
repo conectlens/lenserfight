@@ -1,3 +1,8 @@
+approval_policy = "on-request"
+sandbox_mode = "workspace-write"
+project_doc_fallback_filenames = ["TEAM_GUIDE.md", ".agents.md"]
+project_doc_max_bytes = 65536
+
 [mcp_servers.nx-mcp]
 command = "npx"
 args = [ "nx-mcp@latest", "--minimal" ]
@@ -8,3 +13,42 @@ multi_agent = true
 [agents.ci-monitor-subagent]
 description = "CI helper for /monitor-ci. Fetches CI status, retrieves fix details, or updates self-healing fixes. Executes one MCP tool call and returns the result."
 config_file = "agents/ci-monitor-subagent.toml"
+
+[agents]
+max_threads = 6
+max_depth = 1
+
+[agents.default]
+description = "General-purpose fallback agent for ordinary repository tasks."
+
+[agents.worker]
+description = "Implementation-focused agent for small, targeted code or documentation changes."
+
+[agents.explorer]
+description = "Read-heavy exploration agent for tracing code paths, architecture, and dependencies."
+config_file = "agents/explorer.toml"
+
+[agents.reviewer]
+description = "Focused review agent for security, migrations, release risk, architecture, and maintainability."
+config_file = "agents/reviewer.toml"
+
+[agents.ci-monitor]
+description = "CI and release monitor for failing pipelines, flaky tests, build regressions, and deploy blockers."
+config_file = "agents/ci-monitor-subagent.toml"
+
+# Optional explicit skill toggles. Adjust paths if your repo stores skills elsewhere.
+[[skills.config]]
+path = ".agents/skills/release-readiness-reviewer/SKILL.md"
+enabled = true
+
+[[skills.config]]
+path = ".agents/skills/migration-risk-reviewer/SKILL.md"
+enabled = true
+
+[[skills.config]]
+path = ".agents/skills/repo-architecture-auditor/SKILL.md"
+enabled = true
+
+[[skills.config]]
+path = ".agents/skills/supabase-rls-security-reviewer/SKILL.md"
+enabled = true
