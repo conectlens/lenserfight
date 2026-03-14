@@ -1,0 +1,7 @@
+interface:
+  display_name: "Contract DTO Consistency Reviewer"
+  short_description: "Review consistency between API contracts, DTOs, domain types, and consumer expectations. Use for payload design, serialization issues, nullable mismatch, naming drift, and transport/domain boundary checks."
+  icon_small: "../../assets/apple-icon-small.png"
+  icon_large: "../../assets/apple-icon.png"
+  brand_color: "#ffde59"
+  default_prompt: "Review contract DTO consistency"
