@@ -1,0 +1,12 @@
+{
+  "name": "feature-waiting-list",
+  "$schema": "../../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "libs/features/waiting-list/src",
+  "projectType": "library",
+  "tags": [
+    "layer:feature",
+    "feature:waiting-list"
+  ],
+  "// targets": "to see all targets run: nx show project feature-waiting-list --web",
+  "targets": {}
+}
