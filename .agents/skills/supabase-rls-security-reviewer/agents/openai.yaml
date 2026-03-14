@@ -1,0 +1,7 @@
+interface:
+  display_name: "Supabase RLS Security Reviewer"
+  short_description: "Review Supabase RLS, grants, schema exposure, views, and SQL function privilege boundaries. Use for policy design, auth-sensitive migrations, exposed-schema review, security-definer risk, and least-privilege database hardening."
+  icon_small: "../../assets/apple-icon-small.png"
+  icon_large: "../../assets/apple-icon.png"
+  brand_color: "#ffde59"
+  default_prompt: "Review RLS, grants, exposure, and function privileges; identify risks and hardened replacements."

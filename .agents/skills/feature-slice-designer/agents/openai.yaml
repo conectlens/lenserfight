@@ -1,0 +1,7 @@
+interface:
+  display_name: "Feature Slice Designer"
+  short_description: "Decide where new behavior belongs across apps, features, domain, data, api, ui, infra, and utils. Use before implementing a feature, refactor, or cross-layer change in the LenserFight monorepo."
+  icon_small: "../../assets/apple-icon-small.png"
+  icon_large: "../../assets/apple-icon.png"
+  brand_color: "#ffde59"
+  default_prompt: "Decide where new behavior belongs across apps, features, domain, data, api, ui, infra, and utils. Use before implementing a feature, refactor, or cross-layer change in the LenserFight monorepo."
