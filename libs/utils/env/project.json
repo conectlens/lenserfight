@@ -1,0 +1,12 @@
+{
+  "name": "env",
+  "$schema": "../../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "libs/utils/env/src",
+  "projectType": "library",
+  "tags": [
+    "layer:utils",
+    "util:env"
+  ],
+  "// targets": "to see all targets run: nx show project env --web",
+  "targets": {}
+}
