@@ -1,0 +1,7 @@
+interface:
+  display_name: "Migration Risk Reviewer"
+  short_description: "Assess Supabase/Postgres migration blast radius, rollback difficulty, data loss risk, permission regression risk, and rollout safety. Use before applying migrations to shared environments or bundling schema changes into a release."
+  icon_small: "../../assets/apple-icon-small.png"
+  icon_large: "../../assets/apple-icon.png"
+  brand_color: "#ffde59"
+  default_prompt: "Assess migration rollout risk and rollback safety."
