@@ -10,6 +10,9 @@ export default defineConfig({
 
   vite: {
     plugins: [tailwind()],
+    server: {
+      host: '127.0.0.1',
+    },
   },
 
   themeConfig: {
@@ -21,6 +24,9 @@ export default defineConfig({
       { text: 'Architecture', link: '/architecture/domain-map' },
       { text: 'Contributing', link: '/contributing/development-setup' },
     ],
+
+    aside: true,
+    outline: [2, 3],
 
     sidebar: [
       {
