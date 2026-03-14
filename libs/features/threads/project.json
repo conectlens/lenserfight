@@ -1,0 +1,12 @@
+{
+  "name": "feature-threads",
+  "$schema": "../../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "libs/features/threads/src",
+  "projectType": "library",
+  "tags": [
+    "layer:feature",
+    "feature:threads"
+  ],
+  "// targets": "to see all targets run: nx show project feature-threads --web",
+  "targets": {}
+}

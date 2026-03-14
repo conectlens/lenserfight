@@ -1,0 +1,12 @@
+{
+  "name": "feature-onboarding",
+  "$schema": "../../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "libs/features/onboarding/src",
+  "projectType": "library",
+  "tags": [
+    "layer:feature",
+    "feature:onboarding"
+  ],
+  "// targets": "to see all targets run: nx show project feature-onboarding --web",
+  "targets": {}
+}
