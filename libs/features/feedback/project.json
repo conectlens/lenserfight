@@ -1,0 +1,12 @@
+{
+  "name": "feature-feedback",
+  "$schema": "../../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "libs/features/feedback/src",
+  "projectType": "library",
+  "tags": [
+    "layer:feature",
+    "feature:feedback"
+  ],
+  "// targets": "to see all targets run: nx show project feature-feedback --web",
+  "targets": {}
+}
