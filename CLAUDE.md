@@ -20,4 +20,64 @@
 - DON'T USE for: basic generator syntax (`nx g @nx/react:app`), standard commands, things you already know
 - The `nx-generate` skill handles generator discovery internally - don't call nx_docs just to look up generator syntax
 
+# LenserFight Claude Guide
+
+## Project focus
+- LenserFight is an Nx monorepo with a Vite React web app, layered libraries, and a Supabase backend.
+- Prioritize clear module boundaries, low coupling, and production-safe migrations.
+- Prefer compact, auditable outputs over verbose explanations.
+
+## Architecture defaults
+- `apps/web` is the app entry and composition root.
+- `libs/domain/*` holds business concepts, invariants, and core types.
+- `libs/api/*` defines contracts and DTOs.
+- `libs/data/*` handles repositories, caching, and Supabase integration.
+- `libs/features/*` contains vertical feature slices and orchestration.
+- `libs/ui/*` contains reusable UI primitives, layout, forms, and modals.
+- `libs/utils/*` contains low-level shared utilities only.
+- `supabase/` contains schema, migrations, SQL functions, and database security concerns.
+
+## Working rules
+- Respect Nx boundaries. Do not introduce cross-layer imports without a clear architectural reason.
+- Keep domain logic out of UI and route files.
+- Keep Supabase changes secure by default: least privilege, RLS-first, exposed schema review, migration rollback awareness.
+- Prefer editing existing libraries over creating new ones unless the boundary is clearly justified.
+- Keep public APIs of libraries intentional and small.
+- When adding features, decide placement first, then implementation.
+- When modifying migrations, assess blast radius before proposing changes.
+
+## Skill routing
+Use the matching skill when work is specialized:
+- repo shape or dependency drift → `repo-architecture-auditor`
+- Nx tags/import direction/cycles → `nx-boundary-reviewer`
+- new feature placement across layers → `feature-slice-designer`
+- Vite bundle/runtime performance → `vite-performance-engineer`
+- Tailwind, UX, accessibility, visual consistency → `tailwind-ui-ux-reviewer`
+- test scope and layering → `unit-test-planner`
+- contract/DTO/domain mismatch → `contract-dto-consistency-reviewer`
+- repository/cache/data access review → `repository-pattern-reviewer`
+- Supabase schema design → `supabase-schema-reviewer`
+- RLS, grants, exposed schemas, definer risk → `supabase-rls-security-reviewer`
+- indexes, triggers, write amplification → `supabase-index-trigger-reviewer`
+- RPC/functions and API exposure → `supabase-api-rpc-reviewer`
+- migration blast radius and rollout → `migration-risk-reviewer`
+- public/internal docs and README quality → `docs-publication-manager`
+- product decisions, scope cuts, acceptance → `product-owner-decider`
+- release gate review → `release-readiness-reviewer`
+- release notes/changelog generation → `changelog-release-writer`
+
+## Team routing
+Use team playbooks only for broad, cross-layer work:
+- major DB/security work → `teams/supabase-platform-team.md`
+- app UX/perf work → `teams/frontend-experience-team.md`
+- cross-layer feature delivery → `teams/feature-delivery-team.md`
+- release preparation → `teams/release-governance-team.md`
+- structural refactors → `teams/architecture-review-team.md`
+
+## Output style
+- Be concrete.
+- Prefer checklists, risk tables, file-by-file action plans, and acceptance criteria.
+- Minimize filler.
+- When uncertain, state the uncertainty and what evidence would resolve it.
+
 <!-- nx configuration end-->
