@@ -1,0 +1,12 @@
+{
+  "name": "cache",
+  "$schema": "../../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "libs/data/cache/src",
+  "projectType": "library",
+  "tags": [
+    "layer:data",
+    "data:cache"
+  ],
+  "// targets": "to see all targets run: nx show project cache --web",
+  "targets": {}
+}

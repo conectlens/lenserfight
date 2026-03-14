@@ -9,18 +9,15 @@ export default [
   js.configs.recommended,
   ...tseslint.configs.recommended,
   prettier,
-
   {
     plugins: {
       'unused-imports': unusedImports,
       import: importPlugin,
       'react-hooks': reactHooks,
     },
-
     rules: {
       // Kill unused imports automatically
       'unused-imports/no-unused-imports': 'error',
-
       // Allow unused vars only if prefixed with _
       'unused-imports/no-unused-vars': [
         'warn',
@@ -31,7 +28,6 @@ export default [
           argsIgnorePattern: '^_',
         },
       ],
-
       // Import ordering
       'import/order': [
         'error',
@@ -50,10 +46,15 @@ export default [
           alphabetize: { order: 'asc', caseInsensitive: true },
         },
       ],
-
       // React hooks safety
       'react-hooks/rules-of-hooks': 'error',
       'react-hooks/exhaustive-deps': 'warn',
     },
+  },
+  {
+      "ignores": [
+        "**/vite.config.*.timestamp*",
+        "**/vitest.config.*.timestamp*"
+      ]
   },
 ]
