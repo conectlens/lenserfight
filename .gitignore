@@ -65,3 +65,9 @@ Desktop.ini
 vite.config.*.timestamp*
 .nx/polygraph
 vitest.config.*.timestamp*
+
+apps/docs/.vitepress/cache/
+apps/docs/.vitepress/dist/
+.vitepress/cache/
+.vitepress/dist/
+.vite/
