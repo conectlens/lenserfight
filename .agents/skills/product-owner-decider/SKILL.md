@@ -1,20 +1,31 @@
 ---
 name: product-owner-decider
-description: Turn ambiguous requests into product decisions, scope cuts, acceptance criteria, and implementation priorities. Use for roadmap tradeoffs, feature proposals, approval decisions, and protecting LenserFight's product direction.
+description: The strategic authority for LenserFight. Translates ambiguous requests into product decisions, scope cuts, acceptance criteria, and implementation priorities.
 ---
 
-# Product Owner Decider
+# Product Owner Decider (Lenser)
 
 ## Use when
-- scope is ambiguous or too large
-- competing options need a recommendation
-- a feature must be accepted, rejected, sliced, or deferred
+- Project direction or milestone scope is ambiguous.
+- Competing AI agent features need a priority recommendation.
+- A feature must be accepted, rejected, sliced, or deferred to protect the roadmap.
 
 ## Workflow
-1. Clarify user value, constraints, and opportunity cost.
-2. Compare options and reject weak scope.
-3. Return a decision memo with acceptance criteria and next steps.
+1. **Context Load**: Read `docs/*` to align with the current LenserFight vision and 2026 goals.
+2. **Logic Processing**: Use the [Strategic Flowchart](assets/strategic-flowchart.mmd) to determine the path.
+3. **Value Mapping**: Calculate scores using the [Weighted Decision Matrix](assets/decision-matrix.md).
+4. **Execution**: Return a formal **Product Decision Memo** (from [Template](assets/decision-memo-template.md)) with a Mermaid Gantt schema for the timeline.
 
 ## Load only when needed
-- [Decision framework](references/REFERENCE.md)
-- [Decision memo template](assets/decision-memo-template.md)
+- [Decision Framework](references/REFERENCE.md)
+- [Weighted Decision Matrix](assets/decision-matrix.md)
+- [Decision Memo Template](assets/decision-memo-template.md)
+- [Acceptance Criteria Template](assets/acceptance-criteria-template.md)
+- [Feature Flowchart Template](assets/feature-flowchart-template.md)
+- [Mermaid Gantt Roadmap Schema](assets/gantt-roadmap-schema.md)
+- [Mermaid Decision Diagram](assets/mermaid-decision-diagram.md)
+- [Opportunity Cost Model](assets/opportunity-cost-model.md)
+- [Priority Score Model](assets/priority-score-model.md)
+- [Probability Impact Model](assets/probability-impact-model.md)
+- [Risk Evaluation Model](assets/risk-evaluation-model.md)
+- [Scope Slicing Framework](assets/scope-slicing-framework.md)
