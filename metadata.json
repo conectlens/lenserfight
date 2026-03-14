@@ -1,5 +1,0 @@
-{
-  "name": "LenserFight",
-  "description": "A scalable React application with Auth and Dashboard using GRASP principles and a mock-first repository architecture.",
-  "requestFramePermissions": []
-}
