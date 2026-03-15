@@ -1,6 +1,7 @@
 ---
 name: supabase-index-trigger-reviewer
 description: Review Postgres indexes, triggers, write amplification, and performance risk in Supabase migrations. Use for slow queries, missing indexes, trigger-heavy designs, stale propagation issues, and DB-side performance tuning.
+disable-model-invocation: true
 ---
 
 # Supabase Index Trigger Reviewer

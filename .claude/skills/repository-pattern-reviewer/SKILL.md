@@ -1,6 +1,7 @@
 ---
 name: repository-pattern-reviewer
 description: Review repositories, cache behavior, data-access boundaries, and error mapping. Use when persistence code becomes leaky, caching is suspicious, or feature code reaches into transport/storage details.
+disable-model-invocation: true
 ---
 
 # Repository Pattern Reviewer
