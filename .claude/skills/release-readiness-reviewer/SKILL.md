@@ -1,6 +1,7 @@
 ---
 name: release-readiness-reviewer
 description: Review whether a change set is ready for release across code, migrations, tests, docs, and rollout planning. Use before production releases, high-risk merges, or milestone sign-off.
+disable-model-invocation: true
 ---
 
 # Release Readiness Reviewer
