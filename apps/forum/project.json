@@ -1,12 +1,12 @@
 {
-  "name": "web",
+  "name": "forum",
   "$schema": "../../node_modules/nx/schemas/project-schema.json",
-  "sourceRoot": "apps/web/src",
+  "sourceRoot": "apps/forum/src",
   "projectType": "application",
   "tags": [
     "layer:app",
-    "scope:web"
+    "scope:forum"
   ],
-  "// targets": "to see all targets run: nx show project web --web",
+  "// targets": "to see all targets run: nx show project forum --forum",
   "targets": {}
 }

@@ -8,7 +8,7 @@
 - Merge pull request #16 from connectlens/refactor/database-and-app
 - Refactor: Migrate application features, components, and services into a new modular library structure.
 - feat: Migrate project structure to Nx monorepo, introducing new features like analytics, admin, leaderboard, and generations, while refactoring existing components and utilities.
-- feat: add nx apps/web.
+- feat: add nx apps/forum.
 - feat: Add agent skills for CI monitoring and Nx workspace integration, alongside related configurations and scripts.
 - feat: Implement Row Level Security for owner access to prompts and threads, including reaction totals and private content fetching.
 - feat: Implement comprehensive private content handling and tag management for prompts and threads, enhancing author profile and tag data fetching in repositories.
@@ -138,7 +138,7 @@
 - Merge pull request #16 from connectlens/refactor/database-and-app
 - Refactor: Migrate application features, components, and services into a new modular library structure.
 - feat: Migrate project structure to Nx monorepo, introducing new features like analytics, admin, leaderboard, and generations, while refactoring existing components and utilities.
-- feat: add nx apps/web.
+- feat: add nx apps/forum.
 - feat: Add agent skills for CI monitoring and Nx workspace integration, alongside related configurations and scripts.
 - feat: Implement Row Level Security for owner access to prompts and threads, including reaction totals and private content fetching.
 - feat: Implement comprehensive private content handling and tag management for prompts and threads, enhancing author profile and tag data fetching in repositories.
