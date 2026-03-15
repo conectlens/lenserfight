@@ -7,7 +7,7 @@ import tailwindcss from '@tailwindcss/vite'
 
 export default defineConfig(() => ({
   root: import.meta.dirname,
-  cacheDir: '../../node_modules/.vite/apps/web',
+  cacheDir: '../../node_modules/.vite/apps/forum',
   server: {
     port: 3000,
     host: 'localhost',
@@ -23,7 +23,7 @@ export default defineConfig(() => ({
   //   plugins: () => [ nxViteTsPaths() ],
   // },
   build: {
-    outDir: '../../dist/apps/web',
+    outDir: '../../dist/apps/forum',
     emptyOutDir: true,
     reportCompressedSize: true,
     commonjsOptions: {
@@ -31,14 +31,14 @@ export default defineConfig(() => ({
     },
   },
   test: {
-    name: 'web',
+    name: 'forum',
     watch: false,
     globals: true,
     environment: 'jsdom',
     include: ['{src,tests}/**/*.{test,spec}.{js,mjs,cjs,ts,mts,cts,jsx,tsx}'],
     reporters: ['default'],
     coverage: {
-      reportsDirectory: '../../coverage/apps/web',
+      reportsDirectory: '../../coverage/apps/forum',
       provider: 'v8' as const,
     },
   },

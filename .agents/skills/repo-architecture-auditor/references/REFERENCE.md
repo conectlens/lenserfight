@@ -1,6 +1,6 @@
 # Reference
 Check:
-- whether `apps/web` is only composition and routing
+- whether `apps/forum` is only composition and routing
 - whether `domain` is free from framework and transport concerns
 - whether `data` owns persistence and external service access
 - whether `features` orchestrate use cases instead of duplicating domain/data logic
