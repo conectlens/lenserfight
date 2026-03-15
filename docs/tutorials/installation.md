@@ -6,7 +6,7 @@ Use this guide to prepare your machine and local environment for LenserFight.
 
 LenserFight is a TypeScript Nx monorepo with:
 
-- a Vite-based web app in `apps/web`
+- a Vite-based web app in `apps/forum`
 - a VitePress docs site in `apps/docs`
 - shared libraries in `libs/`
 - Supabase configuration and migrations in `supabase/` when present
