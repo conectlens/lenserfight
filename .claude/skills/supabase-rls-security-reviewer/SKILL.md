@@ -1,6 +1,7 @@
 ---
 name: supabase-rls-security-reviewer
 description: Review Supabase RLS, grants, schema exposure, views, and SQL function privilege boundaries. Use for policy design, auth-sensitive migrations, exposed-schema review, security-definer risk, and least-privilege database hardening.
+disable-model-invocation: true
 ---
 
 # Supabase RLS Security Reviewer
