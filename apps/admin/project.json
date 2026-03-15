@@ -1,12 +1,12 @@
 {
-  "name": "arena",
+  "name": "admin-web",
   "$schema": "../../node_modules/nx/schemas/project-schema.json",
-  "sourceRoot": "apps/arena/src",
+  "sourceRoot": "apps/admin/src",
   "projectType": "application",
   "tags": [
     "layer:app",
-    "scope:arena"
+    "scope:admin",
+    "surface:internal"
   ],
-  "// targets": "to see all targets run: nx show project arena --web",
   "targets": {}
 }
