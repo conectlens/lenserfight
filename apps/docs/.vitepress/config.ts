@@ -6,7 +6,7 @@ export default defineConfig({
   srcDir: '../../docs',
 
   title: 'LenserFight Docs',
-  description: 'Diátaxis-based documentation for LenserFight.',
+  description: 'User-first documentation for LenserFight Arena, Forum, Admin, and Mobile.',
 
   vite: {
     plugins: [tailwind()],
@@ -17,12 +17,15 @@ export default defineConfig({
 
   themeConfig: {
     nav: [
-      { text: 'Tutorials', link: '/tutorials/installation' },
-      { text: 'How-To Guides', link: '/how-to/create-agent' },
-      { text: 'Concepts', link: '/explanations/architecture-overview' },
+      { text: 'Start Here', link: '/getting-started/overview' },
+      { text: 'Battles', link: '/battles/how-battles-work' },
+      { text: 'Forum', link: '/forum/community-hub' },
+      { text: 'Mobile', link: '/mobile/companion-app' },
+      { text: 'Admin', link: '/admins/operations-console' },
+      { text: 'Guides', link: '/guides/run-your-first-battle' },
+      { text: 'Reference', link: '/reference/beta-roadmap' },
       { text: 'Reference', link: '/reference/configuration' },
-      { text: 'Architecture', link: '/architecture/domain-map' },
-      { text: 'Community', link: '/community/contributing' },
+      { text: 'Contributors', link: '/contributors/wave-2-plan' },
     ],
 
     aside: true,
@@ -30,60 +33,52 @@ export default defineConfig({
 
     sidebar: [
       {
-        text: 'Tutorials',
+        text: 'Getting Started',
         items: [
+          { text: 'Overview', link: '/getting-started/overview' },
+          { text: 'Join the Beta', link: '/getting-started/join-beta' },
+          { text: 'Glossary', link: '/getting-started/glossary' },
           { text: 'Installation', link: '/tutorials/installation' },
           { text: 'Quickstart', link: '/tutorials/quickstart' },
-          { text: 'First Agent', link: '/tutorials/first-agent' },
         ],
       },
       {
-        text: 'How-To Guides',
+        text: 'Battles',
         items: [
-          { text: 'Create an Agent', link: '/how-to/create-agent' },
-          { text: 'Integrate an API', link: '/how-to/integrate-api' },
-          { text: 'Deploy a Project', link: '/how-to/deploy-project' },
-          { text: 'Debug Agents', link: '/how-to/debug-agents' },
+          { text: 'How Battles Work', link: '/battles/how-battles-work' },
+          { text: 'Hybrid Scoring', link: '/battles/hybrid-scoring' },
         ],
       },
       {
-        text: 'Concepts / Explanations',
+        text: 'Forum',
         items: [
-          { text: 'Architecture Overview', link: '/explanations/architecture-overview' },
-          { text: 'Agent Lifecycle', link: '/explanations/agent-lifecycle' },
-          { text: 'Domain Model', link: '/explanations/domain-model' },
-          { text: 'Token Economy', link: '/explanations/token-economy' },
-          { text: 'System Boundaries', link: '/explanations/system-boundaries' },
+          { text: 'Community Hub', link: '/forum/community-hub' },
+          { text: 'Creator Profiles', link: '/profiles/creator-profiles' },
         ],
       },
       {
-        text: 'Reference',
+        text: 'Apps',
         items: [
-          { text: 'Configuration', link: '/reference/configuration' },
-          { text: 'Environment Variables', link: '/reference/environment-variables' },
-          { text: 'CLI', link: '/reference/cli' },
-          { text: 'API Overview', link: '/reference/api-overview' },
-          { text: 'Events', link: '/reference/events' },
+          { text: 'Mobile Companion App', link: '/mobile/companion-app' },
+          { text: 'Admin Operations Console', link: '/admins/operations-console' },
         ],
       },
       {
-        text: 'Architecture',
+        text: 'Guides',
         items: [
-          { text: 'Domain Map', link: '/architecture/domain-map' },
-          { text: 'Module Boundaries', link: '/architecture/module-boundaries' },
-          { text: 'Runtime Flows', link: '/architecture/runtime-flows' },
-          { text: 'Event-Driven Architecture', link: '/architecture/event-driven-architecture' },
+          { text: 'Run Your First Battle', link: '/guides/run-your-first-battle' },
+          { text: 'Share a Result', link: '/guides/share-a-result' },
+          { text: 'FAQ', link: '/help/faq' },
         ],
       },
       {
-        text: 'Community',
+        text: 'Strategy And Reference',
         items: [
-          { text: 'Contributing', link: '/community/contributing' },
-          { text: 'Branching', link: '/community/branching' },
-          { text: 'Code of Conduct', link: '/community/code-of-conduct' },
-          { text: 'Security', link: '/community/security' },
-          { text: 'Support', link: '/community/support' },
-          { text: 'Contributors', link: '/community/contributors' },
+          { text: 'Beta Roadmap', link: '/reference/beta-roadmap' },
+          { text: 'Open Core Model', link: '/tools/open-core-model' },
+          { text: 'Agent Positioning', link: '/agents/positioning' },
+          { text: 'Prompts In LenserFight', link: '/prompts/prompt-usage' },
+          { text: 'Contributors Wave 2', link: '/contributors/wave-2-plan' },
         ],
       },
     ],
