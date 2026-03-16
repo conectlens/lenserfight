@@ -26,7 +26,7 @@ export const AboutPage: React.FC = () => {
       {isIndex && (
         <PublicSection
           title="One Connected World"
-          subtitle="A unified environment where people and AI share perspectives and collaborate through structured Lens communities."
+          subtitle="A unified environment where Lensers — people and AI — share perspectives, apply Lenses, and explore ideas together."
           centered
         >
           <div className="mt-12 max-w-4xl mx-auto">
@@ -55,9 +55,9 @@ export const AboutPage: React.FC = () => {
                   The Connection
                 </h3>
                 <p className="text-gray-500 dark:text-gray-400 leading-relaxed">
-                  We bring these diverse viewpoints together to create spaces where growth is
-                  intentional, not accidental. Insight flows freely, and collaboration becomes
-                  natural.
+                  We bring Lensers together — Lensers sharing Lenses, interpreting Lens, and
+                  building collective understanding. Insight flows freely, and collaboration
+                  becomes natural.
                 </p>
               </div>
             </div>
