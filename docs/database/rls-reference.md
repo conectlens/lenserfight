@@ -95,7 +95,7 @@ Soft-delete pattern: users set `deletion_requested_at` via UPDATE. A background 
 
 ### `battles` Schema
 
-The battles schema has 7 tables with status-gated visibility.
+The battles schema has 11 tables with status-gated visibility.
 
 #### `rubrics`
 
@@ -159,6 +159,43 @@ The battles schema has 7 tables with status-gated visibility.
 | SELECT | anon / authenticated | Battle `status IN ('closed', 'published')` | Public after close |
 | INSERT / UPDATE / DELETE | service_role | -- | System-generated only |
 
+#### `templates`
+
+| Operation | Tier | Condition | Notes |
+|-----------|------|-----------|-------|
+| SELECT | anon | `is_public = true` AND `deleted_at IS NULL` | Public templates |
+| SELECT | authenticated | `is_public = true` OR `creator_lenser_id = lensers.get_auth_lenser_id()` AND `deleted_at IS NULL` | Own + public |
+| INSERT | authenticated | `creator_lenser_id = lensers.get_auth_lenser_id()` | Create own |
+| UPDATE | authenticated | `creator_lenser_id = lensers.get_auth_lenser_id()` AND `deleted_at IS NULL` | Edit own |
+| DELETE | -- | Not allowed | Soft-delete via `deleted_at` |
+
+#### `agent_adapters`
+
+| Operation | Tier | Condition | Notes |
+|-----------|------|-----------|-------|
+| SELECT | authenticated | `owner_lenser_id = lensers.get_auth_lenser_id()` | Own adapters only |
+| INSERT | authenticated | `owner_lenser_id = lensers.get_auth_lenser_id()` | Register own |
+| UPDATE | authenticated | `owner_lenser_id = lensers.get_auth_lenser_id()` | Edit own (including deactivation) |
+| DELETE | -- | Not allowed | Deactivated via `is_active = false` |
+
+#### `events`
+
+| Operation | Tier | Condition | Notes |
+|-----------|------|-----------|-------|
+| SELECT | anon | Battle is in a public status (`voting` or later) | Visible on public battles |
+| SELECT | authenticated | Battle is public OR `actor_id = lensers.get_auth_lenser_id()` | Own events + public battle events |
+| INSERT | -- | Via RPC functions (SECURITY DEFINER) | Never inserted directly |
+| UPDATE / DELETE | -- | Not allowed | Immutable audit log |
+
+#### `invitations`
+
+| Operation | Tier | Condition | Notes |
+|-----------|------|-----------|-------|
+| SELECT | authenticated | `invited_by = lensers.get_auth_lenser_id()` OR `invited_lenser_id = lensers.get_auth_lenser_id()` | Inviter sees sent, invitee sees received |
+| INSERT | -- | Via `fn_battles_invite` (SECURITY DEFINER) | Never inserted directly |
+| UPDATE | authenticated | `invited_lenser_id = lensers.get_auth_lenser_id()` AND `status = 'pending'` | Invitee can accept/decline |
+| DELETE | -- | Not allowed | Preserved for audit |
+
 ---
 
 ## Common Patterns
@@ -173,7 +210,7 @@ Votes cannot be updated. To change a vote, the user must DELETE their existing v
 
 ### Soft-Delete
 
-Tables using soft-delete (`rubrics`, `battles`) include `deleted_at IS NULL` in their USING clauses. Rows with a non-null `deleted_at` are invisible to all non-service-role queries.
+Tables using soft-delete (`rubrics`, `battles`, `templates`) include `deleted_at IS NULL` in their USING clauses. Rows with a non-null `deleted_at` are invisible to all non-service-role queries.
 
 ### Status-Gated Visibility
 
