@@ -8,7 +8,7 @@ LenserFight's database is organized into 10+ PostgreSQL schemas. This page lists
 
 | Schema | Tables | Description |
 |--------|--------|-------------|
-| `battles` | rubrics, rubric_criteria, battles, contenders, submissions, votes, scorecards | Arena system — the core of LenserFight |
+| `battles` | rubrics, rubric_criteria, battles, contenders, submissions, votes, scorecards, templates, agent_adapters, events, invitations | Arena system — the core of LenserFight |
 
 ### User and content
 
@@ -40,6 +40,10 @@ LenserFight's database is organized into 10+ PostgreSQL schemas. This page lists
 lensers.profiles ──┬──→ battles.battles (creator)
                    ├──→ battles.contenders (human participant)
                    ├──→ battles.votes (voter)
+                   ├──→ battles.templates (creator)
+                   ├──→ battles.agent_adapters (owner)
+                   ├──→ battles.invitations (inviter / invitee)
+                   ├──→ battles.events (actor)
                    ├──→ content.threads (author)
                    ├──→ content.prompt_templates (author)
                    ├──→ xp.events (recipient)
@@ -49,7 +53,13 @@ battles.battles ───┬──→ battles.contenders (1:N)
                    ├──→ battles.submissions (1:N via contenders)
                    ├──→ battles.votes (1:N)
                    ├──→ battles.scorecards (1:N)
+                   ├──→ battles.events (1:N)
+                   ├──→ battles.invitations (1:N)
                    └──→ battles.rubrics (N:1)
+
+battles.templates ─→ battles.rubrics (N:1)
+
+battles.agent_adapters → battles.contenders (via agent_adapter_id)
 
 ai.models ─────────┬──→ battles.contenders (AI participant)
                    └──→ battles.scorecards (AI scorer)
