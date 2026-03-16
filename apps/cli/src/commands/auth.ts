@@ -7,6 +7,7 @@ import {
   isAuthenticated,
   refreshAuthToken,
   getAuthToken,
+  registerUser,
 } from '../utils/auth';
 
 const login = defineCommand({
@@ -18,11 +19,13 @@ const login = defineCommand({
     email: {
       type: 'string',
       description: 'Account email address',
+      alias: 'e',
       required: true,
     },
     password: {
       type: 'string',
       description: 'Account password',
+      alias: 'p',
       required: true,
     },
   },
@@ -113,10 +116,52 @@ const token = defineCommand({
   },
 });
 
+const register = defineCommand({
+  meta: {
+    name: 'register',
+    description: 'Create a new LenserFight account.',
+  },
+  args: {
+    email: {
+      type: 'string',
+      description: 'Account email address',
+      alias: 'e',
+      required: true,
+    },
+    password: {
+      type: 'string',
+      description: 'Account password (min 8 characters)',
+      alias: 'p',
+      required: true,
+    },
+    'display-name': {
+      type: 'string',
+      description: 'Display name (optional)',
+      alias: 'n',
+    },
+  },
+  async run({ args }) {
+    try {
+      const result = await registerUser(
+        args.email,
+        args.password,
+        args['display-name']
+      );
+      consola.success('Account created successfully.');
+      consola.info('ID:     %s', result.id);
+      consola.info('Email:  %s', result.email);
+      consola.info('Handle: %s', result.handle);
+    } catch (err) {
+      consola.error('Registration failed: %s', (err as Error).message);
+      process.exitCode = 1;
+    }
+  },
+});
+
 export default defineCommand({
   meta: {
     name: 'auth',
-    description: 'Manage authentication: login, logout, whoami, refresh, token.',
+    description: 'Manage authentication: login, logout, whoami, refresh, token, register.',
   },
   subCommands: {
     login,
@@ -124,5 +169,6 @@ export default defineCommand({
     whoami,
     refresh,
     token,
+    register,
   },
 });
