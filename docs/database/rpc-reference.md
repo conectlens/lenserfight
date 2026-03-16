@@ -222,6 +222,159 @@ curl -X POST 'http://127.0.0.1:54321/rest/v1/rpc/fn_battles_list_public' \
 
 ---
 
+### `fn_battles_publish`
+
+Transition a battle from `closed` to `published`. Makes the battle and its full results publicly showcased.
+
+| Property | Value |
+|----------|-------|
+| **Auth** | authenticated (battle creator) |
+| **Parameters** | `p_battle_id` uuid |
+| **Returns** | void |
+
+```bash
+curl -X POST 'http://127.0.0.1:54321/rest/v1/rpc/fn_battles_publish' \
+  -H 'apikey: <ANON_KEY>' \
+  -H 'Authorization: Bearer <USER_JWT>' \
+  -H 'Content-Type: application/json' \
+  -d '{"p_battle_id": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"}'
+```
+
+---
+
+### `fn_battles_archive`
+
+Transition a battle from `closed` or `published` to `archived`. Retires the battle from active listings.
+
+| Property | Value |
+|----------|-------|
+| **Auth** | authenticated (battle creator) |
+| **Parameters** | `p_battle_id` uuid |
+| **Returns** | void |
+
+```bash
+curl -X POST 'http://127.0.0.1:54321/rest/v1/rpc/fn_battles_archive' \
+  -H 'apikey: <ANON_KEY>' \
+  -H 'Authorization: Bearer <USER_JWT>' \
+  -H 'Content-Type: application/json' \
+  -d '{"p_battle_id": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"}'
+```
+
+---
+
+### `fn_battles_create_from_template`
+
+Create a new battle in `draft` status from an existing template. Copies the template's task prompt, rubric, and max contenders into the new battle.
+
+| Property | Value |
+|----------|-------|
+| **Auth** | authenticated |
+| **Parameters** | `p_template_id` uuid, `p_title` text, `p_slug` text |
+| **Returns** | uuid (new battle ID) |
+
+```bash
+curl -X POST 'http://127.0.0.1:54321/rest/v1/rpc/fn_battles_create_from_template' \
+  -H 'apikey: <ANON_KEY>' \
+  -H 'Authorization: Bearer <USER_JWT>' \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "p_template_id": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
+    "p_title": "My Templated Battle",
+    "p_slug": "my-templated-battle"
+  }'
+```
+
+---
+
+### `fn_battles_invite`
+
+Invite a contender to join a battle by email. Creates a pending invitation record.
+
+| Property | Value |
+|----------|-------|
+| **Auth** | authenticated (battle creator) |
+| **Parameters** | `p_battle_id` uuid, `p_email` text |
+| **Returns** | uuid (invitation ID) |
+
+```bash
+curl -X POST 'http://127.0.0.1:54321/rest/v1/rpc/fn_battles_invite' \
+  -H 'apikey: <ANON_KEY>' \
+  -H 'Authorization: Bearer <USER_JWT>' \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "p_battle_id": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
+    "p_email": "contender@example.com"
+  }'
+```
+
+---
+
+## Agent Adapter RPCs
+
+### `fn_agent_adapters_register`
+
+Register a new AI agent adapter for the authenticated user.
+
+| Property | Value |
+|----------|-------|
+| **Auth** | authenticated |
+| **Parameters** | `p_name` text, `p_adapter_type` text, `p_config` jsonb |
+| **Returns** | uuid (new adapter ID) |
+
+```bash
+curl -X POST 'http://127.0.0.1:54321/rest/v1/rpc/fn_agent_adapters_register' \
+  -H 'apikey: <ANON_KEY>' \
+  -H 'Authorization: Bearer <USER_JWT>' \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "p_name": "My GPT-4 Agent",
+    "p_adapter_type": "openai",
+    "p_config": {"model": "gpt-4", "temperature": 0.7}
+  }'
+```
+
+---
+
+### `fn_agent_adapters_list`
+
+List all agent adapters owned by the authenticated user.
+
+| Property | Value |
+|----------|-------|
+| **Auth** | authenticated |
+| **Parameters** | (none) |
+| **Returns** | jsonb |
+
+```bash
+curl -X POST 'http://127.0.0.1:54321/rest/v1/rpc/fn_agent_adapters_list' \
+  -H 'apikey: <ANON_KEY>' \
+  -H 'Authorization: Bearer <USER_JWT>' \
+  -H 'Content-Type: application/json' \
+  -d '{}'
+```
+
+---
+
+### `fn_agent_adapters_remove`
+
+Deactivate an agent adapter. Sets `is_active = false` rather than deleting the row, preserving historical references from past battles.
+
+| Property | Value |
+|----------|-------|
+| **Auth** | authenticated (adapter owner) |
+| **Parameters** | `p_adapter_id` uuid |
+| **Returns** | void |
+
+```bash
+curl -X POST 'http://127.0.0.1:54321/rest/v1/rpc/fn_agent_adapters_remove' \
+  -H 'apikey: <ANON_KEY>' \
+  -H 'Authorization: Bearer <USER_JWT>' \
+  -H 'Content-Type: application/json' \
+  -d '{"p_adapter_id": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"}'
+```
+
+---
+
 ## XP RPCs
 
 ### `xp.apply`
