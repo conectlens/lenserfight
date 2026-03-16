@@ -20,6 +20,8 @@ const main = defineCommand({
     inspect: () => import('./commands/inspect').then((m) => m.default),
     run: () => import('./commands/run').then((m) => m.default),
     publish: () => import('./commands/publish').then((m) => m.default),
+    rubric: () => import('./commands/rubric').then((m) => m.default),
+    template: () => import('./commands/template').then((m) => m.default),
   },
 });
 

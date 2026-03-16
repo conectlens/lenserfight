@@ -5,6 +5,8 @@ import {
   clearAuthTokens,
   getUserInfo,
   isAuthenticated,
+  refreshAuthToken,
+  getAuthToken,
 } from '../utils/auth';
 
 const login = defineCommand({
@@ -79,14 +81,48 @@ const whoami = defineCommand({
   },
 });
 
+const refresh = defineCommand({
+  meta: {
+    name: 'refresh',
+    description: 'Force-refresh the stored access token.',
+  },
+  async run() {
+    try {
+      const tokens = await refreshAuthToken();
+      consola.success('Token refreshed. Expires at %s', tokens.expiresAt);
+    } catch (err) {
+      consola.error('Refresh failed: %s', (err as Error).message);
+      process.exitCode = 1;
+    }
+  },
+});
+
+const token = defineCommand({
+  meta: {
+    name: 'token',
+    description: 'Print the raw access token (for piping into other tools).',
+  },
+  async run() {
+    const t = getAuthToken();
+    if (!t) {
+      consola.error('Not authenticated. Run `lenserfight auth login` first.');
+      process.exitCode = 1;
+      return;
+    }
+    process.stdout.write(t + '\n');
+  },
+});
+
 export default defineCommand({
   meta: {
     name: 'auth',
-    description: 'Manage authentication: login, logout, whoami.',
+    description: 'Manage authentication: login, logout, whoami, refresh, token.',
   },
   subCommands: {
     login,
     logout,
     whoami,
+    refresh,
+    token,
   },
 });
