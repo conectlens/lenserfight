@@ -1,7 +1,7 @@
 import { defineCommand } from 'citty';
 import consola from 'consola';
 import { callRpc, handleError } from '../utils/api';
-import { loadConfig } from '../config/project-config';
+import { resolveConfig as loadConfig } from '../config/project-config';
 
 // ---------------------------------------------------------------------------
 // run submit

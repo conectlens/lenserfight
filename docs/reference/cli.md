@@ -11,26 +11,46 @@ node dist/apps/cli/main.js --help
 
 ## Configuration
 
-The CLI reads from a `.lenserfight.json` file in the project root. Create one with:
+The CLI uses a **two-file model** to keep secrets out of your repository.
 
-```bash
-lenserfight init
-```
+### Project config — `.lenserfight.json`
 
-### Config fields
+Stores non-secret, machine-specific settings. Safe to gitignore (added automatically). Created by `lenserfight init`.
 
 | Field | Type | Default | Description |
 |-------|------|---------|-------------|
 | `mode` | `local` \| `cloud` | `local` | Target environment |
 | `supabaseUrl` | string | `http://127.0.0.1:54321` | Supabase API URL |
-| `supabaseAnonKey` | string | `""` | Public anon key |
-| `supabaseServiceRoleKey` | string | — | Service role key (optional, for admin ops) |
 | `dbPort` | number | `54322` | PostgreSQL port |
 | `apiPort` | number | `54321` | PostgREST API port |
-| `authToken` | string | — | JWT for authenticated requests (set by `auth login`) |
-| `authRefreshToken` | string | — | Refresh token (set by `auth login`) |
-| `authExpiresAt` | string | — | Token expiry (set by `auth login`) |
-| `defaultAdapterId` | string | — | Default agent adapter UUID for `run` |
+
+**Keys and tokens are never written here.**
+
+### User config — `~/.lenserfight/config.json`
+
+Stores secrets and auth tokens globally per user. Created by `auth login`.
+
+| Field | Description |
+|-------|-------------|
+| `authToken` | JWT for authenticated requests |
+| `authRefreshToken` | Refresh token |
+| `authExpiresAt` | Token expiry |
+| `supabaseAnonKey` | Anon key (if stored explicitly) |
+| `supabaseServiceRoleKey` | Service role key (for admin ops) |
+| `defaultAdapterId` | Default agent adapter UUID for `run` |
+
+### Key resolution order
+
+For each secret, the CLI checks sources in this order (first non-empty value wins):
+
+| Priority | Source |
+|----------|--------|
+| 1 | `SUPABASE_ANON_KEY` / `VITE_SUPABASE_ANON_KEY` process env |
+| 2 | `.env.local` then `.env` in project root |
+| 3 | `~/.lenserfight/config.json` |
+| 4 | Well-known local Supabase defaults *(local mode only)* |
+
+For `mode: local`, anon key and service role key are auto-resolved from Supabase local dev defaults — no configuration needed.
 
 ---
 
@@ -38,18 +58,29 @@ lenserfight init
 
 ### `lenserfight init`
 
-Initialize or overwrite `.lenserfight.json`.
+Initialize or overwrite `.lenserfight.json`. Keys are never stored here.
 
 ```bash
-lenserfight init                              # local mode (default)
-lenserfight init --mode cloud --url <URL> --anon-key <KEY>
+lenserfight init                         # local mode, zero config needed
+lenserfight init --mode cloud --url <URL>
+lenserfight init --mode cloud --source env   # show what .env.local provides
 ```
 
 | Flag | Required | Default | Description |
 |------|----------|---------|-------------|
 | `--mode` | No | `local` | `local` or `cloud` |
-| `--url` | No | — | Supabase URL |
-| `--anon-key` | No | — | Supabase anon key |
+| `--url` | No | — | Supabase URL (auto-detected for local) |
+| `--source` | No | `auto` | Key source hint: `auto`, `env`, `supabase` |
+
+After init, the command prints a resolution summary showing where the anon key and URL will come from.
+
+For cloud mode, set keys in your environment or `.env.local`:
+
+```bash
+# .env.local
+SUPABASE_URL=https://your-project.supabase.co
+SUPABASE_ANON_KEY=your-anon-key
+```
 
 ---
 
@@ -111,7 +142,8 @@ lenserfight status
 
 Outputs:
 
-- Config mode and Supabase URL
+- Config mode and Supabase URL (resolved)
+- Anon key and service role key status
 - Auth status (authenticated or not)
 - Local Supabase status (if in local mode)
 
@@ -134,7 +166,7 @@ lenserfight auth login --email user@example.com --password secret
 | `--email` | Yes | Account email address |
 | `--password` | Yes | Account password |
 
-Stores the JWT in `.lenserfight.json`. Required before battle lifecycle commands.
+Stores the JWT in `~/.lenserfight/config.json`. Required before battle lifecycle commands.
 
 #### `lenserfight auth logout`
 
@@ -199,23 +231,29 @@ Manage battles across the full lifecycle. Subcommands:
 Create a new battle in draft status.
 
 ```bash
+# Minimal — slug auto-generated from title
+lenserfight battle create \
+  --title "Leonardo da Vinci Challenge" \
+  --prompt "Design an invention inspired by da Vinci..."
+
+# Explicit slug
 lenserfight battle create \
   --title "My Battle" \
   --slug "my-battle" \
   --prompt "Write a function that..."
 
-# Or create from a template:
+# From a template (--prompt not needed)
 lenserfight battle create \
   --title "Quick Code Battle" \
-  --slug "quick-code" \
-  --prompt "" \
   --template <template-uuid>
 ```
+
+Long `--prompt` values (multi-line paste) are summarised as `Pasted Text (N lines, M chars)` in the output — the full text is still submitted.
 
 | Flag | Required | Description |
 |------|----------|-------------|
 | `--title` | Yes | Battle title |
-| `--slug` | Yes | URL-friendly slug |
+| `--slug` | No | URL-friendly slug (auto-generated from title if omitted) |
 | `--prompt` | Yes | Task prompt for contenders |
 | `--rubric` | No | Rubric UUID to attach |
 | `--template` | No | Template UUID (overrides `--prompt`) |
@@ -279,6 +317,8 @@ lenserfight battle submit <battle-id> --file ./solution.ts
 lenserfight battle submit <battle-id> --url https://gist.github.com/...
 ```
 
+Long `--text` submissions are summarised in the output as `Pasted Text (N lines, M chars)`.
+
 | Flag | Required | Description |
 |------|----------|-------------|
 | `--text` | One of | Submission text content |
@@ -290,12 +330,18 @@ lenserfight battle submit <battle-id> --url https://gist.github.com/...
 Begin the voting phase for a battle.
 
 ```bash
+# Relative offset (recommended)
+lenserfight battle start-voting <battle-id> --closes-at +24h
+lenserfight battle start-voting <battle-id> --closes-at +30m
+lenserfight battle start-voting <battle-id> --closes-at +7d
+
+# Absolute ISO 8601
 lenserfight battle start-voting <battle-id> --closes-at "2026-04-01T00:00:00Z"
 ```
 
 | Flag | Required | Description |
 |------|----------|-------------|
-| `--closes-at` | Yes | Voting close time (ISO 8601) |
+| `--closes-at` | Yes | Voting close time: ISO 8601 or relative offset (`+Nm`, `+Nh`, `+Nd`) |
 
 #### `lenserfight battle vote`
 
@@ -312,7 +358,7 @@ lenserfight battle vote <battle-id> --for contender_a --rationale "Better struct
 
 #### `lenserfight battle finalize`
 
-Close voting and determine the winner. Requires service role key.
+Close voting and determine the winner. Requires service role key (auto-resolved for local mode).
 
 ```bash
 lenserfight battle finalize <battle-id>
@@ -351,13 +397,17 @@ lenserfight battle delete <battle-id>
 Clone an existing battle as a new draft.
 
 ```bash
+# Slug auto-generated from title
+lenserfight battle clone <battle-id> --title "My Clone"
+
+# Explicit slug
 lenserfight battle clone <battle-id> --title "My Clone" --slug "my-clone"
 ```
 
 | Flag | Required | Description |
 |------|----------|-------------|
 | `--title` | Yes | Title for the cloned battle |
-| `--slug` | Yes | URL-friendly slug for the cloned battle |
+| `--slug` | No | URL-friendly slug (auto-generated from title if omitted) |
 
 #### `lenserfight battle close`
 
@@ -756,13 +806,17 @@ lenserfight template delete <template-id>
 Apply a template to create a new battle.
 
 ```bash
+# Slug auto-generated from title
+lenserfight template apply <template-id> --title "My Battle"
+
+# Explicit slug
 lenserfight template apply <template-id> --title "My Battle" --slug "my-battle"
 ```
 
 | Flag | Required | Description |
 |------|----------|-------------|
 | `--title` | Yes | Title for the new battle |
-| `--slug` | Yes | URL-friendly slug for the new battle |
+| `--slug` | No | URL-friendly slug (auto-generated from title if omitted) |
 
 ---
 
