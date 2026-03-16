@@ -83,6 +83,8 @@ export interface ThreadFeedItem {
   createdAt: string
   userHasReacted: boolean
   visibility: Visibility
+  hotScore?: number
+  primaryLanguage?: string
 }
 
 export interface ThreadReplyViewModel {

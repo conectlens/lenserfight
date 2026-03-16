@@ -8,6 +8,7 @@ import {
   AuthorProfile,
   LenserFullProfile,
   LenserProfileDTO,
+  TrendingLenser,
 } from '@lenserfight/types'
 import { PromptTemplateRecord } from '@lenserfight/types'
 import { ThreadRecord } from '@lenserfight/types'
@@ -47,6 +48,7 @@ export interface LenserRepositoryPort {
   ): Promise<NetworkUser[]>
   getLenserById(id: string): Promise<Lenser | null>
   getLanguages(): Promise<Language[]>
+  getTrendingLensers(limit?: number): Promise<TrendingLenser[]>
 }
 export class SupabaseLenserRepository implements LenserRepositoryPort {
   async getPublicLenserProfile(handle: string): Promise<LenserProfileDTO> {
@@ -193,5 +195,21 @@ export class SupabaseLenserRepository implements LenserRepositoryPort {
     const { data, error } = await supabase.rpc('fn_core_languages_list')
     if (error) throw error
     return (data as Language[]) ?? []
+  }
+
+  async getTrendingLensers(limit = 10): Promise<TrendingLenser[]> {
+    const { data, error } = await supabase.rpc('fn_lensers_get_trending', {
+      p_limit: limit,
+    })
+    if (error) throw error
+    return ((data ?? []) as Record<string, unknown>[]).map((row) => ({
+      lenserId: row.lenser_id as string,
+      handle: row.handle as string,
+      displayName: row.display_name as string,
+      avatarUrl: (row.avatar_url as string | null) ?? null,
+      totalXp: Number(row.total_xp ?? 0),
+      currentLevel: row.current_level as number,
+      lenserScore: row.lenser_score as number,
+    }))
   }
 }
