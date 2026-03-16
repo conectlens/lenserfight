@@ -7,6 +7,7 @@ export * from './lib/DangerZone'
 export * from './lib/FormError'
 export * from './lib/LoadingOverlay'
 export * from './lib/MentionRenderer'
+export * from './lib/MermaidDiagram'
 export * from './lib/SEOHead'
 // `export *` does not re-export `default`, so expose this as a named export.
 export { default as StarBackground } from './lib/StarBackground'
