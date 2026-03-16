@@ -23,6 +23,7 @@ The beta is split across four surfaces:
 - Battles: [How Battles Work](/battles/how-battles-work), [Hybrid Scoring](/battles/hybrid-scoring)
 - Community: [Forum Hub](/forum/community-hub), [Creator Profiles](/profiles/creator-profiles)
 - Apps: [Mobile Companion App](/mobile/companion-app), [Admin Operations Console](/admins/operations-console)
+- Database: [Schema Overview](/database/schema-overview), [RLS Reference](/database/rls-reference), [API Overview](/reference/api-overview)
 - Guides: [Run Your First Battle](/guides/run-your-first-battle), [Share a Result](/guides/share-a-result), [FAQ](/help/faq)
 
 ## Product defaults
