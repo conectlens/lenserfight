@@ -2,12 +2,14 @@ export const queryKeys = {
   threads: {
     all: ['threads'] as const,
     feed: () => [...queryKeys.threads.all, 'feed'] as const,
+    trending: (lang?: string) => [...queryKeys.threads.all, 'trending', lang] as const,
     detail: (id: string) => [...queryKeys.threads.all, 'detail', id] as const,
   },
   prompts: {
     all: ['prompts'] as const,
     feed: (filter?: object) => [...queryKeys.prompts.all, 'feed', filter] as const,
     top: ['prompts', 'top'] as const,
+    trending: (lang?: string) => [...queryKeys.prompts.all, 'trending', lang] as const,
     detail: (id: string) => [...queryKeys.prompts.all, 'detail', id] as const,
     composite: (id: string) => [...queryKeys.prompts.all, 'composite', id] as const,
   },
@@ -19,6 +21,7 @@ export const queryKeys = {
     stats: (handle: string) => [...queryKeys.lenser.all, 'stats', handle] as const,
     activity: (handle: string) => [...queryKeys.lenser.all, 'activity', handle] as const,
     latest: ['lenser', 'latest'] as const,
+    trending: ['lenser', 'trending'] as const,
   },
   tags: {
     all: ['tags'] as const,
