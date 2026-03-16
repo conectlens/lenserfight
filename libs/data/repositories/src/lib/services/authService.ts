@@ -4,13 +4,8 @@ import { User, AuthStateChangeCallback, UserMetadata } from '@lenserfight/types'
 const authRepo = new SupabaseAuthRepository()
 
 export const authService = {
-  login: async (
-    email: string,
-    password: string,
-    captchaToken?: string,
-    metadata?: Partial<UserMetadata>
-  ): Promise<User> => {
-    return authRepo.login(email, password, captchaToken, metadata)
+  login: async (email: string, password: string, captchaToken?: string): Promise<User> => {
+    return authRepo.login(email, password, captchaToken)
   },
 
   register: async (
@@ -28,6 +23,10 @@ export const authService = {
 
   getCurrentUser: async (): Promise<User | null> => {
     return authRepo.getCurrentUser()
+  },
+
+  updateMetadata: async (metadata: Partial<UserMetadata>): Promise<void> => {
+    return authRepo.updateMetadata(metadata)
   },
 
   requestPasswordReset: async (email: string, captchaToken?: string): Promise<void> => {

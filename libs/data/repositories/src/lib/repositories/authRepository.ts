@@ -3,12 +3,7 @@ import { supabase } from '@lenserfight/data/supabase'
 
 // --- Port (Interface) ---
 export interface AuthRepositoryPort {
-  login(
-    email: string,
-    password: string,
-    captchaToken?: string,
-    metadata?: Partial<UserMetadata>
-  ): Promise<User>
+  login(email: string, password: string, captchaToken?: string): Promise<User>
   register(
     email: string,
     password: string,
@@ -17,6 +12,7 @@ export interface AuthRepositoryPort {
   ): Promise<User>
   logout(): Promise<void>
   getCurrentUser(): Promise<User | null>
+  updateMetadata(metadata: Partial<UserMetadata>): Promise<void>
   requestPasswordReset(email: string, captchaToken?: string): Promise<void>
   resetPassword(password: string, token?: string): Promise<void>
   signInWithOAuth(provider: 'google' | 'github' | 'azure'): Promise<void>
@@ -24,35 +20,15 @@ export interface AuthRepositoryPort {
   onAuthStateChange(callback: AuthStateChangeCallback): () => void
 }
 export class SupabaseAuthRepository implements AuthRepositoryPort {
-  async login(
-    email: string,
-    password: string,
-    captchaToken?: string,
-    metadata?: Partial<UserMetadata>
-  ): Promise<User> {
+  async login(email: string, password: string, captchaToken?: string): Promise<User> {
     const { data, error } = await supabase.auth.signInWithPassword({
       email,
       password,
       options: { captchaToken },
     })
-
     if (error) throw error
     if (!data.user) throw new Error('No user returned')
-
-    // Refresh transient environment metadata on login
-    if (metadata) {
-      const { data: updateData, error: updateError } = await supabase.auth.updateUser({
-        data: metadata,
-      })
-      if (updateError) console.warn('Failed to update user metadata on login', updateError)
-
-      if (updateData.user) {
-        return updateData.user as unknown as User
-      }
-    }
-
-    const user = data.user as unknown as User
-    return user
+    return data.user as unknown as User
   }
 
   async register(
@@ -82,10 +58,16 @@ export class SupabaseAuthRepository implements AuthRepositoryPort {
     return user || null
   }
 
+  async updateMetadata(metadata: Partial<UserMetadata>): Promise<void> {
+    const { error } = await supabase.auth.updateUser({ data: metadata })
+    if (error) throw error
+  }
+
 
   async requestPasswordReset(email: string, captchaToken?: string): Promise<void> {
+    const authAppUrl = import.meta.env.VITE_AUTH_APP_URL ?? window.location.origin
     const { error } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: `${window.location.origin}/auth/reset-password`,
+      redirectTo: `${authAppUrl}/reset-password`,
       captchaToken,
     })
     if (error) throw error
@@ -97,9 +79,17 @@ export class SupabaseAuthRepository implements AuthRepositoryPort {
   }
 
   async signInWithOAuth(provider: 'google' | 'github' | 'azure'): Promise<void> {
+    const authAppUrl = import.meta.env.VITE_AUTH_APP_URL ?? window.location.origin
+    // Preserve the originating page so /callback can redirect back after OAuth.
+    // Priority: explicit return_url query param → current full page URL.
+    // Use sessionStorage (not localStorage) so stale return URLs don't persist
+    // across unrelated browser sessions.
+    const returnUrl =
+      new URLSearchParams(window.location.search).get('return_url') ?? window.location.href
+    sessionStorage.setItem('auth_return_url', returnUrl)
     const { error } = await supabase.auth.signInWithOAuth({
       provider: provider,
-      options: { redirectTo: `${window.location.origin}` },
+      options: { redirectTo: `${authAppUrl}/callback` },
     })
     if (error) throw error
   }
