@@ -1,6 +1,6 @@
 import { Pencil, Trash2, Lock } from 'lucide-react'
 import React, { useState, useEffect } from 'react'
-import { useParams, useNavigate, useLocation } from 'react-router-dom'
+import { useParams, useNavigate } from 'react-router-dom'
 
 import { Button } from '@lenserfight/ui/components'
 import { ConfirmModal } from '@lenserfight/ui/modals'
@@ -20,7 +20,6 @@ import { useThreadDetailController } from '../hooks/useThreadDetailController'
 export const ThreadDetailPage: React.FC = () => {
   const { threadId } = useParams<{ threadId: string }>()
   const navigate = useNavigate()
-  const location = useLocation()
   const { hasLenser, lenser } = useAuthenticatedLenser()
   const { isAuthenticated } = useAuth()
   const { setShareConfig } = useShareContext()
@@ -82,7 +81,8 @@ export const ThreadDetailPage: React.FC = () => {
 
   const handleToggleReaction = () => {
     if (!isAuthenticated) {
-      navigate('/auth/login', { state: { from: location } })
+      const authAppUrl = import.meta.env.VITE_AUTH_APP_URL ?? 'https://auth.lenserfight.com'
+      window.location.href = `${authAppUrl}/login?return_url=${encodeURIComponent(window.location.href)}`
       return
     }
     if (!hasLenser) {
@@ -94,7 +94,8 @@ export const ThreadDetailPage: React.FC = () => {
 
   const handleReplyReaction = (replyId: string) => {
     if (!isAuthenticated) {
-      navigate('/auth/login', { state: { from: location } })
+      const authAppUrl = import.meta.env.VITE_AUTH_APP_URL ?? 'https://auth.lenserfight.com'
+      window.location.href = `${authAppUrl}/login?return_url=${encodeURIComponent(window.location.href)}`
       return
     }
     if (!hasLenser) {
