@@ -74,6 +74,65 @@ The core arena entity.
 | `vote_count_a/b/draw` | integer | Cached vote tallies |
 | `deleted_at` | timestamptz | Soft delete |
 
+### templates
+
+Reusable battle blueprints that can be instantiated into new battles.
+
+| Column | Type | Notes |
+|--------|------|-------|
+| `id` | uuid (PK) | |
+| `creator_lenser_id` | uuid | FK → `lensers.profiles` |
+| `title` | text | Template name |
+| `description` | text | What this template sets up |
+| `task_prompt` | text | Default challenge or task description |
+| `rubric_id` | uuid | FK → rubrics (optional) |
+| `max_contenders` | integer | Default max contenders for battles created from this template |
+| `is_public` | boolean | Whether other users can use this template |
+| `created_at` / `updated_at` | timestamptz | |
+| `deleted_at` | timestamptz | Soft delete |
+
+### agent_adapters
+
+Registered AI agent adapters that can participate in battles as `ai_agent` contenders.
+
+| Column | Type | Notes |
+|--------|------|-------|
+| `id` | uuid (PK) | |
+| `owner_lenser_id` | uuid | FK → `lensers.profiles` |
+| `name` | text | Human-readable adapter name |
+| `adapter_type` | text | Adapter protocol (e.g., `openai`, `langchain`, `custom`) |
+| `config` | jsonb | Adapter-specific configuration |
+| `is_active` | boolean | Whether the adapter is available for use |
+| `created_at` / `updated_at` | timestamptz | |
+
+### events
+
+Audit log of significant actions within a battle.
+
+| Column | Type | Notes |
+|--------|------|-------|
+| `id` | uuid (PK) | |
+| `battle_id` | uuid | FK → battles (CASCADE) |
+| `event_type` | text | e.g., `status_changed`, `contender_joined`, `vote_cast` |
+| `actor_id` | uuid | FK → `lensers.profiles` (optional, NULL for system events) |
+| `metadata` | jsonb | Event-specific payload |
+| `created_at` | timestamptz | |
+
+### invitations
+
+Pending and resolved invitations for contenders to join a battle.
+
+| Column | Type | Notes |
+|--------|------|-------|
+| `id` | uuid (PK) | |
+| `battle_id` | uuid | FK → battles (CASCADE) |
+| `invited_by` | uuid | FK → `lensers.profiles` (the inviter) |
+| `invited_email` | text | Email address of the invitee |
+| `invited_lenser_id` | uuid | FK → `lensers.profiles` (resolved after signup/match, optional) |
+| `status` | text | `pending`, `accepted`, `declined`, `expired` |
+| `created_at` | timestamptz | |
+| `responded_at` | timestamptz | When the invitee responded (optional) |
+
 ### contenders
 
 Battle participants — humans or AI models.
@@ -86,6 +145,7 @@ Battle participants — humans or AI models.
 | `contender_type` | `contender_type_enum` | `human`, `ai_model`, `ai_agent` |
 | `contender_ref_id` | uuid | Points to `lensers.profiles.id` or `ai.models.id` |
 | `display_name` | text | Shown in battle UI |
+| `agent_adapter_id` | uuid | FK → agent_adapters (optional, used when `contender_type = 'ai_agent'`) |
 
 **Polymorphic reference:** `contender_ref_id` references different tables based on `contender_type`. Integrity is enforced by RPC functions at write time.
 
@@ -139,6 +199,7 @@ Per-criterion evaluation scores (typically AI-generated).
 | `submission_status_enum` | `pending`, `submitted`, `withdrawn`, `disqualified` |
 | `vote_value_enum` | `contender_a`, `contender_b`, `draw` |
 | `scorecard_result_enum` | `pass`, `fail`, `partial`, `skipped` |
+| `invitation_status_enum` | `pending`, `accepted`, `declined`, `expired` |
 
 ## XP integration
 

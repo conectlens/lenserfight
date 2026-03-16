@@ -673,6 +673,137 @@ ON CONFLICT (id) DO NOTHING;
 
 
 -- ============================================================
+-- 5.5  BATTLE TEMPLATES
+-- ============================================================
+
+INSERT INTO battles.templates (id, creator_lenser_id, title, description, task_prompt, rubric_id, max_contenders, is_public)
+VALUES
+    (
+        'fb100000-0000-0000-0000-000000000001',
+        'b2000000-0000-0000-0000-000000000001',
+        'Code Challenge Template',
+        'Standard template for coding challenge battles. Includes code quality rubric.',
+        'Write a solution to the following programming challenge. Your code should be correct, readable, and efficient.',
+        'd4000000-0000-0000-0000-000000000001',
+        2, true
+    ),
+    (
+        'fb100000-0000-0000-0000-000000000002',
+        'b2000000-0000-0000-0000-000000000001',
+        'Creative Writing Template',
+        'Standard template for creative writing battles. Includes creative writing rubric.',
+        'Write a short story (300-500 words) on the given theme. Focus on creativity, coherence, and style.',
+        'd4000000-0000-0000-0000-000000000002',
+        2, true
+    )
+ON CONFLICT (id) DO NOTHING;
+
+
+-- ============================================================
+-- 5.6  AGENT ADAPTERS
+-- ============================================================
+
+INSERT INTO battles.agent_adapters (id, owner_lenser_id, name, adapter_type, config, is_active)
+VALUES
+    (
+        'fc200000-0000-0000-0000-000000000001',
+        'b2000000-0000-0000-0000-000000000001',
+        'GPT-4o Default Adapter',
+        'openai-agents',
+        '{"model": "gpt-4o", "temperature": 0.7}'::jsonb,
+        true
+    ),
+    (
+        'fc200000-0000-0000-0000-000000000002',
+        'b2000000-0000-0000-0000-000000000001',
+        'Claude Sonnet HTTP Adapter',
+        'http',
+        '{"endpoint": "https://api.anthropic.com/v1/messages", "model": "claude-sonnet-4-6"}'::jsonb,
+        true
+    ),
+    (
+        'fc200000-0000-0000-0000-000000000003',
+        'b2000000-0000-0000-0000-000000000002',
+        'Local Ollama Adapter',
+        'ollama',
+        '{"model": "llama3", "host": "http://localhost:11434"}'::jsonb,
+        true
+    )
+ON CONFLICT (id) DO NOTHING;
+
+
+-- ============================================================
+-- 5.7  BATTLE EVENTS (audit trail for seed battles)
+-- ============================================================
+
+INSERT INTO battles.events (id, battle_id, event_type, actor_id, metadata)
+VALUES
+    (
+        'fd300000-0000-0000-0000-000000000001',
+        'f6000000-0000-0000-0000-000000000001',
+        'status_change',
+        'b2000000-0000-0000-0000-000000000001',
+        '{"from": "draft", "to": "open"}'::jsonb
+    ),
+    (
+        'fd300000-0000-0000-0000-000000000002',
+        'f6000000-0000-0000-0000-000000000001',
+        'contender_joined',
+        'b2000000-0000-0000-0000-000000000002',
+        '{"slot": "A", "contender_type": "human"}'::jsonb
+    ),
+    (
+        'fd300000-0000-0000-0000-000000000003',
+        'f6000000-0000-0000-0000-000000000001',
+        'status_change',
+        'b2000000-0000-0000-0000-000000000001',
+        '{"from": "voting", "to": "closed"}'::jsonb
+    ),
+    (
+        'fd300000-0000-0000-0000-000000000004',
+        'f6000000-0000-0000-0000-000000000001',
+        'published',
+        'b2000000-0000-0000-0000-000000000001',
+        '{"from": "closed", "to": "published"}'::jsonb
+    ),
+    (
+        'fd300000-0000-0000-0000-000000000005',
+        'f6000000-0000-0000-0000-000000000002',
+        'status_change',
+        'b2000000-0000-0000-0000-000000000001',
+        '{"from": "draft", "to": "open"}'::jsonb
+    )
+ON CONFLICT (id) DO NOTHING;
+
+
+-- ============================================================
+-- 5.8  BATTLE INVITATIONS
+-- ============================================================
+
+INSERT INTO battles.invitations (id, battle_id, invited_by, invited_email, invited_lenser_id, status, responded_at)
+VALUES
+    (
+        'fe400000-0000-0000-0000-000000000001',
+        'f6000000-0000-0000-0000-000000000001',
+        'b2000000-0000-0000-0000-000000000001',
+        'bob@lenserfight.local',
+        'b2000000-0000-0000-0000-000000000002',
+        'accepted',
+        '2026-03-10 09:00:00+00'
+    ),
+    (
+        'fe400000-0000-0000-0000-000000000002',
+        'f6000000-0000-0000-0000-000000000002',
+        'b2000000-0000-0000-0000-000000000001',
+        'carol@lenserfight.local',
+        'b2000000-0000-0000-0000-000000000003',
+        'pending',
+        NULL
+    )
+ON CONFLICT (id) DO NOTHING;
+
+
+-- ============================================================
 -- 6. LENSER STATS (analytics)
 -- ============================================================
 

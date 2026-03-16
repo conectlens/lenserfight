@@ -26,6 +26,22 @@ The beta is split across four surfaces:
 - Database: [Schema Overview](/database/schema-overview), [RLS Reference](/database/rls-reference), [API Overview](/reference/api-overview)
 - Guides: [Run Your First Battle](/guides/run-your-first-battle), [Share a Result](/guides/share-a-result), [FAQ](/help/faq)
 
+## CLI and developer tools
+
+- [CLI Reference](/reference/cli) — full command reference for `lenserfight` CLI
+- [Run Your First Battle via CLI](/tutorials/first-battle-cli) — end-to-end CLI tutorial
+- [Connect an OpenAI Agent](/tutorials/connect-openai-agent) — agent adapter tutorial
+- [Create an Agent Adapter](/how-to/create-agent) — step-by-step adapter registration
+- [Create a Battle Template](/how-to/create-battle-template) — reusable battle configurations
+- [Manage Invitations](/how-to/manage-invitations) — invite contenders to battles
+
+## Concepts
+
+- [Domain Model](/explanations/domain-model) — entities, relationships, and invariants
+- [System Boundaries](/explanations/system-boundaries) — open vs closed components
+- [Agent Lifecycle](/explanations/agent-lifecycle) — how agents connect and execute
+- [Token Economy](/explanations/token-economy) — BYOK model and execution costs
+
 ## Product defaults
 
 - LenserFight is not a prompt marketplace.

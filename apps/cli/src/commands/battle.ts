@@ -1,7 +1,11 @@
 import { defineCommand } from 'citty';
 import consola from 'consola';
-import { loadConfig } from '../config/project-config';
+import { callRpc, handleError } from '../utils/api';
+import { printTable, printJson, truncate } from '../utils/output';
 
+// ---------------------------------------------------------------------------
+// battle create
+// ---------------------------------------------------------------------------
 const create = defineCommand({
   meta: {
     name: 'create',
@@ -27,57 +31,52 @@ const create = defineCommand({
       type: 'string',
       description: 'Rubric UUID to attach (optional)',
     },
+    template: {
+      type: 'string',
+      description: 'Template UUID to create from (overrides --prompt)',
+    },
   },
   async run({ args }) {
-    const config = loadConfig();
-
-    if (!config.supabaseAnonKey) {
-      consola.error(
-        'supabaseAnonKey not set. Run `lenserfight init` with --anon-key.'
-      );
-      process.exitCode = 1;
-      return;
-    }
-
-    const body: Record<string, unknown> = {
-      p_title: args.title,
-      p_slug: args.slug,
-      p_task_prompt: args.prompt,
-    };
-
-    if (args.rubric) {
-      body.p_rubric_id = args.rubric;
-    }
-
     try {
-      const res = await fetch(
-        `${config.supabaseUrl}/rest/v1/rpc/fn_battles_create`,
-        {
-          method: 'POST',
-          headers: {
-            apikey: config.supabaseAnonKey,
-            'Content-Type': 'application/json',
+      if (args.template) {
+        const battleId = await callRpc<string>(
+          'fn_battles_create_from_template',
+          {
+            p_template_id: args.template,
+            p_title: args.title,
+            p_slug: args.slug,
           },
-          body: JSON.stringify(body),
-        }
-      );
-
-      if (!res.ok) {
-        const err = await res.json();
-        consola.error('Failed to create battle: %s', err.message || res.statusText);
-        process.exitCode = 1;
+          { requireAuth: true }
+        );
+        consola.success('Battle created from template: %s', battleId);
         return;
       }
 
-      const battleId = await res.json();
+      const params: Record<string, unknown> = {
+        p_title: args.title,
+        p_slug: args.slug,
+        p_task_prompt: args.prompt,
+      };
+
+      if (args.rubric) {
+        params.p_rubric_id = args.rubric;
+      }
+
+      const battleId = await callRpc<string>(
+        'fn_battles_create',
+        params,
+        { requireAuth: true }
+      );
       consola.success('Battle created: %s', battleId);
     } catch (err) {
-      consola.error('Request failed: %s', (err as Error).message);
-      process.exitCode = 1;
+      handleError(err);
     }
   },
 });
 
+// ---------------------------------------------------------------------------
+// battle list
+// ---------------------------------------------------------------------------
 const list = defineCommand({
   meta: {
     name: 'list',
@@ -89,64 +88,58 @@ const list = defineCommand({
       description: 'Number of battles to list',
       default: '10',
     },
+    status: {
+      type: 'string',
+      description: 'Filter by status (e.g., open, voting, published)',
+    },
+    json: {
+      type: 'boolean',
+      description: 'Output as JSON',
+      default: false,
+    },
   },
   async run({ args }) {
-    const config = loadConfig();
-
-    if (!config.supabaseAnonKey) {
-      consola.error(
-        'supabaseAnonKey not set. Run `lenserfight init` with --anon-key.'
-      );
-      process.exitCode = 1;
-      return;
-    }
-
     try {
-      const res = await fetch(
-        `${config.supabaseUrl}/rest/v1/rpc/fn_battles_list_public`,
-        {
-          method: 'POST',
-          headers: {
-            apikey: config.supabaseAnonKey,
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            p_limit: parseInt(args.limit, 10),
-            p_offset: 0,
-          }),
-        }
-      );
-
-      if (!res.ok) {
-        const err = await res.json();
-        consola.error('Failed: %s', err.message || res.statusText);
-        process.exitCode = 1;
-        return;
-      }
-
-      const battles = await res.json();
+      const battles = await callRpc<
+        Array<Record<string, unknown>>
+      >('fn_battles_list_public', {
+        p_limit: parseInt(args.limit, 10),
+        p_offset: 0,
+      });
 
       if (!Array.isArray(battles) || battles.length === 0) {
         consola.info('No public battles found.');
         return;
       }
 
-      for (const b of battles) {
-        consola.log(
-          '  %s  %s  [%s]  %s',
-          b.id?.substring(0, 8) || '-',
-          b.status || '-',
-          b.contender_count || 0,
-          b.title || 'Untitled'
-        );
+      let filtered = battles;
+      if (args.status) {
+        filtered = battles.filter((b) => b.status === args.status);
       }
+
+      if (args.json) {
+        printJson(filtered);
+        return;
+      }
+
+      printTable(
+        ['ID', 'Status', 'Contenders', 'Title'],
+        filtered.map((b) => [
+          String(b.id || '-').substring(0, 8),
+          String(b.status || '-'),
+          String(b.contender_count || 0),
+          truncate(String(b.title || 'Untitled'), 40),
+        ])
+      );
     } catch (err) {
-      consola.error('Request failed: %s', (err as Error).message);
-      process.exitCode = 1;
+      handleError(err);
     }
   },
 });
 
+// ---------------------------------------------------------------------------
+// battle view
+// ---------------------------------------------------------------------------
 const view = defineCommand({
   meta: {
     name: 'view',
@@ -158,61 +151,357 @@ const view = defineCommand({
       description: 'Battle UUID',
       required: true,
     },
+    json: {
+      type: 'boolean',
+      description: 'Output as JSON',
+      default: false,
+    },
   },
   async run({ args }) {
-    const config = loadConfig();
-
-    if (!config.supabaseAnonKey) {
-      consola.error(
-        'supabaseAnonKey not set. Run `lenserfight init` with --anon-key.'
-      );
-      process.exitCode = 1;
-      return;
-    }
-
     try {
-      const res = await fetch(
-        `${config.supabaseUrl}/rest/v1/rpc/fn_battles_get_public`,
-        {
-          method: 'POST',
-          headers: {
-            apikey: config.supabaseAnonKey,
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({ p_battle_id: args.id }),
-        }
+      const battle = await callRpc<Record<string, unknown>>(
+        'fn_battles_get_public',
+        { p_battle_id: args.id }
       );
-
-      if (!res.ok) {
-        const err = await res.json();
-        consola.error('Failed: %s', err.message || res.statusText);
-        process.exitCode = 1;
-        return;
-      }
-
-      const battle = await res.json();
 
       if (!battle) {
         consola.warn('Battle not found or not public.');
         return;
       }
 
-      consola.log(JSON.stringify(battle, null, 2));
+      if (args.json) {
+        printJson(battle);
+        return;
+      }
+
+      consola.info('Title:   %s', battle.title);
+      consola.info('ID:      %s', battle.id);
+      consola.info('Status:  %s', battle.status);
+      consola.info('Slug:    %s', battle.slug);
+      consola.info('Votes:   A=%s  B=%s  Draw=%s',
+        battle.vote_count_a ?? 0,
+        battle.vote_count_b ?? 0,
+        battle.vote_count_draw ?? 0
+      );
+      if (battle.winner_contender_id) {
+        consola.info('Winner:  %s', battle.winner_contender_id);
+      }
     } catch (err) {
-      consola.error('Request failed: %s', (err as Error).message);
-      process.exitCode = 1;
+      handleError(err);
     }
   },
 });
 
+// ---------------------------------------------------------------------------
+// battle open
+// ---------------------------------------------------------------------------
+const open = defineCommand({
+  meta: {
+    name: 'open',
+    description: 'Open a draft battle for contenders.',
+  },
+  args: {
+    id: {
+      type: 'positional',
+      description: 'Battle UUID',
+      required: true,
+    },
+  },
+  async run({ args }) {
+    try {
+      await callRpc('fn_battles_open', {
+        p_battle_id: args.id,
+      }, { requireAuth: true });
+      consola.success('Battle opened: %s', args.id);
+    } catch (err) {
+      handleError(err);
+    }
+  },
+});
+
+// ---------------------------------------------------------------------------
+// battle join
+// ---------------------------------------------------------------------------
+const join = defineCommand({
+  meta: {
+    name: 'join',
+    description: 'Join a battle as a contender.',
+  },
+  args: {
+    id: {
+      type: 'positional',
+      description: 'Battle UUID',
+      required: true,
+    },
+  },
+  async run({ args }) {
+    try {
+      const contenderId = await callRpc<string>('fn_battles_join', {
+        p_battle_id: args.id,
+      }, { requireAuth: true });
+      consola.success('Joined battle as contender: %s', contenderId);
+    } catch (err) {
+      handleError(err);
+    }
+  },
+});
+
+// ---------------------------------------------------------------------------
+// battle submit
+// ---------------------------------------------------------------------------
+const submit = defineCommand({
+  meta: {
+    name: 'submit',
+    description: 'Submit a response to a battle.',
+  },
+  args: {
+    id: {
+      type: 'positional',
+      description: 'Battle UUID',
+      required: true,
+    },
+    text: {
+      type: 'string',
+      description: 'Submission text content',
+    },
+    file: {
+      type: 'string',
+      description: 'Path to file with submission content',
+    },
+    url: {
+      type: 'string',
+      description: 'URL to submission content',
+    },
+  },
+  async run({ args }) {
+    let contentText = args.text || null;
+    const contentUrl = args.url || null;
+
+    if (args.file) {
+      const { readFileSync } = await import('node:fs');
+      try {
+        contentText = readFileSync(args.file, 'utf-8');
+      } catch (err) {
+        consola.error('Failed to read file: %s', (err as Error).message);
+        process.exitCode = 1;
+        return;
+      }
+    }
+
+    if (!contentText && !contentUrl) {
+      consola.error('Provide --text, --file, or --url for the submission.');
+      process.exitCode = 1;
+      return;
+    }
+
+    try {
+      await callRpc('fn_battles_submit', {
+        p_battle_id: args.id,
+        p_content_text: contentText,
+        p_content_url: contentUrl,
+        p_content_media: null,
+      }, { requireAuth: true });
+      consola.success('Submission sent for battle: %s', args.id);
+    } catch (err) {
+      handleError(err);
+    }
+  },
+});
+
+// ---------------------------------------------------------------------------
+// battle start-voting
+// ---------------------------------------------------------------------------
+const startVoting = defineCommand({
+  meta: {
+    name: 'start-voting',
+    description: 'Begin the voting phase for a battle.',
+  },
+  args: {
+    id: {
+      type: 'positional',
+      description: 'Battle UUID',
+      required: true,
+    },
+    'closes-at': {
+      type: 'string',
+      description: 'Voting closes at (ISO 8601 timestamp)',
+      required: true,
+    },
+  },
+  async run({ args }) {
+    try {
+      await callRpc('fn_battles_start_voting', {
+        p_battle_id: args.id,
+        p_voting_closes_at: args['closes-at'],
+      }, { requireAuth: true });
+      consola.success(
+        'Voting started for battle %s (closes at %s)',
+        args.id,
+        args['closes-at']
+      );
+    } catch (err) {
+      handleError(err);
+    }
+  },
+});
+
+// ---------------------------------------------------------------------------
+// battle vote
+// ---------------------------------------------------------------------------
+const vote = defineCommand({
+  meta: {
+    name: 'vote',
+    description: 'Cast a vote on a battle.',
+  },
+  args: {
+    id: {
+      type: 'positional',
+      description: 'Battle UUID',
+      required: true,
+    },
+    for: {
+      type: 'string',
+      description: 'Vote for: contender_a, contender_b, or draw',
+      required: true,
+    },
+    rationale: {
+      type: 'string',
+      description: 'Reason for your vote',
+      default: '',
+    },
+  },
+  async run({ args }) {
+    const validVotes = ['contender_a', 'contender_b', 'draw'];
+    if (!validVotes.includes(args.for)) {
+      consola.error(
+        'Invalid vote: %s. Must be one of: %s',
+        args.for,
+        validVotes.join(', ')
+      );
+      process.exitCode = 1;
+      return;
+    }
+
+    try {
+      await callRpc('fn_battles_vote', {
+        p_battle_id: args.id,
+        p_vote: args.for,
+        p_rationale: args.rationale || null,
+      }, { requireAuth: true });
+      consola.success('Vote cast: %s', args.for);
+    } catch (err) {
+      handleError(err);
+    }
+  },
+});
+
+// ---------------------------------------------------------------------------
+// battle finalize
+// ---------------------------------------------------------------------------
+const finalize = defineCommand({
+  meta: {
+    name: 'finalize',
+    description: 'Close voting and determine the winner.',
+  },
+  args: {
+    id: {
+      type: 'positional',
+      description: 'Battle UUID',
+      required: true,
+    },
+  },
+  async run({ args }) {
+    try {
+      await callRpc('fn_battles_finalize', {
+        p_battle_id: args.id,
+      }, { useServiceRole: true });
+      consola.success('Battle finalized: %s', args.id);
+    } catch (err) {
+      handleError(err);
+    }
+  },
+});
+
+// ---------------------------------------------------------------------------
+// battle publish
+// ---------------------------------------------------------------------------
+const publishBattle = defineCommand({
+  meta: {
+    name: 'publish',
+    description: 'Publish a closed battle.',
+  },
+  args: {
+    id: {
+      type: 'positional',
+      description: 'Battle UUID',
+      required: true,
+    },
+  },
+  async run({ args }) {
+    try {
+      await callRpc('fn_battles_publish', {
+        p_battle_id: args.id,
+      }, { requireAuth: true });
+      consola.success('Battle published: %s', args.id);
+    } catch (err) {
+      handleError(err);
+    }
+  },
+});
+
+// ---------------------------------------------------------------------------
+// battle invite
+// ---------------------------------------------------------------------------
+const invite = defineCommand({
+  meta: {
+    name: 'invite',
+    description: 'Invite a contender to a battle by email.',
+  },
+  args: {
+    id: {
+      type: 'positional',
+      description: 'Battle UUID',
+      required: true,
+    },
+    email: {
+      type: 'string',
+      description: 'Email of the person to invite',
+      required: true,
+    },
+  },
+  async run({ args }) {
+    try {
+      const invitationId = await callRpc<string>('fn_battles_invite', {
+        p_battle_id: args.id,
+        p_email: args.email,
+      }, { requireAuth: true });
+      consola.success('Invitation sent: %s', invitationId);
+    } catch (err) {
+      handleError(err);
+    }
+  },
+});
+
+// ---------------------------------------------------------------------------
+// Root command
+// ---------------------------------------------------------------------------
 export default defineCommand({
   meta: {
     name: 'battle',
-    description: 'Manage battles: create, list, view.',
+    description:
+      'Manage battles: create, list, view, open, join, submit, vote, finalize, publish, invite.',
   },
   subCommands: {
     create,
     list,
     view,
+    open,
+    join,
+    submit,
+    'start-voting': startVoting,
+    vote,
+    finalize,
+    publish: publishBattle,
+    invite,
   },
 });
