@@ -30,13 +30,7 @@ import {
   PromptDetailPage,
   PromptsPage,
 } from '@lenserfight/features/prompts'
-import {
-  AboutPage,
-  ContactPage,
-  EcosystemPage,
-  LegalPage,
-  WelcomePage,
-} from '@lenserfight/features/public'
+import { WelcomePage } from '@lenserfight/features/public'
 import { SettingsPage } from '@lenserfight/features/settings'
 import { ShortLinkRedirect } from '@lenserfight/features/share'
 import {
@@ -58,12 +52,6 @@ const ProtectedAdminRoute = () => {
   return <Outlet />
 }
 
-// Wrapper for public routes to apply layout
-const PublicRouteWrapper = () => (
-  <PublicLayout>
-    <Outlet />
-  </PublicLayout>
-)
 
 export const AppRouter: React.FC = () => {
   return (
@@ -95,25 +83,7 @@ export const AppRouter: React.FC = () => {
           }
         />
 
-        {/* Public Marketing Routes */}
-        <Route element={<PublicRouteWrapper />}>
-          <Route path="/about" element={<AboutPage />} />
-          <Route path="/about/vision" element={<AboutPage />} />
-          <Route path="/about/mission" element={<AboutPage />} />
-
-          <Route path="/ecosystem" element={<EcosystemPage />} />
-          <Route path="/ecosystem/lens" element={<EcosystemPage />} />
-          <Route path="/ecosystem/lenser" element={<EcosystemPage />} />
-          <Route path="/ecosystem/len" element={<EcosystemPage />} />
-
-          <Route path="/contact" element={<ContactPage />} />
-
-          <Route path="/legal" element={<LegalPage />} />
-          <Route path="/legal/privacy" element={<LegalPage />} />
-          <Route path="/legal/terms" element={<LegalPage />} />
-        </Route>
-
-        {/* App Dashboard Routes */}
+{/* App Dashboard Routes */}
         <Route
           path="/"
           element={
