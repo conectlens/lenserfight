@@ -3,7 +3,10 @@
   "$schema": "../../node_modules/nx/schemas/project-schema.json",
   "sourceRoot": "apps/arena/src",
   "projectType": "application",
-  "tags": [],
+  "tags": [
+    "layer:app",
+    "scope:arena"
+  ],
   "// targets": "to see all targets run: nx show project arena --web",
   "targets": {}
 }

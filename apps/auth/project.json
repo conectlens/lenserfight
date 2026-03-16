@@ -1,0 +1,9 @@
+{
+  "name": "auth",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "apps/auth/src",
+  "projectType": "application",
+  "tags": ["type:app", "layer:app"],
+  "// targets": "to see all targets run: nx show project auth --web",
+  "targets": {}
+}
