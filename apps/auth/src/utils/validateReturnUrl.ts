@@ -2,14 +2,10 @@ const ALLOWED_ORIGINS = [
   'https://forum.lenserfight.com',
   'https://arena.lenserfight.com',
   'https://admin.lenserfight.com',
-  // Local dev via dev-proxy
-  'http://forum.localhost:8080',
-  'http://arena.localhost:8080',
-  'http://admin.localhost:8080',
   // Local dev direct Vite ports
-  'http://localhost:3000',
-  'http://localhost:3001',
-  'http://localhost:3002',
+  'http://localhost:3000', // forum
+  'http://localhost:3001', // arena
+  'http://localhost:3002', // admin
 ]
 
 const DEFAULT_RETURN_URL = 'https://forum.lenserfight.com'
