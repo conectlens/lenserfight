@@ -1,4 +1,4 @@
-import { loadConfig } from '../config/project-config';
+import { resolveConfig as loadConfig } from '../config/project-config';
 
 let clientModule: typeof import('@supabase/supabase-js') | null = null;
 
