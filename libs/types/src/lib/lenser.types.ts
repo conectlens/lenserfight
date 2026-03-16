@@ -148,6 +148,16 @@ export interface NetworkUser {
   is_following: boolean
 }
 
+export interface TrendingLenser {
+  lenserId: string
+  handle: string
+  displayName: string
+  avatarUrl?: string | null
+  totalXp: number
+  currentLevel: number
+  lenserScore: number
+}
+
 export interface LenserProfileDTO {
   // Identity
   id: string
