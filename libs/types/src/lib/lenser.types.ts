@@ -14,9 +14,17 @@ export interface LenserCompactProfile {
 }
 
 export interface LenserPreferences {
-  theme?: 'light' | 'dark'
+  theme?: 'light' | 'dark' | 'system'
   sidebar_collapsed?: boolean
   [key: string]: any // Forward compatibility
+}
+
+export interface Language {
+  code: string
+  name: string
+  native_name: string
+  direction: 'ltr' | 'rtl'
+  is_active: boolean
 }
 
 export interface Lenser {
@@ -34,7 +42,10 @@ export interface Lenser {
   visibility?: 'public' | 'private'
   is_in_waiting_list?: boolean
   is_super_admin?: boolean // Added for RBAC via Lenser profile
+  preferred_language?: string
   preferences?: LenserPreferences
+  onboarding_step?: number         // 0=not started, 1=handle created, 2=complete
+  onboarding_completed_at?: string | null
   created_at: string
   updated_at?: string
   join_order?: number // Immutable rank from lenser_join_log

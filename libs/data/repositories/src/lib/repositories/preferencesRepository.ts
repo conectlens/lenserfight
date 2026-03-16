@@ -2,12 +2,12 @@ import { LenserPreferences } from '@lenserfight/types'
 import { supabase } from '@lenserfight/data/supabase'
 
 export interface PreferencesRepositoryPort {
-  updateTheme(userId: string, theme: 'light' | 'dark'): Promise<void>
+  updateTheme(userId: string, theme: 'light' | 'dark' | 'system'): Promise<void>
   getPreferences(userId: string): Promise<LenserPreferences | null>
 }
 
 export class SupabasePreferencesRepository implements PreferencesRepositoryPort {
-  async updateTheme(_userId: string, theme: 'light' | 'dark'): Promise<void> {
+  async updateTheme(_userId: string, theme: 'light' | 'dark' | 'system'): Promise<void> {
     const { data: authData } = await supabase.auth.getUser()
     if (!authData.user) return
 
