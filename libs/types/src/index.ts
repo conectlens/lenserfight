@@ -15,6 +15,7 @@ export type {
   ActionRecord,
   AuthorProfile,
   CreateLenserDTO,
+  Language,
   Lenser,
   LenserActivityPoint,
   LenserCompactProfile,
