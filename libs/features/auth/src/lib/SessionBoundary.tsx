@@ -1,5 +1,5 @@
 import React from 'react'
-
+import { LoadingOverlay } from '@lenserfight/ui/components'
 import { useAuth } from './context/AuthContext'
 
 interface SessionBoundaryProps {
@@ -21,11 +21,8 @@ interface SessionBoundaryProps {
 export const SessionBoundary: React.FC<SessionBoundaryProps> = ({ children }) => {
   const { user, isLoading } = useAuth()
 
-  // If we are currently loading auth state (e.g. on first refresh),
-  // we might want to wait or just render.
-  // Using `isLoading` helps prevent double-mounting if auth state flips quickly on load.
   if (isLoading) {
-    return null // Or a global spinner if desired
+    return <LoadingOverlay message="Loading..." />
   }
 
   // 'guest' key ensures that even unauthenticated state is consistent
