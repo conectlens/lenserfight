@@ -8,6 +8,10 @@ export interface LenserfightConfig {
   supabaseServiceRoleKey?: string;
   dbPort: number;
   apiPort: number;
+  authToken?: string;
+  authRefreshToken?: string;
+  authExpiresAt?: string;
+  defaultAdapterId?: string;
 }
 
 const CONFIG_FILE = '.lenserfight.json';
