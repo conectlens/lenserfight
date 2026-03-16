@@ -1,6 +1,6 @@
 import { supabase } from '@lenserfight/data/supabase'
 import { AuthorProfile } from '@lenserfight/types'
-import { ThreadRecord, TagRecord, ThreadReplyRecord, CreateThreadDTO } from '@lenserfight/types'
+import { ThreadRecord, TagRecord, ThreadReplyRecord, CreateThreadDTO, ThreadFeedItem } from '@lenserfight/types'
 
 // --- Port (Interface) ---
 export interface ThreadsRepositoryPort {
@@ -18,6 +18,7 @@ export interface ThreadsRepositoryPort {
   getThreadReplies(threadId: string, viewerLenserId?: string): Promise<ThreadReplyRecord[]>
   getReplyById(replyId: string): Promise<ThreadReplyRecord | null>
   getTrendingTags(limit: number): Promise<string[]>
+  getTrendingThreads(lang?: string, offset?: number, limit?: number): Promise<ThreadFeedItem[]>
   createReply(
     threadId: string,
     lenserId: string,
@@ -494,6 +495,43 @@ export class SupabaseThreadsRepository implements ThreadsRepositoryPort {
     }
 
     return replyView as ThreadReplyRecord
+  }
+
+  /**
+   * Trending threads via hot score RPC with optional language boost.
+   */
+  async getTrendingThreads(lang?: string, offset = 0, limit = 20): Promise<ThreadFeedItem[]> {
+    const { data, error } = await supabase.rpc('fn_content_get_trending_threads', {
+      p_lang: lang ?? null,
+      p_limit: limit,
+      p_offset: offset,
+    })
+
+    if (error) this.handleError(error)
+
+    return ((data ?? []) as Record<string, unknown>[]).map((row) => {
+      const author = (row.author_profile as Record<string, unknown>) ?? {}
+      const reactionTotals = (row.reaction_totals as Record<string, number>) ?? {}
+      return {
+        id: row.id as string,
+        title: row.title as string,
+        content: '',
+        author: {
+          id: (author.id as string) ?? '',
+          displayName: (author.display_name as string) ?? 'Unknown',
+          handle: (author.handle as string) ?? 'unknown',
+          avatarUrl: (author.avatar_url as string | null) ?? null,
+        },
+        tags: (row.tags as TagRecord[]) ?? [],
+        reactionCount: Object.values(reactionTotals).reduce((sum, n) => sum + n, 0),
+        replyCount: (row.reply_count as number) ?? 0,
+        createdAt: row.created_at as string,
+        userHasReacted: false,
+        visibility: 'public' as const,
+        hotScore: row.hot_score as number,
+        primaryLanguage: (row.primary_language as string) ?? undefined,
+      }
+    })
   }
 
   /**
