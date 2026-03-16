@@ -142,14 +142,150 @@ const remove = defineCommand({
   },
 });
 
+const view = defineCommand({
+  meta: {
+    name: 'view',
+    description: 'Show full config and status for a registered adapter.',
+  },
+  args: {
+    id: {
+      type: 'positional',
+      description: 'Adapter UUID',
+      required: true,
+    },
+    json: {
+      type: 'boolean',
+      description: 'Output as JSON',
+      default: false,
+    },
+  },
+  async run({ args }) {
+    try {
+      const adapter = await callRpc<Record<string, unknown>>(
+        'fn_agent_adapters_get',
+        { p_adapter_id: args.id },
+        { requireAuth: true }
+      );
+
+      if (!adapter) {
+        consola.warn('Adapter not found: %s', args.id);
+        return;
+      }
+
+      if (args.json) {
+        printJson(adapter);
+        return;
+      }
+
+      consola.info('ID:      %s', adapter.id);
+      consola.info('Name:    %s', adapter.name);
+      consola.info('Type:    %s', adapter.adapter_type);
+      consola.info('Active:  %s', adapter.is_active ? 'yes' : 'no');
+      consola.info('Created: %s', adapter.created_at);
+      if (adapter.config) {
+        consola.info('Config:  %s', JSON.stringify(adapter.config, null, 2));
+      }
+    } catch (err) {
+      handleError(err);
+    }
+  },
+});
+
+const enable = defineCommand({
+  meta: {
+    name: 'enable',
+    description: 'Re-activate a previously deactivated adapter.',
+  },
+  args: {
+    id: {
+      type: 'positional',
+      description: 'Adapter UUID',
+      required: true,
+    },
+  },
+  async run({ args }) {
+    try {
+      await callRpc('fn_agent_adapters_enable', {
+        p_adapter_id: args.id,
+      }, { requireAuth: true });
+      consola.success('Agent adapter enabled: %s', args.id);
+    } catch (err) {
+      handleError(err);
+    }
+  },
+});
+
+const test = defineCommand({
+  meta: {
+    name: 'test',
+    description: 'Send a probe prompt to verify an adapter is reachable.',
+  },
+  args: {
+    id: {
+      type: 'positional',
+      description: 'Adapter UUID',
+      required: true,
+    },
+    prompt: {
+      type: 'string',
+      description: 'Probe prompt to send',
+      default: 'Hello, are you available?',
+    },
+  },
+  async run({ args }) {
+    try {
+      consola.start('Testing adapter %s...', args.id);
+      const result = await callRpc<Record<string, unknown>>(
+        'fn_agent_adapters_probe',
+        {
+          p_adapter_id: args.id,
+          p_prompt: args.prompt,
+        },
+        { requireAuth: true }
+      );
+      consola.success('Adapter responded successfully.');
+      if (result?.response) {
+        consola.info('Response: %s', String(result.response).substring(0, 200));
+      }
+    } catch (err) {
+      handleError(err);
+    }
+  },
+});
+
+const types = defineCommand({
+  meta: {
+    name: 'types',
+    description: 'List all supported adapter types with descriptions.',
+  },
+  async run() {
+    printTable(
+      ['Type', 'Description'],
+      [
+        ['openai-agents', 'OpenAI Agents SDK'],
+        ['langchain',     'LangChain agent framework'],
+        ['crewai',        'CrewAI multi-agent framework'],
+        ['mcp',           'Model Context Protocol server'],
+        ['ollama',        'Local Ollama model endpoint'],
+        ['http',          'Generic HTTP endpoint adapter'],
+        ['custom',        'Custom adapter implementation'],
+      ]
+    );
+  },
+});
+
 export default defineCommand({
   meta: {
     name: 'agent',
-    description: 'Manage agent adapters: connect, list, remove.',
+    description: 'Manage agent adapters: connect, list, view, enable, remove, test, types.',
   },
   subCommands: {
     connect,
     list,
+    view,
+    enable,
     remove,
+    test,
+    types,
   },
 });
