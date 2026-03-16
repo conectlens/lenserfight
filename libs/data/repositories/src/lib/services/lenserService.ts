@@ -9,6 +9,11 @@ import {
   NetworkUser,
   LenserProfileDTO,
   TrendingLenser,
+  SuggestedLenser,
+  LeaderboardLenser,
+  LenserFollowStatus,
+  FollowsNetworkUser,
+  FollowPeriod,
 } from '@lenserfight/types'
 import { PromptTemplateRecord } from '@lenserfight/types'
 import { ThreadRecord } from '@lenserfight/types'
@@ -159,5 +164,38 @@ export const lenserService = {
 
   getTrendingLensers: async (limit = 10): Promise<TrendingLenser[]> => {
     return lenserRepo.getTrendingLensers(limit)
+  },
+
+  // ── Phase 3: Follow graph ─────────────────────────────────────────────────
+
+  followLenser: async (followingId: string): Promise<LenserFollowStatus> => {
+    return lenserRepo.followLenser(followingId)
+  },
+
+  unfollowLenser: async (followingId: string): Promise<LenserFollowStatus> => {
+    return lenserRepo.unfollowLenser(followingId)
+  },
+
+  isFollowing: async (targetId: string): Promise<boolean> => {
+    return lenserRepo.isFollowing(targetId)
+  },
+
+  getLenserFollows: async (
+    lenserId: string,
+    type: 'followers' | 'following',
+    offset = 0,
+    limit = 20
+  ): Promise<FollowsNetworkUser[]> => {
+    return lenserRepo.getLenserFollows(lenserId, type, offset, limit)
+  },
+
+  getSuggestedLensers: async (lenserId: string, limit = 10): Promise<SuggestedLenser[]> => {
+    return lenserRepo.getSuggestedLensers(lenserId, limit)
+  },
+
+  // ── Phase 4: Leaderboard ──────────────────────────────────────────────────
+
+  getLeaderboard: async (period: FollowPeriod = 'all_time', limit = 20): Promise<LeaderboardLenser[]> => {
+    return lenserRepo.getLeaderboard(period, limit)
   },
 }
