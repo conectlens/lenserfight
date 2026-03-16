@@ -1,11 +1,10 @@
 import { Check, X, Loader2 } from 'lucide-react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import React, { useState, useEffect } from 'react'
-import { useNavigate } from 'react-router-dom'
 
 import { queryKeys } from '@lenserfight/data/cache'
 import { lenserService } from '@lenserfight/data/repositories'
-import { Button } from '@lenserfight/ui/components'
+import { LanguageSelectBox, StepWizard } from '@lenserfight/ui/components'
 import { Modal } from '@lenserfight/ui/modals'
 import { useAuth } from '@lenserfight/features/auth'
 import { InputField } from '@lenserfight/features/auth'
@@ -14,16 +13,32 @@ import { storage } from '@lenserfight/utils/storage'
 
 interface CreateLenserProfileModalProps {
   onClose: () => void
+  onComplete?: () => void
 }
 
-export const CreateLenserProfileModal: React.FC<CreateLenserProfileModalProps> = ({ onClose }) => {
+export const CreateLenserProfileModal: React.FC<CreateLenserProfileModalProps> = ({
+  onClose,
+  onComplete,
+}) => {
   const { isAuthenticated, isLoading: authLoading } = useAuth()
   const queryClient = useQueryClient()
-  const navigate = useNavigate()
+
+  // ── Step state ──────────────────────────────────────────────────────
+  const [currentStep, setCurrentStep] = useState(0)
+
+  // ── Step 0: handle + display name ──────────────────────────────────
   const [handle, setHandle] = useState('')
   const [displayName, setDisplayName] = useState('')
-  const [error, setError] = useState<string | null>(null)
-  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [handleError, setHandleError] = useState<string | null>(null)
+  const [isCheckingHandle, setIsCheckingHandle] = useState(false)
+  const [isHandleUnique, setIsHandleUnique] = useState(false)
+  const [suggestions, setSuggestions] = useState<string[]>([])
+  const [submitError, setSubmitError] = useState<string | null>(null)
+  const [isSubmittingStep0, setIsSubmittingStep0] = useState(false)
+
+  // ── Step 1: language preference ─────────────────────────────────────
+  const [preferredLanguage, setPreferredLanguage] = useState('en')
+  const [isCompletingStep1, setIsCompletingStep1] = useState(false)
 
   const { data: lenser = null, isLoading: lenserLoading } = useQuery<Lenser | null>({
     queryKey: queryKeys.lenser.authenticated(),
@@ -32,218 +47,213 @@ export const CreateLenserProfileModal: React.FC<CreateLenserProfileModalProps> =
     staleTime: 1000 * 60 * 5,
   })
 
+  const { data: languages = [], isLoading: langsLoading } = useQuery({
+    queryKey: ['core', 'languages'],
+    queryFn: () => lenserService.getLanguages(),
+    enabled: currentStep === 1,
+    staleTime: Infinity,
+  })
+
   const hasLenser = !!lenser
-  const isLoading = authLoading || lenserLoading || isSubmitting
+  const isLoading = authLoading || lenserLoading
 
-  // Validation States
-  const [handleError, setHandleError] = useState<string | null>(null)
-  const [isCheckingHandle, setIsCheckingHandle] = useState(false)
-  const [isHandleUnique, setIsHandleUnique] = useState(false)
-  const [suggestions, setSuggestions] = useState<string[]>([])
-
-  // Security Redirect: Only authenticated users without a profile can access this
+  // Security redirect: only authenticated users without a profile reach this
   useEffect(() => {
-    if (!authLoading && !isLoading) {
-      if (!isAuthenticated) {
-        navigate('/auth/login')
-        onClose()
-      } else if (hasLenser) {
-        // If they already have a profile, just close
-        onClose()
-      }
+    if (authLoading || lenserLoading) return
+    if (!isAuthenticated) {
+      const authAppUrl = import.meta.env.VITE_AUTH_APP_URL ?? 'https://auth.lenserfight.com'
+      const returnUrl = encodeURIComponent(window.location.href)
+      window.location.href = `${authAppUrl}/login?return_url=${returnUrl}`
+      onClose()
+    } else if (hasLenser && currentStep === 0) {
+      // Profile already exists before we started; close
+      onClose()
     }
-  }, [authLoading, isLoading, isAuthenticated, hasLenser, navigate, onClose])
+  }, [authLoading, lenserLoading, isAuthenticated, hasLenser, currentStep, onClose])
 
-  // Real-time validation & Debounced Check
+  // ── Handle uniqueness check (debounced) ─────────────────────────────
   useEffect(() => {
-    // Reset states when input changes
     setIsHandleUnique(false)
     setSuggestions([])
 
-    // 1. Basic format validation
-    const cleanHandle = handle.toLowerCase().replace(/\s/g, '')
-    if (handle !== cleanHandle) {
-      // This is handled by onChange logic usually, but strict check here
-    }
-
-    if (cleanHandle.length === 0) {
-      setHandleError(null)
-      return
-    }
-
-    if (cleanHandle.length < 4) {
-      setHandleError('Handle must be at least 4 characters.')
-      return
-    }
-
-    const validRegex = /^[a-z0-9_.]+$/
-    if (!validRegex.test(cleanHandle)) {
+    const clean = handle.toLowerCase().replace(/\s/g, '')
+    if (clean.length === 0) { setHandleError(null); return }
+    if (clean.length < 4) { setHandleError('Handle must be at least 4 characters.'); return }
+    if (!/^[a-z0-9_.]+$/.test(clean)) {
       setHandleError('Only lowercase letters, numbers, underscores, and dots allowed.')
       return
     }
-
     setHandleError(null)
 
-    // 2. Generate Suggestions immediately if valid format (for use if needed)
-    const generatedSuggestions = [
-      `${cleanHandle}123`,
-      `${cleanHandle}_app`,
-      `iam_${cleanHandle}`,
-      `${cleanHandle}.official`,
-      `real_${cleanHandle}`,
+    const suggestions = [
+      `${clean}123`, `${clean}_app`, `iam_${clean}`, `${clean}.official`, `real_${clean}`,
     ]
 
-    // 3. Debounced Uniqueness Check
     const timer = setTimeout(async () => {
       setIsCheckingHandle(true)
       try {
-        const existing = await lenserService.getLenserByHandle(cleanHandle)
+        const existing = await lenserService.getLenserByHandle(clean)
         if (existing) {
           setHandleError('Handle is already taken.')
-          setSuggestions(generatedSuggestions)
+          setSuggestions(suggestions)
           setIsHandleUnique(false)
         } else {
           setIsHandleUnique(true)
-          // Also provide suggestions if valid but we want to offer alts?
-          // Prompt says "When ... valid ... but not yet confirmed ... generate suggestions".
-          // Since we just confirmed it IS unique, we usually clear them.
-          // However, to strictly follow instructions, we generated them.
-          // We'll keep them cleared if unique to avoid clutter unless checking.
           setSuggestions([])
         }
-      } catch (e) {
-        console.error(e)
+      } catch {
+        // ignore check errors — user can still try to submit
       } finally {
         setIsCheckingHandle(false)
       }
-    }, 500) // 500ms debounce
-
-    // If we want to show suggestions immediately while typing (before check), set them here:
-    // setSuggestions(generatedSuggestions);
-    // But typically we wait for the check to see if we NEED them.
+    }, 500)
 
     return () => clearTimeout(timer)
   }, [handle])
 
-  if (authLoading || isLoading || !isAuthenticated || hasLenser) return null
+  if (authLoading || isLoading || !isAuthenticated) return null
+  // Don't render if profile already existed and we haven't started step 1 yet
+  if (hasLenser && currentStep === 0) return null
 
-  const createLenserProfile = async (data: CreateLenserDTO): Promise<Lenser> => {
-    const profile = await lenserService.createLenserProfile(data)
-    queryClient.setQueryData(queryKeys.lenser.authenticated(), profile)
-    await queryClient.invalidateQueries({ queryKey: queryKeys.waitingList.status() })
-    storage.setItem('lenser_has_profile', 'true')
-    return profile
-  }
+  // ── Step 0 submit: create profile ───────────────────────────────────
+  const handleStep0Next = async () => {
+    if (!displayName.trim()) { setSubmitError('Display Name is required'); return }
+    if (handleError || !isHandleUnique) return
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-
-    // Final block
-    if (handleError || !isHandleUnique) {
-      if (!handleError && handle.length < 4) {
-        return
-      }
-      return
-    }
-
-    if (!displayName) {
-      setError('Display Name is required')
-      return
-    }
-
-    setError(null)
+    setSubmitError(null)
+    setIsSubmittingStep0(true)
     try {
-      setIsSubmitting(true)
-      await createLenserProfile({ handle, display_name: displayName })
-      onClose() // Close on success
+      const profile = await lenserService.createLenserProfile({ handle, display_name: displayName } as CreateLenserDTO)
+      queryClient.setQueryData(queryKeys.lenser.authenticated(), profile)
+      await queryClient.invalidateQueries({ queryKey: queryKeys.waitingList.status() })
+      storage.setItem('lenser_has_profile', 'true')
+      setCurrentStep(1)
     } catch (err: any) {
-      setError(err.message || 'Failed to create profile')
+      setSubmitError(err.message || 'Failed to create profile')
     } finally {
-      setIsSubmitting(false)
+      setIsSubmittingStep0(false)
     }
   }
 
-  const applySuggestion = (s: string) => {
-    setHandle(s)
+  // ── Step 1 submit: save language + complete onboarding ───────────────
+  const handleStep1Complete = async () => {
+    setIsCompletingStep1(true)
+    try {
+      const updated = await lenserService.updateLenserProfile({
+        preferred_language: preferredLanguage,
+        onboarding_step: 2,
+        onboarding_completed_at: new Date().toISOString(),
+      })
+      queryClient.setQueryData(queryKeys.lenser.authenticated(), updated)
+    } catch {
+      // Language preference save is best-effort; proceed regardless
+    } finally {
+      setIsCompletingStep1(false)
+      ;(onComplete ?? onClose)()
+    }
   }
 
   return (
     <Modal isOpen={true} canClose={true} onClose={onClose} title="Complete Your Profile">
-      <div className="text-sm text-gray-500 mb-6">
-        Claim your unique handle to join the community.
-      </div>
+      <StepWizard
+        steps={['Profile', 'Preferences']}
+        currentStep={currentStep}
+        onNext={handleStep0Next}
+        onBack={() => setCurrentStep((s) => Math.max(s - 1, 0))}
+        onComplete={handleStep1Complete}
+        canProceed={currentStep === 0 ? (isHandleUnique && !!displayName.trim()) : true}
+        isNextLoading={isSubmittingStep0}
+        isCompleting={isCompletingStep1}
+        nextLabel="Continue"
+        completeLabel="Finish"
+      >
+        {currentStep === 0 ? (
+          /* ── Step 0: handle + display name ── */
+          <div className="space-y-5">
+            <p className="text-sm text-gray-500 dark:text-gray-400">
+              Claim your unique handle to join the community.
+            </p>
 
-      <form onSubmit={handleSubmit} className="space-y-5">
-        {/* Handle Input Block */}
-        <div>
-          <div className="relative">
+            {/* Handle input */}
+            <div>
+              <div className="relative">
+                <InputField
+                  label="Handle"
+                  placeholder="e.g. alexandre_ui"
+                  value={handle}
+                  onChange={(e) => setHandle(e.target.value.toLowerCase().replace(/\s/g, ''))}
+                  error={handleError || undefined}
+                  className={isHandleUnique ? '!border-green-500 !focus:ring-green-200' : ''}
+                />
+                <div className="absolute right-3 top-[34px] pointer-events-none">
+                  {isCheckingHandle ? (
+                    <Loader2 className="w-5 h-5 text-gray-400 animate-spin" />
+                  ) : isHandleUnique ? (
+                    <Check className="w-5 h-5 text-green-500" />
+                  ) : handleError && handle.length > 0 ? (
+                    <X className="w-5 h-5 text-red-500" />
+                  ) : null}
+                </div>
+              </div>
+
+              {/* Suggestions */}
+              {suggestions.length > 0 && (
+                <div className="mt-2 animate-in slide-in-from-top-1 fade-in duration-200">
+                  <p className="text-xs text-gray-500 mb-2">Suggestions:</p>
+                  <div className="flex flex-wrap gap-2">
+                    {suggestions.map((s) => (
+                      <button
+                        key={s}
+                        type="button"
+                        onClick={() => setHandle(s)}
+                        className="px-3 py-1 bg-gray-50 hover:bg-primary/20 hover:text-gray-900 border border-gray-200 rounded-full text-xs font-medium text-gray-600 transition-colors"
+                      >
+                        @{s}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {isCheckingHandle && !handleError && handle.length >= 4 && suggestions.length === 0 && (
+                <p className="mt-2 text-xs text-gray-400">Checking availability…</p>
+              )}
+            </div>
+
             <InputField
-              label="Handle"
-              placeholder="e.g. alexandre_ui"
-              value={handle}
-              onChange={(e) => setHandle(e.target.value.toLowerCase().replace(/\s/g, ''))}
-              error={handleError || undefined}
-              className={isHandleUnique ? '!border-green-500 !focus:ring-green-200' : ''}
+              label="Display Name"
+              placeholder="e.g. Alexandre"
+              value={displayName}
+              onChange={(e) => setDisplayName(e.target.value)}
+              required
             />
 
-            {/* Status Indicator Icon */}
-            <div className="absolute right-3 top-[34px] pointer-events-none">
-              {isCheckingHandle ? (
-                <Loader2 className="w-5 h-5 text-gray-400 animate-spin" />
-              ) : isHandleUnique ? (
-                <Check className="w-5 h-5 text-green-500" />
-              ) : handleError && handle.length > 0 ? (
-                <X className="w-5 h-5 text-red-500" />
-              ) : null}
+            {submitError && (
+              <div className="text-red-500 text-sm bg-red-50 dark:bg-red-900/20 p-3 rounded-lg">
+                {submitError}
+              </div>
+            )}
+          </div>
+        ) : (
+          /* ── Step 1: language preference ── */
+          <div className="space-y-4">
+            <div>
+              <p className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                Preferred Language
+              </p>
+              <p className="text-xs text-gray-500 dark:text-gray-400 mb-3">
+                Choose the language for content and interface.
+              </p>
+              <LanguageSelectBox
+                value={preferredLanguage}
+                onChange={setPreferredLanguage}
+                languages={languages}
+                isLoading={langsLoading}
+              />
             </div>
           </div>
-
-          {/* Suggestions */}
-          {suggestions.length > 0 && (
-            <div className="mt-2 animate-in slide-in-from-top-1 fade-in duration-200">
-              <p className="text-xs text-gray-500 mb-2">Suggestions:</p>
-              <div className="flex flex-wrap gap-2">
-                {suggestions.map((s) => (
-                  <button
-                    key={s}
-                    type="button"
-                    onClick={() => applySuggestion(s)}
-                    className="px-3 py-1 bg-gray-50 hover:bg-primary/20 hover:text-gray-900 border border-gray-200 rounded-full text-xs font-medium text-gray-600 transition-colors"
-                  >
-                    @{s}
-                  </button>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* Show loading text if taking long */}
-          {isCheckingHandle && !handleError && handle.length >= 4 && suggestions.length === 0 && (
-            <div className="mt-2">
-              <p className="text-xs text-gray-400">Checking availability...</p>
-            </div>
-          )}
-        </div>
-
-        <InputField
-          label="Display Name"
-          placeholder="e.g. Alexandre"
-          value={displayName}
-          onChange={(e) => setDisplayName(e.target.value)}
-          required
-        />
-
-        {error && <div className="text-red-500 text-sm bg-red-50 p-3 rounded-lg">{error}</div>}
-
-        <Button
-          type="submit"
-          isLoading={isLoading || isCheckingHandle}
-          disabled={!!handleError || !isHandleUnique || !displayName}
-          className="mt-4"
-        >
-          Create Profile
-        </Button>
-      </form>
+        )}
+      </StepWizard>
     </Modal>
   )
 }

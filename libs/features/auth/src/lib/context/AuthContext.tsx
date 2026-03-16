@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect } from 'react'
+import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react'
 import { queryClient } from '@lenserfight/data/cache'
 import { authService } from '@lenserfight/data/repositories'
 import { AuthState, UserMetadata } from '@lenserfight/types'
@@ -33,9 +33,15 @@ const getErrorMessage = (err: unknown): string => {
   return 'An unexpected error occurred'
 }
 
-// Key used in LenserContext
+// Keys cleared on logout (also used in LenserContext)
 const LENSER_CACHE_KEY = 'lenser_profile_data_v1'
 const MOCK_AUTH_KEY = 'mock_auth_user'
+
+const clearAuthStorage = () => {
+  storage.removeItem('lenser_has_profile')
+  storage.removeItem(LENSER_CACHE_KEY)
+  storage.removeItem(MOCK_AUTH_KEY)
+}
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [state, setState] = useState<AuthState>({
@@ -45,144 +51,134 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     error: null,
   })
 
+  // Tracks whether initAuth has already settled state so the onAuthStateChange
+  // subscription does not overwrite it with a stale INITIAL_SESSION event.
+  const initDone = useRef(false)
+
   useEffect(() => {
-    // 1. Initial Load from persisted session or repo
+    // 1. Subscribe before initAuth to avoid missing events that fire synchronously
+    //    during subscription setup (Supabase fires INITIAL_SESSION immediately).
+    const unsubscribe = authService.onAuthStateChange((user) => {
+      // Skip early INITIAL_SESSION fires — initAuth owns the first state write.
+      // After that, apply any subsequent changes (token refresh, sign-out, etc.)
+      if (!initDone.current) return
+      setState((s) => {
+        if (s.user?.id === user?.id) return s
+        return { ...s, user, isAuthenticated: !!user, isLoading: false }
+      })
+    })
+
+    // 2. Initial load from persisted session or network
     const initAuth = async () => {
       try {
         const user = await authService.getCurrentUser()
+        initDone.current = true
         if (user) {
           setState((s) => ({ ...s, user, isAuthenticated: true, isLoading: false }))
         } else {
           setState((s) => ({ ...s, user: null, isAuthenticated: false, isLoading: false }))
         }
       } catch (err: any) {
+        initDone.current = true
         // AuthSessionMissingError is expected when no session exists — not a real error
-        if (err?.name === 'AuthSessionMissingError' || err?.message?.includes('Auth session missing')) {
+        if (
+          err?.name === 'AuthSessionMissingError' ||
+          err?.message?.includes('Auth session missing')
+        ) {
           setState((s) => ({ ...s, user: null, isAuthenticated: false, isLoading: false }))
           return
         }
         console.error('Auth initialization error:', err)
-        // If user is not found (e.g. deleted from DB but JWT still exists), redirect to login
-        if (err?.code === 'user_not_found' || err?.message?.includes('User from sub claim in JWT does not exist')) {
-          console.warn('User not found in database, redirecting to login...')
-          // Clear session and redirect
+        // User deleted in DB but JWT still valid → force clean logout
+        if (
+          err?.code === 'user_not_found' ||
+          err?.message?.includes('User from sub claim in JWT does not exist')
+        ) {
+          console.warn('User not found in database, clearing session...')
           await authService.logout()
-          storage.removeItem('lenser_has_profile')
-          storage.removeItem(LENSER_CACHE_KEY)
-          storage.removeItem(MOCK_AUTH_KEY)
-          window.location.href = '/auth/login'
+          clearAuthStorage()
+          setState({ user: null, isAuthenticated: false, isLoading: false, error: null })
           return
         }
         setState((s) => ({ ...s, isLoading: false, error: 'Failed to restore session' }))
       }
     }
-    initAuth()
 
-    // 2. Subscribe to auth state changes (Supabase specific events like token refresh)
-    const unsubscribe = authService.onAuthStateChange((user) => {
-      setState((s) => {
-        // Prevent state updates if user object is identical (by ID) to avoid downstream re-renders
-        if (s.user?.id === user?.id) return s
-        return {
-          ...s,
-          user,
-          isAuthenticated: !!user,
-          isLoading: false,
-        }
-      })
-    })
+    initAuth()
 
     return () => {
       unsubscribe()
     }
   }, [])
 
-  const login = async (email: string, pass: string, captchaToken?: string) => {
-    // We do NOT set isLoading: true here because that triggers SessionBoundary to unmount the app
+  const login = useCallback(async (email: string, pass: string, captchaToken?: string) => {
     setState((s) => ({ ...s, error: null }))
     try {
-      // Gather fresh environment metadata for the login event
-      const env = await getEnvMetadata()
-      const metadataUpdate: Partial<UserMetadata> = {
-        detected_language: env.detected_language,
-        timezone: env.timezone,
-        country: env.country,
-      }
-
-      const user = await authService.login(email, pass, captchaToken, metadataUpdate)
+      const user = await authService.login(email, pass, captchaToken)
       setState({ user, isAuthenticated: true, isLoading: false, error: null })
+
+      // Update environment metadata in the background — do not block the login flow
+      getEnvMetadata().then((env) => {
+        const metadata: Partial<UserMetadata> = {
+          detected_language: env.detected_language,
+          timezone: env.timezone,
+          country: env.country,
+        }
+        authService.updateMetadata(metadata).catch((e) =>
+          console.warn('Failed to update user metadata on login', e)
+        )
+      })
     } catch (err: unknown) {
       const message = getErrorMessage(err)
       setState((s) => ({ ...s, isLoading: false, error: message }))
       throw err
     }
-  }
+  }, [])
 
-  const register = async (
-    email: string,
-    pass: string,
-    options?: RegisterOptions,
-    captchaToken?: string
-  ) => {
-    // We do NOT set isLoading: true here because that triggers SessionBoundary to unmount the app
-    setState((s) => ({ ...s, error: null }))
-    try {
-      // Gather environment metadata for sign up
-      const env = await getEnvMetadata()
-      const metadata: UserMetadata = {
-        display_name: options?.displayName,
-        preferred_language: options?.preferredLanguage,
-        ui_language: options?.preferredLanguage || env.detected_language, // Default UI language to preferred
-        detected_language: env.detected_language,
-        timezone: env.timezone,
-        country: env.country,
+  const register = useCallback(
+    async (email: string, pass: string, options?: RegisterOptions, captchaToken?: string) => {
+      setState((s) => ({ ...s, error: null }))
+      try {
+        const env = await getEnvMetadata()
+        const metadata: UserMetadata = {
+          display_name: options?.displayName,
+          preferred_language: options?.preferredLanguage,
+          ui_language: options?.preferredLanguage || env.detected_language,
+          detected_language: env.detected_language,
+          timezone: env.timezone,
+          country: env.country,
+        }
+        const user = await authService.register(email, pass, metadata, captchaToken)
+        setState({ user, isAuthenticated: true, isLoading: false, error: null })
+      } catch (err: unknown) {
+        const message = getErrorMessage(err)
+        setState((s) => ({ ...s, isLoading: false, error: message }))
+        throw err
       }
+    },
+    []
+  )
 
-      const user = await authService.register(email, pass, metadata, captchaToken)
-      setState({ user, isAuthenticated: true, isLoading: false, error: null })
-    } catch (err: unknown) {
-      const message = getErrorMessage(err)
-      setState((s) => ({ ...s, isLoading: false, error: message }))
-      throw err
-    }
-  }
-
-  const logout = async () => {
+  const logout = useCallback(async () => {
     try {
       await authService.logout()
     } catch (e) {
       console.error('Logout error', e)
     }
-
-    // 1. Clear React Query Cache (Removes all cached API responses)
     queryClient.clear()
-
-    // 2. Clear Local Storage / Persisted State
-    storage.removeItem('lenser_has_profile')
-    storage.removeItem(LENSER_CACHE_KEY)
-    storage.removeItem(MOCK_AUTH_KEY)
-
-    // 3. Reset Local State
+    clearAuthStorage()
     setState({ user: null, isAuthenticated: false, isLoading: false, error: null })
-  }
+  }, [])
 
-  const requestPasswordReset = async (email: string, captchaToken?: string) => {
-    try {
-      await authService.requestPasswordReset(email, captchaToken)
-    } catch (err: unknown) {
-      throw err
-    }
-  }
+  const requestPasswordReset = useCallback(async (email: string, captchaToken?: string) => {
+    await authService.requestPasswordReset(email, captchaToken)
+  }, [])
 
-  const resetPassword = async (password: string, token?: string) => {
-    try {
-      await authService.resetPassword(password, token)
-    } catch (err: unknown) {
-      throw err
-    }
-  }
+  const resetPassword = useCallback(async (password: string, token?: string) => {
+    await authService.resetPassword(password, token)
+  }, [])
 
-  const signInWithOAuth = async (provider: 'google' | 'github' | 'azure') => {
+  const signInWithOAuth = useCallback(async (provider: 'google' | 'github' | 'azure') => {
     try {
       await authService.signInWithOAuth(provider)
     } catch (err: unknown) {
@@ -190,15 +186,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setState((s) => ({ ...s, error: message }))
       throw err
     }
-  }
+  }, [])
 
-  const resendSignupConfirmation = async (email: string) => {
-    try {
-      await authService.resendSignupConfirmation(email)
-    } catch (err: unknown) {
-      throw err
-    }
-  }
+  const resendSignupConfirmation = useCallback(async (email: string) => {
+    await authService.resendSignupConfirmation(email)
+  }, [])
 
   return (
     <AuthContext.Provider
