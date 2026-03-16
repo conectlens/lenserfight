@@ -3,6 +3,7 @@ import { SupabaseReactionRepository } from '../repositories/reactionRepository'
 import { SupabaseThreadsRepository } from '../repositories/threadsRepository'
 import {
   ThreadFeedItem,
+  PersonalFeedItem,
   ThreadDetailViewModel,
   ThreadRecord,
   Visibility,
@@ -189,6 +190,14 @@ export const threadsService = {
     limit = 20
   ): Promise<ThreadFeedItem[]> => {
     return threadsRepo.getTrendingThreads(lang, offset, limit)
+  },
+
+  getPersonalFeed: async (
+    lenserId: string,
+    offset = 0,
+    limit = 20
+  ): Promise<PersonalFeedItem[]> => {
+    return threadsRepo.getPersonalFeed(lenserId, offset, limit)
   },
 
   // Backward compatibility alias

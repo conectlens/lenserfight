@@ -56,6 +56,19 @@ export interface TagContentProvider {
   ): Promise<TaggedContentItem[]>
 }
 
+export interface TagFollowRecord {
+  tagId: string
+  slug: string
+  name: string
+  followedAt: string
+}
+
+export interface ContentReportDTO {
+  targetType: 'thread' | 'prompt_template'
+  targetId: string
+  reason: 'spam' | 'harassment' | 'misinformation' | 'off_topic' | 'other'
+}
+
 export interface TagActivityEventDTO {
   tag_id: string
   entity_type: ContentType
