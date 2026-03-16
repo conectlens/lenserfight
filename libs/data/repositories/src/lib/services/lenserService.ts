@@ -8,6 +8,7 @@ import {
   ActionRecord,
   NetworkUser,
   LenserProfileDTO,
+  TrendingLenser,
 } from '@lenserfight/types'
 import { PromptTemplateRecord } from '@lenserfight/types'
 import { ThreadRecord } from '@lenserfight/types'
@@ -154,5 +155,9 @@ export const lenserService = {
 
   getLanguages: async (): Promise<Language[]> => {
     return lenserRepo.getLanguages()
+  },
+
+  getTrendingLensers: async (limit = 10): Promise<TrendingLenser[]> => {
+    return lenserRepo.getTrendingLensers(limit)
   },
 }

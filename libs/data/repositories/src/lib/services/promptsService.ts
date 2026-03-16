@@ -81,6 +81,14 @@ export const promptsService = {
     return mapToViewModels(records)
   },
 
+  getTrending: async (
+    lang?: string,
+    offset = 0,
+    limit = 20
+  ): Promise<PromptTemplateViewModel[]> => {
+    return promptsRepo.getTrendingPrompts(lang, offset, limit)
+  },
+
   getLenserPrompts: async (
     lenserHandle: string,
     offset = 0,

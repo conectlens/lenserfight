@@ -183,6 +183,14 @@ export const threadsService = {
     return threadsRepo.getTrendingTags(limit)
   },
 
+  getTrendingFeed: async (
+    lang?: string,
+    offset = 0,
+    limit = 20
+  ): Promise<ThreadFeedItem[]> => {
+    return threadsRepo.getTrendingThreads(lang, offset, limit)
+  },
+
   // Backward compatibility alias
   getThreadsByAuthor: async (
     lenserHandle: string,
