@@ -124,10 +124,13 @@ export const CreateLenserProfileModal: React.FC<CreateLenserProfileModalProps> =
     setIsSubmittingStep0(true)
     try {
       const profile = await lenserService.createLenserProfile({ handle, display_name: displayName } as CreateLenserDTO)
+      // Advance step and update cache synchronously in the same render batch
+      // BEFORE any awaits — otherwise a render fires with hasLenser=true + currentStep=0
+      // which triggers the "profile already exists" guard and closes the modal.
       queryClient.setQueryData(queryKeys.lenser.authenticated(), profile)
-      await queryClient.invalidateQueries({ queryKey: queryKeys.waitingList.status() })
       storage.setItem('lenser_has_profile', 'true')
       setCurrentStep(1)
+      await queryClient.invalidateQueries({ queryKey: queryKeys.waitingList.status() })
     } catch (err: any) {
       setSubmitError(err.message || 'Failed to create profile')
     } finally {
