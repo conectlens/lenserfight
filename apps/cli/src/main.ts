@@ -1,4 +1,3 @@
-#!/usr/bin/env node
 import { defineCommand, runMain } from 'citty';
 
 const main = defineCommand({

@@ -1,5 +1,5 @@
 import consola from 'consola';
-import { loadConfig, type LenserfightConfig } from '../config/project-config';
+import { resolveConfig, type LenserfightConfig } from '../config/project-config';
 
 export interface RpcOptions {
   requireAuth?: boolean;
@@ -11,11 +11,11 @@ export async function callRpc<T = unknown>(
   params: Record<string, unknown> = {},
   options: RpcOptions = {}
 ): Promise<T> {
-  const config = loadConfig();
+  const config = resolveConfig();
 
   if (!config.supabaseAnonKey) {
     throw new Error(
-      'supabaseAnonKey not set. Run `lenserfight init` with --anon-key.'
+      'Supabase anon key not found. Set SUPABASE_ANON_KEY in your environment or run `lenserfight init --mode cloud`.'
     );
   }
 
@@ -27,7 +27,7 @@ export async function callRpc<T = unknown>(
   if (options.useServiceRole) {
     if (!config.supabaseServiceRoleKey) {
       throw new Error(
-        'supabaseServiceRoleKey not set in .lenserfight.json. Required for this operation.'
+        'Service role key not found. Set SUPABASE_SERVICE_ROLE_KEY in your environment or ~/.lenserfight/config.json.'
       );
     }
     headers['Authorization'] = `Bearer ${config.supabaseServiceRoleKey}`;
