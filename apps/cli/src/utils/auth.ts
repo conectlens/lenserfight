@@ -1,4 +1,4 @@
-import { loadConfig, saveConfig } from '../config/project-config';
+import { loadUserConfig, saveUserConfig, resolveConfig } from '../config/project-config';
 
 export interface AuthTokens {
   accessToken: string;
@@ -7,24 +7,20 @@ export interface AuthTokens {
 }
 
 export function isAuthenticated(): boolean {
-  const config = loadConfig();
-  if (!config.authToken) return false;
-
-  if (config.authExpiresAt) {
-    const expiry = new Date(config.authExpiresAt);
-    if (expiry < new Date()) return false;
+  const user = loadUserConfig();
+  if (!user.authToken) return false;
+  if (user.authExpiresAt) {
+    if (new Date(user.authExpiresAt) < new Date()) return false;
   }
-
   return true;
 }
 
 export function getAuthToken(): string | undefined {
-  const config = loadConfig();
-  return config.authToken;
+  return loadUserConfig().authToken;
 }
 
 export function saveAuthTokens(tokens: AuthTokens): void {
-  saveConfig({
+  saveUserConfig({
     authToken: tokens.accessToken,
     authRefreshToken: tokens.refreshToken,
     authExpiresAt: tokens.expiresAt,
@@ -32,7 +28,7 @@ export function saveAuthTokens(tokens: AuthTokens): void {
 }
 
 export function clearAuthTokens(): void {
-  saveConfig({
+  saveUserConfig({
     authToken: undefined,
     authRefreshToken: undefined,
     authExpiresAt: undefined,
@@ -43,11 +39,11 @@ export async function loginWithEmail(
   email: string,
   password: string
 ): Promise<AuthTokens> {
-  const config = loadConfig();
+  const config = resolveConfig();
 
   if (!config.supabaseUrl || !config.supabaseAnonKey) {
     throw new Error(
-      'Supabase URL and anon key must be set. Run `lenserfight init` first.'
+      'Supabase URL or anon key not found. Run `lenserfight init` first.'
     );
   }
 
@@ -83,14 +79,16 @@ export async function loginWithEmail(
 }
 
 export async function refreshAuthToken(): Promise<AuthTokens> {
-  const config = loadConfig();
+  const user = loadUserConfig();
 
-  if (!config.authRefreshToken) {
+  if (!user.authRefreshToken) {
     throw new Error('No refresh token stored. Run `lenserfight auth login` first.');
   }
 
+  const config = resolveConfig();
+
   if (!config.supabaseUrl || !config.supabaseAnonKey) {
-    throw new Error('Supabase URL and anon key must be set. Run `lenserfight init` first.');
+    throw new Error('Supabase URL or anon key not found. Run `lenserfight init` first.');
   }
 
   const res = await fetch(
@@ -101,7 +99,7 @@ export async function refreshAuthToken(): Promise<AuthTokens> {
         'Content-Type': 'application/json',
         apikey: config.supabaseAnonKey,
       },
-      body: JSON.stringify({ refresh_token: config.authRefreshToken }),
+      body: JSON.stringify({ refresh_token: user.authRefreshToken }),
     }
   );
 
@@ -123,7 +121,7 @@ export async function refreshAuthToken(): Promise<AuthTokens> {
 }
 
 export async function getUserInfo(): Promise<Record<string, unknown> | null> {
-  const config = loadConfig();
+  const config = resolveConfig();
   const token = config.authToken;
 
   if (!token) return null;
