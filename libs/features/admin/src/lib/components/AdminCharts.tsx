@@ -23,7 +23,7 @@ export const AreaChart: React.FC<ChartProps> = ({
   height = 200,
   className = '',
 }) => {
-  const { theme } = useTheme()
+  const { resolvedTheme: theme } = useTheme()
   const [hoverIndex, setHoverIndex] = useState<number | null>(null)
 
   const max = useMemo(() => getMax(data) || 10, [data])
@@ -128,7 +128,7 @@ export const BarChart: React.FC<ChartProps> = ({
   height = 200,
   className = '',
 }) => {
-  const { theme } = useTheme()
+  const { resolvedTheme: theme } = useTheme()
   const [hoverIndex, setHoverIndex] = useState<number | null>(null)
 
   const max = useMemo(() => getMax(data) || 10, [data])
