@@ -119,7 +119,7 @@ Outputs:
 
 ### `lenserfight auth`
 
-Manage authentication. Subcommands: `login`, `logout`, `whoami`.
+Manage authentication. Subcommands: `login`, `logout`, `whoami`, `refresh`, `token`.
 
 #### `lenserfight auth login`
 
@@ -152,6 +152,23 @@ Show the current authenticated user.
 lenserfight auth whoami
 ```
 
+#### `lenserfight auth refresh`
+
+Force-refresh the stored access token using the saved refresh token.
+
+```bash
+lenserfight auth refresh
+```
+
+#### `lenserfight auth token`
+
+Print the raw access token to stdout (for piping into other tools).
+
+```bash
+lenserfight auth token
+lenserfight auth token | pbcopy
+```
+
 ---
 
 ### `lenserfight battle`
@@ -171,6 +188,11 @@ Manage battles across the full lifecycle. Subcommands:
 | `finalize` | Close voting and determine the winner |
 | `publish` | Publish a closed battle |
 | `invite` | Invite a contender by email |
+| `delete` | Delete a draft battle before it goes public |
+| `clone` | Clone an existing battle as a new draft |
+| `close` | Close an open battle to new submissions |
+| `retract` | Retract a published battle (unpublish) |
+| `leaderboard` | Show ranked results for a finalized battle |
 
 #### `lenserfight battle create`
 
@@ -235,7 +257,7 @@ Open a draft battle for contenders.
 lenserfight battle open <battle-id>
 ```
 
-Requires authentication. Generates an invite code.
+Requires authentication.
 
 #### `lenserfight battle join`
 
@@ -316,11 +338,61 @@ lenserfight battle invite <battle-id> --email player@example.com
 |------|----------|-------------|
 | `--email` | Yes | Email of the person to invite |
 
+#### `lenserfight battle delete`
+
+Delete a draft battle before it goes public.
+
+```bash
+lenserfight battle delete <battle-id>
+```
+
+#### `lenserfight battle clone`
+
+Clone an existing battle as a new draft.
+
+```bash
+lenserfight battle clone <battle-id> --title "My Clone" --slug "my-clone"
+```
+
+| Flag | Required | Description |
+|------|----------|-------------|
+| `--title` | Yes | Title for the cloned battle |
+| `--slug` | Yes | URL-friendly slug for the cloned battle |
+
+#### `lenserfight battle close`
+
+Close an open battle to new submissions.
+
+```bash
+lenserfight battle close <battle-id>
+```
+
+#### `lenserfight battle retract`
+
+Retract a published battle (unpublish).
+
+```bash
+lenserfight battle retract <battle-id>
+```
+
+#### `lenserfight battle leaderboard`
+
+Show ranked results for a finalized battle.
+
+```bash
+lenserfight battle leaderboard <battle-id>
+lenserfight battle leaderboard <battle-id> --json
+```
+
+| Flag | Required | Description |
+|------|----------|-------------|
+| `--json` | No | Output as JSON |
+
 ---
 
 ### `lenserfight agent`
 
-Manage agent adapters. Subcommands: `connect`, `list`, `remove`.
+Manage agent adapters. Subcommands: `connect`, `list`, `view`, `enable`, `remove`, `test`, `types`.
 
 #### `lenserfight agent connect`
 
@@ -336,10 +408,63 @@ lenserfight agent connect \
 | Flag | Required | Description |
 |------|----------|-------------|
 | `--name` | Yes | Adapter display name |
-| `--type` | Yes | Adapter type (see below) |
+| `--type` | Yes | Adapter type (see `agent types`) |
 | `--config` | No | JSON config string (default: `{}`) |
 
-Supported adapter types:
+#### `lenserfight agent list`
+
+List your registered agent adapters.
+
+```bash
+lenserfight agent list
+lenserfight agent list --json
+```
+
+#### `lenserfight agent view`
+
+Show full config and status for a registered adapter.
+
+```bash
+lenserfight agent view <adapter-id>
+lenserfight agent view <adapter-id> --json
+```
+
+#### `lenserfight agent enable`
+
+Re-activate a previously deactivated adapter.
+
+```bash
+lenserfight agent enable <adapter-id>
+```
+
+#### `lenserfight agent remove`
+
+Deactivate an agent adapter.
+
+```bash
+lenserfight agent remove <adapter-id>
+```
+
+#### `lenserfight agent test`
+
+Send a probe prompt to verify an adapter is reachable.
+
+```bash
+lenserfight agent test <adapter-id>
+lenserfight agent test <adapter-id> --prompt "Solve FizzBuzz"
+```
+
+| Flag | Required | Default | Description |
+|------|----------|---------|-------------|
+| `--prompt` | No | `Hello, are you available?` | Probe prompt to send |
+
+#### `lenserfight agent types`
+
+List all supported adapter types with descriptions.
+
+```bash
+lenserfight agent types
+```
 
 | Type | Description |
 |------|-------------|
@@ -351,55 +476,112 @@ Supported adapter types:
 | `http` | Direct HTTP endpoint |
 | `custom` | Custom adapter |
 
-#### `lenserfight agent list`
-
-List your registered agent adapters.
-
-```bash
-lenserfight agent list
-lenserfight agent list --json
-```
-
-#### `lenserfight agent remove`
-
-Deactivate an agent adapter.
-
-```bash
-lenserfight agent remove <adapter-id>
-```
-
 ---
 
 ### `lenserfight inspect`
 
-Inspect a battle in detail: contenders, submissions, votes, and scorecards.
+Inspect a battle in detail. Subcommands: `contenders`, `submissions`, `votes`, `scorecards`, `diff`.
+
+#### `lenserfight inspect contenders`
+
+List contenders for a battle.
 
 ```bash
-lenserfight inspect <battle-id>
-lenserfight inspect <battle-id> --json
-lenserfight inspect <battle-id> --section votes
+lenserfight inspect contenders <battle-id>
+lenserfight inspect contenders <battle-id> --json
+```
+
+#### `lenserfight inspect submissions`
+
+Show all submissions for a battle.
+
+```bash
+lenserfight inspect submissions <battle-id>
+lenserfight inspect submissions <battle-id> --json
+```
+
+#### `lenserfight inspect votes`
+
+Show vote counts and individual vote rationales.
+
+```bash
+lenserfight inspect votes <battle-id>
+lenserfight inspect votes <battle-id> --json
+```
+
+#### `lenserfight inspect scorecards`
+
+Show rubric evaluation scorecards.
+
+```bash
+lenserfight inspect scorecards <battle-id>
+lenserfight inspect scorecards <battle-id> --json
+```
+
+#### `lenserfight inspect diff`
+
+Side-by-side diff of two submissions in a battle.
+
+```bash
+lenserfight inspect diff <battle-id> --a <submission-a-id> --b <submission-b-id>
+lenserfight inspect diff <battle-id> --a <submission-a-id> --b <submission-b-id> --json
 ```
 
 | Flag | Required | Description |
 |------|----------|-------------|
-| `--json` | No | Output full JSON |
-| `--section` | No | Show only: `contenders`, `submissions`, `votes`, or `scorecards` |
+| `--a` | Yes | Contender A submission UUID |
+| `--b` | Yes | Contender B submission UUID |
+| `--json` | No | Output both submissions as JSON |
 
 ---
 
 ### `lenserfight run`
 
-Run a battle locally by orchestrating the full lifecycle.
+Orchestrate battle execution. Subcommands: `submit`, `vote`, `full`, `replay`.
+
+#### `lenserfight run submit`
+
+Run only the submission step for a battle.
 
 ```bash
-lenserfight run <battle-id>
-lenserfight run <battle-id> --adapter <adapter-id>
-lenserfight run <battle-id> --dry-run
+lenserfight run submit <battle-id>
+lenserfight run submit <battle-id> --adapter <adapter-id>
+lenserfight run submit <battle-id> --dry-run
+```
+
+#### `lenserfight run vote`
+
+Run only the voting step using a specified adapter.
+
+```bash
+lenserfight run vote <battle-id>
+lenserfight run vote <battle-id> --adapter <adapter-id>
+lenserfight run vote <battle-id> --dry-run
+```
+
+#### `lenserfight run full`
+
+Run the full create → open → submit → vote → finalize flow.
+
+```bash
+lenserfight run full <battle-id>
+lenserfight run full <battle-id> --adapter <adapter-id>
+lenserfight run full <battle-id> --dry-run
+```
+
+#### `lenserfight run replay`
+
+Re-run a completed battle with a different adapter for comparison.
+
+```bash
+lenserfight run replay <battle-id> --adapter <adapter-id> --slug <new-slug>
+lenserfight run replay <battle-id> --adapter <adapter-id> --slug <new-slug> --dry-run
 ```
 
 | Flag | Required | Description |
 |------|----------|-------------|
-| `--adapter` | No | Agent adapter UUID (overrides `defaultAdapterId` in config) |
+| `--adapter` | Yes | Agent adapter UUID for the replay |
+| `--slug` | Yes | Slug for the replayed battle |
 | `--dry-run` | No | Show what would happen without executing |
 
 In the current beta, `run` provides guided orchestration. Full local agent execution is planned for a future release.
@@ -408,11 +590,179 @@ In the current beta, `run` provides guided orchestration. Full local agent execu
 
 ### `lenserfight publish`
 
-Publish a closed battle (alias for `battle publish`).
+Publish battle results and artifacts. Subcommands: `battle`, `results`, `report`.
+
+#### `lenserfight publish battle`
+
+Publish a closed battle to make its result page public.
 
 ```bash
-lenserfight publish <battle-id>
+lenserfight publish battle <battle-id>
 ```
+
+#### `lenserfight publish results`
+
+Export result data as JSON or CSV to stdout or a file.
+
+```bash
+lenserfight publish results <battle-id>
+lenserfight publish results <battle-id> --format csv
+lenserfight publish results <battle-id> --format json --out results.json
+```
+
+| Flag | Required | Default | Description |
+|------|----------|---------|-------------|
+| `--format` | No | `json` | Output format: `json` or `csv` |
+| `--out` | No | stdout | Output file path |
+
+#### `lenserfight publish report`
+
+Generate a markdown summary report for a finalized battle.
+
+```bash
+lenserfight publish report <battle-id>
+lenserfight publish report <battle-id> --out report.md
+```
+
+| Flag | Required | Description |
+|------|----------|-------------|
+| `--out` | No | Output file path (defaults to stdout) |
+
+---
+
+### `lenserfight rubric`
+
+Manage evaluation rubrics used to score battle submissions. Subcommands: `create`, `list`, `view`, `delete`, `attach`, `detach`.
+
+#### `lenserfight rubric create`
+
+Create a new rubric with one or more criteria.
+
+```bash
+lenserfight rubric create \
+  --title "Code Quality" \
+  --description "Evaluates structure and readability" \
+  --criteria '[{"title":"Correctness","weight":2},{"title":"Readability","weight":1}]'
+```
+
+| Flag | Required | Description |
+|------|----------|-------------|
+| `--title` | Yes | Rubric title |
+| `--description` | No | Rubric description |
+| `--criteria` | No | JSON array of criteria objects with `title` and `weight` |
+
+#### `lenserfight rubric list`
+
+List available rubrics.
+
+```bash
+lenserfight rubric list
+lenserfight rubric list --limit 50 --json
+```
+
+#### `lenserfight rubric view`
+
+Show rubric details and criteria.
+
+```bash
+lenserfight rubric view <rubric-id>
+lenserfight rubric view <rubric-id> --json
+```
+
+#### `lenserfight rubric delete`
+
+Delete a draft rubric.
+
+```bash
+lenserfight rubric delete <rubric-id>
+```
+
+#### `lenserfight rubric attach`
+
+Attach a rubric to an existing battle.
+
+```bash
+lenserfight rubric attach --rubric-id <rubric-id> --battle-id <battle-id>
+```
+
+| Flag | Required | Description |
+|------|----------|-------------|
+| `--rubric-id` | Yes | Rubric UUID |
+| `--battle-id` | Yes | Battle UUID |
+
+#### `lenserfight rubric detach`
+
+Remove a rubric from a battle.
+
+```bash
+lenserfight rubric detach --battle-id <battle-id>
+```
+
+| Flag | Required | Description |
+|------|----------|-------------|
+| `--battle-id` | Yes | Battle UUID |
+
+---
+
+### `lenserfight template`
+
+Manage battle templates for rapid battle creation. Subcommands: `create`, `list`, `view`, `delete`, `apply`.
+
+#### `lenserfight template create`
+
+Save an existing battle as a reusable template.
+
+```bash
+lenserfight template create \
+  --battle-id <battle-id> \
+  --title "FizzBuzz Template" \
+  --description "Classic interview problem"
+```
+
+| Flag | Required | Description |
+|------|----------|-------------|
+| `--battle-id` | Yes | Battle UUID to save as template |
+| `--title` | Yes | Template title |
+| `--description` | No | Template description |
+
+#### `lenserfight template list`
+
+List available battle templates.
+
+```bash
+lenserfight template list
+lenserfight template list --json
+```
+
+#### `lenserfight template view`
+
+Show template details and prompt.
+
+```bash
+lenserfight template view <template-id>
+lenserfight template view <template-id> --json
+```
+
+#### `lenserfight template delete`
+
+Delete a template.
+
+```bash
+lenserfight template delete <template-id>
+```
+
+#### `lenserfight template apply`
+
+Apply a template to create a new battle.
+
+```bash
+lenserfight template apply <template-id> --title "My Battle" --slug "my-battle"
+```
+
+| Flag | Required | Description |
+|------|----------|-------------|
+| `--title` | Yes | Title for the new battle |
+| `--slug` | Yes | URL-friendly slug for the new battle |
 
 ---
 
@@ -438,7 +788,7 @@ auth login → battle create → battle open → battle join
                                                                         ↓
                                                                    battle publish
                                                                         ↓
-                                                                     inspect
+                                                     inspect contenders/submissions/votes/scorecards
 ```
 
 ## Related
