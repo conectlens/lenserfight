@@ -1,15 +1,29 @@
-import { Sun, Moon } from 'lucide-react'
+import { Sun, Moon, Monitor } from 'lucide-react'
 import React from 'react'
 import { Link } from 'react-router-dom'
 import { useTheme } from '@lenserfight/ui/theme'
+import type { Theme } from '@lenserfight/ui/theme'
 
 interface FooterProps {
   isDashboard?: boolean
 }
 
+const THEME_CYCLE: Theme[] = ['light', 'dark', 'system']
+const THEME_ICONS: Record<Theme, React.ReactNode> = {
+  light: <Sun size={18} />,
+  dark: <Moon size={18} />,
+  system: <Monitor size={18} />,
+}
+const THEME_LABELS: Record<Theme, string> = {
+  light: 'Switch to dark mode',
+  dark: 'Switch to system mode',
+  system: 'Switch to light mode',
+}
+
 export const Footer: React.FC<FooterProps> = ({ isDashboard }) => {
   const currentYear = new Date().getFullYear()
-  const { theme, toggleTheme } = useTheme()
+  const { themeMode, setTheme } = useTheme()
+  const nextTheme = THEME_CYCLE[(THEME_CYCLE.indexOf(themeMode) + 1) % THEME_CYCLE.length]
 
   return (
     <footer className="w-full py-12 px-4 mt-auto border-t border-gray-100 bg-white text-gray-500 dark:bg-gray-900 dark:border-gray-700 dark:text-gray-400 transition-colors duration-200">
@@ -67,12 +81,12 @@ export const Footer: React.FC<FooterProps> = ({ isDashboard }) => {
           <div className="h-4 w-px bg-gray-200 dark:bg-gray-700 mx-2 hidden md:block"></div>
 
           <button
-            onClick={toggleTheme}
+            onClick={() => setTheme(nextTheme)}
             className="p-2 rounded-full text-gray-400 hover:text-gray-900 hover:bg-gray-100 dark:hover:text-gray-100 dark:hover:bg-gray-800 transition-colors focus:outline-none"
             aria-label="Toggle theme"
-            title={`Switch to ${theme === 'dark' ? 'light' : 'dark'} mode`}
+            title={THEME_LABELS[themeMode]}
           >
-            {theme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}
+            {THEME_ICONS[themeMode]}
           </button>
 
           {/* 

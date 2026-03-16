@@ -1,6 +1,6 @@
 import { Plus, ChevronRight, MessageSquareOff, AlertCircle, Tag, Sparkles } from 'lucide-react'
 import React, { useCallback, useRef } from 'react'
-import { useNavigate, useLocation } from 'react-router-dom'
+import { useNavigate } from 'react-router-dom'
 
 import { Avatar } from '@lenserfight/ui/components'
 import { Button } from '@lenserfight/ui/components'
@@ -21,7 +21,6 @@ import { ThreadsList } from '../components/ThreadsList'
 
 export const HomePage: React.FC = () => {
   const navigate = useNavigate()
-  const location = useLocation()
   const { isAuthenticated } = useAuth()
   const hasLenser = storage.getItem('lenser_has_profile') === 'true'
 
@@ -67,7 +66,11 @@ export const HomePage: React.FC = () => {
   const handleOpenThread = (id: string) => navigate(`/threads/${id}`)
 
   const handleCreateClick = () => {
-    if (!isAuthenticated) return navigate('/auth/login', { state: { from: location } })
+    if (!isAuthenticated) {
+      const authAppUrl = import.meta.env.VITE_AUTH_APP_URL ?? 'https://auth.lenserfight.com'
+      window.location.href = `${authAppUrl}/login?return_url=${encodeURIComponent(window.location.href)}`
+      return
+    }
     if (!hasLenser) return setIsProfileModalOpen(true)
     setIsCreateModalOpen(true)
   }

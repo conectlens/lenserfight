@@ -99,7 +99,7 @@ const NodeGraphBackground: React.FC<{ theme: 'light' | 'dark' }> = ({ theme }) =
 export const TagCloudPage: React.FC = () => {
   const [tags, setTags] = useState<TagUsage[]>([])
   const [isLoading, setIsLoading] = useState(true)
-  const { theme } = useTheme()
+  const { resolvedTheme: theme } = useTheme()
 
   useEffect(() => {
     const fetchTags = async () => {
