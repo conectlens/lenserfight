@@ -1,0 +1,13 @@
+{
+  "name": "forum",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "apps/forum/src",
+  "projectType": "application",
+  "tags": [
+    "layer:app",
+    "scope:forum",
+    "surface:community"
+  ],
+  "// targets": "to see all targets run: nx show project forum --forum",
+  "targets": {}
+}

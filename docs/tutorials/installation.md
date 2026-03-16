@@ -6,7 +6,8 @@ Use this guide to prepare your machine and local environment for LenserFight.
 
 LenserFight is a TypeScript Nx monorepo with:
 
-- a Vite-based web app in `apps/web`
+- Vite-based web apps in `apps/forum`, `apps/arena`, and `apps/admin`
+- a planned Expo mobile app contract in `apps/mobile`
 - a VitePress docs site in `apps/docs`
 - shared libraries in `libs/`
 - Supabase configuration and migrations in `supabase/` when present
@@ -35,13 +36,34 @@ If you want the full contributor setup workflow after installation, continue wit
 
 ## Verify the installation
 
-To confirm the repository installs correctly, start with one of these:
+Start all apps together with the local reverse proxy:
 
-- run the web app in the [Quickstart](/tutorials/quickstart)
-- preview the docs site with `npm exec nx run docs:serve`
+```sh
+npm run dev
+```
+
+This starts all apps concurrently and prints a route table like:
+
+| URL | App |
+|-----|-----|
+| http://forum.localhost:8080 | forum |
+| http://arena.localhost:8080 | arena |
+| http://admin.localhost:8080 | admin |
+| http://docs.localhost:8080 | docs |
+| http://conectlenscom.localhost:8080 | conectlenscom |
+
+To remove the `:8080` suffix, run `bash tools/dev-proxy/setup.sh` once per machine (requires sudo). After that `http://forum.localhost` and friends work directly.
+
+To start a single app instead:
+
+- `npm exec nx serve forum`
+- `npm exec nx serve arena`
+- `npm exec nx serve admin`
+- `npm run docs:dev`
 
 ## Related guides
 
 - [Quickstart](/tutorials/quickstart)
+- [Overview](/getting-started/overview)
 - [Development Setup](/contributing/development-setup)
 - [Contributing](/community/contributing)

@@ -6,7 +6,7 @@ import { Link, useNavigate } from 'react-router-dom'
 import { Button } from '@lenserfight/ui/components'
 import { LoadingOverlay } from '@lenserfight/ui/components'
 import { Modal } from '@lenserfight/ui/modals'
-import { isMock, ENABLE_CAPTCHA, CAPTCHA_SITE_KEY } from '@lenserfight/utils/env'
+import { isMock, isLocal, LOCAL_SEED_CREDENTIALS, ENABLE_CAPTCHA, CAPTCHA_SITE_KEY } from '@lenserfight/utils/env'
 import { useAuth } from '@lenserfight/features/auth'
 import { useFormValidation } from '@lenserfight/utils/validation'
 import { isRequired, isEmail } from '@lenserfight/utils/validation'
@@ -19,12 +19,12 @@ export const RegisterPage: React.FC = () => {
   const navigate = useNavigate()
 
   const [formData, setFormData] = useState({
-    displayName: isMock ? 'New User' : '',
-    email: isMock ? `newuser_${Date.now()}@example.com` : '',
-    password: isMock ? 'Password123!' : '',
-    confirmPassword: isMock ? 'Password123!' : '',
+    displayName: isLocal || isMock ? LOCAL_SEED_CREDENTIALS.displayName : '',
+    email: isLocal || isMock ? `newuser_${Date.now()}@lenserfight.local` : '',
+    password: isLocal || isMock ? LOCAL_SEED_CREDENTIALS.password : '',
+    confirmPassword: isLocal || isMock ? LOCAL_SEED_CREDENTIALS.password : '',
     preferredLanguage: 'en',
-    agreeTerms: isMock ? true : false,
+    agreeTerms: isLocal || isMock,
   })
 
   // Policy Modal State

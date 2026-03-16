@@ -1,0 +1,11 @@
+{
+  "name": "mobile",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "projectType": "application",
+  "tags": [
+    "layer:app",
+    "scope:mobile",
+    "surface:companion"
+  ],
+  "targets": {}
+}
