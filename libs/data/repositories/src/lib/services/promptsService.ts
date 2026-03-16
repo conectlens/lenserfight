@@ -5,6 +5,7 @@ import {
   PromptTemplateViewModel,
   PromptTemplateDetailViewModel,
   PromptTemplateRecord,
+  PersonalPromptFeedItem,
   CreatePromptDTO,
   PromptAuthor,
 } from '@lenserfight/types'
@@ -87,6 +88,14 @@ export const promptsService = {
     limit = 20
   ): Promise<PromptTemplateViewModel[]> => {
     return promptsRepo.getTrendingPrompts(lang, offset, limit)
+  },
+
+  getPersonalFeed: async (
+    lenserId: string,
+    offset = 0,
+    limit = 20
+  ): Promise<PersonalPromptFeedItem[]> => {
+    return promptsRepo.getPersonalFeed(lenserId, offset, limit)
   },
 
   getLenserPrompts: async (
