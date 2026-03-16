@@ -1,4 +1,5 @@
 import {
+  Language,
   Lenser,
   CreateLenserDTO,
   LenserActivityPoint,
@@ -45,6 +46,7 @@ export interface LenserRepositoryPort {
     page: number
   ): Promise<NetworkUser[]>
   getLenserById(id: string): Promise<Lenser | null>
+  getLanguages(): Promise<Language[]>
 }
 export class SupabaseLenserRepository implements LenserRepositoryPort {
   async getPublicLenserProfile(handle: string): Promise<LenserProfileDTO> {
@@ -76,38 +78,31 @@ export class SupabaseLenserRepository implements LenserRepositoryPort {
   }
 
   async createLenser(data: CreateLenserDTO): Promise<Lenser> {
-    const { data: authData } = await supabase.auth.getUser()
-    if (!authData.user) throw new Error('Not authenticated')
-
-    const { data: newLenser, error } = await supabase.schema('lensers').from('profiles').insert({
-      user_id: authData.user.id,
-      handle: data.handle,
-      display_name: data.display_name,
-      bio: data.bio || '',
-      headline: null
-    }).select('*').single()
+    const { data: newLenser, error } = await supabase.rpc('fn_lensers_create_profile', {
+      p_handle: data.handle,
+      p_display_name: data.display_name,
+      p_bio: data.bio || '',
+    })
 
     if (error) throw error
     return newLenser as Lenser
   }
 
   async updateLenser(data: Partial<Lenser>): Promise<Lenser> {
-    const { data: authData } = await supabase.auth.getUser()
-    if (!authData.user) throw new Error('Not authenticated')
-
-    const updatePayload: any = {}
+    const updatePayload: Record<string, unknown> = {}
     if (data.display_name !== undefined) updatePayload.display_name = data.display_name
     if (data.avatar_url !== undefined) updatePayload.avatar_url = data.avatar_url
     if (data.banner_url !== undefined) updatePayload.banner_url = data.banner_url
     if (data.bio !== undefined) updatePayload.bio = data.bio
     if (data.headline !== undefined) updatePayload.headline = data.headline
     if (data.preferences !== undefined) updatePayload.preferences = data.preferences
+    if (data.preferred_language !== undefined) updatePayload.preferred_language = data.preferred_language
+    if (data.onboarding_step !== undefined) updatePayload.onboarding_step = data.onboarding_step
+    if (data.onboarding_completed_at !== undefined) updatePayload.onboarding_completed_at = data.onboarding_completed_at
 
-    const { data: updated, error } = await supabase.schema('lensers').from('profiles')
-      .update(updatePayload)
-      .eq('user_id', authData.user.id)
-      .select('*')
-      .single()
+    const { data: updated, error } = await supabase.rpc('fn_lensers_update_profile', {
+      p_data: updatePayload,
+    })
 
     if (error) throw error
     return updated as Lenser
@@ -192,5 +187,11 @@ export class SupabaseLenserRepository implements LenserRepositoryPort {
     const { data, error } = await supabase.from('vw_lensers_profile_full').select('*').eq('id', id).single()
     if (error) return null
     return data as Lenser
+  }
+
+  async getLanguages(): Promise<Language[]> {
+    const { data, error } = await supabase.rpc('fn_core_languages_list')
+    if (error) throw error
+    return (data as Language[]) ?? []
   }
 }

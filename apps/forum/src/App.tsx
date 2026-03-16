@@ -42,12 +42,22 @@ import {
 import { ThreadDetailPage } from '@lenserfight/features/threads'
 import { WaitingListPage } from '@lenserfight/features/waiting-list'
 import { useEffect } from 'react'
-import { Routes, Route, Navigate, Outlet, BrowserRouter } from 'react-router-dom'
+import { Routes, Route, Navigate, Outlet, BrowserRouter, useLocation } from 'react-router-dom'
 
 const AUTH_APP_URL = import.meta.env.VITE_AUTH_APP_URL ?? 'https://auth.lenserfight.com'
 
+/**
+ * Redirect to an external URL (auth app), preserving the current page as
+ * return_url so the user is sent back here after authentication completes.
+ */
 const ExternalRedirect = ({ to }: { to: string }) => {
-  useEffect(() => { window.location.href = to }, [to])
+  const location = useLocation()
+  useEffect(() => {
+    const returnUrl = encodeURIComponent(
+      window.location.origin + location.pathname + location.search + location.hash
+    )
+    window.location.href = `${to}?return_url=${returnUrl}`
+  }, [to, location])
   return null
 }
 

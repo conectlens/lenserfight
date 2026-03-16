@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react'
-import { useNavigate, useLocation, useSearchParams } from 'react-router-dom'
+import { useLocation } from 'react-router-dom'
 import { useAuth } from '@lenserfight/features/auth'
-import { CreateLenserProfileModal } from '@lenserfight/features/onboarding'
 import { useLenser } from '@lenserfight/features/profile'
 import { Footer } from '@lenserfight/ui/layout'
 import { storage } from '@lenserfight/utils/storage'
@@ -22,12 +21,7 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) =>
   const { lenser, hasLenser, isLoading: lenserLoading, updateLenserProfile } = useLenser()
   const { isAuthenticated, isLoading: authLoading } = useAuth()
 
-  const navigate = useNavigate()
   const location = useLocation()
-
-  const [searchParams, setSearchParams] = useSearchParams()
-  const isProfileModalOpen = searchParams.get('onboarding') === 'true'
-  const [hasDismissedProfileModal, setHasDismissedProfileModal] = useState(false)
 
   // Initialize sidebar state from storage or defaults
   const [sidebarOpen, setSidebarOpen] = useState(() => {
@@ -100,19 +94,15 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) =>
     return () => window.removeEventListener('resize', debounced)
   }, [])
 
-  // Handle modal behavior only when data is ready
+  // Redirect to auth app onboarding when authenticated but has no profile
   useEffect(() => {
     if (!isReady) return
-
-    const shouldOpen = isAuthenticated && !hasLenser && !hasDismissedProfileModal
-
-    if (shouldOpen && !isProfileModalOpen) {
-      setSearchParams((prev) => {
-        prev.set('onboarding', 'true')
-        return prev
-      }, { replace: true })
+    if (isAuthenticated && !hasLenser) {
+      const authAppUrl = import.meta.env.VITE_AUTH_APP_URL ?? 'https://auth.lenserfight.com'
+      const returnUrl = encodeURIComponent(window.location.href)
+      window.location.replace(`${authAppUrl}/onboarding?return_url=${returnUrl}`)
     }
-  }, [isReady, isAuthenticated, hasLenser, hasDismissedProfileModal, isProfileModalOpen, setSearchParams])
+  }, [isReady, isAuthenticated, hasLenser])
 
   const handleToggleSidebar = () => {
     const newState = !sidebarOpen
@@ -138,23 +128,14 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) =>
   }
 
   const handleOpenProfileSetup = () => {
+    const authAppUrl = import.meta.env.VITE_AUTH_APP_URL ?? 'https://auth.lenserfight.com'
     if (!isAuthenticated) {
-      navigate('/auth/login')
+      const returnUrl = encodeURIComponent(window.location.href)
+      window.location.href = `${authAppUrl}/login?return_url=${returnUrl}`
       return
     }
-    setHasDismissedProfileModal(false)
-    setSearchParams((prev) => {
-      prev.set('onboarding', 'true')
-      return prev
-    })
-  }
-
-  const handleCloseProfileModal = () => {
-    setHasDismissedProfileModal(true)
-    setSearchParams((prev) => {
-      prev.delete('onboarding')
-      return prev
-    })
+    const returnUrl = encodeURIComponent(window.location.href)
+    window.location.href = `${authAppUrl}/onboarding?return_url=${returnUrl}`
   }
 
   return (
@@ -178,9 +159,6 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) =>
         </main>
       </div>
 
-      {isProfileModalOpen && isAuthenticated && !hasLenser && isReady && (
-        <CreateLenserProfileModal onClose={handleCloseProfileModal} />
-      )}
     </div>
   )
 }

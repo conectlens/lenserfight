@@ -4,20 +4,65 @@ import { supabase } from '@lenserfight/data/supabase'
 import { LoadingOverlay } from '@lenserfight/ui/components'
 import { sanitizeReturnUrl } from '../utils/validateReturnUrl'
 
+const RETURN_URL_KEY = 'auth_return_url'
+
+/**
+ * Handles the post-OAuth redirect from Supabase / provider.
+ *
+ * The previous implementation called `getSession()` immediately, which raced
+ * against Supabase's `detectSessionInUrl` processing of the URL hash fragment
+ * (PKCE / implicit flows). When the race was lost, getSession() returned null
+ * and the user was incorrectly sent back to /login.
+ *
+ * Fix: subscribe to `onAuthStateChange` and wait for the `SIGNED_IN` event.
+ * As a belt-and-suspenders measure we also call getSession() in case the code
+ * exchange already completed before the component mounted.
+ */
 export const OAuthCallbackPage: React.FC = () => {
   const navigate = useNavigate()
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data }) => {
-      if (data.session) {
-        const storedReturnUrl = localStorage.getItem('auth_return_url')
-        localStorage.removeItem('auth_return_url')
-        const returnUrl = sanitizeReturnUrl(storedReturnUrl)
-        window.location.href = returnUrl
-      } else {
-        navigate('/login')
+    let redirected = false
+
+    const redirect = (session: { user: unknown } | null) => {
+      if (redirected || !session) return
+      redirected = true
+      const returnUrl = sanitizeReturnUrl(sessionStorage.getItem(RETURN_URL_KEY))
+      sessionStorage.removeItem(RETURN_URL_KEY)
+      window.location.replace(returnUrl)
+    }
+
+    // 1. Subscribe first so we don't miss the SIGNED_IN event
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === 'SIGNED_IN') {
+        redirect(session)
+      } else if (!redirected && (event === 'SIGNED_OUT' || event === 'TOKEN_REFRESHED')) {
+        // Unexpected terminal state without a session
+        navigate('/login', { replace: true })
       }
     })
+
+    // 2. Belt-and-suspenders: session may already be available if the code
+    //    exchange completed before the component mounted (PKCE with server redirect)
+    supabase.auth.getSession().then(({ data }) => {
+      if (data.session) {
+        redirect(data.session)
+      }
+    })
+
+    // Timeout guard: if neither event fires within 10s, abort to login
+    const timeout = setTimeout(() => {
+      if (!redirected) {
+        navigate('/login', { replace: true })
+      }
+    }, 10_000)
+
+    return () => {
+      subscription.unsubscribe()
+      clearTimeout(timeout)
+    }
   }, [navigate])
 
   return <LoadingOverlay message="Completing sign in..." />
