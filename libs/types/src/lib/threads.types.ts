@@ -87,6 +87,10 @@ export interface ThreadFeedItem {
   primaryLanguage?: string
 }
 
+export interface PersonalFeedItem extends ThreadFeedItem {
+  personalScore: number
+}
+
 export interface ThreadReplyViewModel {
   id: string
   author: ThreadAuthor

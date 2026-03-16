@@ -158,6 +158,28 @@ export interface TrendingLenser {
   lenserScore: number
 }
 
+export interface SuggestedLenser extends TrendingLenser {
+  tagOverlapScore: number
+}
+
+export interface LeaderboardLenser extends TrendingLenser {
+  rank: number
+}
+
+export type FollowPeriod = 'weekly' | 'monthly' | 'all_time'
+
+export interface LenserFollowStatus {
+  following: boolean
+}
+
+export interface FollowsNetworkUser {
+  lenserId: string
+  handle: string
+  displayName: string
+  avatarUrl?: string | null
+  isFollowing: boolean
+}
+
 export interface LenserProfileDTO {
   // Identity
   id: string
