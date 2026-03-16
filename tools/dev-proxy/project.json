@@ -1,0 +1,15 @@
+{
+  "name": "dev-proxy",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "projectType": "application",
+  "sourceRoot": "tools/dev-proxy/src",
+  "targets": {
+    "serve": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "node --import jiti/register ./tools/dev-proxy/src/index.ts",
+        "cwd": "{workspaceRoot}"
+      }
+    }
+  }
+}
