@@ -1,7 +1,8 @@
 import { SupabasePreferencesRepository } from '@lenserfight/data/repositories'
 import { storage } from '@lenserfight/utils/storage'
 
-export type Theme = 'light' | 'dark'
+export type Theme = 'light' | 'dark' | 'system'
+export type ResolvedTheme = 'light' | 'dark'
 
 const repo = new SupabasePreferencesRepository()
 
@@ -14,16 +15,21 @@ interface ThemeCacheEntry {
   userId: string
 }
 
-const isValidTheme = (t: any): t is Theme => t === 'light' || t === 'dark'
+const isValidTheme = (t: any): t is Theme => t === 'light' || t === 'dark' || t === 'system'
+const isValidStoredTheme = (t: any): t is Theme => isValidTheme(t)
+
+export const getSystemTheme = (): ResolvedTheme =>
+  window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'
+
+export const resolveTheme = (theme: Theme): ResolvedTheme =>
+  theme === 'system' ? getSystemTheme() : theme
 
 const applyToDOM = (theme: Theme) => {
+  const resolved = resolveTheme(theme)
   const root = document.documentElement
-  root.classList.remove(theme === 'dark' ? 'light' : 'dark')
-  root.classList.add(theme)
+  root.classList.remove('light', 'dark')
+  root.classList.add(resolved)
 }
-
-const getSystemTheme = (): Theme =>
-  window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'
 
 const readCache = (userId: string): ThemeCacheEntry | null => {
   try {
@@ -49,10 +55,10 @@ const writeCache = (userId: string, theme: Theme) => {
 export const themeController = {
   initTheme: async (userId?: string): Promise<Theme> => {
     // 1) Fast path: localStorage or system
-    let resolved = getSystemTheme()
+    let resolved: Theme = 'system'
 
     const ls = storage.getItem('theme')
-    if (isValidTheme(ls)) {
+    if (isValidStoredTheme(ls)) {
       resolved = ls
     }
 
@@ -124,5 +130,12 @@ export const themeController = {
       writeCache(userId, theme)
       repo.updateTheme(userId, theme).catch(() => {})
     }
+  },
+
+  watchSystemTheme: (onChange: (resolved: ResolvedTheme) => void): (() => void) => {
+    const mq = window.matchMedia('(prefers-color-scheme: dark)')
+    const handler = (e: MediaQueryListEvent) => onChange(e.matches ? 'dark' : 'light')
+    mq.addEventListener('change', handler)
+    return () => mq.removeEventListener('change', handler)
   },
 }
