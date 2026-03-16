@@ -113,6 +113,15 @@ export function loadUserConfig(): UserConfig {
   }
 }
 
+export function ensureUserConfigDir(): void {
+  if (!existsSync(USER_CONFIG_DIR)) {
+    mkdirSync(USER_CONFIG_DIR, { recursive: true });
+  }
+  if (!existsSync(USER_CONFIG_PATH)) {
+    writeFileSync(USER_CONFIG_PATH, '{}\n');
+  }
+}
+
 export function saveUserConfig(partial: Partial<UserConfig>): void {
   if (!existsSync(USER_CONFIG_DIR)) {
     mkdirSync(USER_CONFIG_DIR, { recursive: true });
