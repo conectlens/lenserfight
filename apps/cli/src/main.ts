@@ -12,6 +12,7 @@ const main = defineCommand({
     doctor: () => import('./commands/doctor').then((m) => m.default),
     dev: () => import('./commands/dev').then((m) => m.default),
     seed: () => import('./commands/seed').then((m) => m.default),
+    reset: () => import('./commands/reset').then((m) => m.default),
     status: () => import('./commands/status').then((m) => m.default),
     auth: () => import('./commands/auth').then((m) => m.default),
     battle: () => import('./commands/battle').then((m) => m.default),
