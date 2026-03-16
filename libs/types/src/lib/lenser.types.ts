@@ -14,7 +14,7 @@ export interface LenserCompactProfile {
 }
 
 export interface LenserPreferences {
-  theme?: 'light' | 'dark'
+  theme?: 'light' | 'dark' | 'system'
   sidebar_collapsed?: boolean
   [key: string]: any // Forward compatibility
 }

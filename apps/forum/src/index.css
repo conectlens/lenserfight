@@ -4,6 +4,9 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Use class-based dark mode (html.dark) instead of media query */
+@variant dark (&:where(.dark, .dark *));
+
 @source "../../../libs/ui";
 @source "../../../libs/shared";
 @source "../../../libs/features";
@@ -57,10 +60,17 @@
   }
 }
 
+html {
+  background-color: #f9fafb;
+  color: #1f2937;
+}
+
 body {
   font-family: 'Inter', sans-serif;
   overflow-x: hidden;
   /* Prevent horizontal scrolling */
+  background-color: inherit;
+  color: inherit;
 }
 
 /* Utilities for hiding scrollbars */
@@ -108,6 +118,7 @@ html.dark {
   color-scheme: dark;
   background-color: #121212;
   /* Match gray-900 */
+  color: #f9fafb;
 }
 
 html.dark ::-webkit-scrollbar-track {
