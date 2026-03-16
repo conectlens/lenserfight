@@ -72,7 +72,7 @@ lenserfight init --mode cloud --source env   # show what .env.local provides
 | `--url` | No | — | Supabase URL (auto-detected for local) |
 | `--source` | No | `auto` | Key source hint: `auto`, `env`, `supabase` |
 
-After init, the command prints a resolution summary showing where the anon key and URL will come from.
+After init, the command prints a resolution summary showing where the anon key and URL will come from. `~/.lenserfight/config.json` is created empty and will be populated with auth tokens after `auth login`.
 
 For cloud mode, set keys in your environment or `.env.local`:
 
