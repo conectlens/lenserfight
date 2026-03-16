@@ -73,3 +73,41 @@ export const useLatestLensers = () => {
     staleTime: 1000 * 60 * 5,
   })
 }
+
+export const useTrendingThreads = (lang?: string) => {
+  return useInfiniteQuery({
+    queryKey: keys.threads.trending(lang),
+    queryFn: async ({ pageParam = 0 }) => {
+      return threadsService.getTrendingFeed(lang, pageParam * 20, 20)
+    },
+    initialPageParam: 0,
+    getNextPageParam: (lastPage, allPages) => {
+      return lastPage.length === 20 ? allPages.length : undefined
+    },
+    staleTime: 1000 * 60 * 5,
+    gcTime: 1000 * 60 * 30,
+  })
+}
+
+export const useTrendingPrompts = (lang?: string) => {
+  return useInfiniteQuery({
+    queryKey: keys.prompts.trending(lang),
+    queryFn: async ({ pageParam = 0 }) => {
+      return promptsService.getTrending(lang, pageParam * 20, 20)
+    },
+    initialPageParam: 0,
+    getNextPageParam: (lastPage, allPages) => {
+      return lastPage.length === 20 ? allPages.length : undefined
+    },
+    staleTime: 1000 * 60 * 5,
+    gcTime: 1000 * 60 * 30,
+  })
+}
+
+export const useTrendingLensers = () => {
+  return useQuery({
+    queryKey: keys.lenser.trending,
+    queryFn: () => lenserService.getTrendingLensers(10),
+    staleTime: 1000 * 60 * 10,
+  })
+}
