@@ -23,7 +23,7 @@ import { Avatar } from '@lenserfight/ui/components'
 import { notificationService } from '@lenserfight/data/repositories'
 import { useAuth } from '@lenserfight/features/auth'
 import { FeedbackModal } from '@lenserfight/features/feedback'
-import { useLenser, useSidebarProfile } from '@lenserfight/features/profile'
+import { useLenser, useSidebarProfile, useHasLenserProfile } from '@lenserfight/features/profile'
 import { FEATURES } from '@lenserfight/utils/env'
 import { useTheme } from '@lenserfight/ui/theme'
 import type { Theme } from '@lenserfight/ui/theme'
@@ -63,6 +63,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
 }) => {
   // Use LenserContext mainly for the handle/identity bootstrapping
   const { lenser: authLenser } = useLenser()
+  const { hasLenser } = useHasLenserProfile()
   const { logout } = useAuth()
   const { themeMode, setTheme } = useTheme()
 
@@ -468,7 +469,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
               )}
             </div>
 
-            {!displayProfile && (
+            {!hasLenser && (
               <div className="absolute inset-0 flex items-center justify-center p-2 z-10 bg-gray-50/50 dark:bg-gray-900/50 backdrop-blur-[1px]">
                 <button
                   onClick={onOpenProfileSetup}
