@@ -56,6 +56,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           setState((s) => ({ ...s, user: null, isAuthenticated: false, isLoading: false }))
         }
       } catch (err: any) {
+        // AuthSessionMissingError is expected when no session exists — not a real error
+        if (err?.name === 'AuthSessionMissingError' || err?.message?.includes('Auth session missing')) {
+          setState((s) => ({ ...s, user: null, isAuthenticated: false, isLoading: false }))
+          return
+        }
         console.error('Auth initialization error:', err)
         // If user is not found (e.g. deleted from DB but JWT still exists), redirect to login
         if (err?.code === 'user_not_found' || err?.message?.includes('User from sub claim in JWT does not exist')) {
