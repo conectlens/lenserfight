@@ -1,6 +1,6 @@
 import { Plus } from 'lucide-react'
 import React, { useState, useCallback, useRef } from 'react'
-import { useNavigate, useLocation } from 'react-router-dom'
+import { useNavigate } from 'react-router-dom'
 
 import { Button } from '@lenserfight/ui/components'
 import { SEOHead } from '@lenserfight/ui/components'
@@ -17,7 +17,6 @@ import { useCreatePrompt } from '../hooks/useCreatePrompt'
 
 export const PromptsPage: React.FC = () => {
   const navigate = useNavigate()
-  const location = useLocation()
   const { hasLenser } = useAuthenticatedLenser()
   const { isAuthenticated } = useAuth()
 
@@ -67,7 +66,8 @@ export const PromptsPage: React.FC = () => {
 
   const handleCreateClick = () => {
     if (!isAuthenticated) {
-      navigate('/auth/login', { state: { from: location } })
+      const authAppUrl = import.meta.env.VITE_AUTH_APP_URL ?? 'https://auth.lenserfight.com'
+      window.location.href = `${authAppUrl}/login?return_url=${encodeURIComponent(window.location.href)}`
       return
     }
     if (!hasLenser) {
