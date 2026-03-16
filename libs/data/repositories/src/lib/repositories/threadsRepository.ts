@@ -1,6 +1,6 @@
 import { supabase } from '@lenserfight/data/supabase'
 import { AuthorProfile } from '@lenserfight/types'
-import { ThreadRecord, TagRecord, ThreadReplyRecord, CreateThreadDTO, ThreadFeedItem } from '@lenserfight/types'
+import { ThreadRecord, TagRecord, ThreadReplyRecord, CreateThreadDTO, ThreadFeedItem, PersonalFeedItem } from '@lenserfight/types'
 
 // --- Port (Interface) ---
 export interface ThreadsRepositoryPort {
@@ -19,6 +19,7 @@ export interface ThreadsRepositoryPort {
   getReplyById(replyId: string): Promise<ThreadReplyRecord | null>
   getTrendingTags(limit: number): Promise<string[]>
   getTrendingThreads(lang?: string, offset?: number, limit?: number): Promise<ThreadFeedItem[]>
+  getPersonalFeed(lenserId: string, offset?: number, limit?: number): Promise<PersonalFeedItem[]>
   createReply(
     threadId: string,
     lenserId: string,
@@ -530,6 +531,45 @@ export class SupabaseThreadsRepository implements ThreadsRepositoryPort {
         visibility: 'public' as const,
         hotScore: row.hot_score as number,
         primaryLanguage: (row.primary_language as string) ?? undefined,
+      }
+    })
+  }
+
+  /**
+   * Personalized thread feed for an authenticated lenser (Phase 3+4).
+   * Score = 0.30×tag_sim + 0.25×lang_match + 0.20×hot + 0.15×author_rep + 0.10×followed_author.
+   */
+  async getPersonalFeed(lenserId: string, offset = 0, limit = 20): Promise<PersonalFeedItem[]> {
+    const { data, error } = await supabase.rpc('fn_content_get_personal_threads', {
+      p_lenser_id: lenserId,
+      p_limit: limit,
+      p_offset: offset,
+    })
+
+    if (error) this.handleError(error)
+
+    return ((data ?? []) as Record<string, unknown>[]).map((row) => {
+      const author = (row.author_profile as Record<string, unknown>) ?? {}
+      const reactionTotals = (row.reaction_totals as Record<string, number>) ?? {}
+      return {
+        id: row.id as string,
+        title: row.title as string,
+        content: '',
+        author: {
+          id: (author.id as string) ?? '',
+          displayName: (author.display_name as string) ?? 'Unknown',
+          handle: (author.handle as string) ?? 'unknown',
+          avatarUrl: (author.avatar_url as string | null) ?? null,
+        },
+        tags: (row.tags as TagRecord[]) ?? [],
+        reactionCount: Object.values(reactionTotals).reduce((sum, n) => sum + n, 0),
+        replyCount: (row.reply_count as number) ?? 0,
+        createdAt: row.created_at as string,
+        userHasReacted: false,
+        visibility: 'public' as const,
+        hotScore: row.hot_score as number,
+        primaryLanguage: (row.primary_language as string) ?? undefined,
+        personalScore: (row.personal_score as number) ?? 0,
       }
     })
   }
