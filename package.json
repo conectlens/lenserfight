@@ -4,7 +4,7 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "nx serve",
+    "dev": "nx run-many --target=serve --projects=conectlenscom,forum,arena,admin,docs,dev-proxy --parallel=6",
     "build": "nx vite:build",
     "preview": "nx vite:preview",
     "lint": "eslint .",
@@ -91,6 +91,8 @@
     "jest": "^30.0.2",
     "jest-environment-node": "^30.0.2",
     "jest-util": "^30.0.2",
+    "@types/http-proxy": "^1.17.15",
+    "http-proxy": "^1.18.1",
     "jiti": "2.4.2",
     "jsdom": "~22.1.0",
     "mermaid": "^11.13.0",
