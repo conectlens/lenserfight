@@ -1,7 +1,7 @@
 import { defineCommand } from 'citty';
 import consola from 'consola';
 import { callRpc, handleError } from '../utils/api';
-import { printTable, printJson, truncate } from '../utils/output';
+import { printTable, printJson, truncate, slugify, pastedTextSummary, parseClosesAt } from '../utils/output';
 
 // ---------------------------------------------------------------------------
 // battle create
@@ -19,12 +19,11 @@ const create = defineCommand({
     },
     slug: {
       type: 'string',
-      description: 'URL-friendly slug',
-      required: true,
+      description: 'URL-friendly slug (auto-generated from title if omitted)',
     },
     prompt: {
       type: 'string',
-      description: 'Task prompt for contenders',
+      description: 'Task prompt for contenders (supports multi-line paste)',
       required: true,
     },
     rubric: {
@@ -37,6 +36,8 @@ const create = defineCommand({
     },
   },
   async run({ args }) {
+    const resolvedSlug = args.slug || slugify(args.title);
+
     try {
       if (args.template) {
         const battleId = await callRpc<string>(
@@ -44,17 +45,22 @@ const create = defineCommand({
           {
             p_template_id: args.template,
             p_title: args.title,
-            p_slug: args.slug,
+            p_slug: resolvedSlug,
           },
           { requireAuth: true }
         );
-        consola.success('Battle created from template: %s', battleId);
+        consola.success('Battle created from template: %s (slug: %s)', battleId, resolvedSlug);
         return;
+      }
+
+      const promptSummary = pastedTextSummary(args.prompt);
+      if (promptSummary) {
+        consola.info('Prompt: %s', promptSummary);
       }
 
       const params: Record<string, unknown> = {
         p_title: args.title,
-        p_slug: args.slug,
+        p_slug: resolvedSlug,
         p_task_prompt: args.prompt,
       };
 
@@ -67,7 +73,7 @@ const create = defineCommand({
         params,
         { requireAuth: true }
       );
-      consola.success('Battle created: %s', battleId);
+      consola.success('Battle created: %s (slug: %s)', battleId, resolvedSlug);
     } catch (err) {
       handleError(err);
     }
@@ -294,6 +300,14 @@ const submit = defineCommand({
       return;
     }
 
+    if (contentText) {
+      const summary = pastedTextSummary(contentText);
+      if (summary) consola.info('Content: %s', summary);
+    }
+    if (contentUrl) {
+      consola.info('Content URL: %s', contentUrl);
+    }
+
     try {
       await callRpc('fn_battles_submit', {
         p_battle_id: args.id,
@@ -324,20 +338,21 @@ const startVoting = defineCommand({
     },
     'closes-at': {
       type: 'string',
-      description: 'Voting closes at (ISO 8601 timestamp)',
+      description: 'Voting closes at: ISO 8601 timestamp or relative offset (+2h, +30m, +1d)',
       required: true,
     },
   },
   async run({ args }) {
+    const closesAt = parseClosesAt(args['closes-at']);
     try {
       await callRpc('fn_battles_start_voting', {
         p_battle_id: args.id,
-        p_voting_closes_at: args['closes-at'],
+        p_voting_closes_at: closesAt,
       }, { requireAuth: true });
       consola.success(
         'Voting started for battle %s (closes at %s)',
         args.id,
-        args['closes-at']
+        closesAt
       );
     } catch (err) {
       handleError(err);
@@ -530,18 +545,18 @@ const clone = defineCommand({
     },
     slug: {
       type: 'string',
-      description: 'URL-friendly slug for the cloned battle',
-      required: true,
+      description: 'URL-friendly slug for the cloned battle (auto-generated from title if omitted)',
     },
   },
   async run({ args }) {
+    const resolvedSlug = args.slug || slugify(args.title);
     try {
       const battleId = await callRpc<string>('fn_battles_clone', {
         p_battle_id: args.id,
         p_title: args.title,
-        p_slug: args.slug,
+        p_slug: resolvedSlug,
       }, { requireAuth: true });
-      consola.success('Battle cloned: %s', battleId);
+      consola.success('Battle cloned: %s (slug: %s)', battleId, resolvedSlug);
     } catch (err) {
       handleError(err);
     }
