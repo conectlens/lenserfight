@@ -1,6 +1,7 @@
 import { SupabaseLenserRepository } from '../repositories/lenserRepository'
 import { SupabaseShareRepository } from '../repositories/shareRepository'
 import {
+  Language,
   Lenser,
   CreateLenserDTO,
   LenserActivityPoint,
@@ -149,5 +150,9 @@ export const lenserService = {
     page: number
   ): Promise<NetworkUser[]> => {
     return lenserRepo.getLenserNetwork(lenserId, type, page)
+  },
+
+  getLanguages: async (): Promise<Language[]> => {
+    return lenserRepo.getLanguages()
   },
 }
