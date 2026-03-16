@@ -1,0 +1,180 @@
+---
+title: RLS Policy Reference
+---
+
+# RLS Policy Reference
+
+## Overview
+
+Row Level Security (RLS) is PostgreSQL's built-in mechanism for restricting which rows a given user can read or modify. LenserFight enables RLS on **every table** across all schemas. Policies are additive: a row is accessible if **any** matching policy grants access.
+
+The `service_role` key bypasses RLS entirely and should only be used in trusted server-side contexts (Edge Functions, background jobs).
+
+## Auth Tiers
+
+| Tier | Description | RLS Behavior |
+|------|-------------|--------------|
+| `anon` | Unauthenticated requests (public API key only) | Restricted to explicitly public data |
+| `authenticated` | Logged-in user with a valid JWT | Scoped to own data plus public data |
+| `service_role` | Server-side key with elevated privileges | **Bypasses RLS completely** |
+
+## Policy Inventory
+
+### `lensers` Schema
+
+#### `profiles`
+
+| Operation | Tier | Condition | Notes |
+|-----------|------|-----------|-------|
+| SELECT | anon | All rows | Public profile data |
+| SELECT | authenticated | All rows | Public profile data |
+| INSERT | authenticated | `user_id = auth.uid()` | User creates own profile |
+| UPDATE | authenticated | `user_id = auth.uid()` | User edits own profile |
+| DELETE | -- | Not allowed | Soft-delete via `deletion_requested_at` |
+
+Soft-delete pattern: users set `deletion_requested_at` via UPDATE. A background job handles actual removal after a grace period.
+
+---
+
+### `content` Schema
+
+#### `threads`
+
+| Operation | Tier | Condition | Notes |
+|-----------|------|-----------|-------|
+| SELECT | anon | `visibility = 'public'` | Public threads only |
+| SELECT | authenticated | `visibility = 'public'` OR `lenser_id = lensers.get_auth_lenser_id()` | Own threads plus public |
+| INSERT | authenticated | `lenser_id = lensers.get_auth_lenser_id()` | Create own threads |
+| UPDATE | authenticated | `lenser_id = lensers.get_auth_lenser_id()` | Edit own threads |
+| DELETE | authenticated | `lenser_id = lensers.get_auth_lenser_id()` | Delete own threads |
+
+---
+
+### `xp` Schema
+
+#### `rules`
+
+| Operation | Tier | Condition | Notes |
+|-----------|------|-----------|-------|
+| SELECT | anon / authenticated | All rows | Public reference data |
+| INSERT / UPDATE / DELETE | service_role | -- | Admin-managed only |
+
+#### `events`
+
+| Operation | Tier | Condition | Notes |
+|-----------|------|-----------|-------|
+| SELECT | authenticated | `lenser_id = lensers.get_auth_lenser_id()` | Own events only |
+| INSERT | -- | Via `xp.apply()` (SECURITY DEFINER) | Never inserted directly |
+
+#### `totals`, `levels`, `streaks`, `seasons`
+
+| Operation | Tier | Condition | Notes |
+|-----------|------|-----------|-------|
+| SELECT | authenticated | `lenser_id = lensers.get_auth_lenser_id()` | Read own data |
+| INSERT / UPDATE / DELETE | -- | Managed by triggers and functions | No direct writes |
+
+---
+
+### `ai` Schema
+
+#### `models`
+
+| Operation | Tier | Condition | Notes |
+|-----------|------|-----------|-------|
+| SELECT | anon / authenticated | `is_public = true` | Public models only |
+| INSERT / UPDATE / DELETE | service_role | -- | Admin-managed |
+
+#### `generations`
+
+| Operation | Tier | Condition | Notes |
+|-----------|------|-----------|-------|
+| SELECT | authenticated | `lenser_id = lensers.get_auth_lenser_id()` | Own generations |
+| INSERT | authenticated | `lenser_id = lensers.get_auth_lenser_id()` | Create own |
+
+---
+
+### `battles` Schema
+
+The battles schema has 7 tables with status-gated visibility.
+
+#### `rubrics`
+
+| Operation | Tier | Condition | Notes |
+|-----------|------|-----------|-------|
+| SELECT | anon | `is_public = true` AND `deleted_at IS NULL` | Public rubrics |
+| SELECT | authenticated | `is_public = true` OR `created_by = lensers.get_auth_lenser_id()` AND `deleted_at IS NULL` | Own + public |
+| INSERT | authenticated | `created_by = lensers.get_auth_lenser_id()` | Create own |
+| UPDATE | authenticated | `created_by = lensers.get_auth_lenser_id()` AND `deleted_at IS NULL` | Edit own |
+| DELETE | -- | Not allowed | Soft-delete via `deleted_at` |
+
+#### `rubric_criteria`
+
+| Operation | Tier | Condition | Notes |
+|-----------|------|-----------|-------|
+| SELECT | anon | Rubric is public (`deleted_at IS NULL`) | Via public rubric |
+| SELECT | authenticated | Rubric is public OR owned | Via accessible rubric |
+| INSERT | authenticated | Rubric owned by user | Add criteria to own rubric |
+| UPDATE | authenticated | Rubric owned by user | Edit criteria on own rubric |
+
+#### `battles`
+
+| Operation | Tier | Condition | Notes |
+|-----------|------|-----------|-------|
+| SELECT | anon | `status IN ('voting', 'scoring', 'closed', 'published')` AND `deleted_at IS NULL` | Status-gated public visibility |
+| SELECT | authenticated | Public statuses OR `created_by = lensers.get_auth_lenser_id()` (includes drafts) | Own drafts + public battles |
+| INSERT | authenticated | `created_by = lensers.get_auth_lenser_id()` | Create own battles |
+| UPDATE | authenticated | `created_by = lensers.get_auth_lenser_id()` AND `status IN ('draft', 'open')` | Edit own draft/open battles only |
+
+#### `contenders`
+
+| Operation | Tier | Condition | Notes |
+|-----------|------|-----------|-------|
+| SELECT | anon | Battle is in a public status | Visible on public battles |
+| SELECT | authenticated | Battle is public OR user is the contender (`lenser_id = lensers.get_auth_lenser_id()`) | Self-see for human contenders |
+| INSERT | authenticated | Battle is open OR user owns the battle | Join open battles or add contenders to own battles |
+
+#### `submissions`
+
+| Operation | Tier | Condition | Notes |
+|-----------|------|-----------|-------|
+| SELECT | anon | Battle `status IN ('voting', 'scoring', 'closed', 'published')` | Visible once voting starts |
+| SELECT | authenticated | Battle is voting+ OR user is the contender | Own submissions always visible |
+| INSERT | authenticated | User is the contender AND battle `status = 'open'` | Submit during open phase |
+| UPDATE | authenticated | User is the contender AND battle `status = 'open'` | Revise before voting |
+
+#### `votes`
+
+| Operation | Tier | Condition | Notes |
+|-----------|------|-----------|-------|
+| SELECT | anon | Battle `status IN ('closed', 'published')` | Votes revealed after close |
+| SELECT | authenticated | Battle is closed+ OR `voter_id = lensers.get_auth_lenser_id()` | Own votes always visible |
+| INSERT | authenticated | Battle `status = 'voting'` AND voter is NOT a contender | Non-contenders only |
+| DELETE | authenticated | `voter_id = lensers.get_auth_lenser_id()` AND battle `status = 'voting'` | Remove own vote during voting |
+| UPDATE | -- | Not allowed | Immutable; use DELETE + INSERT |
+
+#### `scorecards`
+
+| Operation | Tier | Condition | Notes |
+|-----------|------|-----------|-------|
+| SELECT | anon / authenticated | Battle `status IN ('closed', 'published')` | Public after close |
+| INSERT / UPDATE / DELETE | service_role | -- | System-generated only |
+
+---
+
+## Common Patterns
+
+### `lensers.get_auth_lenser_id()`
+
+A helper function that maps `auth.uid()` (Supabase auth UUID) to the internal `lenser_id` in the `lensers.profiles` table. Used in most authenticated policies to avoid repeated subqueries.
+
+### Immutable Votes
+
+Votes cannot be updated. To change a vote, the user must DELETE their existing vote and INSERT a new one. This preserves an audit-friendly pattern and avoids partial-update edge cases.
+
+### Soft-Delete
+
+Tables using soft-delete (`rubrics`, `battles`) include `deleted_at IS NULL` in their USING clauses. Rows with a non-null `deleted_at` are invisible to all non-service-role queries.
+
+### Status-Gated Visibility
+
+Battles progress through statuses: `draft` -> `open` -> `voting` -> `scoring` -> `closed` -> `published`. Anonymous users can only see battles at `voting` or later. Owners can always see their own battles regardless of status.
