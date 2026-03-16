@@ -1,7 +1,5 @@
 import { supabase } from '@lenserfight/data/supabase'
-import { AuthorProfile } from '@lenserfight/types'
-import { PromptTemplateRecord, CreatePromptDTO } from '@lenserfight/types'
-import { TagRecord } from '@lenserfight/types'
+import { AuthorProfile, PromptTemplateRecord, PromptTemplateViewModel, CreatePromptDTO, TagRecord } from '@lenserfight/types'
 
 // --- Port (Interface) ---
 export interface PromptsRepositoryPort {
@@ -18,6 +16,7 @@ export interface PromptsRepositoryPort {
     limit?: number
   ): Promise<PromptTemplateRecord[]>
   getTopPrompts(limit: number): Promise<PromptTemplateRecord[]>
+  getTrendingPrompts(lang?: string, offset?: number, limit?: number): Promise<PromptTemplateViewModel[]>
   getByLenser(
     handle: string,
     offset?: number,
@@ -247,6 +246,39 @@ export class SupabasePromptsRepository implements PromptsRepositoryPort {
 
     if (error) this.handleError(error)
     return data as unknown as PromptTemplateRecord[]
+  }
+
+  /**
+   * Trending prompts via hot score RPC with optional language boost.
+   */
+  async getTrendingPrompts(lang?: string, offset = 0, limit = 20): Promise<PromptTemplateViewModel[]> {
+    const { data, error } = await supabase.rpc('fn_content_get_trending_prompts', {
+      p_lang: lang ?? null,
+      p_limit: limit,
+      p_offset: offset,
+    })
+
+    if (error) this.handleError(error)
+
+    return ((data ?? []) as Record<string, unknown>[]).map((row) => {
+      const author = (row.author_profile as Record<string, unknown>) ?? {}
+      const reactionTotals = (row.reaction_totals as Record<string, number>) ?? {}
+      return {
+        id: row.id as string,
+        title: row.title as string,
+        description: (row.description as string | null) ?? null,
+        author: {
+          id: (author.id as string) ?? '',
+          displayName: (author.display_name as string) ?? 'Unknown',
+          handle: (author.handle as string) ?? 'unknown',
+          avatarUrl: (author.avatar_url as string | null) ?? null,
+        },
+        tags: (row.tags as TagRecord[]) ?? [],
+        usageCount: reactionTotals['copy'] ?? 0,
+        createdAt: row.created_at as string,
+        visibility: 'public' as const,
+      }
+    })
   }
 
   async getByLenser(
