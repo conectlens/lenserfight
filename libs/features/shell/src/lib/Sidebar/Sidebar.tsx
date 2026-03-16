@@ -63,7 +63,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
 }) => {
   // Use LenserContext mainly for the handle/identity bootstrapping
   const { lenser: authLenser } = useLenser()
-  const { hasLenser } = useHasLenserProfile()
+  const { hasLenser, isLoading: isLenserLoading } = useHasLenserProfile()
   const { logout } = useAuth()
   const { themeMode, setTheme } = useTheme()
 
@@ -469,7 +469,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
               )}
             </div>
 
-            {!hasLenser && (
+            {!hasLenser && !isLenserLoading && (
               <div className="absolute inset-0 flex items-center justify-center p-2 z-10 bg-gray-50/50 dark:bg-gray-900/50 backdrop-blur-[1px]">
                 <button
                   onClick={onOpenProfileSetup}
