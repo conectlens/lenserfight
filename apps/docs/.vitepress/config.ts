@@ -1,6 +1,20 @@
 import { defineConfig } from 'vitepress'
 import tailwind from '@tailwindcss/vite'
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function mermaidFencePlugin(md: any) {
+  const defaultFence = md.renderer.rules.fence?.bind(md.renderer.rules) ?? (() => '')
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  md.renderer.rules.fence = (tokens: any[], idx: number, options: any, env: any, self: any) => {
+    const token = tokens[idx]
+    if (token.info.trim() === 'mermaid') {
+      const chart = token.content.trim().replace(/"/g, '&quot;')
+      return `<MermaidDiagram chart="${chart}" />\n`
+    }
+    return defaultFence(tokens, idx, options, env, self)
+  }
+}
+
 // https://vitepress.dev/reference/site-config
 export default defineConfig({
   srcDir: '../../docs',
@@ -8,10 +22,17 @@ export default defineConfig({
   title: 'LenserFight Docs',
   description: 'User-first documentation for LenserFight Arena, Forum, Admin, and Mobile.',
 
+  markdown: {
+    config: mermaidFencePlugin,
+  },
+
   vite: {
     plugins: [tailwind()],
     server: {
       host: '127.0.0.1',
+    },
+    ssr: {
+      noExternal: ['mermaid'],
     },
   },
 
