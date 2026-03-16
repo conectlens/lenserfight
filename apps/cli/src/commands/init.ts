@@ -45,8 +45,13 @@ export default defineCommand({
     const supabaseUrl = args.url || (mode === 'local' ? LOCAL_DEFAULT_URL : '');
 
     saveConfig({ mode: mode as 'local' | 'cloud', supabaseUrl, dbPort: 54322, apiPort: 54321 });
-    ensureUserConfigDir();
+    const userConfigCreated = ensureUserConfigDir();
     consola.success('Created .lenserfight.json (mode: %s)', mode);
+    if (userConfigCreated) {
+      consola.success('Created ~/.lenserfight/config.json (tokens stored here after login)');
+    } else {
+      consola.info('~/.lenserfight/config.json already exists');
+    }
 
     // Show resolution summary
     const env = loadEnvConfig();
@@ -59,7 +64,6 @@ export default defineCommand({
         consola.info('Anon key : local Supabase defaults (auto)');
       }
       consola.info('URL      : %s', supabaseUrl);
-      consola.info('Tokens   : ~/.lenserfight/config.json (created, populated on login)');
     } else {
       // Cloud mode guidance
       if (env.supabaseAnonKey) {

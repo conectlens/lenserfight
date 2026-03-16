@@ -8,13 +8,18 @@ import { loadConfig } from '../config/project-config';
 export default defineCommand({
   meta: {
     name: 'seed',
-    description: 'Run seed.sql against local or cloud database.',
+    description: 'Run seed.sql against local database. Requires --force to confirm the database reset.',
   },
   args: {
     file: {
       type: 'string',
       description: 'Path to seed SQL file',
       default: 'supabase/seed.sql',
+    },
+    force: {
+      type: 'boolean',
+      description: 'Skip confirmation warning and proceed with database reset',
+      default: false,
     },
   },
   async run({ args }) {
@@ -29,14 +34,20 @@ export default defineCommand({
     const config = loadConfig();
 
     if (config.mode === 'local') {
-      const dbUrl = `postgresql://postgres:postgres@127.0.0.1:${config.dbPort}/postgres`;
-      consola.info('Seeding local database from %s ...', args.file);
+      if (!args.force) {
+        consola.warn('This will run `supabase db reset`, which DROPS and recreates the local database.');
+        consola.warn('All local data will be lost. Re-run with --force to confirm.');
+        process.exitCode = 1;
+        return;
+      }
+
+      consola.info('Seeding local database via `supabase db reset` ...');
 
       try {
-        execSync(`psql "${dbUrl}" -f "${seedPath}"`, { stdio: 'inherit' });
+        execSync('npx supabase db reset', { stdio: 'inherit' });
         consola.success('Seed complete.');
       } catch {
-        consola.error('Seed failed. Is the local database running?');
+        consola.error('Seed failed. Is the local Supabase stack running? Try `npx supabase start` first.');
         process.exitCode = 1;
       }
     } else {
