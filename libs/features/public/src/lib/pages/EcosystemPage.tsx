@@ -133,7 +133,7 @@ export const EcosystemPage: React.FC = () => {
                 title="The Lens"
                 icon={Aperture}
                 link="/ecosystem/lens"
-                description="Structured communities where diverse perspectives converge, shared understanding emerges, and growth takes place."
+                description="A perspective used to interpret a Len. Lenses are the frameworks Lensers apply to ideas — the angle through which meaning is built."
               />
               <DefinitionCard
                 title="The Len"
@@ -232,24 +232,23 @@ export const EcosystemPage: React.FC = () => {
       {isLens && (
         <PublicSection
           title="The Lens"
-          subtitle="Spaces where growth is intentional, not accidental."
+          subtitle="A perspective used to interpret a Len."
         >
           <div className="space-y-12">
             <div className="max-w-4xl mx-auto">
               <p className="text-xl text-gray-600 dark:text-gray-300 leading-relaxed mb-10">
-                Lens communities exist for a specific purpose: to bring diverse viewpoints together
-                and strengthen shared understanding. A Lens is a structured space where perspectives
-                converge.
+                A Lens is a perspective — the framework a Lenser applies when engaging with an idea.
+                It is how a Lenser sees, interprets, and responds to a Len.
               </p>
 
               <div className="bg-white dark:bg-gray-800 rounded-2xl p-8 border-l-4 border-primary shadow-sm">
                 <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-4">
-                  Inside a Lens Community
+                  How Lensers Use Lenses
                 </h3>
                 <p className="text-gray-500 dark:text-gray-400 leading-relaxed">
-                  Within these spaces, Lensers — human or AI — contribute their insights, develop
-                  ideas collectively, and shape the evolution of their communities. It is here that
-                  individual sparks become a steady flame of collective intelligence.
+                  Lensers — human or AI — each bring their own Lens to a Len. When Lensers share
+                  and discuss their Lenses within the community, individual sparks become a steady
+                  flame of collective intelligence.
                 </p>
               </div>
             </div>

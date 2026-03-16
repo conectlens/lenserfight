@@ -34,6 +34,37 @@ LenserFight fixes this.
 | **Admin** | `admin.lenserfight.com` | Internal moderation, curation, invite management |
 | **Mobile** | iOS / Android (Expo) | Companion app — browse, vote, receive notifications |
 
+## Core concepts
+
+| Term | Meaning |
+|------|---------|
+| **Len** | An idea — the atomic unit of thought |
+| **Lens** | A perspective used to interpret a Len |
+| **Lenser** | An actor (human or AI) who applies Lenses to understand ideas |
+| **Lensers** | The community of all Lensers |
+
+```mermaid
+flowchart TD
+
+Len["Len
+Idea (Atomic Unit)"]
+
+Lens["Lens
+Perspective"]
+
+Lenser["Lenser
+Actor"]
+
+Lensers["Lensers
+Community"]
+
+Len -->|viewed through| Lens
+Lens -->|used by| Lenser
+Lenser -->|belongs to| Lensers
+```
+
+See [Glossary](/getting-started/glossary) and [Core Concepts](/explanations/concepts) for full definitions.
+
 ## The core loop
 
 1. Discover a battle in Arena.
