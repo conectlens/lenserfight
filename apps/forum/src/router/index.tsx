@@ -17,12 +17,7 @@ import {
   AdminWaitlist,
   AdminWelcome,
 } from '@lenserfight/features/admin'
-import {
-  ForgotPasswordPage,
-  LoginPage,
-  RegisterPage,
-  ResetPasswordPage,
-} from '@lenserfight/features/auth'
+
 import { HomePage } from '@lenserfight/features/home'
 import { LeaderboardPage } from '@lenserfight/features/leaderboard'
 import { LenserProfilePage, useLenser } from '@lenserfight/features/profile'
@@ -39,9 +34,15 @@ import {
 } from '@lenserfight/features/tags'
 import { ThreadDetailPage } from '@lenserfight/features/threads'
 import { WaitingListPage } from '@lenserfight/features/waiting-list'
+import { useEffect } from 'react'
 import { Routes, Route, Navigate, Outlet, BrowserRouter } from 'react-router-dom'
 
-// Admin Pages
+const AUTH_APP_URL = import.meta.env.VITE_AUTH_APP_URL ?? 'https://auth.lenserfight.com'
+
+const ExternalRedirect = ({ to }: { to: string }) => {
+  useEffect(() => { window.location.href = to }, [to])
+  return null
+}
 
 // Protected Admin Guard
 const ProtectedAdminRoute = () => {
@@ -66,14 +67,12 @@ export const AppRouter: React.FC = () => {
         {/* Short Link Redirect Route (No Layout) */}
         <Route path="/s/:shortId" element={<ShortLinkRedirect />} />
 
-        {/* Auth Routes (Self-contained Layouts) */}
-        <Route path="/auth">
-          <Route index element={<Navigate to="/auth/login" replace />} />
-          <Route path="login" element={<LoginPage />} />
-          <Route path="register" element={<RegisterPage />} />
-          <Route path="forgot-password" element={<ForgotPasswordPage />} />
-          <Route path="reset-password" element={<ResetPasswordPage />} />
-        </Route>
+        {/* Auth Routes → delegated to apps/auth */}
+        <Route path="/auth/login" element={<ExternalRedirect to={`${AUTH_APP_URL}/login`} />} />
+        <Route path="/auth/register" element={<ExternalRedirect to={`${AUTH_APP_URL}/register`} />} />
+        <Route path="/auth/forgot-password" element={<ExternalRedirect to={`${AUTH_APP_URL}/forgot-password`} />} />
+        <Route path="/auth/reset-password" element={<ExternalRedirect to={`${AUTH_APP_URL}/reset-password`} />} />
+        <Route path="/auth" element={<ExternalRedirect to={`${AUTH_APP_URL}/login`} />} />
         <Route
           path="/welcome"
           element={
