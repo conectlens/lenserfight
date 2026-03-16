@@ -13,6 +13,9 @@ import {
   Brain,
   Rocket,
   Trophy,
+  Sun,
+  Moon,
+  Monitor,
 } from 'lucide-react'
 import React, { useState, useRef, useEffect } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
@@ -22,8 +25,16 @@ import { useAuth } from '@lenserfight/features/auth'
 import { FeedbackModal } from '@lenserfight/features/feedback'
 import { useLenser, useSidebarProfile } from '@lenserfight/features/profile'
 import { FEATURES } from '@lenserfight/utils/env'
+import { useTheme } from '@lenserfight/ui/theme'
+import type { Theme } from '@lenserfight/ui/theme'
 
 import { SidebarItem } from './SidebarItem'
+
+const THEME_OPTIONS: { value: Theme; label: string; icon: React.ReactNode }[] = [
+  { value: 'light', label: 'Light', icon: <Sun size={14} /> },
+  { value: 'dark', label: 'Dark', icon: <Moon size={14} /> },
+  { value: 'system', label: 'System', icon: <Monitor size={14} /> },
+]
 
 interface SidebarProps {
   isOpen: boolean
@@ -53,6 +64,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
   // Use LenserContext mainly for the handle/identity bootstrapping
   const { lenser: authLenser } = useLenser()
   const { logout } = useAuth()
+  const { themeMode, setTheme } = useTheme()
 
   // Use optimized hook for display data (XP, Level, Fresh Avatar)
   const { profile: compactProfile } = useSidebarProfile(authLenser?.handle)
@@ -403,6 +415,27 @@ export const Sidebar: React.FC<SidebarProps> = ({
                             )}
                           </button>
                         )}
+
+                        <div className="px-3 py-2">
+                          <p className="text-xs text-gray-400 mb-1.5">Theme</p>
+                          <div className="flex gap-1">
+                            {THEME_OPTIONS.map(({ value, label, icon }) => (
+                              <button
+                                key={value}
+                                onClick={() => setTheme(value)}
+                                title={label}
+                                className={`flex-1 flex items-center justify-center gap-1 px-2 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+                                  themeMode === value
+                                    ? 'bg-primary text-gray-900'
+                                    : 'text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700'
+                                }`}
+                              >
+                                {icon}
+                                <span>{label}</span>
+                              </button>
+                            ))}
+                          </div>
+                        </div>
 
                         <button
                           className="w-full text-left px-3 py-2 rounded-lg text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white flex items-center gap-3 transition-colors"
