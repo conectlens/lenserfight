@@ -483,13 +483,185 @@ const invite = defineCommand({
 });
 
 // ---------------------------------------------------------------------------
+// battle delete
+// ---------------------------------------------------------------------------
+const deleteBattle = defineCommand({
+  meta: {
+    name: 'delete',
+    description: 'Delete a draft battle before it goes public.',
+  },
+  args: {
+    id: {
+      type: 'positional',
+      description: 'Battle UUID',
+      required: true,
+    },
+  },
+  async run({ args }) {
+    try {
+      await callRpc('fn_battles_delete', {
+        p_battle_id: args.id,
+      }, { requireAuth: true });
+      consola.success('Battle deleted: %s', args.id);
+    } catch (err) {
+      handleError(err);
+    }
+  },
+});
+
+// ---------------------------------------------------------------------------
+// battle clone
+// ---------------------------------------------------------------------------
+const clone = defineCommand({
+  meta: {
+    name: 'clone',
+    description: 'Clone an existing battle as a new draft.',
+  },
+  args: {
+    id: {
+      type: 'positional',
+      description: 'Source battle UUID',
+      required: true,
+    },
+    title: {
+      type: 'string',
+      description: 'Title for the cloned battle',
+      required: true,
+    },
+    slug: {
+      type: 'string',
+      description: 'URL-friendly slug for the cloned battle',
+      required: true,
+    },
+  },
+  async run({ args }) {
+    try {
+      const battleId = await callRpc<string>('fn_battles_clone', {
+        p_battle_id: args.id,
+        p_title: args.title,
+        p_slug: args.slug,
+      }, { requireAuth: true });
+      consola.success('Battle cloned: %s', battleId);
+    } catch (err) {
+      handleError(err);
+    }
+  },
+});
+
+// ---------------------------------------------------------------------------
+// battle close
+// ---------------------------------------------------------------------------
+const close = defineCommand({
+  meta: {
+    name: 'close',
+    description: 'Close an open battle to new submissions.',
+  },
+  args: {
+    id: {
+      type: 'positional',
+      description: 'Battle UUID',
+      required: true,
+    },
+  },
+  async run({ args }) {
+    try {
+      await callRpc('fn_battles_close', {
+        p_battle_id: args.id,
+      }, { requireAuth: true });
+      consola.success('Battle closed: %s', args.id);
+    } catch (err) {
+      handleError(err);
+    }
+  },
+});
+
+// ---------------------------------------------------------------------------
+// battle retract
+// ---------------------------------------------------------------------------
+const retract = defineCommand({
+  meta: {
+    name: 'retract',
+    description: 'Retract a published battle (unpublish).',
+  },
+  args: {
+    id: {
+      type: 'positional',
+      description: 'Battle UUID',
+      required: true,
+    },
+  },
+  async run({ args }) {
+    try {
+      await callRpc('fn_battles_retract', {
+        p_battle_id: args.id,
+      }, { requireAuth: true });
+      consola.success('Battle retracted: %s', args.id);
+    } catch (err) {
+      handleError(err);
+    }
+  },
+});
+
+// ---------------------------------------------------------------------------
+// battle leaderboard
+// ---------------------------------------------------------------------------
+const leaderboard = defineCommand({
+  meta: {
+    name: 'leaderboard',
+    description: 'Show ranked results for a finalized battle.',
+  },
+  args: {
+    id: {
+      type: 'positional',
+      description: 'Battle UUID',
+      required: true,
+    },
+    json: {
+      type: 'boolean',
+      description: 'Output as JSON',
+      default: false,
+    },
+  },
+  async run({ args }) {
+    try {
+      const results = await callRpc<Array<Record<string, unknown>>>(
+        'fn_battles_leaderboard',
+        { p_battle_id: args.id }
+      );
+
+      if (!Array.isArray(results) || results.length === 0) {
+        consola.info('No results found for battle: %s', args.id);
+        return;
+      }
+
+      if (args.json) {
+        printJson(results);
+        return;
+      }
+
+      printTable(
+        ['Rank', 'Contender', 'Score', 'Votes'],
+        results.map((r) => [
+          String(r.rank || '-'),
+          truncate(String(r.display_name || r.contender_id || '-'), 30),
+          String(r.score ?? '-'),
+          String(r.vote_count ?? '-'),
+        ])
+      );
+    } catch (err) {
+      handleError(err);
+    }
+  },
+});
+
+// ---------------------------------------------------------------------------
 // Root command
 // ---------------------------------------------------------------------------
 export default defineCommand({
   meta: {
     name: 'battle',
     description:
-      'Manage battles: create, list, view, open, join, submit, vote, finalize, publish, invite.',
+      'Manage battles: create, list, view, open, join, submit, vote, finalize, publish, invite, delete, clone, close, retract, leaderboard.',
   },
   subCommands: {
     create,
@@ -503,5 +675,10 @@ export default defineCommand({
     finalize,
     publish: publishBattle,
     invite,
+    delete: deleteBattle,
+    clone,
+    close,
+    retract,
+    leaderboard,
   },
 });
