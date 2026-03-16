@@ -16,6 +16,7 @@ The beta is split across four surfaces:
 - Learn the battle loop: [How Battles Work](/battles/how-battles-work)
 - Run a battle locally: [Quickstart](/tutorials/quickstart)
 - Review the release plan: [Beta Roadmap](/reference/beta-roadmap)
+- Review the cross-surface strategy: [Product Decision Memo](/reference/product-decision-memo)
 
 ## Core docs
 
