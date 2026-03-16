@@ -9,6 +9,11 @@ import {
   LenserFullProfile,
   LenserProfileDTO,
   TrendingLenser,
+  SuggestedLenser,
+  LeaderboardLenser,
+  LenserFollowStatus,
+  FollowsNetworkUser,
+  FollowPeriod,
 } from '@lenserfight/types'
 import { PromptTemplateRecord } from '@lenserfight/types'
 import { ThreadRecord } from '@lenserfight/types'
@@ -39,7 +44,7 @@ export interface LenserRepositoryPort {
   getPublicLenserProfile(handle: string): Promise<LenserProfileDTO>
   getAuthenticatedLenser(): Promise<Lenser | null>
 
-  // New features
+  // Existing features
   getLenserActions(lenserId: string): Promise<ActionRecord[]>
   getLenserNetwork(
     lenserId: string,
@@ -49,6 +54,21 @@ export interface LenserRepositoryPort {
   getLenserById(id: string): Promise<Lenser | null>
   getLanguages(): Promise<Language[]>
   getTrendingLensers(limit?: number): Promise<TrendingLenser[]>
+
+  // Phase 3: Follow graph
+  followLenser(followingId: string): Promise<LenserFollowStatus>
+  unfollowLenser(followingId: string): Promise<LenserFollowStatus>
+  isFollowing(targetId: string): Promise<boolean>
+  getLenserFollows(
+    lenserId: string,
+    type: 'followers' | 'following',
+    offset?: number,
+    limit?: number
+  ): Promise<FollowsNetworkUser[]>
+  getSuggestedLensers(lenserId: string, limit?: number): Promise<SuggestedLenser[]>
+
+  // Phase 4: Leaderboard
+  getLeaderboard(period: FollowPeriod, limit?: number): Promise<LeaderboardLenser[]>
 }
 export class SupabaseLenserRepository implements LenserRepositoryPort {
   async getPublicLenserProfile(handle: string): Promise<LenserProfileDTO> {
@@ -210,6 +230,92 @@ export class SupabaseLenserRepository implements LenserRepositoryPort {
       totalXp: Number(row.total_xp ?? 0),
       currentLevel: row.current_level as number,
       lenserScore: row.lenser_score as number,
+    }))
+  }
+
+  private mapLenserScoreRow(row: Record<string, unknown>): TrendingLenser {
+    return {
+      lenserId: row.lenser_id as string,
+      handle: row.handle as string,
+      displayName: row.display_name as string,
+      avatarUrl: (row.avatar_url as string | null) ?? null,
+      totalXp: Number(row.total_xp ?? 0),
+      currentLevel: row.current_level as number,
+      lenserScore: row.lenser_score as number,
+    }
+  }
+
+  // ── Phase 3: Follow graph ──────────────────────────────────────────────────
+
+  async followLenser(followingId: string): Promise<LenserFollowStatus> {
+    const { data, error } = await supabase.rpc('fn_lensers_follow', {
+      p_following_id: followingId,
+    })
+    if (error) throw error
+    return data as LenserFollowStatus
+  }
+
+  async unfollowLenser(followingId: string): Promise<LenserFollowStatus> {
+    const { data, error } = await supabase.rpc('fn_lensers_unfollow', {
+      p_following_id: followingId,
+    })
+    if (error) throw error
+    return data as LenserFollowStatus
+  }
+
+  async isFollowing(targetId: string): Promise<boolean> {
+    const { data, error } = await supabase.rpc('fn_lensers_is_following', {
+      p_target_id: targetId,
+    })
+    if (error) return false
+    return Boolean(data)
+  }
+
+  async getLenserFollows(
+    lenserId: string,
+    type: 'followers' | 'following',
+    offset = 0,
+    limit = 20
+  ): Promise<FollowsNetworkUser[]> {
+    const { data, error } = await supabase.rpc('fn_lensers_get_follows', {
+      p_lenser_id: lenserId,
+      p_type: type,
+      p_limit: limit,
+      p_offset: offset,
+    })
+    if (error) throw error
+    return ((data ?? []) as Record<string, unknown>[]).map((row) => ({
+      lenserId: row.lenser_id as string,
+      handle: row.handle as string,
+      displayName: row.display_name as string,
+      avatarUrl: (row.avatar_url as string | null) ?? null,
+      isFollowing: Boolean(row.is_following),
+    }))
+  }
+
+  async getSuggestedLensers(lenserId: string, limit = 10): Promise<SuggestedLenser[]> {
+    const { data, error } = await supabase.rpc('fn_lensers_get_suggested', {
+      p_lenser_id: lenserId,
+      p_limit: limit,
+    })
+    if (error) throw error
+    return ((data ?? []) as Record<string, unknown>[]).map((row) => ({
+      ...this.mapLenserScoreRow(row),
+      tagOverlapScore: (row.tag_overlap_score as number) ?? 0,
+    }))
+  }
+
+  // ── Phase 4: Leaderboard ───────────────────────────────────────────────────
+
+  async getLeaderboard(period: FollowPeriod = 'all_time', limit = 20): Promise<LeaderboardLenser[]> {
+    const { data, error } = await supabase.rpc('fn_lensers_get_leaderboard', {
+      p_period: period,
+      p_limit: limit,
+    })
+    if (error) throw error
+    return ((data ?? []) as Record<string, unknown>[]).map((row) => ({
+      ...this.mapLenserScoreRow(row),
+      rank: row.rank as number,
     }))
   }
 }

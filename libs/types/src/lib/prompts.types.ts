@@ -51,6 +51,12 @@ export interface PromptTemplateViewModel {
   visibility: VisibilityEnum
 }
 
+export interface PersonalPromptFeedItem extends PromptTemplateViewModel {
+  personalScore: number
+  hotScore?: number
+  primaryLanguage?: string
+}
+
 export interface PromptTemplateDetailViewModel extends PromptTemplateViewModel {
   content: string
   reactionCounts: Record<ReactionEnum, number>
