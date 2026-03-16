@@ -2,6 +2,7 @@ import { defineCommand } from 'citty';
 import consola from 'consola';
 import {
   configExists,
+  ensureUserConfigDir,
   loadConfig,
   loadEnvConfig,
   saveConfig,
@@ -44,6 +45,7 @@ export default defineCommand({
     const supabaseUrl = args.url || (mode === 'local' ? LOCAL_DEFAULT_URL : '');
 
     saveConfig({ mode: mode as 'local' | 'cloud', supabaseUrl, dbPort: 54322, apiPort: 54321 });
+    ensureUserConfigDir();
     consola.success('Created .lenserfight.json (mode: %s)', mode);
 
     // Show resolution summary
@@ -57,7 +59,7 @@ export default defineCommand({
         consola.info('Anon key : local Supabase defaults (auto)');
       }
       consola.info('URL      : %s', supabaseUrl);
-      consola.info('Tokens   : stored in ~/.lenserfight/config.json after login');
+      consola.info('Tokens   : ~/.lenserfight/config.json (created, populated on login)');
     } else {
       // Cloud mode guidance
       if (env.supabaseAnonKey) {
