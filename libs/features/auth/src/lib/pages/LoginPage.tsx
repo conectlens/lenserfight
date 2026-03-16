@@ -1,19 +1,20 @@
 import { Turnstile } from '@marsidev/react-turnstile'
 import { Eye, EyeOff, ArrowLeft, Check } from 'lucide-react'
-import React, { useState, useEffect } from 'react'
+import React, { useState } from 'react'
 import { Link, useNavigate, useLocation } from 'react-router-dom'
 
 import { Button } from '@lenserfight/ui/components'
 import { LoadingOverlay } from '@lenserfight/ui/components'
 import { isMock, isLocal, LOCAL_SEED_CREDENTIALS, ENABLE_CAPTCHA, CAPTCHA_SITE_KEY } from '@lenserfight/utils/env'
 import { useAuth } from '@lenserfight/features/auth'
+import { rememberMeStorage } from '@lenserfight/data/supabase'
 import { useFormValidation } from '@lenserfight/utils/validation'
 import { isRequired, isEmail } from '@lenserfight/utils/validation'
 import { AuthCard } from '../components/AuthCard'
 import { InputField } from '../components/InputField'
 
 export const LoginPage: React.FC = () => {
-  const { login, signInWithOAuth, isAuthenticated } = useAuth()
+  const { login, signInWithOAuth } = useAuth()
   const navigate = useNavigate()
   const location = useLocation()
 
@@ -33,16 +34,7 @@ export const LoginPage: React.FC = () => {
   const [showPassword, setShowPassword] = useState(false)
   const [isSuccess, setIsSuccess] = useState(false)
   const [captchaToken, setCaptchaToken] = useState<string | null>(null)
-
-  // Redirect if already authenticated, BUT NOT if we are currently submitting (waiting for success animation)
-  // or if we just finished success (waiting for redirect timeout)
-  useEffect(() => {
-    if (isAuthenticated && !isSuccess && !isSubmitting) {
-      const stateFrom = (location.state as any)?.from
-      const redirectPath = stateFrom ? `${stateFrom.pathname}${stateFrom.search || ''}` : '/'
-      navigate(redirectPath, { replace: true })
-    }
-  }, [isAuthenticated, navigate, isSuccess, isSubmitting, location.state])
+  const [rememberMe, setRememberMe] = useState(true)
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target
@@ -63,13 +55,12 @@ export const LoginPage: React.FC = () => {
 
     setIsSubmitting(true)
     try {
+      // Apply the remember-me preference before the session token is written
+      rememberMeStorage.setRememberMe(rememberMe)
       await login(formData.email, formData.password, captchaToken || undefined)
 
       // Success State Trigger - effectively starts the transition animation
       setIsSuccess(true)
-
-      // We keep isSubmitting true to prevent the useEffect redirect from firing prematurely
-      // and to keep the button in a "busy" or "success" state visually if visible.
 
       // Return URL Mechanism
       const stateFrom = (location.state as any)?.from
@@ -177,7 +168,12 @@ export const LoginPage: React.FC = () => {
           <div className="flex items-center justify-between text-sm pt-1">
             <label className="flex items-center gap-2 cursor-pointer group select-none">
               <div className="relative flex items-center">
-                <input type="checkbox" className="peer sr-only" />
+                <input
+                  type="checkbox"
+                  className="peer sr-only"
+                  checked={rememberMe}
+                  onChange={(e) => setRememberMe(e.target.checked)}
+                />
                 <div className="w-5 h-5 rounded border-2 border-gray-300 bg-white dark:bg-gray-800 dark:border-gray-600 peer-checked:bg-primary peer-checked:border-primary peer-focus:ring-2 peer-focus:ring-primary/30 transition-all"></div>
                 <Check
                   className="w-3.5 h-3.5 text-gray-900 absolute left-[3px] top-[3px] opacity-0 peer-checked:opacity-100 transition-opacity pointer-events-none"

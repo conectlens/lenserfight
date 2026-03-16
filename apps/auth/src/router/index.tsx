@@ -7,6 +7,9 @@ import {
   ResetPasswordPage,
 } from '@lenserfight/features/auth'
 import { OAuthCallbackPage } from '../pages/OAuthCallbackPage'
+import { OnboardingPage } from '../pages/OnboardingPage'
+import { GatewayGuard } from '../components/GatewayGuard'
+import { OnboardingGuard } from '../components/OnboardingGuard'
 
 export const AuthRouter: React.FC = () => {
   return (
@@ -16,14 +19,40 @@ export const AuthRouter: React.FC = () => {
         v7_relativeSplatPath: true,
       }}
     >
+      {/*
+       * GatewayGuard wraps all routes: authenticated users are immediately
+       * redirected to return_url (or the default forum) before any route renders.
+       * This prevents the render loop where LoginPage.useEffect navigates to "/"
+       * which the router then sends back to "/login" ad infinitum.
+       *
+       * /callback is excluded — it must render to complete the OAuth flow even
+       * for users who are mid-authentication.
+       */}
       <Routes>
-        <Route path="/login" element={<LoginPage />} />
-        <Route path="/register" element={<RegisterPage />} />
-        <Route path="/forgot-password" element={<ForgotPasswordPage />} />
-        <Route path="/reset-password" element={<ResetPasswordPage />} />
         <Route path="/callback" element={<OAuthCallbackPage />} />
-        <Route path="/" element={<Navigate to="/login" replace />} />
-        <Route path="*" element={<Navigate to="/login" replace />} />
+        <Route
+          path="/onboarding"
+          element={
+            <OnboardingGuard>
+              <OnboardingPage />
+            </OnboardingGuard>
+          }
+        />
+        <Route
+          path="/*"
+          element={
+            <GatewayGuard>
+              <Routes>
+                <Route path="/login" element={<LoginPage />} />
+                <Route path="/register" element={<RegisterPage />} />
+                <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+                <Route path="/reset-password" element={<ResetPasswordPage />} />
+                <Route path="/" element={<Navigate to="/login" replace />} />
+                <Route path="*" element={<Navigate to="/login" replace />} />
+              </Routes>
+            </GatewayGuard>
+          }
+        />
       </Routes>
     </BrowserRouter>
   )
