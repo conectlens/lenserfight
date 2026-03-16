@@ -30,6 +30,9 @@ dist-ssr
 .env.production
 .env.development
 
+# LenserFight CLI — machine-specific, never commit
+.lenserfight.json
+
 # Firebase
 .firebase/
 firebase-debug.log
