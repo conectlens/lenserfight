@@ -8,6 +8,16 @@ export const DATA_SOURCE = import.meta.env.VITE_DATA_SOURCE || 'supabase'
 // Mock flag
 export const isMock = import.meta.env.VITE_MOCK === 'true'
 
+// Local development flag (Vite dev server)
+export const isLocal = MODE === 'development'
+
+// Seed credentials for local auto-fill (matches supabase/seed.sql)
+export const LOCAL_SEED_CREDENTIALS = {
+  email: 'alice@lenserfight.local',
+  password: 'Password123!',
+  displayName: 'Alice Arena',
+} as const
+
 // Feature Flags
 export const FEATURES = {
   CHALLENGES_TAB: import.meta.env.VITE_FEATURE_CHALLENGES_TAB === 'true',

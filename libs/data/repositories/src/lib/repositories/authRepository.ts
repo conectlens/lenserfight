@@ -84,8 +84,9 @@ export class SupabaseAuthRepository implements AuthRepositoryPort {
 
 
   async requestPasswordReset(email: string, captchaToken?: string): Promise<void> {
+    const authAppUrl = import.meta.env.VITE_AUTH_APP_URL ?? window.location.origin
     const { error } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: `${window.location.origin}/auth/reset-password`,
+      redirectTo: `${authAppUrl}/reset-password`,
       captchaToken,
     })
     if (error) throw error
@@ -97,9 +98,15 @@ export class SupabaseAuthRepository implements AuthRepositoryPort {
   }
 
   async signInWithOAuth(provider: 'google' | 'github' | 'azure'): Promise<void> {
+    const authAppUrl = import.meta.env.VITE_AUTH_APP_URL ?? window.location.origin
+    // Preserve the current app URL so /callback can redirect back after OAuth
+    const returnUrl = new URLSearchParams(window.location.search).get('return_url')
+    if (returnUrl) {
+      localStorage.setItem('auth_return_url', returnUrl)
+    }
     const { error } = await supabase.auth.signInWithOAuth({
       provider: provider,
-      options: { redirectTo: `${window.location.origin}` },
+      options: { redirectTo: `${authAppUrl}/callback` },
     })
     if (error) throw error
   }
