@@ -16,7 +16,6 @@ export interface Feedback {
 export interface SubmitFeedbackDTO {
   product_tag?: ProductTag
   page: string
-  user_id?: string | null
   message: string
   start_date?: string | null
   end_date?: string | null
