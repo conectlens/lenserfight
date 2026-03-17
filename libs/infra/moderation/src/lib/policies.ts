@@ -1,6 +1,6 @@
 import { GoogleGenAI } from '@google/genai'
 
-import { ModerationPolicy, ModerationResult } from '../../types/moderation.types'
+import { ModerationPolicy, ModerationResult } from './moderation.types'
 
 /**
  * 1. Dictionary Policy with Leetspeak Normalization

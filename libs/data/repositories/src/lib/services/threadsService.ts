@@ -24,14 +24,14 @@ const sumReactionTotals = (reactionTotals?: Record<string, number>): number => {
 }
 
 const resolveAuthor = (record: Pick<ThreadRecord, 'author_profile' | 'lenser_id'>): ThreadAuthor => {
-  const profile = record.author_profile || {}
+  const profile = record.author_profile
   return {
     // ID is preserved for ownership checks (e.g. edit/delete permissions)
-    id: profile.id || record.lenser_id || 'unknown',
+    id: profile?.id || record.lenser_id || 'unknown',
     // Presentation layer attributes strictly from profile snapshot or default
-    displayName: profile.display_name || 'Unknown',
-    handle: profile.handle || 'unknown',
-    avatarUrl: profile.avatar_url || null,
+    displayName: profile?.display_name || 'Unknown',
+    handle: profile?.handle || 'unknown',
+    avatarUrl: profile?.avatar_url || null,
   }
 }
 
