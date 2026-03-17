@@ -231,13 +231,16 @@ export class SupabaseThreadsRepository implements ThreadsRepositoryPort {
     const cleanLenserId = !dto.lenserId || dto.lenserId === 'undefined' ? undefined : dto.lenserId
 
     // 1. Resolve the content language from the exposed profile schema.
-    const { data: profileData } = await supabase
-      .schema('lensers')
-      .from('profiles')
-      .select('preferred_language')
-      .eq('id', cleanLenserId)
-      .maybeSingle()
-    const languageCode = profileData?.preferred_language || 'en'
+    let languageCode = 'en'
+    if (cleanLenserId) {
+      const { data: profileData } = await supabase
+        .schema('lensers')
+        .from('profiles')
+        .select('preferred_language')
+        .eq('id', cleanLenserId)
+        .maybeSingle()
+      languageCode = profileData?.preferred_language || 'en'
+    }
 
     // 2. Insert Base Thread
     const { data: threadInsertData, error: insertError } = await supabase.schema('content').from('threads').insert({
