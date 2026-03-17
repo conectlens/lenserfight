@@ -33,7 +33,7 @@ export const PromptsPage: React.FC = () => {
     sortOrder
   )
 
-  const prompts = data?.pages.flatMap((page) => page) || []
+  const prompts = data?.pages.flatMap((page) => page.data ?? []) || []
 
   // Create Prompt Logic
   const {
