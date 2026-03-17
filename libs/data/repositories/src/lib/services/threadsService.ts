@@ -11,6 +11,7 @@ import {
   CreateThreadDTO,
   ThreadAuthor,
 } from '@lenserfight/types'
+import { ApiResponseEnvelope, paginatedResponse } from 'contracts'
 
 import { tagService } from './tagService'
 import { threadInteractionService } from './threadInteractionService'
@@ -78,9 +79,15 @@ export const threadsService = {
     currentUserId?: string,
     offset = 0,
     limit = 10
-  ): Promise<ThreadFeedItem[]> => {
-    const records = await threadsRepo.getAllThreads(offset, limit)
-    return threadsService._mapToFeedItems(records, currentUserId)
+  ): Promise<ApiResponseEnvelope<ThreadFeedItem[]>> => {
+    const result = await threadsRepo.getAllThreads(offset, limit)
+    const items = await threadsService._mapToFeedItems(result.data ?? [], currentUserId)
+    return paginatedResponse(items, {
+      limit: result.meta?.limit ?? limit,
+      offset: result.meta?.offset ?? offset,
+      total: result.meta?.total,
+      hasNextPage: result.meta?.hasNextPage ?? false,
+    }, { durationMs: result.meta?.durationMs })
   },
 
   getThreadsByTag: async (
@@ -88,9 +95,15 @@ export const threadsService = {
     currentUserId?: string,
     offset = 0,
     limit = 10
-  ): Promise<ThreadFeedItem[]> => {
-    const records = await threadsRepo.getThreadsByTag(slug, offset, limit)
-    return threadsService._mapToFeedItems(records, currentUserId)
+  ): Promise<ApiResponseEnvelope<ThreadFeedItem[]>> => {
+    const result = await threadsRepo.getThreadsByTag(slug, offset, limit)
+    const items = await threadsService._mapToFeedItems(result.data ?? [], currentUserId)
+    return paginatedResponse(items, {
+      limit: result.meta?.limit ?? limit,
+      offset: result.meta?.offset ?? offset,
+      total: result.meta?.total,
+      hasNextPage: result.meta?.hasNextPage ?? false,
+    }, { durationMs: result.meta?.durationMs })
   },
 
   getThreadsByLenser: async (
@@ -190,7 +203,7 @@ export const threadsService = {
     lang?: string,
     offset = 0,
     limit = 20
-  ): Promise<ThreadFeedItem[]> => {
+  ): Promise<ApiResponseEnvelope<ThreadFeedItem[]>> => {
     return threadsRepo.getTrendingThreads(lang, offset, limit)
   },
 
@@ -198,7 +211,7 @@ export const threadsService = {
     _lenserId: string,
     offset = 0,
     limit = 20
-  ): Promise<PersonalFeedItem[]> => {
+  ): Promise<ApiResponseEnvelope<PersonalFeedItem[]>> => {
     return threadsRepo.getPersonalFeed(offset, limit)
   },
 
