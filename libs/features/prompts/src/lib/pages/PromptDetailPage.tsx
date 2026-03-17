@@ -1,5 +1,5 @@
 import { useQueryClient } from '@tanstack/react-query'
-import { Lock, Pencil, Trash2 } from 'lucide-react'
+import { Lock, Pencil, Trash2, Flag } from 'lucide-react'
 import React, { useEffect, useMemo, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 
@@ -9,6 +9,7 @@ import { useAuth } from '@lenserfight/features/auth'
 import { useShareContext } from '@lenserfight/features/share'
 import { useUI } from '@lenserfight/ui/components'
 import { promptsService } from '@lenserfight/data/repositories'
+import { useReportContent } from '@lenserfight/features/home'
 import { AIResultsSection } from '@lenserfight/features/generations'
 import { CreateLenserProfileModal } from '@lenserfight/features/onboarding'
 import { CreatePromptModal } from '../components/CreatePromptModal'
@@ -32,8 +33,14 @@ export const PromptDetailPage: React.FC = () => {
   const { prompt, relatedPrompts, authorPrompts, isLoading, error, actions } =
     usePromptDetailController(id)
 
+  const reportContent = useReportContent()
+
   const [showProfileModal, setShowProfileModal] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
+  const [isReportOpen, setIsReportOpen] = useState(false)
+  const [reportReason, setReportReason] = useState<
+    'spam' | 'harassment' | 'misinformation' | 'off_topic' | 'other'
+  >('spam')
 
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false)
   const [isDeleting, setIsDeleting] = useState(false)
@@ -114,8 +121,18 @@ export const PromptDetailPage: React.FC = () => {
         },
       ]
     }
+    if (!isOwner && prompt?.id && hasLenser) {
+      return [
+        {
+          label: 'Report Prompt',
+          icon: <Flag size={16} />,
+          onClick: () => setIsReportOpen(true),
+          variant: 'danger' as const,
+        },
+      ]
+    }
     return []
-  }, [isOwner, prompt])
+  }, [isOwner, prompt, hasLenser])
 
   useEffect(() => {
     setPageActions(pageActions)
@@ -278,6 +295,63 @@ export const PromptDetailPage: React.FC = () => {
         confirmLabel="Delete"
         isLoading={isDeleting}
       />
+
+      {isReportOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+          <div className="bg-white dark:bg-gray-800 rounded-xl p-6 max-w-sm w-full space-y-4 shadow-xl">
+            <h3 className="text-base font-semibold text-gray-900 dark:text-white">
+              Report Prompt
+            </h3>
+            <p className="text-sm text-gray-500 dark:text-gray-400">
+              Why are you reporting this prompt?
+            </p>
+            <select
+              value={reportReason}
+              onChange={(e) =>
+                setReportReason(
+                  e.target.value as
+                    | 'spam'
+                    | 'harassment'
+                    | 'misinformation'
+                    | 'off_topic'
+                    | 'other'
+                )
+              }
+              className="w-full border border-gray-200 dark:border-gray-600 rounded-lg px-3 py-2 text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+            >
+              {(['spam', 'harassment', 'misinformation', 'off_topic', 'other'] as const).map(
+                (r) => (
+                  <option key={r} value={r}>
+                    {r.replace('_', ' ').replace(/\b\w/g, (c) => c.toUpperCase())}
+                  </option>
+                )
+              )}
+            </select>
+            <div className="flex gap-3 justify-end pt-1">
+              <button
+                onClick={() => setIsReportOpen(false)}
+                className="px-4 py-2 text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => {
+                  reportContent.mutate({
+                    targetType: 'prompt_template',
+                    targetId: prompt.id,
+                    reason: reportReason,
+                  })
+                  setIsReportOpen(false)
+                }}
+                disabled={reportContent.isPending}
+                className="px-4 py-2 text-sm bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors disabled:opacity-50"
+              >
+                {reportContent.isPending ? 'Reporting…' : 'Report'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
