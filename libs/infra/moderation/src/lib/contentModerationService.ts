@@ -1,6 +1,6 @@
-import { ModerationPolicy, ModerationError } from '../types/moderation.types'
+import { ModerationPolicy, ModerationError } from './moderation.types'
 
-import { DictionaryPolicy, RegexPolicy, SemanticPolicy } from './moderation/policies.ts'
+import { DictionaryPolicy, RegexPolicy, SemanticPolicy } from './policies'
 
 class ContentModerationService {
   private policies: ModerationPolicy[]
