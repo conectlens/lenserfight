@@ -4,13 +4,13 @@
 -- =============================================================================
 
 -- Memory tuning for bulk operations
-SET work_mem = '256MB';
-SET maintenance_work_mem = '512MB';
+SET work_mem = '32MB';
+SET maintenance_work_mem = '128MB';
 
 -- ---------------------------------------------------------------------------
 -- Utility: language picker with weighted distribution
 -- ---------------------------------------------------------------------------
-CREATE OR REPLACE FUNCTION pg_temp.seed_pick_language(r float)
+CREATE OR REPLACE FUNCTION public.seed_pick_language(r float)
 RETURNS text LANGUAGE sql IMMUTABLE AS $$
   SELECT CASE
     WHEN r < 0.40 THEN 'en'
@@ -30,7 +30,7 @@ $$;
 -- ---------------------------------------------------------------------------
 -- Utility: country picker with weighted distribution
 -- ---------------------------------------------------------------------------
-CREATE OR REPLACE FUNCTION pg_temp.seed_pick_country(r float)
+CREATE OR REPLACE FUNCTION public.seed_pick_country(r float)
 RETURNS text LANGUAGE sql IMMUTABLE AS $$
   SELECT CASE
     WHEN r < 0.25 THEN 'US'
@@ -51,7 +51,7 @@ RETURNS text LANGUAGE sql IMMUTABLE AS $$
 $$;
 
 -- Pre-computed bcrypt hash for 'seedpassword' (avoids per-row crypt() cost)
-CREATE OR REPLACE FUNCTION pg_temp.seed_password_hash()
+CREATE OR REPLACE FUNCTION public.seed_password_hash()
 RETURNS text LANGUAGE sql IMMUTABLE AS $$
   SELECT '$2a$06$RzK1X5hN5KqJF5V8OqXYXOqYXOqYXOqYXOqYXOqYXOqYXOqYXOqYX'::text;
 $$;

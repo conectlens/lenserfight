@@ -51,7 +51,7 @@ ALTER TABLE analytics.lenser_join_log ENABLE TRIGGER "trg_no_update_lenser_join_
 -- ---------------------------------------------------------------------------
 -- Backfill analytics.lenser_join_log
 -- ---------------------------------------------------------------------------
-INSERT INTO analytics.lenser_join_log (lenser_id, created_at)
+INSERT INTO analytics.lenser_join_log (lenser_id, joined_at)
 SELECT id, created_at
 FROM lensers.profiles
 WHERE handle LIKE 'lenser_%'
@@ -61,14 +61,13 @@ ON CONFLICT (lenser_id) DO NOTHING;
 -- ---------------------------------------------------------------------------
 -- Backfill analytics.lenser_stats (thread/prompt/follower/following counts)
 -- ---------------------------------------------------------------------------
-INSERT INTO analytics.lenser_stats (lenser_id, thread_count, prompt_count, follower_count, following_count, created_at, updated_at)
+INSERT INTO analytics.lenser_stats (lenser_id, thread_count, prompt_count, follower_count, following_count, updated_at)
 SELECT
   p.id,
   COALESCE(tc.cnt, 0),
   COALESCE(pc.cnt, 0),
   COALESCE(frc.cnt, 0),
   COALESCE(fgc.cnt, 0),
-  now(),
   now()
 FROM lensers.profiles p
 LEFT JOIN (
@@ -111,6 +110,9 @@ WHERE t.id = sub.thread_id
 -- ---------------------------------------------------------------------------
 DROP TABLE IF EXISTS seed_profile_index;
 DROP TABLE IF EXISTS seed_tag_index;
+DROP FUNCTION IF EXISTS public.seed_pick_language(float);
+DROP FUNCTION IF EXISTS public.seed_pick_country(float);
+DROP FUNCTION IF EXISTS public.seed_password_hash();
 
 -- ---------------------------------------------------------------------------
 -- ANALYZE all seeded tables for query planner accuracy
