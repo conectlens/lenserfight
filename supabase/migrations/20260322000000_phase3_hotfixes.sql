@@ -52,8 +52,12 @@ CREATE POLICY "Public can read badges"
 
 -- =============================================================================
 -- A5. Update content.vw_auth_threads to include prompt_data
+-- DROP + CREATE because PostgreSQL's CREATE OR REPLACE VIEW cannot reorder
+-- existing columns (prompt_data must be inserted before title).
 -- =============================================================================
-CREATE OR REPLACE VIEW content.vw_auth_threads AS
+DROP VIEW IF EXISTS content.vw_auth_threads CASCADE;
+
+CREATE VIEW content.vw_auth_threads AS
  SELECT t.id,
     t.lenser_id,
     t.visibility,
@@ -77,10 +81,18 @@ CREATE OR REPLACE VIEW content.vw_auth_threads AS
      LEFT JOIN lensers.profiles prof ON t.lenser_id = prof.id)
      LEFT JOIN content.thread_translations tt ON (t.id = tt.thread_id AND tt.is_original = true));
 
+ALTER TABLE content.vw_auth_threads OWNER TO postgres;
+GRANT SELECT ON TABLE content.vw_auth_threads TO anon;
+GRANT SELECT ON TABLE content.vw_auth_threads TO authenticated;
+GRANT SELECT ON TABLE content.vw_auth_threads TO service_role;
+
 -- =============================================================================
 -- A6. Update public.vw_content_threads_public to include prompt_data
+-- Same issue: DROP + CREATE to allow inserting prompt_data before tags.
 -- =============================================================================
-CREATE OR REPLACE VIEW public.vw_content_threads_public AS
+DROP VIEW IF EXISTS public.vw_content_threads_public CASCADE;
+
+CREATE VIEW public.vw_content_threads_public AS
  SELECT t.id,
     COALESCE(tt.title, 'Untitled'::text) AS title,
     COALESCE(tt.content, ''::text) AS content,
@@ -106,5 +118,10 @@ CREATE OR REPLACE VIEW public.vw_content_threads_public AS
      LEFT JOIN content.thread_translations tt ON (t.id = tt.thread_id AND tt.is_original = true))
      LEFT JOIN lensers.profiles prof ON t.lenser_id = prof.id)
   WHERE t.visibility = 'public'::content.visibility_enum;
+
+ALTER TABLE public.vw_content_threads_public OWNER TO postgres;
+GRANT ALL ON TABLE public.vw_content_threads_public TO anon;
+GRANT ALL ON TABLE public.vw_content_threads_public TO authenticated;
+GRANT ALL ON TABLE public.vw_content_threads_public TO service_role;
 
 COMMIT;

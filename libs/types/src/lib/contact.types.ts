@@ -12,7 +12,6 @@ export interface ContactMessage {
 }
 
 export interface CreateContactDTO {
-  lenser_id?: string | null
   name: string
   email: string
   subject: string
