@@ -39,9 +39,13 @@ const insertReplyInTree = (nodes: any[], newReply: any, parentId?: string): any[
 const incrementedThreadViews = new Set<string>()
 
 export const useThreadDetailController = (threadId?: string) => {
-  const { lenser } = useAuthenticatedLenser()
-  const { user } = useAuth()
+  const { lenser, isLoading: isLenserLoading } = useAuthenticatedLenser()
+  const { user, isAuthenticated } = useAuth()
   const queryClient = useQueryClient()
+
+  // Don't fire until we know who the viewer is — prevents a premature 401 for private threads
+  const queryReady = !!threadId && (!isAuthenticated || !isLenserLoading)
+  const detailKey = [...queryKeys.threads.detail(threadId || ''), { viewerId: lenser?.id }]
 
   //
   // 1. Aggregated Query
@@ -51,12 +55,12 @@ export const useThreadDetailController = (threadId?: string) => {
     isLoading: loading,
     error: queryError,
   } = useQuery({
-    queryKey: [...queryKeys.threads.detail(threadId || ''), { viewerId: lenser?.id }],
+    queryKey: detailKey,
     queryFn: async () => {
       if (!threadId) return null
       return threadsService.getThreadDetail(threadId, lenser?.id)
     },
-    enabled: !!threadId,
+    enabled: queryReady,
     staleTime: 1000 * 60 * 5,
     gcTime: 1000 * 60 * 30,
     retry: (failureCount, error: any) => {
@@ -108,16 +112,14 @@ export const useThreadDetailController = (threadId?: string) => {
       return reactionService.toggleReaction('thread', threadId, lenser.id, 'like')
     },
     onMutate: async () => {
-      await queryClient.cancelQueries({ queryKey: queryKeys.threads.detail(threadId!) })
+      await queryClient.cancelQueries({ queryKey: detailKey })
 
-      const prev = queryClient.getQueryData<ThreadDetailViewModel>(
-        queryKeys.threads.detail(threadId!)
-      )
+      const prev = queryClient.getQueryData<ThreadDetailViewModel>(detailKey)
       if (!prev) return { prev }
 
       const toggled = !prev.userHasReacted
 
-      queryClient.setQueryData(queryKeys.threads.detail(threadId!), {
+      queryClient.setQueryData(detailKey, {
         ...prev,
         userHasReacted: toggled,
         reactionCount: prev.reactionCount + (toggled ? 1 : -1),
@@ -127,18 +129,16 @@ export const useThreadDetailController = (threadId?: string) => {
     },
     onError: (_e, _v, ctx) => {
       if (ctx?.prev) {
-        queryClient.setQueryData(queryKeys.threads.detail(threadId!), ctx.prev)
+        queryClient.setQueryData(detailKey, ctx.prev)
       }
     },
     onSuccess: (result) => {
-      const prev = queryClient.getQueryData<ThreadDetailViewModel>(
-        queryKeys.threads.detail(threadId!)
-      )
+      const prev = queryClient.getQueryData<ThreadDetailViewModel>(detailKey)
       if (!prev) return
 
       const finalHas = result.added
 
-      queryClient.setQueryData(queryKeys.threads.detail(threadId!), {
+      queryClient.setQueryData(detailKey, {
         ...prev,
         userHasReacted: finalHas,
         // IMPORTANT: DO NOT update reactionCount here
@@ -153,13 +153,9 @@ export const useThreadDetailController = (threadId?: string) => {
       return threadInteractionService.toggleReplyReaction(replyId, lenser.id)
     },
     onMutate: async (replyId) => {
-      await queryClient.cancelQueries({
-        queryKey: queryKeys.threads.detail(threadId!),
-      })
+      await queryClient.cancelQueries({ queryKey: detailKey })
 
-      const previousThread = queryClient.getQueryData<ThreadDetailViewModel>(
-        queryKeys.threads.detail(threadId!)
-      )
+      const previousThread = queryClient.getQueryData<ThreadDetailViewModel>(detailKey)
 
       if (previousThread) {
         const updatedReplies = updateReplyInTree(previousThread.replies, replyId, (r) => ({
@@ -168,7 +164,7 @@ export const useThreadDetailController = (threadId?: string) => {
           reactionCount: r.userHasReacted ? r.reactionCount - 1 : r.reactionCount + 1,
         }))
 
-        queryClient.setQueryData<ThreadDetailViewModel>(queryKeys.threads.detail(threadId!), {
+        queryClient.setQueryData<ThreadDetailViewModel>(detailKey, {
           ...previousThread,
           replies: updatedReplies,
         })
@@ -178,7 +174,7 @@ export const useThreadDetailController = (threadId?: string) => {
     },
     onError: (_err, _vars, context) => {
       if (context?.previousThread) {
-        queryClient.setQueryData(queryKeys.threads.detail(threadId!), context.previousThread)
+        queryClient.setQueryData(detailKey, context.previousThread)
       }
     },
   })
@@ -190,7 +186,7 @@ export const useThreadDetailController = (threadId?: string) => {
     },
     onSuccess: (newReply, { parentId }) => {
       queryClient.setQueryData<ThreadDetailViewModel>(
-        queryKeys.threads.detail(threadId!),
+        detailKey,
         (old) => {
         if (!old) return old
         return {
