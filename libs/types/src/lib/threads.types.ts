@@ -12,7 +12,6 @@ export interface CreateThreadDTO {
   title: string
   content: string
   tagIds: string[]
-  lenserId: string
   visibility: Visibility
 }
 

@@ -91,11 +91,11 @@ export const promptsService = {
   },
 
   getPersonalFeed: async (
-    lenserId: string,
+    _lenserId: string,
     offset = 0,
     limit = 20
   ): Promise<PersonalPromptFeedItem[]> => {
-    return promptsRepo.getPersonalFeed(lenserId, offset, limit)
+    return promptsRepo.getPersonalFeed(offset, limit)
   },
 
   getLenserPrompts: async (
@@ -203,7 +203,6 @@ export const promptsService = {
           entity_type: 'prompt',
           entity_id: prompt.id,
           activity_type: 'created',
-          actor_id: input.lenserId,
         }))
       )
       .catch(console.error)
@@ -213,11 +212,10 @@ export const promptsService = {
   updatePrompt: async (
     id: string,
     input: Partial<CreatePromptDTO>,
-    lenserId: string
+    _lenserId?: string
   ): Promise<PromptTemplateRecord> => {
-    const existing = await promptsRepo.getById(id, lenserId)
+    const existing = await promptsRepo.getById(id)
     if (!existing) throw new Error('Prompt not found')
-    if (existing.lenser_id !== lenserId) throw new Error('Unauthorized to edit this prompt')
 
     if (input.content && !input.description) {
       input.description =
@@ -233,14 +231,9 @@ export const promptsService = {
     return promptsRepo.updatePrompt(id, { ...input, tagIds: realTagIds })
   },
 
-  deletePrompt: async (id: string, lenserId: string): Promise<void> => {
-    const existing = await promptsRepo.getById(id, lenserId)
+  deletePrompt: async (id: string, _lenserId?: string): Promise<void> => {
+    const existing = await promptsRepo.getById(id)
     if (!existing) throw new Error('Prompt not found')
-
-    if (existing.lenser_id !== lenserId) {
-      throw new Error('Unauthorized to delete this prompt')
-    }
-
     await promptsRepo.deletePrompt(id)
   },
 
