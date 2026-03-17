@@ -18,6 +18,9 @@ interface SEOHeadProps {
   overrideTitle?: string
 }
 
+const FORUM_HOST = 'https://lenserfight.com'
+const DEFAULT_OG_IMAGE = `${FORUM_HOST}/og-banner.png`
+
 export const SEOHead: React.FC<SEOHeadProps> = ({ type, data, overrideTitle }) => {
   const meta: SEOMetadata = useMemo(() => {
     if (overrideTitle) {
@@ -45,18 +48,44 @@ export const SEOHead: React.FC<SEOHeadProps> = ({ type, data, overrideTitle }) =
     }
   }, [type, data, overrideTitle])
 
+  // Derive canonical URL: prefer meta.url, fall back to current page location (client-only)
+  const canonicalUrl =
+    meta.url ??
+    (typeof window !== 'undefined' ? window.location.origin + window.location.pathname : FORUM_HOST)
+
+  const ogImage = meta.ogImage ?? DEFAULT_OG_IMAGE
+  const ogType =
+    type === 'profile' ? 'profile' : type === 'prompt' || type === 'thread' ? 'article' : 'website'
+
   return (
     <Helmet>
       <title>{meta.title}</title>
       <meta name="description" content={meta.description} />
 
+      {/* Canonical — critical for deduplication across search engines */}
+      <link rel="canonical" href={canonicalUrl} />
+
       {/* Open Graph / Social */}
       <meta property="og:title" content={meta.title} />
       <meta property="og:description" content={meta.description} />
-      <meta property="og:type" content={type === 'profile' ? 'profile' : 'website'} />
+      <meta property="og:type" content={ogType} />
+      <meta property="og:url" content={canonicalUrl} />
+      <meta property="og:image" content={ogImage} />
+      <meta property="og:image:width" content="1200" />
+      <meta property="og:image:height" content="630" />
+      <meta property="og:site_name" content="LenserFight" />
+
+      {/* Twitter / X */}
       <meta name="twitter:card" content="summary_large_image" />
       <meta name="twitter:title" content={meta.title} />
       <meta name="twitter:description" content={meta.description} />
+      <meta name="twitter:image" content={ogImage} />
+      <meta name="twitter:site" content="@lenserfight" />
+
+      {/* JSON-LD structured data — helps Google, Bing, Yandex understand content type */}
+      {meta.jsonLd && (
+        <script type="application/ld+json">{JSON.stringify(meta.jsonLd)}</script>
+      )}
     </Helmet>
   )
 }
