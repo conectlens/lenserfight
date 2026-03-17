@@ -1,7 +1,7 @@
 ---
 name: repo-performance-guard
 description: Enforce performance-safe query and rendering patterns across this Nx monorepo. Use when working on Vite freezes, Supabase overfetching, pagination, caching, CPU hotspots, memory pressure, or large seeded datasets.
-user-invocable: false
+disable-model-invocation: true
 ---
 
 # Repo Performance Guard
