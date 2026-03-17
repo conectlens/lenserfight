@@ -171,13 +171,13 @@ export const threadsService = {
       }
     }
 
-    let userHasReacted = false
-    if (viewerLenserId) {
-      const [reaction] = await reactionRepo.getUserReaction('thread', threadId, viewerLenserId)
-      userHasReacted = !!reaction
-    }
-
-    const replies = await threadInteractionService.getReplyTree(threadId, viewerLenserId)
+    // Parallelize: reaction check and reply tree are independent of each other
+    const [userHasReacted, replies] = await Promise.all([
+      viewerLenserId
+        ? reactionRepo.getUserReaction('thread', threadId, viewerLenserId).then(([r]) => !!r)
+        : Promise.resolve(false),
+      threadInteractionService.getReplyTree(threadId, viewerLenserId),
+    ])
 
     return {
       id: record.id,
