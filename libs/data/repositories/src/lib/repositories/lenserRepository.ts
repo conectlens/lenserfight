@@ -5,8 +5,6 @@ import {
   LenserActivityPoint,
   ActionRecord,
   NetworkUser,
-  AuthorProfile,
-  LenserFullProfile,
   LenserProfileDTO,
   TrendingLenser,
   SuggestedLenser,
@@ -148,9 +146,12 @@ export class SupabaseLenserRepository implements LenserRepositoryPort {
 
   async getRecentlyActive(limit: number): Promise<Lenser[]> {
     const { data, error } = await supabase
-      .from('vw_lensers_profile_full')
+      .schema('lensers')
+      .from('profiles')
       .select('*')
-      .order('updated_at', { ascending: false })
+      .eq('status', 'active')
+      .is('deletion_requested_at', null)
+      .order('last_active_at', { ascending: false })
       .limit(limit)
     if (error) throw error
     return data as Lenser[]
@@ -167,7 +168,7 @@ export class SupabaseLenserRepository implements LenserRepositoryPort {
     handle: string,
     offset = 0,
     limit = 10,
-    viewerId?: string
+    _viewerId?: string
   ): Promise<PromptTemplateRecord[]> {
     const query = supabase
       .from('vw_prompt_templates_public')
@@ -203,21 +204,26 @@ export class SupabaseLenserRepository implements LenserRepositoryPort {
     return data as ThreadRecord[]
   }
 
-  async getActivityTimeline(lenserId: string): Promise<LenserActivityPoint[]> {
+  async getActivityTimeline(_lenserId: string): Promise<LenserActivityPoint[]> {
     return []
   }
-  async getLenserActions(lenserId: string): Promise<ActionRecord[]> {
+  async getLenserActions(_lenserId: string): Promise<ActionRecord[]> {
     return []
   }
   async getLenserNetwork(
-    lenserId: string,
-    type: 'followers' | 'following',
-    page: number
+    _lenserId: string,
+    _type: 'followers' | 'following',
+    _page: number
   ): Promise<NetworkUser[]> {
     return []
   }
   async getLenserById(id: string): Promise<Lenser | null> {
-    const { data, error } = await supabase.from('vw_lensers_profile_full').select('*').eq('id', id).single()
+    const { data, error } = await supabase
+      .schema('lensers')
+      .from('profiles')
+      .select('*')
+      .eq('id', id)
+      .maybeSingle()
     if (error) return null
     return data as Lenser
   }
