@@ -1,11 +1,14 @@
 import { useState } from 'react'
 
+import { useQueryClient } from '@tanstack/react-query'
+import { queryKeys } from '@lenserfight/data/cache'
 import { promptsService } from '@lenserfight/data/repositories'
 import { CreatePromptDTO, VisibilityEnum } from '@lenserfight/types'
 import { useAuthenticatedLenser } from './useAuthenticatedLenser'
 
 export const useCreatePrompt = () => {
   const { lenser } = useAuthenticatedLenser()
+  const queryClient = useQueryClient()
   const [isOpen, setIsOpen] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -78,6 +81,14 @@ export const useCreatePrompt = () => {
         // @ts-ignore - full DTO required for create
         const created = await promptsService.createPrompt(dto as CreatePromptDTO)
         resultId = created.id
+      }
+
+      queryClient.invalidateQueries({ queryKey: queryKeys.prompts.feed() })
+      if (lenser?.id) {
+        queryClient.invalidateQueries({ queryKey: queryKeys.prompts.personal(lenser.id) })
+      }
+      if (editId) {
+        queryClient.invalidateQueries({ queryKey: queryKeys.prompts.detail(editId) })
       }
 
       if (onSuccess) onSuccess(resultId)
