@@ -21,6 +21,10 @@ export const ThreadsListCard: React.FC<ThreadsListCardProps> = memo(
   ({ thread, onOpen, isOwner, onEdit, onDelete }) => {
     const navigate = useNavigate()
 
+    if (!thread?.author) {
+      return null
+    }
+
     const handleUserClick = (e: React.MouseEvent) => {
       e.stopPropagation()
       navigate(`/lenser/${thread.author.handle}`)

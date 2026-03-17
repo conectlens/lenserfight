@@ -102,13 +102,13 @@ export const HomePage: React.FC = () => {
   const activeIsFetchingNext =
     activeTab === 'for_you' ? isFetchingNextPersonal : isFetchingNextPage
   const activeIsLoading = activeTab === 'for_you' ? personalLoading : threadsLoading
-  const threads = activeFeedData?.pages.flatMap((page) => page) || []
+  const threads = activeFeedData?.pages.flatMap((page) => page.data ?? []) || []
   const isEmpty = !activeIsLoading && threads.length === 0
 
   // Sidebar prompts: personalised for auth users, top prompts otherwise
   const sidebarPrompts =
     showForYou
-      ? (personalPromptsData?.pages[0]?.slice(0, 3) ?? [])
+      ? (personalPromptsData?.pages[0]?.data?.slice(0, 3) ?? [])
       : (topPrompts ?? []).sort((a, b) => b.usageCount - a.usageCount).slice(0, 3)
   const sidebarPromptsLoading = showForYou ? personalPromptsLoading : promptsLoading
 
