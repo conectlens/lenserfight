@@ -15,6 +15,7 @@ disable-model-invocation: true
 1. Inspect exposure surface: schemas, tables, views, functions, and grants.
 2. Check RLS policy correctness by actor and operation.
 3. Return concrete risks, exploit paths, and hardened replacements.
+4. Run 'npx supabase migration up --local' to ensure the created migrations applied successfully.
 
 ## Load only when needed
 - [RLS and security guide](references/REFERENCE.md)
