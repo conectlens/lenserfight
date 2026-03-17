@@ -8,10 +8,18 @@ export interface FeedbackRepositoryPort {
 }
 export class SupabaseFeedbackRepository implements FeedbackRepositoryPort {
   async submitFeedback(dto: SubmitFeedbackDTO) {
+    let message = dto.message
+    if (message != null) {
+      message = message.trim()
+      if (message.length < 10 || message.length > 2000) {
+        throw new Error('Feedback message must be between 10 and 2000 characters.')
+      }
+    }
+
     const { error } = await supabase.schema('analytics').from('product_feedback').insert({
       product_tag: dto.product_tag ?? 'general',
       page: dto.page,
-      message: dto.message,
+      message: message,
       start_date: dto.start_date ?? null,
       end_date: dto.end_date ?? null,
     })
