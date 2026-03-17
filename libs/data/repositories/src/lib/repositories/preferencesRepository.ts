@@ -14,7 +14,12 @@ export class SupabasePreferencesRepository implements PreferencesRepositoryPort 
     const { data: profile } = await supabase.schema('lensers').from('profiles').select('id, preferences').eq('user_id', authData.user.id).maybeSingle()
     if (!profile) return
 
-    const newPrefs = { ...(profile.preferences as any || {}), theme }
+    // DB constraint only allows 'light' | 'dark' — resolve 'system' before persisting
+    const persistedTheme: 'light' | 'dark' = theme === 'system'
+      ? (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light')
+      : theme
+
+    const newPrefs = { ...(profile.preferences as any || {}), theme: persistedTheme }
 
     const { error } = await supabase.schema('lensers').from('profiles').update({ preferences: newPrefs }).eq('id', profile.id)
 
