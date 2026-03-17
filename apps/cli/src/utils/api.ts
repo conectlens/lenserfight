@@ -1,5 +1,6 @@
 import consola from 'consola';
 import { resolveConfig, type LenserfightConfig } from '../config/project-config';
+import { reportCliError } from './error-reporter';
 
 export interface RpcOptions {
   requireAuth?: boolean;
@@ -53,14 +54,17 @@ export async function callRpc<T = unknown>(
 
   if (!res.ok) {
     const err = await res.json().catch(() => ({ message: res.statusText }));
-    throw new Error(err.message || err.error || res.statusText);
+    const httpError = Object.assign(
+      new Error(err.message || err.error || res.statusText),
+      { status: res.status, code: err.code }
+    );
+    throw httpError;
   }
 
   return res.json() as Promise<T>;
 }
 
 export function handleError(err: unknown): void {
-  const message = err instanceof Error ? err.message : String(err);
-  consola.error(message);
+  reportCliError(err);
   process.exitCode = 1;
 }
