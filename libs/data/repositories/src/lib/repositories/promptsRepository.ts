@@ -187,34 +187,32 @@ export class SupabasePromptsRepository implements PromptsRepositoryPort {
 
   async getAll(offset = 0, limit = 10): Promise<ApiResponseEnvelope<PromptTemplateRecord[]>> {
     const start = Date.now()
-    const { data, error, count } = await supabase
+    const { data, error } = await supabase
       .from('vw_prompt_templates_public')
-      .select(this.listPromptSelect, { count: 'exact' })
+      .select(this.listPromptSelect)
       .order('created_at', { ascending: false })
       .range(offset, offset + limit - 1)
 
     if (error) this.handleError(error)
-    const total = count ?? 0
     return paginatedResponse(
       (data ?? []) as unknown as PromptTemplateRecord[],
-      { limit, offset, total, hasNextPage: offset + limit < total },
+      { limit, offset, hasNextPage: (data?.length ?? 0) >= limit },
       { durationMs: Date.now() - start },
     )
   }
 
   async search(query: string, offset = 0, limit = 10): Promise<ApiResponseEnvelope<PromptTemplateRecord[]>> {
     const start = Date.now()
-    const { data, error, count } = await supabase
+    const { data, error } = await supabase
       .from('vw_prompt_templates_public')
-      .select(this.listPromptSelect, { count: 'exact' })
+      .select(this.listPromptSelect)
       .ilike('title', `%${query}%`)
       .range(offset, offset + limit - 1)
 
     if (error) this.handleError(error)
-    const total = count ?? 0
     return paginatedResponse(
       (data ?? []) as unknown as PromptTemplateRecord[],
-      { limit, offset, total, hasNextPage: offset + limit < total },
+      { limit, offset, hasNextPage: (data?.length ?? 0) >= limit },
       { durationMs: Date.now() - start },
     )
   }
@@ -245,16 +243,15 @@ export class SupabasePromptsRepository implements PromptsRepositoryPort {
     const start = Date.now()
 
     if (order === 'newest') {
-      const { data, error, count } = await supabase
+      const { data, error } = await supabase
         .from('vw_prompt_templates_public')
-        .select(this.listPromptSelect, { count: 'exact' })
+        .select(this.listPromptSelect)
         .order('created_at', { ascending: false })
         .range(offset, offset + limit - 1)
       if (error) this.handleError(error)
-      const total = count ?? 0
       return paginatedResponse(
         (data ?? []) as unknown as PromptTemplateRecord[],
-        { limit, offset, total, hasNextPage: offset + limit < total },
+        { limit, offset, hasNextPage: (data?.length ?? 0) >= limit },
         { durationMs: Date.now() - start },
       )
     }
@@ -391,7 +388,7 @@ export class SupabasePromptsRepository implements PromptsRepositoryPort {
     const { data, error } = await supabase
       .from('vw_prompt_templates_public')
       .select(this.listPromptSelect)
-      .eq('author_profile->>handle', handle)
+      .eq('lenser_handle', handle)
       .order('created_at', { ascending: false })
       .range(offset, offset + limit - 1)
 
