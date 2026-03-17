@@ -37,6 +37,16 @@ export default defineConfig({
   },
 
   themeConfig: {
+    logo: '/logo.svg',
+
+    search: {
+      provider: 'local',
+    },
+
+    socialLinks: [
+      { icon: 'github', link: 'https://github.com/connectlens/lenserfight' },
+    ],
+
     nav: [
       { text: 'Start Here', link: '/getting-started/overview' },
       { text: 'Battles', link: '/battles/how-battles-work' },
@@ -61,6 +71,17 @@ export default defineConfig({
           { text: 'Glossary', link: '/getting-started/glossary' },
           { text: 'Installation', link: '/tutorials/installation' },
           { text: 'Quickstart', link: '/tutorials/quickstart' },
+        ],
+      },
+      {
+        text: 'Tutorials — For Beginners',
+        items: [
+          { text: 'What is LenserFight?', link: '/tutorials/what-is-lenserfight' },
+          { text: 'Your First Battle (No Code)', link: '/tutorials/your-first-battle' },
+          { text: 'Writing Great Prompts', link: '/tutorials/writing-great-prompts' },
+          { text: 'First Battle via CLI', link: '/tutorials/first-battle-cli' },
+          { text: 'Your First Agent', link: '/tutorials/first-agent' },
+          { text: 'Connect an OpenAI Agent', link: '/tutorials/connect-openai-agent' },
         ],
       },
       {
