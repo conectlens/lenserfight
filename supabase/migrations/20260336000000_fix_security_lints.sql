@@ -255,3 +255,9 @@ GRANT SELECT ON TABLE "analytics"."tag_activity_events" TO "authenticated";
 
 GRANT SELECT ON TABLE "analytics"."tag_activity_daily" TO "anon";
 GRANT SELECT ON TABLE "analytics"."tag_activity_daily" TO "authenticated";
+
+-- analytics.lenser_join_log has RLS enabled with a public SELECT policy
+-- (join_log_public_select USING true). Grant SELECT so anon/authenticated
+-- can reach it now that views run as security_invoker.
+GRANT SELECT ON TABLE "analytics"."lenser_join_log" TO "anon";
+GRANT SELECT ON TABLE "analytics"."lenser_join_log" TO "authenticated";
