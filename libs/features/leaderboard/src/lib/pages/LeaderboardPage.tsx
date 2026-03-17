@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 
 import { SEOHead } from '@lenserfight/ui/components'
 import { Avatar } from '@lenserfight/ui/components'
@@ -6,6 +6,7 @@ import { useLenser } from '@lenserfight/features/profile'
 import { useLeaderboard } from '@lenserfight/features/leaderboard'
 import { useLeaderboard as useActivityLeaderboard } from '@lenserfight/features/home'
 import { LeaderboardTimeframe, LeaderboardScope, FollowPeriod } from '@lenserfight/types'
+import { useError, normalizeError } from '@lenserfight/shared/error'
 import { LeaderboardFilters } from '../components/LeaderboardFilters'
 import { LeaderboardHeader } from '../components/LeaderboardHeader'
 import { LeaderboardList } from '../components/LeaderboardList'
@@ -19,20 +20,22 @@ const ACTIVITY_PERIOD_LABELS: Record<FollowPeriod, string> = {
 
 export const LeaderboardPage: React.FC = () => {
   const { lenser } = useLenser()
+  const { setError } = useError()
   const [scope, setScope] = useState<LeaderboardScope>('global')
   const [timeframe, setTimeframe] = useState<LeaderboardTimeframe>('all_time')
   const [board, setBoard] = useState<'xp' | 'activity'>('xp')
   const [activityPeriod, setActivityPeriod] = useState<FollowPeriod>('all_time')
 
-  const { data, isLoading, fetchNextPage, hasNextPage, isFetchingNextPage } = useLeaderboard(
-    timeframe,
-    scope
-  )
+  const { data, isLoading, fetchNextPage, hasNextPage, isFetchingNextPage, error: xpError } =
+    useLeaderboard(timeframe, scope)
 
-  const { data: activityData, isLoading: activityLoading } = useActivityLeaderboard(
-    activityPeriod,
-    20
-  )
+  const { data: activityData, isLoading: activityLoading, error: activityError } =
+    useActivityLeaderboard(activityPeriod, 20)
+
+  useEffect(() => {
+    const err = xpError ?? activityError
+    if (err) setError(normalizeError(err))
+  }, [xpError, activityError, setError])
 
   const leaderboardList = data?.pages.flatMap((page) => page.list) || []
   const userEntry = data?.pages[0]?.userEntry
