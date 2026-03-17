@@ -4,7 +4,8 @@
 -- =============================================================================
 
 -- Pre-index tags for fast lookup
-CREATE TEMP TABLE IF NOT EXISTS seed_tag_index AS
+DROP TABLE IF EXISTS seed_tag_index;
+CREATE UNLOGGED TABLE seed_tag_index AS
 SELECT id AS tag_id, row_number() OVER (ORDER BY id) - 1 AS tidx
 FROM content.tags
 WHERE slug LIKE 'tag-%';
@@ -29,7 +30,7 @@ BEGIN
     RAISE NOTICE 'tag_map threads batch starting at %...', batch_start;
 
     INSERT INTO content.tag_map (id, entity_type, entity_id, tag_id, language_detected, created_at)
-    SELECT DISTINCT ON (entity_id, tag_id)
+    SELECT DISTINCT ON (t.id, ti.tag_id)
       gen_random_uuid(),
       'thread'::"content"."entity_type_enum",
       t.id,
@@ -67,7 +68,7 @@ BEGIN
     RAISE NOTICE 'tag_map prompts batch starting at %...', batch_start;
 
     INSERT INTO content.tag_map (id, entity_type, entity_id, tag_id, language_detected, created_at)
-    SELECT DISTINCT ON (entity_id, tag_id)
+    SELECT DISTINCT ON (pt.id, ti.tag_id)
       gen_random_uuid(),
       'prompt_template'::"content"."entity_type_enum",
       pt.id,

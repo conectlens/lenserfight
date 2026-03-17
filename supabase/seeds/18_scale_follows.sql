@@ -54,19 +54,21 @@ BEGIN
   RAISE NOTICE 'Creating ~500K tag follows...';
 
   INSERT INTO lensers.tag_follows (id, lenser_id, tag_id, created_at)
-  SELECT
-    gen_random_uuid(),
-    p.id,
-    ti.tag_id,
-    now() - (random() * interval '180 days')
-  FROM seed_profile_index p
-  CROSS JOIN LATERAL (
-    -- 1-7 tags per lenser, power-law tag popularity
-    SELECT (floor(tag_cnt * pow(random(), 2))::int) AS tidx
-    FROM generate_series(1, 1 + (random() * 6)::int)
-  ) tag_picks
-  JOIN seed_tag_index ti ON ti.tidx = tag_picks.tidx
-  WHERE random() < 0.75  -- throttle to ~500K total
-  ON CONFLICT DO NOTHING
-  LIMIT 500000;
+  SELECT * FROM (
+    SELECT
+      gen_random_uuid(),
+      p.id,
+      ti.tag_id,
+      now() - (random() * interval '180 days')
+    FROM seed_profile_index p
+    CROSS JOIN LATERAL (
+      -- 1-7 tags per lenser, power-law tag popularity
+      SELECT (floor(tag_cnt * pow(random(), 2))::int) AS tidx
+      FROM generate_series(1, 1 + (random() * 6)::int)
+    ) tag_picks
+    JOIN seed_tag_index ti ON ti.tidx = tag_picks.tidx
+    WHERE random() < 0.75  -- throttle to ~500K total
+    LIMIT 500000
+  ) sub
+  ON CONFLICT DO NOTHING;
 END $$;

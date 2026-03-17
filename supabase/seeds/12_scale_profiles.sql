@@ -8,7 +8,7 @@ INSERT INTO lensers.profiles (
   status, visibility, preferred_language, country, created_at
 )
 SELECT
-  ('b2' || lpad(to_hex(rn), 12, '0') || '-0001-4000-8000-000000000000')::uuid,
+  ('b2' || lpad(to_hex(rn), 6, '0') || '-0001-4000-8000-000000000000')::uuid,
   u.id,
   'lenser_' || lpad(to_hex(rn), 8, '0'),
   COALESCE(u.raw_user_meta_data->>'display_name', 'Lenser ' || rn),
@@ -19,7 +19,22 @@ SELECT
   'active'::"lensers"."lenser_status",
   'public'::"lensers"."lenser_visibility",
   COALESCE(u.raw_user_meta_data->>'preferred_language', 'en'),
-  pg_temp.seed_pick_country(random()),
+  CASE
+    WHEN random() < 0.25 THEN 'US'
+    WHEN random() < 0.40 THEN 'TR'
+    WHEN random() < 0.50 THEN 'ES'
+    WHEN random() < 0.58 THEN 'FR'
+    WHEN random() < 0.65 THEN 'DE'
+    WHEN random() < 0.72 THEN 'GB'
+    WHEN random() < 0.77 THEN 'JP'
+    WHEN random() < 0.82 THEN 'KR'
+    WHEN random() < 0.87 THEN 'BR'
+    WHEN random() < 0.91 THEN 'SA'
+    WHEN random() < 0.94 THEN 'IT'
+    WHEN random() < 0.96 THEN 'MX'
+    WHEN random() < 0.98 THEN 'IN'
+    ELSE 'CA'
+  END,
   u.created_at
 FROM (
   SELECT id, raw_user_meta_data, created_at,
