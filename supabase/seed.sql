@@ -846,13 +846,13 @@ ON CONFLICT (lenser_id) DO NOTHING;
 -- =============================================================================
 
 -- Memory tuning for bulk operations
-SET work_mem = '256MB';
-SET maintenance_work_mem = '512MB';
+SET work_mem = '32MB';
+SET maintenance_work_mem = '128MB';
 
 -- ---------------------------------------------------------------------------
 -- Utility: language picker with weighted distribution
 -- ---------------------------------------------------------------------------
-CREATE OR REPLACE FUNCTION pg_temp.seed_pick_language(r float)
+CREATE OR REPLACE FUNCTION public.seed_pick_language(r float)
 RETURNS text LANGUAGE sql IMMUTABLE AS $$
   SELECT CASE
     WHEN r < 0.40 THEN 'en'
@@ -872,7 +872,7 @@ $$;
 -- ---------------------------------------------------------------------------
 -- Utility: country picker with weighted distribution
 -- ---------------------------------------------------------------------------
-CREATE OR REPLACE FUNCTION pg_temp.seed_pick_country(r float)
+CREATE OR REPLACE FUNCTION public.seed_pick_country(r float)
 RETURNS text LANGUAGE sql IMMUTABLE AS $$
   SELECT CASE
     WHEN r < 0.25 THEN 'US'
@@ -893,7 +893,7 @@ RETURNS text LANGUAGE sql IMMUTABLE AS $$
 $$;
 
 -- Pre-computed bcrypt hash for 'seedpassword' (avoids per-row crypt() cost)
-CREATE OR REPLACE FUNCTION pg_temp.seed_password_hash()
+CREATE OR REPLACE FUNCTION public.seed_password_hash()
 RETURNS text LANGUAGE sql IMMUTABLE AS $$
   SELECT '$2a$06$RzK1X5hN5KqJF5V8OqXYXOqYXOqYXOqYXOqYXOqYXOqYXOqYXOqYX'::text;
 $$;
@@ -970,10 +970,10 @@ BEGIN
     )
     SELECT
       '00000000-0000-0000-0000-000000000000'::uuid,
-      ('a1' || lpad(to_hex(batch_start + gs), 12, '0') || '-0001-4000-8000-000000000000')::uuid,
+      ('a1' || lpad(to_hex(batch_start + gs), 6, '0') || '-0001-4000-8000-000000000000')::uuid,
       'authenticated', 'authenticated',
       'seed_user_' || (batch_start + gs) || '@lenserfight.seed',
-      pg_temp.seed_password_hash(),
+      public.seed_password_hash(),
       now() - (random() * interval '365 days'),
       now() - (random() * interval '365 days'),
       now(),
@@ -981,7 +981,7 @@ BEGIN
       '{"provider":"email","providers":["email"]}'::jsonb,
       jsonb_build_object(
         'display_name', 'Seed User ' || (batch_start + gs),
-        'preferred_language', pg_temp.seed_pick_language(random())
+        'preferred_language', public.seed_pick_language(random())
       )
     FROM generate_series(0, LEAST(batch_size - 1, total - batch_start - 1)) AS gs
     ON CONFLICT (id) DO NOTHING;
@@ -1016,7 +1016,7 @@ INSERT INTO lensers.profiles (
   status, visibility, preferred_language, country, created_at
 )
 SELECT
-  ('b2' || lpad(to_hex(rn), 12, '0') || '-0001-4000-8000-000000000000')::uuid,
+  ('b2' || lpad(to_hex(rn), 6, '0') || '-0001-4000-8000-000000000000')::uuid,
   u.id,
   'lenser_' || lpad(to_hex(rn), 8, '0'),
   COALESCE(u.raw_user_meta_data->>'display_name', 'Lenser ' || rn),
@@ -1027,7 +1027,22 @@ SELECT
   'active'::"lensers"."lenser_status",
   'public'::"lensers"."lenser_visibility",
   COALESCE(u.raw_user_meta_data->>'preferred_language', 'en'),
-  pg_temp.seed_pick_country(random()),
+  CASE
+    WHEN random() < 0.25 THEN 'US'
+    WHEN random() < 0.40 THEN 'TR'
+    WHEN random() < 0.50 THEN 'ES'
+    WHEN random() < 0.58 THEN 'FR'
+    WHEN random() < 0.65 THEN 'DE'
+    WHEN random() < 0.72 THEN 'GB'
+    WHEN random() < 0.77 THEN 'JP'
+    WHEN random() < 0.82 THEN 'KR'
+    WHEN random() < 0.87 THEN 'BR'
+    WHEN random() < 0.91 THEN 'SA'
+    WHEN random() < 0.94 THEN 'IT'
+    WHEN random() < 0.96 THEN 'MX'
+    WHEN random() < 0.98 THEN 'IN'
+    ELSE 'CA'
+  END,
   u.created_at
 FROM (
   SELECT id, raw_user_meta_data, created_at,
@@ -1119,7 +1134,8 @@ ON CONFLICT DO NOTHING;
 -- =============================================================================
 
 -- Step 1: Pre-materialize author assignments with power-law distribution
-CREATE TEMP TABLE IF NOT EXISTS seed_profile_index AS
+DROP TABLE IF EXISTS seed_profile_index;
+CREATE UNLOGGED TABLE seed_profile_index AS
 SELECT id, preferred_language,
   row_number() OVER (ORDER BY id) - 1 AS idx
 FROM lensers.profiles
@@ -1364,7 +1380,8 @@ WHERE pt.visibility = 'public'::"content"."visibility_enum"
 -- =============================================================================
 
 -- Pre-index tags for fast lookup
-CREATE TEMP TABLE IF NOT EXISTS seed_tag_index AS
+DROP TABLE IF EXISTS seed_tag_index;
+CREATE UNLOGGED TABLE seed_tag_index AS
 SELECT id AS tag_id, row_number() OVER (ORDER BY id) - 1 AS tidx
 FROM content.tags
 WHERE slug LIKE 'tag-%';
@@ -1389,7 +1406,7 @@ BEGIN
     RAISE NOTICE 'tag_map threads batch starting at %...', batch_start;
 
     INSERT INTO content.tag_map (id, entity_type, entity_id, tag_id, language_detected, created_at)
-    SELECT DISTINCT ON (entity_id, tag_id)
+    SELECT DISTINCT ON (t.id, ti.tag_id)
       gen_random_uuid(),
       'thread'::"content"."entity_type_enum",
       t.id,
@@ -1427,7 +1444,7 @@ BEGIN
     RAISE NOTICE 'tag_map prompts batch starting at %...', batch_start;
 
     INSERT INTO content.tag_map (id, entity_type, entity_id, tag_id, language_detected, created_at)
-    SELECT DISTINCT ON (entity_id, tag_id)
+    SELECT DISTINCT ON (pt.id, ti.tag_id)
       gen_random_uuid(),
       'prompt_template'::"content"."entity_type_enum",
       pt.id,
@@ -1579,21 +1596,23 @@ BEGIN
   RAISE NOTICE 'Creating ~500K tag follows...';
 
   INSERT INTO lensers.tag_follows (id, lenser_id, tag_id, created_at)
-  SELECT
-    gen_random_uuid(),
-    p.id,
-    ti.tag_id,
-    now() - (random() * interval '180 days')
-  FROM seed_profile_index p
-  CROSS JOIN LATERAL (
-    -- 1-7 tags per lenser, power-law tag popularity
-    SELECT (floor(tag_cnt * pow(random(), 2))::int) AS tidx
-    FROM generate_series(1, 1 + (random() * 6)::int)
-  ) tag_picks
-  JOIN seed_tag_index ti ON ti.tidx = tag_picks.tidx
-  WHERE random() < 0.75  -- throttle to ~500K total
-  ON CONFLICT DO NOTHING
-  LIMIT 500000;
+  SELECT * FROM (
+    SELECT
+      gen_random_uuid(),
+      p.id,
+      ti.tag_id,
+      now() - (random() * interval '180 days')
+    FROM seed_profile_index p
+    CROSS JOIN LATERAL (
+      -- 1-7 tags per lenser, power-law tag popularity
+      SELECT (floor(tag_cnt * pow(random(), 2))::int) AS tidx
+      FROM generate_series(1, 1 + (random() * 6)::int)
+    ) tag_picks
+    JOIN seed_tag_index ti ON ti.tidx = tag_picks.tidx
+    WHERE random() < 0.75  -- throttle to ~500K total
+    LIMIT 500000
+  ) sub
+  ON CONFLICT DO NOTHING;
 END $$;
 
 
@@ -1760,19 +1779,15 @@ END $$;
 -- Simulated XP distribution matching creator activity levels.
 -- =============================================================================
 
-INSERT INTO xp.totals (lenser_id, app_id, total_xp, created_at, updated_at)
+INSERT INTO xp.totals (lenser_id, app_id, total_xp, updated_at)
 SELECT
   p.id,
   '00000000-0000-0000-0000-000000000001'::uuid,
   -- Power-law XP: heavy creators get more XP
   (50 + floor(pow(random(), 0.3) * 5000))::int,
-  p_created_at,
   now()
-FROM (
-  SELECT id,
-    (SELECT created_at FROM lensers.profiles WHERE id = seed_profile_index.id) AS p_created_at
-  FROM seed_profile_index
-) p
+FROM lensers.profiles p
+WHERE p.handle LIKE 'lenser_%'
 ON CONFLICT DO NOTHING;
 
 
@@ -1833,7 +1848,7 @@ ALTER TABLE analytics.lenser_join_log ENABLE TRIGGER "trg_no_update_lenser_join_
 -- ---------------------------------------------------------------------------
 -- Backfill analytics.lenser_join_log
 -- ---------------------------------------------------------------------------
-INSERT INTO analytics.lenser_join_log (lenser_id, created_at)
+INSERT INTO analytics.lenser_join_log (lenser_id, joined_at)
 SELECT id, created_at
 FROM lensers.profiles
 WHERE handle LIKE 'lenser_%'
@@ -1843,14 +1858,13 @@ ON CONFLICT (lenser_id) DO NOTHING;
 -- ---------------------------------------------------------------------------
 -- Backfill analytics.lenser_stats (thread/prompt/follower/following counts)
 -- ---------------------------------------------------------------------------
-INSERT INTO analytics.lenser_stats (lenser_id, thread_count, prompt_count, follower_count, following_count, created_at, updated_at)
+INSERT INTO analytics.lenser_stats (lenser_id, thread_count, prompt_count, follower_count, following_count, updated_at)
 SELECT
   p.id,
   COALESCE(tc.cnt, 0),
   COALESCE(pc.cnt, 0),
   COALESCE(frc.cnt, 0),
   COALESCE(fgc.cnt, 0),
-  now(),
   now()
 FROM lensers.profiles p
 LEFT JOIN (
@@ -1893,6 +1907,9 @@ WHERE t.id = sub.thread_id
 -- ---------------------------------------------------------------------------
 DROP TABLE IF EXISTS seed_profile_index;
 DROP TABLE IF EXISTS seed_tag_index;
+DROP FUNCTION IF EXISTS public.seed_pick_language(float);
+DROP FUNCTION IF EXISTS public.seed_pick_country(float);
+DROP FUNCTION IF EXISTS public.seed_password_hash();
 
 -- ---------------------------------------------------------------------------
 -- ANALYZE all seeded tables for query planner accuracy
@@ -1933,9 +1950,9 @@ RESET maintenance_work_mem;
 -- Run after all seed data is loaded.
 -- =============================================================================
 
-\echo '============================================================'
-\echo 'BENCHMARK: Row counts'
-\echo '============================================================'
+-- ============================================================
+-- BENCHMARK: Row counts
+-- ============================================================
 
 SELECT 'auth.users' AS entity, count(*) AS cnt FROM auth.users
 UNION ALL SELECT 'lensers.profiles', count(*) FROM lensers.profiles
@@ -1957,92 +1974,92 @@ ORDER BY entity;
 -- =============================================================================
 -- BENCHMARK 1: Hot score views
 -- =============================================================================
-\echo ''
-\echo '============================================================'
-\echo 'BENCHMARK 1: vw_threads_hot_scores (top 50)'
-\echo '============================================================'
+-- 
+-- ============================================================
+-- BENCHMARK 1: vw_threads_hot_scores (top 50)
+-- ============================================================
 
-EXPLAIN (ANALYZE, BUFFERS, FORMAT TEXT)
+EXPLAIN (FORMAT TEXT)
 SELECT * FROM content.vw_threads_hot_scores
 ORDER BY hot_score DESC LIMIT 50;
 
-\echo ''
-\echo '============================================================'
-\echo 'BENCHMARK 2: vw_prompts_hot_scores (top 50)'
-\echo '============================================================'
+-- 
+-- ============================================================
+-- BENCHMARK 2: vw_prompts_hot_scores (top 50)
+-- ============================================================
 
-EXPLAIN (ANALYZE, BUFFERS, FORMAT TEXT)
+EXPLAIN (FORMAT TEXT)
 SELECT * FROM content.vw_prompts_hot_scores
 ORDER BY hot_score DESC LIMIT 50;
 
 -- =============================================================================
 -- BENCHMARK 3-4: Public content views
 -- =============================================================================
-\echo ''
-\echo '============================================================'
-\echo 'BENCHMARK 3: vw_content_threads_public (latest 50)'
-\echo '============================================================'
+-- 
+-- ============================================================
+-- BENCHMARK 3: vw_content_threads_public (latest 50)
+-- ============================================================
 
-EXPLAIN (ANALYZE, BUFFERS, FORMAT TEXT)
+EXPLAIN (FORMAT TEXT)
 SELECT * FROM public.vw_content_threads_public
 ORDER BY created_at DESC LIMIT 50;
 
-\echo ''
-\echo '============================================================'
-\echo 'BENCHMARK 4: vw_content_threads_public (full count)'
-\echo '============================================================'
+-- 
+-- ============================================================
+-- BENCHMARK 4: vw_content_threads_public (full count)
+-- ============================================================
 
-EXPLAIN (ANALYZE, BUFFERS, FORMAT TEXT)
+EXPLAIN (FORMAT TEXT)
 SELECT count(*) FROM public.vw_content_threads_public;
 
 -- =============================================================================
 -- BENCHMARK 5-8: Trending feeds
 -- =============================================================================
-\echo ''
-\echo '============================================================'
-\echo 'BENCHMARK 5: Trending threads (English)'
-\echo '============================================================'
+-- 
+-- ============================================================
+-- BENCHMARK 5: Trending threads (English)
+-- ============================================================
 
-EXPLAIN (ANALYZE, BUFFERS, FORMAT TEXT)
-SELECT * FROM content.fn_content_get_trending_threads('en', 20, 0);
+EXPLAIN (FORMAT TEXT)
+SELECT * FROM public.fn_content_get_trending_threads('en', 20, 0);
 
-\echo ''
-\echo '============================================================'
-\echo 'BENCHMARK 6: Trending threads (Turkish)'
-\echo '============================================================'
+-- 
+-- ============================================================
+-- BENCHMARK 6: Trending threads (Turkish)
+-- ============================================================
 
-EXPLAIN (ANALYZE, BUFFERS, FORMAT TEXT)
-SELECT * FROM content.fn_content_get_trending_threads('tr', 20, 0);
+EXPLAIN (FORMAT TEXT)
+SELECT * FROM public.fn_content_get_trending_threads('tr', 20, 0);
 
-\echo ''
-\echo '============================================================'
-\echo 'BENCHMARK 7: Trending threads deep pagination'
-\echo '============================================================'
+-- 
+-- ============================================================
+-- BENCHMARK 7: Trending threads deep pagination
+-- ============================================================
 
-EXPLAIN (ANALYZE, BUFFERS, FORMAT TEXT)
-SELECT * FROM content.fn_content_get_trending_threads('en', 20, 500);
+EXPLAIN (FORMAT TEXT)
+SELECT * FROM public.fn_content_get_trending_threads('en', 20, 500);
 
 -- =============================================================================
 -- BENCHMARK 8: Lenser score view
 -- =============================================================================
-\echo ''
-\echo '============================================================'
-\echo 'BENCHMARK 8: vw_lensers_score (top 50)'
-\echo '============================================================'
+-- 
+-- ============================================================
+-- BENCHMARK 8: vw_lensers_score (top 50)
+-- ============================================================
 
-EXPLAIN (ANALYZE, BUFFERS, FORMAT TEXT)
+EXPLAIN (FORMAT TEXT)
 SELECT * FROM lensers.vw_lensers_score
 ORDER BY lenser_score DESC LIMIT 50;
 
 -- =============================================================================
 -- BENCHMARK 9: Thread replies for a popular thread
 -- =============================================================================
-\echo ''
-\echo '============================================================'
-\echo 'BENCHMARK 9: Replies for most popular thread'
-\echo '============================================================'
+-- 
+-- ============================================================
+-- BENCHMARK 9: Replies for most popular thread
+-- ============================================================
 
-EXPLAIN (ANALYZE, BUFFERS, FORMAT TEXT)
+EXPLAIN (FORMAT TEXT)
 SELECT * FROM public.vw_content_thread_replies_public
 WHERE thread_id = (
   SELECT id FROM content.threads
@@ -2055,22 +2072,22 @@ ORDER BY created_at LIMIT 50;
 -- =============================================================================
 -- BENCHMARK 10: Cross-language tag view
 -- =============================================================================
-\echo ''
-\echo '============================================================'
-\echo 'BENCHMARK 10: vw_tag_cross_lang'
-\echo '============================================================'
+-- 
+-- ============================================================
+-- BENCHMARK 10: vw_tag_cross_lang
+-- ============================================================
 
-EXPLAIN (ANALYZE, BUFFERS, FORMAT TEXT)
+EXPLAIN (FORMAT TEXT)
 SELECT * FROM content.vw_tag_cross_lang LIMIT 100;
 
 -- =============================================================================
 -- RECOMMENDATION VALIDATION
 -- =============================================================================
 
-\echo ''
-\echo '============================================================'
-\echo 'VALIDATION: Language distribution in content'
-\echo '============================================================'
+-- 
+-- ============================================================
+-- VALIDATION: Language distribution in content
+-- ============================================================
 
 SELECT
   tt.language_code,
@@ -2081,10 +2098,10 @@ WHERE tt.is_original = true
 GROUP BY tt.language_code
 ORDER BY thread_count DESC;
 
-\echo ''
-\echo '============================================================'
-\echo 'VALIDATION: Language distribution in profiles'
-\echo '============================================================'
+-- 
+-- ============================================================
+-- VALIDATION: Language distribution in profiles
+-- ============================================================
 
 SELECT
   preferred_language,
@@ -2094,10 +2111,10 @@ FROM lensers.profiles
 GROUP BY preferred_language
 ORDER BY profile_count DESC;
 
-\echo ''
-\echo '============================================================'
-\echo 'VALIDATION: Tag follow distribution (top 20 tags)'
-\echo '============================================================'
+-- 
+-- ============================================================
+-- VALIDATION: Tag follow distribution (top 20 tags)
+-- ============================================================
 
 SELECT
   t.slug,
@@ -2108,10 +2125,10 @@ GROUP BY t.slug
 ORDER BY follower_count DESC
 LIMIT 20;
 
-\echo ''
-\echo '============================================================'
-\echo 'VALIDATION: Creator distribution (top 20 by thread count)'
-\echo '============================================================'
+-- 
+-- ============================================================
+-- VALIDATION: Creator distribution (top 20 by thread count)
+-- ============================================================
 
 SELECT
   p.handle,
@@ -2124,10 +2141,10 @@ JOIN lensers.profiles p ON p.id = ls.lenser_id
 ORDER BY ls.thread_count DESC
 LIMIT 20;
 
-\echo ''
-\echo '============================================================'
-\echo 'VALIDATION: Reaction distribution per type'
-\echo '============================================================'
+-- 
+-- ============================================================
+-- VALIDATION: Reaction distribution per type
+-- ============================================================
 
 SELECT 'thread_reactions' AS source, reaction::text, count(*) AS cnt
 FROM content.thread_reactions GROUP BY reaction
@@ -2136,10 +2153,10 @@ SELECT 'prompt_reactions', reaction::text, count(*)
 FROM content.prompt_reactions GROUP BY reaction
 ORDER BY source, cnt DESC;
 
-\echo ''
-\echo '============================================================'
-\echo 'VALIDATION: Hot score distribution (threads)'
-\echo '============================================================'
+-- 
+-- ============================================================
+-- VALIDATION: Hot score distribution (threads)
+-- ============================================================
 
 SELECT
   CASE
@@ -2154,10 +2171,10 @@ FROM content.vw_threads_hot_scores
 GROUP BY 1
 ORDER BY avg_score DESC;
 
-\echo ''
-\echo '============================================================'
-\echo 'VALIDATION: Index usage (check for seq scans on large tables)'
-\echo '============================================================'
+-- 
+-- ============================================================
+-- VALIDATION: Index usage (check for seq scans on large tables)
+-- ============================================================
 
 SELECT
   schemaname || '.' || relname AS table_name,
@@ -2172,8 +2189,8 @@ FROM pg_stat_user_tables
 WHERE n_live_tup > 10000
 ORDER BY n_live_tup DESC;
 
-\echo ''
-\echo '============================================================'
-\echo 'BENCHMARK COMPLETE'
-\echo '============================================================'
+-- 
+-- ============================================================
+-- BENCHMARK COMPLETE
+-- ============================================================
 
