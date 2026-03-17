@@ -40,7 +40,6 @@ export const threadsService = {
     title: string
     content: string
     tagIds: string[]
-    lenserId: string
     visibility: Visibility
   }): Promise<ThreadRecord> => {
     const resolvedTags = await tagService.processBatchInput(input.tagIds)
@@ -194,11 +193,11 @@ export const threadsService = {
   },
 
   getPersonalFeed: async (
-    lenserId: string,
+    _lenserId: string,
     offset = 0,
     limit = 20
   ): Promise<PersonalFeedItem[]> => {
-    return threadsRepo.getPersonalFeed(lenserId, offset, limit)
+    return threadsRepo.getPersonalFeed(offset, limit)
   },
 
   // Backward compatibility alias
