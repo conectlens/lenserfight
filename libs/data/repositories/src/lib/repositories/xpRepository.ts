@@ -26,7 +26,8 @@ export class SupabaseXPRepository implements XPRepositoryPort {
 
   async getXPSummary(lenserId: string): Promise<XPSummary | null> {
     const { data: totals, error } = await supabase
-      .from('xp_totals')
+      .schema('xp')
+      .from('totals')
       .select('total_xp, current_level, app_id')
       .eq('lenser_id', lenserId)
       .maybeSingle()
@@ -44,7 +45,8 @@ export class SupabaseXPRepository implements XPRepositoryPort {
       .maybeSingle()
 
     const { data: levelData } = await supabase
-      .from('xp_levels')
+      .schema('xp')
+      .from('levels')
       .select('min_total_xp, max_total_xp')
       .eq('app_id', appId)
       .eq('level', currentLevel)
@@ -61,7 +63,8 @@ export class SupabaseXPRepository implements XPRepositoryPort {
 
   async getHistory(lenserId: string, limit = 20): Promise<XPEvent[]> {
     const { data, error } = await supabase
-      .from('xp_events')
+      .schema('xp')
+      .from('events')
       .select('id, rule_key, xp, source, created_at')
       .eq('lenser_id', lenserId)
       .order('created_at', { ascending: false })
@@ -80,7 +83,8 @@ export class SupabaseXPRepository implements XPRepositoryPort {
 
   async getBadges(lenserId: string): Promise<LenserBadge[]> {
     const { data, error } = await supabase
-      .from('lenser_badges')
+      .schema('lensers')
+      .from('badges')
       .select('*')
       .eq('lenser_id', lenserId)
       .order('awarded_at', { ascending: false })
