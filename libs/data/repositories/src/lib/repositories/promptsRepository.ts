@@ -1,23 +1,24 @@
 import { supabase } from '@lenserfight/data/supabase'
 import { AuthorProfile, PromptTemplateRecord, PromptTemplateViewModel, PersonalPromptFeedItem, CreatePromptDTO, TagRecord } from '@lenserfight/types'
+import { ApiResponseEnvelope, paginatedResponse } from 'contracts'
 
 // --- Port (Interface) ---
 export interface PromptsRepositoryPort {
-  getAll(offset?: number, limit?: number): Promise<PromptTemplateRecord[]>
-  search(query: string, offset?: number, limit?: number): Promise<PromptTemplateRecord[]>
+  getAll(offset?: number, limit?: number): Promise<ApiResponseEnvelope<PromptTemplateRecord[]>>
+  search(query: string, offset?: number, limit?: number): Promise<ApiResponseEnvelope<PromptTemplateRecord[]>>
   filterByTag(
     tagSlug: string | null,
     offset?: number,
     limit?: number
-  ): Promise<PromptTemplateRecord[]>
+  ): Promise<ApiResponseEnvelope<PromptTemplateRecord[]>>
   sort(
     order: 'newest' | 'popular',
     offset?: number,
     limit?: number
-  ): Promise<PromptTemplateRecord[]>
+  ): Promise<ApiResponseEnvelope<PromptTemplateRecord[]>>
   getTopPrompts(limit: number): Promise<PromptTemplateRecord[]>
-  getTrendingPrompts(lang?: string, offset?: number, limit?: number): Promise<PromptTemplateViewModel[]>
-  getPersonalFeed(offset?: number, limit?: number): Promise<PersonalPromptFeedItem[]>
+  getTrendingPrompts(lang?: string, offset?: number, limit?: number): Promise<ApiResponseEnvelope<PromptTemplateViewModel[]>>
+  getPersonalFeed(offset?: number, limit?: number): Promise<ApiResponseEnvelope<PersonalPromptFeedItem[]>>
   getByLenser(
     handle: string,
     offset?: number,
@@ -53,9 +54,10 @@ export class SupabasePromptsRepository implements PromptsRepositoryPort {
     throw error
   }
 
-  private get promptSelect() {
-    return '*'
-  }
+  // Narrow column list for list queries — excludes heavy/unused columns.
+  // Single-item reads (create, update, detail) still use '*' via direct .select('*').
+  private readonly listPromptSelect =
+    'id, title, description, lenser_id, author_profile, tags, reaction_totals, visibility, created_at'
 
   private async getProfileByHandle(handle: string): Promise<AuthorProfile | null> {
     const { data: profile, error } = await supabase
@@ -183,48 +185,69 @@ export class SupabasePromptsRepository implements PromptsRepositoryPort {
   // READ OPERATIONS (Views only, never touching base tables)
   // -----------------------------------------------------
 
-  async getAll(offset = 0, limit = 10): Promise<PromptTemplateRecord[]> {
-    const { data, error } = await supabase
+  async getAll(offset = 0, limit = 10): Promise<ApiResponseEnvelope<PromptTemplateRecord[]>> {
+    const start = Date.now()
+    const { data, error, count } = await supabase
       .from('vw_prompt_templates_public')
-      .select(this.promptSelect)
+      .select(this.listPromptSelect, { count: 'exact' })
       .order('created_at', { ascending: false })
       .range(offset, offset + limit - 1)
 
     if (error) this.handleError(error)
-    return data as unknown as PromptTemplateRecord[]
+    const total = count ?? 0
+    return paginatedResponse(
+      (data ?? []) as unknown as PromptTemplateRecord[],
+      { limit, offset, total, hasNextPage: offset + limit < total },
+      { durationMs: Date.now() - start },
+    )
   }
 
-  async search(query: string, offset = 0, limit = 10): Promise<PromptTemplateRecord[]> {
-    const { data, error } = await supabase
+  async search(query: string, offset = 0, limit = 10): Promise<ApiResponseEnvelope<PromptTemplateRecord[]>> {
+    const start = Date.now()
+    const { data, error, count } = await supabase
       .from('vw_prompt_templates_public')
-      .select(this.promptSelect)
+      .select(this.listPromptSelect, { count: 'exact' })
       .ilike('title', `%${query}%`)
       .range(offset, offset + limit - 1)
 
     if (error) this.handleError(error)
-    return data as unknown as PromptTemplateRecord[]
+    const total = count ?? 0
+    return paginatedResponse(
+      (data ?? []) as unknown as PromptTemplateRecord[],
+      { limit, offset, total, hasNextPage: offset + limit < total },
+      { durationMs: Date.now() - start },
+    )
   }
 
   async filterByTag(
     tagSlug: string | null,
     offset = 0,
     limit = 10
-  ): Promise<PromptTemplateRecord[]> {
+  ): Promise<ApiResponseEnvelope<PromptTemplateRecord[]>> {
     if (!tagSlug) return this.getAll(offset, limit)
 
-    const { data, error } = await supabase
+    const start = Date.now()
+    const { data, error, count } = await supabase
       .from('vw_prompt_templates_public')
-      .select(this.promptSelect)
+      .select(this.listPromptSelect, { count: 'exact' })
       .contains('tags', JSON.stringify([{ slug: tagSlug }]))
       .order('created_at', { ascending: false })
       .range(offset, offset + limit - 1)
 
     if (error) this.handleError(error)
-    return data as unknown as PromptTemplateRecord[]
+    const total = count ?? 0
+    return paginatedResponse(
+      (data ?? []) as unknown as PromptTemplateRecord[],
+      { limit, offset, total, hasNextPage: offset + limit < total },
+      { durationMs: Date.now() - start },
+    )
   }
 
-  async sort(order: 'newest' | 'popular', offset = 0, limit = 10): Promise<PromptTemplateRecord[]> {
-    let builder = supabase.from('vw_prompt_templates_public').select(this.promptSelect)
+  async sort(order: 'newest' | 'popular', offset = 0, limit = 10): Promise<ApiResponseEnvelope<PromptTemplateRecord[]>> {
+    const start = Date.now()
+    let builder = supabase
+      .from('vw_prompt_templates_public')
+      .select(this.listPromptSelect, { count: 'exact' })
 
     if (order === 'newest') {
       builder = builder.order('created_at', { ascending: false })
@@ -232,15 +255,20 @@ export class SupabasePromptsRepository implements PromptsRepositoryPort {
       builder = builder.order('reaction_totals->>copy', { ascending: false })
     }
 
-    const { data, error } = await builder.range(offset, offset + limit - 1)
+    const { data, error, count } = await builder.range(offset, offset + limit - 1)
     if (error) this.handleError(error)
-    return data as unknown as PromptTemplateRecord[]
+    const total = count ?? 0
+    return paginatedResponse(
+      (data ?? []) as unknown as PromptTemplateRecord[],
+      { limit, offset, total, hasNextPage: offset + limit < total },
+      { durationMs: Date.now() - start },
+    )
   }
 
   async getTopPrompts(limit: number): Promise<PromptTemplateRecord[]> {
     const { data, error } = await supabase
       .from('vw_prompt_templates_public')
-      .select(this.promptSelect)
+      .select(this.listPromptSelect)
       .order('reaction_totals->>copy', { ascending: false })
       .limit(limit)
 
@@ -250,8 +278,10 @@ export class SupabasePromptsRepository implements PromptsRepositoryPort {
 
   /**
    * Trending prompts via hot score RPC with optional language boost.
+   * RPC does not return a row count; hasNextPage uses data.length >= limit heuristic.
    */
-  async getTrendingPrompts(lang?: string, offset = 0, limit = 20): Promise<PromptTemplateViewModel[]> {
+  async getTrendingPrompts(lang?: string, offset = 0, limit = 20): Promise<ApiResponseEnvelope<PromptTemplateViewModel[]>> {
+    const start = Date.now()
     const { data, error } = await supabase.rpc('fn_content_get_trending_prompts', {
       p_lang: lang ?? null,
       p_limit: limit,
@@ -260,7 +290,8 @@ export class SupabasePromptsRepository implements PromptsRepositoryPort {
 
     if (error) this.handleError(error)
 
-    return ((data ?? []) as Record<string, unknown>[]).map((row) => {
+    const rows = (data ?? []) as Record<string, unknown>[]
+    const items: PromptTemplateViewModel[] = rows.map((row) => {
       const author = (row.author_profile as Record<string, unknown>) ?? {}
       const reactionTotals = (row.reaction_totals as Record<string, number>) ?? {}
       return {
@@ -279,12 +310,19 @@ export class SupabasePromptsRepository implements PromptsRepositoryPort {
         visibility: 'public' as const,
       }
     })
+    return paginatedResponse(
+      items,
+      { limit, offset, hasNextPage: rows.length >= limit },
+      { durationMs: Date.now() - start },
+    )
   }
 
   /**
    * Personalized prompt feed for an authenticated lenser (Phase 3+4).
+   * RPC does not return a row count; hasNextPage uses data.length >= limit heuristic.
    */
-  async getPersonalFeed(offset = 0, limit = 20): Promise<PersonalPromptFeedItem[]> {
+  async getPersonalFeed(offset = 0, limit = 20): Promise<ApiResponseEnvelope<PersonalPromptFeedItem[]>> {
+    const start = Date.now()
     const { data, error } = await supabase.rpc('fn_content_get_personal_prompts', {
       p_limit: limit,
       p_offset: offset,
@@ -292,7 +330,8 @@ export class SupabasePromptsRepository implements PromptsRepositoryPort {
 
     if (error) this.handleError(error)
 
-    return ((data ?? []) as Record<string, unknown>[]).map((row) => {
+    const rows = (data ?? []) as Record<string, unknown>[]
+    const items: PersonalPromptFeedItem[] = rows.map((row) => {
       const author = (row.author_profile as Record<string, unknown>) ?? {}
       const reactionTotals = (row.reaction_totals as Record<string, number>) ?? {}
       return {
@@ -314,6 +353,11 @@ export class SupabasePromptsRepository implements PromptsRepositoryPort {
         personalScore: (row.personal_score as number) ?? 0,
       }
     })
+    return paginatedResponse(
+      items,
+      { limit, offset, hasNextPage: rows.length >= limit },
+      { durationMs: Date.now() - start },
+    )
   }
 
   async getByLenser(
@@ -340,7 +384,7 @@ export class SupabasePromptsRepository implements PromptsRepositoryPort {
 
     const { data, error } = await supabase
       .from('vw_prompt_templates_public')
-      .select(this.promptSelect)
+      .select(this.listPromptSelect)
       .eq('author_profile->>handle', handle)
       .order('created_at', { ascending: false })
       .range(offset, offset + limit - 1)
@@ -455,7 +499,7 @@ export class SupabasePromptsRepository implements PromptsRepositoryPort {
     // Fetch from view
     const { data, error } = await supabase
       .from('vw_prompt_templates_public')
-      .select(this.promptSelect)
+      .select('*')
       .eq('id', promptId)
       .maybeSingle()
 
@@ -521,7 +565,7 @@ export class SupabasePromptsRepository implements PromptsRepositoryPort {
 
     const { data, error } = await supabase
       .from('vw_prompt_templates_public')
-      .select(this.promptSelect)
+      .select('*')
       .eq('id', id)
       .maybeSingle()
 
