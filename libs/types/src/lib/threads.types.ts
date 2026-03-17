@@ -1,6 +1,7 @@
 import { AuthorProfile } from './lenser.types'
 
-export type Visibility = 'public' | 'private'
+export type Visibility = 'public' | 'community' | 'private'
+export type ContentStatus = 'draft' | 'published' | 'archived'
 
 export interface PromptData {
   title: string
@@ -29,6 +30,7 @@ export interface ThreadRecord {
   title: string
   content: string
   visibility: Visibility
+  status: ContentStatus
   view_count: number
   reply_count: number
   reaction_totals?: Record<string, number> // JSONB from DB
@@ -81,6 +83,7 @@ export interface ThreadFeedItem {
   createdAt: string
   userHasReacted: boolean
   visibility: Visibility
+  status: ContentStatus
   hotScore?: number
   primaryLanguage?: string
 }
@@ -112,4 +115,5 @@ export interface ThreadDetailViewModel {
   replies: ThreadReplyViewModel[]
   promptBlock?: PromptData
   visibility: Visibility
+  status: ContentStatus
 }
