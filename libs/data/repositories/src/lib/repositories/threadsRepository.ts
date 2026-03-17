@@ -321,18 +321,16 @@ export class SupabaseThreadsRepository implements ThreadsRepositoryPort {
    */
   async getThreadsByTag(tagSlug: string, offset = 0, limit = 10): Promise<ApiResponseEnvelope<ThreadRecord[]>> {
     const start = Date.now()
-    const { data, error, count } = await supabase
-      .from('vw_content_threads_public')
-      .select(this.listThreadSelect, { count: 'exact' })
-      .contains('tags', JSON.stringify([{ slug: tagSlug }]))
-      .order('created_at', { ascending: false })
-      .range(offset, offset + limit - 1)
+    const { data, error } = await supabase.rpc('fn_content_get_threads_by_tag', {
+      p_tag_slug: tagSlug,
+      p_limit: limit,
+      p_offset: offset,
+    })
 
     if (error) this.handleError(error)
-    const total = count ?? 0
     return paginatedResponse(
       (data ?? []) as unknown as ThreadRecord[],
-      { limit, offset, total, hasNextPage: offset + limit < total },
+      { limit, offset, hasNextPage: (data?.length ?? 0) >= limit },
       { durationMs: Date.now() - start },
     )
   }
