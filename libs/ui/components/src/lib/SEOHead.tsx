@@ -18,7 +18,7 @@ interface SEOHeadProps {
   overrideTitle?: string
 }
 
-const FORUM_HOST = 'https://lenserfight.com'
+const FORUM_HOST = 'https://forum.lenserfight.com'
 const DEFAULT_OG_IMAGE = `${FORUM_HOST}/og-banner.png`
 
 export const SEOHead: React.FC<SEOHeadProps> = ({ type, data, overrideTitle }) => {
