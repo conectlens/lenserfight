@@ -10,6 +10,7 @@ import {
 import { ThemeProvider } from '@lenserfight/ui/theme'
 import { UIProvider } from '@lenserfight/ui/components'
 import { ShareProvider } from '@lenserfight/features/share'
+import { ErrorProvider, GlobalErrorRenderer, ErrorClearer } from '@lenserfight/shared/error'
 import {
   DashboardLayout,
   PublicLayout,
@@ -74,22 +75,25 @@ const ProtectedAdminRoute = () => {
 const App: React.FC = () => {
   return (
     <HelmetProvider>
-      <QueryClientProvider client={queryClient}>
-        <AuthProvider>
-          <ThemeProvider>
-            <SessionBoundary>
-              <LenserProvider>
-                <UIProvider>
-                  <ShareProvider>
-                    <BrowserRouter
-                      future={{
-                        v7_startTransition: true,
-                        v7_relativeSplatPath: true
-                      }}
-                    >
-                      <ScrollToTop />
-                      <GlobalAnalytics />
-                      <Routes>
+      <ErrorProvider>
+        <QueryClientProvider client={queryClient}>
+          <AuthProvider>
+            <ThemeProvider>
+              <SessionBoundary>
+                <LenserProvider>
+                  <UIProvider>
+                    <ShareProvider>
+                      <BrowserRouter
+                        future={{
+                          v7_startTransition: true,
+                          v7_relativeSplatPath: true
+                        }}
+                      >
+                        <ScrollToTop />
+                        <GlobalAnalytics />
+                        <ErrorClearer />
+                        <GlobalErrorRenderer>
+                        <Routes>
                         {/* Short Link Redirect Route (No Layout) */}
                         <Route path="/s/:shortId" element={<ShortLinkRedirect />} />
 
@@ -244,15 +248,17 @@ const App: React.FC = () => {
 
                         {/* Default Redirect */}
                         <Route path="*" element={<Navigate to="/" replace />} />
-                      </Routes>
-                    </BrowserRouter>
-                  </ShareProvider>
-                </UIProvider>
-              </LenserProvider>
-            </SessionBoundary>
-          </ThemeProvider>
-        </AuthProvider>
-      </QueryClientProvider>
+                        </Routes>
+                        </GlobalErrorRenderer>
+                      </BrowserRouter>
+                    </ShareProvider>
+                  </UIProvider>
+                </LenserProvider>
+              </SessionBoundary>
+            </ThemeProvider>
+          </AuthProvider>
+        </QueryClientProvider>
+      </ErrorProvider>
     </HelmetProvider>
   )
 }

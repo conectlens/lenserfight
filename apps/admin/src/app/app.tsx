@@ -1,6 +1,10 @@
+import { ErrorProvider, GlobalErrorRenderer } from '@lenserfight/shared/error'
+
 export function App() {
   return (
-    <main className="admin-shell">
+    <ErrorProvider>
+      <GlobalErrorRenderer>
+        <main className="admin-shell">
       <section className="admin-hero">
         <div>
           <p className="admin-kicker">admin.lenserfight.com</p>
@@ -63,7 +67,9 @@ export function App() {
           </dl>
         </article>
       </section>
-    </main>
+        </main>
+      </GlobalErrorRenderer>
+    </ErrorProvider>
   )
 }
 
