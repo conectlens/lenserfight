@@ -17,7 +17,7 @@ export interface ThreadsRepositoryPort {
   getThreadTags(threadId: string): Promise<TagRecord[]>
   getThreadReplies(threadId: string, viewerLenserId?: string): Promise<ThreadReplyRecord[]>
   getReplyById(replyId: string): Promise<ThreadReplyRecord | null>
-  getTrendingTags(limit: number): Promise<string[]>
+  getTrendingTags(limit: number): Promise<TagRecord[]>
   getTrendingThreads(lang?: string, offset?: number, limit?: number): Promise<ThreadFeedItem[]>
   getPersonalFeed(lenserId: string, offset?: number, limit?: number): Promise<PersonalFeedItem[]>
   createReply(
@@ -577,14 +577,18 @@ export class SupabaseThreadsRepository implements ThreadsRepositoryPort {
   /**
    * Trending tags from public tags view.
    */
-  async getTrendingTags(limit: number): Promise<string[]> {
+  async getTrendingTags(limit: number): Promise<TagRecord[]> {
     const { data, error } = await supabase
       .from('vw_content_tags_public')
-      .select('name')
+      .select('id, slug, name')
       .limit(limit)
 
     if (error) return []
-    return (data ?? []).map((tag) => tag.name as string)
+    return (data ?? []).map((tag) => ({
+      id: tag.id as string,
+      slug: tag.slug as string,
+      name: tag.name as string,
+    }))
   }
 
   /**
