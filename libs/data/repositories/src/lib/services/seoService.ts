@@ -6,9 +6,18 @@ import { ThreadDetailViewModel, ThreadFeedItem } from '@lenserfight/types'
 export interface SEOMetadata {
   title: string
   description: string
+  /** Canonical URL for this page (absolute). */
+  url?: string
+  /** Absolute URL to the OG image for this page. */
+  ogImage?: string
+  /** Serialized JSON-LD structured data object (not stringified — passed to SEOHead). */
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  jsonLd?: Record<string, any>
 }
 
 const SITE_NAME = 'LenserFight'
+const FORUM_HOST = 'https://lenserfight.com'
+const DEFAULT_OG_IMAGE = `${FORUM_HOST}/og-banner.png`
 const DEFAULT_TITLE = 'LenserFight - The AI Prompt Engineering Arena'
 const DEFAULT_DESC =
   'Join the LenserFight ecosystem. Discover, battle, and share advanced AI prompts for GPT-5, Gemini, Claude, and Midjourney. Connect with top Lensers and master LLM interactions.'
@@ -31,6 +40,23 @@ export const seoService = {
   getHomeMeta: (): SEOMetadata => ({
     title: DEFAULT_TITLE,
     description: DEFAULT_DESC,
+    url: FORUM_HOST,
+    ogImage: DEFAULT_OG_IMAGE,
+    jsonLd: {
+      '@context': 'https://schema.org',
+      '@type': 'WebSite',
+      name: SITE_NAME,
+      url: FORUM_HOST,
+      description: DEFAULT_DESC,
+      potentialAction: {
+        '@type': 'SearchAction',
+        target: {
+          '@type': 'EntryPoint',
+          urlTemplate: `${FORUM_HOST}/len/p?q={search_term_string}`,
+        },
+        'query-input': 'required name=search_term_string',
+      },
+    },
   }),
 
   getPromptMeta: (
@@ -40,18 +66,41 @@ export const seoService = {
       return {
         title: 'Prompt Not Found',
         description: 'This prompt template could not be found on LenserFight.',
+        url: `${FORUM_HOST}/len/p`,
+        ogImage: DEFAULT_OG_IMAGE,
       }
 
     const tags = prompt.tags?.map((t) => t.name).join(', ') || 'AI'
     const author = prompt.author.displayName
     const uses = prompt.usageCount > 0 ? `Used ${prompt.usageCount} times.` : ''
+    const pageUrl = `${FORUM_HOST}/len/p/${prompt.id}`
 
-    // Construct rich description
     const desc = `Use the "${prompt.title}" prompt template by ${author}. Optimized for ${tags}. ${uses} Copy and remix this prompt for GPT-5, Gemini, and Claude on LenserFight.`
 
     return {
       title: `${prompt.title} - AI Prompt Template | ${SITE_NAME}`,
-      description: desc.substring(0, 160), // Truncate for optimal SERP display
+      description: desc.substring(0, 160),
+      url: pageUrl,
+      ogImage: DEFAULT_OG_IMAGE,
+      jsonLd: {
+        '@context': 'https://schema.org',
+        '@type': 'Article',
+        headline: prompt.title,
+        description: desc.substring(0, 160),
+        url: pageUrl,
+        author: {
+          '@type': 'Person',
+          name: author,
+          url: `${FORUM_HOST}/lenser/${prompt.author.handle ?? ''}`,
+        },
+        publisher: {
+          '@type': 'Organization',
+          name: SITE_NAME,
+          url: FORUM_HOST,
+        },
+        keywords: [...(prompt.tags?.map((t) => t.name) ?? []), ...AI_KEYWORDS].join(', '),
+        image: DEFAULT_OG_IMAGE,
+      },
     }
   },
 
@@ -60,54 +109,135 @@ export const seoService = {
       return {
         title: 'Thread Not Found',
         description: 'This discussion could not be found on LenserFight.',
+        url: `${FORUM_HOST}/`,
+        ogImage: DEFAULT_OG_IMAGE,
       }
 
     const tags = thread.tags?.map((t) => t.name).join(' ')
     const replyContext = (thread as ThreadDetailViewModel).replies?.length
       ? `Join the discussion with ${thread.author.displayName} and community experts.`
       : `Read insights from ${thread.author.displayName}.`
+    const pageUrl = `${FORUM_HOST}/threads/${thread.id}`
+
+    const desc = `Community thread: ${thread.title}. ${replyContext} Topics: ${tags} #GenerativeAI #PromptEngineering. Explore LenserFight for advanced LLM tactics.`
 
     return {
       title: `${thread.title} - AI Discussion | ${SITE_NAME}`,
-      description: `Community thread: ${thread.title}. ${replyContext} Topics: ${tags} #GenerativeAI #PromptEngineering. Explore LenserFight for advanced LLM tactics.`,
+      description: desc,
+      url: pageUrl,
+      ogImage: DEFAULT_OG_IMAGE,
+      jsonLd: {
+        '@context': 'https://schema.org',
+        '@type': 'DiscussionForumPosting',
+        headline: thread.title,
+        description: desc,
+        url: pageUrl,
+        author: {
+          '@type': 'Person',
+          name: thread.author.displayName,
+          url: `${FORUM_HOST}/lenser/${thread.author.handle ?? ''}`,
+        },
+        publisher: {
+          '@type': 'Organization',
+          name: SITE_NAME,
+          url: FORUM_HOST,
+        },
+        keywords: [...(thread.tags?.map((t) => t.name) ?? []), ...AI_KEYWORDS].join(', '),
+        image: DEFAULT_OG_IMAGE,
+      },
     }
   },
 
   getProfileMeta: (lenser?: Lenser | null, stats?: LenserStats | null): SEOMetadata => {
     if (!lenser)
-      return { title: 'Lenser Not Found', description: 'User profile not found on LenserFight.' }
+      return {
+        title: 'Lenser Not Found',
+        description: 'User profile not found on LenserFight.',
+        url: FORUM_HOST,
+        ogImage: DEFAULT_OG_IMAGE,
+      }
 
     const role = lenser.headline || 'AI Creator'
     const statText = stats
       ? `${stats.promptsCount} prompts, ${stats.threadsCount} threads.`
       : 'Active Lenser community member.'
+    const pageUrl = `${FORUM_HOST}/lenser/${lenser.handle}`
+    const desc = `Check out ${lenser.display_name}'s profile on LenserFight. ${role}. ${statText} Follow for top-tier AI prompts, LLM strategies, and ConnectLens ecosystem contributions.`
 
     return {
       title: `${lenser.display_name} (@${lenser.handle}) - ${role} | ${SITE_NAME}`,
-      description: `Check out ${lenser.display_name}'s profile on LenserFight. ${role}. ${statText} Follow for top-tier AI prompts, LLM strategies, and ConnectLens ecosystem contributions.`,
+      description: desc,
+      url: pageUrl,
+      ogImage: lenser.avatar_url ?? DEFAULT_OG_IMAGE,
+      jsonLd: {
+        '@context': 'https://schema.org',
+        '@type': 'Person',
+        name: lenser.display_name,
+        alternateName: `@${lenser.handle}`,
+        description: desc,
+        url: pageUrl,
+        image: lenser.avatar_url ?? DEFAULT_OG_IMAGE,
+        jobTitle: role,
+        sameAs: [`${FORUM_HOST}/lenser/${lenser.handle}`],
+      },
     }
   },
 
   getTagMeta: (tag?: TagUsage | null): SEOMetadata => {
     if (!tag)
-      return { title: 'Explore AI Topics', description: 'Discover trending AI topics and prompts.' }
+      return {
+        title: 'Explore AI Topics',
+        description: 'Discover trending AI topics and prompts.',
+        url: `${FORUM_HOST}/len`,
+        ogImage: DEFAULT_OG_IMAGE,
+      }
 
     const name = tag.name
     const count = tag.count > 0 ? `Over ${tag.count} resources available.` : ''
+    const pageUrl = `${FORUM_HOST}/len/${name.toLowerCase()}`
+    const desc = `Explore the best ${name} prompts, discussions, and challenges. ${count} Master ${name} workflows with GPT-5, Gemini, and Claude tools on LenserFight.`
 
     return {
       title: `Top ${name} AI Prompts & Threads | ${SITE_NAME}`,
-      description: `Explore the best ${name} prompts, discussions, and challenges. ${count} Master ${name} workflows with GPT-5, Gemini, and Claude tools on LenserFight.`,
+      description: desc,
+      url: pageUrl,
+      ogImage: DEFAULT_OG_IMAGE,
+      jsonLd: {
+        '@context': 'https://schema.org',
+        '@type': 'CollectionPage',
+        name: `${name} AI Prompts & Threads`,
+        description: desc,
+        url: pageUrl,
+        publisher: { '@type': 'Organization', name: SITE_NAME, url: FORUM_HOST },
+      },
     }
   },
 
   getTagCloudMeta: (): SEOMetadata => ({
     title: `Explore AI Topics & Trends | ${SITE_NAME}`,
     description: `Browse trending tags in the LenserFight ecosystem. Find prompts for Coding, Art, Writing, Marketing, and more. Optimized for the latest LLMs.`,
+    url: `${FORUM_HOST}/len`,
+    ogImage: DEFAULT_OG_IMAGE,
+    jsonLd: {
+      '@context': 'https://schema.org',
+      '@type': 'CollectionPage',
+      name: 'AI Topics & Trends',
+      url: `${FORUM_HOST}/len`,
+      publisher: { '@type': 'Organization', name: SITE_NAME, url: FORUM_HOST },
+    },
   }),
 
   getPromptsListMeta: (): SEOMetadata => ({
     title: `Discover Best AI Prompts | ${SITE_NAME}`,
     description: `Search and filter thousands of high-quality AI prompts. Categories include Writing, Coding, Art Generation (Midjourney/DALL-E), and Productivity. Boost your LLM workflow.`,
+    url: `${FORUM_HOST}/len/p`,
+    ogImage: DEFAULT_OG_IMAGE,
+    jsonLd: {
+      '@context': 'https://schema.org',
+      '@type': 'CollectionPage',
+      name: 'AI Prompt Library',
+      url: `${FORUM_HOST}/len/p`,
+      publisher: { '@type': 'Organization', name: SITE_NAME, url: FORUM_HOST },
+    },
   }),
 }
