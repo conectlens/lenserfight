@@ -6,6 +6,7 @@ import { useAuth } from '@lenserfight/features/auth'
 import { useLenser } from '@lenserfight/features/profile'
 import { ShareModal, useShareContext } from '@lenserfight/features/share'
 import { useUI } from '@lenserfight/ui/components'
+import { LanguageSwitcher } from './LanguageSwitcher'
 
 interface HeaderProps {
   onToggleSidebar: () => void
@@ -62,6 +63,8 @@ export const Header: React.FC<HeaderProps> = ({ onToggleSidebar, isSidebarOpen }
         )}
 
         {pageActions.length > 0 && <ActionMenu actions={pageActions} />}
+
+        <LanguageSwitcher />
 
         {isAuthenticated && (
           <button
