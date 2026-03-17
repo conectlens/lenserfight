@@ -1,7 +1,7 @@
 interface:
   display_name: "Docs Publication Manager"
-  short_description: "Create or refine compact technical documentation, READMEs, public docs, and contribution guides. Use for OSS-facing docs, internal docs cleanup, navigation design, and converting implementation details into concise Claude-style markdown."
+  short_description: "Create or refine compact technical documentation, READMEs, public docs, and contribution guides. Handles multilingual docs (English + Turkish). Use for OSS-facing docs, internal docs cleanup, navigation design, and converting implementation details into concise Claude-style markdown."
   icon_small: "../../assets/apple-icon-small.png"
   icon_large: "../../assets/apple-icon.png"
   brand_color: "#ffde59"
-  default_prompt: "Create or refine compact technical documentation, READMEs, public docs, and contribution guides. Use for OSS-facing docs, internal docs cleanup, navigation design, and converting implementation details into concise Claude-style markdown."
+  default_prompt: "Create or refine compact technical documentation. Supports English (default) and Turkish (/tr/) pages. Use for OSS-facing docs, internal docs cleanup, navigation design, multilingual content, and converting implementation details into concise Claude-style markdown."
