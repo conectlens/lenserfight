@@ -114,14 +114,12 @@ export const CreateGenerationModal: React.FC<CreateGenerationModalProps> = ({
 
     try {
       const dto: CreateGenerationDTO = {
-        lenser_id: lenser.id,
         prompt_template_id: promptId,
         ai_model_slug: aiModelSlug,
         visibility: 'public',
         input_text: resultType === 'text' ? content : undefined, // Store text result here
         original_chat_url: chatUrl || null,
         media: {
-          lenser_id: lenser.id,
           media_kind: resultType,
           // For text, we use a placeholder URL or data URI, logic handled by Repo usually,
           // but here we ensure the required fields are met.

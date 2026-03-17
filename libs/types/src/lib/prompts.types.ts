@@ -69,5 +69,4 @@ export interface CreatePromptDTO {
   content: string
   tagIds: string[]
   visibility: VisibilityEnum
-  lenserId: string
 }
