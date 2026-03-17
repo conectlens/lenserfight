@@ -301,17 +301,16 @@ export class SupabaseThreadsRepository implements ThreadsRepositoryPort {
    */
   async getAllThreads(offset = 0, limit = 10): Promise<ApiResponseEnvelope<ThreadRecord[]>> {
     const start = Date.now()
-    const { data, error, count } = await supabase
+    const { data, error } = await supabase
       .from('vw_content_threads_public')
-      .select(this.listThreadSelect, { count: 'exact' })
+      .select(this.listThreadSelect)
       .order('created_at', { ascending: false })
       .range(offset, offset + limit - 1)
 
     if (error) this.handleError(error)
-    const total = count ?? 0
     return paginatedResponse(
       (data ?? []) as unknown as ThreadRecord[],
-      { limit, offset, total, hasNextPage: offset + limit < total },
+      { limit, offset, hasNextPage: (data?.length ?? 0) >= limit },
       { durationMs: Date.now() - start },
     )
   }
@@ -387,7 +386,7 @@ export class SupabaseThreadsRepository implements ThreadsRepositoryPort {
     const { data, error } = await supabase
       .from('vw_content_threads_public')
       .select(this.listThreadSelect)
-      .eq('author_profile->>handle', handle)
+      .eq('lenser_handle', handle)
       .order('created_at', { ascending: false })
       .range(offset, offset + limit - 1)
 
