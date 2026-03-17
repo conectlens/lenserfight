@@ -7,19 +7,19 @@ import { nxCopyAssetsPlugin } from '@nx/vite/plugins/nx-copy-assets.plugin'
 export default defineConfig(() => ({
   root: import.meta.dirname,
   cacheDir: '../../node_modules/.vite/apps/docs',
+
   server: {
     port: 3005,
     host: 'localhost',
   },
+
   preview: {
     port: 3005,
     host: 'localhost',
   },
+
   plugins: [react(), nxViteTsPaths(), nxCopyAssetsPlugin(['*.md'])],
-  // Uncomment this if you are using workers.
-  // worker: {
-  //   plugins: () => [ nxViteTsPaths() ],
-  // },
+
   build: {
     outDir: '../../dist/apps/docs',
     emptyOutDir: true,
@@ -28,6 +28,7 @@ export default defineConfig(() => ({
       transformMixedEsModules: true,
     },
   },
+
   test: {
     name: 'docs',
     watch: false,
