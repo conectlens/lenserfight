@@ -1,6 +1,10 @@
+import { ErrorProvider, GlobalErrorRenderer } from '@lenserfight/shared/error'
+
 export function App() {
   return (
-    <main className="arena-shell">
+    <ErrorProvider>
+      <GlobalErrorRenderer>
+        <main className="arena-shell">
       <section className="arena-hero">
         <div className="arena-badge">lenserfight.com</div>
         <h1>Creator-first AI battles with result pages built to be shared.</h1>
@@ -59,7 +63,9 @@ export function App() {
           </ul>
         </article>
       </section>
-    </main>
+        </main>
+      </GlobalErrorRenderer>
+    </ErrorProvider>
   )
 }
 

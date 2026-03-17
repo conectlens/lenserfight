@@ -216,6 +216,9 @@
       ],
       "@lenserfight/features/shell": [
         "libs/features/shell/src/index.ts"
+      ],
+      "@lenserfight/shared/error": [
+        "libs/shared/error/src/index.ts"
       ]
     }
   }
