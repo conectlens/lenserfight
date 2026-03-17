@@ -61,9 +61,8 @@ export interface AIGeneration {
 
 export interface CreateGenerationDTO {
   prompt_template_id: string
-  lenser_id: string
   ai_model_slug: string
-  media: Omit<MediaLibraryItem, 'id' | 'created_at'>
+  media: Omit<MediaLibraryItem, 'id' | 'created_at' | 'lenser_id'>
   input_text?: string
   visibility?: 'public' | 'private'
   original_chat_url?: string | null

@@ -65,7 +65,6 @@ export const useCreatePrompt = () => {
       content: trimmedContent,
       tagIds: tags,
       visibility,
-      lenserId: lenser.id,
       description: autoDescription,
     }
 
@@ -73,7 +72,7 @@ export const useCreatePrompt = () => {
       let resultId: string
 
       if (editId) {
-        const updated = await promptsService.updatePrompt(editId, dto, lenser.id)
+        const updated = await promptsService.updatePrompt(editId, dto)
         resultId = updated.id
       } else {
         // @ts-ignore - full DTO required for create
