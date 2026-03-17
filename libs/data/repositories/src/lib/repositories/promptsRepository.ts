@@ -17,7 +17,7 @@ export interface PromptsRepositoryPort {
   ): Promise<PromptTemplateRecord[]>
   getTopPrompts(limit: number): Promise<PromptTemplateRecord[]>
   getTrendingPrompts(lang?: string, offset?: number, limit?: number): Promise<PromptTemplateViewModel[]>
-  getPersonalFeed(lenserId: string, offset?: number, limit?: number): Promise<PersonalPromptFeedItem[]>
+  getPersonalFeed(offset?: number, limit?: number): Promise<PersonalPromptFeedItem[]>
   getByLenser(
     handle: string,
     offset?: number,
@@ -284,9 +284,8 @@ export class SupabasePromptsRepository implements PromptsRepositoryPort {
   /**
    * Personalized prompt feed for an authenticated lenser (Phase 3+4).
    */
-  async getPersonalFeed(lenserId: string, offset = 0, limit = 20): Promise<PersonalPromptFeedItem[]> {
+  async getPersonalFeed(offset = 0, limit = 20): Promise<PersonalPromptFeedItem[]> {
     const { data, error } = await supabase.rpc('fn_content_get_personal_prompts', {
-      p_lenser_id: lenserId,
       p_limit: limit,
       p_offset: offset,
     })
@@ -408,26 +407,24 @@ export class SupabasePromptsRepository implements PromptsRepositoryPort {
   // -----------------------------------------------------
 
   async createPrompt(input: CreatePromptDTO): Promise<PromptTemplateRecord> {
-    const cleanLenserId = !input.lenserId || input.lenserId === 'undefined' ? undefined : input.lenserId
-
-    // 1. Resolve the content language from the exposed profile schema.
+    // 1. Resolve the content language from the authenticated user's profile.
     let languageCode = 'en'
-    if (cleanLenserId) {
+    const { data: { user } } = await supabase.auth.getUser()
+    if (user) {
       const { data: profileData } = await supabase
         .schema('lensers')
         .from('profiles')
         .select('preferred_language')
-        .eq('id', cleanLenserId)
+        .eq('user_id', user.id)
         .maybeSingle()
       if (profileData?.preferred_language) {
         languageCode = profileData.preferred_language
       }
     }
 
-    // 2. Insert Base Prompt Template
+    // 2. Insert Base Prompt Template (lenser_id resolved server-side via DEFAULT lensers.get_auth_lenser_id())
     const { data: promptInsertData, error: rpcError } = await supabase.schema('content').from('prompt_templates').insert({
       visibility: input.visibility,
-      lenser_id: cleanLenserId
     }).select('id').single()
 
     if (rpcError) this.handleError(rpcError)
@@ -470,7 +467,6 @@ export class SupabasePromptsRepository implements PromptsRepositoryPort {
       // In a real scenario, we should have a 'vw_prompt_templates_owner' view.
       return {
         id: promptId,
-        lenser_id: cleanLenserId,
         visibility: input.visibility,
         created_at: new Date().toISOString(),
         title: input.title,
