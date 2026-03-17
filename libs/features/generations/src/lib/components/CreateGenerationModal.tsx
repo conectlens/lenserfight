@@ -8,7 +8,6 @@ import { generationService } from '@lenserfight/data/repositories'
 import {
   CreateGenerationDTO,
   MediaKind,
-  AIGeneration,
   AIModel,
 } from '@lenserfight/types'
 import { isValidUrl } from '@lenserfight/utils/validation'
@@ -18,7 +17,7 @@ import { useAuthenticatedLenser } from '../hooks/useAuthenticatedLenser'
 interface CreateGenerationModalProps {
   isOpen: boolean
   onClose: () => void
-  onSuccess: (item: AIGeneration) => void
+  onSuccess: () => void
   promptId: string
   existingUrls?: string[]
 }
@@ -137,8 +136,8 @@ export const CreateGenerationModal: React.FC<CreateGenerationModalProps> = ({
         },
       }
 
-      const newItem = await generationService.createGeneration(dto)
-      onSuccess(newItem)
+      await generationService.createGeneration(dto)
+      onSuccess()
       onClose()
     } catch (err: any) {
       setError(err.message || 'Failed to save result.')

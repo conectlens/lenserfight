@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { SupabaseLenserRepository } from '@lenserfight/data/repositories'
-import { Lenser, LenserCompactProfile } from '@lenserfight/types'
+import { Lenser } from '@lenserfight/types'
 import { storage } from '@lenserfight/utils/storage'
 
 const lenserRepo = new SupabaseLenserRepository()
@@ -13,7 +13,7 @@ interface CachedCompact {
 }
 
 export const useSidebarProfile = (handle?: string) => {
-  const [profile, setProfile] = useState<LenserCompactProfile | null>(() => {
+  const [profile, setProfile] = useState<Lenser | null>(() => {
     if (!handle) return null
 
     try {

@@ -327,7 +327,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 <div className="relative">
                   <Avatar src={displayProfile?.avatar_url} size="sm" className="!w-9 !h-9" />
                   {/* Level Badge integrated if compact profile available */}
-                  {compactProfile && compactProfile.current_level > 1 && (
+                  {compactProfile && (compactProfile.current_level ?? 0) > 1 && (
                     <div className="absolute -bottom-1 -right-1 bg-gray-900 text-white text-[8px] font-bold px-1 rounded-full border border-white dark:border-gray-900 shadow-sm">
                       {compactProfile.current_level}
                     </div>

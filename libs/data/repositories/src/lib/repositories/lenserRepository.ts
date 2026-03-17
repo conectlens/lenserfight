@@ -89,6 +89,7 @@ export class SupabaseLenserRepository implements LenserRepositoryPort {
       total_xp: data.total_xp,
       current_level: data.current_level,
       badges: data.badges,
+      created_at: data.created_at ?? '',
     }
   }
 
