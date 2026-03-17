@@ -15,6 +15,7 @@ disable-model-invocation: true
 1. Inspect the API-facing database surface.
 2. Flag unstable contracts, privilege problems, and unnecessary RPC complexity.
 3. Return the safest interface shape and exact adjustments.
+4. Run 'npx supabase migration up --local' to ensure the created migrations applied successfully.
 
 ## Load only when needed
 - [RPC review guide](references/REFERENCE.md)
