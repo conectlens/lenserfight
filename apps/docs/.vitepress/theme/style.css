@@ -275,6 +275,8 @@ html.dark .lf-btn-outline {
   transition: background 0.15s, color 0.15s, border-color 0.15s;
   margin-bottom: 1.5rem;
   float: right;
+  position: relative;
+  z-index: 1;
 }
 
 .lf-copy-btn:hover {
