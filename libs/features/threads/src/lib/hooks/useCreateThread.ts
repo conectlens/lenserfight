@@ -30,13 +30,7 @@ export const useCreateThread = () => {
       if (editId) {
         const updated = await threadsService.updateThread(
           editId,
-          {
-            title,
-            content,
-            tagIds: tags,
-            visibility,
-            lenserId: lenser.id,
-          },
+          { title, content, tagIds: tags, visibility },
           lenser.id
         )
         resultId = updated.id
@@ -45,7 +39,6 @@ export const useCreateThread = () => {
           title,
           content,
           tagIds: tags,
-          lenserId: lenser.id,
           visibility,
         })
         resultId = created.id
