@@ -51,7 +51,7 @@ export const useThreadDetailController = (threadId?: string) => {
     isLoading: loading,
     error: queryError,
   } = useQuery({
-    queryKey: queryKeys.threads.detail(threadId || ''),
+    queryKey: [...queryKeys.threads.detail(threadId || ''), { viewerId: lenser?.id }],
     queryFn: async () => {
       if (!threadId) return null
       return threadsService.getThreadDetail(threadId, lenser?.id)
