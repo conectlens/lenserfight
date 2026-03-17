@@ -52,7 +52,6 @@ export type {
   CreateThreadDTO,
   PersonalFeedItem,
   PromptData,
-  ReactionType as ThreadReactionType,
   ThreadAuthor,
   ThreadDetailViewModel,
   ThreadFeedItem,
