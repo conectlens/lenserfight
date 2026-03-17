@@ -107,7 +107,7 @@ export const promptsService = {
   ): Promise<PromptTemplateViewModel[]> => {
     let includePrivate = false
     if (viewerId) {
-      const viewer = await lenserRepo.getAuthenticatedLenser()
+      const viewer = await lenserRepo.getLenserById(viewerId)
       if (viewer && viewer.handle === lenserHandle) {
         includePrivate = true
       }
