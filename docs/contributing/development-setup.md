@@ -34,7 +34,7 @@ Starts all apps and the local reverse proxy concurrently. Access each app by sub
 | http://docs.localhost:8080 | docs |
 | http://conectlenscom.localhost:8080 | conectlenscom |
 
-> **Optional one-time setup:** Run `bash tools/dev-proxy/setup.sh` once per machine to forward port 80 → 8080 at the OS level. After that, URLs become `http://forum.localhost` (no port suffix) and survive reboots. See [tools/dev-proxy/README.md](/tools/dev-proxy/README.md) for details.
+> **Optional one-time setup:** Run `bash tools/dev-proxy/setup.sh` once per machine to forward port 80 → 8080 at the OS level. After that, URLs become `http://forum.localhost` (no port suffix) and survive reboots. See the [dev-proxy README](https://github.com/connectlens/lenserfight/tree/main/tools/dev-proxy) on GitHub for details.
 
 ## Run a single app
 
