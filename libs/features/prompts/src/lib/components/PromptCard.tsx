@@ -80,7 +80,7 @@ export const PromptCard: React.FC<PromptCardProps> = memo(
         </div>
 
         <div className="flex flex-wrap gap-2 mb-6">
-          {prompt.tags.slice(0, 3).map((tag) => (
+          {(prompt.tags ?? []).slice(0, 3).map((tag) => (
             <span
               key={tag.id}
               onClick={(e) => {
@@ -92,9 +92,9 @@ export const PromptCard: React.FC<PromptCardProps> = memo(
               {tag.name}
             </span>
           ))}
-          {prompt.tags.length > 3 && (
+          {(prompt.tags?.length ?? 0) > 3 && (
             <span className="text-[10px] text-gray-400 dark:text-gray-600 self-center px-1 font-medium">
-              +{prompt.tags.length - 3}
+              +{prompt.tags!.length - 3}
             </span>
           )}
         </div>
