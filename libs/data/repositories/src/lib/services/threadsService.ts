@@ -6,6 +6,7 @@ import {
   PersonalFeedItem,
   ThreadDetailViewModel,
   ThreadRecord,
+  TagRecord,
   Visibility,
   CreateThreadDTO,
   ThreadAuthor,
@@ -180,7 +181,7 @@ export const threadsService = {
     }
   },
 
-  getTrendingTags: async (limit: number = 6): Promise<string[]> => {
+  getTrendingTags: async (limit: number = 6): Promise<TagRecord[]> => {
     return threadsRepo.getTrendingTags(limit)
   },
 
