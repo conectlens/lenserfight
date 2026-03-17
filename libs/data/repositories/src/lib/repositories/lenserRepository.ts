@@ -16,6 +16,7 @@ import {
 import { PromptTemplateRecord } from '@lenserfight/types'
 import { ThreadRecord } from '@lenserfight/types'
 import { supabase } from '@lenserfight/data/supabase'
+import { ApiResponseEnvelope, paginatedResponse } from 'contracts'
 
 // --- Port (Interface) ---
 export interface LenserRepositoryPort {
@@ -62,7 +63,7 @@ export interface LenserRepositoryPort {
     type: 'followers' | 'following',
     offset?: number,
     limit?: number
-  ): Promise<FollowsNetworkUser[]>
+  ): Promise<ApiResponseEnvelope<FollowsNetworkUser[]>>
   getSuggestedLensers(lenserId: string, limit?: number): Promise<SuggestedLenser[]>
 
   // Phase 4: Leaderboard
@@ -293,7 +294,8 @@ export class SupabaseLenserRepository implements LenserRepositoryPort {
     type: 'followers' | 'following',
     offset = 0,
     limit = 20
-  ): Promise<FollowsNetworkUser[]> {
+  ): Promise<ApiResponseEnvelope<FollowsNetworkUser[]>> {
+    const start = Date.now()
     const { data, error } = await supabase.rpc('fn_lensers_get_follows', {
       p_lenser_id: lenserId,
       p_type: type,
@@ -301,13 +303,19 @@ export class SupabaseLenserRepository implements LenserRepositoryPort {
       p_offset: offset,
     })
     if (error) throw error
-    return ((data ?? []) as Record<string, unknown>[]).map((row) => ({
+    const rows = (data ?? []) as Record<string, unknown>[]
+    const items: FollowsNetworkUser[] = rows.map((row) => ({
       lenserId: row.lenser_id as string,
       handle: row.handle as string,
       displayName: row.display_name as string,
       avatarUrl: (row.avatar_url as string | null) ?? null,
       isFollowing: Boolean(row.is_following),
     }))
+    return paginatedResponse(
+      items,
+      { limit, offset, hasNextPage: rows.length >= limit },
+      { durationMs: Date.now() - start },
+    )
   }
 
   async getSuggestedLensers(lenserId: string, limit = 10): Promise<SuggestedLenser[]> {

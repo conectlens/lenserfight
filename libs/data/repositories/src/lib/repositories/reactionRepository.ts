@@ -1,5 +1,6 @@
 import { ReactionRecord, TargetType, ReactionType, ReactionCount } from '@lenserfight/types'
 import { supabase } from '@lenserfight/data/supabase'
+import { ApiResponseEnvelope, paginatedResponse } from 'contracts'
 
 export interface ReactionRepositoryPort {
   toggleReaction(
@@ -27,7 +28,7 @@ export interface ReactionRepositoryPort {
     lenserId: string
   ): Promise<ReactionRecord[]>
   countReactions(targetType: TargetType, targetId: string): Promise<ReactionCount[]>
-  getLenserHistory(handle: string, offset?: number, limit?: number): Promise<ReactionRecord[]>
+  getLenserHistory(handle: string, offset?: number, limit?: number): Promise<ApiResponseEnvelope<ReactionRecord[]>>
 }
 export class SupabaseReactionRepository implements ReactionRepositoryPort {
   private getMapping(targetType: TargetType) {
@@ -175,7 +176,8 @@ export class SupabaseReactionRepository implements ReactionRepositoryPort {
     }))
   }
 
-  async getLenserHistory(handle: string, offset = 0, limit = 20): Promise<ReactionRecord[]> {
+  async getLenserHistory(handle: string, offset = 0, limit = 20): Promise<ApiResponseEnvelope<ReactionRecord[]>> {
+    const start = Date.now()
     // 1. Resolve handle to ID
     const { data: profile, error: profileError } = await supabase
       .schema('lensers')
@@ -184,10 +186,13 @@ export class SupabaseReactionRepository implements ReactionRepositoryPort {
       .eq('handle', handle)
       .single()
 
-    if (profileError || !profile) return []
+    if (profileError || !profile) {
+      return paginatedResponse([], { limit, offset, total: 0, hasNextPage: false }, { durationMs: Date.now() - start })
+    }
     const lenserId = profile.id
 
-    // 2. Fetch from all 3 de-polymorphed tables
+    // 2. Fetch from all 3 de-polymorphed tables (fetch one extra to detect hasNextPage)
+    const fetchLimit = limit + offset + 1
     const [pRes, tRes, rRes] = await Promise.all([
       supabase
         .schema('content')
@@ -195,32 +200,36 @@ export class SupabaseReactionRepository implements ReactionRepositoryPort {
         .select('*')
         .eq('user_id', lenserId)
         .order('created_at', { ascending: false })
-        .limit(limit + offset),
+        .limit(fetchLimit),
       supabase
         .schema('content')
         .from('thread_reactions')
         .select('*')
         .eq('user_id', lenserId)
         .order('created_at', { ascending: false })
-        .limit(limit + offset),
+        .limit(fetchLimit),
       supabase
         .schema('content')
         .from('thread_reply_reactions')
         .select('*')
         .eq('user_id', lenserId)
         .order('created_at', { ascending: false })
-        .limit(limit + offset),
+        .limit(fetchLimit),
     ])
 
     const allReactions: ReactionRecord[] = [
       ...(pRes.data ?? []).map((r) => this.mapToRecord(r, 'prompt_template', 'prompt_id')),
       ...(tRes.data ?? []).map((r) => this.mapToRecord(r, 'thread', 'thread_id')),
       ...(rRes.data ?? []).map((r) => this.mapToRecord(r, 'thread_reply', 'reply_id')),
-    ]
+    ].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
 
-    // 3. Sort and slice for manual pagination across tables
-    return allReactions
-      .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
-      .slice(offset, offset + limit)
+    // 3. Manual pagination; detect hasNextPage by checking if more items exist beyond the window
+    const page = allReactions.slice(offset, offset + limit)
+    const hasNextPage = allReactions.length > offset + limit
+    return paginatedResponse(
+      page,
+      { limit, offset, hasNextPage },
+      { durationMs: Date.now() - start },
+    )
   }
 }
