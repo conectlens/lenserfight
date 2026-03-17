@@ -14,11 +14,12 @@ export const useThreadsFeed = () => {
   return useInfiniteQuery({
     queryKey: keys.threads.feed(),
     queryFn: async ({ pageParam = 0 }) => {
-      return threadsService.getThreadsFeed(undefined, pageParam * 10, 10)
+      return threadsService.getThreadsFeed(undefined, pageParam, 10)
     },
     initialPageParam: 0,
-    getNextPageParam: (lastPage, allPages) => {
-      return lastPage.length === 10 ? allPages.length : undefined
+    getNextPageParam: (lastPage) => {
+      if (!lastPage.meta?.hasNextPage) return undefined
+      return (lastPage.meta.offset ?? 0) + (lastPage.meta.limit ?? 10)
     },
     staleTime: 1000 * 60 * 5, // 5 minutes
     gcTime: 1000 * 60 * 30, // 30 minutes
@@ -33,18 +34,15 @@ export const usePromptsFeed = (
   return useInfiniteQuery({
     queryKey: keys.prompts.feed({ searchQuery, selectedTag, sortOrder }),
     queryFn: async ({ pageParam = 0 }) => {
-      const offset = pageParam * 12
-      const limit = 12
-
-      if (searchQuery) return promptsService.search(searchQuery, offset, limit)
-      if (selectedTag) return promptsService.filter(selectedTag, offset, limit)
-      if (sortOrder) return promptsService.sort(sortOrder, offset, limit)
-
-      return promptsService.getPrompts(offset, limit)
+      if (searchQuery) return promptsService.search(searchQuery, pageParam, 12)
+      if (selectedTag) return promptsService.filter(selectedTag, pageParam, 12)
+      if (sortOrder) return promptsService.sort(sortOrder, pageParam, 12)
+      return promptsService.getPrompts(pageParam, 12)
     },
     initialPageParam: 0,
-    getNextPageParam: (lastPage, allPages) => {
-      return lastPage.length === 12 ? allPages.length : undefined
+    getNextPageParam: (lastPage) => {
+      if (!lastPage.meta?.hasNextPage) return undefined
+      return (lastPage.meta.offset ?? 0) + (lastPage.meta.limit ?? 12)
     },
     staleTime: 1000 * 60 * 5,
     gcTime: 1000 * 60 * 30,
@@ -79,11 +77,12 @@ export const useTrendingThreads = (lang?: string) => {
   return useInfiniteQuery({
     queryKey: keys.threads.trending(lang),
     queryFn: async ({ pageParam = 0 }) => {
-      return threadsService.getTrendingFeed(lang, pageParam * 20, 20)
+      return threadsService.getTrendingFeed(lang, pageParam, 20)
     },
     initialPageParam: 0,
-    getNextPageParam: (lastPage, allPages) => {
-      return lastPage.length === 20 ? allPages.length : undefined
+    getNextPageParam: (lastPage) => {
+      if (!lastPage.meta?.hasNextPage) return undefined
+      return (lastPage.meta.offset ?? 0) + (lastPage.meta.limit ?? 20)
     },
     staleTime: 1000 * 60 * 5,
     gcTime: 1000 * 60 * 30,
@@ -94,11 +93,12 @@ export const useTrendingPrompts = (lang?: string) => {
   return useInfiniteQuery({
     queryKey: keys.prompts.trending(lang),
     queryFn: async ({ pageParam = 0 }) => {
-      return promptsService.getTrending(lang, pageParam * 20, 20)
+      return promptsService.getTrending(lang, pageParam, 20)
     },
     initialPageParam: 0,
-    getNextPageParam: (lastPage, allPages) => {
-      return lastPage.length === 20 ? allPages.length : undefined
+    getNextPageParam: (lastPage) => {
+      if (!lastPage.meta?.hasNextPage) return undefined
+      return (lastPage.meta.offset ?? 0) + (lastPage.meta.limit ?? 20)
     },
     staleTime: 1000 * 60 * 5,
     gcTime: 1000 * 60 * 30,
@@ -119,13 +119,14 @@ export const usePersonalFeed = (lenserId?: string) => {
   return useInfiniteQuery({
     queryKey: lenserId ? keys.threads.personal(lenserId) : keys.threads.feed(),
     queryFn: async ({ pageParam = 0 }) => {
-      if (!lenserId) return []
-      return threadsService.getPersonalFeed(lenserId, pageParam * 20, 20)
+      if (!lenserId) return { data: [], meta: { hasNextPage: false, offset: 0, limit: 20 } }
+      return threadsService.getPersonalFeed(lenserId, pageParam, 20)
     },
     enabled: Boolean(lenserId),
     initialPageParam: 0,
-    getNextPageParam: (lastPage, allPages) => {
-      return lastPage.length === 20 ? allPages.length : undefined
+    getNextPageParam: (lastPage) => {
+      if (!lastPage.meta?.hasNextPage) return undefined
+      return (lastPage.meta.offset ?? 0) + (lastPage.meta.limit ?? 20)
     },
     staleTime: 1000 * 60 * 3, // 3 minutes — personalized data changes more often
     gcTime: 1000 * 60 * 15,
@@ -136,13 +137,14 @@ export const usePersonalPrompts = (lenserId?: string) => {
   return useInfiniteQuery({
     queryKey: lenserId ? keys.prompts.personal(lenserId) : keys.prompts.feed(),
     queryFn: async ({ pageParam = 0 }) => {
-      if (!lenserId) return []
-      return promptsService.getPersonalFeed(lenserId, pageParam * 20, 20)
+      if (!lenserId) return { data: [], meta: { hasNextPage: false, offset: 0, limit: 20 } }
+      return promptsService.getPersonalFeed(lenserId, pageParam, 20)
     },
     enabled: Boolean(lenserId),
     initialPageParam: 0,
-    getNextPageParam: (lastPage, allPages) => {
-      return lastPage.length === 20 ? allPages.length : undefined
+    getNextPageParam: (lastPage) => {
+      if (!lastPage.meta?.hasNextPage) return undefined
+      return (lastPage.meta.offset ?? 0) + (lastPage.meta.limit ?? 20)
     },
     staleTime: 1000 * 60 * 3,
     gcTime: 1000 * 60 * 15,
@@ -170,7 +172,11 @@ export const useFollowedTags = (lenserId?: string) => {
 export const useLenserFollows = (lenserId?: string, type: 'followers' | 'following' = 'following') => {
   return useQuery({
     queryKey: lenserId ? keys.lenser.follows(lenserId, type) : keys.lenser.all,
-    queryFn: () => (lenserId ? lenserService.getLenserFollows(lenserId, type) : []),
+    queryFn: async () => {
+      if (!lenserId) return []
+      const result = await lenserService.getLenserFollows(lenserId, type)
+      return result.data ?? []
+    },
     enabled: Boolean(lenserId),
     staleTime: 1000 * 60 * 2,
   })
