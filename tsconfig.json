@@ -1,7 +1,7 @@
 {
   "compilerOptions": {
     "useDefineForClassFields": false,
-    "types": ["node"],
+    "types": ["node", "vite/client", "vitest/globals"],
     "isolatedModules": true,
     "moduleDetection": "force",
     "allowJs": true,
