@@ -71,13 +71,21 @@ export class SupabaseReactionRepository implements ReactionRepositoryPort {
     targetId: string,
     _lenserId: string
   ): Promise<ReactionRecord[]> {
-    const { data, error } = await supabase.rpc('fn_content_reactions_get_user_for_target', {
-      p_target_type: targetType,
-      p_target_id: targetId,
-    })
+    const { table, idColumn } = this.getMapping(targetType)
+    const {
+      data: { user },
+    } = await supabase.auth.getUser()
+    if (!user) return []
+
+    const { data, error } = await supabase
+      .schema('content')
+      .from(table)
+      .select('*')
+      .eq(idColumn, targetId)
+      .eq('user_id', user.id)
 
     if (error) throw error
-    return (data ?? []) as ReactionRecord[]
+    return (data ?? []).map((r) => this.mapToRecord(r, targetType, idColumn))
   }
 
   async toggleReaction(
@@ -100,7 +108,23 @@ export class SupabaseReactionRepository implements ReactionRepositoryPort {
     })
 
     if (error) throw error
-    return data as any
+
+    const rpcResult = data as { added: boolean; counts: Record<string, number> }
+    const raw = rpcResult.counts ?? {}
+    const counts: Record<ReactionType, number> = {
+      like: raw['like'] ?? 0,
+      love: raw['love'] ?? 0,
+      clap: raw['clap'] ?? 0,
+      saved: raw['saved'] ?? 0,
+      copy: raw['copy'] ?? 0,
+    }
+    const total = counts.like + counts.love + counts.clap
+
+    // Fetch user's current reactions from table (source of truth post-toggle)
+    const userReactionRecords = await this.getUserReaction(targetType, targetId, _lenserId)
+    const userReactions = userReactionRecords.map((r) => r.reaction)
+
+    return { added: rpcResult.added, summary: { counts, total, userReactions } }
   }
 
   async getBatchUserReactions(
