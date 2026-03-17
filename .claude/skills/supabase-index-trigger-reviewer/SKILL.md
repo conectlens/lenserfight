@@ -15,6 +15,7 @@ disable-model-invocation: true
 1. Identify likely read/write hotspots.
 2. Review index coverage and trigger side effects.
 3. Return exact indexing or trigger simplification recommendations.
+4. Run 'npx supabase migration up --local' to ensure the created migrations applied successfully.
 
 ## Load only when needed
 - [Index and trigger review guide](references/REFERENCE.md)
