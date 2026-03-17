@@ -204,7 +204,18 @@ export const threadsService = {
     offset = 0,
     limit = 20
   ): Promise<ApiResponseEnvelope<ThreadFeedItem[]>> => {
-    return threadsRepo.getTrendingThreads(lang, offset, limit)
+    const result = await threadsRepo.getTrendingThreads(lang, offset, limit)
+    const items = result.data ?? []
+    return paginatedResponse(
+      items,
+      {
+        limit: result.meta?.limit ?? limit,
+        offset: result.meta?.offset ?? offset,
+        total: result.meta?.total,
+        hasNextPage: result.meta?.hasNextPage ?? false,
+      },
+      { durationMs: result.meta?.durationMs }
+    )
   },
 
   getPersonalFeed: async (
@@ -212,7 +223,18 @@ export const threadsService = {
     offset = 0,
     limit = 20
   ): Promise<ApiResponseEnvelope<PersonalFeedItem[]>> => {
-    return threadsRepo.getPersonalFeed(offset, limit)
+    const result = await threadsRepo.getPersonalFeed(offset, limit)
+    const items = result.data ?? []
+    return paginatedResponse(
+      items,
+      {
+        limit: result.meta?.limit ?? limit,
+        offset: result.meta?.offset ?? offset,
+        total: result.meta?.total,
+        hasNextPage: result.meta?.hasNextPage ?? false,
+      },
+      { durationMs: result.meta?.durationMs }
+    )
   },
 
   // Backward compatibility alias
