@@ -19,7 +19,7 @@ export interface ThreadsRepositoryPort {
   getReplyById(replyId: string): Promise<ThreadReplyRecord | null>
   getTrendingTags(limit: number): Promise<TagRecord[]>
   getTrendingThreads(lang?: string, offset?: number, limit?: number): Promise<ThreadFeedItem[]>
-  getPersonalFeed(lenserId: string, offset?: number, limit?: number): Promise<PersonalFeedItem[]>
+  getPersonalFeed(offset?: number, limit?: number): Promise<PersonalFeedItem[]>
   createReply(
     threadId: string,
     lenserId: string,
@@ -228,24 +228,22 @@ export class SupabaseThreadsRepository implements ThreadsRepositoryPort {
    * - Frontend cannot spoof lenser_id.
    */
   async createThread(dto: CreateThreadDTO): Promise<ThreadRecord> {
-    const cleanLenserId = !dto.lenserId || dto.lenserId === 'undefined' ? undefined : dto.lenserId
-
-    // 1. Resolve the content language from the exposed profile schema.
+    // 1. Resolve the content language from the authenticated user's profile.
     let languageCode = 'en'
-    if (cleanLenserId) {
+    const { data: { user } } = await supabase.auth.getUser()
+    if (user) {
       const { data: profileData } = await supabase
         .schema('lensers')
         .from('profiles')
         .select('preferred_language')
-        .eq('id', cleanLenserId)
+        .eq('user_id', user.id)
         .maybeSingle()
       languageCode = profileData?.preferred_language || 'en'
     }
 
-    // 2. Insert Base Thread
+    // 2. Insert Base Thread (lenser_id resolved server-side via DEFAULT lensers.get_auth_lenser_id())
     const { data: threadInsertData, error: insertError } = await supabase.schema('content').from('threads').insert({
       visibility: dto.visibility,
-      lenser_id: cleanLenserId
     }).select('id').single()
 
     if (insertError) this.handleError(insertError)
@@ -282,10 +280,9 @@ export class SupabaseThreadsRepository implements ThreadsRepositoryPort {
     if (viewError) this.handleError(viewError)
 
     if (!threadView) {
-      // Fallback for private threads
+      // Fallback for private threads (lenser_id resolved server-side)
       return {
         id: threadId,
-        lenser_id: cleanLenserId,
         visibility: dto.visibility,
         created_at: new Date().toISOString(),
         author_profile: {},
@@ -465,7 +462,7 @@ export class SupabaseThreadsRepository implements ThreadsRepositoryPort {
    */
   async createReply(
     threadId: string,
-    lenserId: string, // intentionally ignored; server resolves author from auth.uid()
+    _lenserId: string, // ignored; lenser_id resolved server-side via DEFAULT lensers.get_auth_lenser_id()
     content: string,
     parentReplyId?: string
   ): Promise<ThreadReplyRecord> {
@@ -473,7 +470,6 @@ export class SupabaseThreadsRepository implements ThreadsRepositoryPort {
       thread_id: threadId,
       content,
       parent_reply_id: parentReplyId ?? null,
-      lenser_id: !lenserId || lenserId === 'undefined' ? undefined : lenserId
     }).select('id').single()
 
     if (error) this.handleError(error)
@@ -493,7 +489,6 @@ export class SupabaseThreadsRepository implements ThreadsRepositoryPort {
         thread_id: threadId,
         content,
         parent_reply_id: parentReplyId || null,
-        lenser_id: lenserId,
         created_at: new Date().toISOString(),
       } as unknown as ThreadReplyRecord
     }
@@ -542,9 +537,8 @@ export class SupabaseThreadsRepository implements ThreadsRepositoryPort {
    * Personalized thread feed for an authenticated lenser (Phase 3+4).
    * Score = 0.30×tag_sim + 0.25×lang_match + 0.20×hot + 0.15×author_rep + 0.10×followed_author.
    */
-  async getPersonalFeed(lenserId: string, offset = 0, limit = 20): Promise<PersonalFeedItem[]> {
+  async getPersonalFeed(offset = 0, limit = 20): Promise<PersonalFeedItem[]> {
     const { data, error } = await supabase.rpc('fn_content_get_personal_threads', {
-      p_lenser_id: lenserId,
       p_limit: limit,
       p_offset: offset,
     })
