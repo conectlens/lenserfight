@@ -23,7 +23,7 @@ export const usePromptDetailController = (promptId?: string) => {
   const queryClient = useQueryClient()
   const hasLoggedView = useRef<string | null>(null)
 
-  const promptCompositeKey = ['prompt-composite', promptId]
+  const promptCompositeKey = ['prompt-composite', promptId, { viewerId: lenser?.id }]
   const loggedPromptViews = new Set<string>()
 
   const { data, isLoading, error } = useQuery<PromptDetailData, Error>({
