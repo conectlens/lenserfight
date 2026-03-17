@@ -9,6 +9,7 @@ import {
   CreatePromptDTO,
   PromptAuthor,
 } from '@lenserfight/types'
+import { ApiResponseEnvelope, paginatedResponse } from 'contracts'
 
 import { reactionService } from './reactionService'
 import { tagService } from './tagService'
@@ -50,32 +51,56 @@ const mapToViewModels = async (
 }
 
 export const promptsService = {
-  getPrompts: async (offset = 0, limit = 10): Promise<PromptTemplateViewModel[]> => {
-    const records = await promptsRepo.getAll(offset, limit)
-    return mapToViewModels(records)
+  getPrompts: async (offset = 0, limit = 10): Promise<ApiResponseEnvelope<PromptTemplateViewModel[]>> => {
+    const result = await promptsRepo.getAll(offset, limit)
+    const items = await mapToViewModels(result.data ?? [])
+    return paginatedResponse(items, {
+      limit: result.meta?.limit ?? limit,
+      offset: result.meta?.offset ?? offset,
+      total: result.meta?.total,
+      hasNextPage: result.meta?.hasNextPage ?? false,
+    }, { durationMs: result.meta?.durationMs })
   },
 
-  search: async (query: string, offset = 0, limit = 10): Promise<PromptTemplateViewModel[]> => {
-    const records = await promptsRepo.search(query, offset, limit)
-    return mapToViewModels(records)
+  search: async (query: string, offset = 0, limit = 10): Promise<ApiResponseEnvelope<PromptTemplateViewModel[]>> => {
+    const result = await promptsRepo.search(query, offset, limit)
+    const items = await mapToViewModels(result.data ?? [])
+    return paginatedResponse(items, {
+      limit: result.meta?.limit ?? limit,
+      offset: result.meta?.offset ?? offset,
+      total: result.meta?.total,
+      hasNextPage: result.meta?.hasNextPage ?? false,
+    }, { durationMs: result.meta?.durationMs })
   },
 
   filter: async (
     tagSlug: string | null,
     offset = 0,
     limit = 10
-  ): Promise<PromptTemplateViewModel[]> => {
-    const records = await promptsRepo.filterByTag(tagSlug, offset, limit)
-    return mapToViewModels(records)
+  ): Promise<ApiResponseEnvelope<PromptTemplateViewModel[]>> => {
+    const result = await promptsRepo.filterByTag(tagSlug, offset, limit)
+    const items = await mapToViewModels(result.data ?? [])
+    return paginatedResponse(items, {
+      limit: result.meta?.limit ?? limit,
+      offset: result.meta?.offset ?? offset,
+      total: result.meta?.total,
+      hasNextPage: result.meta?.hasNextPage ?? false,
+    }, { durationMs: result.meta?.durationMs })
   },
 
   sort: async (
     order: 'newest' | 'popular',
     offset = 0,
     limit = 10
-  ): Promise<PromptTemplateViewModel[]> => {
-    const records = await promptsRepo.sort(order, offset, limit)
-    return mapToViewModels(records)
+  ): Promise<ApiResponseEnvelope<PromptTemplateViewModel[]>> => {
+    const result = await promptsRepo.sort(order, offset, limit)
+    const items = await mapToViewModels(result.data ?? [])
+    return paginatedResponse(items, {
+      limit: result.meta?.limit ?? limit,
+      offset: result.meta?.offset ?? offset,
+      total: result.meta?.total,
+      hasNextPage: result.meta?.hasNextPage ?? false,
+    }, { durationMs: result.meta?.durationMs })
   },
 
   getTopPrompts: async (limit: number = 3): Promise<PromptTemplateViewModel[]> => {
@@ -87,7 +112,7 @@ export const promptsService = {
     lang?: string,
     offset = 0,
     limit = 20
-  ): Promise<PromptTemplateViewModel[]> => {
+  ): Promise<ApiResponseEnvelope<PromptTemplateViewModel[]>> => {
     return promptsRepo.getTrendingPrompts(lang, offset, limit)
   },
 
@@ -95,7 +120,7 @@ export const promptsService = {
     _lenserId: string,
     offset = 0,
     limit = 20
-  ): Promise<PersonalPromptFeedItem[]> => {
+  ): Promise<ApiResponseEnvelope<PersonalPromptFeedItem[]>> => {
     return promptsRepo.getPersonalFeed(offset, limit)
   },
 
@@ -154,12 +179,12 @@ export const promptsService = {
   getRelatedPrompts: async (id: string): Promise<PromptTemplateViewModel[]> => {
     const tags = await promptsRepo.getTags(id)
     if (tags.length === 0) {
-      const all = await promptsRepo.getAll()
-      return mapToViewModels(all.filter((p) => p.id !== id).slice(0, 4))
+      const result = await promptsRepo.getAll(0, 20)
+      return mapToViewModels((result.data ?? []).filter((p) => p.id !== id).slice(0, 4))
     }
 
-    const relatedRecords = await promptsRepo.filterByTag(tags[0].slug)
-    const filtered = relatedRecords.filter((p) => p.id !== id).slice(0, 5)
+    const result = await promptsRepo.filterByTag(tags[0].slug, 0, 20)
+    const filtered = (result.data ?? []).filter((p) => p.id !== id).slice(0, 5)
     return mapToViewModels(filtered)
   },
 
