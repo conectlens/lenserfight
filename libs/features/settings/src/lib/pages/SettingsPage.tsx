@@ -195,10 +195,10 @@ export const SettingsPage: React.FC = () => {
   }
 
   const handleDeleteRequest = async () => {
-    if (!user) return
+    if (!lenser) return
     setIsDeleting(true)
     try {
-      await lenserService.requestAccountDeletion(user.handle)
+      await lenserService.requestAccountDeletion(lenser.handle)
       // Auto logout after request
       await logout()
       navigate('/login')

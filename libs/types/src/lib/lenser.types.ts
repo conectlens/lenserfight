@@ -50,6 +50,8 @@ export interface Lenser {
   updated_at?: string
   join_order?: number // Immutable rank from lenser_join_log
   deletion_requested_at?: string | null
+  xp?: number
+  current_level?: number
 }
 
 export interface LenserBadge {
@@ -193,7 +195,7 @@ export interface LenserProfileDTO {
 
   // Status
   status?: 'active' | 'inactive' | 'banned'
-  created_at?: string
+  created_at: string
 
   // XP / Level
   total_xp: string | null // bigint → string
