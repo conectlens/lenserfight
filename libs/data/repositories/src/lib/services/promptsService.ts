@@ -42,6 +42,7 @@ const mapToViewModels = async (
       usageCount: record.reaction_totals?.['copy'] || 0,
       createdAt: record.created_at,
       visibility: record.visibility,
+      status: record.status,
       author: resolveAuthor(record),
       tags: tags,
     }

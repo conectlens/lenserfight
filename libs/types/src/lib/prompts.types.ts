@@ -1,7 +1,8 @@
 import { AuthorProfile } from './lenser.types'
 import { TagRecord } from './threads.types'
 
-export type VisibilityEnum = 'public' | 'private'
+export type VisibilityEnum = 'public' | 'community' | 'private'
+export type ContentStatus = 'draft' | 'published' | 'archived'
 export type ReactionEnum = 'like' | 'love' | 'clap' | 'saved' | 'copy'
 
 export interface PromptTemplateRecord {
@@ -12,6 +13,7 @@ export interface PromptTemplateRecord {
   description?: string | null
   content: string
   visibility: VisibilityEnum
+  status: ContentStatus
   reaction_totals?: Record<string, number> // JSONB
   tags: TagRecord[] // Denormalized JSONB
   created_at: string
@@ -49,6 +51,7 @@ export interface PromptTemplateViewModel {
   usageCount: number
   createdAt: string
   visibility: VisibilityEnum
+  status: ContentStatus
 }
 
 export interface PersonalPromptFeedItem extends PromptTemplateViewModel {
