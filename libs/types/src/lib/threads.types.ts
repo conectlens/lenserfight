@@ -1,7 +1,6 @@
 import { AuthorProfile } from './lenser.types'
 
-export type Visibility = 'public' | 'private' | 'followers'
-export type ReactionType = 'like' | 'love' | 'clap'
+export type Visibility = 'public' | 'private'
 
 export interface PromptData {
   title: string
