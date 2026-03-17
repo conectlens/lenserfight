@@ -27,10 +27,13 @@ export class SupabaseAdminRepository implements AdminRepositoryPort {
     limit: number,
     query?: string
   ): Promise<AdminListResponse<AdminUser>> {
-    let queryBuilder = supabase.from('vw_lensers_profile_full').select('*', { count: 'exact' })
+    let queryBuilder = supabase
+      .schema('lensers')
+      .from('profiles')
+      .select('id, user_id, handle, display_name, created_at, updated_at, last_login_at, is_super_admin', { count: 'exact' })
 
     if (query) {
-      queryBuilder = queryBuilder.or(`email.ilike.%${query}%,display_name.ilike.%${query}%`)
+      queryBuilder = queryBuilder.ilike('display_name', `%${query}%`)
     }
 
     const { data, count, error } = await queryBuilder
@@ -42,10 +45,10 @@ export class SupabaseAdminRepository implements AdminRepositoryPort {
     return {
       data: (data as any[]).map((u) => ({
         id: u.user_id,
-        email: u.email || 'hidden',
+        email: 'hidden',
         display_name: u.display_name,
         created_at: u.created_at,
-        last_sign_in_at: u.updated_at, // Use updated_at as proxy for last_sign_in if not available on lensers table
+        last_sign_in_at: u.last_login_at ?? u.updated_at,
         is_super_admin: u.is_super_admin,
       })),
       total: count || 0,
@@ -70,7 +73,8 @@ export class SupabaseAdminRepository implements AdminRepositoryPort {
 
   async getWaitlist(offset: number, limit: number): Promise<AdminListResponse<Lenser>> {
     const { data, count, error } = await supabase
-      .from('vw_lensers_profile_full')
+      .schema('lensers')
+      .from('profiles')
       .select('*', { count: 'exact' })
       .eq('is_in_waiting_list', true)
       .order('created_at', { ascending: false })
