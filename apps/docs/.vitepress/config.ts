@@ -1,5 +1,11 @@
 import { defineConfig } from 'vitepress'
 import tailwind from '@tailwindcss/vite'
+import { copyFileSync, existsSync, mkdirSync, readdirSync, readFileSync, statSync } from 'fs'
+import { dirname, join, resolve } from 'path'
+import { fileURLToPath } from 'url'
+
+const __dirname = dirname(fileURLToPath(import.meta.url))
+const docsDir = resolve(__dirname, '../../docs')
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function mermaidFencePlugin(md: any) {
@@ -15,14 +21,70 @@ function mermaidFencePlugin(md: any) {
   }
 }
 
+/**
+ * Dev-server plugin: intercepts requests for *.md files and serves the raw
+ * markdown source so that CopyPageButton's fetch() succeeds in dev mode.
+ */
+function rawMarkdownPlugin() {
+  return {
+    name: 'lf-raw-markdown',
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    configureServer(server: any) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      server.middlewares.use((req: any, res: any, next: any) => {
+        const url: string = req.url ?? ''
+        if (!url.endsWith('.md') || url.startsWith('/@')) return next()
+        const mdPath = join(docsDir, decodeURIComponent(url))
+        if (existsSync(mdPath)) {
+          try {
+            res.setHeader('Content-Type', 'text/plain; charset=utf-8')
+            res.end(readFileSync(mdPath, 'utf-8'))
+            return
+          } catch {
+            // fall through to next()
+          }
+        }
+        next()
+      })
+    },
+  }
+}
+
+const DOCS_HOST = 'https://docs.lenserfight.com'
+const OG_BANNER = `${DOCS_HOST}/og-banner.png`
+
+const SITE_JSON_LD = JSON.stringify({
+  '@context': 'https://schema.org',
+  '@type': 'WebSite',
+  name: 'LenserFight Docs',
+  url: DOCS_HOST,
+  description: 'User-first documentation for LenserFight Arena, Forum, Admin, and Mobile.',
+  publisher: {
+    '@type': 'Organization',
+    name: 'LenserFight',
+    url: 'https://lenserfight.com',
+    logo: {
+      '@type': 'ImageObject',
+      url: `${DOCS_HOST}/favicons/apple-icon.png`,
+    },
+  },
+  inLanguage: ['en', 'tr'],
+})
+
 // https://vitepress.dev/reference/site-config
 export default defineConfig({
   srcDir: '../../docs',
+  cleanUrls: true,
 
   title: 'LenserFight Docs',
   description: 'User-first documentation for LenserFight Arena, Forum, Admin, and Mobile.',
 
+  sitemap: {
+    hostname: DOCS_HOST,
+  },
+
   head: [
+    // ── Favicons ────────────────────────────────────────────────────────────
     ['link', { rel: 'apple-touch-icon', sizes: '57x57', href: '/favicons/apple-icon-57x57.png' }],
     ['link', { rel: 'apple-touch-icon', sizes: '60x60', href: '/favicons/apple-icon-60x60.png' }],
     ['link', { rel: 'apple-touch-icon', sizes: '72x72', href: '/favicons/apple-icon-72x72.png' }],
@@ -40,17 +102,170 @@ export default defineConfig({
     ['meta', { name: 'msapplication-TileColor', content: '#ffffff' }],
     ['meta', { name: 'msapplication-TileImage', content: '/favicons/ms-icon-144x144.png' }],
     ['meta', { name: 'theme-color', content: '#ffffff' }],
+    // ── Fonts ────────────────────────────────────────────────────────────────
     ['link', { rel: 'preconnect', href: 'https://fonts.googleapis.com' }],
     ['link', { rel: 'preconnect', href: 'https://fonts.gstatic.com', crossorigin: '' }],
     ['link', { rel: 'stylesheet', href: 'https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap' }],
+    // ── Open Graph ──────────────────────────────────────────────────────────
+    ['meta', { property: 'og:site_name', content: 'LenserFight Docs' }],
+    ['meta', { property: 'og:type', content: 'website' }],
+    ['meta', { property: 'og:image', content: OG_BANNER }],
+    ['meta', { property: 'og:image:width', content: '1200' }],
+    ['meta', { property: 'og:image:height', content: '630' }],
+    ['meta', { property: 'og:image:alt', content: 'LenserFight Docs' }],
+    // ── Twitter / X ─────────────────────────────────────────────────────────
+    ['meta', { name: 'twitter:card', content: 'summary_large_image' }],
+    ['meta', { name: 'twitter:site', content: '@lenserfight' }],
+    ['meta', { name: 'twitter:image', content: OG_BANNER }],
+    // ── Structured data (JSON-LD) ────────────────────────────────────────────
+    ['script', { type: 'application/ld+json' }, SITE_JSON_LD],
+    // ── hreflang (for Googlebot multilingual discovery) ─────────────────────
+    ['link', { rel: 'alternate', hreflang: 'en', href: DOCS_HOST }],
+    ['link', { rel: 'alternate', hreflang: 'tr', href: `${DOCS_HOST}/tr/` }],
+    ['link', { rel: 'alternate', hreflang: 'x-default', href: DOCS_HOST }],
   ],
+
+  /**
+   * After VitePress finishes building, copy every .md source file from srcDir
+   * into outDir at the same relative path.  This makes raw markdown accessible
+   * at the same URL as its HTML counterpart (e.g. /tutorials/quickstart.md),
+   * so CopyPageButton's fetch() succeeds in production.
+   */
+  buildEnd: async (siteConfig) => {
+    function copyMd(src: string, dest: string) {
+      mkdirSync(dest, { recursive: true })
+      for (const entry of readdirSync(src)) {
+        const s = join(src, entry)
+        const d = join(dest, entry)
+        if (statSync(s).isDirectory()) {
+          copyMd(s, d)
+        } else if (entry.endsWith('.md')) {
+          copyFileSync(s, d)
+        }
+      }
+    }
+    copyMd(siteConfig.srcDir, siteConfig.outDir)
+  },
 
   markdown: {
     config: mermaidFencePlugin,
   },
 
+  // ── i18n Locales ────────────────────────────────────────────────────────────
+  locales: {
+    root: {
+      label: 'English',
+      lang: 'en',
+    },
+    tr: {
+      label: 'Türkçe',
+      lang: 'tr',
+      link: '/tr/',
+      title: 'LenserFight Belgeleri',
+      description: 'LenserFight Arena, Forum, Admin ve Mobil için kullanıcı odaklı belgeler.',
+      themeConfig: {
+        nav: [
+          { text: 'Başlangıç', link: '/tr/getting-started/overview' },
+          { text: 'Savaşlar', link: '/tr/battles/how-battles-work' },
+          { text: 'Forum', link: '/tr/forum/community-hub' },
+          { text: 'Mobil', link: '/tr/mobile/companion-app' },
+          { text: 'Yönetici', link: '/tr/admins/operations-console' },
+          { text: 'Kılavuzlar', link: '/tr/guides/run-your-first-battle' },
+          { text: 'Veritabanı', link: '/tr/database/schema-overview' },
+          { text: 'Referans', link: '/tr/reference/configuration' },
+          { text: 'Katkıda Bulunanlar', link: '/tr/contributors/wave-2-plan' },
+        ],
+        sidebar: [
+          {
+            text: 'Başlarken',
+            items: [
+              { text: 'Genel Bakış', link: '/tr/getting-started/overview' },
+              { text: "Beta'ya Katıl", link: '/tr/getting-started/join-beta' },
+              { text: 'Sözlük', link: '/tr/getting-started/glossary' },
+              { text: 'Kurulum', link: '/tr/tutorials/installation' },
+              { text: 'Hızlı Başlangıç', link: '/tr/tutorials/quickstart' },
+            ],
+          },
+          {
+            text: 'Eğitimler — Yeni Başlayanlar İçin',
+            items: [
+              { text: 'LenserFight Nedir?', link: '/tr/tutorials/what-is-lenserfight' },
+              { text: 'İlk Savaşın (Kodsuz)', link: '/tr/tutorials/your-first-battle' },
+              { text: 'Harika Prompt Yazmak', link: '/tr/tutorials/writing-great-prompts' },
+              { text: 'CLI ile İlk Savaş', link: '/tr/tutorials/first-battle-cli' },
+              { text: 'İlk Ajanını Oluştur', link: '/tr/tutorials/first-agent' },
+              { text: 'OpenAI Ajanı Bağla', link: '/tr/tutorials/connect-openai-agent' },
+            ],
+          },
+          {
+            text: 'Savaşlar',
+            items: [
+              { text: 'Savaşlar Nasıl Çalışır', link: '/tr/battles/how-battles-work' },
+              { text: 'Hibrit Puanlama', link: '/tr/battles/hybrid-scoring' },
+            ],
+          },
+          {
+            text: 'Forum',
+            items: [
+              { text: 'Topluluk Merkezi', link: '/tr/forum/community-hub' },
+              { text: 'İçerik Üretici Profilleri', link: '/tr/profiles/creator-profiles' },
+            ],
+          },
+          {
+            text: 'Uygulamalar',
+            items: [
+              { text: 'Mobil Yardımcı Uygulama', link: '/tr/mobile/companion-app' },
+              { text: 'Yönetici Konsolu', link: '/tr/admins/operations-console' },
+            ],
+          },
+          {
+            text: 'Kılavuzlar',
+            items: [
+              { text: 'İlk Savaşı Başlat', link: '/tr/guides/run-your-first-battle' },
+              { text: 'Sonuç Paylaş', link: '/tr/guides/share-a-result' },
+              { text: 'SSS', link: '/tr/help/faq' },
+            ],
+          },
+          {
+            text: 'Strateji ve Referans',
+            items: [
+              { text: 'Beta Yol Haritası', link: '/tr/reference/beta-roadmap' },
+              { text: 'Açık Çekirdek Modeli', link: '/tr/tools/open-core-model' },
+              { text: 'Ajan Konumlandırma', link: '/tr/agents/positioning' },
+              { text: "LenserFight'ta Promptlar", link: '/tr/prompts/prompt-usage' },
+              { text: 'Katkıda Bulunanlar 2. Dalga', link: '/tr/contributors/wave-2-plan' },
+            ],
+          },
+          {
+            text: 'Veritabanı',
+            items: [
+              { text: 'Genel Bakış', link: '/tr/database/schema-overview' },
+              { text: 'Lensers Şeması', link: '/tr/database/schema-lensers' },
+              { text: 'İçerik Şeması', link: '/tr/database/schema-content' },
+              { text: 'XP Şeması', link: '/tr/database/schema-xp' },
+              { text: 'Analitik Şeması', link: '/tr/database/schema-analytics' },
+              { text: 'AI Şeması', link: '/tr/database/schema-ai' },
+              { text: 'Savaşlar Şeması', link: '/tr/database/schema-battles' },
+              { text: 'Diğer Şemalar', link: '/tr/database/schema-other' },
+              { text: 'RLS Referansı', link: '/tr/database/rls-reference' },
+              { text: 'RPC Referansı', link: '/tr/database/rpc-reference' },
+              { text: 'Yerel Kurulum', link: '/tr/database/local-setup' },
+            ],
+          },
+          {
+            text: 'API',
+            items: [
+              { text: 'API Genel Bakış', link: '/tr/reference/api-overview' },
+              { text: 'CLI Referansı', link: '/tr/reference/cli' },
+            ],
+          },
+        ],
+      },
+    },
+  },
+
   vite: {
-    plugins: [tailwind()],
+    plugins: [tailwind(), rawMarkdownPlugin()],
     server: {
       host: '127.0.0.1',
     },
