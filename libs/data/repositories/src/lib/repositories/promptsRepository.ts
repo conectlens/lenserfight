@@ -227,53 +227,59 @@ export class SupabasePromptsRepository implements PromptsRepositoryPort {
     if (!tagSlug) return this.getAll(offset, limit)
 
     const start = Date.now()
-    const { data, error, count } = await supabase
-      .from('vw_prompt_templates_public')
-      .select(this.listPromptSelect, { count: 'exact' })
-      .contains('tags', JSON.stringify([{ slug: tagSlug }]))
-      .order('created_at', { ascending: false })
-      .range(offset, offset + limit - 1)
+    const { data, error } = await supabase.rpc('fn_content_get_prompts_by_tag', {
+      p_tag_slug: tagSlug,
+      p_limit: limit,
+      p_offset: offset,
+    })
 
     if (error) this.handleError(error)
-    const total = count ?? 0
     return paginatedResponse(
       (data ?? []) as unknown as PromptTemplateRecord[],
-      { limit, offset, total, hasNextPage: offset + limit < total },
+      { limit, offset, hasNextPage: (data?.length ?? 0) >= limit },
       { durationMs: Date.now() - start },
     )
   }
 
   async sort(order: 'newest' | 'popular', offset = 0, limit = 10): Promise<ApiResponseEnvelope<PromptTemplateRecord[]>> {
     const start = Date.now()
-    let builder = supabase
-      .from('vw_prompt_templates_public')
-      .select(this.listPromptSelect, { count: 'exact' })
 
     if (order === 'newest') {
-      builder = builder.order('created_at', { ascending: false })
-    } else {
-      builder = builder.order('reaction_totals->>copy', { ascending: false })
+      const { data, error, count } = await supabase
+        .from('vw_prompt_templates_public')
+        .select(this.listPromptSelect, { count: 'exact' })
+        .order('created_at', { ascending: false })
+        .range(offset, offset + limit - 1)
+      if (error) this.handleError(error)
+      const total = count ?? 0
+      return paginatedResponse(
+        (data ?? []) as unknown as PromptTemplateRecord[],
+        { limit, offset, total, hasNextPage: offset + limit < total },
+        { durationMs: Date.now() - start },
+      )
     }
 
-    const { data, error, count } = await builder.range(offset, offset + limit - 1)
+    // popular: fn_content_get_popular_prompts orders by hot_score (pre-computed
+    // batch aggregate) — avoids a full 765K-row scan on the computed copy_count column.
+    const { data, error } = await supabase.rpc('fn_content_get_popular_prompts', {
+      p_limit: limit,
+      p_offset: offset,
+    })
     if (error) this.handleError(error)
-    const total = count ?? 0
     return paginatedResponse(
       (data ?? []) as unknown as PromptTemplateRecord[],
-      { limit, offset, total, hasNextPage: offset + limit < total },
+      { limit, offset, hasNextPage: (data?.length ?? 0) >= limit },
       { durationMs: Date.now() - start },
     )
   }
 
   async getTopPrompts(limit: number): Promise<PromptTemplateRecord[]> {
-    const { data, error } = await supabase
-      .from('vw_prompt_templates_public')
-      .select(this.listPromptSelect)
-      .order('reaction_totals->>copy', { ascending: false })
-      .limit(limit)
-
+    const { data, error } = await supabase.rpc('fn_content_get_popular_prompts', {
+      p_limit: limit,
+      p_offset: 0,
+    })
     if (error) this.handleError(error)
-    return data as unknown as PromptTemplateRecord[]
+    return (data ?? []) as unknown as PromptTemplateRecord[]
   }
 
   /**
