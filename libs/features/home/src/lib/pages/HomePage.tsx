@@ -1,4 +1,12 @@
-import { Plus, ChevronRight, MessageSquareOff, AlertCircle, Tag, Sparkles } from 'lucide-react'
+import {
+  Plus,
+  ChevronRight,
+  MessageSquareOff,
+  AlertCircle,
+  Tag,
+  Sparkles,
+  UserPlus,
+} from 'lucide-react'
 import React, { useCallback, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 
@@ -13,20 +21,33 @@ import {
   useTopPrompts,
   useTrendingTags,
   useLatestLensers,
+  usePersonalFeed,
+  usePersonalPrompts,
+  useSuggestedLensers,
+  useFollowedTags,
+  useFollowTag,
+  useUnfollowTag,
+  useFollowLenser,
+  useUnfollowLenser,
 } from '@lenserfight/features/home'
+import { useLenser } from '@lenserfight/features/profile'
 import { CreateLenserProfileModal } from '@lenserfight/features/onboarding'
 import { CreateThreadModal } from '@lenserfight/features/threads'
-import { storage } from '@lenserfight/utils/storage'
 import { ThreadsList } from '../components/ThreadsList'
 
 export const HomePage: React.FC = () => {
   const navigate = useNavigate()
   const { isAuthenticated } = useAuth()
-  const hasLenser = storage.getItem('lenser_has_profile') === 'true'
+  const { lenser, hasLenser } = useLenser()
+  const lenserId = lenser?.id
+  const showForYou = isAuthenticated && hasLenser
 
   const [isCreateModalOpen, setIsCreateModalOpen] = React.useState(false)
   const [isProfileModalOpen, setIsProfileModalOpen] = React.useState(false)
+  const [feedTab, setFeedTab] = React.useState<'for_you' | 'trending'>('for_you')
+  const activeTab = showForYou ? feedTab : 'trending'
 
+  // Global trending feed (always fetched as fallback / trending tab)
   const {
     data: threadsData,
     fetchNextPage,
@@ -35,32 +56,77 @@ export const HomePage: React.FC = () => {
     isLoading: threadsLoading,
   } = useThreadsFeed()
 
+  // Personal feed (enabled only when authenticated + has lenser profile)
+  const {
+    data: personalData,
+    fetchNextPage: fetchNextPersonal,
+    hasNextPage: hasNextPersonal,
+    isFetchingNextPage: isFetchingNextPersonal,
+    isLoading: personalLoading,
+  } = usePersonalFeed(showForYou ? lenserId : undefined)
+
+  // Sidebar widgets
   const { data: topPrompts, isLoading: promptsLoading } = useTopPrompts()
-  const { data: trendingTags, isLoading: tagsLoading, isError: tagsError } = useTrendingTags()
+  const { data: personalPromptsData, isLoading: personalPromptsLoading } = usePersonalPrompts(
+    showForYou ? lenserId : undefined
+  )
+
   const {
     data: latestLensers,
     isLoading: lensersLoading,
     isError: lensersError,
   } = useLatestLensers()
+  const { data: suggestedLensers, isLoading: suggestedLoading } = useSuggestedLensers(
+    showForYou ? lenserId : undefined
+  )
 
-  const threads = threadsData?.pages.flatMap((page) => page) || []
-  const isEmpty = !threadsLoading && threads.length === 0
+  const { data: trendingTags, isLoading: tagsLoading, isError: tagsError } = useTrendingTags()
+  const { data: followedTags } = useFollowedTags(showForYou ? lenserId : undefined)
+
+  // Follow mutations
+  const followTag = useFollowTag(lenserId)
+  const unfollowTag = useUnfollowTag(lenserId)
+  const followLenser = useFollowLenser(lenserId)
+  const unfollowLenser = useUnfollowLenser(lenserId)
+
+  const [followedLenserIds, setFollowedLenserIds] = React.useState<Set<string>>(new Set())
+  const followedTagSlugs = React.useMemo(
+    () => new Set(followedTags?.map((t) => t.slug) ?? []),
+    [followedTags]
+  )
+
+  // Derive active feed data from the selected tab
+  const activeFeedData = activeTab === 'for_you' ? personalData : threadsData
+  const activeFetchNext = activeTab === 'for_you' ? fetchNextPersonal : fetchNextPage
+  const activeHasNext = activeTab === 'for_you' ? hasNextPersonal : hasNextPage
+  const activeIsFetchingNext =
+    activeTab === 'for_you' ? isFetchingNextPersonal : isFetchingNextPage
+  const activeIsLoading = activeTab === 'for_you' ? personalLoading : threadsLoading
+  const threads = activeFeedData?.pages.flatMap((page) => page) || []
+  const isEmpty = !activeIsLoading && threads.length === 0
+
+  // Sidebar prompts: personalised for auth users, top prompts otherwise
+  const sidebarPrompts =
+    showForYou
+      ? (personalPromptsData?.pages[0]?.slice(0, 3) ?? [])
+      : (topPrompts ?? []).sort((a, b) => b.usageCount - a.usageCount).slice(0, 3)
+  const sidebarPromptsLoading = showForYou ? personalPromptsLoading : promptsLoading
 
   const observer = useRef<IntersectionObserver | null>(null)
   const lastThreadElementRef = useCallback(
     (node: HTMLDivElement) => {
-      if (threadsLoading || isFetchingNextPage) return
+      if (activeIsLoading || activeIsFetchingNext) return
       if (observer.current) observer.current.disconnect()
 
       observer.current = new IntersectionObserver((entries) => {
-        if (entries[0].isIntersecting && hasNextPage) {
-          fetchNextPage()
+        if (entries[0].isIntersecting && activeHasNext) {
+          activeFetchNext()
         }
       })
 
       if (node) observer.current.observe(node)
     },
-    [threadsLoading, isFetchingNextPage, hasNextPage, fetchNextPage]
+    [activeIsLoading, activeIsFetchingNext, activeHasNext, activeFetchNext]
   )
 
   const handleOpenThread = (id: string) => navigate(`/threads/${id}`)
@@ -83,7 +149,7 @@ export const HomePage: React.FC = () => {
     }
   }
 
-  const MinimalAlert = ({ icon: Icon, text }: { icon: any; text: string }) => (
+  const MinimalAlert = ({ icon: Icon, text }: { icon: React.ElementType; text: string }) => (
     <div className="bg-gray-50 dark:bg-gray-800 border border-gray-100 dark:border-gray-700 rounded-lg p-6 flex flex-col items-center justify-center text-center">
       <Icon className="w-5 h-5 text-gray-400 dark:text-gray-500 mb-2" />
       <span className="text-xs font-medium text-gray-500 dark:text-gray-400">{text}</span>
@@ -97,7 +163,25 @@ export const HomePage: React.FC = () => {
       {/* Main Feed Column */}
       <div className="lg:col-span-8">
         <div className="flex items-center justify-between mb-6">
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Your Feed</h1>
+          {showForYou ? (
+            <div className="flex bg-gray-100 dark:bg-gray-800 rounded-xl p-1 gap-1">
+              {(['for_you', 'trending'] as const).map((tab) => (
+                <button
+                  key={tab}
+                  onClick={() => setFeedTab(tab)}
+                  className={`px-4 py-2 rounded-lg text-sm font-semibold transition-all ${
+                    activeTab === tab
+                      ? 'bg-white dark:bg-gray-700 text-gray-900 dark:text-white shadow-sm'
+                      : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
+                  }`}
+                >
+                  {tab === 'for_you' ? 'For You' : 'Trending'}
+                </button>
+              ))}
+            </div>
+          ) : (
+            <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Your Feed</h1>
+          )}
           {!isEmpty && (
             <div className="w-auto">
               <Button
@@ -117,7 +201,9 @@ export const HomePage: React.FC = () => {
             </div>
             <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">No posts yet</h3>
             <p className="text-gray-500 dark:text-gray-400 max-w-sm mb-8 leading-relaxed">
-              Your feed is currently quiet. Be the first to start a conversation.
+              {activeTab === 'for_you'
+                ? 'Follow some lensers and tags to build your personalised feed.'
+                : 'Your feed is currently quiet. Be the first to start a conversation.'}
             </p>
             <Button onClick={handleCreateClick} className="flex items-center gap-2 px-6 w-auto">
               <Plus size={18} /> Create Post
@@ -127,12 +213,12 @@ export const HomePage: React.FC = () => {
           <div className="space-y-6">
             <ThreadsList
               threads={threads}
-              isLoading={threadsLoading}
+              isLoading={activeIsLoading}
               onOpenThread={handleOpenThread}
             />
 
             <div ref={lastThreadElementRef} className="h-4"></div>
-            {isFetchingNextPage && (
+            {activeIsFetchingNext && (
               <div className="py-4 flex justify-center">
                 <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary"></div>
               </div>
@@ -144,50 +230,50 @@ export const HomePage: React.FC = () => {
       {/* Right Sidebar Widgets */}
       <div className="lg:col-span-4 mt-8 lg:mt-0">
         <div className="space-y-6 lg:pt-[52px]">
-          {/* Top Prompts Widget */}
+          {/* Prompts You May Like / Top Prompts Widget */}
           <Card className="p-0 overflow-hidden bg-white dark:bg-gray-800">
             <div className="px-6 py-4 border-b border-gray-100 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-800/50">
               <h3 className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                Top Prompts
+                {showForYou ? 'Prompts You May Like' : 'Top Prompts'}
               </h3>
             </div>
             <div className="p-2">
-              {promptsLoading ? (
+              {sidebarPromptsLoading ? (
                 <div className="p-4 space-y-3">
                   <div className="h-10 bg-gray-100 dark:bg-gray-700 rounded animate-pulse"></div>
                   <div className="h-10 bg-gray-100 dark:bg-gray-700 rounded animate-pulse"></div>
                 </div>
-              ) : !topPrompts || topPrompts.length === 0 ? (
+              ) : !sidebarPrompts || sidebarPrompts.length === 0 ? (
                 <div>
-                  <MinimalAlert icon={Sparkles} text="No top prompts yet" />
+                  <MinimalAlert icon={Sparkles} text="No prompts yet" />
                 </div>
               ) : (
-                [...topPrompts]
-                  .sort((a, b) => b.usageCount - a.usageCount)
-                  .map((prompt) => (
-                    <div
-                      key={prompt.id}
-                      onClick={() => navigate(`/len/p/${prompt.id}`)}
-                      className="p-4 hover:bg-gray-50 dark:hover:bg-gray-700/50 rounded-xl cursor-pointer transition-colors"
-                    >
-                      <p className="text-sm font-medium text-gray-800 dark:text-gray-200 line-clamp-2">
-                        {prompt.title}
-                      </p>
+                sidebarPrompts.map((prompt) => (
+                  <div
+                    key={prompt.id}
+                    onClick={() => navigate(`/len/p/${prompt.id}`)}
+                    className="p-4 hover:bg-gray-50 dark:hover:bg-gray-700/50 rounded-xl cursor-pointer transition-colors"
+                  >
+                    <p className="text-sm font-medium text-gray-800 dark:text-gray-200 line-clamp-2">
+                      {prompt.title}
+                    </p>
+                    {'usageCount' in prompt && (
                       <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">
-                        {prompt.usageCount} uses
+                        {(prompt as { usageCount: number }).usageCount} uses
                       </p>
-                    </div>
-                  ))
+                    )}
+                  </div>
+                ))
               )}
             </div>
           </Card>
 
-          {/* New Lensers Widget */}
+          {/* Suggested Lensers / New Lensers Widget */}
           <Card className="p-6">
             <h3 className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-4">
-              New Lensers
+              {showForYou ? 'Suggested Lensers' : 'New Lensers'}
             </h3>
-            {lensersLoading ? (
+            {(showForYou ? suggestedLoading : lensersLoading) ? (
               <div className="space-y-3">
                 {[1, 2, 3].map((i) => (
                   <div key={i} className="flex gap-2">
@@ -196,6 +282,65 @@ export const HomePage: React.FC = () => {
                   </div>
                 ))}
               </div>
+            ) : showForYou ? (
+              !suggestedLensers || suggestedLensers.length === 0 ? (
+                <MinimalAlert icon={UserPlus} text="No suggestions yet" />
+              ) : (
+                <div className="space-y-3">
+                  {suggestedLensers.slice(0, 5).map((user) => {
+                    const isFollowed = followedLenserIds.has(user.lenserId)
+                    return (
+                      <div key={user.lenserId} className="flex items-center gap-2">
+                        <div
+                          className="flex items-center gap-2 flex-1 min-w-0 cursor-pointer p-1 -mx-1 hover:bg-gray-50 dark:hover:bg-gray-700/50 rounded-lg transition-colors"
+                          onClick={() => navigate(`/lenser/${user.handle}`)}
+                        >
+                          <Avatar
+                            src={user.avatarUrl}
+                            alt={user.displayName}
+                            size="md"
+                            className="!w-9 !h-9 ring-2 ring-white dark:ring-gray-800 flex-shrink-0"
+                          />
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-semibold text-gray-900 dark:text-gray-100 truncate">
+                              {user.displayName}
+                            </p>
+                            <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
+                              @{user.handle}
+                            </p>
+                          </div>
+                        </div>
+                        <button
+                          onClick={() => {
+                            if (isFollowed) {
+                              unfollowLenser.mutate(user.lenserId, {
+                                onSuccess: () =>
+                                  setFollowedLenserIds((prev) => {
+                                    const next = new Set(prev)
+                                    next.delete(user.lenserId)
+                                    return next
+                                  }),
+                              })
+                            } else {
+                              followLenser.mutate(user.lenserId, {
+                                onSuccess: () =>
+                                  setFollowedLenserIds((prev) => new Set([...prev, user.lenserId])),
+                              })
+                            }
+                          }}
+                          className={`flex-shrink-0 px-3 py-1 rounded-full text-xs font-semibold border transition-colors ${
+                            isFollowed
+                              ? 'border-primary text-primary bg-primary/5 hover:bg-primary/10'
+                              : 'border-gray-200 dark:border-gray-600 text-gray-600 dark:text-gray-400 hover:border-primary hover:text-primary'
+                          }`}
+                        >
+                          {isFollowed ? 'Following' : 'Follow'}
+                        </button>
+                      </div>
+                    )
+                  })}
+                </div>
+              )
             ) : lensersError ? (
               <MinimalAlert icon={AlertCircle} text="Error loading members" />
             ) : (
@@ -234,7 +379,7 @@ export const HomePage: React.FC = () => {
             )}
           </Card>
 
-          {/* Trending Tags Widget */}
+          {/* Trending Tags Widget with follow toggle */}
           <Card className="p-6">
             <h3 className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-4">
               Trending Tags
@@ -248,13 +393,30 @@ export const HomePage: React.FC = () => {
               <MinimalAlert icon={Tag} text="No trending topics" />
             ) : (
               <div className="flex flex-wrap gap-2">
-                {trendingTags.map((tag) => (
-                  <TagBadge
-                    key={tag}
-                    label={tag}
-                    onClick={() => navigate(`/len/${tag.toLowerCase()}`)}
-                  />
-                ))}
+                {trendingTags.map((tag) => {
+                  const isFollowed = followedTagSlugs.has(tag.slug)
+                  return (
+                    <div key={tag.slug} className="flex items-center gap-0.5 group">
+                      <TagBadge
+                        label={tag.name}
+                        onClick={() => navigate(`/len/${tag.slug.toLowerCase()}`)}
+                      />
+                      {showForYou && (
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            if (isFollowed) unfollowTag.mutate(tag.id)
+                            else followTag.mutate(tag.id)
+                          }}
+                          title={isFollowed ? 'Unfollow tag' : 'Follow tag'}
+                          className="opacity-0 group-hover:opacity-100 w-5 h-5 flex items-center justify-center rounded-full text-xs font-bold text-gray-400 hover:text-primary hover:bg-gray-100 dark:hover:bg-gray-700 transition-all"
+                        >
+                          {isFollowed ? '−' : '+'}
+                        </button>
+                      )}
+                    </div>
+                  )
+                })}
               </div>
             )}
           </Card>
