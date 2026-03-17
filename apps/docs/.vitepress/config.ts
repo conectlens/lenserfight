@@ -32,9 +32,10 @@ function rawMarkdownPlugin() {
     configureServer(server: any) {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       server.middlewares.use((req: any, res: any, next: any) => {
-        const url: string = req.url ?? ''
-        if (!url.endsWith('.md') || url.startsWith('/@')) return next()
-        const mdPath = join(docsDir, decodeURIComponent(url))
+        const raw: string = req.url ?? ''
+        const pathname = raw.split('?')[0]
+        if (!pathname.endsWith('.md') || pathname.startsWith('/@')) return next()
+        const mdPath = join(docsDir, decodeURIComponent(pathname))
         if (existsSync(mdPath)) {
           try {
             res.setHeader('Content-Type', 'text/plain; charset=utf-8')
@@ -268,6 +269,9 @@ export default defineConfig({
     plugins: [tailwind(), rawMarkdownPlugin()],
     server: {
       host: '127.0.0.1',
+    },
+    optimizeDeps: {
+      exclude: ['mermaid'],
     },
     ssr: {
       noExternal: ['mermaid'],
