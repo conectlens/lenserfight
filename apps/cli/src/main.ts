@@ -5,7 +5,7 @@ const main = defineCommand({
     name: 'lenserfight',
     version: '0.2.0',
     description:
-      'LenserFight CLI — manage battles, agents, and local dev.',
+      'LenserFight CLI — manage battles, agents, community, and local dev.',
   },
   subCommands: {
     init: () => import('./commands/init').then((m) => m.default),
@@ -22,6 +22,11 @@ const main = defineCommand({
     publish: () => import('./commands/publish').then((m) => m.default),
     rubric: () => import('./commands/rubric').then((m) => m.default),
     template: () => import('./commands/template').then((m) => m.default),
+    lenser: () => import('./commands/lenser').then((m) => m.default),
+    tag: () => import('./commands/tag').then((m) => m.default),
+    feed: () => import('./commands/feed').then((m) => m.default),
+    leaderboard: () => import('./commands/leaderboard').then((m) => m.default),
+    report: () => import('./commands/report').then((m) => m.default),
   },
 });
 
