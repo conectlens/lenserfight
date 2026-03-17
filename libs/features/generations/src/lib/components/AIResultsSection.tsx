@@ -114,14 +114,11 @@ export const AIResultsSection: React.FC<AIResultsSectionProps> = ({ promptId }) 
   )
 
   // Actions
-  const handleCreateSuccess = (newItem: AIGeneration) => {
-    setGenerations((prev) => [newItem, ...prev])
-    if (mediaFilter !== 'all' && newItem.media?.media_kind !== mediaFilter) {
-      setMediaFilter('all')
-    }
-    if (modelFilter !== 'all' && newItem.ai_model_slug !== modelFilter) {
-      setModelFilter('all')
-    }
+  const handleCreateSuccess = () => {
+    setMediaFilter('all')
+    setModelFilter('all')
+    setPage(0)
+    fetchGenerations(0, true)
   }
 
   const confirmDelete = async () => {
