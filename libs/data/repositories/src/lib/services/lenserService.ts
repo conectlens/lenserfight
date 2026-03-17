@@ -185,7 +185,7 @@ export const lenserService = {
     type: 'followers' | 'following',
     offset = 0,
     limit = 20
-  ): Promise<FollowsNetworkUser[]> => {
+  ) => {
     return lenserRepo.getLenserFollows(lenserId, type, offset, limit)
   },
 
