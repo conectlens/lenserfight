@@ -94,9 +94,19 @@ export class SupabaseLenserRepository implements LenserRepositoryPort {
   }
 
   async getAuthenticatedLenser(): Promise<Lenser | null> {
-    const { data, error } = await supabase.rpc('fn_lensers_get_authenticated_profile')
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) return null
 
-    if (error) return null
+    const { data, error } = await supabase
+      .schema('lensers')
+      .from('profiles')
+      .select('*')
+      .eq('user_id', user.id)
+      .eq('status', 'active')
+      .is('deletion_requested_at', null)
+      .maybeSingle()
+
+    if (error || !data) return null
     return data as Lenser
   }
 

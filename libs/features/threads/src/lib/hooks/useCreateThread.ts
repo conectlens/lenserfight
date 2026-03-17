@@ -1,11 +1,14 @@
 import { useState } from 'react'
 
+import { useQueryClient } from '@tanstack/react-query'
+import { queryKeys } from '@lenserfight/data/cache'
 import { threadsService } from '@lenserfight/data/repositories'
 import { Visibility } from '@lenserfight/types'
 import { useAuthenticatedLenser } from './useAuthenticatedLenser'
 
 export const useCreateThread = () => {
   const { lenser } = useAuthenticatedLenser()
+  const queryClient = useQueryClient()
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -42,6 +45,14 @@ export const useCreateThread = () => {
           visibility,
         })
         resultId = created.id
+      }
+
+      queryClient.invalidateQueries({ queryKey: queryKeys.threads.feed() })
+      if (lenser?.id) {
+        queryClient.invalidateQueries({ queryKey: queryKeys.threads.personal(lenser.id) })
+      }
+      if (editId) {
+        queryClient.invalidateQueries({ queryKey: queryKeys.threads.detail(editId) })
       }
 
       // Mark as done before calling onSuccess
