@@ -29,7 +29,6 @@ export interface PromptsRepositoryPort {
   createPrompt(input: CreatePromptDTO): Promise<PromptTemplateRecord>
   updatePrompt(id: string, input: Partial<CreatePromptDTO>): Promise<PromptTemplateRecord>
   deletePrompt(id: string): Promise<void>
-  updateReactionTotals(id: string, totals: Record<string, number>): Promise<void>
 }
 
 // Fallback data for Mock Mode
@@ -551,11 +550,4 @@ export class SupabasePromptsRepository implements PromptsRepositoryPort {
     if (error) this.handleError(error)
   }
 
-  async updateReactionTotals(id: string, totals: Record<string, number>): Promise<void> {
-    const { error } = await supabase.rpc('fn_content_update_prompt_reaction_totals', {
-      p_id: id,
-      p_totals: totals,
-    })
-    if (error) console.error('Failed to sync totals', error)
-  }
 }
