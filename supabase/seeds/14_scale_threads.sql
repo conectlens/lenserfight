@@ -4,7 +4,8 @@
 -- =============================================================================
 
 -- Step 1: Pre-materialize author assignments with power-law distribution
-CREATE TEMP TABLE IF NOT EXISTS seed_profile_index AS
+DROP TABLE IF EXISTS seed_profile_index;
+CREATE UNLOGGED TABLE seed_profile_index AS
 SELECT id, preferred_language,
   row_number() OVER (ORDER BY id) - 1 AS idx
 FROM lensers.profiles

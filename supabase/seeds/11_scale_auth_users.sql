@@ -20,10 +20,10 @@ BEGIN
     )
     SELECT
       '00000000-0000-0000-0000-000000000000'::uuid,
-      ('a1' || lpad(to_hex(batch_start + gs), 12, '0') || '-0001-4000-8000-000000000000')::uuid,
+      ('a1' || lpad(to_hex(batch_start + gs), 6, '0') || '-0001-4000-8000-000000000000')::uuid,
       'authenticated', 'authenticated',
       'seed_user_' || (batch_start + gs) || '@lenserfight.seed',
-      pg_temp.seed_password_hash(),
+      public.seed_password_hash(),
       now() - (random() * interval '365 days'),
       now() - (random() * interval '365 days'),
       now(),
@@ -31,7 +31,7 @@ BEGIN
       '{"provider":"email","providers":["email"]}'::jsonb,
       jsonb_build_object(
         'display_name', 'Seed User ' || (batch_start + gs),
-        'preferred_language', pg_temp.seed_pick_language(random())
+        'preferred_language', public.seed_pick_language(random())
       )
     FROM generate_series(0, LEAST(batch_size - 1, total - batch_start - 1)) AS gs
     ON CONFLICT (id) DO NOTHING;

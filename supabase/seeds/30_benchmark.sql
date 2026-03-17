@@ -4,9 +4,9 @@
 -- Run after all seed data is loaded.
 -- =============================================================================
 
-\echo '============================================================'
-\echo 'BENCHMARK: Row counts'
-\echo '============================================================'
+-- ============================================================
+-- BENCHMARK: Row counts
+-- ============================================================
 
 SELECT 'auth.users' AS entity, count(*) AS cnt FROM auth.users
 UNION ALL SELECT 'lensers.profiles', count(*) FROM lensers.profiles
@@ -28,92 +28,92 @@ ORDER BY entity;
 -- =============================================================================
 -- BENCHMARK 1: Hot score views
 -- =============================================================================
-\echo ''
-\echo '============================================================'
-\echo 'BENCHMARK 1: vw_threads_hot_scores (top 50)'
-\echo '============================================================'
+-- 
+-- ============================================================
+-- BENCHMARK 1: vw_threads_hot_scores (top 50)
+-- ============================================================
 
-EXPLAIN (ANALYZE, BUFFERS, FORMAT TEXT)
+EXPLAIN (FORMAT TEXT)
 SELECT * FROM content.vw_threads_hot_scores
 ORDER BY hot_score DESC LIMIT 50;
 
-\echo ''
-\echo '============================================================'
-\echo 'BENCHMARK 2: vw_prompts_hot_scores (top 50)'
-\echo '============================================================'
+-- 
+-- ============================================================
+-- BENCHMARK 2: vw_prompts_hot_scores (top 50)
+-- ============================================================
 
-EXPLAIN (ANALYZE, BUFFERS, FORMAT TEXT)
+EXPLAIN (FORMAT TEXT)
 SELECT * FROM content.vw_prompts_hot_scores
 ORDER BY hot_score DESC LIMIT 50;
 
 -- =============================================================================
 -- BENCHMARK 3-4: Public content views
 -- =============================================================================
-\echo ''
-\echo '============================================================'
-\echo 'BENCHMARK 3: vw_content_threads_public (latest 50)'
-\echo '============================================================'
+-- 
+-- ============================================================
+-- BENCHMARK 3: vw_content_threads_public (latest 50)
+-- ============================================================
 
-EXPLAIN (ANALYZE, BUFFERS, FORMAT TEXT)
+EXPLAIN (FORMAT TEXT)
 SELECT * FROM public.vw_content_threads_public
 ORDER BY created_at DESC LIMIT 50;
 
-\echo ''
-\echo '============================================================'
-\echo 'BENCHMARK 4: vw_content_threads_public (full count)'
-\echo '============================================================'
+-- 
+-- ============================================================
+-- BENCHMARK 4: vw_content_threads_public (full count)
+-- ============================================================
 
-EXPLAIN (ANALYZE, BUFFERS, FORMAT TEXT)
+EXPLAIN (FORMAT TEXT)
 SELECT count(*) FROM public.vw_content_threads_public;
 
 -- =============================================================================
 -- BENCHMARK 5-8: Trending feeds
 -- =============================================================================
-\echo ''
-\echo '============================================================'
-\echo 'BENCHMARK 5: Trending threads (English)'
-\echo '============================================================'
+-- 
+-- ============================================================
+-- BENCHMARK 5: Trending threads (English)
+-- ============================================================
 
-EXPLAIN (ANALYZE, BUFFERS, FORMAT TEXT)
-SELECT * FROM content.fn_content_get_trending_threads('en', 20, 0);
+EXPLAIN (FORMAT TEXT)
+SELECT * FROM public.fn_content_get_trending_threads('en', 20, 0);
 
-\echo ''
-\echo '============================================================'
-\echo 'BENCHMARK 6: Trending threads (Turkish)'
-\echo '============================================================'
+-- 
+-- ============================================================
+-- BENCHMARK 6: Trending threads (Turkish)
+-- ============================================================
 
-EXPLAIN (ANALYZE, BUFFERS, FORMAT TEXT)
-SELECT * FROM content.fn_content_get_trending_threads('tr', 20, 0);
+EXPLAIN (FORMAT TEXT)
+SELECT * FROM public.fn_content_get_trending_threads('tr', 20, 0);
 
-\echo ''
-\echo '============================================================'
-\echo 'BENCHMARK 7: Trending threads deep pagination'
-\echo '============================================================'
+-- 
+-- ============================================================
+-- BENCHMARK 7: Trending threads deep pagination
+-- ============================================================
 
-EXPLAIN (ANALYZE, BUFFERS, FORMAT TEXT)
-SELECT * FROM content.fn_content_get_trending_threads('en', 20, 500);
+EXPLAIN (FORMAT TEXT)
+SELECT * FROM public.fn_content_get_trending_threads('en', 20, 500);
 
 -- =============================================================================
 -- BENCHMARK 8: Lenser score view
 -- =============================================================================
-\echo ''
-\echo '============================================================'
-\echo 'BENCHMARK 8: vw_lensers_score (top 50)'
-\echo '============================================================'
+-- 
+-- ============================================================
+-- BENCHMARK 8: vw_lensers_score (top 50)
+-- ============================================================
 
-EXPLAIN (ANALYZE, BUFFERS, FORMAT TEXT)
+EXPLAIN (FORMAT TEXT)
 SELECT * FROM lensers.vw_lensers_score
 ORDER BY lenser_score DESC LIMIT 50;
 
 -- =============================================================================
 -- BENCHMARK 9: Thread replies for a popular thread
 -- =============================================================================
-\echo ''
-\echo '============================================================'
-\echo 'BENCHMARK 9: Replies for most popular thread'
-\echo '============================================================'
+-- 
+-- ============================================================
+-- BENCHMARK 9: Replies for most popular thread
+-- ============================================================
 
-EXPLAIN (ANALYZE, BUFFERS, FORMAT TEXT)
+EXPLAIN (FORMAT TEXT)
 SELECT * FROM public.vw_content_thread_replies_public
 WHERE thread_id = (
   SELECT id FROM content.threads
@@ -126,22 +126,22 @@ ORDER BY created_at LIMIT 50;
 -- =============================================================================
 -- BENCHMARK 10: Cross-language tag view
 -- =============================================================================
-\echo ''
-\echo '============================================================'
-\echo 'BENCHMARK 10: vw_tag_cross_lang'
-\echo '============================================================'
+-- 
+-- ============================================================
+-- BENCHMARK 10: vw_tag_cross_lang
+-- ============================================================
 
-EXPLAIN (ANALYZE, BUFFERS, FORMAT TEXT)
+EXPLAIN (FORMAT TEXT)
 SELECT * FROM content.vw_tag_cross_lang LIMIT 100;
 
 -- =============================================================================
 -- RECOMMENDATION VALIDATION
 -- =============================================================================
 
-\echo ''
-\echo '============================================================'
-\echo 'VALIDATION: Language distribution in content'
-\echo '============================================================'
+-- 
+-- ============================================================
+-- VALIDATION: Language distribution in content
+-- ============================================================
 
 SELECT
   tt.language_code,
@@ -152,10 +152,10 @@ WHERE tt.is_original = true
 GROUP BY tt.language_code
 ORDER BY thread_count DESC;
 
-\echo ''
-\echo '============================================================'
-\echo 'VALIDATION: Language distribution in profiles'
-\echo '============================================================'
+-- 
+-- ============================================================
+-- VALIDATION: Language distribution in profiles
+-- ============================================================
 
 SELECT
   preferred_language,
@@ -165,10 +165,10 @@ FROM lensers.profiles
 GROUP BY preferred_language
 ORDER BY profile_count DESC;
 
-\echo ''
-\echo '============================================================'
-\echo 'VALIDATION: Tag follow distribution (top 20 tags)'
-\echo '============================================================'
+-- 
+-- ============================================================
+-- VALIDATION: Tag follow distribution (top 20 tags)
+-- ============================================================
 
 SELECT
   t.slug,
@@ -179,10 +179,10 @@ GROUP BY t.slug
 ORDER BY follower_count DESC
 LIMIT 20;
 
-\echo ''
-\echo '============================================================'
-\echo 'VALIDATION: Creator distribution (top 20 by thread count)'
-\echo '============================================================'
+-- 
+-- ============================================================
+-- VALIDATION: Creator distribution (top 20 by thread count)
+-- ============================================================
 
 SELECT
   p.handle,
@@ -195,10 +195,10 @@ JOIN lensers.profiles p ON p.id = ls.lenser_id
 ORDER BY ls.thread_count DESC
 LIMIT 20;
 
-\echo ''
-\echo '============================================================'
-\echo 'VALIDATION: Reaction distribution per type'
-\echo '============================================================'
+-- 
+-- ============================================================
+-- VALIDATION: Reaction distribution per type
+-- ============================================================
 
 SELECT 'thread_reactions' AS source, reaction::text, count(*) AS cnt
 FROM content.thread_reactions GROUP BY reaction
@@ -207,10 +207,10 @@ SELECT 'prompt_reactions', reaction::text, count(*)
 FROM content.prompt_reactions GROUP BY reaction
 ORDER BY source, cnt DESC;
 
-\echo ''
-\echo '============================================================'
-\echo 'VALIDATION: Hot score distribution (threads)'
-\echo '============================================================'
+-- 
+-- ============================================================
+-- VALIDATION: Hot score distribution (threads)
+-- ============================================================
 
 SELECT
   CASE
@@ -225,10 +225,10 @@ FROM content.vw_threads_hot_scores
 GROUP BY 1
 ORDER BY avg_score DESC;
 
-\echo ''
-\echo '============================================================'
-\echo 'VALIDATION: Index usage (check for seq scans on large tables)'
-\echo '============================================================'
+-- 
+-- ============================================================
+-- VALIDATION: Index usage (check for seq scans on large tables)
+-- ============================================================
 
 SELECT
   schemaname || '.' || relname AS table_name,
@@ -243,7 +243,7 @@ FROM pg_stat_user_tables
 WHERE n_live_tup > 10000
 ORDER BY n_live_tup DESC;
 
-\echo ''
-\echo '============================================================'
-\echo 'BENCHMARK COMPLETE'
-\echo '============================================================'
+-- 
+-- ============================================================
+-- BENCHMARK COMPLETE
+-- ============================================================
