@@ -140,6 +140,7 @@ export const threadsService = {
         createdAt: record.created_at,
         userHasReacted: userReactedIds.has(record.id),
         visibility: record.visibility,
+        status: record.status,
       }
     })
   },
@@ -177,6 +178,7 @@ export const threadsService = {
       replies: replies,
       promptBlock: record.prompt_data,
       visibility: record.visibility,
+      status: record.status,
     }
   },
 
