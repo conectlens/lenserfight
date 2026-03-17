@@ -452,7 +452,6 @@ export const LenserProfilePage: React.FC = () => {
         <div className="px-4 md:px-0">
           <LenserStatsRow
             stats={stats}
-            joinOrder={viewedProfile.join_order}
             xpSummary={xpSummary}
           />
         </div>
