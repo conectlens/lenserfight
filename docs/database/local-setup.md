@@ -37,13 +37,17 @@ The first `supabase start` pulls Docker images and may take a few minutes. Subse
 
 ## Run Migrations
 
-To drop the database, recreate it, run all migrations, and apply seed data in one step:
+To drop the database, recreate it, run all migrations, and apply seed data:
 
 ```bash
+# Regenerate seed.sql from individual files in supabase/seeds/
+cd supabase && bash combine-seeds.sh
+
+# Reset — runs all migrations then applies seed.sql
 pnpm supabase db reset
 ```
 
-This is the recommended way to get a clean local database. It executes every migration file in `supabase/migrations/` in order and then runs `supabase/seed.sql`.
+This is the recommended way to get a clean local database. It executes every migration file in `supabase/migrations/` in order and then runs `supabase/seed.sql`. Always run `combine-seeds.sh` first if any seed file changed.
 
 ## Verify the Setup
 
@@ -63,14 +67,33 @@ Open [http://127.0.0.1:54323](http://127.0.0.1:54323) in your browser. Studio pr
 
 ## Seed Data
 
-The seed file (`supabase/seed.sql`) creates a ready-to-use local environment:
+Seeds are managed as individual numbered files in `supabase/seeds/` and combined into `supabase/seed.sql` before a reset.
 
-| Data | Details |
-|------|---------|
-| Test users | 3 users: alice, bob, carol |
-| AI models | Pre-configured AI model entries |
-| Battles | 2 sample battles with rubrics |
-| Rubrics | Default rubrics with criteria |
+### Seed files
+
+| Range | Purpose |
+|-------|---------|
+| `01–06` | Core dev fixtures: languages, auth users, lenser profiles, AI models, battles, analytics |
+| `10–21` | Scale data: ~10k users, threads, prompts, replies, reactions, XP — used for load testing and index benchmarking |
+| `30` | Benchmark & recommendation validation — runs automatically after scale data is loaded |
+
+> `supabase/seed.sql` is **auto-generated**. Do not edit it directly. Edit files in `supabase/seeds/` instead.
+
+### How to use
+
+**Generate `seed.sql` and reset the database (standard dev setup):**
+
+```bash
+# 1. Combine individual seed files into seed.sql
+cd supabase && bash combine-seeds.sh
+
+# 2. Reset the database — applies all migrations then runs seed.sql
+pnpm supabase db reset
+```
+
+The reset takes **2–5 minutes** for the core fixtures (files `01–06`) and **25–30 minutes** when scale data (`10–30`) is included.
+
+**Benchmark results** are printed at the end of the reset output, produced by `30_benchmark.sql`. They show query latency for the recommendation and feed RPCs under scale load.
 
 ### Login Credentials
 
@@ -93,6 +116,12 @@ curl -X POST 'http://127.0.0.1:54321/auth/v1/token?grant_type=password' \
 ```
 
 The response includes an `access_token` (JWT) to use as `Authorization: Bearer <token>` in subsequent API calls.
+
+### Adding or modifying seed data
+
+1. Edit or create a file in `supabase/seeds/` following the naming convention `NN_description.sql`.
+2. Run `cd supabase && bash combine-seeds.sh` to regenerate `seed.sql`.
+3. Run `pnpm supabase db reset` to apply the updated seed to your local database.
 
 ## Common Issues
 
