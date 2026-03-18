@@ -1,9 +1,9 @@
-import React, { useEffect, useState, useRef } from 'react'
+import React, { useEffect, useRef } from 'react'
+import { useQuery } from '@tanstack/react-query'
 
 import { SEOHead } from '@lenserfight/ui/components'
 import { useTheme } from '@lenserfight/ui/theme'
 import { tagService } from '@lenserfight/data/repositories'
-import { TagUsage } from '@lenserfight/types'
 import { TagCloud } from '../components/TagCloud'
 
 const NodeGraphBackground: React.FC<{ theme: 'light' | 'dark' }> = ({ theme }) => {
@@ -97,23 +97,12 @@ const NodeGraphBackground: React.FC<{ theme: 'light' | 'dark' }> = ({ theme }) =
 }
 
 export const TagCloudPage: React.FC = () => {
-  const [tags, setTags] = useState<TagUsage[]>([])
-  const [isLoading, setIsLoading] = useState(true)
   const { resolvedTheme: theme } = useTheme()
-
-  useEffect(() => {
-    const fetchTags = async () => {
-      try {
-        const data = await tagService.getCloud()
-        setTags(data)
-      } catch (e) {
-        console.error('Failed to load tag cloud', e)
-      } finally {
-        setIsLoading(false)
-      }
-    }
-    fetchTags()
-  }, [])
+  const { data: tags = [], isLoading } = useQuery({
+    queryKey: ['tag-cloud'],
+    queryFn: () => tagService.getCloud(),
+    staleTime: 1000 * 60 * 15,
+  })
 
   return (
     <div className="relative w-full min-h-[80vh] flex flex-col items-center justify-center overflow-hidden bg-gray-50/30 dark:bg-gray-900 transition-colors duration-200">

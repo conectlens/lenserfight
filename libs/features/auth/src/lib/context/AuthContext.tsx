@@ -70,16 +70,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     // 2. Initial load from persisted session or network
     const initAuth = async () => {
+      if (initDone.current) return
+      initDone.current = true
       try {
         const user = await authService.getCurrentUser()
-        initDone.current = true
         if (user) {
           setState((s) => ({ ...s, user, isAuthenticated: true, isLoading: false }))
         } else {
           setState((s) => ({ ...s, user: null, isAuthenticated: false, isLoading: false }))
         }
       } catch (err: any) {
-        initDone.current = true
         // AuthSessionMissingError is expected when no session exists — not a real error
         if (
           err?.name === 'AuthSessionMissingError' ||
