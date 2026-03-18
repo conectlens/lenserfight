@@ -76,9 +76,10 @@ export const promptsService = {
   filter: async (
     tagSlug: string | null,
     offset = 0,
-    limit = 10
+    limit = 20,
+    sort: 'newest' | 'trending' | 'popular' = 'newest'
   ): Promise<ApiResponseEnvelope<PromptTemplateViewModel[]>> => {
-    const result = await promptsRepo.filterByTag(tagSlug, offset, limit)
+    const result = await promptsRepo.filterByTag(tagSlug, sort, offset, limit)
     const items = await mapToViewModels(result.data ?? [])
     return paginatedResponse(items, {
       limit: result.meta?.limit ?? limit,
@@ -183,7 +184,7 @@ export const promptsService = {
       return mapToViewModels((result.data ?? []).filter((p) => p.id !== id).slice(0, 4))
     }
 
-    const result = await promptsRepo.filterByTag(tags[0].slug, 0, 20)
+    const result = await promptsRepo.filterByTag(tags[0].slug, 'newest', 0, 20)
     const filtered = (result.data ?? []).filter((p) => p.id !== id).slice(0, 5)
     return mapToViewModels(filtered)
   },
