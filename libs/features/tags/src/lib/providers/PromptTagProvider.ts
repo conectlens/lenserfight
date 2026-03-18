@@ -15,18 +15,10 @@ export class PromptTagProvider implements TagContentProvider {
     sort: SortOption,
     currentLenserId?: string
   ): Promise<TaggedContentItem[]> {
-    // Pass currentLenserId to filter so owners can see their private tagged prompts
-    const prompts = await promptsService.filter(tagSlug, 0, 50)
+    const result = await promptsService.filter(tagSlug, 0, 20, sort)
+    const prompts = result.data ?? []
 
-    const sorted = [...prompts]
-    if (sort === 'newest') {
-      sorted.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
-    } else {
-      // Popular / Trending map to usage count for prompts
-      sorted.sort((a, b) => b.usageCount - a.usageCount)
-    }
-
-    return sorted.map((p) => ({
+    return prompts.map((p) => ({
       id: p.id,
       type: 'prompt',
       title: p.title,

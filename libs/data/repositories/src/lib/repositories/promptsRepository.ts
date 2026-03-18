@@ -8,6 +8,7 @@ export interface PromptsRepositoryPort {
   search(query: string, offset?: number, limit?: number): Promise<ApiResponseEnvelope<PromptTemplateRecord[]>>
   filterByTag(
     tagSlug: string | null,
+    sort?: string,
     offset?: number,
     limit?: number
   ): Promise<ApiResponseEnvelope<PromptTemplateRecord[]>>
@@ -219,14 +220,16 @@ export class SupabasePromptsRepository implements PromptsRepositoryPort {
 
   async filterByTag(
     tagSlug: string | null,
+    sort = 'newest',
     offset = 0,
-    limit = 10
+    limit = 20
   ): Promise<ApiResponseEnvelope<PromptTemplateRecord[]>> {
     if (!tagSlug) return this.getAll(offset, limit)
 
     const start = Date.now()
     const { data, error } = await supabase.rpc('fn_content_get_prompts_by_tag', {
       p_tag_slug: tagSlug,
+      p_sort: sort,
       p_limit: limit,
       p_offset: offset,
     })

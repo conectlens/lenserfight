@@ -7,7 +7,7 @@ import { ApiResponseEnvelope, paginatedResponse } from 'contracts'
 export interface ThreadsRepositoryPort {
   createThread(dto: CreateThreadDTO): Promise<ThreadRecord>
   getAllThreads(offset?: number, limit?: number): Promise<ApiResponseEnvelope<ThreadRecord[]>>
-  getThreadsByTag(tagSlug: string, offset?: number, limit?: number): Promise<ApiResponseEnvelope<ThreadRecord[]>>
+  getThreadsByTag(tagSlug: string, sort?: string, offset?: number, limit?: number): Promise<ApiResponseEnvelope<ThreadRecord[]>>
   getThreadById(id: string, viewerLenserId?: string): Promise<ThreadRecord | null>
   getByLenser(
     handle: string,
@@ -318,10 +318,11 @@ export class SupabaseThreadsRepository implements ThreadsRepositoryPort {
   /**
    * List threads by tag slug using JSONB containment on view's tags column.
    */
-  async getThreadsByTag(tagSlug: string, offset = 0, limit = 10): Promise<ApiResponseEnvelope<ThreadRecord[]>> {
+  async getThreadsByTag(tagSlug: string, sort = 'newest', offset = 0, limit = 20): Promise<ApiResponseEnvelope<ThreadRecord[]>> {
     const start = Date.now()
     const { data, error } = await supabase.rpc('fn_content_get_threads_by_tag', {
       p_tag_slug: tagSlug,
+      p_sort: sort,
       p_limit: limit,
       p_offset: offset,
     })
