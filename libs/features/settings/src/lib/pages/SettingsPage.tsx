@@ -487,17 +487,25 @@ export const SettingsPage: React.FC = () => {
                   />
                 </div>
 
-                <div className="relative">
+                <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
                     Profile Visibility
                   </label>
-                  {/* Blurred/Disabled Container */}
-                  <div className="grid grid-cols-2 gap-4 blur-[2px] opacity-60 pointer-events-none select-none relative">
+                  <div className="grid grid-cols-2 gap-4">
                     <button
                       type="button"
-                      className={`flex items-center gap-3 p-4 border rounded-xl transition-all border-primary bg-primary/5 ring-1 ring-primary`}
+                      onClick={() => setFormData((prev) => ({ ...prev, visibility: 'public' }))}
+                      className={`flex items-center gap-3 p-4 border rounded-xl transition-all ${
+                        formData.visibility === 'public'
+                          ? 'border-primary bg-primary/5 ring-1 ring-primary'
+                          : 'border-gray-200 dark:border-gray-700'
+                      }`}
                     >
-                      <div className={`p-2 rounded-full bg-primary/20 text-gray-900`}>
+                      <div className={`p-2 rounded-full ${
+                        formData.visibility === 'public'
+                          ? 'bg-primary/20 text-gray-900'
+                          : 'bg-gray-100 dark:bg-gray-700 text-gray-500'
+                      }`}>
                         <Eye size={20} />
                       </div>
                       <div className="text-left">
@@ -512,11 +520,18 @@ export const SettingsPage: React.FC = () => {
 
                     <button
                       type="button"
-                      className={`flex items-center gap-3 p-4 border rounded-xl transition-all border-gray-200 dark:border-gray-700`}
+                      onClick={() => setFormData((prev) => ({ ...prev, visibility: 'private' }))}
+                      className={`flex items-center gap-3 p-4 border rounded-xl transition-all ${
+                        formData.visibility === 'private'
+                          ? 'border-primary bg-primary/5 ring-1 ring-primary'
+                          : 'border-gray-200 dark:border-gray-700'
+                      }`}
                     >
-                      <div
-                        className={`p-2 rounded-full bg-gray-100 dark:bg-gray-700 text-gray-500`}
-                      >
+                      <div className={`p-2 rounded-full ${
+                        formData.visibility === 'private'
+                          ? 'bg-primary/20 text-gray-900'
+                          : 'bg-gray-100 dark:bg-gray-700 text-gray-500'
+                      }`}>
                         <Lock size={20} />
                       </div>
                       <div className="text-left">
@@ -528,12 +543,6 @@ export const SettingsPage: React.FC = () => {
                         </p>
                       </div>
                     </button>
-                  </div>
-                  {/* Overlay */}
-                  <div className="absolute inset-0 flex items-center justify-center z-10 top-6">
-                    <span className="bg-gray-900 dark:bg-white text-white dark:text-gray-900 text-xs font-bold px-3 py-1.5 rounded-full shadow-lg">
-                      Coming Soon
-                    </span>
                   </div>
                 </div>
               </div>
