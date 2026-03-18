@@ -18,24 +18,6 @@ npm ci
 
 Copy `.env.example` to `.env` and fill in the required values.
 
-## Run all apps (recommended)
-
-```sh
-npm run dev
-```
-
-Starts all apps and the local reverse proxy concurrently. Access each app by subdomain:
-
-| URL | App |
-|-----|-----|
-| http://forum.localhost:8080 | forum |
-| http://arena.localhost:8080 | arena |
-| http://admin.localhost:8080 | admin |
-| http://docs.localhost:8080 | docs |
-| http://conectlenscom.localhost:8080 | conectlenscom |
-
-> **Optional one-time setup:** Run `bash tools/dev-proxy/setup.sh` once per machine to forward port 80 → 8080 at the OS level. After that, URLs become `http://forum.localhost` (no port suffix) and survive reboots. See the [dev-proxy README](https://github.com/connectlens/lenserfight/tree/main/tools/dev-proxy) on GitHub for details.
-
 ## Run a single app
 
 ```sh
