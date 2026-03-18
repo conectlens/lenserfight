@@ -16,10 +16,6 @@ export class SupabaseTagRepository implements TagRepositoryPort {
       throw new Error("This tag is private or you don't have permission to access it.")
     }
 
-    if (error.code === 'PGRST116') {
-      return null
-    }
-
     throw error
   }
 
@@ -32,19 +28,17 @@ export class SupabaseTagRepository implements TagRepositoryPort {
       .from('vw_tags_public_stats')
       .select('id, name, slug, visibility')
       .eq('slug', slug)
-      .single()
+      .maybeSingle()
 
-    if (error) {
-      if (error.code === 'PGRST116') return null
-      this.handleError(error)
-    }
+    if (error) this.handleError(error)
 
-    return data as TagDTO
+    return data as TagDTO | null
   }
 
   /**
-   * CREATE TAG — uses REST API for multi-step creation
-   * Security: Follows direct table access patterns with RLS enforcement.
+   * CREATE TAG — uses fn_create_tag SECURITY DEFINER RPC for atomic creation.
+   * Direct INSERT into content.tag_translations is blocked by RLS for non-service roles;
+   * the RPC bypasses this by running with elevated privileges server-side.
    */
   async createTag(name: string, slug: string): Promise<TagDTO> {
     // 1. Resolve language code from current user profile
@@ -65,38 +59,15 @@ export class SupabaseTagRepository implements TagRepositoryPort {
       }
     }
 
-    // 2. Insert Base Tag
-    const { data: tag, error: tagError } = await supabase
-      .schema('content')
-      .from('tags')
-      .insert({ slug, visibility: 'public' })
-      .select('id')
+    // 2. Atomic tag + translation creation via SECURITY DEFINER RPC
+    const { data, error } = await supabase
+      .rpc('fn_create_tag', { p_name: name, p_slug: slug, p_language_code: languageCode })
       .single()
 
-    if (tagError) {
-      if (tagError.code === '23505') {
-        const existing = await this.findBySlug(slug)
-        if (existing) return existing
-      }
-      this.handleError(tagError)
-    }
+    if (error) this.handleError(error)
+    if (!data) throw new Error('Failed to retrieve newly created tag.')
 
-    const tagId = tag.id
-
-    // 3. Insert Tag Translation
-    const { error: transError } = await supabase.schema('content').from('tag_translations').insert({
-      tag_id: tagId,
-      language_code: languageCode,
-      name: name,
-    })
-    if (transError) {
-      console.error('Failed to create tag translation', transError)
-    }
-
-    // 4. Return refreshed DTO from view
-    const result = await this.findBySlug(slug)
-    if (!result) throw new Error('Failed to retrieve newly created tag.')
-    return result
+    return data as TagDTO
   }
 
   /**

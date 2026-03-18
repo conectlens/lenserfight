@@ -1,5 +1,5 @@
 import { X, Plus } from 'lucide-react'
-import React, { useState, KeyboardEvent } from 'react'
+import React, { useState, KeyboardEvent, useCallback } from 'react'
 
 import { tagService } from '@lenserfight/data/repositories'
 
@@ -8,33 +8,39 @@ interface PromptTagInputProps {
   onChange: (tags: string[]) => void
 }
 
-export const PromptTagInput: React.FC<PromptTagInputProps> = ({ tags, onChange }) => {
+export const PromptTagInput: React.FC<PromptTagInputProps> = React.memo(({ tags, onChange }) => {
   const [input, setInput] = useState('')
   const [loading, setLoading] = useState(false)
 
-  const handleKeyDown = async (e: KeyboardEvent<HTMLInputElement>) => {
-    if ((e.key === 'Enter' || e.key === ',') && input.trim()) {
-      e.preventDefault()
-      setLoading(true)
-      try {
-        const validTag = await tagService.processUserInput(input)
-        if (!tags.includes(validTag.name)) {
-          onChange([...tags, validTag.name])
+  const handleKeyDown = useCallback(
+    async (e: KeyboardEvent<HTMLInputElement>) => {
+      if ((e.key === 'Enter' || e.key === ',') && input.trim()) {
+        e.preventDefault()
+        setLoading(true)
+        try {
+          const validTag = await tagService.processUserInput(input)
+          if (!tags.includes(validTag.name)) {
+            onChange([...tags, validTag.name])
+          }
+          setInput('')
+        } catch (error) {
+          // ignore invalid
+        } finally {
+          setLoading(false)
         }
-        setInput('')
-      } catch (error) {
-        // ignore invalid
-      } finally {
-        setLoading(false)
+      } else if (e.key === 'Backspace' && !input && tags.length > 0) {
+        onChange(tags.slice(0, -1))
       }
-    } else if (e.key === 'Backspace' && !input && tags.length > 0) {
-      onChange(tags.slice(0, -1))
-    }
-  }
+    },
+    [input, tags, onChange]
+  )
 
-  const removeTag = (tagToRemove: string) => {
-    onChange(tags.filter((tag) => tag !== tagToRemove))
-  }
+  const removeTag = useCallback(
+    (tagToRemove: string) => {
+      onChange(tags.filter((tag) => tag !== tagToRemove))
+    },
+    [tags, onChange]
+  )
 
   return (
     <div className="flex flex-col gap-2">
@@ -78,4 +84,4 @@ export const PromptTagInput: React.FC<PromptTagInputProps> = ({ tags, onChange }
       </div>
     </div>
   )
-}
+})
