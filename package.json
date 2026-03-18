@@ -4,7 +4,6 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "nx run-many --target=serve --projects=forum,arena,admin,auth,docs --parallel=5",
     "build": "nx vite:build",
     "preview": "nx vite:preview",
     "lint": "eslint .",
@@ -74,7 +73,6 @@
     "@swc/helpers": "~0.5.18",
     "@testing-library/dom": "10.4.0",
     "@testing-library/react": "16.3.0",
-    "@types/http-proxy": "^1.17.15",
     "@types/jest": "^30.0.0",
     "@types/node": "^22.14.0",
     "@types/react": "18.3.1",
@@ -92,7 +90,6 @@
     "eslint-plugin-import": "^2.32.0",
     "eslint-plugin-react-hooks": "^7.0.1",
     "eslint-plugin-unused-imports": "^4.3.0",
-    "http-proxy": "^1.18.1",
     "jest": "^30.0.2",
     "jest-environment-node": "^30.0.2",
     "jest-util": "^30.0.2",
