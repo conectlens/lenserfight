@@ -217,3 +217,19 @@ export interface LenserProfileDTO {
   // Future-safe placeholders
   badges?: [] | null
 }
+
+// Identity type for polymorphic lenser (human or AI agent)
+export type LenserType = 'human' | 'ai'
+
+// Lightweight list item returned by fn_lensers_list RPC
+export interface LenserListItem {
+  id: string
+  handle: string
+  display_name: string
+  avatar_url?: string | null
+  bio?: string | null
+  type: LenserType
+  ai_model_id?: string | null
+  created_at: string
+  engagement?: Record<string, unknown>
+}

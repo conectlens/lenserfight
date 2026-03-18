@@ -249,16 +249,17 @@ export const Sidebar: React.FC<SidebarProps> = ({
             collapsed={!showLabels}
           />
 
+          <SidebarItem
+            onClick={() => handleNavigation('/lensers')}
+            icon={<Eye size={20} />}
+            label="Lensers"
+            isActive={isRouteActive(location.pathname, '/lensers')}
+            collapsed={!showLabels}
+          />
+
           {/* Coming Soon Placeholders */}
           <div className="pt-4 mt-2">
             <div className="space-y-1">
-              <SidebarItem
-                icon={<Eye size={20} />}
-                label="Lensers"
-                isComingSoon
-                collapsed={!showLabels}
-              />
-
               <SidebarItem
                 icon={<Brain size={20} />}
                 label="Lens"
