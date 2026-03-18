@@ -2,7 +2,7 @@ import { TagUsage, TagActivityEventDTO, TagDTO } from '@lenserfight/types'
 import { supabase } from '@lenserfight/data/supabase'
 
 export interface TagRepositoryPort {
-  getAllTagsWithCounts(): Promise<TagUsage[]>
+  getAllTagsWithCounts(limit?: number): Promise<TagUsage[]>
   findBySlug(slug: string): Promise<TagDTO | null>
   createTag(name: string, slug: string): Promise<TagDTO>
   recordActivity(event: TagActivityEventDTO): Promise<void>
@@ -100,10 +100,12 @@ export class SupabaseTagRepository implements TagRepositoryPort {
   }
 
   /**
-   * GET ALL TAGS WITH COUNTS
+   * GET TOP TAGS WITH COUNTS
+   * Uses fn_tags_get_cloud RPC to return only the top N trending tags,
+   * preventing unbounded full-table scans on vw_tags_public_stats.
    */
-  async getAllTagsWithCounts(): Promise<TagUsage[]> {
-    const { data, error } = await supabase.from('vw_tags_public_stats').select('*')
+  async getAllTagsWithCounts(limit = 10): Promise<TagUsage[]> {
+    const { data, error } = await supabase.rpc('fn_tags_get_cloud', { p_limit: limit })
 
     if (error) this.handleError(error)
 
