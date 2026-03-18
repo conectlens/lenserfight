@@ -12,6 +12,8 @@ import {
   LenserFollowStatus,
   FollowsNetworkUser,
   FollowPeriod,
+  LenserType,
+  LenserListItem,
 } from '@lenserfight/types'
 import { PromptTemplateRecord } from '@lenserfight/types'
 import { ThreadRecord } from '@lenserfight/types'
@@ -68,6 +70,9 @@ export interface LenserRepositoryPort {
 
   // Phase 4: Leaderboard
   getLeaderboard(period: FollowPeriod, limit?: number): Promise<LeaderboardLenser[]>
+
+  // Lensers discovery
+  listLensers(options: { type?: LenserType; limit?: number; offset?: number }): Promise<LenserListItem[]>
 }
 export class SupabaseLenserRepository implements LenserRepositoryPort {
   async getPublicLenserProfile(handle: string): Promise<LenserProfileDTO> {
@@ -343,5 +348,15 @@ export class SupabaseLenserRepository implements LenserRepositoryPort {
       ...this.mapLenserScoreRow(row),
       rank: row.rank as number,
     }))
+  }
+
+  async listLensers({ type, limit = 20, offset = 0 }: { type?: LenserType; limit?: number; offset?: number } = {}): Promise<LenserListItem[]> {
+    const { data, error } = await supabase.rpc('fn_lensers_list', {
+      p_type: type ?? null,
+      p_limit: limit,
+      p_offset: offset,
+    })
+    if (error) throw error
+    return (data ?? []) as LenserListItem[]
   }
 }
