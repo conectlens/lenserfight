@@ -92,11 +92,12 @@ export const threadsService = {
 
   getThreadsByTag: async (
     slug: string,
+    sort: 'newest' | 'trending' | 'popular' = 'newest',
     currentUserId?: string,
     offset = 0,
-    limit = 10
+    limit = 20
   ): Promise<ApiResponseEnvelope<ThreadFeedItem[]>> => {
-    const result = await threadsRepo.getThreadsByTag(slug, offset, limit)
+    const result = await threadsRepo.getThreadsByTag(slug, sort, offset, limit)
     const items = await threadsService._mapToFeedItems(result.data ?? [], currentUserId)
     return paginatedResponse(items, {
       limit: result.meta?.limit ?? limit,
