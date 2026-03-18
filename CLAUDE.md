@@ -36,7 +36,6 @@
 - `libs/ui/*` contains reusable UI primitives, layout, forms, and modals.
 - `libs/utils/*` contains low-level shared utilities only.
 - `supabase/` contains schema, migrations, SQL functions, and database security concerns.
-- `tools/dev-proxy/` contains the local dev reverse proxy. Port discovery is automated; do not hardcode ports there.
 
 ## Working rules
 - Respect Nx boundaries. Do not introduce cross-layer imports without a clear architectural reason.
