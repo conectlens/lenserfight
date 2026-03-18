@@ -27,6 +27,7 @@ export const queryKeys = {
     suggested: (lenserId: string) => [...queryKeys.lenser.all, 'suggested', lenserId] as const,
     follows: (lenserId: string, type: string) => [...queryKeys.lenser.all, 'follows', lenserId, type] as const,
     leaderboard: (period: string) => [...queryKeys.lenser.all, 'leaderboard', period] as const,
+    list: (type?: string) => [...queryKeys.lenser.all, 'list', type] as const,
   },
   tags: {
     all: ['tags'] as const,
