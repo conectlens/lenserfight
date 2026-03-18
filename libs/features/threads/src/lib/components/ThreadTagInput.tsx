@@ -1,5 +1,5 @@
 import { X } from 'lucide-react'
-import React, { useState, KeyboardEvent } from 'react'
+import React, { useState, KeyboardEvent, useCallback } from 'react'
 
 import { tagService } from '@lenserfight/data/repositories'
 
@@ -8,46 +8,40 @@ interface ThreadTagInputProps {
   onChange: (tags: string[]) => void
 }
 
-export const ThreadTagInput: React.FC<ThreadTagInputProps> = ({ tags, onChange }) => {
+export const ThreadTagInput: React.FC<ThreadTagInputProps> = React.memo(({ tags, onChange }) => {
   const [input, setInput] = useState('')
   const [isLoading, setIsLoading] = useState(false)
 
-  const handleKeyDown = async (e: KeyboardEvent<HTMLInputElement>) => {
-    if ((e.key === 'Enter' || e.key === ',') && input.trim()) {
-      e.preventDefault()
+  const handleKeyDown = useCallback(
+    async (e: KeyboardEvent<HTMLInputElement>) => {
+      if ((e.key === 'Enter' || e.key === ',') && input.trim()) {
+        e.preventDefault()
 
-      setIsLoading(true)
-      try {
-        // Use Domain Service to validate and normalize
-        // Note: In this UI component we just store the names,
-        // actual persistence usually happens on Form Submit.
-        // However, we can use the service here to get the "Canonical Name".
-
-        // For immediate UI feedback without persisting to DB yet (Mock approach often persists early,
-        // but proper way is verifying format).
-        // If we want to persist *immediately*, we use processUserInput.
-        // If we want to just validate format, we'd use TagValidator directly.
-        // Assuming we want to ensure the tag is valid and gets its canonical display name:
-
-        const normalizedTag = await tagService.processUserInput(input)
-        if (!tags.includes(normalizedTag.name)) {
-          onChange([...tags, normalizedTag.name])
+        setIsLoading(true)
+        try {
+          const normalizedTag = await tagService.processUserInput(input)
+          if (!tags.includes(normalizedTag.name)) {
+            onChange([...tags, normalizedTag.name])
+          }
+          setInput('')
+        } catch (err) {
+          console.warn('Invalid tag input', err)
+        } finally {
+          setIsLoading(false)
         }
-        setInput('')
-      } catch (err) {
-        console.warn('Invalid tag input', err)
-        // Optional: Show error toast
-      } finally {
-        setIsLoading(false)
+      } else if (e.key === 'Backspace' && !input && tags.length > 0) {
+        onChange(tags.slice(0, -1))
       }
-    } else if (e.key === 'Backspace' && !input && tags.length > 0) {
-      onChange(tags.slice(0, -1))
-    }
-  }
+    },
+    [input, tags, onChange]
+  )
 
-  const removeTag = (tagToRemove: string) => {
-    onChange(tags.filter((tag) => tag !== tagToRemove))
-  }
+  const removeTag = useCallback(
+    (tagToRemove: string) => {
+      onChange(tags.filter((tag) => tag !== tagToRemove))
+    },
+    [tags, onChange]
+  )
 
   return (
     <div className="flex flex-col gap-2">
@@ -83,4 +77,4 @@ export const ThreadTagInput: React.FC<ThreadTagInputProps> = ({ tags, onChange }
       <p className="text-xs text-gray-500 dark:text-gray-400">Press Enter or Comma to add a tag</p>
     </div>
   )
-}
+})
