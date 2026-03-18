@@ -36,25 +36,9 @@ If you want the full contributor setup workflow after installation, continue wit
 
 ## Verify the installation
 
-Start all apps together with the local reverse proxy:
+Start a single app to verify everything is working:
 
-```sh
-npm run dev
-```
-
-This starts all apps concurrently and prints a route table like:
-
-| URL | App |
-|-----|-----|
-| http://forum.localhost:8080 | forum |
-| http://arena.localhost:8080 | arena |
-| http://admin.localhost:8080 | admin |
-| http://docs.localhost:8080 | docs |
-| http://conectlenscom.localhost:8080 | conectlenscom |
-
-To remove the `:8080` suffix, run `bash tools/dev-proxy/setup.sh` once per machine (requires sudo). After that `http://forum.localhost` and friends work directly.
-
-To start a single app instead:
+To start a single app:
 
 - `npm exec nx serve forum`
 - `npm exec nx serve arena`
