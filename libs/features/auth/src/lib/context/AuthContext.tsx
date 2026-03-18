@@ -34,12 +34,14 @@ const getErrorMessage = (err: unknown): string => {
 }
 
 // Keys cleared on logout (also used in LenserContext)
-const LENSER_CACHE_KEY = 'lenser_profile_data_v1'
+export const LENSER_CACHE_KEY = 'lenser_profile_data_v1'
+export const WAITINGLIST_CACHE_KEY = 'waitinglist_status_v1'
 const MOCK_AUTH_KEY = 'mock_auth_user'
 
 const clearAuthStorage = () => {
   storage.removeItem('lenser_has_profile')
   storage.removeItem(LENSER_CACHE_KEY)
+  storage.removeItem(WAITINGLIST_CACHE_KEY)
   storage.removeItem(MOCK_AUTH_KEY)
 }
 
