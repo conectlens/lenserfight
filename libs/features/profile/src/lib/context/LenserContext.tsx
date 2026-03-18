@@ -47,10 +47,12 @@ export const LenserProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   const cachedProfile = readCache<Lenser>(LENSER_CACHE_KEY)
   const cachedWaitingList = readCache<boolean>(WAITINGLIST_CACHE_KEY)
 
-  // Discard cached profile if it belongs to a different user
+  // Discard cached profile if it belongs to a different user or if data is null
   const profileInitialData =
-    cachedProfile?.data.user_id === user?.id ? cachedProfile.data : undefined
-  const profileInitialDataUpdatedAt = profileInitialData ? cachedProfile!.fetchedAt : undefined
+    cachedProfile?.data && user?.id && cachedProfile.data.user_id === user.id
+      ? cachedProfile.data
+      : undefined
+  const profileInitialDataUpdatedAt = profileInitialData ? cachedProfile?.fetchedAt : undefined
 
   const {
     data: lenser = null,
