@@ -137,6 +137,7 @@ export class SupabaseLenserRepository implements LenserRepositoryPort {
     if (data.preferred_language !== undefined) updatePayload.preferred_language = data.preferred_language
     if (data.onboarding_step !== undefined) updatePayload.onboarding_step = data.onboarding_step
     if (data.onboarding_completed_at !== undefined) updatePayload.onboarding_completed_at = data.onboarding_completed_at
+    if (data.visibility !== undefined) updatePayload.visibility = data.visibility
 
     const { data: updated, error } = await supabase.rpc('fn_lensers_update_profile', {
       p_data: updatePayload,
