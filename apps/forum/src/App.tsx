@@ -54,9 +54,11 @@ const AUTH_APP_URL = import.meta.env.VITE_AUTH_APP_URL ?? 'https://auth.lenserfi
 const ExternalRedirect = ({ to }: { to: string }) => {
   const location = useLocation()
   useEffect(() => {
-    const returnUrl = encodeURIComponent(
-      window.location.origin + location.pathname + location.search + location.hash
-    )
+    // Avoid encoding /auth/* paths as return_url — they get rejected by sanitizeReturnUrl
+    // and cause a fallback to the wrong (production) URL in dev.
+    const isAuthPath = location.pathname.startsWith('/auth/')
+    const returnPath = isAuthPath ? '/' : location.pathname + location.search + location.hash
+    const returnUrl = encodeURIComponent(window.location.origin + returnPath)
     window.location.href = `${to}?return_url=${returnUrl}`
   }, [to, location])
   return null
