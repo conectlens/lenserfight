@@ -3057,14 +3057,14 @@ $$;
 ALTER FUNCTION "public"."fn_content_get_popular_prompts"("p_limit" integer, "p_offset" integer) OWNER TO "postgres";
 
 
-CREATE OR REPLACE FUNCTION "public"."fn_content_get_prompts_by_tag"("p_tag_slug" "text", "p_limit" integer DEFAULT 20, "p_offset" integer DEFAULT 0) RETURNS TABLE("id" "uuid", "lenser_id" "uuid", "visibility" "content"."visibility_enum", "title" "text", "description" "text", "author_profile" "jsonb", "reaction_totals" "jsonb", "copy_count" integer, "like_count" integer, "saved_count" integer, "tags" "jsonb", "created_at" timestamp with time zone)
+CREATE OR REPLACE FUNCTION "public"."fn_content_get_prompts_by_tag"("p_tag_slug" "text", "p_sort" "text" DEFAULT 'newest'::"text", "p_limit" integer DEFAULT 20, "p_offset" integer DEFAULT 0) RETURNS TABLE("id" "uuid", "lenser_id" "uuid", "visibility" "content"."visibility_enum", "title" "text", "description" "text", "author_profile" "jsonb", "reaction_totals" "jsonb", "copy_count" integer, "like_count" integer, "saved_count" integer, "tags" "jsonb", "created_at" timestamp with time zone)
     LANGUAGE "sql" STABLE SECURITY DEFINER
     SET "search_path" TO 'public', 'content', 'lensers'
     AS $$
   WITH matched_ids AS (
     SELECT DISTINCT tm.entity_id AS prompt_id
     FROM content.tag_map tm
-    JOIN content.tags    tg ON tg.id = tm.tag_id AND tg.slug = p_tag_slug
+    JOIN content.tags tg ON tg.id = tm.tag_id AND tg.slug = p_tag_slug
     WHERE tm.entity_type = 'prompt_template'
     LIMIT 1000
   )
@@ -3074,23 +3074,26 @@ CREATE OR REPLACE FUNCTION "public"."fn_content_get_prompts_by_tag"("p_tag_slug"
     v.saved_count, v.tags, v.created_at
   FROM matched_ids m
   JOIN public.vw_prompt_templates_public v ON v.id = m.prompt_id
-  ORDER BY v.created_at DESC
-  LIMIT  LEAST(p_limit,  50)
+  ORDER BY
+    CASE WHEN p_sort = 'newest' THEN v.created_at END DESC,
+    CASE WHEN p_sort IN ('trending', 'popular') THEN v.copy_count END DESC NULLS LAST,
+    CASE WHEN p_sort IN ('trending', 'popular') THEN v.like_count END DESC NULLS LAST
+  LIMIT  LEAST(p_limit, 50)
   OFFSET GREATEST(p_offset, 0);
 $$;
 
 
-ALTER FUNCTION "public"."fn_content_get_prompts_by_tag"("p_tag_slug" "text", "p_limit" integer, "p_offset" integer) OWNER TO "postgres";
+ALTER FUNCTION "public"."fn_content_get_prompts_by_tag"("p_tag_slug" "text", "p_sort" "text", "p_limit" integer, "p_offset" integer) OWNER TO "postgres";
 
 
-CREATE OR REPLACE FUNCTION "public"."fn_content_get_threads_by_tag"("p_tag_slug" "text", "p_limit" integer DEFAULT 20, "p_offset" integer DEFAULT 0) RETURNS TABLE("id" "uuid", "lenser_id" "uuid", "title" "text", "content" "text", "author_profile" "jsonb", "reaction_totals" "jsonb", "like_count" integer, "reply_count" integer, "view_count" integer, "visibility" "content"."visibility_enum", "tags" "jsonb", "created_at" timestamp with time zone)
+CREATE OR REPLACE FUNCTION "public"."fn_content_get_threads_by_tag"("p_tag_slug" "text", "p_sort" "text" DEFAULT 'newest'::"text", "p_limit" integer DEFAULT 20, "p_offset" integer DEFAULT 0) RETURNS TABLE("id" "uuid", "lenser_id" "uuid", "title" "text", "content" "text", "author_profile" "jsonb", "reaction_totals" "jsonb", "like_count" integer, "reply_count" integer, "view_count" integer, "visibility" "content"."visibility_enum", "tags" "jsonb", "created_at" timestamp with time zone)
     LANGUAGE "sql" STABLE SECURITY DEFINER
     SET "search_path" TO 'public', 'content', 'lensers'
     AS $$
   WITH matched_ids AS (
     SELECT DISTINCT tm.entity_id AS thread_id
     FROM content.tag_map tm
-    JOIN content.tags    tg ON tg.id = tm.tag_id AND tg.slug = p_tag_slug
+    JOIN content.tags tg ON tg.id = tm.tag_id AND tg.slug = p_tag_slug
     WHERE tm.entity_type = 'thread'
     LIMIT 1000
   )
@@ -3100,13 +3103,16 @@ CREATE OR REPLACE FUNCTION "public"."fn_content_get_threads_by_tag"("p_tag_slug"
     v.reply_count, v.view_count, v.visibility, v.tags, v.created_at
   FROM matched_ids m
   JOIN public.vw_content_threads_public v ON v.id = m.thread_id
-  ORDER BY v.created_at DESC
-  LIMIT  LEAST(p_limit,  50)
+  ORDER BY
+    CASE WHEN p_sort = 'newest' THEN v.created_at END DESC,
+    CASE WHEN p_sort IN ('trending', 'popular') THEN v.like_count END DESC NULLS LAST,
+    CASE WHEN p_sort IN ('trending', 'popular') THEN v.reply_count END DESC NULLS LAST
+  LIMIT  LEAST(p_limit, 50)
   OFFSET GREATEST(p_offset, 0);
 $$;
 
 
-ALTER FUNCTION "public"."fn_content_get_threads_by_tag"("p_tag_slug" "text", "p_limit" integer, "p_offset" integer) OWNER TO "postgres";
+ALTER FUNCTION "public"."fn_content_get_threads_by_tag"("p_tag_slug" "text", "p_sort" "text", "p_limit" integer, "p_offset" integer) OWNER TO "postgres";
 
 
 CREATE OR REPLACE FUNCTION "public"."fn_content_get_trending_prompts"("p_lang" "text" DEFAULT NULL::"text", "p_limit" integer DEFAULT 20, "p_offset" integer DEFAULT 0) RETURNS TABLE("id" "uuid", "hot_score" double precision, "primary_language" "text", "author_profile" "jsonb", "tags" "jsonb", "reaction_totals" "jsonb", "title" "text", "description" "text", "created_at" timestamp with time zone)
@@ -4477,6 +4483,30 @@ $$;
 
 
 ALTER FUNCTION "public"."fn_tag_activity_log"("p_events" "jsonb") OWNER TO "postgres";
+
+
+CREATE OR REPLACE FUNCTION "public"."fn_tags_get_cloud"("p_limit" integer DEFAULT 50) RETURNS TABLE("id" "uuid", "slug" "text", "name" "text", "visibility" "text", "created_at" timestamp with time zone, "created_count" bigint, "viewed_count" bigint, "reacted_count" bigint, "total_usage" bigint, "trend_score_7d" numeric)
+    LANGUAGE "sql" STABLE SECURITY DEFINER
+    SET "search_path" TO 'public', 'content', 'analytics'
+    AS $$
+  SELECT
+    id,
+    slug,
+    name,
+    visibility,
+    created_at,
+    created_count,
+    viewed_count,
+    reacted_count,
+    total_usage,
+    trend_score_7d
+  FROM vw_tags_public_stats
+  ORDER BY trend_score_7d DESC NULLS LAST, total_usage DESC NULLS LAST
+  LIMIT LEAST(p_limit, 100);
+$$;
+
+
+ALTER FUNCTION "public"."fn_tags_get_cloud"("p_limit" integer) OWNER TO "postgres";
 
 
 CREATE OR REPLACE FUNCTION "public"."fn_xp_get_self"() RETURNS TABLE("lenser_id" "uuid", "total_xp" bigint, "current_level" integer)
@@ -7606,6 +7636,22 @@ ALTER TABLE ONLY "xp"."totals"
 
 
 
+CREATE INDEX "idx_tag_activity_daily_tag_date" ON "analytics"."tag_activity_daily" USING "btree" ("tag_id", "activity_date");
+
+
+
+CREATE INDEX "idx_tag_activity_daily_tag_id" ON "analytics"."tag_activity_daily" USING "btree" ("tag_id");
+
+
+
+CREATE INDEX "idx_tag_activity_events_tag_id" ON "analytics"."tag_activity_events" USING "btree" ("tag_id");
+
+
+
+CREATE INDEX "idx_tag_activity_events_tag_occurred" ON "analytics"."tag_activity_events" USING "btree" ("tag_id", "occurred_at");
+
+
+
 CREATE INDEX "lenser_engagement_totals_lenser_id_idx" ON "analytics"."lenser_stats" USING "btree" ("lenser_id");
 
 
@@ -7655,6 +7701,10 @@ CREATE INDEX "idx_tag_map_tag_id" ON "content"."tag_map" USING "btree" ("tag_id"
 
 
 CREATE INDEX "idx_tag_map_type_tag" ON "content"."tag_map" USING "btree" ("entity_type", "tag_id", "entity_id");
+
+
+
+CREATE INDEX "idx_tag_suggestions_entity" ON "content"."tag_suggestions" USING "btree" ("entity_type", "entity_id");
 
 
 
@@ -10020,17 +10070,17 @@ GRANT ALL ON FUNCTION "public"."fn_content_get_popular_prompts"("p_limit" intege
 
 
 
-REVOKE ALL ON FUNCTION "public"."fn_content_get_prompts_by_tag"("p_tag_slug" "text", "p_limit" integer, "p_offset" integer) FROM PUBLIC;
-GRANT ALL ON FUNCTION "public"."fn_content_get_prompts_by_tag"("p_tag_slug" "text", "p_limit" integer, "p_offset" integer) TO "anon";
-GRANT ALL ON FUNCTION "public"."fn_content_get_prompts_by_tag"("p_tag_slug" "text", "p_limit" integer, "p_offset" integer) TO "authenticated";
-GRANT ALL ON FUNCTION "public"."fn_content_get_prompts_by_tag"("p_tag_slug" "text", "p_limit" integer, "p_offset" integer) TO "service_role";
+REVOKE ALL ON FUNCTION "public"."fn_content_get_prompts_by_tag"("p_tag_slug" "text", "p_sort" "text", "p_limit" integer, "p_offset" integer) FROM PUBLIC;
+GRANT ALL ON FUNCTION "public"."fn_content_get_prompts_by_tag"("p_tag_slug" "text", "p_sort" "text", "p_limit" integer, "p_offset" integer) TO "anon";
+GRANT ALL ON FUNCTION "public"."fn_content_get_prompts_by_tag"("p_tag_slug" "text", "p_sort" "text", "p_limit" integer, "p_offset" integer) TO "authenticated";
+GRANT ALL ON FUNCTION "public"."fn_content_get_prompts_by_tag"("p_tag_slug" "text", "p_sort" "text", "p_limit" integer, "p_offset" integer) TO "service_role";
 
 
 
-REVOKE ALL ON FUNCTION "public"."fn_content_get_threads_by_tag"("p_tag_slug" "text", "p_limit" integer, "p_offset" integer) FROM PUBLIC;
-GRANT ALL ON FUNCTION "public"."fn_content_get_threads_by_tag"("p_tag_slug" "text", "p_limit" integer, "p_offset" integer) TO "anon";
-GRANT ALL ON FUNCTION "public"."fn_content_get_threads_by_tag"("p_tag_slug" "text", "p_limit" integer, "p_offset" integer) TO "authenticated";
-GRANT ALL ON FUNCTION "public"."fn_content_get_threads_by_tag"("p_tag_slug" "text", "p_limit" integer, "p_offset" integer) TO "service_role";
+REVOKE ALL ON FUNCTION "public"."fn_content_get_threads_by_tag"("p_tag_slug" "text", "p_sort" "text", "p_limit" integer, "p_offset" integer) FROM PUBLIC;
+GRANT ALL ON FUNCTION "public"."fn_content_get_threads_by_tag"("p_tag_slug" "text", "p_sort" "text", "p_limit" integer, "p_offset" integer) TO "anon";
+GRANT ALL ON FUNCTION "public"."fn_content_get_threads_by_tag"("p_tag_slug" "text", "p_sort" "text", "p_limit" integer, "p_offset" integer) TO "authenticated";
+GRANT ALL ON FUNCTION "public"."fn_content_get_threads_by_tag"("p_tag_slug" "text", "p_sort" "text", "p_limit" integer, "p_offset" integer) TO "service_role";
 
 
 
@@ -10241,6 +10291,12 @@ GRANT ALL ON FUNCTION "public"."fn_log_page_view"("p_target_type" "public"."page
 GRANT ALL ON FUNCTION "public"."fn_tag_activity_log"("p_events" "jsonb") TO "anon";
 GRANT ALL ON FUNCTION "public"."fn_tag_activity_log"("p_events" "jsonb") TO "authenticated";
 GRANT ALL ON FUNCTION "public"."fn_tag_activity_log"("p_events" "jsonb") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."fn_tags_get_cloud"("p_limit" integer) TO "anon";
+GRANT ALL ON FUNCTION "public"."fn_tags_get_cloud"("p_limit" integer) TO "authenticated";
+GRANT ALL ON FUNCTION "public"."fn_tags_get_cloud"("p_limit" integer) TO "service_role";
 
 
 
@@ -10694,7 +10750,7 @@ GRANT ALL ON TABLE "public"."vw_ai_models_public" TO "service_role";
 
 
 
-GRANT INSERT,REFERENCES,DELETE,TRIGGER,TRUNCATE,UPDATE ON TABLE "public"."vw_auth_lenser" TO "anon";
+GRANT ALL ON TABLE "public"."vw_auth_lenser" TO "anon";
 GRANT ALL ON TABLE "public"."vw_auth_lenser" TO "authenticated";
 GRANT ALL ON TABLE "public"."vw_auth_lenser" TO "service_role";
 
