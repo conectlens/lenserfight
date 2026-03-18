@@ -13,6 +13,9 @@ interface TagCache {
 const CACHE_TTL = 15 * 60 * 1000 // 15 Minutes
 let globalTagCache: TagCache | null = null
 
+const SLUG_CACHE_TTL = 10 * 60 * 1000 // 10 minutes
+const slugCache = new Map<string, { tag: TagDTO; timestamp: number }>()
+
 export const tagService = {
   /**
    * The Main Entry Point for User Input.
@@ -27,24 +30,35 @@ export const tagService = {
     TagValidator.validateDisplayName(name)
     TagValidator.validateSlug(slug)
 
-    // 3. Domain Logic: Find or Create
-    // Check if tag exists
+    // 3. Check in-memory slug cache
+    const now = Date.now()
+    const cached = slugCache.get(slug)
+    if (cached && now - cached.timestamp < SLUG_CACHE_TTL) {
+      return cached.tag
+    }
+
+    // 4. Domain Logic: Find or Create
     const existingTag = await tagRepo.findBySlug(slug)
     if (existingTag) {
+      slugCache.set(slug, { tag: existingTag, timestamp: now })
       return existingTag
     }
 
     // Create new tag
     try {
       const newTag = await tagRepo.createTag(name, slug)
-      // Invalidate cache on creation to ensure cloud is up to date
+      slugCache.set(slug, { tag: newTag, timestamp: now })
+      // Invalidate cloud cache on creation to ensure cloud is up to date
       globalTagCache = null
       return newTag
     } catch (e: any) {
       // Race condition handling: If DB constraints catch a duplicate slug that we missed
       if (e.message?.includes('duplicate key') || e.code === '23505') {
         const retry = await tagRepo.findBySlug(slug)
-        if (retry) return retry
+        if (retry) {
+          slugCache.set(slug, { tag: retry, timestamp: now })
+          return retry
+        }
       }
       throw new TagDomainError(`Failed to create tag: ${e.message}`)
     }
