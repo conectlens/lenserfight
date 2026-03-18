@@ -33,6 +33,8 @@ export type {
   SocialPlatform,
   SuggestedLenser,
   TrendingLenser,
+  LenserType,
+  LenserListItem,
 } from './lib/lenser.types'
 export type { LenserBadge as ProfileLenserBadge } from './lib/lenser.types'
 export type {
