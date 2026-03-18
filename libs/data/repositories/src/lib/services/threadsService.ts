@@ -63,8 +63,8 @@ export const threadsService = {
     return threadsRepo.updateThread(id, { ...input, tagIds: realTagIds })
   },
 
-  deleteThread: async (id: string, lenserHandle: string): Promise<void> => {
-    const existing = await threadsRepo.getThreadById(id)
+  deleteThread: async (id: string, lenserHandle: string, lenserId?: string): Promise<void> => {
+    const existing = await threadsRepo.getThreadById(id, lenserId)
     if (!existing) throw new Error('Thread not found')
 
     const recordHandle = existing.author_profile?.handle || ''

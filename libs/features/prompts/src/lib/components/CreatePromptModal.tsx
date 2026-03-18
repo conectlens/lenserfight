@@ -1,5 +1,5 @@
 import { Globe, Lock } from 'lucide-react'
-import React from 'react'
+import React, { useMemo, useRef, useCallback } from 'react'
 
 import { Button } from '@lenserfight/ui/components'
 import { FormError } from '@lenserfight/ui/components'
@@ -39,17 +39,20 @@ export const CreatePromptModal: React.FC<CreatePromptModalProps> = ({
   error,
   isEditMode,
 }) => {
-  const formValues = {
-    title: form.title,
-    content: form.content,
-    tags: form.tags,
-  }
+  const formValues = useMemo(
+    () => ({ title: form.title, content: form.content, tags: form.tags }),
+    [form.title, form.content, form.tags]
+  )
 
-  const { errors, validate, clearError } = useFormValidation<typeof formValues>({
+  const validationRulesRef = useRef({
     title: [isRequired(), minLength(3, 'Title must be at least 3 characters')],
     content: [isRequired(), minLength(10, 'Content must be at least 10 characters')],
     tags: [],
   })
+
+  const { errors, validate, clearError } = useFormValidation<typeof formValues>(
+    validationRulesRef.current
+  )
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
@@ -58,15 +61,21 @@ export const CreatePromptModal: React.FC<CreatePromptModalProps> = ({
     }
   }
 
-  const handleTitleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    form.setTitle(e.target.value)
-    clearError('title')
-  }
+  const handleTitleChange = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      form.setTitle(e.target.value)
+      clearError('title')
+    },
+    [form.setTitle, clearError]
+  )
 
-  const handleContentChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    form.setContent(e.target.value)
-    clearError('content')
-  }
+  const handleContentChange = useCallback(
+    (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+      form.setContent(e.target.value)
+      clearError('content')
+    },
+    [form.setContent, clearError]
+  )
 
   const visibilityOptions = [
     { value: 'public', label: 'Public', icon: Globe },
