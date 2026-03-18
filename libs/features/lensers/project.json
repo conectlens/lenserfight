@@ -1,0 +1,9 @@
+{
+  "name": "lensers",
+  "$schema": "../../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "libs/features/lensers/src",
+  "projectType": "library",
+  "tags": ["layer:feature", "feature:lensers"],
+  "// targets": "to see all targets run: nx show project lensers --web",
+  "targets": {}
+}

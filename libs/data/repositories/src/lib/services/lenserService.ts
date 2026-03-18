@@ -14,6 +14,8 @@ import {
   LenserFollowStatus,
   FollowsNetworkUser,
   FollowPeriod,
+  LenserType,
+  LenserListItem,
 } from '@lenserfight/types'
 import { PromptTemplateRecord } from '@lenserfight/types'
 import { ThreadRecord } from '@lenserfight/types'
@@ -197,5 +199,11 @@ export const lenserService = {
 
   getLeaderboard: async (period: FollowPeriod = 'all_time', limit = 20): Promise<LeaderboardLenser[]> => {
     return lenserRepo.getLeaderboard(period, limit)
+  },
+
+  // ── Lensers discovery ─────────────────────────────────────────────────────
+
+  listLensers: async (options: { type?: LenserType; limit?: number; offset?: number } = {}): Promise<LenserListItem[]> => {
+    return lenserRepo.listLensers(options)
   },
 }
