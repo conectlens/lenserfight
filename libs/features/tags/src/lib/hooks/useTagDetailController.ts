@@ -56,30 +56,18 @@ export const useTagDetailController = (slug?: string) => {
 
   // 3. Merge & Sort
   const items = useMemo(() => {
-    let result: TaggedContentItem[] = []
+    // Single-tab views arrive pre-sorted from the DB — no re-sort needed.
+    if (activeTab === 'prompts') return prompts || []
+    if (activeTab === 'threads') return threads || []
 
-    if (activeTab === 'prompts') {
-      result = prompts || []
-    } else if (activeTab === 'threads') {
-      result = threads || []
+    // 'all' tab: merge two separately-sorted lists and re-sort the combined result.
+    const result = [...(prompts || []), ...(threads || [])]
+    if (sortType === 'newest') {
+      result.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
     } else {
-      // All
-      result = [...(prompts || []), ...(threads || [])]
-
-      // We need to re-sort the combined list because fetching separately sorted lists
-      // and concatenating them doesn't result in a globally sorted list.
-      if (sortType === 'newest') {
-        result.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
-      } else {
-        // Trending/Popular heuristic
-        const getScore = (item: TaggedContentItem) => {
-          const uses = item.stats.uses || 0
-          const likes = item.stats.likes || 0
-          const replies = item.stats.replies || 0
-          return uses + likes + replies
-        }
-        result.sort((a, b) => getScore(b) - getScore(a))
-      }
+      const getScore = (item: TaggedContentItem) =>
+        (item.stats.uses || 0) + (item.stats.likes || 0) + (item.stats.replies || 0)
+      result.sort((a, b) => getScore(b) - getScore(a))
     }
     return result
   }, [prompts, threads, activeTab, sortType])
