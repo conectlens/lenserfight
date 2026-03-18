@@ -125,7 +125,7 @@ export const ThreadDetailPage: React.FC = () => {
     if (!thread || !lenser) return
     setIsDeleting(true)
     try {
-      await threadsService.deleteThread(thread.id, lenser.handle)
+      await threadsService.deleteThread(thread.id, lenser.handle, lenser.id)
       setIsDeleteModalOpen(false)
       navigate('/app')
     } catch (e) {
