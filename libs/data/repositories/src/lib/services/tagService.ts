@@ -120,19 +120,34 @@ export const tagService = {
   },
 
   getTagDetails: async (slug: string): Promise<TagUsage | null> => {
-    // In a real app, this would fetch extended metadata from Repo
-    // For now, we reuse the list + filter, or specific find
     const dto = await tagRepo.findBySlug(slug)
     if (!dto) return null
 
-    // Enriched structure for UI
     return {
       ...dto,
       id: dto.id,
-      count: 0,
-      trendingScore: 0,
-      created_at: new Date().toISOString(),
+      count: Number(dto.total_usage ?? 0),
+      trendingScore: Number(dto.trend_score_7d ?? 0),
+      created_at: dto.created_at ?? new Date().toISOString(),
     }
+  },
+
+  getTagDetailsById: async (id: string): Promise<TagUsage | null> => {
+    const dto = await tagRepo.findById(id)
+    if (!dto) return null
+
+    return {
+      ...dto,
+      id: dto.id,
+      count: Number(dto.total_usage ?? 0),
+      trendingScore: Number(dto.trend_score_7d ?? 0),
+      created_at: dto.created_at ?? new Date().toISOString(),
+    }
+  },
+
+  searchTags: async (query: string, lang?: string): Promise<TagUsage[]> => {
+    if (!query || query.length < 2) return []
+    return tagRepo.searchTags(query, lang ?? 'en', 5)
   },
 
   // --- Activity Recording ---

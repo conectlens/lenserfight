@@ -1,9 +1,10 @@
 import { MentionParser } from '@lenserfight/utils/text'
 
 import { promptsService } from './promptsService'
+import { tagService } from './tagService'
 
 export interface ResolvedSegment {
-  type: 'text' | 'mention'
+  type: 'text' | 'mention' | 'tag'
   content: string // The display text (e.g. "Prompt Title" or raw text)
   id?: string
   entityType?: string
@@ -27,10 +28,35 @@ export const mentionService = {
         } as ResolvedSegment
       }
 
+      if (segment.type === 'tag') {
+        try {
+          const tag = await tagService.getTagDetailsById(segment.id)
+          if (tag) {
+            return {
+              type: 'tag',
+              content: tag.name,
+              id: segment.id,
+              entityType: 'Tag',
+              link: `/len/${tag.slug}`,
+              isValid: true,
+            } as ResolvedSegment
+          }
+        } catch {
+          // fall through to fallback
+        }
+        return {
+          type: 'tag',
+          content: segment.id,
+          id: segment.id,
+          entityType: 'Tag',
+          isValid: false,
+        } as ResolvedSegment
+      }
+
       if (segment.type === 'mention') {
         try {
           switch (segment.entityType) {
-            case 'Prompt':
+            case 'Prompt': {
               const prompt = await promptsService.getPromptDetail(segment.id)
               if (prompt) {
                 return {
@@ -43,6 +69,7 @@ export const mentionService = {
                 } as ResolvedSegment
               }
               break
+            }
             // Future cases...
           }
 

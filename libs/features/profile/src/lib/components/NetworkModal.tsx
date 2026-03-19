@@ -1,70 +1,138 @@
-import { UserX } from 'lucide-react'
+import { UserX, Sparkles } from 'lucide-react'
 import React, { useEffect, useState, useRef, useCallback } from 'react'
 
 import { Avatar } from '@lenserfight/ui/components'
 import { Modal } from '@lenserfight/ui/modals'
 import { lenserService } from '@lenserfight/data/repositories'
-import { NetworkUser } from '@lenserfight/types'
+import { FollowsNetworkUser, TrendingLenser } from '@lenserfight/types'
+
+const PAGE_SIZE = 20
 
 interface NetworkModalProps {
   isOpen: boolean
   onClose: () => void
   lenserId: string
   type: 'followers' | 'following'
+  currentLenserId?: string
 }
 
-export const NetworkModal: React.FC<NetworkModalProps> = ({ isOpen, onClose, lenserId, type }) => {
-  const [users, setUsers] = useState<NetworkUser[]>([])
-  const [page, setPage] = useState(1)
+export const NetworkModal: React.FC<NetworkModalProps> = ({
+  isOpen,
+  onClose,
+  lenserId,
+  type,
+  currentLenserId,
+}) => {
+  const [users, setUsers] = useState<FollowsNetworkUser[]>([])
+  const [offset, setOffset] = useState(0)
   const [loading, setLoading] = useState(false)
   const [hasMore, setHasMore] = useState(true)
+  const [followingInProgress, setFollowingInProgress] = useState<Set<string>>(new Set())
+  const [trendingLensers, setTrendingLensers] = useState<TrendingLenser[]>([])
+  const [loadingTrending, setLoadingTrending] = useState(false)
   const observer = useRef<IntersectionObserver | null>(null)
 
-  const loadUsers = async (pageNum: number, reset = false) => {
-    if (!lenserId) return
-    setLoading(true)
-    try {
-      const newUsers = await lenserService.getLenserNetwork(lenserId, type, pageNum)
-      if (newUsers.length === 0) {
-        setHasMore(false)
-      } else {
+  const loadUsers = useCallback(
+    async (currentOffset: number, reset = false) => {
+      if (!lenserId) return
+      setLoading(true)
+      try {
+        const result = await lenserService.getLenserFollows(lenserId, type, currentOffset, PAGE_SIZE)
+        const newUsers = result.data ?? []
         setUsers((prev) => (reset ? newUsers : [...prev, ...newUsers]))
+        setHasMore(newUsers.length >= PAGE_SIZE)
+      } catch (err) {
+        console.error(err)
+      } finally {
+        setLoading(false)
       }
-    } catch (err) {
-      console.error(err)
-    } finally {
-      setLoading(false)
-    }
-  }
+    },
+    [lenserId, type]
+  )
 
   useEffect(() => {
     if (isOpen) {
       setUsers([])
-      setPage(1)
+      setOffset(0)
       setHasMore(true)
-      loadUsers(1, true)
+      setTrendingLensers([])
+      loadUsers(0, true)
     }
   }, [isOpen, lenserId, type])
 
+  // Load trending lensers when list is empty and done loading
+  useEffect(() => {
+    if (!loading && !hasMore && users.length === 0) {
+      setLoadingTrending(true)
+      lenserService
+        .getTrendingLensers(10)
+        .then((lensers) => setTrendingLensers(lensers))
+        .catch(console.error)
+        .finally(() => setLoadingTrending(false))
+    }
+  }, [loading, hasMore, users.length])
+
   const lastElementRef = useCallback(
-    (node: HTMLDivElement) => {
+    (node: HTMLDivElement | null) => {
       if (loading) return
       if (observer.current) observer.current.disconnect()
 
       observer.current = new IntersectionObserver((entries) => {
         if (entries[0].isIntersecting && hasMore) {
-          setPage((prev) => {
-            const nextPage = prev + 1
-            loadUsers(nextPage)
-            return nextPage
-          })
+          const nextOffset = offset + PAGE_SIZE
+          setOffset(nextOffset)
+          loadUsers(nextOffset)
         }
       })
 
       if (node) observer.current.observe(node)
     },
-    [loading, hasMore]
+    [loading, hasMore, offset, loadUsers]
   )
+
+  const handleFollowToggle = async (user: FollowsNetworkUser) => {
+    if (followingInProgress.has(user.lenserId)) return
+    setFollowingInProgress((prev) => new Set(prev).add(user.lenserId))
+    try {
+      if (user.isFollowing) {
+        await lenserService.unfollowLenser(user.lenserId)
+      } else {
+        await lenserService.followLenser(user.lenserId)
+      }
+      setUsers((prev) =>
+        prev.map((u) =>
+          u.lenserId === user.lenserId ? { ...u, isFollowing: !u.isFollowing } : u
+        )
+      )
+    } catch (err) {
+      console.error(err)
+    } finally {
+      setFollowingInProgress((prev) => {
+        const next = new Set(prev)
+        next.delete(user.lenserId)
+        return next
+      })
+    }
+  }
+
+  const handleTrendingFollow = async (lenser: TrendingLenser) => {
+    if (followingInProgress.has(lenser.lenserId)) return
+    setFollowingInProgress((prev) => new Set(prev).add(lenser.lenserId))
+    try {
+      await lenserService.followLenser(lenser.lenserId)
+      setTrendingLensers((prev) =>
+        prev.map((l) => (l.lenserId === lenser.lenserId ? { ...l, _following: true } : l))
+      )
+    } catch (err) {
+      console.error(err)
+    } finally {
+      setFollowingInProgress((prev) => {
+        const next = new Set(prev)
+        next.delete(lenser.lenserId)
+        return next
+      })
+    }
+  }
 
   const title = type === 'followers' ? 'Followers' : 'Following'
 
@@ -75,28 +143,31 @@ export const NetworkModal: React.FC<NetworkModalProps> = ({ isOpen, onClose, len
       <div className="-mx-6 px-6">
         {users.map((user, index) => (
           <div
-            key={user.id}
+            key={user.lenserId}
             className="flex items-center justify-between py-3 border-b border-gray-50 dark:border-gray-700 last:border-0 dark:text-gray-200"
           >
             <div className="flex items-center gap-3">
-              <Avatar src={user.avatar_url} size="md" className="!w-10 !h-10" />
+              <Avatar src={user.avatarUrl} size="md" className="!w-10 !h-10" />
               <div>
                 <p className="text-sm font-semibold text-gray-900 dark:text-white">
-                  {user.display_name}
+                  {user.displayName}
                 </p>
                 <p className="text-xs text-gray-500 dark:text-gray-400">@{user.handle}</p>
               </div>
             </div>
-            <button
-              className={`px-3 py-1.5 rounded-full text-xs font-semibold transition-colors ${
-                user.is_following
-                  ? 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
-                  : 'bg-primary text-gray-900 hover:bg-yellow-300'
-              }`}
-            >
-              {user.is_following ? 'Following' : 'Follow'}
-            </button>
-            {/* Intersection anchor for last element */}
+            {user.lenserId !== currentLenserId && (
+              <button
+                onClick={() => handleFollowToggle(user)}
+                disabled={followingInProgress.has(user.lenserId)}
+                className={`px-3 py-1.5 rounded-full text-xs font-semibold transition-colors disabled:opacity-50 ${
+                  user.isFollowing
+                    ? 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
+                    : 'bg-primary text-gray-900 hover:bg-yellow-300'
+                }`}
+              >
+                {user.isFollowing ? 'Following' : 'Follow'}
+              </button>
+            )}
             {index === users.length - 1 && <div ref={lastElementRef} />}
           </div>
         ))}
@@ -115,13 +186,76 @@ export const NetworkModal: React.FC<NetworkModalProps> = ({ isOpen, onClose, len
           </div>
         )}
 
-        {!loading && users.length === 0 && (
-          <div className="flex flex-col items-center justify-center py-12 text-center">
-            <div className="w-12 h-12 bg-gray-50 dark:bg-gray-800 rounded-full flex items-center justify-center mb-3 text-gray-300 dark:text-gray-600">
-              <UserX size={24} />
+        {!loading && users.length === 0 && !hasMore && (
+          <>
+            <div className="flex flex-col items-center justify-center py-8 text-center">
+              <div className="w-12 h-12 bg-gray-50 dark:bg-gray-800 rounded-full flex items-center justify-center mb-3 text-gray-300 dark:text-gray-600">
+                <UserX size={24} />
+              </div>
+              <p className="text-gray-500 dark:text-gray-400 font-medium text-sm">
+                No {type} found.
+              </p>
             </div>
-            <p className="text-gray-500 dark:text-gray-400 font-medium text-sm">No {type} found.</p>
-          </div>
+
+            {(trendingLensers.length > 0 || loadingTrending) && (
+              <div className="mt-2 border-t border-gray-100 dark:border-gray-700 pt-4">
+                <div className="flex items-center gap-2 mb-3 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                  <Sparkles size={13} />
+                  <span>Discover popular Lensers</span>
+                </div>
+                {loadingTrending ? (
+                  <div className="space-y-3">
+                    {[1, 2, 3].map((i) => (
+                      <div key={i} className="flex items-center gap-3 animate-pulse">
+                        <div className="w-10 h-10 bg-gray-200 dark:bg-gray-700 rounded-full"></div>
+                        <div className="flex-1 space-y-2">
+                          <div className="h-3 bg-gray-200 dark:bg-gray-700 w-24 rounded"></div>
+                          <div className="h-2 bg-gray-200 dark:bg-gray-700 w-16 rounded"></div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  trendingLensers
+                    .filter((l) => l.lenserId !== currentLenserId)
+                    .map((lenser) => {
+                      const isFollowing = !!(lenser as any)._following
+                      return (
+                        <div
+                          key={lenser.lenserId}
+                          className="flex items-center justify-between py-3 border-b border-gray-50 dark:border-gray-700 last:border-0"
+                        >
+                          <div className="flex items-center gap-3">
+                            <Avatar
+                              src={lenser.avatarUrl}
+                              size="md"
+                              className="!w-10 !h-10"
+                            />
+                            <div>
+                              <p className="text-sm font-semibold text-gray-900 dark:text-white">
+                                {lenser.displayName}
+                              </p>
+                              <p className="text-xs text-gray-500 dark:text-gray-400">
+                                @{lenser.handle}
+                              </p>
+                            </div>
+                          </div>
+                          {!isFollowing && (
+                            <button
+                              onClick={() => handleTrendingFollow(lenser)}
+                              disabled={followingInProgress.has(lenser.lenserId)}
+                              className="px-3 py-1.5 rounded-full text-xs font-semibold bg-primary text-gray-900 hover:bg-yellow-300 transition-colors disabled:opacity-50"
+                            >
+                              Follow
+                            </button>
+                          )}
+                        </div>
+                      )
+                    })
+                )}
+              </div>
+            )}
+          </>
         )}
       </div>
     </Modal>
