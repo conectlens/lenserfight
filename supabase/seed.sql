@@ -222,16 +222,16 @@ IF EXISTS (
 
     -- OpenAI models
     INSERT INTO ai.models (
-      name, capabilities, model_key, provider_id,
-      context_window_tokens, supports_tools, supports_json_schema,
-      supports_vision, is_active
+      slug, name, provider, description, capabilities, temperature, max_tokens,
+      model_key, provider_id, context_window_tokens,
+      supports_tools, supports_json_schema, supports_vision, is_active
     )
     SELECT
-      'GPT-5.2',
-      ARRAY['chat', 'reasoning', 'tools', 'vision', 'json_schema']::text[],
+      'gpt-5.2', 'GPT-5.2', 'openai', 'OpenAI GPT-5.2 model.',
+      ARRAY['text', 'code', 'image']::ai.ai_capability_enum[], 0.7, 4096,
       'gpt-5.2', p.id, 400000, true, true, true, false
     FROM ai.providers p WHERE p.key = 'openai'
-    ON CONFLICT (model_key) DO UPDATE
+    ON CONFLICT (slug) DO UPDATE
     SET name = EXCLUDED.name, capabilities = EXCLUDED.capabilities,
         provider_id = EXCLUDED.provider_id,
         context_window_tokens = EXCLUDED.context_window_tokens,
@@ -240,16 +240,16 @@ IF EXISTS (
         supports_vision = EXCLUDED.supports_vision, is_active = false;
 
     INSERT INTO ai.models (
-      name, capabilities, model_key, provider_id,
-      context_window_tokens, supports_tools, supports_json_schema,
-      supports_vision, is_active
+      slug, name, provider, description, capabilities, temperature, max_tokens,
+      model_key, provider_id, context_window_tokens,
+      supports_tools, supports_json_schema, supports_vision, is_active
     )
     SELECT
-      'GPT-4o',
-      ARRAY['chat', 'tools', 'vision', 'json_schema']::text[],
+      'gpt-4o', 'GPT-4o', 'openai', 'OpenAI GPT-4o multimodal model.',
+      ARRAY['text', 'code', 'image']::ai.ai_capability_enum[], 0.7, 4096,
       'gpt-4o', p.id, 128000, true, true, true, false
     FROM ai.providers p WHERE p.key = 'openai'
-    ON CONFLICT (model_key) DO UPDATE
+    ON CONFLICT (slug) DO UPDATE
     SET name = EXCLUDED.name, capabilities = EXCLUDED.capabilities,
         provider_id = EXCLUDED.provider_id,
         context_window_tokens = EXCLUDED.context_window_tokens,
@@ -258,59 +258,59 @@ IF EXISTS (
         supports_vision = EXCLUDED.supports_vision, is_active = false;
 
     -- Anthropic models
-    INSERT INTO ai.models (name, capabilities, model_key, provider_id, context_window_tokens, is_active)
-    SELECT 'Claude Opus 4.6', ARRAY['chat', 'reasoning', 'tools']::text[], 'claude-opus-4-6', p.id, 200000, false
+    INSERT INTO ai.models (slug, name, provider, description, capabilities, temperature, max_tokens, model_key, provider_id, context_window_tokens, is_active)
+    SELECT 'claude-opus-4-6', 'Claude Opus 4.6', 'anthropic', 'Anthropic Claude Opus 4.6 model.', ARRAY['text', 'code']::ai.ai_capability_enum[], 0.7, 4096, 'claude-opus-4-6', p.id, 200000, false
     FROM ai.providers p WHERE p.key = 'anthropic'
-    ON CONFLICT (model_key) DO UPDATE
+    ON CONFLICT (slug) DO UPDATE
     SET name = EXCLUDED.name, capabilities = EXCLUDED.capabilities,
         provider_id = EXCLUDED.provider_id,
         context_window_tokens = EXCLUDED.context_window_tokens, is_active = false;
 
-    INSERT INTO ai.models (name, capabilities, model_key, provider_id, context_window_tokens, is_active)
-    SELECT 'Claude Sonnet 4.6', ARRAY['chat', 'reasoning', 'tools']::text[], 'claude-sonnet-4-6', p.id, 200000, false
+    INSERT INTO ai.models (slug, name, provider, description, capabilities, temperature, max_tokens, model_key, provider_id, context_window_tokens, is_active)
+    SELECT 'claude-sonnet-4-6', 'Claude Sonnet 4.6', 'anthropic', 'Anthropic Claude Sonnet 4.6 model.', ARRAY['text', 'code']::ai.ai_capability_enum[], 0.7, 4096, 'claude-sonnet-4-6', p.id, 200000, false
     FROM ai.providers p WHERE p.key = 'anthropic'
-    ON CONFLICT (model_key) DO UPDATE
+    ON CONFLICT (slug) DO UPDATE
     SET name = EXCLUDED.name, capabilities = EXCLUDED.capabilities,
         provider_id = EXCLUDED.provider_id,
         context_window_tokens = EXCLUDED.context_window_tokens, is_active = false;
 
-    INSERT INTO ai.models (name, capabilities, model_key, provider_id, context_window_tokens, is_active)
-    SELECT 'Claude Haiku 4.5', ARRAY['chat']::text[], 'claude-haiku-4-5', p.id, 200000, false
+    INSERT INTO ai.models (slug, name, provider, description, capabilities, temperature, max_tokens, model_key, provider_id, context_window_tokens, is_active)
+    SELECT 'claude-haiku-4-5', 'Claude Haiku 4.5', 'anthropic', 'Anthropic Claude Haiku 4.5 model.', ARRAY['text']::ai.ai_capability_enum[], 0.7, 4096, 'claude-haiku-4-5', p.id, 200000, false
     FROM ai.providers p WHERE p.key = 'anthropic'
-    ON CONFLICT (model_key) DO UPDATE
+    ON CONFLICT (slug) DO UPDATE
     SET name = EXCLUDED.name, capabilities = EXCLUDED.capabilities,
         provider_id = EXCLUDED.provider_id,
         context_window_tokens = EXCLUDED.context_window_tokens, is_active = false;
 
     -- Google models
-    INSERT INTO ai.models (name, capabilities, model_key, provider_id, context_window_tokens, is_active)
-    SELECT 'Gemini 2.5 Pro', ARRAY['chat', 'reasoning', 'tools', 'vision']::text[], 'gemini-2.5-pro', p.id, 2000000, false
+    INSERT INTO ai.models (slug, name, provider, description, capabilities, temperature, max_tokens, model_key, provider_id, context_window_tokens, is_active)
+    SELECT 'gemini-2.5-pro', 'Gemini 2.5 Pro', 'google', 'Google Gemini 2.5 Pro model.', ARRAY['text', 'code', 'image']::ai.ai_capability_enum[], 0.7, 4096, 'gemini-2.5-pro', p.id, 2000000, false
     FROM ai.providers p WHERE p.key = 'google'
-    ON CONFLICT (model_key) DO UPDATE
+    ON CONFLICT (slug) DO UPDATE
     SET name = EXCLUDED.name, capabilities = EXCLUDED.capabilities,
         provider_id = EXCLUDED.provider_id,
         context_window_tokens = EXCLUDED.context_window_tokens, is_active = false;
 
-    INSERT INTO ai.models (name, capabilities, model_key, provider_id, context_window_tokens, is_active)
-    SELECT 'Gemini 2.5 Flash', ARRAY['chat', 'tools', 'vision']::text[], 'gemini-2.5-flash', p.id, 1000000, false
+    INSERT INTO ai.models (slug, name, provider, description, capabilities, temperature, max_tokens, model_key, provider_id, context_window_tokens, is_active)
+    SELECT 'gemini-2.5-flash', 'Gemini 2.5 Flash', 'google', 'Google Gemini 2.5 Flash model.', ARRAY['text', 'code', 'image']::ai.ai_capability_enum[], 0.7, 4096, 'gemini-2.5-flash', p.id, 1000000, false
     FROM ai.providers p WHERE p.key = 'google'
-    ON CONFLICT (model_key) DO UPDATE
+    ON CONFLICT (slug) DO UPDATE
     SET name = EXCLUDED.name, capabilities = EXCLUDED.capabilities,
         provider_id = EXCLUDED.provider_id,
         context_window_tokens = EXCLUDED.context_window_tokens, is_active = false;
 
-    INSERT INTO ai.models (name, capabilities, model_key, provider_id, context_window_tokens, is_active)
-    SELECT 'Gemini 3 Pro Preview', ARRAY['chat', 'reasoning', 'tools', 'vision']::text[], 'gemini-3-pro-preview', p.id, 2000000, false
+    INSERT INTO ai.models (slug, name, provider, description, capabilities, temperature, max_tokens, model_key, provider_id, context_window_tokens, is_active)
+    SELECT 'gemini-3-pro-preview', 'Gemini 3 Pro Preview', 'google', 'Google Gemini 3 Pro Preview model.', ARRAY['text', 'code', 'image']::ai.ai_capability_enum[], 0.7, 4096, 'gemini-3-pro-preview', p.id, 2000000, false
     FROM ai.providers p WHERE p.key = 'google'
-    ON CONFLICT (model_key) DO UPDATE
+    ON CONFLICT (slug) DO UPDATE
     SET name = EXCLUDED.name, capabilities = EXCLUDED.capabilities,
         provider_id = EXCLUDED.provider_id,
         context_window_tokens = EXCLUDED.context_window_tokens, is_active = false;
 
-    INSERT INTO ai.models (name, capabilities, model_key, provider_id, context_window_tokens, is_active)
-    SELECT 'Gemini 3 Flash Preview', ARRAY['chat', 'tools', 'vision']::text[], 'gemini-3-flash-preview', p.id, 1000000, false
+    INSERT INTO ai.models (slug, name, provider, description, capabilities, temperature, max_tokens, model_key, provider_id, context_window_tokens, is_active)
+    SELECT 'gemini-3-flash-preview', 'Gemini 3 Flash Preview', 'google', 'Google Gemini 3 Flash Preview model.', ARRAY['text', 'code', 'image']::ai.ai_capability_enum[], 0.7, 4096, 'gemini-3-flash-preview', p.id, 1000000, false
     FROM ai.providers p WHERE p.key = 'google'
-    ON CONFLICT (model_key) DO UPDATE
+    ON CONFLICT (slug) DO UPDATE
     SET name = EXCLUDED.name, capabilities = EXCLUDED.capabilities,
         provider_id = EXCLUDED.provider_id,
         context_window_tokens = EXCLUDED.context_window_tokens, is_active = false;
@@ -720,7 +720,7 @@ ON CONFLICT (id) DO NOTHING;
 -- 5.6  AGENT ADAPTERS
 -- =============================================================================
 
-INSERT INTO battles.agent_adapters (id, owner_lenser_id, name, adapter_type, config, is_active)
+INSERT INTO agents.agent_adapters (id, owner_lenser_id, name, adapter_type, config, is_active)
 VALUES
     (
         'fc200000-0000-0000-0000-000000000001',
