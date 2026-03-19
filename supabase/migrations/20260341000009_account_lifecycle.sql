@@ -4610,7 +4610,7 @@ BEGIN
   WHERE
     p.status              = 'active'
     AND p.deletion_requested_at IS NULL
-    AND p.onboarding_step = 2
+    AND p.onboarding_step >= 1
     AND p.visibility      = 'public'
     AND (p_type IS NULL OR p.type = p_type::lensers.lenser_type)
   ORDER BY p.created_at DESC
