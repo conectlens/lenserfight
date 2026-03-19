@@ -481,10 +481,11 @@ export class SupabaseThreadsRepository implements ThreadsRepositoryPort {
       thread_id: threadId,
       content,
       parent_reply_id: parentReplyId ?? null,
-    }).select('id').single()
+    }).select('id, lenser_id').single()
 
     if (error) this.handleError(error)
     const replyId = replyInsertData.id
+    const resolvedLenserId = replyInsertData.lenser_id || _lenserId
 
     const { data: replyView, error: viewError } = await supabase
       .from('vw_content_thread_replies_public')
@@ -495,12 +496,15 @@ export class SupabaseThreadsRepository implements ThreadsRepositoryPort {
     if (viewError) this.handleError(viewError)
 
     if (!replyView) {
+      const authorProfile = resolvedLenserId ? await this.getProfileById(resolvedLenserId) : null
       return {
         id: replyId,
         thread_id: threadId,
+        lenser_id: resolvedLenserId,
         content,
         parent_reply_id: parentReplyId || null,
         created_at: new Date().toISOString(),
+        author_profile: authorProfile,
       } as unknown as ThreadReplyRecord
     }
 
