@@ -82,12 +82,17 @@ export class SupabaseThreadsRepository implements ThreadsRepositoryPort {
   }
 
   private async getProfileById(lenserId: string): Promise<AuthorProfile> {
-    const { data: profile } = await supabase
+    const { data: profile, error } = await supabase
       .schema('lensers')
       .from('profiles')
       .select('id, handle, display_name, avatar_url')
       .eq('id', lenserId)
       .maybeSingle()
+
+    if (error) {
+      // RLS may block anon access to private profiles — degrade gracefully
+      return this.mapProfileToAuthor(null, lenserId)
+    }
 
     return this.mapProfileToAuthor(profile as Partial<AuthorProfile> | null, lenserId)
   }
