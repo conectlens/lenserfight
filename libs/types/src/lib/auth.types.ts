@@ -33,8 +33,9 @@ export interface AuthState {
 }
 
 export interface AuthProfileGate {
-  kind: 'active' | 'new' | 'recoverable' | 'deleted'
+  kind: 'active' | 'new' | 'onboarding' | 'recoverable' | 'deleted'
   status?: LenserAccountStatus
+  onboardingStep?: number
   deletionDeadlineAt?: string | null
 }
 
