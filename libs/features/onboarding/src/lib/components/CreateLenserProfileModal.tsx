@@ -11,14 +11,18 @@ import { InputField } from '@lenserfight/features/auth'
 import { CreateLenserDTO, Lenser } from '@lenserfight/types'
 import { storage } from '@lenserfight/utils/storage'
 
+const AUTH_PROFILE_GATE_QUERY_KEY = ['lenser', 'auth-profile-gate'] as const
+
 interface CreateLenserProfileModalProps {
   onClose: () => void
   onComplete?: () => void
+  requireCompletion?: boolean
 }
 
 export const CreateLenserProfileModal: React.FC<CreateLenserProfileModalProps> = ({
   onClose,
   onComplete,
+  requireCompletion = false,
 }) => {
   const { isAuthenticated, isLoading: authLoading } = useAuth()
   const queryClient = useQueryClient()
@@ -55,6 +59,8 @@ export const CreateLenserProfileModal: React.FC<CreateLenserProfileModalProps> =
   })
 
   const hasLenser = !!lenser
+  const onboardingStep = lenser?.onboarding_step ?? 0
+  const hasCompletedOnboarding = onboardingStep >= 2
   const isLoading = authLoading || lenserLoading
 
   // Security redirect: only authenticated users without a profile reach this
@@ -65,11 +71,19 @@ export const CreateLenserProfileModal: React.FC<CreateLenserProfileModalProps> =
       const returnUrl = encodeURIComponent(window.location.href)
       window.location.href = `${authAppUrl}/login?return_url=${returnUrl}`
       onClose()
-    } else if (hasLenser && currentStep === 0) {
-      // Profile already exists before we started; close
+    } else if (hasLenser && hasCompletedOnboarding) {
+      // Fully completed profiles should not remain in the modal.
       onClose()
     }
-  }, [authLoading, lenserLoading, isAuthenticated, hasLenser, currentStep, onClose])
+  }, [authLoading, lenserLoading, isAuthenticated, hasLenser, hasCompletedOnboarding, onClose])
+
+  useEffect(() => {
+    if (!hasLenser) return
+    if (hasCompletedOnboarding) return
+    if (onboardingStep >= 1 && currentStep === 0) {
+      setCurrentStep(1)
+    }
+  }, [currentStep, hasCompletedOnboarding, hasLenser, onboardingStep])
 
   // ── Handle uniqueness check (debounced) ─────────────────────────────
   useEffect(() => {
@@ -112,8 +126,7 @@ export const CreateLenserProfileModal: React.FC<CreateLenserProfileModalProps> =
   }, [handle])
 
   if (authLoading || isLoading || !isAuthenticated) return null
-  // Don't render if profile already existed and we haven't started step 1 yet
-  if (hasLenser && currentStep === 0) return null
+  if (hasLenser && hasCompletedOnboarding) return null
 
   // ── Step 0 submit: create profile ───────────────────────────────────
   const handleStep0Next = async () => {
@@ -128,8 +141,14 @@ export const CreateLenserProfileModal: React.FC<CreateLenserProfileModalProps> =
       // BEFORE any awaits — otherwise a render fires with hasLenser=true + currentStep=0
       // which triggers the "profile already exists" guard and closes the modal.
       queryClient.setQueryData(queryKeys.lenser.authenticated(), profile)
+      queryClient.setQueryData(AUTH_PROFILE_GATE_QUERY_KEY, {
+        kind: 'onboarding',
+        status: 'active',
+        onboardingStep: profile.onboarding_step ?? 1,
+      })
       storage.setItem('lenser_has_profile', 'true')
       setCurrentStep(1)
+      await queryClient.invalidateQueries({ queryKey: AUTH_PROFILE_GATE_QUERY_KEY })
       await queryClient.invalidateQueries({ queryKey: queryKeys.waitingList.status() })
     } catch (err: any) {
       setSubmitError(err.message || 'Failed to create profile')
@@ -149,6 +168,11 @@ export const CreateLenserProfileModal: React.FC<CreateLenserProfileModalProps> =
         onboarding_completed_at: new Date().toISOString(),
       })
       queryClient.setQueryData(queryKeys.lenser.authenticated(), updated)
+      queryClient.setQueryData(AUTH_PROFILE_GATE_QUERY_KEY, {
+        kind: 'active',
+        status: 'active',
+      })
+      await queryClient.invalidateQueries({ queryKey: AUTH_PROFILE_GATE_QUERY_KEY })
       ;(onComplete ?? onClose)()
     } catch (err: any) {
       setSubmitError(err?.message || 'Failed to save preferences. Please try again.')
@@ -158,7 +182,12 @@ export const CreateLenserProfileModal: React.FC<CreateLenserProfileModalProps> =
   }
 
   return (
-    <Modal isOpen={true} canClose={true} onClose={onClose} title="Complete Your Profile">
+    <Modal
+      isOpen={true}
+      canClose={!requireCompletion}
+      onClose={onClose}
+      title="Complete Your Profile"
+    >
       <StepWizard
         steps={['Profile', 'Preferences']}
         currentStep={currentStep}
