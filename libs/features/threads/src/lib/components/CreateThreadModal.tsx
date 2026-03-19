@@ -7,11 +7,13 @@ import { Modal } from '@lenserfight/ui/modals'
 import { RichMentionInput, RichMentionInputHandle } from '@lenserfight/ui/forms'
 import { SelectField } from '@lenserfight/ui/forms'
 import { promptsService } from '@lenserfight/data/repositories'
-import { PromptTemplateViewModel } from '@lenserfight/types'
+import { tagService } from '@lenserfight/data/repositories'
+import { PromptTemplateViewModel, TagUsage } from '@lenserfight/types'
 import { Visibility } from '@lenserfight/types'
 import { useCreateThread } from '../hooks/useCreateThread'
 
 import { MentionAutocompleteList } from './MentionAutocompleteList'
+import { TagMentionAutocompleteList } from './TagMentionAutocompleteList'
 import { ThreadTagInput } from './ThreadTagInput'
 
 interface CreateThreadModalProps {
@@ -40,11 +42,20 @@ export const CreateThreadModal: React.FC<CreateThreadModalProps> = ({
   const [visibility, setVisibility] = useState<Visibility>('public')
 
   const editorRef = useRef<RichMentionInputHandle>(null)
+
+  // Prompt (@) mention state
   const [mentionQuery, setMentionQuery] = useState('')
   const [suggestions, setSuggestions] = useState<PromptTemplateViewModel[]>([])
   const [isMentioning, setIsMentioning] = useState(false)
   const [menuPos, setMenuPos] = useState({ top: 0, left: 0 })
   const [activeIndex, setActiveIndex] = useState(0)
+
+  // Tag (#) mention state
+  const [tagMentionQuery, setTagMentionQuery] = useState('')
+  const [tagSuggestions, setTagSuggestions] = useState<TagUsage[]>([])
+  const [isTagMentioning, setIsTagMentioning] = useState(false)
+  const [tagMenuPos, setTagMenuPos] = useState({ top: 0, left: 0 })
+  const [tagActiveIndex, setTagActiveIndex] = useState(0)
 
   useEffect(() => {
     if (isOpen) {
@@ -62,6 +73,7 @@ export const CreateThreadModal: React.FC<CreateThreadModalProps> = ({
     }
   }, [isOpen, initialData])
 
+  // Prompt mention suggestions
   useEffect(() => {
     if (!isMentioning || !mentionQuery) {
       setSuggestions([])
@@ -87,6 +99,33 @@ export const CreateThreadModal: React.FC<CreateThreadModalProps> = ({
       clearTimeout(timer)
     }
   }, [mentionQuery, isMentioning])
+
+  // Tag mention suggestions
+  useEffect(() => {
+    if (!isTagMentioning || !tagMentionQuery || tagMentionQuery.length < 1) {
+      setTagSuggestions([])
+      return
+    }
+
+    let cancelled = false
+
+    const timer = setTimeout(async () => {
+      try {
+        const results = await tagService.searchTags(tagMentionQuery)
+        if (!cancelled) {
+          setTagSuggestions(results)
+          setTagActiveIndex(0)
+        }
+      } catch (e) {
+        if (!cancelled) console.error(e)
+      }
+    }, 300)
+
+    return () => {
+      cancelled = true
+      clearTimeout(timer)
+    }
+  }, [tagMentionQuery, isTagMentioning])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -117,7 +156,35 @@ export const CreateThreadModal: React.FC<CreateThreadModalProps> = ({
     setSuggestions([])
   }
 
+  const handleTagSelect = (tag: TagUsage) => {
+    if (editorRef.current) {
+      editorRef.current.insertTag(tag)
+    }
+    setIsTagMentioning(false)
+    setTagSuggestions([])
+  }
+
   const handleKeyDown = (e: React.KeyboardEvent) => {
+    // Tag mention keyboard nav takes priority
+    if (isTagMentioning && tagSuggestions.length > 0) {
+      if (e.key === 'ArrowDown') {
+        e.preventDefault()
+        setTagActiveIndex((prev) => (prev + 1) % tagSuggestions.length)
+      } else if (e.key === 'ArrowUp') {
+        e.preventDefault()
+        setTagActiveIndex((prev) => (prev - 1 + tagSuggestions.length) % tagSuggestions.length)
+      } else if (e.key === 'Enter') {
+        e.preventDefault()
+        handleTagSelect(tagSuggestions[tagActiveIndex])
+      } else if (e.key === 'Escape') {
+        e.preventDefault()
+        setIsTagMentioning(false)
+        setTagSuggestions([])
+      }
+      return
+    }
+
+    // Prompt mention keyboard nav
     if (isMentioning && suggestions.length > 0) {
       if (e.key === 'ArrowDown') {
         e.preventDefault()
@@ -172,12 +239,27 @@ export const CreateThreadModal: React.FC<CreateThreadModalProps> = ({
                   setMentionQuery(query)
                   setMenuPos(coords)
                   setIsMentioning(true)
+                  // Close tag menu
+                  setIsTagMentioning(false)
+                  setTagSuggestions([])
                 }}
                 onMentionClose={() => {
                   setIsMentioning(false)
                   setSuggestions([])
                 }}
-                placeholder="What's on your mind? Type @ to link a prompt..."
+                onTagSearch={(query, coords) => {
+                  setTagMentionQuery(query)
+                  setTagMenuPos(coords)
+                  setIsTagMentioning(true)
+                  // Close prompt menu
+                  setIsMentioning(false)
+                  setSuggestions([])
+                }}
+                onTagClose={() => {
+                  setIsTagMentioning(false)
+                  setTagSuggestions([])
+                }}
+                placeholder="What's on your mind? Type @ to link a prompt, # to mention a tag..."
               />
 
               {isMentioning &&
@@ -189,6 +271,19 @@ export const CreateThreadModal: React.FC<CreateThreadModalProps> = ({
                     activeIndex={activeIndex}
                     position={menuPos}
                     onSelect={handleMentionSelect}
+                  />,
+                  document.body
+                )}
+
+              {isTagMentioning &&
+                tagSuggestions.length > 0 &&
+                createPortal(
+                  <TagMentionAutocompleteList
+                    visible={isTagMentioning}
+                    suggestions={tagSuggestions}
+                    activeIndex={tagActiveIndex}
+                    position={tagMenuPos}
+                    onSelect={handleTagSelect}
                   />,
                   document.body
                 )}
