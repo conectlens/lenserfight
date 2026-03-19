@@ -2,6 +2,7 @@ import {
   Language,
   Lenser,
   CreateLenserDTO,
+  AuthProfileGate,
   LenserActivityPoint,
   ActionRecord,
   NetworkUser,
@@ -46,6 +47,7 @@ export interface LenserRepositoryPort {
 
   getPublicLenserProfile(handle: string): Promise<LenserProfileDTO>
   getAuthenticatedLenser(): Promise<Lenser | null>
+  getAuthenticatedProfileGate(): Promise<AuthProfileGate>
 
   // Existing features
   getLenserActions(lenserId: string): Promise<ActionRecord[]>
@@ -95,6 +97,51 @@ export interface LenserRepositoryPort {
   scheduleAccountDeletion(): Promise<{ success: boolean; deadline?: string }>
   cancelDeletionOnLogin(): Promise<{ restored: boolean; from_status?: string }>
 }
+
+type AuthProfileGateRow = Pick<Lenser, 'status' | 'deletion_requested_at'> & {
+  deletion_deadline_at?: string | null
+}
+
+export const mapProfileToAuthProfileGate = (
+  profile: AuthProfileGateRow | null | undefined
+): AuthProfileGate => {
+  if (!profile) {
+    return { kind: 'new' }
+  }
+
+  if (profile.status === 'deleted') {
+    return {
+      kind: 'deleted',
+      status: profile.status,
+      deletionDeadlineAt: profile.deletion_deadline_at ?? null,
+    }
+  }
+
+  // A profile that is "active" but still carries deletion flags is in a stale
+  // recoverable state until login cleanup clears those flags.
+  if (profile.deletion_requested_at) {
+    return {
+      kind: 'recoverable',
+      status: profile.status,
+      deletionDeadlineAt: profile.deletion_deadline_at ?? null,
+    }
+  }
+
+  if (profile.status === 'active' && !profile.deletion_requested_at) {
+    return { kind: 'active', status: 'active' }
+  }
+
+  if (profile.status === 'pending_deletion' || profile.status === 'deactivated') {
+    return {
+      kind: 'recoverable',
+      status: profile.status,
+      deletionDeadlineAt: profile.deletion_deadline_at ?? null,
+    }
+  }
+
+  return { kind: 'deleted', status: profile.status, deletionDeadlineAt: profile.deletion_deadline_at ?? null }
+}
+
 export class SupabaseLenserRepository implements LenserRepositoryPort {
   async getPublicLenserProfile(handle: string): Promise<LenserProfileDTO> {
     const { data, error } = await supabase.rpc('fn_lensers_get_public_profile', {
@@ -134,6 +181,24 @@ export class SupabaseLenserRepository implements LenserRepositoryPort {
 
     if (error || !data) return null
     return data as Lenser
+  }
+
+  async getAuthenticatedProfileGate(): Promise<AuthProfileGate> {
+    const {
+      data: { session },
+    } = await supabase.auth.getSession()
+    const user = session?.user
+    if (!user) return { kind: 'new' }
+
+    const { data, error } = await supabase
+      .schema('lensers')
+      .from('profiles')
+      .select('status, deletion_requested_at, deletion_deadline_at')
+      .eq('user_id', user.id)
+      .maybeSingle()
+
+    if (error) throw error
+    return mapProfileToAuthProfileGate((data as AuthProfileGateRow | null) ?? null)
   }
 
   async createLenser(data: CreateLenserDTO): Promise<Lenser> {

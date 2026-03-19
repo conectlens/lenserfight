@@ -8,6 +8,8 @@ import {
 } from '@lenserfight/features/auth'
 import { OAuthCallbackPage } from '../pages/OAuthCallbackPage'
 import { OnboardingPage } from '../pages/OnboardingPage'
+import { AccountRecoveryPage } from '../pages/AccountRecoveryPage'
+import { AccountUnavailablePage } from '../pages/AccountUnavailablePage'
 import { GatewayGuard } from '../components/GatewayGuard'
 import { OnboardingGuard } from '../components/OnboardingGuard'
 
@@ -30,6 +32,8 @@ export const AuthRouter: React.FC = () => {
        */}
       <Routes>
         <Route path="/callback" element={<OAuthCallbackPage />} />
+        <Route path="/account-recovery" element={<AccountRecoveryPage />} />
+        <Route path="/account-unavailable" element={<AccountUnavailablePage />} />
         <Route
           path="/onboarding"
           element={

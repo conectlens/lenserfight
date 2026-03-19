@@ -2,7 +2,8 @@ import React, { useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '@lenserfight/data/supabase'
 import { LoadingOverlay } from '@lenserfight/ui/components'
-import { sanitizeReturnUrl } from '../utils/validateReturnUrl'
+import { getPostOAuthRedirectUrl } from '../utils/authRedirects'
+import { replaceLocationSafely, sanitizeReturnUrl } from '../utils/validateReturnUrl'
 
 const RETURN_URL_KEY = 'auth_return_url'
 
@@ -17,6 +18,9 @@ const RETURN_URL_KEY = 'auth_return_url'
  * Fix: subscribe to `onAuthStateChange` and wait for the `SIGNED_IN` event.
  * As a belt-and-suspenders measure we also call getSession() in case the code
  * exchange already completed before the component mounted.
+ *
+ * After OAuth succeeds we return to apps/auth first so the same profile-gate
+ * logic runs for OAuth and password sign-ins.
  */
 export const OAuthCallbackPage: React.FC = () => {
   const navigate = useNavigate()
@@ -29,7 +33,7 @@ export const OAuthCallbackPage: React.FC = () => {
       redirected = true
       const returnUrl = sanitizeReturnUrl(sessionStorage.getItem(RETURN_URL_KEY))
       sessionStorage.removeItem(RETURN_URL_KEY)
-      window.location.replace(returnUrl)
+      replaceLocationSafely(getPostOAuthRedirectUrl(returnUrl))
     }
 
     // 1. Subscribe first so we don't miss the SIGNED_IN event

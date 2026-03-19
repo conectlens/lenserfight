@@ -1,6 +1,6 @@
 import React from 'react'
 import { CreateLenserProfileModal } from '@lenserfight/features/onboarding'
-import { sanitizeReturnUrl } from '../utils/validateReturnUrl'
+import { replaceLocationSafely, sanitizeReturnUrl } from '../utils/validateReturnUrl'
 
 /**
  * OnboardingPage hosts the multi-step profile creation wizard in apps/auth.
@@ -11,7 +11,7 @@ export const OnboardingPage: React.FC = () => {
   const params = new URLSearchParams(window.location.search)
   const returnUrl = sanitizeReturnUrl(params.get('return_url'))
 
-  const handleDone = () => window.location.replace(returnUrl)
+  const handleDone = () => replaceLocationSafely(returnUrl)
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-950 flex items-center justify-center p-4">
