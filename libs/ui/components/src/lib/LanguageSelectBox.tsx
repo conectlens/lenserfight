@@ -1,5 +1,5 @@
-import React, { useState, useRef, useEffect, useCallback } from 'react'
 import { Language } from '@lenserfight/types'
+import React, { useState, useRef, useEffect, useCallback } from 'react'
 
 interface LanguageSelectBoxProps {
   value: string
@@ -18,6 +18,7 @@ export const LanguageSelectBox: React.FC<LanguageSelectBoxProps> = ({
 }) => {
   const [isOpen, setIsOpen] = useState(false)
   const [focusedIndex, setFocusedIndex] = useState<number>(-1)
+  const [openDirection, setOpenDirection] = useState<'up' | 'down'>('down')
   const containerRef = useRef<HTMLDivElement>(null)
   const listRef = useRef<HTMLUListElement>(null)
 
@@ -46,6 +47,26 @@ export const LanguageSelectBox: React.FC<LanguageSelectBoxProps> = ({
       item?.scrollIntoView({ block: 'nearest' })
     }
   }, [focusedIndex])
+
+  useEffect(() => {
+    if (!isOpen || !containerRef.current) return
+
+    const updateDirection = () => {
+      const rect = containerRef.current?.getBoundingClientRect()
+      if (!rect) return
+
+      const estimatedMenuHeight = Math.min(languages.length * 46, 224)
+      const spaceBelow = window.innerHeight - rect.bottom
+      const spaceAbove = rect.top
+
+      setOpenDirection(spaceBelow < estimatedMenuHeight + 12 && spaceAbove > spaceBelow ? 'up' : 'down')
+    }
+
+    updateDirection()
+    window.addEventListener('resize', updateDirection)
+
+    return () => window.removeEventListener('resize', updateDirection)
+  }, [isOpen, languages.length])
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (!isOpen) {
@@ -122,9 +143,10 @@ export const LanguageSelectBox: React.FC<LanguageSelectBoxProps> = ({
           ref={listRef}
           role="listbox"
           className={[
-            'absolute z-50 mt-1 w-full max-h-56 overflow-y-auto',
+            'absolute z-50 w-full max-h-56 overflow-y-auto',
             'bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700',
             'rounded-xl shadow-lg py-1 text-sm',
+            openDirection === 'up' ? 'bottom-full mb-1' : 'top-full mt-1',
           ].join(' ')}
         >
           {languages.map((lang, index) => {

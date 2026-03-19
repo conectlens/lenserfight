@@ -1,15 +1,14 @@
-import { Check, X, Loader2 } from 'lucide-react'
-import { useQuery, useQueryClient } from '@tanstack/react-query'
-import React, { useState, useEffect } from 'react'
-
 import { queryKeys } from '@lenserfight/data/cache'
 import { lenserService } from '@lenserfight/data/repositories'
-import { LanguageSelectBox, StepWizard } from '@lenserfight/ui/components'
-import { Modal } from '@lenserfight/ui/modals'
 import { useAuth } from '@lenserfight/features/auth'
 import { InputField } from '@lenserfight/features/auth'
 import { CreateLenserDTO, Lenser } from '@lenserfight/types'
+import { LanguageSelectBox, StepWizard } from '@lenserfight/ui/components'
+import { Modal } from '@lenserfight/ui/modals'
 import { storage } from '@lenserfight/utils/storage'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
+import { Check, X, Loader2 } from 'lucide-react'
+import React, { useState, useEffect } from 'react'
 
 const AUTH_PROFILE_GATE_QUERY_KEY = ['lenser', 'auth-profile-gate'] as const
 
@@ -18,6 +17,9 @@ interface CreateLenserProfileModalProps {
   onComplete?: () => void
   requireCompletion?: boolean
 }
+
+const getErrorMessage = (error: unknown, fallback: string) =>
+  error instanceof Error && error.message ? error.message : fallback
 
 export const CreateLenserProfileModal: React.FC<CreateLenserProfileModalProps> = ({
   onClose,
@@ -150,8 +152,8 @@ export const CreateLenserProfileModal: React.FC<CreateLenserProfileModalProps> =
       setCurrentStep(1)
       await queryClient.invalidateQueries({ queryKey: AUTH_PROFILE_GATE_QUERY_KEY })
       await queryClient.invalidateQueries({ queryKey: queryKeys.waitingList.status() })
-    } catch (err: any) {
-      setSubmitError(err.message || 'Failed to create profile')
+    } catch (err: unknown) {
+      setSubmitError(getErrorMessage(err, 'Failed to create profile'))
     } finally {
       setIsSubmittingStep0(false)
     }
@@ -174,8 +176,8 @@ export const CreateLenserProfileModal: React.FC<CreateLenserProfileModalProps> =
       })
       await queryClient.invalidateQueries({ queryKey: AUTH_PROFILE_GATE_QUERY_KEY })
       ;(onComplete ?? onClose)()
-    } catch (err: any) {
-      setSubmitError(err?.message || 'Failed to save preferences. Please try again.')
+    } catch (err: unknown) {
+      setSubmitError(getErrorMessage(err, 'Failed to save preferences. Please try again.'))
     } finally {
       setIsCompletingStep1(false)
     }
@@ -187,6 +189,8 @@ export const CreateLenserProfileModal: React.FC<CreateLenserProfileModalProps> =
       canClose={!requireCompletion}
       onClose={onClose}
       title="Complete Your Profile"
+      panelClassName="max-w-xl sm:max-w-2xl"
+      contentClassName="px-4 py-5 sm:px-6 sm:py-6"
     >
       <StepWizard
         steps={['Profile', 'Preferences']}
