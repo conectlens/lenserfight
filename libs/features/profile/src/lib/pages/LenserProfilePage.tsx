@@ -8,6 +8,7 @@ import { ConfirmModal } from '@lenserfight/ui/modals'
 import { SEOHead } from '@lenserfight/ui/components'
 import { FEATURES } from '@lenserfight/utils/env'
 import { useLenser } from '@lenserfight/features/profile'
+import { useAuth } from '@lenserfight/features/auth'
 import { useShareContext } from '@lenserfight/features/share'
 import { useAnalytics } from '@lenserfight/infra/analytics'
 import { queryKeys } from '@lenserfight/data/cache'
@@ -70,17 +71,18 @@ export const LenserProfilePage: React.FC = () => {
   const { handle, tab: routeTab } = useParams<{ handle: string; tab?: string }>()
   const navigate = useNavigate()
   const { lenser: currentUser } = useLenser() // The currently authenticated user
+  const { user: authUser, isLoading: isAuthLoading } = useAuth()
   const { setShareConfig } = useShareContext()
   const { trackView } = useAnalytics()
   const queryClient = useQueryClient()
 
   const { data: accessPayload = null, isLoading: loadingProfile } = useQuery<ProfileAccessPayload | null>({
-    queryKey: queryKeys.lenser.profile(handle!),
+    queryKey: [...queryKeys.lenser.profile(handle!), authUser?.id ?? 'anonymous'],
     queryFn: async () => {
       const result = await lenserService.getProfile(handle!)
       return result ?? null
     },
-    enabled: !!handle,
+    enabled: !!handle && !isAuthLoading,
   })
 
   const routeState = accessPayload?.route_state ?? null
@@ -179,7 +181,7 @@ export const LenserProfilePage: React.FC = () => {
       setShareConfig({
         title: viewedProfile.display_name,
         resourceType: 'profile',
-        resourceId: viewedProfile.id,
+        resourceId: viewedProfile.handle,
         slug: viewedProfile.handle,
       })
     }
@@ -282,8 +284,10 @@ export const LenserProfilePage: React.FC = () => {
     navigate(`/lenser/${handle}/${code}`)
   }
 
-  const handleProfileUpdate = (updatedLenser: Lenser) => {
-    queryClient.setQueryData(queryKeys.lenser.profile(handle!), updatedLenser)
+  const handleProfileUpdate = (_updatedLenser: Lenser) => {
+    queryClient.invalidateQueries({
+      queryKey: [...queryKeys.lenser.profile(handle!), authUser?.id ?? 'anonymous'],
+    })
   }
 
   const handleEditPrompt = (id: string) => {

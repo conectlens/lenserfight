@@ -1,4 +1,4 @@
-import { Sparkles, HelpCircle } from 'lucide-react'
+import { Sparkles, HelpCircle, Hash } from 'lucide-react'
 import React, { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { mentionService, ResolvedSegment } from '@lenserfight/data/repositories'
@@ -34,7 +34,17 @@ export const MentionRenderer: React.FC<MentionRendererProps> = ({
             id: s.id,
             entityType: s.entityType,
             isValid: true,
-            link: '', // Not used in simple badge
+            link: '',
+          } as ResolvedSegment
+        }
+        if (s.type === 'tag') {
+          return {
+            type: 'tag',
+            content: 'Tag', // generic label — name unknown without fetch
+            id: s.id,
+            entityType: 'Tag',
+            isValid: true,
+            link: `/len/${s.id}`,
           } as ResolvedSegment
         }
         return { type: 'text', content: s.content } as ResolvedSegment
@@ -138,6 +148,43 @@ export const MentionRenderer: React.FC<MentionRendererProps> = ({
               <HelpCircle size={12} />
               {displayContent}
             </span>
+          )
+        }
+
+        if (segment.type === 'tag') {
+          const tagLabel = segment.content || segment.id || 'tag'
+
+          if (plainText) {
+            return (
+              <span key={index} className="font-medium text-teal-700 dark:text-teal-400">
+                #{tagLabel}
+              </span>
+            )
+          }
+
+          if (segment.link) {
+            return (
+              <Link
+                key={index}
+                to={segment.link}
+                className="inline-flex items-center gap-1 mx-0.5 px-1.5 py-0.5 rounded-md bg-teal-100 dark:bg-teal-900/40 text-teal-800 dark:text-teal-300 hover:bg-teal-200 dark:hover:bg-teal-800/50 font-medium text-sm transition-colors align-baseline no-underline"
+              >
+                <Hash size={11} />
+                {tagLabel}
+              </Link>
+            )
+          }
+
+          // Fallback: tag couldn't be resolved by name — link by id
+          return (
+            <Link
+              key={index}
+              to={`/len/${segment.id}`}
+              className="inline-flex items-center gap-1 mx-0.5 px-1.5 py-0.5 rounded-md bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400 text-sm align-baseline hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors no-underline"
+            >
+              <Hash size={11} />
+              {tagLabel}
+            </Link>
           )
         }
 
