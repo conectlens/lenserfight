@@ -409,9 +409,6 @@ export class SupabasePromptsRepository implements PromptsRepositoryPort {
 
     if (error) this.handleError(error)
     if (!basePrompt) return null
-    if (basePrompt.visibility === 'private' && (!viewerLenserId || basePrompt.lenser_id !== viewerLenserId)) {
-      return null
-    }
 
     const { data: translation, error: translationError } = await supabase
       .schema('content')
@@ -446,7 +443,7 @@ export class SupabasePromptsRepository implements PromptsRepositoryPort {
       .from('vw_prompt_templates_public')
       .select('tags')
       .eq('id', templateId)
-      .single()
+      .maybeSingle()
 
     if (error) return []
     return (data?.tags as TagRecord[]) || []
