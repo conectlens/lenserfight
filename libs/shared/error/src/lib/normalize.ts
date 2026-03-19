@@ -13,6 +13,16 @@ function isUnauthorized(error: unknown): boolean {
   // HTTP 401 or 403
   if (e['status'] === 401 || e['status'] === 403) return true
 
+  // PostgreSQL RAISE EXCEPTION (P0001) — only treat as unauthorized when message is auth-related
+  if (e['code'] === 'P0001') {
+    const p0001msg = typeof e['message'] === 'string' ? e['message'].toLowerCase() : ''
+    return (
+      p0001msg.includes('authentication required') ||
+      p0001msg.includes('not authenticated') ||
+      p0001msg.includes('profile not found')
+    )
+  }
+
   // Message-based fallback — covers JWT errors and RLS "permission denied for view/table"
   const msg = typeof e['message'] === 'string' ? e['message'].toLowerCase() : ''
   return (
@@ -33,9 +43,14 @@ function isNetworkError(error: unknown): boolean {
 
 export function normalizeError(error: unknown): AppError {
   if (isUnauthorized(error)) {
+    const originalMsg =
+      error && typeof error === 'object' ? (error as Record<string, unknown>)['message'] : undefined
     return {
       kind: 'unauthorized',
-      message: 'You are not authorized to view this content.',
+      message:
+        typeof originalMsg === 'string' && originalMsg.trim()
+          ? originalMsg
+          : 'You are not authorized to view this content.',
       originalError: error,
     } satisfies UnauthorizedError
   }

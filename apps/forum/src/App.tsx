@@ -8,7 +8,7 @@ import {
   ScrollToTop,
 } from '@lenserfight/ui/layout'
 import { ThemeProvider } from '@lenserfight/ui/theme'
-import { UIProvider } from '@lenserfight/ui/components'
+import { UIProvider, AppToaster } from '@lenserfight/ui/components'
 import { ShareProvider } from '@lenserfight/features/share'
 import { ErrorProvider, GlobalErrorRenderer, ErrorClearer } from '@lenserfight/shared/error'
 import {
@@ -95,6 +95,7 @@ const App: React.FC = () => {
                         <ScrollToTop />
                         <GlobalAnalytics />
                         <ErrorClearer />
+                        <AppToaster />
                         <GlobalErrorRenderer>
                         <Routes>
                         {/* Short Link Redirect Route (No Layout) */}
