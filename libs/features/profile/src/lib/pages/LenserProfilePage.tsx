@@ -284,8 +284,10 @@ export const LenserProfilePage: React.FC = () => {
     navigate(`/lenser/${handle}/${code}`)
   }
 
-  const handleProfileUpdate = (updatedLenser: Lenser) => {
-    queryClient.setQueryData(queryKeys.lenser.profile(handle!), updatedLenser)
+  const handleProfileUpdate = (_updatedLenser: Lenser) => {
+    queryClient.invalidateQueries({
+      queryKey: [...queryKeys.lenser.profile(handle!), authUser?.id ?? 'anonymous'],
+    })
   }
 
   const handleEditPrompt = (id: string) => {
