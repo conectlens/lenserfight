@@ -1,3 +1,5 @@
+import type { LenserAccountStatus } from './lenser.types'
+
 export interface UserMetadata {
   display_name?: string
   preferred_language?: string
@@ -28,6 +30,12 @@ export interface AuthState {
   isAuthenticated: boolean
   isLoading: boolean
   error: string | null
+}
+
+export interface AuthProfileGate {
+  kind: 'active' | 'new' | 'recoverable' | 'deleted'
+  status?: LenserAccountStatus
+  deletionDeadlineAt?: string | null
 }
 
 export type AuthStateChangeCallback = (user: User | null) => void
