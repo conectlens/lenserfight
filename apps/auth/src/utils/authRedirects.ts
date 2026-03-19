@@ -9,6 +9,7 @@ export function getAuthGateRedirectUrl(gate: AuthProfileGate, returnUrl: string)
     case 'active':
       return returnUrl
     case 'new':
+    case 'onboarding':
       return `/onboarding?return_url=${encodeURIComponent(returnUrl)}`
     case 'recoverable':
       return `/account-recovery?return_url=${encodeURIComponent(returnUrl)}`
