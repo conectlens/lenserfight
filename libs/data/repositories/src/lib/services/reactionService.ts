@@ -72,7 +72,8 @@ export const reactionService = {
     offset = 0,
     limit = 20
   ): Promise<ActivityFeedItem[]> => {
-    const reactions = await reactionRepo.getLenserHistory(lenserHandle, offset, limit)
+    const result = await reactionRepo.getLenserHistory(lenserHandle, offset, limit)
+    const reactions = result.data ?? []
 
     const enriched = await Promise.all(
       reactions.map(async (r) => {

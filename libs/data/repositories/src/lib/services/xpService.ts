@@ -1,8 +1,9 @@
-import { SupabaseLenserRepository } from '../repositories/lenserRepository'
 import { SupabaseXPRepository } from '../repositories/xpRepository'
 import {
   XPSummary,
   XPEvent,
+  XPApp,
+  XPContribution,
   LenserBadge,
   LeaderboardEntry,
   LeaderboardTimeframe,
@@ -10,11 +11,10 @@ import {
 } from '@lenserfight/types'
 
 const repo = new SupabaseXPRepository()
-const lenserRepo = new SupabaseLenserRepository()
 
 export const xpService = {
-  getStats: async (lenserId: string): Promise<XPSummary | null> => {
-    return repo.getXPSummary(lenserId)
+  getStats: async (lenserId: string, appId?: string): Promise<XPSummary | null> => {
+    return repo.getXPSummary(lenserId, appId)
   },
 
   getHistory: async (lenserId: string): Promise<XPEvent[]> => {
@@ -32,5 +32,13 @@ export const xpService = {
     offset = 0
   ): Promise<{ list: LeaderboardEntry[]; userEntry?: LeaderboardEntry | null }> => {
     return repo.getLeaderboard(timeframe, scope, limit, offset)
+  },
+
+  getApps: async (): Promise<XPApp[]> => {
+    return repo.getApps()
+  },
+
+  getContributions: async (lenserId: string): Promise<XPContribution[]> => {
+    return repo.getContributions(lenserId)
   },
 }

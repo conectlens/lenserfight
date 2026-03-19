@@ -4,7 +4,9 @@ import { supabase } from '@lenserfight/data/supabase'
 export interface TagRepositoryPort {
   getAllTagsWithCounts(limit?: number): Promise<TagUsage[]>
   findBySlug(slug: string): Promise<TagDTO | null>
+  findById(id: string): Promise<TagDTO | null>
   createTag(name: string, slug: string): Promise<TagDTO>
+  searchTags(query: string, lang?: string, limit?: number): Promise<TagUsage[]>
   recordActivity(event: TagActivityEventDTO): Promise<void>
   recordBatchActivity(events: TagActivityEventDTO[]): Promise<void>
 }
@@ -23,16 +25,31 @@ export class SupabaseTagRepository implements TagRepositoryPort {
    * FIND TAG BY SLUG
    * Uses REST API on secure public view
    */
-  async findBySlug(slug: string): Promise<TagDTO | null> {
+  async findBySlug(slug: string): Promise<(TagDTO & { total_usage?: number; trend_score_7d?: number; created_at?: string }) | null> {
     const { data, error } = await supabase
       .from('vw_tags_public_stats')
-      .select('id, name, slug, visibility')
+      .select('id, name, slug, visibility, total_usage, trend_score_7d, created_at')
       .eq('slug', slug)
       .maybeSingle()
 
     if (error) this.handleError(error)
 
-    return data as TagDTO | null
+    return data as (TagDTO & { total_usage?: number; trend_score_7d?: number; created_at?: string }) | null
+  }
+
+  /**
+   * FIND TAG BY ID
+   */
+  async findById(id: string): Promise<(TagDTO & { total_usage?: number; trend_score_7d?: number; created_at?: string }) | null> {
+    const { data, error } = await supabase
+      .from('vw_tags_public_stats')
+      .select('id, name, slug, visibility, total_usage, trend_score_7d, created_at')
+      .eq('id', id)
+      .maybeSingle()
+
+    if (error) this.handleError(error)
+
+    return data as (TagDTO & { total_usage?: number; trend_score_7d?: number; created_at?: string }) | null
   }
 
   /**
@@ -89,6 +106,30 @@ export class SupabaseTagRepository implements TagRepositoryPort {
       created_at: tag.created_at,
       count: Number(tag.total_usage ?? 0),
       trendingScore: Number(tag.trend_score_7d ?? 0),
+    })) as TagUsage[]
+  }
+
+  /**
+   * SEARCH TAGS BY NAME/SLUG
+   * Uses fn_tags_search RPC. Results sorted by: language match → exact match → popularity.
+   */
+  async searchTags(query: string, lang = 'en', limit = 5): Promise<TagUsage[]> {
+    const { data, error } = await supabase.rpc('fn_tags_search', {
+      p_query: query,
+      p_lang: lang,
+      p_limit: limit,
+    })
+
+    if (error) this.handleError(error)
+
+    return (data ?? []).map((tag: any) => ({
+      id: tag.id,
+      name: tag.name,
+      slug: tag.slug,
+      visibility: tag.visibility ?? 'public',
+      created_at: new Date().toISOString(),
+      count: Number(tag.total_usage ?? 0),
+      trendingScore: 0,
     })) as TagUsage[]
   }
 

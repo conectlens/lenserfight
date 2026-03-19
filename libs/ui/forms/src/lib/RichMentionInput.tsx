@@ -1,24 +1,28 @@
 import React, { useRef, useEffect } from 'react'
 import { mentionService } from '@lenserfight/data/repositories'
-import { PromptTemplateViewModel } from '@lenserfight/types'
+import { PromptTemplateViewModel, TagUsage } from '@lenserfight/types'
 
 interface RichMentionInputProps {
   value: string // The tokenized value from parent
   onChange: (value: string) => void
   onMentionSearch: (query: string, coords: { top: number; left: number }) => void
   onMentionClose: () => void
+  onTagSearch?: (query: string, coords: { top: number; left: number }) => void
+  onTagClose?: () => void
   placeholder?: string
 }
 
 export interface RichMentionInputHandle {
   insertMention: (prompt: PromptTemplateViewModel) => void
+  insertTag: (tag: TagUsage) => void
   focus: () => void
 }
 
 export const RichMentionInput = React.forwardRef<RichMentionInputHandle, RichMentionInputProps>(
-  ({ value, onChange, onMentionSearch, onMentionClose, placeholder }, ref) => {
+  ({ value, onChange, onMentionSearch, onMentionClose, onTagSearch, onTagClose, placeholder }, ref) => {
     const containerRef = useRef<HTMLDivElement>(null)
     const isTypingMention = useRef(false)
+    const isTypingTag = useRef(false)
     // Initialize with empty string so that if initial value is provided, hydration triggers
     const lastKnownValue = useRef('')
 
@@ -63,12 +67,8 @@ export const RichMentionInput = React.forwardRef<RichMentionInputHandle, RichMen
       }
 
       // Hydration Case: Container is empty (initial mount or manual clear) and we have a value.
-      // We check textContent to see if visual DOM is empty.
       const isContainerEmpty = !containerRef.current.textContent?.trim()
 
-      // If container is empty but value is set, we need to hydrate.
-      // We also check if value differs from lastKnownValue to avoid re-hydrating during typing loops
-      // (though isContainerEmpty usually protects against that unless user typed spaces only).
       if (isContainerEmpty && value !== lastKnownValue.current) {
         hydrateContent(value)
       }
@@ -87,12 +87,10 @@ export const RichMentionInput = React.forwardRef<RichMentionInputHandle, RichMen
               containerRef.current?.appendChild(document.createTextNode(segment.content))
             }
           } else if (segment.type === 'mention' && segment.id) {
-            const chip = document.createElement('span')
-            chip.contentEditable = 'false'
-            chip.className =
-              'inline-flex items-center px-1.5 py-0.5 rounded mx-1 bg-primary/20 text-primary-900 font-medium text-sm select-none align-middle'
-            chip.setAttribute('data-mention-id', segment.id)
-            chip.textContent = segment.content || 'Unknown Prompt'
+            const chip = createPromptChip(segment.id, segment.content || 'Unknown Prompt')
+            containerRef.current?.appendChild(chip)
+          } else if (segment.type === 'tag' && segment.id) {
+            const chip = createTagChip(segment.id, segment.content || segment.id)
             containerRef.current?.appendChild(chip)
           }
         })
@@ -107,31 +105,46 @@ export const RichMentionInput = React.forwardRef<RichMentionInputHandle, RichMen
       }
     }
 
+    const createPromptChip = (id: string, label: string): HTMLSpanElement => {
+      const chip = document.createElement('span')
+      chip.contentEditable = 'false'
+      chip.className =
+        'inline-flex items-center px-1.5 py-0.5 rounded mx-1 bg-primary/20 text-primary-900 font-medium text-sm select-none align-middle'
+      chip.setAttribute('data-mention-id', id)
+      chip.textContent = label
+      return chip
+    }
+
+    const createTagChip = (id: string, label: string): HTMLSpanElement => {
+      const chip = document.createElement('span')
+      chip.contentEditable = 'false'
+      chip.className =
+        'inline-flex items-center px-1.5 py-0.5 rounded mx-1 bg-teal-100 dark:bg-teal-900/40 text-teal-800 dark:text-teal-300 font-medium text-sm select-none align-middle'
+      chip.setAttribute('data-tag-id', id)
+      chip.textContent = `#${label}`
+      return chip
+    }
+
     const handleInput = () => {
       if (!containerRef.current) return
 
-      // Check for @ trigger
       const selection = window.getSelection()
       if (selection && selection.rangeCount > 0) {
         const range = selection.getRangeAt(0)
         const textNode = range.startContainer
 
-        // We only support mentions in text nodes for simplicity
         if (textNode.nodeType === Node.TEXT_NODE) {
           const text = textNode.textContent || ''
           const caretPos = range.startOffset
 
-          // Find last @ before caret
+          // Check for @ trigger (prompt mention)
           const lastAt = text.lastIndexOf('@', caretPos - 1)
-
           if (lastAt !== -1) {
-            // Check if valid mention start (start of line or preceded by space)
             const isStart = lastAt === 0
             const isPrecededBySpace = !isStart && /[\s\u00A0]/.test(text[lastAt - 1])
 
             if (isStart || isPrecededBySpace) {
               const query = text.substring(lastAt + 1, caretPos)
-              // No spaces allowed in search query to prevent menu getting stuck
               if (!/\s/.test(query)) {
                 const coords = getCaretCoordinates()
                 onMentionSearch(query, {
@@ -139,6 +152,13 @@ export const RichMentionInput = React.forwardRef<RichMentionInputHandle, RichMen
                   left: coords.left,
                 })
                 isTypingMention.current = true
+                // Close tag menu if open
+                if (isTypingTag.current) {
+                  onTagClose?.()
+                  isTypingTag.current = false
+                }
+                serializeContent()
+                return
               } else {
                 onMentionClose()
                 isTypingMention.current = false
@@ -150,6 +170,38 @@ export const RichMentionInput = React.forwardRef<RichMentionInputHandle, RichMen
           } else {
             onMentionClose()
             isTypingMention.current = false
+          }
+
+          // Check for # trigger (tag mention)
+          if (onTagSearch) {
+            const lastHash = text.lastIndexOf('#', caretPos - 1)
+            if (lastHash !== -1) {
+              const isStart = lastHash === 0
+              const isPrecededBySpace = !isStart && /[\s\u00A0]/.test(text[lastHash - 1])
+
+              if (isStart || isPrecededBySpace) {
+                const query = text.substring(lastHash + 1, caretPos)
+                if (!/\s/.test(query) && query.length >= 1) {
+                  const coords = getCaretCoordinates()
+                  onTagSearch(query, {
+                    top: coords.top + (coords.height || 20),
+                    left: coords.left,
+                  })
+                  isTypingTag.current = true
+                  serializeContent()
+                  return
+                } else {
+                  onTagClose?.()
+                  isTypingTag.current = false
+                }
+              } else {
+                onTagClose?.()
+                isTypingTag.current = false
+              }
+            } else {
+              onTagClose?.()
+              isTypingTag.current = false
+            }
           }
         }
       }
@@ -163,7 +215,6 @@ export const RichMentionInput = React.forwardRef<RichMentionInputHandle, RichMen
 
       let text = ''
 
-      // Helper to walk nodes
       const walk = (node: Node) => {
         if (node.nodeType === Node.TEXT_NODE) {
           text += node.textContent
@@ -172,6 +223,9 @@ export const RichMentionInput = React.forwardRef<RichMentionInputHandle, RichMen
           if (el.hasAttribute('data-mention-id')) {
             const id = el.getAttribute('data-mention-id')
             text += `@[Prompt:${id}]`
+          } else if (el.hasAttribute('data-tag-id')) {
+            const id = el.getAttribute('data-tag-id')
+            text += `#[Tag:${id}]`
           } else if (el.tagName === 'BR') {
             text += '\n'
           } else if (el.tagName === 'DIV') {
@@ -185,7 +239,6 @@ export const RichMentionInput = React.forwardRef<RichMentionInputHandle, RichMen
 
       containerRef.current.childNodes.forEach(walk)
 
-      // Clean up excessive initial newlines if any
       const cleanText = text.replace(/^\n+/, '')
 
       if (lastKnownValue.current !== cleanText) {
@@ -214,13 +267,7 @@ export const RichMentionInput = React.forwardRef<RichMentionInputHandle, RichMen
         }
       }
 
-      const chip = document.createElement('span')
-      chip.contentEditable = 'false'
-      chip.className =
-        'inline-flex items-center px-1.5 py-0.5 rounded mx-1 bg-primary/20 text-primary-900 font-medium text-sm select-none align-middle'
-      chip.setAttribute('data-mention-id', prompt.id)
-      chip.textContent = prompt.title
-
+      const chip = createPromptChip(prompt.id, prompt.title)
       range.insertNode(chip)
 
       const space = document.createTextNode('\u00A0')
@@ -238,8 +285,47 @@ export const RichMentionInput = React.forwardRef<RichMentionInputHandle, RichMen
       containerRef.current.focus()
     }
 
+    const insertTag = (tag: TagUsage) => {
+      if (!containerRef.current) return
+
+      const selection = window.getSelection()
+      if (!selection) return
+      const range = selection.getRangeAt(0)
+
+      const textNode = range.startContainer
+      if (textNode.nodeType === Node.TEXT_NODE) {
+        const text = textNode.textContent || ''
+        const caretPos = range.startOffset
+        const lastHash = text.lastIndexOf('#', caretPos - 1)
+
+        if (lastHash !== -1) {
+          range.setStart(textNode, lastHash)
+          range.setEnd(textNode, caretPos)
+          range.deleteContents()
+        }
+      }
+
+      const chip = createTagChip(tag.id, tag.name)
+      range.insertNode(chip)
+
+      const space = document.createTextNode('\u00A0')
+      range.setStartAfter(chip)
+      range.insertNode(space)
+
+      range.setStartAfter(space)
+      range.setEndAfter(space)
+      selection.removeAllRanges()
+      selection.addRange(range)
+
+      onTagClose?.()
+      isTypingTag.current = false
+      serializeContent()
+      containerRef.current.focus()
+    }
+
     React.useImperativeHandle(ref, () => ({
       insertMention,
+      insertTag,
       focus: () => containerRef.current?.focus(),
     }))
 
@@ -251,7 +337,7 @@ export const RichMentionInput = React.forwardRef<RichMentionInputHandle, RichMen
         className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl text-gray-900 dark:text-white focus:ring-2 focus:ring-primary/50 focus:border-primary outline-none transition-all min-h-[140px] whitespace-pre-wrap overflow-y-auto max-h-[300px]"
         data-placeholder={placeholder}
         onKeyDown={(e) => {
-          if (e.key === 'Enter' && isTypingMention.current) {
+          if (e.key === 'Enter' && (isTypingMention.current || isTypingTag.current)) {
             e.preventDefault()
           }
         }}
