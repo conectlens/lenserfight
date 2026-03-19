@@ -29,7 +29,7 @@ import {
 import { HomePage } from '@lenserfight/features/home'
 import { LeaderboardPage } from '@lenserfight/features/leaderboard'
 import { LensersPage } from '@lenserfight/features/lensers'
-import { LenserProfilePage, LenserProvider, useLenser } from '@lenserfight/features/profile'
+import { LenserProfilePage, LenserProvider, useLenser, PendingRequestsPage } from '@lenserfight/features/profile'
 import {
   PromptDetailPage,
   PromptsPage,
@@ -195,6 +195,15 @@ const App: React.FC = () => {
                           element={
                             <DashboardLayout>
                               <TagDetailPage />
+                            </DashboardLayout>
+                          }
+                        />
+
+                        <Route
+                          path="/lenser/requests"
+                          element={
+                            <DashboardLayout>
+                              <PendingRequestsPage />
                             </DashboardLayout>
                           }
                         />

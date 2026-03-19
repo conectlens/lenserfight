@@ -14,6 +14,8 @@ import {
   FollowPeriod,
   LenserType,
   LenserListItem,
+  ProfileAccessPayload,
+  PendingFollowRequest,
 } from '@lenserfight/types'
 import { PromptTemplateRecord } from '@lenserfight/types'
 import { ThreadRecord } from '@lenserfight/types'
@@ -73,6 +75,25 @@ export interface LenserRepositoryPort {
 
   // Lensers discovery
   listLensers(options: { type?: LenserType; limit?: number; offset?: number }): Promise<LenserListItem[]>
+
+  // Social graph: Profile access
+  getProfile(handle: string): Promise<ProfileAccessPayload>
+
+  // Social graph: Follow requests
+  requestFollow(targetId: string): Promise<{ status: string; reason?: string }>
+  removeFollow(targetId: string): Promise<LenserFollowStatus>
+  acceptFollowRequest(sourceId: string): Promise<{ success: boolean; reason?: string }>
+  rejectFollowRequest(sourceId: string): Promise<{ success: boolean; reason?: string }>
+  getPendingRequests(limit?: number, offset?: number): Promise<PendingFollowRequest[]>
+
+  // Social graph: Block
+  blockProfile(targetId: string): Promise<{ blocked: boolean }>
+  unblockProfile(targetId: string): Promise<{ blocked: boolean }>
+
+  // Account lifecycle
+  deactivateAccount(): Promise<{ success: boolean }>
+  scheduleAccountDeletion(): Promise<{ success: boolean; deadline?: string }>
+  cancelDeletionOnLogin(): Promise<{ restored: boolean; from_status?: string }>
 }
 export class SupabaseLenserRepository implements LenserRepositoryPort {
   async getPublicLenserProfile(handle: string): Promise<LenserProfileDTO> {
@@ -359,5 +380,104 @@ export class SupabaseLenserRepository implements LenserRepositoryPort {
     })
     if (error) throw error
     return (data ?? []) as LenserListItem[]
+  }
+
+  // ── Social Graph: Profile Access ────────────────────────────────────────────
+
+  async getProfile(handle: string): Promise<ProfileAccessPayload> {
+    const { data, error } = await supabase.rpc('fn_lensers_get_profile', {
+      p_handle: handle,
+    })
+    if (error) throw error
+    if (!data) {
+      return {
+        route_state: 'UNAVAILABLE_PROFILE',
+        access_reason: 'not_found',
+        relationship_state: null,
+        profile: null,
+      }
+    }
+    return data as ProfileAccessPayload
+  }
+
+  // ── Social Graph: Follow Requests ───────────────────────────────────────────
+
+  async requestFollow(targetId: string): Promise<{ status: string; reason?: string }> {
+    const { data, error } = await supabase.rpc('fn_request_follow', {
+      p_target_profile_id: targetId,
+    })
+    if (error) throw error
+    return data as { status: string; reason?: string }
+  }
+
+  async removeFollow(targetId: string): Promise<LenserFollowStatus> {
+    const { data, error } = await supabase.rpc('fn_remove_follow', {
+      p_target_profile_id: targetId,
+    })
+    if (error) throw error
+    return data as LenserFollowStatus
+  }
+
+  async acceptFollowRequest(sourceId: string): Promise<{ success: boolean; reason?: string }> {
+    const { data, error } = await supabase.rpc('fn_accept_follow_request', {
+      p_source_profile_id: sourceId,
+    })
+    if (error) throw error
+    return data as { success: boolean; reason?: string }
+  }
+
+  async rejectFollowRequest(sourceId: string): Promise<{ success: boolean; reason?: string }> {
+    const { data, error } = await supabase.rpc('fn_reject_follow_request', {
+      p_source_profile_id: sourceId,
+    })
+    if (error) throw error
+    return data as { success: boolean; reason?: string }
+  }
+
+  async getPendingRequests(limit = 20, offset = 0): Promise<PendingFollowRequest[]> {
+    const { data, error } = await supabase.rpc('fn_get_pending_requests', {
+      p_limit: limit,
+      p_offset: offset,
+    })
+    if (error) throw error
+    return (data ?? []) as PendingFollowRequest[]
+  }
+
+  // ── Social Graph: Block ─────────────────────────────────────────────────────
+
+  async blockProfile(targetId: string): Promise<{ blocked: boolean }> {
+    const { data, error } = await supabase.rpc('fn_block_profile', {
+      p_target_profile_id: targetId,
+    })
+    if (error) throw error
+    return data as { blocked: boolean }
+  }
+
+  async unblockProfile(targetId: string): Promise<{ blocked: boolean }> {
+    const { data, error } = await supabase.rpc('fn_unblock_profile', {
+      p_target_profile_id: targetId,
+    })
+    if (error) throw error
+    return data as { blocked: boolean }
+  }
+
+  // ── Account Lifecycle ───────────────────────────────────────────────────────
+
+  async deactivateAccount(): Promise<{ success: boolean }> {
+    const { data, error } = await supabase.rpc('fn_deactivate_account')
+    if (error) throw error
+    return data as { success: boolean }
+  }
+
+  async scheduleAccountDeletion(): Promise<{ success: boolean; deadline?: string }> {
+    const { data, error } = await supabase.rpc('fn_schedule_account_deletion')
+    if (error) throw error
+    return data as { success: boolean; deadline?: string }
+  }
+
+  async cancelDeletionOnLogin(): Promise<{ restored: boolean; from_status?: string }> {
+    const { data, error } = await supabase.rpc('fn_cancel_account_deletion_on_login')
+    if (error) throw error
+    return data as { restored: boolean; from_status?: string }
   }
 }
