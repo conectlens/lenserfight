@@ -1,6 +1,8 @@
 import {
   XPSummary,
   XPEvent,
+  XPApp,
+  XPContribution,
   LenserBadge,
   LeaderboardEntry,
   LeaderboardTimeframe,
@@ -8,8 +10,16 @@ import {
 } from '@lenserfight/types'
 import { supabase } from '@lenserfight/data/supabase'
 
+export const XP_APP_IDS = {
+  global: '00000000-0000-0000-0000-000000000000',
+  forum: '00000000-0000-0000-0000-000000000001',
+  arena: '00000000-0000-0000-0000-000000000002',
+  cli: '00000000-0000-0000-0000-000000000003',
+  auth: '00000000-0000-0000-0000-000000000004',
+} as const
+
 export interface XPRepositoryPort {
-  getXPSummary(lenserId: string): Promise<XPSummary | null>
+  getXPSummary(lenserId: string, appId?: string): Promise<XPSummary | null>
   getHistory(lenserId: string, limit?: number): Promise<XPEvent[]>
   getBadges(lenserId: string): Promise<LenserBadge[]>
   getLeaderboard(
@@ -18,25 +28,30 @@ export interface XPRepositoryPort {
     limit?: number,
     offset?: number
   ): Promise<{ list: LeaderboardEntry[]; userEntry?: LeaderboardEntry | null }>
+  getApps(): Promise<XPApp[]>
+  getContributions(lenserId: string): Promise<XPContribution[]>
 }
 
 // --- Supabase Implementation ---
 export class SupabaseXPRepository implements XPRepositoryPort {
-  private DEFAULT_APP_ID = '00000000-0000-0000-0000-000000000000'
-
-  async getXPSummary(lenserId: string): Promise<XPSummary | null> {
-    const { data: totals, error } = await supabase
+  async getXPSummary(lenserId: string, appId?: string): Promise<XPSummary | null> {
+    let query = supabase
       .schema('xp')
       .from('totals')
       .select('total_xp, current_level, app_id')
       .eq('lenser_id', lenserId)
-      .maybeSingle()
+
+    if (appId) {
+      query = query.eq('app_id', appId)
+    }
+
+    const { data: totals, error } = await query.maybeSingle()
 
     if (error) throw error
 
     const currentTotal = totals?.total_xp || 0
     const currentLevel = totals?.current_level || 1
-    const appId = totals?.app_id || this.DEFAULT_APP_ID
+    const resolvedAppId = totals?.app_id || XP_APP_IDS.forum
 
     const { data: rankData } = await supabase
       .from('vw_xp_leaderboard_global')
@@ -48,7 +63,7 @@ export class SupabaseXPRepository implements XPRepositoryPort {
       .schema('xp')
       .from('levels')
       .select('min_total_xp, max_total_xp')
-      .eq('app_id', appId)
+      .eq('app_id', resolvedAppId)
       .eq('level', currentLevel)
       .maybeSingle()
 
@@ -65,7 +80,7 @@ export class SupabaseXPRepository implements XPRepositoryPort {
     const { data, error } = await supabase
       .schema('xp')
       .from('events')
-      .select('id, rule_key, xp, source, created_at')
+      .select('id, action_key, xp, base_xp, source, created_at')
       .eq('lenser_id', lenserId)
       .order('created_at', { ascending: false })
       .limit(limit)
@@ -74,9 +89,52 @@ export class SupabaseXPRepository implements XPRepositoryPort {
 
     return data.map((row) => ({
       id: row.id,
-      action: row.rule_key,
+      action: row.action_key,
       xp: row.xp,
+      baseXp: row.base_xp,
       source: row.source,
+      createdAt: row.created_at,
+    }))
+  }
+
+  async getApps(): Promise<XPApp[]> {
+    const { data, error } = await supabase
+      .schema('xp')
+      .from('apps')
+      .select('id, slug, name, difficulty, is_active')
+      .eq('is_active', true)
+      .order('slug')
+
+    if (error) throw error
+
+    return data.map((row) => ({
+      id: row.id,
+      slug: row.slug,
+      name: row.name,
+      difficulty: row.difficulty,
+      isActive: row.is_active,
+    }))
+  }
+
+  async getContributions(lenserId: string): Promise<XPContribution[]> {
+    const { data, error } = await supabase
+      .schema('xp')
+      .from('contributions')
+      .select('id, lenser_id, context, contribution_type, external_ref, title, verified_by, xp_event_id, created_at')
+      .eq('lenser_id', lenserId)
+      .order('created_at', { ascending: false })
+
+    if (error) throw error
+
+    return data.map((row) => ({
+      id: row.id,
+      lenserId: row.lenser_id,
+      context: row.context,
+      contributionType: row.contribution_type,
+      externalRef: row.external_ref ?? undefined,
+      title: row.title ?? undefined,
+      verifiedBy: row.verified_by ?? undefined,
+      xpEventId: row.xp_event_id ?? undefined,
       createdAt: row.created_at,
     }))
   }
