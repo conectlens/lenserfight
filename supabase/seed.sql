@@ -911,7 +911,19 @@ ALTER TABLE lensers.profiles DISABLE TRIGGER "trg_enforce_lensers_protections";
 ALTER TABLE lensers.profiles DISABLE TRIGGER "trg_protect_sensitive_lenser_fields";
 
 -- lensers.follows triggers
-ALTER TABLE lensers.follows DISABLE TRIGGER "trg_follows_sync_counts";
+DO $$
+BEGIN
+  IF EXISTS (
+    SELECT 1
+    FROM pg_trigger
+    WHERE tgname = 'trg_follows_sync_counts'
+      AND tgrelid = 'lensers.follows'::regclass
+      AND NOT tgisinternal
+  ) THEN
+    ALTER TABLE lensers.follows DISABLE TRIGGER "trg_follows_sync_counts";
+  END IF;
+END
+$$;
 
 -- content.threads triggers
 ALTER TABLE content.threads DISABLE TRIGGER "trg_sync_thread_count";
@@ -1813,7 +1825,19 @@ ALTER TABLE lensers.profiles ENABLE TRIGGER "trg_enforce_lensers_protections";
 ALTER TABLE lensers.profiles ENABLE TRIGGER "trg_protect_sensitive_lenser_fields";
 
 -- lensers.follows
-ALTER TABLE lensers.follows ENABLE TRIGGER "trg_follows_sync_counts";
+DO $$
+BEGIN
+  IF EXISTS (
+    SELECT 1
+    FROM pg_trigger
+    WHERE tgname = 'trg_follows_sync_counts'
+      AND tgrelid = 'lensers.follows'::regclass
+      AND NOT tgisinternal
+  ) THEN
+    ALTER TABLE lensers.follows ENABLE TRIGGER "trg_follows_sync_counts";
+  END IF;
+END
+$$;
 
 -- content.threads
 ALTER TABLE content.threads ENABLE TRIGGER "trg_sync_thread_count";
@@ -2193,4 +2217,3 @@ ORDER BY n_live_tup DESC;
 -- ============================================================
 -- BENCHMARK COMPLETE
 -- ============================================================
-
