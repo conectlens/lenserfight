@@ -5,6 +5,8 @@ import { Button } from '@lenserfight/ui/components'
 import { lenserService } from '@lenserfight/data/repositories'
 import { queryKeys } from '@lenserfight/data/cache'
 import { RelationshipState } from '@lenserfight/types'
+import { useNavigate } from 'react-router-dom'
+import { useToast } from '@lenserfight/shared/error'
 
 type FollowButtonState = 'follow' | 'requested' | 'following' | 'follow_back' | 'unavailable'
 
@@ -31,6 +33,8 @@ export const FollowButton: React.FC<FollowButtonProps> = ({
   onStateChange,
 }) => {
   const queryClient = useQueryClient()
+  const navigate = useNavigate()
+  const { toastError } = useToast()
   const [showUnfollow, setShowUnfollow] = useState(false)
   const buttonState = resolveButtonState(relationshipState)
 
@@ -42,6 +46,7 @@ export const FollowButton: React.FC<FollowButtonProps> = ({
   const followMutation = useMutation({
     mutationFn: () => lenserService.requestFollow(targetProfileId),
     onSuccess: invalidate,
+    onError: (err) => toastError(err, { redirectOnAuth: true, navigate }),
   })
 
   const unfollowMutation = useMutation({
