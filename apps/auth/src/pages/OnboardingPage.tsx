@@ -4,8 +4,9 @@ import { replaceLocationSafely, sanitizeReturnUrl } from '../utils/validateRetur
 
 /**
  * OnboardingPage hosts the multi-step profile creation wizard in apps/auth.
- * All applications redirect here after login when the user has no LenserProfile.
- * After completing (or skipping) onboarding, the user is sent to return_url.
+ * All applications redirect here after login when the user has no LenserProfile
+ * or still has onboarding steps left to finish.
+ * After completing onboarding, the user is sent to return_url.
  */
 export const OnboardingPage: React.FC = () => {
   const params = new URLSearchParams(window.location.search)
@@ -15,7 +16,11 @@ export const OnboardingPage: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-950 flex items-center justify-center p-4">
-      <CreateLenserProfileModal onClose={handleDone} onComplete={handleDone} />
+      <CreateLenserProfileModal
+        onClose={() => undefined}
+        onComplete={handleDone}
+        requireCompletion={true}
+      />
     </div>
   )
 }

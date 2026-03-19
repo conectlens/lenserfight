@@ -1,10 +1,24 @@
 import { mapProfileToAuthProfileGate } from './lenserRepository'
 
 describe('mapProfileToAuthProfileGate', () => {
-  it('maps active profiles to active', () => {
+  it('maps fully onboarded active profiles to active', () => {
     expect(
-      mapProfileToAuthProfileGate({ status: 'active', deletion_requested_at: null })
+      mapProfileToAuthProfileGate({
+        status: 'active',
+        deletion_requested_at: null,
+        onboarding_step: 2,
+      })
     ).toEqual({ kind: 'active', status: 'active' })
+  })
+
+  it('maps partially onboarded active profiles to onboarding', () => {
+    expect(
+      mapProfileToAuthProfileGate({
+        status: 'active',
+        deletion_requested_at: null,
+        onboarding_step: 1,
+      })
+    ).toEqual({ kind: 'onboarding', status: 'active', onboardingStep: 1 })
   })
 
   it('maps missing profile rows to new', () => {
