@@ -67,9 +67,13 @@ export type {
 export type { TagRecord } from './lib/threads.types'
 export type {
   LeaderboardEntry,
+  ContributionContext,
   LeaderboardScope,
   LeaderboardTimeframe,
   LenserBadge,
+  XPApp,
+  XPContribution,
+  XPDifficulty,
   XPEvent,
   XPRuleKey,
   XPSource,
