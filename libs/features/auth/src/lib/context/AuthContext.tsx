@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react'
-import { queryClient } from '@lenserfight/data/cache'
+import { queryClient, queryKeys } from '@lenserfight/data/cache'
 import { authService, lenserService } from '@lenserfight/data/repositories'
 import { AuthState, UserMetadata } from '@lenserfight/types'
 import { getEnvMetadata } from '@lenserfight/utils/env'
@@ -37,6 +37,7 @@ const getErrorMessage = (err: unknown): string => {
 export const LENSER_CACHE_KEY = 'lenser_profile_data_v1'
 export const WAITINGLIST_CACHE_KEY = 'waitinglist_status_v1'
 const MOCK_AUTH_KEY = 'mock_auth_user'
+const AUTH_PROFILE_GATE_QUERY_KEY = ['lenser', 'auth-profile-gate'] as const
 
 const clearAuthStorage = () => {
   storage.removeItem('lenser_has_profile')
@@ -56,6 +57,19 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   // Tracks whether initAuth has already settled state so the onAuthStateChange
   // subscription does not overwrite it with a stale INITIAL_SESSION event.
   const initDone = useRef(false)
+  const loginTransitionInFlight = useRef(false)
+
+  const restoreLenserAccountIfNeeded = useCallback(async () => {
+    try {
+      const result = await lenserService.cancelDeletionOnLogin()
+      if (result?.restored) {
+        queryClient.removeQueries({ queryKey: queryKeys.lenser.authenticated() })
+        queryClient.removeQueries({ queryKey: AUTH_PROFILE_GATE_QUERY_KEY })
+      }
+    } catch (err) {
+      console.warn('Failed to check account recovery on login', err)
+    }
+  }, [])
 
   useEffect(() => {
     // 1. Subscribe before initAuth to avoid missing events that fire synchronously
@@ -64,6 +78,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       // Skip early INITIAL_SESSION fires — initAuth owns the first state write.
       // After that, apply any subsequent changes (token refresh, sign-out, etc.)
       if (!initDone.current) return
+      if (loginTransitionInFlight.current && user) return
       setState((s) => {
         if (s.user?.id === user?.id) return s
         return { ...s, user, isAuthenticated: !!user, isLoading: false }
@@ -77,6 +92,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       try {
         const user = await authService.getCurrentUser()
         if (user) {
+          await restoreLenserAccountIfNeeded()
           setState((s) => ({ ...s, user, isAuthenticated: true, isLoading: false }))
         } else {
           setState((s) => ({ ...s, user: null, isAuthenticated: false, isLoading: false }))
@@ -111,18 +127,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return () => {
       unsubscribe()
     }
-  }, [])
+  }, [restoreLenserAccountIfNeeded])
 
   const login = useCallback(async (email: string, pass: string, captchaToken?: string) => {
     setState((s) => ({ ...s, error: null }))
+    loginTransitionInFlight.current = true
     try {
       const user = await authService.login(email, pass, captchaToken)
+      await restoreLenserAccountIfNeeded()
       setState({ user, isAuthenticated: true, isLoading: false, error: null })
-
-      // Cancel pending deletion/deactivation on login — do not block the login flow
-      lenserService.cancelDeletionOnLogin().catch((e) =>
-        console.warn('Failed to check account recovery on login', e)
-      )
 
       // Update environment metadata in the background — do not block the login flow
       getEnvMetadata().then((env) => {
@@ -139,8 +152,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const message = getErrorMessage(err)
       setState((s) => ({ ...s, isLoading: false, error: message }))
       throw err
+    } finally {
+      loginTransitionInFlight.current = false
     }
-  }, [])
+  }, [restoreLenserAccountIfNeeded])
 
   const register = useCallback(
     async (email: string, pass: string, options?: RegisterOptions, captchaToken?: string) => {

@@ -4,6 +4,7 @@ import {
   Language,
   Lenser,
   CreateLenserDTO,
+  AuthProfileGate,
   LenserActivityPoint,
   ActionRecord,
   NetworkUser,
@@ -52,6 +53,10 @@ export const lenserService = {
   getAuthenticatedLenser: async (): Promise<Lenser | null> => {
     const lenser = await lenserRepo.getAuthenticatedLenser()
     return enrichLenserProfile(lenser)
+  },
+
+  getAuthenticatedProfileGate: async (): Promise<AuthProfileGate> => {
+    return lenserRepo.getAuthenticatedProfileGate()
   },
 
   getPublicLenserProfile: async (handle: string): Promise<LenserProfileDTO> => {
