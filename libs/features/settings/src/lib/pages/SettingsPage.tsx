@@ -1,25 +1,18 @@
-import { useQuery } from '@tanstack/react-query'
-import { ExternalLink, Check, Camera, Eye, Lock, MessageSquareDashed } from 'lucide-react'
-import React, { useState, useEffect } from 'react'
-import { useLocation, Link, useParams, useNavigate } from 'react-router-dom'
-
-import { Avatar } from '@lenserfight/ui/components'
-import { Button } from '@lenserfight/ui/components'
-import { Card } from '@lenserfight/ui/components'
-import { ConfirmModal } from '@lenserfight/ui/modals'
-import { DangerZone } from '@lenserfight/ui/components'
-import { Table, Column } from '@lenserfight/ui/components'
-import { FEATURES } from '@lenserfight/utils/env'
-import { useAuth } from '@lenserfight/features/auth'
-import { useLenser } from '@lenserfight/features/profile'
 import { feedbackService } from '@lenserfight/data/repositories'
 import { lenserService } from '@lenserfight/data/repositories'
 import { notificationService } from '@lenserfight/data/repositories'
-import { Feedback, ProductTag, FeedbackStatus } from '@lenserfight/types'
-import { Notification } from '@lenserfight/types'
+import { InputField, useAuth } from '@lenserfight/features/auth'
+import { AvatarSelectionModal, useLenser } from '@lenserfight/features/profile'
+import { Feedback, ProductTag, FeedbackStatus, Notification } from '@lenserfight/types'
+import { Avatar, Button, Card, DangerZone, LanguageSelectBox, Table, Column } from '@lenserfight/ui/components'
+import { ConfirmModal } from '@lenserfight/ui/modals'
 import { timeAgo } from '@lenserfight/utils/date'
-import { InputField } from '@lenserfight/features/auth'
-import { AvatarSelectionModal } from '@lenserfight/features/profile'
+import { FEATURES } from '@lenserfight/utils/env'
+import { useQuery } from '@tanstack/react-query'
+import { ExternalLink, Check, Camera, Eye, Lock, MessageSquareDashed } from 'lucide-react'
+import React, { useState, useEffect, useMemo } from 'react'
+import { useTranslation } from 'react-i18next'
+import { useLocation, Link, useParams, useNavigate } from 'react-router-dom'
 
 const FEEDBACK_PAGE_SIZE = 5
 
@@ -74,6 +67,7 @@ export const SettingsPage: React.FC = () => {
   const { tab } = useParams<{ tab: string }>()
   const navigate = useNavigate()
   const location = useLocation()
+  const { i18n } = useTranslation()
   const { lenser, updateLenserProfile } = useLenser()
   const { user, isAuthenticated, isLoading: authLoading, logout } = useAuth()
 
@@ -85,10 +79,13 @@ export const SettingsPage: React.FC = () => {
   }, [authLoading, isAuthenticated, navigate, location])
 
   // Tab Logic
-  const validTabs = ['account', 'profile']
-  if (FEATURES.NOTIFICATIONS) {
-    validTabs.push('notifications')
-  }
+  const validTabs = useMemo(() => {
+    const tabs = ['account', 'profile']
+    if (FEATURES.NOTIFICATIONS) {
+      tabs.push('notifications')
+    }
+    return tabs
+  }, [])
 
   const activeTab = validTabs.includes(tab?.toLowerCase() || '') ? tab?.toLowerCase() : 'account'
 
@@ -97,7 +94,7 @@ export const SettingsPage: React.FC = () => {
     if (!authLoading && isAuthenticated && tab && !validTabs.includes(tab.toLowerCase())) {
       navigate('/settings/account', { replace: true })
     }
-  }, [tab, authLoading, isAuthenticated, navigate])
+  }, [tab, authLoading, isAuthenticated, navigate, validTabs])
 
   // Profile Form State
   const [formData, setFormData] = useState({
@@ -108,6 +105,8 @@ export const SettingsPage: React.FC = () => {
   })
   const [isSaving, setIsSaving] = useState(false)
   const [showAvatarModal, setShowAvatarModal] = useState(false)
+  const [preferredLanguage, setPreferredLanguage] = useState('en')
+  const [isSavingLanguage, setIsSavingLanguage] = useState(false)
 
   // Notifications State
   const [notifications, setNotifications] = useState<Notification[]>([])
@@ -130,6 +129,13 @@ export const SettingsPage: React.FC = () => {
     staleTime: 1000 * 60 * 5, // 5 minutes
   })
 
+  const { data: languages = [], isLoading: languagesLoading } = useQuery({
+    queryKey: ['core', 'languages'],
+    queryFn: () => lenserService.getLanguages(),
+    enabled: isAuthenticated && activeTab === 'account',
+    staleTime: Infinity,
+  })
+
   useEffect(() => {
     if (lenser) {
       setFormData({
@@ -138,6 +144,7 @@ export const SettingsPage: React.FC = () => {
         bio: lenser.bio || '',
         visibility: lenser.visibility || 'public',
       })
+      setPreferredLanguage(lenser.preferred_language || 'en')
     }
   }, [lenser])
 
@@ -186,6 +193,22 @@ export const SettingsPage: React.FC = () => {
       console.error(e)
     } finally {
       setIsSaving(false)
+    }
+  }
+
+  const handleLanguageSave = async () => {
+    if (!lenser || preferredLanguage === (lenser.preferred_language || 'en')) return
+
+    setIsSavingLanguage(true)
+    try {
+      await updateLenserProfile({ preferred_language: preferredLanguage })
+      await i18n.changeLanguage(preferredLanguage)
+      document.documentElement.lang = preferredLanguage
+    } catch (e) {
+      console.error('Failed to update preferred language', e)
+      alert('Failed to update language preference.')
+    } finally {
+      setIsSavingLanguage(false)
     }
   }
 
@@ -334,6 +357,41 @@ export const SettingsPage: React.FC = () => {
               </p>
 
               <div className="space-y-6">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
+                    Language Preferences
+                  </label>
+                  <p className="text-xs text-gray-400 dark:text-gray-500 mb-3">
+                    Used to prioritize prompts, threads, and recommendations in your language. It
+                    also updates the interface language for this session.
+                  </p>
+                  <LanguageSelectBox
+                    value={preferredLanguage}
+                    onChange={setPreferredLanguage}
+                    languages={languages}
+                    isLoading={languagesLoading}
+                  />
+
+                  <div className="flex flex-col-reverse gap-3 mt-4 sm:flex-row sm:justify-end">
+                    <Button
+                      variant="secondary"
+                      className="w-full sm:w-auto"
+                      onClick={() => setPreferredLanguage(lenser?.preferred_language || 'en')}
+                      disabled={isSavingLanguage || preferredLanguage === (lenser?.preferred_language || 'en')}
+                    >
+                      Reset
+                    </Button>
+                    <Button
+                      onClick={handleLanguageSave}
+                      isLoading={isSavingLanguage}
+                      className="w-full sm:w-auto px-6 bg-primary hover:bg-yellow-400"
+                      disabled={languagesLoading || preferredLanguage === (lenser?.preferred_language || 'en')}
+                    >
+                      Save language
+                    </Button>
+                  </div>
+                </div>
+
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
                     Registered Name

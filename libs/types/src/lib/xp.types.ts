@@ -1,14 +1,60 @@
-export type XPSource = 'system' | 'ai' | 'battle' | 'challenge' | 'daily' | 'social' | 'content'
+export type XPSource =
+  | 'system'
+  | 'ai'
+  | 'battle'
+  | 'challenge'
+  | 'daily'
+  | 'referral'
+  | 'social'
+  | 'content'
+  | 'contribution'
+  | 'other'
 
-// Matches the rule_key in xp_rules table
+export type XPDifficulty = 'easy' | 'standard' | 'hard' | 'legendary'
+
+export type ContributionContext =
+  | 'main_project'
+  | 'community_plugin'
+  | 'documentation'
+  | 'infrastructure'
+
+// Matches the rule_key in xp.rules table
 export type XPRuleKey =
+  // Forum
   | 'THREAD_CREATED'
   | 'THREAD_REPLY_CREATED'
-  | 'PROMPT_CREATED'
-  | 'REACTION_GIVEN'
-  | 'DAILY_LOGIN'
-  | 'THREAD_ENGAGED'
   | 'THREAD_REPLY_RECEIVED'
+  | 'PROMPT_CREATED'
+  | 'TAG_CREATED'
+  | 'REACTION_GIVEN'
+  | 'REACTION_RECEIVED'
+  | 'THREAD_ENGAGED'
+  | 'DAILY_LOGIN'
+  // Arena
+  | 'BATTLE_CREATED'
+  | 'BATTLE_PARTICIPATED'
+  | 'BATTLE_WON'
+  | 'BATTLE_VOTED'
+  // CLI
+  | 'CLI_INIT'
+  | 'CLI_DEPLOY'
+  // Auth
+  | 'ACCOUNT_CREATED'
+  | 'PROFILE_COMPLETED'
+  // Contributor
+  | 'CONTRIB_PR_MERGED_MAIN'
+  | 'CONTRIB_PR_MERGED_COMMUNITY'
+  | 'CONTRIB_PR_MERGED_DOCS'
+  | 'CONTRIB_ISSUE_FILED'
+  | 'CONTRIB_REVIEW_GIVEN'
+
+export interface XPApp {
+  id: string
+  slug: string
+  name: string
+  difficulty: XPDifficulty
+  isActive: boolean
+}
 
 export interface XPSummary {
   totalXp: number
@@ -23,7 +69,20 @@ export interface XPEvent {
   id: string
   action: string
   xp: number
+  baseXp: number
   source: string
+  createdAt: string
+}
+
+export interface XPContribution {
+  id: string
+  lenserId: string
+  context: ContributionContext
+  contributionType: string
+  externalRef?: string
+  title?: string
+  verifiedBy?: string
+  xpEventId?: string
   createdAt: string
 }
 
