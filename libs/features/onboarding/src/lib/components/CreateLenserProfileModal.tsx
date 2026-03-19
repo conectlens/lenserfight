@@ -141,6 +141,7 @@ export const CreateLenserProfileModal: React.FC<CreateLenserProfileModalProps> =
   // ── Step 1 submit: save language + complete onboarding ───────────────
   const handleStep1Complete = async () => {
     setIsCompletingStep1(true)
+    setSubmitError(null)
     try {
       const updated = await lenserService.updateLenserProfile({
         preferred_language: preferredLanguage,
@@ -148,11 +149,11 @@ export const CreateLenserProfileModal: React.FC<CreateLenserProfileModalProps> =
         onboarding_completed_at: new Date().toISOString(),
       })
       queryClient.setQueryData(queryKeys.lenser.authenticated(), updated)
-    } catch {
-      // Language preference save is best-effort; proceed regardless
+      ;(onComplete ?? onClose)()
+    } catch (err: any) {
+      setSubmitError(err?.message || 'Failed to save preferences. Please try again.')
     } finally {
       setIsCompletingStep1(false)
-      ;(onComplete ?? onClose)()
     }
   }
 
@@ -254,6 +255,11 @@ export const CreateLenserProfileModal: React.FC<CreateLenserProfileModalProps> =
                 isLoading={langsLoading}
               />
             </div>
+            {submitError && (
+              <div className="text-red-500 text-sm bg-red-50 dark:bg-red-900/20 p-3 rounded-lg">
+                {submitError}
+              </div>
+            )}
           </div>
         )}
       </StepWizard>
