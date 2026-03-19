@@ -1,19 +1,17 @@
-import { Menu, Share2, Shield, LogOut } from 'lucide-react'
-import React, { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
-import { ActionMenu, Breadcrumbs } from '@lenserfight/ui/components'
 import { useAuth } from '@lenserfight/features/auth'
 import { useLenser } from '@lenserfight/features/profile'
 import { ShareModal, useShareContext } from '@lenserfight/features/share'
-import { useUI } from '@lenserfight/ui/components'
-import { LanguageSwitcher } from './LanguageSwitcher'
+import { ActionMenu, Breadcrumbs, useUI } from '@lenserfight/ui/components'
+import { Menu, Share2, Shield, LogOut } from 'lucide-react'
+import React, { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 
 interface HeaderProps {
   onToggleSidebar: () => void
   isSidebarOpen: boolean
 }
 
-export const Header: React.FC<HeaderProps> = ({ onToggleSidebar, isSidebarOpen }) => {
+export const Header: React.FC<HeaderProps> = ({ onToggleSidebar }) => {
   const { shareConfig } = useShareContext()
   const { pageActions } = useUI()
   const { lenser } = useLenser()
@@ -63,8 +61,6 @@ export const Header: React.FC<HeaderProps> = ({ onToggleSidebar, isSidebarOpen }
         )}
 
         {pageActions.length > 0 && <ActionMenu actions={pageActions} />}
-
-        <LanguageSwitcher />
 
         {isAuthenticated && (
           <button
