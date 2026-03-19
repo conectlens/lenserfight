@@ -72,12 +72,17 @@ VALUES (
 ON CONFLICT (id) DO NOTHING;
 
 -- Contenders for Battle 1
-INSERT INTO battles.contenders (id, battle_id, slot, contender_type, contender_ref_id, display_name)
+INSERT INTO battles.contenders (id, battle_id, slot, contender_type, contender_ref_id, display_name,
+    actor_id, entry_mode, contender_status, joined_at)
 VALUES
     ('f7000000-0000-0000-0000-000000000001', 'f6000000-0000-0000-0000-000000000001', 'A',
-     'human', 'b2000000-0000-0000-0000-000000000002', 'Bob Builder'),
+     'human', 'b2000000-0000-0000-0000-000000000002', 'Bob Builder',
+     (SELECT id FROM actors.actors WHERE profile_id = 'b2000000-0000-0000-0000-000000000002' LIMIT 1),
+     'direct', 'active', '2026-03-10 09:30:00+00'),
     ('f7000000-0000-0000-0000-000000000002', 'f6000000-0000-0000-0000-000000000001', 'B',
-     'ai_model', 'c3000000-0000-0000-0000-000000000001', 'GPT-4o')
+     'ai_model', 'c3000000-0000-0000-0000-000000000001', 'GPT-4o',
+     (SELECT id FROM actors.actors WHERE ai_model_id = 'c3000000-0000-0000-0000-000000000001' LIMIT 1),
+     'direct', 'active', '2026-03-10 09:30:00+00')
 ON CONFLICT (id) DO NOTHING;
 
 -- Set winner (contender A won with 2 votes)
@@ -104,23 +109,33 @@ VALUES
 ON CONFLICT (id) DO NOTHING;
 
 -- Votes for Battle 1
-INSERT INTO battles.votes (id, battle_id, voter_lenser_id, vote_value, rationale)
+INSERT INTO battles.votes (id, battle_id, voter_lenser_id, vote_value, rationale,
+    voted_contender_id, is_draw, voter_actor_id, weight, is_ai_vote)
 VALUES
     ('f9000000-0000-0000-0000-000000000001',
      'f6000000-0000-0000-0000-000000000001',
      'b2000000-0000-0000-0000-000000000003',
      'contender_a',
-     'Type-safe approach with proper Rule type. More extensible and idiomatic TypeScript.'),
+     'Type-safe approach with proper Rule type. More extensible and idiomatic TypeScript.',
+     'f7000000-0000-0000-0000-000000000001', false,
+     (SELECT id FROM actors.actors WHERE profile_id = 'b2000000-0000-0000-0000-000000000003' LIMIT 1),
+     1.0, false),
     ('f9000000-0000-0000-0000-000000000002',
      'f6000000-0000-0000-0000-000000000001',
      'b2000000-0000-0000-0000-000000000001',
      'contender_a',
-     'Functional style with Array.from is cleaner. Good use of filter+map+join chain.'),
+     'Functional style with Array.from is cleaner. Good use of filter+map+join chain.',
+     'f7000000-0000-0000-0000-000000000001', false,
+     (SELECT id FROM actors.actors WHERE profile_id = 'b2000000-0000-0000-0000-000000000001' LIMIT 1),
+     1.0, false),
     ('f9000000-0000-0000-0000-000000000003',
      'f6000000-0000-0000-0000-000000000001',
      'b2000000-0000-0000-0000-000000000002',
      'contender_b',
-     'Simpler Record-based config is more practical for quick use.')
+     'Simpler Record-based config is more practical for quick use.',
+     'f7000000-0000-0000-0000-000000000002', false,
+     (SELECT id FROM actors.actors WHERE profile_id = 'b2000000-0000-0000-0000-000000000002' LIMIT 1),
+     1.0, false)
 ON CONFLICT (id) DO NOTHING;
 
 -- Scorecards for Battle 1, Contender A (Bob)
@@ -183,12 +198,17 @@ VALUES (
 ON CONFLICT (id) DO NOTHING;
 
 -- Contenders for Battle 2 (two AI models)
-INSERT INTO battles.contenders (id, battle_id, slot, contender_type, contender_ref_id, display_name)
+INSERT INTO battles.contenders (id, battle_id, slot, contender_type, contender_ref_id, display_name,
+    actor_id, entry_mode, contender_status, joined_at)
 VALUES
     ('f7000000-0000-0000-0000-000000000003', 'f6000000-0000-0000-0000-000000000002', 'A',
-     'ai_model', 'c3000000-0000-0000-0000-000000000002', 'Claude Sonnet 4.6'),
+     'ai_model', 'c3000000-0000-0000-0000-000000000002', 'Claude Sonnet 4.6',
+     (SELECT id FROM actors.actors WHERE ai_model_id = 'c3000000-0000-0000-0000-000000000002' LIMIT 1),
+     'direct', 'active', now()),
     ('f7000000-0000-0000-0000-000000000004', 'f6000000-0000-0000-0000-000000000002', 'B',
-     'ai_model', 'c3000000-0000-0000-0000-000000000003', 'Gemini 2.5 Flash')
+     'ai_model', 'c3000000-0000-0000-0000-000000000003', 'Gemini 2.5 Flash',
+     (SELECT id FROM actors.actors WHERE ai_model_id = 'c3000000-0000-0000-0000-000000000003' LIMIT 1),
+     'direct', 'active', now())
 ON CONFLICT (id) DO NOTHING;
 
 -- Pending submissions for Battle 2 (awaiting AI generation)
@@ -334,3 +354,20 @@ VALUES
         NULL
     )
 ON CONFLICT (id) DO NOTHING;
+
+
+-- =============================================================================
+-- 5.9  VOTE AGGREGATES (materialized vote summaries)
+-- =============================================================================
+
+INSERT INTO battles.vote_aggregates (battle_id, contender_id, raw_vote_count, weighted_vote_sum, draw_count, rank_position)
+VALUES
+    -- Battle 1: Contender A (Bob) — 2 votes, winner
+    ('f6000000-0000-0000-0000-000000000001', 'f7000000-0000-0000-0000-000000000001', 2, 2.0, 0, 1),
+    -- Battle 1: Contender B (GPT-4o) — 1 vote
+    ('f6000000-0000-0000-0000-000000000001', 'f7000000-0000-0000-0000-000000000002', 1, 1.0, 0, 2),
+    -- Battle 2: Contender A (Claude) — no votes yet
+    ('f6000000-0000-0000-0000-000000000002', 'f7000000-0000-0000-0000-000000000003', 0, 0, 0, NULL),
+    -- Battle 2: Contender B (Gemini) — no votes yet
+    ('f6000000-0000-0000-0000-000000000002', 'f7000000-0000-0000-0000-000000000004', 0, 0, 0, NULL)
+ON CONFLICT (battle_id, contender_id) DO NOTHING;
