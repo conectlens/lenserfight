@@ -114,9 +114,18 @@ export const Sidebar: React.FC<SidebarProps> = ({
       }
     }
 
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape' && isDropdownOpen) {
+        setIsDropdownOpen(false)
+        buttonRef.current?.focus()
+      }
+    }
+
     document.addEventListener('mousedown', handleClickOutside)
+    document.addEventListener('keydown', handleKeyDown)
     return () => {
       document.removeEventListener('mousedown', handleClickOutside)
+      document.removeEventListener('keydown', handleKeyDown)
     }
   }, [isDropdownOpen])
 
@@ -181,7 +190,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
         />
       )}
 
-      <aside className={containerClass}>
+      <aside className={containerClass} aria-label="Main navigation">
         <div
           className={`h-16 flex items-center px-4 flex-shrink-0 ${!showLabels ? 'justify-center' : ''}`}
         >
@@ -314,16 +323,45 @@ export const Sidebar: React.FC<SidebarProps> = ({
           <div className="h-px bg-gray-200 dark:bg-gray-700 w-full"></div>
 
           <div className="relative">
+            {/* Loading skeleton */}
+            {isLenserLoading && (
+              <div className={`flex items-center p-2 rounded-xl ${!showLabels ? 'justify-center' : ''}`}>
+                <div className="w-9 h-9 rounded-full bg-gray-200 dark:bg-gray-700 animate-pulse flex-shrink-0" />
+                {showLabels && (
+                  <div className="ml-3 flex-1 space-y-1.5">
+                    <div className="h-3 w-24 bg-gray-200 dark:bg-gray-700 rounded animate-pulse" />
+                    <div className="h-2.5 w-16 bg-gray-200 dark:bg-gray-700 rounded animate-pulse" />
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Be Lenser CTA — shown when loaded but no lenser profile */}
+            {!isLenserLoading && !hasLenser && (
+              <button
+                onClick={onOpenProfileSetup}
+                className={`
+                  flex items-center justify-center gap-2 bg-primary hover:bg-yellow-300 text-gray-900 font-bold rounded-xl shadow-lg transition-all w-full h-10
+                  ${!showLabels ? 'rounded-full w-10 p-0' : 'px-4'}
+                `}
+                title="Be a Lenser"
+              >
+                <Sparkles size={18} />
+                {showLabels && <span>Be Lenser</span>}
+              </button>
+            )}
+
+            {/* Profile row — shown only when loaded and profile exists */}
+            {!isLenserLoading && hasLenser && (
             <div
               className={`
-                  flex items-center p-2 rounded-xl transition-all 
-                  ${!displayProfile ? 'filter blur-sm select-none opacity-60' : 'hover:bg-white dark:hover:bg-gray-700 hover:shadow-sm cursor-pointer border border-transparent hover:border-gray-100 dark:hover:border-gray-600'}
+                  flex items-center p-2 rounded-xl transition-all hover:bg-white dark:hover:bg-gray-700 hover:shadow-sm cursor-pointer border border-transparent hover:border-gray-100 dark:hover:border-gray-600
                   ${!showLabels ? 'justify-center' : ''}
               `}
             >
               <div
                 className="relative flex-shrink-0"
-                onClick={displayProfile ? handleProfileClick : undefined}
+                onClick={handleProfileClick}
               >
                 <div className="relative">
                   <Avatar src={displayProfile?.avatar_url} size="sm" className="!w-9 !h-9" />
@@ -335,17 +373,15 @@ export const Sidebar: React.FC<SidebarProps> = ({
                   )}
                 </div>
 
-                {displayProfile && FEATURES.NOTIFICATIONS && (
-                  <div
-                    className={`absolute -top-0.5 -right-0.5 w-2.5 h-2.5 border-2 border-white dark:border-gray-900 rounded-full ${unreadCount > 0 ? 'bg-red-500' : 'hidden'}`}
-                  ></div>
+                {FEATURES.NOTIFICATIONS && unreadCount > 0 && (
+                  <div className="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 border-2 border-white dark:border-gray-900 rounded-full bg-red-500"></div>
                 )}
               </div>
 
               {showLabels && (
                 <div
                   className="ml-3 flex-1 overflow-hidden"
-                  onClick={displayProfile ? handleProfileClick : undefined}
+                  onClick={handleProfileClick}
                 >
                   <p className="text-sm font-semibold text-gray-900 dark:text-gray-100 truncate">
                     {displayProfile?.display_name || 'Guest'}
@@ -356,10 +392,13 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 </div>
               )}
 
-              {showLabels && displayProfile && (
+              {showLabels && (
                 <div className="relative">
                   <button
                     ref={buttonRef}
+                    aria-label="Account menu"
+                    aria-haspopup="menu"
+                    aria-expanded={isDropdownOpen}
                     onClick={(e) => {
                       e.stopPropagation()
                       setIsDropdownOpen(!isDropdownOpen)
@@ -375,6 +414,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                   {isDropdownOpen && (
                     <div
                       ref={dropdownRef}
+                      role="menu"
                       className="absolute bottom-full right-0 mb-2 w-56 bg-white dark:bg-gray-800 rounded-2xl shadow-xl border border-gray-100 dark:border-gray-700 py-1 z-50 overflow-hidden transform origin-bottom-right"
                       onClick={(e) => e.stopPropagation()}
                     >
@@ -385,6 +425,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                       </div>
                       <div className="p-1">
                         <button
+                          role="menuitem"
                           className="w-full text-left px-3 py-2 rounded-lg text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white flex items-center gap-3 transition-colors"
                           onClick={() => {
                             setIsDropdownOpen(false)
@@ -397,6 +438,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
                         {FEATURES.NOTIFICATIONS && (
                           <button
+                            role="menuitem"
                             className="w-full text-left px-3 py-2 rounded-lg text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white flex items-center gap-3 transition-colors"
                             onClick={() => {
                               setIsDropdownOpen(false)
@@ -440,6 +482,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                         </div>
 
                         <button
+                          role="menuitem"
                           className="w-full text-left px-3 py-2 rounded-lg text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white flex items-center gap-3 transition-colors"
                           onClick={() => {
                             setIsDropdownOpen(false)
@@ -453,6 +496,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                       <div className="h-px bg-gray-100 dark:bg-gray-700 my-0"></div>
                       <div className="p-1">
                         <button
+                          role="menuitem"
                           onClick={async () => {
                             setIsDropdownOpen(false)
                             await logout()
@@ -469,21 +513,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 </div>
               )}
             </div>
-
-            {!hasLenser && !isLenserLoading && (
-              <div className="absolute inset-0 flex items-center justify-center p-2 z-10 bg-gray-50/50 dark:bg-gray-900/50 backdrop-blur-[1px]">
-                <button
-                  onClick={onOpenProfileSetup}
-                  className={`
-                          flex items-center justify-center gap-2 bg-primary hover:bg-yellow-300 text-gray-900 font-bold rounded-xl shadow-lg transition-all w-full h-10
-                          ${!showLabels ? 'rounded-full w-10 p-0' : 'px-4'}
-                      `}
-                  title="Be a Lenser"
-                >
-                  <Sparkles size={18} />
-                  {showLabels && <span>Be Lenser</span>}
-                </button>
-              </div>
             )}
           </div>
         </div>
