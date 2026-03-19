@@ -1,7 +1,7 @@
 import { Turnstile } from '@marsidev/react-turnstile'
 import { Eye, EyeOff, ArrowLeft, Check } from 'lucide-react'
 import React, { useState } from 'react'
-import { Link, useNavigate, useLocation } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 
 import { Button } from '@lenserfight/ui/components'
 import { LoadingOverlay } from '@lenserfight/ui/components'
@@ -16,7 +16,6 @@ import { InputField } from '../components/InputField'
 export const LoginPage: React.FC = () => {
   const { login, signInWithOAuth } = useAuth()
   const navigate = useNavigate()
-  const location = useLocation()
 
   const [formData, setFormData] = useState({
     email: isLocal || isMock ? LOCAL_SEED_CREDENTIALS.email : '',
@@ -61,29 +60,6 @@ export const LoginPage: React.FC = () => {
 
       // Success State Trigger - effectively starts the transition animation
       setIsSuccess(true)
-
-      // Return URL Mechanism
-      const stateFrom = (location.state as any)?.from
-      const searchParams = new URLSearchParams(location.search)
-      const returnUrlParam = searchParams.get('return_url')
-
-      let redirectPath = '/'
-
-      if (stateFrom) {
-        redirectPath = stateFrom.pathname + (stateFrom.search || '') + (stateFrom.hash || '')
-      } else if (returnUrlParam) {
-        redirectPath = returnUrlParam
-      }
-
-      // Delay navigation to show animation
-      setTimeout(() => {
-        // Cross-app redirect: if return_url is an absolute URL, use window.location
-        if (returnUrlParam && /^https?:\/\//.test(returnUrlParam)) {
-          window.location.href = returnUrlParam
-        } else {
-          navigate(redirectPath, { replace: true })
-        }
-      }, 1500)
     } catch (err: any) {
       setApiError(err.message || 'Failed to sign in')
       setIsSubmitting(false) // Only stop loading on error
