@@ -28,6 +28,8 @@ export const queryKeys = {
     follows: (lenserId: string, type: string) => [...queryKeys.lenser.all, 'follows', lenserId, type] as const,
     leaderboard: (period: string) => [...queryKeys.lenser.all, 'leaderboard', period] as const,
     list: (type?: string) => [...queryKeys.lenser.all, 'list', type] as const,
+    pendingRequests: () => [...queryKeys.lenser.all, 'pendingRequests'] as const,
+    relationship: (handle: string) => [...queryKeys.lenser.all, 'relationship', handle] as const,
   },
   tags: {
     all: ['tags'] as const,

@@ -15,7 +15,7 @@ import { lenserService } from '@lenserfight/data/repositories'
 import { promptsService } from '@lenserfight/data/repositories'
 import { reactionService } from '@lenserfight/data/repositories'
 import { threadsService } from '@lenserfight/data/repositories'
-import { Lenser, LenserStats, LenserActivityPoint, LenserProfileDTO } from '@lenserfight/types'
+import { Lenser, LenserStats, LenserActivityPoint, LenserProfileDTO, ProfileAccessPayload } from '@lenserfight/types'
 import { PromptTemplateViewModel } from '@lenserfight/types'
 import { ActivityFeedItem } from '@lenserfight/types'
 import { ThreadFeedItem } from '@lenserfight/types'
@@ -30,6 +30,9 @@ import { LenserActivityHeatmap } from '../components/LenserActivityHeatmap'
 import { LenserProfileHeader } from '../components/LenserProfileHeader'
 import { LenserStatsRow } from '../components/LenserStatsRow'
 import { LenserTabs } from '../components/LenserTabs'
+import { RestrictedProfileShell } from '../components/RestrictedProfileShell'
+import { UnavailableProfile } from '../components/UnavailableProfile'
+import { OwnerRecoveryBanner } from '../components/OwnerRecoveryBanner'
 
 type TabType = 'actions' | 'prompts' | 'threads' | 'challenges'
 
@@ -71,14 +74,18 @@ export const LenserProfilePage: React.FC = () => {
   const { trackView } = useAnalytics()
   const queryClient = useQueryClient()
 
-  const { data: viewedProfile = null, isLoading: loadingProfile } = useQuery<LenserProfileDTO | null>({
+  const { data: accessPayload = null, isLoading: loadingProfile } = useQuery<ProfileAccessPayload | null>({
     queryKey: queryKeys.lenser.profile(handle!),
     queryFn: async () => {
-      const result = await lenserService.getPublicLenserProfile(handle!)
+      const result = await lenserService.getProfile(handle!)
       return result ?? null
     },
     enabled: !!handle,
   })
+
+  const routeState = accessPayload?.route_state ?? null
+  const viewedProfile = accessPayload?.profile ?? null
+  const relationshipState = accessPayload?.relationship_state ?? null
 
   const { data: activity = [] } = useQuery<LenserActivityPoint[]>({
     queryKey: queryKeys.lenser.activity(handle!),
@@ -421,6 +428,21 @@ export const LenserProfilePage: React.FC = () => {
     )
   }
 
+  // Route state branching
+  if (routeState === 'UNAVAILABLE_PROFILE') {
+    return <UnavailableProfile />
+  }
+
+  if (routeState === 'RESTRICTED_PROFILE' && viewedProfile) {
+    return (
+      <RestrictedProfileShell
+        profile={viewedProfile}
+        relationshipState={relationshipState}
+        isAuthenticated={!!currentUser}
+      />
+    )
+  }
+
   if (!viewedProfile) {
     return (
       <div className="flex justify-center items-center min-h-[50vh]">
@@ -440,12 +462,21 @@ export const LenserProfilePage: React.FC = () => {
     <div className="max-w-7xl mx-auto pb-12">
       <SEOHead type="profile" data={{ lenser: viewedProfile, stats }} />
 
+      {routeState === 'OWNER_RECOVERY_PROFILE' && (
+        <OwnerRecoveryBanner
+          handle={handle!}
+          status={viewedProfile.status ?? ''}
+          deletionDeadline={viewedProfile.deletion_deadline_at}
+        />
+      )}
+
       <LenserProfileHeader
         lenser={viewedProfile}
         stats={stats}
         xpSummary={xpSummary}
         isOwner={isOwner}
         onProfileUpdate={handleProfileUpdate}
+        relationshipState={relationshipState}
       />
 
       {stats && (

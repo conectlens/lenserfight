@@ -198,13 +198,15 @@ export const SettingsPage: React.FC = () => {
     if (!lenser) return
     setIsDeleting(true)
     try {
-      await lenserService.requestAccountDeletion(lenser.handle)
-      // Auto logout after request
+      const result = await lenserService.scheduleAccountDeletion()
       await logout()
-      navigate('/login')
-      alert('Account deletion requested. Access restricted.')
+      navigate('/auth/login')
+      alert(result.deadline
+        ? `Account scheduled for deletion. You have until ${new Date(result.deadline).toLocaleDateString()} to cancel by signing back in.`
+        : 'Account deletion scheduled. Sign back in within 30 days to cancel.'
+      )
     } catch (e) {
-      console.error('Failed to request deletion', e)
+      console.error('Failed to schedule deletion', e)
       alert('Failed to process deletion request.')
     } finally {
       setIsDeleting(false)
@@ -401,11 +403,37 @@ export const SettingsPage: React.FC = () => {
                   />
                 </div>
 
+                {/* Deactivate Account */}
+                <div className="bg-amber-50 dark:bg-amber-900/10 border border-amber-200 dark:border-amber-800 rounded-xl p-6">
+                  <h3 className="text-base font-semibold text-amber-900 dark:text-amber-200 mb-1">
+                    Deactivate Account
+                  </h3>
+                  <p className="text-sm text-amber-700 dark:text-amber-300 mb-4">
+                    Temporarily hide your profile. Your data is preserved and you can reactivate by signing back in.
+                  </p>
+                  <Button
+                    variant="secondary"
+                    className="!w-auto px-4 text-sm border-amber-300 dark:border-amber-700 text-amber-800 dark:text-amber-200 hover:bg-amber-100 dark:hover:bg-amber-900/30"
+                    onClick={async () => {
+                      try {
+                        await lenserService.deactivateAccount()
+                        await logout()
+                        navigate('/auth/login')
+                      } catch (e) {
+                        console.error('Failed to deactivate', e)
+                        alert('Failed to deactivate account.')
+                      }
+                    }}
+                  >
+                    Deactivate Account
+                  </Button>
+                </div>
+
                 {/* Danger Area */}
                 <DangerZone
                   title="Delete Account"
-                  description="Request to permanently delete your account and all associated data. This action restricts access to the application immediately."
-                  buttonLabel="Delete Account"
+                  description="Request to permanently delete your account and all associated data. You will have a 30-day grace period to cancel by signing back in. After 30 days, your data will be permanently removed."
+                  buttonLabel="Schedule Deletion"
                   onAction={() => setIsDeleteModalOpen(true)}
                 />
               </div>
@@ -539,7 +567,7 @@ export const SettingsPage: React.FC = () => {
                           Private
                         </p>
                         <p className="text-xs text-gray-500 dark:text-gray-400">
-                          Only visible to you
+                          Only visible to approved followers
                         </p>
                       </div>
                     </button>
@@ -563,8 +591,8 @@ export const SettingsPage: React.FC = () => {
               {/* Danger Area Duplicate for Visibility */}
               <DangerZone
                 title="Delete Account"
-                description="Request to permanently delete your account and all associated data. This action restricts access to the application immediately."
-                buttonLabel="Delete Account"
+                description="Request to permanently delete your account. You will have a 30-day grace period to cancel by signing back in."
+                buttonLabel="Schedule Deletion"
                 onAction={() => setIsDeleteModalOpen(true)}
               />
             </div>
@@ -669,9 +697,9 @@ export const SettingsPage: React.FC = () => {
         isOpen={isDeleteModalOpen}
         onClose={() => setIsDeleteModalOpen(false)}
         onConfirm={handleDeleteRequest}
-        title="Delete Account"
-        message="Are you sure you want to request account deletion? This action will mark your account for deletion and restrict access to the application immediately."
-        confirmLabel="Request Deletion"
+        title="Schedule Account Deletion"
+        message="Are you sure you want to schedule account deletion? Your account will be hidden immediately and permanently deleted after 30 days. You can cancel by signing back in during the grace period."
+        confirmLabel="Schedule Deletion"
         isLoading={isDeleting}
       />
     </div>

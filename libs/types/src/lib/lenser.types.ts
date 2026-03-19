@@ -170,8 +170,37 @@ export interface LeaderboardLenser extends TrendingLenser {
 
 export type FollowPeriod = 'weekly' | 'monthly' | 'all_time'
 
+export type ProfileAccessLevel = 'FULL_PROFILE' | 'RESTRICTED_PROFILE' | 'OWNER_RECOVERY_PROFILE' | 'UNAVAILABLE_PROFILE'
+export type RelationshipStatus = 'pending' | 'accepted' | 'rejected' | 'blocked' | 'removed' | null
+export type LenserAccountStatus = 'active' | 'suspended' | 'deactivated' | 'pending_deletion' | 'deleted'
+
+export interface RelationshipState {
+  viewer_to_subject: RelationshipStatus
+  subject_to_viewer: RelationshipStatus
+  is_mutual: boolean
+  is_blocked: boolean
+  is_close_circle: boolean
+}
+
+export interface ProfileAccessPayload {
+  route_state: ProfileAccessLevel
+  access_reason: string
+  relationship_state: RelationshipState | null
+  profile: LenserProfileDTO | null
+}
+
 export interface LenserFollowStatus {
   following: boolean
+  status?: RelationshipStatus
+}
+
+export interface PendingFollowRequest {
+  id: string
+  source_profile_id: string
+  handle: string
+  display_name: string
+  avatar_url: string | null
+  requested_at: string
 }
 
 export interface FollowsNetworkUser {
@@ -194,7 +223,7 @@ export interface LenserProfileDTO {
   bio?: string
 
   // Status
-  status?: 'active' | 'inactive' | 'banned'
+  status?: LenserAccountStatus
   created_at: string
 
   // XP / Level
@@ -213,6 +242,10 @@ export interface LenserProfileDTO {
   // Community join info
   join_order?: number // immutable
   joined_at?: string
+
+  // Visibility & lifecycle
+  visibility?: 'public' | 'private' | 'community'
+  deletion_deadline_at?: string | null
 
   // Future-safe placeholders
   badges?: [] | null
