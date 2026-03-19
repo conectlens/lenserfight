@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react'
 import { queryClient } from '@lenserfight/data/cache'
-import { authService } from '@lenserfight/data/repositories'
+import { authService, lenserService } from '@lenserfight/data/repositories'
 import { AuthState, UserMetadata } from '@lenserfight/types'
 import { getEnvMetadata } from '@lenserfight/utils/env'
 import { storage } from '@lenserfight/utils/storage'
@@ -118,6 +118,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       const user = await authService.login(email, pass, captchaToken)
       setState({ user, isAuthenticated: true, isLoading: false, error: null })
+
+      // Cancel pending deletion/deactivation on login — do not block the login flow
+      lenserService.cancelDeletionOnLogin().catch((e) =>
+        console.warn('Failed to check account recovery on login', e)
+      )
 
       // Update environment metadata in the background — do not block the login flow
       getEnvMetadata().then((env) => {

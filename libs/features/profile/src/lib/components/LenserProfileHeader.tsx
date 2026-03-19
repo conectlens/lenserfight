@@ -18,7 +18,7 @@ import { Avatar } from '@lenserfight/ui/components'
 import { FEATURES } from '@lenserfight/utils/env'
 import { useLenser } from '@lenserfight/features/profile'
 import { socialLinksService } from '@lenserfight/data/repositories'
-import { Lenser, LenserStats, SocialLink } from '@lenserfight/types'
+import { Lenser, LenserStats, SocialLink, RelationshipState } from '@lenserfight/types'
 import { XPSummary } from '@lenserfight/types'
 import { formatCount } from '@lenserfight/utils/number'
 
@@ -26,6 +26,7 @@ import { AvatarSelectionModal } from './AvatarSelectionModal'
 import { BannerSelectionModal } from './BannerSelectionModal'
 import { EditProfileModal } from './EditProfileModal'
 import { NetworkModal } from './NetworkModal'
+import { FollowButton } from './FollowButton'
 
 interface LenserProfileHeaderProps {
   lenser: Lenser
@@ -33,6 +34,7 @@ interface LenserProfileHeaderProps {
   xpSummary?: XPSummary | null
   isOwner: boolean
   onProfileUpdate: (updatedLenser: Lenser) => void
+  relationshipState?: RelationshipState | null
 }
 
 export const LenserProfileHeader: React.FC<LenserProfileHeaderProps> = ({
@@ -41,6 +43,7 @@ export const LenserProfileHeader: React.FC<LenserProfileHeaderProps> = ({
   xpSummary,
   isOwner,
   onProfileUpdate,
+  relationshipState,
 }) => {
   const { updateLenserProfile } = useLenser()
 
@@ -201,8 +204,8 @@ export const LenserProfileHeader: React.FC<LenserProfileHeaderProps> = ({
       {/* Profile Info Card Overlay */}
       <div className="px-0 md:px-6 relative z-10 -mt-6 md:-mt-16">
         <div className="bg-white dark:bg-gray-800 md:rounded-2xl shadow-sm border-b md:border border-gray-100 dark:border-gray-700 p-6 md:p-8 relative transition-colors">
-          {/* Mobile Edit Button */}
-          {isOwner && (
+          {/* Mobile Edit / Follow Button */}
+          {isOwner ? (
             <button
               onClick={() => setShowEditModal(true)}
               className="md:hidden absolute top-4 right-4 p-2.5 text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white rounded-full transition-colors z-20 border border-transparent hover:border-gray-200 dark:hover:border-gray-600"
@@ -210,6 +213,14 @@ export const LenserProfileHeader: React.FC<LenserProfileHeaderProps> = ({
             >
               <Pencil size={18} />
             </button>
+          ) : (
+            <div className="md:hidden absolute top-4 right-4 z-20">
+              <FollowButton
+                targetProfileId={lenser.id}
+                handle={lenser.handle}
+                relationshipState={relationshipState ?? null}
+              />
+            </div>
           )}
 
           <div className="flex flex-col md:flex-row items-center md:items-start gap-4 md:gap-6">
@@ -309,7 +320,7 @@ export const LenserProfileHeader: React.FC<LenserProfileHeaderProps> = ({
                   {/* Hidden on desktop as it's in stats block */}
                 </div>
 
-                {isOwner && (
+                {isOwner ? (
                   <button
                     onClick={() => setShowEditModal(true)}
                     className="hidden md:flex items-center gap-2 px-4 py-2 rounded-lg border border-gray-200 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 font-medium transition-colors mt-2 md:mt-0"
@@ -317,6 +328,14 @@ export const LenserProfileHeader: React.FC<LenserProfileHeaderProps> = ({
                     <Pencil size={16} />
                     Edit Profile
                   </button>
+                ) : (
+                  <div className="hidden md:block mt-2 md:mt-0">
+                    <FollowButton
+                      targetProfileId={lenser.id}
+                      handle={lenser.handle}
+                      relationshipState={relationshipState ?? null}
+                    />
+                  </div>
                 )}
               </div>
 

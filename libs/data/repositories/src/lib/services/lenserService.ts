@@ -16,6 +16,8 @@ import {
   FollowPeriod,
   LenserType,
   LenserListItem,
+  ProfileAccessPayload,
+  PendingFollowRequest,
 } from '@lenserfight/types'
 import { PromptTemplateRecord } from '@lenserfight/types'
 import { ThreadRecord } from '@lenserfight/types'
@@ -205,5 +207,57 @@ export const lenserService = {
 
   listLensers: async (options: { type?: LenserType; limit?: number; offset?: number } = {}): Promise<LenserListItem[]> => {
     return lenserRepo.listLensers(options)
+  },
+
+  // ── Social Graph: Profile Access ────────────────────────────────────────
+
+  getProfile: async (handle: string): Promise<ProfileAccessPayload> => {
+    return lenserRepo.getProfile(handle)
+  },
+
+  // ── Social Graph: Follow Requests ───────────────────────────────────────
+
+  requestFollow: async (targetId: string): Promise<{ status: string; reason?: string }> => {
+    return lenserRepo.requestFollow(targetId)
+  },
+
+  removeFollow: async (targetId: string): Promise<LenserFollowStatus> => {
+    return lenserRepo.removeFollow(targetId)
+  },
+
+  acceptFollowRequest: async (sourceId: string): Promise<{ success: boolean; reason?: string }> => {
+    return lenserRepo.acceptFollowRequest(sourceId)
+  },
+
+  rejectFollowRequest: async (sourceId: string): Promise<{ success: boolean; reason?: string }> => {
+    return lenserRepo.rejectFollowRequest(sourceId)
+  },
+
+  getPendingRequests: async (limit = 20, offset = 0): Promise<PendingFollowRequest[]> => {
+    return lenserRepo.getPendingRequests(limit, offset)
+  },
+
+  // ── Social Graph: Block ─────────────────────────────────────────────────
+
+  blockProfile: async (targetId: string): Promise<{ blocked: boolean }> => {
+    return lenserRepo.blockProfile(targetId)
+  },
+
+  unblockProfile: async (targetId: string): Promise<{ blocked: boolean }> => {
+    return lenserRepo.unblockProfile(targetId)
+  },
+
+  // ── Account Lifecycle ───────────────────────────────────────────────────
+
+  deactivateAccount: async (): Promise<{ success: boolean }> => {
+    return lenserRepo.deactivateAccount()
+  },
+
+  scheduleAccountDeletion: async (): Promise<{ success: boolean; deadline?: string }> => {
+    return lenserRepo.scheduleAccountDeletion()
+  },
+
+  cancelDeletionOnLogin: async (): Promise<{ restored: boolean; from_status?: string }> => {
+    return lenserRepo.cancelDeletionOnLogin()
   },
 }
