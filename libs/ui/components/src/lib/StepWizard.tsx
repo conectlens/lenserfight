@@ -1,4 +1,5 @@
 import React from 'react'
+
 import { Button } from './Button'
 
 interface StepWizardProps {
@@ -84,12 +85,12 @@ export const StepWizard: React.FC<StepWizardProps> = ({
       <div>{children}</div>
 
       {/* Navigation */}
-      <div className="flex items-center justify-between pt-2">
+      <div className="flex flex-col-reverse gap-3 border-t border-gray-100 pt-4 dark:border-gray-700 sm:flex-row sm:items-center sm:justify-between">
         <button
           type="button"
           onClick={onBack}
           disabled={currentStep === 0}
-          className="text-sm font-medium text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+          className="text-sm font-medium text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white disabled:opacity-30 disabled:cursor-not-allowed transition-colors text-left"
         >
           ← Back
         </button>
@@ -100,7 +101,7 @@ export const StepWizard: React.FC<StepWizardProps> = ({
             onClick={onComplete}
             disabled={!canProceed || isCompleting}
             isLoading={isCompleting}
-            className="px-6"
+            className="px-6 sm:w-auto sm:min-w-[140px]"
           >
             {completeLabel}
           </Button>
@@ -110,7 +111,7 @@ export const StepWizard: React.FC<StepWizardProps> = ({
             onClick={onNext}
             disabled={!canProceed || isNextLoading}
             isLoading={isNextLoading}
-            className="px-6"
+            className="px-6 sm:w-auto sm:min-w-[140px]"
           >
             {nextLabel} →
           </Button>
