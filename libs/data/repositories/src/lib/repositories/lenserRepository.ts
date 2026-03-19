@@ -98,7 +98,7 @@ export interface LenserRepositoryPort {
   cancelDeletionOnLogin(): Promise<{ restored: boolean; from_status?: string }>
 }
 
-type AuthProfileGateRow = Pick<Lenser, 'status' | 'deletion_requested_at'> & {
+type AuthProfileGateRow = Pick<Lenser, 'status' | 'deletion_requested_at' | 'onboarding_step'> & {
   deletion_deadline_at?: string | null
 }
 
@@ -128,6 +128,11 @@ export const mapProfileToAuthProfileGate = (
   }
 
   if (profile.status === 'active' && !profile.deletion_requested_at) {
+    const onboardingStep = profile.onboarding_step ?? 0
+    if (onboardingStep < 2) {
+      return { kind: 'onboarding', status: 'active', onboardingStep }
+    }
+
     return { kind: 'active', status: 'active' }
   }
 
@@ -193,7 +198,7 @@ export class SupabaseLenserRepository implements LenserRepositoryPort {
     const { data, error } = await supabase
       .schema('lensers')
       .from('profiles')
-      .select('status, deletion_requested_at, deletion_deadline_at')
+      .select('status, deletion_requested_at, deletion_deadline_at, onboarding_step')
       .eq('user_id', user.id)
       .maybeSingle()
 

@@ -6,13 +6,13 @@ import { useAuthProfileGate } from '../hooks/useAuthProfileGate'
 
 /**
  * OnboardingGuard ensures the /onboarding route is only accessible to
- * authenticated users who are genuinely new and do not have a Lenser profile row.
+ * authenticated users who are genuinely new or still mid-onboarding.
  *
  * - Not authenticated → /login (with return_url preserved)
  * - Authenticated + active profile → return_url (onboarding already done)
  * - Authenticated + recoverable profile → /account-recovery
  * - Authenticated + deleted/unavailable profile → /account-unavailable
- * - Authenticated + no profile → render children (onboarding page)
+ * - Authenticated + no profile / incomplete onboarding → render children
  */
 export const OnboardingGuard: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { isAuthenticated, isLoading } = useAuth()
@@ -39,14 +39,21 @@ export const OnboardingGuard: React.FC<{ children: React.ReactNode }> = ({ child
       const params = new URLSearchParams(window.location.search)
       const returnUrl = sanitizeReturnUrl(params.get('return_url'))
       replaceLocationSafely(`/account-recovery?return_url=${encodeURIComponent(returnUrl)}`)
-    } else if (gate.kind !== 'new') {
+    } else if (gate.kind !== 'new' && gate.kind !== 'onboarding') {
       const params = new URLSearchParams(window.location.search)
       const returnUrl = sanitizeReturnUrl(params.get('return_url'))
       replaceLocationSafely(`/account-unavailable?return_url=${encodeURIComponent(returnUrl)}`)
     }
   }, [gate, gateLoading, isAuthenticated, isLoading])
 
-  if (isLoading || gateLoading || !!gateError || !isAuthenticated || !gate || gate.kind !== 'new') {
+  if (
+    isLoading ||
+    gateLoading ||
+    !!gateError ||
+    !isAuthenticated ||
+    !gate ||
+    (gate.kind !== 'new' && gate.kind !== 'onboarding')
+  ) {
     return <LoadingOverlay message="Loading..." />
   }
 
