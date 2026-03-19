@@ -11,6 +11,7 @@ export * from './lib/share.types'
 export * from './lib/waitingList.types'
 export type { LogPageViewDTO } from './lib/analytics.types'
 export type { TargetType as AnalyticsTargetType } from './lib/analytics.types'
+export type { AuthProfileGate } from './lib/auth.types'
 export type {
   ActionRecord,
   AuthorProfile,
@@ -25,10 +26,14 @@ export type {
   LenserFullProfile,
   LenserPreferences,
   LenserProfileDTO,
+  LenserAccountStatus,
   LenserState,
   LenserStats,
   LeaderboardLenser,
   NetworkUser,
+  PendingFollowRequest,
+  ProfileAccessPayload,
+  RelationshipState,
   SocialLink,
   SocialPlatform,
   SuggestedLenser,
@@ -67,9 +72,13 @@ export type {
 export type { TagRecord } from './lib/threads.types'
 export type {
   LeaderboardEntry,
+  ContributionContext,
   LeaderboardScope,
   LeaderboardTimeframe,
   LenserBadge,
+  XPApp,
+  XPContribution,
+  XPDifficulty,
   XPEvent,
   XPRuleKey,
   XPSource,
