@@ -7,6 +7,8 @@ interface ModalProps {
   title?: string
   children: React.ReactNode
   canClose?: boolean
+  panelClassName?: string
+  contentClassName?: string
 }
 
 export const Modal: React.FC<ModalProps> = ({
@@ -15,13 +17,18 @@ export const Modal: React.FC<ModalProps> = ({
   title,
   children,
   canClose = true,
+  panelClassName = '',
+  contentClassName = '',
 }) => {
   if (!isOpen) return null
 
   return createPortal(
-    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
+    <div className="fixed inset-0 z-[100] flex items-center justify-center p-3 sm:p-4 bg-black/45 backdrop-blur-sm animate-in fade-in duration-200">
       <div
-        className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-md max-h-[calc(100vh-2rem)] flex flex-col relative overflow-hidden transform transition-all border border-gray-100 dark:border-gray-700"
+        className={[
+          'bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-md max-h-[calc(100vh-1.5rem)] sm:max-h-[calc(100vh-2rem)] flex flex-col relative overflow-hidden transform transition-all border border-gray-100 dark:border-gray-700',
+          panelClassName,
+        ].join(' ')}
         role="dialog"
         aria-modal="true"
       >
@@ -46,7 +53,7 @@ export const Modal: React.FC<ModalProps> = ({
             </button>
           )}
         </div>
-        <div className="p-6 overflow-y-auto overscroll-contain flex-1 w-full dark:text-gray-300">
+        <div className={['p-5 sm:p-6 overflow-y-auto overscroll-contain flex-1 w-full dark:text-gray-300', contentClassName].join(' ')}>
           {children}
         </div>
       </div>
