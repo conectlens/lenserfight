@@ -2,6 +2,8 @@ import {
   Camera,
   Pencil,
   Globe,
+  Lock,
+  Users,
   Link as LinkIcon,
   Linkedin,
   Github,
@@ -15,7 +17,6 @@ import {
 import React, { useState, useEffect } from 'react'
 
 import { Avatar } from '@lenserfight/ui/components'
-import { FEATURES } from '@lenserfight/utils/env'
 import { useLenser } from '@lenserfight/features/profile'
 import { socialLinksService } from '@lenserfight/data/repositories'
 import { Lenser, LenserStats, SocialLink, RelationshipState } from '@lenserfight/types'
@@ -29,7 +30,7 @@ import { NetworkModal } from './NetworkModal'
 import { FollowButton } from './FollowButton'
 
 interface LenserProfileHeaderProps {
-  lenser: Lenser
+  lenser: Lenser & { visibility?: 'public' | 'private' | 'community' }
   stats: LenserStats | null
   xpSummary?: XPSummary | null
   isOwner: boolean
@@ -97,31 +98,27 @@ export const LenserProfileHeader: React.FC<LenserProfileHeaderProps> = ({
   const followersCount = stats?.followersCount || 0
   const followingCount = stats?.followingCount || 0
 
-  const showNetworkLinks = FEATURES.NETWORK_LINKS
+  const { lenser: currentUser } = useLenser()
 
   const StatsBlock = ({ mobile = false }) => (
     <div
       className={`flex items-center gap-3 text-sm ${mobile ? 'justify-center text-gray-600 dark:text-gray-400' : 'text-gray-500 dark:text-gray-400'}`}
     >
       <div
-        className={`flex items-center gap-1 transition-colors group/stats ${showNetworkLinks ? 'cursor-pointer hover:text-primary-700 dark:hover:text-primary-400' : ''}`}
-        onClick={showNetworkLinks ? () => setNetworkType('followers') : undefined}
+        className="flex items-center gap-1 transition-colors group/stats cursor-pointer hover:text-primary-700 dark:hover:text-primary-400"
+        onClick={() => setNetworkType('followers')}
       >
-        <span
-          className={`font-bold text-gray-900 dark:text-gray-100 ${showNetworkLinks ? 'group-hover/stats:text-primary-700 dark:group-hover/stats:text-primary-400' : ''}`}
-        >
+        <span className="font-bold text-gray-900 dark:text-gray-100 group-hover/stats:text-primary-700 dark:group-hover/stats:text-primary-400">
           {formatCount(followersCount)}
         </span>
         <span className="text-gray-500 dark:text-gray-400">Followers</span>
       </div>
       <span className="text-gray-300 dark:text-gray-600">•</span>
       <div
-        className={`flex items-center gap-1 transition-colors group/stats ${showNetworkLinks ? 'cursor-pointer hover:text-primary-700 dark:hover:text-primary-400' : ''}`}
-        onClick={showNetworkLinks ? () => setNetworkType('following') : undefined}
+        className="flex items-center gap-1 transition-colors group/stats cursor-pointer hover:text-primary-700 dark:hover:text-primary-400"
+        onClick={() => setNetworkType('following')}
       >
-        <span
-          className={`font-bold text-gray-900 dark:text-gray-100 ${showNetworkLinks ? 'group-hover/stats:text-primary-700 dark:group-hover/stats:text-primary-400' : ''}`}
-        >
+        <span className="font-bold text-gray-900 dark:text-gray-100 group-hover/stats:text-primary-700 dark:group-hover/stats:text-primary-400">
           {formatCount(followingCount)}
         </span>
         <span className="text-gray-500 dark:text-gray-400">Following</span>
@@ -291,6 +288,16 @@ export const LenserProfileHeader: React.FC<LenserProfileHeaderProps> = ({
                     <h1 className="text-2xl md:text-3xl font-bold text-gray-900 dark:text-white leading-tight">
                       {lenser.display_name}
                     </h1>
+                    {lenser.visibility === 'private' && (
+                      <span title="Private profile" className="flex items-center text-gray-400 dark:text-gray-500">
+                        <Lock size={16} />
+                      </span>
+                    )}
+                    {lenser.visibility === 'community' && (
+                      <span title="Community profile" className="flex items-center text-blue-400 dark:text-blue-500">
+                        <Users size={16} />
+                      </span>
+                    )}
                     {/* Modern Professional Join Log Badge */}
                     {lenser.join_order !== undefined && (
                       <div
@@ -425,12 +432,13 @@ export const LenserProfileHeader: React.FC<LenserProfileHeaderProps> = ({
         </>
       )}
 
-      {showNetworkLinks && networkType && (
+      {networkType && (
         <NetworkModal
           isOpen={!!networkType}
           onClose={() => setNetworkType(null)}
           type={networkType}
           lenserId={lenser.id}
+          currentLenserId={currentUser?.id}
         />
       )}
     </div>
