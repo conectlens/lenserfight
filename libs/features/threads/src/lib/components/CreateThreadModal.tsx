@@ -63,26 +63,29 @@ export const CreateThreadModal: React.FC<CreateThreadModalProps> = ({
   }, [isOpen, initialData])
 
   useEffect(() => {
-    if (!isMentioning) {
+    if (!isMentioning || !mentionQuery) {
       setSuggestions([])
       return
     }
 
-    if (!mentionQuery) {
-      setSuggestions([])
-      return
-    }
+    let cancelled = false
 
     const timer = setTimeout(async () => {
       try {
         const results = await promptsService.search(mentionQuery)
-        setSuggestions(results.slice(0, 5))
-        setActiveIndex(0)
+        if (!cancelled) {
+          setSuggestions((results.data ?? []).slice(0, 5))
+          setActiveIndex(0)
+        }
       } catch (e) {
-        console.error(e)
+        if (!cancelled) console.error(e)
       }
-    }, 200)
-    return () => clearTimeout(timer)
+    }, 500)
+
+    return () => {
+      cancelled = true
+      clearTimeout(timer)
+    }
   }, [mentionQuery, isMentioning])
 
   const handleSubmit = async (e: React.FormEvent) => {
