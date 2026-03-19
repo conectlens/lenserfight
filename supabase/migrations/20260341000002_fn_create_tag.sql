@@ -26,7 +26,7 @@ BEGIN
   -- Idempotent insert of base tag
   INSERT INTO content.tags (slug, visibility)
   VALUES (btrim(p_slug), 'public')
-  ON CONFLICT (slug) DO NOTHING;
+  ON CONFLICT ON CONSTRAINT tags_slug_key DO NOTHING;
 
   -- Resolve tag id (handles both new insert and pre-existing slug)
   SELECT t.id INTO v_tag_id
@@ -40,7 +40,7 @@ BEGIN
   -- Idempotent insert of translation for the requested language
   INSERT INTO content.tag_translations (tag_id, language_code, name)
   VALUES (v_tag_id, btrim(p_language_code), btrim(p_name))
-  ON CONFLICT (tag_id, language_code) DO NOTHING;
+  ON CONFLICT ON CONSTRAINT tag_translations_tag_id_language_id_key DO NOTHING;
 
   -- Return resolved row from the public view
   RETURN QUERY
