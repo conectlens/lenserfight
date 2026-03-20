@@ -1,0 +1,23 @@
+name: OSS Migration Guard
+
+on:
+  pull_request:
+    paths:
+      - 'supabase/migrations/**'
+      - 'supabase/config.toml'
+  push:
+    branches:
+      - main
+    paths:
+      - 'supabase/migrations/**'
+      - 'supabase/config.toml'
+
+jobs:
+  validate-oss-migrations:
+    name: Validate no private schema in OSS migrations
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Run OSS migration guard
+        run: bash scripts/validate-oss-migrations.sh
