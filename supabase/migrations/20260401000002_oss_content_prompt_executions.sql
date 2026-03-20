@@ -55,3 +55,8 @@ CREATE POLICY "prompt_exec_service_all"
     USING (true) WITH CHECK (true);
 
 -- No UPDATE/DELETE policies for authenticated — records are immutable
+
+-- Grants: authenticated role needs table-level SELECT/INSERT to satisfy PostgREST + RLS
+GRANT SELECT, INSERT ON TABLE "content"."prompt_executions" TO "authenticated";
+GRANT ALL ON TABLE "content"."prompt_executions" TO "service_role";
+GRANT ALL ON TYPE "content"."payment_method_enum" TO "authenticated";

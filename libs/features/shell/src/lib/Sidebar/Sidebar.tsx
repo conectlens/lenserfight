@@ -16,6 +16,7 @@ import {
   Sun,
   Moon,
   Monitor,
+  ShoppingBag,
 } from 'lucide-react'
 import React, { useState, useRef, useEffect } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
@@ -263,6 +264,14 @@ export const Sidebar: React.FC<SidebarProps> = ({
             icon={<Eye size={20} />}
             label="Lensers"
             isActive={isRouteActive(location.pathname, '/lensers')}
+            collapsed={!showLabels}
+          />
+
+          <SidebarItem
+            onClick={() => handleNavigation('/store')}
+            icon={<ShoppingBag size={20} />}
+            label="Plans"
+            isActive={isRouteActive(location.pathname, '/store')}
             collapsed={!showLabels}
           />
 
