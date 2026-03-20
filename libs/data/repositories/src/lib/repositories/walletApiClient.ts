@@ -47,13 +47,17 @@ export const walletApiClient = {
 
   async checkout(req: WalletCheckoutRequest): Promise<WalletCheckoutResponse> {
     const authHeader = await getAuthHeader()
+    const payload: Record<string, unknown> = {
+      variant_id: req.variantId,
+      ...(req.email ? { email: req.email } : {}),
+    }
     const res = await fetch(`${API_BASE}/wallet/checkout`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         ...authHeader,
       },
-      body: JSON.stringify(req),
+      body: JSON.stringify(payload),
     })
     return handleResponse<WalletCheckoutResponse>(res)
   },
