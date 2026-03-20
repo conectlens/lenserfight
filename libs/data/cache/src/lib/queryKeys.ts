@@ -68,4 +68,7 @@ export const queryKeys = {
     artifacts: (runId: string) =>
       [...queryKeys.executions.all, 'artifacts', runId] as const,
   },
+  aiModels: {
+    all: ['ai-models'] as const,
+  },
 }

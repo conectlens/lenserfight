@@ -93,10 +93,9 @@ export const LabExecutionPanel: React.FC<LabExecutionPanelProps> = ({
       <SelectField
         value={selectedModelId}
         onChange={setSelectedModelId}
-        options={[
-          { value: '', label: isLoadingModels ? 'Loading models…' : 'Select a model' },
-          ...aiModels.map((m) => ({ value: m.id, label: `${m.name} (${m.provider})` })),
-        ]}
+        placeholder={isLoadingModels ? 'Loading models…' : 'Select a model'}
+        options={aiModels.map((m) => ({ value: m.slug, label: `${m.name} (${m.provider})` }))}
+        disabled={isLoadingModels}
       />
 
       {/* Dynamic Variable Inputs */}
