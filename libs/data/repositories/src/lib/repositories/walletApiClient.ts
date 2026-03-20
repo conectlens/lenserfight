@@ -1,4 +1,5 @@
 import { supabase } from '@lenserfight/data/supabase'
+import { apiFetch } from '../apiFetch'
 import {
   WalletBalance,
   WalletCheckoutRequest,
@@ -34,37 +35,36 @@ async function handleResponse<T>(res: Response): Promise<T> {
 export const walletApiClient = {
   async getBalance(): Promise<WalletBalance> {
     const authHeader = await getAuthHeader()
-    const res = await fetch(`${API_BASE}/wallet/balance`, {
+    const res = await apiFetch(`${API_BASE}/wallet/balance`, {
       headers: { ...authHeader },
     })
     return handleResponse<WalletBalance>(res)
   },
 
   async getProducts(): Promise<{ products: WalletProduct[] }> {
-    const res = await fetch(`${API_BASE}/wallet/products`)
+    const res = await apiFetch(`${API_BASE}/wallet/products`)
     return handleResponse<{ products: WalletProduct[] }>(res)
   },
 
   async checkout(req: WalletCheckoutRequest): Promise<WalletCheckoutResponse> {
     const authHeader = await getAuthHeader()
-    const payload: Record<string, unknown> = {
-      variant_id: req.variantId,
-      ...(req.email ? { email: req.email } : {}),
-    }
-    const res = await fetch(`${API_BASE}/wallet/checkout`, {
+    const res = await apiFetch(`${API_BASE}/wallet/checkout`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         ...authHeader,
       },
-      body: JSON.stringify(payload),
+      body: JSON.stringify({
+        variant_id: req.variantId,
+        ...(req.email ? { email: req.email } : {}),
+      }),
     })
     return handleResponse<WalletCheckoutResponse>(res)
   },
 
   async executeWithWallet(req: WalletExecuteRequest): Promise<WalletExecuteResponse> {
     const authHeader = await getAuthHeader()
-    const res = await fetch(`${API_BASE}/execute/wallet`, {
+    const res = await apiFetch(`${API_BASE}/execute/wallet`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
