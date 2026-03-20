@@ -31,7 +31,7 @@ export type PricingTierEnum = 'free' | 'paid' | 'enterprise'
 
 export interface AIModel {
   id: string // uuid
-  slug: string
+  key: string
   name: string
   provider: ProviderEnum
   version?: string | null
@@ -48,7 +48,7 @@ export interface AIModel {
 export interface AIGeneration {
   id: string
   lenser_id: string
-  ai_model_slug: string // references ai_models(id)
+  ai_model_key: string // references ai_models(key)
   prompt_template_id: string
   media_id: string
   media?: MediaLibraryItem // Joined data
