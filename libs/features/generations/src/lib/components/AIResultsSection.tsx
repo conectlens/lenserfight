@@ -195,7 +195,7 @@ export const AIResultsSection: React.FC<AIResultsSectionProps> = ({ promptId }) 
             onOpen={handleLoadModels}
             options={[
               { value: 'all', label: 'All Models' },
-              ...availableModels.map((m) => ({ value: m.slug, label: m.name })),
+              ...availableModels.map((m) => ({ value: m.key, label: m.name })),
             ]}
             className="w-full"
             dropdownClassName="generations-scroll"

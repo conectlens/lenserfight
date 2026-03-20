@@ -92,7 +92,7 @@ export const StorePage: React.FC = () => {
     setBuyingId(product.id)
     try {
       const { checkoutUrl } = await walletService.checkout({
-        variantId: product.id,
+        variantId: product.variant_id,
         ...(user?.email ? { email: user.email } : {}),
       })
       window.location.href = checkoutUrl
