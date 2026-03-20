@@ -1,21 +1,19 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { executionService, generationService } from '@lenserfight/data/repositories'
+import { executionService, walletService, generationService } from '@lenserfight/data/repositories'
 import { queryKeys } from '@lenserfight/data/cache'
-import {
-  PromptExecutionRecord,
-  TriggerExecutionDTO,
-  ExecutionRun,
-  AIModel,
-} from '@lenserfight/types'
-
-const TERMINAL_STATUSES = ['succeeded', 'failed', 'canceled', 'timed_out'] as const
-type TerminalStatus = (typeof TERMINAL_STATUSES)[number]
-
-const isTerminal = (status: string): status is TerminalStatus =>
-  TERMINAL_STATUSES.includes(status as TerminalStatus)
+import { PromptExecutionRecord, AIModel, WalletExecuteResponse } from '@lenserfight/types'
 
 const PAGE_SIZE = 20
+
+const resolveTemplate = (content: string, vars: Record<string, string>): string =>
+  content.replace(/\{\{(\w+)\}\}/g, (_, k) => vars[k] ?? '')
+
+export interface TriggerLabExecutionDTO {
+  model: AIModel
+  promptContent: string
+  inputSnapshot: Record<string, string>
+}
 
 export const useLabController = (promptId: string, isAuthenticated = false) => {
   const queryClient = useQueryClient()
@@ -25,8 +23,8 @@ export const useLabController = (promptId: string, isAuthenticated = false) => {
   const [allHistory, setAllHistory] = useState<PromptExecutionRecord[]>([])
   const [hasMoreHistory, setHasMoreHistory] = useState(true)
 
-  // In-flight execution run id for polling
-  const [pendingRunId, setPendingRunId] = useState<string | null>(null)
+  // Latest sync execution result
+  const [latestResult, setLatestResult] = useState<WalletExecuteResponse | null>(null)
 
   // Selection state for artifact viewer + comparison
   const [selectedRunId, setSelectedRunId] = useState<string | null>(null)
@@ -59,48 +57,36 @@ export const useLabController = (promptId: string, isAuthenticated = false) => {
     setHistoryOffset((prev) => prev + PAGE_SIZE)
   }, [hasMoreHistory, isLoadingHistory])
 
-  // --- AI Models query (reuse existing generationService) ---
+  // --- AI Models query ---
   const { data: aiModels = [], isLoading: isLoadingModels } = useQuery<AIModel[]>({
     queryKey: queryKeys.aiModels.all,
     queryFn: () => generationService.getAIModels(),
     staleTime: 5 * 60_000,
   })
 
-  // --- Trigger execution mutation ---
+  // --- Sync execution mutation via platform /execute/wallet ---
   const {
     mutate: triggerExecution,
     isPending: isTriggeringExecution,
     error: triggerError,
   } = useMutation({
-    mutationFn: (dto: TriggerExecutionDTO) => executionService.triggerExecution(dto),
-    onSuccess: (res) => {
-      setPendingRunId(res.execution_run_id)
+    mutationFn: ({ model, promptContent, inputSnapshot }: TriggerLabExecutionDTO) => {
+      const resolvedContent = resolveTemplate(promptContent, inputSnapshot)
+      return walletService.executeWithWallet({
+        provider: model.provider,
+        model: model.slug,
+        messages: [{ role: 'user', content: resolvedContent }],
+        max_tokens: model.max_tokens,
+        temperature: model.temperature,
+      })
     },
-  })
-
-  // --- Polling: watch the pending run until it reaches a terminal state ---
-  const { data: polledRun } = useQuery({
-    queryKey: queryKeys.executions.run(pendingRunId ?? '__none__'),
-    queryFn: () => executionService.pollStatus(pendingRunId!),
-    enabled: !!pendingRunId,
-    refetchInterval: (query) => {
-      const status = query.state.data?.status
-      if (!status) return 2000
-      return isTerminal(status) ? false : 2000
-    },
-    staleTime: 0,
-  })
-
-  useEffect(() => {
-    if (!polledRun) return
-    if (isTerminal(polledRun.status)) {
-      setPendingRunId(null)
-      // Invalidate history to show the new run
+    onSuccess: (result) => {
+      setLatestResult(result)
+      // Refresh history — platform backend may write a run record
       queryClient.invalidateQueries({ queryKey: queryKeys.executions.history(promptId) })
-      // Reset to first page so new run appears at top
       setHistoryOffset(0)
-    }
-  }, [polledRun?.status, promptId, queryClient])
+    },
+  })
 
   // --- Comparison toggle: max 2 runs ---
   const toggleComparison = useCallback((runId: string) => {
@@ -111,10 +97,6 @@ export const useLabController = (promptId: string, isAuthenticated = false) => {
     })
   }, [])
 
-  const pendingRun = pendingRunId
-    ? ({ id: pendingRunId, status: polledRun?.status ?? 'queued' } as Pick<ExecutionRun, 'id' | 'status'>)
-    : null
-
   return {
     history: allHistory,
     isLoadingHistory,
@@ -122,7 +104,7 @@ export const useLabController = (promptId: string, isAuthenticated = false) => {
     loadMoreHistory,
     aiModels,
     isLoadingModels,
-    pendingRun,
+    latestResult,
     triggerExecution,
     isTriggeringExecution,
     triggerError,
