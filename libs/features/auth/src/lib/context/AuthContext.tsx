@@ -27,6 +27,10 @@ interface AuthContextType extends AuthState {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
 
+// Module-level flag: survives React Strict Mode unmount/remount and HMR reloads.
+// Prevents fn_cancel_account_deletion_on_login from firing more than once per session.
+let _accountDeletionCheckDone = false
+
 const getErrorMessage = (err: unknown): string => {
   if (err instanceof Error) return err.message
   if (typeof err === 'string') return err
@@ -92,7 +96,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       try {
         const user = await authService.getCurrentUser()
         if (user) {
-          await restoreLenserAccountIfNeeded()
+          if (!_accountDeletionCheckDone) {
+            _accountDeletionCheckDone = true
+            await restoreLenserAccountIfNeeded()
+          }
           setState((s) => ({ ...s, user, isAuthenticated: true, isLoading: false }))
         } else {
           setState((s) => ({ ...s, user: null, isAuthenticated: false, isLoading: false }))
@@ -182,6 +189,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   )
 
   const logout = useCallback(async () => {
+    _accountDeletionCheckDone = false
     try {
       await authService.logout()
     } catch (e) {
