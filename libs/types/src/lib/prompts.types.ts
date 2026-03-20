@@ -18,6 +18,8 @@ export interface PromptTemplateRecord {
   tags: TagRecord[] // Denormalized JSONB
   created_at: string
   updated_at: string
+  parent_prompt_id?: string | null
+  forked_from_execution_id?: string | null
 }
 
 export interface PromptTemplateTagRecord {
@@ -64,6 +66,8 @@ export interface PromptTemplateDetailViewModel extends PromptTemplateViewModel {
   content: string
   reactionCounts: Record<ReactionEnum, number>
   isSaved: boolean
+  parentPromptId?: string | null
+  forkedFromExecutionId?: string | null
 }
 
 export interface CreatePromptDTO {
@@ -72,4 +76,6 @@ export interface CreatePromptDTO {
   content: string
   tagIds: string[]
   visibility: VisibilityEnum
+  parentPromptId?: string | null
+  forkedFromExecutionId?: string | null
 }
