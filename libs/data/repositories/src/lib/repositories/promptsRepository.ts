@@ -1,5 +1,5 @@
 import { supabase } from '@lenserfight/data/supabase'
-import { AuthorProfile, PromptTemplateRecord, PromptTemplateViewModel, PersonalPromptFeedItem, CreatePromptDTO, TagRecord } from '@lenserfight/types'
+import { AuthorProfile, PromptParam, PromptTemplateRecord, PromptTemplateViewModel, PersonalPromptFeedItem, CreatePromptDTO, TagRecord } from '@lenserfight/types'
 import { ApiResponseEnvelope, paginatedResponse } from 'contracts'
 
 // --- Port (Interface) ---
@@ -147,7 +147,7 @@ export class SupabasePromptsRepository implements PromptsRepositoryPort {
       supabase
         .schema('content')
         .from('prompt_translations')
-        .select('title, description, content')
+        .select('title, description, content, params')
         .eq('prompt_id', basePrompt.id)
         .eq('is_original', true)
         .maybeSingle(),
@@ -167,6 +167,7 @@ export class SupabasePromptsRepository implements PromptsRepositoryPort {
       title: translationResult.data?.title || 'Untitled',
       description: translationResult.data?.description ?? null,
       content: translationResult.data?.content || '',
+      params: (translationResult.data?.params ?? []) as PromptParam[],
       author_profile: authorProfile,
       tags,
       reaction_totals: reactionTotals,
@@ -413,7 +414,7 @@ export class SupabasePromptsRepository implements PromptsRepositoryPort {
     const { data: translation, error: translationError } = await supabase
       .schema('content')
       .from('prompt_translations')
-      .select('title, description, content')
+      .select('title, description, content, params')
       .eq('prompt_id', id)
       .eq('is_original', true)
       .maybeSingle()
@@ -434,6 +435,7 @@ export class SupabasePromptsRepository implements PromptsRepositoryPort {
       title: translation?.title || 'Untitled',
       description: translation?.description ?? null,
       content: translation?.content || '',
+      params: ((translation as any)?.params ?? []) as PromptParam[],
       author_profile: authorProfile,
       reaction_totals: {},
       tags,
@@ -490,7 +492,8 @@ export class SupabasePromptsRepository implements PromptsRepositoryPort {
       is_original: true,
       title: input.title,
       description: input.description ?? null,
-      content: input.content
+      content: input.content,
+      params: input.params ?? [],
     })
     if (translationError) this.handleError(translationError)
 
@@ -544,6 +547,7 @@ export class SupabasePromptsRepository implements PromptsRepositoryPort {
     if (input.title !== undefined) translationUpdatePayload.title = input.title
     if (input.description !== undefined) translationUpdatePayload.description = input.description
     if (input.content !== undefined) translationUpdatePayload.content = input.content
+    if (input.params !== undefined) (translationUpdatePayload as any).params = input.params
 
     if (Object.keys(baseUpdatePayload).length > 0) {
       const { error: rpcError } = await supabase.schema('content').from('prompt_templates').update(baseUpdatePayload).eq('id', id)

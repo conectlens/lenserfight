@@ -1,15 +1,15 @@
-import MDEditor from '@uiw/react-md-editor'
 import { Globe, Lock } from 'lucide-react'
-import React, { useMemo, useRef, useCallback } from 'react'
+import React, { useMemo, useRef, useCallback, useEffect } from 'react'
 
 import { Button } from '@lenserfight/ui/components'
 import { FormError } from '@lenserfight/ui/components'
 import { Modal } from '@lenserfight/ui/modals'
 import { SelectField } from '@lenserfight/ui/forms'
 import { useFormValidation } from '@lenserfight/utils/validation'
-import { VisibilityEnum } from '@lenserfight/types'
+import { PromptParam, VisibilityEnum } from '@lenserfight/types'
 import { isRequired, minLength } from '@lenserfight/utils/validation'
 
+import { ParameterPanel } from './ParameterPanel'
 import { PromptTagInput } from './PromptTagInput'
 
 interface CreatePromptModalProps {
@@ -25,6 +25,9 @@ interface CreatePromptModalProps {
     setTags: (v: string[]) => void
     visibility: VisibilityEnum
     setVisibility: (v: VisibilityEnum) => void
+    params: PromptParam[]
+    setParams: (v: PromptParam[]) => void
+    syncParamsFromContent: (content: string) => void
   }
   isSubmitting: boolean
   error: string | null
@@ -40,6 +43,8 @@ export const CreatePromptModal: React.FC<CreatePromptModalProps> = ({
   error,
   isEditMode,
 }) => {
+  const textareaRef = useRef<HTMLTextAreaElement>(null)
+
   const formValues = useMemo(
     () => ({ title: form.title, content: form.content, tags: form.tags }),
     [form.title, form.content, form.tags]
@@ -55,6 +60,12 @@ export const CreatePromptModal: React.FC<CreatePromptModalProps> = ({
     validationRulesRef.current
   )
 
+  // Debounced param extraction
+  useEffect(() => {
+    const t = setTimeout(() => form.syncParamsFromContent(form.content), 400)
+    return () => clearTimeout(t)
+  }, [form.content])
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
     if (validate(formValues)) {
@@ -68,6 +79,33 @@ export const CreatePromptModal: React.FC<CreatePromptModalProps> = ({
       clearError('title')
     },
     [form.setTitle, clearError]
+  )
+
+  const handleContentChange = useCallback(
+    (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+      form.setContent(e.target.value)
+      clearError('content')
+    },
+    [form.setContent, clearError]
+  )
+
+  const handleContentKeyDown = useCallback(
+    (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+      if (e.key === 'Tab') {
+        e.preventDefault()
+        const el = e.currentTarget
+        const start = el.selectionStart
+        const next = form.content.slice(0, start) + '  ' + form.content.slice(el.selectionEnd)
+        form.setContent(next)
+        requestAnimationFrame(() => {
+          if (textareaRef.current) {
+            textareaRef.current.selectionStart = start + 2
+            textareaRef.current.selectionEnd = start + 2
+          }
+        })
+      }
+    },
+    [form.content, form.setContent]
   )
 
   const visibilityOptions = [
@@ -97,19 +135,20 @@ export const CreatePromptModal: React.FC<CreatePromptModalProps> = ({
             Prompt
           </label>
           <div className={`rounded-xl border overflow-hidden ${errors.content ? 'border-red-500' : 'border-gray-200 dark:border-gray-700'}`}>
-            <MDEditor
+            <textarea
+              ref={textareaRef}
               value={form.content}
-              onChange={(val) => {
-                form.setContent(val ?? '')
-                clearError('content')
-              }}
-              height={220}
-              preview="edit"
-              data-color-mode="light"
+              onChange={handleContentChange}
+              onKeyDown={handleContentKeyDown}
+              rows={10}
+              placeholder={"Write your prompt in markdown.\nUse {{variable}} for dynamic parameters.\n\nExample:\n## Task\nGenerate {{num_ideas}} ideas about **{{topic}}**"}
+              className="w-full px-4 py-3 font-mono text-sm bg-gray-50 dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none resize-none transition-all"
             />
           </div>
           <FormError message={errors.content} />
         </div>
+
+        <ParameterPanel params={form.params} onChange={form.setParams} />
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <PromptTagInput tags={form.tags} onChange={form.setTags} />

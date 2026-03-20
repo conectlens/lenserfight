@@ -2,17 +2,16 @@ import { useState, useEffect, useCallback } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { executionService, walletService, generationService } from '@lenserfight/data/repositories'
 import { queryKeys } from '@lenserfight/data/cache'
-import { PromptExecutionRecord, AIModel, WalletExecuteResponse } from '@lenserfight/types'
+import { PromptExecutionRecord, AIModel, PromptParam, WalletExecuteResponse } from '@lenserfight/types'
+import { renderPrompt } from '@lenserfight/utils/text'
 
 const PAGE_SIZE = 20
-
-const resolveTemplate = (content: string, vars: Record<string, string>): string =>
-  content.replace(/\{\{(\w+)\}\}/g, (_, k) => vars[k] ?? '')
 
 export interface TriggerLabExecutionDTO {
   model: AIModel
   promptContent: string
-  inputSnapshot: Record<string, string>
+  inputSnapshot: Record<string, any>
+  params?: PromptParam[]
 }
 
 export const useLabController = (promptId: string, isAuthenticated = false) => {
@@ -70,8 +69,8 @@ export const useLabController = (promptId: string, isAuthenticated = false) => {
     isPending: isTriggeringExecution,
     error: triggerError,
   } = useMutation({
-    mutationFn: ({ model, promptContent, inputSnapshot }: TriggerLabExecutionDTO) => {
-      const resolvedContent = resolveTemplate(promptContent, inputSnapshot)
+    mutationFn: ({ model, promptContent, inputSnapshot, params }: TriggerLabExecutionDTO) => {
+      const resolvedContent = renderPrompt(promptContent, inputSnapshot, params ?? [])
       return walletService.executeWithWallet({
         provider: model.provider,
         model: model.slug,
