@@ -14,7 +14,6 @@ export interface WalletProduct {
 export interface WalletCheckoutRequest {
   variantId: string
   email?: string
-  customData?: Record<string, string>
 }
 
 export interface WalletCheckoutResponse {
