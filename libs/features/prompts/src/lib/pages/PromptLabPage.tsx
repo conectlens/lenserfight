@@ -29,14 +29,14 @@ export const PromptLabPage: React.FC = () => {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
   const { lenser, hasLenser } = useAuthenticatedLenser()
-  const { isLoading: authLoading } = useAuth()
+  const { isLoading: authLoading, isAuthenticated } = useAuth()
   const { setShareConfig } = useShareContext()
   const { setPageActions, setPageTitle } = useUI()
   const queryClient = useQueryClient()
 
   const { prompt, isLoading, error, actions } = usePromptDetailController(id)
 
-  const lab = useLabController(id ?? '')
+  const lab = useLabController(id ?? '', !!isAuthenticated)
   const { forkPrompt, isForking } = useForkPrompt(prompt ?? null)
 
   const reportContent = useReportContent()
@@ -241,7 +241,7 @@ export const PromptLabPage: React.FC = () => {
         saveCount={prompt.reactionCounts.saved}
       />
 
-      {/* Version lineage + Execution panel row */}
+      {/* Version lineage + Prompt body + Execution panel row */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
         <div className="lg:col-span-3">
           <LabVersionGraph
@@ -252,7 +252,15 @@ export const PromptLabPage: React.FC = () => {
             isForking={isForking}
           />
         </div>
-        <div className="lg:col-span-9">
+        <div className="lg:col-span-5">
+          <PromptBodyViewer
+            content={prompt.content}
+            onCopy={handleCopy}
+            onFork={() => forkPrompt()}
+            isForking={isForking}
+          />
+        </div>
+        <div className="lg:col-span-4">
           <LabExecutionPanel
             promptId={prompt.id}
             promptContent={prompt.content}
@@ -264,9 +272,6 @@ export const PromptLabPage: React.FC = () => {
           />
         </div>
       </div>
-
-      {/* Prompt body */}
-      <PromptBodyViewer content={prompt.content} onCopy={handleCopy} />
 
       {/* Output + History row */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 mt-2">

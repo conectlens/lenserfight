@@ -182,9 +182,9 @@ export const SelectField: React.FC<SelectFieldProps> = ({
             }}
           >
             <div className="p-1">
-              {options.map((option) => (
+              {options.map((option, index) => (
                 <button
-                  key={option.value}
+                  key={`${index}-${String(option.value)}`}
                   type="button"
                   onClick={() => handleSelect(option.value)}
                   className={`
