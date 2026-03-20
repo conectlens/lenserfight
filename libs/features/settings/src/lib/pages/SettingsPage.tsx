@@ -1,15 +1,17 @@
 import { feedbackService } from '@lenserfight/data/repositories'
 import { lenserService } from '@lenserfight/data/repositories'
 import { notificationService } from '@lenserfight/data/repositories'
+import { walletService } from '@lenserfight/data/repositories'
 import { InputField, useAuth } from '@lenserfight/features/auth'
 import { AvatarSelectionModal, useLenser } from '@lenserfight/features/profile'
 import { Feedback, ProductTag, FeedbackStatus, Notification } from '@lenserfight/types'
 import { Avatar, Button, Card, DangerZone, LanguageSelectBox, Table, Column } from '@lenserfight/ui/components'
+import { queryKeys } from '@lenserfight/data/cache'
 import { ConfirmModal } from '@lenserfight/ui/modals'
 import { timeAgo } from '@lenserfight/utils/date'
 import { FEATURES } from '@lenserfight/utils/env'
 import { useQuery } from '@tanstack/react-query'
-import { ExternalLink, Check, Camera, Eye, Lock, MessageSquareDashed } from 'lucide-react'
+import { ExternalLink, Check, Camera, Eye, Lock, MessageSquareDashed, Coins } from 'lucide-react'
 import React, { useState, useEffect, useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useLocation, Link, useParams, useNavigate } from 'react-router-dom'
@@ -127,6 +129,13 @@ export const SettingsPage: React.FC = () => {
         : { data: [], total: 0 },
     enabled: !!user?.id && activeTab === 'account',
     staleTime: 1000 * 60 * 5, // 5 minutes
+  })
+
+  const { data: walletBalance } = useQuery({
+    queryKey: queryKeys.wallet.balance,
+    queryFn: walletService.getBalance,
+    enabled: isAuthenticated,
+    staleTime: 1000 * 60 * 2,
   })
 
   const { data: languages = [], isLoading: languagesLoading } = useQuery({
@@ -389,6 +398,35 @@ export const SettingsPage: React.FC = () => {
                     >
                       Save language
                     </Button>
+                  </div>
+                </div>
+
+                {/* Wallet Balance */}
+                <div className="flex items-center justify-between p-4 rounded-xl bg-gray-50 dark:bg-gray-800/60 border border-gray-200 dark:border-gray-700">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 rounded-lg bg-primary/10">
+                      <Coins size={18} className="text-gray-800 dark:text-gray-200" />
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium text-gray-700 dark:text-gray-300">Credit Balance</p>
+                      <p className="text-xs text-gray-400 dark:text-gray-500">
+                        ≈ ${walletBalance ? (walletBalance.balance / 10000).toFixed(2) : '—'} USD
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <span className="text-lg font-bold text-gray-900 dark:text-white tabular-nums">
+                      {walletBalance != null
+                        ? walletBalance.balance.toLocaleString()
+                        : '—'}{' '}
+                      <span className="text-sm font-normal text-gray-400">cr</span>
+                    </span>
+                    <Link
+                      to="/store"
+                      className="text-xs font-medium text-primary-700 dark:text-primary-400 hover:underline whitespace-nowrap"
+                    >
+                      Add credits
+                    </Link>
                   </div>
                 </div>
 
