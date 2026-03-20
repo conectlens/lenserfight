@@ -77,3 +77,5 @@ apps/docs/.vitepress/dist/
 .vitepress/cache/
 .vitepress/dist/
 .vite/
+
+supabase/*
