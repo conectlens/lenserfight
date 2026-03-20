@@ -71,4 +71,8 @@ export const queryKeys = {
   aiModels: {
     all: ['ai-models'] as const,
   },
+  wallet: {
+    balance: ['wallet', 'balance'] as const,
+    products: ['wallet', 'products'] as const,
+  },
 }
