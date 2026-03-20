@@ -59,4 +59,13 @@ export const queryKeys = {
     all: ['waitingList'] as const,
     status: () => [...queryKeys.waitingList.all, 'status'] as const,
   },
+  executions: {
+    all: ['executions'] as const,
+    history: (promptId: string, offset?: number) =>
+      [...queryKeys.executions.all, 'history', promptId, offset] as const,
+    run: (runId: string) =>
+      [...queryKeys.executions.all, 'run', runId] as const,
+    artifacts: (runId: string) =>
+      [...queryKeys.executions.all, 'artifacts', runId] as const,
+  },
 }
