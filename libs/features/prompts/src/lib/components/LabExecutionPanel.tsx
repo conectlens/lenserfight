@@ -42,6 +42,8 @@ export const LabExecutionPanel: React.FC<LabExecutionPanelProps> = ({
   params,
 }) => {
   const variables = useMemo(() => extractVariables(promptContent), [promptContent])
+  console.log("aiModels", aiModels) // TODO: This is returning name and provider only! But you must return ai.models.key too. Read supabase/migrations/*. Then you must replace selectList's id with ai.models.key! 
+
 
   // Derive typed schema: use props.params when available, fall back to legacy string extraction
   const paramSchemas = useMemo<PromptParam[]>(() => {
@@ -70,7 +72,7 @@ export const LabExecutionPanel: React.FC<LabExecutionPanelProps> = ({
     e.preventDefault()
     if (!selectedModelId) return
 
-    const model = aiModels.find((m) => m.slug === selectedModelId)
+    const model = aiModels.find((m) => m.key === selectedModelId)
     if (!model) return
 
     if (paramSchemas.length > 0) {
@@ -111,7 +113,7 @@ export const LabExecutionPanel: React.FC<LabExecutionPanelProps> = ({
         value={selectedModelId}
         onChange={setSelectedModelId}
         placeholder={isLoadingModels ? 'Loading models…' : 'Select a model'}
-        options={aiModels.map((m) => ({ value: m.slug, label: `${m.name} (${m.provider})` }))}
+        options={aiModels.map((m) => ({ value: m.key, label: `${m.name} (${m.provider})` }))}
         disabled={isLoadingModels}
       />
 
@@ -189,8 +191,8 @@ export const LabExecutionPanel: React.FC<LabExecutionPanelProps> = ({
                     param.arrayFormat === 'json'
                       ? '["item1", "item2"]'
                       : param.arrayFormat === 'newline'
-                      ? 'item1\nitem2\nitem3'
-                      : 'item1, item2, item3'
+                        ? 'item1\nitem2\nitem3'
+                        : 'item1, item2, item3'
                   }
                   rows={3}
                   className={`${inputClass} resize-none`}
