@@ -1,6 +1,8 @@
 import { supabase } from '@lenserfight/data/supabase'
 import {
   WalletBalance,
+  WalletCheckoutRequest,
+  WalletCheckoutResponse,
   WalletExecuteRequest,
   WalletExecuteResponse,
   WalletProduct,
@@ -41,6 +43,19 @@ export const walletApiClient = {
   async getProducts(): Promise<{ products: WalletProduct[] }> {
     const res = await fetch(`${API_BASE}/wallet/products`)
     return handleResponse<{ products: WalletProduct[] }>(res)
+  },
+
+  async checkout(req: WalletCheckoutRequest): Promise<WalletCheckoutResponse> {
+    const authHeader = await getAuthHeader()
+    const res = await fetch(`${API_BASE}/wallet/checkout`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        ...authHeader,
+      },
+      body: JSON.stringify(req),
+    })
+    return handleResponse<WalletCheckoutResponse>(res)
   },
 
   async executeWithWallet(req: WalletExecuteRequest): Promise<WalletExecuteResponse> {
