@@ -31,6 +31,7 @@
     "@tsparticles/engine": "^3.9.1",
     "@tsparticles/react": "^3.0.0",
     "@tsparticles/slim": "^3.9.1",
+    "@uiw/react-md-editor": "^4.0.11",
     "citty": "^0.2.1",
     "consola": "^3.4.2",
     "crypto-js": "^4.2.0",
@@ -48,8 +49,8 @@
     "react-parallax-tilt": "^1.7.200",
     "react-router-dom": "6.30.3",
     "rehype-raw": "^7.0.0",
-    "three": "^0.160.0",
     "sonner": "^1.5.0",
+    "three": "^0.160.0",
     "tslib": "^2.3.0"
   },
   "devDependencies": {
