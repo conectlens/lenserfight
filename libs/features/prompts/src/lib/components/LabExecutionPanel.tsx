@@ -1,8 +1,9 @@
 import React, { useMemo, useState } from 'react'
 import { Loader2, Play } from 'lucide-react'
 import { SelectField } from '@lenserfight/ui/forms'
-import { Button } from '@lenserfight/ui/components'
-import { AIModel } from '@lenserfight/types'
+import { Button, FormError } from '@lenserfight/ui/components'
+import { AIModel, PromptParam } from '@lenserfight/types'
+import { validateParamValues } from '@lenserfight/utils/text'
 import { TriggerLabExecutionDTO } from '../hooks/useLabController'
 
 const VARIABLE_REGEX = /\{\{(\w+)\}\}/g
@@ -25,7 +26,11 @@ interface LabExecutionPanelProps {
   onTrigger: (dto: TriggerLabExecutionDTO) => void
   isTriggeringExecution: boolean
   pendingRun?: null
+  params?: PromptParam[]
 }
+
+const inputClass =
+  'w-full rounded-lg border border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-800 px-3 py-2 text-sm text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-500'
 
 export const LabExecutionPanel: React.FC<LabExecutionPanelProps> = ({
   promptId: _promptId,
@@ -34,14 +39,31 @@ export const LabExecutionPanel: React.FC<LabExecutionPanelProps> = ({
   isLoadingModels,
   onTrigger,
   isTriggeringExecution,
+  params,
 }) => {
   const variables = useMemo(() => extractVariables(promptContent), [promptContent])
 
-  const [selectedModelId, setSelectedModelId] = useState<string>('')
-  const [inputValues, setInputValues] = useState<Record<string, string>>({})
+  // Derive typed schema: use props.params when available, fall back to legacy string extraction
+  const paramSchemas = useMemo<PromptParam[]>(() => {
+    if (params && params.length > 0) return params
+    return variables.map((v) => ({ name: v, type: 'string' as const, required: true, placeholder: `Enter ${v}…` }))
+  }, [params, variables])
 
-  const handleInputChange = (variable: string, value: string) => {
-    setInputValues((prev) => ({ ...prev, [variable]: value }))
+  const [selectedModelId, setSelectedModelId] = useState<string>('')
+  const [inputValues, setInputValues] = useState<Record<string, any>>({})
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({})
+
+  const handleChange = (name: string, value: any) => {
+    setInputValues((prev) => ({ ...prev, [name]: value }))
+    setFieldErrors((prev) => { const next = { ...prev }; delete next[name]; return next })
+  }
+
+  const handleMultiselectToggle = (name: string, option: string) => {
+    setInputValues((prev) => {
+      const current: string[] = Array.isArray(prev[name]) ? prev[name] : []
+      const next = current.includes(option) ? current.filter((v) => v !== option) : [...current, option]
+      return { ...prev, [name]: next }
+    })
   }
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -51,12 +73,20 @@ export const LabExecutionPanel: React.FC<LabExecutionPanelProps> = ({
     const model = aiModels.find((m) => m.slug === selectedModelId)
     if (!model) return
 
-    const inputSnapshot: Record<string, string> =
-      variables.length > 0
-        ? Object.fromEntries(variables.map((v) => [v, inputValues[v] ?? '']))
+    if (paramSchemas.length > 0) {
+      const errors = validateParamValues(inputValues, paramSchemas)
+      if (Object.keys(errors).length > 0) {
+        setFieldErrors(errors)
+        return
+      }
+    }
+
+    const inputSnapshot: Record<string, any> =
+      paramSchemas.length > 0
+        ? Object.fromEntries(paramSchemas.map((p) => [p.name, inputValues[p.name] ?? p.default ?? '']))
         : { freeform: inputValues['freeform'] ?? '' }
 
-    onTrigger({ model, promptContent, inputSnapshot })
+    onTrigger({ model, promptContent, inputSnapshot, params: paramSchemas })
   }
 
   const isDisabled = isTriggeringExecution || !selectedModelId
@@ -85,21 +115,89 @@ export const LabExecutionPanel: React.FC<LabExecutionPanelProps> = ({
         disabled={isLoadingModels}
       />
 
-      {/* Dynamic Variable Inputs */}
-      {variables.length > 0 ? (
+      {/* Typed Parameter Inputs */}
+      {paramSchemas.length > 0 ? (
         <div className="flex flex-col gap-3">
-          {variables.map((variable) => (
-            <div key={variable} className="flex flex-col gap-1">
+          {paramSchemas.map((param) => (
+            <div key={param.name} className="flex flex-col gap-1">
               <label className="text-xs font-medium text-gray-600 dark:text-gray-400 uppercase tracking-wide">
-                {variable}
+                {param.name}
+                {param.required && <span className="text-red-500 ml-0.5">*</span>}
+                {param.description && (
+                  <span className="ml-1 normal-case text-gray-400 font-normal">— {param.description}</span>
+                )}
               </label>
-              <input
-                type="text"
-                value={inputValues[variable] ?? ''}
-                onChange={(e) => handleInputChange(variable, e.target.value)}
-                placeholder={`Enter ${variable}…`}
-                className="w-full rounded-lg border border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-800 px-3 py-2 text-sm text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-500"
-              />
+
+              {(param.type === 'string' || param.type === 'number') && (
+                <input
+                  type={param.type === 'number' ? 'number' : 'text'}
+                  value={inputValues[param.name] ?? param.default ?? ''}
+                  onChange={(e) => handleChange(param.name, e.target.value)}
+                  placeholder={param.placeholder ?? `Enter ${param.name}…`}
+                  min={param.min}
+                  max={param.max}
+                  className={inputClass}
+                />
+              )}
+
+              {param.type === 'boolean' && (
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={!!inputValues[param.name]}
+                    onChange={(e) => handleChange(param.name, e.target.checked)}
+                    className="w-4 h-4 accent-primary"
+                  />
+                  <span className="text-sm text-gray-700 dark:text-gray-300">{param.name}</span>
+                </label>
+              )}
+
+              {param.type === 'select' && (
+                <SelectField
+                  value={inputValues[param.name] ?? param.default ?? ''}
+                  onChange={(val) => handleChange(param.name, val)}
+                  placeholder={`Select ${param.name}…`}
+                  options={param.options ?? []}
+                />
+              )}
+
+              {param.type === 'multiselect' && param.options && (
+                <div className="flex flex-wrap gap-2">
+                  {param.options.map((opt) => {
+                    const selected: string[] = Array.isArray(inputValues[param.name]) ? inputValues[param.name] : []
+                    const isChecked = selected.includes(opt.value)
+                    return (
+                      <label key={opt.value} className="flex items-center gap-1.5 text-sm cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={isChecked}
+                          onChange={() => handleMultiselectToggle(param.name, opt.value)}
+                          className="w-3.5 h-3.5 accent-primary"
+                        />
+                        <span className="text-gray-700 dark:text-gray-300">{opt.label}</span>
+                      </label>
+                    )
+                  })}
+                </div>
+              )}
+
+              {param.type === 'array' && (
+                <textarea
+                  value={inputValues[param.name] ?? param.default ?? ''}
+                  onChange={(e) => handleChange(param.name, e.target.value)}
+                  placeholder={
+                    param.arrayFormat === 'json'
+                      ? '["item1", "item2"]'
+                      : param.arrayFormat === 'newline'
+                      ? 'item1\nitem2\nitem3'
+                      : 'item1, item2, item3'
+                  }
+                  rows={3}
+                  className={`${inputClass} resize-none`}
+                />
+              )}
+
+              {fieldErrors[param.name] && <FormError message={fieldErrors[param.name]} />}
             </div>
           ))}
         </div>
@@ -110,10 +208,10 @@ export const LabExecutionPanel: React.FC<LabExecutionPanelProps> = ({
           </label>
           <textarea
             value={inputValues['freeform'] ?? ''}
-            onChange={(e) => handleInputChange('freeform', e.target.value)}
+            onChange={(e) => handleChange('freeform', e.target.value)}
             placeholder="Enter additional context or instructions…"
             rows={3}
-            className="w-full rounded-lg border border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-800 px-3 py-2 text-sm text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-500 resize-none"
+            className={`${inputClass} resize-none`}
           />
         </div>
       )}

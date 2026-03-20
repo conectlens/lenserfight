@@ -176,6 +176,7 @@ export const promptsService = {
       isSaved,
       parentPromptId: record.parent_prompt_id ?? null,
       forkedFromExecutionId: record.forked_from_execution_id ?? null,
+      params: record.params ?? [],
     }
   },
 
