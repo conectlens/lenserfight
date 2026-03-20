@@ -11,6 +11,17 @@ export interface WalletProduct {
   test_mode: boolean
 }
 
+export interface WalletCheckoutRequest {
+  variantId: string
+  email?: string
+  customData?: Record<string, string>
+}
+
+export interface WalletCheckoutResponse {
+  checkoutUrl: string
+  checkoutId: string
+}
+
 export interface WalletBalance {
   balance: number
 }

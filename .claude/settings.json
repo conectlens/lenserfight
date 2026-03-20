@@ -1,18 +1,74 @@
 {
-  "model": "sonnet",
+  "$schema": "https://json.schemastore.org/claude-code-settings.json",
   "permissions": {
     "allow": [
-      "Bash(npm run *)",
-      "Bash(npx supabase migration up)",
-      "Bash(npx supabase start)",
-      "Bash(npx supabase stop)",
-      "Bash(* --version)",
-      "Bash(* --help *)",
-      "Bash(* install)"
+      "Bash(npm run test *)",
+      "Bash(npm run lint *)",
+      "Read(.env.example)",
+      "Read(./.env.example)",
+      "Read(**/.env.example)"
     ],
     "deny": [
-      "Bash(git push *)"
-    ]
+      "Read(.env)",
+      "Read(./.env)",
+      "Read(**/.env)",
+      "Read(.env.local)",
+      "Read(./.env.local)",
+      "Read(**/.env.local)",
+      "Read(.env.development)",
+      "Read(./.env.development)",
+      "Read(**/.env.development)",
+      "Read(.env.development.local)",
+      "Read(./.env.development.local)",
+      "Read(**/.env.development.local)",
+      "Read(.env.test)",
+      "Read(./.env.test)",
+      "Read(**/.env.test)",
+      "Read(.env.test.local)",
+      "Read(./.env.test.local)",
+      "Read(**/.env.test.local)",
+      "Read(.env.production)",
+      "Read(./.env.production)",
+      "Read(**/.env.production)",
+      "Read(.env.production.local)",
+      "Read(./.env.production.local)",
+      "Read(**/.env.production.local)",
+      "Read(**/secrets/**)",
+      "Bash(npm run build)",
+      "Bash(node *)",
+      "Bash(npx *)",
+      "Bash(env)",
+      "Bash(printenv)",
+      "Bash(export *)",
+      "Bash(set)",
+      "Bash(cat .env*)",
+      "Bash(curl *)",
+      "Bash(wget *)",
+      "Bash(nc *)",
+      "Bash(netcat *)",
+      "Bash(ssh *)",
+      "Bash(scp *)"
+    ],
+    "disableBypassPermissionsMode": "disable"
+  },
+  "sandbox": {
+    "enabled": true,
+    "autoAllowBashIfSandboxed": false,
+    "allowUnsandboxedCommands": false,
+    "filesystem": {
+      "denyRead": [
+        ".env",
+        ".env.*",
+        "**/.env",
+        "**/.env.*",
+        "**/secrets/**"
+      ],
+      "allowRead": [
+        ".env.example",
+        "./.env.example",
+        "**/.env.example"
+      ]
+    }
   },
   "extraKnownMarketplaces": {
     "nx-claude-plugins": {
@@ -22,20 +78,5 @@
       }
     }
   },
-  "hooks": {
-    "Notification": [
-      {
-        "matcher": "",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "osascript -e 'display notification \"Claude Code needs your attention\" with title \"Claude Code\"'"
-          }
-        ]
-      }
-    ]
-  },
-  "enabledPlugins": {
-    "nx@nx-claude-plugins": true
-  }
+  "enabledPlugins": {}
 }
