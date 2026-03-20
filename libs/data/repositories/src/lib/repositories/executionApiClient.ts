@@ -1,5 +1,6 @@
 import { supabase } from '@lenserfight/data/supabase'
 import { TriggerExecutionDTO, TriggerExecutionResponse } from '@lenserfight/types'
+import { apiFetch } from '../apiFetch'
 
 if (!import.meta.env.VITE_API_URL) {
   console.warn('[executionApiClient] VITE_API_URL is not set — triggerExecution calls will fail.')
@@ -27,7 +28,7 @@ export class HttpExecutionApiClient implements ExecutionApiClientPort {
   async triggerExecution(dto: TriggerExecutionDTO): Promise<TriggerExecutionResponse> {
     const authHeader = await this.getAuthHeader()
 
-    const res = await fetch(`${API_BASE}/v1/executions`, {
+    const res = await apiFetch(`${API_BASE}/v1/executions`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

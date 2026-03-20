@@ -1,4 +1,5 @@
 import consola from 'consola';
+import { toSnakeCaseKeys } from '@lenserfight/utils/text';
 import { resolveConfig, type LenserfightConfig } from '../config/project-config';
 import { reportCliError } from './error-reporter';
 
@@ -49,7 +50,7 @@ export async function callRpc<T = unknown>(
   const res = await fetch(url, {
     method: 'POST',
     headers,
-    body: JSON.stringify(params),
+    body: JSON.stringify(toSnakeCaseKeys(params)),
   });
 
   if (!res.ok) {
