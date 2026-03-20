@@ -1,12 +1,14 @@
-import { Copy, Check, Terminal } from 'lucide-react'
+import { Copy, Check, Terminal, GitFork, Loader2 } from 'lucide-react'
 import React, { useState } from 'react'
 
 interface PromptBodyViewerProps {
   content?: string | null
   onCopy?: () => void
+  onFork?: () => void
+  isForking?: boolean
 }
 
-export const PromptBodyViewer: React.FC<PromptBodyViewerProps> = ({ content, onCopy }) => {
+export const PromptBodyViewer: React.FC<PromptBodyViewerProps> = ({ content, onCopy, onFork, isForking }) => {
   const [copied, setCopied] = useState(false)
   const safeContent = content ?? ''
 
@@ -31,6 +33,21 @@ export const PromptBodyViewer: React.FC<PromptBodyViewerProps> = ({ content, onC
       <div className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 shadow-sm overflow-hidden transition-all hover:shadow-md relative">
         {/* Floating Actions */}
         <div className="absolute top-3 right-3 z-10 flex gap-2">
+          {onFork && (
+            <button
+              onClick={onFork}
+              disabled={isForking}
+              className="relative p-2 rounded-lg transition-all duration-200 border shadow-sm group/fork bg-white dark:bg-gray-800 text-gray-500 dark:text-gray-400 border-gray-200 dark:border-gray-700 hover:text-gray-900 dark:hover:text-gray-200 hover:border-gray-300 dark:hover:border-gray-600 disabled:opacity-60 disabled:cursor-not-allowed"
+              aria-label="Fork prompt"
+            >
+              {isForking ? <Loader2 size={16} className="animate-spin" /> : <GitFork size={16} />}
+              {!isForking && (
+                <span className="absolute right-full top-1/2 -translate-y-1/2 mr-2 px-2 py-1 bg-gray-900 text-white text-[10px] font-bold rounded opacity-0 pointer-events-none group-hover/fork:opacity-100 transition-opacity duration-200 whitespace-nowrap">
+                  Fork
+                </span>
+              )}
+            </button>
+          )}
           <button
             onClick={handleCopy}
             className={`

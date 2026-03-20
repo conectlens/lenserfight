@@ -17,7 +17,7 @@ const isTerminal = (status: string): status is TerminalStatus =>
 
 const PAGE_SIZE = 20
 
-export const useLabController = (promptId: string) => {
+export const useLabController = (promptId: string, isAuthenticated = false) => {
   const queryClient = useQueryClient()
 
   // Pagination offset for execution history
@@ -36,7 +36,7 @@ export const useLabController = (promptId: string) => {
   const { data: historyPage, isLoading: isLoadingHistory } = useQuery({
     queryKey: queryKeys.executions.history(promptId, historyOffset),
     queryFn: () => executionService.getHistory(promptId, PAGE_SIZE, historyOffset),
-    enabled: !!promptId,
+    enabled: !!promptId && isAuthenticated,
     staleTime: 30_000,
   })
 
