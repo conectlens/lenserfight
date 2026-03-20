@@ -2,7 +2,8 @@ import React, { useMemo, useState } from 'react'
 import { Loader2, Play } from 'lucide-react'
 import { SelectField } from '@lenserfight/ui/forms'
 import { Button } from '@lenserfight/ui/components'
-import { AIModel, TriggerExecutionDTO, ExecutionRun } from '@lenserfight/types'
+import { AIModel } from '@lenserfight/types'
+import { TriggerLabExecutionDTO } from '../hooks/useLabController'
 
 const VARIABLE_REGEX = /\{\{(\w+)\}\}/g
 
@@ -21,28 +22,18 @@ interface LabExecutionPanelProps {
   promptContent: string
   aiModels: AIModel[]
   isLoadingModels: boolean
-  onTrigger: (dto: TriggerExecutionDTO) => void
+  onTrigger: (dto: TriggerLabExecutionDTO) => void
   isTriggeringExecution: boolean
-  pendingRun: Pick<ExecutionRun, 'id' | 'status'> | null
-}
-
-const STATUS_LABELS: Record<string, string> = {
-  queued: 'Queued…',
-  running: 'Running…',
-  succeeded: 'Completed',
-  failed: 'Failed',
-  canceled: 'Canceled',
-  timed_out: 'Timed out',
+  pendingRun?: null
 }
 
 export const LabExecutionPanel: React.FC<LabExecutionPanelProps> = ({
-  promptId,
+  promptId: _promptId,
   promptContent,
   aiModels,
   isLoadingModels,
   onTrigger,
   isTriggeringExecution,
-  pendingRun,
 }) => {
   const variables = useMemo(() => extractVariables(promptContent), [promptContent])
 
@@ -57,22 +48,18 @@ export const LabExecutionPanel: React.FC<LabExecutionPanelProps> = ({
     e.preventDefault()
     if (!selectedModelId) return
 
-    const input_snapshot: Record<string, unknown> =
+    const model = aiModels.find((m) => m.slug === selectedModelId)
+    if (!model) return
+
+    const inputSnapshot: Record<string, string> =
       variables.length > 0
         ? Object.fromEntries(variables.map((v) => [v, inputValues[v] ?? '']))
         : { freeform: inputValues['freeform'] ?? '' }
 
-    onTrigger({
-      prompt_template_id: promptId,
-      model_id: selectedModelId,
-      input_snapshot,
-      origin_type: 'forum',
-      funding_source: 'platform_credit',
-    })
+    onTrigger({ model, promptContent, inputSnapshot })
   }
 
-  const isRunning = !!pendingRun && !['succeeded', 'failed', 'canceled', 'timed_out'].includes(pendingRun.status)
-  const isDisabled = isTriggeringExecution || isRunning || !selectedModelId
+  const isDisabled = isTriggeringExecution || !selectedModelId
 
   return (
     <form
@@ -81,10 +68,10 @@ export const LabExecutionPanel: React.FC<LabExecutionPanelProps> = ({
     >
       <div className="flex items-center justify-between">
         <h4 className="text-sm font-semibold text-gray-800 dark:text-gray-100">Run Prompt</h4>
-        {pendingRun && (
+        {isTriggeringExecution && (
           <span className="flex items-center gap-1.5 text-xs text-gray-500 dark:text-gray-400">
-            {isRunning && <Loader2 size={12} className="animate-spin" />}
-            {STATUS_LABELS[pendingRun.status] ?? pendingRun.status}
+            <Loader2 size={12} className="animate-spin" />
+            Running…
           </span>
         )}
       </div>
@@ -136,10 +123,10 @@ export const LabExecutionPanel: React.FC<LabExecutionPanelProps> = ({
         disabled={isDisabled}
         className="w-full flex items-center justify-center gap-2 h-auto py-2.5"
       >
-        {isRunning ? (
+        {isTriggeringExecution ? (
           <>
             <Loader2 size={16} className="animate-spin" />
-            <span>{STATUS_LABELS[pendingRun!.status]}</span>
+            <span>Running…</span>
           </>
         ) : (
           <>
