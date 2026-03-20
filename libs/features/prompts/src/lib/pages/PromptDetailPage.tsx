@@ -41,7 +41,6 @@ export const PromptDetailPage: React.FC = () => {
   const [reportReason, setReportReason] = useState<
     'spam' | 'harassment' | 'misinformation' | 'off_topic' | 'other'
   >('spam')
-
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false)
   const [isDeleting, setIsDeleting] = useState(false)
   const [deleteTargetId, setDeleteTargetId] = useState<string | null>(null)
@@ -57,29 +56,37 @@ export const PromptDetailPage: React.FC = () => {
     isEditMode,
   } = useCreatePrompt()
 
-  useEffect(() => {
-    if (!prompt) return
-    setPageTitle(prompt.title)
-    setShareConfig({
-      title: prompt.title,
-      resourceType: 'prompt',
-      resourceId: prompt.id,
-    })
-  }, [prompt, setPageTitle, setShareConfig])
+  const isOwner = !!(lenser && prompt && prompt.author.id === lenser.id)
 
   const ensureProfile = (): boolean => {
-    if (!hasLenser) {
-      setShowProfileModal(true)
-      return false
-    }
+    if (!hasLenser) { setShowProfileModal(true); return false }
     return true
   }
 
-  const isOwner = !!(lenser && prompt && prompt.author.id === lenser.id)
+  useEffect(() => {
+    if (!prompt) return
+    setPageTitle(prompt.title)
+    setShareConfig({ title: prompt.title, resourceType: 'prompt', resourceId: prompt.id })
+  }, [prompt, setPageTitle, setShareConfig])
 
-  const handleCreateClick = () => {
-    if (ensureProfile()) openCreateModal()
-  }
+  const pageActions = useMemo(() => {
+    if (isOwner && prompt?.id) {
+      return [
+        { label: 'Edit Prompt', icon: <Pencil size={16} />, onClick: () => handleEditClick(prompt.id) },
+        { label: 'Delete Prompt', icon: <Trash2 size={16} />, onClick: () => handleDeleteClick(prompt.id), variant: 'danger' as const },
+      ]
+    }
+    if (!isOwner && prompt?.id && hasLenser) {
+      return [
+        { label: 'Report Prompt', icon: <Flag size={16} />, onClick: () => setIsReportOpen(true), variant: 'danger' as const },
+      ]
+    }
+    return []
+  }, [isOwner, prompt, hasLenser])
+
+  useEffect(() => { setPageActions(pageActions) }, [pageActions, setPageActions])
+
+  const handleCreateClick = () => { if (ensureProfile()) openCreateModal() }
 
   const handleDeleteClick = (targetId: string) => {
     setDeleteTargetId(targetId)
@@ -88,55 +95,13 @@ export const PromptDetailPage: React.FC = () => {
 
   const handleEditClick = (targetId?: string) => {
     if (!ensureProfile()) return
-
     const editId = targetId || prompt?.id
     if (editId && lenser) {
       promptsService.getPromptDetail(editId, lenser.id).then((detail) => {
-        if (detail) {
-          openCreateModal({
-            id: detail.id,
-            title: detail.title,
-            content: detail.content,
-            tags: detail.tags,
-            visibility: detail.visibility,
-          })
-        }
+        if (detail) openCreateModal({ id: detail.id, title: detail.title, content: detail.content, tags: detail.tags, visibility: detail.visibility })
       })
     }
   }
-
-  const pageActions = useMemo(() => {
-    if (isOwner && prompt?.id) {
-      return [
-        {
-          label: 'Edit Prompt',
-          icon: <Pencil size={16} />,
-          onClick: () => handleEditClick(prompt.id),
-        },
-        {
-          label: 'Delete Prompt',
-          icon: <Trash2 size={16} />,
-          onClick: () => handleDeleteClick(prompt.id),
-          variant: 'danger' as const,
-        },
-      ]
-    }
-    if (!isOwner && prompt?.id && hasLenser) {
-      return [
-        {
-          label: 'Report Prompt',
-          icon: <Flag size={16} />,
-          onClick: () => setIsReportOpen(true),
-          variant: 'danger' as const,
-        },
-      ]
-    }
-    return []
-  }, [isOwner, prompt, hasLenser])
-
-  useEffect(() => {
-    setPageActions(pageActions)
-  }, [pageActions, setPageActions])
 
   const handleCopy = async () => {
     if (!prompt || !ensureProfile() || !lenser) return
@@ -149,11 +114,7 @@ export const PromptDetailPage: React.FC = () => {
   const handleSave = async () => {
     if (!ensureProfile()) return
     setIsSaving(true)
-    try {
-      await actions.savePrompt()
-    } finally {
-      setIsSaving(false)
-    }
+    try { await actions.savePrompt() } finally { setIsSaving(false) }
   }
 
   const confirmDelete = async () => {
@@ -162,7 +123,6 @@ export const PromptDetailPage: React.FC = () => {
     try {
       await promptsService.deletePrompt(deleteTargetId, lenser.id)
       setIsDeleteModalOpen(false)
-
       if (prompt && deleteTargetId === prompt.id) {
         navigate('/len/p')
       } else {
@@ -187,13 +147,13 @@ export const PromptDetailPage: React.FC = () => {
     return (
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 animate-pulse">
         <div className="lg:col-span-8 space-y-8">
-          <div className="h-8 w-32 bg-gray-200 dark:bg-gray-700 rounded"></div>
-          <div className="h-16 w-3/4 bg-gray-200 dark:bg-gray-700 rounded"></div>
-          <div className="h-64 w-full bg-gray-200 dark:bg-gray-700 rounded"></div>
+          <div className="h-8 w-32 bg-gray-200 dark:bg-gray-700 rounded" />
+          <div className="h-16 w-3/4 bg-gray-200 dark:bg-gray-700 rounded" />
+          <div className="h-64 w-full bg-gray-200 dark:bg-gray-700 rounded" />
         </div>
         <div className="hidden lg:block lg:col-span-4 space-y-6">
-          <div className="h-8 w-40 bg-gray-200 dark:bg-gray-700 rounded"></div>
-          <div className="h-20 w-full bg-gray-200 dark:bg-gray-700 rounded"></div>
+          <div className="h-8 w-40 bg-gray-200 dark:bg-gray-700 rounded" />
+          <div className="h-20 w-full bg-gray-200 dark:bg-gray-700 rounded" />
         </div>
       </div>
     )
@@ -206,10 +166,7 @@ export const PromptDetailPage: React.FC = () => {
           <Lock className="w-12 h-12 text-red-500" />
         </div>
         <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-3">Access Denied</h2>
-        <button
-          onClick={() => navigate('/len/p')}
-          className="text-primary-700 dark:text-primary-400 hover:underline"
-        >
+        <button onClick={() => navigate('/len/p')} className="text-primary-700 dark:text-primary-400 hover:underline">
           Return to Library
         </button>
       </div>
@@ -265,7 +222,6 @@ export const PromptDetailPage: React.FC = () => {
             onEdit={handleEditClick}
             onDelete={handleDeleteClick}
           />
-
           <PromptRelatedList
             prompts={relatedPrompts}
             onOpen={(id) => navigate(`/len/p/${id}`)}
@@ -299,33 +255,18 @@ export const PromptDetailPage: React.FC = () => {
       {isReportOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
           <div className="bg-white dark:bg-gray-800 rounded-xl p-6 max-w-sm w-full space-y-4 shadow-xl">
-            <h3 className="text-base font-semibold text-gray-900 dark:text-white">
-              Report Prompt
-            </h3>
-            <p className="text-sm text-gray-500 dark:text-gray-400">
-              Why are you reporting this prompt?
-            </p>
+            <h3 className="text-base font-semibold text-gray-900 dark:text-white">Report Prompt</h3>
+            <p className="text-sm text-gray-500 dark:text-gray-400">Why are you reporting this prompt?</p>
             <select
               value={reportReason}
-              onChange={(e) =>
-                setReportReason(
-                  e.target.value as
-                    | 'spam'
-                    | 'harassment'
-                    | 'misinformation'
-                    | 'off_topic'
-                    | 'other'
-                )
-              }
+              onChange={(e) => setReportReason(e.target.value as typeof reportReason)}
               className="w-full border border-gray-200 dark:border-gray-600 rounded-lg px-3 py-2 text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
             >
-              {(['spam', 'harassment', 'misinformation', 'off_topic', 'other'] as const).map(
-                (r) => (
-                  <option key={r} value={r}>
-                    {r.replace('_', ' ').replace(/\b\w/g, (c) => c.toUpperCase())}
-                  </option>
-                )
-              )}
+              {(['spam', 'harassment', 'misinformation', 'off_topic', 'other'] as const).map((r) => (
+                <option key={r} value={r}>
+                  {r.replace('_', ' ').replace(/\b\w/g, (c) => c.toUpperCase())}
+                </option>
+              ))}
             </select>
             <div className="flex gap-3 justify-end pt-1">
               <button
@@ -336,11 +277,7 @@ export const PromptDetailPage: React.FC = () => {
               </button>
               <button
                 onClick={() => {
-                  reportContent.mutate({
-                    targetType: 'prompt_template',
-                    targetId: prompt.id,
-                    reason: reportReason,
-                  })
+                  reportContent.mutate({ targetType: 'prompt_template', targetId: prompt.id, reason: reportReason })
                   setIsReportOpen(false)
                 }}
                 disabled={reportContent.isPending}

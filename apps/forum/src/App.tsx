@@ -43,6 +43,7 @@ import {
 } from '@lenserfight/features/tags'
 import { ThreadDetailPage } from '@lenserfight/features/threads'
 import { WaitingListPage } from '@lenserfight/features/waiting-list'
+import { StorePage } from '@lenserfight/features/store'
 import { useEffect } from 'react'
 import { Routes, Route, Navigate, Outlet, BrowserRouter, useLocation } from 'react-router-dom'
 
@@ -242,6 +243,15 @@ const App: React.FC = () => {
                           element={
                             <DashboardLayout>
                               <WaitingListPage />
+                            </DashboardLayout>
+                          }
+                        />
+
+                        <Route
+                          path="/store"
+                          element={
+                            <DashboardLayout>
+                              <StorePage />
                             </DashboardLayout>
                           }
                         />
