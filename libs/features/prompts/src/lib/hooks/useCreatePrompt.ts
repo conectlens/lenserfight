@@ -1,9 +1,10 @@
-import { useState } from 'react'
+import { useState, useCallback } from 'react'
 
 import { useQueryClient } from '@tanstack/react-query'
 import { queryKeys } from '@lenserfight/data/cache'
 import { promptsService } from '@lenserfight/data/repositories'
-import { CreatePromptDTO, VisibilityEnum } from '@lenserfight/types'
+import { CreatePromptDTO, PromptParam, VisibilityEnum } from '@lenserfight/types'
+import { extractParams } from '@lenserfight/utils/text'
 import { useAuthenticatedLenser } from './useAuthenticatedLenser'
 
 export const useCreatePrompt = () => {
@@ -19,14 +20,24 @@ export const useCreatePrompt = () => {
   const [content, setContent] = useState('')
   const [tags, setTags] = useState<string[]>([])
   const [visibility, setVisibility] = useState<VisibilityEnum>('private')
+  const [params, setParams] = useState<PromptParam[]>([])
+
+  const syncParamsFromContent = useCallback((rawContent: string) => {
+    const extracted = extractParams(rawContent)
+    setParams((prev) => {
+      const prevMap = new Map(prev.map((p) => [p.name, p]))
+      return extracted.map((ep) => prevMap.get(ep.name) ?? ep)
+    })
+  }, [])
 
   const openModal = (initialData?: any) => {
     if (initialData) {
       setEditId(initialData.id)
       setTitle(initialData.title)
-      setContent(initialData.content || '') // In real app, might need to fetch full content if list item is partial
+      setContent(initialData.content || '')
       setTags(initialData.tags?.map((t: any) => t.name) || [])
       setVisibility(initialData.visibility || 'public')
+      setParams(initialData.params ?? [])
     } else {
       resetForm()
     }
@@ -44,6 +55,7 @@ export const useCreatePrompt = () => {
     setContent('')
     setTags([])
     setVisibility('private')
+    setParams([])
     setError(null)
   }
 
@@ -63,12 +75,13 @@ export const useCreatePrompt = () => {
         ? trimmedContent.substring(0, 100) + (trimmedContent.length > 100 ? '...' : '')
         : null
 
-    const dto: Partial<CreatePromptDTO> = {
+    const dto: CreatePromptDTO = {
       title: trimmedTitle,
       content: trimmedContent,
       tagIds: tags,
       visibility,
       description: autoDescription,
+      params,
     }
 
     try {
@@ -78,8 +91,7 @@ export const useCreatePrompt = () => {
         const updated = await promptsService.updatePrompt(editId, dto)
         resultId = updated.id
       } else {
-        // @ts-ignore - full DTO required for create
-        const created = await promptsService.createPrompt(dto as CreatePromptDTO)
+        const created = await promptsService.createPrompt(dto)
         resultId = created.id
       }
 
@@ -113,6 +125,9 @@ export const useCreatePrompt = () => {
       setTags,
       visibility,
       setVisibility,
+      params,
+      setParams,
+      syncParamsFromContent,
     },
     isSubmitting,
     error,
