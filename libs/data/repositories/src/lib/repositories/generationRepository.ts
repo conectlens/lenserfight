@@ -8,6 +8,13 @@ import {
 
 import { supabase } from '@lenserfight/data/supabase'
 
+type AIModelPublicRow = {
+  id: string
+  key: string | null
+  name: string
+  provider: AIModel['provider']
+  is_active: boolean
+}
 
 
 export interface GenerationRepositoryPort {
@@ -85,6 +92,24 @@ export class SupabaseGenerationRepository implements GenerationRepositoryPort {
       console.warn('Failed to fetch ai_models, returning empty list.', error)
       return []
     }
-    return data as AIModel[]
+
+    return ((data ?? []) as AIModelPublicRow[])
+      .filter((row) => !!row.key)
+      .map((row) => ({
+        id: row.id,
+        key: row.key!,
+        name: row.name,
+        provider: row.provider,
+        version: null,
+        provider_url: null,
+        description: '',
+        capabilities: [],
+        temperature: 0,
+        max_tokens: 0,
+        pricing_tier: null,
+        is_public: true,
+        is_active: row.is_active,
+        created_at: '',
+      }))
   }
 }
