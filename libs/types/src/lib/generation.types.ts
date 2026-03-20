@@ -42,6 +42,7 @@ export interface AIModel {
   max_tokens: number
   pricing_tier?: PricingTierEnum | null
   is_public: boolean
+  is_active: boolean
   created_at: string
 }
 

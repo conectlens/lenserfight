@@ -73,7 +73,7 @@ export const useLabController = (promptId: string, isAuthenticated = false) => {
       const resolvedContent = renderPrompt(promptContent, inputSnapshot, params ?? [])
       return walletService.executeWithWallet({
         provider: model.provider,
-        model: model.slug,
+        model: model.key,
         messages: [{ role: 'user', content: resolvedContent }],
         max_tokens: model.max_tokens,
         temperature: model.temperature,

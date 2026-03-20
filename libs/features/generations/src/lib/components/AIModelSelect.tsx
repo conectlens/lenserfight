@@ -22,8 +22,8 @@ export const AIModelSelect: React.FC<AIModelSelectProps> = ({
   const { models, isLoading } = useAIModels()
 
   const options = models
-    .filter((m) => !!m.model_key && m.is_active)
-    .map((m) => ({ value: m.model_key!, label: `${m.name} (${m.provider})` }))
+    .filter((m) => !!m.key && m.is_active)
+    .map((m) => ({ value: m.key, label: `${m.name} (${m.provider})` }))
 
   return (
     <SelectField

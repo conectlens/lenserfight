@@ -1,5 +1,6 @@
 export interface WalletProduct {
   id: string
+  variant_id: string
   name: string
   slug: string
   description: string
