@@ -174,6 +174,8 @@ export const promptsService = {
       content: record.content,
       reactionCounts,
       isSaved,
+      parentPromptId: record.parent_prompt_id ?? null,
+      forkedFromExecutionId: record.forked_from_execution_id ?? null,
     }
   },
 
