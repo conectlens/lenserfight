@@ -403,7 +403,7 @@ export class SupabasePromptsRepository implements PromptsRepositoryPort {
     const { data: basePrompt, error } = await supabase
       .schema('content')
       .from('prompt_templates')
-      .select('id, lenser_id, visibility, created_at, updated_at')
+      .select('id, lenser_id, visibility, created_at, updated_at, parent_prompt_id, forked_from_execution_id')
       .eq('id', id)
       .maybeSingle()
 
@@ -429,6 +429,8 @@ export class SupabasePromptsRepository implements PromptsRepositoryPort {
       visibility: basePrompt.visibility,
       created_at: basePrompt.created_at,
       updated_at: basePrompt.updated_at,
+      parent_prompt_id: (basePrompt as Record<string, unknown>).parent_prompt_id as string | null ?? null,
+      forked_from_execution_id: (basePrompt as Record<string, unknown>).forked_from_execution_id as string | null ?? null,
       title: translation?.title || 'Untitled',
       description: translation?.description ?? null,
       content: translation?.content || '',
@@ -470,9 +472,13 @@ export class SupabasePromptsRepository implements PromptsRepositoryPort {
     }
 
     // 2. Insert Base Prompt Template (lenser_id resolved server-side via DEFAULT lensers.get_auth_lenser_id())
-    const { data: promptInsertData, error: rpcError } = await supabase.schema('content').from('prompt_templates').insert({
-      visibility: input.visibility,
-    }).select('id').single()
+    const insertPayload: Record<string, unknown> = { visibility: input.visibility }
+    if (input.parentPromptId) insertPayload.parent_prompt_id = input.parentPromptId
+    if (input.forkedFromExecutionId) insertPayload.forked_from_execution_id = input.forkedFromExecutionId
+
+    const { data: promptInsertData, error: rpcError } = await supabase.schema('content').from('prompt_templates').insert(
+      insertPayload
+    ).select('id').single()
 
     if (rpcError) this.handleError(rpcError)
     const promptId = promptInsertData.id
