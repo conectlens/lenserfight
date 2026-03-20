@@ -43,6 +43,7 @@
       "@lenserfight/features/settings": ["libs/features/settings/src/index.ts"],
       "@lenserfight/features/share": ["libs/features/share/src/index.ts"],
       "@lenserfight/features/waiting-list": ["libs/features/waiting-list/src/index.ts"],
+      "@lenserfight/features/store": ["libs/features/store/src/index.ts"],
       "@lenserfight/features/feedback": ["libs/features/feedback/src/index.ts"],
       "@lenserfight/features/generations": ["libs/features/generations/src/index.ts"],
       "@lenserfight/features/onboarding": ["libs/features/onboarding/src/index.ts"],
