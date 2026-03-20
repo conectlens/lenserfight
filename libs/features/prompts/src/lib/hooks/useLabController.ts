@@ -61,7 +61,7 @@ export const useLabController = (promptId: string, isAuthenticated = false) => {
 
   // --- AI Models query (reuse existing generationService) ---
   const { data: aiModels = [], isLoading: isLoadingModels } = useQuery<AIModel[]>({
-    queryKey: queryKeys.executions.all,
+    queryKey: queryKeys.aiModels.all,
     queryFn: () => generationService.getAIModels(),
     staleTime: 5 * 60_000,
   })
