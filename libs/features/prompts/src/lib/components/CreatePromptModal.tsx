@@ -1,3 +1,4 @@
+import MDEditor from '@uiw/react-md-editor'
 import { Globe, Lock } from 'lucide-react'
 import React, { useMemo, useRef, useCallback } from 'react'
 
@@ -69,14 +70,6 @@ export const CreatePromptModal: React.FC<CreatePromptModalProps> = ({
     [form.setTitle, clearError]
   )
 
-  const handleContentChange = useCallback(
-    (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-      form.setContent(e.target.value)
-      clearError('content')
-    },
-    [form.setContent, clearError]
-  )
-
   const visibilityOptions = [
     { value: 'public', label: 'Public', icon: Globe },
     { value: 'private', label: 'Private', icon: Lock },
@@ -103,13 +96,18 @@ export const CreatePromptModal: React.FC<CreatePromptModalProps> = ({
           <label className="text-sm font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
             Prompt
           </label>
-          <textarea
-            value={form.content}
-            onChange={handleContentChange}
-            placeholder="Enter your full prompt content here. Use {{variables}} for dynamic inputs..."
-            rows={6}
-            className={`w-full px-4 py-3 bg-gray-50 dark:bg-gray-800 border rounded-xl text-gray-900 dark:text-white placeholder-gray-400 focus:ring-2 focus:ring-primary/50 focus:border-primary outline-none transition-all resize-none ${errors.content ? 'border-red-500' : 'border-gray-200 dark:border-gray-700'}`}
-          />
+          <div className={`rounded-xl border overflow-hidden ${errors.content ? 'border-red-500' : 'border-gray-200 dark:border-gray-700'}`}>
+            <MDEditor
+              value={form.content}
+              onChange={(val) => {
+                form.setContent(val ?? '')
+                clearError('content')
+              }}
+              height={220}
+              preview="edit"
+              data-color-mode="light"
+            />
+          </div>
           <FormError message={errors.content} />
         </div>
 
