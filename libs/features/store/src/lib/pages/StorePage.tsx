@@ -91,11 +91,16 @@ export const StorePage: React.FC = () => {
     setCheckoutError(null)
     setBuyingId(product.id)
     try {
-      const { checkoutUrl } = await walletService.checkout({
-        variantId: product.variant_id,
+      const checkout = await walletService.checkout({
+        variantId: product.variantId,
         ...(user?.email ? { email: user.email } : {}),
       })
-      window.location.href = checkoutUrl
+      const checkoutUrl = checkout.checkoutUrl || checkout.checkout_url
+      if (!checkoutUrl) {
+        throw new Error('Checkout failed: missing checkout URL.')
+      }
+
+      window.location.assign(checkoutUrl)
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Checkout failed.'
       const isAuthError = message.toLowerCase().includes('unauthenticated') || message.includes('401')
