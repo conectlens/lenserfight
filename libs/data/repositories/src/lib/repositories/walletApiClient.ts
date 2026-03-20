@@ -15,6 +15,10 @@ if (!import.meta.env.VITE_API_URL) {
 
 const API_BASE = import.meta.env.VITE_API_URL as string
 
+type WalletProductApi = Omit<WalletProduct, 'id'> & {
+  productId: string
+}
+
 async function getAuthHeader(): Promise<Record<string, string>> {
   const { data } = await supabase.auth.getSession()
   if (!data.session?.access_token) {
@@ -32,6 +36,14 @@ async function handleResponse<T>(res: Response): Promise<T> {
   return res.json() as Promise<T>
 }
 
+function normalizeCheckoutResponse(response: WalletCheckoutResponse): WalletCheckoutResponse {
+  return {
+    ...response,
+    checkoutUrl: response.checkoutUrl ?? response.checkout_url ?? '',
+    checkoutId: response.checkoutId ?? response.checkout_id ?? '',
+  }
+}
+
 export const walletApiClient = {
   async getBalance(): Promise<WalletBalance> {
     const authHeader = await getAuthHeader()
@@ -43,7 +55,13 @@ export const walletApiClient = {
 
   async getProducts(): Promise<{ products: WalletProduct[] }> {
     const res = await apiFetch(`${API_BASE}/wallet/products`)
-    return handleResponse<{ products: WalletProduct[] }>(res)
+    const data = await handleResponse<{ products: WalletProductApi[] }>(res)
+    return {
+      products: data.products.map(({ productId, ...product }) => ({
+        id: productId,
+        ...product,
+      })),
+    }
   },
 
   async checkout(req: WalletCheckoutRequest): Promise<WalletCheckoutResponse> {
@@ -59,7 +77,8 @@ export const walletApiClient = {
         ...(req.email ? { email: req.email } : {}),
       }),
     })
-    return handleResponse<WalletCheckoutResponse>(res)
+    const response = await handleResponse<WalletCheckoutResponse>(res)
+    return normalizeCheckoutResponse(response)
   },
 
   async executeWithWallet(req: WalletExecuteRequest): Promise<WalletExecuteResponse> {

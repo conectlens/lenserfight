@@ -1,11 +1,10 @@
 export interface WalletProduct {
   id: string
-  variant_id: string
+  variantId: string
   name: string
-  slug: string
   description: string
-  thumb_url?: string
-  large_thumb_url?: string
+  thumb_url?: string | null
+  large_thumb_url?: string | null
   price: number
   price_formatted: string
   pay_what_you_want: boolean
@@ -19,7 +18,9 @@ export interface WalletCheckoutRequest {
 
 export interface WalletCheckoutResponse {
   checkoutUrl: string
+  checkout_url?: string
   checkoutId: string
+  checkout_id?: string
 }
 
 export interface WalletBalance {
