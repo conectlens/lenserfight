@@ -82,6 +82,31 @@ export const PromptDetailCard: React.FC<PromptDetailCardProps> = ({
             <PromptReactionBar counts={prompt.reactionCounts} />
           </div>
         </div>
+
+        {/* Parameters */}
+        {prompt.params && prompt.params.length > 0 && (
+          <div className="mt-4 pt-4 border-t border-gray-100 dark:border-gray-700">
+            <p className="text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-2">
+              Parameters
+            </p>
+            <div className="flex flex-wrap gap-1.5">
+              {prompt.params.map((p) => (
+                <span
+                  key={p.name}
+                  className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full border border-gray-200 dark:border-gray-700 text-xs bg-gray-50 dark:bg-gray-800"
+                >
+                  <code className="font-mono text-primary-700 dark:text-primary-400">{`{{${p.name}}}`}</code>
+                  <span className="text-gray-400">{p.type}</span>
+                  {p.required ? (
+                    <span className="text-red-500 font-semibold">*</span>
+                  ) : (
+                    <span className="text-gray-400">opt</span>
+                  )}
+                </span>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Main Content Area */}
