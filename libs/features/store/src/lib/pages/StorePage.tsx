@@ -94,7 +94,6 @@ export const StorePage: React.FC = () => {
       const { checkoutUrl } = await walletService.checkout({
         variantId: product.id,
         ...(user?.email ? { email: user.email } : {}),
-        ...(user?.id ? { customData: { userId: user.id } } : {}),
       })
       window.location.href = checkoutUrl
     } catch (err) {
