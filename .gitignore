@@ -33,6 +33,9 @@ dist-ssr
 # LenserFight CLI — machine-specific, never commit
 .lenserfight.json
 
+# Private migrations — lenserfight-platform repo only, never commit to OSS
+supabase/private-migrations/
+
 # Firebase
 .firebase/
 firebase-debug.log
