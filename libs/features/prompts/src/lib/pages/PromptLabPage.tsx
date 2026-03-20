@@ -258,6 +258,7 @@ export const PromptLabPage: React.FC = () => {
             isLoadingModels={lab.isLoadingModels}
             onTrigger={lab.triggerExecution}
             isTriggeringExecution={lab.isTriggeringExecution}
+            params={prompt.params}
           />
         </div>
       </div>
