@@ -258,7 +258,6 @@ export const PromptLabPage: React.FC = () => {
             isLoadingModels={lab.isLoadingModels}
             onTrigger={lab.triggerExecution}
             isTriggeringExecution={lab.isTriggeringExecution}
-            pendingRun={lab.pendingRun}
           />
         </div>
       </div>
@@ -270,6 +269,7 @@ export const PromptLabPage: React.FC = () => {
           <LabArtifactViewer
             selectedRunId={lab.selectedRunId}
             comparisonRunIds={lab.comparisonRunIds}
+            latestResult={lab.latestResult}
           />
         </div>
 
