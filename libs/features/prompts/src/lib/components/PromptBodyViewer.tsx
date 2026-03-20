@@ -28,7 +28,7 @@ export const PromptBodyViewer: React.FC<PromptBodyViewerProps> = ({ content, onC
   }
 
   return (
-    <div className="w-full max-w-[860px] mx-auto relative group">
+    <div className="w-full relative group">
       {/* Container */}
       <div className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 shadow-sm overflow-hidden transition-all hover:shadow-md relative">
         {/* Floating Actions */}

@@ -20,7 +20,7 @@ export const useForkPrompt = (sourcePrompt: PromptTemplateDetailViewModel | null
         title: `Fork of ${sourcePrompt.title}`,
         description: sourcePrompt.description ?? null,
         content: sourcePrompt.content,
-        tagIds: sourcePrompt.tags.map((t) => t.id),
+        tagIds: sourcePrompt.tags.map((t) => t.name),
         visibility: 'private',
         parentPromptId: sourcePrompt.id,
         forkedFromExecutionId: options.forkedFromExecutionId ?? null,

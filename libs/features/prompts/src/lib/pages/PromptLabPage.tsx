@@ -18,7 +18,6 @@ import { PromptDetailHeader } from '../components/PromptDetailHeader'
 import { LabExecutionPanel } from '../components/LabExecutionPanel'
 import { LabExecutionTimeline } from '../components/LabExecutionTimeline'
 import { LabArtifactViewer } from '../components/LabArtifactViewer'
-import { LabVersionGraph } from '../components/LabVersionGraph'
 import { useAuthenticatedLenser } from '../hooks/useAuthenticatedLenser'
 import { useCreatePrompt } from '../hooks/useCreatePrompt'
 import { usePromptDetailController } from '../hooks/usePromptDetailController'
@@ -241,18 +240,9 @@ export const PromptLabPage: React.FC = () => {
         saveCount={prompt.reactionCounts.saved}
       />
 
-      {/* Version lineage + Prompt body + Execution panel row */}
+      {/* Prompt body + Execution panel row */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
-        <div className="lg:col-span-3">
-          <LabVersionGraph
-            currentPromptId={prompt.id}
-            parentPromptId={prompt.parentPromptId}
-            onNavigate={(targetId) => navigate(`/len/p/${targetId}`)}
-            onFork={() => forkPrompt()}
-            isForking={isForking}
-          />
-        </div>
-        <div className="lg:col-span-5">
+        <div className="lg:col-span-7">
           <PromptBodyViewer
             content={prompt.content}
             onCopy={handleCopy}
@@ -260,7 +250,7 @@ export const PromptLabPage: React.FC = () => {
             isForking={isForking}
           />
         </div>
-        <div className="lg:col-span-4">
+        <div className="lg:col-span-5">
           <LabExecutionPanel
             promptId={prompt.id}
             promptContent={prompt.content}
