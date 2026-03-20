@@ -31,7 +31,7 @@ import { LeaderboardPage } from '@lenserfight/features/leaderboard'
 import { LensersPage } from '@lenserfight/features/lensers'
 import { LenserProfilePage, LenserProvider, useLenser, PendingRequestsPage } from '@lenserfight/features/profile'
 import {
-  PromptDetailPage,
+  PromptLabPage,
   PromptsPage,
 } from '@lenserfight/features/prompts'
 import { WelcomePage } from '@lenserfight/features/public'
@@ -167,7 +167,7 @@ const App: React.FC = () => {
                           path="/len/p/:id"
                           element={
                             <DashboardLayout>
-                              <PromptDetailPage />
+                              <PromptLabPage />
                             </DashboardLayout>
                           }
                         />
