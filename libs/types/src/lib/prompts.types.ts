@@ -5,6 +5,23 @@ export type VisibilityEnum = 'public' | 'community' | 'private'
 export type ContentStatus = 'draft' | 'published' | 'archived'
 export type ReactionEnum = 'like' | 'love' | 'clap' | 'saved' | 'copy'
 
+export type PromptParamType = 'string' | 'number' | 'boolean' | 'select' | 'multiselect' | 'array'
+
+export interface PromptParam {
+  name: string
+  type: PromptParamType
+  required: boolean
+  default?: any
+  description?: string
+  min?: number
+  max?: number
+  regex?: string
+  options?: { label: string; value: string }[]
+  itemType?: 'string' | 'number'
+  arrayFormat?: 'comma' | 'newline' | 'json'
+  placeholder?: string
+}
+
 export interface PromptTemplateRecord {
   id: string
   lenser_id: string
@@ -20,6 +37,7 @@ export interface PromptTemplateRecord {
   updated_at: string
   parent_prompt_id?: string | null
   forked_from_execution_id?: string | null
+  params?: PromptParam[] | null
 }
 
 export interface PromptTemplateTagRecord {
@@ -68,6 +86,7 @@ export interface PromptTemplateDetailViewModel extends PromptTemplateViewModel {
   isSaved: boolean
   parentPromptId?: string | null
   forkedFromExecutionId?: string | null
+  params: PromptParam[]
 }
 
 export interface CreatePromptDTO {
@@ -78,4 +97,5 @@ export interface CreatePromptDTO {
   visibility: VisibilityEnum
   parentPromptId?: string | null
   forkedFromExecutionId?: string | null
+  params?: PromptParam[]
 }
