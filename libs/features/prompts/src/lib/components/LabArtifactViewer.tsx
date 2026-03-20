@@ -1,13 +1,14 @@
 import React, { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
-import { Copy, Check, LayoutPanelLeft } from 'lucide-react'
+import { Copy, Check, LayoutPanelLeft, Coins } from 'lucide-react'
 import { executionService } from '@lenserfight/data/repositories'
 import { queryKeys } from '@lenserfight/data/cache'
-import { ExecutionArtifact } from '@lenserfight/types'
+import { ExecutionArtifact, WalletExecuteResponse } from '@lenserfight/types'
 
 interface LabArtifactViewerProps {
   selectedRunId: string | null
   comparisonRunIds: string[]
+  latestResult?: WalletExecuteResponse | null
 }
 
 interface ArtifactBlockProps {
@@ -107,12 +108,41 @@ const RunArtifacts: React.FC<{ runId: string; showAll: boolean }> = ({ runId, sh
 export const LabArtifactViewer: React.FC<LabArtifactViewerProps> = ({
   selectedRunId,
   comparisonRunIds,
+  latestResult,
 }) => {
   const [showAll, setShowAll] = useState(false)
 
   const isComparing = comparisonRunIds.length === 2
 
+  // Show the latest sync result if nothing from history is selected
   if (!selectedRunId && !isComparing) {
+    if (latestResult) {
+      return (
+        <div className="flex flex-col gap-3">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <LayoutPanelLeft size={16} className="text-gray-400" />
+              <span className="text-sm font-semibold text-gray-800 dark:text-gray-100">Output</span>
+            </div>
+            <div className="flex items-center gap-2 text-xs text-gray-400 dark:text-gray-500">
+              <Coins size={12} />
+              <span>{latestResult.credits_charged} cr</span>
+              <span>·</span>
+              <span>{latestResult.usage.input_tokens + latestResult.usage.output_tokens} tokens</span>
+            </div>
+          </div>
+          <div className="relative">
+            <div className="absolute top-2 right-2">
+              <CopyButton text={latestResult.content} />
+            </div>
+            <pre className="whitespace-pre-wrap break-words text-sm text-gray-800 dark:text-gray-200 bg-gray-50 dark:bg-gray-800 rounded-lg p-4 pr-16 border border-gray-200 dark:border-gray-700 font-mono leading-relaxed">
+              {latestResult.content}
+            </pre>
+          </div>
+        </div>
+      )
+    }
+
     return (
       <div className="flex items-center justify-center h-32 rounded-xl border border-dashed border-gray-200 dark:border-gray-700 text-sm text-gray-400 dark:text-gray-500">
         Select an execution to view its output.
