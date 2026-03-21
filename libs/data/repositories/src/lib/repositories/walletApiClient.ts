@@ -1,14 +1,21 @@
 import { supabase } from '@lenserfight/data/supabase'
-import { apiFetch } from '../apiFetch'
 import {
+  ExecuteByokRequest,
+  ExecuteByokResponse,
+  ExecuteImageRequest,
+  ExecuteImageResponse,
+  StreamCallbacks,
   WalletBalance,
   WalletCheckoutRequest,
   WalletCheckoutResponse,
   WalletExecuteRequest,
   WalletExecuteResponse,
+  WalletPricingModel,
   WalletProduct,
-  StreamCallbacks,
+  WalletTransaction,
 } from '@lenserfight/types'
+import type { ApiResponseEnvelope } from 'contracts'
+import { apiFetch, unwrapEnvelope } from '../apiFetch'
 
 if (!import.meta.env.VITE_API_URL) {
   console.warn('[walletApiClient] VITE_API_URL is not set — wallet calls will fail.')
@@ -28,41 +35,50 @@ async function getAuthHeader(): Promise<Record<string, string>> {
   return { Authorization: `Bearer ${data.session.access_token}` }
 }
 
-async function handleResponse<T>(res: Response): Promise<T> {
-  if (!res.ok) {
-    const body = await res.json().catch(() => ({}))
-    const message = (body as { message?: string })?.message ?? `HTTP ${res.status}`
-    throw new Error(`[walletApiClient] ${message}`)
-  }
-  return res.json() as Promise<T>
-}
-
-function normalizeCheckoutResponse(response: WalletCheckoutResponse): WalletCheckoutResponse {
-  return {
-    ...response,
-    checkoutUrl: response.checkoutUrl ?? response.checkout_url ?? '',
-    checkoutId: response.checkoutId ?? response.checkout_id ?? '',
-  }
-}
-
 export const walletApiClient = {
   async getBalance(): Promise<WalletBalance> {
     const authHeader = await getAuthHeader()
     const res = await apiFetch(`${API_BASE}/wallet/balance`, {
       headers: { ...authHeader },
     })
-    return handleResponse<WalletBalance>(res)
+    return unwrapEnvelope<WalletBalance>(res)
   },
 
   async getProducts(): Promise<{ products: WalletProduct[] }> {
     const res = await apiFetch(`${API_BASE}/wallet/products`)
-    const data = await handleResponse<{ products: WalletProductApi[] }>(res)
+    const data = await unwrapEnvelope<{ products: WalletProductApi[] }>(res)
     return {
       products: data.products.map(({ productId, ...product }) => ({
         id: productId,
         ...product,
       })),
     }
+  },
+
+  async getTransactions(
+    page = 1,
+    limit = 20,
+  ): Promise<{ transactions: WalletTransaction[]; total: number; hasNextPage: boolean }> {
+    const authHeader = await getAuthHeader()
+    const res = await apiFetch(
+      `${API_BASE}/wallet/transactions?page=${page}&limit=${limit}`,
+      { headers: { ...authHeader } },
+    )
+    const envelope = (await res.json()) as ApiResponseEnvelope<WalletTransaction[]>
+    if (envelope.error) throw envelope.error
+    return {
+      transactions: envelope.data ?? [],
+      total: envelope.meta?.total ?? 0,
+      hasNextPage: envelope.meta?.hasNextPage ?? false,
+    }
+  },
+
+  async getPricing(): Promise<{ models: WalletPricingModel[] }> {
+    const authHeader = await getAuthHeader()
+    const res = await apiFetch(`${API_BASE}/wallet/pricing`, {
+      headers: { ...authHeader },
+    })
+    return unwrapEnvelope<{ models: WalletPricingModel[] }>(res)
   },
 
   async checkout(req: WalletCheckoutRequest): Promise<WalletCheckoutResponse> {
@@ -78,8 +94,11 @@ export const walletApiClient = {
         ...(req.email ? { email: req.email } : {}),
       }),
     })
-    const response = await handleResponse<WalletCheckoutResponse>(res)
-    return normalizeCheckoutResponse(response)
+    const raw = await unwrapEnvelope<{ checkout_url: string; checkout_id: string }>(res)
+    return {
+      checkoutUrl: raw.checkout_url,
+      checkoutId: raw.checkout_id,
+    }
   },
 
   async executeWithWallet(req: WalletExecuteRequest): Promise<WalletExecuteResponse> {
@@ -92,7 +111,33 @@ export const walletApiClient = {
       },
       body: JSON.stringify(req),
     })
-    return handleResponse<WalletExecuteResponse>(res)
+    return unwrapEnvelope<WalletExecuteResponse>(res)
+  },
+
+  async executeByok(req: ExecuteByokRequest): Promise<ExecuteByokResponse> {
+    const authHeader = await getAuthHeader()
+    const res = await apiFetch(`${API_BASE}/execute/byok`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        ...authHeader,
+      },
+      body: JSON.stringify(req),
+    })
+    return unwrapEnvelope<ExecuteByokResponse>(res)
+  },
+
+  async executeImage(req: ExecuteImageRequest): Promise<ExecuteImageResponse> {
+    const authHeader = await getAuthHeader()
+    const res = await apiFetch(`${API_BASE}/execute/image`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        ...authHeader,
+      },
+      body: JSON.stringify(req),
+    })
+    return unwrapEnvelope<ExecuteImageResponse>(res)
   },
 
   async streamWithWallet(
@@ -114,7 +159,11 @@ export const walletApiClient = {
 
     if (!response.ok) {
       const body = await response.json().catch(() => ({}))
-      throw new Error((body as { message?: string }).message ?? `HTTP ${response.status}`)
+      const envelope = body as { error?: { code?: string; message?: string } }
+      const message = envelope.error?.message ?? `HTTP ${response.status}`
+      const code = envelope.error?.code ?? 'internal_error'
+      callbacks.onError(message, code)
+      return
     }
 
     const reader = response.body!.getReader()

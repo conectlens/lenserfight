@@ -20,6 +20,13 @@ vi.mock('@lenserfight/data/supabase', () => ({
 
 import { walletApiClient } from './walletApiClient'
 
+function envelopeResponse(data: unknown, status = 200): Response {
+  return new Response(JSON.stringify({ data, meta: { requestId: 'req_test', durationMs: 1 } }), {
+    status,
+    headers: { 'Content-Type': 'application/json' },
+  })
+}
+
 describe('walletApiClient.checkout', () => {
   afterEach(() => {
     vi.restoreAllMocks()
@@ -27,17 +34,9 @@ describe('walletApiClient.checkout', () => {
   })
 
   it('sends variant_id to the checkout API', async () => {
-    const response = new Response(
-      JSON.stringify({
-        checkout_url: 'https://checkout.test/session',
-        checkout_id: 'chk_123',
-      }),
-      {
-        status: 200,
-        headers: { 'Content-Type': 'application/json' },
-      }
-    )
-    const fetchMock = vi.spyOn(globalThis, 'fetch').mockResolvedValue(response)
+    const fetchMock = vi
+      .spyOn(globalThis, 'fetch')
+      .mockResolvedValue(envelopeResponse({ checkout_url: 'https://checkout.test/session', checkout_id: 'chk_123' }))
 
     await walletApiClient.checkout({
       variantId: 'var_123',
@@ -51,32 +50,20 @@ describe('walletApiClient.checkout', () => {
           variant_id: 'var_123',
           email: 'buyer@example.com',
         }),
-      })
+      }),
     )
   })
 
   it('normalizes checkout_url to checkoutUrl', async () => {
-    const response = new Response(
-      JSON.stringify({
-        checkout_url: 'https://checkout.test/session',
-        checkout_id: 'chk_123',
-      }),
-      {
-        status: 200,
-        headers: { 'Content-Type': 'application/json' },
-      }
+    vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+      envelopeResponse({ checkout_url: 'https://checkout.test/session', checkout_id: 'chk_123' }),
     )
-    vi.spyOn(globalThis, 'fetch').mockResolvedValue(response)
 
     await expect(
-      walletApiClient.checkout({
-        variantId: 'var_123',
-      })
+      walletApiClient.checkout({ variantId: 'var_123' }),
     ).resolves.toEqual({
       checkoutUrl: 'https://checkout.test/session',
-      checkout_url: 'https://checkout.test/session',
       checkoutId: 'chk_123',
-      checkout_id: 'chk_123',
     })
   })
 })
@@ -87,8 +74,8 @@ describe('walletApiClient.getProducts', () => {
   })
 
   it('normalizes productId to id and preserves variantId', async () => {
-    const response = new Response(
-      JSON.stringify({
+    const fetchMock = vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+      envelopeResponse({
         products: [
           {
             productId: '905584',
@@ -104,18 +91,13 @@ describe('walletApiClient.getProducts', () => {
           },
         ],
       }),
-      {
-        status: 200,
-        headers: { 'Content-Type': 'application/json' },
-      }
     )
-    const fetchMock = vi.spyOn(globalThis, 'fetch').mockResolvedValue(response)
 
     const result = await walletApiClient.getProducts()
 
     expect(fetchMock).toHaveBeenCalledWith(
       expect.stringContaining('/wallet/products'),
-      expect.any(Object)
+      expect.any(Object),
     )
     expect(result.products).toEqual([
       {
@@ -131,5 +113,71 @@ describe('walletApiClient.getProducts', () => {
         test_mode: true,
       },
     ])
+  })
+})
+
+describe('walletApiClient.getBalance', () => {
+  afterEach(() => {
+    vi.restoreAllMocks()
+    getSession.mockClear()
+  })
+
+  it('returns balance from envelope data', async () => {
+    vi.spyOn(globalThis, 'fetch').mockResolvedValue(envelopeResponse({ balance: 499900 }))
+
+    const result = await walletApiClient.getBalance()
+    expect(result).toEqual({ balance: 499900 })
+  })
+
+  it('throws envelope error when error field is present', async () => {
+    vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+      new Response(
+        JSON.stringify({
+          error: { code: 'wallet.not_found', message: 'Wallet not found' },
+          meta: { requestId: 'req_test' },
+        }),
+        { status: 200, headers: { 'Content-Type': 'application/json' } },
+      ),
+    )
+
+    await expect(walletApiClient.getBalance()).rejects.toMatchObject({
+      code: 'wallet.not_found',
+      message: 'Wallet not found',
+    })
+  })
+})
+
+describe('walletApiClient.getTransactions', () => {
+  afterEach(() => {
+    vi.restoreAllMocks()
+    getSession.mockClear()
+  })
+
+  it('returns transactions with pagination meta', async () => {
+    const tx = {
+      id: 'uuid-1',
+      tx_type: 'spend',
+      amount: 188,
+      direction: -1,
+      balance_after: 499712,
+      description: 'AI execution: openai/gpt-4o',
+      reference_type: 'execution.runs',
+      reference_id: 'run_uuid',
+      created_at: '2026-03-20T15:30:00Z',
+    }
+    vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+      new Response(
+        JSON.stringify({
+          data: [tx],
+          meta: { requestId: 'req_test', durationMs: 23, limit: 20, offset: 0, total: 127, hasNextPage: true },
+        }),
+        { status: 200, headers: { 'Content-Type': 'application/json' } },
+      ),
+    )
+
+    const result = await walletApiClient.getTransactions(1, 20)
+    expect(result.transactions).toHaveLength(1)
+    expect(result.total).toBe(127)
+    expect(result.hasNextPage).toBe(true)
   })
 })
