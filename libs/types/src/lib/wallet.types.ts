@@ -18,13 +18,33 @@ export interface WalletCheckoutRequest {
 
 export interface WalletCheckoutResponse {
   checkoutUrl: string
-  checkout_url?: string
   checkoutId: string
-  checkout_id?: string
 }
 
 export interface WalletBalance {
   balance: number
+}
+
+export interface WalletTransaction {
+  id: string
+  tx_type: 'spend' | 'deposit' | 'refund'
+  amount: number
+  direction: 1 | -1
+  balance_after: number
+  description: string
+  reference_type: string
+  reference_id: string
+  created_at: string
+}
+
+export interface WalletPricingModel {
+  model_key: string
+  name: string
+  provider: string
+  provider_name: string
+  unit_type: 'tokens' | 'image'
+  sample_cost_usd: number
+  sample_cost_credits: number
 }
 
 export interface WalletExecuteRequest {
@@ -40,6 +60,35 @@ export interface WalletExecuteResponse {
   usage: { input_tokens: number; output_tokens: number }
   provider: string
   model: string
+  credits_charged: number
+}
+
+export interface ExecuteByokRequest {
+  key_ref_id: string
+  provider?: string
+  model: string
+  messages: Array<{ role: 'system' | 'user' | 'assistant'; content: string }>
+  max_tokens?: number
+  temperature?: number
+}
+
+export interface ExecuteByokResponse {
+  content: string
+  usage: { input_tokens: number; output_tokens: number }
+  provider: string
+  model: string
+}
+
+export interface ExecuteImageRequest {
+  model: 'fal-ai/flux/schnell' | 'fal-ai/flux/dev' | 'fal-ai/flux-pro'
+  prompt: string
+  num_images?: number
+  image_size?: 'square_hd' | 'square' | 'landscape_4_3' | 'portrait_4_3'
+}
+
+export interface ExecuteImageResponse {
+  urls: string[]
+  units: number
   credits_charged: number
 }
 

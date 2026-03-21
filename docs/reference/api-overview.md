@@ -1,122 +1,152 @@
 # API Overview
 
-LenserFight exposes a REST API via [PostgREST](https://postgrest.org), auto-generated from the Supabase schemas. All API access goes through the Supabase API gateway.
+LenserFight exposes a REST API via the **API gateway** (`lf-api-gateway`), a Cloudflare Worker that routes requests to internal workers by path prefix. All platform features (wallet, execution, billing) are served through this single gateway.
 
-## Base URL
+::: warning API URL is determined by NODE_ENV
+**The API base URL changes based on your environment:**
 
 | Environment | URL |
 |-------------|-----|
-| Local | `http://127.0.0.1:54321/rest/v1` |
-| Production | `https://<project-ref>.supabase.co/rest/v1` |
+| Production (`NODE_ENV=production`) | `https://api.lenserfight.com` |
+| Development (`NODE_ENV=development`) | `http://localhost:8786` |
 
-## Exposed Schemas
+Never hardcode the URL — always read it from the environment variable `VITE_API_URL` (frontend) or `NODE_ENV` (server-side).
+:::
 
-The following schemas are accessible via the REST API (configured in `supabase/config.toml`):
+## Request Routing
 
-| Schema | Purpose |
-|--------|---------|
-| `public` | RPC functions, shared types, enums |
-| `lensers` | User profiles, social links, badges |
-| `content` | Forum threads, replies, prompt templates |
-| `ai` | AI models, providers, generations |
-| `xp` | Experience points, rules, events, levels |
-| `battles` | Battle arenas, contenders, votes, scorecards |
-| `graphql_public` | GraphQL schema (auto-managed by pg_graphql) |
+| Path prefix | Worker | Description |
+|-------------|--------|-------------|
+| `/wallet/*` | `lf-wallet-api` | Balance, transactions, checkout, pricing |
+| `/execute/*` | `lf-execution-proxy` | AI model execution (wallet, BYOK, image, stream) |
+| `/webhook/*` | `lf-billing-webhook` | LemonSqueezy billing events |
 
 ## Authentication
 
-Every request requires the `apikey` header. Authenticated requests also include a JWT `Authorization` header.
+### JWT (User Context)
 
-### Auth Tiers
-
-| Role | Header | Description |
-|------|--------|-------------|
-| `anon` | `apikey: <ANON_KEY>` | Public read access; no user identity |
-| `authenticated` | `apikey: <ANON_KEY>` + `Authorization: Bearer <JWT>` | Logged-in user; RLS policies apply based on `auth.uid()` |
-| `service_role` | `apikey: <SERVICE_ROLE_KEY>` | Bypasses RLS; used by backend services only |
-
-### Example Headers
-
-```bash
-# Anonymous request
-curl 'http://127.0.0.1:54321/rest/v1/battles?status=eq.published' \
-  -H 'apikey: eyJhbGciOiJIUzI1NiIs...'
-
-# Authenticated request
-curl 'http://127.0.0.1:54321/rest/v1/rpc/fn_battles_create' \
-  -H 'apikey: eyJhbGciOiJIUzI1NiIs...' \
-  -H 'Authorization: Bearer eyJhbGciOiJIUzI1NiIs...' \
-  -H 'Content-Type: application/json' \
-  -d '{"p_title": "My Battle", "p_slug": "my-battle", "p_task_prompt": "..."}'
-```
-
-## Table Access
-
-PostgREST auto-generates CRUD endpoints for every table in exposed schemas:
+User-facing endpoints require a **Supabase JWT** via the `Authorization` header:
 
 ```
-GET    /rest/v1/<schema>/<table>          -- SELECT (filtered by RLS)
-POST   /rest/v1/<schema>/<table>          -- INSERT
-PATCH  /rest/v1/<schema>/<table>?id=eq.x  -- UPDATE
-DELETE /rest/v1/<schema>/<table>?id=eq.x  -- DELETE
+Authorization: Bearer <JWT_TOKEN>
 ```
 
-Row-Level Security policies control what each role can see and modify. See [RLS Reference](/database/rls-reference) for the complete policy inventory.
+The JWT is obtained by signing in via Supabase Auth. The lenser ID is extracted from the JWT `sub` claim.
 
-## RPC Functions
+### API Key (Internal/Service)
 
-Custom logic is exposed via `SECURITY DEFINER` functions in the `public` schema. Call them with:
+Internal service-to-service endpoints use the platform API key via the `X-Platform-Api-Key` header. Only internal workers have this key — regular users cannot access these endpoints.
 
-```
-POST /rest/v1/rpc/<function_name>
-Content-Type: application/json
-Body: { "param1": "value1", "param2": "value2" }
-```
+## Response Contract
 
-Key RPC surfaces:
+Every endpoint returns `ApiResponseEnvelope<T>`:
 
-| Domain | Functions | Auth |
-|--------|-----------|------|
-| Battles | `fn_battles_create`, `fn_battles_open`, `fn_battles_join`, `fn_battles_submit`, `fn_battles_start_voting`, `fn_battles_vote`, `fn_battles_finalize`, `fn_battles_get_public`, `fn_battles_list_public` | Mixed |
-| XP | `xp.apply` | service_role |
-| Analytics | `fn_log_page_view`, `fn_tag_activity_log` | anon/authenticated |
-
-See [RPC Reference](/database/rpc-reference) for full signatures, parameters, and curl examples.
-
-## Filtering and Pagination
-
-PostgREST supports query parameters for filtering:
-
-```bash
-# Filter by status
-GET /rest/v1/battles?status=eq.published
-
-# Pagination
-GET /rest/v1/battles?limit=20&offset=0
-
-# Select specific columns
-GET /rest/v1/battles?select=id,title,slug,status
-
-# Order by
-GET /rest/v1/battles?order=created_at.desc
-```
-
-## Response Format
-
-All responses are JSON. Successful responses return `200` with data. Errors return appropriate HTTP status codes with a JSON error body:
-
-```json
+```typescript
 {
-  "code": "PGRST301",
-  "details": null,
-  "hint": null,
-  "message": "JWT expired"
+  data?: T       // Present on success
+  error?: ApiError  // Present on failure
+  meta?: ApiMeta    // Always present
 }
 ```
 
+### ApiMeta
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `requestId` | `string` | Unique request ID. Include in bug reports. |
+| `durationMs` | `number` | Server-side processing time in milliseconds. |
+| `limit` | `number` | Page size (paginated endpoints only). |
+| `offset` | `number` | Record offset from start (paginated endpoints only). |
+| `total` | `number` | Total records available (paginated endpoints only). |
+| `hasNextPage` | `boolean` | Whether more records exist (paginated endpoints only). |
+
+### ApiError
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `code` | `string` | Machine-readable dot-notation code (e.g. `wallet.not_found`). |
+| `message` | `string` | Human-readable explanation. |
+| `details` | `object` | Optional structured details (e.g. validation field errors). |
+
+## Endpoints Summary
+
+### Wallet API
+
+| Method | Path | Auth | Description |
+|--------|------|------|-------------|
+| `GET` | `/wallet/balance` | JWT | Get current credit balance |
+| `GET` | `/wallet/transactions` | JWT | Get paginated transaction ledger |
+| `POST` | `/wallet/checkout` | JWT | Start a LemonSqueezy checkout session |
+| `GET` | `/wallet/products` | None | List all active credit products |
+| `GET` | `/wallet/pricing` | JWT | Get model catalog with credit costs |
+
+### Execution Proxy
+
+| Method | Path | Auth | Description |
+|--------|------|------|-------------|
+| `POST` | `/execute/wallet` | JWT | Execute AI request (charges wallet credits) |
+| `POST` | `/execute/byok` | JWT | Execute AI request (user's own API key, no charge) |
+| `POST` | `/execute/image` | JWT | Generate images via Fal.ai FLUX (charges credits) |
+| `POST` | `/execute/stream` | JWT | Stream AI tokens via SSE (charges credits) |
+
+### Billing Webhook
+
+| Method | Path | Auth | Description |
+|--------|------|------|-------------|
+| `POST` | `/webhook/lemonsqueezy` | HMAC-SHA256 | Receive and process LemonSqueezy order events |
+
+## Error Code Reference
+
+| `error.code` | HTTP Status | Meaning |
+|-------------|-------------|---------|
+| `auth.missing_token` | 401 | No `Authorization` header or not `Bearer` format |
+| `auth.invalid_token` | 401 | JWT expired, malformed, or `sub` claim missing |
+| `auth.profile_not_found` | 404 | JWT valid but lenser profile not found |
+| `auth.unauthorized` | 401 | Missing or invalid `X-Platform-Api-Key` |
+| `validation_error` | 400 | Request body or query failed schema validation — see `details` |
+| `not_found` | 404 | No route matched the request path |
+| `wallet.not_found` | 404 | Wallet account not found for this lenser |
+| `wallet.insufficient_balance` | 402 | Not enough credits to complete the operation |
+| `wallet.account_frozen` | 403 | Account suspended by admin |
+| `wallet.spending_limit_exceeded` | 429 | Daily or monthly spend cap reached |
+| `wallet.invalid_amount` | 400 | Amount is invalid (e.g. zero or negative) |
+| `wallet.reservation_failed` | 503 | Wallet service unavailable during reservation |
+| `pricing.not_found` | 404 | No pricing configured for this model |
+| `execute.model_not_found` | 404 | Model not in catalog or not active |
+| `execute.pricing_failed` | 500 | Credit cost calculation failed |
+| `execute.invalid_messages` | 400 | Messages array failed sanitization |
+| `execute.unsupported_provider` | 400 | Provider has no platform key configured |
+| `execute.provider_failed` | 502 | AI provider returned an error |
+| `execute.provider_mismatch` | 400 | Requested provider doesn't match BYOK key's provider |
+| `execute.key_resolution_failed` | 403 | BYOK key not found or not owned by this user |
+| `billing.variant_not_found` | 404 | LemonSqueezy variant not found in billing schema |
+| `billing.session_failed` | 500 | Failed to create checkout session |
+| `billing.upstream_error` | 502 | LemonSqueezy API returned an error |
+| `webhook.invalid_signature` | 401 | HMAC signature mismatch |
+| `webhook.invalid_json` | 400 | Webhook body is not valid JSON |
+| `webhook.missing_session` | 400 | `session_id` not present in `custom_data` |
+| `webhook.session_not_found` | 404 | Checkout session not found |
+| `webhook.processing_failed` | 500 | Webhook handler threw an unexpected error |
+| `internal_error` | 500 | Unhandled server error |
+
+## Rate Limits
+
+| Endpoint | Limit | Window |
+|----------|-------|--------|
+| `POST /execute/wallet` | 100 requests | Per minute per user |
+| `POST /execute/image` | 30 requests | Per minute per user |
+| `GET /wallet/balance` | 200 requests | Per minute per user |
+| `GET /wallet/transactions` | 100 requests | Per minute per user |
+
+Exceeded limits return **HTTP 429** with a `Retry-After` header.
+
+## Versioning
+
+Current version: **v1** (stable). Future versions will be prefixed (e.g. `/v2/execute/wallet`). Old versions are supported for **12 months** before deprecation.
+
 ## Related
 
-- [Schema Overview](/database/schema-overview) — all schemas and their tables
-- [RLS Reference](/database/rls-reference) — row-level security policies per table
-- [RPC Reference](/database/rpc-reference) — full function signatures and examples
-- [Local Setup](/database/local-setup) — run the API locally
+- [Call the API](/how-to/call-the-api) — Step-by-step curl guide for every endpoint
+- [Integrate API](/how-to/integrate-api) — Client setup, auth handling, error strategy
+- [Streaming Architecture](/explanations/streaming) — SSE streaming deep-dive
+- [Credits](/explanation/credits) — Credit packs and pricing
