@@ -128,9 +128,10 @@ export class SupabasePromptsRepository implements PromptsRepositoryPort {
   private async getPromptReactionTotals(promptId: string): Promise<Record<string, number>> {
     const { data, error } = await supabase
       .schema('content')
-      .from('prompt_reactions')
+      .from('reactions')
       .select('reaction')
-      .eq('prompt_id', promptId)
+      .eq('entity_type', 'prompt_template')
+      .eq('entity_id', promptId)
 
     if (error) this.handleError(error)
 
@@ -146,9 +147,10 @@ export class SupabasePromptsRepository implements PromptsRepositoryPort {
     const [translationResult, authorProfile, tags] = await Promise.all([
       supabase
         .schema('content')
-        .from('prompt_translations')
+        .from('entity_translations')
         .select('title, description, content, params')
-        .eq('prompt_id', basePrompt.id)
+        .eq('entity_type', 'prompt_template')
+        .eq('entity_id', basePrompt.id)
         .eq('is_original', true)
         .maybeSingle(),
       this.getProfileById(basePrompt.lenser_id),
@@ -413,9 +415,10 @@ export class SupabasePromptsRepository implements PromptsRepositoryPort {
 
     const { data: translation, error: translationError } = await supabase
       .schema('content')
-      .from('prompt_translations')
+      .from('entity_translations')
       .select('title, description, content, params')
-      .eq('prompt_id', id)
+      .eq('entity_type', 'prompt_template')
+      .eq('entity_id', id)
       .eq('is_original', true)
       .maybeSingle()
 
@@ -486,8 +489,9 @@ export class SupabasePromptsRepository implements PromptsRepositoryPort {
     const promptId = promptInsertData.id
 
     // 3. Insert Prompt Translation
-    const { error: translationError } = await supabase.schema('content').from('prompt_translations').insert({
-      prompt_id: promptId,
+    const { error: translationError } = await supabase.schema('content').from('entity_translations').insert({
+      entity_type: 'prompt_template',
+      entity_id: promptId,
       language_code: languageCode,
       is_original: true,
       title: input.title,
@@ -555,9 +559,10 @@ export class SupabasePromptsRepository implements PromptsRepositoryPort {
     }
 
     if (Object.keys(translationUpdatePayload).length > 0) {
-      const { error } = await supabase.schema('content').from('prompt_translations')
+      const { error } = await supabase.schema('content').from('entity_translations')
         .update(translationUpdatePayload)
-        .eq('prompt_id', id)
+        .eq('entity_type', 'prompt_template')
+        .eq('entity_id', id)
         .eq('is_original', true)
       if (error) this.handleError(error)
     }

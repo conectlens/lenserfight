@@ -38,6 +38,12 @@ export interface ThreadRecord {
   created_at: string
   updated_at: string
   thumbnail_url?: string
+  /** Replaces prompt_data. FK to content.prompt_templates(id). */
+  linked_prompt_id?: string | null
+  /**
+   * @deprecated Use linked_prompt_id instead.
+   * Kept for backward compatibility while existing thread rows are migrated.
+   */
   prompt_data?: PromptData
 }
 
