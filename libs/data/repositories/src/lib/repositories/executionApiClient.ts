@@ -3,7 +3,10 @@ import { TriggerExecutionDTO, TriggerExecutionResponse } from '@lenserfight/type
 import { apiFetch } from '../apiFetch'
 
 if (!import.meta.env.VITE_API_URL) {
-  console.warn('[executionApiClient] VITE_API_URL is not set — triggerExecution calls will fail.')
+  console.warn(
+    '[executionApiClient] VITE_API_URL is not set — triggerExecution calls will fail. ' +
+      'Note: this client routes to the internal /v1/executions worker, not /execute/wallet.',
+  )
 }
 
 const API_BASE = import.meta.env.VITE_API_URL as string
@@ -28,6 +31,8 @@ export class HttpExecutionApiClient implements ExecutionApiClientPort {
   async triggerExecution(dto: TriggerExecutionDTO): Promise<TriggerExecutionResponse> {
     const authHeader = await this.getAuthHeader()
 
+    // Routes to the internal execution worker (/v1/executions), not the gateway /execute/wallet.
+    // apiFetch throws on non-2xx, so no manual ok-check is needed here.
     const res = await apiFetch(`${API_BASE}/v1/executions`, {
       method: 'POST',
       headers: {
@@ -36,12 +41,6 @@ export class HttpExecutionApiClient implements ExecutionApiClientPort {
       },
       body: JSON.stringify(dto),
     })
-
-    if (!res.ok) {
-      const body = await res.json().catch(() => ({}))
-      const message = (body as { message?: string })?.message ?? `HTTP ${res.status}`
-      throw new Error(`[executionApiClient] ${message}`)
-    }
 
     return res.json() as Promise<TriggerExecutionResponse>
   }
