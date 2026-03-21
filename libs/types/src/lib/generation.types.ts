@@ -27,12 +27,21 @@ export type AICapabilityEnum =
   | 'image_generation'
   | 'video_generation'
   | 'audio_generation'
+/**
+ * DB source: ai.model_tier_enum (relocated from public.pricing_tier_enum in migration 20260440000010).
+ */
 export type PricingTierEnum = 'free' | 'paid' | 'enterprise'
 
 export interface AIModel {
   id: string // uuid
   key: string
   name: string
+  /** FK to ai.providers(id). Use this instead of the deprecated provider field. */
+  provider_id?: string | null
+  /**
+   * @deprecated Use provider_id with a join to ai.providers.
+   * This field reflects ai.models.provider (enum) which will be dropped after all callers migrate.
+   */
   provider: ProviderEnum
   version?: string | null
   provider_url?: string | null

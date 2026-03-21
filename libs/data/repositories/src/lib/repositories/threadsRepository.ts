@@ -131,9 +131,10 @@ export class SupabaseThreadsRepository implements ThreadsRepositoryPort {
   private async getThreadReactionTotals(threadId: string): Promise<Record<string, number>> {
     const { data, error } = await supabase
       .schema('content')
-      .from('thread_reactions')
+      .from('reactions')
       .select('reaction')
-      .eq('thread_id', threadId)
+      .eq('entity_type', 'thread')
+      .eq('entity_id', threadId)
 
     if (error) this.handleError(error)
 
@@ -155,14 +156,15 @@ export class SupabaseThreadsRepository implements ThreadsRepositoryPort {
       | 'view_count'
       | 'thumbnail_url'
       | 'prompt_data'
-    >
+    > & { linked_prompt_id?: string | null }
   ): Promise<ThreadRecord> {
     const [translationResult, authorProfile, tags] = await Promise.all([
       supabase
         .schema('content')
-        .from('thread_translations')
+        .from('entity_translations')
         .select('title, content')
-        .eq('thread_id', baseThread.id)
+        .eq('entity_type', 'thread')
+        .eq('entity_id', baseThread.id)
         .eq('is_original', true)
         .maybeSingle(),
       this.getProfileById(baseThread.lenser_id),
@@ -186,6 +188,7 @@ export class SupabaseThreadsRepository implements ThreadsRepositoryPort {
       reply_count: baseThread.reply_count ?? 0,
       view_count: baseThread.view_count ?? 0,
       thumbnail_url: baseThread.thumbnail_url,
+      linked_prompt_id: baseThread.linked_prompt_id ?? null,
       prompt_data: baseThread.prompt_data,
     } as ThreadRecord
   }
@@ -212,17 +215,18 @@ export class SupabaseThreadsRepository implements ThreadsRepositoryPort {
 
     const { data, error } = await supabase
       .schema('content')
-      .from('thread_reply_reactions')
-      .select('reply_id, reaction')
-      .in('reply_id', replyIds)
+      .from('reactions')
+      .select('entity_id, reaction')
+      .eq('entity_type', 'thread_reply')
+      .in('entity_id', replyIds)
 
     if (error) this.handleError(error)
 
     const totals = new Map<string, Record<string, number>>()
     for (const row of data ?? []) {
-      const current = totals.get(row.reply_id) ?? {}
+      const current = totals.get(row.entity_id) ?? {}
       current[row.reaction] = (current[row.reaction] ?? 0) + 1
-      totals.set(row.reply_id, current)
+      totals.set(row.entity_id, current)
     }
     return totals
   }
@@ -256,8 +260,9 @@ export class SupabaseThreadsRepository implements ThreadsRepositoryPort {
     const threadId = threadInsertData.id
 
     // 3. Insert Thread Translation
-    const { error: translationError } = await supabase.schema('content').from('thread_translations').insert({
-      thread_id: threadId,
+    const { error: translationError } = await supabase.schema('content').from('entity_translations').insert({
+      entity_type: 'thread',
+      entity_id: threadId,
       language_code: languageCode,
       is_original: true,
       title: dto.title,
@@ -347,7 +352,7 @@ export class SupabaseThreadsRepository implements ThreadsRepositoryPort {
     const { data, error } = await supabase
       .schema('content')
       .from('threads')
-      .select('id, lenser_id, visibility, created_at, updated_at, reply_count, view_count, thumbnail_url, prompt_data')
+      .select('id, lenser_id, visibility, created_at, updated_at, reply_count, view_count, thumbnail_url, linked_prompt_id, prompt_data')
       .eq('id', id)
       .maybeSingle()
 
@@ -380,7 +385,7 @@ export class SupabaseThreadsRepository implements ThreadsRepositoryPort {
       const { data: baseThreads, error } = await supabase
         .schema('content')
         .from('threads')
-        .select('id, lenser_id, visibility, created_at, updated_at, reply_count, view_count, thumbnail_url, prompt_data')
+        .select('id, lenser_id, visibility, created_at, updated_at, reply_count, view_count, thumbnail_url, linked_prompt_id, prompt_data')
         .eq('lenser_id', profile.id)
         .order('created_at', { ascending: false })
         .range(offset, offset + limit - 1)
@@ -645,9 +650,10 @@ export class SupabaseThreadsRepository implements ThreadsRepositoryPort {
 
     if (Object.keys(translationUpdatePayload).length > 0) {
       // Update the original translation
-      const { error } = await supabase.schema('content').from('thread_translations')
+      const { error } = await supabase.schema('content').from('entity_translations')
         .update(translationUpdatePayload)
-        .eq('thread_id', id)
+        .eq('entity_type', 'thread')
+        .eq('entity_id', id)
         .eq('is_original', true)
       if (error) this.handleError(error)
     }
