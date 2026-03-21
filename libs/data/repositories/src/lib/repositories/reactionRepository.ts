@@ -30,41 +30,29 @@ export interface ReactionRepositoryPort {
   countReactions(targetType: TargetType, targetId: string): Promise<ReactionCount[]>
   getLenserHistory(handle: string, offset?: number, limit?: number): Promise<ApiResponseEnvelope<ReactionRecord[]>>
 }
-export class SupabaseReactionRepository implements ReactionRepositoryPort {
-  private getMapping(targetType: TargetType) {
-    switch (targetType) {
-      case 'prompt_template':
-        return { table: 'prompt_reactions', idColumn: 'prompt_id' }
-      case 'thread':
-        return { table: 'thread_reactions', idColumn: 'thread_id' }
-      case 'thread_reply':
-        return { table: 'thread_reply_reactions', idColumn: 'reply_id' }
-      default:
-        throw new Error(`Invalid target type: ${targetType}`)
-    }
-  }
 
-  private mapToRecord(r: any, targetType: TargetType, idColumn: string): ReactionRecord {
+export class SupabaseReactionRepository implements ReactionRepositoryPort {
+  private mapToRecord(r: any): ReactionRecord {
     return {
       id: r.id,
-      lenser_id: r.user_id,
-      target_type: targetType,
-      target_id: r[idColumn],
+      lenser_id: r.lenser_id,
+      target_type: r.entity_type as TargetType,
+      target_id: r.entity_id,
       reaction: r.reaction,
       created_at: r.created_at,
     }
   }
 
   async getReactionsFor(targetType: TargetType, targetId: string): Promise<ReactionRecord[]> {
-    const { table, idColumn } = this.getMapping(targetType)
     const { data, error } = await supabase
       .schema('content')
-      .from(table)
+      .from('reactions')
       .select('*')
-      .eq(idColumn, targetId)
+      .eq('entity_type', targetType)
+      .eq('entity_id', targetId)
 
     if (error) throw error
-    return (data ?? []).map((r) => this.mapToRecord(r, targetType, idColumn))
+    return (data ?? []).map((r) => this.mapToRecord(r))
   }
 
   async getUserReaction(
@@ -72,7 +60,6 @@ export class SupabaseReactionRepository implements ReactionRepositoryPort {
     targetId: string,
     _lenserId: string
   ): Promise<ReactionRecord[]> {
-    const { table, idColumn } = this.getMapping(targetType)
     const {
       data: { user },
     } = await supabase.auth.getUser()
@@ -80,13 +67,14 @@ export class SupabaseReactionRepository implements ReactionRepositoryPort {
 
     const { data, error } = await supabase
       .schema('content')
-      .from(table)
+      .from('reactions')
       .select('*')
-      .eq(idColumn, targetId)
-      .eq('user_id', user.id)
+      .eq('entity_type', targetType)
+      .eq('entity_id', targetId)
+      .eq('lenser_id', user.id)
 
     if (error) throw error
-    return (data ?? []).map((r) => this.mapToRecord(r, targetType, idColumn))
+    return (data ?? []).map((r) => this.mapToRecord(r))
   }
 
   async toggleReaction(
@@ -121,7 +109,6 @@ export class SupabaseReactionRepository implements ReactionRepositoryPort {
     }
     const total = counts.like + counts.love + counts.clap
 
-    // Fetch user's current reactions from table (source of truth post-toggle)
     const userReactionRecords = await this.getUserReaction(targetType, targetId, _lenserId)
     const userReactions = userReactionRecords.map((r) => r.reaction)
 
@@ -135,7 +122,6 @@ export class SupabaseReactionRepository implements ReactionRepositoryPort {
   ): Promise<ReactionRecord[]> {
     if (targetIds.length === 0) return []
 
-    const { table, idColumn } = this.getMapping(targetType)
     const {
       data: { user },
     } = await supabase.auth.getUser()
@@ -143,25 +129,23 @@ export class SupabaseReactionRepository implements ReactionRepositoryPort {
 
     const { data, error } = await supabase
       .schema('content')
-      .from(table)
+      .from('reactions')
       .select('*')
-      .eq('user_id', user.id)
-      .in(idColumn, targetIds)
+      .eq('entity_type', targetType)
+      .eq('lenser_id', user.id)
+      .in('entity_id', targetIds)
 
     if (error) throw error
-    return (data ?? []).map((r) => this.mapToRecord(r, targetType, idColumn))
+    return (data ?? []).map((r) => this.mapToRecord(r))
   }
 
   async countReactions(targetType: TargetType, targetId: string): Promise<ReactionCount[]> {
-    const { table, idColumn } = this.getMapping(targetType)
-
-    // Using PostgREST to get all reactions for this target and counting in JS
-    // This is the simplest way to migrate from RPC without grouping support in REST API
     const { data, error } = await supabase
       .schema('content')
-      .from(table)
+      .from('reactions')
       .select('reaction')
-      .eq(idColumn, targetId)
+      .eq('entity_type', targetType)
+      .eq('entity_id', targetId)
 
     if (error) throw error
 
@@ -178,7 +162,7 @@ export class SupabaseReactionRepository implements ReactionRepositoryPort {
 
   async getLenserHistory(handle: string, offset = 0, limit = 20): Promise<ApiResponseEnvelope<ReactionRecord[]>> {
     const start = Date.now()
-    // 1. Resolve handle to ID
+
     const { data: profile, error: profileError } = await supabase
       .schema('lensers')
       .from('profiles')
@@ -189,43 +173,21 @@ export class SupabaseReactionRepository implements ReactionRepositoryPort {
     if (profileError || !profile) {
       return paginatedResponse([], { limit, offset, total: 0, hasNextPage: false }, { durationMs: Date.now() - start })
     }
-    const lenserId = profile.id
 
-    // 2. Fetch from all 3 de-polymorphed tables (fetch one extra to detect hasNextPage)
-    const fetchLimit = limit + offset + 1
-    const [pRes, tRes, rRes] = await Promise.all([
-      supabase
-        .schema('content')
-        .from('prompt_reactions')
-        .select('*')
-        .eq('user_id', lenserId)
-        .order('created_at', { ascending: false })
-        .limit(fetchLimit),
-      supabase
-        .schema('content')
-        .from('thread_reactions')
-        .select('*')
-        .eq('user_id', lenserId)
-        .order('created_at', { ascending: false })
-        .limit(fetchLimit),
-      supabase
-        .schema('content')
-        .from('thread_reply_reactions')
-        .select('*')
-        .eq('user_id', lenserId)
-        .order('created_at', { ascending: false })
-        .limit(fetchLimit),
-    ])
+    const { data, error } = await supabase
+      .schema('content')
+      .from('reactions')
+      .select('*')
+      .eq('lenser_id', profile.id)
+      .order('created_at', { ascending: false })
+      .range(offset, offset + limit)
 
-    const allReactions: ReactionRecord[] = [
-      ...(pRes.data ?? []).map((r) => this.mapToRecord(r, 'prompt_template', 'prompt_id')),
-      ...(tRes.data ?? []).map((r) => this.mapToRecord(r, 'thread', 'thread_id')),
-      ...(rRes.data ?? []).map((r) => this.mapToRecord(r, 'thread_reply', 'reply_id')),
-    ].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+    if (error) throw error
 
-    // 3. Manual pagination; detect hasNextPage by checking if more items exist beyond the window
-    const page = allReactions.slice(offset, offset + limit)
-    const hasNextPage = allReactions.length > offset + limit
+    const records = (data ?? []).map((r) => this.mapToRecord(r))
+    const hasNextPage = records.length > limit
+    const page = records.slice(0, limit)
+
     return paginatedResponse(
       page,
       { limit, offset, hasNextPage },
