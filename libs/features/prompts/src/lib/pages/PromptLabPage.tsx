@@ -259,7 +259,8 @@ export const PromptLabPage: React.FC = () => {
             onTrigger={lab.triggerExecution}
             onTriggerStream={lab.triggerStream}
             isTriggeringExecution={lab.isTriggeringExecution}
-            isStreaming={lab.streamState !== 'idle'}
+            isConnecting={lab.streamState === 'loading'}
+            isStreaming={lab.streamState === 'loading' || lab.streamState === 'streaming'}
             onStop={lab.stopStream}
             params={prompt.params}
           />

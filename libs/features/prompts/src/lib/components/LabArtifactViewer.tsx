@@ -146,7 +146,24 @@ const StreamingOutput: React.FC<{
         )}
       </div>
       {error ? (
-        <p className="text-sm text-red-500 dark:text-red-400">{error}</p>
+        <div className="rounded-lg border border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-900/20 p-4">
+          <p className="text-sm font-medium text-red-700 dark:text-red-400 mb-1">Execution failed</p>
+          <p className="text-sm text-red-600 dark:text-red-300">
+            {/401/.test(error)
+              ? 'Authentication failed. Please sign in again to continue.'
+              : /403/.test(error)
+                ? 'Access denied. You do not have permission to use this model.'
+                : /402|insufficient|credit/i.test(error)
+                  ? 'Insufficient credits. Please top up your wallet to continue.'
+                  : /429|rate.?limit/i.test(error)
+                    ? 'Rate limit reached. Please wait a moment before trying again.'
+                    : /500|502|503|504/.test(error)
+                      ? 'The server encountered an error. Please try again shortly.'
+                      : /network|fetch|failed to fetch/i.test(error)
+                        ? 'Network error. Check your connection and try again.'
+                        : 'An unexpected error occurred. Please try again.'}
+          </p>
+        </div>
       ) : (
         <div className="relative">
           {state === 'complete' && output && (
