@@ -502,12 +502,10 @@ export class SupabasePromptsRepository implements PromptsRepositoryPort {
     if (translationError) this.handleError(translationError)
 
     if (input.tagIds?.length) {
-      const { data: authData } = await supabase.auth.getUser()
       const tagRecords = input.tagIds.map(tagId => ({
         entity_type: 'prompt_template',
         entity_id: promptId,
         tag_id: tagId,
-        user_id: authData?.user?.id || null
       }))
       await supabase.schema('content').from('tag_map').insert(tagRecords)
     }
@@ -570,12 +568,10 @@ export class SupabasePromptsRepository implements PromptsRepositoryPort {
     if (input.tagIds !== undefined) {
       await supabase.schema('content').from('tag_map').delete().eq('entity_type', 'prompt_template').eq('entity_id', id)
       if (input.tagIds.length > 0) {
-        const { data: authData } = await supabase.auth.getUser()
         const tagRecords = input.tagIds.map(tagId => ({
           entity_type: 'prompt_template',
           entity_id: id,
           tag_id: tagId,
-          user_id: authData?.user?.id || null
         }))
         await supabase.schema('content').from('tag_map').insert(tagRecords)
       }
