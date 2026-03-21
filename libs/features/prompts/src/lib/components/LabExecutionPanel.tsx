@@ -27,6 +27,7 @@ interface LabExecutionPanelProps {
   onTriggerStream: (dto: TriggerLabExecutionDTO) => void
   isTriggeringExecution: boolean
   isStreaming: boolean
+  isConnecting?: boolean
   onStop: () => void
   pendingRun?: null
   params?: PromptParam[]
@@ -44,6 +45,7 @@ export const LabExecutionPanel: React.FC<LabExecutionPanelProps> = ({
   onTriggerStream,
   isTriggeringExecution,
   isStreaming,
+  isConnecting,
   onStop,
   params,
 }) => {
@@ -107,7 +109,7 @@ export const LabExecutionPanel: React.FC<LabExecutionPanelProps> = ({
         {(isTriggeringExecution || isStreaming) && (
           <span className="flex items-center gap-1.5 text-xs text-gray-500 dark:text-gray-400">
             <Loader2 size={12} className="animate-spin" />
-            {isStreaming ? 'Streaming…' : 'Running…'}
+            {isConnecting ? 'Connecting…' : isStreaming ? 'Streaming…' : 'Running…'}
           </span>
         )}
       </div>
