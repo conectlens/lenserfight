@@ -10,6 +10,7 @@ export function AppToaster() {
       theme={resolvedTheme}
       richColors
       closeButton
+      toastOptions={{ style: { zIndex: 9999 } }}
     />
   )
 }
