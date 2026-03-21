@@ -7,6 +7,7 @@ import {
   WalletExecuteRequest,
   WalletExecuteResponse,
   WalletProduct,
+  StreamCallbacks,
 } from '@lenserfight/types'
 
 if (!import.meta.env.VITE_API_URL) {
@@ -92,5 +93,57 @@ export const walletApiClient = {
       body: JSON.stringify(req),
     })
     return handleResponse<WalletExecuteResponse>(res)
+  },
+
+  async streamWithWallet(
+    req: WalletExecuteRequest,
+    signal: AbortSignal,
+    callbacks: StreamCallbacks,
+  ): Promise<void> {
+    const authHeader = await getAuthHeader()
+    const response = await fetch(`${API_BASE}/execute/stream`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Accept: 'text/event-stream',
+        ...authHeader,
+      },
+      body: JSON.stringify(req),
+      signal,
+    })
+
+    if (!response.ok) {
+      const body = await response.json().catch(() => ({}))
+      throw new Error((body as { message?: string }).message ?? `HTTP ${response.status}`)
+    }
+
+    const reader = response.body!.getReader()
+    const decoder = new TextDecoder()
+    let buffer = ''
+
+    while (true) {
+      const { done, value } = await reader.read()
+      if (done) break
+      buffer += decoder.decode(value, { stream: true })
+      const events = buffer.split('\n\n')
+      buffer = events.pop() ?? ''
+      for (const raw of events) {
+        const line = raw.replace(/^data: /, '').trim()
+        if (!line) continue
+        const evt = JSON.parse(line) as { event: string; [key: string]: unknown }
+        if (evt.event === 'start') callbacks.onStart(evt['run_id'] as string)
+        if (evt.event === 'token') callbacks.onToken(evt['content'] as string)
+        if (evt.event === 'end') {
+          callbacks.onEnd(
+            evt['usage'] as { input_tokens: number; output_tokens: number },
+            evt['credits_charged'] as number,
+          )
+        }
+        if (evt.event === 'error') {
+          callbacks.onError(evt['message'] as string, evt['code'] as string)
+          return
+        }
+      }
+    }
   },
 }

@@ -42,3 +42,24 @@ export interface WalletExecuteResponse {
   model: string
   credits_charged: number
 }
+
+export type StreamState = 'idle' | 'loading' | 'streaming' | 'complete' | 'error'
+
+export interface StreamUsage {
+  input_tokens: number
+  output_tokens: number
+}
+
+export interface StreamResult {
+  content: string
+  runId: string
+  usage: StreamUsage
+  credits_charged: number
+}
+
+export interface StreamCallbacks {
+  onStart: (runId: string) => void
+  onToken: (content: string) => void
+  onEnd: (usage: StreamUsage, creditsCharged: number) => void
+  onError: (message: string, code: string) => void
+}

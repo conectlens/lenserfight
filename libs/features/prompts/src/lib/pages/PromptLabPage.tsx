@@ -257,7 +257,10 @@ export const PromptLabPage: React.FC = () => {
             aiModels={lab.aiModels}
             isLoadingModels={lab.isLoadingModels}
             onTrigger={lab.triggerExecution}
+            onTriggerStream={lab.triggerStream}
             isTriggeringExecution={lab.isTriggeringExecution}
+            isStreaming={lab.streamState !== 'idle'}
+            onStop={lab.stopStream}
             params={prompt.params}
           />
         </div>
@@ -271,6 +274,12 @@ export const PromptLabPage: React.FC = () => {
             selectedRunId={lab.selectedRunId}
             comparisonRunIds={lab.comparisonRunIds}
             latestResult={lab.latestResult}
+            streamState={lab.streamState}
+            streamOutput={lab.streamOutput}
+            streamRunId={lab.streamRunId}
+            streamUsage={lab.streamUsage}
+            streamCredits={lab.streamCredits}
+            streamError={lab.streamError}
           />
         </div>
 
