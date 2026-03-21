@@ -1,4 +1,5 @@
 import { normalizeJsonStringToSnakeCase, toCamelCaseKeys } from '@lenserfight/utils/text'
+import type { ApiResponseEnvelope } from 'contracts'
 
 export interface ApiFetchConfig {
   /**
@@ -71,3 +72,18 @@ export function createApiFetch(config: ApiFetchConfig = {}) {
  * Transforms outgoing JSON request body keys from camelCase to snake_case.
  */
 export const apiFetch = createApiFetch()
+
+/**
+ * Parses an `ApiResponseEnvelope<T>` from a successful Response.
+ * Throws the envelope's `error` object (with `code` and `message`) if present.
+ * Returns `data` on success.
+ *
+ * Use this after calling `apiFetch` (which already throws on non-2xx).
+ */
+export async function unwrapEnvelope<T>(res: Response): Promise<T> {
+  const envelope = (await res.json()) as ApiResponseEnvelope<T>
+  if (envelope.error) {
+    throw envelope.error
+  }
+  return envelope.data as T
+}
