@@ -1,14 +1,20 @@
 import React, { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
-import { Copy, Check, LayoutPanelLeft, Coins } from 'lucide-react'
+import { Copy, Check, LayoutPanelLeft, Coins, Loader2 } from 'lucide-react'
 import { executionService } from '@lenserfight/data/repositories'
 import { queryKeys } from '@lenserfight/data/cache'
-import { ExecutionArtifact, WalletExecuteResponse } from '@lenserfight/types'
+import { ExecutionArtifact, WalletExecuteResponse, StreamState, StreamUsage } from '@lenserfight/types'
 
 interface LabArtifactViewerProps {
   selectedRunId: string | null
   comparisonRunIds: string[]
   latestResult?: WalletExecuteResponse | null
+  streamState: StreamState
+  streamOutput: string
+  streamRunId: string | null
+  streamUsage: StreamUsage | null
+  streamCredits: number | null
+  streamError: string | null
 }
 
 interface ArtifactBlockProps {
@@ -105,14 +111,87 @@ const RunArtifacts: React.FC<{ runId: string; showAll: boolean }> = ({ runId, sh
   )
 }
 
+const StreamingOutput: React.FC<{
+  state: StreamState
+  output: string
+  runId: string | null
+  usage: StreamUsage | null
+  credits: number | null
+  error: string | null
+}> = ({ state, output, runId, usage, credits, error }) => {
+  const isCursor = state === 'streaming'
+  return (
+    <div className="flex flex-col gap-3">
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <LayoutPanelLeft size={16} className="text-gray-400" />
+          <span className="text-sm font-semibold text-gray-800 dark:text-gray-100">Output</span>
+          {runId && (
+            <span className="text-xs text-gray-400 font-mono">{runId.slice(0, 8)}</span>
+          )}
+        </div>
+        {state === 'complete' && usage && credits !== null && (
+          <div className="flex items-center gap-2 text-xs text-gray-400 dark:text-gray-500">
+            <Coins size={12} />
+            <span>{credits} cr</span>
+            <span>·</span>
+            <span>{usage.input_tokens + usage.output_tokens} tokens</span>
+          </div>
+        )}
+        {state === 'loading' && (
+          <span className="flex items-center gap-1 text-xs text-gray-400 dark:text-gray-500">
+            <Loader2 size={12} className="animate-spin" />
+            Connecting…
+          </span>
+        )}
+      </div>
+      {error ? (
+        <p className="text-sm text-red-500 dark:text-red-400">{error}</p>
+      ) : (
+        <div className="relative">
+          {state === 'complete' && output && (
+            <div className="absolute top-2 right-2">
+              <CopyButton text={output} />
+            </div>
+          )}
+          <pre className="whitespace-pre-wrap break-words text-sm text-gray-800 dark:text-gray-200 bg-gray-50 dark:bg-gray-800 rounded-lg p-4 pr-16 border border-gray-200 dark:border-gray-700 font-mono leading-relaxed min-h-[3rem]">
+            {output}
+            {isCursor && <span className="animate-pulse">▌</span>}
+          </pre>
+        </div>
+      )}
+    </div>
+  )
+}
+
 export const LabArtifactViewer: React.FC<LabArtifactViewerProps> = ({
   selectedRunId,
   comparisonRunIds,
   latestResult,
+  streamState,
+  streamOutput,
+  streamRunId,
+  streamUsage,
+  streamCredits,
+  streamError,
 }) => {
   const [showAll, setShowAll] = useState(false)
 
   const isComparing = comparisonRunIds.length === 2
+
+  // Streaming takes priority over all other display modes
+  if (streamState !== 'idle') {
+    return (
+      <StreamingOutput
+        state={streamState}
+        output={streamOutput}
+        runId={streamRunId}
+        usage={streamUsage}
+        credits={streamCredits}
+        error={streamError}
+      />
+    )
+  }
 
   // Show the latest sync result if nothing from history is selected
   if (!selectedRunId && !isComparing) {
