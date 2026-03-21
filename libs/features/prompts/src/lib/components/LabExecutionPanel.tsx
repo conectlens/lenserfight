@@ -42,8 +42,6 @@ export const LabExecutionPanel: React.FC<LabExecutionPanelProps> = ({
   params,
 }) => {
   const variables = useMemo(() => extractVariables(promptContent), [promptContent])
-  console.log("aiModels", aiModels) // TODO: This is returning name and provider only! But you must return ai.models.key too. Read supabase/migrations/*. Then you must replace selectList's id with ai.models.key! 
-
 
   // Derive typed schema: use props.params when available, fall back to legacy string extraction
   const paramSchemas = useMemo<PromptParam[]>(() => {
