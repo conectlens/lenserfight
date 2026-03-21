@@ -1,4 +1,4 @@
-export type { AppError, UnauthorizedError, NetworkError, UnknownError, ErrorKind } from './lib/types'
+export type { AppError, UnauthorizedError, NetworkError, ApiError, UnknownError, ErrorKind } from './lib/types'
 export { normalizeError } from './lib/normalize'
 export { ErrorProvider, useError } from './lib/error-context/ErrorContext'
 export { GlobalErrorRenderer } from './lib/error-boundary/GlobalErrorRenderer'
