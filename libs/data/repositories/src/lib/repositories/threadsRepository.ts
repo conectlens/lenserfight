@@ -271,12 +271,10 @@ export class SupabaseThreadsRepository implements ThreadsRepositoryPort {
     if (translationError) this.handleError(translationError)
 
     if (dto.tagIds && dto.tagIds.length > 0) {
-      const { data: authData } = await supabase.auth.getUser()
       const tagRecords = dto.tagIds.map(tagId => ({
         entity_type: 'thread',
         entity_id: threadId,
         tag_id: tagId,
-        user_id: authData?.user?.id || null
       }))
       await supabase.schema('content').from('tag_map').insert(tagRecords)
     }
@@ -661,12 +659,10 @@ export class SupabaseThreadsRepository implements ThreadsRepositoryPort {
     if (dto.tagIds !== undefined) {
       await supabase.schema('content').from('tag_map').delete().eq('entity_type', 'thread').eq('entity_id', id)
       if (dto.tagIds.length > 0) {
-        const { data: authData } = await supabase.auth.getUser()
         const tagRecords = dto.tagIds.map(tagId => ({
           entity_type: 'thread',
           entity_id: id,
           tag_id: tagId,
-          user_id: authData?.user?.id || null
         }))
         const { error: tagError } = await supabase.schema('content').from('tag_map').insert(tagRecords)
         if (tagError) this.handleError(tagError)
