@@ -1,4 +1,4 @@
-import type { AppError, UnauthorizedError, NetworkError, UnknownError } from './types'
+import type { AppError, UnauthorizedError, NetworkError, ApiError, UnknownError } from './types'
 
 function isUnauthorized(error: unknown): boolean {
   if (!error || typeof error !== 'object') return false
@@ -53,6 +53,18 @@ export function normalizeError(error: unknown): AppError {
           : 'You are not authorized to view this content.',
       originalError: error,
     } satisfies UnauthorizedError
+  }
+
+  // API business errors: { error: "Insufficient credit balance" }
+  if (error && typeof error === 'object' && 'error' in (error as object)) {
+    const apiMsg = (error as Record<string, unknown>)['error']
+    if (typeof apiMsg === 'string' && apiMsg.trim()) {
+      return {
+        kind: 'api',
+        message: apiMsg.trim(),
+        originalError: error,
+      } satisfies ApiError
+    }
   }
 
   if (isNetworkError(error)) {

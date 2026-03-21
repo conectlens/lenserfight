@@ -46,6 +46,16 @@ export function createApiFetch(config: ApiFetchConfig = {}) {
 
     const response = await fetch(url, finalInit)
 
+    if (!response.ok) {
+      let errorBody: unknown
+      try {
+        errorBody = await response.clone().json()
+      } catch {
+        errorBody = { error: response.statusText || `HTTP ${response.status}` }
+      }
+      throw errorBody
+    }
+
     if (!transformResponse) return response
 
     // Wrap .json() to transform response keys on demand (lazy — no extra round-trip)
