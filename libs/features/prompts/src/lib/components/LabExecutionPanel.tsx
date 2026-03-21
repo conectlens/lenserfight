@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from 'react'
-import { Loader2, Play } from 'lucide-react'
+import { Loader2, Play, Square } from 'lucide-react'
 import { SelectField } from '@lenserfight/ui/forms'
 import { Button, FormError } from '@lenserfight/ui/components'
 import { AIModel, PromptParam } from '@lenserfight/types'
@@ -24,7 +24,10 @@ interface LabExecutionPanelProps {
   aiModels: AIModel[]
   isLoadingModels: boolean
   onTrigger: (dto: TriggerLabExecutionDTO) => void
+  onTriggerStream: (dto: TriggerLabExecutionDTO) => void
   isTriggeringExecution: boolean
+  isStreaming: boolean
+  onStop: () => void
   pendingRun?: null
   params?: PromptParam[]
 }
@@ -37,8 +40,11 @@ export const LabExecutionPanel: React.FC<LabExecutionPanelProps> = ({
   promptContent,
   aiModels,
   isLoadingModels,
-  onTrigger,
+  onTrigger: _onTrigger,
+  onTriggerStream,
   isTriggeringExecution,
+  isStreaming,
+  onStop,
   params,
 }) => {
   const variables = useMemo(() => extractVariables(promptContent), [promptContent])
@@ -86,10 +92,10 @@ export const LabExecutionPanel: React.FC<LabExecutionPanelProps> = ({
         ? Object.fromEntries(paramSchemas.map((p) => [p.name, inputValues[p.name] ?? p.default ?? '']))
         : { freeform: inputValues['freeform'] ?? '' }
 
-    onTrigger({ model, promptContent, inputSnapshot, params: paramSchemas })
+    onTriggerStream({ model, promptContent, inputSnapshot, params: paramSchemas })
   }
 
-  const isDisabled = isTriggeringExecution || !selectedModelId
+  const isDisabled = isTriggeringExecution || isStreaming || !selectedModelId
 
   return (
     <form
@@ -98,10 +104,10 @@ export const LabExecutionPanel: React.FC<LabExecutionPanelProps> = ({
     >
       <div className="flex items-center justify-between">
         <h4 className="text-sm font-semibold text-gray-800 dark:text-gray-100">Run Prompt</h4>
-        {isTriggeringExecution && (
+        {(isTriggeringExecution || isStreaming) && (
           <span className="flex items-center gap-1.5 text-xs text-gray-500 dark:text-gray-400">
             <Loader2 size={12} className="animate-spin" />
-            Running…
+            {isStreaming ? 'Streaming…' : 'Running…'}
           </span>
         )}
       </div>
@@ -216,23 +222,34 @@ export const LabExecutionPanel: React.FC<LabExecutionPanelProps> = ({
         </div>
       )}
 
-      <Button
-        type="submit"
-        disabled={isDisabled}
-        className="w-full flex items-center justify-center gap-2 h-auto py-2.5"
-      >
-        {isTriggeringExecution ? (
-          <>
-            <Loader2 size={16} className="animate-spin" />
-            <span>Running…</span>
-          </>
-        ) : (
-          <>
-            <Play size={16} />
-            <span>Run</span>
-          </>
-        )}
-      </Button>
+      {isStreaming ? (
+        <Button
+          type="button"
+          onClick={onStop}
+          className="w-full flex items-center justify-center gap-2 h-auto py-2.5 bg-red-600 hover:bg-red-700 text-white"
+        >
+          <Square size={16} />
+          <span>Stop</span>
+        </Button>
+      ) : (
+        <Button
+          type="submit"
+          disabled={isDisabled}
+          className="w-full flex items-center justify-center gap-2 h-auto py-2.5"
+        >
+          {isTriggeringExecution ? (
+            <>
+              <Loader2 size={16} className="animate-spin" />
+              <span>Running…</span>
+            </>
+          ) : (
+            <>
+              <Play size={16} />
+              <span>Run</span>
+            </>
+          )}
+        </Button>
+      )}
     </form>
   )
 }

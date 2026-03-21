@@ -1,8 +1,8 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { executionService, walletService, generationService } from '@lenserfight/data/repositories'
+import { executionService, walletService, generationService, walletApiClient } from '@lenserfight/data/repositories'
 import { queryKeys } from '@lenserfight/data/cache'
-import { PromptExecutionRecord, AIModel, PromptParam, WalletExecuteResponse } from '@lenserfight/types'
+import { PromptExecutionRecord, AIModel, PromptParam, WalletExecuteResponse, StreamState, StreamUsage } from '@lenserfight/types'
 import { renderPrompt } from '@lenserfight/utils/text'
 import { useToast } from '@lenserfight/shared/error'
 
@@ -26,6 +26,15 @@ export const useLabController = (promptId: string, isAuthenticated = false) => {
 
   // Latest sync execution result
   const [latestResult, setLatestResult] = useState<WalletExecuteResponse | null>(null)
+
+  // Streaming state
+  const [streamState, setStreamState] = useState<StreamState>('idle')
+  const [streamOutput, setStreamOutput] = useState('')
+  const [streamRunId, setStreamRunId] = useState<string | null>(null)
+  const [streamUsage, setStreamUsage] = useState<StreamUsage | null>(null)
+  const [streamCredits, setStreamCredits] = useState<number | null>(null)
+  const [streamError, setStreamError] = useState<string | null>(null)
+  const abortRef = useRef<AbortController | null>(null)
 
   // Selection state for artifact viewer + comparison
   const [selectedRunId, setSelectedRunId] = useState<string | null>(null)
@@ -90,6 +99,70 @@ export const useLabController = (promptId: string, isAuthenticated = false) => {
     onError: (err) => toastError(err),
   })
 
+  // --- Streaming execution ---
+  const triggerStream = useCallback(
+    (dto: TriggerLabExecutionDTO) => {
+      abortRef.current?.abort()
+      const controller = new AbortController()
+      abortRef.current = controller
+      setStreamState('loading')
+      setStreamOutput('')
+      setStreamRunId(null)
+      setStreamUsage(null)
+      setStreamCredits(null)
+      setStreamError(null)
+
+      const resolvedContent = renderPrompt(dto.promptContent, dto.inputSnapshot, dto.params ?? [])
+
+      walletApiClient
+        .streamWithWallet(
+          {
+            provider: dto.model.provider,
+            model: dto.model.key,
+            messages: [{ role: 'user', content: resolvedContent }],
+            max_tokens: dto.model.max_tokens,
+            temperature: dto.model.temperature,
+          },
+          controller.signal,
+          {
+            onStart: (runId) => {
+              setStreamRunId(runId)
+              setStreamState('streaming')
+            },
+            onToken: (content) => setStreamOutput((prev) => prev + content),
+            onEnd: (usage, credits) => {
+              setStreamUsage(usage)
+              setStreamCredits(credits)
+              setStreamState('complete')
+              queryClient.invalidateQueries({ queryKey: queryKeys.executions.history(promptId) })
+              setHistoryOffset(0)
+            },
+            onError: (message) => {
+              setStreamError(message)
+              setStreamState('error')
+              toastError(new Error(message))
+            },
+          },
+        )
+        .catch((err: unknown) => {
+          if ((err as Error).name === 'AbortError') {
+            setStreamState('idle')
+          } else {
+            setStreamError((err as Error).message)
+            setStreamState('error')
+            toastError(err)
+          }
+        })
+    },
+    [promptId, queryClient, toastError],
+  )
+
+  const stopStream = useCallback(() => {
+    abortRef.current?.abort()
+    abortRef.current = null
+    setStreamState('idle')
+  }, [])
+
   // --- Comparison toggle: max 2 runs ---
   const toggleComparison = useCallback((runId: string) => {
     setComparisonRunIds((prev) => {
@@ -110,6 +183,14 @@ export const useLabController = (promptId: string, isAuthenticated = false) => {
     triggerExecution,
     isTriggeringExecution,
     triggerError,
+    streamState,
+    streamOutput,
+    streamRunId,
+    streamUsage,
+    streamCredits,
+    streamError,
+    triggerStream,
+    stopStream,
     selectedRunId,
     setSelectedRunId,
     comparisonRunIds,
