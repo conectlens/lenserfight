@@ -4,6 +4,7 @@ import { executionService, walletService, generationService } from '@lenserfight
 import { queryKeys } from '@lenserfight/data/cache'
 import { PromptExecutionRecord, AIModel, PromptParam, WalletExecuteResponse } from '@lenserfight/types'
 import { renderPrompt } from '@lenserfight/utils/text'
+import { useToast } from '@lenserfight/shared/error'
 
 const PAGE_SIZE = 20
 
@@ -16,6 +17,7 @@ export interface TriggerLabExecutionDTO {
 
 export const useLabController = (promptId: string, isAuthenticated = false) => {
   const queryClient = useQueryClient()
+  const { toastError } = useToast()
 
   // Pagination offset for execution history
   const [historyOffset, setHistoryOffset] = useState(0)
@@ -85,6 +87,7 @@ export const useLabController = (promptId: string, isAuthenticated = false) => {
       queryClient.invalidateQueries({ queryKey: queryKeys.executions.history(promptId) })
       setHistoryOffset(0)
     },
+    onError: (err) => toastError(err),
   })
 
   // --- Comparison toggle: max 2 runs ---
