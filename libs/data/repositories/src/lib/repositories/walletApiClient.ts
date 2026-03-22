@@ -30,7 +30,7 @@ type WalletProductApi = Omit<WalletProduct, 'id'> & {
 async function getAuthHeader(): Promise<Record<string, string>> {
   const { data } = await supabase.auth.getSession()
   if (!data.session?.access_token) {
-    throw new Error('Unauthenticated: cannot call wallet API without a valid session.')
+    throw new Error('401: Unauthenticated')
   }
   return { Authorization: `Bearer ${data.session.access_token}` }
 }
@@ -146,22 +146,22 @@ export const walletApiClient = {
     callbacks: StreamCallbacks,
   ): Promise<void> {
     const authHeader = await getAuthHeader()
-    const response = await fetch(`${API_BASE}/execute/stream`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Accept: 'text/event-stream',
-        ...authHeader,
-      },
-      body: JSON.stringify(req),
-      signal,
-    })
-
-    if (!response.ok) {
-      const body = await response.json().catch(() => ({}))
-      const envelope = body as { error?: { code?: string; message?: string } }
-      const message = envelope.error?.message ?? `HTTP ${response.status}`
-      const code = envelope.error?.code ?? 'internal_error'
+    let response: Response
+    try {
+      response = await apiFetch(`${API_BASE}/execute/stream`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Accept: 'text/event-stream',
+          ...authHeader,
+        },
+        body: JSON.stringify(req),
+        signal,
+      })
+    } catch (err: unknown) {
+      const envelope = err as { code?: string; message?: string }
+      const message = envelope?.message ?? 'An unexpected error occurred.'
+      const code = envelope?.code ?? 'internal_error'
       callbacks.onError(message, code)
       return
     }
