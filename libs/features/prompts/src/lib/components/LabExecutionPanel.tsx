@@ -102,7 +102,7 @@ export const LabExecutionPanel: React.FC<LabExecutionPanelProps> = ({
         ? Object.fromEntries(paramSchemas.map((p) => [p.name, inputValues[p.name] ?? p.default ?? '']))
         : { freeform: inputValues['freeform'] ?? '' }
 
-    onTriggerStream({ providerKey: selectedProviderKey, modelKey: selectedModelKey, promptContent, inputSnapshot, params: paramSchemas })
+    onTriggerStream({ providerKey: selectedProviderKey as 'openai' | 'anthropic' | 'google', modelKey: selectedModelKey, promptContent, inputSnapshot, params: paramSchemas })
   }
 
   const isDisabled = isTriggeringExecution || isStreaming || !selectedProviderKey || !selectedModelKey

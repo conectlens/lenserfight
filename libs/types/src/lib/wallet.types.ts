@@ -47,17 +47,29 @@ export interface WalletPricingModel {
   sample_cost_credits: number
 }
 
-export interface WalletExecuteRequest {
-  provider: string
+export type MessageRole = 'system' | 'user' | 'assistant'
+
+export interface Message {
+  role: MessageRole
+  content: string
+}
+
+export interface TokenUsage {
+  input_tokens: number
+  output_tokens: number
+}
+
+export interface ExecuteRequest {
+  provider: 'openai' | 'anthropic' | 'google'
   model: string
-  messages: Array<{ role: 'system' | 'user' | 'assistant'; content: string }>
+  messages: Message[]
   max_tokens?: number
   temperature?: number
 }
 
-export interface WalletExecuteResponse {
+export interface ExecuteResponse {
   content: string
-  usage: { input_tokens: number; output_tokens: number }
+  usage: TokenUsage
   provider: string
   model: string
   credits_charged: number
@@ -65,22 +77,23 @@ export interface WalletExecuteResponse {
 
 export interface ExecuteByokRequest {
   key_ref_id: string
-  provider?: string
+  provider?: 'openai' | 'anthropic' | 'google'
   model: string
-  messages: Array<{ role: 'system' | 'user' | 'assistant'; content: string }>
+  messages: Message[]
   max_tokens?: number
   temperature?: number
 }
 
-export interface ExecuteByokResponse {
+export interface ExecuteBYOKResponse {
   content: string
-  usage: { input_tokens: number; output_tokens: number }
+  usage: TokenUsage
   provider: string
   model: string
 }
 
 export interface ExecuteImageRequest {
-  model: 'fal-ai/flux/schnell' | 'fal-ai/flux/dev' | 'fal-ai/flux-pro'
+  provider: 'fal'
+  model: string
   prompt: string
   num_images?: number
   image_size?: 'square_hd' | 'square' | 'landscape_4_3' | 'portrait_4_3'
