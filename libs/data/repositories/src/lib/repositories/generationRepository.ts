@@ -110,9 +110,9 @@ export class SupabaseGenerationRepository implements GenerationRepositoryPort {
       console.warn('get_active_models_by_provider failed', error)
       return []
     }
-    return ((data ?? []) as { name: string; model_key: string }[]).map((m) => ({
+    return ((data ?? []) as { name: string; key: string }[]).map((m) => ({
       name: m.name,
-      model_key: m.model_key,
+      key: m.key,
     }))
   }
 
@@ -140,6 +140,8 @@ export class SupabaseGenerationRepository implements GenerationRepositoryPort {
         pricing_tier: null,
         is_public: true,
         is_active: row.is_active,
+        input_modalities: ['text'],
+        output_modalities: ['text'],
         created_at: '',
       }))
   }

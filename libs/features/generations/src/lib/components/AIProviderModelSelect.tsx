@@ -19,7 +19,7 @@ export const AIProviderModelSelect: React.FC<AIProviderModelSelectProps> = ({
   const { data: models = [], isLoading: isLoadingModels } = useAIModelsByProvider(providerKey || null)
 
   const providerOptions = providers.map((p) => ({ value: p.key, label: p.display_name }))
-  const modelOptions = models.map((m) => ({ value: m.model_key, label: m.name }))
+  const modelOptions = models.map((m) => ({ value: m.key, label: m.name }))
 
   return (
     <div className="flex flex-col sm:flex-row gap-3">

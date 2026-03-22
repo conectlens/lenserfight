@@ -439,6 +439,31 @@ curl -X POST 'http://127.0.0.1:54321/rest/v1/rpc/fn_tag_activity_log' \
 
 ---
 
+## Lenser Preference RPCs
+
+### `fn_lensers_get_preferences`
+
+Returns the authenticated user's full preferences row from `lensers.preferences` as `jsonb`.
+
+| Property | Value |
+|----------|-------|
+| **Auth** | authenticated |
+| **Parameters** | _(none)_ |
+| **Returns** | `jsonb` — full row from `lensers.preferences`, or `{}` if no row exists |
+| **Source table** | `lensers.preferences` (1:1 with `lensers.profiles`) — updated in migration `20260322000059` |
+
+Previously read from `lensers.profiles.preferences` JSONB. Now reads from the structured `lensers.preferences` table which includes language, theme, AI config, wallet mode, and more.
+
+```bash
+curl -X POST 'http://127.0.0.1:54321/rest/v1/rpc/fn_lensers_get_preferences' \
+  -H 'apikey: <ANON_KEY>' \
+  -H 'Authorization: Bearer <USER_JWT>' \
+  -H 'Content-Type: application/json' \
+  -d '{}'
+```
+
+---
+
 ## Content RPCs
 
 Content operations (thread creation, replies) are handled directly via PostgREST table endpoints with RLS policies rather than dedicated RPC functions. Use standard REST operations against the `content.threads` and related tables:

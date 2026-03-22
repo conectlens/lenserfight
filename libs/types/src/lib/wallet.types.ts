@@ -38,7 +38,7 @@ export interface WalletTransaction {
 }
 
 export interface WalletPricingModel {
-  model_key: string
+  key: string
   name: string
   provider: string
   provider_name: string
