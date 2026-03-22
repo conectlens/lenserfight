@@ -2,7 +2,7 @@ import React, { useMemo, useState } from 'react'
 import { Loader2, Play, Square } from 'lucide-react'
 import { SelectField } from '@lenserfight/ui/forms'
 import { Button, FormError } from '@lenserfight/ui/components'
-import { AIProvider, AIProviderModel, PromptParam } from '@lenserfight/types'
+import { AIProvider, AIProviderModel, PromptParam, PromptVersion } from '@lenserfight/types'
 import { validateParamValues } from '@lenserfight/utils/text'
 import { TriggerLabExecutionDTO } from '../hooks/useLabController'
 
@@ -37,6 +37,11 @@ interface LabExecutionPanelProps {
   onStop: () => void
   pendingRun?: null
   params?: PromptParam[]
+  // Version selector
+  versions?: PromptVersion[]
+  selectedVersionId?: string | null
+  onVersionChange?: (versionId: string) => void
+  isLoadingVersions?: boolean
 }
 
 const inputClass =
@@ -60,6 +65,10 @@ export const LabExecutionPanel: React.FC<LabExecutionPanelProps> = ({
   isConnecting,
   onStop,
   params,
+  versions,
+  selectedVersionId,
+  onVersionChange,
+  isLoadingVersions,
 }) => {
   const variables = useMemo(() => extractVariables(promptContent), [promptContent])
 
@@ -121,6 +130,20 @@ export const LabExecutionPanel: React.FC<LabExecutionPanelProps> = ({
           </span>
         )}
       </div>
+
+      {/* Version Selector — only shown when versions are available */}
+      {versions && versions.length > 0 && (
+        <SelectField
+          value={selectedVersionId ?? ''}
+          onChange={(val) => onVersionChange?.(val)}
+          placeholder={isLoadingVersions ? 'Loading versions…' : 'Select a version'}
+          options={versions.map((v) => ({
+            value: v.id,
+            label: `v${v.versionNumber}${v.changelog ? ` — ${v.changelog}` : ''}${v.status === 'draft' ? ' (draft)' : ''}`,
+          }))}
+          disabled={isLoadingVersions}
+        />
+      )}
 
       {/* Provider + Model Selectors */}
       <SelectField

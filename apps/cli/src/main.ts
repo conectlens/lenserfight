@@ -22,6 +22,7 @@ const main = defineCommand({
     publish: () => import('./commands/publish').then((m) => m.default),
     rubric: () => import('./commands/rubric').then((m) => m.default),
     template: () => import('./commands/template').then((m) => m.default),
+    prompt: () => import('./commands/prompt').then((m) => m.default),
     lenser: () => import('./commands/lenser').then((m) => m.default),
     tag: () => import('./commands/tag').then((m) => m.default),
     feed: () => import('./commands/feed').then((m) => m.default),
