@@ -1,6 +1,6 @@
 import { MentionParser } from '@lenserfight/utils/text'
 
-import { promptsService } from './promptsService'
+import { lensesService } from './lensesService'
 import { tagService } from './tagService'
 
 export interface ResolvedSegment {
@@ -37,7 +37,7 @@ export const mentionService = {
               content: tag.name,
               id: segment.id,
               entityType: 'Tag',
-              link: `/len/${tag.slug}`,
+              link: `/rays/${tag.slug}`,
               isValid: true,
             } as ResolvedSegment
           }
@@ -56,15 +56,15 @@ export const mentionService = {
       if (segment.type === 'mention') {
         try {
           switch (segment.entityType) {
-            case 'Prompt': {
-              const prompt = await promptsService.getPromptDetail(segment.id)
+            case 'Lens': {
+              const prompt = await lensesService.getLensDetail(segment.id)
               if (prompt) {
                 return {
                   type: 'mention',
                   content: prompt.title,
                   id: segment.id,
-                  entityType: 'Prompt',
-                  link: `/len/p/${segment.id}`,
+                  entityType: 'Lens',
+                  link: `/lenses/${segment.id}`,
                   isValid: true,
                 } as ResolvedSegment
               }

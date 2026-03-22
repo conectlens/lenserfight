@@ -3,7 +3,7 @@ import { AuthorProfile } from './lenser.types'
 export type Visibility = 'public' | 'community' | 'private'
 export type ContentStatus = 'draft' | 'published' | 'archived'
 
-export interface PromptData {
+export interface LensData {
   title: string
   description: string
   actionLabel?: string
@@ -38,13 +38,12 @@ export interface ThreadRecord {
   created_at: string
   updated_at: string
   thumbnail_url?: string
-  /** Replaces prompt_data. FK to content.prompt_templates(id). */
-  linked_prompt_id?: string | null
+  /** FK to content.lenses(id). Links a thread to a specific Lens. */
+  linked_lens_id?: string | null
   /**
-   * @deprecated Use linked_prompt_id instead.
-   * Kept for backward compatibility while existing thread rows are migrated.
+   * @deprecated Use linked_lens_id instead.
    */
-  prompt_data?: PromptData
+  prompt_data?: LensData
 }
 
 export interface ThreadTagRecord {
@@ -119,7 +118,7 @@ export interface ThreadDetailViewModel {
   reactionCount: number
   userHasReacted: boolean
   replies: ThreadReplyViewModel[]
-  promptBlock?: PromptData
+  promptBlock?: LensData
   visibility: Visibility
   status: ContentStatus
 }

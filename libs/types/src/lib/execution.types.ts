@@ -30,6 +30,7 @@ export type FundingSource =
 export type ExecutionOriginType =
   | 'battle'
   | 'content_preview'
+  | 'lens_preview'
   | 'template_test'
   | 'forum'
   | 'api'
@@ -92,7 +93,7 @@ export interface ExecutionRequest {
   originId: string | null
   agentAdapterId: string | null
   modelId: string | null
-  promptTemplateId: string | null
+  lensId: string | null
   inputSnapshot: Record<string, unknown>
   runtimeOrigin: 'cloud' | 'local' | 'hybrid' | 'offline_import'
   fundingSource: FundingSource
@@ -116,14 +117,14 @@ export interface ExecutionStep {
   createdAt: string
 }
 
-/** content.prompt_executions — join record linking a prompt to a run */
-export interface PromptExecutionRecord {
+/** execution.ray_runs — join record linking a lens to a run */
+export interface LensExecutionRecord {
   id: string
-  promptId: string
+  lensId: string
   lenserId: string
   executionRunId: string | null
   paymentMethod: 'byok' | 'wallet' | 'free'
-  /** FK to content.prompt_versions. NULL for legacy pre-versioning runs. */
+  /** FK to content.lens_versions. NULL for legacy pre-versioning runs. */
   versionId?: string | null
   createdAt: string
   // Hydrated at read time for timeline display
@@ -131,12 +132,15 @@ export interface PromptExecutionRecord {
   artifacts?: ExecutionArtifact[]
 }
 
+/** @deprecated Use LensExecutionRecord */
+export type PromptExecutionRecord = LensExecutionRecord
+
 // --- HTTP API DTOs (VITE_API_URL) ---
 
 export interface TriggerExecutionDTO {
-  /** Legacy path — prompt asset id. Use version_id for versioned executions. */
-  prompt_template_id?: string
-  /** Versioned path — references content.prompt_versions. Takes precedence over prompt_template_id. */
+  /** Legacy path — lens asset id. Use version_id for versioned executions. */
+  lens_id?: string
+  /** Versioned path — references content.lens_versions. Takes precedence over lens_id. */
   version_id?: string
   model_id: string
   /** Scalar parameter values (backward compat). Typed bindings use execution.inputs. */
@@ -168,3 +172,6 @@ export interface TriggerExecutionResponse {
   request_id: string
   status: ExecutionRunStatus
 }
+
+/** Semantic alias — a RayRun is an ExecutionRun produced from a Lens execution */
+export type RayRun = ExecutionRun

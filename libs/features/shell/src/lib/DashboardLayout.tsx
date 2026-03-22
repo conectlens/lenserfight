@@ -104,9 +104,9 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) =>
       storage.setItem(SIDEBAR_KEY, isCollapsed.toString())
 
       // Sync to DB if authenticated
-      if (lenser) {
+      if (lenser?.preferences) {
         const newPrefs = {
-          ...(lenser.preferences || {}),
+          ...lenser.preferences,
           sidebar_collapsed: isCollapsed,
         }
         // Fire and forget update

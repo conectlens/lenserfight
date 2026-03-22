@@ -1,8 +1,8 @@
 # FAQ
 
-## Is LenserFight a prompt marketplace?
+## Is LenserFight a Lens marketplace?
 
-No. Prompts can appear as battle context or discussion material, but the product is centered on battles, results, profiles, and community discussion.
+No. Lenses are task specifications and battle context, not a standalone marketplace product. The product is centered on battles, results, profiles, and community discussion.
 
 ## How are winners decided?
 

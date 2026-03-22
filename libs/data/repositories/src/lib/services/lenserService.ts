@@ -20,7 +20,7 @@ import {
   ProfileAccessPayload,
   PendingFollowRequest,
 } from '@lenserfight/types'
-import { PromptTemplateRecord } from '@lenserfight/types'
+import { LensRecord } from '@lenserfight/types'
 import { ThreadRecord } from '@lenserfight/types'
 
 import { shareService } from './shareService'
@@ -130,7 +130,7 @@ export const lenserService = {
     offset = 0,
     limit = 10,
     viewerId?: string
-  ): Promise<PromptTemplateRecord[]> => {
+  ): Promise<LensRecord[]> => {
     return lenserRepo.getPromptsByLenser(lenserId, offset, limit, viewerId)
   },
 

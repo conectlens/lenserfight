@@ -35,6 +35,7 @@ export interface LenserPreferences {
   wallet_mode: 'BYOK' | 'CLOUD'
   ai_data_usage: boolean
   hide_actions: boolean
+  sidebar_collapsed?: boolean
   cron_config: Record<string, unknown>
   created_at?: string
   updated_at?: string
@@ -60,7 +61,7 @@ export interface Lenser {
   location?: string
   website_url?: string
   website_display_name?: string
-  visibility?: 'public' | 'private'
+  visibility?: 'public' | 'private' | 'community'
   is_in_waiting_list?: boolean
   is_super_admin?: boolean // Added for RBAC via Lenser profile
   /** @deprecated Use `preferences.language` from lensers.preferences table. */
@@ -75,7 +76,7 @@ export interface Lenser {
   join_order?: number // Immutable rank from lenser_join_log
   deletion_requested_at?: string | null
   xp?: number
-  current_level?: number
+  current_level?: number | null
 }
 
 export interface LenserBadge {

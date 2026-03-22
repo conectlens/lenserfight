@@ -1,4 +1,4 @@
-export type MentionType = 'Prompt' | 'User' | 'Thread'
+export type MentionType = 'Lens' | 'Prompt' | 'User' | 'Thread'
 
 export interface MentionToken {
   type: 'mention'

@@ -37,7 +37,6 @@ export const ContactPage: React.FC = () => {
 
     try {
       await contactService.submitMessage({
-        lenser_id: lenser?.id || null,
         name,
         email,
         subject,

@@ -6,11 +6,11 @@ import { Avatar } from '@lenserfight/ui/components'
 import { Card } from '@lenserfight/ui/components'
 import { MentionRenderer } from '@lenserfight/ui/components'
 import { TagBadge } from '@lenserfight/ui/components'
-import { PromptTemplateViewModel } from '@lenserfight/types'
+import { LensViewModel } from '@lenserfight/types'
 import { TaggedContentItem } from '@lenserfight/types'
 import { ThreadFeedItem } from '@lenserfight/types'
 import { timeAgo } from '@lenserfight/utils/date'
-import { PromptCard } from '@lenserfight/features/prompts'
+import { LensCard } from '@lenserfight/features/lenses'
 
 interface TagContentGridProps {
   items: TaggedContentItem[]
@@ -44,11 +44,11 @@ export const TagContentGrid: React.FC<TagContentGridProps> = ({ items, loading }
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 animate-in fade-in duration-500">
       {items.map((item) => {
-        if (item.type === 'prompt') {
-          const promptVM = item.data as PromptTemplateViewModel
+        if (item.type === 'lens') {
+          const lensVM = item.data as LensViewModel
           return (
             <div key={item.id} className="h-full">
-              <PromptCard prompt={promptVM} onClick={(id) => navigate(`/len/p/${id}`)} />
+              <LensCard lens={lensVM} onClick={(id) => navigate(`/lenses/${id}`)} />
             </div>
           )
         }

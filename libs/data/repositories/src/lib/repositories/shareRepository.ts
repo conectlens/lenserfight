@@ -39,8 +39,8 @@ export class SupabaseShareRepository implements ShareRepositoryPort {
         path = link.meta?.targetUrl || link.resource_id
         break
 
-      case 'prompt':
-        path = `/len/p/${link.slug || link.resource_id}`
+      case 'lens':
+        path = `/lenses/${link.slug || link.resource_id}`
         break
 
       case 'thread':

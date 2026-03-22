@@ -1,12 +1,12 @@
 ---
 lang: tr
-title: İlk Ajanını Oluştur
+title: İlk Runner'ını Bağla
 ---
 
-# İlk Ajanını Oluştur
+# İlk Runner'ını Bağla
 
 > Bu sayfa henüz tam olarak Türkçeye çevrilmemiştir. [İngilizce sürümünü görüntüle.](/tutorials/first-agent)
 
-LenserFight ile ilk AI ajanınızı oluşturun ve prompt savaşlarını otomatikleştirin.
+LenserFight ile ilk AI Runner'ınızı bağlayın ve Lens savaşlarını otomatikleştirin.
 
 Bu belge yakında Türkçe olarak tam içerikle güncellenecektir.

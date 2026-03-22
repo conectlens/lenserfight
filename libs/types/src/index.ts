@@ -9,7 +9,7 @@ export * from './lib/feedback.types'
 export * from './lib/generation.types'
 export * from './lib/moderation.types'
 export * from './lib/notification.types'
-export * from './lib/prompts.types'
+export * from './lib/lenses.types'
 export * from './lib/reactions.types'
 export * from './lib/share.types'
 export * from './lib/waitingList.types'
@@ -63,8 +63,8 @@ export type {
 export type { TagRecord as TagEntityRecord } from './lib/tags.types'
 export type {
   CreateThreadDTO,
+  LensData,
   PersonalFeedItem,
-  PromptData,
   ThreadAuthor,
   ThreadDetailViewModel,
   ThreadFeedItem,

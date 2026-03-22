@@ -16,7 +16,7 @@ This guide explains where to find your XP, what actions earn XP, and how the pro
 |--------|----------|---------|
 | Create a thread | 20 | 60 seconds |
 | Reply to a thread | 12 | 30 seconds |
-| Create a prompt | 30 | 2 minutes |
+| Create a Lens | 30 | 2 minutes |
 | Give a reaction | 4 | 5 seconds |
 | Receive a reaction | ~2 | None |
 | Receive a reply | 4 | None |
