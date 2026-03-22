@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback, useRef } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { executionService, walletService, walletApiClient } from '@lenserfight/data/repositories'
 import { queryKeys } from '@lenserfight/data/cache'
-import { PromptExecutionRecord, PromptParam, WalletExecuteResponse, StreamState, StreamUsage } from '@lenserfight/types'
+import { PromptExecutionRecord, PromptParam, ExecuteResponse, StreamState, StreamUsage } from '@lenserfight/types'
 import { renderPrompt } from '@lenserfight/utils/text'
 import { useToast } from '@lenserfight/shared/error'
 import { useAIProviders, useAIModelsByProvider } from '@lenserfight/features/generations'
@@ -11,7 +11,7 @@ import { useAuth } from '@lenserfight/features/auth'
 const PAGE_SIZE = 20
 
 export interface TriggerLabExecutionDTO {
-  providerKey: string
+  providerKey: 'openai' | 'anthropic' | 'google'
   modelKey: string
   promptContent: string
   inputSnapshot: Record<string, any>
@@ -29,7 +29,7 @@ export const useLabController = (promptId: string, isAuthenticated = false) => {
   const [hasMoreHistory, setHasMoreHistory] = useState(true)
 
   // Latest sync execution result
-  const [latestResult, setLatestResult] = useState<WalletExecuteResponse | null>(null)
+  const [latestResult, setLatestResult] = useState<ExecuteResponse | null>(null)
 
   // Streaming state
   const [streamState, setStreamState] = useState<StreamState>('idle')
@@ -85,7 +85,7 @@ export const useLabController = (promptId: string, isAuthenticated = false) => {
     setSelectedModelKey('')
   }, [])
 
-  // --- Sync execution mutation via platform /execute/wallet ---
+  // --- Sync execution mutation via platform /execute ---
   const {
     mutate: triggerExecution,
     isPending: isTriggeringExecution,
@@ -93,7 +93,7 @@ export const useLabController = (promptId: string, isAuthenticated = false) => {
   } = useMutation({
     mutationFn: ({ providerKey, modelKey, promptContent, inputSnapshot, params }: TriggerLabExecutionDTO) => {
       const resolvedContent = renderPrompt(promptContent, inputSnapshot, params ?? [])
-      return walletService.executeWithWallet({
+      return walletService.execute({
         provider: providerKey,
         model: modelKey,
         messages: [{ role: 'user', content: resolvedContent }],

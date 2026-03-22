@@ -1,15 +1,15 @@
 import { supabase } from '@lenserfight/data/supabase'
 import {
   ExecuteByokRequest,
-  ExecuteByokResponse,
+  ExecuteBYOKResponse,
   ExecuteImageRequest,
   ExecuteImageResponse,
+  ExecuteRequest,
+  ExecuteResponse,
   StreamCallbacks,
   WalletBalance,
   WalletCheckoutRequest,
   WalletCheckoutResponse,
-  WalletExecuteRequest,
-  WalletExecuteResponse,
   WalletPricingModel,
   WalletProduct,
   WalletTransaction,
@@ -101,9 +101,9 @@ export const walletApiClient = {
     }
   },
 
-  async executeWithWallet(req: WalletExecuteRequest): Promise<WalletExecuteResponse> {
+  async execute(req: ExecuteRequest): Promise<ExecuteResponse> {
     const authHeader = await getAuthHeader()
-    const res = await apiFetch(`${API_BASE}/execute/wallet`, {
+    const res = await apiFetch(`${API_BASE}/execute`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -111,10 +111,10 @@ export const walletApiClient = {
       },
       body: JSON.stringify(req),
     })
-    return unwrapEnvelope<WalletExecuteResponse>(res)
+    return unwrapEnvelope<ExecuteResponse>(res)
   },
 
-  async executeByok(req: ExecuteByokRequest): Promise<ExecuteByokResponse> {
+  async executeByok(req: ExecuteByokRequest): Promise<ExecuteBYOKResponse> {
     const authHeader = await getAuthHeader()
     const res = await apiFetch(`${API_BASE}/execute/byok`, {
       method: 'POST',
@@ -124,7 +124,7 @@ export const walletApiClient = {
       },
       body: JSON.stringify(req),
     })
-    return unwrapEnvelope<ExecuteByokResponse>(res)
+    return unwrapEnvelope<ExecuteBYOKResponse>(res)
   },
 
   async executeImage(req: ExecuteImageRequest): Promise<ExecuteImageResponse> {
@@ -141,7 +141,7 @@ export const walletApiClient = {
   },
 
   async streamWithWallet(
-    req: WalletExecuteRequest,
+    req: ExecuteRequest,
     signal: AbortSignal,
     callbacks: StreamCallbacks,
   ): Promise<void> {
