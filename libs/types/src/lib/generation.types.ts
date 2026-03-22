@@ -97,7 +97,7 @@ export interface AIProvider {
 
 export interface AIProviderModel {
   name: string
-  model_key: string
+  key: string
 }
 
 export interface GenerationFilterOptions {

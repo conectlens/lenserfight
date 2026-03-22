@@ -181,7 +181,7 @@ export const LabExecutionPanel: React.FC<LabExecutionPanelProps> = ({
         value={selectedModelKey}
         onChange={onModelChange}
         placeholder={isLoadingModels ? 'Loading models…' : selectedProviderKey ? 'Select a model' : 'Select a provider first'}
-        options={providerModels.map((m) => ({ value: m.model_key, label: m.name }))}
+        options={providerModels.map((m) => ({ value: m.key, label: m.name }))}
         disabled={!selectedProviderKey || isLoadingModels}
       />
 

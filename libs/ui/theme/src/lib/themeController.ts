@@ -81,7 +81,7 @@ export const themeController = {
         }
 
         // stale-while-revalidate → fetch in background
-        repo.getPreferences(userId).then((prefs) => {
+        repo.getPreferences().then((prefs) => {
           const dbTheme = prefs?.theme
           if (isValidTheme(dbTheme)) {
             writeCache(userId, dbTheme)
@@ -95,7 +95,7 @@ export const themeController = {
 
       // No cache → fetch from DB
       try {
-        const prefs = await repo.getPreferences(userId)
+        const prefs = await repo.getPreferences()
         const dbTheme = prefs?.theme
 
         if (isValidTheme(dbTheme)) {
@@ -105,7 +105,7 @@ export const themeController = {
           writeCache(userId, resolved)
         } else {
           // Persist current resolved theme to DB (only once)
-          repo.updateTheme(userId, resolved)
+          repo.updateTheme(resolved)
           writeCache(userId, resolved)
         }
       } catch {
@@ -128,7 +128,7 @@ export const themeController = {
 
     if (userId) {
       writeCache(userId, theme)
-      repo.updateTheme(userId, theme).catch(() => {})
+      repo.updateTheme(theme).catch(() => {})
     }
   },
 

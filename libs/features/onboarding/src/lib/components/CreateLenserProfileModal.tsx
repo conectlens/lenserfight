@@ -1,7 +1,8 @@
 import { queryKeys } from '@lenserfight/data/cache'
-import { lenserService } from '@lenserfight/data/repositories'
+import { lenserService, preferencesService } from '@lenserfight/data/repositories'
 import { useAuth } from '@lenserfight/features/auth'
 import { InputField } from '@lenserfight/features/auth'
+import { useAIProviders, useAIModelsByProvider } from '@lenserfight/features/generations'
 import { CreateLenserDTO, Lenser } from '@lenserfight/types'
 import { LanguageSelectBox, StepWizard } from '@lenserfight/ui/components'
 import { Modal } from '@lenserfight/ui/modals'
@@ -20,6 +21,12 @@ interface CreateLenserProfileModalProps {
 
 const getErrorMessage = (error: unknown, fallback: string) =>
   error instanceof Error && error.message ? error.message : fallback
+
+const THEME_OPTIONS: { value: 'light' | 'dark' | 'system'; label: string }[] = [
+  { value: 'system', label: 'System default' },
+  { value: 'light', label: 'Light' },
+  { value: 'dark', label: 'Dark' },
+]
 
 export const CreateLenserProfileModal: React.FC<CreateLenserProfileModalProps> = ({
   onClose,
@@ -42,9 +49,15 @@ export const CreateLenserProfileModal: React.FC<CreateLenserProfileModalProps> =
   const [submitError, setSubmitError] = useState<string | null>(null)
   const [isSubmittingStep0, setIsSubmittingStep0] = useState(false)
 
-  // ── Step 1: language preference ─────────────────────────────────────
+  // ── Step 1: language + theme ─────────────────────────────────────
   const [preferredLanguage, setPreferredLanguage] = useState('en')
+  const [selectedTheme, setSelectedTheme] = useState<'light' | 'dark' | 'system'>('system')
   const [isCompletingStep1, setIsCompletingStep1] = useState(false)
+
+  // ── Step 2: AI configuration (optional) ─────────────────────────
+  const [aiProviderKey, setAiProviderKey] = useState<string>('')
+  const [aiModelKey, setAiModelKey] = useState<string>('')
+  const [isCompletingStep2, setIsCompletingStep2] = useState(false)
 
   const { data: lenser = null, isLoading: lenserLoading } = useQuery<Lenser | null>({
     queryKey: queryKeys.lenser.authenticated(),
@@ -60,6 +73,11 @@ export const CreateLenserProfileModal: React.FC<CreateLenserProfileModalProps> =
     staleTime: Infinity,
   })
 
+  const { data: providers = [], isLoading: isLoadingProviders } = useAIProviders()
+  const { data: providerModels = [], isLoading: isLoadingModels } = useAIModelsByProvider(
+    currentStep === 2 && aiProviderKey ? aiProviderKey : null
+  )
+
   const hasLenser = !!lenser
   const onboardingStep = lenser?.onboarding_step ?? 0
   const hasCompletedOnboarding = onboardingStep >= 2
@@ -74,7 +92,6 @@ export const CreateLenserProfileModal: React.FC<CreateLenserProfileModalProps> =
       window.location.href = `${authAppUrl}/login?return_url=${returnUrl}`
       onClose()
     } else if (hasLenser && hasCompletedOnboarding) {
-      // Fully completed profiles should not remain in the modal.
       onClose()
     }
   }, [authLoading, lenserLoading, isAuthenticated, hasLenser, hasCompletedOnboarding, onClose])
@@ -139,9 +156,6 @@ export const CreateLenserProfileModal: React.FC<CreateLenserProfileModalProps> =
     setIsSubmittingStep0(true)
     try {
       const profile = await lenserService.createLenserProfile({ handle, display_name: displayName } as CreateLenserDTO)
-      // Advance step and update cache synchronously in the same render batch
-      // BEFORE any awaits — otherwise a render fires with hasLenser=true + currentStep=0
-      // which triggers the "profile already exists" guard and closes the modal.
       queryClient.setQueryData(queryKeys.lenser.authenticated(), profile)
       queryClient.setQueryData(AUTH_PROFILE_GATE_QUERY_KEY, {
         kind: 'onboarding',
@@ -159,27 +173,43 @@ export const CreateLenserProfileModal: React.FC<CreateLenserProfileModalProps> =
     }
   }
 
-  // ── Step 1 submit: save language + complete onboarding ───────────────
-  const handleStep1Complete = async () => {
+  // ── Step 1 submit: save language + theme, advance to AI setup ───────
+  const handleStep1Next = async () => {
     setIsCompletingStep1(true)
     setSubmitError(null)
     try {
-      const updated = await lenserService.updateLenserProfile({
-        preferred_language: preferredLanguage,
-        onboarding_step: 2,
-        onboarding_completed_at: new Date().toISOString(),
-      })
-      queryClient.setQueryData(queryKeys.lenser.authenticated(), updated)
-      queryClient.setQueryData(AUTH_PROFILE_GATE_QUERY_KEY, {
-        kind: 'active',
-        status: 'active',
-      })
-      await queryClient.invalidateQueries({ queryKey: AUTH_PROFILE_GATE_QUERY_KEY })
-      ;(onComplete ?? onClose)()
+      await preferencesService.updatePreferences({ language: preferredLanguage, theme: selectedTheme })
+      setCurrentStep(2)
     } catch (err: unknown) {
       setSubmitError(getErrorMessage(err, 'Failed to save preferences. Please try again.'))
     } finally {
       setIsCompletingStep1(false)
+    }
+  }
+
+  // ── Step 2 complete: save AI config + mark onboarding done ──────────
+  const handleStep2Complete = async () => {
+    setIsCompletingStep2(true)
+    setSubmitError(null)
+    try {
+      if (aiProviderKey || aiModelKey) {
+        await preferencesService.updatePreferences({
+          ai_provider_key: aiProviderKey || null,
+          ai_model_key: aiModelKey || null,
+        })
+      }
+      const updated = await lenserService.updateLenserProfile({
+        onboarding_step: 2,
+        onboarding_completed_at: new Date().toISOString(),
+      })
+      queryClient.setQueryData(queryKeys.lenser.authenticated(), updated)
+      queryClient.setQueryData(AUTH_PROFILE_GATE_QUERY_KEY, { kind: 'active', status: 'active' })
+      await queryClient.invalidateQueries({ queryKey: AUTH_PROFILE_GATE_QUERY_KEY })
+      ;(onComplete ?? onClose)()
+    } catch (err: unknown) {
+      setSubmitError(getErrorMessage(err, 'Failed to complete setup. Please try again.'))
+    } finally {
+      setIsCompletingStep2(false)
     }
   }
 
@@ -193,14 +223,14 @@ export const CreateLenserProfileModal: React.FC<CreateLenserProfileModalProps> =
       contentClassName="px-4 py-5 sm:px-6 sm:py-6"
     >
       <StepWizard
-        steps={['Profile', 'Preferences']}
+        steps={['Profile', 'Personalization', 'AI Setup']}
         currentStep={currentStep}
-        onNext={handleStep0Next}
+        onNext={currentStep === 0 ? handleStep0Next : handleStep1Next}
         onBack={() => setCurrentStep((s) => Math.max(s - 1, 0))}
-        onComplete={handleStep1Complete}
+        onComplete={handleStep2Complete}
         canProceed={currentStep === 0 ? (isHandleUnique && !!displayName.trim()) : true}
-        isNextLoading={isSubmittingStep0}
-        isCompleting={isCompletingStep1}
+        isNextLoading={isSubmittingStep0 || isCompletingStep1}
+        isCompleting={isCompletingStep2}
         nextLabel="Continue"
         completeLabel="Finish"
       >
@@ -211,7 +241,6 @@ export const CreateLenserProfileModal: React.FC<CreateLenserProfileModalProps> =
               Claim your unique handle to join the community.
             </p>
 
-            {/* Handle input */}
             <div>
               <div className="relative">
                 <InputField
@@ -233,7 +262,6 @@ export const CreateLenserProfileModal: React.FC<CreateLenserProfileModalProps> =
                 </div>
               </div>
 
-              {/* Suggestions */}
               {suggestions.length > 0 && (
                 <div className="mt-2 animate-in slide-in-from-top-1 fade-in duration-200">
                   <p className="text-xs text-gray-500 mb-2">Suggestions:</p>
@@ -271,9 +299,9 @@ export const CreateLenserProfileModal: React.FC<CreateLenserProfileModalProps> =
               </div>
             )}
           </div>
-        ) : (
-          /* ── Step 1: language preference ── */
-          <div className="space-y-4">
+        ) : currentStep === 1 ? (
+          /* ── Step 1: language + theme ── */
+          <div className="space-y-5">
             <div>
               <p className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                 Preferred Language
@@ -288,6 +316,77 @@ export const CreateLenserProfileModal: React.FC<CreateLenserProfileModalProps> =
                 isLoading={langsLoading}
               />
             </div>
+
+            <div>
+              <p className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                Theme
+              </p>
+              <p className="text-xs text-gray-500 dark:text-gray-400 mb-3">
+                Choose your preferred colour scheme.
+              </p>
+              <div className="flex gap-3">
+                {THEME_OPTIONS.map((opt) => (
+                  <button
+                    key={opt.value}
+                    type="button"
+                    onClick={() => setSelectedTheme(opt.value)}
+                    className={`flex-1 py-2.5 px-4 rounded-lg border text-sm font-medium transition-colors ${
+                      selectedTheme === opt.value
+                        ? 'border-primary bg-primary/10 text-gray-900 dark:text-white'
+                        : 'border-gray-200 dark:border-gray-700 text-gray-500 dark:text-gray-400 hover:border-gray-300 dark:hover:border-gray-600'
+                    }`}
+                  >
+                    {opt.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {submitError && (
+              <div className="text-red-500 text-sm bg-red-50 dark:bg-red-900/20 p-3 rounded-lg">
+                {submitError}
+              </div>
+            )}
+          </div>
+        ) : (
+          /* ── Step 2: AI configuration (optional) ── */
+          <div className="space-y-5">
+            <p className="text-sm text-gray-500 dark:text-gray-400">
+              Optionally set your preferred AI provider and model. You can change this later in Settings.
+            </p>
+
+            <div>
+              <p className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Provider</p>
+              <select
+                value={aiProviderKey}
+                onChange={(e) => { setAiProviderKey(e.target.value); setAiModelKey('') }}
+                disabled={isLoadingProviders}
+                className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-sm text-gray-700 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-primary/40 disabled:opacity-50"
+              >
+                <option value="">Select a provider (optional)</option>
+                {providers.map((p) => (
+                  <option key={p.key} value={p.key}>{p.display_name}</option>
+                ))}
+              </select>
+            </div>
+
+            {aiProviderKey && (
+              <div>
+                <p className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Model</p>
+                <select
+                  value={aiModelKey}
+                  onChange={(e) => setAiModelKey(e.target.value)}
+                  disabled={isLoadingModels}
+                  className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-sm text-gray-700 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-primary/40 disabled:opacity-50"
+                >
+                  <option value="">Select a model (optional)</option>
+                  {providerModels.map((m) => (
+                    <option key={m.key} value={m.key}>{m.name}</option>
+                  ))}
+                </select>
+              </div>
+            )}
+
             {submitError && (
               <div className="text-red-500 text-sm bg-red-50 dark:bg-red-900/20 p-3 rounded-lg">
                 {submitError}
