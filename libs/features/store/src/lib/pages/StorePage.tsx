@@ -6,6 +6,9 @@ import React, { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { useAuth } from '@lenserfight/features/auth'
 import { SEOHead } from '@lenserfight/ui/components'
+import { useCheckoutStatus } from '../hooks/useCheckoutStatus'
+import { CheckoutSuccessView } from '../views/CheckoutSuccessView'
+import { CheckoutErrorView } from '../views/CheckoutErrorView'
 
 function safeRenderHtml(html: string): string {
   return html
@@ -76,7 +79,12 @@ const CreditPackSkeleton: React.FC = () => (
   </div>
 )
 
-export const StorePage: React.FC = () => {
+/**
+ * GRASP: High Cohesion — isolates all product-fetching and buying hooks so
+ * StorePage (the Creator/dispatcher) can call useCheckoutStatus() without
+ * violating Rules of Hooks through conditional hook calls.
+ */
+const StoreProductsView: React.FC = () => {
   const { user, redirectToLogin } = useAuth()
   const [buyingId, setBuyingId] = useState<string | null>(null)
   const [checkoutError, setCheckoutError] = useState<string | null>(null)
@@ -158,4 +166,19 @@ export const StorePage: React.FC = () => {
       )}
     </div>
   )
+}
+
+/**
+ * GRASP: Creator + Polymorphism + Protected Variations
+ *
+ * StorePage is the composition root for the /store route. It owns the
+ * checkout-status signal and delegates rendering to the appropriate
+ * sub-view. Unknown ?status= values fall through to the default store
+ * (Protected Variations).
+ */
+export const StorePage: React.FC = () => {
+  const checkoutStatus = useCheckoutStatus()
+  if (checkoutStatus === 'success') return <CheckoutSuccessView />
+  if (checkoutStatus === 'error') return <CheckoutErrorView />
+  return <StoreProductsView />
 }
