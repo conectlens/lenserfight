@@ -31,11 +31,22 @@ import type { Theme } from '@lenserfight/ui/theme'
 
 import { SidebarItem } from './SidebarItem'
 
-const THEME_OPTIONS: { value: Theme; label: string; icon: React.ReactNode }[] = [
-  { value: 'light', label: 'Light', icon: <Sun size={14} /> },
-  { value: 'dark', label: 'Dark', icon: <Moon size={14} /> },
-  { value: 'system', label: 'System', icon: <Monitor size={14} /> },
-]
+const THEME_CYCLE: Theme[] = ['light', 'dark', 'system']
+const THEME_ICONS: Record<Theme, React.ReactNode> = {
+  light: <Sun size={16} />,
+  dark: <Moon size={16} />,
+  system: <Monitor size={16} />,
+}
+const THEME_LABELS: Record<Theme, string> = {
+  light: 'Switch to dark mode',
+  dark: 'Switch to system mode',
+  system: 'Switch to light mode',
+}
+const THEME_NAMES: Record<Theme, string> = {
+  light: 'Light',
+  dark: 'Dark',
+  system: 'System',
+}
 
 interface SidebarProps {
   isOpen: boolean
@@ -67,6 +78,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
   const { hasLenser, isLoading: isLenserLoading } = useHasLenserProfile()
   const { logout } = useAuth()
   const { themeMode, setTheme } = useTheme()
+  const nextTheme = THEME_CYCLE[(THEME_CYCLE.indexOf(themeMode) + 1) % THEME_CYCLE.length]
 
   // Use optimized hook for display data (XP, Level, Fresh Avatar)
   const { profile: compactProfile } = useSidebarProfile(authLenser?.handle)
@@ -82,6 +94,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
   const [unreadCount, setUnreadCount] = useState(0)
   const [isFeedbackOpen, setIsFeedbackOpen] = useState(false)
+  const [shownThemeName, setShownThemeName] = useState<string | null>(null)
+  const themeNameTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   useEffect(() => {
     if (!authLenser || !FEATURES.NOTIFICATIONS) return
@@ -129,6 +143,12 @@ export const Sidebar: React.FC<SidebarProps> = ({
       document.removeEventListener('keydown', handleKeyDown)
     }
   }, [isDropdownOpen])
+
+  useEffect(() => {
+    return () => {
+      if (themeNameTimerRef.current) clearTimeout(themeNameTimerRef.current)
+    }
+  }, [])
 
   const desktopWidthClass = isOpen ? 'w-64' : 'w-20'
 
@@ -469,26 +489,23 @@ export const Sidebar: React.FC<SidebarProps> = ({
                           </button>
                         )}
 
-                        <div className="px-3 py-2">
-                          <p className="text-xs text-gray-400 mb-1.5">Theme</p>
-                          <div className="flex gap-1">
-                            {THEME_OPTIONS.map(({ value, label, icon }) => (
-                              <button
-                                key={value}
-                                onClick={() => setTheme(value)}
-                                title={label}
-                                className={`flex-1 flex items-center justify-center gap-1 px-2 py-1.5 rounded-lg text-xs font-medium transition-colors ${
-                                  themeMode === value
-                                    ? 'bg-primary text-gray-900'
-                                    : 'text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700'
-                                }`}
-                              >
-                                {icon}
-                                <span>{label}</span>
-                              </button>
-                            ))}
-                          </div>
-                        </div>
+                        <button
+                          role="menuitem"
+                          onClick={() => {
+                            const nameToShow = THEME_NAMES[nextTheme]
+                            setTheme(nextTheme)
+                            setShownThemeName(nameToShow)
+                            if (themeNameTimerRef.current) clearTimeout(themeNameTimerRef.current)
+                            themeNameTimerRef.current = setTimeout(() => setShownThemeName(null), 2000)
+                          }}
+                          title={THEME_LABELS[themeMode]}
+                          className="w-full text-left px-3 py-2 rounded-lg text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white flex items-center gap-3 transition-colors"
+                        >
+                          {THEME_ICONS[themeMode]}
+                          <span key={shownThemeName ?? 'theme'} className="animate-in fade-in duration-300">
+                            {shownThemeName ?? 'Theme'}
+                          </span>
+                        </button>
 
                         <button
                           role="menuitem"
