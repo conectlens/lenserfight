@@ -62,6 +62,9 @@ Desktop.ini
 
 .notes
 
+# Internal strategy, sponsorship, and investor docs — never commit to OSS repo
+docs/.internal/
+
 .data/*
 
 

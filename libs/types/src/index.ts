@@ -1,4 +1,5 @@
 export * from './lib/admin.types'
+export * from './lib/apiKeys.types'
 export * from './lib/resources.types'
 export * from './lib/wallet.types'
 export * from './lib/execution.types'

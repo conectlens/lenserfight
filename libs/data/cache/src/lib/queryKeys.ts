@@ -81,6 +81,10 @@ export const queryKeys = {
     detail: (versionId: string) => [...queryKeys.promptVersions.all, 'detail', versionId] as const,
     latestPublished: (promptId: string) => [...queryKeys.promptVersions.all, 'latestPublished', promptId] as const,
   },
+  apiKeys: {
+    all: ['apiKeys'] as const,
+    myKeys: () => [...queryKeys.apiKeys.all, 'mine'] as const,
+  },
   resources: {
     all: ['resources'] as const,
     byOwner: (lenserId: string) => [...queryKeys.resources.all, 'owner', lenserId] as const,
