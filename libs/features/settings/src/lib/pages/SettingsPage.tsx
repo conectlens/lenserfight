@@ -1,20 +1,19 @@
 import { feedbackService } from '@lenserfight/data/repositories'
 import { lenserService } from '@lenserfight/data/repositories'
 import { notificationService } from '@lenserfight/data/repositories'
-import { preferencesService } from '@lenserfight/data/repositories'
 import { InputField, useAuth } from '@lenserfight/features/auth'
 import { useWallet } from '@lenserfight/features/store'
 import { AvatarSelectionModal, useLenser } from '@lenserfight/features/profile'
 import { Feedback, ProductTag, FeedbackStatus, Notification } from '@lenserfight/types'
-import { Avatar, Button, Card, DangerZone, LanguageSelectBox, Table, Column } from '@lenserfight/ui/components'
+import { Avatar, Button, Card, DangerZone, Table, Column } from '@lenserfight/ui/components'
 import { ConfirmModal } from '@lenserfight/ui/modals'
 import { timeAgo } from '@lenserfight/utils/date'
 import { FEATURES } from '@lenserfight/utils/env'
 import { useQuery } from '@tanstack/react-query'
-import { ExternalLink, Check, Camera, Eye, Lock, MessageSquareDashed, Coins, Key } from 'lucide-react'
+import { ExternalLink, Check, Camera, Eye, Lock, MessageSquareDashed, Coins } from 'lucide-react'
 import { ApiKeysTab } from '../components/ApiKeysTab'
+import { GeneralTab } from '../components/GeneralTab'
 import React, { useState, useEffect, useMemo } from 'react'
-import { useTranslation } from 'react-i18next'
 import { useLocation, Link, useParams, useNavigate } from 'react-router-dom'
 
 const FEEDBACK_PAGE_SIZE = 5
@@ -70,7 +69,6 @@ export const SettingsPage: React.FC = () => {
   const { tab } = useParams<{ tab: string }>()
   const navigate = useNavigate()
   const location = useLocation()
-  const { i18n } = useTranslation()
   const { lenser, updateLenserProfile } = useLenser()
   const { user, isAuthenticated, isLoading: authLoading, logout } = useAuth()
 
@@ -83,12 +81,17 @@ export const SettingsPage: React.FC = () => {
 
   // Tab Logic
   const validTabs = useMemo(() => {
-    const tabs = ['account', 'profile', 'api-keys']
+    const tabs = ['account', 'profile', 'api-keys', 'general']
     if (FEATURES.NOTIFICATIONS) {
       tabs.push('notifications')
     }
     return tabs
   }, [])
+
+  const tabLabel = (t: string) => {
+    if (t === 'api-keys') return 'API Keys'
+    return t.charAt(0).toUpperCase() + t.slice(1)
+  }
 
   const activeTab = validTabs.includes(tab?.toLowerCase() || '') ? tab?.toLowerCase() : 'account'
 
@@ -108,9 +111,6 @@ export const SettingsPage: React.FC = () => {
   })
   const [isSaving, setIsSaving] = useState(false)
   const [showAvatarModal, setShowAvatarModal] = useState(false)
-  const [preferredLanguage, setPreferredLanguage] = useState('en')
-  const [isSavingLanguage, setIsSavingLanguage] = useState(false)
-
   // Notifications State
   const [notifications, setNotifications] = useState<Notification[]>([])
   const [notifLoading, setNotifLoading] = useState(false)
@@ -134,13 +134,6 @@ export const SettingsPage: React.FC = () => {
 
   const { balance: walletBalance } = useWallet()
 
-  const { data: languages = [], isLoading: languagesLoading } = useQuery({
-    queryKey: ['core', 'languages'],
-    queryFn: () => lenserService.getLanguages(),
-    enabled: isAuthenticated && activeTab === 'account',
-    staleTime: Infinity,
-  })
-
   useEffect(() => {
     if (lenser) {
       setFormData({
@@ -149,7 +142,6 @@ export const SettingsPage: React.FC = () => {
         bio: lenser.bio || '',
         visibility: lenser.visibility || 'public',
       })
-      setPreferredLanguage(lenser.preferences?.language || lenser.preferred_language || 'en')
     }
   }, [lenser])
 
@@ -198,23 +190,6 @@ export const SettingsPage: React.FC = () => {
       console.error(e)
     } finally {
       setIsSaving(false)
-    }
-  }
-
-  const handleLanguageSave = async () => {
-    const currentLang = lenser?.preferences?.language || lenser?.preferred_language || 'en'
-    if (!lenser || preferredLanguage === currentLang) return
-
-    setIsSavingLanguage(true)
-    try {
-      await preferencesService.updatePreferences({ language: preferredLanguage })
-      await i18n.changeLanguage(preferredLanguage)
-      document.documentElement.lang = preferredLanguage
-    } catch (e) {
-      console.error('Failed to update preferred language', e)
-      alert('Failed to update language preference.')
-    } finally {
-      setIsSavingLanguage(false)
     }
   }
 
@@ -320,12 +295,12 @@ export const SettingsPage: React.FC = () => {
             <button
               key={t}
               onClick={() => navigate(`/settings/${t}`)}
-              className={`w-full text-left px-4 py-2.5 rounded-lg text-sm font-medium transition-colors capitalize ${activeTab === t
+              className={`w-full text-left px-4 py-2.5 rounded-lg text-sm font-medium transition-colors ${activeTab === t
                   ? 'bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-white'
                   : 'text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-gray-200'
                 }`}
             >
-              {t}
+              {tabLabel(t)}
             </button>
           ))}
 
@@ -363,41 +338,6 @@ export const SettingsPage: React.FC = () => {
               </p>
 
               <div className="space-y-6">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
-                    Language Preferences
-                  </label>
-                  <p className="text-xs text-gray-400 dark:text-gray-500 mb-3">
-                    Used to prioritize prompts, threads, and recommendations in your language. It
-                    also updates the interface language for this session.
-                  </p>
-                  <LanguageSelectBox
-                    value={preferredLanguage}
-                    onChange={setPreferredLanguage}
-                    languages={languages}
-                    isLoading={languagesLoading}
-                  />
-
-                  <div className="flex flex-col-reverse gap-3 mt-4 sm:flex-row sm:justify-end">
-                    <Button
-                      variant="secondary"
-                      className="w-full sm:w-auto"
-                      onClick={() => setPreferredLanguage(lenser?.preferences?.language || lenser?.preferred_language || 'en')}
-                      disabled={isSavingLanguage || preferredLanguage === (lenser?.preferences?.language || lenser?.preferred_language || 'en')}
-                    >
-                      Reset
-                    </Button>
-                    <Button
-                      onClick={handleLanguageSave}
-                      isLoading={isSavingLanguage}
-                      className="w-full sm:w-auto px-6 bg-primary hover:bg-yellow-400"
-                      disabled={languagesLoading || preferredLanguage === (lenser?.preferences?.language || lenser?.preferred_language || 'en')}
-                    >
-                      Save language
-                    </Button>
-                  </div>
-                </div>
-
                 {/* Wallet Balance */}
                 <div className="flex items-center justify-between p-4 rounded-xl bg-gray-50 dark:bg-gray-800/60 border border-gray-200 dark:border-gray-700">
                   <div className="flex items-center gap-3">
@@ -693,6 +633,9 @@ export const SettingsPage: React.FC = () => {
 
           {/* API KEYS TAB */}
           {activeTab === 'api-keys' && <ApiKeysTab />}
+
+          {/* GENERAL TAB */}
+          {activeTab === 'general' && <GeneralTab />}
 
           {/* NOTIFICATIONS TAB */}
           {activeTab === 'notifications' && FEATURES.NOTIFICATIONS && (
