@@ -10,7 +10,7 @@ import { useShareContext } from '@lenserfight/features/share'
 import { useUI } from '@lenserfight/ui/components'
 import { promptsService } from '@lenserfight/data/repositories'
 import { useReportContent } from '@lenserfight/features/home'
-import { ReportReasonEnum, REPORT_REASONS } from '@lenserfight/types'
+import { ReportReasonEnum } from '@lenserfight/types'
 import { AIResultsSection, AIProviderModelSelect } from '@lenserfight/features/generations'
 import { CreateLenserProfileModal } from '@lenserfight/features/onboarding'
 import { CreatePromptModal } from '../components/CreatePromptModal'
@@ -62,7 +62,17 @@ export const PromptDetailPage: React.FC = () => {
 
   // Resources for selected version
   const { data: versionResources = [], isLoading: isLoadingResources } = useVersionResources(selectedVersionId)
-  const { uploadAndAttach, detachResource, uploadProgress } = useResourceAttachments(selectedVersionId)
+  const { uploadAndAttach, detachResource, uploadProgress: rawUploadProgress } = useResourceAttachments(selectedVersionId)
+  const uploadProgress = useMemo(
+    () =>
+      Object.fromEntries(
+        Object.entries(rawUploadProgress).map(([k, s]) => [
+          k,
+          { status: s, percent: s === 'done' ? 100 : s === 'uploading' ? 50 : 0 },
+        ])
+      ),
+    [rawUploadProgress]
+  )
 
   const handleProviderChange = (key: string) => {
     setSelectedProviderKey(key)
@@ -273,11 +283,9 @@ export const PromptDetailPage: React.FC = () => {
             <ResourceAttachmentsPanel
               resources={versionResources}
               isOwner={isOwner}
-              onUploadAndAttach={async (file, key) => { await uploadAndAttach(file, key) }}
-              onDetach={(resourceId) => detachResource(resourceId)}
-              uploadProgress={Object.fromEntries(
-                Object.entries(uploadProgress).map(([k, s]) => [k, { status: s, percent: s === 'done' ? 100 : s === 'uploading' ? 50 : 0 }])
-              )}
+              onUploadAndAttach={(file, key) => uploadAndAttach(file, key)}
+              onDetach={detachResource}
+              uploadProgress={uploadProgress}
               isLoading={isLoadingResources}
             />
           )}
