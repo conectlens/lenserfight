@@ -35,23 +35,15 @@ export interface XPRepositoryPort {
 // --- Supabase Implementation ---
 export class SupabaseXPRepository implements XPRepositoryPort {
   async getXPSummary(lenserId: string, appId?: string): Promise<XPSummary | null> {
-    let query = supabase
-      .schema('xp')
-      .from('totals')
-      .select('total_xp, current_level, app_id')
-      .eq('lenser_id', lenserId)
-
-    if (appId) {
-      query = query.eq('app_id', appId)
-    }
-
-    const { data: totals, error } = await query.maybeSingle()
+    const { data, error } = await supabase.rpc('fn_xp_get_summary', {
+      p_lenser_id: lenserId,
+      p_app_id: appId ?? null,
+    })
 
     if (error) throw error
 
-    const currentTotal = totals?.total_xp || 0
-    const currentLevel = totals?.current_level || 1
-    const resolvedAppId = totals?.app_id || XP_APP_IDS.forum
+    const row = data?.[0]
+    if (!row) return null
 
     const { data: rankData } = await supabase
       .from('vw_xp_leaderboard_global')
@@ -59,35 +51,24 @@ export class SupabaseXPRepository implements XPRepositoryPort {
       .eq('lenser_id', lenserId)
       .maybeSingle()
 
-    const { data: levelData } = await supabase
-      .schema('xp')
-      .from('levels')
-      .select('min_total_xp, max_total_xp')
-      .eq('app_id', resolvedAppId)
-      .eq('level', currentLevel)
-      .maybeSingle()
-
     return {
-      totalXp: currentTotal,
-      currentLevel: currentLevel,
+      totalXp: row.total_xp ?? 0,
+      currentLevel: row.current_level ?? 1,
       rank: rankData?.rank,
-      currentLevelMinXp: levelData?.min_total_xp ?? 0,
-      currentLevelMaxXp: levelData?.max_total_xp ?? undefined,
+      currentLevelMinXp: row.min_total_xp ?? 0,
+      currentLevelMaxXp: row.max_total_xp ?? undefined,
     }
   }
 
   async getHistory(lenserId: string, limit = 20): Promise<XPEvent[]> {
-    const { data, error } = await supabase
-      .schema('xp')
-      .from('events')
-      .select('id, action_key, xp, base_xp, source, created_at')
-      .eq('lenser_id', lenserId)
-      .order('created_at', { ascending: false })
-      .limit(limit)
+    const { data, error } = await supabase.rpc('fn_xp_get_history', {
+      p_lenser_id: lenserId,
+      p_limit: limit,
+    })
 
     if (error) throw error
 
-    return data.map((row) => ({
+    return (data ?? []).map((row: any) => ({
       id: row.id,
       action: row.action_key,
       xp: row.xp,
@@ -98,16 +79,11 @@ export class SupabaseXPRepository implements XPRepositoryPort {
   }
 
   async getApps(): Promise<XPApp[]> {
-    const { data, error } = await supabase
-      .schema('xp')
-      .from('apps')
-      .select('id, slug, name, difficulty, is_active')
-      .eq('is_active', true)
-      .order('slug')
+    const { data, error } = await supabase.rpc('fn_xp_get_apps')
 
     if (error) throw error
 
-    return data.map((row) => ({
+    return (data ?? []).map((row: any) => ({
       id: row.id,
       slug: row.slug,
       name: row.name,
@@ -117,16 +93,13 @@ export class SupabaseXPRepository implements XPRepositoryPort {
   }
 
   async getContributions(lenserId: string): Promise<XPContribution[]> {
-    const { data, error } = await supabase
-      .schema('xp')
-      .from('contributions')
-      .select('id, lenser_id, context, contribution_type, external_ref, title, verified_by, xp_event_id, created_at')
-      .eq('lenser_id', lenserId)
-      .order('created_at', { ascending: false })
+    const { data, error } = await supabase.rpc('fn_xp_get_contributions', {
+      p_lenser_id: lenserId,
+    })
 
     if (error) throw error
 
-    return data.map((row) => ({
+    return (data ?? []).map((row: any) => ({
       id: row.id,
       lenserId: row.lenser_id,
       context: row.context,
