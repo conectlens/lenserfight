@@ -17,12 +17,12 @@ export class SupabaseFeedbackRepository implements FeedbackRepositoryPort {
       }
     }
 
-    const { error } = await supabase.schema('analytics').from('product_feedback').insert({
-      product_tag: dto.product_tag ?? 'general',
-      page: dto.page,
-      message: message,
-      start_date: dto.start_date ?? null,
-      end_date: dto.end_date ?? null,
+    const { error } = await supabase.rpc('fn_analytics_submit_feedback', {
+      p_product_tag: dto.product_tag ?? 'general',
+      p_page: dto.page ?? null,
+      p_message: message ?? null,
+      p_start_date: dto.start_date ?? null,
+      p_end_date: dto.end_date ?? null,
     })
 
     if (error) throw error
@@ -41,7 +41,7 @@ export class SupabaseFeedbackRepository implements FeedbackRepositoryPort {
     if (error) throw error
 
     const total = data?.length ? (data[0].total_count as number) : 0
-    const items: Feedback[] = (data ?? []).map((row) => ({
+    const items: Feedback[] = (data ?? []).map((row: any) => ({
       product_tag: row.product_tag,
       page: row.page,
       message: row.message,
