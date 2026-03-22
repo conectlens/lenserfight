@@ -18,8 +18,8 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) =>
   const [isMobile, setIsMobile] = useState(false)
   const mainContentRef = useRef<HTMLElement>(null)
 
-  const { lenser, hasLenser, isLoading: lenserLoading, updateLenserProfile } = useLenser()
-  const { isAuthenticated, isLoading: authLoading } = useAuth()
+  const { lenser, redirectToOnboarding, updateLenserProfile } = useLenser()
+  const { isAuthenticated } = useAuth()
 
   const location = useLocation()
 
@@ -56,9 +56,6 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) =>
     }
   }, [lenser?.preferences?.sidebar_collapsed, isMobile])
 
-  // Unified ready state - prevents race conditions
-  const isReady = !authLoading && !lenserLoading
-
   // Scroll reset on route change
   useEffect(() => {
     if (mainContentRef.current) {
@@ -94,16 +91,6 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) =>
     return () => window.removeEventListener('resize', debounced)
   }, [])
 
-  // Redirect to auth app onboarding when authenticated but has no profile
-  useEffect(() => {
-    if (!isReady) return
-    if (isAuthenticated && !hasLenser) {
-      const authAppUrl = import.meta.env.VITE_AUTH_APP_URL ?? 'https://auth.lenserfight.com'
-      const returnUrl = encodeURIComponent(window.location.href)
-      window.location.replace(`${authAppUrl}/onboarding?return_url=${returnUrl}`)
-    }
-  }, [isReady, isAuthenticated, hasLenser])
-
   const handleToggleSidebar = () => {
     const newState = !sidebarOpen
     setSidebarOpen(newState)
@@ -128,14 +115,13 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) =>
   }
 
   const handleOpenProfileSetup = () => {
-    const authAppUrl = import.meta.env.VITE_AUTH_APP_URL ?? 'https://auth.lenserfight.com'
     if (!isAuthenticated) {
+      const authAppUrl = import.meta.env.VITE_AUTH_APP_URL ?? 'https://auth.lenserfight.com'
       const returnUrl = encodeURIComponent(window.location.href)
       window.location.href = `${authAppUrl}/login?return_url=${returnUrl}`
       return
     }
-    const returnUrl = encodeURIComponent(window.location.href)
-    window.location.href = `${authAppUrl}/onboarding?return_url=${returnUrl}`
+    redirectToOnboarding()
   }
 
   return (
