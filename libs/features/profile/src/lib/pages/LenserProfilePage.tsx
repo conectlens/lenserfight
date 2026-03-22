@@ -158,6 +158,13 @@ export const LenserProfilePage: React.FC = () => {
     currentUser.handle.toLowerCase() === handle.toLowerCase()
   )
 
+  // Content visibility: 'public' = anyone, 'community' = authenticated only, 'private' = owner only
+  const contentVisibility = viewedProfile?.content_visibility ?? 'public'
+  const canViewContent =
+    isOwner ||
+    contentVisibility === 'public' ||
+    (contentVisibility === 'community' && !!authUser)
+
   // Reset tab cache when navigating to a different profile
   useEffect(() => {
     if (!handle) return
@@ -503,12 +510,12 @@ export const LenserProfilePage: React.FC = () => {
           <LenserTabs
             activeTab={activeTab}
             onChange={handleTabChange}
-            hideActions={!isOwner && !!(viewedProfile as any)?.preferences?.hide_actions}
+            hideActions={!isOwner && !!viewedProfile?.hide_actions}
           />
         </div>
 
         <div className="min-h-[300px] px-4 md:px-0">
-          {activeTab === 'actions' && (isOwner || !(viewedProfile as any)?.preferences?.hide_actions) && (
+          {activeTab === 'actions' && (isOwner || !viewedProfile?.hide_actions) && (
             <>
               {items.length > 0 ? (
                 <LenserActionsList actions={items as ActivityFeedItem[]} />
@@ -518,7 +525,11 @@ export const LenserProfilePage: React.FC = () => {
             </>
           )}
 
-          {activeTab === 'prompts' && (
+          {activeTab === 'prompts' && !canViewContent && (
+            <EmptyState icon={FolderOpen} message="This content is not public." />
+          )}
+
+          {activeTab === 'prompts' && canViewContent && (
             <>
               {items.length > 0 ? (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 gap-6">
@@ -555,7 +566,11 @@ export const LenserProfilePage: React.FC = () => {
             </>
           )}
 
-          {activeTab === 'threads' && (
+          {activeTab === 'threads' && !canViewContent && (
+            <EmptyState icon={MessageSquare} message="This content is not public." />
+          )}
+
+          {activeTab === 'threads' && canViewContent && (
             <>
               {items.length > 0 ? (
                 <div className="space-y-6">
