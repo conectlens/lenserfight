@@ -39,9 +39,7 @@ export const PromptDetailPage: React.FC = () => {
   const [showProfileModal, setShowProfileModal] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
   const [isReportOpen, setIsReportOpen] = useState(false)
-  const [reportReason, setReportReason] = useState<
-    'spam' | 'harassment' | 'misinformation' | 'off_topic' | 'other'
-  >('spam')
+  const [reportReason, setReportReason] = useState<ReportReasonEnum>('spam')
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false)
   const [isDeleting, setIsDeleting] = useState(false)
   const [deleteTargetId, setDeleteTargetId] = useState<string | null>(null)
