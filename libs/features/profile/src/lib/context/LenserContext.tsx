@@ -162,3 +162,5 @@ export const useLenser = () => {
   if (!ctx) throw new Error('useLenser must be used within LenserProvider')
   return ctx
 }
+
+export const useLenserOptional = () => useContext(LenserContext)
