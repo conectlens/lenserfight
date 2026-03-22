@@ -288,10 +288,10 @@ export const Sidebar: React.FC<SidebarProps> = ({
           />
 
           <SidebarItem
-            onClick={() => handleNavigation('/store')}
+            onClick={() => handleNavigation('/billing')}
             icon={<ShoppingBag size={20} />}
             label="Plans"
-            isActive={isRouteActive(location.pathname, '/store')}
+            isActive={isRouteActive(location.pathname, '/billing')}
             collapsed={!showLabels}
           />
 
