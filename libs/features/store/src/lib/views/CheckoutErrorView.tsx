@@ -47,7 +47,7 @@ export const CheckoutErrorView: React.FC = () => {
         <div className="flex flex-col sm:flex-row items-center justify-center gap-3 w-full">
           <button
             type="button"
-            onClick={() => navigate('/store', { replace: true })}
+            onClick={() => navigate('/billing', { replace: true })}
             className="w-full sm:w-auto px-6 py-2.5 rounded-xl bg-primary hover:bg-yellow-300 text-gray-900 text-sm font-semibold transition-colors"
           >
             Try again

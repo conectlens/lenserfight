@@ -101,7 +101,7 @@ export const FundingSourceToggle: React.FC<FundingSourceToggleProps> = ({
       {isCloud && walletBalance != null && walletBalance.balance <= 0 && (
         <p className="text-xs text-amber-600 dark:text-amber-400">
           No credits remaining.{' '}
-          <Link to="/store" className="hover:underline">
+          <Link to="/billing" className="hover:underline">
             Add credits
           </Link>
         </p>

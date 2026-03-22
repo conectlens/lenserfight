@@ -39,8 +39,8 @@ export const WalletProvider: React.FC<{ children: React.ReactNode }> = ({ childr
 
   const redirectToStore = useCallback(
     (delayMs = 0) => {
-      if (delayMs > 0) setTimeout(() => navigate('/store'), delayMs)
-      else navigate('/store')
+      if (delayMs > 0) setTimeout(() => navigate('/billing'), delayMs)
+      else navigate('/billing')
     },
     [navigate],
   )
@@ -67,7 +67,7 @@ export const useWallet = () => {
 }
 
 /**
- * Opt-in hook: redirects to /store after 2s when the authenticated user has
+ * Opt-in hook: redirects to /billing after 2s when the authenticated user has
  * no balance. Call this at the top of any page that requires credits.
  */
 export function useRequireBalance(): void {
@@ -76,7 +76,7 @@ export function useRequireBalance(): void {
 
   useEffect(() => {
     if (isLoading || balance === null) return
-    if (pathname === '/store') return
+    if (pathname === '/billing') return
     if (balance <= 0) redirectToStore(2000)
   }, [isLoading, balance, pathname, redirectToStore])
 }

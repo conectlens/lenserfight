@@ -77,7 +77,7 @@ export const CheckoutSuccessView: React.FC = () => {
           </button>
           <button
             type="button"
-            onClick={() => navigate('/store', { replace: true })}
+            onClick={() => navigate('/billing', { replace: true })}
             className="w-full sm:w-auto px-6 py-2.5 rounded-xl bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-900 dark:text-white text-sm font-semibold transition-colors"
           >
             Buy more credits
