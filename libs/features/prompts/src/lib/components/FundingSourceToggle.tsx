@@ -90,7 +90,7 @@ export const FundingSourceToggle: React.FC<FundingSourceToggleProps> = ({
       {/* No keys hint */}
       {isByok && availableKeys.length === 0 && (
         <p className="text-xs text-gray-400 dark:text-gray-500">
-          No keys for this provider.{' '}
+          No API keys added.{' '}
           <Link to="/settings/api-keys" className="text-primary-600 dark:text-primary-400 hover:underline">
             Add one in Settings
           </Link>
