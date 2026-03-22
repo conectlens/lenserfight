@@ -1,5 +1,5 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query'
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useMemo } from 'react'
 
 import { useAuth } from '@lenserfight/features/auth'
 import { analyticsService } from '@lenserfight/infra/analytics'
@@ -21,10 +21,12 @@ export const usePromptDetailController = (promptId?: string) => {
   const { lenser } = useAuthenticatedLenser()
   const { user } = useAuth()
   const queryClient = useQueryClient()
-  const hasLoggedView = useRef<string | null>(null)
+  const loggedPromptViews = useRef(new Set<string>())
 
-  const promptCompositeKey = ['prompt-composite', promptId, { viewerId: lenser?.id }]
-  const loggedPromptViews = new Set<string>()
+  const promptCompositeKey = useMemo(
+    () => ['prompt-composite', promptId, { viewerId: lenser?.id }],
+    [promptId, lenser?.id]
+  )
 
   const { data, isLoading, error } = useQuery<PromptDetailData, Error>({
     queryKey: promptCompositeKey,
@@ -59,8 +61,8 @@ export const usePromptDetailController = (promptId?: string) => {
   useEffect(() => {
     if (!data?.prompt || !promptId) return
 
-    if (loggedPromptViews.has(promptId)) return
-    loggedPromptViews.add(promptId)
+    if (loggedPromptViews.current.has(promptId)) return
+    loggedPromptViews.current.add(promptId)
 
     analyticsService.trackView('prompt', promptId, {
       userId: user?.id,
