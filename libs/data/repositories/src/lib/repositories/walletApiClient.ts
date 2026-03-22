@@ -159,9 +159,9 @@ export const walletApiClient = {
         signal,
       })
     } catch (err: unknown) {
-      const envelope = err as { code?: string; message?: string }
-      const message = envelope?.message ?? 'An unexpected error occurred.'
-      const code = envelope?.code ?? 'internal_error'
+      const envelope = err as { error?: { code?: string; message?: string }; code?: string; message?: string }
+      const message = envelope?.error?.message ?? envelope?.message ?? 'An unexpected error occurred.'
+      const code = envelope?.error?.code ?? envelope?.code ?? 'internal_error'
       callbacks.onError(message, code)
       return
     }
