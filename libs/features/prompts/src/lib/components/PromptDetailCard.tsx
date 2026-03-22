@@ -1,5 +1,6 @@
 import { Copy, Eye, Lock, Pencil } from 'lucide-react'
 import React from 'react'
+import { Link } from 'react-router-dom'
 
 import { Avatar } from '@lenserfight/ui/components'
 import { Button } from '@lenserfight/ui/components'
@@ -26,7 +27,10 @@ export const PromptDetailCard: React.FC<PromptDetailCardProps> = ({
     <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden transition-colors">
       <div className="p-8 border-b border-gray-100 dark:border-gray-700">
         {/* Header */}
-        <div className="flex items-center gap-4 mb-6">
+        <Link
+          to={`/lenser/${prompt.author.handle}`}
+          className="flex items-center gap-4 mb-6 w-fit hover:opacity-80 transition-opacity"
+        >
           <Avatar src={prompt.author.avatarUrl} alt={prompt.author.displayName} size="md" />
           <div>
             <h3 className="text-base font-semibold text-gray-900 dark:text-white">
@@ -38,7 +42,7 @@ export const PromptDetailCard: React.FC<PromptDetailCardProps> = ({
               <span>{timeAgo(prompt.createdAt)}</span>
             </div>
           </div>
-        </div>
+        </Link>
 
         {/* Title & Desc */}
         <div className="flex items-start justify-between gap-3 mb-4">
