@@ -52,6 +52,7 @@ export const FollowButton: React.FC<FollowButtonProps> = ({
   const unfollowMutation = useMutation({
     mutationFn: () => lenserService.removeFollow(targetProfileId),
     onSuccess: invalidate,
+    onError: (err) => toastError(err, { redirectOnAuth: true, navigate }),
   })
 
   const isLoading = followMutation.isPending || unfollowMutation.isPending
