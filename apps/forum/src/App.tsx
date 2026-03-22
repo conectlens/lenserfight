@@ -249,7 +249,7 @@ const App: React.FC = () => {
                         />
 
                         <Route
-                          path="/store"
+                          path="/billing"
                           element={
                             <DashboardLayout>
                               <StorePage />
@@ -278,6 +278,7 @@ const App: React.FC = () => {
                         <Route path="/prompts/*" element={<Navigate to="/len/p" replace />} />
                         <Route path="/tags/*" element={<Navigate to="/len" replace />} />
                         <Route path="/leaderboard" element={<Navigate to="/lenserboard" replace />} />
+                        <Route path="/store" element={<Navigate to="/billing" replace />} />
 
                         {/* Default Redirect */}
                         <Route path="*" element={<Navigate to="/" replace />} />

@@ -359,7 +359,7 @@ export const SettingsPage: React.FC = () => {
                       <span className="text-sm font-normal text-gray-400">cr</span>
                     </span>
                     <Link
-                      to="/store"
+                      to="/billing"
                       className="text-xs font-medium text-primary-700 dark:text-primary-400 hover:underline whitespace-nowrap"
                     >
                       Add credits
