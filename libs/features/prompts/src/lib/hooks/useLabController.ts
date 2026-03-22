@@ -20,7 +20,12 @@ export interface TriggerLabExecutionDTO {
   byokKeyRefId?: string
 }
 
-export const useLabController = (promptId: string, isAuthenticated = false) => {
+export interface LabControllerOptions {
+  preferredProviderKey?: string | null
+  preferredModelKey?: string | null
+}
+
+export const useLabController = (promptId: string, isAuthenticated = false, options: LabControllerOptions = {}) => {
   const queryClient = useQueryClient()
   const { toastError } = useToast()
   const { redirectToLogin } = useAuth()
@@ -74,8 +79,22 @@ export const useLabController = (promptId: string, isAuthenticated = false) => {
   }, [hasMoreHistory, isLoadingHistory])
 
   // --- Provider / Model selection ---
-  const [selectedProviderKey, setSelectedProviderKey] = useState('')
-  const [selectedModelKey, setSelectedModelKey] = useState('')
+  const { preferredProviderKey, preferredModelKey } = options
+  const [selectedProviderKey, setSelectedProviderKey] = useState(() => preferredProviderKey ?? '')
+  const [selectedModelKey, setSelectedModelKey] = useState(() => preferredModelKey ?? '')
+
+  // Sync preferences into selection once they resolve (e.g. after auth)
+  useEffect(() => {
+    if (preferredProviderKey && !selectedProviderKey) {
+      setSelectedProviderKey(preferredProviderKey)
+    }
+  }, [preferredProviderKey]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  useEffect(() => {
+    if (preferredModelKey && selectedProviderKey && !selectedModelKey) {
+      setSelectedModelKey(preferredModelKey)
+    }
+  }, [preferredModelKey, selectedProviderKey]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const { data: providers = [], isLoading: isLoadingProviders } = useAIProviders()
   const { data: providerModels = [], isLoading: isLoadingModels } = useAIModelsByProvider(

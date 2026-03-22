@@ -2,6 +2,7 @@ import React, { useMemo, useState } from 'react'
 import { Loader2, Play, Square } from 'lucide-react'
 import { SelectField } from '@lenserfight/ui/forms'
 import { Button, FormError } from '@lenserfight/ui/components'
+import { AIProviderSelectList, AIModelSelectList } from '@lenserfight/features/generations'
 import { AIProvider, AIProviderModel, PromptParam, PromptVersion, FundingSource, UserApiKey, WalletBalance } from '@lenserfight/types'
 import { validateParamValues } from '@lenserfight/utils/text'
 import { TriggerLabExecutionDTO } from '../hooks/useLabController'
@@ -170,19 +171,18 @@ export const LabExecutionPanel: React.FC<LabExecutionPanelProps> = ({
       )}
 
       {/* Provider + Model Selectors */}
-      <SelectField
+      <AIProviderSelectList
+        providers={providers}
+        isLoading={isLoadingProviders}
         value={selectedProviderKey}
         onChange={onProviderChange}
-        placeholder={isLoadingProviders ? 'Loading providers…' : 'Select a provider'}
-        options={providers.map((p) => ({ value: p.key, label: p.display_name }))}
-        disabled={isLoadingProviders}
       />
-      <SelectField
+      <AIModelSelectList
+        models={providerModels}
+        isLoading={isLoadingModels}
         value={selectedModelKey}
         onChange={onModelChange}
-        placeholder={isLoadingModels ? 'Loading models…' : selectedProviderKey ? 'Select a model' : 'Select a provider first'}
-        options={providerModels.map((m) => ({ value: m.key, label: m.name }))}
-        disabled={!selectedProviderKey || isLoadingModels}
+        providerSelected={!!selectedProviderKey}
       />
 
       {/* Funding Source Toggle */}
