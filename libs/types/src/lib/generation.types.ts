@@ -52,6 +52,17 @@ export interface AIModel {
   pricing_tier?: PricingTierEnum | null
   is_public: boolean
   is_active: boolean
+  /**
+   * Extensible input modality list. Source of truth for CapabilityMapper validation.
+   * Values: 'text' | 'image' | 'document' | 'audio' | 'video' (migration 45).
+   * Defaults to ['text'] for models where the column is not yet populated.
+   */
+  input_modalities: string[]
+  /**
+   * Extensible output modality list (migration 45).
+   * Values: 'text' | 'image' | 'audio' | 'video'.
+   */
+  output_modalities: string[]
   created_at: string
 }
 

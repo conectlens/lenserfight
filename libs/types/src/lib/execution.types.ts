@@ -77,6 +77,10 @@ export interface ExecutionArtifact {
   contentJson: unknown | null
   visibility: 'private' | 'public' | 'contender_only'
   isPrimaryOutput: boolean
+  /** FK to content.resources. Set for generated media outputs (migration 43). */
+  resourceId?: string | null
+  /** Extensible output type — superset of artifactKind. Prefer for new writes. */
+  outputType?: string | null
   createdAt: string
 }
 
@@ -119,6 +123,8 @@ export interface PromptExecutionRecord {
   lenserId: string
   executionRunId: string | null
   paymentMethod: 'byok' | 'wallet' | 'free'
+  /** FK to content.prompt_versions. NULL for legacy pre-versioning runs. */
+  versionId?: string | null
   createdAt: string
   // Hydrated at read time for timeline display
   run?: ExecutionRun
@@ -128,12 +134,33 @@ export interface PromptExecutionRecord {
 // --- HTTP API DTOs (VITE_API_URL) ---
 
 export interface TriggerExecutionDTO {
-  prompt_template_id: string
+  /** Legacy path — prompt asset id. Use version_id for versioned executions. */
+  prompt_template_id?: string
+  /** Versioned path — references content.prompt_versions. Takes precedence over prompt_template_id. */
+  version_id?: string
   model_id: string
+  /** Scalar parameter values (backward compat). Typed bindings use execution.inputs. */
   input_snapshot: Record<string, unknown>
+  /** Resource bindings for the version's named slots (migration 42). */
+  resource_bindings?: { resource_id: string; binding_key: string }[]
   funding_source: FundingSource
   origin_type: ExecutionOriginType
   byok_key_ref_id?: string
+}
+
+/** Typed input binding — mirrors execution.inputs */
+export type ExecutionInputType = 'parameter' | 'resource' | 'tool_input'
+
+export interface ExecutionInput {
+  id: string
+  runId: string
+  inputType: ExecutionInputType
+  bindingKey: string
+  scalarValue?: string | null
+  resourceId?: string | null
+  resourceSnapshot?: unknown
+  metadata?: unknown
+  createdAt: string
 }
 
 export interface TriggerExecutionResponse {
