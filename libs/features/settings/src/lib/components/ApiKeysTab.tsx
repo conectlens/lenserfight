@@ -1,5 +1,5 @@
 import React, { useState } from 'react'
-import { Key, Plus, Trash2, ShieldCheck } from 'lucide-react'
+import { Key, Plus, Trash2, ShieldCheck, CheckCircle2 } from 'lucide-react'
 import { Button, Badge, Skeleton } from '@lenserfight/ui/components'
 import { SelectField } from '@lenserfight/ui/forms'
 import { ConfirmModal } from '@lenserfight/ui/modals'
@@ -14,7 +14,7 @@ const PROVIDER_OPTIONS = (Object.keys(BYOK_PROVIDER_LABELS) as ByokProvider[]).m
 const maskKey = (suffix: string) => `${'•'.repeat(8)}${suffix}`
 
 export const ApiKeysTab: React.FC = () => {
-  const { keys, isLoading, storeKey, isStoring, storeError, revokeKey, isRevoking } = useApiKeys()
+  const { keys, isLoading, selectedKeyId, storeKey, isStoring, storeError, revokeKey, isRevoking, selectKey, isSelecting } = useApiKeys()
 
   // Form state
   const [provider, setProvider] = useState<ByokProvider | ''>('')
@@ -157,46 +157,82 @@ export const ApiKeysTab: React.FC = () => {
           </div>
         ) : (
           <div className="space-y-2">
-            {keys.map((key) => (
-              <div
-                key={key.id}
-                className="flex items-center justify-between p-4 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800"
-              >
-                <div className="flex items-center gap-3 min-w-0">
-                  <div className="p-1.5 rounded-md bg-gray-100 dark:bg-gray-700">
-                    <ShieldCheck size={16} className="text-gray-500 dark:text-gray-400" />
-                  </div>
-                  <div className="min-w-0">
-                    <div className="flex items-center gap-2">
-                      <Badge variant="outline" className="text-xs">
-                        {BYOK_PROVIDER_LABELS[key.provider] ?? key.provider}
-                      </Badge>
-                      {key.label && (
-                        <span className="text-sm font-medium text-gray-700 dark:text-gray-300 truncate">
-                          {key.label}
+            {keys.map((key) => {
+              const isSelected = selectedKeyId === key.id
+              return (
+                <div
+                  key={key.id}
+                  className={`flex items-center justify-between p-4 rounded-lg border bg-white dark:bg-gray-800 transition-colors ${
+                    isSelected
+                      ? 'border-primary-500 dark:border-primary-400'
+                      : 'border-gray-200 dark:border-gray-700'
+                  }`}
+                >
+                  <div className="flex items-center gap-3 min-w-0">
+                    <div className={`p-1.5 rounded-md ${isSelected ? 'bg-primary-50 dark:bg-primary-900/30' : 'bg-gray-100 dark:bg-gray-700'}`}>
+                      <ShieldCheck size={16} className={isSelected ? 'text-primary-500' : 'text-gray-500 dark:text-gray-400'} />
+                    </div>
+                    <div className="min-w-0">
+                      <div className="flex items-center gap-2">
+                        <Badge variant="outline" className="text-xs">
+                          {BYOK_PROVIDER_LABELS[key.provider] ?? key.provider}
+                        </Badge>
+                        {key.label && (
+                          <span className="text-sm font-medium text-gray-700 dark:text-gray-300 truncate">
+                            {key.label}
+                          </span>
+                        )}
+                        {isSelected && (
+                          <span className="flex items-center gap-1 text-xs font-medium text-primary-600 dark:text-primary-400">
+                            <CheckCircle2 size={12} />
+                            In use
+                          </span>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-2 mt-0.5">
+                        <span className="text-xs text-gray-400 dark:text-gray-500 font-mono">
+                          {maskKey(key.keySuffix)}
                         </span>
-                      )}
+                        <span className="text-xs text-gray-400 dark:text-gray-500">
+                          {new Date(key.createdAt).toLocaleDateString()}
+                        </span>
+                      </div>
                     </div>
-                    <div className="flex items-center gap-2 mt-0.5">
-                      <span className="text-xs text-gray-400 dark:text-gray-500 font-mono">
-                        {maskKey(key.keySuffix)}
-                      </span>
-                      <span className="text-xs text-gray-400 dark:text-gray-500">
-                        {new Date(key.createdAt).toLocaleDateString()}
-                      </span>
-                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-1 shrink-0">
+                    {!isSelected && (
+                      <Button
+                        variant="ghost"
+                        className="!w-auto !px-3 !py-1.5 text-xs text-gray-500 hover:text-primary-600 dark:hover:text-primary-400"
+                        onClick={() => selectKey(key.id)}
+                        isLoading={isSelecting}
+                        disabled={isSelecting}
+                      >
+                        Use this key
+                      </Button>
+                    )}
+                    {isSelected && (
+                      <Button
+                        variant="ghost"
+                        className="!w-auto !px-3 !py-1.5 text-xs text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+                        onClick={() => selectKey(null)}
+                        disabled={isSelecting}
+                      >
+                        Unset
+                      </Button>
+                    )}
+                    <Button
+                      variant="ghost"
+                      className="!w-auto !p-2 text-gray-400 hover:text-red-500"
+                      onClick={() => setRevokeTarget(key)}
+                    >
+                      <Trash2 size={16} />
+                    </Button>
                   </div>
                 </div>
-
-                <Button
-                  variant="ghost"
-                  className="!w-auto !p-2 text-gray-400 hover:text-red-500"
-                  onClick={() => setRevokeTarget(key)}
-                >
-                  <Trash2 size={16} />
-                </Button>
-              </div>
-            ))}
+              )
+            })}
           </div>
         )}
       </div>
