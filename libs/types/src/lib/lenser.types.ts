@@ -271,6 +271,10 @@ export interface LenserProfileDTO {
   visibility?: 'public' | 'private' | 'community'
   deletion_deadline_at?: string | null
 
+  // Content preferences (flat from lensers.preferences table)
+  hide_actions?: boolean
+  content_visibility?: 'public' | 'community' | 'private'
+
   // Future-safe placeholders
   badges?: [] | null
 }
