@@ -31,6 +31,7 @@ export interface LenserPreferences {
   ai_model_key?: string | null
   ai_persona?: string | null
   ai_ruleset: Record<string, unknown>
+  selected_api_key_id?: string | null
   wallet_mode: 'BYOK' | 'CLOUD'
   ai_data_usage: boolean
   hide_actions: boolean
