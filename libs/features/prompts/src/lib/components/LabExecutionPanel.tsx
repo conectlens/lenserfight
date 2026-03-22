@@ -2,7 +2,7 @@ import React, { useMemo, useState } from 'react'
 import { Loader2, Play, Square } from 'lucide-react'
 import { SelectField } from '@lenserfight/ui/forms'
 import { Button, FormError } from '@lenserfight/ui/components'
-import { AIModel, PromptParam } from '@lenserfight/types'
+import { AIProvider, AIProviderModel, PromptParam } from '@lenserfight/types'
 import { validateParamValues } from '@lenserfight/utils/text'
 import { TriggerLabExecutionDTO } from '../hooks/useLabController'
 
@@ -21,8 +21,14 @@ function extractVariables(content: string): string[] {
 interface LabExecutionPanelProps {
   promptId: string
   promptContent: string
-  aiModels: AIModel[]
+  providers: AIProvider[]
+  isLoadingProviders: boolean
+  providerModels: AIProviderModel[]
   isLoadingModels: boolean
+  selectedProviderKey: string
+  selectedModelKey: string
+  onProviderChange: (key: string) => void
+  onModelChange: (key: string) => void
   onTrigger: (dto: TriggerLabExecutionDTO) => void
   onTriggerStream: (dto: TriggerLabExecutionDTO) => void
   isTriggeringExecution: boolean
@@ -39,8 +45,14 @@ const inputClass =
 export const LabExecutionPanel: React.FC<LabExecutionPanelProps> = ({
   promptId: _promptId,
   promptContent,
-  aiModels,
+  providers,
+  isLoadingProviders,
+  providerModels,
   isLoadingModels,
+  selectedProviderKey,
+  selectedModelKey,
+  onProviderChange,
+  onModelChange,
   onTrigger: _onTrigger,
   onTriggerStream,
   isTriggeringExecution,
@@ -57,7 +69,6 @@ export const LabExecutionPanel: React.FC<LabExecutionPanelProps> = ({
     return variables.map((v) => ({ name: v, type: 'string' as const, required: true, placeholder: `Enter ${v}…` }))
   }, [params, variables])
 
-  const [selectedModelId, setSelectedModelId] = useState<string>('')
   const [inputValues, setInputValues] = useState<Record<string, any>>({})
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({})
 
@@ -76,10 +87,7 @@ export const LabExecutionPanel: React.FC<LabExecutionPanelProps> = ({
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
-    if (!selectedModelId) return
-
-    const model = aiModels.find((m) => m.key === selectedModelId)
-    if (!model) return
+    if (!selectedProviderKey || !selectedModelKey) return
 
     if (paramSchemas.length > 0) {
       const errors = validateParamValues(inputValues, paramSchemas)
@@ -94,10 +102,10 @@ export const LabExecutionPanel: React.FC<LabExecutionPanelProps> = ({
         ? Object.fromEntries(paramSchemas.map((p) => [p.name, inputValues[p.name] ?? p.default ?? '']))
         : { freeform: inputValues['freeform'] ?? '' }
 
-    onTriggerStream({ model, promptContent, inputSnapshot, params: paramSchemas })
+    onTriggerStream({ providerKey: selectedProviderKey, modelKey: selectedModelKey, promptContent, inputSnapshot, params: paramSchemas })
   }
 
-  const isDisabled = isTriggeringExecution || isStreaming || !selectedModelId
+  const isDisabled = isTriggeringExecution || isStreaming || !selectedProviderKey || !selectedModelKey
 
   return (
     <form
@@ -114,13 +122,20 @@ export const LabExecutionPanel: React.FC<LabExecutionPanelProps> = ({
         )}
       </div>
 
-      {/* Model Selector */}
+      {/* Provider + Model Selectors */}
       <SelectField
-        value={selectedModelId}
-        onChange={setSelectedModelId}
-        placeholder={isLoadingModels ? 'Loading models…' : 'Select a model'}
-        options={aiModels.map((m) => ({ value: m.key, label: `${m.name} (${m.provider})` }))}
-        disabled={isLoadingModels}
+        value={selectedProviderKey}
+        onChange={onProviderChange}
+        placeholder={isLoadingProviders ? 'Loading providers…' : 'Select a provider'}
+        options={providers.map((p) => ({ value: p.key, label: p.display_name }))}
+        disabled={isLoadingProviders}
+      />
+      <SelectField
+        value={selectedModelKey}
+        onChange={onModelChange}
+        placeholder={isLoadingModels ? 'Loading models…' : selectedProviderKey ? 'Select a model' : 'Select a provider first'}
+        options={providerModels.map((m) => ({ value: m.model_key, label: m.name }))}
+        disabled={!selectedProviderKey || isLoadingModels}
       />
 
       {/* Typed Parameter Inputs */}
