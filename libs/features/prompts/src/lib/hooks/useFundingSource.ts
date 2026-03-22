@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { queryKeys } from '@lenserfight/data/cache'
 import { apiKeysService, walletApiClient } from '@lenserfight/data/repositories'
-import { UserApiKey, FundingSource, WalletBalance, ByokProvider } from '@lenserfight/types'
+import { UserApiKey, FundingSource, WalletBalance } from '@lenserfight/types'
 import { useAuth } from '@lenserfight/features/auth'
 
 export const useFundingSource = (selectedProviderKey: string) => {
@@ -24,19 +24,8 @@ export const useFundingSource = (selectedProviderKey: string) => {
     staleTime: 1000 * 60 * 2,
   })
 
-  // Filter keys by the currently selected provider
-  const availableKeys = useMemo(() => {
-    if (!selectedProviderKey) return []
-    const providerMap: Record<string, ByokProvider> = {
-      openai: 'openai',
-      anthropic: 'anthropic',
-      google: 'google',
-      mistral: 'mistral',
-    }
-    const mapped = providerMap[selectedProviderKey]
-    if (!mapped) return []
-    return allKeys.filter((k) => k.provider === mapped && k.isActive)
-  }, [allKeys, selectedProviderKey])
+  // All user BYOK keys — not filtered by provider or active status
+  const availableKeys = useMemo(() => allKeys, [allKeys])
 
   const canUseBYOK = availableKeys.length > 0
 
