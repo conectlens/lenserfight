@@ -43,7 +43,7 @@ import {
 } from '@lenserfight/features/tags'
 import { ThreadDetailPage } from '@lenserfight/features/threads'
 import { WaitingListPage } from '@lenserfight/features/waiting-list'
-import { StorePage } from '@lenserfight/features/store'
+import { StorePage, WalletProvider } from '@lenserfight/features/store'
 import { useEffect } from 'react'
 import { Routes, Route, Navigate, Outlet, BrowserRouter, useLocation } from 'react-router-dom'
 
@@ -93,6 +93,7 @@ const App: React.FC = () => {
                           v7_relativeSplatPath: true
                         }}
                       >
+                        <WalletProvider>
                         <ScrollToTop />
                         <GlobalAnalytics />
                         <ErrorClearer />
@@ -282,6 +283,7 @@ const App: React.FC = () => {
                         <Route path="*" element={<Navigate to="/" replace />} />
                         </Routes>
                         </GlobalErrorRenderer>
+                        </WalletProvider>
                       </BrowserRouter>
                     </ShareProvider>
                   </UIProvider>

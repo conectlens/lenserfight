@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useEffect } from 'react'
+import React, { createContext, useContext, useEffect, useCallback } from 'react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { queryKeys } from '@lenserfight/data/cache'
 import { lenserService, waitingListService } from '@lenserfight/data/repositories'
@@ -32,6 +32,9 @@ interface LenserContextType {
   error: string | null
   isInWaitingList: boolean | null
 
+  isReady: boolean
+  redirectToOnboarding: (delayMs?: number) => void
+
   loadLenserProfile: (force?: boolean) => Promise<void>
   createLenserProfile: (data: CreateLenserDTO) => Promise<Lenser>
   updateLenserProfile: (data: Partial<Lenser>) => Promise<Lenser>
@@ -41,7 +44,7 @@ interface LenserContextType {
 const LenserContext = createContext<LenserContextType | undefined>(undefined)
 
 export const LenserProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const { user, isAuthenticated } = useAuth()
+  const { user, isAuthenticated, isLoading: authLoading } = useAuth()
   const queryClient = useQueryClient()
 
   const cachedProfile = readCache<Lenser>(LENSER_CACHE_KEY)
@@ -93,6 +96,16 @@ export const LenserProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   // LenserContext only surfaces the error string for UI consumers.
   const error = queryError ? (queryError as Error).message || 'Failed to load profile' : null
 
+  const isReady = !authLoading && !isLoading
+
+  const redirectToOnboarding = useCallback((delayMs = 0) => {
+    const authAppUrl = import.meta.env.VITE_AUTH_APP_URL ?? 'https://auth.lenserfight.com'
+    const returnUrl = encodeURIComponent(window.location.href)
+    const target = `${authAppUrl}/onboarding?return_url=${returnUrl}`
+    if (delayMs > 0) setTimeout(() => window.location.replace(target), delayMs)
+    else window.location.replace(target)
+  }, [])
+
   const loadLenserProfile = async (force = false): Promise<void> => {
     if (force) {
       await queryClient.invalidateQueries({ queryKey: queryKeys.lenser.authenticated() })
@@ -131,6 +144,8 @@ export const LenserProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         isLoading,
         error,
         isInWaitingList: isInWaitingList ?? null,
+        isReady,
+        redirectToOnboarding,
         loadLenserProfile,
         createLenserProfile,
         updateLenserProfile,
