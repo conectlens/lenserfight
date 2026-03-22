@@ -141,8 +141,8 @@ const StoreProductsView: React.FC = () => {
       )}
 
       {productsLoading ? (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          {Array.from({ length: 4 }).map((_, i) => <CreditPackSkeleton key={i} />)}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+          {Array.from({ length: 5 }).map((_, i) => <CreditPackSkeleton key={i} />)}
         </div>
       ) : products.length === 0 ? (
         <div className="flex items-center gap-3 p-4 rounded-xl border border-yellow-200 dark:border-yellow-800 bg-yellow-50 dark:bg-yellow-900/20 text-yellow-800 dark:text-yellow-300">
@@ -150,7 +150,7 @@ const StoreProductsView: React.FC = () => {
           <span className="text-sm">No products available at this time. Please check back later.</span>
         </div>
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
           {products.map((product, i) => (
             <CreditPackCard
               key={product.id}
