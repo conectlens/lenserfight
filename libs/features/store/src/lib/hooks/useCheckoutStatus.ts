@@ -14,9 +14,9 @@ export type CheckoutStatus = 'success' | 'error' | null
 
 export function useCheckoutStatus(): CheckoutStatus {
   const [params] = useSearchParams()
-  const raw = params.get('status')
+  const raw = params.get('success')
 
-  if (raw === 'success') return 'success'
-  if (raw === 'error') return 'error'
+  if (raw === 'true') return 'success'
+  if (raw === 'false') return 'error'
   return null
 }
