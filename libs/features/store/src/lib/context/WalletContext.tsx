@@ -29,7 +29,9 @@ export const WalletProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     queryKey: queryKeys.wallet.balance,
     queryFn: () => walletService.getBalance(),
     enabled: isAuthenticated && hasLenser,
-    staleTime: 1000 * 60 * 2,
+    staleTime: 1000 * 60 * 10,
+    gcTime: 1000 * 60 * 30,
+    refetchOnWindowFocus: false,
   })
 
   const balance = data?.balance ?? null
