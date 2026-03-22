@@ -1,10 +1,13 @@
 import { UserX, Sparkles } from 'lucide-react'
 import React, { useEffect, useState, useRef, useCallback } from 'react'
+import { useNavigate } from 'react-router-dom'
 
 import { Avatar } from '@lenserfight/ui/components'
 import { Modal } from '@lenserfight/ui/modals'
 import { lenserService } from '@lenserfight/data/repositories'
 import { FollowsNetworkUser, TrendingLenser } from '@lenserfight/types'
+import { useToast } from '@lenserfight/shared/error'
+import { useLenser } from '../context/LenserContext'
 
 const PAGE_SIZE = 20
 
@@ -23,6 +26,9 @@ export const NetworkModal: React.FC<NetworkModalProps> = ({
   type,
   currentLenserId,
 }) => {
+  const navigate = useNavigate()
+  const { toastError } = useToast()
+  const { hasLenser } = useLenser()
   const [users, setUsers] = useState<FollowsNetworkUser[]>([])
   const [offset, setOffset] = useState(0)
   const [loading, setLoading] = useState(false)
@@ -42,7 +48,7 @@ export const NetworkModal: React.FC<NetworkModalProps> = ({
         setUsers((prev) => (reset ? newUsers : [...prev, ...newUsers]))
         setHasMore(newUsers.length >= PAGE_SIZE)
       } catch (err) {
-        console.error(err)
+        toastError(err, { redirectOnAuth: true, navigate })
       } finally {
         setLoading(false)
       }
@@ -67,7 +73,7 @@ export const NetworkModal: React.FC<NetworkModalProps> = ({
       lenserService
         .getTrendingLensers(10)
         .then((lensers) => setTrendingLensers(lensers))
-        .catch(console.error)
+        .catch((err) => toastError(err, { redirectOnAuth: true, navigate }))
         .finally(() => setLoadingTrending(false))
     }
   }, [loading, hasMore, users.length])
@@ -105,7 +111,7 @@ export const NetworkModal: React.FC<NetworkModalProps> = ({
         )
       )
     } catch (err) {
-      console.error(err)
+      toastError(err, { redirectOnAuth: true, navigate })
     } finally {
       setFollowingInProgress((prev) => {
         const next = new Set(prev)
@@ -124,7 +130,7 @@ export const NetworkModal: React.FC<NetworkModalProps> = ({
         prev.map((l) => (l.lenserId === lenser.lenserId ? { ...l, _following: true } : l))
       )
     } catch (err) {
-      console.error(err)
+      toastError(err, { redirectOnAuth: true, navigate })
     } finally {
       setFollowingInProgress((prev) => {
         const next = new Set(prev)
@@ -158,7 +164,8 @@ export const NetworkModal: React.FC<NetworkModalProps> = ({
             {user.lenserId !== currentLenserId && (
               <button
                 onClick={() => handleFollowToggle(user)}
-                disabled={followingInProgress.has(user.lenserId)}
+                disabled={!hasLenser || followingInProgress.has(user.lenserId)}
+                title={!hasLenser ? 'Sign in and set up your profile to follow' : undefined}
                 className={`px-3 py-1.5 rounded-full text-xs font-semibold transition-colors disabled:opacity-50 ${
                   user.isFollowing
                     ? 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
@@ -243,7 +250,8 @@ export const NetworkModal: React.FC<NetworkModalProps> = ({
                           {!isFollowing && (
                             <button
                               onClick={() => handleTrendingFollow(lenser)}
-                              disabled={followingInProgress.has(lenser.lenserId)}
+                              disabled={!hasLenser || followingInProgress.has(lenser.lenserId)}
+                              title={!hasLenser ? 'Sign in and set up your profile to follow' : undefined}
                               className="px-3 py-1.5 rounded-full text-xs font-semibold bg-primary text-gray-900 hover:bg-yellow-300 transition-colors disabled:opacity-50"
                             >
                               Follow

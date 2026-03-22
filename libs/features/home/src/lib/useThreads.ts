@@ -1,6 +1,8 @@
 import { useQuery, useInfiniteQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { useNavigate } from 'react-router-dom'
 
 import { queryKeys } from '@lenserfight/data/cache'
+import { useToast } from '@lenserfight/shared/error'
 import { lenserService, tagFollowsService } from '@lenserfight/data/repositories'
 import { promptsService } from '@lenserfight/data/repositories'
 import { threadsService } from '@lenserfight/data/repositories'
@@ -186,6 +188,8 @@ export const useLenserFollows = (lenserId?: string, type: 'followers' | 'followi
 
 export const useFollowLenser = (currentLenserId?: string) => {
   const queryClient = useQueryClient()
+  const navigate = useNavigate()
+  const { toastError } = useToast()
   return useMutation({
     mutationFn: (followingId: string) => lenserService.followLenser(followingId),
     onSuccess: (_data, followingId) => {
@@ -195,11 +199,14 @@ export const useFollowLenser = (currentLenserId?: string) => {
         queryClient.invalidateQueries({ queryKey: keys.lenser.follows(followingId, 'followers') })
       }
     },
+    onError: (err) => toastError(err, { redirectOnAuth: true, navigate }),
   })
 }
 
 export const useUnfollowLenser = (currentLenserId?: string) => {
   const queryClient = useQueryClient()
+  const navigate = useNavigate()
+  const { toastError } = useToast()
   return useMutation({
     mutationFn: (followingId: string) => lenserService.unfollowLenser(followingId),
     onSuccess: (_data, followingId) => {
@@ -209,6 +216,7 @@ export const useUnfollowLenser = (currentLenserId?: string) => {
         queryClient.invalidateQueries({ queryKey: keys.lenser.follows(followingId, 'followers') })
       }
     },
+    onError: (err) => toastError(err, { redirectOnAuth: true, navigate }),
   })
 }
 
