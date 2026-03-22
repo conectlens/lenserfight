@@ -3,9 +3,16 @@ import { preferencesService } from '@lenserfight/data/repositories'
 import { useLenser } from '@lenserfight/features/profile'
 import { LenserPreferences } from '@lenserfight/types'
 import { Button, LanguageSelectBox } from '@lenserfight/ui/components'
+import { SelectField } from '@lenserfight/ui/forms'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import React, { useState, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
+
+const CONTENT_VISIBILITY_OPTIONS = [
+  { value: 'public', label: 'Public — visible to everyone' },
+  { value: 'community', label: 'Community — visible to registered users' },
+  { value: 'private', label: 'Private — only visible to you' },
+]
 
 export const GeneralTab: React.FC = () => {
   const { i18n } = useTranslation()
@@ -145,15 +152,11 @@ export const GeneralTab: React.FC = () => {
           <p className="text-xs text-gray-400 dark:text-gray-500 mb-3">
             Applied to new prompts and threads you create.
           </p>
-          <select
+          <SelectField
             value={contentVisibility}
-            onChange={(e) => setContentVisibility(e.target.value as typeof contentVisibility)}
-            className="w-full px-4 py-2.5 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-primary/50 focus:border-primary outline-none transition-colors"
-          >
-            <option value="public">Public — visible to everyone</option>
-            <option value="community">Community — visible to registered users</option>
-            <option value="private">Private — only visible to you</option>
-          </select>
+            onChange={(v) => setContentVisibility(v as typeof contentVisibility)}
+            options={CONTENT_VISIBILITY_OPTIONS}
+          />
         </div>
 
         {/* Toggles */}
