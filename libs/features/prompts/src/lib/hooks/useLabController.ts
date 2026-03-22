@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback, useRef } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { executionService, walletService, walletApiClient } from '@lenserfight/data/repositories'
 import { queryKeys } from '@lenserfight/data/cache'
-import { PromptExecutionRecord, PromptParam, ExecuteResponse, StreamState, StreamUsage } from '@lenserfight/types'
+import { PromptExecutionRecord, PromptParam, ExecuteResponse, StreamState, StreamUsage, FundingSource } from '@lenserfight/types'
 import { renderPrompt } from '@lenserfight/utils/text'
 import { useToast } from '@lenserfight/shared/error'
 import { useAIProviders, useAIModelsByProvider } from '@lenserfight/features/generations'
@@ -16,6 +16,8 @@ export interface TriggerLabExecutionDTO {
   promptContent: string
   inputSnapshot: Record<string, any>
   params?: PromptParam[]
+  fundingSource?: FundingSource
+  byokKeyRefId?: string
 }
 
 export const useLabController = (promptId: string, isAuthenticated = false) => {
@@ -129,35 +131,49 @@ export const useLabController = (promptId: string, isAuthenticated = false) => {
 
       const resolvedContent = renderPrompt(dto.promptContent, dto.inputSnapshot, dto.params ?? [])
 
-      walletApiClient
-        .streamWithWallet(
-          {
-            provider: dto.providerKey,
-            model: dto.modelKey,
-            messages: [{ role: 'user', content: resolvedContent }],
-          },
-          controller.signal,
-          {
-            onStart: (runId) => {
-              setStreamRunId(runId)
-              setStreamState('streaming')
-            },
-            onToken: (content) => setStreamOutput((prev) => prev + content),
-            onEnd: (usage, credits) => {
-              setStreamUsage(usage)
-              setStreamCredits(credits)
-              setStreamState('complete')
-              queryClient.invalidateQueries({ queryKey: queryKeys.executions.history(promptId) })
-              setHistoryOffset(0)
-            },
-            onError: (message) => {
-              setStreamError(message)
-              setStreamState('error')
-              toastError(new Error(message))
-            },
-          },
-        )
-        .catch((err: unknown) => {
+      const callbacks = {
+        onStart: (runId: string) => {
+          setStreamRunId(runId)
+          setStreamState('streaming')
+        },
+        onToken: (content: string) => setStreamOutput((prev) => prev + content),
+        onEnd: (usage: { input_tokens: number; output_tokens: number }, credits: number) => {
+          setStreamUsage(usage)
+          setStreamCredits(credits)
+          setStreamState('complete')
+          queryClient.invalidateQueries({ queryKey: queryKeys.executions.history(promptId) })
+          setHistoryOffset(0)
+        },
+        onError: (message: string) => {
+          setStreamError(message)
+          setStreamState('error')
+          toastError(new Error(message))
+        },
+      }
+
+      const streamPromise =
+        dto.fundingSource === 'user_byok_cloud' && dto.byokKeyRefId
+          ? walletApiClient.streamWithByok(
+              {
+                key_ref_id: dto.byokKeyRefId,
+                provider: dto.providerKey,
+                model: dto.modelKey,
+                messages: [{ role: 'user', content: resolvedContent }],
+              },
+              controller.signal,
+              callbacks,
+            )
+          : walletApiClient.streamWithWallet(
+              {
+                provider: dto.providerKey,
+                model: dto.modelKey,
+                messages: [{ role: 'user', content: resolvedContent }],
+              },
+              controller.signal,
+              callbacks,
+            )
+
+      streamPromise.catch((err: unknown) => {
           if ((err as Error).name === 'AbortError') {
             setStreamState('idle')
           } else {

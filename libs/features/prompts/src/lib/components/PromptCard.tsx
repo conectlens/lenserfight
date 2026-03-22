@@ -112,14 +112,21 @@ export const PromptCard: React.FC<PromptCardProps> = memo(
             </span>
           </div>
 
-          <div
-            className="flex items-center gap-1.5 text-gray-400 dark:text-gray-500 group-hover:text-primary-600 dark:group-hover:text-primary-400 transition-colors"
-            title={`${prompt.usageCount} uses`}
-          >
-            <Copy size={14} />
-            <span className="text-xs font-semibold font-mono">
-              {formatCount(prompt.usageCount)}
-            </span>
+          <div className="flex items-center gap-3">
+            {prompt.latestVersionNumber != null && prompt.latestVersionNumber > 1 && (
+              <span className="text-[10px] font-bold text-gray-400 dark:text-gray-500 bg-gray-100 dark:bg-gray-700 px-1.5 py-0.5 rounded tabular-nums">
+                v{prompt.latestVersionNumber}
+              </span>
+            )}
+            <div
+              className="flex items-center gap-1.5 text-gray-400 dark:text-gray-500 group-hover:text-primary-600 dark:group-hover:text-primary-400 transition-colors"
+              title={`${prompt.usageCount} uses`}
+            >
+              <Copy size={14} />
+              <span className="text-xs font-semibold font-mono">
+                {formatCount(prompt.usageCount)}
+              </span>
+            </div>
           </div>
         </div>
       </div>

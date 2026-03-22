@@ -18,9 +18,14 @@ import { PromptAuthorList } from '../components/PromptAuthorList'
 import { PromptBodyViewer } from '../components/PromptBodyViewer'
 import { PromptDetailHeader } from '../components/PromptDetailHeader'
 import { PromptRelatedList } from '../components/PromptRelatedList'
+import { VersionHistoryPanel } from '../components/VersionHistoryPanel'
+import { CreateVersionModal } from '../components/CreateVersionModal'
+import { ResourceAttachmentsPanel } from '../components/ResourceAttachmentsPanel'
 import { useAuthenticatedLenser } from '../hooks/useAuthenticatedLenser'
 import { useCreatePrompt } from '../hooks/useCreatePrompt'
 import { usePromptDetailController } from '../hooks/usePromptDetailController'
+import { usePromptVersions, usePromptVersionDetail } from '../hooks/usePromptVersions'
+import { useVersionResources, useResourceAttachments } from '../hooks/useResourceAttachments'
 
 export const PromptDetailPage: React.FC = () => {
   const { id } = useParams<{ id: string }>()
@@ -46,6 +51,18 @@ export const PromptDetailPage: React.FC = () => {
 
   const [selectedProviderKey, setSelectedProviderKey] = useState('')
   const [selectedModelKey, setSelectedModelKey] = useState('')
+
+  // Versioning state
+  const [selectedVersionId, setSelectedVersionId] = useState<string | null>(null)
+  const [isCreateVersionOpen, setIsCreateVersionOpen] = useState(false)
+
+  const { versions, isLoading: isLoadingVersions, createVersion, isCreating: isCreatingVersion, publishVersion, isPublishing } =
+    usePromptVersions(id ?? '')
+  const { data: selectedVersion } = usePromptVersionDetail(selectedVersionId)
+
+  // Resources for selected version
+  const { data: versionResources = [], isLoading: isLoadingResources } = useVersionResources(selectedVersionId)
+  const { uploadAndAttach, detachResource, uploadProgress } = useResourceAttachments(selectedVersionId)
 
   const handleProviderChange = (key: string) => {
     setSelectedProviderKey(key)
@@ -134,7 +151,7 @@ export const PromptDetailPage: React.FC = () => {
         navigate('/len/p')
       } else {
         queryClient.invalidateQueries({ queryKey: ['prompt-list'] })
-        queryClient.invalidateQueries({ queryKey: ['prompt-composite', prompt.id] })
+        queryClient.invalidateQueries({ queryKey: ['prompt-composite', prompt?.id] })
       }
     } finally {
       setIsDeleting(false)
@@ -210,7 +227,10 @@ export const PromptDetailPage: React.FC = () => {
           </div>
 
           <div className="mb-8">
-            <PromptBodyViewer content={prompt.content} onCopy={handleCopy} />
+            <PromptBodyViewer
+              content={selectedVersion?.templateBody ?? prompt.content}
+              onCopy={handleCopy}
+            />
           </div>
 
           <div className="max-w-[860px] mx-auto mb-6">
@@ -238,6 +258,30 @@ export const PromptDetailPage: React.FC = () => {
             onEdit={handleEditClick}
             onDelete={handleDeleteClick}
           />
+          <VersionHistoryPanel
+            versions={versions}
+            selectedVersionId={selectedVersionId}
+            onVersionSelect={setSelectedVersionId}
+            onCreateVersion={() => setIsCreateVersionOpen(true)}
+            onPublishVersion={publishVersion}
+            isPublishing={isPublishing}
+            isOwner={isOwner}
+            isLoading={isLoadingVersions}
+          />
+
+          {selectedVersionId && (
+            <ResourceAttachmentsPanel
+              resources={versionResources}
+              isOwner={isOwner}
+              onUploadAndAttach={async (file, key) => { await uploadAndAttach(file, key) }}
+              onDetach={(resourceId) => detachResource(resourceId)}
+              uploadProgress={Object.fromEntries(
+                Object.entries(uploadProgress).map(([k, s]) => [k, { status: s, percent: s === 'done' ? 100 : s === 'uploading' ? 50 : 0 }])
+              )}
+              isLoading={isLoadingResources}
+            />
+          )}
+
           <PromptRelatedList
             prompts={relatedPrompts}
             onOpen={(id) => navigate(`/len/p/${id}`)}
@@ -254,6 +298,22 @@ export const PromptDetailPage: React.FC = () => {
         isSubmitting={isCreateSubmitting}
         error={createError}
         isEditMode={isEditMode}
+      />
+
+      <CreateVersionModal
+        isOpen={isCreateVersionOpen}
+        onClose={() => setIsCreateVersionOpen(false)}
+        onSubmit={async (data) => {
+          await createVersion({
+            promptId: prompt.id,
+            templateBody: data.templateBody,
+            changelog: data.changelog || null,
+            parameters: data.parameters,
+          })
+          setIsCreateVersionOpen(false)
+        }}
+        isSubmitting={isCreatingVersion}
+        initialContent={prompt.content}
       />
 
       {showProfileModal && <CreateLenserProfileModal onClose={() => setShowProfileModal(false)} />}
