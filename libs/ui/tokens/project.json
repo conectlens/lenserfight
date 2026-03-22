@@ -1,0 +1,12 @@
+{
+  "name": "tokens",
+  "$schema": "../../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "libs/ui/tokens/src",
+  "projectType": "library",
+  "tags": [
+    "layer:ui",
+    "ui:tokens"
+  ],
+  "// targets": "to see all targets run: nx show project tokens --web",
+  "targets": {}
+}

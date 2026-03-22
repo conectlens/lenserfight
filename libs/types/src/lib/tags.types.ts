@@ -63,10 +63,14 @@ export interface TagFollowRecord {
   followedAt: string
 }
 
+export type ReportReasonEnum = 'spam' | 'harassment' | 'misinformation' | 'off_topic' | 'other'
+
+export const REPORT_REASONS: ReportReasonEnum[] = ['spam', 'harassment', 'misinformation', 'off_topic', 'other']
+
 export interface ContentReportDTO {
   targetType: 'thread' | 'prompt_template'
   targetId: string
-  reason: 'spam' | 'harassment' | 'misinformation' | 'off_topic' | 'other'
+  reason: ReportReasonEnum
 }
 
 export interface TagActivityEventDTO {

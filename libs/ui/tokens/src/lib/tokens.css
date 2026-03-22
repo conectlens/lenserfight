@@ -1,0 +1,64 @@
+/**
+ * ConnectLens Brand CSS Custom Properties
+ *
+ * Import this file in your Tailwind 4 `@theme {}` block or as a global CSS import.
+ * In Tailwind 4, declaring --color-* variables inside @theme auto-generates
+ * utility classes like bg-primary-yellow-500, text-status-green, etc.
+ *
+ * Usage in apps/forum/src/index.css:
+ *   @import '@lenserfight/ui/tokens/tokens.css';   (if bundler resolves it)
+ *   — OR copy the variables directly into your @theme {} block.
+ */
+
+:root {
+  /* ── Primary Yellow ─────────────────────────────────────── */
+  --cl-yellow-50: #fff7d7;
+  --cl-yellow-100: #ffefb0;
+  --cl-yellow-200: #ffe784;
+  --cl-yellow-300: #ffdf63;
+  --cl-yellow-400: #ffda59;
+  --cl-yellow-500: #ffde59;
+  --cl-yellow-600: #e8c645;
+  --cl-yellow-700: #c9a935;
+  --cl-yellow-800: #a88d2b;
+  --cl-yellow-900: #8a7322;
+
+  /* ── Deep Lens Navy ─────────────────────────────────────── */
+  --cl-navy-50: #e6edf5;
+  --cl-navy-100: #c3d1e4;
+  --cl-navy-200: #9ab4d2;
+  --cl-navy-300: #6b94be;
+  --cl-navy-400: #3c74a9;
+  --cl-navy-500: #213f74;
+  --cl-navy-600: #1a3260;
+  --cl-navy-700: #12244a;
+  --cl-navy-800: #0a1730;
+  --cl-navy-900: #040b14;
+
+  /* ── Greyscale ──────────────────────────────────────────── */
+  --cl-grey-0: #ffffff;
+  --cl-grey-25: #f8f9fa;
+  --cl-grey-50: #f3f4f5;
+  --cl-grey-100: #e6e7e9;
+  --cl-grey-200: #dcdde0;
+  --cl-grey-300: #c8c9cc;
+  --cl-grey-400: #a6a7aa;
+  --cl-grey-500: #86878a;
+  --cl-grey-600: #6a6b6e;
+  --cl-grey-700: #4e5053;
+  --cl-grey-800: #333538;
+  --cl-grey-900: #1f2022;
+
+  /* ── Primary Dark ───────────────────────────────────────── */
+  --cl-dark-500: #1a1a1a;
+  --cl-dark-600: #141414;
+  --cl-dark-700: #0f0f0f;
+  --cl-dark-800: #0a0a0a;
+  --cl-dark-900: #000000;
+
+  /* ── Status ─────────────────────────────────────────────── */
+  --cl-status-green: #2eb773;
+  --cl-status-red: #ea3942;
+  --cl-status-blue: #287bff;
+  --cl-status-purple: #8746ff;
+}

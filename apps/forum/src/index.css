@@ -15,11 +15,62 @@
   /* Fonts */
   --font-sans: 'Inter', ui-sans-serif, system-ui, sans-serif;
 
-  /* Brand palette */
+  /* ── Brand aliases (backward compat) ─────────────────────── */
   --color-primary: #ffde59;
   --color-deep: #213f74;
 
-  /* Gray scale from your tailwind extension */
+  /* ── Primary Yellow ──────────────────────────────────────── */
+  --color-primary-yellow-50: #fff7d7;
+  --color-primary-yellow-100: #ffefb0;
+  --color-primary-yellow-200: #ffe784;
+  --color-primary-yellow-300: #ffdf63;
+  --color-primary-yellow-400: #ffda59;
+  --color-primary-yellow-500: #ffde59;
+  --color-primary-yellow-600: #e8c645;
+  --color-primary-yellow-700: #c9a935;
+  --color-primary-yellow-800: #a88d2b;
+  --color-primary-yellow-900: #8a7322;
+
+  /* ── Deep Lens Navy ──────────────────────────────────────── */
+  --color-deep-lens-navy-50: #e6edf5;
+  --color-deep-lens-navy-100: #c3d1e4;
+  --color-deep-lens-navy-200: #9ab4d2;
+  --color-deep-lens-navy-300: #6b94be;
+  --color-deep-lens-navy-400: #3c74a9;
+  --color-deep-lens-navy-500: #213f74;
+  --color-deep-lens-navy-600: #1a3260;
+  --color-deep-lens-navy-700: #12244a;
+  --color-deep-lens-navy-800: #0a1730;
+  --color-deep-lens-navy-900: #040b14;
+
+  /* ── Greyscale brand scale ───────────────────────────────── */
+  --color-greyscale-0: #ffffff;
+  --color-greyscale-25: #f8f9fa;
+  --color-greyscale-50: #f3f4f5;
+  --color-greyscale-100: #e6e7e9;
+  --color-greyscale-200: #dcdde0;
+  --color-greyscale-300: #c8c9cc;
+  --color-greyscale-400: #a6a7aa;
+  --color-greyscale-500: #86878a;
+  --color-greyscale-600: #6a6b6e;
+  --color-greyscale-700: #4e5053;
+  --color-greyscale-800: #333538;
+  --color-greyscale-900: #1f2022;
+
+  /* ── Primary Dark ────────────────────────────────────────── */
+  --color-primary-dark-500: #1a1a1a;
+  --color-primary-dark-600: #141414;
+  --color-primary-dark-700: #0f0f0f;
+  --color-primary-dark-800: #0a0a0a;
+  --color-primary-dark-900: #000000;
+
+  /* ── Status ──────────────────────────────────────────────── */
+  --color-status-green: #2eb773;
+  --color-status-red: #ea3942;
+  --color-status-blue: #287bff;
+  --color-status-purple: #8746ff;
+
+  /* ── Gray scale (Tailwind-compat, kept for existing components) ─ */
   --color-gray-50: #f9fafb;
   --color-gray-100: #ededed;
   --color-gray-200: #e5e7eb;
@@ -28,20 +79,17 @@
   --color-gray-500: #6b7280;
   --color-gray-600: #4b5563;
   --color-gray-700: #262626;
-  /* border */
   --color-gray-800: #1a1a1a;
-  /* sidebar/surface */
   --color-gray-900: #121212;
-  /* main background */
 
-  /* Light scheme */
+  /* ── Light scheme ────────────────────────────────────────── */
   --color-light-base: #ffffff;
   --color-light-surface: #f9fafb;
   --color-light-subtle: #e5e7eb;
   --color-light-text: #1f2937;
   --color-light-muted: #6b7280;
 
-  /* Dark scheme derived from your dark colors */
+  /* ── Dark scheme ─────────────────────────────────────────── */
   --color-dark-base: #121212;
   --color-dark-surface: #1a1a1a;
   --color-dark-subtle: #262626;
