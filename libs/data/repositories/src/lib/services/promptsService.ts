@@ -8,6 +8,8 @@ import {
   PersonalPromptFeedItem,
   CreatePromptDTO,
   PromptAuthor,
+  PromptVersion,
+  CreatePromptVersionDTO,
 } from '@lenserfight/types'
 import { ApiResponseEnvelope, paginatedResponse } from 'contracts'
 
@@ -270,5 +272,30 @@ export const promptsService = {
   // Backward compatibility alias for deprecated method if needed elsewhere
   getAuthorPrompts: async (lenserHandle: string, offset = 0, limit = 10, viewerId?: string) => {
     return promptsService.getLenserPrompts(lenserHandle, offset, limit, viewerId)
+  },
+
+  // ─── Versioning ───────────────────────────────────────────────────────────
+
+  getVersions: async (promptId: string): Promise<PromptVersion[]> => {
+    return promptsRepo.getVersions(promptId)
+  },
+
+  getVersionById: async (versionId: string): Promise<PromptVersion | null> => {
+    return promptsRepo.getVersionById(versionId)
+  },
+
+  getLatestPublishedVersion: async (promptId: string): Promise<PromptVersion | null> => {
+    return promptsRepo.getLatestPublishedVersion(promptId)
+  },
+
+  createVersion: async (input: CreatePromptVersionDTO): Promise<PromptVersion> => {
+    if (!input.templateBody || input.templateBody.trim().length < 1) {
+      throw new Error('Template body cannot be empty.')
+    }
+    return promptsRepo.createVersion(input)
+  },
+
+  publishVersion: async (versionId: string): Promise<void> => {
+    return promptsRepo.publishVersion(versionId)
   },
 }

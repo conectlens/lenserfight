@@ -1,5 +1,5 @@
 import { supabase } from '@lenserfight/data/supabase'
-import { AuthorProfile, PromptParam, PromptTemplateRecord, PromptTemplateViewModel, PersonalPromptFeedItem, CreatePromptDTO, TagRecord } from '@lenserfight/types'
+import { AuthorProfile, PromptParam, PromptTemplateRecord, PromptTemplateViewModel, PersonalPromptFeedItem, CreatePromptDTO, TagRecord, PromptVersion, PromptVersionParam, CreatePromptVersionDTO } from '@lenserfight/types'
 import { ApiResponseEnvelope, paginatedResponse } from 'contracts'
 
 // --- Port (Interface) ---
@@ -31,6 +31,12 @@ export interface PromptsRepositoryPort {
   createPrompt(input: CreatePromptDTO): Promise<PromptTemplateRecord>
   updatePrompt(id: string, input: Partial<CreatePromptDTO>): Promise<PromptTemplateRecord>
   deletePrompt(id: string): Promise<void>
+  // ─── Versioning ───────────────────────────────────────────────────────────
+  getVersions(promptId: string): Promise<PromptVersion[]>
+  getVersionById(versionId: string): Promise<PromptVersion | null>
+  getLatestPublishedVersion(promptId: string): Promise<PromptVersion | null>
+  createVersion(input: CreatePromptVersionDTO): Promise<PromptVersion>
+  publishVersion(versionId: string): Promise<void>
 }
 
 // Fallback data for Mock Mode
@@ -601,6 +607,137 @@ export class SupabasePromptsRepository implements PromptsRepositoryPort {
 
   async deletePrompt(id: string): Promise<void> {
     const { error } = await supabase.schema('content').from('prompt_templates').delete().eq('id', id)
+    if (error) this.handleError(error)
+  }
+
+  // ─── Versioning ───────────────────────────────────────────────────────────
+
+  private mapVersionParam(row: Record<string, unknown>): PromptVersionParam {
+    return {
+      id: row.id as string,
+      versionId: row.version_id as string,
+      key: row.key as string,
+      label: (row.label as string | null) ?? null,
+      type: row.type as PromptVersionParam['type'],
+      required: row.required as boolean,
+      defaultValue: (row.default_value as string | null) ?? null,
+      placeholder: (row.placeholder as string | null) ?? null,
+      helpText: (row.help_text as string | null) ?? null,
+      validationSchema: row.validation_schema ?? null,
+      options: (row.options as { label: string; value: string }[] | null) ?? undefined,
+      sortOrder: (row.sort_order as number) ?? 0,
+    }
+  }
+
+  private mapVersion(row: Record<string, unknown>): PromptVersion {
+    return {
+      id: row.id as string,
+      promptId: row.prompt_id as string,
+      versionNumber: row.version_number as number,
+      templateBody: row.template_body as string,
+      status: row.status as PromptVersion['status'],
+      changelog: (row.changelog as string | null) ?? null,
+      parentVersionId: (row.parent_version_id as string | null) ?? null,
+      publishedAt: (row.published_at as string | null) ?? null,
+      createdAt: row.created_at as string,
+      parameterCount: (row.parameter_count as number | null) ?? undefined,
+    }
+  }
+
+  async getVersions(promptId: string): Promise<PromptVersion[]> {
+    const { data, error } = await supabase
+      .schema('content')
+      .rpc('fn_content_list_prompt_versions', { p_prompt_id: promptId })
+    if (error) this.handleError(error)
+    return ((data ?? []) as Record<string, unknown>[]).map((row) => this.mapVersion(row))
+  }
+
+  async getVersionById(versionId: string): Promise<PromptVersion | null> {
+    const { data: vRow, error: vError } = await supabase
+      .schema('content')
+      .from('prompt_versions')
+      .select('*')
+      .eq('id', versionId)
+      .maybeSingle()
+    if (vError) this.handleError(vError)
+    if (!vRow) return null
+
+    const { data: params, error: pError } = await supabase
+      .schema('content')
+      .from('prompt_version_parameters')
+      .select('*')
+      .eq('version_id', versionId)
+      .order('sort_order', { ascending: true })
+    if (pError) this.handleError(pError)
+
+    const version = this.mapVersion(vRow as Record<string, unknown>)
+    version.parameters = ((params ?? []) as Record<string, unknown>[]).map((p) => this.mapVersionParam(p))
+    return version
+  }
+
+  async getLatestPublishedVersion(promptId: string): Promise<PromptVersion | null> {
+    const { data, error } = await supabase
+      .schema('content')
+      .from('vw_prompt_published_versions')
+      .select('*')
+      .eq('prompt_id', promptId)
+      .order('version_number', { ascending: false })
+      .limit(1)
+      .maybeSingle()
+    if (error) this.handleError(error)
+    if (!data) return null
+    return this.mapVersion(data as Record<string, unknown>)
+  }
+
+  async createVersion(input: CreatePromptVersionDTO): Promise<PromptVersion> {
+    const { data: vRow, error: vError } = await supabase
+      .schema('content')
+      .from('prompt_versions')
+      .insert({
+        prompt_id: input.promptId,
+        template_body: input.templateBody,
+        changelog: input.changelog ?? null,
+        parent_version_id: input.parentVersionId ?? null,
+        status: 'draft',
+      })
+      .select('*')
+      .single()
+    if (vError) this.handleError(vError)
+
+    const version = this.mapVersion(vRow as Record<string, unknown>)
+
+    if (input.parameters?.length) {
+      const paramRows = input.parameters.map((p) => ({
+        version_id: version.id,
+        key: p.key,
+        label: p.label ?? null,
+        type: p.type,
+        required: p.required,
+        default_value: p.defaultValue ?? null,
+        placeholder: p.placeholder ?? null,
+        help_text: p.helpText ?? null,
+        validation_schema: p.validationSchema ?? null,
+        options: p.options ?? null,
+        sort_order: p.sortOrder,
+      }))
+      const { data: insertedParams, error: pError } = await supabase
+        .schema('content')
+        .from('prompt_version_parameters')
+        .insert(paramRows)
+        .select('*')
+      if (pError) this.handleError(pError)
+      version.parameters = ((insertedParams ?? []) as Record<string, unknown>[]).map((p) =>
+        this.mapVersionParam(p)
+      )
+    }
+
+    return version
+  }
+
+  async publishVersion(versionId: string): Promise<void> {
+    const { error } = await supabase
+      .schema('content')
+      .rpc('fn_content_publish_prompt_version', { p_version_id: versionId })
     if (error) this.handleError(error)
   }
 
