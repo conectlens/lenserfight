@@ -298,18 +298,6 @@ export const LenserProfileHeader: React.FC<LenserProfileHeaderProps> = ({
                         <Users size={16} />
                       </span>
                     )}
-                    {/* Modern Professional Join Log Badge */}
-                    {lenser.join_order !== undefined && (
-                      <div
-                        className="hidden md:flex items-center gap-1.5 px-3 py-1 rounded-full bg-gradient-to-b from-white to-gray-50 dark:from-gray-800 dark:to-gray-900 border border-gray-200 dark:border-gray-700 shadow-sm transition-all hover:border-gray-300 dark:hover:border-gray-600 cursor-help"
-                        title={`Unique Lenser ID: #${lenser.join_order}`}
-                      >
-                        <span className="w-1.5 h-1.5 rounded-full bg-primary shadow-[0_0_8px_rgba(255,222,89,0.6)]"></span>
-                        <span className="text-[10px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider font-mono">
-                          NO. {String(lenser.join_order).padStart(4, '0')}
-                        </span>
-                      </div>
-                    )}
                   </div>
                   <div className="flex items-center gap-2 md:hidden mt-1">
                     <p className="text-gray-500 dark:text-gray-400 text-sm font-medium">
