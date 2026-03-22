@@ -24,6 +24,8 @@ import { useCreatePrompt } from '../hooks/useCreatePrompt'
 import { usePromptDetailController } from '../hooks/usePromptDetailController'
 import { useLabController } from '../hooks/useLabController'
 import { useForkPrompt } from '../hooks/useForkPrompt'
+import { usePromptVersions, usePromptVersionDetail } from '../hooks/usePromptVersions'
+import { useFundingSource } from '../hooks/useFundingSource'
 
 export const PromptLabPage: React.FC = () => {
   const { id } = useParams<{ id: string }>()
@@ -38,6 +40,25 @@ export const PromptLabPage: React.FC = () => {
 
   const lab = useLabController(id ?? '', !!isAuthenticated)
   const { forkPrompt, isForking } = useForkPrompt(prompt ?? null)
+
+  // Versioning
+  const [selectedVersionId, setSelectedVersionId] = useState<string | null>(null)
+  const { versions, isLoading: isLoadingVersions } = usePromptVersions(id ?? '')
+  const { data: selectedVersion } = usePromptVersionDetail(selectedVersionId)
+
+  // Funding source
+  const funding = useFundingSource(lab.selectedProviderKey)
+
+  // Derive prompt content and params from selected version or base prompt
+  const activePromptContent = selectedVersion?.templateBody ?? prompt?.content ?? ''
+  const activeParams = selectedVersion?.parameters?.map((p) => ({
+    name: p.key,
+    type: (p.type === 'text' ? 'string' : p.type) as 'string' | 'number' | 'boolean' | 'select' | 'multiselect' | 'array',
+    required: p.required,
+    default: p.defaultValue ?? undefined,
+    placeholder: p.placeholder ?? undefined,
+    description: p.helpText ?? undefined,
+  })) ?? prompt?.params
 
   const reportContent = useReportContent()
 
@@ -243,16 +264,16 @@ export const PromptLabPage: React.FC = () => {
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
         <div className="lg:col-span-7">
           <PromptBodyViewer
-            content={prompt.content}
+            content={activePromptContent}
             onCopy={handleCopy}
-            onFork={() => forkPrompt()}
+            onFork={() => forkPrompt({})}
             isForking={isForking}
           />
         </div>
         <div className="lg:col-span-5">
           <LabExecutionPanel
             promptId={prompt.id}
-            promptContent={prompt.content}
+            promptContent={activePromptContent}
             providers={lab.providers}
             isLoadingProviders={lab.isLoadingProviders}
             providerModels={lab.providerModels}
@@ -267,7 +288,18 @@ export const PromptLabPage: React.FC = () => {
             isConnecting={lab.streamState === 'loading'}
             isStreaming={lab.streamState === 'loading' || lab.streamState === 'streaming'}
             onStop={lab.stopStream}
-            params={prompt.params}
+            params={activeParams}
+            versions={versions}
+            selectedVersionId={selectedVersionId}
+            onVersionChange={setSelectedVersionId}
+            isLoadingVersions={isLoadingVersions}
+            fundingSource={funding.fundingSource}
+            onFundingSourceChange={funding.setFundingSource}
+            selectedKeyRefId={funding.selectedKeyRefId}
+            onKeyRefIdChange={funding.setSelectedKeyRefId}
+            availableKeys={funding.availableKeys}
+            walletBalance={funding.walletBalance}
+            canUseBYOK={funding.canUseBYOK}
           />
         </div>
       </div>

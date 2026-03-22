@@ -72,6 +72,7 @@ export interface PromptTemplateViewModel {
   createdAt: string
   visibility: VisibilityEnum
   status: ContentStatus
+  latestVersionNumber?: number
 }
 
 export interface PersonalPromptFeedItem extends PromptTemplateViewModel {

@@ -2,9 +2,10 @@ import React, { useMemo, useState } from 'react'
 import { Loader2, Play, Square } from 'lucide-react'
 import { SelectField } from '@lenserfight/ui/forms'
 import { Button, FormError } from '@lenserfight/ui/components'
-import { AIProvider, AIProviderModel, PromptParam, PromptVersion } from '@lenserfight/types'
+import { AIProvider, AIProviderModel, PromptParam, PromptVersion, FundingSource, UserApiKey, WalletBalance } from '@lenserfight/types'
 import { validateParamValues } from '@lenserfight/utils/text'
 import { TriggerLabExecutionDTO } from '../hooks/useLabController'
+import { FundingSourceToggle } from './FundingSourceToggle'
 
 const VARIABLE_REGEX = /\{\{(\w+)\}\}/g
 
@@ -42,6 +43,14 @@ interface LabExecutionPanelProps {
   selectedVersionId?: string | null
   onVersionChange?: (versionId: string) => void
   isLoadingVersions?: boolean
+  // Funding source
+  fundingSource?: FundingSource
+  onFundingSourceChange?: (source: FundingSource) => void
+  selectedKeyRefId?: string | null
+  onKeyRefIdChange?: (keyId: string) => void
+  availableKeys?: UserApiKey[]
+  walletBalance?: WalletBalance
+  canUseBYOK?: boolean
 }
 
 const inputClass =
@@ -69,6 +78,13 @@ export const LabExecutionPanel: React.FC<LabExecutionPanelProps> = ({
   selectedVersionId,
   onVersionChange,
   isLoadingVersions,
+  fundingSource,
+  onFundingSourceChange,
+  selectedKeyRefId,
+  onKeyRefIdChange,
+  availableKeys,
+  walletBalance,
+  canUseBYOK,
 }) => {
   const variables = useMemo(() => extractVariables(promptContent), [promptContent])
 
@@ -111,7 +127,15 @@ export const LabExecutionPanel: React.FC<LabExecutionPanelProps> = ({
         ? Object.fromEntries(paramSchemas.map((p) => [p.name, inputValues[p.name] ?? p.default ?? '']))
         : { freeform: inputValues['freeform'] ?? '' }
 
-    onTriggerStream({ providerKey: selectedProviderKey as 'openai' | 'anthropic' | 'google', modelKey: selectedModelKey, promptContent, inputSnapshot, params: paramSchemas })
+    onTriggerStream({
+      providerKey: selectedProviderKey as 'openai' | 'anthropic' | 'google',
+      modelKey: selectedModelKey,
+      promptContent,
+      inputSnapshot,
+      params: paramSchemas,
+      fundingSource,
+      byokKeyRefId: fundingSource === 'user_byok_cloud' ? selectedKeyRefId ?? undefined : undefined,
+    })
   }
 
   const isDisabled = isTriggeringExecution || isStreaming || !selectedProviderKey || !selectedModelKey
@@ -160,6 +184,19 @@ export const LabExecutionPanel: React.FC<LabExecutionPanelProps> = ({
         options={providerModels.map((m) => ({ value: m.model_key, label: m.name }))}
         disabled={!selectedProviderKey || isLoadingModels}
       />
+
+      {/* Funding Source Toggle */}
+      {fundingSource && onFundingSourceChange && onKeyRefIdChange && (
+        <FundingSourceToggle
+          fundingSource={fundingSource}
+          onFundingSourceChange={onFundingSourceChange}
+          selectedKeyRefId={selectedKeyRefId ?? null}
+          onKeyRefIdChange={onKeyRefIdChange}
+          availableKeys={availableKeys ?? []}
+          walletBalance={walletBalance}
+          canUseBYOK={canUseBYOK ?? false}
+        />
+      )}
 
       {/* Typed Parameter Inputs */}
       {paramSchemas.length > 0 ? (
