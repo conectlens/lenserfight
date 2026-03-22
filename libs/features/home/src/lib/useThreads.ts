@@ -6,7 +6,7 @@ import { useToast } from '@lenserfight/shared/error'
 import { lenserService, tagFollowsService } from '@lenserfight/data/repositories'
 import { promptsService } from '@lenserfight/data/repositories'
 import { threadsService } from '@lenserfight/data/repositories'
-import type { FollowPeriod, ContentReportDTO } from '@lenserfight/types'
+import type { FollowPeriod, ContentReportDTO, TagFollowRecord } from '@lenserfight/types'
 
 // Re-export for backward compatibility with any imports of `keys` from this file
 const keys = queryKeys
@@ -223,11 +223,22 @@ export const useUnfollowLenser = (currentLenserId?: string) => {
 export const useFollowTag = (lenserId?: string) => {
   const queryClient = useQueryClient()
   return useMutation({
-    mutationFn: (tagId: string) => tagFollowsService.followTag(tagId),
-    onSuccess: () => {
-      if (lenserId) {
-        queryClient.invalidateQueries({ queryKey: keys.tags.followed(lenserId) })
-      }
+    mutationFn: ({ tagId }: { tagId: string; slug?: string; name?: string }) =>
+      tagFollowsService.followTag(tagId),
+    onMutate: async ({ tagId, slug, name }) => {
+      if (!lenserId || !slug || !name) return
+      const cacheKey = keys.tags.followed(lenserId)
+      await queryClient.cancelQueries({ queryKey: cacheKey })
+      const prev = queryClient.getQueryData<TagFollowRecord[]>(cacheKey)
+      queryClient.setQueryData<TagFollowRecord[]>(cacheKey, (old) => [
+        ...(old ?? []),
+        { tagId, slug, name, followedAt: new Date().toISOString() },
+      ])
+      return { prev }
+    },
+    onError: (_e, _v, ctx) => {
+      if (lenserId && ctx?.prev !== undefined)
+        queryClient.setQueryData(keys.tags.followed(lenserId), ctx.prev)
     },
   })
 }
@@ -236,10 +247,19 @@ export const useUnfollowTag = (lenserId?: string) => {
   const queryClient = useQueryClient()
   return useMutation({
     mutationFn: (tagId: string) => tagFollowsService.unfollowTag(tagId),
-    onSuccess: () => {
-      if (lenserId) {
-        queryClient.invalidateQueries({ queryKey: keys.tags.followed(lenserId) })
-      }
+    onMutate: async (tagId) => {
+      if (!lenserId) return
+      const cacheKey = keys.tags.followed(lenserId)
+      await queryClient.cancelQueries({ queryKey: cacheKey })
+      const prev = queryClient.getQueryData<TagFollowRecord[]>(cacheKey)
+      queryClient.setQueryData<TagFollowRecord[]>(cacheKey, (old) =>
+        old?.filter((t) => t.tagId !== tagId) ?? []
+      )
+      return { prev }
+    },
+    onError: (_e, _v, ctx) => {
+      if (lenserId && ctx?.prev !== undefined)
+        queryClient.setQueryData(keys.tags.followed(lenserId), ctx.prev)
     },
   })
 }

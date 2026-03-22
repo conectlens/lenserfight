@@ -1,6 +1,8 @@
 import { Pencil, Trash2, Lock, Flag } from 'lucide-react'
 import React, { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
+import { useQueryClient } from '@tanstack/react-query'
+import { queryKeys } from '@lenserfight/data/cache'
 
 import { Button } from '@lenserfight/ui/components'
 import { ConfirmModal } from '@lenserfight/ui/modals'
@@ -21,6 +23,7 @@ import { useThreadDetailController } from '../hooks/useThreadDetailController'
 export const ThreadDetailPage: React.FC = () => {
   const { threadId } = useParams<{ threadId: string }>()
   const navigate = useNavigate()
+  const queryClient = useQueryClient()
   const { hasLenser, lenser } = useAuthenticatedLenser()
   const { isAuthenticated } = useAuth()
   const { setShareConfig } = useShareContext()
@@ -138,7 +141,10 @@ export const ThreadDetailPage: React.FC = () => {
   }
 
   const handleEditSuccess = () => {
-    window.location.reload()
+    queryClient.invalidateQueries({
+      queryKey: [...queryKeys.threads.detail(threadId || ''), { viewerId: lenser?.id }],
+    })
+    setIsEditModalOpen(false)
   }
 
   if (loading) {
