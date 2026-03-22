@@ -75,4 +75,15 @@ export const queryKeys = {
     balance: ['wallet', 'balance'] as const,
     products: ['wallet', 'products'] as const,
   },
+  promptVersions: {
+    all: ['promptVersions'] as const,
+    list: (promptId: string) => [...queryKeys.promptVersions.all, 'list', promptId] as const,
+    detail: (versionId: string) => [...queryKeys.promptVersions.all, 'detail', versionId] as const,
+    latestPublished: (promptId: string) => [...queryKeys.promptVersions.all, 'latestPublished', promptId] as const,
+  },
+  resources: {
+    all: ['resources'] as const,
+    byOwner: (lenserId: string) => [...queryKeys.resources.all, 'owner', lenserId] as const,
+    forVersion: (versionId: string) => [...queryKeys.resources.all, 'version', versionId] as const,
+  },
 }

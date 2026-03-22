@@ -99,3 +99,57 @@ export interface CreatePromptDTO {
   forkedFromExecutionId?: string | null
   params?: PromptParam[]
 }
+
+// ─── Prompt Versioning ────────────────────────────────────────────────────────
+
+/**
+ * Parameter types for a versioned prompt.
+ * Note: DB stores 'text' for the string variant; map via mapVersionParam() in repo.
+ */
+export type PromptVersionParamType =
+  | 'text'
+  | 'number'
+  | 'boolean'
+  | 'select'
+  | 'textarea'
+  | 'json'
+
+/** Mirrors content.prompt_version_parameters */
+export interface PromptVersionParam {
+  id: string
+  versionId: string
+  key: string
+  label?: string | null
+  type: PromptVersionParamType
+  required: boolean
+  defaultValue?: string | null
+  placeholder?: string | null
+  helpText?: string | null
+  validationSchema?: unknown
+  options?: { label: string; value: string }[]
+  sortOrder: number
+}
+
+/** Mirrors content.prompt_versions */
+export interface PromptVersion {
+  id: string
+  promptId: string
+  versionNumber: number
+  templateBody: string
+  status: ContentStatus
+  changelog?: string | null
+  parentVersionId?: string | null
+  publishedAt?: string | null
+  createdAt: string
+  // Hydrated at read time
+  parameterCount?: number
+  parameters?: PromptVersionParam[]
+}
+
+export interface CreatePromptVersionDTO {
+  promptId: string
+  templateBody: string
+  changelog?: string | null
+  parentVersionId?: string | null
+  parameters?: Omit<PromptVersionParam, 'id' | 'versionId'>[]
+}

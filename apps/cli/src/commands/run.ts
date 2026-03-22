@@ -2,6 +2,7 @@ import { defineCommand } from 'citty';
 import consola from 'consola';
 import { callRpc, handleError } from '../utils/api';
 import { resolveConfig as loadConfig } from '../config/project-config';
+import { getAdapter, getStreamAdapter, byokKeyResolver, OLLAMA_DEFAULT_BASE_URL, type TextProvider } from '@lenserfight/providers';
 
 // ---------------------------------------------------------------------------
 // run submit
@@ -283,17 +284,229 @@ const replay = defineCommand({
 });
 
 // ---------------------------------------------------------------------------
+// run exec — three-mode prompt execution (Ollama / BYOK / Cloud)
+// ---------------------------------------------------------------------------
+//
+// Modes:
+//   --ollama [--base-url http://localhost:11434]   Local Ollama inference
+//   --byok <provider> [--key <api-key>]            Bring Your Own Key (env var fallback)
+//   --cloud (default)                              LenserFight wallet credits
+//
+// BYOK Security: the API key is NEVER stored — it is resolved transiently
+// from --key flag or the corresponding env var (OPENAI_API_KEY, etc.) and
+// is not included in any DB row, log, or error message.
+// ---------------------------------------------------------------------------
+const exec = defineCommand({
+  meta: {
+    name: 'exec',
+    description: 'Execute a prompt against an AI model (Ollama / BYOK / Cloud).',
+  },
+  args: {
+    prompt: {
+      type: 'string',
+      description: 'Prompt text to send to the model',
+      required: true,
+    },
+    model: {
+      type: 'string',
+      description: 'Model key (e.g. gpt-4o, claude-sonnet-4-6, llama3.2)',
+      required: true,
+    },
+    ollama: {
+      type: 'boolean',
+      description: 'Use local Ollama (localhost:11434)',
+      default: false,
+    },
+    'base-url': {
+      type: 'string',
+      description: `Ollama base URL (default: ${OLLAMA_DEFAULT_BASE_URL})`,
+      default: '',
+    },
+    byok: {
+      type: 'string',
+      description: 'Provider for BYOK mode (openai | anthropic | google | mistral)',
+      default: '',
+    },
+    key: {
+      type: 'string',
+      description: 'API key for BYOK mode (falls back to PROVIDER_API_KEY env var)',
+      default: '',
+    },
+    system: {
+      type: 'string',
+      description: 'Optional system message',
+      default: '',
+    },
+    stream: {
+      type: 'boolean',
+      description: 'Stream the response token-by-token',
+      default: true,
+    },
+  },
+  async run({ args }) {
+    const messages: Array<{ role: 'system' | 'user'; content: string }> = [];
+    if (args.system) messages.push({ role: 'system', content: args.system });
+    messages.push({ role: 'user', content: args.prompt });
+
+    // ── Ollama mode ──────────────────────────────────────────────────────────
+    if (args.ollama) {
+      consola.start('Running via Ollama (%s)…', args.model);
+      try {
+        const adapter = getAdapter('ollama');
+        const baseUrl = args['base-url'] || OLLAMA_DEFAULT_BASE_URL;
+        const { url: _defaultUrl, body, headers } = adapter.transformRequest(
+          args.model,
+          messages,
+          { maxTokens: 4096 }
+        );
+        const url = `${baseUrl}/api/chat`;
+
+        const res = await fetch(url, { method: 'POST', headers, body });
+        if (!res.ok) {
+          const text = await res.text();
+          throw new Error(`Ollama error ${res.status}: ${text}`);
+        }
+        const data = await res.json() as Record<string, unknown>;
+        const reply = (data.message as Record<string, unknown>)?.content ?? '';
+        consola.log('\n%s', reply);
+      } catch (err) {
+        handleError(err);
+      }
+      return;
+    }
+
+    // ── BYOK mode ────────────────────────────────────────────────────────────
+    if (args.byok) {
+      const provider = args.byok as TextProvider;
+      const validProviders: TextProvider[] = ['openai', 'anthropic', 'google', 'mistral'];
+      if (!validProviders.includes(provider)) {
+        consola.error('Unknown BYOK provider: %s. Valid: %s', provider, validProviders.join(', '));
+        process.exitCode = 1;
+        return;
+      }
+
+      // Key resolution: CLI flag > env var. Key NEVER stored or logged.
+      let apiKey: string;
+      try {
+        apiKey = byokKeyResolver.resolve(provider, { cliFlag: args.key || undefined });
+      } catch (err) {
+        consola.error((err as Error).message);
+        process.exitCode = 1;
+        return;
+      }
+
+      consola.start('Running via BYOK/%s (%s)…', provider, args.model);
+
+      try {
+        if (args.stream) {
+          const streamAdapter = getStreamAdapter(provider);
+          const { url, body, headers } = streamAdapter.buildStreamRequest(
+            args.model,
+            messages,
+            { maxTokens: 4096 }
+          );
+          const authHeaders = streamAdapter.authHeader(apiKey);
+
+          const res = await fetch(url, {
+            method: 'POST',
+            headers: { ...headers, ...authHeaders },
+            body,
+          });
+
+          if (!res.ok || !res.body) {
+            const text = await res.text();
+            throw new Error(`Provider error ${res.status}: ${text}`);
+          }
+
+          process.stdout.write('\n');
+          let eventType: string | undefined;
+          const reader = res.body.getReader();
+          const decoder = new TextDecoder();
+          let buf = '';
+
+          while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
+            buf += decoder.decode(value, { stream: true });
+            const lines = buf.split('\n');
+            buf = lines.pop() ?? '';
+            for (const line of lines) {
+              if (line.startsWith('event: ')) { eventType = line.slice(7).trim(); continue; }
+              if (!line.startsWith('data: ') && !line.trim()) continue;
+              const chunk = streamAdapter.parseStreamChunk(line, eventType);
+              if (chunk?.content) process.stdout.write(chunk.content);
+              if (chunk?.done) break;
+            }
+          }
+          process.stdout.write('\n');
+        } else {
+          const adapter = getAdapter(provider);
+          const { url, body, headers } = adapter.transformRequest(args.model, messages, { maxTokens: 4096 });
+          const authHeaders = adapter.authHeader(apiKey);
+
+          const res = await fetch(url, {
+            method: 'POST',
+            headers: { ...headers, ...authHeaders },
+            body,
+          });
+          if (!res.ok) {
+            const text = await res.text();
+            throw new Error(`Provider error ${res.status}: ${text}`);
+          }
+          const data = await res.json();
+          const result = adapter.transformResponse(data as never);
+          consola.log('\n%s', result.content);
+          consola.info('Tokens — in: %d, out: %d', result.usage.input_tokens, result.usage.output_tokens);
+        }
+      } catch (err) {
+        handleError(err);
+      }
+      return;
+    }
+
+    // ── Cloud mode (default) ─────────────────────────────────────────────────
+    consola.start('Running via LenserFight Cloud (%s)…', args.model);
+    try {
+      const config = loadConfig();
+      if (!config.authToken) {
+        consola.error('Cloud mode requires authentication. Run `lenserfight auth login` first.');
+        process.exitCode = 1;
+        return;
+      }
+
+      const result = await callRpc<Record<string, unknown>>(
+        'fn_execution_run_prompt',
+        {
+          p_model_key: args.model,
+          p_prompt: args.prompt,
+          p_system: args.system || null,
+        },
+        { requireAuth: true }
+      );
+
+      consola.log('\n%s', String(result?.output ?? result?.content ?? ''));
+      if (result?.token_input || result?.token_output) {
+        consola.info('Tokens — in: %d, out: %d', result.token_input ?? 0, result.token_output ?? 0);
+      }
+    } catch (err) {
+      handleError(err);
+    }
+  },
+});
+
+// ---------------------------------------------------------------------------
 // Root command
 // ---------------------------------------------------------------------------
 export default defineCommand({
   meta: {
     name: 'run',
-    description: 'Orchestrate battle execution: submit, vote, full, replay.',
+    description: 'Orchestrate battle execution and prompt execution.',
   },
   subCommands: {
     submit,
     vote,
     full,
     replay,
+    exec,
   },
 });
