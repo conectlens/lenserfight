@@ -147,7 +147,15 @@ export const CreateThreadModal: React.FC<CreateThreadModalProps> = ({
     try {
       const tag = await tagService.processUserInput(name)
       if (tag && editorRef.current) {
-        editorRef.current.insertTag({ id: tag.id, name: tag.name, count: 0 })
+        editorRef.current.insertTag({
+          id: tag.id,
+          name: tag.name,
+          slug: tag.slug,
+          visibility: tag.visibility,
+          created_at: new Date().toISOString(),
+          count: 0,
+          trendingScore: 0,
+        })
       }
     } catch (e) {
       console.error(e)
