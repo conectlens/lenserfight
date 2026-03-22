@@ -2,7 +2,7 @@ import { UserX, Sparkles } from 'lucide-react'
 import React, { useEffect, useState, useRef, useCallback } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 
-import { Avatar } from '@lenserfight/ui/components'
+import { Avatar, AppButton } from '@lenserfight/ui/components'
 import { Modal } from '@lenserfight/ui/modals'
 import { lenserService } from '@lenserfight/data/repositories'
 import { FollowsNetworkUser, TrendingLenser } from '@lenserfight/types'
@@ -174,17 +174,15 @@ export const NetworkModal: React.FC<NetworkModalProps> = ({
               </div>
             </Link>
             {user.lenserId !== currentLenserId && (
-              <button
+              <AppButton
+                size="sm"
+                variant={user.isFollowing ? 'secondary' : 'primary'}
                 onClick={() => handleFollowToggle(user)}
                 disabled={followingInProgress.has(user.lenserId)}
-                className={`px-3 py-1.5 rounded-full text-xs font-semibold transition-colors disabled:opacity-50 ${
-                  user.isFollowing
-                    ? 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
-                    : 'bg-primary text-gray-900 hover:bg-yellow-300'
-                }`}
+                className="!w-auto rounded-full"
               >
                 {user.isFollowing ? 'Following' : 'Follow'}
-              </button>
+              </AppButton>
             )}
             {index === users.length - 1 && <div ref={lastElementRef} />}
           </div>
@@ -263,13 +261,15 @@ export const NetworkModal: React.FC<NetworkModalProps> = ({
                             </div>
                           </Link>
                           {!isFollowing && (
-                            <button
+                            <AppButton
+                              size="sm"
+                              variant="primary"
                               onClick={() => handleTrendingFollow(lenser)}
                               disabled={followingInProgress.has(lenser.lenserId)}
-                              className="px-3 py-1.5 rounded-full text-xs font-semibold bg-primary text-gray-900 hover:bg-yellow-300 transition-colors disabled:opacity-50"
+                              className="!w-auto rounded-full"
                             >
                               Follow
-                            </button>
+                            </AppButton>
                           )}
                         </div>
                       )

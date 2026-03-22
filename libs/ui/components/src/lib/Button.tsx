@@ -1,9 +1,12 @@
 import React from 'react'
+import { toast } from 'sonner'
 
 export interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
-  variant?: 'primary' | 'secondary' | 'dark' | 'ghost'
+  variant?: 'primary' | 'secondary' | 'dark' | 'ghost' | 'danger'
   size?: 'sm' | 'md' | 'lg'
   isLoading?: boolean
+  /** When set, visually disables the button but keeps it clickable — shows this message as an error toast on click. */
+  contextError?: string | null
 }
 
 const variantClasses: Record<NonNullable<ButtonProps['variant']>, string> = {
@@ -14,6 +17,8 @@ const variantClasses: Record<NonNullable<ButtonProps['variant']>, string> = {
   dark: 'bg-deep-lens-navy-500 border border-transparent text-white hover:bg-deep-lens-navy-600 focus:ring-deep-lens-navy-500/50 shadow-sm',
   ghost:
     'bg-transparent text-gray-600 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-gray-200',
+  danger:
+    'bg-red-500 border border-transparent text-white hover:bg-red-600 focus:ring-red-500/50 shadow-sm',
 }
 
 const sizeClasses: Record<NonNullable<ButtonProps['size']>, string> = {
@@ -31,6 +36,8 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
       isLoading,
       className = '',
       disabled,
+      contextError,
+      onClick,
       ...props
     },
     ref
@@ -38,11 +45,21 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
     const baseStyle =
       'w-full rounded-lg font-medium transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-1 disabled:opacity-60 disabled:cursor-not-allowed dark:focus:ring-offset-gray-900'
 
+    const handleClick = (e: React.MouseEvent<HTMLButtonElement>) => {
+      if (contextError) {
+        toast.error(contextError)
+        return
+      }
+      onClick?.(e)
+    }
+
     return (
       <button
         ref={ref}
-        className={`${baseStyle} ${sizeClasses[size]} ${variantClasses[variant]} ${className} flex justify-center items-center`}
+        className={`${baseStyle} ${sizeClasses[size]} ${variantClasses[variant]} ${contextError ? 'opacity-50 cursor-not-allowed' : ''} ${className} flex justify-center items-center`}
         disabled={disabled || isLoading}
+        aria-disabled={!!contextError || disabled || isLoading}
+        onClick={handleClick}
         {...props}
       >
         {isLoading ? (
