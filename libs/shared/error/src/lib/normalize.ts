@@ -55,13 +55,27 @@ export function normalizeError(error: unknown): AppError {
     } satisfies UnauthorizedError
   }
 
-  // API business errors: { error: "Insufficient credit balance" }
+  // API business errors: { error: "Insufficient credit balance" } or { error: { message: "..." } }
   if (error && typeof error === 'object' && 'error' in (error as object)) {
-    const apiMsg = (error as Record<string, unknown>)['error']
-    if (typeof apiMsg === 'string' && apiMsg.trim()) {
+    const apiError = (error as Record<string, unknown>)['error']
+
+    // Handle nested error object with message property
+    if (apiError && typeof apiError === 'object' && 'message' in (apiError as object)) {
+      const nestedMsg = (apiError as Record<string, unknown>)['message']
+      if (typeof nestedMsg === 'string' && nestedMsg.trim()) {
+        return {
+          kind: 'api',
+          message: nestedMsg.trim(),
+          originalError: error,
+        } satisfies ApiError
+      }
+    }
+
+    // Handle simple string error message
+    if (typeof apiError === 'string' && apiError.trim()) {
       return {
         kind: 'api',
-        message: apiMsg.trim(),
+        message: apiError.trim(),
         originalError: error,
       } satisfies ApiError
     }
