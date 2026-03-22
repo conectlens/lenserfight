@@ -1,15 +1,17 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { executionService, walletService, generationService, walletApiClient } from '@lenserfight/data/repositories'
+import { executionService, walletService, walletApiClient } from '@lenserfight/data/repositories'
 import { queryKeys } from '@lenserfight/data/cache'
-import { PromptExecutionRecord, AIModel, PromptParam, WalletExecuteResponse, StreamState, StreamUsage } from '@lenserfight/types'
+import { PromptExecutionRecord, PromptParam, WalletExecuteResponse, StreamState, StreamUsage } from '@lenserfight/types'
 import { renderPrompt } from '@lenserfight/utils/text'
 import { useToast } from '@lenserfight/shared/error'
+import { useAIProviders, useAIModelsByProvider } from '@lenserfight/features/generations'
 
 const PAGE_SIZE = 20
 
 export interface TriggerLabExecutionDTO {
-  model: AIModel
+  providerKey: string
+  modelKey: string
   promptContent: string
   inputSnapshot: Record<string, any>
   params?: PromptParam[]
@@ -67,12 +69,19 @@ export const useLabController = (promptId: string, isAuthenticated = false) => {
     setHistoryOffset((prev) => prev + PAGE_SIZE)
   }, [hasMoreHistory, isLoadingHistory])
 
-  // --- AI Models query ---
-  const { data: aiModels = [], isLoading: isLoadingModels } = useQuery<AIModel[]>({
-    queryKey: queryKeys.aiModels.all,
-    queryFn: () => generationService.getAIModels(),
-    staleTime: 5 * 60_000,
-  })
+  // --- Provider / Model selection ---
+  const [selectedProviderKey, setSelectedProviderKey] = useState('')
+  const [selectedModelKey, setSelectedModelKey] = useState('')
+
+  const { data: providers = [], isLoading: isLoadingProviders } = useAIProviders()
+  const { data: providerModels = [], isLoading: isLoadingModels } = useAIModelsByProvider(
+    selectedProviderKey || null
+  )
+
+  const handleProviderChange = useCallback((key: string) => {
+    setSelectedProviderKey(key)
+    setSelectedModelKey('')
+  }, [])
 
   // --- Sync execution mutation via platform /execute/wallet ---
   const {
@@ -80,14 +89,12 @@ export const useLabController = (promptId: string, isAuthenticated = false) => {
     isPending: isTriggeringExecution,
     error: triggerError,
   } = useMutation({
-    mutationFn: ({ model, promptContent, inputSnapshot, params }: TriggerLabExecutionDTO) => {
+    mutationFn: ({ providerKey, modelKey, promptContent, inputSnapshot, params }: TriggerLabExecutionDTO) => {
       const resolvedContent = renderPrompt(promptContent, inputSnapshot, params ?? [])
       return walletService.executeWithWallet({
-        provider: model.provider,
-        model: model.key,
+        provider: providerKey,
+        model: modelKey,
         messages: [{ role: 'user', content: resolvedContent }],
-        max_tokens: model.max_tokens,
-        temperature: model.temperature,
       })
     },
     onSuccess: (result) => {
@@ -117,11 +124,9 @@ export const useLabController = (promptId: string, isAuthenticated = false) => {
       walletApiClient
         .streamWithWallet(
           {
-            provider: dto.model.provider,
-            model: dto.model.key,
+            provider: dto.providerKey,
+            model: dto.modelKey,
             messages: [{ role: 'user', content: resolvedContent }],
-            max_tokens: dto.model.max_tokens,
-            temperature: dto.model.temperature,
           },
           controller.signal,
           {
@@ -177,8 +182,14 @@ export const useLabController = (promptId: string, isAuthenticated = false) => {
     isLoadingHistory,
     hasMoreHistory,
     loadMoreHistory,
-    aiModels,
+    providers,
+    isLoadingProviders,
+    providerModels,
     isLoadingModels,
+    selectedProviderKey,
+    selectedModelKey,
+    setSelectedModelKey,
+    handleProviderChange,
     latestResult,
     triggerExecution,
     isTriggeringExecution,
