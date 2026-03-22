@@ -9,7 +9,7 @@ import {
   Sparkles,
   MessageSquarePlus,
   Bell,
-  Eye,
+  Users,
   Brain,
   Rocket,
   Trophy,
@@ -261,7 +261,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
           <SidebarItem
             onClick={() => handleNavigation('/lensers')}
-            icon={<Eye size={20} />}
+            icon={<Users size={20} />}
             label="Lensers"
             isActive={isRouteActive(location.pathname, '/lensers')}
             collapsed={!showLabels}
