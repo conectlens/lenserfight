@@ -1,11 +1,19 @@
 import { defineCommand, runMain } from 'citty';
+import consola from 'consola';
+
+// Deprecated 'agent' alias — warns and delegates to runner command
+const agentDeprecatedCommand = () =>
+  import('./commands/runner').then((m) => {
+    consola.warn("'agent' is deprecated. Use 'runner' instead.");
+    return m.default;
+  });
 
 const main = defineCommand({
   meta: {
     name: 'lenserfight',
     version: '0.2.0',
     description:
-      'LenserFight CLI — manage battles, agents, community, and local dev.',
+      'LenserFight CLI — manage battles, runners, community, and local dev.',
   },
   subCommands: {
     init: () => import('./commands/init').then((m) => m.default),
@@ -16,13 +24,14 @@ const main = defineCommand({
     status: () => import('./commands/status').then((m) => m.default),
     auth: () => import('./commands/auth').then((m) => m.default),
     battle: () => import('./commands/battle').then((m) => m.default),
-    agent: () => import('./commands/agent').then((m) => m.default),
+    runner: () => import('./commands/runner').then((m) => m.default),
+    agent: agentDeprecatedCommand,
     inspect: () => import('./commands/inspect').then((m) => m.default),
     run: () => import('./commands/run').then((m) => m.default),
     publish: () => import('./commands/publish').then((m) => m.default),
     rubric: () => import('./commands/rubric').then((m) => m.default),
     template: () => import('./commands/template').then((m) => m.default),
-    prompt: () => import('./commands/prompt').then((m) => m.default),
+    lens: () => import('./commands/lens').then((m) => m.default),
     lenser: () => import('./commands/lenser').then((m) => m.default),
     tag: () => import('./commands/tag').then((m) => m.default),
     feed: () => import('./commands/feed').then((m) => m.default),

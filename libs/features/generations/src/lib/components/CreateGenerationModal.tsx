@@ -18,7 +18,7 @@ interface CreateGenerationModalProps {
   isOpen: boolean
   onClose: () => void
   onSuccess: () => void
-  promptId: string
+  lensId: string
   existingUrls?: string[]
 }
 
@@ -32,7 +32,7 @@ export const CreateGenerationModal: React.FC<CreateGenerationModalProps> = ({
   isOpen,
   onClose,
   onSuccess,
-  promptId,
+  lensId,
   existingUrls = [],
 }) => {
   const { lenser } = useAuthenticatedLenser()
@@ -114,7 +114,7 @@ export const CreateGenerationModal: React.FC<CreateGenerationModalProps> = ({
 
     try {
       const dto: CreateGenerationDTO = {
-        prompt_template_id: promptId,
+        lens_id: lensId,
         ai_model_slug: aiModelSlug,
         visibility: 'public',
         input_text: resultType === 'text' ? content : undefined, // Store text result here

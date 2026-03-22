@@ -18,7 +18,7 @@ import {
   ProfileAccessPayload,
   PendingFollowRequest,
 } from '@lenserfight/types'
-import { PromptTemplateRecord } from '@lenserfight/types'
+import { LensRecord } from '@lenserfight/types'
 import { ThreadRecord } from '@lenserfight/types'
 import { supabase } from '@lenserfight/data/supabase'
 import { ApiResponseEnvelope, paginatedResponse } from 'contracts'
@@ -36,7 +36,7 @@ export interface LenserRepositoryPort {
     offset?: number,
     limit?: number,
     viewerId?: string
-  ): Promise<PromptTemplateRecord[]>
+  ): Promise<LensRecord[]>
   getThreadsByLenser(
     lenserId: string,
     offset?: number,
@@ -268,9 +268,9 @@ export class SupabaseLenserRepository implements LenserRepositoryPort {
     offset = 0,
     limit = 10,
     _viewerId?: string
-  ): Promise<PromptTemplateRecord[]> {
+  ): Promise<LensRecord[]> {
     const query = supabase
-      .from('vw_prompt_templates_public')
+      .from('vw_lenses_public')
       .select('*') // Reads denormalized profile/tags directly
       .eq('handle', handle)
       .order('created_at', { ascending: false })
@@ -278,7 +278,7 @@ export class SupabaseLenserRepository implements LenserRepositoryPort {
 
     const { data, error } = await query
     if (error) throw error
-    return data as PromptTemplateRecord[]
+    return data as LensRecord[]
   }
 
   async getThreadsByLenser(

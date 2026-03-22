@@ -1,8 +1,8 @@
 import React from 'react'
 
 const AUTH_APP_URL =
-  typeof import.meta !== 'undefined' && (import.meta as Record<string, unknown>).env
-    ? ((import.meta as Record<string, { VITE_AUTH_APP_URL?: string }>).env.VITE_AUTH_APP_URL ?? '/auth/login')
+  typeof import.meta !== 'undefined' && (import.meta as unknown as Record<string, unknown>).env
+    ? ((import.meta as unknown as Record<string, { VITE_AUTH_APP_URL?: string }>).env.VITE_AUTH_APP_URL ?? '/auth/login')
     : '/auth/login'
 
 interface UnauthorizedPageProps {

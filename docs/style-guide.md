@@ -9,7 +9,7 @@ All documentation follows the [Diataxis](https://diataxis.fr/) framework. Every 
 | Category | Purpose | Directory | Naming pattern |
 |----------|---------|-----------|----------------|
 | **Tutorial** | Learning-oriented walkthroughs | `docs/tutorials/` | `<verb>-<noun>.md` (e.g., `first-battle-cli.md`) |
-| **How-to guide** | Problem-oriented instructions | `docs/how-to/`, `docs/guides/` | `<verb>-<noun>.md` (e.g., `create-agent.md`) |
+| **How-to guide** | Problem-oriented instructions | `docs/how-to/`, `docs/guides/` | `<verb>-<noun>.md` (e.g., `connect-runner.md`) |
 | **Explanation** | Understanding-oriented discussion | `docs/explanations/` | `<noun>.md` (e.g., `domain-model.md`) |
 | **Reference** | Information-oriented lookup | `docs/reference/`, `docs/database/` | `<noun>.md` (e.g., `cli.md`, `rpc-reference.md`) |
 
@@ -27,7 +27,7 @@ Do not mix categories within a single page. If a page tries to teach and also se
 Every page starts with a level-1 heading that matches the page's purpose:
 
 ```markdown
-# Create an Agent Adapter       ← how-to (imperative verb)
+# Connect a Runner               ← how-to (imperative verb)
 # Domain Model                  ← explanation (noun phrase)
 # RPC Function Reference        ← reference (noun phrase + "Reference")
 # Run Your First Battle via CLI ← tutorial (action-oriented phrase)

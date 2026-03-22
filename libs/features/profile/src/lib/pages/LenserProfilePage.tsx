@@ -13,18 +13,18 @@ import { useShareContext } from '@lenserfight/features/share'
 import { useAnalytics } from '@lenserfight/infra/analytics'
 import { queryKeys } from '@lenserfight/data/cache'
 import { lenserService } from '@lenserfight/data/repositories'
-import { promptsService } from '@lenserfight/data/repositories'
+import { lensesService } from '@lenserfight/data/repositories'
 import { reactionService } from '@lenserfight/data/repositories'
 import { threadsService } from '@lenserfight/data/repositories'
 import { Lenser, LenserStats, LenserActivityPoint, LenserProfileDTO, ProfileAccessPayload } from '@lenserfight/types'
-import { PromptTemplateViewModel } from '@lenserfight/types'
+import { LensViewModel } from '@lenserfight/types'
 import { ActivityFeedItem } from '@lenserfight/types'
 import { ThreadFeedItem } from '@lenserfight/types'
 import { XPSummary } from '@lenserfight/types'
 import { ThreadsListCard } from '@lenserfight/features/home'
-import { CreatePromptModal } from '@lenserfight/features/prompts'
-import { PromptCard } from '@lenserfight/features/prompts'
-import { useCreatePrompt } from '@lenserfight/features/prompts'
+import { CreateLensModal } from '@lenserfight/features/lenses'
+import { LensCard } from '@lenserfight/features/lenses'
+import { useCreateLens } from '@lenserfight/features/lenses'
 import { CreateThreadModal } from '@lenserfight/features/threads'
 import { LenserActionsList } from '../components/LenserActionsList'
 import { LenserActivityHeatmap } from '../components/LenserActivityHeatmap'
@@ -140,7 +140,7 @@ export const LenserProfilePage: React.FC = () => {
     error: promptError,
     submit: submitPrompt,
     isEditMode: isPromptEditMode,
-  } = useCreatePrompt()
+  } = useCreateLens()
 
   const [isThreadModalOpen, setIsThreadModalOpen] = useState(false)
   const [editingThread, setEditingThread] = useState<any>(null)
@@ -211,7 +211,7 @@ export const LenserProfilePage: React.FC = () => {
 
       switch (targetTab) {
         case 'prompts':
-          newItems = await promptsService.getLenserPrompts(
+          newItems = await lensesService.getLenserLenses(
             viewedProfile.handle,
             offset,
             PAGE_SIZE,
@@ -300,7 +300,7 @@ export const LenserProfilePage: React.FC = () => {
   const handleEditPrompt = (id: string) => {
     const promptToEdit = items.find((p: any) => p.id === id)
     if (promptToEdit) {
-      promptsService.getPromptDetail(id, currentUser?.id).then((detail) => {
+      lensesService.getLensDetail(id, currentUser?.id).then((detail) => {
         if (detail) {
           openPromptModal({
             id: detail.id,
@@ -345,7 +345,7 @@ export const LenserProfilePage: React.FC = () => {
     try {
       // Use current user handle for authorization check in service
       if (deleteTarget.type === 'prompt') {
-        await promptsService.deletePrompt(deleteTarget.id, currentUser.handle)
+        await lensesService.deleteLens(deleteTarget.id, currentUser.handle)
         removeCacheItem('prompts', deleteTarget.id)
         alert('Prompt deleted successfully.')
       } else {
@@ -535,9 +535,9 @@ export const LenserProfilePage: React.FC = () => {
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 gap-6">
                   {items.map((prompt) => (
                     <div key={prompt.id} className="h-full">
-                      <PromptCard
-                        prompt={prompt as PromptTemplateViewModel}
-                        onClick={(id) => navigate(`/len/p/${id}`)}
+                      <LensCard
+                        lens={prompt as LensViewModel}
+                        onClick={(id) => navigate(`/lenses/${id}`)}
                         isOwner={isOwner}
                         onEdit={handleEditPrompt}
                         onDelete={() => setDeleteTarget({ id: prompt.id, type: 'prompt' })}
@@ -620,7 +620,7 @@ export const LenserProfilePage: React.FC = () => {
         </div>
       </div>
 
-      <CreatePromptModal
+      <CreateLensModal
         isOpen={isPromptModalOpen}
         onClose={closePromptModal}
         onSubmit={() => submitPrompt(handlePromptSubmit)}

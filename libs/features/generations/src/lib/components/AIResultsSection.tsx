@@ -13,12 +13,12 @@ import { GenerationMasonryGrid } from './GenerationMasonryGrid'
 import { GenerationPreviewModal } from './GenerationPreviewModal'
 
 interface AIResultsSectionProps {
-  promptId: string
+  lensId: string
 }
 
 const PAGE_SIZE = 20
 
-export const AIResultsSection: React.FC<AIResultsSectionProps> = ({ promptId }) => {
+export const AIResultsSection: React.FC<AIResultsSectionProps> = ({ lensId }) => {
   const { lenser, hasLenser } = useAuthenticatedLenser()
   const [generations, setGenerations] = useState<AIGeneration[]>([])
   const [loading, setLoading] = useState(false)
@@ -59,12 +59,12 @@ export const AIResultsSection: React.FC<AIResultsSectionProps> = ({ promptId }) 
 
   // Fetch Logic
   const fetchGenerations = async (pageNum: number, reset = false) => {
-    if (!promptId || !lenser) return
+    if (!lensId || !lenser) return
 
     setLoading(true)
     try {
       const offset = pageNum * PAGE_SIZE
-      const newItems = await generationService.getGenerations(promptId, lenser.id, {
+      const newItems = await generationService.getGenerations(lensId, lenser.id, {
         limit: PAGE_SIZE,
         offset,
         mediaKind: mediaFilter,
@@ -90,7 +90,7 @@ export const AIResultsSection: React.FC<AIResultsSectionProps> = ({ promptId }) 
     setPage(0)
     setHasMore(true)
     fetchGenerations(0, true)
-  }, [promptId, lenser?.id, mediaFilter, modelFilter])
+  }, [lensId, lenser?.id, mediaFilter, modelFilter])
 
   // Infinite Scroll Observer
   const lastElementRef = useCallback(
@@ -218,7 +218,7 @@ export const AIResultsSection: React.FC<AIResultsSectionProps> = ({ promptId }) 
         isOpen={isCreateModalOpen}
         onClose={() => setIsCreateModalOpen(false)}
         onSuccess={handleCreateSuccess}
-        promptId={promptId}
+        lensId={lensId}
         existingUrls={existingUrls}
       />
 

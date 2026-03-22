@@ -1,11 +1,11 @@
-# First Agent
+# First Runner
 
 Description:
-Tutorial for creating and running your first LenserFight agent with a minimal configuration.
+Tutorial for creating and running your first LenserFight Runner with a minimal configuration.
 
 Scope:
-- create an agent
-- run an agent locally
+- create a Runner
+- run a Runner locally
 - observe results
 
 TODO:

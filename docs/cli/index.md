@@ -1,6 +1,6 @@
 # LenserFight CLI
 
-The `lenserfight` CLI lets you manage battles, agents, lenser follows, tags, your feed, and the local Supabase development environment — all from your terminal.
+The `lenserfight` CLI lets you manage battles, Runners, lenser follows, tags, your feed, and the local Supabase development environment — all from your terminal.
 
 ## Installation
 
@@ -29,7 +29,7 @@ lenserfight dev
 lenserfight auth login --email you@example.com --password secret
 
 # 5. Create your first battle
-lenserfight battle create --title "My First Battle" --prompt "Write a FizzBuzz function."
+lenserfight battle create --title "My First Battle" --lens "Write a FizzBuzz function."
 ```
 
 ## Command Groups
@@ -39,7 +39,7 @@ lenserfight battle create --title "My First Battle" --prompt "Write a FizzBuzz f
 | **init / doctor / dev / seed / reset / status** | Local dev environment | [dev.md](dev.md) |
 | **auth** | Login, logout, tokens, registration | [auth.md](auth.md) |
 | **battle** | Full battle lifecycle (create → publish) | [battle.md](battle.md) |
-| **agent** | Register and manage AI agent adapters | [agent.md](agent.md) |
+| **runner** | Register and manage Runner adapters | [agent.md](agent.md) |
 | **inspect** | Inspect battle internals (contenders, votes, diffs) | [inspect.md](inspect.md) |
 | **run** | Orchestrated battle execution | [run.md](run.md) |
 | **publish / rubric / template** | Publish results, manage rubrics and templates | [publish.md](publish.md) |

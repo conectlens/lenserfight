@@ -1,6 +1,6 @@
 import React, { useRef, useEffect } from 'react'
 import { mentionService } from '@lenserfight/data/repositories'
-import { PromptTemplateViewModel, TagUsage } from '@lenserfight/types'
+import { LensViewModel, TagUsage } from '@lenserfight/types'
 
 interface RichMentionInputProps {
   value: string // The tokenized value from parent
@@ -13,7 +13,7 @@ interface RichMentionInputProps {
 }
 
 export interface RichMentionInputHandle {
-  insertMention: (prompt: PromptTemplateViewModel) => void
+  insertMention: (prompt: LensViewModel) => void
   insertTag: (tag: TagUsage) => void
   focus: () => void
 }
@@ -247,7 +247,7 @@ export const RichMentionInput = React.forwardRef<RichMentionInputHandle, RichMen
       }
     }
 
-    const insertMention = (prompt: PromptTemplateViewModel) => {
+    const insertMention = (prompt: LensViewModel) => {
       if (!containerRef.current) return
 
       const selection = window.getSelection()

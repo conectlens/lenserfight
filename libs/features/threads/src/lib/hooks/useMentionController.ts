@@ -1,14 +1,14 @@
 import React, { useState, useEffect } from 'react'
 
-import { promptsService } from '@lenserfight/data/repositories'
-import { PromptTemplateViewModel } from '@lenserfight/types'
+import { lensesService } from '@lenserfight/data/repositories'
+import { LensViewModel } from '@lenserfight/types'
 import { MentionParser } from '@lenserfight/utils/text'
 import { getCaretCoordinates } from '@lenserfight/utils/dom'
 
 export const useMentionController = () => {
   const [isMentioning, setIsMentioning] = useState(false)
   const [query, setQuery] = useState('')
-  const [suggestions, setSuggestions] = useState<PromptTemplateViewModel[]>([])
+  const [suggestions, setSuggestions] = useState<LensViewModel[]>([])
   const [activeIndex, setActiveIndex] = useState(0)
   const [position, setPosition] = useState({ top: 0, left: 0 })
   const [mentionStartPos, setMentionStartPos] = useState<number>(-1)
@@ -20,9 +20,9 @@ export const useMentionController = () => {
     const timer = setTimeout(async () => {
       try {
         // Use the existing prompts service to search
-        const results = await promptsService.search(query)
+        const results = await lensesService.search(query)
         // Limit to 5 results for the dropdown
-        setSuggestions(results.slice(0, 5))
+        setSuggestions((results.data ?? []).slice(0, 5))
         setActiveIndex(0)
       } catch (e) {
         console.error('Mention search failed', e)
@@ -67,7 +67,7 @@ export const useMentionController = () => {
   }
 
   const selectPrompt = (
-    prompt: PromptTemplateViewModel,
+    prompt: LensViewModel,
     currentContent: string,
     setValue: (val: string) => void,
     textareaRef: React.RefObject<HTMLTextAreaElement>

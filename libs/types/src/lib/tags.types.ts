@@ -22,7 +22,7 @@ export interface TagUsage extends TagRecord {
   weight?: number // Normalized value (1-10) for UI scaling
 }
 
-export type ContentType = 'thread' | 'prompt' | 'challenge' | 'ai_generation' | 'all'
+export type ContentType = 'thread' | 'lens' | 'challenge' | 'ai_generation' | 'all'
 export type SortOption = 'newest' | 'popular' | 'trending'
 
 export interface TaggedContentItem {
@@ -68,7 +68,7 @@ export type ReportReasonEnum = 'spam' | 'harassment' | 'misinformation' | 'off_t
 export const REPORT_REASONS: ReportReasonEnum[] = ['spam', 'harassment', 'misinformation', 'off_topic', 'other']
 
 export interface ContentReportDTO {
-  targetType: 'thread' | 'prompt_template'
+  targetType: 'thread' | 'lens'
   targetId: string
   reason: ReportReasonEnum
 }

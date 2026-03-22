@@ -36,7 +36,7 @@ export const LenserActionsList: React.FC<LenserActionsListProps> = ({ actions })
     else if (reaction === 'clap') actionVerb = 'Clapped for'
 
     let entityName = 'item'
-    if (targetType === 'prompt_template') entityName = 'prompt'
+    if (targetType === 'lens') entityName = 'lens'
     else if (targetType === 'thread') entityName = 'post'
     else if (targetType === 'thread_reply') entityName = 'reply'
 
@@ -44,8 +44,8 @@ export const LenserActionsList: React.FC<LenserActionsListProps> = ({ actions })
   }
 
   const handleClick = (item: ActivityFeedItem) => {
-    if (item.targetType === 'prompt_template') {
-      navigate(`/len/p/${item.targetId}`)
+    if (item.targetType === 'lens') {
+      navigate(`/lenses/${item.targetId}`)
     } else if (item.targetType === 'thread') {
       navigate(`/threads/${item.targetId}`)
     } else if (item.targetType === 'thread_reply') {

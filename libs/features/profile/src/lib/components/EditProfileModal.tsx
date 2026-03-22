@@ -188,7 +188,7 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({
         display_name: displayName,
         headline: headline,
         bio: bio,
-        website_url: trimmedWebsiteUrl || null, // Convert empty string to null
+        website_url: trimmedWebsiteUrl || undefined,
       })
     } catch (e: any) {
       console.error('Failed to save profile', e)

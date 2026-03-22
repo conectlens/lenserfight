@@ -4,7 +4,6 @@ import {
   MoreHorizontal,
   Settings,
   LogOut,
-  Lightbulb,
   User,
   Sparkles,
   MessageSquarePlus,
@@ -260,22 +259,18 @@ export const Sidebar: React.FC<SidebarProps> = ({
           />
 
           <SidebarItem
-            onClick={() => handleNavigation('/len/p')}
-            icon={<Lightbulb size={20} />}
-            label="Prompts"
-            isActive={isRouteActive(location.pathname, '/len/p')}
+            onClick={() => handleNavigation('/lenses')}
+            icon={<Brain size={20} />}
+            label="Lenses"
+            isActive={isRouteActive(location.pathname, '/lenses')}
             collapsed={!showLabels}
           />
 
           <SidebarItem
-            onClick={() => handleNavigation('/len')}
+            onClick={() => handleNavigation('/rays')}
             icon={<Cloud size={20} />}
-            label="Len Cloud"
-            // Must match /len root but EXCLUDE /len/p to avoid double activation
-            isActive={
-              isRouteActive(location.pathname, '/len') &&
-              !isRouteActive(location.pathname, '/len/p')
-            }
+            label="Ray Cloud"
+            isActive={isRouteActive(location.pathname, '/rays')}
             collapsed={!showLabels}
           />
 
@@ -295,17 +290,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
             collapsed={!showLabels}
           />
 
-          {/* Coming Soon Placeholders */}
-          <div className="pt-4 mt-2">
-            <div className="space-y-1">
-              <SidebarItem
-                icon={<Brain size={20} />}
-                label="Lens"
-                isComingSoon
-                collapsed={!showLabels}
-              />
-            </div>
-          </div>
         </nav>
 
         <div className="flex-shrink-0 px-3 pb-3 pt-2 bg-gray-50 dark:bg-gray-800 mt-auto space-y-3">

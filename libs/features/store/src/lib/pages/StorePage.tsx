@@ -25,7 +25,7 @@ const CreditPackCard: React.FC<{
   buying: boolean
 }> = ({ product, index, onBuy, buying }) => {
   const isPopular = index === POPULAR_INDEX
-  const safeDescription = safeRenderHtml(product.description)
+  const safeDescription = safeRenderHtml(product.description ?? '')
 
   return (
     <div
@@ -101,7 +101,7 @@ const StoreProductsView: React.FC = () => {
         variantId: product.variantId,
         ...(user?.email ? { email: user.email } : {}),
       })
-      const checkoutUrl = checkout.checkoutUrl || checkout.checkout_url
+      const checkoutUrl = checkout.checkoutUrl
       if (!checkoutUrl) {
         throw new Error('Checkout failed: missing checkout URL.')
       }

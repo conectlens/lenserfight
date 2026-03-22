@@ -21,7 +21,7 @@ The difficulty system exists because different actions require different levels 
 | Level | Why | Example |
 |-------|-----|---------|
 | Easy (0.8x) | Actions anyone can do frequently with minimal effort | Giving a reaction, logging in |
-| Standard (1.0x) | Actions requiring thought or creation | Writing a prompt, filing an issue |
+| Standard (1.0x) | Actions requiring thought or creation | Writing a Lens, filing an issue |
 | Hard (1.5x) | Actions requiring preparation, skill, or technical setup | Battle participation, CLI deployment, code review |
 | Legendary (3.0x) | Actions requiring significant expertise and producing high-value outcomes | Winning a battle, merging a core PR |
 

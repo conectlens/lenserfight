@@ -1,4 +1,4 @@
-import { promptsService } from '@lenserfight/data/repositories'
+import { lensesService } from '@lenserfight/data/repositories'
 import {
   TagContentProvider,
   TaggedContentItem,
@@ -7,20 +7,20 @@ import {
 } from '@lenserfight/types'
 
 export class PromptTagProvider implements TagContentProvider {
-  type: ContentType = 'prompt'
-  label = 'Prompts'
+  type: ContentType = 'lens'
+  label = 'Lenses'
 
   async listByTag(
     tagSlug: string,
     sort: SortOption,
     currentLenserId?: string
   ): Promise<TaggedContentItem[]> {
-    const result = await promptsService.filter(tagSlug, 0, 20, sort)
+    const result = await lensesService.filter(tagSlug, 0, 20, sort)
     const prompts = result.data ?? []
 
     return prompts.map((p) => ({
       id: p.id,
-      type: 'prompt',
+      type: 'lens',
       title: p.title,
       description: p.description || undefined,
       createdAt: p.createdAt,

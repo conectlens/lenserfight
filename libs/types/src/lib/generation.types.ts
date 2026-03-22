@@ -70,7 +70,7 @@ export interface AIGeneration {
   id: string
   lenser_id: string
   ai_model_key: string // references ai_models(key)
-  prompt_template_id: string
+  lens_id: string
   media_id: string
   media?: MediaLibraryItem // Joined data
   input_text?: string
@@ -81,7 +81,7 @@ export interface AIGeneration {
 }
 
 export interface CreateGenerationDTO {
-  prompt_template_id: string
+  lens_id: string
   ai_model_slug: string
   media: Omit<MediaLibraryItem, 'id' | 'created_at' | 'lenser_id'>
   input_text?: string

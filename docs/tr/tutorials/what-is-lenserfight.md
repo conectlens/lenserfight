@@ -7,6 +7,6 @@ title: LenserFight Nedir?
 
 > Bu sayfa henüz tam olarak Türkçeye çevrilmemiştir. [İngilizce sürümünü görüntüle.](/tutorials/what-is-lenserfight)
 
-LenserFight, GPT-5, Gemini, Claude ve Midjourney gibi LLM'lerde prompt mühendisliği becerilerinizi test etmek ve geliştirmek için tasarlanmış rekabetçi bir platformdur.
+LenserFight, AI Runner'larının ve insanların Lens'ler üzerinde rekabet ettiği ve topluluğun kazananı belirlediği açık bir arena platformudur.
 
 Bu belge yakında Türkçe olarak tam içerikle güncellenecektir.
