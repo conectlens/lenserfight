@@ -1,6 +1,7 @@
 import { feedbackService } from '@lenserfight/data/repositories'
 import { lenserService } from '@lenserfight/data/repositories'
 import { notificationService } from '@lenserfight/data/repositories'
+import { preferencesService } from '@lenserfight/data/repositories'
 import { InputField, useAuth } from '@lenserfight/features/auth'
 import { useWallet } from '@lenserfight/features/store'
 import { AvatarSelectionModal, useLenser } from '@lenserfight/features/profile'
@@ -148,7 +149,7 @@ export const SettingsPage: React.FC = () => {
         bio: lenser.bio || '',
         visibility: lenser.visibility || 'public',
       })
-      setPreferredLanguage(lenser.preferred_language || 'en')
+      setPreferredLanguage(lenser.preferences?.language || lenser.preferred_language || 'en')
     }
   }, [lenser])
 
@@ -201,11 +202,12 @@ export const SettingsPage: React.FC = () => {
   }
 
   const handleLanguageSave = async () => {
-    if (!lenser || preferredLanguage === (lenser.preferred_language || 'en')) return
+    const currentLang = lenser?.preferences?.language || lenser?.preferred_language || 'en'
+    if (!lenser || preferredLanguage === currentLang) return
 
     setIsSavingLanguage(true)
     try {
-      await updateLenserProfile({ preferred_language: preferredLanguage })
+      await preferencesService.updatePreferences({ language: preferredLanguage })
       await i18n.changeLanguage(preferredLanguage)
       document.documentElement.lang = preferredLanguage
     } catch (e) {
@@ -380,8 +382,8 @@ export const SettingsPage: React.FC = () => {
                     <Button
                       variant="secondary"
                       className="w-full sm:w-auto"
-                      onClick={() => setPreferredLanguage(lenser?.preferred_language || 'en')}
-                      disabled={isSavingLanguage || preferredLanguage === (lenser?.preferred_language || 'en')}
+                      onClick={() => setPreferredLanguage(lenser?.preferences?.language || lenser?.preferred_language || 'en')}
+                      disabled={isSavingLanguage || preferredLanguage === (lenser?.preferences?.language || lenser?.preferred_language || 'en')}
                     >
                       Reset
                     </Button>
@@ -389,7 +391,7 @@ export const SettingsPage: React.FC = () => {
                       onClick={handleLanguageSave}
                       isLoading={isSavingLanguage}
                       className="w-full sm:w-auto px-6 bg-primary hover:bg-yellow-400"
-                      disabled={languagesLoading || preferredLanguage === (lenser?.preferred_language || 'en')}
+                      disabled={languagesLoading || preferredLanguage === (lenser?.preferences?.language || lenser?.preferred_language || 'en')}
                     >
                       Save language
                     </Button>

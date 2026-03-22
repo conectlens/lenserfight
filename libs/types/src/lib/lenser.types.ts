@@ -13,10 +13,30 @@ export interface LenserCompactProfile {
   current_level: number
 }
 
+/**
+ * Full preferences row from `lensers.preferences` (1:1 with profiles).
+ * Non-optional fields mirror DB NOT NULL columns.
+ */
 export interface LenserPreferences {
-  theme?: 'light' | 'dark' | 'system'
-  sidebar_collapsed?: boolean
-  [key: string]: any // Forward compatibility
+  id?: string
+  lenser_id?: string
+  /** ISO 639-1 language code. Always present, defaults to 'en'. */
+  language: string
+  theme: 'light' | 'dark' | 'system'
+  notifications: Record<string, unknown>
+  sidebar: Record<string, unknown>
+  content_visibility: 'public' | 'community' | 'private'
+  email_digest: boolean
+  ai_provider_key?: string | null
+  ai_model_key?: string | null
+  ai_persona?: string | null
+  ai_ruleset: Record<string, unknown>
+  wallet_mode: 'BYOK' | 'CLOUD'
+  ai_data_usage: boolean
+  hide_actions: boolean
+  cron_config: Record<string, unknown>
+  created_at?: string
+  updated_at?: string
 }
 
 export interface Language {
@@ -42,7 +62,9 @@ export interface Lenser {
   visibility?: 'public' | 'private'
   is_in_waiting_list?: boolean
   is_super_admin?: boolean // Added for RBAC via Lenser profile
+  /** @deprecated Use `preferences.language` from lensers.preferences table. */
   preferred_language?: string
+  /** Structured preferences row from lensers.preferences (1:1 with profile). */
   preferences?: LenserPreferences
   onboarding_step?: number         // 0=not started, 1=handle created, 2=complete
   onboarding_completed_at?: string | null
