@@ -271,7 +271,7 @@ export const HomePage: React.FC = () => {
           {/* Suggested Lensers / New Lensers Widget */}
           <Card className="p-6">
             <h3 className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-4">
-              {showForYou ? 'Suggested Lensers' : 'New Lensers'}
+              {showForYou && suggestedLensers?.length ? 'Suggested Lensers' : 'New Lensers'}
             </h3>
             {(showForYou ? suggestedLoading : lensersLoading) ? (
               <div className="space-y-3">
@@ -282,65 +282,61 @@ export const HomePage: React.FC = () => {
                   </div>
                 ))}
               </div>
-            ) : showForYou ? (
-              !suggestedLensers || suggestedLensers.length === 0 ? (
-                <MinimalAlert icon={UserPlus} text="No suggestions yet" />
-              ) : (
-                <div className="space-y-3">
-                  {suggestedLensers.slice(0, 5).map((user) => {
-                    const isFollowed = followedLenserIds.has(user.lenserId)
-                    return (
-                      <div key={user.lenserId} className="flex items-center gap-2">
-                        <div
-                          className="flex items-center gap-2 flex-1 min-w-0 cursor-pointer p-1 -mx-1 hover:bg-gray-50 dark:hover:bg-gray-700/50 rounded-lg transition-colors"
-                          onClick={() => navigate(`/lenser/${user.handle}`)}
-                        >
-                          <Avatar
-                            src={user.avatarUrl}
-                            alt={user.displayName}
-                            size="md"
-                            className="!w-9 !h-9 ring-2 ring-white dark:ring-gray-800 flex-shrink-0"
-                          />
-                          <div className="flex-1 min-w-0">
-                            <p className="text-sm font-semibold text-gray-900 dark:text-gray-100 truncate">
-                              {user.displayName}
-                            </p>
-                            <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
-                              @{user.handle}
-                            </p>
-                          </div>
+            ) : showForYou && suggestedLensers && suggestedLensers.length > 0 ? (
+              <div className="space-y-3">
+                {suggestedLensers.slice(0, 5).map((user) => {
+                  const isFollowed = followedLenserIds.has(user.lenserId)
+                  return (
+                    <div key={user.lenserId} className="flex items-center gap-2">
+                      <div
+                        className="flex items-center gap-2 flex-1 min-w-0 cursor-pointer p-1 -mx-1 hover:bg-gray-50 dark:hover:bg-gray-700/50 rounded-lg transition-colors"
+                        onClick={() => navigate(`/lenser/${user.handle}`)}
+                      >
+                        <Avatar
+                          src={user.avatarUrl}
+                          alt={user.displayName}
+                          size="md"
+                          className="!w-9 !h-9 ring-2 ring-white dark:ring-gray-800 flex-shrink-0"
+                        />
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-semibold text-gray-900 dark:text-gray-100 truncate">
+                            {user.displayName}
+                          </p>
+                          <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
+                            @{user.handle}
+                          </p>
                         </div>
-                        <button
-                          onClick={() => {
-                            if (isFollowed) {
-                              unfollowLenser.mutate(user.lenserId, {
-                                onSuccess: () =>
-                                  setFollowedLenserIds((prev) => {
-                                    const next = new Set(prev)
-                                    next.delete(user.lenserId)
-                                    return next
-                                  }),
-                              })
-                            } else {
-                              followLenser.mutate(user.lenserId, {
-                                onSuccess: () =>
-                                  setFollowedLenserIds((prev) => new Set([...prev, user.lenserId])),
-                              })
-                            }
-                          }}
-                          className={`flex-shrink-0 px-3 py-1 rounded-full text-xs font-semibold border transition-colors ${
-                            isFollowed
-                              ? 'border-primary text-primary bg-primary/5 hover:bg-primary/10'
-                              : 'border-gray-200 dark:border-gray-600 text-gray-600 dark:text-gray-400 hover:border-primary hover:text-primary'
-                          }`}
-                        >
-                          {isFollowed ? 'Following' : 'Follow'}
-                        </button>
                       </div>
-                    )
-                  })}
-                </div>
-              )
+                      <button
+                        onClick={() => {
+                          if (isFollowed) {
+                            unfollowLenser.mutate(user.lenserId, {
+                              onSuccess: () =>
+                                setFollowedLenserIds((prev) => {
+                                  const next = new Set(prev)
+                                  next.delete(user.lenserId)
+                                  return next
+                                }),
+                            })
+                          } else {
+                            followLenser.mutate(user.lenserId, {
+                              onSuccess: () =>
+                                setFollowedLenserIds((prev) => new Set([...prev, user.lenserId])),
+                            })
+                          }
+                        }}
+                        className={`flex-shrink-0 px-3 py-1 rounded-full text-xs font-semibold border transition-colors ${
+                          isFollowed
+                            ? 'border-primary text-primary bg-primary/5 hover:bg-primary/10'
+                            : 'border-gray-200 dark:border-gray-600 text-gray-600 dark:text-gray-400 hover:border-primary hover:text-primary'
+                        }`}
+                      >
+                        {isFollowed ? 'Following' : 'Follow'}
+                      </button>
+                    </div>
+                  )
+                })}
+              </div>
             ) : lensersError ? (
               <MinimalAlert icon={AlertCircle} text="Error loading members" />
             ) : (
@@ -406,7 +402,7 @@ export const HomePage: React.FC = () => {
                           onClick={(e) => {
                             e.stopPropagation()
                             if (isFollowed) unfollowTag.mutate(tag.id)
-                            else followTag.mutate(tag.id)
+                            else followTag.mutate({ tagId: tag.id, slug: tag.slug, name: tag.name })
                           }}
                           title={isFollowed ? 'Unfollow tag' : 'Follow tag'}
                           className="opacity-0 group-hover:opacity-100 w-5 h-5 flex items-center justify-center rounded-full text-xs font-bold text-gray-400 hover:text-primary hover:bg-gray-100 dark:hover:bg-gray-700 transition-all"

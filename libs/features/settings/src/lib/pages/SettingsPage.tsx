@@ -1,12 +1,11 @@
 import { feedbackService } from '@lenserfight/data/repositories'
 import { lenserService } from '@lenserfight/data/repositories'
 import { notificationService } from '@lenserfight/data/repositories'
-import { walletService } from '@lenserfight/data/repositories'
 import { InputField, useAuth } from '@lenserfight/features/auth'
+import { useWallet } from '@lenserfight/features/store'
 import { AvatarSelectionModal, useLenser } from '@lenserfight/features/profile'
 import { Feedback, ProductTag, FeedbackStatus, Notification } from '@lenserfight/types'
 import { Avatar, Button, Card, DangerZone, LanguageSelectBox, Table, Column } from '@lenserfight/ui/components'
-import { queryKeys } from '@lenserfight/data/cache'
 import { ConfirmModal } from '@lenserfight/ui/modals'
 import { timeAgo } from '@lenserfight/utils/date'
 import { FEATURES } from '@lenserfight/utils/env'
@@ -132,12 +131,7 @@ export const SettingsPage: React.FC = () => {
     staleTime: 1000 * 60 * 5, // 5 minutes
   })
 
-  const { data: walletBalance } = useQuery({
-    queryKey: queryKeys.wallet.balance,
-    queryFn: walletService.getBalance,
-    enabled: isAuthenticated,
-    staleTime: 1000 * 60 * 2,
-  })
+  const { balance: walletBalance } = useWallet()
 
   const { data: languages = [], isLoading: languagesLoading } = useQuery({
     queryKey: ['core', 'languages'],
@@ -411,14 +405,14 @@ export const SettingsPage: React.FC = () => {
                     <div>
                       <p className="text-sm font-medium text-gray-700 dark:text-gray-300">Credit Balance</p>
                       <p className="text-xs text-gray-400 dark:text-gray-500">
-                        ≈ ${walletBalance ? (walletBalance.balance / 10000).toFixed(2) : '—'} USD
+                        ≈ ${walletBalance != null ? (walletBalance / 10000).toFixed(2) : '—'} USD
                       </p>
                     </div>
                   </div>
                   <div className="flex items-center gap-3">
                     <span className="text-lg font-bold text-gray-900 dark:text-white tabular-nums">
                       {walletBalance != null
-                        ? walletBalance.balance.toLocaleString()
+                        ? walletBalance.toLocaleString()
                         : '—'}{' '}
                       <span className="text-sm font-normal text-gray-400">cr</span>
                     </span>
