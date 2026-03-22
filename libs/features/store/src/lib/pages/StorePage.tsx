@@ -77,7 +77,7 @@ const CreditPackSkeleton: React.FC = () => (
 )
 
 export const StorePage: React.FC = () => {
-  const { user } = useAuth()
+  const { user, redirectToLogin } = useAuth()
   const [buyingId, setBuyingId] = useState<string | null>(null)
   const [checkoutError, setCheckoutError] = useState<string | null>(null)
 
@@ -109,6 +109,7 @@ export const StorePage: React.FC = () => {
           ? 'You must be signed in to purchase. Please log in and try again.'
           : message
       )
+      if (isAuthError) redirectToLogin(2000)
       setBuyingId(null)
     }
   }
