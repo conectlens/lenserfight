@@ -46,6 +46,8 @@ export type {
 export type { LenserBadge as ProfileLenserBadge } from './lib/lenser.types'
 export type {
   ContentReportDTO,
+  ReportReasonEnum,
+  REPORT_REASONS,
   ContentType,
   SortOption,
   TagActivityEventDTO,
