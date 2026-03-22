@@ -10,7 +10,7 @@ import { useShareContext } from '@lenserfight/features/share'
 import { useUI } from '@lenserfight/ui/components'
 import { promptsService } from '@lenserfight/data/repositories'
 import { useReportContent } from '@lenserfight/features/home'
-import { AIResultsSection } from '@lenserfight/features/generations'
+import { AIResultsSection, AIProviderModelSelect } from '@lenserfight/features/generations'
 import { CreateLenserProfileModal } from '@lenserfight/features/onboarding'
 import { CreatePromptModal } from '../components/CreatePromptModal'
 import { PromptAuthorList } from '../components/PromptAuthorList'
@@ -44,6 +44,14 @@ export const PromptDetailPage: React.FC = () => {
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false)
   const [isDeleting, setIsDeleting] = useState(false)
   const [deleteTargetId, setDeleteTargetId] = useState<string | null>(null)
+
+  const [selectedProviderKey, setSelectedProviderKey] = useState('')
+  const [selectedModelKey, setSelectedModelKey] = useState('')
+
+  const handleProviderChange = (key: string) => {
+    setSelectedProviderKey(key)
+    setSelectedModelKey('')
+  }
 
   const {
     isOpen: isCreateOpen,
@@ -204,6 +212,15 @@ export const PromptDetailPage: React.FC = () => {
 
           <div className="mb-8">
             <PromptBodyViewer content={prompt.content} onCopy={handleCopy} />
+          </div>
+
+          <div className="max-w-[860px] mx-auto mb-6">
+            <AIProviderModelSelect
+              providerKey={selectedProviderKey}
+              modelKey={selectedModelKey}
+              onProviderChange={handleProviderChange}
+              onModelChange={setSelectedModelKey}
+            />
           </div>
 
           <div className="max-w-[860px] mx-auto">

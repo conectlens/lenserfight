@@ -78,6 +78,17 @@ export interface CreateGenerationDTO {
   original_chat_url?: string | null
 }
 
+export interface AIProvider {
+  id: string
+  key: string
+  display_name: string
+}
+
+export interface AIProviderModel {
+  name: string
+  model_key: string
+}
+
 export interface GenerationFilterOptions {
   limit?: number
   offset?: number

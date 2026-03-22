@@ -4,6 +4,8 @@ import {
   AIGeneration,
   GenerationFilterOptions,
   AIModel,
+  AIProvider,
+  AIProviderModel,
 } from '@lenserfight/types'
 
 const repo = new SupabaseGenerationRepository()
@@ -29,5 +31,13 @@ export const generationService = {
 
   getAIModels: async (): Promise<AIModel[]> => {
     return repo.getAIModels()
+  },
+
+  getActiveProviders: async (): Promise<AIProvider[]> => {
+    return repo.getActiveProviders()
+  },
+
+  getModelsByProvider: async (providerKey: string): Promise<AIProviderModel[]> => {
+    return repo.getModelsByProvider(providerKey)
   },
 }
