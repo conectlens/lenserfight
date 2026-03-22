@@ -6,6 +6,7 @@ import { PromptExecutionRecord, PromptParam, WalletExecuteResponse, StreamState,
 import { renderPrompt } from '@lenserfight/utils/text'
 import { useToast } from '@lenserfight/shared/error'
 import { useAIProviders, useAIModelsByProvider } from '@lenserfight/features/generations'
+import { useAuth } from '@lenserfight/features/auth'
 
 const PAGE_SIZE = 20
 
@@ -20,6 +21,7 @@ export interface TriggerLabExecutionDTO {
 export const useLabController = (promptId: string, isAuthenticated = false) => {
   const queryClient = useQueryClient()
   const { toastError } = useToast()
+  const { redirectToLogin } = useAuth()
 
   // Pagination offset for execution history
   const [historyOffset, setHistoryOffset] = useState(0)
@@ -109,6 +111,12 @@ export const useLabController = (promptId: string, isAuthenticated = false) => {
   // --- Streaming execution ---
   const triggerStream = useCallback(
     (dto: TriggerLabExecutionDTO) => {
+      if (!isAuthenticated) {
+        setStreamError('401: Unauthenticated')
+        setStreamState('error')
+        redirectToLogin(2000)
+        return
+      }
       abortRef.current?.abort()
       const controller = new AbortController()
       abortRef.current = controller
@@ -159,7 +167,7 @@ export const useLabController = (promptId: string, isAuthenticated = false) => {
           }
         })
     },
-    [promptId, queryClient, toastError],
+    [promptId, queryClient, toastError, isAuthenticated, redirectToLogin],
   )
 
   const stopStream = useCallback(() => {
