@@ -46,7 +46,7 @@ const CreditPackCard: React.FC<{
       />
 
       <div className="text-4xl font-extrabold text-gray-900 dark:text-white tracking-tight mb-1">
-        {product.price_formatted}
+        ${(product.price_cents / 100).toFixed(2)}
       </div>
 
       <div className="text-xs text-gray-400 dark:text-gray-500 mb-8">

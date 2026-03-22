@@ -23,8 +23,8 @@ if (!import.meta.env.VITE_API_URL) {
 
 const API_BASE = import.meta.env.VITE_API_URL as string
 
-type WalletProductApi = Omit<WalletProduct, 'id'> & {
-  productId: string
+type WalletProductApi = Omit<WalletProduct, 'variantId'> & {
+  variant_id: string
 }
 
 async function getAuthHeader(): Promise<Record<string, string>> {
@@ -45,11 +45,11 @@ export const walletApiClient = {
   },
 
   async getProducts(): Promise<{ products: WalletProduct[] }> {
-    const res = await apiFetch(`${API_BASE}/wallet/products`)
+    const res = await apiFetch(`${API_BASE}/billing/products`)
     const data = await unwrapEnvelope<{ products: WalletProductApi[] }>(res)
     return {
-      products: data.products.map(({ productId, ...product }) => ({
-        id: productId,
+      products: data.products.map(({ variant_id, ...product }) => ({
+        variantId: variant_id,
         ...product,
       })),
     }
@@ -83,7 +83,7 @@ export const walletApiClient = {
 
   async checkout(req: WalletCheckoutRequest): Promise<WalletCheckoutResponse> {
     const authHeader = await getAuthHeader()
-    const res = await apiFetch(`${API_BASE}/wallet/checkout`, {
+    const res = await apiFetch(`${API_BASE}/billing/checkout`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -179,7 +179,7 @@ export const walletApiClient = {
       for (const raw of events) {
         const line = raw.replace(/^data: /, '').trim()
         if (!line) continue
-        const evt = JSON.parse(line) as { event: string; [key: string]: unknown }
+        const evt = JSON.parse(line) as { event: string;[key: string]: unknown }
         if (evt.event === 'start') callbacks.onStart(evt['run_id'] as string)
         if (evt.event === 'token') callbacks.onToken(evt['content'] as string)
         if (evt.event === 'end') {
@@ -235,7 +235,7 @@ export const walletApiClient = {
       for (const raw of events) {
         const line = raw.replace(/^data: /, '').trim()
         if (!line) continue
-        const evt = JSON.parse(line) as { event: string; [key: string]: unknown }
+        const evt = JSON.parse(line) as { event: string;[key: string]: unknown }
         if (evt.event === 'start') callbacks.onStart(evt['run_id'] as string)
         if (evt.event === 'token') callbacks.onToken(evt['content'] as string)
         if (evt.event === 'end') {

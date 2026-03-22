@@ -44,7 +44,7 @@ describe('walletApiClient.checkout', () => {
     })
 
     expect(fetchMock).toHaveBeenCalledWith(
-      expect.stringContaining('/wallet/checkout'),
+      expect.stringContaining('/billing/checkout'),
       expect.objectContaining({
         body: JSON.stringify({
           variant_id: 'var_123',
@@ -73,21 +73,24 @@ describe('walletApiClient.getProducts', () => {
     vi.restoreAllMocks()
   })
 
-  it('normalizes productId to id and preserves variantId', async () => {
+  it('normalizes variant_id to variantId', async () => {
     const fetchMock = vi.spyOn(globalThis, 'fetch').mockResolvedValue(
       envelopeResponse({
         products: [
           {
-            productId: '905584',
-            variantId: '1424384',
-            name: 'LenserFight Tokens',
-            description: '<p>10,000 credits</p>',
-            thumb_url: null,
-            large_thumb_url: null,
-            price: 999,
-            price_formatted: '$9.99',
+            id: 'uuid-product-1',
+            variant_id: 'uuid-variant-1',
+            ls_variant_id: 1424384,
+            variant_name: 'Default',
+            name: 'Clash Pack',
+            slug: 'clash-pack',
+            description: null,
+            price_cents: 999,
+            credits_granted: 999,
             pay_what_you_want: false,
+            buy_now_url: null,
             test_mode: true,
+            order_count: 14,
           },
         ],
       }),
@@ -96,21 +99,24 @@ describe('walletApiClient.getProducts', () => {
     const result = await walletApiClient.getProducts()
 
     expect(fetchMock).toHaveBeenCalledWith(
-      expect.stringContaining('/wallet/products'),
+      expect.stringContaining('/billing/products'),
       expect.any(Object),
     )
     expect(result.products).toEqual([
       {
-        id: '905584',
-        variantId: '1424384',
-        name: 'LenserFight Tokens',
-        description: '<p>10,000 credits</p>',
-        thumb_url: null,
-        large_thumb_url: null,
-        price: 999,
-        price_formatted: '$9.99',
+        id: 'uuid-product-1',
+        variantId: 'uuid-variant-1',
+        ls_variant_id: 1424384,
+        variant_name: 'Default',
+        name: 'Clash Pack',
+        slug: 'clash-pack',
+        description: null,
+        price_cents: 999,
+        credits_granted: 999,
         pay_what_you_want: false,
+        buy_now_url: null,
         test_mode: true,
+        order_count: 14,
       },
     ])
   })
