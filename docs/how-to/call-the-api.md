@@ -88,7 +88,7 @@ curl -X GET "$API_URL/wallet/transactions?page=1&limit=20" \
 No authentication required.
 
 ```bash
-curl -X GET "$API_URL/wallet/products"
+curl -X GET "$API_URL/billing/products"
 ```
 
 **Response:**
@@ -97,14 +97,19 @@ curl -X GET "$API_URL/wallet/products"
   "data": {
     "products": [
       {
-        "productId": "905584",
-        "variantId": "1424384",
-        "name": "Starter Pack",
-        "description": "500,000 credits to get started",
-        "price": 999,
-        "price_formatted": "$9.99",
+        "id": "uuid",
+        "name": "Clash Pack",
+        "slug": "clash-pack",
+        "description": null,
+        "price_cents": 999,
+        "credits_granted": 999,
         "pay_what_you_want": false,
-        "test_mode": false
+        "buy_now_url": null,
+        "test_mode": true,
+        "variant_id": "uuid",
+        "ls_variant_id": 1424384,
+        "variant_name": "Default",
+        "order_count": 14
       }
     ]
   },
@@ -112,35 +117,37 @@ curl -X GET "$API_URL/wallet/products"
 }
 ```
 
+- `price_cents`: Price in USD cents (999 = $9.99)
+- `credits_granted`: Credits awarded after purchase
+- `variant_id`: Internal UUID — pass to `POST /billing/checkout`
+- `order_count`: Number of paid orders — use to show a "Most Popular" badge
+
 ---
 
 ### Start a Checkout
 
 ```bash
-curl -X POST "$API_URL/wallet/checkout" \
+# 1. Get the internal variant UUID from the products endpoint
+VARIANT_ID=$(curl -s "$API_URL/billing/products" | jq -r '.data.products[] | select(.name=="Clash Pack") | .variant_id')
+
+# 2. Start checkout using the internal variant UUID
+curl -X POST "$API_URL/billing/checkout" \
   -H "Authorization: Bearer $JWT" \
   -H "Content-Type: application/json" \
-  -d '{"variant_id": "1424405"}'
+  -d "{\"variant_id\": \"$VARIANT_ID\"}"
 ```
 
 **Response:**
 ```json
 {
-  "data": { "checkout_url": "https://lemonsqueezy.com/checkout/..." },
+  "data": { "checkout_url": "https://lemonsqueezy.com/checkout/buy/..." },
   "meta": { "requestId": "req_7f3a1c9e", "durationMs": 145 }
 }
 ```
 
 Open `checkout_url` in the browser and complete payment with test card `4242 4242 4242 4242`.
 
-Common `variant_id` values:
-
-| Pack | Price | `variant_id` |
-|------|-------|--------------|
-| Starter | $9.99 | `1424384` |
-| Explorer | $24.99 | `1424401` |
-| Pro | $49.99 | `1424405` |
-| Power | $99.99 | `1424407` |
+**Note:** Always fetch `variant_id` from `GET /billing/products` — do not hardcode it. After the user completes purchase, a webhook grants the product's `credits_granted` to their wallet.
 
 ---
 
