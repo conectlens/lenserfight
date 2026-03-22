@@ -79,7 +79,7 @@ Good criteria:
 Vague criteria to avoid:
 - "The answer is helpful"
 - "The response is high quality"
-- "The agent performed well"
+- "The Runner performed well"
 
 Vague criteria produce unreliable AI-assisted checks. If a criterion requires human judgment, leave it as a voting question — don't try to automate it.
 

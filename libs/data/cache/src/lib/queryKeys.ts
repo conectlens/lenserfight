@@ -6,14 +6,14 @@ export const queryKeys = {
     personal: (lenserId: string) => [...queryKeys.threads.all, 'personal', lenserId] as const,
     detail: (id: string) => [...queryKeys.threads.all, 'detail', id] as const,
   },
-  prompts: {
-    all: ['prompts'] as const,
-    feed: (filter?: object) => [...queryKeys.prompts.all, 'feed', filter] as const,
-    top: ['prompts', 'top'] as const,
-    trending: (lang?: string) => [...queryKeys.prompts.all, 'trending', lang] as const,
-    personal: (lenserId: string) => [...queryKeys.prompts.all, 'personal', lenserId] as const,
-    detail: (id: string) => [...queryKeys.prompts.all, 'detail', id] as const,
-    composite: (id: string) => [...queryKeys.prompts.all, 'composite', id] as const,
+  lenses: {
+    all: ['lenses'] as const,
+    feed: (filter?: object) => [...queryKeys.lenses.all, 'feed', filter] as const,
+    top: ['lenses', 'top'] as const,
+    trending: (lang?: string) => [...queryKeys.lenses.all, 'trending', lang] as const,
+    personal: (lenserId: string) => [...queryKeys.lenses.all, 'personal', lenserId] as const,
+    detail: (id: string) => [...queryKeys.lenses.all, 'detail', id] as const,
+    composite: (id: string) => [...queryKeys.lenses.all, 'composite', id] as const,
   },
   lenser: {
     all: ['lenser'] as const,
@@ -36,7 +36,7 @@ export const queryKeys = {
     trending: ['tags', 'trending'] as const,
     followed: (lenserId: string) => [...queryKeys.tags.all, 'followed', lenserId] as const,
     detail: (slug: string) => [...queryKeys.tags.all, 'detail', slug] as const,
-    prompts: (slug: string, sort?: string) => [...queryKeys.tags.all, 'prompts', slug, sort] as const,
+    lenses: (slug: string, sort?: string) => [...queryKeys.tags.all, 'lenses', slug, sort] as const,
     threadList: (slug: string, sort?: string) => [...queryKeys.tags.all, 'threads', slug, sort] as const,
   },
   xp: {
@@ -61,8 +61,8 @@ export const queryKeys = {
   },
   executions: {
     all: ['executions'] as const,
-    history: (promptId: string, offset?: number) =>
-      [...queryKeys.executions.all, 'history', promptId, offset] as const,
+    history: (lensId: string, offset?: number) =>
+      [...queryKeys.executions.all, 'history', lensId, offset] as const,
     run: (runId: string) =>
       [...queryKeys.executions.all, 'run', runId] as const,
     artifacts: (runId: string) =>
@@ -75,11 +75,11 @@ export const queryKeys = {
     balance: ['wallet', 'balance'] as const,
     products: ['wallet', 'products'] as const,
   },
-  promptVersions: {
-    all: ['promptVersions'] as const,
-    list: (promptId: string) => [...queryKeys.promptVersions.all, 'list', promptId] as const,
-    detail: (versionId: string) => [...queryKeys.promptVersions.all, 'detail', versionId] as const,
-    latestPublished: (promptId: string) => [...queryKeys.promptVersions.all, 'latestPublished', promptId] as const,
+  lensVersions: {
+    all: ['lensVersions'] as const,
+    list: (lensId: string) => [...queryKeys.lensVersions.all, 'list', lensId] as const,
+    detail: (versionId: string) => [...queryKeys.lensVersions.all, 'detail', versionId] as const,
+    latestPublished: (lensId: string) => [...queryKeys.lensVersions.all, 'latestPublished', lensId] as const,
   },
   apiKeys: {
     all: ['apiKeys'] as const,

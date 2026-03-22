@@ -1,10 +1,14 @@
+import React from 'react'
+import { Routes, Route, Link } from 'react-router-dom'
 import { ErrorProvider, GlobalErrorRenderer } from '@lenserfight/shared/error'
+import { BattlesFeedPage } from '../pages/BattlesFeedPage'
+import { BattleDetailPage } from '../pages/BattleDetailPage'
+import { BattleResultPage } from '../pages/BattleResultPage'
+import { CreateBattlePage } from '../pages/CreateBattlePage'
 
-export function App() {
+function ArenaLandingPage() {
   return (
-    <ErrorProvider>
-      <GlobalErrorRenderer>
-        <main className="arena-shell">
+    <main className="arena-shell">
       <section className="arena-hero">
         <div className="arena-badge">lenserfight.com</div>
         <h1>Creator-first AI battles with result pages built to be shared.</h1>
@@ -17,6 +21,20 @@ export function App() {
           <span>Hybrid scoring</span>
           <span>Leaderboard-lite</span>
           <span>Invite-gated creation</span>
+        </div>
+        <div className="mt-6 flex gap-3 justify-center flex-wrap">
+          <Link
+            to="/battles"
+            className="inline-flex items-center gap-1 px-5 py-2.5 rounded-lg bg-gray-900 text-white text-sm font-medium hover:bg-gray-700 transition-colors"
+          >
+            Browse Battles →
+          </Link>
+          <Link
+            to="/battles/create"
+            className="inline-flex items-center gap-1 px-5 py-2.5 rounded-lg border border-gray-300 text-gray-700 text-sm font-medium hover:border-gray-500 transition-colors"
+          >
+            Create a Battle
+          </Link>
         </div>
       </section>
 
@@ -63,7 +81,21 @@ export function App() {
           </ul>
         </article>
       </section>
-        </main>
+    </main>
+  )
+}
+
+export function App() {
+  return (
+    <ErrorProvider>
+      <GlobalErrorRenderer>
+        <Routes>
+          <Route path="/" element={<ArenaLandingPage />} />
+          <Route path="/battles" element={<BattlesFeedPage />} />
+          <Route path="/battles/create" element={<CreateBattlePage />} />
+          <Route path="/battles/:slug" element={<BattleDetailPage />} />
+          <Route path="/battles/:slug/result" element={<BattleResultPage />} />
+        </Routes>
       </GlobalErrorRenderer>
     </ErrorProvider>
   )

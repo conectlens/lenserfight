@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom'
 import { queryKeys } from '@lenserfight/data/cache'
 import { useToast } from '@lenserfight/shared/error'
 import { lenserService, tagFollowsService } from '@lenserfight/data/repositories'
-import { promptsService } from '@lenserfight/data/repositories'
+import { lensesService } from '@lenserfight/data/repositories'
 import { threadsService } from '@lenserfight/data/repositories'
 import type { FollowPeriod, ContentReportDTO, TagFollowRecord } from '@lenserfight/types'
 
@@ -28,18 +28,18 @@ export const useThreadsFeed = () => {
   })
 }
 
-export const usePromptsFeed = (
+export const useLensesFeed = (
   searchQuery: string,
   selectedTag: string | null,
   sortOrder: 'newest' | 'popular'
 ) => {
   return useInfiniteQuery({
-    queryKey: keys.prompts.feed({ searchQuery, selectedTag, sortOrder }),
+    queryKey: keys.lenses.feed({ searchQuery, selectedTag, sortOrder }),
     queryFn: async ({ pageParam = 0 }) => {
-      if (searchQuery) return promptsService.search(searchQuery, pageParam, 12)
-      if (selectedTag) return promptsService.filter(selectedTag, pageParam, 12)
-      if (sortOrder) return promptsService.sort(sortOrder, pageParam, 12)
-      return promptsService.getPrompts(pageParam, 12)
+      if (searchQuery) return lensesService.search(searchQuery, pageParam, 12)
+      if (selectedTag) return lensesService.filter(selectedTag, pageParam, 12)
+      if (sortOrder) return lensesService.sort(sortOrder, pageParam, 12)
+      return lensesService.getLenses(pageParam, 12)
     },
     initialPageParam: 0,
     getNextPageParam: (lastPage) => {
@@ -51,10 +51,10 @@ export const usePromptsFeed = (
   })
 }
 
-export const useTopPrompts = () => {
+export const useTopLenses = () => {
   return useQuery({
-    queryKey: keys.prompts.top,
-    queryFn: () => promptsService.getTopPrompts(3),
+    queryKey: keys.lenses.top,
+    queryFn: () => lensesService.getTopLenses(3),
     staleTime: 1000 * 60 * 10,
   })
 }
@@ -93,9 +93,9 @@ export const useTrendingThreads = (lang?: string) => {
 
 export const useTrendingPrompts = (lang?: string) => {
   return useInfiniteQuery({
-    queryKey: keys.prompts.trending(lang),
+    queryKey: keys.lenses.trending(lang),
     queryFn: async ({ pageParam = 0 }) => {
-      return promptsService.getTrending(lang, pageParam, 20)
+      return lensesService.getTrending(lang, pageParam, 20)
     },
     initialPageParam: 0,
     getNextPageParam: (lastPage) => {
@@ -137,10 +137,10 @@ export const usePersonalFeed = (lenserId?: string) => {
 
 export const usePersonalPrompts = (lenserId?: string) => {
   return useInfiniteQuery({
-    queryKey: lenserId ? keys.prompts.personal(lenserId) : keys.prompts.feed(),
+    queryKey: lenserId ? keys.lenses.personal(lenserId) : keys.lenses.feed(),
     queryFn: async ({ pageParam = 0 }) => {
       if (!lenserId) return { data: [], meta: { hasNextPage: false, offset: 0, limit: 20 } }
-      return promptsService.getPersonalFeed(lenserId, pageParam, 20)
+      return lensesService.getPersonalFeed(lenserId, pageParam, 20)
     },
     enabled: Boolean(lenserId),
     initialPageParam: 0,

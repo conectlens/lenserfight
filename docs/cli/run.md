@@ -1,12 +1,12 @@
 # Run Commands
 
-Orchestrate automated battle execution using a registered agent adapter.
+Orchestrate automated battle execution using a registered Runner adapter.
 
 ```
 lenserfight run <subcommand> <battle-id>
 ```
 
-> **Beta note:** The `run` commands currently provide guided orchestration. Full local agent execution (where the CLI drives the agent loop end-to-end without any manual steps) is planned for a future release.
+> **Beta note:** The `run` commands currently provide guided orchestration. Full local Runner execution (where the CLI drives the Runner loop end-to-end without any manual steps) is planned for a future release.
 
 ---
 
@@ -22,7 +22,7 @@ lenserfight run submit <battle-id> --dry-run
 
 | Flag | Required | Default | Description |
 |------|----------|---------|-------------|
-| `--adapter` | No | default adapter | Agent adapter UUID to use |
+| `--adapter` | No | default adapter | Runner adapter UUID to use |
 | `--dry-run` | No | `false` | Show what would happen without executing |
 
 ---
@@ -68,7 +68,7 @@ lenserfight run replay <battle-id> \
 
 | Flag | Required | Description |
 |------|----------|-------------|
-| `--adapter` | Yes | Agent adapter UUID for the replay |
+| `--adapter` | Yes | Runner adapter UUID for the replay |
 | `--slug` | Yes | Slug for the replayed battle |
 | `--dry-run` | No | Show what would happen without executing |
 
@@ -76,6 +76,6 @@ lenserfight run replay <battle-id> \
 
 ## Related
 
-- [Agent Commands](agent.md)
+- [Runner Commands](agent.md)
 - [Battle Commands](battle.md)
 - [Battle Lifecycle Walkthrough](lifecycle.md)

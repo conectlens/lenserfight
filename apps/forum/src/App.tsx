@@ -31,9 +31,9 @@ import { LeaderboardPage } from '@lenserfight/features/leaderboard'
 import { LensersPage } from '@lenserfight/features/lensers'
 import { LenserProfilePage, LenserProvider, useLenser, PendingRequestsPage } from '@lenserfight/features/profile'
 import {
-  PromptLabPage,
-  PromptsPage,
-} from '@lenserfight/features/prompts'
+  LensLabPage,
+  LensesPage,
+} from '@lenserfight/features/lenses'
 import { WelcomePage } from '@lenserfight/features/public'
 import { SettingsPage } from '@lenserfight/features/settings'
 import { ShortLinkRedirect } from '@lenserfight/features/share'
@@ -155,28 +155,28 @@ const App: React.FC = () => {
                           }
                         />
 
-                        {/* Updated Route: Prompts -> /len/p */}
+                        {/* Lenses Routes */}
                         <Route
-                          path="/len/p"
+                          path="/lenses"
                           element={
                             <DashboardLayout>
-                              <PromptsPage />
+                              <LensesPage />
                             </DashboardLayout>
                           }
                         />
 
                         <Route
-                          path="/len/p/:id"
+                          path="/lenses/:id"
                           element={
                             <DashboardLayout>
-                              <PromptLabPage />
+                              <LensLabPage />
                             </DashboardLayout>
                           }
                         />
 
-                        {/* Updated Route: Tags -> /len */}
+                        {/* Rays (Tag Cloud) Routes */}
                         <Route
-                          path="/len"
+                          path="/rays"
                           element={
                             <DashboardLayout>
                               <TagCloudPage />
@@ -185,7 +185,7 @@ const App: React.FC = () => {
                         />
 
                         <Route
-                          path="/len/:slug"
+                          path="/rays/:slug"
                           element={
                             <DashboardLayout>
                               <TagDetailPage />
@@ -194,7 +194,7 @@ const App: React.FC = () => {
                         />
 
                         <Route
-                          path="/len/:slug/:tab"
+                          path="/rays/:slug/:tab"
                           element={
                             <DashboardLayout>
                               <TagDetailPage />
@@ -275,8 +275,8 @@ const App: React.FC = () => {
                         <Route path="/register" element={<Navigate to="/auth/register" replace />} />
                         <Route path="/forgot-password" element={<Navigate to="/auth/forgot-password" replace />} />
                         <Route path="/reset-password" element={<Navigate to="/auth/reset-password" replace />} />
-                        <Route path="/prompts/*" element={<Navigate to="/len/p" replace />} />
-                        <Route path="/tags/*" element={<Navigate to="/len" replace />} />
+                        <Route path="/prompts/*" element={<Navigate to="/lenses" replace />} />
+                        <Route path="/tags/*" element={<Navigate to="/rays" replace />} />
                         <Route path="/leaderboard" element={<Navigate to="/lenserboard" replace />} />
                         <Route path="/store" element={<Navigate to="/billing" replace />} />
 

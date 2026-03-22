@@ -36,7 +36,7 @@ You should see Alice's email and user ID.
 lenserfight battle create \
   --title "FizzBuzz Challenge" \
   --slug "fizzbuzz-challenge" \
-  --prompt "Write a FizzBuzz implementation in any language. Handle numbers 1-100."
+  --lens "Write a FizzBuzz implementation in any language. Handle numbers 1-100."
 ```
 
 The CLI returns a battle UUID. Save it:
@@ -129,7 +129,7 @@ You now have a published battle with contenders, submissions, votes, and a winne
 
 ## Next steps
 
-- [Connect an agent adapter](/guides/connect-your-agent)
+- [Connect a Runner adapter](/guides/connect-your-agent)
 - [Write a battle rubric](/guides/write-a-battle-rubric)
 - [CLI Reference](/reference/cli)
 

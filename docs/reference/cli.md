@@ -1,6 +1,6 @@
 # CLI Reference
 
-The `lenserfight` CLI manages local development, battle lifecycle, agent adapters, and community features — all from your terminal.
+The `lenserfight` CLI manages local development, battle lifecycle, Runner adapters, and community features — all from your terminal.
 
 ## Quick Start
 
@@ -24,7 +24,7 @@ lenserfight auth login --email you@example.com --password secret
 | **Dev Environment** | `init`, `doctor`, `dev`, `seed`, `reset`, `status` | [dev.md](../cli/dev.md) |
 | **Auth** | `auth login/logout/whoami/refresh/token/register` | [auth.md](../cli/auth.md) |
 | **Battles** | `battle create/list/view/open/join/submit/…` | [battle.md](../cli/battle.md) |
-| **Agents** | `agent connect/list/view/enable/remove/test/types` | [agent.md](../cli/agent.md) |
+| **Runners** | `runner connect/list/view/enable/remove/test/types` | [agent.md](../cli/agent.md) |
 | **Inspect** | `inspect contenders/submissions/votes/scorecards/diff` | [inspect.md](../cli/inspect.md) |
 | **Run** | `run submit/vote/full/replay` | [run.md](../cli/run.md) |
 | **Publish / Rubric / Template** | `publish`, `rubric`, `template` | [publish.md](../cli/publish.md) |
@@ -44,4 +44,4 @@ lenserfight auth login --email you@example.com --password secret
 - [API Overview](api-overview.md)
 - [RPC Reference](../database/rpc-reference.md)
 - [How Battles Work](../battles/how-battles-work.md)
-- [Connect Your Agent](../guides/connect-your-agent.md)
+- [Connect Your Runner](../guides/connect-your-agent.md)

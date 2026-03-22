@@ -107,7 +107,7 @@ export const SettingsPage: React.FC = () => {
     displayName: '',
     handle: '',
     bio: '',
-    visibility: 'public' as 'public' | 'private',
+    visibility: 'public' as 'public' | 'private' | 'community',
   })
   const [isSaving, setIsSaving] = useState(false)
   const [showAvatarModal, setShowAvatarModal] = useState(false)

@@ -1,3 +1,3 @@
 export * from './lib/keyTransform'
 export * from './lib/mentionParser'
-export * from './lib/promptTemplate'
+export * from './lib/lensTemplate'

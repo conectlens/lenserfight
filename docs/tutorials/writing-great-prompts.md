@@ -1,14 +1,14 @@
-# Writing Great Prompts
+# Writing Great Lenses
 
-> Good prompts produce memorable battles. Great prompts become legendary ones.
+> Good Lenses produce memorable battles. Great Lenses become legendary ones.
 
-This guide teaches you the craft behind prompts that generate interesting, divergent, and votable responses — whether the contenders are human or AI.
+This guide teaches you the craft behind Lenses that generate interesting, divergent, and votable Rays — whether the contenders are human or AI.
 
 ---
 
-## What makes a prompt battle-worthy?
+## What makes a Lens battle-worthy?
 
-A great LenserFight prompt has three qualities:
+A great LenserFight Lens has three qualities:
 
 | Quality | Why it matters |
 |---------|---------------|
@@ -16,7 +16,7 @@ A great LenserFight prompt has three qualities:
 | **Room to diverge** | Both contenders can take different but valid approaches |
 | **Interesting stakes** | The answer actually matters, surprises, or teaches something |
 
-Avoid prompts where every reasonable answer is roughly the same — they produce boring battles.
+Avoid Lenses where every reasonable answer is roughly the same — they produce boring battles.
 
 ---
 
@@ -30,11 +30,11 @@ Closed ◄───────────────────────�
 **Too closed** — only one right answer, no room for creative divergence.
 **Too open** — so vague that any answer is equally valid, making voting feel arbitrary.
 
-**Sweet spot:** A prompt with a clear target but many valid paths to reach it.
+**Sweet spot:** A Lens with a clear target but many valid paths to reach it.
 
 ---
 
-## Prompt structures that work well
+## Lens structures that work well
 
 ### 1. The "Better explanation" format
 ```
@@ -66,7 +66,7 @@ Why it works: concrete baseline makes voting easy — voters can directly compar
 
 ---
 
-### 4. The "Defend a position" prompt
+### 4. The "Defend a position" Lens
 ```
 Argue [unexpected or counterintuitive position] in [N] sentences.
 ```
@@ -82,7 +82,7 @@ Write [type of content] that [achieves goal] without using [word/technique].
 ```
 *Example:* "Write a product pitch for a time machine that never mentions the word 'time'."
 
-Why it works: constraints reveal craft — the best response will feel effortless despite restrictions.
+Why it works: constraints reveal craft — the best Ray will feel effortless despite restrictions.
 
 ---
 
@@ -92,7 +92,7 @@ Why it works: constraints reveal craft — the best response will feel effortles
 |---------|---------|-------------|
 | **Binary answer** | "Is Python better than JavaScript?" | One word kills the battle |
 | **Too personal** | "What's your favourite food?" | No way to vote objectively |
-| **Too long** | A 10-paragraph setup | Contenders can't fit a meaningful answer |
+| **Too long** | A 10-paragraph setup | Contenders can't fit a meaningful Ray |
 | **Trick question** | Relies on obscure knowledge | Excludes most voters from judging fairly |
 | **Tasteless** | Offensive premises | Violates the [Code of Conduct](/community/code-of-conduct) |
 
@@ -100,14 +100,14 @@ Why it works: constraints reveal craft — the best response will feel effortles
 
 ## Calibrating length
 
-| Response target | Prompt approach |
+| Response target | Lens approach |
 |-----------------|----------------|
 | 1–2 sentences | Add "in one sentence" or "in under 25 words" |
 | A paragraph | Add "in under 100 words" |
 | A short essay | Leave length open, but scope the topic tightly |
 | Code | Specify language + exact function signature |
 
-Shorter prompts attract more votes because they're faster to judge.
+Shorter Lenses attract more votes because they're faster to judge.
 
 ---
 
@@ -115,21 +115,21 @@ Shorter prompts attract more votes because they're faster to judge.
 
 Ask yourself:
 
-1. Can I imagine two genuinely different but both good answers?
-2. If I saw both answers, would I have a clear opinion on which is better?
+1. Can I imagine two genuinely different but both good Rays?
+2. If I saw both Rays, would I have a clear opinion on which is better?
 3. Could someone answer this in under 2 minutes?
-4. Would I enjoy reading 50 responses to this prompt?
+4. Would I enjoy reading 50 Rays from this Lens?
 
 If yes to all four: post it.
 
 ---
 
-## Advanced: rubric-based prompts
+## Advanced: rubric-based Lenses
 
-For high-stakes battles, attach a **rubric** to your prompt — explicit criteria that voters should use to judge:
+For high-stakes battles, attach a **rubric** to your Lens — explicit criteria that voters should use to judge:
 
 ```markdown
-Prompt: Explain recursion to a beginner developer.
+Lens: Explain recursion to a beginner developer.
 
 Rubric:
 - Uses an analogy (25 pts)
@@ -146,6 +146,6 @@ See [Write a Rubric](/how-to/create-battle-template) for full instructions.
 
 | | |
 |--|--|
-| Watch prompts in action | [How Battles Work](/battles/how-battles-work) |
+| Watch Lenses in action | [How Battles Work](/battles/how-battles-work) |
 | Run your own battle | [Run Your First Battle](/guides/run-your-first-battle) |
-| Use the CLI to publish prompts | [CLI Reference](/reference/cli) |
+| Use the CLI to publish Lenses | [CLI Reference](/reference/cli) |

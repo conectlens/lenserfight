@@ -97,7 +97,7 @@ export class SupabaseThreadsRepository implements ThreadsRepositoryPort {
     return this.mapProfileToAuthor(profile as Partial<AuthorProfile> | null, lenserId)
   }
 
-  private async getTagsForEntity(entityType: 'thread' | 'prompt_template', entityId: string): Promise<TagRecord[]> {
+  private async getTagsForEntity(entityType: 'thread' | 'lens', entityId: string): Promise<TagRecord[]> {
     const { data: tagMapRows, error: tagMapError } = await supabase
       .schema('content')
       .from('tag_map')
@@ -120,7 +120,7 @@ export class SupabaseThreadsRepository implements ThreadsRepositoryPort {
     const tagById = new Map((tags ?? []).map((tag) => [tag.id, tag]))
     return tagIds
       .map((id) => tagById.get(id))
-      .filter(Boolean)
+      .filter((tag): tag is NonNullable<typeof tag> => tag != null)
       .map((tag) => ({
         id: tag.id,
         slug: tag.slug,
@@ -188,8 +188,8 @@ export class SupabaseThreadsRepository implements ThreadsRepositoryPort {
       reply_count: baseThread.reply_count ?? 0,
       view_count: baseThread.view_count ?? 0,
       thumbnail_url: baseThread.thumbnail_url,
-      linked_prompt_id: baseThread.linked_prompt_id ?? null,
-      prompt_data: baseThread.prompt_data,
+      linked_lens_id: (baseThread as any).linked_lens_id ?? null,
+      prompt_data: (baseThread as any).lens_data ?? (baseThread as any).prompt_data,
     } as ThreadRecord
   }
 
@@ -257,6 +257,7 @@ export class SupabaseThreadsRepository implements ThreadsRepositoryPort {
     }).select('id').single()
 
     if (insertError) this.handleError(insertError)
+    if (!threadInsertData) throw new Error('Failed to create thread')
     const threadId = threadInsertData.id
 
     // 3. Insert Thread Translation
@@ -350,7 +351,7 @@ export class SupabaseThreadsRepository implements ThreadsRepositoryPort {
     const { data, error } = await supabase
       .schema('content')
       .from('threads')
-      .select('id, lenser_id, visibility, created_at, updated_at, reply_count, view_count, thumbnail_url, linked_prompt_id, prompt_data')
+      .select('id, lenser_id, visibility, created_at, updated_at, reply_count, view_count, thumbnail_url, linked_lens_id, lens_data')
       .eq('id', id)
       .maybeSingle()
 
@@ -363,7 +364,7 @@ export class SupabaseThreadsRepository implements ThreadsRepositoryPort {
       return null
     }
 
-    return this.buildOwnerThreadRecord(data as ThreadRecord)
+    return this.buildOwnerThreadRecord(data as unknown as ThreadRecord)
   }
 
   /**
@@ -383,13 +384,13 @@ export class SupabaseThreadsRepository implements ThreadsRepositoryPort {
       const { data: baseThreads, error } = await supabase
         .schema('content')
         .from('threads')
-        .select('id, lenser_id, visibility, created_at, updated_at, reply_count, view_count, thumbnail_url, linked_prompt_id, prompt_data')
+        .select('id, lenser_id, visibility, created_at, updated_at, reply_count, view_count, thumbnail_url, linked_lens_id, lens_data')
         .eq('lenser_id', profile.id)
         .order('created_at', { ascending: false })
         .range(offset, offset + limit - 1)
 
       if (error) this.handleError(error)
-      return this.hydrateThreadRecords((baseThreads ?? []) as ThreadRecord[])
+      return this.hydrateThreadRecords((baseThreads ?? []) as unknown as ThreadRecord[])
     }
 
     const { data, error } = await supabase
@@ -492,6 +493,7 @@ export class SupabaseThreadsRepository implements ThreadsRepositoryPort {
     }).select('id, lenser_id').single()
 
     if (error) this.handleError(error)
+    if (!replyInsertData) throw new Error('Failed to create reply')
     const replyId = replyInsertData.id
     const resolvedLenserId = replyInsertData.lenser_id || _lenserId
 

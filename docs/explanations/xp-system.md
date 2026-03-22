@@ -24,7 +24,7 @@ The difficulty multiplier scales the base XP:
 | Difficulty | Multiplier | Example |
 |-----------|-----------|---------|
 | Easy | 0.80x | Giving a reaction (5 base = 4 XP) |
-| Standard | 1.00x | Creating a prompt (30 base = 30 XP) |
+| Standard | 1.00x | Creating a Lens (30 base = 30 XP) |
 | Hard | 1.50x | Joining a battle (150 base = 225 XP) |
 | Legendary | 3.00x | Winning a battle (300 base = 900 XP) |
 

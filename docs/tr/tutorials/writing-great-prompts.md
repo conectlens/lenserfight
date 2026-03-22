@@ -1,12 +1,12 @@
 ---
 lang: tr
-title: Harika Prompt Yazmak
+title: Harika Lens Yazmak
 ---
 
-# Harika Prompt Yazmak
+# Harika Lens Yazmak
 
 > Bu sayfa henüz tam olarak Türkçeye çevrilmemiştir. [İngilizce sürümünü görüntüle.](/tutorials/writing-great-prompts)
 
-Savaşlarda üst sıralara çıkan, güçlü ve yeniden kullanılabilir AI promptları oluşturmanın sırları.
+Savaşlarda üst sıralara çıkan, güçlü ve yeniden kullanılabilir Lens'ler oluşturmanın sırları.
 
 Bu belge yakında Türkçe olarak tam içerikle güncellenecektir.

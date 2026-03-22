@@ -1,4 +1,4 @@
-export type ShareResourceType = 'prompt' | 'thread' | 'arena' | 'profile' | 'challenge' | 'external'
+export type ShareResourceType = 'lens' | 'thread' | 'arena' | 'profile' | 'challenge' | 'external'
 
 export interface SharedLink {
   id: string

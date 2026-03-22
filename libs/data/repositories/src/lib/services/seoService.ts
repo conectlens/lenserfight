@@ -1,5 +1,5 @@
 import { Lenser, LenserStats } from '@lenserfight/types'
-import { PromptTemplateDetailViewModel, PromptTemplateViewModel } from '@lenserfight/types'
+import { LensDetailViewModel, LensViewModel } from '@lenserfight/types'
 import { TagUsage } from '@lenserfight/types'
 import { ThreadDetailViewModel, ThreadFeedItem } from '@lenserfight/types'
 
@@ -52,7 +52,7 @@ export const seoService = {
         '@type': 'SearchAction',
         target: {
           '@type': 'EntryPoint',
-          urlTemplate: `${FORUM_HOST}/len/p?q={search_term_string}`,
+          urlTemplate: `${FORUM_HOST}/lenses?q={search_term_string}`,
         },
         'query-input': 'required name=search_term_string',
       },
@@ -60,20 +60,20 @@ export const seoService = {
   }),
 
   getPromptMeta: (
-    prompt?: PromptTemplateDetailViewModel | PromptTemplateViewModel | null
+    prompt?: LensDetailViewModel | LensViewModel | null
   ): SEOMetadata => {
     if (!prompt)
       return {
-        title: 'Prompt Not Found',
-        description: 'This prompt template could not be found on LenserFight.',
-        url: `${FORUM_HOST}/len/p`,
+        title: 'Lens Not Found',
+        description: 'This lens could not be found on LenserFight.',
+        url: `${FORUM_HOST}/lenses`,
         ogImage: DEFAULT_OG_IMAGE,
       }
 
     const tags = prompt.tags?.map((t) => t.name).join(', ') || 'AI'
     const author = prompt.author.displayName
     const uses = prompt.usageCount > 0 ? `Used ${prompt.usageCount} times.` : ''
-    const pageUrl = `${FORUM_HOST}/len/p/${prompt.id}`
+    const pageUrl = `${FORUM_HOST}/lenses/${prompt.id}`
 
     const desc = `Use the "${prompt.title}" prompt template by ${author}. Optimized for ${tags}. ${uses} Copy and remix this prompt for GPT-5, Gemini, and Claude on LenserFight.`
 

@@ -1,4 +1,4 @@
-# Prompt Execution Modes
+# Lens Execution Modes
 
 `lenserfight run exec` supports three execution modes. All three use the same provider adapters from `@lenserfight/providers` — no code duplication.
 

@@ -49,7 +49,7 @@ export class SupabaseGenerationRepository implements GenerationRepositoryPort {
     const { data, error } = await supabase.rpc(
       'fn_ai_get_generations_for_prompt',
       {
-        p_prompt_template_id: promptId,
+        p_lens_id: promptId,
         p_lenser_id: lenserId,
         p_limit: limit,
         p_offset: offset,
@@ -71,7 +71,7 @@ export class SupabaseGenerationRepository implements GenerationRepositoryPort {
   async createGeneration(dto: CreateGenerationDTO): Promise<void> {
     const { error } = await supabase.rpc('fn_ai_create_generation', {
       p_ai_model_slug: dto.ai_model_slug,
-      p_prompt_template_id: dto.prompt_template_id,
+      p_lens_id: dto.lens_id,
       p_media: dto.media,
       p_input_text: dto.input_text ?? null,
       p_visibility: dto.visibility ?? 'private',

@@ -5,8 +5,8 @@ layout: home
 
 hero:
   name: LenserFight
-  text: AI Prompt Mühendisliği Arenası
-  tagline: Prompt savaşlarına katıl, en iyi LLM stratejilerini keşfet ve top Lensers ile bağlan.
+  text: AI Değerlendirme Arenası
+  tagline: Lens savaşlarına katıl, Runner'ını getir ve topluluğun önünde kanıtla.
   actions:
     - theme: brand
       text: Başlayın
@@ -19,18 +19,18 @@ hero:
       link: https://github.com/connectlens/lenserfight
 
 features:
-  - title: Prompt Savaşları
-    details: Promptlarınızı gerçek zamanlı savaşlarda test edin, puan kazanın ve sıralama tablosuna girin.
+  - title: Lens Savaşları
+    details: Lens'lerinizi gerçek zamanlı savaşlarda test edin, puan kazanın ve sıralama tablosuna girin.
     link: /tr/battles/how-battles-work
   - title: Topluluk Forumu
     details: Tartışmalara katılın, rehberler paylaşın ve yapay zeka topluluğuyla bağlantı kurun.
     link: /tr/forum/community-hub
-  - title: Prompt Kütüphanesi
-    details: Binlerce yüksek kaliteli AI promptunu keşfedin, kopyalayın ve karıştırın.
+  - title: Lens Kütüphanesi
+    details: Binlerce yüksek kaliteli Lens'i keşfedin, kopyalayın ve karıştırın.
   - title: Lenser Profilleri
     details: En iyi AI içerik üreticilerini takip edin ve katkılarınızla lider tablolarına girin.
   - title: CLI Aracı
-    details: Savaşları doğrudan terminal üzerinden çalıştırın. Otomasyon ve ajan entegrasyonu için.
+    details: Savaşları doğrudan terminal üzerinden çalıştırın. Otomasyon ve Runner entegrasyonu için.
     link: /tr/reference/cli
   - title: Açık Çekirdek
     details: Temel altyapı açık kaynak. Ekibinizin araçlarıyla entegre edin veya katkıda bulunun.

@@ -10,7 +10,7 @@ Use this guide to stage a beta-style battle without assuming future tournament f
 
 ## Procedure
 
-1. Pick one task with a clear prompt or success goal.
+1. Pick one task with a clear Lens or success goal.
 2. Enter exactly two contenders.
 3. Publish the battle with enough context for human judges to compare outputs.
 4. Open judging and collect votes.
