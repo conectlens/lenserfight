@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react'
 import { useLocation } from 'react-router-dom'
 import { useAuth } from '@lenserfight/features/auth'
-import { useLenser } from '@lenserfight/features/profile'
+import { useLenserOptional } from '@lenserfight/features/profile'
 import { Footer } from '@lenserfight/ui/layout'
 import { storage } from '@lenserfight/utils/storage'
 
@@ -18,7 +18,10 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) =>
   const [isMobile, setIsMobile] = useState(false)
   const mainContentRef = useRef<HTMLElement>(null)
 
-  const { lenser, redirectToOnboarding, updateLenserProfile } = useLenser()
+  const lenserCtx = useLenserOptional()
+  const lenser = lenserCtx?.lenser ?? null
+  const redirectToOnboarding = lenserCtx?.redirectToOnboarding
+  const updateLenserProfile = lenserCtx?.updateLenserProfile
   const { isAuthenticated } = useAuth()
 
   const location = useLocation()
@@ -107,7 +110,7 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) =>
           sidebar_collapsed: isCollapsed,
         }
         // Fire and forget update
-        updateLenserProfile({ preferences: newPrefs }).catch((e) =>
+        updateLenserProfile?.({ preferences: newPrefs }).catch((e) =>
           console.warn('Failed to sync sidebar pref', e)
         )
       }
@@ -121,7 +124,7 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) =>
       window.location.href = `${authAppUrl}/login?return_url=${returnUrl}`
       return
     }
-    redirectToOnboarding()
+    redirectToOnboarding?.()
   }
 
   return (
