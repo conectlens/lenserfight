@@ -14,7 +14,6 @@ import { useCreateThread } from '../hooks/useCreateThread'
 
 import { MentionAutocompleteList } from './MentionAutocompleteList'
 import { TagMentionAutocompleteList } from './TagMentionAutocompleteList'
-import { ThreadTagInput } from './ThreadTagInput'
 
 interface CreateThreadModalProps {
   isOpen: boolean
@@ -38,7 +37,6 @@ export const CreateThreadModal: React.FC<CreateThreadModalProps> = ({
   const { createThread, isSubmitting, error } = useCreateThread()
   const [title, setTitle] = useState('')
   const [content, setContent] = useState('')
-  const [tags, setTags] = useState<string[]>([])
   const [visibility, setVisibility] = useState<Visibility>('public')
 
   const editorRef = useRef<RichMentionInputHandle>(null)
@@ -62,12 +60,10 @@ export const CreateThreadModal: React.FC<CreateThreadModalProps> = ({
       if (initialData) {
         setTitle(initialData.title)
         setContent(initialData.content)
-        setTags(initialData.tags || [])
         setVisibility(initialData.visibility)
       } else {
         setTitle('')
         setContent('')
-        setTags([])
         setVisibility('public')
       }
     }
@@ -127,6 +123,9 @@ export const CreateThreadModal: React.FC<CreateThreadModalProps> = ({
     }
   }, [tagMentionQuery, isTagMentioning])
 
+  const extractTagIds = (raw: string): string[] =>
+    [...raw.matchAll(/#\[Tag:([^\]]+)\]/g)].map((m) => m[1])
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!title) return
@@ -134,7 +133,7 @@ export const CreateThreadModal: React.FC<CreateThreadModalProps> = ({
     await createThread(
       title,
       content,
-      tags,
+      extractTagIds(content),
       visibility,
       (id) => {
         onSuccess(id)
@@ -142,6 +141,19 @@ export const CreateThreadModal: React.FC<CreateThreadModalProps> = ({
       },
       initialData?.id
     )
+  }
+
+  const handleTagCreate = async (name: string) => {
+    try {
+      const tag = await tagService.processUserInput(name)
+      if (tag && editorRef.current) {
+        editorRef.current.insertTag({ id: tag.id, name: tag.name, count: 0 })
+      }
+    } catch (e) {
+      console.error(e)
+    }
+    setIsTagMentioning(false)
+    setTagSuggestions([])
   }
 
   const handleClose = () => {
@@ -166,20 +178,28 @@ export const CreateThreadModal: React.FC<CreateThreadModalProps> = ({
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     // Tag mention keyboard nav takes priority
-    if (isTagMentioning && tagSuggestions.length > 0) {
-      if (e.key === 'ArrowDown') {
+    if (isTagMentioning) {
+      if (tagSuggestions.length > 0) {
+        if (e.key === 'ArrowDown') {
+          e.preventDefault()
+          setTagActiveIndex((prev) => (prev + 1) % tagSuggestions.length)
+        } else if (e.key === 'ArrowUp') {
+          e.preventDefault()
+          setTagActiveIndex((prev) => (prev - 1 + tagSuggestions.length) % tagSuggestions.length)
+        } else if (e.key === 'Enter') {
+          e.preventDefault()
+          handleTagSelect(tagSuggestions[tagActiveIndex])
+        } else if (e.key === 'Escape') {
+          e.preventDefault()
+          setIsTagMentioning(false)
+          setTagSuggestions([])
+        }
+      } else if (tagMentionQuery && e.key === 'Enter') {
         e.preventDefault()
-        setTagActiveIndex((prev) => (prev + 1) % tagSuggestions.length)
-      } else if (e.key === 'ArrowUp') {
-        e.preventDefault()
-        setTagActiveIndex((prev) => (prev - 1 + tagSuggestions.length) % tagSuggestions.length)
-      } else if (e.key === 'Enter') {
-        e.preventDefault()
-        handleTagSelect(tagSuggestions[tagActiveIndex])
+        handleTagCreate(tagMentionQuery)
       } else if (e.key === 'Escape') {
         e.preventDefault()
         setIsTagMentioning(false)
-        setTagSuggestions([])
       }
       return
     }
@@ -259,7 +279,7 @@ export const CreateThreadModal: React.FC<CreateThreadModalProps> = ({
                   setIsTagMentioning(false)
                   setTagSuggestions([])
                 }}
-                placeholder="What's on your mind? Type @ to link a prompt, # to mention a tag..."
+                placeholder="What's on your mind? Type @ to link a prompt, # to mention or create a tag..."
               />
 
               {isMentioning &&
@@ -276,7 +296,7 @@ export const CreateThreadModal: React.FC<CreateThreadModalProps> = ({
                 )}
 
               {isTagMentioning &&
-                tagSuggestions.length > 0 &&
+                (tagSuggestions.length > 0 || tagMentionQuery) &&
                 createPortal(
                   <TagMentionAutocompleteList
                     visible={isTagMentioning}
@@ -284,14 +304,14 @@ export const CreateThreadModal: React.FC<CreateThreadModalProps> = ({
                     activeIndex={tagActiveIndex}
                     position={tagMenuPos}
                     onSelect={handleTagSelect}
+                    createQuery={tagMentionQuery}
+                    onCreate={handleTagCreate}
                   />,
                   document.body
                 )}
             </div>
           </div>
         </div>
-
-        <ThreadTagInput tags={tags} onChange={setTags} />
 
         <div className="space-y-2">
           <SelectField
