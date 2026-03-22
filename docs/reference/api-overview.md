@@ -76,8 +76,8 @@ Every endpoint returns `ApiResponseEnvelope<T>`:
 |--------|------|------|-------------|
 | `GET` | `/wallet/balance` | JWT | Get current credit balance |
 | `GET` | `/wallet/transactions` | JWT | Get paginated transaction ledger |
-| `POST` | `/wallet/checkout` | JWT | Start a LemonSqueezy checkout session |
-| `GET` | `/wallet/products` | None | List all active credit products |
+| `POST` | `/billing/checkout` | JWT | Start a LemonSqueezy checkout session |
+| `GET` | `/billing/products` | None | Active credit packs from DB (`billing.vw_products`) |
 | `GET` | `/wallet/pricing` | JWT | Get model catalog with credit costs |
 
 ### Execution Proxy
