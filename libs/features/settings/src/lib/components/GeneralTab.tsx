@@ -2,8 +2,8 @@ import { lenserService } from '@lenserfight/data/repositories'
 import { preferencesService } from '@lenserfight/data/repositories'
 import { useLenser } from '@lenserfight/features/profile'
 import { LenserPreferences } from '@lenserfight/types'
-import { Button, LanguageSelectBox } from '@lenserfight/ui/components'
-import { SelectField } from '@lenserfight/ui/forms'
+import { Button } from '@lenserfight/ui/components'
+import { SearchSelectField, SelectField } from '@lenserfight/ui/forms'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import React, { useState, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
@@ -19,7 +19,7 @@ export const GeneralTab: React.FC = () => {
   const { lenser } = useLenser()
   const queryClient = useQueryClient()
 
-  const { data: languages = [], isLoading: languagesLoading } = useQuery({
+  const { data: languages = [] } = useQuery({
     queryKey: ['core', 'languages'],
     queryFn: () => lenserService.getLanguages(),
     staleTime: Infinity,
@@ -110,11 +110,12 @@ export const GeneralTab: React.FC = () => {
           <p className="text-xs text-gray-400 dark:text-gray-500 mb-3">
             Prioritizes prompts, threads, and recommendations in your language. Also updates the interface language for this session.
           </p>
-          <LanguageSelectBox
+          <SearchSelectField
             value={language}
             onChange={setLanguage}
-            languages={languages}
-            isLoading={languagesLoading}
+            options={languages.map((l) => ({ value: l.code, label: l.native_name || l.name }))}
+            searchPlaceholder="Search language…"
+            placeholder="Select language"
           />
         </div>
 
