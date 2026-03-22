@@ -20,26 +20,10 @@ export class SupabasePreferencesRepository implements PreferencesRepositoryPort 
   }
 
   async updatePreferences(patch: Partial<LenserPreferences>): Promise<void> {
-    const { data: authData } = await supabase.auth.getUser()
-    if (!authData.user) return
-
-    const { data: profile } = await supabase
-      .schema('lensers')
-      .from('profiles')
-      .select('id')
-      .eq('user_id', authData.user.id)
-      .maybeSingle()
-
-    if (!profile) return
-
-    // Exclude read-only / identity fields from the patch
+    // Exclude read-only / identity fields before sending to RPC
     const { id: _id, lenser_id: _lid, created_at: _ca, updated_at: _ua, ...fields } = patch as Record<string, unknown>
 
-    const { error } = await supabase
-      .schema('lensers')
-      .from('preferences')
-      .update(fields)
-      .eq('lenser_id', profile.id)
+    const { error } = await supabase.rpc('fn_lensers_update_preferences', { p_data: fields })
 
     if (error) {
       console.error('Failed to update preferences', error)
