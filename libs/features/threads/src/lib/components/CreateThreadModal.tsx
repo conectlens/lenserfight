@@ -240,6 +240,7 @@ export const CreateThreadModal: React.FC<CreateThreadModalProps> = ({
       isOpen={isOpen}
       onClose={handleClose}
       title={initialData ? 'Edit Post' : 'Create New Post'}
+      panelClassName="sm:max-w-xl md:max-w-2xl lg:max-w-3xl"
     >
       <form onSubmit={handleSubmit} className="space-y-6" onKeyDown={handleKeyDown}>
         <div className="space-y-4">
