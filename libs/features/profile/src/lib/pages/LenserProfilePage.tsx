@@ -500,11 +500,15 @@ export const LenserProfilePage: React.FC = () => {
 
       <div className="px-0 md:px-0 mt-8">
         <div className="px-4 md:px-0">
-          <LenserTabs activeTab={activeTab} onChange={handleTabChange} />
+          <LenserTabs
+            activeTab={activeTab}
+            onChange={handleTabChange}
+            hideActions={!isOwner && !!(viewedProfile as any)?.preferences?.hide_actions}
+          />
         </div>
 
         <div className="min-h-[300px] px-4 md:px-0">
-          {activeTab === 'actions' && (
+          {activeTab === 'actions' && (isOwner || !(viewedProfile as any)?.preferences?.hide_actions) && (
             <>
               {items.length > 0 ? (
                 <LenserActionsList actions={items as ActivityFeedItem[]} />
