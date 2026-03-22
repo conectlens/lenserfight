@@ -114,7 +114,7 @@ export const CreatePromptModal: React.FC<CreatePromptModalProps> = ({
   ]
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title={isEditMode ? 'Edit Prompt' : 'Create Prompt'}>
+    <Modal isOpen={isOpen} onClose={onClose} title={isEditMode ? 'Edit Prompt' : 'Create Prompt'} panelClassName="sm:max-w-2xl md:max-w-3xl lg:max-w-4xl xl:max-w-5xl">
       <form onSubmit={handleSubmit} className="space-y-6" noValidate>
         <div className="space-y-2">
           <label className="text-sm font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
