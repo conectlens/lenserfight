@@ -254,8 +254,14 @@ export const PromptLabPage: React.FC = () => {
           <LabExecutionPanel
             promptId={prompt.id}
             promptContent={prompt.content}
-            aiModels={lab.aiModels}
+            providers={lab.providers}
+            isLoadingProviders={lab.isLoadingProviders}
+            providerModels={lab.providerModels}
             isLoadingModels={lab.isLoadingModels}
+            selectedProviderKey={lab.selectedProviderKey}
+            selectedModelKey={lab.selectedModelKey}
+            onProviderChange={lab.handleProviderChange}
+            onModelChange={lab.setSelectedModelKey}
             onTrigger={lab.triggerExecution}
             onTriggerStream={lab.triggerStream}
             isTriggeringExecution={lab.isTriggeringExecution}

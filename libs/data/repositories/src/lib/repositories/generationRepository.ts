@@ -4,6 +4,8 @@ import {
   MediaLibraryItem,
   GenerationFilterOptions,
   AIModel,
+  AIProvider,
+  AIProviderModel,
 } from '@lenserfight/types'
 
 import { supabase } from '@lenserfight/data/supabase'
@@ -26,6 +28,8 @@ export interface GenerationRepositoryPort {
   createGeneration(data: CreateGenerationDTO): Promise<void>
   deleteGeneration(id: string): Promise<void>
   getAIModels(): Promise<AIModel[]>
+  getActiveProviders(): Promise<AIProvider[]>
+  getModelsByProvider(providerKey: string): Promise<AIProviderModel[]>
 }
 
 
@@ -83,6 +87,33 @@ export class SupabaseGenerationRepository implements GenerationRepositoryPort {
   async deleteGeneration(id: string): Promise<void> {
     const { error } = await supabase.from('ai_generations').delete().eq('id', id)
     if (error) throw error
+  }
+
+  async getActiveProviders(): Promise<AIProvider[]> {
+    const { data, error } = await supabase.rpc('get_active_providers')
+    if (error) {
+      console.warn('get_active_providers failed', error)
+      return []
+    }
+    return ((data ?? []) as { id: string; key: string; display_name: string }[]).map((p) => ({
+      id: p.id,
+      key: p.key,
+      display_name: p.display_name,
+    }))
+  }
+
+  async getModelsByProvider(providerKey: string): Promise<AIProviderModel[]> {
+    const { data, error } = await supabase.rpc('get_active_models_by_provider', {
+      p_provider_key: providerKey,
+    })
+    if (error) {
+      console.warn('get_active_models_by_provider failed', error)
+      return []
+    }
+    return ((data ?? []) as { name: string; model_key: string }[]).map((m) => ({
+      name: m.name,
+      model_key: m.model_key,
+    }))
   }
 
   async getAIModels(): Promise<AIModel[]> {
