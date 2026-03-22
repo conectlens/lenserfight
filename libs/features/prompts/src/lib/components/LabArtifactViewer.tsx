@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect, useRef } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { Copy, Check, LayoutPanelLeft, Coins, Loader2 } from 'lucide-react'
 import { executionService } from '@lenserfight/data/repositories'
@@ -120,18 +120,48 @@ const StreamingOutput: React.FC<{
   error: string | null
 }> = ({ state, output, runId, usage, credits, error }) => {
   const isCursor = state === 'streaming'
+  const bottomRef = useRef<HTMLDivElement>(null)
+  const preRef = useRef<HTMLPreElement>(null)
+  const userScrolledUpRef = useRef(false)
+
+  // Detect if user scrolled up inside the pre — suppress auto-scroll while they browse
+  useEffect(() => {
+    const el = preRef.current
+    if (!el) return
+    const onScroll = () => {
+      const atBottom = el.scrollHeight - el.scrollTop - el.clientHeight < 40
+      userScrolledUpRef.current = !atBottom
+    }
+    el.addEventListener('scroll', onScroll, { passive: true })
+    return () => el.removeEventListener('scroll', onScroll)
+  }, [])
+
+  // Auto-scroll to bottom on each new token unless user scrolled up
+  useEffect(() => {
+    if (!isCursor || userScrolledUpRef.current) return
+    bottomRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' })
+  }, [output, isCursor])
+
+  // When streaming completes, always scroll to bottom once
+  useEffect(() => {
+    if (state === 'complete') {
+      userScrolledUpRef.current = false
+      bottomRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' })
+    }
+  }, [state])
+
   return (
     <div className="flex flex-col gap-3">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <LayoutPanelLeft size={16} className="text-gray-400" />
+      <div className="flex items-center justify-between gap-2 flex-wrap">
+        <div className="flex items-center gap-2 min-w-0">
+          <LayoutPanelLeft size={16} className="text-gray-400 flex-shrink-0" />
           <span className="text-sm font-semibold text-gray-800 dark:text-gray-100">Output</span>
           {runId && (
-            <span className="text-xs text-gray-400 font-mono">{runId.slice(0, 8)}</span>
+            <span className="text-xs text-gray-400 font-mono truncate">{runId.slice(0, 8)}</span>
           )}
         </div>
         {state === 'complete' && usage && credits !== null && (
-          <div className="flex items-center gap-2 text-xs text-gray-400 dark:text-gray-500">
+          <div className="flex items-center gap-2 text-xs text-gray-400 dark:text-gray-500 flex-shrink-0">
             <Coins size={12} />
             <span>{credits} cr</span>
             <span>·</span>
@@ -139,7 +169,7 @@ const StreamingOutput: React.FC<{
           </div>
         )}
         {state === 'loading' && (
-          <span className="flex items-center gap-1 text-xs text-gray-400 dark:text-gray-500">
+          <span className="flex items-center gap-1 text-xs text-gray-400 dark:text-gray-500 flex-shrink-0">
             <Loader2 size={12} className="animate-spin" />
             Connecting…
           </span>
@@ -167,13 +197,18 @@ const StreamingOutput: React.FC<{
       ) : (
         <div className="relative">
           {state === 'complete' && output && (
-            <div className="absolute top-2 right-2">
+            <div className="absolute top-2 right-2 z-10">
               <CopyButton text={output} />
             </div>
           )}
-          <pre className="whitespace-pre-wrap break-words text-sm text-gray-800 dark:text-gray-200 bg-gray-50 dark:bg-gray-800 rounded-lg p-4 pr-16 border border-gray-200 dark:border-gray-700 font-mono leading-relaxed min-h-[3rem]">
+          <pre
+            ref={preRef}
+            className="whitespace-pre-wrap break-words text-sm text-gray-800 dark:text-gray-200 bg-gray-50 dark:bg-gray-800 rounded-lg p-4 pr-16 border border-gray-200 dark:border-gray-700 font-mono leading-relaxed min-h-[3rem] max-h-[60vh] overflow-y-auto overscroll-contain"
+          >
             {output}
             {isCursor && <span className="animate-pulse">▌</span>}
+            {/* Scroll anchor — always at the very end of content */}
+            <span ref={bottomRef} />
           </pre>
         </div>
       )}
