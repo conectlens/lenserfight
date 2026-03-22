@@ -27,7 +27,7 @@ export const NetworkModal: React.FC<NetworkModalProps> = ({
   currentLenserId,
 }) => {
   const navigate = useNavigate()
-  const { toastError } = useToast()
+  const { toastError, toastInfo } = useToast()
   const { hasLenser } = useLenser()
   const [users, setUsers] = useState<FollowsNetworkUser[]>([])
   const [offset, setOffset] = useState(0)
@@ -97,6 +97,10 @@ export const NetworkModal: React.FC<NetworkModalProps> = ({
   )
 
   const handleFollowToggle = async (user: FollowsNetworkUser) => {
+    if (!hasLenser) {
+      toastInfo('Sign in and set up your profile to follow lensers.')
+      return
+    }
     if (followingInProgress.has(user.lenserId)) return
     setFollowingInProgress((prev) => new Set(prev).add(user.lenserId))
     try {
@@ -122,6 +126,10 @@ export const NetworkModal: React.FC<NetworkModalProps> = ({
   }
 
   const handleTrendingFollow = async (lenser: TrendingLenser) => {
+    if (!hasLenser) {
+      toastInfo('Sign in and set up your profile to follow lensers.')
+      return
+    }
     if (followingInProgress.has(lenser.lenserId)) return
     setFollowingInProgress((prev) => new Set(prev).add(lenser.lenserId))
     try {
@@ -164,8 +172,7 @@ export const NetworkModal: React.FC<NetworkModalProps> = ({
             {user.lenserId !== currentLenserId && (
               <button
                 onClick={() => handleFollowToggle(user)}
-                disabled={!hasLenser || followingInProgress.has(user.lenserId)}
-                title={!hasLenser ? 'Sign in and set up your profile to follow' : undefined}
+                disabled={followingInProgress.has(user.lenserId)}
                 className={`px-3 py-1.5 rounded-full text-xs font-semibold transition-colors disabled:opacity-50 ${
                   user.isFollowing
                     ? 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
@@ -250,8 +257,7 @@ export const NetworkModal: React.FC<NetworkModalProps> = ({
                           {!isFollowing && (
                             <button
                               onClick={() => handleTrendingFollow(lenser)}
-                              disabled={!hasLenser || followingInProgress.has(lenser.lenserId)}
-                              title={!hasLenser ? 'Sign in and set up your profile to follow' : undefined}
+                              disabled={followingInProgress.has(lenser.lenserId)}
                               className="px-3 py-1.5 rounded-full text-xs font-semibold bg-primary text-gray-900 hover:bg-yellow-300 transition-colors disabled:opacity-50"
                             >
                               Follow
