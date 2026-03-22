@@ -11,6 +11,7 @@ const mockGetLanguages = vi.fn()
 const mockGetLenserByHandle = vi.fn()
 const mockCreateLenserProfile = vi.fn()
 const mockUpdateLenserProfile = vi.fn()
+const mockUpdatePreferences = vi.fn()
 const mockSetItem = vi.fn()
 
 vi.mock('@lenserfight/features/auth', () => ({
@@ -47,6 +48,14 @@ vi.mock('@lenserfight/data/repositories', () => ({
     createLenserProfile: (...args: any[]) => mockCreateLenserProfile(...args),
     updateLenserProfile: (...args: any[]) => mockUpdateLenserProfile(...args),
   },
+  preferencesService: {
+    updatePreferences: (...args: any[]) => mockUpdatePreferences(...args),
+  },
+}))
+
+vi.mock('@lenserfight/features/generations', () => ({
+  useAIProviders: () => ({ data: [], isLoading: false }),
+  useAIModelsByProvider: () => ({ data: [], isLoading: false }),
 }))
 
 vi.mock('@lenserfight/utils/storage', () => ({
@@ -142,15 +151,15 @@ describe('CreateLenserProfileModal', () => {
       id: 'profile-1',
       handle: 'alice',
       display_name: 'Alice',
-      preferred_language: 'en',
       onboarding_step: 2,
       onboarding_completed_at: '2026-03-19T10:05:00.000Z',
       created_at: '2026-03-19T10:00:00.000Z',
     })
+    mockUpdatePreferences.mockResolvedValue(undefined)
     mockSetItem.mockReset()
   })
 
-  it('advances to preferences after step 0 instead of closing', async () => {
+  it('advances to personalization after step 0 instead of closing', async () => {
     const onClose = vi.fn()
     renderModal({ onClose })
 
@@ -175,7 +184,7 @@ describe('CreateLenserProfileModal', () => {
     })
 
     await waitFor(() => {
-      expect(screen.queryByText('Preferences')).not.toBeNull()
+      expect(screen.queryByText('Personalization')).not.toBeNull()
     })
 
     expect(onClose).not.toHaveBeenCalled()
@@ -203,10 +212,22 @@ describe('CreateLenserProfileModal', () => {
 
     renderModal({ onComplete, requireCompletion: true })
 
+    // Wait for Personalization step (step 1)
     await waitFor(() => {
-      expect(screen.queryByText('Preferences')).not.toBeNull()
+      expect(screen.queryByText('Personalization')).not.toBeNull()
     })
 
+    // Advance from Personalization → AI Setup
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: 'Continue' }))
+    })
+
+    // Wait for AI Setup step (step 2 = final)
+    await waitFor(() => {
+      expect(screen.queryByText('AI Setup')).not.toBeNull()
+    })
+
+    // Click Finish on the final step
     await act(async () => {
       fireEvent.click(screen.getByRole('button', { name: 'Finish' }))
     })
@@ -215,6 +236,7 @@ describe('CreateLenserProfileModal', () => {
       expect(mockUpdateLenserProfile).toHaveBeenCalledTimes(1)
     })
 
+    expect(mockUpdatePreferences).toHaveBeenCalledWith({ language: 'en', theme: 'system' })
     expect(onComplete).toHaveBeenCalledTimes(1)
   })
 })
