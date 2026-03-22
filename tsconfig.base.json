@@ -73,6 +73,8 @@
       "@lenserfight/ui/layout": ["libs/ui/layout/src/index.ts"],
       "@lenserfight/ui/modals": ["libs/ui/modals/src/index.ts"],
       "@lenserfight/ui/theme": ["libs/ui/theme/src/index.ts"],
+      "@lenserfight/ui/tokens": ["libs/ui/tokens/src/index.ts"],
+      "tokens": ["libs/ui/tokens/src/index.ts"],
       "@lenserfight/utils/date": ["libs/utils/date/src/index.ts"],
       "@lenserfight/utils/env": ["libs/utils/env/src/index.ts"],
       "@lenserfight/utils/storage": ["libs/utils/storage/src/index.ts"],
