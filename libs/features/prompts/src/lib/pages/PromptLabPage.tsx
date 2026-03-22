@@ -1,4 +1,4 @@
-import { useQueryClient } from '@tanstack/react-query'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { Lock, Pencil, Trash2, Flag } from 'lucide-react'
 import React, { useEffect, useMemo, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
@@ -8,7 +8,8 @@ import { SEOHead } from '@lenserfight/ui/components'
 import { useAuth } from '@lenserfight/features/auth'
 import { useShareContext } from '@lenserfight/features/share'
 import { useUI } from '@lenserfight/ui/components'
-import { promptsService } from '@lenserfight/data/repositories'
+import { promptsService, preferencesService } from '@lenserfight/data/repositories'
+import { LenserPreferences } from '@lenserfight/types'
 import { useReportContent } from '@lenserfight/features/home'
 import { ReportReasonEnum, REPORT_REASONS } from '@lenserfight/types'
 import { CreateLenserProfileModal } from '@lenserfight/features/onboarding'
@@ -38,7 +39,17 @@ export const PromptLabPage: React.FC = () => {
 
   const { prompt, isLoading, error, actions } = usePromptDetailController(id)
 
-  const lab = useLabController(id ?? '', !!isAuthenticated)
+  const { data: preferences } = useQuery<LenserPreferences | null>({
+    queryKey: ['preferences'],
+    queryFn: () => preferencesService.getPreferences(),
+    enabled: !!isAuthenticated,
+    staleTime: 1000 * 60 * 5,
+  })
+
+  const lab = useLabController(id ?? '', !!isAuthenticated, {
+    preferredProviderKey: preferences?.ai_provider_key,
+    preferredModelKey: preferences?.ai_model_key,
+  })
   const { forkPrompt, isForking } = useForkPrompt(prompt ?? null)
 
   // Versioning

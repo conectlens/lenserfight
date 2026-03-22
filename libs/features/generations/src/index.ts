@@ -1,4 +1,6 @@
 export * from './lib/components/AIProviderModelSelect'
+export * from './lib/components/AIProviderSelectList'
+export * from './lib/components/AIModelSelectList'
 export * from './lib/hooks/useAIProviderModels'
 export * from './lib/components/AIResultsSection'
 export * from './lib/components/CreateGenerationModal'
