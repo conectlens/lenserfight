@@ -29,9 +29,9 @@ interface AuthContextType extends AuthState {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
 
-// Module-level flag: survives React Strict Mode unmount/remount and HMR reloads.
-// Prevents fn_cancel_account_deletion_on_login from firing more than once per session.
-let _accountDeletionCheckDone = false
+// sessionStorage-backed guard: survives React Strict Mode and HMR (unlike module-level booleans
+// which reset on every hot-reload in dev). Key is scoped by user ID so switching accounts works.
+const _deletionCheckKey = (userId: string) => `acdr_${userId}`
 
 const getErrorMessage = (err: unknown): string => {
   if (err instanceof Error) return err.message
@@ -98,8 +98,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       try {
         const user = await authService.getCurrentUser()
         if (user) {
-          if (!_accountDeletionCheckDone) {
-            _accountDeletionCheckDone = true
+          if (!sessionStorage.getItem(_deletionCheckKey(user.id))) {
+            sessionStorage.setItem(_deletionCheckKey(user.id), '1')
             await restoreLenserAccountIfNeeded()
           }
           setState((s) => ({ ...s, user, isAuthenticated: true, isLoading: false }))
@@ -143,7 +143,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     loginTransitionInFlight.current = true
     try {
       const user = await authService.login(email, pass, captchaToken)
-      await restoreLenserAccountIfNeeded()
+      if (!sessionStorage.getItem(_deletionCheckKey(user.id))) {
+        sessionStorage.setItem(_deletionCheckKey(user.id), '1')
+        await restoreLenserAccountIfNeeded()
+      }
       setState({ user, isAuthenticated: true, isLoading: false, error: null })
 
       // Update environment metadata in the background — do not block the login flow
@@ -191,7 +194,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   )
 
   const logout = useCallback(async () => {
-    _accountDeletionCheckDone = false
+    // Clear all per-user deletion check keys from this session
+    Object.keys(sessionStorage)
+      .filter((k) => k.startsWith('acdr_'))
+      .forEach((k) => sessionStorage.removeItem(k))
     try {
       await authService.logout()
     } catch (e) {
