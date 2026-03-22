@@ -3,12 +3,12 @@ import { useQuery } from '@tanstack/react-query'
 import { Copy, Check, LayoutPanelLeft, Coins, Loader2 } from 'lucide-react'
 import { executionService } from '@lenserfight/data/repositories'
 import { queryKeys } from '@lenserfight/data/cache'
-import { ExecutionArtifact, WalletExecuteResponse, StreamState, StreamUsage } from '@lenserfight/types'
+import { ExecutionArtifact, ExecuteResponse, StreamState, StreamUsage } from '@lenserfight/types'
 
 interface LabArtifactViewerProps {
   selectedRunId: string | null
   comparisonRunIds: string[]
-  latestResult?: WalletExecuteResponse | null
+  latestResult?: ExecuteResponse | null
   streamState: StreamState
   streamOutput: string
   streamRunId: string | null
