@@ -11,7 +11,8 @@ import { ConfirmModal } from '@lenserfight/ui/modals'
 import { timeAgo } from '@lenserfight/utils/date'
 import { FEATURES } from '@lenserfight/utils/env'
 import { useQuery } from '@tanstack/react-query'
-import { ExternalLink, Check, Camera, Eye, Lock, MessageSquareDashed, Coins } from 'lucide-react'
+import { ExternalLink, Check, Camera, Eye, Lock, MessageSquareDashed, Coins, Key } from 'lucide-react'
+import { ApiKeysTab } from '../components/ApiKeysTab'
 import React, { useState, useEffect, useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useLocation, Link, useParams, useNavigate } from 'react-router-dom'
@@ -82,7 +83,7 @@ export const SettingsPage: React.FC = () => {
 
   // Tab Logic
   const validTabs = useMemo(() => {
-    const tabs = ['account', 'profile']
+    const tabs = ['account', 'profile', 'api-keys']
     if (FEATURES.NOTIFICATIONS) {
       tabs.push('notifications')
     }
@@ -693,6 +694,9 @@ export const SettingsPage: React.FC = () => {
               />
             </div>
           )}
+
+          {/* API KEYS TAB */}
+          {activeTab === 'api-keys' && <ApiKeysTab />}
 
           {/* NOTIFICATIONS TAB */}
           {activeTab === 'notifications' && FEATURES.NOTIFICATIONS && (
