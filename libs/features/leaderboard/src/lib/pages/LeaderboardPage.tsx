@@ -94,8 +94,8 @@ export const LeaderboardPage: React.FC = () => {
                 onClick={() => setActivityPeriod(p)}
                 className={`px-4 py-1.5 rounded-full text-sm font-medium transition-colors whitespace-nowrap ${
                   activityPeriod === p
-                    ? 'bg-primary text-white'
-                    : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700'
+                    ? 'bg-primary text-black dark:text-white'
+                    : 'bg-gray-100 dark:bg-gray-800 text-black dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700'
                 }`}
               >
                 {ACTIVITY_PERIOD_LABELS[p]}
