@@ -23,6 +23,8 @@ interface AuthContextType extends AuthState {
   resetPassword: (password: string, token?: string) => Promise<void>
   signInWithOAuth: (provider: 'google' | 'github' | 'azure') => Promise<void>
   resendSignupConfirmation: (email: string) => Promise<void>
+  /** Redirect to the external auth app login page, preserving the current page as return_url. */
+  redirectToLogin: (delayMs?: number) => void
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
@@ -222,6 +224,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     await authService.resendSignupConfirmation(email)
   }, [])
 
+  const redirectToLogin = useCallback((delayMs = 0) => {
+    const authAppUrl = (import.meta as any).env?.VITE_AUTH_APP_URL ?? 'https://auth.lenserfight.com'
+    const returnUrl = encodeURIComponent(window.location.href)
+    const target = `${authAppUrl}/login?return_url=${returnUrl}`
+    if (delayMs > 0) {
+      setTimeout(() => { window.location.href = target }, delayMs)
+    } else {
+      window.location.href = target
+    }
+  }, [])
+
   return (
     <AuthContext.Provider
       value={{
@@ -233,6 +246,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         resetPassword,
         signInWithOAuth,
         resendSignupConfirmation,
+        redirectToLogin,
       }}
     >
       {children}
