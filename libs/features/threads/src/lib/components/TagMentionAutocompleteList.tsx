@@ -1,4 +1,4 @@
-import { Hash } from 'lucide-react'
+import { Hash, Plus } from 'lucide-react'
 import React from 'react'
 
 import { TagUsage } from '@lenserfight/types'
@@ -10,6 +10,8 @@ interface TagMentionAutocompleteListProps {
   onSelect: (tag: TagUsage) => void
   position: { top: number; left: number }
   visible: boolean
+  createQuery?: string
+  onCreate?: (name: string) => void
 }
 
 export const TagMentionAutocompleteList: React.FC<TagMentionAutocompleteListProps> = ({
@@ -18,8 +20,15 @@ export const TagMentionAutocompleteList: React.FC<TagMentionAutocompleteListProp
   onSelect,
   position,
   visible,
+  createQuery,
+  onCreate,
 }) => {
-  if (!visible || suggestions.length === 0) return null
+  const hasExactMatch = suggestions.some(
+    (t) => t.name.toLowerCase() === createQuery?.toLowerCase()
+  )
+  const showCreate = !!createQuery && !!onCreate && !hasExactMatch
+
+  if (!visible || (suggestions.length === 0 && !showCreate)) return null
 
   return (
     <div
@@ -62,6 +71,22 @@ export const TagMentionAutocompleteList: React.FC<TagMentionAutocompleteListProp
             </div>
           </li>
         ))}
+        {showCreate && (
+          <li
+            onMouseDown={(e) => {
+              e.preventDefault()
+              onCreate!(createQuery)
+            }}
+            className="px-4 py-2.5 cursor-pointer transition-colors hover:bg-gray-50 dark:hover:bg-gray-800 border-t border-gray-100 dark:border-gray-700"
+          >
+            <div className="flex items-center gap-2">
+              <Plus size={13} className="text-teal-600 dark:text-teal-400 shrink-0" />
+              <span className="text-sm font-medium text-teal-700 dark:text-teal-300">
+                Create <span className="font-bold">#{createQuery}</span>
+              </span>
+            </div>
+          </li>
+        )}
       </ul>
     </div>
   )
