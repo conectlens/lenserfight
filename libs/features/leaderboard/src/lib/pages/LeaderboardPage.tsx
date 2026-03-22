@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react'
+import { useNavigate } from 'react-router-dom'
 
 import { SEOHead } from '@lenserfight/ui/components'
 import { Avatar } from '@lenserfight/ui/components'
@@ -19,6 +20,7 @@ const ACTIVITY_PERIOD_LABELS: Record<FollowPeriod, string> = {
 }
 
 export const LeaderboardPage: React.FC = () => {
+  const navigate = useNavigate()
   const { lenser } = useLenser()
   const { setError } = useError()
   const [scope, setScope] = useState<LeaderboardScope>('global')
@@ -121,7 +123,8 @@ export const LeaderboardPage: React.FC = () => {
               {activityData.map((entry) => (
                 <div
                   key={entry.lenserId}
-                  className="flex items-center gap-4 p-4 bg-white dark:bg-gray-800 rounded-xl border border-gray-100 dark:border-gray-700"
+                  onClick={() => navigate(`/lenser/${entry.handle}`)}
+                  className="flex items-center gap-4 p-4 bg-white dark:bg-gray-800 rounded-xl border border-gray-100 dark:border-gray-700 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-750 transition-colors"
                 >
                   <span className="w-7 text-center text-sm font-bold text-gray-500 dark:text-gray-400">
                     {entry.rank}
