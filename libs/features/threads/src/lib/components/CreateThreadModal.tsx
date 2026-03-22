@@ -6,9 +6,9 @@ import { Button } from '@lenserfight/ui/components'
 import { Modal } from '@lenserfight/ui/modals'
 import { RichMentionInput, RichMentionInputHandle } from '@lenserfight/ui/forms'
 import { SelectField } from '@lenserfight/ui/forms'
-import { promptsService } from '@lenserfight/data/repositories'
+import { lensesService } from '@lenserfight/data/repositories'
 import { tagService } from '@lenserfight/data/repositories'
-import { PromptTemplateViewModel, TagUsage } from '@lenserfight/types'
+import { LensViewModel, TagUsage } from '@lenserfight/types'
 import { Visibility } from '@lenserfight/types'
 import { useCreateThread } from '../hooks/useCreateThread'
 
@@ -43,7 +43,7 @@ export const CreateThreadModal: React.FC<CreateThreadModalProps> = ({
 
   // Prompt (@) mention state
   const [mentionQuery, setMentionQuery] = useState('')
-  const [suggestions, setSuggestions] = useState<PromptTemplateViewModel[]>([])
+  const [suggestions, setSuggestions] = useState<LensViewModel[]>([])
   const [isMentioning, setIsMentioning] = useState(false)
   const [menuPos, setMenuPos] = useState({ top: 0, left: 0 })
   const [activeIndex, setActiveIndex] = useState(0)
@@ -80,7 +80,7 @@ export const CreateThreadModal: React.FC<CreateThreadModalProps> = ({
 
     const timer = setTimeout(async () => {
       try {
-        const results = await promptsService.search(mentionQuery)
+        const results = await lensesService.search(mentionQuery)
         if (!cancelled) {
           setSuggestions((results.data ?? []).slice(0, 5))
           setActiveIndex(0)
@@ -168,7 +168,7 @@ export const CreateThreadModal: React.FC<CreateThreadModalProps> = ({
     if (!isSubmitting) onClose()
   }
 
-  const handleMentionSelect = (prompt: PromptTemplateViewModel) => {
+  const handleMentionSelect = (prompt: LensViewModel) => {
     if (editorRef.current) {
       editorRef.current.insertMention(prompt)
     }

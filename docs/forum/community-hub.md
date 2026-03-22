@@ -20,7 +20,7 @@
 
 ## What does not belong in forum
 
-- a standalone prompt marketplace
+- a standalone Lens marketplace
 - long-term enterprise account management
 - private moderation actions
 

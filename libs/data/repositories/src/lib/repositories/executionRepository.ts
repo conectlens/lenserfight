@@ -75,8 +75,8 @@ export class SupabaseExecutionRepository implements ExecutionRepositoryPort {
     const { data: execRows, error: execError } = await supabase
       .schema('content')
       .from('prompt_executions')
-      .select('id, prompt_id, lenser_id, execution_run_id, payment_method, created_at')
-      .eq('prompt_id', promptId)
+      .select('id, lens_id, lenser_id, execution_run_id, payment_method, created_at')
+      .eq('lens_id', promptId)
       .order('created_at', { ascending: false })
       .range(offset, offset + limit - 1)
 
@@ -135,7 +135,7 @@ export class SupabaseExecutionRepository implements ExecutionRepositoryPort {
       const run = runId ? runMap.get(runId) : undefined
       return {
         id: r.id as string,
-        promptId: r.prompt_id as string,
+        lensId: r.lens_id as string,
         lenserId: r.lenser_id as string,
         executionRunId: runId,
         paymentMethod: (r.payment_method as PromptExecutionRecord['paymentMethod']) ?? 'free',

@@ -4,12 +4,12 @@ import { SEOMetadata, seoService } from '@lenserfight/data/repositories'
 
 type SEOType =
   | 'home'
-  | 'prompt'
+  | 'lens'
   | 'thread'
   | 'profile'
   | 'tag'
   | 'tag-cloud'
-  | 'prompts-list'
+  | 'lenses-list'
   | 'default'
 
 interface SEOHeadProps {
@@ -30,7 +30,7 @@ export const SEOHead: React.FC<SEOHeadProps> = ({ type, data, overrideTitle }) =
     switch (type) {
       case 'home':
         return seoService.getHomeMeta()
-      case 'prompt':
+      case 'lens':
         return seoService.getPromptMeta(data)
       case 'thread':
         return seoService.getThreadMeta(data)
@@ -41,7 +41,7 @@ export const SEOHead: React.FC<SEOHeadProps> = ({ type, data, overrideTitle }) =
         return seoService.getTagMeta(data)
       case 'tag-cloud':
         return seoService.getTagCloudMeta()
-      case 'prompts-list':
+      case 'lenses-list':
         return seoService.getPromptsListMeta()
       default:
         return seoService.getHomeMeta()
@@ -55,7 +55,7 @@ export const SEOHead: React.FC<SEOHeadProps> = ({ type, data, overrideTitle }) =
 
   const ogImage = meta.ogImage ?? DEFAULT_OG_IMAGE
   const ogType =
-    type === 'profile' ? 'profile' : type === 'prompt' || type === 'thread' ? 'article' : 'website'
+    type === 'profile' ? 'profile' : type === 'lens' || type === 'thread' ? 'article' : 'website'
 
   return (
     <Helmet>

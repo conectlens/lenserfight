@@ -1,4 +1,4 @@
-import { SupabasePromptsRepository } from '../repositories/promptsRepository'
+import { SupabaseLensesRepository } from '../repositories/lensesRepository'
 import { SupabaseReactionRepository } from '../repositories/reactionRepository'
 import { SupabaseThreadsRepository } from '../repositories/threadsRepository'
 import {
@@ -10,11 +10,11 @@ import {
 
 const reactionRepo = new SupabaseReactionRepository()
 const threadsRepo = new SupabaseThreadsRepository()
-const promptsRepo = new SupabasePromptsRepository()
+const lensesRepo = new SupabaseLensesRepository()
 
 export const reactionService = {
   validateTarget: (t: string) => {
-    const valid: TargetType[] = ['thread', 'thread_reply', 'prompt_template']
+    const valid: TargetType[] = ['thread', 'thread_reply', 'lens']
     if (!valid.includes(t as TargetType)) throw new Error(`Invalid target`)
   },
 
@@ -83,8 +83,8 @@ export const reactionService = {
           if (r.target_type === 'thread') {
             const t = await threadsRepo.getThreadById(r.target_id)
             if (t) title = t.title
-          } else if (r.target_type === 'prompt_template') {
-            const p = await promptsRepo.getById(r.target_id)
+          } else if (r.target_type === 'lens') {
+            const p = await lensesRepo.getById(r.target_id)
             if (p) title = p.title
           } else if (r.target_type === 'thread_reply') {
             const reply = await threadsRepo.getReplyById(r.target_id)

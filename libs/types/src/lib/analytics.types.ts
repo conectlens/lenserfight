@@ -1,4 +1,4 @@
-export type TargetType = 'page' | 'thread' | 'prompt' | 'profile' | 'tag'
+export type TargetType = 'page' | 'thread' | 'lens' | 'profile' | 'tag'
 
 export interface LogPageViewDTO {
   lenserId?: string | null

@@ -58,7 +58,6 @@ export const FeedbackModal: React.FC<FeedbackModalProps> = ({ isOpen, onClose })
       await feedbackService.submitFeedback({
         product_tag: (productTag as ProductTag) || undefined,
         page: location.pathname,
-        user_id: user?.id || null,
         message: message,
         start_date: null,
         end_date: null,

@@ -2,7 +2,7 @@ import { defineCommand } from 'citty';
 import consola from 'consola';
 import { callRpc, handleError } from '../utils/api';
 
-const VALID_TYPES = ['thread', 'prompt_template'] as const;
+const VALID_TYPES = ['thread', 'lens'] as const;
 const VALID_REASONS = [
   'spam',
   'harassment',
@@ -20,7 +20,7 @@ export default defineCommand({
     type: {
       type: 'string',
       required: true,
-      description: 'Content type: thread | prompt_template',
+      description: 'Content type: thread | lens',
     },
     id: {
       type: 'string',

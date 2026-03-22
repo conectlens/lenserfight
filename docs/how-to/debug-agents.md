@@ -1,7 +1,7 @@
-# Debug Agents
+# Debug Runners
 
 Description:
-How to debug agent behavior, failures, and unexpected outputs in development and production-like setups.
+How to debug Runner behavior, failures, and unexpected outputs in development and production-like setups.
 
 Scope:
 - logging and tracing

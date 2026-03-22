@@ -1,12 +1,12 @@
 import { Sparkles } from 'lucide-react'
 import React from 'react'
 
-import { PromptTemplateViewModel } from '@lenserfight/types'
+import { LensViewModel } from '@lenserfight/types'
 
 interface MentionAutocompleteListProps {
-  suggestions: PromptTemplateViewModel[]
+  suggestions: LensViewModel[]
   activeIndex: number
-  onSelect: (prompt: PromptTemplateViewModel) => void
+  onSelect: (prompt: LensViewModel) => void
   position: { top: number; left: number }
   visible: boolean
 }

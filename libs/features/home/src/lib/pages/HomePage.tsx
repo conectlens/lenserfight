@@ -18,7 +18,7 @@ import { TagBadge } from '@lenserfight/ui/components'
 import { useAuth } from '@lenserfight/features/auth'
 import {
   useThreadsFeed,
-  useTopPrompts,
+  useTopLenses,
   useTrendingTags,
   useLatestLensers,
   usePersonalFeed,
@@ -66,7 +66,7 @@ export const HomePage: React.FC = () => {
   } = usePersonalFeed(showForYou ? lenserId : undefined)
 
   // Sidebar widgets
-  const { data: topPrompts, isLoading: promptsLoading } = useTopPrompts()
+  const { data: topPrompts, isLoading: promptsLoading } = useTopLenses()
   const { data: personalPromptsData, isLoading: personalPromptsLoading } = usePersonalPrompts(
     showForYou ? lenserId : undefined
   )
