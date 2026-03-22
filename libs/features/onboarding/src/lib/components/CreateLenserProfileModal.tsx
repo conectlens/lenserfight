@@ -2,6 +2,7 @@ import { queryKeys } from '@lenserfight/data/cache'
 import { lenserService, preferencesService } from '@lenserfight/data/repositories'
 import { useAuth } from '@lenserfight/features/auth'
 import { InputField } from '@lenserfight/features/auth'
+import { SearchSelectField } from '@lenserfight/ui/forms'
 import { useAIProviders, useAIModelsByProvider } from '@lenserfight/features/generations'
 import { CreateLenserDTO, Lenser } from '@lenserfight/types'
 import { LanguageSelectBox, StepWizard } from '@lenserfight/ui/components'
@@ -355,36 +356,26 @@ export const CreateLenserProfileModal: React.FC<CreateLenserProfileModalProps> =
               Optionally set your preferred AI provider and model. You can change this later in Settings.
             </p>
 
-            <div>
-              <p className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Provider</p>
-              <select
-                value={aiProviderKey}
-                onChange={(e) => { setAiProviderKey(e.target.value); setAiModelKey('') }}
-                disabled={isLoadingProviders}
-                className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-sm text-gray-700 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-primary/40 disabled:opacity-50"
-              >
-                <option value="">Select a provider (optional)</option>
-                {providers.map((p) => (
-                  <option key={p.key} value={p.key}>{p.display_name}</option>
-                ))}
-              </select>
-            </div>
+            <SearchSelectField
+              label="Provider"
+              value={aiProviderKey}
+              onChange={(val) => { setAiProviderKey(val); setAiModelKey('') }}
+              options={providers.map((p) => ({ value: p.key, label: p.display_name }))}
+              placeholder="Select a provider (optional)"
+              searchPlaceholder="Search providers..."
+              disabled={isLoadingProviders}
+            />
 
             {aiProviderKey && (
-              <div>
-                <p className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Model</p>
-                <select
-                  value={aiModelKey}
-                  onChange={(e) => setAiModelKey(e.target.value)}
-                  disabled={isLoadingModels}
-                  className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-sm text-gray-700 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-primary/40 disabled:opacity-50"
-                >
-                  <option value="">Select a model (optional)</option>
-                  {providerModels.map((m) => (
-                    <option key={m.key} value={m.key}>{m.name}</option>
-                  ))}
-                </select>
-              </div>
+              <SearchSelectField
+                label="Model"
+                value={aiModelKey}
+                onChange={setAiModelKey}
+                options={providerModels.map((m) => ({ value: m.key, label: m.name }))}
+                placeholder="Select a model (optional)"
+                searchPlaceholder="Search models..."
+                disabled={isLoadingModels}
+              />
             )}
 
             {submitError && (
