@@ -7,14 +7,15 @@ type Tab = 'actions' | 'prompts' | 'threads' | 'challenges'
 interface LenserTabsProps {
   activeTab: Tab
   onChange: (tab: Tab) => void
+  hideActions?: boolean
 }
 
-export const LenserTabs: React.FC<LenserTabsProps> = ({ activeTab, onChange }) => {
+export const LenserTabs: React.FC<LenserTabsProps> = ({ activeTab, onChange, hideActions = false }) => {
   // Order: Threads, Prompts, Actions
   const tabs: { id: Tab; label: string }[] = [
     { id: 'threads', label: 'Threads' },
     { id: 'prompts', label: 'Prompts' },
-    { id: 'actions', label: 'Actions' },
+    ...(!hideActions ? [{ id: 'actions' as Tab, label: 'Actions' }] : []),
   ]
 
   if (FEATURES.CHALLENGES_TAB) {
