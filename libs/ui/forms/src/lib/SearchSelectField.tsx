@@ -1,19 +1,15 @@
-import { ChevronDown, Check } from 'lucide-react'
+import { ChevronDown, Check, Search } from 'lucide-react'
 import React, { useState, useRef, useEffect, useCallback } from 'react'
 import { createPortal } from 'react-dom'
+import { type Option } from './SelectField'
 
-export interface Option {
-  value: string
-  label: string
-  icon?: React.ElementType
-}
-
-interface SelectFieldProps {
+interface SearchSelectFieldProps {
   label?: string
   value: string
   onChange: (value: string) => void
   options: Option[]
   placeholder?: string
+  searchPlaceholder?: string
   error?: string
   disabled?: boolean
   className?: string
@@ -22,12 +18,13 @@ interface SelectFieldProps {
   onOpen?: () => void
 }
 
-export const SelectField: React.FC<SelectFieldProps> = ({
+export const SearchSelectField: React.FC<SearchSelectFieldProps> = ({
   label,
   value,
   onChange,
   options,
   placeholder = 'Select...',
+  searchPlaceholder = 'Search...',
   error,
   disabled,
   className = '',
@@ -36,17 +33,20 @@ export const SelectField: React.FC<SelectFieldProps> = ({
   onOpen,
 }) => {
   const [isOpen, setIsOpen] = useState(false)
-  const [focusedIndex, setFocusedIndex] = useState(-1)
-  const [typeaheadBuffer, setTypeaheadBuffer] = useState('')
+  const [query, setQuery] = useState('')
+  const [focusedIndex, setFocusedIndex] = useState(0)
   const containerRef = useRef<HTMLButtonElement>(null)
   const dropdownRef = useRef<HTMLDivElement>(null)
-  const typeaheadTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const searchRef = useRef<HTMLInputElement>(null)
   const optionRefs = useRef<(HTMLButtonElement | null)[]>([])
 
-  // Portal positioning
   const [coords, setCoords] = useState({ top: 0, left: 0, width: 0 })
 
   const selectedOption = options.find((o) => o.value === value)
+
+  const filteredOptions = query.trim()
+    ? options.filter((o) => o.label.toLowerCase().includes(query.toLowerCase()))
+    : options
 
   const openDropdown = useCallback(() => {
     if (onOpen) onOpen()
@@ -58,23 +58,30 @@ export const SelectField: React.FC<SelectFieldProps> = ({
         width: rect.width,
       })
     }
-    const currentIndex = options.findIndex((o) => o.value === value)
-    setFocusedIndex(currentIndex)
     setIsOpen(true)
-  }, [onOpen, options, value])
+    setQuery('')
+    setFocusedIndex(0)
+  }, [onOpen])
 
   const closeDropdown = useCallback(() => {
     setIsOpen(false)
-    setFocusedIndex(-1)
-    setTypeaheadBuffer('')
-    if (typeaheadTimerRef.current) clearTimeout(typeaheadTimerRef.current)
+    setQuery('')
+    setFocusedIndex(0)
   }, [])
 
-  const scrollOptionIntoView = (index: number) => {
-    optionRefs.current[index]?.scrollIntoView({ block: 'nearest' })
-  }
+  // Autofocus search input when dropdown opens
+  useEffect(() => {
+    if (isOpen) {
+      requestAnimationFrame(() => searchRef.current?.focus())
+    }
+  }, [isOpen])
 
-  // Close on outside click and scroll
+  // Reset focused index when filtered list changes
+  useEffect(() => {
+    setFocusedIndex(0)
+  }, [query])
+
+  // Close on outside click / scroll
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (containerRef.current && containerRef.current.contains(event.target as Node)) return
@@ -102,74 +109,52 @@ export const SelectField: React.FC<SelectFieldProps> = ({
     }
   }, [isOpen, closeDropdown])
 
-  const toggleOpen = () => {
-    if (disabled) return
-    if (isOpen) {
-      closeDropdown()
-    } else {
-      openDropdown()
-    }
-  }
-
   const handleSelect = (val: string) => {
     if (val !== value) onChange(val)
     closeDropdown()
+    containerRef.current?.focus()
   }
 
-  const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (disabled) return
-
+  const handleSearchKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Escape') {
       closeDropdown()
-      return
-    }
-
-    if (e.key === 'Enter' || e.key === ' ') {
-      e.preventDefault()
-      if (isOpen && focusedIndex >= 0 && focusedIndex < options.length) {
-        handleSelect(options[focusedIndex].value)
-      } else {
-        toggleOpen()
-      }
+      containerRef.current?.focus()
       return
     }
 
     if (e.key === 'ArrowDown') {
       e.preventDefault()
-      if (!isOpen) { openDropdown(); return }
-      const next = Math.min(focusedIndex + 1, options.length - 1)
+      const next = Math.min(focusedIndex + 1, filteredOptions.length - 1)
       setFocusedIndex(next)
-      scrollOptionIntoView(next)
+      optionRefs.current[next]?.scrollIntoView({ block: 'nearest' })
       return
     }
 
     if (e.key === 'ArrowUp') {
       e.preventDefault()
-      if (!isOpen) { openDropdown(); return }
       const prev = Math.max(focusedIndex - 1, 0)
       setFocusedIndex(prev)
-      scrollOptionIntoView(prev)
+      optionRefs.current[prev]?.scrollIntoView({ block: 'nearest' })
       return
     }
 
-    // Typeahead: printable single character
-    if (e.key.length === 1 && !e.ctrlKey && !e.metaKey && !e.altKey) {
+    if (e.key === 'Enter') {
       e.preventDefault()
-
-      const newBuffer = typeaheadBuffer + e.key.toLowerCase()
-      setTypeaheadBuffer(newBuffer)
-
-      if (typeaheadTimerRef.current) clearTimeout(typeaheadTimerRef.current)
-      typeaheadTimerRef.current = setTimeout(() => setTypeaheadBuffer(''), 600)
-
-      const matchIndex = options.findIndex((o) => o.label.toLowerCase().startsWith(newBuffer))
-      if (matchIndex !== -1) {
-        if (!isOpen) openDropdown()
-        setFocusedIndex(matchIndex)
-        // Defer scroll until after dropdown renders
-        requestAnimationFrame(() => scrollOptionIntoView(matchIndex))
+      if (filteredOptions.length === 1) {
+        handleSelect(filteredOptions[0].value)
+      } else if (focusedIndex >= 0 && focusedIndex < filteredOptions.length) {
+        handleSelect(filteredOptions[focusedIndex].value)
       }
     }
+  }
+
+  const handleTriggerKeyDown = (e: React.KeyboardEvent) => {
+    if (disabled) return
+    if (e.key === 'Enter' || e.key === ' ' || e.key === 'ArrowDown') {
+      e.preventDefault()
+      if (!isOpen) openDropdown()
+    }
+    if (e.key === 'Escape' && isOpen) closeDropdown()
   }
 
   return (
@@ -183,8 +168,8 @@ export const SelectField: React.FC<SelectFieldProps> = ({
       <button
         ref={containerRef}
         type="button"
-        onClick={toggleOpen}
-        onKeyDown={handleKeyDown}
+        onClick={() => { if (disabled) return; isOpen ? closeDropdown() : openDropdown() }}
+        onKeyDown={handleTriggerKeyDown}
         className={`
             w-full flex items-center justify-between px-4 py-2.5 rounded-xl border bg-white dark:bg-gray-800 text-left transition-all shadow-sm
             ${
@@ -216,15 +201,32 @@ export const SelectField: React.FC<SelectFieldProps> = ({
         createPortal(
           <div
             ref={dropdownRef}
-            className={`select-dropdown-portal absolute z-[9999] bg-white dark:bg-gray-800 rounded-xl shadow-xl border border-gray-100 dark:border-gray-700 max-h-60 overflow-y-auto animate-in fade-in zoom-in-95 duration-100 origin-top ${dropdownClassName}`}
+            className={`select-dropdown-portal absolute z-[9999] bg-white dark:bg-gray-800 rounded-xl shadow-xl border border-gray-100 dark:border-gray-700 animate-in fade-in zoom-in-95 duration-100 origin-top ${dropdownClassName}`}
             style={{
               top: coords.top,
               left: coords.left,
               width: coords.width,
             }}
           >
-            <div className="p-1">
-              {options.map((option, index) => {
+            {/* Search input */}
+            <div className="p-2 border-b border-gray-100 dark:border-gray-700">
+              <div className="relative">
+                <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
+                <input
+                  ref={searchRef}
+                  type="text"
+                  value={query}
+                  onChange={(e) => setQuery(e.target.value)}
+                  onKeyDown={handleSearchKeyDown}
+                  placeholder={searchPlaceholder}
+                  className="w-full pl-8 pr-3 py-1.5 text-sm rounded-lg border border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-colors"
+                />
+              </div>
+            </div>
+
+            {/* Options list */}
+            <div className="p-1 max-h-52 overflow-y-auto">
+              {filteredOptions.map((option, index) => {
                 const isSelected = option.value === value
                 const isFocused = index === focusedIndex
                 return (
@@ -248,22 +250,18 @@ export const SelectField: React.FC<SelectFieldProps> = ({
                       {option.icon && (
                         <option.icon
                           size={16}
-                          className={
-                            isSelected
-                              ? 'text-gray-900 dark:text-gray-100'
-                              : 'text-gray-400 dark:text-gray-500'
-                          }
+                          className={isSelected ? 'text-gray-900 dark:text-gray-100' : 'text-gray-400 dark:text-gray-500'}
                         />
                       )}
                       {option.label}
                     </div>
-                    {isSelected && <Check size={14} className="text-primary-700" />}
+                    {isSelected && <Check size={14} className="text-primary-700 shrink-0" />}
                   </button>
                 )
               })}
-              {options.length === 0 && (
+              {filteredOptions.length === 0 && (
                 <div className="px-3 py-3 text-sm text-gray-400 dark:text-gray-500 text-center">
-                  No options available
+                  No results for "{query}"
                 </div>
               )}
             </div>
