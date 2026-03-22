@@ -1,6 +1,6 @@
 import { UserX, Sparkles } from 'lucide-react'
 import React, { useEffect, useState, useRef, useCallback } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, Link } from 'react-router-dom'
 
 import { Avatar } from '@lenserfight/ui/components'
 import { Modal } from '@lenserfight/ui/modals'
@@ -160,7 +160,11 @@ export const NetworkModal: React.FC<NetworkModalProps> = ({
             key={user.lenserId}
             className="flex items-center justify-between py-3 border-b border-gray-50 dark:border-gray-700 last:border-0 dark:text-gray-200"
           >
-            <div className="flex items-center gap-3">
+            <Link
+              to={`/lenser/${user.handle}`}
+              onClick={onClose}
+              className="flex items-center gap-3 hover:opacity-80 transition-opacity"
+            >
               <Avatar src={user.avatarUrl} size="md" className="!w-10 !h-10" />
               <div>
                 <p className="text-sm font-semibold text-gray-900 dark:text-white">
@@ -168,7 +172,7 @@ export const NetworkModal: React.FC<NetworkModalProps> = ({
                 </p>
                 <p className="text-xs text-gray-500 dark:text-gray-400">@{user.handle}</p>
               </div>
-            </div>
+            </Link>
             {user.lenserId !== currentLenserId && (
               <button
                 onClick={() => handleFollowToggle(user)}
@@ -239,7 +243,11 @@ export const NetworkModal: React.FC<NetworkModalProps> = ({
                           key={lenser.lenserId}
                           className="flex items-center justify-between py-3 border-b border-gray-50 dark:border-gray-700 last:border-0"
                         >
-                          <div className="flex items-center gap-3">
+                          <Link
+                            to={`/lenser/${lenser.handle}`}
+                            onClick={onClose}
+                            className="flex items-center gap-3 hover:opacity-80 transition-opacity"
+                          >
                             <Avatar
                               src={lenser.avatarUrl}
                               size="md"
@@ -253,7 +261,7 @@ export const NetworkModal: React.FC<NetworkModalProps> = ({
                                 @{lenser.handle}
                               </p>
                             </div>
-                          </div>
+                          </Link>
                           {!isFollowing && (
                             <button
                               onClick={() => handleTrendingFollow(lenser)}
