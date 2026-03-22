@@ -29,14 +29,13 @@ const CreditPackCard: React.FC<{
 
   return (
     <div
-      className={`relative flex flex-col rounded-2xl p-6 border transition-all ${
-        isPopular
-          ? 'border-primary bg-primary/5 dark:bg-primary/10 shadow-md'
-          : 'border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 hover:border-gray-300 dark:hover:border-gray-600'
-      }`}
+      className={`relative flex flex-col rounded-2xl p-6 border transition-all ${isPopular
+        ? 'border-primary bg-primary/5 dark:bg-primary/10 shadow-md'
+        : 'border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 hover:border-gray-300 dark:hover:border-gray-600'
+        }`}
     >
       {isPopular && (
-        <span className="absolute -top-3 left-1/2 -translate-x-1/2 bg-primary text-gray-900 text-[10px] font-bold px-3 py-0.5 rounded-full uppercase tracking-widest">
+        <span className="absolute -top-3 left-1/2 -translate-x-1/2 bg-primary text-gray-900 text-[10px] font-bold px-3 py-0.5 rounded-full uppercase tracking-widest text-center">
           Most popular
         </span>
       )}
@@ -56,11 +55,10 @@ const CreditPackCard: React.FC<{
 
       <button
         disabled={buying}
-        className={`mt-auto w-full py-2.5 rounded-xl text-sm font-semibold transition-colors flex items-center justify-center gap-2 ${
-          isPopular
-            ? 'bg-primary hover:bg-yellow-300 text-gray-900'
-            : 'bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-900 dark:text-white'
-        } disabled:opacity-50 disabled:cursor-not-allowed`}
+        className={`mt-auto w-full py-2.5 rounded-xl text-sm font-semibold transition-colors flex items-center justify-center gap-2 ${isPopular
+          ? 'bg-primary hover:bg-yellow-300 text-gray-900'
+          : 'bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-900 dark:text-white'
+          } disabled:opacity-50 disabled:cursor-not-allowed`}
         onClick={() => onBuy(product)}
       >
         {buying && <Loader2 size={14} className="animate-spin" />}
