@@ -181,7 +181,7 @@ export const LenserProfilePage: React.FC = () => {
       setShareConfig({
         title: viewedProfile.display_name,
         resourceType: 'profile',
-        resourceId: viewedProfile.handle,
+        resourceId: viewedProfile.id,
         slug: viewedProfile.handle,
       })
     }
