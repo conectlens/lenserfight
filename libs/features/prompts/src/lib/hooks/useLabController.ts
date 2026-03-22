@@ -122,6 +122,7 @@ export const useLabController = (promptId: string, isAuthenticated = false) => {
       abortRef.current?.abort()
       const controller = new AbortController()
       abortRef.current = controller
+      const isActive = () => abortRef.current === controller
       setStreamState('loading')
       setStreamOutput('')
       setStreamRunId(null)
@@ -133,11 +134,18 @@ export const useLabController = (promptId: string, isAuthenticated = false) => {
 
       const callbacks = {
         onStart: (runId: string) => {
+          if (!isActive()) return
           setStreamRunId(runId)
           setStreamState('streaming')
         },
-        onToken: (content: string) => setStreamOutput((prev) => prev + content),
+        onToken: (content: string) => {
+          if (!isActive()) return
+          // Collapse runs of 10+ spaces (e.g. Gemini table-padding) to a single space
+          const cleaned = content.replace(/ {10,}/g, ' ')
+          setStreamOutput((prev) => prev + cleaned)
+        },
         onEnd: (usage: { input_tokens: number; output_tokens: number }, credits: number) => {
+          if (!isActive()) return
           setStreamUsage(usage)
           setStreamCredits(credits)
           setStreamState('complete')
@@ -145,6 +153,7 @@ export const useLabController = (promptId: string, isAuthenticated = false) => {
           setHistoryOffset(0)
         },
         onError: (message: string) => {
+          if (!isActive()) return
           setStreamError(message)
           setStreamState('error')
           toastError(new Error(message))
@@ -174,6 +183,7 @@ export const useLabController = (promptId: string, isAuthenticated = false) => {
             )
 
       streamPromise.catch((err: unknown) => {
+          if (!isActive()) return
           if ((err as Error).name === 'AbortError') {
             setStreamState('idle')
           } else {
