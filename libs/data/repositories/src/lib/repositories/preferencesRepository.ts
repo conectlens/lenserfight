@@ -4,11 +4,6 @@ import { supabase } from '@lenserfight/data/supabase'
 export interface PreferencesRepositoryPort {
   getPreferences(): Promise<LenserPreferences | null>
   updatePreferences(patch: Partial<LenserPreferences>): Promise<void>
-  /**
-   * Convenience helper that writes theme to lensers.preferences.
-   * Also writes to lensers.profiles.preferences for backward compat until
-   * profiles.preferences JSONB is deprecated.
-   */
   updateTheme(theme: 'light' | 'dark' | 'system'): Promise<void>
 }
 
@@ -32,33 +27,6 @@ export class SupabasePreferencesRepository implements PreferencesRepositoryPort 
   }
 
   async updateTheme(theme: 'light' | 'dark' | 'system'): Promise<void> {
-    // Write to new preferences table
     await this.updatePreferences({ theme })
-
-    // Also keep the old profiles.preferences JSONB in sync for backward compat
-    const { data: authData } = await supabase.auth.getUser()
-    if (!authData.user) return
-
-    const { data: profile } = await supabase
-      .schema('lensers')
-      .from('profiles')
-      .select('id, preferences')
-      .eq('user_id', authData.user.id)
-      .maybeSingle()
-
-    if (!profile) return
-
-    const persistedTheme: 'light' | 'dark' =
-      theme === 'system'
-        ? window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'
-        : theme
-
-    const newPrefs = { ...((profile.preferences as Record<string, unknown>) ?? {}), theme: persistedTheme }
-
-    await supabase
-      .schema('lensers')
-      .from('profiles')
-      .update({ preferences: newPrefs })
-      .eq('id', profile.id)
   }
 }
