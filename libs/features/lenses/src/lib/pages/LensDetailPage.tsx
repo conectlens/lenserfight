@@ -1,5 +1,5 @@
 import { useQueryClient } from '@tanstack/react-query'
-import { Lock, Pencil, Trash2, Flag } from 'lucide-react'
+import { History, Lock, Loader2, Pencil, Trash2, Flag } from 'lucide-react'
 import React, { useEffect, useMemo, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 
@@ -18,14 +18,10 @@ import { LensAuthorList } from '../components/LensAuthorList'
 import { LensBodyViewer } from '../components/LensBodyViewer'
 import { LensDetailHeader } from '../components/LensDetailHeader'
 import { LensRelatedList } from '../components/LensRelatedList'
-import { LensVersionHistoryPanel } from '../components/LensVersionHistoryPanel'
-import { CreateLensVersionModal } from '../components/CreateLensVersionModal'
-import { ResourceAttachmentsPanel } from '../components/ResourceAttachmentsPanel'
 import { useAuthenticatedLenser } from '../hooks/useAuthenticatedLenser'
 import { useCreateLens } from '../hooks/useCreateLens'
 import { useLensDetailController } from '../hooks/useLensDetailController'
 import { useLensVersions, useLensVersionDetail } from '../hooks/useLensVersions'
-import { useVersionResources, useResourceAttachments } from '../hooks/useResourceAttachments'
 
 export const LensDetailPage: React.FC = () => {
   const { id } = useParams<{ id: string }>()
@@ -52,27 +48,14 @@ export const LensDetailPage: React.FC = () => {
   const [selectedProviderKey, setSelectedProviderKey] = useState('')
   const [selectedModelKey, setSelectedModelKey] = useState('')
 
-  // Versioning state
-  const [selectedVersionId, setSelectedVersionId] = useState<string | null>(null)
-  const [isCreateVersionOpen, setIsCreateVersionOpen] = useState(false)
+  // Version history (lazy — only fetched when picker is opened)
+  const [showVersionPicker, setShowVersionPicker] = useState(false)
+  const [previewVersionId, setPreviewVersionId] = useState<string | null>(null)
 
-  const { versions, isLoading: isLoadingVersions, createVersion, isCreating: isCreatingVersion, publishVersion, isPublishing } =
-    useLensVersions(id ?? '')
-  const { data: selectedVersion } = useLensVersionDetail(selectedVersionId)
-
-  // Resources for selected version
-  const { data: versionResources = [], isLoading: isLoadingResources } = useVersionResources(selectedVersionId)
-  const { uploadAndAttach, detachResource, uploadProgress: rawUploadProgress } = useResourceAttachments(selectedVersionId)
-  const uploadProgress = useMemo(
-    () =>
-      Object.fromEntries(
-        Object.entries(rawUploadProgress).map(([k, s]) => [
-          k,
-          { status: s, percent: s === 'done' ? 100 : s === 'uploading' ? 50 : 0 },
-        ])
-      ),
-    [rawUploadProgress]
-  )
+  const { versions, isLoading: isLoadingVersions } = useLensVersions(id ?? '', {
+    enabled: showVersionPicker,
+  })
+  const { data: previewVersion, isLoading: isLoadingPreview } = useLensVersionDetail(previewVersionId)
 
   const handleProviderChange = (key: string) => {
     setSelectedProviderKey(key)
@@ -140,7 +123,7 @@ export const LensDetailPage: React.FC = () => {
   const handleCopy = async () => {
     if (!lens || !ensureProfile() || !lenser) return
     try {
-      await navigator.clipboard.writeText(lens.content)
+      await navigator.clipboard.writeText(previewVersion?.templateBody ?? lens.content)
       await actions.copyLens()
     } catch { }
   }
@@ -175,6 +158,11 @@ export const LensDetailPage: React.FC = () => {
     } else {
       navigate(`/lenses/${newId}`)
     }
+  }
+
+  const handleVersionToggle = () => {
+    setShowVersionPicker((v) => !v)
+    setPreviewVersionId(null)
   }
 
   if (authLoading || isLoading) {
@@ -236,12 +224,87 @@ export const LensDetailPage: React.FC = () => {
             />
           </div>
 
-          <div className="mb-8">
+          <div className="flex flex-col gap-2 mb-6">
+            {/* Viewer toolbar — History icon button */}
+            <div className="flex justify-end">
+              <button
+                type="button"
+                onClick={handleVersionToggle}
+                title={showVersionPicker ? 'Hide version history' : 'Show version history'}
+                className={`flex items-center gap-1.5 px-2.5 py-1.5 text-xs rounded-lg border shadow-sm transition-all ${
+                  showVersionPicker
+                    ? 'border-primary-200 dark:border-primary-800 bg-primary-50 dark:bg-primary-900/20 text-primary-600 dark:text-primary-400'
+                    : 'border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200 hover:border-gray-300 dark:hover:border-gray-600'
+                }`}
+              >
+                <History size={13} />
+                <span>
+                  {previewVersionId
+                    ? `v${versions.find((v) => v.id === previewVersionId)?.versionNumber ?? '?'} selected`
+                    : 'Version history'}
+                </span>
+              </button>
+            </div>
+
             <LensBodyViewer
-              content={selectedVersion?.templateBody ?? lens.content}
+              content={previewVersion?.templateBody ?? lens.content}
               onCopy={handleCopy}
             />
           </div>
+
+          {/* Compact version picker — collapsed by default */}
+          {showVersionPicker && (
+            <div className="mb-6 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 overflow-hidden">
+              {isLoadingVersions ? (
+                <div className="flex items-center justify-center gap-2 py-5 text-xs text-gray-400">
+                  <Loader2 size={13} className="animate-spin" />
+                  Loading versions…
+                </div>
+              ) : versions.length === 0 ? (
+                <div className="py-5 text-xs text-center text-gray-400">No versions found.</div>
+              ) : (
+                <div className="divide-y divide-gray-50 dark:divide-gray-800 max-h-52 overflow-y-auto">
+                  {versions.map((v) => {
+                    const isSelected = v.id === previewVersionId
+                    return (
+                      <button
+                        key={v.id}
+                        type="button"
+                        onClick={() => setPreviewVersionId(isSelected ? null : v.id)}
+                        className={`w-full text-left px-4 py-2.5 flex items-center gap-3 transition-colors ${
+                          isSelected
+                            ? 'bg-primary-50 dark:bg-primary-900/20 text-primary-700 dark:text-primary-300'
+                            : 'hover:bg-gray-50 dark:hover:bg-gray-800/60 text-gray-700 dark:text-gray-300'
+                        }`}
+                      >
+                        <span className="font-mono font-bold text-xs w-8 shrink-0">
+                          v{v.versionNumber}
+                        </span>
+                        <span
+                          className={`text-[10px] px-1.5 py-0.5 rounded-full font-medium shrink-0 ${
+                            v.status === 'draft'
+                              ? 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300'
+                              : 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300'
+                          }`}
+                        >
+                          {v.status}
+                        </span>
+                        <span className="text-xs text-gray-500 dark:text-gray-400 truncate flex-1">
+                          {v.changelog ?? '—'}
+                        </span>
+                        <span className="text-[10px] text-gray-400 shrink-0">
+                          {new Date(v.createdAt).toLocaleDateString()}
+                        </span>
+                        {isSelected && isLoadingPreview && (
+                          <Loader2 size={12} className="animate-spin text-gray-400 shrink-0" />
+                        )}
+                      </button>
+                    )
+                  })}
+                </div>
+              )}
+            </div>
+          )}
 
           <div className="max-w-[860px] mx-auto mb-6">
             <AIProviderModelSelect
@@ -268,28 +331,6 @@ export const LensDetailPage: React.FC = () => {
             onEdit={handleEditClick}
             onDelete={handleDeleteClick}
           />
-          <LensVersionHistoryPanel
-            versions={versions}
-            selectedVersionId={selectedVersionId}
-            onVersionSelect={setSelectedVersionId}
-            onCreateVersion={() => setIsCreateVersionOpen(true)}
-            onPublishVersion={publishVersion}
-            isPublishing={isPublishing}
-            isOwner={isOwner}
-            isLoading={isLoadingVersions}
-          />
-
-          {selectedVersionId && (
-            <ResourceAttachmentsPanel
-              resources={versionResources}
-              isOwner={isOwner}
-              onUploadAndAttach={async (file, key) => { await uploadAndAttach(file, key) }}
-              onDetach={detachResource}
-              uploadProgress={uploadProgress}
-              isLoading={isLoadingResources}
-            />
-          )}
-
           <LensRelatedList
             lenses={relatedLenses}
             onOpen={(id) => navigate(`/lenses/${id}`)}
@@ -306,22 +347,7 @@ export const LensDetailPage: React.FC = () => {
         isSubmitting={isCreateSubmitting}
         error={createError}
         isEditMode={isEditMode}
-      />
-
-      <CreateLensVersionModal
-        isOpen={isCreateVersionOpen}
-        onClose={() => setIsCreateVersionOpen(false)}
-        onSubmit={async (data) => {
-          await createVersion({
-            lensId: lens.id,
-            templateBody: data.templateBody,
-            changelog: data.changelog || null,
-            parameters: data.parameters,
-          })
-          setIsCreateVersionOpen(false)
-        }}
-        isSubmitting={isCreatingVersion}
-        initialContent={lens.content}
+        lensId={isEditMode && lens ? lens.id : undefined}
       />
 
       {showProfileModal && <CreateLenserProfileModal onClose={() => setShowProfileModal(false)} />}

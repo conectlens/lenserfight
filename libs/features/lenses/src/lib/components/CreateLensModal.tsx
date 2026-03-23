@@ -1,6 +1,8 @@
 import { Globe, Lock } from 'lucide-react'
 import React, { useMemo, useRef, useCallback, useEffect } from 'react'
 
+import { LensVersionHistoryButton } from './LensVersionHistoryButton'
+
 import { Button } from '@lenserfight/ui/components'
 import { FormError } from '@lenserfight/ui/components'
 import { Modal } from '@lenserfight/ui/modals'
@@ -32,6 +34,7 @@ interface CreateLensModalProps {
   isSubmitting: boolean
   error: string | null
   isEditMode?: boolean
+  lensId?: string
 }
 
 export const CreateLensModal: React.FC<CreateLensModalProps> = ({
@@ -42,6 +45,7 @@ export const CreateLensModal: React.FC<CreateLensModalProps> = ({
   isSubmitting,
   error,
   isEditMode,
+  lensId,
 }) => {
   const textareaRef = useRef<HTMLTextAreaElement>(null)
 
@@ -131,9 +135,17 @@ export const CreateLensModal: React.FC<CreateLensModalProps> = ({
         </div>
 
         <div className="space-y-2">
-          <label className="text-sm font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-            Lens
-          </label>
+          <div className="flex items-center justify-between">
+            <label className="text-sm font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+              Lens
+            </label>
+            {lensId && (
+              <LensVersionHistoryButton
+                lensId={lensId}
+                onRestore={(content) => { form.setContent(content); clearError('content') }}
+              />
+            )}
+          </div>
           <div className={`rounded-xl border overflow-hidden ${errors.content ? 'border-red-500' : 'border-gray-200 dark:border-gray-700'}`}>
             <textarea
               ref={textareaRef}

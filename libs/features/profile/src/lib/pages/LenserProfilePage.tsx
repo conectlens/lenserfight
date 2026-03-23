@@ -119,7 +119,7 @@ export const LenserProfilePage: React.FC = () => {
 
   const [tabCache, setTabCache] = useState<Record<TabType, TabState>>({
     threads: { ...INITIAL_TAB_STATE },
-    prompts: { ...INITIAL_TAB_STATE },
+    lenses: { ...INITIAL_TAB_STATE },
     actions: { ...INITIAL_TAB_STATE },
     challenges: { ...INITIAL_TAB_STATE },
   })
@@ -170,7 +170,7 @@ export const LenserProfilePage: React.FC = () => {
     if (!handle) return
     setTabCache({
       threads: { ...INITIAL_TAB_STATE },
-      prompts: { ...INITIAL_TAB_STATE },
+      lenses: { ...INITIAL_TAB_STATE },
       actions: { ...INITIAL_TAB_STATE },
       challenges: { ...INITIAL_TAB_STATE },
     })
