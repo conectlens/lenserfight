@@ -267,10 +267,10 @@ export const Sidebar: React.FC<SidebarProps> = ({
           />
 
           <SidebarItem
-            onClick={() => handleNavigation('/rays')}
+            onClick={() => handleNavigation('/ray')}
             icon={<Cloud size={20} />}
             label="Ray Cloud"
-            isActive={isRouteActive(location.pathname, '/rays')}
+            isActive={isRouteActive(location.pathname, '/ray')}
             collapsed={!showLabels}
           />
 
@@ -366,163 +366,163 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
             {/* Profile row — shown only when loaded and profile exists */}
             {!isLenserLoading && hasLenser && (
-            <div
-              className={`
+              <div
+                className={`
                   flex items-center p-2 rounded-xl transition-all hover:bg-white dark:hover:bg-gray-700 hover:shadow-sm cursor-pointer border border-transparent hover:border-gray-100 dark:hover:border-gray-600
                   ${!showLabels ? 'justify-center' : ''}
               `}
-            >
-              <div
-                className="relative flex-shrink-0"
-                onClick={handleProfileClick}
               >
-                <div className="relative">
-                  <Avatar src={displayProfile?.avatar_url} size="sm" className="!w-9 !h-9" />
-                  {/* Level Badge integrated if compact profile available */}
-                  {compactProfile && (compactProfile.current_level ?? 0) > 1 && (
-                    <div className="absolute -bottom-1 -right-1 bg-gray-900 text-white text-[8px] font-bold px-1 rounded-full border border-white dark:border-gray-900 shadow-sm">
-                      {compactProfile.current_level}
-                    </div>
+                <div
+                  className="relative flex-shrink-0"
+                  onClick={handleProfileClick}
+                >
+                  <div className="relative">
+                    <Avatar src={displayProfile?.avatar_url} size="sm" className="!w-9 !h-9" />
+                    {/* Level Badge integrated if compact profile available */}
+                    {compactProfile && (compactProfile.current_level ?? 0) > 1 && (
+                      <div className="absolute -bottom-1 -right-1 bg-gray-900 text-white text-[8px] font-bold px-1 rounded-full border border-white dark:border-gray-900 shadow-sm">
+                        {compactProfile.current_level}
+                      </div>
+                    )}
+                  </div>
+
+                  {FEATURES.NOTIFICATIONS && unreadCount > 0 && (
+                    <div className="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 border-2 border-white dark:border-gray-900 rounded-full bg-red-500"></div>
                   )}
                 </div>
 
-                {FEATURES.NOTIFICATIONS && unreadCount > 0 && (
-                  <div className="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 border-2 border-white dark:border-gray-900 rounded-full bg-red-500"></div>
-                )}
-              </div>
-
-              {showLabels && (
-                <div
-                  className="ml-3 flex-1 overflow-hidden"
-                  onClick={handleProfileClick}
-                >
-                  <p className="text-sm font-semibold text-gray-900 dark:text-gray-100 truncate">
-                    {displayProfile?.display_name || 'Guest'}
-                  </p>
-                  <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
-                    @{displayProfile?.handle || 'guest'}
-                  </p>
-                </div>
-              )}
-
-              {showLabels && (
-                <div className="relative">
-                  <button
-                    ref={buttonRef}
-                    aria-label="Account menu"
-                    aria-haspopup="menu"
-                    aria-expanded={isDropdownOpen}
-                    onClick={(e) => {
-                      e.stopPropagation()
-                      setIsDropdownOpen(!isDropdownOpen)
-                    }}
-                    className={`p-1.5 rounded-lg transition-colors relative ${isDropdownOpen ? 'bg-gray-200 dark:bg-gray-600 text-gray-900 dark:text-white' : 'text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-700'}`}
+                {showLabels && (
+                  <div
+                    className="ml-3 flex-1 overflow-hidden"
+                    onClick={handleProfileClick}
                   >
-                    <MoreHorizontal size={18} />
-                    {FEATURES.NOTIFICATIONS && unreadCount > 0 && (
-                      <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full border border-white"></span>
-                    )}
-                  </button>
+                    <p className="text-sm font-semibold text-gray-900 dark:text-gray-100 truncate">
+                      {displayProfile?.display_name || 'Guest'}
+                    </p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
+                      @{displayProfile?.handle || 'guest'}
+                    </p>
+                  </div>
+                )}
 
-                  {isDropdownOpen && (
-                    <div
-                      ref={dropdownRef}
-                      role="menu"
-                      className="absolute bottom-full right-0 mb-2 w-56 bg-white dark:bg-gray-800 rounded-2xl shadow-xl border border-gray-100 dark:border-gray-700 py-1 z-50 overflow-hidden transform origin-bottom-right"
-                      onClick={(e) => e.stopPropagation()}
+                {showLabels && (
+                  <div className="relative">
+                    <button
+                      ref={buttonRef}
+                      aria-label="Account menu"
+                      aria-haspopup="menu"
+                      aria-expanded={isDropdownOpen}
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        setIsDropdownOpen(!isDropdownOpen)
+                      }}
+                      className={`p-1.5 rounded-lg transition-colors relative ${isDropdownOpen ? 'bg-gray-200 dark:bg-gray-600 text-gray-900 dark:text-white' : 'text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-700'}`}
                     >
-                      <div className="px-4 py-3 border-b border-gray-50 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-800/50">
-                        <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider">
-                          Account
-                        </p>
-                      </div>
-                      <div className="p-1">
-                        <button
-                          role="menuitem"
-                          className="w-full text-left px-3 py-2 rounded-lg text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white flex items-center gap-3 transition-colors"
-                          onClick={() => {
-                            setIsDropdownOpen(false)
-                            handleProfileClick()
-                          }}
-                        >
-                          <User size={16} className="text-gray-400" />
-                          My Profile
-                        </button>
+                      <MoreHorizontal size={18} />
+                      {FEATURES.NOTIFICATIONS && unreadCount > 0 && (
+                        <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full border border-white"></span>
+                      )}
+                    </button>
 
-                        {FEATURES.NOTIFICATIONS && (
+                    {isDropdownOpen && (
+                      <div
+                        ref={dropdownRef}
+                        role="menu"
+                        className="absolute bottom-full right-0 mb-2 w-56 bg-white dark:bg-gray-800 rounded-2xl shadow-xl border border-gray-100 dark:border-gray-700 py-1 z-50 overflow-hidden transform origin-bottom-right"
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        <div className="px-4 py-3 border-b border-gray-50 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-800/50">
+                          <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider">
+                            Account
+                          </p>
+                        </div>
+                        <div className="p-1">
                           <button
                             role="menuitem"
                             className="w-full text-left px-3 py-2 rounded-lg text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white flex items-center gap-3 transition-colors"
                             onClick={() => {
                               setIsDropdownOpen(false)
-                              navigate('/settings/notifications')
+                              handleProfileClick()
                             }}
                           >
-                            <div className="relative">
-                              <Bell size={16} className="text-gray-400" />
-                              {unreadCount > 0 && (
-                                <span className="absolute -top-0.5 -right-0.5 w-2 h-2 bg-red-500 rounded-full"></span>
-                              )}
-                            </div>
-                            <span className="flex-1">Notifications</span>
-                            {unreadCount > 0 && (
-                              <span className="bg-red-500 text-white text-[10px] font-bold px-1.5 rounded-full h-4 flex items-center justify-center">
-                                {unreadCount}
-                              </span>
-                            )}
+                            <User size={16} className="text-gray-400" />
+                            My Profile
                           </button>
-                        )}
 
-                        <button
-                          role="menuitem"
-                          onClick={() => {
-                            const nameToShow = THEME_NAMES[nextTheme]
-                            setTheme(nextTheme)
-                            setShownThemeName(nameToShow)
-                            if (themeNameTimerRef.current) clearTimeout(themeNameTimerRef.current)
-                            themeNameTimerRef.current = setTimeout(() => setShownThemeName(null), 2000)
-                          }}
-                          title={THEME_LABELS[themeMode]}
-                          className="w-full text-left px-3 py-2 rounded-lg text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white flex items-center gap-3 transition-colors"
-                        >
-                          {THEME_ICONS[themeMode]}
-                          <span key={shownThemeName ?? 'theme'} className="animate-in fade-in duration-300">
-                            {shownThemeName ?? 'Theme'}
-                          </span>
-                        </button>
+                          {FEATURES.NOTIFICATIONS && (
+                            <button
+                              role="menuitem"
+                              className="w-full text-left px-3 py-2 rounded-lg text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white flex items-center gap-3 transition-colors"
+                              onClick={() => {
+                                setIsDropdownOpen(false)
+                                navigate('/settings/notifications')
+                              }}
+                            >
+                              <div className="relative">
+                                <Bell size={16} className="text-gray-400" />
+                                {unreadCount > 0 && (
+                                  <span className="absolute -top-0.5 -right-0.5 w-2 h-2 bg-red-500 rounded-full"></span>
+                                )}
+                              </div>
+                              <span className="flex-1">Notifications</span>
+                              {unreadCount > 0 && (
+                                <span className="bg-red-500 text-white text-[10px] font-bold px-1.5 rounded-full h-4 flex items-center justify-center">
+                                  {unreadCount}
+                                </span>
+                              )}
+                            </button>
+                          )}
 
-                        <button
-                          role="menuitem"
-                          className="w-full text-left px-3 py-2 rounded-lg text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white flex items-center gap-3 transition-colors"
-                          onClick={() => {
-                            setIsDropdownOpen(false)
-                            navigate('/settings/account')
-                          }}
-                        >
-                          <Settings size={16} className="text-gray-400" />
-                          Settings
-                        </button>
+                          <button
+                            role="menuitem"
+                            onClick={() => {
+                              const nameToShow = THEME_NAMES[nextTheme]
+                              setTheme(nextTheme)
+                              setShownThemeName(nameToShow)
+                              if (themeNameTimerRef.current) clearTimeout(themeNameTimerRef.current)
+                              themeNameTimerRef.current = setTimeout(() => setShownThemeName(null), 2000)
+                            }}
+                            title={THEME_LABELS[themeMode]}
+                            className="w-full text-left px-3 py-2 rounded-lg text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white flex items-center gap-3 transition-colors"
+                          >
+                            {THEME_ICONS[themeMode]}
+                            <span key={shownThemeName ?? 'theme'} className="animate-in fade-in duration-300">
+                              {shownThemeName ?? 'Theme'}
+                            </span>
+                          </button>
+
+                          <button
+                            role="menuitem"
+                            className="w-full text-left px-3 py-2 rounded-lg text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white flex items-center gap-3 transition-colors"
+                            onClick={() => {
+                              setIsDropdownOpen(false)
+                              navigate('/settings/account')
+                            }}
+                          >
+                            <Settings size={16} className="text-gray-400" />
+                            Settings
+                          </button>
+                        </div>
+                        <div className="h-px bg-gray-100 dark:bg-gray-700 my-0"></div>
+                        <div className="p-1">
+                          <button
+                            role="menuitem"
+                            onClick={async () => {
+                              setIsDropdownOpen(false)
+                              await logout()
+                              navigate('/auth/login')
+                            }}
+                            className="w-full text-left px-3 py-2 rounded-lg text-sm text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 flex items-center gap-3 transition-colors"
+                          >
+                            <LogOut size={16} />
+                            Logout
+                          </button>
+                        </div>
                       </div>
-                      <div className="h-px bg-gray-100 dark:bg-gray-700 my-0"></div>
-                      <div className="p-1">
-                        <button
-                          role="menuitem"
-                          onClick={async () => {
-                            setIsDropdownOpen(false)
-                            await logout()
-                            navigate('/auth/login')
-                          }}
-                          className="w-full text-left px-3 py-2 rounded-lg text-sm text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 flex items-center gap-3 transition-colors"
-                        >
-                          <LogOut size={16} />
-                          Logout
-                        </button>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              )}
-            </div>
+                    )}
+                  </div>
+                )}
+              </div>
             )}
           </div>
         </div>
