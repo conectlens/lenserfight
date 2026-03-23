@@ -1,7 +1,7 @@
 import React, { useState } from 'react'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { UserPlus, UserCheck, Clock, UserX } from 'lucide-react'
-import { AppButton } from '@lenserfight/ui/components'
+import { AppButton } from '@lenserfight/features/shell'
 import { lenserService } from '@lenserfight/data/repositories'
 import { queryKeys } from '@lenserfight/data/cache'
 import { RelationshipState } from '@lenserfight/types'

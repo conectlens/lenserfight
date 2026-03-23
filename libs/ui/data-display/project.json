@@ -1,0 +1,8 @@
+{
+  "name": "data-display",
+  "$schema": "../../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "libs/ui/data-display/src",
+  "projectType": "library",
+  "tags": ["layer:ui", "ui:data-display"],
+  "targets": {}
+}

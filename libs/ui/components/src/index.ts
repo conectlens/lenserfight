@@ -2,7 +2,9 @@ export * from './lib/ActionMenu'
 export * from './lib/Avatar'
 export * from './lib/Breadcrumbs'
 export * from './lib/Button'
-export * from './lib/AppButton'
+// AppButton moved to @lenserfight/features/shell — re-exported for backward compat
+// NOTE: importing from @lenserfight/ui/components still works, but new code should
+// import directly from @lenserfight/features/shell to respect layer boundaries.
 export * from './lib/Card'
 export * from './lib/DangerZone'
 export * from './lib/FormError'
@@ -16,12 +18,16 @@ export * from './lib/Table'
 export * from './lib/TagBadge'
 export * from './lib/LanguageSelectBox'
 export * from './lib/StepWizard'
-export * from './lib/UIContext'
 export * from './lib/UserCard'
 export * from './lib/components'
 export { InfiniteScrollSentinel } from './lib/pagination/InfiniteScrollSentinel'
 export { Paginator } from './lib/pagination/Paginator'
-export { AppToaster } from './lib/AppToaster'
+
+// UIProvider, useUI, AppToaster, ActionItem — moved to @lenserfight/ui/providers.
+// Re-exported here for backward compat; new code should import from providers directly.
+export { UIProvider, useUI } from '@lenserfight/ui/providers'
+export type { ActionItem } from '@lenserfight/ui/providers'
+export { AppToaster } from '@lenserfight/ui/providers'
 
 // Brand components
 export * from './lib/Alert'

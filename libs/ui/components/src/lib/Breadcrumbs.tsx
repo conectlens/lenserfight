@@ -2,7 +2,7 @@ import { ChevronRight } from 'lucide-react'
 import React from 'react'
 import { useLocation, Link } from 'react-router-dom'
 
-import { useUI } from './UIContext'
+import { useUI } from '@lenserfight/ui/providers'
 
 const routeNameMap: Record<string, string> = {
   ray: 'Ray Cloud',

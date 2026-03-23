@@ -84,7 +84,14 @@
       "@lenserfight/shared/error": ["libs/shared/error/src/index.ts"],
       "@lenserfight/features/lensers": ["libs/features/lensers/src/index.ts"],
       "@lenserfight/providers": ["libs/providers/src/index.ts"],
-      "providers": ["libs/providers/src/index.ts"]
+      "providers": ["libs/providers/src/index.ts"],
+      "@lenserfight/ui/primitives": ["libs/ui/primitives/src/index.ts"],
+      "@lenserfight/ui/feedback": ["libs/ui/feedback/src/index.ts"],
+      "@lenserfight/ui/navigation": ["libs/ui/navigation/src/index.ts"],
+      "@lenserfight/ui/data-display": ["libs/ui/data-display/src/index.ts"],
+      "@lenserfight/ui/overlays": ["libs/ui/overlays/src/index.ts"],
+      "@lenserfight/ui/providers": ["libs/ui/providers/src/index.ts"],
+      "@lenserfight/ui/widgets": ["libs/ui/widgets/src/index.ts"]
     }
   }
 }
