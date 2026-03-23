@@ -76,9 +76,12 @@ export const threadInteractionService = {
 
   getReplyTree: async (
     threadId: string,
-    currentLenserId?: string
-  ): Promise<ThreadReplyViewModel[]> => {
-    const records = await threadsRepo.getThreadReplies(threadId, currentLenserId)
+    currentLenserId?: string,
+    limit = 20,
+    offset = 0,
+    visibility?: string
+  ): Promise<{ replies: ThreadReplyViewModel[]; hasNextPage: boolean }> => {
+    const records = await threadsRepo.getThreadReplies(threadId, currentLenserId, limit, offset, visibility)
     const userReactedIds = new Set<string>()
     if (currentLenserId && records.length > 0) {
       const replyIds = records.map((r) => r.id)
@@ -168,6 +171,11 @@ export const threadInteractionService = {
 
     sortReplies(rootReplies)
 
-    return rootReplies
+    // hasNextPage: true when the number of root-level replies returned equals the
+    // requested limit, meaning there may be more root replies on the next page.
+    const rootCount = records.filter((r) => !r.parent_reply_id).length
+    const hasNextPage = rootCount >= limit
+
+    return { replies: rootReplies, hasNextPage }
   },
 }

@@ -40,7 +40,7 @@ export const ThreadDetailPage: React.FC = () => {
     'spam' | 'harassment' | 'misinformation' | 'off_topic' | 'other'
   >('spam')
 
-  const { thread, loading, error, toggleReaction, toggleReplyReaction, addReply } =
+  const { thread, loading, error, toggleReaction, toggleReplyReaction, addReply, loadMoreReplies, isLoadingMoreReplies } =
     useThreadDetailController(threadId)
 
   const isOwner = lenser && thread && thread.author.id === lenser.id
@@ -212,6 +212,9 @@ export const ThreadDetailPage: React.FC = () => {
             await addReply(content, parentId)
           }}
           onReactionToggle={handleReplyReaction}
+          hasMore={thread.repliesHasNextPage}
+          isLoadingMore={isLoadingMoreReplies}
+          onLoadMore={loadMoreReplies}
         />
       </div>
 
