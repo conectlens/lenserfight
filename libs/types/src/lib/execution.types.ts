@@ -77,8 +77,10 @@ export interface ExecutionArtifact {
   contentJson: unknown | null
   visibility: 'private' | 'public' | 'contender_only'
   isPrimaryOutput: boolean
-  /** FK to ai.resources. Set for generated media outputs (migration 43). */
+  /** @deprecated Use mediaObjectId. FK to ai.resources. */
   resourceId?: string | null
+  /** FK to media.objects. New canonical reference for generated media outputs. */
+  mediaObjectId?: string | null
   /** Extensible output type — superset of artifactKind. Prefer for new writes. */
   outputType?: string | null
   createdAt: string

@@ -481,6 +481,103 @@ See the [RLS Policy Reference](./rls-reference.md) for details on which operatio
 
 ---
 
+## Media RPCs
+
+### `fn_media_finalize_upload`
+
+Finalizes a media upload, setting `lifecycle_state` to `active`.
+
+| Property | Value |
+|----------|-------|
+| **Auth** | authenticated (object owner) |
+| **Parameters** | `p_object_id` uuid, `p_bucket` text, `p_object_key` text, `p_byte_size` bigint (optional), `p_checksum` text (optional) |
+| **Returns** | void |
+
+```bash
+curl -X POST 'http://127.0.0.1:54321/rest/v1/rpc/fn_media_finalize_upload' \
+  -H 'apikey: <ANON_KEY>' \
+  -H 'Authorization: Bearer <USER_JWT>' \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "p_object_id": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
+    "p_bucket": "user-media",
+    "p_object_key": "uploads/2026/03/photo.png",
+    "p_byte_size": 204800,
+    "p_checksum": "sha256:abc123..."
+  }'
+```
+
+---
+
+### `fn_media_bind_attachment`
+
+Upserts an attachment binding between a media object and an entity.
+
+| Property | Value |
+|----------|-------|
+| **Auth** | authenticated (object owner) |
+| **Parameters** | `p_object_id` uuid, `p_entity_type` text, `p_entity_id` uuid, `p_binding_key` text (optional) |
+| **Returns** | void |
+
+```bash
+curl -X POST 'http://127.0.0.1:54321/rest/v1/rpc/fn_media_bind_attachment' \
+  -H 'apikey: <ANON_KEY>' \
+  -H 'Authorization: Bearer <USER_JWT>' \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "p_object_id": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
+    "p_entity_type": "thread",
+    "p_entity_id": "yyyyyyyy-yyyy-yyyy-yyyy-yyyyyyyyyyyy",
+    "p_binding_key": "cover_image"
+  }'
+```
+
+---
+
+### `fn_media_unbind_attachment`
+
+Removes an attachment binding.
+
+| Property | Value |
+|----------|-------|
+| **Auth** | authenticated (object owner) |
+| **Parameters** | `p_entity_type` text, `p_entity_id` uuid, `p_binding_key` text (optional) |
+| **Returns** | void |
+
+```bash
+curl -X POST 'http://127.0.0.1:54321/rest/v1/rpc/fn_media_unbind_attachment' \
+  -H 'apikey: <ANON_KEY>' \
+  -H 'Authorization: Bearer <USER_JWT>' \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "p_entity_type": "thread",
+    "p_entity_id": "yyyyyyyy-yyyy-yyyy-yyyy-yyyyyyyyyyyy",
+    "p_binding_key": "cover_image"
+  }'
+```
+
+---
+
+### `fn_media_soft_delete`
+
+Soft-deletes a media object by setting `lifecycle_state` to `deleted`.
+
+| Property | Value |
+|----------|-------|
+| **Auth** | authenticated (object owner) |
+| **Parameters** | `p_object_id` uuid |
+| **Returns** | void |
+
+```bash
+curl -X POST 'http://127.0.0.1:54321/rest/v1/rpc/fn_media_soft_delete' \
+  -H 'apikey: <ANON_KEY>' \
+  -H 'Authorization: Bearer <USER_JWT>' \
+  -H 'Content-Type: application/json' \
+  -d '{"p_object_id": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"}'
+```
+
+---
+
 ## Lens RPCs
 
 ### `fn_create_lens`

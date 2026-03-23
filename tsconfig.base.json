@@ -67,6 +67,7 @@
       "@lenserfight/data/supabase": ["libs/data/supabase/src/index.ts"],
       "@lenserfight/infra/analytics": ["libs/infra/analytics/src/index.ts"],
       "@lenserfight/infra/moderation": ["libs/infra/moderation/src/index.ts"],
+      "@lenserfight/infra/storage": ["libs/infra/storage/src/index.ts"],
       "@lenserfight/types": ["libs/types/src/index.ts"],
       "@lenserfight/ui/components": ["libs/ui/components/src/index.ts"],
       "@lenserfight/ui/forms": ["libs/ui/forms/src/index.ts"],

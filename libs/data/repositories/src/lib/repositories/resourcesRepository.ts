@@ -1,3 +1,9 @@
+/**
+ * @deprecated Use mediaRepository.ts and mediaService.ts instead.
+ * This file is retained for backward compatibility during the migration
+ * from ai.resources to media.objects.
+ */
+
 import { supabase } from '@lenserfight/data/supabase'
 import {
   PromptResource,
@@ -7,6 +13,7 @@ import {
 } from '@lenserfight/types'
 
 // --- Port (Interface) ---
+/** @deprecated Use MediaRepositoryPort from mediaRepository.ts */
 
 export interface ResourcesRepositoryPort {
   getByOwner(lenserId: string, limit?: number): Promise<PromptResource[]>
@@ -21,7 +28,7 @@ export interface ResourcesRepositoryPort {
 }
 
 // --- Supabase Implementation ---
-
+/** @deprecated Use SupabaseMediaRepository from mediaRepository.ts */
 export class SupabaseResourcesRepository implements ResourcesRepositoryPort {
   private handleError(error: unknown): never {
     const e = error as { code?: string; message?: string }
