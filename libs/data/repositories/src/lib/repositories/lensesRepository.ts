@@ -1,5 +1,5 @@
 import { supabase } from '@lenserfight/data/supabase'
-import { AuthorProfile, LensParam, LensRecord, LensViewModel, PersonalLensFeedItem, CreateLensDTO, TagRecord, LensVersion, LensVersionParam, CreateLensVersionDTO } from '@lenserfight/types'
+import { AuthorProfile, LensParam, LensRecord, LensViewModel, PersonalLensFeedItem, CreateLensDTO, TagRecord, LensVersion, LensVersionParam, CreateLensVersionDTO, ForkNode } from '@lenserfight/types'
 import { ApiResponseEnvelope, paginatedResponse } from 'contracts'
 
 // --- Port (Interface) ---
@@ -37,6 +37,8 @@ export interface LensesRepositoryPort {
   getLatestPublishedVersion(lensId: string): Promise<LensVersion | null>
   createVersion(input: CreateLensVersionDTO): Promise<LensVersion>
   publishVersion(versionId: string): Promise<void>
+  cloneLens(sourceLensId: string, versionId?: string | null): Promise<string>
+  getForkTree(lensId: string): Promise<ForkNode[]>
 }
 
 // Fallback data for Mock Mode
@@ -485,7 +487,10 @@ export class SupabaseLensesRepository implements LensesRepositoryPort {
     }
 
     // 2. Insert Base Lens (lenser_id resolved server-side via DEFAULT lensers.get_auth_lenser_id())
-    const insertPayload: Record<string, unknown> = { visibility: input.visibility }
+    const insertPayload: Record<string, unknown> = {
+      visibility: input.visibility,
+      template_body: input.content,  // ensures create_initial_lens_version trigger fires with real content
+    }
     if (input.parentLensId) insertPayload.parent_lens_id = input.parentLensId
     if (input.forkedFromExecutionId) insertPayload.forked_from_execution_id = input.forkedFromExecutionId
 
@@ -549,7 +554,7 @@ export class SupabaseLensesRepository implements LensesRepositoryPort {
   }
 
   async updateLens(id: string, input: Partial<CreateLensDTO>): Promise<LensRecord> {
-    const baseUpdatePayload: Partial<Pick<LensRecord, 'visibility'>> = {}
+    const baseUpdatePayload: Record<string, unknown> = {}
     const translationUpdatePayload: Partial<
       Pick<LensRecord, 'title' | 'description' | 'content'>
     > = {}
@@ -557,7 +562,11 @@ export class SupabaseLensesRepository implements LensesRepositoryPort {
     if (input.visibility !== undefined) baseUpdatePayload.visibility = input.visibility
     if (input.title !== undefined) translationUpdatePayload.title = input.title
     if (input.description !== undefined) translationUpdatePayload.description = input.description
-    if (input.content !== undefined) translationUpdatePayload.content = input.content
+    if (input.content !== undefined) {
+      translationUpdatePayload.content = input.content
+      // Sync working copy — triggers trg_lens_template_updated which upserts the draft version
+      baseUpdatePayload.template_body = input.content
+    }
     if (input.params !== undefined) (translationUpdatePayload as any).params = input.params
 
     if (Object.keys(baseUpdatePayload).length > 0) {
@@ -681,9 +690,10 @@ export class SupabaseLensesRepository implements LensesRepositoryPort {
   async getLatestPublishedVersion(lensId: string): Promise<LensVersion | null> {
     const { data, error } = await supabase
       .schema('lenses')
-      .from('vw_published_versions')
+      .from('vw_lens_version_history')
       .select('*')
       .eq('lens_id', lensId)
+      .eq('status', 'published')
       .order('version_number', { ascending: false })
       .limit(1)
       .maybeSingle()
@@ -693,18 +703,16 @@ export class SupabaseLensesRepository implements LensesRepositoryPort {
   }
 
   async createVersion(input: CreateLensVersionDTO): Promise<LensVersion> {
+    // Route through fn_upsert_draft_version to get correct version_number
+    // (direct INSERT omits version_number which has no DEFAULT — always fails)
     const { data: vRow, error: vError } = await supabase
       .schema('lenses')
-      .from('versions')
-      .insert({
-        lens_id: input.lensId,
-        template_body: input.templateBody,
-        changelog: input.changelog ?? null,
-        parent_version_id: input.parentVersionId ?? null,
-        status: 'draft',
+      .rpc('fn_upsert_draft_version', {
+        p_lens_id: input.lensId,
+        p_template_body: input.templateBody,
+        p_changelog: input.changelog ?? null,
+        p_parent_version_id: input.parentVersionId ?? null,
       })
-      .select('*')
-      .single()
     if (vError) this.handleError(vError)
 
     const version = this.mapVersion(vRow as Record<string, unknown>)
@@ -742,6 +750,37 @@ export class SupabaseLensesRepository implements LensesRepositoryPort {
       .schema('lenses')
       .rpc('fn_publish_version', { p_version_id: versionId })
     if (error) this.handleError(error)
+  }
+
+  async cloneLens(sourceLensId: string, versionId?: string | null): Promise<string> {
+    const { data, error } = await supabase
+      .schema('lenses')
+      .rpc('fn_clone_lens', {
+        p_source_lens_id: sourceLensId,
+        p_version_id: versionId ?? null,
+      })
+    if (error) this.handleError(error)
+    return data as string
+  }
+
+  async getForkTree(lensId: string): Promise<ForkNode[]> {
+    const { data, error } = await supabase
+      .schema('lenses')
+      .from('vw_fork_history')
+      .select('*')
+      .eq('lens_id', lensId)
+      .order('depth', { ascending: true })
+    if (error) this.handleError(error)
+    return ((data ?? []) as Record<string, unknown>[]).map((row) => ({
+      lensId: row.lens_id as string,
+      forkedFromLensId: row.forked_from_lens_id as string,
+      forkedFromTitle: row.forked_from_title as string,
+      depth: row.depth as number,
+      forkedFromLenserId: row.forked_from_lenser_id as string,
+      forkedFromLenserName: row.forked_from_lenser_name as string,
+      forkedFromLenserHandle: row.forked_from_lenser_handle as string,
+      forkedFromLenserAvatarUrl: (row.forked_from_lenser_avatar_url as string | null) ?? null,
+    }))
   }
 
 }

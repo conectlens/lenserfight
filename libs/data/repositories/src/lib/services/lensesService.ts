@@ -10,6 +10,7 @@ import {
   LensAuthor,
   LensVersion,
   CreateLensVersionDTO,
+  ForkNode,
 } from '@lenserfight/types'
 import { ApiResponseEnvelope, paginatedResponse } from 'contracts'
 
@@ -297,5 +298,13 @@ export const lensesService = {
 
   publishVersion: async (versionId: string): Promise<void> => {
     return lensesRepo.publishVersion(versionId)
+  },
+
+  cloneLens: async (sourceLensId: string, versionId?: string | null): Promise<string> => {
+    return lensesRepo.cloneLens(sourceLensId, versionId)
+  },
+
+  getForkTree: async (lensId: string): Promise<ForkNode[]> => {
+    return lensesRepo.getForkTree(lensId)
   },
 }
