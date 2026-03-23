@@ -13,7 +13,7 @@ export const BYOK_PROVIDER_LABELS: Record<ByokProvider, string> = {
 export interface UserApiKey {
   id: string
   lenserId: string
-  provider: ByokProvider
+  provider: ByokProvider | null
   label: string | null
   /** Last 4 characters of the key, for masked display only */
   keySuffix: string

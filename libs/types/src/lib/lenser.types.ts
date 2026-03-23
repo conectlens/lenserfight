@@ -37,6 +37,8 @@ export interface LenserPreferences {
   hide_actions: boolean
   sidebar_collapsed?: boolean
   cron_config: Record<string, unknown>
+  country_id?: string | null
+  currency?: string | null
   created_at?: string
   updated_at?: string
 }
