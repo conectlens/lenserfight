@@ -3,6 +3,8 @@ import consola from 'consola';
 import { callRpc, handleError } from '../utils/api';
 import { printTable, printJson, truncate } from '../utils/output';
 
+const MIN_TEMPLATE_LENGTH = 50;
+
 // ---------------------------------------------------------------------------
 // lens version list
 // ---------------------------------------------------------------------------
@@ -88,8 +90,18 @@ const versionCreate = defineCommand({
     },
   },
   async run({ args }) {
+    if (args.body.trim().length < MIN_TEMPLATE_LENGTH) {
+      consola.error(
+        'Template body must be at least %d characters (got %d).',
+        MIN_TEMPLATE_LENGTH,
+        args.body.trim().length
+      );
+      process.exitCode = 1;
+      return;
+    }
+
     try {
-      const { data: version } = await callRpc<{ data: Record<string, unknown> }>(
+      const version = await callRpc<Record<string, unknown>>(
         'fn_lenses_create_version',
         {
           p_lens_id: args.id,
@@ -98,24 +110,16 @@ const versionCreate = defineCommand({
           p_parent_version_id: args['parent-version'] || null,
         },
         { requireAuth: true }
-      ) as unknown as { data: Record<string, unknown> };
+      );
 
-      // The RPC above may not exist yet — fall back to a direct REST insert hint
       consola.success('Version created.');
       if (version?.version_number) {
         consola.info('Version number: %s', version.version_number);
         consola.info('Version ID:     %s', version.id);
         consola.info('\nTo publish: lenserfight lens version publish %s', version.id);
       }
-    } catch (err: unknown) {
-      // RPC may not exist in current DB — guide the user
-      const msg = (err as Error).message ?? '';
-      if (msg.includes('not found') || msg.includes('does not exist')) {
-        consola.error('RPC fn_lenses_create_version not found. Apply migration schema_refactor_lenses first.');
-        consola.info('Use the Web UI or Supabase Studio to create versions until the migration is applied.');
-      } else {
-        handleError(err);
-      }
+    } catch (err) {
+      handleError(err);
     }
   },
 });

@@ -1,7 +1,7 @@
 import React, { useState } from 'react'
 import { Modal } from '@lenserfight/ui/modals'
 import { Button } from '@lenserfight/ui/components'
-import { LensVersionParam } from '@lenserfight/types'
+import { LensVersionParam, LENS_MIN_TEMPLATE_LENGTH } from '@lenserfight/types'
 import { LensVersionParameterEditor } from './LensVersionParameterEditor'
 
 type EditableParam = Omit<LensVersionParam, 'id' | 'versionId'>
@@ -32,9 +32,12 @@ export const CreateLensVersionModal: React.FC<CreateLensVersionModalProps> = ({
   const [changelog, setChangelog] = useState('')
   const [parameters, setParameters] = useState<EditableParam[]>([])
 
+  const trimmedLength = templateBody.trim().length
+  const isBodyValid = trimmedLength >= LENS_MIN_TEMPLATE_LENGTH
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
-    if (!templateBody.trim()) return
+    if (!isBodyValid) return
     onSubmit({ templateBody: templateBody.trim(), changelog: changelog.trim(), parameters })
   }
 
@@ -66,8 +69,11 @@ export const CreateLensVersionModal: React.FC<CreateLensVersionModalProps> = ({
             onChange={(e) => setTemplateBody(e.target.value)}
             rows={10}
             className={`${inputClass} resize-none font-mono text-xs`}
-            placeholder="Enter the lens template..."
+            placeholder={`Enter the lens template (minimum ${LENS_MIN_TEMPLATE_LENGTH} characters)...`}
           />
+          <p className={`text-xs mt-1 ${isBodyValid ? 'text-gray-400 dark:text-gray-500' : 'text-amber-500 dark:text-amber-400'}`}>
+            {trimmedLength}/{LENS_MIN_TEMPLATE_LENGTH} characters minimum
+          </p>
         </div>
 
         <div>
@@ -92,7 +98,7 @@ export const CreateLensVersionModal: React.FC<CreateLensVersionModalProps> = ({
           <Button
             type="submit"
             isLoading={isSubmitting}
-            disabled={!templateBody.trim()}
+            disabled={!isBodyValid}
             className="!w-auto px-6"
           >
             Create Draft

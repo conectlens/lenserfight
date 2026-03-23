@@ -478,3 +478,89 @@ curl -X POST 'http://127.0.0.1:54321/rest/v1/threads' \
 ```
 
 See the [RLS Policy Reference](./rls-reference.md) for details on which operations are allowed per auth tier.
+
+---
+
+## Lens RPCs
+
+### `fn_create_lens`
+
+Atomic lens creation: creates the lens row, initial draft version, translation, and tag associations in one transaction.
+
+| Property | Value |
+|----------|-------|
+| **Schema** | `lenses` (CLI wrapper: `public.fn_lenses_create_lens`) |
+| **Auth** | authenticated |
+| **Security** | DEFINER |
+| **Parameters** | `p_visibility` visibility_enum, `p_template_body` text (min 50 chars), `p_title` text, `p_description` text, `p_language_code` text (default 'en'), `p_params` jsonb (default '[]'), `p_tag_ids` uuid[] (default '{}'), `p_parent_lens_id` uuid, `p_forked_from_execution_id` uuid |
+| **Returns** | uuid (new lens ID) |
+
+---
+
+### `fn_update_lens`
+
+Atomic lens update: updates visibility, template body (via version upsert), translation, and tags in one transaction.
+
+| Property | Value |
+|----------|-------|
+| **Schema** | `lenses` |
+| **Auth** | authenticated (lens owner) |
+| **Security** | DEFINER |
+| **Parameters** | `p_lens_id` uuid, `p_template_body` text (min 50 chars, optional), `p_visibility` visibility_enum (optional), `p_title` text (optional), `p_description` text (optional), `p_params` jsonb (optional), `p_tag_ids` uuid[] (optional, NULL = no change, empty = clear) |
+| **Returns** | void |
+
+---
+
+### `fn_upsert_draft_version`
+
+Creates or updates a draft version. Reuses existing draft if present; creates new version otherwise.
+
+| Property | Value |
+|----------|-------|
+| **Schema** | `lenses` (CLI wrapper: `public.fn_lenses_create_version`) |
+| **Auth** | authenticated |
+| **Security** | DEFINER |
+| **Parameters** | `p_lens_id` uuid, `p_template_body` text (min 50 chars), `p_changelog` text (optional), `p_parent_version_id` uuid (optional) |
+| **Returns** | `lenses.versions` row |
+
+---
+
+### `fn_publish_version`
+
+Publishes a draft version. Validates ownership, draft status, and 50-char minimum.
+
+| Property | Value |
+|----------|-------|
+| **Schema** | `lenses` (CLI wrapper: `public.fn_lenses_publish_version`) |
+| **Auth** | authenticated (lens owner) |
+| **Security** | DEFINER |
+| **Parameters** | `p_version_id` uuid |
+| **Returns** | void |
+
+---
+
+### `fn_clone_lens`
+
+Clones a lens from a published version of a public+published source lens. Draft, archived, and private lenses cannot be cloned.
+
+| Property | Value |
+|----------|-------|
+| **Schema** | `lenses` |
+| **Auth** | authenticated |
+| **Security** | DEFINER |
+| **Parameters** | `p_source_lens_id` uuid, `p_version_id` uuid (optional, defaults to latest published) |
+| **Returns** | uuid (new lens ID) |
+
+---
+
+### `fn_list_versions`
+
+Lists all versions for a lens in descending version number order. Caller RLS applies.
+
+| Property | Value |
+|----------|-------|
+| **Schema** | `lenses` (CLI wrapper: `public.fn_lenses_list_versions`) |
+| **Auth** | authenticated |
+| **Security** | INVOKER |
+| **Parameters** | `p_lens_id` uuid |
+| **Returns** | SETOF `lenses.versions` |
