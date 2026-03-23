@@ -1,5 +1,5 @@
 import { useQueryClient } from '@tanstack/react-query'
-import { History, Lock, Loader2, Pencil, Trash2, Flag } from 'lucide-react'
+import { GitFork, History, Lock, Loader2, Pencil, Trash2, Flag } from 'lucide-react'
 import React, { useEffect, useMemo, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 
@@ -19,7 +19,9 @@ import { LensBodyViewer } from '../components/LensBodyViewer'
 import { LensDetailHeader } from '../components/LensDetailHeader'
 import { LensRelatedList } from '../components/LensRelatedList'
 import { useAuthenticatedLenser } from '../hooks/useAuthenticatedLenser'
+import { useCloneLens } from '../hooks/useCloneLens'
 import { useCreateLens } from '../hooks/useCreateLens'
+import { useForkTree } from '../hooks/useForkTree'
 import { useLensDetailController } from '../hooks/useLensDetailController'
 import { useLensVersions, useLensVersionDetail } from '../hooks/useLensVersions'
 
@@ -56,6 +58,9 @@ export const LensDetailPage: React.FC = () => {
     enabled: showVersionPicker,
   })
   const { data: previewVersion, isLoading: isLoadingPreview } = useLensVersionDetail(previewVersionId)
+
+  const { cloneLens, isCloning } = useCloneLens(lens ?? null)
+  const { forkTree, isLoadingForkTree } = useForkTree(id ?? '', lens?.parentLensId)
 
   const handleProviderChange = (key: string) => {
     setSelectedProviderKey(key)
@@ -221,12 +226,27 @@ export const LensDetailPage: React.FC = () => {
               isSaved={lens.isSaved}
               isSaving={isSaving}
               saveCount={lens.reactionCounts.saved}
+              forkTree={forkTree}
+              isLoadingForkTree={isLoadingForkTree}
             />
           </div>
 
           <div className="flex flex-col gap-2 mb-6">
-            {/* Viewer toolbar — History icon button */}
-            <div className="flex justify-end">
+            {/* Viewer toolbar */}
+            <div className="flex items-center justify-end gap-2">
+              {/* Clone button */}
+              <button
+                type="button"
+                onClick={() => cloneLens(previewVersionId ?? null)}
+                disabled={isCloning}
+                title={previewVersionId ? 'Clone this version as a new lens' : 'Clone latest version as a new lens'}
+                className="flex items-center gap-1.5 px-2.5 py-1.5 text-xs rounded-lg border shadow-sm transition-all border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200 hover:border-gray-300 dark:hover:border-gray-600 disabled:opacity-50"
+              >
+                {isCloning ? <Loader2 size={13} className="animate-spin" /> : <GitFork size={13} />}
+                <span>{previewVersionId ? 'Clone this version' : 'Clone'}</span>
+              </button>
+
+              {/* Version history button */}
               <button
                 type="button"
                 onClick={handleVersionToggle}

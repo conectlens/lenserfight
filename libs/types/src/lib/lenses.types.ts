@@ -155,6 +155,25 @@ export interface CreateLensVersionDTO {
   parameters?: Omit<LensVersionParam, 'id' | 'versionId'>[]
 }
 
+// ─── Fork Tree ───────────────────────────────────────────────────────────────
+
+/** One node in a lens fork ancestry chain (from vw_fork_history). */
+export interface ForkNode {
+  lensId: string
+  forkedFromLensId: string
+  forkedFromTitle: string
+  depth: number
+  forkedFromLenserId: string
+  forkedFromLenserName: string
+  forkedFromLenserHandle: string
+  forkedFromLenserAvatarUrl?: string | null
+}
+
+export interface CloneLensDTO {
+  sourceLensId: string
+  versionId?: string | null
+}
+
 // Semantic type alias — a Ray is the output unit (was called "Len" previously)
 export type Ray = {
   id: string
