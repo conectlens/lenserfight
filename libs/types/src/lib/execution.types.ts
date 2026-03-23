@@ -51,7 +51,6 @@ export interface ExecutionRun {
   requestId: string
   status: ExecutionRunStatus
   modelId: string | null
-  agentAdapterId: string | null
   providerRequestId: string | null
   executionHash: string | null
   inputHash: string | null
@@ -78,7 +77,7 @@ export interface ExecutionArtifact {
   contentJson: unknown | null
   visibility: 'private' | 'public' | 'contender_only'
   isPrimaryOutput: boolean
-  /** FK to content.resources. Set for generated media outputs (migration 43). */
+  /** FK to ai.resources. Set for generated media outputs (migration 43). */
   resourceId?: string | null
   /** Extensible output type — superset of artifactKind. Prefer for new writes. */
   outputType?: string | null
@@ -91,7 +90,6 @@ export interface ExecutionRequest {
   requesterLenserId: string
   originType: ExecutionOriginType
   originId: string | null
-  agentAdapterId: string | null
   modelId: string | null
   lensId: string | null
   inputSnapshot: Record<string, unknown>
@@ -122,9 +120,10 @@ export interface LensExecutionRecord {
   id: string
   lensId: string
   lenserId: string
-  executionRunId: string | null
+  /** FK to execution.runs (renamed from executionRunId). */
+  runId: string | null
   paymentMethod: 'byok' | 'wallet' | 'free'
-  /** FK to content.lens_versions. NULL for legacy pre-versioning runs. */
+  /** FK to lenses.versions. NULL for legacy pre-versioning runs. */
   versionId?: string | null
   createdAt: string
   // Hydrated at read time for timeline display
