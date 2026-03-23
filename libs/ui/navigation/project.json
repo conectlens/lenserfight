@@ -1,0 +1,8 @@
+{
+  "name": "navigation",
+  "$schema": "../../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "libs/ui/navigation/src",
+  "projectType": "library",
+  "tags": ["layer:ui", "ui:navigation"],
+  "targets": {}
+}

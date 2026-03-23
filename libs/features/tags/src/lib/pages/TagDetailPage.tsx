@@ -2,7 +2,7 @@ import React, { useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 
 import { SEOHead } from '@lenserfight/ui/components'
-import { useUI } from '@lenserfight/ui/components'
+import { useUI } from '@lenserfight/ui/providers'
 import { TagContentGrid } from '../components/TagContentGrid'
 import { TagFilterBar } from '../components/TagFilterBar'
 import { TagHeader } from '../components/TagHeader'
