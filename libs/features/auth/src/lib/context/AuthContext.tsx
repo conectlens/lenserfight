@@ -85,6 +85,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       // After that, apply any subsequent changes (token refresh, sign-out, etc.)
       if (!initDone.current) return
       if (loginTransitionInFlight.current && user) return
+      // Clear stale caches on sign-out (e.g. 403 Forbidden, token revoked)
+      // so the Sidebar and other consumers reflect the unauthenticated state immediately.
+      if (!user) {
+        queryClient.clear()
+        clearAuthStorage()
+      }
       setState((s) => {
         if (s.user?.id === user?.id) return s
         return { ...s, user, isAuthenticated: !!user, isLoading: false }
@@ -124,6 +130,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           console.warn('User not found in database, clearing session...')
           await authService.logout()
           clearAuthStorage()
+          setState({ user: null, isAuthenticated: false, isLoading: false, error: null })
+          return
+        }
+        // 403 Forbidden: token revoked, expired, or invalid → force clean logout
+        if (err?.status === 403) {
+          console.warn('Auth token forbidden (403), forcing clean logout...')
+          await authService.logout()
+          clearAuthStorage()
+          queryClient.clear()
           setState({ user: null, isAuthenticated: false, isLoading: false, error: null })
           return
         }
