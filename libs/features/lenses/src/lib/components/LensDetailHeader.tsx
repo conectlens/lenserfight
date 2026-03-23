@@ -1,10 +1,10 @@
-import { Lock, Bookmark, Pencil } from 'lucide-react'
+import { GitFork, Lock, Bookmark, Pencil } from 'lucide-react'
 import React from 'react'
 import { useNavigate } from 'react-router-dom'
 
 import { Avatar } from '@lenserfight/ui/components'
 import { TagBadge } from '@lenserfight/ui/components'
-import { LensDetailViewModel } from '@lenserfight/types'
+import { ForkNode, LensDetailViewModel } from '@lenserfight/types'
 import { formatCount } from '@lenserfight/utils/number'
 
 interface LensDetailHeaderProps {
@@ -15,6 +15,8 @@ interface LensDetailHeaderProps {
   isSaved: boolean
   isSaving: boolean
   saveCount: number
+  forkTree?: ForkNode[]
+  isLoadingForkTree?: boolean
 }
 
 export const LensDetailHeader: React.FC<LensDetailHeaderProps> = ({
@@ -25,6 +27,8 @@ export const LensDetailHeader: React.FC<LensDetailHeaderProps> = ({
   isSaved,
   isSaving,
   saveCount,
+  forkTree,
+  isLoadingForkTree: _isLoadingForkTree,
 }) => {
   const navigate = useNavigate()
   const formattedDate = new Date(lens.createdAt).toLocaleDateString('en-US', {
@@ -140,6 +144,41 @@ export const LensDetailHeader: React.FC<LensDetailHeaderProps> = ({
           <span className="text-xs">{formattedDate}</span>
         </div>
       </div>
+
+      {/* Fork breadcrumb — only shown for forked lenses */}
+      {forkTree && forkTree.length > 0 && (
+        <div className="flex items-center flex-wrap gap-1.5 mt-2.5 text-xs text-gray-400 dark:text-gray-500">
+          <GitFork size={12} className="shrink-0" />
+          <span>Forked from</span>
+          {forkTree.slice(0, 3).map((node, i) => (
+            <React.Fragment key={node.forkedFromLensId}>
+              {i > 0 && <span className="text-gray-300 dark:text-gray-600">→</span>}
+              <button
+                type="button"
+                onClick={() => navigate(`/lenses/${node.forkedFromLensId}`)}
+                className="flex items-center gap-1 hover:text-primary-600 dark:hover:text-primary-400 transition-colors"
+              >
+                {node.forkedFromLenserAvatarUrl && (
+                  <img
+                    src={node.forkedFromLenserAvatarUrl}
+                    className="w-4 h-4 rounded-full object-cover"
+                    alt={node.forkedFromLenserHandle}
+                  />
+                )}
+                <span className="font-medium text-gray-600 dark:text-gray-400 hover:text-primary-600 dark:hover:text-primary-400 transition-colors">
+                  {node.forkedFromTitle}
+                </span>
+                <span className="text-gray-400 dark:text-gray-500">
+                  by {node.forkedFromLenserHandle}
+                </span>
+              </button>
+            </React.Fragment>
+          ))}
+          {forkTree.length > 3 && (
+            <span className="text-gray-400 dark:text-gray-500">… +{forkTree.length - 3} more</span>
+          )}
+        </div>
+      )}
     </div>
   )
 }
