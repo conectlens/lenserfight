@@ -1,5 +1,5 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query'
-import { Lock, Pencil, Trash2, Flag } from 'lucide-react'
+import { History, Lock, Loader2, Pencil, Trash2, Flag } from 'lucide-react'
 import React, { useEffect, useMemo, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 
@@ -52,9 +52,12 @@ export const LensLabPage: React.FC = () => {
   })
   const { forkLens, isForking } = useForkLens(lens ?? null)
 
-  // Versioning
+  // Versioning — lazy, only loads when the picker is opened
+  const [showVersionPicker, setShowVersionPicker] = useState(false)
   const [selectedVersionId, setSelectedVersionId] = useState<string | null>(null)
-  const { versions, isLoading: isLoadingVersions } = useLensVersions(id ?? '')
+  const { versions, isLoading: isLoadingVersions } = useLensVersions(id ?? '', {
+    enabled: showVersionPicker,
+  })
   const { data: selectedVersion } = useLensVersionDetail(selectedVersionId)
 
   // Funding source
@@ -273,14 +276,87 @@ export const LensLabPage: React.FC = () => {
 
       {/* Lens body + Execution panel row */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
-        <div className="lg:col-span-7">
+        <div className="lg:col-span-7 flex flex-col gap-2">
+          {/* Viewer toolbar — History icon button */}
+          <div className="flex justify-end">
+            <button
+              type="button"
+              onClick={() => { setShowVersionPicker((v) => !v); setSelectedVersionId(null) }}
+              title={showVersionPicker ? 'Hide version history' : 'Show version history'}
+              className={`flex items-center gap-1.5 px-2.5 py-1.5 text-xs rounded-lg border shadow-sm transition-all ${
+                showVersionPicker
+                  ? 'border-primary-200 dark:border-primary-800 bg-primary-50 dark:bg-primary-900/20 text-primary-600 dark:text-primary-400'
+                  : 'border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200 hover:border-gray-300 dark:hover:border-gray-600'
+              }`}
+            >
+              <History size={13} />
+              <span>
+                {selectedVersionId
+                  ? `v${versions.find((v) => v.id === selectedVersionId)?.versionNumber ?? '?'} selected`
+                  : 'Version history'}
+              </span>
+            </button>
+          </div>
+
           <LensBodyViewer
             content={activeLensContent}
             onCopy={handleCopy}
             onFork={() => forkLens({})}
             isForking={isForking}
           />
+
+          {/* Compact version picker — hidden by default */}
+          {showVersionPicker && (
+            <div className="rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 overflow-hidden">
+              {isLoadingVersions ? (
+                <div className="flex items-center justify-center gap-2 py-5 text-xs text-gray-400">
+                  <Loader2 size={13} className="animate-spin" />
+                  Loading versions…
+                </div>
+              ) : versions.length === 0 ? (
+                <div className="py-5 text-xs text-center text-gray-400">No versions found.</div>
+              ) : (
+                <div className="divide-y divide-gray-50 dark:divide-gray-800 max-h-48 overflow-y-auto">
+                  {versions.map((v) => {
+                    const isSelected = v.id === selectedVersionId
+                    return (
+                      <button
+                        key={v.id}
+                        type="button"
+                        onClick={() => setSelectedVersionId(isSelected ? null : v.id)}
+                        className={`w-full text-left px-4 py-2.5 flex items-center gap-3 transition-colors ${
+                          isSelected
+                            ? 'bg-primary-50 dark:bg-primary-900/20 text-primary-700 dark:text-primary-300'
+                            : 'hover:bg-gray-50 dark:hover:bg-gray-800/60 text-gray-700 dark:text-gray-300'
+                        }`}
+                      >
+                        <span className="font-mono font-bold text-xs w-8 shrink-0">
+                          v{v.versionNumber}
+                        </span>
+                        <span
+                          className={`text-[10px] px-1.5 py-0.5 rounded-full font-medium shrink-0 ${
+                            v.status === 'draft'
+                              ? 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300'
+                              : 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300'
+                          }`}
+                        >
+                          {v.status}
+                        </span>
+                        <span className="text-xs text-gray-500 dark:text-gray-400 truncate flex-1">
+                          {v.changelog ?? '—'}
+                        </span>
+                        <span className="text-[10px] text-gray-400 shrink-0">
+                          {new Date(v.createdAt).toLocaleDateString()}
+                        </span>
+                      </button>
+                    )
+                  })}
+                </div>
+              )}
+            </div>
+          )}
         </div>
+
         <div className="lg:col-span-5">
           <LabExecutionPanel
             lensId={lens.id}
@@ -300,10 +376,6 @@ export const LensLabPage: React.FC = () => {
             isStreaming={lab.streamState === 'loading' || lab.streamState === 'streaming'}
             onStop={lab.stopStream}
             params={activeParams}
-            versions={versions}
-            selectedVersionId={selectedVersionId}
-            onVersionChange={setSelectedVersionId}
-            isLoadingVersions={isLoadingVersions}
             fundingSource={funding.fundingSource}
             onFundingSourceChange={funding.setFundingSource}
             selectedKeyRefId={funding.selectedKeyRefId}
@@ -364,6 +436,7 @@ export const LensLabPage: React.FC = () => {
         isSubmitting={isCreateSubmitting}
         error={createError}
         isEditMode={isEditMode}
+        lensId={isEditMode && lens ? lens.id : undefined}
       />
 
       {showProfileModal && <CreateLenserProfileModal onClose={() => setShowProfileModal(false)} />}
