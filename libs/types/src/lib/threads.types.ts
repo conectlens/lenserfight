@@ -118,6 +118,7 @@ export interface ThreadDetailViewModel {
   reactionCount: number
   userHasReacted: boolean
   replies: ThreadReplyViewModel[]
+  repliesHasNextPage: boolean
   promptBlock?: LensData
   visibility: Visibility
   status: ContentStatus
