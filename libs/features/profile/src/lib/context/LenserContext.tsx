@@ -58,18 +58,24 @@ export const LenserProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       : undefined
   const profileInitialDataUpdatedAt = profileInitialData ? cachedProfile?.fetchedAt : undefined
 
+  const queryEnabled = isAuthenticated && !!user
+
   const {
     data: lenser = null,
-    isLoading,
+    isLoading: queryIsLoading,
     error: queryError,
   } = useQuery<Lenser | null>({
     queryKey: queryKeys.lenser.authenticated(),
     queryFn: () => lenserService.getAuthenticatedLenser(),
-    enabled: isAuthenticated && !!user,
+    enabled: queryEnabled,
     staleTime: 1000 * 60 * 5,
     initialData: profileInitialData,
     initialDataUpdatedAt: profileInitialDataUpdatedAt,
   })
+
+  // Disabled queries (anon users) remain in React Query's 'pending' status.
+  // Normalize isLoading to false so isReady resolves immediately after auth settles.
+  const isLoading = queryEnabled ? queryIsLoading : false
 
   useEffect(() => {
     if (lenser) writeCache(LENSER_CACHE_KEY, lenser)

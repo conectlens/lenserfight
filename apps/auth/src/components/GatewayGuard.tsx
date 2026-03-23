@@ -28,7 +28,7 @@ export const GatewayGuard: React.FC<{ children: React.ReactNode }> = ({ children
     }
   }, [gate, gateLoading, isAuthenticated, isLoading])
 
-  if (isLoading || gateLoading || !!gateError || (isAuthenticated && gate)) {
+  if (isLoading || gateLoading || (isAuthenticated && !!gateError) || (isAuthenticated && gate)) {
     return <LoadingOverlay message={isAuthenticated ? 'Redirecting...' : 'Loading...'} />
   }
 

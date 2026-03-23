@@ -1,8 +1,7 @@
 import React, { useEffect } from 'react'
-import { useParams, useNavigate, useLocation } from 'react-router-dom'
+import { useParams, useNavigate } from 'react-router-dom'
 
 import { SEOHead } from '@lenserfight/ui/components'
-import { useAuth } from '@lenserfight/features/auth'
 import { useUI } from '@lenserfight/ui/components'
 import { TagContentGrid } from '../components/TagContentGrid'
 import { TagFilterBar } from '../components/TagFilterBar'
@@ -12,15 +11,7 @@ import { useTagDetailController } from '../hooks/useTagDetailController'
 export const TagDetailPage: React.FC = () => {
   const { slug } = useParams<{ slug: string }>()
   const navigate = useNavigate()
-  const location = useLocation()
-  const { isAuthenticated, isLoading: authLoading } = useAuth()
   const { setPageTitle } = useUI()
-
-  useEffect(() => {
-    if (!authLoading && !isAuthenticated) {
-      navigate('/login', { state: { from: location }, replace: true })
-    }
-  }, [authLoading, isAuthenticated, navigate, location])
 
   const { tag, items, loading, hasNextPage, fetchNextPage, filter, setFilter, sort, setSort, availableFilters } =
     useTagDetailController(slug)
@@ -33,14 +24,6 @@ export const TagDetailPage: React.FC = () => {
     }
     return () => setPageTitle(null)
   }, [tag, setPageTitle])
-
-  if (authLoading || (!isAuthenticated && !authLoading)) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-      </div>
-    )
-  }
 
   if (!loading && !tag) {
     return (

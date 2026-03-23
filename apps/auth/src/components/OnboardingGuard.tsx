@@ -19,7 +19,8 @@ export const OnboardingGuard: React.FC<{ children: React.ReactNode }> = ({ child
   const { data: gate, isLoading: gateLoading, error: gateError } = useAuthProfileGate()
 
   useEffect(() => {
-    if (isLoading || gateLoading) return
+    if (isLoading || gateLoading || !!gateError) return
+
     if (!isAuthenticated) {
       const params = new URLSearchParams(window.location.search)
       const returnUrl = params.get('return_url')
@@ -44,16 +45,21 @@ export const OnboardingGuard: React.FC<{ children: React.ReactNode }> = ({ child
       const returnUrl = sanitizeReturnUrl(params.get('return_url'))
       replaceLocationSafely(`/account-unavailable?return_url=${encodeURIComponent(returnUrl)}`)
     }
-  }, [gate, gateLoading, isAuthenticated, isLoading])
+  }, [gate, gateLoading, gateError, isAuthenticated, isLoading])
 
-  if (
-    isLoading ||
-    gateLoading ||
-    !!gateError ||
-    !isAuthenticated ||
-    !gate ||
-    (gate.kind !== 'new' && gate.kind !== 'onboarding')
-  ) {
+  if (isLoading || gateLoading || !!gateError) {
+    return <LoadingOverlay message="Loading..." />
+  }
+
+  if (!isAuthenticated) {
+    return null
+  }
+
+  if (!gate) {
+    return <LoadingOverlay message="Loading..." />
+  }
+
+  if (gate.kind !== 'new' && gate.kind !== 'onboarding') {
     return <LoadingOverlay message="Loading..." />
   }
 

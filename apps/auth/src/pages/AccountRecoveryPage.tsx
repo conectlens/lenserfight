@@ -37,7 +37,12 @@ export const AccountRecoveryPage: React.FC = () => {
     : null
 
   useEffect(() => {
-    if (!isAuthenticated || isLoading || !!gateError || !gate) return
+    if (!isAuthenticated) {
+      replaceLocationSafely(`/login?return_url=${encodeURIComponent(returnUrl)}`)
+      return
+    }
+
+    if (isLoading || !!gateError || !gate) return
 
     if (gate.kind !== 'recoverable') {
       replaceLocationSafely(
@@ -61,7 +66,15 @@ export const AccountRecoveryPage: React.FC = () => {
     returnUrl,
   ])
 
-  if (!isAuthenticated || isLoading || !!gateError || !gate) {
+  if (isLoading || !!gateError) {
+    return <LoadingOverlay message="Checking your account..." />
+  }
+
+  if (!isAuthenticated) {
+    return null
+  }
+
+  if (!gate) {
     return <LoadingOverlay message="Checking your account..." />
   }
 
