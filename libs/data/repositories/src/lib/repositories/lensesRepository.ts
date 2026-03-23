@@ -38,7 +38,7 @@ export interface LensesRepositoryPort {
   createVersion(input: CreateLensVersionDTO): Promise<LensVersion>
   publishVersion(versionId: string): Promise<void>
   cloneLens(sourceLensId: string, versionId?: string | null): Promise<string>
-  getForkTree(lensId: string): Promise<ForkNode[]>
+  getForkTree(lensId: string, limit?: number): Promise<ForkNode[]>
 }
 
 // Fallback data for Mock Mode
@@ -712,13 +712,14 @@ export class SupabaseLensesRepository implements LensesRepositoryPort {
     return data as string
   }
 
-  async getForkTree(lensId: string): Promise<ForkNode[]> {
+  async getForkTree(lensId: string, limit = 100): Promise<ForkNode[]> {
     const { data, error } = await supabase
       .schema('lenses')
       .from('vw_fork_history')
       .select('*')
       .eq('lens_id', lensId)
       .order('depth', { ascending: true })
+      .limit(limit)
     if (error) this.handleError(error)
     return ((data ?? []) as Record<string, unknown>[]).map((row) => ({
       lensId: row.lens_id as string,

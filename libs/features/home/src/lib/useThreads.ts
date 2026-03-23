@@ -168,7 +168,7 @@ export const useSuggestedLensers = (lenserId?: string) => {
 export const useFollowedTags = (lenserId?: string) => {
   return useQuery({
     queryKey: lenserId ? keys.tags.followed(lenserId) : keys.tags.trending,
-    queryFn: () => (lenserId ? tagFollowsService.getFollowedTags(lenserId) : []),
+    queryFn: () => (lenserId ? tagFollowsService.getFollowedTags(lenserId, 50) : []),
     enabled: Boolean(lenserId),
     staleTime: 1000 * 60 * 5,
   })

@@ -13,9 +13,11 @@ export class ThreadTagProvider implements TagContentProvider {
   async listByTag(
     tagSlug: string,
     sort: SortOption,
-    currentLenserId?: string
+    currentLenserId?: string,
+    offset = 0,
+    limit = 20,
   ): Promise<TaggedContentItem[]> {
-    const result = await threadsService.getThreadsByTag(tagSlug, sort, currentLenserId, 0, 20)
+    const result = await threadsService.getThreadsByTag(tagSlug, sort, currentLenserId, offset, limit)
     const threads = result.data ?? []
 
     return threads.map((t) => ({

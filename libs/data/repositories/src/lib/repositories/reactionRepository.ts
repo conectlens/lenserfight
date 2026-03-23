@@ -180,13 +180,13 @@ export class SupabaseReactionRepository implements ReactionRepositoryPort {
       .select('*')
       .eq('lenser_id', profile.id)
       .order('created_at', { ascending: false })
-      .range(offset, offset + limit)
+      .range(offset, offset + limit - 1)
 
     if (error) throw error
 
     const records = (data ?? []).map((r) => this.mapToRecord(r))
-    const hasNextPage = records.length > limit
-    const page = records.slice(0, limit)
+    const hasNextPage = records.length === limit
+    const page = records
 
     return paginatedResponse(
       page,
