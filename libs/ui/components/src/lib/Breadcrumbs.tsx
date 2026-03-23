@@ -5,8 +5,9 @@ import { useLocation, Link } from 'react-router-dom'
 import { useUI } from './UIContext'
 
 const routeNameMap: Record<string, string> = {
-  len: 'Len Cloud',
-  p: 'Prompts',
+  ray: 'Ray Cloud',
+  lenses: 'Lenses',
+  p: 'Lenses',
   threads: 'Threads',
   lenser: 'Lenser',
   lenserboard: 'LenserBoard',

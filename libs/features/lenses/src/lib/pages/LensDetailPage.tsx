@@ -158,7 +158,7 @@ export const LensDetailPage: React.FC = () => {
       await lensesService.deleteLens(deleteTargetId, lenser.id)
       setIsDeleteModalOpen(false)
       if (lens && deleteTargetId === lens.id) {
-        navigate('/len/p')
+        navigate('/lenses')
       } else {
         queryClient.invalidateQueries({ queryKey: ['lens-list'] })
         queryClient.invalidateQueries({ queryKey: ['lens-composite', lens?.id] })
@@ -173,7 +173,7 @@ export const LensDetailPage: React.FC = () => {
     if (isEditMode && lens && newId === lens.id) {
       queryClient.invalidateQueries({ queryKey: ['lens-composite', lens.id] })
     } else {
-      navigate(`/len/p/${newId}`)
+      navigate(`/lenses/${newId}`)
     }
   }
 
@@ -200,7 +200,7 @@ export const LensDetailPage: React.FC = () => {
           <Lock className="w-12 h-12 text-red-500" />
         </div>
         <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-3">Access Denied</h2>
-        <button onClick={() => navigate('/len/p')} className="text-primary-700 dark:text-primary-400 hover:underline">
+        <button onClick={() => navigate('/lenses')} className="text-primary-700 dark:text-primary-400 hover:underline">
           Return to Library
         </button>
       </div>
@@ -211,7 +211,7 @@ export const LensDetailPage: React.FC = () => {
     return (
       <div className="flex flex-col items-center justify-center min-h-[50vh]">
         <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">Lens Not Found</h2>
-        <button onClick={() => navigate('/len/p')} className="text-primary hover:underline">
+        <button onClick={() => navigate('/lenses')} className="text-primary hover:underline">
           Return to Library
         </button>
       </div>
@@ -261,7 +261,7 @@ export const LensDetailPage: React.FC = () => {
           <LensAuthorList
             lenses={authorLenses}
             authorName={lens.author.displayName}
-            onOpen={(id) => navigate(`/len/p/${id}`)}
+            onOpen={(id) => navigate(`/lenses/${id}`)}
             isLoading={isLoading}
             onCreateClick={handleCreateClick}
             isOwner={isOwner}
@@ -292,7 +292,7 @@ export const LensDetailPage: React.FC = () => {
 
           <LensRelatedList
             lenses={relatedLenses}
-            onOpen={(id) => navigate(`/len/p/${id}`)}
+            onOpen={(id) => navigate(`/lenses/${id}`)}
             isLoading={isLoading}
           />
         </div>

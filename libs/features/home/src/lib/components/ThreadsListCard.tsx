@@ -106,7 +106,7 @@ export const ThreadsListCard: React.FC<ThreadsListCardProps> = memo(
                     label={tag.name}
                     onClick={(e) => {
                       e.stopPropagation()
-                      navigate(`/len/${tag.slug}`)
+                      navigate(`/ray/${tag.slug}`)
                     }}
                   />
                 ))}

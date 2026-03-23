@@ -18,9 +18,9 @@ export interface SEOMetadata {
 const SITE_NAME = 'LenserFight'
 const FORUM_HOST = 'https://forum.lenserfight.com'
 const DEFAULT_OG_IMAGE = `${FORUM_HOST}/og-banner.png`
-const DEFAULT_TITLE = 'LenserFight - The AI Prompt Engineering Arena'
+const DEFAULT_TITLE = 'LenserFight - The AI Lens Engineering Arena'
 const DEFAULT_DESC =
-  'Join the LenserFight ecosystem. Discover, battle, and share advanced AI prompts for GPT-5, Gemini, Claude, and Midjourney. Connect with top Lensers and master LLM interactions.'
+  'Join the LenserFight ecosystem. Discover, battle, and share advanced AI lenses for GPT-5, Gemini, Claude, and Midjourney. Connect with top Lensers and master LLM interactions.'
 
 // Keywords for injection based on context
 const AI_KEYWORDS = [
@@ -75,10 +75,10 @@ export const seoService = {
     const uses = prompt.usageCount > 0 ? `Used ${prompt.usageCount} times.` : ''
     const pageUrl = `${FORUM_HOST}/lenses/${prompt.id}`
 
-    const desc = `Use the "${prompt.title}" prompt template by ${author}. Optimized for ${tags}. ${uses} Copy and remix this prompt for GPT-5, Gemini, and Claude on LenserFight.`
+    const desc = `Use the "${prompt.title}" lens template by ${author}. Optimized for ${tags}. ${uses} Copy and remix this lens for GPT-5, Gemini, and Claude on LenserFight.`
 
     return {
-      title: `${prompt.title} - AI Prompt Template | ${SITE_NAME}`,
+      title: `${prompt.title} - AI Lens Template | ${SITE_NAME}`,
       description: desc.substring(0, 160),
       url: pageUrl,
       ogImage: DEFAULT_OG_IMAGE,
@@ -119,7 +119,7 @@ export const seoService = {
       : `Read insights from ${thread.author.displayName}.`
     const pageUrl = `${FORUM_HOST}/threads/${thread.id}`
 
-    const desc = `Community thread: ${thread.title}. ${replyContext} Topics: ${tags} #GenerativeAI #PromptEngineering. Explore LenserFight for advanced LLM tactics.`
+    const desc = `Community thread: ${thread.title}. ${replyContext} Topics: ${tags} #GenerativeAI #LensEngineering. Explore LenserFight for advanced LLM tactics.`
 
     return {
       title: `${thread.title} - AI Discussion | ${SITE_NAME}`,
@@ -159,10 +159,10 @@ export const seoService = {
 
     const role = lenser.headline || 'AI Creator'
     const statText = stats
-      ? `${stats.promptsCount} prompts, ${stats.threadsCount} threads.`
+      ? `${stats.promptsCount} lenses, ${stats.threadsCount} threads.`
       : 'Active Lenser community member.'
     const pageUrl = `${FORUM_HOST}/lenser/${lenser.handle}`
-    const desc = `Check out ${lenser.display_name}'s profile on LenserFight. ${role}. ${statText} Follow for top-tier AI prompts, LLM strategies, and ConnectLens ecosystem contributions.`
+    const desc = `Check out ${lenser.display_name}'s profile on LenserFight. ${role}. ${statText} Follow for top-tier AI lenses, LLM strategies, and ConnectLens ecosystem contributions.`
 
     return {
       title: `${lenser.display_name} (@${lenser.handle}) - ${role} | ${SITE_NAME}`,
@@ -187,25 +187,25 @@ export const seoService = {
     if (!tag)
       return {
         title: 'Explore AI Topics',
-        description: 'Discover trending AI topics and prompts.',
-        url: `${FORUM_HOST}/len`,
+        description: 'Discover trending AI topics and lenses.',
+        url: `${FORUM_HOST}/ray`,
         ogImage: DEFAULT_OG_IMAGE,
       }
 
     const name = tag.name
     const count = tag.count > 0 ? `Over ${tag.count} resources available.` : ''
-    const pageUrl = `${FORUM_HOST}/len/${name.toLowerCase()}`
-    const desc = `Explore the best ${name} prompts, discussions, and challenges. ${count} Master ${name} workflows with GPT-5, Gemini, and Claude tools on LenserFight.`
+    const pageUrl = `${FORUM_HOST}/ray/${name.toLowerCase()}`
+    const desc = `Explore the best ${name} lenses, discussions, and challenges. ${count} Master ${name} workflows with GPT-5, Gemini, and Claude tools on LenserFight.`
 
     return {
-      title: `Top ${name} AI Prompts & Threads | ${SITE_NAME}`,
+      title: `Top ${name} AI Lenses & Threads | ${SITE_NAME}`,
       description: desc,
       url: pageUrl,
       ogImage: DEFAULT_OG_IMAGE,
       jsonLd: {
         '@context': 'https://schema.org',
         '@type': 'CollectionPage',
-        name: `${name} AI Prompts & Threads`,
+        name: `${name} AI Lenses & Threads`,
         description: desc,
         url: pageUrl,
         publisher: { '@type': 'Organization', name: SITE_NAME, url: FORUM_HOST },
@@ -215,28 +215,28 @@ export const seoService = {
 
   getTagCloudMeta: (): SEOMetadata => ({
     title: `Explore AI Topics & Trends | ${SITE_NAME}`,
-    description: `Browse trending tags in the LenserFight ecosystem. Find prompts for Coding, Art, Writing, Marketing, and more. Optimized for the latest LLMs.`,
-    url: `${FORUM_HOST}/len`,
+    description: `Browse trending tags in the LenserFight ecosystem. Find lenses for Coding, Art, Writing, Marketing, and more. Optimized for the latest LLMs.`,
+    url: `${FORUM_HOST}/ray`,
     ogImage: DEFAULT_OG_IMAGE,
     jsonLd: {
       '@context': 'https://schema.org',
       '@type': 'CollectionPage',
       name: 'AI Topics & Trends',
-      url: `${FORUM_HOST}/len`,
+      url: `${FORUM_HOST}/ray`,
       publisher: { '@type': 'Organization', name: SITE_NAME, url: FORUM_HOST },
     },
   }),
 
   getPromptsListMeta: (): SEOMetadata => ({
-    title: `Discover Best AI Prompts | ${SITE_NAME}`,
-    description: `Search and filter thousands of high-quality AI prompts. Categories include Writing, Coding, Art Generation (Midjourney/DALL-E), and Productivity. Boost your LLM workflow.`,
-    url: `${FORUM_HOST}/len/p`,
+    title: `Discover Best AI Lenses | ${SITE_NAME}`,
+    description: `Search and filter thousands of high-quality AI lenses. Categories include Writing, Coding, Art Generation (Midjourney/DALL-E), and Productivity. Boost your LLM workflow.`,
+    url: `${FORUM_HOST}/lenses`,
     ogImage: DEFAULT_OG_IMAGE,
     jsonLd: {
       '@context': 'https://schema.org',
       '@type': 'CollectionPage',
-      name: 'AI Prompt Library',
-      url: `${FORUM_HOST}/len/p`,
+      name: 'AI Lens Library',
+      url: `${FORUM_HOST}/lenses`,
       publisher: { '@type': 'Organization', name: SITE_NAME, url: FORUM_HOST },
     },
   }),

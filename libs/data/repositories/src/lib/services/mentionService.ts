@@ -37,7 +37,7 @@ export const mentionService = {
               content: tag.name,
               id: segment.id,
               entityType: 'Tag',
-              link: `/rays/${tag.slug}`,
+              link: `/ray/${tag.slug}`,
               isValid: true,
             } as ResolvedSegment
           }

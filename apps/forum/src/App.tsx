@@ -174,9 +174,9 @@ const App: React.FC = () => {
                           }
                         />
 
-                        {/* Rays (Tag Cloud) Routes */}
+                        {/* Ray (Tag Cloud) Routes */}
                         <Route
-                          path="/rays"
+                          path="/ray"
                           element={
                             <DashboardLayout>
                               <TagCloudPage />
@@ -185,7 +185,7 @@ const App: React.FC = () => {
                         />
 
                         <Route
-                          path="/rays/:slug"
+                          path="/ray/:slug"
                           element={
                             <DashboardLayout>
                               <TagDetailPage />
@@ -194,7 +194,7 @@ const App: React.FC = () => {
                         />
 
                         <Route
-                          path="/rays/:slug/:tab"
+                          path="/ray/:slug/:tab"
                           element={
                             <DashboardLayout>
                               <TagDetailPage />
@@ -276,7 +276,9 @@ const App: React.FC = () => {
                         <Route path="/forgot-password" element={<Navigate to="/auth/forgot-password" replace />} />
                         <Route path="/reset-password" element={<Navigate to="/auth/reset-password" replace />} />
                         <Route path="/prompts/*" element={<Navigate to="/lenses" replace />} />
-                        <Route path="/tags/*" element={<Navigate to="/rays" replace />} />
+                        <Route path="/tags/*" element={<Navigate to="/ray" replace />} />
+                        <Route path="/rays/*" element={<Navigate to="/ray" replace />} />
+                        <Route path="/len/*" element={<Navigate to="/ray" replace />} />
                         <Route path="/leaderboard" element={<Navigate to="/lenserboard" replace />} />
                         <Route path="/store" element={<Navigate to="/billing" replace />} />
 

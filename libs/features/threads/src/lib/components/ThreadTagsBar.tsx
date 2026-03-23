@@ -15,7 +15,7 @@ export const ThreadTagsBar: React.FC<ThreadTagsBarProps> = ({ tags }) => {
       {tags.map((tag) => (
         <button
           key={tag.id}
-          onClick={() => navigate(`/len/${tag.slug}`)}
+          onClick={() => navigate(`/ray/${tag.slug}`)}
           className="inline-flex items-center px-4 py-1.5 rounded-full text-sm font-medium bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
         >
           {tag.name}

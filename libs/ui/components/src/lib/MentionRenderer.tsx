@@ -30,7 +30,7 @@ export const MentionRenderer: React.FC<MentionRendererProps> = ({
         if (s.type === 'mention') {
           return {
             type: 'mention',
-            content: 'Prompt', // Generic label
+            content: 'Lens', // Generic label
             id: s.id,
             entityType: s.entityType,
             isValid: true,
@@ -44,7 +44,7 @@ export const MentionRenderer: React.FC<MentionRendererProps> = ({
             id: s.id,
             entityType: 'Tag',
             isValid: true,
-            link: `/len/${s.id}`,
+            link: `/ray/${s.id}`,
           } as ResolvedSegment
         }
         return { type: 'text', content: s.content } as ResolvedSegment
@@ -131,7 +131,7 @@ export const MentionRenderer: React.FC<MentionRendererProps> = ({
             }
           }
 
-          // Unknown/Invalid Prompt
+          // Unknown/Invalid Lens
           if (plainText) {
             return (
               <span key={index} className="text-gray-500">
@@ -143,7 +143,7 @@ export const MentionRenderer: React.FC<MentionRendererProps> = ({
             <span
               key={index}
               className="inline-flex items-center gap-1 mx-1 px-1.5 py-0.5 rounded-md bg-gray-100 text-gray-500 text-sm align-baseline cursor-not-allowed"
-              title="Prompt not found"
+              title="Lens not found"
             >
               <HelpCircle size={12} />
               {displayContent}
@@ -179,7 +179,7 @@ export const MentionRenderer: React.FC<MentionRendererProps> = ({
           return (
             <Link
               key={index}
-              to={`/len/${segment.id}`}
+              to={`/ray/${segment.id}`}
               className="inline-flex items-center gap-1 mx-0.5 px-1.5 py-0.5 rounded-md bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400 text-sm align-baseline hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors no-underline"
             >
               <Hash size={11} />

@@ -2,7 +2,7 @@ import React from 'react'
 
 import { FEATURES } from '@lenserfight/utils/env'
 
-type Tab = 'actions' | 'prompts' | 'threads' | 'challenges'
+type Tab = 'actions' | 'lenses' | 'threads' | 'challenges'
 
 interface LenserTabsProps {
   activeTab: Tab
@@ -11,10 +11,10 @@ interface LenserTabsProps {
 }
 
 export const LenserTabs: React.FC<LenserTabsProps> = ({ activeTab, onChange, hideActions = false }) => {
-  // Order: Threads, Prompts, Actions
+  // Order: Threads, Lenses, Actions
   const tabs: { id: Tab; label: string }[] = [
     { id: 'threads', label: 'Threads' },
-    { id: 'prompts', label: 'Prompts' },
+    { id: 'lenses', label: 'Lenses' },
     ...(!hideActions ? [{ id: 'actions' as Tab, label: 'Actions' }] : []),
   ]
 
