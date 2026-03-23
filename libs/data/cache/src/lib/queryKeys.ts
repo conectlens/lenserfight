@@ -14,6 +14,7 @@ export const queryKeys = {
     personal: (lenserId: string) => [...queryKeys.lenses.all, 'personal', lenserId] as const,
     detail: (id: string) => [...queryKeys.lenses.all, 'detail', id] as const,
     composite: (id: string) => [...queryKeys.lenses.all, 'composite', id] as const,
+    forkTree: (lensId: string) => [...queryKeys.lenses.all, 'forkTree', lensId] as const,
   },
   lenser: {
     all: ['lenser'] as const,
