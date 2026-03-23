@@ -37,9 +37,8 @@ export const useLensesFeed = (
     queryKey: keys.lenses.feed({ searchQuery, selectedTag, sortOrder }),
     queryFn: async ({ pageParam = 0 }) => {
       if (searchQuery) return lensesService.search(searchQuery, pageParam, 12)
-      if (selectedTag) return lensesService.filter(selectedTag, pageParam, 12)
-      if (sortOrder) return lensesService.sort(sortOrder, pageParam, 12)
-      return lensesService.getLenses(pageParam, 12)
+      if (selectedTag) return lensesService.filter(selectedTag, pageParam, 12, sortOrder)
+      return lensesService.sort(sortOrder, pageParam, 12)
     },
     initialPageParam: 0,
     getNextPageParam: (lastPage) => {
