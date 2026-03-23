@@ -1,4 +1,4 @@
-import { useQuery } from '@tanstack/react-query'
+import { useInfiniteQuery, useQuery } from '@tanstack/react-query'
 import { useMemo } from 'react'
 import { useParams, useSearchParams, useNavigate } from 'react-router-dom'
 
@@ -10,6 +10,8 @@ import { ThreadTagProvider } from '../providers/ThreadTagProvider'
 
 const promptProvider = new PromptTagProvider()
 const threadProvider = new ThreadTagProvider()
+
+const PAGE_SIZE = 20
 
 const FILTERS = [
   { value: 'all', label: 'All' },
@@ -36,32 +38,62 @@ export const useTagDetailController = (slug?: string) => {
     staleTime: 1000 * 60 * 10, // 10 minutes
   })
 
-  // 2. Fetch Content (Split queries for independent caching)
+  // 2. Fetch Content (Split queries for independent caching + pagination)
   const shouldFetchPrompts = activeTab === 'all' || activeTab === 'lenses'
   const shouldFetchThreads = activeTab === 'all' || activeTab === 'threads'
 
-  const { data: prompts, isLoading: loadingPrompts } = useQuery({
+  const {
+    data: promptPages,
+    isLoading: loadingPrompts,
+    fetchNextPage: fetchNextPrompts,
+    hasNextPage: hasMorePrompts,
+  } = useInfiniteQuery({
     queryKey: ['tag-prompts', slug, sortType],
-    queryFn: () => (slug ? promptProvider.listByTag(slug, sortType, lenser?.id) : []),
+    queryFn: ({ pageParam = 0 }) =>
+      slug
+        ? promptProvider.listByTag(slug, sortType, lenser?.id, pageParam as number, PAGE_SIZE)
+        : Promise.resolve([]),
+    initialPageParam: 0,
+    getNextPageParam: (lastPage, _allPages, lastPageParam) =>
+      (lastPage as TaggedContentItem[]).length >= PAGE_SIZE
+        ? (lastPageParam as number) + PAGE_SIZE
+        : undefined,
     enabled: !!slug && shouldFetchPrompts,
-    staleTime: 1000 * 60 * 5, // 5 minutes cache
+    staleTime: 1000 * 60 * 5,
   })
 
-  const { data: threads, isLoading: loadingThreads } = useQuery({
+  const {
+    data: threadPages,
+    isLoading: loadingThreads,
+    fetchNextPage: fetchNextThreads,
+    hasNextPage: hasMoreThreads,
+  } = useInfiniteQuery({
     queryKey: ['tag-threads', slug, sortType],
-    queryFn: () => (slug ? threadProvider.listByTag(slug, sortType, lenser?.id) : []),
+    queryFn: ({ pageParam = 0 }) =>
+      slug
+        ? threadProvider.listByTag(slug, sortType, lenser?.id, pageParam as number, PAGE_SIZE)
+        : Promise.resolve([]),
+    initialPageParam: 0,
+    getNextPageParam: (lastPage, _allPages, lastPageParam) =>
+      (lastPage as TaggedContentItem[]).length >= PAGE_SIZE
+        ? (lastPageParam as number) + PAGE_SIZE
+        : undefined,
     enabled: !!slug && shouldFetchThreads,
-    staleTime: 1000 * 60 * 5, // 5 minutes cache
+    staleTime: 1000 * 60 * 5,
   })
+
+  // Flatten pages
+  const prompts = promptPages?.pages.flatMap((p) => p as TaggedContentItem[]) ?? []
+  const threads = threadPages?.pages.flatMap((p) => p as TaggedContentItem[]) ?? []
 
   // 3. Merge & Sort
   const items = useMemo(() => {
     // Single-tab views arrive pre-sorted from the DB — no re-sort needed.
-    if (activeTab === 'lenses') return prompts || []
-    if (activeTab === 'threads') return threads || []
+    if (activeTab === 'lenses') return prompts
+    if (activeTab === 'threads') return threads
 
     // 'all' tab: merge two separately-sorted lists and re-sort the combined result.
-    const result = [...(prompts || []), ...(threads || [])]
+    const result = [...prompts, ...threads]
     if (sortType === 'newest') {
       result.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
     } else {
@@ -74,6 +106,22 @@ export const useTagDetailController = (slug?: string) => {
 
   const loading =
     loadingTag || (shouldFetchPrompts && loadingPrompts) || (shouldFetchThreads && loadingThreads)
+
+  const hasNextPage =
+    (activeTab === 'lenses' && hasMorePrompts) ||
+    (activeTab === 'threads' && hasMoreThreads) ||
+    (activeTab === 'all' && (!!hasMorePrompts || !!hasMoreThreads))
+
+  const fetchNextPage = () => {
+    if (activeTab === 'lenses') {
+      fetchNextPrompts()
+    } else if (activeTab === 'threads') {
+      fetchNextThreads()
+    } else {
+      if (hasMorePrompts) fetchNextPrompts()
+      if (hasMoreThreads) fetchNextThreads()
+    }
+  }
 
   // Navigation Handlers
   const handleTabChange = (newTab: string) => {
@@ -102,6 +150,8 @@ export const useTagDetailController = (slug?: string) => {
     tag,
     items,
     loading,
+    hasNextPage,
+    fetchNextPage,
     filter: activeTab,
     setFilter: handleTabChange,
     sort: sortType,

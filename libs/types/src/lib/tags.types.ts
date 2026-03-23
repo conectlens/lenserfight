@@ -52,7 +52,9 @@ export interface TagContentProvider {
   listByTag(
     tagSlug: string,
     sort: SortOption,
-    currentLenserId?: string
+    currentLenserId?: string,
+    offset?: number,
+    limit?: number,
   ): Promise<TaggedContentItem[]>
 }
 

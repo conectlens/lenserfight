@@ -97,6 +97,22 @@ export class SupabaseThreadsRepository implements ThreadsRepositoryPort {
     return this.mapProfileToAuthor(profile as Partial<AuthorProfile> | null, lenserId)
   }
 
+  private async getBatchProfilesByIds(ids: string[]): Promise<Map<string, AuthorProfile>> {
+    if (ids.length === 0) return new Map()
+    const { data, error } = await supabase
+      .schema('lensers')
+      .from('profiles')
+      .select('id, handle, display_name, avatar_url')
+      .in('id', ids)
+    if (error) return new Map()
+    return new Map(
+      ((data ?? []) as Partial<AuthorProfile>[]).map((p) => [
+        p.id!,
+        this.mapProfileToAuthor(p, p.id!),
+      ])
+    )
+  }
+
   private async getTagsForEntity(entityType: 'thread' | 'lens', entityId: string): Promise<TagRecord[]> {
     const { data: tagMapRows, error: tagMapError } = await supabase
       .schema('content')
@@ -455,14 +471,15 @@ export class SupabaseThreadsRepository implements ThreadsRepositoryPort {
     if (error) this.handleError(error)
 
     const replyRows = (replies ?? []) as ThreadReplyRecord[]
-    const [reactionTotals, authorProfiles] = await Promise.all([
+    const uniqueLenserIds = [...new Set(replyRows.map((r) => r.lenser_id))]
+    const [reactionTotals, profileMap] = await Promise.all([
       this.getReplyReactionTotals(replyRows.map((reply) => reply.id)),
-      Promise.all(replyRows.map((reply) => this.getProfileById(reply.lenser_id))),
+      this.getBatchProfilesByIds(uniqueLenserIds),
     ])
 
-    return replyRows.map((reply, index) => ({
+    return replyRows.map((reply) => ({
       ...reply,
-      author_profile: authorProfiles[index],
+      author_profile: profileMap.get(reply.lenser_id) ?? this.mapProfileToAuthor(null, reply.lenser_id),
       reaction_totals: reactionTotals.get(reply.id) ?? {},
     }))
   }
