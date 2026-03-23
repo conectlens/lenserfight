@@ -173,11 +173,11 @@ export const threadsService = {
     }
 
     // Parallelize: reaction check and reply tree are independent of each other
-    const [userHasReacted, replies] = await Promise.all([
+    const [userHasReacted, replyPage] = await Promise.all([
       viewerLenserId
         ? reactionRepo.getUserReaction('thread', threadId, viewerLenserId).then(([r]) => !!r)
         : Promise.resolve(false),
-      threadInteractionService.getReplyTree(threadId, viewerLenserId),
+      threadInteractionService.getReplyTree(threadId, viewerLenserId, 20, 0, record.visibility),
     ])
 
     return {
@@ -189,7 +189,8 @@ export const threadsService = {
       tags: record.tags || [],
       reactionCount: sumReactionTotals(record.reaction_totals),
       userHasReacted: userHasReacted,
-      replies: replies,
+      replies: replyPage.replies,
+      repliesHasNextPage: replyPage.hasNextPage,
       promptBlock: record.prompt_data,
       visibility: record.visibility,
       status: record.status,

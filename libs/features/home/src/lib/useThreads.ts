@@ -118,7 +118,11 @@ export const useTrendingLensers = () => {
 
 export const usePersonalFeed = (lenserId?: string) => {
   return useInfiniteQuery({
-    queryKey: lenserId ? keys.threads.personal(lenserId) : keys.threads.feed(),
+    // Use a distinct idle key when lenserId is absent so this disabled observer
+    // never shares a query key with useThreadsFeed. Sharing keys caused React
+    // Query v5 to sometimes use the wrong queryFn (returning []) on re-fetches,
+    // leaving the trending feed empty and the skeleton visible for anon users.
+    queryKey: lenserId ? keys.threads.personal(lenserId) : ['_personal_feed_idle'],
     queryFn: async ({ pageParam = 0 }) => {
       if (!lenserId) return { data: [], meta: { hasNextPage: false, offset: 0, limit: 20 } }
       return threadsService.getPersonalFeed(lenserId, pageParam, 20)

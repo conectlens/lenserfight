@@ -16,7 +16,7 @@ export interface ThreadsRepositoryPort {
     includePrivate?: boolean
   ): Promise<ThreadRecord[]>
   getThreadTags(threadId: string): Promise<TagRecord[]>
-  getThreadReplies(threadId: string, viewerLenserId?: string): Promise<ThreadReplyRecord[]>
+  getThreadReplies(threadId: string, viewerLenserId?: string, limit?: number, offset?: number, visibility?: string): Promise<ThreadReplyRecord[]>
   getReplyById(replyId: string): Promise<ThreadReplyRecord | null>
   getTrendingTags(limit: number): Promise<TagRecord[]>
   getTrendingThreads(lang?: string, offset?: number, limit?: number): Promise<ApiResponseEnvelope<ThreadFeedItem[]>>
@@ -423,16 +423,22 @@ export class SupabaseThreadsRepository implements ThreadsRepositoryPort {
    * Get replies for a thread from the public replies view.
    * Soft-deleted replies should be handled at view-level (e.g. content = "[deleted]").
    */
-  async getThreadReplies(threadId: string, viewerLenserId?: string): Promise<ThreadReplyRecord[]> {
-    const thread = await this.getThreadById(threadId, viewerLenserId)
-    if (!thread) return []
+  async getThreadReplies(threadId: string, viewerLenserId?: string, limit = 20, offset = 0, visibility?: string): Promise<ThreadReplyRecord[]> {
+    // Resolve visibility — skip getThreadById when the caller already has it
+    let resolvedVisibility = visibility
+    if (!resolvedVisibility) {
+      const thread = await this.getThreadById(threadId, viewerLenserId)
+      if (!thread) return []
+      resolvedVisibility = thread.visibility
+    }
 
-    if (thread.visibility === 'public') {
+    if (resolvedVisibility === 'public') {
       const { data, error } = await supabase
-        .from('vw_content_thread_replies_public')
-        .select('*')
-        .eq('thread_id', threadId)
-        .order('created_at', { ascending: true })
+        .rpc('fn_get_thread_replies_page', {
+          p_thread_id: threadId,
+          p_limit: limit,
+          p_offset: offset,
+        })
 
       if (error) this.handleError(error)
       return (data ?? []) as ThreadReplyRecord[]
@@ -444,6 +450,7 @@ export class SupabaseThreadsRepository implements ThreadsRepositoryPort {
       .select('id, thread_id, parent_reply_id, lenser_id, content, created_at, deleted_at')
       .eq('thread_id', threadId)
       .order('created_at', { ascending: true })
+      .range(offset, offset + limit - 1)
 
     if (error) this.handleError(error)
 
