@@ -174,7 +174,7 @@ export class SupabaseThreadsRepository implements ThreadsRepositoryPort {
       | 'prompt_data'
     > & { linked_prompt_id?: string | null }
   ): Promise<ThreadRecord> {
-    const [translationResult, authorProfile, tags] = await Promise.all([
+    const [translationResult, authorProfile, tags, reactionTotals] = await Promise.all([
       supabase
         .schema('content')
         .from('entity_translations')
@@ -185,10 +185,10 @@ export class SupabaseThreadsRepository implements ThreadsRepositoryPort {
         .maybeSingle(),
       this.getProfileById(baseThread.lenser_id),
       this.getTagsForEntity('thread', baseThread.id),
+      this.getThreadReactionTotals(baseThread.id),
     ])
 
     if (translationResult.error) this.handleError(translationResult.error)
-    const reactionTotals = await this.getThreadReactionTotals(baseThread.id)
 
     return {
       id: baseThread.id,
@@ -361,9 +361,42 @@ export class SupabaseThreadsRepository implements ThreadsRepositoryPort {
   }
 
   /**
-   * Get a single thread by id from public view.
+   * Get a single thread by id.
+   *
+   * Fast path: tries vw_content_threads_public first (public + published) — single query,
+   * all joins pre-computed. Falls back to raw table + hydration only for private/draft threads.
    */
   async getThreadById(id: string, viewerLenserId?: string): Promise<ThreadRecord | null> {
+    // Fast path: 1 query covers public published threads (the common case)
+    const { data: publicRow } = await supabase
+      .from('vw_content_threads_public')
+      .select('id, lenser_id, title, content, author_profile, reaction_totals, reply_count, view_count, created_at, thumbnail_url, lens_data, visibility, tags')
+      .eq('id', id)
+      .maybeSingle()
+
+    if (publicRow) {
+      return {
+        id: publicRow.id,
+        lenser_id: publicRow.lenser_id,
+        visibility: publicRow.visibility,
+        created_at: publicRow.created_at,
+        updated_at: publicRow.created_at,
+        title: publicRow.title,
+        content: publicRow.content,
+        author_profile: publicRow.author_profile as AuthorProfile,
+        tags: (publicRow.tags as any[]) ?? [],
+        reaction_totals: (publicRow.reaction_totals as Record<string, number>) ?? {},
+        reply_count: publicRow.reply_count ?? 0,
+        view_count: publicRow.view_count ?? 0,
+        thumbnail_url: publicRow.thumbnail_url,
+        linked_lens_id: null,
+        prompt_data: (publicRow as any).lens_data ?? null,
+      } as unknown as ThreadRecord
+    }
+
+    // Slow path: private or draft thread — needs direct table access + full hydration
+    if (!viewerLenserId) return null
+
     const { data, error } = await supabase
       .schema('content')
       .from('threads')
@@ -376,7 +409,7 @@ export class SupabaseThreadsRepository implements ThreadsRepositoryPort {
       this.handleError(error)
     }
     if (!data) return null
-    if (data.visibility === 'private' && (!viewerLenserId || data.lenser_id !== viewerLenserId)) {
+    if (data.visibility === 'private' && data.lenser_id !== viewerLenserId) {
       return null
     }
 
