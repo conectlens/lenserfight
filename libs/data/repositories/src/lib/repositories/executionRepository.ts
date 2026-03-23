@@ -34,7 +34,6 @@ export class SupabaseExecutionRepository implements ExecutionRepositoryPort {
       requestId: row.request_id as string,
       status: row.status as ExecutionRunStatus,
       modelId: (row.model_id as string | null) ?? null,
-      agentAdapterId: (row.agent_adapter_id as string | null) ?? null,
       providerRequestId: (row.provider_request_id as string | null) ?? null,
       executionHash: (row.execution_hash as string | null) ?? null,
       inputHash: (row.input_hash as string | null) ?? null,
@@ -71,11 +70,11 @@ export class SupabaseExecutionRepository implements ExecutionRepositoryPort {
     limit = 20,
     offset = 0
   ): Promise<PromptExecutionRecord[]> {
-    // 1. Fetch prompt_executions rows for this prompt
+    // 1. Fetch ray_runs rows for this lens
     const { data: execRows, error: execError } = await supabase
-      .schema('content')
-      .from('prompt_executions')
-      .select('id, lens_id, lenser_id, execution_run_id, payment_method, created_at')
+      .schema('execution')
+      .from('ray_runs')
+      .select('id, lens_id, lenser_id, run_id, payment_method, created_at')
       .eq('lens_id', promptId)
       .order('created_at', { ascending: false })
       .range(offset, offset + limit - 1)
@@ -84,9 +83,9 @@ export class SupabaseExecutionRepository implements ExecutionRepositoryPort {
 
     const rows = (execRows ?? []) as Record<string, unknown>[]
 
-    // 2. Batch-fetch runs for non-null execution_run_ids
+    // 2. Batch-fetch runs for non-null run_ids
     const runIds = rows
-      .map((r) => r.execution_run_id as string | null)
+      .map((r) => r.run_id as string | null)
       .filter((id): id is string => !!id)
 
     const runMap = new Map<string, ExecutionRun>()
@@ -95,7 +94,7 @@ export class SupabaseExecutionRepository implements ExecutionRepositoryPort {
         .schema('execution')
         .from('runs')
         .select(
-          'id, request_id, status, model_id, agent_adapter_id, provider_request_id, execution_hash, input_hash, output_hash, started_at, completed_at, latency_ms, cost_estimate, token_input, token_output, credit_cost, billing_status, error_code, error_message, created_at'
+          'id, request_id, status, model_id, provider_request_id, execution_hash, input_hash, output_hash, started_at, completed_at, latency_ms, cost_estimate, token_input, token_output, credit_cost, billing_status, error_code, error_message, created_at'
         )
         .in('id', runIds)
 
@@ -131,13 +130,13 @@ export class SupabaseExecutionRepository implements ExecutionRepositoryPort {
 
     // 4. Compose PromptExecutionRecord list
     return rows.map((r) => {
-      const runId = r.execution_run_id as string | null
+      const runId = r.run_id as string | null
       const run = runId ? runMap.get(runId) : undefined
       return {
         id: r.id as string,
         lensId: r.lens_id as string,
         lenserId: r.lenser_id as string,
-        executionRunId: runId,
+        runId: runId,
         paymentMethod: (r.payment_method as PromptExecutionRecord['paymentMethod']) ?? 'free',
         createdAt: r.created_at as string,
         run,
@@ -151,7 +150,7 @@ export class SupabaseExecutionRepository implements ExecutionRepositoryPort {
       .schema('execution')
       .from('runs')
       .select(
-        'id, request_id, status, model_id, agent_adapter_id, provider_request_id, execution_hash, input_hash, output_hash, started_at, completed_at, latency_ms, cost_estimate, token_input, token_output, credit_cost, billing_status, error_code, error_message, created_at'
+        'id, request_id, status, model_id, provider_request_id, execution_hash, input_hash, output_hash, started_at, completed_at, latency_ms, cost_estimate, token_input, token_output, credit_cost, billing_status, error_code, error_message, created_at'
       )
       .eq('id', runId)
       .maybeSingle()

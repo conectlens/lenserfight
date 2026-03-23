@@ -160,7 +160,7 @@ export type Ray = {
   id: string
   lensId: string
   lenserId: string
-  executionRunId: string
+  runId: string
   versionId?: string | null
   paymentMethod: 'byok' | 'wallet' | 'free'
   createdAt: string
