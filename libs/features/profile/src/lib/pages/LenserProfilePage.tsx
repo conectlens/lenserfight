@@ -35,7 +35,7 @@ import { RestrictedProfileShell } from '../components/RestrictedProfileShell'
 import { UnavailableProfile } from '../components/UnavailableProfile'
 import { OwnerRecoveryBanner } from '../components/OwnerRecoveryBanner'
 
-type TabType = 'actions' | 'prompts' | 'threads' | 'challenges'
+type TabType = 'actions' | 'lenses' | 'threads' | 'challenges'
 
 interface TabState {
   data: any[]
@@ -53,14 +53,14 @@ const INITIAL_TAB_STATE: TabState = {
 
 const TAB_MAP: Record<string, TabType> = {
   t: 'threads',
-  p: 'prompts',
+  p: 'lenses',
   a: 'actions',
   c: 'challenges',
 }
 
 const REVERSE_TAB_MAP: Record<string, string> = {
   threads: 't',
-  prompts: 'p',
+  lenses: 'p',
   actions: 'a',
   challenges: 'c',
 }
@@ -210,7 +210,7 @@ export const LenserProfilePage: React.FC = () => {
       const viewerId = currentUser?.id
 
       switch (targetTab) {
-        case 'prompts':
+        case 'lenses':
           newItems = await lensesService.getLenserLenses(
             viewedProfile.handle,
             offset,
@@ -346,8 +346,8 @@ export const LenserProfilePage: React.FC = () => {
       // Use current user handle for authorization check in service
       if (deleteTarget.type === 'prompt') {
         await lensesService.deleteLens(deleteTarget.id, currentUser.handle)
-        removeCacheItem('prompts', deleteTarget.id)
-        alert('Prompt deleted successfully.')
+        removeCacheItem('lenses', deleteTarget.id)
+        alert('Lens deleted successfully.')
       } else {
         await threadsService.deleteThread(deleteTarget.id, currentUser.handle)
         removeCacheItem('threads', deleteTarget.id)
@@ -367,11 +367,11 @@ export const LenserProfilePage: React.FC = () => {
   }
 
   const handlePromptSubmit = (id: string) => {
-    handleMutationSuccess('prompts')
+    handleMutationSuccess('lenses')
   }
 
   const SkeletonLoader = () => {
-    if (activeTab === 'prompts') {
+    if (activeTab === 'lenses') {
       return (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {[1, 2, 3].map((i) => (
@@ -525,11 +525,11 @@ export const LenserProfilePage: React.FC = () => {
             </>
           )}
 
-          {activeTab === 'prompts' && !canViewContent && (
+          {activeTab === 'lenses' && !canViewContent && (
             <EmptyState icon={FolderOpen} message="This content is not public." />
           )}
 
-          {activeTab === 'prompts' && canViewContent && (
+          {activeTab === 'lenses' && canViewContent && (
             <>
               {items.length > 0 ? (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 gap-6">
@@ -556,7 +556,7 @@ export const LenserProfilePage: React.FC = () => {
                           onClick={() => openPromptModal()}
                           className="!w-auto flex items-center gap-2"
                         >
-                          <Plus size={16} /> Create Prompt
+                          <Plus size={16} /> Create Lens
                         </Button>
                       )
                     }
@@ -644,7 +644,7 @@ export const LenserProfilePage: React.FC = () => {
         isOpen={!!deleteTarget}
         onClose={() => setDeleteTarget(null)}
         onConfirm={confirmDelete}
-        title={`Delete ${deleteTarget?.type === 'prompt' ? 'Prompt' : 'Thread'}`}
+        title={`Delete ${deleteTarget?.type === 'prompt' ? 'Lens' : 'Thread'}`}
         message={`Are you sure you want to delete this ${deleteTarget?.type}? This action cannot be undone.`}
         confirmLabel="Delete"
         isLoading={isDeleting}
