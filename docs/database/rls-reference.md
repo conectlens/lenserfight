@@ -198,6 +198,57 @@ The battles schema has 11 tables with status-gated visibility.
 
 ---
 
+### `lenses` Schema
+
+#### `lenses`
+
+| Operation | Tier | Condition | Notes |
+|-----------|------|-----------|-------|
+| SELECT | anon | `visibility = 'public' AND status = 'published'` | Public published only |
+| SELECT | authenticated | `(visibility IN ('public','community') AND status = 'published') OR lenser_id = owner` | Own + public/community |
+| INSERT | authenticated | `is_active_lenser(uid()) AND lenser_id = current_active_lenser_id()` | Active lenser check |
+| UPDATE | authenticated | Same owner check in USING + WITH CHECK | Owner only |
+| DELETE | authenticated | Same owner check | Owner only |
+
+#### `versions`
+
+| Operation | Tier | Condition | Notes |
+|-----------|------|-----------|-------|
+| SELECT | anon | Parent lens is public + published | Via public lens |
+| SELECT | authenticated | Parent lens owner OR public/community + published | Own + public |
+| INSERT | authenticated | Parent lens owned by caller | Create on own lens |
+| UPDATE | authenticated | Parent lens owned by caller AND version status = draft | Draft only |
+
+#### `version_parameters`
+
+| Operation | Tier | Condition | Notes |
+|-----------|------|-----------|-------|
+| SELECT | anon | Parent lens is public + published | Via public lens |
+| SELECT | authenticated | Parent lens owner OR public/community + published | Own + public |
+| INSERT | authenticated | Parent lens owned AND version is draft | Draft only |
+| UPDATE | authenticated | Parent lens owned AND version is draft | Draft only |
+
+#### `parameters` (DEPRECATED)
+
+| Operation | Tier | Condition | Notes |
+|-----------|------|-----------|-------|
+| SELECT | anon | Parent lens is public + published | Read-only for all |
+| SELECT | authenticated | Parent lens owner OR public/community + published | Read-only |
+
+**Note:** `lenses.parameters` is deprecated. Use `lenses.version_parameters` instead.
+
+#### Grant Summary
+
+| Table | anon | authenticated |
+|-------|------|---------------|
+| `lenses` | SELECT | SELECT, INSERT, UPDATE, DELETE |
+| `versions` | SELECT | SELECT, INSERT, UPDATE |
+| `parameters` | SELECT | SELECT (read-only legacy) |
+| `version_parameters` | SELECT | SELECT, INSERT, UPDATE, DELETE |
+| `version_resources` | SELECT | SELECT, INSERT, DELETE |
+
+---
+
 ## Common Patterns
 
 ### `lensers.get_auth_lenser_id()`
