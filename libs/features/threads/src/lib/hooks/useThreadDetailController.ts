@@ -1,14 +1,25 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 
 import { useAuth } from '@lenserfight/features/auth'
 import { queryKeys } from '@lenserfight/data/cache'
 import { analyticsService } from '@lenserfight/infra/analytics'
-import { reactionService } from '@lenserfight/data/repositories'
-import { threadInteractionService } from '@lenserfight/data/repositories'
-import { threadsService } from '@lenserfight/data/repositories'
+import { reactionService, threadInteractionService, threadsService } from '@lenserfight/data/repositories'
 import { ThreadDetailViewModel } from '@lenserfight/types'
 import { useAuthenticatedLenser } from './useAuthenticatedLenser'
+
+// Collect all reply ids in a tree (for deduplication on load-more)
+const collectReplyIds = (replies: any[]): string[] => {
+  const ids: string[] = []
+  const walk = (nodes: any[]) => {
+    nodes.forEach((n) => {
+      ids.push(n.id)
+      if (n.replies?.length) walk(n.replies)
+    })
+  }
+  walk(replies)
+  return ids
+}
 
 // Immutable reply helpers
 const updateReplyInTree = (replies: any[], id: string, updater: (r: any) => any): any[] => {
@@ -35,6 +46,8 @@ const insertReplyInTree = (nodes: any[], newReply: any, parentId?: string): any[
   })
 }
 
+const REPLIES_PAGE_SIZE = 20
+
 // Prevent double view increments across mounts (StrictMode-safe)
 const incrementedThreadViews = new Set<string>()
 
@@ -42,6 +55,13 @@ export const useThreadDetailController = (threadId?: string) => {
   const { lenser, isLoading: isLenserLoading } = useAuthenticatedLenser()
   const { user, isAuthenticated } = useAuth()
   const queryClient = useQueryClient()
+  const [repliesOffset, setRepliesOffset] = useState(REPLIES_PAGE_SIZE)
+  const [isLoadingMoreReplies, setIsLoadingMoreReplies] = useState(false)
+
+  // Reset pagination offset when threadId changes
+  useEffect(() => {
+    setRepliesOffset(REPLIES_PAGE_SIZE)
+  }, [threadId])
 
   // Don't fire until we know who the viewer is — prevents a premature 401 for private threads
   const queryReady = !!threadId && (!isAuthenticated || !isLenserLoading)
@@ -199,7 +219,38 @@ export const useThreadDetailController = (threadId?: string) => {
   })
 
   //
-  // 4. Return API
+  // 4. Load More Replies
+  //
+  const loadMoreReplies = async () => {
+    if (!threadId || isLoadingMoreReplies) return
+    setIsLoadingMoreReplies(true)
+    try {
+      const { replies: newReplies, hasNextPage } = await threadInteractionService.getReplyTree(
+        threadId,
+        lenser?.id,
+        REPLIES_PAGE_SIZE,
+        repliesOffset,
+        thread?.visibility
+      )
+      queryClient.setQueryData<ThreadDetailViewModel>(detailKey, (old) => {
+        if (!old) return old
+        // Deduplicate by id before merging
+        const existingIds = new Set(collectReplyIds(old.replies))
+        const toAppend = newReplies.filter((r) => !existingIds.has(r.id))
+        return {
+          ...old,
+          replies: [...old.replies, ...toAppend],
+          repliesHasNextPage: hasNextPage,
+        }
+      })
+      setRepliesOffset((prev) => prev + REPLIES_PAGE_SIZE)
+    } finally {
+      setIsLoadingMoreReplies(false)
+    }
+  }
+
+  //
+  // 5. Return API
   //
   return {
     thread: thread || null,
@@ -209,5 +260,7 @@ export const useThreadDetailController = (threadId?: string) => {
     toggleReplyReaction: toggleReplyReactionMutation.mutate,
     addReply: async (content: string, parentId?: string) =>
       addReplyMutation.mutateAsync({ content, parentId }),
+    loadMoreReplies,
+    isLoadingMoreReplies,
   }
 }
