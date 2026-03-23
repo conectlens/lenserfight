@@ -75,7 +75,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
   // Use LenserContext mainly for the handle/identity bootstrapping
   const { lenser: authLenser } = useLenser()
   const { hasLenser, isLoading: isLenserLoading } = useHasLenserProfile()
-  const { logout } = useAuth()
+  const { logout, isAuthenticated } = useAuth()
   const { themeMode, setTheme } = useTheme()
   const nextTheme = THEME_CYCLE[(THEME_CYCLE.indexOf(themeMode) + 1) % THEME_CYCLE.length]
 
@@ -349,19 +349,33 @@ export const Sidebar: React.FC<SidebarProps> = ({
               </div>
             )}
 
-            {/* Be Lenser CTA — shown when loaded but no lenser profile */}
+            {/* Be Lenser / Sign In CTA — shown when loaded but no lenser profile */}
             {!isLenserLoading && !hasLenser && (
-              <button
-                onClick={onOpenProfileSetup}
-                className={`
-                  flex items-center justify-center gap-2 bg-primary hover:bg-yellow-300 text-gray-900 font-bold rounded-xl shadow-lg transition-all w-full h-10
-                  ${!showLabels ? 'rounded-full w-10 p-0' : 'px-4'}
-                `}
-                title="Be a Lenser"
-              >
-                <Sparkles size={18} />
-                {showLabels && <span>Be Lenser</span>}
-              </button>
+              isAuthenticated ? (
+                <button
+                  onClick={onOpenProfileSetup}
+                  className={`
+                    flex items-center justify-center gap-2 bg-primary hover:bg-yellow-300 text-gray-900 font-bold rounded-xl shadow-lg transition-all w-full h-10
+                    ${!showLabels ? 'rounded-full w-10 p-0' : 'px-4'}
+                  `}
+                  title="Be a Lenser"
+                >
+                  <Sparkles size={18} />
+                  {showLabels && <span>Be Lenser</span>}
+                </button>
+              ) : (
+                <button
+                  onClick={onOpenProfileSetup}
+                  className={`
+                    flex items-center justify-center gap-2 bg-primary hover:bg-yellow-300 text-gray-900 font-bold rounded-xl shadow-lg transition-all w-full h-10
+                    ${!showLabels ? 'rounded-full w-10 p-0' : 'px-4'}
+                  `}
+                  title="Sign in"
+                >
+                  <User size={18} />
+                  {showLabels && <span>Sign In</span>}
+                </button>
+              )
             )}
 
             {/* Profile row — shown only when loaded and profile exists */}
