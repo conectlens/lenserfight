@@ -5,8 +5,8 @@ if (import.meta.hot) {
   import.meta.hot.decline()
 }
 import { queryKeys } from '@lenserfight/data/cache'
-import { lenserService, waitingListService } from '@lenserfight/data/repositories'
-import { useAuth, LENSER_CACHE_KEY, WAITINGLIST_CACHE_KEY } from '@lenserfight/features/auth'
+import { lenserService } from '@lenserfight/data/repositories'
+import { useAuth, LENSER_CACHE_KEY } from '@lenserfight/features/auth'
 import { Lenser, CreateLenserDTO } from '@lenserfight/types'
 import { storage } from '@lenserfight/utils/storage'
 
@@ -34,7 +34,6 @@ interface LenserContextType {
   hasLenser: boolean
   isLoading: boolean
   error: string | null
-  isInWaitingList: boolean | null
 
   isReady: boolean
   redirectToOnboarding: (delayMs?: number) => void
@@ -42,7 +41,6 @@ interface LenserContextType {
   loadLenserProfile: (force?: boolean) => Promise<void>
   createLenserProfile: (data: CreateLenserDTO) => Promise<Lenser>
   updateLenserProfile: (data: Partial<Lenser>) => Promise<Lenser>
-  toggleWaitingList: (kvkkApproved: boolean) => Promise<void>
 }
 
 const LenserContext = createContext<LenserContextType | undefined>(undefined)
@@ -52,7 +50,6 @@ export const LenserProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   const queryClient = useQueryClient()
 
   const cachedProfile = readCache<Lenser>(LENSER_CACHE_KEY)
-  const cachedWaitingList = readCache<boolean>(WAITINGLIST_CACHE_KEY)
 
   // Discard cached profile if it belongs to a different user or if data is null
   const profileInitialData =
@@ -74,27 +71,9 @@ export const LenserProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     initialDataUpdatedAt: profileInitialDataUpdatedAt,
   })
 
-  const { data: isInWaitingList = null } = useQuery<boolean | null>({
-    queryKey: queryKeys.waitingList.status(),
-    queryFn: async () => {
-      const result = await waitingListService.getIsInWaitingList()
-      return result ?? null
-    },
-    enabled: isAuthenticated && !!user,
-    staleTime: 1000 * 60 * 5,
-    initialData: cachedWaitingList?.data ?? undefined,
-    initialDataUpdatedAt: cachedWaitingList?.fetchedAt,
-  })
-
   useEffect(() => {
     if (lenser) writeCache(LENSER_CACHE_KEY, lenser)
   }, [lenser])
-
-  useEffect(() => {
-    if (isInWaitingList !== null && isInWaitingList !== undefined) {
-      writeCache(WAITINGLIST_CACHE_KEY, isInWaitingList)
-    }
-  }, [isInWaitingList])
 
   // Invalid JWT errors (user deleted in DB) are handled centrally in AuthContext.initAuth.
   // LenserContext only surfaces the error string for UI consumers.
@@ -129,17 +108,6 @@ export const LenserProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     return updated
   }
 
-  const toggleWaitingList = async (kvkkApproved: boolean): Promise<void> => {
-    await waitingListService.toggleWaitingList(kvkkApproved)
-    queryClient.setQueryData(queryKeys.waitingList.status(), true)
-    if (lenser) {
-      queryClient.setQueryData(queryKeys.lenser.authenticated(), {
-        ...lenser,
-        is_in_waiting_list: true,
-      })
-    }
-  }
-
   return (
     <LenserContext.Provider
       value={{
@@ -147,13 +115,11 @@ export const LenserProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         hasLenser: !!lenser,
         isLoading,
         error,
-        isInWaitingList: isInWaitingList ?? null,
         isReady,
         redirectToOnboarding,
         loadLenserProfile,
         createLenserProfile,
         updateLenserProfile,
-        toggleWaitingList,
       }}
     >
       {children}

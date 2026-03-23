@@ -13,14 +13,11 @@ import { Link } from 'react-router-dom'
 import { Button } from '@lenserfight/ui/components'
 import { useAuth } from '@lenserfight/features/auth'
 import { useLenser } from '@lenserfight/features/profile'
+import { useWaitingList } from '../hooks/useWaitingList'
 
 export const WaitingListSection: React.FC = () => {
-  const {
-    lenser,
-    hasLenser,
-    isInWaitingList,
-    toggleWaitingList,
-  } = useLenser()
+  const { lenser, hasLenser } = useLenser()
+  const { isInWaitingList, toggleWaitingList } = useWaitingList()
 
   const { isAuthenticated } = useAuth()
 
