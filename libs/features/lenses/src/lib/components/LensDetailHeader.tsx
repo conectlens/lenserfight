@@ -119,7 +119,7 @@ export const LensDetailHeader: React.FC<LensDetailHeaderProps> = ({
                   key={tag.id}
                   label={tag.name}
                   className="bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 font-medium px-2.5 py-0.5 text-xs"
-                  onClick={() => navigate(`/len/${tag.slug}`)}
+                  onClick={() => navigate(`/ray/${tag.slug}`)}
                 />
               ))}
             </div>

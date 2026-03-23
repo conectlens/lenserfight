@@ -103,7 +103,7 @@ export const LenserStatsRow: React.FC<LenserStatsRowProps> = ({ stats, xpSummary
       bg: 'bg-blue-50 dark:bg-blue-900/20',
     },
     {
-      label: 'Prompts',
+      label: 'Lenses',
       value: stats.promptsCount,
       icon: Lightbulb,
       color: 'text-purple-600 dark:text-purple-400',

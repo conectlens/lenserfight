@@ -78,7 +78,7 @@ export const LensesPage: React.FC = () => {
   }
 
   const handleCreateSuccess = (id: string) => {
-    navigate(`/len/p/${id}`)
+    navigate(`/lenses/${id}`)
   }
 
   return (
@@ -126,7 +126,7 @@ export const LensesPage: React.FC = () => {
       <LensesGrid
         lenses={lenses}
         isLoading={isLoading}
-        onOpen={(id) => navigate(`/len/p/${id}`)}
+        onOpen={(id) => navigate(`/lenses/${id}`)}
       />
 
       {/* Intersection Anchor & Loader */}

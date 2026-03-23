@@ -14,7 +14,7 @@ const threadProvider = new ThreadTagProvider()
 const FILTERS = [
   { value: 'all', label: 'All' },
   { value: 'threads', label: 'Threads' },
-  { value: 'prompts', label: 'Prompts' },
+  { value: 'lenses', label: 'Lenses' },
 ]
 
 export const useTagDetailController = (slug?: string) => {
@@ -25,7 +25,7 @@ export const useTagDetailController = (slug?: string) => {
   const { tab: routeTab } = useParams<{ tab?: string; slug: string }>()
   const [searchParams, setSearchParams] = useSearchParams()
 
-  const activeTab = routeTab && ['threads', 'prompts'].includes(routeTab) ? routeTab : 'all'
+  const activeTab = routeTab && ['threads', 'lenses'].includes(routeTab) ? routeTab : 'all'
   const sortType = (searchParams.get('type') as SortOption) || 'trending'
 
   // 1. Fetch Tag Metadata
@@ -37,7 +37,7 @@ export const useTagDetailController = (slug?: string) => {
   })
 
   // 2. Fetch Content (Split queries for independent caching)
-  const shouldFetchPrompts = activeTab === 'all' || activeTab === 'prompts'
+  const shouldFetchPrompts = activeTab === 'all' || activeTab === 'lenses'
   const shouldFetchThreads = activeTab === 'all' || activeTab === 'threads'
 
   const { data: prompts, isLoading: loadingPrompts } = useQuery({
@@ -57,7 +57,7 @@ export const useTagDetailController = (slug?: string) => {
   // 3. Merge & Sort
   const items = useMemo(() => {
     // Single-tab views arrive pre-sorted from the DB — no re-sort needed.
-    if (activeTab === 'prompts') return prompts || []
+    if (activeTab === 'lenses') return prompts || []
     if (activeTab === 'threads') return threads || []
 
     // 'all' tab: merge two separately-sorted lists and re-sort the combined result.
@@ -83,9 +83,9 @@ export const useTagDetailController = (slug?: string) => {
     const sortQuery = sortType !== 'trending' ? `?type=${sortType}` : ''
 
     if (newTab === 'all') {
-      navigate(`/len/${slug}${sortQuery}`)
+      navigate(`/ray/${slug}${sortQuery}`)
     } else {
-      navigate(`/len/${slug}/${newTab}${sortQuery}`)
+      navigate(`/ray/${slug}/${newTab}${sortQuery}`)
     }
   }
 
