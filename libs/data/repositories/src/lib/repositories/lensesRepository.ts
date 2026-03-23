@@ -388,7 +388,7 @@ export class SupabaseLensesRepository implements LensesRepositoryPort {
       if (!profile?.id) return []
 
       const { data: baseLenses, error } = await supabase
-        .schema('content')
+        .schema('lenses')
         .from('lenses')
         .select('id, lenser_id, visibility, created_at, updated_at')
         .eq('lenser_id', profile.id)
@@ -412,7 +412,7 @@ export class SupabaseLensesRepository implements LensesRepositoryPort {
 
   async getById(id: string, viewerLenserId?: string): Promise<LensRecord | null> {
     const { data: baseLens, error } = await supabase
-      .schema('content')
+      .schema('lenses')
       .from('lenses')
       .select('id, lenser_id, visibility, created_at, updated_at, parent_lens_id, forked_from_execution_id')
       .eq('id', id)
@@ -489,7 +489,7 @@ export class SupabaseLensesRepository implements LensesRepositoryPort {
     if (input.parentLensId) insertPayload.parent_lens_id = input.parentLensId
     if (input.forkedFromExecutionId) insertPayload.forked_from_execution_id = input.forkedFromExecutionId
 
-    const { data: lensInsertData, error: rpcError } = await supabase.schema('content').from('lenses').insert(
+    const { data: lensInsertData, error: rpcError } = await supabase.schema('lenses').from('lenses').insert(
       insertPayload
     ).select('id').single()
 
@@ -561,7 +561,7 @@ export class SupabaseLensesRepository implements LensesRepositoryPort {
     if (input.params !== undefined) (translationUpdatePayload as any).params = input.params
 
     if (Object.keys(baseUpdatePayload).length > 0) {
-      const { error: rpcError } = await supabase.schema('content').from('lenses').update(baseUpdatePayload).eq('id', id)
+      const { error: rpcError } = await supabase.schema('lenses').from('lenses').update(baseUpdatePayload).eq('id', id)
       if (rpcError) this.handleError(rpcError)
     }
 
@@ -609,7 +609,7 @@ export class SupabaseLensesRepository implements LensesRepositoryPort {
   }
 
   async deleteLens(id: string): Promise<void> {
-    const { error } = await supabase.schema('content').from('lenses').delete().eq('id', id)
+    const { error } = await supabase.schema('lenses').from('lenses').delete().eq('id', id)
     if (error) this.handleError(error)
   }
 
@@ -649,16 +649,16 @@ export class SupabaseLensesRepository implements LensesRepositoryPort {
 
   async getVersions(lensId: string): Promise<LensVersion[]> {
     const { data, error } = await supabase
-      .schema('content')
-      .rpc('fn_content_list_lens_versions', { p_lens_id: lensId })
+      .schema('lenses')
+      .rpc('fn_list_versions', { p_lens_id: lensId })
     if (error) this.handleError(error)
     return ((data ?? []) as Record<string, unknown>[]).map((row) => this.mapVersion(row))
   }
 
   async getVersionById(versionId: string): Promise<LensVersion | null> {
     const { data: vRow, error: vError } = await supabase
-      .schema('content')
-      .from('lens_versions')
+      .schema('lenses')
+      .from('versions')
       .select('*')
       .eq('id', versionId)
       .maybeSingle()
@@ -666,8 +666,8 @@ export class SupabaseLensesRepository implements LensesRepositoryPort {
     if (!vRow) return null
 
     const { data: params, error: pError } = await supabase
-      .schema('content')
-      .from('lens_version_parameters')
+      .schema('lenses')
+      .from('version_parameters')
       .select('*')
       .eq('version_id', versionId)
       .order('sort_order', { ascending: true })
@@ -680,8 +680,8 @@ export class SupabaseLensesRepository implements LensesRepositoryPort {
 
   async getLatestPublishedVersion(lensId: string): Promise<LensVersion | null> {
     const { data, error } = await supabase
-      .schema('content')
-      .from('vw_lens_published_versions')
+      .schema('lenses')
+      .from('vw_published_versions')
       .select('*')
       .eq('lens_id', lensId)
       .order('version_number', { ascending: false })
@@ -694,8 +694,8 @@ export class SupabaseLensesRepository implements LensesRepositoryPort {
 
   async createVersion(input: CreateLensVersionDTO): Promise<LensVersion> {
     const { data: vRow, error: vError } = await supabase
-      .schema('content')
-      .from('lens_versions')
+      .schema('lenses')
+      .from('versions')
       .insert({
         lens_id: input.lensId,
         template_body: input.templateBody,
@@ -724,8 +724,8 @@ export class SupabaseLensesRepository implements LensesRepositoryPort {
         sort_order: p.sortOrder,
       }))
       const { data: insertedParams, error: pError } = await supabase
-        .schema('content')
-        .from('lens_version_parameters')
+        .schema('lenses')
+        .from('version_parameters')
         .insert(paramRows)
         .select('*')
       if (pError) this.handleError(pError)
@@ -739,8 +739,8 @@ export class SupabaseLensesRepository implements LensesRepositoryPort {
 
   async publishVersion(versionId: string): Promise<void> {
     const { error } = await supabase
-      .schema('content')
-      .rpc('fn_content_publish_lens_version', { p_version_id: versionId })
+      .schema('lenses')
+      .rpc('fn_publish_version', { p_version_id: versionId })
     if (error) this.handleError(error)
   }
 

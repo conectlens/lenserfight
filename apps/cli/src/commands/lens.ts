@@ -26,8 +26,8 @@ const versionList = defineCommand({
   async run({ args }) {
     try {
       const versions = await callRpc<Array<Record<string, unknown>>>(
-        'fn_content_list_lens_versions',
-        { p_prompt_id: args.id },
+        'fn_lenses_list_versions',
+        { p_lens_id: args.id },
         { requireAuth: true }
       );
 
@@ -90,9 +90,9 @@ const versionCreate = defineCommand({
   async run({ args }) {
     try {
       const { data: version } = await callRpc<{ data: Record<string, unknown> }>(
-        'fn_content_create_lens_version',
+        'fn_lenses_create_version',
         {
-          p_prompt_id: args.id,
+          p_lens_id: args.id,
           p_template_body: args.body,
           p_changelog: args.changelog || null,
           p_parent_version_id: args['parent-version'] || null,
@@ -111,7 +111,7 @@ const versionCreate = defineCommand({
       // RPC may not exist in current DB — guide the user
       const msg = (err as Error).message ?? '';
       if (msg.includes('not found') || msg.includes('does not exist')) {
-        consola.error('RPC fn_content_create_lens_version not found. Apply migration 46 first.');
+        consola.error('RPC fn_lenses_create_version not found. Apply migration schema_refactor_lenses first.');
         consola.info('Use the Web UI or Supabase Studio to create versions until the migration is applied.');
       } else {
         handleError(err);
@@ -138,7 +138,7 @@ const versionPublish = defineCommand({
   async run({ args }) {
     try {
       await callRpc(
-        'fn_content_publish_lens_version',
+        'fn_lenses_publish_version',
         { p_version_id: args.id },
         { requireAuth: true }
       );
@@ -223,7 +223,7 @@ const resourceAttach = defineCommand({
       };
       if (config.authToken) headers['Authorization'] = `Bearer ${config.authToken}`;
 
-      const resourceRes = await fetch(`${config.supabaseUrl}/rest/v1/resources?schema=content`, {
+      const resourceRes = await fetch(`${config.supabaseUrl}/rest/v1/resources?schema=ai`, {
         method: 'POST',
         headers,
         body: JSON.stringify({
@@ -243,7 +243,7 @@ const resourceAttach = defineCommand({
       const resourceId = String(resource.id);
 
       // Attach to version
-      const attachRes = await fetch(`${config.supabaseUrl}/rest/v1/version_resources?schema=content`, {
+      const attachRes = await fetch(`${config.supabaseUrl}/rest/v1/version_resources?schema=lenses`, {
         method: 'POST',
         headers: { ...headers, Prefer: 'return=minimal' },
         body: JSON.stringify({

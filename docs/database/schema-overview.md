@@ -8,21 +8,23 @@ LenserFight's database is organized into 10+ PostgreSQL schemas. This page lists
 
 | Schema | Tables | Description |
 |--------|--------|-------------|
-| `battles` | rubrics, rubric_criteria, battles, contenders, submissions, votes, scorecards, templates, agent_adapters, events, invitations | Arena system — the core of LenserFight |
+| `battles` | rubrics, rubric_criteria, battles, contenders, submissions, votes, scorecards, templates, events, invitations | Arena system — the core of LenserFight |
 
 ### User and content
 
 | Schema | Tables | Description |
 |--------|--------|-------------|
 | `lensers` | profiles, badges, social_links, waiting_list | User identity and reputation |
-| `content` | threads, thread_replies, prompt_templates, tags, tag_map, reactions, media_library | Forum content and discovery |
+| `content` | threads, thread_replies, tags, tag_map, reactions | Forum content and discovery |
+| `lenses` | lenses, versions, parameters, version_parameters, steps, comment_runs, version_resources | Lens assets and versioning |
 
 ### Progression and AI
 
 | Schema | Tables | Description |
 |--------|--------|-------------|
 | `xp` | rules, events, totals, levels, streaks, seasons | Experience points and leveling |
-| `ai` | models, generations | AI model registry and generation tracking |
+| `ai` | models, providers, resources | AI model registry, providers, and attachments |
+| `execution` | requests, runs, ray_runs, artifacts | Lens execution and Ray tracking |
 
 ### Analytics and infrastructure
 
@@ -41,11 +43,10 @@ lensers.profiles ──┬──→ battles.battles (creator)
                    ├──→ battles.contenders (human participant)
                    ├──→ battles.votes (voter)
                    ├──→ battles.templates (creator)
-                   ├──→ battles.agent_adapters (owner)
                    ├──→ battles.invitations (inviter / invitee)
                    ├──→ battles.events (actor)
                    ├──→ content.threads (author)
-                   ├──→ content.prompt_templates (author)
+                   ├──→ lenses.lenses (author)
                    ├──→ xp.events (recipient)
                    └──→ analytics.lenser_stats (1:1)
 
@@ -59,10 +60,18 @@ battles.battles ───┬──→ battles.contenders (1:N)
 
 battles.templates ─→ battles.rubrics (N:1)
 
-battles.agent_adapters → battles.contenders (via agent_adapter_id)
+lenses.lenses ─────┬──→ lenses.versions (1:N)
+                   └──→ execution.ray_runs (1:N)
+
+lenses.versions ───┬──→ lenses.version_parameters (1:N)
+                   └──→ lenses.version_resources (1:N)
 
 ai.models ─────────┬──→ battles.contenders (AI participant)
-                   └──→ battles.scorecards (AI scorer)
+                   ├──→ battles.scorecards (AI scorer)
+                   └──→ execution.requests (model used for run)
+
+execution.requests ─→ execution.runs (1:1)
+execution.ray_runs ──→ execution.runs (N:1, the Ray)
 
 xp.rules ──────────→ xp.events (action_key lookup)
 xp.events ─────────→ xp.totals (aggregated)
@@ -73,7 +82,7 @@ xp.events ─────────→ xp.totals (aggregated)
 Only schemas listed in `supabase/config.toml` → `api.schemas` are exposed via the auto-generated REST API:
 
 ```toml
-schemas = ["lensers", "public", "graphql_public", "content", "ai", "xp", "battles"]
+schemas = ["lensers", "public", "graphql_public", "content", "lenses", "ai", "xp", "battles", "execution"]
 ```
 
 Tables in unexposed schemas (analytics, core, billing, ops, system) are accessible only through `SECURITY DEFINER` RPC functions in the `public` schema or via direct database connections.
