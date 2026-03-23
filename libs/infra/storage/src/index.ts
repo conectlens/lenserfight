@@ -1,0 +1,5 @@
+export type { StorageAdapterPort, StorageListItem, StorageAdapterId } from './lib/storage.types'
+export { SupabaseStorageAdapter } from './lib/supabase-storage.adapter'
+export { LocalFileStorageAdapter } from './lib/local-storage.adapter'
+export { CloudflareR2StorageAdapter } from './lib/r2-storage.adapter'
+export { getStorageAdapter, setDefaultStorageAdapter } from './lib/storage.registry'

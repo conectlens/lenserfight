@@ -92,6 +92,10 @@ Log of AI generation requests and results.
 | `token_count` | integer | Tokens used |
 | `created_at` | timestamptz | |
 
+### resources
+
+> **Deprecated:** `ai.resources` is superseded by `media.objects`. New code should use the `media` schema. See [Media Schema](/database/schema-media).
+
 ## Moved tables
 
 ### billing.execution_margin_policies _(previously ai.execution_margin_policies)_

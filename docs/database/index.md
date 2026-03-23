@@ -17,6 +17,8 @@ LenserFight uses PostgreSQL via Supabase with a multi-schema architecture. Each 
 | `content` | Forum content — threads, replies, prompt templates, tags, reactions | Yes |
 | `xp` | Experience points — rules, events, totals, levels, streaks, seasons | Yes |
 | `ai` | AI integration — models, generations, capabilities | Yes |
+| `tenancy` | Workspace tenancy — workspaces, members, roles | Yes |
+| `media` | Media/file storage — objects, attachments, upload lifecycle | Yes |
 | `analytics` | Engagement tracking — stats, page views, share events, feedback | No |
 | `core` | Platform primitives — features, languages, settings | No |
 | `billing` | Payments — plans, entitlements, credits | No |
@@ -27,7 +29,7 @@ LenserFight uses PostgreSQL via Supabase with a multi-schema architecture. Each 
 ## Navigation
 
 - [Schema Overview](/database/schema-overview) — table inventory and dependency diagram
-- Individual schemas: [lensers](/database/schema-lensers), [content](/database/schema-content), [xp](/database/schema-xp), [analytics](/database/schema-analytics), [ai](/database/schema-ai), [battles](/database/schema-battles), [other](/database/schema-other)
+- Individual schemas: [lensers](/database/schema-lensers), [content](/database/schema-content), [xp](/database/schema-xp), [analytics](/database/schema-analytics), [ai](/database/schema-ai), [battles](/database/schema-battles), [tenancy](/database/schema-tenancy), [media](/database/schema-media), [other](/database/schema-other)
 - [RLS Reference](/database/rls-reference) — row-level security policies per table
 - [RPC Reference](/database/rpc-reference) — all public API functions
 - [Local Setup](/database/local-setup) — run the full database locally
