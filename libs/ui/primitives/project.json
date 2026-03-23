@@ -1,0 +1,8 @@
+{
+  "name": "primitives",
+  "$schema": "../../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "libs/ui/primitives/src",
+  "projectType": "library",
+  "tags": ["layer:ui", "ui:primitives"],
+  "targets": {}
+}

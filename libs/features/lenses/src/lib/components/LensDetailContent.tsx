@@ -13,7 +13,7 @@ export const LensDetailContent: React.FC<LensDetailContentProps> = ({
   onEdit,
 }) => {
   return (
-    <div className="w-full max-w-[860px] mx-auto bg-white rounded-2xl border border-gray-200/70 shadow-[0_4px_20px_-4px_rgba(0,0,0,0.03)] p-6 md:p-10 transition-all duration-200">
+    <div className="w-full max-w-[860px] mx-auto bg-white rounded-2xl border border-gray-200/70 shadow-neu-1 p-6 md:p-10 transition-all duration-200">
       {canEdit && onEdit && (
         <div className="mb-4 flex justify-end">
           <button

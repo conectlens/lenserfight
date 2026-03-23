@@ -1,2 +1,7 @@
 export * from './lib/Footer'
 export * from './lib/ScrollToTop'
+export * from './lib/Stack'
+export * from './lib/TopAppBar'
+export * from './lib/PageHeader'
+export * from './lib/BottomNavigation'
+export * from './lib/Tabs'
