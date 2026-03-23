@@ -1,6 +1,6 @@
 import { Plus } from 'lucide-react'
-import React, { useState, useCallback, useRef } from 'react'
-import { useNavigate } from 'react-router-dom'
+import React, { useState, useCallback, useEffect, useRef } from 'react'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 
 import { Button } from '@lenserfight/ui/components'
 import { SEOHead } from '@lenserfight/ui/components'
@@ -17,14 +17,54 @@ import { useCreateLens } from '../hooks/useCreateLens'
 
 export const LensesPage: React.FC = () => {
   const navigate = useNavigate()
+  const [searchParams, setSearchParams] = useSearchParams()
   const { hasLenser } = useAuthenticatedLenser()
   const { isAuthenticated } = useAuth()
 
-  // Filters state
-  const [searchQuery, setSearchQuery] = useState('')
-  const [selectedTag, setSelectedTag] = useState<string | null>(null)
-  const [sortOrder, setSortOrder] = useState<'newest' | 'popular'>('popular')
+  // URL-synced filters
+  const selectedTag = searchParams.get('tag')
+  const sortOrder = (searchParams.get('sort') as 'newest' | 'popular') || 'popular'
+  const searchQuery = searchParams.get('q') ?? ''
+
+  // Local state for search input — debounced into URL
+  const [searchInput, setSearchInput] = useState(searchQuery)
   const [showProfileModal, setShowProfileModal] = useState(false)
+
+  useEffect(() => {
+    const t = setTimeout(() => {
+      setSearchParams(
+        (prev) => {
+          if (searchInput) prev.set('q', searchInput)
+          else prev.delete('q')
+          return prev
+        },
+        { replace: true }
+      )
+    }, 400)
+    return () => clearTimeout(t)
+  }, [searchInput]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  const handleTagSelect = (tag: string | null) => {
+    setSearchParams(
+      (prev) => {
+        if (tag) prev.set('tag', tag)
+        else prev.delete('tag')
+        return prev
+      },
+      { replace: true }
+    )
+  }
+
+  const handleSortChange = (order: 'newest' | 'popular') => {
+    setSearchParams(
+      (prev) => {
+        if (order !== 'popular') prev.set('sort', order)
+        else prev.delete('sort')
+        return prev
+      },
+      { replace: true }
+    )
+  }
 
   // React Query Hook
   const { data, fetchNextPage, hasNextPage, isFetchingNextPage, isLoading } = useLensesFeed(
@@ -98,17 +138,17 @@ export const LensesPage: React.FC = () => {
       {/* Controls Bar */}
       <div className="flex flex-col gap-4 mb-8">
         <div className="w-full">
-          <LensesSearchBar value={searchQuery} onChange={setSearchQuery} />
+          <LensesSearchBar value={searchInput} onChange={setSearchInput} />
         </div>
 
         <div className="flex flex-col sm:flex-row gap-4 sm:items-center justify-between min-w-0">
           <div className="w-full sm:w-auto max-w-full min-w-0">
-            <LensesTagFilter selectedTag={selectedTag} onSelect={setSelectedTag} />
+            <LensesTagFilter selectedTag={selectedTag} onSelect={handleTagSelect} />
           </div>
 
           <div className="flex items-center gap-2 sm:gap-4 shrink-0 justify-between sm:justify-end">
             <div className="min-w-[120px]">
-              <LensesSortDropdown value={sortOrder} onChange={setSortOrder} />
+              <LensesSortDropdown value={sortOrder} onChange={handleSortChange} />
             </div>
             <Button
               onClick={handleCreateClick}
