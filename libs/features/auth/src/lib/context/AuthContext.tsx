@@ -64,6 +64,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   // subscription does not overwrite it with a stale INITIAL_SESSION event.
   const initDone = useRef(false)
   const loginTransitionInFlight = useRef(false)
+  // Track whether the user was previously authenticated so we only clear caches
+  // on actual sign-out transitions (not null → null for anonymous users).
+  const wasAuthenticated = useRef(false)
 
   const restoreLenserAccountIfNeeded = useCallback(async () => {
     try {
@@ -85,14 +88,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       // After that, apply any subsequent changes (token refresh, sign-out, etc.)
       if (!initDone.current) return
       if (loginTransitionInFlight.current && user) return
-      // Clear stale caches on sign-out (e.g. 403 Forbidden, token revoked)
-      // so the Sidebar and other consumers reflect the unauthenticated state immediately.
-      if (!user) {
+      // Clear stale caches on actual sign-out (user was authenticated, now is not).
+      // Skip for anonymous users (null → null) to avoid wiping in-flight public queries.
+      if (!user && wasAuthenticated.current) {
         queryClient.clear()
         clearAuthStorage()
       }
+      wasAuthenticated.current = !!user
       setState((s) => {
-        if (s.user?.id === user?.id) return s
+        if (s.user?.id === user?.id && !s.isLoading) return s
         return { ...s, user, isAuthenticated: !!user, isLoading: false }
       })
     })
@@ -108,8 +112,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             sessionStorage.setItem(_deletionCheckKey(user.id), '1')
             await restoreLenserAccountIfNeeded()
           }
+          wasAuthenticated.current = true
           setState((s) => ({ ...s, user, isAuthenticated: true, isLoading: false }))
         } else {
+          wasAuthenticated.current = false
           setState((s) => ({ ...s, user: null, isAuthenticated: false, isLoading: false }))
         }
       } catch (err: any) {
@@ -162,6 +168,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         sessionStorage.setItem(_deletionCheckKey(user.id), '1')
         await restoreLenserAccountIfNeeded()
       }
+      wasAuthenticated.current = true
       setState({ user, isAuthenticated: true, isLoading: false, error: null })
 
       // Update environment metadata in the background — do not block the login flow
@@ -198,6 +205,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           country: env.country,
         }
         const user = await authService.register(email, pass, metadata, captchaToken)
+        wasAuthenticated.current = true
         setState({ user, isAuthenticated: true, isLoading: false, error: null })
       } catch (err: unknown) {
         const message = getErrorMessage(err)
@@ -218,6 +226,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     } catch (e) {
       console.error('Logout error', e)
     }
+    wasAuthenticated.current = false
     queryClient.clear()
     clearAuthStorage()
     setState({ user: null, isAuthenticated: false, isLoading: false, error: null })

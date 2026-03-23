@@ -1,9 +1,6 @@
 import React, { createContext, useContext, useEffect, useCallback } from 'react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 
-if (import.meta.hot) {
-  import.meta.hot.decline()
-}
 import { queryKeys } from '@lenserfight/data/cache'
 import { lenserService } from '@lenserfight/data/repositories'
 import { useAuth, LENSER_CACHE_KEY } from '@lenserfight/features/auth'
