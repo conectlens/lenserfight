@@ -53,7 +53,7 @@ const incrementedThreadViews = new Set<string>()
 
 export const useThreadDetailController = (threadId?: string) => {
   const { lenser, isLoading: isLenserLoading } = useAuthenticatedLenser()
-  const { user, isAuthenticated } = useAuth()
+  const { user, isAuthenticated, isLoading: isAuthLoading } = useAuth()
   const queryClient = useQueryClient()
   const [repliesOffset, setRepliesOffset] = useState(REPLIES_PAGE_SIZE)
   const [isLoadingMoreReplies, setIsLoadingMoreReplies] = useState(false)
@@ -63,9 +63,11 @@ export const useThreadDetailController = (threadId?: string) => {
     setRepliesOffset(REPLIES_PAGE_SIZE)
   }, [threadId])
 
-  // Don't fire until we know who the viewer is — prevents a premature 401 for private threads
-  const queryReady = !!threadId && (!isAuthenticated || !isLenserLoading)
-  const detailKey = [...queryKeys.threads.detail(threadId || ''), { viewerId: lenser?.id }]
+  // Don't fire until auth is resolved — prevents a double-fetch when isAuthenticated starts as false
+  // then settles to true, which would change viewerId from undefined → uuid and trigger a second cascade.
+  const viewerId = lenser?.id ?? null
+  const queryReady = !!threadId && !isAuthLoading && (!isAuthenticated || !isLenserLoading)
+  const detailKey = [...queryKeys.threads.detail(threadId || ''), { viewerId }]
 
   //
   // 1. Aggregated Query
