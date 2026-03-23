@@ -18,12 +18,19 @@ LenserFight's database is organized into 10+ PostgreSQL schemas. This page lists
 | `content` | threads, thread_replies, tags, tag_map, reactions | Forum content and discovery |
 | `lenses` | lenses, versions, parameters, version_parameters, steps, comment_runs, version_resources | Lens assets and versioning |
 
+### Tenancy and storage
+
+| Schema | Tables | Description |
+|--------|--------|-------------|
+| `tenancy` | workspaces, workspace_members | Workspace tenant boundary for multi-tenant isolation |
+| `media` | objects, attachments | Normalized file/media registry replacing ai.resources |
+
 ### Progression and AI
 
 | Schema | Tables | Description |
 |--------|--------|-------------|
 | `xp` | rules, events, totals, levels, streaks, seasons | Experience points and leveling |
-| `ai` | models, providers, resources | AI model registry, providers, and attachments |
+| `ai` | models, providers, resources | AI model registry and providers (ai.resources deprecated — use media.objects) |
 | `execution` | requests, runs, ray_runs, artifacts | Lens execution and Ray tracking |
 
 ### Analytics and infrastructure
@@ -75,6 +82,11 @@ execution.ray_runs ──→ execution.runs (N:1, the Ray)
 
 xp.rules ──────────→ xp.events (action_key lookup)
 xp.events ─────────→ xp.totals (aggregated)
+
+tenancy.workspaces ──┬──→ media.objects (workspace_id)
+                     └──→ tenancy.workspace_members (1:N)
+
+media.objects ──────→ media.attachments (1:N, binding slots)
 ```
 
 ## PostgREST exposure

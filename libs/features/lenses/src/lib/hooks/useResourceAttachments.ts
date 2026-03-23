@@ -1,51 +1,55 @@
 import { useState, useCallback } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { resourcesService } from '@lenserfight/data/repositories'
+import { mediaService } from '@lenserfight/data/repositories'
 import { queryKeys } from '@lenserfight/data/cache'
-import { CreateResourceDTO } from '@lenserfight/types'
+import { CreateMediaObjectDTO } from '@lenserfight/types'
 import { useToast } from '@lenserfight/shared/error'
+import { getStorageAdapter } from '@lenserfight/infra/storage'
 
 export const useVersionResources = (versionId: string | null | undefined) => {
   return useQuery({
-    queryKey: queryKeys.resources.forVersion(versionId ?? ''),
-    queryFn: () => resourcesService.getForVersion(versionId!),
+    queryKey: queryKeys.media.forEntity('lens_version', versionId ?? ''),
+    queryFn: () => mediaService.getAttachmentsForEntity('lens_version', versionId!),
     enabled: !!versionId,
     staleTime: 30_000,
   })
 }
 
 /**
- * Manages the full resource upload + attach lifecycle for a version's named slot.
+ * Manages the full media upload + attach lifecycle for a version's named slot.
  *
  * Upload flow:
- *   1. startUpload(file, bindingKey) — creates resource row, gets signed URL
- *   2. Browser uploads to Supabase Storage using the signed URL
- *   3. finalizeAndAttach(resourceId, bucket, objectKey, versionId, bindingKey)
- *      — finalizes the storage path + attaches to version
+ *   1. startUpload(file, bindingKey) — creates media object row, gets signed URL
+ *   2. Browser uploads to storage using the signed URL (via storage adapter)
+ *   3. finalizeAndBind — finalizes the storage path + binds attachment to entity
  */
-export const useResourceAttachments = (versionId: string | null | undefined) => {
+export const useResourceAttachments = (
+  versionId: string | null | undefined,
+  workspaceId: string | null | undefined,
+) => {
   const queryClient = useQueryClient()
   const { toastError } = useToast()
   const [uploadProgress, setUploadProgress] = useState<Record<string, 'uploading' | 'done' | 'error'>>({})
 
-  const { mutateAsync: attachResource, isPending: isAttaching } = useMutation({
+  const { mutateAsync: bindAttachment, isPending: isAttaching } = useMutation({
     mutationFn: ({
-      resourceId,
+      objectId,
       bindingKey,
     }: {
-      resourceId: string
+      objectId: string
       bindingKey: string
-    }) => resourcesService.attachToVersion(versionId!, resourceId, bindingKey),
+    }) => mediaService.bindAttachment(objectId, 'lens_version', versionId!, bindingKey),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: queryKeys.resources.forVersion(versionId ?? '') })
+      queryClient.invalidateQueries({ queryKey: queryKeys.media.forEntity('lens_version', versionId ?? '') })
     },
     onError: (err) => toastError(err),
   })
 
-  const { mutateAsync: detachResource, isPending: isDetaching } = useMutation({
-    mutationFn: (resourceId: string) => resourcesService.detachFromVersion(versionId!, resourceId),
+  const { mutateAsync: unbindAttachment, isPending: isDetaching } = useMutation({
+    mutationFn: (bindingKey: string) =>
+      mediaService.unbindAttachment('lens_version', versionId!, bindingKey),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: queryKeys.resources.forVersion(versionId ?? '') })
+      queryClient.invalidateQueries({ queryKey: queryKeys.media.forEntity('lens_version', versionId ?? '') })
     },
     onError: (err) => toastError(err),
   })
@@ -57,12 +61,13 @@ export const useResourceAttachments = (versionId: string | null | undefined) => 
       bucket: string = 'lens-resources'
     ) => {
       if (!versionId) throw new Error('versionId is required')
+      if (!workspaceId) throw new Error('workspaceId is required')
 
       setUploadProgress((prev) => ({ ...prev, [bindingKey]: 'uploading' }))
 
       try {
         const objectKey = `${versionId}/${bindingKey}/${file.name}`
-        const dto: CreateResourceDTO = {
+        const dto: CreateMediaObjectDTO = {
           mediaType: file.type.startsWith('image/')
             ? 'image'
             : file.type === 'application/pdf'
@@ -76,10 +81,13 @@ export const useResourceAttachments = (versionId: string | null | undefined) => 
           name: file.name,
         }
 
-        const session = await resourcesService.startUpload(dto, bucket, objectKey)
+        const session = await mediaService.startUpload(dto, workspaceId, bucket, objectKey)
 
-        // Direct browser → Supabase Storage upload
-        const uploadResponse = await fetch(session.signedUploadUrl, {
+        // Upload via storage adapter
+        const adapter = getStorageAdapter()
+        const { signedUrl } = await adapter.createSignedUploadUrl(bucket, objectKey)
+
+        const uploadResponse = await fetch(signedUrl, {
           method: 'PUT',
           headers: { 'Content-Type': file.type },
           body: file,
@@ -89,18 +97,25 @@ export const useResourceAttachments = (versionId: string | null | undefined) => 
           throw new Error(`Storage upload failed: ${uploadResponse.status}`)
         }
 
-        await resourcesService.finalizeUpload(session.resourceId, bucket, objectKey)
-        await attachResource({ resourceId: session.resourceId, bindingKey })
+        await mediaService.finalizeUpload(session.objectId, bucket, objectKey, file.size)
+        await bindAttachment({ objectId: session.objectId, bindingKey })
 
         setUploadProgress((prev) => ({ ...prev, [bindingKey]: 'done' }))
-        return session.resourceId
+        return session.objectId
       } catch (err) {
         setUploadProgress((prev) => ({ ...prev, [bindingKey]: 'error' }))
         toastError(err)
         throw err
       }
     },
-    [versionId, attachResource, toastError]
+    [versionId, workspaceId, bindAttachment, toastError]
+  )
+
+  // Backward-compatible aliases
+  const attachResource = bindAttachment
+  const detachResource = useCallback(
+    (bindingKey: string) => unbindAttachment(bindingKey),
+    [unbindAttachment]
   )
 
   return {

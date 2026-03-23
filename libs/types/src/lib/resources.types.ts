@@ -1,8 +1,10 @@
 // ─── Resource Registry Types ──────────────────────────────────────────────────
-// Mirrors content.resources and content.version_resources.
-// Resources are first-class objects: documents, images, text blobs, URLs.
+// @deprecated — Use MediaObject, MediaAttachment, UploadSession from media.types instead.
+// This file is retained for backward compatibility during the migration.
+// Mirrors ai.resources and lenses.version_resources (legacy tables).
 
 /**
+ * @deprecated Use UnifiedMediaType from media.types instead.
  * Extensible media type — TEXT in DB, not an enum, to avoid future migrations.
  * mime_type is the ground truth for provider capability validation.
  */
@@ -15,7 +17,7 @@ export type MediaType =
   | 'json'
   | 'binary'
 
-/** Mirrors content.resources */
+/** @deprecated Use MediaObject from media.types. Mirrors ai.resources (legacy). */
 export interface PromptResource {
   id: string
   ownerLenserId: string
@@ -32,7 +34,7 @@ export interface PromptResource {
   createdAt: string
 }
 
-/** Mirrors content.version_resources (junction table) */
+/** @deprecated Use MediaAttachment from media.types. Mirrors lenses.version_resources (legacy). */
 export interface VersionResource {
   versionId: string
   resourceId: string
@@ -42,6 +44,7 @@ export interface VersionResource {
   resource?: PromptResource
 }
 
+/** @deprecated Use CreateMediaObjectDTO from media.types */
 export interface CreateResourceDTO {
   mediaType: MediaType
   mimeType?: string
@@ -52,7 +55,7 @@ export interface CreateResourceDTO {
   url?: string
 }
 
-/** Returned after create; used to drive browser → Supabase Storage direct upload. */
+/** @deprecated Use UploadSession from media.types */
 export interface ResourceUploadSession {
   resourceId: string
   signedUploadUrl: string

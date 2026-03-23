@@ -61,6 +61,8 @@ export class SupabaseExecutionRepository implements ExecutionRepositoryPort {
       contentJson: (row.content_json as unknown) ?? null,
       visibility: (row.visibility as ExecutionArtifact['visibility']) ?? 'private',
       isPrimaryOutput: (row.is_primary_output as boolean) ?? false,
+      resourceId: (row.resource_id as string | null) ?? null,
+      mediaObjectId: (row.media_object_id as string | null) ?? null,
       createdAt: row.created_at as string,
     }
   }
@@ -115,7 +117,7 @@ export class SupabaseExecutionRepository implements ExecutionRepositoryPort {
       const { data: artifactRows, error: artifactError } = await supabase
         .schema('execution')
         .from('artifacts')
-        .select('id, run_id, artifact_kind, content_text, content_json, visibility, is_primary_output, created_at')
+        .select('id, run_id, artifact_kind, content_text, content_json, visibility, is_primary_output, resource_id, media_object_id, created_at')
         .in('run_id', succeededRunIds)
         .eq('is_primary_output', true)
 
@@ -164,7 +166,7 @@ export class SupabaseExecutionRepository implements ExecutionRepositoryPort {
     const { data, error } = await supabase
       .schema('execution')
       .from('artifacts')
-      .select('id, run_id, artifact_kind, content_text, content_json, visibility, is_primary_output, created_at')
+      .select('id, run_id, artifact_kind, content_text, content_json, visibility, is_primary_output, resource_id, media_object_id, created_at')
       .eq('run_id', runId)
       .order('is_primary_output', { ascending: false })
       .order('created_at', { ascending: true })
