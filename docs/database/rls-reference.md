@@ -198,6 +198,49 @@ The battles schema has 11 tables with status-gated visibility.
 
 ---
 
+### `tenancy` Schema
+
+#### `workspaces`
+
+| Policy | Operation | Tier | Condition | Notes |
+|--------|-----------|------|-----------|-------|
+| `members_select_own_workspaces` | SELECT | authenticated | User is a member of the workspace | Members can see their own workspaces |
+| `admin_update_workspace` | UPDATE | authenticated | User is admin/owner of the workspace | Admin/owner can update workspace |
+| `authenticated_insert_workspace` | INSERT | authenticated | `owner_id = lensers.get_auth_lenser_id()` | Authenticated users can create workspaces they own |
+
+#### `workspace_members`
+
+| Policy | Operation | Tier | Condition | Notes |
+|--------|-----------|------|-----------|-------|
+| `members_select_same_workspace` | SELECT | authenticated | User is a member of the same workspace | Members can see co-members |
+| `admin_insert_members` | INSERT | authenticated | User is admin/owner of the workspace | Admin/owner can add members |
+| `admin_delete_members` | DELETE | authenticated | User is admin/owner of the workspace | Admin/owner can remove members |
+
+---
+
+### `media` Schema
+
+#### `objects`
+
+| Policy | Operation | Tier | Condition | Notes |
+|--------|-----------|------|-----------|-------|
+| `authenticated_select_own_or_public` | SELECT | authenticated | Owner, public visibility, or workspace member | Owner, public, or workspace member |
+| `anon_select_public` | SELECT | anon | `visibility = 'public'` | Public objects visible to anonymous |
+| `authenticated_insert_own` | INSERT | authenticated | Owner + workspace member | Owner + workspace member can create |
+| `authenticated_update_own` | UPDATE | authenticated | `owner_id = lensers.get_auth_lenser_id()` | Owner can update |
+| `authenticated_delete_own` | DELETE | authenticated | `owner_id = lensers.get_auth_lenser_id()` | Owner can delete |
+
+#### `attachments`
+
+| Policy | Operation | Tier | Condition | Notes |
+|--------|-----------|------|-----------|-------|
+| `authenticated_select_attachments` | SELECT | authenticated | Parent object is accessible to user | Can see if object is accessible |
+| `anon_select_public_attachments` | SELECT | anon | Parent object is public | Public object attachments visible to anon |
+| `authenticated_insert_attachments` | INSERT | authenticated | User owns the parent object | Object owner can attach |
+| `authenticated_delete_attachments` | DELETE | authenticated | User owns the parent object | Object owner can detach |
+
+---
+
 ### `lenses` Schema
 
 #### `lenses`

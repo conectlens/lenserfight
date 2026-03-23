@@ -86,9 +86,16 @@ export const queryKeys = {
     all: ['apiKeys'] as const,
     myKeys: () => [...queryKeys.apiKeys.all, 'mine'] as const,
   },
+  /** @deprecated Use queryKeys.media instead */
   resources: {
     all: ['resources'] as const,
     byOwner: (lenserId: string) => [...queryKeys.resources.all, 'owner', lenserId] as const,
     forVersion: (versionId: string) => [...queryKeys.resources.all, 'version', versionId] as const,
+  },
+  media: {
+    all: ['media'] as const,
+    byOwner: (lenserId: string) => [...queryKeys.media.all, 'owner', lenserId] as const,
+    forEntity: (entityType: string, entityId: string) =>
+      [...queryKeys.media.all, 'entity', entityType, entityId] as const,
   },
 }

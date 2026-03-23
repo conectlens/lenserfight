@@ -1,3 +1,9 @@
+/**
+ * @deprecated Use mediaService.ts instead.
+ * This file is retained for backward compatibility during the migration
+ * from ai.resources to media.objects.
+ */
+
 import { SupabaseResourcesRepository, startResourceUpload } from '../repositories/resourcesRepository'
 import { PromptResource, VersionResource, CreateResourceDTO, ResourceUploadSession } from '@lenserfight/types'
 
