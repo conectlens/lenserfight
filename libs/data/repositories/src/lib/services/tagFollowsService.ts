@@ -12,8 +12,8 @@ export const tagFollowsService = {
     return tagFollowsRepo.unfollowTag(tagId)
   },
 
-  getFollowedTags: async (lenserId: string): Promise<TagFollowRecord[]> => {
-    return tagFollowsRepo.getFollowedTags(lenserId)
+  getFollowedTags: async (lenserId: string, limit = 50): Promise<TagFollowRecord[]> => {
+    return tagFollowsRepo.getFollowedTags(lenserId, limit)
   },
 
   reportContent: async (dto: ContentReportDTO): Promise<{ reported: boolean }> => {

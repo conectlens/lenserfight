@@ -117,7 +117,7 @@ export class SupabaseGenerationRepository implements GenerationRepositoryPort {
   }
 
   async getAIModels(): Promise<AIModel[]> {
-    const { data, error } = await supabase.from('vw_ai_models_public').select('*')
+    const { data, error } = await supabase.from('vw_ai_models_public').select('*').limit(50)
 
     if (error) {
       console.warn('Failed to fetch ai_models, returning empty list.', error)

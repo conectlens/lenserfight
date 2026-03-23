@@ -22,7 +22,7 @@ export const TagDetailPage: React.FC = () => {
     }
   }, [authLoading, isAuthenticated, navigate, location])
 
-  const { tag, items, loading, filter, setFilter, sort, setSort, availableFilters } =
+  const { tag, items, loading, hasNextPage, fetchNextPage, filter, setFilter, sort, setSort, availableFilters } =
     useTagDetailController(slug)
 
   useEffect(() => {
@@ -79,12 +79,21 @@ export const TagDetailPage: React.FC = () => {
       {/* Content Area */}
       <TagContentGrid items={items} loading={loading} />
 
-      {/* Footer / Pagination Placeholder */}
+      {/* Load More */}
       {!loading && items.length > 0 && (
         <div className="mt-12 flex justify-center">
-          <p className="text-xs text-gray-400 dark:text-gray-600 uppercase tracking-widest font-semibold">
-            End of Results
-          </p>
+          {hasNextPage ? (
+            <button
+              onClick={fetchNextPage}
+              className="px-6 py-2 text-sm font-semibold rounded-full border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+            >
+              Load More
+            </button>
+          ) : (
+            <p className="text-xs text-gray-400 dark:text-gray-600 uppercase tracking-widest font-semibold">
+              End of Results
+            </p>
+          )}
         </div>
       )}
     </div>

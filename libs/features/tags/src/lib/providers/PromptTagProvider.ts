@@ -13,9 +13,11 @@ export class PromptTagProvider implements TagContentProvider {
   async listByTag(
     tagSlug: string,
     sort: SortOption,
-    currentLenserId?: string
+    currentLenserId?: string,
+    offset = 0,
+    limit = 20,
   ): Promise<TaggedContentItem[]> {
-    const result = await lensesService.filter(tagSlug, 0, 20, sort)
+    const result = await lensesService.filter(tagSlug, offset, limit, sort)
     const prompts = result.data ?? []
 
     return prompts.map((p) => ({

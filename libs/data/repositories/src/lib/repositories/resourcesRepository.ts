@@ -9,7 +9,7 @@ import {
 // --- Port (Interface) ---
 
 export interface ResourcesRepositoryPort {
-  getByOwner(lenserId: string): Promise<PromptResource[]>
+  getByOwner(lenserId: string, limit?: number): Promise<PromptResource[]>
   getById(id: string): Promise<PromptResource | null>
   create(input: CreateResourceDTO): Promise<PromptResource>
   getSignedUploadUrl(bucket: string, objectKey: string): Promise<string>
@@ -52,13 +52,14 @@ export class SupabaseResourcesRepository implements ResourcesRepositoryPort {
     }
   }
 
-  async getByOwner(lenserId: string): Promise<PromptResource[]> {
+  async getByOwner(lenserId: string, limit = 200): Promise<PromptResource[]> {
     const { data, error } = await supabase
       .schema('content')
       .from('resources')
-      .select('*')
+      .select('id, owner_lenser_id, media_type, mime_type, name, storage_bucket, object_key, url, byte_size, is_public, created_at')
       .eq('owner_lenser_id', lenserId)
       .order('created_at', { ascending: false })
+      .limit(limit)
 
     if (error) this.handleError(error)
     return ((data ?? []) as Record<string, unknown>[]).map((row) => this.mapRow(row))
