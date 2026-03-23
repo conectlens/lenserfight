@@ -4,7 +4,7 @@ import { queryKeys } from '@lenserfight/data/cache'
 import { CreateLensVersionDTO } from '@lenserfight/types'
 import { useToast } from '@lenserfight/shared/error'
 
-export const useLensVersions = (lensId: string) => {
+export const useLensVersions = (lensId: string, options?: { enabled?: boolean }) => {
   const queryClient = useQueryClient()
   const { toastError } = useToast()
 
@@ -15,7 +15,7 @@ export const useLensVersions = (lensId: string) => {
   } = useQuery({
     queryKey: queryKeys.lensVersions.list(lensId),
     queryFn: () => lensesService.getVersions(lensId),
-    enabled: !!lensId,
+    enabled: (options?.enabled !== false) && !!lensId,
     staleTime: 30_000,
   })
 

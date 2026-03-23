@@ -3,7 +3,7 @@ import { Loader2, Play, Square } from 'lucide-react'
 import { SelectField } from '@lenserfight/ui/forms'
 import { Button, FormError } from '@lenserfight/ui/components'
 import { AIProviderSelectList, AIModelSelectList } from '@lenserfight/features/generations'
-import { AIProvider, AIProviderModel, LensParam, LensVersion, FundingSource, UserApiKey, WalletBalance } from '@lenserfight/types'
+import { AIProvider, AIProviderModel, LensParam, FundingSource, UserApiKey, WalletBalance } from '@lenserfight/types'
 import { validateParamValues } from '@lenserfight/utils/text'
 import { TriggerLabExecutionDTO } from '../hooks/useLabController'
 import { FundingSourceToggle } from './FundingSourceToggle'
@@ -39,11 +39,6 @@ interface LabExecutionPanelProps {
   onStop: () => void
   pendingRun?: null
   params?: LensParam[]
-  // Version selector
-  versions?: LensVersion[]
-  selectedVersionId?: string | null
-  onVersionChange?: (versionId: string) => void
-  isLoadingVersions?: boolean
   // Funding source
   fundingSource?: FundingSource
   onFundingSourceChange?: (source: FundingSource) => void
@@ -75,10 +70,6 @@ export const LabExecutionPanel: React.FC<LabExecutionPanelProps> = ({
   isConnecting,
   onStop,
   params,
-  versions,
-  selectedVersionId,
-  onVersionChange,
-  isLoadingVersions,
   fundingSource,
   onFundingSourceChange,
   selectedKeyRefId,
@@ -155,20 +146,6 @@ export const LabExecutionPanel: React.FC<LabExecutionPanelProps> = ({
           </span>
         )}
       </div>
-
-      {/* Version Selector — only shown when versions are available */}
-      {versions && versions.length > 0 && (
-        <SelectField
-          value={selectedVersionId ?? ''}
-          onChange={(val) => onVersionChange?.(val)}
-          placeholder={isLoadingVersions ? 'Loading versions…' : 'Select a version'}
-          options={versions.map((v) => ({
-            value: v.id,
-            label: `v${v.versionNumber}${v.changelog ? ` — ${v.changelog}` : ''}${v.status === 'draft' ? ' (draft)' : ''}`,
-          }))}
-          disabled={isLoadingVersions}
-        />
-      )}
 
       {/* Provider + Model Selectors */}
       <AIProviderSelectList
