@@ -28,7 +28,7 @@ export class SupabaseApiKeysRepository implements ApiKeysRepositoryPort {
   async getMyKeys(): Promise<UserApiKey[]> {
     const { data, error } = await supabase
       .schema('ai')
-      .from('user_api_keys')
+      .from('keys')
       .select('id, lenser_id, provider, label, key_suffix, is_active, created_at, revoked_at')
       .eq('is_active', true)
       .order('created_at', { ascending: false })
