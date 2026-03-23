@@ -212,8 +212,8 @@ export const lensesService = {
   createLens: async (input: CreateLensDTO): Promise<LensRecord> => {
     if (!input.title || input.title.trim().length < 3)
       throw new Error('Title must be at least 3 characters long.')
-    if (!input.content || input.content.trim().length < 10)
-      throw new Error('Content must be at least 10 characters long.')
+    if (!input.content || input.content.trim().length < 50)
+      throw new Error('Content must be at least 50 characters long.')
 
     if (!input.description) {
       input.description =
@@ -290,8 +290,8 @@ export const lensesService = {
   },
 
   createVersion: async (input: CreateLensVersionDTO): Promise<LensVersion> => {
-    if (!input.templateBody || input.templateBody.trim().length < 1) {
-      throw new Error('Template body cannot be empty.')
+    if (!input.templateBody || input.templateBody.trim().length < 50) {
+      throw new Error('Template body must be at least 50 characters.')
     }
     return lensesRepo.createVersion(input)
   },

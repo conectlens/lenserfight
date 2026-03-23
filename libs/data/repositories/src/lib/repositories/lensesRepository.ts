@@ -471,7 +471,7 @@ export class SupabaseLensesRepository implements LensesRepositoryPort {
   // -----------------------------------------------------
 
   async createLens(input: CreateLensDTO): Promise<LensRecord> {
-    // 1. Resolve the content language from the authenticated user's profile.
+    // Resolve the content language from the authenticated user's profile.
     let languageCode = 'en'
     const { data: { user } } = await supabase.auth.getUser()
     if (user) {
@@ -486,43 +486,21 @@ export class SupabaseLensesRepository implements LensesRepositoryPort {
       }
     }
 
-    // 2. Insert Base Lens (lenser_id resolved server-side via DEFAULT lensers.get_auth_lenser_id())
-    const insertPayload: Record<string, unknown> = {
-      visibility: input.visibility,
-      template_body: input.content,  // ensures create_initial_lens_version trigger fires with real content
-    }
-    if (input.parentLensId) insertPayload.parent_lens_id = input.parentLensId
-    if (input.forkedFromExecutionId) insertPayload.forked_from_execution_id = input.forkedFromExecutionId
-
-    const { data: lensInsertData, error: rpcError } = await supabase.schema('lenses').from('lenses').insert(
-      insertPayload
-    ).select('id').single()
+    // Atomic RPC: creates lens + version 1 + translation + tags in one transaction
+    const { data: lensId, error: rpcError } = await supabase.schema('lenses').rpc('fn_create_lens', {
+      p_visibility: input.visibility,
+      p_template_body: input.content,
+      p_title: input.title,
+      p_description: input.description ?? null,
+      p_language_code: languageCode,
+      p_params: input.params ?? [],
+      p_tag_ids: input.tagIds ?? [],
+      p_parent_lens_id: input.parentLensId ?? null,
+      p_forked_from_execution_id: input.forkedFromExecutionId ?? null,
+    })
 
     if (rpcError) this.handleError(rpcError)
-    if (!lensInsertData) throw new Error('Failed to create lens')
-    const lensId = lensInsertData.id
-
-    // 3. Insert Lens Translation
-    const { error: translationError } = await supabase.schema('content').from('entity_translations').insert({
-      entity_type: 'lens',
-      entity_id: lensId,
-      language_code: languageCode,
-      is_original: true,
-      title: input.title,
-      description: input.description ?? null,
-      content: input.content,
-      params: input.params ?? [],
-    })
-    if (translationError) this.handleError(translationError)
-
-    if (input.tagIds?.length) {
-      const tagRecords = input.tagIds.map(tagId => ({
-        entity_type: 'lens',
-        entity_id: lensId,
-        tag_id: tagId,
-      }))
-      await supabase.schema('content').from('tag_map').insert(tagRecords)
-    }
+    if (!lensId) throw new Error('Failed to create lens')
 
     // Fetch from view
     const { data, error } = await supabase
@@ -535,8 +513,6 @@ export class SupabaseLensesRepository implements LensesRepositoryPort {
 
     if (!data) {
       // If lens is private, it won't show in the public view.
-      // We return a "simulated" record so the flow can continue.
-      // In a real scenario, we should have a 'vw_lenses_owner' view.
       return {
         id: lensId,
         visibility: input.visibility,
@@ -554,46 +530,19 @@ export class SupabaseLensesRepository implements LensesRepositoryPort {
   }
 
   async updateLens(id: string, input: Partial<CreateLensDTO>): Promise<LensRecord> {
-    const baseUpdatePayload: Record<string, unknown> = {}
-    const translationUpdatePayload: Partial<
-      Pick<LensRecord, 'title' | 'description' | 'content'>
-    > = {}
+    // Atomic RPC: updates visibility, template body (via version upsert),
+    // translation, and tags in one transaction
+    const { error: rpcError } = await supabase.schema('lenses').rpc('fn_update_lens', {
+      p_lens_id: id,
+      p_template_body: input.content ?? null,
+      p_visibility: input.visibility ?? null,
+      p_title: input.title ?? null,
+      p_description: input.description ?? null,
+      p_params: input.params ?? null,
+      p_tag_ids: input.tagIds ?? null,
+    })
 
-    if (input.visibility !== undefined) baseUpdatePayload.visibility = input.visibility
-    if (input.title !== undefined) translationUpdatePayload.title = input.title
-    if (input.description !== undefined) translationUpdatePayload.description = input.description
-    if (input.content !== undefined) {
-      translationUpdatePayload.content = input.content
-      // Sync working copy — triggers trg_lens_template_updated which upserts the draft version
-      baseUpdatePayload.template_body = input.content
-    }
-    if (input.params !== undefined) (translationUpdatePayload as any).params = input.params
-
-    if (Object.keys(baseUpdatePayload).length > 0) {
-      const { error: rpcError } = await supabase.schema('lenses').from('lenses').update(baseUpdatePayload).eq('id', id)
-      if (rpcError) this.handleError(rpcError)
-    }
-
-    if (Object.keys(translationUpdatePayload).length > 0) {
-      const { error } = await supabase.schema('content').from('entity_translations')
-        .update(translationUpdatePayload)
-        .eq('entity_type', 'lens')
-        .eq('entity_id', id)
-        .eq('is_original', true)
-      if (error) this.handleError(error)
-    }
-
-    if (input.tagIds !== undefined) {
-      await supabase.schema('content').from('tag_map').delete().eq('entity_type', 'lens').eq('entity_id', id)
-      if (input.tagIds.length > 0) {
-        const tagRecords = input.tagIds.map(tagId => ({
-          entity_type: 'lens',
-          entity_id: id,
-          tag_id: tagId,
-        }))
-        await supabase.schema('content').from('tag_map').insert(tagRecords)
-      }
-    }
+    if (rpcError) this.handleError(rpcError)
 
     const { data, error } = await supabase
       .from('vw_lenses_public')
