@@ -1,0 +1,7 @@
+interface:
+  display_name: "Apps Language Rules"
+  short_description: "Define i18n and internalization rules for forum (React/i18next) and docs (VitePress locales) apps. Use when adding new UI strings, translating docs, adding new locales, checking language consistency, or setting up hreflang SEO for multilingual pages."
+  icon_small: "../../assets/apple-icon-small.png"
+  icon_large: "../../assets/apple-icon.png"
+  brand_color: "#10b981"
+  default_prompt: "Review or apply i18n rules for the LenserFight apps. Supported languages: English (default) and Turkish. For forum: use react-i18next with en.json/tr.json catalogs. For docs: use VitePress locales with docs/tr/ stubs. Always add both English and Turkish keys when adding UI strings."

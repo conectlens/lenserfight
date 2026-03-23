@@ -26,11 +26,11 @@ This repository is optimized for Codex using a layered instruction model:
 - persistent repo guidance in `AGENTS.md`
 - Codex runtime config in `.codex/config.toml`
 - role-specific behavior in `.codex/agents/*.toml`
-- reusable project skills in `.agents/skills/*`
+- reusable project skills in `.agents/skills/*`, `.claude/skills/*`, and `.gemini/skills/*`
 
 ## Project defaults
 
-- Prefer existing repository skills from `.agents/skills` before inventing a new workflow.
+- Prefer existing repository skills from the local skills folders before inventing a new workflow.
 - Keep changes minimal, local, and reversible.
 - Preserve architectural boundaries between product, UI, tests, and Supabase concerns.
 - When reviewing, prioritize correctness, security, migration safety, and maintainability over style-only commentary.
