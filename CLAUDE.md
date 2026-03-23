@@ -23,7 +23,7 @@
 # LenserFight Claude Guide
 
 ## Project focus
-- LenserFight is an Nx monorepo with a Vite React web app, layered libraries, and a Supabase backend.
+- LenserFight is an Nx monorepo with apps, layered `libs/*`, and a Supabase backend.
 - Prioritize clear module boundaries, low coupling, and production-safe migrations.
 - Prefer compact, auditable outputs over verbose explanations.
 
@@ -33,7 +33,11 @@
 - `libs/api/*` defines contracts and DTOs.
 - `libs/data/*` handles repositories, caching, and Supabase integration.
 - `libs/features/*` contains vertical feature slices and orchestration.
-- `libs/ui/*` contains reusable UI primitives, layout, forms, and modals.
+- `libs/infra/*` holds analytics, moderation, and storage adapters.
+- `libs/providers/*` contains app-provider integrations.
+- `libs/shared/*` contains cross-cutting shared domain pieces.
+- `libs/types/*` holds shared type packages.
+- `libs/ui/*` contains reusable UI components, forms, layout, modals, theme, and tokens.
 - `libs/utils/*` contains low-level shared utilities only.
 - `supabase/` contains schema, migrations, SQL functions, and database security concerns.
 
@@ -49,7 +53,7 @@
 ## Skill routing
 Use the matching skill when work is specialized:
 - repo shape or dependency drift → `repo-architecture-auditor`
-- Nx tags/import direction/cycles → `nx-boundary-reviewer`
+- Nx tags/import direction/cycles → `repo-architecture-auditor`
 - new feature placement across layers → `feature-slice-designer`
 - Vite bundle/runtime performance → `vite-performance-engineer`
 - Tailwind, UX, accessibility, visual consistency → `tailwind-ui-ux-reviewer`
