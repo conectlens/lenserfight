@@ -5,6 +5,8 @@ export type VisibilityEnum = 'public' | 'community' | 'private'
 export type ContentStatus = 'draft' | 'published' | 'archived'
 export type ReactionEnum = 'like' | 'love' | 'clap' | 'saved' | 'copy'
 
+export const LENS_MIN_TEMPLATE_LENGTH = 50
+
 export type LensParamType = 'string' | 'number' | 'boolean' | 'select' | 'multiselect' | 'array'
 
 export interface LensParam {

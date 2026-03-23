@@ -56,7 +56,7 @@ export const CreateLensModal: React.FC<CreateLensModalProps> = ({
 
   const validationRulesRef = useRef({
     title: [isRequired(), minLength(3, 'Title must be at least 3 characters')],
-    content: [isRequired(), minLength(10, 'Content must be at least 10 characters')],
+    content: [isRequired(), minLength(50, 'Content must be at least 50 characters')],
     tags: [],
   })
 
@@ -153,7 +153,7 @@ export const CreateLensModal: React.FC<CreateLensModalProps> = ({
               onChange={handleContentChange}
               onKeyDown={handleContentKeyDown}
               rows={10}
-              placeholder={"Write your lens in markdown.\nUse {{variable}} for dynamic parameters.\n\nExample:\n## Task\nGenerate {{num_ideas}} ideas about **{{topic}}**"}
+              placeholder={"Write your lens in markdown (minimum 50 characters).\nUse {{variable}} for dynamic parameters.\n\nExample:\n## Task\nGenerate {{num_ideas}} ideas about **{{topic}}**"}
               className="w-full px-4 py-3 font-mono text-sm bg-gray-50 dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none resize-none transition-all"
             />
           </div>
