@@ -94,198 +94,198 @@ const App: React.FC = () => {
                         }}
                       >
                         <WalletProvider>
-                        <ScrollToTop />
-                        <GlobalAnalytics />
-                        <ErrorClearer />
-                        <AppToaster />
-                        <GlobalErrorRenderer>
-                        <Routes>
-                        {/* Short Link Redirect Route (No Layout) */}
-                        <Route path="/s/:shortId" element={<ShortLinkRedirect />} />
+                          <ScrollToTop />
+                          <GlobalAnalytics />
+                          <ErrorClearer />
+                          <AppToaster />
+                          <GlobalErrorRenderer>
+                            <Routes>
+                              {/* Short Link Redirect Route (No Layout) */}
+                              <Route path="/s/:shortId" element={<ShortLinkRedirect />} />
 
-                        {/* Auth Routes → delegated to apps/auth */}
-                        <Route path="/auth/login" element={<ExternalRedirect to={`${AUTH_APP_URL}/login`} />} />
-                        <Route path="/auth/register" element={<ExternalRedirect to={`${AUTH_APP_URL}/register`} />} />
-                        <Route path="/auth/forgot-password" element={<ExternalRedirect to={`${AUTH_APP_URL}/forgot-password`} />} />
-                        <Route path="/auth/reset-password" element={<ExternalRedirect to={`${AUTH_APP_URL}/reset-password`} />} />
-                        <Route path="/auth" element={<ExternalRedirect to={`${AUTH_APP_URL}/login`} />} />
-                        <Route
-                          path="/welcome"
-                          element={
-                            <PublicLayout>
-                              <WelcomePage />
-                            </PublicLayout>
-                          }
-                        />
+                              {/* Auth Routes → delegated to apps/auth */}
+                              <Route path="/auth/login" element={<ExternalRedirect to={`${AUTH_APP_URL}/login`} />} />
+                              <Route path="/auth/register" element={<ExternalRedirect to={`${AUTH_APP_URL}/register`} />} />
+                              <Route path="/auth/forgot-password" element={<ExternalRedirect to={`${AUTH_APP_URL}/forgot-password`} />} />
+                              <Route path="/auth/reset-password" element={<ExternalRedirect to={`${AUTH_APP_URL}/reset-password`} />} />
+                              <Route path="/auth" element={<ExternalRedirect to={`${AUTH_APP_URL}/login`} />} />
+                              <Route
+                                path="/welcome"
+                                element={
+                                  <PublicLayout>
+                                    <WelcomePage />
+                                  </PublicLayout>
+                                }
+                              />
 
-                        {/* App Dashboard Routes */}
-                        <Route
-                          path="/"
-                          element={
-                            <DashboardLayout>
-                              <HomePage />
-                            </DashboardLayout>
-                          }
-                        />
+                              {/* App Dashboard Routes */}
+                              <Route
+                                path="/"
+                                element={
+                                  <DashboardLayout>
+                                    <HomePage />
+                                  </DashboardLayout>
+                                }
+                              />
 
-                        <Route
-                          path="/lenserboard"
-                          element={
-                            <DashboardLayout>
-                              <LeaderboardPage />
-                            </DashboardLayout>
-                          }
-                        />
+                              <Route
+                                path="/lenserboard"
+                                element={
+                                  <DashboardLayout>
+                                    <LeaderboardPage />
+                                  </DashboardLayout>
+                                }
+                              />
 
-                        <Route
-                          path="/lensers"
-                          element={
-                            <DashboardLayout>
-                              <LensersPage />
-                            </DashboardLayout>
-                          }
-                        />
+                              <Route
+                                path="/lensers"
+                                element={
+                                  <DashboardLayout>
+                                    <LensersPage />
+                                  </DashboardLayout>
+                                }
+                              />
 
-                        <Route
-                          path="/threads/:threadId"
-                          element={
-                            <DashboardLayout>
-                              <ThreadDetailPage />
-                            </DashboardLayout>
-                          }
-                        />
+                              <Route
+                                path="/threads/:threadId"
+                                element={
+                                  <DashboardLayout>
+                                    <ThreadDetailPage />
+                                  </DashboardLayout>
+                                }
+                              />
 
-                        {/* Lenses Routes */}
-                        <Route
-                          path="/lenses"
-                          element={
-                            <DashboardLayout>
-                              <LensesPage />
-                            </DashboardLayout>
-                          }
-                        />
+                              {/* Lenses Routes */}
+                              <Route
+                                path="/lenses"
+                                element={
+                                  <DashboardLayout>
+                                    <LensesPage />
+                                  </DashboardLayout>
+                                }
+                              />
 
-                        <Route
-                          path="/lenses/:id"
-                          element={
-                            <DashboardLayout>
-                              <LensLabPage />
-                            </DashboardLayout>
-                          }
-                        />
+                              <Route
+                                path="/lenses/:id"
+                                element={
+                                  <DashboardLayout>
+                                    <LensLabPage />
+                                  </DashboardLayout>
+                                }
+                              />
 
-                        {/* Ray (Tag Cloud) Routes */}
-                        <Route
-                          path="/ray"
-                          element={
-                            <DashboardLayout>
-                              <TagCloudPage />
-                            </DashboardLayout>
-                          }
-                        />
+                              {/* Ray (Tag Cloud) Routes */}
+                              <Route
+                                path="/ray"
+                                element={
+                                  <DashboardLayout>
+                                    <TagCloudPage />
+                                  </DashboardLayout>
+                                }
+                              />
 
-                        <Route
-                          path="/ray/:slug"
-                          element={
-                            <DashboardLayout>
-                              <TagDetailPage />
-                            </DashboardLayout>
-                          }
-                        />
+                              <Route
+                                path="/ray/:slug"
+                                element={
+                                  <DashboardLayout>
+                                    <TagDetailPage />
+                                  </DashboardLayout>
+                                }
+                              />
 
-                        <Route
-                          path="/ray/:slug/:tab"
-                          element={
-                            <DashboardLayout>
-                              <TagDetailPage />
-                            </DashboardLayout>
-                          }
-                        />
+                              <Route
+                                path="/ray/:slug/:tab"
+                                element={
+                                  <DashboardLayout>
+                                    <TagDetailPage />
+                                  </DashboardLayout>
+                                }
+                              />
 
-                        <Route
-                          path="/lenser/requests"
-                          element={
-                            <DashboardLayout>
-                              <PendingRequestsPage />
-                            </DashboardLayout>
-                          }
-                        />
+                              <Route
+                                path="/lenser/requests"
+                                element={
+                                  <DashboardLayout>
+                                    <PendingRequestsPage />
+                                  </DashboardLayout>
+                                }
+                              />
 
-                        <Route
-                          path="/lenser/:handle"
-                          element={
-                            <DashboardLayout>
-                              <LenserProfilePage />
-                            </DashboardLayout>
-                          }
-                        />
-                        <Route
-                          path="/lenser/:handle/:tab"
-                          element={
-                            <DashboardLayout>
-                              <LenserProfilePage />
-                            </DashboardLayout>
-                          }
-                        />
+                              <Route
+                                path="/lenser/:handle"
+                                element={
+                                  <DashboardLayout>
+                                    <LenserProfilePage />
+                                  </DashboardLayout>
+                                }
+                              />
+                              <Route
+                                path="/lenser/:handle/:tab"
+                                element={
+                                  <DashboardLayout>
+                                    <LenserProfilePage />
+                                  </DashboardLayout>
+                                }
+                              />
 
-                        {/* Settings Routes with Redirect */}
-                        <Route path="/settings" element={<Navigate to="/settings/account" replace />} />
-                        <Route
-                          path="/settings/:tab"
-                          element={
-                            <DashboardLayout>
-                              <SettingsPage />
-                            </DashboardLayout>
-                          }
-                        />
+                              {/* Settings Routes with Redirect */}
+                              <Route path="/settings" element={<Navigate to="/settings/account" replace />} />
+                              <Route
+                                path="/settings/:tab"
+                                element={
+                                  <DashboardLayout>
+                                    <SettingsPage />
+                                  </DashboardLayout>
+                                }
+                              />
 
-                        <Route
-                          path="/waiting-list"
-                          element={
-                            <DashboardLayout>
-                              <WaitingListPage />
-                            </DashboardLayout>
-                          }
-                        />
+                              <Route
+                                path="/waiting-list"
+                                element={
+                                  <DashboardLayout>
+                                    <WaitingListPage />
+                                  </DashboardLayout>
+                                }
+                              />
 
-                        <Route
-                          path="/billing"
-                          element={
-                            <DashboardLayout>
-                              <StorePage />
-                            </DashboardLayout>
-                          }
-                        />
+                              <Route
+                                path="/billing"
+                                element={
+                                  <DashboardLayout>
+                                    <StorePage />
+                                  </DashboardLayout>
+                                }
+                              />
 
-                        {/* ADMIN ROUTES */}
-                        <Route element={<ProtectedAdminRoute />}>
-                          <Route path="/admin" element={<AdminLayout />}>
-                            <Route index element={<AdminWelcome />} />
-                            <Route path="analytics" element={<AdminAnalytics />} />
-                            <Route path="users" element={<AdminUsers />} />
-                            <Route path="design" element={<AdminDesign />} />
-                            <Route path="feedbacks" element={<AdminFeedbacks />} />
-                            <Route path="waitlist" element={<AdminWaitlist />} />
-                            <Route path="contacts" element={<AdminContacts />} />
-                          </Route>
-                        </Route>
+                              {/* ADMIN ROUTES */}
+                              <Route element={<ProtectedAdminRoute />}>
+                                <Route path="/admin" element={<AdminLayout />}>
+                                  <Route index element={<AdminWelcome />} />
+                                  <Route path="analytics" element={<AdminAnalytics />} />
+                                  <Route path="users" element={<AdminUsers />} />
+                                  <Route path="design" element={<AdminDesign />} />
+                                  <Route path="feedbacks" element={<AdminFeedbacks />} />
+                                  <Route path="waitlist" element={<AdminWaitlist />} />
+                                  <Route path="contacts" element={<AdminContacts />} />
+                                </Route>
+                              </Route>
 
-                        {/* Redirect old routes for backward compatibility/bookmarks */}
-                        <Route path="/login" element={<Navigate to="/auth/login" replace />} />
-                        <Route path="/register" element={<Navigate to="/auth/register" replace />} />
-                        <Route path="/forgot-password" element={<Navigate to="/auth/forgot-password" replace />} />
-                        <Route path="/reset-password" element={<Navigate to="/auth/reset-password" replace />} />
-                        <Route path="/prompts/*" element={<Navigate to="/lenses" replace />} />
-                        <Route path="/tags/*" element={<Navigate to="/ray" replace />} />
-                        <Route path="/rays/*" element={<Navigate to="/ray" replace />} />
-                        <Route path="/len/*" element={<Navigate to="/ray" replace />} />
-                        <Route path="/leaderboard" element={<Navigate to="/lenserboard" replace />} />
-                        <Route path="/store" element={<Navigate to="/billing" replace />} />
+                              {/* Redirect old routes for backward compatibility/bookmarks */}
+                              <Route path="/login" element={<Navigate to="/auth/login" replace />} />
+                              <Route path="/register" element={<Navigate to="/auth/register" replace />} />
+                              <Route path="/forgot-password" element={<Navigate to="/auth/forgot-password" replace />} />
+                              <Route path="/reset-password" element={<Navigate to="/auth/reset-password" replace />} />
+                              <Route path="/prompts/*" element={<Navigate to="/lenses" replace />} />
+                              <Route path="/tags/*" element={<Navigate to="/ray" replace />} />
+                              <Route path="/rays/*" element={<Navigate to="/ray" replace />} />
+                              <Route path="/len/*" element={<Navigate to="/ray" replace />} />
+                              <Route path="/leaderboard" element={<Navigate to="/lenserboard" replace />} />
+                              <Route path="/store" element={<Navigate to="/billing" replace />} />
 
-                        {/* Default Redirect */}
-                        <Route path="*" element={<Navigate to="/" replace />} />
-                        </Routes>
-                        </GlobalErrorRenderer>
+                              {/* Default Redirect */}
+                              <Route path="*" element={<Navigate to="/" replace />} />
+                            </Routes>
+                          </GlobalErrorRenderer>
                         </WalletProvider>
                       </BrowserRouter>
                     </ShareProvider>
