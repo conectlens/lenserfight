@@ -28,7 +28,7 @@ export const useForkLens = (sourceLens: LensDetailViewModel | null) => {
     },
     onSuccess: (newLens) => {
       queryClient.invalidateQueries({ queryKey: queryKeys.lenses.all })
-      navigate(`/len/p/${newLens.id}`)
+      navigate(`/lenses/${newLens.id}`)
     },
   })
 

@@ -105,7 +105,7 @@ export const HomePage: React.FC = () => {
   const threads = activeFeedData?.pages.flatMap((page) => page.data ?? []) || []
   const isEmpty = !activeIsLoading && threads.length === 0
 
-  // Sidebar prompts: personalised for auth users, top prompts otherwise
+  // Sidebar lenses: personalised for auth users, top lenses otherwise
   const sidebarPrompts =
     showForYou
       ? (personalPromptsData?.pages[0]?.data?.slice(0, 3) ?? [])
@@ -169,11 +169,10 @@ export const HomePage: React.FC = () => {
                 <button
                   key={tab}
                   onClick={() => setFeedTab(tab)}
-                  className={`px-4 py-2 rounded-lg text-sm font-semibold transition-all ${
-                    activeTab === tab
+                  className={`px-4 py-2 rounded-lg text-sm font-semibold transition-all ${activeTab === tab
                       ? 'bg-white dark:bg-gray-700 text-gray-900 dark:text-white shadow-sm'
                       : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
-                  }`}
+                    }`}
                 >
                   {tab === 'for_you' ? 'For You' : 'Trending'}
                 </button>
@@ -230,11 +229,11 @@ export const HomePage: React.FC = () => {
       {/* Right Sidebar Widgets */}
       <div className="lg:col-span-4 mt-8 lg:mt-0">
         <div className="space-y-6 lg:pt-[52px]">
-          {/* Prompts You May Like / Top Prompts Widget */}
+          {/* Lenses You May Like / Top Lenses Widget */}
           <Card className="p-0 overflow-hidden bg-white dark:bg-gray-800">
             <div className="px-6 py-4 border-b border-gray-100 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-800/50">
               <h3 className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                {showForYou ? 'Prompts You May Like' : 'Top Prompts'}
+                {showForYou ? 'Lenses You May Like' : 'Top Lenses'}
               </h3>
             </div>
             <div className="p-2">
@@ -245,13 +244,13 @@ export const HomePage: React.FC = () => {
                 </div>
               ) : !sidebarPrompts || sidebarPrompts.length === 0 ? (
                 <div>
-                  <MinimalAlert icon={Sparkles} text="No prompts yet" />
+                  <MinimalAlert icon={Sparkles} text="No lenses yet" />
                 </div>
               ) : (
                 sidebarPrompts.map((prompt) => (
                   <div
                     key={prompt.id}
-                    onClick={() => navigate(`/len/p/${prompt.id}`)}
+                    onClick={() => navigate(`/lenses/${prompt.id}`)}
                     className="p-4 hover:bg-gray-50 dark:hover:bg-gray-700/50 rounded-xl cursor-pointer transition-colors"
                   >
                     <p className="text-sm font-medium text-gray-800 dark:text-gray-200 line-clamp-2">
@@ -325,11 +324,10 @@ export const HomePage: React.FC = () => {
                             })
                           }
                         }}
-                        className={`flex-shrink-0 px-3 py-1 rounded-full text-xs font-semibold border transition-colors ${
-                          isFollowed
+                        className={`flex-shrink-0 px-3 py-1 rounded-full text-xs font-semibold border transition-colors ${isFollowed
                             ? 'border-primary text-primary bg-primary/5 hover:bg-primary/10'
                             : 'border-gray-200 dark:border-gray-600 text-gray-600 dark:text-gray-400 hover:border-primary hover:text-primary'
-                        }`}
+                          }`}
                       >
                         {isFollowed ? 'Following' : 'Follow'}
                       </button>
@@ -395,7 +393,7 @@ export const HomePage: React.FC = () => {
                     <div key={tag.slug} className="flex items-center gap-0.5 group">
                       <TagBadge
                         label={tag.name}
-                        onClick={() => navigate(`/len/${tag.slug.toLowerCase()}`)}
+                        onClick={() => navigate(`/ray/${tag.slug.toLowerCase()}`)}
                       />
                       {showForYou && (
                         <button
