@@ -16,7 +16,7 @@ export class SupabaseApiKeysRepository implements ApiKeysRepositoryPort {
     return {
       id: row.id as string,
       lenserId: row.lenser_id as string,
-      provider: row.provider as ByokProvider,
+      provider: (row.provider as ByokProvider) ?? null,
       label: (row.label as string) ?? null,
       keySuffix: row.key_suffix as string,
       isActive: row.is_active as boolean,
@@ -29,7 +29,7 @@ export class SupabaseApiKeysRepository implements ApiKeysRepositoryPort {
     const { data, error } = await supabase
       .schema('ai')
       .from('keys')
-      .select('id, lenser_id, provider, label, key_suffix, is_active, created_at, revoked_at')
+      .select('id, lenser_id, label, key_suffix, is_active, created_at, revoked_at')
       .eq('is_active', true)
       .order('created_at', { ascending: false })
 

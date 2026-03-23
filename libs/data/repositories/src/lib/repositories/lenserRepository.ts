@@ -224,7 +224,6 @@ export class SupabaseLenserRepository implements LenserRepositoryPort {
     if (data.banner_url !== undefined) updatePayload.banner_url = data.banner_url
     if (data.bio !== undefined) updatePayload.bio = data.bio
     if (data.headline !== undefined) updatePayload.headline = data.headline
-    if (data.preferences !== undefined) updatePayload.preferences = data.preferences
     if (data.preferred_language !== undefined) updatePayload.preferred_language = data.preferred_language
     if (data.onboarding_step !== undefined) updatePayload.onboarding_step = data.onboarding_step
     if (data.onboarding_completed_at !== undefined) updatePayload.onboarding_completed_at = data.onboarding_completed_at
