@@ -3,7 +3,7 @@ import { LensParam } from '@lenserfight/types'
 import { parseContentSegments, detectParamMismatches, type ParamMismatch } from '@lenserfight/utils/text'
 import { ParamAutocomplete } from './ParamAutocomplete'
 import { ParamEditPopover } from './ParamEditPopover'
-import { AlertTriangle } from 'lucide-react'
+import { AlertTriangle, Type, Hash, ToggleLeft, Paperclip, ChevronDown, Link, Calendar, AlignLeft } from 'lucide-react'
 
 // ─── Types ────────────────────────────────────────────────────────────────
 
@@ -21,7 +21,80 @@ export interface LensContentEditorHandle {
   focus: () => void
 }
 
-// ─── Chip color config (same as ParamChip) ────────────────────────────────
+// ─── Quick-add param toolbar templates ───────────────────────────────────
+
+interface QuickTemplate {
+  label: string
+  icon: React.ReactNode
+  colorClass: string
+  param: LensParam
+}
+
+const QUICK_TEMPLATES: QuickTemplate[] = [
+  {
+    label: 'Text',
+    icon: <Type size={12} />,
+    colorClass: 'bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400',
+    param: { name: 'input', type: 'string', required: true, placeholder: 'Enter text…' },
+  },
+  {
+    label: 'Number',
+    icon: <Hash size={12} />,
+    colorClass: 'bg-amber-50 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400',
+    param: { name: 'count', type: 'number', required: false, min: 1, max: 100, default: '10' },
+  },
+  {
+    label: 'Toggle',
+    icon: <ToggleLeft size={12} />,
+    colorClass: 'bg-purple-50 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400',
+    param: { name: 'enabled', type: 'boolean', required: false, default: 'false' },
+  },
+  {
+    label: 'File',
+    icon: <Paperclip size={12} />,
+    colorClass: 'bg-slate-50 dark:bg-slate-900/30 text-slate-600 dark:text-slate-400',
+    param: { name: 'attachment', type: 'string', required: false, description: 'Upload a file' },
+  },
+  {
+    label: 'Select',
+    icon: <ChevronDown size={12} />,
+    colorClass: 'bg-teal-50 dark:bg-teal-900/30 text-teal-600 dark:text-teal-400',
+    param: {
+      name: 'option',
+      type: 'select',
+      required: true,
+      options: [{ label: 'Option A', value: 'a' }, { label: 'Option B', value: 'b' }],
+    },
+  },
+  {
+    label: 'URL',
+    icon: <Link size={12} />,
+    colorClass: 'bg-green-50 dark:bg-green-900/30 text-green-600 dark:text-green-400',
+    param: { name: 'url', type: 'string', required: false, placeholder: 'https://…' },
+  },
+  {
+    label: 'Date',
+    icon: <Calendar size={12} />,
+    colorClass: 'bg-rose-50 dark:bg-rose-900/30 text-rose-600 dark:text-rose-400',
+    param: { name: 'date', type: 'string', required: false, placeholder: 'YYYY-MM-DD' },
+  },
+  {
+    label: 'Long Text',
+    icon: <AlignLeft size={12} />,
+    colorClass: 'bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400',
+    param: { name: 'description', type: 'string', required: false, placeholder: 'Enter description…' },
+  },
+]
+
+function uniquifyName(baseName: string, existing: LensParam[]): string {
+  const names = new Set(existing.map((p) => p.name))
+  if (!names.has(baseName)) return baseName
+  let i = 2
+  while (names.has(`${baseName}_${i}`)) i++
+  return `${baseName}_${i}`
+}
+
+// ─── Chip color config ────────────────────────────────────────────────────
 
 const CHIP_CLASSES: Record<string, string> = {
   string:      'bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300 border-blue-200 dark:border-blue-700',
@@ -41,6 +114,8 @@ export const LensContentEditor = React.forwardRef<LensContentEditorHandle, LensC
     const containerRef = useRef<HTMLDivElement>(null)
     const lastKnownValue = useRef('')
     const isTypingParam = useRef(false)
+    // Track which param name (if any) started a drag from within this editor
+    const internalDragName = useRef<string | null>(null)
 
     // Autocomplete state
     const [autocomplete, setAutocomplete] = useState<{
@@ -86,17 +161,32 @@ export const LensContentEditor = React.forwardRef<LensContentEditorHandle, LensC
       chip.contentEditable = 'false'
       chip.setAttribute('data-param', paramName)
       chip.className = `inline-flex items-center px-1.5 py-0.5 rounded-md font-mono text-xs font-medium select-none align-middle whitespace-nowrap border mx-0.5 ${chipColors} ${isRequired ? '' : 'border-dashed'} cursor-pointer`
-      chip.textContent = `{{${paramName}}}`
+      chip.textContent = `[[${paramName}]]`
       chip.title = `${paramName} (${param?.type ?? 'string'}${isRequired ? ', required' : ', optional'})`
 
-      // Click opens edit popover
-      chip.addEventListener('click', (e) => {
+      const openPopover = (e: Event) => {
         e.preventDefault()
         e.stopPropagation()
         if (!param) return
         const idx = params.findIndex((p) => p.name === paramName)
         if (idx === -1) return
         setEditTarget({ param, paramIndex: idx, rect: chip.getBoundingClientRect() })
+      }
+
+      chip.addEventListener('click', openPopover)
+      chip.addEventListener('dblclick', openPopover)
+      chip.addEventListener('contextmenu', openPopover)
+
+      // Make chips draggable so they can be reordered within the editor
+      chip.draggable = true
+      chip.addEventListener('dragstart', (e) => {
+        const de = e as DragEvent
+        de.dataTransfer?.setData('text/plain', `[[${paramName}]]`)
+        if (de.dataTransfer) de.dataTransfer.effectAllowed = 'move'
+        internalDragName.current = paramName
+      })
+      chip.addEventListener('dragend', () => {
+        internalDragName.current = null
       })
 
       return chip
@@ -107,16 +197,10 @@ export const LensContentEditor = React.forwardRef<LensContentEditorHandle, LensC
     const hydrate = useCallback(() => {
       if (!containerRef.current) return
 
-      // Save caret position intent
-      const selection = window.getSelection()
-      let savedOffset: number | null = null
-      if (selection && selection.rangeCount > 0 && containerRef.current.contains(selection.anchorNode)) {
-        // We'll re-focus after hydration but can't perfectly restore caret in contentEditable
-        savedOffset = null // Let browser handle
-      }
-
       containerRef.current.innerHTML = ''
-      const segments = parseContentSegments(value)
+      // Shim: migrate any legacy {{param}} syntax that may exist in unsaved/in-flight content
+      const normalizedValue = value.replace(/\{\{(\w+)\}\}/g, '[[$1]]')
+      const segments = parseContentSegments(normalizedValue)
 
       segments.forEach((seg) => {
         if (seg.type === 'text') {
@@ -129,7 +213,7 @@ export const LensContentEditor = React.forwardRef<LensContentEditorHandle, LensC
         }
       })
 
-      lastKnownValue.current = value
+      lastKnownValue.current = normalizedValue
     }, [value, createChipElement])
 
     // Hydrate on mount and when value changes externally
@@ -168,7 +252,7 @@ export const LensContentEditor = React.forwardRef<LensContentEditorHandle, LensC
           const el = node as HTMLElement
           if (el.hasAttribute('data-param')) {
             const name = el.getAttribute('data-param')
-            text += `{{${name}}}`
+            text += `[[${name}]]`
           } else if (el.tagName === 'BR') {
             text += '\n'
           } else if (el.tagName === 'DIV') {
@@ -286,6 +370,16 @@ export const LensContentEditor = React.forwardRef<LensContentEditorHandle, LensC
       containerRef.current.focus()
     }, [createChipElement, serializeContent])
 
+    // ─── Quick-add param from toolbar ─────────────────────────────────
+
+    const handleQuickAdd = useCallback((template: QuickTemplate) => {
+      const uniqueName = uniquifyName(template.param.name, params)
+      const newParam: LensParam = { ...template.param, name: uniqueName }
+      onParamsChange([...params, newParam])
+      insertParam(newParam)
+      containerRef.current?.focus()
+    }, [params, onParamsChange, insertParam])
+
     // ─── Handle autocomplete selection ────────────────────────────────
 
     const handleSelect = useCallback((param: LensParam) => {
@@ -324,10 +418,8 @@ export const LensContentEditor = React.forwardRef<LensContentEditorHandle, LensC
     const handleParamRemove = useCallback(() => {
       if (!editTarget) return
       const name = editTarget.param.name
-      // Remove from params array
       onParamsChange(params.filter((_, i) => i !== editTarget.paramIndex))
-      // Remove from content
-      const newContent = value.replace(new RegExp(`\\{\\{${name}\\}\\}`, 'g'), '')
+      const newContent = value.replace(new RegExp(`\\[\\[${name}\\]\\]`, 'g'), '')
       onChange(newContent)
       setEditTarget(null)
     }, [editTarget, params, onParamsChange, value, onChange])
@@ -335,18 +427,66 @@ export const LensContentEditor = React.forwardRef<LensContentEditorHandle, LensC
     // ─── Keyboard handling ────────────────────────────────────────────
 
     const handleKeyDown = useCallback((e: React.KeyboardEvent<HTMLDivElement>) => {
-      // Prevent Enter from propagating when autocomplete is open (handled by ParamAutocomplete)
       if (autocomplete && (e.key === 'Enter' || e.key === 'ArrowDown' || e.key === 'ArrowUp' || e.key === 'Escape')) {
         e.preventDefault()
         return
       }
 
-      // Tab inserts 2 spaces
       if (e.key === 'Tab') {
         e.preventDefault()
         document.execCommand('insertText', false, '  ')
       }
     }, [autocomplete])
+
+    // ─── Drop handler (external chips from parameter panel + internal reorder) ──
+
+    const handleDrop = useCallback((e: React.DragEvent<HTMLDivElement>) => {
+      e.preventDefault()
+      const raw = e.dataTransfer.getData('text/plain')
+      const match = raw.match(/^\[\[(\w+)\]\]$/)
+      if (!match) return
+
+      const paramName = match[1]
+      const isInternal = internalDragName.current === paramName
+
+      // Place caret at drop coordinates using modern API with webkit fallback
+      const sel = window.getSelection()
+      if (sel && (document as Document & { caretPositionFromPoint?: (x: number, y: number) => { offsetNode: Node; offset: number } | null }).caretPositionFromPoint) {
+        const pos = (document as Document & { caretPositionFromPoint: (x: number, y: number) => { offsetNode: Node; offset: number } | null }).caretPositionFromPoint(e.clientX, e.clientY)
+        if (pos) {
+          const range = document.createRange()
+          range.setStart(pos.offsetNode, pos.offset)
+          range.collapse(true)
+          sel.removeAllRanges()
+          sel.addRange(range)
+        }
+      } else if (sel) {
+        // Webkit fallback
+        const wkDoc = document as Document & { caretRangeFromPoint?: (x: number, y: number) => Range | null }
+        const range = wkDoc.caretRangeFromPoint?.(e.clientX, e.clientY)
+        if (range) {
+          sel.removeAllRanges()
+          sel.addRange(range)
+        }
+      }
+
+      // For internal reorders, remove the original chip first to avoid duplication
+      if (isInternal && containerRef.current) {
+        const existing = containerRef.current.querySelector(`[data-param="${paramName}"]`)
+        existing?.parentNode?.removeChild(existing)
+      }
+
+      // Add to params if new
+      if (!params.find((p) => p.name === paramName)) {
+        const newParam: LensParam = { name: paramName, type: 'string', required: true }
+        onParamsChange([...params, newParam])
+      }
+
+      const existingParam = params.find((p) => p.name === paramName)
+        ?? { name: paramName, type: 'string' as const, required: true }
+      insertParam(existingParam)
+      internalDragName.current = null
+    }, [params, onParamsChange, insertParam])
 
     // ─── Imperative handle ────────────────────────────────────────────
 
@@ -361,11 +501,32 @@ export const LensContentEditor = React.forwardRef<LensContentEditorHandle, LensC
 
     return (
       <div className="space-y-1">
+        {/* Quick-add parameter toolbar */}
+        <div className="flex items-center gap-1 px-3 pt-2 pb-1 flex-wrap">
+          {QUICK_TEMPLATES.map((tpl) => (
+            <button
+              key={tpl.label}
+              type="button"
+              onMouseDown={(e) => { e.preventDefault(); handleQuickAdd(tpl) }}
+              title={`Add ${tpl.label} parameter`}
+              className={`flex flex-col items-center gap-0.5 px-2 py-1.5 rounded-lg ${tpl.colorClass} hover:opacity-80 active:scale-95 transition-all`}
+            >
+              {tpl.icon}
+              <span className="text-[9px] font-medium leading-none">{tpl.label}</span>
+            </button>
+          ))}
+          <span className="ml-auto text-[10px] text-gray-400 dark:text-gray-500 pr-1">
+            Type <kbd className="px-1 py-0.5 bg-gray-100 dark:bg-gray-700 rounded text-[9px] font-mono">@</kbd> to mention
+          </span>
+        </div>
+
         <div
           ref={containerRef}
           contentEditable
           onInput={handleInput}
           onKeyDown={handleKeyDown}
+          onDragOver={(e) => { e.preventDefault(); e.dataTransfer.dropEffect = 'move' }}
+          onDrop={handleDrop}
           className={`w-full px-4 py-3 font-mono text-sm bg-gray-50 dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none resize-none transition-all min-h-[200px] whitespace-pre-wrap overflow-y-auto max-h-[420px] empty:before:content-[attr(data-placeholder)] empty:before:text-gray-400 dark:empty:before:text-gray-500 empty:before:pointer-events-none ${className}`}
           data-placeholder={placeholder}
           suppressContentEditableWarning
@@ -378,7 +539,7 @@ export const LensContentEditor = React.forwardRef<LensContentEditorHandle, LensC
             <div>
               {mismatches.orphanedInContent.length > 0 && (
                 <span>
-                  Undefined: {mismatches.orphanedInContent.map((n) => `{{${n}}}`).join(', ')}
+                  Undefined: {mismatches.orphanedInContent.map((n) => `[[${n}]]`).join(', ')}
                 </span>
               )}
               {mismatches.orphanedInContent.length > 0 && mismatches.orphanedInParams.length > 0 && ' | '}
