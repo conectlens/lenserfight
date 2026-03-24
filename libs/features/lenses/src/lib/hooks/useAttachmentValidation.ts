@@ -54,12 +54,14 @@ export function validateParamValue(
   param: LensVersionParam,
   modelInputModalities?: string[],
 ): string | null {
-  const type = param.type
-  const min = param.min ?? param.validationSchema?.min ?? null
-  const max = param.max ?? param.validationSchema?.max ?? null
+  const tool = param.tool
+  const type = tool.type
+  const min = tool.validationSchema?.min ?? null
+  const max = tool.validationSchema?.max ?? null
+  const name = param.label
 
-  if (param.required && (value === null || value === undefined || value === '')) {
-    return `${param.label ?? param.key} is required`
+  if (tool.required && (value === null || value === undefined || value === '')) {
+    return `${name} is required`
   }
 
   if (value === null || value === undefined || value === '') return null
@@ -68,37 +70,37 @@ export function validateParamValue(
 
   if (type === 'integer') {
     const n = parseInt(strValue, 10)
-    if (isNaN(n) || !Number.isInteger(n)) return `${param.label ?? param.key} must be an integer`
-    if (min !== null && n < min) return `${param.label ?? param.key} must be ≥ ${min}`
-    if (max !== null && n > max) return `${param.label ?? param.key} must be ≤ ${max}`
+    if (isNaN(n) || !Number.isInteger(n)) return `${name} must be an integer`
+    if (min !== null && n < min) return `${name} must be ≥ ${min}`
+    if (max !== null && n > max) return `${name} must be ≤ ${max}`
   }
 
   if (type === 'float' || type === 'decimal' || type === 'number') {
     const n = parseFloat(strValue)
-    if (isNaN(n)) return `${param.label ?? param.key} must be a number`
-    if (min !== null && n < min) return `${param.label ?? param.key} must be ≥ ${min}`
-    if (max !== null && n > max) return `${param.label ?? param.key} must be ≤ ${max}`
+    if (isNaN(n)) return `${name} must be a number`
+    if (min !== null && n < min) return `${name} must be ≥ ${min}`
+    if (max !== null && n > max) return `${name} must be ≤ ${max}`
   }
 
   if (type === 'url') {
-    const schemes = param.validationSchema?.urlScheme ?? ['http', 'https']
+    const schemes = tool.validationSchema?.urlScheme ?? ['http', 'https']
     try {
       const parsed = new URL(strValue)
       const protocol = parsed.protocol.replace(':', '')
       if (!schemes.includes(protocol)) {
-        return `${param.label ?? param.key} must start with ${schemes.join(' or ')}`
+        return `${name} must start with ${schemes.join(' or ')}`
       }
     } catch {
-      return `${param.label ?? param.key} must be a valid URL`
+      return `${name} must be a valid URL`
     }
   }
 
   if (type === 'date') {
-    if (isNaN(Date.parse(strValue))) return `${param.label ?? param.key} must be a valid date`
+    if (isNaN(Date.parse(strValue))) return `${name} must be a valid date`
   }
 
   if (type === 'datetime') {
-    if (isNaN(Date.parse(strValue))) return `${param.label ?? param.key} must be a valid date-time`
+    if (isNaN(Date.parse(strValue))) return `${name} must be a valid date-time`
   }
 
   if (type === 'file' && modelInputModalities) {

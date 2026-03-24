@@ -3,41 +3,59 @@ import { useState, useCallback } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
 import { queryKeys } from '@lenserfight/data/cache'
 import { lensesService } from '@lenserfight/data/repositories'
-import { CreateLensDTO, LensParam, VisibilityEnum } from '@lenserfight/types'
+import { CreateLensDTO, CreateVersionParamInput, VisibilityEnum } from '@lenserfight/types'
 import { extractParams } from '@lenserfight/utils/text'
 import { useAuthenticatedLenser } from './useAuthenticatedLenser'
+import { useTools } from './useTools'
 
 export const useCreateLens = () => {
   const { lenser } = useAuthenticatedLenser()
   const queryClient = useQueryClient()
+  const { textToolId } = useTools()
+
   const [isOpen, setIsOpen] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [editId, setEditId] = useState<string | null>(null)
 
-  // Form State
+  // Form state
   const [title, setTitle] = useState('')
   const [content, setContent] = useState('')
   const [tags, setTags] = useState<string[]>([])
   const [visibility, setVisibility] = useState<VisibilityEnum>('private')
-  const [params, setParams] = useState<LensParam[]>([])
+  const [versionParams, setVersionParams] = useState<CreateVersionParamInput[]>([])
 
+  /**
+   * Sync detected [[label]] tokens from content into versionParams.
+   * Preserves toolId for labels already present; new labels default to the
+   * system 'text' tool.
+   */
   const syncParamsFromContent = useCallback((rawContent: string) => {
     const extracted = extractParams(rawContent)
-    setParams((prev) => {
-      const prevMap = new Map(prev.map((p) => [p.name, p]))
-      return extracted.map((ep) => prevMap.get(ep.name) ?? ep)
+    setVersionParams((prev) => {
+      const prevMap = new Map(prev.map((p) => [p.label, p]))
+      return extracted.map((ep) => {
+        const existing = prevMap.get(ep.name)
+        return existing ?? { label: ep.name, toolId: textToolId ?? '' }
+      })
     })
-  }, [])
+  }, [textToolId])
 
-  const openModal = (initialData?: any) => {
+  const openModal = (initialData?: {
+    id?: string
+    title?: string
+    content?: string
+    tags?: any[]
+    visibility?: VisibilityEnum
+    versionParams?: CreateVersionParamInput[]
+  }) => {
     if (initialData) {
-      setEditId(initialData.id)
-      setTitle(initialData.title)
-      setContent(initialData.content || '')
-      setTags(initialData.tags?.map((t: any) => t.name) || [])
-      setVisibility(initialData.visibility || 'public')
-      setParams(initialData.params ?? [])
+      setEditId(initialData.id ?? null)
+      setTitle(initialData.title ?? '')
+      setContent(initialData.content ?? '')
+      setTags(initialData.tags?.map((t: any) => t.name ?? t) ?? [])
+      setVisibility(initialData.visibility ?? 'private')
+      setVersionParams(initialData.versionParams ?? [])
     } else {
       resetForm()
     }
@@ -55,7 +73,7 @@ export const useCreateLens = () => {
     setContent('')
     setTags([])
     setVisibility('private')
-    setParams([])
+    setVersionParams([])
     setError(null)
   }
 
@@ -75,13 +93,19 @@ export const useCreateLens = () => {
         ? trimmedContent.substring(0, 100) + (trimmedContent.length > 100 ? '...' : '')
         : null
 
+    // Ensure all params have a toolId (fallback to text tool)
+    const resolvedParams: CreateVersionParamInput[] = versionParams.map((p) => ({
+      label: p.label,
+      toolId: p.toolId || textToolId || '',
+    }))
+
     const dto: CreateLensDTO = {
       title: trimmedTitle,
       content: trimmedContent,
       tagIds: tags,
       visibility,
       description: autoDescription,
-      params,
+      params: resolvedParams,
     }
 
     try {
@@ -125,8 +149,8 @@ export const useCreateLens = () => {
       setTags,
       visibility,
       setVisibility,
-      params,
-      setParams,
+      versionParams,
+      setVersionParams,
       syncParamsFromContent,
     },
     isSubmitting,

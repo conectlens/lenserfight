@@ -1,5 +1,5 @@
 import { supabase } from '@lenserfight/data/supabase'
-import { AuthorProfile, LensRecord, LensViewModel, PersonalLensFeedItem, CreateLensDTO, TagRecord, LensVersion, LensVersionParam, CreateLensVersionDTO, ForkNode } from '@lenserfight/types'
+import { AuthorProfile, LensRecord, LensViewModel, PersonalLensFeedItem, CreateLensDTO, TagRecord, LensVersion, LensVersionParam, CreateLensVersionDTO, ForkNode, ToolRecord } from '@lenserfight/types'
 import { ApiResponseEnvelope, paginatedResponse } from 'contracts'
 
 // --- Port (Interface) ---
@@ -39,6 +39,7 @@ export interface LensesRepositoryPort {
   publishVersion(versionId: string): Promise<void>
   cloneLens(sourceLensId: string, versionId?: string | null): Promise<string>
   getForkTree(lensId: string, limit?: number): Promise<ForkNode[]>
+  getTools(category?: string): Promise<ToolRecord[]>
 }
 
 // Fallback data for Mock Mode
@@ -485,24 +486,16 @@ export class SupabaseLensesRepository implements LensesRepositoryPort {
       }
     }
 
-    // Atomic RPC: creates lens + version 1 + translation + tags in one transaction
+    // Atomic RPC: creates lens + version 1 + version_parameters + translation + tags in one transaction
     const { data: lensId, error: rpcError } = await supabase.schema('lenses').rpc('fn_create_lens', {
       p_visibility: input.visibility,
       p_template_body: input.content,
       p_title: input.title,
       p_description: input.description ?? null,
       p_language_code: languageCode,
-      p_params: (input.params ?? []).map((p, i) => ({
-        key: p.name,
-        label: p.name,
-        type: p.type === 'string' ? 'text' : p.type,
-        required: p.required,
-        default_value: p.default ?? null,
-        placeholder: p.placeholder ?? null,
-        help_text: p.description ?? null,
-        validation_schema: null,
-        options: p.options ?? null,
-        sort_order: i,
+      p_params: (input.params ?? []).map((p) => ({
+        label: p.label,
+        tool_id: p.toolId,
       })),
       p_tag_ids: input.tagIds ?? [],
       p_parent_lens_id: input.parentLensId ?? null,
@@ -541,7 +534,7 @@ export class SupabaseLensesRepository implements LensesRepositoryPort {
 
   async updateLens(id: string, input: Partial<CreateLensDTO>): Promise<LensRecord> {
     // Atomic RPC: updates visibility, template body (via version upsert),
-    // translation, and tags in one transaction
+    // version_parameters, translation, and tags in one transaction
     const { error: rpcError } = await supabase.schema('lenses').rpc('fn_update_lens', {
       p_lens_id: id,
       p_template_body: input.content ?? null,
@@ -549,6 +542,9 @@ export class SupabaseLensesRepository implements LensesRepositoryPort {
       p_title: input.title ?? null,
       p_description: input.description ?? null,
       p_tag_ids: input.tagIds ?? null,
+      p_params: input.params
+        ? input.params.map((p) => ({ label: p.label, tool_id: p.toolId }))
+        : null,
     })
 
     if (rpcError) this.handleError(rpcError)
@@ -583,29 +579,40 @@ export class SupabaseLensesRepository implements LensesRepositoryPort {
   // ─── Versioning ───────────────────────────────────────────────────────────
 
   private mapVersionParam(row: Record<string, unknown>): LensVersionParam {
-    const schema = (row.validation_schema as {
+    const t = (row.tool ?? row) as Record<string, unknown>
+    const schema = (t.validation_schema as {
       min?: number | null
       max?: number | null
       urlScheme?: string[] | null
       allowedMimeTypes?: string[] | null
     } | null) ?? null
 
+    const tool: ToolRecord = {
+      id: t.id as string,
+      key: t.key as string,
+      label: (t.label as string | null) ?? null,
+      description: (t.description as string | null) ?? null,
+      category: (t.category as ToolRecord['category']) ?? 'input',
+      type: (t.type as LensVersionParam['tool']['type']) ?? 'text',
+      required: (t.required as boolean) ?? true,
+      minLength: (t.min_length as number) ?? 0,
+      maxLength: (t.max_length as number) ?? 10000,
+      placeholder: (t.placeholder as string | null) ?? null,
+      helpText: (t.help_text as string | null) ?? null,
+      validationSchema: schema,
+      options: (t.options as { label: string; value: string }[] | null) ?? null,
+      sortOrder: (t.sort_order as number) ?? 0,
+      isSystem: (t.is_system as boolean) ?? false,
+      icon: (t.icon as string | null) ?? null,
+      color: (t.color as string | null) ?? null,
+    }
+
     return {
       id: row.id as string,
-      versionId: row.version_id as string,
-      key: row.key as string,
-      label: (row.label as string | null) ?? null,
-      type: row.type as LensVersionParam['type'],
-      required: row.required as boolean,
-      defaultValue: (row.default_value as string | null) ?? null,
-      placeholder: (row.placeholder as string | null) ?? null,
-      helpText: (row.help_text as string | null) ?? null,
-      validationSchema: schema,
-      options: (row.options as { label: string; value: string }[] | null) ?? undefined,
-      sortOrder: (row.sort_order as number) ?? 0,
-      min: schema?.min ?? null,
-      max: schema?.max ?? null,
-      allowedMimeTypes: schema?.allowedMimeTypes ?? null,
+      versionId: (row.version_id as string) ?? (row.versionId as string),
+      label: row.label as string,
+      toolId: (row.tool_id as string) ?? (row.toolId as string),
+      tool,
     }
   }
 
@@ -642,16 +649,20 @@ export class SupabaseLensesRepository implements LensesRepositoryPort {
     if (vError) this.handleError(vError)
     if (!vRow) return null
 
-    const { data: params, error: pError } = await supabase
+    // Render template_body: replace [[:uuid]] tokens with [[label]] for display/editing
+    const { data: renderedBody } = await supabase
       .schema('lenses')
-      .from('version_parameters')
-      .select('*')
-      .eq('version_id', versionId)
-      .order('sort_order', { ascending: true })
+      .rpc('fn_render_version_body', { p_version_id: versionId })
+
+    // Fetch params enriched with tool details via RPC
+    const { data: paramsJson, error: pError } = await supabase
+      .schema('lenses')
+      .rpc('fn_get_version_params_with_tools', { p_version_id: versionId })
     if (pError) this.handleError(pError)
 
     const version = this.mapVersion(vRow as Record<string, unknown>)
-    version.parameters = ((params ?? []) as Record<string, unknown>[]).map((p) => this.mapVersionParam(p))
+    if (renderedBody) version.templateBody = renderedBody as string
+    version.parameters = ((paramsJson ?? []) as Record<string, unknown>[]).map((p) => this.mapVersionParam(p))
     return version
   }
 
@@ -671,8 +682,6 @@ export class SupabaseLensesRepository implements LensesRepositoryPort {
   }
 
   async createVersion(input: CreateLensVersionDTO): Promise<LensVersion> {
-    // Route through fn_upsert_draft_version to get correct version_number
-    // (direct INSERT omits version_number which has no DEFAULT — always fails)
     const { data: vRow, error: vError } = await supabase
       .schema('lenses')
       .rpc('fn_create_draft_version', {
@@ -688,24 +697,19 @@ export class SupabaseLensesRepository implements LensesRepositoryPort {
     if (input.parameters?.length) {
       const paramRows = input.parameters.map((p) => ({
         version_id: version.id,
-        key: p.key,
-        label: p.label ?? null,
-        type: p.type,
-        required: p.required,
-        default_value: p.defaultValue ?? null,
-        placeholder: p.placeholder ?? null,
-        help_text: p.helpText ?? null,
-        validation_schema: p.validationSchema ?? null,
-        options: p.options ?? null,
-        sort_order: p.sortOrder,
+        label: p.label,
+        tool_id: p.toolId,
       }))
-      const { data: insertedParams, error: pError } = await supabase
+      const { error: pError } = await supabase
         .schema('lenses')
         .from('version_parameters')
         .insert(paramRows)
-        .select('*')
       if (pError) this.handleError(pError)
-      version.parameters = ((insertedParams ?? []) as Record<string, unknown>[]).map((p) =>
+
+      const { data: paramsJson } = await supabase
+        .schema('lenses')
+        .rpc('fn_get_version_params_with_tools', { p_version_id: version.id })
+      version.parameters = ((paramsJson ?? []) as Record<string, unknown>[]).map((p) =>
         this.mapVersionParam(p)
       )
     }
@@ -729,6 +733,32 @@ export class SupabaseLensesRepository implements LensesRepositoryPort {
       })
     if (error) this.handleError(error)
     return data as string
+  }
+
+  async getTools(category?: string): Promise<ToolRecord[]> {
+    const { data, error } = await supabase
+      .schema('lenses')
+      .rpc('fn_list_tools', { p_category: category ?? null })
+    if (error) this.handleError(error)
+    return ((data ?? []) as Record<string, unknown>[]).map((t) => ({
+      id: t.id as string,
+      key: t.key as string,
+      label: (t.label as string | null) ?? null,
+      description: (t.description as string | null) ?? null,
+      category: (t.category as ToolRecord['category']) ?? 'input',
+      type: (t.type as ToolRecord['type']) ?? 'text',
+      required: (t.required as boolean) ?? true,
+      minLength: (t.min_length as number) ?? 0,
+      maxLength: (t.max_length as number) ?? 10000,
+      placeholder: (t.placeholder as string | null) ?? null,
+      helpText: (t.help_text as string | null) ?? null,
+      validationSchema: (t.validation_schema as ToolRecord['validationSchema']) ?? null,
+      options: (t.options as ToolRecord['options']) ?? null,
+      sortOrder: (t.sort_order as number) ?? 0,
+      isSystem: (t.is_system as boolean) ?? false,
+      icon: (t.icon as string | null) ?? null,
+      color: (t.color as string | null) ?? null,
+    }))
   }
 
   async getForkTree(lensId: string, limit = 100): Promise<ForkNode[]> {

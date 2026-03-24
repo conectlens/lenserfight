@@ -6,19 +6,42 @@ import { LensParam } from '@lenserfight/types'
 // parameter extraction of unrelated curly-brace patterns.
 const VARIABLE_REGEX = /\[\[(\w+)\]\]/g
 
-export function extractParams(template: string): LensParam[] {
+// UUID-reference syntax [[:uuid]] used in stored template bodies (lenses.versions.template_body).
+// The colon prefix distinguishes param refs from named params.
+const PARAM_REF_REGEX = /\[\[:([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})\]\]/gi
+
+export function extractParams(template: string): { name: string }[] {
   const seen = new Set<string>()
-  const params: LensParam[] = []
+  const params: { name: string }[] = []
   let match: RegExpExecArray | null
   const re = new RegExp(VARIABLE_REGEX.source, VARIABLE_REGEX.flags)
   while ((match = re.exec(template)) !== null) {
     const name = match[1].trim().toLowerCase()
     if (!seen.has(name)) {
       seen.add(name)
-      params.push({ name, type: 'string', required: true })
+      params.push({ name })
     }
   }
   return params
+}
+
+/**
+ * Extracts all `[[:uuid]]` parameter reference tokens from a stored template body.
+ * Used during execution to resolve parameter values by version_parameter id.
+ */
+export function extractParamRefs(template: string): string[] {
+  const seen = new Set<string>()
+  const refs: string[] = []
+  let match: RegExpExecArray | null
+  const re = new RegExp(PARAM_REF_REGEX.source, PARAM_REF_REGEX.flags)
+  while ((match = re.exec(template)) !== null) {
+    const id = match[1].toLowerCase()
+    if (!seen.has(id)) {
+      seen.add(id)
+      refs.push(id)
+    }
+  }
+  return refs
 }
 
 function escapeHtml(value: string): string {
@@ -68,16 +91,22 @@ export function renderLens(
 export type LensContentSegment =
   | { type: 'text'; content: string }
   | { type: 'param'; name: string }
+  | { type: 'param-ref'; id: string }
+
+// Combined regex that matches both [[name]] and [[:uuid]] tokens
+const COMBINED_REGEX = /\[\[(?::([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})|(\w+))\]\]/gi
 
 /**
  * Splits lens content into typed segments for rendering.
- * Text spans become { type: 'text' }, {{variable}} tokens become { type: 'param' }.
+ * - `[[name]]` → { type: 'param', name }  (editor/display format)
+ * - `[[:uuid]]` → { type: 'param-ref', id } (stored template body format)
+ * - plain text → { type: 'text', content }
  */
 export function parseContentSegments(content: string): LensContentSegment[] {
   if (!content) return []
 
   const segments: LensContentSegment[] = []
-  const re = new RegExp(VARIABLE_REGEX.source, VARIABLE_REGEX.flags)
+  const re = new RegExp(COMBINED_REGEX.source, COMBINED_REGEX.flags)
   let lastIndex = 0
   let match: RegExpExecArray | null
 
@@ -85,7 +114,13 @@ export function parseContentSegments(content: string): LensContentSegment[] {
     if (match.index > lastIndex) {
       segments.push({ type: 'text', content: content.slice(lastIndex, match.index) })
     }
-    segments.push({ type: 'param', name: match[1].trim().toLowerCase() })
+    if (match[1]) {
+      // [[:uuid]] format
+      segments.push({ type: 'param-ref', id: match[1].toLowerCase() })
+    } else {
+      // [[name]] format
+      segments.push({ type: 'param', name: match[2].trim().toLowerCase() })
+    }
     lastIndex = re.lastIndex
   }
 
