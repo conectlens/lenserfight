@@ -90,6 +90,8 @@ export interface LensDetailViewModel extends LensViewModel {
   parentLensId?: string | null
   forkedFromExecutionId?: string | null
   params: LensParam[]
+  /** ID of the latest (non-archived) version — used to fetch version params when editing. */
+  latestVersionId?: string | null
 }
 
 export interface CreateLensDTO {
