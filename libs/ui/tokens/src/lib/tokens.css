@@ -62,6 +62,15 @@
   --cl-status-blue: #287bff;
   --cl-status-purple: #8746ff;
 
+  /* ── Auth Semantic Roles ────────────────────────────────── */
+  --background-default: #F5F7FA;
+  --surface-card: #FFFFFF;
+  --surface-input: #F9FAFB;
+  --border-default: #E5E7EB;
+  --border-strong: #D1D5DB;
+  --text-primary: #111827;
+  --text-secondary: #6B7280;
+
   /* ── Semantic surfaces (light mode defaults) ────────────── */
   --cl-surface-base:         #ffffff;
   --cl-surface-raised:       #f8f9fa;
