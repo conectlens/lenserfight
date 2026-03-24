@@ -1,11 +1,13 @@
 import { Pencil } from 'lucide-react'
 import React from 'react'
-import { LensParam } from '@lenserfight/types'
+import { LensParam, LensVersionParam } from '@lenserfight/types'
 import { LensContentReadonly } from './LensContentReadonly'
 
 interface LensDetailContentProps {
   content: string
   params?: LensParam[]
+  /** Rich version params — forwarded to LensContentReadonly for tooltip display. */
+  versionParams?: LensVersionParam[]
   canEdit?: boolean
   onEdit?: () => void
 }
@@ -13,6 +15,7 @@ interface LensDetailContentProps {
 export const LensDetailContent: React.FC<LensDetailContentProps> = ({
   content,
   params = [],
+  versionParams,
   canEdit = false,
   onEdit,
 }) => {
@@ -34,6 +37,7 @@ export const LensDetailContent: React.FC<LensDetailContentProps> = ({
       <LensContentReadonly
         content={content}
         params={params}
+        versionParams={versionParams}
         className="prose prose-lg md:prose-xl max-w-none leading-loose"
       />
     </div>

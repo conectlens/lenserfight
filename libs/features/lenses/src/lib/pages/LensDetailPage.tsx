@@ -25,7 +25,7 @@ import { useCloneLens } from '../hooks/useCloneLens'
 import { useCreateLens } from '../hooks/useCreateLens'
 import { useForkTree } from '../hooks/useForkTree'
 import { useLensDetailController } from '../hooks/useLensDetailController'
-import { useLensVersions, useLensVersionDetail } from '../hooks/useLensVersions'
+import { useLensVersions, useLensVersionDetail, useLatestPublishedVersion } from '../hooks/useLensVersions'
 import { useLabController } from '../hooks/useLabController'
 import { useFundingSource } from '../hooks/useFundingSource'
 
@@ -55,7 +55,23 @@ export const LensDetailPage: React.FC = () => {
   const [showRunPanel, setShowRunPanel] = useState(false)
   const lab = useLabController(id ?? '', !!isAuthenticated)
   const funding = useFundingSource(lab.selectedProviderKey)
-  const activeVersionParams = previewVersion?.parameters ?? undefined
+
+  // Version history (lazy — only fetched when picker is opened)
+  const [showVersionPicker, setShowVersionPicker] = useState(false)
+  const [previewVersionId, setPreviewVersionId] = useState<string | null>(null)
+
+  const { versions, isLoading: isLoadingVersions } = useLensVersions(id ?? '', {
+    enabled: showVersionPicker,
+  })
+  const { data: previewVersion, isLoading: isLoadingPreview } = useLensVersionDetail(previewVersionId)
+
+  // Auto-load latest published version on page init so params are available immediately
+  const { data: latestPublished } = useLatestPublishedVersion(id ?? '')
+  const { data: latestPublishedDetail } = useLensVersionDetail(latestPublished?.id)
+
+  // Explicit version selection takes precedence; falls back to latest published
+  const activeVersionParams =
+    previewVersion?.parameters ?? latestPublishedDetail?.parameters ?? undefined
 
   // Map LensVersionParam[] → LensParam[] for components expecting the legacy shape
   const activeParamsAsLensParams = useMemo(() =>
@@ -75,15 +91,6 @@ export const LensDetailPage: React.FC = () => {
   const selectedModelInputModalities = lab.providerModels.find(
     (m) => m.key === lab.selectedModelKey,
   )?.inputModalities
-
-  // Version history (lazy — only fetched when picker is opened)
-  const [showVersionPicker, setShowVersionPicker] = useState(false)
-  const [previewVersionId, setPreviewVersionId] = useState<string | null>(null)
-
-  const { versions, isLoading: isLoadingVersions } = useLensVersions(id ?? '', {
-    enabled: showVersionPicker,
-  })
-  const { data: previewVersion, isLoading: isLoadingPreview } = useLensVersionDetail(previewVersionId)
 
   const { cloneLens, isCloning } = useCloneLens(lens ?? null)
   const { forkTree, isLoadingForkTree } = useForkTree(id ?? '', lens?.parentLensId)
@@ -149,7 +156,7 @@ export const LensDetailPage: React.FC = () => {
   const handleCopy = async () => {
     if (!lens || !ensureProfile() || !lenser) return
     try {
-      await navigator.clipboard.writeText(previewVersion?.templateBody ?? lens.content)
+      await navigator.clipboard.writeText(previewVersion?.templateBody ?? latestPublishedDetail?.templateBody ?? lens.content)
       await actions.copyLens()
     } catch { }
   }
@@ -288,8 +295,9 @@ export const LensDetailPage: React.FC = () => {
             </div>
 
             <LensBodyViewer
-              content={previewVersion?.templateBody ?? lens.content}
+              content={previewVersion?.templateBody ?? latestPublishedDetail?.templateBody ?? lens.content}
               params={activeParamsAsLensParams}
+              versionParams={activeVersionParams}
               onCopy={handleCopy}
             />
           </div>
@@ -370,7 +378,7 @@ export const LensDetailPage: React.FC = () => {
               <div className="mt-3 space-y-4">
                 <LabExecutionPanel
                   lensId={lens.id}
-                  lensContent={previewVersion?.templateBody ?? lens.content}
+                  lensContent={previewVersion?.templateBody ?? latestPublishedDetail?.templateBody ?? lens.content}
                   providers={lab.providers}
                   isLoadingProviders={lab.isLoadingProviders}
                   providerModels={lab.providerModels}

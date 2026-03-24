@@ -675,7 +675,7 @@ export class SupabaseLensesRepository implements LensesRepositoryPort {
     // (direct INSERT omits version_number which has no DEFAULT — always fails)
     const { data: vRow, error: vError } = await supabase
       .schema('lenses')
-      .rpc('fn_upsert_draft_version', {
+      .rpc('fn_create_draft_version', {
         p_lens_id: input.lensId,
         p_template_body: input.templateBody,
         p_changelog: input.changelog ?? null,
@@ -749,6 +749,8 @@ export class SupabaseLensesRepository implements LensesRepositoryPort {
       forkedFromLenserName: row.forked_from_lenser_name as string,
       forkedFromLenserHandle: row.forked_from_lenser_handle as string,
       forkedFromLenserAvatarUrl: (row.forked_from_lenser_avatar_url as string | null) ?? null,
+      forkedFromVersionId: (row.forked_from_version_id as string | null) ?? null,
+      forkedFromVersionNumber: (row.forked_from_version_number as number | null) ?? null,
     }))
   }
 
