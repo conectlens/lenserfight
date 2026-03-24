@@ -1,4 +1,5 @@
-import React from 'react'
+import React, { useState, useEffect } from 'react'
+import { Sun, Moon } from 'lucide-react'
 
 export const AuthCard: React.FC<{
   children: React.ReactNode
@@ -6,6 +7,26 @@ export const AuthCard: React.FC<{
   subtitle?: string
   backButton?: React.ReactNode
 }> = ({ children, title, subtitle, backButton }) => {
+  const [isDark, setIsDark] = useState(false)
+
+  useEffect(() => {
+    const isDarkMode = document.documentElement.classList.contains('dark')
+    setIsDark(isDarkMode)
+  }, [])
+
+  const toggleTheme = () => {
+    const html = document.documentElement
+    if (html.classList.contains('dark')) {
+      html.classList.remove('dark')
+      localStorage.setItem('theme', 'light')
+      setIsDark(false)
+    } else {
+      html.classList.add('dark')
+      localStorage.setItem('theme', 'dark')
+      setIsDark(true)
+    }
+  }
+
   return (
     <div className="min-h-screen flex flex-col md:justify-center items-center bg-gray-50 dark:bg-gray-900 p-4 relative transition-colors duration-200">
       {backButton && (
@@ -37,6 +58,26 @@ export const AuthCard: React.FC<{
 
         <div className="bg-white dark:bg-gray-800 rounded-3xl shadow-xl shadow-gray-200/50 dark:shadow-black/30 border border-gray-100 dark:border-gray-700 p-8 sm:p-10 relative overflow-hidden transition-colors">
           {children}
+        </div>
+
+        <div className="mt-6 flex justify-center">
+          <button
+            onClick={toggleTheme}
+            className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-full bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors shadow-sm"
+            title={isDark ? 'Switch to light mode' : 'Switch to dark mode'}
+          >
+            {isDark ? (
+              <>
+                <Sun size={18} />
+                <span className="text-sm font-medium">Light</span>
+              </>
+            ) : (
+              <>
+                <Moon size={18} />
+                <span className="text-sm font-medium">Dark</span>
+              </>
+            )}
+          </button>
         </div>
       </div>
     </div>
