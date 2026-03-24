@@ -11,6 +11,7 @@ import {
   LensVersion,
   CreateLensVersionDTO,
   ForkNode,
+  ToolRecord,
 } from '@lenserfight/types'
 import { ApiResponseEnvelope, paginatedResponse } from 'contracts'
 
@@ -306,5 +307,9 @@ export const lensesService = {
 
   getForkTree: async (lensId: string): Promise<ForkNode[]> => {
     return lensesRepo.getForkTree(lensId)
+  },
+
+  getTools: async (category?: string): Promise<ToolRecord[]> => {
+    return lensesRepo.getTools(category)
   },
 }

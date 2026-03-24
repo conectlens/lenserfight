@@ -130,8 +130,8 @@ export const LabExecutionPanel: React.FC<LabExecutionPanelProps> = ({
     if (usingVersionParams && versionParams) {
       // Validate each version param
       for (const p of versionParams) {
-        const err = validateParamValue(inputValues[p.key], p, selectedModelInputModalities)
-        if (err) errors[p.key] = err
+        const err = validateParamValue(inputValues[p.label], p, selectedModelInputModalities)
+        if (err) errors[p.label] = err
       }
       if (Object.keys(errors).length > 0) {
         setFieldErrors(errors)
@@ -140,12 +140,12 @@ export const LabExecutionPanel: React.FC<LabExecutionPanelProps> = ({
       // Sanitize text-like values
       inputSnapshot = Object.fromEntries(
         versionParams.map((p) => {
-          const val = inputValues[p.key] ?? p.defaultValue ?? ''
+          const val = inputValues[p.label] ?? ''
           const sanitized =
-            p.type === 'text' || p.type === 'textarea' || p.type === 'url' || p.type === 'json'
+            p.tool.type === 'text' || p.tool.type === 'textarea' || p.tool.type === 'url' || p.tool.type === 'json'
               ? sanitize(val)
               : val
-          return [p.key, sanitized]
+          return [p.label, sanitized]
         }),
       )
     } else {
@@ -223,12 +223,12 @@ export const LabExecutionPanel: React.FC<LabExecutionPanelProps> = ({
         <div className="flex flex-col gap-3">
           {versionParams.map((param) => (
             <ToolField
-              key={param.key}
+              key={param.label}
               param={param}
-              value={inputValues[param.key]}
-              onChange={(v) => handleChange(param.key, v)}
+              value={inputValues[param.label]}
+              onChange={(v) => handleChange(param.label, v)}
               onFileUpload={onFileParamUpload}
-              error={fieldErrors[param.key]}
+              error={fieldErrors[param.label]}
               modelInputModalities={selectedModelInputModalities}
             />
           ))}

@@ -1,195 +1,128 @@
 import React from 'react'
 import { Trash2 } from 'lucide-react'
-import { SelectField } from '@lenserfight/ui/forms'
 import { ParamChip } from '@lenserfight/ui/forms'
-import { Accordion } from '@lenserfight/ui/components'
-import { LensParam, LensParamType } from '@lenserfight/types'
+import { CreateVersionParamInput, ToolRecord } from '@lenserfight/types'
 
 interface ParameterPanelProps {
-  params: LensParam[]
-  onChange: (params: LensParam[]) => void
+  versionParams: CreateVersionParamInput[]
+  onChange: (params: CreateVersionParamInput[]) => void
+  tools: ToolRecord[]
 }
 
-const PARAM_TYPES: { value: LensParamType; label: string }[] = [
-  { value: 'string', label: 'String' },
-  { value: 'number', label: 'Number' },
-  { value: 'boolean', label: 'Boolean' },
-  { value: 'select', label: 'Select' },
-  { value: 'multiselect', label: 'Multi-Select' },
-  { value: 'array', label: 'Array' },
-]
-
-const ARRAY_FORMATS = [
-  { value: 'comma', label: 'Comma-separated' },
-  { value: 'newline', label: 'Newline-separated' },
-  { value: 'json', label: 'JSON array' },
-]
-
-const inputClass =
-  'w-full px-2 py-1.5 text-xs bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white outline-none focus:ring-1 focus:ring-primary/50 focus:border-primary transition-all'
-
-function updateParam(params: LensParam[], index: number, patch: Partial<LensParam>): LensParam[] {
-  return params.map((p, i) => (i === index ? { ...p, ...patch } : p))
+const CATEGORY_LABELS: Record<string, string> = {
+  input: 'Input',
+  media: 'Media',
+  execution: 'Execution',
+  battle: 'Battle',
+  system: 'System',
 }
 
-function parseOptions(raw: string): { label: string; value: string }[] {
-  return raw
-    .split(',')
-    .map((s) => s.trim())
-    .filter(Boolean)
-    .map((s) => {
-      const [label, value] = s.split(':').map((p) => p.trim())
-      return { label: label ?? s, value: value ?? label ?? s }
-    })
+const TYPE_BADGE: Record<string, string> = {
+  text:      'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300',
+  textarea:  'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300',
+  json:      'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-300',
+  number:    'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300',
+  integer:   'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300',
+  float:     'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300',
+  decimal:   'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300',
+  boolean:   'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300',
+  select:    'bg-teal-100 text-teal-700 dark:bg-teal-900/30 dark:text-teal-300',
+  url:       'bg-cyan-100 text-cyan-700 dark:bg-cyan-900/30 dark:text-cyan-300',
+  date:      'bg-rose-100 text-rose-700 dark:bg-rose-900/30 dark:text-rose-300',
+  datetime:  'bg-rose-100 text-rose-700 dark:bg-rose-900/30 dark:text-rose-300',
+  file:      'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300',
 }
 
-function optionsToString(options: { label: string; value: string }[] | undefined): string {
-  return (options ?? []).map((o) => (o.label === o.value ? o.value : `${o.label}:${o.value}`)).join(', ')
-}
-
-export const ParameterPanel: React.FC<ParameterPanelProps> = ({ params, onChange }) => {
-  if (params.length === 0) return null
+export const ParameterPanel: React.FC<ParameterPanelProps> = ({
+  versionParams,
+  onChange,
+  tools,
+}) => {
+  if (versionParams.length === 0) return null
 
   const handleDelete = (index: number) => {
-    onChange(params.filter((_, i) => i !== index))
+    onChange(versionParams.filter((_, i) => i !== index))
   }
+
+  const handleToolChange = (index: number, toolId: string) => {
+    onChange(versionParams.map((p, i) => (i === index ? { ...p, toolId } : p)))
+  }
+
+  // Group tools by category for <optgroup>, sorted by canonical order
+  const CATEGORY_ORDER = ['input', 'media', 'execution', 'battle', 'system']
+  const toolsByCategory = tools.reduce<Record<string, ToolRecord[]>>((acc, t) => {
+    if (!acc[t.category]) acc[t.category] = []
+    acc[t.category].push(t)
+    return acc
+  }, {})
+  const categories = Object.keys(toolsByCategory).sort(
+    (a, b) => CATEGORY_ORDER.indexOf(a) - CATEGORY_ORDER.indexOf(b)
+  )
 
   return (
     <div className="space-y-2">
       <p className="text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400">
         Detected Parameters
       </p>
-      <Accordion type="multiple">
-        {params.map((param, i) => (
-          <Accordion.Item
-            key={`${param.name}-${i}`}
-            title={`[[${param.name}]]`}
-            icon={
+      <div className="space-y-1.5">
+        {versionParams.map((param, i) => {
+          const selectedTool = tools.find((t) => t.id === param.toolId)
+
+          return (
+            <div
+              key={`${param.label}-${i}`}
+              className="flex items-center gap-2 px-3 py-2 rounded-xl bg-gray-50 dark:bg-gray-800/60 border border-gray-200 dark:border-gray-700"
+            >
+              {/* Label chip */}
               <ParamChip
-                name={param.name}
-                type={param.type}
-                required={param.required}
+                name={param.label}
+                type={selectedTool?.type}
+                required={selectedTool?.required ?? true}
                 size="xs"
-                draggable
               />
-            }
-            actions={
+
+              {/* Tool selector */}
+              <div className="flex-1 min-w-0">
+                <select
+                  value={param.toolId}
+                  onChange={(e) => handleToolChange(i, e.target.value)}
+                  className="w-full text-xs bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg px-2 py-1 text-gray-900 dark:text-white outline-none focus:ring-1 focus:ring-primary/50 focus:border-primary transition-all"
+                  title={selectedTool?.description ?? undefined}
+                >
+                  {categories.map((cat) => (
+                    <optgroup key={cat} label={CATEGORY_LABELS[cat] ?? cat}>
+                      {toolsByCategory[cat].map((tool) => (
+                        <option key={tool.id} value={tool.id}>
+                          {tool.label ?? tool.key}
+                        </option>
+                      ))}
+                    </optgroup>
+                  ))}
+                </select>
+              </div>
+
+              {/* Type badge */}
+              {selectedTool && (
+                <span
+                  className={`shrink-0 text-[10px] font-medium px-1.5 py-0.5 rounded ${TYPE_BADGE[selectedTool.type] ?? TYPE_BADGE.text}`}
+                >
+                  {selectedTool.type}
+                </span>
+              )}
+
+              {/* Delete */}
               <button
                 type="button"
-                onClick={(e) => { e.stopPropagation(); handleDelete(i) }}
-                className="p-1 rounded text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
+                onClick={() => handleDelete(i)}
+                className="p-1 rounded text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors shrink-0"
                 title="Delete parameter"
               >
                 <Trash2 size={12} />
               </button>
-            }
-          >
-            <div className="space-y-3 pt-1">
-              {/* Type + Required row */}
-              <div className="grid grid-cols-2 gap-3">
-                <div className="space-y-1">
-                  <label className="text-[10px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                    Type
-                  </label>
-                  <SelectField
-                    value={param.type}
-                    onChange={(val) =>
-                      onChange(updateParam(params, i, {
-                        type: val as LensParamType,
-                        options: undefined,
-                        arrayFormat: undefined,
-                      }))
-                    }
-                    options={PARAM_TYPES}
-                    className="w-full"
-                  />
-                </div>
-                <div className="space-y-1">
-                  <label className="text-[10px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                    Required
-                  </label>
-                  <div className="flex items-center h-8">
-                    <input
-                      type="checkbox"
-                      checked={param.required}
-                      onChange={(e) => onChange(updateParam(params, i, { required: e.target.checked }))}
-                      className="w-4 h-4 accent-primary cursor-pointer"
-                    />
-                    <span className="ml-2 text-xs text-gray-500 dark:text-gray-400">
-                      {param.required ? 'Required' : 'Optional'}
-                    </span>
-                  </div>
-                </div>
-              </div>
-
-              {/* Default / Options */}
-              {param.type !== 'boolean' && param.type !== 'select' && param.type !== 'multiselect' && param.type !== 'array' && (
-                <div className="space-y-1">
-                  <label className="text-[10px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                    Default Value
-                  </label>
-                  <input
-                    type="text"
-                    value={param.default ?? ''}
-                    onChange={(e) => onChange(updateParam(params, i, { default: e.target.value || undefined }))}
-                    placeholder="Default value"
-                    className={inputClass}
-                  />
-                </div>
-              )}
-
-              {param.type === 'boolean' && (
-                <div className="space-y-1">
-                  <label className="text-[10px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                    Default Value
-                  </label>
-                  <SelectField
-                    value={param.default ?? ''}
-                    onChange={(val) => onChange(updateParam(params, i, { default: val || undefined }))}
-                    options={[
-                      { value: '', label: 'No default' },
-                      { value: 'true', label: 'true' },
-                      { value: 'false', label: 'false' },
-                    ]}
-                    className="w-full"
-                  />
-                </div>
-              )}
-
-              {(param.type === 'select' || param.type === 'multiselect') && (
-                <div className="space-y-1">
-                  <label className="text-[10px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                    Options (label:value)
-                  </label>
-                  <input
-                    type="text"
-                    value={optionsToString(param.options)}
-                    onChange={(e) => onChange(updateParam(params, i, { options: parseOptions(e.target.value) }))}
-                    placeholder="label:value, label2:value2"
-                    className={inputClass}
-                  />
-                </div>
-              )}
-
-              {param.type === 'array' && (
-                <div className="space-y-1">
-                  <label className="text-[10px] font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                    Array Format
-                  </label>
-                  <SelectField
-                    value={param.arrayFormat ?? 'comma'}
-                    onChange={(val) =>
-                      onChange(updateParam(params, i, { arrayFormat: val as LensParam['arrayFormat'] }))
-                    }
-                    options={ARRAY_FORMATS}
-                    className="w-full"
-                  />
-                </div>
-              )}
             </div>
-          </Accordion.Item>
-        ))}
-      </Accordion>
+          )
+        })}
+      </div>
     </div>
   )
 }

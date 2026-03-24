@@ -73,20 +73,6 @@ export const LensDetailPage: React.FC = () => {
   const activeVersionParams =
     previewVersion?.parameters ?? latestPublishedDetail?.parameters ?? undefined
 
-  // Map LensVersionParam[] → LensParam[] for components expecting the legacy shape
-  const activeParamsAsLensParams = useMemo(() =>
-    (activeVersionParams ?? []).map((vp) => ({
-      name: vp.key,
-      type: vp.type as import('@lenserfight/types').LensParamType,
-      required: vp.required,
-      default: vp.defaultValue ?? undefined,
-      description: vp.helpText ?? undefined,
-      placeholder: vp.placeholder ?? undefined,
-      min: vp.validationSchema?.min ?? undefined,
-      max: vp.validationSchema?.max ?? undefined,
-    })),
-    [activeVersionParams]
-  )
 
   const selectedModelInputModalities = lab.providerModels.find(
     (m) => m.key === lab.selectedModelKey,
@@ -296,7 +282,6 @@ export const LensDetailPage: React.FC = () => {
 
             <LensBodyViewer
               content={previewVersion?.templateBody ?? latestPublishedDetail?.templateBody ?? lens.content}
-              params={activeParamsAsLensParams}
               versionParams={activeVersionParams}
               onCopy={handleCopy}
             />
