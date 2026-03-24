@@ -173,6 +173,8 @@ export const lensesService = {
 
     const isSaved = summary.userReactions.includes('saved')
 
+    const latestVersionId = await lensesRepo.getLatestVersionId(id)
+
     return {
       ...viewModel,
       content: record.content,
@@ -181,6 +183,7 @@ export const lensesService = {
       parentLensId: record.parent_lens_id ?? null,
       forkedFromExecutionId: record.forked_from_execution_id ?? null,
       params: record.params ?? [],
+      latestVersionId: latestVersionId ?? null,
     }
   },
 

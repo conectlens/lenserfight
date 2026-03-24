@@ -238,7 +238,7 @@ export const LensContentEditor = React.forwardRef<LensContentEditorHandle, LensC
             const isPrecededBySpace = !isStart && /[\s\u00A0]/.test(text[lastAt - 1])
             if (isStart || isPrecededBySpace) {
               const query = text.substring(lastAt + 1, caretPos)
-              if (!/\s/.test(query)) {
+              if (query.length >= 2 && !/\s/.test(query)) {
                 const coords = getCaretCoordinates()
                 setAutocomplete({
                   query,
@@ -348,20 +348,69 @@ export const LensContentEditor = React.forwardRef<LensContentEditorHandle, LensC
     // ─── Keyboard handling ────────────────────────────────────────────
 
     const handleKeyDown = useCallback((e: React.KeyboardEvent<HTMLDivElement>) => {
-      if (autocomplete && (e.key === 'Enter' || e.key === 'ArrowDown' || e.key === 'ArrowUp' || e.key === 'Escape')) {
-        e.preventDefault()
-        return
+      if (autocomplete) {
+        if (e.key === 'Enter' || e.key === 'ArrowDown' || e.key === 'ArrowUp' || e.key === 'Escape') {
+          e.preventDefault()
+          return
+        }
+        if (e.key === 'Tab') {
+          e.preventDefault()
+          const q = autocomplete.query.toLowerCase()
+          const filtered = versionParams.filter((p) => p.label.toLowerCase().includes(q))
+          if (filtered.length > 0) {
+            handleAutocompleteSelect(filtered[0].label)
+          } else if (q.length > 0) {
+            const safeLabel = q.replace(/\s+/g, '_').replace(/[^\w]/g, '')
+            if (safeLabel) handleCreateNew(safeLabel)
+          }
+          return
+        }
       }
       if (e.key === 'Tab') {
         e.preventDefault()
         document.execCommand('insertText', false, '  ')
       }
-    }, [autocomplete])
+    }, [autocomplete, versionParams, handleAutocompleteSelect, handleCreateNew])
 
     // ─── Drop handler ─────────────────────────────────────────────────
 
     const handleDrop = useCallback((e: React.DragEvent<HTMLDivElement>) => {
       e.preventDefault()
+
+      // Toolbar button drag — create a new param of the given tool type at drop position
+      const toolKey = e.dataTransfer.getData('application/lenserfight-tool')
+      if (toolKey) {
+        const tool = tools.find((t) => t.key === toolKey)
+        const toolId = tool?.id ?? ''
+        const tpl = QUICK_TEMPLATES.find((t) => t.toolKey === toolKey)
+        if (tpl) {
+          const sel = window.getSelection()
+          if (sel) {
+            const doc = document as Document & {
+              caretPositionFromPoint?: (x: number, y: number) => { offsetNode: Node; offset: number } | null
+              caretRangeFromPoint?: (x: number, y: number) => Range | null
+            }
+            if (doc.caretPositionFromPoint) {
+              const pos = doc.caretPositionFromPoint(e.clientX, e.clientY)
+              if (pos) {
+                const range = document.createRange()
+                range.setStart(pos.offsetNode, pos.offset)
+                range.collapse(true)
+                sel.removeAllRanges()
+                sel.addRange(range)
+              }
+            } else if (doc.caretRangeFromPoint) {
+              const range = doc.caretRangeFromPoint(e.clientX, e.clientY)
+              if (range) { sel.removeAllRanges(); sel.addRange(range) }
+            }
+          }
+          const uniqueLabel = uniquifyLabel(toolKey, versionParams)
+          onVersionParamsChange([...versionParams, { label: uniqueLabel, toolId }])
+          insertParamByLabel(uniqueLabel, toolId)
+        }
+        return
+      }
+
       const raw = e.dataTransfer.getData('text/plain')
       const match = raw.match(/^\[\[(\w+)\]\]$/)
       if (!match) return
@@ -427,9 +476,14 @@ export const LensContentEditor = React.forwardRef<LensContentEditorHandle, LensC
             <button
               key={tpl.label}
               type="button"
+              draggable
+              onDragStart={(e) => {
+                e.dataTransfer.setData('application/lenserfight-tool', tpl.toolKey)
+                e.dataTransfer.effectAllowed = 'copy'
+              }}
               onMouseDown={(e) => { e.preventDefault(); handleQuickAdd(tpl) }}
-              title={`Add ${tpl.label} parameter`}
-              className={`flex flex-col items-center gap-0.5 px-2 py-1.5 rounded-lg ${tpl.colorClass} hover:opacity-80 active:scale-95 transition-all`}
+              title={`Add ${tpl.label} parameter (or drag into editor)`}
+              className={`flex flex-col items-center gap-0.5 px-2 py-1.5 rounded-lg ${tpl.colorClass} hover:opacity-80 active:scale-95 transition-all cursor-grab active:cursor-grabbing`}
             >
               {tpl.icon}
               <span className="text-[9px] font-medium leading-none">{tpl.label}</span>

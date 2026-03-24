@@ -34,6 +34,7 @@ export interface LensesRepositoryPort {
   // ─── Versioning ───────────────────────────────────────────────────────────
   getVersions(lensId: string): Promise<LensVersion[]>
   getVersionById(versionId: string): Promise<LensVersion | null>
+  getLatestVersionId(lensId: string): Promise<string | null>
   getLatestPublishedVersion(lensId: string): Promise<LensVersion | null>
   createVersion(input: CreateLensVersionDTO): Promise<LensVersion>
   publishVersion(versionId: string): Promise<void>
@@ -664,6 +665,19 @@ export class SupabaseLensesRepository implements LensesRepositoryPort {
     if (renderedBody) version.templateBody = renderedBody as string
     version.parameters = ((paramsJson ?? []) as Record<string, unknown>[]).map((p) => this.mapVersionParam(p))
     return version
+  }
+
+  async getLatestVersionId(lensId: string): Promise<string | null> {
+    const { data } = await supabase
+      .schema('lenses')
+      .from('versions')
+      .select('id')
+      .eq('lens_id', lensId)
+      .neq('status', 'archived')
+      .order('version_number', { ascending: false })
+      .limit(1)
+      .maybeSingle()
+    return (data as { id: string } | null)?.id ?? null
   }
 
   async getLatestPublishedVersion(lensId: string): Promise<LensVersion | null> {

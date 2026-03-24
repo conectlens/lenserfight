@@ -10,7 +10,7 @@ import { useShareContext } from '@lenserfight/features/share'
 import { useUI } from '@lenserfight/ui/providers'
 import { lensesService } from '@lenserfight/data/repositories'
 import { useReportContent } from '@lenserfight/features/home'
-import { ReportReasonEnum } from '@lenserfight/types'
+import { CreateVersionParamInput, ReportReasonEnum } from '@lenserfight/types'
 import { AIResultsSection } from '@lenserfight/features/generations'
 import { CreateLenserProfileModal } from '@lenserfight/features/onboarding'
 import { CreateLensModal } from '../components/CreateLensModal'
@@ -67,7 +67,7 @@ export const LensDetailPage: React.FC = () => {
 
   // Auto-load latest published version on page init so params are available immediately
   const { data: latestPublished } = useLatestPublishedVersion(id ?? '')
-  const { data: latestPublishedDetail } = useLensVersionDetail(latestPublished?.id)
+  const { data: latestPublishedDetail, isLoading: isLoadingLatestDetail } = useLensVersionDetail(latestPublished?.id)
 
   // Explicit version selection takes precedence; falls back to latest published
   const activeVersionParams =
@@ -133,8 +133,24 @@ export const LensDetailPage: React.FC = () => {
     if (!ensureProfile()) return
     const editId = targetId || lens?.id
     if (editId && lenser) {
-      lensesService.getLensDetail(editId, lenser.id).then((detail) => {
-        if (detail) openCreateModal({ id: detail.id, title: detail.title, content: detail.content, tags: detail.tags, visibility: detail.visibility })
+      lensesService.getLensDetail(editId, lenser.id).then(async (detail) => {
+        if (!detail) return
+        let initialVersionParams: CreateVersionParamInput[] = []
+        if (detail.latestVersionId) {
+          const versionDetail = await lensesService.getVersionById(detail.latestVersionId)
+          initialVersionParams = (versionDetail?.parameters ?? []).map((p) => ({
+            label: p.label,
+            toolId: p.toolId,
+          }))
+        }
+        openCreateModal({
+          id: detail.id,
+          title: detail.title,
+          content: detail.content,
+          tags: detail.tags,
+          visibility: detail.visibility,
+          versionParams: initialVersionParams,
+        })
       })
     }
   }
@@ -379,6 +395,7 @@ export const LensDetailPage: React.FC = () => {
                   isStreaming={lab.streamState === 'loading' || lab.streamState === 'streaming'}
                   onStop={lab.stopStream}
                   versionParams={activeVersionParams}
+                  isLoadingVersionParams={!previewVersionId && (isLoadingLatestDetail || (!!latestPublished && !latestPublishedDetail))}
                   selectedModelInputModalities={selectedModelInputModalities}
                   fundingSource={funding.fundingSource}
                   onFundingSourceChange={funding.setFundingSource}
