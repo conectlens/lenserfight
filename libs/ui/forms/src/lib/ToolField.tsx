@@ -8,7 +8,6 @@ import { FormError } from '@lenserfight/ui/components'
 import { SelectField } from './SelectField'
 
 // ─── Tool Registry ────────────────────────────────────────────────────────────
-// Maps each LensVersionParamType to its UI config (GRASP: Information Expert)
 
 interface ToolConfig {
   icon: React.ElementType
@@ -60,7 +59,7 @@ const FileToolInput: React.FC<FileToolInputProps> = ({
   const [localError, setLocalError] = useState<string | null>(null)
   const [isDragOver, setIsDragOver] = useState(false)
 
-  const accept = param.allowedMimeTypes?.join(',') ?? undefined
+  const accept = param.tool.validationSchema?.allowedMimeTypes?.join(',') ?? undefined
 
   const processFile = async (file: File) => {
     setLocalError(null)
@@ -70,7 +69,7 @@ const FileToolInput: React.FC<FileToolInputProps> = ({
     }
     setUploading(true)
     try {
-      const mediaObjectId = await onFileUpload(param.key, file)
+      const mediaObjectId = await onFileUpload(param.label, file)
       onChange(mediaObjectId)
     } catch (err) {
       setLocalError((err as Error).message ?? 'Upload failed')
@@ -157,6 +156,7 @@ export interface ToolFieldProps {
 /**
  * Tool factory that renders the correct form input for a LensVersionParam.
  * GRASP: Information Expert — single authority on param-to-input mapping.
+ * All field type/validation metadata is read from param.tool (ToolRecord).
  */
 export const ToolField: React.FC<ToolFieldProps> = ({
   param,
@@ -167,40 +167,40 @@ export const ToolField: React.FC<ToolFieldProps> = ({
   disabled = false,
   modelInputModalities,
 }) => {
-  const config = TOOL_REGISTRY[param.type] ?? TOOL_REGISTRY.text
+  const tool = param.tool
+  const config = TOOL_REGISTRY[tool.type] ?? TOOL_REGISTRY.text
   const Icon = config.icon
-  const displayLabel = param.label ?? param.key
-  const isNumeric = NUMERIC_TYPES.includes(param.type)
+  const isNumeric = NUMERIC_TYPES.includes(tool.type)
 
   return (
     <div className="flex flex-col gap-1.5">
       {/* Label row */}
       <label className="flex items-center gap-1.5 text-xs font-medium text-gray-600 dark:text-gray-400 uppercase tracking-wide">
         <Icon size={11} className={config.colorClass} aria-hidden />
-        <span>{displayLabel}</span>
-        {param.required && <span className="text-red-500 ml-0.5" aria-label="required">*</span>}
-        {param.helpText && (
-          <span className="ml-1 normal-case text-gray-400 font-normal">— {param.helpText}</span>
+        <span>{param.label}</span>
+        {tool.required && <span className="text-red-500 ml-0.5" aria-label="required">*</span>}
+        {tool.helpText && (
+          <span className="ml-1 normal-case text-gray-400 font-normal">— {tool.helpText}</span>
         )}
       </label>
 
       {/* Input */}
-      {(param.type === 'text' || param.type === 'json') && (
+      {(tool.type === 'text' || tool.type === 'json') && (
         <input
           type="text"
-          value={(value as string) ?? param.defaultValue ?? ''}
+          value={(value as string) ?? ''}
           onChange={(e) => onChange(e.target.value)}
-          placeholder={param.placeholder ?? `Enter ${displayLabel}…`}
+          placeholder={tool.placeholder ?? `Enter ${param.label}…`}
           disabled={disabled}
           className={inputClass}
         />
       )}
 
-      {param.type === 'textarea' && (
+      {tool.type === 'textarea' && (
         <textarea
-          value={(value as string) ?? param.defaultValue ?? ''}
+          value={(value as string) ?? ''}
           onChange={(e) => onChange(e.target.value)}
-          placeholder={param.placeholder ?? `Enter ${displayLabel}…`}
+          placeholder={tool.placeholder ?? `Enter ${param.label}…`}
           rows={3}
           disabled={disabled}
           className={`${inputClass} resize-none`}
@@ -210,72 +210,72 @@ export const ToolField: React.FC<ToolFieldProps> = ({
       {isNumeric && (
         <input
           type="number"
-          value={(value as string) ?? param.defaultValue ?? ''}
+          value={(value as string) ?? ''}
           onChange={(e) => onChange(e.target.value)}
-          placeholder={param.placeholder ?? `Enter ${displayLabel}…`}
-          min={param.min ?? param.validationSchema?.min ?? undefined}
-          max={param.max ?? param.validationSchema?.max ?? undefined}
-          step={param.type === 'integer' ? 1 : 'any'}
+          placeholder={tool.placeholder ?? `Enter ${param.label}…`}
+          min={tool.validationSchema?.min ?? undefined}
+          max={tool.validationSchema?.max ?? undefined}
+          step={tool.type === 'integer' ? 1 : 'any'}
           disabled={disabled}
           className={inputClass}
         />
       )}
 
-      {param.type === 'boolean' && (
+      {tool.type === 'boolean' && (
         <label className="flex items-center gap-2 cursor-pointer">
           <input
             type="checkbox"
-            checked={!!(value ?? (param.defaultValue === 'true'))}
+            checked={!!(value)}
             onChange={(e) => onChange(e.target.checked)}
             disabled={disabled}
             className="w-4 h-4 accent-primary"
           />
-          <span className="text-sm text-gray-700 dark:text-gray-300">{displayLabel}</span>
+          <span className="text-sm text-gray-700 dark:text-gray-300">{param.label}</span>
         </label>
       )}
 
-      {param.type === 'select' && (
+      {tool.type === 'select' && (
         <SelectField
-          value={(value as string) ?? param.defaultValue ?? ''}
+          value={(value as string) ?? ''}
           onChange={(v) => onChange(v)}
-          placeholder={param.placeholder ?? `Select ${displayLabel}…`}
-          options={param.options ?? []}
+          placeholder={tool.placeholder ?? `Select ${param.label}…`}
+          options={tool.options ?? []}
           disabled={disabled}
         />
       )}
 
-      {param.type === 'url' && (
+      {tool.type === 'url' && (
         <input
           type="url"
-          value={(value as string) ?? param.defaultValue ?? ''}
+          value={(value as string) ?? ''}
           onChange={(e) => onChange(e.target.value)}
-          placeholder={param.placeholder ?? 'https://…'}
+          placeholder={tool.placeholder ?? 'https://…'}
           disabled={disabled}
           className={inputClass}
         />
       )}
 
-      {param.type === 'date' && (
+      {tool.type === 'date' && (
         <input
           type="date"
-          value={(value as string) ?? param.defaultValue ?? ''}
+          value={(value as string) ?? ''}
           onChange={(e) => onChange(e.target.value)}
           disabled={disabled}
           className={inputClass}
         />
       )}
 
-      {param.type === 'datetime' && (
+      {tool.type === 'datetime' && (
         <input
           type="datetime-local"
-          value={(value as string) ?? param.defaultValue ?? ''}
+          value={(value as string) ?? ''}
           onChange={(e) => onChange(e.target.value)}
           disabled={disabled}
           className={inputClass}
         />
       )}
 
-      {param.type === 'file' && (
+      {tool.type === 'file' && (
         <FileToolInput
           param={param}
           value={value as string | undefined}
@@ -286,7 +286,7 @@ export const ToolField: React.FC<ToolFieldProps> = ({
         />
       )}
 
-      {param.type !== 'file' && error && <FormError message={error} />}
+      {tool.type !== 'file' && error && <FormError message={error} />}
     </div>
   )
 }

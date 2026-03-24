@@ -1,8 +1,8 @@
 import React, { useRef, useEffect, useState, useCallback } from 'react'
-import { LensParam } from '@lenserfight/types'
+import { CreateVersionParamInput, ToolRecord } from '@lenserfight/types'
 import { parseContentSegments, detectParamMismatches, type ParamMismatch } from '@lenserfight/utils/text'
 import { ParamAutocomplete } from './ParamAutocomplete'
-import { ParamEditPopover } from './ParamEditPopover'
+import { ToolPickerDropdown } from './ToolPickerDropdown'
 import { AlertTriangle, Type, Hash, ToggleLeft, Paperclip, ChevronDown, Link, Calendar, AlignLeft } from 'lucide-react'
 
 // ─── Types ────────────────────────────────────────────────────────────────
@@ -10,14 +10,15 @@ import { AlertTriangle, Type, Hash, ToggleLeft, Paperclip, ChevronDown, Link, Ca
 export interface LensContentEditorProps {
   value: string
   onChange: (value: string) => void
-  params: LensParam[]
-  onParamsChange: (params: LensParam[]) => void
+  versionParams: CreateVersionParamInput[]
+  onVersionParamsChange: (params: CreateVersionParamInput[]) => void
+  tools: ToolRecord[]
   placeholder?: string
   className?: string
 }
 
 export interface LensContentEditorHandle {
-  insertParam: (param: LensParam) => void
+  insertParam: (label: string, toolId: string) => void
   focus: () => void
 }
 
@@ -27,94 +28,54 @@ interface QuickTemplate {
   label: string
   icon: React.ReactNode
   colorClass: string
-  param: LensParam
+  toolKey: string
 }
 
 const QUICK_TEMPLATES: QuickTemplate[] = [
-  {
-    label: 'Text',
-    icon: <Type size={12} />,
-    colorClass: 'bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400',
-    param: { name: 'input', type: 'string', required: true, placeholder: 'Enter text…' },
-  },
-  {
-    label: 'Number',
-    icon: <Hash size={12} />,
-    colorClass: 'bg-amber-50 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400',
-    param: { name: 'count', type: 'number', required: false, min: 1, max: 100, default: '10' },
-  },
-  {
-    label: 'Toggle',
-    icon: <ToggleLeft size={12} />,
-    colorClass: 'bg-purple-50 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400',
-    param: { name: 'enabled', type: 'boolean', required: false, default: 'false' },
-  },
-  {
-    label: 'File',
-    icon: <Paperclip size={12} />,
-    colorClass: 'bg-slate-50 dark:bg-slate-900/30 text-slate-600 dark:text-slate-400',
-    param: { name: 'attachment', type: 'string', required: false, description: 'Upload a file' },
-  },
-  {
-    label: 'Select',
-    icon: <ChevronDown size={12} />,
-    colorClass: 'bg-teal-50 dark:bg-teal-900/30 text-teal-600 dark:text-teal-400',
-    param: {
-      name: 'option',
-      type: 'select',
-      required: true,
-      options: [{ label: 'Option A', value: 'a' }, { label: 'Option B', value: 'b' }],
-    },
-  },
-  {
-    label: 'URL',
-    icon: <Link size={12} />,
-    colorClass: 'bg-green-50 dark:bg-green-900/30 text-green-600 dark:text-green-400',
-    param: { name: 'url', type: 'string', required: false, placeholder: 'https://…' },
-  },
-  {
-    label: 'Date',
-    icon: <Calendar size={12} />,
-    colorClass: 'bg-rose-50 dark:bg-rose-900/30 text-rose-600 dark:text-rose-400',
-    param: { name: 'date', type: 'string', required: false, placeholder: 'YYYY-MM-DD' },
-  },
-  {
-    label: 'Long Text',
-    icon: <AlignLeft size={12} />,
-    colorClass: 'bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400',
-    param: { name: 'description', type: 'string', required: false, placeholder: 'Enter description…' },
-  },
+  { label: 'Text',      icon: <Type size={12} />,        colorClass: 'bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400',     toolKey: 'text' },
+  { label: 'Number',    icon: <Hash size={12} />,        colorClass: 'bg-amber-50 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400', toolKey: 'number' },
+  { label: 'Toggle',    icon: <ToggleLeft size={12} />,  colorClass: 'bg-purple-50 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400', toolKey: 'boolean' },
+  { label: 'File',      icon: <Paperclip size={12} />,   colorClass: 'bg-slate-50 dark:bg-slate-900/30 text-slate-600 dark:text-slate-400', toolKey: 'file' },
+  { label: 'Select',    icon: <ChevronDown size={12} />, colorClass: 'bg-teal-50 dark:bg-teal-900/30 text-teal-600 dark:text-teal-400',     toolKey: 'select' },
+  { label: 'URL',       icon: <Link size={12} />,        colorClass: 'bg-green-50 dark:bg-green-900/30 text-green-600 dark:text-green-400', toolKey: 'url' },
+  { label: 'Date',      icon: <Calendar size={12} />,    colorClass: 'bg-rose-50 dark:bg-rose-900/30 text-rose-600 dark:text-rose-400',     toolKey: 'date' },
+  { label: 'Long Text', icon: <AlignLeft size={12} />,   colorClass: 'bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400', toolKey: 'textarea' },
 ]
 
-function uniquifyName(baseName: string, existing: LensParam[]): string {
-  const names = new Set(existing.map((p) => p.name))
-  if (!names.has(baseName)) return baseName
+function uniquifyLabel(base: string, existing: CreateVersionParamInput[]): string {
+  const names = new Set(existing.map((p) => p.label))
+  if (!names.has(base)) return base
   let i = 2
-  while (names.has(`${baseName}_${i}`)) i++
-  return `${baseName}_${i}`
+  while (names.has(`${base}_${i}`)) i++
+  return `${base}_${i}`
 }
 
-// ─── Chip color config ────────────────────────────────────────────────────
+// ─── Chip color from tool.color or tool.type ──────────────────────────────
 
-const CHIP_CLASSES: Record<string, string> = {
-  string:      'bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300 border-blue-200 dark:border-blue-700',
-  number:      'bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-300 border-amber-200 dark:border-amber-700',
-  boolean:     'bg-purple-50 dark:bg-purple-900/20 text-purple-700 dark:text-purple-300 border-purple-200 dark:border-purple-700',
-  select:      'bg-teal-50 dark:bg-teal-900/20 text-teal-700 dark:text-teal-300 border-teal-200 dark:border-teal-700',
-  multiselect: 'bg-teal-50 dark:bg-teal-900/20 text-teal-700 dark:text-teal-300 border-teal-200 dark:border-teal-700',
-  array:       'bg-indigo-50 dark:bg-indigo-900/20 text-indigo-700 dark:text-indigo-300 border-indigo-200 dark:border-indigo-700',
+const TYPE_CHIP_CLASSES: Record<string, string> = {
+  text:      'bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300 border-blue-200 dark:border-blue-700',
+  textarea:  'bg-indigo-50 dark:bg-indigo-900/20 text-indigo-700 dark:text-indigo-300 border-indigo-200 dark:border-indigo-700',
+  number:    'bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-300 border-amber-200 dark:border-amber-700',
+  integer:   'bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-300 border-amber-200 dark:border-amber-700',
+  float:     'bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-300 border-amber-200 dark:border-amber-700',
+  decimal:   'bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-300 border-amber-200 dark:border-amber-700',
+  boolean:   'bg-purple-50 dark:bg-purple-900/20 text-purple-700 dark:text-purple-300 border-purple-200 dark:border-purple-700',
+  select:    'bg-teal-50 dark:bg-teal-900/20 text-teal-700 dark:text-teal-300 border-teal-200 dark:border-teal-700',
+  url:       'bg-cyan-50 dark:bg-cyan-900/20 text-cyan-700 dark:text-cyan-300 border-cyan-200 dark:border-cyan-700',
+  date:      'bg-rose-50 dark:bg-rose-900/20 text-rose-700 dark:text-rose-300 border-rose-200 dark:border-rose-700',
+  datetime:  'bg-rose-50 dark:bg-rose-900/20 text-rose-700 dark:text-rose-300 border-rose-200 dark:border-rose-700',
+  file:      'bg-slate-50 dark:bg-slate-900/20 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700',
+  json:      'bg-orange-50 dark:bg-orange-900/20 text-orange-700 dark:text-orange-300 border-orange-200 dark:border-orange-700',
 }
-
-const DEFAULT_CHIP = CHIP_CLASSES.string
+const DEFAULT_CHIP_CLASS = TYPE_CHIP_CLASSES.text
 
 // ─── Component ────────────────────────────────────────────────────────────
 
 export const LensContentEditor = React.forwardRef<LensContentEditorHandle, LensContentEditorProps>(
-  ({ value, onChange, params, onParamsChange, placeholder, className = '' }, ref) => {
+  ({ value, onChange, versionParams, onVersionParamsChange, tools, placeholder, className = '' }, ref) => {
     const containerRef = useRef<HTMLDivElement>(null)
     const lastKnownValue = useRef('')
     const isTypingParam = useRef(false)
-    // Track which param name (if any) started a drag from within this editor
     const internalDragName = useRef<string | null>(null)
 
     // Autocomplete state
@@ -123,136 +84,125 @@ export const LensContentEditor = React.forwardRef<LensContentEditorHandle, LensC
       position: { top: number; left: number }
     } | null>(null)
 
-    // Edit popover state
-    const [editTarget, setEditTarget] = useState<{
-      param: LensParam
-      paramIndex: number
+    // Tool picker state (replaces ParamEditPopover)
+    const [toolPicker, setToolPicker] = useState<{
+      paramLabel: string
       rect: DOMRect
     } | null>(null)
 
     // Mismatch state
     const [mismatches, setMismatches] = useState<ParamMismatch>({ orphanedInContent: [], orphanedInParams: [] })
 
-    // ─── Caret coordinates ────────────────────────────────────────────
+    // ─── Helpers ──────────────────────────────────────────────────────
 
     const getCaretCoordinates = () => {
       const selection = window.getSelection()
       if (!selection || selection.rangeCount === 0) return { top: 0, left: 0, height: 20 }
-
       const range = selection.getRangeAt(0)
       const rect = range.getBoundingClientRect()
-
       if (rect.width === 0 && rect.height === 0 && containerRef.current) {
         const containerRect = containerRef.current.getBoundingClientRect()
         return { top: containerRect.top + 10, left: containerRect.left + 10, height: 20 }
       }
-
       return { top: rect.top, left: rect.left, height: rect.height }
     }
 
+    const getChipClasses = useCallback((paramLabel: string): string => {
+      const vp = versionParams.find((p) => p.label === paramLabel)
+      if (vp?.toolId) {
+        const tool = tools.find((t) => t.id === vp.toolId)
+        if (tool) return TYPE_CHIP_CLASSES[tool.type] ?? DEFAULT_CHIP_CLASS
+      }
+      return DEFAULT_CHIP_CLASS
+    }, [versionParams, tools])
+
     // ─── Create chip DOM element ──────────────────────────────────────
 
-    const createChipElement = useCallback((paramName: string): HTMLSpanElement => {
-      const param = params.find((p) => p.name === paramName)
-      const chipColors = CHIP_CLASSES[param?.type ?? 'string'] ?? DEFAULT_CHIP
-      const isRequired = param?.required !== false
+    const createChipElement = useCallback((paramLabel: string): HTMLSpanElement => {
+      const chipColors = getChipClasses(paramLabel)
+      const vp = versionParams.find((p) => p.label === paramLabel)
+      const tool = vp?.toolId ? tools.find((t) => t.id === vp.toolId) : null
+      const isRequired = tool?.required !== false
 
       const chip = document.createElement('span')
       chip.contentEditable = 'false'
-      chip.setAttribute('data-param', paramName)
+      chip.setAttribute('data-param', paramLabel)
       chip.className = `inline-flex items-center px-1.5 py-0.5 rounded-md font-mono text-xs font-medium select-none align-middle whitespace-nowrap border mx-0.5 ${chipColors} ${isRequired ? '' : 'border-dashed'} cursor-pointer`
-      chip.textContent = `[[${paramName}]]`
-      chip.title = `${paramName} (${param?.type ?? 'string'}${isRequired ? ', required' : ', optional'})`
+      chip.textContent = `[[${paramLabel}]]`
+      chip.title = `${paramLabel}${tool ? ` (${tool.label ?? tool.key})` : ''} — right-click to change tool`
 
-      const openPopover = (e: Event) => {
+      const openPicker = (e: Event) => {
         e.preventDefault()
         e.stopPropagation()
-        if (!param) return
-        const idx = params.findIndex((p) => p.name === paramName)
-        if (idx === -1) return
-        setEditTarget({ param, paramIndex: idx, rect: chip.getBoundingClientRect() })
+        setToolPicker({ paramLabel, rect: chip.getBoundingClientRect() })
       }
 
-      chip.addEventListener('click', openPopover)
-      chip.addEventListener('dblclick', openPopover)
-      chip.addEventListener('contextmenu', openPopover)
+      chip.addEventListener('dblclick', openPicker)
+      chip.addEventListener('contextmenu', openPicker)
 
-      // Make chips draggable so they can be reordered within the editor
       chip.draggable = true
       chip.addEventListener('dragstart', (e) => {
         const de = e as DragEvent
-        de.dataTransfer?.setData('text/plain', `[[${paramName}]]`)
+        de.dataTransfer?.setData('text/plain', `[[${paramLabel}]]`)
         if (de.dataTransfer) de.dataTransfer.effectAllowed = 'move'
-        internalDragName.current = paramName
+        internalDragName.current = paramLabel
       })
       chip.addEventListener('dragend', () => {
         internalDragName.current = null
       })
 
       return chip
-    }, [params])
+    }, [versionParams, tools, getChipClasses])
 
     // ─── Hydration: value → DOM ───────────────────────────────────────
 
     const hydrate = useCallback(() => {
       if (!containerRef.current) return
-
       containerRef.current.innerHTML = ''
-      // Shim: migrate any legacy {{param}} syntax that may exist in unsaved/in-flight content
       const normalizedValue = value.replace(/\{\{(\w+)\}\}/g, '[[$1]]')
       const segments = parseContentSegments(normalizedValue)
-
       segments.forEach((seg) => {
         if (seg.type === 'text') {
-          if (seg.content) {
-            containerRef.current?.appendChild(document.createTextNode(seg.content))
-          }
+          if (seg.content) containerRef.current?.appendChild(document.createTextNode(seg.content))
         } else if (seg.type === 'param') {
-          const chip = createChipElement(seg.name)
-          containerRef.current?.appendChild(chip)
+          containerRef.current?.appendChild(createChipElement(seg.name))
         }
       })
-
       lastKnownValue.current = normalizedValue
     }, [value, createChipElement])
 
-    // Hydrate on mount and when value changes externally
     useEffect(() => {
       if (!containerRef.current) return
-
-      // Reset case
       if (value === '' && containerRef.current.textContent !== '') {
         containerRef.current.innerHTML = ''
         lastKnownValue.current = ''
         return
       }
-
-      // Only hydrate if value changed externally (not from our own serialization)
-      if (value !== lastKnownValue.current) {
-        hydrate()
-      }
+      if (value !== lastKnownValue.current) hydrate()
     }, [value, hydrate])
 
-    // Update mismatches when content or params change
     useEffect(() => {
-      setMismatches(detectParamMismatches(value, params))
-    }, [value, params])
+      // Build a LensParam-compatible mismatch check using labels
+      const pseudoParams = versionParams.map((p) => ({
+        name: p.label,
+        type: 'string' as const,
+        required: true,
+      }))
+      setMismatches(detectParamMismatches(value, pseudoParams))
+    }, [value, versionParams])
 
     // ─── Serialize: DOM → value ───────────────────────────────────────
 
     const serializeContent = useCallback(() => {
       if (!containerRef.current) return
-
       let text = ''
-
       const walk = (node: Node) => {
         if (node.nodeType === Node.TEXT_NODE) {
           text += node.textContent
         } else if (node.nodeType === Node.ELEMENT_NODE) {
           const el = node as HTMLElement
           if (el.hasAttribute('data-param')) {
-            const name = el.getAttribute('data-param')
-            text += `[[${name}]]`
+            text += `[[${el.getAttribute('data-param')}]]`
           } else if (el.tagName === 'BR') {
             text += '\n'
           } else if (el.tagName === 'DIV') {
@@ -263,11 +213,8 @@ export const LensContentEditor = React.forwardRef<LensContentEditorHandle, LensC
           }
         }
       }
-
       containerRef.current.childNodes.forEach(walk)
-
       const cleanText = text.replace(/^\n+/, '')
-
       if (lastKnownValue.current !== cleanText) {
         lastKnownValue.current = cleanText
         onChange(cleanText)
@@ -278,22 +225,17 @@ export const LensContentEditor = React.forwardRef<LensContentEditorHandle, LensC
 
     const handleInput = useCallback(() => {
       if (!containerRef.current) return
-
       const selection = window.getSelection()
       if (selection && selection.rangeCount > 0) {
         const range = selection.getRangeAt(0)
         const textNode = range.startContainer
-
         if (textNode.nodeType === Node.TEXT_NODE) {
           const text = textNode.textContent || ''
           const caretPos = range.startOffset
-
-          // Check for @ trigger
           const lastAt = text.lastIndexOf('@', caretPos - 1)
           if (lastAt !== -1) {
             const isStart = lastAt === 0
             const isPrecededBySpace = !isStart && /[\s\u00A0]/.test(text[lastAt - 1])
-
             if (isStart || isPrecededBySpace) {
               const query = text.substring(lastAt + 1, caretPos)
               if (!/\s/.test(query)) {
@@ -310,41 +252,33 @@ export const LensContentEditor = React.forwardRef<LensContentEditorHandle, LensC
           }
         }
       }
-
-      // No trigger active
       if (isTypingParam.current) {
         setAutocomplete(null)
         isTypingParam.current = false
       }
-
       serializeContent()
     }, [serializeContent])
 
     // ─── Insert param chip ────────────────────────────────────────────
 
-    const insertParam = useCallback((param: LensParam) => {
+    const insertParamByLabel = useCallback((paramLabel: string, toolId: string) => {
       if (!containerRef.current) return
 
       const selection = window.getSelection()
       if (!selection || selection.rangeCount === 0) {
-        // No selection — append at end
-        const chip = createChipElement(param.name)
+        const chip = createChipElement(paramLabel)
         containerRef.current.appendChild(chip)
-        const space = document.createTextNode('\u00A0')
-        containerRef.current.appendChild(space)
+        containerRef.current.appendChild(document.createTextNode('\u00A0'))
         serializeContent()
         return
       }
 
       const range = selection.getRangeAt(0)
-
-      // Delete @query text if present
       const textNode = range.startContainer
       if (textNode.nodeType === Node.TEXT_NODE) {
         const text = textNode.textContent || ''
         const caretPos = range.startOffset
         const lastAt = text.lastIndexOf('@', caretPos - 1)
-
         if (lastAt !== -1) {
           range.setStart(textNode, lastAt)
           range.setEnd(textNode, caretPos)
@@ -352,13 +286,11 @@ export const LensContentEditor = React.forwardRef<LensContentEditorHandle, LensC
         }
       }
 
-      const chip = createChipElement(param.name)
+      const chip = createChipElement(paramLabel)
       range.insertNode(chip)
-
       const space = document.createTextNode('\u00A0')
       range.setStartAfter(chip)
       range.insertNode(space)
-
       range.setStartAfter(space)
       range.setEndAfter(space)
       selection.removeAllRanges()
@@ -372,57 +304,46 @@ export const LensContentEditor = React.forwardRef<LensContentEditorHandle, LensC
 
     // ─── Quick-add param from toolbar ─────────────────────────────────
 
-    const handleQuickAdd = useCallback((template: QuickTemplate) => {
-      const uniqueName = uniquifyName(template.param.name, params)
-      const newParam: LensParam = { ...template.param, name: uniqueName }
-      onParamsChange([...params, newParam])
-      insertParam(newParam)
+    const handleQuickAdd = useCallback((tpl: QuickTemplate) => {
+      const tool = tools.find((t) => t.key === tpl.toolKey)
+      const toolId = tool?.id ?? ''
+      const uniqueLabel = uniquifyLabel(tpl.toolKey, versionParams)
+      onVersionParamsChange([...versionParams, { label: uniqueLabel, toolId }])
+      insertParamByLabel(uniqueLabel, toolId)
       containerRef.current?.focus()
-    }, [params, onParamsChange, insertParam])
+    }, [tools, versionParams, onVersionParamsChange, insertParamByLabel])
 
-    // ─── Handle autocomplete selection ────────────────────────────────
+    // ─── Autocomplete handlers ────────────────────────────────────────
 
-    const handleSelect = useCallback((param: LensParam) => {
-      insertParam(param)
-    }, [insertParam])
+    const handleAutocompleteSelect = useCallback((name: string) => {
+      const existing = versionParams.find((p) => p.label === name)
+      const toolId = existing?.toolId ?? tools.find((t) => t.key === 'text')?.id ?? ''
+      insertParamByLabel(name, toolId)
+    }, [versionParams, tools, insertParamByLabel])
 
     const handleCreateNew = useCallback((name: string) => {
-      const newParam: LensParam = { name, type: 'string', required: true }
-      onParamsChange([...params, newParam])
-      insertParam(newParam)
-    }, [params, onParamsChange, insertParam])
+      const toolId = tools.find((t) => t.key === 'text')?.id ?? ''
+      onVersionParamsChange([...versionParams, { label: name, toolId }])
+      insertParamByLabel(name, toolId)
+    }, [versionParams, tools, onVersionParamsChange, insertParamByLabel])
 
-    const handleAutocompleteClose = useCallback(() => {
-      setAutocomplete(null)
-      isTypingParam.current = false
-    }, [])
+    // ─── Tool picker handler ───────────────────────────────────────────
 
-    // ─── Handle param edit ────────────────────────────────────────────
-
-    const handleParamUpdate = useCallback((patch: Partial<LensParam>) => {
-      if (!editTarget) return
-      const updated = params.map((p, i) =>
-        i === editTarget.paramIndex ? { ...p, ...patch } : p
+    const handleToolSelect = useCallback((toolId: string) => {
+      if (!toolPicker) return
+      const updated = versionParams.map((p) =>
+        p.label === toolPicker.paramLabel ? { ...p, toolId } : p
       )
-      onParamsChange(updated)
-      setEditTarget(null)
-      // Re-hydrate to update chip colors/styles
+      onVersionParamsChange(updated)
+      setToolPicker(null)
+      // Force chip re-render by resetting hydration
       requestAnimationFrame(() => {
         if (containerRef.current) {
-          lastKnownValue.current = '' // Force re-hydration
+          lastKnownValue.current = ''
           hydrate()
         }
       })
-    }, [editTarget, params, onParamsChange, hydrate])
-
-    const handleParamRemove = useCallback(() => {
-      if (!editTarget) return
-      const name = editTarget.param.name
-      onParamsChange(params.filter((_, i) => i !== editTarget.paramIndex))
-      const newContent = value.replace(new RegExp(`\\[\\[${name}\\]\\]`, 'g'), '')
-      onChange(newContent)
-      setEditTarget(null)
-    }, [editTarget, params, onParamsChange, value, onChange])
+    }, [toolPicker, versionParams, onVersionParamsChange, hydrate])
 
     // ─── Keyboard handling ────────────────────────────────────────────
 
@@ -431,14 +352,13 @@ export const LensContentEditor = React.forwardRef<LensContentEditorHandle, LensC
         e.preventDefault()
         return
       }
-
       if (e.key === 'Tab') {
         e.preventDefault()
         document.execCommand('insertText', false, '  ')
       }
     }, [autocomplete])
 
-    // ─── Drop handler (external chips from parameter panel + internal reorder) ──
+    // ─── Drop handler ─────────────────────────────────────────────────
 
     const handleDrop = useCallback((e: React.DragEvent<HTMLDivElement>) => {
       e.preventDefault()
@@ -446,10 +366,9 @@ export const LensContentEditor = React.forwardRef<LensContentEditorHandle, LensC
       const match = raw.match(/^\[\[(\w+)\]\]$/)
       if (!match) return
 
-      const paramName = match[1]
-      const isInternal = internalDragName.current === paramName
+      const paramLabel = match[1]
+      const isInternal = internalDragName.current === paramLabel
 
-      // Place caret at drop coordinates using modern API with webkit fallback
       const sel = window.getSelection()
       if (sel && (document as Document & { caretPositionFromPoint?: (x: number, y: number) => { offsetNode: Node; offset: number } | null }).caretPositionFromPoint) {
         const pos = (document as Document & { caretPositionFromPoint: (x: number, y: number) => { offsetNode: Node; offset: number } | null }).caretPositionFromPoint(e.clientX, e.clientY)
@@ -461,41 +380,42 @@ export const LensContentEditor = React.forwardRef<LensContentEditorHandle, LensC
           sel.addRange(range)
         }
       } else if (sel) {
-        // Webkit fallback
         const wkDoc = document as Document & { caretRangeFromPoint?: (x: number, y: number) => Range | null }
         const range = wkDoc.caretRangeFromPoint?.(e.clientX, e.clientY)
-        if (range) {
-          sel.removeAllRanges()
-          sel.addRange(range)
-        }
+        if (range) { sel.removeAllRanges(); sel.addRange(range) }
       }
 
-      // For internal reorders, remove the original chip first to avoid duplication
       if (isInternal && containerRef.current) {
-        const existing = containerRef.current.querySelector(`[data-param="${paramName}"]`)
+        const existing = containerRef.current.querySelector(`[data-param="${paramLabel}"]`)
         existing?.parentNode?.removeChild(existing)
       }
 
-      // Add to params if new
-      if (!params.find((p) => p.name === paramName)) {
-        const newParam: LensParam = { name: paramName, type: 'string', required: true }
-        onParamsChange([...params, newParam])
+      const existingVp = versionParams.find((p) => p.label === paramLabel)
+      const toolId = existingVp?.toolId ?? tools.find((t) => t.key === 'text')?.id ?? ''
+
+      if (!existingVp) {
+        onVersionParamsChange([...versionParams, { label: paramLabel, toolId }])
       }
 
-      const existingParam = params.find((p) => p.name === paramName)
-        ?? { name: paramName, type: 'string' as const, required: true }
-      insertParam(existingParam)
+      insertParamByLabel(paramLabel, toolId)
       internalDragName.current = null
-    }, [params, onParamsChange, insertParam])
+    }, [versionParams, tools, onVersionParamsChange, insertParamByLabel])
 
     // ─── Imperative handle ────────────────────────────────────────────
 
     React.useImperativeHandle(ref, () => ({
-      insertParam,
+      insertParam: (label: string, toolId: string) => insertParamByLabel(label, toolId),
       focus: () => containerRef.current?.focus(),
     }))
 
     // ─── Render ───────────────────────────────────────────────────────
+
+    // Build a simple pseudo-param array for autocomplete (just labels)
+    const pseudoParamsForAutocomplete = versionParams.map((p) => ({
+      name: p.label,
+      type: 'string' as const,
+      required: true,
+    }))
 
     const hasMismatches = mismatches.orphanedInContent.length > 0 || mismatches.orphanedInParams.length > 0
 
@@ -538,15 +458,11 @@ export const LensContentEditor = React.forwardRef<LensContentEditorHandle, LensC
             <AlertTriangle size={12} className="flex-shrink-0 mt-0.5" />
             <div>
               {mismatches.orphanedInContent.length > 0 && (
-                <span>
-                  Undefined: {mismatches.orphanedInContent.map((n) => `[[${n}]]`).join(', ')}
-                </span>
+                <span>Undefined: {mismatches.orphanedInContent.map((n) => `[[${n}]]`).join(', ')}</span>
               )}
               {mismatches.orphanedInContent.length > 0 && mismatches.orphanedInParams.length > 0 && ' | '}
               {mismatches.orphanedInParams.length > 0 && (
-                <span>
-                  Unused: {mismatches.orphanedInParams.join(', ')}
-                </span>
+                <span>Unused: {mismatches.orphanedInParams.join(', ')}</span>
               )}
             </div>
           </div>
@@ -555,23 +471,24 @@ export const LensContentEditor = React.forwardRef<LensContentEditorHandle, LensC
         {/* Autocomplete dropdown */}
         {autocomplete && (
           <ParamAutocomplete
-            params={params}
+            params={pseudoParamsForAutocomplete}
             query={autocomplete.query}
             position={autocomplete.position}
-            onSelect={handleSelect}
+            onSelect={(p) => handleAutocompleteSelect(p.name)}
             onCreateNew={handleCreateNew}
-            onClose={handleAutocompleteClose}
+            onClose={() => { setAutocomplete(null); isTypingParam.current = false }}
           />
         )}
 
-        {/* Param edit popover */}
-        {editTarget && (
-          <ParamEditPopover
-            param={editTarget.param}
-            onUpdate={handleParamUpdate}
-            onRemove={handleParamRemove}
-            anchorRect={editTarget.rect}
-            onClose={() => setEditTarget(null)}
+        {/* Tool picker popover — opened on chip right-click / double-click */}
+        {toolPicker && (
+          <ToolPickerDropdown
+            paramLabel={toolPicker.paramLabel}
+            currentToolId={versionParams.find((p) => p.label === toolPicker.paramLabel)?.toolId}
+            tools={tools}
+            anchorRect={toolPicker.rect}
+            onSelect={handleToolSelect}
+            onClose={() => setToolPicker(null)}
           />
         )}
       </div>

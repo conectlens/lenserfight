@@ -72,20 +72,6 @@ export const LensLabPage: React.FC = () => {
   const activeLensContent = activeVersion?.templateBody ?? lens?.content ?? ''
   const activeVersionParams = activeVersion?.parameters ?? undefined
 
-  // Map LensVersionParam[] → LensParam[] for components expecting the legacy shape
-  const activeParamsAsLensParams = useMemo(() =>
-    (activeVersionParams ?? []).map((vp) => ({
-      name: vp.key,
-      type: vp.type as import('@lenserfight/types').LensParamType,
-      required: vp.required,
-      default: vp.defaultValue ?? undefined,
-      description: vp.helpText ?? undefined,
-      placeholder: vp.placeholder ?? undefined,
-      min: vp.validationSchema?.min ?? undefined,
-      max: vp.validationSchema?.max ?? undefined,
-    })),
-    [activeVersionParams]
-  )
 
   // Selected model input modalities (for file param validation)
   const selectedModelInputModalities = lab.providerModels.find(
@@ -318,7 +304,6 @@ export const LensLabPage: React.FC = () => {
 
           <LensBodyViewer
             content={activeLensContent}
-            params={activeParamsAsLensParams}
             onCopy={handleCopy}
             onFork={() => forkLens({})}
             isForking={isForking}

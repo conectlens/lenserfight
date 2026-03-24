@@ -8,11 +8,12 @@ import { FormError } from '@lenserfight/ui/components'
 import { Modal } from '@lenserfight/ui/modals'
 import { SelectField, LensContentEditor, type LensContentEditorHandle } from '@lenserfight/ui/forms'
 import { useFormValidation } from '@lenserfight/utils/validation'
-import { LensParam, VisibilityEnum } from '@lenserfight/types'
+import { CreateVersionParamInput, VisibilityEnum } from '@lenserfight/types'
 import { isRequired, minLength } from '@lenserfight/utils/validation'
 
 import { ParameterPanel } from './LensParameterPanel'
 import { LensTagInput } from './LensTagInput'
+import { useTools } from '../hooks/useTools'
 
 interface CreateLensModalProps {
   isOpen: boolean
@@ -27,8 +28,8 @@ interface CreateLensModalProps {
     setTags: (v: string[]) => void
     visibility: VisibilityEnum
     setVisibility: (v: VisibilityEnum) => void
-    params: LensParam[]
-    setParams: (v: LensParam[]) => void
+    versionParams: CreateVersionParamInput[]
+    setVersionParams: (v: CreateVersionParamInput[]) => void
     syncParamsFromContent: (content: string) => void
   }
   isSubmitting: boolean
@@ -48,6 +49,7 @@ export const CreateLensModal: React.FC<CreateLensModalProps> = ({
   lensId,
 }) => {
   const editorRef = useRef<LensContentEditorHandle>(null)
+  const { tools } = useTools()
 
   const formValues = useMemo(
     () => ({ title: form.title, content: form.content, tags: form.tags }),
@@ -132,15 +134,20 @@ export const CreateLensModal: React.FC<CreateLensModalProps> = ({
               ref={editorRef}
               value={form.content}
               onChange={handleContentChange}
-              params={form.params}
-              onParamsChange={form.setParams}
+              versionParams={form.versionParams}
+              onVersionParamsChange={form.setVersionParams}
+              tools={tools}
               placeholder={"Write your lens in markdown (minimum 50 characters).\nType @ to insert a parameter, or use [[variable]] syntax.\n\nExample:\n## Task\nGenerate [[num_ideas]] ideas about [[topic]]"}
             />
           </div>
           <FormError message={errors.content} />
         </div>
 
-        <ParameterPanel params={form.params} onChange={form.setParams} />
+        <ParameterPanel
+          versionParams={form.versionParams}
+          onChange={form.setVersionParams}
+          tools={tools}
+        />
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <LensTagInput tags={form.tags} onChange={form.setTags} />

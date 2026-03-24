@@ -100,82 +100,89 @@ export interface CreateLensDTO {
   visibility: VisibilityEnum
   parentLensId?: string | null
   forkedFromExecutionId?: string | null
-  params?: LensParam[]
+  params?: CreateVersionParamInput[]
 }
 
 // ─── Lens Versioning ────────────────────────────────────────────────────────
 
 /**
  * Parameter types for a versioned lens.
- * Mirrors all SQL data type categories supported by lenses.fn_validate_inputs.
- * Note: DB stores 'text' for the legacy string variant; map via mapVersionParam() in repo.
+ * Mirrors the SQL type constraint on lenses.tools.type.
  */
 export type LensVersionParamType =
-  // Text variants
   | 'text'
   | 'textarea'
   | 'json'
-  // Legacy numeric (backward compat, maps to float validation)
   | 'number'
-  // Explicit numeric types
   | 'integer'
   | 'float'
   | 'decimal'
-  // Boolean
   | 'boolean'
-  // Enum/select
   | 'select'
-  // Validated string formats
   | 'url'
   | 'date'
   | 'datetime'
-  // File/attachment (value = media_object_id UUID)
   | 'file'
 
-/** Mirrors lenses.version_parameters */
-export interface LensVersionParam {
+/** Mirrors lenses.tools */
+export interface ToolRecord {
   id: string
-  versionId: string
   key: string
-  label?: string | null
+  label: string | null
+  description: string | null
+  category: 'input' | 'media' | 'execution' | 'battle' | 'system'
   type: LensVersionParamType
   required: boolean
-  defaultValue?: string | null
-  placeholder?: string | null
-  helpText?: string | null
-  /** Structured validation rules stored as jsonb in DB.
-   *  - min / max: for integer, float, decimal, number types
-   *  - urlScheme: allowlist for url type e.g. ['https']
-   *  - allowedMimeTypes: for file type e.g. ['image/png', 'application/pdf']
-   */
-  validationSchema?: {
+  minLength: number
+  maxLength: number
+  placeholder: string | null
+  helpText: string | null
+  validationSchema: {
     min?: number | null
     max?: number | null
     urlScheme?: string[] | null
     allowedMimeTypes?: string[] | null
   } | null
-  options?: { label: string; value: string }[]
+  options: { label: string; value: string }[] | null
   sortOrder: number
-  /** Convenience accessor derived from validationSchema.min */
-  min?: number | null
-  /** Convenience accessor derived from validationSchema.max */
-  max?: number | null
-  /** MIME types accepted for file params — derived from validationSchema.allowedMimeTypes */
-  allowedMimeTypes?: string[] | null
+  isSystem: boolean
+  icon: string | null
+  color: string | null
 }
 
-/** Mirrors content.lens_versions */
+/**
+ * Mirrors lenses.version_parameters (new 4-col schema).
+ * Each param references a tool from lenses.tools via tool_id.
+ * The `tool` field is hydrated via fn_get_version_params_with_tools.
+ */
+export interface LensVersionParam {
+  id: string
+  versionId: string
+  /** Human-readable label used in [[label]] template tokens and as the user-facing name. */
+  label: string
+  toolId: string
+  /** Full tool definition — always present when loaded via fn_get_version_params_with_tools. */
+  tool: ToolRecord
+}
+
+/** Input shape for creating/updating version parameters. */
+export type CreateVersionParamInput = {
+  label: string
+  toolId: string
+}
+
+/** Mirrors lenses.versions */
 export interface LensVersion {
   id: string
   lensId: string
   versionNumber: number
+  /** Human-readable [[label]] format (rendered by fn_render_version_body). */
   templateBody: string
   status: ContentStatus
   changelog?: string | null
   parentVersionId?: string | null
   publishedAt?: string | null
   createdAt: string
-  // Hydrated at read time
   parameterCount?: number
   parameters?: LensVersionParam[]
 }
@@ -185,7 +192,7 @@ export interface CreateLensVersionDTO {
   templateBody: string
   changelog?: string | null
   parentVersionId?: string | null
-  parameters?: Omit<LensVersionParam, 'id' | 'versionId'>[]
+  parameters?: CreateVersionParamInput[]
 }
 
 // ─── Fork Tree ───────────────────────────────────────────────────────────────

@@ -16,6 +16,7 @@ export * from './lib/ToolField'
 export * from './lib/ParamChip'
 export * from './lib/ParamAutocomplete'
 export * from './lib/ParamEditPopover'
+export * from './lib/ToolPickerDropdown'
 export * from './lib/LensContentEditor'
 // Mobile-only form components (resolved via .native.tsx by Metro)
 export * from './lib/OTPInput'
