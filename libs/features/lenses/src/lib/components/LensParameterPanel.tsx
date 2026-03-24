@@ -1,20 +1,12 @@
-import React from 'react'
+import React, { useMemo } from 'react'
 import { Trash2 } from 'lucide-react'
-import { ParamChip } from '@lenserfight/ui/forms'
+import { ParamChip, SearchSelectField } from '@lenserfight/ui/forms'
 import { CreateVersionParamInput, ToolRecord } from '@lenserfight/types'
 
 interface ParameterPanelProps {
   versionParams: CreateVersionParamInput[]
   onChange: (params: CreateVersionParamInput[]) => void
   tools: ToolRecord[]
-}
-
-const CATEGORY_LABELS: Record<string, string> = {
-  input: 'Input',
-  media: 'Media',
-  execution: 'Execution',
-  battle: 'Battle',
-  system: 'System',
 }
 
 const TYPE_BADGE: Record<string, string> = {
@@ -33,6 +25,23 @@ const TYPE_BADGE: Record<string, string> = {
   file:      'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300',
 }
 
+function makeColorDot(color: string | null): React.FC<{ size?: number }> {
+  return function ColorDot({ size = 10 }) {
+    return (
+      <span
+        style={{
+          display: 'inline-block',
+          width: size,
+          height: size,
+          borderRadius: '50%',
+          background: color ?? '#9ca3af',
+          flexShrink: 0,
+        }}
+      />
+    )
+  }
+}
+
 export const ParameterPanel: React.FC<ParameterPanelProps> = ({
   versionParams,
   onChange,
@@ -48,15 +57,16 @@ export const ParameterPanel: React.FC<ParameterPanelProps> = ({
     onChange(versionParams.map((p, i) => (i === index ? { ...p, toolId } : p)))
   }
 
-  // Group tools by category for <optgroup>, sorted by canonical order
-  const CATEGORY_ORDER = ['input', 'media', 'execution', 'battle', 'system']
-  const toolsByCategory = tools.reduce<Record<string, ToolRecord[]>>((acc, t) => {
-    if (!acc[t.category]) acc[t.category] = []
-    acc[t.category].push(t)
-    return acc
-  }, {})
-  const categories = Object.keys(toolsByCategory).sort(
-    (a, b) => CATEGORY_ORDER.indexOf(a) - CATEGORY_ORDER.indexOf(b)
+  const toolOptions = useMemo(
+    () =>
+      [...tools]
+        .sort((a, b) => a.sortOrder - b.sortOrder)
+        .map((tool) => ({
+          value: tool.id,
+          label: tool.label ?? tool.key,
+          icon: makeColorDot(tool.color),
+        })),
+    [tools]
   )
 
   return (
@@ -83,22 +93,13 @@ export const ParameterPanel: React.FC<ParameterPanelProps> = ({
 
               {/* Tool selector */}
               <div className="flex-1 min-w-0">
-                <select
+                <SearchSelectField
                   value={param.toolId}
-                  onChange={(e) => handleToolChange(i, e.target.value)}
-                  className="w-full text-xs bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg px-2 py-1 text-gray-900 dark:text-white outline-none focus:ring-1 focus:ring-primary/50 focus:border-primary transition-all"
-                  title={selectedTool?.description ?? undefined}
-                >
-                  {categories.map((cat) => (
-                    <optgroup key={cat} label={CATEGORY_LABELS[cat] ?? cat}>
-                      {toolsByCategory[cat].map((tool) => (
-                        <option key={tool.id} value={tool.id}>
-                          {tool.label ?? tool.key}
-                        </option>
-                      ))}
-                    </optgroup>
-                  ))}
-                </select>
+                  onChange={(id) => handleToolChange(i, id)}
+                  options={toolOptions}
+                  placeholder="Select tool..."
+                  searchPlaceholder="Search tools..."
+                />
               </div>
 
               {/* Type badge */}
