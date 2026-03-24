@@ -9,6 +9,8 @@ interface ModalProps {
   canClose?: boolean
   panelClassName?: string
   contentClassName?: string
+  /** Stretches the panel to full viewport width and height (minus padding). Overrides max-w-md default. */
+  fullWidth?: boolean
 }
 
 export const Modal: React.FC<ModalProps> = ({
@@ -19,6 +21,7 @@ export const Modal: React.FC<ModalProps> = ({
   canClose = true,
   panelClassName = '',
   contentClassName = '',
+  fullWidth = false,
 }) => {
   if (!isOpen) return null
 
@@ -26,7 +29,8 @@ export const Modal: React.FC<ModalProps> = ({
     <div className="fixed inset-0 z-[100] flex items-center justify-center p-3 sm:p-4 bg-black/45 backdrop-blur-sm animate-in fade-in duration-200">
       <div
         className={[
-          'bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-md max-h-[calc(100vh-1.5rem)] sm:max-h-[calc(100vh-2rem)] flex flex-col relative overflow-hidden transform transition-all border border-gray-100 dark:border-gray-700',
+          'bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-h-[calc(100vh-1.5rem)] sm:max-h-[calc(100vh-2rem)] flex flex-col relative overflow-hidden transform transition-all border border-gray-100 dark:border-gray-700',
+          fullWidth ? 'max-w-full' : 'max-w-md',
           panelClassName,
         ].join(' ')}
         role="dialog"

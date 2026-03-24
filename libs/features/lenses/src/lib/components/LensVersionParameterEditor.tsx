@@ -131,7 +131,7 @@ export const LensVersionParameterEditor: React.FC<LensVersionParameterEditorProp
 
       {parameters.length === 0 ? (
         <p className="text-xs text-gray-400 dark:text-gray-500 text-center py-3">
-          No parameters defined. Variables like {'{{name}}'} will be auto-detected.
+          No parameters defined. Variables like {'[[name]]'} will be auto-detected.
         </p>
       ) : (
         <div className="space-y-3">
