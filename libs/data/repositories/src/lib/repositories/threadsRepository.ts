@@ -261,10 +261,10 @@ export class SupabaseThreadsRepository implements ThreadsRepositoryPort {
       const { data: profileData } = await supabase
         .schema('lensers')
         .from('profiles')
-        .select('preferred_language')
+        .select('preferences(language)')
         .eq('user_id', user.id)
         .maybeSingle()
-      languageCode = profileData?.preferred_language || 'en'
+      languageCode = (profileData?.preferences as { language?: string } | null)?.language || 'en'
     }
 
     // 2. Insert Base Thread (lenser_id resolved server-side via DEFAULT lensers.get_auth_lenser_id())
