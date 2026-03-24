@@ -200,6 +200,10 @@ export interface ForkNode {
   forkedFromLenserName: string
   forkedFromLenserHandle: string
   forkedFromLenserAvatarUrl?: string | null
+  /** The specific version row this lens was cloned from (nullable for pre-migration forks). */
+  forkedFromVersionId?: string | null
+  /** Version number for display: "Forked from LensTitle v3" (nullable for pre-migration forks). */
+  forkedFromVersionNumber?: number | null
 }
 
 export interface CloneLensDTO {

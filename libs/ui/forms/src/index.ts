@@ -12,6 +12,7 @@ export * from './lib/Switch'
 export * from './lib/SearchBar'
 export * from './lib/SegmentedControl'
 // Lens parameter editor primitives
+export * from './lib/ToolField'
 export * from './lib/ParamChip'
 export * from './lib/ParamAutocomplete'
 export * from './lib/ParamEditPopover'

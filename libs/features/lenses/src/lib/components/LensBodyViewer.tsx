@@ -1,17 +1,19 @@
 import { Copy, Check, Terminal, GitFork, Loader2 } from 'lucide-react'
 import React, { useState } from 'react'
-import { LensParam } from '@lenserfight/types'
+import { LensParam, LensVersionParam } from '@lenserfight/types'
 import { LensContentReadonly } from './LensContentReadonly'
 
 interface LensBodyViewerProps {
   content?: string | null
   params?: LensParam[]
+  /** Rich version params — forwarded to LensContentReadonly for tooltip display. */
+  versionParams?: LensVersionParam[]
   onCopy?: () => void
   onFork?: () => void
   isForking?: boolean
 }
 
-export const LensBodyViewer: React.FC<LensBodyViewerProps> = ({ content, params = [], onCopy, onFork, isForking }) => {
+export const LensBodyViewer: React.FC<LensBodyViewerProps> = ({ content, params = [], versionParams, onCopy, onFork, isForking }) => {
   const [copied, setCopied] = useState(false)
   const safeContent = content ?? ''
 
@@ -90,6 +92,7 @@ export const LensBodyViewer: React.FC<LensBodyViewerProps> = ({ content, params 
               <LensContentReadonly
                 content={safeContent}
                 params={params}
+                versionParams={versionParams}
                 className="text-gray-800 dark:text-gray-200 break-words"
               />
             ) : (

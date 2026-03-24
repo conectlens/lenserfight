@@ -1,6 +1,10 @@
 import { LensParam } from '@lenserfight/types'
 
-const VARIABLE_REGEX = /\{\{(\w+)\}\}/g
+// Double-square-bracket syntax [[param_name]] is intentional and injection-safe.
+// Unlike {{param}}, double-square-brackets do not appear in Jinja2/Handlebars/Mustache
+// templates that users may paste into their lens body, preventing accidental
+// parameter extraction of unrelated curly-brace patterns.
+const VARIABLE_REGEX = /\[\[(\w+)\]\]/g
 
 export function extractParams(template: string): LensParam[] {
   const seen = new Set<string>()
@@ -51,7 +55,7 @@ export function renderLens(
   params: LensParam[]
 ): string {
   const paramMap = new Map(params.map((p) => [p.name, p]))
-  return template.replace(/\{\{(\w+)\}\}/g, (_, name) => {
+  return template.replace(/\[\[(\w+)\]\]/g, (_, name) => {
     const param = paramMap.get(name) ?? { name, type: 'string' as const, required: true }
     const value = values[name]
     if (value === undefined || value === null || value === '') return ''

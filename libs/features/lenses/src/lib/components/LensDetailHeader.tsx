@@ -168,6 +168,11 @@ export const LensDetailHeader: React.FC<LensDetailHeaderProps> = ({
                 <span className="font-medium text-gray-600 dark:text-gray-400 hover:text-primary-600 dark:hover:text-primary-400 transition-colors">
                   {node.forkedFromTitle}
                 </span>
+                {node.forkedFromVersionNumber != null && (
+                  <span className="font-mono text-[10px] px-1 py-0.5 rounded bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400 border border-gray-200 dark:border-gray-700">
+                    v{node.forkedFromVersionNumber}
+                  </span>
+                )}
                 <span className="text-gray-400 dark:text-gray-500">
                   by {node.forkedFromLenserHandle}
                 </span>
