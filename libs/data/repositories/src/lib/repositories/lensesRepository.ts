@@ -1,5 +1,5 @@
 import { supabase } from '@lenserfight/data/supabase'
-import { AuthorProfile, LensParam, LensRecord, LensViewModel, PersonalLensFeedItem, CreateLensDTO, TagRecord, LensVersion, LensVersionParam, CreateLensVersionDTO, ForkNode } from '@lenserfight/types'
+import { AuthorProfile, LensRecord, LensViewModel, PersonalLensFeedItem, CreateLensDTO, TagRecord, LensVersion, LensVersionParam, CreateLensVersionDTO, ForkNode } from '@lenserfight/types'
 import { ApiResponseEnvelope, paginatedResponse } from 'contracts'
 
 // --- Port (Interface) ---
@@ -156,7 +156,7 @@ export class SupabaseLensesRepository implements LensesRepositoryPort {
       supabase
         .schema('content')
         .from('entity_translations')
-        .select('title, description, content, params')
+        .select('title, description, content')
         .eq('entity_type', 'lens')
         .eq('entity_id', baseLens.id)
         .eq('is_original', true)
@@ -177,7 +177,6 @@ export class SupabaseLensesRepository implements LensesRepositoryPort {
       title: translationResult.data?.title || 'Untitled',
       description: translationResult.data?.description ?? null,
       content: translationResult.data?.content || '',
-      params: (translationResult.data?.params ?? []) as LensParam[],
       author_profile: authorProfile,
       tags,
       reaction_totals: reactionTotals,
@@ -426,7 +425,7 @@ export class SupabaseLensesRepository implements LensesRepositoryPort {
     const { data: translation, error: translationError } = await supabase
       .schema('content')
       .from('entity_translations')
-      .select('title, description, content, params')
+      .select('title, description, content')
       .eq('entity_type', 'lens')
       .eq('entity_id', id)
       .eq('is_original', true)
@@ -448,7 +447,6 @@ export class SupabaseLensesRepository implements LensesRepositoryPort {
       title: translation?.title || 'Untitled',
       description: translation?.description ?? null,
       content: translation?.content || '',
-      params: ((translation as any)?.params ?? []) as LensParam[],
       author_profile: authorProfile,
       reaction_totals: {},
       tags,
@@ -494,7 +492,18 @@ export class SupabaseLensesRepository implements LensesRepositoryPort {
       p_title: input.title,
       p_description: input.description ?? null,
       p_language_code: languageCode,
-      p_params: input.params ?? [],
+      p_params: (input.params ?? []).map((p, i) => ({
+        key: p.name,
+        label: p.name,
+        type: p.type === 'string' ? 'text' : p.type,
+        required: p.required,
+        default_value: p.default ?? null,
+        placeholder: p.placeholder ?? null,
+        help_text: p.description ?? null,
+        validation_schema: null,
+        options: p.options ?? null,
+        sort_order: i,
+      })),
       p_tag_ids: input.tagIds ?? [],
       p_parent_lens_id: input.parentLensId ?? null,
       p_forked_from_execution_id: input.forkedFromExecutionId ?? null,
@@ -539,7 +548,6 @@ export class SupabaseLensesRepository implements LensesRepositoryPort {
       p_visibility: input.visibility ?? null,
       p_title: input.title ?? null,
       p_description: input.description ?? null,
-      p_params: input.params ?? null,
       p_tag_ids: input.tagIds ?? null,
     })
 
@@ -575,6 +583,13 @@ export class SupabaseLensesRepository implements LensesRepositoryPort {
   // ─── Versioning ───────────────────────────────────────────────────────────
 
   private mapVersionParam(row: Record<string, unknown>): LensVersionParam {
+    const schema = (row.validation_schema as {
+      min?: number | null
+      max?: number | null
+      urlScheme?: string[] | null
+      allowedMimeTypes?: string[] | null
+    } | null) ?? null
+
     return {
       id: row.id as string,
       versionId: row.version_id as string,
@@ -585,9 +600,12 @@ export class SupabaseLensesRepository implements LensesRepositoryPort {
       defaultValue: (row.default_value as string | null) ?? null,
       placeholder: (row.placeholder as string | null) ?? null,
       helpText: (row.help_text as string | null) ?? null,
-      validationSchema: row.validation_schema ?? null,
+      validationSchema: schema,
       options: (row.options as { label: string; value: string }[] | null) ?? undefined,
       sortOrder: (row.sort_order as number) ?? 0,
+      min: schema?.min ?? null,
+      max: schema?.max ?? null,
+      allowedMimeTypes: schema?.allowedMimeTypes ?? null,
     }
   }
 

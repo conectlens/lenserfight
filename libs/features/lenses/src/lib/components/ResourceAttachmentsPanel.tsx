@@ -1,27 +1,29 @@
 import React, { useRef, useState } from 'react'
 import { FileText, Image, Music, Video, File, Upload, X } from 'lucide-react'
 import { Button, LinearProgress } from '@lenserfight/ui/components'
-import { VersionResource } from '@lenserfight/types'
+import { MediaAttachment } from '@lenserfight/types'
 
 interface ResourceAttachmentsPanelProps {
-  resources: VersionResource[]
+  attachments: MediaAttachment[]
   isOwner: boolean
   onUploadAndAttach: (file: globalThis.File, bindingKey: string) => Promise<void>
-  onDetach: (resourceId: string) => void
+  onDetach: (bindingKey: string) => void
   uploadProgress: Record<string, { status: string; percent?: number }>
   isLoading?: boolean
+  /** MIME types accepted for file input (from LensVersionParam.allowedMimeTypes). */
+  allowedMimeTypes?: string[] | null
 }
 
 const MEDIA_ICONS: Record<string, React.ElementType> = {
   text: FileText,
   document: FileText,
+  json: FileText,
   image: Image,
   audio: Music,
   video: Video,
-  json: FileText,
 }
 
-function formatBytes(bytes?: number): string {
+function formatBytes(bytes?: number | null): string {
   if (!bytes) return ''
   if (bytes < 1024) return `${bytes} B`
   if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`
@@ -29,16 +31,19 @@ function formatBytes(bytes?: number): string {
 }
 
 export const ResourceAttachmentsPanel: React.FC<ResourceAttachmentsPanelProps> = ({
-  resources,
+  attachments,
   isOwner,
   onUploadAndAttach,
   onDetach,
   uploadProgress,
   isLoading,
+  allowedMimeTypes,
 }) => {
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [bindingKey, setBindingKey] = useState('')
   const [isDragOver, setIsDragOver] = useState(false)
+
+  const acceptAttr = allowedMimeTypes?.length ? allowedMimeTypes.join(',') : undefined
 
   const handleFileSelect = async (files: FileList | null) => {
     if (!files || files.length === 0) return
@@ -70,31 +75,32 @@ export const ResourceAttachmentsPanel: React.FC<ResourceAttachmentsPanelProps> =
     <div className="mt-6">
       <h4 className="text-sm font-semibold text-gray-800 dark:text-gray-100 mb-3">Attachments</h4>
 
-      {/* Resource list */}
-      {resources.length > 0 && (
+      {/* Attachment list */}
+      {attachments.length > 0 && (
         <div className="space-y-1.5 mb-4">
-          {resources.map((vr) => {
-            const res = vr.resource
-            if (!res) return null
-            const Icon = MEDIA_ICONS[res.mediaType] ?? File
+          {attachments.map((att) => {
+            const obj = att.object
+            const Icon = obj ? (MEDIA_ICONS[obj.mediaType] ?? File) : File
             return (
               <div
-                key={`${vr.versionId}-${vr.resourceId}`}
+                key={att.id}
                 className="flex items-center gap-2 p-2 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800"
               >
                 <Icon size={16} className="text-gray-400 flex-shrink-0" />
                 <div className="flex-1 min-w-0">
                   <p className="text-xs font-medium text-gray-700 dark:text-gray-300 truncate">
-                    {res.name}
+                    {obj?.name ?? att.bindingKey}
                   </p>
                   <p className="text-[10px] text-gray-400">
-                    {vr.bindingKey}{res.byteSize ? ` · ${formatBytes(res.byteSize)}` : ''}
+                    {att.bindingKey}
+                    {obj?.byteSize ? ` · ${formatBytes(obj.byteSize)}` : ''}
+                    {obj?.mimeType ? ` · ${obj.mimeType}` : ''}
                   </p>
                 </div>
                 {isOwner && (
                   <button
                     type="button"
-                    onClick={() => onDetach(vr.resourceId)}
+                    onClick={() => onDetach(att.bindingKey)}
                     className="p-1 text-gray-400 hover:text-red-500 transition-colors flex-shrink-0"
                   >
                     <X size={14} />
@@ -141,10 +147,16 @@ export const ResourceAttachmentsPanel: React.FC<ResourceAttachmentsPanelProps> =
             <p className="text-xs text-gray-500 dark:text-gray-400">
               Drop file or <span className="text-primary-600 dark:text-primary-400">browse</span>
             </p>
+            {allowedMimeTypes?.length && (
+              <p className="text-[10px] text-gray-400 mt-1">
+                Accepted: {allowedMimeTypes.join(', ')}
+              </p>
+            )}
           </div>
           <input
             ref={fileInputRef}
             type="file"
+            accept={acceptAttr}
             className="hidden"
             onChange={(e) => handleFileSelect(e.target.files)}
           />
@@ -152,7 +164,7 @@ export const ResourceAttachmentsPanel: React.FC<ResourceAttachmentsPanelProps> =
       )}
 
       {/* Empty state for non-owners */}
-      {!isOwner && resources.length === 0 && (
+      {!isOwner && attachments.length === 0 && (
         <p className="text-xs text-gray-400 dark:text-gray-500 text-center py-4">
           No attachments for this version.
         </p>

@@ -64,7 +64,7 @@ export const ParameterPanel: React.FC<ParameterPanelProps> = ({ params, onChange
         {/* Rows */}
         {params.map((param, i) => (
           <div
-            key={param.name}
+            key={`${param.name}-${i}`}
             className="grid grid-cols-[140px_140px_70px_1fr] gap-2 px-3 py-2 border-b last:border-b-0 border-gray-100 dark:border-gray-700 items-start"
           >
             {/* Name */}
