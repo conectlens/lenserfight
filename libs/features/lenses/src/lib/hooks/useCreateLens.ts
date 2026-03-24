@@ -28,15 +28,17 @@ export const useCreateLens = () => {
   /**
    * Sync detected [[label]] tokens from content into versionParams.
    * Preserves toolId for labels already present; new labels default to the
-   * system 'text' tool.
+   * system 'text' tool. No-ops if tools haven't loaded yet (textToolId
+   * undefined) — the debounce in CreateLensModal will retry on next change.
    */
   const syncParamsFromContent = useCallback((rawContent: string) => {
+    if (!textToolId) return
     const extracted = extractParams(rawContent)
     setVersionParams((prev) => {
       const prevMap = new Map(prev.map((p) => [p.label, p]))
       return extracted.map((ep) => {
         const existing = prevMap.get(ep.name)
-        return existing ?? { label: ep.name, toolId: textToolId ?? '' }
+        return existing ?? { label: ep.name, toolId: textToolId }
       })
     })
   }, [textToolId])
@@ -93,11 +95,13 @@ export const useCreateLens = () => {
         ? trimmedContent.substring(0, 100) + (trimmedContent.length > 100 ? '...' : '')
         : null
 
-    // Ensure all params have a toolId (fallback to text tool)
-    const resolvedParams: CreateVersionParamInput[] = versionParams.map((p) => ({
-      label: p.label,
-      toolId: p.toolId || textToolId || '',
-    }))
+    // Ensure all params have a toolId; drop any that still have none
+    const resolvedParams: CreateVersionParamInput[] = versionParams
+      .filter((p) => p.toolId || textToolId)
+      .map((p) => ({
+        label: p.label,
+        toolId: p.toolId || textToolId || '',
+      }))
 
     const dto: CreateLensDTO = {
       title: trimmedTitle,
