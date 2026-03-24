@@ -1,14 +1,17 @@
 import { Copy, Check, Terminal, GitFork, Loader2 } from 'lucide-react'
 import React, { useState } from 'react'
+import { LensParam } from '@lenserfight/types'
+import { LensContentReadonly } from './LensContentReadonly'
 
 interface LensBodyViewerProps {
   content?: string | null
+  params?: LensParam[]
   onCopy?: () => void
   onFork?: () => void
   isForking?: boolean
 }
 
-export const LensBodyViewer: React.FC<LensBodyViewerProps> = ({ content, onCopy, onFork, isForking }) => {
+export const LensBodyViewer: React.FC<LensBodyViewerProps> = ({ content, params = [], onCopy, onFork, isForking }) => {
   const [copied, setCopied] = useState(false)
   const safeContent = content ?? ''
 
@@ -66,7 +69,7 @@ export const LensBodyViewer: React.FC<LensBodyViewerProps> = ({ content, onCopy,
             {!copied && (
               <span
                 className="
-                  absolute right-full top-1/2 -translate-y-1/2 mr-2 px-2 py-1 
+                  absolute right-full top-1/2 -translate-y-1/2 mr-2 px-2 py-1
                   bg-gray-900 text-white text-[10px] font-bold rounded opacity-0 pointer-events-none
                   group-hover/btn:opacity-100 transition-opacity duration-200 whitespace-nowrap
                 "
@@ -78,12 +81,22 @@ export const LensBodyViewer: React.FC<LensBodyViewerProps> = ({ content, onCopy,
         </div>
 
         {/* Content */}
-        <pre className="block p-6 pt-10 md:p-8 md:pt-8 overflow-y-auto max-h-[70vh] text-sm md:text-base font-mono leading-7 text-gray-800 dark:text-gray-200 bg-white dark:bg-gray-900 whitespace-pre-wrap break-words scrollbar-thin scrollbar-thumb-gray-200 dark:scrollbar-thumb-gray-700 scrollbar-track-transparent">
+        <div className="block p-6 pt-10 md:p-8 md:pt-8 overflow-y-auto max-h-[70vh] text-sm md:text-base font-mono leading-7 bg-white dark:bg-gray-900 scrollbar-thin scrollbar-thumb-gray-200 dark:scrollbar-thumb-gray-700 scrollbar-track-transparent">
           <div className="absolute top-4 left-4 select-none opacity-30 pointer-events-none text-gray-400">
             <Terminal size={16} />
           </div>
-          <code className="pl-6 block">{safeContent || 'No lens content available.'}</code>
-        </pre>
+          <div className="pl-6">
+            {safeContent ? (
+              <LensContentReadonly
+                content={safeContent}
+                params={params}
+                className="text-gray-800 dark:text-gray-200 break-words"
+              />
+            ) : (
+              <span className="text-gray-400">No lens content available.</span>
+            )}
+          </div>
+        </div>
       </div>
     </div>
   )

@@ -68,6 +68,9 @@ export interface ExecutionRun {
   createdAt: string
 }
 
+/** Visibility for execution artifacts. Enforced by RLS + fn_set_artifact_visibility. */
+export type ArtifactVisibility = 'private' | 'public' | 'contender_only' | 'archived'
+
 /** Mirrors execution.artifacts */
 export interface ExecutionArtifact {
   id: string
@@ -75,7 +78,7 @@ export interface ExecutionArtifact {
   artifactKind: ArtifactKind
   contentText: string | null
   contentJson: unknown | null
-  visibility: 'private' | 'public' | 'contender_only'
+  visibility: ArtifactVisibility
   isPrimaryOutput: boolean
   /** @deprecated Use mediaObjectId. FK to ai.resources. */
   resourceId?: string | null
@@ -84,6 +87,12 @@ export interface ExecutionArtifact {
   /** Extensible output type — superset of artifactKind. Prefer for new writes. */
   outputType?: string | null
   createdAt: string
+}
+
+/** DTO for fn_set_artifact_visibility RPC */
+export interface SetArtifactVisibilityDTO {
+  artifactId: string
+  visibility: ArtifactVisibility
 }
 
 /** Mirrors execution.requests */
@@ -136,6 +145,40 @@ export interface LensExecutionRecord {
 /** @deprecated Use LensExecutionRecord */
 export type PromptExecutionRecord = LensExecutionRecord
 
+/**
+ * Enriched execution history item returned by fn_get_lens_execution_history.
+ * Replaces the deprecated ray_runs-based LensExecutionRecord for timeline display.
+ * Includes model key, provider key, and version number for badge rendering.
+ */
+export interface LensExecutionHistoryItem {
+  requestId: string
+  lensId: string
+  versionId: string | null
+  versionNumber: number | null
+  modelId: string | null
+  modelKey: string | null
+  providerKey: string | null
+  fundingSource: FundingSource
+  runId: string | null
+  runStatus: ExecutionRunStatus | null
+  latencyMs: number | null
+  tokenInput: number | null
+  tokenOutput: number | null
+  creditCost: number | null
+  createdAt: string
+  // Hydrated at read time
+  artifacts?: ExecutionArtifact[]
+}
+
+/** Mirrors execution.request_attachments */
+export interface RequestAttachment {
+  id: string
+  requestId: string
+  mediaObjectId: string
+  bindingKey: string
+  attachedAt: string
+}
+
 // --- HTTP API DTOs (VITE_API_URL) ---
 
 export interface TriggerExecutionDTO {
@@ -148,6 +191,9 @@ export interface TriggerExecutionDTO {
   input_snapshot: Record<string, unknown>
   /** Resource bindings for the version's named slots (migration 42). */
   resource_bindings?: { resource_id: string; binding_key: string }[]
+  /** File attachment bindings for 'file' type parameters. Each maps a media_object_id
+   *  to the parameter key (binding_key). Written to execution.request_attachments. */
+  attachment_bindings?: { media_object_id: string; binding_key: string }[]
   funding_source: FundingSource
   origin_type: ExecutionOriginType
   byok_key_ref_id?: string

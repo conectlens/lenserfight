@@ -1,5 +1,5 @@
 import { useQueryClient } from '@tanstack/react-query'
-import { GitFork, History, Lock, Loader2, Pencil, Trash2, Flag } from 'lucide-react'
+import { GitFork, History, Lock, Loader2, Pencil, Trash2, Flag, Play, ChevronDown, ChevronUp } from 'lucide-react'
 import React, { useEffect, useMemo, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 
@@ -11,25 +11,29 @@ import { useUI } from '@lenserfight/ui/providers'
 import { lensesService } from '@lenserfight/data/repositories'
 import { useReportContent } from '@lenserfight/features/home'
 import { ReportReasonEnum } from '@lenserfight/types'
-import { AIResultsSection, AIProviderModelSelect } from '@lenserfight/features/generations'
+import { AIResultsSection } from '@lenserfight/features/generations'
 import { CreateLenserProfileModal } from '@lenserfight/features/onboarding'
 import { CreateLensModal } from '../components/CreateLensModal'
 import { LensAuthorList } from '../components/LensAuthorList'
 import { LensBodyViewer } from '../components/LensBodyViewer'
 import { LensDetailHeader } from '../components/LensDetailHeader'
 import { LensRelatedList } from '../components/LensRelatedList'
+import { LabExecutionPanel } from '../components/LabExecutionPanel'
+import { LabArtifactViewer } from '../components/LabArtifactViewer'
 import { useAuthenticatedLenser } from '../hooks/useAuthenticatedLenser'
 import { useCloneLens } from '../hooks/useCloneLens'
 import { useCreateLens } from '../hooks/useCreateLens'
 import { useForkTree } from '../hooks/useForkTree'
 import { useLensDetailController } from '../hooks/useLensDetailController'
 import { useLensVersions, useLensVersionDetail } from '../hooks/useLensVersions'
+import { useLabController } from '../hooks/useLabController'
+import { useFundingSource } from '../hooks/useFundingSource'
 
 export const LensDetailPage: React.FC = () => {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
   const { lenser, hasLenser } = useAuthenticatedLenser()
-  const { isLoading: authLoading } = useAuth()
+  const { isLoading: authLoading, isAuthenticated } = useAuth()
   const { setShareConfig } = useShareContext()
   const { setPageActions, setPageTitle } = useUI()
   const queryClient = useQueryClient()
@@ -47,8 +51,30 @@ export const LensDetailPage: React.FC = () => {
   const [isDeleting, setIsDeleting] = useState(false)
   const [deleteTargetId, setDeleteTargetId] = useState<string | null>(null)
 
-  const [selectedProviderKey, setSelectedProviderKey] = useState('')
-  const [selectedModelKey, setSelectedModelKey] = useState('')
+  // Execution panel state
+  const [showRunPanel, setShowRunPanel] = useState(false)
+  const lab = useLabController(id ?? '', !!isAuthenticated)
+  const funding = useFundingSource(lab.selectedProviderKey)
+  const activeVersionParams = previewVersion?.parameters ?? undefined
+
+  // Map LensVersionParam[] → LensParam[] for components expecting the legacy shape
+  const activeParamsAsLensParams = useMemo(() =>
+    (activeVersionParams ?? []).map((vp) => ({
+      name: vp.key,
+      type: vp.type as import('@lenserfight/types').LensParamType,
+      required: vp.required,
+      default: vp.defaultValue ?? undefined,
+      description: vp.helpText ?? undefined,
+      placeholder: vp.placeholder ?? undefined,
+      min: vp.validationSchema?.min ?? undefined,
+      max: vp.validationSchema?.max ?? undefined,
+    })),
+    [activeVersionParams]
+  )
+
+  const selectedModelInputModalities = lab.providerModels.find(
+    (m) => m.key === lab.selectedModelKey,
+  )?.inputModalities
 
   // Version history (lazy — only fetched when picker is opened)
   const [showVersionPicker, setShowVersionPicker] = useState(false)
@@ -61,11 +87,6 @@ export const LensDetailPage: React.FC = () => {
 
   const { cloneLens, isCloning } = useCloneLens(lens ?? null)
   const { forkTree, isLoadingForkTree } = useForkTree(id ?? '', lens?.parentLensId)
-
-  const handleProviderChange = (key: string) => {
-    setSelectedProviderKey(key)
-    setSelectedModelKey('')
-  }
 
   const {
     isOpen: isCreateOpen,
@@ -268,6 +289,7 @@ export const LensDetailPage: React.FC = () => {
 
             <LensBodyViewer
               content={previewVersion?.templateBody ?? lens.content}
+              params={activeParamsAsLensParams}
               onCopy={handleCopy}
             />
           </div>
@@ -326,13 +348,67 @@ export const LensDetailPage: React.FC = () => {
             </div>
           )}
 
+          {/* Run Lens collapsible panel */}
           <div className="max-w-[860px] mx-auto mb-6">
-            <AIProviderModelSelect
-              providerKey={selectedProviderKey}
-              modelKey={selectedModelKey}
-              onProviderChange={handleProviderChange}
-              onModelChange={setSelectedModelKey}
-            />
+            <button
+              type="button"
+              onClick={() => setShowRunPanel((v) => !v)}
+              className="w-full flex items-center gap-2 px-4 py-3 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors text-left"
+            >
+              <Play size={15} className="text-primary-500 flex-shrink-0" />
+              <span className="text-sm font-semibold text-gray-800 dark:text-gray-100 flex-1">
+                Run Lens
+              </span>
+              {showRunPanel ? (
+                <ChevronUp size={15} className="text-gray-400" />
+              ) : (
+                <ChevronDown size={15} className="text-gray-400" />
+              )}
+            </button>
+
+            {showRunPanel && (
+              <div className="mt-3 space-y-4">
+                <LabExecutionPanel
+                  lensId={lens.id}
+                  lensContent={previewVersion?.templateBody ?? lens.content}
+                  providers={lab.providers}
+                  isLoadingProviders={lab.isLoadingProviders}
+                  providerModels={lab.providerModels}
+                  isLoadingModels={lab.isLoadingModels}
+                  selectedProviderKey={lab.selectedProviderKey}
+                  selectedModelKey={lab.selectedModelKey}
+                  onProviderChange={lab.handleProviderChange}
+                  onModelChange={lab.setSelectedModelKey}
+                  onTrigger={lab.triggerExecution}
+                  onTriggerStream={lab.triggerStream}
+                  isTriggeringExecution={lab.isTriggeringExecution}
+                  isConnecting={lab.streamState === 'loading'}
+                  isStreaming={lab.streamState === 'loading' || lab.streamState === 'streaming'}
+                  onStop={lab.stopStream}
+                  versionParams={activeVersionParams}
+                  selectedModelInputModalities={selectedModelInputModalities}
+                  fundingSource={funding.fundingSource}
+                  onFundingSourceChange={funding.setFundingSource}
+                  selectedKeyRefId={funding.selectedKeyRefId}
+                  onKeyRefIdChange={funding.setSelectedKeyRefId}
+                  availableKeys={funding.availableKeys}
+                  walletBalance={funding.walletBalance}
+                  canUseBYOK={funding.canUseBYOK}
+                />
+                <LabArtifactViewer
+                  selectedRunId={lab.selectedRunId}
+                  comparisonRunIds={lab.comparisonRunIds}
+                  latestResult={lab.latestResult}
+                  streamState={lab.streamState}
+                  streamOutput={lab.streamOutput}
+                  streamRunId={lab.streamRunId}
+                  streamUsage={lab.streamUsage}
+                  streamCredits={lab.streamCredits}
+                  streamError={lab.streamError}
+                  isOwner={isOwner}
+                />
+              </div>
+            )}
           </div>
 
           <div className="max-w-[860px] mx-auto">

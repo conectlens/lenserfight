@@ -1,9 +1,13 @@
 import React, { useState, useEffect, useRef } from 'react'
 import { useQuery } from '@tanstack/react-query'
-import { Copy, Check, LayoutPanelLeft, Coins, Loader2 } from 'lucide-react'
-import { executionService } from '@lenserfight/data/repositories'
+import { Copy, Check, LayoutPanelLeft, Coins, Loader2, Eye, EyeOff, Users, Archive } from 'lucide-react'
+import { executionService, mediaRepository } from '@lenserfight/data/repositories'
 import { queryKeys } from '@lenserfight/data/cache'
-import { ExecutionArtifact, ExecuteResponse, StreamState, StreamUsage } from '@lenserfight/types'
+import { ExecutionArtifact, ExecuteResponse, StreamState, StreamUsage, ArtifactVisibility } from '@lenserfight/types'
+import { MediaViewer } from '@lenserfight/ui/data-display'
+import { useArtifactVisibility } from '../hooks/useArtifactVisibility'
+
+const FAILED_STATUSES = ['failed', 'canceled', 'timed_out'] as const
 
 interface LabArtifactViewerProps {
   selectedRunId: string | null
@@ -15,21 +19,16 @@ interface LabArtifactViewerProps {
   streamUsage: StreamUsage | null
   streamCredits: number | null
   streamError: string | null
-}
-
-interface ArtifactBlockProps {
-  artifact: ExecutionArtifact
+  isOwner?: boolean
 }
 
 const CopyButton: React.FC<{ text: string }> = ({ text }) => {
   const [copied, setCopied] = useState(false)
-
   const handleCopy = async () => {
     await navigator.clipboard.writeText(text)
     setCopied(true)
     setTimeout(() => setCopied(false), 2000)
   }
-
   return (
     <button
       onClick={handleCopy}
@@ -41,16 +40,131 @@ const CopyButton: React.FC<{ text: string }> = ({ text }) => {
   )
 }
 
-const ArtifactBlock: React.FC<ArtifactBlockProps> = ({ artifact }) => {
+const VISIBILITY_OPTIONS: { value: ArtifactVisibility; icon: React.ElementType; label: string; color: string }[] = [
+  { value: 'private',         icon: EyeOff, label: 'Private',     color: 'text-gray-400' },
+  { value: 'public',          icon: Eye,    label: 'Public',      color: 'text-status-green' },
+  { value: 'contender_only',  icon: Users,  label: 'Community',   color: 'text-status-blue' },
+  { value: 'archived',        icon: Archive, label: 'Archived',   color: 'text-gray-400' },
+]
+
+function VisibilityToggle({
+  artifactId,
+  visibility,
+  runId,
+}: {
+  artifactId: string
+  visibility: ArtifactVisibility
+  runId: string
+}) {
+  const [open, setOpen] = useState(false)
+  const { setVisibility, isPending } = useArtifactVisibility(runId)
+  const current = VISIBILITY_OPTIONS.find((o) => o.value === visibility) ?? VISIBILITY_OPTIONS[0]
+  const Icon = current.icon
+
+  return (
+    <div className="relative">
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        disabled={isPending}
+        className={`flex items-center gap-1 text-xs transition-colors ${current.color} hover:opacity-80 disabled:opacity-50`}
+        title={`Visibility: ${current.label}`}
+      >
+        {isPending ? <Loader2 size={12} className="animate-spin" /> : <Icon size={12} />}
+        <span>{current.label}</span>
+      </button>
+
+      {open && (
+        <div className="absolute right-0 top-5 z-20 w-36 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 shadow-lg py-1">
+          {VISIBILITY_OPTIONS.map((opt) => {
+            const OptIcon = opt.icon
+            return (
+              <button
+                key={opt.value}
+                type="button"
+                onClick={async () => {
+                  setOpen(false)
+                  await setVisibility({ artifactId, visibility: opt.value })
+                }}
+                className={`w-full flex items-center gap-2 px-3 py-1.5 text-xs hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors ${opt.color} ${opt.value === visibility ? 'font-semibold' : ''}`}
+              >
+                <OptIcon size={12} />
+                {opt.label}
+              </button>
+            )
+          })}
+        </div>
+      )}
+    </div>
+  )
+}
+
+function MediaArtifactBlock({ artifact, isOwner, runId }: { artifact: ExecutionArtifact; isOwner?: boolean; runId: string }) {
+  // Resolve signed read URL when mediaObjectId is present
+  const { data: signedUrl } = useQuery({
+    queryKey: ['media-signed-url', artifact.mediaObjectId],
+    queryFn: () => mediaRepository.getSignedReadUrl(artifact.mediaObjectId!),
+    enabled: !!artifact.mediaObjectId,
+    staleTime: 50 * 60_000, // signed URLs valid ~1h
+  })
+
+  const mediaTypeFromKind = (): 'image' | 'video' | 'audio' | 'document' | 'text' | 'unknown' => {
+    switch (artifact.artifactKind) {
+      case 'image': return 'image'
+      case 'audio': return 'audio'
+      case 'video': return 'video'
+      default: return 'unknown'
+    }
+  }
+
+  return (
+    <div className="rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
+      <MediaViewer
+        mediaType={mediaTypeFromKind()}
+        url={signedUrl ?? null}
+        name={artifact.mediaObjectId ?? undefined}
+      />
+      {isOwner && (
+        <div className="flex items-center justify-end px-3 py-1.5 border-t border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-gray-900">
+          <VisibilityToggle
+            artifactId={artifact.id}
+            visibility={artifact.visibility as ArtifactVisibility}
+            runId={runId}
+          />
+        </div>
+      )}
+    </div>
+  )
+}
+
+const ArtifactBlock: React.FC<{ artifact: ExecutionArtifact; isOwner?: boolean; runId: string }> = ({
+  artifact,
+  isOwner,
+  runId,
+}) => {
+  // Non-owners see only non-private artifacts
+  if (!isOwner && artifact.visibility === 'private') return null
+
   if (artifact.artifactKind === 'text' && artifact.contentText) {
     return (
-      <div className="relative">
-        <div className="absolute top-2 right-2">
-          <CopyButton text={artifact.contentText} />
+      <div className="rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
+        <div className="relative">
+          <div className="absolute top-2 right-2 z-10 flex items-center gap-2">
+            <CopyButton text={artifact.contentText} />
+          </div>
+          <pre className="whitespace-pre-wrap break-words text-sm text-gray-800 dark:text-gray-200 bg-gray-50 dark:bg-gray-800 p-4 pr-20 font-mono leading-relaxed">
+            {artifact.contentText}
+          </pre>
         </div>
-        <pre className="whitespace-pre-wrap break-words text-sm text-gray-800 dark:text-gray-200 bg-gray-50 dark:bg-gray-800 rounded-lg p-4 pr-16 border border-gray-200 dark:border-gray-700 font-mono leading-relaxed">
-          {artifact.contentText}
-        </pre>
+        {isOwner && (
+          <div className="flex items-center justify-end px-3 py-1.5 border-t border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-gray-900">
+            <VisibilityToggle
+              artifactId={artifact.id}
+              visibility={artifact.visibility as ArtifactVisibility}
+              runId={runId}
+            />
+          </div>
+        )}
       </div>
     )
   }
@@ -58,26 +172,53 @@ const ArtifactBlock: React.FC<ArtifactBlockProps> = ({ artifact }) => {
   if (artifact.artifactKind === 'json' && artifact.contentJson !== null) {
     const pretty = JSON.stringify(artifact.contentJson, null, 2)
     return (
-      <div className="relative">
-        <div className="absolute top-2 right-2">
-          <CopyButton text={pretty} />
+      <div className="rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
+        <div className="relative">
+          <div className="absolute top-2 right-2 z-10">
+            <CopyButton text={pretty} />
+          </div>
+          <pre className="whitespace-pre-wrap break-words text-sm text-gray-800 dark:text-gray-200 bg-gray-50 dark:bg-gray-800 p-4 pr-16 font-mono leading-relaxed">
+            {pretty}
+          </pre>
         </div>
-        <pre className="whitespace-pre-wrap break-words text-sm text-gray-800 dark:text-gray-200 bg-gray-50 dark:bg-gray-800 rounded-lg p-4 pr-16 border border-gray-200 dark:border-gray-700 font-mono leading-relaxed">
-          {pretty}
-        </pre>
+        {isOwner && (
+          <div className="flex items-center justify-end px-3 py-1.5 border-t border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-gray-900">
+            <VisibilityToggle
+              artifactId={artifact.id}
+              visibility={artifact.visibility as ArtifactVisibility}
+              runId={runId}
+            />
+          </div>
+        )}
       </div>
     )
   }
 
-  // image / audio / video / other — placeholder
-  return (
-    <div className="flex items-center justify-center h-24 rounded-lg border border-dashed border-gray-200 dark:border-gray-700 text-sm text-gray-400 dark:text-gray-500">
-      Media output ({artifact.artifactKind}) — coming soon
-    </div>
-  )
+  // image / video / audio — use MediaViewer
+  if (['image', 'video', 'audio'].includes(artifact.artifactKind)) {
+    return <MediaArtifactBlock artifact={artifact} isOwner={isOwner} runId={runId} />
+  }
+
+  // Binary / other — download link if mediaObjectId resolves
+  if (artifact.mediaObjectId) {
+    return <MediaArtifactBlock artifact={artifact} isOwner={isOwner} runId={runId} />
+  }
+
+  return null
 }
 
-const RunArtifacts: React.FC<{ runId: string; showAll: boolean }> = ({ runId, showAll }) => {
+const RunArtifacts: React.FC<{ runId: string; showAll: boolean; isOwner?: boolean }> = ({
+  runId,
+  showAll,
+  isOwner,
+}) => {
+  const { data: run } = useQuery({
+    queryKey: queryKeys.executions.run(runId),
+    queryFn: () => executionService.pollRunStatus(runId),
+    enabled: !!runId,
+    staleTime: 60_000,
+  })
+
   const { data: artifacts = [], isLoading } = useQuery({
     queryKey: queryKeys.executions.artifacts(runId),
     queryFn: () => executionService.getArtifacts(runId),
@@ -94,6 +235,16 @@ const RunArtifacts: React.FC<{ runId: string; showAll: boolean }> = ({ runId, sh
     )
   }
 
+  // Never show artifacts from non-succeeded runs
+  const runStatus = run?.status
+  if (runStatus && FAILED_STATUSES.includes(runStatus as typeof FAILED_STATUSES[number])) {
+    return (
+      <p className="text-sm text-gray-400 dark:text-gray-500 text-center py-4">
+        Output not available for {runStatus} runs.
+      </p>
+    )
+  }
+
   const displayed = showAll ? artifacts : artifacts.filter((a) => a.isPrimaryOutput)
 
   if (displayed.length === 0) {
@@ -105,7 +256,7 @@ const RunArtifacts: React.FC<{ runId: string; showAll: boolean }> = ({ runId, sh
   return (
     <div className="flex flex-col gap-3">
       {displayed.map((artifact) => (
-        <ArtifactBlock key={artifact.id} artifact={artifact} />
+        <ArtifactBlock key={artifact.id} artifact={artifact} isOwner={isOwner} runId={runId} />
       ))}
     </div>
   )
@@ -124,7 +275,6 @@ const StreamingOutput: React.FC<{
   const preRef = useRef<HTMLPreElement>(null)
   const userScrolledUpRef = useRef(false)
 
-  // Detect if user scrolled up inside the pre — suppress auto-scroll while they browse
   useEffect(() => {
     const el = preRef.current
     if (!el) return
@@ -136,13 +286,11 @@ const StreamingOutput: React.FC<{
     return () => el.removeEventListener('scroll', onScroll)
   }, [])
 
-  // Auto-scroll to bottom on each new token unless user scrolled up
   useEffect(() => {
     if (!isCursor || userScrolledUpRef.current) return
     bottomRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' })
   }, [output, isCursor])
 
-  // When streaming completes, always scroll to bottom once
   useEffect(() => {
     if (state === 'complete') {
       userScrolledUpRef.current = false
@@ -207,7 +355,6 @@ const StreamingOutput: React.FC<{
           >
             {output}
             {isCursor && <span className="animate-pulse">▌</span>}
-            {/* Scroll anchor — always at the very end of content */}
             <span ref={bottomRef} />
           </pre>
         </div>
@@ -226,12 +373,11 @@ export const LabArtifactViewer: React.FC<LabArtifactViewerProps> = ({
   streamUsage,
   streamCredits,
   streamError,
+  isOwner,
 }) => {
   const [showAll, setShowAll] = useState(false)
-
   const isComparing = comparisonRunIds.length === 2
 
-  // Streaming takes priority over all other display modes
   if (streamState !== 'idle') {
     return (
       <StreamingOutput
@@ -245,7 +391,6 @@ export const LabArtifactViewer: React.FC<LabArtifactViewerProps> = ({
     )
   }
 
-  // Show the latest sync result if nothing from history is selected
   if (!selectedRunId && !isComparing) {
     if (latestResult) {
       return (
@@ -283,7 +428,6 @@ export const LabArtifactViewer: React.FC<LabArtifactViewerProps> = ({
 
   return (
     <div className="flex flex-col gap-3">
-      {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <LayoutPanelLeft size={16} className="text-gray-400" />
@@ -302,7 +446,6 @@ export const LabArtifactViewer: React.FC<LabArtifactViewerProps> = ({
         </label>
       </div>
 
-      {/* Comparison: 2-column grid */}
       {isComparing ? (
         <div className="grid grid-cols-2 gap-4">
           {comparisonRunIds.map((runId, i) => (
@@ -310,12 +453,12 @@ export const LabArtifactViewer: React.FC<LabArtifactViewerProps> = ({
               <span className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">
                 Run {i + 1}
               </span>
-              <RunArtifacts runId={runId} showAll={showAll} />
+              <RunArtifacts runId={runId} showAll={showAll} isOwner={isOwner} />
             </div>
           ))}
         </div>
       ) : (
-        selectedRunId && <RunArtifacts runId={selectedRunId} showAll={showAll} />
+        selectedRunId && <RunArtifacts runId={selectedRunId} showAll={showAll} isOwner={isOwner} />
       )}
     </div>
   )
