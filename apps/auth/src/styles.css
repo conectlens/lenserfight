@@ -4,6 +4,8 @@
 @tailwind components;
 @tailwind utilities;
 
+@variant dark (&:where(.dark, .dark *));
+
 @source "../../../libs/ui";
 @source "../../../libs/shared";
 @source "../../../libs/features";
