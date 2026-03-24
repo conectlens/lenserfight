@@ -107,17 +107,32 @@ export interface CreateLensDTO {
 
 /**
  * Parameter types for a versioned lens.
- * Note: DB stores 'text' for the string variant; map via mapVersionParam() in repo.
+ * Mirrors all SQL data type categories supported by lenses.fn_validate_inputs.
+ * Note: DB stores 'text' for the legacy string variant; map via mapVersionParam() in repo.
  */
 export type LensVersionParamType =
+  // Text variants
   | 'text'
-  | 'number'
-  | 'boolean'
-  | 'select'
   | 'textarea'
   | 'json'
+  // Legacy numeric (backward compat, maps to float validation)
+  | 'number'
+  // Explicit numeric types
+  | 'integer'
+  | 'float'
+  | 'decimal'
+  // Boolean
+  | 'boolean'
+  // Enum/select
+  | 'select'
+  // Validated string formats
+  | 'url'
+  | 'date'
+  | 'datetime'
+  // File/attachment (value = media_object_id UUID)
+  | 'file'
 
-/** Mirrors content.lens_version_parameters */
+/** Mirrors lenses.version_parameters */
 export interface LensVersionParam {
   id: string
   versionId: string
@@ -128,9 +143,25 @@ export interface LensVersionParam {
   defaultValue?: string | null
   placeholder?: string | null
   helpText?: string | null
-  validationSchema?: unknown
+  /** Structured validation rules stored as jsonb in DB.
+   *  - min / max: for integer, float, decimal, number types
+   *  - urlScheme: allowlist for url type e.g. ['https']
+   *  - allowedMimeTypes: for file type e.g. ['image/png', 'application/pdf']
+   */
+  validationSchema?: {
+    min?: number | null
+    max?: number | null
+    urlScheme?: string[] | null
+    allowedMimeTypes?: string[] | null
+  } | null
   options?: { label: string; value: string }[]
   sortOrder: number
+  /** Convenience accessor derived from validationSchema.min */
+  min?: number | null
+  /** Convenience accessor derived from validationSchema.max */
+  max?: number | null
+  /** MIME types accepted for file params — derived from validationSchema.allowedMimeTypes */
+  allowedMimeTypes?: string[] | null
 }
 
 /** Mirrors content.lens_versions */

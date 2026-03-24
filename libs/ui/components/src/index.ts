@@ -29,6 +29,10 @@ export { UIProvider, useUI } from '@lenserfight/ui/providers'
 export type { ActionItem } from '@lenserfight/ui/providers'
 export { AppToaster } from '@lenserfight/ui/providers'
 
+// Lens system badges
+export * from './lib/VersionBadge'
+export * from './lib/ModelProviderBadge'
+
 // Brand components
 export * from './lib/Alert'
 export * from './lib/Badge'

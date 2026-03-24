@@ -59,6 +59,65 @@ export function renderLens(
   })
 }
 
+// ─── Content Segment Parsing ──────────────────────────────────────────────
+
+export type LensContentSegment =
+  | { type: 'text'; content: string }
+  | { type: 'param'; name: string }
+
+/**
+ * Splits lens content into typed segments for rendering.
+ * Text spans become { type: 'text' }, {{variable}} tokens become { type: 'param' }.
+ */
+export function parseContentSegments(content: string): LensContentSegment[] {
+  if (!content) return []
+
+  const segments: LensContentSegment[] = []
+  const re = new RegExp(VARIABLE_REGEX.source, VARIABLE_REGEX.flags)
+  let lastIndex = 0
+  let match: RegExpExecArray | null
+
+  while ((match = re.exec(content)) !== null) {
+    if (match.index > lastIndex) {
+      segments.push({ type: 'text', content: content.slice(lastIndex, match.index) })
+    }
+    segments.push({ type: 'param', name: match[1].trim().toLowerCase() })
+    lastIndex = re.lastIndex
+  }
+
+  if (lastIndex < content.length) {
+    segments.push({ type: 'text', content: content.slice(lastIndex) })
+  }
+
+  return segments
+}
+
+// ─── Mismatch Detection ──────────────────────────────────────────────────
+
+export interface ParamMismatch {
+  /** {{var}} in content but not in params array */
+  orphanedInContent: string[]
+  /** param exists in array but no {{var}} in content */
+  orphanedInParams: string[]
+}
+
+/**
+ * Detects mismatches between {{variable}} tokens in content and the params array.
+ */
+export function detectParamMismatches(content: string, params: LensParam[]): ParamMismatch {
+  const contentParamNames = new Set(
+    extractParams(content).map((p) => p.name)
+  )
+  const arrayParamNames = new Set(params.map((p) => p.name))
+
+  return {
+    orphanedInContent: [...contentParamNames].filter((n) => !arrayParamNames.has(n)),
+    orphanedInParams: [...arrayParamNames].filter((n) => !contentParamNames.has(n)),
+  }
+}
+
+// ─── Validation ──────────────────────────────────────────────────────────
+
 export function validateParamValues(
   values: Record<string, any>,
   params: LensParam[]

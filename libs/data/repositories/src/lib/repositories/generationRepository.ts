@@ -30,6 +30,7 @@ export interface GenerationRepositoryPort {
   getAIModels(): Promise<AIModel[]>
   getActiveProviders(): Promise<AIProvider[]>
   getModelsByProvider(providerKey: string): Promise<AIProviderModel[]>
+  getModelById(modelId: string): Promise<AIModel | null>
 }
 
 
@@ -110,10 +111,49 @@ export class SupabaseGenerationRepository implements GenerationRepositoryPort {
       console.warn('get_active_models_by_provider failed', error)
       return []
     }
-    return ((data ?? []) as { name: string; key: string }[]).map((m) => ({
-      name: m.name,
-      key: m.key,
+    return ((data ?? []) as Record<string, unknown>[]).map((m) => ({
+      id: (m.id as string | undefined) ?? undefined,
+      name: m.name as string,
+      key: m.key as string,
+      inputModalities: (m.input_modalities as string[] | null) ?? ['text'],
+      outputModalities: (m.output_modalities as string[] | null) ?? ['text'],
+      contextWindowTokens: (m.context_window_tokens as number | undefined) ?? undefined,
     }))
+  }
+
+  async getModelById(modelId: string): Promise<AIModel | null> {
+    const { data, error } = await supabase
+      .schema('ai')
+      .from('models')
+      .select('id, key, name, provider, description, capabilities, temperature, max_tokens, pricing_tier, is_public, is_active, input_modalities, output_modalities, created_at')
+      .eq('id', modelId)
+      .maybeSingle()
+
+    if (error) {
+      console.warn('getModelById failed', error)
+      return null
+    }
+    if (!data) return null
+
+    const row = data as AIModelPublicRow & Record<string, unknown>
+    return {
+      id: row.id,
+      key: row.key ?? '',
+      name: row.name,
+      provider: row.provider,
+      version: null,
+      provider_url: null,
+      description: (row as Record<string, unknown>).description as string ?? '',
+      capabilities: (row as Record<string, unknown>).capabilities as AIModel['capabilities'] ?? [],
+      temperature: (row as Record<string, unknown>).temperature as number ?? 0,
+      max_tokens: (row as Record<string, unknown>).max_tokens as number ?? 0,
+      pricing_tier: (row as Record<string, unknown>).pricing_tier as AIModel['pricing_tier'] ?? null,
+      is_public: (row as Record<string, unknown>).is_public as boolean ?? true,
+      is_active: row.is_active,
+      input_modalities: (row as Record<string, unknown>).input_modalities as string[] ?? ['text'],
+      output_modalities: (row as Record<string, unknown>).output_modalities as string[] ?? ['text'],
+      created_at: (row as Record<string, unknown>).created_at as string ?? '',
+    }
   }
 
   async getAIModels(): Promise<AIModel[]> {

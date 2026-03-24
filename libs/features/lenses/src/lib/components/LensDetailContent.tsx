@@ -1,19 +1,23 @@
 import { Pencil } from 'lucide-react'
 import React from 'react'
+import { LensParam } from '@lenserfight/types'
+import { LensContentReadonly } from './LensContentReadonly'
 
 interface LensDetailContentProps {
   content: string
+  params?: LensParam[]
   canEdit?: boolean
   onEdit?: () => void
 }
 
 export const LensDetailContent: React.FC<LensDetailContentProps> = ({
   content,
+  params = [],
   canEdit = false,
   onEdit,
 }) => {
   return (
-    <div className="w-full max-w-[860px] mx-auto bg-white rounded-2xl border border-gray-200/70 shadow-neu-1 p-6 md:p-10 transition-all duration-200">
+    <div className="w-full max-w-[860px] mx-auto bg-white dark:bg-gray-900 rounded-2xl border border-gray-200/70 dark:border-gray-700/70 shadow-neu-1 p-6 md:p-10 transition-all duration-200">
       {canEdit && onEdit && (
         <div className="mb-4 flex justify-end">
           <button
@@ -27,9 +31,11 @@ export const LensDetailContent: React.FC<LensDetailContentProps> = ({
           </button>
         </div>
       )}
-      <div className="prose prose-lg md:prose-xl max-w-none text-gray-800 leading-loose whitespace-pre-wrap font-sans font-normal">
-        {content}
-      </div>
+      <LensContentReadonly
+        content={content}
+        params={params}
+        className="prose prose-lg md:prose-xl max-w-none leading-loose"
+      />
     </div>
   )
 }
