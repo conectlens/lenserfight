@@ -46,6 +46,8 @@ interface LabExecutionPanelProps {
   selectedModelInputModalities?: string[]
   /** Version id to pin execution to (from useVersionExecution). Passed to TriggerLabExecutionDTO. */
   activeVersionId?: string | null
+  /** True while version params are still loading (prevents freeform fallback flash). */
+  isLoadingVersionParams?: boolean
   /** Upload a file for a file-type param. Returns the media_object_id. */
   onFileParamUpload?: (key: string, file: File) => Promise<string>
   // Funding source
@@ -82,6 +84,7 @@ export const LabExecutionPanel: React.FC<LabExecutionPanelProps> = ({
   versionParams,
   selectedModelInputModalities,
   activeVersionId: _activeVersionId,
+  isLoadingVersionParams,
   onFileParamUpload,
   fundingSource,
   onFundingSourceChange,
@@ -322,8 +325,16 @@ export const LabExecutionPanel: React.FC<LabExecutionPanelProps> = ({
         </div>
       )}
 
+      {/* Loading skeleton while version params resolve */}
+      {!usingVersionParams && isLoadingVersionParams && (
+        <div className="flex items-center gap-2 text-xs text-gray-400 dark:text-gray-500 py-3">
+          <Loader2 size={12} className="animate-spin" />
+          Loading parameters…
+        </div>
+      )}
+
       {/* Freeform input (no params at all) */}
-      {!usingVersionParams && legacyParamSchemas.length === 0 && (
+      {!usingVersionParams && !isLoadingVersionParams && legacyParamSchemas.length === 0 && (
         <div className="flex flex-col gap-1">
           <label className="text-xs font-medium text-gray-600 dark:text-gray-400 uppercase tracking-wide">
             Input
