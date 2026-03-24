@@ -28,14 +28,17 @@ export const AuthCard: React.FC<{
   }
 
   return (
-    <div className="min-h-screen flex flex-col md:justify-center items-center bg-gray-50 dark:bg-gray-900 p-4 relative transition-colors duration-200">
+    <div className="min-h-screen flex flex-col md:justify-center items-center
+bg-[var(--background-default)]
+dark:bg-gray-900
+p-4 relative transition-colors duration-200">
       {backButton && (
         <div className="w-full md:absolute md:top-6 md:left-6 z-10 mb-6 md:mb-0">{backButton}</div>
       )}
       <div className="w-full max-w-md">
         <div className="flex flex-col items-center mb-8">
           <div className="relative mb-6">
-            <div className="h-24 w-24 flex items-center justify-center bg-white dark:bg-gray-800 rounded-3xl shadow-sm border border-gray-100 dark:border-gray-700 p-4 transition-colors">
+            <div className="h-24 w-24 flex items-center justify-center bg-[var(--surface-card)] dark:bg-gray-800 rounded-3xl shadow-sm border border-[var(--border-default)] dark:border-gray-700 p-4 transition-colors">
               <img
                 src="https://cdn.lenserfight.com/brand/lenserfight-logo.png"
                 alt="LenserFight Logo"
@@ -46,24 +49,24 @@ export const AuthCard: React.FC<{
               Beta
             </span>
           </div>
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-white tracking-tight text-center">
+          <h1 className="text-3xl font-bold text-[var(--text-primary)] dark:text-white tracking-tight text-center">
             {title}
           </h1>
           {subtitle && (
-            <p className="text-gray-500 dark:text-gray-400 mt-2 font-medium text-center">
+            <p className="text-[var(--text-secondary)] dark:text-gray-400 mt-2 font-medium text-center">
               {subtitle}
             </p>
           )}
         </div>
 
-        <div className="bg-white dark:bg-gray-800 rounded-3xl shadow-xl shadow-gray-200/50 dark:shadow-black/30 border border-gray-100 dark:border-gray-700 p-8 sm:p-10 relative overflow-hidden transition-colors">
+        <div className="bg-[var(--surface-card)] dark:bg-gray-800 rounded-3xl border border-[var(--border-default)] dark:border-gray-700 p-8 sm:p-10 shadow-[0_8px_24px_rgba(0,0,0,0.06)] relative overflow-hidden transition-colors">
           {children}
         </div>
 
         <div className="mt-6 flex justify-center">
           <button
             onClick={toggleTheme}
-            className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-full bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors shadow-sm"
+            className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-full bg-[var(--surface-input)] dark:bg-gray-800 border border-[var(--border-default)] dark:border-gray-700 text-[var(--text-primary)] dark:text-gray-300 hover:bg-[#F3F4F6] dark:hover:bg-gray-700 transition-colors shadow-sm"
             title={isDark ? 'Switch to light mode' : 'Switch to dark mode'}
           >
             {isDark ? (
