@@ -11,3 +11,5 @@ export * from './lib/Radio'
 export * from './lib/Switch'
 export * from './lib/SearchBar'
 export * from './lib/SegmentedControl'
+// Mobile-only form components (resolved via .native.tsx by Metro)
+export * from './lib/OTPInput'
