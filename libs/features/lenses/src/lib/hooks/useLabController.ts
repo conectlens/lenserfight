@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback, useRef } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { executionService, walletService, walletApiClient } from '@lenserfight/data/repositories'
 import { queryKeys } from '@lenserfight/data/cache'
-import { LensExecutionRecord, LensParam, ExecuteResponse, StreamState, StreamUsage, FundingSource } from '@lenserfight/types'
+import { LensExecutionHistoryItem, LensParam, ExecuteResponse, StreamState, StreamUsage, FundingSource } from '@lenserfight/types'
 import { renderLens } from '@lenserfight/utils/text'
 import { useToast } from '@lenserfight/shared/error'
 import { useAIProviders, useAIModelsByProvider } from '@lenserfight/features/generations'
@@ -32,7 +32,7 @@ export const useLabController = (lensId: string, isAuthenticated = false, option
 
   // Pagination offset for execution history
   const [historyOffset, setHistoryOffset] = useState(0)
-  const [allHistory, setAllHistory] = useState<LensExecutionRecord[]>([])
+  const [allHistory, setAllHistory] = useState<LensExecutionHistoryItem[]>([])
   const [hasMoreHistory, setHasMoreHistory] = useState(true)
 
   // Latest sync execution result
@@ -65,8 +65,8 @@ export const useLabController = (lensId: string, isAuthenticated = false, option
       setAllHistory(historyPage)
     } else {
       setAllHistory((prev) => {
-        const existingIds = new Set(prev.map((r) => r.id))
-        const newItems = historyPage.filter((r) => !existingIds.has(r.id))
+        const existingIds = new Set(prev.map((r) => r.requestId))
+        const newItems = historyPage.filter((r) => !existingIds.has(r.requestId))
         return [...prev, ...newItems]
       })
     }

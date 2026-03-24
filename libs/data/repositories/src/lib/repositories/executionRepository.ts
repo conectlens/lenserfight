@@ -2,23 +2,22 @@ import { supabase } from '@lenserfight/data/supabase'
 import {
   ExecutionRun,
   ExecutionArtifact,
+  LensExecutionHistoryItem,
   PromptExecutionRecord,
   ExecutionRunStatus,
+  SetArtifactVisibilityDTO,
 } from '@lenserfight/types'
 
 // --- Port ---
 
 export interface ExecutionRepositoryPort {
-  getExecutionHistoryForPrompt(
-    promptId: string,
-    limit?: number,
-    offset?: number
-  ): Promise<PromptExecutionRecord[]>
+  getHistoryForLens(lensId: string, limit?: number, offset?: number): Promise<LensExecutionHistoryItem[]>
+  /** @deprecated Use getHistoryForLens instead. */
+  getExecutionHistoryForPrompt(promptId: string, limit?: number, offset?: number): Promise<PromptExecutionRecord[]>
   getRunById(runId: string): Promise<ExecutionRun | null>
   getArtifactsForRun(runId: string): Promise<ExecutionArtifact[]>
-  pollRunStatus(
-    runId: string
-  ): Promise<Pick<ExecutionRun, 'id' | 'status' | 'completedAt' | 'errorCode'>>
+  pollRunStatus(runId: string): Promise<Pick<ExecutionRun, 'id' | 'status' | 'completedAt' | 'errorCode'>>
+  setArtifactVisibility(dto: SetArtifactVisibilityDTO): Promise<void>
 }
 
 // --- Supabase Implementation ---
@@ -61,90 +60,68 @@ export class SupabaseExecutionRepository implements ExecutionRepositoryPort {
       contentJson: (row.content_json as unknown) ?? null,
       visibility: (row.visibility as ExecutionArtifact['visibility']) ?? 'private',
       isPrimaryOutput: (row.is_primary_output as boolean) ?? false,
-      resourceId: (row.resource_id as string | null) ?? null,
       mediaObjectId: (row.media_object_id as string | null) ?? null,
       createdAt: row.created_at as string,
     }
   }
 
+  private mapHistoryItem(row: Record<string, unknown>): LensExecutionHistoryItem {
+    return {
+      requestId: row.request_id as string,
+      lensId: row.lens_id as string,
+      versionId: (row.version_id as string | null) ?? null,
+      versionNumber: (row.version_number as number | null) ?? null,
+      modelId: (row.model_id as string | null) ?? null,
+      modelKey: (row.model_key as string | null) ?? null,
+      providerKey: (row.provider_key as string | null) ?? null,
+      fundingSource: (row.funding_source as LensExecutionHistoryItem['fundingSource']) ?? 'free',
+      runId: (row.run_id as string | null) ?? null,
+      runStatus: (row.run_status as LensExecutionHistoryItem['runStatus']) ?? null,
+      latencyMs: (row.latency_ms as number | null) ?? null,
+      tokenInput: (row.token_input as number | null) ?? null,
+      tokenOutput: (row.token_output as number | null) ?? null,
+      creditCost: (row.credit_cost as number | null) ?? null,
+      createdAt: row.created_at as string,
+    }
+  }
+
+  async getHistoryForLens(
+    lensId: string,
+    limit = 20,
+    offset = 0,
+  ): Promise<LensExecutionHistoryItem[]> {
+    const { data, error } = await supabase.schema('execution').rpc('fn_get_lens_execution_history', {
+      p_lens_id: lensId,
+      p_limit: limit,
+      p_offset: offset,
+    })
+
+    if (error) this.handleError(error)
+
+    const rows = (data ?? []) as Record<string, unknown>[]
+    return rows.map((row) => this.mapHistoryItem(row))
+  }
+
+  /**
+   * @deprecated Use getHistoryForLens instead.
+   * Retained for backward compatibility during migration.
+   */
   async getExecutionHistoryForPrompt(
     promptId: string,
     limit = 20,
-    offset = 0
+    offset = 0,
   ): Promise<PromptExecutionRecord[]> {
-    // 1. Fetch ray_runs rows for this lens
-    const { data: execRows, error: execError } = await supabase
-      .schema('execution')
-      .from('ray_runs')
-      .select('id, lens_id, lenser_id, run_id, payment_method, created_at')
-      .eq('lens_id', promptId)
-      .order('created_at', { ascending: false })
-      .range(offset, offset + limit - 1)
-
-    if (execError) this.handleError(execError)
-
-    const rows = (execRows ?? []) as Record<string, unknown>[]
-
-    // 2. Batch-fetch runs for non-null run_ids
-    const runIds = rows
-      .map((r) => r.run_id as string | null)
-      .filter((id): id is string => !!id)
-
-    const runMap = new Map<string, ExecutionRun>()
-    if (runIds.length > 0) {
-      const { data: runRows, error: runError } = await supabase
-        .schema('execution')
-        .from('runs')
-        .select(
-          'id, request_id, status, model_id, provider_request_id, execution_hash, input_hash, output_hash, started_at, completed_at, latency_ms, cost_estimate, token_input, token_output, credit_cost, billing_status, error_code, error_message, created_at'
-        )
-        .in('id', runIds)
-
-      if (runError) this.handleError(runError)
-      for (const row of (runRows ?? []) as Record<string, unknown>[]) {
-        const run = this.mapRun(row)
-        runMap.set(run.id, run)
-      }
-    }
-
-    // 3. Batch-fetch primary artifacts for succeeded runs
-    const succeededRunIds = Array.from(runMap.values())
-      .filter((r) => r.status === 'succeeded')
-      .map((r) => r.id)
-
-    const artifactsByRun = new Map<string, ExecutionArtifact[]>()
-    if (succeededRunIds.length > 0) {
-      const { data: artifactRows, error: artifactError } = await supabase
-        .schema('execution')
-        .from('artifacts')
-        .select('id, run_id, artifact_kind, content_text, content_json, visibility, is_primary_output, resource_id, media_object_id, created_at')
-        .in('run_id', succeededRunIds)
-        .eq('is_primary_output', true)
-
-      if (artifactError) this.handleError(artifactError)
-      for (const row of (artifactRows ?? []) as Record<string, unknown>[]) {
-        const artifact = this.mapArtifact(row)
-        const existing = artifactsByRun.get(artifact.runId) ?? []
-        existing.push(artifact)
-        artifactsByRun.set(artifact.runId, existing)
-      }
-    }
-
-    // 4. Compose PromptExecutionRecord list
-    return rows.map((r) => {
-      const runId = r.run_id as string | null
-      const run = runId ? runMap.get(runId) : undefined
-      return {
-        id: r.id as string,
-        lensId: r.lens_id as string,
-        lenserId: r.lenser_id as string,
-        runId: runId,
-        paymentMethod: (r.payment_method as PromptExecutionRecord['paymentMethod']) ?? 'free',
-        createdAt: r.created_at as string,
-        run,
-        artifacts: run ? (artifactsByRun.get(run.id) ?? []) : [],
-      }
-    })
+    const items = await this.getHistoryForLens(promptId, limit, offset)
+    return items.map((item) => ({
+      id: item.requestId,
+      lensId: item.lensId,
+      lenserId: '',
+      runId: item.runId,
+      paymentMethod: (item.fundingSource as PromptExecutionRecord['paymentMethod']) ?? 'free',
+      createdAt: item.createdAt,
+      run: undefined,
+      artifacts: [],
+    }))
   }
 
   async getRunById(runId: string): Promise<ExecutionRun | null> {
@@ -152,7 +129,7 @@ export class SupabaseExecutionRepository implements ExecutionRepositoryPort {
       .schema('execution')
       .from('runs')
       .select(
-        'id, request_id, status, model_id, provider_request_id, execution_hash, input_hash, output_hash, started_at, completed_at, latency_ms, cost_estimate, token_input, token_output, credit_cost, billing_status, error_code, error_message, created_at'
+        'id, request_id, status, model_id, provider_request_id, execution_hash, input_hash, output_hash, started_at, completed_at, latency_ms, cost_estimate, token_input, token_output, credit_cost, billing_status, error_code, error_message, created_at',
       )
       .eq('id', runId)
       .maybeSingle()
@@ -166,7 +143,9 @@ export class SupabaseExecutionRepository implements ExecutionRepositoryPort {
     const { data, error } = await supabase
       .schema('execution')
       .from('artifacts')
-      .select('id, run_id, artifact_kind, content_text, content_json, visibility, is_primary_output, resource_id, media_object_id, created_at')
+      .select(
+        'id, run_id, artifact_kind, content_text, content_json, visibility, is_primary_output, media_object_id, created_at',
+      )
       .eq('run_id', runId)
       .order('is_primary_output', { ascending: false })
       .order('created_at', { ascending: true })
@@ -176,7 +155,7 @@ export class SupabaseExecutionRepository implements ExecutionRepositoryPort {
   }
 
   async pollRunStatus(
-    runId: string
+    runId: string,
   ): Promise<Pick<ExecutionRun, 'id' | 'status' | 'completedAt' | 'errorCode'>> {
     const { data, error } = await supabase
       .schema('execution')
@@ -196,4 +175,15 @@ export class SupabaseExecutionRepository implements ExecutionRepositoryPort {
       errorCode: (row.error_code as string | null) ?? null,
     }
   }
+
+  async setArtifactVisibility(dto: SetArtifactVisibilityDTO): Promise<void> {
+    const { error } = await supabase.rpc('fn_set_artifact_visibility', {
+      p_artifact_id: dto.artifactId,
+      p_visibility: dto.visibility,
+    })
+
+    if (error) this.handleError(error)
+  }
 }
+
+export const executionRepository = new SupabaseExecutionRepository()

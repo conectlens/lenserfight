@@ -1,18 +1,117 @@
-import { Globe, Lock } from 'lucide-react'
-import React, { useMemo, useRef, useCallback, useEffect } from 'react'
+import { Globe, Lock, Zap, ChevronDown, ChevronRight } from 'lucide-react'
+import React, { useMemo, useRef, useCallback, useEffect, useState } from 'react'
 
 import { LensVersionHistoryButton } from './LensVersionHistoryButton'
 
 import { Button } from '@lenserfight/ui/components'
 import { FormError } from '@lenserfight/ui/components'
 import { Modal } from '@lenserfight/ui/modals'
-import { SelectField } from '@lenserfight/ui/forms'
+import { SelectField, LensContentEditor, type LensContentEditorHandle } from '@lenserfight/ui/forms'
 import { useFormValidation } from '@lenserfight/utils/validation'
 import { LensParam, VisibilityEnum } from '@lenserfight/types'
 import { isRequired, minLength } from '@lenserfight/utils/validation'
 
 import { ParameterPanel } from './LensParameterPanel'
 import { LensTagInput } from './LensTagInput'
+
+// ─── Parameter Tool Cards ───────────────────────────────────────────────────
+
+interface ParamTemplate {
+  label: string
+  emoji: string
+  param: LensParam
+}
+
+const PARAM_TEMPLATES: ParamTemplate[] = [
+  {
+    label: 'Text Input',
+    emoji: '✏️',
+    param: { name: 'input', type: 'string', required: true, placeholder: 'Enter text…' },
+  },
+  {
+    label: 'Number',
+    emoji: '🔢',
+    param: { name: 'count', type: 'number', required: false, min: 1, max: 100, default: '10' },
+  },
+  {
+    label: 'Boolean Toggle',
+    emoji: '🔀',
+    param: { name: 'enabled', type: 'boolean', required: false, default: 'false' },
+  },
+  {
+    label: 'File Upload',
+    emoji: '📎',
+    param: { name: 'attachment', type: 'string', required: false, description: 'Upload a file to attach' },
+  },
+  {
+    label: 'Select',
+    emoji: '🎛️',
+    param: {
+      name: 'option',
+      type: 'select',
+      required: true,
+      options: [
+        { label: 'Option A', value: 'a' },
+        { label: 'Option B', value: 'b' },
+      ],
+    },
+  },
+  {
+    label: 'URL',
+    emoji: '🔗',
+    param: { name: 'url', type: 'string', required: false, placeholder: 'https://…' },
+  },
+  {
+    label: 'Date',
+    emoji: '📅',
+    param: { name: 'date', type: 'string', required: false, placeholder: 'YYYY-MM-DD' },
+  },
+  {
+    label: 'Long Text',
+    emoji: '📝',
+    param: { name: 'description', type: 'string', required: false, placeholder: 'Enter description…' },
+  },
+]
+
+const ParamToolCards: React.FC<{ onAdd: (p: LensParam) => void }> = ({ onAdd }) => {
+  const [open, setOpen] = useState(false)
+
+  return (
+    <div className="rounded-xl border border-dashed border-gray-200 dark:border-gray-700 overflow-hidden">
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        className="w-full flex items-center gap-2 px-4 py-2.5 bg-gray-50 dark:bg-gray-800/60 text-left hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+      >
+        <Zap size={13} className="text-primary-500 flex-shrink-0" />
+        <span className="text-xs font-semibold text-gray-600 dark:text-gray-300 uppercase tracking-wide">
+          Quick-add parameter
+        </span>
+        {open ? (
+          <ChevronDown size={13} className="ml-auto text-gray-400" />
+        ) : (
+          <ChevronRight size={13} className="ml-auto text-gray-400" />
+        )}
+      </button>
+
+      {open && (
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 p-3 bg-white dark:bg-gray-900">
+          {PARAM_TEMPLATES.map((tpl) => (
+            <button
+              key={tpl.label}
+              type="button"
+              onClick={() => onAdd({ ...tpl.param })}
+              className="flex flex-col items-center gap-1 p-3 rounded-lg border border-gray-100 dark:border-gray-700 hover:border-primary-300 dark:hover:border-primary-600 hover:bg-primary-50 dark:hover:bg-primary-900/10 transition-colors text-center"
+            >
+              <span className="text-xl">{tpl.emoji}</span>
+              <span className="text-xs font-medium text-gray-600 dark:text-gray-300">{tpl.label}</span>
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
 
 interface CreateLensModalProps {
   isOpen: boolean
@@ -47,7 +146,7 @@ export const CreateLensModal: React.FC<CreateLensModalProps> = ({
   isEditMode,
   lensId,
 }) => {
-  const textareaRef = useRef<HTMLTextAreaElement>(null)
+  const editorRef = useRef<LensContentEditorHandle>(null)
 
   const formValues = useMemo(
     () => ({ title: form.title, content: form.content, tags: form.tags }),
@@ -64,7 +163,7 @@ export const CreateLensModal: React.FC<CreateLensModalProps> = ({
     validationRulesRef.current
   )
 
-  // Debounced param extraction
+  // Debounced param extraction (safety net — editor also manages params)
   useEffect(() => {
     const t = setTimeout(() => form.syncParamsFromContent(form.content), 400)
     return () => clearTimeout(t)
@@ -86,30 +185,21 @@ export const CreateLensModal: React.FC<CreateLensModalProps> = ({
   )
 
   const handleContentChange = useCallback(
-    (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-      form.setContent(e.target.value)
+    (value: string) => {
+      form.setContent(value)
       clearError('content')
     },
     [form.setContent, clearError]
   )
 
-  const handleContentKeyDown = useCallback(
-    (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
-      if (e.key === 'Tab') {
-        e.preventDefault()
-        const el = e.currentTarget
-        const start = el.selectionStart
-        const next = form.content.slice(0, start) + '  ' + form.content.slice(el.selectionEnd)
-        form.setContent(next)
-        requestAnimationFrame(() => {
-          if (textareaRef.current) {
-            textareaRef.current.selectionStart = start + 2
-            textareaRef.current.selectionEnd = start + 2
-          }
-        })
-      }
+  const handleAddParamFromTemplate = useCallback(
+    (p: LensParam) => {
+      // Add to params array
+      form.setParams([...form.params, p])
+      // Insert {{param}} at cursor in editor
+      editorRef.current?.insertParam(p)
     },
-    [form.content, form.setContent]
+    [form.params, form.setParams],
   )
 
   const visibilityOptions = [
@@ -139,6 +229,9 @@ export const CreateLensModal: React.FC<CreateLensModalProps> = ({
             <label className="text-sm font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
               Lens
             </label>
+            <span className="text-[10px] text-gray-400 dark:text-gray-500">
+              Type <kbd className="px-1 py-0.5 bg-gray-100 dark:bg-gray-700 rounded text-[9px] font-mono">@</kbd> to mention a parameter
+            </span>
             {lensId && (
               <LensVersionHistoryButton
                 lensId={lensId}
@@ -147,20 +240,22 @@ export const CreateLensModal: React.FC<CreateLensModalProps> = ({
             )}
           </div>
           <div className={`rounded-xl border overflow-hidden ${errors.content ? 'border-red-500' : 'border-gray-200 dark:border-gray-700'}`}>
-            <textarea
-              ref={textareaRef}
+            <LensContentEditor
+              ref={editorRef}
               value={form.content}
               onChange={handleContentChange}
-              onKeyDown={handleContentKeyDown}
-              rows={10}
-              placeholder={"Write your lens in markdown (minimum 50 characters).\nUse {{variable}} for dynamic parameters.\n\nExample:\n## Task\nGenerate {{num_ideas}} ideas about **{{topic}}**"}
-              className="w-full px-4 py-3 font-mono text-sm bg-gray-50 dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none resize-none transition-all"
+              params={form.params}
+              onParamsChange={form.setParams}
+              placeholder={"Write your lens in markdown (minimum 50 characters).\nType @ to insert a parameter, or use {{variable}} syntax.\n\nExample:\n## Task\nGenerate {{num_ideas}} ideas about {{topic}}"}
             />
           </div>
           <FormError message={errors.content} />
         </div>
 
-        <ParameterPanel params={form.params} onChange={form.setParams} />
+        <div className="space-y-3">
+          <ParamToolCards onAdd={handleAddParamFromTemplate} />
+          <ParameterPanel params={form.params} onChange={form.setParams} />
+        </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <LensTagInput tags={form.tags} onChange={form.setTags} />

@@ -98,6 +98,15 @@ export interface AIProvider {
 export interface AIProviderModel {
   name: string
   key: string
+  id?: string
+  /** Input modalities supported by this model (from ai.models.input_modalities).
+   *  Values: 'text' | 'image' | 'document' | 'audio' | 'video'.
+   *  Used by attachment validation to determine which file types are allowed.
+   *  Defaults to ['text'] when not populated. */
+  inputModalities?: string[]
+  /** Output modalities (from ai.models.output_modalities). */
+  outputModalities?: string[]
+  contextWindowTokens?: number
 }
 
 export interface GenerationFilterOptions {

@@ -27,6 +27,7 @@ import { useLabController } from '../hooks/useLabController'
 import { useForkLens } from '../hooks/useForkLens'
 import { useLensVersions, useLensVersionDetail } from '../hooks/useLensVersions'
 import { useFundingSource } from '../hooks/useFundingSource'
+import { useVersionExecution } from '../hooks/useVersionExecution'
 
 export const LensLabPage: React.FC = () => {
   const { id } = useParams<{ id: string }>()
@@ -52,6 +53,9 @@ export const LensLabPage: React.FC = () => {
   })
   const { forkLens, isForking } = useForkLens(lens ?? null)
 
+  // Version restore/preview orchestration
+  const versionExecution = useVersionExecution()
+
   // Versioning — lazy, only loads when the picker is opened
   const [showVersionPicker, setShowVersionPicker] = useState(false)
   const [selectedVersionId, setSelectedVersionId] = useState<string | null>(null)
@@ -63,16 +67,30 @@ export const LensLabPage: React.FC = () => {
   // Funding source
   const funding = useFundingSource(lab.selectedProviderKey)
 
-  // Derive lens content and params from selected version or base lens
-  const activeLensContent = selectedVersion?.templateBody ?? lens?.content ?? ''
-  const activeParams = selectedVersion?.parameters?.map((p) => ({
-    name: p.key,
-    type: (p.type === 'text' ? 'string' : p.type) as 'string' | 'number' | 'boolean' | 'select' | 'multiselect' | 'array',
-    required: p.required,
-    default: p.defaultValue ?? undefined,
-    placeholder: p.placeholder ?? undefined,
-    description: p.helpText ?? undefined,
-  })) ?? lens?.params
+  // Active version: prefer restore-pinned version, then manually selected, then base lens
+  const activeVersion = versionExecution.previewVersion ?? selectedVersion ?? null
+  const activeLensContent = activeVersion?.templateBody ?? lens?.content ?? ''
+  const activeVersionParams = activeVersion?.parameters ?? undefined
+
+  // Map LensVersionParam[] → LensParam[] for components expecting the legacy shape
+  const activeParamsAsLensParams = useMemo(() =>
+    (activeVersionParams ?? []).map((vp) => ({
+      name: vp.key,
+      type: vp.type as import('@lenserfight/types').LensParamType,
+      required: vp.required,
+      default: vp.defaultValue ?? undefined,
+      description: vp.helpText ?? undefined,
+      placeholder: vp.placeholder ?? undefined,
+      min: vp.validationSchema?.min ?? undefined,
+      max: vp.validationSchema?.max ?? undefined,
+    })),
+    [activeVersionParams]
+  )
+
+  // Selected model input modalities (for file param validation)
+  const selectedModelInputModalities = lab.providerModels.find(
+    (m) => m.key === lab.selectedModelKey,
+  )?.inputModalities
 
   const reportContent = useReportContent()
 
@@ -300,6 +318,7 @@ export const LensLabPage: React.FC = () => {
 
           <LensBodyViewer
             content={activeLensContent}
+            params={activeParamsAsLensParams}
             onCopy={handleCopy}
             onFork={() => forkLens({})}
             isForking={isForking}
@@ -375,7 +394,9 @@ export const LensLabPage: React.FC = () => {
             isConnecting={lab.streamState === 'loading'}
             isStreaming={lab.streamState === 'loading' || lab.streamState === 'streaming'}
             onStop={lab.stopStream}
-            params={activeParams}
+            versionParams={activeVersionParams}
+            selectedModelInputModalities={selectedModelInputModalities}
+            activeVersionId={versionExecution.previewVersionId}
             fundingSource={funding.fundingSource}
             onFundingSourceChange={funding.setFundingSource}
             selectedKeyRefId={funding.selectedKeyRefId}
@@ -401,6 +422,7 @@ export const LensLabPage: React.FC = () => {
             streamUsage={lab.streamUsage}
             streamCredits={lab.streamCredits}
             streamError={lab.streamError}
+            isOwner={isOwner}
           />
         </div>
 
@@ -420,9 +442,11 @@ export const LensLabPage: React.FC = () => {
             hasMore={lab.hasMoreHistory}
             selectedRunId={lab.selectedRunId}
             comparisonRunIds={lab.comparisonRunIds}
-            onSelectRun={lab.setSelectedRunId}
+            onSelectRun={(_requestId, runId) => runId && lab.setSelectedRunId(runId)}
             onToggleComparison={lab.toggleComparison}
             onLoadMore={lab.loadMoreHistory}
+            isOwner={isOwner}
+            onRestoreVersion={versionExecution.restoreAndExecute}
           />
         </div>
       </div>

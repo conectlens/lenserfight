@@ -11,5 +11,10 @@ export * from './lib/Radio'
 export * from './lib/Switch'
 export * from './lib/SearchBar'
 export * from './lib/SegmentedControl'
+// Lens parameter editor primitives
+export * from './lib/ParamChip'
+export * from './lib/ParamAutocomplete'
+export * from './lib/ParamEditPopover'
+export * from './lib/LensContentEditor'
 // Mobile-only form components (resolved via .native.tsx by Metro)
 export * from './lib/OTPInput'

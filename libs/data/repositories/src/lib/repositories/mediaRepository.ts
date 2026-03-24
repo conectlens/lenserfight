@@ -20,6 +20,7 @@ export interface MediaRepositoryPort {
   unbindAttachment(entityType: string, entityId: string, bindingKey: string): Promise<void>
   getAttachmentsForEntity(entityType: string, entityId: string): Promise<MediaAttachment[]>
   getSignedUploadUrl(bucket: string, objectKey: string): Promise<{ signedUrl: string; token: string }>
+  getSignedReadUrl(objectId: string): Promise<string | null>
   deleteStorageObject(bucket: string, objectKey: string): Promise<void>
 }
 
@@ -205,6 +206,27 @@ export class SupabaseMediaRepository implements MediaRepositoryPort {
 
   async getSignedUploadUrl(bucket: string, objectKey: string): Promise<{ signedUrl: string; token: string }> {
     return this.storageAdapter.createSignedUploadUrl(bucket, objectKey)
+  }
+
+  async getSignedReadUrl(objectId: string): Promise<string | null> {
+    const obj = await this.getById(objectId)
+    if (!obj) return null
+
+    // External URLs are already public
+    if (obj.externalUrl) return obj.externalUrl
+
+    // text-only objects have no storage URL
+    if (!obj.bucket || !obj.objectKey) return null
+
+    try {
+      const { data, error } = await supabase.storage
+        .from(obj.bucket)
+        .createSignedUrl(obj.objectKey, 3600)
+      if (error || !data?.signedUrl) return null
+      return data.signedUrl
+    } catch {
+      return null
+    }
   }
 
   async deleteStorageObject(bucket: string, objectKey: string): Promise<void> {
