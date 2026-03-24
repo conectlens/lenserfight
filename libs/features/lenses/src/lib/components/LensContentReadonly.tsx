@@ -1,15 +1,13 @@
 import React from 'react'
-import { LensParam, LensVersionParam } from '@lenserfight/types'
+import { LensVersionParam } from '@lenserfight/types'
 import { parseContentSegments } from '@lenserfight/utils/text'
 import { ParamChip } from '@lenserfight/ui/forms'
 
 interface LensContentReadonlyProps {
   content: string
-  params: LensParam[]
   /**
-   * Optional rich version params (LensVersionParam[]). When provided, the chip
-   * tooltip will show label, helpText, and defaultValue in addition to the
-   * type/required data available from the legacy LensParam shape.
+   * Version params with hydrated tool info (from fn_get_version_params_with_tools).
+   * Used to render chip tooltips with type, helpText, etc. from the tool definition.
    */
   versionParams?: LensVersionParam[]
   className?: string
@@ -17,21 +15,21 @@ interface LensContentReadonlyProps {
 
 /**
  * Renders lens content with inline parameter badges (readonly).
- * Uses the same parseContentSegments() as the editor for consistency.
- * Each parameter chip gets a unique deterministic color by name and a
- * rich hover tooltip when versionParams are supplied.
+ * Handles both [[name]] (display format) and [[:uuid]] (stored format) tokens.
+ * For [[:uuid]] segments, looks up the matching versionParam by id to get the label.
  */
 export const LensContentReadonly: React.FC<LensContentReadonlyProps> = ({
   content: rawContent,
-  params,
-  versionParams,
+  versionParams = [],
   className = '',
 }) => {
-  // Normalize legacy {{param}} → [[param]] so both syntaxes render as chips
+  // Normalize legacy {{param}} → [[param]]
   const content = rawContent.replace(/\{\{(\w+)\}\}/g, '[[$1]]')
   const segments = parseContentSegments(content)
-  const paramMap = new Map(params.map((p) => [p.name, p]))
-  const versionParamMap = new Map((versionParams ?? []).map((vp) => [vp.key, vp]))
+
+  // Map by label (for [[name]] segments) and by id (for [[:uuid]] segments)
+  const paramByLabel = new Map(versionParams.map((vp) => [vp.label.toLowerCase(), vp]))
+  const paramById = new Map(versionParams.map((vp) => [vp.id, vp]))
 
   return (
     <div className={`whitespace-pre-wrap font-sans text-gray-800 dark:text-gray-200 leading-relaxed ${className}`}>
@@ -40,18 +38,20 @@ export const LensContentReadonly: React.FC<LensContentReadonlyProps> = ({
           return <React.Fragment key={i}>{seg.content}</React.Fragment>
         }
 
-        const param = paramMap.get(seg.name)
-        const vp = versionParamMap.get(seg.name)
+        // Resolve the versionParam for this segment
+        const vp = seg.type === 'param-ref'
+          ? paramById.get(seg.id)
+          : paramByLabel.get(seg.name)
+
+        const displayName = vp?.label ?? (seg.type === 'param' ? seg.name : seg.id.slice(0, 8))
 
         return (
           <ParamChip
-            key={`${seg.name}-${i}`}
-            name={seg.name}
-            type={vp?.type ?? param?.type}
-            required={vp?.required ?? param?.required}
-            label={vp?.label}
-            helpText={vp?.helpText}
-            defaultValue={vp?.defaultValue}
+            key={`${displayName}-${i}`}
+            name={displayName}
+            type={vp?.tool.type}
+            required={vp?.tool.required}
+            helpText={vp?.tool.helpText}
             readonly
             size="xs"
           />
