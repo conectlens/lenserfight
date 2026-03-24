@@ -478,11 +478,12 @@ export class SupabaseLensesRepository implements LensesRepositoryPort {
       const { data: profileData } = await supabase
         .schema('lensers')
         .from('profiles')
-        .select('preferred_language')
+        .select('preferences(language)')
         .eq('user_id', user.id)
         .maybeSingle()
-      if (profileData?.preferred_language) {
-        languageCode = profileData.preferred_language
+      const lang = (profileData?.preferences as { language?: string } | null)?.language
+      if (lang) {
+        languageCode = lang
       }
     }
 
