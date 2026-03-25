@@ -10,6 +10,8 @@ type SEOType =
   | 'tag'
   | 'tag-cloud'
   | 'lenses-list'
+  | 'battle'
+  | 'battles-list'
   | 'default'
 
 interface SEOHeadProps {
@@ -43,6 +45,10 @@ export const SEOHead: React.FC<SEOHeadProps> = ({ type, data, overrideTitle }) =
         return seoService.getTagCloudMeta()
       case 'lenses-list':
         return seoService.getPromptsListMeta()
+      case 'battle':
+        return seoService.getBattleMeta(data)
+      case 'battles-list':
+        return seoService.getBattlesListMeta()
       default:
         return seoService.getHomeMeta()
     }
@@ -55,7 +61,7 @@ export const SEOHead: React.FC<SEOHeadProps> = ({ type, data, overrideTitle }) =
 
   const ogImage = meta.ogImage ?? DEFAULT_OG_IMAGE
   const ogType =
-    type === 'profile' ? 'profile' : type === 'lens' || type === 'thread' ? 'article' : 'website'
+    type === 'profile' ? 'profile' : type === 'lens' || type === 'thread' || type === 'battle' ? 'article' : 'website'
 
   return (
     <Helmet>

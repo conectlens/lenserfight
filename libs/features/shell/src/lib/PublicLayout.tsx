@@ -81,7 +81,7 @@ export const PublicLayout: React.FC<PublicLayoutProps> = ({ children }) => {
 
       <main className="flex-1 w-full">{children}</main>
 
-      <Footer policyBaseUrl={import.meta.env.VITE_ARENA_APP_URL ?? 'https://lenserfight.com'} />
+      <Footer navBaseUrl={import.meta.env.VITE_ARENA_URL ?? 'https://lenserfight.com'} />
     </div>
   )
 }

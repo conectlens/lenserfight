@@ -100,4 +100,12 @@ export const queryKeys = {
     forEntity: (entityType: string, entityId: string) =>
       [...queryKeys.media.all, 'entity', entityType, entityId] as const,
   },
+  battles: {
+    all: ['battles'] as const,
+    feed: (filter?: string) => [...queryKeys.battles.all, 'feed', filter] as const,
+    detail: (slug: string) => [...queryKeys.battles.all, 'detail', slug] as const,
+    contenders: (battleId: string) => [...queryKeys.battles.all, 'contenders', battleId] as const,
+    aggregates: (battleId: string) => [...queryKeys.battles.all, 'aggregates', battleId] as const,
+    scorecard: (battleId: string) => [...queryKeys.battles.all, 'scorecard', battleId] as const,
+  },
 }
