@@ -1,6 +1,6 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { History, Lock, Loader2, Pencil, Trash2, Flag } from 'lucide-react'
-import React, { useEffect, useMemo, useState } from 'react'
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 
 import { ConfirmModal } from '@lenserfight/ui/modals'
@@ -47,10 +47,32 @@ export const LensLabPage: React.FC = () => {
     staleTime: 1000 * 60 * 5,
   })
 
+  // Lazy provider loading: only fetch when user first opens the provider dropdown
+  const [providersEnabled, setProvidersEnabled] = useState(false)
+  const handleProviderDropdownOpen = useCallback(() => setProvidersEnabled(true), [])
+
+  // resolveLocalKey ref — breaks the circular dependency between lab and funding.
+  // The ref is written synchronously on every render before triggerStream could be called.
+  const resolveLocalKeyRef = useRef<((id: string) => Promise<string>) | undefined>(undefined)
+  const stableResolveLocalKey = useCallback(
+    (keyId: string) =>
+      resolveLocalKeyRef.current
+        ? resolveLocalKeyRef.current(keyId)
+        : Promise.reject(new Error('Local key resolver not ready')),
+    [],
+  )
+
   const lab = useLabController(id ?? '', !!isAuthenticated, {
     preferredProviderKey: preferences?.ai_provider_key,
     preferredModelKey: preferences?.ai_model_key,
+    providersEnabled,
+    resolveLocalKey: stableResolveLocalKey,
   })
+
+  const funding = useFundingSource(lab.selectedProviderKey)
+  // Keep the ref current so triggerStream always uses the latest decryption function
+  resolveLocalKeyRef.current = funding.resolveLocalKey
+
   const { forkLens, isForking } = useForkLens(lens ?? null)
 
   // Version restore/preview orchestration
@@ -63,9 +85,6 @@ export const LensLabPage: React.FC = () => {
     enabled: showVersionPicker,
   })
   const { data: selectedVersion } = useLensVersionDetail(selectedVersionId)
-
-  // Funding source
-  const funding = useFundingSource(lab.selectedProviderKey)
 
   // Active version: prefer restore-pinned version, then manually selected, then base lens
   const activeVersion = versionExecution.previewVersion ?? selectedVersion ?? null
@@ -359,6 +378,20 @@ export const LensLabPage: React.FC = () => {
               )}
             </div>
           )}
+
+          {/* Artifact viewer — below lens body */}
+          <LabArtifactViewer
+            selectedRunId={lab.selectedRunId}
+            comparisonRunIds={lab.comparisonRunIds}
+            latestResult={lab.latestResult}
+            streamState={lab.streamState}
+            streamOutput={lab.streamOutput}
+            streamRunId={lab.streamRunId}
+            streamUsage={lab.streamUsage}
+            streamCredits={lab.streamCredits}
+            streamError={lab.streamError}
+            isOwner={isOwner}
+          />
         </div>
 
         <div className="lg:col-span-5">
@@ -389,30 +422,20 @@ export const LensLabPage: React.FC = () => {
             availableKeys={funding.availableKeys}
             walletBalance={funding.walletBalance}
             canUseBYOK={funding.canUseBYOK}
+            selectedLocalKeyId={funding.selectedLocalKeyId}
+            onLocalKeyIdChange={funding.setSelectedLocalKeyId}
+            availableLocalKeys={funding.localKeys}
+            onAddLocalKey={funding.addLocalKey}
+            onRemoveLocalKey={funding.removeLocalKey}
+            onProviderDropdownOpen={handleProviderDropdownOpen}
           />
         </div>
       </div>
 
-      {/* Output + History row */}
+      {/* History row */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 mt-2">
-        {/* Artifact viewer — left 7 cols */}
-        <div className="lg:col-span-7 border-t pt-6 border-gray-100 dark:border-gray-800 lg:border-t-0 lg:pt-0">
-          <LabArtifactViewer
-            selectedRunId={lab.selectedRunId}
-            comparisonRunIds={lab.comparisonRunIds}
-            latestResult={lab.latestResult}
-            streamState={lab.streamState}
-            streamOutput={lab.streamOutput}
-            streamRunId={lab.streamRunId}
-            streamUsage={lab.streamUsage}
-            streamCredits={lab.streamCredits}
-            streamError={lab.streamError}
-            isOwner={isOwner}
-          />
-        </div>
-
-        {/* Execution timeline — right 5 cols */}
-        <div className="lg:col-span-5 border-t pt-6 border-gray-100 dark:border-gray-800 lg:border-t-0 lg:pt-0">
+        {/* Execution timeline — right 5 cols (offset to align with execution panel) */}
+        <div className="lg:col-start-8 lg:col-span-5 border-t pt-6 border-gray-100 dark:border-gray-800 lg:border-t-0 lg:pt-0">
           <div className="flex items-center gap-2 mb-4">
             <h4 className="text-sm font-semibold text-gray-800 dark:text-gray-100">History</h4>
             {lab.comparisonRunIds.length > 0 && (

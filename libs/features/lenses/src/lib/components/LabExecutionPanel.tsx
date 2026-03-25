@@ -8,6 +8,7 @@ import { validateParamValues } from '@lenserfight/utils/text'
 import { TriggerLabExecutionDTO } from '../hooks/useLabController'
 import { FundingSourceToggle } from './FundingSourceToggle'
 import { sanitizeStringInput, validateParamValue } from '../hooks/useAttachmentValidation'
+import type { LocalKeyMeta } from '@lenserfight/types'
 
 // Detect variables from both {{legacy}} and [[modern]] template syntaxes
 function extractVariables(content: string): string[] {
@@ -58,6 +59,14 @@ interface LabExecutionPanelProps {
   availableKeys?: UserApiKey[]
   walletBalance?: WalletBalance
   canUseBYOK?: boolean
+  // Local BYOK
+  selectedLocalKeyId?: string | null
+  onLocalKeyIdChange?: (keyId: string) => void
+  availableLocalKeys?: LocalKeyMeta[]
+  onAddLocalKey?: (provider: string, label: string, rawKey: string) => Promise<void>
+  onRemoveLocalKey?: (id: string) => Promise<void>
+  /** Called when the user first opens the provider dropdown — triggers lazy data fetch */
+  onProviderDropdownOpen?: () => void
 }
 
 const inputClass =
@@ -93,9 +102,17 @@ export const LabExecutionPanel: React.FC<LabExecutionPanelProps> = ({
   availableKeys,
   walletBalance,
   canUseBYOK,
+  selectedLocalKeyId,
+  onLocalKeyIdChange,
+  availableLocalKeys,
+  onAddLocalKey,
+  onRemoveLocalKey,
+  onProviderDropdownOpen,
 }) => {
   const variables = useMemo(() => extractVariables(lensContent), [lensContent])
   const usingVersionParams = !!(versionParams && versionParams.length > 0)
+
+  const isLocalByok = fundingSource === 'user_byok_local'
 
   // Legacy LensParam[] fallback (when versionParams is absent)
   const legacyParamSchemas = useMemo<LensParam[]>(() => {
@@ -125,13 +142,18 @@ export const LabExecutionPanel: React.FC<LabExecutionPanelProps> = ({
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
-    if (!selectedProviderKey || !selectedModelKey) return
+
+    // For local BYOK: provider comes from the selected local key
+    const effectiveProviderKey = isLocalByok
+      ? (availableLocalKeys?.find((k) => k.id === selectedLocalKeyId)?.provider ?? '')
+      : selectedProviderKey
+
+    if (!effectiveProviderKey || !selectedModelKey) return
 
     let inputSnapshot: Record<string, unknown>
     const errors: Record<string, string> = {}
 
     if (usingVersionParams && versionParams) {
-      // Validate each version param
       for (const p of versionParams) {
         const err = validateParamValue(inputValues[p.label], p, selectedModelInputModalities)
         if (err) errors[p.label] = err
@@ -140,7 +162,6 @@ export const LabExecutionPanel: React.FC<LabExecutionPanelProps> = ({
         setFieldErrors(errors)
         return
       }
-      // Sanitize text-like values
       inputSnapshot = Object.fromEntries(
         versionParams.map((p) => {
           const val = inputValues[p.label] ?? ''
@@ -166,17 +187,21 @@ export const LabExecutionPanel: React.FC<LabExecutionPanelProps> = ({
     }
 
     onTriggerStream({
-      providerKey: selectedProviderKey as 'openai' | 'anthropic' | 'google',
+      providerKey: effectiveProviderKey as 'openai' | 'anthropic' | 'google' | 'mistral' | 'ollama',
       modelKey: selectedModelKey,
       lensContent,
       inputSnapshot: inputSnapshot as Record<string, string>,
       params: usingVersionParams ? undefined : legacyParamSchemas,
       fundingSource,
       byokKeyRefId: fundingSource === 'user_byok_cloud' ? selectedKeyRefId ?? undefined : undefined,
+      byokLocalKeyId: fundingSource === 'user_byok_local' ? selectedLocalKeyId ?? undefined : undefined,
     })
   }
 
-  const isDisabled = isTriggeringExecution || isStreaming || !selectedProviderKey || !selectedModelKey
+  const isDisabled =
+    isTriggeringExecution ||
+    isStreaming ||
+    (isLocalByok ? !selectedLocalKeyId : !selectedProviderKey || !selectedModelKey)
 
   return (
     <form
@@ -193,22 +218,7 @@ export const LabExecutionPanel: React.FC<LabExecutionPanelProps> = ({
         )}
       </div>
 
-      {/* Provider + Model Selectors */}
-      <AIProviderSelectList
-        providers={providers}
-        isLoading={isLoadingProviders}
-        value={selectedProviderKey}
-        onChange={onProviderChange}
-      />
-      <AIModelSelectList
-        models={providerModels}
-        isLoading={isLoadingModels}
-        value={selectedModelKey}
-        onChange={onModelChange}
-        providerSelected={!!selectedProviderKey}
-      />
-
-      {/* Funding Source Toggle */}
+      {/* 1. Funding Source — FIRST */}
       {fundingSource && onFundingSourceChange && onKeyRefIdChange && (
         <FundingSourceToggle
           fundingSource={fundingSource}
@@ -216,12 +226,37 @@ export const LabExecutionPanel: React.FC<LabExecutionPanelProps> = ({
           selectedKeyRefId={selectedKeyRefId ?? null}
           onKeyRefIdChange={onKeyRefIdChange}
           availableKeys={availableKeys ?? []}
+          selectedLocalKeyId={selectedLocalKeyId ?? null}
+          onLocalKeyIdChange={onLocalKeyIdChange ?? (() => {})}
+          availableLocalKeys={availableLocalKeys ?? []}
+          onAddLocalKey={onAddLocalKey ?? (async () => {})}
+          onRemoveLocalKey={onRemoveLocalKey}
           walletBalance={walletBalance}
           canUseBYOK={canUseBYOK ?? false}
         />
       )}
 
-      {/* Version Parameters — rendered via ToolField factory (GRASP: Information Expert) */}
+      {/* 2. Provider + Model — only when NOT local BYOK */}
+      {!isLocalByok && (
+        <>
+          <AIProviderSelectList
+            providers={providers}
+            isLoading={isLoadingProviders}
+            value={selectedProviderKey}
+            onChange={onProviderChange}
+            onOpen={onProviderDropdownOpen}
+          />
+          <AIModelSelectList
+            models={providerModels}
+            isLoading={isLoadingModels}
+            value={selectedModelKey}
+            onChange={onModelChange}
+            providerSelected={!!selectedProviderKey}
+          />
+        </>
+      )}
+
+      {/* 3. Version Parameters */}
       {usingVersionParams && versionParams && (
         <div className="flex flex-col gap-3">
           {versionParams.map((param) => (
