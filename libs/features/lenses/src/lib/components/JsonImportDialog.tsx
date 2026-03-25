@@ -1,8 +1,9 @@
-import React, { useState } from 'react'
+import React, { useMemo, useState } from 'react'
+import { Clipboard, Check, Zap } from 'lucide-react'
 import { Dialog } from '@lenserfight/ui/overlays'
 import { Button } from '@lenserfight/ui/components'
 import { LensVersionParam, LensParam } from '@lenserfight/types'
-import { coerceJsonImport, ImportResult } from '../hooks/useParamImport'
+import { coerceJsonImport, buildJsonTemplate, ImportResult } from '../hooks/useParamImport'
 
 interface JsonImportDialogProps {
   open: boolean
@@ -21,8 +22,25 @@ export const JsonImportDialog: React.FC<JsonImportDialogProps> = ({
 }) => {
   const [rawText, setRawText] = useState('')
   const [parseResult, setParseResult] = useState<ImportResult | null>(null)
+  const [copiedTemplate, setCopiedTemplate] = useState(false)
 
   const totalParams = versionParams.length + legacyParams.length
+
+  // Build typed template from actual params
+  const templateJson = useMemo(
+    () => buildJsonTemplate(versionParams, legacyParams),
+    [versionParams, legacyParams],
+  )
+
+  const handleCopyTemplate = async () => {
+    try {
+      await navigator.clipboard.writeText(templateJson)
+      setCopiedTemplate(true)
+      setTimeout(() => setCopiedTemplate(false), 2000)
+    } catch {
+      // clipboard access denied — silently ignore
+    }
+  }
 
   const handleParse = () => {
     if (!rawText.trim()) return
@@ -69,22 +87,36 @@ export const JsonImportDialog: React.FC<JsonImportDialogProps> = ({
         <textarea
           value={rawText}
           onChange={(e) => { setRawText(e.target.value); setParseResult(null) }}
-          placeholder={'{\n  "param_label": "value",\n  "another_param": 42\n}'}
+          placeholder={templateJson || '{\n  "param_label": "value"\n}'}
           rows={8}
           spellCheck={false}
           className="w-full rounded-lg border border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-800 px-3 py-2 text-xs font-mono text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-500 resize-none"
         />
 
-        <Button
-          type="button"
-          variant="secondary"
-          size="sm"
-          onClick={handleParse}
-          disabled={!rawText.trim()}
-          className="self-start"
-        >
-          Parse
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            onClick={handleCopyTemplate}
+            disabled={!templateJson}
+            className="flex items-center gap-1.5"
+          >
+            {copiedTemplate ? <Check size={13} /> : <Clipboard size={13} />}
+            {copiedTemplate ? 'Copied!' : 'Copy template'}
+          </Button>
+          <Button
+            type="button"
+            variant="secondary"
+            size="sm"
+            onClick={handleParse}
+            disabled={!rawText.trim()}
+            className="flex items-center gap-1.5"
+          >
+            <Zap size={13} />
+            Parse
+          </Button>
+        </div>
 
         {/* Parse error */}
         {hasParseError && (
