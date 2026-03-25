@@ -175,7 +175,7 @@ export const ApiKeysTab: React.FC = () => {
                     <div className="min-w-0">
                       <div className="flex items-center gap-2">
                         <Badge variant="outline" className="text-xs">
-                          {BYOK_PROVIDER_LABELS[key.provider] ?? key.provider}
+                          {key.providerDisplayName}
                         </Badge>
                         {key.label && (
                           <span className="text-sm font-medium text-gray-700 dark:text-gray-300 truncate">
@@ -243,7 +243,7 @@ export const ApiKeysTab: React.FC = () => {
         onClose={() => setRevokeTarget(null)}
         onConfirm={handleRevoke}
         title="Revoke API Key"
-        message={`Are you sure you want to revoke the ${revokeTarget ? BYOK_PROVIDER_LABELS[revokeTarget.provider] : ''} key${revokeTarget?.label ? ` "${revokeTarget.label}"` : ''}? This key will no longer be usable for AI executions.`}
+        message={`Are you sure you want to revoke the ${revokeTarget?.providerDisplayName ?? ''} key${revokeTarget?.label ? ` "${revokeTarget.label}"` : ''}? This key will no longer be usable for AI executions.`}
         confirmLabel="Revoke"
         isLoading={isRevoking}
       />
