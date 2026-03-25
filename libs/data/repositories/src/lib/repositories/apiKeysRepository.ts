@@ -1,5 +1,5 @@
 import { supabase } from '@lenserfight/data/supabase'
-import { UserApiKey, ByokProvider, CreateApiKeyDTO } from '@lenserfight/types'
+import { UserApiKey, CreateApiKeyDTO } from '@lenserfight/types'
 
 // --- Port (Interface) ---
 
@@ -16,7 +16,9 @@ export class SupabaseApiKeysRepository implements ApiKeysRepositoryPort {
     return {
       id: row.id as string,
       lenserId: row.lenser_id as string,
-      provider: (row.provider as ByokProvider) ?? null,
+      providerId: row.provider_id as string,
+      providerKey: row.provider_key as string,
+      providerDisplayName: row.provider_name as string,
       label: (row.label as string) ?? null,
       keySuffix: row.key_suffix as string,
       isActive: row.is_active as boolean,
@@ -26,12 +28,7 @@ export class SupabaseApiKeysRepository implements ApiKeysRepositoryPort {
   }
 
   async getMyKeys(): Promise<UserApiKey[]> {
-    const { data, error } = await supabase
-      .schema('ai')
-      .from('keys')
-      .select('id, lenser_id, label, key_suffix, is_active, created_at, revoked_at')
-      .eq('is_active', true)
-      .order('created_at', { ascending: false })
+    const { data, error } = await supabase.rpc('fn_get_my_api_keys')
 
     if (error) throw error
     return (data ?? []).map((row) => this.mapRow(row as Record<string, unknown>))

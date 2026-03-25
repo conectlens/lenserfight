@@ -1,7 +1,7 @@
 import React from 'react'
 import { Cloud, KeyRound } from 'lucide-react'
 import { SelectField } from '@lenserfight/ui/forms'
-import { FundingSource, UserApiKey, WalletBalance, BYOK_PROVIDER_LABELS } from '@lenserfight/types'
+import { FundingSource, UserApiKey, WalletBalance } from '@lenserfight/types'
 import { Link } from 'react-router-dom'
 
 interface FundingSourceToggleProps {
@@ -82,7 +82,7 @@ export const FundingSourceToggle: React.FC<FundingSourceToggleProps> = ({
           placeholder="Select an API key"
           options={availableKeys.map((k) => ({
             value: k.id,
-            label: `${BYOK_PROVIDER_LABELS[k.provider]}${k.label ? ` — ${k.label}` : ''} (••••${k.keySuffix})`,
+            label: `${k.providerDisplayName}${k.label ? ` — ${k.label}` : ''} (••••${k.keySuffix})`,
           }))}
         />
       )}
