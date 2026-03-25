@@ -2,11 +2,12 @@ import { useQuery } from '@tanstack/react-query'
 import { generationService } from '@lenserfight/data/repositories'
 import { AIProvider, AIProviderModel } from '@lenserfight/types'
 
-export const useAIProviders = () => {
+export const useAIProviders = (options?: { enabled?: boolean }) => {
   return useQuery<AIProvider[]>({
     queryKey: ['ai-providers'],
     queryFn: () => generationService.getActiveProviders(),
     staleTime: 10 * 60_000,
+    enabled: options?.enabled ?? true,
   })
 }
 

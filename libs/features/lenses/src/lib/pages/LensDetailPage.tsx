@@ -1,6 +1,6 @@
 import { useQueryClient } from '@tanstack/react-query'
 import { GitFork, History, Lock, Loader2, Pencil, Trash2, Flag, Play, ChevronDown, ChevronUp } from 'lucide-react'
-import React, { useEffect, useMemo, useState } from 'react'
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 
 import { ConfirmModal } from '@lenserfight/ui/modals'
@@ -54,8 +54,24 @@ export const LensDetailPage: React.FC = () => {
 
   // Execution panel state
   const [showRunPanel, setShowRunPanel] = useState(false)
-  const lab = useLabController(id ?? '', !!isAuthenticated)
+  const [providersEnabled, setProvidersEnabled] = useState(false)
+  const handleProviderDropdownOpen = useCallback(() => setProvidersEnabled(true), [])
+
+  const resolveLocalKeyRef = useRef<((id: string) => Promise<string>) | undefined>(undefined)
+  const stableResolveLocalKey = useCallback(
+    (keyId: string) =>
+      resolveLocalKeyRef.current
+        ? resolveLocalKeyRef.current(keyId)
+        : Promise.reject(new Error('Local key resolver not ready')),
+    [],
+  )
+
+  const lab = useLabController(id ?? '', !!isAuthenticated, {
+    providersEnabled,
+    resolveLocalKey: stableResolveLocalKey,
+  })
   const funding = useFundingSource(lab.selectedProviderKey)
+  resolveLocalKeyRef.current = funding.resolveLocalKey
 
   // Version history (lazy — only fetched when picker is opened)
   const [showVersionPicker, setShowVersionPicker] = useState(false)
@@ -421,6 +437,12 @@ export const LensDetailPage: React.FC = () => {
                   availableKeys={funding.availableKeys}
                   walletBalance={funding.walletBalance}
                   canUseBYOK={funding.canUseBYOK}
+                  selectedLocalKeyId={funding.selectedLocalKeyId}
+                  onLocalKeyIdChange={funding.setSelectedLocalKeyId}
+                  availableLocalKeys={funding.localKeys}
+                  onAddLocalKey={funding.addLocalKey}
+                  onRemoveLocalKey={funding.removeLocalKey}
+                  onProviderDropdownOpen={handleProviderDropdownOpen}
                 />
                 <LabArtifactViewer
                   selectedRunId={lab.selectedRunId}
