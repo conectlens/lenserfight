@@ -21,8 +21,12 @@ jobs:
         with:
           node-version: 20
 
-      - run: npm ci
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9
 
-      - run: npx semantic-release
+      - run: pnpm install --frozen-lockfile
+
+      - run: pnpm dlx semantic-release
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
