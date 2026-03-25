@@ -50,7 +50,7 @@ export const useApiKeys = () => {
   })
 
   const getKeysForProvider = (provider: ByokProvider): UserApiKey[] => {
-    return keys.filter((k) => k.provider === provider && k.isActive)
+    return keys.filter((k) => k.providerKey === provider && k.isActive)
   }
 
   return {

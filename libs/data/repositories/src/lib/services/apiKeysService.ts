@@ -27,6 +27,6 @@ export const apiKeysService = {
 
   getActiveKeysForProvider: async (provider: ByokProvider): Promise<UserApiKey[]> => {
     const keys = await apiKeysRepo.getMyKeys()
-    return keys.filter((k) => k.provider === provider && k.isActive)
+    return keys.filter((k) => k.providerKey === provider && k.isActive)
   },
 }
