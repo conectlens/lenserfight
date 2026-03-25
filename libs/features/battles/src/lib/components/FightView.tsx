@@ -45,57 +45,63 @@ export function FightView({
   const showVotes = phase === 'voting' || phase === 'result'
 
   return (
-    <div className="relative grid grid-cols-1 gap-4 md:grid-cols-2">
-      {/* VS badge centered */}
-      <div className="hidden md:block">
+    <div className="relative flex flex-col items-center gap-4 md:flex-row md:items-stretch">
+      {/* Contender A */}
+      <div className="w-full md:flex-1">
+        {contenderA ? (
+          <motion.div
+            className="h-full"
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.3, ease: [0, 0, 0.2, 1] }}
+          >
+            {renderContenderSlot({
+              slot: 'A',
+              displayName: contenderA.display_name,
+              contenderType: contenderA.contender_type,
+              contentText: submissionA?.content_text,
+              contentUrl: submissionA?.content_url,
+              voteCount: showVotes ? (aggA?.raw_vote_count ?? 0) : undefined,
+              votePercentage: showVotes ? pctA : undefined,
+            })}
+          </motion.div>
+        ) : (
+          <div className="flex h-full min-h-32 items-center justify-center rounded-2xl border border-dashed border-surface-border p-8 text-sm text-greyscale-400">
+            No contender A
+          </div>
+        )}
+      </div>
+
+      {/* VS badge — centered between columns */}
+      <div className="flex shrink-0 items-center justify-center">
         <VSIndicator />
       </div>
 
-      {/* Contender A */}
-      {contenderA ? (
-        <motion.div
-          initial={{ opacity: 0, x: -20 }}
-          animate={{ opacity: 1, x: 0 }}
-          transition={{ duration: 0.3, ease: [0, 0, 0.2, 1] }}
-        >
-          {renderContenderSlot({
-            slot: 'A',
-            displayName: contenderA.display_name,
-            contenderType: contenderA.contender_type,
-            contentText: submissionA?.content_text,
-            contentUrl: submissionA?.content_url,
-            voteCount: showVotes ? (aggA?.raw_vote_count ?? 0) : undefined,
-            votePercentage: showVotes ? pctA : undefined,
-          })}
-        </motion.div>
-      ) : (
-        <div className="flex items-center justify-center rounded-2xl border border-dashed border-surface-border p-8 text-sm text-greyscale-400">
-          No contender A
-        </div>
-      )}
-
       {/* Contender B */}
-      {contenderB ? (
-        <motion.div
-          initial={{ opacity: 0, x: 20 }}
-          animate={{ opacity: 1, x: 0 }}
-          transition={{ duration: 0.3, ease: [0, 0, 0.2, 1], delay: 0.05 }}
-        >
-          {renderContenderSlot({
-            slot: 'B',
-            displayName: contenderB.display_name,
-            contenderType: contenderB.contender_type,
-            contentText: submissionB?.content_text,
-            contentUrl: submissionB?.content_url,
-            voteCount: showVotes ? (aggB?.raw_vote_count ?? 0) : undefined,
-            votePercentage: showVotes ? pctB : undefined,
-          })}
-        </motion.div>
-      ) : (
-        <div className="flex items-center justify-center rounded-2xl border border-dashed border-surface-border p-8 text-sm text-greyscale-400">
-          No contender B
-        </div>
-      )}
+      <div className="w-full md:flex-1">
+        {contenderB ? (
+          <motion.div
+            className="h-full"
+            initial={{ opacity: 0, x: 20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.3, ease: [0, 0, 0.2, 1], delay: 0.05 }}
+          >
+            {renderContenderSlot({
+              slot: 'B',
+              displayName: contenderB.display_name,
+              contenderType: contenderB.contender_type,
+              contentText: submissionB?.content_text,
+              contentUrl: submissionB?.content_url,
+              voteCount: showVotes ? (aggB?.raw_vote_count ?? 0) : undefined,
+              votePercentage: showVotes ? pctB : undefined,
+            })}
+          </motion.div>
+        ) : (
+          <div className="flex h-full min-h-32 items-center justify-center rounded-2xl border border-dashed border-surface-border p-8 text-sm text-greyscale-400">
+            No contender B
+          </div>
+        )}
+      </div>
     </div>
   )
 }

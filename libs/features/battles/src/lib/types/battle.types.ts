@@ -20,6 +20,36 @@ export type ContenderType = 'human' | 'ai_model' | 'ai_agent' | 'ai_runner'
 export type VoteValue = 'contender_a' | 'contender_b' | 'draw'
 export type ScorecardResult = 'pass' | 'fail' | 'partial' | 'skipped'
 
+/**
+ * Determines who competes and who judges.
+ * - ai_vs_ai: two AI lensers compete, community judges
+ * - human_vs_human_ai_votes: two humans compete, AI judge casts weighted votes
+ * - human_vs_human_open_votes: two humans compete, community votes openly
+ * - human_vs_ai: human vs AI lenser, everyone can vote
+ */
+export type BattleType =
+  | 'ai_vs_ai'
+  | 'human_vs_human_ai_votes'
+  | 'human_vs_human_open_votes'
+  | 'human_vs_ai'
+
+/**
+ * Who is allowed to cast votes in this battle.
+ * - open: any authenticated user
+ * - human_only: only lensers with type = 'human'
+ * - ai_only: only lensers with type = 'ai' (AI judge mode)
+ * - verified_lenser: only lensers who have completed onboarding
+ */
+export type VoterEligibility = 'open' | 'human_only' | 'ai_only' | 'verified_lenser'
+
+export interface AIHandicapConfig {
+  max_tokens_per_second?: number | null
+  injected_delay_ms?: number
+  max_context_tokens?: number | null
+  allowed_model_tier?: 'free' | 'paid' | 'enterprise' | null
+  time_budget_ms?: number | null
+}
+
 export interface Battle {
   id: string
   slug: string
@@ -28,6 +58,9 @@ export interface Battle {
   status: BattleStatus
   total_vote_count: number
   published_at: string | null
+  battle_type: BattleType
+  voter_eligibility: VoterEligibility
+  handicap_config: AIHandicapConfig
 }
 
 export interface Contender {

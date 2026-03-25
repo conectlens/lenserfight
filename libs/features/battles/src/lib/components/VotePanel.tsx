@@ -2,6 +2,8 @@ import { Badge, Button, Card } from '@lenserfight/ui/components'
 import { motion } from 'framer-motion'
 import React, { useState } from 'react'
 
+import type { VoterEligibility } from '../types/battle.types'
+
 interface VotePanelProps {
   battleId: string
   contenderA: { id: string; displayName: string }
@@ -9,6 +11,8 @@ interface VotePanelProps {
   existingVote?: 'contender_a' | 'contender_b' | 'draw' | null
   onVote: (value: 'contender_a' | 'contender_b' | 'draw', rationale: string) => Promise<void>
   disabled?: boolean
+  voterEligibility?: VoterEligibility
+  isEligible?: boolean
 }
 
 const containerVariants = {
@@ -27,7 +31,24 @@ const buttonVariants = {
   },
 }
 
-export function VotePanel({ contenderA, contenderB, existingVote, onVote, disabled }: VotePanelProps) {
+const ELIGIBILITY_MESSAGES: Record<string, string> = {
+  human_only: 'This battle is restricted to human lensers.',
+  ai_only: 'This battle uses AI judges only.',
+  verified_lenser: 'Only verified lensers can vote. Complete your onboarding to participate.',
+}
+
+export function VotePanel({ contenderA, contenderB, existingVote, onVote, disabled, voterEligibility, isEligible = true }: VotePanelProps) {
+  // Show ineligibility gate before anything else
+  if (!isEligible && voterEligibility && voterEligibility !== 'open') {
+    return (
+      <div className="rounded-2xl border border-surface-border bg-surface-raised p-5 text-center space-y-2">
+        <Badge color="yellow" variant="outline" className="mb-2">Restricted voting</Badge>
+        <p className="text-sm text-greyscale-600 dark:text-greyscale-400">
+          {ELIGIBILITY_MESSAGES[voterEligibility] ?? 'You are not eligible to vote in this battle.'}
+        </p>
+      </div>
+    )
+  }
   const [selected, setSelected] = useState<'contender_a' | 'contender_b' | 'draw' | null>(existingVote ?? null)
   const [rationale, setRationale] = useState('')
   const [loading, setLoading] = useState(false)

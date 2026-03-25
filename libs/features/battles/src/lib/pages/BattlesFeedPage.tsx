@@ -5,7 +5,17 @@ import React, { useState } from 'react'
 import { BattleCard } from '../components/BattleCard'
 import { useBattlesFeed } from '../hooks/useBattlesFeed'
 
-const FILTERS = ['all', 'open', 'voting', 'published', 'closed'] as const
+import type { BattleType } from '../types/battle.types'
+
+const STATUS_FILTERS = ['all', 'open', 'voting', 'published', 'closed'] as const
+
+const TYPE_FILTERS: { value: BattleType | 'all'; label: string }[] = [
+  { value: 'all', label: 'All types' },
+  { value: 'human_vs_human_open_votes', label: 'H vs H' },
+  { value: 'human_vs_ai', label: 'Human vs AI' },
+  { value: 'ai_vs_ai', label: 'AI vs AI' },
+  { value: 'human_vs_human_ai_votes', label: 'AI Judge' },
+]
 
 const cardVariants = {
   hidden: { opacity: 0, y: 20 },
@@ -21,27 +31,48 @@ const cardVariants = {
   exit: { opacity: 0, y: -10, transition: { duration: 0.15 } },
 }
 
+const filterBtnClass = (active: boolean) =>
+  `text-xs px-3 py-1.5 rounded-full border transition-all ${
+    active
+      ? 'bg-[var(--cl-surface-text)] text-[var(--cl-surface-base)] border-[var(--cl-surface-text)]'
+      : 'bg-[var(--cl-surface-base)] text-[var(--cl-surface-text-muted)] border-[var(--cl-surface-border)] hover:border-[var(--cl-surface-border-subtle)]'
+  }`
+
 export function BattlesFeedPage() {
-  const [filter, setFilter] = useState<string>('all')
-  const { data: battles = [], isLoading } = useBattlesFeed(filter)
+  const [statusFilter, setStatusFilter] = useState<string>('all')
+  const [typeFilter, setTypeFilter] = useState<BattleType | 'all'>('all')
+  const { data: battles = [], isLoading } = useBattlesFeed(statusFilter)
+
+  const filtered = typeFilter === 'all'
+    ? battles
+    : battles.filter((b) => b.battle_type === typeFilter)
 
   return (
     <div className="max-w-4xl mx-auto px-4 py-8">
       <SEOHead type="battles-list" />
-      <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-bold text-[var(--cl-surface-text)]">Battles</h1>
+      <div className="space-y-3 mb-6">
+        <div className="flex items-center justify-between">
+          <h1 className="text-2xl font-bold text-[var(--cl-surface-text)]">Battles</h1>
+        </div>
         <div className="flex gap-2 flex-wrap">
-          {FILTERS.map((f) => (
+          {STATUS_FILTERS.map((f) => (
             <button
               key={f}
-              onClick={() => setFilter(f)}
-              className={`text-xs px-3 py-1.5 rounded-full border transition-all ${
-                filter === f
-                  ? 'bg-[var(--cl-surface-text)] text-[var(--cl-surface-base)] border-[var(--cl-surface-text)]'
-                  : 'bg-[var(--cl-surface-base)] text-[var(--cl-surface-text-muted)] border-[var(--cl-surface-border)] hover:border-[var(--cl-surface-border-subtle)]'
-              }`}
+              onClick={() => setStatusFilter(f)}
+              className={filterBtnClass(statusFilter === f)}
             >
               {f.charAt(0).toUpperCase() + f.slice(1)}
+            </button>
+          ))}
+        </div>
+        <div className="flex gap-2 flex-wrap">
+          {TYPE_FILTERS.map((t) => (
+            <button
+              key={t.value}
+              onClick={() => setTypeFilter(t.value)}
+              className={filterBtnClass(typeFilter === t.value)}
+            >
+              {t.label}
             </button>
           ))}
         </div>
@@ -53,7 +84,7 @@ export function BattlesFeedPage() {
             <div key={i} className="h-32 bg-[var(--cl-surface-raised)] rounded-xl animate-pulse" />
           ))}
         </div>
-      ) : battles.length === 0 ? (
+      ) : filtered.length === 0 ? (
         <div className="text-center py-16 text-[var(--cl-surface-text-disabled)]">
           <p className="text-4xl mb-3">⚔️</p>
           <p className="font-medium">No battles yet.</p>
@@ -62,7 +93,7 @@ export function BattlesFeedPage() {
       ) : (
         <AnimatePresence mode="popLayout">
           <motion.div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            {battles.map((b, i) => (
+            {filtered.map((b, i) => (
               <motion.div
                 key={b.id}
                 custom={i}
@@ -80,6 +111,7 @@ export function BattlesFeedPage() {
                   status={b.status}
                   totalVoteCount={b.total_vote_count}
                   publishedAt={b.published_at}
+                  battleType={b.battle_type}
                 />
               </motion.div>
             ))}

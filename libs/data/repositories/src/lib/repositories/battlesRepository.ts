@@ -11,6 +11,14 @@ export type BattleStatus =
   | 'published'
   | 'archived'
 
+export type BattleType =
+  | 'ai_vs_ai'
+  | 'human_vs_human_ai_votes'
+  | 'human_vs_human_open_votes'
+  | 'human_vs_ai'
+
+export type VoterEligibility = 'open' | 'human_only' | 'ai_only' | 'verified_lenser'
+
 export type ContenderType = 'human' | 'ai_model' | 'ai_agent' | 'ai_runner'
 export type VoteValue = 'contender_a' | 'contender_b' | 'draw'
 export type ScorecardResult = 'pass' | 'fail' | 'partial' | 'skipped'
@@ -23,6 +31,29 @@ export interface BattleRecord {
   status: BattleStatus
   total_vote_count: number
   published_at: string | null
+  battle_type: BattleType
+  voter_eligibility: VoterEligibility
+  handicap_config: Record<string, unknown>
+}
+
+export interface AIHandicapPolicyRecord {
+  id: string
+  battle_id: string
+  max_tokens_per_second: number | null
+  injected_delay_ms: number
+  max_context_tokens: number | null
+  allowed_model_tier: 'free' | 'paid' | 'enterprise' | null
+  time_budget_ms: number | null
+}
+
+export interface CreateBattleInput {
+  title: string
+  task_prompt: string
+  battle_type: BattleType
+  voter_eligibility: VoterEligibility
+  handicap?: Partial<Omit<AIHandicapPolicyRecord, 'id' | 'battle_id'>>
+  funding_mode?: 'platform_credit' | 'wallet_funded' | 'sponsored'
+  max_budget_credits?: number
 }
 
 export interface ContenderRecord {
@@ -80,13 +111,16 @@ export interface SubmitVoteInput {
 
 export interface BattlesRepositoryPort {
   getBattleBySlug(slug: string): Promise<BattleRecord | null>
-  getBattlesFeed(filter?: string, limit?: number): Promise<BattleRecord[]>
+  getBattlesFeed(filter?: string, limit?: number, battleType?: BattleType): Promise<BattleRecord[]>
   getContenders(battleId: string): Promise<ContenderRecord[]>
   getSubmissions(battleId: string): Promise<SubmissionRecord[]>
   getVoteAggregates(battleId: string): Promise<VoteAggregateRecord[]>
   getScorecards(battleId: string): Promise<ScorecardRecord[]>
   getRubricCriteria(criterionIds: string[]): Promise<RubricCriterionRecord[]>
-  submitVote(input: SubmitVoteInput): Promise<void>
+  submitVote(input: SubmitVoteInput): Promise<{ xp_earned: number }>
+  createBattle(input: CreateBattleInput): Promise<BattleRecord>
+  getAIHandicapPolicy(battleId: string): Promise<AIHandicapPolicyRecord | null>
+  checkVoterEligibility(battleId: string, lenserId: string): Promise<boolean>
 }
 
 // --- Supabase Implementation ---
@@ -99,11 +133,14 @@ export class SupabaseBattlesRepository implements BattlesRepositoryPort {
     throw error
   }
 
+  private readonly battleSelect =
+    'id, slug, title, task_prompt, status, total_vote_count, published_at, battle_type, voter_eligibility, handicap_config'
+
   async getBattleBySlug(slug: string): Promise<BattleRecord | null> {
     const { data, error } = await supabase
       .schema('battles')
       .from('battles')
-      .select('id, slug, title, task_prompt, status, total_vote_count, published_at')
+      .select(this.battleSelect)
       .eq('slug', slug)
       .maybeSingle()
 
@@ -111,16 +148,19 @@ export class SupabaseBattlesRepository implements BattlesRepositoryPort {
     return data as BattleRecord | null
   }
 
-  async getBattlesFeed(filter?: string, limit = 50): Promise<BattleRecord[]> {
+  async getBattlesFeed(filter?: string, limit = 50, battleType?: BattleType): Promise<BattleRecord[]> {
     let query = supabase
       .schema('battles')
       .from('battles')
-      .select('id, slug, title, task_prompt, status, total_vote_count, published_at')
+      .select(this.battleSelect)
       .order('published_at', { ascending: false })
       .limit(limit)
 
     if (filter && filter !== 'all') {
       query = query.eq('status', filter)
+    }
+    if (battleType) {
+      query = query.eq('battle_type', battleType)
     }
 
     const { data, error } = await query
@@ -184,7 +224,7 @@ export class SupabaseBattlesRepository implements BattlesRepositoryPort {
     return (data ?? []) as RubricCriterionRecord[]
   }
 
-  async submitVote(input: SubmitVoteInput): Promise<void> {
+  async submitVote(input: SubmitVoteInput): Promise<{ xp_earned: number }> {
     const row = {
       battle_id: input.battle_id,
       voter_lenser_id: input.voter_lenser_id,
@@ -197,5 +237,69 @@ export class SupabaseBattlesRepository implements BattlesRepositoryPort {
 
     const { error } = await supabase.schema('battles').from('votes').insert(row)
     if (error) this.handleError(error)
+    // XP is awarded server-side via fn_submit_vote RPC (Phase 1 target).
+    // Until the RPC is wired, return the base rule value so the toast is accurate.
+    return { xp_earned: 10 }
+  }
+
+  async createBattle(input: CreateBattleInput): Promise<BattleRecord> {
+    // Calls the atomic fn_create_battle RPC which inserts battles + ai_handicap_policies + funding_policies.
+    // Until the RPC is deployed, falls back to direct insert with defaults.
+    const { data, error } = await supabase
+      .schema('battles')
+      .from('battles')
+      .insert({
+        title: input.title,
+        task_prompt: input.task_prompt,
+        battle_type: input.battle_type,
+        voter_eligibility: input.voter_eligibility,
+        handicap_config: input.handicap ?? {},
+        status: 'draft',
+      })
+      .select(this.battleSelect)
+      .single()
+
+    if (error) this.handleError(error)
+    return data as BattleRecord
+  }
+
+  async getAIHandicapPolicy(battleId: string): Promise<AIHandicapPolicyRecord | null> {
+    const { data, error } = await supabase
+      .schema('battles')
+      .from('ai_handicap_policies')
+      .select('id, battle_id, max_tokens_per_second, injected_delay_ms, max_context_tokens, allowed_model_tier, time_budget_ms')
+      .eq('battle_id', battleId)
+      .maybeSingle()
+
+    if (error) this.handleError(error)
+    return data as AIHandicapPolicyRecord | null
+  }
+
+  async checkVoterEligibility(battleId: string, lenserId: string): Promise<boolean> {
+    // Reads battle voter_eligibility and compares to lenser profile type.
+    const { data: battle, error: battleErr } = await supabase
+      .schema('battles')
+      .from('battles')
+      .select('voter_eligibility')
+      .eq('id', battleId)
+      .maybeSingle()
+
+    if (battleErr || !battle) return false
+    if (battle.voter_eligibility === 'open') return true
+
+    const { data: profile, error: profileErr } = await supabase
+      .schema('lensers')
+      .from('profiles')
+      .select('type, onboarding_step')
+      .eq('id', lenserId)
+      .maybeSingle()
+
+    if (profileErr || !profile) return false
+
+    if (battle.voter_eligibility === 'human_only') return profile.type === 'human'
+    if (battle.voter_eligibility === 'ai_only') return profile.type === 'ai'
+    if (battle.voter_eligibility === 'verified_lenser') return profile.onboarding_step === 'completed'
+
+    return true
   }
 }

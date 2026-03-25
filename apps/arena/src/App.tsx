@@ -19,6 +19,7 @@ import { LandHomePage } from './pages/LandHomePage'
 import { MissionPage } from './pages/MissionPage'
 import { PoliciesPage } from './pages/PoliciesPage'
 import { ProductPage } from './pages/ProductPage'
+import { BattleShowcasePage } from './pages/BattleShowcasePage'
 import { WhatIsPage } from './pages/WhatIsPage'
 
 const AUTH_APP_URL = import.meta.env.VITE_AUTH_BASE_URL ?? 'https://auth.lenserfight.com'
@@ -60,6 +61,7 @@ const App: React.FC = () => {
                     <Route path="/contact" element={<ContactPage />} />
                     <Route path="/get-started" element={<GetStartedPage />} />
                     <Route path="/demo" element={<DemoPage />} />
+                    <Route path="/battle-showcase" element={<BattleShowcasePage />} />
 
                     {/* Policy routes */}
                     <Route element={<PolicyLayoutWrapper />}>
