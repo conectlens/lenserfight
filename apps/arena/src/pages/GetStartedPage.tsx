@@ -1,6 +1,8 @@
+import { Badge, Card } from '@lenserfight/ui/components'
+import { ArrowRight, BookOpen, Sword, Trophy, CheckCircle2 } from 'lucide-react'
 import React from 'react'
 import { Link } from 'react-router-dom'
-import { ArrowRight, Sword, BookOpen, Trophy } from 'lucide-react'
+
 
 const AUTH_APP_URL = import.meta.env.VITE_AUTH_BASE_URL ?? 'https://auth.lenserfight.com'
 
@@ -9,17 +11,17 @@ const STEPS = [
     icon: BookOpen,
     step: '01',
     title: 'Create an account',
-    desc: 'Sign up for free. Your Lenser identity is your reputation in the ecosystem.',
-    cta: 'Sign Up',
+    desc: 'Sign up once, then use the same identity to vote, follow, and build reputation.',
+    cta: 'Sign up',
     href: `${AUTH_APP_URL}/register`,
     external: true,
   },
   {
     icon: Sword,
     step: '02',
-    title: 'Explore battles',
-    desc: 'Browse live AI battles. See how GPT-4o, Claude, Gemini, and others compare on real prompts.',
-    cta: 'See Battles',
+    title: 'Explore live battles',
+    desc: 'Read prompts, compare outputs, and understand how the result pages are structured.',
+    cta: 'See battles',
     href: '/battles',
     external: false,
   },
@@ -27,77 +29,121 @@ const STEPS = [
     icon: Trophy,
     step: '03',
     title: 'Create your first Lens',
-    desc: 'Write a prompt you care about. Run it as a battle. Watch the community rank the results.',
-    cta: 'Create a Battle',
-    href: '/battles/create',
+    desc: 'When you’re ready, define a task that other contenders can execute and judge.',
+    cta: 'Open Arena',
+    href: '/battles',
     external: false,
   },
 ]
 
 export const GetStartedPage: React.FC = () => {
   return (
-    <div className="bg-white dark:bg-gray-900 py-20 px-4">
-      <div className="max-w-4xl mx-auto">
-        {/* Header */}
-        <div className="text-center mb-16">
-          <h1 className="text-4xl md:text-5xl font-black text-gray-900 dark:text-white tracking-tight mb-6">
-            Get Started
-          </h1>
-          <p className="text-xl text-gray-500 dark:text-gray-400 leading-relaxed max-w-xl mx-auto">
-            Join the arena in three steps. No setup required. Start exploring immediately.
-          </p>
-        </div>
-
-        {/* Steps */}
-        <div className="space-y-6 mb-16">
-          {STEPS.map(({ icon: Icon, step, title, desc, cta, href, external }) => (
-            <div
-              key={step}
-              className="flex gap-6 p-8 rounded-2xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800/50 items-start"
-            >
-              <div className="flex-shrink-0">
-                <div className="w-12 h-12 rounded-xl bg-gray-100 dark:bg-gray-700 flex items-center justify-center">
-                  <Icon className="w-6 h-6 text-gray-700 dark:text-gray-200" />
-                </div>
-              </div>
-              <div className="flex-1">
-                <div className="text-xs font-black uppercase tracking-widest text-gray-400 dark:text-gray-500 mb-1">
-                  Step {step}
-                </div>
-                <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">{title}</h3>
-                <p className="text-gray-500 dark:text-gray-400 text-sm leading-relaxed mb-4">{desc}</p>
-                {external ? (
-                  <a
-                    href={href}
-                    className="inline-flex items-center gap-2 px-5 py-2 rounded-full bg-[#ffe170] text-gray-900 font-bold text-sm hover:bg-[#ffd940] transition-colors"
-                  >
-                    {cta} <ArrowRight size={14} />
-                  </a>
-                ) : (
-                  <Link
-                    to={href}
-                    className="inline-flex items-center gap-2 px-5 py-2 rounded-full bg-gray-900 dark:bg-white text-white dark:text-gray-900 font-bold text-sm hover:opacity-90 transition-opacity"
-                  >
-                    {cta} <ArrowRight size={14} />
-                  </Link>
-                )}
-              </div>
+    <div className="bg-surface-base text-surface-text">
+      <section className="mx-auto max-w-6xl px-4 py-16 sm:px-6 lg:px-8 lg:py-24">
+        <div className="grid gap-10 lg:grid-cols-[0.96fr_1.04fr] lg:items-start">
+          <div className="space-y-6">
+            <Badge color="yellow" variant="outline">
+              Get started
+            </Badge>
+            <h1 className="text-4xl font-black tracking-tight text-greyscale-900 dark:text-greyscale-0 sm:text-5xl">
+              Start in three steps and understand the product in minutes.
+            </h1>
+            <p className="max-w-2xl text-lg leading-8 text-greyscale-600 dark:text-greyscale-400">
+              The Arena is easier to understand when people see the loop in motion. This path takes you from
+              curiosity to participation with almost no setup.
+            </p>
+            <div className="flex flex-wrap gap-3">
+              <Link
+                to="/demo"
+                className="inline-flex items-center gap-2 rounded-full border border-surface-border bg-surface-base px-5 py-3 text-sm font-semibold text-greyscale-700 transition-colors hover:border-status-blue hover:text-greyscale-900 dark:text-greyscale-300 dark:hover:text-greyscale-0"
+              >
+                Watch the demo
+              </Link>
+              <Link
+                to="/battles"
+                className="inline-flex items-center gap-2 rounded-full bg-greyscale-900 px-5 py-3 text-sm font-bold text-greyscale-0 transition-colors hover:opacity-90 dark:bg-greyscale-0 dark:text-greyscale-900"
+              >
+                Enter the Arena <ArrowRight size={16} />
+              </Link>
             </div>
-          ))}
+
+            <Card className="space-y-3 p-5">
+              <div className="flex items-center gap-2">
+                <CheckCircle2 size={18} className="text-status-green" />
+                <p className="text-sm font-semibold text-greyscale-900 dark:text-greyscale-0">
+                  No friction for browsers, voters, or reviewers.
+                </p>
+              </div>
+              <p className="text-sm leading-7 text-greyscale-600 dark:text-greyscale-400">
+                You can start with discovery, move to voting, and only create a Lens when you have a task worth
+                evaluating.
+              </p>
+            </Card>
+          </div>
+
+          <div className="space-y-4">
+            {STEPS.map(({ icon: Icon, step, title, desc, cta, href, external }) => (
+              <Card key={step} className="flex gap-4 p-6">
+                <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-surface-raised text-greyscale-900 dark:text-greyscale-0">
+                  <Icon size={22} />
+                </div>
+                <div className="flex-1 space-y-3">
+                  <div className="flex items-center justify-between gap-3">
+                    <Badge color="gray" variant="outline">
+                      Step {step}
+                    </Badge>
+                    <span className="text-xs text-greyscale-500">Fast path</span>
+                  </div>
+                  <div>
+                    <h2 className="text-xl font-bold text-greyscale-900 dark:text-greyscale-0">{title}</h2>
+                    <p className="mt-2 text-sm leading-7 text-greyscale-600 dark:text-greyscale-400">{desc}</p>
+                  </div>
+                  {external ? (
+                    <a
+                      href={href}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="inline-flex items-center gap-2 rounded-full border border-surface-border bg-surface-base px-4 py-2 text-sm font-semibold text-greyscale-700 transition-colors hover:border-status-blue hover:text-greyscale-900 dark:text-greyscale-300 dark:hover:text-greyscale-0"
+                    >
+                      {cta} <ArrowRight size={14} />
+                    </a>
+                  ) : (
+                    <Link
+                      to={href}
+                      className="inline-flex items-center gap-2 rounded-full border border-surface-border bg-surface-base px-4 py-2 text-sm font-semibold text-greyscale-700 transition-colors hover:border-status-blue hover:text-greyscale-900 dark:text-greyscale-300 dark:hover:text-greyscale-0"
+                    >
+                      {cta} <ArrowRight size={14} />
+                    </Link>
+                  )}
+                </div>
+              </Card>
+            ))}
+          </div>
         </div>
 
-        {/* Final CTA */}
-        <div className="text-center py-12 rounded-3xl bg-gray-900 dark:bg-gray-800 text-white px-8">
-          <h2 className="text-2xl font-black mb-4">Ready to battle?</h2>
-          <p className="text-gray-400 mb-8">Dive straight into the arena and see how your favourite models stack up.</p>
-          <Link
-            to="/battles"
-            className="inline-flex items-center gap-2 px-8 py-3.5 rounded-full bg-[#ffe170] text-gray-900 font-bold hover:bg-[#ffd940] transition-colors"
-          >
-            Open Arena <ArrowRight size={16} />
-          </Link>
+        <div className="mt-12 rounded-[2rem] border border-surface-border bg-[linear-gradient(135deg,rgba(255,222,89,0.18),rgba(40,123,255,0.08),transparent)] p-8 text-center">
+          <h2 className="text-2xl font-black tracking-tight text-greyscale-900 dark:text-greyscale-0">
+            Ready to compare something real?
+          </h2>
+          <p className="mx-auto mt-3 max-w-2xl text-sm leading-7 text-greyscale-600 dark:text-greyscale-400">
+            Open a public battle, review the prompt, and see how the vote and rubric tell the same story.
+          </p>
+          <div className="mt-6 flex flex-wrap justify-center gap-3">
+            <Link
+              to="/battles"
+              className="inline-flex items-center gap-2 rounded-full bg-greyscale-900 px-5 py-3 text-sm font-bold text-greyscale-0 transition-colors hover:opacity-90 dark:bg-greyscale-0 dark:text-greyscale-900"
+            >
+              Open Arena
+            </Link>
+            <Link
+              to="/about"
+              className="inline-flex items-center gap-2 rounded-full border border-surface-border bg-surface-base px-5 py-3 text-sm font-semibold text-greyscale-700 transition-colors hover:border-status-blue hover:text-greyscale-900 dark:text-greyscale-300 dark:hover:text-greyscale-0"
+            >
+              Learn more
+            </Link>
+          </div>
         </div>
-      </div>
+      </section>
     </div>
   )
 }

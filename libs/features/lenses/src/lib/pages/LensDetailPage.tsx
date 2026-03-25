@@ -1,34 +1,35 @@
+import { queryKeys } from '@lenserfight/data/cache'
+import { lensesService } from '@lenserfight/data/repositories'
+import { useAuth } from '@lenserfight/features/auth'
+import { AIResultsSection } from '@lenserfight/features/generations'
+import { useReportContent } from '@lenserfight/features/home'
+import { CreateLenserProfileModal } from '@lenserfight/features/onboarding'
+import { useShareContext } from '@lenserfight/features/share'
+import { CreateVersionParamInput, ReportReasonEnum } from '@lenserfight/types'
+import { SEOHead, Badge, Card, DesktopFrame } from '@lenserfight/ui/components'
+import { ConfirmModal } from '@lenserfight/ui/modals'
+import { useUI } from '@lenserfight/ui/providers'
 import { useQueryClient } from '@tanstack/react-query'
 import { GitFork, History, Lock, Loader2, Pencil, Trash2, Flag, Play, ChevronDown, ChevronUp } from 'lucide-react'
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 
-import { ConfirmModal } from '@lenserfight/ui/modals'
-import { SEOHead } from '@lenserfight/ui/components'
-import { useAuth } from '@lenserfight/features/auth'
-import { useShareContext } from '@lenserfight/features/share'
-import { useUI } from '@lenserfight/ui/providers'
-import { lensesService } from '@lenserfight/data/repositories'
-import { queryKeys } from '@lenserfight/data/cache'
-import { useReportContent } from '@lenserfight/features/home'
-import { CreateVersionParamInput, ReportReasonEnum } from '@lenserfight/types'
-import { AIResultsSection } from '@lenserfight/features/generations'
-import { CreateLenserProfileModal } from '@lenserfight/features/onboarding'
+
 import { CreateLensModal } from '../components/CreateLensModal'
+import { LabArtifactViewer } from '../components/LabArtifactViewer'
+import { LabExecutionPanel } from '../components/LabExecutionPanel'
 import { LensAuthorList } from '../components/LensAuthorList'
 import { LensBodyViewer } from '../components/LensBodyViewer'
 import { LensDetailHeader } from '../components/LensDetailHeader'
 import { LensRelatedList } from '../components/LensRelatedList'
-import { LabExecutionPanel } from '../components/LabExecutionPanel'
-import { LabArtifactViewer } from '../components/LabArtifactViewer'
 import { useAuthenticatedLenser } from '../hooks/useAuthenticatedLenser'
 import { useCloneLens } from '../hooks/useCloneLens'
 import { useCreateLens } from '../hooks/useCreateLens'
 import { useForkTree } from '../hooks/useForkTree'
+import { useFundingSource } from '../hooks/useFundingSource'
+import { useLabController } from '../hooks/useLabController'
 import { useLensDetailController } from '../hooks/useLensDetailController'
 import { useLensVersionsPaginated, useLensVersionDetail, useLatestPublishedVersion } from '../hooks/useLensVersions'
-import { useLabController } from '../hooks/useLabController'
-import { useFundingSource } from '../hooks/useFundingSource'
 
 export const LensDetailPage: React.FC = () => {
   const { id } = useParams<{ id: string }>()
@@ -115,8 +116,26 @@ export const LensDetailPage: React.FC = () => {
     (m) => m.key === lab.selectedModelKey,
   )?.inputModalities
 
+  const activeVersionLabel = previewVersion?.versionNumber ?? latestPublishedDetail?.versionNumber ?? null
+  const parameterCount = activeVersionParams?.length ?? 0
+  const selectedModel = lab.providerModels.find((m) => m.key === lab.selectedModelKey)
+  const inputModalities = selectedModelInputModalities?.length ? selectedModelInputModalities.join(', ') : 'text'
+  const executionLabel =
+    funding.fundingSource === 'user_byok_cloud'
+      ? 'Cloud BYOK'
+      : funding.fundingSource === 'user_byok_local'
+      ? 'Local BYOK'
+      : 'Managed provider'
+  const providerLabel = selectedModel?.name ?? lab.selectedModelKey ?? 'Model not selected'
+  const outputStateLabel = lab.latestResult
+    ? 'Latest execution available'
+    : lab.streamState === 'streaming' || lab.streamState === 'loading'
+    ? 'Execution in progress'
+    : 'No execution yet'
+  const historyLabel = versions.length > 0 ? `${versions.length} versions` : 'No version history yet'
+
   const { cloneLens, isCloning } = useCloneLens(lens ?? null)
-  const { forkTree, isLoadingForkTree } = useForkTree(id ?? '', lens?.parentLensId)
+  const { forkTree } = useForkTree(id ?? '', lens?.parentLensId)
 
   const {
     isOpen: isCreateOpen,
@@ -131,16 +150,57 @@ export const LensDetailPage: React.FC = () => {
 
   const isOwner = !!(lenser && lens && lens.author.id === lenser.id)
 
-  const ensureProfile = (): boolean => {
-    if (!hasLenser) { setShowProfileModal(true); return false }
+  const ensureProfile = useCallback((): boolean => {
+    if (!hasLenser) {
+      setShowProfileModal(true)
+      return false
+    }
     return true
-  }
+  }, [hasLenser])
 
   useEffect(() => {
     if (!lens) return
     setPageTitle(lens.title)
     setShareConfig({ title: lens.title, resourceType: 'lens', resourceId: lens.id })
   }, [lens, setPageTitle, setShareConfig])
+
+  const handleCreateClick = useCallback(() => {
+    if (ensureProfile()) openCreateModal()
+  }, [ensureProfile, openCreateModal])
+
+  const handleDeleteClick = useCallback((targetId: string) => {
+    setDeleteTargetId(targetId)
+    setIsDeleteModalOpen(true)
+  }, [])
+
+  const handleEditClick = useCallback(
+    (targetId?: string) => {
+      if (!ensureProfile()) return
+      const editId = targetId || lens?.id
+      if (editId && lenser) {
+        lensesService.getLensDetail(editId, lenser.id).then(async (detail) => {
+          if (!detail) return
+          let initialVersionParams: CreateVersionParamInput[] = []
+          if (detail.latestVersionId) {
+            const versionDetail = await lensesService.getVersionById(detail.latestVersionId)
+            initialVersionParams = (versionDetail?.parameters ?? []).map((p) => ({
+              label: p.label,
+              toolId: p.toolId,
+            }))
+          }
+          openCreateModal({
+            id: detail.id,
+            title: detail.title,
+            content: detail.content,
+            tags: detail.tags,
+            visibility: detail.visibility,
+            versionParams: initialVersionParams,
+          })
+        })
+      }
+    },
+    [ensureProfile, lenser, lens?.id, openCreateModal],
+  )
 
   const pageActions = useMemo(() => {
     if (isOwner && lens?.id) {
@@ -155,49 +215,18 @@ export const LensDetailPage: React.FC = () => {
       ]
     }
     return []
-  }, [isOwner, lens, hasLenser])
+  }, [hasLenser, handleDeleteClick, handleEditClick, isOwner, lens])
 
   useEffect(() => { setPageActions(pageActions) }, [pageActions, setPageActions])
-
-  const handleCreateClick = () => { if (ensureProfile()) openCreateModal() }
-
-  const handleDeleteClick = (targetId: string) => {
-    setDeleteTargetId(targetId)
-    setIsDeleteModalOpen(true)
-  }
-
-  const handleEditClick = (targetId?: string) => {
-    if (!ensureProfile()) return
-    const editId = targetId || lens?.id
-    if (editId && lenser) {
-      lensesService.getLensDetail(editId, lenser.id).then(async (detail) => {
-        if (!detail) return
-        let initialVersionParams: CreateVersionParamInput[] = []
-        if (detail.latestVersionId) {
-          const versionDetail = await lensesService.getVersionById(detail.latestVersionId)
-          initialVersionParams = (versionDetail?.parameters ?? []).map((p) => ({
-            label: p.label,
-            toolId: p.toolId,
-          }))
-        }
-        openCreateModal({
-          id: detail.id,
-          title: detail.title,
-          content: detail.content,
-          tags: detail.tags,
-          visibility: detail.visibility,
-          versionParams: initialVersionParams,
-        })
-      })
-    }
-  }
 
   const handleCopy = async () => {
     if (!lens || !ensureProfile() || !lenser) return
     try {
       await navigator.clipboard.writeText(previewVersion?.templateBody ?? latestPublishedDetail?.templateBody ?? lens.content)
       await actions.copyLens()
-    } catch { }
+    } catch (error) {
+      void error
+    }
   }
 
   const handleSave = async () => {
@@ -282,12 +311,60 @@ export const LensDetailPage: React.FC = () => {
   }
 
   return (
-    <div>
+    <div className="space-y-8">
       <SEOHead type="lens" data={lens} />
 
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-12">
-        <div className="lg:col-span-8">
-          <div className="max-w-[860px] mx-auto">
+      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        <Card className="space-y-2 p-4">
+          <Badge color="blue" variant="outline">
+            Inputs
+          </Badge>
+          <p className="text-lg font-black tracking-tight text-greyscale-900 dark:text-greyscale-50">
+            {parameterCount > 0 ? `${parameterCount} parameters` : 'Freeform Lens'}
+          </p>
+          <p className="text-sm leading-7 text-greyscale-500 dark:text-greyscale-400">
+            {inputModalities} inputs are available for the current version.
+          </p>
+        </Card>
+
+        <Card className="space-y-2 p-4">
+          <Badge color="purple" variant="outline">
+            Execution
+          </Badge>
+          <p className="text-lg font-black tracking-tight text-greyscale-900 dark:text-greyscale-50">
+            {executionLabel}
+          </p>
+          <p className="text-sm leading-7 text-greyscale-500 dark:text-greyscale-400">{providerLabel}</p>
+        </Card>
+
+        <Card className="space-y-2 p-4">
+          <Badge color="green" variant="outline">
+            Output
+          </Badge>
+          <p className="text-lg font-black tracking-tight text-greyscale-900 dark:text-greyscale-50">
+            {outputStateLabel}
+          </p>
+          <p className="text-sm leading-7 text-greyscale-500 dark:text-greyscale-400">
+            Read the generated artifact below or run the Lens to produce a fresh result.
+          </p>
+        </Card>
+
+        <Card className="space-y-2 p-4">
+          <Badge color="gray" variant="outline">
+            History
+          </Badge>
+          <p className="text-lg font-black tracking-tight text-greyscale-900 dark:text-greyscale-50">
+            {historyLabel}
+          </p>
+          <p className="text-sm leading-7 text-greyscale-500 dark:text-greyscale-400">
+            {activeVersionLabel ? `Currently previewing v${activeVersionLabel}.` : 'Latest published version in view.'}
+          </p>
+        </Card>
+      </div>
+
+      <div className="grid gap-8 lg:grid-cols-[minmax(0,1.04fr)_360px]">
+        <div className="space-y-8">
+          <Card className="space-y-4 p-6">
             <LensDetailHeader
               lens={lens}
               onSave={handleSave}
@@ -297,34 +374,30 @@ export const LensDetailPage: React.FC = () => {
               isSaving={isSaving}
               saveCount={lens.reactionCounts.saved}
               forkTree={forkTree}
-              isLoadingForkTree={isLoadingForkTree}
             />
-          </div>
+          </Card>
 
-          <div className="flex flex-col gap-2 mb-6">
-            {/* Viewer toolbar */}
-            <div className="flex items-center justify-end gap-2">
-              {/* Clone button */}
+          <Card className="space-y-4 p-5">
+            <div className="flex flex-wrap items-center justify-end gap-2">
               <button
                 type="button"
                 onClick={() => cloneLens(previewVersionId ?? null)}
                 disabled={isCloning}
                 title={previewVersionId ? 'Clone this version as a new lens' : 'Clone latest version as a new lens'}
-                className="flex items-center gap-1.5 px-2.5 py-1.5 text-xs rounded-lg border shadow-sm transition-all border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200 hover:border-gray-300 dark:hover:border-gray-600 disabled:opacity-50"
+                className="flex items-center gap-1.5 rounded-2xl border border-surface-border bg-surface-base px-3 py-2 text-xs font-medium text-greyscale-600 shadow-sm transition-colors hover:border-status-blue hover:text-greyscale-900 disabled:opacity-50 dark:text-greyscale-400 dark:hover:text-greyscale-50"
               >
                 {isCloning ? <Loader2 size={13} className="animate-spin" /> : <GitFork size={13} />}
                 <span>{previewVersionId ? 'Clone this version' : 'Clone'}</span>
               </button>
 
-              {/* Version history button */}
               <button
                 type="button"
                 onClick={handleVersionToggle}
                 title={showVersionPicker ? 'Hide version history' : 'Show version history'}
-                className={`flex items-center gap-1.5 px-2.5 py-1.5 text-xs rounded-lg border shadow-sm transition-all ${
+                className={`flex items-center gap-1.5 rounded-2xl border px-3 py-2 text-xs font-medium shadow-sm transition-colors ${
                   showVersionPicker
-                    ? 'border-primary-200 dark:border-primary-800 bg-primary-50 dark:bg-primary-900/20 text-primary-600 dark:text-primary-400'
-                    : 'border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200 hover:border-gray-300 dark:hover:border-gray-600'
+                    ? 'border-status-blue bg-status-blue/10 text-status-blue'
+                    : 'border-surface-border bg-surface-base text-greyscale-600 hover:border-status-blue hover:text-greyscale-900 dark:text-greyscale-400 dark:hover:text-greyscale-50'
                 }`}
               >
                 <History size={13} />
@@ -336,96 +409,102 @@ export const LensDetailPage: React.FC = () => {
               </button>
             </div>
 
-            <LensBodyViewer
-              content={previewVersion?.templateBody ?? latestPublishedDetail?.templateBody ?? lens.content}
-              versionParams={activeVersionParams}
-              onCopy={handleCopy}
-            />
-          </div>
+            <DesktopFrame
+              title="Lens reader preview"
+              url={`lenserfight.com/lenses/${lens.id}`}
+              label={activeVersionLabel ? `v${activeVersionLabel}` : 'Reader view'}
+            >
+              <LensBodyViewer
+                content={previewVersion?.templateBody ?? latestPublishedDetail?.templateBody ?? lens.content}
+                versionParams={activeVersionParams}
+                onCopy={handleCopy}
+              />
+            </DesktopFrame>
+          </Card>
 
-          {/* Compact version picker — collapsed by default */}
           {showVersionPicker && (
-            <div className="mb-6 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 overflow-hidden">
-              {isLoadingVersions ? (
-                <div className="flex items-center justify-center gap-2 py-5 text-xs text-gray-400">
-                  <Loader2 size={13} className="animate-spin" />
-                  Loading versions…
+            <Card className="space-y-3 p-5">
+              <div className="flex items-center justify-between gap-3">
+                <div>
+                  <p className="text-sm font-semibold text-greyscale-900 dark:text-greyscale-50">Version history</p>
+                  <p className="text-xs text-greyscale-500 dark:text-greyscale-400">
+                    Select a version to preview its parameters and body.
+                  </p>
                 </div>
-              ) : versions.length === 0 ? (
-                <div className="py-5 text-xs text-center text-gray-400">No versions found.</div>
+                {isLoadingVersions && (
+                  <span className="flex items-center gap-2 text-xs text-greyscale-500">
+                    <Loader2 size={13} className="animate-spin" />
+                    Loading
+                  </span>
+                )}
+              </div>
+              {versions.length === 0 ? (
+                <div className="py-4 text-center text-sm text-greyscale-500 dark:text-greyscale-400">No versions found.</div>
               ) : (
-                <div className="divide-y divide-gray-50 dark:divide-gray-800 max-h-52 overflow-y-auto">
-                  {versions.map((v) => {
-                    const isSelected = v.id === previewVersionId
-                    return (
-                      <button
-                        key={v.id}
-                        type="button"
-                        onClick={() => setPreviewVersionId(isSelected ? null : v.id)}
-                        className={`w-full text-left px-4 py-2.5 flex items-center gap-3 transition-colors ${
-                          isSelected
-                            ? 'bg-primary-50 dark:bg-primary-900/20 text-primary-700 dark:text-primary-300'
-                            : 'hover:bg-gray-50 dark:hover:bg-gray-800/60 text-gray-700 dark:text-gray-300'
-                        }`}
-                      >
-                        <span className="font-mono font-bold text-xs w-8 shrink-0">
-                          v{v.versionNumber}
-                        </span>
-                        <span
-                          className={`text-[10px] px-1.5 py-0.5 rounded-full font-medium shrink-0 ${
-                            v.status === 'draft'
-                              ? 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300'
-                              : 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300'
+                <div className="max-h-56 overflow-y-auto rounded-2xl border border-surface-border">
+                  <div className="divide-y divide-surface-border">
+                    {versions.map((v) => {
+                      const isSelected = v.id === previewVersionId
+                      return (
+                        <button
+                          key={v.id}
+                          type="button"
+                          onClick={() => setPreviewVersionId(isSelected ? null : v.id)}
+                          className={`flex w-full items-center gap-3 px-4 py-3 text-left transition-colors ${
+                            isSelected
+                              ? 'bg-status-blue/10 text-status-blue'
+                              : 'bg-surface-base text-greyscale-700 hover:bg-surface-raised dark:text-greyscale-300'
                           }`}
                         >
-                          {v.status}
-                        </span>
-                        <span className="text-xs text-gray-500 dark:text-gray-400 truncate flex-1">
-                          {v.changelog ?? '—'}
-                        </span>
-                        <span className="text-[10px] text-gray-400 shrink-0">
-                          {new Date(v.createdAt).toLocaleDateString()}
-                        </span>
-                        {isSelected && isLoadingPreview && (
-                          <Loader2 size={12} className="animate-spin text-gray-400 shrink-0" />
-                        )}
-                      </button>
-                    )
-                  })}
-                  {/* Infinite scroll sentinel for compact picker */}
+                          <span className="font-mono text-xs font-bold w-8 shrink-0">v{v.versionNumber}</span>
+                          <Badge color={v.status === 'draft' ? 'yellow' : 'green'} variant="outline">
+                            {v.status}
+                          </Badge>
+                          <span className="min-w-0 flex-1 truncate text-xs text-greyscale-500 dark:text-greyscale-400">
+                            {v.changelog ?? 'No changelog'}
+                          </span>
+                          <span className="shrink-0 text-[10px] text-greyscale-400">
+                            {new Date(v.createdAt).toLocaleDateString()}
+                          </span>
+                        </button>
+                      )
+                    })}
+                  </div>
                   {hasMoreVersions && <div ref={versionSentinelRef} className="h-2" />}
                   {isFetchingMoreVersions && (
                     <div className="flex justify-center py-2">
-                      <Loader2 size={12} className="animate-spin text-gray-400" />
+                      <Loader2 size={12} className="animate-spin text-greyscale-400" />
+                    </div>
+                  )}
+                  {previewVersionId && isLoadingPreview && (
+                    <div className="flex items-center justify-center gap-2 border-t border-surface-border px-4 py-3 text-xs text-greyscale-500">
+                      <Loader2 size={12} className="animate-spin" />
+                      Loading selected version
                     </div>
                   )}
                 </div>
               )}
-            </div>
+            </Card>
           )}
 
-          {/* Run Lens collapsible panel */}
-          <div className="max-w-[860px] mx-auto mb-6">
+          <Card className="space-y-4 p-5">
             <button
               type="button"
               onClick={() => setShowRunPanel((v) => !v)}
-              className="w-full flex items-center gap-2 px-4 py-3 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors text-left"
+              className="flex w-full items-center gap-3 rounded-2xl border border-surface-border bg-surface-base px-4 py-3 text-left transition-colors hover:border-status-blue"
             >
-              <Play size={15} className="text-primary-500 flex-shrink-0" />
-              <span className="text-sm font-semibold text-gray-800 dark:text-gray-100 flex-1">
-                Run Lens
-              </span>
+              <Play size={15} className="flex-shrink-0 text-status-blue" />
+              <span className="flex-1 text-sm font-semibold text-greyscale-900 dark:text-greyscale-50">Run Lens</span>
               {showRunPanel ? (
-                <ChevronUp size={15} className="text-gray-400" />
+                <ChevronUp size={15} className="text-greyscale-400" />
               ) : (
-                <ChevronDown size={15} className="text-gray-400" />
+                <ChevronDown size={15} className="text-greyscale-400" />
               )}
             </button>
 
             {showRunPanel && (
-              <div className="mt-3 space-y-4">
+              <div className="space-y-4 pt-1">
                 <LabExecutionPanel
-                  lensId={lens.id}
                   lensContent={previewVersion?.templateBody ?? latestPublishedDetail?.templateBody ?? lens.content}
                   providers={lab.providers}
                   isLoadingProviders={lab.isLoadingProviders}
@@ -435,7 +514,6 @@ export const LensDetailPage: React.FC = () => {
                   selectedModelKey={lab.selectedModelKey}
                   onProviderChange={lab.handleProviderChange}
                   onModelChange={lab.setSelectedModelKey}
-                  onTrigger={lab.triggerExecution}
                   onTriggerStream={lab.triggerStream}
                   isTriggeringExecution={lab.isTriggeringExecution}
                   isConnecting={lab.streamState === 'loading'}
@@ -472,29 +550,58 @@ export const LensDetailPage: React.FC = () => {
                 />
               </div>
             )}
-          </div>
+          </Card>
 
-          <div className="max-w-[860px] mx-auto">
+          <Card className="p-6">
             <AIResultsSection lensId={lens.id} />
-          </div>
+          </Card>
         </div>
 
-        <div className="lg:col-span-4 border-t lg:border-t-0 border-gray-100 dark:border-gray-800 pt-8 lg:pt-0">
-          <LensAuthorList
-            lenses={authorLenses}
-            authorName={lens.author.displayName}
-            onOpen={(id) => navigate(`/lenses/${id}`)}
-            isLoading={isLoading}
-            onCreateClick={handleCreateClick}
-            isOwner={isOwner}
-            onEdit={handleEditClick}
-            onDelete={handleDeleteClick}
-          />
-          <LensRelatedList
-            lenses={relatedLenses}
-            onOpen={(id) => navigate(`/lenses/${id}`)}
-            isLoading={isLoading}
-          />
+        <div className="space-y-6">
+          <Card className="space-y-3 p-5">
+            <Badge color="blue" variant="outline">
+              Execution context
+            </Badge>
+            <div className="space-y-3 text-sm leading-7 text-greyscale-600 dark:text-greyscale-400">
+              <p>
+                <span className="font-semibold text-greyscale-900 dark:text-greyscale-50">Provider: </span>
+                {providerLabel}
+              </p>
+              <p>
+                <span className="font-semibold text-greyscale-900 dark:text-greyscale-50">Input modalities: </span>
+                {inputModalities}
+              </p>
+              <p>
+                <span className="font-semibold text-greyscale-900 dark:text-greyscale-50">Result state: </span>
+                {outputStateLabel}
+              </p>
+              <p>
+                <span className="font-semibold text-greyscale-900 dark:text-greyscale-50">History: </span>
+                {historyLabel}
+              </p>
+            </div>
+          </Card>
+
+          <Card className="space-y-4 p-5">
+            <LensAuthorList
+              lenses={authorLenses}
+              authorName={lens.author.displayName}
+              onOpen={(id) => navigate(`/lenses/${id}`)}
+              isLoading={isLoading}
+              onCreateClick={handleCreateClick}
+              isOwner={isOwner}
+              onEdit={handleEditClick}
+              onDelete={handleDeleteClick}
+            />
+          </Card>
+
+          <Card className="space-y-4 p-5">
+            <LensRelatedList
+              lenses={relatedLenses}
+              onOpen={(id) => navigate(`/lenses/${id}`)}
+              isLoading={isLoading}
+            />
+          </Card>
         </div>
       </div>
 

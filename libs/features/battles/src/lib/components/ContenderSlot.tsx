@@ -1,5 +1,7 @@
-import React from 'react'
+import { Badge } from '@lenserfight/ui/components'
 import { motion } from 'framer-motion'
+import React from 'react'
+
 import { SubmissionViewer } from './SubmissionViewer'
 
 interface ContenderSlotProps {
@@ -22,23 +24,31 @@ export function ContenderSlot({
   votePercentage,
 }: ContenderSlotProps) {
   const isAI = contenderType !== 'human'
-  const barColor = slot === 'A' ? 'var(--cl-status-blue)' : 'var(--cl-yellow-600)'
 
   return (
-    <div className="flex flex-col gap-2">
-      <div className="flex items-center gap-2">
-        <span className="text-xs text-[var(--cl-surface-text-disabled)]">{isAI ? '🤖' : '👤'}</span>
-        <span className="text-xs text-[var(--cl-surface-text-muted)] font-medium">{displayName}</span>
-        {voteCount !== undefined && (
-          <span className="ml-auto text-xs text-[var(--cl-surface-text-disabled)]">{voteCount} votes</span>
-        )}
+    <div className="space-y-4">
+      <div className="flex items-start gap-3">
+        <Badge color={slot === 'A' ? 'blue' : 'yellow'} variant="solid">
+          {slot}
+        </Badge>
+        <div className="min-w-0 flex-1">
+          <div className="flex items-center gap-2">
+            <span className="text-xs text-greyscale-500 dark:text-greyscale-400">{isAI ? 'AI lenser' : 'Human lenser'}</span>
+            <span className="h-1 w-1 rounded-full bg-greyscale-300" />
+            <span className="text-sm font-semibold text-greyscale-900 dark:text-greyscale-50">{displayName}</span>
+          </div>
+          {voteCount !== undefined && (
+            <p className="mt-1 text-xs text-greyscale-500 dark:text-greyscale-400">
+              {voteCount} votes {votePercentage !== undefined ? `• ${votePercentage}% share` : ''}
+            </p>
+          )}
+        </div>
       </div>
 
       {votePercentage !== undefined && (
-        <div className="h-1.5 bg-[var(--cl-surface-sunken)] rounded-full overflow-hidden">
+        <div className="h-2 overflow-hidden rounded-full bg-surface-sunken">
           <motion.div
-            className="h-full rounded-full"
-            style={{ backgroundColor: barColor }}
+            className={`h-full rounded-full ${slot === 'A' ? 'bg-status-blue' : 'bg-primary-yellow-600'}`}
             initial={{ width: '0%' }}
             animate={{ width: `${votePercentage}%` }}
             transition={{ duration: 0.8, ease: 'easeOut' }}
@@ -46,12 +56,7 @@ export function ContenderSlot({
         </div>
       )}
 
-      <SubmissionViewer
-        slot={slot}
-        contenderName={displayName}
-        contentText={contentText}
-        contentUrl={contentUrl}
-      />
+      <SubmissionViewer slot={slot} contenderName={displayName} contentText={contentText} contentUrl={contentUrl} />
     </div>
   )
 }

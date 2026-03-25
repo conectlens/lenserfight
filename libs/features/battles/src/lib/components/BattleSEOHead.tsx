@@ -1,5 +1,6 @@
-import React from 'react'
 import { SEOHead } from '@lenserfight/ui/components'
+import React from 'react'
+
 import type { Battle } from '../types/battle.types'
 
 interface BattleSEOHeadProps {

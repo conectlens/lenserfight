@@ -1,6 +1,7 @@
-import React from 'react'
-import { motion } from 'framer-motion'
 import { Badge } from '@lenserfight/ui/components'
+import { motion } from 'framer-motion'
+import React from 'react'
+
 import type { BadgeColor, BadgeVariant } from '@lenserfight/ui/components'
 
 type BattleStatus = 'draft' | 'open' | 'voting' | 'scoring' | 'closed' | 'published' | 'archived'
@@ -25,7 +26,7 @@ export function BattleStatusBadge({ status }: { status: BattleStatus }) {
       animate={isVoting ? { scale: [1, 1.08, 1] } : { scale: 1 }}
       transition={isVoting ? { duration: 2, repeat: Infinity, ease: 'easeInOut' } : {}}
     >
-      <Badge color={color} variant={variant} size="sm">
+      <Badge color={color} variant={variant} size="sm" className="tracking-wide">
         {label}
       </Badge>
     </motion.span>

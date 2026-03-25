@@ -1,6 +1,8 @@
-import React, { useEffect, useRef } from 'react'
-import { motion, useMotionValue, animate } from 'framer-motion'
+import { Badge, Card } from '@lenserfight/ui/components'
 import { ScoreBar } from '@lenserfight/ui/widgets'
+import { useMotionValue, animate } from 'framer-motion'
+import React, { useEffect, useRef } from 'react'
+
 import type { VoteAggregate, Contender } from '../types/battle.types'
 
 interface ScoreSystemProps {
@@ -38,21 +40,27 @@ export function ScoreSystem({ aggregates, contenders }: ScoreSystemProps) {
   const countB = aggB?.raw_vote_count ?? 0
 
   return (
-    <div className="rounded-xl border border-gray-200 bg-gray-50 p-4 space-y-2">
-      <div className="flex items-center justify-between text-xs font-medium text-gray-500">
-        <span className="flex items-center gap-1">
-          <span className="w-2 h-2 rounded-full bg-blue-500 inline-block" />
-          {contenderA?.display_name ?? 'A'}:{' '}
-          <strong className="text-gray-900 ml-1">
+    <Card className="space-y-3 p-4">
+      <div className="flex items-center justify-between gap-3">
+        <p className="text-sm font-semibold text-greyscale-900 dark:text-greyscale-50">Community signal</p>
+        <Badge color="gray" variant="outline">
+          Vote totals
+        </Badge>
+      </div>
+      <div className="flex items-center justify-between text-xs font-medium text-greyscale-500 dark:text-greyscale-400">
+        <span className="flex items-center gap-2">
+          <span className="h-2 w-2 rounded-full bg-status-blue" />
+          {contenderA?.display_name ?? 'A'}:
+          <strong className="text-greyscale-900 dark:text-greyscale-50">
             <AnimatedCount value={countA} />
           </strong>
         </span>
-        <span className="flex items-center gap-1">
-          {contenderB?.display_name ?? 'B'}:{' '}
-          <strong className="text-gray-900 mr-1">
+        <span className="flex items-center gap-2">
+          {contenderB?.display_name ?? 'B'}:
+          <strong className="text-greyscale-900 dark:text-greyscale-50">
             <AnimatedCount value={countB} />
           </strong>
-          <span className="w-2 h-2 rounded-full bg-orange-400 inline-block" />
+          <span className="h-2 w-2 rounded-full bg-primary-yellow-600" />
         </span>
       </div>
       <ScoreBar
@@ -61,6 +69,6 @@ export function ScoreSystem({ aggregates, contenders }: ScoreSystemProps) {
         labelA={contenderA?.display_name ?? 'A'}
         labelB={contenderB?.display_name ?? 'B'}
       />
-    </div>
+    </Card>
   )
 }

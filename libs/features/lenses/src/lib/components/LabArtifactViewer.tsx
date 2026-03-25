@@ -1,10 +1,11 @@
-import React, { useState, useEffect, useRef } from 'react'
-import { useQuery } from '@tanstack/react-query'
-import { Copy, Check, LayoutPanelLeft, Coins, Loader2, Eye, EyeOff, Users, Archive } from 'lucide-react'
-import { executionService, mediaRepository } from '@lenserfight/data/repositories'
 import { queryKeys } from '@lenserfight/data/cache'
+import { executionService, mediaRepository } from '@lenserfight/data/repositories'
 import { ExecutionArtifact, ExecuteResponse, StreamState, StreamUsage, ArtifactVisibility } from '@lenserfight/types'
 import { MediaViewer } from '@lenserfight/ui/data-display'
+import { useQuery } from '@tanstack/react-query'
+import { Copy, Check, LayoutPanelLeft, Coins, Loader2, Eye, EyeOff, Users, Archive } from 'lucide-react'
+import React, { useState, useEffect, useRef } from 'react'
+
 import { useArtifactVisibility } from '../hooks/useArtifactVisibility'
 
 const FAILED_STATUSES = ['failed', 'canceled', 'timed_out'] as const
@@ -32,7 +33,7 @@ const CopyButton: React.FC<{ text: string }> = ({ text }) => {
   return (
     <button
       onClick={handleCopy}
-      className="flex items-center gap-1 text-xs text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
+      className="flex items-center gap-1 text-xs text-greyscale-500 transition-colors hover:text-greyscale-700 dark:hover:text-greyscale-300"
     >
       {copied ? <Check size={12} /> : <Copy size={12} />}
       {copied ? 'Copied' : 'Copy'}
@@ -41,10 +42,10 @@ const CopyButton: React.FC<{ text: string }> = ({ text }) => {
 }
 
 const VISIBILITY_OPTIONS: { value: ArtifactVisibility; icon: React.ElementType; label: string; color: string }[] = [
-  { value: 'private',         icon: EyeOff, label: 'Private',     color: 'text-gray-400' },
-  { value: 'public',          icon: Eye,    label: 'Public',      color: 'text-status-green' },
-  { value: 'contender_only',  icon: Users,  label: 'Community',   color: 'text-status-blue' },
-  { value: 'archived',        icon: Archive, label: 'Archived',   color: 'text-gray-400' },
+  { value: 'private', icon: EyeOff, label: 'Private', color: 'text-greyscale-500' },
+  { value: 'public', icon: Eye, label: 'Public', color: 'text-status-green' },
+  { value: 'contender_only', icon: Users, label: 'Community', color: 'text-status-blue' },
+  { value: 'archived', icon: Archive, label: 'Archived', color: 'text-greyscale-500' },
 ]
 
 function VisibilityToggle({
@@ -75,7 +76,7 @@ function VisibilityToggle({
       </button>
 
       {open && (
-        <div className="absolute right-0 top-5 z-20 w-36 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 shadow-lg py-1">
+        <div className="absolute right-0 top-5 z-20 w-36 rounded-2xl border border-surface-border bg-surface-base py-1 shadow-lg">
           {VISIBILITY_OPTIONS.map((opt) => {
             const OptIcon = opt.icon
             return (
@@ -86,7 +87,7 @@ function VisibilityToggle({
                   setOpen(false)
                   await setVisibility({ artifactId, visibility: opt.value })
                 }}
-                className={`w-full flex items-center gap-2 px-3 py-1.5 text-xs hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors ${opt.color} ${opt.value === visibility ? 'font-semibold' : ''}`}
+                className={`w-full flex items-center gap-2 px-3 py-2 text-xs transition-colors hover:bg-surface-raised ${opt.color} ${opt.value === visibility ? 'font-semibold' : ''}`}
               >
                 <OptIcon size={12} />
                 {opt.label}
@@ -118,14 +119,14 @@ function MediaArtifactBlock({ artifact, isOwner, runId }: { artifact: ExecutionA
   }
 
   return (
-    <div className="rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
+    <div className="overflow-hidden rounded-2xl border border-surface-border">
       <MediaViewer
         mediaType={mediaTypeFromKind()}
         url={signedUrl ?? null}
         name={artifact.mediaObjectId ?? undefined}
       />
       {isOwner && (
-        <div className="flex items-center justify-end px-3 py-1.5 border-t border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-gray-900">
+        <div className="flex items-center justify-end border-t border-surface-border bg-surface-raised px-3 py-1.5">
           <VisibilityToggle
             artifactId={artifact.id}
             visibility={artifact.visibility as ArtifactVisibility}
@@ -147,17 +148,17 @@ const ArtifactBlock: React.FC<{ artifact: ExecutionArtifact; isOwner?: boolean; 
 
   if (artifact.artifactKind === 'text' && artifact.contentText) {
     return (
-      <div className="rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
+      <div className="overflow-hidden rounded-2xl border border-surface-border">
         <div className="relative">
           <div className="absolute top-2 right-2 z-10 flex items-center gap-2">
             <CopyButton text={artifact.contentText} />
           </div>
-          <pre className="whitespace-pre-wrap break-words text-sm text-gray-800 dark:text-gray-200 bg-gray-50 dark:bg-gray-800 p-4 pr-20 font-mono leading-relaxed">
+          <pre className="whitespace-pre-wrap break-words bg-surface-raised p-4 pr-20 font-mono text-sm leading-relaxed text-greyscale-700 dark:text-greyscale-200">
             {artifact.contentText}
           </pre>
         </div>
         {isOwner && (
-          <div className="flex items-center justify-end px-3 py-1.5 border-t border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-gray-900">
+          <div className="flex items-center justify-end border-t border-surface-border bg-surface-raised px-3 py-1.5">
             <VisibilityToggle
               artifactId={artifact.id}
               visibility={artifact.visibility as ArtifactVisibility}
@@ -172,17 +173,17 @@ const ArtifactBlock: React.FC<{ artifact: ExecutionArtifact; isOwner?: boolean; 
   if (artifact.artifactKind === 'json' && artifact.contentJson !== null) {
     const pretty = JSON.stringify(artifact.contentJson, null, 2)
     return (
-      <div className="rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
+      <div className="overflow-hidden rounded-2xl border border-surface-border">
         <div className="relative">
           <div className="absolute top-2 right-2 z-10">
             <CopyButton text={pretty} />
           </div>
-          <pre className="whitespace-pre-wrap break-words text-sm text-gray-800 dark:text-gray-200 bg-gray-50 dark:bg-gray-800 p-4 pr-16 font-mono leading-relaxed">
+          <pre className="whitespace-pre-wrap break-words bg-surface-raised p-4 pr-16 font-mono text-sm leading-relaxed text-greyscale-700 dark:text-greyscale-200">
             {pretty}
           </pre>
         </div>
         {isOwner && (
-          <div className="flex items-center justify-end px-3 py-1.5 border-t border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-gray-900">
+          <div className="flex items-center justify-end border-t border-surface-border bg-surface-raised px-3 py-1.5">
             <VisibilityToggle
               artifactId={artifact.id}
               visibility={artifact.visibility as ArtifactVisibility}
@@ -228,9 +229,9 @@ const RunArtifacts: React.FC<{ runId: string; showAll: boolean; isOwner?: boolea
 
   if (isLoading) {
     return (
-      <div className="animate-pulse flex flex-col gap-2">
-        <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-3/4" />
-        <div className="h-24 bg-gray-200 dark:bg-gray-700 rounded" />
+      <div className="flex flex-col gap-2 animate-pulse">
+        <div className="h-4 w-3/4 rounded bg-surface-raised" />
+        <div className="h-24 rounded bg-surface-raised" />
       </div>
     )
   }
@@ -420,8 +421,11 @@ export const LabArtifactViewer: React.FC<LabArtifactViewerProps> = ({
     }
 
     return (
-      <div className="flex items-center justify-center h-32 rounded-xl border border-dashed border-gray-200 dark:border-gray-700 text-sm text-gray-400 dark:text-gray-500">
-        Select an execution to view its output.
+      <div className="mt-3">
+        <h2 className="font-semibold mb-2 text-gray-800 dark:text-gray-100">Executions</h2>
+        <div className="flex items-center justify-center h-32 rounded-xl border border-dashed border-gray-200 dark:border-gray-700 text-sm text-gray-400 dark:text-gray-500">
+          Select an execution to view its output.
+        </div>
       </div>
     )
   }

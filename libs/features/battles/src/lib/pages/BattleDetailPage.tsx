@@ -1,12 +1,15 @@
 import React from 'react'
 import { useParams } from 'react-router-dom'
+
 import { ArenaView } from '../components/ArenaView'
-import { ContenderSlot } from '../components/ContenderSlot'
-import { VotePanel } from '../components/VotePanel'
-import { RubricPanel } from '../components/RubricPanel'
-import { ResultBanner } from '../components/ResultBanner'
 import { BattleShareCard } from '../components/BattleShareCard'
 import { BattleStatusBadge } from '../components/BattleStatusBadge'
+import { ContenderSlot } from '../components/ContenderSlot'
+import { ResultBanner } from '../components/ResultBanner'
+import { RubricPanel } from '../components/RubricPanel'
+import { VotePanel } from '../components/VotePanel'
+
+import type { BattleStatus } from '../types/battle.types'
 
 export function BattleDetailPage() {
   const { slug } = useParams<{ slug: string }>()
@@ -53,7 +56,7 @@ export function BattleDetailPage() {
         <BattleShareCard battleSlug={props.battleSlug} battleTitle={props.battleTitle} />
       )}
       renderStatusBadge={(props) => (
-        <BattleStatusBadge status={props.status as any} />
+        <BattleStatusBadge status={props.status as BattleStatus} />
       )}
     />
   )

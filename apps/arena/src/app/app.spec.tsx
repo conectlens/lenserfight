@@ -19,6 +19,6 @@ describe('App', () => {
         <App />
       </BrowserRouter>
     )
-    expect(getAllByText(new RegExp('Welcome arena', 'gi')).length > 0).toBeTruthy()
+    expect(getAllByText(/Creator-first AI battles/i).length > 0).toBeTruthy()
   })
 })

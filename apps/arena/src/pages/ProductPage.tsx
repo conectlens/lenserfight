@@ -1,96 +1,184 @@
+import { Badge, Card, DesktopFrame } from '@lenserfight/ui/components'
+import { ArrowRight, Aperture, Activity, Brain, User, Layers3, Gauge } from 'lucide-react'
 import React from 'react'
 import { Link } from 'react-router-dom'
-import { ArrowRight, User, Aperture, Activity, Brain } from 'lucide-react'
+
 
 const PRIMITIVES = [
   {
     icon: User,
-    title: 'The Lenser',
-    subtitle: 'Human or AI participant',
+    title: 'Lenser',
+    subtitle: 'The actor in the ecosystem',
     description:
-      'A Lenser is any entity — human or AI — that participates in the ecosystem. Lensers create Lenses, run executions, and battle for ranking. Each Lenser builds a reputation through their contributions.',
-    color: 'text-blue-500',
-    bg: 'bg-blue-50 dark:bg-blue-900/20',
+      'A Lenser is the human or AI participant that creates, votes, forks, and builds reputation across the network.',
   },
   {
     icon: Aperture,
-    title: 'The Lens',
-    subtitle: 'Reusable prompt template',
+    title: 'Lens',
+    subtitle: 'The reusable task',
     description:
-      'A Lens is a structured prompt — a reusable instruction that can be executed against any AI model. Lenses can be private or public, versioned, and used as the basis for battles.',
-    color: 'text-[#ffe170]',
-    bg: 'bg-yellow-50 dark:bg-yellow-900/20',
+      'A Lens is the structured input that defines what every contender must solve. It is the canonical unit of comparison.',
   },
   {
     icon: Activity,
-    title: 'The Execution',
-    subtitle: 'A model run with a Lens',
+    title: 'Execution',
+    subtitle: 'The run and its context',
     description:
-      'An execution is a single run of a Lens against a specific AI model. Executions are the raw material of battles — they capture the model output alongside metadata for comparison.',
-    color: 'text-green-500',
-    bg: 'bg-green-50 dark:bg-green-900/20',
+      'An Execution captures one model or runner’s response to a Lens, plus the execution context needed to review it properly.',
   },
   {
     icon: Brain,
-    title: 'The Battle',
-    subtitle: 'Head-to-head model comparison',
+    title: 'Battle',
+    subtitle: 'The public comparison',
     description:
-      'A battle is two or more executions of the same Lens against different models, presented side-by-side for community voting. Battles drive the ELO ranking system.',
-    color: 'text-purple-500',
-    bg: 'bg-purple-50 dark:bg-purple-900/20',
+      'A Battle presents two executions side-by-side so the community can vote, inspect the rubric, and share the result.',
   },
+]
+
+const FLOW = [
+  { title: '1. Define the Lens', description: 'Write a task that is specific, fair, and easy to judge.' },
+  { title: '2. Execute twice', description: 'Two contenders answer the same Lens under comparable conditions.' },
+  { title: '3. Compare publicly', description: 'Judges vote, the rubric is visible, and the final result can travel.' },
 ]
 
 export const ProductPage: React.FC = () => {
   return (
-    <div className="bg-white dark:bg-gray-900 py-20 px-4">
-      <div className="max-w-5xl mx-auto">
-        {/* Header */}
-        <div className="text-center mb-16">
-          <div className="inline-flex items-center gap-2 px-3 py-1 bg-gray-100 dark:bg-gray-800 rounded-full text-xs font-bold uppercase tracking-widest text-gray-500 dark:text-gray-400 mb-6">
-            The Ecosystem
-          </div>
-          <h1 className="text-4xl md:text-6xl font-black text-gray-900 dark:text-white tracking-tight mb-6 leading-[1.1]">
-            Core Primitives
-          </h1>
-          <p className="text-xl text-gray-600 dark:text-gray-300 leading-relaxed max-w-3xl mx-auto">
-            ConnectLens is an interconnected ecosystem that unifies individuals, communities, and AI agents. Four core primitives power everything.
-          </p>
-        </div>
-
-        {/* Primitives grid */}
-        <div className="grid md:grid-cols-2 gap-6 mb-16">
-          {PRIMITIVES.map(({ icon: Icon, title, subtitle, description, color, bg }) => (
-            <div
-              key={title}
-              className="p-8 rounded-2xl border border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600 transition-colors bg-white dark:bg-gray-800/50"
-            >
-              <div className={`w-14 h-14 ${bg} rounded-2xl flex items-center justify-center mb-6 ${color}`}>
-                <Icon size={28} />
-              </div>
-              <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-1">{title}</h3>
-              <p className="text-sm font-medium text-gray-400 dark:text-gray-500 mb-3">{subtitle}</p>
-              <p className="text-gray-500 dark:text-gray-400 leading-relaxed text-sm">
-                {description}
+    <div className="bg-surface-base text-surface-text">
+      <section className="mx-auto max-w-6xl px-4 py-16 sm:px-6 lg:px-8 lg:py-24">
+        <div className="grid gap-10 lg:grid-cols-[1.05fr_0.95fr] lg:items-center">
+          <div className="space-y-6">
+            <Badge color="yellow" variant="outline">
+              Core primitives
+            </Badge>
+            <div className="space-y-4">
+              <h1 className="max-w-3xl text-4xl font-black tracking-tight text-greyscale-900 dark:text-greyscale-0 sm:text-5xl lg:text-6xl">
+                Lenser, Lens, Execution, and Battle form the product’s core language.
+              </h1>
+              <p className="max-w-2xl text-lg leading-8 text-greyscale-600 dark:text-greyscale-400">
+                The Arena works because each primitive has a distinct job. That separation keeps evaluation readable,
+                keeps the UI scalable, and keeps the product easy to explain.
               </p>
             </div>
+
+            <div className="flex flex-wrap gap-3">
+              <Link
+                to="/about"
+                className="inline-flex items-center gap-2 rounded-full border border-surface-border bg-surface-base px-5 py-3 text-sm font-semibold text-greyscale-700 transition-colors hover:border-status-blue hover:text-greyscale-900 dark:text-greyscale-300 dark:hover:text-greyscale-0"
+              >
+                Read the story
+              </Link>
+              <Link
+                to="/battles"
+                className="inline-flex items-center gap-2 rounded-full bg-greyscale-900 px-5 py-3 text-sm font-bold text-greyscale-0 transition-colors hover:opacity-90 dark:bg-greyscale-0 dark:text-greyscale-900"
+              >
+                Open Arena <ArrowRight size={16} />
+              </Link>
+            </div>
+          </div>
+
+          <DesktopFrame title="Primitive flow preview" url="lenserfight.com/product" label="System map">
+            <div className="space-y-4">
+              <Card className="space-y-3 p-5">
+                <div className="flex items-center justify-between gap-3">
+                  <Badge color="blue" variant="outline">
+                    Lens
+                  </Badge>
+                  <span className="text-xs text-greyscale-500">Shared task</span>
+                </div>
+                <p className="text-sm font-semibold text-greyscale-900 dark:text-greyscale-0">
+                  Explain recursion to a 10-year-old
+                </p>
+                <p className="text-sm leading-7 text-greyscale-600 dark:text-greyscale-400">
+                  The task is the anchor. Everything else exists to compare how contenders respond to it.
+                </p>
+              </Card>
+
+              <div className="grid gap-3 md:grid-cols-3">
+                {[
+                  { label: 'Lenser', icon: User },
+                  { label: 'Execution', icon: Layers3 },
+                  { label: 'Battle', icon: Gauge },
+                ].map(({ label, icon: Icon }) => (
+                  <Card key={label} className="space-y-3 p-4">
+                    <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-surface-raised text-status-blue">
+                      <Icon size={18} />
+                    </div>
+                    <p className="text-sm font-semibold text-greyscale-900 dark:text-greyscale-0">{label}</p>
+                    <p className="text-sm leading-6 text-greyscale-600 dark:text-greyscale-400">
+                      Clear scope, clear output, clear comparison.
+                    </p>
+                  </Card>
+                ))}
+              </div>
+            </div>
+          </DesktopFrame>
+        </div>
+      </section>
+
+      <section className="mx-auto max-w-6xl px-4 pb-16 sm:px-6 lg:px-8 lg:pb-24">
+        <div className="grid gap-6 xl:grid-cols-4">
+          {PRIMITIVES.map(({ icon: Icon, title, subtitle, description }) => (
+            <Card key={title} className="space-y-4 p-6">
+              <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-primary-yellow-500/15 text-primary-yellow-800 dark:bg-primary-yellow-500/10 dark:text-primary-yellow-400">
+                <Icon size={22} />
+              </div>
+              <div className="space-y-2">
+                <h2 className="text-xl font-bold text-greyscale-900 dark:text-greyscale-0">{title}</h2>
+                <p className="text-sm font-medium text-greyscale-500 dark:text-greyscale-400">{subtitle}</p>
+              </div>
+              <p className="text-sm leading-7 text-greyscale-600 dark:text-greyscale-400">{description}</p>
+            </Card>
           ))}
         </div>
+      </section>
 
-        {/* Protocol section */}
-        <div className="rounded-[2.5rem] bg-gray-900 dark:bg-black text-white p-8 md:p-12 text-center">
-          <h2 className="text-2xl md:text-3xl font-black mb-4">ConnectLens Protocol</h2>
-          <p className="text-gray-400 max-w-xl mx-auto mb-8 leading-relaxed">
-            All primitives are governed by the ConnectLens Protocol — an open standard for AI collaboration and evaluation. The protocol ensures interoperability, neutrality, and verifiable rankings.
-          </p>
-          <Link
-            to="/battles"
-            className="inline-flex items-center gap-2 px-6 py-3 rounded-full bg-[#ffe170] text-gray-900 font-bold hover:bg-[#ffd940] transition-colors"
-          >
-            Experience it live <ArrowRight size={16} />
-          </Link>
+      <section className="mx-auto max-w-6xl px-4 pb-16 sm:px-6 lg:px-8 lg:pb-24">
+        <div className="grid gap-6 lg:grid-cols-[0.95fr_1.05fr]">
+          <Card className="space-y-4 p-6">
+            <Badge color="green" variant="outline">
+              How it works
+            </Badge>
+            <h2 className="text-2xl font-black tracking-tight text-greyscale-900 dark:text-greyscale-0">
+              The product flow stays simple on purpose.
+            </h2>
+            <div className="space-y-3">
+              {FLOW.map((item) => (
+                <div key={item.title} className="rounded-2xl border border-surface-border bg-surface-raised p-4">
+                  <p className="text-sm font-semibold text-greyscale-900 dark:text-greyscale-0">{item.title}</p>
+                  <p className="mt-2 text-sm leading-7 text-greyscale-600 dark:text-greyscale-400">{item.description}</p>
+                </div>
+              ))}
+            </div>
+          </Card>
+
+          <Card className="space-y-4 p-6">
+            <Badge color="purple" variant="outline">
+              Product value
+            </Badge>
+            <h2 className="text-2xl font-black tracking-tight text-greyscale-900 dark:text-greyscale-0">
+              This structure makes the UX easier to scan and the business story easier to sell.
+            </h2>
+            <p className="text-sm leading-7 text-greyscale-600 dark:text-greyscale-400">
+              When the primitives stay distinct, the pages can speak clearly to different audiences: creators,
+              judges, communities, and stakeholders.
+            </p>
+            <div className="flex flex-wrap gap-3">
+              <Link
+                to="/demo"
+                className="inline-flex items-center gap-2 rounded-full border border-surface-border bg-surface-base px-5 py-3 text-sm font-semibold text-greyscale-700 transition-colors hover:border-status-blue hover:text-greyscale-900 dark:text-greyscale-300 dark:hover:text-greyscale-0"
+              >
+                See proof
+              </Link>
+              <Link
+                to="/contact"
+                className="inline-flex items-center gap-2 rounded-full bg-greyscale-900 px-5 py-3 text-sm font-bold text-greyscale-0 transition-colors hover:opacity-90 dark:bg-greyscale-0 dark:text-greyscale-900"
+              >
+                Contact us <ArrowRight size={16} />
+              </Link>
+            </div>
+          </Card>
         </div>
-      </div>
+      </section>
     </div>
   )
 }

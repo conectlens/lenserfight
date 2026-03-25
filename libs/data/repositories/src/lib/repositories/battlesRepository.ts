@@ -53,7 +53,7 @@ export interface VoteAggregateRecord {
 
 export interface RubricCriterionRecord {
   id: string
-  name: string
+  title: string
   description?: string
   weight: number
 }
@@ -177,7 +177,7 @@ export class SupabaseBattlesRepository implements BattlesRepositoryPort {
     const { data, error } = await supabase
       .schema('battles')
       .from('rubric_criteria')
-      .select('id, name, description, weight')
+      .select('id, title, description, weight')
       .in('id', criterionIds)
 
     if (error) this.handleError(error)

@@ -1,8 +1,9 @@
-import React, { useState } from 'react'
-import { AnimatePresence, motion } from 'framer-motion'
 import { SEOHead } from '@lenserfight/ui/components'
-import { useBattlesFeed } from '../hooks/useBattlesFeed'
+import { AnimatePresence, motion } from 'framer-motion'
+import React, { useState } from 'react'
+
 import { BattleCard } from '../components/BattleCard'
+import { useBattlesFeed } from '../hooks/useBattlesFeed'
 
 const FILTERS = ['all', 'open', 'voting', 'published', 'closed'] as const
 

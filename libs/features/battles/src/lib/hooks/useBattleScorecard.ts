@@ -1,6 +1,7 @@
-import { useQuery } from '@tanstack/react-query'
 import { queryKeys } from '@lenserfight/data/cache'
 import { battlesService } from '@lenserfight/data/repositories'
+import { useQuery } from '@tanstack/react-query'
+
 import type { Scorecard, RubricCriterion } from '../types/battle.types'
 
 export interface BattleScorecardData {

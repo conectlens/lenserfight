@@ -1,17 +1,21 @@
+import { Badge, Card } from '@lenserfight/ui/components'
+import { AnimatePresence, motion } from 'framer-motion'
 import React, { useState } from 'react'
 import { Link } from 'react-router-dom'
-import { AnimatePresence, motion } from 'framer-motion'
+
 import { useBattle } from '../hooks/useBattle'
 import { useBattleContenders } from '../hooks/useBattleContenders'
-import { useVoteAggregates } from '../hooks/useVoteAggregates'
-import { useSubmitVote } from '../hooks/useSubmitVote'
 import { useBattleScorecard } from '../hooks/useBattleScorecard'
 import { useBattleStateMachine } from '../hooks/useBattleStateMachine'
-import { PhaseIndicator } from './PhaseIndicator'
+import { useSubmitVote } from '../hooks/useSubmitVote'
+import { useVoteAggregates } from '../hooks/useVoteAggregates'
+
+import { BattleSEOHead } from './BattleSEOHead'
 import { FightView } from './FightView'
+import { PhaseIndicator } from './PhaseIndicator'
 import { ScoreSystem } from './ScoreSystem'
 import { XPGainToast } from './XPGainToast'
-import { BattleSEOHead } from './BattleSEOHead'
+
 import type { BattleUIPhase } from '../types/battle.types'
 import type { SubmitVoteInput } from '@lenserfight/data/repositories'
 
@@ -154,12 +158,12 @@ export function ArenaView({
 
   if (battleLoading) {
     return (
-      <div className="max-w-5xl mx-auto px-4 py-8 space-y-4">
-        <div className="h-8 bg-gray-100 rounded animate-pulse w-1/2" />
-        <div className="h-4 bg-gray-100 rounded animate-pulse w-3/4" />
-        <div className="grid grid-cols-2 gap-4 mt-6">
-          <div className="h-64 bg-gray-100 rounded-xl animate-pulse" />
-          <div className="h-64 bg-gray-100 rounded-xl animate-pulse" />
+      <div className="mx-auto max-w-6xl space-y-4 px-4 py-8">
+        <div className="h-8 w-1/2 animate-pulse rounded-full bg-surface-raised" />
+        <div className="h-4 w-3/4 animate-pulse rounded-full bg-surface-raised" />
+        <div className="mt-6 grid grid-cols-2 gap-4">
+          <div className="h-64 animate-pulse rounded-3xl bg-surface-raised" />
+          <div className="h-64 animate-pulse rounded-3xl bg-surface-raised" />
         </div>
       </div>
     )
@@ -167,40 +171,54 @@ export function ArenaView({
 
   if (battleError || !battle) {
     return (
-      <div className="max-w-5xl mx-auto px-4 py-16 text-center text-gray-400">
-        <p className="text-4xl mb-3">⚔️</p>
-        <p className="font-medium">{battleError?.message ?? 'Battle not found.'}</p>
-        <Link to="/battles" className="text-sm text-blue-600 underline mt-3 inline-block">
-          Back to battles
-        </Link>
+      <div className="mx-auto max-w-6xl px-4 py-16">
+        <Card className="mx-auto max-w-xl space-y-4 p-8 text-center">
+          <p className="text-4xl">⚔️</p>
+          <p className="text-lg font-semibold text-greyscale-900 dark:text-greyscale-50">
+            {battleError?.message ?? 'Battle not found.'}
+          </p>
+          <Link
+            to="/battles"
+            className="inline-flex items-center gap-2 rounded-full bg-greyscale-900 px-5 py-3 text-sm font-bold text-greyscale-0 transition-colors hover:opacity-90 dark:bg-greyscale-0 dark:text-greyscale-900"
+          >
+            Back to battles
+          </Link>
+        </Card>
       </div>
     )
   }
 
   return (
-    <div className="max-w-5xl mx-auto px-4 py-8 space-y-6">
+    <div className="mx-auto max-w-6xl space-y-6 px-4 py-8 sm:px-6 lg:px-8">
       <BattleSEOHead battle={battle} />
       <XPGainToast visible={xpVisible} xp={10} />
 
-      {/* Header */}
-      <div className="flex items-start justify-between gap-4">
-        <div className="flex-1 min-w-0">
-          <Link to="/battles" className="text-xs text-gray-400 hover:text-gray-600 mb-2 inline-block">
-            ← All Battles
-          </Link>
-          <h1 className="text-2xl font-bold text-gray-900 leading-tight">{battle.title}</h1>
+      <Card className="space-y-5 p-5 sm:p-6">
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+          <div className="space-y-3">
+            <Link to="/battles" className="text-xs font-medium text-greyscale-500 transition-colors hover:text-greyscale-900 dark:hover:text-greyscale-50">
+              ← All battles
+            </Link>
+            <div className="space-y-2">
+              <Badge color="blue" variant="outline">
+                Battle detail
+              </Badge>
+              <h1 className="text-3xl font-black tracking-tight text-greyscale-900 dark:text-greyscale-50 sm:text-4xl">
+                {battle.title}
+              </h1>
+            </div>
+          </div>
+          <div className="flex flex-wrap items-center gap-3">
+            {renderStatusBadge({ status: battle.status })}
+            <PhaseIndicator currentPhase={currentPhase} />
+          </div>
         </div>
-        <div className="flex flex-col items-end gap-2">
-          {renderStatusBadge({ status: battle.status })}
-          <PhaseIndicator currentPhase={currentPhase} />
-        </div>
-      </div>
 
-      {/* Task prompt */}
-      <div className="rounded-xl border border-gray-200 bg-gray-50 p-4">
-        <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-1">Task</p>
-        <p className="text-sm text-gray-800 leading-relaxed">{battle.task_prompt}</p>
-      </div>
+        <Card className="space-y-2 border border-surface-border bg-surface-raised p-4">
+          <p className="text-xs font-semibold uppercase tracking-[0.22em] text-greyscale-500">Lens prompt</p>
+          <p className="text-sm leading-7 text-greyscale-700 dark:text-greyscale-300">{battle.task_prompt}</p>
+        </Card>
+      </Card>
 
       {/* Phase-driven content */}
       <AnimatePresence mode="wait">
@@ -215,11 +233,11 @@ export function ArenaView({
         >
           {/* Idle: awaiting submissions */}
           {currentPhase === 'idle' && (
-            <div className="rounded-xl border-2 border-dashed border-gray-200 p-8 text-center text-gray-400">
+            <Card className="space-y-3 border border-dashed border-surface-border p-8 text-center">
               <p className="text-3xl mb-2">⏳</p>
-              <p className="font-medium">Awaiting contender submissions</p>
-              <p className="text-sm mt-1 text-gray-300">This battle is open — submissions coming soon.</p>
-            </div>
+              <p className="font-semibold text-greyscale-900 dark:text-greyscale-50">Awaiting contender submissions</p>
+              <p className="text-sm text-greyscale-500 dark:text-greyscale-400">This battle is open and the first execution is still in progress.</p>
+            </Card>
           )}
 
           {/* Running: show submissions but no votes yet */}
@@ -286,12 +304,12 @@ export function ArenaView({
 
       {/* Detail page: link to result when published */}
       {(battle.status === 'published' || battle.status === 'closed') && currentPhase !== 'result' && (
-        <div className="text-center pt-2">
+        <div className="flex justify-center pt-2">
           <Link
             to={`/battles/${battle.slug}/result`}
-            className="inline-flex items-center gap-1 text-sm font-medium text-gray-900 border border-gray-900 rounded-lg px-4 py-2 hover:bg-gray-900 hover:text-white transition-colors"
+            className="inline-flex items-center gap-2 rounded-full bg-greyscale-900 px-5 py-3 text-sm font-bold text-greyscale-0 transition-colors hover:opacity-90 dark:bg-greyscale-0 dark:text-greyscale-900"
           >
-            See Full Result →
+            See full result
           </Link>
         </div>
       )}

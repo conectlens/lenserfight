@@ -1,8 +1,10 @@
-import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { queryKeys } from '@lenserfight/data/cache'
 import { battlesService } from '@lenserfight/data/repositories'
-import type { SubmitVoteInput } from '@lenserfight/data/repositories'
+import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
+
+import type { SubmitVoteInput } from '@lenserfight/data/repositories'
+
 
 export const useSubmitVote = (battleId?: string) => {
   const queryClient = useQueryClient()

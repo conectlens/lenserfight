@@ -1,193 +1,181 @@
-import React, { useState, useEffect } from 'react'
+import { Badge, Card, DesktopFrame } from '@lenserfight/ui/components'
+import { ArrowRight, ShieldCheck, Trophy, MessagesSquare, Layers3, Bolt } from 'lucide-react'
+import React from 'react'
 import { Link } from 'react-router-dom'
-import { ArrowRight, Zap } from 'lucide-react'
-import { ArenaView, FightView, AgentPanel, AnimatedOutput, VSIndicator } from '@lenserfight/ui/widgets'
-import { StarBackground } from '@lenserfight/ui/widgets'
 
-const MOCK_FIGHT = {
-  prompt: 'Explain the concept of recursion in programming, as if explaining to a 10-year-old.',
-  agentA: {
-    name: 'GPT-4o',
-    avatar: 'https://api.dicebear.com/7.x/bottts/svg?seed=gpt4o',
-    elo: 1420,
-    output:
-      'Imagine a set of Russian nesting dolls. When you open one, there\'s a smaller version inside — and that smaller one contains an even smaller one. Recursion is like that: a function that calls a smaller version of itself until it reaches the tiniest doll that can\'t open anymore.',
+
+const HERO_POINTS = [
+  'Compare outputs with a public vote trail.',
+  'Show the rubric, result, and share link in one place.',
+  'Keep the product language simple: Lenser, Lens, Execution, Battle.',
+]
+
+const VALUE_CARDS = [
+  {
+    icon: MessagesSquare,
+    title: 'Community judgment',
+    description: 'Every battle invites a human answer, not just an automated score.',
   },
-  agentB: {
-    name: 'Claude 3.5',
-    avatar: 'https://api.dicebear.com/7.x/bottts/svg?seed=claude35',
-    elo: 1398,
-    output:
-      'Think of it like a set of mirrors facing each other. When you stand between them, you see yourself reflected infinitely — each reflection containing another reflection. Recursion works the same way: a function looks at a smaller version of its own problem, over and over, until the problem is small enough to answer directly.',
+  {
+    icon: Layers3,
+    title: 'Structured evaluation',
+    description: 'The Lens and rubric keep the comparison fair and reproducible.',
   },
-}
+  {
+    icon: Trophy,
+    title: 'Shareable results',
+    description: 'Result pages are designed to be cited, discussed, and revisited.',
+  },
+]
 
 export const LandHomePage: React.FC = () => {
-  const [step, setStep] = useState<'idle' | 'a' | 'b' | 'done'>('idle')
-
-  useEffect(() => {
-    const t0 = setTimeout(() => setStep('a'), 800)
-    const t1 = setTimeout(() => setStep('b'), 3200)
-    const t2 = setTimeout(() => setStep('done'), 6000)
-    return () => { clearTimeout(t0); clearTimeout(t1); clearTimeout(t2) }
-  }, [])
-
   return (
-    <div className="relative overflow-hidden">
-      {/* Hero */}
-      <section className="relative min-h-screen flex flex-col items-center justify-center px-4 py-20 bg-gray-950 text-white">
-        <StarBackground />
+    <div className="relative overflow-hidden bg-surface-base text-surface-text">
+      <div className="absolute inset-x-0 top-0 -z-10 h-[32rem] bg-[radial-gradient(circle_at_top,_rgba(255,222,89,0.18),_transparent_50%),radial-gradient(circle_at_right,_rgba(40,123,255,0.12),_transparent_42%),linear-gradient(180deg,rgba(248,249,250,0.95),transparent)] dark:bg-[radial-gradient(circle_at_top,_rgba(255,222,89,0.12),_transparent_45%),radial-gradient(circle_at_right,_rgba(40,123,255,0.08),_transparent_42%),linear-gradient(180deg,rgba(26,26,26,0.95),transparent)]" />
 
-        <div className="relative z-10 max-w-3xl mx-auto text-center mb-16">
-          <div className="inline-flex items-center gap-2 px-3 py-1 bg-[#ffe170]/10 border border-[#ffe170]/20 rounded-full text-xs font-bold uppercase tracking-widest text-[#ffe170] mb-8">
-            <Zap size={10} />
-            Live Arena — lenserfight.com
+      <section className="mx-auto grid max-w-6xl gap-10 px-4 py-16 sm:px-6 lg:grid-cols-[1.02fr_0.98fr] lg:items-center lg:px-8 lg:py-24">
+        <div className="space-y-6">
+          <Badge color="yellow" variant="outline">
+            Live arena
+          </Badge>
+          <div className="space-y-4">
+            <h1 className="max-w-3xl text-5xl font-black tracking-tight text-greyscale-900 dark:text-greyscale-0 sm:text-6xl lg:text-7xl">
+              Bring your Lens to the Arena and let the comparison speak for itself.
+            </h1>
+            <p className="max-w-2xl text-lg leading-8 text-greyscale-600 dark:text-greyscale-400">
+              LenserFight turns model evaluation into a readable product surface. Community votes, rubric signals,
+              and shareable result pages make quality legible without hiding the work behind a black box.
+            </p>
           </div>
 
-          <h1 className="text-5xl md:text-7xl font-black tracking-tight mb-6 leading-[1.05]">
-            The AI{' '}
-            <span className="text-[#ffe170]">Battle</span>{' '}
-            Arena
-          </h1>
+          <ul className="space-y-3">
+            {HERO_POINTS.map((point) => (
+              <li key={point} className="flex items-start gap-3 text-sm leading-7 text-greyscale-600 dark:text-greyscale-400">
+                <ShieldCheck size={18} className="mt-1 shrink-0 text-status-green" />
+                <span>{point}</span>
+              </li>
+            ))}
+          </ul>
 
-          <p className="text-xl md:text-2xl text-gray-300 font-light leading-relaxed mb-10 max-w-2xl mx-auto">
-            Compare AI models head-to-head. Watch them generate. Vote for the best.
-            Ranked by the community.
-          </p>
-
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
+          <div className="flex flex-wrap gap-3">
             <Link
               to="/battles"
-              className="px-8 py-3.5 rounded-full bg-[#ffe170] text-gray-900 font-bold text-base hover:bg-[#ffd940] transition-colors shadow-lg shadow-[#ffe170]/20 inline-flex items-center gap-2"
+              className="inline-flex items-center gap-2 rounded-full bg-greyscale-900 px-5 py-3 text-sm font-bold text-greyscale-0 transition-colors hover:opacity-90 dark:bg-greyscale-0 dark:text-greyscale-900"
             >
               Enter the Arena <ArrowRight size={16} />
             </Link>
             <Link
-              to="/what-is-lenserfight"
-              className="px-8 py-3.5 rounded-full border border-gray-700 text-gray-300 font-semibold text-base hover:border-gray-500 hover:text-white transition-colors"
+              to="/about"
+              className="inline-flex items-center gap-2 rounded-full border border-surface-border bg-surface-base px-5 py-3 text-sm font-semibold text-greyscale-700 transition-colors hover:border-status-blue hover:text-greyscale-900 dark:text-greyscale-300 dark:hover:text-greyscale-0"
             >
-              Learn More
+              Learn the product
             </Link>
+          </div>
+
+          <div className="grid gap-3 sm:grid-cols-3">
+            {[
+              { label: 'Vote first', value: 'Community signal' },
+              { label: 'Rubric second', value: 'Additive context' },
+              { label: 'Share last', value: 'Public proof' },
+            ].map((item) => (
+              <Card key={item.label} className="space-y-1 p-4">
+                <p className="text-xs font-semibold uppercase tracking-[0.22em] text-greyscale-500">{item.label}</p>
+                <p className="text-sm font-semibold text-greyscale-900 dark:text-greyscale-0">{item.value}</p>
+              </Card>
+            ))}
           </div>
         </div>
 
-        {/* Live Arena Preview */}
-        <div className="relative z-10 w-full max-w-5xl mx-auto">
-          <div className="mb-3 flex items-center gap-2 px-1">
-            <span className="w-2 h-2 rounded-full bg-green-400 animate-pulse" />
-            <span className="text-xs text-gray-400 font-mono">LIVE DEMO — Battle in progress</span>
-          </div>
+        <DesktopFrame title="Battle preview" url="lenserfight.com/battles/live" label="Public demo">
+          <div className="space-y-4">
+            <Card className="space-y-3 p-5">
+              <div className="flex items-center justify-between gap-3">
+                <Badge color="blue" variant="outline">
+                  Lens
+                </Badge>
+                <span className="text-xs text-greyscale-500">Prompt: open and legible</span>
+              </div>
+              <p className="text-base font-semibold text-greyscale-900 dark:text-greyscale-0">
+                Rewrite a technical error message for a non-technical user.
+              </p>
+              <p className="text-sm leading-7 text-greyscale-600 dark:text-greyscale-400">
+                Two contenders answer the same task. The output, vote, and result all stay visible.
+              </p>
+            </Card>
 
-          <div className="rounded-2xl border border-gray-800 bg-gray-900/60 backdrop-blur overflow-hidden shadow-2xl">
-            {/* Prompt bar */}
-            <div className="border-b border-gray-800 px-4 py-3 text-sm text-gray-400 font-mono bg-gray-900/40">
-              <span className="text-[#ffe170]">prompt:</span>{' '}
-              <span className="text-gray-300">{MOCK_FIGHT.prompt}</span>
+            <div className="grid gap-4 md:grid-cols-2">
+              {[
+                { label: 'Runner A', color: 'blue', text: 'Clearer tone, shorter response, stronger user empathy.' },
+                { label: 'Runner B', color: 'purple', text: 'More technical detail, but the explanation is harder to scan.' },
+              ].map(({ label, color, text }) => (
+                <Card key={label} className="space-y-3 p-5">
+                  <div className="flex items-center justify-between">
+                    <Badge color={color as 'blue' | 'purple'} variant="outline">
+                      {label}
+                    </Badge>
+                    <span className="text-xs text-greyscale-500">Output</span>
+                  </div>
+                  <p className="text-sm leading-7 text-greyscale-600 dark:text-greyscale-400">{text}</p>
+                </Card>
+              ))}
             </div>
 
-            <ArenaView>
-              <AgentPanel
-                name={MOCK_FIGHT.agentA.name}
-                avatar={MOCK_FIGHT.agentA.avatar}
-                elo={MOCK_FIGHT.agentA.elo}
-                status={step === 'a' ? 'generating' : step === 'idle' ? 'idle' : 'done'}
-              />
-              <FightView>
-                {(step === 'a' || step === 'b' || step === 'done') && (
-                  <AnimatedOutput
-                    content={MOCK_FIGHT.agentA.output}
-                    isGenerating={step === 'a'}
-                  />
-                )}
-              </FightView>
-
-              <VSIndicator />
-
-              <FightView>
-                {(step === 'b' || step === 'done') && (
-                  <AnimatedOutput
-                    content={MOCK_FIGHT.agentB.output}
-                    isGenerating={step === 'b'}
-                  />
-                )}
-              </FightView>
-              <AgentPanel
-                name={MOCK_FIGHT.agentB.name}
-                avatar={MOCK_FIGHT.agentB.avatar}
-                elo={MOCK_FIGHT.agentB.elo}
-                status={step === 'b' ? 'generating' : step === 'done' ? 'done' : 'idle'}
-              />
-            </ArenaView>
-
-            {step === 'done' && (
-              <div className="border-t border-gray-800 px-4 py-3 flex items-center justify-between bg-gray-900/60">
-                <span className="text-sm text-gray-400">Who gave the better explanation?</span>
-                <div className="flex gap-3">
-                  <button className="px-4 py-1.5 text-sm font-semibold rounded-full border border-gray-700 text-gray-300 hover:bg-gray-800 transition-colors">
-                    GPT-4o
-                  </button>
-                  <button className="px-4 py-1.5 text-sm font-semibold rounded-full bg-[#ffe170]/10 border border-[#ffe170]/30 text-[#ffe170] hover:bg-[#ffe170]/20 transition-colors">
-                    Claude 3.5
-                  </button>
-                </div>
+            <Card className="flex items-center justify-between gap-3 p-5">
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-[0.22em] text-greyscale-500">Vote result</p>
+                <p className="mt-1 text-sm font-semibold text-greyscale-900 dark:text-greyscale-0">
+                  63% to Runner A, 37% to Runner B
+                </p>
               </div>
-            )}
+              <Badge color="green">Published</Badge>
+            </Card>
           </div>
+        </DesktopFrame>
+      </section>
 
-          <p className="text-center text-xs text-gray-600 mt-3">
-            Simulated preview — real battles use live model outputs
-          </p>
+      <section className="mx-auto max-w-6xl px-4 pb-16 sm:px-6 lg:px-8 lg:pb-24">
+        <div className="grid gap-6 md:grid-cols-3">
+          {VALUE_CARDS.map(({ icon: Icon, title, description }) => (
+            <Card key={title} className="space-y-4 p-6">
+              <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-primary-yellow-500/15 text-primary-yellow-800 dark:bg-primary-yellow-500/10 dark:text-primary-yellow-400">
+                <Icon size={22} />
+              </div>
+              <h2 className="text-xl font-bold text-greyscale-900 dark:text-greyscale-0">{title}</h2>
+              <p className="text-sm leading-7 text-greyscale-600 dark:text-greyscale-400">{description}</p>
+            </Card>
+          ))}
         </div>
       </section>
 
-      {/* Value props */}
-      <section className="py-24 px-4 bg-white dark:bg-gray-900">
-        <div className="max-w-4xl mx-auto text-center mb-16">
-          <h2 className="text-3xl md:text-4xl font-black text-gray-900 dark:text-white mb-4">
-            Built for serious AI evaluation
-          </h2>
-          <p className="text-lg text-gray-500 dark:text-gray-400">
-            Beyond benchmarks. Real prompts. Real outputs. Community ranking.
-          </p>
-        </div>
-
-        <div className="max-w-5xl mx-auto grid md:grid-cols-3 gap-6">
-          {[
-            {
-              icon: '⚔️',
-              title: 'Head-to-Head Battles',
-              desc: 'Submit the same prompt to multiple models and compare outputs side by side.',
-            },
-            {
-              icon: '🏆',
-              title: 'Community Ranking',
-              desc: 'Votes from real users create an ELO-based ranking you can actually trust.',
-            },
-            {
-              icon: '🔬',
-              title: 'Lens Library',
-              desc: 'Build and share reusable prompts (Lenses) that others can battle with.',
-            },
-          ].map(({ icon, title, desc }) => (
-            <div
-              key={title}
-              className="p-8 rounded-2xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800/50"
+      <section className="mx-auto max-w-6xl px-4 pb-16 sm:px-6 lg:px-8 lg:pb-24">
+        <Card className="flex flex-col gap-6 p-8 lg:flex-row lg:items-center lg:justify-between">
+          <div className="max-w-2xl space-y-3">
+            <Badge color="purple" variant="outline">
+              Proof-led
+            </Badge>
+            <h2 className="text-2xl font-black tracking-tight text-greyscale-900 dark:text-greyscale-0">
+              The public pages are designed to explain the product before asking people to sign up.
+            </h2>
+            <p className="text-sm leading-7 text-greyscale-600 dark:text-greyscale-400">
+              That keeps the commercial layer conversion-oriented without sacrificing the clarity of the product
+              story.
+            </p>
+          </div>
+          <div className="flex flex-wrap gap-3">
+            <Link
+              to="/product"
+              className="inline-flex items-center gap-2 rounded-full border border-surface-border bg-surface-base px-5 py-3 text-sm font-semibold text-greyscale-700 transition-colors hover:border-status-blue hover:text-greyscale-900 dark:text-greyscale-300 dark:hover:text-greyscale-0"
             >
-              <div className="text-3xl mb-4">{icon}</div>
-              <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-2">{title}</h3>
-              <p className="text-gray-500 dark:text-gray-400 text-sm leading-relaxed">{desc}</p>
-            </div>
-          ))}
-        </div>
-
-        <div className="text-center mt-12">
-          <Link
-            to="/battles"
-            className="inline-flex items-center gap-2 px-8 py-3.5 rounded-full bg-gray-900 dark:bg-white text-white dark:text-gray-900 font-bold text-base hover:opacity-90 transition-opacity"
-          >
-            Start Battling <ArrowRight size={16} />
-          </Link>
-        </div>
+              Product map
+            </Link>
+            <Link
+              to="/contact"
+              className="inline-flex items-center gap-2 rounded-full bg-greyscale-900 px-5 py-3 text-sm font-bold text-greyscale-0 transition-colors hover:opacity-90 dark:bg-greyscale-0 dark:text-greyscale-900"
+            >
+              Contact us <Bolt size={16} />
+            </Link>
+          </div>
+        </Card>
       </section>
     </div>
   )

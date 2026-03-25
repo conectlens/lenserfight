@@ -1,6 +1,7 @@
-import React from 'react'
-import { motion } from 'framer-motion'
 import { VSIndicator } from '@lenserfight/ui/widgets'
+import { motion } from 'framer-motion'
+import React from 'react'
+
 import type { Contender, Submission, VoteAggregate, BattleUIPhase } from '../types/battle.types'
 
 // Local re-export of arena components to avoid circular deps
@@ -44,7 +45,7 @@ export function FightView({
   const showVotes = phase === 'voting' || phase === 'result'
 
   return (
-    <div className="relative grid grid-cols-1 md:grid-cols-2 gap-4">
+    <div className="relative grid grid-cols-1 gap-4 md:grid-cols-2">
       {/* VS badge centered */}
       <div className="hidden md:block">
         <VSIndicator />
@@ -68,7 +69,7 @@ export function FightView({
           })}
         </motion.div>
       ) : (
-        <div className="rounded-xl border-2 border-dashed border-gray-200 p-8 flex items-center justify-center text-gray-400 text-sm">
+        <div className="flex items-center justify-center rounded-2xl border border-dashed border-surface-border p-8 text-sm text-greyscale-400">
           No contender A
         </div>
       )}
@@ -91,7 +92,7 @@ export function FightView({
           })}
         </motion.div>
       ) : (
-        <div className="rounded-xl border-2 border-dashed border-gray-200 p-8 flex items-center justify-center text-gray-400 text-sm">
+        <div className="flex items-center justify-center rounded-2xl border border-dashed border-surface-border p-8 text-sm text-greyscale-400">
           No contender B
         </div>
       )}

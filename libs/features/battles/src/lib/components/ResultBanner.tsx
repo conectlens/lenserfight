@@ -1,6 +1,7 @@
-import React from 'react'
-import { motion } from 'framer-motion'
+import { Badge } from '@lenserfight/ui/components'
 import { ScoreBar } from '@lenserfight/ui/widgets'
+import { motion } from 'framer-motion'
+import React from 'react'
 
 interface ResultBannerProps {
   winnerName?: string
@@ -45,22 +46,44 @@ export function ResultBanner({ winnerName, winnerSlot, voteA, voteB, drawCount =
         ))}
 
       <motion.div
-        className="rounded-xl border-2 border-[var(--cl-surface-text)] bg-[var(--cl-surface-raised)] p-6 text-center space-y-3"
+        className="rounded-3xl border border-greyscale-200 bg-surface-raised p-6 text-center shadow-neu-1 dark:border-greyscale-800"
         initial={{ opacity: 0, y: 40 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.3, ease: [0, 0, 0.2, 1] }}
       >
-        {winnerSlot === 'draw' ? (
-          <p className="text-xl font-bold text-[var(--cl-surface-text-muted)]">🤝 It's a Draw</p>
-        ) : winnerName ? (
-          <p className="text-xl font-bold text-[var(--cl-surface-text)]">🏆 {winnerName} wins</p>
-        ) : (
-          <p className="text-lg font-medium text-[var(--cl-surface-text-disabled)]">Result pending</p>
-        )}
+        <div className="space-y-3">
+          {winnerSlot === 'draw' ? (
+            <Badge color="gray" variant="outline">
+              It’s a draw
+            </Badge>
+          ) : winnerName ? (
+            <Badge color="green" variant="outline">
+              Winner
+            </Badge>
+          ) : (
+            <Badge color="gray" variant="outline">
+              Result pending
+            </Badge>
+          )}
 
-        <ScoreBar scoreA={voteA} scoreB={voteB} labelA="A" labelB="B" />
+          {winnerSlot === 'draw' ? (
+            <p className="text-2xl font-black tracking-tight text-greyscale-900 dark:text-greyscale-50">
+              The community split evenly.
+            </p>
+          ) : winnerName ? (
+            <p className="text-2xl font-black tracking-tight text-greyscale-900 dark:text-greyscale-50">
+              {winnerName} wins the battle.
+            </p>
+          ) : (
+            <p className="text-xl font-semibold text-greyscale-500 dark:text-greyscale-400">Result pending</p>
+          )}
+        </div>
 
-        <div className="flex justify-between text-xs text-[var(--cl-surface-text-muted)] px-1">
+        <div className="mt-5">
+          <ScoreBar scoreA={voteA} scoreB={voteB} labelA="A" labelB="B" />
+        </div>
+
+        <div className="mt-3 flex items-center justify-between text-xs text-greyscale-500 dark:text-greyscale-400">
           <span>{voteA} votes</span>
           {drawCount > 0 && <span>{drawCount} draws</span>}
           <span>{voteB} votes</span>

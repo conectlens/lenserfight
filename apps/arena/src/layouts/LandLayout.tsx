@@ -1,13 +1,13 @@
+import { Footer } from '@lenserfight/ui/layout'
+import { Menu, X, ArrowRight } from 'lucide-react'
 import React, { useState } from 'react'
 import { Link, Outlet, useLocation } from 'react-router-dom'
-import { Menu, X } from 'lucide-react'
-import { Footer } from '@lenserfight/ui/layout'
 
 const NAV_LINKS = [
-  { to: '/what-is-lenserfight', label: 'What is LenserFight?' },
+  { to: '/about', label: 'About' },
   { to: '/product', label: 'Product' },
-  { to: '/mission', label: 'Mission' },
   { to: '/demo', label: 'Demo' },
+  { to: '/contact', label: 'Contact' },
 ]
 
 export const LandLayout: React.FC = () => {
@@ -17,28 +17,28 @@ export const LandLayout: React.FC = () => {
   const isActive = (to: string) => location.pathname === to || location.pathname.startsWith(to + '/')
 
   return (
-    <div className="min-h-screen flex flex-col bg-white">
+    <div className="min-h-screen flex flex-col bg-surface-base text-surface-text">
       {/* Header */}
-      <header className="sticky top-0 z-50 w-full bg-white/80 backdrop-blur-md border-b border-gray-100">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between gap-4">
+      <header className="sticky top-0 z-50 w-full border-b border-surface-border/80 bg-surface-base/90 backdrop-blur-md">
+        <div className="mx-auto flex h-16 max-w-6xl items-center justify-between gap-4 px-4 sm:px-6">
           {/* Logo */}
           <Link
             to="/"
-            className="flex items-center gap-2 font-black text-lg tracking-tight text-gray-900 hover:opacity-80 transition-opacity shrink-0"
+            className="flex shrink-0 items-center gap-2 text-lg font-black tracking-tight text-greyscale-900 transition-opacity hover:opacity-80 dark:text-greyscale-0"
           >
             LenserFight
           </Link>
 
           {/* Desktop Nav */}
-          <nav className="hidden md:flex items-center gap-6 text-sm font-medium">
+          <nav className="hidden items-center gap-2 md:flex">
             {NAV_LINKS.map(({ to, label }) => (
               <Link
                 key={to}
                 to={to}
-                className={`transition-colors ${
+                className={`rounded-full px-3 py-1.5 text-sm font-medium transition-colors ${
                   isActive(to)
-                    ? 'text-gray-900'
-                    : 'text-gray-500 hover:text-gray-900'
+                    ? 'bg-surface-raised text-greyscale-900 dark:text-greyscale-0'
+                    : 'text-greyscale-500 hover:bg-surface-raised hover:text-greyscale-900 dark:text-greyscale-400 dark:hover:text-greyscale-0'
                 }`}
               >
                 {label}
@@ -50,21 +50,21 @@ export const LandLayout: React.FC = () => {
           <div className="hidden md:flex items-center gap-3">
             <Link
               to="/get-started"
-              className="text-sm font-semibold text-gray-600 hover:text-gray-900 transition-colors"
+              className="text-sm font-semibold text-greyscale-600 transition-colors hover:text-greyscale-900 dark:text-greyscale-400 dark:hover:text-greyscale-0"
             >
               Get Started
             </Link>
             <Link
               to="/battles"
-              className="px-4 py-2 text-sm font-bold rounded-full bg-[var(--cl-yellow-500)] text-gray-900 hover:bg-[var(--cl-yellow-400)] transition-colors shadow-sm"
+              className="inline-flex items-center gap-2 rounded-full bg-primary-yellow-500 px-4 py-2 text-sm font-bold text-greyscale-900 shadow-sm transition-colors hover:bg-primary-yellow-400"
             >
-              Try Arena
+              Try Arena <ArrowRight size={14} />
             </Link>
           </div>
 
           {/* Mobile toggle */}
           <button
-            className="md:hidden p-2 rounded-lg text-gray-500 hover:bg-gray-100 transition-colors"
+            className="rounded-lg p-2 text-greyscale-500 transition-colors hover:bg-surface-raised md:hidden"
             onClick={() => setMobileOpen(prev => !prev)}
             aria-label="Toggle menu"
           >
@@ -74,29 +74,29 @@ export const LandLayout: React.FC = () => {
 
         {/* Mobile menu */}
         {mobileOpen && (
-          <div className="md:hidden border-t border-gray-100 bg-white px-4 py-4 space-y-3">
+          <div className="space-y-3 border-t border-surface-border bg-surface-base px-4 py-4 md:hidden">
             {NAV_LINKS.map(({ to, label }) => (
               <Link
                 key={to}
                 to={to}
                 onClick={() => setMobileOpen(false)}
-                className="block text-sm font-medium text-gray-700 hover:text-gray-900 py-1"
+                className="block py-1 text-sm font-medium text-greyscale-600 hover:text-greyscale-900 dark:text-greyscale-400 dark:hover:text-greyscale-0"
               >
                 {label}
               </Link>
             ))}
-            <div className="pt-3 border-t border-gray-100 flex flex-col gap-2">
+            <div className="flex flex-col gap-2 border-t border-surface-border pt-3">
               <Link
                 to="/get-started"
                 onClick={() => setMobileOpen(false)}
-                className="text-sm font-semibold text-gray-600"
+                className="text-sm font-semibold text-greyscale-600"
               >
                 Get Started
               </Link>
               <Link
                 to="/battles"
                 onClick={() => setMobileOpen(false)}
-                className="px-4 py-2 text-sm font-bold rounded-full bg-[var(--cl-yellow-500)] text-gray-900 text-center"
+                className="inline-flex items-center justify-center gap-2 rounded-full bg-primary-yellow-500 px-4 py-2 text-sm font-bold text-greyscale-900"
               >
                 Try Arena
               </Link>

@@ -1,6 +1,6 @@
+import { PolicyLayout } from '@lenserfight/ui/layout'
 import React from 'react'
 import { Outlet, useParams } from 'react-router-dom'
-import { PolicyLayout } from '@lenserfight/ui/layout'
 
 const POLICY_TITLES: Record<string, string> = {
   terms: 'Terms of Service',

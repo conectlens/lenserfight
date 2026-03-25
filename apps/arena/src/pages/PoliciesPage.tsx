@@ -1,6 +1,8 @@
+import { Card } from '@lenserfight/ui/components'
 import React, { useState, useEffect } from 'react'
-import { useParams, Navigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
+import { useParams, Navigate } from 'react-router-dom'
+
 import { MarkdownRenderer } from '../utils/MarkdownRenderer'
 
 const VALID_POLICIES = ['terms', 'privacy', 'cookies', 'acceptable-use'] as const
@@ -55,20 +57,24 @@ export const PoliciesPage: React.FC = () => {
   }
 
   return (
-    <div className="py-6">
+    <div className="space-y-6">
       {loading && (
-        <div className="animate-pulse space-y-4">
-          <div className="h-8 bg-gray-200 dark:bg-gray-700 rounded w-1/3" />
-          <div className="h-4 bg-gray-100 dark:bg-gray-800 rounded w-full" />
-          <div className="h-4 bg-gray-100 dark:bg-gray-800 rounded w-5/6" />
-          <div className="h-4 bg-gray-100 dark:bg-gray-800 rounded w-4/6" />
-        </div>
+        <Card className="animate-pulse space-y-4 p-6">
+          <div className="h-8 w-1/3 rounded bg-surface-raised" />
+          <div className="h-4 w-full rounded bg-surface-raised" />
+          <div className="h-4 w-5/6 rounded bg-surface-raised" />
+          <div className="h-4 w-4/6 rounded bg-surface-raised" />
+        </Card>
       )}
       {!loading && content && (
-        <MarkdownRenderer content={content} />
+        <Card className="p-6">
+          <MarkdownRenderer content={content} />
+        </Card>
       )}
       {!loading && !content && (
-        <p className="text-gray-500 dark:text-gray-400">Policy content not available.</p>
+        <Card className="p-6">
+          <p className="text-greyscale-500 dark:text-greyscale-400">Policy content not available.</p>
+        </Card>
       )}
     </div>
   )

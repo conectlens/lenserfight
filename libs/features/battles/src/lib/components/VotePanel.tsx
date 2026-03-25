@@ -1,6 +1,6 @@
-import React, { useState } from 'react'
+import { Badge, Button, Card } from '@lenserfight/ui/components'
 import { motion } from 'framer-motion'
-import { Button } from '@lenserfight/ui/components'
+import React, { useState } from 'react'
 
 interface VotePanelProps {
   battleId: string
@@ -57,10 +57,13 @@ export function VotePanel({ contenderA, contenderB, existingVote, onVote, disabl
         key={`voted-${shakeKey}`}
         animate={shakeKey > 0 ? { x: [-4, 4, -4, 4, 0] } : {}}
         transition={{ duration: 0.35 }}
-        className="rounded-xl border border-[var(--cl-surface-border)] bg-[var(--cl-surface-raised)] p-4 text-center text-sm text-[var(--cl-surface-text-muted)]"
+        className="rounded-2xl border border-surface-border bg-surface-raised p-4 text-center text-sm text-greyscale-600 dark:text-greyscale-400"
       >
+        <Badge color="green" variant="outline" className="mb-3">
+          Vote recorded
+        </Badge>
         You voted for{' '}
-        <strong className="text-[var(--cl-surface-text)]">
+        <strong className="text-greyscale-900 dark:text-greyscale-50">
           {existingVote === 'draw'
             ? 'Draw'
             : existingVote === 'contender_a'
@@ -73,8 +76,16 @@ export function VotePanel({ contenderA, contenderB, existingVote, onVote, disabl
   }
 
   return (
-    <div className="rounded-xl border border-[var(--cl-surface-border)] bg-[var(--cl-surface-base)] p-4 space-y-3">
-      <p className="text-sm font-medium text-[var(--cl-surface-text-muted)]">Cast your vote</p>
+    <Card className="space-y-4 p-4">
+      <div className="flex items-center justify-between gap-3">
+        <p className="text-sm font-semibold text-greyscale-900 dark:text-greyscale-50">Cast your vote</p>
+        <Badge color="blue" variant="outline">
+          Primary signal
+        </Badge>
+      </div>
+      <p className="text-sm leading-7 text-greyscale-600 dark:text-greyscale-400">
+        Pick the contender that answered the Lens better. Your rationale is optional and stays secondary.
+      </p>
       <motion.div
         className="grid grid-cols-3 gap-2"
         variants={containerVariants}
@@ -88,29 +99,30 @@ export function VotePanel({ contenderA, contenderB, existingVote, onVote, disabl
             ['contender_b', contenderB.displayName],
           ] as const
         ).map(([val, label]) => (
-          <motion.button
-            key={val}
-            variants={buttonVariants}
-            onClick={() => handleSelect(val)}
-            disabled={disabled}
-            animate={selected === val ? { scale: [1, 1.05, 1] } : { scale: 1 }}
-            transition={selected === val ? { duration: 0.25 } : {}}
-            className={`py-2 px-3 rounded-lg text-sm font-medium border transition-colors ${
-              selected === val
-                ? 'border-[var(--cl-surface-text)] bg-[var(--cl-surface-text)] text-[var(--cl-surface-base)]'
-                : 'border-[var(--cl-surface-border)] bg-transparent text-[var(--cl-surface-text)] hover:border-[var(--cl-surface-border-subtle)]'
-            }`}
-          >
-            {label}
-          </motion.button>
-        ))}
+            <motion.button
+              key={val}
+              variants={buttonVariants}
+              onClick={() => handleSelect(val)}
+              disabled={disabled}
+              animate={selected === val ? { scale: [1, 1.05, 1] } : { scale: 1 }}
+              transition={selected === val ? { duration: 0.25 } : {}}
+              className={`rounded-2xl border px-3 py-3 text-sm font-semibold transition-colors ${
+                selected === val
+                  ? 'border-greyscale-900 bg-greyscale-900 text-greyscale-0 dark:border-greyscale-0 dark:bg-greyscale-0 dark:text-greyscale-900'
+                  : 'border-surface-border bg-surface-base text-greyscale-700 hover:border-status-blue dark:text-greyscale-300'
+              }`}
+              aria-pressed={selected === val}
+            >
+              {label}
+            </motion.button>
+          ))}
       </motion.div>
       <textarea
         placeholder="Why? (optional)"
         value={rationale}
         onChange={(e) => setRationale(e.target.value)}
         rows={2}
-        className="w-full text-sm border border-[var(--cl-surface-border)] rounded-lg p-2 resize-none focus:outline-none focus:ring-1 focus:ring-[var(--cl-surface-border-subtle)] bg-[var(--cl-surface-raised)] text-[var(--cl-surface-text)]"
+        className="w-full resize-none rounded-2xl border border-surface-border bg-surface-raised p-3 text-sm text-greyscale-900 outline-none transition-colors placeholder:text-greyscale-400 focus:border-status-blue dark:text-greyscale-50"
       />
       <Button
         variant="dark"
@@ -118,9 +130,10 @@ export function VotePanel({ contenderA, contenderB, existingVote, onVote, disabl
         onClick={handleVote}
         disabled={!selected || disabled}
         isLoading={loading}
+        className="w-auto"
       >
         Submit Vote
       </Button>
-    </div>
+    </Card>
   )
 }

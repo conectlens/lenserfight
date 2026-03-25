@@ -1,8 +1,9 @@
-import { useQuery, useQueryClient } from '@tanstack/react-query'
-import { useEffect, useRef } from 'react'
 import { queryKeys } from '@lenserfight/data/cache'
 import { battlesService } from '@lenserfight/data/repositories'
 import { supabase } from '@lenserfight/data/supabase'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
+import { useEffect, useRef } from 'react'
+
 import type { VoteAggregate } from '../types/battle.types'
 
 export const useVoteAggregates = (battleId?: string) => {

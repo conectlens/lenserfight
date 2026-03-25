@@ -1,5 +1,6 @@
-import React from 'react'
 import { Badge } from '@lenserfight/ui/components'
+import { Card } from '@lenserfight/ui/components'
+import React from 'react'
 
 interface SubmissionViewerProps {
   contentText?: string | null
@@ -9,22 +10,21 @@ interface SubmissionViewerProps {
 }
 
 export function SubmissionViewer({ contentText, contentUrl, contenderName, slot }: SubmissionViewerProps) {
-  const borderColor = slot === 'A' ? 'var(--cl-status-blue)' : 'var(--cl-yellow-600)'
-
   return (
-    <div
-      className="rounded-xl border-2 p-4 h-full flex flex-col bg-[var(--cl-surface-raised)]"
-      style={{ borderColor }}
-    >
-      <div className="flex items-center gap-2 mb-3">
-        <Badge color={slot === 'A' ? 'blue' : 'yellow'} variant="solid" size="sm">
+    <Card className="flex h-full flex-col gap-4 p-5">
+      <div className="flex items-center gap-2">
+        <Badge color={slot === 'A' ? 'blue' : 'yellow'} variant="outline" size="sm">
           {slot}
         </Badge>
-        <span className="font-medium text-sm text-[var(--cl-surface-text)] truncate">{contenderName}</span>
+        <div className="min-w-0">
+          <p className="truncate text-sm font-semibold text-greyscale-900 dark:text-greyscale-50">{contenderName}</p>
+          <p className="text-xs text-greyscale-500 dark:text-greyscale-400">Contender output</p>
+        </div>
       </div>
-      <div className="flex-1 overflow-auto">
+
+      <div className="min-h-[11rem] flex-1 overflow-auto">
         {contentText ? (
-          <pre className="text-sm text-[var(--cl-surface-text)] whitespace-pre-wrap font-sans leading-relaxed">
+          <pre className="whitespace-pre-wrap text-sm leading-7 text-greyscale-700 dark:text-greyscale-300">
             {contentText}
           </pre>
         ) : contentUrl ? (
@@ -32,14 +32,14 @@ export function SubmissionViewer({ contentText, contentUrl, contenderName, slot 
             href={contentUrl}
             target="_blank"
             rel="noopener noreferrer"
-            className="text-[var(--cl-status-blue)] underline text-sm"
+            className="text-sm font-medium text-status-blue underline decoration-status-blue/30 underline-offset-4"
           >
             View submission →
           </a>
         ) : (
-          <p className="text-[var(--cl-surface-text-disabled)] text-sm italic">No submission yet.</p>
+          <p className="text-sm italic text-greyscale-400">No submission yet.</p>
         )}
       </div>
-    </div>
+    </Card>
   )
 }

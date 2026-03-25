@@ -1,27 +1,28 @@
-import React from 'react'
-import { HelmetProvider } from 'react-helmet-async'
-import { QueryClientProvider } from '@tanstack/react-query'
 import { queryClient } from '@lenserfight/data/cache'
 import { AuthProvider, AuthExternalRedirect } from '@lenserfight/features/auth'
-import { ThemeProvider } from '@lenserfight/ui/theme'
 import { GlobalAnalytics } from '@lenserfight/infra/analytics'
-import { ScrollToTop } from '@lenserfight/ui/layout'
 import { ErrorProvider, GlobalErrorRenderer, ErrorClearer } from '@lenserfight/shared/error'
+import { ScrollToTop } from '@lenserfight/ui/layout'
+import { ThemeProvider } from '@lenserfight/ui/theme'
+import { QueryClientProvider } from '@tanstack/react-query'
+import React from 'react'
+import { HelmetProvider } from 'react-helmet-async'
 import { Routes, Route, Navigate, BrowserRouter } from 'react-router-dom'
 
 import { LandLayout } from './layouts/LandLayout'
 import { PolicyLayoutWrapper } from './layouts/PolicyLayoutWrapper'
-
-import { LandHomePage } from './pages/LandHomePage'
-import { WhatIsPage } from './pages/WhatIsPage'
-import { ProductPage } from './pages/ProductPage'
-import { MissionPage } from './pages/MissionPage'
-import { GetStartedPage } from './pages/GetStartedPage'
+import { AboutPage } from './pages/AboutPage'
+import { ContactPage } from './pages/ContactPage'
 import { DemoPage } from './pages/DemoPage'
+import { GetStartedPage } from './pages/GetStartedPage'
+import { LandHomePage } from './pages/LandHomePage'
+import { MissionPage } from './pages/MissionPage'
 import { PoliciesPage } from './pages/PoliciesPage'
+import { ProductPage } from './pages/ProductPage'
+import { WhatIsPage } from './pages/WhatIsPage'
 
 const AUTH_APP_URL = import.meta.env.VITE_AUTH_BASE_URL ?? 'https://auth.lenserfight.com'
-const APP_URL = import.meta.env.VITE_WEB_BASE_URL ?? 'https://app.lenserfight.com'
+const ARENA_APP_URL = import.meta.env.VITE_ARENA_URL ?? 'https://run.lenserfight.com'
 
 const App: React.FC = () => {
   return (
@@ -52,9 +53,11 @@ const App: React.FC = () => {
                   {/* Marketing routes (LandLayout — always light) */}
                   <Route element={<LandLayout />}>
                     <Route index element={<LandHomePage />} />
+                    <Route path="/about" element={<AboutPage />} />
                     <Route path="/what-is-lenserfight" element={<WhatIsPage />} />
                     <Route path="/product" element={<ProductPage />} />
                     <Route path="/mission" element={<MissionPage />} />
+                    <Route path="/contact" element={<ContactPage />} />
                     <Route path="/get-started" element={<GetStartedPage />} />
                     <Route path="/demo" element={<DemoPage />} />
 
@@ -65,10 +68,11 @@ const App: React.FC = () => {
                     </Route>
                   </Route>
 
-                  {/* Battle routes → redirect to unified app */}
-                  <Route path="/battles/*" element={<AuthExternalRedirect to={`${APP_URL}/battles`} />} />
+                  {/* Battle routes → redirect to the arena app */}
+                  <Route path="/battles/*" element={<AuthExternalRedirect to={`${ARENA_APP_URL}/battles`} />} />
 
                   {/* Backward-compat redirects */}
+                  <Route path="/ecosystem" element={<Navigate to="/product" replace />} />
                   <Route path="/login" element={<Navigate to="/auth/login" replace />} />
                   <Route path="/register" element={<Navigate to="/auth/register" replace />} />
                   <Route path="/forgot-password" element={<Navigate to="/auth/forgot-password" replace />} />
