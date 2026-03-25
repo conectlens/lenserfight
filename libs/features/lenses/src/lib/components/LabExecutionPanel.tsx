@@ -1,6 +1,6 @@
 import React, { useMemo, useState } from 'react'
 import { Loader2, Play, Square } from 'lucide-react'
-import { SelectField, ToolField } from '@lenserfight/ui/forms'
+import { SelectField, SearchSelectField, ToolField } from '@lenserfight/ui/forms'
 import { Button, FormError } from '@lenserfight/ui/components'
 import { AIProviderSelectList, AIModelSelectList } from '@lenserfight/features/generations'
 import { AIProvider, AIProviderModel, LensParam, FundingSource, UserApiKey, WalletBalance, LensVersionParam } from '@lenserfight/types'
@@ -8,6 +8,7 @@ import { validateParamValues } from '@lenserfight/utils/text'
 import { TriggerLabExecutionDTO } from '../hooks/useLabController'
 import { FundingSourceToggle } from './FundingSourceToggle'
 import { sanitizeStringInput, validateParamValue } from '../hooks/useAttachmentValidation'
+import { useOllamaModels } from '../hooks/useOllamaModels'
 import type { LocalKeyMeta } from '@lenserfight/types'
 
 // Detect variables from both {{legacy}} and [[modern]] template syntaxes
@@ -112,7 +113,30 @@ export const LabExecutionPanel: React.FC<LabExecutionPanelProps> = ({
   const variables = useMemo(() => extractVariables(lensContent), [lensContent])
   const usingVersionParams = !!(versionParams && versionParams.length > 0)
 
+  const isCloudByok = fundingSource === 'user_byok_cloud'
   const isLocalByok = fundingSource === 'user_byok_local'
+
+  // Derive the effective provider key based on funding mode:
+  // - Cloud BYOK: locked to the selected key's provider (no manual picker)
+  // - Local BYOK: read from the selected local key's provider field
+  // - Wallet: user-selected via provider dropdown
+  const effectiveProviderKey = isCloudByok
+    ? (availableKeys?.find((k) => k.id === selectedKeyRefId)?.providerKey ?? '')
+    : isLocalByok
+      ? (availableLocalKeys?.find((k) => k.id === selectedLocalKeyId)?.provider ?? '')
+      : selectedProviderKey
+
+  const isOllamaLocal = isLocalByok && effectiveProviderKey === 'ollama'
+
+  // Detect running Ollama instance and list installed models.
+  // Hook is always called (no conditional); `enabled` gates all network requests.
+  const {
+    isRunning: ollamaIsRunning,
+    isLoading: isLoadingOllama,
+    models: ollamaModels,
+    error: ollamaError,
+    refetch: refetchOllama,
+  } = useOllamaModels(isOllamaLocal)
 
   // Legacy LensParam[] fallback (when versionParams is absent)
   const legacyParamSchemas = useMemo<LensParam[]>(() => {
@@ -201,7 +225,10 @@ export const LabExecutionPanel: React.FC<LabExecutionPanelProps> = ({
   const isDisabled =
     isTriggeringExecution ||
     isStreaming ||
-    (isLocalByok ? !selectedLocalKeyId : !selectedProviderKey || !selectedModelKey)
+    (isOllamaLocal && ollamaIsRunning === false) ||
+    (isLocalByok
+      ? !selectedLocalKeyId || !selectedModelKey
+      : !effectiveProviderKey || !selectedModelKey)
 
   return (
     <form
@@ -236,8 +263,19 @@ export const LabExecutionPanel: React.FC<LabExecutionPanelProps> = ({
         />
       )}
 
-      {/* 2. Provider + Model — only when NOT local BYOK */}
-      {!isLocalByok && (
+      {/* 2. Cloud BYOK: provider locked to key — show only model picker */}
+      {isCloudByok && !!effectiveProviderKey && (
+        <AIModelSelectList
+          models={providerModels}
+          isLoading={isLoadingModels}
+          value={selectedModelKey}
+          onChange={onModelChange}
+          providerSelected={true}
+        />
+      )}
+
+      {/* Wallet (platform credit): provider picker + model picker with lazy load */}
+      {!isCloudByok && !isLocalByok && (
         <>
           <AIProviderSelectList
             providers={providers}
@@ -254,6 +292,58 @@ export const LabExecutionPanel: React.FC<LabExecutionPanelProps> = ({
             providerSelected={!!selectedProviderKey}
           />
         </>
+      )}
+
+      {/* Local BYOK + Ollama: liveness status + installed model list */}
+      {isOllamaLocal && (
+        <>
+          {ollamaIsRunning === false && (
+            <div className="flex flex-col gap-2 p-3 rounded-lg border border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-950">
+              <p className="text-xs font-semibold text-amber-700 dark:text-amber-300">
+                Ollama is not running
+              </p>
+              <p className="text-[10px] text-amber-600 dark:text-amber-400">
+                {ollamaError ?? 'Start it with: ollama serve'}
+              </p>
+              <button
+                type="button"
+                onClick={refetchOllama}
+                className="self-start text-xs text-primary-600 dark:text-primary-400 hover:underline"
+              >
+                Retry connection
+              </button>
+            </div>
+          )}
+          {ollamaIsRunning === null && isLoadingOllama && (
+            <div className="flex items-center gap-2 text-xs text-gray-400 dark:text-gray-500 py-2">
+              <Loader2 size={12} className="animate-spin" />
+              Detecting Ollama…
+            </div>
+          )}
+          {ollamaIsRunning && (
+            <SearchSelectField
+              value={selectedModelKey}
+              onChange={onModelChange}
+              placeholder="Select installed model…"
+              isLoading={isLoadingOllama}
+              options={ollamaModels.map((m) => ({
+                value: m.name,
+                label: m.name + (m.details?.parameter_size ? ` (${m.details.parameter_size})` : ''),
+              }))}
+            />
+          )}
+        </>
+      )}
+
+      {/* Local BYOK + non-Ollama (e.g. local OpenAI key): model picker from platform */}
+      {isLocalByok && !isOllamaLocal && !!effectiveProviderKey && (
+        <AIModelSelectList
+          models={providerModels}
+          isLoading={isLoadingModels}
+          value={selectedModelKey}
+          onChange={onModelChange}
+          providerSelected={true}
+        />
       )}
 
       {/* 3. Version Parameters */}

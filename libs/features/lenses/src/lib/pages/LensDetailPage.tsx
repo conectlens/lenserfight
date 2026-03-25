@@ -73,6 +73,20 @@ export const LensDetailPage: React.FC = () => {
   const funding = useFundingSource(lab.selectedProviderKey)
   resolveLocalKeyRef.current = funding.resolveLocalKey
 
+  // Auto-sync Cloud BYOK key's provider → lab model query
+  useEffect(() => {
+    if (funding.fundingSource !== 'user_byok_cloud') return
+    const key = funding.availableKeys.find((k) => k.id === funding.selectedKeyRefId)
+    if (key) lab.handleProviderChange(key.providerKey)
+  }, [funding.fundingSource, funding.selectedKeyRefId]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Auto-sync Local BYOK non-Ollama key's provider → lab model query
+  useEffect(() => {
+    if (funding.fundingSource !== 'user_byok_local') return
+    const localKey = funding.localKeys.find((k) => k.id === funding.selectedLocalKeyId)
+    if (localKey && localKey.provider !== 'ollama') lab.handleProviderChange(localKey.provider)
+  }, [funding.fundingSource, funding.selectedLocalKeyId]) // eslint-disable-line react-hooks/exhaustive-deps
+
   // Version history (lazy — only fetched when picker is opened)
   const [showVersionPicker, setShowVersionPicker] = useState(false)
   const [previewVersionId, setPreviewVersionId] = useState<string | null>(null)
