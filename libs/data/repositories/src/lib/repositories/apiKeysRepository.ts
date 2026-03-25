@@ -31,7 +31,7 @@ export class SupabaseApiKeysRepository implements ApiKeysRepositoryPort {
     const { data, error } = await supabase.rpc('fn_get_my_api_keys')
 
     if (error) throw error
-    return (data ?? []).map((row) => this.mapRow(row as Record<string, unknown>))
+    return (data ?? []).map((row: Record<string, unknown>) => this.mapRow(row))
   }
 
   async storeKey(dto: CreateApiKeyDTO): Promise<string> {

@@ -19,7 +19,7 @@ export const TagFilterBar: React.FC<TagFilterBarProps> = ({
   onSortChange,
 }) => {
   return (
-    <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8 sticky top-[60px] z-20 bg-gray-50/95 dark:bg-gray-900/95 backdrop-blur py-3 border-b border-gray-100/50 dark:border-gray-800/50 transition-colors">
+    <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6 sticky top-[56px] z-20 bg-gray-50/95 dark:bg-gray-900/95 backdrop-blur py-2 border-b border-gray-100/50 dark:border-gray-800/50 transition-colors">
       {/* Tabs */}
       <div className="flex p-1 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-sm overflow-x-auto scrollbar-hide max-w-full">
         {filters.map((f) => (

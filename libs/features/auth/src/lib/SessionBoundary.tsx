@@ -1,6 +1,6 @@
 import React from 'react'
-import { LoadingOverlay } from '@lenserfight/ui/components'
 import { useAuth } from './context/AuthContext'
+import { AuthLoadingOverlay } from './components/AuthLoadingOverlay'
 
 interface SessionBoundaryProps {
   children: React.ReactNode
@@ -22,7 +22,7 @@ export const SessionBoundary: React.FC<SessionBoundaryProps> = ({ children }) =>
   const { user, isLoading } = useAuth()
 
   if (isLoading) {
-    return <LoadingOverlay message="Loading..." />
+    return <AuthLoadingOverlay message="Loading..." />
   }
 
   // 'guest' key ensures that even unauthenticated state is consistent

@@ -1,10 +1,10 @@
+import { tagService } from '@lenserfight/data/repositories'
+import { useLenser } from '@lenserfight/features/profile'
+import { TaggedContentItem, SortOption } from '@lenserfight/types'
 import { useInfiniteQuery, useQuery } from '@tanstack/react-query'
 import { useMemo } from 'react'
-import { useParams, useSearchParams, useNavigate } from 'react-router-dom'
+import { useNavigate, useParams, useSearchParams } from 'react-router-dom'
 
-import { useLenser } from '@lenserfight/features/profile'
-import { tagService } from '@lenserfight/data/repositories'
-import { TaggedContentItem, SortOption } from '@lenserfight/types'
 import { PromptTagProvider } from '../providers/PromptTagProvider'
 import { ThreadTagProvider } from '../providers/ThreadTagProvider'
 
@@ -83,17 +83,33 @@ export const useTagDetailController = (slug?: string) => {
   })
 
   // Flatten pages
-  const prompts = promptPages?.pages.flatMap((p) => p as TaggedContentItem[]) ?? []
-  const threads = threadPages?.pages.flatMap((p) => p as TaggedContentItem[]) ?? []
+  const prompts = useMemo(
+    () => promptPages?.pages.flatMap((p) => p as TaggedContentItem[]) ?? [],
+    [promptPages],
+  )
+  const threads = useMemo(
+    () => threadPages?.pages.flatMap((p) => p as TaggedContentItem[]) ?? [],
+    [threadPages],
+  )
 
   // 3. Merge & Sort
   const items = useMemo(() => {
+    const dedupeByKey = (list: TaggedContentItem[]) => {
+      const seen = new Set<string>()
+      return list.filter((item) => {
+        const key = `${item.type}-${item.id}`
+        if (seen.has(key)) return false
+        seen.add(key)
+        return true
+      })
+    }
+
     // Single-tab views arrive pre-sorted from the DB — no re-sort needed.
-    if (activeTab === 'lenses') return prompts
-    if (activeTab === 'threads') return threads
+    if (activeTab === 'lenses') return dedupeByKey(prompts)
+    if (activeTab === 'threads') return dedupeByKey(threads)
 
     // 'all' tab: merge two separately-sorted lists and re-sort the combined result.
-    const result = [...prompts, ...threads]
+    const result = dedupeByKey([...prompts, ...threads])
     if (sortType === 'newest') {
       result.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
     } else {
