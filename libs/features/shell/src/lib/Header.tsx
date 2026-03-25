@@ -26,7 +26,7 @@ export const Header: React.FC<HeaderProps> = ({ onToggleSidebar }) => {
   }
 
   return (
-    <header className="sticky top-0 z-30 flex items-center justify-between px-4 py-3 bg-gray-50/95 dark:bg-gray-900/95 backdrop-blur-sm transition-all duration-200 w-full border-b border-gray-200/50 dark:border-gray-700">
+    <header className="sticky top-0 flex items-center justify-between px-4 py-3 bg-gray-50/95 dark:bg-gray-900/95 backdrop-blur-sm transition-all duration-200 w-full border-b border-gray-200/50 dark:border-gray-700">
       <div className="flex items-center gap-4 flex-1 min-w-0">
         <button
           onClick={onToggleSidebar}

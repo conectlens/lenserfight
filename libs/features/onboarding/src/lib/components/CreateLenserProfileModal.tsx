@@ -7,6 +7,7 @@ import { useAIProviders, useAIModelsByProvider } from '@lenserfight/features/gen
 import { CreateLenserDTO, Lenser } from '@lenserfight/types'
 import { LanguageSelectBox, StepWizard } from '@lenserfight/ui/components'
 import { Modal } from '@lenserfight/ui/modals'
+import { buildAuthReturnUrl } from '@lenserfight/utils/dom'
 import { storage } from '@lenserfight/utils/storage'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { Check, X, Loader2 } from 'lucide-react'
@@ -89,7 +90,7 @@ export const CreateLenserProfileModal: React.FC<CreateLenserProfileModalProps> =
     if (authLoading || lenserLoading) return
     if (!isAuthenticated) {
       const authAppUrl = import.meta.env.VITE_AUTH_BASE_URL ?? 'https://auth.lenserfight.com'
-      const returnUrl = encodeURIComponent(window.location.href)
+      const returnUrl = encodeURIComponent(buildAuthReturnUrl(window.location.href))
       window.location.href = `${authAppUrl}/login?return_url=${returnUrl}`
       onClose()
     } else if (hasLenser && hasCompletedOnboarding) {

@@ -3,6 +3,7 @@ import { useLocation } from 'react-router-dom'
 import { useAuth } from '@lenserfight/features/auth'
 import { useLenserOptional } from '@lenserfight/features/profile'
 import { Footer } from '@lenserfight/ui/layout'
+import { buildAuthReturnUrl } from '@lenserfight/utils/dom'
 import { storage } from '@lenserfight/utils/storage'
 
 import { Header } from './Header'
@@ -120,7 +121,7 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) =>
   const handleOpenProfileSetup = () => {
     if (!isAuthenticated) {
       const authAppUrl = import.meta.env.VITE_AUTH_BASE_URL ?? 'https://auth.lenserfight.com'
-      const returnUrl = encodeURIComponent(window.location.href)
+      const returnUrl = encodeURIComponent(buildAuthReturnUrl(window.location.href))
       window.location.href = `${authAppUrl}/login?return_url=${returnUrl}`
       return
     }
