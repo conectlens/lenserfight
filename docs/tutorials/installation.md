@@ -6,7 +6,7 @@ Use this guide to prepare your machine and local environment for LenserFight.
 
 LenserFight is a TypeScript Nx monorepo with:
 
-- Vite-based web apps in `apps/forum`, `apps/arena`, and `apps/admin`
+- Vite-based web apps in `apps/forum`, `apps/arena`, `apps/land`, and `apps/cli`
 - a planned Expo mobile app contract in `apps/mobile`
 - a VitePress docs site in `apps/docs`
 - shared libraries in `libs/`
@@ -42,7 +42,7 @@ To start a single app:
 
 - `npm exec nx serve forum`
 - `npm exec nx serve arena`
-- `npm exec nx serve admin`
+- `npm exec nx serve land`
 - `npm run docs:dev`
 
 ## Related guides

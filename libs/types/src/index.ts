@@ -1,4 +1,3 @@
-export * from './lib/admin.types'
 export * from './lib/apiKeys.types'
 export * from './lib/media.types'
 export * from './lib/resources.types'
