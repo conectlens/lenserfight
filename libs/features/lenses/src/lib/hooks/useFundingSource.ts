@@ -40,10 +40,14 @@ export const useFundingSource = (selectedProviderKey: string) => {
 
   const canUseBYOK = availableKeys.length > 0 || localKeys.length > 0
 
-  // Reset key selections when provider changes or BYOK becomes unavailable
+  // Reset key selections when provider changes (non-BYOK mode) or BYOK becomes unavailable
   useEffect(() => {
-    setSelectedKeyRefId(null)
-    setSelectedLocalKeyId(null)
+    // In BYOK modes the provider is driven by the selected key — don't reset the key here
+    // as that would create a circular loop: key→provider→reset key→re-select key→provider…
+    if (fundingSource !== 'user_byok_cloud' && fundingSource !== 'user_byok_local') {
+      setSelectedKeyRefId(null)
+      setSelectedLocalKeyId(null)
+    }
     if (!canUseBYOK && (fundingSource === 'user_byok_cloud' || fundingSource === 'user_byok_local')) {
       setFundingSource('platform_credit')
     }
