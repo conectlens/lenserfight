@@ -71,5 +71,5 @@ export const semanticNativeStatus = {
   },
 } as const
 
-export type NativeSurface = typeof semanticNativeSurfaceLight
+export type NativeSurface = typeof semanticNativeSurfaceLight | typeof semanticNativeSurfaceDark
 export type NativeStatus  = typeof semanticNativeStatus

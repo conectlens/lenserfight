@@ -47,7 +47,7 @@ export const TagContentGrid: React.FC<TagContentGridProps> = ({ items, loading }
         if (item.type === 'lens') {
           const lensVM = item.data as LensViewModel
           return (
-            <div key={item.id} className="h-full">
+            <div key={`${item.type}-${item.id}`} className="h-full">
               <LensCard lens={lensVM} onClick={(id) => navigate(`/lenses/${id}`)} />
             </div>
           )
@@ -59,7 +59,7 @@ export const TagContentGrid: React.FC<TagContentGridProps> = ({ items, loading }
 
           return (
             <div
-              key={item.id}
+              key={`${item.type}-${item.id}`}
               onClick={() => navigate(`/threads/${item.id}`)}
               className="cursor-pointer group h-full"
             >

@@ -9,7 +9,7 @@
     "serve": {
       "executor": "nx:run-commands",
       "options": {
-        "command": "npm exec vitepress dev apps/docs -- --port 3005"
+        "command": "npm exec vitepress dev apps/docs -- --port 3002"
       }
     },
     "build": {
@@ -21,7 +21,7 @@
     "preview": {
       "executor": "nx:run-commands",
       "options": {
-        "command": "npm exec vitepress preview apps/docs -- --port 3005"
+        "command": "npm exec vitepress preview apps/docs -- --port 3002"
       }
     }
   }

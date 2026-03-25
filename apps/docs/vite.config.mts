@@ -9,12 +9,12 @@ export default defineConfig(() => ({
   cacheDir: '../../node_modules/.vite/apps/docs',
 
   server: {
-    port: 3005,
+    port: 3002,
     host: 'localhost',
   },
 
   preview: {
-    port: 3005,
+    port: 3002,
     host: 'localhost',
   },
 
