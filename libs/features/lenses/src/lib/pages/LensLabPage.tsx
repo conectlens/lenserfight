@@ -73,6 +73,21 @@ export const LensLabPage: React.FC = () => {
   // Keep the ref current so triggerStream always uses the latest decryption function
   resolveLocalKeyRef.current = funding.resolveLocalKey
 
+  // Auto-sync Cloud BYOK key's provider → lab model query
+  // (provider picker is hidden in Cloud BYOK mode; models must load for the right provider)
+  useEffect(() => {
+    if (funding.fundingSource !== 'user_byok_cloud') return
+    const key = funding.availableKeys.find((k) => k.id === funding.selectedKeyRefId)
+    if (key) lab.handleProviderChange(key.providerKey)
+  }, [funding.fundingSource, funding.selectedKeyRefId]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Auto-sync Local BYOK non-Ollama key's provider → lab model query
+  useEffect(() => {
+    if (funding.fundingSource !== 'user_byok_local') return
+    const localKey = funding.localKeys.find((k) => k.id === funding.selectedLocalKeyId)
+    if (localKey && localKey.provider !== 'ollama') lab.handleProviderChange(localKey.provider)
+  }, [funding.fundingSource, funding.selectedLocalKeyId]) // eslint-disable-line react-hooks/exhaustive-deps
+
   const { forkLens, isForking } = useForkLens(lens ?? null)
 
   // Version restore/preview orchestration
