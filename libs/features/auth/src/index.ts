@@ -1,4 +1,5 @@
 export * from './lib/SessionBoundary'
+export * from './lib/components/AuthExternalRedirect'
 export * from './lib/auth'
 export * from './lib/components/AuthCard'
 export * from './lib/components/InputField'

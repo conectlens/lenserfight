@@ -2,31 +2,56 @@ name: Claude Code Review
 
 on:
   pull_request:
-    types: [opened, synchronize, ready_for_review, reopened]
-    # Optional: Only run on specific file changes
-    # paths:
-    #   - "src/**/*.ts"
-    #   - "src/**/*.tsx"
-    #   - "src/**/*.js"
-    #   - "src/**/*.jsx"
+    types: [review_requested]
+
+permissions:
+  contents: read
+  pull-requests: write
+  issues: read
+  id-token: write
 
 jobs:
   claude-review:
-    # Optional: Filter by PR author
-    # if: |
-    #   github.event.pull_request.user.login == 'external-contributor' ||
-    #   github.event.pull_request.user.login == 'new-developer' ||
-    #   github.event.pull_request.author_association == 'FIRST_TIME_CONTRIBUTOR'
+    # Only run if the PR review was explicitly requested from the Claude user
+    if: >
+      github.event.requested_reviewer.login == 'claude'
 
     runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      pull-requests: read
-      issues: read
-      id-token: write
 
     steps:
+      - name: Check requester permission
+        id: gate
+        uses: actions/github-script@v8
+        with:
+          script: |
+            const requester = context.payload.sender.login;
+            const { owner, repo } = context.repo;
+
+            const res = await github.rest.repos.getCollaboratorPermissionLevel({
+              owner,
+              repo,
+              username: requester,
+            });
+
+            const permission = res.data.permission;
+            const roleName = res.data.role_name;
+
+            core.info(`Requester: ${requester}`);
+            core.info(`permission=${permission}, role_name=${roleName}`);
+
+            // Strict admin-only mode
+            const allowed = roleName === 'admin' || permission === 'admin';
+
+            core.setOutput('allowed', allowed ? 'true' : 'false');
+
+            if (!allowed) {
+              core.setFailed(
+                `Claude review is restricted to repository admins. '${requester}' has permission='${permission}', role='${roleName}'.`
+              );
+            }
+
       - name: Checkout repository
+        if: steps.gate.outputs.allowed == 'true'
         uses: actions/checkout@v4
         with:
           fetch-depth: 1
@@ -44,4 +69,4 @@ jobs:
 
           claude_args: |
             --max-turns 10
-            --model claude-sonnet-4-6
+            --model sonnet

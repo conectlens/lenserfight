@@ -38,7 +38,6 @@
       "moderation": ["libs/infra/moderation/src/index.ts"],
       "@lenserfight/features/threads": ["libs/features/threads/src/index.ts"],
       "@lenserfight/features/home": ["libs/features/home/src/index.ts"],
-      "@lenserfight/features/public": ["libs/features/public/src/index.ts"],
       "@lenserfight/features/settings": ["libs/features/settings/src/index.ts"],
       "@lenserfight/features/share": ["libs/features/share/src/index.ts"],
       "@lenserfight/features/waiting-list": ["libs/features/waiting-list/src/index.ts"],

@@ -1,7 +1,0 @@
-export * from './lib/components/PublicPageTabs'
-export * from './lib/components/PublicSection'
-export * from './lib/pages/AboutPage'
-export * from './lib/pages/ContactPage'
-export * from './lib/pages/EcosystemPage'
-export * from './lib/pages/LegalPage'
-export * from './lib/pages/WelcomePage'
