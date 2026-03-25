@@ -88,7 +88,7 @@ export const CreateLenserProfileModal: React.FC<CreateLenserProfileModalProps> =
   useEffect(() => {
     if (authLoading || lenserLoading) return
     if (!isAuthenticated) {
-      const authAppUrl = import.meta.env.VITE_AUTH_APP_URL ?? 'https://auth.lenserfight.com'
+      const authAppUrl = import.meta.env.VITE_AUTH_BASE_URL ?? 'https://auth.lenserfight.com'
       const returnUrl = encodeURIComponent(window.location.href)
       window.location.href = `${authAppUrl}/login?return_url=${returnUrl}`
       onClose()
@@ -206,7 +206,7 @@ export const CreateLenserProfileModal: React.FC<CreateLenserProfileModalProps> =
       queryClient.setQueryData(queryKeys.lenser.authenticated(), updated)
       queryClient.setQueryData(AUTH_PROFILE_GATE_QUERY_KEY, { kind: 'active', status: 'active' })
       await queryClient.invalidateQueries({ queryKey: AUTH_PROFILE_GATE_QUERY_KEY })
-      ;(onComplete ?? onClose)()
+        ; (onComplete ?? onClose)()
     } catch (err: unknown) {
       setSubmitError(getErrorMessage(err, 'Failed to complete setup. Please try again.'))
     } finally {
@@ -331,11 +331,10 @@ export const CreateLenserProfileModal: React.FC<CreateLenserProfileModalProps> =
                     key={opt.value}
                     type="button"
                     onClick={() => setSelectedTheme(opt.value)}
-                    className={`flex-1 py-2.5 px-4 rounded-lg border text-sm font-medium transition-colors ${
-                      selectedTheme === opt.value
+                    className={`flex-1 py-2.5 px-4 rounded-lg border text-sm font-medium transition-colors ${selectedTheme === opt.value
                         ? 'border-primary bg-primary/10 text-gray-900 dark:text-white'
                         : 'border-gray-200 dark:border-gray-700 text-gray-500 dark:text-gray-400 hover:border-gray-300 dark:hover:border-gray-600'
-                    }`}
+                      }`}
                   >
                     {opt.label}
                   </button>

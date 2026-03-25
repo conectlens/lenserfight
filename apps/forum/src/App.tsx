@@ -29,10 +29,16 @@ import {
 import { ThreadDetailPage } from '@lenserfight/features/threads'
 import { WaitingListPage } from '@lenserfight/features/waiting-list'
 import { StorePage, WalletProvider } from '@lenserfight/features/store'
+import {
+  BattlesFeedPage,
+  BattleDetailPage,
+  BattleResultPage,
+  CreateBattlePage,
+} from '@lenserfight/features/battles'
 import { Routes, Route, Navigate, BrowserRouter } from 'react-router-dom'
 
-const AUTH_APP_URL = import.meta.env.VITE_AUTH_APP_URL ?? 'https://auth.lenserfight.com'
-const ARENA_APP_URL = import.meta.env.VITE_ARENA_APP_URL ?? 'https://lenserfight.com'
+const AUTH_APP_URL = import.meta.env.VITE_AUTH_BASE_URL ?? 'https://auth.lenserfight.com'
+const ARENA_APP_URL = import.meta.env.VITE_ARENA_URL ?? 'https://lenserfight.com'
 
 
 const App: React.FC = () => {
@@ -205,6 +211,40 @@ const App: React.FC = () => {
                                 element={
                                   <DashboardLayout>
                                     <StorePage />
+                                  </DashboardLayout>
+                                }
+                              />
+
+                              {/* Arena / Battle Routes */}
+                              <Route
+                                path="/battles"
+                                element={
+                                  <DashboardLayout>
+                                    <BattlesFeedPage />
+                                  </DashboardLayout>
+                                }
+                              />
+                              <Route
+                                path="/battles/create"
+                                element={
+                                  <DashboardLayout>
+                                    <CreateBattlePage />
+                                  </DashboardLayout>
+                                }
+                              />
+                              <Route
+                                path="/battles/:slug"
+                                element={
+                                  <DashboardLayout>
+                                    <BattleDetailPage />
+                                  </DashboardLayout>
+                                }
+                              />
+                              <Route
+                                path="/battles/:slug/result"
+                                element={
+                                  <DashboardLayout>
+                                    <BattleResultPage />
                                   </DashboardLayout>
                                 }
                               />
