@@ -125,6 +125,16 @@
   --ease-enter:       var(--cl-ease-enter);
   --ease-exit:        var(--cl-ease-exit);
   --ease-spring:      var(--cl-ease-spring);
+
+  /* ── Z-Index stack ────────────────────────────────────────── */
+  --z-base:     0;
+  --z-raised:   10;
+  --z-dropdown: 100;
+  --z-sticky:   200;
+  --z-overlay:  300;
+  --z-modal:    400;
+  --z-toast:    500;
+  --z-tooltip:  600;
 }
 
 @layer base {

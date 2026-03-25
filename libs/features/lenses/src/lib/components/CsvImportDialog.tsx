@@ -1,8 +1,9 @@
-import React, { useState } from 'react'
+import React, { useMemo, useState } from 'react'
+import { Clipboard, Check, Zap } from 'lucide-react'
 import { Dialog } from '@lenserfight/ui/overlays'
 import { Button } from '@lenserfight/ui/components'
 import { LensVersionParam, LensParam } from '@lenserfight/types'
-import { parseCsvText, coerceCsvRow, ParsedCsv } from '../hooks/useParamImport'
+import { parseCsvText, coerceCsvRow, buildCsvTemplate, ParsedCsv } from '../hooks/useParamImport'
 
 interface CsvImportDialogProps {
   open: boolean
@@ -29,6 +30,13 @@ export const CsvImportDialog: React.FC<CsvImportDialogProps> = ({
   const [parsedCsv, setParsedCsv] = useState<ParsedCsv | null>(null)
   const [selectedRowIndex, setSelectedRowIndex] = useState(0)
   const [rowErrors, setRowErrors] = useState<Record<string, string>>({})
+  const [copiedTemplate, setCopiedTemplate] = useState(false)
+
+  // Build typed CSV template from actual params
+  const templateCsv = useMemo(
+    () => buildCsvTemplate(versionParams, legacyParams),
+    [versionParams, legacyParams],
+  )
 
   // Pre-compute which header columns match a param
   const allParamKeys = [
@@ -39,6 +47,16 @@ export const CsvImportDialog: React.FC<CsvImportDialogProps> = ({
   const isHeaderMatched = (header: string): boolean => {
     const h = header.trim().toLowerCase()
     return allParamKeys.some((k) => k.toLowerCase() === h)
+  }
+
+  const handleCopyTemplate = async () => {
+    try {
+      await navigator.clipboard.writeText(templateCsv)
+      setCopiedTemplate(true)
+      setTimeout(() => setCopiedTemplate(false), 2000)
+    } catch {
+      // clipboard access denied — silently ignore
+    }
   }
 
   const handleParse = () => {
@@ -85,19 +103,32 @@ export const CsvImportDialog: React.FC<CsvImportDialogProps> = ({
           <textarea
             value={rawText}
             onChange={(e) => { setRawText(e.target.value); setParsedCsv(null); setRowErrors({}) }}
-            placeholder={'city,temperature,unit\nBerlin,22,celsius'}
+            placeholder={templateCsv || 'param1,param2\nvalue1,value2'}
             rows={6}
             spellCheck={false}
             className="w-full rounded-lg border border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-800 px-3 py-2 text-xs font-mono text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-500 resize-none"
           />
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2">
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              onClick={handleCopyTemplate}
+              disabled={!templateCsv}
+              className="flex items-center gap-1.5"
+            >
+              {copiedTemplate ? <Check size={13} /> : <Clipboard size={13} />}
+              {copiedTemplate ? 'Copied!' : 'Copy template'}
+            </Button>
             <Button
               type="button"
               variant="secondary"
               size="sm"
               onClick={handleParse}
               disabled={!rawText.trim()}
+              className="flex items-center gap-1.5"
             >
+              <Zap size={13} />
               Parse
             </Button>
             {parsedCsv && (
