@@ -33,6 +33,7 @@ export interface LensesRepositoryPort {
   deleteLens(id: string): Promise<void>
   // ─── Versioning ───────────────────────────────────────────────────────────
   getVersions(lensId: string): Promise<LensVersion[]>
+  getVersionsPaginated(lensId: string, limit: number, offset: number): Promise<LensVersion[]>
   getVersionById(versionId: string): Promise<LensVersion | null>
   getLatestVersionId(lensId: string): Promise<string | null>
   getLatestPublishedVersion(lensId: string): Promise<LensVersion | null>
@@ -638,6 +639,23 @@ export class SupabaseLensesRepository implements LensesRepositoryPort {
       .rpc('fn_list_versions', { p_lens_id: lensId })
     if (error) this.handleError(error)
     return ((data ?? []) as Record<string, unknown>[]).map((row) => this.mapVersion(row))
+  }
+
+  async getVersionsPaginated(lensId: string, limit: number, offset: number): Promise<LensVersion[]> {
+    const { data, error } = await supabase
+      .schema('lenses')
+      .rpc('fn_list_lens_versions', { p_lens_id: lensId, p_limit: limit, p_offset: offset })
+    if (error) this.handleError(error)
+    return ((data ?? []) as Record<string, unknown>[]).map((row) => ({
+      id: row.id as string,
+      lensId: row.lens_id as string,
+      versionNumber: row.version_number as number,
+      templateBody: '',
+      status: row.status as LensVersion['status'],
+      changelog: (row.changelog as string | null) ?? null,
+      createdAt: row.created_at as string,
+      parameterCount: (row.parameter_count as number | null) ?? undefined,
+    }))
   }
 
   async getVersionById(versionId: string): Promise<LensVersion | null> {

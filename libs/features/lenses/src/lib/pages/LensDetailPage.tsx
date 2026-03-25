@@ -9,6 +9,7 @@ import { useAuth } from '@lenserfight/features/auth'
 import { useShareContext } from '@lenserfight/features/share'
 import { useUI } from '@lenserfight/ui/providers'
 import { lensesService } from '@lenserfight/data/repositories'
+import { queryKeys } from '@lenserfight/data/cache'
 import { useReportContent } from '@lenserfight/features/home'
 import { CreateVersionParamInput, ReportReasonEnum } from '@lenserfight/types'
 import { AIResultsSection } from '@lenserfight/features/generations'
@@ -25,7 +26,7 @@ import { useCloneLens } from '../hooks/useCloneLens'
 import { useCreateLens } from '../hooks/useCreateLens'
 import { useForkTree } from '../hooks/useForkTree'
 import { useLensDetailController } from '../hooks/useLensDetailController'
-import { useLensVersions, useLensVersionDetail, useLatestPublishedVersion } from '../hooks/useLensVersions'
+import { useLensVersionsPaginated, useLensVersionDetail, useLatestPublishedVersion } from '../hooks/useLensVersions'
 import { useLabController } from '../hooks/useLabController'
 import { useFundingSource } from '../hooks/useFundingSource'
 
@@ -60,7 +61,13 @@ export const LensDetailPage: React.FC = () => {
   const [showVersionPicker, setShowVersionPicker] = useState(false)
   const [previewVersionId, setPreviewVersionId] = useState<string | null>(null)
 
-  const { versions, isLoading: isLoadingVersions } = useLensVersions(id ?? '', {
+  const {
+    versions,
+    isLoading: isLoadingVersions,
+    hasMore: hasMoreVersions,
+    isFetchingMore: isFetchingMoreVersions,
+    sentinelRef: versionSentinelRef,
+  } = useLensVersionsPaginated(id ?? '', {
     enabled: showVersionPicker,
   })
   const { data: previewVersion, isLoading: isLoadingPreview } = useLensVersionDetail(previewVersionId)
@@ -190,6 +197,9 @@ export const LensDetailPage: React.FC = () => {
   const handleCreateSubmit = (newId: string) => {
     if (isEditMode && lens && newId === lens.id) {
       queryClient.invalidateQueries({ queryKey: ['lens-composite', lens.id] })
+      // Refresh version data so post-edit params & version list are immediately current
+      queryClient.invalidateQueries({ queryKey: queryKeys.lensVersions.latestPublished(lens.id) })
+      queryClient.invalidateQueries({ queryKey: queryKeys.lensVersions.all })
     } else {
       navigate(`/lenses/${newId}`)
     }
@@ -352,6 +362,13 @@ export const LensDetailPage: React.FC = () => {
                       </button>
                     )
                   })}
+                  {/* Infinite scroll sentinel for compact picker */}
+                  {hasMoreVersions && <div ref={versionSentinelRef} className="h-2" />}
+                  {isFetchingMoreVersions && (
+                    <div className="flex justify-center py-2">
+                      <Loader2 size={12} className="animate-spin text-gray-400" />
+                    </div>
+                  )}
                 </div>
               )}
             </div>
