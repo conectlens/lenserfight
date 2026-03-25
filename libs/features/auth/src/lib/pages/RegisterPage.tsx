@@ -5,7 +5,6 @@ import { Link, useNavigate } from 'react-router-dom'
 
 import { Button } from '@lenserfight/ui/components'
 import { LoadingOverlay } from '@lenserfight/ui/components'
-import { Modal } from '@lenserfight/ui/modals'
 import { isMock, isLocal, LOCAL_SEED_CREDENTIALS, ENABLE_CAPTCHA, CAPTCHA_SITE_KEY } from '@lenserfight/utils/env'
 import { useAuth } from '@lenserfight/features/auth'
 import { useFormValidation } from '@lenserfight/utils/validation'
@@ -26,12 +25,6 @@ export const RegisterPage: React.FC = () => {
     agreeTerms: isLocal || isMock,
   })
 
-  // Policy Modal State
-  const [policyModal, setPolicyModal] = useState<{
-    isOpen: boolean
-    title: string
-    content: React.ReactNode
-  } | null>(null)
   const [captchaToken, setCaptchaToken] = useState<string | null>(null)
 
   const passwordValidator = (value: any) => {
@@ -150,69 +143,13 @@ export const RegisterPage: React.FC = () => {
   }
 
   const openPolicy = (type: 'Terms' | 'Privacy' | 'Cookies') => {
-    let content = <p>Content loading...</p>
-    if (type === 'Terms') {
-      content = (
-        <div className="space-y-4 text-sm text-gray-600 dark:text-gray-300">
-          <p>
-            <strong>1. Introduction</strong>
-            <br />
-            Welcome to ConnectLens. By using our website, you agree to these terms.
-          </p>
-          <p>
-            <strong>2. Usage</strong>
-            <br />
-            You agree to use the platform for lawful purposes only.
-          </p>
-          <p>
-            <strong>3. Content</strong>
-            <br />
-            You retain rights to content you create, but grant us a license to display it.
-          </p>
-        </div>
-      )
-    } else if (type === 'Privacy') {
-      content = (
-        <div className="space-y-4 text-sm text-gray-600 dark:text-gray-300">
-          <p>
-            <strong>1. Data Collection</strong>
-            <br />
-            We collect information you provide directly to us.
-          </p>
-          <p>
-            <strong>2. Usage of Data</strong>
-            <br />
-            We use your data to provide and improve our services.
-          </p>
-          <p>
-            <strong>3. Third Parties</strong>
-            <br />
-            We do not sell your personal data to third parties.
-          </p>
-        </div>
-      )
-    } else {
-      content = (
-        <div className="space-y-4 text-sm text-gray-600 dark:text-gray-300">
-          <p>
-            <strong>1. What are cookies?</strong>
-            <br />
-            Cookies are small text files stored on your device.
-          </p>
-          <p>
-            <strong>2. How we use them</strong>
-            <br />
-            We use cookies for authentication and analytics.
-          </p>
-        </div>
-      )
+    const slugMap: Record<typeof type, string> = {
+      Terms: 'terms',
+      Privacy: 'privacy',
+      Cookies: 'cookies',
     }
-
-    setPolicyModal({
-      isOpen: true,
-      title: `${type} Policy`,
-      content,
-    })
+    const arenaUrl = import.meta.env.VITE_ARENA_APP_URL ?? 'https://lenserfight.com'
+    window.open(`${arenaUrl}/policies/${slugMap[type]}`, '_blank', 'noopener,noreferrer')
   }
 
   const returnUrl =
@@ -448,24 +385,6 @@ export const RegisterPage: React.FC = () => {
         </div>
       </AuthCard>
 
-      {/* Policy Modal */}
-      {policyModal && (
-        <Modal
-          isOpen={policyModal.isOpen}
-          onClose={() => setPolicyModal(null)}
-          title={policyModal.title}
-          canClose={true}
-        >
-          <div className="max-h-[60vh] overflow-y-auto pr-2 text-gray-600 dark:text-gray-300">
-            {policyModal.content}
-          </div>
-          <div className="mt-6 flex justify-end">
-            <Button onClick={() => setPolicyModal(null)} className="w-auto">
-              Close
-            </Button>
-          </div>
-        </Modal>
-      )}
     </>
   )
 }

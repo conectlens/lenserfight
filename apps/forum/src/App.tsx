@@ -2,7 +2,7 @@ import React from 'react'
 import { HelmetProvider } from 'react-helmet-async'
 import { QueryClientProvider } from '@tanstack/react-query'
 import { queryClient } from '@lenserfight/data/cache'
-import { AuthProvider, SessionBoundary } from '@lenserfight/features/auth'
+import { AuthProvider, SessionBoundary, AuthExternalRedirect } from '@lenserfight/features/auth'
 import { GlobalAnalytics } from '@lenserfight/infra/analytics'
 import {
   ScrollToTop,
@@ -11,10 +11,7 @@ import { ThemeProvider } from '@lenserfight/ui/theme'
 import { UIProvider, AppToaster } from '@lenserfight/ui/components'
 import { ShareProvider } from '@lenserfight/features/share'
 import { ErrorProvider, GlobalErrorRenderer, ErrorClearer } from '@lenserfight/shared/error'
-import {
-  DashboardLayout,
-  PublicLayout,
-} from '@lenserfight/features/shell'
+import { DashboardLayout } from '@lenserfight/features/shell'
 import { HomePage } from '@lenserfight/features/home'
 import { LeaderboardPage } from '@lenserfight/features/leaderboard'
 import { LensersPage } from '@lenserfight/features/lensers'
@@ -23,7 +20,6 @@ import {
   LensLabPage,
   LensesPage,
 } from '@lenserfight/features/lenses'
-import { WelcomePage } from '@lenserfight/features/public'
 import { SettingsPage } from '@lenserfight/features/settings'
 import { ShortLinkRedirect } from '@lenserfight/features/share'
 import {
@@ -33,27 +29,10 @@ import {
 import { ThreadDetailPage } from '@lenserfight/features/threads'
 import { WaitingListPage } from '@lenserfight/features/waiting-list'
 import { StorePage, WalletProvider } from '@lenserfight/features/store'
-import { useEffect } from 'react'
-import { Routes, Route, Navigate, BrowserRouter, useLocation } from 'react-router-dom'
+import { Routes, Route, Navigate, BrowserRouter } from 'react-router-dom'
 
 const AUTH_APP_URL = import.meta.env.VITE_AUTH_APP_URL ?? 'https://auth.lenserfight.com'
-
-/**
- * Redirect to an external URL (auth app), preserving the current page as
- * return_url so the user is sent back here after authentication completes.
- */
-const ExternalRedirect = ({ to }: { to: string }) => {
-  const location = useLocation()
-  useEffect(() => {
-    // Avoid encoding /auth/* paths as return_url — they get rejected by sanitizeReturnUrl
-    // and cause a fallback to the wrong (production) URL in dev.
-    const isAuthPath = location.pathname.startsWith('/auth/')
-    const returnPath = isAuthPath ? '/' : location.pathname + location.search + location.hash
-    const returnUrl = encodeURIComponent(window.location.origin + returnPath)
-    window.location.href = `${to}?return_url=${returnUrl}`
-  }, [to, location])
-  return null
-}
+const ARENA_APP_URL = import.meta.env.VITE_ARENA_APP_URL ?? 'https://lenserfight.com'
 
 
 const App: React.FC = () => {
@@ -84,19 +63,12 @@ const App: React.FC = () => {
                               <Route path="/s/:shortId" element={<ShortLinkRedirect />} />
 
                               {/* Auth Routes → delegated to apps/auth */}
-                              <Route path="/auth/login" element={<ExternalRedirect to={`${AUTH_APP_URL}/login`} />} />
-                              <Route path="/auth/register" element={<ExternalRedirect to={`${AUTH_APP_URL}/register`} />} />
-                              <Route path="/auth/forgot-password" element={<ExternalRedirect to={`${AUTH_APP_URL}/forgot-password`} />} />
-                              <Route path="/auth/reset-password" element={<ExternalRedirect to={`${AUTH_APP_URL}/reset-password`} />} />
-                              <Route path="/auth" element={<ExternalRedirect to={`${AUTH_APP_URL}/login`} />} />
-                              <Route
-                                path="/welcome"
-                                element={
-                                  <PublicLayout>
-                                    <WelcomePage />
-                                  </PublicLayout>
-                                }
-                              />
+                              <Route path="/auth/login" element={<AuthExternalRedirect to={`${AUTH_APP_URL}/login`} />} />
+                              <Route path="/auth/register" element={<AuthExternalRedirect to={`${AUTH_APP_URL}/register`} />} />
+                              <Route path="/auth/forgot-password" element={<AuthExternalRedirect to={`${AUTH_APP_URL}/forgot-password`} />} />
+                              <Route path="/auth/reset-password" element={<AuthExternalRedirect to={`${AUTH_APP_URL}/reset-password`} />} />
+                              <Route path="/auth" element={<AuthExternalRedirect to={`${AUTH_APP_URL}/login`} />} />
+                              <Route path="/welcome" element={<AuthExternalRedirect to={`${ARENA_APP_URL}/get-started`} />} />
 
                               {/* App Dashboard Routes */}
                               <Route
