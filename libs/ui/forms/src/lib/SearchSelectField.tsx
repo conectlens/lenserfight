@@ -1,4 +1,4 @@
-import { ChevronDown, Check, Search } from 'lucide-react'
+import { ChevronDown, Check, Search, Loader2 } from 'lucide-react'
 import React, { useState, useRef, useEffect, useCallback } from 'react'
 import { createPortal } from 'react-dom'
 import { type Option } from './SelectField'
@@ -12,6 +12,7 @@ interface SearchSelectFieldProps {
   searchPlaceholder?: string
   error?: string
   disabled?: boolean
+  isLoading?: boolean
   className?: string
   required?: boolean
   dropdownClassName?: string
@@ -27,6 +28,7 @@ export const SearchSelectField: React.FC<SearchSelectFieldProps> = ({
   searchPlaceholder = 'Search...',
   error,
   disabled,
+  isLoading,
   className = '',
   required,
   dropdownClassName = '',
@@ -190,10 +192,14 @@ export const SearchSelectField: React.FC<SearchSelectFieldProps> = ({
             {selectedOption ? selectedOption.label : placeholder}
           </span>
         </span>
-        <ChevronDown
-          size={16}
-          className={`text-gray-400 transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`}
-        />
+        {isLoading ? (
+          <Loader2 size={16} className="text-gray-400 animate-spin" />
+        ) : (
+          <ChevronDown
+            size={16}
+            className={`text-gray-400 transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`}
+          />
+        )}
       </button>
 
       {isOpen &&
@@ -208,25 +214,35 @@ export const SearchSelectField: React.FC<SearchSelectFieldProps> = ({
               width: coords.width,
             }}
           >
-            {/* Search input */}
-            <div className="p-2 border-b border-gray-100 dark:border-gray-700">
-              <div className="relative">
-                <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
-                <input
-                  ref={searchRef}
-                  type="text"
-                  value={query}
-                  onChange={(e) => setQuery(e.target.value)}
-                  onKeyDown={handleSearchKeyDown}
-                  placeholder={searchPlaceholder}
-                  className="w-full pl-8 pr-3 py-1.5 text-sm rounded-lg border border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-colors"
-                />
+            {/* Search input — hidden while loading */}
+            {!isLoading && (
+              <div className="p-2 border-b border-gray-100 dark:border-gray-700">
+                <div className="relative">
+                  <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
+                  <input
+                    ref={searchRef}
+                    type="text"
+                    value={query}
+                    onChange={(e) => setQuery(e.target.value)}
+                    onKeyDown={handleSearchKeyDown}
+                    placeholder={searchPlaceholder}
+                    className="w-full pl-8 pr-3 py-1.5 text-sm rounded-lg border border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-colors"
+                  />
+                </div>
               </div>
-            </div>
+            )}
 
             {/* Options list */}
             <div className="p-1 max-h-52 overflow-y-auto">
-              {filteredOptions.map((option, index) => {
+              {isLoading ? (
+                <div className="flex justify-center py-4">
+                  <Loader2 size={18} className="animate-spin text-gray-400" />
+                </div>
+              ) : filteredOptions.length === 0 ? (
+                <div className="px-3 py-3 text-sm text-gray-400 dark:text-gray-500 text-center">
+                  No results for "{query}"
+                </div>
+              ) : filteredOptions.map((option, index) => {
                 const isSelected = option.value === value
                 const isFocused = index === focusedIndex
                 return (
@@ -259,11 +275,6 @@ export const SearchSelectField: React.FC<SearchSelectFieldProps> = ({
                   </button>
                 )
               })}
-              {filteredOptions.length === 0 && (
-                <div className="px-3 py-3 text-sm text-gray-400 dark:text-gray-500 text-center">
-                  No results for "{query}"
-                </div>
-              )}
             </div>
           </div>,
           document.body

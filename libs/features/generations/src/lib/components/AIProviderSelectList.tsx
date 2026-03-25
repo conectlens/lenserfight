@@ -11,6 +11,8 @@ interface AIProviderSelectListProps {
   label?: string
   placeholder?: string
   className?: string
+  /** Called when the user opens the dropdown — use to trigger lazy data fetching */
+  onOpen?: () => void
 }
 
 export const AIProviderSelectList: React.FC<AIProviderSelectListProps> = ({
@@ -22,6 +24,7 @@ export const AIProviderSelectList: React.FC<AIProviderSelectListProps> = ({
   label,
   placeholder,
   className,
+  onOpen,
 }) => {
   const options = providers.map((p) => ({ value: p.key, label: p.display_name }))
 
@@ -31,10 +34,12 @@ export const AIProviderSelectList: React.FC<AIProviderSelectListProps> = ({
       value={value}
       onChange={onChange}
       options={options}
-      placeholder={isLoading ? 'Loading providers…' : (placeholder ?? 'Select a provider')}
+      placeholder={placeholder ?? 'Select a provider'}
       searchPlaceholder="Search providers…"
-      disabled={disabled || isLoading}
+      isLoading={isLoading}
+      disabled={disabled}
       className={className}
+      onOpen={onOpen}
     />
   )
 }
