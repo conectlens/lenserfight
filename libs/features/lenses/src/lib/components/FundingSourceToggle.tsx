@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import { Cloud, KeyRound, HardDrive, Globe, Plus, X, Eye, EyeOff } from 'lucide-react'
 import { SearchSelectField, SelectField } from '@lenserfight/ui/forms'
 import { FundingSource, UserApiKey, WalletBalance, BYOK_PROVIDER_LABELS } from '@lenserfight/types'
@@ -143,14 +143,14 @@ export const FundingSourceToggle: React.FC<FundingSourceToggleProps> = ({
   const isByok = isByokCloud || isByokLocal
   const [showAddLocalKey, setShowAddLocalKey] = useState(false)
 
+  // Redirect any persisted 'user_byok_local' state to cloud since local keys are disabled
+  useEffect(() => {
+    if (isByokLocal) onFundingSourceChange('user_byok_cloud')
+  }, [isByokLocal, onFundingSourceChange])
+
   const handleMyKeyClick = () => {
-    if (!canUseBYOK && availableLocalKeys.length === 0) return
-    // Default to cloud BYOK if keys exist, otherwise local
-    if (availableKeys.length > 0) {
-      onFundingSourceChange('user_byok_cloud')
-    } else {
-      onFundingSourceChange('user_byok_local')
-    }
+    if (!canUseBYOK) return
+    onFundingSourceChange('user_byok_cloud')
   }
 
   return (
@@ -201,18 +201,15 @@ export const FundingSourceToggle: React.FC<FundingSourceToggleProps> = ({
       </div>
 
       {/* Row 2: Cloud Keys | Local Keys sub-mode (visible when isByok) */}
-      {isByok && (
+      {(isByokCloud || isByokLocal) && (
         <div className="grid grid-cols-2 gap-2">
           <button
             type="button"
             onClick={() => onFundingSourceChange('user_byok_cloud')}
-            disabled={availableKeys.length === 0}
             className={`flex items-center gap-1.5 px-3 py-2 border rounded-lg text-xs transition-all ${
               isByokCloud
                 ? 'border-primary bg-primary/5 ring-1 ring-primary font-semibold text-gray-900 dark:text-gray-100'
-                : availableKeys.length > 0
-                  ? 'border-gray-200 dark:border-gray-600 text-gray-600 dark:text-gray-300 hover:border-gray-300'
-                  : 'border-gray-100 dark:border-gray-700 text-gray-400 opacity-50 cursor-not-allowed'
+                : 'border-gray-200 dark:border-gray-600 text-gray-600 dark:text-gray-300 hover:border-gray-300'
             }`}
           >
             <Globe size={12} />
@@ -224,18 +221,14 @@ export const FundingSourceToggle: React.FC<FundingSourceToggleProps> = ({
 
           <button
             type="button"
-            onClick={() => onFundingSourceChange('user_byok_local')}
-            className={`flex items-center gap-1.5 px-3 py-2 border rounded-lg text-xs transition-all ${
-              isByokLocal
-                ? 'border-primary bg-primary/5 ring-1 ring-primary font-semibold text-gray-900 dark:text-gray-100'
-                : 'border-gray-200 dark:border-gray-600 text-gray-600 dark:text-gray-300 hover:border-gray-300'
-            }`}
+            disabled
+            className="relative flex items-center gap-1.5 px-3 py-2 border rounded-lg text-xs transition-all border-gray-100 dark:border-gray-700 text-gray-400 opacity-60 cursor-not-allowed"
           >
+            <span className="absolute -top-2 left-1/2 -translate-x-1/2 text-[9px] font-semibold bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-300 px-1.5 py-0.5 rounded-full whitespace-nowrap">
+              Coming Soon
+            </span>
             <HardDrive size={12} />
             Local Keys
-            {availableLocalKeys.length > 0 && (
-              <span className="ml-auto text-[10px] text-gray-400">{availableLocalKeys.length}</span>
-            )}
           </button>
         </div>
       )}
