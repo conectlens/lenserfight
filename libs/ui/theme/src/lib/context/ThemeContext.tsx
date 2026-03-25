@@ -1,10 +1,6 @@
 import React, { createContext, useContext, useEffect, useState } from 'react'
 import { useAuth } from '@lenserfight/features/auth'
 
-if (import.meta.hot) {
-  import.meta.hot.decline()
-}
-
 import { themeController, Theme, ResolvedTheme, resolveTheme, getSystemTheme } from '../themeController'
 
 interface ThemeContextType {

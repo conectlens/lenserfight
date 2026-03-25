@@ -1,13 +1,13 @@
-import { Plus } from 'lucide-react'
-import React, { useState, useCallback, useEffect, useRef } from 'react'
-import { useNavigate, useSearchParams } from 'react-router-dom'
-
-import { Button } from '@lenserfight/ui/components'
-import { SEOHead } from '@lenserfight/ui/components'
 import { useAuth } from '@lenserfight/features/auth'
 import { useLensesFeed } from '@lenserfight/features/home'
 import { CreateLenserProfileModal } from '@lenserfight/features/onboarding'
+import { Button } from '@lenserfight/ui/components'
+import { SEOHead } from '@lenserfight/ui/components'
 import { buildAuthReturnUrl } from '@lenserfight/utils/dom'
+import { Plus } from 'lucide-react'
+import React, { useState, useCallback, useEffect, useMemo, useRef } from 'react'
+import { useNavigate, useSearchParams } from 'react-router-dom'
+
 import { CreateLensModal } from '../components/CreateLensModal'
 import { LensesGrid } from '../components/LensesGrid'
 import { LensesSearchBar } from '../components/LensesSearchBar'
@@ -74,7 +74,19 @@ export const LensesPage: React.FC = () => {
     sortOrder
   )
 
-  const lenses = data?.pages.flatMap((page) => page.data ?? []) || []
+  const lenses = useMemo(() => {
+    const seen = new Set<string>()
+
+    return (
+      data?.pages
+        .flatMap((page) => page.data ?? [])
+        .filter((lens) => {
+          if (seen.has(lens.id)) return false
+          seen.add(lens.id)
+          return true
+        }) ?? []
+    )
+  }, [data])
 
   // Create Lens Logic
   const {
@@ -137,7 +149,7 @@ export const LensesPage: React.FC = () => {
       </div>
 
       {/* Controls Bar */}
-      <div className="flex flex-col gap-4 mb-8">
+      <div className="sticky top-[56px] z-20 bg-gray-50/95 dark:bg-gray-900/95 backdrop-blur py-3 border-b border-gray-100/50 dark:border-gray-800/50 transition-all mb-6 -mx-2 sm:-mx-4 lg:-mx-8 px-2 sm:px-4 lg:px-8">
         <div className="w-full">
           <LensesSearchBar value={searchInput} onChange={setSearchInput} />
         </div>

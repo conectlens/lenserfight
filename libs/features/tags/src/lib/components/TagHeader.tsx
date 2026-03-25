@@ -11,7 +11,7 @@ interface TagHeaderProps {
 
 export const TagHeader: React.FC<TagHeaderProps> = ({ tag, totalItems }) => {
   return (
-    <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-100 dark:border-gray-700 p-8 mb-8 shadow-sm relative overflow-hidden transition-colors">
+    <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-100 dark:border-gray-700 p-8 mb-6 shadow-sm relative overflow-hidden transition-colors">
       {/* Decorative Background Element */}
       <div className="absolute top-0 right-0 -mr-16 -mt-16 w-64 h-64 bg-primary/10 rounded-full blur-3xl pointer-events-none"></div>
 
