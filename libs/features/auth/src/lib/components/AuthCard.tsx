@@ -28,10 +28,10 @@ export const AuthCard: React.FC<{
   }
 
   return (
-    <div className="min-h-screen flex flex-col md:justify-center items-center
-bg-[var(--background-default)]
-dark:bg-gray-900
-p-4 relative transition-colors duration-200">
+    <div className="min-h-screen flex flex-col justify-start md:justify-center items-center
+bg-[var(--cl-grey-50)]
+dark:bg-[var(--cl-dark-700)]
+p-4 md:p-6 relative transition-colors duration-200">
       {backButton && (
         <div className="w-full md:absolute md:top-6 md:left-6 z-10 mb-6 md:mb-0">{backButton}</div>
       )}
