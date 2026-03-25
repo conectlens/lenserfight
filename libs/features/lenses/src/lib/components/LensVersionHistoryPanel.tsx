@@ -1,5 +1,5 @@
 import React, { useState } from 'react'
-import { Plus, Check, Clock } from 'lucide-react'
+import { Plus, Check, Clock, Loader2 } from 'lucide-react'
 import { Button, Badge } from '@lenserfight/ui/components'
 import { ConfirmModal } from '@lenserfight/ui/modals'
 import { LensVersion } from '@lenserfight/types'
@@ -13,6 +13,9 @@ interface LensVersionHistoryPanelProps {
   isPublishing: boolean
   isOwner: boolean
   isLoading?: boolean
+  hasMore?: boolean
+  isFetchingMore?: boolean
+  sentinelRef?: (node: HTMLDivElement | null) => void
 }
 
 export const LensVersionHistoryPanel: React.FC<LensVersionHistoryPanelProps> = ({
@@ -24,6 +27,9 @@ export const LensVersionHistoryPanel: React.FC<LensVersionHistoryPanelProps> = (
   isPublishing,
   isOwner,
   isLoading,
+  hasMore,
+  isFetchingMore,
+  sentinelRef,
 }) => {
   const [publishTargetId, setPublishTargetId] = useState<string | null>(null)
 
@@ -129,6 +135,13 @@ export const LensVersionHistoryPanel: React.FC<LensVersionHistoryPanelProps> = (
               </button>
             )
           })}
+          {/* Infinite scroll sentinel */}
+          {hasMore && <div ref={sentinelRef} className="h-4" />}
+          {isFetchingMore && (
+            <div className="flex justify-center py-2">
+              <Loader2 size={14} className="animate-spin text-gray-400" />
+            </div>
+          )}
         </div>
       )}
 
