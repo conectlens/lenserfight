@@ -1,6 +1,7 @@
+import { LensVersionParam } from '@lenserfight/types'
 import { Copy, Check, Terminal, GitFork, Loader2 } from 'lucide-react'
 import React, { useState } from 'react'
-import { LensVersionParam } from '@lenserfight/types'
+
 import { LensContentReadonly } from './LensContentReadonly'
 
 interface LensBodyViewerProps {
@@ -34,14 +35,14 @@ export const LensBodyViewer: React.FC<LensBodyViewerProps> = ({ content, version
   return (
     <div className="w-full relative group">
       {/* Container */}
-      <div className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 shadow-sm overflow-hidden transition-all hover:shadow-md relative">
+      <div className="relative overflow-hidden rounded-3xl border border-surface-border bg-surface-base shadow-neu-1 transition-shadow hover:shadow-neu-2">
         {/* Floating Actions */}
-        <div className="absolute top-3 right-3 z-10 flex gap-2">
+        <div className="absolute top-3 right-3 flex gap-2">
           {onFork && (
             <button
               onClick={onFork}
               disabled={isForking}
-              className="relative p-2 rounded-lg transition-all duration-200 border shadow-sm group/fork bg-white dark:bg-gray-800 text-gray-500 dark:text-gray-400 border-gray-200 dark:border-gray-700 hover:text-gray-900 dark:hover:text-gray-200 hover:border-gray-300 dark:hover:border-gray-600 disabled:opacity-60 disabled:cursor-not-allowed"
+              className="group/fork relative rounded-2xl border border-surface-border bg-surface-base p-2 text-greyscale-500 shadow-sm transition-colors hover:border-status-blue hover:text-status-blue disabled:cursor-not-allowed disabled:opacity-60"
               aria-label="Fork lens"
             >
               {isForking ? <Loader2 size={16} className="animate-spin" /> : <GitFork size={16} />}
@@ -55,12 +56,11 @@ export const LensBodyViewer: React.FC<LensBodyViewerProps> = ({ content, version
           <button
             onClick={handleCopy}
             className={`
-                relative p-2 rounded-lg transition-all duration-200 border shadow-sm group/btn
-                ${
-                  copied
-                    ? 'bg-green-50 dark:bg-green-900/30 text-green-600 dark:text-green-400 border-green-200 dark:border-green-800'
-                    : 'bg-white dark:bg-gray-800 text-gray-500 dark:text-gray-400 border-gray-200 dark:border-gray-700 hover:text-gray-900 dark:hover:text-gray-200 hover:border-gray-300 dark:hover:border-gray-600'
-                }
+                group/btn relative rounded-2xl border p-2 shadow-sm transition-colors
+                ${copied
+                ? 'border-status-green/30 bg-status-green/10 text-status-green'
+                : 'border-surface-border bg-surface-base text-greyscale-500 hover:border-status-blue hover:text-status-blue'
+              }
               `}
             aria-label="Copy lens content"
           >
@@ -70,8 +70,8 @@ export const LensBodyViewer: React.FC<LensBodyViewerProps> = ({ content, version
             {!copied && (
               <span
                 className="
-                  absolute right-full top-1/2 -translate-y-1/2 mr-2 px-2 py-1
-                  bg-gray-900 text-white text-[10px] font-bold rounded opacity-0 pointer-events-none
+                absolute right-full top-1/2 -translate-y-1/2 mr-2 px-2 py-1
+                  bg-greyscale-900 text-white text-[10px] font-bold rounded opacity-0 pointer-events-none
                   group-hover/btn:opacity-100 transition-opacity duration-200 whitespace-nowrap
                 "
               >
@@ -82,8 +82,8 @@ export const LensBodyViewer: React.FC<LensBodyViewerProps> = ({ content, version
         </div>
 
         {/* Content */}
-        <div className="block p-6 pt-10 md:p-8 md:pt-8 overflow-y-auto max-h-[70vh] text-sm md:text-base font-mono leading-7 bg-white dark:bg-gray-900 scrollbar-thin scrollbar-thumb-gray-200 dark:scrollbar-thumb-gray-700 scrollbar-track-transparent">
-          <div className="absolute top-4 left-4 select-none opacity-30 pointer-events-none text-gray-400">
+        <div className="block max-h-[70vh] overflow-y-auto bg-surface-base p-6 pt-10 text-sm font-mono leading-7 text-greyscale-700 md:p-8 md:pt-8 scrollbar-thin scrollbar-track-transparent scrollbar-thumb-gray-200 dark:scrollbar-thumb-gray-700">
+          <div className="absolute left-4 top-4 select-none text-greyscale-400 opacity-30 pointer-events-none">
             <Terminal size={16} />
           </div>
           <div className="pl-6">
@@ -91,10 +91,10 @@ export const LensBodyViewer: React.FC<LensBodyViewerProps> = ({ content, version
               <LensContentReadonly
                 content={safeContent}
                 versionParams={versionParams}
-                className="text-gray-800 dark:text-gray-200 break-words"
+                className="break-words text-greyscale-700 dark:text-greyscale-200"
               />
             ) : (
-              <span className="text-gray-400">No lens content available.</span>
+              <span className="text-greyscale-400">No lens content available.</span>
             )}
           </div>
         </div>

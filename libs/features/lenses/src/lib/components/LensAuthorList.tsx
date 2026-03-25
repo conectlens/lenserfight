@@ -1,8 +1,8 @@
+import { LensViewModel } from '@lenserfight/types'
+import { Button } from '@lenserfight/ui/components'
 import { Plus } from 'lucide-react'
 import React from 'react'
 
-import { Button } from '@lenserfight/ui/components'
-import { LensViewModel } from '@lenserfight/types'
 
 import { LensRelatedCard } from './LensRelatedCard'
 
@@ -30,9 +30,9 @@ export const LensAuthorList: React.FC<LensAuthorListProps> = ({
   if (isLoading) {
     return (
       <div className="space-y-4 mb-8">
-        <div className="h-6 w-32 bg-gray-200 dark:bg-gray-700 rounded animate-pulse mb-4"></div>
+        <div className="h-6 w-32 animate-pulse rounded-full bg-surface-raised mb-4"></div>
         {[1, 2].map((i) => (
-          <div key={i} className="h-16 bg-gray-100 dark:bg-gray-800 rounded-lg animate-pulse" />
+          <div key={i} className="h-16 animate-pulse rounded-2xl bg-surface-raised" />
         ))}
       </div>
     )
@@ -51,7 +51,7 @@ export const LensAuthorList: React.FC<LensAuthorListProps> = ({
 
   return (
     <div className="mb-8">
-      <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-4">
+      <h3 className="mb-4 text-lg font-bold text-greyscale-900 dark:text-greyscale-0">
         More from {authorName}
       </h3>
       <div className="flex flex-col gap-3">
