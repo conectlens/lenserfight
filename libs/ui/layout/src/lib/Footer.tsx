@@ -6,6 +6,11 @@ import type { Theme } from '@lenserfight/ui/theme'
 
 interface FooterProps {
   isDashboard?: boolean
+  /** Base URL for policy links. When set, policy links open externally in a new tab.
+   *  Leave unset when rendering inside arena (lenserfight.com) — links stay internal.
+   *  Example: import.meta.env.VITE_ARENA_APP_URL ?? 'https://lenserfight.com'
+   */
+  policyBaseUrl?: string
 }
 
 const THEME_CYCLE: Theme[] = ['light', 'dark', 'system']
@@ -20,10 +25,20 @@ const THEME_LABELS: Record<Theme, string> = {
   system: 'Switch to light mode',
 }
 
-export const Footer: React.FC<FooterProps> = ({ isDashboard }) => {
+const POLICY_SLUGS = [
+  { slug: 'terms', label: 'Terms' },
+  { slug: 'privacy', label: 'Privacy' },
+  { slug: 'cookies', label: 'Cookies' },
+  { slug: 'acceptable-use', label: 'Acceptable Use' },
+]
+
+export const Footer: React.FC<FooterProps> = ({ isDashboard, policyBaseUrl }) => {
   const currentYear = new Date().getFullYear()
   const { themeMode, setTheme } = useTheme()
   const nextTheme = THEME_CYCLE[(THEME_CYCLE.indexOf(themeMode) + 1) % THEME_CYCLE.length]
+  const isExternal = !!policyBaseUrl
+  const policyHref = (slug: string) =>
+    isExternal ? `${policyBaseUrl}/policies/${slug}` : `/policies/${slug}`
 
   return (
     <footer className="w-full py-12 px-4 mt-auto border-t border-gray-100 bg-white text-gray-500 dark:bg-gray-900 dark:border-gray-700 dark:text-gray-400 transition-colors duration-200">
@@ -70,12 +85,17 @@ export const Footer: React.FC<FooterProps> = ({ isDashboard }) => {
             >
               Contact
             </Link>
-            <Link
-              to="/legal"
-              className="hover:text-gray-900 dark:hover:text-gray-200 transition-colors"
-            >
-              Legal
-            </Link>
+            {POLICY_SLUGS.map(({ slug, label }) => (
+              <a
+                key={slug}
+                href={policyHref(slug)}
+                target={isExternal ? '_blank' : undefined}
+                rel={isExternal ? 'noopener noreferrer' : undefined}
+                className="hover:text-gray-900 dark:hover:text-gray-200 transition-colors"
+              >
+                {label}
+              </a>
+            ))}
           </div>
 
           <div className="h-4 w-px bg-gray-200 dark:bg-gray-700 mx-2 hidden md:block"></div>

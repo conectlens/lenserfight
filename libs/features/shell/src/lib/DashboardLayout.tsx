@@ -144,7 +144,7 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) =>
             {children || <div className="text-gray-400 text-center mt-20">No content provided</div>}
           </div>
 
-          <Footer isDashboard={true} />
+          <Footer isDashboard={true} policyBaseUrl={import.meta.env.VITE_ARENA_APP_URL ?? 'https://lenserfight.com'} />
         </main>
       </div>
 
