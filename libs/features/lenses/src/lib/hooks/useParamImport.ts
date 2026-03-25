@@ -299,3 +299,84 @@ export function coerceCsvRow(
 
   return { values, errors }
 }
+
+// ─── Template Builders ────────────────────────────────────────────────────────
+
+function versionParamPlaceholder(param: LensVersionParam): unknown {
+  const type = param.tool.type
+  switch (type) {
+    case 'text':     return 'text value'
+    case 'textarea': return 'multiline text'
+    case 'json':     return {}
+    case 'integer':  return 0
+    case 'float':
+    case 'decimal':
+    case 'number':   return 0.0
+    case 'boolean':  return true
+    case 'date':     return '2024-01-15'
+    case 'datetime': return '2024-01-15T10:00:00'
+    case 'url':      return 'https://example.com'
+    case 'select':   return param.tool.options?.[0]?.value ?? 'option_value'
+    case 'file':     return undefined // skip
+    default:         return 'value'
+  }
+}
+
+function legacyParamPlaceholder(param: LensParam): unknown {
+  switch (param.type) {
+    case 'string':      return 'text value'
+    case 'number':      return 0
+    case 'boolean':     return true
+    case 'select':      return param.options?.[0]?.value ?? 'option_value'
+    case 'multiselect': return [param.options?.[0]?.value ?? 'option1']
+    case 'array':       return 'item1, item2'
+    default:            return 'value'
+  }
+}
+
+/**
+ * Builds a pretty-printed JSON template string from the active params.
+ * File-type params are omitted. Use as a textarea placeholder or copy-template target.
+ */
+export function buildJsonTemplate(
+  versionParams: LensVersionParam[],
+  legacyParams: LensParam[],
+): string {
+  const obj: Record<string, unknown> = {}
+  for (const p of versionParams) {
+    const val = versionParamPlaceholder(p)
+    if (val !== undefined) obj[p.label] = val
+  }
+  for (const p of legacyParams) {
+    const val = legacyParamPlaceholder(p)
+    if (val !== undefined) obj[p.name] = val
+  }
+  return JSON.stringify(obj, null, 2)
+}
+
+/**
+ * Builds a two-line CSV template string: header row + one data row.
+ * File-type params are omitted. Use as a textarea placeholder or copy-template target.
+ */
+export function buildCsvTemplate(
+  versionParams: LensVersionParam[],
+  legacyParams: LensParam[],
+): string {
+  const headers: string[] = []
+  const values: string[] = []
+
+  for (const p of versionParams) {
+    if (p.tool.type === 'file') continue
+    headers.push(p.label)
+    const val = versionParamPlaceholder(p)
+    values.push(val === null || val === undefined ? '' : typeof val === 'object' ? JSON.stringify(val) : String(val))
+  }
+  for (const p of legacyParams) {
+    headers.push(p.name)
+    const val = legacyParamPlaceholder(p)
+    values.push(val === null || val === undefined ? '' : Array.isArray(val) ? val.join('|') : String(val))
+  }
+
+  if (headers.length === 0) return ''
+  return `${headers.join(',')}\n${values.join(',')}`
+}
