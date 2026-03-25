@@ -11,7 +11,7 @@ import {
   CreateThreadDTO,
   ThreadAuthor,
 } from '@lenserfight/types'
-import { ApiResponseEnvelope, paginatedResponse } from 'contracts'
+import { ApiResponseEnvelope, paginatedResponse } from '@lenserfight/api/contracts'
 
 import { tagService } from './tagService'
 import { threadInteractionService } from './threadInteractionService'

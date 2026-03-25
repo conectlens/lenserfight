@@ -14,7 +14,7 @@ import {
   WalletProduct,
   WalletTransaction,
 } from '@lenserfight/types'
-import type { ApiResponseEnvelope } from 'contracts'
+import type { ApiResponseEnvelope } from '@lenserfight/api/contracts'
 import { apiFetch, unwrapEnvelope } from '../apiFetch'
 
 if (!import.meta.env.VITE_API_URL) {

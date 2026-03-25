@@ -1,6 +1,6 @@
 import { Feedback, SubmitFeedbackDTO } from '@lenserfight/types'
 import { supabase } from '@lenserfight/data/supabase'
-import { ApiResponseEnvelope, paginatedResponse } from 'contracts'
+import { ApiResponseEnvelope, paginatedResponse } from '@lenserfight/api/contracts'
 
 // --- Port (Interface) ---
 export interface FeedbackRepositoryPort {

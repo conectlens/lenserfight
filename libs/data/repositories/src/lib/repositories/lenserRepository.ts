@@ -21,7 +21,7 @@ import {
 import { LensRecord } from '@lenserfight/types'
 import { ThreadRecord } from '@lenserfight/types'
 import { supabase } from '@lenserfight/data/supabase'
-import { ApiResponseEnvelope, paginatedResponse } from 'contracts'
+import { ApiResponseEnvelope, paginatedResponse } from '@lenserfight/api/contracts'
 
 // --- Port (Interface) ---
 export interface LenserRepositoryPort {
