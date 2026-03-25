@@ -1,6 +1,6 @@
 import { ReactionRecord, TargetType, ReactionType, ReactionCount } from '@lenserfight/types'
 import { supabase } from '@lenserfight/data/supabase'
-import { ApiResponseEnvelope, paginatedResponse } from 'contracts'
+import { ApiResponseEnvelope, paginatedResponse } from '@lenserfight/api/contracts'
 
 export interface ReactionRepositoryPort {
   toggleReaction(

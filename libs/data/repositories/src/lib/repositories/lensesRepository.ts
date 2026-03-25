@@ -1,6 +1,6 @@
 import { supabase } from '@lenserfight/data/supabase'
 import { AuthorProfile, LensRecord, LensViewModel, PersonalLensFeedItem, CreateLensDTO, TagRecord, LensVersion, LensVersionParam, CreateLensVersionDTO, ForkNode, ToolRecord } from '@lenserfight/types'
-import { ApiResponseEnvelope, paginatedResponse } from 'contracts'
+import { ApiResponseEnvelope, paginatedResponse } from '@lenserfight/api/contracts'
 
 // --- Port (Interface) ---
 export interface LensesRepositoryPort {

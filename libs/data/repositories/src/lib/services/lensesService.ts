@@ -13,7 +13,7 @@ import {
   ForkNode,
   ToolRecord,
 } from '@lenserfight/types'
-import { ApiResponseEnvelope, paginatedResponse } from 'contracts'
+import { ApiResponseEnvelope, paginatedResponse } from '@lenserfight/api/contracts'
 
 import { reactionService } from './reactionService'
 import { tagService } from './tagService'
