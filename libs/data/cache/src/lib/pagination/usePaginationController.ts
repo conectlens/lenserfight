@@ -1,6 +1,6 @@
 import { useState, useCallback } from 'react'
 
-import type { ApiMeta } from 'contracts'
+import type { ApiMeta } from '@lenserfight/api/contracts'
 
 import type { IPaginationStrategy, PaginationMode } from './paginationStrategy'
 

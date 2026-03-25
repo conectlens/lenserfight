@@ -1,5 +1,5 @@
 import { normalizeJsonStringToSnakeCase, toCamelCaseKeys } from '@lenserfight/utils/text'
-import type { ApiResponseEnvelope } from 'contracts'
+import type { ApiResponseEnvelope } from '@lenserfight/api/contracts'
 
 export interface ApiFetchConfig {
   /**

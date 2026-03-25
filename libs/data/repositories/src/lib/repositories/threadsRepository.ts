@@ -1,7 +1,7 @@
 import { supabase } from '@lenserfight/data/supabase'
 import { AuthorProfile } from '@lenserfight/types'
 import { ThreadRecord, TagRecord, ThreadReplyRecord, CreateThreadDTO, ThreadFeedItem, PersonalFeedItem } from '@lenserfight/types'
-import { ApiResponseEnvelope, paginatedResponse } from 'contracts'
+import { ApiResponseEnvelope, paginatedResponse } from '@lenserfight/api/contracts'
 
 // --- Port (Interface) ---
 export interface ThreadsRepositoryPort {
