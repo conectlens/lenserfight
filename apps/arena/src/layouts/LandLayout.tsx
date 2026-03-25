@@ -17,14 +17,14 @@ export const LandLayout: React.FC = () => {
   const isActive = (to: string) => location.pathname === to || location.pathname.startsWith(to + '/')
 
   return (
-    <div className="min-h-screen flex flex-col bg-white dark:bg-gray-900">
+    <div className="min-h-screen flex flex-col bg-white">
       {/* Header */}
-      <header className="sticky top-0 z-50 w-full bg-white/80 dark:bg-gray-900/80 backdrop-blur-md border-b border-gray-100 dark:border-gray-800">
+      <header className="sticky top-0 z-50 w-full bg-white/80 backdrop-blur-md border-b border-gray-100">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between gap-4">
           {/* Logo */}
           <Link
             to="/"
-            className="flex items-center gap-2 font-black text-lg tracking-tight text-gray-900 dark:text-white hover:opacity-80 transition-opacity shrink-0"
+            className="flex items-center gap-2 font-black text-lg tracking-tight text-gray-900 hover:opacity-80 transition-opacity shrink-0"
           >
             LenserFight
           </Link>
@@ -37,8 +37,8 @@ export const LandLayout: React.FC = () => {
                 to={to}
                 className={`transition-colors ${
                   isActive(to)
-                    ? 'text-gray-900 dark:text-white'
-                    : 'text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
+                    ? 'text-gray-900'
+                    : 'text-gray-500 hover:text-gray-900'
                 }`}
               >
                 {label}
@@ -50,13 +50,13 @@ export const LandLayout: React.FC = () => {
           <div className="hidden md:flex items-center gap-3">
             <Link
               to="/get-started"
-              className="text-sm font-semibold text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white transition-colors"
+              className="text-sm font-semibold text-gray-600 hover:text-gray-900 transition-colors"
             >
               Get Started
             </Link>
             <Link
               to="/battles"
-              className="px-4 py-2 text-sm font-bold rounded-full bg-[#ffe170] text-gray-900 hover:bg-[#ffd940] transition-colors shadow-sm"
+              className="px-4 py-2 text-sm font-bold rounded-full bg-[var(--cl-yellow-500)] text-gray-900 hover:bg-[var(--cl-yellow-400)] transition-colors shadow-sm"
             >
               Try Arena
             </Link>
@@ -64,7 +64,7 @@ export const LandLayout: React.FC = () => {
 
           {/* Mobile toggle */}
           <button
-            className="md:hidden p-2 rounded-lg text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+            className="md:hidden p-2 rounded-lg text-gray-500 hover:bg-gray-100 transition-colors"
             onClick={() => setMobileOpen(prev => !prev)}
             aria-label="Toggle menu"
           >
@@ -74,29 +74,29 @@ export const LandLayout: React.FC = () => {
 
         {/* Mobile menu */}
         {mobileOpen && (
-          <div className="md:hidden border-t border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-900 px-4 py-4 space-y-3">
+          <div className="md:hidden border-t border-gray-100 bg-white px-4 py-4 space-y-3">
             {NAV_LINKS.map(({ to, label }) => (
               <Link
                 key={to}
                 to={to}
                 onClick={() => setMobileOpen(false)}
-                className="block text-sm font-medium text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white py-1"
+                className="block text-sm font-medium text-gray-700 hover:text-gray-900 py-1"
               >
                 {label}
               </Link>
             ))}
-            <div className="pt-3 border-t border-gray-100 dark:border-gray-800 flex flex-col gap-2">
+            <div className="pt-3 border-t border-gray-100 flex flex-col gap-2">
               <Link
                 to="/get-started"
                 onClick={() => setMobileOpen(false)}
-                className="text-sm font-semibold text-gray-600 dark:text-gray-300"
+                className="text-sm font-semibold text-gray-600"
               >
                 Get Started
               </Link>
               <Link
                 to="/battles"
                 onClick={() => setMobileOpen(false)}
-                className="px-4 py-2 text-sm font-bold rounded-full bg-[#ffe170] text-gray-900 text-center"
+                className="px-4 py-2 text-sm font-bold rounded-full bg-[var(--cl-yellow-500)] text-gray-900 text-center"
               >
                 Try Arena
               </Link>

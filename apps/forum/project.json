@@ -6,7 +6,8 @@
   "tags": [
     "layer:app",
     "scope:forum",
-    "surface:community"
+    "surface:community",
+    "surface:arena"
   ],
   "// targets": "to see all targets run: nx show project forum --forum",
   "targets": {

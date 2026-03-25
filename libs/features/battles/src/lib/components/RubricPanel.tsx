@@ -30,15 +30,15 @@ export function RubricPanel({ criteria, scorecardA = [], scorecardB = [] }: Rubr
   if (criteria.length === 0) return null
 
   return (
-    <div className="rounded-xl border border-gray-200 bg-white p-4">
-      <p className="text-sm font-semibold text-gray-700 mb-3">AI Rubric Check</p>
+    <div className="rounded-xl border border-[var(--cl-surface-border)] bg-[var(--cl-surface-base)] p-4">
+      <p className="text-sm font-semibold text-[var(--cl-surface-text)] mb-3">AI Rubric Check</p>
       <div className="space-y-2">
         {criteria.map((c) => {
           const entryA = scorecardA.find((s) => s.rubricCriterionId === c.id)
           const entryB = scorecardB.find((s) => s.rubricCriterionId === c.id)
           return (
             <div key={c.id} className="grid grid-cols-[1fr_2rem_2rem] gap-2 items-center text-sm">
-              <span className="text-gray-600 truncate">{c.name}</span>
+              <span className="text-[var(--cl-surface-text-muted)] truncate">{c.name}</span>
               <span className="text-center" title={entryA?.explanation}>
                 {RESULT_ICON[entryA?.result ?? 'skipped']}
               </span>
@@ -49,7 +49,7 @@ export function RubricPanel({ criteria, scorecardA = [], scorecardB = [] }: Rubr
           )
         })}
       </div>
-      <p className="text-xs text-gray-400 mt-3">
+      <p className="text-xs text-[var(--cl-surface-text-disabled)] mt-3">
         AI rubric checks are additive signals — human votes determine the winner.
       </p>
     </div>

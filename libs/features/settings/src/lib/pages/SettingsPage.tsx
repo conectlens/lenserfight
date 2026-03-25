@@ -307,7 +307,7 @@ export const SettingsPage: React.FC = () => {
           {/* External Link Style Tabs */}
           <div className="pt-4 border-t border-gray-100 dark:border-gray-800 mt-4 space-y-1">
             <a
-              href={`${import.meta.env.VITE_ARENA_APP_URL ?? 'https://lenserfight.com'}/policies/privacy`}
+              href={`${import.meta.env.VITE_WEB_BASE_URL ?? 'https://lenserfight.com'}/policies/privacy`}
               target="_blank"
               rel="noopener noreferrer"
               className="flex items-center justify-between w-full text-left px-4 py-2.5 rounded-lg text-sm font-medium text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-gray-200 transition-colors"
@@ -315,7 +315,7 @@ export const SettingsPage: React.FC = () => {
               Privacy & Security <ExternalLink size={14} />
             </a>
             <a
-              href={`${import.meta.env.VITE_ARENA_APP_URL ?? 'https://lenserfight.com'}/policies/terms`}
+              href={`${import.meta.env.VITE_WEB_BASE_URL ?? 'https://lenserfight.com'}/policies/terms`}
               target="_blank"
               rel="noopener noreferrer"
               className="flex items-center justify-between w-full text-left px-4 py-2.5 rounded-lg text-sm font-medium text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-gray-200 transition-colors"

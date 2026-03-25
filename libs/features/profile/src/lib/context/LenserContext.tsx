@@ -85,7 +85,7 @@ export const LenserProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   const isReady = !authLoading && !isLoading
 
   const redirectToOnboarding = useCallback((delayMs = 0) => {
-    const authAppUrl = import.meta.env.VITE_AUTH_APP_URL ?? 'https://auth.lenserfight.com'
+    const authAppUrl = import.meta.env.VITE_AUTH_BASE_URL ?? 'https://auth.lenserfight.com'
     const returnUrl = encodeURIComponent(window.location.href)
     const target = `${authAppUrl}/onboarding?return_url=${returnUrl}`
     if (delayMs > 0) setTimeout(() => window.location.replace(target), delayMs)

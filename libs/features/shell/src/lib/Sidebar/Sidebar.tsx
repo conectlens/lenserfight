@@ -16,6 +16,7 @@ import {
   Moon,
   Monitor,
   ShoppingBag,
+  Sword,
 } from 'lucide-react'
 import React, { useState, useRef, useEffect } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
@@ -255,6 +256,14 @@ export const Sidebar: React.FC<SidebarProps> = ({
             icon={<Trophy size={20} />}
             label="LenserBoard"
             isActive={isRouteActive(location.pathname, '/lenserboard')}
+            collapsed={!showLabels}
+          />
+
+          <SidebarItem
+            onClick={() => handleNavigation('/battles')}
+            icon={<Sword size={20} />}
+            label="Arena"
+            isActive={isRouteActive(location.pathname, '/battles')}
             collapsed={!showLabels}
           />
 

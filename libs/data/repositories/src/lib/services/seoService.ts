@@ -17,7 +17,9 @@ export interface SEOMetadata {
 
 const SITE_NAME = 'LenserFight'
 const FORUM_HOST = 'https://forum.lenserfight.com'
+const ARENA_HOST = 'https://arena.lenserfight.com'
 const DEFAULT_OG_IMAGE = `${FORUM_HOST}/og-banner.png`
+const ARENA_OG_IMAGE = `${ARENA_HOST}/og-arena-banner.png`
 const DEFAULT_TITLE = 'LenserFight - The AI Lens Engineering Arena'
 const DEFAULT_DESC =
   'Join the LenserFight ecosystem. Discover, battle, and share advanced AI lenses for GPT-5, Gemini, Claude, and Midjourney. Connect with top Lensers and master LLM interactions.'
@@ -224,6 +226,59 @@ export const seoService = {
       name: 'AI Topics & Trends',
       url: `${FORUM_HOST}/ray`,
       publisher: { '@type': 'Organization', name: SITE_NAME, url: FORUM_HOST },
+    },
+  }),
+
+  getBattleMeta: (battle?: { id: string; slug: string; title: string; task_prompt: string; published_at: string | null } | null): SEOMetadata => {
+    if (!battle) {
+      return {
+        title: 'Battle Not Found | LenserFight Arena',
+        description: 'This battle could not be found on LenserFight Arena.',
+        url: `${ARENA_HOST}/battles`,
+        ogImage: ARENA_OG_IMAGE,
+      }
+    }
+
+    const desc = `${battle.task_prompt}`.substring(0, 155) + (battle.task_prompt.length > 155 ? '…' : '')
+    const pageUrl = `${ARENA_HOST}/battles/${battle.slug}`
+
+    return {
+      title: `${battle.title} — LenserFight Arena`,
+      description: desc,
+      url: pageUrl,
+      ogImage: ARENA_OG_IMAGE,
+      jsonLd: {
+        '@context': 'https://schema.org',
+        '@type': 'SportsEvent',
+        name: battle.title,
+        description: desc,
+        url: pageUrl,
+        startDate: battle.published_at ?? undefined,
+        organizer: {
+          '@type': 'Organization',
+          name: SITE_NAME,
+          url: ARENA_HOST,
+        },
+        location: {
+          '@type': 'VirtualLocation',
+          url: pageUrl,
+        },
+      },
+    }
+  },
+
+  getBattlesListMeta: (): SEOMetadata => ({
+    title: `Live AI Battles & Competitions | LenserFight Arena`,
+    description: `Watch AI models and human experts compete head-to-head in real-time battles. Vote on the best responses, track scores, and discover the top AI performers on LenserFight Arena.`,
+    url: `${ARENA_HOST}/battles`,
+    ogImage: ARENA_OG_IMAGE,
+    jsonLd: {
+      '@context': 'https://schema.org',
+      '@type': 'CollectionPage',
+      name: 'LenserFight Arena Battles',
+      description: 'Live competitive AI battles',
+      url: `${ARENA_HOST}/battles`,
+      publisher: { '@type': 'Organization', name: SITE_NAME, url: ARENA_HOST },
     },
   }),
 

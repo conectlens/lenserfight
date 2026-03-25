@@ -133,7 +133,7 @@ export const HomePage: React.FC = () => {
 
   const handleCreateClick = () => {
     if (!isAuthenticated) {
-      const authAppUrl = import.meta.env.VITE_AUTH_APP_URL ?? 'https://auth.lenserfight.com'
+      const authAppUrl = import.meta.env.VITE_AUTH_BASE_URL ?? 'https://auth.lenserfight.com'
       window.location.href = `${authAppUrl}/login?return_url=${encodeURIComponent(window.location.href)}`
       return
     }
@@ -170,8 +170,8 @@ export const HomePage: React.FC = () => {
                   key={tab}
                   onClick={() => setFeedTab(tab)}
                   className={`px-4 py-2 rounded-lg text-sm font-semibold transition-all ${activeTab === tab
-                      ? 'bg-white dark:bg-gray-700 text-gray-900 dark:text-white shadow-sm'
-                      : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
+                    ? 'bg-white dark:bg-gray-700 text-gray-900 dark:text-white shadow-sm'
+                    : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
                     }`}
                 >
                   {tab === 'for_you' ? 'For You' : 'Trending'}
@@ -325,8 +325,8 @@ export const HomePage: React.FC = () => {
                           }
                         }}
                         className={`flex-shrink-0 px-3 py-1 rounded-full text-xs font-semibold border transition-colors ${isFollowed
-                            ? 'border-primary text-primary bg-primary/5 hover:bg-primary/10'
-                            : 'border-gray-200 dark:border-gray-600 text-gray-600 dark:text-gray-400 hover:border-primary hover:text-primary'
+                          ? 'border-primary text-primary bg-primary/5 hover:bg-primary/10'
+                          : 'border-gray-200 dark:border-gray-600 text-gray-600 dark:text-gray-400 hover:border-primary hover:text-primary'
                           }`}
                       >
                         {isFollowed ? 'Following' : 'Follow'}

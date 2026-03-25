@@ -85,7 +85,7 @@ export const LoginPage: React.FC = () => {
 
   const returnUrl =
     new URLSearchParams(window.location.search).get('return_url') ??
-    (import.meta.env.VITE_DEFAULT_RETURN_URL ?? 'https://forum.lenserfight.com')
+    (import.meta.env.VITE_WEB_BASE_URL ?? 'https://forum.lenserfight.com')
 
   const backButton = (
     <a

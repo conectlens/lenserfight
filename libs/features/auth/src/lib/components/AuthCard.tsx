@@ -1,5 +1,19 @@
-import React, { useState, useEffect } from 'react'
-import { Sun, Moon } from 'lucide-react'
+import React from 'react'
+import { Sun, Moon, Monitor } from 'lucide-react'
+import { useTheme } from '@lenserfight/ui/theme'
+import type { Theme } from '@lenserfight/ui/theme'
+
+const THEME_CYCLE: Theme[] = ['light', 'dark', 'system']
+const THEME_ICONS: Record<Theme, React.ReactNode> = {
+  light: <Sun size={18} />,
+  dark: <Moon size={18} />,
+  system: <Monitor size={18} />,
+}
+const THEME_LABELS: Record<Theme, string> = {
+  light: 'Dark',
+  dark: 'System',
+  system: 'Light',
+}
 
 export const AuthCard: React.FC<{
   children: React.ReactNode
@@ -7,25 +21,8 @@ export const AuthCard: React.FC<{
   subtitle?: string
   backButton?: React.ReactNode
 }> = ({ children, title, subtitle, backButton }) => {
-  const [isDark, setIsDark] = useState(false)
-
-  useEffect(() => {
-    const isDarkMode = document.documentElement.classList.contains('dark')
-    setIsDark(isDarkMode)
-  }, [])
-
-  const toggleTheme = () => {
-    const html = document.documentElement
-    if (html.classList.contains('dark')) {
-      html.classList.remove('dark')
-      localStorage.setItem('theme', 'light')
-      setIsDark(false)
-    } else {
-      html.classList.add('dark')
-      localStorage.setItem('theme', 'dark')
-      setIsDark(true)
-    }
-  }
+  const { themeMode, setTheme } = useTheme()
+  const nextTheme = THEME_CYCLE[(THEME_CYCLE.indexOf(themeMode) + 1) % THEME_CYCLE.length]
 
   return (
     <div className="min-h-screen flex flex-col justify-start md:justify-center items-center
@@ -65,21 +62,12 @@ p-4 md:p-6 relative transition-colors duration-200">
 
         <div className="mt-6 flex justify-center">
           <button
-            onClick={toggleTheme}
+            onClick={() => setTheme(nextTheme)}
             className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-full bg-[var(--surface-input)] dark:bg-gray-800 border border-[var(--border-default)] dark:border-gray-700 text-[var(--text-primary)] dark:text-gray-300 hover:bg-[#F3F4F6] dark:hover:bg-gray-700 transition-colors shadow-sm"
-            title={isDark ? 'Switch to light mode' : 'Switch to dark mode'}
+            title={`Switch to ${THEME_LABELS[themeMode]} mode`}
           >
-            {isDark ? (
-              <>
-                <Sun size={18} />
-                <span className="text-sm font-medium">Light</span>
-              </>
-            ) : (
-              <>
-                <Moon size={18} />
-                <span className="text-sm font-medium">Dark</span>
-              </>
-            )}
+            {THEME_ICONS[nextTheme]}
+            <span className="text-sm font-medium">{THEME_LABELS[themeMode]}</span>
           </button>
         </div>
       </div>

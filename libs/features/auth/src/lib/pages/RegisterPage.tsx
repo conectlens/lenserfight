@@ -1,5 +1,5 @@
 import { Turnstile } from '@marsidev/react-turnstile'
-import { ArrowLeft, Check, AlertCircle } from 'lucide-react'
+import { ArrowLeft, Check, AlertCircle, ExternalLink } from 'lucide-react'
 import React, { useState, useEffect } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 
@@ -148,13 +148,13 @@ export const RegisterPage: React.FC = () => {
       Privacy: 'privacy',
       Cookies: 'cookies',
     }
-    const arenaUrl = import.meta.env.VITE_ARENA_APP_URL ?? 'https://lenserfight.com'
+    const arenaUrl = import.meta.env.VITE_WEB_BASE_URL ?? 'https://lenserfight.com'
     window.open(`${arenaUrl}/policies/${slugMap[type]}`, '_blank', 'noopener,noreferrer')
   }
 
   const returnUrl =
     new URLSearchParams(window.location.search).get('return_url') ??
-    (import.meta.env.VITE_DEFAULT_RETURN_URL ?? 'https://forum.lenserfight.com')
+    (import.meta.env.VITE_WEB_BASE_URL ?? 'https://forum.lenserfight.com')
 
   const backButton = (
     <a
@@ -240,25 +240,25 @@ export const RegisterPage: React.FC = () => {
                 <button
                   type="button"
                   onClick={() => openPolicy('Terms')}
-                  className="font-semibold text-gray-900 dark:text-gray-200 hover:underline"
+                  className="inline-flex items-center gap-0.5 font-semibold text-gray-900 dark:text-gray-200 hover:underline"
                 >
-                  Terms and Conditions
+                  Terms and Conditions<ExternalLink size={11} />
                 </button>
                 ,{' '}
                 <button
                   type="button"
                   onClick={() => openPolicy('Privacy')}
-                  className="font-semibold text-gray-900 dark:text-gray-200 hover:underline"
+                  className="inline-flex items-center gap-0.5 font-semibold text-gray-900 dark:text-gray-200 hover:underline"
                 >
-                  Privacy Policy
+                  Privacy Policy<ExternalLink size={11} />
                 </button>{' '}
                 and{' '}
                 <button
                   type="button"
                   onClick={() => openPolicy('Cookies')}
-                  className="font-semibold text-gray-900 dark:text-gray-200 hover:underline"
+                  className="inline-flex items-center gap-0.5 font-semibold text-gray-900 dark:text-gray-200 hover:underline"
                 >
-                  Cookie Policy
+                  Cookie Policy<ExternalLink size={11} />
                 </button>
                 .
               </div>

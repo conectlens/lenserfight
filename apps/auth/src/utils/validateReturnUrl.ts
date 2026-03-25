@@ -28,7 +28,7 @@ const LOCAL_PROXY_ORIGINS = [
 const ALLOWED_ORIGINS = [...PROD_ORIGINS, ...LOCAL_DIRECT_ORIGINS, ...LOCAL_PROXY_ORIGINS]
 
 export const DEFAULT_RETURN_URL =
-  import.meta.env.VITE_DEFAULT_RETURN_URL ?? 'https://forum.lenserfight.com'
+  import.meta.env.VITE_WEB_BASE_URL ?? 'https://forum.lenserfight.com'
 
 export function sanitizeReturnUrl(url: string | null | undefined): string {
   if (!url) return DEFAULT_RETURN_URL
