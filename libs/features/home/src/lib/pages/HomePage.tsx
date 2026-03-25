@@ -33,6 +33,7 @@ import {
 import { useLenser } from '@lenserfight/features/profile'
 import { CreateLenserProfileModal } from '@lenserfight/features/onboarding'
 import { CreateThreadModal } from '@lenserfight/features/threads'
+import { buildAuthReturnUrl } from '@lenserfight/utils/dom'
 import { ThreadsList } from '../components/ThreadsList'
 
 export const HomePage: React.FC = () => {
@@ -134,7 +135,7 @@ export const HomePage: React.FC = () => {
   const handleCreateClick = () => {
     if (!isAuthenticated) {
       const authAppUrl = import.meta.env.VITE_AUTH_BASE_URL ?? 'https://auth.lenserfight.com'
-      window.location.href = `${authAppUrl}/login?return_url=${encodeURIComponent(window.location.href)}`
+      window.location.href = `${authAppUrl}/login?return_url=${encodeURIComponent(buildAuthReturnUrl(window.location.href))}`
       return
     }
     if (!hasLenser) return setIsProfileModalOpen(true)

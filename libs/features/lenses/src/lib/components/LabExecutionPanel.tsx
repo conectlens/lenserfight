@@ -1,21 +1,23 @@
-import React, { useState } from 'react'
-import { Loader2, Play, Square } from 'lucide-react'
-import { Button } from '@lenserfight/ui/components'
 import { AIProvider, AIProviderModel, LensParam, FundingSource, UserApiKey, WalletBalance, LensVersionParam } from '@lenserfight/types'
+import { Button } from '@lenserfight/ui/components'
+import { Loader2, Play, Square } from 'lucide-react'
+import React, { useState } from 'react'
+
 import { TriggerLabExecutionDTO } from '../hooks/useLabController'
 import { useLabParamForm } from '../hooks/useLabParamForm'
 import { useOllamaModels } from '../hooks/useOllamaModels'
-import { FundingSourceToggle } from './FundingSourceToggle'
-import { LabProviderSelector } from './LabProviderSelector'
-import { VersionParamFields } from './VersionParamFields'
-import { LegacyParamFields } from './LegacyParamFields'
-import { FreeformInput } from './FreeformInput'
-import { JsonImportDialog } from './JsonImportDialog'
+
 import { CsvImportDialog } from './CsvImportDialog'
+import { FreeformInput } from './FreeformInput'
+import { FundingSourceToggle } from './FundingSourceToggle'
+import { JsonImportDialog } from './JsonImportDialog'
+import { LabProviderSelector } from './LabProviderSelector'
+import { LegacyParamFields } from './LegacyParamFields'
+import { VersionParamFields } from './VersionParamFields'
+
 import type { LocalKeyMeta } from '@lenserfight/types'
 
 interface LabExecutionPanelProps {
-  lensId: string
   lensContent: string
   providers: AIProvider[]
   isLoadingProviders: boolean
@@ -25,7 +27,6 @@ interface LabExecutionPanelProps {
   selectedModelKey: string
   onProviderChange: (key: string) => void
   onModelChange: (key: string) => void
-  onTrigger: (dto: TriggerLabExecutionDTO) => void
   onTriggerStream: (dto: TriggerLabExecutionDTO) => void
   isTriggeringExecution: boolean
   isStreaming: boolean
@@ -39,7 +40,6 @@ interface LabExecutionPanelProps {
   /** input_modalities from the selected AI model — used to gate file param types. */
   selectedModelInputModalities?: string[]
   /** Version id to pin execution to (from useVersionExecution). Passed to TriggerLabExecutionDTO. */
-  activeVersionId?: string | null
   /** True while version params are still loading (prevents freeform fallback flash). */
   isLoadingVersionParams?: boolean
   /** Upload a file for a file-type param. Returns the media_object_id. */
@@ -63,7 +63,6 @@ interface LabExecutionPanelProps {
 }
 
 export const LabExecutionPanel: React.FC<LabExecutionPanelProps> = ({
-  lensId: _lensId,
   lensContent,
   providers,
   isLoadingProviders,
@@ -73,7 +72,6 @@ export const LabExecutionPanel: React.FC<LabExecutionPanelProps> = ({
   selectedModelKey,
   onProviderChange,
   onModelChange,
-  onTrigger: _onTrigger,
   onTriggerStream,
   isTriggeringExecution,
   isStreaming,
@@ -82,7 +80,6 @@ export const LabExecutionPanel: React.FC<LabExecutionPanelProps> = ({
   params,
   versionParams,
   selectedModelInputModalities,
-  activeVersionId: _activeVersionId,
   isLoadingVersionParams,
   onFileParamUpload,
   fundingSource,
@@ -149,12 +146,12 @@ export const LabExecutionPanel: React.FC<LabExecutionPanelProps> = ({
             selectedModelInputModalities,
           })
         }
-        className="flex flex-col gap-4 p-4 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900"
+        className="flex flex-col gap-4 rounded-2xl border border-surface-border bg-surface-base p-4"
       >
         <div className="flex items-center justify-between">
-          <h4 className="text-sm font-semibold text-gray-800 dark:text-gray-100">Run Lens</h4>
+          <h4 className="text-sm font-semibold text-greyscale-900 dark:text-greyscale-50">Run Lens</h4>
           {(isTriggeringExecution || isStreaming) && (
-            <span className="flex items-center gap-1.5 text-xs text-gray-500 dark:text-gray-400">
+            <span className="flex items-center gap-1.5 text-xs text-greyscale-500 dark:text-greyscale-400">
               <Loader2 size={12} className="animate-spin" />
               {isConnecting ? 'Connecting…' : isStreaming ? 'Streaming…' : 'Running…'}
             </span>

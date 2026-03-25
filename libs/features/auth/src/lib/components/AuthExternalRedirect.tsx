@@ -1,5 +1,6 @@
 import { useEffect } from 'react'
 import { useLocation } from 'react-router-dom'
+import { buildAuthReturnUrl } from '../return-url'
 
 interface AuthExternalRedirectProps {
   to: string
@@ -15,11 +16,9 @@ export const AuthExternalRedirect = ({ to }: AuthExternalRedirectProps) => {
   const location = useLocation()
 
   useEffect(() => {
-    const isAuthPath = location.pathname.startsWith('/auth/')
-    const returnPath = isAuthPath
-      ? '/'
-      : location.pathname + location.search + location.hash
-    const returnUrl = encodeURIComponent(window.location.origin + returnPath)
+    const returnUrl = encodeURIComponent(
+      buildAuthReturnUrl(window.location.origin + location.pathname + location.search + location.hash)
+    )
     window.location.replace(`${to}?return_url=${returnUrl}`)
   }, [to, location])
 

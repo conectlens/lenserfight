@@ -5,6 +5,7 @@ import { queryKeys } from '@lenserfight/data/cache'
 import { lenserService } from '@lenserfight/data/repositories'
 import { useAuth, LENSER_CACHE_KEY } from '@lenserfight/features/auth'
 import { Lenser, CreateLenserDTO } from '@lenserfight/types'
+import { buildAuthReturnUrl } from '@lenserfight/utils/dom'
 import { storage } from '@lenserfight/utils/storage'
 
 interface CachedEntry<T> {
@@ -86,7 +87,7 @@ export const LenserProvider: React.FC<{ children: React.ReactNode }> = ({ childr
 
   const redirectToOnboarding = useCallback((delayMs = 0) => {
     const authAppUrl = import.meta.env.VITE_AUTH_BASE_URL ?? 'https://auth.lenserfight.com'
-    const returnUrl = encodeURIComponent(window.location.href)
+    const returnUrl = encodeURIComponent(buildAuthReturnUrl(window.location.href))
     const target = `${authAppUrl}/onboarding?return_url=${returnUrl}`
     if (delayMs > 0) setTimeout(() => window.location.replace(target), delayMs)
     else window.location.replace(target)

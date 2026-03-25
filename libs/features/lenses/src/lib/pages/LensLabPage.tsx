@@ -1,32 +1,32 @@
+import { lensesService, preferencesService } from '@lenserfight/data/repositories'
+import { useAuth } from '@lenserfight/features/auth'
+import { useReportContent } from '@lenserfight/features/home'
+import { CreateLenserProfileModal } from '@lenserfight/features/onboarding'
+import { useShareContext } from '@lenserfight/features/share'
+import { LenserPreferences } from '@lenserfight/types'
+import { ReportReasonEnum } from '@lenserfight/types'
+import { SEOHead } from '@lenserfight/ui/components'
+import { ConfirmModal } from '@lenserfight/ui/modals'
+import { useUI } from '@lenserfight/ui/providers'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { History, Lock, Loader2, Pencil, Trash2, Flag } from 'lucide-react'
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 
-import { ConfirmModal } from '@lenserfight/ui/modals'
-import { SEOHead } from '@lenserfight/ui/components'
-import { useAuth } from '@lenserfight/features/auth'
-import { useShareContext } from '@lenserfight/features/share'
-import { useUI } from '@lenserfight/ui/providers'
-import { lensesService, preferencesService } from '@lenserfight/data/repositories'
-import { LenserPreferences } from '@lenserfight/types'
-import { useReportContent } from '@lenserfight/features/home'
-import { ReportReasonEnum, REPORT_REASONS } from '@lenserfight/types'
-import { CreateLenserProfileModal } from '@lenserfight/features/onboarding'
 
 import { CreateLensModal } from '../components/CreateLensModal'
-import { LensBodyViewer } from '../components/LensBodyViewer'
-import { LensDetailHeader } from '../components/LensDetailHeader'
+import { LabArtifactViewer } from '../components/LabArtifactViewer'
 import { LabExecutionPanel } from '../components/LabExecutionPanel'
 import { LabExecutionTimeline } from '../components/LabExecutionTimeline'
-import { LabArtifactViewer } from '../components/LabArtifactViewer'
+import { LensBodyViewer } from '../components/LensBodyViewer'
+import { LensDetailHeader } from '../components/LensDetailHeader'
 import { useAuthenticatedLenser } from '../hooks/useAuthenticatedLenser'
 import { useCreateLens } from '../hooks/useCreateLens'
-import { useLensDetailController } from '../hooks/useLensDetailController'
-import { useLabController } from '../hooks/useLabController'
 import { useForkLens } from '../hooks/useForkLens'
-import { useLensVersions, useLensVersionDetail } from '../hooks/useLensVersions'
 import { useFundingSource } from '../hooks/useFundingSource'
+import { useLabController } from '../hooks/useLabController'
+import { useLensDetailController } from '../hooks/useLensDetailController'
+import { useLensVersions, useLensVersionDetail } from '../hooks/useLensVersions'
 import { useVersionExecution } from '../hooks/useVersionExecution'
 
 export const LensLabPage: React.FC = () => {
@@ -134,51 +134,46 @@ export const LensLabPage: React.FC = () => {
     isEditMode,
   } = useCreateLens()
 
-  useEffect(() => {
-    if (!lens) return
-    setPageTitle(lens.title)
-    setShareConfig({
-      title: lens.title,
-      resourceType: 'lens',
-      resourceId: lens.id,
-    })
-  }, [lens, setPageTitle, setShareConfig])
-
-  const ensureProfile = (): boolean => {
+  const ensureProfile = useCallback((): boolean => {
     if (!hasLenser) {
       setShowProfileModal(true)
       return false
     }
     return true
-  }
+  }, [hasLenser])
 
   const isOwner = !!(lenser && lens && lens.author.id === lenser.id)
 
-  const handleDeleteClick = (targetId: string) => {
+  const handleDeleteClick = useCallback((targetId: string) => {
     setDeleteTargetId(targetId)
     setIsDeleteModalOpen(true)
-  }
+  }, [])
 
-  const handleEditClick = (targetId?: string) => {
-    if (!ensureProfile()) return
-    const editId = targetId || lens?.id
-    if (editId && lenser) {
-      lensesService.getLensDetail(editId, lenser.id).then((detail) => {
-        if (detail) {
-          openCreateModal({
-            id: detail.id,
-            title: detail.title,
-            content: detail.content,
-            tags: detail.tags,
-            visibility: detail.visibility,
-          })
-        }
-      })
-    }
-  }
+  const handleEditClick = useCallback(
+    (targetId?: string) => {
+      if (!ensureProfile()) return
+      const editId = targetId || lens?.id
+      if (editId && lenser) {
+        lensesService.getLensDetail(editId, lenser.id).then((detail) => {
+          if (detail) {
+            openCreateModal({
+              id: detail.id,
+              title: detail.title,
+              content: detail.content,
+              tags: detail.tags,
+              visibility: detail.visibility,
+            })
+          }
+        })
+      }
+    },
+    [ensureProfile, lens?.id, lenser, openCreateModal],
+  )
 
   const pageActions = useMemo(() => {
-    if (isOwner && lens?.id) {
+    if (!lens?.id) return []
+
+    if (isOwner) {
       return [
         {
           label: 'Edit Lens',
@@ -193,7 +188,8 @@ export const LensLabPage: React.FC = () => {
         },
       ]
     }
-    if (!isOwner && lens?.id && hasLenser) {
+
+    if (hasLenser) {
       return [
         {
           label: 'Report Lens',
@@ -203,19 +199,45 @@ export const LensLabPage: React.FC = () => {
         },
       ]
     }
+
     return []
-  }, [isOwner, lens, hasLenser])
+  }, [handleDeleteClick, handleEditClick, hasLenser, isOwner, lens?.id])
 
   useEffect(() => {
     setPageActions(pageActions)
   }, [pageActions, setPageActions])
+
+  useEffect(() => {
+    return () => {
+      setPageActions([])
+      setPageTitle(null)
+      setShareConfig(null)
+    }
+  }, [setPageActions, setPageTitle, setShareConfig])
+
+  useEffect(() => {
+    if (!lens) {
+      setPageTitle(null)
+      setShareConfig(null)
+      return
+    }
+
+    setPageTitle(lens.title)
+    setShareConfig({
+      title: lens.title,
+      resourceType: 'lens',
+      resourceId: lens.id,
+    })
+  }, [lens, setPageTitle, setShareConfig])
 
   const handleCopy = async () => {
     if (!lens || !ensureProfile() || !lenser) return
     try {
       await navigator.clipboard.writeText(lens.content)
       await actions.copyLens()
-    } catch {}
+    } catch (error) {
+      void error
+    }
   }
 
   const handleSave = async () => {
@@ -321,11 +343,10 @@ export const LensLabPage: React.FC = () => {
               type="button"
               onClick={() => { setShowVersionPicker((v) => !v); setSelectedVersionId(null) }}
               title={showVersionPicker ? 'Hide version history' : 'Show version history'}
-              className={`flex items-center gap-1.5 px-2.5 py-1.5 text-xs rounded-lg border shadow-sm transition-all ${
-                showVersionPicker
-                  ? 'border-primary-200 dark:border-primary-800 bg-primary-50 dark:bg-primary-900/20 text-primary-600 dark:text-primary-400'
-                  : 'border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200 hover:border-gray-300 dark:hover:border-gray-600'
-              }`}
+              className={`flex items-center gap-1.5 px-2.5 py-1.5 text-xs rounded-lg border shadow-sm transition-all ${showVersionPicker
+                ? 'border-primary-200 dark:border-primary-800 bg-primary-50 dark:bg-primary-900/20 text-primary-600 dark:text-primary-400'
+                : 'border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200 hover:border-gray-300 dark:hover:border-gray-600'
+                }`}
             >
               <History size={13} />
               <span>
@@ -362,21 +383,19 @@ export const LensLabPage: React.FC = () => {
                         key={v.id}
                         type="button"
                         onClick={() => setSelectedVersionId(isSelected ? null : v.id)}
-                        className={`w-full text-left px-4 py-2.5 flex items-center gap-3 transition-colors ${
-                          isSelected
-                            ? 'bg-primary-50 dark:bg-primary-900/20 text-primary-700 dark:text-primary-300'
-                            : 'hover:bg-gray-50 dark:hover:bg-gray-800/60 text-gray-700 dark:text-gray-300'
-                        }`}
+                        className={`w-full text-left px-4 py-2.5 flex items-center gap-3 transition-colors ${isSelected
+                          ? 'bg-primary-50 dark:bg-primary-900/20 text-primary-700 dark:text-primary-300'
+                          : 'hover:bg-gray-50 dark:hover:bg-gray-800/60 text-gray-700 dark:text-gray-300'
+                          }`}
                       >
                         <span className="font-mono font-bold text-xs w-8 shrink-0">
                           v{v.versionNumber}
                         </span>
                         <span
-                          className={`text-[10px] px-1.5 py-0.5 rounded-full font-medium shrink-0 ${
-                            v.status === 'draft'
-                              ? 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300'
-                              : 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300'
-                          }`}
+                          className={`text-[10px] px-1.5 py-0.5 rounded-full font-medium shrink-0 ${v.status === 'draft'
+                            ? 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300'
+                            : 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300'
+                            }`}
                         >
                           {v.status}
                         </span>
@@ -411,7 +430,6 @@ export const LensLabPage: React.FC = () => {
 
         <div className="lg:col-span-5">
           <LabExecutionPanel
-            lensId={lens.id}
             lensContent={activeLensContent}
             providers={lab.providers}
             isLoadingProviders={lab.isLoadingProviders}
@@ -421,7 +439,6 @@ export const LensLabPage: React.FC = () => {
             selectedModelKey={lab.selectedModelKey}
             onProviderChange={lab.handleProviderChange}
             onModelChange={lab.setSelectedModelKey}
-            onTrigger={lab.triggerExecution}
             onTriggerStream={lab.triggerStream}
             isTriggeringExecution={lab.isTriggeringExecution}
             isConnecting={lab.streamState === 'loading'}
@@ -429,7 +446,6 @@ export const LensLabPage: React.FC = () => {
             onStop={lab.stopStream}
             versionParams={activeVersionParams}
             selectedModelInputModalities={selectedModelInputModalities}
-            activeVersionId={versionExecution.previewVersionId}
             fundingSource={funding.fundingSource}
             onFundingSourceChange={funding.setFundingSource}
             selectedKeyRefId={funding.selectedKeyRefId}

@@ -1,11 +1,11 @@
+import { ForkNode, LensDetailViewModel } from '@lenserfight/types'
+import { Avatar } from '@lenserfight/ui/components'
+import { TagBadge } from '@lenserfight/ui/components'
+import { formatCount } from '@lenserfight/utils/number'
 import { GitFork, Lock, Bookmark, Pencil } from 'lucide-react'
 import React from 'react'
 import { useNavigate } from 'react-router-dom'
 
-import { Avatar } from '@lenserfight/ui/components'
-import { TagBadge } from '@lenserfight/ui/components'
-import { ForkNode, LensDetailViewModel } from '@lenserfight/types'
-import { formatCount } from '@lenserfight/utils/number'
 
 interface LensDetailHeaderProps {
   lens: LensDetailViewModel
@@ -16,7 +16,6 @@ interface LensDetailHeaderProps {
   isSaving: boolean
   saveCount: number
   forkTree?: ForkNode[]
-  isLoadingForkTree?: boolean
 }
 
 export const LensDetailHeader: React.FC<LensDetailHeaderProps> = ({
@@ -28,7 +27,6 @@ export const LensDetailHeader: React.FC<LensDetailHeaderProps> = ({
   isSaving,
   saveCount,
   forkTree,
-  isLoadingForkTree: _isLoadingForkTree,
 }) => {
   const navigate = useNavigate()
   const formattedDate = new Date(lens.createdAt).toLocaleDateString('en-US', {
@@ -41,10 +39,10 @@ export const LensDetailHeader: React.FC<LensDetailHeaderProps> = ({
   const safeSaveCount = saveCount || 0
 
   return (
-    <div className="mb-6">
+    <div className="space-y-4">
       <div className="flex justify-between items-start gap-4">
         {/* Unified Title Hierarchy */}
-        <h1 className="text-2xl md:text-3xl font-bold text-gray-900 dark:text-white mb-4 tracking-tight leading-tight flex-1">
+        <h1 className="flex-1 text-2xl font-black leading-tight tracking-tight text-greyscale-900 dark:text-greyscale-0 md:text-3xl">
           {lens.title}
         </h1>
 
@@ -52,7 +50,7 @@ export const LensDetailHeader: React.FC<LensDetailHeaderProps> = ({
           {canEdit && onEdit && (
             <button
               onClick={onEdit}
-              className="group p-2.5 rounded-xl transition-all duration-200 flex-shrink-0 border bg-white dark:bg-gray-800 text-gray-400 border-gray-100 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-primary-700 dark:hover:text-primary-400 hover:border-primary/30"
+              className="group flex-shrink-0 rounded-2xl border border-surface-border bg-surface-base p-2.5 text-greyscale-500 transition-colors hover:border-status-blue hover:text-status-blue"
               aria-label="Edit lens"
               title="Edit lens"
             >
@@ -65,11 +63,11 @@ export const LensDetailHeader: React.FC<LensDetailHeaderProps> = ({
             onClick={onSave}
             disabled={isSaving}
             className={`
-              group relative p-2.5 rounded-xl transition-all duration-200 flex-shrink-0 border
+              group relative flex-shrink-0 rounded-2xl border p-2.5 transition-colors
               ${
                 isSaved
-                  ? 'bg-primary/10 text-primary-700 dark:text-primary-400 border-primary/20 hover:bg-primary/20'
-                  : 'bg-white dark:bg-gray-800 text-gray-400 border-gray-100 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-gray-600 dark:hover:text-gray-200 hover:border-gray-200 dark:hover:border-gray-600'
+                  ? 'border-primary-yellow-500/40 bg-primary-yellow-500/10 text-primary-yellow-800 dark:text-primary-yellow-400'
+                  : 'border-surface-border bg-surface-base text-greyscale-500 hover:border-status-blue hover:text-status-blue'
               }
             `}
             aria-label={isSaved ? 'Unsave lens' : 'Save lens'}
@@ -86,7 +84,7 @@ export const LensDetailHeader: React.FC<LensDetailHeaderProps> = ({
                 className={`
                 absolute -top-2 -right-2 min-w-[18px] h-[18px] flex items-center justify-center 
                 text-[10px] font-bold rounded-full border-2 border-white dark:border-gray-900 px-1 shadow-sm
-                ${isSaved ? 'bg-primary text-gray-900' : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300'}
+                ${isSaved ? 'bg-primary-yellow-500 text-greyscale-900' : 'bg-surface-raised text-greyscale-500 dark:text-greyscale-400'}
               `}
               >
                 {formatCount(safeSaveCount)}
@@ -97,7 +95,7 @@ export const LensDetailHeader: React.FC<LensDetailHeaderProps> = ({
       </div>
 
       {/* Metadata Row */}
-      <div className="flex flex-wrap items-center gap-y-3 text-sm text-gray-500 dark:text-gray-400">
+      <div className="flex flex-wrap items-center gap-y-3 text-sm text-greyscale-500 dark:text-greyscale-400">
         <div
           className="flex items-center gap-2 group cursor-pointer mr-4"
           onClick={() => navigate(`/lenser/${lens.author.handle}`)}
@@ -108,12 +106,12 @@ export const LensDetailHeader: React.FC<LensDetailHeaderProps> = ({
             size="sm"
             className="!w-6 !h-6"
           />
-          <span className="font-semibold text-gray-900 dark:text-gray-200 group-hover:text-primary-700 dark:group-hover:text-primary-400 transition-colors">
+          <span className="font-semibold text-greyscale-900 transition-colors group-hover:text-status-blue dark:text-greyscale-200">
             {lens.author.displayName}
           </span>
         </div>
 
-        <span className="text-gray-300 dark:text-gray-600 mr-4 hidden sm:inline">|</span>
+        <span className="mr-4 hidden text-greyscale-300 dark:text-greyscale-600 sm:inline">|</span>
 
         {hasTags && (
           <>
@@ -122,12 +120,12 @@ export const LensDetailHeader: React.FC<LensDetailHeaderProps> = ({
                 <TagBadge
                   key={tag.id}
                   label={tag.name}
-                  className="bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 font-medium px-2.5 py-0.5 text-xs"
+                  className="bg-surface-raised px-2.5 py-0.5 text-xs font-medium text-greyscale-700 dark:text-greyscale-300"
                   onClick={() => navigate(`/ray/${tag.slug}`)}
                 />
               ))}
             </div>
-            <span className="text-gray-300 dark:text-gray-600 mr-4 hidden sm:inline">|</span>
+            <span className="mr-4 hidden text-greyscale-300 dark:text-greyscale-600 sm:inline">|</span>
           </>
         )}
 
@@ -147,16 +145,16 @@ export const LensDetailHeader: React.FC<LensDetailHeaderProps> = ({
 
       {/* Fork breadcrumb — only shown for forked lenses */}
       {forkTree && forkTree.length > 0 && (
-        <div className="flex items-center flex-wrap gap-1.5 mt-2.5 text-xs text-gray-400 dark:text-gray-500">
+        <div className="flex flex-wrap items-center gap-1.5 text-xs text-greyscale-500 dark:text-greyscale-400">
           <GitFork size={12} className="shrink-0" />
           <span>Forked from</span>
           {forkTree.slice(0, 3).map((node, i) => (
             <React.Fragment key={node.forkedFromLensId}>
-              {i > 0 && <span className="text-gray-300 dark:text-gray-600">→</span>}
+              {i > 0 && <span className="text-greyscale-300 dark:text-greyscale-600">→</span>}
               <button
                 type="button"
                 onClick={() => navigate(`/lenses/${node.forkedFromLensId}`)}
-                className="flex items-center gap-1 hover:text-primary-600 dark:hover:text-primary-400 transition-colors"
+                className="flex items-center gap-1 transition-colors hover:text-status-blue"
               >
                 {node.forkedFromLenserAvatarUrl && (
                   <img
@@ -165,23 +163,21 @@ export const LensDetailHeader: React.FC<LensDetailHeaderProps> = ({
                     alt={node.forkedFromLenserHandle}
                   />
                 )}
-                <span className="font-medium text-gray-600 dark:text-gray-400 hover:text-primary-600 dark:hover:text-primary-400 transition-colors">
+                <span className="font-medium text-greyscale-600 transition-colors hover:text-status-blue dark:text-greyscale-400">
                   {node.forkedFromTitle}
                 </span>
                 {node.forkedFromVersionNumber != null && (
-                  <span className="font-mono text-[10px] px-1 py-0.5 rounded bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400 border border-gray-200 dark:border-gray-700">
+                  <span className="rounded border border-surface-border bg-surface-raised px-1 py-0.5 font-mono text-[10px] text-greyscale-500 dark:text-greyscale-400">
                     v{node.forkedFromVersionNumber}
                   </span>
                 )}
-                <span className="text-gray-400 dark:text-gray-500">
+                <span className="text-greyscale-400 dark:text-greyscale-500">
                   by {node.forkedFromLenserHandle}
                 </span>
               </button>
             </React.Fragment>
           ))}
-          {forkTree.length > 3 && (
-            <span className="text-gray-400 dark:text-gray-500">… +{forkTree.length - 3} more</span>
-          )}
+          {forkTree.length > 3 && <span className="text-greyscale-400 dark:text-greyscale-500">… +{forkTree.length - 3} more</span>}
         </div>
       )}
     </div>

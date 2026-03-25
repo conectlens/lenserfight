@@ -1,10 +1,10 @@
+import { LensViewModel } from '@lenserfight/types'
+import { ActionMenu } from '@lenserfight/ui/components'
+import { Avatar } from '@lenserfight/ui/components'
 import { Pencil, Trash2 } from 'lucide-react'
 import React from 'react'
 import { useNavigate } from 'react-router-dom'
 
-import { ActionMenu } from '@lenserfight/ui/components'
-import { Avatar } from '@lenserfight/ui/components'
-import { LensViewModel } from '@lenserfight/types'
 
 interface LensRelatedCardProps {
   lens: LensViewModel
@@ -46,7 +46,7 @@ export const LensRelatedCard: React.FC<LensRelatedCardProps> = ({
   return (
     <div
       onClick={() => onClick(lens.id)}
-      className="flex gap-4 items-center p-4 bg-white dark:bg-gray-800 rounded-xl border border-gray-100 dark:border-gray-700 shadow-sm hover:shadow-md transition-all duration-200 cursor-pointer group relative pr-10"
+      className="group relative flex cursor-pointer items-center gap-4 rounded-2xl border border-surface-border bg-surface-base p-4 pr-10 shadow-sm transition-colors hover:border-status-blue"
     >
       {!hideAuthor && (
         <div
@@ -59,14 +59,14 @@ export const LensRelatedCard: React.FC<LensRelatedCardProps> = ({
           <Avatar
             src={lens.author.avatarUrl}
             size="sm"
-            className="hover:opacity-80 transition-opacity"
+            className="transition-opacity hover:opacity-80"
           />
         </div>
       )}
 
       <div className="flex-1 min-w-0">
         <h4
-          className={`font-bold text-gray-900 dark:text-gray-100 group-hover:text-primary-600 dark:group-hover:text-primary-400 transition-colors line-clamp-2 ${hideAuthor ? 'text-base' : 'text-sm'}`}
+          className={`line-clamp-2 font-bold text-greyscale-900 transition-colors group-hover:text-status-blue dark:text-greyscale-0 ${hideAuthor ? 'text-base' : 'text-sm'}`}
         >
           {lens.title}
         </h4>
@@ -76,7 +76,7 @@ export const LensRelatedCard: React.FC<LensRelatedCardProps> = ({
               e.stopPropagation()
               navigate(`/lenser/${lens.author.handle}`)
             }}
-            className="text-xs text-gray-500 dark:text-gray-400 hover:underline hover:text-gray-700 dark:hover:text-gray-300 truncate mt-1"
+            className="mt-1 truncate text-xs text-greyscale-500 hover:underline hover:text-greyscale-700 dark:text-greyscale-400 dark:hover:text-greyscale-300"
           >
             by @{lens.author.handle}
           </p>

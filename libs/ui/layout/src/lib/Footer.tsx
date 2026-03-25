@@ -32,7 +32,7 @@ const POLICY_SLUGS = [
 
 const NAV_LINKS = [
   { to: '/about', label: 'About' },
-  { to: '/ecosystem', label: 'Ecosystem' },
+  { to: '/product', label: 'Product' },
   { to: '/contact', label: 'Contact' },
 ]
 

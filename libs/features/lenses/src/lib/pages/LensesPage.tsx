@@ -7,6 +7,7 @@ import { SEOHead } from '@lenserfight/ui/components'
 import { useAuth } from '@lenserfight/features/auth'
 import { useLensesFeed } from '@lenserfight/features/home'
 import { CreateLenserProfileModal } from '@lenserfight/features/onboarding'
+import { buildAuthReturnUrl } from '@lenserfight/utils/dom'
 import { CreateLensModal } from '../components/CreateLensModal'
 import { LensesGrid } from '../components/LensesGrid'
 import { LensesSearchBar } from '../components/LensesSearchBar'
@@ -107,7 +108,7 @@ export const LensesPage: React.FC = () => {
   const handleCreateClick = () => {
     if (!isAuthenticated) {
       const authAppUrl = import.meta.env.VITE_AUTH_BASE_URL ?? 'https://auth.lenserfight.com'
-      window.location.href = `${authAppUrl}/login?return_url=${encodeURIComponent(window.location.href)}`
+      window.location.href = `${authAppUrl}/login?return_url=${encodeURIComponent(buildAuthReturnUrl(window.location.href))}`
       return
     }
     if (!hasLenser) {

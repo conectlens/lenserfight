@@ -1,5 +1,6 @@
 import { User, AuthStateChangeCallback, UserMetadata } from '@lenserfight/types'
 import { supabase } from '@lenserfight/data/supabase'
+import { buildAuthReturnUrl } from '@lenserfight/utils/dom'
 
 // --- Port (Interface) ---
 export interface AuthRepositoryPort {
@@ -81,11 +82,13 @@ export class SupabaseAuthRepository implements AuthRepositoryPort {
   async signInWithOAuth(provider: 'google' | 'github' | 'azure'): Promise<void> {
     const authAppUrl = import.meta.env.VITE_AUTH_BASE_URL ?? window.location.origin
     // Preserve the originating page so /callback can redirect back after OAuth.
-    // Priority: explicit return_url query param → current full page URL.
+    // Priority: explicit return_url query param → current full page URL with any
+    // auth-only return_url hop removed.
     // Use sessionStorage (not localStorage) so stale return URLs don't persist
     // across unrelated browser sessions.
-    const returnUrl =
+    const returnUrl = buildAuthReturnUrl(
       new URLSearchParams(window.location.search).get('return_url') ?? window.location.href
+    )
     sessionStorage.setItem('auth_return_url', returnUrl)
     const { error } = await supabase.auth.signInWithOAuth({
       provider: provider,
