@@ -24,6 +24,18 @@ export const getSystemTheme = (): ResolvedTheme =>
 export const resolveTheme = (theme: Theme): ResolvedTheme =>
   theme === 'system' ? getSystemTheme() : theme
 
+const COOKIE_NAME = 'lf_theme'
+const COOKIE_DOMAIN = '.lenserfight.com'
+const COOKIE_MAX_AGE = 60 * 60 * 24 * 365 // 1 year
+
+const writeCookieTheme = (theme: Theme) => {
+  try {
+    document.cookie = `${COOKIE_NAME}=${theme}; domain=${COOKIE_DOMAIN}; path=/; max-age=${COOKIE_MAX_AGE}; SameSite=Lax`
+  } catch {
+    // ignore in environments where cookie write fails (e.g., SSR)
+  }
+}
+
 const applyToDOM = (theme: Theme) => {
   const resolved = resolveTheme(theme)
   const root = document.documentElement
@@ -129,6 +141,8 @@ export const themeController = {
     if (userId) {
       writeCache(userId, theme)
       repo.updateTheme(theme).catch(() => {})
+    } else {
+      writeCookieTheme(theme)
     }
   },
 

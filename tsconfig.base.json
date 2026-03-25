@@ -20,6 +20,7 @@
       "@lenserfight/features/generations": ["libs/features/generations/src/index.ts"],
       "@lenserfight/features/onboarding": ["libs/features/onboarding/src/index.ts"],
       "@lenserfight/features/lenses": ["libs/features/lenses/src/index.ts"],
+      "@lenserfight/features/battles": ["libs/features/battles/src/index.ts"],
       "@lenserfight/features/tags": ["libs/features/tags/src/index.ts"],
       "@lenserfight/utils/number": ["libs/utils/number/src/index.ts"],
       "@lenserfight/utils/dom": ["libs/utils/dom/src/index.ts"],

@@ -119,7 +119,7 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) =>
 
   const handleOpenProfileSetup = () => {
     if (!isAuthenticated) {
-      const authAppUrl = import.meta.env.VITE_AUTH_APP_URL ?? 'https://auth.lenserfight.com'
+      const authAppUrl = import.meta.env.VITE_AUTH_BASE_URL ?? 'https://auth.lenserfight.com'
       const returnUrl = encodeURIComponent(window.location.href)
       window.location.href = `${authAppUrl}/login?return_url=${returnUrl}`
       return
@@ -144,7 +144,7 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) =>
             {children || <div className="text-gray-400 text-center mt-20">No content provided</div>}
           </div>
 
-          <Footer isDashboard={true} policyBaseUrl={import.meta.env.VITE_ARENA_APP_URL ?? 'https://lenserfight.com'} />
+          <Footer isDashboard={true} navBaseUrl={import.meta.env.VITE_ARENA_URL ?? 'https://lenserfight.com'} />
         </main>
       </div>
 
