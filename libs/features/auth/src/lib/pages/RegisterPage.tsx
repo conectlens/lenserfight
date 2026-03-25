@@ -3,13 +3,13 @@ import { ArrowLeft, Check, AlertCircle, ExternalLink } from 'lucide-react'
 import React, { useState, useEffect } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 
-import { Button } from '@lenserfight/ui/components'
-import { LoadingOverlay } from '@lenserfight/ui/components'
 import { isMock, isLocal, LOCAL_SEED_CREDENTIALS, ENABLE_CAPTCHA, CAPTCHA_SITE_KEY } from '@lenserfight/utils/env'
 import { useAuth } from '@lenserfight/features/auth'
 import { useFormValidation } from '@lenserfight/utils/validation'
 import { isRequired, isEmail } from '@lenserfight/utils/validation'
 import { AuthCard } from '../components/AuthCard'
+import { AuthButton } from '../components/AuthButton'
+import { AuthLoadingOverlay } from '../components/AuthLoadingOverlay'
 import { InputField } from '../components/InputField'
 import { PasswordStrengthMeter } from '../components/PasswordStrengthMeter'
 
@@ -168,7 +168,7 @@ export const RegisterPage: React.FC = () => {
 
   return (
     <>
-      {isSuccess && <LoadingOverlay isSuccess message="Creating Account..." />}
+      {isSuccess && <AuthLoadingOverlay isSuccess message="Creating Account..." />}
 
       <AuthCard title="Create Account" subtitle="Join the community today" backButton={backButton}>
         <form onSubmit={handleSubmit} className="space-y-4" noValidate>
@@ -290,14 +290,14 @@ export const RegisterPage: React.FC = () => {
             </div>
           )}
 
-          <Button
+          <AuthButton
             type="submit"
             isLoading={loading}
             disabled={oauthLoading || isSuccess || (ENABLE_CAPTCHA && !captchaToken)}
             className="mt-4 py-3 text-base font-bold shadow-lg shadow-primary/20"
           >
             {isSuccess ? 'Signing Up...' : 'Sign Up'}
-          </Button>
+          </AuthButton>
         </form>
 
         <div className="relative my-8">

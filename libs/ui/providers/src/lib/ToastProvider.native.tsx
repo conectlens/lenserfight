@@ -8,9 +8,7 @@
  * Wrap your app root with <ToastProvider> alongside <NativeThemeProvider>.
  */
 import React, { createContext, useCallback, useContext, useRef, useState } from 'react'
-import { Animated, Modal, StyleSheet, View } from 'react-native'
-import { Text } from '@lenserfight/ui/primitives'
-import { useNativeTheme } from './NativeThemeContext'
+import { Animated, StyleSheet, Text, View } from 'react-native'
 
 export type ToastVariant = 'default' | 'success' | 'error' | 'warning'
 
@@ -59,7 +57,7 @@ const Toast: React.FC<{ item: ToastItem; onDone: (id: string) => void }> = ({
 
   return (
     <Animated.View style={[styles.toast, { backgroundColor: bg, opacity }]}>
-      <Text variant="bodyS" weight="medium" style={{ color: '#ffffff' }}>
+      <Text style={{ color: '#ffffff', fontWeight: '600' }}>
         {item.message}
       </Text>
     </Animated.View>

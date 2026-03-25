@@ -2,13 +2,13 @@ import { ArrowLeft, AlertCircle } from 'lucide-react'
 import React, { useState, useEffect } from 'react'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 
-import { Button } from '@lenserfight/ui/components'
-import { FormError } from '@lenserfight/ui/components'
 import { isMock } from '@lenserfight/utils/env'
 import { useAuth } from '@lenserfight/features/auth'
 import { useFormValidation } from '@lenserfight/utils/validation'
 import { isRequired, minLength } from '@lenserfight/utils/validation'
 import { AuthCard } from '../components/AuthCard'
+import { AuthButton } from '../components/AuthButton'
+import { AuthFormError } from '../components/AuthFormError'
 import { InputField } from '../components/InputField'
 import { PasswordStrengthMeter } from '../components/PasswordStrengthMeter'
 
@@ -102,7 +102,7 @@ export const ResetPasswordPage: React.FC = () => {
             new one.
           </p>
           <Link to="/forgot-password" className="w-full">
-            <Button>Request New Link</Button>
+            <AuthButton type="button">Request New Link</AuthButton>
           </Link>
         </div>
       </AuthCard>
@@ -138,7 +138,7 @@ export const ResetPasswordPage: React.FC = () => {
             }
           />
           <PasswordStrengthMeter password={formData.password} />
-          <FormError message={errors.password} />
+          <AuthFormError message={errors.password} />
         </div>
 
         <div>
@@ -153,16 +153,16 @@ export const ResetPasswordPage: React.FC = () => {
               errors.confirmPassword ? 'border-red-500 focus:border-red-500 focus:ring-red-200' : ''
             }
           />
-          <FormError message={errors.confirmPassword} />
+          <AuthFormError message={errors.confirmPassword} />
         </div>
 
         {apiError && (
           <div className="text-red-500 text-sm bg-red-50 p-3 rounded-lg">{apiError}</div>
         )}
 
-        <Button type="submit" isLoading={loading} className="mt-2 text-base font-semibold">
+        <AuthButton type="submit" isLoading={loading} className="mt-2 text-base font-semibold">
           Update Password
-        </Button>
+        </AuthButton>
       </form>
 
       <div className="mt-8 text-center text-sm text-gray-500 font-medium">

@@ -3,13 +3,13 @@ import { ArrowLeft } from 'lucide-react'
 import React, { useState } from 'react'
 import { Link } from 'react-router-dom'
 
-import { Button } from '@lenserfight/ui/components'
-import { FormError } from '@lenserfight/ui/components'
 import { isMock, ENABLE_CAPTCHA, CAPTCHA_SITE_KEY } from '@lenserfight/utils/env'
 import { useAuth } from '@lenserfight/features/auth'
 import { useFormValidation } from '@lenserfight/utils/validation'
 import { isRequired, isEmail } from '@lenserfight/utils/validation'
 import { AuthCard } from '../components/AuthCard'
+import { AuthButton } from '../components/AuthButton'
+import { AuthFormError } from '../components/AuthFormError'
 import { InputField } from '../components/InputField'
 
 export const ForgotPasswordPage: React.FC = () => {
@@ -88,7 +88,7 @@ export const ForgotPasswordPage: React.FC = () => {
             </div>
           )}
           <Link to="/auth/login">
-            <Button>Return to Sign In</Button>
+            <AuthButton type="button">Return to Sign In</AuthButton>
           </Link>
         </div>
       </AuthCard>
@@ -126,7 +126,7 @@ export const ForgotPasswordPage: React.FC = () => {
             onChange={handleChange}
             className={errors.email ? 'border-red-500 focus:border-red-500 focus:ring-red-200' : ''}
           />
-          <FormError message={errors.email} />
+          <AuthFormError message={errors.email} />
         </div>
 
         {ENABLE_CAPTCHA && (
@@ -139,14 +139,14 @@ export const ForgotPasswordPage: React.FC = () => {
           <div className="text-red-500 text-sm bg-red-50 p-3 rounded-lg">{apiError}</div>
         )}
 
-        <Button
+        <AuthButton
           type="submit"
           isLoading={loading}
           disabled={ENABLE_CAPTCHA && !captchaToken}
           className="mt-2 text-base font-semibold"
         >
           Send Reset Link
-        </Button>
+        </AuthButton>
       </form>
 
       <div className="mt-8 text-center text-sm text-gray-500 font-medium">

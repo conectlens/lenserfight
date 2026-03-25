@@ -1,3 +1,4 @@
+export * from './lib/apiFetch'
 export * from './lib/repositories'
 export * from './lib/repositories/analyticsRepository'
 export * from './lib/repositories/authRepository'
