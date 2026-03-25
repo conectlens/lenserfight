@@ -15,21 +15,10 @@ import {
   DashboardLayout,
   PublicLayout,
 } from '@lenserfight/features/shell'
-import {
-  AdminAnalytics,
-  AdminContacts,
-  AdminDesign,
-  AdminFeedbacks,
-  AdminLayout,
-  AdminUsers,
-  AdminWaitlist,
-  AdminWelcome,
-} from '@lenserfight/features/admin'
-
 import { HomePage } from '@lenserfight/features/home'
 import { LeaderboardPage } from '@lenserfight/features/leaderboard'
 import { LensersPage } from '@lenserfight/features/lensers'
-import { LenserProfilePage, LenserProvider, useLenser, PendingRequestsPage } from '@lenserfight/features/profile'
+import { LenserProfilePage, LenserProvider, PendingRequestsPage } from '@lenserfight/features/profile'
 import {
   LensLabPage,
   LensesPage,
@@ -45,7 +34,7 @@ import { ThreadDetailPage } from '@lenserfight/features/threads'
 import { WaitingListPage } from '@lenserfight/features/waiting-list'
 import { StorePage, WalletProvider } from '@lenserfight/features/store'
 import { useEffect } from 'react'
-import { Routes, Route, Navigate, Outlet, BrowserRouter, useLocation } from 'react-router-dom'
+import { Routes, Route, Navigate, BrowserRouter, useLocation } from 'react-router-dom'
 
 const AUTH_APP_URL = import.meta.env.VITE_AUTH_APP_URL ?? 'https://auth.lenserfight.com'
 
@@ -64,15 +53,6 @@ const ExternalRedirect = ({ to }: { to: string }) => {
     window.location.href = `${to}?return_url=${returnUrl}`
   }, [to, location])
   return null
-}
-
-// Protected Admin Guard
-const ProtectedAdminRoute = () => {
-  const { lenser, isLoading } = useLenser()
-
-  if (isLoading) return <div className="flex h-screen items-center justify-center">Loading...</div>
-  if (!lenser || !lenser.is_super_admin) return <Navigate to="/" replace />
-  return <Outlet />
 }
 
 
@@ -256,19 +236,6 @@ const App: React.FC = () => {
                                   </DashboardLayout>
                                 }
                               />
-
-                              {/* ADMIN ROUTES */}
-                              <Route element={<ProtectedAdminRoute />}>
-                                <Route path="/admin" element={<AdminLayout />}>
-                                  <Route index element={<AdminWelcome />} />
-                                  <Route path="analytics" element={<AdminAnalytics />} />
-                                  <Route path="users" element={<AdminUsers />} />
-                                  <Route path="design" element={<AdminDesign />} />
-                                  <Route path="feedbacks" element={<AdminFeedbacks />} />
-                                  <Route path="waitlist" element={<AdminWaitlist />} />
-                                  <Route path="contacts" element={<AdminContacts />} />
-                                </Route>
-                              </Route>
 
                               {/* Redirect old routes for backward compatibility/bookmarks */}
                               <Route path="/login" element={<Navigate to="/auth/login" replace />} />
