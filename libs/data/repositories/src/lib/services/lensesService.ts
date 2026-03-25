@@ -285,6 +285,10 @@ export const lensesService = {
     return lensesRepo.getVersions(lensId)
   },
 
+  getVersionsPaginated: async (lensId: string, limit: number, offset: number): Promise<LensVersion[]> => {
+    return lensesRepo.getVersionsPaginated(lensId, limit, offset)
+  },
+
   getVersionById: async (versionId: string): Promise<LensVersion | null> => {
     return lensesRepo.getVersionById(versionId)
   },
