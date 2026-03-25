@@ -145,7 +145,7 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) =>
             {children || <div className="text-gray-400 text-center mt-20">No content provided</div>}
           </div>
 
-          <Footer isDashboard={true} navBaseUrl={import.meta.env.VITE_ARENA_URL ?? 'https://lenserfight.com'} />
+          <Footer isDashboard={true} navBaseUrl={import.meta.env.VITE_WEB_BASE_URL ?? 'https://lenserfight.com'} />
         </main>
       </div>
 
