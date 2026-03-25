@@ -7,22 +7,29 @@ import { renderLens } from '@lenserfight/utils/text'
 import { useToast } from '@lenserfight/shared/error'
 import { useAIProviders, useAIModelsByProvider } from '@lenserfight/features/generations'
 import { useAuth } from '@lenserfight/features/auth'
+import { streamLocalProvider } from '../utils/localProviderStream'
 
 const PAGE_SIZE = 20
 
 export interface TriggerLabExecutionDTO {
-  providerKey: 'openai' | 'anthropic' | 'google'
+  providerKey: 'openai' | 'anthropic' | 'google' | 'mistral' | 'ollama'
   modelKey: string
   lensContent: string
   inputSnapshot: Record<string, any>
   params?: LensParam[]
   fundingSource?: FundingSource
   byokKeyRefId?: string
+  /** ID of a locally stored encrypted key; resolved by resolveLocalKey at stream time */
+  byokLocalKeyId?: string
 }
 
 export interface LabControllerOptions {
   preferredProviderKey?: string | null
   preferredModelKey?: string | null
+  /** Decrypts a locally stored key by ID — injected from useFundingSource */
+  resolveLocalKey?: (id: string) => Promise<string>
+  /** Gate provider list fetching (lazy load) */
+  providersEnabled?: boolean
 }
 
 export const useLabController = (lensId: string, isAuthenticated = false, options: LabControllerOptions = {}) => {
@@ -96,7 +103,9 @@ export const useLabController = (lensId: string, isAuthenticated = false, option
     }
   }, [preferredModelKey, selectedProviderKey]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  const { data: providers = [], isLoading: isLoadingProviders } = useAIProviders()
+  const { data: providers = [], isLoading: isLoadingProviders } = useAIProviders({
+    enabled: options.providersEnabled ?? true,
+  })
   const { data: providerModels = [], isLoading: isLoadingModels } = useAIModelsByProvider(
     selectedProviderKey || null
   )
@@ -180,26 +189,37 @@ export const useLabController = (lensId: string, isAuthenticated = false, option
       }
 
       const streamPromise =
-        dto.fundingSource === 'user_byok_cloud' && dto.byokKeyRefId
-          ? walletApiClient.streamWithByok(
-              {
-                key_ref_id: dto.byokKeyRefId,
+        dto.fundingSource === 'user_byok_local' && dto.byokLocalKeyId && options.resolveLocalKey
+          ? options.resolveLocalKey(dto.byokLocalKeyId).then((decryptedKey) =>
+              streamLocalProvider({
                 provider: dto.providerKey,
                 model: dto.modelKey,
                 messages: [{ role: 'user', content: resolvedContent }],
-              },
-              controller.signal,
-              callbacks,
+                decryptedKey,
+                signal: controller.signal,
+                callbacks,
+              }),
             )
-          : walletApiClient.streamWithWallet(
-              {
-                provider: dto.providerKey,
-                model: dto.modelKey,
-                messages: [{ role: 'user', content: resolvedContent }],
-              },
-              controller.signal,
-              callbacks,
-            )
+          : dto.fundingSource === 'user_byok_cloud' && dto.byokKeyRefId
+            ? walletApiClient.streamWithByok(
+                {
+                  key_ref_id: dto.byokKeyRefId,
+                  provider: dto.providerKey,
+                  model: dto.modelKey,
+                  messages: [{ role: 'user', content: resolvedContent }],
+                },
+                controller.signal,
+                callbacks,
+              )
+            : walletApiClient.streamWithWallet(
+                {
+                  provider: dto.providerKey,
+                  model: dto.modelKey,
+                  messages: [{ role: 'user', content: resolvedContent }],
+                },
+                controller.signal,
+                callbacks,
+              )
 
       streamPromise.catch((err: unknown) => {
           if (!isActive()) return

@@ -1,4 +1,4 @@
-import { ChevronDown, Check } from 'lucide-react'
+import { ChevronDown, Check, Loader2 } from 'lucide-react'
 import React, { useState, useRef, useEffect, useCallback } from 'react'
 import { createPortal } from 'react-dom'
 
@@ -16,6 +16,7 @@ interface SelectFieldProps {
   placeholder?: string
   error?: string
   disabled?: boolean
+  isLoading?: boolean
   className?: string
   required?: boolean
   dropdownClassName?: string
@@ -30,6 +31,7 @@ export const SelectField: React.FC<SelectFieldProps> = ({
   placeholder = 'Select...',
   error,
   disabled,
+  isLoading,
   className = '',
   required,
   dropdownClassName = '',
@@ -205,10 +207,14 @@ export const SelectField: React.FC<SelectFieldProps> = ({
             {selectedOption ? selectedOption.label : placeholder}
           </span>
         </span>
-        <ChevronDown
-          size={16}
-          className={`text-gray-400 transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`}
-        />
+        {isLoading ? (
+          <Loader2 size={16} className="text-gray-400 animate-spin" />
+        ) : (
+          <ChevronDown
+            size={16}
+            className={`text-gray-400 transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`}
+          />
+        )}
       </button>
 
       {isOpen &&
@@ -224,7 +230,15 @@ export const SelectField: React.FC<SelectFieldProps> = ({
             }}
           >
             <div className="p-1">
-              {options.map((option, index) => {
+              {isLoading ? (
+                <div className="flex justify-center py-4">
+                  <Loader2 size={18} className="animate-spin text-gray-400" />
+                </div>
+              ) : options.length === 0 ? (
+                <div className="px-3 py-3 text-sm text-gray-400 dark:text-gray-500 text-center">
+                  No options available
+                </div>
+              ) : options.map((option, index) => {
                 const isSelected = option.value === value
                 const isFocused = index === focusedIndex
                 return (
@@ -261,11 +275,6 @@ export const SelectField: React.FC<SelectFieldProps> = ({
                   </button>
                 )
               })}
-              {options.length === 0 && (
-                <div className="px-3 py-3 text-sm text-gray-400 dark:text-gray-500 text-center">
-                  No options available
-                </div>
-              )}
             </div>
           </div>,
           document.body
