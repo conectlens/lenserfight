@@ -7,6 +7,7 @@ import {
   AgentActionInput,
   AgentActionResponse,
 } from '@lenserfight/types'
+import { supabase } from '@lenserfight/data/supabase'
 import { SupabaseAgentsRepository, AgentProfileView } from '../repositories/agentsRepository'
 
 export type { AgentProfileView }
@@ -36,4 +37,16 @@ export const agentsService = {
     aiLenserId: string,
     policy: Partial<Omit<AgentPolicyRecord, 'id' | 'ai_lenser_id' | 'created_at' | 'updated_at'>>
   ): Promise<void> => agentsRepo.updatePolicy(aiLenserId, policy),
+
+  updateAgentProfile: async (
+    aiLenserId: string,
+    patch: { display_name?: string; bio?: string; avatar_url?: string }
+  ): Promise<void> => {
+    const { error } = await supabase
+      .schema('lensers')
+      .from('profiles')
+      .update(patch)
+      .eq('id', aiLenserId)
+    if (error) throw error
+  },
 }
