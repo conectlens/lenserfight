@@ -104,3 +104,31 @@ export interface Scorecard {
   result: ScorecardResult
   explanation?: string
 }
+
+export type ContenderAssignmentMode = 'manual' | 'auto_agent' | 'battle_required'
+
+export interface RuleSnapshotRecord {
+  id: string
+  battle_id: string
+  snapshot_hash: string
+  rules_json: Record<string, unknown>
+  created_at: string
+  created_by: string | null
+}
+
+export interface ContenderEntityMapRecord {
+  contender_id: string
+  profile_id: string | null
+  ai_lenser_id: string | null
+  group_id: string | null
+}
+
+export interface ContenderLensAssignmentRecord {
+  id: string
+  battle_id: string
+  contender_id: string
+  lens_id: string
+  version_id: string | null
+  assignment_mode: ContenderAssignmentMode
+  assigned_at: string
+}
