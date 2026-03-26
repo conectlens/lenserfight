@@ -1,26 +1,17 @@
-import React, { useState } from 'react'
+import React from 'react'
 import { Link } from 'react-router-dom'
 import { Bot, Plus, ArrowRight, Zap } from 'lucide-react'
-import {
-  CreateAgentModal,
-  useAgents,
-  useCreateAgent,
-} from '@lenserfight/features/agents'
+import { useAgents } from '@lenserfight/features/agents'
 import { Avatar, Button } from '@lenserfight/ui/components'
-import type { CreateAILenserResult } from '@lenserfight/types'
+import { useModalRouter } from '@lenserfight/ui/routing'
 
 interface AgentsTabProps {
   lenserId: string
 }
 
 export const AgentsTab: React.FC<AgentsTabProps> = ({ lenserId }) => {
-  const [showCreateModal, setShowCreateModal] = useState(false)
+  const { open } = useModalRouter()
   const { data: agents = [], isLoading } = useAgents(lenserId)
-  const { submit, isSubmitting } = useCreateAgent(lenserId)
-
-  const handleSuccess = (_result: CreateAILenserResult) => {
-    setShowCreateModal(false)
-  }
 
   return (
     <div>
@@ -30,7 +21,7 @@ export const AgentsTab: React.FC<AgentsTabProps> = ({ lenserId }) => {
         </h2>
         <Button
           variant="ghost"
-          onClick={() => setShowCreateModal(true)}
+          onClick={() => open('create-agent')}
           className="flex items-center gap-1.5 w-auto text-indigo-600 hover:text-indigo-700 dark:text-indigo-400"
         >
           <Plus size={15} />
@@ -60,7 +51,7 @@ export const AgentsTab: React.FC<AgentsTabProps> = ({ lenserId }) => {
             Create one to compete in battles autonomously.
           </p>
           <Button
-            onClick={() => setShowCreateModal(true)}
+            onClick={() => open('create-agent')}
             className="inline-flex items-center gap-2 w-auto"
           >
             <Plus size={14} />
@@ -108,14 +99,6 @@ export const AgentsTab: React.FC<AgentsTabProps> = ({ lenserId }) => {
           ))}
         </div>
       )}
-
-      <CreateAgentModal
-        isOpen={showCreateModal}
-        onClose={() => setShowCreateModal(false)}
-        onSuccess={handleSuccess}
-        ownerLenserId={lenserId}
-        onSubmit={submit}
-      />
     </div>
   )
 }

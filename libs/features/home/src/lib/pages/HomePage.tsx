@@ -31,7 +31,6 @@ import {
   useUnfollowLenser,
 } from '@lenserfight/features/home'
 import { useLenser } from '@lenserfight/features/profile'
-import { CreateLenserProfileModal } from '@lenserfight/features/onboarding'
 import { CreateThreadModal } from '@lenserfight/features/threads'
 import { buildAuthReturnUrl } from '@lenserfight/utils/dom'
 import { HomePromoSection } from '../components/HomePromoSection'
@@ -45,7 +44,6 @@ export const HomePage: React.FC = () => {
   const showForYou = isAuthenticated && hasLenser
 
   const [isCreateModalOpen, setIsCreateModalOpen] = React.useState(false)
-  const [isProfileModalOpen, setIsProfileModalOpen] = React.useState(false)
   const [feedTab, setFeedTab] = React.useState<'for_you' | 'trending'>('for_you')
   const activeTab = showForYou ? feedTab : 'trending'
 
@@ -139,7 +137,7 @@ export const HomePage: React.FC = () => {
       window.location.href = `${authAppUrl}/login?return_url=${encodeURIComponent(buildAuthReturnUrl(window.location.href))}`
       return
     }
-    if (!hasLenser) return setIsProfileModalOpen(true)
+    if (!hasLenser) return navigate('/onboarding', { state: { from: '/' } })
     setIsCreateModalOpen(true)
   }
 
@@ -428,9 +426,6 @@ export const HomePage: React.FC = () => {
         onSuccess={handleCreateSuccess}
       />
 
-      {isProfileModalOpen && (
-        <CreateLenserProfileModal onClose={() => setIsProfileModalOpen(false)} />
-      )}
     </div>
   )
 }
