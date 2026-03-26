@@ -140,6 +140,7 @@ export const ForgotPasswordPage: React.FC = () => {
 
         <Button
           type="submit"
+          fullWidth={true}
           isLoading={loading}
           disabled={ENABLE_CAPTCHA && !captchaToken}
           className="mt-2 text-base font-semibold"

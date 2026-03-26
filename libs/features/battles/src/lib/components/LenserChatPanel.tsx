@@ -39,7 +39,7 @@ export const LenserChatPanel: React.FC<LenserChatPanelProps> = ({
 
   return (
     <div
-      className={`flex-shrink-0 border-t border-greyscale-800 bg-gray-900 transition-all duration-300 ${
+      className={`flex-shrink-0 border-t border-surface-border bg-surface-sunken transition-all duration-300 ${
         collapsed ? 'h-10' : 'h-48'
       }`}
     >
@@ -47,7 +47,7 @@ export const LenserChatPanel: React.FC<LenserChatPanelProps> = ({
       <button
         type="button"
         onClick={onToggle}
-        className="w-full h-10 flex items-center gap-2 px-4 text-xs font-semibold text-greyscale-400 hover:text-greyscale-0 transition-colors"
+        className="w-full h-10 flex items-center gap-2 px-4 text-xs font-semibold text-surface-text-muted hover:text-surface-text transition-colors"
       >
         <MessageSquare size={13} />
         Lenser Chat
@@ -75,13 +75,13 @@ export const LenserChatPanel: React.FC<LenserChatPanelProps> = ({
 
           {/* Input */}
           {isLenser ? (
-            <div className="flex-shrink-0 flex items-center gap-2 px-3 py-2 border-t border-greyscale-800">
+            <div className="flex-shrink-0 flex items-center gap-2 px-3 py-2 border-t border-surface-border">
               <input
                 value={draft}
                 onChange={(e) => setDraft(e.target.value)}
                 onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSend() } }}
                 placeholder="Message lensers…"
-                className="flex-1 bg-transparent text-xs text-greyscale-0 placeholder:text-greyscale-600 outline-none"
+                className="flex-1 bg-transparent text-xs text-surface-text placeholder:text-surface-text-disabled outline-none"
               />
               <button
                 type="button"
@@ -93,7 +93,7 @@ export const LenserChatPanel: React.FC<LenserChatPanelProps> = ({
               </button>
             </div>
           ) : (
-            <div className="flex-shrink-0 px-3 py-2 border-t border-greyscale-800 text-[11px] text-greyscale-500">
+            <div className="flex-shrink-0 px-3 py-2 border-t border-surface-border text-[11px] text-surface-text-disabled">
               You need a Lenser profile to post here.
             </div>
           )}

@@ -81,7 +81,7 @@ export const ImmersiveArenaView: React.FC<ImmersiveArenaViewProps> = ({ slug, cu
 
   if (battleLoading) {
     return (
-      <div className="h-screen flex items-center justify-center bg-gray-800 text-greyscale-400 text-sm">
+      <div className="h-screen flex items-center justify-center bg-surface-base text-surface-text-muted text-sm">
         Loading battle…
       </div>
     )
@@ -89,7 +89,7 @@ export const ImmersiveArenaView: React.FC<ImmersiveArenaViewProps> = ({ slug, cu
 
   if (battleError || !battle) {
     return (
-      <div className="h-screen flex items-center justify-center bg-gray-800">
+      <div className="h-screen flex items-center justify-center bg-surface-base">
         <div className="text-center space-y-3">
           <p className="text-3xl">⚔️</p>
           <p className="text-sm font-semibold text-greyscale-300">
@@ -123,7 +123,7 @@ export const ImmersiveArenaView: React.FC<ImmersiveArenaViewProps> = ({ slug, cu
   )
 
   return (
-    <div className="h-screen overflow-hidden flex flex-col bg-gray-800 text-white">
+    <div className="h-screen overflow-hidden flex flex-col bg-surface-base text-surface-text">
       <BattleSEOHead battle={battle} />
 
       {/* Main content area */}

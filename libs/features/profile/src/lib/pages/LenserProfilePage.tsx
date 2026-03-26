@@ -26,7 +26,8 @@ import { CreateLensModal } from '@lenserfight/features/lenses'
 import { LensCard } from '@lenserfight/features/lenses'
 import { useCreateLens } from '@lenserfight/features/lenses'
 import { CreateThreadModal } from '@lenserfight/features/threads'
-import { AgentCard, CreateAgentModal, useCreateAgent } from '@lenserfight/features/agents'
+import { AgentCard } from '@lenserfight/features/agents'
+import { useModalRouter } from '@lenserfight/ui/routing'
 import { agentsService } from '@lenserfight/data/repositories'
 import { LenserActionsList } from '../components/LenserActionsList'
 import { LenserActivityHeatmap } from '../components/LenserActivityHeatmap'
@@ -150,7 +151,6 @@ export const LenserProfilePage: React.FC = () => {
   const [isThreadModalOpen, setIsThreadModalOpen] = useState(false)
   const [editingThread, setEditingThread] = useState<any>(null)
 
-  const [isAgentModalOpen, setIsAgentModalOpen] = useState(false)
 
   const [deleteTarget, setDeleteTarget] = useState<{
     id: string
@@ -165,7 +165,7 @@ export const LenserProfilePage: React.FC = () => {
     currentUser.handle.toLowerCase() === handle.toLowerCase()
   )
 
-  const { submit: submitCreateAgent, isSubmitting: isCreatingAgent } = useCreateAgent(currentUser?.id ?? '')
+  const { open: openModal } = useModalRouter()
 
   // Content visibility: 'public' = anyone, 'community' = authenticated only, 'private' = owner only
   const contentVisibility = viewedProfile?.content_visibility ?? 'public'
@@ -643,7 +643,7 @@ export const LenserProfilePage: React.FC = () => {
                     action={
                       isOwner && (
                         <Button
-                          onClick={() => setIsAgentModalOpen(true)}
+                          onClick={() => openModal('create-agent')}
                           className="!w-auto flex items-center gap-2"
                         >
                           <Plus size={16} /> Create Agent
@@ -696,17 +696,6 @@ export const LenserProfilePage: React.FC = () => {
         isLoading={isDeleting}
       />
 
-      {FEATURES.AGENTS && isOwner && currentUser && (
-        <CreateAgentModal
-          isOpen={isAgentModalOpen}
-          onClose={() => setIsAgentModalOpen(false)}
-          onSuccess={() => handleMutationSuccess('agents')}
-          ownerLenserId={currentUser.id}
-          onSubmit={(handle, displayName) =>
-            submitCreateAgent(handle, displayName)
-          }
-        />
-      )}
     </div>
   )
 }

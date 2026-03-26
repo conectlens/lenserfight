@@ -12,7 +12,6 @@ import { useShareContext } from '@lenserfight/features/share'
 import { useUI } from '@lenserfight/ui/providers'
 import { threadsService } from '@lenserfight/data/repositories'
 import { useReportContent } from '@lenserfight/features/home'
-import { CreateLenserProfileModal } from '@lenserfight/features/onboarding'
 import { buildAuthReturnUrl } from '@lenserfight/utils/dom'
 import { CreateThreadModal } from '../components/CreateThreadModal'
 import { ReplyComposer } from '../components/ReplyComposer'
@@ -32,7 +31,6 @@ export const ThreadDetailPage: React.FC = () => {
 
   const reportContent = useReportContent()
 
-  const [showProfileModal, setShowProfileModal] = useState(false)
   const [isEditModalOpen, setIsEditModalOpen] = useState(false)
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false)
   const [isDeleting, setIsDeleting] = useState(false)
@@ -106,7 +104,7 @@ export const ThreadDetailPage: React.FC = () => {
       return
     }
     if (!hasLenser) {
-      setShowProfileModal(true)
+      navigate('/onboarding', { state: { from: window.location.pathname } })
       return
     }
     toggleReaction()
@@ -119,7 +117,7 @@ export const ThreadDetailPage: React.FC = () => {
       return
     }
     if (!hasLenser) {
-      setShowProfileModal(true)
+      navigate('/onboarding', { state: { from: window.location.pathname } })
       return
     }
     toggleReplyReaction(replyId)
@@ -219,7 +217,6 @@ export const ThreadDetailPage: React.FC = () => {
         />
       </div>
 
-      {showProfileModal && <CreateLenserProfileModal onClose={() => setShowProfileModal(false)} />}
 
       {isEditModalOpen && (
         <CreateThreadModal

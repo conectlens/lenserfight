@@ -4,6 +4,7 @@ import React, { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 
 import { isMock, isLocal, LOCAL_SEED_CREDENTIALS, ENABLE_CAPTCHA, CAPTCHA_SITE_KEY } from '@lenserfight/utils/env'
+import { sanitizeReturnUrl } from '@lenserfight/utils/dom'
 import { useAuth } from '@lenserfight/features/auth'
 import { rememberMeStorage } from '@lenserfight/data/supabase'
 import { useFormValidation } from '@lenserfight/utils/validation'
@@ -83,9 +84,7 @@ export const LoginPage: React.FC = () => {
     }
   }
 
-  const returnUrl =
-    new URLSearchParams(window.location.search).get('return_url') ??
-    (import.meta.env.VITE_WEB_BASE_URL ?? 'https://forum.lenserfight.com')
+  const returnUrl = sanitizeReturnUrl(new URLSearchParams(window.location.search).get('return_url'))
 
   const backButton = (
     <a
@@ -185,6 +184,7 @@ export const LoginPage: React.FC = () => {
 
           <Button
             type="submit"
+            fullWidth={true}
             isLoading={isSubmitting}
             disabled={oauthLoading || isSuccess || (ENABLE_CAPTCHA && !captchaToken)}
             className="mt-4 py-3 text-base font-bold shadow-lg shadow-[rgba(40,123,255,0.2)]"

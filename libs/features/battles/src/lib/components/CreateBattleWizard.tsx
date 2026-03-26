@@ -1,8 +1,10 @@
 import { Badge, Button } from '@lenserfight/ui/components'
 import { battlesService } from '@lenserfight/data/repositories'
+import { useWizardStep } from '@lenserfight/ui/routing'
 import { AnimatePresence, motion } from 'framer-motion'
 import { ArrowLeft, ArrowRight, Check, Swords } from 'lucide-react'
-import React, { useState } from 'react'
+import React, { useEffect, useState } from 'react'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 
 import { BattleTypeSelector } from './BattleTypeSelector'
 import { ContenderInviteStep } from './ContenderInviteStep'
@@ -13,7 +15,6 @@ import { VoterEligibilitySelector } from './VoterEligibilitySelector'
 import type { AIHandicapConfig, BattleType, VoterEligibility } from '../types/battle.types'
 
 const STEPS = ['Basics', 'Battle type', 'Configuration', 'Contenders', 'Assign Lenses'] as const
-type Step = 0 | 1 | 2 | 3 | 4
 
 const DEFAULT_HANDICAP: AIHandicapConfig = {
   injected_delay_ms: 2000,
@@ -41,24 +42,33 @@ export interface CreateBattleWizardProps {
 /**
  * Self-contained battle creation wizard.
  *
+ * Step state is fully URL-driven via `?step=N`. The `battleId` for
+ * post-creation steps (3–4) is encoded as `?battleId=<uuid>` so the
+ * wizard survives a hard refresh.
+ *
  * Can be rendered:
  * - Inside a `ModalRoute` (Dialog wrapper provided externally)
  * - Directly as a full-page component via `CreateBattlePage`
  */
 export const CreateBattleWizard: React.FC<CreateBattleWizardProps> = ({ onSuccess, onClose }) => {
-  const [step, setStep] = useState<Step>(0)
+  const navigate = useNavigate()
+  const [searchParams, setSearchParams] = useSearchParams()
+  const { step, goToStep } = useWizardStep({ maxStep: 4 })
+
+  // Direction is animation-only — not URL state
   const [direction, setDirection] = useState(1)
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
+  // Form state (steps 0–2)
   const [title, setTitle] = useState('')
   const [taskPrompt, setTaskPrompt] = useState('')
   const [battleType, setBattleType] = useState<BattleType>('human_vs_human_open_votes')
   const [voterEligibility, setVoterEligibility] = useState<VoterEligibility>('open')
   const [handicap, setHandicap] = useState<AIHandicapConfig>(DEFAULT_HANDICAP)
 
-  // Created battle state — populated after step 2 completes
-  const [createdBattleId, setCreatedBattleId] = useState<string | null>(null)
+  // Post-creation state — battleId is the URL source of truth for recovery;
+  // createdBattleSlug is only needed at the final onSuccess() call
   const [createdBattleSlug, setCreatedBattleSlug] = useState<string | null>(null)
 
   // Contender IDs — populated after step 3 (invite) completes
@@ -67,11 +77,22 @@ export const CreateBattleWizard: React.FC<CreateBattleWizardProps> = ({ onSucces
   const [contenderBId, setContenderBId] = useState<string | undefined>()
   const [contenderBName, setContenderBName] = useState<string | undefined>()
 
+  // Read battleId from URL — this is the recovery source of truth for steps 3–4
+  const battleIdFromUrl = searchParams.get('battleId')
+
+  // Guard: if URL claims step >= 3 but there's no battleId, reset to step 0.
+  // This handles a hard refresh after clearing the URL or sharing a partial link.
+  useEffect(() => {
+    if (step >= 3 && !battleIdFromUrl) {
+      navigate('/battles/create', { replace: true })
+    }
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
+
   const showsHandicap = AI_BATTLE_TYPES.includes(battleType)
 
-  const go = (next: Step) => {
+  const go = (next: number) => {
     setDirection(next > step ? 1 : -1)
-    setStep(next)
+    goToStep(next)
   }
 
   const handleBattleTypeChange = (type: BattleType) => {
@@ -97,9 +118,18 @@ export const CreateBattleWizard: React.FC<CreateBattleWizardProps> = ({ onSucces
         voter_eligibility: voterEligibility,
         handicap: showsHandicap ? handicap : undefined,
       })
-      setCreatedBattleId(battle.id)
       setCreatedBattleSlug(battle.slug)
-      go(3)
+      setDirection(1)
+      // Encode both step and battleId atomically so refresh at step 3 recovers correctly
+      setSearchParams(
+        (prev) => {
+          const next = new URLSearchParams(prev)
+          next.set('step', '3')
+          next.set('battleId', battle.id)
+          return next
+        },
+        { replace: false }
+      )
     } catch (e) {
       setError((e as Error).message ?? 'Something went wrong. Please try again.')
     } finally {
@@ -198,7 +228,6 @@ export const CreateBattleWizard: React.FC<CreateBattleWizardProps> = ({ onSucces
                   Cancel
                 </Button>
                 <Button
-
                   onClick={() => go(1)}
                   disabled={!canAdvanceStep0}
                   className="gap-2 w-auto"
@@ -282,7 +311,6 @@ export const CreateBattleWizard: React.FC<CreateBattleWizardProps> = ({ onSucces
                   <ArrowLeft size={15} /> Back
                 </Button>
                 <Button
-
                   onClick={handleCreateBattle}
                   isLoading={submitting}
                   disabled={submitting}
@@ -295,9 +323,9 @@ export const CreateBattleWizard: React.FC<CreateBattleWizardProps> = ({ onSucces
           )}
 
           {/* Step 3: Invite contenders (post-creation) */}
-          {step === 3 && createdBattleId && (
+          {step === 3 && battleIdFromUrl && (
             <ContenderInviteStep
-              battleId={createdBattleId}
+              battleId={battleIdFromUrl}
               onDone={(aId, aName, bId, bName) => {
                 setContenderAId(aId)
                 setContenderAName(aName)
@@ -309,9 +337,9 @@ export const CreateBattleWizard: React.FC<CreateBattleWizardProps> = ({ onSucces
           )}
 
           {/* Step 4: Assign Lenses (optional) */}
-          {step === 4 && createdBattleId && (
+          {step === 4 && battleIdFromUrl && (
             <LensAssignmentStep
-              battleId={createdBattleId}
+              battleId={battleIdFromUrl}
               contenderAId={contenderAId}
               contenderAName={contenderAName}
               contenderBId={contenderBId}

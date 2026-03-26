@@ -47,7 +47,7 @@ export function ResultBanner({ winnerName, winnerSlot, voteA, voteB, drawCount =
         ))}
 
       <motion.div
-        className="rounded-3xl border border-greyscale-200 bg-surface-raised p-6 text-center shadow-neu-1 dark:border-greyscale-800"
+        className="rounded-3xl border border-surface-border bg-surface-raised p-6 text-center shadow-neu-1"
         initial={{ opacity: 0, y: 40 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.3, ease: [0, 0, 0.2, 1] }}
@@ -68,15 +68,15 @@ export function ResultBanner({ winnerName, winnerSlot, voteA, voteB, drawCount =
           )}
 
           {winnerSlot === 'draw' ? (
-            <p className="text-2xl font-black tracking-tight text-greyscale-900 dark:text-greyscale-50">
+            <p className="text-2xl font-black tracking-tight text-surface-text">
               The community split evenly.
             </p>
           ) : winnerName ? (
-            <p className="text-2xl font-black tracking-tight text-greyscale-900 dark:text-greyscale-50">
+            <p className="text-2xl font-black tracking-tight text-surface-text">
               {winnerName} wins the battle.
             </p>
           ) : (
-            <p className="text-xl font-semibold text-greyscale-500 dark:text-greyscale-400">Result pending</p>
+            <p className="text-xl font-semibold text-surface-text-muted">Result pending</p>
           )}
         </div>
 
@@ -84,7 +84,7 @@ export function ResultBanner({ winnerName, winnerSlot, voteA, voteB, drawCount =
           <ScoreBar scoreA={voteA} scoreB={voteB} labelA="A" labelB="B" />
         </div>
 
-        <div className="mt-3 flex items-center justify-between text-xs text-greyscale-500 dark:text-greyscale-400">
+        <div className="mt-3 flex items-center justify-between text-xs text-surface-text-muted">
           <span>{voteA} votes</span>
           {drawCount > 0 && <span>{drawCount} draws</span>}
           <span>{voteB} votes</span>

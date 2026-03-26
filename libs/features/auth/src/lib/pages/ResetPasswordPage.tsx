@@ -159,7 +159,7 @@ export const ResetPasswordPage: React.FC = () => {
           <div className="text-red-500 text-sm bg-red-50 p-3 rounded-lg">{apiError}</div>
         )}
 
-        <Button type="submit" isLoading={loading} className="mt-2 text-base font-semibold">
+        <Button type="submit" fullWidth={true} isLoading={loading} className="mt-2 text-base font-semibold">
           Update Password
         </Button>
       </form>

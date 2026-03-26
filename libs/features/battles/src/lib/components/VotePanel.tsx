@@ -50,7 +50,7 @@ export function VotePanel({ contenderA, contenderB, existingVote, onVote, disabl
     return (
       <div className="rounded-2xl border border-surface-border bg-surface-raised p-5 text-center space-y-2">
         <Badge color="yellow" variant="outline" className="mb-2">Restricted voting</Badge>
-        <p className="text-sm text-greyscale-600 dark:text-greyscale-400">
+        <p className="text-sm text-surface-text-muted">
           {ELIGIBILITY_MESSAGES[voterEligibility] ?? 'You are not eligible to vote in this battle.'}
         </p>
       </div>
@@ -85,13 +85,13 @@ export function VotePanel({ contenderA, contenderB, existingVote, onVote, disabl
         key={`voted-${shakeKey}`}
         animate={shakeKey > 0 ? { x: [-4, 4, -4, 4, 0] } : {}}
         transition={{ duration: 0.35 }}
-        className="rounded-2xl border border-surface-border bg-surface-raised p-4 text-center text-sm text-greyscale-600 dark:text-greyscale-400"
+        className="rounded-2xl border border-surface-border bg-surface-raised p-4 text-center text-sm text-surface-text-muted"
       >
         <Badge color="green" variant="outline" className="mb-3">
           Vote recorded
         </Badge>
         You voted for{' '}
-        <strong className="text-greyscale-900 dark:text-greyscale-50">
+        <strong className="text-surface-text">
           {existingVote === 'draw'
             ? 'Draw'
             : existingVote === 'contender_a'
@@ -113,12 +113,12 @@ export function VotePanel({ contenderA, contenderB, existingVote, onVote, disabl
         </Badge>
       )}
       <div className="flex items-center justify-between gap-3">
-        <p className="text-sm font-semibold text-greyscale-900 dark:text-greyscale-50">Cast your vote</p>
+        <p className="text-sm font-semibold text-surface-text">Cast your vote</p>
         <Badge color="blue" variant="outline">
           Primary signal
         </Badge>
       </div>
-      <p className="text-sm leading-7 text-greyscale-600 dark:text-greyscale-400">
+      <p className="text-sm leading-7 text-surface-text-muted">
         Pick the contender that answered the Lens better. Your rationale is optional and stays secondary.
       </p>
       <motion.div
@@ -142,8 +142,8 @@ export function VotePanel({ contenderA, contenderB, existingVote, onVote, disabl
             animate={selected === val ? { scale: [1, 1.05, 1] } : { scale: 1 }}
             transition={selected === val ? { duration: 0.25 } : {}}
             className={`rounded-2xl border px-3 py-3 text-sm font-semibold transition-colors ${selected === val
-                ? 'border-greyscale-900 bg-greyscale-900 text-greyscale-0 dark:border-greyscale-0 dark:bg-greyscale-0 dark:text-greyscale-900'
-                : 'border-surface-border bg-surface-base text-greyscale-700 hover:border-status-blue dark:text-greyscale-300'
+                ? 'border-surface-text bg-surface-text text-surface-base'
+                : 'border-surface-border bg-surface-base text-surface-text-muted hover:border-status-blue'
               }`}
             aria-pressed={selected === val}
           >
@@ -156,7 +156,7 @@ export function VotePanel({ contenderA, contenderB, existingVote, onVote, disabl
         value={rationale}
         onChange={(e) => setRationale(e.target.value)}
         rows={2}
-        className="w-full resize-none rounded-2xl border border-surface-border bg-surface-raised p-3 text-sm text-greyscale-900 outline-none transition-colors placeholder:text-greyscale-400 focus:border-status-blue dark:text-greyscale-50"
+        className="w-full resize-none rounded-2xl border border-surface-border bg-surface-raised p-3 text-sm text-surface-text outline-none transition-colors placeholder:text-surface-text-muted focus:border-status-blue"
       />
       <Button
 

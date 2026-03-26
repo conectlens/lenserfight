@@ -292,6 +292,7 @@ export const RegisterPage: React.FC = () => {
 
           <Button
             type="submit"
+            fullWidth={true}
             isLoading={loading}
             disabled={oauthLoading || isSuccess || (ENABLE_CAPTCHA && !captchaToken)}
             className="mt-4 py-3 text-base font-bold shadow-lg shadow-primary/20"

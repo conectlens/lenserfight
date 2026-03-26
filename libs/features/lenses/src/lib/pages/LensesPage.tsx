@@ -1,6 +1,5 @@
 import { useAuth } from '@lenserfight/features/auth'
 import { useLensesFeed } from '@lenserfight/features/home'
-import { CreateLenserProfileModal } from '@lenserfight/features/onboarding'
 import { Button } from '@lenserfight/ui/components'
 import { SEOHead } from '@lenserfight/ui/components'
 import { buildAuthReturnUrl } from '@lenserfight/utils/dom'
@@ -29,7 +28,6 @@ export const LensesPage: React.FC = () => {
 
   // Local state for search input — debounced into URL
   const [searchInput, setSearchInput] = useState(searchQuery)
-  const [showProfileModal, setShowProfileModal] = useState(false)
 
   useEffect(() => {
     const t = setTimeout(() => {
@@ -124,7 +122,7 @@ export const LensesPage: React.FC = () => {
       return
     }
     if (!hasLenser) {
-      setShowProfileModal(true)
+      navigate('/onboarding', { state: { from: '/lenses' } })
     } else {
       openModal()
     }
@@ -205,7 +203,6 @@ export const LensesPage: React.FC = () => {
         error={createError}
       />
 
-      {showProfileModal && <CreateLenserProfileModal onClose={() => setShowProfileModal(false)} />}
     </div>
   )
 }

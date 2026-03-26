@@ -30,7 +30,7 @@ export const ArenaCenterZone: React.FC<ArenaCenterZoneProps> = ({
   const { IdleAnimation } = renderer
 
   return (
-    <div className="w-56 flex-shrink-0 flex flex-col items-center justify-center border-r border-greyscale-800 bg-gray-800 px-4">
+    <div className="w-56 flex-shrink-0 flex flex-col items-center justify-center border-r border-surface-border bg-surface-raised px-4">
       <AnimatePresence mode="wait">
         {phase === 'idle' && (
           <motion.div key="idle" variants={phaseVariants} initial="initial" animate="animate" exit="exit" className="w-full">
@@ -39,10 +39,10 @@ export const ArenaCenterZone: React.FC<ArenaCenterZoneProps> = ({
         )}
         {phase === 'running' && (
           <motion.div key="running" variants={phaseVariants} initial="initial" animate="animate" exit="exit" className="w-full text-center">
-            <div className="text-greyscale-400 text-xs mb-2">AI scoring in progress…</div>
+            <div className="text-surface-text-muted text-xs mb-2">AI scoring in progress…</div>
             <div className="flex justify-center gap-1">
               {[0,1,2].map(i => (
-                <span key={i} className="inline-block h-2 w-2 rounded-full bg-greyscale-600 animate-bounce" style={{ animationDelay: `${i * 0.15}s` }} />
+                <span key={i} className="inline-block h-2 w-2 rounded-full bg-surface-border animate-bounce" style={{ animationDelay: `${i * 0.15}s` }} />
               ))}
             </div>
           </motion.div>

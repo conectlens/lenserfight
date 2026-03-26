@@ -57,7 +57,7 @@ export function buildAuthReturnUrl(currentUrl: string, fallback = DEFAULT_RETURN
     }
 
     parsed.searchParams.delete('return_url')
-    return parsed.toString()
+    return sanitizeReturnUrl(parsed.toString())
   } catch {
     return fallback
   }

@@ -50,24 +50,24 @@ export const ArenaContenderColumn: React.FC<ArenaContenderColumnProps> = ({
     !!contender
 
   return (
-    <div className="flex flex-col w-0 flex-1 min-w-0 border-r border-greyscale-800 last:border-r-0">
+    <div className="flex flex-col w-0 flex-1 min-w-0 border-r border-surface-border last:border-r-0">
       {/* Header */}
-      <div className="flex-shrink-0 h-12 flex items-center gap-2 px-4 border-b border-greyscale-800">
-        <div className="h-7 w-7 rounded-full bg-greyscale-800 flex items-center justify-center text-xs font-black text-greyscale-300">
+      <div className="flex-shrink-0 h-12 flex items-center gap-2 px-4 border-b border-surface-border">
+        <div className="h-7 w-7 rounded-full bg-surface-interactive flex items-center justify-center text-xs font-black text-surface-text-muted">
           {slot}
         </div>
-        <span className="text-sm font-semibold text-greyscale-0 truncate">
+        <span className="text-sm font-semibold text-surface-text truncate">
           {contender?.display_name ?? '—'}
         </span>
         {isCurrentUserContender && (
           <span className="ml-1 text-[10px] font-bold text-primary">You</span>
         )}
         {lensAssignment && (
-          <span className="rounded-full bg-greyscale-800 px-2 py-0.5 text-[10px] font-semibold text-greyscale-300 truncate max-w-[80px]">
+          <span className="rounded-full bg-surface-interactive px-2 py-0.5 text-[10px] font-semibold text-surface-text-muted truncate max-w-[80px]">
             lens
           </span>
         )}
-        <span className="ml-auto text-xs text-greyscale-400">
+        <span className="ml-auto text-xs text-surface-text-muted">
           {voteCount} vote{voteCount !== 1 ? 's' : ''}
         </span>
       </div>
@@ -85,14 +85,14 @@ export const ArenaContenderColumn: React.FC<ArenaContenderColumnProps> = ({
       </div>
 
       {/* Vote bar */}
-      <div className="flex-shrink-0 h-10 flex items-center px-4 border-t border-greyscale-800 gap-3">
-        <div className="flex-1 h-1.5 rounded-full bg-greyscale-800 overflow-hidden">
+      <div className="flex-shrink-0 h-10 flex items-center px-4 border-t border-surface-border gap-3">
+        <div className="flex-1 h-1.5 rounded-full bg-surface-interactive overflow-hidden">
           <div
             className="h-full rounded-full bg-primary transition-all duration-500"
             style={{ width: `${votePercent}%` }}
           />
         </div>
-        <span className="text-xs font-bold text-greyscale-300 w-10 text-right">{votePercent}%</span>
+        <span className="text-xs font-bold text-surface-text-muted w-10 text-right">{votePercent}%</span>
       </div>
     </div>
   )
