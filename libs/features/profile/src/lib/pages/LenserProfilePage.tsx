@@ -1,4 +1,4 @@
-import { FolderOpen, MessageSquare, Trophy, Activity, Plus } from 'lucide-react'
+import { FolderOpen, MessageSquare, Trophy, Activity, Plus, Bot } from 'lucide-react'
 import React, { useEffect, useState, useRef, useCallback, useMemo } from 'react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { useParams, useNavigate } from 'react-router-dom'
@@ -26,6 +26,8 @@ import { CreateLensModal } from '@lenserfight/features/lenses'
 import { LensCard } from '@lenserfight/features/lenses'
 import { useCreateLens } from '@lenserfight/features/lenses'
 import { CreateThreadModal } from '@lenserfight/features/threads'
+import { AgentCard, CreateAgentModal, useCreateAgent } from '@lenserfight/features/agents'
+import { agentsService } from '@lenserfight/data/repositories'
 import { LenserActionsList } from '../components/LenserActionsList'
 import { LenserActivityHeatmap } from '../components/LenserActivityHeatmap'
 import { LenserProfileHeader } from '../components/LenserProfileHeader'
@@ -35,7 +37,7 @@ import { RestrictedProfileShell } from '../components/RestrictedProfileShell'
 import { UnavailableProfile } from '../components/UnavailableProfile'
 import { OwnerRecoveryBanner } from '../components/OwnerRecoveryBanner'
 
-type TabType = 'actions' | 'lenses' | 'threads' | 'challenges'
+type TabType = 'actions' | 'lenses' | 'threads' | 'challenges' | 'agents'
 
 interface TabState {
   data: any[]
@@ -56,6 +58,7 @@ const TAB_MAP: Record<string, TabType> = {
   p: 'lenses',
   a: 'actions',
   c: 'challenges',
+  ag: 'agents',
 }
 
 const REVERSE_TAB_MAP: Record<string, string> = {
@@ -63,6 +66,7 @@ const REVERSE_TAB_MAP: Record<string, string> = {
   lenses: 'p',
   actions: 'a',
   challenges: 'c',
+  agents: 'ag',
 }
 
 const PAGE_SIZE = 9
@@ -122,6 +126,7 @@ export const LenserProfilePage: React.FC = () => {
     lenses: { ...INITIAL_TAB_STATE },
     actions: { ...INITIAL_TAB_STATE },
     challenges: { ...INITIAL_TAB_STATE },
+    agents: { ...INITIAL_TAB_STATE },
   })
 
   const [loadingTab, setLoadingTab] = useState(false)
@@ -145,6 +150,8 @@ export const LenserProfilePage: React.FC = () => {
   const [isThreadModalOpen, setIsThreadModalOpen] = useState(false)
   const [editingThread, setEditingThread] = useState<any>(null)
 
+  const [isAgentModalOpen, setIsAgentModalOpen] = useState(false)
+
   const [deleteTarget, setDeleteTarget] = useState<{
     id: string
     type: 'prompt' | 'thread'
@@ -157,6 +164,8 @@ export const LenserProfilePage: React.FC = () => {
     handle &&
     currentUser.handle.toLowerCase() === handle.toLowerCase()
   )
+
+  const { submit: submitCreateAgent, isSubmitting: isCreatingAgent } = useCreateAgent(currentUser?.id ?? '')
 
   // Content visibility: 'public' = anyone, 'community' = authenticated only, 'private' = owner only
   const contentVisibility = viewedProfile?.content_visibility ?? 'public'
@@ -173,6 +182,7 @@ export const LenserProfilePage: React.FC = () => {
       lenses: { ...INITIAL_TAB_STATE },
       actions: { ...INITIAL_TAB_STATE },
       challenges: { ...INITIAL_TAB_STATE },
+      agents: { ...INITIAL_TAB_STATE },
     })
   }, [handle])
 
@@ -232,6 +242,11 @@ export const LenserProfilePage: React.FC = () => {
             offset,
             PAGE_SIZE
           )
+          break
+        case 'agents':
+          if (pageNum === 0) {
+            newItems = await agentsService.getAgentsByOwner(viewedProfile.id)
+          }
           break
         case 'challenges':
           newItems = []
@@ -488,6 +503,7 @@ export const LenserProfilePage: React.FC = () => {
         isOwner={isOwner}
         onProfileUpdate={handleProfileUpdate}
         relationshipState={relationshipState}
+        onManageAgents={isOwner ? () => handleTabChange('agents') : undefined}
       />
 
       {stats && (
@@ -511,6 +527,7 @@ export const LenserProfilePage: React.FC = () => {
             activeTab={activeTab}
             onChange={handleTabChange}
             hideActions={!isOwner && !!viewedProfile?.hide_actions}
+            showAgents={isOwner}
           />
         </div>
 
@@ -610,6 +627,35 @@ export const LenserProfilePage: React.FC = () => {
             <EmptyState icon={Trophy} message="No challenge history available." />
           )}
 
+          {activeTab === 'agents' && FEATURES.AGENTS && (
+            <>
+              {items.length > 0 ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {items.map((agent) => (
+                    <AgentCard key={agent.id} agent={agent} isOwner={isOwner} />
+                  ))}
+                </div>
+              ) : (
+                !loadingTab && (
+                  <EmptyState
+                    icon={Bot}
+                    message="No AI Agents yet."
+                    action={
+                      isOwner && (
+                        <Button
+                          onClick={() => setIsAgentModalOpen(true)}
+                          className="!w-auto flex items-center gap-2"
+                        >
+                          <Plus size={16} /> Create Agent
+                        </Button>
+                      )
+                    }
+                  />
+                )
+              )}
+            </>
+          )}
+
           {loadingTab && (
             <div className="mt-6">
               <SkeletonLoader />
@@ -649,6 +695,18 @@ export const LenserProfilePage: React.FC = () => {
         confirmLabel="Delete"
         isLoading={isDeleting}
       />
+
+      {FEATURES.AGENTS && isOwner && currentUser && (
+        <CreateAgentModal
+          isOpen={isAgentModalOpen}
+          onClose={() => setIsAgentModalOpen(false)}
+          onSuccess={() => handleMutationSuccess('agents')}
+          ownerLenserId={currentUser.id}
+          onSubmit={(handle, displayName) =>
+            submitCreateAgent(handle, displayName)
+          }
+        />
+      )}
     </div>
   )
 }
