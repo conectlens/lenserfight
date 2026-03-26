@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { useQueryClient } from '@tanstack/react-query'
 import { CheckCircle2, Loader2 } from 'lucide-react'
 import { queryKeys } from '@lenserfight/data/cache'
-import { SEOHead } from '@lenserfight/ui/components'
+import { Button, SEOHead } from '@lenserfight/ui/components'
 import { useWallet } from '../context/WalletContext'
 
 /**
@@ -68,20 +68,21 @@ export const CheckoutSuccessView: React.FC = () => {
 
         {/* Actions */}
         <div className="flex flex-col sm:flex-row items-center justify-center gap-3 w-full">
-          <button
+          <Button
             type="button"
             onClick={() => navigate('/arena')}
-            className="w-full sm:w-auto px-6 py-2.5 rounded-xl bg-primary hover:bg-yellow-300 text-gray-900 text-sm font-semibold transition-colors"
+            className="w-full sm:w-auto px-6"
           >
             Start using AI
-          </button>
-          <button
+          </Button>
+          <Button
             type="button"
+            variant="secondary"
             onClick={() => navigate('/billing', { replace: true })}
-            className="w-full sm:w-auto px-6 py-2.5 rounded-xl bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-900 dark:text-white text-sm font-semibold transition-colors"
+            className="w-full sm:w-auto px-6"
           >
             Buy more credits
-          </button>
+          </Button>
         </div>
       </div>
     </div>

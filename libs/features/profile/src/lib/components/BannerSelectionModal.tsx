@@ -96,14 +96,15 @@ export const BannerSelectionModal: React.FC<BannerSelectionModalProps> = ({
       </div>
 
       <div className="flex flex-col sm:flex-row justify-between items-center gap-3 mt-4 pt-4 border-t border-gray-100 dark:border-gray-700">
-        <button
+        <Button
           type="button"
+          variant="danger"
           onClick={handleRemove}
-          className="text-red-500 text-sm font-medium hover:text-red-600 flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors w-full sm:w-auto justify-center sm:justify-start"
           title="Remove Banner"
+          className="flex items-center gap-2 w-full sm:w-auto justify-center sm:justify-start"
         >
           <Trash2 size={16} /> Remove
-        </button>
+        </Button>
 
         <div className="flex gap-2 w-full sm:w-auto">
           <Button

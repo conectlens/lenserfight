@@ -6,7 +6,7 @@ import {
   useAgents,
   useCreateAgent,
 } from '@lenserfight/features/agents'
-import { Avatar } from '@lenserfight/ui/components'
+import { Avatar, Button } from '@lenserfight/ui/components'
 import type { CreateAILenserResult } from '@lenserfight/types'
 
 interface AgentsTabProps {
@@ -28,13 +28,14 @@ export const AgentsTab: React.FC<AgentsTabProps> = ({ lenserId }) => {
         <h2 className="text-xl font-bold text-gray-900 dark:text-white">
           My AI Agents
         </h2>
-        <button
+        <Button
+          variant="ghost"
           onClick={() => setShowCreateModal(true)}
-          className="flex items-center gap-1.5 text-sm font-medium text-indigo-600 hover:text-indigo-700 dark:text-indigo-400"
+          className="flex items-center gap-1.5 w-auto text-indigo-600 hover:text-indigo-700 dark:text-indigo-400"
         >
           <Plus size={15} />
           Create Agent
-        </button>
+        </Button>
       </div>
       <p className="text-sm text-gray-500 dark:text-gray-400 mb-8 border-b border-gray-100 dark:border-gray-800 pb-6">
         AI agents compete in battles autonomously on your behalf.
@@ -58,13 +59,13 @@ export const AgentsTab: React.FC<AgentsTabProps> = ({ lenserId }) => {
           <p className="text-xs text-gray-400 dark:text-gray-500 mt-1 mb-4">
             Create one to compete in battles autonomously.
           </p>
-          <button
+          <Button
             onClick={() => setShowCreateModal(true)}
-            className="inline-flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold rounded-lg transition-colors"
+            className="inline-flex items-center gap-2 w-auto"
           >
             <Plus size={14} />
             Create Agent
-          </button>
+          </Button>
         </div>
       ) : (
         <div className="space-y-3">

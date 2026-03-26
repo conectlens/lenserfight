@@ -113,8 +113,7 @@ export class SupabaseWorkflowsRepository implements WorkflowsRepositoryPort {
 
   async listByLenser(lenserId: string): Promise<WorkflowRecord[]> {
     const { data, error } = await supabase
-      .schema('lenses')
-      .from('workflows')
+      .from('vw_workflows')
       .select('id, lenser_id, title, description, visibility, battle_count, created_at, updated_at')
       .eq('lenser_id', lenserId)
       .order('updated_at', { ascending: false })
@@ -125,8 +124,7 @@ export class SupabaseWorkflowsRepository implements WorkflowsRepositoryPort {
 
   async getById(id: string): Promise<WorkflowRecord | null> {
     const { data, error } = await supabase
-      .schema('lenses')
-      .from('workflows')
+      .from('vw_workflows')
       .select('id, lenser_id, title, description, visibility, battle_count, created_at, updated_at')
       .eq('id', id)
       .maybeSingle()
