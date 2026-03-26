@@ -22,6 +22,11 @@ export interface ModalRouteProps {
   fallback?: string
   /** Dialog maxWidth class. Defaults to 'max-w-2xl'. */
   maxWidth?: string
+  /**
+   * Whether clicking the backdrop (or pressing Escape) closes the dialog.
+   * Set to false for required flows like onboarding. Defaults to true.
+   */
+  dismissOnBackdrop?: boolean
   children: React.ReactNode
 }
 
@@ -49,6 +54,7 @@ export const ModalRoute: React.FC<ModalRouteProps> = ({
   accessCheck,
   fallback = '/not-authorized',
   maxWidth = 'max-w-2xl',
+  dismissOnBackdrop = true,
   children,
 }) => {
   const navigate = useNavigate()
@@ -63,9 +69,9 @@ export const ModalRoute: React.FC<ModalRouteProps> = ({
   return (
     <Dialog
       open
-      onClose={() => navigate(-1)}
+      onClose={dismissOnBackdrop ? () => navigate(-1) : undefined}
       maxWidth={maxWidth}
-      dismissOnBackdrop
+      dismissOnBackdrop={dismissOnBackdrop}
     >
       {children}
     </Dialog>

@@ -36,9 +36,10 @@ import {
   CreateBattlePage,
   CreateBattleWizard,
 } from '@lenserfight/features/battles'
-import { ModalRoute } from '@lenserfight/ui/routing'
+import { ModalRoute, ModalQueryDriven } from '@lenserfight/ui/routing'
 import { NotAuthorizedPage } from './NotAuthorizedPage'
-import { AgentDetailPage } from '@lenserfight/features/agents'
+import { AgentDetailPage, CreateAgentContent } from '@lenserfight/features/agents'
+import { CreateLenserProfileModal } from '@lenserfight/features/onboarding'
 import { BenchmarkSuitesPage, BenchmarkSuiteDetailPage } from '@lenserfight/features/benchmark'
 import { WorkflowsPage, WorkflowBuilderPage } from '@lenserfight/features/workflows'
 import { Routes, Route, Navigate, BrowserRouter, useNavigate, useParams } from 'react-router-dom'
@@ -68,6 +69,17 @@ const WorkflowBuilderPageRoute: React.FC = () => {
     />
   )
 }
+
+/**
+ * Onboarding wizard rendered as a route-based modal at /onboarding.
+ * Step state is URL-driven via ?step=N. Backdrop dismiss is disabled
+ * because profile creation is a required first-run flow.
+ */
+const OnboardingModal: React.FC = () => (
+  <ModalRoute maxWidth="max-w-xl sm:max-w-2xl" dismissOnBackdrop={false}>
+    <CreateLenserProfileModal />
+  </ModalRoute>
+)
 
 const CreateBattleModal: React.FC = () => {
   const navigate = useNavigate()
@@ -347,6 +359,9 @@ const App: React.FC = () => {
                                 }
                               />
 
+                              {/* Onboarding — route-based modal, step URL-driven */}
+                              <Route path="/onboarding" element={<OnboardingModal />} />
+
                               {/* Access control fallback */}
                               <Route
                                 path="/not-authorized"
@@ -373,6 +388,18 @@ const App: React.FC = () => {
                               <Route path="*" element={<Navigate to="/" replace />} />
                             </Routes>
                           </GlobalErrorRenderer>
+
+                          {/* Global query-driven modal for creating AI agents.
+                              Activated by ?modal=create-agent anywhere in the app. */}
+                          <ModalQueryDriven
+                            name="create-agent"
+                            accessCheck={({ isAuthenticated, hasLenser }) => isAuthenticated && hasLenser}
+                            maxWidth="max-w-md"
+                          >
+                            {({ step, goToStep, close }) => (
+                              <CreateAgentContent step={step} goToStep={goToStep} close={close} />
+                            )}
+                          </ModalQueryDriven>
                         </WalletProvider>
                       </BrowserRouter>
                     </ShareProvider>
