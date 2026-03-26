@@ -1,6 +1,8 @@
 import { SEOHead } from '@lenserfight/ui/components'
 import { AnimatePresence, motion } from 'framer-motion'
 import React, { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
+import { PlusCircle } from 'lucide-react'
 
 import { BattleCard } from '../components/BattleCard'
 import { useBattlesFeed } from '../hooks/useBattlesFeed'
@@ -39,6 +41,7 @@ const filterBtnClass = (active: boolean) =>
   }`
 
 export function BattlesFeedPage() {
+  const navigate = useNavigate()
   const [statusFilter, setStatusFilter] = useState<string>('all')
   const [typeFilter, setTypeFilter] = useState<BattleType | 'all'>('all')
   const { data: battles = [], isLoading } = useBattlesFeed(statusFilter)
@@ -53,6 +56,14 @@ export function BattlesFeedPage() {
       <div className="space-y-3 mb-6">
         <div className="flex items-center justify-between">
           <h1 className="text-2xl font-bold text-[var(--cl-surface-text)]">Battles</h1>
+          <button
+            onClick={() => navigate('/battles/create')}
+            className="flex items-center gap-2 bg-primary hover:bg-yellow-300 text-gray-900 font-semibold rounded-lg px-4 py-2 transition-colors"
+            title="New Battle"
+          >
+            <PlusCircle size={18} />
+            <span>New Battle</span>
+          </button>
         </div>
         <div className="flex gap-2 flex-wrap">
           {STATUS_FILTERS.map((f) => (
