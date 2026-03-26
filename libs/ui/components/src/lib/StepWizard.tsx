@@ -1,8 +1,8 @@
-import { Check } from 'lucide-react'
 import React, { useEffect, useContext } from 'react'
 import { DialogHeaderContext } from '@lenserfight/ui/overlays'
 
 import { Button } from './Button'
+import { StepIndicator } from './StepIndicator'
 
 export interface WizardStepConfig {
   /** Short label shown inside the step indicator rail */
@@ -59,55 +59,16 @@ export const StepWizard: React.FC<StepWizardProps> = ({
   }, [current.title, current.description, current.icon, setHeader, clearHeader])
 
   return (
-    <div className="flex flex-col gap-6">
-      {/* Step indicator rail */}
-      <div className="flex items-center gap-3">
-        {steps.map((step, index) => {
-          const isDone = index < currentStep
-          const isActive = index === currentStep
-          return (
-            <React.Fragment key={index}>
-              <div className="flex items-center gap-2">
-                <div
-                  className={[
-                    'flex h-7 w-7 items-center justify-center rounded-full text-xs font-bold transition-colors',
-                    isDone
-                      ? 'bg-greyscale-900 text-greyscale-0 dark:bg-greyscale-0 dark:text-greyscale-900'
-                      : isActive
-                        ? 'border-2 border-status-blue text-status-blue'
-                        : 'border border-surface-border text-greyscale-400',
-                  ].join(' ')}
-                >
-                  {isDone ? <Check size={13} /> : index + 1}
-                </div>
-                <span
-                  className={[
-                    'hidden text-sm font-semibold sm:block',
-                    isActive
-                      ? 'text-greyscale-900 dark:text-greyscale-50'
-                      : 'text-greyscale-400',
-                  ].join(' ')}
-                >
-                  {step.label}
-                </span>
-              </div>
-              {index < steps.length - 1 && (
-                <div
-                  className={[
-                    'h-px flex-1 transition-colors',
-                    isDone
-                      ? 'bg-greyscale-900 dark:bg-greyscale-0'
-                      : 'bg-surface-border',
-                  ].join(' ')}
-                />
-              )}
-            </React.Fragment>
-          )
-        })}
+    <div className="flex flex-col">
+      {/* Step indicator — separated section */}
+      <div className="pb-5">
+        <StepIndicator steps={steps} currentStep={currentStep} />
       </div>
 
+      <div className="border-t border-surface-border" />
+
       {/* Step content */}
-      <div>{children}</div>
+      <div className="py-5">{children}</div>
 
       {/* Navigation footer */}
       <div className="flex flex-col-reverse gap-3 border-t border-surface-border pt-4 sm:flex-row sm:items-center sm:justify-between">
