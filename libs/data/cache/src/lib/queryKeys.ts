@@ -109,6 +109,16 @@ export const queryKeys = {
     scorecard: (battleId: string) => [...queryKeys.battles.all, 'scorecard', battleId] as const,
     comments: (battleId: string) => [...queryKeys.battles.all, 'comments', battleId] as const,
     globalChat: (battleId: string) => [...queryKeys.battles.all, 'globalChat', battleId] as const,
+    lensAssignment: (contenderId: string) => [...queryKeys.battles.all, 'lensAssignment', contenderId] as const,
+  },
+  workflows: {
+    all: ['workflows'] as const,
+    byLenser: (lenserId: string) => [...queryKeys.workflows.all, 'lenser', lenserId] as const,
+    detail: (id: string) => [...queryKeys.workflows.all, 'detail', id] as const,
+    nodes: (id: string) => [...queryKeys.workflows.all, 'nodes', id] as const,
+    edges: (id: string) => [...queryKeys.workflows.all, 'edges', id] as const,
+    run: (runId: string) => [...queryKeys.workflows.all, 'run', runId] as const,
+    nodeResults: (runId: string) => [...queryKeys.workflows.all, 'nodeResults', runId] as const,
   },
   agents: {
     all: ['agents'] as const,
