@@ -6,6 +6,7 @@ import { PlusCircle } from 'lucide-react'
 
 import { BattleCard } from '../components/BattleCard'
 import { useBattlesFeed } from '../hooks/useBattlesFeed'
+import type { BattlesFeedSortBy } from '../hooks/useBattlesFeed'
 
 import type { BattleType } from '../types/battle.types'
 
@@ -17,6 +18,13 @@ const TYPE_FILTERS: { value: BattleType | 'all'; label: string }[] = [
   { value: 'human_vs_ai', label: 'Human vs AI' },
   { value: 'ai_vs_ai', label: 'AI vs AI' },
   { value: 'human_vs_human_ai_votes', label: 'AI Judge' },
+  { value: 'workflow_battle', label: 'Workflow' },
+]
+
+const SORT_OPTIONS: { value: BattlesFeedSortBy; label: string }[] = [
+  { value: 'newest', label: 'Newest' },
+  { value: 'most_votes', label: 'Most votes' },
+  { value: 'trending', label: 'Trending' },
 ]
 
 const cardVariants = {
@@ -44,7 +52,8 @@ export function BattlesFeedPage() {
   const navigate = useNavigate()
   const [statusFilter, setStatusFilter] = useState<string>('all')
   const [typeFilter, setTypeFilter] = useState<BattleType | 'all'>('all')
-  const { data, isLoading, fetchNextPage, hasNextPage, isFetchingNextPage } = useBattlesFeed(statusFilter)
+  const [sortBy, setSortBy] = useState<BattlesFeedSortBy>('newest')
+  const { data, isLoading, fetchNextPage, hasNextPage, isFetchingNextPage } = useBattlesFeed(statusFilter, sortBy)
 
   const battles = data?.pages.flat() ?? []
   const filtered = typeFilter === 'all'
@@ -87,6 +96,20 @@ export function BattlesFeedPage() {
               {t.label}
             </button>
           ))}
+        </div>
+        <div className="flex items-center gap-2">
+          <span className="text-xs text-[var(--cl-surface-text-muted)]">Sort:</span>
+          <div className="flex gap-1.5">
+            {SORT_OPTIONS.map((s) => (
+              <button
+                key={s.value}
+                onClick={() => setSortBy(s.value)}
+                className={filterBtnClass(sortBy === s.value)}
+              >
+                {s.label}
+              </button>
+            ))}
+          </div>
         </div>
       </div>
 

@@ -186,7 +186,7 @@ export interface AssignLensInput {
 
 export interface BattlesRepositoryPort {
   getBattleBySlug(slug: string): Promise<BattleRecord | null>
-  getBattlesFeed(filter?: string, limit?: number, battleType?: BattleType, cursor?: string): Promise<BattleRecord[]>
+  getBattlesFeed(filter?: string, limit?: number, battleType?: BattleType, cursor?: string, sortBy?: 'newest' | 'most_votes' | 'trending'): Promise<BattleRecord[]>
   getBattlesFeedItems(options?: BattlesFeedOptions): Promise<BattleFeedItemRecord[]>
   getContenders(battleId: string): Promise<ContenderRecord[]>
   getSubmissions(battleId: string): Promise<SubmissionRecord[]>
@@ -231,12 +231,14 @@ export class SupabaseBattlesRepository implements BattlesRepositoryPort {
     return data as BattleRecord | null
   }
 
-  async getBattlesFeed(filter?: string, limit = 20, battleType?: BattleType, cursor?: string): Promise<BattleRecord[]> {
+  async getBattlesFeed(filter?: string, limit = 20, battleType?: BattleType, cursor?: string, sortBy: 'newest' | 'most_votes' | 'trending' = 'newest'): Promise<BattleRecord[]> {
+    const orderByVotes = sortBy === 'most_votes' || sortBy === 'trending'
+
     let query = supabase
       .schema('battles')
       .from('battles')
       .select(this.battleSelect)
-      .order('published_at', { ascending: false })
+      .order(orderByVotes ? 'total_vote_count' : 'published_at', { ascending: false })
       .limit(limit)
 
     if (filter && filter !== 'all') {
@@ -245,8 +247,15 @@ export class SupabaseBattlesRepository implements BattlesRepositoryPort {
     if (battleType) {
       query = query.eq('battle_type', battleType)
     }
+    if (sortBy === 'trending') {
+      query = query.gte('published_at', new Date(Date.now() - 48 * 60 * 60 * 1000).toISOString())
+    }
     if (cursor) {
-      query = query.lt('published_at', cursor)
+      if (orderByVotes) {
+        query = query.lt('total_vote_count', Number(cursor))
+      } else {
+        query = query.lt('published_at', cursor)
+      }
     }
 
     const { data, error } = await query

@@ -7,6 +7,7 @@ import { Link } from 'react-router-dom'
 import { BattleTypesShowcase } from '../components/BattleTypesShowcase'
 import { GamificationPreview } from '../components/GamificationPreview'
 import { HeroFightPreview } from '../components/HeroFightPreview'
+import { WaitlistForm } from '../components/WaitlistForm'
 
 const ARENA_APP_URL = import.meta.env.VITE_ARENA_URL ?? 'https://run.lenserfight.com'
 
@@ -70,20 +71,13 @@ export const LandHomePage: React.FC = () => {
               </li>
             ))}
           </ul>
-          <div className="flex flex-wrap gap-3">
-            <a
-              href={`${ARENA_APP_URL}/battles/create`}
-              className="inline-flex items-center gap-2 rounded-full bg-greyscale-900 px-5 py-3 text-sm font-bold text-greyscale-0 transition-colors hover:opacity-90 dark:bg-greyscale-0 dark:text-greyscale-900"
-            >
-              Start a battle <ArrowRight size={16} />
-            </a>
-            <a
-              href={`${ARENA_APP_URL}/battles`}
-              className="inline-flex items-center gap-2 rounded-full border border-surface-border bg-surface-base px-5 py-3 text-sm font-semibold text-greyscale-700 transition-colors hover:border-status-blue hover:text-greyscale-900 dark:text-greyscale-300 dark:hover:text-greyscale-0"
-            >
-              Browse battles
-            </a>
-          </div>
+          <WaitlistForm />
+          <a
+            href={`${ARENA_APP_URL}/battles`}
+            className="inline-flex items-center gap-2 text-sm font-medium text-greyscale-500 transition-colors hover:text-greyscale-900 dark:hover:text-greyscale-0"
+          >
+            Browse live battles <ArrowRight size={14} />
+          </a>
         </div>
         <DesktopFrame title="Live battle preview" url="lenserfight.com/battles" label="Auto-cycling demo">
           <HeroFightPreview />

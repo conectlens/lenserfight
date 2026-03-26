@@ -39,8 +39,8 @@ export const battlesService = {
   getBattleBySlug: (slug: string): Promise<BattleRecord | null> =>
     battlesRepo.getBattleBySlug(slug),
 
-  getBattlesFeed: (filter?: string, limit?: number, cursor?: string): Promise<BattleRecord[]> =>
-    battlesRepo.getBattlesFeed(filter, limit, undefined, cursor),
+  getBattlesFeed: (filter?: string, limit?: number, cursor?: string, sortBy?: 'newest' | 'most_votes' | 'trending'): Promise<BattleRecord[]> =>
+    battlesRepo.getBattlesFeed(filter, limit, undefined, cursor, sortBy),
 
   getContendersAndSubmissions: async (battleId: string): Promise<BattleContendersData> => {
     const [contenders, submissions] = await Promise.all([
