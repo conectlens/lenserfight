@@ -34,6 +34,7 @@ export interface BattleRecord {
   battle_type: BattleType
   voter_eligibility: VoterEligibility
   handicap_config: Record<string, unknown>
+  creator_lenser_id: string | null
 }
 
 export interface AIHandicapPolicyRecord {
@@ -107,6 +108,19 @@ export interface SubmitVoteInput {
   is_draw?: boolean
 }
 
+export interface BattleCommentRecord {
+  id: string
+  battle_id: string
+  lenser_id: string
+  body: string
+  created_at: string
+  updated_at: string
+  // joined from lensers.profiles
+  lenser_handle?: string
+  lenser_display_name?: string
+  lenser_avatar_url?: string | null
+}
+
 // --- Port ---
 
 export interface BattleFeedItemRecord {
@@ -159,7 +173,7 @@ export class SupabaseBattlesRepository implements BattlesRepositoryPort {
   }
 
   private readonly battleSelect =
-    'id, slug, title, task_prompt, status, total_vote_count, published_at, battle_type, voter_eligibility, handicap_config'
+    'id, slug, title, task_prompt, status, total_vote_count, published_at, battle_type, voter_eligibility, handicap_config, creator_lenser_id'
 
   async getBattleBySlug(slug: string): Promise<BattleRecord | null> {
     const { data, error } = await supabase
@@ -331,5 +345,70 @@ export class SupabaseBattlesRepository implements BattlesRepositoryPort {
     if (battle.voter_eligibility === 'verified_lenser') return profile.onboarding_step === 'completed'
 
     return true
+  }
+
+  async publishBattle(battleId: string): Promise<BattleRecord> {
+    const { data, error } = await supabase.rpc('fn_publish_battle', {
+      p_battle_id: battleId,
+    })
+    if (error) this.handleError(error)
+    // fn_publish_battle returns a jsonb snapshot; re-fetch the updated record
+    const { data: updated, error: fetchErr } = await supabase
+      .schema('battles')
+      .from('battles')
+      .select(this.battleSelect)
+      .eq('id', battleId)
+      .single()
+    if (fetchErr) this.handleError(fetchErr)
+    return updated as BattleRecord
+  }
+
+  async getBattleComments(battleId: string, limit = 100): Promise<BattleCommentRecord[]> {
+    const { data, error } = await supabase
+      .schema('battles')
+      .from('comments')
+      .select(`
+        id,
+        battle_id,
+        lenser_id,
+        body,
+        created_at,
+        updated_at,
+        lenser:lenser_id (
+          handle,
+          display_name,
+          avatar_url
+        )
+      `)
+      .eq('battle_id', battleId)
+      .order('created_at', { ascending: true })
+      .limit(limit)
+    if (error) this.handleError(error)
+    return ((data ?? []) as unknown[]).map((row: unknown) => {
+      const r = row as Record<string, unknown>
+      const lenser = r['lenser'] as Record<string, unknown> | null
+      return {
+        id: r['id'] as string,
+        battle_id: r['battle_id'] as string,
+        lenser_id: r['lenser_id'] as string,
+        body: r['body'] as string,
+        created_at: r['created_at'] as string,
+        updated_at: r['updated_at'] as string,
+        lenser_handle: lenser?.['handle'] as string | undefined,
+        lenser_display_name: lenser?.['display_name'] as string | undefined,
+        lenser_avatar_url: lenser?.['avatar_url'] as string | null | undefined,
+      } satisfies BattleCommentRecord
+    })
+  }
+
+  async postComment(battleId: string, lenserId: string, body: string): Promise<BattleCommentRecord> {
+    const { data, error } = await supabase
+      .schema('battles')
+      .from('comments')
+      .insert({ battle_id: battleId, lenser_id: lenserId, body })
+      .select('id, battle_id, lenser_id, body, created_at, updated_at')
+      .single()
+    if (error) this.handleError(error)
+    return data as BattleCommentRecord
   }
 }

@@ -1,6 +1,6 @@
 import React, { useState } from 'react'
 import { useParams, useNavigate, Link } from 'react-router-dom'
-import { Bot, ArrowLeft, ToggleRight, Cpu, BookOpen, BarChart3, Clock } from 'lucide-react'
+import { Bot, ArrowLeft, ToggleRight, Cpu, BookOpen, BarChart3, Clock, Pencil, Check, X } from 'lucide-react'
 import { useQueryClient } from '@tanstack/react-query'
 import { Avatar, Button } from '@lenserfight/ui/components'
 import { useLenser } from '@lenserfight/features/profile'
@@ -44,6 +44,41 @@ export const AgentDetailPage: React.FC = () => {
   const queryClient = useQueryClient()
   const { data: agent, isLoading } = useAgentDetail(id)
   const [policyLoading, setPolicyLoading] = useState(false)
+
+  // Profile edit state
+  const [editOpen, setEditOpen] = useState(false)
+  const [editDisplayName, setEditDisplayName] = useState('')
+  const [editBio, setEditBio] = useState('')
+  const [editAvatarUrl, setEditAvatarUrl] = useState('')
+  const [editSaving, setEditSaving] = useState(false)
+  const [editError, setEditError] = useState<string | null>(null)
+
+  const handleOpenEdit = () => {
+    setEditDisplayName(agent?.display_name ?? '')
+    setEditBio(agent?.bio ?? '')
+    setEditAvatarUrl(agent?.avatar_url ?? '')
+    setEditError(null)
+    setEditOpen(true)
+  }
+
+  const handleSaveProfile = async () => {
+    if (!id) return
+    setEditSaving(true)
+    setEditError(null)
+    try {
+      await agentsService.updateAgentProfile(id, {
+        display_name: editDisplayName.trim() || undefined,
+        bio: editBio.trim() || undefined,
+        avatar_url: editAvatarUrl.trim() || undefined,
+      })
+      await queryClient.invalidateQueries({ queryKey: queryKeys.agents.detail(id) })
+      setEditOpen(false)
+    } catch (e) {
+      setEditError('Failed to save. Please try again.')
+    } finally {
+      setEditSaving(false)
+    }
+  }
 
   const isOwner = !!currentUser && agent?.owner_id === currentUser.id
 
@@ -115,6 +150,13 @@ export const AgentDetailPage: React.FC = () => {
             <div className="flex items-center gap-2 flex-wrap">
               <h1 className="text-xl font-bold text-gray-900 dark:text-white">{agent.display_name}</h1>
               <AgentStatusBadge isActive={agent.is_active} suspendedAt={agent.suspended_at} />
+              <button
+                onClick={handleOpenEdit}
+                title="Edit profile"
+                className="ml-auto p-1.5 rounded-lg text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+              >
+                <Pencil size={14} />
+              </button>
             </div>
             <p className="text-sm text-gray-400 dark:text-gray-500">@{agent.handle}</p>
             {agent.suspended_reason && (
@@ -140,6 +182,83 @@ export const AgentDetailPage: React.FC = () => {
           </div>
         </div>
       </div>
+
+      {/* Edit Profile panel */}
+      {editOpen && (
+        <div className="bg-white dark:bg-gray-800 rounded-2xl border border-primary/40 p-6 space-y-4">
+          <div className="flex items-center justify-between">
+            <h2 className="font-semibold text-gray-900 dark:text-white text-sm">Edit Profile</h2>
+            <button
+              onClick={() => setEditOpen(false)}
+              className="p-1.5 rounded-lg text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+            >
+              <X size={14} />
+            </button>
+          </div>
+
+          <div className="space-y-3">
+            <div>
+              <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">
+                Display Name <span className="text-gray-400">(max 60)</span>
+              </label>
+              <input
+                type="text"
+                maxLength={60}
+                value={editDisplayName}
+                onChange={(e) => setEditDisplayName(e.target.value)}
+                className="w-full rounded-xl border border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 px-3 py-2 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary/50"
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">
+                Bio <span className="text-gray-400">(max 300)</span>
+              </label>
+              <textarea
+                maxLength={300}
+                rows={3}
+                value={editBio}
+                onChange={(e) => setEditBio(e.target.value)}
+                className="w-full rounded-xl border border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 px-3 py-2 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary/50 resize-none"
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">
+                Avatar URL
+              </label>
+              <input
+                type="url"
+                value={editAvatarUrl}
+                onChange={(e) => setEditAvatarUrl(e.target.value)}
+                placeholder="https://…"
+                className="w-full rounded-xl border border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 px-3 py-2 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary/50"
+              />
+            </div>
+          </div>
+
+          {editError && (
+            <p className="text-xs text-red-500 dark:text-red-400">{editError}</p>
+          )}
+
+          <div className="flex justify-end gap-2">
+            <button
+              onClick={() => setEditOpen(false)}
+              className="px-4 py-2 rounded-xl text-sm text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={handleSaveProfile}
+              disabled={editSaving}
+              className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-semibold bg-primary text-gray-900 hover:bg-yellow-300 transition-colors disabled:opacity-60"
+            >
+              <Check size={13} />
+              {editSaving ? 'Saving…' : 'Save'}
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Today's quota */}
       <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-100 dark:border-gray-700 p-6">

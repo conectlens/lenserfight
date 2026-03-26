@@ -9,6 +9,8 @@ export * from './lib/hooks/useBattlesFeed'
 export * from './lib/hooks/useBattleStateMachine'
 export * from './lib/hooks/useSubmitVote'
 export * from './lib/hooks/useVoteAggregates'
+export * from './lib/hooks/usePublishBattle'
+export * from './lib/hooks/useBattleComments'
 
 // Components
 export * from './lib/components/ArenaView'
@@ -27,6 +29,8 @@ export * from './lib/components/RubricPanel'
 export * from './lib/components/VotePanel'
 export * from './lib/components/ResultBanner'
 export * from './lib/components/BattleShareCard'
+export * from './lib/components/BattleCreatorPanel'
+export * from './lib/components/BattleChatPanel'
 
 // Pages
 export * from './lib/pages/BattlesFeedPage'

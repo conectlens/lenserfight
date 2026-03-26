@@ -1,6 +1,7 @@
 import {
   SupabaseBattlesRepository,
   BattleRecord,
+  BattleCommentRecord,
   BattleFeedItemRecord,
   BattlesFeedOptions,
   ContenderRecord,
@@ -13,7 +14,7 @@ import {
 
 const battlesRepo = new SupabaseBattlesRepository()
 
-export type { BattleRecord, BattleFeedItemRecord, BattlesFeedOptions, ContenderRecord, VoteAggregateRecord, ScorecardRecord, RubricCriterionRecord, SubmissionRecord, SubmitVoteInput }
+export type { BattleRecord, BattleCommentRecord, BattleFeedItemRecord, BattlesFeedOptions, ContenderRecord, VoteAggregateRecord, ScorecardRecord, RubricCriterionRecord, SubmissionRecord, SubmitVoteInput }
 
 export interface BattleContendersData {
   contenders: ContenderRecord[]
@@ -60,6 +61,15 @@ export const battlesService = {
 
   submitVote: (input: SubmitVoteInput): Promise<void> =>
     battlesRepo.submitVote(input).then(() => undefined),
+
+  publishBattle: (battleId: string): Promise<BattleRecord> =>
+    battlesRepo.publishBattle(battleId),
+
+  getBattleComments: (battleId: string, limit?: number): Promise<BattleCommentRecord[]> =>
+    battlesRepo.getBattleComments(battleId, limit),
+
+  postComment: (battleId: string, lenserId: string, body: string): Promise<BattleCommentRecord> =>
+    battlesRepo.postComment(battleId, lenserId, body),
 
   deriveWinner: (
     aggregates: VoteAggregateRecord[],

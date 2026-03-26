@@ -1,5 +1,6 @@
 import React from 'react'
 import { useParams } from 'react-router-dom'
+import { useLenser } from '@lenserfight/features/profile'
 
 import { ArenaView } from '../components/ArenaView'
 import { BattleShareCard } from '../components/BattleShareCard'
@@ -13,10 +14,12 @@ import type { BattleStatus } from '../types/battle.types'
 
 export function BattleDetailPage() {
   const { slug } = useParams<{ slug: string }>()
+  const { lenser } = useLenser()
 
   return (
     <ArenaView
       slug={slug ?? ''}
+      currentUserId={lenser?.id}
       renderContenderSlot={(props) => (
         <ContenderSlot
           slot={props.slot}

@@ -34,6 +34,7 @@ import { useLenser } from '@lenserfight/features/profile'
 import { CreateLenserProfileModal } from '@lenserfight/features/onboarding'
 import { CreateThreadModal } from '@lenserfight/features/threads'
 import { buildAuthReturnUrl } from '@lenserfight/utils/dom'
+import { HomePromoSection } from '../components/HomePromoSection'
 import { ThreadsList } from '../components/ThreadsList'
 
 export const HomePage: React.FC = () => {
@@ -230,6 +231,9 @@ export const HomePage: React.FC = () => {
       {/* Right Sidebar Widgets */}
       <div className="lg:col-span-4 mt-8 lg:mt-0">
         <div className="space-y-6 lg:pt-[52px]">
+          {/* Discover promo cards — shown to visitors who haven't signed in */}
+          {!isAuthenticated && <HomePromoSection />}
+
           {/* Lenses You May Like / Top Lenses Widget */}
           <Card className="p-0 overflow-hidden bg-white dark:bg-gray-800">
             <div className="px-6 py-4 border-b border-gray-100 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-800/50">
