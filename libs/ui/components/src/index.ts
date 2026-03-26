@@ -2,9 +2,6 @@ export * from './lib/ActionMenu'
 export * from './lib/Avatar'
 export * from './lib/Breadcrumbs'
 export * from './lib/Button'
-// AppButton moved to @lenserfight/features/shell — re-exported for backward compat
-// NOTE: importing from @lenserfight/ui/components still works, but new code should
-// import directly from @lenserfight/features/shell to respect layer boundaries.
 export * from './lib/Card'
 export * from './lib/DangerZone'
 export * from './lib/FormError'
