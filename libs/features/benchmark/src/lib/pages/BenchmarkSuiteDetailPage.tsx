@@ -1,11 +1,11 @@
 import React, { useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { ChevronLeft, Plus, ClipboardList } from 'lucide-react'
+import { ChevronLeft, Plus, ClipboardList, GitBranch } from 'lucide-react'
 import { SEOHead } from '@lenserfight/ui/components'
 import { useLenser } from '@lenserfight/features/profile'
-import { benchmarkService } from '@lenserfight/data/repositories'
+import { benchmarkService, workflowsService } from '@lenserfight/data/repositories'
 import { BenchmarkSuiteStatus } from '@lenserfight/types'
-import { useQueryClient } from '@tanstack/react-query'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { queryKeys } from '@lenserfight/data/cache'
 import { useBenchmarkSuite } from '../hooks/useBenchmarkSuite'
 
@@ -31,6 +31,21 @@ export const BenchmarkSuiteDetailPage: React.FC = () => {
   const [taskTitle, setTaskTitle] = useState('')
   const [taskPrompt, setTaskPrompt] = useState('')
   const [taskReps, setTaskReps] = useState(1)
+  const [attachWorkflow, setAttachWorkflow] = useState(false)
+  const [workflowQuery, setWorkflowQuery] = useState('')
+  const [selectedWorkflowId, setSelectedWorkflowId] = useState<string | null>(null)
+  const [selectedWorkflowTitle, setSelectedWorkflowTitle] = useState<string>('')
+
+  const { data: workflowSearchResults = [] } = useQuery({
+    queryKey: ['workflow-search-benchmark', workflowQuery],
+    queryFn: async () => {
+      if (!currentUser?.id) return []
+      const results = await workflowsService.listByLenser(currentUser.id)
+      return results.filter((w) => w.title.toLowerCase().includes(workflowQuery.toLowerCase()))
+    },
+    enabled: attachWorkflow && workflowQuery.length >= 0,
+    staleTime: 10_000,
+  })
 
   const handleAddTask = async () => {
     if (!id || !taskTitle.trim() || !taskPrompt.trim()) return
@@ -40,12 +55,17 @@ export const BenchmarkSuiteDetailPage: React.FC = () => {
       prompt_template: taskPrompt.trim(),
       required_repetitions: taskReps,
       ordinal: tasks.length,
+      workflow_id: attachWorkflow ? selectedWorkflowId : null,
     })
     queryClient.invalidateQueries({ queryKey: queryKeys.benchmark.tasks(id) })
     setAddingTask(false)
     setTaskTitle('')
     setTaskPrompt('')
     setTaskReps(1)
+    setAttachWorkflow(false)
+    setSelectedWorkflowId(null)
+    setSelectedWorkflowTitle('')
+    setWorkflowQuery('')
   }
 
   if (suiteQuery.isLoading) {
@@ -143,9 +163,61 @@ export const BenchmarkSuiteDetailPage: React.FC = () => {
               className="w-16 px-2 py-1 rounded-lg border border-gray-300 dark:border-gray-600 bg-transparent text-sm text-center focus:outline-none focus:ring-2 focus:ring-indigo-500"
             />
           </div>
+
+          {/* Workflow attachment toggle */}
+          <div className="space-y-2">
+            <button
+              type="button"
+              onClick={() => { setAttachWorkflow((v) => !v); setSelectedWorkflowId(null); setSelectedWorkflowTitle(''); setWorkflowQuery('') }}
+              className="flex items-center gap-2 text-xs font-medium text-gray-500 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors"
+            >
+              <GitBranch size={13} />
+              {attachWorkflow ? 'Remove workflow' : 'Attach a workflow'}
+            </button>
+            {attachWorkflow && (
+              <div className="space-y-2">
+                {selectedWorkflowId ? (
+                  <div className="flex items-center gap-2 px-3 py-2 rounded-lg border border-indigo-200 dark:border-indigo-700 bg-indigo-50/50 dark:bg-indigo-900/20">
+                    <GitBranch size={13} className="text-indigo-500" />
+                    <span className="text-sm font-medium text-gray-900 dark:text-white flex-1 truncate">{selectedWorkflowTitle}</span>
+                    <button type="button" onClick={() => { setSelectedWorkflowId(null); setSelectedWorkflowTitle('') }} className="text-xs text-gray-400 hover:text-red-500">×</button>
+                  </div>
+                ) : (
+                  <div className="space-y-1">
+                    <input
+                      placeholder="Search your workflows…"
+                      value={workflowQuery}
+                      onChange={(e) => setWorkflowQuery(e.target.value)}
+                      className="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-transparent text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    />
+                    {workflowSearchResults.length > 0 && (
+                      <ul className="rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 divide-y divide-gray-100 dark:divide-gray-700 overflow-hidden">
+                        {workflowSearchResults.slice(0, 5).map((w) => (
+                          <li key={w.id}>
+                            <button
+                              type="button"
+                              onClick={() => { setSelectedWorkflowId(w.id); setSelectedWorkflowTitle(w.title) }}
+                              className="w-full px-3 py-2 text-left text-sm text-gray-900 dark:text-white hover:bg-gray-50 dark:hover:bg-gray-700 flex items-center gap-2"
+                            >
+                              <GitBranch size={12} className="text-gray-400" />
+                              {w.title}
+                            </button>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                    {workflowSearchResults.length === 0 && workflowQuery.length > 0 && (
+                      <p className="text-xs text-gray-400 px-1">No workflows found.</p>
+                    )}
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+
           <div className="flex gap-2 justify-end">
             <button
-              onClick={() => { setAddingTask(false); setTaskTitle(''); setTaskPrompt(''); setTaskReps(1) }}
+              onClick={() => { setAddingTask(false); setTaskTitle(''); setTaskPrompt(''); setTaskReps(1); setAttachWorkflow(false); setSelectedWorkflowId(null); setSelectedWorkflowTitle(''); setWorkflowQuery('') }}
               className="px-3 py-1.5 text-sm text-gray-500 hover:text-gray-700 dark:hover:text-gray-300"
             >
               Cancel
@@ -189,6 +261,12 @@ export const BenchmarkSuiteDetailPage: React.FC = () => {
                 <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5 line-clamp-2">
                   {task.prompt_template}
                 </p>
+                {task.workflow_id && (
+                  <div className="mt-1.5 flex items-center gap-1.5">
+                    <GitBranch size={11} className="text-indigo-400" />
+                    <span className="text-xs font-medium text-indigo-500 dark:text-indigo-400">Workflow attached</span>
+                  </div>
+                )}
               </div>
               <span className="shrink-0 text-xs text-gray-400 dark:text-gray-500 pt-0.5">
                 ×{task.required_repetitions}

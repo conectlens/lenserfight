@@ -1,6 +1,7 @@
 import {
   Home,
   Cloud,
+  GitBranch,
   MoreHorizontal,
   Settings,
   LogOut,
@@ -273,6 +274,14 @@ export const Sidebar: React.FC<SidebarProps> = ({
             icon={<Brain size={20} />}
             label="Lenses"
             isActive={isRouteActive(location.pathname, '/lenses')}
+            collapsed={!showLabels}
+          />
+
+          <SidebarItem
+            onClick={() => handleNavigation('/workflows')}
+            icon={<GitBranch size={20} />}
+            label="Workflows"
+            isActive={isRouteActive(location.pathname, '/workflows')}
             collapsed={!showLabels}
           />
 

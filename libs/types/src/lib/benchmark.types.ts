@@ -29,6 +29,7 @@ export interface BenchmarkTaskRecord {
   evaluation_protocol: Record<string, unknown>
   required_repetitions: number
   ordinal: number
+  workflow_id?: string | null
   created_at: string
 }
 
@@ -88,6 +89,7 @@ export interface CreateBenchmarkTaskInput {
   evaluation_protocol?: Record<string, unknown>
   required_repetitions?: number
   ordinal?: number
+  workflow_id?: string | null
 }
 
 export interface InvalidateResultInput {
