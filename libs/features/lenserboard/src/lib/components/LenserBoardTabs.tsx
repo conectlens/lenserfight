@@ -2,12 +2,12 @@ import React from 'react'
 
 import { LeaderboardScope } from '@lenserfight/types'
 
-interface LeaderboardTabsProps {
+interface LenserBoardTabsProps {
   activeScope: LeaderboardScope
   onChange: (scope: LeaderboardScope) => void
 }
 
-export const LeaderboardTabs: React.FC<LeaderboardTabsProps> = ({ activeScope, onChange }) => {
+export const LenserBoardTabs: React.FC<LenserBoardTabsProps> = ({ activeScope, onChange }) => {
   const tabs: { id: LeaderboardScope; label: string }[] = [
     { id: 'global', label: 'Global' },
     { id: 'season', label: 'Current Season' },

@@ -3,16 +3,67 @@ import React from 'react'
 import { useNavigate } from 'react-router-dom'
 
 import { Avatar } from '@lenserfight/ui/components'
-import { LeaderboardEntry } from '@lenserfight/types'
+import { LeaderboardEntry, LeaderboardLenser } from '@lenserfight/types'
+import { EloLeaderboardEntry } from '@lenserfight/data/repositories'
 import { formatCount } from '@lenserfight/utils/number'
 
-interface LeaderboardRowProps {
-  entry: LeaderboardEntry
-  isCurrentUser?: boolean
-}
+type LenserBoardRowProps =
+  | { mode: 'xp'; entry: LeaderboardEntry; isCurrentUser?: boolean }
+  | { mode: 'activity'; entry: LeaderboardLenser }
+  | { mode: 'elo'; entry: EloLeaderboardEntry }
 
-export const LeaderboardRow: React.FC<LeaderboardRowProps> = ({ entry, isCurrentUser }) => {
+const COMPACT_ROW =
+  'flex items-center gap-4 p-4 rounded-xl border cursor-pointer transition-colors bg-white hover:bg-gray-50 border-gray-100 dark:bg-gray-800 dark:hover:bg-gray-750 dark:border-gray-700'
+
+export const LenserBoardRow: React.FC<LenserBoardRowProps> = (props) => {
   const navigate = useNavigate()
+
+  if (props.mode === 'activity') {
+    const { entry } = props
+    return (
+      <div onClick={() => navigate(`/lenser/${entry.handle}`)} className={COMPACT_ROW}>
+        <span className="w-7 text-center text-sm font-bold text-gray-500 dark:text-gray-400">
+          {entry.rank}
+        </span>
+        <Avatar src={entry.avatarUrl} alt={entry.displayName} size="md" className="!w-9 !h-9 flex-shrink-0" />
+        <div className="flex-1 min-w-0">
+          <p className="text-sm font-semibold truncate text-gray-900 dark:text-white">{entry.displayName}</p>
+          <p className="text-xs text-gray-500 dark:text-gray-400">@{entry.handle}</p>
+        </div>
+        <div className="text-right flex-shrink-0">
+          <p className="text-sm font-bold text-gray-900 dark:text-white">{entry.totalXp.toLocaleString()} XP</p>
+          <p className="text-xs text-gray-400 dark:text-gray-500">Score {entry.lenserScore.toFixed(1)}</p>
+        </div>
+      </div>
+    )
+  }
+
+  if (props.mode === 'elo') {
+    const { entry } = props
+    return (
+      <div onClick={() => navigate(`/lenser/${entry.handle}`)} className={COMPACT_ROW}>
+        <span className="w-7 text-center text-sm font-bold text-gray-500 dark:text-gray-400">
+          {entry.elo_rank}
+        </span>
+        <Avatar src={entry.avatar_url} alt={entry.display_name} size="md" className="!w-9 !h-9 flex-shrink-0" />
+        <div className="flex-1 min-w-0">
+          <p className="text-sm font-semibold truncate text-gray-900 dark:text-white">{entry.display_name}</p>
+          <p className="text-xs text-gray-500 dark:text-gray-400">@{entry.handle}</p>
+        </div>
+        <div className="text-right flex-shrink-0">
+          <p className="text-sm font-bold text-gray-900 dark:text-white">
+            {Math.round(entry.elo_score).toLocaleString()}
+          </p>
+          <p className="text-xs text-gray-400 dark:text-gray-500">
+            {entry.battles_won}W / {entry.battles_played - entry.battles_won}L
+          </p>
+        </div>
+      </div>
+    )
+  }
+
+  // mode === 'xp'
+  const { entry, isCurrentUser } = props
   const { rank, displayName, handle, avatarUrl, totalXp, level, streak } = entry
 
   const isGold = rank === 1
@@ -49,7 +100,6 @@ export const LeaderboardRow: React.FC<LeaderboardRowProps> = ({ entry, isCurrent
     let base =
       'flex items-center gap-4 md:gap-6 p-4 rounded-2xl transition-all cursor-pointer group border'
 
-    // Top 3 Visuals
     if (isGold) {
       base +=
         ' bg-gradient-to-r from-yellow-50/80 via-white to-white dark:from-yellow-900/10 dark:via-gray-800 dark:to-gray-800 border-yellow-200 dark:border-yellow-700/50 shadow-sm'
@@ -60,15 +110,12 @@ export const LeaderboardRow: React.FC<LeaderboardRowProps> = ({ entry, isCurrent
       base +=
         ' bg-gradient-to-r from-orange-50/80 via-white to-white dark:from-orange-900/10 dark:via-gray-800 dark:to-gray-800 border-orange-200 dark:border-orange-800/50 shadow-sm'
     } else if (isCurrentUser) {
-      // Standard User Highlight if not in Top 3
       base += ' bg-primary/5 border-primary/30 dark:bg-primary/5 shadow-md'
     } else {
-      // Default
       base +=
         ' bg-white dark:bg-gray-800 border-transparent hover:border-gray-200 dark:hover:border-gray-700 hover:shadow-md'
     }
 
-    // Sticky behavior for current user (mobile floating effect)
     if (isCurrentUser) {
       base += ' sticky bottom-4 z-10 md:relative md:bottom-0 md:shadow-none'
     }
@@ -103,13 +150,9 @@ export const LeaderboardRow: React.FC<LeaderboardRowProps> = ({ entry, isCurrent
         </div>
       </div>
 
-      {/* Stats - Desktop */}
       <div className="hidden md:flex items-center gap-8">
         {streak !== undefined && streak > 0 && (
-          <div
-            className="flex items-center gap-1.5 text-orange-500 font-semibold"
-            title="Current Streak"
-          >
+          <div className="flex items-center gap-1.5 text-orange-500 font-semibold" title="Current Streak">
             <Flame size={18} className="fill-current" />
             <span>{streak}</span>
           </div>
@@ -122,12 +165,10 @@ export const LeaderboardRow: React.FC<LeaderboardRowProps> = ({ entry, isCurrent
         </div>
       </div>
 
-      {/* XP - Always Visible */}
       <div className="flex flex-col items-end min-w-[80px]">
         <span className="text-lg font-black text-gray-900 dark:text-white tracking-tight">
           {formatCount(totalXp)} <span className="text-sm text-gray-400 font-medium">XP</span>
         </span>
-        {/* Mobile Badge Fallback */}
         <div className="md:hidden flex items-center gap-2 mt-1">
           <span
             className={`text-xs font-medium px-2 rounded-full ${isGold ? 'text-yellow-800 bg-yellow-100 dark:bg-yellow-900/30 dark:text-yellow-200' : 'text-gray-500 bg-gray-100 dark:bg-gray-700'}`}
