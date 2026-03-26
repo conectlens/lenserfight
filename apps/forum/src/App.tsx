@@ -36,6 +36,7 @@ import {
   CreateBattlePage,
 } from '@lenserfight/features/battles'
 import { AgentDetailPage } from '@lenserfight/features/agents'
+import { BenchmarkSuitesPage, BenchmarkSuiteDetailPage } from '@lenserfight/features/benchmark'
 import { Routes, Route, Navigate, BrowserRouter } from 'react-router-dom'
 
 const AUTH_APP_URL = import.meta.env.VITE_AUTH_BASE_URL ?? 'https://auth.lenserfight.com'
@@ -251,11 +252,30 @@ const App: React.FC = () => {
                               />
 
                               {/* Agent Routes */}
+                              <Route path="/agents" element={<Navigate to="/lensers?type=ai" replace />} />
                               <Route
                                 path="/agents/:id"
                                 element={
                                   <DashboardLayout>
                                     <AgentDetailPage />
+                                  </DashboardLayout>
+                                }
+                              />
+
+                              {/* Benchmark Routes */}
+                              <Route
+                                path="/benchmark"
+                                element={
+                                  <DashboardLayout>
+                                    <BenchmarkSuitesPage />
+                                  </DashboardLayout>
+                                }
+                              />
+                              <Route
+                                path="/benchmark/:id"
+                                element={
+                                  <DashboardLayout>
+                                    <BenchmarkSuiteDetailPage />
                                   </DashboardLayout>
                                 }
                               />

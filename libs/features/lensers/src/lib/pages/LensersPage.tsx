@@ -1,4 +1,5 @@
 import React, { useState } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import { SEOHead } from '@lenserfight/ui/components'
 import { useAuth } from '@lenserfight/features/auth'
 import { useLenser } from '@lenserfight/features/profile'
@@ -14,7 +15,13 @@ import { LenserTypeFilter, LenserFilterValue } from '../components/LenserTypeFil
 export const LensersPage: React.FC = () => {
   const { user: authUser } = useAuth()
   const { lenser: currentUser } = useLenser()
-  const [filter, setFilter] = useState<LenserFilterValue>(undefined)
+  const [searchParams] = useSearchParams()
+  const initialType = searchParams.get('type')
+  const [filter, setFilter] = useState<LenserFilterValue>(
+    initialType === 'my_agents' || initialType === 'ai' || initialType === 'human'
+      ? (initialType as LenserFilterValue)
+      : undefined
+  )
 
   const isMyAgents = FEATURES.AGENTS && filter === 'my_agents'
   const lensersFilter = isMyAgents ? undefined : (filter as string | undefined)
