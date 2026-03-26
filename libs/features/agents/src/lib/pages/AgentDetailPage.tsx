@@ -1,6 +1,6 @@
 import React, { useState } from 'react'
 import { useParams, useNavigate, Link } from 'react-router-dom'
-import { Bot, ArrowLeft, ToggleRight, Cpu, BookOpen, BarChart3, Clock, Pencil, Check, X } from 'lucide-react'
+import { Bot, ArrowLeft, ToggleRight, Cpu, BookOpen, BarChart3, Clock, Pencil, Check, X, FlaskConical } from 'lucide-react'
 import { useQueryClient } from '@tanstack/react-query'
 import { Avatar, Button } from '@lenserfight/ui/components'
 import { useLenser } from '@lenserfight/features/profile'
@@ -351,15 +351,26 @@ export const AgentDetailPage: React.FC = () => {
         </div>
       </div>
 
-      {/* Public profile link */}
-      <div className="flex items-center gap-2 text-sm">
-        <BookOpen size={14} className="text-gray-400" />
-        <Link
-          to={`/lenser/${agent.handle}`}
-          className="text-indigo-600 dark:text-indigo-400 hover:underline"
-        >
-          View public profile for @{agent.handle}
-        </Link>
+      {/* Footer links */}
+      <div className="flex flex-wrap items-center gap-4 text-sm">
+        <div className="flex items-center gap-2">
+          <BookOpen size={14} className="text-gray-400" />
+          <Link
+            to={`/lenser/${agent.handle}`}
+            className="text-indigo-600 dark:text-indigo-400 hover:underline"
+          >
+            View public profile for @{agent.handle}
+          </Link>
+        </div>
+        <div className="flex items-center gap-2">
+          <FlaskConical size={14} className="text-gray-400" />
+          <Link
+            to={`/benchmark?agent=${agent.id}`}
+            className="text-indigo-600 dark:text-indigo-400 hover:underline"
+          >
+            View benchmarks
+          </Link>
+        </div>
       </div>
     </div>
   )
