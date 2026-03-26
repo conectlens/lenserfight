@@ -18,7 +18,6 @@ import {
   ShoppingBag,
   Sword,
   FlaskConical,
-  PlusCircle,
   Bot,
 } from 'lucide-react'
 import React, { useState, useRef, useEffect } from 'react'
@@ -269,19 +268,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
             isActive={isRouteActive(location.pathname, '/battles')}
             collapsed={!showLabels}
           />
-
-          {isAuthenticated && hasLenser && (
-            <div className={`${showLabels ? 'pl-8' : 'flex justify-center'}`}>
-              <button
-                onClick={() => handleNavigation('/battles/create')}
-                title="New Battle"
-                className={`flex items-center gap-2 text-xs font-semibold transition-colors rounded-lg py-1 px-2 hover:bg-yellow-50 dark:hover:bg-yellow-900/20 ${isRouteActive(location.pathname, '/battles/create') ? 'text-yellow-600 dark:text-yellow-400' : 'text-primary hover:text-yellow-600 dark:hover:text-yellow-400'}`}
-              >
-                <PlusCircle size={14} />
-                {showLabels && <span>New Battle</span>}
-              </button>
-            </div>
-          )}
 
           <SidebarItem
             onClick={() => handleNavigation('/lenses')}
