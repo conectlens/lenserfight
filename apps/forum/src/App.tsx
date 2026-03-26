@@ -13,7 +13,7 @@ import { ShareProvider } from '@lenserfight/features/share'
 import { ErrorProvider, GlobalErrorRenderer, ErrorClearer } from '@lenserfight/shared/error'
 import { DashboardLayout } from '@lenserfight/features/shell'
 import { HomePage } from '@lenserfight/features/home'
-import { LeaderboardPage } from '@lenserfight/features/leaderboard'
+import { LenserBoardPage } from '@lenserfight/features/lenserboard'
 import { LensersPage } from '@lenserfight/features/lensers'
 import { LenserProfilePage, LenserProvider, PendingRequestsPage } from '@lenserfight/features/profile'
 import {
@@ -40,10 +40,34 @@ import { ModalRoute } from '@lenserfight/ui/routing'
 import { NotAuthorizedPage } from './NotAuthorizedPage'
 import { AgentDetailPage } from '@lenserfight/features/agents'
 import { BenchmarkSuitesPage, BenchmarkSuiteDetailPage } from '@lenserfight/features/benchmark'
-import { Routes, Route, Navigate, BrowserRouter, useNavigate } from 'react-router-dom'
+import { WorkflowsPage, WorkflowBuilderPage } from '@lenserfight/features/workflows'
+import { Routes, Route, Navigate, BrowserRouter, useNavigate, useParams } from 'react-router-dom'
 
 const AUTH_APP_URL = import.meta.env.VITE_AUTH_BASE_URL ?? 'https://auth.lenserfight.com'
 const ARENA_APP_URL = import.meta.env.VITE_ARENA_URL ?? 'https://lenserfight.com'
+
+const WorkflowsPageRoute: React.FC = () => {
+  const navigate = useNavigate()
+  return (
+    <WorkflowsPage
+      onCreateWorkflow={() => navigate('/workflows/new')}
+      onOpenWorkflow={(id) => navigate(`/workflows/${id}`)}
+    />
+  )
+}
+
+const WorkflowBuilderPageRoute: React.FC = () => {
+  const navigate = useNavigate()
+  const { id, runId } = useParams<{ id?: string; runId?: string }>()
+  return (
+    <WorkflowBuilderPage
+      workflowId={id}
+      runId={runId}
+      onWorkflowCreated={(newId) => navigate(`/workflows/${newId}`)}
+      onBattleClick={(workflowId) => navigate(`/battles/create?workflow_id=${workflowId}`)}
+    />
+  )
+}
 
 const CreateBattleModal: React.FC = () => {
   const navigate = useNavigate()
@@ -110,7 +134,7 @@ const App: React.FC = () => {
                                 path="/lenserboard"
                                 element={
                                   <DashboardLayout>
-                                    <LeaderboardPage />
+                                    <LenserBoardPage />
                                   </DashboardLayout>
                                 }
                               />
@@ -256,6 +280,40 @@ const App: React.FC = () => {
                                 element={
                                   <DashboardLayout>
                                     <BattleResultPage />
+                                  </DashboardLayout>
+                                }
+                              />
+
+                              {/* Workflow Routes */}
+                              <Route
+                                path="/workflows"
+                                element={
+                                  <DashboardLayout>
+                                    <WorkflowsPageRoute />
+                                  </DashboardLayout>
+                                }
+                              />
+                              <Route
+                                path="/workflows/new"
+                                element={
+                                  <DashboardLayout>
+                                    <WorkflowBuilderPageRoute />
+                                  </DashboardLayout>
+                                }
+                              />
+                              <Route
+                                path="/workflows/:id"
+                                element={
+                                  <DashboardLayout>
+                                    <WorkflowBuilderPageRoute />
+                                  </DashboardLayout>
+                                }
+                              />
+                              <Route
+                                path="/workflows/:id/run/:runId"
+                                element={
+                                  <DashboardLayout>
+                                    <WorkflowBuilderPageRoute />
                                   </DashboardLayout>
                                 }
                               />
