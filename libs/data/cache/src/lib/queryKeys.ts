@@ -114,6 +114,7 @@ export const queryKeys = {
   workflows: {
     all: ['workflows'] as const,
     byLenser: (lenserId: string) => [...queryKeys.workflows.all, 'lenser', lenserId] as const,
+    feed: (lenserId: string, filter?: object) => [...queryKeys.workflows.all, 'feed', lenserId, filter] as const,
     detail: (id: string) => [...queryKeys.workflows.all, 'detail', id] as const,
     nodes: (id: string) => [...queryKeys.workflows.all, 'nodes', id] as const,
     edges: (id: string) => [...queryKeys.workflows.all, 'edges', id] as const,
