@@ -11,11 +11,12 @@ import { Sidebar } from './Sidebar/Sidebar'
 
 interface DashboardLayoutProps {
   children?: React.ReactNode
+  fullscreen?: boolean
 }
 
 const SIDEBAR_KEY = 'sidebar_collapsed'
 
-export const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) => {
+export const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children, fullscreen }) => {
   const [isMobile, setIsMobile] = useState(false)
   const mainContentRef = useRef<HTMLElement>(null)
 
@@ -60,12 +61,11 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) =>
     }
   }, [lenser?.preferences?.sidebar_collapsed, isMobile])
 
-  // Scroll reset on route change
+  // Scroll reset on route change (not needed for fullscreen pages which manage their own scroll)
   useEffect(() => {
-    if (mainContentRef.current) {
-      mainContentRef.current.scrollTop = 0
-    }
-  }, [location.pathname])
+    if (!mainContentRef.current || fullscreen) return
+    mainContentRef.current.scrollTop = 0
+  }, [location.pathname, fullscreen])
 
   // Resize listener for responsive sidebar
   useEffect(() => {
@@ -140,12 +140,24 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children }) =>
       <div className="flex-1 flex flex-col min-w-0 h-full overflow-hidden relative">
         <Header onToggleSidebar={handleToggleSidebar} isSidebarOpen={sidebarOpen} />
 
-        <main ref={mainContentRef} className="flex-1 overflow-y-auto scrollbar-hide flex flex-col">
-          <div className="flex-1 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 text-gray-900 dark:text-gray-100">
-            {children || <div className="text-gray-400 text-center mt-20">No content provided</div>}
-          </div>
-
-          <Footer isDashboard={true} navBaseUrl={import.meta.env.VITE_WEB_BASE_URL ?? 'https://lenserfight.com'} />
+        <main
+          ref={mainContentRef}
+          className={
+            fullscreen
+              ? 'flex-1 overflow-hidden flex flex-col'
+              : 'flex-1 overflow-y-auto scrollbar-hide flex flex-col'
+          }
+        >
+          {fullscreen ? (
+            children
+          ) : (
+            <>
+              <div className="flex-1 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 text-gray-900 dark:text-gray-100">
+                {children || <div className="text-gray-400 text-center mt-20">No content provided</div>}
+              </div>
+              <Footer isDashboard={true} navBaseUrl={import.meta.env.VITE_WEB_BASE_URL ?? 'https://lenserfight.com'} />
+            </>
+          )}
         </main>
       </div>
 
