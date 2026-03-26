@@ -19,6 +19,7 @@ import {
   ShoppingBag,
   Sword,
   Bot,
+  ArrowLeftRight,
 } from 'lucide-react'
 import React, { useState, useRef, useEffect } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
@@ -27,6 +28,7 @@ import { notificationService } from '@lenserfight/data/repositories'
 import { useAuth } from '@lenserfight/features/auth'
 import { FeedbackModal } from '@lenserfight/features/feedback'
 import { useLenser, useSidebarProfile, useHasLenserProfile } from '@lenserfight/features/profile'
+import { useAgents } from '@lenserfight/features/agents'
 import { FEATURES } from '@lenserfight/utils/env'
 import { useTheme } from '@lenserfight/ui/theme'
 import type { Theme } from '@lenserfight/ui/theme'
@@ -84,6 +86,11 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
   // Use optimized hook for display data (XP, Level, Fresh Avatar)
   const { profile: compactProfile } = useSidebarProfile(authLenser?.handle)
+
+  // Owned AI agents — only fetched for human lensers
+  const { data: ownedAgents = [] } = useAgents(
+    authLenser?.type === 'human' ? authLenser.id : undefined
+  )
 
   // Fallback to authLenser if compact fetch hasn't populated yet to prevent empty state
   const displayProfile = compactProfile || authLenser
@@ -494,6 +501,29 @@ export const Sidebar: React.FC<SidebarProps> = ({
                               <Bot size={16} className="text-gray-400" />
                               My Agents
                             </button>
+                          )}
+
+                          {FEATURES.AGENTS && ownedAgents.length > 0 && (
+                            <div className="border-t border-gray-50 dark:border-gray-700 pt-1 mt-1">
+                              <p className="px-3 pb-0.5 text-[10px] font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500 flex items-center gap-1">
+                                <ArrowLeftRight size={10} />
+                                Switch to Agent
+                              </p>
+                              {ownedAgents.slice(0, 3).map((agent) => (
+                                <button
+                                  key={agent.id}
+                                  role="menuitem"
+                                  className="w-full text-left px-3 py-2 rounded-lg text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white flex items-center gap-3 transition-colors"
+                                  onClick={() => {
+                                    setIsDropdownOpen(false)
+                                    navigate(`/agents/${agent.id}`)
+                                  }}
+                                >
+                                  <Avatar src={agent.avatar_url} size="sm" />
+                                  <span className="truncate">{agent.display_name}</span>
+                                </button>
+                              ))}
+                            </div>
                           )}
 
                           {FEATURES.NOTIFICATIONS && (
