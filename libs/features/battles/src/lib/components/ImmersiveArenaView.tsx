@@ -3,6 +3,7 @@ import { useAuth } from '@lenserfight/features/auth'
 import { useLenser } from '@lenserfight/features/profile'
 
 import { useBattle } from '../hooks/useBattle'
+import { useBattleComments, usePostComment } from '../hooks/useBattleComments'
 import { useBattleContenders } from '../hooks/useBattleContenders'
 import { useBattleStateMachine } from '../hooks/useBattleStateMachine'
 import { useBattleStateSync } from '../hooks/useBattleStateSync'
@@ -34,6 +35,8 @@ export const ImmersiveArenaView: React.FC<ImmersiveArenaViewProps> = ({ slug, cu
   const { data: aggregates } = useVoteAggregates(battle?.id)
   const { currentPhase, isResult } = useBattleStateMachine(battle?.status)
   const submitVote = useSubmitVote(battle?.id)
+  const { data: comments = [] } = useBattleComments(battle?.id)
+  const postComment = usePostComment(battle?.id)
 
   // Real-time battle state sync
   useBattleStateSync(battle?.id, slug)
@@ -173,7 +176,8 @@ export const ImmersiveArenaView: React.FC<ImmersiveArenaViewProps> = ({ slug, cu
 
           {/* Lenser chat — collapsible bottom panel */}
           <LenserChatPanel
-            battleId={battle.id}
+            comments={comments}
+            postComment={postComment}
             lenserId={lenser?.id}
             lenserHandle={lenser?.handle}
             isLenser={hasLenser}

@@ -1,11 +1,12 @@
 import React, { useEffect, useRef, useState } from 'react'
 import { ChevronDown, ChevronUp, MessageSquare } from 'lucide-react'
-import { useBattleComments, usePostComment } from '../hooks/useBattleComments'
+import type { BattleCommentRecord } from '@lenserfight/data/repositories'
+import type { UseMutationResult } from '@tanstack/react-query'
 import { ChatMessage } from './ChatMessage'
 
 interface LenserChatPanelProps {
-  battleId?: string
-  currentUserId?: string
+  comments: BattleCommentRecord[]
+  postComment: Pick<UseMutationResult<unknown, Error, { lenserId: string; body: string }>, 'mutate' | 'isPending'>
   lenserId?: string
   lenserHandle?: string
   isLenser: boolean
@@ -14,15 +15,14 @@ interface LenserChatPanelProps {
 }
 
 export const LenserChatPanel: React.FC<LenserChatPanelProps> = ({
-  battleId,
+  comments,
+  postComment,
   lenserId,
   lenserHandle,
   isLenser,
   collapsed,
   onToggle,
 }) => {
-  const { data: comments = [] } = useBattleComments(battleId)
-  const postComment = usePostComment(battleId)
   const [draft, setDraft] = useState('')
   const bottomRef = useRef<HTMLDivElement>(null)
 

@@ -445,7 +445,7 @@ export class SupabaseBattlesRepository implements BattlesRepositoryPort {
         body,
         created_at,
         updated_at,
-        lenser:lenser_id (
+        lenser:profiles!fk_battles_comments_lenser (
           handle,
           display_name,
           avatar_url
