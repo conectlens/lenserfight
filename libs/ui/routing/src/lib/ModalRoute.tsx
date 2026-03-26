@@ -27,6 +27,12 @@ export interface ModalRouteProps {
    * Set to false for required flows like onboarding. Defaults to true.
    */
   dismissOnBackdrop?: boolean
+  /** Forwarded to Dialog header — truncated at 60 chars */
+  title?: string
+  /** Forwarded to Dialog header — clamped to 2 lines */
+  description?: string
+  /** Forwarded to Dialog header icon badge */
+  icon?: React.ReactNode
   children: React.ReactNode
 }
 
@@ -55,6 +61,9 @@ export const ModalRoute: React.FC<ModalRouteProps> = ({
   fallback = '/not-authorized',
   maxWidth = 'max-w-2xl',
   dismissOnBackdrop = true,
+  title,
+  description,
+  icon,
   children,
 }) => {
   const navigate = useNavigate()
@@ -71,6 +80,9 @@ export const ModalRoute: React.FC<ModalRouteProps> = ({
       open
       onClose={dismissOnBackdrop ? () => navigate(-1) : undefined}
       maxWidth={maxWidth}
+      title={title}
+      description={description}
+      icon={icon}
       dismissOnBackdrop={dismissOnBackdrop}
     >
       {children}

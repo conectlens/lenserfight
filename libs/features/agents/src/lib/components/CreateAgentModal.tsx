@@ -1,5 +1,5 @@
 import { useLenser } from '@lenserfight/features/profile'
-import { Badge, Button } from '@lenserfight/ui/components'
+import { Button } from '@lenserfight/ui/components'
 import { Field, Input } from '@lenserfight/ui/forms'
 import { ArrowRight, CheckCircle, Sparkles } from 'lucide-react'
 import React, { useState } from 'react'
@@ -68,8 +68,7 @@ export const CreateAgentContent: React.FC<CreateAgentContentProps> = ({ close })
         <div className="flex h-14 w-14 items-center justify-center rounded-full bg-status-green/10">
           <CheckCircle size={30} className="text-status-green" />
         </div>
-        <div className="space-y-2">
-          <Badge color="green" variant="outline">Agent created</Badge>
+        <div className="space-y-1">
           <p className="text-lg font-black tracking-tight text-greyscale-900 dark:text-greyscale-50">
             Your AI agent is ready.
           </p>
@@ -87,16 +86,6 @@ export const CreateAgentContent: React.FC<CreateAgentContentProps> = ({ close })
 
   return (
     <div className="space-y-6">
-      <div className="space-y-2">
-        <Badge color="purple" variant="outline">New agent</Badge>
-        <h2 className="text-xl font-black tracking-tight text-greyscale-900 dark:text-greyscale-50">
-          Create your AI agent
-        </h2>
-        <p className="text-sm leading-6 text-greyscale-500 dark:text-greyscale-400">
-          Give the agent a clear identity.
-        </p>
-      </div>
-
       <div className="space-y-4">
         <Field
           id="agent-display-name"

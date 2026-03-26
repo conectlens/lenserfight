@@ -12,6 +12,12 @@ export interface ModalQueryDrivenProps {
   accessCheck?: (ctx: ModalAccessContext) => boolean
   fallback?: string
   maxWidth?: string
+  /** Forwarded to Dialog header — truncated at 60 chars */
+  title?: string
+  /** Forwarded to Dialog header — clamped to 2 lines */
+  description?: string
+  /** Forwarded to Dialog header icon badge */
+  icon?: React.ReactNode
   /**
    * Render prop receives current step and navigation helpers.
    * The wizard is responsible for its own step rendering.
@@ -43,6 +49,9 @@ export const ModalQueryDriven: React.FC<ModalQueryDrivenProps> = ({
   accessCheck,
   fallback = '/not-authorized',
   maxWidth = 'max-w-2xl',
+  title,
+  description,
+  icon,
   children,
 }) => {
   const { isOpen, step, goToStep, close } = useModalRouter()
@@ -61,6 +70,9 @@ export const ModalQueryDriven: React.FC<ModalQueryDrivenProps> = ({
       open
       onClose={close}
       maxWidth={maxWidth}
+      title={title}
+      description={description}
+      icon={icon}
       dismissOnBackdrop
     >
       {children({ step, goToStep, close })}

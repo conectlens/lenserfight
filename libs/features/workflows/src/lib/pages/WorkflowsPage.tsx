@@ -2,6 +2,7 @@ import { Button } from '@lenserfight/ui/components'
 import { useAuth } from '@lenserfight/features/auth'
 import { GitBranch, Plus } from 'lucide-react'
 import React from 'react'
+import { Outlet } from 'react-router-dom'
 
 import { useWorkflow } from '../hooks/useWorkflow'
 import { useWorkflows } from '../hooks/useWorkflows'
@@ -75,6 +76,9 @@ export function WorkflowsPage({ onCreateWorkflow, onOpenWorkflow }: WorkflowsPag
           ))}
         </div>
       )}
+
+      {/* Nested modal outlet — renders /workflows/manage modal overlay */}
+      <Outlet />
     </div>
   )
 }
