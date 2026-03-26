@@ -35,6 +35,7 @@ export interface BattleRecord {
   voter_eligibility: VoterEligibility
   handicap_config: Record<string, unknown>
   creator_lenser_id: string | null
+  forum_thread_id: string | null
 }
 
 export interface AIHandicapPolicyRecord {
@@ -63,6 +64,15 @@ export interface ContenderRecord {
   slot: 'A' | 'B'
   contender_type: ContenderType
   display_name: string
+  contender_ref_id: string | null
+}
+
+export interface InviteContenderInput {
+  battle_id: string
+  slot: 'A' | 'B'
+  contender_ref_id: string
+  display_name: string
+  contender_type: ContenderType
 }
 
 export interface SubmissionRecord {
@@ -159,7 +169,7 @@ export interface BattlesFeedOptions {
 
 export interface BattlesRepositoryPort {
   getBattleBySlug(slug: string): Promise<BattleRecord | null>
-  getBattlesFeed(filter?: string, limit?: number, battleType?: BattleType): Promise<BattleRecord[]>
+  getBattlesFeed(filter?: string, limit?: number, battleType?: BattleType, cursor?: string): Promise<BattleRecord[]>
   getBattlesFeedItems(options?: BattlesFeedOptions): Promise<BattleFeedItemRecord[]>
   getContenders(battleId: string): Promise<ContenderRecord[]>
   getSubmissions(battleId: string): Promise<SubmissionRecord[]>
@@ -172,6 +182,9 @@ export interface BattlesRepositoryPort {
   checkVoterEligibility(battleId: string, lenserId: string): Promise<boolean>
   getGlobalMessages(battleId: string, limit?: number): Promise<GlobalMessageRecord[]>
   postGlobalMessage(battleId: string, senderId: string, senderHandle: string, senderRole: string, body: string): Promise<GlobalMessageRecord>
+  inviteContender(input: InviteContenderInput): Promise<ContenderRecord>
+  submitContenderEntry(battleId: string, contenderId: string, contentText: string): Promise<SubmissionRecord>
+  linkForumThread(battleId: string, forumThreadId: string): Promise<void>
 }
 
 // --- Supabase Implementation ---
@@ -185,7 +198,7 @@ export class SupabaseBattlesRepository implements BattlesRepositoryPort {
   }
 
   private readonly battleSelect =
-    'id, slug, title, task_prompt, status, total_vote_count, published_at, battle_type, voter_eligibility, handicap_config, creator_lenser_id'
+    'id, slug, title, task_prompt, status, total_vote_count, published_at, battle_type, voter_eligibility, handicap_config, creator_lenser_id, forum_thread_id'
 
   async getBattleBySlug(slug: string): Promise<BattleRecord | null> {
     const { data, error } = await supabase
@@ -199,7 +212,7 @@ export class SupabaseBattlesRepository implements BattlesRepositoryPort {
     return data as BattleRecord | null
   }
 
-  async getBattlesFeed(filter?: string, limit = 50, battleType?: BattleType): Promise<BattleRecord[]> {
+  async getBattlesFeed(filter?: string, limit = 20, battleType?: BattleType, cursor?: string): Promise<BattleRecord[]> {
     let query = supabase
       .schema('battles')
       .from('battles')
@@ -213,6 +226,9 @@ export class SupabaseBattlesRepository implements BattlesRepositoryPort {
     if (battleType) {
       query = query.eq('battle_type', battleType)
     }
+    if (cursor) {
+      query = query.lt('published_at', cursor)
+    }
 
     const { data, error } = await query
     if (error) this.handleError(error)
@@ -223,7 +239,7 @@ export class SupabaseBattlesRepository implements BattlesRepositoryPort {
     const { data, error } = await supabase
       .schema('battles')
       .from('contenders')
-      .select('id, battle_id, slot, contender_type, display_name')
+      .select('id, battle_id, slot, contender_type, display_name, contender_ref_id')
       .eq('battle_id', battleId)
 
     if (error) this.handleError(error)
@@ -451,5 +467,50 @@ export class SupabaseBattlesRepository implements BattlesRepositoryPort {
       .single()
     if (error) this.handleError(error)
     return data as GlobalMessageRecord
+  }
+
+  async inviteContender(input: InviteContenderInput): Promise<ContenderRecord> {
+    const { data, error } = await supabase
+      .schema('battles')
+      .from('contenders')
+      .insert({
+        battle_id: input.battle_id,
+        slot: input.slot,
+        contender_type: input.contender_type,
+        contender_ref_id: input.contender_ref_id,
+        display_name: input.display_name,
+        entry_mode: 'manual',
+        contender_status: 'invited',
+      })
+      .select('id, battle_id, slot, contender_type, display_name, contender_ref_id')
+      .single()
+    if (error) this.handleError(error)
+    return data as ContenderRecord
+  }
+
+  async submitContenderEntry(battleId: string, contenderId: string, contentText: string): Promise<SubmissionRecord> {
+    const { data, error } = await supabase
+      .schema('battles')
+      .from('submissions')
+      .insert({
+        battle_id: battleId,
+        contender_id: contenderId,
+        content_text: contentText,
+        content_url: null,
+        status: 'submitted',
+      })
+      .select('id, battle_id, contender_id, content_text, content_url, status')
+      .single()
+    if (error) this.handleError(error)
+    return data as SubmissionRecord
+  }
+
+  async linkForumThread(battleId: string, forumThreadId: string): Promise<void> {
+    const { error } = await supabase
+      .schema('battles')
+      .from('battles')
+      .update({ forum_thread_id: forumThreadId })
+      .eq('id', battleId)
+    if (error) this.handleError(error)
   }
 }

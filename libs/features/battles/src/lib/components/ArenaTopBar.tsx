@@ -20,7 +20,7 @@ export const ArenaTopBar: React.FC<ArenaTopBarProps> = ({ battle, currentPhase, 
   const { label, color } = PHASE_LABELS[currentPhase]
 
   return (
-    <div className="h-14 flex-shrink-0 flex items-center gap-3 px-4 border-b border-greyscale-800 bg-gray-950">
+    <div className="h-14 flex-shrink-0 flex items-center gap-3 px-4 border-b border-greyscale-800 bg-gray-800">
       <Link
         to="/battles"
         className="flex items-center gap-1.5 text-greyscale-400 hover:text-greyscale-0 transition-colors text-sm"

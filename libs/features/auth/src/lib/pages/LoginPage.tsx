@@ -9,7 +9,7 @@ import { rememberMeStorage } from '@lenserfight/data/supabase'
 import { useFormValidation } from '@lenserfight/utils/validation'
 import { isRequired, isEmail } from '@lenserfight/utils/validation'
 import { AuthCard } from '../components/AuthCard'
-import { AuthButton } from '../components/AuthButton'
+import { Button } from '@lenserfight/ui/components'
 import { AuthLoadingOverlay } from '../components/AuthLoadingOverlay'
 import { InputField } from '../components/InputField'
 
@@ -183,14 +183,14 @@ export const LoginPage: React.FC = () => {
             </div>
           )}
 
-          <AuthButton
+          <Button
             type="submit"
             isLoading={isSubmitting}
             disabled={oauthLoading || isSuccess || (ENABLE_CAPTCHA && !captchaToken)}
             className="mt-4 py-3 text-base font-bold shadow-lg shadow-[rgba(40,123,255,0.2)]"
           >
             {isSuccess ? 'Signing In...' : 'Sign In'}
-          </AuthButton>
+          </Button>
         </form>
 
         <div className="relative my-8">

@@ -13,6 +13,9 @@ export * from './lib/hooks/useVoteAggregates'
 export * from './lib/hooks/usePublishBattle'
 export * from './lib/hooks/useBattleComments'
 export * from './lib/hooks/useGlobalChat'
+export * from './lib/hooks/useInviteContender'
+export * from './lib/hooks/useSubmitEntry'
+export * from './lib/hooks/useVoterEligibility'
 
 export * from './lib/types/battle-renderer.types'
 
@@ -36,6 +39,8 @@ export * from './lib/components/XPGainToast'
 
 // Battle creation wizard
 export * from './lib/components/CreateBattleWizard'
+export * from './lib/components/ContenderInviteStep'
+export * from './lib/components/SubmitTextForm'
 
 // Battle UI components
 export * from './lib/components/BattleCard'

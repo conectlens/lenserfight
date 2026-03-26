@@ -61,6 +61,8 @@ export interface Battle {
   battle_type: BattleType
   voter_eligibility: VoterEligibility
   handicap_config: AIHandicapConfig
+  creator_lenser_id: string | null
+  forum_thread_id: string | null
 }
 
 export interface Contender {
@@ -69,6 +71,7 @@ export interface Contender {
   slot: 'A' | 'B'
   contender_type: ContenderType
   display_name: string
+  contender_ref_id: string | null
 }
 
 export interface Submission {

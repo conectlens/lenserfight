@@ -25,7 +25,7 @@ export const NotAuthorizedPage: React.FC = () => {
         >
           Go back
         </button>
-        <Button variant="dark" onClick={() => navigate('/auth/login')} className="w-auto">
+        <Button onClick={() => navigate('/auth/login')} className="w-auto">
           Sign in
         </Button>
       </div>

@@ -11,11 +11,12 @@ import {
   RubricCriterionRecord,
   SubmissionRecord,
   SubmitVoteInput,
+  InviteContenderInput,
 } from '../repositories/battlesRepository'
 
 const battlesRepo = new SupabaseBattlesRepository()
 
-export type { BattleRecord, BattleCommentRecord, GlobalMessageRecord, BattleFeedItemRecord, BattlesFeedOptions, ContenderRecord, VoteAggregateRecord, ScorecardRecord, RubricCriterionRecord, SubmissionRecord, SubmitVoteInput }
+export type { BattleRecord, BattleCommentRecord, GlobalMessageRecord, BattleFeedItemRecord, BattlesFeedOptions, ContenderRecord, VoteAggregateRecord, ScorecardRecord, RubricCriterionRecord, SubmissionRecord, SubmitVoteInput, InviteContenderInput }
 
 export interface BattleContendersData {
   contenders: ContenderRecord[]
@@ -36,8 +37,8 @@ export const battlesService = {
   getBattleBySlug: (slug: string): Promise<BattleRecord | null> =>
     battlesRepo.getBattleBySlug(slug),
 
-  getBattlesFeed: (filter?: string, limit?: number): Promise<BattleRecord[]> =>
-    battlesRepo.getBattlesFeed(filter, limit),
+  getBattlesFeed: (filter?: string, limit?: number, cursor?: string): Promise<BattleRecord[]> =>
+    battlesRepo.getBattlesFeed(filter, limit, undefined, cursor),
 
   getContendersAndSubmissions: async (battleId: string): Promise<BattleContendersData> => {
     const [contenders, submissions] = await Promise.all([
@@ -77,6 +78,18 @@ export const battlesService = {
 
   postGlobalMessage: (battleId: string, senderId: string, senderHandle: string, senderRole: string, body: string): Promise<GlobalMessageRecord> =>
     battlesRepo.postGlobalMessage(battleId, senderId, senderHandle, senderRole, body),
+
+  inviteContender: (input: InviteContenderInput): Promise<ContenderRecord> =>
+    battlesRepo.inviteContender(input),
+
+  submitContenderEntry: (battleId: string, contenderId: string, contentText: string): Promise<SubmissionRecord> =>
+    battlesRepo.submitContenderEntry(battleId, contenderId, contentText),
+
+  linkForumThread: (battleId: string, forumThreadId: string): Promise<void> =>
+    battlesRepo.linkForumThread(battleId, forumThreadId),
+
+  checkVoterEligibility: (battleId: string, lenserId: string): Promise<boolean> =>
+    battlesRepo.checkVoterEligibility(battleId, lenserId),
 
   deriveWinner: (
     aggregates: VoteAggregateRecord[],

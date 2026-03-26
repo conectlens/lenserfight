@@ -7,8 +7,7 @@ import { useAuth } from '@lenserfight/features/auth'
 import { useFormValidation } from '@lenserfight/utils/validation'
 import { isRequired, minLength } from '@lenserfight/utils/validation'
 import { AuthCard } from '../components/AuthCard'
-import { AuthButton } from '../components/AuthButton'
-import { AuthFormError } from '../components/AuthFormError'
+import { Button, FormError } from '@lenserfight/ui/components'
 import { InputField } from '../components/InputField'
 import { PasswordStrengthMeter } from '../components/PasswordStrengthMeter'
 
@@ -102,7 +101,7 @@ export const ResetPasswordPage: React.FC = () => {
             new one.
           </p>
           <Link to="/forgot-password" className="w-full">
-            <AuthButton type="button">Request New Link</AuthButton>
+            <Button type="button" >Request New Link</Button>
           </Link>
         </div>
       </AuthCard>
@@ -138,7 +137,7 @@ export const ResetPasswordPage: React.FC = () => {
             }
           />
           <PasswordStrengthMeter password={formData.password} />
-          <AuthFormError message={errors.password} />
+          <FormError message={errors.password} />
         </div>
 
         <div>
@@ -153,16 +152,16 @@ export const ResetPasswordPage: React.FC = () => {
               errors.confirmPassword ? 'border-red-500 focus:border-red-500 focus:ring-red-200' : ''
             }
           />
-          <AuthFormError message={errors.confirmPassword} />
+          <FormError message={errors.confirmPassword} />
         </div>
 
         {apiError && (
           <div className="text-red-500 text-sm bg-red-50 p-3 rounded-lg">{apiError}</div>
         )}
 
-        <AuthButton type="submit" isLoading={loading} className="mt-2 text-base font-semibold">
+        <Button type="submit" isLoading={loading} className="mt-2 text-base font-semibold">
           Update Password
-        </AuthButton>
+        </Button>
       </form>
 
       <div className="mt-8 text-center text-sm text-gray-500 font-medium">

@@ -31,11 +31,12 @@ interface BattleCardProps {
   publishedAt?: string | null
   battleType?: BattleType
   contenders?: { displayName: string; slot: string }[]
+  creatorHandle?: string | null
 }
 
 const MotionLink = motion(Link)
 
-export function BattleCard({ slug, title, taskPrompt, status, totalVoteCount, battleType, contenders }: BattleCardProps) {
+export function BattleCard({ slug, title, taskPrompt, status, totalVoteCount, battleType, contenders, creatorHandle }: BattleCardProps) {
   return (
     <MotionLink
       to={`/battles/${slug}`}
@@ -79,8 +80,12 @@ export function BattleCard({ slug, title, taskPrompt, status, totalVoteCount, ba
         )}
 
         <div className="flex items-center justify-between text-xs text-greyscale-500 dark:text-greyscale-400">
-          <span>Votes</span>
-          <span className="font-semibold text-greyscale-900 dark:text-greyscale-50">{totalVoteCount}</span>
+          {creatorHandle ? (
+            <span>by <span className="font-medium text-greyscale-700 dark:text-greyscale-300">@{creatorHandle}</span></span>
+          ) : (
+            <span />
+          )}
+          <span className="font-semibold text-greyscale-900 dark:text-greyscale-50">{totalVoteCount} vote{totalVoteCount !== 1 ? 's' : ''}</span>
         </div>
       </Card>
     </MotionLink>

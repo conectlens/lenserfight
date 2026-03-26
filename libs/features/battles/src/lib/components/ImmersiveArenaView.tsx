@@ -28,7 +28,7 @@ export const ImmersiveArenaView: React.FC<ImmersiveArenaViewProps> = ({ slug, cu
   const { isAuthenticated } = useAuth()
   const { lenser, hasLenser } = useLenser()
 
-  const { data: battle, isLoading: battleLoading } = useBattle(slug)
+  const { data: battle, isLoading: battleLoading, error: battleError } = useBattle(slug)
   const { data: contendersData } = useBattleContenders(battle?.id)
   const { data: aggregates } = useVoteAggregates(battle?.id)
   const { currentPhase, isResult } = useBattleStateMachine(battle?.status)
@@ -75,10 +75,24 @@ export const ImmersiveArenaView: React.FC<ImmersiveArenaViewProps> = ({ slug, cu
       })()
     : undefined
 
-  if (battleLoading || !battle) {
+  if (battleLoading) {
     return (
-      <div className="h-screen flex items-center justify-center bg-gray-950 text-greyscale-400 text-sm">
+      <div className="h-screen flex items-center justify-center bg-gray-800 text-greyscale-400 text-sm">
         Loading battle…
+      </div>
+    )
+  }
+
+  if (battleError || !battle) {
+    return (
+      <div className="h-screen flex items-center justify-center bg-gray-800">
+        <div className="text-center space-y-3">
+          <p className="text-3xl">⚔️</p>
+          <p className="text-sm font-semibold text-greyscale-300">
+            {battleError?.message ?? 'Battle not found.'}
+          </p>
+          <a href="/battles" className="text-xs text-primary hover:underline">← Back to battles</a>
+        </div>
       </div>
     )
   }
@@ -89,6 +103,7 @@ export const ImmersiveArenaView: React.FC<ImmersiveArenaViewProps> = ({ slug, cu
       contenderA={{ id: contenderA.id, displayName: contenderA.display_name }}
       contenderB={{ id: contenderB.id, displayName: contenderB.display_name }}
       disabled={!currentUserId}
+      voterEligibility={battle.voter_eligibility}
       onVote={handleVote}
     />
   ) : null
@@ -99,11 +114,12 @@ export const ImmersiveArenaView: React.FC<ImmersiveArenaViewProps> = ({ slug, cu
       winnerSlot={winnerSlot}
       voteA={aggA?.raw_vote_count ?? 0}
       voteB={aggB?.raw_vote_count ?? 0}
+      forumThreadId={battle.forum_thread_id}
     />
   )
 
   return (
-    <div className="h-screen overflow-hidden flex flex-col bg-gray-950 text-white">
+    <div className="h-screen overflow-hidden flex flex-col bg-gray-800 text-white">
       <BattleSEOHead battle={battle} />
 
       {/* Main content area */}
@@ -121,6 +137,9 @@ export const ImmersiveArenaView: React.FC<ImmersiveArenaViewProps> = ({ slug, cu
               aggregate={aggA}
               renderer={renderer}
               totalVotes={totalVotes}
+              battleId={battle.id}
+              battleStatus={battle.status}
+              currentUserId={currentUserId}
             />
             <ArenaCenterZone
               phase={currentPhase}
@@ -140,6 +159,9 @@ export const ImmersiveArenaView: React.FC<ImmersiveArenaViewProps> = ({ slug, cu
               aggregate={aggB}
               renderer={renderer}
               totalVotes={totalVotes}
+              battleId={battle.id}
+              battleStatus={battle.status}
+              currentUserId={currentUserId}
             />
           </div>
 

@@ -1,6 +1,7 @@
 import React from 'react'
 import type { Contender, Submission, VoteAggregate } from '../types/battle.types'
 import type { BattleContentRenderer } from '../types/battle-renderer.types'
+import { SubmitTextForm } from './SubmitTextForm'
 
 interface ArenaContenderColumnProps {
   slot: 'A' | 'B'
@@ -9,6 +10,9 @@ interface ArenaContenderColumnProps {
   aggregate?: VoteAggregate
   renderer: BattleContentRenderer
   totalVotes: number
+  battleId?: string
+  battleStatus?: string
+  currentUserId?: string
 }
 
 export const ArenaContenderColumn: React.FC<ArenaContenderColumnProps> = ({
@@ -18,10 +22,25 @@ export const ArenaContenderColumn: React.FC<ArenaContenderColumnProps> = ({
   aggregate,
   renderer,
   totalVotes,
+  battleId,
+  battleStatus,
+  currentUserId,
 }) => {
   const voteCount = aggregate?.raw_vote_count ?? 0
   const votePercent = totalVotes > 0 ? Math.round((voteCount / totalVotes) * 100) : 0
   const { SubmissionRenderer } = renderer
+
+  const isCurrentUserContender =
+    !!currentUserId &&
+    !!contender?.contender_ref_id &&
+    currentUserId === contender.contender_ref_id
+
+  const canSubmit =
+    isCurrentUserContender &&
+    battleStatus === 'open' &&
+    !submission &&
+    !!battleId &&
+    !!contender
 
   return (
     <div className="flex flex-col w-0 flex-1 min-w-0 border-r border-greyscale-800 last:border-r-0">
@@ -33,17 +52,24 @@ export const ArenaContenderColumn: React.FC<ArenaContenderColumnProps> = ({
         <span className="text-sm font-semibold text-greyscale-0 truncate">
           {contender?.display_name ?? '—'}
         </span>
+        {isCurrentUserContender && (
+          <span className="ml-1 text-[10px] font-bold text-primary">You</span>
+        )}
         <span className="ml-auto text-xs text-greyscale-400">
           {voteCount} vote{voteCount !== 1 ? 's' : ''}
         </span>
       </div>
 
-      {/* Submission content */}
+      {/* Submission content or submit form */}
       <div className="flex-1 overflow-y-auto p-4">
-        <SubmissionRenderer
-          content={submission?.content_text}
-          url={submission?.content_url}
-        />
+        {canSubmit ? (
+          <SubmitTextForm battleId={battleId} contenderId={contender.id} />
+        ) : (
+          <SubmissionRenderer
+            content={submission?.content_text}
+            url={submission?.content_url}
+          />
+        )}
       </div>
 
       {/* Vote bar */}

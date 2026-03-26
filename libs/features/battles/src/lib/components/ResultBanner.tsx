@@ -9,6 +9,7 @@ interface ResultBannerProps {
   voteA: number
   voteB: number
   drawCount?: number
+  forumThreadId?: string | null
 }
 
 // Particle colors from design tokens
@@ -20,7 +21,7 @@ const PARTICLE_COLORS = [
   'var(--cl-navy-400)',
 ]
 
-export function ResultBanner({ winnerName, winnerSlot, voteA, voteB, drawCount = 0 }: ResultBannerProps) {
+export function ResultBanner({ winnerName, winnerSlot, voteA, voteB, drawCount = 0, forumThreadId }: ResultBannerProps) {
   const isWinner = winnerSlot === 'A' || winnerSlot === 'B'
 
   return (
@@ -88,6 +89,17 @@ export function ResultBanner({ winnerName, winnerSlot, voteA, voteB, drawCount =
           {drawCount > 0 && <span>{drawCount} draws</span>}
           <span>{voteB} votes</span>
         </div>
+
+        {forumThreadId && (
+          <div className="mt-4">
+            <a
+              href={`/threads/${forumThreadId}`}
+              className="text-xs font-semibold text-primary hover:underline"
+            >
+              Discuss in forum →
+            </a>
+          </div>
+        )}
       </motion.div>
     </div>
   )

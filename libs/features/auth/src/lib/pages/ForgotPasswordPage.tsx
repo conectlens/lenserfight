@@ -8,8 +8,7 @@ import { useAuth } from '@lenserfight/features/auth'
 import { useFormValidation } from '@lenserfight/utils/validation'
 import { isRequired, isEmail } from '@lenserfight/utils/validation'
 import { AuthCard } from '../components/AuthCard'
-import { AuthButton } from '../components/AuthButton'
-import { AuthFormError } from '../components/AuthFormError'
+import { Button, FormError } from '@lenserfight/ui/components'
 import { InputField } from '../components/InputField'
 
 export const ForgotPasswordPage: React.FC = () => {
@@ -88,7 +87,7 @@ export const ForgotPasswordPage: React.FC = () => {
             </div>
           )}
           <Link to="/auth/login">
-            <AuthButton type="button">Return to Sign In</AuthButton>
+            <Button type="button" >Return to Sign In</Button>
           </Link>
         </div>
       </AuthCard>
@@ -126,7 +125,7 @@ export const ForgotPasswordPage: React.FC = () => {
             onChange={handleChange}
             className={errors.email ? 'border-red-500 focus:border-red-500 focus:ring-red-200' : ''}
           />
-          <AuthFormError message={errors.email} />
+          <FormError message={errors.email} />
         </div>
 
         {ENABLE_CAPTCHA && (
@@ -139,14 +138,14 @@ export const ForgotPasswordPage: React.FC = () => {
           <div className="text-red-500 text-sm bg-red-50 p-3 rounded-lg">{apiError}</div>
         )}
 
-        <AuthButton
+        <Button
           type="submit"
           isLoading={loading}
           disabled={ENABLE_CAPTCHA && !captchaToken}
           className="mt-2 text-base font-semibold"
         >
           Send Reset Link
-        </AuthButton>
+        </Button>
       </form>
 
       <div className="mt-8 text-center text-sm text-gray-500 font-medium">

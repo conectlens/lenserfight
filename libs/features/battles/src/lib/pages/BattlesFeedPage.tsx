@@ -44,8 +44,9 @@ export function BattlesFeedPage() {
   const navigate = useNavigate()
   const [statusFilter, setStatusFilter] = useState<string>('all')
   const [typeFilter, setTypeFilter] = useState<BattleType | 'all'>('all')
-  const { data: battles = [], isLoading } = useBattlesFeed(statusFilter)
+  const { data, isLoading, fetchNextPage, hasNextPage, isFetchingNextPage } = useBattlesFeed(statusFilter)
 
+  const battles = data?.pages.flat() ?? []
   const filtered = typeFilter === 'all'
     ? battles
     : battles.filter((b) => b.battle_type === typeFilter)
@@ -128,6 +129,17 @@ export function BattlesFeedPage() {
             ))}
           </motion.div>
         </AnimatePresence>
+      )}
+      {hasNextPage && (
+        <div className="mt-6 flex justify-center">
+          <button
+            onClick={() => fetchNextPage()}
+            disabled={isFetchingNextPage}
+            className="text-sm px-5 py-2 rounded-full border border-[var(--cl-surface-border)] text-[var(--cl-surface-text-muted)] hover:border-[var(--cl-surface-border-subtle)] transition-all disabled:opacity-50"
+          >
+            {isFetchingNextPage ? 'Loading…' : 'Load more'}
+          </button>
+        </div>
       )}
       <Outlet />
     </div>

@@ -8,7 +8,7 @@ import { useAuth } from '@lenserfight/features/auth'
 import { useFormValidation } from '@lenserfight/utils/validation'
 import { isRequired, isEmail } from '@lenserfight/utils/validation'
 import { AuthCard } from '../components/AuthCard'
-import { AuthButton } from '../components/AuthButton'
+import { Button } from '@lenserfight/ui/components'
 import { AuthLoadingOverlay } from '../components/AuthLoadingOverlay'
 import { InputField } from '../components/InputField'
 import { PasswordStrengthMeter } from '../components/PasswordStrengthMeter'
@@ -290,14 +290,14 @@ export const RegisterPage: React.FC = () => {
             </div>
           )}
 
-          <AuthButton
+          <Button
             type="submit"
             isLoading={loading}
             disabled={oauthLoading || isSuccess || (ENABLE_CAPTCHA && !captchaToken)}
             className="mt-4 py-3 text-base font-bold shadow-lg shadow-primary/20"
           >
             {isSuccess ? 'Signing Up...' : 'Sign Up'}
-          </AuthButton>
+          </Button>
         </form>
 
         <div className="relative my-8">

@@ -30,7 +30,7 @@ export const ArenaCenterZone: React.FC<ArenaCenterZoneProps> = ({
   const { IdleAnimation } = renderer
 
   return (
-    <div className="w-56 flex-shrink-0 flex flex-col items-center justify-center border-r border-greyscale-800 bg-gray-950 px-4">
+    <div className="w-56 flex-shrink-0 flex flex-col items-center justify-center border-r border-greyscale-800 bg-gray-800 px-4">
       <AnimatePresence mode="wait">
         {phase === 'idle' && (
           <motion.div key="idle" variants={phaseVariants} initial="initial" animate="animate" exit="exit" className="w-full">

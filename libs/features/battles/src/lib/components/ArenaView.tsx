@@ -10,6 +10,7 @@ import { useBattleStateMachine } from '../hooks/useBattleStateMachine'
 import { usePublishBattle } from '../hooks/usePublishBattle'
 import { useSubmitVote } from '../hooks/useSubmitVote'
 import { useVoteAggregates } from '../hooks/useVoteAggregates'
+import { useVoterEligibility } from '../hooks/useVoterEligibility'
 
 import { BattleChatPanel } from './BattleChatPanel'
 import { BattleCreatorPanel } from './BattleCreatorPanel'
@@ -39,6 +40,8 @@ interface ArenaViewRenderProps {
     contenderB: { id: string; displayName: string }
     disabled: boolean
     onVote: (value: 'contender_a' | 'contender_b' | 'draw', rationale: string) => Promise<void>
+    voterEligibility?: import('../types/battle.types').VoterEligibility
+    isEligible: boolean
   }) => React.ReactNode
   renderRubricPanel: (props: {
     criteria: Array<{ id: string; name: string; description?: string; weight: number }>
@@ -87,6 +90,7 @@ export function ArenaView({
   const { data: aggregates = [] } = useVoteAggregates(battle?.id)
   const { data: scorecardData } = useBattleScorecard(battle?.id)
   const { mutateAsync: submitVote } = useSubmitVote(battle?.id)
+  const { isEligible } = useVoterEligibility(battle?.id, currentUserId)
 
   const stateMachine = useBattleStateMachine(battle?.status)
   const currentPhase = forcePhase ?? stateMachine.currentPhase
@@ -286,6 +290,8 @@ export function ArenaView({
                   contenderB: { id: contenderB.id, displayName: contenderB.display_name },
                   disabled: !currentUserId,
                   onVote: handleVote,
+                  voterEligibility: battle.voter_eligibility,
+                  isEligible,
                 })}
             </>
           )}
@@ -311,6 +317,16 @@ export function ArenaView({
               {criteria.length > 0 &&
                 renderRubricPanel({ criteria, scorecardA, scorecardB })}
               {renderShareCard({ battleSlug: battle.slug, battleTitle: battle.title })}
+              {battle.forum_thread_id && (
+                <div className="mt-4 text-center">
+                  <a
+                    href={`/threads/${battle.forum_thread_id}`}
+                    className="text-sm text-primary hover:underline"
+                  >
+                    Discuss in forum →
+                  </a>
+                </div>
+              )}
             </>
           )}
         </motion.div>

@@ -5,13 +5,14 @@ import { ArrowLeft, ArrowRight, Check, Swords } from 'lucide-react'
 import React, { useState } from 'react'
 
 import { BattleTypeSelector } from './BattleTypeSelector'
+import { ContenderInviteStep } from './ContenderInviteStep'
 import { HandicapConfigPanel } from './HandicapConfigPanel'
 import { VoterEligibilitySelector } from './VoterEligibilitySelector'
 
 import type { AIHandicapConfig, BattleType, VoterEligibility } from '../types/battle.types'
 
-const STEPS = ['Basics', 'Battle type', 'Configuration'] as const
-type Step = 0 | 1 | 2
+const STEPS = ['Basics', 'Battle type', 'Configuration', 'Contenders'] as const
+type Step = 0 | 1 | 2 | 3
 
 const DEFAULT_HANDICAP: AIHandicapConfig = {
   injected_delay_ms: 2000,
@@ -55,6 +56,10 @@ export const CreateBattleWizard: React.FC<CreateBattleWizardProps> = ({ onSucces
   const [voterEligibility, setVoterEligibility] = useState<VoterEligibility>('open')
   const [handicap, setHandicap] = useState<AIHandicapConfig>(DEFAULT_HANDICAP)
 
+  // Created battle state — populated after step 2 completes
+  const [createdBattleId, setCreatedBattleId] = useState<string | null>(null)
+  const [createdBattleSlug, setCreatedBattleSlug] = useState<string | null>(null)
+
   const showsHandicap = AI_BATTLE_TYPES.includes(battleType)
 
   const go = (next: Step) => {
@@ -73,7 +78,7 @@ export const CreateBattleWizard: React.FC<CreateBattleWizardProps> = ({ onSucces
 
   const canAdvanceStep0 = title.trim().length >= 3 && taskPrompt.trim().length >= 20
 
-  const handleSubmit = async () => {
+  const handleCreateBattle = async () => {
     if (!canAdvanceStep0) return
     setSubmitting(true)
     setError(null)
@@ -85,9 +90,12 @@ export const CreateBattleWizard: React.FC<CreateBattleWizardProps> = ({ onSucces
         voter_eligibility: voterEligibility,
         handicap: showsHandicap ? handicap : undefined,
       })
-      onSuccess(battle.slug)
+      setCreatedBattleId(battle.id)
+      setCreatedBattleSlug(battle.slug)
+      go(3)
     } catch (e) {
       setError((e as Error).message ?? 'Something went wrong. Please try again.')
+    } finally {
       setSubmitting(false)
     }
   }
@@ -102,18 +110,16 @@ export const CreateBattleWizard: React.FC<CreateBattleWizardProps> = ({ onSucces
           return (
             <React.Fragment key={label}>
               <div className="flex items-center gap-2">
-                <div className={`flex h-7 w-7 items-center justify-center rounded-full text-xs font-bold transition-colors ${
-                  done
+                <div className={`flex h-7 w-7 items-center justify-center rounded-full text-xs font-bold transition-colors ${done
                     ? 'bg-greyscale-900 text-greyscale-0 dark:bg-greyscale-0 dark:text-greyscale-900'
                     : active
-                    ? 'border-2 border-greyscale-900 text-greyscale-900 dark:border-greyscale-0 dark:text-greyscale-0'
-                    : 'border border-surface-border text-greyscale-400'
-                }`}>
+                      ? 'border-2 border-greyscale-900 text-greyscale-900 dark:border-greyscale-0 dark:text-greyscale-0'
+                      : 'border border-surface-border text-greyscale-400'
+                  }`}>
                   {done ? <Check size={13} /> : i + 1}
                 </div>
-                <span className={`text-sm font-semibold ${
-                  active ? 'text-greyscale-900 dark:text-greyscale-0' : 'text-greyscale-400'
-                }`}>
+                <span className={`hidden sm:block text-sm font-semibold ${active ? 'text-greyscale-900 dark:text-greyscale-0' : 'text-greyscale-400'
+                  }`}>
                   {label}
                 </span>
               </div>
@@ -138,7 +144,7 @@ export const CreateBattleWizard: React.FC<CreateBattleWizardProps> = ({ onSucces
           {step === 0 && (
             <Card className="space-y-5 p-6">
               <div className="space-y-2">
-                <Badge color="blue" variant="outline">Step 1 of 3</Badge>
+                <Badge color="blue" variant="outline">Step 1 of 4</Badge>
                 <h2 className="text-xl font-black tracking-tight text-greyscale-900 dark:text-greyscale-0">
                   Battle basics
                 </h2>
@@ -184,7 +190,7 @@ export const CreateBattleWizard: React.FC<CreateBattleWizardProps> = ({ onSucces
                   Cancel
                 </button>
                 <Button
-                  variant="dark"
+
                   onClick={() => go(1)}
                   disabled={!canAdvanceStep0}
                   className="gap-2 w-auto"
@@ -199,7 +205,7 @@ export const CreateBattleWizard: React.FC<CreateBattleWizardProps> = ({ onSucces
           {step === 1 && (
             <Card className="space-y-5 p-6">
               <div className="space-y-2">
-                <Badge color="blue" variant="outline">Step 2 of 3</Badge>
+                <Badge color="blue" variant="outline">Step 2 of 4</Badge>
                 <h2 className="text-xl font-black tracking-tight text-greyscale-900 dark:text-greyscale-0">
                   Battle type
                 </h2>
@@ -218,7 +224,7 @@ export const CreateBattleWizard: React.FC<CreateBattleWizardProps> = ({ onSucces
                 >
                   <ArrowLeft size={15} /> Back
                 </button>
-                <Button variant="dark" onClick={() => go(2)} className="gap-2 w-auto">
+                <Button onClick={() => go(2)} className="gap-2 w-auto">
                   Next <ArrowRight size={15} />
                 </Button>
               </div>
@@ -230,7 +236,7 @@ export const CreateBattleWizard: React.FC<CreateBattleWizardProps> = ({ onSucces
             <div className="space-y-4">
               <Card className="space-y-5 p-6">
                 <div className="space-y-2">
-                  <Badge color="blue" variant="outline">Step 3 of 3</Badge>
+                  <Badge color="blue" variant="outline">Step 3 of 4</Badge>
                   <h2 className="text-xl font-black tracking-tight text-greyscale-900 dark:text-greyscale-0">
                     Configuration
                   </h2>
@@ -266,8 +272,8 @@ export const CreateBattleWizard: React.FC<CreateBattleWizardProps> = ({ onSucces
                   <ArrowLeft size={15} /> Back
                 </button>
                 <Button
-                  variant="dark"
-                  onClick={handleSubmit}
+
+                  onClick={handleCreateBattle}
                   isLoading={submitting}
                   disabled={submitting}
                   className="gap-2 w-auto"
@@ -276,6 +282,14 @@ export const CreateBattleWizard: React.FC<CreateBattleWizardProps> = ({ onSucces
                 </Button>
               </div>
             </div>
+          )}
+
+          {/* Step 3: Invite contenders (post-creation) */}
+          {step === 3 && createdBattleId && (
+            <ContenderInviteStep
+              battleId={createdBattleId}
+              onDone={() => onSuccess(createdBattleSlug!)}
+            />
           )}
         </motion.div>
       </AnimatePresence>
