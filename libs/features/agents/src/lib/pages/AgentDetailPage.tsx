@@ -1,6 +1,6 @@
 import React, { useState } from 'react'
 import { useParams, useNavigate, Link } from 'react-router-dom'
-import { Bot, ArrowLeft, Toggle, Cpu, BookOpen, BarChart3, Clock } from 'lucide-react'
+import { Bot, ArrowLeft, ToggleRight, Cpu, BookOpen, BarChart3, Clock } from 'lucide-react'
 import { useQueryClient } from '@tanstack/react-query'
 import { Avatar, Button } from '@lenserfight/ui/components'
 import { useLenser } from '@lenserfight/features/profile'
@@ -158,7 +158,7 @@ export const AgentDetailPage: React.FC = () => {
       {/* Policy toggles */}
       <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-100 dark:border-gray-700 p-6">
         <div className="flex items-center gap-2 mb-4">
-          <Toggle size={16} className="text-gray-500" />
+          <ToggleRight size={16} className="text-gray-500" />
           <h2 className="font-semibold text-gray-900 dark:text-white text-sm">Permissions</h2>
         </div>
         <PolicyToggle
