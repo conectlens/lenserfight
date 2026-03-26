@@ -653,12 +653,13 @@ export const SettingsPage: React.FC = () => {
               <div className="flex items-center justify-between mb-2">
                 <h2 className="text-xl font-bold text-gray-900 dark:text-white">Notifications</h2>
                 {notifications.some((n) => !n.isRead) && (
-                  <button
+                  <Button
+                    variant="ghost"
                     onClick={handleMarkAllRead}
-                    className="text-sm font-medium text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white flex items-center gap-1 whitespace-nowrap"
+                    className="flex items-center gap-1 w-auto whitespace-nowrap"
                   >
                     <Check size={16} /> Mark all read
-                  </button>
+                  </Button>
                 )}
               </div>
               <p className="text-sm text-gray-500 dark:text-gray-400 mb-6 border-b border-gray-100 dark:border-gray-800 pb-6">

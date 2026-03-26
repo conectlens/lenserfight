@@ -5,7 +5,7 @@ import { CreateLenserProfileModal } from '@lenserfight/features/onboarding'
 import { useShareContext } from '@lenserfight/features/share'
 import { LenserPreferences } from '@lenserfight/types'
 import { ReportReasonEnum } from '@lenserfight/types'
-import { SEOHead } from '@lenserfight/ui/components'
+import { Button, SEOHead } from '@lenserfight/ui/components'
 import { ConfirmModal } from '@lenserfight/ui/modals'
 import { useUI } from '@lenserfight/ui/providers'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
@@ -537,13 +537,15 @@ export const LensLabPage: React.FC = () => {
               ))}
             </select>
             <div className="flex gap-3 justify-end pt-1">
-              <button
+              <Button
+                variant="ghost"
                 onClick={() => setIsReportOpen(false)}
-                className="px-4 py-2 text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors"
+                className="w-auto"
               >
                 Cancel
-              </button>
-              <button
+              </Button>
+              <Button
+                variant="danger"
                 onClick={() => {
                   reportContent.mutate({
                     targetType: 'lens',
@@ -553,10 +555,11 @@ export const LensLabPage: React.FC = () => {
                   setIsReportOpen(false)
                 }}
                 disabled={reportContent.isPending}
-                className="px-4 py-2 text-sm bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors disabled:opacity-50"
+                isLoading={reportContent.isPending}
+                className="w-auto"
               >
                 {reportContent.isPending ? 'Reporting…' : 'Report'}
-              </button>
+              </Button>
             </div>
           </div>
         </div>

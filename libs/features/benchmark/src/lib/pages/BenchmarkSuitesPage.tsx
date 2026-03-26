@@ -1,7 +1,7 @@
 import React, { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Plus, FlaskConical } from 'lucide-react'
-import { SEOHead } from '@lenserfight/ui/components'
+import { Button, SEOHead } from '@lenserfight/ui/components'
 import { useLenser } from '@lenserfight/features/profile'
 import { benchmarkService } from '@lenserfight/data/repositories'
 import { BenchmarkSuiteStatus } from '@lenserfight/types'
@@ -57,13 +57,13 @@ export const BenchmarkSuitesPage: React.FC = () => {
           </p>
         </div>
         {currentUser && (
-          <button
+          <Button
             onClick={() => setCreating(true)}
-            className="flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-sm font-semibold transition-colors"
+            className="flex items-center gap-2 w-auto"
           >
             <Plus className="w-4 h-4" />
             <span className="hidden sm:inline">Create Suite</span>
-          </button>
+          </Button>
         )}
       </div>
 
@@ -85,19 +85,20 @@ export const BenchmarkSuitesPage: React.FC = () => {
             className="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-transparent text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
           />
           <div className="flex gap-2 justify-end">
-            <button
+            <Button
+              variant="ghost"
               onClick={() => { setCreating(false); setTitle(''); setCategory('') }}
-              className="px-3 py-1.5 text-sm text-gray-500 hover:text-gray-700 dark:hover:text-gray-300"
+              className="w-auto"
             >
               Cancel
-            </button>
-            <button
+            </Button>
+            <Button
               onClick={handleCreate}
               disabled={!title.trim()}
-              className="px-4 py-1.5 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white rounded-lg text-sm font-semibold"
+              className="w-auto"
             >
               Create
-            </button>
+            </Button>
           </div>
         </div>
       )}

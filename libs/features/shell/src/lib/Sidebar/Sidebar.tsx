@@ -19,7 +19,8 @@ import {
   ShoppingBag,
   Sword,
   Bot,
-  ArrowLeftRight,
+  ChevronsUpDown,
+  Check,
 } from 'lucide-react'
 import React, { useState, useRef, useEffect } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
@@ -101,6 +102,10 @@ export const Sidebar: React.FC<SidebarProps> = ({
   const dropdownRef = useRef<HTMLDivElement>(null)
   const buttonRef = useRef<HTMLButtonElement>(null)
 
+  const [isSwitcherOpen, setIsSwitcherOpen] = useState(false)
+  const switcherRef = useRef<HTMLDivElement>(null)
+  const switcherButtonRef = useRef<HTMLButtonElement>(null)
+
   const [unreadCount, setUnreadCount] = useState(0)
   const [isFeedbackOpen, setIsFeedbackOpen] = useState(false)
   const [shownThemeName, setShownThemeName] = useState<string | null>(null)
@@ -152,6 +157,32 @@ export const Sidebar: React.FC<SidebarProps> = ({
       document.removeEventListener('keydown', handleKeyDown)
     }
   }, [isDropdownOpen])
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        isSwitcherOpen &&
+        switcherRef.current &&
+        !switcherRef.current.contains(event.target as Node) &&
+        switcherButtonRef.current &&
+        !switcherButtonRef.current.contains(event.target as Node)
+      ) {
+        setIsSwitcherOpen(false)
+      }
+    }
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape' && isSwitcherOpen) {
+        setIsSwitcherOpen(false)
+        switcherButtonRef.current?.focus()
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside)
+    document.addEventListener('keydown', handleKeyDown)
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside)
+      document.removeEventListener('keydown', handleKeyDown)
+    }
+  }, [isSwitcherOpen])
 
   useEffect(() => {
     return () => {
@@ -445,6 +476,80 @@ export const Sidebar: React.FC<SidebarProps> = ({
                   </div>
                 )}
 
+                {/* Workspace switcher — visible when human lenser owns AI agents */}
+                {showLabels && FEATURES.AGENTS && ownedAgents.length > 0 && (
+                  <div className="relative flex-shrink-0">
+                    <button
+                      ref={switcherButtonRef}
+                      aria-label="Switch workspace"
+                      aria-haspopup="listbox"
+                      aria-expanded={isSwitcherOpen}
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        setIsSwitcherOpen((v) => !v)
+                        setIsDropdownOpen(false)
+                      }}
+                      className={`p-1 rounded-md transition-colors ${isSwitcherOpen ? 'bg-gray-200 dark:bg-gray-600 text-gray-900 dark:text-white' : 'text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700'}`}
+                      title="Switch workspace"
+                    >
+                      <ChevronsUpDown size={14} />
+                    </button>
+
+                    {isSwitcherOpen && (
+                      <div
+                        ref={switcherRef}
+                        role="listbox"
+                        aria-label="Workspace switcher"
+                        className="absolute bottom-full left-0 mb-2 w-56 bg-white dark:bg-gray-800 rounded-2xl shadow-xl border border-gray-100 dark:border-gray-700 py-1 z-50 overflow-hidden"
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        <p className="px-3 pt-2 pb-1 text-[10px] font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500">
+                          Switch workspace
+                        </p>
+                        {/* Current identity */}
+                        <div className="flex items-center gap-2.5 px-3 py-2 bg-gray-50 dark:bg-gray-700/50">
+                          <Avatar src={displayProfile?.avatar_url} size="sm" className="!w-6 !h-6 flex-shrink-0" />
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-medium text-gray-900 dark:text-white truncate leading-tight">
+                              {displayProfile?.display_name}
+                            </p>
+                            <p className="text-[11px] text-gray-500 dark:text-gray-400 truncate leading-tight">
+                              @{displayProfile?.handle}
+                            </p>
+                          </div>
+                          <Check size={13} className="text-primary flex-shrink-0" />
+                        </div>
+                        {/* Owned AI Lensers */}
+                        {ownedAgents.slice(0, 5).map((agent) => (
+                          <button
+                            key={agent.id}
+                            role="option"
+                            aria-selected={false}
+                            className="w-full text-left flex items-center gap-2.5 px-3 py-2 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors"
+                            onClick={() => {
+                              setIsSwitcherOpen(false)
+                              navigate(`/agents/${agent.id}`)
+                            }}
+                          >
+                            <Avatar src={agent.avatar_url} size="sm" className="!w-6 !h-6 flex-shrink-0" />
+                            <div className="flex-1 min-w-0">
+                              <p className="text-sm font-medium text-gray-900 dark:text-white truncate leading-tight">
+                                {agent.display_name}
+                              </p>
+                              <p className="text-[11px] text-gray-500 dark:text-gray-400 truncate leading-tight">
+                                @{agent.handle}
+                              </p>
+                            </div>
+                            <span className="text-[9px] font-semibold uppercase tracking-wide text-gray-400 flex-shrink-0 bg-gray-100 dark:bg-gray-700 px-1 rounded">
+                              AI
+                            </span>
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )}
+
                 {showLabels && (
                   <div className="relative">
                     <button
@@ -501,29 +606,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
                               <Bot size={16} className="text-gray-400" />
                               My Agents
                             </button>
-                          )}
-
-                          {FEATURES.AGENTS && ownedAgents.length > 0 && (
-                            <div className="border-t border-gray-50 dark:border-gray-700 pt-1 mt-1">
-                              <p className="px-3 pb-0.5 text-[10px] font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500 flex items-center gap-1">
-                                <ArrowLeftRight size={10} />
-                                Switch to Agent
-                              </p>
-                              {ownedAgents.slice(0, 3).map((agent) => (
-                                <button
-                                  key={agent.id}
-                                  role="menuitem"
-                                  className="w-full text-left px-3 py-2 rounded-lg text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white flex items-center gap-3 transition-colors"
-                                  onClick={() => {
-                                    setIsDropdownOpen(false)
-                                    navigate(`/agents/${agent.id}`)
-                                  }}
-                                >
-                                  <Avatar src={agent.avatar_url} size="sm" />
-                                  <span className="truncate">{agent.display_name}</span>
-                                </button>
-                              ))}
-                            </div>
                           )}
 
                           {FEATURES.NOTIFICATIONS && (

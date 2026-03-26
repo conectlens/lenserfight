@@ -17,7 +17,7 @@ import {
 } from 'lucide-react'
 import React, { useState, useEffect } from 'react'
 
-import { Avatar } from '@lenserfight/ui/components'
+import { Avatar, Button } from '@lenserfight/ui/components'
 import { useLenser } from '@lenserfight/features/profile'
 import { socialLinksService } from '@lenserfight/data/repositories'
 import { Lenser, LenserStats, SocialLink, RelationshipState } from '@lenserfight/types'
@@ -185,7 +185,7 @@ export const LenserProfileHeader: React.FC<LenserProfileHeaderProps> = ({
           />
         ) : (
           <div className="w-full h-full bg-gradient-to-r from-gray-200 to-gray-300 dark:from-gray-700 dark:to-gray-800 flex items-center justify-center">
-            <span className="text-gray-400 dark:text-gray-600 opacity-50 text-4xl md:text-6xl font-black tracking-tighter mix-blend-overlay">
+            <span className="text-gray-500 dark:text-gray-600 opacity-60 text-4xl md:text-6xl font-black tracking-tighter">
               LENSER
             </span>
           </div>
@@ -322,22 +322,24 @@ export const LenserProfileHeader: React.FC<LenserProfileHeaderProps> = ({
                 {isOwner ? (
                   <div className="hidden md:flex items-center gap-2 mt-2 md:mt-0">
                     {FEATURES.AGENTS && onManageAgents && (
-                      <button
+                      <Button
+                        variant="secondary"
                         onClick={onManageAgents}
-                        className="flex items-center gap-2 px-3 py-2 rounded-lg border border-indigo-200 dark:border-indigo-800 hover:bg-indigo-50 dark:hover:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 font-medium transition-colors"
                         title="Manage AI Agents"
+                        className="flex items-center gap-2 w-auto border-indigo-200 dark:border-indigo-800 text-indigo-600 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/30"
                       >
                         <Bot size={16} />
                         Agents
-                      </button>
+                      </Button>
                     )}
-                    <button
+                    <Button
+                      variant="secondary"
                       onClick={() => setShowEditModal(true)}
-                      className="flex items-center gap-2 px-4 py-2 rounded-lg border border-gray-200 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 font-medium transition-colors"
+                      className="flex items-center gap-2 w-auto"
                     >
                       <Pencil size={16} />
                       Edit Profile
-                    </button>
+                    </Button>
                   </div>
                 ) : (
                   <div className="hidden md:block mt-2 md:mt-0">
