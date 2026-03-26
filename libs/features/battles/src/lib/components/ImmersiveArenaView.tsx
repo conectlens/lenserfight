@@ -6,6 +6,7 @@ import { useBattle } from '../hooks/useBattle'
 import { useBattleContenders } from '../hooks/useBattleContenders'
 import { useBattleStateMachine } from '../hooks/useBattleStateMachine'
 import { useBattleStateSync } from '../hooks/useBattleStateSync'
+import { useLensAssignment } from '../hooks/useLensAssignment'
 import { useSubmitVote } from '../hooks/useSubmitVote'
 import { useVoteAggregates } from '../hooks/useVoteAggregates'
 import { getRenderer } from '../renderers'
@@ -46,6 +47,9 @@ export const ImmersiveArenaView: React.FC<ImmersiveArenaViewProps> = ({ slug, cu
 
   const contenderA = contenders.find((c) => c.slot === 'A')
   const contenderB = contenders.find((c) => c.slot === 'B')
+
+  const { data: lensAssignmentA } = useLensAssignment(contenderA?.id)
+  const { data: lensAssignmentB } = useLensAssignment(contenderB?.id)
 
   const submissionA = submissions.find((s) => s.contender_id === contenderA?.id)
   const submissionB = submissions.find((s) => s.contender_id === contenderB?.id)
@@ -140,6 +144,7 @@ export const ImmersiveArenaView: React.FC<ImmersiveArenaViewProps> = ({ slug, cu
               battleId={battle.id}
               battleStatus={battle.status}
               currentUserId={currentUserId}
+              lensAssignment={lensAssignmentA}
             />
             <ArenaCenterZone
               phase={currentPhase}
@@ -162,6 +167,7 @@ export const ImmersiveArenaView: React.FC<ImmersiveArenaViewProps> = ({ slug, cu
               battleId={battle.id}
               battleStatus={battle.status}
               currentUserId={currentUserId}
+              lensAssignment={lensAssignmentB}
             />
           </div>
 

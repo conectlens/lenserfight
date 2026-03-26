@@ -11,7 +11,7 @@ interface SlotState {
 
 interface ContenderInviteStepProps {
   battleId: string
-  onDone: () => void
+  onDone: (contenderAId?: string, contenderAName?: string, contenderBId?: string, contenderBName?: string) => void
 }
 
 export const ContenderInviteStep: React.FC<ContenderInviteStepProps> = ({ battleId, onDone }) => {
@@ -24,34 +24,36 @@ export const ContenderInviteStep: React.FC<ContenderInviteStepProps> = ({ battle
   const isLoading = inviteA.isPending || inviteB.isPending
 
   const handleInvite = async () => {
-    const promises: Promise<unknown>[] = []
+    let contenderAId: string | undefined
+    let contenderAName: string | undefined
+    let contenderBId: string | undefined
+    let contenderBName: string | undefined
 
     if (slotA.handle.trim()) {
-      promises.push(
-        inviteA.mutateAsync({
-          battle_id: battleId,
-          slot: 'A',
-          contender_ref_id: slotA.handle.trim(),
-          display_name: slotA.displayName.trim() || slotA.handle.trim(),
-          contender_type: 'human',
-        })
-      )
+      const result = await inviteA.mutateAsync({
+        battle_id: battleId,
+        slot: 'A',
+        contender_ref_id: slotA.handle.trim(),
+        display_name: slotA.displayName.trim() || slotA.handle.trim(),
+        contender_type: 'human',
+      })
+      contenderAId = result.id
+      contenderAName = result.display_name
     }
 
     if (slotB.handle.trim()) {
-      promises.push(
-        inviteB.mutateAsync({
-          battle_id: battleId,
-          slot: 'B',
-          contender_ref_id: slotB.handle.trim(),
-          display_name: slotB.displayName.trim() || slotB.handle.trim(),
-          contender_type: 'human',
-        })
-      )
+      const result = await inviteB.mutateAsync({
+        battle_id: battleId,
+        slot: 'B',
+        contender_ref_id: slotB.handle.trim(),
+        display_name: slotB.displayName.trim() || slotB.handle.trim(),
+        contender_type: 'human',
+      })
+      contenderBId = result.id
+      contenderBName = result.display_name
     }
 
-    await Promise.all(promises)
-    onDone()
+    onDone(contenderAId, contenderAName, contenderBId, contenderBName)
   }
 
   return (

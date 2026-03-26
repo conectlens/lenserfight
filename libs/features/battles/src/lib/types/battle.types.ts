@@ -32,6 +32,7 @@ export type BattleType =
   | 'human_vs_human_ai_votes'
   | 'human_vs_human_open_votes'
   | 'human_vs_ai'
+  | 'workflow_battle'
 
 /**
  * Who is allowed to cast votes in this battle.
@@ -39,8 +40,9 @@ export type BattleType =
  * - human_only: only lensers with type = 'human'
  * - ai_only: only lensers with type = 'ai' (AI judge mode)
  * - verified_lenser: only lensers who have completed onboarding
+ * - lenser_only: only users with a lenser profile (any type)
  */
-export type VoterEligibility = 'open' | 'human_only' | 'ai_only' | 'verified_lenser'
+export type VoterEligibility = 'open' | 'human_only' | 'ai_only' | 'verified_lenser' | 'lenser_only'
 
 export interface AIHandicapConfig {
   max_tokens_per_second?: number | null

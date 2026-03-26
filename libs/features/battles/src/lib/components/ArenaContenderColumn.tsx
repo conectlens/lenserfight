@@ -3,6 +3,11 @@ import type { Contender, Submission, VoteAggregate } from '../types/battle.types
 import type { BattleContentRenderer } from '../types/battle-renderer.types'
 import { SubmitTextForm } from './SubmitTextForm'
 
+interface LensAssignmentBadgeInfo {
+  lens_id: string
+  version_id: string | null
+}
+
 interface ArenaContenderColumnProps {
   slot: 'A' | 'B'
   contender?: Contender
@@ -13,6 +18,7 @@ interface ArenaContenderColumnProps {
   battleId?: string
   battleStatus?: string
   currentUserId?: string
+  lensAssignment?: LensAssignmentBadgeInfo | null
 }
 
 export const ArenaContenderColumn: React.FC<ArenaContenderColumnProps> = ({
@@ -25,6 +31,7 @@ export const ArenaContenderColumn: React.FC<ArenaContenderColumnProps> = ({
   battleId,
   battleStatus,
   currentUserId,
+  lensAssignment,
 }) => {
   const voteCount = aggregate?.raw_vote_count ?? 0
   const votePercent = totalVotes > 0 ? Math.round((voteCount / totalVotes) * 100) : 0
@@ -54,6 +61,11 @@ export const ArenaContenderColumn: React.FC<ArenaContenderColumnProps> = ({
         </span>
         {isCurrentUserContender && (
           <span className="ml-1 text-[10px] font-bold text-primary">You</span>
+        )}
+        {lensAssignment && (
+          <span className="rounded-full bg-greyscale-800 px-2 py-0.5 text-[10px] font-semibold text-greyscale-300 truncate max-w-[80px]">
+            lens
+          </span>
         )}
         <span className="ml-auto text-xs text-greyscale-400">
           {voteCount} vote{voteCount !== 1 ? 's' : ''}

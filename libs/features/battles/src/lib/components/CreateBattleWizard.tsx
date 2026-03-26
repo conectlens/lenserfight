@@ -7,12 +7,13 @@ import React, { useState } from 'react'
 import { BattleTypeSelector } from './BattleTypeSelector'
 import { ContenderInviteStep } from './ContenderInviteStep'
 import { HandicapConfigPanel } from './HandicapConfigPanel'
+import { LensAssignmentStep } from './LensAssignmentStep'
 import { VoterEligibilitySelector } from './VoterEligibilitySelector'
 
 import type { AIHandicapConfig, BattleType, VoterEligibility } from '../types/battle.types'
 
-const STEPS = ['Basics', 'Battle type', 'Configuration', 'Contenders'] as const
-type Step = 0 | 1 | 2 | 3
+const STEPS = ['Basics', 'Battle type', 'Configuration', 'Contenders', 'Assign Lenses'] as const
+type Step = 0 | 1 | 2 | 3 | 4
 
 const DEFAULT_HANDICAP: AIHandicapConfig = {
   injected_delay_ms: 2000,
@@ -59,6 +60,12 @@ export const CreateBattleWizard: React.FC<CreateBattleWizardProps> = ({ onSucces
   // Created battle state — populated after step 2 completes
   const [createdBattleId, setCreatedBattleId] = useState<string | null>(null)
   const [createdBattleSlug, setCreatedBattleSlug] = useState<string | null>(null)
+
+  // Contender IDs — populated after step 3 (invite) completes
+  const [contenderAId, setContenderAId] = useState<string | undefined>()
+  const [contenderAName, setContenderAName] = useState<string | undefined>()
+  const [contenderBId, setContenderBId] = useState<string | undefined>()
+  const [contenderBName, setContenderBName] = useState<string | undefined>()
 
   const showsHandicap = AI_BATTLE_TYPES.includes(battleType)
 
@@ -288,6 +295,24 @@ export const CreateBattleWizard: React.FC<CreateBattleWizardProps> = ({ onSucces
           {step === 3 && createdBattleId && (
             <ContenderInviteStep
               battleId={createdBattleId}
+              onDone={(aId, aName, bId, bName) => {
+                setContenderAId(aId)
+                setContenderAName(aName)
+                setContenderBId(bId)
+                setContenderBName(bName)
+                go(4)
+              }}
+            />
+          )}
+
+          {/* Step 4: Assign Lenses (optional) */}
+          {step === 4 && createdBattleId && (
+            <LensAssignmentStep
+              battleId={createdBattleId}
+              contenderAId={contenderAId}
+              contenderAName={contenderAName}
+              contenderBId={contenderBId}
+              contenderBName={contenderBName}
               onDone={() => onSuccess(createdBattleSlug!)}
             />
           )}

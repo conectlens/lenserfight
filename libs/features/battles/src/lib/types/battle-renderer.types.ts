@@ -1,6 +1,6 @@
 import type React from 'react'
 
-export type BattleContentType = 'text' | 'code' | 'poem' | 'drawing' | 'image'
+export type BattleContentType = 'text' | 'code' | 'poem' | 'drawing' | 'image' | 'video' | 'audio' | 'workflow'
 
 export interface SubmissionRendererProps {
   content?: string | null

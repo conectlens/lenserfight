@@ -1,6 +1,6 @@
 import { Card } from '@lenserfight/ui/components'
 import { motion } from 'framer-motion'
-import { Bot, Brain, Swords, Users } from 'lucide-react'
+import { Bot, Brain, GitBranch, Swords, Users } from 'lucide-react'
 import React from 'react'
 
 import type { BattleType } from '../types/battle.types'
@@ -45,6 +45,13 @@ const TYPES: {
     description: 'Two humans compete. An AI lenser casts weighted judging votes.',
     defaultEligibility: 'AI judge only',
   },
+  {
+    value: 'workflow_battle',
+    icon: <GitBranch size={20} />,
+    label: 'Workflow Battle',
+    description: 'Chain your lenses into a multi-step workflow and compete end-to-end.',
+    defaultEligibility: 'Open voting',
+  },
 ]
 
 const containerVariants = {
@@ -64,7 +71,7 @@ export function BattleTypeSelector({ value, onChange }: BattleTypeSelectorProps)
         Battle type
       </label>
       <motion.div
-        className="grid grid-cols-1 gap-3 sm:grid-cols-2"
+        className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3"
         variants={containerVariants}
         initial="hidden"
         animate="visible"
