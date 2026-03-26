@@ -107,6 +107,7 @@ export const queryKeys = {
     contenders: (battleId: string) => [...queryKeys.battles.all, 'contenders', battleId] as const,
     aggregates: (battleId: string) => [...queryKeys.battles.all, 'aggregates', battleId] as const,
     scorecard: (battleId: string) => [...queryKeys.battles.all, 'scorecard', battleId] as const,
+    comments: (battleId: string) => [...queryKeys.battles.all, 'comments', battleId] as const,
   },
   agents: {
     all: ['agents'] as const,

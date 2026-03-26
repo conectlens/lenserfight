@@ -17,6 +17,9 @@ import {
   Monitor,
   ShoppingBag,
   Sword,
+  FlaskConical,
+  PlusCircle,
+  Bot,
 } from 'lucide-react'
 import React, { useState, useRef, useEffect } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
@@ -267,6 +270,19 @@ export const Sidebar: React.FC<SidebarProps> = ({
             collapsed={!showLabels}
           />
 
+          {isAuthenticated && hasLenser && (
+            <div className={`${showLabels ? 'pl-8' : 'flex justify-center'}`}>
+              <button
+                onClick={() => handleNavigation('/battles/create')}
+                title="New Battle"
+                className={`flex items-center gap-2 text-xs font-semibold transition-colors rounded-lg py-1 px-2 hover:bg-yellow-50 dark:hover:bg-yellow-900/20 ${isRouteActive(location.pathname, '/battles/create') ? 'text-yellow-600 dark:text-yellow-400' : 'text-primary hover:text-yellow-600 dark:hover:text-yellow-400'}`}
+              >
+                <PlusCircle size={14} />
+                {showLabels && <span>New Battle</span>}
+              </button>
+            </div>
+          )}
+
           <SidebarItem
             onClick={() => handleNavigation('/lenses')}
             icon={<Brain size={20} />}
@@ -296,6 +312,14 @@ export const Sidebar: React.FC<SidebarProps> = ({
             icon={<ShoppingBag size={20} />}
             label="Plans"
             isActive={isRouteActive(location.pathname, '/billing')}
+            collapsed={!showLabels}
+          />
+
+          <SidebarItem
+            onClick={() => handleNavigation('/benchmark')}
+            icon={<FlaskConical size={20} />}
+            label="Benchmark"
+            isActive={isRouteActive(location.pathname, '/benchmark')}
             collapsed={!showLabels}
           />
 
@@ -471,6 +495,20 @@ export const Sidebar: React.FC<SidebarProps> = ({
                             <User size={16} className="text-gray-400" />
                             My Profile
                           </button>
+
+                          {FEATURES.AGENTS && hasLenser && (
+                            <button
+                              role="menuitem"
+                              className="w-full text-left px-3 py-2 rounded-lg text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white flex items-center gap-3 transition-colors"
+                              onClick={() => {
+                                setIsDropdownOpen(false)
+                                navigate('/lensers?type=my_agents')
+                              }}
+                            >
+                              <Bot size={16} className="text-gray-400" />
+                              My Agents
+                            </button>
+                          )}
 
                           {FEATURES.NOTIFICATIONS && (
                             <button
