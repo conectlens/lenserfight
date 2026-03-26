@@ -39,6 +39,7 @@ interface LenserProfileHeaderProps {
   onProfileUpdate: (updatedLenser: Lenser) => void
   relationshipState?: RelationshipState | null
   onManageAgents?: () => void
+  onEditAgent?: () => void
 }
 
 export const LenserProfileHeader: React.FC<LenserProfileHeaderProps> = ({
@@ -49,6 +50,7 @@ export const LenserProfileHeader: React.FC<LenserProfileHeaderProps> = ({
   onProfileUpdate,
   relationshipState,
   onManageAgents,
+  onEditAgent,
 }) => {
   const { updateLenserProfile } = useLenser()
 
@@ -207,13 +209,14 @@ export const LenserProfileHeader: React.FC<LenserProfileHeaderProps> = ({
         <div className="bg-white dark:bg-gray-800 md:rounded-2xl shadow-sm border-b md:border border-gray-100 dark:border-gray-700 p-6 md:p-8 relative transition-colors">
           {/* Mobile Edit / Follow Button */}
           {isOwner ? (
-            <button
+            <Button
+              variant="ghost"
               onClick={() => setShowEditModal(true)}
-              className="md:hidden absolute top-4 right-4 p-2.5 text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white rounded-full transition-colors z-20 border border-transparent hover:border-gray-200 dark:hover:border-gray-600"
+              className="md:hidden absolute top-4 right-4 !p-2.5 !w-auto rounded-full z-20"
               title="Edit Profile"
             >
               <Pencil size={18} />
-            </button>
+            </Button>
           ) : (
             <div className="md:hidden absolute top-4 right-4 z-20">
               <FollowButton
@@ -321,25 +324,48 @@ export const LenserProfileHeader: React.FC<LenserProfileHeaderProps> = ({
 
                 {isOwner ? (
                   <div className="hidden md:flex items-center gap-2 mt-2 md:mt-0">
-                    {FEATURES.AGENTS && onManageAgents && (
-                      <Button
-                        variant="secondary"
-                        onClick={onManageAgents}
-                        title="Manage AI Agents"
-                        className="flex items-center gap-2 w-auto border-indigo-200 dark:border-indigo-800 text-indigo-600 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/30"
-                      >
-                        <Bot size={16} />
-                        Agents
-                      </Button>
+                    {lenser.type === 'ai' ? (
+                      <>
+                        <Button
+                          variant="secondary"
+                          onClick={() => setShowEditModal(true)}
+                          className="flex items-center gap-2 w-auto"
+                        >
+                          <Pencil size={16} />
+                          Edit Profile
+                        </Button>
+                        <Button
+                          variant="secondary"
+                          onClick={onEditAgent}
+                          className="flex items-center gap-2 w-auto"
+                        >
+                          <Bot size={16} />
+                          Edit Agent
+                        </Button>
+                      </>
+                    ) : (
+                      <>
+                        {FEATURES.AGENTS && onManageAgents && (
+                          <Button
+                            variant="secondary"
+                            onClick={onManageAgents}
+                            title="Manage AI Agents"
+                            className="flex items-center gap-2 w-auto"
+                          >
+                            <Bot size={16} />
+                            Agents
+                          </Button>
+                        )}
+                        <Button
+                          variant="secondary"
+                          onClick={() => setShowEditModal(true)}
+                          className="flex items-center gap-2 w-auto"
+                        >
+                          <Pencil size={16} />
+                          Edit Profile
+                        </Button>
+                      </>
                     )}
-                    <Button
-                      variant="secondary"
-                      onClick={() => setShowEditModal(true)}
-                      className="flex items-center gap-2 w-auto"
-                    >
-                      <Pencil size={16} />
-                      Edit Profile
-                    </Button>
                   </div>
                 ) : (
                   <div className="hidden md:block mt-2 md:mt-0">
