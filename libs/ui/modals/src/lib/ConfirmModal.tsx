@@ -1,8 +1,7 @@
 import { AlertTriangle } from 'lucide-react'
 import React from 'react'
 import { Button } from '@lenserfight/ui/components'
-
-import { Modal } from './Modal'
+import { Dialog } from '@lenserfight/ui/overlays'
 
 interface ConfirmModalProps {
   isOpen: boolean
@@ -24,25 +23,28 @@ export const ConfirmModal: React.FC<ConfirmModalProps> = ({
   isLoading = false,
 }) => {
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title={title}>
-      <div className="flex flex-col items-center text-center p-2">
-        <div className="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center mb-4 text-red-600">
-          <AlertTriangle size={24} />
-        </div>
-        <p className="text-gray-600 mb-8 leading-relaxed">{message}</p>
-        <div className="flex gap-3 w-full">
-          <Button variant="secondary" onClick={onClose} disabled={isLoading}>
+    <Dialog
+      open={isOpen}
+      onClose={onClose}
+      title={title}
+      icon={<AlertTriangle size={18} />}
+      maxWidth="max-w-sm"
+    >
+      <div className="flex flex-col items-center gap-6 text-center">
+        <p className="text-sm leading-relaxed text-greyscale-600 dark:text-greyscale-400">{message}</p>
+        <div className="flex w-full gap-3">
+          <Button variant="secondary" onClick={onClose} disabled={isLoading} className="flex-1">
             Cancel
           </Button>
           <Button
             onClick={onConfirm}
             isLoading={isLoading}
-            className="bg-red-600 hover:bg-red-700 text-white focus:ring-red-200"
+            className="flex-1 bg-red-600 hover:bg-red-700 text-white focus:ring-red-200"
           >
             {confirmLabel}
           </Button>
         </div>
       </div>
-    </Modal>
+    </Dialog>
   )
 }
