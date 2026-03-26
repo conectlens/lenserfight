@@ -35,12 +35,12 @@ import {
   BattleResultPage,
   CreateBattleWizard,
 } from '@lenserfight/features/battles'
-import { ModalRoute, ModalQueryDriven } from '@lenserfight/ui/routing'
+import { ModalRoute, ModalQueryDriven, useModalRouter } from '@lenserfight/ui/routing'
 import { NotAuthorizedPage } from './NotAuthorizedPage'
 import { AgentDetailPage, CreateAgentContent } from '@lenserfight/features/agents'
 import { CreateLenserProfileModal } from '@lenserfight/features/onboarding'
 import { BenchmarkSuitesPage, BenchmarkSuiteDetailPage } from '@lenserfight/features/benchmark'
-import { WorkflowsPage, WorkflowBuilderPage } from '@lenserfight/features/workflows'
+import { WorkflowsPage, WorkflowBuilderPage, CreateWorkflowWizardModal } from '@lenserfight/features/workflows'
 import { Routes, Route, Navigate, BrowserRouter, useNavigate, useParams } from 'react-router-dom'
 
 const AUTH_APP_URL = import.meta.env.VITE_AUTH_BASE_URL ?? 'https://auth.lenserfight.com'
@@ -48,9 +48,10 @@ const ARENA_APP_URL = import.meta.env.VITE_ARENA_URL ?? 'https://lenserfight.com
 
 const WorkflowsPageRoute: React.FC = () => {
   const navigate = useNavigate()
+  const { open } = useModalRouter()
   return (
     <WorkflowsPage
-      onCreateWorkflow={() => navigate('/workflows/new')}
+      onCreateWorkflow={() => open('create-workflow')}
       onOpenWorkflow={(id) => navigate(`/workflows/${id}`)}
     />
   )
@@ -58,12 +59,11 @@ const WorkflowsPageRoute: React.FC = () => {
 
 const WorkflowBuilderPageRoute: React.FC = () => {
   const navigate = useNavigate()
-  const { id, runId } = useParams<{ id?: string; runId?: string }>()
+  const { id, runId } = useParams<{ id: string; runId?: string }>()
   return (
     <WorkflowBuilderPage
-      workflowId={id}
+      workflowId={id!}
       runId={runId}
-      onWorkflowCreated={(newId) => navigate(`/workflows/${newId}`)}
       onBattleClick={(workflowId) => navigate(`/battles/create?workflow_id=${workflowId}`)}
     />
   )
@@ -305,14 +305,6 @@ const App: React.FC = () => {
                                 }
                               />
                               <Route
-                                path="/workflows/new"
-                                element={
-                                  <DashboardLayout>
-                                    <WorkflowBuilderPageRoute />
-                                  </DashboardLayout>
-                                }
-                              />
-                              <Route
                                 path="/workflows/:id"
                                 element={
                                   <DashboardLayout>
@@ -388,6 +380,10 @@ const App: React.FC = () => {
                             </Routes>
                           </GlobalErrorRenderer>
 
+                          {/* Global query-driven modal for creating a workflow.
+                              Activated by ?modal=create-workflow anywhere in the app. */}
+                          <CreateWorkflowWizardModal />
+
                           {/* Global query-driven modal for creating AI agents.
                               Activated by ?modal=create-agent anywhere in the app. */}
                           <ModalQueryDriven
@@ -395,8 +391,8 @@ const App: React.FC = () => {
                             accessCheck={({ isAuthenticated, hasLenser }) => isAuthenticated && hasLenser}
                             maxWidth="max-w-md"
                           >
-                            {({ step, goToStep, close }) => (
-                              <CreateAgentContent step={step} goToStep={goToStep} close={close} />
+                            {({ close }) => (
+                              <CreateAgentContent close={close} />
                             )}
                           </ModalQueryDriven>
                         </WalletProvider>
