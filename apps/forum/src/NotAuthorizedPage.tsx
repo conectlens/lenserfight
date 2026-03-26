@@ -18,13 +18,9 @@ export const NotAuthorizedPage: React.FC = () => {
         You need to be signed in with a Lenser profile to access this page.
       </p>
       <div className="flex items-center gap-3">
-        <button
-          type="button"
-          onClick={() => navigate(-1)}
-          className="text-sm text-greyscale-500 transition-colors hover:text-greyscale-900 dark:hover:text-greyscale-0"
-        >
+        <Button variant="ghost" size="sm" onClick={() => navigate(-1)}>
           Go back
-        </button>
+        </Button>
         <Button onClick={() => navigate('/auth/login')} className="w-auto">
           Sign in
         </Button>

@@ -1,7 +1,7 @@
 import React, { useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { ChevronLeft, Plus, ClipboardList, GitBranch } from 'lucide-react'
-import { SEOHead } from '@lenserfight/ui/components'
+import { Button, SEOHead } from '@lenserfight/ui/components'
 import { useLenser } from '@lenserfight/features/profile'
 import { benchmarkService, workflowsService } from '@lenserfight/data/repositories'
 import { BenchmarkSuiteStatus } from '@lenserfight/types'
@@ -93,13 +93,14 @@ export const BenchmarkSuiteDetailPage: React.FC = () => {
       <SEOHead type="default" overrideTitle={suite.title} />
 
       {/* Back */}
-      <button
+      <Button
+        variant="ghost"
         onClick={() => navigate('/benchmark')}
-        className="flex items-center gap-1 text-sm text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 mb-4"
+        className="flex items-center gap-1 w-auto mb-4"
       >
         <ChevronLeft className="w-4 h-4" />
         Benchmarks
-      </button>
+      </Button>
 
       {/* Header */}
       <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-100 dark:border-gray-700 p-5 mb-6">
@@ -125,13 +126,14 @@ export const BenchmarkSuiteDetailPage: React.FC = () => {
           Tasks
         </h2>
         {isOwner && suite.status !== 'archived' && (
-          <button
+          <Button
+            variant="ghost"
             onClick={() => setAddingTask(true)}
-            className="flex items-center gap-1.5 text-sm text-indigo-600 hover:text-indigo-700 dark:text-indigo-400 font-medium"
+            className="flex items-center gap-1.5 w-auto text-indigo-600 hover:text-indigo-700 dark:text-indigo-400"
           >
             <Plus className="w-4 h-4" />
             Add Task
-          </button>
+          </Button>
         )}
       </div>
 
@@ -216,19 +218,20 @@ export const BenchmarkSuiteDetailPage: React.FC = () => {
           </div>
 
           <div className="flex gap-2 justify-end">
-            <button
+            <Button
+              variant="ghost"
               onClick={() => { setAddingTask(false); setTaskTitle(''); setTaskPrompt(''); setTaskReps(1); setAttachWorkflow(false); setSelectedWorkflowId(null); setSelectedWorkflowTitle(''); setWorkflowQuery('') }}
-              className="px-3 py-1.5 text-sm text-gray-500 hover:text-gray-700 dark:hover:text-gray-300"
+              className="w-auto"
             >
               Cancel
-            </button>
-            <button
+            </Button>
+            <Button
               onClick={handleAddTask}
               disabled={!taskTitle.trim() || !taskPrompt.trim()}
-              className="px-4 py-1.5 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white rounded-lg text-sm font-semibold"
+              className="w-auto"
             >
               Add
-            </button>
+            </Button>
           </div>
         </div>
       )}
