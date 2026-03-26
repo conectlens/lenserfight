@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import { Swords } from 'lucide-react'
 
 import { SEOHead } from '@lenserfight/ui/components'
@@ -24,12 +24,21 @@ const ACTIVITY_PERIOD_LABELS: Record<FollowPeriod, string> = {
 
 export const LeaderboardPage: React.FC = () => {
   const navigate = useNavigate()
+  const [searchParams, setSearchParams] = useSearchParams()
   const { lenser } = useLenser()
   const { setError } = useError()
   const [scope, setScope] = useState<LeaderboardScope>('global')
   const [timeframe, setTimeframe] = useState<LeaderboardTimeframe>('all_time')
-  const [board, setBoard] = useState<'xp' | 'activity' | 'elo'>('xp')
+  const boardParam = searchParams.get('board') as 'xp' | 'activity' | 'elo' | null
+  const [board, setBoard] = useState<'xp' | 'activity' | 'elo'>(
+    boardParam === 'activity' || boardParam === 'elo' ? boardParam : 'xp'
+  )
   const [activityPeriod, setActivityPeriod] = useState<FollowPeriod>('all_time')
+
+  const handleBoardChange = (b: 'xp' | 'activity' | 'elo') => {
+    setBoard(b)
+    setSearchParams(b === 'xp' ? {} : { board: b })
+  }
 
   const { data, isLoading, fetchNextPage, hasNextPage, isFetchingNextPage, error: xpError } =
     useLeaderboard(timeframe, scope)
@@ -59,7 +68,7 @@ export const LeaderboardPage: React.FC = () => {
           {(['xp', 'activity', ...(FEATURES.AGENTS ? ['elo' as const] : [])] as const).map((b) => (
             <button
               key={b}
-              onClick={() => setBoard(b)}
+              onClick={() => handleBoardChange(b)}
               className={`px-4 py-2 rounded-lg text-sm font-semibold transition-all ${
                 board === b
                   ? 'bg-white dark:bg-gray-700 text-gray-900 dark:text-white shadow-sm'

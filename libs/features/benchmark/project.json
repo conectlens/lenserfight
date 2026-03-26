@@ -1,0 +1,9 @@
+{
+  "name": "benchmark",
+  "$schema": "../../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "libs/features/benchmark/src",
+  "projectType": "library",
+  "tags": ["layer:feature", "feature:benchmark"],
+  "// targets": "to see all targets run: nx show project benchmark --web",
+  "targets": {}
+}
