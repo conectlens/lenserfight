@@ -13,6 +13,13 @@ interface ModalProps {
   fullWidth?: boolean
 }
 
+/**
+ * @deprecated Use `Dialog` from `@lenserfight/ui/overlays` together with
+ * routing primitives from `@lenserfight/ui/routing` (`ModalRoute` or
+ * `ModalQueryDriven`). This keeps modal visibility in the URL and gives
+ * you browser back/forward, deep-linking, and centralised access control
+ * for free. This component will be removed in a future major version.
+ */
 export const Modal: React.FC<ModalProps> = ({
   isOpen,
   onClose,

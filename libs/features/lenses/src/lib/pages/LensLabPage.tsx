@@ -1,7 +1,6 @@
 import { lensesService, preferencesService } from '@lenserfight/data/repositories'
 import { useAuth } from '@lenserfight/features/auth'
 import { useReportContent } from '@lenserfight/features/home'
-import { CreateLenserProfileModal } from '@lenserfight/features/onboarding'
 import { useShareContext } from '@lenserfight/features/share'
 import { LenserPreferences } from '@lenserfight/types'
 import { ReportReasonEnum } from '@lenserfight/types'
@@ -114,7 +113,6 @@ export const LensLabPage: React.FC = () => {
 
   const reportContent = useReportContent()
 
-  const [showProfileModal, setShowProfileModal] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
   const [isReportOpen, setIsReportOpen] = useState(false)
   const [reportReason, setReportReason] = useState<ReportReasonEnum>('spam')
@@ -136,7 +134,7 @@ export const LensLabPage: React.FC = () => {
 
   const ensureProfile = useCallback((): boolean => {
     if (!hasLenser) {
-      setShowProfileModal(true)
+      navigate('/onboarding', { state: { from: window.location.pathname } })
       return false
     }
     return true
@@ -502,7 +500,6 @@ export const LensLabPage: React.FC = () => {
         lensId={isEditMode && lens ? lens.id : undefined}
       />
 
-      {showProfileModal && <CreateLenserProfileModal onClose={() => setShowProfileModal(false)} />}
 
       <ConfirmModal
         isOpen={isDeleteModalOpen}

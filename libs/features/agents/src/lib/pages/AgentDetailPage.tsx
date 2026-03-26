@@ -80,7 +80,7 @@ export const AgentDetailPage: React.FC = () => {
     }
   }
 
-  const isOwner = !!currentUser && agent?.owner_id === currentUser.id
+  const isOwner = !!currentUser && agent?.owner_lenser_id === currentUser.id
 
   const handleTogglePolicy = async (field: string, value: boolean) => {
     if (!id) return

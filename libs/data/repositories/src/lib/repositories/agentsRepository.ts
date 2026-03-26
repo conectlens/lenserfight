@@ -15,6 +15,7 @@ import {
 
 export interface AgentProfileView {
   id: string
+  ai_lenser_id: string
   handle: string
   display_name: string
   avatar_url: string | null
