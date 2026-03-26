@@ -1,4 +1,4 @@
-import { Badge, Button, StepWizard } from '@lenserfight/ui/components'
+import { Alert, Badge, Button, StepWizard } from '@lenserfight/ui/components'
 import type { WizardStepConfig } from '@lenserfight/ui/components'
 import { Field, Input, SelectField, TextArea } from '@lenserfight/ui/forms'
 import { useWizardStep } from '@lenserfight/ui/routing'
@@ -232,6 +232,7 @@ export const CreateWorkflowWizard: React.FC<CreateWorkflowWizardProps> = ({ onCr
   }
 
   const handleCreate = async () => {
+    setLocalError(null)
     try {
       const workflow = await submit({
         title: titleValue,
@@ -254,8 +255,15 @@ export const CreateWorkflowWizard: React.FC<CreateWorkflowWizardProps> = ({ onCr
 
       setCreatedWorkflowId(workflow.id)
       onCreated(workflow.id)
-    } catch {
-      goToStep(0)
+    } catch (err) {
+      // Stay on current step — never navigate back automatically on error
+      const msg =
+        err instanceof Error
+          ? err.message
+          : typeof (err as { message?: string })?.message === 'string'
+            ? (err as { message: string }).message
+            : 'Something went wrong. Please try again.'
+      setLocalError(msg)
     }
   }
 
@@ -337,9 +345,7 @@ export const CreateWorkflowWizard: React.FC<CreateWorkflowWizardProps> = ({ onCr
             placeholder="Choose visibility"
           />
 
-          {error && (
-            <p className="text-sm font-medium text-status-red">{error}</p>
-          )}
+          {/* Submission errors only (validation errors are shown inline on the Field above) */}
         </div>
       ) : (
         <div className="space-y-4">
@@ -351,8 +357,8 @@ export const CreateWorkflowWizard: React.FC<CreateWorkflowWizardProps> = ({ onCr
           <p className="text-xs leading-5 text-greyscale-400">
             Selection is optional — you can add and connect lenses later in the canvas editor.
           </p>
-          {error && (
-            <p className="text-sm font-medium text-status-red">{error}</p>
+          {error && step === 1 && (
+            <Alert variant="error" title={error} onDismiss={() => setLocalError(null)} />
           )}
         </div>
       )}
