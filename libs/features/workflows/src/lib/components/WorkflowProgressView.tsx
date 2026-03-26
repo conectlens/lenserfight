@@ -25,7 +25,7 @@ const STATUS_COLORS = {
   failed: 'border-status-red bg-status-red/5',
 }
 
-export function WorkflowProgressView({ nodes, edges: _edges, nodeResults }: WorkflowProgressViewProps) {
+export function WorkflowProgressView({ nodes, nodeResults }: WorkflowProgressViewProps) {
   if (nodes.length === 0) {
     return (
       <div className="flex items-center justify-center p-8 text-sm text-greyscale-400">
