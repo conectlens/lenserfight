@@ -37,7 +37,7 @@ export interface AgentProfileView {
   battles_used: number
   votes_used: number
   credits_spent: number
-  owner_id: string
+  owner_lenser_id: string
   owner_handle: string
   owner_display_name: string
 }
@@ -81,14 +81,14 @@ export class SupabaseAgentsRepository implements AgentsRepositoryPort {
       .schema('agents')
       .from('v_agent_profile')
       .select('*')
-      .eq('owner_id', ownerLenserId)
+      .eq('owner_lenser_id', ownerLenserId)
 
     if (error) this.handleError(error)
     return (data ?? []) as AgentProfileView[]
   }
 
   async createAgent(input: CreateAILenserInput): Promise<CreateAILenserResult> {
-    const { data, error } = await supabase.rpc('fn_create_ai_lenser', {
+    const { data, error } = await supabase.schema('agents').rpc('fn_create_ai_lenser', {
       p_owner_lenser_id: input.owner_lenser_id,
       p_handle: input.handle,
       p_display_name: input.display_name,
