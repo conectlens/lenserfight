@@ -35,7 +35,7 @@ export const useModalRouter = () => {
         next.delete('step')
         return next
       },
-      { replace: false }
+      { replace: true }
     )
   }
 
