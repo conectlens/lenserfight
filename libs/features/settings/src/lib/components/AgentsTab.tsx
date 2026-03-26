@@ -22,7 +22,7 @@ export const AgentsTab: React.FC<AgentsTabProps> = ({ lenserId }) => {
         <Button
           variant="ghost"
           onClick={() => open('create-agent')}
-          className="flex items-center gap-1.5 w-auto text-indigo-600 hover:text-indigo-700 dark:text-indigo-400"
+          className="flex items-center gap-1.5 w-auto"
         >
           <Plus size={15} />
           Create Agent
@@ -81,11 +81,10 @@ export const AgentsTab: React.FC<AgentsTabProps> = ({ lenserId }) => {
               </div>
               <div className="flex items-center gap-2 shrink-0">
                 <span
-                  className={`inline-flex items-center gap-1 text-xs font-medium px-2 py-0.5 rounded-full ${
-                    agent.is_active
-                      ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400'
-                      : 'bg-gray-100 text-gray-500 dark:bg-gray-800 dark:text-gray-400'
-                  }`}
+                  className={`inline-flex items-center gap-1 text-xs font-medium px-2 py-0.5 rounded-full ${agent.is_active
+                    ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400'
+                    : 'bg-gray-100 text-gray-500 dark:bg-gray-800 dark:text-gray-400'
+                    }`}
                 >
                   <Zap size={10} />
                   {agent.is_active ? 'Active' : 'Inactive'}

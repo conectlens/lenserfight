@@ -33,7 +33,6 @@ import {
   BattlesFeedPage,
   BattleDetailPage,
   BattleResultPage,
-  CreateBattlePage,
   CreateBattleWizard,
 } from '@lenserfight/features/battles'
 import { ModalRoute, ModalQueryDriven } from '@lenserfight/ui/routing'
