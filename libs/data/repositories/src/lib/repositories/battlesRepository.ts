@@ -435,41 +435,14 @@ export class SupabaseBattlesRepository implements BattlesRepositoryPort {
   }
 
   async getBattleComments(battleId: string, limit = 100): Promise<BattleCommentRecord[]> {
-    const { data, error } = await supabase
-      .schema('battles')
-      .from('comments')
-      .select(`
-        id,
-        battle_id,
-        lenser_id,
-        body,
-        created_at,
-        updated_at,
-        lenser:profiles!fk_battles_comments_lenser (
-          handle,
-          display_name,
-          avatar_url
-        )
-      `)
-      .eq('battle_id', battleId)
-      .order('created_at', { ascending: true })
-      .limit(limit)
-    if (error) this.handleError(error)
-    return ((data ?? []) as unknown[]).map((row: unknown) => {
-      const r = row as Record<string, unknown>
-      const lenser = r['lenser'] as Record<string, unknown> | null
-      return {
-        id: r['id'] as string,
-        battle_id: r['battle_id'] as string,
-        lenser_id: r['lenser_id'] as string,
-        body: r['body'] as string,
-        created_at: r['created_at'] as string,
-        updated_at: r['updated_at'] as string,
-        lenser_handle: lenser?.['handle'] as string | undefined,
-        lenser_display_name: lenser?.['display_name'] as string | undefined,
-        lenser_avatar_url: lenser?.['avatar_url'] as string | null | undefined,
-      } satisfies BattleCommentRecord
+    // Cross-schema join (battles.comments → lensers.profiles) is done server-side via
+    // fn_get_battle_comments to avoid PostgREST schema-cache poisoning (PGRST200).
+    const { data, error } = await supabase.rpc('fn_get_battle_comments', {
+      p_battle_id: battleId,
+      p_limit: limit,
     })
+    if (error) this.handleError(error)
+    return (data ?? []) as BattleCommentRecord[]
   }
 
   async postComment(battleId: string, lenserId: string, body: string): Promise<BattleCommentRecord> {

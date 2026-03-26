@@ -10,6 +10,9 @@ export * from './lib/components/WorkflowCard'
 export * from './lib/components/WorkflowBuilderCanvas'
 export * from './lib/components/WorkflowProgressView'
 export * from './lib/components/CreateWorkflowWizard'
+export * from './lib/components/WorkflowLensPalette'
+export * from './lib/components/WorkflowCanvasNode'
+export * from './lib/components/WorkflowCanvasEdge'
 
 // Pages
 export * from './lib/pages/WorkflowsPage'

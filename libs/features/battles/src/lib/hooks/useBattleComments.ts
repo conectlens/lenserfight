@@ -15,7 +15,6 @@ export const useBattleComments = (battleId?: string) => {
     staleTime: 0,
   })
 
-  // Real-time subscription — append new comments without full refetch
   useEffect(() => {
     if (!battleId) return
 
@@ -29,10 +28,45 @@ export const useBattleComments = (battleId?: string) => {
           table: 'comments',
           filter: `battle_id=eq.${battleId}`,
         },
-        () => {
-          queryClient.invalidateQueries({
-            queryKey: queryKeys.battles.comments(battleId),
-          })
+        async (payload) => {
+          const raw = payload.new as {
+            id: string
+            battle_id: string
+            lenser_id: string
+            body: string
+            created_at: string
+            updated_at: string
+          }
+
+          // Fetch profile inline so we can append a fully-enriched record
+          // without a full query refetch (true streaming, one small round trip).
+          const { data: profile } = await supabase
+            .schema('lensers')
+            .from('profiles')
+            .select('handle, display_name, avatar_url')
+            .eq('id', raw.lenser_id)
+            .single()
+
+          const enriched: BattleCommentRecord = {
+            id: raw.id,
+            battle_id: raw.battle_id,
+            lenser_id: raw.lenser_id,
+            body: raw.body,
+            created_at: raw.created_at,
+            updated_at: raw.updated_at,
+            lenser_handle: profile?.handle ?? undefined,
+            lenser_display_name: profile?.display_name ?? undefined,
+            lenser_avatar_url: profile?.avatar_url ?? null,
+          }
+
+          queryClient.setQueryData<BattleCommentRecord[]>(
+            queryKeys.battles.comments(battleId),
+            (prev = []) => {
+              // Deduplicate: realtime fires for the sender's own INSERT too
+              if (prev.some((c) => c.id === enriched.id)) return prev
+              return [...prev, enriched]
+            }
+          )
         }
       )
       .subscribe()
@@ -46,15 +80,10 @@ export const useBattleComments = (battleId?: string) => {
 }
 
 export const usePostComment = (battleId?: string) => {
-  const queryClient = useQueryClient()
-
   return useMutation({
     mutationFn: ({ lenserId, body }: { lenserId: string; body: string }) =>
       battlesService.postComment(battleId!, lenserId, body),
-    onSuccess: () => {
-      queryClient.invalidateQueries({
-        queryKey: queryKeys.battles.comments(battleId ?? ''),
-      })
-    },
+    // No onSuccess invalidation — the realtime INSERT subscription enriches
+    // and appends the new comment directly, avoiding a duplicate round trip.
   })
 }

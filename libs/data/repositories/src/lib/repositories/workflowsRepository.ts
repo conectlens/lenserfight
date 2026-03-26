@@ -1,3 +1,4 @@
+import { paginatedResponse, type ApiResponseEnvelope } from '@lenserfight/api/contracts'
 import { supabase } from '@lenserfight/data/supabase'
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -59,6 +60,12 @@ export interface WorkflowNodeResultRecord {
   completed_at?: string | null
 }
 
+export interface WorkflowsListFilter {
+  visibility?: 'public' | 'private' | 'unlisted'
+  sort?: 'updated_at' | 'created_at' | 'battle_count'
+  search?: string
+}
+
 export interface CreateWorkflowInput {
   lenser_id: string
   title: string
@@ -90,6 +97,7 @@ export interface UpsertEdgeInput {
 
 export interface WorkflowsRepositoryPort {
   listByLenser(lenserId: string): Promise<WorkflowRecord[]>
+  listByLenserPaginated(lenserId: string, offset: number, limit: number, filter?: WorkflowsListFilter): Promise<ApiResponseEnvelope<WorkflowRecord[]>>
   getById(id: string): Promise<WorkflowRecord | null>
   getNodes(workflowId: string): Promise<WorkflowNodeRecord[]>
   getEdges(workflowId: string): Promise<WorkflowEdgeRecord[]>
@@ -123,6 +131,35 @@ export class SupabaseWorkflowsRepository implements WorkflowsRepositoryPort {
 
     if (error) this.handleError(error)
     return (data ?? []) as WorkflowRecord[]
+  }
+
+  async listByLenserPaginated(
+    lenserId: string,
+    offset: number,
+    limit: number,
+    filter: WorkflowsListFilter = {}
+  ): Promise<ApiResponseEnvelope<WorkflowRecord[]>> {
+    let query = supabase
+      .from('vw_workflows')
+      .select('id, lenser_id, title, description, visibility, battle_count, created_at, updated_at', { count: 'planned' })
+      .eq('lenser_id', lenserId)
+
+    if (filter.visibility) query = query.eq('visibility', filter.visibility)
+    if (filter.search) query = query.ilike('title', `%${filter.search}%`)
+
+    const sortCol = filter.sort ?? 'updated_at'
+    query = query.order(sortCol, { ascending: false }).range(offset, offset + limit - 1)
+
+    const { data, error, count } = await query
+    if (error) this.handleError(error)
+
+    const rows = (data ?? []) as WorkflowRecord[]
+    return paginatedResponse(rows, {
+      offset,
+      limit,
+      total: count ?? undefined,
+      hasNextPage: rows.length === limit,
+    })
   }
 
   async getById(id: string): Promise<WorkflowRecord | null> {
