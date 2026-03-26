@@ -1,3 +1,4 @@
+import type { ApiResponseEnvelope } from '@lenserfight/api/contracts'
 import {
   SupabaseWorkflowsRepository,
   type WorkflowRecord,
@@ -8,6 +9,7 @@ import {
   type CreateWorkflowInput,
   type UpsertNodeInput,
   type UpsertEdgeInput,
+  type WorkflowsListFilter,
 } from '../repositories/workflowsRepository'
 
 const workflowsRepo = new SupabaseWorkflowsRepository()
@@ -21,11 +23,20 @@ export type {
   CreateWorkflowInput,
   UpsertNodeInput,
   UpsertEdgeInput,
+  WorkflowsListFilter,
 }
 
 export const workflowsService = {
   listByLenser: (lenserId: string): Promise<WorkflowRecord[]> =>
     workflowsRepo.listByLenser(lenserId),
+
+  listByLenserPaginated: (
+    lenserId: string,
+    offset: number,
+    limit: number,
+    filter?: WorkflowsListFilter
+  ): Promise<ApiResponseEnvelope<WorkflowRecord[]>> =>
+    workflowsRepo.listByLenserPaginated(lenserId, offset, limit, filter),
 
   getById: (id: string): Promise<WorkflowRecord | null> =>
     workflowsRepo.getById(id),

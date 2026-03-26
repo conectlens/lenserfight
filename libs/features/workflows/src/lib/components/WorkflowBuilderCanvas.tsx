@@ -1,148 +1,261 @@
-import { Button } from '@lenserfight/ui/components'
-import { lensesService } from '@lenserfight/data/repositories'
-import type { WorkflowNodeRecord, WorkflowEdgeRecord, UpsertNodeInput, UpsertEdgeInput } from '@lenserfight/data/repositories'
-import { useQuery } from '@tanstack/react-query'
-import { Plus, Trash2 } from 'lucide-react'
-import React, { useState } from 'react'
+import '@xyflow/react/dist/style.css'
+import {
+  ReactFlow,
+  ReactFlowProvider,
+  Background,
+  BackgroundVariant,
+  Controls,
+  MiniMap,
+  addEdge,
+  useNodesState,
+  useEdgesState,
+  useReactFlow,
+} from '@xyflow/react'
+import type {
+  Connection,
+  Node,
+  Edge,
+  NodeTypes,
+  EdgeTypes,
+  OnNodesChange,
+  OnEdgesChange,
+} from '@xyflow/react'
+import type {
+  WorkflowNodeRecord,
+  WorkflowEdgeRecord,
+  UpsertNodeInput,
+  UpsertEdgeInput,
+} from '@lenserfight/data/repositories'
+import React, { useCallback, useEffect, useRef } from 'react'
 
 import { useSaveWorkflow } from '../hooks/useSaveWorkflow'
+import type { WorkflowNodeData } from './WorkflowCanvasNode'
+import { WorkflowCanvasNode } from './WorkflowCanvasNode'
+import { WorkflowCanvasEdge } from './WorkflowCanvasEdge'
+import type { DraggedLensData } from './WorkflowLensPalette'
 
-interface WorkflowBuilderCanvasProps {
+// ─── Type registries ──────────────────────────────────────────────────────────
+
+const nodeTypes: NodeTypes = { workflowNode: WorkflowCanvasNode }
+const edgeTypes: EdgeTypes = { workflowEdge: WorkflowCanvasEdge }
+
+// ─── Record → Flow node/edge converters ──────────────────────────────────────
+
+function toFlowNode(
+  record: WorkflowNodeRecord,
+  onRemove: (id: string) => void
+): Node<WorkflowNodeData> {
+  return {
+    id: record.id,
+    type: 'workflowNode',
+    position: { x: record.position_x, y: record.position_y },
+    data: {
+      label: record.label ?? 'Lens node',
+      ordinal: record.ordinal,
+      isPersisted: true,
+      lens_id: record.lens_id,
+      onRemove,
+    } as WorkflowNodeData & { lens_id: string },
+  }
+}
+
+function toFlowEdge(
+  record: WorkflowEdgeRecord,
+  onRemove: (id: string) => void
+): Edge {
+  return {
+    id: record.id,
+    source: record.source_node_id,
+    target: record.target_node_id,
+    type: 'workflowEdge',
+    data: { sourceOutputKey: record.source_output_key, onRemove },
+  }
+}
+
+// ─── Props ────────────────────────────────────────────────────────────────────
+
+export interface WorkflowBuilderCanvasProps {
   workflowId: string
   nodes: WorkflowNodeRecord[]
   edges: WorkflowEdgeRecord[]
   readOnly?: boolean
 }
 
-interface PendingNode {
-  tempId: string
-  lens_id: string
-  lensTitle: string
-  label: string
-  ordinal: number
+// ─── Public component — wraps inner in ReactFlowProvider ─────────────────────
+
+export function WorkflowBuilderCanvas(props: WorkflowBuilderCanvasProps) {
+  return (
+    <ReactFlowProvider>
+      <WorkflowBuilderCanvasInner {...props} />
+    </ReactFlowProvider>
+  )
 }
 
-export function WorkflowBuilderCanvas({ workflowId, nodes, edges, readOnly }: WorkflowBuilderCanvasProps) {
-  const [query, setQuery] = useState('')
-  const [pendingNodes, setPendingNodes] = useState<PendingNode[]>([])
-  const [saved, setSaved] = useState(false)
-  const { mutateAsync: saveWorkflow, isPending: saving } = useSaveWorkflow()
+// ─── Inner component — can call useReactFlow ──────────────────────────────────
 
-  const { data: searchResults = [] } = useQuery({
-    queryKey: ['lens-search-workflow-builder', query],
-    queryFn: async () => {
-      const resp = await lensesService.search(query, 0, 6)
-      return resp.data ?? []
+function WorkflowBuilderCanvasInner({
+  workflowId,
+  nodes: nodeRecords,
+  edges: edgeRecords,
+  readOnly = false,
+}: WorkflowBuilderCanvasProps) {
+  const { screenToFlowPosition } = useReactFlow()
+  const { mutateAsync: saveWorkflow } = useSaveWorkflow()
+  const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  // ── Remove handlers ──────────────────────────────────────────────────────
+  const handleRemoveNode = useCallback((nodeId: string) => {
+    setNodes((nds) => nds.filter((n) => n.id !== nodeId))
+    scheduleSave()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  const handleRemoveEdge = useCallback((edgeId: string) => {
+    setEdges((eds) => eds.filter((e) => e.id !== edgeId))
+    scheduleSave()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  // ── Flow state ────────────────────────────────────────────────────────────
+  const [flowNodes, setNodes, onNodesChange] = useNodesState(
+    nodeRecords.map((n) => toFlowNode(n, handleRemoveNode))
+  )
+  const [flowEdges, setEdges, onEdgesChange] = useEdgesState(
+    edgeRecords.map((e) => toFlowEdge(e, handleRemoveEdge))
+  )
+
+  // Re-seed when DB records arrive (initial fetch)
+  useEffect(() => {
+    setNodes(nodeRecords.map((n) => toFlowNode(n, handleRemoveNode)))
+  }, [nodeRecords, handleRemoveNode, setNodes])
+
+  useEffect(() => {
+    setEdges(edgeRecords.map((e) => toFlowEdge(e, handleRemoveEdge)))
+  }, [edgeRecords, handleRemoveEdge, setEdges])
+
+  // ── Debounced save ────────────────────────────────────────────────────────
+  const scheduleSave = useCallback(() => {
+    if (readOnly) return
+    if (saveTimerRef.current) clearTimeout(saveTimerRef.current)
+    saveTimerRef.current = setTimeout(() => {
+      setNodes((nds) => {
+        setEdges((eds) => {
+          const upsertNodes: UpsertNodeInput[] = nds.map((n, i) => {
+            const d = n.data as WorkflowNodeData & { lens_id?: string }
+            return {
+              id: n.id.startsWith('tmp-') ? undefined : n.id,
+              lens_id: d.lens_id ?? n.id,
+              version_id: null,
+              label: d.label,
+              ordinal: d.ordinal ?? i,
+              position_x: n.position.x,
+              position_y: n.position.y,
+            }
+          })
+          const upsertEdges: UpsertEdgeInput[] = eds
+            .filter((e) => !e.id.startsWith('tmp-edge-'))
+            .map((e) => ({
+              id: e.id,
+              source_node_id: e.source,
+              target_node_id: e.target,
+              source_output_key:
+                (e.data as { sourceOutputKey?: string })?.sourceOutputKey ?? 'output',
+              target_param_label: e.targetHandle ?? 'input',
+            }))
+          saveWorkflow({ workflowId, nodes: upsertNodes, edges: upsertEdges }).catch(() => null)
+          return eds
+        })
+        return nds
+      })
+    }, 1500)
+  }, [readOnly, workflowId, saveWorkflow, setNodes, setEdges])
+
+  // ── Connect nodes ─────────────────────────────────────────────────────────
+  const onConnect = useCallback(
+    (connection: Connection) => {
+      const newEdge: Edge = {
+        ...connection,
+        id: `tmp-edge-${Date.now()}`,
+        type: 'workflowEdge',
+        data: { sourceOutputKey: 'output', onRemove: handleRemoveEdge },
+      } as Edge
+      setEdges((eds) => addEdge(newEdge, eds))
+      scheduleSave()
     },
-    enabled: query.length >= 2,
-    staleTime: 5000,
-  })
+    [setEdges, scheduleSave, handleRemoveEdge]
+  )
 
-  const allNodes = [
-    ...nodes.map((n) => ({ id: n.id, label: n.label, ordinal: n.ordinal, lens_id: n.lens_id, isPersisted: true })),
-    ...pendingNodes.map((n) => ({ id: n.tempId, label: n.label, ordinal: n.ordinal, lens_id: n.lens_id, isPersisted: false })),
-  ].sort((a, b) => a.ordinal - b.ordinal)
+  // ── Drag-and-drop from palette ────────────────────────────────────────────
+  const onDragOver = useCallback((e: React.DragEvent) => {
+    e.preventDefault()
+    e.dataTransfer.dropEffect = 'copy'
+  }, [])
 
-  const addLens = (lens: { id: string; title: string }) => {
-    const ordinal = allNodes.length
-    setPendingNodes((prev) => [
-      ...prev,
-      { tempId: `tmp-${Date.now()}`, lens_id: lens.id, lensTitle: lens.title, label: lens.title, ordinal },
-    ])
-    setQuery('')
-    setSaved(false)
-  }
+  const onDrop = useCallback(
+    (e: React.DragEvent) => {
+      e.preventDefault()
+      const raw = e.dataTransfer.getData('application/lenserfight-lens')
+      if (!raw) return
+      const lensData: DraggedLensData = JSON.parse(raw)
+      const pos = screenToFlowPosition({ x: e.clientX, y: e.clientY })
+      const nextOrdinal = flowNodes.length
+      const newNode: Node<WorkflowNodeData> = {
+        id: `tmp-${Date.now()}`,
+        type: 'workflowNode',
+        position: pos,
+        data: {
+          label: lensData.title,
+          ordinal: nextOrdinal,
+          isPersisted: false,
+          lens_id: lensData.lens_id,
+          onRemove: handleRemoveNode,
+        } as WorkflowNodeData & { lens_id: string },
+      }
+      setNodes((nds) => [...nds, newNode])
+      scheduleSave()
+    },
+    [screenToFlowPosition, flowNodes.length, setNodes, scheduleSave, handleRemoveNode]
+  )
 
-  const removeNode = (id: string) => {
-    setPendingNodes((prev) => prev.filter((n) => n.tempId !== id))
-  }
-
-  const handleSave = async () => {
-    const upsertNodes: UpsertNodeInput[] = [
-      ...nodes.map((n) => ({ id: n.id, lens_id: n.lens_id, version_id: n.version_id, label: n.label, ordinal: n.ordinal, position_x: n.position_x, position_y: n.position_y })),
-      ...pendingNodes.map((n, i) => ({ lens_id: n.lens_id, version_id: null, label: n.label, ordinal: nodes.length + i, position_x: i * 200, position_y: 0 })),
-    ]
-    const upsertEdges: UpsertEdgeInput[] = edges.map((e) => ({
-      id: e.id,
-      source_node_id: e.source_node_id,
-      target_node_id: e.target_node_id,
-      source_output_key: e.source_output_key,
-      target_param_label: e.target_param_label,
-    }))
-    await saveWorkflow({ workflowId, nodes: upsertNodes, edges: upsertEdges })
-    setPendingNodes([])
-    setSaved(true)
-  }
+  const onNodeDragStop = useCallback(() => scheduleSave(), [scheduleSave])
 
   return (
-    <div className="space-y-4">
-      {/* Node list */}
-      <div className="space-y-2">
-        {allNodes.length === 0 && (
-          <div className="rounded-2xl border border-dashed border-surface-border p-6 text-center text-sm text-greyscale-400">
-            Add your first lens to start building
-          </div>
-        )}
-        {allNodes.map((node, i) => (
-          <div key={node.id} className="flex items-center gap-3 rounded-2xl border border-surface-border bg-surface-raised px-4 py-3">
-            <span className="flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-full bg-surface-base text-xs font-bold text-greyscale-500">
-              {i + 1}
-            </span>
-            <span className="text-sm font-medium text-greyscale-900 dark:text-greyscale-50 flex-1 truncate">
-              {node.label}
-            </span>
-            {!node.isPersisted && !readOnly && (
-              <button type="button" onClick={() => removeNode(node.id)} className="text-greyscale-400 hover:text-status-red transition-colors">
-                <Trash2 size={14} />
-              </button>
-            )}
-          </div>
-        ))}
-      </div>
-
-      {!readOnly && (
-        <>
-          {/* Lens search */}
-          <div className="relative">
-            <div className="flex items-center gap-2">
-              <Plus size={14} className="text-greyscale-400 flex-shrink-0" />
-              <input
-                type="text"
-                placeholder="Add a lens…"
-                value={query}
-                onChange={(e) => setQuery(e.target.value)}
-                className="w-full rounded-2xl border border-surface-border bg-surface-base px-3 py-2 text-sm text-greyscale-900 placeholder:text-greyscale-400 outline-none focus:border-status-blue dark:bg-surface-raised dark:text-greyscale-50"
-              />
-            </div>
-            {searchResults.length > 0 && (
-              <ul className="absolute left-0 right-0 top-full z-10 mt-1 rounded-2xl border border-surface-border bg-surface-base divide-y divide-surface-border overflow-hidden shadow-lg">
-                {searchResults.map((lens) => (
-                  <li key={lens.id}>
-                    <button
-                      type="button"
-                      onClick={() => addLens({ id: lens.id, title: lens.title })}
-                      className="w-full px-4 py-2.5 text-left text-sm text-greyscale-900 hover:bg-surface-raised transition-colors dark:text-greyscale-50"
-                    >
-                      {lens.title}
-                    </button>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </div>
-
-          {(pendingNodes.length > 0 || nodes.length > 0) && (
-            <div className="flex items-center gap-3">
-              <Button onClick={handleSave} isLoading={saving} size="sm" className="w-auto">
-                Save workflow
-              </Button>
-              {saved && (
-                <span className="text-xs text-status-green font-medium">Saved</span>
-              )}
-            </div>
-          )}
-        </>
-      )}
-    </div>
+    <ReactFlow
+      nodes={flowNodes}
+      edges={flowEdges}
+      nodeTypes={nodeTypes}
+      edgeTypes={edgeTypes}
+      onNodesChange={readOnly ? undefined : onNodesChange}
+      onEdgesChange={readOnly ? undefined : onEdgesChange}
+      onConnect={readOnly ? undefined : onConnect}
+      onDragOver={readOnly ? undefined : onDragOver}
+      onDrop={readOnly ? undefined : onDrop}
+      onNodeDragStop={readOnly ? undefined : onNodeDragStop}
+      nodesDraggable={!readOnly}
+      nodesConnectable={!readOnly}
+      elementsSelectable={!readOnly}
+      fitView
+      fitViewOptions={{ padding: 0.25 }}
+      minZoom={0.2}
+      maxZoom={2.5}
+      proOptions={{ hideAttribution: true }}
+    >
+      <Background
+        variant={BackgroundVariant.Dots}
+        gap={20}
+        size={1.5}
+        color="var(--cl-greyscale-200, #e5e7eb)"
+      />
+      <Controls
+        position="bottom-left"
+        showInteractive={false}
+      />
+      <MiniMap
+        position="bottom-right"
+        nodeColor="var(--cl-surface-raised, #f3f4f6)"
+        maskColor="rgba(0,0,0,0.05)"
+        className="!rounded-2xl !border !border-surface-border !overflow-hidden"
+      />
+    </ReactFlow>
   )
 }

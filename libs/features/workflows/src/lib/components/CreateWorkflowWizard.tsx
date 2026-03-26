@@ -2,8 +2,13 @@ import { Badge, Button, StepWizard } from '@lenserfight/ui/components'
 import type { WizardStepConfig } from '@lenserfight/ui/components'
 import { Field, Input, SelectField, TextArea } from '@lenserfight/ui/forms'
 import { useWizardStep } from '@lenserfight/ui/routing'
-import { Check, GitBranch, Sparkles } from 'lucide-react'
+import { lensesService } from '@lenserfight/data/repositories'
+import { workflowsService } from '@lenserfight/data/repositories'
+import { useAuth } from '@lenserfight/features/auth'
+import { useQuery } from '@tanstack/react-query'
+import { Check, GitBranch, Layers, Search, Sparkles } from 'lucide-react'
 import React, { useState } from 'react'
+import type { LensViewModel, PersonalLensFeedItem } from '@lenserfight/types'
 
 import { useCreateWorkflow } from '../hooks/useCreateWorkflow'
 
@@ -22,17 +27,163 @@ const WIZARD_STEPS: WizardStepConfig[] = [
   {
     label: 'Details',
     title: 'Build a Connected Lens workflow',
-    description: 'Start with the workflow metadata, review it once, then move into the canvas builder.',
+    description: 'Give your workflow a name and visibility, then pick the starting lenses.',
     icon: <GitBranch size={20} />,
   },
   {
-    label: 'Review',
-    title: 'Review workflow metadata',
-    description: "This creates the workflow shell only. You'll land in the builder immediately after creation.",
+    label: 'Add Lenses',
+    title: 'Choose starting lenses',
+    description: 'Pick one or more lenses to add as nodes. You can always add more in the canvas editor.',
+    icon: <Layers size={20} />,
   },
 ]
 
+// ─── Lens picker (inline, no new file) ────────────────────────────────────────
+
+type PickableLens = Pick<LensViewModel, 'id' | 'title' | 'description' | 'visibility'>
+
+interface LensPickerProps {
+  lenserId: string | undefined
+  selected: string[]
+  onToggle: (id: string, title: string) => void
+}
+
+function LensPicker({ lenserId, selected, onToggle }: LensPickerProps) {
+  const [tab, setTab] = useState<'mine' | 'popular'>('mine')
+  const [search, setSearch] = useState('')
+
+  // My lenses via personal feed (session-based, respects RLS)
+  const { data: personalData, isLoading: loadingPersonal } = useQuery({
+    queryKey: ['lens-picker-personal', lenserId],
+    queryFn: () => lensesService.getPersonalFeed(lenserId ?? '', 0, 12),
+    enabled: !!lenserId,
+    staleTime: 1000 * 60,
+  })
+  const myLenses: PickableLens[] = (personalData?.data ?? []) as PersonalLensFeedItem[]
+
+  // Auto-switch to popular if user has no personal lenses
+  const effectiveTab = myLenses.length === 0 && !loadingPersonal ? 'popular' : tab
+
+  // Popular lenses
+  const { data: popularData, isLoading: loadingPopular } = useQuery({
+    queryKey: ['lens-picker-popular'],
+    queryFn: () => lensesService.sort('popular', 0, 12),
+    enabled: effectiveTab === 'popular' || myLenses.length === 0,
+    staleTime: 1000 * 60 * 5,
+  })
+  const popularLenses: PickableLens[] = popularData?.data ?? []
+
+  // Search results (respects RLS — only public or owned lenses returned)
+  const { data: searchData, isLoading: loadingSearch } = useQuery({
+    queryKey: ['lens-picker-search', search],
+    queryFn: () => lensesService.search(search, 0, 8),
+    enabled: search.length >= 2,
+    staleTime: 5000,
+  })
+  const searchResults: PickableLens[] = searchData?.data ?? []
+
+  const displayLenses: PickableLens[] =
+    search.length >= 2 ? searchResults : effectiveTab === 'mine' ? myLenses : popularLenses
+  const isLoading =
+    search.length >= 2 ? loadingSearch : effectiveTab === 'mine' ? loadingPersonal : loadingPopular
+
+  return (
+    <div className="space-y-3">
+      {/* Search */}
+      <div className="relative">
+        <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-greyscale-400 pointer-events-none" />
+        <input
+          type="text"
+          placeholder="Search lenses…"
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          className="w-full rounded-2xl border border-surface-border bg-surface-base pl-8 pr-3 py-2 text-sm text-greyscale-900 placeholder:text-greyscale-400 outline-none focus:border-status-blue dark:bg-surface-raised dark:text-greyscale-50"
+        />
+      </div>
+
+      {/* Tabs (only shown when search is empty) */}
+      {search.length < 2 && myLenses.length > 0 && (
+        <div className="flex gap-2">
+          {(['mine', 'popular'] as const).map((t) => (
+            <button
+              key={t}
+              type="button"
+              onClick={() => setTab(t)}
+              className={`rounded-full px-3 py-1 text-xs font-semibold transition-colors ${
+                effectiveTab === t
+                  ? 'bg-status-blue text-white'
+                  : 'bg-surface-raised text-greyscale-500 hover:text-greyscale-900 dark:hover:text-greyscale-50'
+              }`}
+            >
+              {t === 'mine' ? 'My Lenses' : 'Popular'}
+            </button>
+          ))}
+        </div>
+      )}
+
+      {/* List */}
+      <div className="max-h-64 overflow-y-auto space-y-1 rounded-2xl border border-surface-border bg-surface-base p-1">
+        {isLoading && (
+          <div className="flex flex-col gap-1 p-2">
+            {Array.from({ length: 4 }).map((_, i) => (
+              <div key={i} className="h-10 rounded-xl bg-surface-raised animate-pulse" />
+            ))}
+          </div>
+        )}
+        {!isLoading && displayLenses.length === 0 && (
+          <p className="py-6 text-center text-sm text-greyscale-400">
+            {search.length >= 2 ? 'No lenses found.' : 'No lenses available.'}
+          </p>
+        )}
+        {!isLoading &&
+          displayLenses.map((lens) => {
+            const isSelected = selected.includes(lens.id)
+            return (
+              <button
+                key={lens.id}
+                type="button"
+                onClick={() => onToggle(lens.id, lens.title)}
+                className={`w-full flex items-center gap-3 rounded-xl px-3 py-2.5 text-left transition-colors ${
+                  isSelected
+                    ? 'bg-status-blue/10 border border-status-blue/30'
+                    : 'hover:bg-surface-raised border border-transparent'
+                }`}
+              >
+                <div
+                  className={`flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-md border transition-colors ${
+                    isSelected
+                      ? 'bg-status-blue border-status-blue'
+                      : 'border-greyscale-300 dark:border-greyscale-600'
+                  }`}
+                >
+                  {isSelected && <Check size={11} className="text-white" strokeWidth={3} />}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="truncate text-sm font-medium text-greyscale-900 dark:text-greyscale-50">
+                    {lens.title}
+                  </p>
+                </div>
+                {lens.visibility !== 'public' && (
+                  <span className="flex-shrink-0 text-xs text-greyscale-400 capitalize">{lens.visibility}</span>
+                )}
+              </button>
+            )
+          })}
+      </div>
+
+      {selected.length > 0 && (
+        <p className="text-xs text-greyscale-500">
+          {selected.length} lens{selected.length > 1 ? 'es' : ''} selected — will be added as nodes in the canvas.
+        </p>
+      )}
+    </div>
+  )
+}
+
+// ─── Wizard ──────────────────────────────────────────────────────────────────
+
 export const CreateWorkflowWizard: React.FC<CreateWorkflowWizardProps> = ({ onCreated, onCancel }) => {
+  const { user } = useAuth()
   const { step, goToStep } = useWizardStep({ maxStep: 1 })
   const { submit, isSubmitting, error: submissionError } = useCreateWorkflow()
 
@@ -42,9 +193,20 @@ export const CreateWorkflowWizard: React.FC<CreateWorkflowWizardProps> = ({ onCr
   const [localError, setLocalError] = useState<string | null>(null)
   const [createdWorkflowId, setCreatedWorkflowId] = useState<string | null>(null)
 
+  // Lens picker state: map of id → title for selected lenses
+  const [selectedLenses, setSelectedLenses] = useState<Map<string, string>>(new Map())
+
   const titleValue = title.trim()
-  const descriptionValue = description.trim()
   const error = localError ?? submissionError
+
+  const toggleLens = (id: string, title: string) => {
+    setSelectedLenses((prev) => {
+      const next = new Map(prev)
+      if (next.has(id)) next.delete(id)
+      else next.set(id, title)
+      return next
+    })
+  }
 
   const reset = () => {
     setTitle('')
@@ -52,6 +214,7 @@ export const CreateWorkflowWizard: React.FC<CreateWorkflowWizardProps> = ({ onCr
     setVisibility('public')
     setLocalError(null)
     setCreatedWorkflowId(null)
+    setSelectedLenses(new Map())
   }
 
   const handleCancel = () => {
@@ -72,9 +235,23 @@ export const CreateWorkflowWizard: React.FC<CreateWorkflowWizardProps> = ({ onCr
     try {
       const workflow = await submit({
         title: titleValue,
-        description: descriptionValue || undefined,
+        description: description.trim() || undefined,
         visibility,
       })
+
+      // Upsert selected lenses as initial nodes
+      if (selectedLenses.size > 0) {
+        const nodes = Array.from(selectedLenses.entries()).map(([lens_id, label], i) => ({
+          lens_id,
+          version_id: null,
+          label,
+          ordinal: i,
+          position_x: i * 220,
+          position_y: 0,
+        }))
+        await workflowsService.upsertNodes(workflow.id, nodes)
+      }
+
       setCreatedWorkflowId(workflow.id)
       onCreated(workflow.id)
     } catch {
@@ -94,7 +271,9 @@ export const CreateWorkflowWizard: React.FC<CreateWorkflowWizardProps> = ({ onCr
             Your workflow is ready.
           </h2>
           <p className="text-sm leading-6 text-greyscale-500 dark:text-greyscale-400">
-            We saved the metadata and handed you off to the builder so you can start connecting lenses.
+            {selectedLenses.size > 0
+              ? `Added ${selectedLenses.size} lens${selectedLenses.size > 1 ? 'es' : ''} as nodes. Connect them in the canvas builder.`
+              : 'We saved the metadata and handed you off to the builder so you can start connecting lenses.'}
           </p>
         </div>
         <Button onClick={handleCancel} variant="ghost" className="w-auto">
@@ -164,29 +343,14 @@ export const CreateWorkflowWizard: React.FC<CreateWorkflowWizardProps> = ({ onCr
         </div>
       ) : (
         <div className="space-y-4">
-          <div className="rounded-2xl border border-surface-border bg-surface-base p-4 shadow-neu-1">
-            <div className="space-y-3 text-sm">
-              <div className="flex items-center justify-between gap-3">
-                <span className="text-greyscale-500 dark:text-greyscale-400">Title</span>
-                <span className="font-semibold text-greyscale-900 dark:text-greyscale-50">{titleValue}</span>
-              </div>
-              <div className="flex items-center justify-between gap-3">
-                <span className="text-greyscale-500 dark:text-greyscale-400">Visibility</span>
-                <span className="font-semibold capitalize text-greyscale-900 dark:text-greyscale-50">{visibility}</span>
-              </div>
-              {descriptionValue && (
-                <div className="space-y-1">
-                  <span className="text-greyscale-500 dark:text-greyscale-400">Description</span>
-                  <p className="leading-6 text-greyscale-700 dark:text-greyscale-300">{descriptionValue}</p>
-                </div>
-              )}
-            </div>
-          </div>
-
-          <p className="text-sm leading-6 text-greyscale-500 dark:text-greyscale-400">
-            The workflow will be created under your current lenser profile. You can add lenses and edges right after this step.
+          <LensPicker
+            lenserId={user?.id}
+            selected={Array.from(selectedLenses.keys())}
+            onToggle={toggleLens}
+          />
+          <p className="text-xs leading-5 text-greyscale-400">
+            Selection is optional — you can add and connect lenses later in the canvas editor.
           </p>
-
           {error && (
             <p className="text-sm font-medium text-status-red">{error}</p>
           )}
