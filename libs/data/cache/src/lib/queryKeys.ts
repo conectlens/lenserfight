@@ -108,4 +108,26 @@ export const queryKeys = {
     aggregates: (battleId: string) => [...queryKeys.battles.all, 'aggregates', battleId] as const,
     scorecard: (battleId: string) => [...queryKeys.battles.all, 'scorecard', battleId] as const,
   },
+  agents: {
+    all: ['agents'] as const,
+    detail: (id: string) => [...queryKeys.agents.all, 'detail', id] as const,
+    policy: (id: string) => [...queryKeys.agents.all, 'policy', id] as const,
+    quota: (id: string, date?: string) => [...queryKeys.agents.all, 'quota', id, date] as const,
+    actions: (id: string) => [...queryKeys.agents.all, 'actions', id] as const,
+    bindings: (id: string) => [...queryKeys.agents.all, 'bindings', id] as const,
+  },
+  reputation: {
+    all: ['reputation'] as const,
+    scores: (lenserId: string) => [...queryKeys.reputation.all, 'scores', lenserId] as const,
+    ratings: (lenserId: string) => [...queryKeys.reputation.all, 'ratings', lenserId] as const,
+    calibration: (lenserId: string) => [...queryKeys.reputation.all, 'calibration', lenserId] as const,
+  },
+  benchmark: {
+    all: ['benchmark'] as const,
+    suites: (filter?: string) => [...queryKeys.benchmark.all, 'suites', filter] as const,
+    suite: (id: string) => [...queryKeys.benchmark.all, 'suite', id] as const,
+    tasks: (suiteId: string) => [...queryKeys.benchmark.all, 'tasks', suiteId] as const,
+    results: (suiteId: string) => [...queryKeys.benchmark.all, 'results', suiteId] as const,
+    protocols: (suiteId: string) => [...queryKeys.benchmark.all, 'protocols', suiteId] as const,
+  },
 }
