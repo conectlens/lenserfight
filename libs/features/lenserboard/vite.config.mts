@@ -8,7 +8,7 @@ import { nxCopyAssetsPlugin } from '@nx/vite/plugins/nx-copy-assets.plugin'
 
 export default defineConfig(() => ({
   root: import.meta.dirname,
-  cacheDir: '../../../node_modules/.vite/libs/features/leaderboard',
+  cacheDir: '../../../node_modules/.vite/libs/features/lenserboard',
   plugins: [
     react(),
     nxViteTsPaths(),
@@ -26,7 +26,7 @@ export default defineConfig(() => ({
   // Configuration for building your library.
   // See: https://vite.dev/guide/build.html#library-mode
   build: {
-    outDir: '../../../dist/libs/features/leaderboard',
+    outDir: '../../../dist/libs/features/lenserboard',
     emptyOutDir: true,
     reportCompressedSize: true,
     commonjsOptions: {
@@ -35,7 +35,7 @@ export default defineConfig(() => ({
     lib: {
       // Could also be a dictionary or array of multiple entry points.
       entry: 'src/index.ts',
-      name: 'leaderboard',
+      name: 'lenserboard',
       fileName: 'index',
       // Change this to the formats you want to support.
       // Don't forget to update your package.json as well.
@@ -47,14 +47,14 @@ export default defineConfig(() => ({
     },
   },
   test: {
-    name: 'leaderboard',
+    name: 'lenserboard',
     watch: false,
     globals: true,
     environment: 'jsdom',
     include: ['{src,tests}/**/*.{test,spec}.{js,mjs,cjs,ts,mts,cts,jsx,tsx}'],
     reporters: ['default'],
     coverage: {
-      reportsDirectory: '../../../coverage/libs/features/leaderboard',
+      reportsDirectory: '../../../coverage/libs/features/lenserboard',
       provider: 'v8' as const,
     },
   },

@@ -3,10 +3,10 @@ import React from 'react'
 import { Button } from '@lenserfight/ui/components'
 import { LeaderboardEntry } from '@lenserfight/types'
 
-import { LeaderboardRow } from './LeaderboardRow'
+import { LenserBoardRow } from './LenserBoardRow'
 import { MyPositionStrip } from './MyPositionStrip'
 
-interface LeaderboardListProps {
+interface LenserBoardListProps {
   data: LeaderboardEntry[]
   userEntry?: LeaderboardEntry | null
   isLoading: boolean
@@ -16,7 +16,7 @@ interface LeaderboardListProps {
   isFetchingNextPage?: boolean
 }
 
-export const LeaderboardList: React.FC<LeaderboardListProps> = ({
+export const LenserBoardList: React.FC<LenserBoardListProps> = ({
   data,
   userEntry,
   isLoading,
@@ -43,15 +43,15 @@ export const LeaderboardList: React.FC<LeaderboardListProps> = ({
     )
   }
 
-  // Check if current user is in the visible top list
   const userInTopList = data.some((e) => e.lenserId === currentUserId)
 
   return (
     <div className="relative pb-24 md:pb-0">
       <div className="flex flex-col gap-3">
         {data.map((entry) => (
-          <LeaderboardRow
+          <LenserBoardRow
             key={entry.lenserId}
+            mode="xp"
             entry={entry}
             isCurrentUser={entry.lenserId === currentUserId}
           />
@@ -71,7 +71,6 @@ export const LeaderboardList: React.FC<LeaderboardListProps> = ({
         </div>
       )}
 
-      {/* Sticky footer for user if not in top list */}
       {!userInTopList && userEntry && currentUserId && <MyPositionStrip entry={userEntry} />}
     </div>
   )
