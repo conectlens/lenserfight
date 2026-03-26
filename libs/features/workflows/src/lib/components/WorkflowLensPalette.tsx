@@ -1,7 +1,7 @@
 import { lensesService } from '@lenserfight/data/repositories'
 import { useAuth } from '@lenserfight/features/auth'
 import { useQuery } from '@tanstack/react-query'
-import { GripVertical, Search } from 'lucide-react'
+import { ChevronLeft, ChevronRight, GripVertical, Search } from 'lucide-react'
 import React, { useState } from 'react'
 import type { LensViewModel, PersonalLensFeedItem } from '@lenserfight/types'
 
@@ -12,11 +12,13 @@ export interface DraggedLensData {
 
 interface WorkflowLensPaletteProps {
   onDragStart: (data: DraggedLensData) => void
+  collapsed?: boolean
+  onToggleCollapse?: () => void
 }
 
 type PaletteTab = 'mine' | 'popular'
 
-export function WorkflowLensPalette({ onDragStart }: WorkflowLensPaletteProps) {
+export function WorkflowLensPalette({ onDragStart, collapsed, onToggleCollapse }: WorkflowLensPaletteProps) {
   const { user } = useAuth()
   const [tab, setTab] = useState<PaletteTab>('mine')
   const [search, setSearch] = useState('')
@@ -63,9 +65,35 @@ export function WorkflowLensPalette({ onDragStart }: WorkflowLensPaletteProps) {
     onDragStart(data)
   }
 
+  if (collapsed) {
+    return (
+      <aside className="flex flex-col w-10 flex-shrink-0 border-r border-surface-border bg-surface-base overflow-hidden items-center py-2">
+        <button
+          type="button"
+          onClick={onToggleCollapse}
+          className="flex h-8 w-8 items-center justify-center rounded-xl text-greyscale-400 hover:text-greyscale-700 hover:bg-surface-raised transition-colors dark:hover:text-greyscale-200"
+          title="Expand lens palette"
+        >
+          <ChevronRight size={14} />
+        </button>
+      </aside>
+    )
+  }
+
   return (
     <aside className="flex flex-col w-60 flex-shrink-0 border-r border-surface-border bg-surface-base overflow-hidden">
-      <div className="px-3 pt-3 pb-2 space-y-2">
+      <div className="flex items-center justify-between px-3 pt-3 pb-0">
+        <span className="text-[10px] font-semibold uppercase tracking-wider text-greyscale-400">Lenses</span>
+        <button
+          type="button"
+          onClick={onToggleCollapse}
+          className="flex h-6 w-6 items-center justify-center rounded-lg text-greyscale-400 hover:text-greyscale-700 hover:bg-surface-raised transition-colors dark:hover:text-greyscale-200"
+          title="Collapse palette"
+        >
+          <ChevronLeft size={12} />
+        </button>
+      </div>
+      <div className="px-3 pt-2 pb-2 space-y-2">
         {/* Search */}
         <div className="relative">
           <Search size={13} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-greyscale-400 pointer-events-none" />
