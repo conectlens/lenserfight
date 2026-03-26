@@ -1,28 +1,25 @@
-import React, { useState } from 'react'
-import { ArrowRight, CheckCircle } from 'lucide-react'
-import { Button } from '@lenserfight/ui/components'
 import { useLenser } from '@lenserfight/features/profile'
+import { Badge, Button } from '@lenserfight/ui/components'
+import { Field, Input } from '@lenserfight/ui/forms'
+import { ArrowRight, CheckCircle, Sparkles } from 'lucide-react'
+import React, { useState } from 'react'
+
 import { useCreateAgent } from '../hooks/useCreateAgent'
 
 export interface CreateAgentContentProps {
-  /** Current wizard step from ModalQueryDriven (0 = form, 1 = confirm). */
-  step: number
-  goToStep: (n: number) => void
   close: () => void
 }
 
 /**
- * Create AI Agent form — rendered as a render-prop child of `ModalQueryDriven`.
+ * Create AI Agent modal content.
  *
  * Open via URL: `useModalRouter().open('create-agent')`
- * URL shape:    `?modal=create-agent&step=0`
+ * URL shape:    `?modal=create-agent`
  *
- * Step 0: fill handle + display name
- * Step 1: review + confirm → creates agent
- *
+ * Single form: fill handle + display name, then confirm and create.
  * The Dialog wrapper is provided externally by `ModalQueryDriven` in App.tsx.
  */
-export const CreateAgentContent: React.FC<CreateAgentContentProps> = ({ step, goToStep, close }) => {
+export const CreateAgentContent: React.FC<CreateAgentContentProps> = ({ close }) => {
   const { lenser } = useLenser()
   const { submit, isSubmitting } = useCreateAgent(lenser?.id ?? '')
 
@@ -31,132 +28,120 @@ export const CreateAgentContent: React.FC<CreateAgentContentProps> = ({ step, go
   const [error, setError] = useState<string | null>(null)
   const [created, setCreated] = useState(false)
 
-  const handleClose = () => {
+  const normalizedHandle = handle.trim().toLowerCase()
+  const displayValue = displayName.trim()
+
+  const reset = () => {
     setHandle('')
     setDisplayName('')
     setError(null)
     setCreated(false)
+  }
+
+  const handleClose = () => {
+    reset()
     close()
   }
 
-  const handleNext = () => {
-    if (!handle.trim() || handle.length < 3) {
-      setError('Handle must be at least 3 characters.')
-      return
-    }
-    if (!displayName.trim() || displayName.length < 2) {
+  const handleCreate = async () => {
+    if (!displayValue || displayValue.length < 2) {
       setError('Display name must be at least 2 characters.')
       return
     }
+    if (!normalizedHandle || normalizedHandle.length < 3) {
+      setError('Handle must be at least 3 characters.')
+      return
+    }
     setError(null)
-    goToStep(1)
-  }
-
-  const handleCreate = async () => {
     try {
-      await submit(handle.trim(), displayName.trim())
+      await submit(normalizedHandle, displayValue)
       setCreated(true)
     } catch (e) {
       const msg = e instanceof Error ? e.message : 'Failed to create agent.'
       setError(msg)
-      goToStep(0)
     }
   }
 
   if (created) {
     return (
-      <div className="flex flex-col items-center gap-4 py-6 text-center">
-        <div className="w-14 h-14 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center">
-          <CheckCircle size={32} className="text-green-600 dark:text-green-400" />
+      <div className="flex flex-col items-center gap-4 py-4 text-center">
+        <div className="flex h-14 w-14 items-center justify-center rounded-full bg-status-green/10">
+          <CheckCircle size={30} className="text-status-green" />
         </div>
-        <div>
-          <p className="font-semibold text-gray-900 dark:text-white">Agent created!</p>
-          <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-            Your AI Agent is ready. You can now configure its policy and model bindings.
+        <div className="space-y-2">
+          <Badge color="green" variant="outline">Agent created</Badge>
+          <p className="text-lg font-black tracking-tight text-greyscale-900 dark:text-greyscale-50">
+            Your AI agent is ready.
+          </p>
+          <p className="text-sm leading-6 text-greyscale-500 dark:text-greyscale-400">
+            You can now configure its policy, model bindings, and runtime permissions from the agent detail page.
           </p>
         </div>
-        <Button onClick={handleClose} className="!w-auto">Done</Button>
+        <Button onClick={handleClose} className="w-auto gap-2">
+          <Sparkles size={14} />
+          Done
+        </Button>
       </div>
     )
   }
 
-  if (step === 0) {
-    return (
-      <div className="flex flex-col gap-5">
-        <div className="flex flex-col gap-1.5">
-          <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
-            Display Name
-          </label>
-          <input
-            type="text"
+  return (
+    <div className="space-y-6">
+      <div className="space-y-2">
+        <Badge color="purple" variant="outline">New agent</Badge>
+        <h2 className="text-xl font-black tracking-tight text-greyscale-900 dark:text-greyscale-50">
+          Create your AI agent
+        </h2>
+        <p className="text-sm leading-6 text-greyscale-500 dark:text-greyscale-400">
+          Give the agent a clear identity.
+        </p>
+      </div>
+
+      <div className="space-y-4">
+        <Field
+          id="agent-display-name"
+          label="Display name"
+          required
+          error={error && displayValue.length < 2 ? error : undefined}
+          hint="Shown across the app on cards, profiles, and management panels."
+        >
+          <Input
+            id="agent-display-name"
             value={displayName}
             onChange={(e) => setDisplayName(e.target.value)}
             placeholder="My Battle Bot"
-            className="w-full px-3 py-2 rounded-lg border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
             maxLength={64}
           />
-        </div>
+        </Field>
 
-        <div className="flex flex-col gap-1.5">
-          <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
-            Handle
-          </label>
-          <div className="flex items-center rounded-lg border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 overflow-hidden focus-within:ring-2 focus-within:ring-indigo-500">
-            <span className="px-3 py-2 text-sm text-gray-400 dark:text-gray-500 bg-gray-50 dark:bg-gray-800 border-r border-gray-200 dark:border-gray-600 select-none">
-              @
-            </span>
-            <input
-              type="text"
-              value={handle}
-              onChange={(e) => setHandle(e.target.value.replace(/[^a-z0-9_-]/gi, '').toLowerCase())}
-              placeholder="my-battle-bot"
-              className="flex-1 px-3 py-2 text-sm text-gray-900 dark:text-white bg-transparent focus:outline-none"
-              maxLength={32}
-            />
-          </div>
-          <p className="text-xs text-gray-400">Letters, numbers, hyphens and underscores only.</p>
-        </div>
-
-        {error && (
-          <p className="text-sm text-red-600 dark:text-red-400">{error}</p>
-        )}
-
-        <div className="flex gap-3 pt-1">
-          <Button variant="ghost" onClick={handleClose} className="flex-1">Cancel</Button>
-          <Button onClick={handleNext} className="flex-1 flex items-center justify-center gap-2">
-            Next <ArrowRight size={14} />
-          </Button>
-        </div>
+        <Field
+          id="agent-handle"
+          label="Handle"
+          required
+          error={error && normalizedHandle.length < 3 ? error : undefined}
+          hint="Letters, numbers, hyphens, and underscores only."
+        >
+          <Input
+            id="agent-handle"
+            value={handle}
+            onChange={(e) => setHandle(e.target.value.replace(/[^a-z0-9_-]/gi, '').toLowerCase())}
+            placeholder="my-battle-bot"
+            maxLength={32}
+            startAdornment={<span className="text-sm text-greyscale-400">@</span>}
+          />
+        </Field>
       </div>
-    )
-  }
-
-  // Step 1: confirm
-  return (
-    <div className="flex flex-col gap-5">
-      <div className="bg-gray-50 dark:bg-gray-700/50 rounded-xl p-4 text-sm space-y-2">
-        <div className="flex justify-between">
-          <span className="text-gray-500 dark:text-gray-400">Display Name</span>
-          <span className="font-medium text-gray-900 dark:text-white">{displayName}</span>
-        </div>
-        <div className="flex justify-between">
-          <span className="text-gray-500 dark:text-gray-400">Handle</span>
-          <span className="font-medium text-gray-900 dark:text-white">@{handle}</span>
-        </div>
-      </div>
-
-      <p className="text-sm text-gray-500 dark:text-gray-400">
-        The agent will start with all actions <strong>disabled</strong>. Enable them from the agent management page after creation.
-      </p>
 
       {error && (
-        <p className="text-sm text-red-600 dark:text-red-400">{error}</p>
+        <p className="text-sm font-medium text-status-red">{error}</p>
       )}
 
-      <div className="flex gap-3 pt-1">
-        <Button variant="ghost" onClick={() => goToStep(0)} className="flex-1">Back</Button>
-        <Button onClick={handleCreate} isLoading={isSubmitting} className="flex-1">
-          Create Agent
+      <div className="flex flex-col-reverse gap-3 pt-1 sm:flex-row">
+        <Button variant="ghost" onClick={handleClose} className="w-full sm:w-auto">
+          Cancel
+        </Button>
+        <Button onClick={handleCreate} isLoading={isSubmitting} className="w-full gap-2 sm:w-auto">
+          Create Agent <ArrowRight size={14} />
         </Button>
       </div>
     </div>
