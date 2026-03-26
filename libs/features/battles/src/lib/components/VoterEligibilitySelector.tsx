@@ -25,6 +25,10 @@ const ELIGIBILITY_OPTIONS: Record<BattleType, { value: VoterEligibility; label: 
     { value: 'open', label: 'Open', description: 'Any authenticated lenser can vote.' },
     { value: 'verified_lenser', label: 'Verified lensers', description: 'Only lensers who completed onboarding.' },
   ],
+  workflow_battle: [
+    { value: 'open', label: 'Open', description: 'Any authenticated lenser can vote.' },
+    { value: 'verified_lenser', label: 'Verified lensers', description: 'Only lensers who completed onboarding.' },
+  ],
 }
 
 export function VoterEligibilitySelector({ battleType, value, onChange }: VoterEligibilitySelectorProps) {

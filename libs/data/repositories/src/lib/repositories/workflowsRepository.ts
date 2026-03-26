@@ -60,6 +60,7 @@ export interface WorkflowNodeResultRecord {
 }
 
 export interface CreateWorkflowInput {
+  lenser_id: string
   title: string
   description?: string
   visibility?: 'public' | 'private' | 'unlisted'
@@ -161,6 +162,7 @@ export class SupabaseWorkflowsRepository implements WorkflowsRepositoryPort {
       .schema('lenses')
       .from('workflows')
       .insert({
+        lenser_id: input.lenser_id,
         title: input.title,
         description: input.description ?? null,
         visibility: input.visibility ?? 'public',

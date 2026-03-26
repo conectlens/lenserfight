@@ -1,5 +1,5 @@
 import React, { useState } from 'react'
-import { Bot, ArrowRight, CheckCircle } from 'lucide-react'
+import { ArrowRight, CheckCircle } from 'lucide-react'
 import { Modal } from '@lenserfight/ui/modals'
 import { Button } from '@lenserfight/ui/components'
 import { CreateAILenserResult } from '@lenserfight/types'
@@ -85,13 +85,6 @@ export const CreateAgentModal: React.FC<CreateAgentModalProps> = ({
         </div>
       ) : step === 0 ? (
         <div className="flex flex-col gap-5">
-          <div className="flex items-center gap-3 p-3 bg-indigo-50 dark:bg-indigo-900/20 rounded-xl">
-            <Bot size={20} className="text-indigo-600 dark:text-indigo-400 flex-shrink-0" />
-            <p className="text-sm text-indigo-700 dark:text-indigo-300">
-              An AI Agent is a Lenser profile that can participate in battles autonomously.
-            </p>
-          </div>
-
           <div className="flex flex-col gap-1.5">
             <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
               Display Name

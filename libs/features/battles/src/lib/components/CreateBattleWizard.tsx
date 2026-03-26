@@ -1,4 +1,4 @@
-import { Badge, Button, Card } from '@lenserfight/ui/components'
+import { Badge, Button } from '@lenserfight/ui/components'
 import { battlesService } from '@lenserfight/data/repositories'
 import { AnimatePresence, motion } from 'framer-motion'
 import { ArrowLeft, ArrowRight, Check, Swords } from 'lucide-react'
@@ -149,7 +149,7 @@ export const CreateBattleWizard: React.FC<CreateBattleWizardProps> = ({ onSucces
         >
           {/* Step 0: Battle basics */}
           {step === 0 && (
-            <Card className="space-y-5 p-6">
+            <div className="space-y-5">
               <div className="space-y-2">
                 <Badge color="blue" variant="outline">Step 1 of 4</Badge>
                 <h2 className="text-xl font-black tracking-tight text-greyscale-900 dark:text-greyscale-0">
@@ -206,12 +206,12 @@ export const CreateBattleWizard: React.FC<CreateBattleWizardProps> = ({ onSucces
                   Next <ArrowRight size={15} />
                 </Button>
               </div>
-            </Card>
+            </div>
           )}
 
           {/* Step 1: Battle type */}
           {step === 1 && (
-            <Card className="space-y-5 p-6">
+            <div className="space-y-5">
               <div className="space-y-2">
                 <Badge color="blue" variant="outline">Step 2 of 4</Badge>
                 <h2 className="text-xl font-black tracking-tight text-greyscale-900 dark:text-greyscale-0">
@@ -237,13 +237,13 @@ export const CreateBattleWizard: React.FC<CreateBattleWizardProps> = ({ onSucces
                   Next <ArrowRight size={15} />
                 </Button>
               </div>
-            </Card>
+            </div>
           )}
 
           {/* Step 2: Configuration */}
           {step === 2 && (
             <div className="space-y-4">
-              <Card className="space-y-5 p-6">
+              <div className="space-y-5">
                 <div className="space-y-2">
                   <Badge color="blue" variant="outline">Step 3 of 4</Badge>
                   <h2 className="text-xl font-black tracking-tight text-greyscale-900 dark:text-greyscale-0">
@@ -258,12 +258,12 @@ export const CreateBattleWizard: React.FC<CreateBattleWizardProps> = ({ onSucces
                   value={voterEligibility}
                   onChange={setVoterEligibility}
                 />
-              </Card>
+              </div>
 
               {showsHandicap && (
-                <Card className="p-6">
+                <div>
                   <HandicapConfigPanel value={handicap} onChange={setHandicap} />
-                </Card>
+                </div>
               )}
 
               {error && (

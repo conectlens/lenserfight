@@ -1,8 +1,9 @@
 import { SEOHead } from '@lenserfight/ui/components'
 import { Button } from '@lenserfight/ui/components'
+import { SelectField } from '@lenserfight/ui/forms'
 import { AnimatePresence, motion } from 'framer-motion'
-import React, { useState } from 'react'
-import { useNavigate, Outlet } from 'react-router-dom'
+import React from 'react'
+import { useNavigate, Outlet, useSearchParams } from 'react-router-dom'
 import { PlusCircle } from 'lucide-react'
 
 import { BattleCard } from '../components/BattleCard'
@@ -11,9 +12,15 @@ import type { BattlesFeedSortBy } from '../hooks/useBattlesFeed'
 
 import type { BattleType } from '../types/battle.types'
 
-const STATUS_FILTERS = ['all', 'open', 'voting', 'published', 'closed'] as const
+const STATUS_OPTIONS = [
+  { value: 'all', label: 'All statuses' },
+  { value: 'open', label: 'Open' },
+  { value: 'voting', label: 'Voting' },
+  { value: 'published', label: 'Published' },
+  { value: 'closed', label: 'Closed' },
+]
 
-const TYPE_FILTERS: { value: BattleType | 'all'; label: string }[] = [
+const TYPE_OPTIONS: { value: BattleType | 'all'; label: string }[] = [
   { value: 'all', label: 'All types' },
   { value: 'human_vs_human_open_votes', label: 'H vs H' },
   { value: 'human_vs_ai', label: 'Human vs AI' },
@@ -42,18 +49,25 @@ const cardVariants = {
   exit: { opacity: 0, y: -10, transition: { duration: 0.15 } },
 }
 
-const filterBtnClass = (active: boolean) =>
-  `text-xs px-3 py-1.5 rounded-full border transition-all ${
-    active
-      ? 'bg-[var(--cl-surface-text)] text-[var(--cl-surface-base)] border-[var(--cl-surface-text)]'
-      : 'bg-[var(--cl-surface-base)] text-[var(--cl-surface-text-muted)] border-[var(--cl-surface-border)] hover:border-[var(--cl-surface-border-subtle)]'
-  }`
-
 export function BattlesFeedPage() {
   const navigate = useNavigate()
-  const [statusFilter, setStatusFilter] = useState<string>('all')
-  const [typeFilter, setTypeFilter] = useState<BattleType | 'all'>('all')
-  const [sortBy, setSortBy] = useState<BattlesFeedSortBy>('newest')
+  const [searchParams, setSearchParams] = useSearchParams()
+
+  const statusFilter = searchParams.get('status') ?? 'all'
+  const typeFilter = (searchParams.get('type') as BattleType | 'all') ?? 'all'
+  const sortBy = (searchParams.get('sort') as BattlesFeedSortBy) ?? 'newest'
+
+  const setParam = (key: string, value: string, defaultValue: string) => {
+    setSearchParams(
+      (prev) => {
+        if (value !== defaultValue) prev.set(key, value)
+        else prev.delete(key)
+        return prev
+      },
+      { replace: true }
+    )
+  }
+
   const { data, isLoading, fetchNextPage, hasNextPage, isFetchingNextPage } = useBattlesFeed(statusFilter, sortBy)
 
   const battles = data?.pages.flat() ?? []
@@ -76,41 +90,25 @@ export function BattlesFeedPage() {
             <span>New Battle</span>
           </Button>
         </div>
-        <div className="flex gap-2 flex-wrap">
-          {STATUS_FILTERS.map((f) => (
-            <button
-              key={f}
-              onClick={() => setStatusFilter(f)}
-              className={filterBtnClass(statusFilter === f)}
-            >
-              {f.charAt(0).toUpperCase() + f.slice(1)}
-            </button>
-          ))}
-        </div>
-        <div className="flex gap-2 flex-wrap">
-          {TYPE_FILTERS.map((t) => (
-            <button
-              key={t.value}
-              onClick={() => setTypeFilter(t.value)}
-              className={filterBtnClass(typeFilter === t.value)}
-            >
-              {t.label}
-            </button>
-          ))}
-        </div>
-        <div className="flex items-center gap-2">
-          <span className="text-xs text-[var(--cl-surface-text-muted)]">Sort:</span>
-          <div className="flex gap-1.5">
-            {SORT_OPTIONS.map((s) => (
-              <button
-                key={s.value}
-                onClick={() => setSortBy(s.value)}
-                className={filterBtnClass(sortBy === s.value)}
-              >
-                {s.label}
-              </button>
-            ))}
-          </div>
+        <div className="flex flex-wrap gap-3">
+          <SelectField
+            value={statusFilter}
+            onChange={(v) => setParam('status', v, 'all')}
+            options={STATUS_OPTIONS}
+            className="w-40"
+          />
+          <SelectField
+            value={typeFilter}
+            onChange={(v) => setParam('type', v, 'all')}
+            options={TYPE_OPTIONS}
+            className="w-44"
+          />
+          <SelectField
+            value={sortBy}
+            onChange={(v) => setParam('sort', v, 'newest')}
+            options={SORT_OPTIONS}
+            className="w-36"
+          />
         </div>
       </div>
 
