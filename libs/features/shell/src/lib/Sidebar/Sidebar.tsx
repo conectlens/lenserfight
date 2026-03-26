@@ -17,7 +17,6 @@ import {
   Monitor,
   ShoppingBag,
   Sword,
-  FlaskConical,
   Bot,
 } from 'lucide-react'
 import React, { useState, useRef, useEffect } from 'react'
@@ -298,14 +297,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
             icon={<ShoppingBag size={20} />}
             label="Plans"
             isActive={isRouteActive(location.pathname, '/billing')}
-            collapsed={!showLabels}
-          />
-
-          <SidebarItem
-            onClick={() => handleNavigation('/benchmark')}
-            icon={<FlaskConical size={20} />}
-            label="Benchmark"
-            isActive={isRouteActive(location.pathname, '/benchmark')}
             collapsed={!showLabels}
           />
 

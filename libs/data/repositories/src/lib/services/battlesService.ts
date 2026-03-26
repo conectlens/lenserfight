@@ -2,6 +2,7 @@ import {
   SupabaseBattlesRepository,
   BattleRecord,
   BattleCommentRecord,
+  GlobalMessageRecord,
   BattleFeedItemRecord,
   BattlesFeedOptions,
   ContenderRecord,
@@ -14,7 +15,7 @@ import {
 
 const battlesRepo = new SupabaseBattlesRepository()
 
-export type { BattleRecord, BattleCommentRecord, BattleFeedItemRecord, BattlesFeedOptions, ContenderRecord, VoteAggregateRecord, ScorecardRecord, RubricCriterionRecord, SubmissionRecord, SubmitVoteInput }
+export type { BattleRecord, BattleCommentRecord, GlobalMessageRecord, BattleFeedItemRecord, BattlesFeedOptions, ContenderRecord, VoteAggregateRecord, ScorecardRecord, RubricCriterionRecord, SubmissionRecord, SubmitVoteInput }
 
 export interface BattleContendersData {
   contenders: ContenderRecord[]
@@ -70,6 +71,12 @@ export const battlesService = {
 
   postComment: (battleId: string, lenserId: string, body: string): Promise<BattleCommentRecord> =>
     battlesRepo.postComment(battleId, lenserId, body),
+
+  getGlobalMessages: (battleId: string, limit?: number): Promise<GlobalMessageRecord[]> =>
+    battlesRepo.getGlobalMessages(battleId, limit),
+
+  postGlobalMessage: (battleId: string, senderId: string, senderHandle: string, senderRole: string, body: string): Promise<GlobalMessageRecord> =>
+    battlesRepo.postGlobalMessage(battleId, senderId, senderHandle, senderRole, body),
 
   deriveWinner: (
     aggregates: VoteAggregateRecord[],

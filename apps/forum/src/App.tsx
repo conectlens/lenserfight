@@ -34,13 +34,31 @@ import {
   BattleDetailPage,
   BattleResultPage,
   CreateBattlePage,
+  CreateBattleWizard,
 } from '@lenserfight/features/battles'
+import { ModalRoute } from '@lenserfight/ui/routing'
+import { NotAuthorizedPage } from './NotAuthorizedPage'
 import { AgentDetailPage } from '@lenserfight/features/agents'
 import { BenchmarkSuitesPage, BenchmarkSuiteDetailPage } from '@lenserfight/features/benchmark'
-import { Routes, Route, Navigate, BrowserRouter } from 'react-router-dom'
+import { Routes, Route, Navigate, BrowserRouter, useNavigate } from 'react-router-dom'
 
 const AUTH_APP_URL = import.meta.env.VITE_AUTH_BASE_URL ?? 'https://auth.lenserfight.com'
 const ARENA_APP_URL = import.meta.env.VITE_ARENA_URL ?? 'https://lenserfight.com'
+
+const CreateBattleModal: React.FC = () => {
+  const navigate = useNavigate()
+  return (
+    <ModalRoute
+      accessCheck={({ isAuthenticated, hasLenser }) => isAuthenticated && hasLenser}
+      maxWidth="max-w-2xl"
+    >
+      <CreateBattleWizard
+        onSuccess={(slug) => navigate(`/battles/${slug}`)}
+        onClose={() => navigate('/battles')}
+      />
+    </ModalRoute>
+  )
+}
 
 
 const App: React.FC = () => {
@@ -225,22 +243,13 @@ const App: React.FC = () => {
                                     <BattlesFeedPage />
                                   </DashboardLayout>
                                 }
-                              />
-                              <Route
-                                path="/battles/create"
-                                element={
-                                  <DashboardLayout>
-                                    <CreateBattlePage />
-                                  </DashboardLayout>
-                                }
-                              />
+                              >
+                                <Route path="create" element={<CreateBattleModal />} />
+                              </Route>
+                              {/* BattleDetailPage renders its own full-screen layout (ImmersiveArenaView) */}
                               <Route
                                 path="/battles/:slug"
-                                element={
-                                  <DashboardLayout>
-                                    <BattleDetailPage />
-                                  </DashboardLayout>
-                                }
+                                element={<BattleDetailPage />}
                               />
                               <Route
                                 path="/battles/:slug/result"
@@ -276,6 +285,16 @@ const App: React.FC = () => {
                                 element={
                                   <DashboardLayout>
                                     <BenchmarkSuiteDetailPage />
+                                  </DashboardLayout>
+                                }
+                              />
+
+                              {/* Access control fallback */}
+                              <Route
+                                path="/not-authorized"
+                                element={
+                                  <DashboardLayout>
+                                    <NotAuthorizedPage />
                                   </DashboardLayout>
                                 }
                               />

@@ -1,7 +1,7 @@
 import { SEOHead } from '@lenserfight/ui/components'
 import { AnimatePresence, motion } from 'framer-motion'
 import React, { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, Outlet } from 'react-router-dom'
 import { PlusCircle } from 'lucide-react'
 
 import { BattleCard } from '../components/BattleCard'
@@ -129,6 +129,7 @@ export function BattlesFeedPage() {
           </motion.div>
         </AnimatePresence>
       )}
+      <Outlet />
     </div>
   )
 }

@@ -7,18 +7,35 @@ export * from './lib/hooks/useBattleContenders'
 export * from './lib/hooks/useBattleScorecard'
 export * from './lib/hooks/useBattlesFeed'
 export * from './lib/hooks/useBattleStateMachine'
+export * from './lib/hooks/useBattleStateSync'
 export * from './lib/hooks/useSubmitVote'
 export * from './lib/hooks/useVoteAggregates'
 export * from './lib/hooks/usePublishBattle'
 export * from './lib/hooks/useBattleComments'
+export * from './lib/hooks/useGlobalChat'
+
+export * from './lib/types/battle-renderer.types'
+
+// Renderers
+export * from './lib/renderers'
 
 // Components
 export * from './lib/components/ArenaView'
+export * from './lib/components/ChatMessage'
+export * from './lib/components/ArenaTopBar'
+export * from './lib/components/ArenaContenderColumn'
+export * from './lib/components/ArenaCenterZone'
+export * from './lib/components/LenserChatPanel'
+export * from './lib/components/GlobalChatRail'
+export * from './lib/components/ImmersiveArenaView'
 export * from './lib/components/BattleSEOHead'
 export * from './lib/components/FightView'
 export * from './lib/components/PhaseIndicator'
 export * from './lib/components/ScoreSystem'
 export * from './lib/components/XPGainToast'
+
+// Battle creation wizard
+export * from './lib/components/CreateBattleWizard'
 
 // Battle UI components
 export * from './lib/components/BattleCard'

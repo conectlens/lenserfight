@@ -121,6 +121,16 @@ export interface BattleCommentRecord {
   lenser_avatar_url?: string | null
 }
 
+export interface GlobalMessageRecord {
+  id: string
+  battle_id: string
+  sender_id: string | null
+  sender_handle: string
+  sender_role: 'viewer' | 'lenser' | 'moderator' | 'system'
+  body: string
+  created_at: string
+}
+
 // --- Port ---
 
 export interface BattleFeedItemRecord {
@@ -160,6 +170,8 @@ export interface BattlesRepositoryPort {
   createBattle(input: CreateBattleInput): Promise<BattleRecord>
   getAIHandicapPolicy(battleId: string): Promise<AIHandicapPolicyRecord | null>
   checkVoterEligibility(battleId: string, lenserId: string): Promise<boolean>
+  getGlobalMessages(battleId: string, limit?: number): Promise<GlobalMessageRecord[]>
+  postGlobalMessage(battleId: string, senderId: string, senderHandle: string, senderRole: string, body: string): Promise<GlobalMessageRecord>
 }
 
 // --- Supabase Implementation ---
@@ -410,5 +422,34 @@ export class SupabaseBattlesRepository implements BattlesRepositoryPort {
       .single()
     if (error) this.handleError(error)
     return data as BattleCommentRecord
+  }
+
+  async getGlobalMessages(battleId: string, limit = 100): Promise<GlobalMessageRecord[]> {
+    const { data, error } = await supabase
+      .schema('battles')
+      .from('global_messages')
+      .select('id, battle_id, sender_id, sender_handle, sender_role, body, created_at')
+      .eq('battle_id', battleId)
+      .order('created_at', { ascending: true })
+      .limit(limit)
+    if (error) this.handleError(error)
+    return (data ?? []) as GlobalMessageRecord[]
+  }
+
+  async postGlobalMessage(
+    battleId: string,
+    senderId: string,
+    senderHandle: string,
+    senderRole: string,
+    body: string
+  ): Promise<GlobalMessageRecord> {
+    const { data, error } = await supabase
+      .schema('battles')
+      .from('global_messages')
+      .insert({ battle_id: battleId, sender_id: senderId, sender_handle: senderHandle, sender_role: senderRole, body })
+      .select('id, battle_id, sender_id, sender_handle, sender_role, body, created_at')
+      .single()
+    if (error) this.handleError(error)
+    return data as GlobalMessageRecord
   }
 }
