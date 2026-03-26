@@ -1,5 +1,6 @@
 import { Check } from 'lucide-react'
-import React from 'react'
+import React, { useEffect, useContext } from 'react'
+import { DialogHeaderContext } from '@lenserfight/ui/overlays'
 
 import { Button } from './Button'
 
@@ -50,6 +51,13 @@ export const StepWizard: React.FC<StepWizardProps> = ({
   const isLastStep = currentStep === steps.length - 1
   const current = steps[currentStep]
 
+  // Push current step header into the parent Dialog's header slot (if inside one)
+  const { setHeader, clearHeader } = useContext(DialogHeaderContext)
+  useEffect(() => {
+    setHeader({ title: current.title, description: current.description, icon: current.icon })
+    return () => clearHeader()
+  }, [current.title, current.description, current.icon, setHeader, clearHeader])
+
   return (
     <div className="flex flex-col gap-6">
       {/* Step indicator rail */}
@@ -96,23 +104,6 @@ export const StepWizard: React.FC<StepWizardProps> = ({
             </React.Fragment>
           )
         })}
-      </div>
-
-      {/* Dynamic step header */}
-      <div className="space-y-1">
-        {current.icon && (
-          <div className="mb-2 flex h-10 w-10 items-center justify-center rounded-2xl bg-status-blue/10 text-status-blue">
-            {current.icon}
-          </div>
-        )}
-        <h2 className="text-xl font-black tracking-tight text-greyscale-900 dark:text-greyscale-50">
-          {current.title}
-        </h2>
-        {current.description && (
-          <p className="text-sm leading-6 text-greyscale-500 dark:text-greyscale-400">
-            {current.description}
-          </p>
-        )}
       </div>
 
       {/* Step content */}

@@ -35,12 +35,13 @@ import {
   BattleResultPage,
   CreateBattleWizard,
 } from '@lenserfight/features/battles'
-import { ModalRoute, ModalQueryDriven, useModalRouter } from '@lenserfight/ui/routing'
+import { ModalRoute, ModalQueryDriven } from '@lenserfight/ui/routing'
+import { Sparkles } from 'lucide-react'
 import { NotAuthorizedPage } from './NotAuthorizedPage'
 import { AgentManageWizard, CreateAgentContent } from '@lenserfight/features/agents'
 import { CreateLenserProfileModal } from '@lenserfight/features/onboarding'
 import { BenchmarkSuitesPage, BenchmarkSuiteDetailPage } from '@lenserfight/features/benchmark'
-import { WorkflowsPage, WorkflowBuilderPage, CreateWorkflowWizardModal } from '@lenserfight/features/workflows'
+import { WorkflowsPage, WorkflowBuilderPage, CreateWorkflowWizard } from '@lenserfight/features/workflows'
 import { Routes, Route, Navigate, BrowserRouter, useNavigate, useParams, useSearchParams } from 'react-router-dom'
 
 const AUTH_APP_URL = import.meta.env.VITE_AUTH_BASE_URL ?? 'https://auth.lenserfight.com'
@@ -48,12 +49,26 @@ const ARENA_APP_URL = import.meta.env.VITE_ARENA_URL ?? 'https://lenserfight.com
 
 const WorkflowsPageRoute: React.FC = () => {
   const navigate = useNavigate()
-  const { open } = useModalRouter()
   return (
     <WorkflowsPage
-      onCreateWorkflow={() => open('create-workflow')}
+      onCreateWorkflow={() => navigate('/workflows/manage')}
       onOpenWorkflow={(id) => navigate(`/workflows/${id}`)}
     />
+  )
+}
+
+const CreateWorkflowModal: React.FC = () => {
+  const navigate = useNavigate()
+  return (
+    <ModalRoute
+      accessCheck={({ isAuthenticated, hasLenser }) => isAuthenticated && hasLenser}
+      maxWidth="max-w-2xl"
+    >
+      <CreateWorkflowWizard
+        onCreated={(workflowId) => navigate(`/workflows/${workflowId}`)}
+        onCancel={() => navigate('/workflows')}
+      />
+    </ModalRoute>
   )
 }
 
@@ -330,7 +345,10 @@ const App: React.FC = () => {
                                     <WorkflowsPageRoute />
                                   </DashboardLayout>
                                 }
-                              />
+                              >
+                                {/* Nested: Create workflow modal at /workflows/manage */}
+                                <Route path="manage" element={<CreateWorkflowModal />} />
+                              </Route>
                               <Route
                                 path="/workflows/:id"
                                 element={
@@ -400,16 +418,15 @@ const App: React.FC = () => {
                             </Routes>
                           </GlobalErrorRenderer>
 
-                          {/* Global query-driven modal for creating a workflow.
-                              Activated by ?modal=create-workflow anywhere in the app. */}
-                          <CreateWorkflowWizardModal />
-
                           {/* Global query-driven modal for creating AI agents.
                               Activated by ?modal=create-agent anywhere in the app. */}
                           <ModalQueryDriven
                             name="create-agent"
                             accessCheck={({ isAuthenticated, hasLenser }) => isAuthenticated && hasLenser}
                             maxWidth="max-w-md"
+                            title="Create AI agent"
+                            description="Give the agent a clear identity — handle and display name."
+                            icon={<Sparkles size={18} />}
                           >
                             {({ close }) => (
                               <CreateAgentContent close={close} />

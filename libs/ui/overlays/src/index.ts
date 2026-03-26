@@ -1,6 +1,7 @@
 export * from './lib/Portal'
 export * from './lib/Backdrop'
 export * from './lib/Dialog'
+export * from './lib/DialogHeaderContext'
 export * from './lib/AlertDialog'
 export * from './lib/Drawer'
 export * from './lib/Popover'

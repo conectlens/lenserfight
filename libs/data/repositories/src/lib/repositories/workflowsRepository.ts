@@ -112,6 +112,8 @@ export class SupabaseWorkflowsRepository implements WorkflowsRepositoryPort {
     throw error
   }
 
+  // ── Reads via public.vw_workflows (no schema switch needed) ────────────────
+
   async listByLenser(lenserId: string): Promise<WorkflowRecord[]> {
     const { data, error } = await supabase
       .from('vw_workflows')
@@ -134,104 +136,74 @@ export class SupabaseWorkflowsRepository implements WorkflowsRepositoryPort {
     return data as WorkflowRecord | null
   }
 
+  // ── Reads via public-schema RPCs (lenses schema not exposed to PostgREST) ──
+
   async getNodes(workflowId: string): Promise<WorkflowNodeRecord[]> {
-    const { data, error } = await supabase
-      .schema('lenses')
-      .from('workflow_nodes')
-      .select('id, workflow_id, lens_id, version_id, position_x, position_y, label, ordinal, created_at')
-      .eq('workflow_id', workflowId)
-      .order('ordinal', { ascending: true })
+    const { data, error } = await supabase.rpc('fn_get_workflow_nodes', {
+      p_workflow_id: workflowId,
+    })
 
     if (error) this.handleError(error)
     return (data ?? []) as WorkflowNodeRecord[]
   }
 
   async getEdges(workflowId: string): Promise<WorkflowEdgeRecord[]> {
-    const { data, error } = await supabase
-      .schema('lenses')
-      .from('workflow_edges')
-      .select('id, workflow_id, source_node_id, target_node_id, source_output_key, target_param_label')
-      .eq('workflow_id', workflowId)
+    const { data, error } = await supabase.rpc('fn_get_workflow_edges', {
+      p_workflow_id: workflowId,
+    })
 
     if (error) this.handleError(error)
     return (data ?? []) as WorkflowEdgeRecord[]
   }
 
+  // ── Writes via SECURITY DEFINER RPCs in public schema ──────────────────────
+
   async createWorkflow(input: CreateWorkflowInput): Promise<WorkflowRecord> {
-    const { data, error } = await supabase
-      .schema('lenses')
-      .from('workflows')
-      .insert({
-        lenser_id: input.lenser_id,
-        title: input.title,
-        description: input.description ?? null,
-        visibility: input.visibility ?? 'public',
-      })
-      .select('id, lenser_id, title, description, visibility, battle_count, created_at, updated_at')
-      .single()
+    const { data, error } = await supabase.rpc('fn_create_workflow', {
+      p_lenser_id: input.lenser_id,
+      p_title: input.title,
+      p_description: input.description ?? null,
+      p_visibility: input.visibility ?? 'public',
+    })
 
     if (error) this.handleError(error)
-    return data as WorkflowRecord
+    // rpc returns an array for RETURNS TABLE; take the first row
+    const row = Array.isArray(data) ? data[0] : data
+    return row as WorkflowRecord
   }
 
   async upsertNodes(workflowId: string, nodes: UpsertNodeInput[]): Promise<WorkflowNodeRecord[]> {
-    const rows = nodes.map((n, i) => ({
-      ...(n.id ? { id: n.id } : {}),
-      workflow_id: workflowId,
-      lens_id: n.lens_id,
-      version_id: n.version_id ?? null,
-      position_x: n.position_x,
-      position_y: n.position_y,
-      label: n.label ?? null,
-      ordinal: n.ordinal ?? i,
-    }))
-
-    const { data, error } = await supabase
-      .schema('lenses')
-      .from('workflow_nodes')
-      .upsert(rows, { onConflict: 'id' })
-      .select('id, workflow_id, lens_id, version_id, position_x, position_y, label, ordinal, created_at')
+    const { data, error } = await supabase.rpc('fn_upsert_workflow_nodes', {
+      p_workflow_id: workflowId,
+      p_nodes: nodes,
+    })
 
     if (error) this.handleError(error)
     return (data ?? []) as WorkflowNodeRecord[]
   }
 
   async upsertEdges(workflowId: string, edges: UpsertEdgeInput[]): Promise<WorkflowEdgeRecord[]> {
-    const rows = edges.map((e) => ({
-      ...(e.id ? { id: e.id } : {}),
-      workflow_id: workflowId,
-      source_node_id: e.source_node_id,
-      target_node_id: e.target_node_id,
-      source_output_key: e.source_output_key ?? 'output',
-      target_param_label: e.target_param_label,
-    }))
-
-    const { data, error } = await supabase
-      .schema('lenses')
-      .from('workflow_edges')
-      .upsert(rows, { onConflict: 'source_node_id,target_node_id,target_param_label' })
-      .select('id, workflow_id, source_node_id, target_node_id, source_output_key, target_param_label')
+    const { data, error } = await supabase.rpc('fn_upsert_workflow_edges', {
+      p_workflow_id: workflowId,
+      p_edges: edges,
+    })
 
     if (error) this.handleError(error)
     return (data ?? []) as WorkflowEdgeRecord[]
   }
 
   async deleteNode(nodeId: string): Promise<void> {
-    const { error } = await supabase
-      .schema('lenses')
-      .from('workflow_nodes')
-      .delete()
-      .eq('id', nodeId)
+    const { error } = await supabase.rpc('fn_delete_workflow_node', {
+      p_node_id: nodeId,
+    })
 
     if (error) this.handleError(error)
   }
 
   async deleteEdge(edgeId: string): Promise<void> {
-    const { error } = await supabase
-      .schema('lenses')
-      .from('workflow_edges')
-      .delete()
-      .eq('id', edgeId)
+    const { error } = await supabase.rpc('fn_delete_workflow_edge', {
+      p_edge_id: edgeId,
+    })
 
     if (error) this.handleError(error)
   }
@@ -244,7 +216,6 @@ export class SupabaseWorkflowsRepository implements WorkflowsRepositoryPort {
 
     if (error) this.handleError(error)
 
-    // Fetch the created run
     const runId = data as string
     const run = await this.getRun(runId)
     if (!run) throw new Error('Workflow run not found after creation')
@@ -252,23 +223,19 @@ export class SupabaseWorkflowsRepository implements WorkflowsRepositoryPort {
   }
 
   async getRun(runId: string): Promise<WorkflowRunRecord | null> {
-    const { data, error } = await supabase
-      .schema('lenses')
-      .from('workflow_runs')
-      .select('id, workflow_id, triggered_by, status, context_inputs, started_at, completed_at, created_at')
-      .eq('id', runId)
-      .maybeSingle()
+    const { data, error } = await supabase.rpc('fn_get_workflow_run', {
+      p_run_id: runId,
+    })
 
     if (error) this.handleError(error)
-    return data as WorkflowRunRecord | null
+    const row = Array.isArray(data) ? data[0] : data
+    return (row ?? null) as WorkflowRunRecord | null
   }
 
   async getNodeResults(runId: string): Promise<WorkflowNodeResultRecord[]> {
-    const { data, error } = await supabase
-      .schema('lenses')
-      .from('workflow_node_results')
-      .select('id, run_id, node_id, execution_run_id, status, output_data, error_message, started_at, completed_at')
-      .eq('run_id', runId)
+    const { data, error } = await supabase.rpc('fn_get_workflow_node_results', {
+      p_run_id: runId,
+    })
 
     if (error) this.handleError(error)
     return (data ?? []) as WorkflowNodeResultRecord[]
