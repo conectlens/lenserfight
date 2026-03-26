@@ -9,7 +9,7 @@ const MAX_MESSAGES = 200
 
 export type RealtimeStatus = 'connecting' | 'live' | 'error'
 
-export const useGlobalChat = (battleId?: string) => {
+export const useLenserChat = (battleId?: string) => {
   const queryClient = useQueryClient()
   const queryKey = battleId ? queryKeys.battles.globalChat(battleId) : null
   const [realtimeStatus, setRealtimeStatus] = useState<RealtimeStatus>('connecting')
@@ -61,7 +61,7 @@ export const useGlobalChat = (battleId?: string) => {
   }
 }
 
-export const usePostGlobalMessage = (battleId?: string) => {
+export const usePostLenserMessage = (battleId?: string) => {
   return useMutation({
     mutationFn: ({
       senderId,

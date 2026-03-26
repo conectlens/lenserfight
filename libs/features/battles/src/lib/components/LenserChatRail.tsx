@@ -1,11 +1,11 @@
 import React, { useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { useGlobalChat, usePostGlobalMessage } from '../hooks/useGlobalChat'
-import type { RealtimeStatus } from '../hooks/useGlobalChat'
+import { useLenserChat, usePostLenserMessage } from '../hooks/useLenserChat'
+import type { RealtimeStatus } from '../hooks/useLenserChat'
 import { ChatMessage } from './ChatMessage'
 import { Badge } from '@lenserfight/ui/components'
 
-interface GlobalChatRailProps {
+interface LenserChatRailProps {
   battleId?: string
   currentUserId?: string
   currentHandle?: string
@@ -42,15 +42,15 @@ const LiveIndicator: React.FC<{ status: RealtimeStatus }> = ({ status }) => {
   )
 }
 
-export const GlobalChatRail: React.FC<GlobalChatRailProps> = ({
+export const LenserChatRail: React.FC<LenserChatRailProps> = ({
   battleId,
   currentUserId,
   currentHandle,
   senderRole = 'viewer',
   isAuthenticated,
 }) => {
-  const { messages, realtimeStatus } = useGlobalChat(battleId)
-  const postMessage = usePostGlobalMessage(battleId)
+  const { messages, realtimeStatus } = useLenserChat(battleId)
+  const postMessage = usePostLenserMessage(battleId)
   const [draft, setDraft] = useState('')
   const bottomRef = useRef<HTMLDivElement>(null)
 
@@ -69,7 +69,7 @@ export const GlobalChatRail: React.FC<GlobalChatRailProps> = ({
     <div className="w-72 flex-shrink-0 flex flex-col border-l border-surface-border bg-surface-sunken">
       {/* Header */}
       <div className="flex-shrink-0 h-14 flex items-center justify-between px-4 border-b border-surface-border">
-        <span className="text-xs font-bold text-surface-text-muted uppercase tracking-wider">Live Chat</span>
+        <span className="text-xs font-bold text-surface-text-muted uppercase tracking-wider">Lenser Chat</span>
         <LiveIndicator status={realtimeStatus} />
       </div>
 

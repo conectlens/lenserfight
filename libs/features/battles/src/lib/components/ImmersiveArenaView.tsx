@@ -1,9 +1,8 @@
-import React, { useState } from 'react'
+import React from 'react'
 import { useAuth } from '@lenserfight/features/auth'
 import { useLenser } from '@lenserfight/features/profile'
 
 import { useBattle } from '../hooks/useBattle'
-import { useBattleComments, usePostComment } from '../hooks/useBattleComments'
 import { useBattleContenders } from '../hooks/useBattleContenders'
 import { useBattleStateMachine } from '../hooks/useBattleStateMachine'
 import { useBattleStateSync } from '../hooks/useBattleStateSync'
@@ -15,8 +14,7 @@ import { getRenderer } from '../renderers'
 import { ArenaTopBar } from './ArenaTopBar'
 import { ArenaContenderColumn } from './ArenaContenderColumn'
 import { ArenaCenterZone } from './ArenaCenterZone'
-import { GlobalChatRail } from './GlobalChatRail'
-import { LenserChatPanel } from './LenserChatPanel'
+import { LenserChatRail } from './LenserChatRail'
 import { BattleSEOHead } from './BattleSEOHead'
 import { VotePanel } from './VotePanel'
 import { ResultBanner } from './ResultBanner'
@@ -35,13 +33,8 @@ export const ImmersiveArenaView: React.FC<ImmersiveArenaViewProps> = ({ slug, cu
   const { data: aggregates } = useVoteAggregates(battle?.id)
   const { currentPhase, isResult } = useBattleStateMachine(battle?.status)
   const submitVote = useSubmitVote(battle?.id)
-  const { data: comments = [] } = useBattleComments(battle?.id)
-  const postComment = usePostComment(battle?.id)
-
   // Real-time battle state sync
   useBattleStateSync(battle?.id, slug)
-
-  const [lenserChatCollapsed, setLenserChatCollapsed] = useState(false)
 
   const renderer = getRenderer('text')
 
@@ -174,20 +167,10 @@ export const ImmersiveArenaView: React.FC<ImmersiveArenaViewProps> = ({ slug, cu
             />
           </div>
 
-          {/* Lenser chat — collapsible bottom panel */}
-          <LenserChatPanel
-            comments={comments}
-            postComment={postComment}
-            lenserId={lenser?.id}
-            lenserHandle={lenser?.handle}
-            isLenser={hasLenser}
-            collapsed={lenserChatCollapsed}
-            onToggle={() => setLenserChatCollapsed((v) => !v)}
-          />
         </div>
 
-        {/* Right: Global chat rail */}
-        <GlobalChatRail
+        {/* Right: Lenser chat rail */}
+        <LenserChatRail
           battleId={battle.id}
           currentUserId={currentUserId}
           currentHandle={lenser?.handle}
