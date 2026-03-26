@@ -352,7 +352,7 @@ const App: React.FC = () => {
                               <Route
                                 path="/workflows/:id"
                                 element={
-                                  <DashboardLayout>
+                                  <DashboardLayout fullscreen>
                                     <WorkflowBuilderPageRoute />
                                   </DashboardLayout>
                                 }
@@ -360,7 +360,7 @@ const App: React.FC = () => {
                               <Route
                                 path="/workflows/:id/run/:runId"
                                 element={
-                                  <DashboardLayout>
+                                  <DashboardLayout fullscreen>
                                     <WorkflowBuilderPageRoute />
                                   </DashboardLayout>
                                 }

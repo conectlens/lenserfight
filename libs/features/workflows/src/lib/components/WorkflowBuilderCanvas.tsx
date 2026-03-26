@@ -102,6 +102,8 @@ function WorkflowBuilderCanvasInner({
   const { screenToFlowPosition } = useReactFlow()
   const { mutateAsync: saveWorkflow } = useSaveWorkflow()
   const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const flowNodesRef = useRef<Node<WorkflowNodeData>[]>([])
+  const flowEdgesRef = useRef<Edge[]>([])
 
   // ── Remove handlers ──────────────────────────────────────────────────────
   const handleRemoveNode = useCallback((nodeId: string) => {
@@ -133,42 +135,50 @@ function WorkflowBuilderCanvasInner({
     setEdges(edgeRecords.map((e) => toFlowEdge(e, handleRemoveEdge)))
   }, [edgeRecords, handleRemoveEdge, setEdges])
 
+  // ── Sync refs with latest state ───────────────────────────────────────────
+  useEffect(() => { flowNodesRef.current = flowNodes }, [flowNodes])
+  useEffect(() => { flowEdgesRef.current = flowEdges }, [flowEdges])
+
+  // ── Cleanup pending save on unmount ───────────────────────────────────────
+  useEffect(() => {
+    return () => { if (saveTimerRef.current) clearTimeout(saveTimerRef.current) }
+  }, [])
+
   // ── Debounced save ────────────────────────────────────────────────────────
+  // NOTE: saveWorkflow is called in the timeout callback body, NOT inside a
+  // React state updater. State updaters are double-invoked in StrictMode,
+  // which would cause duplicate POST requests. Reading state via refs is safe.
   const scheduleSave = useCallback(() => {
     if (readOnly) return
     if (saveTimerRef.current) clearTimeout(saveTimerRef.current)
     saveTimerRef.current = setTimeout(() => {
-      setNodes((nds) => {
-        setEdges((eds) => {
-          const upsertNodes: UpsertNodeInput[] = nds.map((n, i) => {
-            const d = n.data as WorkflowNodeData & { lens_id?: string }
-            return {
-              id: n.id.startsWith('tmp-') ? undefined : n.id,
-              lens_id: d.lens_id ?? n.id,
-              version_id: null,
-              label: d.label,
-              ordinal: d.ordinal ?? i,
-              position_x: n.position.x,
-              position_y: n.position.y,
-            }
-          })
-          const upsertEdges: UpsertEdgeInput[] = eds
-            .filter((e) => !e.id.startsWith('tmp-edge-'))
-            .map((e) => ({
-              id: e.id,
-              source_node_id: e.source,
-              target_node_id: e.target,
-              source_output_key:
-                (e.data as { sourceOutputKey?: string })?.sourceOutputKey ?? 'output',
-              target_param_label: e.targetHandle ?? 'input',
-            }))
-          saveWorkflow({ workflowId, nodes: upsertNodes, edges: upsertEdges }).catch(() => null)
-          return eds
-        })
-        return nds
+      const nds = flowNodesRef.current
+      const eds = flowEdgesRef.current
+      const upsertNodes: UpsertNodeInput[] = nds.map((n, i) => {
+        const d = n.data as WorkflowNodeData & { lens_id?: string }
+        return {
+          id: n.id.startsWith('tmp-') ? undefined : n.id,
+          lens_id: d.lens_id ?? n.id,
+          version_id: null,
+          label: d.label,
+          ordinal: d.ordinal ?? i,
+          position_x: n.position.x,
+          position_y: n.position.y,
+        }
       })
+      const upsertEdges: UpsertEdgeInput[] = eds
+        .filter((e) => !e.id.startsWith('tmp-edge-'))
+        .map((e) => ({
+          id: e.id,
+          source_node_id: e.source,
+          target_node_id: e.target,
+          source_output_key:
+            (e.data as { sourceOutputKey?: string })?.sourceOutputKey ?? 'output',
+          target_param_label: e.targetHandle ?? 'input',
+        }))
+      saveWorkflow({ workflowId, nodes: upsertNodes, edges: upsertEdges }).catch(() => null)
     }, 1500)
-  }, [readOnly, workflowId, saveWorkflow, setNodes, setEdges])
+  }, [readOnly, workflowId, saveWorkflow])
 
   // ── Connect nodes ─────────────────────────────────────────────────────────
   const onConnect = useCallback(
@@ -243,8 +253,9 @@ function WorkflowBuilderCanvasInner({
       <Background
         variant={BackgroundVariant.Dots}
         gap={20}
-        size={1.5}
+        size={1}
         color="var(--cl-greyscale-200, #e5e7eb)"
+        style={{ opacity: 0.5 }}
       />
       <Controls
         position="bottom-left"

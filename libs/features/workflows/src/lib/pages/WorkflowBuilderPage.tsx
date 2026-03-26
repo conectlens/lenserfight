@@ -20,6 +20,7 @@ export function WorkflowBuilderPage({ workflowId, onBattleClick }: WorkflowBuild
   const { workflow, nodes, edges, isLoading } = useWorkflow(workflowId)
   const { startRun, isPending: starting, runId, nodeResults, isRunning } = useWorkflowRun(workflowId)
   const [showRunPanel, setShowRunPanel] = useState(false)
+  const [paletteCollapsed, setPaletteCollapsed] = useState(false)
 
   const handleRun = async () => {
     await startRun({})
@@ -29,7 +30,7 @@ export function WorkflowBuilderPage({ workflowId, onBattleClick }: WorkflowBuild
   // ── Loading / error states ─────────────────────────────────────────────────
   if (isLoading) {
     return (
-      <div className="flex h-screen items-center justify-center text-sm text-greyscale-400">
+      <div className="flex h-full items-center justify-center text-sm text-greyscale-400">
         Loading workflow…
       </div>
     )
@@ -37,14 +38,14 @@ export function WorkflowBuilderPage({ workflowId, onBattleClick }: WorkflowBuild
 
   if (!workflow) {
     return (
-      <div className="flex h-screen items-center justify-center text-sm text-greyscale-400">
+      <div className="flex h-full items-center justify-center text-sm text-greyscale-400">
         Workflow not found.
       </div>
     )
   }
 
   return (
-    <div className="flex h-screen flex-col overflow-hidden bg-surface-base">
+    <div className="flex h-full flex-col overflow-hidden bg-surface-base">
       {/* ── Toolbar ─────────────────────────────────────────────────────────── */}
       <header className="flex flex-shrink-0 items-center gap-3 border-b border-surface-border bg-surface-base px-4 h-[52px]">
         {/* Back */}
@@ -123,7 +124,11 @@ export function WorkflowBuilderPage({ workflowId, onBattleClick }: WorkflowBuild
       {/* ── Main area ──────────────────────────────────────────────────────── */}
       <div className="flex flex-1 overflow-hidden">
         {/* Lens palette sidebar */}
-        <WorkflowLensPalette onDragStart={() => undefined} />
+        <WorkflowLensPalette
+          onDragStart={() => undefined}
+          collapsed={paletteCollapsed}
+          onToggleCollapse={() => setPaletteCollapsed((v) => !v)}
+        />
 
         {/* Canvas — fills remaining space */}
         <div className="relative flex-1 overflow-hidden">
