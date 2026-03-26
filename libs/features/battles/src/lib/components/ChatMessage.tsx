@@ -1,5 +1,4 @@
 import React from 'react'
-import { formatDistanceToNow } from 'date-fns'
 
 export interface ChatMessageProps {
   senderHandle: string
@@ -15,6 +14,21 @@ const ROLE_BADGE: Record<string, string> = {
   system: 'System',
 }
 
+const formatTimeAgo = (date: string): string => {
+  const now = new Date()
+  const past = new Date(date)
+  const diffMs = now.getTime() - past.getTime()
+  const diffSecs = Math.floor(diffMs / 1000)
+  const diffMins = Math.floor(diffSecs / 60)
+  const diffHours = Math.floor(diffMins / 60)
+  const diffDays = Math.floor(diffHours / 24)
+
+  if (diffSecs < 60) return 'just now'
+  if (diffMins < 60) return `${diffMins}m ago`
+  if (diffHours < 24) return `${diffHours}h ago`
+  return `${diffDays}d ago`
+}
+
 export const ChatMessage: React.FC<ChatMessageProps> = ({
   senderHandle,
   senderRole = 'viewer',
@@ -24,7 +38,7 @@ export const ChatMessage: React.FC<ChatMessageProps> = ({
 }) => {
   const badge = senderRole !== 'viewer' ? ROLE_BADGE[senderRole] : null
   const initials = senderHandle.slice(0, 2).toUpperCase()
-  const timeAgo = formatDistanceToNow(new Date(createdAt), { addSuffix: true })
+  const timeAgo = formatTimeAgo(createdAt)
 
   return (
     <div className="flex items-start gap-2.5 px-3 py-2">
