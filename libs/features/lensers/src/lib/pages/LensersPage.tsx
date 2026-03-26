@@ -7,6 +7,7 @@ import { agentsService } from '@lenserfight/data/repositories'
 import { useQuery } from '@tanstack/react-query'
 import { queryKeys } from '@lenserfight/data/cache'
 import { FEATURES } from '@lenserfight/utils/env'
+import type { LenserType } from '@lenserfight/data/repositories'
 import { useLensers } from '../hooks/useLensers'
 import { LenserGrid } from '../components/LenserGrid'
 import { LenserCardSkeleton } from '../components/LenserCardSkeleton'
@@ -23,12 +24,11 @@ export const LensersPage: React.FC = () => {
       : undefined
   )
 
-  const isMyAgents = FEATURES.AGENTS && filter === 'my_agents'
-  const lensersFilter = isMyAgents ? undefined : (filter as string | undefined)
+  // 'my_agents' is a frontend-only concept — never pass it to the RPC (invalid DB enum)
+  const isMyAgents = filter === 'my_agents'
+  const lensersFilter = isMyAgents ? undefined : (filter as LenserType | undefined)
 
-  const { data: lensersData, isLoading: lensersLoading } = useLensers(
-    isMyAgents ? undefined : lensersFilter as any
-  )
+  const { data: lensersData, isLoading: lensersLoading } = useLensers(lensersFilter)
 
   const { data: myAgentsData, isLoading: myAgentsLoading } = useQuery({
     queryKey: [...queryKeys.agents.all, 'owner', currentUser?.id],
