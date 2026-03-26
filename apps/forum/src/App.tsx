@@ -37,11 +37,11 @@ import {
 } from '@lenserfight/features/battles'
 import { ModalRoute, ModalQueryDriven, useModalRouter } from '@lenserfight/ui/routing'
 import { NotAuthorizedPage } from './NotAuthorizedPage'
-import { AgentDetailPage, CreateAgentContent } from '@lenserfight/features/agents'
+import { AgentManageWizard, CreateAgentContent } from '@lenserfight/features/agents'
 import { CreateLenserProfileModal } from '@lenserfight/features/onboarding'
 import { BenchmarkSuitesPage, BenchmarkSuiteDetailPage } from '@lenserfight/features/benchmark'
 import { WorkflowsPage, WorkflowBuilderPage, CreateWorkflowWizardModal } from '@lenserfight/features/workflows'
-import { Routes, Route, Navigate, BrowserRouter, useNavigate, useParams } from 'react-router-dom'
+import { Routes, Route, Navigate, BrowserRouter, useNavigate, useParams, useSearchParams } from 'react-router-dom'
 
 const AUTH_APP_URL = import.meta.env.VITE_AUTH_BASE_URL ?? 'https://auth.lenserfight.com'
 const ARENA_APP_URL = import.meta.env.VITE_ARENA_URL ?? 'https://lenserfight.com'
@@ -90,6 +90,30 @@ const CreateBattleModal: React.FC = () => {
       <CreateBattleWizard
         onSuccess={(slug) => navigate(`/battles/${slug}`)}
         onClose={() => navigate('/battles')}
+      />
+    </ModalRoute>
+  )
+}
+
+/**
+ * Agent manage wizard rendered as a nested route-based modal at /lenser/:handle/agent.
+ * Step state is URL-driven via ?step=N.
+ */
+const AgentManageModal: React.FC = () => {
+  const navigate = useNavigate()
+  const { handle } = useParams<{ handle: string }>()
+  const [searchParams] = useSearchParams()
+  const agentId = searchParams.get('agentId') ?? ''
+
+  return (
+    <ModalRoute
+      accessCheck={({ isAuthenticated, hasLenser }) => isAuthenticated && hasLenser}
+      maxWidth="max-w-lg"
+    >
+      <AgentManageWizard
+        agentId={agentId}
+        handle={handle!}
+        onDone={() => navigate(`/lenser/${handle}`)}
       />
     </ModalRoute>
   )
@@ -231,7 +255,10 @@ const App: React.FC = () => {
                                     <LenserProfilePage />
                                   </DashboardLayout>
                                 }
-                              />
+                              >
+                                {/* Nested: Agent manage wizard modal */}
+                                <Route path="agent" element={<AgentManageModal />} />
+                              </Route>
                               <Route
                                 path="/lenser/:handle/:tab"
                                 element={
@@ -321,16 +348,9 @@ const App: React.FC = () => {
                                 }
                               />
 
-                              {/* Agent Routes */}
+                              {/* Agent Routes — management is now at /lenser/:handle/agent */}
                               <Route path="/agents" element={<Navigate to="/lensers?type=ai" replace />} />
-                              <Route
-                                path="/agents/:id"
-                                element={
-                                  <DashboardLayout>
-                                    <AgentDetailPage />
-                                  </DashboardLayout>
-                                }
-                              />
+                              <Route path="/agents/:id" element={<Navigate to="/lensers?type=ai" replace />} />
 
                               {/* Benchmark Routes */}
                               <Route

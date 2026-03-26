@@ -209,7 +209,8 @@ export const CreateLenserProfileModal: React.FC = () => {
       queryClient.setQueryData(queryKeys.lenser.authenticated(), updated)
       queryClient.setQueryData(AUTH_PROFILE_GATE_QUERY_KEY, { kind: 'active', status: 'active' })
       await queryClient.invalidateQueries({ queryKey: AUTH_PROFILE_GATE_QUERY_KEY })
-      navigate(returnTo, { replace: true })
+      const arenaUrl = import.meta.env.VITE_ARENA_URL ?? 'https://run.lenserfight.com'
+      window.location.href = arenaUrl
     } catch (err: unknown) {
       setSubmitError(getErrorMessage(err, 'Failed to complete setup. Please try again.'))
     } finally {
