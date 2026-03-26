@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { Swords } from 'lucide-react'
 
 import { SEOHead } from '@lenserfight/ui/components'
 import { Avatar } from '@lenserfight/ui/components'
@@ -8,10 +9,12 @@ import { useLeaderboard } from '@lenserfight/features/leaderboard'
 import { useLeaderboard as useActivityLeaderboard } from '@lenserfight/features/home'
 import { LeaderboardTimeframe, LeaderboardScope, FollowPeriod } from '@lenserfight/types'
 import { useError, normalizeError } from '@lenserfight/shared/error'
+import { FEATURES } from '@lenserfight/utils/env'
 import { LeaderboardFilters } from '../components/LeaderboardFilters'
 import { LeaderboardHeader } from '../components/LeaderboardHeader'
 import { LeaderboardList } from '../components/LeaderboardList'
 import { LeaderboardTabs } from '../components/LeaderboardTabs'
+import { useEloLeaderboard } from '../useEloLeaderboard'
 
 const ACTIVITY_PERIOD_LABELS: Record<FollowPeriod, string> = {
   weekly: 'This Week',
@@ -25,7 +28,7 @@ export const LeaderboardPage: React.FC = () => {
   const { setError } = useError()
   const [scope, setScope] = useState<LeaderboardScope>('global')
   const [timeframe, setTimeframe] = useState<LeaderboardTimeframe>('all_time')
-  const [board, setBoard] = useState<'xp' | 'activity'>('xp')
+  const [board, setBoard] = useState<'xp' | 'activity' | 'elo'>('xp')
   const [activityPeriod, setActivityPeriod] = useState<FollowPeriod>('all_time')
 
   const { data, isLoading, fetchNextPage, hasNextPage, isFetchingNextPage, error: xpError } =
@@ -33,6 +36,8 @@ export const LeaderboardPage: React.FC = () => {
 
   const { data: activityData, isLoading: activityLoading, error: activityError } =
     useActivityLeaderboard(activityPeriod, 20)
+
+  const { data: eloData, isLoading: eloLoading } = useEloLeaderboard(50)
 
   useEffect(() => {
     const err = xpError ?? activityError
@@ -51,7 +56,7 @@ export const LeaderboardPage: React.FC = () => {
       {/* Board type toggle */}
       <div className="flex gap-2 mb-6">
         <div className="flex bg-gray-100 dark:bg-gray-800 rounded-xl p-1 gap-1">
-          {(['xp', 'activity'] as const).map((b) => (
+          {(['xp', 'activity', ...(FEATURES.AGENTS ? ['elo' as const] : [])] as const).map((b) => (
             <button
               key={b}
               onClick={() => setBoard(b)}
@@ -61,7 +66,7 @@ export const LeaderboardPage: React.FC = () => {
                   : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
               }`}
             >
-              {b === 'xp' ? 'XP Ranking' : 'Activity Score'}
+              {b === 'xp' ? 'XP Ranking' : b === 'activity' ? 'Activity Score' : 'ELO Rating'}
             </button>
           ))}
         </div>
@@ -86,7 +91,7 @@ export const LeaderboardPage: React.FC = () => {
             isFetchingNextPage={isFetchingNextPage}
           />
         </>
-      ) : (
+      ) : board === 'activity' ? (
         <>
           {/* Activity period filter */}
           <div className="flex gap-2 mb-6 overflow-x-auto">
@@ -154,7 +159,60 @@ export const LeaderboardPage: React.FC = () => {
             </div>
           )}
         </>
-      )}
+      ) : board === 'elo' && FEATURES.AGENTS ? (
+        <>
+          {eloLoading ? (
+            <div className="space-y-3">
+              {Array.from({ length: 8 }).map((_, i) => (
+                <div
+                  key={i}
+                  className="h-14 bg-gray-100 dark:bg-gray-800 rounded-xl animate-pulse"
+                />
+              ))}
+            </div>
+          ) : !eloData?.length ? (
+            <div className="text-center py-16 text-gray-400 dark:text-gray-500">
+              <Swords className="w-8 h-8 mx-auto mb-3 opacity-40" />
+              <p className="text-lg font-medium">No ELO rankings yet.</p>
+              <p className="text-sm mt-1">Rankings appear after battles are played.</p>
+            </div>
+          ) : (
+            <div className="space-y-2">
+              {eloData.map((entry) => (
+                <div
+                  key={entry.lenser_id}
+                  onClick={() => navigate(`/lenser/${entry.handle}`)}
+                  className="flex items-center gap-4 p-4 bg-white dark:bg-gray-800 rounded-xl border border-gray-100 dark:border-gray-700 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-750 transition-colors"
+                >
+                  <span className="w-7 text-center text-sm font-bold text-gray-500 dark:text-gray-400">
+                    {entry.elo_rank}
+                  </span>
+                  <Avatar
+                    src={entry.avatar_url}
+                    alt={entry.display_name}
+                    size="md"
+                    className="!w-9 !h-9 flex-shrink-0"
+                  />
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-semibold text-gray-900 dark:text-white truncate">
+                      {entry.display_name}
+                    </p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400">@{entry.handle}</p>
+                  </div>
+                  <div className="text-right flex-shrink-0">
+                    <p className="text-sm font-bold text-gray-900 dark:text-white">
+                      {Math.round(entry.elo_score).toLocaleString()}
+                    </p>
+                    <p className="text-xs text-gray-400 dark:text-gray-500">
+                      {entry.battles_won}W / {entry.battles_played - entry.battles_won}L
+                    </p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </>
+      ) : null}
     </div>
   )
 }

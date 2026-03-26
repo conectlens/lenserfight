@@ -24,6 +24,7 @@ export const FEATURES = {
   LENSER_ACTIVITY: import.meta.env.VITE_FEATURE_LENSER_ACTIVITY === 'true',
   NOTIFICATIONS: import.meta.env.VITE_FEATURE_NOTIFICATIONS === 'true',
   NETWORK_LINKS: import.meta.env.VITE_FEATURE_NETWORK_LINKS === 'true',
+  AGENTS: import.meta.env.VITE_FEATURE_AGENTS === 'true',
 }
 
 // Captcha
