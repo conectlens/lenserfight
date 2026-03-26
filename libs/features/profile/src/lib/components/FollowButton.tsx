@@ -1,7 +1,7 @@
 import React, { useState } from 'react'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { UserPlus, UserCheck, Clock, UserX } from 'lucide-react'
-import { AppButton } from '@lenserfight/features/shell'
+import { Button } from '@lenserfight/ui/components'
 import { lenserService } from '@lenserfight/data/repositories'
 import { queryKeys } from '@lenserfight/data/cache'
 import { RelationshipState } from '@lenserfight/types'
@@ -61,7 +61,7 @@ export const FollowButton: React.FC<FollowButtonProps> = ({
 
   if (buttonState === 'following') {
     return (
-      <AppButton
+      <Button
         variant={showUnfollow ? 'danger' : 'secondary'}
         className="!w-auto px-4 py-2 text-sm"
 
@@ -81,13 +81,13 @@ export const FollowButton: React.FC<FollowButtonProps> = ({
             Following
           </>
         )}
-      </AppButton>
+      </Button>
     )
   }
 
   if (buttonState === 'requested') {
     return (
-      <AppButton
+      <Button
         variant="secondary"
         className="!w-auto px-4 py-2 text-sm"
 
@@ -96,18 +96,18 @@ export const FollowButton: React.FC<FollowButtonProps> = ({
       >
         <Clock size={16} className="mr-1.5" />
         Requested
-      </AppButton>
+      </Button>
     )
   }
 
   return (
-    <AppButton
+    <Button
       className="!w-auto px-4 py-2 text-sm bg-primary hover:bg-yellow-400"
       onClick={() => followMutation.mutate()}
       isLoading={isLoading}
     >
       <UserPlus size={16} className="mr-1.5" />
       {buttonState === 'follow_back' ? 'Follow Back' : 'Follow'}
-    </AppButton>
+    </Button>
   )
 }

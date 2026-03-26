@@ -14,7 +14,7 @@ const variantClasses: Record<NonNullable<ButtonProps['variant']>, string> = {
     'bg-primary text-gray-900 hover:bg-primary-yellow-400 focus:ring-primary/50 shadow-sm border border-transparent',
   secondary:
     'bg-greyscale-50 border border-greyscale-300 text-greyscale-900 hover:bg-greyscale-200 focus:ring-greyscale-200 dark:bg-greyscale-800 dark:border-greyscale-700 dark:text-greyscale-50 dark:hover:bg-greyscale-700 dark:focus:ring-greyscale-700',
-  dark: 'bg-deep-lens-navy-500 border border-transparent text-white hover:bg-deep-lens-navy-600 focus:ring-deep-lens-navy-500/50 shadow-sm',
+  dark: 'bg-gray-800 border border-transparent text-white hover:bg-gray-700 focus:ring-gray-700/50 shadow-sm',
   ghost:
     'bg-transparent text-gray-600 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-gray-200',
   danger:
@@ -62,9 +62,9 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
         onClick={handleClick}
         {...props}
       >
-        {isLoading ? (
+        {isLoading && (
           <svg
-            className="animate-spin -ml-1 mr-3 h-5 w-5 text-current"
+            className="animate-spin -ml-1 mr-2 h-4 w-4 shrink-0 text-current"
             xmlns="http://www.w3.org/2000/svg"
             fill="none"
             viewBox="0 0 24 24"
@@ -83,9 +83,8 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
               d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
             />
           </svg>
-        ) : (
-          children
         )}
+        {children}
       </button>
     )
   }
