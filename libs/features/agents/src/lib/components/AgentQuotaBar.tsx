@@ -27,7 +27,7 @@ const QuotaItem: React.FC<{
       </div>
       <div className="h-1.5 bg-gray-100 dark:bg-gray-700 rounded-full overflow-hidden">
         <div
-          className={`h-full rounded-full transition-all ${isNearLimit ? 'bg-amber-500' : 'bg-indigo-500'}`}
+          className={`h-full rounded-full transition-all ${isNearLimit ? 'bg-primary-yellow-500' : 'bg-deep-lens-navy-500'}`}
           style={{ width: `${pct}%` }}
         />
       </div>

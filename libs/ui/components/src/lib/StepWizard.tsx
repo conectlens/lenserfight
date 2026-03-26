@@ -1,19 +1,35 @@
+import { Check } from 'lucide-react'
 import React from 'react'
 
 import { Button } from './Button'
 
+export interface WizardStepConfig {
+  /** Short label shown inside the step indicator rail */
+  label: string
+  /** Heading rendered above the step's children */
+  title: string
+  /** Optional subheading rendered below the title */
+  description?: string
+  /** Optional icon displayed beside the title */
+  icon?: React.ReactNode
+}
+
 interface StepWizardProps {
-  steps: string[]
+  steps: WizardStepConfig[]
   currentStep: number
   children: React.ReactNode
   onNext: () => void
   onBack: () => void
   onComplete: () => void
+  /** Called when Cancel is pressed on step 0 */
+  onCancel?: () => void
   canProceed: boolean
   isNextLoading?: boolean
   isCompleting?: boolean
   nextLabel?: string
   completeLabel?: string
+  /** Optional icon prepended to the complete button label */
+  completeIcon?: React.ReactNode
 }
 
 export const StepWizard: React.FC<StepWizardProps> = ({
@@ -23,56 +39,57 @@ export const StepWizard: React.FC<StepWizardProps> = ({
   onNext,
   onBack,
   onComplete,
+  onCancel,
   canProceed,
   isNextLoading = false,
   isCompleting = false,
   nextLabel = 'Next',
   completeLabel = 'Complete',
+  completeIcon,
 }) => {
   const isLastStep = currentStep === steps.length - 1
+  const current = steps[currentStep]
 
   return (
     <div className="flex flex-col gap-6">
-      {/* Step indicator */}
-      <div className="flex items-center justify-center gap-2">
-        {steps.map((label, index) => {
+      {/* Step indicator rail */}
+      <div className="flex items-center gap-3">
+        {steps.map((step, index) => {
           const isDone = index < currentStep
-          const isCurrent = index === currentStep
+          const isActive = index === currentStep
           return (
-            <React.Fragment key={label}>
-              <div className="flex flex-col items-center gap-1">
+            <React.Fragment key={index}>
+              <div className="flex items-center gap-2">
                 <div
                   className={[
-                    'w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold transition-colors',
+                    'flex h-7 w-7 items-center justify-center rounded-full text-xs font-bold transition-colors',
                     isDone
-                      ? 'bg-primary text-white'
-                      : isCurrent
-                        ? 'ring-2 ring-primary text-primary bg-white dark:bg-gray-800'
-                        : 'bg-gray-100 dark:bg-gray-700 text-gray-400 dark:text-gray-500',
+                      ? 'bg-greyscale-900 text-greyscale-0 dark:bg-greyscale-0 dark:text-greyscale-900'
+                      : isActive
+                        ? 'border-2 border-status-blue text-status-blue'
+                        : 'border border-surface-border text-greyscale-400',
                   ].join(' ')}
                 >
-                  {isDone ? (
-                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                    </svg>
-                  ) : (
-                    index + 1
-                  )}
+                  {isDone ? <Check size={13} /> : index + 1}
                 </div>
                 <span
                   className={[
-                    'text-xs font-medium',
-                    isCurrent ? 'text-primary' : 'text-gray-400 dark:text-gray-500',
+                    'hidden text-sm font-semibold sm:block',
+                    isActive
+                      ? 'text-greyscale-900 dark:text-greyscale-50'
+                      : 'text-greyscale-400',
                   ].join(' ')}
                 >
-                  {label}
+                  {step.label}
                 </span>
               </div>
               {index < steps.length - 1 && (
                 <div
                   className={[
-                    'h-px w-12 mb-5 transition-colors',
-                    isDone ? 'bg-primary' : 'bg-gray-200 dark:bg-gray-700',
+                    'h-px flex-1 transition-colors',
+                    isDone
+                      ? 'bg-greyscale-900 dark:bg-greyscale-0'
+                      : 'bg-surface-border',
                   ].join(' ')}
                 />
               )}
@@ -81,19 +98,45 @@ export const StepWizard: React.FC<StepWizardProps> = ({
         })}
       </div>
 
+      {/* Dynamic step header */}
+      <div className="space-y-1">
+        {current.icon && (
+          <div className="mb-2 flex h-10 w-10 items-center justify-center rounded-2xl bg-status-blue/10 text-status-blue">
+            {current.icon}
+          </div>
+        )}
+        <h2 className="text-xl font-black tracking-tight text-greyscale-900 dark:text-greyscale-50">
+          {current.title}
+        </h2>
+        {current.description && (
+          <p className="text-sm leading-6 text-greyscale-500 dark:text-greyscale-400">
+            {current.description}
+          </p>
+        )}
+      </div>
+
       {/* Step content */}
       <div>{children}</div>
 
-      {/* Navigation */}
-      <div className="flex flex-col-reverse gap-3 border-t border-gray-100 pt-4 dark:border-gray-700 sm:flex-row sm:items-center sm:justify-between">
-        <button
-          type="button"
-          onClick={onBack}
-          disabled={currentStep === 0}
-          className="text-sm font-medium text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white disabled:opacity-30 disabled:cursor-not-allowed transition-colors text-left"
-        >
-          ← Back
-        </button>
+      {/* Navigation footer */}
+      <div className="flex flex-col-reverse gap-3 border-t border-surface-border pt-4 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex items-center gap-2">
+          {currentStep === 0 && onCancel ? (
+            <Button type="button" variant="ghost" onClick={onCancel} className="w-auto">
+              Cancel
+            </Button>
+          ) : (
+            <Button
+              type="button"
+              variant="ghost"
+              onClick={onBack}
+              disabled={currentStep === 0}
+              className="w-auto"
+            >
+              ← Back
+            </Button>
+          )}
+        </div>
 
         {isLastStep ? (
           <Button
@@ -101,8 +144,9 @@ export const StepWizard: React.FC<StepWizardProps> = ({
             onClick={onComplete}
             disabled={!canProceed || isCompleting}
             isLoading={isCompleting}
-            className="px-6 sm:w-auto sm:min-w-[140px]"
+            className="inline-flex items-center gap-2 px-6 sm:w-auto sm:min-w-[140px]"
           >
+            {completeIcon}
             {completeLabel}
           </Button>
         ) : (
@@ -111,7 +155,7 @@ export const StepWizard: React.FC<StepWizardProps> = ({
             onClick={onNext}
             disabled={!canProceed || isNextLoading}
             isLoading={isNextLoading}
-            className="px-6 sm:w-auto sm:min-w-[140px]"
+            className="inline-flex items-center gap-2 px-6 sm:w-auto sm:min-w-[140px]"
           >
             {nextLabel} →
           </Button>

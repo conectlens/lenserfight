@@ -1,7 +1,7 @@
 import { FolderOpen, MessageSquare, Trophy, Activity, Plus, Bot } from 'lucide-react'
 import React, { useEffect, useState, useRef, useCallback, useMemo } from 'react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
-import { useParams, useNavigate } from 'react-router-dom'
+import { useParams, useNavigate, Outlet } from 'react-router-dom'
 
 import { Button } from '@lenserfight/ui/components'
 import { ConfirmModal } from '@lenserfight/ui/modals'
@@ -504,6 +504,11 @@ export const LenserProfilePage: React.FC = () => {
         onProfileUpdate={handleProfileUpdate}
         relationshipState={relationshipState}
         onManageAgents={isOwner ? () => handleTabChange('agents') : undefined}
+        onEditAgent={
+          isOwner && viewedProfile.type === 'ai'
+            ? () => navigate(`/lenser/${viewedProfile.handle}/agent?agentId=${viewedProfile.id}`)
+            : undefined
+        }
       />
 
       {stats && (
@@ -695,6 +700,9 @@ export const LenserProfilePage: React.FC = () => {
         confirmLabel="Delete"
         isLoading={isDeleting}
       />
+
+      {/* Nested route outlet — renders AgentManageModal at /lenser/:handle/agent */}
+      <Outlet />
 
     </div>
   )

@@ -39,7 +39,7 @@ export const StepWizard: React.FC<StepWizardProps> = ({
           const isDone = index < currentStep
           const isCurrent = index === currentStep
           return (
-            <React.Fragment key={label}>
+            <React.Fragment key={index}>
               <div className="flex flex-col items-center gap-1">
                 <div
                   className={[
