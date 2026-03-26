@@ -342,6 +342,20 @@ export class SupabaseBattlesRepository implements BattlesRepositoryPort {
     return (data ?? []) as BattleFeedItemRecord[]
   }
 
+  private generateSlug(title: string): string {
+    return (
+      title
+        .toLowerCase()
+        .trim()
+        .replace(/[^a-z0-9\s-]/g, '')
+        .replace(/\s+/g, '-')
+        .replace(/-+/g, '-')
+        .slice(0, 80) +
+      '-' +
+      Math.random().toString(36).slice(2, 8)
+    )
+  }
+
   async createBattle(input: CreateBattleInput): Promise<BattleRecord> {
     // Calls the atomic fn_create_battle RPC which inserts battles + ai_handicap_policies + funding_policies.
     // Until the RPC is deployed, falls back to direct insert with defaults.
@@ -355,6 +369,7 @@ export class SupabaseBattlesRepository implements BattlesRepositoryPort {
         voter_eligibility: input.voter_eligibility,
         handicap_config: input.handicap ?? {},
         status: 'draft',
+        slug: this.generateSlug(input.title),
       })
       .select(this.battleSelect)
       .single()
