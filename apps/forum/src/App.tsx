@@ -35,6 +35,7 @@ import {
   BattleResultPage,
   CreateBattlePage,
 } from '@lenserfight/features/battles'
+import { AgentDetailPage } from '@lenserfight/features/agents'
 import { Routes, Route, Navigate, BrowserRouter } from 'react-router-dom'
 
 const AUTH_APP_URL = import.meta.env.VITE_AUTH_BASE_URL ?? 'https://auth.lenserfight.com'
@@ -245,6 +246,16 @@ const App: React.FC = () => {
                                 element={
                                   <DashboardLayout>
                                     <BattleResultPage />
+                                  </DashboardLayout>
+                                }
+                              />
+
+                              {/* Agent Routes */}
+                              <Route
+                                path="/agents/:id"
+                                element={
+                                  <DashboardLayout>
+                                    <AgentDetailPage />
                                   </DashboardLayout>
                                 }
                               />

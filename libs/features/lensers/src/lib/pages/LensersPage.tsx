@@ -1,14 +1,52 @@
 import React, { useState } from 'react'
 import { SEOHead } from '@lenserfight/ui/components'
-import type { LenserType } from '@lenserfight/types'
+import { useAuth } from '@lenserfight/features/auth'
+import { useLenser } from '@lenserfight/features/profile'
+import { agentsService } from '@lenserfight/data/repositories'
+import { useQuery } from '@tanstack/react-query'
+import { queryKeys } from '@lenserfight/data/cache'
+import { FEATURES } from '@lenserfight/utils/env'
 import { useLensers } from '../hooks/useLensers'
 import { LenserGrid } from '../components/LenserGrid'
 import { LenserCardSkeleton } from '../components/LenserCardSkeleton'
-import { LenserTypeFilter } from '../components/LenserTypeFilter'
+import { LenserTypeFilter, LenserFilterValue } from '../components/LenserTypeFilter'
 
 export const LensersPage: React.FC = () => {
-  const [filter, setFilter] = useState<LenserType | undefined>(undefined)
-  const { data, isLoading } = useLensers(filter)
+  const { user: authUser } = useAuth()
+  const { lenser: currentUser } = useLenser()
+  const [filter, setFilter] = useState<LenserFilterValue>(undefined)
+
+  const isMyAgents = FEATURES.AGENTS && filter === 'my_agents'
+  const lensersFilter = isMyAgents ? undefined : (filter as string | undefined)
+
+  const { data: lensersData, isLoading: lensersLoading } = useLensers(
+    isMyAgents ? undefined : lensersFilter as any
+  )
+
+  const { data: myAgentsData, isLoading: myAgentsLoading } = useQuery({
+    queryKey: [...queryKeys.agents.all, 'owner', currentUser?.id],
+    queryFn: async () => {
+      const agents = await agentsService.getAgentsByOwner(currentUser!.id)
+      // Map AgentProfileView to a Lenser-compatible shape for LenserGrid
+      return agents.map((a) => ({
+        id: a.id,
+        handle: a.handle,
+        display_name: a.display_name,
+        avatar_url: a.avatar_url,
+        type: 'ai' as const,
+        bio: null,
+        headline: null,
+        follower_count: 0,
+        following_count: 0,
+        join_order: undefined,
+      }))
+    },
+    enabled: isMyAgents && !!currentUser?.id,
+    staleTime: 1000 * 60 * 2,
+  })
+
+  const data = isMyAgents ? myAgentsData : lensersData
+  const isLoading = isMyAgents ? myAgentsLoading : lensersLoading
 
   return (
     <div className="max-w-5xl mx-auto py-8 px-4 md:px-6">
@@ -21,18 +59,31 @@ export const LensersPage: React.FC = () => {
         </p>
       </div>
 
-      <LenserTypeFilter value={filter} onChange={setFilter} />
+      <LenserTypeFilter
+        value={filter}
+        onChange={setFilter}
+        isAuthenticated={!!authUser}
+      />
 
       {isLoading ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           <LenserCardSkeleton count={6} />
         </div>
       ) : (data?.length ?? 0) > 0 ? (
-        <LenserGrid items={data!} />
+        <LenserGrid items={data as any} />
       ) : (
         <div className="text-center py-16 text-gray-400 dark:text-gray-500">
-          <p className="text-lg font-medium">No lensers yet.</p>
-          <p className="text-sm mt-1">Be the first to join.</p>
+          {isMyAgents ? (
+            <>
+              <p className="text-lg font-medium">No AI Agents yet.</p>
+              <p className="text-sm mt-1">Create one from your profile page.</p>
+            </>
+          ) : (
+            <>
+              <p className="text-lg font-medium">No lensers yet.</p>
+              <p className="text-sm mt-1">Be the first to join.</p>
+            </>
+          )}
         </div>
       )}
     </div>

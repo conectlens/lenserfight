@@ -109,15 +109,40 @@ export interface SubmitVoteInput {
 
 // --- Port ---
 
+export interface BattleFeedItemRecord {
+  id: string
+  slug: string
+  title: string
+  status: BattleStatus
+  published_at: string | null
+  battle_type: BattleType
+  voter_eligibility: VoterEligibility
+  contender_a_id: string | null
+  contender_a_name: string | null
+  contender_a_type: ContenderType | null
+  contender_b_id: string | null
+  contender_b_name: string | null
+  contender_b_type: ContenderType | null
+  winner_slot: 'A' | 'B' | null
+}
+
+export interface BattlesFeedOptions {
+  status?: string
+  battleType?: BattleType
+  limit?: number
+  cursor?: string
+}
+
 export interface BattlesRepositoryPort {
   getBattleBySlug(slug: string): Promise<BattleRecord | null>
   getBattlesFeed(filter?: string, limit?: number, battleType?: BattleType): Promise<BattleRecord[]>
+  getBattlesFeedItems(options?: BattlesFeedOptions): Promise<BattleFeedItemRecord[]>
   getContenders(battleId: string): Promise<ContenderRecord[]>
   getSubmissions(battleId: string): Promise<SubmissionRecord[]>
   getVoteAggregates(battleId: string): Promise<VoteAggregateRecord[]>
   getScorecards(battleId: string): Promise<ScorecardRecord[]>
   getRubricCriteria(criterionIds: string[]): Promise<RubricCriterionRecord[]>
-  submitVote(input: SubmitVoteInput): Promise<{ xp_earned: number }>
+  submitVote(input: SubmitVoteInput): Promise<{ vote_id: string; status: string; battle_id: string }>
   createBattle(input: CreateBattleInput): Promise<BattleRecord>
   getAIHandicapPolicy(battleId: string): Promise<AIHandicapPolicyRecord | null>
   checkVoterEligibility(battleId: string, lenserId: string): Promise<boolean>
@@ -224,22 +249,27 @@ export class SupabaseBattlesRepository implements BattlesRepositoryPort {
     return (data ?? []) as RubricCriterionRecord[]
   }
 
-  async submitVote(input: SubmitVoteInput): Promise<{ xp_earned: number }> {
-    const row = {
-      battle_id: input.battle_id,
-      voter_lenser_id: input.voter_lenser_id,
-      vote_value: input.vote_value,
-      voted_contender_id: input.voted_contender_id,
-      rationale: input.rationale ?? null,
-      is_draw: input.is_draw ?? input.vote_value === 'draw',
-      weight: 1,
-    }
-
-    const { error } = await supabase.schema('battles').from('votes').insert(row)
+  async submitVote(input: SubmitVoteInput): Promise<{ vote_id: string; status: string; battle_id: string }> {
+    const { data, error } = await supabase.rpc('fn_submit_vote', {
+      p_battle_id: input.battle_id,
+      p_voted_contender_id: input.voted_contender_id,
+      p_vote_value: input.vote_value,
+      p_is_draw: input.is_draw ?? input.vote_value === 'draw',
+      p_rationale: input.rationale ?? null,
+    })
     if (error) this.handleError(error)
-    // XP is awarded server-side via fn_submit_vote RPC (Phase 1 target).
-    // Until the RPC is wired, return the base rule value so the toast is accurate.
-    return { xp_earned: 10 }
+    return data as { vote_id: string; status: string; battle_id: string }
+  }
+
+  async getBattlesFeedItems(options?: BattlesFeedOptions): Promise<BattleFeedItemRecord[]> {
+    const { data, error } = await supabase.rpc('fn_get_battles_feed', {
+      p_status: options?.status ?? null,
+      p_battle_type: options?.battleType ?? null,
+      p_limit: options?.limit ?? 20,
+      p_cursor: options?.cursor ?? null,
+    })
+    if (error) this.handleError(error)
+    return (data ?? []) as BattleFeedItemRecord[]
   }
 
   async createBattle(input: CreateBattleInput): Promise<BattleRecord> {
