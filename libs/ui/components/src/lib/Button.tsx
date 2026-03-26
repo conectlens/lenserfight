@@ -13,7 +13,7 @@ const variantClasses: Record<NonNullable<ButtonProps['variant']>, string> = {
   primary:
     'bg-primary text-gray-900 hover:bg-primary-yellow-400 focus:ring-primary/50 shadow-sm border border-transparent',
   secondary:
-    'bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 focus:ring-gray-200 dark:bg-gray-800 dark:border-gray-600 dark:text-gray-200 dark:hover:bg-gray-700 dark:focus:ring-gray-600',
+    'bg-greyscale-50 border border-greyscale-300 text-greyscale-900 hover:bg-greyscale-200 focus:ring-greyscale-200 dark:bg-greyscale-800 dark:border-greyscale-700 dark:text-greyscale-50 dark:hover:bg-greyscale-700 dark:focus:ring-greyscale-700',
   dark: 'bg-deep-lens-navy-500 border border-transparent text-white hover:bg-deep-lens-navy-600 focus:ring-deep-lens-navy-500/50 shadow-sm',
   ghost:
     'bg-transparent text-gray-600 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-gray-200',
