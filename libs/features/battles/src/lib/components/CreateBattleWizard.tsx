@@ -1,8 +1,9 @@
-import { Badge, Button } from '@lenserfight/ui/components'
+import { StepWizard } from '@lenserfight/ui/components'
+import type { WizardStepConfig } from '@lenserfight/ui/components'
 import { battlesService } from '@lenserfight/data/repositories'
 import { useWizardStep } from '@lenserfight/ui/routing'
 import { AnimatePresence, motion } from 'framer-motion'
-import { ArrowLeft, ArrowRight, Check, Swords } from 'lucide-react'
+import { Swords } from 'lucide-react'
 import React, { useEffect, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 
@@ -14,7 +15,33 @@ import { VoterEligibilitySelector } from './VoterEligibilitySelector'
 
 import type { AIHandicapConfig, BattleType, VoterEligibility } from '../types/battle.types'
 
-const STEPS = ['Basics', 'Battle type', 'Configuration', 'Contenders', 'Assign Lenses'] as const
+const WIZARD_STEPS: WizardStepConfig[] = [
+  {
+    label: 'Basics',
+    title: 'Battle basics',
+    description: 'Give your battle a clear title and a detailed Lens prompt. Both contenders receive the same prompt.',
+  },
+  {
+    label: 'Battle type',
+    title: 'Battle type',
+    description: 'Choose who competes and who judges.',
+  },
+  {
+    label: 'Configuration',
+    title: 'Configuration',
+    description: 'Set voter eligibility and optional AI handicap settings.',
+  },
+  {
+    label: 'Contenders',
+    title: 'Invite contenders',
+    description: 'Add the two contenders who will compete in this battle.',
+  },
+  {
+    label: 'Assign Lenses',
+    title: 'Assign Lenses',
+    description: 'Optionally assign lenses to each contender.',
+  },
+]
 
 const DEFAULT_HANDICAP: AIHandicapConfig = {
   injected_delay_ms: 2000,
@@ -137,218 +164,127 @@ export const CreateBattleWizard: React.FC<CreateBattleWizardProps> = ({ onSucces
     }
   }
 
+  // Steps 3–4 are post-creation; their child components own navigation.
+  // Render them outside the StepWizard to avoid overriding their own nav.
+  if (step >= 3) {
+    return (
+      <div className="w-full">
+        <AnimatePresence mode="wait" custom={direction}>
+          <motion.div
+            key={step}
+            custom={direction}
+            variants={slideVariants}
+            initial="enter"
+            animate="center"
+            exit="exit"
+          >
+            {step === 3 && battleIdFromUrl && (
+              <ContenderInviteStep
+                battleId={battleIdFromUrl}
+                onDone={(aId, aName, bId, bName) => {
+                  setContenderAId(aId)
+                  setContenderAName(aName)
+                  setContenderBId(bId)
+                  setContenderBName(bName)
+                  go(4)
+                }}
+              />
+            )}
+            {step === 4 && battleIdFromUrl && (
+              <LensAssignmentStep
+                battleId={battleIdFromUrl}
+                contenderAId={contenderAId}
+                contenderAName={contenderAName}
+                contenderBId={contenderBId}
+                contenderBName={contenderBName}
+                onDone={() => onSuccess(createdBattleSlug!)}
+              />
+            )}
+          </motion.div>
+        </AnimatePresence>
+      </div>
+    )
+  }
+
   return (
     <div className="w-full">
-      {/* Step indicator */}
-      <div className="mb-6 flex items-center gap-3">
-        {STEPS.map((label, i) => {
-          const done = i < step
-          const active = i === step
-          return (
-            <React.Fragment key={label}>
-              <div className="flex items-center gap-2">
-                <div className={`flex h-7 w-7 items-center justify-center rounded-full text-xs font-bold transition-colors ${done
-                    ? 'bg-greyscale-900 text-greyscale-0 dark:bg-greyscale-0 dark:text-greyscale-900'
-                    : active
-                      ? 'border-2 border-greyscale-900 text-greyscale-900 dark:border-greyscale-0 dark:text-greyscale-0'
-                      : 'border border-surface-border text-greyscale-400'
-                  }`}>
-                  {done ? <Check size={13} /> : i + 1}
+      <StepWizard
+        steps={WIZARD_STEPS}
+        currentStep={step}
+        onNext={() => go(step + 1)}
+        onBack={() => go(step - 1)}
+        onComplete={handleCreateBattle}
+        onCancel={onClose}
+        canProceed={step === 0 ? canAdvanceStep0 : true}
+        isCompleting={submitting}
+        completeLabel="Create Battle"
+        completeIcon={<Swords size={15} />}
+      >
+        <AnimatePresence mode="wait" custom={direction}>
+          <motion.div
+            key={step}
+            custom={direction}
+            variants={slideVariants}
+            initial="enter"
+            animate="center"
+            exit="exit"
+          >
+            {step === 0 && (
+              <div className="space-y-4">
+                <div>
+                  <label className="mb-2 block text-sm font-semibold text-greyscale-900 dark:text-greyscale-0">
+                    Battle title
+                  </label>
+                  <input
+                    type="text"
+                    value={title}
+                    onChange={(e) => setTitle(e.target.value)}
+                    placeholder="e.g. GPT-4o vs Claude — Technical Writing"
+                    maxLength={120}
+                    className="w-full rounded-2xl border border-surface-border bg-surface-base px-4 py-3 text-sm text-greyscale-900 outline-none transition-colors placeholder:text-greyscale-400 focus:border-status-blue dark:bg-surface-raised dark:text-greyscale-50"
+                  />
                 </div>
-                <span className={`hidden sm:block text-sm font-semibold ${active ? 'text-greyscale-900 dark:text-greyscale-0' : 'text-greyscale-400'
-                  }`}>
-                  {label}
-                </span>
-              </div>
-              {i < STEPS.length - 1 && (
-                <div className="h-px flex-1 bg-surface-border" />
-              )}
-            </React.Fragment>
-          )
-        })}
-      </div>
 
-      <AnimatePresence mode="wait" custom={direction}>
-        <motion.div
-          key={step}
-          custom={direction}
-          variants={slideVariants}
-          initial="enter"
-          animate="center"
-          exit="exit"
-        >
-          {/* Step 0: Battle basics */}
-          {step === 0 && (
-            <div className="space-y-5">
-              <div className="space-y-2">
-                <Badge color="blue" variant="outline">Step 1 of 4</Badge>
-                <h2 className="text-xl font-black tracking-tight text-greyscale-900 dark:text-greyscale-0">
-                  Battle basics
-                </h2>
-                <p className="text-sm leading-7 text-greyscale-500 dark:text-greyscale-400">
-                  Give your battle a clear title and a detailed Lens prompt. Both contenders receive the same prompt.
-                </p>
+                <div>
+                  <label className="mb-2 block text-sm font-semibold text-greyscale-900 dark:text-greyscale-0">
+                    Lens prompt
+                  </label>
+                  <textarea
+                    value={taskPrompt}
+                    onChange={(e) => setTaskPrompt(e.target.value)}
+                    placeholder="Describe the task clearly. Be specific about format, constraints, and the success criteria you want evaluated."
+                    rows={6}
+                    className="w-full resize-none rounded-2xl border border-surface-border bg-surface-base px-4 py-3 text-sm text-greyscale-900 outline-none transition-colors placeholder:text-greyscale-400 focus:border-status-blue dark:bg-surface-raised dark:text-greyscale-50"
+                  />
+                  <p className="mt-1 text-right text-xs text-greyscale-400">{taskPrompt.length} chars</p>
+                </div>
               </div>
+            )}
 
-              <div>
-                <label className="mb-2 block text-sm font-semibold text-greyscale-900 dark:text-greyscale-0">
-                  Battle title
-                </label>
-                <input
-                  type="text"
-                  value={title}
-                  onChange={(e) => setTitle(e.target.value)}
-                  placeholder="e.g. GPT-4o vs Claude — Technical Writing"
-                  maxLength={120}
-                  className="w-full rounded-2xl border border-surface-border bg-surface-base px-4 py-3 text-sm text-greyscale-900 outline-none transition-colors placeholder:text-greyscale-400 focus:border-status-blue dark:bg-surface-raised dark:text-greyscale-50"
-                />
-              </div>
-
-              <div>
-                <label className="mb-2 block text-sm font-semibold text-greyscale-900 dark:text-greyscale-0">
-                  Lens prompt
-                </label>
-                <textarea
-                  value={taskPrompt}
-                  onChange={(e) => setTaskPrompt(e.target.value)}
-                  placeholder="Describe the task clearly. Be specific about format, constraints, and the success criteria you want evaluated."
-                  rows={6}
-                  className="w-full resize-none rounded-2xl border border-surface-border bg-surface-base px-4 py-3 text-sm text-greyscale-900 outline-none transition-colors placeholder:text-greyscale-400 focus:border-status-blue dark:bg-surface-raised dark:text-greyscale-50"
-                />
-                <p className="mt-1 text-right text-xs text-greyscale-400">{taskPrompt.length} chars</p>
-              </div>
-
-              <div className="flex items-center justify-between gap-3">
-                <Button
-                  type="button"
-                  variant="ghost"
-                  onClick={onClose}
-                  className="w-auto"
-                >
-                  Cancel
-                </Button>
-                <Button
-                  onClick={() => go(1)}
-                  disabled={!canAdvanceStep0}
-                  className="gap-2 w-auto"
-                >
-                  Next <ArrowRight size={15} />
-                </Button>
-              </div>
-            </div>
-          )}
-
-          {/* Step 1: Battle type */}
-          {step === 1 && (
-            <div className="space-y-5">
-              <div className="space-y-2">
-                <Badge color="blue" variant="outline">Step 2 of 4</Badge>
-                <h2 className="text-xl font-black tracking-tight text-greyscale-900 dark:text-greyscale-0">
-                  Battle type
-                </h2>
-                <p className="text-sm leading-7 text-greyscale-500 dark:text-greyscale-400">
-                  Choose who competes and who judges.
-                </p>
-              </div>
-
+            {step === 1 && (
               <BattleTypeSelector value={battleType} onChange={handleBattleTypeChange} />
+            )}
 
-              <div className="flex justify-between gap-3">
-                <Button
-                  type="button"
-                  variant="ghost"
-                  onClick={() => go(0)}
-                  className="inline-flex items-center gap-2 w-auto"
-                >
-                  <ArrowLeft size={15} /> Back
-                </Button>
-                <Button onClick={() => go(2)} className="gap-2 w-auto">
-                  Next <ArrowRight size={15} />
-                </Button>
-              </div>
-            </div>
-          )}
-
-          {/* Step 2: Configuration */}
-          {step === 2 && (
-            <div className="space-y-4">
-              <div className="space-y-5">
-                <div className="space-y-2">
-                  <Badge color="blue" variant="outline">Step 3 of 4</Badge>
-                  <h2 className="text-xl font-black tracking-tight text-greyscale-900 dark:text-greyscale-0">
-                    Configuration
-                  </h2>
-                  <p className="text-sm leading-7 text-greyscale-500 dark:text-greyscale-400">
-                    Set voter eligibility and optional AI handicap settings.
-                  </p>
-                </div>
+            {step === 2 && (
+              <div className="space-y-4">
                 <VoterEligibilitySelector
                   battleType={battleType}
                   value={voterEligibility}
                   onChange={setVoterEligibility}
                 />
-              </div>
-
-              {showsHandicap && (
-                <div>
+                {showsHandicap && (
                   <HandicapConfigPanel value={handicap} onChange={setHandicap} />
-                </div>
-              )}
-
-              {error && (
-                <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-900 dark:border-red-900/40 dark:bg-red-950/40 dark:text-red-100">
-                  {error}
-                </div>
-              )}
-
-              <div className="flex justify-between gap-3">
-                <Button
-                  type="button"
-                  variant="ghost"
-                  onClick={() => go(1)}
-                  className="inline-flex items-center gap-2 w-auto"
-                >
-                  <ArrowLeft size={15} /> Back
-                </Button>
-                <Button
-                  onClick={handleCreateBattle}
-                  isLoading={submitting}
-                  disabled={submitting}
-                  className="gap-2 w-auto"
-                >
-                  <Swords size={15} /> Create Battle
-                </Button>
+                )}
+                {error && (
+                  <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-900 dark:border-red-900/40 dark:bg-red-950/40 dark:text-red-100">
+                    {error}
+                  </div>
+                )}
               </div>
-            </div>
-          )}
-
-          {/* Step 3: Invite contenders (post-creation) */}
-          {step === 3 && battleIdFromUrl && (
-            <ContenderInviteStep
-              battleId={battleIdFromUrl}
-              onDone={(aId, aName, bId, bName) => {
-                setContenderAId(aId)
-                setContenderAName(aName)
-                setContenderBId(bId)
-                setContenderBName(bName)
-                go(4)
-              }}
-            />
-          )}
-
-          {/* Step 4: Assign Lenses (optional) */}
-          {step === 4 && battleIdFromUrl && (
-            <LensAssignmentStep
-              battleId={battleIdFromUrl}
-              contenderAId={contenderAId}
-              contenderAName={contenderAName}
-              contenderBId={contenderBId}
-              contenderBName={contenderBName}
-              onDone={() => onSuccess(createdBattleSlug!)}
-            />
-          )}
-        </motion.div>
-      </AnimatePresence>
+            )}
+          </motion.div>
+        </AnimatePresence>
+      </StepWizard>
     </div>
   )
 }
