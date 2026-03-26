@@ -2,12 +2,12 @@ import React from 'react'
 
 import { LeaderboardTimeframe } from '@lenserfight/types'
 
-interface LeaderboardFiltersProps {
+interface LenserBoardFiltersProps {
   activeTimeframe: LeaderboardTimeframe
   onChange: (timeframe: LeaderboardTimeframe) => void
 }
 
-export const LeaderboardFilters: React.FC<LeaderboardFiltersProps> = ({
+export const LenserBoardFilters: React.FC<LenserBoardFiltersProps> = ({
   activeTimeframe,
   onChange,
 }) => {
