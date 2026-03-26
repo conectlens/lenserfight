@@ -1,0 +1,12 @@
+{
+  "name": "lenserboard",
+  "$schema": "../../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "libs/features/lenserboard/src",
+  "projectType": "library",
+  "tags": [
+    "layer:feature",
+    "feature:lenserboard"
+  ],
+  "// targets": "to see all targets run: nx show project lenserboard --web",
+  "targets": {}
+}

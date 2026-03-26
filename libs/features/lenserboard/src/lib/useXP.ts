@@ -4,7 +4,7 @@ import { queryKeys } from '@lenserfight/data/cache'
 import { xpService } from '@lenserfight/data/repositories'
 import { LeaderboardTimeframe, LeaderboardScope } from '@lenserfight/types'
 
-export const useLeaderboard = (timeframe: LeaderboardTimeframe, scope: LeaderboardScope) => {
+export const useLenserBoard = (timeframe: LeaderboardTimeframe, scope: LeaderboardScope) => {
   const pageSize = 20
   return useInfiniteQuery({
     queryKey: queryKeys.xp.leaderboard(timeframe, scope),
