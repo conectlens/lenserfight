@@ -7,6 +7,8 @@ export interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElemen
   isLoading?: boolean
   /** When set, visually disables the button but keeps it clickable — shows this message as an error toast on click. */
   contextError?: string | null
+  /** When true, button stretches to full width of its container. */
+  fullWidth?: boolean
 }
 
 const variantClasses: Record<NonNullable<ButtonProps['variant']>, string> = {
@@ -14,7 +16,7 @@ const variantClasses: Record<NonNullable<ButtonProps['variant']>, string> = {
     'bg-primary text-gray-900 hover:bg-primary-yellow-400 focus:ring-primary/50 shadow-sm border border-transparent',
   secondary:
     'bg-greyscale-50 border border-greyscale-300 text-greyscale-900 hover:bg-greyscale-200 focus:ring-greyscale-200 dark:bg-greyscale-800 dark:border-greyscale-700 dark:text-greyscale-50 dark:hover:bg-greyscale-700 dark:focus:ring-greyscale-700',
-  dark: 'bg-gray-800 border border-transparent text-white hover:bg-gray-700 focus:ring-gray-700/50 shadow-sm',
+  dark: 'bg-deep-lens-navy-500 border border-transparent text-white hover:bg-deep-lens-navy-600 focus:ring-deep-lens-navy-500/50 shadow-sm',
   ghost:
     'bg-transparent text-gray-600 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-gray-200',
   danger:
@@ -37,13 +39,14 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
       className = '',
       disabled,
       contextError,
+      fullWidth = false,
       onClick,
       ...props
     },
     ref
   ) => {
     const baseStyle =
-      'w-full rounded-lg font-medium transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-1 disabled:opacity-60 disabled:cursor-not-allowed dark:focus:ring-offset-gray-900'
+      'rounded-lg font-medium transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-1 disabled:opacity-60 disabled:cursor-not-allowed dark:focus:ring-offset-gray-900'
 
     const handleClick = (e: React.MouseEvent<HTMLButtonElement>) => {
       if (contextError) {
@@ -56,7 +59,7 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
     return (
       <button
         ref={ref}
-        className={`${baseStyle} ${sizeClasses[size]} ${variantClasses[variant]} ${contextError ? 'opacity-50 cursor-not-allowed' : ''} ${className} flex justify-center items-center`}
+        className={`${baseStyle} ${fullWidth ? 'w-full' : ''} ${sizeClasses[size]} ${variantClasses[variant]} ${contextError ? 'opacity-50 cursor-not-allowed' : ''} ${className} flex justify-center items-center`}
         disabled={disabled || isLoading}
         aria-disabled={!!contextError || disabled || isLoading}
         onClick={handleClick}
