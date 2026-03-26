@@ -102,7 +102,7 @@ export const queryKeys = {
   },
   battles: {
     all: ['battles'] as const,
-    feed: (filter?: string) => [...queryKeys.battles.all, 'feed', filter] as const,
+    feed: (filter?: string, sortBy?: string) => [...queryKeys.battles.all, 'feed', filter, sortBy] as const,
     detail: (slug: string) => [...queryKeys.battles.all, 'detail', slug] as const,
     contenders: (battleId: string) => [...queryKeys.battles.all, 'contenders', battleId] as const,
     aggregates: (battleId: string) => [...queryKeys.battles.all, 'aggregates', battleId] as const,
