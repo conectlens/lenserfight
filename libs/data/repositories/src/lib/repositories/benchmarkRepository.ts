@@ -102,8 +102,9 @@ export class SupabaseBenchmarkRepository implements BenchmarkRepositoryPort {
         evaluation_protocol: input.evaluation_protocol ?? {},
         required_repetitions: input.required_repetitions ?? 1,
         ordinal: input.ordinal ?? 0,
+        workflow_id: input.workflow_id ?? null,
       })
-      .select('id, suite_id, title, prompt_template, evaluation_protocol, required_repetitions, ordinal, created_at')
+      .select('id, suite_id, title, prompt_template, evaluation_protocol, required_repetitions, ordinal, workflow_id, created_at')
       .single()
 
     if (error) this.handleError(error)

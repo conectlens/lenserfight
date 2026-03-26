@@ -12,11 +12,13 @@ import {
   SubmissionRecord,
   SubmitVoteInput,
   InviteContenderInput,
+  ContenderLensAssignmentRecord,
+  AssignLensInput,
 } from '../repositories/battlesRepository'
 
 const battlesRepo = new SupabaseBattlesRepository()
 
-export type { BattleRecord, BattleCommentRecord, GlobalMessageRecord, BattleFeedItemRecord, BattlesFeedOptions, ContenderRecord, VoteAggregateRecord, ScorecardRecord, RubricCriterionRecord, SubmissionRecord, SubmitVoteInput, InviteContenderInput }
+export type { BattleRecord, BattleCommentRecord, GlobalMessageRecord, BattleFeedItemRecord, BattlesFeedOptions, ContenderRecord, VoteAggregateRecord, ScorecardRecord, RubricCriterionRecord, SubmissionRecord, SubmitVoteInput, InviteContenderInput, ContenderLensAssignmentRecord, AssignLensInput }
 
 export interface BattleContendersData {
   contenders: ContenderRecord[]
@@ -90,6 +92,12 @@ export const battlesService = {
 
   checkVoterEligibility: (battleId: string, lenserId: string): Promise<boolean> =>
     battlesRepo.checkVoterEligibility(battleId, lenserId),
+
+  assignLensToContender: (input: AssignLensInput): Promise<ContenderLensAssignmentRecord> =>
+    battlesRepo.assignLensToContender(input),
+
+  getLensAssignment: (contenderId: string): Promise<ContenderLensAssignmentRecord | null> =>
+    battlesRepo.getLensAssignment(contenderId),
 
   deriveWinner: (
     aggregates: VoteAggregateRecord[],

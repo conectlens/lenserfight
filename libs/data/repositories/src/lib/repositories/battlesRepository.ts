@@ -16,8 +16,9 @@ export type BattleType =
   | 'human_vs_human_ai_votes'
   | 'human_vs_human_open_votes'
   | 'human_vs_ai'
+  | 'workflow_battle'
 
-export type VoterEligibility = 'open' | 'human_only' | 'ai_only' | 'verified_lenser'
+export type VoterEligibility = 'open' | 'human_only' | 'ai_only' | 'verified_lenser' | 'lenser_only'
 
 export type ContenderType = 'human' | 'ai_model' | 'ai_agent' | 'ai_runner'
 export type VoteValue = 'contender_a' | 'contender_b' | 'draw'
@@ -167,6 +168,22 @@ export interface BattlesFeedOptions {
   cursor?: string
 }
 
+export interface ContenderLensAssignmentRecord {
+  id: string
+  contender_id: string
+  battle_id: string
+  lens_id: string
+  version_id: string | null
+  assigned_at: string
+}
+
+export interface AssignLensInput {
+  contender_id: string
+  battle_id: string
+  lens_id: string
+  version_id?: string | null
+}
+
 export interface BattlesRepositoryPort {
   getBattleBySlug(slug: string): Promise<BattleRecord | null>
   getBattlesFeed(filter?: string, limit?: number, battleType?: BattleType, cursor?: string): Promise<BattleRecord[]>
@@ -185,6 +202,8 @@ export interface BattlesRepositoryPort {
   inviteContender(input: InviteContenderInput): Promise<ContenderRecord>
   submitContenderEntry(battleId: string, contenderId: string, contentText: string): Promise<SubmissionRecord>
   linkForumThread(battleId: string, forumThreadId: string): Promise<void>
+  assignLensToContender(input: AssignLensInput): Promise<ContenderLensAssignmentRecord>
+  getLensAssignment(contenderId: string): Promise<ContenderLensAssignmentRecord | null>
 }
 
 // --- Supabase Implementation ---
@@ -512,5 +531,35 @@ export class SupabaseBattlesRepository implements BattlesRepositoryPort {
       .update({ forum_thread_id: forumThreadId })
       .eq('id', battleId)
     if (error) this.handleError(error)
+  }
+
+  async assignLensToContender(input: AssignLensInput): Promise<ContenderLensAssignmentRecord> {
+    const { data, error } = await supabase
+      .schema('battles')
+      .from('contender_lens_assignments')
+      .upsert(
+        {
+          contender_id: input.contender_id,
+          battle_id: input.battle_id,
+          lens_id: input.lens_id,
+          version_id: input.version_id ?? null,
+        },
+        { onConflict: 'contender_id' }
+      )
+      .select('id, contender_id, battle_id, lens_id, version_id, assigned_at')
+      .single()
+    if (error) this.handleError(error)
+    return data as ContenderLensAssignmentRecord
+  }
+
+  async getLensAssignment(contenderId: string): Promise<ContenderLensAssignmentRecord | null> {
+    const { data, error } = await supabase
+      .schema('battles')
+      .from('contender_lens_assignments')
+      .select('id, contender_id, battle_id, lens_id, version_id, assigned_at')
+      .eq('contender_id', contenderId)
+      .maybeSingle()
+    if (error) this.handleError(error)
+    return data as ContenderLensAssignmentRecord | null
   }
 }
