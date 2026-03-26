@@ -192,13 +192,14 @@ export function LensAssignmentStep({ battleId, contenderAId, contenderAName, con
       </div>
 
       <div className="flex items-center justify-between gap-3 pt-2">
-        <button
+        <Button
           type="button"
+          variant="ghost"
           onClick={onDone}
-          className="text-sm text-greyscale-500 transition-colors hover:text-greyscale-900 dark:hover:text-greyscale-0"
+          className="w-auto"
         >
           {assignedA || assignedB ? 'Done' : 'Skip for now'}
-        </button>
+        </Button>
         {(assignedA || assignedB) && (
           <Button onClick={onDone} className="gap-2 w-auto">
             Continue to battle

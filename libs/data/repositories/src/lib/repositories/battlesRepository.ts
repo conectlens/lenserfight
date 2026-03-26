@@ -470,8 +470,7 @@ export class SupabaseBattlesRepository implements BattlesRepositoryPort {
 
   async getGlobalMessages(battleId: string, limit = 100): Promise<GlobalMessageRecord[]> {
     const { data, error } = await supabase
-      .schema('battles')
-      .from('global_messages')
+      .from('vw_global_messages')
       .select('id, battle_id, sender_id, sender_handle, sender_role, body, created_at')
       .eq('battle_id', battleId)
       .order('created_at', { ascending: true })

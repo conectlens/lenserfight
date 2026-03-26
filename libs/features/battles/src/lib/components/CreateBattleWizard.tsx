@@ -189,13 +189,14 @@ export const CreateBattleWizard: React.FC<CreateBattleWizardProps> = ({ onSucces
               </div>
 
               <div className="flex items-center justify-between gap-3">
-                <button
+                <Button
                   type="button"
+                  variant="ghost"
                   onClick={onClose}
-                  className="inline-flex items-center gap-2 text-sm text-greyscale-500 transition-colors hover:text-greyscale-900 dark:hover:text-greyscale-0"
+                  className="w-auto"
                 >
                   Cancel
-                </button>
+                </Button>
                 <Button
 
                   onClick={() => go(1)}
@@ -224,13 +225,14 @@ export const CreateBattleWizard: React.FC<CreateBattleWizardProps> = ({ onSucces
               <BattleTypeSelector value={battleType} onChange={handleBattleTypeChange} />
 
               <div className="flex justify-between gap-3">
-                <button
+                <Button
                   type="button"
+                  variant="ghost"
                   onClick={() => go(0)}
-                  className="inline-flex items-center gap-2 text-sm text-greyscale-500 transition-colors hover:text-greyscale-900 dark:hover:text-greyscale-0"
+                  className="inline-flex items-center gap-2 w-auto"
                 >
                   <ArrowLeft size={15} /> Back
-                </button>
+                </Button>
                 <Button onClick={() => go(2)} className="gap-2 w-auto">
                   Next <ArrowRight size={15} />
                 </Button>
@@ -271,13 +273,14 @@ export const CreateBattleWizard: React.FC<CreateBattleWizardProps> = ({ onSucces
               )}
 
               <div className="flex justify-between gap-3">
-                <button
+                <Button
                   type="button"
+                  variant="ghost"
                   onClick={() => go(1)}
-                  className="inline-flex items-center gap-2 text-sm text-greyscale-500 transition-colors hover:text-greyscale-900 dark:hover:text-greyscale-0"
+                  className="inline-flex items-center gap-2 w-auto"
                 >
                   <ArrowLeft size={15} /> Back
-                </button>
+                </Button>
                 <Button
 
                   onClick={handleCreateBattle}

@@ -1,4 +1,5 @@
 import { SEOHead } from '@lenserfight/ui/components'
+import { Button } from '@lenserfight/ui/components'
 import { AnimatePresence, motion } from 'framer-motion'
 import React, { useState } from 'react'
 import { useNavigate, Outlet } from 'react-router-dom'
@@ -66,14 +67,14 @@ export function BattlesFeedPage() {
       <div className="space-y-3 mb-6">
         <div className="flex items-center justify-between">
           <h1 className="text-2xl font-bold text-[var(--cl-surface-text)]">Battles</h1>
-          <button
+          <Button
             onClick={() => navigate('/battles/create')}
-            className="flex items-center gap-2 bg-primary hover:bg-yellow-300 text-gray-900 font-semibold rounded-lg px-4 py-2 transition-colors"
             title="New Battle"
+            className="flex items-center gap-2 w-auto"
           >
             <PlusCircle size={18} />
             <span>New Battle</span>
-          </button>
+          </Button>
         </div>
         <div className="flex gap-2 flex-wrap">
           {STATUS_FILTERS.map((f) => (
@@ -155,13 +156,15 @@ export function BattlesFeedPage() {
       )}
       {hasNextPage && (
         <div className="mt-6 flex justify-center">
-          <button
+          <Button
+            variant="secondary"
             onClick={() => fetchNextPage()}
             disabled={isFetchingNextPage}
-            className="text-sm px-5 py-2 rounded-full border border-[var(--cl-surface-border)] text-[var(--cl-surface-text-muted)] hover:border-[var(--cl-surface-border-subtle)] transition-all disabled:opacity-50"
+            isLoading={isFetchingNextPage}
+            className="w-auto"
           >
             {isFetchingNextPage ? 'Loading…' : 'Load more'}
-          </button>
+          </Button>
         </div>
       )}
       <Outlet />

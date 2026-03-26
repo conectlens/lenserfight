@@ -1,6 +1,6 @@
 import React from 'react'
 import { Shield, Rocket, Clock, CheckCircle } from 'lucide-react'
-import { Card, Badge } from '@lenserfight/ui/components'
+import { Card, Badge, Button } from '@lenserfight/ui/components'
 import type { BattleStatus } from '../types/battle.types'
 
 interface BattleCreatorPanelProps {
@@ -44,14 +44,15 @@ export const BattleCreatorPanel: React.FC<BattleCreatorPanelProps> = ({
           <p className="text-sm text-gray-600 dark:text-gray-300">
             Publishing opens this battle so contenders can submit their entries. Once published this cannot be undone.
           </p>
-          <button
+          <Button
             onClick={() => onPublish(battleId)}
             disabled={isPublishing}
-            className="flex items-center gap-2 rounded-full bg-primary px-5 py-2.5 text-sm font-bold text-gray-900 transition-colors hover:bg-yellow-300 disabled:opacity-60 disabled:cursor-not-allowed"
+            isLoading={isPublishing}
+            className="flex items-center gap-2 w-auto"
           >
             <Rocket size={14} />
             {isPublishing ? 'Publishing…' : 'Publish Battle'}
-          </button>
+          </Button>
         </div>
       )}
 

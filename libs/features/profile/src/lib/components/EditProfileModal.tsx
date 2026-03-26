@@ -265,13 +265,14 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({
               Social Links
             </label>
             {getAvailablePlatforms(-1).length > 0 && (
-              <button
+              <Button
                 type="button"
+                variant="ghost"
                 onClick={handleAddLink}
-                className="flex items-center gap-1.5 text-xs font-semibold text-primary-700 dark:text-primary-400 hover:text-primary-800 dark:hover:text-primary-300 bg-primary/10 hover:bg-primary/20 px-3 py-1.5 rounded-lg transition-colors"
+                className="flex items-center gap-1.5 w-auto text-xs"
               >
                 <Plus size={14} strokeWidth={3} /> Add Link
-              </button>
+              </Button>
             )}
           </div>
 

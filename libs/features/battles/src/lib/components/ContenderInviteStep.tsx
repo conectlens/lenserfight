@@ -107,13 +107,14 @@ export const ContenderInviteStep: React.FC<ContenderInviteStepProps> = ({ battle
       )}
 
       <div className="flex items-center justify-between gap-3">
-        <button
+        <Button
           type="button"
+          variant="ghost"
           onClick={onDone}
-          className="text-sm text-greyscale-500 transition-colors hover:text-greyscale-900 dark:hover:text-greyscale-0"
+          className="w-auto"
         >
           Skip for now
-        </button>
+        </Button>
         <Button
 
           onClick={handleInvite}

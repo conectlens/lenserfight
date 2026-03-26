@@ -131,12 +131,13 @@ export const AgentDetailPage: React.FC = () => {
   return (
     <div className="max-w-2xl mx-auto py-8 px-4 space-y-6">
       {/* Back */}
-      <button
+      <Button
+        variant="ghost"
         onClick={() => navigate(-1)}
-        className="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400 hover:text-gray-800 dark:hover:text-white transition-colors"
+        className="flex items-center gap-2 w-auto"
       >
         <ArrowLeft size={16} /> Back
-      </button>
+      </Button>
 
       {/* Identity card */}
       <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-100 dark:border-gray-700 p-6">
@@ -242,20 +243,22 @@ export const AgentDetailPage: React.FC = () => {
           )}
 
           <div className="flex justify-end gap-2">
-            <button
+            <Button
+              variant="ghost"
               onClick={() => setEditOpen(false)}
-              className="px-4 py-2 rounded-xl text-sm text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+              className="w-auto"
             >
               Cancel
-            </button>
-            <button
+            </Button>
+            <Button
               onClick={handleSaveProfile}
               disabled={editSaving}
-              className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-semibold bg-primary text-gray-900 hover:bg-yellow-300 transition-colors disabled:opacity-60"
+              isLoading={editSaving}
+              className="flex items-center gap-1.5 w-auto"
             >
               <Check size={13} />
               {editSaving ? 'Saving…' : 'Save'}
-            </button>
+            </Button>
           </div>
         </div>
       )}
