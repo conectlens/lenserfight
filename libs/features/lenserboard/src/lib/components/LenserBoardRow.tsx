@@ -1,5 +1,5 @@
-import { Trophy, Flame, MoreHorizontal } from 'lucide-react'
-import React from 'react'
+import { Trophy, Flame, MoreHorizontal, User, ExternalLink } from 'lucide-react'
+import React, { useState, useRef, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 
 import { Avatar } from '@lenserfight/ui/components'
@@ -12,8 +12,178 @@ type LenserBoardRowProps =
   | { mode: 'activity'; entry: LeaderboardLenser }
   | { mode: 'elo'; entry: EloLeaderboardEntry }
 
-const COMPACT_ROW =
-  'flex items-center gap-4 p-4 rounded-xl border cursor-pointer transition-colors bg-white hover:bg-gray-50 border-gray-100 dark:bg-gray-800 dark:hover:bg-gray-750 dark:border-gray-700'
+interface RowData {
+  rank: number
+  handle: string
+  displayName: string
+  avatarUrl: string | undefined
+  statPrimary: string
+  statSecondary: string
+  badge?: React.ReactNode
+  extras?: React.ReactNode
+  isCurrentUser?: boolean
+}
+
+const RankBadge: React.FC<{ rank: number }> = ({ rank }) => {
+  if (rank === 1)
+    return (
+      <div className="w-9 h-9 rounded-full bg-gradient-to-br from-yellow-300 to-yellow-500 flex items-center justify-center text-yellow-950 shadow-md ring-2 ring-yellow-100 dark:ring-yellow-900/20 font-black text-base flex-shrink-0">
+        1
+      </div>
+    )
+  if (rank === 2)
+    return (
+      <div className="w-9 h-9 rounded-full bg-gradient-to-br from-slate-200 to-slate-400 flex items-center justify-center text-slate-800 shadow ring-2 ring-slate-100 dark:ring-slate-800 font-bold text-base flex-shrink-0">
+        2
+      </div>
+    )
+  if (rank === 3)
+    return (
+      <div className="w-9 h-9 rounded-full bg-gradient-to-br from-orange-200 to-orange-400 flex items-center justify-center text-orange-900 shadow ring-2 ring-orange-100 dark:ring-orange-900/20 font-bold text-base flex-shrink-0">
+        3
+      </div>
+    )
+  return (
+    <span className="w-9 text-center text-sm font-bold text-gray-400 dark:text-gray-500 flex-shrink-0">
+      #{rank}
+    </span>
+  )
+}
+
+const RowDropdown: React.FC<{ handle: string; onNavigate: () => void }> = ({ handle, onNavigate }) => {
+  const [open, setOpen] = useState(false)
+  const ref = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    if (!open) return
+    const handler = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false)
+    }
+    document.addEventListener('mousedown', handler)
+    return () => document.removeEventListener('mousedown', handler)
+  }, [open])
+
+  return (
+    <div ref={ref} className="relative flex-shrink-0">
+      <button
+        onClick={(e) => {
+          e.stopPropagation()
+          setOpen((v) => !v)
+        }}
+        className="p-1.5 rounded-lg text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+        aria-label="More options"
+      >
+        <MoreHorizontal size={18} />
+      </button>
+
+      {open && (
+        <div className="absolute right-0 top-full mt-1 w-44 rounded-xl border border-gray-100 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-lg z-50 overflow-hidden">
+          <button
+            onClick={(e) => {
+              e.stopPropagation()
+              setOpen(false)
+              onNavigate()
+            }}
+            className="w-full flex items-center gap-2 px-4 py-2.5 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+          >
+            <User size={14} />
+            View Profile
+          </button>
+          <a
+            href={`/lenser/${handle}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            onClick={(e) => e.stopPropagation()}
+            className="w-full flex items-center gap-2 px-4 py-2.5 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+          >
+            <ExternalLink size={14} />
+            Open in new tab
+          </a>
+        </div>
+      )}
+    </div>
+  )
+}
+
+const UnifiedRow: React.FC<RowData & { onNavigate: () => void }> = ({
+  rank,
+  handle,
+  displayName,
+  avatarUrl,
+  statPrimary,
+  statSecondary,
+  badge,
+  extras,
+  isCurrentUser,
+  onNavigate,
+}) => {
+  const rankBorderCls =
+    rank === 1
+      ? 'border-yellow-200 dark:border-yellow-700/50'
+      : rank === 2
+        ? 'border-slate-200 dark:border-slate-700/50'
+        : rank === 3
+          ? 'border-orange-200 dark:border-orange-800/50'
+          : isCurrentUser
+            ? 'border-primary/30'
+            : 'border-gray-100 dark:border-gray-700'
+
+  const containerCls = [
+    'group flex items-center gap-3 p-3 sm:p-4 rounded-xl border cursor-pointer',
+    'transition-all duration-150',
+    'hover:scale-[1.01] hover:shadow-md',
+    rankBorderCls,
+    isCurrentUser
+      ? 'bg-primary/5 dark:bg-primary/5'
+      : 'bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700',
+  ].join(' ')
+
+  return (
+    <div onClick={onNavigate} className={containerCls}>
+      {/* Rank */}
+      <div className="flex items-center justify-center w-9 flex-shrink-0">
+        <RankBadge rank={rank} />
+      </div>
+
+      {/* Avatar */}
+      <Avatar
+        src={avatarUrl}
+        alt={displayName}
+        size="md"
+        className={[
+          '!w-9 !h-9 flex-shrink-0',
+          rank === 1 ? 'ring-2 ring-yellow-400 dark:ring-yellow-600' : '',
+        ].join(' ')}
+      />
+
+      {/* Name + handle */}
+      <div className="flex-1 min-w-0">
+        <div className="flex items-center gap-1.5 min-w-0">
+          <p
+            className={`text-sm font-semibold truncate ${isCurrentUser ? 'text-primary-900 dark:text-primary-400' : 'text-gray-900 dark:text-white'}`}
+          >
+            {displayName}
+          </p>
+          {rank === 1 && <Trophy size={13} className="text-yellow-500 fill-current flex-shrink-0" />}
+          {badge}
+        </div>
+        <p className="text-xs text-gray-500 dark:text-gray-400 truncate">@{handle}</p>
+      </div>
+
+      {/* Extras (streak, level, etc.) — hidden on mobile */}
+      {extras && <div className="hidden sm:flex items-center gap-3">{extras}</div>}
+
+      {/* Stats */}
+      <div className="text-right flex-shrink-0">
+        <p className="text-sm font-bold text-gray-900 dark:text-white">{statPrimary}</p>
+        <p className="text-xs text-gray-400 dark:text-gray-500">{statSecondary}</p>
+      </div>
+
+      {/* Dropdown */}
+      <RowDropdown handle={handle} onNavigate={onNavigate} />
+    </div>
+  )
+}
 
 export const LenserBoardRow: React.FC<LenserBoardRowProps> = (props) => {
   const navigate = useNavigate()
@@ -21,166 +191,65 @@ export const LenserBoardRow: React.FC<LenserBoardRowProps> = (props) => {
   if (props.mode === 'activity') {
     const { entry } = props
     return (
-      <div onClick={() => navigate(`/lenser/${entry.handle}`)} className={COMPACT_ROW}>
-        <span className="w-7 text-center text-sm font-bold text-gray-500 dark:text-gray-400">
-          {entry.rank}
-        </span>
-        <Avatar src={entry.avatarUrl} alt={entry.displayName} size="md" className="!w-9 !h-9 flex-shrink-0" />
-        <div className="flex-1 min-w-0">
-          <p className="text-sm font-semibold truncate text-gray-900 dark:text-white">{entry.displayName}</p>
-          <p className="text-xs text-gray-500 dark:text-gray-400">@{entry.handle}</p>
-        </div>
-        <div className="text-right flex-shrink-0">
-          <p className="text-sm font-bold text-gray-900 dark:text-white">{entry.totalXp.toLocaleString()} XP</p>
-          <p className="text-xs text-gray-400 dark:text-gray-500">Score {entry.lenserScore.toFixed(1)}</p>
-        </div>
-      </div>
+      <UnifiedRow
+        rank={entry.rank}
+        handle={entry.handle}
+        displayName={entry.displayName}
+        avatarUrl={entry.avatarUrl}
+        statPrimary={`${entry.totalXp.toLocaleString()} XP`}
+        statSecondary={`Score ${entry.lenserScore.toFixed(1)}`}
+        onNavigate={() => navigate(`/lenser/${entry.handle}`)}
+      />
     )
   }
 
   if (props.mode === 'elo') {
     const { entry } = props
     return (
-      <div onClick={() => navigate(`/lenser/${entry.handle}`)} className={COMPACT_ROW}>
-        <span className="w-7 text-center text-sm font-bold text-gray-500 dark:text-gray-400">
-          {entry.elo_rank}
-        </span>
-        <Avatar src={entry.avatar_url} alt={entry.display_name} size="md" className="!w-9 !h-9 flex-shrink-0" />
-        <div className="flex-1 min-w-0">
-          <p className="text-sm font-semibold truncate text-gray-900 dark:text-white">{entry.display_name}</p>
-          <p className="text-xs text-gray-500 dark:text-gray-400">@{entry.handle}</p>
-        </div>
-        <div className="text-right flex-shrink-0">
-          <p className="text-sm font-bold text-gray-900 dark:text-white">
-            {Math.round(entry.elo_score).toLocaleString()}
-          </p>
-          <p className="text-xs text-gray-400 dark:text-gray-500">
-            {entry.battles_won}W / {entry.battles_played - entry.battles_won}L
-          </p>
-        </div>
-      </div>
+      <UnifiedRow
+        rank={entry.elo_rank}
+        handle={entry.handle}
+        displayName={entry.display_name}
+        avatarUrl={entry.avatar_url}
+        statPrimary={Math.round(entry.elo_score).toLocaleString()}
+        statSecondary={`${entry.battles_won}W / ${entry.battles_played - entry.battles_won}L`}
+        onNavigate={() => navigate(`/lenser/${entry.handle}`)}
+      />
     )
   }
 
   // mode === 'xp'
   const { entry, isCurrentUser } = props
   const { rank, displayName, handle, avatarUrl, totalXp, level, streak } = entry
-
   const isGold = rank === 1
-  const isSilver = rank === 2
-  const isBronze = rank === 3
 
-  const getRankBadge = () => {
-    if (isGold)
-      return (
-        <div className="w-12 h-12 rounded-full bg-gradient-to-br from-yellow-300 to-yellow-500 flex items-center justify-center text-yellow-950 shadow-lg ring-4 ring-yellow-100 dark:ring-yellow-900/20 font-black text-xl">
-          1
+  const extras = (
+    <>
+      {streak !== undefined && streak > 0 && (
+        <div className="flex items-center gap-1 text-orange-500 font-semibold text-sm" title="Current Streak">
+          <Flame size={14} className="fill-current" />
+          <span>{streak}</span>
         </div>
-      )
-    if (isSilver)
-      return (
-        <div className="w-10 h-10 rounded-full bg-gradient-to-br from-slate-200 to-slate-400 flex items-center justify-center text-slate-800 shadow-md ring-4 ring-slate-100 dark:ring-slate-800 font-bold text-lg">
-          2
-        </div>
-      )
-    if (isBronze)
-      return (
-        <div className="w-10 h-10 rounded-full bg-gradient-to-br from-orange-200 to-orange-400 flex items-center justify-center text-orange-900 shadow-md ring-4 ring-orange-100 dark:ring-orange-900/20 font-bold text-lg">
-          3
-        </div>
-      )
-    return (
-      <span className="text-xl font-bold text-gray-400 dark:text-gray-500 w-10 text-center">
-        #{rank}
-      </span>
-    )
-  }
-
-  const getContainerStyles = () => {
-    let base =
-      'flex items-center gap-4 md:gap-6 p-4 rounded-2xl transition-all cursor-pointer group border'
-
-    if (isGold) {
-      base +=
-        ' bg-gradient-to-r from-yellow-50/80 via-white to-white dark:from-yellow-900/10 dark:via-gray-800 dark:to-gray-800 border-yellow-200 dark:border-yellow-700/50 shadow-sm'
-    } else if (isSilver) {
-      base +=
-        ' bg-gradient-to-r from-slate-50/80 via-white to-white dark:from-slate-800/30 dark:via-gray-800 dark:to-gray-800 border-slate-200 dark:border-slate-700/50 shadow-sm'
-    } else if (isBronze) {
-      base +=
-        ' bg-gradient-to-r from-orange-50/80 via-white to-white dark:from-orange-900/10 dark:via-gray-800 dark:to-gray-800 border-orange-200 dark:border-orange-800/50 shadow-sm'
-    } else if (isCurrentUser) {
-      base += ' bg-primary/5 border-primary/30 dark:bg-primary/5 shadow-md'
-    } else {
-      base +=
-        ' bg-white dark:bg-gray-800 border-transparent hover:border-gray-200 dark:hover:border-gray-700 hover:shadow-md'
-    }
-
-    if (isCurrentUser) {
-      base += ' sticky bottom-4 z-10 md:relative md:bottom-0 md:shadow-none'
-    }
-
-    return base
-  }
+      )}
+      <div
+        className={`px-2.5 py-0.5 rounded-full text-xs font-bold ${isGold ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-200' : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300'}`}
+      >
+        Lvl {level}
+      </div>
+    </>
+  )
 
   return (
-    <div onClick={() => navigate(`/lenser/${handle}`)} className={getContainerStyles()}>
-      <div className="flex-shrink-0 flex items-center justify-center w-12">{getRankBadge()}</div>
-
-      <div className="flex items-center gap-4 flex-1 min-w-0">
-        <Avatar
-          src={avatarUrl}
-          alt={displayName}
-          size="md"
-          className={isGold ? 'ring-2 ring-yellow-400 dark:ring-yellow-600' : ''}
-        />
-
-        <div className="flex flex-col overflow-hidden">
-          <div className="flex items-center gap-2">
-            <span
-              className={`font-bold truncate text-lg ${isCurrentUser ? 'text-primary-900 dark:text-primary-400' : 'text-gray-900 dark:text-white'}`}
-            >
-              {displayName}
-            </span>
-            {isGold && <Trophy size={16} className="text-yellow-500 fill-current" />}
-          </div>
-          {handle && (
-            <span className="text-sm text-gray-500 dark:text-gray-400 truncate">@{handle}</span>
-          )}
-        </div>
-      </div>
-
-      <div className="hidden md:flex items-center gap-8">
-        {streak !== undefined && streak > 0 && (
-          <div className="flex items-center gap-1.5 text-orange-500 font-semibold" title="Current Streak">
-            <Flame size={18} className="fill-current" />
-            <span>{streak}</span>
-          </div>
-        )}
-
-        <div
-          className={`px-3 py-1 rounded-full text-xs font-bold ${isGold ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-200' : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300'}`}
-        >
-          Level {level}
-        </div>
-      </div>
-
-      <div className="flex flex-col items-end min-w-[80px]">
-        <span className="text-lg font-black text-gray-900 dark:text-white tracking-tight">
-          {formatCount(totalXp)} <span className="text-sm text-gray-400 font-medium">XP</span>
-        </span>
-        <div className="md:hidden flex items-center gap-2 mt-1">
-          <span
-            className={`text-xs font-medium px-2 rounded-full ${isGold ? 'text-yellow-800 bg-yellow-100 dark:bg-yellow-900/30 dark:text-yellow-200' : 'text-gray-500 bg-gray-100 dark:bg-gray-700'}`}
-          >
-            Lvl {level}
-          </span>
-        </div>
-      </div>
-
-      <div className="hidden md:block text-gray-300 dark:text-gray-600 group-hover:text-gray-500 transition-colors">
-        <MoreHorizontal size={20} />
-      </div>
-    </div>
+    <UnifiedRow
+      rank={rank}
+      handle={handle}
+      displayName={displayName}
+      avatarUrl={avatarUrl}
+      statPrimary={`${formatCount(totalXp)} XP`}
+      statSecondary={`Level ${level}`}
+      extras={extras}
+      isCurrentUser={isCurrentUser}
+      onNavigate={() => navigate(`/lenser/${handle}`)}
+    />
   )
 }
