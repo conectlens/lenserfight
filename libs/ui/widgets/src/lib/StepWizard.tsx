@@ -36,12 +36,12 @@ export const StepWizard: React.FC<StepWizardProps> = ({
   return (
     <div className="flex flex-col gap-6">
       {/* Step indicator */}
-      <div className="relative flex items-center justify-center gap-2">
+      <div className="relative flex items-center justify-between gap-1 w-full px-2">
         {onCancel && (
           <button
             type="button"
             onClick={onCancel}
-            className="absolute right-0 top-0 p-1 text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 transition-colors"
+            className="absolute -right-2 -top-4 p-1 text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 transition-colors"
             aria-label="Close"
           >
             <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -52,12 +52,14 @@ export const StepWizard: React.FC<StepWizardProps> = ({
         {steps.map((label, index) => {
           const isDone = index < currentStep
           const isCurrent = index === currentStep
+          const isCompact = steps.length > 4
+
           return (
             <React.Fragment key={index}>
-              <div className="flex flex-col items-center gap-1">
+              <div className="flex items-center gap-2 shrink-0">
                 <div
                   className={[
-                    'w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold transition-colors',
+                    'w-7 h-7 rounded-full flex items-center justify-center text-[10px] font-bold transition-colors shrink-0',
                     isDone
                       ? 'bg-primary text-white'
                       : isCurrent
@@ -66,7 +68,7 @@ export const StepWizard: React.FC<StepWizardProps> = ({
                   ].join(' ')}
                 >
                   {isDone ? (
-                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                    <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
                       <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
                     </svg>
                   ) : (
@@ -75,7 +77,8 @@ export const StepWizard: React.FC<StepWizardProps> = ({
                 </div>
                 <span
                   className={[
-                    'text-xs font-medium',
+                    'text-[11px] font-medium whitespace-nowrap transition-all duration-300',
+                    isCompact && !isCurrent ? 'hidden' : 'hidden sm:block',
                     isCurrent ? 'text-primary' : 'text-gray-400 dark:text-gray-500',
                   ].join(' ')}
                 >
@@ -85,7 +88,7 @@ export const StepWizard: React.FC<StepWizardProps> = ({
               {index < steps.length - 1 && (
                 <div
                   className={[
-                    'h-px w-12 mb-5 transition-colors',
+                    'h-px min-w-[8px] flex-1 transition-colors',
                     isDone ? 'bg-primary' : 'bg-gray-200 dark:bg-gray-700',
                   ].join(' ')}
                 />
