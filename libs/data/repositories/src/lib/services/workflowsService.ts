@@ -7,6 +7,7 @@ import {
   type WorkflowRunRecord,
   type WorkflowNodeResultRecord,
   type CreateWorkflowInput,
+  type UpdateWorkflowInput,
   type UpsertNodeInput,
   type UpsertEdgeInput,
   type WorkflowsListFilter,
@@ -21,6 +22,7 @@ export type {
   WorkflowRunRecord,
   WorkflowNodeResultRecord,
   CreateWorkflowInput,
+  UpdateWorkflowInput,
   UpsertNodeInput,
   UpsertEdgeInput,
   WorkflowsListFilter,
@@ -55,6 +57,9 @@ export const workflowsService = {
 
   createWorkflow: (input: CreateWorkflowInput): Promise<WorkflowRecord> =>
     workflowsRepo.createWorkflow(input),
+
+  updateWorkflow: (id: string, input: UpdateWorkflowInput): Promise<WorkflowRecord> =>
+    workflowsRepo.updateWorkflow(id, input),
 
   upsertNodes: (workflowId: string, nodes: UpsertNodeInput[]): Promise<WorkflowNodeRecord[]> =>
     workflowsRepo.upsertNodes(workflowId, nodes),

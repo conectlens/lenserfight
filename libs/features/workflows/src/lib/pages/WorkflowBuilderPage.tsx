@@ -1,17 +1,21 @@
-import { lensesService } from '@lenserfight/data/repositories'
+import { lensesService, battlesService } from '@lenserfight/data/repositories'
+import type { BattleRecord } from '@lenserfight/data/repositories'
 import { useAuth } from '@lenserfight/features/auth'
 import { useCreateLens, CreateLensModal } from '@lenserfight/features/lenses'
 import { Badge, Button } from '@lenserfight/ui/components'
-import { ArrowLeft, Bookmark, ChevronDown, GitBranch, GitFork, Play, Swords, ThumbsUp, X } from 'lucide-react'
+import { ArrowLeft, Bookmark, ChevronDown, GitBranch, GitFork, Play, Settings, Swords, ThumbsUp, X } from 'lucide-react'
 import React, { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 
 import { WorkflowBuilderCanvas } from '../components/WorkflowBuilderCanvas'
+import { EditWorkflowModal } from '../components/EditWorkflowModal'
 import { WorkflowLensPalette } from '../components/WorkflowLensPalette'
 import { WorkflowProgressView } from '../components/WorkflowProgressView'
 import { useForkWorkflow } from '../hooks/useForkWorkflow'
 import { useWorkflow } from '../hooks/useWorkflow'
 import { useWorkflowReaction } from '../hooks/useWorkflowReaction'
+import { useQuery } from '@tanstack/react-query'
+import { queryKeys } from '@lenserfight/data/cache'
 import { useWorkflowRun } from '../hooks/useWorkflowRun'
 
 interface WorkflowBuilderPageProps {
@@ -26,6 +30,7 @@ export function WorkflowBuilderPage({ workflowId, onBattleClick }: WorkflowBuild
   const { workflow, nodes, edges, isLoading } = useWorkflow(workflowId)
   const { startRun, isPending: starting, runId, nodeResults, isRunning } = useWorkflowRun(workflowId)
   const [showRunPanel, setShowRunPanel] = useState(false)
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false)
   const [paletteCollapsed, setPaletteCollapsed] = useState(
     () => typeof window !== 'undefined' && window.innerWidth < 768
   )
@@ -34,6 +39,14 @@ export function WorkflowBuilderPage({ workflowId, onBattleClick }: WorkflowBuild
   const { mutate: forkWorkflow, isPending: isForking } = useForkWorkflow()
   const { liked, saved, likeCount, savedCount, toggleLike, toggleSave, isPending: reactionPending } =
     useWorkflowReaction(workflowId, workflow?.reaction_totals as Record<string, number> | null | undefined)
+
+  // ── Existing draft battle for editing ──────────────────────────────────────
+  const { data: draftBattle } = useQuery({
+    queryKey: ['workflow-draft-battle', workflowId],
+    queryFn: () => battlesService.getLatestDraftBattleByWorkflowId(workflowId),
+    enabled: !!workflowId && isOwner,
+    staleTime: 1000 * 60,
+  })
 
   // ── Lens edit modal (via useCreateLens in edit mode) ────────────────────────
   const lensModal = useCreateLens()
@@ -176,14 +189,27 @@ export function WorkflowBuilderPage({ workflowId, onBattleClick }: WorkflowBuild
 
           {/* Battle */}
           {onBattleClick && (
-            <Button
-              size="sm"
-              variant="secondary"
-              onClick={() => onBattleClick(workflow.id)}
-              className="gap-1.5 w-auto"
-            >
-              <Swords size={12} /> Battle it
-            </Button>
+            <div className="flex items-center gap-1.5">
+              <Button
+                size="sm"
+                variant="secondary"
+                onClick={() => onBattleClick(workflow.id)}
+                className="gap-1.5 w-auto"
+              >
+                <Swords size={12} /> Battle it
+              </Button>
+              {draftBattle && (
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  onClick={() => navigate(`/battles/create?workflow_id=${workflowId}&battleId=${draftBattle.slug}`)}
+                  className="!p-2 text-greyscale-400 hover:text-primary-yellow-600 hover:bg-primary-yellow-500/10 transition-colors"
+                  title="Edit draft battle"
+                >
+                  <Settings size={14} />
+                </Button>
+              )}
+            </div>
           )}
 
           {/* Run panel toggle */}
@@ -221,6 +247,7 @@ export function WorkflowBuilderPage({ workflowId, onBattleClick }: WorkflowBuild
             nodes={nodes}
             edges={edges}
             onEditLens={handleEditLens}
+            onEdit={isOwner ? () => setIsEditModalOpen(true) : undefined}
           />
 
           {/* Empty state overlay */}
@@ -275,6 +302,15 @@ export function WorkflowBuilderPage({ workflowId, onBattleClick }: WorkflowBuild
           </aside>
         )}
       </div>
+
+      {/* ── Workflow edit modal ──────────────────────────────────────────────── */}
+      {isEditModalOpen && (
+        <EditWorkflowModal
+          isOpen={isEditModalOpen}
+          onClose={() => setIsEditModalOpen(false)}
+          workflow={workflow}
+        />
+      )}
 
       {/* ── Lens edit modal ─────────────────────────────────────────────────── */}
       <CreateLensModal
