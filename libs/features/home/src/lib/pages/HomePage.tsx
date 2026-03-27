@@ -162,16 +162,18 @@ export const HomePage: React.FC = () => {
           {showForYou ? (
             <div className="flex bg-gray-100 dark:bg-gray-800 rounded-xl p-1 gap-1">
               {(['for_you', 'trending'] as const).map((tab) => (
-                <button
+                <Button
                   key={tab}
+                  variant={activeTab === tab ? 'dark' : 'ghost'}
+                  size="sm"
                   onClick={() => setFeedTab(tab)}
-                  className={`px-4 py-2 rounded-lg text-sm font-semibold transition-all ${activeTab === tab
+                  className={`px-4 py-2 text-sm font-semibold ${activeTab === tab
                     ? 'bg-white dark:bg-gray-700 text-gray-900 dark:text-white shadow-sm'
-                    : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
+                    : 'text-gray-500 dark:text-gray-400'
                     }`}
                 >
                   {tab === 'for_you' ? 'For You' : 'Trending'}
-                </button>
+                </Button>
               ))}
             </div>
           ) : (

@@ -1,8 +1,7 @@
 import { Image as ImageIcon, Video, Type, AlertCircle } from 'lucide-react'
 import React, { useState, useEffect } from 'react'
 
-import { Button } from '@lenserfight/ui/components'
-import { Modal } from '@lenserfight/ui/modals'
+import { Dialog, ModalFooter } from '@lenserfight/ui/overlays'
 import { SelectField } from '@lenserfight/ui/forms'
 import { generationService } from '@lenserfight/data/repositories'
 import {
@@ -147,7 +146,7 @@ export const CreateGenerationModal: React.FC<CreateGenerationModalProps> = ({
   const isMedia = resultType === 'image' || resultType === 'video'
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title="Add AI Result">
+    <Dialog open={isOpen} onClose={onClose} title="Add AI Result">
       <form onSubmit={handleSubmit} className="space-y-6">
         {/* Model Selection */}
         <div className="space-y-4">
@@ -267,21 +266,11 @@ export const CreateGenerationModal: React.FC<CreateGenerationModalProps> = ({
           </div>
         )}
 
-        <div className="flex justify-end gap-3 pt-2">
-          <Button
-            type="button"
-            variant="secondary"
-            onClick={onClose}
-            disabled={isSubmitting}
-            className="w-auto"
-          >
-            Cancel
-          </Button>
-          <Button type="submit" isLoading={isSubmitting} className="w-auto">
-            Save Result
-          </Button>
-        </div>
+        <ModalFooter
+          leftButton={{ label: 'Cancel', onClick: onClose, disabled: isSubmitting, variant: 'secondary' }}
+          primaryButton={{ label: 'Save Result', type: 'submit', isLoading: isSubmitting }}
+        />
       </form>
-    </Modal>
+    </Dialog>
   )
 }

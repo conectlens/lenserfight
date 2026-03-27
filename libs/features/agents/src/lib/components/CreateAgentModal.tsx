@@ -1,7 +1,7 @@
 import { lenserService } from '@lenserfight/data/repositories'
 import { useLenser } from '@lenserfight/features/profile'
-import { Button } from '@lenserfight/ui/components'
 import { Field, Input } from '@lenserfight/ui/forms'
+import { ModalFooter } from '@lenserfight/ui/overlays'
 import { ArrowRight, Check, Loader2, X } from 'lucide-react'
 import React, { useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
@@ -185,19 +185,15 @@ export const CreateAgentContent: React.FC<CreateAgentContentProps> = ({ close })
         <p className="text-sm font-medium text-status-red">{error}</p>
       )}
 
-      <div className="flex flex-col-reverse gap-3 pt-1 sm:flex-row">
-        <Button variant="ghost" onClick={close} className="w-full sm:w-auto">
-          Cancel
-        </Button>
-        <Button
-          onClick={handleCreate}
-          isLoading={isSubmitting}
-          disabled={!canSubmit}
-          className="w-full gap-2 sm:w-auto"
-        >
-          Create Agent <ArrowRight size={14} />
-        </Button>
-      </div>
+      <ModalFooter
+        leftButton={{ label: 'Cancel', onClick: close, variant: 'ghost' }}
+        primaryButton={{
+          label: <span className="flex items-center gap-2">Create Agent <ArrowRight size={14} /></span>,
+          onClick: handleCreate,
+          isLoading: isSubmitting,
+          disabled: !canSubmit,
+        }}
+      />
     </div>
   )
 }

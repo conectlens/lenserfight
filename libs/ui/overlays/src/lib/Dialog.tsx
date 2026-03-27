@@ -18,6 +18,8 @@ export interface DialogProps {
   /** Whether clicking the backdrop closes the dialog */
   dismissOnBackdrop?: boolean
   panelClassName?: string
+  /** Sticky footer rendered outside the scrollable body. Pass <ModalFooter .../> here. */
+  footer?: React.ReactNode
 }
 
 /**
@@ -42,6 +44,7 @@ export const Dialog: React.FC<DialogProps> = ({
   maxWidth = 'max-w-md',
   dismissOnBackdrop = true,
   panelClassName = '',
+  footer,
 }) => {
   // Children (e.g. StepWizard) can override the header slot via context
   const [headerSlot, setHeaderSlot] = useState<DialogHeaderSlot | null>(null)
@@ -154,6 +157,13 @@ export const Dialog: React.FC<DialogProps> = ({
             <div className="flex-1 overflow-y-auto overscroll-contain p-6">
               {children}
             </div>
+
+            {/* Sticky footer — flex-shrink-0, never scrolls away */}
+            {footer && (
+              <div className="flex-shrink-0 px-6 pb-5">
+                {footer}
+              </div>
+            )}
           </div>
         </div>
       </Portal>
