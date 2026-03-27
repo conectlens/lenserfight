@@ -5,6 +5,7 @@ import { useLenser } from '@lenserfight/features/profile'
 import { Button, EmptyState, InfiniteScrollSentinel, PageHeader } from '@lenserfight/ui/components'
 import { SearchBar, SelectField } from '@lenserfight/ui/forms'
 import { useQuery } from '@tanstack/react-query'
+import { AnimatePresence, motion } from 'framer-motion'
 import { GitBranch, Plus, Search } from 'lucide-react'
 import React, { useMemo, useState } from 'react'
 import { Link, Outlet, useSearchParams } from 'react-router-dom'
@@ -12,6 +13,20 @@ import { Link, Outlet, useSearchParams } from 'react-router-dom'
 import { WorkflowCard } from '../components/WorkflowCard'
 import { usePopularWorkflows } from '../hooks/usePopularWorkflows'
 import { useWorkflows } from '../hooks/useWorkflows'
+
+const cardVariants = {
+  hidden: { opacity: 0, y: 20 },
+  visible: (i: number) => ({
+    opacity: 1,
+    y: 0,
+    transition: {
+      delay: i * 0.05,
+      duration: 0.3,
+      ease: [0, 0, 0.2, 1] as [number, number, number, number],
+    },
+  }),
+  exit: { opacity: 0, y: -10, transition: { duration: 0.15 } },
+}
 
 // Per-card node count loader — only fetches nodes (not full detail) to avoid N+1 getById calls.
 function WorkflowCardWithNodes({ workflow }: { workflow: WorkflowRecord }) {
@@ -138,8 +153,8 @@ export function WorkflowsPage({ onCreateWorkflow }: WorkflowsPageProps) {
       </div>
 
       {isLoading && (
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          {Array.from({ length: 4 }).map((_, i) => (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+          {Array.from({ length: 6 }).map((_, i) => (
             <div key={i} className="h-32 rounded-2xl border border-surface-border bg-surface-raised animate-pulse" />
           ))}
         </div>
@@ -167,14 +182,23 @@ export function WorkflowsPage({ onCreateWorkflow }: WorkflowsPageProps) {
       )}
 
       {!isLoading && workflows.length > 0 && (
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          {workflows.map((w) => (
-            <WorkflowCardWithNodes
-              key={w.id}
-              workflow={w}
-            />
-          ))}
-        </div>
+        <AnimatePresence mode="popLayout">
+          <motion.div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+            {workflows.map((w, i) => (
+              <motion.div
+                key={w.id}
+                custom={i}
+                variants={cardVariants}
+                initial="hidden"
+                animate="visible"
+                exit="exit"
+                layout
+              >
+                <WorkflowCardWithNodes workflow={w} />
+              </motion.div>
+            ))}
+          </motion.div>
+        </AnimatePresence>
       )}
 
       <InfiniteScrollSentinel

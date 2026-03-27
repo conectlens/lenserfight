@@ -1,4 +1,4 @@
-import { Button, EmptyState, PageHeader, SEOHead } from '@lenserfight/ui/components'
+import { Button, EmptyState, InfiniteScrollSentinel, PageHeader, SEOHead } from '@lenserfight/ui/components'
 import { SelectField } from '@lenserfight/ui/forms'
 import { AnimatePresence, motion } from 'framer-motion'
 import React from 'react'
@@ -138,7 +138,7 @@ export function BattlesFeedPage() {
       </div>
 
       {isLoading ? (
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
           {Array.from({ length: 6 }).map((_, i) => (
             <div key={i} className="h-40 bg-[var(--cl-surface-raised)] rounded-xl animate-pulse" />
           ))}
@@ -150,7 +150,7 @@ export function BattlesFeedPage() {
         />
       ) : (
         <AnimatePresence mode="popLayout">
-          <motion.div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <motion.div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
             {sorted.map((b, i) => (
               <motion.div
                 key={b.id}
@@ -182,19 +182,11 @@ export function BattlesFeedPage() {
           </motion.div>
         </AnimatePresence>
       )}
-      {hasNextPage && (
-        <div className="mt-6 flex justify-center">
-          <Button
-            variant="secondary"
-            onClick={() => fetchNextPage()}
-            disabled={isFetchingNextPage}
-            isLoading={isFetchingNextPage}
-            className="w-auto"
-          >
-            {isFetchingNextPage ? 'Loading…' : 'Load more'}
-          </Button>
-        </div>
-      )}
+      <InfiniteScrollSentinel
+        hasNextPage={!!hasNextPage}
+        isFetchingNextPage={isFetchingNextPage}
+        fetchNextPage={fetchNextPage}
+      />
       <Outlet />
     </div>
   )

@@ -1,6 +1,6 @@
 import { Card } from '@lenserfight/ui/components'
 import { motion } from 'framer-motion'
-import { Bot, User, Trophy, Swords } from 'lucide-react'
+import { Bot, User, Trophy, Swords, Lock } from 'lucide-react'
 import React from 'react'
 import { Link } from 'react-router-dom'
 
@@ -85,7 +85,7 @@ export function BattleCard({
       whileHover={{ y: -3 }}
       transition={{ duration: 0.1, ease: [0.4, 0, 0.2, 1] }}
     >
-      <Card className="space-y-3 p-5">
+      <Card className="space-y-3 p-4">
         {/* Badge row */}
         <div className="flex items-center justify-between gap-2">
           <div className="flex items-center gap-1.5 min-w-0 flex-wrap">
@@ -95,7 +95,8 @@ export function BattleCard({
               </span>
             )}
             {isRestricted && (
-              <span className="text-[11px] font-semibold text-greyscale-500 bg-surface-raised px-2 py-0.5 rounded-full flex-shrink-0">
+              <span className="flex items-center gap-1 text-[11px] font-semibold text-greyscale-500 bg-surface-raised px-2 py-0.5 rounded-full flex-shrink-0">
+                <Lock size={10} />
                 Restricted
               </span>
             )}
@@ -104,7 +105,7 @@ export function BattleCard({
         </div>
 
         {/* Title */}
-        <h3 className="line-clamp-2 text-base font-bold leading-tight text-greyscale-900 dark:text-greyscale-50">
+        <h3 className="line-clamp-1 text-base font-bold leading-tight text-greyscale-900 dark:text-greyscale-50">
           {title}
         </h3>
 
