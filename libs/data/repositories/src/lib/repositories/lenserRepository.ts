@@ -96,6 +96,16 @@ export interface LenserRepositoryPort {
   deactivateAccount(): Promise<{ success: boolean }>
   scheduleAccountDeletion(): Promise<{ success: boolean; deadline?: string }>
   cancelDeletionOnLogin(): Promise<{ restored: boolean; from_status?: string }>
+
+  // Battle invite search
+  searchLensers(query: string, limit?: number): Promise<LenserSearchResult[]>
+}
+
+export interface LenserSearchResult {
+  id: string
+  handle: string
+  display_name: string
+  avatar_url: string | null
 }
 
 type AuthProfileGateRow = Pick<Lenser, 'status' | 'deletion_requested_at' | 'onboarding_step'> & {
@@ -548,5 +558,14 @@ export class SupabaseLenserRepository implements LenserRepositoryPort {
     const { data, error } = await supabase.rpc('fn_cancel_account_deletion_on_login')
     if (error) throw error
     return data as { restored: boolean; from_status?: string }
+  }
+
+  async searchLensers(query: string, limit = 8): Promise<LenserSearchResult[]> {
+    const { data, error } = await supabase.rpc('fn_search_lensers', {
+      p_query: query,
+      p_limit: limit,
+    })
+    if (error) throw error
+    return (data ?? []) as LenserSearchResult[]
   }
 }

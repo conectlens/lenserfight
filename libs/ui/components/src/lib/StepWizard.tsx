@@ -30,6 +30,8 @@ interface StepWizardProps {
   completeLabel?: string
   /** Optional icon prepended to the complete button label */
   completeIcon?: React.ReactNode
+  /** Optional skip button shown between Back and primary action (e.g. "Skip for now") */
+  skipButton?: { label: string; onClick: () => void }
 }
 
 export const StepWizard: React.FC<StepWizardProps> = ({
@@ -46,6 +48,7 @@ export const StepWizard: React.FC<StepWizardProps> = ({
   nextLabel = 'Next',
   completeLabel = 'Complete',
   completeIcon,
+  skipButton,
 }) => {
   const isLastStep = currentStep === steps.length - 1
   const current = steps[currentStep]
@@ -77,6 +80,11 @@ export const StepWizard: React.FC<StepWizardProps> = ({
           disabled: !onCancel && currentStep === 0,
           variant: 'ghost',
         }}
+        rightButtons={
+          skipButton
+            ? [{ label: skipButton.label, onClick: skipButton.onClick, variant: 'ghost' }]
+            : undefined
+        }
         primaryButton={
           isLastStep
             ? {
