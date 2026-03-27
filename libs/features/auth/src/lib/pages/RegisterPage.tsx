@@ -7,6 +7,7 @@ import { isMock, isLocal, LOCAL_SEED_CREDENTIALS, ENABLE_CAPTCHA, CAPTCHA_SITE_K
 import { useAuth } from '@lenserfight/features/auth'
 import { useFormValidation } from '@lenserfight/utils/validation'
 import { isRequired, isEmail } from '@lenserfight/utils/validation'
+import { normalizeError, type AppError } from '@lenserfight/shared/error'
 import { AuthCard } from '../components/AuthCard'
 import { BackButton } from '../components/BackButton'
 import { Button } from '@lenserfight/ui/components'
@@ -46,7 +47,7 @@ export const RegisterPage: React.FC = () => {
 
   const [loading, setLoading] = useState(false)
   const [oauthLoading, setOauthLoading] = useState(false)
-  const [apiError, setApiError] = useState<string | null>(null)
+  const [apiError, setApiError] = useState<AppError | null>(null)
   const [showResend, setShowResend] = useState(false)
   const [isSuccess, setIsSuccess] = useState(false)
 
@@ -77,12 +78,12 @@ export const RegisterPage: React.FC = () => {
     if (!validate(formData)) return
 
     if (!formData.agreeTerms) {
-      setApiError('You must agree to the terms and conditions.')
+      setApiError({ kind: 'unknown', message: 'You must agree to the terms and conditions.' })
       return
     }
 
     if (ENABLE_CAPTCHA && !captchaToken) {
-      setApiError('Please complete the security check.')
+      setApiError({ kind: 'unknown', message: 'Please complete the security check.' })
       return
     }
 
@@ -105,22 +106,23 @@ export const RegisterPage: React.FC = () => {
       setTimeout(() => {
         navigate('/welcome')
       }, 1500)
-    } catch (err: any) {
-      const msg = err.message || ''
-      if (msg.toLowerCase().includes('already exists') || msg.includes('registered')) {
-        setApiError('This email is already associated with an account.')
+    } catch (err: unknown) {
+      const normalized = normalizeError(err)
+      const rawMsg = err instanceof Error ? err.message : typeof err === 'string' ? err : ''
+      if (rawMsg.toLowerCase().includes('already exists') || rawMsg.includes('registered')) {
         setShowResend(true)
-
         try {
           await resendSignupConfirmation(formData.email)
-          setApiError(
-            'Account already exists. If your email was not confirmed, we have sent another confirmation link.'
-          )
+          setApiError({
+            ...normalized,
+            message: 'Account already exists. If your email was not confirmed, we have sent another confirmation link.',
+          })
         } catch (resendErr) {
           console.log('Resend failed or not needed', resendErr)
+          setApiError({ ...normalized, message: 'This email is already associated with an account.' })
         }
       } else {
-        setApiError(msg || 'Failed to register')
+        setApiError(normalized)
       }
       setLoading(false)
       if (ENABLE_CAPTCHA) setCaptchaToken(null)
@@ -137,8 +139,8 @@ export const RegisterPage: React.FC = () => {
         setIsSuccess(true)
         setTimeout(() => navigate('/welcome'), 1500)
       }
-    } catch (err: any) {
-      setApiError(err.message || `Failed to sign up with ${provider}`)
+    } catch (err: unknown) {
+      setApiError(normalizeError(err))
       setOauthLoading(false)
     }
   }
@@ -262,7 +264,15 @@ export const RegisterPage: React.FC = () => {
             <div className="flex flex-col gap-2 bg-red-50 dark:bg-red-900/30 border border-red-100 dark:border-red-800 p-4 rounded-xl text-red-600 dark:text-red-400 text-sm mt-4 animate-in fade-in slide-in-from-top-1">
               <div className="flex items-start gap-2">
                 <AlertCircle size={16} className="mt-0.5 flex-shrink-0" />
-                <span>{apiError}</span>
+                <span>
+                  {apiError.kind === 'rate_limit'
+                    ? 'Too many sign-up attempts. Please wait a moment before trying again.'
+                    : apiError.kind === 'forbidden'
+                      ? 'Account creation is not allowed. Please contact support.'
+                      : apiError.kind === 'server_error'
+                        ? 'Server error. Please try again in a moment.'
+                        : apiError.message}
+                </span>
               </div>
               {showResend && (
                 <div className="ml-6 mt-1">
