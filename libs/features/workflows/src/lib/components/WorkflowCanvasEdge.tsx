@@ -39,8 +39,10 @@ export function WorkflowCanvasEdge({
       <BaseEdge
         path={edgePath}
         style={{
-          stroke: selected ? 'var(--cl-primary-yellow-500)' : 'var(--cl-surface-border-strong)',
-          strokeWidth: selected ? 2 : 1.5,
+          stroke: selected
+            ? 'var(--cl-yellow-700)'
+            : 'var(--cl-grey-500)',
+          strokeWidth: selected ? 2.5 : 1.5,
           transition: 'stroke 0.15s, stroke-width 0.15s',
         }}
       />
@@ -57,7 +59,7 @@ export function WorkflowCanvasEdge({
         >
           {/* Source key badge */}
           {sourceOutputKey && sourceOutputKey !== 'output' && (
-            <span className="rounded-full bg-surface-base border border-surface-border px-1.5 py-0.5 text-[9px] font-mono text-greyscale-500 shadow-sm">
+            <span className="rounded-full bg-surface-base border border-surface-border px-1.5 py-0.5 text-[9px] font-mono text-greyscale-700 dark:text-greyscale-300 shadow-sm transition-colors">
               {sourceOutputKey}
             </span>
           )}
@@ -69,10 +71,10 @@ export function WorkflowCanvasEdge({
               variant="ghost"
               size="sm"
               onClick={() => onRemove(id)}
-              className="!h-4 !w-4 !p-0 !rounded-full !bg-surface-base border border-surface-border !text-greyscale-400 hover:!text-status-red hover:!border-status-red/50 shadow-sm"
+              className="!h-4 !w-4 !p-0 !rounded-full !bg-surface-base border border-surface-border !text-greyscale-500 hover:!text-status-red hover:!border-status-red/50 shadow-sm transition-colors"
               title="Remove connection"
             >
-              <X size={8} strokeWidth={2.5} />
+              <X size={8} strokeWidth={3} />
             </Button>
           )}
         </div>
