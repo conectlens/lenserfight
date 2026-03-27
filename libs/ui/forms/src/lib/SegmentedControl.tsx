@@ -64,10 +64,6 @@ export function SegmentedControl<T extends string = string>({
             variant="ghost"
             size={size}
             className={`
-              flex-1 !font-medium !rounded-lg
-              transition-all duration-normal ease-standard
-              focus:outline-none focus:ring-0
-              focus-visible:ring-2 focus-visible:ring-primary-yellow-500/50
               ${isSelected
                 ? '!bg-surface-raised shadow-neu-2 !text-greyscale-900 dark:!text-greyscale-50'
                 : '!text-greyscale-500 dark:!text-greyscale-500 hover:!text-greyscale-700 dark:hover:!text-greyscale-300'
