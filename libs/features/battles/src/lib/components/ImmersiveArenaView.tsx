@@ -1,4 +1,4 @@
-import React, { lazy, Suspense } from 'react'
+import React, { lazy, Suspense, useState } from 'react'
 import { useAuth } from '@lenserfight/features/auth'
 import { useLenser } from '@lenserfight/features/profile'
 
@@ -11,6 +11,7 @@ import { useSubmitVote } from '../hooks/useSubmitVote'
 import { useVoteAggregates } from '../hooks/useVoteAggregates'
 import { getRenderer } from '../renderers'
 
+import { Drawer } from '@lenserfight/ui/overlays'
 import { ArenaTopBar } from './ArenaTopBar'
 import { ArenaContenderColumn } from './ArenaContenderColumn'
 import { ArenaCenterZone } from './ArenaCenterZone'
@@ -29,6 +30,7 @@ interface ImmersiveArenaViewProps {
 export const ImmersiveArenaView: React.FC<ImmersiveArenaViewProps> = ({ slug, currentUserId }) => {
   const { isAuthenticated } = useAuth()
   const { lenser, hasLenser } = useLenser()
+  const [chatOpen, setChatOpen] = useState(false)
 
   const { data: battle, isLoading: battleLoading, error: battleError } = useBattle(slug)
   const { data: contendersData } = useBattleContenders(battle?.id)
@@ -171,18 +173,53 @@ export const ImmersiveArenaView: React.FC<ImmersiveArenaViewProps> = ({ slug, cu
 
         </div>
 
-        {/* Right: Lenser chat rail — lazy loaded to avoid blocking arena render */}
-        <Suspense fallback={
-          <div className="w-72 flex-shrink-0 border-l border-surface-border bg-surface-sunken animate-pulse" />
-        }>
-          <LenserChatRail
-            battleId={battle.id}
-            currentUserId={currentUserId}
-            currentHandle={lenser?.handle}
-            senderRole={hasLenser ? 'lenser' : 'viewer'}
-            isAuthenticated={isAuthenticated}
-          />
-        </Suspense>
+        {/* Desktop chat rail — hidden on mobile */}
+        <div className="hidden md:flex">
+          <Suspense fallback={
+            <div className="w-72 flex-shrink-0 border-l border-surface-border bg-surface-sunken animate-pulse" />
+          }>
+            <LenserChatRail
+              battleId={battle.id}
+              currentUserId={currentUserId}
+              currentHandle={lenser?.handle}
+              senderRole={hasLenser ? 'lenser' : 'viewer'}
+              isAuthenticated={isAuthenticated}
+            />
+          </Suspense>
+        </div>
+
+        {/* Mobile: FAB to open chat drawer */}
+        <button
+          type="button"
+          onClick={() => setChatOpen(true)}
+          className="fixed bottom-5 right-4 z-sticky md:hidden flex items-center gap-1.5 bg-primary-yellow-500 text-greyscale-900 rounded-full px-4 py-2.5 shadow-lg text-xs font-bold"
+          aria-label="Open Lenser Chat"
+        >
+          <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+          </svg>
+          Chat
+        </button>
+
+        {/* Mobile: chat drawer */}
+        <Drawer
+          open={chatOpen}
+          onClose={() => setChatOpen(false)}
+          side="right"
+          width="w-80"
+          title="Lenser Chat"
+        >
+          <Suspense fallback={<div className="flex-1 animate-pulse bg-surface-sunken" />}>
+            <LenserChatRail
+              battleId={battle.id}
+              currentUserId={currentUserId}
+              currentHandle={lenser?.handle}
+              senderRole={hasLenser ? 'lenser' : 'viewer'}
+              isAuthenticated={isAuthenticated}
+              className="h-full"
+            />
+          </Suspense>
+        </Drawer>
       </div>
     </div>
   )

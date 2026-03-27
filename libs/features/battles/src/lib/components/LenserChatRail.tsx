@@ -11,6 +11,8 @@ interface LenserChatRailProps {
   currentHandle?: string
   senderRole?: 'viewer' | 'lenser'
   isAuthenticated: boolean
+  /** Override outer wrapper classes. Defaults to `w-72 flex-shrink-0` for the desktop rail. */
+  className?: string
 }
 
 const LiveIndicator: React.FC<{ status: RealtimeStatus }> = ({ status }) => {
@@ -48,6 +50,7 @@ export const LenserChatRail: React.FC<LenserChatRailProps> = ({
   currentHandle,
   senderRole = 'viewer',
   isAuthenticated,
+  className,
 }) => {
   const { messages, realtimeStatus, hasMore, isLoadingMore, loadMore } = useLenserChat(battleId)
   const postMessage = usePostLenserMessage(battleId)
@@ -97,7 +100,7 @@ export const LenserChatRail: React.FC<LenserChatRailProps> = ({
   }
 
   return (
-    <div className="w-72 flex-shrink-0 flex flex-col border-l border-surface-border bg-surface-sunken">
+    <div className={`flex flex-col border-l border-surface-border bg-surface-sunken ${className ?? 'w-72 flex-shrink-0'}`}>
       {/* Header */}
       <div className="flex-shrink-0 h-14 flex items-center justify-between px-4 border-b border-surface-border">
         <span className="text-xs font-bold text-surface-text-muted uppercase tracking-wider">Lenser Chat</span>
