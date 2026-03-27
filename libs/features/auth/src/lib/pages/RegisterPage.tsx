@@ -9,7 +9,7 @@ import { useFormValidation } from '@lenserfight/utils/validation'
 import { isRequired, isEmail } from '@lenserfight/utils/validation'
 import { AuthCard } from '../components/AuthCard'
 import { Button } from '@lenserfight/ui/components'
-import { AuthLoadingOverlay } from '../components/AuthLoadingOverlay'
+import { Loader } from '@lenserfight/ui/feedback'
 import { InputField } from '../components/InputField'
 import { PasswordStrengthMeter } from '../components/PasswordStrengthMeter'
 
@@ -168,7 +168,7 @@ export const RegisterPage: React.FC = () => {
 
   return (
     <>
-      {isSuccess && <AuthLoadingOverlay isSuccess message="Creating Account..." />}
+      {isSuccess && <Loader variant="card" isSuccess message="Creating Account..." />}
 
       <AuthCard title="Create Account" subtitle="Join the community today" backButton={backButton}>
         <form onSubmit={handleSubmit} className="space-y-4" noValidate>

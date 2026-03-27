@@ -11,7 +11,7 @@ import { useFormValidation } from '@lenserfight/utils/validation'
 import { isRequired, isEmail } from '@lenserfight/utils/validation'
 import { AuthCard } from '../components/AuthCard'
 import { Button } from '@lenserfight/ui/components'
-import { AuthLoadingOverlay } from '../components/AuthLoadingOverlay'
+import { Loader } from '@lenserfight/ui/feedback'
 import { InputField } from '../components/InputField'
 
 export const LoginPage: React.FC = () => {
@@ -98,7 +98,7 @@ export const LoginPage: React.FC = () => {
 
   return (
     <>
-      {isSuccess && <AuthLoadingOverlay isSuccess message="Welcome back, Lenser." />}
+      {isSuccess && <Loader variant="card" isSuccess message="Welcome back, Lenser." />}
 
       <AuthCard title="Sign In" subtitle="Welcome back, Lenser" backButton={backButton}>
         <form onSubmit={handleSubmit} className="space-y-5" noValidate>
