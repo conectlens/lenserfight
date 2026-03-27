@@ -1,8 +1,9 @@
-import { Handle, Position } from '@xyflow/react'
-import type { NodeProps } from '@xyflow/react'
 import { Button } from '@lenserfight/ui/components'
+import { Handle, Position } from '@xyflow/react'
 import { Pencil, Trash2 } from 'lucide-react'
 import React from 'react'
+
+import type { NodeProps } from '@xyflow/react'
 
 export interface WorkflowNodeData {
   label: string
@@ -20,7 +21,6 @@ export function WorkflowCanvasNode({ id, data, selected }: NodeProps) {
 
   return (
     <div
-      onClick={() => { if (onEdit && lens_id) onEdit(lens_id) }}
       onDoubleClick={() => { if (onEdit && lens_id) onEdit(lens_id) }}
       className={`relative flex items-center gap-2.5 min-w-[160px] max-w-[220px] rounded-2xl border bg-surface-raised px-3 py-2.5 shadow-neu-1 transition-colors ${
         selected

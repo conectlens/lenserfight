@@ -1,4 +1,7 @@
 import '@xyflow/react/dist/style.css'
+import { queryKeys } from '@lenserfight/data/cache'
+import { workflowsService } from '@lenserfight/data/repositories'
+import { useQueryClient } from '@tanstack/react-query'
 import {
   ReactFlow,
   ReactFlowProvider,
@@ -11,31 +14,28 @@ import {
   useEdgesState,
   useReactFlow,
 } from '@xyflow/react'
-import type {
-  Connection,
-  Node,
-  Edge,
-  NodeTypes,
-  EdgeTypes,
-  OnNodesChange,
-  OnEdgesChange,
-} from '@xyflow/react'
+import React, { useCallback, useEffect, useRef } from 'react'
+
+import { useSaveWorkflow } from '../hooks/useSaveWorkflow'
+
+import { WorkflowCanvasEdge } from './WorkflowCanvasEdge'
+import { WorkflowCanvasNode } from './WorkflowCanvasNode'
+
+import type { WorkflowNodeData } from './WorkflowCanvasNode'
+import type { DraggedLensData } from './WorkflowLensPalette'
 import type {
   WorkflowNodeRecord,
   WorkflowEdgeRecord,
   UpsertNodeInput,
   UpsertEdgeInput,
 } from '@lenserfight/data/repositories'
-import { workflowsService } from '@lenserfight/data/repositories'
-import { queryKeys } from '@lenserfight/data/cache'
-import React, { useCallback, useEffect, useRef } from 'react'
-import { useQueryClient } from '@tanstack/react-query'
-
-import { useSaveWorkflow } from '../hooks/useSaveWorkflow'
-import type { WorkflowNodeData } from './WorkflowCanvasNode'
-import { WorkflowCanvasNode } from './WorkflowCanvasNode'
-import { WorkflowCanvasEdge } from './WorkflowCanvasEdge'
-import type { DraggedLensData } from './WorkflowLensPalette'
+import type {
+  Connection,
+  Node,
+  Edge,
+  NodeTypes,
+  EdgeTypes,
+} from '@xyflow/react'
 
 // ─── Type registries ──────────────────────────────────────────────────────────
 
@@ -66,7 +66,7 @@ function toFlowNode(
 
 // ─── Tree layout helper ───────────────────────────────────────────────────────
 
-function computeTreeLayout(nodes: Node[], edges: Edge[]): Node[] {
+function computeTreeLayout<T extends Record<string, unknown>>(nodes: Node<T>[], edges: Edge[]): Node<T>[] {
   const inDegree = new Map<string, number>()
   const adjList = new Map<string, string[]>()
   nodes.forEach((n) => { inDegree.set(n.id, 0); adjList.set(n.id, []) })
@@ -314,7 +314,7 @@ function WorkflowBuilderCanvasInner({
         variant={BackgroundVariant.Dots}
         gap={20}
         size={1}
-        color="var(--cl-greyscale-300)"
+        color="var(--cl-surface-border-subtle)"
         style={{ opacity: 0.6 }}
       />
       <Controls
