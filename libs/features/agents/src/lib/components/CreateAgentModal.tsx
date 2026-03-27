@@ -1,8 +1,10 @@
+import { lenserService } from '@lenserfight/data/repositories'
 import { useLenser } from '@lenserfight/features/profile'
 import { Button } from '@lenserfight/ui/components'
 import { Field, Input } from '@lenserfight/ui/forms'
-import { ArrowRight, CheckCircle, Sparkles } from 'lucide-react'
-import React, { useState } from 'react'
+import { ArrowRight, Check, Loader2, X } from 'lucide-react'
+import React, { useEffect, useRef, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 
 import { useCreateAgent } from '../hooks/useCreateAgent'
 
@@ -16,32 +18,70 @@ export interface CreateAgentContentProps {
  * Open via URL: `useModalRouter().open('create-agent')`
  * URL shape:    `?modal=create-agent`
  *
- * Single form: fill handle + display name, then confirm and create.
- * The Dialog wrapper is provided externally by `ModalQueryDriven` in App.tsx.
+ * Single form: fill handle + display name, create, then navigate to the new
+ * agent profile. The Dialog wrapper is provided externally by `ModalQueryDriven`
+ * in App.tsx.
  */
 export const CreateAgentContent: React.FC<CreateAgentContentProps> = ({ close }) => {
   const { lenser } = useLenser()
   const { submit, isSubmitting } = useCreateAgent(lenser?.id ?? '')
+  const navigate = useNavigate()
 
   const [handle, setHandle] = useState('')
   const [displayName, setDisplayName] = useState('')
   const [error, setError] = useState<string | null>(null)
-  const [created, setCreated] = useState(false)
+
+  // Handle uniqueness check state
+  const [isCheckingHandle, setIsCheckingHandle] = useState(false)
+  const [isHandleUnique, setIsHandleUnique] = useState(false)
+  const [handleError, setHandleError] = useState<string | null>(null)
+  const [suggestions, setSuggestions] = useState<string[]>([])
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   const normalizedHandle = handle.trim().toLowerCase()
   const displayValue = displayName.trim()
 
-  const reset = () => {
-    setHandle('')
-    setDisplayName('')
-    setError(null)
-    setCreated(false)
-  }
+  // Debounced handle uniqueness check
+  useEffect(() => {
+    setIsHandleUnique(false)
+    setSuggestions([])
 
-  const handleClose = () => {
-    reset()
-    close()
-  }
+    if (normalizedHandle.length === 0) { setHandleError(null); return }
+    if (normalizedHandle.length < 3) { setHandleError('Handle must be at least 3 characters.'); return }
+    if (!/^[a-z0-9_-]+$/.test(normalizedHandle)) {
+      setHandleError('Only lowercase letters, numbers, hyphens, and underscores allowed.')
+      return
+    }
+    setHandleError(null)
+
+    if (debounceRef.current) clearTimeout(debounceRef.current)
+    debounceRef.current = setTimeout(async () => {
+      setIsCheckingHandle(true)
+      try {
+        const existing = await lenserService.getLenserByHandle(normalizedHandle)
+        if (existing) {
+          setHandleError('Handle is already taken.')
+          setSuggestions([
+            `${normalizedHandle}123`,
+            `${normalizedHandle}_bot`,
+            `ai_${normalizedHandle}`,
+            `${normalizedHandle}.ai`,
+            `my_${normalizedHandle}`,
+          ])
+          setIsHandleUnique(false)
+        } else {
+          setIsHandleUnique(true)
+          setSuggestions([])
+        }
+      } catch {
+        // Ignore check errors — user can still try to submit
+      } finally {
+        setIsCheckingHandle(false)
+      }
+    }, 500)
+
+    return () => { if (debounceRef.current) clearTimeout(debounceRef.current) }
+  }, [normalizedHandle])
 
   const handleCreate = async () => {
     if (!displayValue || displayValue.length < 2) {
@@ -52,37 +92,29 @@ export const CreateAgentContent: React.FC<CreateAgentContentProps> = ({ close })
       setError('Handle must be at least 3 characters.')
       return
     }
+    if (!isHandleUnique) return
+
     setError(null)
     try {
       await submit(normalizedHandle, displayValue)
-      setCreated(true)
+      close()
+      navigate(`/lenser/${normalizedHandle}`)
     } catch (e) {
-      const msg = e instanceof Error ? e.message : 'Failed to create agent.'
-      setError(msg)
+      const err = e as { code?: string; message?: string }
+      if (err?.code === '23505' || err?.message?.includes('unique')) {
+        setHandleError('Handle is already taken.')
+        setIsHandleUnique(false)
+        return
+      }
+      if (err?.message?.includes('P0004') || err?.message?.includes('Maximum 5')) {
+        setError('Maximum of 5 AI agents reached. Remove an existing agent to create a new one.')
+        return
+      }
+      setError(err?.message ?? 'Failed to create agent.')
     }
   }
 
-  if (created) {
-    return (
-      <div className="flex flex-col items-center gap-4 py-4 text-center">
-        <div className="flex h-14 w-14 items-center justify-center rounded-full bg-status-green/10">
-          <CheckCircle size={30} className="text-status-green" />
-        </div>
-        <div className="space-y-1">
-          <p className="text-lg font-black tracking-tight text-greyscale-900 dark:text-greyscale-50">
-            Your AI agent is ready.
-          </p>
-          <p className="text-sm leading-6 text-greyscale-500 dark:text-greyscale-400">
-            You can now configure its policy, model bindings, and runtime permissions from the agent detail page.
-          </p>
-        </div>
-        <Button onClick={handleClose} className="w-auto gap-2">
-          <Sparkles size={14} />
-          Done
-        </Button>
-      </div>
-    )
-  }
+  const canSubmit = isHandleUnique && displayValue.length >= 2 && !isCheckingHandle
 
   return (
     <div className="space-y-6">
@@ -91,7 +123,6 @@ export const CreateAgentContent: React.FC<CreateAgentContentProps> = ({ close })
           id="agent-display-name"
           label="Display name"
           required
-          error={error && displayValue.length < 2 ? error : undefined}
           hint="Shown across the app on cards, profiles, and management panels."
         >
           <Input
@@ -107,17 +138,46 @@ export const CreateAgentContent: React.FC<CreateAgentContentProps> = ({ close })
           id="agent-handle"
           label="Handle"
           required
-          error={error && normalizedHandle.length < 3 ? error : undefined}
+          error={handleError ?? undefined}
           hint="Letters, numbers, hyphens, and underscores only."
         >
-          <Input
-            id="agent-handle"
-            value={handle}
-            onChange={(e) => setHandle(e.target.value.replace(/[^a-z0-9_-]/gi, '').toLowerCase())}
-            placeholder="my-battle-bot"
-            maxLength={32}
-            startAdornment={<span className="text-sm text-greyscale-400">@</span>}
-          />
+          <div className="relative">
+            <Input
+              id="agent-handle"
+              value={handle}
+              onChange={(e) => setHandle(e.target.value.replace(/[^a-z0-9_-]/gi, '').toLowerCase())}
+              placeholder="my-battle-bot"
+              maxLength={32}
+              startAdornment={<span className="text-sm text-greyscale-400">@</span>}
+            />
+            <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none">
+              {isCheckingHandle ? (
+                <Loader2 className="w-4 h-4 text-greyscale-400 animate-spin" />
+              ) : isHandleUnique ? (
+                <Check className="w-4 h-4 text-status-green" />
+              ) : handleError && handle.length > 0 ? (
+                <X className="w-4 h-4 text-status-red" />
+              ) : null}
+            </div>
+          </div>
+
+          {suggestions.length > 0 && (
+            <div className="mt-2">
+              <p className="text-xs text-greyscale-500 mb-1.5">Suggestions:</p>
+              <div className="flex flex-wrap gap-1.5">
+                {suggestions.map((s) => (
+                  <button
+                    key={s}
+                    type="button"
+                    onClick={() => setHandle(s)}
+                    className="px-2.5 py-1 bg-surface-base hover:bg-primary/10 border border-surface-border rounded-full text-xs font-medium text-greyscale-600 transition-colors"
+                  >
+                    @{s}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
         </Field>
       </div>
 
@@ -126,10 +186,15 @@ export const CreateAgentContent: React.FC<CreateAgentContentProps> = ({ close })
       )}
 
       <div className="flex flex-col-reverse gap-3 pt-1 sm:flex-row">
-        <Button variant="ghost" onClick={handleClose} className="w-full sm:w-auto">
+        <Button variant="ghost" onClick={close} className="w-full sm:w-auto">
           Cancel
         </Button>
-        <Button onClick={handleCreate} isLoading={isSubmitting} className="w-full gap-2 sm:w-auto">
+        <Button
+          onClick={handleCreate}
+          isLoading={isSubmitting}
+          disabled={!canSubmit}
+          className="w-full gap-2 sm:w-auto"
+        >
           Create Agent <ArrowRight size={14} />
         </Button>
       </div>

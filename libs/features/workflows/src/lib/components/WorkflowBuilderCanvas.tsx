@@ -303,7 +303,7 @@ function WorkflowBuilderCanvasInner({
       onNodeDragStop={readOnly ? undefined : onNodeDragStop}
       nodesDraggable={!readOnly}
       nodesConnectable={!readOnly}
-      elementsSelectable={!readOnly}
+      elementsSelectable={true}
       fitView
       fitViewOptions={{ padding: 0.25 }}
       minZoom={0.2}

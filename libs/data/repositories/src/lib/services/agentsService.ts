@@ -7,10 +7,9 @@ import {
   AgentActionInput,
   AgentActionResponse,
 } from '@lenserfight/types'
-import { supabase } from '@lenserfight/data/supabase'
-import { SupabaseAgentsRepository, AgentProfileView } from '../repositories/agentsRepository'
+import { SupabaseAgentsRepository, AgentProfileView, AgentProfilePatch } from '../repositories/agentsRepository'
 
-export type { AgentProfileView }
+export type { AgentProfileView, AgentProfilePatch }
 
 const agentsRepo = new SupabaseAgentsRepository()
 
@@ -38,15 +37,7 @@ export const agentsService = {
     policy: Partial<Omit<AgentPolicyRecord, 'id' | 'ai_lenser_id' | 'created_at' | 'updated_at'>>
   ): Promise<void> => agentsRepo.updatePolicy(aiLenserId, policy),
 
-  updateAgentProfile: async (
-    aiLenserId: string,
-    patch: { display_name?: string; bio?: string; avatar_url?: string }
-  ): Promise<void> => {
-    const { error } = await supabase
-      .schema('lensers')
-      .from('profiles')
-      .update(patch)
-      .eq('id', aiLenserId)
-    if (error) throw error
-  },
+  /** Securely patches AI lenser profile fields via fn_update_agent_profile RPC (validates ownership). */
+  updateAgentProfile: (aiLenserId: string, patch: AgentProfilePatch): Promise<void> =>
+    agentsRepo.updateAgentProfile(aiLenserId, patch),
 }

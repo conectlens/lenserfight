@@ -8,7 +8,6 @@ import { ThreadDetailViewModel } from '@lenserfight/types'
 import { timeAgo } from '@lenserfight/utils/date'
 
 import { ThreadReactionBar } from './ThreadReactionBar'
-import { ThreadTagsBar } from './ThreadTagsBar'
 
 interface ThreadDetailCardProps {
   thread: ThreadDetailViewModel
@@ -67,8 +66,7 @@ export const ThreadDetailCard: React.FC<ThreadDetailCardProps> = ({ thread, onTo
       )}
 
       {/* Footer: Tags & Actions */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mt-8 pt-6 border-t border-gray-50 dark:border-gray-700">
-        <ThreadTagsBar tags={thread.tags} />
+      <div className="flex flex-col sm:flex-row sm:items-center justify-end gap-4 mt-8 pt-6 border-t border-gray-50 dark:border-gray-700">
         <ThreadReactionBar
           count={thread.reactionCount}
           hasReacted={thread.userHasReacted}
