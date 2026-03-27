@@ -164,13 +164,9 @@ export const HomePage: React.FC = () => {
               {(['for_you', 'trending'] as const).map((tab) => (
                 <Button
                   key={tab}
-                  variant={activeTab === tab ? 'dark' : 'ghost'}
+                  variant={activeTab === tab ? 'primary' : 'ghost'}
                   size="sm"
                   onClick={() => setFeedTab(tab)}
-                  className={`px-4 py-2 text-sm font-semibold ${activeTab === tab
-                    ? 'bg-white dark:bg-gray-700 text-gray-900 dark:text-white shadow-sm'
-                    : 'text-gray-500 dark:text-gray-400'
-                    }`}
                 >
                   {tab === 'for_you' ? 'For You' : 'Trending'}
                 </Button>

@@ -32,7 +32,7 @@ export const AccountUnavailablePage: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-950 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-gray-50 dark:bg-greyscale-900 flex items-center justify-center p-4">
       <div className="w-full max-w-lg rounded-3xl border border-gray-200 bg-white p-8 shadow-xl dark:border-gray-800 dark:bg-gray-900">
         <div className="space-y-4 text-center">
           <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-red-100 text-red-600 dark:bg-red-950/40 dark:text-red-300">

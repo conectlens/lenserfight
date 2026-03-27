@@ -9,7 +9,7 @@ import { CreateLenserProfileModal } from '@lenserfight/features/onboarding'
  */
 export const OnboardingPage: React.FC = () => {
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-950 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-gray-50 dark:bg-greyscale-900 flex items-center justify-center p-4">
       <CreateLenserProfileModal />
     </div>
   )
