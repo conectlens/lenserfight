@@ -91,10 +91,11 @@ export const CreateBattleWizard: React.FC<CreateBattleWizardProps> = ({ onSucces
   const [selectedWorkflowId, setSelectedWorkflowId] = useState<string | null>(null)
   const [selectedWorkflowTitle, setSelectedWorkflowTitle] = useState('')
   const [selectedLensId, setSelectedLensId] = useState<string | null>(null)
+  const [selectedLensTitle, setSelectedLensTitle] = useState('')
 
   // Steps 2–4 — battle config
   const [title, setTitle] = useState('')
-  const [taskPrompt, setTaskPrompt] = useState('')
+  const [description, setDescription] = useState('')
   const [battleType, setBattleType] = useState<BattleType>('human_vs_human_open_votes')
   const [voterEligibility, setVoterEligibility] = useState<VoterEligibility>('open')
   const [handicap, setHandicap] = useState<AIHandicapConfig>(DEFAULT_HANDICAP)
@@ -167,11 +168,7 @@ export const CreateBattleWizard: React.FC<CreateBattleWizardProps> = ({ onSucces
     if (step === 1) {
       return battleFormat === 'workflow' ? !!selectedWorkflowId : !!selectedLensId
     }
-    if (step === 2) {
-      const titleOk = title.trim().length >= 3
-      const promptOk = battleFormat === 'workflow' || taskPrompt.trim().length >= 20
-      return titleOk && promptOk
-    }
+    if (step === 2) return title.trim().length >= 3
     return true
   })()
 
@@ -184,7 +181,7 @@ export const CreateBattleWizard: React.FC<CreateBattleWizardProps> = ({ onSucces
     try {
       const resolvedPrompt = battleFormat === 'workflow'
         ? `Workflow battle: ${selectedWorkflowTitle || selectedWorkflowId}`
-        : taskPrompt.trim()
+        : `Lens battle: ${selectedLensTitle || selectedLensId}`
 
       const battle = await battlesService.createBattle({
         title: title.trim(),
@@ -386,7 +383,7 @@ export const CreateBattleWizard: React.FC<CreateBattleWizardProps> = ({ onSucces
                   <button
                     key={lens.id}
                     type="button"
-                    onClick={() => setSelectedLensId(lens.id)}
+                    onClick={() => { setSelectedLensId(lens.id); setSelectedLensTitle(lens.title) }}
                     className={`flex w-full items-center gap-3 rounded-2xl border-2 px-4 py-3 text-left transition-colors ${
                       selectedLensId === lens.id
                         ? 'border-status-blue bg-status-blue/5'
@@ -427,30 +424,18 @@ export const CreateBattleWizard: React.FC<CreateBattleWizardProps> = ({ onSucces
                   />
                 </div>
 
-                {battleFormat === 'lens' && (
-                  <div>
-                    <label className="mb-2 block text-sm font-semibold text-greyscale-900 dark:text-greyscale-0">
-                      Lens prompt
-                    </label>
-                    <textarea
-                      value={taskPrompt}
-                      onChange={(e) => setTaskPrompt(e.target.value)}
-                      placeholder="Describe the task clearly. Be specific about format, constraints, and the success criteria you want evaluated."
-                      rows={6}
-                      className="w-full resize-none rounded-2xl border border-surface-border bg-surface-base px-4 py-3 text-sm text-greyscale-900 outline-none transition-colors placeholder:text-greyscale-400 focus:border-status-blue dark:bg-surface-raised dark:text-greyscale-50"
-                    />
-                    <p className="mt-1 text-right text-xs text-greyscale-400">{taskPrompt.length} chars</p>
-                  </div>
-                )}
-
-                {battleFormat === 'workflow' && (
-                  <div className="flex items-center gap-3 rounded-2xl border border-surface-border bg-surface-raised px-4 py-3">
-                    <GitBranch size={16} className="text-greyscale-400 flex-shrink-0" />
-                    <p className="text-xs text-greyscale-500 dark:text-greyscale-400">
-                      The task is defined by your selected workflow — no additional prompt needed.
-                    </p>
-                  </div>
-                )}
+                <div>
+                  <label className="mb-2 block text-sm font-semibold text-greyscale-900 dark:text-greyscale-0">
+                    Description <span className="font-normal text-greyscale-400">(optional)</span>
+                  </label>
+                  <textarea
+                    value={description}
+                    onChange={(e) => setDescription(e.target.value)}
+                    placeholder="Add context for participants and voters, e.g. what success looks like."
+                    rows={4}
+                    className="w-full resize-none rounded-2xl border border-surface-border bg-surface-base px-4 py-3 text-sm text-greyscale-900 outline-none transition-colors placeholder:text-greyscale-400 focus:border-status-blue dark:bg-surface-raised dark:text-greyscale-50"
+                  />
+                </div>
               </div>
             )}
 
