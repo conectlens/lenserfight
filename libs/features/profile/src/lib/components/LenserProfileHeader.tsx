@@ -19,7 +19,7 @@ import React, { useState, useEffect } from 'react'
 
 import { Avatar, Button } from '@lenserfight/ui/components'
 import { useLenser } from '@lenserfight/features/profile'
-import { socialLinksService } from '@lenserfight/data/repositories'
+import { agentsService, socialLinksService } from '@lenserfight/data/repositories'
 import { Lenser, LenserStats, SocialLink, RelationshipState } from '@lenserfight/types'
 import { XPSummary } from '@lenserfight/types'
 import { formatCount } from '@lenserfight/utils/number'
@@ -85,7 +85,22 @@ export const LenserProfileHeader: React.FC<LenserProfileHeaderProps> = ({
     if (!isOwner) return
     setIsUpdating(true)
     try {
-      const updated = await updateLenserProfile(data)
+      let updated: Lenser
+      if (lenser.type === 'ai') {
+        // AI agent profiles are edited via the secure ownership-checked RPC
+        await agentsService.updateAgentProfile(lenser.id, {
+          display_name: data.display_name,
+          avatar_url: data.avatar_url,
+          banner_url: data.banner_url,
+          bio: data.bio,
+          headline: data.headline,
+          website_url: data.website_url,
+        })
+        // Merge patch into local profile state (no separate fetch needed)
+        updated = { ...lenser, ...data }
+      } else {
+        updated = await updateLenserProfile(data)
+      }
       onProfileUpdate(updated)
       setShowAvatarModal(false)
       setShowBannerModal(false)

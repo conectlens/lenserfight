@@ -20,6 +20,7 @@ export function WorkflowCanvasNode({ id, data, selected }: NodeProps) {
 
   return (
     <div
+      onClick={() => { if (onEdit && lens_id) onEdit(lens_id) }}
       onDoubleClick={() => { if (onEdit && lens_id) onEdit(lens_id) }}
       className={`relative flex items-center gap-2.5 min-w-[160px] max-w-[220px] rounded-2xl border bg-surface-raised px-3 py-2.5 shadow-neu-1 transition-colors ${
         selected
