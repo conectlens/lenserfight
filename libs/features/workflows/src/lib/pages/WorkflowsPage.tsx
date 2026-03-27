@@ -82,7 +82,7 @@ export function WorkflowsPage({ onCreateWorkflow, onOpenWorkflow }: WorkflowsPag
   }
 
   return (
-    <div className="mx-auto max-w-3xl px-4 py-8 space-y-6">
+    <div className="">
       <div className="flex items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-black tracking-tight text-greyscale-900 dark:text-greyscale-50">
