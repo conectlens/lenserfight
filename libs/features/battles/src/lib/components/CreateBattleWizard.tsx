@@ -4,6 +4,7 @@ import { Input, SegmentedControl, TextArea } from '@lenserfight/ui/forms'
 import { battlesService, workflowsService, lensesService } from '@lenserfight/data/repositories'
 import type { WorkflowRecord } from '@lenserfight/data/repositories'
 import { useAuth } from '@lenserfight/features/auth'
+import { useLenser } from '@lenserfight/features/profile'
 import { useWizardStep } from '@lenserfight/ui/routing'
 import { useQuery } from '@tanstack/react-query'
 import { AnimatePresence, motion } from 'framer-motion'
@@ -84,6 +85,7 @@ export interface CreateBattleWizardProps {
 
 export const CreateBattleWizard: React.FC<CreateBattleWizardProps> = ({ onSuccess, onClose }) => {
   const { user } = useAuth()
+  const { lenser } = useLenser()
   const navigate = useNavigate()
   const [searchParams, setSearchParams] = useSearchParams()
   const { step, goToStep } = useWizardStep({ maxStep: WIZARD_STEPS.length })
@@ -94,12 +96,16 @@ export const CreateBattleWizard: React.FC<CreateBattleWizardProps> = ({ onSucces
   const [error, setError] = useState<string | null>(null)
   const [inviteError, setInviteError] = useState<string | null>(null)
 
-  // Step 0 — format choice
-  const [battleFormat, setBattleFormat] = useState<'workflow' | 'lens' | null>(null)
+  // Step 0 — format choice (lazy-init from URL so query is enabled on first render)
+  const [battleFormat, setBattleFormat] = useState<'workflow' | 'lens' | null>(() =>
+    searchParams.get('workflow_id') ? 'workflow' : null
+  )
 
-  // Step 1 — source selection
+  // Step 1 — source selection (lazy-init from URL)
   const [workflowScope, setWorkflowScope] = useState<'mine' | 'popular'>('mine')
-  const [selectedWorkflowId, setSelectedWorkflowId] = useState<string | null>(null)
+  const [selectedWorkflowId, setSelectedWorkflowId] = useState<string | null>(() =>
+    searchParams.get('workflow_id') ?? null
+  )
   const [selectedWorkflowTitle, setSelectedWorkflowTitle] = useState('')
   const [selectedLensId, setSelectedLensId] = useState<string | null>(null)
   const [selectedLensTitle, setSelectedLensTitle] = useState('')
@@ -129,11 +135,9 @@ export const CreateBattleWizard: React.FC<CreateBattleWizardProps> = ({ onSucces
   const inviteA = useInviteContender(createdBattleId ?? '')
   const inviteB = useInviteContender(createdBattleId ?? '')
 
-  // Auto-select from ?workflow_id param
+  // Auto-advance to step 1 when arriving with ?workflow_id param
   useEffect(() => {
     if (preselectedWorkflowId && !battleIdFromUrl) {
-      setBattleFormat('workflow')
-      setSelectedWorkflowId(preselectedWorkflowId)
       goToStep(1)
     }
   }, []) // eslint-disable-line
@@ -199,9 +203,9 @@ export const CreateBattleWizard: React.FC<CreateBattleWizardProps> = ({ onSucces
   // ── Data fetching ────────────────────────────────────────────────────────
 
   const { data: myWorkflowsData, isLoading: loadingWorkflows } = useQuery({
-    queryKey: ['battle-wizard-workflows', user?.id],
-    queryFn: () => workflowsService.listByLenserPaginated(user?.id ?? '', 0, 50),
-    enabled: !!user?.id && battleFormat === 'workflow' && step === 1 && workflowScope === 'mine',
+    queryKey: ['battle-wizard-workflows', lenser?.id],
+    queryFn: () => workflowsService.listByLenserPaginated(lenser?.id ?? '', 0, 50),
+    enabled: !!lenser?.id && battleFormat === 'workflow' && step === 1 && workflowScope === 'mine',
     staleTime: 1000 * 60,
   })
   const workflows = (myWorkflowsData?.data ?? []) as WorkflowRecord[]
@@ -215,9 +219,9 @@ export const CreateBattleWizard: React.FC<CreateBattleWizardProps> = ({ onSucces
   const popularWorkflows = (popularWorkflowsData?.data ?? []) as WorkflowRecord[]
 
   const { data: lensesData, isLoading: loadingLenses } = useQuery({
-    queryKey: ['battle-wizard-lenses', user?.id],
-    queryFn: () => lensesService.getPersonalFeed(user?.id ?? '', 0, 30),
-    enabled: !!user?.id && battleFormat === 'lens' && step === 1,
+    queryKey: ['battle-wizard-lenses', lenser?.id],
+    queryFn: () => lensesService.getPersonalFeed(lenser?.id ?? '', 0, 30),
+    enabled: !!lenser?.id && battleFormat === 'lens' && step === 1,
     staleTime: 1000 * 60,
   })
   const myLenses: LensViewModel[] = (lensesData?.data ?? []) as LensViewModel[]

@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom'
 import { useLenserChat, usePostLenserMessage, useChatScrollAnchor } from '../hooks/useLenserChat'
 import type { RealtimeStatus } from '../hooks/useLenserChat'
 import { ChatMessage } from './ChatMessage'
-import { Badge } from '@lenserfight/ui/components'
+import { Badge, Button } from '@lenserfight/ui/components'
 
 interface LenserChatRailProps {
   battleId?: string
@@ -114,13 +114,16 @@ export const LenserChatRail: React.FC<LenserChatRailProps> = ({
         {/* Load earlier button */}
         {hasMore && (
           <div className="pb-3 flex justify-center">
-            <button
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
               onClick={handleLoadMore}
               disabled={isLoadingMore}
-              className="px-3 py-1.5 rounded-full bg-surface-interactive text-[10px] font-bold text-surface-text-muted hover:text-surface-text transition-colors disabled:opacity-40 uppercase tracking-widest"
+              className="!rounded-full !text-[10px] !font-bold !text-surface-text-muted hover:!text-surface-text !uppercase !tracking-widest !px-3 !py-1.5 !bg-surface-interactive"
             >
               {isLoadingMore ? 'Loading…' : 'Load earlier'}
-            </button>
+            </Button>
           </div>
         )}
 
@@ -154,14 +157,16 @@ export const LenserChatRail: React.FC<LenserChatRailProps> = ({
                 maxLength={300}
                 className="flex-1 bg-transparent text-sm text-surface-text placeholder:text-surface-text-disabled outline-none py-1"
               />
-              <button
+              <Button
                 type="button"
+                variant="primary"
+                size="sm"
                 onClick={handleSend}
                 disabled={!draft.trim()}
-                className="text-[11px] font-black text-dark-900 bg-primary-yellow-500 px-3 py-1.5 rounded-lg uppercase tracking-wider disabled:opacity-40 hover:brightness-105 active:scale-95 transition-all"
+                className="!text-[11px] !font-black !text-dark-900 !bg-primary-yellow-500 !px-3 !py-1.5 !rounded-lg !uppercase !tracking-wider hover:!brightness-105 active:!scale-95"
               >
                 Send
-              </button>
+              </Button>
             </div>
             {draft.length > 0 && (
               <span className="text-[9px] text-surface-text-muted font-bold text-right tabular-nums px-1">

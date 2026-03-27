@@ -74,6 +74,9 @@ export const battlesService = {
   getBattlesFeedItems: (options?: BattlesFeedOptions): Promise<BattleFeedItemRecord[]> =>
     battlesRepo.getBattlesFeedItems(options),
 
+  getMyVote: (battleId: string): Promise<{ vote_value: string } | null> =>
+    battlesRepo.getMyVote(battleId),
+
   submitVote: (input: SubmitVoteInput): Promise<void> =>
     battlesRepo.submitVote(input).then(() => undefined),
 

@@ -7,6 +7,7 @@ import { useBattleContenders } from '../hooks/useBattleContenders'
 import { useBattleStateMachine } from '../hooks/useBattleStateMachine'
 import { useBattleStateSync } from '../hooks/useBattleStateSync'
 import { useLensAssignment } from '../hooks/useLensAssignment'
+import { useMyVote } from '../hooks/useMyVote'
 import { useSubmitVote } from '../hooks/useSubmitVote'
 import { useVoteAggregates } from '../hooks/useVoteAggregates'
 import { getRenderer } from '../renderers'
@@ -39,6 +40,7 @@ export const ImmersiveArenaView: React.FC<ImmersiveArenaViewProps> = ({ slug, cu
   const { data: aggregates } = useVoteAggregates(battle?.id)
   const { currentPhase, isResult } = useBattleStateMachine(battle?.status)
   const submitVote = useSubmitVote(battle?.id)
+  const { myVote } = useMyVote(battle?.id, currentUserId)
   // Real-time battle state sync
   useBattleStateSync(battle?.id, slug)
 
@@ -112,6 +114,7 @@ export const ImmersiveArenaView: React.FC<ImmersiveArenaViewProps> = ({ slug, cu
       contenderB={{ id: contenderB.id, displayName: contenderB.display_name }}
       disabled={!currentUserId}
       voterEligibility={battle.voter_eligibility}
+      existingVote={(myVote?.vote_value as 'contender_a' | 'contender_b' | 'draw') ?? null}
       onVote={handleVote}
     />
   ) : null

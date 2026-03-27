@@ -337,6 +337,17 @@ export class SupabaseBattlesRepository implements BattlesRepositoryPort {
     return (data ?? []) as RubricCriterionRecord[]
   }
 
+  async getMyVote(battleId: string): Promise<{ vote_value: string } | null> {
+    const { data, error } = await supabase
+      .schema('battles')
+      .from('votes')
+      .select('vote_value')
+      .eq('battle_id', battleId)
+      .maybeSingle()
+    if (error) this.handleError(error)
+    return data as { vote_value: string } | null
+  }
+
   async submitVote(input: SubmitVoteInput): Promise<{ vote_id: string; status: string; battle_id: string }> {
     const { data, error } = await supabase.rpc('fn_submit_vote', {
       p_battle_id: input.battle_id,
@@ -554,7 +565,7 @@ export class SupabaseBattlesRepository implements BattlesRepositoryPort {
         contender_type: input.contender_type,
         contender_ref_id: input.contender_ref_id,
         display_name: input.display_name,
-        entry_mode: 'manual',
+        entry_mode: 'invited',
         contender_status: 'invited',
       })
       .select('id, battle_id, slot, contender_type, display_name, contender_ref_id')
