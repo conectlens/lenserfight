@@ -14,7 +14,7 @@ export const isLocal = MODE === 'development'
 // Seed credentials for local auto-fill (matches supabase/seed.sql)
 export const LOCAL_SEED_CREDENTIALS = {
   email: 'alice@lenserfight.local',
-  password: 'Password123!',
+  password: 'Alice#Lenser2026!',
   displayName: 'Alice Arena',
 } as const
 
