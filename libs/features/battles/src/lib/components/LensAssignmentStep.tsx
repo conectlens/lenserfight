@@ -1,4 +1,4 @@
-import { Badge, Button, Card } from '@lenserfight/ui/components'
+import { Button } from '@lenserfight/ui/components'
 import { Input, SelectField } from '@lenserfight/ui/forms'
 import { lensesService } from '@lenserfight/data/repositories'
 import { useQuery } from '@tanstack/react-query'
@@ -144,70 +144,44 @@ export interface LensAssignmentStepProps {
   contenderAName: string | undefined
   contenderBId: string | undefined
   contenderBName: string | undefined
-  onDone: () => void
 }
 
-export function LensAssignmentStep({ battleId, contenderAId, contenderAName, contenderBId, contenderBName, onDone }: LensAssignmentStepProps) {
-  const [assignedA, setAssignedA] = useState(false)
-  const [assignedB, setAssignedB] = useState(false)
-
+export function LensAssignmentStep({
+  battleId,
+  contenderAId,
+  contenderAName,
+  contenderBId,
+  contenderBName,
+}: LensAssignmentStepProps) {
   return (
-    <Card className="space-y-5 p-6">
-      <div className="space-y-2">
-        <Badge color="blue" variant="outline">Step 5 of 5 (Optional)</Badge>
-        <h2 className="text-xl font-black tracking-tight text-greyscale-900 dark:text-greyscale-0">
-          Assign Lenses
-        </h2>
-        <p className="text-sm leading-7 text-greyscale-500 dark:text-greyscale-400">
-          Lenses define how each contender approaches the prompt. Assign a Lens to give your battle a competitive edge.
-        </p>
-      </div>
+    <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+      {contenderAId ? (
+        <SlotLensPicker
+          slot="A"
+          slotLabel={contenderAName ?? 'Contender A'}
+          contenderId={contenderAId}
+          battleId={battleId}
+          onAssigned={() => undefined}
+        />
+      ) : (
+        <div className="rounded-2xl border border-surface-border bg-surface-raised p-4 text-sm text-greyscale-400 text-center">
+          No contender in slot A
+        </div>
+      )}
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-        {contenderAId ? (
-          <SlotLensPicker
-            slot="A"
-            slotLabel={contenderAName ?? 'Contender A'}
-            contenderId={contenderAId}
-            battleId={battleId}
-            onAssigned={() => setAssignedA(true)}
-          />
-        ) : (
-          <div className="rounded-2xl border border-surface-border bg-surface-raised p-4 text-sm text-greyscale-400 text-center">
-            No contender in slot A
-          </div>
-        )}
-
-        {contenderBId ? (
-          <SlotLensPicker
-            slot="B"
-            slotLabel={contenderBName ?? 'Contender B'}
-            contenderId={contenderBId}
-            battleId={battleId}
-            onAssigned={() => setAssignedB(true)}
-          />
-        ) : (
-          <div className="rounded-2xl border border-surface-border bg-surface-raised p-4 text-sm text-greyscale-400 text-center">
-            No contender in slot B
-          </div>
-        )}
-      </div>
-
-      <div className="flex items-center justify-between gap-3 pt-2">
-        <Button
-          type="button"
-          variant="ghost"
-          onClick={onDone}
-          className="w-auto"
-        >
-          {assignedA || assignedB ? 'Done' : 'Skip for now'}
-        </Button>
-        {(assignedA || assignedB) && (
-          <Button onClick={onDone} className="gap-2 w-auto">
-            Continue to battle
-          </Button>
-        )}
-      </div>
-    </Card>
+      {contenderBId ? (
+        <SlotLensPicker
+          slot="B"
+          slotLabel={contenderBName ?? 'Contender B'}
+          contenderId={contenderBId}
+          battleId={battleId}
+          onAssigned={() => undefined}
+        />
+      ) : (
+        <div className="rounded-2xl border border-surface-border bg-surface-raised p-4 text-sm text-greyscale-400 text-center">
+          No contender in slot B
+        </div>
+      )}
+    </div>
   )
 }

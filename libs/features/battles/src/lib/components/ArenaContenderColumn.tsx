@@ -17,6 +17,7 @@ interface ArenaContenderColumnProps {
   totalVotes: number
   battleId?: string
   battleStatus?: string
+  taskPrompt?: string
   currentUserId?: string
   lensAssignment?: LensAssignmentBadgeInfo | null
   className?: string
@@ -31,6 +32,7 @@ export const ArenaContenderColumn: React.FC<ArenaContenderColumnProps> = ({
   totalVotes,
   battleId,
   battleStatus,
+  taskPrompt,
   currentUserId,
   lensAssignment,
   className = '',
@@ -74,10 +76,30 @@ export const ArenaContenderColumn: React.FC<ArenaContenderColumnProps> = ({
         </span>
       </div>
 
-      {/* Submission content or submit form */}
+      {/* Submission content, submit form, or empty state with task prompt */}
       <div className="flex-1 overflow-y-auto p-4">
         {canSubmit ? (
-          <SubmitTextForm battleId={battleId} contenderId={contender.id} />
+          <div className="space-y-4">
+            {taskPrompt && (
+              <div className="rounded-xl border border-surface-border bg-surface-raised p-3">
+                <p className="text-[11px] font-bold uppercase tracking-widest text-greyscale-400 mb-1.5">Task</p>
+                <p className="text-sm text-greyscale-700 dark:text-greyscale-300 leading-relaxed whitespace-pre-wrap">
+                  {taskPrompt}
+                </p>
+              </div>
+            )}
+            <SubmitTextForm battleId={battleId} contenderId={contender.id} />
+          </div>
+        ) : !submission && battleStatus === 'open' && taskPrompt ? (
+          <div className="space-y-3">
+            <div className="rounded-xl border border-surface-border bg-surface-raised p-3">
+              <p className="text-[11px] font-bold uppercase tracking-widest text-greyscale-400 mb-1.5">Task</p>
+              <p className="text-sm text-greyscale-700 dark:text-greyscale-300 leading-relaxed whitespace-pre-wrap">
+                {taskPrompt}
+              </p>
+            </div>
+            <p className="text-xs text-greyscale-400 text-center py-2">Waiting for submission…</p>
+          </div>
         ) : (
           <SubmissionRenderer
             content={submission?.content_text}

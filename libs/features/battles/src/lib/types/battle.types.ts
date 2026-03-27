@@ -60,11 +60,15 @@ export interface Battle {
   status: BattleStatus
   total_vote_count: number
   published_at: string | null
+  voting_opens_at: string | null
+  voting_closes_at: string | null
   battle_type: BattleType
   voter_eligibility: VoterEligibility
   handicap_config: AIHandicapConfig
   creator_lenser_id: string | null
   forum_thread_id: string | null
+  workflow_id: string | null
+  lens_id: string | null
 }
 
 export interface Contender {

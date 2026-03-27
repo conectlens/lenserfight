@@ -32,11 +32,15 @@ export interface BattleRecord {
   status: BattleStatus
   total_vote_count: number
   published_at: string | null
+  voting_opens_at: string | null
+  voting_closes_at: string | null
   battle_type: BattleType
   voter_eligibility: VoterEligibility
   handicap_config: Record<string, unknown>
   creator_lenser_id: string | null
   forum_thread_id: string | null
+  workflow_id: string | null
+  lens_id: string | null
 }
 
 export interface AIHandicapPolicyRecord {
@@ -154,6 +158,9 @@ export interface BattleFeedItemRecord {
   published_at: string | null
   battle_type: BattleType
   voter_eligibility: VoterEligibility
+  total_vote_count: number
+  voting_opens_at: string | null
+  voting_closes_at: string | null
   contender_a_id: string | null
   contender_a_name: string | null
   contender_a_type: ContenderType | null
@@ -211,6 +218,8 @@ export interface BattlesRepositoryPort {
   linkForumThread(battleId: string, forumThreadId: string): Promise<void>
   assignLensToContender(input: AssignLensInput): Promise<ContenderLensAssignmentRecord>
   getLensAssignment(contenderId: string): Promise<ContenderLensAssignmentRecord | null>
+  openVoting(battleId: string): Promise<void>
+  closeVoting(battleId: string): Promise<void>
 }
 
 // --- Supabase Implementation ---
@@ -224,7 +233,7 @@ export class SupabaseBattlesRepository implements BattlesRepositoryPort {
   }
 
   private readonly battleSelect =
-    'id, slug, title, task_prompt, status, total_vote_count, published_at, battle_type, voter_eligibility, handicap_config, creator_lenser_id, forum_thread_id'
+    'id, slug, title, task_prompt, status, total_vote_count, published_at, voting_opens_at, voting_closes_at, battle_type, voter_eligibility, handicap_config, creator_lenser_id, forum_thread_id, workflow_id, lens_id'
 
   async getBattleBySlug(slug: string): Promise<BattleRecord | null> {
     const { data, error } = await supabase
@@ -570,5 +579,15 @@ export class SupabaseBattlesRepository implements BattlesRepositoryPort {
       .maybeSingle()
     if (error) this.handleError(error)
     return data as ContenderLensAssignmentRecord | null
+  }
+
+  async openVoting(battleId: string): Promise<void> {
+    const { error } = await supabase.rpc('fn_battle_open_voting', { p_battle_id: battleId })
+    if (error) this.handleError(error)
+  }
+
+  async closeVoting(battleId: string): Promise<void> {
+    const { error } = await supabase.rpc('fn_battle_close_voting', { p_battle_id: battleId })
+    if (error) this.handleError(error)
   }
 }

@@ -3,7 +3,7 @@ import { SelectField } from '@lenserfight/ui/forms'
 import { AnimatePresence, motion } from 'framer-motion'
 import React from 'react'
 import { useNavigate, Outlet, useSearchParams } from 'react-router-dom'
-import { PlusCircle } from 'lucide-react'
+import { PlusCircle, Zap } from 'lucide-react'
 
 import { BattleCard } from '../components/BattleCard'
 import { useBattlesFeed } from '../hooks/useBattlesFeed'
@@ -67,12 +67,18 @@ export function BattlesFeedPage() {
     )
   }
 
-  const { data, isLoading, fetchNextPage, hasNextPage, isFetchingNextPage } = useBattlesFeed(statusFilter, sortBy)
+  const { data, isLoading, fetchNextPage, hasNextPage, isFetchingNextPage } = useBattlesFeed(
+    statusFilter,
+    sortBy,
+    typeFilter
+  )
 
   const battles = data?.pages.flat() ?? []
-  const filtered = typeFilter === 'all'
-    ? battles
-    : battles.filter((b) => b.battle_type === typeFilter)
+
+  // Client-side sort for most_votes / trending (RPC returns newest-first only)
+  const sorted = sortBy === 'most_votes' || sortBy === 'trending'
+    ? [...battles].sort((a, b) => (b.total_vote_count ?? 0) - (a.total_vote_count ?? 0))
+    : battles
 
   return (
     <div className="">
@@ -92,7 +98,24 @@ export function BattlesFeedPage() {
         }
       />
       <div className="sticky top-[56px] z-20 bg-gray-50/95 dark:bg-gray-900/95 backdrop-blur py-3 border-b border-gray-100/50 dark:border-gray-800/50 transition-all mb-6 -mx-2 sm:-mx-4 lg:-mx-8 px-2 sm:px-4 lg:px-8">
-        <div className="flex flex-wrap gap-3">
+        <div className="flex flex-wrap items-center gap-3">
+          {/* Live quick-filter chip */}
+          <button
+            type="button"
+            onClick={() => setParam('status', statusFilter === 'voting' ? 'all' : 'voting', 'all')}
+            className={`flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-full border transition-colors ${
+              statusFilter === 'voting'
+                ? 'bg-primary-yellow-500/10 border-primary-yellow-500/40 text-primary-yellow-600'
+                : 'bg-surface-raised border-surface-border text-greyscale-500 hover:border-greyscale-400'
+            }`}
+          >
+            <Zap size={12} />
+            Live
+            {statusFilter === 'voting' && (
+              <span className="inline-block h-1.5 w-1.5 rounded-full bg-primary-yellow-500 animate-pulse" />
+            )}
+          </button>
+
           <SelectField
             value={statusFilter}
             onChange={(v) => setParam('status', v, 'all')}
@@ -117,10 +140,10 @@ export function BattlesFeedPage() {
       {isLoading ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           {Array.from({ length: 6 }).map((_, i) => (
-            <div key={i} className="h-32 bg-[var(--cl-surface-raised)] rounded-xl animate-pulse" />
+            <div key={i} className="h-40 bg-[var(--cl-surface-raised)] rounded-xl animate-pulse" />
           ))}
         </div>
-      ) : filtered.length === 0 ? (
+      ) : sorted.length === 0 ? (
         <EmptyState
           title="No battles yet."
           description="Be the first to create one."
@@ -128,7 +151,7 @@ export function BattlesFeedPage() {
       ) : (
         <AnimatePresence mode="popLayout">
           <motion.div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            {filtered.map((b, i) => (
+            {sorted.map((b, i) => (
               <motion.div
                 key={b.id}
                 custom={i}
@@ -142,11 +165,17 @@ export function BattlesFeedPage() {
                   id={b.id}
                   slug={b.slug}
                   title={b.title}
-                  taskPrompt={b.task_prompt}
                   status={b.status}
                   totalVoteCount={b.total_vote_count}
-                  publishedAt={b.published_at}
                   battleType={b.battle_type}
+                  voterEligibility={b.voter_eligibility}
+                  votingOpensAt={b.voting_opens_at}
+                  votingClosesAt={b.voting_closes_at}
+                  contenderAName={b.contender_a_name}
+                  contenderAType={b.contender_a_type}
+                  contenderBName={b.contender_b_name}
+                  contenderBType={b.contender_b_type}
+                  winnerSlot={b.winner_slot}
                 />
               </motion.div>
             ))}

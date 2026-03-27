@@ -15,6 +15,7 @@ import { Drawer } from '@lenserfight/ui/overlays'
 import { ArenaTopBar } from './ArenaTopBar'
 import { ArenaContenderColumn } from './ArenaContenderColumn'
 import { ArenaCenterZone } from './ArenaCenterZone'
+import { BattleRulesDrawer } from './BattleRulesDrawer'
 const LenserChatRail = lazy(() =>
   import('./LenserChatRail').then((m) => ({ default: m.LenserChatRail }))
 )
@@ -31,6 +32,7 @@ export const ImmersiveArenaView: React.FC<ImmersiveArenaViewProps> = ({ slug, cu
   const { isAuthenticated } = useAuth()
   const { lenser, hasLenser } = useLenser()
   const [chatOpen, setChatOpen] = useState(false)
+  const [rulesOpen, setRulesOpen] = useState(false)
 
   const { data: battle, isLoading: battleLoading, error: battleError } = useBattle(slug)
   const { data: contendersData } = useBattleContenders(battle?.id)
@@ -56,6 +58,8 @@ export const ImmersiveArenaView: React.FC<ImmersiveArenaViewProps> = ({ slug, cu
   const aggA = aggregates?.find((a) => a.contender_id === contenderA?.id)
   const aggB = aggregates?.find((a) => a.contender_id === contenderB?.id)
   const totalVotes = (aggA?.raw_vote_count ?? 0) + (aggB?.raw_vote_count ?? 0)
+
+  const isOwner = !!(battle?.creator_lenser_id && lenser?.id && battle.creator_lenser_id === lenser.id)
 
   const handleVote = async (value: 'contender_a' | 'contender_b' | 'draw', rationale: string) => {
     if (!currentUserId || !contenderA || !contenderB) return
@@ -130,7 +134,11 @@ export const ImmersiveArenaView: React.FC<ImmersiveArenaViewProps> = ({ slug, cu
       <div className="flex-1 flex overflow-hidden min-h-0">
         {/* Left: Arena panel */}
         <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
-          <ArenaTopBar battle={battle} currentPhase={currentPhase} />
+          <ArenaTopBar
+            battle={battle}
+            currentPhase={currentPhase}
+            onRulesOpen={() => setRulesOpen(true)}
+          />
 
           {/* Contender columns + center zone */}
           <div className="flex-1 flex flex-col md:flex-row overflow-y-auto md:overflow-hidden">
@@ -143,6 +151,7 @@ export const ImmersiveArenaView: React.FC<ImmersiveArenaViewProps> = ({ slug, cu
               totalVotes={totalVotes}
               battleId={battle.id}
               battleStatus={battle.status}
+              taskPrompt={battle.task_prompt}
               currentUserId={currentUserId}
               lensAssignment={lensAssignmentA}
               className="order-1 md:order-none"
@@ -168,6 +177,7 @@ export const ImmersiveArenaView: React.FC<ImmersiveArenaViewProps> = ({ slug, cu
               totalVotes={totalVotes}
               battleId={battle.id}
               battleStatus={battle.status}
+              taskPrompt={battle.task_prompt}
               currentUserId={currentUserId}
               lensAssignment={lensAssignmentB}
               className="order-2 md:order-none"
@@ -223,6 +233,14 @@ export const ImmersiveArenaView: React.FC<ImmersiveArenaViewProps> = ({ slug, cu
             />
           </Suspense>
         </Drawer>
+
+        {/* Rules drawer */}
+        <BattleRulesDrawer
+          open={rulesOpen}
+          onClose={() => setRulesOpen(false)}
+          battle={battle}
+          isOwner={isOwner}
+        />
       </div>
     </div>
   )

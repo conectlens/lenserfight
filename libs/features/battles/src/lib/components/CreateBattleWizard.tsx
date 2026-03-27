@@ -15,10 +15,12 @@ import { BattleTypeSelector } from './BattleTypeSelector'
 import { ContenderInviteStep } from './ContenderInviteStep'
 import { HandicapConfigPanel } from './HandicapConfigPanel'
 import { LensAssignmentStep } from './LensAssignmentStep'
+import type { LenserSearchResult } from './LenserSearchPicker'
 import { VoterEligibilitySelector } from './VoterEligibilitySelector'
 
 import type { AIHandicapConfig, BattleType, VoterEligibility } from '../types/battle.types'
 import type { LensViewModel } from '@lenserfight/types'
+import { useInviteContender } from '../hooks/useInviteContender'
 
 // ─── Step config ─────────────────────────────────────────────────────────────
 
@@ -44,9 +46,19 @@ const WIZARD_STEPS: WizardStepConfig[] = [
     description: 'Choose who competes and who judges.',
   },
   {
-    label: 'Configuration',
+    label: 'Config',
     title: 'Configuration',
     description: 'Set voter eligibility and optional AI handicap settings.',
+  },
+  {
+    label: 'Contenders',
+    title: 'Invite contenders',
+    description: 'Add up to two contenders by their lenser handle or display name. You can skip and invite later.',
+  },
+  {
+    label: 'Lenses',
+    title: 'Assign Lenses',
+    description: 'Lenses define how each contender approaches the prompt. Optional — assign later from the battle page.',
   },
 ]
 
@@ -79,11 +91,13 @@ export const CreateBattleWizard: React.FC<CreateBattleWizardProps> = ({ onSucces
   const { user } = useAuth()
   const navigate = useNavigate()
   const [searchParams, setSearchParams] = useSearchParams()
-  const { step, goToStep } = useWizardStep({ maxStep: 6 })
+  const { step, goToStep } = useWizardStep({ maxStep: WIZARD_STEPS.length })
 
   const [direction, setDirection] = useState(1)
   const [submitting, setSubmitting] = useState(false)
+  const [inviting, setInviting] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [inviteError, setInviteError] = useState<string | null>(null)
 
   // Step 0 — format choice
   const [battleFormat, setBattleFormat] = useState<'workflow' | 'lens' | null>(null)
@@ -104,15 +118,23 @@ export const CreateBattleWizard: React.FC<CreateBattleWizardProps> = ({ onSucces
 
   // Post-creation
   const [createdBattleSlug, setCreatedBattleSlug] = useState<string | null>(null)
+  const [createdBattleId, setCreatedBattleId] = useState<string | null>(null)
   const [contenderAId, setContenderAId] = useState<string | undefined>()
   const [contenderAName, setContenderAName] = useState<string | undefined>()
   const [contenderBId, setContenderBId] = useState<string | undefined>()
   const [contenderBName, setContenderBName] = useState<string | undefined>()
 
+  // Step 5 — invite contenders
+  const [slotA, setSlotA] = useState<LenserSearchResult | null>(null)
+  const [slotB, setSlotB] = useState<LenserSearchResult | null>(null)
+
   const battleIdFromUrl = searchParams.get('battleId')
   const preselectedWorkflowId = searchParams.get('workflow_id')
 
-  // Auto-select from ?workflow_id param (emitted by WorkflowBuilderPage "Battle it" button)
+  const inviteA = useInviteContender(createdBattleId ?? '')
+  const inviteB = useInviteContender(createdBattleId ?? '')
+
+  // Auto-select from ?workflow_id param
   useEffect(() => {
     if (preselectedWorkflowId && !battleIdFromUrl) {
       setBattleFormat('workflow')
@@ -127,6 +149,13 @@ export const CreateBattleWizard: React.FC<CreateBattleWizardProps> = ({ onSucces
       navigate('/battles/create', { replace: true })
     }
   }, []) // eslint-disable-line
+
+  // Sync createdBattleId from URL when navigating back to post-creation steps
+  useEffect(() => {
+    if (battleIdFromUrl && !createdBattleId) {
+      setCreatedBattleId(battleIdFromUrl)
+    }
+  }, [battleIdFromUrl, createdBattleId])
 
   // ── Data fetching ────────────────────────────────────────────────────────
 
@@ -179,10 +208,11 @@ export const CreateBattleWizard: React.FC<CreateBattleWizardProps> = ({ onSucces
       return battleFormat === 'workflow' ? !!selectedWorkflowId : !!selectedLensId
     }
     if (step === 2) return title.trim().length >= 3
+    // Steps 5 & 6 are always skippable
     return true
   })()
 
-  // ── Create battle ────────────────────────────────────────────────────────
+  // ── Create battle (step 4 → 5) ───────────────────────────────────────────
 
   const handleCreateBattle = async () => {
     if (!canProceed) return
@@ -203,6 +233,7 @@ export const CreateBattleWizard: React.FC<CreateBattleWizardProps> = ({ onSucces
         ...(battleFormat === 'lens' && selectedLensId ? { lens_id: selectedLensId } : {}),
       })
       setCreatedBattleSlug(battle.slug)
+      setCreatedBattleId(battle.id)
       setDirection(1)
       setSearchParams(
         (prev) => {
@@ -220,63 +251,84 @@ export const CreateBattleWizard: React.FC<CreateBattleWizardProps> = ({ onSucces
     }
   }
 
-  // ── Post-creation steps (5–6) ────────────────────────────────────────────
+  // ── Invite contenders (step 5 → 6) ───────────────────────────────────────
 
-  if (step >= 5) {
-    return (
-      <div className="w-full">
-        <AnimatePresence mode="wait" custom={direction}>
-          <motion.div
-            key={step}
-            custom={direction}
-            variants={slideVariants}
-            initial="enter"
-            animate="center"
-            exit="exit"
-          >
-            {step === 5 && battleIdFromUrl && (
-              <ContenderInviteStep
-                battleId={battleIdFromUrl}
-                onDone={(aId, aName, bId, bName) => {
-                  setContenderAId(aId)
-                  setContenderAName(aName)
-                  setContenderBId(bId)
-                  setContenderBName(bName)
-                  go(6)
-                }}
-              />
-            )}
-            {step === 6 && battleIdFromUrl && (
-              <LensAssignmentStep
-                battleId={battleIdFromUrl}
-                contenderAId={contenderAId}
-                contenderAName={contenderAName}
-                contenderBId={contenderBId}
-                contenderBName={contenderBName}
-                onDone={() => onSuccess(createdBattleSlug!)}
-              />
-            )}
-          </motion.div>
-        </AnimatePresence>
-      </div>
-    )
+  const activeBattleId = createdBattleId ?? battleIdFromUrl
+
+  const handleInvite = async () => {
+    if (!activeBattleId || (!slotA && !slotB)) {
+      go(6)
+      return
+    }
+    setInviting(true)
+    setInviteError(null)
+    try {
+      if (slotA) {
+        const result = await inviteA.mutateAsync({
+          battle_id: activeBattleId,
+          slot: 'A',
+          contender_ref_id: slotA.id,
+          display_name: slotA.display_name,
+          contender_type: 'human',
+        })
+        setContenderAId(result.id)
+        setContenderAName(result.display_name)
+      }
+      if (slotB) {
+        const result = await inviteB.mutateAsync({
+          battle_id: activeBattleId,
+          slot: 'B',
+          contender_ref_id: slotB.id,
+          display_name: slotB.display_name,
+          contender_type: 'human',
+        })
+        setContenderBId(result.id)
+        setContenderBName(result.display_name)
+      }
+      go(6)
+    } catch (e) {
+      setInviteError((e as Error).message ?? 'Failed to invite contender.')
+    } finally {
+      setInviting(false)
+    }
   }
 
-  // ── Pre-creation steps (0–4) ─────────────────────────────────────────────
+  const handleFinish = () => onSuccess(createdBattleSlug!)
+
+  // ── Render ────────────────────────────────────────────────────────────────
+
+  // Skip button config per step
+  const skipButton = step === 5
+    ? { label: 'Skip for now', onClick: () => go(6) }
+    : step === 6
+      ? { label: 'Skip for now', onClick: handleFinish }
+      : undefined
+
+  // Next / complete handler varies by step
+  const handleNext = step === 4
+    ? handleCreateBattle
+    : step === 5
+      ? handleInvite
+      : () => go(step + 1)
+
+  const handleComplete = handleFinish
 
   return (
     <div className="w-full">
       <StepWizard
         steps={WIZARD_STEPS}
         currentStep={step}
-        onNext={() => go(step + 1)}
+        onNext={handleNext}
         onBack={() => go(step - 1)}
-        onComplete={handleCreateBattle}
+        onComplete={handleComplete}
         onCancel={onClose}
         canProceed={canProceed}
-        isCompleting={submitting}
-        completeLabel="Create Battle"
-        completeIcon={<Swords size={15} />}
+        isCompleting={step === 4 ? submitting : step === 5 ? inviting : false}
+        isNextLoading={step === 4 ? submitting : step === 5 ? inviting : false}
+        completeLabel="Go to Battle"
+        completeIcon={<Swords size={15} className="mr-1.5" />}
+        nextLabel={step === 4 ? 'Create Battle' : step === 5 ? 'Invite' : 'Next'}
+        skipButton={skipButton}
       >
         <AnimatePresence mode="wait" custom={direction}>
           <motion.div
@@ -491,6 +543,28 @@ export const CreateBattleWizard: React.FC<CreateBattleWizardProps> = ({ onSucces
                   </div>
                 )}
               </div>
+            )}
+
+            {/* ── Step 5: Invite contenders ─────────────────────────── */}
+            {step === 5 && (
+              <ContenderInviteStep
+                slotA={slotA}
+                slotB={slotB}
+                onChangeSlotA={setSlotA}
+                onChangeSlotB={setSlotB}
+                error={inviteError}
+              />
+            )}
+
+            {/* ── Step 6: Assign Lenses ─────────────────────────────── */}
+            {step === 6 && activeBattleId && (
+              <LensAssignmentStep
+                battleId={activeBattleId}
+                contenderAId={contenderAId}
+                contenderAName={contenderAName}
+                contenderBId={contenderBId}
+                contenderBName={contenderBName}
+              />
             )}
 
           </motion.div>

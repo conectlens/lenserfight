@@ -104,6 +104,12 @@ export const battlesService = {
   getLensAssignment: (contenderId: string): Promise<ContenderLensAssignmentRecord | null> =>
     battlesRepo.getLensAssignment(contenderId),
 
+  openVoting: (battleId: string): Promise<void> =>
+    battlesRepo.openVoting(battleId),
+
+  closeVoting: (battleId: string): Promise<void> =>
+    battlesRepo.closeVoting(battleId),
+
   deriveWinner: (
     aggregates: VoteAggregateRecord[],
     contenders: ContenderRecord[]

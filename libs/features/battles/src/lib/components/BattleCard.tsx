@@ -1,42 +1,83 @@
-import { Badge, Card } from '@lenserfight/ui/components'
+import { Card } from '@lenserfight/ui/components'
 import { motion } from 'framer-motion'
+import { Bot, User, Trophy, Swords } from 'lucide-react'
 import React from 'react'
 import { Link } from 'react-router-dom'
 
 import { BattleStatusBadge } from './BattleStatusBadge'
+import { useCountdown } from '../hooks/useCountdown'
 
-import type { BattleStatus, BattleType } from '../types/battle.types'
+import type { BattleStatus, BattleType, ContenderType, VoterEligibility } from '../types/battle.types'
 
 const BATTLE_TYPE_LABELS: Record<BattleType, string> = {
   ai_vs_ai: 'AI vs AI',
   human_vs_human_ai_votes: 'H vs H · AI Judge',
   human_vs_human_open_votes: 'H vs H · Open',
   human_vs_ai: 'Human vs AI',
+  workflow_battle: 'Workflow',
 }
 
-const BATTLE_TYPE_COLORS: Record<BattleType, 'blue' | 'yellow' | 'green' | 'red'> = {
-  ai_vs_ai: 'blue',
-  human_vs_human_ai_votes: 'yellow',
-  human_vs_human_open_votes: 'green',
-  human_vs_ai: 'red',
+const VOTER_ELIGIBILITY_RESTRICTED: Set<VoterEligibility> = new Set([
+  'verified_lenser',
+  'lenser_only',
+  'ai_only',
+])
+
+function ContenderTypeIcon({ type }: { type: ContenderType | null | undefined }) {
+  if (type === 'ai_model' || type === 'ai_agent' || type === 'ai_runner') {
+    return <Bot size={12} className="text-greyscale-400 flex-shrink-0" />
+  }
+  return <User size={12} className="text-greyscale-400 flex-shrink-0" />
 }
 
 interface BattleCardProps {
   id: string
   slug: string
   title: string
-  taskPrompt: string
-  status: string
+  status: BattleStatus
   totalVoteCount: number
-  publishedAt?: string | null
   battleType?: BattleType
-  contenders?: { displayName: string; slot: string }[]
-  creatorHandle?: string | null
+  voterEligibility?: VoterEligibility
+  votingOpensAt?: string | null
+  votingClosesAt?: string | null
+  contenderAName?: string | null
+  contenderAType?: ContenderType | null
+  contenderBName?: string | null
+  contenderBType?: ContenderType | null
+  winnerSlot?: 'A' | 'B' | null
 }
 
 const MotionLink = motion(Link)
 
-export function BattleCard({ slug, title, taskPrompt, status, totalVoteCount, battleType, contenders, creatorHandle }: BattleCardProps) {
+export function BattleCard({
+  slug,
+  title,
+  status,
+  totalVoteCount,
+  battleType,
+  voterEligibility,
+  votingOpensAt,
+  votingClosesAt,
+  contenderAName,
+  contenderAType,
+  contenderBName,
+  contenderBType,
+  winnerSlot,
+}: BattleCardProps) {
+  const votingClosesCountdown = useCountdown(
+    status === 'voting' ? votingClosesAt : null,
+    'Voting closes in'
+  )
+  const votingOpensCountdown = useCountdown(
+    status === 'open' && votingOpensAt ? votingOpensAt : null,
+    'Voting opens in'
+  )
+  const countdown = votingClosesCountdown ?? votingOpensCountdown
+
+  const hasContenders = !!(contenderAName || contenderBName)
+  const isRestricted = voterEligibility ? VOTER_ELIGIBILITY_RESTRICTED.has(voterEligibility) : false
+  const isFinished = status === 'published' || status === 'closed' || status === 'archived'
+
   return (
     <MotionLink
       to={`/battles/${slug}`}
@@ -44,45 +85,75 @@ export function BattleCard({ slug, title, taskPrompt, status, totalVoteCount, ba
       whileHover={{ y: -3 }}
       transition={{ duration: 0.1, ease: [0.4, 0, 0.2, 1] }}
     >
-      <Card className="space-y-4 p-5">
-        <div className="flex items-start justify-between gap-3">
-          <div className="min-w-0 space-y-2">
-            <div className="flex flex-wrap gap-1.5">
-              <Badge color="gray" variant="outline">
-                Battle
-              </Badge>
-              {battleType && (
-                <Badge color={BATTLE_TYPE_COLORS[battleType]} variant="outline">
-                  {BATTLE_TYPE_LABELS[battleType]}
-                </Badge>
-              )}
-            </div>
-            <h3 className="line-clamp-2 text-base font-bold leading-tight text-greyscale-900 dark:text-greyscale-50">
-              {title}
-            </h3>
+      <Card className="space-y-3 p-5">
+        {/* Badge row */}
+        <div className="flex items-center justify-between gap-2">
+          <div className="flex items-center gap-1.5 min-w-0 flex-wrap">
+            {battleType && (
+              <span className="text-[11px] font-semibold text-greyscale-500 dark:text-greyscale-400 bg-surface-raised px-2 py-0.5 rounded-full flex-shrink-0">
+                {BATTLE_TYPE_LABELS[battleType]}
+              </span>
+            )}
+            {isRestricted && (
+              <span className="text-[11px] font-semibold text-greyscale-500 bg-surface-raised px-2 py-0.5 rounded-full flex-shrink-0">
+                Restricted
+              </span>
+            )}
           </div>
-          <BattleStatusBadge status={status as BattleStatus} />
+          <BattleStatusBadge status={status} />
         </div>
 
-        <p className="line-clamp-3 text-sm leading-7 text-greyscale-600 dark:text-greyscale-400">{taskPrompt}</p>
+        {/* Title */}
+        <h3 className="line-clamp-2 text-base font-bold leading-tight text-greyscale-900 dark:text-greyscale-50">
+          {title}
+        </h3>
 
-        {contenders && contenders.length > 0 && (
-          <div className="flex flex-wrap gap-2">
-            {contenders.map((c) => (
-              <Badge key={c.slot} color={c.slot === 'A' ? 'blue' : 'yellow'} variant="outline">
-                {c.slot}: {c.displayName}
-              </Badge>
-            ))}
+        {/* Winner banner */}
+        {isFinished && winnerSlot && (
+          <div className={`flex items-center gap-2 rounded-xl px-3 py-2 text-xs font-semibold ${
+            winnerSlot === 'A'
+              ? 'bg-status-green/10 text-status-green'
+              : 'bg-primary-yellow-500/10 text-primary-yellow-600'
+          }`}>
+            <Trophy size={12} />
+            {winnerSlot === 'A' ? (contenderAName ?? 'Contender A') : (contenderBName ?? 'Contender B')} wins
           </div>
         )}
 
-        <div className="flex items-center justify-between text-xs text-greyscale-500 dark:text-greyscale-400">
-          {creatorHandle ? (
-            <span>by <span className="font-medium text-greyscale-700 dark:text-greyscale-300">@{creatorHandle}</span></span>
+        {/* Contender VS row */}
+        {hasContenders && (
+          <div className="flex items-center gap-2">
+            <div className="flex-1 min-w-0 flex items-center gap-1.5 rounded-xl bg-surface-raised px-2.5 py-1.5">
+              <span className="flex h-4 w-4 items-center justify-center rounded-full bg-primary-yellow-500/15 text-[9px] font-black text-primary-yellow-600 flex-shrink-0">A</span>
+              <ContenderTypeIcon type={contenderAType} />
+              <span className="text-xs font-medium text-greyscale-700 dark:text-greyscale-300 truncate">
+                {contenderAName ?? '—'}
+              </span>
+            </div>
+            <Swords size={13} className="text-greyscale-300 dark:text-greyscale-600 flex-shrink-0" />
+            <div className="flex-1 min-w-0 flex items-center gap-1.5 rounded-xl bg-surface-raised px-2.5 py-1.5">
+              <span className="flex h-4 w-4 items-center justify-center rounded-full bg-status-yellow/15 text-[9px] font-black text-status-yellow flex-shrink-0">B</span>
+              <ContenderTypeIcon type={contenderBType} />
+              <span className="text-xs font-medium text-greyscale-700 dark:text-greyscale-300 truncate">
+                {contenderBName ?? '—'}
+              </span>
+            </div>
+          </div>
+        )}
+
+        {/* Meta row */}
+        <div className="flex items-center justify-between text-xs text-greyscale-500 dark:text-greyscale-400 gap-2">
+          {countdown && !countdown.expired ? (
+            <span className={`flex items-center gap-1 font-semibold ${countdown.urgent ? 'text-status-red' : ''}`}>
+              <span className="inline-block h-1.5 w-1.5 rounded-full bg-current animate-pulse flex-shrink-0" />
+              {countdown.label} {countdown.formatted}
+            </span>
           ) : (
             <span />
           )}
-          <span className="font-semibold text-greyscale-900 dark:text-greyscale-50">{totalVoteCount} vote{totalVoteCount !== 1 ? 's' : ''}</span>
+          <span className="font-semibold text-greyscale-900 dark:text-greyscale-50 flex-shrink-0">
+            {totalVoteCount} vote{totalVoteCount !== 1 ? 's' : ''}
+          </span>
         </div>
       </Card>
     </MotionLink>

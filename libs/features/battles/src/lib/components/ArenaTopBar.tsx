@@ -1,7 +1,8 @@
 import React from 'react'
 import { Link } from 'react-router-dom'
-import { ArrowLeft } from 'lucide-react'
+import { ArrowLeft, BookOpen, Timer } from 'lucide-react'
 import type { Battle, BattleUIPhase } from '../types/battle.types'
+import { useCountdown } from '../hooks/useCountdown'
 
 const PHASE_LABELS: Record<BattleUIPhase, { label: string; color: string }> = {
   idle:    { label: 'Open', color: 'bg-status-green/10 text-status-green' },
@@ -14,10 +15,27 @@ interface ArenaTopBarProps {
   battle: Battle
   currentPhase: BattleUIPhase
   spectatorCount?: number
+  onRulesOpen?: () => void
 }
 
-export const ArenaTopBar: React.FC<ArenaTopBarProps> = ({ battle, currentPhase, spectatorCount }) => {
+export const ArenaTopBar: React.FC<ArenaTopBarProps> = ({
+  battle,
+  currentPhase,
+  spectatorCount,
+  onRulesOpen,
+}) => {
   const { label, color } = PHASE_LABELS[currentPhase]
+
+  // Determine the relevant countdown based on phase
+  const votingOpensCountdown = useCountdown(
+    battle.status === 'open' && battle.voting_opens_at ? battle.voting_opens_at : null,
+    'Voting opens in'
+  )
+  const votingClosesCountdown = useCountdown(
+    battle.status === 'voting' ? battle.voting_closes_at : null,
+    'Voting closes in'
+  )
+  const countdown = votingClosesCountdown ?? votingOpensCountdown
 
   return (
     <div className="h-14 flex-shrink-0 flex items-center gap-3 px-4 border-b border-surface-border bg-surface-base">
@@ -32,9 +50,39 @@ export const ArenaTopBar: React.FC<ArenaTopBarProps> = ({ battle, currentPhase, 
       <h1 className="flex-1 min-w-0 text-sm font-semibold text-surface-text truncate">
         {battle.title}
       </h1>
+
+      {/* Countdown chip */}
+      {countdown && !countdown.expired && (
+        <span
+          className={`hidden sm:flex items-center gap-1 text-[11px] font-semibold px-2.5 py-1 rounded-full ${
+            countdown.urgent
+              ? 'bg-status-red/10 text-status-red'
+              : 'bg-surface-raised text-greyscale-500'
+          }`}
+        >
+          <Timer size={11} />
+          {countdown.formatted}
+        </span>
+      )}
+
+      {/* Phase badge */}
       <span className={`flex-shrink-0 text-[11px] font-bold px-2.5 py-1 rounded-full ${color}`}>
         {label}
       </span>
+
+      {/* Rules button */}
+      {onRulesOpen && (
+        <button
+          type="button"
+          onClick={onRulesOpen}
+          className="flex-shrink-0 flex items-center gap-1.5 text-[11px] font-semibold text-greyscale-500 hover:text-greyscale-900 dark:hover:text-greyscale-100 transition-colors px-2 py-1 rounded-lg hover:bg-surface-raised"
+          aria-label="View battle rules"
+        >
+          <BookOpen size={13} />
+          <span className="hidden sm:inline">Rules</span>
+        </button>
+      )}
+
       {spectatorCount != null && spectatorCount > 0 && (
         <span className="hidden sm:flex items-center gap-1 text-[11px] text-surface-text-muted">
           <span className="inline-block h-1.5 w-1.5 rounded-full bg-status-green animate-pulse" />
