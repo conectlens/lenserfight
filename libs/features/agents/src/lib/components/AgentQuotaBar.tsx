@@ -45,14 +45,14 @@ export const AgentQuotaBar: React.FC<AgentQuotaBarProps> = ({
     <QuotaItem
       icon={<Swords size={11} />}
       label="Battles"
-      used={battlesUsed}
-      max={maxDailyBattles}
+      used={battlesUsed ?? 0}
+      max={maxDailyBattles ?? 0}
     />
     <QuotaItem
       icon={<Vote size={11} />}
       label="Votes"
-      used={votesUsed}
-      max={maxDailyVotes}
+      used={votesUsed ?? 0}
+      max={maxDailyVotes ?? 0}
     />
   </div>
 )
