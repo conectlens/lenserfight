@@ -15,7 +15,6 @@ import {
   useEdgesState,
   useReactFlow,
 } from '@xyflow/react'
-import { Pencil } from 'lucide-react'
 import React, { useCallback, useEffect, useRef } from 'react'
 
 import { useSaveWorkflow } from '../hooks/useSaveWorkflow'
@@ -23,7 +22,7 @@ import { useSaveWorkflow } from '../hooks/useSaveWorkflow'
 import { WorkflowCanvasEdge } from './WorkflowCanvasEdge'
 import { WorkflowCanvasNode } from './WorkflowCanvasNode'
 
-import type { WorkflowNodeData } from './WorkflowCanvasNode'
+import type { WorkflowNodeData, WorkflowNodeConfig } from './WorkflowCanvasNode'
 import type { DraggedLensData } from './WorkflowLensPalette'
 import type {
   WorkflowNodeRecord,
@@ -49,8 +48,12 @@ const edgeTypes: EdgeTypes = { workflowEdge: WorkflowCanvasEdge }
 function toFlowNode(
   record: WorkflowNodeRecord,
   onRemove: (id: string) => void,
-  onEdit?: (lensId: string) => void
+  onConfigNode?: (nodeId: string, lensId: string) => void,
+  onEditLens?: (lensId: string) => void,
+  currentUserId?: string,
+  nodeConfigOverrides?: Record<string, WorkflowNodeConfig>,
 ): Node<WorkflowNodeData> {
+  const isLensOwner = !!currentUserId && !!record.lens_lenser_id && currentUserId === record.lens_lenser_id
   return {
     id: record.id,
     type: 'workflowNode',
@@ -60,8 +63,13 @@ function toFlowNode(
       ordinal: record.ordinal,
       isPersisted: true,
       lens_id: record.lens_id,
+      lensVisibility: record.lens_visibility as 'public' | 'private' | 'unlisted' | undefined,
+      lensLenserId: record.lens_lenser_id ?? undefined,
+      isLensOwner,
+      config: nodeConfigOverrides?.[record.id] ?? record.config ?? {},
       onRemove,
-      onEdit,
+      onConfigNode,
+      onEditLens: isLensOwner ? onEditLens : undefined,
     } as WorkflowNodeData & { lens_id: string },
   }
 }
@@ -120,6 +128,9 @@ export interface WorkflowBuilderCanvasProps {
   nodes: WorkflowNodeRecord[]
   edges: WorkflowEdgeRecord[]
   readOnly?: boolean
+  currentUserId?: string
+  nodeConfigOverrides?: Record<string, WorkflowNodeConfig>
+  onConfigNode?: (nodeId: string, lensId: string) => void
   onEditLens?: (lensId: string) => void
   onEdit?: () => void
 }
@@ -143,6 +154,9 @@ function WorkflowBuilderCanvasInner({
   nodes: nodeRecords,
   edges: edgeRecords,
   readOnly = false,
+  currentUserId,
+  nodeConfigOverrides,
+  onConfigNode,
   onEditLens,
   onEdit,
 }: WorkflowBuilderCanvasProps) {
@@ -183,7 +197,7 @@ function WorkflowBuilderCanvasInner({
 
   // ── Flow state ────────────────────────────────────────────────────────────
   const [flowNodes, setNodes, onNodesChange] = useNodesState(
-    nodeRecords.map((n) => toFlowNode(n, handleRemoveNode, onEditLens))
+    nodeRecords.map((n) => toFlowNode(n, handleRemoveNode, onConfigNode, onEditLens, currentUserId, nodeConfigOverrides))
   )
   const [flowEdges, setEdges, onEdgesChange] = useEdgesState(
     edgeRecords.map((e) => toFlowEdge(e, handleRemoveEdge))
@@ -191,8 +205,18 @@ function WorkflowBuilderCanvasInner({
 
   // Re-seed when DB records arrive (initial fetch)
   useEffect(() => {
-    setNodes(nodeRecords.map((n) => toFlowNode(n, handleRemoveNode, onEditLens)))
-  }, [nodeRecords, handleRemoveNode, onEditLens, setNodes])
+    setNodes(nodeRecords.map((n) => toFlowNode(n, handleRemoveNode, onConfigNode, onEditLens, currentUserId, nodeConfigOverrides)))
+  }, [nodeRecords, handleRemoveNode, onConfigNode, onEditLens, currentUserId, nodeConfigOverrides, setNodes])
+
+  // Sync config overrides into existing nodes without re-seeding positions
+  useEffect(() => {
+    if (!nodeConfigOverrides) return
+    setNodes((nds) => nds.map((n) => {
+      const override = nodeConfigOverrides[n.id]
+      if (!override) return n
+      return { ...n, data: { ...n.data, config: override } }
+    }))
+  }, [nodeConfigOverrides, setNodes])
 
   useEffect(() => {
     setEdges(edgeRecords.map((e) => toFlowEdge(e, handleRemoveEdge)))
@@ -283,14 +307,19 @@ function WorkflowBuilderCanvasInner({
           ordinal: nextOrdinal,
           isPersisted: false,
           lens_id: lensData.lens_id,
+          lensVisibility: lensData.visibility,
+          lensLenserId: lensData.lenser_id,
+          isLensOwner: !!currentUserId && currentUserId === lensData.lenser_id,
+          config: {},
           onRemove: handleRemoveNode,
-          onEdit: onEditLens,
+          onConfigNode,
+          onEditLens: (!!currentUserId && currentUserId === lensData.lenser_id) ? onEditLens : undefined,
         } as WorkflowNodeData & { lens_id: string },
       }
       setNodes((nds) => [...nds, newNode])
       scheduleSave()
     },
-    [screenToFlowPosition, flowNodes.length, setNodes, scheduleSave, handleRemoveNode, onEditLens]
+    [screenToFlowPosition, flowNodes.length, setNodes, scheduleSave, handleRemoveNode, onConfigNode, onEditLens, currentUserId]
   )
 
   const onNodeDragStop = useCallback(() => scheduleSave(), [scheduleSave])

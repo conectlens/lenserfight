@@ -29,6 +29,10 @@ export interface WorkflowNodeRecord {
   label?: string | null
   ordinal: number
   created_at: string
+  // Enriched by fn_get_workflow_nodes JOIN (added in migration)
+  config?: Record<string, unknown> | null
+  lens_visibility?: string | null
+  lens_lenser_id?: string | null
 }
 
 export interface WorkflowEdgeRecord {
@@ -46,6 +50,7 @@ export interface WorkflowRunRecord {
   triggered_by?: string | null
   status: 'pending' | 'running' | 'completed' | 'failed'
   context_inputs: Record<string, unknown>
+  global_model_id?: string | null
   started_at?: string | null
   completed_at?: string | null
   created_at: string
@@ -118,7 +123,7 @@ export interface WorkflowsRepositoryPort {
   upsertEdges(workflowId: string, edges: UpsertEdgeInput[]): Promise<WorkflowEdgeRecord[]>
   deleteNode(nodeId: string): Promise<void>
   deleteEdge(edgeId: string): Promise<void>
-  startRun(workflowId: string, inputs?: Record<string, unknown>): Promise<WorkflowRunRecord>
+  startRun(workflowId: string, inputs?: Record<string, unknown>, globalModelId?: string): Promise<WorkflowRunRecord>
   getRun(runId: string): Promise<WorkflowRunRecord | null>
   getNodeResults(runId: string): Promise<WorkflowNodeResultRecord[]>
 }
@@ -297,10 +302,11 @@ export class SupabaseWorkflowsRepository implements WorkflowsRepositoryPort {
     if (error) this.handleError(error)
   }
 
-  async startRun(workflowId: string, inputs: Record<string, unknown> = {}): Promise<WorkflowRunRecord> {
+  async startRun(workflowId: string, inputs: Record<string, unknown> = {}, globalModelId?: string): Promise<WorkflowRunRecord> {
     const { data, error } = await supabase.rpc('fn_start_workflow_run', {
       p_workflow_id: workflowId,
       p_inputs: inputs,
+      p_global_model_id: globalModelId ?? null,
     })
 
     if (error) this.handleError(error)
