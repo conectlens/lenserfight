@@ -1,14 +1,17 @@
 import { Badge, Button } from '@lenserfight/ui/components'
 import { lensesService } from '@lenserfight/data/repositories'
+import { useAuth } from '@lenserfight/features/auth'
 import { useCreateLens, CreateLensModal } from '@lenserfight/features/lenses'
-import { ArrowLeft, ChevronDown, GitBranch, Play, Swords, X } from 'lucide-react'
+import { ArrowLeft, Bookmark, ChevronDown, GitBranch, GitFork, Play, Swords, ThumbsUp, X } from 'lucide-react'
 import React, { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 
 import { WorkflowBuilderCanvas } from '../components/WorkflowBuilderCanvas'
 import { WorkflowLensPalette } from '../components/WorkflowLensPalette'
 import { WorkflowProgressView } from '../components/WorkflowProgressView'
+import { useForkWorkflow } from '../hooks/useForkWorkflow'
 import { useWorkflow } from '../hooks/useWorkflow'
+import { useWorkflowReaction } from '../hooks/useWorkflowReaction'
 import { useWorkflowRun } from '../hooks/useWorkflowRun'
 
 interface WorkflowBuilderPageProps {
@@ -19,12 +22,18 @@ interface WorkflowBuilderPageProps {
 
 export function WorkflowBuilderPage({ workflowId, onBattleClick }: WorkflowBuilderPageProps) {
   const navigate = useNavigate()
+  const { user } = useAuth()
   const { workflow, nodes, edges, isLoading } = useWorkflow(workflowId)
   const { startRun, isPending: starting, runId, nodeResults, isRunning } = useWorkflowRun(workflowId)
   const [showRunPanel, setShowRunPanel] = useState(false)
   const [paletteCollapsed, setPaletteCollapsed] = useState(
     () => typeof window !== 'undefined' && window.innerWidth < 768
   )
+
+  const isOwner = !!user && user.id === workflow?.lenser_id
+  const { mutate: forkWorkflow, isPending: isForking } = useForkWorkflow()
+  const { liked, saved, likeCount, savedCount, toggleLike, toggleSave, isPending: reactionPending } =
+    useWorkflowReaction(workflowId, workflow?.reaction_totals as Record<string, number> | null | undefined)
 
   // ── Lens edit modal (via useCreateLens in edit mode) ────────────────────────
   const lensModal = useCreateLens()
@@ -104,6 +113,53 @@ export function WorkflowBuilderPage({ workflowId, onBattleClick }: WorkflowBuild
 
         {/* Actions */}
         <div className="flex items-center gap-2 flex-shrink-0">
+          {/* Social: Like / Save / Fork — shown when authenticated */}
+          {user && (
+            <>
+              <button
+                type="button"
+                onClick={toggleLike}
+                disabled={reactionPending}
+                title={liked ? 'Unlike' : 'Like'}
+                className={`flex items-center gap-1 rounded-xl border px-2.5 py-1 text-xs font-medium transition-colors ${
+                  liked
+                    ? 'border-primary-yellow-500 bg-primary-yellow-500/10 text-primary-yellow-600'
+                    : 'border-surface-border bg-surface-raised text-greyscale-500 hover:text-greyscale-900 dark:hover:text-greyscale-100'
+                }`}
+              >
+                <ThumbsUp size={12} className={liked ? 'fill-current' : ''} />
+                {likeCount > 0 && <span>{likeCount}</span>}
+              </button>
+
+              <button
+                type="button"
+                onClick={toggleSave}
+                disabled={reactionPending}
+                title={saved ? 'Unsave' : 'Save'}
+                className={`flex items-center gap-1 rounded-xl border px-2.5 py-1 text-xs font-medium transition-colors ${
+                  saved
+                    ? 'border-primary-yellow-500 bg-primary-yellow-500/10 text-primary-yellow-600'
+                    : 'border-surface-border bg-surface-raised text-greyscale-500 hover:text-greyscale-900 dark:hover:text-greyscale-100'
+                }`}
+              >
+                <Bookmark size={12} className={saved ? 'fill-current' : ''} />
+                {savedCount > 0 && <span>{savedCount}</span>}
+              </button>
+
+              {!isOwner && (
+                <Button
+                  size="sm"
+                  variant="secondary"
+                  onClick={() => forkWorkflow(workflowId)}
+                  isLoading={isForking}
+                  className="gap-1.5 w-auto"
+                >
+                  <GitFork size={12} /> Fork
+                </Button>
+              )}
+            </>
+          )}
+
           {/* Run */}
           <Button
             size="sm"

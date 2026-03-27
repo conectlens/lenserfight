@@ -47,6 +47,13 @@ export type XPRuleKey =
   | 'CONTRIB_PR_MERGED_DOCS'
   | 'CONTRIB_ISSUE_FILED'
   | 'CONTRIB_REVIEW_GIVEN'
+  // Workflow Marketplace
+  | 'WORKFLOW_FORKED'
+  | 'WORKFLOW_FORK_RECEIVED'
+  | 'WORKFLOW_LIKED'
+  | 'WORKFLOW_LIKE_RECEIVED'
+  | 'WORKFLOW_SAVED'
+  | 'WORKFLOW_SAVE_RECEIVED'
 
 export interface XPApp {
   id: string

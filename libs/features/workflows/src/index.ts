@@ -4,6 +4,9 @@ export * from './lib/hooks/useWorkflow'
 export * from './lib/hooks/useWorkflowRun'
 export * from './lib/hooks/useSaveWorkflow'
 export * from './lib/hooks/useCreateWorkflow'
+export * from './lib/hooks/usePopularWorkflows'
+export * from './lib/hooks/useForkWorkflow'
+export * from './lib/hooks/useWorkflowReaction'
 
 // Components
 export * from './lib/components/WorkflowCard'

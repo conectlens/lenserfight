@@ -38,8 +38,14 @@ export const workflowsService = {
   ): Promise<ApiResponseEnvelope<WorkflowRecord[]>> =>
     workflowsRepo.listByLenserPaginated(lenserId, offset, limit, filter),
 
+  getPopular: (offset: number, limit: number, search?: string): Promise<ApiResponseEnvelope<WorkflowRecord[]>> =>
+    workflowsRepo.getPopular(offset, limit, search),
+
   getById: (id: string): Promise<WorkflowRecord | null> =>
     workflowsRepo.getById(id),
+
+  forkWorkflow: (sourceId: string): Promise<WorkflowRecord> =>
+    workflowsRepo.forkWorkflow(sourceId),
 
   getNodes: (workflowId: string): Promise<WorkflowNodeRecord[]> =>
     workflowsRepo.getNodes(workflowId),

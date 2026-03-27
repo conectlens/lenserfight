@@ -1,6 +1,6 @@
 import { Badge, Card } from '@lenserfight/ui/components'
 import { timeAgo } from '@lenserfight/utils/date'
-import { GitBranch, Swords } from 'lucide-react'
+import { Bookmark, GitFork, GitBranch, Swords, ThumbsUp } from 'lucide-react'
 import React from 'react'
 
 import type { WorkflowRecord, WorkflowNodeRecord } from '@lenserfight/data/repositories'
@@ -9,12 +9,16 @@ interface WorkflowCardProps {
   workflow: WorkflowRecord
   nodes?: WorkflowNodeRecord[]
   compact?: boolean
+  showReactions?: boolean
   onClick?: () => void
 }
 
-export function WorkflowCard({ workflow, nodes, compact, onClick }: WorkflowCardProps) {
+export function WorkflowCard({ workflow, nodes, compact, showReactions, onClick }: WorkflowCardProps) {
   const nodeCount = nodes?.length ?? 0
   const battleCount = workflow.battle_count ?? 0
+  const likeCount = (workflow.reaction_totals as Record<string, number> | null | undefined)?.like ?? 0
+  const savedCount = (workflow.reaction_totals as Record<string, number> | null | undefined)?.saved ?? 0
+  const forkCount = workflow.fork_count ?? 0
 
   if (compact) {
     return (
@@ -63,6 +67,26 @@ export function WorkflowCard({ workflow, nodes, compact, onClick }: WorkflowCard
         <p className="text-xs text-greyscale-500 font-medium">
           Used in {battleCount} battle{battleCount !== 1 ? 's' : ''}
         </p>
+      )}
+
+      {showReactions && (likeCount > 0 || savedCount > 0 || forkCount > 0) && (
+        <div className="flex items-center gap-3 pt-1 border-t border-surface-border">
+          {likeCount > 0 && (
+            <span className="flex items-center gap-1 text-xs text-greyscale-400">
+              <ThumbsUp size={11} /> {likeCount}
+            </span>
+          )}
+          {savedCount > 0 && (
+            <span className="flex items-center gap-1 text-xs text-greyscale-400">
+              <Bookmark size={11} /> {savedCount}
+            </span>
+          )}
+          {forkCount > 0 && (
+            <span className="flex items-center gap-1 text-xs text-greyscale-400">
+              <GitFork size={11} /> {forkCount}
+            </span>
+          )}
+        </div>
       )}
     </Card>
   )

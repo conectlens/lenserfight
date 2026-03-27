@@ -52,7 +52,6 @@ const WorkflowsPageRoute: React.FC = () => {
   return (
     <WorkflowsPage
       onCreateWorkflow={() => navigate('/workflows/manage')}
-      onOpenWorkflow={(id) => navigate(`/workflows/${id}`)}
     />
   )
 }
