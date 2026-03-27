@@ -20,7 +20,7 @@ export function WorkflowCard({ workflow, nodes, compact, onClick }: WorkflowCard
     return (
       <div
         onClick={onClick}
-        className={`flex items-center gap-3 rounded-2xl border border-surface-border bg-surface-raised px-3 py-2 ${onClick ? 'cursor-pointer hover:border-status-blue transition-colors' : ''}`}
+        className={`flex items-center gap-3 rounded-2xl border border-surface-border bg-surface-raised px-3 py-2 ${onClick ? 'cursor-pointer hover:border-primary-yellow-500 transition-colors' : ''}`}
       >
         <GitBranch size={14} className="text-greyscale-400 flex-shrink-0" />
         <span className="text-sm font-semibold text-greyscale-900 dark:text-greyscale-50 truncate">{workflow.title}</span>
@@ -32,7 +32,7 @@ export function WorkflowCard({ workflow, nodes, compact, onClick }: WorkflowCard
   return (
     <Card
       onClick={onClick}
-      className={`space-y-3 p-5 ${onClick ? 'cursor-pointer hover:border-status-blue transition-colors' : ''}`}
+      className={`space-y-3 p-5 ${onClick ? 'cursor-pointer hover:border-primary-yellow-500 transition-colors' : ''}`}
     >
       <div className="flex items-start gap-3">
         <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-xl bg-surface-raised">

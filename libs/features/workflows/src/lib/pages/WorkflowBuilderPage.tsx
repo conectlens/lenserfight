@@ -177,14 +177,14 @@ export function WorkflowBuilderPage({ workflowId, onBattleClick }: WorkflowBuild
 
           {/* Battle CTA — shown when workflow has nodes and isn't running */}
           {nodes.length > 0 && !isRunning && !showRunPanel && onBattleClick && (
-            <div className="pointer-events-auto absolute top-3 right-3 flex items-center gap-2 rounded-2xl border border-status-blue/30 bg-status-blue/5 px-3 py-2 shadow-sm">
+            <div className="pointer-events-auto absolute top-3 right-3 flex items-center gap-2 rounded-2xl border border-primary-yellow-500/30 bg-primary-yellow-500/5 px-3 py-2 shadow-sm">
               <p className="text-xs font-medium text-greyscale-700 dark:text-greyscale-300">
                 Workflow ready.
               </p>
               <button
                 type="button"
                 onClick={() => onBattleClick(workflow.id)}
-                className="text-xs font-semibold text-status-blue hover:underline"
+                className="text-xs font-semibold text-primary-yellow-600 hover:underline"
               >
                 Battle it →
               </button>

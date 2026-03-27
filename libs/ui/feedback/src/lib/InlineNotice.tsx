@@ -16,10 +16,10 @@ const variantConfig: Record<
   { bg: string; border: string; text: string; iconColor: string }
 > = {
   info: {
-    bg:        'bg-status-blue/10',
-    border:    'border-status-blue/30',
+    bg:        'bg-primary-yellow-500/10',
+    border:    'border-primary-yellow-500/30',
     text:      'text-greyscale-800 dark:text-greyscale-200',
-    iconColor: 'text-status-blue',
+    iconColor: 'text-primary-yellow-600',
   },
   success: {
     bg:        'bg-status-green/10',
