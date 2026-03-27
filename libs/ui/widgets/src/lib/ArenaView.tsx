@@ -6,7 +6,7 @@ export interface ArenaViewProps {
 
 export function ArenaView({ children }: ArenaViewProps) {
   return (
-    <div className="flex flex-col md:flex-row w-full gap-4 relative">
+    <div className="flex flex-col md:flex-row w-full h-full gap-4 relative isolate">
       {children}
     </div>
   );
