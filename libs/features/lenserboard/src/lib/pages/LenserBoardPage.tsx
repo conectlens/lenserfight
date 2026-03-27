@@ -56,7 +56,7 @@ export const LenserBoardPage: React.FC = () => {
   const userEntry = data?.pages[0]?.userEntry
 
   return (
-    <div className="max-w-5xl mx-auto py-8 px-4 md:px-6">
+    <div className="">
       <SEOHead type="default" overrideTitle="LenserBoard" />
 
       <LenserBoardHeader />

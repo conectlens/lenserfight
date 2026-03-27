@@ -26,7 +26,7 @@ export const CheckoutSuccessView: React.FC = () => {
   }, [queryClient])
 
   return (
-    <div className="max-w-4xl mx-auto py-16 px-4">
+    <div className="">
       <SEOHead type="default" overrideTitle="Payment Successful — LenserFight" />
 
       <div className="max-w-md mx-auto flex flex-col items-center text-center">

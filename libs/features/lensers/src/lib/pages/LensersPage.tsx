@@ -56,7 +56,7 @@ export const LensersPage: React.FC = () => {
   const isLoading = isMyAgents ? myAgentsLoading : lensersLoading
 
   return (
-    <div className="max-w-5xl mx-auto py-8 px-4 md:px-6">
+    <div className="">
       <SEOHead type="default" overrideTitle="Lensers" />
 
       <div className="mb-6">

@@ -4,7 +4,7 @@ import { useLocation } from 'react-router-dom'
 
 import { Button } from '@lenserfight/ui/components'
 import { FormError } from '@lenserfight/ui/components'
-import { Modal } from '@lenserfight/ui/modals'
+import { Dialog } from '@lenserfight/ui/overlays'
 import { useAuth } from '@lenserfight/features/auth'
 import { feedbackService } from '@lenserfight/data/repositories'
 import { ProductTag } from '@lenserfight/types'
@@ -76,7 +76,7 @@ export const FeedbackModal: React.FC<FeedbackModalProps> = ({ isOpen, onClose })
 
   if (success) {
     return (
-      <Modal isOpen={isOpen} onClose={handleClose} title="Feedback Sent">
+      <Dialog open={isOpen} onClose={handleClose} title="Feedback Sent" icon={<CheckCircle size={18} />}>
         <div className="flex flex-col items-center justify-center py-8 text-center animate-in fade-in zoom-in duration-300">
           <div className="w-16 h-16 bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400 rounded-full flex items-center justify-center mb-4">
             <CheckCircle size={32} />
@@ -86,12 +86,12 @@ export const FeedbackModal: React.FC<FeedbackModalProps> = ({ isOpen, onClose })
             Your feedback has been received and helps us improve the platform.
           </p>
         </div>
-      </Modal>
+      </Dialog>
     )
   }
 
   return (
-    <Modal isOpen={isOpen} onClose={handleClose} title="Send Feedback">
+    <Dialog open={isOpen} onClose={handleClose} title="Send Feedback" icon={<MessageSquare size={18} />}>
       <form onSubmit={handleSubmit} className="space-y-5">
         {/* Topic Selection */}
         <div>
@@ -168,6 +168,6 @@ export const FeedbackModal: React.FC<FeedbackModalProps> = ({ isOpen, onClose })
           </Button>
         </div>
       </form>
-    </Modal>
+    </Dialog>
   )
 }

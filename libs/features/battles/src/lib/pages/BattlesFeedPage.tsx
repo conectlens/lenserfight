@@ -76,7 +76,7 @@ export function BattlesFeedPage() {
     : battles.filter((b) => b.battle_type === typeFilter)
 
   return (
-    <div className="max-w-4xl mx-auto px-4 py-8">
+    <div className="">
       <SEOHead type="battles-list" />
       <div className="space-y-3 mb-6">
         <div className="flex items-center justify-between">
