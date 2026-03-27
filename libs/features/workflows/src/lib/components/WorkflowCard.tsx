@@ -1,5 +1,6 @@
 import { Badge, Card } from '@lenserfight/ui/components'
 import { timeAgo } from '@lenserfight/utils/date'
+import { motion } from 'framer-motion'
 import { Bookmark, GitFork, GitBranch, Swords, ThumbsUp } from 'lucide-react'
 import React from 'react'
 
@@ -34,9 +35,14 @@ export function WorkflowCard({ workflow, nodes, compact, showReactions, onClick 
   }
 
   return (
+    <motion.div
+      whileHover={{ y: -3 }}
+      transition={{ duration: 0.1, ease: [0.4, 0, 0.2, 1] }}
+      className="hover:shadow-xl transition-shadow"
+    >
     <Card
       onClick={onClick}
-      className={`space-y-3 p-5 ${onClick ? 'cursor-pointer hover:border-primary-yellow-500 transition-colors' : ''}`}
+      className={`space-y-3 p-4 ${onClick ? 'cursor-pointer hover:border-primary-yellow-500 transition-colors' : ''}`}
     >
       <div className="flex items-start gap-3">
         <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-xl bg-surface-raised">
@@ -89,5 +95,6 @@ export function WorkflowCard({ workflow, nodes, compact, showReactions, onClick 
         </div>
       )}
     </Card>
+    </motion.div>
   )
 }
