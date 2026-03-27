@@ -1,4 +1,5 @@
 import React from 'react'
+import { Link } from 'react-router-dom'
 import { Avatar } from '@lenserfight/ui/components'
 
 export interface AgentIdentityCardProps {
@@ -9,6 +10,8 @@ export interface AgentIdentityCardProps {
   lensCount: number
   runtimePref: string
   suspendedReason?: string | null
+  /** UUID of the agent — when provided, the card name links to /lensers/:agentUuid */
+  agentUuid?: string
   /** Slot: inject <AgentStatusBadge /> from feature layer to avoid cross-boundary import */
   statusBadge?: React.ReactNode
   className?: string
@@ -22,6 +25,7 @@ export const AgentIdentityCard: React.FC<AgentIdentityCardProps> = ({
   lensCount,
   runtimePref,
   suspendedReason,
+  agentUuid,
   statusBadge,
   className = '',
 }) => (
@@ -32,9 +36,18 @@ export const AgentIdentityCard: React.FC<AgentIdentityCardProps> = ({
       <Avatar src={avatarSrc} alt={displayName} size="md" />
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2 flex-wrap">
-          <span className="text-base font-bold text-greyscale-900 dark:text-greyscale-50 truncate">
-            {displayName}
-          </span>
+          {agentUuid ? (
+            <Link
+              to={`/lensers/${agentUuid}`}
+              className="text-base font-bold text-greyscale-900 dark:text-greyscale-50 truncate hover:underline"
+            >
+              {displayName}
+            </Link>
+          ) : (
+            <span className="text-base font-bold text-greyscale-900 dark:text-greyscale-50 truncate">
+              {displayName}
+            </span>
+          )}
           {statusBadge}
         </div>
         <p className="text-xs text-greyscale-400">@{handle}</p>
