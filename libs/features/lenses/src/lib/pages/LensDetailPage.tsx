@@ -7,6 +7,7 @@ import { useShareContext } from '@lenserfight/features/share'
 import { CreateVersionParamInput, ReportReasonEnum } from '@lenserfight/types'
 import { SEOHead, Badge, Button, Card, DesktopFrame } from '@lenserfight/ui/components'
 import { ConfirmModal } from '@lenserfight/ui/modals'
+import { SelectField } from '@lenserfight/ui/forms'
 import { useUI } from '@lenserfight/ui/providers'
 import { useQueryClient } from '@tanstack/react-query'
 import { GitFork, History, Lock, Loader2, Pencil, Trash2, Flag, Play, ChevronDown, ChevronUp } from 'lucide-react'
@@ -630,17 +631,14 @@ export const LensDetailPage: React.FC = () => {
           <div className="bg-white dark:bg-gray-800 rounded-xl p-6 max-w-sm w-full space-y-4 shadow-xl">
             <h3 className="text-base font-semibold text-gray-900 dark:text-white">Report Lens</h3>
             <p className="text-sm text-gray-500 dark:text-gray-400">Why are you reporting this lens?</p>
-            <select
+            <SelectField
               value={reportReason}
-              onChange={(e) => setReportReason(e.target.value as typeof reportReason)}
-              className="w-full border border-gray-200 dark:border-gray-600 rounded-lg px-3 py-2 text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-            >
-              {(['spam', 'harassment', 'misinformation', 'off_topic', 'other'] as const).map((r) => (
-                <option key={r} value={r}>
-                  {r.replace('_', ' ').replace(/\b\w/g, (c) => c.toUpperCase())}
-                </option>
-              ))}
-            </select>
+              onChange={(v) => setReportReason(v as typeof reportReason)}
+              options={(['spam', 'harassment', 'misinformation', 'off_topic', 'other'] as const).map((r) => ({
+                value: r,
+                label: r.replace('_', ' ').replace(/\b\w/g, (c) => c.toUpperCase()),
+              }))}
+            />
             <div className="flex gap-3 justify-end pt-1">
               <Button
                 variant="ghost"

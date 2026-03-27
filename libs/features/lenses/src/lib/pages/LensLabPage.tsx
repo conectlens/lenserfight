@@ -6,6 +6,7 @@ import { LenserPreferences } from '@lenserfight/types'
 import { ReportReasonEnum } from '@lenserfight/types'
 import { Button, SEOHead } from '@lenserfight/ui/components'
 import { ConfirmModal } from '@lenserfight/ui/modals'
+import { SelectField } from '@lenserfight/ui/forms'
 import { useUI } from '@lenserfight/ui/providers'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { History, Lock, Loader2, Pencil, Trash2, Flag } from 'lucide-react'
@@ -518,21 +519,14 @@ export const LensLabPage: React.FC = () => {
             <p className="text-sm text-gray-500 dark:text-gray-400">
               Why are you reporting this lens?
             </p>
-            <select
+            <SelectField
               value={reportReason}
-              onChange={(e) =>
-                setReportReason(
-                  e.target.value as 'spam' | 'harassment' | 'misinformation' | 'off_topic' | 'other'
-                )
-              }
-              className="w-full border border-gray-200 dark:border-gray-600 rounded-lg px-3 py-2 text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-            >
-              {(['spam', 'harassment', 'misinformation', 'off_topic', 'other'] as const).map((r) => (
-                <option key={r} value={r}>
-                  {r.replace('_', ' ').replace(/\b\w/g, (c) => c.toUpperCase())}
-                </option>
-              ))}
-            </select>
+              onChange={(v) => setReportReason(v as 'spam' | 'harassment' | 'misinformation' | 'off_topic' | 'other')}
+              options={(['spam', 'harassment', 'misinformation', 'off_topic', 'other'] as const).map((r) => ({
+                value: r,
+                label: r.replace('_', ' ').replace(/\b\w/g, (c) => c.toUpperCase()),
+              }))}
+            />
             <div className="flex gap-3 justify-end pt-1">
               <Button
                 variant="ghost"
