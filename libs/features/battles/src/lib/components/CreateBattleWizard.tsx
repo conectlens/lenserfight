@@ -1,6 +1,6 @@
 import { Button, StepWizard } from '@lenserfight/ui/components'
 import type { WizardStepConfig } from '@lenserfight/ui/components'
-import { Input, TextArea } from '@lenserfight/ui/forms'
+import { Input, SegmentedControl, TextArea } from '@lenserfight/ui/forms'
 import { battlesService, workflowsService, lensesService } from '@lenserfight/data/repositories'
 import type { WorkflowRecord } from '@lenserfight/data/repositories'
 import { useAuth } from '@lenserfight/features/auth'
@@ -89,6 +89,7 @@ export const CreateBattleWizard: React.FC<CreateBattleWizardProps> = ({ onSucces
   const [battleFormat, setBattleFormat] = useState<'workflow' | 'lens' | null>(null)
 
   // Step 1 — source selection
+  const [workflowScope, setWorkflowScope] = useState<'mine' | 'popular'>('mine')
   const [selectedWorkflowId, setSelectedWorkflowId] = useState<string | null>(null)
   const [selectedWorkflowTitle, setSelectedWorkflowTitle] = useState('')
   const [selectedLensId, setSelectedLensId] = useState<string | null>(null)
@@ -132,9 +133,17 @@ export const CreateBattleWizard: React.FC<CreateBattleWizardProps> = ({ onSucces
   const { data: workflows = [], isLoading: loadingWorkflows } = useQuery({
     queryKey: ['battle-wizard-workflows', user?.id],
     queryFn: () => workflowsService.listByLenser(user?.id ?? ''),
-    enabled: !!user?.id && battleFormat === 'workflow' && step === 1,
+    enabled: !!user?.id && battleFormat === 'workflow' && step === 1 && workflowScope === 'mine',
     staleTime: 1000 * 60,
   })
+
+  const { data: popularWorkflowsData, isLoading: loadingPopularWorkflows } = useQuery({
+    queryKey: ['battle-wizard-popular-workflows'],
+    queryFn: () => workflowsService.getPopular(0, 30),
+    enabled: battleFormat === 'workflow' && step === 1 && workflowScope === 'popular',
+    staleTime: 1000 * 60,
+  })
+  const popularWorkflows = (popularWorkflowsData?.data ?? []) as WorkflowRecord[]
 
   const { data: lensesData, isLoading: loadingLenses } = useQuery({
     queryKey: ['battle-wizard-lenses', user?.id],
@@ -333,44 +342,61 @@ export const CreateBattleWizard: React.FC<CreateBattleWizardProps> = ({ onSucces
             )}
 
             {/* ── Step 1: Workflow picker ───────────────────────────── */}
-            {step === 1 && battleFormat === 'workflow' && (
-              <div className="space-y-2">
-                {loadingWorkflows && Array.from({ length: 4 }).map((_, i) => (
-                  <div key={i} className="h-14 rounded-2xl bg-surface-raised animate-pulse" />
-                ))}
-                {!loadingWorkflows && workflows.length === 0 && (
-                  <p className="py-8 text-center text-sm text-greyscale-400">
-                    No workflows found. Create one first from the Workflows section.
-                  </p>
-                )}
-                {!loadingWorkflows && (workflows as WorkflowRecord[]).map((wf) => (
-                  <Button
-                    key={wf.id}
-                    type="button"
-                    variant="ghost"
-                    onClick={() => { setSelectedWorkflowId(wf.id); setSelectedWorkflowTitle(wf.title) }}
-                    className={`!justify-start !gap-3 !rounded-2xl !border-2 !px-4 !py-3 w-full !font-normal text-left !transition-colors ${
-                      selectedWorkflowId === wf.id
-                        ? '!border-primary-yellow-500 !bg-primary-yellow-500/5 hover:!bg-primary-yellow-500/5'
-                        : '!border-surface-border hover:!border-greyscale-300 dark:hover:!border-greyscale-600 !bg-transparent hover:!bg-transparent'
-                    }`}
-                  >
-                    <GitBranch
-                      size={16}
-                      className={selectedWorkflowId === wf.id ? 'text-primary-yellow-600 flex-shrink-0' : 'text-greyscale-400 flex-shrink-0'}
-                    />
-                    <div className="flex-1 min-w-0">
-                      <p className="truncate text-sm font-semibold text-greyscale-900 dark:text-greyscale-50">
-                        {wf.title}
+            {step === 1 && battleFormat === 'workflow' && (() => {
+              const isLoading = workflowScope === 'mine' ? loadingWorkflows : loadingPopularWorkflows
+              const list = workflowScope === 'mine' ? (workflows as WorkflowRecord[]) : popularWorkflows
+              return (
+                <div className="space-y-3">
+                  <SegmentedControl
+                    options={[
+                      { value: 'mine', label: 'My Workflows' },
+                      { value: 'popular', label: 'Popular' },
+                    ]}
+                    value={workflowScope}
+                    onChange={(v) => { setWorkflowScope(v as 'mine' | 'popular'); setSelectedWorkflowId(null) }}
+                    size="sm"
+                  />
+                  <div className="space-y-2">
+                    {isLoading && Array.from({ length: 4 }).map((_, i) => (
+                      <div key={i} className="h-14 rounded-2xl bg-surface-raised animate-pulse" />
+                    ))}
+                    {!isLoading && list.length === 0 && (
+                      <p className="py-8 text-center text-sm text-greyscale-400">
+                        {workflowScope === 'mine'
+                          ? 'No workflows found. Create one first from the Workflows section.'
+                          : 'No popular workflows yet. Check back later.'}
                       </p>
-                      {wf.description && (
-                        <p className="truncate text-xs text-greyscale-400">{wf.description}</p>
-                      )}
-                    </div>
-                  </Button>
-                ))}
-              </div>
-            )}
+                    )}
+                    {!isLoading && list.map((wf) => (
+                      <Button
+                        key={wf.id}
+                        type="button"
+                        variant="ghost"
+                        onClick={() => { setSelectedWorkflowId(wf.id); setSelectedWorkflowTitle(wf.title) }}
+                        className={`!justify-start !gap-3 !rounded-2xl !border-2 !px-4 !py-3 w-full !font-normal text-left !transition-colors ${
+                          selectedWorkflowId === wf.id
+                            ? '!border-primary-yellow-500 !bg-primary-yellow-500/5 hover:!bg-primary-yellow-500/5'
+                            : '!border-surface-border hover:!border-greyscale-300 dark:hover:!border-greyscale-600 !bg-transparent hover:!bg-transparent'
+                        }`}
+                      >
+                        <GitBranch
+                          size={16}
+                          className={selectedWorkflowId === wf.id ? 'text-primary-yellow-600 flex-shrink-0' : 'text-greyscale-400 flex-shrink-0'}
+                        />
+                        <div className="flex-1 min-w-0">
+                          <p className="truncate text-sm font-semibold text-greyscale-900 dark:text-greyscale-50">
+                            {wf.title}
+                          </p>
+                          {wf.description && (
+                            <p className="truncate text-xs text-greyscale-400">{wf.description}</p>
+                          )}
+                        </div>
+                      </Button>
+                    ))}
+                  </div>
+                </div>
+              )
+            })()}
 
             {/* ── Step 1: Lens picker ───────────────────────────────── */}
             {step === 1 && battleFormat === 'lens' && (
