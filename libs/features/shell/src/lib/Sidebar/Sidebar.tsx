@@ -24,7 +24,7 @@ import {
 } from 'lucide-react'
 import React, { useState, useRef, useEffect } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
-import { Avatar } from '@lenserfight/ui/components'
+import { Avatar, Logo } from '@lenserfight/ui/components'
 import { notificationService } from '@lenserfight/data/repositories'
 import { useAuth } from '@lenserfight/features/auth'
 import { FeedbackModal } from '@lenserfight/features/feedback'
@@ -78,9 +78,9 @@ export const Sidebar: React.FC<SidebarProps> = ({
   onOpenProfileSetup,
 }) => {
   // Use LenserContext mainly for the handle/identity bootstrapping
-  const { lenser: authLenser } = useLenser()
+  const { lenser: authLenser, redirectToOnboarding } = useLenser()
   const { hasLenser, isLoading: isLenserLoading } = useHasLenserProfile()
-  const { logout, isAuthenticated } = useAuth()
+  const { logout, isAuthenticated, redirectToLogin } = useAuth()
   const { themeMode, setTheme } = useTheme()
   const nextTheme = THEME_CYCLE[(THEME_CYCLE.indexOf(themeMode) + 1) % THEME_CYCLE.length]
 
@@ -93,6 +93,16 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
   // Fallback to authLenser if compact fetch hasn't populated yet to prevent empty state
   const displayProfile = compactProfile || authLenser
+
+  // Auth-gating helpers for nav items that require a Lenser profile
+  const isNavLocked = !hasLenser && !isLenserLoading
+  const navLockReason = !isAuthenticated
+    ? 'Sign in to access'
+    : 'Create a Lenser profile to access'
+  const handleLockedNav = () => {
+    if (!isAuthenticated) redirectToLogin()
+    else redirectToOnboarding()
+  }
 
   const navigate = useNavigate()
   const location = useLocation()
@@ -258,25 +268,9 @@ export const Sidebar: React.FC<SidebarProps> = ({
             onClick={handleLogoClick}
             title="Go Home"
           >
-            <div
-              className={`w-10 h-10 flex items-center justify-center flex-shrink-0 transition-transform group-hover:scale-105`}
-            >
-              <img
-                src="https://cdn.lenserfight.com/brand/lenserfight-logo.png"
-                alt="LenserFight Logo"
-                className="w-full h-full object-contain"
-              />
+            <div className="flex items-center min-w-0 transition-transform group-hover:scale-105">
+              <Logo size={32} showWordmark={showLabels} showBeta={showLabels} />
             </div>
-            {showLabels && (
-              <div className="relative">
-                <span className="font-bold text-lg tracking-tight text-gray-900 dark:text-white truncate">
-                  LenserFight
-                </span>
-                <span className="absolute -bottom-2.5 -right-8 bg-primary text-gray-900 text-[9px] font-bold px-1.5 py-0.5 rounded border border-yellow-300 shadow-sm leading-none tracking-wide">
-                  BETA
-                </span>
-              </div>
-            )}
           </div>
         </div>
 
@@ -319,6 +313,9 @@ export const Sidebar: React.FC<SidebarProps> = ({
             label="Workflows"
             isActive={isRouteActive(location.pathname, '/workflows')}
             collapsed={!showLabels}
+            locked={isNavLocked}
+            lockReason={navLockReason}
+            onLockedClick={handleLockedNav}
           />
 
           <SidebarItem
