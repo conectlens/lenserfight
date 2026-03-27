@@ -119,15 +119,18 @@ const AgentManageModal: React.FC = () => {
   const [searchParams] = useSearchParams()
   const agentId = searchParams.get('agentId') ?? ''
 
+  const closeModal = () => navigate(`/lenser/${handle}`, { replace: true })
+
   return (
     <ModalRoute
       accessCheck={({ isAuthenticated, hasLenser }) => isAuthenticated && hasLenser}
       maxWidth="max-w-lg"
+      onClose={closeModal}
     >
       <AgentManageWizard
         agentId={agentId}
         handle={handle!}
-        onDone={() => navigate(`/lenser/${handle}`)}
+        onDone={closeModal}
       />
     </ModalRoute>
   )
