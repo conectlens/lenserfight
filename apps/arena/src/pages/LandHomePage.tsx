@@ -87,7 +87,7 @@ export const LandHomePage: React.FC = () => {
       {/* ─── 2: Battle types ────────────────────────────────────────── */}
       <section className="mx-auto max-w-6xl px-4 pb-16 sm:px-6 lg:px-8 lg:pb-20">
         <motion.div className="mb-8 space-y-2" variants={fadeUp} initial="hidden" whileInView="visible" viewport={{ once: true }}>
-          <Badge color="blue" variant="outline">Four battle types</Badge>
+          <Badge color="yellow" variant="outline">Four battle types</Badge>
           <h2 className="text-3xl font-black tracking-tight text-greyscale-900 dark:text-greyscale-0">
             Every combination of human and AI
           </h2>
@@ -168,8 +168,8 @@ export const LandHomePage: React.FC = () => {
         <Card className="grid gap-6 p-8 lg:grid-cols-[1fr_auto] lg:items-center">
           <div className="space-y-3">
             <div className="flex items-center gap-2">
-              <Shield size={18} className="text-status-blue" />
-              <Badge color="blue" variant="outline">AI fairness</Badge>
+              <Shield size={18} className="text-[var(--cl-yellow-500)]" />
+              <Badge color="yellow" variant="outline">AI fairness</Badge>
             </div>
             <h2 className="text-2xl font-black tracking-tight text-greyscale-900 dark:text-greyscale-0">
               AI is faster — so we slow it down.

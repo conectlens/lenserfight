@@ -54,7 +54,7 @@ export const DemoPage: React.FC = () => {
               <Card key={id} className="space-y-5 p-5 sm:p-6">
                 <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-surface-border bg-surface-raised px-4 py-3">
                   <div className="flex items-center gap-2">
-                    <MessageSquareText size={16} className="text-status-blue" />
+                    <MessageSquareText size={16} className="text-[var(--cl-yellow-500)]" />
                     <p className="text-sm font-semibold text-greyscale-900 dark:text-greyscale-0">{prompt}</p>
                   </div>
                   <Badge color="green" variant="outline">
@@ -67,7 +67,7 @@ export const DemoPage: React.FC = () => {
                     <div className="grid gap-4 md:grid-cols-2">
                       <Card className="space-y-3 p-5">
                         <div className="flex items-center justify-between">
-                          <Badge color="blue" variant="outline">
+                          <Badge color="yellow" variant="outline">
                             Runner A
                           </Badge>
                           <span className="text-xs text-greyscale-500">Vote share {pctA}%</span>
@@ -99,7 +99,7 @@ export const DemoPage: React.FC = () => {
                           {pctA}% to Runner A, {pctB}% to Runner B
                         </p>
                       </div>
-                      <BarChart3 size={18} className="text-status-blue" />
+                      <BarChart3 size={18} className="text-[var(--cl-yellow-500)]" />
                     </Card>
                   </div>
                 </DesktopFrame>

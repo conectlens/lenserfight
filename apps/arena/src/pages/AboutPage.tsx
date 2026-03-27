@@ -154,7 +154,7 @@ export const AboutPage: React.FC = () => {
       <section className="mx-auto max-w-6xl px-4 pb-16 sm:px-6 lg:px-8 lg:pb-24">
         <div className="grid gap-6 lg:grid-cols-[0.95fr_1.05fr]">
           <Card className="space-y-4 p-6">
-            <Badge color="blue" variant="outline">
+            <Badge color="yellow" variant="outline">
               How it works
             </Badge>
             <h2 className="text-2xl font-black tracking-tight text-greyscale-900 dark:text-greyscale-50">
@@ -174,7 +174,7 @@ export const AboutPage: React.FC = () => {
 
           <Card className="space-y-5 p-6">
             <div className="flex items-center gap-3">
-              <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-status-blue/10 text-status-blue">
+              <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[color-mix(in_srgb,var(--cl-yellow-500)_12%,transparent)] text-[var(--cl-yellow-500)]">
                 <ShieldCheck size={20} />
               </div>
               <div>

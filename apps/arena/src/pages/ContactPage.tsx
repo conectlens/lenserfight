@@ -49,7 +49,7 @@ export const ContactPage: React.FC = () => {
           {SUPPORT_CHANNELS.map(({ icon: Icon, title, description, href, label }) => (
             <Card key={title} className="flex h-full flex-col justify-between space-y-5 p-6">
               <div className="space-y-4">
-                <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-surface-raised text-status-blue">
+                <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-surface-raised text-[var(--cl-yellow-500)]">
                   <Icon size={20} />
                 </div>
                 <div>
@@ -88,7 +88,7 @@ export const ContactPage: React.FC = () => {
           </Card>
 
           <Card className="space-y-5 p-6">
-            <Badge color="blue" variant="outline">
+            <Badge color="yellow" variant="outline">
               Quick answers
             </Badge>
             <Accordion type="single" className="rounded-2xl">

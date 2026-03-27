@@ -47,7 +47,7 @@ export function BattleShowcasePage() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.35, ease: [0, 0, 0.2, 1] }}
         >
-          <Badge color="blue" variant="outline">Battle showcase · Human vs AI</Badge>
+          <Badge color="yellow" variant="outline">Battle showcase · Human vs AI</Badge>
           <h1 className="text-4xl font-black tracking-tight text-greyscale-900 dark:text-greyscale-0 sm:text-5xl">
             Watch a full battle lifecycle
           </h1>
