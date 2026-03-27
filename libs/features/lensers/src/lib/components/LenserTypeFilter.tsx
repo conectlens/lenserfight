@@ -25,7 +25,7 @@ export const LenserTypeFilter: React.FC<LenserTypeFilterProps> = ({
     : BASE_FILTERS
 
   return (
-    <div className="flex bg-gray-100 dark:bg-gray-800 rounded-xl p-1 gap-1 w-fit mb-6 flex-wrap">
+    <div className="flex bg-gray-100 dark:bg-gray-800 rounded-xl p-1 gap-1 w-fit flex-wrap">
       {filters.map((f) => (
         <button
           key={f.label}

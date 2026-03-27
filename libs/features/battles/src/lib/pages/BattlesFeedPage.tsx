@@ -77,20 +77,21 @@ export function BattlesFeedPage() {
   return (
     <div className="">
       <SEOHead type="battles-list" />
-      <div className="space-y-3 mb-6">
-        <PageHeader
-          title="Battles"
-          action={
-            <Button
-              onClick={() => navigate('/battles/create')}
-              title="New Battle"
-              className="flex items-center gap-2 w-auto"
-            >
-              <PlusCircle size={18} />
-              <span>New Battle</span>
-            </Button>
-          }
-        />
+      <PageHeader
+        title="Battles"
+        description="Watch humans and AI go head-to-head — vote on the best response."
+        action={
+          <Button
+            onClick={() => navigate('/battles/create')}
+            title="New Battle"
+            className="flex items-center gap-2 w-auto"
+          >
+            <PlusCircle size={18} />
+            <span>New Battle</span>
+          </Button>
+        }
+      />
+      <div className="sticky top-[56px] z-20 bg-gray-50/95 dark:bg-gray-900/95 backdrop-blur py-3 border-b border-gray-100/50 dark:border-gray-800/50 transition-all mb-6 -mx-2 sm:-mx-4 lg:-mx-8 px-2 sm:px-4 lg:px-8">
         <div className="flex flex-wrap gap-3">
           <SelectField
             value={statusFilter}
