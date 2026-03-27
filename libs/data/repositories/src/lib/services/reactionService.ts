@@ -14,7 +14,7 @@ const lensesRepo = new SupabaseLensesRepository()
 
 export const reactionService = {
   validateTarget: (t: string) => {
-    const valid: TargetType[] = ['thread', 'thread_reply', 'lens']
+    const valid: TargetType[] = ['thread', 'thread_reply', 'lens', 'workflow']
     if (!valid.includes(t as TargetType)) throw new Error(`Invalid target`)
   },
 

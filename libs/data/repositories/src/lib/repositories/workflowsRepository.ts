@@ -12,6 +12,9 @@ export interface WorkflowRecord {
   description?: string | null
   visibility: string
   battle_count: number
+  reaction_totals?: Record<string, number> | null
+  fork_count?: number
+  parent_workflow_id?: string | null
   created_at: string
   updated_at: string
 }
@@ -98,10 +101,12 @@ export interface UpsertEdgeInput {
 export interface WorkflowsRepositoryPort {
   listByLenser(lenserId: string): Promise<WorkflowRecord[]>
   listByLenserPaginated(lenserId: string, offset: number, limit: number, filter?: WorkflowsListFilter): Promise<ApiResponseEnvelope<WorkflowRecord[]>>
+  getPopular(offset: number, limit: number, search?: string): Promise<ApiResponseEnvelope<WorkflowRecord[]>>
   getById(id: string): Promise<WorkflowRecord | null>
   getNodes(workflowId: string): Promise<WorkflowNodeRecord[]>
   getEdges(workflowId: string): Promise<WorkflowEdgeRecord[]>
   createWorkflow(input: CreateWorkflowInput): Promise<WorkflowRecord>
+  forkWorkflow(sourceId: string): Promise<WorkflowRecord>
   upsertNodes(workflowId: string, nodes: UpsertNodeInput[]): Promise<WorkflowNodeRecord[]>
   upsertEdges(workflowId: string, edges: UpsertEdgeInput[]): Promise<WorkflowEdgeRecord[]>
   deleteNode(nodeId: string): Promise<void>
@@ -139,25 +144,42 @@ export class SupabaseWorkflowsRepository implements WorkflowsRepositoryPort {
     limit: number,
     filter: WorkflowsListFilter = {}
   ): Promise<ApiResponseEnvelope<WorkflowRecord[]>> {
-    let query = supabase
-      .from('vw_workflows')
-      .select('id, lenser_id, title, description, visibility, battle_count, created_at, updated_at', { count: 'planned' })
-      .eq('lenser_id', lenserId)
+    const { data, error } = await supabase.rpc('fn_get_my_workflows', {
+      p_lenser_id:  lenserId,
+      p_offset:     offset,
+      p_limit:      limit,
+      p_visibility: filter.visibility ?? null,
+      p_sort:       filter.sort ?? 'updated_at',
+      p_search:     filter.search ?? null,
+    })
 
-    if (filter.visibility) query = query.eq('visibility', filter.visibility)
-    if (filter.search) query = query.ilike('title', `%${filter.search}%`)
-
-    const sortCol = filter.sort ?? 'updated_at'
-    query = query.order(sortCol, { ascending: false }).range(offset, offset + limit - 1)
-
-    const { data, error, count } = await query
     if (error) this.handleError(error)
 
     const rows = (data ?? []) as WorkflowRecord[]
     return paginatedResponse(rows, {
       offset,
       limit,
-      total: count ?? undefined,
+      hasNextPage: rows.length === limit,
+    })
+  }
+
+  async getPopular(
+    offset: number,
+    limit: number,
+    search?: string
+  ): Promise<ApiResponseEnvelope<WorkflowRecord[]>> {
+    const { data, error } = await supabase.rpc('fn_workflows_get_popular', {
+      p_offset: offset,
+      p_limit:  limit,
+      p_search: search ?? null,
+    })
+
+    if (error) this.handleError(error)
+
+    const rows = (data ?? []) as WorkflowRecord[]
+    return paginatedResponse(rows, {
+      offset,
+      limit,
       hasNextPage: rows.length === limit,
     })
   }
@@ -165,7 +187,7 @@ export class SupabaseWorkflowsRepository implements WorkflowsRepositoryPort {
   async getById(id: string): Promise<WorkflowRecord | null> {
     const { data, error } = await supabase
       .from('vw_workflows')
-      .select('id, lenser_id, title, description, visibility, battle_count, created_at, updated_at')
+      .select('id, lenser_id, title, description, visibility, battle_count, reaction_totals, fork_count, parent_workflow_id, created_at, updated_at')
       .eq('id', id)
       .maybeSingle()
 
@@ -205,6 +227,16 @@ export class SupabaseWorkflowsRepository implements WorkflowsRepositoryPort {
 
     if (error) this.handleError(error)
     // rpc returns an array for RETURNS TABLE; take the first row
+    const row = Array.isArray(data) ? data[0] : data
+    return row as WorkflowRecord
+  }
+
+  async forkWorkflow(sourceId: string): Promise<WorkflowRecord> {
+    const { data, error } = await supabase.rpc('fn_clone_workflow', {
+      p_source_workflow_id: sourceId,
+    })
+
+    if (error) this.handleError(error)
     const row = Array.isArray(data) ? data[0] : data
     return row as WorkflowRecord
   }
