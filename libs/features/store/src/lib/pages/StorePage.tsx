@@ -9,12 +9,7 @@ import { Button, SEOHead } from '@lenserfight/ui/components'
 import { useCheckoutStatus } from '../hooks/useCheckoutStatus'
 import { CheckoutSuccessView } from '../views/CheckoutSuccessView'
 import { CheckoutErrorView } from '../views/CheckoutErrorView'
-
-function safeRenderHtml(html: string): string {
-  return html
-    .replace(/<(?!\/?(?:p|strong|em|br)\b)[^>]+>/gi, '')
-    .trim()
-}
+import { sanitizeProductDescription } from '../utils/sanitizeProductDescription'
 
 const POPULAR_INDEX = 1
 
@@ -25,7 +20,7 @@ const CreditPackCard: React.FC<{
   buying: boolean
 }> = ({ product, index, onBuy, buying }) => {
   const isPopular = index === POPULAR_INDEX
-  const safeDescription = safeRenderHtml(product.description ?? '')
+  const safeDescription = sanitizeProductDescription(product.description ?? '')
 
   return (
     <div
