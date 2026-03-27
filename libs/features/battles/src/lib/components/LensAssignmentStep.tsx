@@ -1,4 +1,5 @@
 import { Badge, Button, Card } from '@lenserfight/ui/components'
+import { Input, SelectField } from '@lenserfight/ui/forms'
 import { lensesService } from '@lenserfight/data/repositories'
 import { useQuery } from '@tanstack/react-query'
 import React, { useState } from 'react'
@@ -84,47 +85,48 @@ function SlotLensPicker({ slot, slotLabel, contenderId, battleId, onAssigned }: 
         <p className="text-xs font-semibold text-greyscale-500 uppercase tracking-wide">{slotLabel}</p>
       </div>
 
-      <input
+      <Input
         type="text"
         placeholder="Search lenses by name…"
         value={query}
         onChange={(e) => { setQuery(e.target.value); setSelectedLens(null); setSelectedVersionId(null) }}
-        className="w-full rounded-2xl border border-surface-border bg-surface-base px-3 py-2 text-sm text-greyscale-900 placeholder:text-greyscale-400 outline-none focus:border-status-blue dark:bg-surface-raised dark:text-greyscale-50"
       />
 
       {searchResults.length > 0 && !selectedLens && (
         <ul className="rounded-2xl border border-surface-border bg-surface-base divide-y divide-surface-border overflow-hidden">
           {searchResults.map((lens) => (
             <li key={lens.id}>
-              <button
+              <Button
                 type="button"
+                variant="ghost"
+                size="sm"
+                fullWidth
                 onClick={() => { setSelectedLens({ id: lens.id, title: lens.title, latestVersionNumber: lens.latestVersionNumber }); setQuery(lens.title) }}
-                className="w-full flex items-center gap-3 px-3 py-2 text-left hover:bg-surface-raised transition-colors"
+                className="!justify-start !gap-3 !px-3 !py-2 !rounded-none !font-normal"
               >
                 <span className="text-sm font-medium text-greyscale-900 dark:text-greyscale-50">{lens.title}</span>
                 {lens.latestVersionNumber != null && (
                   <span className="text-xs text-greyscale-500">v{lens.latestVersionNumber}</span>
                 )}
-              </button>
+              </Button>
             </li>
           ))}
         </ul>
       )}
 
       {selectedLens && versions.length > 0 && (
-        <div className="space-y-1">
-          <p className="text-xs font-semibold text-greyscale-500">Version (optional)</p>
-          <select
-            value={selectedVersionId ?? ''}
-            onChange={(e) => setSelectedVersionId(e.target.value || null)}
-            className="w-full rounded-2xl border border-surface-border bg-surface-base px-3 py-2 text-sm text-greyscale-900 outline-none focus:border-status-blue dark:bg-surface-raised dark:text-greyscale-50"
-          >
-            <option value="">Latest (v{selectedLens.latestVersionNumber ?? versions[0]?.versionNumber})</option>
-            {versions.map((v) => (
-              <option key={v.id} value={v.id}>v{v.versionNumber}{v.changelog ? ` — ${v.changelog}` : ''}</option>
-            ))}
-          </select>
-        </div>
+        <SelectField
+          label="Version (optional)"
+          value={selectedVersionId ?? ''}
+          onChange={(value) => setSelectedVersionId(value || null)}
+          options={[
+            { value: '', label: `Latest (v${selectedLens.latestVersionNumber ?? versions[0]?.versionNumber})` },
+            ...versions.map((v) => ({
+              value: v.id,
+              label: `v${v.versionNumber}${v.changelog ? ` — ${v.changelog}` : ''}`,
+            })),
+          ]}
+        />
       )}
 
       {selectedLens && (

@@ -1,4 +1,5 @@
 import { Badge, Button, Card } from '@lenserfight/ui/components'
+import { TextArea } from '@lenserfight/ui/forms'
 import { motion } from 'framer-motion'
 import React, { useState } from 'react'
 
@@ -151,12 +152,13 @@ export function VotePanel({ contenderA, contenderB, existingVote, onVote, disabl
           </motion.button>
         ))}
       </motion.div>
-      <textarea
+      <TextArea
         placeholder="Why? (optional)"
         value={rationale}
         onChange={(e) => setRationale(e.target.value)}
-        rows={2}
-        className="w-full resize-none rounded-2xl border border-surface-border bg-surface-raised p-3 text-sm text-surface-text outline-none transition-colors placeholder:text-surface-text-muted focus:border-status-blue"
+        minRows={2}
+        maxRows={4}
+        autoResize={false}
       />
       <Button
 

@@ -1,5 +1,6 @@
-import { StepWizard } from '@lenserfight/ui/components'
+import { Button, StepWizard } from '@lenserfight/ui/components'
 import type { WizardStepConfig } from '@lenserfight/ui/components'
+import { Input, TextArea } from '@lenserfight/ui/forms'
 import { battlesService, workflowsService, lensesService } from '@lenserfight/data/repositories'
 import type { WorkflowRecord } from '@lenserfight/data/repositories'
 import { useAuth } from '@lenserfight/features/auth'
@@ -281,13 +282,14 @@ export const CreateBattleWizard: React.FC<CreateBattleWizardProps> = ({ onSucces
             {/* ── Step 0: Format chooser ────────────────────────────── */}
             {step === 0 && (
               <div className="grid grid-cols-2 gap-4">
-                <button
+                <Button
                   type="button"
+                  variant="ghost"
                   onClick={() => setBattleFormat('workflow')}
-                  className={`flex flex-col items-center gap-3 rounded-2xl border-2 p-6 text-center transition-colors ${
+                  className={`!flex-col !gap-3 !rounded-2xl !border-2 !p-6 text-center w-full !h-auto !font-normal !transition-colors ${
                     battleFormat === 'workflow'
-                      ? 'border-status-blue bg-status-blue/5'
-                      : 'border-surface-border hover:border-greyscale-300 dark:hover:border-greyscale-600'
+                      ? '!border-status-blue !bg-status-blue/5 hover:!bg-status-blue/5'
+                      : '!border-surface-border hover:!border-greyscale-300 dark:hover:!border-greyscale-600 !bg-transparent hover:!bg-transparent'
                   }`}
                 >
                   <GitBranch
@@ -302,15 +304,16 @@ export const CreateBattleWizard: React.FC<CreateBattleWizardProps> = ({ onSucces
                       Use a connected lens workflow
                     </p>
                   </div>
-                </button>
+                </Button>
 
-                <button
+                <Button
                   type="button"
+                  variant="ghost"
                   onClick={() => setBattleFormat('lens')}
-                  className={`flex flex-col items-center gap-3 rounded-2xl border-2 p-6 text-center transition-colors ${
+                  className={`!flex-col !gap-3 !rounded-2xl !border-2 !p-6 text-center w-full !h-auto !font-normal !transition-colors ${
                     battleFormat === 'lens'
-                      ? 'border-status-blue bg-status-blue/5'
-                      : 'border-surface-border hover:border-greyscale-300 dark:hover:border-greyscale-600'
+                      ? '!border-status-blue !bg-status-blue/5 hover:!bg-status-blue/5'
+                      : '!border-surface-border hover:!border-greyscale-300 dark:hover:!border-greyscale-600 !bg-transparent hover:!bg-transparent'
                   }`}
                 >
                   <Layers
@@ -325,7 +328,7 @@ export const CreateBattleWizard: React.FC<CreateBattleWizardProps> = ({ onSucces
                       Use a single prompt lens
                     </p>
                   </div>
-                </button>
+                </Button>
               </div>
             )}
 
@@ -341,14 +344,15 @@ export const CreateBattleWizard: React.FC<CreateBattleWizardProps> = ({ onSucces
                   </p>
                 )}
                 {!loadingWorkflows && (workflows as WorkflowRecord[]).map((wf) => (
-                  <button
+                  <Button
                     key={wf.id}
                     type="button"
+                    variant="ghost"
                     onClick={() => { setSelectedWorkflowId(wf.id); setSelectedWorkflowTitle(wf.title) }}
-                    className={`flex w-full items-center gap-3 rounded-2xl border-2 px-4 py-3 text-left transition-colors ${
+                    className={`!justify-start !gap-3 !rounded-2xl !border-2 !px-4 !py-3 w-full !font-normal text-left !transition-colors ${
                       selectedWorkflowId === wf.id
-                        ? 'border-status-blue bg-status-blue/5'
-                        : 'border-surface-border hover:border-greyscale-300 dark:hover:border-greyscale-600'
+                        ? '!border-status-blue !bg-status-blue/5 hover:!bg-status-blue/5'
+                        : '!border-surface-border hover:!border-greyscale-300 dark:hover:!border-greyscale-600 !bg-transparent hover:!bg-transparent'
                     }`}
                   >
                     <GitBranch
@@ -363,7 +367,7 @@ export const CreateBattleWizard: React.FC<CreateBattleWizardProps> = ({ onSucces
                         <p className="truncate text-xs text-greyscale-400">{wf.description}</p>
                       )}
                     </div>
-                  </button>
+                  </Button>
                 ))}
               </div>
             )}
@@ -380,14 +384,15 @@ export const CreateBattleWizard: React.FC<CreateBattleWizardProps> = ({ onSucces
                   </p>
                 )}
                 {!loadingLenses && myLenses.map((lens) => (
-                  <button
+                  <Button
                     key={lens.id}
                     type="button"
+                    variant="ghost"
                     onClick={() => { setSelectedLensId(lens.id); setSelectedLensTitle(lens.title) }}
-                    className={`flex w-full items-center gap-3 rounded-2xl border-2 px-4 py-3 text-left transition-colors ${
+                    className={`!justify-start !gap-3 !rounded-2xl !border-2 !px-4 !py-3 w-full !font-normal text-left !transition-colors ${
                       selectedLensId === lens.id
-                        ? 'border-status-blue bg-status-blue/5'
-                        : 'border-surface-border hover:border-greyscale-300 dark:hover:border-greyscale-600'
+                        ? '!border-status-blue !bg-status-blue/5 hover:!bg-status-blue/5'
+                        : '!border-surface-border hover:!border-greyscale-300 dark:hover:!border-greyscale-600 !bg-transparent hover:!bg-transparent'
                     }`}
                   >
                     <Layers
@@ -402,7 +407,7 @@ export const CreateBattleWizard: React.FC<CreateBattleWizardProps> = ({ onSucces
                         <p className="text-xs text-greyscale-400 capitalize">{lens.visibility}</p>
                       )}
                     </div>
-                  </button>
+                  </Button>
                 ))}
               </div>
             )}
@@ -414,13 +419,12 @@ export const CreateBattleWizard: React.FC<CreateBattleWizardProps> = ({ onSucces
                   <label className="mb-2 block text-sm font-semibold text-greyscale-900 dark:text-greyscale-0">
                     Battle title
                   </label>
-                  <input
+                  <Input
                     type="text"
                     value={title}
                     onChange={(e) => setTitle(e.target.value)}
                     placeholder="e.g. GPT-4o vs Claude — Technical Writing"
                     maxLength={120}
-                    className="w-full rounded-2xl border border-surface-border bg-surface-base px-4 py-3 text-sm text-greyscale-900 outline-none transition-colors placeholder:text-greyscale-400 focus:border-status-blue dark:bg-surface-raised dark:text-greyscale-50"
                   />
                 </div>
 
@@ -428,12 +432,12 @@ export const CreateBattleWizard: React.FC<CreateBattleWizardProps> = ({ onSucces
                   <label className="mb-2 block text-sm font-semibold text-greyscale-900 dark:text-greyscale-0">
                     Description <span className="font-normal text-greyscale-400">(optional)</span>
                   </label>
-                  <textarea
+                  <TextArea
                     value={description}
                     onChange={(e) => setDescription(e.target.value)}
                     placeholder="Add context for participants and voters, e.g. what success looks like."
-                    rows={4}
-                    className="w-full resize-none rounded-2xl border border-surface-border bg-surface-base px-4 py-3 text-sm text-greyscale-900 outline-none transition-colors placeholder:text-greyscale-400 focus:border-status-blue dark:bg-surface-raised dark:text-greyscale-50"
+                    minRows={4}
+                    autoResize={false}
                   />
                 </div>
               </div>

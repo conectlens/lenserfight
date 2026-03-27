@@ -40,11 +40,8 @@ export function BattleCard({ slug, title, taskPrompt, status, totalVoteCount, ba
   return (
     <MotionLink
       to={`/battles/${slug}`}
-      className="block"
-      whileHover={{
-        y: -3,
-        boxShadow: '0 18px 48px rgba(0,0,0,0.10)',
-      }}
+      className="block hover:shadow-xl transition-shadow"
+      whileHover={{ y: -3 }}
       transition={{ duration: 0.1, ease: [0.4, 0, 0.2, 1] }}
     >
       <Card className="space-y-4 p-5">

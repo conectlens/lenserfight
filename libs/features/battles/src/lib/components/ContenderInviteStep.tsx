@@ -1,4 +1,5 @@
 import { Badge, Button, Card } from '@lenserfight/ui/components'
+import { Input } from '@lenserfight/ui/forms'
 import { Users } from 'lucide-react'
 import React, { useState } from 'react'
 
@@ -75,12 +76,11 @@ export const ContenderInviteStep: React.FC<ContenderInviteStepProps> = ({ battle
             <span className="flex h-6 w-6 items-center justify-center rounded-full bg-status-blue/15 text-xs font-black text-status-blue">A</span>
             Contender A
           </label>
-          <input
+          <Input
             type="text"
             value={slotA.handle}
             onChange={(e) => setSlotA((s) => ({ ...s, handle: e.target.value }))}
             placeholder="@handle or display name"
-            className="w-full rounded-2xl border border-surface-border bg-surface-base px-4 py-3 text-sm text-greyscale-900 outline-none transition-colors placeholder:text-greyscale-400 focus:border-status-blue dark:bg-surface-raised dark:text-greyscale-50"
           />
         </div>
 
@@ -90,12 +90,11 @@ export const ContenderInviteStep: React.FC<ContenderInviteStepProps> = ({ battle
             <span className="flex h-6 w-6 items-center justify-center rounded-full bg-status-yellow/15 text-xs font-black text-status-yellow">B</span>
             Contender B
           </label>
-          <input
+          <Input
             type="text"
             value={slotB.handle}
             onChange={(e) => setSlotB((s) => ({ ...s, handle: e.target.value }))}
             placeholder="@handle or display name"
-            className="w-full rounded-2xl border border-surface-border bg-surface-base px-4 py-3 text-sm text-greyscale-900 outline-none transition-colors placeholder:text-greyscale-400 focus:border-status-blue dark:bg-surface-raised dark:text-greyscale-50"
           />
         </div>
       </div>

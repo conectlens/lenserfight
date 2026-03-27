@@ -1,4 +1,5 @@
-import { Badge } from '@lenserfight/ui/components'
+import { Badge, Button } from '@lenserfight/ui/components'
+import { SelectField } from '@lenserfight/ui/forms'
 import { Info } from 'lucide-react'
 import React from 'react'
 
@@ -83,41 +84,33 @@ export function HandicapConfigPanel({ value, onChange }: HandicapConfigPanelProp
         <div className="flex gap-2 flex-wrap">
           {[null, 60000, 180000, 300000, 600000].map((ms) => {
             const label = ms == null ? 'None' : ms < 60000 ? `${ms / 1000}s` : `${ms / 60000} min`
+            const isActive = value.time_budget_ms === ms
             return (
-              <button
+              <Button
                 key={String(ms)}
                 type="button"
+                variant={isActive ? 'dark' : 'secondary'}
+                size="sm"
                 onClick={() => update({ time_budget_ms: ms })}
-                className={`text-xs px-3 py-1.5 rounded-full border transition-colors ${
-                  value.time_budget_ms === ms
-                    ? 'border-greyscale-900 bg-greyscale-900 text-greyscale-0 dark:border-greyscale-0 dark:bg-greyscale-0 dark:text-greyscale-900'
-                    : 'border-surface-border text-greyscale-600 hover:border-status-blue dark:text-greyscale-400'
-                }`}
+                className="!rounded-full !text-xs !px-3 !py-1.5"
               >
                 {label}
-              </button>
+              </Button>
             )
           })}
         </div>
       </div>
 
       {/* Context window cap */}
-      <div className="space-y-2">
-        <span className="text-xs font-semibold text-greyscale-700 dark:text-greyscale-300">
-          Max context tokens
-        </span>
-        <select
-          value={String(value.max_context_tokens ?? 'null')}
-          onChange={(e) => update({ max_context_tokens: e.target.value === 'null' ? null : Number(e.target.value) })}
-          className="w-full rounded-2xl border border-surface-border bg-surface-base px-4 py-3 text-sm text-greyscale-900 outline-none dark:text-greyscale-50"
-        >
-          {CONTEXT_TOKEN_OPTIONS.map((o) => (
-            <option key={String(o.value)} value={String(o.value ?? 'null')}>
-              {o.label}
-            </option>
-          ))}
-        </select>
-      </div>
+      <SelectField
+        label="Max context tokens"
+        value={String(value.max_context_tokens ?? 'null')}
+        onChange={(val) => update({ max_context_tokens: val === 'null' ? null : Number(val) })}
+        options={CONTEXT_TOKEN_OPTIONS.map((o) => ({
+          value: String(o.value ?? 'null'),
+          label: o.label,
+        }))}
+      />
 
       {/* Model tier */}
       <div className="space-y-2">
@@ -125,20 +118,21 @@ export function HandicapConfigPanel({ value, onChange }: HandicapConfigPanelProp
           Allowed model tier
         </span>
         <div className="flex gap-2 flex-wrap">
-          {MODEL_TIER_OPTIONS.map((t) => (
-            <button
-              key={String(t.value)}
-              type="button"
-              onClick={() => update({ allowed_model_tier: t.value })}
-              className={`text-xs px-3 py-1.5 rounded-full border transition-colors ${
-                value.allowed_model_tier === t.value
-                  ? 'border-greyscale-900 bg-greyscale-900 text-greyscale-0 dark:border-greyscale-0 dark:bg-greyscale-0 dark:text-greyscale-900'
-                  : 'border-surface-border text-greyscale-600 hover:border-status-blue dark:text-greyscale-400'
-              }`}
-            >
-              {t.label}
-            </button>
-          ))}
+          {MODEL_TIER_OPTIONS.map((t) => {
+            const isActive = value.allowed_model_tier === t.value
+            return (
+              <Button
+                key={String(t.value)}
+                type="button"
+                variant={isActive ? 'dark' : 'secondary'}
+                size="sm"
+                onClick={() => update({ allowed_model_tier: t.value })}
+                className="!rounded-full !text-xs !px-3 !py-1.5"
+              >
+                {t.label}
+              </Button>
+            )
+          })}
         </div>
       </div>
     </div>

@@ -1,4 +1,5 @@
 import { Button } from '@lenserfight/ui/components'
+import { TextArea } from '@lenserfight/ui/forms'
 import React, { useState } from 'react'
 
 import { useSubmitEntry } from '../hooks/useSubmitEntry'
@@ -36,12 +37,13 @@ export const SubmitTextForm: React.FC<SubmitTextFormProps> = ({ battleId, conten
   return (
     <div className="space-y-3 p-1">
       <p className="text-xs font-semibold uppercase tracking-wider text-greyscale-500">Your submission</p>
-      <textarea
+      <TextArea
         value={text}
         onChange={(e) => setText(e.target.value)}
         placeholder="Write your response to the battle prompt…"
-        rows={8}
-        className="w-full resize-none rounded-2xl border border-greyscale-700 bg-greyscale-900 px-4 py-3 text-sm text-greyscale-50 outline-none transition-colors placeholder:text-greyscale-600 focus:border-greyscale-500"
+        minRows={8}
+        autoResize={false}
+        className="!bg-greyscale-900 !border-greyscale-700 !text-greyscale-50 placeholder:!text-greyscale-600 focus:!border-greyscale-500"
       />
       <div className="flex items-center justify-between gap-3">
         <span className={`text-xs ${isValid ? 'text-greyscale-500' : 'text-greyscale-600'}`}>

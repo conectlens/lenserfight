@@ -1,5 +1,6 @@
 import { lensesService } from '@lenserfight/data/repositories'
 import { useAuth } from '@lenserfight/features/auth'
+import { Button } from '@lenserfight/ui/components'
 import { SearchBar } from '@lenserfight/ui/forms'
 import { useQuery } from '@tanstack/react-query'
 import { ChevronLeft, ChevronRight, GripVertical } from 'lucide-react'
@@ -77,14 +78,16 @@ export function WorkflowLensPalette({ onDragStart, collapsed, onToggleCollapse }
   if (collapsed) {
     return (
       <aside className="flex flex-col w-10 flex-shrink-0 border-r border-surface-border bg-surface-base overflow-hidden items-center py-2">
-        <button
+        <Button
           type="button"
+          variant="ghost"
+          size="sm"
           onClick={onToggleCollapse}
-          className="flex h-8 w-8 items-center justify-center rounded-xl text-greyscale-400 hover:text-greyscale-700 hover:bg-surface-raised transition-colors dark:hover:text-greyscale-200"
+          className="!h-8 !w-8 !p-0 text-greyscale-400 hover:!text-greyscale-700 dark:hover:!text-greyscale-200"
           title="Expand lens palette"
         >
           <ChevronRight size={14} />
-        </button>
+        </Button>
       </aside>
     )
   }
@@ -93,14 +96,16 @@ export function WorkflowLensPalette({ onDragStart, collapsed, onToggleCollapse }
     <aside className="flex flex-col w-60 flex-shrink-0 border-r border-surface-border bg-surface-base overflow-hidden">
       <div className="flex items-center justify-between px-3 pt-3 pb-0">
         <span className="text-[10px] font-semibold uppercase tracking-wider text-greyscale-400">Lenses</span>
-        <button
+        <Button
           type="button"
+          variant="ghost"
+          size="sm"
           onClick={onToggleCollapse}
-          className="flex h-6 w-6 items-center justify-center rounded-lg text-greyscale-400 hover:text-greyscale-700 hover:bg-surface-raised transition-colors dark:hover:text-greyscale-200"
+          className="!h-6 !w-6 !p-0 text-greyscale-400 hover:!text-greyscale-700 dark:hover:!text-greyscale-200"
           title="Collapse palette"
         >
           <ChevronLeft size={12} />
-        </button>
+        </Button>
       </div>
       <div className="px-3 pt-2 pb-2 space-y-2">
         {/* Search */}
@@ -117,18 +122,20 @@ export function WorkflowLensPalette({ onDragStart, collapsed, onToggleCollapse }
         {!isSearching && myLenses.length > 0 && (
           <div className="flex gap-1">
             {(['mine', 'popular'] as const).map((t) => (
-              <button
+              <Button
                 key={t}
                 type="button"
+                variant="ghost"
+                size="sm"
                 onClick={() => setTab(t)}
-                className={`flex-1 rounded-lg px-2 py-1 text-xs font-semibold transition-colors ${
+                className={`flex-1 !rounded-lg !px-2 !py-1 !text-xs !font-semibold ${
                   effectiveTab === t
-                    ? 'bg-status-blue/15 text-status-blue'
-                    : 'text-greyscale-500 hover:text-greyscale-900 dark:hover:text-greyscale-50'
+                    ? '!bg-status-blue/15 !text-status-blue hover:!bg-status-blue/15'
+                    : '!text-greyscale-500 hover:!text-greyscale-900 dark:hover:!text-greyscale-50 !bg-transparent'
                 }`}
               >
                 {t === 'mine' ? 'My Lenses' : 'Popular'}
-              </button>
+              </Button>
             ))}
           </div>
         )}

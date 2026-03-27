@@ -31,7 +31,7 @@ export const BattleCreatorPanel: React.FC<BattleCreatorPanelProps> = ({
     <Card className="space-y-4 border border-dashed border-primary/30 bg-yellow-50/40 dark:bg-yellow-900/10 p-5">
       <div className="flex items-center gap-2">
         <Shield size={16} className="text-primary flex-shrink-0" />
-        <span className="text-sm font-semibold text-gray-800 dark:text-gray-100">Creator Controls</span>
+        <span className="text-sm font-semibold text-greyscale-800 dark:text-greyscale-100">Creator Controls</span>
         {cfg && (
           <Badge color={cfg.color} variant="outline" className="ml-auto text-xs">
             {cfg.label}
@@ -41,7 +41,7 @@ export const BattleCreatorPanel: React.FC<BattleCreatorPanelProps> = ({
 
       {status === 'draft' && (
         <div className="space-y-3">
-          <p className="text-sm text-gray-600 dark:text-gray-300">
+          <p className="text-sm text-greyscale-600 dark:text-greyscale-300">
             Publishing opens this battle so contenders can submit their entries. Once published this cannot be undone.
           </p>
           <Button
@@ -58,8 +58,8 @@ export const BattleCreatorPanel: React.FC<BattleCreatorPanelProps> = ({
 
       {status === 'open' && (
         <div className="flex items-start gap-3">
-          <Clock size={15} className="mt-0.5 text-green-500 flex-shrink-0" />
-          <p className="text-sm text-gray-600 dark:text-gray-300">
+          <Clock size={15} className="mt-0.5 text-status-green flex-shrink-0" />
+          <p className="text-sm text-greyscale-600 dark:text-greyscale-300">
             Battle is open. Contenders can now submit their entries. The battle will transition to voting once submissions are ready.
           </p>
         </div>
@@ -67,8 +67,8 @@ export const BattleCreatorPanel: React.FC<BattleCreatorPanelProps> = ({
 
       {status === 'voting' && (
         <div className="flex items-start gap-3">
-          <CheckCircle size={15} className="mt-0.5 text-blue-500 flex-shrink-0" />
-          <p className="text-sm text-gray-600 dark:text-gray-300">
+          <CheckCircle size={15} className="mt-0.5 text-status-blue flex-shrink-0" />
+          <p className="text-sm text-greyscale-600 dark:text-greyscale-300">
             Voting is live. Lensers are casting their votes. Results will be calculated when voting closes.
           </p>
         </div>
@@ -76,8 +76,8 @@ export const BattleCreatorPanel: React.FC<BattleCreatorPanelProps> = ({
 
       {(status === 'scoring' || status === 'closed' || status === 'published') && (
         <div className="flex items-start gap-3">
-          <CheckCircle size={15} className="mt-0.5 text-gray-400 flex-shrink-0" />
-          <p className="text-sm text-gray-500 dark:text-gray-400">
+          <CheckCircle size={15} className="mt-0.5 text-greyscale-400 flex-shrink-0" />
+          <p className="text-sm text-greyscale-500 dark:text-greyscale-400">
             Battle has concluded. Results are final.
           </p>
         </div>
