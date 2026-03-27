@@ -41,7 +41,7 @@ export function WorkflowCanvasEdge({
         style={{
           stroke: selected
             ? 'var(--cl-yellow-700)'
-            : 'var(--cl-grey-500)',
+            : 'var(--cl-workflow-edge)',
           strokeWidth: selected ? 2.5 : 1.5,
           transition: 'stroke 0.15s, stroke-width 0.15s',
         }}

@@ -31,7 +31,7 @@ const WIZARD_STEPS: WizardStepConfig[] = [
     description: 'Select whether you want to battle with a connected workflow or a single lens prompt.',
   },
   {
-    label: 'Pick',
+    label: 'Source', // Was 'Pick'
     title: 'Select your source',
     description: 'Choose which workflow or lens to use for this battle.',
   },
@@ -41,14 +41,9 @@ const WIZARD_STEPS: WizardStepConfig[] = [
     description: 'Give your battle a title and, if using a lens, a prompt.',
   },
   {
-    label: 'Battle type',
-    title: 'Battle type',
-    description: 'Choose who competes and who judges.',
-  },
-  {
-    label: 'Config',
-    title: 'Configuration',
-    description: 'Set voter eligibility and optional AI handicap settings.',
+    label: 'Config', // Merged 3 & 4
+    title: 'Battle configuration',
+    description: 'Choose battle mode, voter eligibility, and AI handicap settings.',
   },
   {
     label: 'Contenders',
@@ -143,9 +138,9 @@ export const CreateBattleWizard: React.FC<CreateBattleWizardProps> = ({ onSucces
     }
   }, []) // eslint-disable-line
 
-  // Guard: if URL claims step >= 5 but there's no battleId, reset to step 0
+  // Guard: if URL claims step >= 4 but there's no battleId, reset to step 0
   useEffect(() => {
-    if (step >= 5 && !battleIdFromUrl) {
+    if (step >= 4 && !battleIdFromUrl) {
       navigate('/battles/create', { replace: true })
     }
   }, []) // eslint-disable-line
@@ -208,11 +203,11 @@ export const CreateBattleWizard: React.FC<CreateBattleWizardProps> = ({ onSucces
       return battleFormat === 'workflow' ? !!selectedWorkflowId : !!selectedLensId
     }
     if (step === 2) return title.trim().length >= 3
-    // Steps 5 & 6 are always skippable
+    // Steps 4 & 5 are always skippable
     return true
   })()
 
-  // ── Create battle (step 4 → 5) ───────────────────────────────────────────
+  // ── Create battle (step 3 → 4) ───────────────────────────────────────────
 
   const handleCreateBattle = async () => {
     if (!canProceed) return
@@ -238,7 +233,7 @@ export const CreateBattleWizard: React.FC<CreateBattleWizardProps> = ({ onSucces
       setSearchParams(
         (prev) => {
           const next = new URLSearchParams(prev)
-          next.set('step', '5')
+          next.set('step', '4')
           next.set('battleId', battle.id)
           return next
         },
@@ -251,13 +246,13 @@ export const CreateBattleWizard: React.FC<CreateBattleWizardProps> = ({ onSucces
     }
   }
 
-  // ── Invite contenders (step 5 → 6) ───────────────────────────────────────
+  // ── Invite contenders (step 4 → 5) ───────────────────────────────────────
 
   const activeBattleId = createdBattleId ?? battleIdFromUrl
 
   const handleInvite = async () => {
     if (!activeBattleId || (!slotA && !slotB)) {
-      go(6)
+      go(5)
       return
     }
     setInviting(true)
@@ -285,7 +280,7 @@ export const CreateBattleWizard: React.FC<CreateBattleWizardProps> = ({ onSucces
         setContenderBId(result.id)
         setContenderBName(result.display_name)
       }
-      go(6)
+      go(5)
     } catch (e) {
       setInviteError((e as Error).message ?? 'Failed to invite contender.')
     } finally {
@@ -298,16 +293,16 @@ export const CreateBattleWizard: React.FC<CreateBattleWizardProps> = ({ onSucces
   // ── Render ────────────────────────────────────────────────────────────────
 
   // Skip button config per step
-  const skipButton = step === 5
-    ? { label: 'Skip for now', onClick: () => go(6) }
-    : step === 6
+  const skipButton = step === 4
+    ? { label: 'Skip for now', onClick: () => go(5) }
+    : step === 5
       ? { label: 'Skip for now', onClick: handleFinish }
       : undefined
 
   // Next / complete handler varies by step
-  const handleNext = step === 4
+  const handleNext = step === 3
     ? handleCreateBattle
-    : step === 5
+    : step === 4
       ? handleInvite
       : () => go(step + 1)
 
@@ -323,11 +318,11 @@ export const CreateBattleWizard: React.FC<CreateBattleWizardProps> = ({ onSucces
         onComplete={handleComplete}
         onCancel={onClose}
         canProceed={canProceed}
-        isCompleting={step === 4 ? submitting : step === 5 ? inviting : false}
-        isNextLoading={step === 4 ? submitting : step === 5 ? inviting : false}
+        isCompleting={step === 3 ? submitting : step === 4 ? inviting : false}
+        isNextLoading={step === 3 ? submitting : step === 4 ? inviting : false}
         completeLabel="Go to Battle"
         completeIcon={<Swords size={15} className="mr-1.5" />}
-        nextLabel={step === 4 ? 'Create Battle' : step === 5 ? 'Invite' : 'Next'}
+        nextLabel={step === 3 ? 'Create Battle' : step === 4 ? 'Invite' : 'Next'}
         skipButton={skipButton}
       >
         <AnimatePresence mode="wait" custom={direction}>
@@ -521,22 +516,32 @@ export const CreateBattleWizard: React.FC<CreateBattleWizardProps> = ({ onSucces
               </div>
             )}
 
-            {/* ── Step 3: Battle type ───────────────────────────────── */}
+            {/* ── Step 3: Configuration (Merged Type & Settings) ─── */}
             {step === 3 && (
-              <BattleTypeSelector value={battleType} onChange={handleBattleTypeChange} />
-            )}
+              <div className="space-y-6">
+                <div>
+                  <h4 className="mb-4 text-xs font-bold uppercase tracking-wider text-greyscale-400">
+                    Battle Mode
+                  </h4>
+                  <BattleTypeSelector value={battleType} onChange={handleBattleTypeChange} />
+                </div>
 
-            {/* ── Step 4: Configuration ─────────────────────────────── */}
-            {step === 4 && (
-              <div className="space-y-4">
-                <VoterEligibilitySelector
-                  battleType={battleType}
-                  value={voterEligibility}
-                  onChange={setVoterEligibility}
-                />
-                {showsHandicap && (
-                  <HandicapConfigPanel value={handicap} onChange={setHandicap} />
-                )}
+                <div className="border-t border-surface-border pt-6">
+                  <h4 className="mb-4 text-xs font-bold uppercase tracking-wider text-greyscale-400">
+                    Voter & Performance Settings
+                  </h4>
+                  <div className="space-y-6">
+                    <VoterEligibilitySelector
+                      battleType={battleType}
+                      value={voterEligibility}
+                      onChange={setVoterEligibility}
+                    />
+                    {showsHandicap && (
+                      <HandicapConfigPanel value={handicap} onChange={setHandicap} />
+                    )}
+                  </div>
+                </div>
+
                 {error && (
                   <div className="rounded-2xl border border-status-red/20 bg-status-red/5 px-4 py-3 text-sm text-status-red">
                     {error}
@@ -545,8 +550,8 @@ export const CreateBattleWizard: React.FC<CreateBattleWizardProps> = ({ onSucces
               </div>
             )}
 
-            {/* ── Step 5: Invite contenders ─────────────────────────── */}
-            {step === 5 && (
+            {/* ── Step 4: Invite contenders ─────────────────────────── */}
+            {step === 4 && (
               <ContenderInviteStep
                 slotA={slotA}
                 slotB={slotB}
@@ -556,8 +561,8 @@ export const CreateBattleWizard: React.FC<CreateBattleWizardProps> = ({ onSucces
               />
             )}
 
-            {/* ── Step 6: Assign Lenses ─────────────────────────────── */}
-            {step === 6 && activeBattleId && (
+            {/* ── Step 5: Assign Lenses ─────────────────────────────── */}
+            {step === 5 && activeBattleId && (
               <LensAssignmentStep
                 battleId={activeBattleId}
                 contenderAId={contenderAId}
