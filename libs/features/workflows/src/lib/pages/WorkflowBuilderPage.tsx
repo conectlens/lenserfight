@@ -1,7 +1,7 @@
-import { Badge, Button } from '@lenserfight/ui/components'
 import { lensesService } from '@lenserfight/data/repositories'
 import { useAuth } from '@lenserfight/features/auth'
 import { useCreateLens, CreateLensModal } from '@lenserfight/features/lenses'
+import { Badge, Button } from '@lenserfight/ui/components'
 import { ArrowLeft, Bookmark, ChevronDown, GitBranch, GitFork, Play, Swords, ThumbsUp, X } from 'lucide-react'
 import React, { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
@@ -82,14 +82,15 @@ export function WorkflowBuilderPage({ workflowId, onBattleClick }: WorkflowBuild
       {/* ── Toolbar ─────────────────────────────────────────────────────────── */}
       <header className="flex flex-shrink-0 items-center gap-3 border-b border-surface-border bg-surface-base px-4 h-[52px]">
         {/* Back */}
-        <button
-          type="button"
+        <Button
+          variant="ghost"
+          size="sm"
           onClick={() => navigate('/workflows')}
-          className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-xl text-greyscale-400 hover:text-greyscale-700 hover:bg-surface-raised transition-colors dark:hover:text-greyscale-200"
+          className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-xl !p-0 text-greyscale-400 hover:text-greyscale-700 hover:bg-surface-raised transition-colors dark:hover:text-greyscale-200"
           title="Back to workflows"
         >
           <ArrowLeft size={16} />
-        </button>
+        </Button>
 
         {/* Workflow identity */}
         <div className="flex items-center gap-2 flex-1 min-w-0">
@@ -116,12 +117,13 @@ export function WorkflowBuilderPage({ workflowId, onBattleClick }: WorkflowBuild
           {/* Social: Like / Save / Fork — shown when authenticated */}
           {user && (
             <>
-              <button
-                type="button"
+              <Button
+                variant={liked ? 'primary' : 'secondary'}
+                size="sm"
                 onClick={toggleLike}
                 disabled={reactionPending}
                 title={liked ? 'Unlike' : 'Like'}
-                className={`flex items-center gap-1 rounded-xl border px-2.5 py-1 text-xs font-medium transition-colors ${
+                className={`gap-1.5 w-auto rounded-xl px-2.5 py-1 transition-colors ${
                   liked
                     ? 'border-primary-yellow-500 bg-primary-yellow-500/10 text-primary-yellow-600'
                     : 'border-surface-border bg-surface-raised text-greyscale-500 hover:text-greyscale-900 dark:hover:text-greyscale-100'
@@ -129,14 +131,15 @@ export function WorkflowBuilderPage({ workflowId, onBattleClick }: WorkflowBuild
               >
                 <ThumbsUp size={12} className={liked ? 'fill-current' : ''} />
                 {likeCount > 0 && <span>{likeCount}</span>}
-              </button>
+              </Button>
 
-              <button
-                type="button"
+              <Button
+                variant={saved ? 'primary' : 'secondary'}
+                size="sm"
                 onClick={toggleSave}
                 disabled={reactionPending}
                 title={saved ? 'Unsave' : 'Save'}
-                className={`flex items-center gap-1 rounded-xl border px-2.5 py-1 text-xs font-medium transition-colors ${
+                className={`gap-1.5 w-auto rounded-xl px-2.5 py-1 transition-colors ${
                   saved
                     ? 'border-primary-yellow-500 bg-primary-yellow-500/10 text-primary-yellow-600'
                     : 'border-surface-border bg-surface-raised text-greyscale-500 hover:text-greyscale-900 dark:hover:text-greyscale-100'
@@ -144,7 +147,7 @@ export function WorkflowBuilderPage({ workflowId, onBattleClick }: WorkflowBuild
               >
                 <Bookmark size={12} className={saved ? 'fill-current' : ''} />
                 {savedCount > 0 && <span>{savedCount}</span>}
-              </button>
+              </Button>
 
               {!isOwner && (
                 <Button
@@ -185,10 +188,11 @@ export function WorkflowBuilderPage({ workflowId, onBattleClick }: WorkflowBuild
 
           {/* Run panel toggle */}
           {runId && (
-            <button
-              type="button"
+            <Button
+              variant="secondary"
+              size="sm"
               onClick={() => setShowRunPanel((v) => !v)}
-              className="flex items-center gap-1 rounded-xl border border-surface-border bg-surface-raised px-2.5 py-1 text-xs font-medium text-greyscale-600 hover:text-greyscale-900 transition-colors dark:text-greyscale-300"
+              className="gap-1.5 rounded-xl border border-surface-border bg-surface-raised px-2.5 py-1 text-greyscale-600 hover:text-greyscale-900 transition-colors dark:text-greyscale-300 w-auto"
             >
               {isRunning ? (
                 <Badge color="blue" variant="outline" className="text-[10px]">Running</Badge>
@@ -196,7 +200,7 @@ export function WorkflowBuilderPage({ workflowId, onBattleClick }: WorkflowBuild
                 <Badge color="green" variant="outline" className="text-[10px]">Done</Badge>
               )}
               <ChevronDown size={12} className={`transition-transform ${showRunPanel ? 'rotate-180' : ''}`} />
-            </button>
+            </Button>
           )}
         </div>
       </header>
@@ -237,13 +241,14 @@ export function WorkflowBuilderPage({ workflowId, onBattleClick }: WorkflowBuild
               <p className="text-xs font-medium text-greyscale-700 dark:text-greyscale-300">
                 Workflow ready.
               </p>
-              <button
-                type="button"
+              <Button
+                variant="ghost"
+                size="sm"
                 onClick={() => onBattleClick(workflow.id)}
-                className="text-xs font-semibold text-primary-yellow-600 hover:underline"
+                className="!text-xs !font-semibold !text-primary-yellow-600 hover:!bg-primary-yellow-500/10 w-auto !h-auto !py-1 !px-2"
               >
                 Battle it →
-              </button>
+              </Button>
             </div>
           )}
         </div>
@@ -255,13 +260,14 @@ export function WorkflowBuilderPage({ workflowId, onBattleClick }: WorkflowBuild
               <p className="text-xs font-semibold text-greyscale-900 dark:text-greyscale-50">
                 Run {isRunning ? '— in progress' : '— complete'}
               </p>
-              <button
-                type="button"
+              <Button
+                variant="ghost"
+                size="sm"
                 onClick={() => setShowRunPanel(false)}
-                className="text-greyscale-400 hover:text-greyscale-700 transition-colors"
+                className="!p-1 !h-6 !w-6 text-greyscale-400 hover:text-greyscale-700 transition-colors"
               >
                 <X size={14} />
-              </button>
+              </Button>
             </div>
             <div className="flex-1 overflow-y-auto">
               <WorkflowProgressView nodes={nodes} edges={edges} nodeResults={nodeResults} />

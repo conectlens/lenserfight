@@ -1,8 +1,9 @@
-import { BaseEdge, EdgeLabelRenderer, getBezierPath } from '@xyflow/react'
-import type { EdgeProps } from '@xyflow/react'
 import { Button } from '@lenserfight/ui/components'
+import { BaseEdge, EdgeLabelRenderer, getBezierPath } from '@xyflow/react'
 import { X } from 'lucide-react'
 import React from 'react'
+
+import type { EdgeProps } from '@xyflow/react'
 
 export interface WorkflowEdgeData {
   sourceOutputKey?: string
@@ -38,7 +39,7 @@ export function WorkflowCanvasEdge({
       <BaseEdge
         path={edgePath}
         style={{
-          stroke: selected ? 'var(--cl-status-blue)' : 'var(--cl-greyscale-300)',
+          stroke: selected ? 'var(--cl-primary-yellow-500)' : 'var(--cl-surface-border-strong)',
           strokeWidth: selected ? 2 : 1.5,
           transition: 'stroke 0.15s, stroke-width 0.15s',
         }}
