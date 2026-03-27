@@ -33,6 +33,9 @@ export { AppToaster } from '@lenserfight/ui/providers'
 export * from './lib/VersionBadge'
 export * from './lib/ModelProviderBadge'
 
+// Logo
+export * from './lib/Logo'
+
 // Brand components
 export * from './lib/Alert'
 export * from './lib/Badge'

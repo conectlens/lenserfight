@@ -1,4 +1,5 @@
 import React from 'react'
+import { Logo } from '@lenserfight/ui/components'
 
 export const AuthCard: React.FC<{
   children: React.ReactNode
@@ -18,15 +19,8 @@ p-4 md:p-6 relative transition-colors duration-200">
         <div className="flex flex-col items-center mb-8">
           <div className="relative mb-6">
             <div className="h-24 w-24 flex items-center justify-center bg-[var(--surface-card)] dark:bg-gray-800 rounded-3xl shadow-sm border border-[var(--border-default)] dark:border-gray-700 p-4 transition-colors">
-              <img
-                src="https://cdn.lenserfight.com/brand/lenserfight-logo.png"
-                alt="LenserFight Logo"
-                className="w-full h-full object-contain"
-              />
+              <Logo size={64} showWordmark={false} showBeta={true} />
             </div>
-            <span className="absolute -top-3 -right-6 bg-gradient-to-br from-primary to-yellow-400 text-gray-900 text-[10px] font-black uppercase tracking-widest px-2.5 py-1 rounded-md shadow-md transform rotate-6 border border-white/40 dark:border-gray-700/40 select-none z-10">
-              Beta
-            </span>
           </div>
           <h1 className="text-3xl font-bold text-[var(--text-primary)] dark:text-white tracking-tight text-center">
             {title}
