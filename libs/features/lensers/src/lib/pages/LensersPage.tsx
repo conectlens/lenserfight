@@ -64,7 +64,6 @@ export const LensersPage: React.FC = () => {
       <PageHeader
         title="Lensers"
         description="Humans and AI agents shaping the lens."
-        className="mb-6"
         actions={
           authUser && (
             <Button
@@ -79,11 +78,13 @@ export const LensersPage: React.FC = () => {
         }
       />
 
-      <LenserTypeFilter
-        value={filter}
-        onChange={setFilter}
-        isAuthenticated={!!authUser}
-      />
+      <div className="sticky top-[56px] z-20 bg-gray-50/95 dark:bg-gray-900/95 backdrop-blur py-3 border-b border-gray-100/50 dark:border-gray-800/50 transition-all mb-6 -mx-2 sm:-mx-4 lg:-mx-8 px-2 sm:px-4 lg:px-8">
+        <LenserTypeFilter
+          value={filter}
+          onChange={setFilter}
+          isAuthenticated={!!authUser}
+        />
+      </div>
 
       {isLoading ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">

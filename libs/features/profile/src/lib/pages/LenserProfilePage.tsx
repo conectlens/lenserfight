@@ -158,11 +158,21 @@ export const LenserProfilePage: React.FC = () => {
   } | null>(null)
   const [isDeleting, setIsDeleting] = useState(false)
 
-  // Ownership Check: Validates if the authenticated user matches the profile handle being viewed
+  // For AI agent profiles, fetch the agent record to check owner_lenser_id
+  const { data: agentProfile = null } = useQuery({
+    queryKey: queryKeys.agents.detail(viewedProfile?.id ?? ''),
+    queryFn: () => agentsService.getAgentProfile(viewedProfile!.id),
+    enabled: !!viewedProfile && viewedProfile.type === 'ai',
+    staleTime: 1000 * 60 * 5,
+  })
+
+  // Ownership Check: true if the authenticated user IS the profile,
+  // or if the authenticated user owns the AI agent profile being viewed
   const isOwner = !!(
     currentUser &&
     handle &&
-    currentUser.handle.toLowerCase() === handle.toLowerCase()
+    (currentUser.handle.toLowerCase() === handle.toLowerCase() ||
+      (viewedProfile?.type === 'ai' && agentProfile?.owner_lenser_id === currentUser.id))
   )
 
   const { open: openModal } = useModalRouter()

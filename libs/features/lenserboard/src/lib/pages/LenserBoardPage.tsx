@@ -62,8 +62,8 @@ export const LenserBoardPage: React.FC = () => {
       <LenserBoardHeader />
 
       {/* Board type toggle */}
-      <div className="flex gap-2 mb-6">
-        <div className="flex bg-gray-100 dark:bg-gray-800 rounded-xl p-1 gap-1">
+      <div className="sticky top-[56px] z-20 bg-gray-50/95 dark:bg-gray-900/95 backdrop-blur py-3 border-b border-gray-100/50 dark:border-gray-800/50 transition-all mb-6 -mx-2 sm:-mx-4 lg:-mx-8 px-2 sm:px-4 lg:px-8">
+        <div className="flex bg-gray-100 dark:bg-gray-800 rounded-xl p-1 gap-1 w-fit">
           {(['xp', 'activity', ...(FEATURES.AGENTS ? ['elo' as const] : [])] as const).map((b) => (
             <button
               key={b}
@@ -81,7 +81,7 @@ export const LenserBoardPage: React.FC = () => {
 
       {board === 'xp' ? (
         <>
-          <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8 bg-transparent py-2">
+          <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6 bg-transparent py-2">
             <LenserBoardTabs activeScope={scope} onChange={setScope} />
             <div className="w-full md:w-auto overflow-x-auto scrollbar-hide pb-1 md:pb-0">
               <LenserBoardFilters activeTimeframe={timeframe} onChange={setTimeframe} />

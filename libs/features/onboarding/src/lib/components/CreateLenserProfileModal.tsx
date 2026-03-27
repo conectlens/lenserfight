@@ -12,7 +12,7 @@ import { storage } from '@lenserfight/utils/storage'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { Check, X, Loader2 } from 'lucide-react'
 import React, { useState, useEffect } from 'react'
-import { useNavigate, useLocation } from 'react-router-dom'
+import { useNavigate, useLocation, useSearchParams } from 'react-router-dom'
 
 const AUTH_PROFILE_GATE_QUERY_KEY = ['lenser', 'auth-profile-gate'] as const
 
@@ -86,7 +86,11 @@ export const CreateLenserProfileModal: React.FC = () => {
   const hasCompletedOnboarding = onboardingStep >= 2
   const isLoading = authLoading || lenserLoading
 
-  const returnTo = (location.state as { from?: string } | null)?.from ?? '/'
+  const [searchParams] = useSearchParams()
+  const returnTo =
+    (location.state as { from?: string } | null)?.from ??
+    searchParams.get('return_url') ??
+    '/'
 
   // Security redirect: only authenticated users without a profile reach this
   useEffect(() => {

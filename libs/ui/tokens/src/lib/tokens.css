@@ -24,16 +24,16 @@
   --cl-yellow-900: #8a7322;
 
   /* ── Deep Lens Navy ─────────────────────────────────────── */
-  --cl-navy-50: #e6edf5;
-  --cl-navy-100: #c3d1e4;
-  --cl-navy-200: #9ab4d2;
-  --cl-navy-300: #6b94be;
-  --cl-navy-400: #3c74a9;
-  --cl-navy-500: #213f74;
-  --cl-navy-600: #1a3260;
-  --cl-navy-700: #12244a;
-  --cl-navy-800: #0a1730;
-  --cl-navy-900: #040b14;
+  --cl-navy-50: var(--cl-grey-50);
+  --cl-navy-100: var(--cl-grey-100);
+  --cl-navy-200: var(--cl-grey-200);
+  --cl-navy-300: var(--cl-grey-300);
+  --cl-navy-400: var(--cl-grey-400);
+  --cl-navy-500: var(--cl-grey-500);
+  --cl-navy-600: var(--cl-grey-600);
+  --cl-navy-700: var(--cl-grey-700);
+  --cl-navy-800: var(--cl-grey-800);
+  --cl-navy-900: var(--cl-grey-900);
 
   /* ── Greyscale ──────────────────────────────────────────── */
   --cl-grey-0: #ffffff;
