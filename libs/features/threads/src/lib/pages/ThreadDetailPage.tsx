@@ -6,6 +6,7 @@ import { queryKeys } from '@lenserfight/data/cache'
 
 import { Button } from '@lenserfight/ui/components'
 import { ConfirmModal } from '@lenserfight/ui/modals'
+import { SelectField } from '@lenserfight/ui/forms'
 import { SEOHead } from '@lenserfight/ui/components'
 import { useAuth } from '@lenserfight/features/auth'
 import { useShareContext } from '@lenserfight/features/share'
@@ -252,23 +253,14 @@ export const ThreadDetailPage: React.FC = () => {
             <p className="text-sm text-gray-500 dark:text-gray-400">
               Why are you reporting this thread?
             </p>
-            <select
+            <SelectField
               value={reportReason}
-              onChange={(e) =>
-                setReportReason(
-                  e.target.value as 'spam' | 'harassment' | 'misinformation' | 'off_topic' | 'other'
-                )
-              }
-              className="w-full border border-gray-200 dark:border-gray-600 rounded-lg px-3 py-2 text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-            >
-              {(['spam', 'harassment', 'misinformation', 'off_topic', 'other'] as const).map(
-                (r) => (
-                  <option key={r} value={r}>
-                    {r.replace('_', ' ').replace(/\b\w/g, (c) => c.toUpperCase())}
-                  </option>
-                )
-              )}
-            </select>
+              onChange={(v) => setReportReason(v as 'spam' | 'harassment' | 'misinformation' | 'off_topic' | 'other')}
+              options={(['spam', 'harassment', 'misinformation', 'off_topic', 'other'] as const).map((r) => ({
+                value: r,
+                label: r.replace('_', ' ').replace(/\b\w/g, (c) => c.toUpperCase()),
+              }))}
+            />
             <div className="flex gap-3 justify-end pt-1">
               <Button
                 variant="ghost"
