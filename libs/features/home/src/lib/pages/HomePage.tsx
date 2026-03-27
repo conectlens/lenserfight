@@ -10,11 +10,7 @@ import {
 import React, { useCallback, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 
-import { Avatar } from '@lenserfight/ui/components'
-import { Button } from '@lenserfight/ui/components'
-import { Card } from '@lenserfight/ui/components'
-import { SEOHead } from '@lenserfight/ui/components'
-import { TagBadge } from '@lenserfight/ui/components'
+import { Avatar, Button, Card, EmptyState, SEOHead, TagBadge } from '@lenserfight/ui/components'
 import { useAuth } from '@lenserfight/features/auth'
 import {
   useThreadsFeed,
@@ -194,20 +190,21 @@ export const HomePage: React.FC = () => {
         </div>
 
         {isEmpty ? (
-          <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 border-dashed p-10 py-16 flex flex-col items-center justify-center text-center shadow-sm">
-            <div className="w-16 h-16 bg-gray-50 dark:bg-gray-700 rounded-full flex items-center justify-center mb-4 text-gray-400 dark:text-gray-500">
-              <MessageSquareOff size={32} strokeWidth={1.5} />
-            </div>
-            <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">No posts yet</h3>
-            <p className="text-gray-500 dark:text-gray-400 max-w-sm mb-8 leading-relaxed">
-              {activeTab === 'for_you'
+          <EmptyState
+            icon={MessageSquareOff}
+            title="No posts yet"
+            description={
+              activeTab === 'for_you'
                 ? 'Follow some lensers and tags to build your personalised feed.'
-                : 'Your feed is currently quiet. Be the first to start a conversation.'}
-            </p>
-            <Button onClick={handleCreateClick} className="flex items-center gap-2 px-6 w-auto">
-              <Plus size={18} /> Create Post
-            </Button>
-          </div>
+                : 'Your feed is currently quiet. Be the first to start a conversation.'
+            }
+            action={
+              <Button onClick={handleCreateClick} className="flex items-center gap-2 px-6 w-auto">
+                <Plus size={18} /> Create Post
+              </Button>
+            }
+            className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 shadow-sm"
+          />
         ) : (
           <div className="space-y-6">
             <ThreadsList
