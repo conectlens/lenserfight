@@ -2,9 +2,9 @@ import { lensesService } from '@lenserfight/data/repositories'
 import { useAuth } from '@lenserfight/features/auth'
 import { Button } from '@lenserfight/ui/components'
 import { SearchBar } from '@lenserfight/ui/forms'
-import { useQuery } from '@tanstack/react-query'
+import { useInfiniteQuery, useQuery } from '@tanstack/react-query'
 import { ChevronLeft, ChevronRight, GripVertical } from 'lucide-react'
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useRef, useState } from 'react'
 import type { LensViewModel, PersonalLensFeedItem } from '@lenserfight/types'
 
 export interface DraggedLensData {
@@ -20,11 +20,14 @@ interface WorkflowLensPaletteProps {
 
 type PaletteTab = 'mine' | 'popular'
 
+const PAGE_SIZE = 20
+
 export function WorkflowLensPalette({ onDragStart, collapsed, onToggleCollapse }: WorkflowLensPaletteProps) {
   const { user } = useAuth()
   const [tab, setTab] = useState<PaletteTab>('mine')
   const [rawSearch, setRawSearch] = useState('')
   const [debouncedSearch, setDebouncedSearch] = useState('')
+  const sentinelRef = useRef<HTMLDivElement>(null)
 
   // Debounce: only propagate search query after 300ms of inactivity
   useEffect(() => {
@@ -32,28 +35,39 @@ export function WorkflowLensPalette({ onDragStart, collapsed, onToggleCollapse }
     return () => clearTimeout(t)
   }, [rawSearch])
 
-  // My lenses via personal feed
-  const { data: personalData, isLoading: loadingPersonal } = useQuery({
+  // My lenses — infinite scroll
+  const personalQuery = useInfiniteQuery({
     queryKey: ['workflow-palette-personal', user?.id],
-    queryFn: () => lensesService.getPersonalFeed(user?.id ?? '', 0, 30),
+    queryFn: ({ pageParam }: { pageParam: number }) =>
+      lensesService.getPersonalFeed(user?.id ?? '', pageParam, PAGE_SIZE),
+    initialPageParam: 0,
+    getNextPageParam: (lastPage, pages) =>
+      lastPage.meta?.hasNextPage ? pages.length * PAGE_SIZE : undefined,
     enabled: !!user?.id,
     staleTime: 1000 * 60,
   })
-  const myLenses: LensViewModel[] = (personalData?.data ?? []) as PersonalLensFeedItem[]
+
+  const myLenses: LensViewModel[] =
+    (personalQuery.data?.pages.flatMap((p) => p.data) ?? []) as PersonalLensFeedItem[]
 
   // Auto-switch to popular when user has no personal lenses
-  const effectiveTab: PaletteTab = myLenses.length === 0 && !loadingPersonal ? 'popular' : tab
+  const effectiveTab: PaletteTab = myLenses.length === 0 && !personalQuery.isLoading ? 'popular' : tab
 
-  // Popular lenses (fetched when tab is popular OR as fallback)
-  const { data: popularData, isLoading: loadingPopular } = useQuery({
+  // Popular lenses — infinite scroll
+  const popularQuery = useInfiniteQuery({
     queryKey: ['workflow-palette-popular'],
-    queryFn: () => lensesService.sort('popular', 0, 30),
+    queryFn: ({ pageParam }: { pageParam: number }) =>
+      lensesService.sort('popular', pageParam, PAGE_SIZE),
+    initialPageParam: 0,
+    getNextPageParam: (lastPage, pages) =>
+      lastPage.meta?.hasNextPage ? pages.length * PAGE_SIZE : undefined,
     enabled: effectiveTab === 'popular' || myLenses.length === 0,
     staleTime: 1000 * 60 * 5,
   })
-  const popularLenses: LensViewModel[] = popularData?.data ?? []
 
-  // Search — min 3 chars, fires after debounce
+  const popularLenses: LensViewModel[] = popularQuery.data?.pages.flatMap((p) => p.data) ?? []
+
+  // Search — min 3 chars, fires after debounce (keep as regular query, no infinite scroll)
   const { data: searchData, isLoading: loadingSearch } = useQuery({
     queryKey: ['workflow-palette-search', debouncedSearch],
     queryFn: () => lensesService.search(debouncedSearch, 0, 20),
@@ -65,8 +79,24 @@ export function WorkflowLensPalette({ onDragStart, collapsed, onToggleCollapse }
   const isSearching = debouncedSearch.length >= 3
   const displayLenses: LensViewModel[] =
     isSearching ? searchResults : effectiveTab === 'mine' ? myLenses : popularLenses
-  const isLoading =
-    isSearching ? loadingSearch : effectiveTab === 'mine' ? loadingPersonal : loadingPopular
+
+  const activeQuery = isSearching ? null : effectiveTab === 'mine' ? personalQuery : popularQuery
+  const isLoading = isSearching ? loadingSearch : activeQuery?.isLoading ?? false
+
+  // IntersectionObserver — trigger next page when sentinel enters viewport
+  useEffect(() => {
+    if (!sentinelRef.current || !activeQuery) return
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting && activeQuery.hasNextPage && !activeQuery.isFetchingNextPage) {
+          activeQuery.fetchNextPage()
+        }
+      },
+      { threshold: 0.1 }
+    )
+    observer.observe(sentinelRef.current)
+    return () => observer.disconnect()
+  }, [effectiveTab, isSearching, activeQuery?.hasNextPage, activeQuery?.isFetchingNextPage])
 
   const handleDragStart = (e: React.DragEvent, lens: LensViewModel) => {
     const data: DraggedLensData = { lens_id: lens.id, title: lens.title }
@@ -177,6 +207,18 @@ export function WorkflowLensPalette({ onDragStart, collapsed, onToggleCollapse }
               </div>
             </div>
           ))}
+
+        {/* Sentinel for infinite scroll */}
+        {!isSearching && (
+          <div ref={sentinelRef} className="h-4" />
+        )}
+
+        {/* Loading more indicator */}
+        {activeQuery?.isFetchingNextPage && (
+          <div className="flex justify-center py-2">
+            <div className="h-4 w-4 rounded-full border-2 border-primary-yellow-500 border-t-transparent animate-spin" />
+          </div>
+        )}
       </div>
     </aside>
   )
