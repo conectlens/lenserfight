@@ -10,6 +10,8 @@ import type { LensViewModel, PersonalLensFeedItem } from '@lenserfight/types'
 export interface DraggedLensData {
   lens_id: string
   title: string
+  visibility?: 'public' | 'private' | 'unlisted'
+  lenser_id?: string
 }
 
 interface WorkflowLensPaletteProps {
@@ -99,7 +101,12 @@ export function WorkflowLensPalette({ onDragStart, collapsed, onToggleCollapse }
   }, [effectiveTab, isSearching, activeQuery?.hasNextPage, activeQuery?.isFetchingNextPage])
 
   const handleDragStart = (e: React.DragEvent, lens: LensViewModel) => {
-    const data: DraggedLensData = { lens_id: lens.id, title: lens.title }
+    const data: DraggedLensData = {
+      lens_id: lens.id,
+      title: lens.title,
+      visibility: lens.visibility as 'public' | 'private' | 'unlisted',
+      lenser_id: lens.author?.id,
+    }
     e.dataTransfer.setData('application/lenserfight-lens', JSON.stringify(data))
     e.dataTransfer.effectAllowed = 'copy'
     onDragStart(data)

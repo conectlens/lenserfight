@@ -1,5 +1,4 @@
 import { lensesService, battlesService } from '@lenserfight/data/repositories'
-import type { BattleRecord } from '@lenserfight/data/repositories'
 import { useAuth } from '@lenserfight/features/auth'
 import { useCreateLens, CreateLensModal } from '@lenserfight/features/lenses'
 import { Badge, Button } from '@lenserfight/ui/components'
@@ -10,13 +9,16 @@ import { useNavigate } from 'react-router-dom'
 import { WorkflowBuilderCanvas } from '../components/WorkflowBuilderCanvas'
 import { EditWorkflowModal } from '../components/EditWorkflowModal'
 import { WorkflowLensPalette } from '../components/WorkflowLensPalette'
+import { WorkflowNodeConfigPanel } from '../components/WorkflowNodeConfigPanel'
 import { WorkflowProgressView } from '../components/WorkflowProgressView'
+import { WorkflowRunConfigModal } from '../components/WorkflowRunConfigModal'
 import { useForkWorkflow } from '../hooks/useForkWorkflow'
 import { useWorkflow } from '../hooks/useWorkflow'
 import { useWorkflowReaction } from '../hooks/useWorkflowReaction'
 import { useQuery } from '@tanstack/react-query'
 import { queryKeys } from '@lenserfight/data/cache'
 import { useWorkflowRun } from '../hooks/useWorkflowRun'
+import type { WorkflowNodeConfig } from '../components/WorkflowCanvasNode'
 
 interface WorkflowBuilderPageProps {
   workflowId: string
@@ -30,10 +32,17 @@ export function WorkflowBuilderPage({ workflowId, onBattleClick }: WorkflowBuild
   const { workflow, nodes, edges, isLoading } = useWorkflow(workflowId)
   const { startRun, isPending: starting, runId, nodeResults, isRunning } = useWorkflowRun(workflowId)
   const [showRunPanel, setShowRunPanel] = useState(false)
+  const [showRunConfig, setShowRunConfig] = useState(false)
   const [isEditModalOpen, setIsEditModalOpen] = useState(false)
   const [paletteCollapsed, setPaletteCollapsed] = useState(
     () => typeof window !== 'undefined' && window.innerWidth < 768
   )
+
+  // Per-node config overrides (in-memory; persisted to DB via migration Phase 2)
+  const [nodeConfigs, setNodeConfigs] = useState<Record<string, WorkflowNodeConfig>>({})
+
+  // Selected node for the config panel
+  const [selectedNodeConfig, setSelectedNodeConfig] = useState<{ nodeId: string; lensId: string; nodeLabel: string } | null>(null)
 
   const isOwner = !!user && user.id === workflow?.lenser_id
   const { mutate: forkWorkflow, isPending: isForking } = useForkWorkflow()
@@ -68,9 +77,27 @@ export function WorkflowBuilderPage({ workflowId, onBattleClick }: WorkflowBuild
     }
   }
 
-  const handleRun = async () => {
-    await startRun({})
+  // ── Node config panel ───────────────────────────────────────────────────────
+  const handleConfigNode = (nodeId: string, lensId: string) => {
+    const node = nodes.find((n) => n.id === nodeId)
+    setSelectedNodeConfig({ nodeId, lensId, nodeLabel: node?.label ?? `Node ${(node?.ordinal ?? 0) + 1}` })
+    // Hide run panel when config panel opens
+    setShowRunPanel(false)
+  }
+
+  const handleSaveNodeConfig = (nodeId: string, config: WorkflowNodeConfig) => {
+    setNodeConfigs((prev) => ({ ...prev, [nodeId]: config }))
+  }
+
+  // ── Run ─────────────────────────────────────────────────────────────────────
+  const handleRunClick = () => {
+    setShowRunConfig(true)
+  }
+
+  const handleRun = async (globalModelId: string, inputs: Record<string, unknown>) => {
+    await startRun({ inputs, globalModelId })
     setShowRunPanel(true)
+    setSelectedNodeConfig(null)
   }
 
   // ── Loading / error states ─────────────────────────────────────────────────
@@ -94,7 +121,6 @@ export function WorkflowBuilderPage({ workflowId, onBattleClick }: WorkflowBuild
     <div className="flex h-full flex-col overflow-hidden bg-surface-base">
       {/* ── Toolbar ─────────────────────────────────────────────────────────── */}
       <header className="flex flex-shrink-0 items-center gap-3 border-b border-surface-border bg-surface-base px-4 h-[52px]">
-
 
         {/* Back */}
         <Button
@@ -191,7 +217,7 @@ export function WorkflowBuilderPage({ workflowId, onBattleClick }: WorkflowBuild
           {/* Run */}
           <Button
             size="sm"
-            onClick={handleRun}
+            onClick={handleRunClick}
             isLoading={starting}
             disabled={nodes.length === 0}
             className="gap-1.5 w-auto"
@@ -224,24 +250,12 @@ export function WorkflowBuilderPage({ workflowId, onBattleClick }: WorkflowBuild
             </div>
           )}
 
-
-          {/* Back */}
-          <Button
-            variant="secondary"
-            size="sm"
-            onClick={() => setIsEditModalOpen(true)}
-            className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-xl !p-0 text-greyscale-400 hover:text-greyscale-700 hover:bg-surface-raised transition-colors dark:hover:text-greyscale-200"
-            title="Edit this workflow"
-          >
-            <Pencil size={16} />
-          </Button>
-
           {/* Run panel toggle */}
           {runId && (
             <Button
               variant="secondary"
               size="sm"
-              onClick={() => setShowRunPanel((v) => !v)}
+              onClick={() => { setShowRunPanel((v) => !v); setSelectedNodeConfig(null) }}
               className="gap-1.5 rounded-xl border border-surface-border bg-surface-raised px-2.5 py-1 text-greyscale-600 hover:text-greyscale-900 transition-colors dark:text-greyscale-300 w-auto"
             >
               {isRunning ? (
@@ -270,6 +284,9 @@ export function WorkflowBuilderPage({ workflowId, onBattleClick }: WorkflowBuild
             workflowId={workflow.id}
             nodes={nodes}
             edges={edges}
+            currentUserId={user?.id}
+            nodeConfigOverrides={nodeConfigs}
+            onConfigNode={handleConfigNode}
             onEditLens={handleEditLens}
             onEdit={isOwner ? () => setIsEditModalOpen(true) : undefined}
           />
@@ -286,9 +303,8 @@ export function WorkflowBuilderPage({ workflowId, onBattleClick }: WorkflowBuild
             </div>
           )}
 
-
           {/* Battle CTA — shown when workflow has nodes and isn't running */}
-          {nodes.length > 0 && !isRunning && !showRunPanel && onBattleClick && (
+          {nodes.length > 0 && !isRunning && !showRunPanel && !selectedNodeConfig && onBattleClick && (
             <div className="pointer-events-auto absolute top-3 right-3 flex items-center gap-2 rounded-2xl border border-primary-yellow-500/30 bg-primary-yellow-500/5 px-3 py-2 shadow-sm">
               <p className="text-xs font-medium text-greyscale-700 dark:text-greyscale-300">
                 Workflow ready.
@@ -305,8 +321,22 @@ export function WorkflowBuilderPage({ workflowId, onBattleClick }: WorkflowBuild
           )}
         </div>
 
+        {/* Node config panel — slides in from right */}
+        {selectedNodeConfig && (
+          <WorkflowNodeConfigPanel
+            nodeId={selectedNodeConfig.nodeId}
+            lensId={selectedNodeConfig.lensId}
+            nodeLabel={selectedNodeConfig.nodeLabel}
+            currentConfig={nodeConfigs[selectedNodeConfig.nodeId] ?? {}}
+            nodes={nodes}
+            edges={edges}
+            onSave={handleSaveNodeConfig}
+            onClose={() => setSelectedNodeConfig(null)}
+          />
+        )}
+
         {/* Run results panel — slides in from the right */}
-        {showRunPanel && runId && (
+        {showRunPanel && runId && !selectedNodeConfig && (
           <aside className="flex flex-col w-80 flex-shrink-0 border-l border-surface-border bg-surface-base overflow-hidden">
             <div className="flex items-center justify-between px-4 py-2.5 border-b border-surface-border">
               <p className="text-xs font-semibold text-greyscale-900 dark:text-greyscale-50">
@@ -336,6 +366,14 @@ export function WorkflowBuilderPage({ workflowId, onBattleClick }: WorkflowBuild
           workflow={workflow}
         />
       )}
+
+      {/* ── Run configuration modal ──────────────────────────────────────────── */}
+      <WorkflowRunConfigModal
+        isOpen={showRunConfig}
+        onClose={() => setShowRunConfig(false)}
+        onRun={handleRun}
+        isRunning={starting}
+      />
 
       {/* ── Lens edit modal ─────────────────────────────────────────────────── */}
       <CreateLensModal

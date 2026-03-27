@@ -73,8 +73,8 @@ export const workflowsService = {
   deleteEdge: (edgeId: string): Promise<void> =>
     workflowsRepo.deleteEdge(edgeId),
 
-  startRun: (workflowId: string, inputs?: Record<string, unknown>): Promise<WorkflowRunRecord> =>
-    workflowsRepo.startRun(workflowId, inputs),
+  startRun: (workflowId: string, inputs?: Record<string, unknown>, globalModelId?: string): Promise<WorkflowRunRecord> =>
+    workflowsRepo.startRun(workflowId, inputs, globalModelId),
 
   getRun: (runId: string): Promise<WorkflowRunRecord | null> =>
     workflowsRepo.getRun(runId),
