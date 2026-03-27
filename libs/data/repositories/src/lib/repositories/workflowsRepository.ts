@@ -76,6 +76,12 @@ export interface CreateWorkflowInput {
   visibility?: 'public' | 'private' | 'unlisted'
 }
 
+export interface UpdateWorkflowInput {
+  title: string
+  description?: string | null
+  visibility: 'public' | 'private' | 'unlisted'
+}
+
 export interface UpsertNodeInput {
   id?: string
   lens_id: string
@@ -106,6 +112,7 @@ export interface WorkflowsRepositoryPort {
   getNodes(workflowId: string): Promise<WorkflowNodeRecord[]>
   getEdges(workflowId: string): Promise<WorkflowEdgeRecord[]>
   createWorkflow(input: CreateWorkflowInput): Promise<WorkflowRecord>
+  updateWorkflow(id: string, input: UpdateWorkflowInput): Promise<WorkflowRecord>
   forkWorkflow(sourceId: string): Promise<WorkflowRecord>
   upsertNodes(workflowId: string, nodes: UpsertNodeInput[]): Promise<WorkflowNodeRecord[]>
   upsertEdges(workflowId: string, edges: UpsertEdgeInput[]): Promise<WorkflowEdgeRecord[]>
@@ -227,6 +234,19 @@ export class SupabaseWorkflowsRepository implements WorkflowsRepositoryPort {
 
     if (error) this.handleError(error)
     // rpc returns an array for RETURNS TABLE; take the first row
+    const row = Array.isArray(data) ? data[0] : data
+    return row as WorkflowRecord
+  }
+
+  async updateWorkflow(id: string, input: UpdateWorkflowInput): Promise<WorkflowRecord> {
+    const { data, error } = await supabase.rpc('fn_update_workflow', {
+      p_workflow_id: id,
+      p_title: input.title,
+      p_description: input.description ?? null,
+      p_visibility: input.visibility,
+    })
+
+    if (error) this.handleError(error)
     const row = Array.isArray(data) ? data[0] : data
     return row as WorkflowRecord
   }

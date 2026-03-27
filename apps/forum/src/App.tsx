@@ -96,14 +96,16 @@ const OnboardingModal: React.FC = () => (
 
 const CreateBattleModal: React.FC = () => {
   const navigate = useNavigate()
+  const handleClose = () => navigate('/battles')
   return (
     <ModalRoute
       accessCheck={({ isAuthenticated, hasLenser }) => isAuthenticated && hasLenser}
       maxWidth="max-w-2xl"
+      onClose={handleClose}
     >
       <CreateBattleWizard
         onSuccess={(slug) => navigate(`/battles/${slug}`)}
-        onClose={() => navigate('/battles')}
+        onClose={handleClose}
       />
     </ModalRoute>
   )

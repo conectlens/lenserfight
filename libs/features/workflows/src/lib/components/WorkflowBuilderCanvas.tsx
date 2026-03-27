@@ -9,11 +9,13 @@ import {
   BackgroundVariant,
   Controls,
   MiniMap,
+  Panel,
   addEdge,
   useNodesState,
   useEdgesState,
   useReactFlow,
 } from '@xyflow/react'
+import { Pencil } from 'lucide-react'
 import React, { useCallback, useEffect, useRef } from 'react'
 
 import { useSaveWorkflow } from '../hooks/useSaveWorkflow'
@@ -119,6 +121,7 @@ export interface WorkflowBuilderCanvasProps {
   edges: WorkflowEdgeRecord[]
   readOnly?: boolean
   onEditLens?: (lensId: string) => void
+  onEdit?: () => void
 }
 
 // ─── Public component — wraps inner in ReactFlowProvider ─────────────────────
@@ -131,6 +134,8 @@ export function WorkflowBuilderCanvas(props: WorkflowBuilderCanvasProps) {
   )
 }
 
+
+
 // ─── Inner component — can call useReactFlow ──────────────────────────────────
 
 function WorkflowBuilderCanvasInner({
@@ -139,6 +144,7 @@ function WorkflowBuilderCanvasInner({
   edges: edgeRecords,
   readOnly = false,
   onEditLens,
+  onEdit,
 }: WorkflowBuilderCanvasProps) {
   const { screenToFlowPosition } = useReactFlow()
   const { mutateAsync: saveWorkflow } = useSaveWorkflow()
@@ -316,6 +322,18 @@ function WorkflowBuilderCanvasInner({
       }}
       className="[--xy-edge-stroke:var(--cl-workflow-edge)] [--xy-edge-stroke-selected:var(--cl-yellow-700)] dark:[--xy-edge-stroke-selected:var(--cl-yellow-500)]"
     >
+      {onEdit && !readOnly && (
+        <Panel position="top-left">
+          <button
+            onClick={onEdit}
+            title="Edit workflow settings"
+            className="flex items-center gap-1.5 rounded-xl border border-surface-border bg-surface-base px-2.5 py-1.5 text-xs font-medium text-greyscale-500 shadow-sm transition-colors hover:text-greyscale-900 hover:bg-surface-raised dark:hover:text-greyscale-100"
+          >
+            <Pencil size={12} />
+            Edit
+          </button>
+        </Panel>
+      )}
       <Background
         variant={BackgroundVariant.Dots}
         gap={20}

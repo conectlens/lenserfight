@@ -11,7 +11,7 @@ export function useForkWorkflow() {
     mutationFn: (sourceId: string) => workflowsService.forkWorkflow(sourceId),
     onSuccess: (newWorkflow) => {
       queryClient.invalidateQueries({ queryKey: queryKeys.workflows.all })
-      navigate(`/workflows/manage/${newWorkflow.id}`)
+      navigate(`/workflows/${newWorkflow.id}`)
     },
   })
 }
