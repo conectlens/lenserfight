@@ -3,7 +3,7 @@ import type { BattleRecord } from '@lenserfight/data/repositories'
 import { useAuth } from '@lenserfight/features/auth'
 import { useCreateLens, CreateLensModal } from '@lenserfight/features/lenses'
 import { Badge, Button } from '@lenserfight/ui/components'
-import { ArrowLeft, Bookmark, ChevronDown, GitBranch, GitFork, Play, Settings, Swords, ThumbsUp, X } from 'lucide-react'
+import { ArrowLeft, Bookmark, ChevronDown, GitBranch, GitFork, Pencil, Play, Settings, Swords, ThumbsUp, X } from 'lucide-react'
 import React, { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 
@@ -94,6 +94,8 @@ export function WorkflowBuilderPage({ workflowId, onBattleClick }: WorkflowBuild
     <div className="flex h-full flex-col overflow-hidden bg-surface-base">
       {/* ── Toolbar ─────────────────────────────────────────────────────────── */}
       <header className="flex flex-shrink-0 items-center gap-3 border-b border-surface-border bg-surface-base px-4 h-[52px]">
+
+
         {/* Back */}
         <Button
           variant="ghost"
@@ -136,11 +138,10 @@ export function WorkflowBuilderPage({ workflowId, onBattleClick }: WorkflowBuild
                 onClick={toggleLike}
                 disabled={reactionPending}
                 title={liked ? 'Unlike' : 'Like'}
-                className={`gap-1.5 w-auto rounded-xl px-2.5 py-1 transition-colors ${
-                  liked
-                    ? 'border-primary-yellow-500 bg-primary-yellow-500/10 text-primary-yellow-600'
-                    : 'border-surface-border bg-surface-raised text-greyscale-500 hover:text-greyscale-900 dark:hover:text-greyscale-100'
-                }`}
+                className={`gap-1.5 w-auto rounded-xl px-2.5 py-1 transition-colors ${liked
+                  ? 'border-primary-yellow-500 bg-primary-yellow-500/10 text-primary-yellow-600'
+                  : 'border-surface-border bg-surface-raised text-greyscale-500 hover:text-greyscale-900 dark:hover:text-greyscale-100'
+                  }`}
               >
                 <ThumbsUp size={12} className={liked ? 'fill-current' : ''} />
                 {likeCount > 0 && <span>{likeCount}</span>}
@@ -152,17 +153,28 @@ export function WorkflowBuilderPage({ workflowId, onBattleClick }: WorkflowBuild
                 onClick={toggleSave}
                 disabled={reactionPending}
                 title={saved ? 'Unsave' : 'Save'}
-                className={`gap-1.5 w-auto rounded-xl px-2.5 py-1 transition-colors ${
-                  saved
-                    ? 'border-primary-yellow-500 bg-primary-yellow-500/10 text-primary-yellow-600'
-                    : 'border-surface-border bg-surface-raised text-greyscale-500 hover:text-greyscale-900 dark:hover:text-greyscale-100'
-                }`}
+                className={`gap-1.5 w-auto rounded-xl px-2.5 py-1 transition-colors ${saved
+                  ? 'border-primary-yellow-500 bg-primary-yellow-500/10 text-primary-yellow-600'
+                  : 'border-surface-border bg-surface-raised text-greyscale-500 hover:text-greyscale-900 dark:hover:text-greyscale-100'
+                  }`}
               >
                 <Bookmark size={12} className={saved ? 'fill-current' : ''} />
                 {savedCount > 0 && <span>{savedCount}</span>}
               </Button>
 
-              {!isOwner && (
+              {isOwner && (
+                <Button
+                  size="sm"
+                  variant="secondary"
+                  onClick={() => setIsEditModalOpen(true)}
+                  className="gap-1.5 w-auto rounded-xl px-2.5 py-1"
+                  title="Edit workflow"
+                >
+                  <Pencil size={12} />
+                </Button>
+              )}
+
+              {!isOwner && workflow.visibility === 'public' && (
                 <Button
                   size="sm"
                   variant="secondary"
@@ -211,6 +223,18 @@ export function WorkflowBuilderPage({ workflowId, onBattleClick }: WorkflowBuild
               )}
             </div>
           )}
+
+
+          {/* Back */}
+          <Button
+            variant="secondary"
+            size="sm"
+            onClick={() => setIsEditModalOpen(true)}
+            className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-xl !p-0 text-greyscale-400 hover:text-greyscale-700 hover:bg-surface-raised transition-colors dark:hover:text-greyscale-200"
+            title="Edit this workflow"
+          >
+            <Pencil size={16} />
+          </Button>
 
           {/* Run panel toggle */}
           {runId && (
@@ -261,6 +285,7 @@ export function WorkflowBuilderPage({ workflowId, onBattleClick }: WorkflowBuild
               </div>
             </div>
           )}
+
 
           {/* Battle CTA — shown when workflow has nodes and isn't running */}
           {nodes.length > 0 && !isRunning && !showRunPanel && onBattleClick && (
