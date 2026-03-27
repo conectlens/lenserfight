@@ -1,7 +1,7 @@
 import { queryKeys } from '@lenserfight/data/cache'
 import type { WorkflowRecord } from '@lenserfight/data/repositories'
 import { workflowsService } from '@lenserfight/data/repositories'
-import { useAuth } from '@lenserfight/features/auth'
+import { useLenser } from '@lenserfight/features/profile'
 import { Button, EmptyState, InfiniteScrollSentinel, PageHeader } from '@lenserfight/ui/components'
 import { SearchBar, SelectField } from '@lenserfight/ui/forms'
 import { useQuery } from '@tanstack/react-query'
@@ -50,7 +50,7 @@ interface WorkflowsPageProps {
 }
 
 export function WorkflowsPage({ onCreateWorkflow }: WorkflowsPageProps) {
-  const { user } = useAuth()
+  const { lenser } = useLenser()
   const [searchParams, setSearchParams] = useSearchParams()
 
   const scope = (searchParams.get('scope') ?? 'mine') as 'mine' | 'popular'
@@ -80,7 +80,7 @@ export function WorkflowsPage({ onCreateWorkflow }: WorkflowsPageProps) {
     [visibility, sort, search]
   )
 
-  const myWorkflows = useWorkflows(user?.id, myFilter)
+  const myWorkflows = useWorkflows(lenser?.id, myFilter)
   const popularWorkflows = usePopularWorkflows({ search: search || undefined }, scope === 'popular')
 
   const active = scope === 'popular' ? popularWorkflows : myWorkflows

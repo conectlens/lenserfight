@@ -38,7 +38,7 @@ import {
 import { ModalRoute, ModalQueryDriven } from '@lenserfight/ui/routing'
 import { Sparkles } from 'lucide-react'
 import { NotAuthorizedPage } from './NotAuthorizedPage'
-import { AgentManageWizard, CreateAgentContent } from '@lenserfight/features/agents'
+import { AgentManageWizard, CreateAgentContent, AgentProfileRedirect } from '@lenserfight/features/agents'
 import { CreateLenserProfileModal } from '@lenserfight/features/onboarding'
 import { BenchmarkSuitesPage, BenchmarkSuiteDetailPage } from '@lenserfight/features/benchmark'
 import { WorkflowsPage, WorkflowBuilderPage, CreateWorkflowWizard } from '@lenserfight/features/workflows'
@@ -365,9 +365,9 @@ const App: React.FC = () => {
                                 }
                               />
 
-                              {/* Agent Routes — management is now at /lenser/:handle/agent */}
+                              {/* Agent Routes — /agents/:id resolves handle then redirects to /lenser/:handle/agent */}
                               <Route path="/agents" element={<Navigate to="/lensers?type=ai" replace />} />
-                              <Route path="/agents/:id" element={<Navigate to="/lensers?type=ai" replace />} />
+                              <Route path="/agents/:id" element={<AgentProfileRedirect />} />
 
                               {/* Benchmark Routes */}
                               <Route
