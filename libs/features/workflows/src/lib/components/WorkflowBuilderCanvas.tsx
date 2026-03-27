@@ -304,11 +304,17 @@ function WorkflowBuilderCanvasInner({
       nodesDraggable={!readOnly}
       nodesConnectable={!readOnly}
       elementsSelectable={true}
+      defaultEdgeOptions={{ type: 'workflowEdge' }}
       fitView
       fitViewOptions={{ padding: 0.25 }}
       minZoom={0.2}
       maxZoom={2.5}
       proOptions={{ hideAttribution: true }}
+      connectionLineStyle={{ 
+        stroke: 'var(--cl-workflow-edge)',
+        strokeWidth: 2 
+      }}
+      className="[--xy-edge-stroke:var(--cl-workflow-edge)] [--xy-edge-stroke-selected:var(--cl-yellow-700)] dark:[--xy-edge-stroke-selected:var(--cl-yellow-500)]"
     >
       <Background
         variant={BackgroundVariant.Dots}
