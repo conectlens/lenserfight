@@ -50,7 +50,7 @@ export function WorkflowProgressView({ nodes, nodeResults }: WorkflowProgressVie
             <motion.div
               key={node.id}
               className={`relative rounded-2xl border p-4 transition-colors ${STATUS_COLORS[status]}`}
-              animate={isRunning ? { boxShadow: ['0 0 0 0 rgba(59,130,246,0)', '0 0 0 6px rgba(59,130,246,0.15)', '0 0 0 0 rgba(59,130,246,0)'] } : {}}
+              animate={isRunning ? { boxShadow: ['0 0 0 0 rgba(40,123,255,0)', '0 0 0 6px rgba(40,123,255,0.15)', '0 0 0 0 rgba(40,123,255,0)'] } : {}}
               transition={isRunning ? { duration: 1.5, repeat: Infinity } : {}}
             >
               <div className="flex items-center gap-3">

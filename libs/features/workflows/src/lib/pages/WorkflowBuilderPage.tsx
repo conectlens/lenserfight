@@ -1,4 +1,6 @@
 import { Badge, Button } from '@lenserfight/ui/components'
+import { lensesService } from '@lenserfight/data/repositories'
+import { useCreateLens, CreateLensModal } from '@lenserfight/features/lenses'
 import { ArrowLeft, ChevronDown, GitBranch, Play, Swords, X } from 'lucide-react'
 import React, { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
@@ -20,7 +22,29 @@ export function WorkflowBuilderPage({ workflowId, onBattleClick }: WorkflowBuild
   const { workflow, nodes, edges, isLoading } = useWorkflow(workflowId)
   const { startRun, isPending: starting, runId, nodeResults, isRunning } = useWorkflowRun(workflowId)
   const [showRunPanel, setShowRunPanel] = useState(false)
-  const [paletteCollapsed, setPaletteCollapsed] = useState(false)
+  const [paletteCollapsed, setPaletteCollapsed] = useState(
+    () => typeof window !== 'undefined' && window.innerWidth < 768
+  )
+
+  // ── Lens edit modal (via useCreateLens in edit mode) ────────────────────────
+  const lensModal = useCreateLens()
+
+  const handleEditLens = async (lensId: string) => {
+    try {
+      const lens = await lensesService.getLensDetail(lensId)
+      if (!lens) return
+      lensModal.openModal({
+        id: lensId,
+        title: lens.title,
+        content: lens.versions?.[0]?.content ?? '',
+        tags: lens.tags ?? [],
+        visibility: lens.visibility,
+        versionParams: lens.versions?.[0]?.params ?? [],
+      })
+    } catch {
+      // silently ignore — can't edit if fetch fails
+    }
+  }
 
   const handleRun = async () => {
     await startRun({})
@@ -136,6 +160,7 @@ export function WorkflowBuilderPage({ workflowId, onBattleClick }: WorkflowBuild
             workflowId={workflow.id}
             nodes={nodes}
             edges={edges}
+            onEditLens={handleEditLens}
           />
 
           {/* Empty state overlay */}
@@ -188,6 +213,17 @@ export function WorkflowBuilderPage({ workflowId, onBattleClick }: WorkflowBuild
           </aside>
         )}
       </div>
+
+      {/* ── Lens edit modal ─────────────────────────────────────────────────── */}
+      <CreateLensModal
+        isOpen={lensModal.isOpen}
+        onClose={lensModal.closeModal}
+        onSubmit={() => lensModal.submit()}
+        form={lensModal.form}
+        isSubmitting={lensModal.isSubmitting}
+        error={lensModal.error}
+        isEditMode={lensModal.isEditMode}
+      />
     </div>
   )
 }

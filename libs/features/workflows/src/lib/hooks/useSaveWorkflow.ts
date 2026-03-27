@@ -20,9 +20,10 @@ export function useSaveWorkflow() {
       ])
       return { nodes: savedNodes, edges: savedEdges }
     },
-    onSuccess: (_data, variables) => {
-      queryClient.invalidateQueries({ queryKey: queryKeys.workflows.nodes(variables.workflowId) })
-      queryClient.invalidateQueries({ queryKey: queryKeys.workflows.edges(variables.workflowId) })
+    onSuccess: ({ nodes: savedNodes, edges: savedEdges }, variables) => {
+      // Update cache directly — avoids a redundant fn_get_workflow_nodes/edges refetch
+      queryClient.setQueryData(queryKeys.workflows.nodes(variables.workflowId), savedNodes)
+      queryClient.setQueryData(queryKeys.workflows.edges(variables.workflowId), savedEdges)
     },
   })
 }
