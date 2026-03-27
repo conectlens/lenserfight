@@ -42,6 +42,13 @@ export const HomePage: React.FC = () => {
   const [isCreateModalOpen, setIsCreateModalOpen] = React.useState(false)
   const [feedTab, setFeedTab] = React.useState<'for_you' | 'trending'>('for_you')
   const activeTab = showForYou ? feedTab : 'trending'
+  const [loadSidebarWidgets, setLoadSidebarWidgets] = React.useState(false)
+  const sidebarWidgetsLoading = !loadSidebarWidgets
+
+  React.useEffect(() => {
+    const raf = window.requestAnimationFrame(() => setLoadSidebarWidgets(true))
+    return () => window.cancelAnimationFrame(raf)
+  }, [])
 
   // Global trending feed (always fetched as fallback / trending tab)
   const {
@@ -62,22 +69,29 @@ export const HomePage: React.FC = () => {
   } = usePersonalFeed(showForYou ? lenserId : undefined)
 
   // Sidebar widgets
-  const { data: topPrompts, isLoading: promptsLoading } = useTopLenses()
+  const { data: topPrompts, isLoading: promptsLoading } = useTopLenses(loadSidebarWidgets)
   const { data: personalPromptsData, isLoading: personalPromptsLoading } = usePersonalPrompts(
-    showForYou ? lenserId : undefined
+    showForYou ? lenserId : undefined,
+    loadSidebarWidgets
   )
 
   const {
     data: latestLensers,
     isLoading: lensersLoading,
     isError: lensersError,
-  } = useLatestLensers()
+  } = useLatestLensers(loadSidebarWidgets)
   const { data: suggestedLensers, isLoading: suggestedLoading } = useSuggestedLensers(
-    showForYou ? lenserId : undefined
+    showForYou ? lenserId : undefined,
+    loadSidebarWidgets
   )
 
-  const { data: trendingTags, isLoading: tagsLoading, isError: tagsError } = useTrendingTags()
-  const { data: followedTags } = useFollowedTags(showForYou ? lenserId : undefined)
+  const { data: trendingTags, isLoading: tagsLoading, isError: tagsError } = useTrendingTags(
+    loadSidebarWidgets
+  )
+  const { data: followedTags } = useFollowedTags(
+    showForYou ? lenserId : undefined,
+    loadSidebarWidgets
+  )
 
   // Follow mutations
   const followTag = useFollowTag(lenserId)
@@ -106,7 +120,8 @@ export const HomePage: React.FC = () => {
     showForYou
       ? (personalPromptsData?.pages[0]?.data?.slice(0, 3) ?? [])
       : (topPrompts ?? []).sort((a, b) => b.usageCount - a.usageCount).slice(0, 3)
-  const sidebarPromptsLoading = showForYou ? personalPromptsLoading : promptsLoading
+  const sidebarPromptsLoading =
+    sidebarWidgetsLoading || (showForYou ? personalPromptsLoading : promptsLoading)
 
   const observer = useRef<IntersectionObserver | null>(null)
   const lastThreadElementRef = useCallback(
@@ -270,7 +285,7 @@ export const HomePage: React.FC = () => {
             <h3 className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-4">
               {showForYou && suggestedLensers?.length ? 'Suggested Lensers' : 'New Lensers'}
             </h3>
-            {(showForYou ? suggestedLoading : lensersLoading) ? (
+            {(sidebarWidgetsLoading || (showForYou ? suggestedLoading : lensersLoading)) ? (
               <div className="space-y-3">
                 {[1, 2, 3].map((i) => (
                   <div key={i} className="flex gap-2">
@@ -376,7 +391,7 @@ export const HomePage: React.FC = () => {
             <h3 className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-4">
               Trending Tags
             </h3>
-            {tagsLoading ? (
+            {sidebarWidgetsLoading || tagsLoading ? (
               <div className="flex gap-2">
                 <div className="w-12 h-6 bg-gray-200 dark:bg-gray-700 rounded"></div>
                 <div className="w-16 h-6 bg-gray-200 dark:bg-gray-700 rounded"></div>
