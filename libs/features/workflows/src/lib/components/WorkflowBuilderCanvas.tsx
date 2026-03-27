@@ -314,7 +314,7 @@ function WorkflowBuilderCanvasInner({
         variant={BackgroundVariant.Dots}
         gap={20}
         size={1}
-        color="var(--cl-surface-border-subtle)"
+        color="var(--cl-grey-300)"
         style={{ opacity: 0.6 }}
       />
       <Controls
