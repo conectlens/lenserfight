@@ -46,7 +46,7 @@ export const BenchmarkSuitesPage: React.FC = () => {
   }
 
   return (
-    <div className="max-w-5xl mx-auto py-8 px-4 md:px-6">
+    <div className="">
       <SEOHead type="default" overrideTitle="Benchmarks" />
 
       <div className="flex items-center justify-between mb-6">

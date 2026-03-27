@@ -120,7 +120,7 @@ const StoreProductsView: React.FC = () => {
   }
 
   return (
-    <div className="max-w-4xl mx-auto py-16 px-4">
+    <div className="">
       <SEOHead type="default" overrideTitle="Plans & Pricing — LenserFight" />
 
       <div className="text-center mb-12">
