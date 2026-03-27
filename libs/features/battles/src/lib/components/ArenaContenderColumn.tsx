@@ -54,36 +54,44 @@ export const ArenaContenderColumn: React.FC<ArenaContenderColumnProps> = ({
     !!contender
 
   return (
-    <div className={`flex flex-col w-full md:w-0 flex-1 min-w-0 min-h-[280px] md:min-h-0 border-b border-surface-border last:border-b-0 md:border-b-0 md:border-r md:last:border-r-0 ${className}`}>
+    <div className={`flex flex-col w-full md:w-0 flex-1 min-w-0 min-h-[280px] md:min-h-0 border-b border-surface-border-subtle last:border-b-0 md:border-b-0 relative ${className}`}>
       {/* Header */}
-      <div className="flex-shrink-0 h-12 flex items-center gap-2 px-4 border-b border-surface-border">
-        <div className="h-7 w-7 rounded-full bg-surface-interactive flex items-center justify-center text-xs font-black text-surface-text-muted">
+      <div className="flex-shrink-0 min-h-[56px] py-2 flex items-center gap-3 px-5 border-b border-surface-border shadow-sm bg-surface-base z-10 transition-colors">
+        <div className="h-8 w-8 rounded-lg bg-primary-yellow-500 flex items-center justify-center text-sm font-black text-dark-900 shadow-[var(--cl-elevation-inset-1)]">
           {slot}
         </div>
-        <span className="text-sm font-semibold text-surface-text truncate">
-          {contender?.display_name ?? '—'}
-        </span>
-        {isCurrentUserContender && (
-          <span className="ml-1 text-[10px] font-bold text-primary">You</span>
-        )}
-        {lensAssignment && (
-          <span className="rounded-full bg-surface-interactive px-2 py-0.5 text-[10px] font-semibold text-surface-text-muted truncate max-w-[80px]">
-            lens
-          </span>
-        )}
-        <span className="ml-auto text-xs text-surface-text-muted">
-          {voteCount} vote{voteCount !== 1 ? 's' : ''}
-        </span>
+        <div className="flex flex-col justify-center min-w-0 flex-1">
+          <div className="flex items-center gap-2">
+            <span className="text-base font-bold text-surface-text truncate tracking-tight">
+              {contender?.display_name ?? '—'}
+            </span>
+            {isCurrentUserContender && (
+              <span className="px-1.5 py-0.5 rounded-md bg-primary-yellow-100 text-[10px] font-bold text-primary-yellow-900 border border-primary-yellow-300">YOU</span>
+            )}
+            {lensAssignment && (
+              <span className="rounded bg-surface-interactive px-1.5 py-0.5 text-[10px] font-semibold text-surface-text-muted border border-surface-border-subtle uppercase tracking-wider">
+                lens
+              </span>
+            )}
+          </div>
+        </div>
+        <div className="flex flex-col items-end flex-shrink-0 pl-2">
+          <span className="text-sm font-bold text-surface-text">{voteCount}</span>
+          <span className="text-[10px] font-semibold text-surface-text-muted uppercase tracking-wider">Votes</span>
+        </div>
       </div>
 
       {/* Submission content, submit form, or empty state with task prompt */}
-      <div className="flex-1 overflow-y-auto p-4">
+      <div className="flex-1 overflow-y-auto p-5 md:p-6 bg-surface-base">
         {canSubmit ? (
-          <div className="space-y-4">
+          <div className="space-y-6 max-w-2xl mx-auto">
             {taskPrompt && (
-              <div className="rounded-xl border border-surface-border bg-surface-raised p-3">
-                <p className="text-[11px] font-bold uppercase tracking-widest text-greyscale-400 mb-1.5">Task</p>
-                <p className="text-sm text-greyscale-700 dark:text-greyscale-300 leading-relaxed whitespace-pre-wrap">
+              <div className="rounded-xl border border-surface-border-subtle bg-surface-raised p-4 shadow-sm">
+                <p className="text-[10px] font-bold uppercase tracking-widest text-surface-text-disabled mb-2 flex items-center gap-1.5">
+                  <span className="w-1.5 h-1.5 rounded-full bg-primary-yellow-500"></span>
+                  Active Task
+                </p>
+                <p className="text-[15px] text-surface-text leading-relaxed whitespace-pre-wrap">
                   {taskPrompt}
                 </p>
               </div>
@@ -91,14 +99,20 @@ export const ArenaContenderColumn: React.FC<ArenaContenderColumnProps> = ({
             <SubmitTextForm battleId={battleId} contenderId={contender.id} />
           </div>
         ) : !submission && battleStatus === 'open' && taskPrompt ? (
-          <div className="space-y-3">
-            <div className="rounded-xl border border-surface-border bg-surface-raised p-3">
-              <p className="text-[11px] font-bold uppercase tracking-widest text-greyscale-400 mb-1.5">Task</p>
-              <p className="text-sm text-greyscale-700 dark:text-greyscale-300 leading-relaxed whitespace-pre-wrap">
+          <div className="space-y-5 max-w-2xl mx-auto">
+            <div className="rounded-xl border border-surface-border-subtle bg-surface-raised p-4 shadow-sm">
+              <p className="text-[10px] font-bold uppercase tracking-widest text-surface-text-disabled mb-2 flex items-center gap-1.5">
+                <span className="w-1.5 h-1.5 rounded-full bg-primary-yellow-500"></span>
+                Active Task
+              </p>
+              <p className="text-[15px] text-surface-text leading-relaxed whitespace-pre-wrap">
                 {taskPrompt}
               </p>
             </div>
-            <p className="text-xs text-greyscale-400 text-center py-2">Waiting for submission…</p>
+            <div className="flex flex-col items-center justify-center py-8 text-surface-text-muted bg-surface-sunken rounded-xl border border-dashed border-surface-border">
+              <span className="w-6 h-6 mb-3 rounded-full border-2 border-primary-yellow-500 border-t-transparent animate-spin"></span>
+              <p className="text-sm font-semibold">Waiting for submission…</p>
+            </div>
           </div>
         ) : (
           <SubmissionRenderer
@@ -109,14 +123,14 @@ export const ArenaContenderColumn: React.FC<ArenaContenderColumnProps> = ({
       </div>
 
       {/* Vote bar */}
-      <div className="flex-shrink-0 h-10 flex items-center px-4 border-t border-surface-border gap-3">
-        <div className="flex-1 h-1.5 rounded-full bg-surface-interactive overflow-hidden">
+      <div className="flex-shrink-0 h-[52px] flex items-center px-5 border-t border-surface-border bg-surface-raised gap-4">
+        <div className="flex-1 h-2.5 rounded-full bg-surface-interactive overflow-hidden shadow-inner">
           <div
-            className="h-full rounded-full bg-primary transition-all duration-500"
+            className="h-full rounded-full bg-primary-yellow-500 transition-all duration-700 ease-[var(--cl-ease-spring)]"
             style={{ width: `${votePercent}%` }}
           />
         </div>
-        <span className="text-xs font-bold text-surface-text-muted w-10 text-right">{votePercent}%</span>
+        <span className="text-sm font-bold text-surface-text-muted w-11 text-right tabular-nums tracking-tight">{votePercent}%</span>
       </div>
     </div>
   )

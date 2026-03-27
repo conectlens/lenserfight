@@ -141,7 +141,7 @@ export const ImmersiveArenaView: React.FC<ImmersiveArenaViewProps> = ({ slug, cu
           />
 
           {/* Contender columns + center zone */}
-          <div className="flex-1 flex flex-col md:flex-row overflow-y-auto md:overflow-hidden">
+          <div className="flex-1 flex flex-col md:flex-row overflow-y-auto md:overflow-hidden relative isolates max-w-full">
             <ArenaContenderColumn
               slot="A"
               contender={contenderA}
@@ -154,7 +154,7 @@ export const ImmersiveArenaView: React.FC<ImmersiveArenaViewProps> = ({ slug, cu
               taskPrompt={battle.task_prompt}
               currentUserId={currentUserId}
               lensAssignment={lensAssignmentA}
-              className="order-1 md:order-none"
+              className="order-1 md:order-none md:border-r border-surface-border-subtle"
             />
             <ArenaCenterZone
               phase={currentPhase}
@@ -166,7 +166,7 @@ export const ImmersiveArenaView: React.FC<ImmersiveArenaViewProps> = ({ slug, cu
               currentUserId={currentUserId}
               renderVotePanel={votePanel}
               renderResultBanner={resultBanner}
-              className="order-3 md:order-none"
+              className="order-3 md:order-none md:border-r border-surface-border-subtle bg-surface-base"
             />
             <ArenaContenderColumn
               slot="B"

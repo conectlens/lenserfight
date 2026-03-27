@@ -1,7 +1,7 @@
 import React from 'react'
 import { Link } from 'react-router-dom'
 import { ArrowLeft, BookOpen, Timer } from 'lucide-react'
-import type { Battle, BattleUIPhase } from '../types/battle.types'
+import type { Battle, BattleType, BattleUIPhase } from '../types/battle.types'
 import { useCountdown } from '../hooks/useCountdown'
 
 const PHASE_LABELS: Record<BattleUIPhase, { label: string; color: string }> = {
@@ -9,6 +9,14 @@ const PHASE_LABELS: Record<BattleUIPhase, { label: string; color: string }> = {
   running: { label: 'Scoring', color: 'bg-status-yellow/10 text-status-yellow' },
   voting:  { label: 'Voting', color: 'bg-primary-yellow-500/10 text-primary-yellow-600' },
   result:  { label: 'Finished', color: 'bg-surface-overlay text-surface-text-muted' },
+}
+
+const BATTLE_TYPE_SHORT: Record<BattleType, string> = {
+  ai_vs_ai: 'AI vs AI',
+  human_vs_human_ai_votes: 'H vs H · AI Judge',
+  human_vs_human_open_votes: 'H vs H · Open',
+  human_vs_ai: 'Human vs AI',
+  workflow_battle: 'Workflow',
 }
 
 interface ArenaTopBarProps {
@@ -64,6 +72,11 @@ export const ArenaTopBar: React.FC<ArenaTopBarProps> = ({
           {countdown.formatted}
         </span>
       )}
+
+      {/* Category chip */}
+      <span className="hidden sm:flex flex-shrink-0 items-center text-[11px] font-semibold px-2.5 py-1 rounded-full bg-surface-raised text-surface-text-muted border border-surface-border">
+        {BATTLE_TYPE_SHORT[battle.battle_type] ?? battle.battle_type}
+      </span>
 
       {/* Phase badge */}
       <span className={`flex-shrink-0 text-[11px] font-bold px-2.5 py-1 rounded-full ${color}`}>

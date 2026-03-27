@@ -32,7 +32,7 @@ export const ArenaCenterZone: React.FC<ArenaCenterZoneProps> = ({
   const { IdleAnimation } = renderer
 
   return (
-    <div className={`w-full md:w-56 md:flex-shrink-0 flex flex-col items-center justify-center border-b border-surface-border md:border-b-0 md:border-r bg-surface-raised px-4 py-4 md:py-0 ${className}`}>
+    <div className={`w-full md:w-64 lg:w-72 md:flex-shrink-0 flex flex-col items-center justify-center border-b border-surface-border-subtle md:border-b-0 md:border-r bg-surface-base/50 md:bg-transparent px-4 py-8 md:py-0 relative z-10 ${className}`}>
       <AnimatePresence mode="wait">
         {phase === 'idle' && (
           <motion.div key="idle" variants={phaseVariants} initial="initial" animate="animate" exit="exit" className="w-full">
@@ -41,21 +41,21 @@ export const ArenaCenterZone: React.FC<ArenaCenterZoneProps> = ({
         )}
         {phase === 'running' && (
           <motion.div key="running" variants={phaseVariants} initial="initial" animate="animate" exit="exit" className="w-full text-center">
-            <div className="text-surface-text-muted text-xs mb-2">AI scoring in progress…</div>
-            <div className="flex justify-center gap-1">
+            <div className="text-surface-text-muted text-xs font-semibold uppercase tracking-widest mb-3">AI Scoring</div>
+            <div className="flex justify-center gap-1.5">
               {[0,1,2].map(i => (
-                <span key={i} className="inline-block h-2 w-2 rounded-full bg-surface-border animate-bounce" style={{ animationDelay: `${i * 0.15}s` }} />
+                <span key={i} className="inline-block h-2.5 w-2.5 rounded-full bg-primary-yellow-500 animate-bounce" style={{ animationDelay: `${i * 0.15}s` }} />
               ))}
             </div>
           </motion.div>
         )}
         {phase === 'voting' && (
-          <motion.div key="voting" variants={phaseVariants} initial="initial" animate="animate" exit="exit" className="w-full">
+          <motion.div key="voting" variants={phaseVariants} initial="initial" animate="animate" exit="exit" className="w-full max-w-sm mx-auto">
             {renderVotePanel}
           </motion.div>
         )}
         {phase === 'result' && (
-          <motion.div key="result" variants={phaseVariants} initial="initial" animate="animate" exit="exit" className="w-full">
+          <motion.div key="result" variants={phaseVariants} initial="initial" animate="animate" exit="exit" className="w-full max-w-sm mx-auto">
             {renderResultBanner}
           </motion.div>
         )}

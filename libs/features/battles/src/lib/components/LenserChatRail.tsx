@@ -38,8 +38,8 @@ const LiveIndicator: React.FC<{ status: RealtimeStatus }> = ({ status }) => {
   // connecting
   return (
     <div className="flex items-center gap-1.5">
-      <span className="h-2 w-2 rounded-full bg-surface-text-disabled animate-pulse" />
-      <span className="text-[10px] font-semibold text-surface-text-disabled uppercase tracking-wider">Connecting…</span>
+      <span className="h-1.5 w-1.5 rounded-full bg-surface-text-disabled animate-pulse" />
+      <span className="text-[9px] font-bold text-surface-text-disabled uppercase tracking-widest">Connecting</span>
     </div>
   )
 }
@@ -100,24 +100,28 @@ export const LenserChatRail: React.FC<LenserChatRailProps> = ({
   }
 
   return (
-    <div className={`flex flex-col border-l border-surface-border bg-surface-sunken ${className ?? 'w-72 flex-shrink-0'}`}>
+    <div className={`flex flex-col border-l border-surface-border-subtle bg-surface-base shadow-[-4px_0_24px_rgba(0,0,0,0.02)] z-20 ${className ?? 'w-72 lg:w-80 flex-shrink-0'}`}>
       {/* Header */}
-      <div className="flex-shrink-0 h-14 flex items-center justify-between px-4 border-b border-surface-border">
-        <span className="text-xs font-bold text-surface-text-muted uppercase tracking-wider">Lenser Chat</span>
+      <div className="flex-shrink-0 h-14 flex items-center justify-between px-5 border-b border-surface-border-subtle bg-surface-base">
+        <span className="text-[11px] font-bold text-surface-text uppercase tracking-widest flex items-center gap-2">
+          Lenser Chat
+        </span>
         <LiveIndicator status={realtimeStatus} />
       </div>
 
       {/* Messages */}
-      <div ref={scrollRef} className="flex-1 overflow-y-auto">
+      <div ref={scrollRef} className="flex-1 overflow-y-auto py-2 scroll-smooth bg-surface-raised min-h-[300px]">
         {/* Load earlier button */}
         {hasMore && (
-          <button
-            onClick={handleLoadMore}
-            disabled={isLoadingMore}
-            className="w-full py-2 text-[11px] text-surface-text-muted hover:text-surface-text disabled:opacity-40 border-b border-surface-border"
-          >
-            {isLoadingMore ? 'Loading…' : 'Load earlier messages'}
-          </button>
+          <div className="pb-3 flex justify-center">
+            <button
+              onClick={handleLoadMore}
+              disabled={isLoadingMore}
+              className="px-3 py-1.5 rounded-full bg-surface-interactive text-[10px] font-bold text-surface-text-muted hover:text-surface-text transition-colors disabled:opacity-40 uppercase tracking-widest"
+            >
+              {isLoadingMore ? 'Loading…' : 'Load earlier'}
+            </button>
+          </div>
         )}
 
         {messages.length === 0 && (
@@ -138,40 +142,42 @@ export const LenserChatRail: React.FC<LenserChatRailProps> = ({
       </div>
 
       {/* Input */}
-      <div className="flex-shrink-0 border-t border-surface-border px-3 py-2.5">
+      <div className="flex-shrink-0 border-t border-surface-border-subtle px-4 py-3 bg-surface-base">
         {isAuthenticated ? (
-          <div className="flex flex-col gap-1">
-            <div className="flex items-center gap-2">
+          <div className="flex flex-col gap-2">
+            <div className="flex items-center gap-2 bg-surface-interactive rounded-xl px-3 py-2 border border-surface-border transition-colors focus-within:border-primary-yellow-500 focus-within:ring-1 focus-within:ring-primary-yellow-500">
               <input
                 value={draft}
                 onChange={(e) => setDraft(e.target.value)}
                 onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSend() } }}
                 placeholder="Say something…"
                 maxLength={300}
-                className="flex-1 bg-transparent text-xs text-surface-text placeholder:text-surface-text-disabled outline-none"
+                className="flex-1 bg-transparent text-sm text-surface-text placeholder:text-surface-text-disabled outline-none py-1"
               />
               <button
                 type="button"
                 onClick={handleSend}
                 disabled={!draft.trim()}
-                className="text-xs font-semibold text-primary disabled:opacity-40"
+                className="text-[11px] font-black text-dark-900 bg-primary-yellow-500 px-3 py-1.5 rounded-lg uppercase tracking-wider disabled:opacity-40 hover:brightness-105 active:scale-95 transition-all"
               >
                 Send
               </button>
             </div>
             {draft.length > 0 && (
-              <span className="text-[10px] text-surface-text-disabled text-right tabular-nums">
+              <span className="text-[9px] text-surface-text-muted font-bold text-right tabular-nums px-1">
                 {draft.length}/300
               </span>
             )}
           </div>
         ) : (
-          <p className="text-[11px] text-surface-text-muted dark:text-surface-text-disabled text-center flex items-center justify-center gap-1.5">
-            <Link to="/auth/login" className="hover:opacity-80 transition-opacity">
-              <Badge color="gray" size="sm" className="font-semibold cursor-pointer">Sign in</Badge>
-            </Link>
-            <span>to chat</span>
-          </p>
+          <div className="flex items-center justify-center py-2">
+            <p className="text-xs text-surface-text-muted font-medium flex items-center gap-2">
+              <Link to="/auth/login" className="hover:scale-105 transition-transform">
+                <Badge color="yellow" size="sm" className="font-bold cursor-pointer shadow-sm">Sign in</Badge>
+              </Link>
+              to join the chat
+            </p>
+          </div>
         )}
       </div>
     </div>

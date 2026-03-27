@@ -41,27 +41,29 @@ export const ChatMessage: React.FC<ChatMessageProps> = ({
   const timeAgo = formatTimeAgo(createdAt)
 
   return (
-    <div className="flex items-start gap-2.5 px-3 py-2">
-      <div className="flex-shrink-0 h-7 w-7 rounded-full bg-greyscale-200 dark:bg-greyscale-700 flex items-center justify-center overflow-hidden">
+    <div className="flex items-start gap-3 px-4 py-2 hover:bg-surface-raised/50 transition-colors group">
+      <div className="flex-shrink-0 h-8 w-8 rounded-full bg-surface-interactive flex items-center justify-center overflow-hidden border border-surface-border sombra-sm">
         {avatarUrl ? (
           <img src={avatarUrl} alt={senderHandle} className="h-full w-full object-cover" />
         ) : (
-          <span className="text-[10px] font-bold text-greyscale-600 dark:text-greyscale-300">{initials}</span>
+          <span className="text-[10px] font-bold text-surface-text-muted">{initials}</span>
         )}
       </div>
-      <div className="flex-1 min-w-0">
-        <div className="flex items-baseline gap-1.5 flex-wrap">
-          <span className="text-xs font-semibold text-greyscale-900 dark:text-greyscale-50 truncate">
-            {senderHandle}
-          </span>
-          {badge && (
-            <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-primary/10 text-primary">
-              {badge}
+      <div className="flex-1 min-w-0 md:pt-0.5">
+        <div className="flex items-baseline justify-between gap-2 mb-0.5 max-w-full">
+          <div className="flex items-center gap-1.5 flex-1 min-w-0 pr-2">
+            <span className="text-sm font-bold text-surface-text truncate">
+              {senderHandle}
             </span>
-          )}
-          <span className="text-[10px] text-greyscale-400 ml-auto flex-shrink-0">{timeAgo}</span>
+            {badge && (
+              <span className="text-[9px] font-bold px-1.5 py-0.5 rounded uppercase tracking-wider bg-surface-interactive text-surface-text border border-surface-border-subtle">
+                {badge}
+              </span>
+            )}
+          </div>
+          <span className="text-[10px] text-surface-text-disabled flex-shrink-0 font-medium group-hover:text-surface-text-muted transition-colors">{timeAgo}</span>
         </div>
-        <p className="text-xs text-greyscale-700 dark:text-greyscale-300 leading-snug mt-0.5 break-words">
+        <p className="text-[13px] text-surface-text-muted leading-relaxed break-words break-all sm:break-normal">
           {body}
         </p>
       </div>
