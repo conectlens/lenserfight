@@ -39,7 +39,7 @@ export const StepIndicator: React.FC<StepIndicatorProps> = ({ steps, currentStep
                   isDone
                     ? 'bg-greyscale-900 text-greyscale-0 dark:bg-greyscale-0 dark:text-greyscale-900'
                     : isActive
-                      ? 'border-2 border-status-blue text-status-blue shadow-[0_0_0_3px_rgba(59,130,246,0.12)]'
+                      ? 'border-2 border-[var(--cl-yellow-500)] text-[var(--cl-yellow-500)] shadow-[0_0_0_3px_color-mix(in_srgb,var(--cl-yellow-500)_12%,transparent)]'
                       : 'border border-surface-border text-greyscale-400',
                 ].join(' ')}
               >
