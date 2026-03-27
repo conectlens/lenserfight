@@ -16,7 +16,7 @@ export const CheckoutErrorView: React.FC = () => {
   const navigate = useNavigate()
 
   return (
-    <div className="max-w-4xl mx-auto py-16 px-4">
+    <div className="">
       <SEOHead type="default" overrideTitle="Checkout Incomplete — LenserFight" />
 
       <div className="max-w-md mx-auto flex flex-col items-center text-center">
