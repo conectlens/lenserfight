@@ -33,16 +33,16 @@
   --color-primary-yellow-900: #8a7322;
 
   /* ── Deep Lens Navy ──────────────────────────────────────── */
-  --color-deep-lens-navy-50: #e6edf5;
-  --color-deep-lens-navy-100: #c3d1e4;
-  --color-deep-lens-navy-200: #9ab4d2;
-  --color-deep-lens-navy-300: #6b94be;
-  --color-deep-lens-navy-400: #3c74a9;
-  --color-deep-lens-navy-500: #213f74;
-  --color-deep-lens-navy-600: #1a3260;
-  --color-deep-lens-navy-700: #12244a;
-  --color-deep-lens-navy-800: #0a1730;
-  --color-deep-lens-navy-900: #040b14;
+  --color-deep-lens-navy-50: #e8e8e8;
+  --color-deep-lens-navy-100: #c8c8c8;
+  --color-deep-lens-navy-200: #a0a0a0;
+  --color-deep-lens-navy-300: #787878;
+  --color-deep-lens-navy-400: #4a4a4a;
+  --color-deep-lens-navy-500: #111212;
+  --color-deep-lens-navy-600: #0e0f0f;
+  --color-deep-lens-navy-700: #0a0b0b;
+  --color-deep-lens-navy-800: #070707;
+  --color-deep-lens-navy-900: #000000;
 
   /* ── Greyscale brand scale ───────────────────────────────── */
   --color-greyscale-0: #ffffff;
