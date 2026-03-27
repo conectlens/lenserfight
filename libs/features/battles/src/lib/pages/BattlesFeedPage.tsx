@@ -138,9 +138,9 @@ export function BattlesFeedPage() {
       </div>
 
       {isLoading ? (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+        <div className="columns-1 sm:columns-2 lg:columns-3 gap-3">
           {Array.from({ length: 6 }).map((_, i) => (
-            <div key={i} className="h-40 bg-[var(--cl-surface-raised)] rounded-xl animate-pulse" />
+            <div key={i} className="break-inside-avoid mb-3 h-40 bg-[var(--cl-surface-raised)] rounded-xl animate-pulse" />
           ))}
         </div>
       ) : sorted.length === 0 ? (
@@ -150,7 +150,7 @@ export function BattlesFeedPage() {
         />
       ) : (
         <AnimatePresence mode="popLayout">
-          <motion.div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+          <div className="columns-1 sm:columns-2 lg:columns-3 gap-3">
             {sorted.map((b, i) => (
               <motion.div
                 key={b.id}
@@ -159,7 +159,7 @@ export function BattlesFeedPage() {
                 initial="hidden"
                 animate="visible"
                 exit="exit"
-                layout
+                className="break-inside-avoid mb-3"
               >
                 <BattleCard
                   id={b.id}
@@ -179,7 +179,7 @@ export function BattlesFeedPage() {
                 />
               </motion.div>
             ))}
-          </motion.div>
+          </div>
         </AnimatePresence>
       )}
       <InfiniteScrollSentinel
