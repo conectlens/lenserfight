@@ -15,11 +15,12 @@ import {
   ContenderLensAssignmentRecord,
   AssignLensInput,
   CreateBattleInput,
+  ChatCursor,
 } from '../repositories/battlesRepository'
 
 const battlesRepo = new SupabaseBattlesRepository()
 
-export type { BattleRecord, BattleCommentRecord, GlobalMessageRecord, BattleFeedItemRecord, BattlesFeedOptions, ContenderRecord, VoteAggregateRecord, ScorecardRecord, RubricCriterionRecord, SubmissionRecord, SubmitVoteInput, InviteContenderInput, ContenderLensAssignmentRecord, AssignLensInput, CreateBattleInput }
+export type { BattleRecord, BattleCommentRecord, GlobalMessageRecord, BattleFeedItemRecord, BattlesFeedOptions, ContenderRecord, VoteAggregateRecord, ScorecardRecord, RubricCriterionRecord, SubmissionRecord, SubmitVoteInput, InviteContenderInput, ContenderLensAssignmentRecord, AssignLensInput, CreateBattleInput, ChatCursor }
 
 export interface BattleContendersData {
   contenders: ContenderRecord[]
@@ -73,14 +74,14 @@ export const battlesService = {
   publishBattle: (battleId: string): Promise<BattleRecord> =>
     battlesRepo.publishBattle(battleId),
 
-  getBattleComments: (battleId: string, limit?: number): Promise<BattleCommentRecord[]> =>
-    battlesRepo.getBattleComments(battleId, limit),
+  getBattleComments: (battleId: string, limit?: number, cursor?: ChatCursor): Promise<BattleCommentRecord[]> =>
+    battlesRepo.getBattleComments(battleId, limit, cursor),
 
   postComment: (battleId: string, lenserId: string, body: string): Promise<BattleCommentRecord> =>
     battlesRepo.postComment(battleId, lenserId, body),
 
-  getGlobalMessages: (battleId: string, limit?: number): Promise<GlobalMessageRecord[]> =>
-    battlesRepo.getGlobalMessages(battleId, limit),
+  getGlobalMessages: (battleId: string, limit?: number, cursor?: ChatCursor): Promise<GlobalMessageRecord[]> =>
+    battlesRepo.getGlobalMessages(battleId, limit, cursor),
 
   postGlobalMessage: (battleId: string, senderId: string, senderHandle: string, senderRole: string, body: string): Promise<GlobalMessageRecord> =>
     battlesRepo.postGlobalMessage(battleId, senderId, senderHandle, senderRole, body),

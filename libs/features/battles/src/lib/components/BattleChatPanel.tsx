@@ -1,8 +1,8 @@
-import React, { useEffect, useRef, useState } from 'react'
+import React, { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { MessageCircle, Send } from 'lucide-react'
 import { Avatar, Button, Card } from '@lenserfight/ui/components'
 import { TextArea } from '@lenserfight/ui/forms'
-import { useBattleComments, usePostComment } from '../hooks/useBattleComments'
+import { useBattleComments, usePostComment, useScrollAnchor } from '../hooks/useBattleComments'
 import type { BattleCommentRecord } from '@lenserfight/data/repositories'
 
 interface BattleChatPanelProps {
@@ -45,16 +45,38 @@ const CommentRow: React.FC<{ comment: BattleCommentRecord }> = ({ comment }) => 
 )
 
 export const BattleChatPanel: React.FC<BattleChatPanelProps> = ({ battleId, currentUserId }) => {
-  const { data: comments = [], isLoading } = useBattleComments(battleId)
+  const { data: comments = [], isLoading, hasMore, isLoadingMore, loadMore } = useBattleComments(battleId)
   const { mutate: postComment, isPending: isSending } = usePostComment(battleId)
   const [draft, setDraft] = useState('')
-  const listRef = useRef<HTMLDivElement>(null)
 
-  // Scroll to bottom when new comments arrive
-  useEffect(() => {
-    const el = listRef.current
-    if (el) el.scrollTop = el.scrollHeight
+  // Scroll-anchor: prevents viewport from jumping when older comments are prepended
+  const { ref: listRef, captureScrollHeight } = useScrollAnchor(comments.length)
+
+  // Track whether the initial scroll-to-bottom has fired
+  const hasInitialScrolled = useRef(false)
+
+  // Initial scroll to bottom before paint (no flash)
+  useLayoutEffect(() => {
+    if (!hasInitialScrolled.current && comments.length > 0 && listRef.current) {
+      hasInitialScrolled.current = true
+      listRef.current.scrollTop = listRef.current.scrollHeight
+    }
   }, [comments.length])
+
+  // Subsequent live comments: scroll to bottom when a new one is appended
+  const prevLengthRef = useRef(comments.length)
+  useEffect(() => {
+    const prev = prevLengthRef.current
+    prevLengthRef.current = comments.length
+    if (hasInitialScrolled.current && comments.length > prev && listRef.current) {
+      listRef.current.scrollTop = listRef.current.scrollHeight
+    }
+  }, [comments.length])
+
+  const handleLoadMore = () => {
+    captureScrollHeight()
+    loadMore()
+  }
 
   const handleSend = () => {
     const body = draft.trim()
@@ -85,6 +107,19 @@ export const BattleChatPanel: React.FC<BattleChatPanelProps> = ({ battleId, curr
         ref={listRef}
         className="max-h-72 overflow-y-auto overscroll-contain scroll-smooth pr-1"
       >
+        {/* Load earlier button */}
+        {hasMore && !isLoading && (
+          <div className="pb-2 flex justify-center">
+            <button
+              onClick={handleLoadMore}
+              disabled={isLoadingMore}
+              className="text-xs text-greyscale-400 hover:text-greyscale-600 dark:hover:text-greyscale-300 disabled:opacity-40"
+            >
+              {isLoadingMore ? 'Loading…' : 'Load earlier comments'}
+            </button>
+          </div>
+        )}
+
         {isLoading && (
           <div className="space-y-3 animate-pulse py-2">
             {[1, 2].map((n) => (

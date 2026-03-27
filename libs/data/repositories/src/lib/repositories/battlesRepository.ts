@@ -186,6 +186,11 @@ export interface AssignLensInput {
   version_id?: string | null
 }
 
+export interface ChatCursor {
+  before_ts: string // ISO timestamptz of the oldest loaded message
+  before_id: string // uuid of the oldest loaded message
+}
+
 export interface BattlesRepositoryPort {
   getBattleBySlug(slug: string): Promise<BattleRecord | null>
   getBattlesFeed(filter?: string, limit?: number, battleType?: BattleType, cursor?: string, sortBy?: 'newest' | 'most_votes' | 'trending'): Promise<BattleRecord[]>
@@ -199,7 +204,7 @@ export interface BattlesRepositoryPort {
   createBattle(input: CreateBattleInput): Promise<BattleRecord>
   getAIHandicapPolicy(battleId: string): Promise<AIHandicapPolicyRecord | null>
   checkVoterEligibility(battleId: string, lenserId: string): Promise<boolean>
-  getGlobalMessages(battleId: string, limit?: number): Promise<GlobalMessageRecord[]>
+  getGlobalMessages(battleId: string, limit?: number, cursor?: ChatCursor): Promise<GlobalMessageRecord[]>
   postGlobalMessage(battleId: string, senderId: string, senderHandle: string, senderRole: string, body: string): Promise<GlobalMessageRecord>
   inviteContender(input: InviteContenderInput): Promise<ContenderRecord>
   submitContenderEntry(battleId: string, contenderId: string, contentText: string): Promise<SubmissionRecord>
@@ -438,15 +443,18 @@ export class SupabaseBattlesRepository implements BattlesRepositoryPort {
     return updated as BattleRecord
   }
 
-  async getBattleComments(battleId: string, limit = 100): Promise<BattleCommentRecord[]> {
+  async getBattleComments(battleId: string, limit = 50, cursor?: ChatCursor): Promise<BattleCommentRecord[]> {
     // Cross-schema join (battles.comments → lensers.profiles) is done server-side via
     // fn_get_battle_comments to avoid PostgREST schema-cache poisoning (PGRST200).
+    // RPC returns DESC (newest first from cursor); we reverse to chronological order.
     const { data, error } = await supabase.rpc('fn_get_battle_comments', {
       p_battle_id: battleId,
       p_limit: limit,
+      p_before_ts: cursor?.before_ts ?? null,
+      p_before_id: cursor?.before_id ?? null,
     })
     if (error) this.handleError(error)
-    return (data ?? []) as BattleCommentRecord[]
+    return ((data ?? []) as BattleCommentRecord[]).reverse()
   }
 
   async postComment(battleId: string, lenserId: string, body: string): Promise<BattleCommentRecord> {
@@ -460,15 +468,16 @@ export class SupabaseBattlesRepository implements BattlesRepositoryPort {
     return data as BattleCommentRecord
   }
 
-  async getGlobalMessages(battleId: string, limit = 100): Promise<GlobalMessageRecord[]> {
-    const { data, error } = await supabase
-      .from('vw_global_messages')
-      .select('id, battle_id, sender_id, sender_handle, sender_role, body, created_at')
-      .eq('battle_id', battleId)
-      .order('created_at', { ascending: true })
-      .limit(limit)
+  async getGlobalMessages(battleId: string, limit = 50, cursor?: ChatCursor): Promise<GlobalMessageRecord[]> {
+    // RPC returns DESC (newest first from cursor); we reverse to chronological order.
+    const { data, error } = await supabase.rpc('fn_get_global_messages', {
+      p_battle_id: battleId,
+      p_limit: limit,
+      p_before_ts: cursor?.before_ts ?? null,
+      p_before_id: cursor?.before_id ?? null,
+    })
     if (error) this.handleError(error)
-    return (data ?? []) as GlobalMessageRecord[]
+    return ((data ?? []) as GlobalMessageRecord[]).reverse()
   }
 
   async postGlobalMessage(

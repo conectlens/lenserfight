@@ -1,6 +1,6 @@
-import React, { useEffect, useRef, useState } from 'react'
+import React, { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { useLenserChat, usePostLenserMessage } from '../hooks/useLenserChat'
+import { useLenserChat, usePostLenserMessage, useChatScrollAnchor } from '../hooks/useLenserChat'
 import type { RealtimeStatus } from '../hooks/useLenserChat'
 import { ChatMessage } from './ChatMessage'
 import { Badge } from '@lenserfight/ui/components'
@@ -49,14 +49,45 @@ export const LenserChatRail: React.FC<LenserChatRailProps> = ({
   senderRole = 'viewer',
   isAuthenticated,
 }) => {
-  const { messages, realtimeStatus } = useLenserChat(battleId)
+  const { messages, realtimeStatus, hasMore, isLoadingMore, loadMore } = useLenserChat(battleId)
   const postMessage = usePostLenserMessage(battleId)
   const [draft, setDraft] = useState('')
   const bottomRef = useRef<HTMLDivElement>(null)
 
+  // Scroll-anchor: prevents jump when older messages are prepended
+  const { ref: scrollRef, captureScrollHeight } = useChatScrollAnchor(messages.length)
+
+  // Track whether the initial scroll-to-bottom has fired
+  const hasInitialScrolled = useRef(false)
+
+  // Reset on battleId change so next battle also starts at bottom
+  useLayoutEffect(() => {
+    hasInitialScrolled.current = false
+  }, [battleId])
+
+  // Scroll to bottom on initial load (unconditional); for subsequent live messages only if near bottom
+  const prevLengthRef = useRef(messages.length)
   useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
+    const prev = prevLengthRef.current
+    prevLengthRef.current = messages.length
+    if (messages.length > prev && scrollRef.current) {
+      if (!hasInitialScrolled.current) {
+        hasInitialScrolled.current = true
+        bottomRef.current?.scrollIntoView({ behavior: 'instant' })
+      } else {
+        const el = scrollRef.current
+        const isNearBottom = el.scrollHeight - el.scrollTop - el.clientHeight < 120
+        if (isNearBottom) {
+          bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
+        }
+      }
+    }
   }, [messages.length])
+
+  const handleLoadMore = () => {
+    captureScrollHeight()
+    loadMore()
+  }
 
   const handleSend = () => {
     const body = draft.trim()
@@ -74,7 +105,18 @@ export const LenserChatRail: React.FC<LenserChatRailProps> = ({
       </div>
 
       {/* Messages */}
-      <div className="flex-1 overflow-y-auto">
+      <div ref={scrollRef} className="flex-1 overflow-y-auto">
+        {/* Load earlier button */}
+        {hasMore && (
+          <button
+            onClick={handleLoadMore}
+            disabled={isLoadingMore}
+            className="w-full py-2 text-[11px] text-surface-text-muted hover:text-surface-text disabled:opacity-40 border-b border-surface-border"
+          >
+            {isLoadingMore ? 'Loading…' : 'Load earlier messages'}
+          </button>
+        )}
+
         {messages.length === 0 && (
           <div className="flex items-center justify-center h-32 text-xs text-surface-text-disabled">
             No messages yet. Be the first!

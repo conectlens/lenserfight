@@ -1,20 +1,64 @@
 import { queryKeys } from '@lenserfight/data/cache'
 import { battlesService } from '@lenserfight/data/repositories'
-import type { BattleCommentRecord } from '@lenserfight/data/repositories'
+import type { BattleCommentRecord, ChatCursor } from '@lenserfight/data/repositories'
 import { supabase } from '@lenserfight/data/supabase'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { useEffect } from 'react'
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react'
+
+const PAGE_SIZE = 50
 
 export const useBattleComments = (battleId?: string) => {
   const queryClient = useQueryClient()
 
+  // Initial page via React Query (realtime inserts append to this cache key)
   const query = useQuery<BattleCommentRecord[], Error>({
     queryKey: queryKeys.battles.comments(battleId ?? ''),
-    queryFn: () => battlesService.getBattleComments(battleId!),
+    queryFn: () => battlesService.getBattleComments(battleId!, PAGE_SIZE),
     enabled: !!battleId,
     staleTime: 0,
   })
 
+  // Older pages prepended when user clicks "Load earlier"
+  const [olderPages, setOlderPages] = useState<BattleCommentRecord[][]>([])
+  const [hasMore, setHasMore] = useState(false)
+  const [isLoadingMore, setIsLoadingMore] = useState(false)
+
+  // Derive hasMore once the initial page resolves
+  useEffect(() => {
+    if (query.data) {
+      setHasMore(query.data.length >= PAGE_SIZE)
+    }
+  }, [query.data])
+
+  // Reset older pages when battleId changes
+  useEffect(() => {
+    setOlderPages([])
+    setHasMore(false)
+  }, [battleId])
+
+  const loadMore = useCallback(async () => {
+    if (!battleId || isLoadingMore) return
+
+    // Determine the cursor: oldest item across all currently displayed messages
+    const allCurrent = [...olderPages.flat(), ...(query.data ?? [])]
+    const oldest = allCurrent[0]
+    if (!oldest) return
+
+    const cursor: ChatCursor = { before_ts: oldest.created_at, before_id: oldest.id }
+
+    setIsLoadingMore(true)
+    try {
+      const page = await battlesService.getBattleComments(battleId, PAGE_SIZE, cursor)
+      if (page.length > 0) {
+        setOlderPages((prev) => [page, ...prev])
+      }
+      setHasMore(page.length >= PAGE_SIZE)
+    } finally {
+      setIsLoadingMore(false)
+    }
+  }, [battleId, isLoadingMore, olderPages, query.data])
+
+  // Realtime INSERT — append new message to the React Query cache
   useEffect(() => {
     if (!battleId) return
 
@@ -76,7 +120,16 @@ export const useBattleComments = (battleId?: string) => {
     }
   }, [battleId, queryClient])
 
-  return query
+  // All comments in chronological order: older pages first, then initial page (+ realtime tail)
+  const data = [...olderPages.flat(), ...(query.data ?? [])]
+
+  return {
+    data,
+    isLoading: query.isLoading,
+    hasMore,
+    isLoadingMore,
+    loadMore,
+  }
 }
 
 export const usePostComment = (battleId?: string) => {
@@ -86,4 +139,29 @@ export const usePostComment = (battleId?: string) => {
     // No onSuccess invalidation — the realtime INSERT subscription enriches
     // and appends the new comment directly, avoiding a duplicate round trip.
   })
+}
+
+// Scroll-anchor hook: prevents viewport from jumping when content is prepended
+export const useScrollAnchor = (dep: unknown) => {
+  const ref = useRef<HTMLDivElement>(null)
+  const prevScrollHeight = useRef<number>(0)
+  const isPrepending = useRef(false)
+
+  const captureScrollHeight = useCallback(() => {
+    if (ref.current) {
+      prevScrollHeight.current = ref.current.scrollHeight
+      isPrepending.current = true
+    }
+  }, [])
+
+  useLayoutEffect(() => {
+    if (!isPrepending.current || !ref.current) return
+    const diff = ref.current.scrollHeight - prevScrollHeight.current
+    if (diff > 0) {
+      ref.current.scrollTop += diff
+    }
+    isPrepending.current = false
+  }, [dep])
+
+  return { ref, captureScrollHeight }
 }

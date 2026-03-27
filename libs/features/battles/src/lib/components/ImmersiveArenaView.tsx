@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { lazy, Suspense } from 'react'
 import { useAuth } from '@lenserfight/features/auth'
 import { useLenser } from '@lenserfight/features/profile'
 
@@ -14,7 +14,9 @@ import { getRenderer } from '../renderers'
 import { ArenaTopBar } from './ArenaTopBar'
 import { ArenaContenderColumn } from './ArenaContenderColumn'
 import { ArenaCenterZone } from './ArenaCenterZone'
-import { LenserChatRail } from './LenserChatRail'
+const LenserChatRail = lazy(() =>
+  import('./LenserChatRail').then((m) => ({ default: m.LenserChatRail }))
+)
 import { BattleSEOHead } from './BattleSEOHead'
 import { VotePanel } from './VotePanel'
 import { ResultBanner } from './ResultBanner'
@@ -169,14 +171,18 @@ export const ImmersiveArenaView: React.FC<ImmersiveArenaViewProps> = ({ slug, cu
 
         </div>
 
-        {/* Right: Lenser chat rail */}
-        <LenserChatRail
-          battleId={battle.id}
-          currentUserId={currentUserId}
-          currentHandle={lenser?.handle}
-          senderRole={hasLenser ? 'lenser' : 'viewer'}
-          isAuthenticated={isAuthenticated}
-        />
+        {/* Right: Lenser chat rail — lazy loaded to avoid blocking arena render */}
+        <Suspense fallback={
+          <div className="w-72 flex-shrink-0 border-l border-surface-border bg-surface-sunken animate-pulse" />
+        }>
+          <LenserChatRail
+            battleId={battle.id}
+            currentUserId={currentUserId}
+            currentHandle={lenser?.handle}
+            senderRole={hasLenser ? 'lenser' : 'viewer'}
+            isAuthenticated={isAuthenticated}
+          />
+        </Suspense>
       </div>
     </div>
   )
