@@ -153,9 +153,9 @@ export function WorkflowsPage({ onCreateWorkflow }: WorkflowsPageProps) {
       </div>
 
       {isLoading && (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+        <div className="columns-1 sm:columns-2 lg:columns-3 gap-3">
           {Array.from({ length: 6 }).map((_, i) => (
-            <div key={i} className="h-32 rounded-2xl border border-surface-border bg-surface-raised animate-pulse" />
+            <div key={i} className="break-inside-avoid mb-3 h-32 rounded-2xl border border-surface-border bg-surface-raised animate-pulse" />
           ))}
         </div>
       )}
@@ -183,7 +183,7 @@ export function WorkflowsPage({ onCreateWorkflow }: WorkflowsPageProps) {
 
       {!isLoading && workflows.length > 0 && (
         <AnimatePresence mode="popLayout">
-          <motion.div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+          <div className="columns-1 sm:columns-2 lg:columns-3 gap-3">
             {workflows.map((w, i) => (
               <motion.div
                 key={w.id}
@@ -192,12 +192,12 @@ export function WorkflowsPage({ onCreateWorkflow }: WorkflowsPageProps) {
                 initial="hidden"
                 animate="visible"
                 exit="exit"
-                layout
+                className="break-inside-avoid mb-3"
               >
                 <WorkflowCardWithNodes workflow={w} />
               </motion.div>
             ))}
-          </motion.div>
+          </div>
         </AnimatePresence>
       )}
 
