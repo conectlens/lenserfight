@@ -1,3 +1,4 @@
+import { EmptyState } from '@lenserfight/ui/components'
 import React from 'react'
 
 import { LensViewModel } from '@lenserfight/types'
@@ -48,9 +49,10 @@ export const LensesGrid: React.FC<LensesGridProps> = ({ lenses, isLoading, onOpe
 
   if (lenses.length === 0) {
     return (
-      <div className="text-center py-20 bg-white dark:bg-gray-800 rounded-2xl border border-gray-100 dark:border-gray-700 border-dashed">
-        <p className="text-gray-500 dark:text-gray-400">No lenses found matching your criteria.</p>
-      </div>
+      <EmptyState
+        title="No lenses found matching your criteria."
+        className="py-20 bg-white dark:bg-gray-800 border-gray-100 dark:border-gray-700"
+      />
     )
   }
 

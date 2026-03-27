@@ -1,5 +1,4 @@
-import { SEOHead } from '@lenserfight/ui/components'
-import { Button } from '@lenserfight/ui/components'
+import { Button, EmptyState, PageHeader, SEOHead } from '@lenserfight/ui/components'
 import { SelectField } from '@lenserfight/ui/forms'
 import { AnimatePresence, motion } from 'framer-motion'
 import React from 'react'
@@ -79,17 +78,19 @@ export function BattlesFeedPage() {
     <div className="">
       <SEOHead type="battles-list" />
       <div className="space-y-3 mb-6">
-        <div className="flex items-center justify-between">
-          <h1 className="text-2xl font-bold text-[var(--cl-surface-text)]">Battles</h1>
-          <Button
-            onClick={() => navigate('/battles/create')}
-            title="New Battle"
-            className="flex items-center gap-2 w-auto"
-          >
-            <PlusCircle size={18} />
-            <span>New Battle</span>
-          </Button>
-        </div>
+        <PageHeader
+          title="Battles"
+          action={
+            <Button
+              onClick={() => navigate('/battles/create')}
+              title="New Battle"
+              className="flex items-center gap-2 w-auto"
+            >
+              <PlusCircle size={18} />
+              <span>New Battle</span>
+            </Button>
+          }
+        />
         <div className="flex flex-wrap gap-3">
           <SelectField
             value={statusFilter}
@@ -119,11 +120,10 @@ export function BattlesFeedPage() {
           ))}
         </div>
       ) : filtered.length === 0 ? (
-        <div className="text-center py-16 text-[var(--cl-surface-text-disabled)]">
-          <p className="text-4xl mb-3">⚔️</p>
-          <p className="font-medium">No battles yet.</p>
-          <p className="text-sm mt-1">Be the first to create one.</p>
-        </div>
+        <EmptyState
+          title="No battles yet."
+          description="Be the first to create one."
+        />
       ) : (
         <AnimatePresence mode="popLayout">
           <motion.div className="grid grid-cols-1 sm:grid-cols-2 gap-4">

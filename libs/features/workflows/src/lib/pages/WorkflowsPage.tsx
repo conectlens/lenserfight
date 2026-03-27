@@ -2,7 +2,7 @@ import { queryKeys } from '@lenserfight/data/cache'
 import type { WorkflowRecord } from '@lenserfight/data/repositories'
 import { workflowsService } from '@lenserfight/data/repositories'
 import { useAuth } from '@lenserfight/features/auth'
-import { Button, InfiniteScrollSentinel } from '@lenserfight/ui/components'
+import { Button, EmptyState, InfiniteScrollSentinel, PageHeader } from '@lenserfight/ui/components'
 import { SelectField } from '@lenserfight/ui/forms'
 import { useQuery } from '@tanstack/react-query'
 import { GitBranch, Plus, Search } from 'lucide-react'
@@ -83,19 +83,15 @@ export function WorkflowsPage({ onCreateWorkflow, onOpenWorkflow }: WorkflowsPag
 
   return (
     <div className="">
-      <div className="flex items-center justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-black tracking-tight text-greyscale-900 dark:text-greyscale-50">
-            Connected Lenses
-          </h1>
-          <p className="mt-1 text-sm text-greyscale-500">
-            Chain lenses into multi-step workflows and battle them end-to-end.
-          </p>
-        </div>
-        <Button onClick={onCreateWorkflow} className="gap-2 w-auto flex-shrink-0">
-          <Plus size={15} /> New Workflow
-        </Button>
-      </div>
+      <PageHeader
+        title="Connected Lenses"
+        description="Chain lenses into multi-step workflows and battle them end-to-end."
+        action={
+          <Button onClick={onCreateWorkflow} className="gap-2 w-auto flex-shrink-0">
+            <Plus size={15} /> New Workflow
+          </Button>
+        }
+      />
 
       {/* Filters */}
       <div className="flex flex-wrap gap-3 items-center">
@@ -134,20 +130,16 @@ export function WorkflowsPage({ onCreateWorkflow, onOpenWorkflow }: WorkflowsPag
       )}
 
       {!isLoading && workflows.length === 0 && (
-        <div className="flex flex-col items-center justify-center rounded-3xl border border-dashed border-surface-border py-16 px-8 text-center space-y-4">
-          <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-surface-raised">
-            <GitBranch size={24} className="text-greyscale-400" />
-          </div>
-          <div>
-            <p className="font-semibold text-greyscale-900 dark:text-greyscale-50">Build your first Connected Lens workflow</p>
-            <p className="mt-1 text-sm text-greyscale-500">
-              Chain lenses together and watch AI outputs transform step by step.
-            </p>
-          </div>
-          <Button onClick={onCreateWorkflow} className="gap-2 w-auto">
-            <Plus size={15} /> Create Workflow
-          </Button>
-        </div>
+        <EmptyState
+          icon={GitBranch}
+          title="Build your first Connected Lens workflow"
+          description="Chain lenses together and watch AI outputs transform step by step."
+          action={
+            <Button onClick={onCreateWorkflow} className="gap-2 w-auto">
+              <Plus size={15} /> Create Workflow
+            </Button>
+          }
+        />
       )}
 
       {!isLoading && workflows.length > 0 && (

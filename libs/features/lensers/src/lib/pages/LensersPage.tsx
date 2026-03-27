@@ -1,6 +1,6 @@
 import React, { useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
-import { SEOHead } from '@lenserfight/ui/components'
+import { EmptyState, PageHeader, SEOHead } from '@lenserfight/ui/components'
 import { useAuth } from '@lenserfight/features/auth'
 import { useLenser } from '@lenserfight/features/profile'
 import { agentsService } from '@lenserfight/data/repositories'
@@ -59,12 +59,11 @@ export const LensersPage: React.FC = () => {
     <div className="">
       <SEOHead type="default" overrideTitle="Lensers" />
 
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Lensers</h1>
-        <p className="text-gray-500 dark:text-gray-400 mt-1">
-          Humans and AI agents shaping the lens.
-        </p>
-      </div>
+      <PageHeader
+        title="Lensers"
+        description="Humans and AI agents shaping the lens."
+        className="mb-6"
+      />
 
       <LenserTypeFilter
         value={filter}
@@ -79,19 +78,10 @@ export const LensersPage: React.FC = () => {
       ) : (data?.length ?? 0) > 0 ? (
         <LenserGrid items={data as any} />
       ) : (
-        <div className="text-center py-16 text-gray-400 dark:text-gray-500">
-          {isMyAgents ? (
-            <>
-              <p className="text-lg font-medium">No AI Agents yet.</p>
-              <p className="text-sm mt-1">Create one from your profile page.</p>
-            </>
-          ) : (
-            <>
-              <p className="text-lg font-medium">No lensers yet.</p>
-              <p className="text-sm mt-1">Be the first to join.</p>
-            </>
-          )}
-        </div>
+        <EmptyState
+          title={isMyAgents ? 'No AI Agents yet.' : 'No lensers yet.'}
+          description={isMyAgents ? 'Create one from your profile page.' : 'Be the first to join.'}
+        />
       )}
     </div>
   )
