@@ -138,6 +138,50 @@ export const CreateBattleWizard: React.FC<CreateBattleWizardProps> = ({ onSucces
     }
   }, []) // eslint-disable-line
 
+  // ── Fetch existing battle for editing ─────────────────────────────────────
+  const isEditMode = !!battleIdFromUrl && step < 4
+
+  useEffect(() => {
+    if (battleIdFromUrl && step < 4) {
+      const fetchBattleData = async () => {
+        try {
+          // Use UUID if possible, but the service only has getBattleBySlug.
+          // In the wizard, battleId from URL might be an ID or a SLUG depending on how it's linked.
+          // Looking at SupabaseBattlesRepository.createBattle, it returns a record with id and slug.
+          // getBattleBySlug is the only public fetcher. Let's see if we can get it by ID.
+          // I'll assume we might need getBattleById.
+          // Let's check battlesService.
+          const battle = await battlesService.getBattleBySlug(battleIdFromUrl)
+          if (battle && battle.status === 'draft') {
+            setTitle(battle.title)
+            setDescription(battle.task_prompt.startsWith('Workflow battle: ') || battle.task_prompt.startsWith('Lens battle: ') ? '' : battle.task_prompt)
+            setBattleType(battle.battle_type)
+            setVoterEligibility(battle.voter_eligibility)
+            if (battle.handicap_config) {
+              setHandicap(battle.handicap_config as unknown as AIHandicapConfig)
+            }
+            if (battle.workflow_id) {
+              setBattleFormat('workflow')
+              setSelectedWorkflowId(battle.workflow_id)
+            } else if (battle.lens_id) {
+              setBattleFormat('lens')
+              setSelectedLensId(battle.lens_id)
+            }
+            setCreatedBattleId(battle.id)
+            setCreatedBattleSlug(battle.slug)
+            // Skip format/source steps if we have them already
+            if (step === 0 && (battle.workflow_id || battle.lens_id)) {
+              goToStep(2)
+            }
+          }
+        } catch (e) {
+          console.error('Failed to fetch battle for editing', e)
+        }
+      }
+      fetchBattleData()
+    }
+  }, [battleIdFromUrl]) // eslint-disable-line
+
   // Guard: if URL claims step >= 4 but there's no battleId, reset to step 0
   useEffect(() => {
     if (step >= 4 && !battleIdFromUrl) {
@@ -154,12 +198,13 @@ export const CreateBattleWizard: React.FC<CreateBattleWizardProps> = ({ onSucces
 
   // ── Data fetching ────────────────────────────────────────────────────────
 
-  const { data: workflows = [], isLoading: loadingWorkflows } = useQuery({
+  const { data: myWorkflowsData, isLoading: loadingWorkflows } = useQuery({
     queryKey: ['battle-wizard-workflows', user?.id],
-    queryFn: () => workflowsService.listByLenser(user?.id ?? ''),
+    queryFn: () => workflowsService.listByLenserPaginated(user?.id ?? '', 0, 50),
     enabled: !!user?.id && battleFormat === 'workflow' && step === 1 && workflowScope === 'mine',
     staleTime: 1000 * 60,
   })
+  const workflows = (myWorkflowsData?.data ?? []) as WorkflowRecord[]
 
   const { data: popularWorkflowsData, isLoading: loadingPopularWorkflows } = useQuery({
     queryKey: ['battle-wizard-popular-workflows'],
@@ -207,6 +252,15 @@ export const CreateBattleWizard: React.FC<CreateBattleWizardProps> = ({ onSucces
     return true
   })()
 
+  const stepValidity: boolean[] = [
+    battleFormat !== null,
+    battleFormat === 'workflow' ? !!selectedWorkflowId : !!selectedLensId,
+    title.trim().length >= 3,
+    true, // config step always valid
+    true, // contenders always skippable
+    true, // lenses always skippable
+  ]
+
   // ── Create battle (step 3 → 4) ───────────────────────────────────────────
 
   const handleCreateBattle = async () => {
@@ -214,11 +268,11 @@ export const CreateBattleWizard: React.FC<CreateBattleWizardProps> = ({ onSucces
     setSubmitting(true)
     setError(null)
     try {
-      const resolvedPrompt = battleFormat === 'workflow'
+      const resolvedPrompt = description.trim() || (battleFormat === 'workflow'
         ? `Workflow battle: ${selectedWorkflowTitle || selectedWorkflowId}`
-        : `Lens battle: ${selectedLensTitle || selectedLensId}`
+        : `Lens battle: ${selectedLensTitle || selectedLensId}`)
 
-      const battle = await battlesService.createBattle({
+      const battleInput = {
         title: title.trim(),
         task_prompt: resolvedPrompt,
         battle_type: battleType,
@@ -226,7 +280,15 @@ export const CreateBattleWizard: React.FC<CreateBattleWizardProps> = ({ onSucces
         handicap: showsHandicap ? handicap : undefined,
         ...(battleFormat === 'workflow' && selectedWorkflowId ? { workflow_id: selectedWorkflowId } : {}),
         ...(battleFormat === 'lens' && selectedLensId ? { lens_id: selectedLensId } : {}),
-      })
+      }
+
+      let battle
+      if (isEditMode && createdBattleId) {
+        battle = await battlesService.updateBattle(createdBattleId, battleInput)
+      } else {
+        battle = await battlesService.createBattle(battleInput)
+      }
+
       setCreatedBattleSlug(battle.slug)
       setCreatedBattleId(battle.id)
       setDirection(1)
@@ -322,8 +384,10 @@ export const CreateBattleWizard: React.FC<CreateBattleWizardProps> = ({ onSucces
         isNextLoading={step === 3 ? submitting : step === 4 ? inviting : false}
         completeLabel="Go to Battle"
         completeIcon={<Swords size={15} className="mr-1.5" />}
-        nextLabel={step === 3 ? 'Create Battle' : step === 4 ? 'Invite' : 'Next'}
+        nextLabel={step === 3 ? (isEditMode ? 'Update Battle' : 'Create Battle') : step === 4 ? 'Invite' : 'Next'}
         skipButton={skipButton}
+        stepValidity={stepValidity}
+        onStepClick={go}
       >
         <AnimatePresence mode="wait" custom={direction}>
           <motion.div

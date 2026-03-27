@@ -44,6 +44,12 @@ export const battlesService = {
   getBattleBySlug: (slug: string): Promise<BattleRecord | null> =>
     battlesRepo.getBattleBySlug(slug),
 
+  updateBattle: (id: string, input: Partial<CreateBattleInput>): Promise<BattleRecord> =>
+    battlesRepo.updateBattle(id, input),
+
+  getLatestDraftBattleByWorkflowId: (workflowId: string): Promise<BattleRecord | null> =>
+    battlesRepo.getLatestDraftBattleByWorkflowId(workflowId),
+
   getBattlesFeed: (filter?: string, limit?: number, cursor?: string, sortBy?: 'newest' | 'most_votes' | 'trending'): Promise<BattleRecord[]> =>
     battlesRepo.getBattlesFeed(filter, limit, undefined, cursor, sortBy),
 

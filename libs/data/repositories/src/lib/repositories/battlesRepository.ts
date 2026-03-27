@@ -218,6 +218,8 @@ export interface BattlesRepositoryPort {
   linkForumThread(battleId: string, forumThreadId: string): Promise<void>
   assignLensToContender(input: AssignLensInput): Promise<ContenderLensAssignmentRecord>
   getLensAssignment(contenderId: string): Promise<ContenderLensAssignmentRecord | null>
+  updateBattle(id: string, input: Partial<CreateBattleInput>): Promise<BattleRecord>
+  getLatestDraftBattleByWorkflowId(workflowId: string): Promise<BattleRecord | null>
   openVoting(battleId: string): Promise<void>
   closeVoting(battleId: string): Promise<void>
 }
@@ -394,6 +396,42 @@ export class SupabaseBattlesRepository implements BattlesRepositoryPort {
 
     if (error) this.handleError(error)
     return data as BattleRecord
+  }
+
+  async updateBattle(id: string, input: Partial<CreateBattleInput>): Promise<BattleRecord> {
+    const { data, error } = await supabase
+      .schema('battles')
+      .from('battles')
+      .update({
+        ...(input.title ? { title: input.title } : {}),
+        ...(input.task_prompt ? { task_prompt: input.task_prompt } : {}),
+        ...(input.battle_type ? { battle_type: input.battle_type } : {}),
+        ...(input.voter_eligibility ? { voter_eligibility: input.voter_eligibility } : {}),
+        ...(input.handicap ? { handicap_config: input.handicap } : {}),
+        ...(input.workflow_id ? { workflow_id: input.workflow_id } : {}),
+        ...(input.lens_id ? { lens_id: input.lens_id } : {}),
+      })
+      .eq('id', id)
+      .select(this.battleSelect)
+      .single()
+
+    if (error) this.handleError(error)
+    return data as BattleRecord
+  }
+
+  async getLatestDraftBattleByWorkflowId(workflowId: string): Promise<BattleRecord | null> {
+    const { data, error } = await supabase
+      .schema('battles')
+      .from('battles')
+      .select(this.battleSelect)
+      .eq('workflow_id', workflowId)
+      .eq('status', 'draft')
+      .order('published_at', { ascending: false, nullsFirst: true })
+      .limit(1)
+      .maybeSingle()
+
+    if (error) this.handleError(error)
+    return data as BattleRecord | null
   }
 
   async getAIHandicapPolicy(battleId: string): Promise<AIHandicapPolicyRecord | null> {
