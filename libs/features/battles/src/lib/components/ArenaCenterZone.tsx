@@ -13,6 +13,7 @@ interface ArenaCenterZoneProps {
   currentUserId?: string
   renderVotePanel: React.ReactNode
   renderResultBanner: React.ReactNode
+  className?: string
 }
 
 const phaseVariants = {
@@ -26,11 +27,12 @@ export const ArenaCenterZone: React.FC<ArenaCenterZoneProps> = ({
   renderer,
   renderVotePanel,
   renderResultBanner,
+  className = '',
 }) => {
   const { IdleAnimation } = renderer
 
   return (
-    <div className="w-full md:w-56 md:flex-shrink-0 flex flex-col items-center justify-center border-b border-surface-border md:border-b-0 md:border-r bg-surface-raised px-4 py-4 md:py-0">
+    <div className={`w-full md:w-56 md:flex-shrink-0 flex flex-col items-center justify-center border-b border-surface-border md:border-b-0 md:border-r bg-surface-raised px-4 py-4 md:py-0 ${className}`}>
       <AnimatePresence mode="wait">
         {phase === 'idle' && (
           <motion.div key="idle" variants={phaseVariants} initial="initial" animate="animate" exit="exit" className="w-full">

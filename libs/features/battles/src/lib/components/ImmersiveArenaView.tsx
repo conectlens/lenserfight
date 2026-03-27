@@ -145,6 +145,7 @@ export const ImmersiveArenaView: React.FC<ImmersiveArenaViewProps> = ({ slug, cu
               battleStatus={battle.status}
               currentUserId={currentUserId}
               lensAssignment={lensAssignmentA}
+              className="order-1 md:order-none"
             />
             <ArenaCenterZone
               phase={currentPhase}
@@ -156,6 +157,7 @@ export const ImmersiveArenaView: React.FC<ImmersiveArenaViewProps> = ({ slug, cu
               currentUserId={currentUserId}
               renderVotePanel={votePanel}
               renderResultBanner={resultBanner}
+              className="order-3 md:order-none"
             />
             <ArenaContenderColumn
               slot="B"
@@ -168,6 +170,7 @@ export const ImmersiveArenaView: React.FC<ImmersiveArenaViewProps> = ({ slug, cu
               battleStatus={battle.status}
               currentUserId={currentUserId}
               lensAssignment={lensAssignmentB}
+              className="order-2 md:order-none"
             />
           </div>
 

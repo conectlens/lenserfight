@@ -19,6 +19,7 @@ interface ArenaContenderColumnProps {
   battleStatus?: string
   currentUserId?: string
   lensAssignment?: LensAssignmentBadgeInfo | null
+  className?: string
 }
 
 export const ArenaContenderColumn: React.FC<ArenaContenderColumnProps> = ({
@@ -32,6 +33,7 @@ export const ArenaContenderColumn: React.FC<ArenaContenderColumnProps> = ({
   battleStatus,
   currentUserId,
   lensAssignment,
+  className = '',
 }) => {
   const voteCount = aggregate?.raw_vote_count ?? 0
   const votePercent = totalVotes > 0 ? Math.round((voteCount / totalVotes) * 100) : 0
@@ -50,7 +52,7 @@ export const ArenaContenderColumn: React.FC<ArenaContenderColumnProps> = ({
     !!contender
 
   return (
-    <div className="flex flex-col w-full md:w-0 flex-1 min-w-0 min-h-[280px] md:min-h-0 border-b border-surface-border last:border-b-0 md:border-b-0 md:border-r md:last:border-r-0">
+    <div className={`flex flex-col w-full md:w-0 flex-1 min-w-0 min-h-[280px] md:min-h-0 border-b border-surface-border last:border-b-0 md:border-b-0 md:border-r md:last:border-r-0 ${className}`}>
       {/* Header */}
       <div className="flex-shrink-0 h-12 flex items-center gap-2 px-4 border-b border-surface-border">
         <div className="h-7 w-7 rounded-full bg-surface-interactive flex items-center justify-center text-xs font-black text-surface-text-muted">
