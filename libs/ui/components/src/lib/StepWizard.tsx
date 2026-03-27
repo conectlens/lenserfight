@@ -1,7 +1,6 @@
 import React, { useEffect, useContext } from 'react'
-import { DialogHeaderContext } from '@lenserfight/ui/overlays'
+import { DialogHeaderContext, ModalFooter } from '@lenserfight/ui/overlays'
 
-import { Button } from './Button'
 import { StepIndicator } from './StepIndicator'
 
 export interface WizardStepConfig {
@@ -71,48 +70,31 @@ export const StepWizard: React.FC<StepWizardProps> = ({
       <div className="py-5">{children}</div>
 
       {/* Navigation footer */}
-      <div className="flex flex-col-reverse gap-3 border-t border-surface-border pt-4 sm:flex-row sm:items-center sm:justify-between">
-        <div className="flex items-center gap-2">
-          {currentStep === 0 && onCancel ? (
-            <Button type="button" variant="ghost" onClick={onCancel} className="w-auto">
-              Cancel
-            </Button>
-          ) : (
-            <Button
-              type="button"
-              variant="ghost"
-              onClick={onBack}
-              disabled={currentStep === 0}
-              className="w-auto"
-            >
-              ← Back
-            </Button>
-          )}
-        </div>
-
-        {isLastStep ? (
-          <Button
-            type="button"
-            onClick={onComplete}
-            disabled={!canProceed || isCompleting}
-            isLoading={isCompleting}
-            className="inline-flex items-center gap-2 px-6 sm:w-auto sm:min-w-[140px]"
-          >
-            {completeIcon}
-            {completeLabel}
-          </Button>
-        ) : (
-          <Button
-            type="button"
-            onClick={onNext}
-            disabled={!canProceed || isNextLoading}
-            isLoading={isNextLoading}
-            className="inline-flex items-center gap-2 px-6 sm:w-auto sm:min-w-[140px]"
-          >
-            {nextLabel} →
-          </Button>
-        )}
-      </div>
+      <ModalFooter
+        leftButton={{
+          label: currentStep === 0 && onCancel ? 'Cancel' : '← Back',
+          onClick: currentStep === 0 && onCancel ? onCancel : onBack,
+          disabled: !onCancel && currentStep === 0,
+          variant: 'ghost',
+        }}
+        primaryButton={
+          isLastStep
+            ? {
+                label: <>{completeIcon}{completeLabel}</>,
+                onClick: onComplete,
+                disabled: !canProceed || isCompleting,
+                isLoading: isCompleting,
+                className: 'px-6 sm:min-w-[140px]',
+              }
+            : {
+                label: `${nextLabel} →`,
+                onClick: onNext,
+                disabled: !canProceed || isNextLoading,
+                isLoading: isNextLoading,
+                className: 'px-6 sm:min-w-[140px]',
+              }
+        }
+      />
     </div>
   )
 }

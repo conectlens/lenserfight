@@ -2,9 +2,8 @@ import { MessageSquare, Tag, CheckCircle } from 'lucide-react'
 import React, { useState } from 'react'
 import { useLocation } from 'react-router-dom'
 
-import { Button } from '@lenserfight/ui/components'
 import { FormError } from '@lenserfight/ui/components'
-import { Dialog } from '@lenserfight/ui/overlays'
+import { Dialog, ModalFooter } from '@lenserfight/ui/overlays'
 import { useAuth } from '@lenserfight/features/auth'
 import { feedbackService } from '@lenserfight/data/repositories'
 import { ProductTag } from '@lenserfight/types'
@@ -153,20 +152,10 @@ export const FeedbackModal: React.FC<FeedbackModalProps> = ({ isOpen, onClose })
 
         {error && <FormError message={error} />}
 
-        <div className="flex gap-3 pt-2">
-          <Button
-            type="button"
-            variant="ghost"
-            onClick={handleClose}
-            disabled={isLoading}
-            className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800"
-          >
-            Cancel
-          </Button>
-          <Button type="submit" isLoading={isLoading}>
-            Submit Feedback
-          </Button>
-        </div>
+        <ModalFooter
+          leftButton={{ label: 'Cancel', onClick: handleClose, disabled: isLoading, variant: 'ghost' }}
+          primaryButton={{ label: 'Submit Feedback', type: 'submit', isLoading }}
+        />
       </form>
     </Dialog>
   )
