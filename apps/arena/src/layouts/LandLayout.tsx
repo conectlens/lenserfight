@@ -1,4 +1,5 @@
 import { Footer } from '@lenserfight/ui/layout'
+import { Logo } from '@lenserfight/ui/components'
 import { Menu, X, ArrowRight } from 'lucide-react'
 import React, { useState } from 'react'
 import { Link, Outlet, useLocation } from 'react-router-dom'
@@ -22,11 +23,8 @@ export const LandLayout: React.FC = () => {
       <header className="sticky top-0 z-50 w-full border-b border-surface-border/80 bg-surface-base/90 backdrop-blur-md">
         <div className="mx-auto flex h-16 max-w-6xl items-center justify-between gap-4 px-4 sm:px-6">
           {/* Logo */}
-          <Link
-            to="/"
-            className="flex shrink-0 items-center gap-2 text-lg font-black tracking-tight text-greyscale-900 transition-opacity hover:opacity-80 dark:text-greyscale-0"
-          >
-            LenserFight
+          <Link to="/" className="flex shrink-0 items-center transition-opacity hover:opacity-80">
+            <Logo size={28} showWordmark={true} />
           </Link>
 
           {/* Desktop Nav */}
