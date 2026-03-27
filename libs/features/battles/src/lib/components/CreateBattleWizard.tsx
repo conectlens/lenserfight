@@ -1,9 +1,12 @@
 import { StepWizard } from '@lenserfight/ui/components'
 import type { WizardStepConfig } from '@lenserfight/ui/components'
-import { battlesService } from '@lenserfight/data/repositories'
+import { battlesService, workflowsService, lensesService } from '@lenserfight/data/repositories'
+import type { WorkflowRecord } from '@lenserfight/data/repositories'
+import { useAuth } from '@lenserfight/features/auth'
 import { useWizardStep } from '@lenserfight/ui/routing'
+import { useQuery } from '@tanstack/react-query'
 import { AnimatePresence, motion } from 'framer-motion'
-import { Swords } from 'lucide-react'
+import { GitBranch, Layers, Swords } from 'lucide-react'
 import React, { useEffect, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 
@@ -14,12 +17,25 @@ import { LensAssignmentStep } from './LensAssignmentStep'
 import { VoterEligibilitySelector } from './VoterEligibilitySelector'
 
 import type { AIHandicapConfig, BattleType, VoterEligibility } from '../types/battle.types'
+import type { LensViewModel } from '@lenserfight/types'
+
+// ─── Step config ─────────────────────────────────────────────────────────────
 
 const WIZARD_STEPS: WizardStepConfig[] = [
   {
+    label: 'Format',
+    title: 'Choose battle format',
+    description: 'Select whether you want to battle with a connected workflow or a single lens prompt.',
+  },
+  {
+    label: 'Pick',
+    title: 'Select your source',
+    description: 'Choose which workflow or lens to use for this battle.',
+  },
+  {
     label: 'Basics',
     title: 'Battle basics',
-    description: 'Give your battle a clear title and a detailed Lens prompt. Both contenders receive the same prompt.',
+    description: 'Give your battle a title and, if using a lens, a prompt.',
   },
   {
     label: 'Battle type',
@@ -30,16 +46,6 @@ const WIZARD_STEPS: WizardStepConfig[] = [
     label: 'Configuration',
     title: 'Configuration',
     description: 'Set voter eligibility and optional AI handicap settings.',
-  },
-  {
-    label: 'Contenders',
-    title: 'Invite contenders',
-    description: 'Add the two contenders who will compete in this battle.',
-  },
-  {
-    label: 'Assign Lenses',
-    title: 'Assign Lenses',
-    description: 'Optionally assign lenses to each contender.',
   },
 ]
 
@@ -66,56 +72,77 @@ export interface CreateBattleWizardProps {
   onClose: () => void
 }
 
-/**
- * Self-contained battle creation wizard.
- *
- * Step state is fully URL-driven via `?step=N`. The `battleId` for
- * post-creation steps (3–4) is encoded as `?battleId=<uuid>` so the
- * wizard survives a hard refresh.
- *
- * Can be rendered:
- * - Inside a `ModalRoute` (Dialog wrapper provided externally)
- * - Directly as a full-page component via `CreateBattlePage`
- */
+// ─── Component ───────────────────────────────────────────────────────────────
+
 export const CreateBattleWizard: React.FC<CreateBattleWizardProps> = ({ onSuccess, onClose }) => {
+  const { user } = useAuth()
   const navigate = useNavigate()
   const [searchParams, setSearchParams] = useSearchParams()
-  const { step, goToStep } = useWizardStep({ maxStep: 4 })
+  const { step, goToStep } = useWizardStep({ maxStep: 6 })
 
-  // Direction is animation-only — not URL state
   const [direction, setDirection] = useState(1)
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  // Form state (steps 0–2)
+  // Step 0 — format choice
+  const [battleFormat, setBattleFormat] = useState<'workflow' | 'lens' | null>(null)
+
+  // Step 1 — source selection
+  const [selectedWorkflowId, setSelectedWorkflowId] = useState<string | null>(null)
+  const [selectedWorkflowTitle, setSelectedWorkflowTitle] = useState('')
+  const [selectedLensId, setSelectedLensId] = useState<string | null>(null)
+
+  // Steps 2–4 — battle config
   const [title, setTitle] = useState('')
   const [taskPrompt, setTaskPrompt] = useState('')
   const [battleType, setBattleType] = useState<BattleType>('human_vs_human_open_votes')
   const [voterEligibility, setVoterEligibility] = useState<VoterEligibility>('open')
   const [handicap, setHandicap] = useState<AIHandicapConfig>(DEFAULT_HANDICAP)
 
-  // Post-creation state — battleId is the URL source of truth for recovery;
-  // createdBattleSlug is only needed at the final onSuccess() call
+  // Post-creation
   const [createdBattleSlug, setCreatedBattleSlug] = useState<string | null>(null)
-
-  // Contender IDs — populated after step 3 (invite) completes
   const [contenderAId, setContenderAId] = useState<string | undefined>()
   const [contenderAName, setContenderAName] = useState<string | undefined>()
   const [contenderBId, setContenderBId] = useState<string | undefined>()
   const [contenderBName, setContenderBName] = useState<string | undefined>()
 
-  // Read battleId from URL — this is the recovery source of truth for steps 3–4
   const battleIdFromUrl = searchParams.get('battleId')
+  const preselectedWorkflowId = searchParams.get('workflow_id')
 
-  // Guard: if URL claims step >= 3 but there's no battleId, reset to step 0.
-  // This handles a hard refresh after clearing the URL or sharing a partial link.
+  // Auto-select from ?workflow_id param (emitted by WorkflowBuilderPage "Battle it" button)
   useEffect(() => {
-    if (step >= 3 && !battleIdFromUrl) {
+    if (preselectedWorkflowId && !battleIdFromUrl) {
+      setBattleFormat('workflow')
+      setSelectedWorkflowId(preselectedWorkflowId)
+      goToStep(1)
+    }
+  }, []) // eslint-disable-line
+
+  // Guard: if URL claims step >= 5 but there's no battleId, reset to step 0
+  useEffect(() => {
+    if (step >= 5 && !battleIdFromUrl) {
       navigate('/battles/create', { replace: true })
     }
-  }, []) // eslint-disable-line react-hooks/exhaustive-deps
+  }, []) // eslint-disable-line
 
-  const showsHandicap = AI_BATTLE_TYPES.includes(battleType)
+  // ── Data fetching ────────────────────────────────────────────────────────
+
+  const { data: workflows = [], isLoading: loadingWorkflows } = useQuery({
+    queryKey: ['battle-wizard-workflows', user?.id],
+    queryFn: () => workflowsService.listByLenser(user?.id ?? ''),
+    enabled: !!user?.id && battleFormat === 'workflow' && step === 1,
+    staleTime: 1000 * 60,
+  })
+
+  const { data: lensesData, isLoading: loadingLenses } = useQuery({
+    queryKey: ['battle-wizard-lenses', user?.id],
+    queryFn: () => lensesService.getPersonalFeed(user?.id ?? '', 0, 30),
+    enabled: !!user?.id && battleFormat === 'lens' && step === 1,
+    staleTime: 1000 * 60,
+  })
+  const myLenses: LensViewModel[] = (lensesData?.data ?? []) as LensViewModel[]
+
+  // ── Navigation ───────────────────────────────────────────────────────────
 
   const go = (next: number) => {
     setDirection(next > step ? 1 : -1)
@@ -131,27 +158,49 @@ export const CreateBattleWizard: React.FC<CreateBattleWizardProps> = ({ onSucces
     }
   }
 
-  const canAdvanceStep0 = title.trim().length >= 3 && taskPrompt.trim().length >= 20
+  // ── Validation ───────────────────────────────────────────────────────────
+
+  const showsHandicap = AI_BATTLE_TYPES.includes(battleType)
+
+  const canProceed = (() => {
+    if (step === 0) return battleFormat !== null
+    if (step === 1) {
+      return battleFormat === 'workflow' ? !!selectedWorkflowId : !!selectedLensId
+    }
+    if (step === 2) {
+      const titleOk = title.trim().length >= 3
+      const promptOk = battleFormat === 'workflow' || taskPrompt.trim().length >= 20
+      return titleOk && promptOk
+    }
+    return true
+  })()
+
+  // ── Create battle ────────────────────────────────────────────────────────
 
   const handleCreateBattle = async () => {
-    if (!canAdvanceStep0) return
+    if (!canProceed) return
     setSubmitting(true)
     setError(null)
     try {
+      const resolvedPrompt = battleFormat === 'workflow'
+        ? `Workflow battle: ${selectedWorkflowTitle || selectedWorkflowId}`
+        : taskPrompt.trim()
+
       const battle = await battlesService.createBattle({
         title: title.trim(),
-        task_prompt: taskPrompt.trim(),
+        task_prompt: resolvedPrompt,
         battle_type: battleType,
         voter_eligibility: voterEligibility,
         handicap: showsHandicap ? handicap : undefined,
+        ...(battleFormat === 'workflow' && selectedWorkflowId ? { workflow_id: selectedWorkflowId } : {}),
+        ...(battleFormat === 'lens' && selectedLensId ? { lens_id: selectedLensId } : {}),
       })
       setCreatedBattleSlug(battle.slug)
       setDirection(1)
-      // Encode both step and battleId atomically so refresh at step 3 recovers correctly
       setSearchParams(
         (prev) => {
           const next = new URLSearchParams(prev)
-          next.set('step', '3')
+          next.set('step', '5')
           next.set('battleId', battle.id)
           return next
         },
@@ -164,9 +213,9 @@ export const CreateBattleWizard: React.FC<CreateBattleWizardProps> = ({ onSucces
     }
   }
 
-  // Steps 3–4 are post-creation; their child components own navigation.
-  // Render them outside the StepWizard to avoid overriding their own nav.
-  if (step >= 3) {
+  // ── Post-creation steps (5–6) ────────────────────────────────────────────
+
+  if (step >= 5) {
     return (
       <div className="w-full">
         <AnimatePresence mode="wait" custom={direction}>
@@ -178,7 +227,7 @@ export const CreateBattleWizard: React.FC<CreateBattleWizardProps> = ({ onSucces
             animate="center"
             exit="exit"
           >
-            {step === 3 && battleIdFromUrl && (
+            {step === 5 && battleIdFromUrl && (
               <ContenderInviteStep
                 battleId={battleIdFromUrl}
                 onDone={(aId, aName, bId, bName) => {
@@ -186,11 +235,11 @@ export const CreateBattleWizard: React.FC<CreateBattleWizardProps> = ({ onSucces
                   setContenderAName(aName)
                   setContenderBId(bId)
                   setContenderBName(bName)
-                  go(4)
+                  go(6)
                 }}
               />
             )}
-            {step === 4 && battleIdFromUrl && (
+            {step === 6 && battleIdFromUrl && (
               <LensAssignmentStep
                 battleId={battleIdFromUrl}
                 contenderAId={contenderAId}
@@ -206,6 +255,8 @@ export const CreateBattleWizard: React.FC<CreateBattleWizardProps> = ({ onSucces
     )
   }
 
+  // ── Pre-creation steps (0–4) ─────────────────────────────────────────────
+
   return (
     <div className="w-full">
       <StepWizard
@@ -215,7 +266,7 @@ export const CreateBattleWizard: React.FC<CreateBattleWizardProps> = ({ onSucces
         onBack={() => go(step - 1)}
         onComplete={handleCreateBattle}
         onCancel={onClose}
-        canProceed={step === 0 ? canAdvanceStep0 : true}
+        canProceed={canProceed}
         isCompleting={submitting}
         completeLabel="Create Battle"
         completeIcon={<Swords size={15} />}
@@ -229,7 +280,138 @@ export const CreateBattleWizard: React.FC<CreateBattleWizardProps> = ({ onSucces
             animate="center"
             exit="exit"
           >
+
+            {/* ── Step 0: Format chooser ────────────────────────────── */}
             {step === 0 && (
+              <div className="grid grid-cols-2 gap-4">
+                <button
+                  type="button"
+                  onClick={() => setBattleFormat('workflow')}
+                  className={`flex flex-col items-center gap-3 rounded-2xl border-2 p-6 text-center transition-colors ${
+                    battleFormat === 'workflow'
+                      ? 'border-status-blue bg-status-blue/5'
+                      : 'border-surface-border hover:border-greyscale-300 dark:hover:border-greyscale-600'
+                  }`}
+                >
+                  <GitBranch
+                    size={28}
+                    className={battleFormat === 'workflow' ? 'text-status-blue' : 'text-greyscale-400'}
+                  />
+                  <div>
+                    <p className="font-semibold text-sm text-greyscale-900 dark:text-greyscale-50">
+                      Workflow Battle
+                    </p>
+                    <p className="text-xs text-greyscale-400 mt-0.5">
+                      Use a connected lens workflow
+                    </p>
+                  </div>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setBattleFormat('lens')}
+                  className={`flex flex-col items-center gap-3 rounded-2xl border-2 p-6 text-center transition-colors ${
+                    battleFormat === 'lens'
+                      ? 'border-status-blue bg-status-blue/5'
+                      : 'border-surface-border hover:border-greyscale-300 dark:hover:border-greyscale-600'
+                  }`}
+                >
+                  <Layers
+                    size={28}
+                    className={battleFormat === 'lens' ? 'text-status-blue' : 'text-greyscale-400'}
+                  />
+                  <div>
+                    <p className="font-semibold text-sm text-greyscale-900 dark:text-greyscale-50">
+                      Lens Battle
+                    </p>
+                    <p className="text-xs text-greyscale-400 mt-0.5">
+                      Use a single prompt lens
+                    </p>
+                  </div>
+                </button>
+              </div>
+            )}
+
+            {/* ── Step 1: Workflow picker ───────────────────────────── */}
+            {step === 1 && battleFormat === 'workflow' && (
+              <div className="space-y-2">
+                {loadingWorkflows && Array.from({ length: 4 }).map((_, i) => (
+                  <div key={i} className="h-14 rounded-2xl bg-surface-raised animate-pulse" />
+                ))}
+                {!loadingWorkflows && workflows.length === 0 && (
+                  <p className="py-8 text-center text-sm text-greyscale-400">
+                    No workflows found. Create one first from the Workflows section.
+                  </p>
+                )}
+                {!loadingWorkflows && (workflows as WorkflowRecord[]).map((wf) => (
+                  <button
+                    key={wf.id}
+                    type="button"
+                    onClick={() => { setSelectedWorkflowId(wf.id); setSelectedWorkflowTitle(wf.title) }}
+                    className={`flex w-full items-center gap-3 rounded-2xl border-2 px-4 py-3 text-left transition-colors ${
+                      selectedWorkflowId === wf.id
+                        ? 'border-status-blue bg-status-blue/5'
+                        : 'border-surface-border hover:border-greyscale-300 dark:hover:border-greyscale-600'
+                    }`}
+                  >
+                    <GitBranch
+                      size={16}
+                      className={selectedWorkflowId === wf.id ? 'text-status-blue flex-shrink-0' : 'text-greyscale-400 flex-shrink-0'}
+                    />
+                    <div className="flex-1 min-w-0">
+                      <p className="truncate text-sm font-semibold text-greyscale-900 dark:text-greyscale-50">
+                        {wf.title}
+                      </p>
+                      {wf.description && (
+                        <p className="truncate text-xs text-greyscale-400">{wf.description}</p>
+                      )}
+                    </div>
+                  </button>
+                ))}
+              </div>
+            )}
+
+            {/* ── Step 1: Lens picker ───────────────────────────────── */}
+            {step === 1 && battleFormat === 'lens' && (
+              <div className="space-y-2">
+                {loadingLenses && Array.from({ length: 4 }).map((_, i) => (
+                  <div key={i} className="h-14 rounded-2xl bg-surface-raised animate-pulse" />
+                ))}
+                {!loadingLenses && myLenses.length === 0 && (
+                  <p className="py-8 text-center text-sm text-greyscale-400">
+                    No lenses found. Create a lens first.
+                  </p>
+                )}
+                {!loadingLenses && myLenses.map((lens) => (
+                  <button
+                    key={lens.id}
+                    type="button"
+                    onClick={() => setSelectedLensId(lens.id)}
+                    className={`flex w-full items-center gap-3 rounded-2xl border-2 px-4 py-3 text-left transition-colors ${
+                      selectedLensId === lens.id
+                        ? 'border-status-blue bg-status-blue/5'
+                        : 'border-surface-border hover:border-greyscale-300 dark:hover:border-greyscale-600'
+                    }`}
+                  >
+                    <Layers
+                      size={16}
+                      className={selectedLensId === lens.id ? 'text-status-blue flex-shrink-0' : 'text-greyscale-400 flex-shrink-0'}
+                    />
+                    <div className="flex-1 min-w-0">
+                      <p className="truncate text-sm font-semibold text-greyscale-900 dark:text-greyscale-50">
+                        {lens.title}
+                      </p>
+                      {lens.visibility !== 'public' && (
+                        <p className="text-xs text-greyscale-400 capitalize">{lens.visibility}</p>
+                      )}
+                    </div>
+                  </button>
+                ))}
+              </div>
+            )}
+
+            {/* ── Step 2: Battle basics ─────────────────────────────── */}
+            {step === 2 && (
               <div className="space-y-4">
                 <div>
                   <label className="mb-2 block text-sm font-semibold text-greyscale-900 dark:text-greyscale-0">
@@ -245,27 +427,40 @@ export const CreateBattleWizard: React.FC<CreateBattleWizardProps> = ({ onSucces
                   />
                 </div>
 
-                <div>
-                  <label className="mb-2 block text-sm font-semibold text-greyscale-900 dark:text-greyscale-0">
-                    Lens prompt
-                  </label>
-                  <textarea
-                    value={taskPrompt}
-                    onChange={(e) => setTaskPrompt(e.target.value)}
-                    placeholder="Describe the task clearly. Be specific about format, constraints, and the success criteria you want evaluated."
-                    rows={6}
-                    className="w-full resize-none rounded-2xl border border-surface-border bg-surface-base px-4 py-3 text-sm text-greyscale-900 outline-none transition-colors placeholder:text-greyscale-400 focus:border-status-blue dark:bg-surface-raised dark:text-greyscale-50"
-                  />
-                  <p className="mt-1 text-right text-xs text-greyscale-400">{taskPrompt.length} chars</p>
-                </div>
+                {battleFormat === 'lens' && (
+                  <div>
+                    <label className="mb-2 block text-sm font-semibold text-greyscale-900 dark:text-greyscale-0">
+                      Lens prompt
+                    </label>
+                    <textarea
+                      value={taskPrompt}
+                      onChange={(e) => setTaskPrompt(e.target.value)}
+                      placeholder="Describe the task clearly. Be specific about format, constraints, and the success criteria you want evaluated."
+                      rows={6}
+                      className="w-full resize-none rounded-2xl border border-surface-border bg-surface-base px-4 py-3 text-sm text-greyscale-900 outline-none transition-colors placeholder:text-greyscale-400 focus:border-status-blue dark:bg-surface-raised dark:text-greyscale-50"
+                    />
+                    <p className="mt-1 text-right text-xs text-greyscale-400">{taskPrompt.length} chars</p>
+                  </div>
+                )}
+
+                {battleFormat === 'workflow' && (
+                  <div className="flex items-center gap-3 rounded-2xl border border-surface-border bg-surface-raised px-4 py-3">
+                    <GitBranch size={16} className="text-greyscale-400 flex-shrink-0" />
+                    <p className="text-xs text-greyscale-500 dark:text-greyscale-400">
+                      The task is defined by your selected workflow — no additional prompt needed.
+                    </p>
+                  </div>
+                )}
               </div>
             )}
 
-            {step === 1 && (
+            {/* ── Step 3: Battle type ───────────────────────────────── */}
+            {step === 3 && (
               <BattleTypeSelector value={battleType} onChange={handleBattleTypeChange} />
             )}
 
-            {step === 2 && (
+            {/* ── Step 4: Configuration ─────────────────────────────── */}
+            {step === 4 && (
               <div className="space-y-4">
                 <VoterEligibilitySelector
                   battleType={battleType}
@@ -276,12 +471,13 @@ export const CreateBattleWizard: React.FC<CreateBattleWizardProps> = ({ onSucces
                   <HandicapConfigPanel value={handicap} onChange={setHandicap} />
                 )}
                 {error && (
-                  <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-900 dark:border-red-900/40 dark:bg-red-950/40 dark:text-red-100">
+                  <div className="rounded-2xl border border-status-red/20 bg-status-red/5 px-4 py-3 text-sm text-status-red">
                     {error}
                   </div>
                 )}
               </div>
             )}
+
           </motion.div>
         </AnimatePresence>
       </StepWizard>

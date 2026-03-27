@@ -37,7 +37,7 @@ export function WorkflowCanvasEdge({
       <BaseEdge
         path={edgePath}
         style={{
-          stroke: selected ? 'var(--cl-status-blue, #3b82f6)' : 'var(--cl-greyscale-300, #d1d5db)',
+          stroke: selected ? 'var(--cl-status-blue, #287bff)' : 'var(--cl-greyscale-300, #d1d5db)',
           strokeWidth: selected ? 2 : 1.5,
           transition: 'stroke 0.15s, stroke-width 0.15s',
         }}

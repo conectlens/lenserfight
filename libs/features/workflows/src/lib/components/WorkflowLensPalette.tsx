@@ -1,8 +1,9 @@
 import { lensesService } from '@lenserfight/data/repositories'
 import { useAuth } from '@lenserfight/features/auth'
+import { SearchBar } from '@lenserfight/ui/forms'
 import { useQuery } from '@tanstack/react-query'
-import { ChevronLeft, ChevronRight, GripVertical, Search } from 'lucide-react'
-import React, { useState } from 'react'
+import { ChevronLeft, ChevronRight, GripVertical } from 'lucide-react'
+import React, { useEffect, useState } from 'react'
 import type { LensViewModel, PersonalLensFeedItem } from '@lenserfight/types'
 
 export interface DraggedLensData {
@@ -21,7 +22,14 @@ type PaletteTab = 'mine' | 'popular'
 export function WorkflowLensPalette({ onDragStart, collapsed, onToggleCollapse }: WorkflowLensPaletteProps) {
   const { user } = useAuth()
   const [tab, setTab] = useState<PaletteTab>('mine')
-  const [search, setSearch] = useState('')
+  const [rawSearch, setRawSearch] = useState('')
+  const [debouncedSearch, setDebouncedSearch] = useState('')
+
+  // Debounce: only propagate search query after 300ms of inactivity
+  useEffect(() => {
+    const t = setTimeout(() => setDebouncedSearch(rawSearch), 300)
+    return () => clearTimeout(t)
+  }, [rawSearch])
 
   // My lenses via personal feed
   const { data: personalData, isLoading: loadingPersonal } = useQuery({
@@ -44,19 +52,20 @@ export function WorkflowLensPalette({ onDragStart, collapsed, onToggleCollapse }
   })
   const popularLenses: LensViewModel[] = popularData?.data ?? []
 
-  // Search results — respects RLS (only public or owned lenses returned by service)
+  // Search — min 3 chars, fires after debounce
   const { data: searchData, isLoading: loadingSearch } = useQuery({
-    queryKey: ['workflow-palette-search', search],
-    queryFn: () => lensesService.search(search, 0, 20),
-    enabled: search.length >= 2,
+    queryKey: ['workflow-palette-search', debouncedSearch],
+    queryFn: () => lensesService.search(debouncedSearch, 0, 20),
+    enabled: debouncedSearch.length >= 3,
     staleTime: 5000,
   })
   const searchResults: LensViewModel[] = searchData?.data ?? []
 
+  const isSearching = debouncedSearch.length >= 3
   const displayLenses: LensViewModel[] =
-    search.length >= 2 ? searchResults : effectiveTab === 'mine' ? myLenses : popularLenses
+    isSearching ? searchResults : effectiveTab === 'mine' ? myLenses : popularLenses
   const isLoading =
-    search.length >= 2 ? loadingSearch : effectiveTab === 'mine' ? loadingPersonal : loadingPopular
+    isSearching ? loadingSearch : effectiveTab === 'mine' ? loadingPersonal : loadingPopular
 
   const handleDragStart = (e: React.DragEvent, lens: LensViewModel) => {
     const data: DraggedLensData = { lens_id: lens.id, title: lens.title }
@@ -95,19 +104,17 @@ export function WorkflowLensPalette({ onDragStart, collapsed, onToggleCollapse }
       </div>
       <div className="px-3 pt-2 pb-2 space-y-2">
         {/* Search */}
-        <div className="relative">
-          <Search size={13} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-greyscale-400 pointer-events-none" />
-          <input
-            type="text"
-            placeholder="Search lenses…"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="w-full rounded-xl border border-surface-border bg-surface-raised pl-7 pr-2.5 py-1.5 text-xs text-greyscale-900 placeholder:text-greyscale-400 outline-none focus:border-status-blue dark:text-greyscale-50"
-          />
-        </div>
+        <SearchBar
+          value={rawSearch}
+          onChange={(e) => setRawSearch(e.target.value)}
+          onClear={() => { setRawSearch(''); setDebouncedSearch('') }}
+          loading={loadingSearch && rawSearch.length >= 3}
+          placeholder="Search lenses… (3+ chars)"
+          className="text-xs"
+        />
 
         {/* Tabs */}
-        {search.length < 2 && myLenses.length > 0 && (
+        {!isSearching && myLenses.length > 0 && (
           <div className="flex gap-1">
             {(['mine', 'popular'] as const).map((t) => (
               <button
@@ -136,7 +143,7 @@ export function WorkflowLensPalette({ onDragStart, collapsed, onToggleCollapse }
 
         {!isLoading && displayLenses.length === 0 && (
           <p className="py-8 text-center text-xs text-greyscale-400">
-            {search.length >= 2 ? 'No lenses found.' : 'No lenses available.'}
+            {isSearching ? 'No lenses found.' : 'No lenses available.'}
           </p>
         )}
 

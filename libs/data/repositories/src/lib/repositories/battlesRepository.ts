@@ -57,6 +57,8 @@ export interface CreateBattleInput {
   handicap?: Partial<Omit<AIHandicapPolicyRecord, 'id' | 'battle_id'>>
   funding_mode?: 'platform_credit' | 'wallet_funded' | 'sponsored'
   max_budget_credits?: number
+  workflow_id?: string
+  lens_id?: string
 }
 
 export interface ContenderRecord {
@@ -370,6 +372,8 @@ export class SupabaseBattlesRepository implements BattlesRepositoryPort {
         handicap_config: input.handicap ?? {},
         status: 'draft',
         slug: this.generateSlug(input.title),
+        ...(input.workflow_id ? { workflow_id: input.workflow_id } : {}),
+        ...(input.lens_id ? { lens_id: input.lens_id } : {}),
       })
       .select(this.battleSelect)
       .single()

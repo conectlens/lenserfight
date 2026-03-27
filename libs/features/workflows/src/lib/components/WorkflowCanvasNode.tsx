@@ -1,22 +1,25 @@
 import { Handle, Position } from '@xyflow/react'
 import type { NodeProps } from '@xyflow/react'
-import { Trash2 } from 'lucide-react'
+import { Pencil, Trash2 } from 'lucide-react'
 import React from 'react'
 
 export interface WorkflowNodeData {
   label: string
   ordinal: number
   isPersisted: boolean
+  lens_id?: string
   onRemove?: (id: string) => void
+  onEdit?: (lensId: string) => void
   [key: string]: unknown
 }
 
 export function WorkflowCanvasNode({ id, data, selected }: NodeProps) {
   const nodeData = data as WorkflowNodeData
-  const { label, ordinal, isPersisted, onRemove } = nodeData
+  const { label, ordinal, isPersisted, lens_id, onRemove, onEdit } = nodeData
 
   return (
     <div
+      onDoubleClick={() => { if (onEdit && lens_id) onEdit(lens_id) }}
       className={`relative flex items-center gap-2.5 min-w-[160px] max-w-[220px] rounded-2xl border bg-surface-raised px-3 py-2.5 shadow-neu-1 transition-colors ${
         selected
           ? 'border-status-blue ring-2 ring-status-blue/20'
@@ -40,7 +43,22 @@ export function WorkflowCanvasNode({ id, data, selected }: NodeProps) {
         {label}
       </span>
 
-      {/* Remove button — only for unsaved/removable nodes */}
+      {/* Edit button */}
+      {onEdit && lens_id && (
+        <button
+          type="button"
+          onMouseDown={(e) => {
+            e.stopPropagation()
+            onEdit(lens_id)
+          }}
+          className="flex-shrink-0 text-greyscale-300 hover:text-status-blue transition-colors"
+          title="Edit lens"
+        >
+          <Pencil size={11} />
+        </button>
+      )}
+
+      {/* Remove button */}
       {onRemove && (
         <button
           type="button"
