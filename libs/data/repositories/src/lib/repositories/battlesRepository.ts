@@ -566,7 +566,7 @@ export class SupabaseBattlesRepository implements BattlesRepositoryPort {
         contender_ref_id: input.contender_ref_id,
         display_name: input.display_name,
         entry_mode: 'invited',
-        contender_status: 'invited',
+        contender_status: 'pending',
       })
       .select('id, battle_id, slot, contender_type, display_name, contender_ref_id')
       .single()
