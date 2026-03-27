@@ -7,6 +7,7 @@ export * from './lib/hooks/useCreateWorkflow'
 export * from './lib/hooks/usePopularWorkflows'
 export * from './lib/hooks/useForkWorkflow'
 export * from './lib/hooks/useWorkflowReaction'
+export * from './lib/hooks/useUpdateWorkflow'
 
 // Components
 export * from './lib/components/WorkflowCard'
@@ -16,6 +17,7 @@ export * from './lib/components/CreateWorkflowWizard'
 export * from './lib/components/WorkflowLensPalette'
 export * from './lib/components/WorkflowCanvasNode'
 export * from './lib/components/WorkflowCanvasEdge'
+export * from './lib/components/EditWorkflowModal'
 
 // Pages
 export * from './lib/pages/WorkflowsPage'
