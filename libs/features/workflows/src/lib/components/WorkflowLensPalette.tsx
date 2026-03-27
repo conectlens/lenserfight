@@ -130,7 +130,7 @@ export function WorkflowLensPalette({ onDragStart, collapsed, onToggleCollapse }
                 onClick={() => setTab(t)}
                 className={`flex-1 !rounded-lg !px-2 !py-1 !text-xs !font-semibold ${
                   effectiveTab === t
-                    ? '!bg-status-blue/15 !text-status-blue hover:!bg-status-blue/15'
+                    ? '!bg-primary-yellow-500/15 !text-primary-yellow-600 hover:!bg-primary-yellow-500/15'
                     : '!text-greyscale-500 hover:!text-greyscale-900 dark:hover:!text-greyscale-50 !bg-transparent'
                 }`}
               >
@@ -161,7 +161,7 @@ export function WorkflowLensPalette({ onDragStart, collapsed, onToggleCollapse }
               draggable
               onDragStart={(e) => handleDragStart(e, lens)}
               title={`Drag to add "${lens.title}"`}
-              className="flex items-center gap-2 rounded-xl border border-surface-border bg-surface-raised px-2.5 py-2 cursor-grab active:cursor-grabbing select-none hover:border-status-blue/40 hover:bg-status-blue/5 transition-colors group"
+              className="flex items-center gap-2 rounded-xl border border-surface-border bg-surface-raised px-2.5 py-2 cursor-grab active:cursor-grabbing select-none hover:border-primary-yellow-500/40 hover:bg-primary-yellow-500/5 transition-colors group"
             >
               <GripVertical
                 size={12}

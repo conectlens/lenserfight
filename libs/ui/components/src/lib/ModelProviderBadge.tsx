@@ -9,7 +9,7 @@ export interface ModelProviderBadgeProps {
 
 // Provider accent colors (dot only — no full background to keep it compact)
 const providerDotColor: Record<string, string> = {
-  google: 'bg-status-blue',
+  google: 'bg-primary-yellow-500',
   anthropic: 'bg-[#D97706]', // amber
   openai: 'bg-status-green',
   mistral: 'bg-status-purple',

@@ -17,7 +17,7 @@ const solidClasses: Record<BadgeColor, string> = {
   yellow: 'bg-primary-yellow-500/20 text-primary-yellow-800 dark:bg-primary-yellow-500/15 dark:text-primary-yellow-400',
   green: 'bg-status-green/15 text-status-green dark:bg-status-green/10',
   red: 'bg-status-red/15 text-status-red dark:bg-status-red/10',
-  blue: 'bg-status-blue/15 text-status-blue dark:bg-status-blue/10',
+  blue: 'bg-primary-yellow-500/15 text-primary-yellow-600 dark:bg-primary-yellow-500/10',
   purple: 'bg-status-purple/15 text-status-purple dark:bg-status-purple/10',
 }
 
@@ -26,7 +26,7 @@ const outlineClasses: Record<BadgeColor, string> = {
   yellow: 'border border-primary-yellow-500/50 text-primary-yellow-700 dark:border-primary-yellow-500/40 dark:text-primary-yellow-400',
   green: 'border border-status-green/50 text-status-green',
   red: 'border border-status-red/50 text-status-red',
-  blue: 'border border-status-blue/50 text-status-blue',
+  blue: 'border border-primary-yellow-500/50 text-primary-yellow-600',
   purple: 'border border-status-purple/50 text-status-purple',
 }
 

@@ -382,7 +382,7 @@ export const LensDetailPage: React.FC = () => {
                 onClick={() => cloneLens(previewVersionId ?? null)}
                 disabled={isCloning}
                 title={previewVersionId ? 'Clone this version as a new lens' : 'Clone latest version as a new lens'}
-                className="flex items-center gap-1.5 rounded-2xl border border-surface-border bg-surface-base px-3 py-2 text-xs font-medium text-greyscale-600 shadow-sm transition-colors hover:border-status-blue hover:text-greyscale-900 disabled:opacity-50 dark:text-greyscale-400 dark:hover:text-greyscale-50"
+                className="flex items-center gap-1.5 rounded-2xl border border-surface-border bg-surface-base px-3 py-2 text-xs font-medium text-greyscale-600 shadow-sm transition-colors hover:border-primary-yellow-500 hover:text-greyscale-900 disabled:opacity-50 dark:text-greyscale-400 dark:hover:text-greyscale-50"
               >
                 {isCloning ? <Loader2 size={13} className="animate-spin" /> : <GitFork size={13} />}
                 <span>{previewVersionId ? 'Clone this version' : 'Clone'}</span>
@@ -394,8 +394,8 @@ export const LensDetailPage: React.FC = () => {
                 title={showVersionPicker ? 'Hide version history' : 'Show version history'}
                 className={`flex items-center gap-1.5 rounded-2xl border px-3 py-2 text-xs font-medium shadow-sm transition-colors ${
                   showVersionPicker
-                    ? 'border-status-blue bg-status-blue/10 text-status-blue'
-                    : 'border-surface-border bg-surface-base text-greyscale-600 hover:border-status-blue hover:text-greyscale-900 dark:text-greyscale-400 dark:hover:text-greyscale-50'
+                    ? 'border-primary-yellow-500 bg-primary-yellow-500/10 text-primary-yellow-600'
+                    : 'border-surface-border bg-surface-base text-greyscale-600 hover:border-primary-yellow-500 hover:text-greyscale-900 dark:text-greyscale-400 dark:hover:text-greyscale-50'
                 }`}
               >
                 <History size={13} />
@@ -450,7 +450,7 @@ export const LensDetailPage: React.FC = () => {
                           onClick={() => setPreviewVersionId(isSelected ? null : v.id)}
                           className={`flex w-full items-center gap-3 px-4 py-3 text-left transition-colors ${
                             isSelected
-                              ? 'bg-status-blue/10 text-status-blue'
+                              ? 'bg-primary-yellow-500/10 text-primary-yellow-600'
                               : 'bg-surface-base text-greyscale-700 hover:bg-surface-raised dark:text-greyscale-300'
                           }`}
                         >
@@ -489,9 +489,9 @@ export const LensDetailPage: React.FC = () => {
             <button
               type="button"
               onClick={() => setShowRunPanel((v) => !v)}
-              className="flex w-full items-center gap-3 rounded-2xl border border-surface-border bg-surface-base px-4 py-3 text-left transition-colors hover:border-status-blue"
+              className="flex w-full items-center gap-3 rounded-2xl border border-surface-border bg-surface-base px-4 py-3 text-left transition-colors hover:border-primary-yellow-500"
             >
-              <Play size={15} className="flex-shrink-0 text-status-blue" />
+              <Play size={15} className="flex-shrink-0 text-primary-yellow-600" />
               <span className="flex-1 text-sm font-semibold text-greyscale-900 dark:text-greyscale-50">Run Lens</span>
               {showRunPanel ? (
                 <ChevronUp size={15} className="text-greyscale-400" />

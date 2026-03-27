@@ -23,7 +23,7 @@ export function WorkflowCanvasNode({ id, data, selected }: NodeProps) {
       onDoubleClick={() => { if (onEdit && lens_id) onEdit(lens_id) }}
       className={`relative flex items-center gap-2.5 min-w-[160px] max-w-[220px] rounded-2xl border bg-surface-raised px-3 py-2.5 shadow-neu-1 transition-colors ${
         selected
-          ? 'border-status-blue ring-2 ring-status-blue/20'
+          ? 'border-primary-yellow-500 ring-2 ring-primary-yellow-500/20'
           : 'border-surface-border hover:border-greyscale-300 dark:hover:border-greyscale-600'
       } ${!isPersisted ? 'border-dashed opacity-80' : ''}`}
     >
@@ -31,7 +31,7 @@ export function WorkflowCanvasNode({ id, data, selected }: NodeProps) {
       <Handle
         type="target"
         position={Position.Left}
-        className="!w-3 !h-3 !rounded-full !bg-greyscale-300 !border-2 !border-surface-base hover:!bg-status-blue transition-colors dark:!border-surface-raised"
+        className="!w-3 !h-3 !rounded-full !bg-greyscale-300 !border-2 !border-surface-base hover:!bg-primary-yellow-500 transition-colors dark:!border-surface-raised"
       />
 
       {/* Ordinal badge */}
@@ -54,7 +54,7 @@ export function WorkflowCanvasNode({ id, data, selected }: NodeProps) {
             e.stopPropagation()
             onEdit(lens_id)
           }}
-          className="!p-0 flex-shrink-0 !text-greyscale-300 hover:!text-status-blue !bg-transparent hover:!bg-transparent"
+          className="!p-0 flex-shrink-0 !text-greyscale-300 hover:!text-primary-yellow-600 !bg-transparent hover:!bg-transparent"
           title="Edit lens"
         >
           <Pencil size={11} />
@@ -82,7 +82,7 @@ export function WorkflowCanvasNode({ id, data, selected }: NodeProps) {
       <Handle
         type="source"
         position={Position.Right}
-        className="!w-3 !h-3 !rounded-full !bg-greyscale-300 !border-2 !border-surface-base hover:!bg-status-blue transition-colors dark:!border-surface-raised"
+        className="!w-3 !h-3 !rounded-full !bg-greyscale-300 !border-2 !border-surface-base hover:!bg-primary-yellow-500 transition-colors dark:!border-surface-raised"
       />
     </div>
   )

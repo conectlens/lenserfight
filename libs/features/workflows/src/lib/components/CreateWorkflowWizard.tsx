@@ -109,7 +109,7 @@ function LensPicker({ lenserId, selected, onToggle }: LensPickerProps) {
               onClick={() => setTab(t)}
               className={`!rounded-full !text-xs !font-semibold !px-3 !py-1 ${
                 effectiveTab === t
-                  ? '!bg-status-blue !text-white hover:!bg-status-blue'
+                  ? '!bg-primary-yellow-500 !text-white hover:!bg-primary-yellow-500'
                   : '!bg-surface-raised !text-greyscale-500 hover:!text-greyscale-900 dark:hover:!text-greyscale-50 hover:!bg-surface-raised'
               }`}
             >
@@ -146,14 +146,14 @@ function LensPicker({ lenserId, selected, onToggle }: LensPickerProps) {
                 onClick={() => onToggle(lens.id, lens.title)}
                 className={`!justify-start !gap-3 !rounded-xl !px-3 !py-2.5 text-left !font-normal !border ${
                   isSelected
-                    ? '!bg-status-blue/10 !border-status-blue/30 hover:!bg-status-blue/10'
+                    ? '!bg-primary-yellow-500/10 !border-primary-yellow-500/30 hover:!bg-primary-yellow-500/10'
                     : 'hover:!bg-surface-raised !border-transparent'
                 }`}
               >
                 <div
                   className={`flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-md border transition-colors ${
                     isSelected
-                      ? 'bg-status-blue border-status-blue'
+                      ? 'bg-primary-yellow-500 border-primary-yellow-500'
                       : 'border-greyscale-300 dark:border-greyscale-600'
                   }`}
                 >

@@ -41,5 +41,7 @@ export * from './lib/Accordion'
 export * from './lib/Skeleton'
 export * from './lib/Dropdown'
 export * from './lib/ErrorPage'
-export * from './lib/PageHeader'
+// PageHeader is owned by @lenserfight/ui/layout — re-exported here for backward compat.
+export { PageHeader } from '@lenserfight/ui/layout'
+export type { PageHeaderProps } from '@lenserfight/ui/layout'
 export * from './lib/EmptyState'
