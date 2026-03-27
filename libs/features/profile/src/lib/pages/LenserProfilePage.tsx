@@ -3,7 +3,7 @@ import React, { useEffect, useState, useRef, useCallback, useMemo } from 'react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { useParams, useNavigate, Outlet } from 'react-router-dom'
 
-import { Button } from '@lenserfight/ui/components'
+import { Button, EmptyState } from '@lenserfight/ui/components'
 import { ConfirmModal } from '@lenserfight/ui/modals'
 import { SEOHead } from '@lenserfight/ui/components'
 import { FEATURES } from '@lenserfight/utils/env'
@@ -419,23 +419,6 @@ export const LenserProfilePage: React.FC = () => {
     )
   }
 
-  const EmptyState = ({
-    icon: Icon,
-    message,
-    action,
-  }: {
-    icon: any
-    message: string
-    action?: React.ReactNode
-  }) => (
-    <div className="flex flex-col items-center justify-center py-20 text-center animate-in fade-in duration-500 bg-gray-50 dark:bg-gray-800/50 rounded-2xl border border-gray-100 dark:border-gray-700 border-dashed">
-      <div className="w-16 h-16 bg-white dark:bg-gray-700 rounded-full flex items-center justify-center mb-4 text-gray-300 dark:text-gray-500 shadow-sm border border-gray-100 dark:border-gray-600">
-        <Icon size={32} />
-      </div>
-      <p className="text-gray-500 dark:text-gray-400 font-medium mb-4">{message}</p>
-      {action}
-    </div>
-  )
 
   if (loadingProfile) {
     return (
@@ -542,13 +525,13 @@ export const LenserProfilePage: React.FC = () => {
               {items.length > 0 ? (
                 <LenserActionsList actions={items as ActivityFeedItem[]} />
               ) : (
-                !loadingTab && <EmptyState icon={Activity} message="No recent activity." />
+                !loadingTab && <EmptyState icon={Activity} title="No recent activity." />
               )}
             </>
           )}
 
           {activeTab === 'lenses' && !canViewContent && (
-            <EmptyState icon={FolderOpen} message="This content is not public." />
+            <EmptyState icon={FolderOpen} title="This content is not public." />
           )}
 
           {activeTab === 'lenses' && canViewContent && (
@@ -571,7 +554,7 @@ export const LenserProfilePage: React.FC = () => {
                 !loadingTab && (
                   <EmptyState
                     icon={FolderOpen}
-                    message="No prompts created yet."
+                    title="No prompts created yet."
                     action={
                       isOwner && (
                         <Button
@@ -589,7 +572,7 @@ export const LenserProfilePage: React.FC = () => {
           )}
 
           {activeTab === 'threads' && !canViewContent && (
-            <EmptyState icon={MessageSquare} message="This content is not public." />
+            <EmptyState icon={MessageSquare} title="This content is not public." />
           )}
 
           {activeTab === 'threads' && canViewContent && (
@@ -611,7 +594,7 @@ export const LenserProfilePage: React.FC = () => {
                 !loadingTab && (
                   <EmptyState
                     icon={MessageSquare}
-                    message="No threads posted yet."
+                    title="No threads posted yet."
                     action={
                       isOwner && (
                         <Button
@@ -629,7 +612,7 @@ export const LenserProfilePage: React.FC = () => {
           )}
 
           {activeTab === 'challenges' && (
-            <EmptyState icon={Trophy} message="No challenge history available." />
+            <EmptyState icon={Trophy} title="No challenge history available." />
           )}
 
           {activeTab === 'agents' && FEATURES.AGENTS && (
@@ -644,7 +627,7 @@ export const LenserProfilePage: React.FC = () => {
                 !loadingTab && (
                   <EmptyState
                     icon={Bot}
-                    message="No AI Agents yet."
+                    title="No AI Agents yet."
                     action={
                       isOwner && (
                         <Button

@@ -1,6 +1,6 @@
 import { useAuth } from '@lenserfight/features/auth'
 import { useLensesFeed } from '@lenserfight/features/home'
-import { Button } from '@lenserfight/ui/components'
+import { Button, PageHeader } from '@lenserfight/ui/components'
 import { SEOHead } from '@lenserfight/ui/components'
 import { buildAuthReturnUrl } from '@lenserfight/utils/dom'
 import { Plus } from 'lucide-react'
@@ -137,14 +137,11 @@ export const LensesPage: React.FC = () => {
       <SEOHead type="lenses-list" />
 
       {/* Page Header */}
-      <div className="mb-6 sm:mb-8 mt-2">
-        <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white mb-2">
-          Discover Lenses
-        </h1>
-        <p className="text-gray-600 dark:text-gray-400 text-base sm:text-lg">
-          Find, share, and remix the best AI lenses from the community.
-        </p>
-      </div>
+      <PageHeader
+        title="Discover Lenses"
+        description="Find, share, and remix the best AI lenses from the community."
+        className="mb-6 sm:mb-8 mt-2"
+      />
 
       {/* Controls Bar */}
       <div className="sticky top-[56px] z-20 bg-gray-50/95 dark:bg-gray-900/95 backdrop-blur py-3 border-b border-gray-100/50 dark:border-gray-800/50 transition-all mb-6 -mx-2 sm:-mx-4 lg:-mx-8 px-2 sm:px-4 lg:px-8">
