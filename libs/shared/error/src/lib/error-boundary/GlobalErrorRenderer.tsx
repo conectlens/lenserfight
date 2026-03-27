@@ -1,7 +1,10 @@
 import React from 'react'
 import { useError } from '../error-context/ErrorContext'
 import { UnauthorizedPage } from './UnauthorizedPage'
+import { ForbiddenPage } from './ForbiddenPage'
+import { NotFoundPage } from './NotFoundPage'
 import { NetworkErrorPage } from './NetworkErrorPage'
+import { ServerErrorPage } from './ServerErrorPage'
 
 interface GenericErrorPageProps {
   message: string
@@ -50,6 +53,19 @@ export const GlobalErrorRenderer: React.FC<{ children?: React.ReactNode }> = ({ 
   switch (error.kind) {
     case 'unauthorized':
       return <UnauthorizedPage onDismiss={clearError} />
+    case 'forbidden':
+      return <ForbiddenPage message={error.message} onDismiss={clearError} />
+    case 'not_found':
+      return <NotFoundPage onDismiss={clearError} />
+    case 'server_error':
+      return <ServerErrorPage message={error.message} onRetry={clearError} />
+    case 'rate_limit':
+      return (
+        <ServerErrorPage
+          message="Too many requests. Please wait a moment before trying again."
+          onRetry={clearError}
+        />
+      )
     case 'network':
       return <NetworkErrorPage onRetry={clearError} />
     default:
