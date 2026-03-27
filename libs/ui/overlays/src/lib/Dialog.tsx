@@ -79,7 +79,7 @@ export const Dialog: React.FC<DialogProps> = ({
     <DialogHeaderContext.Provider value={{ setHeader, clearHeader }}>
       <Portal>
         <div
-          className="fixed inset-0 z-modal flex items-center justify-center p-4"
+          className="fixed inset-0 z-[9999] flex items-center justify-center p-4"
           role="dialog"
           aria-modal="true"
           aria-labelledby={safeTitle ? 'dialog-title' : undefined}
@@ -107,7 +107,7 @@ export const Dialog: React.FC<DialogProps> = ({
               <div className="flex items-center gap-3 px-6 py-4 border-b border-surface-border flex-shrink-0">
                 {/* Icon badge */}
                 {activeIcon && (
-                  <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-xl bg-status-blue/10 text-status-blue">
+                  <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-xl bg-[color-mix(in_srgb,var(--cl-yellow-500)_12%,transparent)] text-[var(--cl-yellow-500)]">
                     {activeIcon}
                   </div>
                 )}
