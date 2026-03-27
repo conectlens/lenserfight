@@ -1,5 +1,5 @@
-import React, { useEffect, useContext } from 'react'
-import { DialogHeaderContext, ModalFooter } from '@lenserfight/ui/overlays'
+import React, { useEffect, useContext, useMemo } from 'react'
+import { DialogHeaderContext, DialogFooterContext, ModalFooter } from '@lenserfight/ui/overlays'
 
 import { StepIndicator } from './StepIndicator'
 
@@ -32,6 +32,13 @@ interface StepWizardProps {
   completeIcon?: React.ReactNode
   /** Optional skip button shown between Back and primary action (e.g. "Skip for now") */
   skipButton?: { label: string; onClick: () => void }
+  /**
+   * Per-step validity array. When provided, clicking a step bubble navigates to it
+   * only if all prior steps are valid. If a step is invalid, its inputs are highlighted.
+   */
+  stepValidity?: boolean[]
+  /** Called when user clicks a step bubble and navigation is allowed. */
+  onStepClick?: (step: number) => void
 }
 
 export const StepWizard: React.FC<StepWizardProps> = ({
@@ -49,6 +56,8 @@ export const StepWizard: React.FC<StepWizardProps> = ({
   completeLabel = 'Complete',
   completeIcon,
   skipButton,
+  stepValidity,
+  onStepClick,
 }) => {
   const isLastStep = currentStep === steps.length - 1
   const current = steps[currentStep]
@@ -60,49 +69,63 @@ export const StepWizard: React.FC<StepWizardProps> = ({
     return () => clearHeader()
   }, [current.title, current.description, current.icon, setHeader, clearHeader])
 
+  // Build footer node and hoist it into Dialog's sticky footer slot
+  const { setFooter, clearFooter } = useContext(DialogFooterContext)
+  const footerNode = useMemo(() => (
+    <ModalFooter
+      leftButton={{
+        label: currentStep === 0 && onCancel ? 'Cancel' : '← Back',
+        onClick: currentStep === 0 && onCancel ? onCancel : onBack,
+        disabled: !onCancel && currentStep === 0,
+        variant: 'ghost',
+      }}
+      rightButtons={
+        skipButton
+          ? [{ label: skipButton.label, onClick: skipButton.onClick, variant: 'ghost' }]
+          : undefined
+      }
+      primaryButton={
+        isLastStep
+          ? {
+              label: <>{completeIcon}{completeLabel}</>,
+              onClick: onComplete,
+              disabled: !canProceed || isCompleting,
+              isLoading: isCompleting,
+              className: 'px-6 sm:min-w-[140px]',
+            }
+          : {
+              label: `${nextLabel} →`,
+              onClick: onNext,
+              disabled: !canProceed || isNextLoading,
+              isLoading: isNextLoading,
+              className: 'px-6 sm:min-w-[140px]',
+            }
+      }
+    />
+  ), [currentStep, onCancel, onBack, skipButton, isLastStep, completeIcon, completeLabel,
+      onComplete, canProceed, isCompleting, nextLabel, onNext, isNextLoading])
+
+  useEffect(() => {
+    setFooter(footerNode)
+    return () => clearFooter()
+  }, [footerNode, setFooter, clearFooter])
+
   return (
     <div className="flex flex-col">
       {/* Step indicator — separated section */}
       <div className="pb-5">
-        <StepIndicator steps={steps} currentStep={currentStep} />
+        <StepIndicator
+          steps={steps}
+          currentStep={currentStep}
+          stepValidity={stepValidity}
+          onStepClick={onStepClick}
+        />
       </div>
 
       <div className="border-t border-surface-border" />
 
       {/* Step content */}
       <div className="py-5">{children}</div>
-
-      {/* Navigation footer */}
-      <ModalFooter
-        leftButton={{
-          label: currentStep === 0 && onCancel ? 'Cancel' : '← Back',
-          onClick: currentStep === 0 && onCancel ? onCancel : onBack,
-          disabled: !onCancel && currentStep === 0,
-          variant: 'ghost',
-        }}
-        rightButtons={
-          skipButton
-            ? [{ label: skipButton.label, onClick: skipButton.onClick, variant: 'ghost' }]
-            : undefined
-        }
-        primaryButton={
-          isLastStep
-            ? {
-                label: <>{completeIcon}{completeLabel}</>,
-                onClick: onComplete,
-                disabled: !canProceed || isCompleting,
-                isLoading: isCompleting,
-                className: 'px-6 sm:min-w-[140px]',
-              }
-            : {
-                label: `${nextLabel} →`,
-                onClick: onNext,
-                disabled: !canProceed || isNextLoading,
-                isLoading: isNextLoading,
-                className: 'px-6 sm:min-w-[140px]',
-              }
-        }
-      />
     </div>
   )
 }
