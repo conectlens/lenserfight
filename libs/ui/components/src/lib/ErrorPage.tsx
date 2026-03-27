@@ -26,7 +26,7 @@ const errorDefaults: Record<ErrorCode, ErrorMeta> = {
   401: {
     title: 'Authentication Required',
     description: 'You need to sign in to access this page.',
-    blobClass: 'bg-status-blue/10',
+    blobClass: 'bg-primary-yellow-500/10',
   },
   403: {
     title: 'Access Denied',

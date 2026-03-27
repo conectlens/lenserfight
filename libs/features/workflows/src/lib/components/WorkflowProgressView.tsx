@@ -13,14 +13,14 @@ interface WorkflowProgressViewProps {
 
 const STATUS_ICONS = {
   pending: <Clock size={14} className="text-greyscale-400" />,
-  running: <Loader size={14} className="text-status-blue animate-spin" />,
+  running: <Loader size={14} className="text-primary-yellow-600 animate-spin" />,
   completed: <CheckCircle size={14} className="text-status-green" />,
   failed: <XCircle size={14} className="text-status-red" />,
 }
 
 const STATUS_COLORS = {
   pending: 'border-surface-border bg-surface-base',
-  running: 'border-status-blue bg-status-blue/5',
+  running: 'border-primary-yellow-500 bg-primary-yellow-500/5',
   completed: 'border-status-green bg-status-green/5',
   failed: 'border-status-red bg-status-red/5',
 }
@@ -49,7 +49,7 @@ export function WorkflowProgressView({ nodes, nodeResults }: WorkflowProgressVie
           return (
             <motion.div
               key={node.id}
-              className={`relative rounded-2xl border p-4 transition-colors ${STATUS_COLORS[status]} ${isRunning ? 'ring-2 ring-status-blue/30 animate-pulse' : ''}`}
+              className={`relative rounded-2xl border p-4 transition-colors ${STATUS_COLORS[status]} ${isRunning ? 'ring-2 ring-primary-yellow-500/30 animate-pulse' : ''}`}
             >
               <div className="flex items-center gap-3">
                 <div className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-lg bg-surface-raised text-xs font-bold text-greyscale-500">

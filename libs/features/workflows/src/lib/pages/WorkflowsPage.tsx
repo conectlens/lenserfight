@@ -104,7 +104,7 @@ export function WorkflowsPage({ onCreateWorkflow, onOpenWorkflow }: WorkflowsPag
             onChange={(e) => setSearchInput(e.target.value)}
             onKeyDown={handleSearchKeyDown}
             onBlur={() => setParam('q', searchInput, '')}
-            className="w-full rounded-2xl border border-surface-border bg-surface-base pl-8 pr-3 py-2 text-sm text-greyscale-900 placeholder:text-greyscale-400 outline-none focus:border-status-blue dark:bg-surface-raised dark:text-greyscale-50"
+            className="w-full rounded-2xl border border-surface-border bg-surface-base pl-8 pr-3 py-2 text-sm text-greyscale-900 placeholder:text-greyscale-400 outline-none focus:border-primary-yellow-500 dark:bg-surface-raised dark:text-greyscale-50"
           />
         </div>
         <SelectField

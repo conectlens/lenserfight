@@ -39,9 +39,9 @@ const variantConfig: Record<
   info: {
     icon: Info,
     containerClass:
-      'bg-status-blue/10 border border-status-blue/20 dark:bg-status-blue/5 dark:border-status-blue/15',
-    iconClass: 'text-status-blue',
-    titleClass: 'text-status-blue',
+      'bg-primary-yellow-500/10 border border-primary-yellow-500/20 dark:bg-primary-yellow-500/5 dark:border-primary-yellow-500/15',
+    iconClass: 'text-primary-yellow-600',
+    titleClass: 'text-primary-yellow-600',
   },
 }
 

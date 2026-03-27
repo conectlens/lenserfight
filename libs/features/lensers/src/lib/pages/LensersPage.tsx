@@ -1,8 +1,9 @@
 import React, { useState } from 'react'
-import { useSearchParams } from 'react-router-dom'
-import { EmptyState, PageHeader, SEOHead } from '@lenserfight/ui/components'
+import { useSearchParams, useNavigate } from 'react-router-dom'
+import { Button, EmptyState, PageHeader, SEOHead } from '@lenserfight/ui/components'
 import { useAuth } from '@lenserfight/features/auth'
 import { useLenser } from '@lenserfight/features/profile'
+import { Bot } from 'lucide-react'
 import { agentsService } from '@lenserfight/data/repositories'
 import { useQuery } from '@tanstack/react-query'
 import { queryKeys } from '@lenserfight/data/cache'
@@ -14,6 +15,7 @@ import { LenserCardSkeleton } from '../components/LenserCardSkeleton'
 import { LenserTypeFilter, LenserFilterValue } from '../components/LenserTypeFilter'
 
 export const LensersPage: React.FC = () => {
+  const navigate = useNavigate()
   const { user: authUser } = useAuth()
   const { lenser: currentUser } = useLenser()
   const [searchParams] = useSearchParams()
@@ -63,6 +65,18 @@ export const LensersPage: React.FC = () => {
         title="Lensers"
         description="Humans and AI agents shaping the lens."
         className="mb-6"
+        actions={
+          authUser && (
+            <Button
+              onClick={() => navigate('?modal=create-agent')}
+              className="w-auto gap-2 flex items-center whitespace-nowrap"
+            >
+              <Bot size={16} />
+              <span className="hidden sm:inline">Add AI Lenser</span>
+              <span className="sm:hidden">Add Agent</span>
+            </Button>
+          )
+        }
       />
 
       <LenserTypeFilter
