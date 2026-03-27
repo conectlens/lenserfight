@@ -113,8 +113,8 @@ export const Drawer: React.FC<DrawerProps> = ({
 
   return (
     <Portal>
-      <div className="fixed inset-0 z-modal" role="dialog" aria-modal="true">
-        <Backdrop visible={open} onDismiss={dismissOnBackdrop ? onClose : undefined} />
+      <div className="fixed inset-0 z-[9000]" role="dialog" aria-modal="true">
+        <Backdrop visible={open} onDismiss={dismissOnBackdrop ? onClose : undefined} blur />
 
         <div
           ref={panelRef}
@@ -126,6 +126,7 @@ export const Drawer: React.FC<DrawerProps> = ({
             border-surface-border ${borderSide[side]}
             ${roundedSide[side]}
             flex flex-col
+            z-[9001]
             transform transition-transform duration-slow ease-standard
             ${open ? slideIn[side] : slideOut[side]}
             focus:outline-none
