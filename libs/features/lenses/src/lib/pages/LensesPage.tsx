@@ -138,7 +138,7 @@ export const LensesPage: React.FC = () => {
       <PageHeader
         title="Discover Lenses"
         description="Find, share, and remix the best AI lenses from the community."
-        className="mb-6 sm:mb-8 mt-2"
+        className="sm:mb-8 mt-2"
         actions={
           <Button
             onClick={handleCreateClick}

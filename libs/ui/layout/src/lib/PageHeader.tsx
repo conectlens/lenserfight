@@ -30,9 +30,9 @@ export const PageHeader: React.FC<PageHeaderProps> = ({
 }) => {
   const actionsNode = actions ?? action
   return (
-    <div className={`flex flex-col gap-1 ${className}`}>
+    <div className={`flex flex-col gap-1 mb-6 ${className}`}>
       {breadcrumb && <div className="mb-1">{breadcrumb}</div>}
-      <div className="flex items-start justify-between gap-4">
+      <div className="flex items-start justify-between gap-4 pt-1">
         <div className="flex-1 min-w-0">
           {typeof title === 'string' ? (
             <h1 className="text-2xl font-bold text-greyscale-900 dark:text-greyscale-50 truncate">
