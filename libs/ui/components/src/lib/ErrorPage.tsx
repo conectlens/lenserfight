@@ -14,6 +14,8 @@ export interface ErrorPageProps {
   primaryAction?: ErrorPageActionProps
   secondaryAction?: ErrorPageActionProps
   className?: string
+  /** Render inline inside a layout container instead of full-screen */
+  inline?: boolean
 }
 
 interface ErrorMeta {
@@ -68,6 +70,7 @@ export function ErrorPage({
   primaryAction,
   secondaryAction,
   className = '',
+  inline = false,
 }: ErrorPageProps) {
   const meta = errorDefaults[code]
   const resolvedTitle = title ?? meta.title
@@ -76,7 +79,7 @@ export function ErrorPage({
 
   return (
     <div
-      className={`relative flex min-h-screen flex-col items-center justify-center overflow-hidden bg-greyscale-25 px-6 py-20 dark:bg-primary-dark-700 ${className}`}
+      className={`relative flex flex-col items-center justify-center overflow-hidden bg-greyscale-25 px-6 dark:bg-primary-dark-700 ${inline ? 'w-full py-16' : 'min-h-screen py-20'} ${className}`}
     >
       {/* Decorative blob */}
       <div
