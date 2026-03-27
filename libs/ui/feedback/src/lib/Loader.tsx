@@ -90,12 +90,10 @@ export const Loader: React.FC<LoaderProps> = ({
   if (variant === 'card') {
     return (
       <div
-        className={`fixed inset-0 flex items-center justify-center bg-[rgba(11,15,25,0.72)] px-4 backdrop-blur-md ${className}`}
+        className={`fixed inset-0 flex items-center justify-center bg-white/95 backdrop-blur-md animate-in fade-in duration-300 dark:bg-gray-900/95 ${className}`}
         style={{ zIndex: 'var(--cl-z-overlay, 300)' as React.CSSProperties['zIndex'] }}
       >
-        <div className="flex min-w-72 flex-col items-center gap-3 rounded-3xl border border-white/10 bg-[rgba(17,23,35,0.92)] px-6 py-7 text-center text-white shadow-2xl">
-          {inner}
-        </div>
+        {inner}
       </div>
     )
   }
