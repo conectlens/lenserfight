@@ -96,7 +96,7 @@ export const Dialog: React.FC<DialogProps> = ({
             className={`
               relative z-10 w-full ${maxWidth}
               bg-surface-raised
-              rounded-2xl shadow-neu-3
+              rounded-2xl 
               border border-surface-border
               flex flex-col overflow-hidden
               max-h-[calc(100dvh-2rem)]
