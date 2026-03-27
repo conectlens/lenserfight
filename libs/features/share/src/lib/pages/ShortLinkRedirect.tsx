@@ -3,6 +3,8 @@ import React, { useEffect, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 
 import { shareService } from '@lenserfight/data/repositories'
+import { Button } from '@lenserfight/ui/components'
+import { resolveSafeRedirectTarget } from '@lenserfight/utils/dom'
 
 export const ShortLinkRedirect: React.FC = () => {
   const { shortId } = useParams<{ shortId: string }>()
@@ -15,19 +17,24 @@ export const ShortLinkRedirect: React.FC = () => {
       try {
         const result = await shareService.resolveAndLog(shortId)
         if (result) {
-          if (result.link.resource_type === 'external') {
-            // Force absolute redirect for external links
-            window.location.href = result.url
+          const safeTarget = resolveSafeRedirectTarget(result.url, {
+            allowedExternalHosts: (import.meta.env.VITE_ALLOWED_EXTERNAL_REDIRECT_HOSTS ?? '')
+              .split(',')
+              .map((host) => host.trim())
+              .filter(Boolean),
+          })
+
+          if (!safeTarget) {
+            setError('This link points to an unsafe destination.')
             return
           }
 
-          // Fix: ensure internal navigation uses the correct path (replacing /app with / if needed in data)
-          let targetUrl = result.url
-          if (targetUrl === '/app') targetUrl = '/'
-          if (targetUrl.startsWith('/app/')) targetUrl = targetUrl.replace('/app', '')
+          if (safeTarget.kind === 'external') {
+            window.location.assign(safeTarget.url)
+            return
+          }
 
-          // Internal navigation
-          navigate(targetUrl, { replace: true })
+          navigate(safeTarget.url, { replace: true })
         } else {
           setError('Link not found or expired.')
         }
@@ -41,15 +48,12 @@ export const ShortLinkRedirect: React.FC = () => {
 
   if (error) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center bg-gray-50 p-4">
+      <div className="min-h-screen flex flex-col items-center justify-center bg-gray-50 p-4 text-center">
         <h1 className="text-2xl font-bold text-gray-900 mb-2">Oops!</h1>
-        <p className="text-gray-600">{error}</p>
-        <button
-          onClick={() => navigate('/')}
-          className="mt-6 text-primary-700 font-medium hover:underline"
-        >
+        <p className="text-gray-600 max-w-md">{error}</p>
+        <Button onClick={() => navigate('/')} className="mt-6 w-auto">
           Go Home
-        </button>
+        </Button>
       </div>
     )
   }
