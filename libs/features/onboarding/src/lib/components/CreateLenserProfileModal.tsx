@@ -84,7 +84,9 @@ export const CreateLenserProfileModal: React.FC = () => {
   const hasLenser = !!lenser
   const onboardingStep = lenser?.onboarding_step ?? 0
   const hasCompletedOnboarding = onboardingStep >= 2
-  const isLoading = authLoading || lenserLoading
+  // Treat a disabled lenser query (non-authenticated) as not loading so the
+  // redirect effect below is not blocked when the session is expired/invalid.
+  const isLoading = authLoading || (isAuthenticated ? lenserLoading : false)
 
   const [searchParams] = useSearchParams()
   const returnTo =
@@ -94,13 +96,20 @@ export const CreateLenserProfileModal: React.FC = () => {
 
   // Security redirect: only authenticated users without a profile reach this
   useEffect(() => {
-    if (authLoading || lenserLoading) return
+    if (authLoading || (isAuthenticated ? lenserLoading : false)) return
     if (!isAuthenticated) {
       const authAppUrl = import.meta.env.VITE_AUTH_BASE_URL ?? 'https://auth.lenserfight.com'
       const returnUrl = encodeURIComponent(buildAuthReturnUrl(window.location.href))
       window.location.href = `${authAppUrl}/login?return_url=${returnUrl}`
     } else if (hasLenser && hasCompletedOnboarding) {
-      navigate(returnTo, { replace: true })
+      // returnTo may be an absolute URL (cross-app redirect) — React Router
+      // navigate() only handles same-origin paths, so use location.replace for
+      // anything that looks like an absolute URL.
+      if (returnTo.startsWith('http://') || returnTo.startsWith('https://')) {
+        window.location.replace(returnTo)
+      } else {
+        navigate(returnTo, { replace: true })
+      }
     }
   }, [authLoading, lenserLoading, isAuthenticated, hasLenser, hasCompletedOnboarding, navigate, returnTo])
 
