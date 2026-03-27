@@ -269,3 +269,28 @@ html.dark .generations-scroll::-webkit-scrollbar-track {
 html.dark .generations-scroll::-webkit-scrollbar-thumb {
   background: #4b5563;
 }
+/* ── ReactFlow dark theme overrides ──────────────────────────────────────── */
+html.dark .react-flow__background {
+  background-color: var(--cl-surface-base) \!important;
+}
+html.dark .react-flow__pane {
+  background-color: var(--cl-surface-base) \!important;
+}
+html.dark .react-flow__edge-path {
+  stroke: var(--cl-greyscale-500) \!important;
+}
+html.dark .react-flow__controls {
+  background: var(--cl-surface-raised) \!important;
+  border-color: var(--cl-surface-border) \!important;
+}
+html.dark .react-flow__controls-button {
+  background: var(--cl-surface-raised) \!important;
+  border-color: var(--cl-surface-border) \!important;
+  fill: var(--cl-greyscale-400) \!important;
+}
+html.dark .react-flow__minimap {
+  background: var(--cl-surface-raised) \!important;
+}
+html.dark .react-flow__background pattern circle {
+  fill: var(--cl-greyscale-600) \!important;
+}

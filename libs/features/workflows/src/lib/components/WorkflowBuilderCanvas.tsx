@@ -26,7 +26,10 @@ import type {
   UpsertNodeInput,
   UpsertEdgeInput,
 } from '@lenserfight/data/repositories'
+import { workflowsService } from '@lenserfight/data/repositories'
+import { queryKeys } from '@lenserfight/data/cache'
 import React, { useCallback, useEffect, useRef } from 'react'
+import { useQueryClient } from '@tanstack/react-query'
 
 import { useSaveWorkflow } from '../hooks/useSaveWorkflow'
 import type { WorkflowNodeData } from './WorkflowCanvasNode'
@@ -43,7 +46,8 @@ const edgeTypes: EdgeTypes = { workflowEdge: WorkflowCanvasEdge }
 
 function toFlowNode(
   record: WorkflowNodeRecord,
-  onRemove: (id: string) => void
+  onRemove: (id: string) => void,
+  onEdit?: (lensId: string) => void
 ): Node<WorkflowNodeData> {
   return {
     id: record.id,
@@ -55,8 +59,43 @@ function toFlowNode(
       isPersisted: true,
       lens_id: record.lens_id,
       onRemove,
+      onEdit,
     } as WorkflowNodeData & { lens_id: string },
   }
+}
+
+// ─── Tree layout helper ───────────────────────────────────────────────────────
+
+function computeTreeLayout(nodes: Node[], edges: Edge[]): Node[] {
+  const inDegree = new Map<string, number>()
+  const adjList = new Map<string, string[]>()
+  nodes.forEach((n) => { inDegree.set(n.id, 0); adjList.set(n.id, []) })
+  edges.forEach((e) => {
+    inDegree.set(e.target, (inDegree.get(e.target) ?? 0) + 1)
+    adjList.get(e.source)?.push(e.target)
+  })
+  const levels = new Map<string, number>()
+  const queue: string[] = []
+  nodes.forEach((n) => { if ((inDegree.get(n.id) ?? 0) === 0) queue.push(n.id) })
+  queue.forEach((id) => levels.set(id, 0))
+  let qi = 0
+  while (qi < queue.length) {
+    const id = queue[qi++]
+    for (const child of adjList.get(id) ?? []) {
+      const newLevel = (levels.get(id) ?? 0) + 1
+      if (!levels.has(child) || levels.get(child)! < newLevel) {
+        levels.set(child, newLevel)
+        queue.push(child)
+      }
+    }
+  }
+  const levelCounts = new Map<number, number>()
+  return nodes.map((n) => {
+    const level = levels.get(n.id) ?? 0
+    const pos = levelCounts.get(level) ?? 0
+    levelCounts.set(level, pos + 1)
+    return { ...n, position: { x: level * 280, y: pos * 130 } }
+  })
 }
 
 function toFlowEdge(
@@ -79,6 +118,7 @@ export interface WorkflowBuilderCanvasProps {
   nodes: WorkflowNodeRecord[]
   edges: WorkflowEdgeRecord[]
   readOnly?: boolean
+  onEditLens?: (lensId: string) => void
 }
 
 // ─── Public component — wraps inner in ReactFlowProvider ─────────────────────
@@ -98,9 +138,11 @@ function WorkflowBuilderCanvasInner({
   nodes: nodeRecords,
   edges: edgeRecords,
   readOnly = false,
+  onEditLens,
 }: WorkflowBuilderCanvasProps) {
   const { screenToFlowPosition } = useReactFlow()
   const { mutateAsync: saveWorkflow } = useSaveWorkflow()
+  const queryClient = useQueryClient()
   const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const flowNodesRef = useRef<Node<WorkflowNodeData>[]>([])
   const flowEdgesRef = useRef<Edge[]>([])
@@ -108,19 +150,34 @@ function WorkflowBuilderCanvasInner({
   // ── Remove handlers ──────────────────────────────────────────────────────
   const handleRemoveNode = useCallback((nodeId: string) => {
     setNodes((nds) => nds.filter((n) => n.id !== nodeId))
+    // Delete persisted nodes from DB immediately; temp nodes only need state removal
+    if (!nodeId.startsWith('tmp-')) {
+      workflowsService.deleteNode(nodeId).catch(() => null)
+      queryClient.setQueryData(
+        queryKeys.workflows.nodes(workflowId),
+        (old: WorkflowNodeRecord[] | undefined) => (old ?? []).filter((n) => n.id !== nodeId)
+      )
+    }
     scheduleSave()
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
+  }, [workflowId, queryClient])
 
   const handleRemoveEdge = useCallback((edgeId: string) => {
     setEdges((eds) => eds.filter((e) => e.id !== edgeId))
+    if (!edgeId.startsWith('tmp-edge-')) {
+      workflowsService.deleteEdge(edgeId).catch(() => null)
+      queryClient.setQueryData(
+        queryKeys.workflows.edges(workflowId),
+        (old: WorkflowEdgeRecord[] | undefined) => (old ?? []).filter((e) => e.id !== edgeId)
+      )
+    }
     scheduleSave()
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
+  }, [workflowId, queryClient])
 
   // ── Flow state ────────────────────────────────────────────────────────────
   const [flowNodes, setNodes, onNodesChange] = useNodesState(
-    nodeRecords.map((n) => toFlowNode(n, handleRemoveNode))
+    nodeRecords.map((n) => toFlowNode(n, handleRemoveNode, onEditLens))
   )
   const [flowEdges, setEdges, onEdgesChange] = useEdgesState(
     edgeRecords.map((e) => toFlowEdge(e, handleRemoveEdge))
@@ -128,8 +185,8 @@ function WorkflowBuilderCanvasInner({
 
   // Re-seed when DB records arrive (initial fetch)
   useEffect(() => {
-    setNodes(nodeRecords.map((n) => toFlowNode(n, handleRemoveNode)))
-  }, [nodeRecords, handleRemoveNode, setNodes])
+    setNodes(nodeRecords.map((n) => toFlowNode(n, handleRemoveNode, onEditLens)))
+  }, [nodeRecords, handleRemoveNode, onEditLens, setNodes])
 
   useEffect(() => {
     setEdges(edgeRecords.map((e) => toFlowEdge(e, handleRemoveEdge)))
@@ -190,9 +247,11 @@ function WorkflowBuilderCanvasInner({
         data: { sourceOutputKey: 'output', onRemove: handleRemoveEdge },
       } as Edge
       setEdges((eds) => addEdge(newEdge, eds))
+      // Auto-layout: apply tree layout after connecting
+      setNodes((nds) => computeTreeLayout(nds, [...flowEdgesRef.current, newEdge]))
       scheduleSave()
     },
-    [setEdges, scheduleSave, handleRemoveEdge]
+    [setEdges, setNodes, scheduleSave, handleRemoveEdge]
   )
 
   // ── Drag-and-drop from palette ────────────────────────────────────────────
@@ -219,12 +278,13 @@ function WorkflowBuilderCanvasInner({
           isPersisted: false,
           lens_id: lensData.lens_id,
           onRemove: handleRemoveNode,
+          onEdit: onEditLens,
         } as WorkflowNodeData & { lens_id: string },
       }
       setNodes((nds) => [...nds, newNode])
       scheduleSave()
     },
-    [screenToFlowPosition, flowNodes.length, setNodes, scheduleSave, handleRemoveNode]
+    [screenToFlowPosition, flowNodes.length, setNodes, scheduleSave, handleRemoveNode, onEditLens]
   )
 
   const onNodeDragStop = useCallback(() => scheduleSave(), [scheduleSave])
@@ -254,8 +314,8 @@ function WorkflowBuilderCanvasInner({
         variant={BackgroundVariant.Dots}
         gap={20}
         size={1}
-        color="var(--cl-greyscale-200, #e5e7eb)"
-        style={{ opacity: 0.5 }}
+        color="var(--cl-greyscale-300, #d1d5db)"
+        style={{ opacity: 0.6 }}
       />
       <Controls
         position="bottom-left"
@@ -263,8 +323,8 @@ function WorkflowBuilderCanvasInner({
       />
       <MiniMap
         position="bottom-right"
-        nodeColor="var(--cl-surface-raised, #f3f4f6)"
-        maskColor="rgba(0,0,0,0.05)"
+        nodeColor="var(--cl-surface-raised)"
+        maskColor="rgba(0,0,0,0.08)"
         className="!rounded-2xl !border !border-surface-border !overflow-hidden"
       />
     </ReactFlow>
