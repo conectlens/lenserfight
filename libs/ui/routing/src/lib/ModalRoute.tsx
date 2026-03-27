@@ -27,6 +27,11 @@ export interface ModalRouteProps {
    * Set to false for required flows like onboarding. Defaults to true.
    */
   dismissOnBackdrop?: boolean
+  /**
+   * Custom close handler. When provided, overrides the default `navigate(-1)` behavior.
+   * Use this when the modal has multi-step URL history that should be skipped on close.
+   */
+  onClose?: () => void
   /** Forwarded to Dialog header — truncated at 60 chars */
   title?: string
   /** Forwarded to Dialog header — clamped to 2 lines */
@@ -61,6 +66,7 @@ export const ModalRoute: React.FC<ModalRouteProps> = ({
   fallback = '/not-authorized',
   maxWidth = 'max-w-2xl',
   dismissOnBackdrop = true,
+  onClose,
   title,
   description,
   icon,
@@ -75,10 +81,12 @@ export const ModalRoute: React.FC<ModalRouteProps> = ({
     return <Navigate to={fallback} state={{ from: location }} replace />
   }
 
+  const handleClose = onClose ?? (() => navigate(-1))
+
   return (
     <Dialog
       open
-      onClose={dismissOnBackdrop ? () => navigate(-1) : undefined}
+      onClose={dismissOnBackdrop ? handleClose : undefined}
       maxWidth={maxWidth}
       title={title}
       description={description}

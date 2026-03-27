@@ -76,6 +76,7 @@ export const AgentManageWizard: React.FC<AgentManageWizardProps> = ({ agentId, h
       lensCount={agent.lens_count}
       runtimePref={agent.runtime_pref}
       suspendedReason={agent.suspended_reason}
+      agentUuid={agentId}
       statusBadge={
         <AgentStatusBadge isActive={agent.is_active} suspendedAt={agent.suspended_at} />
       }
