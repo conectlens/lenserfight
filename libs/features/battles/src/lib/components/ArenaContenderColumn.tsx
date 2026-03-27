@@ -50,7 +50,7 @@ export const ArenaContenderColumn: React.FC<ArenaContenderColumnProps> = ({
     !!contender
 
   return (
-    <div className="flex flex-col w-0 flex-1 min-w-0 border-r border-surface-border last:border-r-0">
+    <div className="flex flex-col w-full md:w-0 flex-1 min-w-0 min-h-[280px] md:min-h-0 border-b border-surface-border last:border-b-0 md:border-b-0 md:border-r md:last:border-r-0">
       {/* Header */}
       <div className="flex-shrink-0 h-12 flex items-center gap-2 px-4 border-b border-surface-border">
         <div className="h-7 w-7 rounded-full bg-surface-interactive flex items-center justify-center text-xs font-black text-surface-text-muted">

@@ -133,7 +133,7 @@ export const ImmersiveArenaView: React.FC<ImmersiveArenaViewProps> = ({ slug, cu
           <ArenaTopBar battle={battle} currentPhase={currentPhase} />
 
           {/* Contender columns + center zone */}
-          <div className="flex-1 flex overflow-hidden min-h-0">
+          <div className="flex-1 flex flex-col md:flex-row overflow-y-auto md:overflow-hidden">
             <ArenaContenderColumn
               slot="A"
               contender={contenderA}
