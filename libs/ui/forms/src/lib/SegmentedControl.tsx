@@ -1,4 +1,5 @@
 import React, { useId } from 'react'
+import { Button } from '@lenserfight/ui/components'
 
 export interface SegmentedOption<T extends string = string> {
   value: T
@@ -14,11 +15,6 @@ export interface SegmentedControlProps<T extends string = string> {
   fullWidth?: boolean
   className?: string
   'aria-label'?: string
-}
-
-const sizeClasses = {
-  sm: 'h-7 text-xs px-3',
-  md: 'h-9 text-sm px-4',
 }
 
 /**
@@ -57,7 +53,7 @@ export function SegmentedControl<T extends string = string>({
       {options.map((option) => {
         const isSelected = option.value === value
         return (
-          <button
+          <Button
             key={option.value}
             type="button"
             role="radio"
@@ -65,20 +61,22 @@ export function SegmentedControl<T extends string = string>({
             disabled={option.disabled}
             id={`${groupId}-${option.value}`}
             onClick={() => onChange(option.value)}
+            variant="ghost"
+            size={size}
             className={`
-              flex-1 flex items-center justify-center rounded-lg font-medium
+              flex-1 !font-medium !rounded-lg
               transition-all duration-normal ease-standard
-              focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-yellow-500/50
-              ${sizeClasses[size]}
+              focus:outline-none focus:ring-0
+              focus-visible:ring-2 focus-visible:ring-primary-yellow-500/50
               ${isSelected
-                ? 'bg-surface-raised shadow-neu-2 text-greyscale-900 dark:text-greyscale-50'
-                : 'text-greyscale-500 dark:text-greyscale-500 hover:text-greyscale-700 dark:hover:text-greyscale-300'
+                ? '!bg-surface-raised shadow-neu-2 !text-greyscale-900 dark:!text-greyscale-50'
+                : '!text-greyscale-500 dark:!text-greyscale-500 hover:!text-greyscale-700 dark:hover:!text-greyscale-300'
               }
-              ${option.disabled ? 'opacity-40 cursor-not-allowed' : 'cursor-pointer'}
+              ${size === 'sm' ? '!h-7 !text-xs !px-3 !py-0' : '!h-9 !text-sm !px-4 !py-0'}
             `}
           >
             {option.label}
-          </button>
+          </Button>
         )
       })}
     </div>
