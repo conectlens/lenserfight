@@ -1,6 +1,6 @@
+import { supabase } from '@lenserfight/data/supabase'
 import { MentionParser } from '@lenserfight/utils/text'
 
-import { lensesService } from './lensesService'
 import { tagService } from './tagService'
 
 export interface ResolvedSegment {
@@ -12,37 +12,80 @@ export interface ResolvedSegment {
   isValid?: boolean
 }
 
+interface BatchResolvedLens {
+  id: string
+  title: string
+  link: string
+}
+
+/**
+ * Batch-fetches lens titles for all Prompt/Lens mention IDs in a single RPC round-trip.
+ */
+async function batchResolveLenses(ids: string[]): Promise<Map<string, BatchResolvedLens>> {
+  if (ids.length === 0) return new Map()
+  try {
+    const { data, error } = await supabase.rpc('fn_resolve_mentions', { p_ids: ids })
+    if (error || !data) return new Map()
+    return new Map((data as BatchResolvedLens[]).map((row) => [row.id, row]))
+  } catch {
+    return new Map()
+  }
+}
+
 /**
  * Service responsible for hydrating mention tokens with actual entity data.
- * Adheres to High Cohesion by grouping resolution logic here.
+ * Uses a single batch RPC call (fn_resolve_mentions) for lens mentions instead
+ * of N+1 getLensDetail calls. Tags are resolved concurrently (lightweight).
+ *
+ * Note: MentionParser stores lenses as @[Prompt:UUID] tokens (entityType='Prompt').
+ * Both 'Prompt' and 'Lens' entity types are handled for forward compatibility.
  */
 export const mentionService = {
   resolveContent: async (rawContent: string): Promise<ResolvedSegment[]> => {
     const segments = MentionParser.parseSegments(rawContent)
+    if (segments.length === 0) return []
 
-    const resolutionPromises = segments.map(async (segment) => {
+    // Collect all lens mention IDs (Prompt = stored format, Lens = future/aliases)
+    const lensIds = segments
+      .filter((s) => s.type === 'mention' && (s.entityType === 'Prompt' || s.entityType === 'Lens'))
+      .map((s) => (s as { id: string }).id)
+
+    // Start both resolutions concurrently
+    const lensMapPromise = batchResolveLenses(lensIds)
+
+    // Resolve unique tag IDs concurrently
+    const uniqueTagIds = [...new Set(
+      segments.filter((s) => s.type === 'tag').map((s) => (s as { id: string }).id)
+    )]
+    const tagEntries = await Promise.all(
+      uniqueTagIds.map(async (id) => {
+        try {
+          const tag = await tagService.getTagDetailsById(id)
+          return [id, tag] as const
+        } catch {
+          return [id, null] as const
+        }
+      })
+    )
+    const tagMap = new Map(tagEntries)
+    const lensMap = await lensMapPromise
+
+    return segments.map((segment): ResolvedSegment => {
       if (segment.type === 'text') {
-        return {
-          type: 'text',
-          content: segment.content,
-        } as ResolvedSegment
+        return { type: 'text', content: segment.content }
       }
 
       if (segment.type === 'tag') {
-        try {
-          const tag = await tagService.getTagDetailsById(segment.id)
-          if (tag) {
-            return {
-              type: 'tag',
-              content: tag.name,
-              id: segment.id,
-              entityType: 'Tag',
-              link: `/ray/${tag.slug}`,
-              isValid: true,
-            } as ResolvedSegment
+        const tag = tagMap.get(segment.id)
+        if (tag) {
+          return {
+            type: 'tag',
+            content: tag.name,
+            id: segment.id,
+            entityType: 'Tag',
+            link: `/ray/${tag.slug}`,
+            isValid: true,
           }
-        } catch {
-          // fall through to fallback
         }
         return {
           type: 'tag',
@@ -50,52 +93,42 @@ export const mentionService = {
           id: segment.id,
           entityType: 'Tag',
           isValid: false,
-        } as ResolvedSegment
-      }
-
-      if (segment.type === 'mention') {
-        try {
-          switch (segment.entityType) {
-            case 'Lens': {
-              const prompt = await lensesService.getLensDetail(segment.id)
-              if (prompt) {
-                return {
-                  type: 'mention',
-                  content: prompt.title,
-                  id: segment.id,
-                  entityType: 'Lens',
-                  link: `/lenses/${segment.id}`,
-                  isValid: true,
-                } as ResolvedSegment
-              }
-              break
-            }
-            // Future cases...
-          }
-
-          // Fallback if entity not found
-          return {
-            type: 'mention',
-            content: `Unknown ${segment.entityType}`,
-            id: segment.id,
-            entityType: segment.entityType,
-            isValid: false,
-          } as ResolvedSegment
-        } catch (error) {
-          // Fallback on error (e.g. 404)
-          return {
-            type: 'mention',
-            content: `Unknown ${segment.entityType}`,
-            id: segment.id,
-            entityType: segment.entityType,
-            isValid: false,
-          } as ResolvedSegment
         }
       }
 
-      return { type: 'text', content: '' } as ResolvedSegment
-    })
+      if (segment.type === 'mention') {
+        if (segment.entityType === 'Prompt' || segment.entityType === 'Lens') {
+          const lens = lensMap.get(segment.id)
+          if (lens && lens.title) {
+            return {
+              type: 'mention',
+              content: lens.title,
+              id: segment.id,
+              entityType: 'Lens',
+              link: lens.link,
+              isValid: true,
+            }
+          }
+          return {
+            type: 'mention',
+            content: 'Unknown Lens',
+            id: segment.id,
+            entityType: 'Lens',
+            isValid: false,
+          }
+        }
 
-    return Promise.all(resolutionPromises)
+        // Future entity types (User, Thread)
+        return {
+          type: 'mention',
+          content: `Unknown ${segment.entityType}`,
+          id: segment.id,
+          entityType: segment.entityType,
+          isValid: false,
+        }
+      }
+
+      return { type: 'text', content: '' }
+    })
   },
 }

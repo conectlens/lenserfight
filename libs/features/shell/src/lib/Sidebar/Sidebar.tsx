@@ -28,8 +28,7 @@ import { Avatar } from '@lenserfight/ui/components'
 import { notificationService } from '@lenserfight/data/repositories'
 import { useAuth } from '@lenserfight/features/auth'
 import { FeedbackModal } from '@lenserfight/features/feedback'
-import { useLenser, useSidebarProfile, useHasLenserProfile } from '@lenserfight/features/profile'
-import { useAgents } from '@lenserfight/features/agents'
+import { useLenser, useSidebarProfile, useHasLenserProfile, useMyLensers, useSwitchLenser } from '@lenserfight/features/profile'
 import { FEATURES } from '@lenserfight/utils/env'
 import { useTheme } from '@lenserfight/ui/theme'
 import type { Theme } from '@lenserfight/ui/theme'
@@ -88,10 +87,9 @@ export const Sidebar: React.FC<SidebarProps> = ({
   // Use optimized hook for display data (XP, Level, Fresh Avatar)
   const { profile: compactProfile } = useSidebarProfile(authLenser?.handle)
 
-  // Owned AI agents — only fetched for human lensers
-  const { data: ownedAgents = [] } = useAgents(
-    authLenser?.type === 'human' ? authLenser.id : undefined
-  )
+  // All lenser profiles (human + owned AI agents) for workspace switcher
+  const { profiles } = useMyLensers()
+  const { switchLenser } = useSwitchLenser()
 
   // Fallback to authLenser if compact fetch hasn't populated yet to prevent empty state
   const displayProfile = compactProfile || authLenser
@@ -476,8 +474,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
                   </div>
                 )}
 
-                {/* Workspace switcher — visible when human lenser owns AI agents */}
-                {showLabels && FEATURES.AGENTS && ownedAgents.length > 0 && (
+                {/* Workspace switcher — visible when there are multiple profiles (human + AI) */}
+                {showLabels && FEATURES.AGENTS && profiles.length > 1 && (
                   <div className="relative flex-shrink-0">
                     <button
                       ref={switcherButtonRef}
@@ -506,43 +504,36 @@ export const Sidebar: React.FC<SidebarProps> = ({
                         <p className="px-3 pt-2 pb-1 text-[10px] font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500">
                           Switch workspace
                         </p>
-                        {/* Current identity */}
-                        <div className="flex items-center gap-2.5 px-3 py-2 bg-gray-50 dark:bg-gray-700/50">
-                          <Avatar src={displayProfile?.avatar_url} size="sm" className="!w-6 !h-6 flex-shrink-0" />
-                          <div className="flex-1 min-w-0">
-                            <p className="text-sm font-medium text-gray-900 dark:text-white truncate leading-tight">
-                              {displayProfile?.display_name}
-                            </p>
-                            <p className="text-[11px] text-gray-500 dark:text-gray-400 truncate leading-tight">
-                              @{displayProfile?.handle}
-                            </p>
-                          </div>
-                          <Check size={13} className="text-primary flex-shrink-0" />
-                        </div>
-                        {/* Owned AI Lensers */}
-                        {ownedAgents.slice(0, 5).map((agent) => (
+                        {/* All profiles: human first, then AI lensers */}
+                        {profiles.map((profile) => (
                           <button
-                            key={agent.id}
+                            key={profile.id}
                             role="option"
-                            aria-selected={false}
-                            className="w-full text-left flex items-center gap-2.5 px-3 py-2 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors"
+                            aria-selected={profile.is_active}
+                            className={`w-full text-left flex items-center gap-2.5 px-3 py-2 transition-colors ${profile.is_active ? 'bg-gray-50 dark:bg-gray-700/50' : 'hover:bg-gray-50 dark:hover:bg-gray-700/50'}`}
                             onClick={() => {
                               setIsSwitcherOpen(false)
-                              navigate(`/agents/${agent.id}`)
+                              switchLenser(profile.id)
+                              navigate(`/lenser/${profile.handle}`)
                             }}
                           >
-                            <Avatar src={agent.avatar_url} size="sm" className="!w-6 !h-6 flex-shrink-0" />
+                            <Avatar src={profile.avatar_url} size="sm" className="!w-6 !h-6 flex-shrink-0" />
                             <div className="flex-1 min-w-0">
                               <p className="text-sm font-medium text-gray-900 dark:text-white truncate leading-tight">
-                                {agent.display_name}
+                                {profile.display_name}
                               </p>
                               <p className="text-[11px] text-gray-500 dark:text-gray-400 truncate leading-tight">
-                                @{agent.handle}
+                                @{profile.handle}
                               </p>
                             </div>
-                            <span className="text-[9px] font-semibold uppercase tracking-wide text-gray-400 flex-shrink-0 bg-gray-100 dark:bg-gray-700 px-1 rounded">
-                              AI
-                            </span>
+                            {profile.type === 'ai' && (
+                              <span className="text-[9px] font-semibold uppercase tracking-wide text-gray-400 flex-shrink-0 bg-gray-100 dark:bg-gray-700 px-1 rounded">
+                                AI
+                              </span>
+                            )}
+                            {profile.is_active && (
+                              <Check size={13} className="text-primary flex-shrink-0" />
+                            )}
                           </button>
                         ))}
                       </div>

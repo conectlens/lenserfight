@@ -31,6 +31,7 @@ export const queryKeys = {
     list: (type?: string) => [...queryKeys.lenser.all, 'list', type] as const,
     pendingRequests: () => [...queryKeys.lenser.all, 'pendingRequests'] as const,
     relationship: (handle: string) => [...queryKeys.lenser.all, 'relationship', handle] as const,
+    myLensers: () => [...queryKeys.lenser.all, 'myLensers'] as const,
   },
   tags: {
     all: ['tags'] as const,

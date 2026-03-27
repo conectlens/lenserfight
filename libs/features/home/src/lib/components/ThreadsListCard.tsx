@@ -5,7 +5,6 @@ import { useNavigate } from 'react-router-dom'
 import { Avatar } from '@lenserfight/ui/components'
 import { Card } from '@lenserfight/ui/components'
 import { MentionRenderer } from '@lenserfight/ui/components'
-import { TagBadge } from '@lenserfight/ui/components'
 import { ThreadFeedItem } from '@lenserfight/types'
 import { timeAgo } from '@lenserfight/utils/date'
 
@@ -97,19 +96,6 @@ export const ThreadsListCard: React.FC<ThreadsListCardProps> = memo(
 
               <div className="text-gray-600 dark:text-gray-300 mb-4 line-clamp-3 leading-relaxed pointer-events-none break-words">
                 <MentionRenderer content={thread.content} simple={true} />
-              </div>
-
-              <div className="flex flex-wrap gap-2 mb-4">
-                {thread.tags.map((tag) => (
-                  <TagBadge
-                    key={tag.id}
-                    label={tag.name}
-                    onClick={(e) => {
-                      e.stopPropagation()
-                      navigate(`/ray/${tag.slug}`)
-                    }}
-                  />
-                ))}
               </div>
 
               <div className="flex items-center gap-6 pt-2 border-t border-gray-50 dark:border-gray-700">

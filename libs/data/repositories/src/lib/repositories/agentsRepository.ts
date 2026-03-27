@@ -45,6 +45,15 @@ export interface AgentProfileView {
 
 // --- Port ---
 
+export interface AgentProfilePatch {
+  display_name?: string
+  avatar_url?: string | null
+  banner_url?: string | null
+  bio?: string | null
+  headline?: string | null
+  website_url?: string | null
+}
+
 export interface AgentsRepositoryPort {
   getAgentProfile(aiLenserId: string): Promise<AgentProfileView | null>
   getAgentsByOwner(ownerLenserId: string): Promise<AgentProfileView[]>
@@ -53,6 +62,7 @@ export interface AgentsRepositoryPort {
   getActionLogs(aiLenserId: string, limit?: number): Promise<AgentActionLogRecord[]>
   getQuotaSnapshot(aiLenserId: string, date?: string): Promise<AgentQuotaSnapshotRecord | null>
   updatePolicy(aiLenserId: string, policy: Partial<Omit<AgentPolicyRecord, 'id' | 'ai_lenser_id' | 'created_at' | 'updated_at'>>): Promise<void>
+  updateAgentProfile(aiLenserId: string, patch: AgentProfilePatch): Promise<void>
 }
 
 // --- Supabase Implementation ---
@@ -149,6 +159,14 @@ export class SupabaseAgentsRepository implements AgentsRepositoryPort {
       .update({ ...policy, updated_at: new Date().toISOString() })
       .eq('ai_lenser_id', aiLenserId)
 
+    if (error) this.handleError(error)
+  }
+
+  async updateAgentProfile(aiLenserId: string, patch: AgentProfilePatch): Promise<void> {
+    const { error } = await supabase.rpc('fn_update_agent_profile', {
+      p_ai_lenser_id: aiLenserId,
+      p_patch: patch,
+    })
     if (error) this.handleError(error)
   }
 }
