@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState, useCallback } from 'react'
 import { Portal } from './Portal'
 import { Backdrop } from './Backdrop'
 import { DialogHeaderContext, type DialogHeaderSlot } from './DialogHeaderContext'
+import { DialogFooterContext } from './DialogFooterContext'
 
 export interface DialogProps {
   open: boolean
@@ -48,9 +49,12 @@ export const Dialog: React.FC<DialogProps> = ({
 }) => {
   // Children (e.g. StepWizard) can override the header slot via context
   const [headerSlot, setHeaderSlot] = useState<DialogHeaderSlot | null>(null)
+  const [footerSlot, setFooterSlot] = useState<React.ReactNode>(null)
 
   const setHeader = useCallback((slot: DialogHeaderSlot) => setHeaderSlot(slot), [])
   const clearHeader = useCallback(() => setHeaderSlot(null), [])
+  const setFooter = useCallback((node: React.ReactNode) => setFooterSlot(node), [])
+  const clearFooter = useCallback(() => setFooterSlot(null), [])
 
   // Merge: slot overrides props when present
   const activeTitle = headerSlot?.title ?? title
@@ -80,6 +84,7 @@ export const Dialog: React.FC<DialogProps> = ({
 
   return (
     <DialogHeaderContext.Provider value={{ setHeader, clearHeader }}>
+    <DialogFooterContext.Provider value={{ setFooter, clearFooter }}>
       <Portal>
         <div
           className="fixed inset-0 z-[9999] flex items-center justify-center p-4"
@@ -159,14 +164,15 @@ export const Dialog: React.FC<DialogProps> = ({
             </div>
 
             {/* Sticky footer — flex-shrink-0, never scrolls away */}
-            {footer && (
+            {(footerSlot ?? footer) && (
               <div className="flex-shrink-0 px-6 pb-5">
-                {footer}
+                {footerSlot ?? footer}
               </div>
             )}
           </div>
         </div>
       </Portal>
+    </DialogFooterContext.Provider>
     </DialogHeaderContext.Provider>
   )
 }
