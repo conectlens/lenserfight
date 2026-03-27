@@ -27,7 +27,7 @@ function SlotLensPicker({ slot, slotLabel, contenderId, battleId, onAssigned }: 
   const [assigned, setAssigned] = useState(false)
   const { mutateAsync: assignLens, isPending } = useAssignLens()
 
-  const slotColor = slot === 'A' ? 'bg-status-blue/15 text-status-blue' : 'bg-status-yellow/15 text-status-yellow'
+  const slotColor = slot === 'A' ? 'bg-primary-yellow-500/15 text-primary-yellow-600' : 'bg-status-yellow/15 text-status-yellow'
 
   const { data: searchResults = [] } = useQuery({
     queryKey: ['lens-search-for-battle', query],

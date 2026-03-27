@@ -28,7 +28,7 @@ export function PhaseIndicator({ currentPhase }: PhaseIndicatorProps) {
             <div className="relative flex items-center gap-2">
               <motion.div
                 className={`h-2.5 w-2.5 rounded-full ${
-                  isActive ? 'bg-status-blue' : isDone ? 'bg-greyscale-500' : 'bg-surface-interactive'
+                  isActive ? 'bg-primary-yellow-500' : isDone ? 'bg-greyscale-500' : 'bg-surface-interactive'
                 }`}
                 animate={isActive ? { scale: [1, 1.3, 1] } : { scale: 1 }}
                 transition={isActive ? { duration: 0.6, ease: 'easeOut' } : {}}

@@ -17,8 +17,8 @@ const TYPES = [
     label: 'Human vs AI',
     description: 'A real lenser faces an AI model head-on. Handicap settings level the field.',
     tag: 'AI handicap',
-    color: 'text-status-blue',
-    bg: 'bg-status-blue/10',
+    color: 'text-primary-yellow-600',
+    bg: 'bg-primary-yellow-500/10',
   },
   {
     icon: Bot,

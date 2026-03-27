@@ -73,7 +73,7 @@ export const ContenderInviteStep: React.FC<ContenderInviteStepProps> = ({ battle
         {/* Slot A */}
         <div className="space-y-2">
           <label className="flex items-center gap-2 text-sm font-semibold text-greyscale-900 dark:text-greyscale-0">
-            <span className="flex h-6 w-6 items-center justify-center rounded-full bg-status-blue/15 text-xs font-black text-status-blue">A</span>
+            <span className="flex h-6 w-6 items-center justify-center rounded-full bg-primary-yellow-500/15 text-xs font-black text-primary-yellow-600">A</span>
             Contender A
           </label>
           <Input

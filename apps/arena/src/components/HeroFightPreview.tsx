@@ -92,7 +92,7 @@ export function HeroFightPreview() {
                     </div>
                     <div className="h-1.5 w-full overflow-hidden rounded-full bg-surface-raised">
                       <motion.div
-                        className={`h-full rounded-full ${color === 'blue' ? 'bg-status-blue' : 'bg-primary-yellow-500'}`}
+                        className={`h-full rounded-full ${color === 'blue' ? 'bg-primary-yellow-500' : 'bg-primary-yellow-500'}`}
                         initial={{ width: 0 }}
                         animate={{ width: `${slot === 'A' ? VOTE_A : VOTE_B}%` }}
                         transition={{ duration: 0.8, ease: [0, 0, 0.2, 1] }}

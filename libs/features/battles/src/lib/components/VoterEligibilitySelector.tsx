@@ -49,7 +49,7 @@ export function VoterEligibilitySelector({ battleType, value, onChange }: VoterE
               className={`flex cursor-pointer items-start gap-3 rounded-2xl border p-4 transition-colors ${
                 isSelected
                   ? 'border-greyscale-900 bg-greyscale-50 dark:border-greyscale-0 dark:bg-greyscale-900'
-                  : 'border-surface-border bg-surface-base hover:border-status-blue'
+                  : 'border-surface-border bg-surface-base hover:border-primary-yellow-500'
               } ${locked ? 'cursor-default opacity-80' : ''}`}
             >
               <input

@@ -3,6 +3,8 @@ import React from 'react'
 export interface PageHeaderProps {
   title: React.ReactNode
   description?: React.ReactNode
+  /** Single action node — alias for `actions` for backward compat. */
+  action?: React.ReactNode
   actions?: React.ReactNode
   breadcrumb?: React.ReactNode
   className?: string
@@ -21,10 +23,12 @@ export interface PageHeaderProps {
 export const PageHeader: React.FC<PageHeaderProps> = ({
   title,
   description,
+  action,
   actions,
   breadcrumb,
   className = '',
 }) => {
+  const actionsNode = actions ?? action
   return (
     <div className={`flex flex-col gap-1 ${className}`}>
       {breadcrumb && <div className="mb-1">{breadcrumb}</div>}
@@ -43,9 +47,9 @@ export const PageHeader: React.FC<PageHeaderProps> = ({
             </p>
           )}
         </div>
-        {actions && (
+        {actionsNode && (
           <div className="flex-shrink-0 flex items-center gap-2">
-            {actions}
+            {actionsNode}
           </div>
         )}
       </div>

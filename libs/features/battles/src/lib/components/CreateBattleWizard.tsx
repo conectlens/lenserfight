@@ -288,13 +288,13 @@ export const CreateBattleWizard: React.FC<CreateBattleWizardProps> = ({ onSucces
                   onClick={() => setBattleFormat('workflow')}
                   className={`!flex-col !gap-3 !rounded-2xl !border-2 !p-6 text-center w-full !h-auto !font-normal !transition-colors ${
                     battleFormat === 'workflow'
-                      ? '!border-status-blue !bg-status-blue/5 hover:!bg-status-blue/5'
+                      ? '!border-primary-yellow-500 !bg-primary-yellow-500/5 hover:!bg-primary-yellow-500/5'
                       : '!border-surface-border hover:!border-greyscale-300 dark:hover:!border-greyscale-600 !bg-transparent hover:!bg-transparent'
                   }`}
                 >
                   <GitBranch
                     size={28}
-                    className={battleFormat === 'workflow' ? 'text-status-blue' : 'text-greyscale-400'}
+                    className={battleFormat === 'workflow' ? 'text-primary-yellow-600' : 'text-greyscale-400'}
                   />
                   <div>
                     <p className="font-semibold text-sm text-greyscale-900 dark:text-greyscale-50">
@@ -312,13 +312,13 @@ export const CreateBattleWizard: React.FC<CreateBattleWizardProps> = ({ onSucces
                   onClick={() => setBattleFormat('lens')}
                   className={`!flex-col !gap-3 !rounded-2xl !border-2 !p-6 text-center w-full !h-auto !font-normal !transition-colors ${
                     battleFormat === 'lens'
-                      ? '!border-status-blue !bg-status-blue/5 hover:!bg-status-blue/5'
+                      ? '!border-primary-yellow-500 !bg-primary-yellow-500/5 hover:!bg-primary-yellow-500/5'
                       : '!border-surface-border hover:!border-greyscale-300 dark:hover:!border-greyscale-600 !bg-transparent hover:!bg-transparent'
                   }`}
                 >
                   <Layers
                     size={28}
-                    className={battleFormat === 'lens' ? 'text-status-blue' : 'text-greyscale-400'}
+                    className={battleFormat === 'lens' ? 'text-primary-yellow-600' : 'text-greyscale-400'}
                   />
                   <div>
                     <p className="font-semibold text-sm text-greyscale-900 dark:text-greyscale-50">
@@ -351,13 +351,13 @@ export const CreateBattleWizard: React.FC<CreateBattleWizardProps> = ({ onSucces
                     onClick={() => { setSelectedWorkflowId(wf.id); setSelectedWorkflowTitle(wf.title) }}
                     className={`!justify-start !gap-3 !rounded-2xl !border-2 !px-4 !py-3 w-full !font-normal text-left !transition-colors ${
                       selectedWorkflowId === wf.id
-                        ? '!border-status-blue !bg-status-blue/5 hover:!bg-status-blue/5'
+                        ? '!border-primary-yellow-500 !bg-primary-yellow-500/5 hover:!bg-primary-yellow-500/5'
                         : '!border-surface-border hover:!border-greyscale-300 dark:hover:!border-greyscale-600 !bg-transparent hover:!bg-transparent'
                     }`}
                   >
                     <GitBranch
                       size={16}
-                      className={selectedWorkflowId === wf.id ? 'text-status-blue flex-shrink-0' : 'text-greyscale-400 flex-shrink-0'}
+                      className={selectedWorkflowId === wf.id ? 'text-primary-yellow-600 flex-shrink-0' : 'text-greyscale-400 flex-shrink-0'}
                     />
                     <div className="flex-1 min-w-0">
                       <p className="truncate text-sm font-semibold text-greyscale-900 dark:text-greyscale-50">
@@ -391,13 +391,13 @@ export const CreateBattleWizard: React.FC<CreateBattleWizardProps> = ({ onSucces
                     onClick={() => { setSelectedLensId(lens.id); setSelectedLensTitle(lens.title) }}
                     className={`!justify-start !gap-3 !rounded-2xl !border-2 !px-4 !py-3 w-full !font-normal text-left !transition-colors ${
                       selectedLensId === lens.id
-                        ? '!border-status-blue !bg-status-blue/5 hover:!bg-status-blue/5'
+                        ? '!border-primary-yellow-500 !bg-primary-yellow-500/5 hover:!bg-primary-yellow-500/5'
                         : '!border-surface-border hover:!border-greyscale-300 dark:hover:!border-greyscale-600 !bg-transparent hover:!bg-transparent'
                     }`}
                   >
                     <Layers
                       size={16}
-                      className={selectedLensId === lens.id ? 'text-status-blue flex-shrink-0' : 'text-greyscale-400 flex-shrink-0'}
+                      className={selectedLensId === lens.id ? 'text-primary-yellow-600 flex-shrink-0' : 'text-greyscale-400 flex-shrink-0'}
                     />
                     <div className="flex-1 min-w-0">
                       <p className="truncate text-sm font-semibold text-greyscale-900 dark:text-greyscale-50">

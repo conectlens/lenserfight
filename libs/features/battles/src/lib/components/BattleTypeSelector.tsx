@@ -87,7 +87,7 @@ export function BattleTypeSelector({ value, onChange }: BattleTypeSelectorProps)
               className={`rounded-2xl border p-4 text-left transition-colors ${
                 isSelected
                   ? 'border-greyscale-900 bg-greyscale-900 text-greyscale-0 dark:border-greyscale-0 dark:bg-greyscale-0 dark:text-greyscale-900'
-                  : 'border-surface-border bg-surface-base hover:border-status-blue'
+                  : 'border-surface-border bg-surface-base hover:border-primary-yellow-500'
               }`}
               aria-pressed={isSelected}
             >
@@ -103,7 +103,7 @@ export function BattleTypeSelector({ value, onChange }: BattleTypeSelectorProps)
                 {t.description}
               </p>
               <p className={`mt-2 text-xs font-semibold ${
-                isSelected ? 'opacity-60' : 'text-status-blue'
+                isSelected ? 'opacity-60' : 'text-primary-yellow-600'
               }`}>
                 {t.defaultEligibility}
               </p>

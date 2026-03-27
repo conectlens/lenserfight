@@ -6,7 +6,7 @@ import type { Battle, BattleUIPhase } from '../types/battle.types'
 const PHASE_LABELS: Record<BattleUIPhase, { label: string; color: string }> = {
   idle:    { label: 'Open', color: 'bg-status-green/10 text-status-green' },
   running: { label: 'Scoring', color: 'bg-status-yellow/10 text-status-yellow' },
-  voting:  { label: 'Voting', color: 'bg-status-blue/10 text-status-blue' },
+  voting:  { label: 'Voting', color: 'bg-primary-yellow-500/10 text-primary-yellow-600' },
   result:  { label: 'Finished', color: 'bg-surface-overlay text-surface-text-muted' },
 }
 

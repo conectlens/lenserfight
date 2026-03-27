@@ -28,7 +28,7 @@ export const WaitlistForm: React.FC<WaitlistFormProps> = ({ className = '' }) =>
         value={email}
         onChange={(e) => setEmail(e.target.value)}
         placeholder="Enter your email"
-        className="h-11 flex-1 rounded-full border border-surface-border bg-surface-base px-4 text-sm text-greyscale-900 placeholder-greyscale-400 outline-none transition-colors focus:border-status-blue dark:bg-greyscale-900 dark:text-greyscale-0 dark:placeholder-greyscale-500"
+        className="h-11 flex-1 rounded-full border border-surface-border bg-surface-base px-4 text-sm text-greyscale-900 placeholder-greyscale-400 outline-none transition-colors focus:border-primary-yellow-500 dark:bg-greyscale-900 dark:text-greyscale-0 dark:placeholder-greyscale-500"
       />
       <button
         type="submit"

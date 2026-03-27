@@ -144,7 +144,7 @@ export function VotePanel({ contenderA, contenderB, existingVote, onVote, disabl
             transition={selected === val ? { duration: 0.25 } : {}}
             className={`rounded-2xl border px-3 py-3 text-sm font-semibold transition-colors ${selected === val
                 ? 'border-surface-text bg-surface-text text-surface-base'
-                : 'border-surface-border bg-surface-base text-surface-text-muted hover:border-status-blue'
+                : 'border-surface-border bg-surface-base text-surface-text-muted hover:border-primary-yellow-500'
               }`}
             aria-pressed={selected === val}
           >
