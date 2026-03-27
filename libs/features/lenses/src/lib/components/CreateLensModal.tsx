@@ -3,9 +3,8 @@ import React, { useMemo, useRef, useCallback, useEffect } from 'react'
 
 import { LensVersionHistoryButton } from './LensVersionHistoryButton'
 
-import { Button } from '@lenserfight/ui/components'
 import { FormError } from '@lenserfight/ui/components'
-import { Modal } from '@lenserfight/ui/modals'
+import { Dialog, ModalFooter } from '@lenserfight/ui/overlays'
 import { SelectField, LensContentEditor, type LensContentEditorHandle } from '@lenserfight/ui/forms'
 import { useFormValidation } from '@lenserfight/utils/validation'
 import { CreateVersionParamInput, VisibilityEnum } from '@lenserfight/types'
@@ -101,7 +100,7 @@ export const CreateLensModal: React.FC<CreateLensModalProps> = ({
   ]
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title={isEditMode ? 'Edit Lens' : 'Create Lens'} fullWidth>
+    <Dialog open={isOpen} onClose={onClose} title={isEditMode ? 'Edit Lens' : 'Create Lens'} maxWidth="max-w-full">
       <form onSubmit={handleSubmit} className="space-y-6" noValidate>
         <div className="space-y-2">
           <label className="text-sm font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
@@ -169,26 +168,11 @@ export const CreateLensModal: React.FC<CreateLensModalProps> = ({
           </div>
         )}
 
-        <div className="flex gap-3 pt-4 justify-end">
-          <Button
-            type="button"
-            variant="secondary"
-            onClick={onClose}
-            disabled={isSubmitting}
-            className="bg-gray-100 dark:bg-gray-700 border-transparent hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-200 w-auto px-6"
-          >
-            Cancel
-          </Button>
-          <Button
-            type="submit"
-            variant="primary"
-            isLoading={isSubmitting}
-            className="w-auto px-6 shadow-md"
-          >
-            {isEditMode ? 'Update Lens' : 'Save Lens'}
-          </Button>
-        </div>
+        <ModalFooter
+          leftButton={{ label: 'Cancel', onClick: onClose, disabled: isSubmitting, variant: 'secondary' }}
+          primaryButton={{ label: isEditMode ? 'Update Lens' : 'Save Lens', type: 'submit', isLoading: isSubmitting, className: 'px-6' }}
+        />
       </form>
-    </Modal>
+    </Dialog>
   )
 }

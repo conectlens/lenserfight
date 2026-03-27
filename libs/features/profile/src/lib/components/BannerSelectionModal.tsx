@@ -1,8 +1,7 @@
 import { Trash2 } from 'lucide-react'
 import React, { useState, useEffect } from 'react'
 
-import { Button } from '@lenserfight/ui/components'
-import { Modal } from '@lenserfight/ui/modals'
+import { Dialog, ModalFooter } from '@lenserfight/ui/overlays'
 
 interface BannerSelectionModalProps {
   isOpen: boolean
@@ -57,69 +56,52 @@ export const BannerSelectionModal: React.FC<BannerSelectionModalProps> = ({
   }
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title="Choose a Header Image">
-      <div className="max-h-[60vh] overflow-y-auto pr-2 -mr-2">
-        <div className="grid grid-cols-2 gap-4 mb-6">
-          {PRESETS.map((url) => (
-            <button
-              key={url}
-              onClick={() => setSelected(url)}
-              className={`
-                        relative aspect-video rounded-xl overflow-hidden border-2 transition-all w-full
-                        ${selected === url ? 'border-primary ring-2 ring-primary/30' : 'border-transparent hover:border-gray-200 dark:hover:border-gray-700'}
-                    `}
-            >
-              <img
-                src={url}
-                alt="Banner option"
-                className="w-full h-full object-cover bg-gray-100 dark:bg-gray-800"
-                loading="lazy"
-              />
-              {selected === url && (
-                <div className="absolute inset-0 bg-primary/10 flex items-center justify-center">
-                  <div className="bg-white rounded-full p-1 shadow-sm">
-                    <svg
-                      className="w-4 h-4 text-primary"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                      stroke="currentColor"
-                      strokeWidth={3}
-                    >
-                      <path d="M5 13l4 4L19 7" />
-                    </svg>
-                  </div>
-                </div>
-              )}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      <div className="flex flex-col sm:flex-row justify-between items-center gap-3 mt-4 pt-4 border-t border-gray-100 dark:border-gray-700">
-        <Button
-          type="button"
-          variant="danger"
-          onClick={handleRemove}
-          title="Remove Banner"
-          className="flex items-center gap-2 w-full sm:w-auto justify-center sm:justify-start"
-        >
-          <Trash2 size={16} /> Remove
-        </Button>
-
-        <div className="flex gap-2 w-full sm:w-auto">
-          <Button
-            variant="secondary"
-            onClick={onClose}
-            disabled={isLoading}
-            className="flex-1 sm:w-auto px-4 dark:bg-gray-700 dark:text-white dark:border-gray-600 dark:hover:bg-gray-600"
+    <Dialog
+      open={isOpen}
+      onClose={onClose}
+      title="Choose a Header Image"
+      footer={
+        <ModalFooter
+          leftButton={{ label: <><Trash2 size={16} /> Remove</>, onClick: handleRemove, variant: 'danger' }}
+          rightButtons={[{ label: 'Cancel', onClick: onClose, disabled: isLoading, variant: 'secondary' }]}
+          primaryButton={{ label: 'Save', onClick: handleConfirm, isLoading }}
+        />
+      }
+    >
+      <div className="grid grid-cols-2 gap-4">
+        {PRESETS.map((url) => (
+          <button
+            key={url}
+            onClick={() => setSelected(url)}
+            className={`
+                      relative aspect-video rounded-xl overflow-hidden border-2 transition-all w-full
+                      ${selected === url ? 'border-primary ring-2 ring-primary/30' : 'border-transparent hover:border-gray-200 dark:hover:border-gray-700'}
+                  `}
           >
-            Cancel
-          </Button>
-          <Button onClick={handleConfirm} isLoading={isLoading} className="flex-1 sm:w-auto px-6">
-            Save
-          </Button>
-        </div>
+            <img
+              src={url}
+              alt="Banner option"
+              className="w-full h-full object-cover bg-gray-100 dark:bg-gray-800"
+              loading="lazy"
+            />
+            {selected === url && (
+              <div className="absolute inset-0 bg-primary/10 flex items-center justify-center">
+                <div className="bg-white rounded-full p-1 shadow-sm">
+                  <svg
+                    className="w-4 h-4 text-primary"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                    strokeWidth={3}
+                  >
+                    <path d="M5 13l4 4L19 7" />
+                  </svg>
+                </div>
+              </div>
+            )}
+          </button>
+        ))}
       </div>
-    </Modal>
+    </Dialog>
   )
 }

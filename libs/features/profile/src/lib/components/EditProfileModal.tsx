@@ -2,7 +2,7 @@ import { Plus, Trash2, Github, Linkedin, Facebook, Instagram, Twitter, Youtube }
 import React, { useState, useEffect, useRef } from 'react'
 
 import { Button } from '@lenserfight/ui/components'
-import { Modal } from '@lenserfight/ui/modals'
+import { Dialog, ModalFooter } from '@lenserfight/ui/overlays'
 import { SelectField } from '@lenserfight/ui/forms'
 import { socialLinksService } from '@lenserfight/data/repositories'
 import { Lenser, SocialLink, SocialPlatform } from '@lenserfight/types'
@@ -208,7 +208,7 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({
   }
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title="Edit Profile">
+    <Dialog open={isOpen} onClose={onClose} title="Edit Profile" maxWidth="max-w-2xl">
       <form onSubmit={handleSubmit} className="space-y-5">
         <div className="space-y-4">
           <InputField
@@ -336,26 +336,11 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({
           )}
         </div>
 
-        <div className="flex justify-end gap-3 pt-6 border-t border-gray-100 dark:border-gray-700">
-          <Button
-            type="button"
-            variant="secondary"
-            onClick={onClose}
-            disabled={isLoading || isSubmitting || loadingLinks}
-            className="w-auto px-6 dark:bg-gray-700 dark:text-white dark:border-gray-600 dark:hover:bg-gray-600"
-          >
-            Cancel
-          </Button>
-          <Button
-            type="submit"
-            isLoading={isLoading || isSubmitting}
-            disabled={isLoading || isSubmitting || loadingLinks}
-            className="w-auto px-6 shadow-md"
-          >
-            Save Changes
-          </Button>
-        </div>
+        <ModalFooter
+          leftButton={{ label: 'Cancel', onClick: onClose, disabled: isLoading || isSubmitting || loadingLinks, variant: 'secondary' }}
+          primaryButton={{ label: 'Save Changes', type: 'submit', isLoading: isLoading || isSubmitting, disabled: isLoading || isSubmitting || loadingLinks, className: 'px-6' }}
+        />
       </form>
-    </Modal>
+    </Dialog>
   )
 }
