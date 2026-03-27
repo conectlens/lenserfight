@@ -314,7 +314,7 @@ function WorkflowBuilderCanvasInner({
         variant={BackgroundVariant.Dots}
         gap={20}
         size={1}
-        color="var(--cl-greyscale-300, #d1d5db)"
+        color="var(--cl-greyscale-300)"
         style={{ opacity: 0.6 }}
       />
       <Controls
@@ -324,7 +324,7 @@ function WorkflowBuilderCanvasInner({
       <MiniMap
         position="bottom-right"
         nodeColor="var(--cl-surface-raised)"
-        maskColor="rgba(0,0,0,0.08)"
+        maskColor="color-mix(in srgb, black 8%, transparent)"
         className="!rounded-2xl !border !border-surface-border !overflow-hidden"
       />
     </ReactFlow>

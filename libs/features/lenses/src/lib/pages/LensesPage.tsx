@@ -133,7 +133,7 @@ export const LensesPage: React.FC = () => {
   }
 
   return (
-    <div className="max-w-7xl mx-auto pb-12 px-2 sm:px-4 lg:px-8">
+    <div className="">
       <SEOHead type="lenses-list" />
 
       {/* Page Header */}

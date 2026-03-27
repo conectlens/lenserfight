@@ -1,5 +1,6 @@
 import { BaseEdge, EdgeLabelRenderer, getBezierPath } from '@xyflow/react'
 import type { EdgeProps } from '@xyflow/react'
+import { Button } from '@lenserfight/ui/components'
 import { X } from 'lucide-react'
 import React from 'react'
 
@@ -37,7 +38,7 @@ export function WorkflowCanvasEdge({
       <BaseEdge
         path={edgePath}
         style={{
-          stroke: selected ? 'var(--cl-status-blue, #287bff)' : 'var(--cl-greyscale-300, #d1d5db)',
+          stroke: selected ? 'var(--cl-status-blue)' : 'var(--cl-greyscale-300)',
           strokeWidth: selected ? 2 : 1.5,
           transition: 'stroke 0.15s, stroke-width 0.15s',
         }}
@@ -62,14 +63,16 @@ export function WorkflowCanvasEdge({
 
           {/* Delete button */}
           {onRemove && (
-            <button
+            <Button
               type="button"
+              variant="ghost"
+              size="sm"
               onClick={() => onRemove(id)}
-              className="flex h-4 w-4 items-center justify-center rounded-full bg-surface-base border border-surface-border text-greyscale-400 hover:text-status-red hover:border-status-red/50 transition-colors shadow-sm"
+              className="!h-4 !w-4 !p-0 !rounded-full !bg-surface-base border border-surface-border !text-greyscale-400 hover:!text-status-red hover:!border-status-red/50 shadow-sm"
               title="Remove connection"
             >
               <X size={8} strokeWidth={2.5} />
-            </button>
+            </Button>
           )}
         </div>
       </EdgeLabelRenderer>

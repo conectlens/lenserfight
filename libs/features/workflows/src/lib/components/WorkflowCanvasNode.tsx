@@ -1,5 +1,6 @@
 import { Handle, Position } from '@xyflow/react'
 import type { NodeProps } from '@xyflow/react'
+import { Button } from '@lenserfight/ui/components'
 import { Pencil, Trash2 } from 'lucide-react'
 import React from 'react'
 
@@ -45,32 +46,36 @@ export function WorkflowCanvasNode({ id, data, selected }: NodeProps) {
 
       {/* Edit button */}
       {onEdit && lens_id && (
-        <button
+        <Button
           type="button"
+          variant="ghost"
+          size="sm"
           onMouseDown={(e) => {
             e.stopPropagation()
             onEdit(lens_id)
           }}
-          className="flex-shrink-0 text-greyscale-300 hover:text-status-blue transition-colors"
+          className="!p-0 flex-shrink-0 !text-greyscale-300 hover:!text-status-blue !bg-transparent hover:!bg-transparent"
           title="Edit lens"
         >
           <Pencil size={11} />
-        </button>
+        </Button>
       )}
 
       {/* Remove button */}
       {onRemove && (
-        <button
+        <Button
           type="button"
+          variant="ghost"
+          size="sm"
           onMouseDown={(e) => {
             e.stopPropagation()
             onRemove(id)
           }}
-          className="flex-shrink-0 text-greyscale-300 hover:text-status-red transition-colors"
+          className="!p-0 flex-shrink-0 !text-greyscale-300 hover:!text-status-red !bg-transparent hover:!bg-transparent"
           title="Remove node"
         >
           <Trash2 size={11} />
-        </button>
+        </Button>
       )}
 
       {/* Source handle — right */}

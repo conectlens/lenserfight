@@ -1,12 +1,12 @@
 import { Alert, Badge, Button, StepWizard } from '@lenserfight/ui/components'
 import type { WizardStepConfig } from '@lenserfight/ui/components'
-import { Field, Input, SelectField, TextArea } from '@lenserfight/ui/forms'
+import { Field, Input, SearchBar, SelectField, TextArea } from '@lenserfight/ui/forms'
 import { useWizardStep } from '@lenserfight/ui/routing'
 import { lensesService } from '@lenserfight/data/repositories'
 import { workflowsService } from '@lenserfight/data/repositories'
 import { useAuth } from '@lenserfight/features/auth'
 import { useQuery } from '@tanstack/react-query'
-import { Check, GitBranch, Layers, Search, Sparkles } from 'lucide-react'
+import { Check, GitBranch, Layers, Sparkles } from 'lucide-react'
 import React, { useState } from 'react'
 import type { LensViewModel, PersonalLensFeedItem } from '@lenserfight/types'
 
@@ -90,33 +90,31 @@ function LensPicker({ lenserId, selected, onToggle }: LensPickerProps) {
   return (
     <div className="space-y-3">
       {/* Search */}
-      <div className="relative">
-        <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-greyscale-400 pointer-events-none" />
-        <input
-          type="text"
-          placeholder="Search lenses…"
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          className="w-full rounded-2xl border border-surface-border bg-surface-base pl-8 pr-3 py-2 text-sm text-greyscale-900 placeholder:text-greyscale-400 outline-none focus:border-status-blue dark:bg-surface-raised dark:text-greyscale-50"
-        />
-      </div>
+      <SearchBar
+        value={search}
+        onChange={(e) => setSearch(e.target.value)}
+        onClear={() => setSearch('')}
+        placeholder="Search lenses…"
+      />
 
       {/* Tabs (only shown when search is empty) */}
       {search.length < 2 && myLenses.length > 0 && (
         <div className="flex gap-2">
           {(['mine', 'popular'] as const).map((t) => (
-            <button
+            <Button
               key={t}
               type="button"
+              variant="ghost"
+              size="sm"
               onClick={() => setTab(t)}
-              className={`rounded-full px-3 py-1 text-xs font-semibold transition-colors ${
+              className={`!rounded-full !text-xs !font-semibold !px-3 !py-1 ${
                 effectiveTab === t
-                  ? 'bg-status-blue text-white'
-                  : 'bg-surface-raised text-greyscale-500 hover:text-greyscale-900 dark:hover:text-greyscale-50'
+                  ? '!bg-status-blue !text-white hover:!bg-status-blue'
+                  : '!bg-surface-raised !text-greyscale-500 hover:!text-greyscale-900 dark:hover:!text-greyscale-50 hover:!bg-surface-raised'
               }`}
             >
               {t === 'mine' ? 'My Lenses' : 'Popular'}
-            </button>
+            </Button>
           ))}
         </div>
       )}
@@ -139,14 +137,17 @@ function LensPicker({ lenserId, selected, onToggle }: LensPickerProps) {
           displayLenses.map((lens) => {
             const isSelected = selected.includes(lens.id)
             return (
-              <button
+              <Button
                 key={lens.id}
                 type="button"
+                variant="ghost"
+                size="sm"
+                fullWidth
                 onClick={() => onToggle(lens.id, lens.title)}
-                className={`w-full flex items-center gap-3 rounded-xl px-3 py-2.5 text-left transition-colors ${
+                className={`!justify-start !gap-3 !rounded-xl !px-3 !py-2.5 text-left !font-normal !border ${
                   isSelected
-                    ? 'bg-status-blue/10 border border-status-blue/30'
-                    : 'hover:bg-surface-raised border border-transparent'
+                    ? '!bg-status-blue/10 !border-status-blue/30 hover:!bg-status-blue/10'
+                    : 'hover:!bg-surface-raised !border-transparent'
                 }`}
               >
                 <div
@@ -166,7 +167,7 @@ function LensPicker({ lenserId, selected, onToggle }: LensPickerProps) {
                 {lens.visibility !== 'public' && (
                   <span className="flex-shrink-0 text-xs text-greyscale-400 capitalize">{lens.visibility}</span>
                 )}
-              </button>
+              </Button>
             )
           })}
       </div>

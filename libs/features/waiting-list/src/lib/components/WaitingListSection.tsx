@@ -62,7 +62,7 @@ export const WaitingListSection: React.FC = () => {
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,_var(--tw-gradient-stops))] from-gray-50 via-white to-white dark:from-gray-800 dark:via-gray-900 dark:to-gray-900" />
       </div>
 
-      <div className="relative z-10 px-6 py-20 md:py-24 max-w-3xl mx-auto text-center">
+      <div className="relative px-6 py-20 md:py-24 max-w-3xl mx-auto text-center">
         {/* HEADER */}
         <div className="inline-flex items-center gap-2.5 px-4 py-1.5 rounded-full bg-gray-900 dark:bg-white text-white dark:text-gray-900 text-[10px] md:text-xs font-bold uppercase tracking-widest mb-10">
           <Sparkles size={12} className="text-primary" />
