@@ -1,15 +1,15 @@
 import { Turnstile } from '@marsidev/react-turnstile'
-import { Eye, EyeOff, ArrowLeft, Check } from 'lucide-react'
+import { Eye, EyeOff, Check } from 'lucide-react'
 import React, { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 
 import { isMock, isLocal, LOCAL_SEED_CREDENTIALS, ENABLE_CAPTCHA, CAPTCHA_SITE_KEY } from '@lenserfight/utils/env'
-import { sanitizeReturnUrl } from '@lenserfight/utils/dom'
 import { useAuth } from '@lenserfight/features/auth'
 import { rememberMeStorage } from '@lenserfight/data/supabase'
 import { useFormValidation } from '@lenserfight/utils/validation'
 import { isRequired, isEmail } from '@lenserfight/utils/validation'
 import { AuthCard } from '../components/AuthCard'
+import { BackButton } from '../components/BackButton'
 import { Button } from '@lenserfight/ui/components'
 import { Loader } from '@lenserfight/ui/feedback'
 import { InputField } from '../components/InputField'
@@ -84,23 +84,11 @@ export const LoginPage: React.FC = () => {
     }
   }
 
-  const returnUrl = sanitizeReturnUrl(new URLSearchParams(window.location.search).get('return_url'))
-
-  const backButton = (
-    <a
-      href={returnUrl}
-      className="inline-flex items-center gap-2 text-sm font-semibold text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white transition-all bg-white/80 dark:bg-gray-800/80 backdrop-blur-md px-4 py-2.5 rounded-full hover:bg-white dark:hover:bg-gray-800 shadow-sm border border-gray-200/50 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600 w-auto"
-    >
-      <ArrowLeft size={16} />
-      Return back
-    </a>
-  )
-
   return (
     <>
       {isSuccess && <Loader variant="card" isSuccess message="Welcome back, Lenser." />}
 
-      <AuthCard title="Sign In" subtitle="Welcome back, Lenser" backButton={backButton}>
+      <AuthCard title="Sign In" subtitle="Welcome back, Lenser" backButton={<BackButton />}>
         <form onSubmit={handleSubmit} className="space-y-5" noValidate>
           <div>
             <InputField

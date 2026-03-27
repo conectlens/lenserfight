@@ -1,5 +1,5 @@
 import { Turnstile } from '@marsidev/react-turnstile'
-import { ArrowLeft, Check, AlertCircle, ExternalLink } from 'lucide-react'
+import { Check, AlertCircle, ExternalLink } from 'lucide-react'
 import React, { useState, useEffect } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 
@@ -8,6 +8,7 @@ import { useAuth } from '@lenserfight/features/auth'
 import { useFormValidation } from '@lenserfight/utils/validation'
 import { isRequired, isEmail } from '@lenserfight/utils/validation'
 import { AuthCard } from '../components/AuthCard'
+import { BackButton } from '../components/BackButton'
 import { Button } from '@lenserfight/ui/components'
 import { Loader } from '@lenserfight/ui/feedback'
 import { InputField } from '../components/InputField'
@@ -152,25 +153,11 @@ export const RegisterPage: React.FC = () => {
     window.open(`${arenaUrl}/policies/${slugMap[type]}`, '_blank', 'noopener,noreferrer')
   }
 
-  const returnUrl =
-    new URLSearchParams(window.location.search).get('return_url') ??
-    (import.meta.env.VITE_WEB_BASE_URL ?? 'https://forum.lenserfight.com')
-
-  const backButton = (
-    <a
-      href={returnUrl}
-      className="inline-flex items-center gap-2 text-sm font-semibold text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white transition-all bg-white/80 dark:bg-gray-800/80 backdrop-blur-md px-4 py-2.5 rounded-full hover:bg-white dark:hover:bg-gray-800 shadow-sm border border-gray-200/50 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600 w-auto"
-    >
-      <ArrowLeft size={16} />
-      Return back
-    </a>
-  )
-
   return (
     <>
       {isSuccess && <Loader variant="card" isSuccess message="Creating Account..." />}
 
-      <AuthCard title="Create Account" subtitle="Join the community today" backButton={backButton}>
+      <AuthCard title="Create Account" subtitle="Join the community today" backButton={<BackButton />}>
         <form onSubmit={handleSubmit} className="space-y-4" noValidate>
           <div>
             <InputField
