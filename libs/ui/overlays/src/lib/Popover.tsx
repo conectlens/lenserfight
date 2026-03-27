@@ -117,7 +117,6 @@ export const Popover: React.FC<PopoverProps> = ({
           z-dropdown min-w-[10rem]
           bg-surface-raised
           rounded-xl border border-surface-border
-          shadow-neu-3
           animate-in fade-in zoom-in-95 duration-fast origin-top
           focus:outline-none
           ${className}
