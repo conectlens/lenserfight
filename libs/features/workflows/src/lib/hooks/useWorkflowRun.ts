@@ -12,8 +12,8 @@ export function useWorkflowRun(workflowId: string | undefined) {
   const [isRunning, setIsRunning] = useState(false)
 
   const { mutateAsync: startRun, isPending } = useMutation({
-    mutationFn: (inputs: Record<string, unknown>) =>
-      workflowsService.startRun(workflowId!, inputs),
+    mutationFn: ({ inputs, globalModelId }: { inputs: Record<string, unknown>; globalModelId?: string }) =>
+      workflowsService.startRun(workflowId!, inputs, globalModelId),
     onSuccess: (run) => {
       setRunId(run.id)
       setIsRunning(true)
