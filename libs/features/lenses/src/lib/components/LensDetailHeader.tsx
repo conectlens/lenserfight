@@ -2,8 +2,8 @@ import { ForkNode, LensDetailViewModel } from '@lenserfight/types'
 import { Avatar } from '@lenserfight/ui/components'
 import { TagBadge } from '@lenserfight/ui/components'
 import { formatCount } from '@lenserfight/utils/number'
-import { GitFork, Lock, Bookmark, Pencil } from 'lucide-react'
-import React from 'react'
+import { GitFork, Lock, Bookmark, Pencil, Copy, Check } from 'lucide-react'
+import React, { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 
 
@@ -16,6 +16,7 @@ interface LensDetailHeaderProps {
   isSaving: boolean
   saveCount: number
   forkTree?: ForkNode[]
+  onCopy?: () => void
 }
 
 export const LensDetailHeader: React.FC<LensDetailHeaderProps> = ({
@@ -27,8 +28,17 @@ export const LensDetailHeader: React.FC<LensDetailHeaderProps> = ({
   isSaving,
   saveCount,
   forkTree,
+  onCopy,
 }) => {
   const navigate = useNavigate()
+  const [copied, setCopied] = useState(false)
+
+  const handleCopy = () => {
+    if (!onCopy) return
+    onCopy()
+    setCopied(true)
+    setTimeout(() => setCopied(false), 2000)
+  }
   const formattedDate = new Date(lens.createdAt).toLocaleDateString('en-US', {
     month: 'long',
     day: 'numeric',
@@ -55,6 +65,26 @@ export const LensDetailHeader: React.FC<LensDetailHeaderProps> = ({
               title="Edit lens"
             >
               <Pencil size={18} className="transition-transform duration-200 group-active:scale-95" />
+            </button>
+          )}
+
+          {/* Copy Action */}
+          {onCopy && (
+            <button
+              onClick={handleCopy}
+              className={`group flex-shrink-0 rounded-2xl border p-2.5 transition-colors ${
+                copied
+                  ? 'border-status-green/30 bg-status-green/10 text-status-green'
+                  : 'border-surface-border bg-surface-base text-greyscale-500 hover:border-primary-yellow-500 hover:text-primary-yellow-600'
+              }`}
+              aria-label="Copy lens content"
+              title="Copy"
+            >
+              {copied ? (
+                <Check size={18} strokeWidth={3} className="transition-transform duration-200 group-active:scale-95" />
+              ) : (
+                <Copy size={18} className="transition-transform duration-200 group-active:scale-95" />
+              )}
             </button>
           )}
 
