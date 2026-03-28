@@ -1,17 +1,15 @@
 import { AIProvider, AIProviderModel, LensParam, FundingSource, UserApiKey, WalletBalance, LensVersionParam } from '@lenserfight/types'
 import { Button } from '@lenserfight/ui/components'
-import { LogIn, Loader2, Play, Square } from 'lucide-react'
+import { Loader2, Play, Square } from 'lucide-react'
 import React, { useState } from 'react'
 
 import { TriggerLabExecutionDTO } from '../hooks/useLabController'
 import { useLabParamForm } from '../hooks/useLabParamForm'
-import { useOllamaModels } from '../hooks/useOllamaModels'
 
 import { CsvImportDialog } from './CsvImportDialog'
 import { FreeformInput } from './FreeformInput'
 import { FundingSourceToggle } from './FundingSourceToggle'
 import { JsonImportDialog } from './JsonImportDialog'
-import { LabProviderSelector } from './LabProviderSelector'
 import { LegacyParamFields } from './LegacyParamFields'
 import { VersionParamFields } from './VersionParamFields'
 
@@ -112,21 +110,12 @@ export const LabExecutionPanel: React.FC<LabExecutionPanelProps> = ({
   const isLocalByok = fundingSource === 'user_byok_local'
   const isCloudByok = fundingSource === 'user_byok_cloud'
 
+  // Derive effective provider key for isDisabled validation
   const effectiveProviderKey = isCloudByok
     ? (availableKeys?.find((k) => k.id === selectedKeyRefId)?.providerKey ?? '')
     : isLocalByok
       ? (availableLocalKeys?.find((k) => k.id === selectedLocalKeyId)?.provider ?? '')
       : selectedProviderKey
-
-  const isOllamaLocal = isLocalByok && effectiveProviderKey === 'ollama'
-
-  const {
-    isRunning: ollamaIsRunning,
-    isLoading: isLoadingOllama,
-    models: ollamaModels,
-    error: ollamaError,
-    refetch: refetchOllama,
-  } = useOllamaModels(isOllamaLocal)
 
   const [jsonImportOpen, setJsonImportOpen] = useState(false)
   const [csvImportOpen, setCsvImportOpen] = useState(false)
@@ -134,7 +123,6 @@ export const LabExecutionPanel: React.FC<LabExecutionPanelProps> = ({
   const isDisabled =
     isTriggeringExecution ||
     isStreaming ||
-    (isOllamaLocal && ollamaIsRunning === false) ||
     (isLocalByok
       ? !selectedLocalKeyId || !selectedModelKey
       : !effectiveProviderKey || !selectedModelKey)
@@ -191,7 +179,7 @@ export const LabExecutionPanel: React.FC<LabExecutionPanelProps> = ({
             )}
           </div>
 
-          {/* 1. Funding Source */}
+          {/* 1. Funding Source + Provider / Model selector */}
           {fundingSource && onFundingSourceChange && onKeyRefIdChange && (
             <FundingSourceToggle
               fundingSource={fundingSource}
@@ -206,29 +194,17 @@ export const LabExecutionPanel: React.FC<LabExecutionPanelProps> = ({
               onRemoveLocalKey={onRemoveLocalKey}
               walletBalance={walletBalance}
               canUseBYOK={canUseBYOK ?? false}
+              providers={providers}
+              isLoadingProviders={isLoadingProviders}
+              providerModels={providerModels}
+              isLoadingModels={isLoadingModels}
+              selectedProviderKey={selectedProviderKey}
+              onProviderChange={onProviderChange}
+              selectedModelKey={selectedModelKey}
+              onModelChange={onModelChange}
+              onProviderDropdownOpen={onProviderDropdownOpen}
             />
           )}
-
-          {/* 2. Provider / Model selector */}
-          <LabProviderSelector
-            fundingSource={fundingSource}
-            effectiveProviderKey={effectiveProviderKey}
-            providers={providers}
-            isLoadingProviders={isLoadingProviders}
-            providerModels={providerModels}
-            isLoadingModels={isLoadingModels}
-            selectedProviderKey={selectedProviderKey}
-            selectedModelKey={selectedModelKey}
-            onProviderChange={onProviderChange}
-            onModelChange={onModelChange}
-            onProviderDropdownOpen={onProviderDropdownOpen}
-            isOllamaLocal={isOllamaLocal}
-            ollamaIsRunning={ollamaIsRunning}
-            isLoadingOllama={isLoadingOllama}
-            ollamaModels={ollamaModels}
-            ollamaError={ollamaError}
-            refetchOllama={refetchOllama}
-          />
 
           {/* 3. Version Parameters */}
           {form.usingVersionParams && versionParams && (

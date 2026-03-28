@@ -1,29 +1,33 @@
 import { lensesService } from '@lenserfight/data/repositories'
+import { VersionParamFields } from '@lenserfight/features/lenses'
 import { Button } from '@lenserfight/ui/components'
-import { useQuery } from '@tanstack/react-query'
+import { useQueries } from '@tanstack/react-query'
 import { FileText } from 'lucide-react'
 import React, { useState, useMemo } from 'react'
 
 import type { WorkflowNodeRecord, WorkflowEdgeRecord } from '@lenserfight/data/repositories'
+import type { LensVersionParam } from '@lenserfight/types'
 
 interface WorkflowRootInputsPanelProps {
   nodes: WorkflowNodeRecord[]
   edges: WorkflowEdgeRecord[]
   onSubmit: (rootInputs: Record<string, string>) => void
   isRunning: boolean
-}
-
-/** Extract [[param]] placeholder labels from a template string. */
-function extractPlaceholders(template: string): string[] {
-  const matches = template.matchAll(/\[\[([^\]]+)\]\]/g)
-  return [...new Set([...matches].map((m) => m[1]))]
+  /** When false, the Execute button is disabled (funding/model not configured). */
+  canExecute?: boolean
 }
 
 /**
- * Identifies root nodes (no incoming edges) and loads their lens templates
- * to extract un-wired [[param]] placeholders that need user input.
+ * Identifies root nodes (no incoming edges) and loads their typed version parameters
+ * via the fn_get_version_params_with_tools RPC. Un-wired required params block execution.
  */
-export function WorkflowRootInputsPanel({ nodes, edges, onSubmit, isRunning }: WorkflowRootInputsPanelProps) {
+export function WorkflowRootInputsPanel({
+  nodes,
+  edges,
+  onSubmit,
+  isRunning,
+  canExecute = true,
+}: WorkflowRootInputsPanelProps) {
   const [inputs, setInputs] = useState<Record<string, string>>({})
 
   // Root nodes = nodes with no incoming edges
@@ -34,51 +38,57 @@ export function WorkflowRootInputsPanel({ nodes, edges, onSubmit, isRunning }: W
   const autoWiredParams = useMemo(() => {
     const wired = new Set<string>()
     for (const e of edges) {
-      wired.add(e.target_param_label)
+      if (e.target_param_label) wired.add(e.target_param_label)
     }
     return wired
   }, [edges])
 
-  // Load templates for root nodes to extract placeholders
-  const { data: rootParams = [], isLoading } = useQuery({
-    queryKey: ['workflow-root-params', rootNodes.map((n) => n.id).join(',')],
-    queryFn: async () => {
-      const results: { nodeId: string; nodeLabel: string; params: string[] }[] = []
-      for (const node of rootNodes) {
-        const version = node.version_id
-          ? await lensesService.getVersionById(node.version_id)
-          : await lensesService.getLatestPublishedVersion(node.lens_id)
-        if (!version?.templateBody) continue
-        const placeholders = extractPlaceholders(version.templateBody)
-        const unWired = placeholders.filter((p) => !autoWiredParams.has(p))
-        if (unWired.length > 0) {
-          results.push({
-            nodeId: node.id,
-            nodeLabel: node.label ?? `Node ${node.ordinal + 1}`,
-            params: unWired,
-          })
-        }
-      }
-      return results
-    },
-    enabled: rootNodes.length > 0,
-    staleTime: 1000 * 60 * 5,
+  // Load typed version params for each root node via getLatestPublishedVersion RPC
+  const nodeVersionQueries = useQueries({
+    queries: rootNodes.map((node) => ({
+      queryKey: ['workflow-node-version', node.version_id ?? `head-${node.lens_id}`],
+      queryFn: () =>
+        node.version_id
+          ? lensesService.getVersionById(node.version_id)
+          : lensesService.getLatestPublishedVersion(node.lens_id),
+      staleTime: 1000 * 60 * 5,
+      enabled: !!node.lens_id,
+    })),
   })
 
-  // Flatten all params for the input form
-  const allParams = useMemo(() => {
-    const params: { label: string; nodeLabel: string }[] = []
-    const seen = new Set<string>()
-    for (const r of rootParams) {
-      for (const p of r.params) {
-        if (!seen.has(p)) {
-          seen.add(p)
-          params.push({ label: p, nodeLabel: r.nodeLabel })
+  const isLoading = nodeVersionQueries.some((q) => q.isLoading)
+
+  // Build per-node param groups (filtered to un-wired params only)
+  const paramGroups = useMemo(() => {
+    return rootNodes
+      .map((node, i) => {
+        const version = nodeVersionQueries[i]?.data
+        const params = (version?.parameters ?? []).filter(
+          (p) => !autoWiredParams.has(p.label)
+        )
+        return {
+          nodeId: node.id,
+          nodeLabel: node.label ?? `Node ${node.ordinal + 1}`,
+          params,
         }
+      })
+      .filter((g) => g.params.length > 0)
+  }, [rootNodes, nodeVersionQueries, autoWiredParams])
+
+  // Required param validation
+  const allRequiredFilled = useMemo(() => {
+    for (const group of paramGroups) {
+      for (const param of group.params) {
+        // Params are required by default unless explicitly marked optional
+        const isRequired = (param as LensVersionParam & { required?: boolean }).required !== false
+        if (!isRequired) continue
+        const key = `${group.nodeId}:${param.label}`
+        const val = inputs[key]
+        if (!val || val.trim() === '') return false
       }
     }
-    return params
-  }, [rootParams])
+    return true
+  }, [paramGroups, inputs])
 
   if (isLoading) {
     return (
@@ -90,11 +100,39 @@ export function WorkflowRootInputsPanel({ nodes, edges, onSubmit, isRunning }: W
     )
   }
 
-  if (allParams.length === 0) return null
+  if (paramGroups.length === 0) {
+    // No params required — show Execute button directly
+    return (
+      <div className="p-4">
+        <Button
+          type="button"
+          size="sm"
+          onClick={() => onSubmit({})}
+          disabled={isRunning || !canExecute}
+          className="w-full"
+          title={!canExecute ? 'Select a funding source and model above' : undefined}
+        >
+          {isRunning ? 'Running…' : 'Execute Workflow'}
+        </Button>
+        {!canExecute && (
+          <p className="mt-2 text-[10px] text-center text-greyscale-400">
+            Select a funding source and model to run.
+          </p>
+        )}
+      </div>
+    )
+  }
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
-    onSubmit(inputs)
+    if (!canExecute || !allRequiredFilled) return
+    // Flatten inputs: strip nodeId prefix, deduplicate by param label
+    const flatInputs: Record<string, string> = {}
+    for (const [key, val] of Object.entries(inputs)) {
+      const paramLabel = key.includes(':') ? key.split(':').slice(1).join(':') : key
+      flatInputs[paramLabel] = val
+    }
+    onSubmit(flatInputs)
   }
 
   return (
@@ -106,27 +144,58 @@ export function WorkflowRootInputsPanel({ nodes, edges, onSubmit, isRunning }: W
         </p>
       </div>
 
-      <div className="space-y-3">
-        {allParams.map(({ label, nodeLabel }) => (
-          <div key={label} className="space-y-1">
-            <label className="text-[11px] font-medium text-greyscale-600 dark:text-greyscale-300 capitalize">
-              {label}
-              <span className="ml-1 text-[10px] text-greyscale-400 font-normal">({nodeLabel})</span>
-            </label>
-            <input
-              type="text"
-              value={inputs[label] ?? ''}
-              onChange={(e) => setInputs((prev) => ({ ...prev, [label]: e.target.value }))}
-              placeholder={`Value for [[${label}]]`}
-              className="w-full px-2.5 py-1.5 text-xs bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg text-gray-900 dark:text-white placeholder-gray-400 focus:ring-1 focus:ring-primary/50 focus:border-primary outline-none transition-all"
+      <div className="space-y-4">
+        {paramGroups.map(({ nodeId, nodeLabel, params }) => (
+          <div key={nodeId} className="space-y-2">
+            {paramGroups.length > 1 && (
+              <p className="text-[10px] font-semibold uppercase tracking-wider text-greyscale-400">
+                {nodeLabel}
+              </p>
+            )}
+            <VersionParamFields
+              params={params}
+              values={Object.fromEntries(
+                Object.entries(inputs)
+                  .filter(([k]) => k.startsWith(`${nodeId}:`))
+                  .map(([k, v]) => [k.split(':').slice(1).join(':'), v])
+              )}
+              errors={{}}
+              onChange={(name, value) =>
+                setInputs((prev) => ({ ...prev, [`${nodeId}:${name}`]: String(value ?? '') }))
+              }
+              onImportJson={() => {}}
+              onImportCsv={() => {}}
             />
           </div>
         ))}
       </div>
 
-      <Button type="submit" size="sm" disabled={isRunning} className="w-full">
-        {isRunning ? 'Running…' : 'Start Run'}
+      <Button
+        type="submit"
+        size="sm"
+        disabled={isRunning || !canExecute || !allRequiredFilled}
+        className="w-full"
+        title={
+          !canExecute
+            ? 'Select a funding source and model above'
+            : !allRequiredFilled
+              ? 'Fill all required parameters'
+              : undefined
+        }
+      >
+        {isRunning ? 'Running…' : 'Execute Workflow'}
       </Button>
+
+      {!canExecute && (
+        <p className="text-[10px] text-center text-greyscale-400">
+          Select a funding source and model to run.
+        </p>
+      )}
+      {canExecute && !allRequiredFilled && (
+        <p className="text-[10px] text-center text-amber-500">
+          Fill all required parameters to continue.
+        </p>
+      )}
     </form>
   )
 }
