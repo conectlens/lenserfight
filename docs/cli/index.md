@@ -8,25 +8,22 @@ The `lenserfight` CLI (also available as `lf`) lets you manage battles, Runners,
 
 ### Local development (monorepo)
 
-Build the CLI, then symlink it globally so you can run `lenserfight` or `lf` from anywhere:
+Build, fix permissions, and link globally in one command:
 
 ```bash
-# 1. Build
-pnpm nx build cli
+pnpm nx run cli:link
+```
 
-# 2. Link globally
-cd dist/apps/cli
-npm link
+This runs `build` → `chmod 755 dist/apps/cli/main.js` → `npm link` in sequence. Both `lenserfight` and `lf` are then available globally.
 
-# 3. Verify
+```bash
 lenserfight --help
 lf --help
 ```
 
-> `npm link` creates a global symlink pointing at `dist/apps/cli/main.js`.
-> After rebuilding (`pnpm nx build cli`), the symlink stays — no need to re-link.
+After every rebuild, re-run `pnpm nx run cli:link` to restore the execute bit (or just `pnpm nx run cli:chmod` if you haven't re-linked).
 
-To unlink later:
+To unlink:
 
 ```bash
 npm unlink -g lenserfight
