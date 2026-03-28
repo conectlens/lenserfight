@@ -221,18 +221,6 @@ export function WorkflowBuilderPage({ workflowId, onBattleClick }: WorkflowBuild
                 {savedCount > 0 && <span>{savedCount}</span>}
               </Button>
 
-              {isOwner && (
-                <Button
-                  size="sm"
-                  variant="secondary"
-                  onClick={() => setIsEditModalOpen(true)}
-                  className="gap-1.5 w-auto rounded-xl px-2.5 py-1"
-                  title="Edit workflow"
-                >
-                  <Pencil size={12} />
-                </Button>
-              )}
-
               {!isOwner && workflow.visibility === 'public' && (
                 <Button
                   size="sm"
@@ -242,6 +230,18 @@ export function WorkflowBuilderPage({ workflowId, onBattleClick }: WorkflowBuild
                   className="gap-1.5 w-auto"
                 >
                   <GitFork size={12} /> Fork
+                </Button>
+              )}
+
+              {isOwner && (
+                <Button
+                  size="sm"
+                  variant="secondary"
+                  onClick={() => setIsEditModalOpen(true)}
+                  className="gap-1.5 w-auto rounded-xl px-2.5 py-1"
+                  title="Edit workflow"
+                >
+                  <Pencil size={12} />
                 </Button>
               )}
 

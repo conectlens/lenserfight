@@ -498,8 +498,8 @@ export const LenserProfilePage: React.FC = () => {
         relationshipState={relationshipState}
         onManageAgents={isOwner ? () => handleTabChange('agents') : undefined}
         onEditAgent={
-          isOwner && viewedProfile.type === 'ai'
-            ? () => navigate(`/lenser/${viewedProfile.handle}/agent?agentId=${viewedProfile.id}`)
+          isOwner && viewedProfile.type === 'ai' && agentProfile
+            ? () => navigate(`/lenser/${viewedProfile.handle}/agent?agentId=${agentProfile.ai_lenser_id}`)
             : undefined
         }
       />
