@@ -1,3 +1,4 @@
+import { exec } from 'node:child_process';
 import { loadUserConfig, saveUserConfig, resolveConfig } from '../config/project-config';
 import { callRpc } from './api';
 import type {
@@ -5,6 +6,8 @@ import type {
   ApproveDeviceRequestResultDTO,
   DeviceApprovalRequestDTO,
   DeviceApprovalRequestResultDTO,
+  DeviceLoginExchangeResultDTO,
+  DeviceLoginRequestResultDTO,
   DeveloperTokenExchangeResultDTO,
   DeveloperTokenGrantDTO,
   DeveloperTokenSummaryDTO,
@@ -445,4 +448,72 @@ export async function getUserInfo(): Promise<Record<string, unknown> | null> {
   if (!res.ok) return null;
 
   return res.json();
+}
+
+// ---------------------------------------------------------------------------
+// Browser-based login (Device Authorization Grant — unauthenticated initiation)
+// ---------------------------------------------------------------------------
+
+export function openBrowser(url: string): void {
+  const cmd =
+    process.platform === 'win32'
+      ? `start "" "${url}"`
+      : process.platform === 'darwin'
+      ? `open "${url}"`
+      : `xdg-open "${url}"`;
+  exec(cmd); // non-fatal — user always has the URL printed to the terminal
+}
+
+export async function requestDeviceLogin(): Promise<DeviceLoginRequestResultDTO> {
+  return callRpc<DeviceLoginRequestResultDTO>(
+    'fn_auth_request_device_login',
+    { p_request_ttl_minutes: 10 },
+    {} // anon — no Bearer token required
+  );
+}
+
+export async function exchangeDeviceLogin(dto: {
+  requestId: string;
+  requestSecret: string;
+}): Promise<DeviceLoginExchangeResultDTO> {
+  return callRpc<DeviceLoginExchangeResultDTO>(
+    'fn_auth_exchange_device_login',
+    { p_request_id: dto.requestId, p_request_secret: dto.requestSecret },
+    {} // anon — no Bearer token required
+  );
+}
+
+export async function waitForSessionLogin(
+  request: DeviceLoginRequestResultDTO,
+  onStatus?: (status: DeviceLoginExchangeResultDTO) => void
+): Promise<AuthTokens> {
+  const pollMs = Math.max(request.pollIntervalSeconds, 3) * 1000;
+  const deadline = new Date(request.expiresAt).getTime();
+
+  while (Date.now() <= deadline) {
+    const status = await exchangeDeviceLogin({
+      requestId: request.requestId,
+      requestSecret: request.requestSecret,
+    });
+
+    onStatus?.(status);
+
+    if (status.status === 'approved' && status.accessToken && status.refreshToken) {
+      const tokens: AuthTokens = {
+        accessToken: status.accessToken,
+        refreshToken: status.refreshToken,
+        expiresAt: new Date(Date.now() + 3600 * 1000).toISOString(),
+      };
+      saveAuthTokens(tokens);
+      return tokens;
+    }
+
+    if (status.status === 'expired' || status.status === 'invalid') {
+      throw new Error('Login request expired or became invalid.');
+    }
+
+    await new Promise((resolve) => setTimeout(resolve, pollMs));
+  }
+
+  throw new Error('Login request expired before browser approval.');
 }
