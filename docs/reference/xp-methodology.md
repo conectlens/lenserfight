@@ -1,120 +1,145 @@
 # XP Methodology
 
-This document explains the mathematical foundations, design decisions, and anti-gaming measures behind LenserFight's XP system.
+Mathematical foundations, design decisions, and anti-gaming measures behind LenserFight's XP system.
 
 ## XP Calculation Formula
 
 ```
-effective_xp = CEIL(base_xp * difficulty_multiplier)
+effective_xp = CEIL(base_xp × difficulty_multiplier)
 ```
-
-Where:
-- `base_xp` is defined per rule in `xp.rules`
-- `difficulty_multiplier` is looked up from `xp.difficulty_multipliers` based on the rule's `difficulty` column
 
 Both `base_xp` (raw) and `effective_xp` (multiplied) are stored in `xp.events` for full auditability.
 
-## Difficulty Scaling Rationale
+## Difficulty Scaling
 
-The difficulty system exists because different actions require different levels of effort:
+| Difficulty | Multiplier | Rationale |
+|-----------|-----------|-----------|
+| easy | ×0.75 | Actions anyone can do frequently with minimal effort |
+| standard | ×1.00 | Actions requiring thought, creation, or moderation |
+| hard | ×1.50 | Actions requiring skill, preparation, or technical setup |
+| legendary | ×2.50 | Actions requiring expertise and producing exceptional value |
 
-| Level | Why | Example |
-|-------|-----|---------|
-| Easy (0.8x) | Actions anyone can do frequently with minimal effort | Giving a reaction, logging in |
-| Standard (1.0x) | Actions requiring thought or creation | Writing a Lens, filing an issue |
-| Hard (1.5x) | Actions requiring preparation, skill, or technical setup | Battle participation, CLI deployment, code review |
-| Legendary (3.0x) | Actions requiring significant expertise and producing high-value outcomes | Winning a battle, merging a core PR |
-
-The multiplier values (0.8, 1.0, 1.5, 3.0) were chosen to create meaningful differentiation without extreme outliers. A legendary action is worth ~3.75x an easy action at the same base_xp.
+A legendary action is worth ~3.3× an easy action at the same `base_xp`. The spread is intentional: it creates strong incentives for high-effort behavior without making casual actions feel worthless.
 
 ## Level Curve Design
 
-Level curves use a power-law formula:
+Level curves use a polynomial formula implemented by `xp.seed_default_curve`:
 
 ```
-increment(level) = CEIL(base * level^power)
-min_xp(level) = SUM(increment(1..level-1))
-max_xp(level) = SUM(increment(1..level))
+increment(level) = CEIL(base × level^power)
+min_xp(level)    = SUM(increment(1 .. level−1))
+max_xp(level)    = SUM(increment(1 .. level))
 ```
 
-### Parameter Selection
+### Parameters
 
-| Parameter | Effect |
-|-----------|--------|
-| `base` | Controls absolute XP scale; higher = more XP per level |
-| `power` | Controls steepness; higher = exponentially harder later levels |
+Both apps use the same parameters:
 
-- **Forum** (`base=30, power=1.3`): Gentle curve. Players level frequently, rewarding consistent casual engagement.
-- **Arena** (`base=80, power=1.6`): Steep curve. High levels are rare and prestigious, reflecting competitive depth.
-- **CLI** (`base=60, power=1.5`): Medium curve. Rewards developer commitment without making early levels inaccessible.
-- **Auth** (`base=20, power=1.2, max=20`): Flat curve, few levels. Account setup is one-time.
+| Parameter | Value | Effect |
+|-----------|-------|--------|
+| `base` | 150 | Controls absolute XP scale per level |
+| `power` | 0.75 | Sub-linear power — early levels are fast; later levels slow down gently |
+| `max_level` | 100 | Champion tier; achievable over 5+ years of dedicated play |
 
-### Why Power-Law Over Linear
+### Level Checkpoints
 
-Linear curves (`increment = constant`) make every level feel the same. Power-law curves create the "easy early, hard late" feel:
-- Early levels take minutes to hours
-- Mid levels take days
-- Late levels take weeks to months
+| Level | Min XP to reach | Annual user who reaches it |
+|-------|----------------|--------------------------|
+| 10 | ~4,400 | Casual after 6 months |
+| 25 | ~22,500 | Casual after ~2 years, regular after 9 months |
+| 50 | ~92,000 | Regular after ~2.5 years, power after ~1.5 years |
+| 75 | ~191,000 | Power user after ~3 years |
+| 100 | ~330,000 | Elite after 5+ years |
 
-This matches engagement psychology: quick rewards hook new users; deep rewards retain veterans.
+### Why sub-linear (`power < 1`) vs steeper curves
+
+A power of 0.75 means the XP increment *per level* grows slowly — the gap between level 5 and level 6 is smaller than the gap between level 95 and 96, but not by a huge amount. This was chosen to:
+
+- Avoid the "wall" effect where mid-game progress stalls completely
+- Keep levels 10–40 feeling achievable for regular users within 1–2 years
+- Still make level 75–100 rare and prestigious
+
+A steeper curve (power ≥ 1.5) would make levels 50+ effectively unreachable for anyone except extreme power users.
+
+## Visibility Policy
+
+Creation XP (LENS_CREATED, THREAD_CREATED, WORKFLOW_CREATED) is only awarded when content is **public and published**. The database enforces this:
+
+1. **INSERT trigger** checks `visibility = 'public' AND status = 'published'` before calling `xp.apply()`. Private drafts earn nothing.
+2. **UPDATE trigger** fires when `visibility` or `status` changes:
+   - Public+published → non-public: `xp.rollback_content_xp()` is called, inserting a compensating negative event.
+   - Non-public → public+published: `xp.apply()` is called if no prior positive event exists for that content.
+3. **Engagement XP** (reactions, replies, votes, views) is never rolled back — those interactions happened regardless of later visibility changes.
+
+This prevents the most common manipulation pattern: post publicly to harvest creation XP, then immediately make private.
 
 ## Anti-Gaming Measures
 
 ### Cooldowns
 
-Each rule can define a `cooldown_seconds` value. If a user triggers the same action within the cooldown window, no XP is awarded. This prevents:
-- Spam-clicking reactions for XP
+`cooldown_seconds` is enforced inside `xp.apply()` by querying the most recent event for the same `(lenser_id, action_key, app_id)` tuple. If the elapsed time is less than the cooldown, no XP is awarded. Prevents:
+- Spam-clicking reactions
 - Automated rapid posting
 - Script-driven thread creation
 
 ### Daily Caps
 
-Two independent daily caps:
-1. **`max_events_per_day`**: Maximum number of XP-earning events for this action
-2. **`max_xp_per_day`**: Maximum total XP from this action type
+Two independent daily caps per rule:
 
-The event cap prevents volume abuse. The XP cap prevents high-multiplier rules from dominating daily earnings.
+| Cap | What it limits |
+|-----|---------------|
+| `max_events_per_day` | Number of XP-earning events for this action type |
+| `max_xp_per_day` | Total XP from this action type in a calendar day |
+
+The event cap prevents volume abuse. The XP cap prevents high-multiplier rules from dominating daily earnings even at low event counts.
 
 ### Season Caps
 
-`max_xp_per_season` limits total XP from a single action across an entire season. This is primarily used for contributor actions to prevent over-accumulation from prolific open-source work.
+`max_xp_per_season` limits total XP from a single action type across a 90-day season. Used on every rule to prevent any single behavior from monopolizing the leaderboard.
 
-### Immutable Events
+### Concurrency Safety
 
-XP events cannot be modified after creation. The `trg_no_update_events` trigger rejects all UPDATE operations (except by service_role). This ensures the audit trail is tamper-proof.
+`xp.apply()` acquires a per-lenser advisory lock (`pg_advisory_xact_lock`) before reading caps or inserting events. This serializes concurrent XP awards for the same user and prevents race conditions on daily/season cap checks.
+
+### Immutable Event Log
+
+XP events cannot be modified after creation. The `trg_no_update_events` trigger rejects all UPDATE operations (except by `service_role`). The audit trail is tamper-proof.
 
 ### Rollback Mechanism
 
-If an XP event needs to be reversed (e.g., content was spam), `xp.rollback_event()` subtracts the XP from totals and recomputes the level. The original event remains in the log for auditing.
+When XP must be reversed (content made private, moderation action), `xp.rollback_event()` inserts a compensating negative event. The original event remains in the log. XP totals and levels are immediately recalculated.
+
+### Self-Interaction Prevention
+
+Received-type rules (REACTION_RECEIVED, THREAD_REPLY_RECEIVED, WORKFLOW_LIKE_RECEIVED, etc.) include a check that the actor is not the same person as the content owner. This prevents users from self-reacting or self-replying to earn received XP.
 
 ## Lenser Score Formula
 
 The leaderboard uses a composite score:
 
 ```
-lenser_score = 0.7 * log(total_xp) + 0.3 * log(recent_reactions_7d)
+lenser_score = 0.7 × log(total_xp) + 0.3 × log(recent_reactions_7d)
 ```
 
 - 70% weight on cumulative XP (long-term engagement)
-- 30% weight on recent activity (current participation)
-- Logarithmic scale prevents extreme outliers from dominating
+- 30% weight on recent reactions received (current participation signal)
+- Logarithmic scale prevents extreme outliers from dominating rankings
 
 ## Season Design
 
 ### Why 90 Days
 
-- Short enough to maintain competitive urgency
-- Long enough to allow meaningful progression
+- Short enough to create competitive urgency and allow new users to reach the top
+- Long enough for meaningful progression (most rules have per-season caps that fill over weeks)
 - Aligns with quarterly planning cycles
-- Historical data is never deleted; only the `is_active` flag changes
 
 ### Automatic Rollover
 
 `xp.check_all_seasons()` runs daily via pg_cron. When a season's `ends_at` passes:
 
 1. The season is marked `is_active = false`
-2. A new season is created starting where the old one ended (no gaps)
-3. If the gap exceeds 7 days (e.g., system was down), the new season starts from now
+2. A new season is created starting immediately after
+3. If the gap exceeds 7 days (system outage), the new season starts from now
 
 ### Season Totals Independence
 
@@ -122,7 +147,6 @@ Season totals are separate from all-time totals. Leveling up uses all-time XP; s
 
 ## Future Considerations
 
-- **Dynamic difficulty**: Adjust multipliers based on platform-wide activity (if an action becomes too common, reduce its multiplier)
-- **Quest system**: Structured multi-step challenges using the existing `challenge` source_enum
-- **Streak multipliers**: Multiply XP by streak length (e.g., 1.1x at 7 days, 1.2x at 30 days)
-- **Cross-app XP**: Aggregate XP across apps for a unified "Lenser Level"
+- **Dynamic multipliers**: Adjust rule multipliers if a single action type becomes too dominant platform-wide
+- **Quest system**: Multi-step challenges using the `challenge` source enum (infrastructure already exists)
+- **Streak multipliers**: Multiply XP by streak length (e.g., ×1.1 at 7 days, ×1.2 at 30 days)

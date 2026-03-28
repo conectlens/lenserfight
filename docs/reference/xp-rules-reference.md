@@ -1,110 +1,147 @@
 # XP Rules Reference
 
-Complete reference of all XP rules, organized by app. All values reflect the seeded configuration.
+Complete reference of all active XP rules. Values reflect the production seed (`supabase/seeds/17_xp_ruleset.sql`).
 
 ## Difficulty Multipliers
 
-| Difficulty | Multiplier | Description |
-|-----------|-----------|-------------|
-| `easy` | 0.80 | Lightweight, frequent actions |
-| `standard` | 1.00 | Moderate-effort actions |
-| `hard` | 1.50 | Significant-effort actions |
-| `legendary` | 3.00 | Exceptional-effort actions |
+| Difficulty | Multiplier | Typical actions |
+|-----------|-----------|----------------|
+| `easy` | ×0.75 | Reactions, logins, views |
+| `standard` | ×1.00 | Thread creation, code reviews, votes |
+| `hard` | ×1.50 | Lens creation, workflow creation, battle participation |
+| `legendary` | ×2.50 | Battle wins, core OSS contributions |
 
-## App Registrations
+**Formula:** `effective_xp = CEIL(base_xp × multiplier)`
 
-| Slug | UUID | Difficulty |
-|------|------|-----------|
-| `global` | `00000000-0000-0000-0000-000000000000` | standard |
-| `forum` | `00000000-0000-0000-0000-000000000001` | easy |
-| `arena` | `00000000-0000-0000-0000-000000000002` | hard |
-| `cli` | `00000000-0000-0000-0000-000000000003` | hard |
-| `auth` | `00000000-0000-0000-0000-000000000004` | easy |
+## Apps
+
+| Slug | UUID | Difficulty profile |
+|------|------|-------------------|
+| `forum` | `00000000-0000-0000-0000-000000000001` | standard |
+| `battles` | `00000000-0000-0000-0000-000000000002` | hard |
+
+---
 
 ## Forum Rules
 
-| action_key | base_xp | effective_xp | difficulty | max_events/day | cooldown_s | max_xp/day | streak_type |
-|-----------|---------|-------------|-----------|---------------|-----------|-----------|------------|
-| `THREAD_CREATED` | 25 | 20 | easy | 10 | 60 | 200 | daily_xp |
-| `THREAD_REPLY_CREATED` | 15 | 12 | easy | 20 | 30 | 200 | daily_xp |
-| `THREAD_REPLY_RECEIVED` | 5 | 4 | easy | 50 | - | 150 | - |
-| `PROMPT_CREATED` | 30 | 30 | standard | 5 | 120 | 150 | daily_xp |
-| `TAG_CREATED` | 10 | 8 | easy | 3 | 300 | 30 | - |
-| `REACTION_GIVEN` | 5 | 4 | easy | 30 | 5 | 100 | daily_xp |
-| `REACTION_RECEIVED` | 3 | 2 | easy | 100 | - | 200 | - |
-| `THREAD_ENGAGED` | 3 | 2 | easy | 20 | 10 | 50 | - |
-| `DAILY_LOGIN` | 10 | 8 | easy | 1 | 86400 | 10 | daily_login |
+### Content Creation
 
-## Arena Rules
+Only **public + published** content earns creation XP. Creating a private draft awards nothing. Publishing or making content public retroactively awards the XP (if not already awarded). Making content private or archiving it **reverses** the creation XP.
 
-| action_key | base_xp | effective_xp | difficulty | max_events/day | cooldown_s | max_xp/day | streak_type |
-|-----------|---------|-------------|-----------|---------------|-----------|-----------|------------|
-| `BATTLE_CREATED` | 200 | 300 | hard | 3 | 600 | 600 | daily_xp |
-| `BATTLE_PARTICIPATED` | 150 | 225 | hard | 5 | - | 600 | daily_xp |
-| `BATTLE_WON` | 300 | 900 | legendary | 5 | - | 1000 | - |
-| `BATTLE_VOTED` | 20 | 20 | standard | 20 | 10 | 200 | daily_xp |
+| action_key | Base XP | Difficulty | Effective XP | Cooldown | Max events/day | Max XP/day | Max XP/season |
+|-----------|--------|-----------|-------------|---------|---------------|-----------|--------------|
+| `LENS_CREATED` | 80 | hard | **120** | 60 min | 5 | 400 | 2,000 |
+| `THREAD_CREATED` | 30 | standard | **30** | 30 min | 10 | 200 | 1,500 |
+| `THREAD_REPLY_CREATED` | 15 | easy | **12** | 5 min | 20 | 200 | 1,200 |
+| `WORKFLOW_CREATED` | 60 | hard | **90** | 60 min | 3 | 180 | 1,500 |
 
-## CLI Rules
+### Social — Giving
 
-| action_key | base_xp | effective_xp | difficulty | max_events/day | cooldown_s | max_xp/day | streak_type |
-|-----------|---------|-------------|-----------|---------------|-----------|-----------|------------|
-| `CLI_INIT` | 100 | 150 | hard | 1 | - | 100 | - |
-| `CLI_DEPLOY` | 75 | 112 | hard | 5 | 300 | 300 | daily_xp |
+| action_key | Base XP | Difficulty | Effective XP | Cooldown | Max events/day | Max XP/day | Max XP/season |
+|-----------|--------|-----------|-------------|---------|---------------|-----------|--------------|
+| `REACTION_GIVEN` | 5 | easy | **4** | 60 s | 30 | 100 | 500 |
+| `WORKFLOW_LIKED` | 5 | easy | **4** | 2 min | 20 | 80 | 400 |
+| `WORKFLOW_SAVED` | 8 | easy | **6** | 5 min | 10 | 60 | 300 |
+| `WORKFLOW_FORKED` | 20 | standard | **20** | 30 min | 5 | 80 | 400 |
+| `LENS_FORKED` | 20 | standard | **20** | 30 min | 5 | 80 | 400 |
 
-## Auth Rules
+### Social — Receiving
 
-| action_key | base_xp | effective_xp | difficulty | max_events/day | cooldown_s | max_xp/day |
-|-----------|---------|-------------|-----------|---------------|-----------|-----------|
-| `ACCOUNT_CREATED` | 5 | 4 | easy | 1 | - | 5 |
-| `PROFILE_COMPLETED` | 20 | 16 | easy | 1 | - | 20 |
+No cooldown applies — you cannot control when others interact with your content. Self-interaction is blocked (reacting to or replying to your own content does not award received XP).
 
-## Contributor Rules
+| action_key | Base XP | Difficulty | Effective XP | Max events/day | Max XP/day | Max XP/season |
+|-----------|--------|-----------|-------------|---------------|-----------|--------------|
+| `REACTION_RECEIVED` | 8 | easy | **6** | 50 | 300 | 1,500 |
+| `THREAD_REPLY_RECEIVED` | 10 | easy | **8** | 30 | 200 | 1,200 |
+| `WORKFLOW_LIKE_RECEIVED` | 8 | easy | **6** | 30 | 200 | 1,000 |
+| `WORKFLOW_SAVE_RECEIVED` | 12 | easy | **9** | 20 | 200 | 800 |
+| `WORKFLOW_FORK_RECEIVED` | 25 | standard | **25** | 10 | 200 | 800 |
+| `LENS_FORK_RECEIVED` | 25 | standard | **25** | 10 | 200 | 800 |
 
-| action_key | base_xp | effective_xp | difficulty | max_events/day | max_xp/day | max_xp/season |
-|-----------|---------|-------------|-----------|---------------|-----------|-------------|
-| `CONTRIB_PR_MERGED_MAIN` | 500 | 1500 | legendary | 3 | 1500 | 15000 |
-| `CONTRIB_PR_MERGED_COMMUNITY` | 200 | 300 | hard | 5 | 800 | 8000 |
-| `CONTRIB_PR_MERGED_DOCS` | 100 | 100 | standard | 5 | 500 | 5000 |
-| `CONTRIB_ISSUE_FILED` | 30 | 30 | standard | 5 | 150 | 1500 |
-| `CONTRIB_REVIEW_GIVEN` | 50 | 75 | hard | 5 | 250 | 2500 |
+### Engagement
 
-## Level Curves
+| action_key | Base XP | Difficulty | Effective XP | Cooldown | Max events/day | Max XP/day | Max XP/season |
+|-----------|--------|-----------|-------------|---------|---------------|-----------|--------------|
+| `THREAD_ENGAGED` | 3 | easy | **3** | 60 min | 5 | 10 | 60 |
 
-Each app has its own level progression curve generated by `xp.seed_default_curve(app_id, max_level, base, power)`.
+### Daily Activity & Streaks
 
-| App | Base | Power | Max Level | Formula |
-|-----|------|-------|-----------|---------|
-| Forum | 30 | 1.3 | 100 | `increment = CEIL(30 * level^1.3)` |
-| Arena | 80 | 1.6 | 100 | `increment = CEIL(80 * level^1.6)` |
-| CLI | 60 | 1.5 | 100 | `increment = CEIL(60 * level^1.5)` |
-| Auth | 20 | 1.2 | 20 | `increment = CEIL(20 * level^1.2)` |
-| Global | 50 | 1.5 | 100 | `increment = CEIL(50 * level^1.5)` |
+| action_key | Base XP | Difficulty | Effective XP | Cooldown | Max events/day | Max XP/season | Streak type |
+|-----------|--------|-----------|-------------|---------|---------------|--------------|------------|
+| `DAILY_LOGIN` | 10 | easy | **8** | 23 h | 1 | 900 | `daily` |
+| `STREAK_BONUS_7D` | 50 | standard | **50** | 7 days | 1 | 400 | `daily` |
+| `STREAK_BONUS_30D` | 150 | hard | **225** | 30 days | 1 | 600 | `daily` |
 
-### Sample Level Thresholds
+The 23-hour cooldown on `DAILY_LOGIN` (not 24 h) prevents gradual drift for users in different timezones.
 
-**Forum (easy curve):**
+### Profile & Social Graph
 
-| Level | Min XP | Max XP |
-|-------|--------|--------|
-| 1 | 0 | 30 |
-| 5 | ~190 | ~270 |
-| 10 | ~590 | ~750 |
-| 25 | ~3,000 | ~3,600 |
-| 50 | ~10,000 | ~11,500 |
+| action_key | Base XP | Difficulty | Effective XP | Cooldown | Max events/day | Max XP/season |
+|-----------|--------|-----------|-------------|---------|---------------|--------------|
+| `PROFILE_COMPLETED` | 100 | standard | **100** | — | 1 | 100 |
+| `FOLLOW_RECEIVED` | 5 | easy | **4** | — | 20 | 400 |
 
-**Arena (hard curve):**
+`PROFILE_COMPLETED` is effectively one-time: the trigger checks for an existing positive event before awarding, and the season cap ensures the max lifetime award is 100 XP.
 
-| Level | Min XP | Max XP |
-|-------|--------|--------|
-| 1 | 0 | 80 |
-| 5 | ~1,000 | ~1,400 |
-| 10 | ~4,800 | ~6,200 |
-| 25 | ~36,000 | ~43,000 |
-| 50 | ~170,000 | ~195,000 |
+### Open-Source Contributions
+
+Awarded by `xp.grant_contribution_xp()` after external verification (GitHub webhook or admin grant). See [XP for Contributors](../contributing/xp-for-contributors.md).
+
+| action_key | Base XP | Difficulty | Effective XP | Cooldown | Max events/day | Max XP/day | Max XP/season |
+|-----------|--------|-----------|-------------|---------|---------------|-----------|--------------|
+| `CONTRIB_PR_MERGED_MAIN` | 500 | legendary | **1,250** | — | 2 | 1,000 | 3,000 |
+| `CONTRIB_PR_MERGED_COMMUNITY` | 200 | hard | **300** | — | 3 | 600 | 2,000 |
+| `CONTRIB_PR_MERGED_DOCS` | 100 | standard | **100** | — | 5 | 400 | 1,500 |
+| `CONTRIB_ISSUE_FILED` | 30 | easy | **23** | 60 min | 5 | 100 | 500 |
+| `CONTRIB_REVIEW_GIVEN` | 40 | standard | **40** | 30 min | 5 | 150 | 600 |
+
+---
+
+## Battles Rules
+
+Battle XP is awarded when a battle transitions to `closed` status (`battles.award_battle_xp` trigger). `BATTLE_CREATED` is awarded when a battle is created in a non-draft status, or when a draft battle is first published.
+
+| action_key | Base XP | Difficulty | Effective XP | Cooldown | Max events/day | Max XP/day | Max XP/season |
+|-----------|--------|-----------|-------------|---------|---------------|-----------|--------------|
+| `BATTLE_CREATED` | 50 | standard | **50** | 2 h | 2 | 100 | 800 |
+| `BATTLE_PARTICIPATED` | 100 | hard | **150** | — | 5 | 500 | 2,000 |
+| `BATTLE_WON` | 150 | legendary | **375** | — | 5 | 750 | 2,500 |
+| `BATTLE_VOTED` | 10 | easy | **8** | 10 min | 20 | 200 | 1,000 |
+
+---
+
+## Level Curve
+
+Both apps use the same polynomial progression: `increment(level) = CEIL(150 × level^0.75)`.
+
+| Level | Min XP to reach | Max XP at level |
+|-------|----------------|----------------|
+| 1 | 0 | 150 |
+| 5 | ~820 | ~1,010 |
+| 10 | ~4,400 | ~5,100 |
+| 15 | ~9,400 | ~10,500 |
+| 25 | ~22,500 | ~24,300 |
+| 35 | ~40,800 | ~43,300 |
+| 50 | ~92,000 | ~96,200 |
+| 75 | ~191,000 | ~197,000 |
+| 100 | ~330,000 | — (cap) |
+
+**XP bands** (annual targets):
+
+| User type | Typical activity | XP/year | Approx. level after 1 year |
+|-----------|-----------------|---------|--------------------------|
+| Casual | 1–2×/week | 5,000–15,000 | 10–22 |
+| Regular | Daily engagement | 20,000–40,000 | 28–42 |
+| Power | High-volume daily | 40,000–80,000 | 42–60 |
+
+---
 
 ## Season Configuration
 
-- Duration: 90 days (default)
-- Automation: `xp.check_all_seasons()` runs daily via pg_cron
-- Slug format: `s{number}_{app_slug}` (e.g., `s1_forum`, `s2_arena`)
-- Season totals are never deleted; historical data is always preserved
+| Parameter | Value |
+|-----------|-------|
+| Duration | 90 days |
+| Auto-rollover | `xp.check_all_seasons()` runs daily via pg_cron |
+| Slug format | `s{n}_{app_slug}` (e.g., `s1_forum`, `s2_battles`) |
+| Season XP vs all-time | Independent — a season reset never reduces your level |
+| Historical data | Never deleted |

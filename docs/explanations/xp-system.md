@@ -1,13 +1,14 @@
 # XP System
 
-LenserFight awards experience points (XP) for meaningful actions across the platform. XP drives your level, badges, streaks, and seasonal rankings.
+LenserFight awards experience points (XP) for meaningful actions across the platform. XP drives your level, streaks, and seasonal rankings.
 
 ## Design Principles
 
-- **Fairness first.** XP reflects effort, not luck. Difficult actions earn more than easy ones.
+- **Fairness first.** XP reflects real contribution. Difficult actions earn more than easy ones.
 - **No pay-to-win.** XP cannot be purchased, traded, or converted to money. It is separate from the token economy.
 - **Anti-gaming.** Cooldowns, daily caps, and seasonal limits prevent XP farming.
-- **Multi-app awareness.** Forum, Arena, and CLI are distinct apps with different difficulty profiles.
+- **Visibility-honest.** Only public content grants creation XP. Making content private reverses it.
+- **Self-interaction blocked.** Reacting to or replying to your own content does not award received-type XP.
 
 ## How XP Works
 
@@ -15,80 +16,111 @@ Every XP-earning action has a **rule** that defines:
 
 1. **Base XP** — the raw amount before scaling
 2. **Difficulty** — `easy`, `standard`, `hard`, or `legendary`
-3. **Cooldown** — minimum seconds between repeat awards
-4. **Daily cap** — maximum XP per day for that action
-5. **Season cap** — maximum XP per season (for contributor actions)
+3. **Cooldown** — minimum seconds between repeat awards for the same action
+4. **Daily cap** — maximum XP per day from that action type
+5. **Season cap** — maximum XP per 90-day season from that action type
 
 The difficulty multiplier scales the base XP:
 
 | Difficulty | Multiplier | Example |
 |-----------|-----------|---------|
-| Easy | 0.80x | Giving a reaction (5 base = 4 XP) |
-| Standard | 1.00x | Creating a Lens (30 base = 30 XP) |
-| Hard | 1.50x | Joining a battle (150 base = 225 XP) |
-| Legendary | 3.00x | Winning a battle (300 base = 900 XP) |
+| easy | ×0.75 | Giving a reaction (5 base → 4 XP) |
+| standard | ×1.00 | Creating a thread (30 base → 30 XP) |
+| hard | ×1.50 | Publishing a lens (80 base → 120 XP) |
+| legendary | ×2.50 | Winning a battle (150 base → 375 XP) |
 
-## Apps and Difficulty
+## Apps
 
-Different parts of LenserFight have different difficulty ratings because they require different levels of effort:
+LenserFight has two XP apps, each with its own ruleset and level curve:
 
-### Forum (Easy)
-Creating threads, replying, reacting. The forum is the entry point — actions are lightweight and frequent. XP per action is lower, but it adds up.
+| App | UUID suffix | Focus |
+|-----|------------|-------|
+| **Forum** | `...0001` | Content, social, contributions |
+| **Battles** | `...0002` | Competitive battle actions |
 
-### Arena (Hard)
-Creating battles, contending against other lensers, winning. Arena actions require preparation, skill, and competitive effort. XP rewards are significantly higher.
+## What Earns XP
 
-### CLI (Hard)
-Initializing the CLI, deploying from the command line. These actions require technical setup and developer skills.
+### Content Creation
 
-### Auth (Easy)
-Account creation and profile completion. One-time actions with small XP rewards.
+Creating a **public + published** lens, thread, or workflow earns creation XP. Drafts and private content do not. The rule applies at the moment content becomes public:
+
+- Publishing a draft publicly → XP awarded
+- Creating content publicly from the start → XP awarded immediately
+- Making public content private or archiving → creation XP is **reversed**
+- Re-publishing previously private content → XP re-awarded (if not previously awarded)
+
+See [XP Rules Reference](../reference/xp-rules-reference.md) for all values.
+
+### Social Actions
+
+| Category | Examples | Notes |
+|----------|---------|-------|
+| Giving | Reacting, liking, saving, forking workflows and lenses | Subject to cooldowns and daily caps |
+| Receiving | Getting reactions, replies, likes, forks | No cooldown (you don't control arrivals); self-interaction blocked |
+| Engagement | Reading threads | Very low value; heavily capped |
+
+### Battles
+
+| Action | Effective XP |
+|--------|-------------|
+| Create a battle | 50 |
+| Participate in a battle | 150 |
+| Win a battle | **375** |
+| Vote on a battle | 8 |
+
+Battle XP (participate, win, vote) is awarded when a battle transitions to `closed` status — after judging completes, not when you join.
+
+### Daily Activity & Streaks
+
+| Action | Effective XP | Notes |
+|--------|-------------|-------|
+| Daily login | 8 | 23-hour cooldown; once per day |
+| 7-day streak bonus | 50 | Once per 7-day period |
+| 30-day streak bonus | 225 | Once per 30-day period |
+
+Missing a day resets your current streak, but your longest streak is always preserved.
+
+### Open-Source Contributions
+
+Contributing to LenserFight earns the highest XP in the system:
+
+| Contribution | Effective XP |
+|-------------|-------------|
+| PR merged (main project) | **1,250** |
+| PR merged (community plugin/infra) | 300 |
+| PR merged (documentation) | 100 |
+| Code review given | 40 |
+| Issue filed | 23 |
+
+See [XP for Contributors](../contributing/xp-for-contributors.md).
 
 ## Levels
 
-Each app has its own level curve. Forum levels are easier to reach than Arena levels. Your level reflects your depth of engagement within that specific part of the platform.
+Both apps use the same 100-level polynomial curve (`base=150, power=0.75`):
 
-Level curves follow a power-law formula: higher levels require exponentially more XP. Early levels are quick; later levels reward long-term dedication.
+| Level | XP to reach |
+|-------|------------|
+| 10 | ~4,400 |
+| 25 | ~22,500 |
+| 50 | ~92,000 |
+| 75 | ~191,000 |
+| 100 | ~330,000 |
 
-## Streaks
-
-Some actions track daily streaks. If you perform the action on consecutive days, your streak counter increases. Streak milestones unlock badges:
-
-- 7-day streak
-- 30-day streak
-- 100-day streak
-
-Missing a day resets the current streak, but your longest streak is always preserved.
+Early levels come quickly to reward getting started. High levels reflect months or years of sustained engagement.
 
 ## Seasons
 
 XP seasons run for 90 days. During a season, your seasonal XP accumulates on a separate leaderboard. When a season ends:
 
-- Your seasonal XP is archived (never deleted)
-- A new season begins automatically
-- Your all-time XP and level are unaffected
-
-Seasons add competitive cycles without penalizing long-term progress.
-
-## Contributor XP
-
-Open-source contributors to LenserFight earn XP for their work. Contributing to the main project is the highest-priority action in the entire system.
-
-| Contribution | Effective XP |
-|-------------|-------------|
-| PR merged (main project) | 1500 |
-| PR merged (community plugin) | 300 |
-| PR merged (documentation) | 100 |
-| Code review given | 75 |
-| Issue filed | 30 |
-
-Contributor XP has seasonal caps to prevent over-accumulation.
+- Seasonal XP is archived (never deleted)
+- A new season starts automatically
+- Your all-time XP and level are never affected
 
 ## What XP Is Not
 
 - XP does not grant access to features
-- XP does not affect battle outcomes
+- XP does not affect battle outcomes or judging
 - XP cannot be exchanged for tokens or money
 - XP is not used to gate content
 
-XP is a social signal of engagement and contribution. It powers leaderboards, badges, and community recognition.
+XP is a social signal of engagement and contribution. It powers leaderboards and community recognition.
