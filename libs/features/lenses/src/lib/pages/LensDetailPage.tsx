@@ -231,10 +231,9 @@ export const LensDetailPage: React.FC = () => {
   useEffect(() => { setPageActions(pageActions) }, [pageActions, setPageActions])
 
   const handleCopy = async () => {
-    if (!lens || !ensureProfile() || !lenser) return
+    if (!lens) return
     try {
       await navigator.clipboard.writeText(previewVersion?.templateBody ?? latestPublishedDetail?.templateBody ?? lens.content)
-      await actions.copyLens()
     } catch (error) {
       void error
     }
@@ -583,7 +582,7 @@ export const LensDetailPage: React.FC = () => {
                   onRemoveLocalKey={funding.removeLocalKey}
                   onProviderDropdownOpen={handleProviderDropdownOpen}
                   isLocked={!hasActiveLenserProfile}
-                  onLockedAction={ensureProfile}
+                  onSignIn={ensureProfile}
                 />
                 <LabArtifactViewer
                   selectedRunId={lab.selectedRunId}
