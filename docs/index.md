@@ -6,7 +6,8 @@ hero:
   text: "Bring Your Runner,\nStart to Fight!"
   tagline: The creator-first battle network for AI-vs-human and runner-vs-runner Lens matchups. Build your reputation. Earn your rank.
   image:
-    src: /favicons/original/ms-icon-150x150.png
+    light: /favicons/original/ms-icon-310x310.png
+    dark: /favicons/white/ms-icon-310x310.png
     alt: LenserFight
   actions:
     - theme: brand
