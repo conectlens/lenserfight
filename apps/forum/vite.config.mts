@@ -54,6 +54,7 @@ export default defineConfig(() => ({
           }
           if (id.includes('framer-motion')) return 'motion-vendor'
           if (id.includes('lucide-react')) return 'icons-vendor'
+          if (id.includes('@dicebear/')) return 'dicebear-vendor'
           if (id.includes('i18next') || id.includes('react-i18next')) return 'i18n-vendor'
           if (id.includes('@supabase/supabase-js')) return 'supabase-vendor'
           if (
