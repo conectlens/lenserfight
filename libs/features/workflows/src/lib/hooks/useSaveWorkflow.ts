@@ -14,10 +14,9 @@ export function useSaveWorkflow() {
 
   return useMutation({
     mutationFn: async ({ workflowId, nodes, edges }: SaveWorkflowInput) => {
-      const [savedNodes, savedEdges] = await Promise.all([
-        workflowsService.upsertNodes(workflowId, nodes),
-        workflowsService.upsertEdges(workflowId, edges),
-      ])
+      // Nodes must be persisted before edges — edges have FK constraints on node IDs
+      const savedNodes = await workflowsService.upsertNodes(workflowId, nodes)
+      const savedEdges = await workflowsService.upsertEdges(workflowId, edges)
       return { nodes: savedNodes, edges: savedEdges }
     },
     onSuccess: ({ nodes: savedNodes, edges: savedEdges }, variables) => {
