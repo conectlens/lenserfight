@@ -2,7 +2,7 @@
 
 This page records the approved LenserFight 2026 beta direction.
 
-For the cross-surface product rationale behind this roadmap, see the [Product Decision Memo](/reference/product-decision-memo).
+For the cross-surface product rationale behind this roadmap, see the broader product notes in the reference docs.
 
 ## Release targets
 

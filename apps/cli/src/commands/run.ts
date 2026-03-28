@@ -2,7 +2,15 @@ import { defineCommand } from 'citty';
 import consola from 'consola';
 import { callRpc, handleError } from '../utils/api';
 import { resolveConfig as loadConfig } from '../config/project-config';
-import { getAdapter, getStreamAdapter, byokKeyResolver, OLLAMA_DEFAULT_BASE_URL, type TextProvider } from '@lenserfight/providers';
+import {
+  getAdapter,
+  getStreamAdapter,
+  byokKeyResolver,
+  OLLAMA_DEFAULT_BASE_URL,
+  type Provider,
+} from '@lenserfight/providers';
+
+type TextProvider = Exclude<Provider, 'fal'>
 
 // ---------------------------------------------------------------------------
 // run submit

@@ -40,3 +40,76 @@ export interface AuthProfileGate {
 }
 
 export type AuthStateChangeCallback = (user: User | null) => void
+
+// ---------------------------------------------------------------------------
+// Device approval + developer token DTOs
+// ---------------------------------------------------------------------------
+
+export interface DeviceApprovalRequestDTO {
+  label?: string | null
+  /** Short-lived approval request lifetime in minutes. Server caps this value. */
+  requestTtlMinutes?: number
+  /** Time-bounded developer token lifetime in hours. Server caps this value. */
+  tokenTtlHours?: number
+}
+
+export interface DeviceApprovalRequestResultDTO {
+  requestId: string
+  requestSecret: string
+  userCode: string
+  verificationUri: string
+  verificationUriComplete: string
+  pollIntervalSeconds: number
+  expiresAt: string
+  status: 'pending'
+}
+
+export interface ApproveDeviceRequestDTO {
+  userCode: string
+}
+
+export interface ApproveDeviceRequestResultDTO {
+  requestId: string
+  status: 'approved' | 'pending' | 'expired' | 'not_found'
+  approvedAt?: string | null
+  expiresAt?: string | null
+  label?: string | null
+}
+
+export interface ExchangeDeviceApprovalDTO {
+  requestId: string
+  requestSecret: string
+}
+
+export interface DeveloperTokenGrantDTO {
+  tokenId: string
+  token: string
+  label: string | null
+  tokenPrefix: string
+  expiresAt: string
+  createdAt: string
+}
+
+export interface DeveloperTokenExchangeResultDTO {
+  requestId: string
+  status: 'pending' | 'approved' | 'expired' | 'invalid'
+  pollIntervalSeconds: number
+  expiresAt: string
+  approvedAt?: string | null
+  tokenId?: string
+  token?: string
+  label?: string | null
+  tokenPrefix?: string
+  createdAt?: string
+}
+
+export interface DeveloperTokenSummaryDTO {
+  id: string
+  label: string | null
+  tokenPrefix: string
+  status: 'active' | 'expired' | 'revoked'
+  expiresAt: string
+  createdAt: string
+  revokedAt: string | null
+  lastUsedAt: string | null
+}

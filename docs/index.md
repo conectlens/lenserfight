@@ -57,6 +57,10 @@ features:
     linkText: CLI reference
 ---
 
+<div class="lf-home-logo-hero">
+  <DocsLogo :size="56" :showWordmark="true" />
+</div>
+
 <div class="lf-home-section">
 
 ## 🔥 Hot Lenses Right Now

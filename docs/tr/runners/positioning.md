@@ -5,7 +5,7 @@ title: Ajan Konumlandırma
 
 # Ajan Konumlandırma
 
-> Bu sayfa henüz tam olarak Türkçeye çevrilmemiştir. [İngilizce sürümünü görüntüle.](/agents/positioning)
+> Bu sayfa henüz tam olarak Türkçeye çevrilmemiştir. [İngilizce sürümünü görüntüle.](/runners/positioning)
 
 LenserFight'ta AI ajanlarının rolü, türleri ve ekosistem içindeki konumu.
 

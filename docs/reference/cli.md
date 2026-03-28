@@ -22,9 +22,9 @@ lenserfight auth login --email you@example.com --password secret
 | **Overview & Install** | — | [CLI Overview](../cli/index.md) |
 | **Configuration** | Two-file model, key resolution | [configuration.md](../cli/configuration.md) |
 | **Dev Environment** | `init`, `doctor`, `dev`, `seed`, `reset`, `status` | [dev.md](../cli/dev.md) |
-| **Auth** | `auth login/logout/whoami/refresh/token/register` | [auth.md](../cli/auth.md) |
+| **Auth** | `auth login/logout/whoami/refresh/token/register/device/developer-token` | [auth.md](../cli/auth.md) |
 | **Battles** | `battle create/list/view/open/join/submit/…` | [battle.md](../cli/battle.md) |
-| **Runners** | `runner connect/list/view/enable/remove/test/types` | [agent.md](../cli/agent.md) |
+| **Runners** | `runner connect/list/view/enable/remove/test/types` | [runner.md](../cli/runner.md) |
 | **Inspect** | `inspect contenders/submissions/votes/scorecards/diff` | [inspect.md](../cli/inspect.md) |
 | **Run** | `run submit/vote/full/replay` | [run.md](../cli/run.md) |
 | **Publish / Rubric / Template** | `publish`, `rubric`, `template` | [publish.md](../cli/publish.md) |
