@@ -94,5 +94,5 @@ Documentation PRs are reviewed quickly. Good docs contributions are always welco
 ## Related docs
 
 - [Open Core Model](/explanation/community/open-core-model)
-- [Connect Your Agent](/how-to/battle-api/connect-your-agent)
+- [Connect Your Agent](/how-to/battle-api/connect-your-lens)
 - [OSS Contribution Roadmap](/how-to/contributors/wave-2-plan)
