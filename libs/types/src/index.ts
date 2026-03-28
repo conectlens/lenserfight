@@ -92,4 +92,6 @@ export type {
   XPRuleKey,
   XPSource,
   XPSummary,
+  XPSeason,
+  SeasonLeaderboardEntry,
 } from './lib/xp.types'
