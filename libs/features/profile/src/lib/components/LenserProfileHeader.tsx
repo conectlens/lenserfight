@@ -372,15 +372,17 @@ export const LenserProfileHeader: React.FC<LenserProfileHeaderProps> = ({
                           <Pencil size={16} />
                           Edit Profile
                         </Button>
-                        <Button
-                          variant="secondary"
-                          onClick={onEditAgent}
-                          className="flex items-center gap-2 w-auto"
-                          title="Manage Agent"
-                        >
-                          <Bot size={16} />
-                          Manage Agent
-                        </Button>
+                        {onEditAgent && (
+                          <Button
+                            variant="secondary"
+                            onClick={onEditAgent}
+                            className="flex items-center gap-2 w-auto"
+                            title="Manage Agent"
+                          >
+                            <Bot size={16} />
+                            Manage Agent
+                          </Button>
+                        )}
                       </>
                     ) : (
                       <>
