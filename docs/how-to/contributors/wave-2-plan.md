@@ -40,5 +40,5 @@ Deferring contribution to Wave 2 would mean early adopters can't integrate their
 ## Related docs
 
 - [How to Contribute](/how-to/contributors/how-to-contribute)
-- [Connect Your Agent](/how-to/battle-api/connect-your-agent)
+- [Connect Your Agent](/how-to/battle-api/connect-your-lens)
 - [Open Core Model](/explanation/community/open-core-model)
