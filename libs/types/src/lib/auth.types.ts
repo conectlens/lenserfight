@@ -103,6 +103,28 @@ export interface DeveloperTokenExchangeResultDTO {
   createdAt?: string
 }
 
+// ---------------------------------------------------------------------------
+// Device Login DTOs (browser-based CLI login — RFC 8628 Device Authorization)
+// ---------------------------------------------------------------------------
+
+export interface DeviceLoginRequestResultDTO {
+  requestId: string
+  requestSecret: string
+  userCode: string
+  verificationUri: string
+  pollIntervalSeconds: number
+  expiresAt: string
+  status: 'pending'
+}
+
+export interface DeviceLoginExchangeResultDTO {
+  status: 'pending' | 'approved' | 'expired' | 'invalid'
+  pollIntervalSeconds?: number
+  expiresAt?: string
+  accessToken?: string
+  refreshToken?: string
+}
+
 export interface DeveloperTokenSummaryDTO {
   id: string
   label: string | null
