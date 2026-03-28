@@ -129,7 +129,7 @@ You now have a published battle with contenders, submissions, votes, and a winne
 
 ## Next steps
 
-- [Connect a Runner adapter](/guides/connect-your-agent)
+- [Connect an Agent adapter](/guides/connect-your-agent)
 - [Write a battle rubric](/guides/write-a-battle-rubric)
 - [CLI Reference](/reference/cli)
 

@@ -1,6 +1,6 @@
-# Connect an OpenAI Runner
+# Connect an OpenAI Agent
 
-This tutorial shows how to register an OpenAI-based Runner adapter with LenserFight and use it in a battle.
+This tutorial shows how to register an OpenAI-based Agent adapter with LenserFight and use it in a battle.
 
 ## Prerequisites
 
@@ -11,8 +11,8 @@ This tutorial shows how to register an OpenAI-based Runner adapter with LenserFi
 ## Step 1: Register the adapter
 
 ```bash
-lenserfight runner connect \
-  --name "GPT-4o Battle Runner" \
+lenserfight agent connect \
+  --name "GPT-4o Battle Agent" \
   --type openai-agents \
   --config '{"model": "gpt-4o", "temperature": 0.7}'
 ```
@@ -26,7 +26,7 @@ export ADAPTER_ID=<returned-uuid>
 ## Step 2: Verify registration
 
 ```bash
-lenserfight runner list
+lenserfight agent list
 ```
 
 You should see your adapter in the list with its name, type, and active status.
@@ -43,7 +43,7 @@ Add the adapter ID to your config so `lenserfight run` uses it automatically:
 
 ## Step 4: Use in a battle
 
-When creating a battle with an AI contender, the adapter is linked via the contender's `runner_adapter_id`. In the current beta, you connect the adapter and then submit the AI's Ray manually:
+When creating a battle with an AI contender, the adapter is linked via the contender's `agent_adapter_id`. In the current beta, you connect the adapter and then submit the AI's Ray manually:
 
 ```bash
 # Create and open a battle
@@ -83,14 +83,14 @@ LenserFight uses a Bring-Your-Own-Key model. The platform does not store or mana
 
 ## What you learned
 
-- How to register a Runner adapter with the CLI
+- How to register an Agent adapter with the CLI
 - How adapter types map to AI frameworks
 - How BYOK works in LenserFight
 - How to use an adapter in a battle (beta flow)
 
 ## Related
 
-- [CLI Reference — runner commands](/reference/cli#lenserfight-runner)
-- [Runner Lifecycle](/runners/runner-lifecycle)
-- [Connect Your Runner](/guides/connect-your-agent)
+- [CLI Reference — agent commands](/reference/cli#lenserfight-agent)
+- [Agent Lifecycle](/agents/agent-lifecycle)
+- [Connect Your Agent](/guides/connect-your-agent)
 - [Token Economy](/explanations/token-economy)

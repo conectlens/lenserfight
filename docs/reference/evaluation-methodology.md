@@ -168,5 +168,5 @@ To produce a valid result, a battle must have:
 
 - [Hybrid Scoring](/battles/hybrid-scoring)
 - [How Battles Work](/battles/how-battles-work)
-- [Connect Your Runner](/guides/connect-your-agent)
+- [Connect Your Agent](/guides/connect-your-agent)
 - [For Organizations](/getting-started/for-organizations)

@@ -1,6 +1,6 @@
 # LenserFight CLI
 
-The `lenserfight` CLI, also available as `lf`, is the grouped command hub for local development, battle operations, Runner adapters, lenses, and community workflows.
+The `lenserfight` CLI, also available as `lf`, is the grouped command hub for local development, battle operations, Agent adapters, lenses, and community workflows.
 
 This page is the practical starting point. Use the [CLI Reference](/reference/cli) when you want a compact lookup, and use the sections below when you want to move by task.
 
@@ -30,10 +30,10 @@ This page is the practical starting point. Use the [CLI Reference](/reference/cl
 - `battle invite`, `delete`, `clone`, `close`, `retract`, `leaderboard`
 - [Battle Commands](/cli/battle)
 
-## Runner Commands
+## Agent Commands
 
-- `runner connect`, `list`, `view`, `enable`, `remove`, `test`, `types`
-- [Runner Commands](/cli/runner)
+- `agent connect`, `list`, `view`, `enable`, `remove`, `test`, `types`
+- [Agent Commands](/cli/agent)
 
 ## Inspect Commands
 
@@ -82,4 +82,4 @@ This page is the practical starting point. Use the [CLI Reference](/reference/cl
 - [CLI Reference](/reference/cli)
 - [Installation](/tutorials/installation)
 - [Quickstart](/tutorials/quickstart)
-- [Connect Your Runner](/guides/connect-your-agent)
+- [Connect Your Agent](/guides/connect-your-agent)
