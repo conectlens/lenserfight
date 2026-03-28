@@ -18,8 +18,8 @@ interface LensDetailData {
 }
 
 export const useLensDetailController = (lensId?: string) => {
-  const { lenser } = useAuthenticatedLenser()
-  const { user } = useAuth()
+  const { lenser, isLoading: isLenserLoading } = useAuthenticatedLenser()
+  const { user, isLoading: isAuthLoading } = useAuth()
   const queryClient = useQueryClient()
   const loggedLensViews = useRef(new Set<string>())
 
@@ -49,7 +49,7 @@ export const useLensDetailController = (lensId?: string) => {
         authorLenses: authorP.filter((p) => p.id !== lensId).slice(0, 5),
       }
     },
-    enabled: !!lensId,
+    enabled: !!lensId && !isAuthLoading && !isLenserLoading,
     staleTime: 1000 * 60 * 5,
     gcTime: 1000 * 60 * 30,
     retry: (failureCount, error) => {
@@ -126,7 +126,7 @@ export const useLensDetailController = (lensId?: string) => {
     lens: data?.lens || null,
     relatedLenses: data?.relatedLenses || [],
     authorLenses: data?.authorLenses || [],
-    isLoading,
+    isLoading: isLoading || isLenserLoading,
     error: error ? error.message : null,
     actions: {
       copyLens,

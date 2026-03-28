@@ -75,7 +75,6 @@ export interface WorkflowsListFilter {
 }
 
 export interface CreateWorkflowInput {
-  lenser_id: string
   title: string
   description?: string
   visibility?: 'public' | 'private' | 'unlisted'
@@ -231,7 +230,6 @@ export class SupabaseWorkflowsRepository implements WorkflowsRepositoryPort {
 
   async createWorkflow(input: CreateWorkflowInput): Promise<WorkflowRecord> {
     const { data, error } = await supabase.rpc('fn_create_workflow', {
-      p_lenser_id: input.lenser_id,
       p_title: input.title,
       p_description: input.description ?? null,
       p_visibility: input.visibility ?? 'public',

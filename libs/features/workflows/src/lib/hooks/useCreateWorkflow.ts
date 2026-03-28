@@ -6,7 +6,7 @@ import { useState } from 'react'
 
 import type { WorkflowRecord, CreateWorkflowInput } from '@lenserfight/data/repositories'
 
-export type CreateWorkflowValues = Omit<CreateWorkflowInput, 'lenser_id'>
+export type CreateWorkflowValues = CreateWorkflowInput
 
 export const useCreateWorkflow = () => {
   const { lenser } = useLenser()
@@ -25,7 +25,6 @@ export const useCreateWorkflow = () => {
     setError(null)
     try {
       const workflow = await workflowsService.createWorkflow({
-        lenser_id: lenser.id,
         title: input.title,
         description: input.description,
         visibility: input.visibility ?? 'public',
