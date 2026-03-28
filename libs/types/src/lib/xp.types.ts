@@ -116,3 +116,26 @@ export interface LeaderboardEntry {
 
 export type LeaderboardTimeframe = 'weekly' | 'monthly' | 'all_time'
 export type LeaderboardScope = 'global' | 'season'
+
+export interface XPSeason {
+  id: string
+  slug: string
+  name: string
+  startsAt: string
+  endsAt: string
+  isActive: boolean
+}
+
+export interface SeasonLeaderboardEntry {
+  seasonId: string
+  seasonSlug: string
+  appId: string
+  rank: number
+  lenserId: string
+  totalXp: number
+  user: {
+    displayName: string
+    handle?: string
+    avatarUrl?: string
+  }
+}

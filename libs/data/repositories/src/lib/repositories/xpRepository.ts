@@ -7,6 +7,8 @@ import {
   LeaderboardEntry,
   LeaderboardTimeframe,
   LeaderboardScope,
+  XPSeason,
+  SeasonLeaderboardEntry,
 } from '@lenserfight/types'
 import { supabase } from '@lenserfight/data/supabase'
 
@@ -30,6 +32,13 @@ export interface XPRepositoryPort {
   ): Promise<{ list: LeaderboardEntry[]; userEntry?: LeaderboardEntry | null }>
   getApps(): Promise<XPApp[]>
   getContributions(lenserId: string): Promise<XPContribution[]>
+  getActiveSeason(appId?: string): Promise<XPSeason | null>
+  getSeasonLeaderboard(
+    appId?: string,
+    seasonId?: string,
+    limit?: number,
+    offset?: number
+  ): Promise<{ list: SeasonLeaderboardEntry[]; userEntry?: SeasonLeaderboardEntry | null }>
 }
 
 // --- Supabase Implementation ---
@@ -175,5 +184,64 @@ export class SupabaseXPRepository implements XPRepositoryPort {
     }
 
     return { list: allEntries, userEntry }
+  }
+
+  async getActiveSeason(appId = XP_APP_IDS.forum): Promise<XPSeason | null> {
+    const { data, error } = await supabase.rpc('fn_get_active_season', {
+      p_app_id: appId,
+    })
+
+    if (error) throw error
+
+    const row = data?.[0]
+    if (!row) return null
+
+    return {
+      id: row.id,
+      slug: row.slug,
+      name: row.name,
+      startsAt: row.starts_at,
+      endsAt: row.ends_at,
+      isActive: row.is_active,
+    }
+  }
+
+  async getSeasonLeaderboard(
+    appId = XP_APP_IDS.forum,
+    seasonId?: string,
+    limit = 20,
+    offset = 0
+  ): Promise<{ list: SeasonLeaderboardEntry[]; userEntry?: SeasonLeaderboardEntry | null }> {
+    const { data, error } = await supabase.rpc('fn_get_season_leaderboard', {
+      p_app_id: appId,
+      p_season_id: seasonId ?? null,
+      p_limit: limit,
+      p_offset: offset,
+    })
+
+    if (error) throw error
+
+    const {
+      data: { session },
+    } = await supabase.auth.getSession()
+    const currentUserId = session?.user?.id
+
+    const list: SeasonLeaderboardEntry[] = (data ?? []).map((row: any) => ({
+      seasonId: row.season_id,
+      seasonSlug: row.season_slug,
+      appId: row.app_id,
+      rank: row.rank,
+      lenserId: row.lenser_id,
+      totalXp: row.total_xp,
+      user: {
+        displayName: row.user?.display_name || 'Unknown Lenser',
+        handle: row.user?.handle,
+        avatarUrl: row.user?.avatar_url,
+      },
+    }))
+
+    const userEntry = currentUserId ? list.find((e) => e.lenserId === currentUserId) ?? null : null
+
+    return { list, userEntry }
   }
 }
