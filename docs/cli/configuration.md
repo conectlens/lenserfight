@@ -30,7 +30,7 @@ Stores secrets and auth tokens globally per user. Created by `auth login`.
 | `developerTokenExpiresAt` | Developer token expiry (ISO 8601) |
 | `supabaseAnonKey` | Anon key (if stored explicitly) |
 | `supabaseServiceRoleKey` | Service role key (for admin ops like `finalize`) |
-| `defaultAdapterId` | Default Runner adapter UUID for `run` |
+| `defaultAdapterId` | Default Agent adapter UUID for `run` |
 
 ## Resolution rules
 

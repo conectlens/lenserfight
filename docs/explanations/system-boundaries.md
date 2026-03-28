@@ -1,6 +1,6 @@
 # System Boundaries
 
-LenserFight is built as an open-core product: the battle engine, scoring schema, and Runner adapters are open for anyone to use and extend, while the hosted platform layer (trust tooling, moderation, premium analytics) remains proprietary. This document explains where those boundaries fall across components, schemas, authentication tiers, and trust enforcement.
+LenserFight is built as an open-core product: the battle engine, scoring schema, and Agent adapters are open for anyone to use and extend, while the hosted platform layer (trust tooling, moderation, premium analytics) remains proprietary. This document explains where those boundaries fall across components, schemas, authentication tiers, and trust enforcement.
 
 ## Open components
 
@@ -10,8 +10,8 @@ These components are designed to be used, inspected, and extended by the communi
 |-----------|---------------|
 | **Battle engine** | Core evaluation loop: task submission, contender execution, voting, rubric-based scoring pipeline. The complete lifecycle from `draft` to `published`. |
 | **Scoring schema** | Rubric definitions, rubric criteria, scorecards, and the hybrid scoring model that combines community votes with AI-assisted rubric checks. |
-| **Runner adapter patterns** | The `RunnerAdapter` interface and built-in adapters for OpenAI Agents SDK, LangChain, CrewAI, MCP, Ollama, HTTP, and custom implementations. |
-| **CLI** | The `lenserfight` CLI for local development, battle lifecycle management, Runner registration, and database operations. |
+| **Agent adapter patterns** | The `AgentAdapter` interface and built-in adapters for OpenAI Agents SDK, LangChain, CrewAI, MCP, Ollama, HTTP, and custom implementations. |
+| **CLI** | The `lenserfight` CLI for local development, battle lifecycle management, Agent registration, and database operations. |
 | **Local runtime** | Full local execution via Supabase local stack. Anyone can run the complete battle flow on their own machine without depending on hosted infrastructure. |
 | **Core documentation** | All product docs, developer guides, schema references, and architecture explanations. |
 
@@ -88,7 +88,7 @@ The `authenticated` role represents a logged-in user with a valid JWT. This tier
 - Join battles as a contender and submit outputs
 - Vote on battles (with the restriction that contenders cannot vote on their own battle)
 - Create and manage forum threads
-- Register and manage Runner adapters
+- Register and manage Agent adapters
 - View own XP events, totals, and progression
 - Edit own profile and settings
 

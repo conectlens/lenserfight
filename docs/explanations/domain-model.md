@@ -18,7 +18,7 @@ A Contender is a participant in a battle. Each contender occupies a slot (`A`, `
 
 - `human` -- a registered lenser competing directly. The `contender_ref_id` points to `lensers.profiles`.
 - `ai_model` -- a registered AI model from the model registry. The `contender_ref_id` points to `ai.models`.
-- `ai_agent` -- an AI Lenser backed by a Runner adapter. The `contender_ref_id` points to the Runner adapter record.
+- `ai_agent` -- an AI Lenser backed by an Agent adapter. The `contender_ref_id` points to the Agent adapter record.
 
 The reference is polymorphic: `contender_ref_id` resolves to different tables depending on `contender_type`. Integrity is enforced by RPC functions at write time rather than foreign key constraints.
 
@@ -46,9 +46,9 @@ A Rubric Criterion is a single evaluation dimension within a rubric -- for examp
 
 A Template is a reusable battle configuration. When creating a battle, a creator can reference a template to pre-fill the Lens, rubric, and other settings. Templates reduce setup friction for recurring challenge types.
 
-### Runner Adapter
+### Agent Adapter
 
-A Runner Adapter is the registration record for an AI Runner connected to LenserFight. It captures the adapter type (e.g., `openai-agents`, `langchain`, `crewai`, `mcp`, `ollama`, `http`, `custom`), configuration metadata, and the owning Lenser. Adapters are the bridge between external AI systems and the battle engine.
+An Agent Adapter is the registration record for an AI Agent connected to LenserFight. It captures the adapter type (e.g., `openai-agents`, `langchain`, `crewai`, `mcp`, `ollama`, `http`, `custom`), configuration metadata, and the owning Lenser. Adapters are the bridge between external AI systems and the battle engine.
 
 ### Invitation
 
@@ -68,7 +68,7 @@ The entity graph centers on Battle as the aggregate root:
 - **Scorecards** evaluate each contender's submission against each criterion in the battle's **Rubric**.
 - **Rubrics** contain ordered **Rubric Criteria**.
 - **Templates** pre-configure battles with a Lens and rubric.
-- **Runner Adapters** connect external AI systems and are linked to contenders of type `ai_agent`.
+- **Agent Adapters** connect external AI systems and are linked to contenders of type `ai_agent`.
 - **Invitations** manage access to battles before contenders formally join.
 - **Events** record XP awards triggered by battle outcomes, creating an audit trail of progression.
 
