@@ -1,12 +1,12 @@
 import { lensesService, battlesService } from '@lenserfight/data/repositories'
 import { useAuth } from '@lenserfight/features/auth'
 import { useAIModels } from '@lenserfight/features/generations'
-import { useCreateLens, CreateLensModal } from '@lenserfight/features/lenses'
+import { useCreateLens, CreateLensModal, useFundingSource, FundingSourceToggle } from '@lenserfight/features/lenses'
 import { Badge, Button } from '@lenserfight/ui/components'
 import { SelectField } from '@lenserfight/ui/forms'
 import { useQuery } from '@tanstack/react-query'
-import { ArrowLeft, Bookmark, ChevronDown, GitBranch, GitFork, Lock, Pencil, Play, Settings, Swords, ThumbsUp, X } from 'lucide-react'
-import React, { useState } from 'react'
+import { ArrowLeft, Bookmark, ChevronDown, GitBranch, GitFork, Lock, Pencil, Play, Settings, Square, Swords, ThumbsUp, X } from 'lucide-react'
+import React, { useCallback, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
 
@@ -34,9 +34,8 @@ export function WorkflowBuilderPage({ workflowId, onBattleClick }: WorkflowBuild
   const navigate = useNavigate()
   const { user } = useAuth()
   const { workflow, nodes, edges, isLoading } = useWorkflow(workflowId)
-  const { startRun, isPending: starting, runId, nodeResults, isRunning } = useWorkflowRun(workflowId)
+  const { startRun, stopRun, isPending: starting, runId, nodeResults, isRunning } = useWorkflowRun(workflowId)
   const { models, isLoading: modelsLoading } = useAIModels()
-  const { execute: executeWorkflow } = useWorkflowExecution({ nodes, edges, models })
   const [showRunPanel, setShowRunPanel] = useState(false)
   const [isEditModalOpen, setIsEditModalOpen] = useState(false)
   const [globalModelId, setGlobalModelId] = useState<string>(() => {
@@ -46,6 +45,27 @@ export function WorkflowBuilderPage({ workflowId, onBattleClick }: WorkflowBuild
   const [paletteCollapsed, setPaletteCollapsed] = useState(
     () => typeof window !== 'undefined' && window.innerWidth < 768
   )
+
+  // ── Funding source (BYOK / platform credit) ────────────────────────────────
+  const funding = useFundingSource(globalModelId)
+  const resolveLocalKeyRef = useRef<((id: string) => Promise<string>) | undefined>(undefined)
+  resolveLocalKeyRef.current = funding.resolveLocalKey
+  const stableResolveLocalKey = useCallback(
+    (keyId: string) =>
+      resolveLocalKeyRef.current
+        ? resolveLocalKeyRef.current(keyId)
+        : Promise.reject(new Error('Local key resolver not ready')),
+    [],
+  )
+
+  const { execute: executeWorkflow, stopExecution } = useWorkflowExecution({
+    nodes,
+    edges,
+    models,
+    fundingSource: funding.fundingSource,
+    selectedLocalKeyId: funding.selectedLocalKeyId,
+    resolveLocalKey: stableResolveLocalKey,
+  })
 
   // Per-node config overrides — synced to DB via canvas debounced save (workflow_nodes.config)
   const [nodeConfigs, setNodeConfigs] = useState<Record<string, WorkflowNodeConfig>>({})
@@ -126,12 +146,40 @@ export function WorkflowBuilderPage({ workflowId, onBattleClick }: WorkflowBuild
     }
   }
 
-  const modelOptions = models
-    .filter((m) => !!m.key && m.is_active)
-    .map((m) => ({
-      value: m.key,
-      label: `${m.name} (${m.providerDisplayName ?? m.provider})`,
-    }))
+  const handleStopClick = () => {
+    stopExecution()
+    stopRun()
+  }
+
+  // Build combined model options: cloud models + models from local BYOK keys' providers
+  const modelOptions = (() => {
+    const cloudOptions = models
+      .filter((m) => !!m.key && m.is_active)
+      .map((m) => ({
+        value: m.key,
+        label: `${m.name} (${m.providerDisplayName ?? m.provider})`,
+      }))
+
+    if (
+      funding.fundingSource === 'user_byok_local' &&
+      funding.selectedLocalKeyId &&
+      funding.localKeys.length > 0
+    ) {
+      const localKey = funding.localKeys.find((k) => k.id === funding.selectedLocalKeyId)
+      if (localKey) {
+        // Filter cloud model list to those matching the local key's provider
+        const providerOptions = models
+          .filter((m) => !!m.key && m.is_active && m.provider === localKey.provider)
+          .map((m) => ({
+            value: m.key,
+            label: `${m.name} (${localKey.label})`,
+          }))
+        if (providerOptions.length > 0) return providerOptions
+      }
+    }
+
+    return cloudOptions
+  })()
 
   // ── Loading / error states ─────────────────────────────────────────────────
   if (isLoading) {
@@ -233,18 +281,6 @@ export function WorkflowBuilderPage({ workflowId, onBattleClick }: WorkflowBuild
                 </Button>
               )}
 
-              {isOwner && (
-                <Button
-                  size="sm"
-                  variant="secondary"
-                  onClick={() => setIsEditModalOpen(true)}
-                  className="gap-1.5 w-auto rounded-xl px-2.5 py-1"
-                  title="Edit workflow"
-                >
-                  <Pencil size={12} />
-                </Button>
-              )}
-
               {workflow.visibility === 'private' && (
                 <span
                   title="Private workflow"
@@ -256,8 +292,19 @@ export function WorkflowBuilderPage({ workflowId, onBattleClick }: WorkflowBuild
             </>
           )}
 
-          {/* Run — inline model selector + run button */}
+          {/* Run — edit + model selector + run/stop button */}
           <div className="flex items-center gap-1.5">
+            {isOwner && (
+              <Button
+                size="sm"
+                variant="secondary"
+                onClick={() => setIsEditModalOpen(true)}
+                className="gap-1.5 w-auto rounded-xl px-2.5 py-1"
+                title="Edit workflow"
+              >
+                <Pencil size={12} />
+              </Button>
+            )}
             <SelectField
               value={globalModelId}
               onChange={handleModelChange}
@@ -266,15 +313,27 @@ export function WorkflowBuilderPage({ workflowId, onBattleClick }: WorkflowBuild
               disabled={modelsLoading}
               className="w-44 [&_button]:!py-1.5 [&_button]:!text-xs [&_button]:!rounded-lg"
             />
-            <Button
-              size="sm"
-              onClick={() => handleRunClick()}
-              isLoading={starting}
-              disabled={nodes.length === 0}
-              className="gap-1.5 w-auto"
-            >
-              <Play size={12} /> Run
-            </Button>
+            {isRunning ? (
+              <Button
+                size="sm"
+                variant="secondary"
+                onClick={handleStopClick}
+                className="gap-1.5 w-auto border-status-red/30 text-status-red hover:bg-status-red/10"
+                title="Stop workflow"
+              >
+                <Square size={12} /> Stop
+              </Button>
+            ) : (
+              <Button
+                size="sm"
+                onClick={() => handleRunClick()}
+                isLoading={starting}
+                disabled={nodes.length === 0}
+                className="gap-1.5 w-auto"
+              >
+                <Play size={12} /> Run
+              </Button>
+            )}
           </div>
 
           {/* Battle */}
@@ -405,6 +464,22 @@ export function WorkflowBuilderPage({ workflowId, onBattleClick }: WorkflowBuild
               </Button>
             </div>
             <div className="flex-1 overflow-y-auto">
+              {/* Funding source selection in run panel */}
+              <div className="px-4 py-3 border-b border-surface-border">
+                <FundingSourceToggle
+                  fundingSource={funding.fundingSource}
+                  onFundingSourceChange={funding.setFundingSource}
+                  selectedKeyRefId={funding.selectedKeyRefId}
+                  onKeyRefIdChange={funding.setSelectedKeyRefId}
+                  availableKeys={funding.availableKeys}
+                  selectedLocalKeyId={funding.selectedLocalKeyId}
+                  onLocalKeyIdChange={funding.setSelectedLocalKeyId}
+                  availableLocalKeys={funding.localKeys}
+                  onAddLocalKey={funding.addLocalKey}
+                  walletBalance={funding.walletBalance}
+                  canUseBYOK={funding.canUseBYOK}
+                />
+              </div>
               <WorkflowRootInputsPanel
                 nodes={nodes}
                 edges={edges}

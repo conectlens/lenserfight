@@ -261,6 +261,8 @@ export const useLabController = (lensId: string, isAuthenticated = false, option
   const stopStream = useCallback(() => {
     abortRef.current?.abort()
     abortRef.current = null
+    streamOutputRef.current = ''
+    setStreamOutput('')
     setStreamState('idle')
   }, [])
 

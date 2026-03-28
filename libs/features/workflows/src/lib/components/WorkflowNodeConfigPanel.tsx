@@ -1,5 +1,6 @@
 import { lensesService } from '@lenserfight/data/repositories'
 import { useAIModels } from '@lenserfight/features/generations'
+import { VersionParamFields } from '@lenserfight/features/lenses'
 import { Button } from '@lenserfight/ui/components'
 import { SelectField } from '@lenserfight/ui/forms'
 import { useQuery } from '@tanstack/react-query'
@@ -130,36 +131,37 @@ export function WorkflowNodeConfigPanel({
             <p className="text-[10px] font-semibold uppercase tracking-wider text-greyscale-400">
               Parameters
             </p>
-            {versionParams.map((param) => {
-              const paramLabel = param.label
-              const isAutoWired = autoWiredParams.has(paramLabel)
-              const edge = incomingEdges.find((e) => e.target_param_label === paramLabel)
+            {/* Auto-wired params display */}
+            {incomingEdges.map((edge) => {
+              const paramLabel = edge.target_param_label
+              if (!paramLabel) return null
               return (
-                <div key={param.id ?? paramLabel} className="space-y-1">
+                <div key={edge.id} className="space-y-1">
                   <label className="text-[11px] font-medium text-greyscale-600 dark:text-greyscale-300 capitalize">
                     {paramLabel}
                   </label>
-                  {isAutoWired && edge ? (
-                    <div className="flex items-center gap-1.5 rounded-lg border border-dashed border-greyscale-300 dark:border-greyscale-600 bg-surface-raised px-2.5 py-1.5">
-                      <span className="text-[10px] text-greyscale-400">{'\u21B3'} auto from</span>
-                      <span className="text-[10px] font-medium text-primary-yellow-600 truncate">
-                        {getSourceNodeLabel(edge.source_node_id)}.{edge.source_output_key}
-                      </span>
-                    </div>
-                  ) : (
-                    <input
-                      type="text"
-                      value={paramOverrides[paramLabel] ?? ''}
-                      onChange={(e) =>
-                        setParamOverrides((prev) => ({ ...prev, [paramLabel]: e.target.value }))
-                      }
-                      placeholder={`Value for [[${paramLabel}]]`}
-                      className="w-full px-2.5 py-1.5 text-xs bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg text-gray-900 dark:text-white placeholder-gray-400 focus:ring-1 focus:ring-primary/50 focus:border-primary outline-none transition-all"
-                    />
-                  )}
+                  <div className="flex items-center gap-1.5 rounded-lg border border-dashed border-greyscale-300 dark:border-greyscale-600 bg-surface-raised px-2.5 py-1.5">
+                    <span className="text-[10px] text-greyscale-400">{'\u21B3'} auto from</span>
+                    <span className="text-[10px] font-medium text-primary-yellow-600 truncate">
+                      {getSourceNodeLabel(edge.source_node_id)}.{edge.source_output_key}
+                    </span>
+                  </div>
                 </div>
               )
             })}
+            {/* Manual param overrides (non-auto-wired) */}
+            {versionParams.filter((p) => !autoWiredParams.has(p.label)).length > 0 && (
+              <VersionParamFields
+                params={versionParams.filter((p) => !autoWiredParams.has(p.label))}
+                values={paramOverrides}
+                errors={{}}
+                onChange={(name, value) =>
+                  setParamOverrides((prev) => ({ ...prev, [name]: String(value ?? '') }))
+                }
+                onImportJson={() => {}}
+                onImportCsv={() => {}}
+              />
+            )}
           </div>
         )}
 
