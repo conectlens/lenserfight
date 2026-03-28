@@ -20,7 +20,8 @@
     }
   },
   "dependencies": {
-    "@xyflow/react": "^12.7.0",
+    "@dicebear/collection": "^9.4.2",
+    "@dicebear/core": "^9.4.2",
     "@expo/metro-config": "~54.0.9",
     "@expo/metro-runtime": "~6.1.2",
     "@google/genai": "^1.31.0",
@@ -33,6 +34,7 @@
     "@tsparticles/react": "^3.0.0",
     "@tsparticles/slim": "^3.9.1",
     "@uiw/react-md-editor": "^4.0.11",
+    "@xyflow/react": "^12.7.0",
     "citty": "^0.2.1",
     "consola": "^3.4.2",
     "expo": "~54.0.0",
