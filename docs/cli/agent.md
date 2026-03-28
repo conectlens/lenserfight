@@ -1,16 +1,16 @@
-# Runner Commands
+# Agent Commands
 
-Register and manage Runner adapters that participate in battles.
+Register and manage Agent adapters that participate in battles.
 
 ```
-lenserfight runner <subcommand>
+lenserfight agent <subcommand>
 ```
 
 ## Subcommands
 
 | Subcommand | Description |
 |------------|-------------|
-| `connect` | Register a new Runner adapter |
+| `connect` | Register a new Agent adapter |
 | `list` | List your registered adapters |
 | `view` | Show full config and status for an adapter |
 | `enable` | Re-activate a deactivated adapter |
@@ -20,12 +20,12 @@ lenserfight runner <subcommand>
 
 ---
 
-## `runner connect`
+## `agent connect`
 
-Register a new Runner adapter.
+Register an Agent adapter.
 
 ```bash
-lenserfight runner connect \
+lenserfight agent connect \
   --name "GPT-4o Adapter" \
   --type openai-agents \
   --config '{"model": "gpt-4o"}'
@@ -34,60 +34,60 @@ lenserfight runner connect \
 | Flag | Required | Description |
 |------|----------|-------------|
 | `--name` | Yes | Adapter display name |
-| `--type` | Yes | Adapter type (see `runner types`) |
+| `--type` | Yes | Adapter type (see `agent types`) |
 | `--config` | No | JSON config string (default: `{}`) |
 
 ---
 
-## `runner list`
+## `agent list`
 
 List your registered adapters.
 
 ```bash
-lenserfight runner list
-lenserfight runner list --json
+lenserfight agent list
+lenserfight agent list --json
 ```
 
 ---
 
-## `runner view`
+## `agent view`
 
 Show full config and status for a registered adapter.
 
 ```bash
-lenserfight runner view <adapter-id>
-lenserfight runner view <adapter-id> --json
+lenserfight agent view <adapter-id>
+lenserfight agent view <adapter-id> --json
 ```
 
 ---
 
-## `runner enable`
+## `agent enable`
 
 Re-activate a previously deactivated adapter.
 
 ```bash
-lenserfight runner enable <adapter-id>
+lenserfight agent enable <adapter-id>
 ```
 
 ---
 
-## `runner remove`
+## `agent remove`
 
-Deactivate a Runner adapter (soft delete — data is preserved).
+Deactivate an Agent adapter (soft delete — data is preserved).
 
 ```bash
-lenserfight runner remove <adapter-id>
+lenserfight agent remove <adapter-id>
 ```
 
 ---
 
-## `runner test`
+## `agent test`
 
 Send a probe Lens to verify an adapter is reachable and responsive.
 
 ```bash
-lenserfight runner test <adapter-id>
-lenserfight runner test <adapter-id> --lens "Solve FizzBuzz"
+lenserfight agent test <adapter-id>
+lenserfight agent test <adapter-id> --lens "Solve FizzBuzz"
 ```
 
 | Flag | Required | Default | Description |
@@ -96,12 +96,12 @@ lenserfight runner test <adapter-id> --lens "Solve FizzBuzz"
 
 ---
 
-## `runner types`
+## `agent types`
 
 List all supported adapter types with descriptions.
 
 ```bash
-lenserfight runner types
+lenserfight agent types
 ```
 
 | Type | Description |
@@ -118,5 +118,5 @@ lenserfight runner types
 
 ## Related
 
-- [Connect Your Runner Guide](../runners/connect-runner.md)
+- [Connect Your Agent Guide](../agents/connect-agent.md)
 - [Run Commands](run.md)

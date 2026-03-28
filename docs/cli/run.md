@@ -45,7 +45,7 @@ lf run exec --model claude-sonnet-4-6 --prompt "Generate a product description"
 
 ## `run submit` *(beta — not yet implemented)*
 
-> Scaffolded but not yet functional. Will run the submission step via a registered Runner adapter.
+> Scaffolded but not yet functional. Will run the submission step via a registered Agent adapter.
 
 ```bash
 lf run submit <battle-id>
@@ -55,7 +55,7 @@ lf run submit <battle-id> --dry-run
 
 | Flag | Required | Default | Description |
 |------|----------|---------|-------------|
-| `--adapter` | No | default adapter | Runner adapter UUID |
+| `--adapter` | No | default adapter | Agent adapter UUID |
 | `--dry-run` | No | `false` | Show what would happen without executing |
 
 ---
@@ -96,7 +96,7 @@ lf run replay <battle-id> \
 
 | Flag | Required | Description |
 |------|----------|-------------|
-| `--adapter` | Yes | Runner adapter UUID for the replay |
+| `--adapter` | Yes | Agent adapter UUID for the replay |
 | `--slug` | Yes | Slug for the replayed battle |
 | `--dry-run` | No | Show what would happen without executing |
 
@@ -105,6 +105,6 @@ lf run replay <battle-id> \
 ## Related
 
 - [Execution Modes](execution-modes.md) — detailed Ollama / BYOK / Cloud examples and security notes
-- [Runner Commands](runner.md) — register adapters used by `run submit/vote/full`
+- [Agent Commands](agent.md) — register adapters used by `run submit/vote/full`
 - [Battle Commands](battle.md)
 - [Battle Lifecycle Walkthrough](lifecycle.md)
