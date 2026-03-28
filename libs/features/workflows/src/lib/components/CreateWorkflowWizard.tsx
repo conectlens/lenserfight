@@ -215,7 +215,10 @@ export const CreateWorkflowWizard: React.FC<CreateWorkflowWizardProps> = ({ onCr
 
   const modelOptions = models
     .filter((m) => !!m.key && m.is_active)
-    .map((m) => ({ value: m.key, label: `${m.name} (${m.provider})` }))
+    .map((m) => ({
+      value: m.key,
+      label: `${m.name} (${m.providerDisplayName ?? m.provider})`,
+    }))
 
   const titleValue = title.trim()
   const error = localError ?? submissionError

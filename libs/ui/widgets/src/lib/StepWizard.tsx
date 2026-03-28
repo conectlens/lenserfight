@@ -1,6 +1,6 @@
+import { Button } from '@lenserfight/ui/components'
 import React from 'react'
 
-import { Button } from '@lenserfight/ui/components'
 
 interface StepWizardProps {
   steps: string[]
@@ -15,6 +15,7 @@ interface StepWizardProps {
   isCompleting?: boolean
   nextLabel?: string
   completeLabel?: string
+  skipButton?: { label: string; onClick: () => void }
 }
 
 export const StepWizard: React.FC<StepWizardProps> = ({
@@ -30,8 +31,30 @@ export const StepWizard: React.FC<StepWizardProps> = ({
   isCompleting = false,
   nextLabel = 'Next',
   completeLabel = 'Complete',
+  skipButton,
 }) => {
   const isLastStep = currentStep === steps.length - 1
+  const isPrimaryBlocked = isLastStep ? isCompleting : isNextLoading
+  const handlePrimaryAction = React.useCallback(() => {
+    if (isPrimaryBlocked || !canProceed) return
+    if (isLastStep) {
+      onComplete()
+      return
+    }
+    onNext()
+  }, [canProceed, isLastStep, isPrimaryBlocked, onComplete, onNext])
+
+  React.useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if (!(e.ctrlKey || e.metaKey) || e.key !== 'Enter') return
+      if (isPrimaryBlocked || !canProceed) return
+      e.preventDefault()
+      handlePrimaryAction()
+    }
+
+    window.addEventListener('keydown', handler)
+    return () => window.removeEventListener('keydown', handler)
+  }, [canProceed, handlePrimaryAction, isPrimaryBlocked])
 
   return (
     <div className="flex flex-col gap-6">
@@ -112,10 +135,21 @@ export const StepWizard: React.FC<StepWizardProps> = ({
           ← Back
         </button>
 
+        {skipButton && (
+          <Button
+            type="button"
+            variant="ghost"
+            onClick={skipButton.onClick}
+            className="px-4 sm:w-auto"
+          >
+            {skipButton.label}
+          </Button>
+        )}
+
         {isLastStep ? (
           <Button
             type="button"
-            onClick={onComplete}
+            onClick={handlePrimaryAction}
             disabled={!canProceed || isCompleting}
             isLoading={isCompleting}
             className="px-6 sm:w-auto sm:min-w-[140px]"
@@ -125,7 +159,7 @@ export const StepWizard: React.FC<StepWizardProps> = ({
         ) : (
           <Button
             type="button"
-            onClick={onNext}
+            onClick={handlePrimaryAction}
             disabled={!canProceed || isNextLoading}
             isLoading={isNextLoading}
             className="px-6 sm:w-auto sm:min-w-[140px]"
