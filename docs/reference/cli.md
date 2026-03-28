@@ -7,19 +7,14 @@ The `lenserfight` CLI (shorthand: `lf`) manages local development, battle lifecy
 ### Local development (monorepo)
 
 ```bash
-# Build
-pnpm nx build cli
+# Build + fix permissions + link in one step
+pnpm nx run cli:link
 
-# Link globally — works for both binary names
-cd dist/apps/cli
-npm link
-
-# Verify
 lenserfight --help
 lf --help
 ```
 
-After every rebuild the symlink stays in place — no need to re-link.
+After every rebuild run `pnpm nx run cli:link` again (or just `pnpm nx run cli:chmod` to fix the execute bit without re-linking).
 
 ### Production
 
