@@ -92,7 +92,7 @@ export const CreateLenserProfileModal: React.FC = () => {
   const returnTo =
     (location.state as { from?: string } | null)?.from ??
     searchParams.get('return_url') ??
-    '/'
+    import.meta.env.VITE_ARENA_URL ?? 'https://lenserfight.com'
 
   // Security redirect: only authenticated users without a profile reach this
   useEffect(() => {
@@ -243,7 +243,9 @@ export const CreateLenserProfileModal: React.FC = () => {
       nextLabel="Continue"
       completeLabel="Finish"
       skipButton={
-        currentStep === 2
+        currentStep === 1
+          ? { label: 'Skip for now', onClick: () => goToStep(2) }
+          : currentStep === 2
           ? { label: 'Skip for now', onClick: handleStep2Complete }
           : undefined
       }
