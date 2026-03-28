@@ -43,9 +43,8 @@ export const threadsService = {
     tagIds: string[]
     visibility: Visibility
   }): Promise<ThreadRecord> => {
-    const resolvedTags = await tagService.processBatchInput(input.tagIds)
-    const realTagIds = resolvedTags.map((t) => t.id)
-    const thread = await threadsRepo.createThread({ ...input, tagIds: realTagIds })
+    // tagIds are pre-resolved UUIDs from extractTagIds() in the modal — use directly
+    const thread = await threadsRepo.createThread(input)
     return thread
   },
 
