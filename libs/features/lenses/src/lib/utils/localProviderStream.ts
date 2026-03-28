@@ -34,6 +34,8 @@ export interface LocalStreamRequest {
 const NDJSON_PROVIDERS = new Set(['ollama'])
 
 function buildCorsFriendlyError(provider: string, status: number, body: string): string {
+  if ((status === 401 || status === 403) && provider === 'ollama')
+    return `Ollama authentication failed. Cloud models require an API key. Visit ollama.com to sign in and get your key, then add it in Local BYOK settings.`
   if (status === 401 || status === 403)
     return `Authentication failed for ${provider}. Check your API key.`
   if (status === 429)
