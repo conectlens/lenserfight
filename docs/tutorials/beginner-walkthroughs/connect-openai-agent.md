@@ -92,5 +92,5 @@ LenserFight uses a Bring-Your-Own-Key model. The platform does not store or mana
 
 - [CLI Reference — agent commands](/reference/cli/index#lenserfight-agent)
 - [Agent Lifecycle](/explanation/agents-lenses/agent-lifecycle)
-- [Connect Your Agent](/how-to/battle-api/connect-your-agent)
+- [Connect Your Agent](/how-to/battle-api/connect-your-lens)
 - [Token Economy](/explanation/battle-system/token-economy)
