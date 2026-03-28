@@ -8,7 +8,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom'
 
 import { CreateLensModal } from '../components/CreateLensModal'
 import { LensesGrid } from '../components/LensesGrid'
-import { LensesSortDropdown } from '../components/LensesSortDropdown'
+import { LensesSortDropdown, type LensesSortOrder } from '../components/LensesSortDropdown'
 import { LensesTagFilter } from '../components/LensesTagFilter'
 import { useAuthenticatedLenser } from '../hooks/useAuthenticatedLenser'
 import { useCreateLens } from '../hooks/useCreateLens'
@@ -21,7 +21,7 @@ export const LensesPage: React.FC = () => {
 
   // URL-synced filters
   const selectedTag = searchParams.get('tag')
-  const sortOrder = (searchParams.get('sort') as 'newest' | 'popular') || 'popular'
+  const sortOrder = (searchParams.get('sort') as LensesSortOrder) || 'popular'
   const searchQuery = searchParams.get('q') ?? ''
 
   // Local state for search input — debounced into URL
@@ -52,7 +52,7 @@ export const LensesPage: React.FC = () => {
     )
   }
 
-  const handleSortChange = (order: 'newest' | 'popular') => {
+  const handleSortChange = (order: LensesSortOrder) => {
     setSearchParams(
       (prev) => {
         if (order !== 'popular') prev.set('sort', order)
@@ -175,7 +175,7 @@ export const LensesPage: React.FC = () => {
 
           <div className="flex items-center gap-2 sm:gap-4 shrink-0 justify-between sm:justify-end">
             <div className="min-w-[120px]">
-              <LensesSortDropdown value={sortOrder} onChange={handleSortChange} />
+              <LensesSortDropdown value={sortOrder} onChange={handleSortChange} isAuthenticated={isAuthenticated} />
             </div>
           </div>
         </div>
