@@ -540,19 +540,20 @@ export class SupabaseBattlesRepository implements BattlesRepositoryPort {
 
   async postGlobalMessage(
     battleId: string,
-    senderId: string,
+    _senderId: string,
     senderHandle: string,
     senderRole: string,
     body: string
   ): Promise<GlobalMessageRecord> {
-    const { data, error } = await supabase
-      .schema('battles')
-      .from('global_messages')
-      .insert({ battle_id: battleId, sender_id: senderId, sender_handle: senderHandle, sender_role: senderRole, body })
-      .select('id, battle_id, sender_id, sender_handle, sender_role, body, created_at')
-      .single()
+    const { data, error } = await supabase.rpc('fn_post_global_message', {
+      p_battle_id: battleId,
+      p_body: body,
+      p_sender_handle: senderHandle,
+      p_sender_role: senderRole,
+    })
     if (error) this.handleError(error)
-    return data as GlobalMessageRecord
+    const row = Array.isArray(data) ? data[0] : data
+    return row as GlobalMessageRecord
   }
 
   async inviteContender(input: InviteContenderInput): Promise<ContenderRecord> {

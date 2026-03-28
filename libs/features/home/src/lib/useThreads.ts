@@ -31,11 +31,12 @@ export const useThreadsFeed = () => {
 export const useLensesFeed = (
   searchQuery: string,
   selectedTag: string | null,
-  sortOrder: 'newest' | 'popular'
+  sortOrder: 'newest' | 'popular' | 'mine'
 ) => {
   return useInfiniteQuery({
     queryKey: keys.lenses.feed({ searchQuery, selectedTag, sortOrder }),
     queryFn: async ({ pageParam = 0 }) => {
+      if (sortOrder === 'mine') return lensesService.getMyLenses(pageParam, 12)
       if (searchQuery) return lensesService.search(searchQuery, pageParam, 12)
       if (selectedTag) return lensesService.filter(selectedTag, pageParam, 12, sortOrder)
       return lensesService.sort(sortOrder, pageParam, 12)
