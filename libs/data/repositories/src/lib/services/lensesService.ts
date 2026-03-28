@@ -157,11 +157,8 @@ export const lensesService = {
     const record: any = await lensesRepo.getById(id, viewerLenserId)
     if (!record) return null
 
-    if (record.visibility === 'private') {
-      if (!viewerLenserId || record.lenser_id !== viewerLenserId) {
-        throw new Error('401')
-      }
-    }
+    // DB RLS already enforces access — no redundant service-level visibility check needed.
+    // If the DB returned a record, the viewer is authorised to see it.
 
     const [viewModel] = await mapToViewModels([record], viewerLenserId)
     const summary = await reactionService.getReactionSummary('lens', id, viewerLenserId)

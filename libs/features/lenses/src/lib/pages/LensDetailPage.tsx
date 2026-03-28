@@ -10,7 +10,7 @@ import { ConfirmModal } from '@lenserfight/ui/modals'
 import { SelectField } from '@lenserfight/ui/forms'
 import { useUI } from '@lenserfight/ui/providers'
 import { useQueryClient } from '@tanstack/react-query'
-import { GitFork, History, Lock, Loader2, Pencil, Trash2, Flag, Play, ChevronDown, ChevronUp } from 'lucide-react'
+import { GitFork, History, Loader2, Pencil, Trash2, Flag, Play, ChevronDown, ChevronUp } from 'lucide-react'
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 
@@ -284,24 +284,13 @@ export const LensDetailPage: React.FC = () => {
     )
   }
 
-  if (error === '401') {
-    return (
-      <div className="flex flex-col items-center justify-center min-h-[60vh]">
-        <div className="bg-red-50 dark:bg-red-900/20 p-6 rounded-full mb-6">
-          <Lock className="w-12 h-12 text-red-500" />
-        </div>
-        <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-3">Access Denied</h2>
-        <button onClick={() => navigate('/lenses')} className="text-primary-700 dark:text-primary-400 hover:underline">
-          Return to Library
-        </button>
-      </div>
-    )
-  }
-
-  if (!lens || error === '404') {
+  if (!lens || error === '404' || error === '401') {
     return (
       <div className="flex flex-col items-center justify-center min-h-[50vh]">
         <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">Lens Not Found</h2>
+        <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
+          This lens doesn't exist or you don't have access to it.
+        </p>
         <button onClick={() => navigate('/lenses')} className="text-primary hover:underline">
           Return to Library
         </button>
