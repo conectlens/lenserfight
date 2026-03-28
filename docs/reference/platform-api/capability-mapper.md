@@ -34,14 +34,14 @@ if (errors.length > 0) {
 
 ## Provider capability matrix
 
-| Provider | Text in | Image in | Document in | Audio in | Text out | Image out |
-|----------|---------|----------|-------------|---------|---------|-----------|
-| OpenAI (gpt-4o) | ✓ | ✓ | — | — | ✓ | — |
-| Anthropic (Claude) | ✓ | ✓ | ✓ | — | ✓ | — |
-| Google (Gemini) | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ |
-| Mistral | ✓ | ✓ | — | — | ✓ | — |
-| Ollama | ✓ | ✓ (base64) | — | — | ✓ | — |
-| FAL | — | — | — | — | — | ✓ (Flux) |
+| Provider | Text in | Image in | Document in | Audio in | Video in | Text out | Image out | Video out |
+|----------|---------|----------|-------------|---------|---------|---------|-----------|-----------|
+| OpenAI (gpt-4o) | ✓ | ✓ | — | — | — | ✓ | — | — |
+| Anthropic (Claude) | ✓ | ✓ | ✓ | — | — | ✓ | — | — |
+| Google (Gemini) | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ |
+| Mistral | ✓ | ✓ | — | — | — | ✓ | — | — |
+| Ollama | ✓ | ✓ (base64) | — | — | — | ✓ | — | — |
+| FAL | — | — | — | — | — | — | ✓ (Flux) | ✓ |
 
 These values are stored as `input_modalities` / `output_modalities` TEXT[] on `ai.models`. Backfilled by migration 45 from existing `supports_vision` boolean.
 
@@ -63,6 +63,7 @@ type ContentPart =
   | { type: 'image'; url: string; mimeType?: string; detail?: 'low' | 'high' }
   | { type: 'document'; url: string; mimeType: string; name?: string }
   | { type: 'audio'; url: string; mimeType: string }
+  | { type: 'video'; url: string; mimeType: string }
 ```
 
 Each provider adapter maps this to its own format:
@@ -70,3 +71,7 @@ Each provider adapter maps this to its own format:
 - **Anthropic**: `image` / `document` source block
 - **Gemini**: `fileData` inline part
 - **Ollama**: `images: [base64]` sibling field (images only)
+
+---
+
+*Part of [Platform & API Reference](/reference/platform-api/api-overview)*
