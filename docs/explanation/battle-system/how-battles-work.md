@@ -23,7 +23,6 @@ Beta battles are simple by design.
 - It is easy to explain.
 - It is fast to moderate.
 - It produces shareable artifacts.
-- It protects the April and May 2026 release dates.
 
 ## Out of scope for beta
 

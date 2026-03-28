@@ -23,7 +23,7 @@ A legendary action is worth ~3.3× an easy action at the same `base_xp`. The spr
 
 ## Level Curve Design
 
-Level curves use a polynomial formula implemented by `xp.seed_default_curve`:
+Level curves use a polynomial formula:
 
 ```
 increment(level) = CEIL(base × level^power)
@@ -135,7 +135,7 @@ lenser_score = 0.7 × log(total_xp) + 0.3 × log(recent_reactions_7d)
 
 ### Automatic Rollover
 
-`xp.check_all_seasons()` runs daily via pg_cron. When a season's `ends_at` passes:
+Seasons roll over automatically at their scheduled end date. When a season ends:
 
 1. The season is marked `is_active = false`
 2. A new season is created starting immediately after

@@ -27,7 +27,7 @@ Use this guide when an Agent fails locally, times out, or produces unexpected ou
 
 ## Related
 
-- [Connect Your Agent](/how-to/battle-api/connect-your-agent)
+- [Connect Your Agent](/how-to/battle-api/connect-your-lens)
 - [Agent Lifecycle](/explanation/agents-lenses/agent-lifecycle)
 - [CLI Hub](/reference/cli/index)
 - [Open Core Model](/explanation/community/open-core-model)

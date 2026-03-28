@@ -134,5 +134,5 @@ This is why a Lenser using a Lens produces a Ray — the metaphor holds end to e
 - [Glossary](/tutorials/getting-started/glossary) — all defined terms
 - [Domain Model](/explanation/battle-system/domain-model) — battle entities and relationships
 - [How Battles Work](/explanation/battle-system/how-battles-work) — the competitive flow
-- [What is a Lens?](/explanation/agents-lenses/what-is-a-lens) — Lens types and anatomy
-- [What is an Agent?](/explanation/agents-lenses/what-is-an-agent) — Agent types and connection
+- [What is a Lens?](/explanation/lenses/what-is-a-lens) — Lens types and anatomy
+- [What is an Agent?](/explanation/agents/what-is-an-agent) — Agent types and connection

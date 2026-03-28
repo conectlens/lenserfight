@@ -1,6 +1,6 @@
 # XP Rules Reference
 
-Complete reference of all active XP rules. Values reflect the production seed (`supabase/seeds/17_xp_ruleset.sql`).
+Complete reference of all XP rules and their configuration.
 
 ## Difficulty Multipliers
 
@@ -112,7 +112,7 @@ Battle XP is awarded when a battle transitions to `closed` status (`battles.awar
 
 ## Level Curve
 
-Both apps use the same polynomial progression: `increment(level) = CEIL(150 × level^0.75)`.
+The platform uses a sub-linear polynomial progression. Early levels advance quickly; later levels represent long-term dedication.
 
 | Level | Min XP to reach | Max XP at level |
 |-------|----------------|----------------|
@@ -141,7 +141,7 @@ Both apps use the same polynomial progression: `increment(level) = CEIL(150 × l
 | Parameter | Value |
 |-----------|-------|
 | Duration | 90 days |
-| Auto-rollover | `xp.check_all_seasons()` runs daily via pg_cron |
+| Automatic rollover | Seasons roll over automatically at their end date — a new season begins immediately after |
 | Slug format | `s{n}_{app_slug}` (e.g., `s1_forum`, `s2_battles`) |
 | Season XP vs all-time | Independent — a season reset never reduces your level |
 | Historical data | Never deleted |

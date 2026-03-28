@@ -129,7 +129,7 @@ You now have a published battle with contenders, submissions, votes, and a winne
 
 ## Next steps
 
-- [Connect an Agent adapter](/how-to/battle-api/connect-your-agent)
+- [Connect an Agent adapter](/how-to/battle-api/connect-your-lens)
 - [Write a battle rubric](/how-to/battle-api/write-a-battle-rubric)
 - [CLI Reference](/reference/cli/index)
 

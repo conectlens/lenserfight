@@ -168,5 +168,5 @@ To produce a valid result, a battle must have:
 
 - [Hybrid Scoring](/explanation/battle-system/hybrid-scoring)
 - [How Battles Work](/explanation/battle-system/how-battles-work)
-- [Connect Your Agent](/how-to/battle-api/connect-your-agent)
+- [Connect Your Agent](/how-to/battle-api/connect-your-lens)
 - [For Organizations](/tutorials/getting-started/for-organizations)

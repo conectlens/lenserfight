@@ -78,7 +78,7 @@ export default defineConfig({
   cleanUrls: true,
 
   title: 'LenserFight Docs',
-  description: 'User-first documentation for LenserFight Arena, Forum, Admin, and Mobile.',
+  description: 'Documentation for LenserFight — AI evaluation battles, Lenses, Workflows, and the Arena.',
 
   sitemap: {
     hostname: DOCS_HOST,
@@ -179,6 +179,7 @@ export default defineConfig({
               items: [
                 { text: 'Başlarken', link: '/tr/tutorials/getting-started/overview' },
                 { text: 'Yeni Başlayanlar İçin', link: '/tr/tutorials/beginner-walkthroughs/what-is-lenserfight' },
+                { text: 'Rehberler', link: '/tr/tutorials/walkthroughs/create-a-lens' },
               ],
             },
           ],
@@ -187,10 +188,22 @@ export default defineConfig({
               text: 'Başlarken',
               items: [
                 { text: 'Genel Bakış', link: '/tr/tutorials/getting-started/overview' },
-                { text: "Beta'ya Katıl", link: '/tr/tutorials/getting-started/join-beta' },
                 { text: 'Sözlük', link: '/tr/tutorials/getting-started/glossary' },
                 { text: 'Kurulum', link: '/tr/tutorials/getting-started/installation' },
                 { text: 'Hızlı Başlangıç', link: '/tr/tutorials/getting-started/quickstart' },
+              ],
+            },
+          ],
+          '/tr/tutorials/walkthroughs/': [
+            {
+              text: 'Rehberler',
+              items: [
+                { text: 'Lens Oluştur', link: '/tr/tutorials/walkthroughs/create-a-lens' },
+                { text: 'İş Akışı Oluştur', link: '/tr/tutorials/walkthroughs/create-a-workflow' },
+                { text: 'Lenslerle Savaş', link: '/tr/tutorials/walkthroughs/battle-with-lenses' },
+                { text: 'İş Akışlarıyla Savaş', link: '/tr/tutorials/walkthroughs/battle-with-workflows' },
+                { text: 'Savaş Türleri Nelerdir?', link: '/tr/tutorials/walkthroughs/what-are-battle-types' },
+                { text: 'İş Akışları Nelerdir?', link: '/tr/tutorials/walkthroughs/what-are-workflows' },
               ],
             },
           ],
@@ -213,7 +226,7 @@ export default defineConfig({
             {
               text: 'Nasıl Yapılır',
               items: [
-                { text: 'Savaş ve API Görevleri', link: '/tr/how-to/battle-api/share-a-result' },
+                { text: 'Savaş ve API Görevleri', link: '/tr/how-to/battle-api/connect-your-lens' },
                 { text: 'Katkıda Bulunanlar', link: '/tr/how-to/contributors/katkilar-icin-xp' },
               ],
             },
@@ -222,6 +235,7 @@ export default defineConfig({
             {
               text: 'Savaş ve API Görevleri',
               items: [
+                { text: "Lens'inizi Bağlayın", link: '/tr/how-to/battle-api/connect-your-lens' },
                 { text: 'İlk Savaşı Çalıştır', link: '/tr/how-to/battle-api/run-your-first-battle' },
                 { text: 'Sonuç Paylaş', link: '/tr/how-to/battle-api/share-a-result' },
                 { text: 'XP Sisteminizi Anlayın', link: '/tr/how-to/battle-api/xp-sisteminizi-anlayin' },
@@ -255,7 +269,7 @@ export default defineConfig({
               text: 'CLI',
               items: [
                 { text: 'CLI Merkezi', link: '/tr/reference/cli/index' },
-                { text: 'CLI Referansı', link: '/tr/reference/platform-api/cli-reference' },
+                { text: 'CLI Referansı', link: '/tr/reference/cli/cli-reference' },
               ],
             },
           ],
@@ -267,6 +281,7 @@ export default defineConfig({
                 { text: 'Yapılandırma', link: '/tr/reference/platform-api/configuration' },
                 { text: 'Beta Yol Haritası', link: '/tr/reference/platform-api/beta-roadmap' },
                 { text: 'XP Sistemi', link: '/tr/reference/platform-api/xp-sistemi' },
+                { text: 'Güvenlik', link: '/tr/reference/platform-api/security' },
               ],
             },
           ],
@@ -295,7 +310,8 @@ export default defineConfig({
               text: 'Açıklama',
               items: [
                 { text: 'Savaş Sistemi', link: '/tr/explanation/battle-system/how-battles-work' },
-                { text: 'Agentlar ve Lensler', link: '/tr/explanation/agents-lenses/positioning' },
+                { text: 'Agentlar', link: '/tr/explanation/agents/index' },
+                { text: 'Lensler', link: '/tr/explanation/lenses/index' },
                 { text: 'Topluluk ve Kullanım', link: '/tr/explanation/community/community-hub' },
               ],
             },
@@ -309,12 +325,27 @@ export default defineConfig({
               ],
             },
           ],
-          '/tr/explanation/agents-lenses/': [
+          '/tr/explanation/agents/': [
             {
-              text: 'Agentlar ve Lensler',
+              text: 'Agentlar',
               items: [
-                { text: 'Ajan Konumlandırma', link: '/tr/explanation/agents-lenses/positioning' },
-                { text: "LenserFight'ta Lens'ler", link: '/tr/explanation/agents-lenses/lens-usage' },
+                { text: 'Genel Bakış', link: '/tr/explanation/agents/index' },
+                { text: 'Agent Nedir?', link: '/tr/explanation/agents/what-is-an-agent' },
+                { text: 'Agent Bağla', link: '/tr/explanation/agents/connect-agent' },
+                { text: 'Agent Yaşam Döngüsü', link: '/tr/explanation/agents/agent-lifecycle' },
+                { text: 'Agent Ekosistemi', link: '/tr/explanation/agents/positioning' },
+              ],
+            },
+          ],
+          '/tr/explanation/lenses/': [
+            {
+              text: 'Lensler',
+              items: [
+                { text: 'Genel Bakış', link: '/tr/explanation/lenses/index' },
+                { text: 'Lens Nedir?', link: '/tr/explanation/lenses/what-is-a-lens' },
+                { text: "LenserFight'ta Lensler", link: '/tr/explanation/lenses/lens-usage' },
+                { text: 'Lens Parametreleri', link: '/tr/explanation/lenses/lens-parameters' },
+                { text: 'İş Akışları', link: '/tr/explanation/lenses/workflows' },
               ],
             },
           ],
@@ -365,7 +396,7 @@ export default defineConfig({
 
     nav: [
       { text: 'Tutorials', link: '/tutorials/beginner-walkthroughs/what-is-lenserfight' },
-      { text: 'How-to', link: '/how-to/battle-api/connect-your-agent' },
+      { text: 'How-to', link: '/how-to/battle-api/connect-your-lens' },
       { text: 'Reference', link: '/reference/cli/index' },
       { text: 'Explanation', link: '/explanation/battle-system/concepts' },
     ],
@@ -381,6 +412,7 @@ export default defineConfig({
           items: [
             { text: 'Getting Started', link: '/tutorials/getting-started/overview' },
             { text: 'Beginner Walkthroughs', link: '/tutorials/beginner-walkthroughs/what-is-lenserfight' },
+            { text: 'Walkthroughs', link: '/tutorials/walkthroughs/create-a-lens' },
           ],
         },
       ],
@@ -389,12 +421,24 @@ export default defineConfig({
           text: 'Getting Started',
           items: [
             { text: 'Overview', link: '/tutorials/getting-started/overview' },
-            { text: 'Join the Beta', link: '/tutorials/getting-started/join-beta' },
             { text: 'Glossary', link: '/tutorials/getting-started/glossary' },
             { text: 'For Communities', link: '/tutorials/getting-started/for-communities' },
             { text: 'For Organizations', link: '/tutorials/getting-started/for-organizations' },
             { text: 'Installation', link: '/tutorials/getting-started/installation' },
             { text: 'Quickstart', link: '/tutorials/getting-started/quickstart' },
+          ],
+        },
+      ],
+      '/tutorials/walkthroughs/': [
+        {
+          text: 'Walkthroughs',
+          items: [
+            { text: 'Create a Lens', link: '/tutorials/walkthroughs/create-a-lens' },
+            { text: 'Create a Workflow', link: '/tutorials/walkthroughs/create-a-workflow' },
+            { text: 'Battle with Lenses', link: '/tutorials/walkthroughs/battle-with-lenses' },
+            { text: 'Battle with Workflows', link: '/tutorials/walkthroughs/battle-with-workflows' },
+            { text: 'What Are Battle Types?', link: '/tutorials/walkthroughs/what-are-battle-types' },
+            { text: 'What Are Workflows?', link: '/tutorials/walkthroughs/what-are-workflows' },
           ],
         },
       ],
@@ -417,7 +461,7 @@ export default defineConfig({
         {
           text: 'How-to',
           items: [
-            { text: 'Battle & API Tasks', link: '/how-to/battle-api/connect-your-agent' },
+            { text: 'Battle & API Tasks', link: '/how-to/battle-api/connect-your-lens' },
             { text: 'Contributors & Maintainers', link: '/how-to/contributors/contributing' },
           ],
         },
@@ -426,7 +470,7 @@ export default defineConfig({
         {
           text: 'Battle & API Tasks',
           items: [
-            { text: 'Connect Your Agent', link: '/how-to/battle-api/connect-your-agent' },
+            { text: 'Connect Your Lens', link: '/how-to/battle-api/connect-your-lens' },
             { text: 'Run Your First Battle', link: '/how-to/battle-api/run-your-first-battle' },
             { text: 'Share a Result', link: '/how-to/battle-api/share-a-result' },
             { text: 'Write a Battle Rubric', link: '/how-to/battle-api/write-a-battle-rubric' },
@@ -504,6 +548,7 @@ export default defineConfig({
             { text: 'XP Methodology', link: '/reference/platform-api/xp-methodology' },
             { text: 'XP Rules Reference', link: '/reference/platform-api/xp-rules-reference' },
             { text: 'Capability Mapper', link: '/reference/platform-api/capability-mapper' },
+            { text: 'Security', link: '/reference/platform-api/security' },
           ],
         },
       ],
@@ -536,7 +581,8 @@ export default defineConfig({
           text: 'Explanation',
           items: [
             { text: 'Battle System', link: '/explanation/battle-system/how-battles-work' },
-            { text: 'Agents & Lenses', link: '/explanation/agents-lenses/what-is-an-agent' },
+            { text: 'Agents', link: '/explanation/agents/index' },
+            { text: 'Lenses', link: '/explanation/lenses/index' },
             { text: 'Community & Use Cases', link: '/explanation/community/community-hub' },
           ],
         },
@@ -556,17 +602,27 @@ export default defineConfig({
           ],
         },
       ],
-      '/explanation/agents-lenses/': [
+      '/explanation/agents/': [
         {
-          text: 'Agents & Lenses',
+          text: 'Agents',
           items: [
-            { text: 'What is an Agent?', link: '/explanation/agents-lenses/what-is-an-agent' },
-            { text: 'Connect an Agent', link: '/explanation/agents-lenses/connect-agent' },
-            { text: 'Agent Lifecycle', link: '/explanation/agents-lenses/agent-lifecycle' },
-            { text: 'Agent Ecosystem Positioning', link: '/explanation/agents-lenses/positioning' },
-            { text: 'What is a Lens?', link: '/explanation/agents-lenses/what-is-a-lens' },
-            { text: 'Lenses in LenserFight', link: '/explanation/agents-lenses/lens-usage' },
-            { text: 'Lens Parameters', link: '/explanation/agents-lenses/lens-parameters' },
+            { text: 'Overview', link: '/explanation/agents/index' },
+            { text: 'What is an Agent?', link: '/explanation/agents/what-is-an-agent' },
+            { text: 'Connect an Agent', link: '/explanation/agents/connect-agent' },
+            { text: 'Agent Lifecycle', link: '/explanation/agents/agent-lifecycle' },
+            { text: 'Agent Ecosystem Positioning', link: '/explanation/agents/positioning' },
+          ],
+        },
+      ],
+      '/explanation/lenses/': [
+        {
+          text: 'Lenses',
+          items: [
+            { text: 'Overview', link: '/explanation/lenses/index' },
+            { text: 'What is a Lens?', link: '/explanation/lenses/what-is-a-lens' },
+            { text: 'Lenses in LenserFight', link: '/explanation/lenses/lens-usage' },
+            { text: 'Lens Parameters', link: '/explanation/lenses/lens-parameters' },
+            { text: 'Workflows', link: '/explanation/lenses/workflows' },
           ],
         },
       ],
