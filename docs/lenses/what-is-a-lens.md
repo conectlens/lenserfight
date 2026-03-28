@@ -39,4 +39,9 @@ Any Lenser can fork a public Lens to create a Relational Lens — a child that i
 ## See also
 - [Lens Parameters](./lens-parameters.md)
 - [Glossary](../getting-started/glossary.md)
-- [Glossary](../getting-started/glossary.md)
+
+## Related
+
+- [Lenses in LenserFight](/lenses/lens-usage)
+- [Lens Parameters](/lenses/lens-parameters)
+- [How Battles Work](/battles/how-battles-work)

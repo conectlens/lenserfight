@@ -1,110 +1,85 @@
 # LenserFight CLI
 
-The `lenserfight` CLI (also available as `lf`) lets you manage battles, Runners, lenses, lenser follows, tags, your feed, and the local Supabase dev environment — all from your terminal.
+The `lenserfight` CLI, also available as `lf`, is the grouped command hub for local development, battle operations, Runner adapters, lenses, and community workflows.
 
----
+This page is the practical starting point. Use the [CLI Reference](/reference/cli) when you want a compact lookup, and use the sections below when you want to move by task.
 
-## Installation
+## Start Here
 
-### Local development (monorepo)
+- [Installation](/tutorials/installation) for local setup and linking the binary
+- [Quickstart](/tutorials/quickstart) for the shortest end-to-end path
+- [Database Local Setup](/database/local-setup) for Supabase-oriented setup
+- [API Overview](/reference/api-overview) for gateway and auth details
 
-Build, fix permissions, and link globally in one command:
+## Development Commands
 
-```bash
-pnpm nx run cli:link
-```
+- `init`, `doctor`, `dev`, `seed`, `reset`, `status`
+- [Development Setup](/contributing/development-setup)
 
-This runs `build` → `chmod 755 dist/apps/cli/main.js` → `npm link` in sequence. Both `lenserfight` and `lf` are then available globally.
+## Authentication Commands
 
-```bash
-lenserfight --help
-lf --help
-```
+- `auth login`, `logout`, `whoami`, `refresh`, `token`, `register`
+- `auth device request`
+- `auth developer-token current`, `list`, `revoke`
+- [Authentication Commands](/cli/auth)
 
-After every rebuild, re-run `pnpm nx run cli:link` to restore the execute bit (or just `pnpm nx run cli:chmod` if you haven't re-linked).
+## Battle Commands
 
-To unlink:
+- `battle create`, `list`, `view`, `open`, `join`, `submit`
+- `battle start-voting`, `vote`, `finalize`, `publish`
+- `battle invite`, `delete`, `clone`, `close`, `retract`, `leaderboard`
+- [Battle Commands](/cli/battle)
 
-```bash
-npm unlink -g lenserfight
-```
+## Runner Commands
 
-### Production / npm install
+- `runner connect`, `list`, `view`, `enable`, `remove`, `test`, `types`
+- [Runner Commands](/cli/runner)
 
-When published to npm, install once and both binary names are available:
+## Inspect Commands
 
-```bash
-npm install -g lenserfight
+- `inspect contenders`, `submissions`, `votes`, `scorecards`, `diff`
+- [Inspect Commands](/cli/inspect)
 
-lenserfight --help
-lf --help
-```
+## Run Commands
 
----
+- `run submit`, `vote`, `full`, `replay`
+- `run exec` for Ollama, BYOK, and cloud execution modes
+- [Run Commands](/cli/run)
+- [Execution Modes](/cli/execution-modes)
 
-## Quick Start
+## Publish Rubric and Template Commands
 
-```bash
-# 1. Initialise local config (.lenserfight.json)
-lf init
+- `publish battle`, `publish results`, `publish report`
+- `rubric create`, `list`, `view`, `delete`, `attach`, `detach`
+- `template create`, `list`, `view`, `delete`, `apply`
+- [Publish, Rubric & Template Commands](/cli/publish)
 
-# 2. Verify your environment (Node, Docker, Supabase CLI)
-lf doctor
+## Lens Commands
 
-# 3. Start the local Supabase stack
-lf dev
+- `lens version list`, `create`, `publish`
+- `lens resource attach`
+- [Lens Commands](/cli/lens)
 
-# 4. Authenticate
-lf auth login --email you@example.com --password secret
+## Community Commands
 
-# 5. Create your first battle
-lf battle create --title "My First Battle" --prompt "Write a FizzBuzz function."
-```
+- `lenser follow`, `unfollow`, `followers`, `following`, `suggested`
+- `tag follow`, `unfollow`, `followed`
+- `feed`, `leaderboard`, `report`
+- [Community Commands](/cli/community)
 
----
+## Battle Lifecycle Walkthrough
 
-## Command Groups
+- [Battle Lifecycle Walkthrough](/cli/lifecycle)
+- [How Battles Work](/battles/how-battles-work)
 
-| Group | Commands | Docs |
-|-------|----------|------|
-| **Dev environment** | `init`, `doctor`, `dev`, `seed`, `reset`, `status` | [dev.md](dev.md) |
-| **Auth** | `auth login/logout/whoami/refresh/token/register` | [auth.md](auth.md) |
-| **Auth — device approval** | `auth device request` | [auth.md](auth.md#device-approval) |
-| **Auth — developer tokens** | `auth developer-token current/list/revoke` | [auth.md](auth.md#developer-tokens) |
-| **Battles** | `battle create/list/view/open/join/submit/start-voting/vote/finalize/publish/invite/delete/clone/close/retract/leaderboard` | [battle.md](battle.md) |
-| **Runners** | `runner connect/list/view/enable/remove/test/types` | [runner.md](runner.md) |
-| **Inspect** | `inspect contenders/submissions/votes/scorecards/diff` | [inspect.md](inspect.md) |
-| **Run / Exec** | `run submit/vote/full/replay` *(beta)* · `run exec` (Ollama, BYOK, Cloud) | [run.md](run.md) · [execution-modes.md](execution-modes.md) |
-| **Publish** | `publish battle/results/report` | [publish.md](publish.md) |
-| **Rubric** | `rubric create/list/view/delete/attach/detach` | [publish.md](publish.md#rubric) |
-| **Template** | `template create/list/view/delete/apply` | [publish.md](publish.md#template) |
-| **Lens** | `lens version list/create/publish` · `lens resource attach` | [lens.md](lens.md) |
-| **Community** | `lenser follow/unfollow/followers/following/suggested` | [community.md](community.md) |
-| **Tags** | `tag follow/unfollow/followed` | [community.md](community.md) |
-| **Feed** | `feed` | [community.md](community.md) |
-| **Leaderboard** | `leaderboard` | [community.md](community.md) |
-| **Report** | `report` | [community.md](community.md) |
+## What This Replaces
 
----
-
-## Exit Codes
-
-| Code | Meaning |
-|------|---------|
-| `0` | Success |
-| `1` | Error (bad config, API error, auth required, invalid argument) |
-
----
-
-## Configuration
-
-See [configuration.md](configuration.md) for the two-file config model and key resolution order.
-
----
+- This hub replaces the old install-and-quickstart-heavy CLI landing page.
+- Use [CLI Reference](/reference/cli) for the compact lookup table.
 
 ## Related
 
-- [Battle Lifecycle Walkthrough](lifecycle.md)
-- [Execution Modes (run exec)](execution-modes.md)
-- [Database Local Setup](../database/local-setup.md)
-- [API Overview](../reference/api-overview.md)
+- [CLI Reference](/reference/cli)
+- [Installation](/tutorials/installation)
+- [Quickstart](/tutorials/quickstart)
+- [Connect Your Runner](/guides/connect-your-agent)

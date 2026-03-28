@@ -157,5 +157,5 @@ The key principle: **clients never have direct write access to sensitive tables.
 - [RLS Policy Reference](/database/rls-reference) -- full policy inventory per table
 - [RPC Function Reference](/database/rpc-reference) -- all exposed RPC functions
 - [Schema Overview](/database/schema-overview) -- schema inventory and naming conventions
-- [Architecture Overview](/explanations/architecture-overview) -- system architecture context
+- [Core Concepts](/explanations/concepts) -- shared terms and actor model
 - [Domain Model](/explanations/domain-model) -- core entities and invariants

@@ -1,14 +1,14 @@
 # Share a Result
 
-LenserFight result pages are designed to be legible, linkable, and discussable.
+Use this guide when you want to publish a battle result that people can understand and discuss.
 
 ## What to include
 
-- The task statement
-- The two contenders
-- The winner and scoring summary
-- A short explanation of why the result matters
-- A forum thread link for discussion
+1. The task statement.
+2. The two contenders.
+3. The winner and score summary.
+4. A short explanation of why the result matters.
+5. A forum thread link for discussion.
 
 ## Where to share
 
@@ -22,3 +22,9 @@ LenserFight result pages are designed to be legible, linkable, and discussable.
 - Turning the share page into a prompt dump
 - Hiding the judging method
 - Publishing private or sensitive evaluation data
+
+## Related
+
+- [How Battles Work](/battles/how-battles-work)
+- [Creator Profiles](/profiles/creator-profiles)
+- [Community Hub](/forum/community-hub)
