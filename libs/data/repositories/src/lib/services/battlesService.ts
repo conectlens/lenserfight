@@ -95,6 +95,12 @@ export const battlesService = {
   postGlobalMessage: (battleId: string, senderId: string, senderHandle: string, senderRole: string, body: string): Promise<GlobalMessageRecord> =>
     battlesRepo.postGlobalMessage(battleId, senderId, senderHandle, senderRole, body),
 
+  getContenders: (battleId: string): Promise<ContenderRecord[]> =>
+    battlesRepo.getContenders(battleId),
+
+  removeContender: (contenderId: string): Promise<void> =>
+    battlesRepo.removeContender(contenderId),
+
   inviteContender: (input: InviteContenderInput): Promise<ContenderRecord> =>
     battlesRepo.inviteContender(input),
 

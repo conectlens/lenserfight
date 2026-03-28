@@ -72,6 +72,9 @@ export class SupabaseAgentsRepository implements AgentsRepositoryPort {
     const e = error as { code?: string; message?: string }
     if (!e) return
     if (e.code === 'PGRST116') throw new Error('Agent not found.')
+    if (e.message?.includes('owner_must_be_active_human_lenser')) {
+      throw new Error('Your account must be active to create AI agents. Try refreshing the page.')
+    }
     throw error
   }
 

@@ -556,6 +556,25 @@ export class SupabaseBattlesRepository implements BattlesRepositoryPort {
     return row as GlobalMessageRecord
   }
 
+  async getContenders(battleId: string): Promise<ContenderRecord[]> {
+    const { data, error } = await supabase
+      .schema('battles')
+      .from('contenders')
+      .select('id, battle_id, slot, contender_type, display_name, contender_ref_id')
+      .eq('battle_id', battleId)
+    if (error) this.handleError(error)
+    return (data ?? []) as ContenderRecord[]
+  }
+
+  async removeContender(contenderId: string): Promise<void> {
+    const { error } = await supabase
+      .schema('battles')
+      .from('contenders')
+      .delete()
+      .eq('id', contenderId)
+    if (error) this.handleError(error)
+  }
+
   async inviteContender(input: InviteContenderInput): Promise<ContenderRecord> {
     const { data, error } = await supabase
       .schema('battles')
