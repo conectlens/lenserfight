@@ -307,52 +307,60 @@ export const LensDetailPage: React.FC = () => {
     <div className="space-y-8">
       <SEOHead type="lens" data={lens} />
 
-      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <Card className="space-y-2 p-4">
-          <Badge color="blue" variant="outline">
-            Inputs
-          </Badge>
-          <p className="text-lg font-black tracking-tight text-greyscale-900 dark:text-greyscale-50">
-            {parameterCount > 0 ? `${parameterCount} parameters` : 'Freeform Lens'}
-          </p>
-          <p className="text-sm leading-7 text-greyscale-500 dark:text-greyscale-400">
-            {inputModalities} inputs are available for the current version.
-          </p>
-        </Card>
+      <div className="columns-2 lg:columns-4 gap-4">
+        <div className="break-inside-avoid mb-4">
+          <Card className="space-y-2 p-4">
+            <Badge color="blue" variant="outline">
+              Inputs
+            </Badge>
+            <p className="text-lg font-black tracking-tight text-greyscale-900 dark:text-greyscale-50">
+              {parameterCount > 0 ? `${parameterCount} parameters` : 'Freeform Lens'}
+            </p>
+            <p className="text-sm leading-7 text-greyscale-500 dark:text-greyscale-400">
+              {inputModalities} inputs are available for the current version.
+            </p>
+          </Card>
+        </div>
 
-        <Card className="space-y-2 p-4">
-          <Badge color="purple" variant="outline">
-            Execution
-          </Badge>
-          <p className="text-lg font-black tracking-tight text-greyscale-900 dark:text-greyscale-50">
-            {executionLabel}
-          </p>
-          <p className="text-sm leading-7 text-greyscale-500 dark:text-greyscale-400">{providerLabel}</p>
-        </Card>
+        <div className="break-inside-avoid mb-4">
+          <Card className="space-y-2 p-4">
+            <Badge color="purple" variant="outline">
+              Execution
+            </Badge>
+            <p className="text-lg font-black tracking-tight text-greyscale-900 dark:text-greyscale-50">
+              {executionLabel}
+            </p>
+            <p className="text-sm leading-7 text-greyscale-500 dark:text-greyscale-400">{providerLabel}</p>
+          </Card>
+        </div>
 
-        <Card className="space-y-2 p-4">
-          <Badge color="green" variant="outline">
-            Output
-          </Badge>
-          <p className="text-lg font-black tracking-tight text-greyscale-900 dark:text-greyscale-50">
-            {outputStateLabel}
-          </p>
-          <p className="text-sm leading-7 text-greyscale-500 dark:text-greyscale-400">
-            Read the generated artifact below or run the Lens to produce a fresh result.
-          </p>
-        </Card>
+        <div className="break-inside-avoid mb-4">
+          <Card className="space-y-2 p-4">
+            <Badge color="green" variant="outline">
+              Output
+            </Badge>
+            <p className="text-lg font-black tracking-tight text-greyscale-900 dark:text-greyscale-50">
+              {outputStateLabel}
+            </p>
+            <p className="text-sm leading-7 text-greyscale-500 dark:text-greyscale-400">
+              Read the generated artifact below or run the Lens to produce a fresh result.
+            </p>
+          </Card>
+        </div>
 
-        <Card className="space-y-2 p-4">
-          <Badge color="gray" variant="outline">
-            History
-          </Badge>
-          <p className="text-lg font-black tracking-tight text-greyscale-900 dark:text-greyscale-50">
-            {historyLabel}
-          </p>
-          <p className="text-sm leading-7 text-greyscale-500 dark:text-greyscale-400">
-            {activeVersionLabel ? `Currently previewing v${activeVersionLabel}.` : 'Latest published version in view.'}
-          </p>
-        </Card>
+        <div className="break-inside-avoid mb-4">
+          <Card className="space-y-2 p-4">
+            <Badge color="gray" variant="outline">
+              History
+            </Badge>
+            <p className="text-lg font-black tracking-tight text-greyscale-900 dark:text-greyscale-50">
+              {historyLabel}
+            </p>
+            <p className="text-sm leading-7 text-greyscale-500 dark:text-greyscale-400">
+              {activeVersionLabel ? `Currently previewing v${activeVersionLabel}.` : 'Latest published version in view.'}
+            </p>
+          </Card>
+        </div>
       </div>
 
       <div className="grid gap-8 lg:grid-cols-[minmax(0,1.04fr)_360px]">
@@ -367,6 +375,7 @@ export const LensDetailPage: React.FC = () => {
               isSaving={isSaving}
               saveCount={lens.reactionCounts.saved}
               forkTree={forkTree}
+              onCopy={handleCopy}
             />
           </Card>
 
@@ -442,7 +451,6 @@ export const LensDetailPage: React.FC = () => {
               <LensBodyViewer
                 content={previewVersion?.templateBody ?? latestPublishedDetail?.templateBody ?? lens.content}
                 versionParams={activeVersionParams}
-                onCopy={handleCopy}
               />
             </DesktopFrame>
           </Card>
