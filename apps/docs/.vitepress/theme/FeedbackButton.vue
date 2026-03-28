@@ -1,6 +1,9 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { supabase } from './supabaseClient'
+
+const COOLDOWN_KEY = 'lf_feedback_cooldown'
+const COOLDOWN_MS = 10 * 60 * 1000 // 10 minutes
 
 const isOpen = ref(false)
 const topic = ref<string>('general')
@@ -8,11 +11,29 @@ const message = ref<string>('')
 const submitting = ref(false)
 const submitError = ref<string | null>(null)
 const success = ref(false)
+const cooldownRemaining = ref(0)
 
 const charCount = computed(() => message.value.length)
-const isValid = computed(() => message.value.trim().length >= 10)
+const isValid = computed(() => message.value.trim().length >= 10 && cooldownRemaining.value === 0)
+
+function checkCooldown() {
+  if (typeof localStorage === 'undefined') return
+  const last = parseInt(localStorage.getItem(COOLDOWN_KEY) ?? '0', 10)
+  const diff = Date.now() - last
+  cooldownRemaining.value = diff < COOLDOWN_MS ? Math.ceil((COOLDOWN_MS - diff) / 60000) : 0
+}
+
+function setCooldown() {
+  if (typeof localStorage !== 'undefined') {
+    localStorage.setItem(COOLDOWN_KEY, String(Date.now()))
+  }
+  cooldownRemaining.value = Math.ceil(COOLDOWN_MS / 60000)
+}
+
+onMounted(checkCooldown)
 
 function openModal() {
+  checkCooldown()
   isOpen.value = true
   submitError.value = null
   success.value = false
@@ -28,11 +49,16 @@ function closeModal() {
 
 async function handleSubmit() {
   if (!isValid.value) return
+  checkCooldown()
+  if (cooldownRemaining.value > 0) {
+    submitError.value = `Please wait ${cooldownRemaining.value} min before sending another message.`
+    return
+  }
   submitting.value = true
   submitError.value = null
 
   try {
-    const { error } = await supabase.rpc('fn_analytics_submit_feedback', {
+    const { error } = await supabase.rpc('fn_analytics_submit_feedback_public', {
       p_product_tag: topic.value,
       p_message: message.value.trim(),
       p_page: typeof window !== 'undefined' ? window.location.pathname : '',
@@ -43,6 +69,7 @@ async function handleSubmit() {
     if (error) {
       submitError.value = error.message
     } else {
+      setCooldown()
       success.value = true
       setTimeout(() => {
         closeModal()
@@ -141,9 +168,9 @@ function handleBackdropClick(e: MouseEvent) {
             <button
               type="submit"
               class="fb-btn fb-btn-submit"
-              :disabled="!isValid || submitting"
+              :disabled="!isValid || submitting || cooldownRemaining > 0"
             >
-              {{ submitting ? 'Sending…' : 'Submit' }}
+              {{ submitting ? 'Sending…' : cooldownRemaining > 0 ? `Wait ${cooldownRemaining}m` : 'Submit' }}
             </button>
           </div>
         </form>
