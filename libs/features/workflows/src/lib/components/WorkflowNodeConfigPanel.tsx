@@ -68,7 +68,10 @@ export function WorkflowNodeConfigPanel({
     { value: '', label: 'Use global model (default)' },
     ...models
       .filter((m) => !!m.key && m.is_active)
-      .map((m) => ({ value: m.key, label: `${m.name} (${m.provider})` })),
+      .map((m) => ({
+        value: m.key,
+        label: `${m.name} (${m.providerDisplayName ?? m.provider})`,
+      })),
   ]
 
   const handleSave = () => {
