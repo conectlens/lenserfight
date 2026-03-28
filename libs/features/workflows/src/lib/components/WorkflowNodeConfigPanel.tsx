@@ -1,17 +1,18 @@
 import { lensesService } from '@lenserfight/data/repositories'
+import { useAIModels } from '@lenserfight/features/generations'
 import { Button } from '@lenserfight/ui/components'
 import { SelectField } from '@lenserfight/ui/forms'
 import { useQuery } from '@tanstack/react-query'
 import { X } from 'lucide-react'
 import React, { useState, useEffect } from 'react'
 
-import { useAIModels } from '@lenserfight/features/generations'
-import type { WorkflowEdgeRecord, WorkflowNodeRecord } from '@lenserfight/data/repositories'
 import type { WorkflowNodeConfig } from './WorkflowCanvasNode'
+import type { WorkflowEdgeRecord, WorkflowNodeRecord } from '@lenserfight/data/repositories'
 
 interface WorkflowNodeConfigPanelProps {
   nodeId: string
   lensId: string
+  versionId: string | null | undefined
   nodeLabel: string
   currentConfig: WorkflowNodeConfig
   nodes: WorkflowNodeRecord[]
@@ -23,6 +24,7 @@ interface WorkflowNodeConfigPanelProps {
 export function WorkflowNodeConfigPanel({
   nodeId,
   lensId,
+  versionId,
   nodeLabel,
   currentConfig,
   nodes,
@@ -37,9 +39,13 @@ export function WorkflowNodeConfigPanel({
 
   const { models, isLoading: modelsLoading } = useAIModels()
 
-  const { data: lensDetail } = useQuery({
-    queryKey: ['lens-detail-config', lensId],
-    queryFn: () => lensesService.getLensDetail(lensId),
+  // Load version-specific params: use explicit versionId or fall back to latest published
+  const { data: lensVersion, isLoading: versionLoading } = useQuery({
+    queryKey: ['lens-version-config', versionId ?? `head-${lensId}`],
+    queryFn: () =>
+      versionId
+        ? lensesService.getVersionById(versionId)
+        : lensesService.getLatestPublishedVersion(lensId),
     staleTime: 1000 * 60 * 5,
     enabled: !!lensId,
   })
@@ -54,7 +60,9 @@ export function WorkflowNodeConfigPanel({
   const incomingEdges = edges.filter((e) => e.target_node_id === nodeId)
   const autoWiredParams = new Set(incomingEdges.map((e) => e.target_param_label))
 
-  const params = lensDetail?.params ?? []
+  // Version params use 'label' as the [[label]] placeholder name
+  const versionParams = lensVersion?.parameters ?? []
+  const isParamsLoading = versionLoading
 
   const modelOptions = [
     { value: '', label: 'Use global model (default)' },
@@ -105,7 +113,7 @@ export function WorkflowNodeConfigPanel({
             value={modelId}
             onChange={setModelId}
             options={modelOptions}
-            placeholder={modelsLoading ? 'Loading models…' : 'Use global model (default)'}
+            placeholder={modelsLoading ? 'Loading models\u2026' : 'Use global model (default)'}
             disabled={modelsLoading}
           />
           <p className="text-[10px] text-greyscale-400 leading-tight">
@@ -113,24 +121,24 @@ export function WorkflowNodeConfigPanel({
           </p>
         </div>
 
-        {/* Parameters */}
-        {params.length > 0 && (
+        {/* Parameters from lens version */}
+        {versionParams.length > 0 && (
           <div className="space-y-2">
             <p className="text-[10px] font-semibold uppercase tracking-wider text-greyscale-400">
               Parameters
             </p>
-            {params.map((param) => {
-              const paramName = param.name
-              const isAutoWired = autoWiredParams.has(paramName)
-              const edge = incomingEdges.find((e) => e.target_param_label === paramName)
+            {versionParams.map((param) => {
+              const paramLabel = param.label
+              const isAutoWired = autoWiredParams.has(paramLabel)
+              const edge = incomingEdges.find((e) => e.target_param_label === paramLabel)
               return (
-                <div key={paramName} className="space-y-1">
+                <div key={param.id ?? paramLabel} className="space-y-1">
                   <label className="text-[11px] font-medium text-greyscale-600 dark:text-greyscale-300 capitalize">
-                    {paramName}{param.required && <span className="text-status-red ml-0.5">*</span>}
+                    {paramLabel}
                   </label>
                   {isAutoWired && edge ? (
                     <div className="flex items-center gap-1.5 rounded-lg border border-dashed border-greyscale-300 dark:border-greyscale-600 bg-surface-raised px-2.5 py-1.5">
-                      <span className="text-[10px] text-greyscale-400">↳ auto from</span>
+                      <span className="text-[10px] text-greyscale-400">{'\u21B3'} auto from</span>
                       <span className="text-[10px] font-medium text-primary-yellow-600 truncate">
                         {getSourceNodeLabel(edge.source_node_id)}.{edge.source_output_key}
                       </span>
@@ -138,11 +146,11 @@ export function WorkflowNodeConfigPanel({
                   ) : (
                     <input
                       type="text"
-                      value={paramOverrides[paramName] ?? ''}
+                      value={paramOverrides[paramLabel] ?? ''}
                       onChange={(e) =>
-                        setParamOverrides((prev) => ({ ...prev, [paramName]: e.target.value }))
+                        setParamOverrides((prev) => ({ ...prev, [paramLabel]: e.target.value }))
                       }
-                      placeholder={param.placeholder ?? `Value for {{${paramName}}}`}
+                      placeholder={`Value for [[${paramLabel}]]`}
                       className="w-full px-2.5 py-1.5 text-xs bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg text-gray-900 dark:text-white placeholder-gray-400 focus:ring-1 focus:ring-primary/50 focus:border-primary outline-none transition-all"
                     />
                   )}
@@ -152,15 +160,23 @@ export function WorkflowNodeConfigPanel({
           </div>
         )}
 
-        {params.length === 0 && !lensDetail && (
-          <div className="rounded-xl border border-surface-border p-3 text-[11px] text-greyscale-400 text-center">
-            Loading lens parameters…
+        {isParamsLoading && (
+          <div className="space-y-2">
+            {Array.from({ length: 3 }).map((_, i) => (
+              <div key={i} className="h-10 rounded-xl bg-surface-raised animate-pulse" />
+            ))}
           </div>
         )}
 
-        {params.length === 0 && lensDetail && (
+        {!isParamsLoading && versionParams.length === 0 && lensVersion && (
           <div className="rounded-xl border border-surface-border p-3 text-[11px] text-greyscale-400 text-center">
-            This lens has no parameters.
+            This lens version has no parameters.
+          </div>
+        )}
+
+        {!isParamsLoading && !lensVersion && (
+          <div className="rounded-xl border border-surface-border p-3 text-[11px] text-greyscale-400 text-center">
+            No version found for this lens.
           </div>
         )}
       </div>

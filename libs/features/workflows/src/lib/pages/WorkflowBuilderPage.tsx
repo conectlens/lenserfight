@@ -1,23 +1,27 @@
 import { lensesService, battlesService } from '@lenserfight/data/repositories'
 import { useAuth } from '@lenserfight/features/auth'
+import { useAIModels } from '@lenserfight/features/generations'
 import { useCreateLens, CreateLensModal } from '@lenserfight/features/lenses'
 import { Badge, Button } from '@lenserfight/ui/components'
+import { SelectField } from '@lenserfight/ui/forms'
+import { useQuery } from '@tanstack/react-query'
 import { ArrowLeft, Bookmark, ChevronDown, GitBranch, GitFork, Pencil, Play, Settings, Swords, ThumbsUp, X } from 'lucide-react'
 import React, { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { toast } from 'sonner'
 
-import { WorkflowBuilderCanvas } from '../components/WorkflowBuilderCanvas'
 import { EditWorkflowModal } from '../components/EditWorkflowModal'
+import { WorkflowBuilderCanvas } from '../components/WorkflowBuilderCanvas'
 import { WorkflowLensPalette } from '../components/WorkflowLensPalette'
 import { WorkflowNodeConfigPanel } from '../components/WorkflowNodeConfigPanel'
 import { WorkflowProgressView } from '../components/WorkflowProgressView'
-import { WorkflowRunConfigModal } from '../components/WorkflowRunConfigModal'
+import { WorkflowRootInputsPanel } from '../components/WorkflowRootInputsPanel'
 import { useForkWorkflow } from '../hooks/useForkWorkflow'
 import { useWorkflow } from '../hooks/useWorkflow'
+import { useWorkflowExecution } from '../hooks/useWorkflowExecution'
 import { useWorkflowReaction } from '../hooks/useWorkflowReaction'
-import { useQuery } from '@tanstack/react-query'
-import { queryKeys } from '@lenserfight/data/cache'
 import { useWorkflowRun } from '../hooks/useWorkflowRun'
+
 import type { WorkflowNodeConfig } from '../components/WorkflowCanvasNode'
 
 interface WorkflowBuilderPageProps {
@@ -31,18 +35,23 @@ export function WorkflowBuilderPage({ workflowId, onBattleClick }: WorkflowBuild
   const { user } = useAuth()
   const { workflow, nodes, edges, isLoading } = useWorkflow(workflowId)
   const { startRun, isPending: starting, runId, nodeResults, isRunning } = useWorkflowRun(workflowId)
+  const { models, isLoading: modelsLoading } = useAIModels()
+  const { execute: executeWorkflow } = useWorkflowExecution({ nodes, edges, models })
   const [showRunPanel, setShowRunPanel] = useState(false)
-  const [showRunConfig, setShowRunConfig] = useState(false)
   const [isEditModalOpen, setIsEditModalOpen] = useState(false)
+  const [globalModelId, setGlobalModelId] = useState<string>(() => {
+    if (typeof window === 'undefined') return ''
+    return localStorage.getItem('lf-workflow-global-model') ?? ''
+  })
   const [paletteCollapsed, setPaletteCollapsed] = useState(
     () => typeof window !== 'undefined' && window.innerWidth < 768
   )
 
-  // Per-node config overrides (in-memory; persisted to DB via migration Phase 2)
+  // Per-node config overrides — synced to DB via canvas debounced save (workflow_nodes.config)
   const [nodeConfigs, setNodeConfigs] = useState<Record<string, WorkflowNodeConfig>>({})
 
   // Selected node for the config panel
-  const [selectedNodeConfig, setSelectedNodeConfig] = useState<{ nodeId: string; lensId: string; nodeLabel: string } | null>(null)
+  const [selectedNodeConfig, setSelectedNodeConfig] = useState<{ nodeId: string; lensId: string; versionId: string | null; nodeLabel: string } | null>(null)
 
   const isOwner = !!user && user.id === workflow?.lenser_id
   const { mutate: forkWorkflow, isPending: isForking } = useForkWorkflow()
@@ -80,7 +89,12 @@ export function WorkflowBuilderPage({ workflowId, onBattleClick }: WorkflowBuild
   // ── Node config panel ───────────────────────────────────────────────────────
   const handleConfigNode = (nodeId: string, lensId: string) => {
     const node = nodes.find((n) => n.id === nodeId)
-    setSelectedNodeConfig({ nodeId, lensId, nodeLabel: node?.label ?? `Node ${(node?.ordinal ?? 0) + 1}` })
+    setSelectedNodeConfig({
+      nodeId,
+      lensId,
+      versionId: node?.version_id ?? null,
+      nodeLabel: node?.label ?? `Node ${(node?.ordinal ?? 0) + 1}`,
+    })
     // Hide run panel when config panel opens
     setShowRunPanel(false)
   }
@@ -90,15 +104,31 @@ export function WorkflowBuilderPage({ workflowId, onBattleClick }: WorkflowBuild
   }
 
   // ── Run ─────────────────────────────────────────────────────────────────────
-  const handleRunClick = () => {
-    setShowRunConfig(true)
+  const handleModelChange = (value: string) => {
+    setGlobalModelId(value)
+    if (typeof window !== 'undefined') localStorage.setItem('lf-workflow-global-model', value)
   }
 
-  const handleRun = async (globalModelId: string, inputs: Record<string, unknown>) => {
-    await startRun({ inputs, globalModelId })
+  const handleRunClick = async (rootInputs: Record<string, unknown> = {}) => {
+    if (!globalModelId) {
+      toast.error('Select a model before running the workflow.')
+      return
+    }
+    const run = await startRun({ inputs: rootInputs, globalModelId })
     setShowRunPanel(true)
     setSelectedNodeConfig(null)
+
+    // Fire execution orchestrator in background — status updates flow via Realtime
+    if (run?.id) {
+      executeWorkflow(run.id, globalModelId, rootInputs).catch((err) => {
+        toast.error(`Workflow execution failed: ${err instanceof Error ? err.message : String(err)}`)
+      })
+    }
   }
+
+  const modelOptions = models
+    .filter((m) => !!m.key && m.is_active)
+    .map((m) => ({ value: m.key, label: `${m.name} (${m.provider})` }))
 
   // ── Loading / error states ─────────────────────────────────────────────────
   if (isLoading) {
@@ -214,16 +244,26 @@ export function WorkflowBuilderPage({ workflowId, onBattleClick }: WorkflowBuild
             </>
           )}
 
-          {/* Run */}
-          <Button
-            size="sm"
-            onClick={handleRunClick}
-            isLoading={starting}
-            disabled={nodes.length === 0}
-            className="gap-1.5 w-auto"
-          >
-            <Play size={12} /> Run
-          </Button>
+          {/* Run — inline model selector + run button */}
+          <div className="flex items-center gap-1.5">
+            <SelectField
+              value={globalModelId}
+              onChange={handleModelChange}
+              options={modelOptions}
+              placeholder={modelsLoading ? 'Loading…' : 'Select model'}
+              disabled={modelsLoading}
+              className="w-44 [&_button]:!py-1.5 [&_button]:!text-xs [&_button]:!rounded-lg"
+            />
+            <Button
+              size="sm"
+              onClick={handleRunClick}
+              isLoading={starting}
+              disabled={nodes.length === 0}
+              className="gap-1.5 w-auto"
+            >
+              <Play size={12} /> Run
+            </Button>
+          </div>
 
           {/* Battle */}
           {onBattleClick && (
@@ -326,6 +366,7 @@ export function WorkflowBuilderPage({ workflowId, onBattleClick }: WorkflowBuild
           <WorkflowNodeConfigPanel
             nodeId={selectedNodeConfig.nodeId}
             lensId={selectedNodeConfig.lensId}
+            versionId={selectedNodeConfig.versionId}
             nodeLabel={selectedNodeConfig.nodeLabel}
             currentConfig={nodeConfigs[selectedNodeConfig.nodeId] ?? {}}
             nodes={nodes}
@@ -336,11 +377,11 @@ export function WorkflowBuilderPage({ workflowId, onBattleClick }: WorkflowBuild
         )}
 
         {/* Run results panel — slides in from the right */}
-        {showRunPanel && runId && !selectedNodeConfig && (
+        {showRunPanel && !selectedNodeConfig && (
           <aside className="flex flex-col w-80 flex-shrink-0 border-l border-surface-border bg-surface-base overflow-hidden">
             <div className="flex items-center justify-between px-4 py-2.5 border-b border-surface-border">
               <p className="text-xs font-semibold text-greyscale-900 dark:text-greyscale-50">
-                Run {isRunning ? '— in progress' : '— complete'}
+                {runId ? `Run ${isRunning ? '— in progress' : '— complete'}` : 'Run Workflow'}
               </p>
               <Button
                 variant="ghost"
@@ -352,7 +393,15 @@ export function WorkflowBuilderPage({ workflowId, onBattleClick }: WorkflowBuild
               </Button>
             </div>
             <div className="flex-1 overflow-y-auto">
-              <WorkflowProgressView nodes={nodes} edges={edges} nodeResults={nodeResults} />
+              <WorkflowRootInputsPanel
+                nodes={nodes}
+                edges={edges}
+                onSubmit={(rootInputs) => handleRunClick(rootInputs)}
+                isRunning={starting || isRunning}
+              />
+              {runId && (
+                <WorkflowProgressView nodes={nodes} edges={edges} nodeResults={nodeResults} />
+              )}
             </div>
           </aside>
         )}
@@ -366,14 +415,6 @@ export function WorkflowBuilderPage({ workflowId, onBattleClick }: WorkflowBuild
           workflow={workflow}
         />
       )}
-
-      {/* ── Run configuration modal ──────────────────────────────────────────── */}
-      <WorkflowRunConfigModal
-        isOpen={showRunConfig}
-        onClose={() => setShowRunConfig(false)}
-        onRun={handleRun}
-        isRunning={starting}
-      />
 
       {/* ── Lens edit modal ─────────────────────────────────────────────────── */}
       <CreateLensModal
