@@ -64,8 +64,15 @@ export function useWorkflowRun(workflowId: string | undefined) {
     }
   }, [runId])
 
+  const stopRun = () => {
+    if (!runId) return
+    workflowsService.updateRunStatus(runId, 'cancelled').catch(() => {})
+    setIsRunning(false)
+  }
+
   return {
     startRun,
+    stopRun,
     isPending,
     runId,
     nodeResults,
