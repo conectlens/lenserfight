@@ -1,14 +1,14 @@
 import { lensesService } from '@lenserfight/data/repositories'
 import { useAIModels } from '@lenserfight/features/generations'
-import { VersionParamFields } from '@lenserfight/features/lenses'
+import { VersionParamFields, FundingSourceToggle, useFundingSource } from '@lenserfight/features/lenses'
 import { Button } from '@lenserfight/ui/components'
-import { SelectField } from '@lenserfight/ui/forms'
 import { useQuery } from '@tanstack/react-query'
 import { X } from 'lucide-react'
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useMemo } from 'react'
 
 import type { WorkflowNodeConfig } from './WorkflowCanvasNode'
 import type { WorkflowEdgeRecord, WorkflowNodeRecord } from '@lenserfight/data/repositories'
+import type { AIProvider, AIProviderModel } from '@lenserfight/types'
 
 interface WorkflowNodeConfigPanelProps {
   nodeId: string
@@ -33,12 +33,14 @@ export function WorkflowNodeConfigPanel({
   onSave,
   onClose,
 }: WorkflowNodeConfigPanelProps) {
-  const [modelId, setModelId] = useState<string>(currentConfig.model_id ?? '')
+  const [selectedProviderKey, setSelectedProviderKey] = useState('')
+  const [selectedModelKey, setSelectedModelKey] = useState(currentConfig.model_id ?? '')
   const [paramOverrides, setParamOverrides] = useState<Record<string, string>>(
     currentConfig.param_overrides ?? {}
   )
 
   const { models, isLoading: modelsLoading } = useAIModels()
+  const nodeFunding = useFundingSource(selectedProviderKey)
 
   // Load version-specific params: use explicit versionId or fall back to latest published
   const { data: lensVersion, isLoading: versionLoading } = useQuery({
@@ -53,8 +55,9 @@ export function WorkflowNodeConfigPanel({
 
   // Reset local state when node changes
   useEffect(() => {
-    setModelId(currentConfig.model_id ?? '')
+    setSelectedModelKey(currentConfig.model_id ?? '')
     setParamOverrides(currentConfig.param_overrides ?? {})
+    setSelectedProviderKey('')
   }, [nodeId, currentConfig.model_id, currentConfig.param_overrides])
 
   // Incoming edge mappings for this node (which params are auto-wired from previous nodes)
@@ -65,20 +68,35 @@ export function WorkflowNodeConfigPanel({
   const versionParams = lensVersion?.parameters ?? []
   const isParamsLoading = versionLoading
 
-  const modelOptions = [
-    { value: '', label: 'Use global model (default)' },
-    ...models
-      .filter((m) => !!m.key && m.is_active)
-      .map((m) => ({
-        value: m.key,
-        label: `${m.name} (${m.providerDisplayName ?? m.provider})`,
-      })),
-  ]
+  // Derive providers/models from flat useAIModels list
+  const providers: AIProvider[] = useMemo(() => {
+    const seen = new Set<string>()
+    return models
+      .filter((m) => m.is_active && !!m.key && !seen.has(m.provider) && (seen.add(m.provider), true))
+      .map((m) => ({ key: m.provider, display_name: m.providerDisplayName ?? m.provider, id: m.provider_id ?? '' }))
+  }, [models])
+
+  const providerModels: AIProviderModel[] = useMemo(() => {
+    const effectiveProvider = selectedProviderKey || (
+      nodeFunding.fundingSource === 'user_byok_cloud'
+        ? (nodeFunding.availableKeys.find((k) => k.id === nodeFunding.selectedKeyRefId)?.providerKey ?? '')
+        : nodeFunding.fundingSource === 'user_byok_local'
+          ? (nodeFunding.localKeys.find((k) => k.id === nodeFunding.selectedLocalKeyId)?.provider ?? '')
+          : selectedProviderKey
+    )
+    if (!effectiveProvider) return []
+    return models
+      .filter((m) => m.is_active && !!m.key && m.provider === effectiveProvider)
+      .map((m) => ({ key: m.key, name: m.name, inputModalities: m.input_modalities }))
+  }, [models, selectedProviderKey, nodeFunding.fundingSource, nodeFunding.selectedKeyRefId, nodeFunding.selectedLocalKeyId, nodeFunding.availableKeys, nodeFunding.localKeys])
 
   const handleSave = () => {
     onSave(nodeId, {
       ...currentConfig,
-      model_id: modelId || null,
+      model_id: selectedModelKey || null,
+      funding_source: nodeFunding.fundingSource,
+      key_ref_id: nodeFunding.selectedKeyRefId,
+      local_key_id: nodeFunding.selectedLocalKeyId,
       param_overrides: Object.keys(paramOverrides).length > 0 ? paramOverrides : undefined,
     })
     onClose()
@@ -110,19 +128,35 @@ export function WorkflowNodeConfigPanel({
       </div>
 
       <div className="flex-1 overflow-y-auto p-4 space-y-5">
-        {/* Model override */}
+        {/* Funding source + model override */}
         <div className="space-y-1.5">
-          <SelectField
-            label="AI Model"
-            value={modelId}
-            onChange={setModelId}
-            options={modelOptions}
-            placeholder={modelsLoading ? 'Loading models\u2026' : 'Use global model (default)'}
-            disabled={modelsLoading}
-          />
-          <p className="text-[10px] text-greyscale-400 leading-tight">
+          <p className="text-[10px] font-semibold uppercase tracking-wider text-greyscale-400">
+            Model Override
+          </p>
+          <p className="text-[10px] text-greyscale-400 leading-tight mb-2">
             Leave blank to use the global model selected at run time.
           </p>
+          <FundingSourceToggle
+            fundingSource={nodeFunding.fundingSource}
+            onFundingSourceChange={nodeFunding.setFundingSource}
+            selectedKeyRefId={nodeFunding.selectedKeyRefId}
+            onKeyRefIdChange={nodeFunding.setSelectedKeyRefId}
+            availableKeys={nodeFunding.availableKeys}
+            selectedLocalKeyId={nodeFunding.selectedLocalKeyId}
+            onLocalKeyIdChange={nodeFunding.setSelectedLocalKeyId}
+            availableLocalKeys={nodeFunding.localKeys}
+            onAddLocalKey={nodeFunding.addLocalKey}
+            walletBalance={nodeFunding.walletBalance}
+            canUseBYOK={nodeFunding.canUseBYOK}
+            providers={providers}
+            isLoadingProviders={modelsLoading}
+            providerModels={providerModels}
+            isLoadingModels={modelsLoading}
+            selectedProviderKey={selectedProviderKey}
+            onProviderChange={(key) => { setSelectedProviderKey(key); setSelectedModelKey('') }}
+            selectedModelKey={selectedModelKey}
+            onModelChange={setSelectedModelKey}
+          />
         </div>
 
         {/* Parameters from lens version */}

@@ -1,9 +1,11 @@
 import React, { useState } from 'react'
 import { Cloud, KeyRound, HardDrive, Globe, Plus, X, Eye, EyeOff } from 'lucide-react'
 import { SearchSelectField, SelectField } from '@lenserfight/ui/forms'
-import { FundingSource, UserApiKey, WalletBalance, BYOK_PROVIDER_LABELS } from '@lenserfight/types'
+import { FundingSource, UserApiKey, WalletBalance, BYOK_PROVIDER_LABELS, AIProvider, AIProviderModel } from '@lenserfight/types'
 import { Link } from 'react-router-dom'
 import type { LocalKeyMeta } from '@lenserfight/types'
+import { LabProviderSelector } from './LabProviderSelector'
+import { useOllamaModels } from '../hooks/useOllamaModels'
 
 interface FundingSourceToggleProps {
   fundingSource: FundingSource
@@ -21,6 +23,16 @@ interface FundingSourceToggleProps {
   // Common
   walletBalance: WalletBalance | undefined
   canUseBYOK: boolean
+  // Optional: Provider/Model selection section (shown when onModelChange is provided)
+  providers?: AIProvider[]
+  isLoadingProviders?: boolean
+  providerModels?: AIProviderModel[]
+  isLoadingModels?: boolean
+  selectedProviderKey?: string
+  onProviderChange?: (key: string) => void
+  selectedModelKey?: string
+  onModelChange?: (key: string) => void
+  onProviderDropdownOpen?: () => void
 }
 
 const PROVIDER_OPTIONS = Object.entries(BYOK_PROVIDER_LABELS).map(([value, label]) => ({
@@ -136,12 +148,40 @@ export const FundingSourceToggle: React.FC<FundingSourceToggleProps> = ({
   onRemoveLocalKey: _onRemoveLocalKey,
   walletBalance,
   canUseBYOK,
+  // Model/Provider selection props
+  providers,
+  isLoadingProviders,
+  providerModels,
+  isLoadingModels,
+  selectedProviderKey,
+  onProviderChange,
+  selectedModelKey,
+  onModelChange,
+  onProviderDropdownOpen,
 }) => {
   const isCloud = fundingSource === 'platform_credit'
   const isByokCloud = fundingSource === 'user_byok_cloud'
   const isByokLocal = fundingSource === 'user_byok_local'
   const isByok = isByokCloud || isByokLocal
   const [showAddLocalKey, setShowAddLocalKey] = useState(false)
+
+  // Derive effective provider key based on funding mode
+  const effectiveProviderKey = isByokCloud
+    ? (availableKeys.find((k) => k.id === selectedKeyRefId)?.providerKey ?? '')
+    : isByokLocal
+      ? (availableLocalKeys.find((k) => k.id === selectedLocalKeyId)?.provider ?? '')
+      : selectedProviderKey ?? ''
+
+  const isOllamaLocal = isByokLocal && effectiveProviderKey === 'ollama'
+
+  // Always call useOllamaModels (gated internally when not enabled)
+  const {
+    isRunning: ollamaIsRunning,
+    isLoading: isLoadingOllama,
+    models: ollamaModels,
+    error: ollamaError,
+    refetch: refetchOllama,
+  } = useOllamaModels(isOllamaLocal)
 
   const handleMyKeyClick = () => {
     if (!canUseBYOK) return
@@ -299,6 +339,29 @@ export const FundingSourceToggle: React.FC<FundingSourceToggleProps> = ({
             Add credits
           </Link>
         </p>
+      )}
+
+      {/* Provider / Model selector — rendered when onModelChange is provided */}
+      {onModelChange && (
+        <LabProviderSelector
+          fundingSource={fundingSource}
+          effectiveProviderKey={effectiveProviderKey}
+          providers={providers ?? []}
+          isLoadingProviders={isLoadingProviders ?? false}
+          providerModels={providerModels ?? []}
+          isLoadingModels={isLoadingModels ?? false}
+          selectedProviderKey={selectedProviderKey ?? ''}
+          selectedModelKey={selectedModelKey ?? ''}
+          onProviderChange={onProviderChange ?? (() => {})}
+          onModelChange={onModelChange}
+          onProviderDropdownOpen={onProviderDropdownOpen}
+          isOllamaLocal={isOllamaLocal}
+          ollamaIsRunning={ollamaIsRunning}
+          isLoadingOllama={isLoadingOllama}
+          ollamaModels={ollamaModels}
+          ollamaError={ollamaError}
+          refetchOllama={refetchOllama}
+        />
       )}
     </div>
   )

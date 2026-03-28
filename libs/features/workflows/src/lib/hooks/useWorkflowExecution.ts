@@ -5,11 +5,11 @@ import { useCallback, useRef } from 'react'
 
 import type { WorkflowNodeRecord, WorkflowEdgeRecord } from '@lenserfight/data/repositories'
 import type {
+  IExecutionProvider,
   WorkflowNode,
   WorkflowEdge,
   WorkflowExecutionContext,
   NodeResult,
-  IExecutionProvider,
   ExecutionInput,
   ExecutionResult,
 } from '@lenserfight/infra/execution'
@@ -70,6 +70,13 @@ interface UseWorkflowExecutionOptions {
   resolveLocalKey?: (keyId: string) => Promise<string>
 }
 
+/** Config shape stored in workflow_nodes.config (subset used for execution) */
+interface NodeExecutionConfig {
+  model_id?: string | null
+  funding_source?: FundingSource
+  local_key_id?: string | null
+}
+
 /**
  * Browser-side workflow execution orchestrator.
  *
@@ -91,6 +98,7 @@ export function useWorkflowExecution({
   edges,
   models,
   fundingSource,
+  selectedKeyRefId: _selectedKeyRefId,
   selectedLocalKeyId,
   resolveLocalKey,
 }: UseWorkflowExecutionOptions) {
@@ -134,13 +142,15 @@ export function useWorkflowExecution({
 
         if (controller.signal.aborted) return
 
-        const provider = createTextExecutionProvider(
+        const globalProvider = createTextExecutionProvider(
           providerName as Exclude<Provider, 'fal'>,
           globalModelId,
           apiKey,
         )
 
-        // Map DB records → execution service types
+        // Map DB records → execution service types.
+        // Per-node model/funding config (NodeExecutionConfig) is stored in workflow_nodes.config
+        // and read by the CF Worker for server-side execution. Browser execution uses globalProvider.
         const execNodes: WorkflowNode[] = nodes.map((n) => ({
           id: n.id,
           lensId: n.lens_id,
@@ -179,8 +189,8 @@ export function useWorkflowExecution({
           },
         }
 
-        // Execute the DAG
-        const executionService = new WorkflowExecutionService(provider)
+        // Execute the DAG using the global provider
+        const executionService = new WorkflowExecutionService(globalProvider)
         const result = await executionService.executeWorkflow(execNodes, execEdges, ctx)
 
         if (controller.signal.aborted) return
@@ -194,7 +204,7 @@ export function useWorkflowExecution({
         if (abortRef.current === controller) abortRef.current = null
       }
     },
-    [nodes, edges, models, fundingSource, selectedLocalKeyId, resolveLocalKey],
+    [nodes, edges, models, fundingSource, selectedLocalKeyId, resolveLocalKey], // eslint-disable-line react-hooks/exhaustive-deps
   )
 
   return { execute, stopExecution }
