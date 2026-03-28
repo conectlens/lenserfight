@@ -9,19 +9,22 @@ import { SEOHead, Badge, Button, Card, DesktopFrame } from '@lenserfight/ui/comp
 import { ConfirmModal } from '@lenserfight/ui/modals'
 import { SelectField } from '@lenserfight/ui/forms'
 import { useUI } from '@lenserfight/ui/providers'
+import { useDrawerRouter } from '@lenserfight/ui/routing'
 import { useQueryClient } from '@tanstack/react-query'
-import { GitFork, History, Loader2, Pencil, Trash2, Flag, Play, ChevronDown, ChevronUp } from 'lucide-react'
+import { GitFork, History, Loader2, Pencil, Trash2, Flag, Play, ChevronDown, ChevronUp, ListVideo, ImageIcon } from 'lucide-react'
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 
 
 import { CreateLensModal } from '../components/CreateLensModal'
+import { ExecutionHistoryDrawer } from '../components/ExecutionHistoryDrawer'
 import { LabArtifactViewer } from '../components/LabArtifactViewer'
 import { LabExecutionPanel } from '../components/LabExecutionPanel'
 import { LensAuthorList } from '../components/LensAuthorList'
 import { LensBodyViewer } from '../components/LensBodyViewer'
 import { LensDetailHeader } from '../components/LensDetailHeader'
 import { LensRelatedList } from '../components/LensRelatedList'
+import { MediaGalleryDrawer } from '../components/MediaGalleryDrawer'
 import { useAuthenticatedLenser } from '../hooks/useAuthenticatedLenser'
 import { useCloneLens } from '../hooks/useCloneLens'
 import { useCreateLens } from '../hooks/useCreateLens'
@@ -39,6 +42,8 @@ export const LensDetailPage: React.FC = () => {
   const { setShareConfig } = useShareContext()
   const { setPageActions, setPageTitle } = useUI()
   const queryClient = useQueryClient()
+
+  const drawerRouter = useDrawerRouter()
 
   const { lens, relatedLenses, authorLenses, isLoading, error, actions } =
     useLensDetailController(id)
@@ -369,6 +374,26 @@ export const LensDetailPage: React.FC = () => {
             <div className="flex flex-wrap items-center justify-end gap-2">
               <button
                 type="button"
+                onClick={() => drawerRouter.open('executions')}
+                title="View execution history"
+                className="flex items-center gap-1.5 rounded-2xl border border-surface-border bg-surface-base px-3 py-2 text-xs font-medium text-greyscale-600 shadow-sm transition-colors hover:border-primary-yellow-500 hover:text-greyscale-900 dark:text-greyscale-400 dark:hover:text-greyscale-50"
+              >
+                <ListVideo size={13} />
+                <span>Executions</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => drawerRouter.open('media')}
+                title="Browse media gallery"
+                className="flex items-center gap-1.5 rounded-2xl border border-surface-border bg-surface-base px-3 py-2 text-xs font-medium text-greyscale-600 shadow-sm transition-colors hover:border-primary-yellow-500 hover:text-greyscale-900 dark:text-greyscale-400 dark:hover:text-greyscale-50"
+              >
+                <ImageIcon size={13} />
+                <span>Media</span>
+              </button>
+
+              <button
+                type="button"
                 onClick={() => cloneLens(previewVersionId ?? null)}
                 disabled={isCloning}
                 title={previewVersionId ? 'Clone this version as a new lens' : 'Clone latest version as a new lens'}
@@ -652,6 +677,22 @@ export const LensDetailPage: React.FC = () => {
           </div>
         </div>
       )}
+
+      <ExecutionHistoryDrawer
+        open={drawerRouter.isOpen('executions')}
+        onClose={drawerRouter.close}
+        lensId={id ?? ''}
+        history={lab.history}
+        isLoadingHistory={lab.isLoadingHistory}
+        hasMoreHistory={lab.hasMoreHistory}
+        loadMoreHistory={lab.loadMoreHistory}
+        onSelectRun={lab.setSelectedRunId}
+      />
+
+      <MediaGalleryDrawer
+        open={drawerRouter.isOpen('media')}
+        onClose={drawerRouter.close}
+      />
     </div>
   )
 }
