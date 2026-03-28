@@ -11,7 +11,7 @@ import { SelectField } from '@lenserfight/ui/forms'
 import { useUI } from '@lenserfight/ui/providers'
 import { useDrawerRouter } from '@lenserfight/ui/routing'
 import { useQueryClient } from '@tanstack/react-query'
-import { GitFork, History, Loader2, Pencil, Trash2, Flag, Play, ChevronDown, ChevronUp, ListVideo, ImageIcon } from 'lucide-react'
+import { History, Loader2, Pencil, Trash2, Flag, Play, ChevronDown, ChevronUp, ListVideo, ImageIcon } from 'lucide-react'
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 
@@ -38,7 +38,7 @@ export const LensDetailPage: React.FC = () => {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
   const { lenser, hasLenser } = useAuthenticatedLenser()
-  const { isLoading: authLoading, isAuthenticated } = useAuth()
+  const { isLoading: authLoading, isAuthenticated, redirectToLogin } = useAuth()
   const { setShareConfig } = useShareContext()
   const { setPageActions, setPageTitle } = useUI()
   const queryClient = useQueryClient()
@@ -137,6 +137,9 @@ export const LensDetailPage: React.FC = () => {
     ? 'Execution in progress'
     : 'No execution yet'
   const historyLabel = versions.length > 0 ? `${versions.length} versions` : 'No version history yet'
+  const normalizedLenserHandle = lenser?.handle?.trim().toLowerCase()
+  const hasActiveLenserProfile =
+    !!lenser && hasLenser && normalizedLenserHandle !== 'anon' && normalizedLenserHandle !== 'anonymous'
 
   const { cloneLens, isCloning } = useCloneLens(lens ?? null)
   const { forkTree } = useForkTree(id ?? '', lens?.parentLensId)
@@ -155,12 +158,16 @@ export const LensDetailPage: React.FC = () => {
   const isOwner = !!(lenser && lens && lens.author.id === lenser.id)
 
   const ensureProfile = useCallback((): boolean => {
-    if (!hasLenser) {
+    if (!isAuthenticated) {
+      redirectToLogin()
+      return false
+    }
+    if (!hasActiveLenserProfile) {
       navigate('/onboarding', { state: { from: window.location.pathname } })
       return false
     }
     return true
-  }, [hasLenser])
+  }, [hasActiveLenserProfile, isAuthenticated, navigate, redirectToLogin])
 
   useEffect(() => {
     if (!lens) return
@@ -213,13 +220,13 @@ export const LensDetailPage: React.FC = () => {
         { label: 'Delete Lens', icon: <Trash2 size={16} />, onClick: () => handleDeleteClick(lens.id), variant: 'danger' as const },
       ]
     }
-    if (!isOwner && lens?.id && hasLenser) {
+    if (!isOwner && lens?.id && hasActiveLenserProfile) {
       return [
         { label: 'Report Lens', icon: <Flag size={16} />, onClick: () => setIsReportOpen(true), variant: 'danger' as const },
       ]
     }
     return []
-  }, [hasLenser, handleDeleteClick, handleEditClick, isOwner, lens])
+  }, [hasActiveLenserProfile, handleDeleteClick, handleEditClick, isOwner, lens])
 
   useEffect(() => { setPageActions(pageActions) }, [pageActions, setPageActions])
 
@@ -376,6 +383,9 @@ export const LensDetailPage: React.FC = () => {
               saveCount={lens.reactionCounts.saved}
               forkTree={forkTree}
               onCopy={handleCopy}
+              onFork={() => cloneLens(previewVersionId ?? null)}
+              canFork={hasActiveLenserProfile}
+              isForking={isCloning}
             />
           </Card>
 
@@ -395,8 +405,11 @@ export const LensDetailPage: React.FC = () => {
 
               <button
                 type="button"
-                onClick={() => drawerRouter.open('executions')}
-                title="View execution history"
+                onClick={() => {
+                  if (!ensureProfile()) return
+                  drawerRouter.open('executions')
+                }}
+                title={hasActiveLenserProfile ? 'View execution history' : 'Sign in or register to view executions'}
                 className="flex items-center gap-1.5 rounded-2xl border border-surface-border bg-surface-base px-3 py-2 text-xs font-medium text-greyscale-600 shadow-sm transition-colors hover:border-primary-yellow-500 hover:text-greyscale-900 dark:text-greyscale-400 dark:hover:text-greyscale-50"
               >
                 <ListVideo size={13} />
@@ -411,17 +424,6 @@ export const LensDetailPage: React.FC = () => {
               >
                 <ImageIcon size={13} />
                 <span>Media</span>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => cloneLens(previewVersionId ?? null)}
-                disabled={isCloning}
-                title={previewVersionId ? 'Clone this version as a new lens' : 'Clone latest version as a new lens'}
-                className="flex items-center gap-1.5 rounded-2xl border border-surface-border bg-surface-base px-3 py-2 text-xs font-medium text-greyscale-600 shadow-sm transition-colors hover:border-primary-yellow-500 hover:text-greyscale-900 disabled:opacity-50 dark:text-greyscale-400 dark:hover:text-greyscale-50"
-              >
-                {isCloning ? <Loader2 size={13} className="animate-spin" /> : <GitFork size={13} />}
-                <span>{previewVersionId ? 'Clone this version' : 'Clone'}</span>
               </button>
 
               <button
@@ -523,19 +525,31 @@ export const LensDetailPage: React.FC = () => {
           <Card className="space-y-4 p-5">
             <button
               type="button"
-              onClick={() => setShowRunPanel((v) => !v)}
-              className="flex w-full items-center gap-3 rounded-2xl border border-surface-border bg-surface-base px-4 py-3 text-left transition-colors hover:border-primary-yellow-500"
+              onClick={() => {
+                if (!hasActiveLenserProfile) {
+                  ensureProfile()
+                  return
+                }
+                setShowRunPanel((v) => !v)
+              }}
+              className={`flex w-full items-center gap-3 rounded-2xl border border-surface-border bg-surface-base px-4 py-3 text-left transition-colors hover:border-primary-yellow-500 ${
+                !hasActiveLenserProfile ? 'cursor-not-allowed opacity-75' : ''
+              }`}
             >
-              <Play size={15} className="flex-shrink-0 text-primary-yellow-600" />
+              <Play size={15} className={`flex-shrink-0 ${hasActiveLenserProfile ? 'text-primary-yellow-600' : 'text-greyscale-400'}`} />
               <span className="flex-1 text-sm font-semibold text-greyscale-900 dark:text-greyscale-50">Run Lens</span>
-              {showRunPanel ? (
-                <ChevronUp size={15} className="text-greyscale-400" />
+              {hasActiveLenserProfile ? (
+                showRunPanel ? (
+                  <ChevronUp size={15} className="text-greyscale-400" />
+                ) : (
+                  <ChevronDown size={15} className="text-greyscale-400" />
+                )
               ) : (
-                <ChevronDown size={15} className="text-greyscale-400" />
+                <span className="text-xs text-greyscale-400">Sign in to run</span>
               )}
             </button>
 
-            {showRunPanel && (
+            {hasActiveLenserProfile && showRunPanel && (
               <div className="space-y-4 pt-1">
                 <LabExecutionPanel
                   lensContent={previewVersion?.templateBody ?? latestPublishedDetail?.templateBody ?? lens.content}
@@ -568,6 +582,8 @@ export const LensDetailPage: React.FC = () => {
                   onAddLocalKey={funding.addLocalKey}
                   onRemoveLocalKey={funding.removeLocalKey}
                   onProviderDropdownOpen={handleProviderDropdownOpen}
+                  isLocked={!hasActiveLenserProfile}
+                  onLockedAction={ensureProfile}
                 />
                 <LabArtifactViewer
                   selectedRunId={lab.selectedRunId}
@@ -580,6 +596,7 @@ export const LensDetailPage: React.FC = () => {
                   streamCredits={lab.streamCredits}
                   streamError={lab.streamError}
                   isOwner={isOwner}
+                  isAuthenticatedLenser={hasActiveLenserProfile}
                 />
               </div>
             )}
