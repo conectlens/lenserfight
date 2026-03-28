@@ -468,7 +468,7 @@ export async function requestDeviceLogin(): Promise<DeviceLoginRequestResultDTO>
   return callRpc<DeviceLoginRequestResultDTO>(
     'fn_auth_request_device_login',
     { p_request_ttl_minutes: 10 },
-    {} // anon — no Bearer token required
+    { noAuth: true } // anon — never attach a stale/expired token
   );
 }
 
@@ -479,7 +479,7 @@ export async function exchangeDeviceLogin(dto: {
   return callRpc<DeviceLoginExchangeResultDTO>(
     'fn_auth_exchange_device_login',
     { p_request_id: dto.requestId, p_request_secret: dto.requestSecret },
-    {} // anon — no Bearer token required
+    { noAuth: true } // anon — never attach a stale/expired token
   );
 }
 
