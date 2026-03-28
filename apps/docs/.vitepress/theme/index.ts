@@ -4,6 +4,7 @@ import type { Theme } from 'vitepress'
 import './style.css'
 import MermaidDiagram from './MermaidDiagram.vue'
 import CopyPageButton from './CopyPageButton.vue'
+import DocsLogo from './DocsLogo.vue'
 
 export default {
   ...DefaultTheme,
@@ -15,5 +16,6 @@ export default {
   enhanceApp(ctx) {
     DefaultTheme.enhanceApp?.(ctx)
     ctx.app.component('MermaidDiagram', MermaidDiagram)
+    ctx.app.component('DocsLogo', DocsLogo)
   },
 } satisfies Theme
