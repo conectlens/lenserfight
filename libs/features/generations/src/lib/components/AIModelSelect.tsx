@@ -1,5 +1,6 @@
-import React from 'react'
 import { SelectField } from '@lenserfight/ui/forms'
+import React from 'react'
+
 import { useAIModels } from '../hooks/useAIModels'
 
 interface AIModelSelectProps {
@@ -23,7 +24,10 @@ export const AIModelSelect: React.FC<AIModelSelectProps> = ({
 
   const options = models
     .filter((m) => !!m.key && m.is_active)
-    .map((m) => ({ value: m.key, label: `${m.name} (${m.provider})` }))
+    .map((m) => ({
+      value: m.key,
+      label: `${m.name} (${m.providerDisplayName ?? m.provider})`,
+    }))
 
   return (
     <SelectField

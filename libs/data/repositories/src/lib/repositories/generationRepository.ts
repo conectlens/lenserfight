@@ -1,20 +1,20 @@
+import { supabase } from '@lenserfight/data/supabase'
 import {
   AIGeneration,
   CreateGenerationDTO,
-  MediaLibraryItem,
   GenerationFilterOptions,
   AIModel,
   AIProvider,
   AIProviderModel,
 } from '@lenserfight/types'
 
-import { supabase } from '@lenserfight/data/supabase'
 
 type AIModelPublicRow = {
   id: string
   key: string | null
   name: string
-  provider: AIModel['provider']
+  provider_key: AIModel['provider']
+  provider_name: string
   is_active: boolean
 }
 
@@ -125,7 +125,7 @@ export class SupabaseGenerationRepository implements GenerationRepositoryPort {
     const { data, error } = await supabase
       .schema('ai')
       .from('models')
-      .select('id, key, name, provider, description, capabilities, temperature, max_tokens, pricing_tier, is_public, is_active, input_modalities, output_modalities, created_at')
+      .select('id, key, name, provider_id, description, capabilities, temperature, max_tokens, pricing_tier, is_public, is_active, input_modalities, output_modalities, created_at')
       .eq('id', modelId)
       .maybeSingle()
 
@@ -135,24 +135,44 @@ export class SupabaseGenerationRepository implements GenerationRepositoryPort {
     }
     if (!data) return null
 
-    const row = data as AIModelPublicRow & Record<string, unknown>
+    const row = data as Record<string, unknown>
+    const providerId = (row.provider_id as string | undefined) ?? null
+    let providerKey: AIModel['provider'] = 'other'
+    let providerDisplayName = 'Unknown'
+
+    if (providerId) {
+      const { data: providerRow, error: providerError } = await supabase
+        .schema('ai')
+        .from('providers')
+        .select('key, display_name')
+        .eq('id', providerId)
+        .maybeSingle()
+
+      if (!providerError && providerRow) {
+        providerKey = (providerRow.key as AIModel['provider']) ?? 'other'
+        providerDisplayName = (providerRow.display_name as string) ?? providerDisplayName
+      }
+    }
+
     return {
-      id: row.id,
-      key: row.key ?? '',
-      name: row.name,
-      provider: row.provider,
+      id: row.id as string,
+      key: (row.key as string | null) ?? '',
+      name: row.name as string,
+      provider: providerKey,
+      provider_id: providerId,
+      providerDisplayName,
       version: null,
       provider_url: null,
-      description: (row as Record<string, unknown>).description as string ?? '',
-      capabilities: (row as Record<string, unknown>).capabilities as AIModel['capabilities'] ?? [],
-      temperature: (row as Record<string, unknown>).temperature as number ?? 0,
-      max_tokens: (row as Record<string, unknown>).max_tokens as number ?? 0,
-      pricing_tier: (row as Record<string, unknown>).pricing_tier as AIModel['pricing_tier'] ?? null,
-      is_public: (row as Record<string, unknown>).is_public as boolean ?? true,
-      is_active: row.is_active,
-      input_modalities: (row as Record<string, unknown>).input_modalities as string[] ?? ['text'],
-      output_modalities: (row as Record<string, unknown>).output_modalities as string[] ?? ['text'],
-      created_at: (row as Record<string, unknown>).created_at as string ?? '',
+      description: (row.description as string) ?? '',
+      capabilities: (row.capabilities as AIModel['capabilities']) ?? [],
+      temperature: (row.temperature as number) ?? 0,
+      max_tokens: (row.max_tokens as number) ?? 0,
+      pricing_tier: (row.pricing_tier as AIModel['pricing_tier']) ?? null,
+      is_public: (row.is_public as boolean) ?? true,
+      is_active: (row.is_active as boolean) ?? false,
+      input_modalities: (row.input_modalities as string[]) ?? ['text'],
+      output_modalities: (row.output_modalities as string[]) ?? ['text'],
+      created_at: (row.created_at as string) ?? '',
     }
   }
 
@@ -170,7 +190,8 @@ export class SupabaseGenerationRepository implements GenerationRepositoryPort {
         id: row.id,
         key: row.key!,
         name: row.name,
-        provider: row.provider,
+        provider: row.provider_key,
+        providerDisplayName: row.provider_name,
         version: null,
         provider_url: null,
         description: '',
