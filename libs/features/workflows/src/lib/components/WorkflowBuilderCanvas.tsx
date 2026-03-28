@@ -15,6 +15,7 @@ import {
   useEdgesState,
   useReactFlow,
 } from '@xyflow/react'
+import { Pencil } from 'lucide-react'
 import React, { useCallback, useEffect, useRef } from 'react'
 
 import { useSaveWorkflow } from '../hooks/useSaveWorkflow'
@@ -269,6 +270,11 @@ function WorkflowBuilderCanvasInner({
     }, 1500)
   }, [readOnly, workflowId, saveWorkflow])
 
+  useEffect(() => {
+    if (!nodeConfigOverrides || Object.keys(nodeConfigOverrides).length === 0) return
+    scheduleSave()
+  }, [nodeConfigOverrides, scheduleSave])
+
   // ── Connect nodes ─────────────────────────────────────────────────────────
   const onConnect = useCallback(
     (connection: Connection) => {
@@ -347,9 +353,9 @@ function WorkflowBuilderCanvasInner({
       minZoom={0.2}
       maxZoom={2.5}
       proOptions={{ hideAttribution: true }}
-      connectionLineStyle={{ 
+      connectionLineStyle={{
         stroke: 'var(--cl-workflow-edge)',
-        strokeWidth: 2 
+        strokeWidth: 2
       }}
       className="[--xy-edge-stroke:var(--cl-workflow-edge)] [--xy-edge-stroke-selected:var(--cl-yellow-700)] dark:[--xy-edge-stroke-selected:var(--cl-yellow-500)]"
     >
