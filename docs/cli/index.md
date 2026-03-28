@@ -1,53 +1,94 @@
 # LenserFight CLI
 
-The `lenserfight` CLI lets you manage battles, Runners, lenser follows, tags, your feed, and the local Supabase development environment — all from your terminal.
+The `lenserfight` CLI (also available as `lf`) lets you manage battles, Runners, lenses, lenser follows, tags, your feed, and the local Supabase dev environment — all from your terminal.
+
+---
 
 ## Installation
 
-```bash
-# Build from source (Nx monorepo)
-pnpm nx build cli
-node dist/apps/cli/main.js --help
+### Local development (monorepo)
 
-# Or use the binary after linking
+Build the CLI, then symlink it globally so you can run `lenserfight` or `lf` from anywhere:
+
+```bash
+# 1. Build
+pnpm nx build cli
+
+# 2. Link globally
+cd dist/apps/cli
+npm link
+
+# 3. Verify
 lenserfight --help
+lf --help
 ```
+
+> `npm link` creates a global symlink pointing at `dist/apps/cli/main.js`.
+> After rebuilding (`pnpm nx build cli`), the symlink stays — no need to re-link.
+
+To unlink later:
+
+```bash
+npm unlink -g lenserfight
+```
+
+### Production / npm install
+
+When published to npm, install once and both binary names are available:
+
+```bash
+npm install -g lenserfight
+
+lenserfight --help
+lf --help
+```
+
+---
 
 ## Quick Start
 
 ```bash
-# 1. Initialise local config
-lenserfight init
+# 1. Initialise local config (.lenserfight.json)
+lf init
 
-# 2. Verify your environment
-lenserfight doctor
+# 2. Verify your environment (Node, Docker, Supabase CLI)
+lf doctor
 
 # 3. Start the local Supabase stack
-lenserfight dev
+lf dev
 
 # 4. Authenticate
-lenserfight auth login --email you@example.com --password secret
+lf auth login --email you@example.com --password secret
 
 # 5. Create your first battle
-lenserfight battle create --title "My First Battle" --lens "Write a FizzBuzz function."
+lf battle create --title "My First Battle" --prompt "Write a FizzBuzz function."
 ```
+
+---
 
 ## Command Groups
 
-| Group | Description | Docs |
-|-------|-------------|------|
-| **init / doctor / dev / seed / reset / status** | Local dev environment | [dev.md](dev.md) |
-| **auth** | Login, logout, device approval, developer tokens | [auth.md](auth.md) |
-| **battle** | Full battle lifecycle (create → publish) | [battle.md](battle.md) |
-| **runner** | Register and manage Runner adapters | [runner.md](runner.md) |
-| **inspect** | Inspect battle internals (contenders, votes, diffs) | [inspect.md](inspect.md) |
-| **run** | Orchestrated battle execution | [run.md](run.md) |
-| **publish / rubric / template** | Publish results, manage rubrics and templates | [publish.md](publish.md) |
-| **lenser** | Follow, unfollow, and discover lensers | [community.md](community.md) |
-| **tag** | Follow tags to personalise your feed | [community.md](community.md) |
-| **feed** | View your personalised content feed | [community.md](community.md) |
-| **leaderboard** | Activity-score leaderboard | [community.md](community.md) |
-| **report** | Report content for moderation | [community.md](community.md) |
+| Group | Commands | Docs |
+|-------|----------|------|
+| **Dev environment** | `init`, `doctor`, `dev`, `seed`, `reset`, `status` | [dev.md](dev.md) |
+| **Auth** | `auth login/logout/whoami/refresh/token/register` | [auth.md](auth.md) |
+| **Auth — device approval** | `auth device request` | [auth.md](auth.md#device-approval) |
+| **Auth — developer tokens** | `auth developer-token current/list/revoke` | [auth.md](auth.md#developer-tokens) |
+| **Battles** | `battle create/list/view/open/join/submit/start-voting/vote/finalize/publish/invite/delete/clone/close/retract/leaderboard` | [battle.md](battle.md) |
+| **Runners** | `runner connect/list/view/enable/remove/test/types` | [runner.md](runner.md) |
+| **Inspect** | `inspect contenders/submissions/votes/scorecards/diff` | [inspect.md](inspect.md) |
+| **Run / Exec** | `run submit/vote/full/replay` *(beta)* · `run exec` (Ollama, BYOK, Cloud) | [run.md](run.md) · [execution-modes.md](execution-modes.md) |
+| **Publish** | `publish battle/results/report` | [publish.md](publish.md) |
+| **Rubric** | `rubric create/list/view/delete/attach/detach` | [publish.md](publish.md#rubric) |
+| **Template** | `template create/list/view/delete/apply` | [publish.md](publish.md#template) |
+| **Lens** | `lens version list/create/publish` · `lens resource attach` | [lens.md](lens.md) |
+| **Community** | `lenser follow/unfollow/followers/following/suggested` | [community.md](community.md) |
+| **Tags** | `tag follow/unfollow/followed` | [community.md](community.md) |
+| **Feed** | `feed` | [community.md](community.md) |
+| **Leaderboard** | `leaderboard` | [community.md](community.md) |
+| **Report** | `report` | [community.md](community.md) |
+
+---
 
 ## Exit Codes
 
@@ -56,12 +97,17 @@ lenserfight battle create --title "My First Battle" --lens "Write a FizzBuzz fun
 | `0` | Success |
 | `1` | Error (bad config, API error, auth required, invalid argument) |
 
+---
+
 ## Configuration
 
 See [configuration.md](configuration.md) for the two-file config model and key resolution order.
 
+---
+
 ## Related
 
 - [Battle Lifecycle Walkthrough](lifecycle.md)
+- [Execution Modes (run exec)](execution-modes.md)
 - [Database Local Setup](../database/local-setup.md)
 - [API Overview](../reference/api-overview.md)

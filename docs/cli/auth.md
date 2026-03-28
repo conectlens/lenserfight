@@ -3,23 +3,43 @@
 Manage your LenserFight session, browser-based device approval, and time-bounded developer tokens.
 
 ```bash
-lenserfight auth <subcommand>
+lf auth <subcommand>
 ```
 
-## Session commands
+---
 
-### `auth login`
+## `auth login`
 
-Authenticate with email and password. Stores the Supabase session tokens in `~/.lenserfight/config.json`.
+### Browser login (recommended)
+
+Run `lf auth login` with no flags. The CLI opens your browser and waits.
 
 ```bash
-lenserfight auth login --email you@example.com --password secret
+lf auth login
+```
+
+**What happens:**
+
+1. The CLI creates a short-lived approval request and prints a code + URL.
+2. Your browser opens `https://auth.lenserfight.com/device-approval?mode=login`.
+3. Sign in (or you are already signed in) — the code is pre-filled.
+4. Click **Approve login**.
+5. The CLI detects approval and saves your session to `~/.lenserfight/config.json`.
+
+If the browser does not open automatically, copy the URL printed in the terminal and open it manually.
+
+### Email / password (headless / CI)
+
+Still supported for scripted and headless environments:
+
+```bash
+lf auth login --email you@example.com --password secret
 ```
 
 | Flag | Required | Description |
 |------|----------|-------------|
-| `--email` | Yes | Account email address |
-| `--password` | Yes | Account password |
+| `--email` | No* | Account email address (*required when using email/password path) |
+| `--password` | No* | Account password (*required when using email/password path) |
 
 ### `auth logout`
 
