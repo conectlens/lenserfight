@@ -1,99 +1,122 @@
 # Understanding Your XP
 
-This guide explains where to find your XP, what actions earn XP, and how the progression system works.
+This guide explains where to find your XP, what actions earn it, and how the progression system works.
 
 ## Where to See Your XP
 
-- **Leaderboard page** — accessible from the sidebar. Shows your rank, total XP, and level alongside other lensers.
-- **Profile** — your XP summary appears on your profile page.
-- **XP History** — view your recent XP events to see exactly which actions earned points.
+- **Leaderboard** — sidebar link. Shows your rank, total XP, level, and seasonal standing.
+- **Profile** — your XP summary and current level.
+- **XP History** — view a log of every XP event so you can see exactly which actions earned points and when.
 
-## Actions That Earn XP
+## What Earns XP
 
-### Forum Actions
+### Content Creation
 
-| Action | XP Earned | Cooldown |
-|--------|----------|---------|
-| Create a thread | 20 | 60 seconds |
-| Reply to a thread | 12 | 30 seconds |
-| Create a Lens | 30 | 2 minutes |
-| Give a reaction | 4 | 5 seconds |
-| Receive a reaction | ~2 | None |
-| Receive a reply | 4 | None |
-| Daily login | 8 | Once per day |
+You earn XP when you publish content that is **public**. Drafts and private posts earn nothing until made public.
 
-### Arena Actions
+| Action | XP earned | Cooldown | Daily limit |
+|--------|----------|---------|------------|
+| Publish a lens (public) | **120** | 60 min | 5 lenses / 400 XP |
+| Publish a workflow (public) | **90** | 60 min | 3 workflows / 180 XP |
+| Create a thread (public) | **30** | 30 min | 10 threads / 200 XP |
+| Post a reply | **12** | 5 min | 20 replies / 200 XP |
 
-| Action | XP Earned | Notes |
+> If you make a public lens or thread **private** after publishing, the creation XP is reversed. Re-publishing it re-awards the XP (once only).
+
+### Social — Giving
+
+You earn small XP for engaging with other lensers' content.
+
+| Action | XP earned | Cooldown | Daily limit |
+|--------|----------|---------|------------|
+| Give a reaction | **4** | 60 s | 30 / 100 XP |
+| Like a workflow | **4** | 2 min | 20 / 80 XP |
+| Save a workflow | **6** | 5 min | 10 / 60 XP |
+| Fork a workflow | **20** | 30 min | 5 / 80 XP |
+| Fork a lens | **20** | 30 min | 5 / 80 XP |
+
+### Social — Receiving
+
+You earn XP when others engage with your content. No cooldown applies — you don't control when interactions arrive. You cannot earn received XP from your own reactions or replies.
+
+| Action | XP earned | Daily limit | Season limit |
+|--------|----------|------------|-------------|
+| Reaction received | **6** | 50 / 300 XP | 1,500 XP |
+| Reply received | **8** | 30 / 200 XP | 1,200 XP |
+| Workflow like received | **6** | 30 / 200 XP | 1,000 XP |
+| Workflow save received | **9** | 20 / 200 XP | 800 XP |
+| Workflow fork received | **25** | 10 / 200 XP | 800 XP |
+| Lens fork received | **25** | 10 / 200 XP | 800 XP |
+| New follower | **4** | 20 / 80 XP | 400 XP |
+
+### Battles
+
+| Action | XP earned | Notes |
 |--------|----------|-------|
-| Create a battle | 300 | Hard difficulty (1.5x) |
-| Join a battle | 225 | Hard difficulty (1.5x) |
-| Win a battle | 900 | Legendary difficulty (3.0x) |
-| Vote on a battle | 20 | Standard difficulty |
+| Create a battle | **50** | Non-draft battles only; max 2/day |
+| Participate in a battle | **150** | Awarded when battle closes |
+| Win a battle | **375** | On top of participation XP |
+| Vote on a battle | **8** | 10-min cooldown; max 20 votes/day |
 
-### CLI Actions
+### Daily Activity & Streaks
 
-| Action | XP Earned |
-|--------|----------|
-| Initialize the CLI | 150 |
-| Deploy via CLI | ~112 |
+| Action | XP earned | Notes |
+|--------|----------|-------|
+| Daily login | **8** | 23-hour cooldown (once per day) |
+| 7-day streak bonus | **50** | Awarded when you reach 7 consecutive days |
+| 30-day streak bonus | **225** | Awarded when you reach 30 consecutive days |
 
-### Contributing
+Missing a day resets your current streak, but your **longest streak** is always preserved.
 
-| Action | XP Earned |
-|--------|----------|
-| Merge a PR to the main project | 1500 |
-| Merge a community plugin PR | 300 |
-| Merge a docs PR | 100 |
-| Review a PR | 75 |
-| File an issue | 30 |
+### Contributing to LenserFight
+
+| Contribution | XP earned |
+|-------------|----------|
+| PR merged — main project | **1,250** |
+| PR merged — community plugin / infra | **300** |
+| PR merged — documentation | **100** |
+| Code review given | **40** |
+| Issue filed | **23** |
+
+See [XP for Contributors](../contributing/xp-for-contributors.md) for setup and season caps.
+
+### Profile
+
+| Action | XP earned | Notes |
+|--------|----------|-------|
+| Complete your profile | **100** | One-time; awarded once per account |
+
+---
 
 ## Daily Caps
 
-Each action has a daily XP cap. Once you hit the cap, you stop earning XP for that specific action until the next day. Other actions still earn normally.
+Each action has a daily cap. Once you hit it, that action stops earning XP until the next day. Other actions continue normally.
 
-For example, forum thread creation caps at 200 XP per day. After creating about 10 threads (20 XP each), you will not earn more thread-creation XP until tomorrow.
+**Example:** Thread creation caps at 200 XP/day. After posting ~7 public threads (30 XP each), no more thread-creation XP is earned that day. Replying, reacting, and other actions still work.
 
 ## Cooldowns
 
-Rapid repetition of the same action is limited by cooldowns. If you create a thread and try to create another within 60 seconds, the second one will not earn XP.
-
-Cooldowns are per-action, per-app. Different actions have independent cooldowns.
+A cooldown prevents earning XP from the same action repeatedly in a short window. Cooldowns are per-action and independent — a reaction cooldown does not affect your reply cooldown.
 
 ## Levels
 
-Your level increases as your total XP crosses thresholds. Each app (Forum, Arena, CLI) has its own level curve:
+Your level is based on your **all-time XP** in each app (Forum and Battles are tracked separately). Both apps use the same curve:
 
-- **Forum**: Easier progression (level 10 at ~600 XP)
-- **Arena**: Harder progression (level 10 at ~3,200 XP)
-- **CLI**: Medium-hard progression (level 10 at ~1,900 XP)
+| Level | XP to reach | Who gets there |
+|-------|------------|---------------|
+| 10 | ~4,400 XP | Casual user, ~6 months |
+| 25 | ~22,500 XP | Regular user, ~1 year |
+| 50 | ~92,000 XP | Power user, ~1.5 years |
+| 100 | ~330,000 XP | Elite, 5+ years |
 
-Higher levels require exponentially more XP. This is by design: early levels reward getting started, while high levels reward dedication.
-
-## Streaks
-
-Actions with a streak type (like daily login or daily content creation) track consecutive-day activity:
-
-- Continue the streak by performing the action every day
-- Miss a day and the current streak resets to 0
-- Your longest streak is always preserved
-- Streak milestones (7, 30, 100 days) earn badges
+Early levels come quickly to reward getting started. Level 100 is for the most dedicated long-term contributors.
 
 ## Seasons
 
-Seasons are 90-day competitive periods. During a season:
+Seasons are 90-day competitive periods:
 
-- A separate leaderboard tracks seasonal XP
-- Season rankings refresh with each new season
-- Your all-time XP and level are never affected by season resets
+- A separate **seasonal leaderboard** tracks who earns the most XP each season
+- Seasons reset rankings without affecting your all-time level or XP
+- Historical season data is preserved forever — you can always look back at past standings
 
 New seasons start automatically when the previous one ends.
-
-## Badges
-
-Badges are awarded at milestones:
-
-- **Level badges**: Level 5, 10, 20, 30
-- **Streak badges**: 7-day, 30-day, 100-day
-- **Activity badges**: Content Creator, Battle Participant
-- **Community badges**: Early Adopter, Founder, Mentor
