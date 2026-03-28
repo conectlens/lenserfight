@@ -54,6 +54,9 @@ export interface WorkflowRunRecord {
   started_at?: string | null
   completed_at?: string | null
   created_at: string
+  budget_credits?: number | null
+  spent_credits?: number
+  cost_metadata?: Record<string, unknown>
 }
 
 export interface WorkflowNodeResultRecord {
@@ -66,6 +69,9 @@ export interface WorkflowNodeResultRecord {
   error_message?: string | null
   started_at?: string | null
   completed_at?: string | null
+  input_tokens?: number
+  output_tokens?: number
+  cost_credits?: number
 }
 
 export interface WorkflowsListFilter {
@@ -105,6 +111,19 @@ export interface UpsertEdgeInput {
   target_param_label: string
 }
 
+export interface WorkflowVersionRecord {
+  id: string
+  workflow_id: string
+  version_number: number
+  changelog?: string | null
+  status: 'draft' | 'published' | 'archived'
+  published_at?: string | null
+  created_by?: string | null
+  created_at: string
+  node_count: number
+  edge_count: number
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 // Port
 // ─────────────────────────────────────────────────────────────────────────────
@@ -128,6 +147,10 @@ export interface WorkflowsRepositoryPort {
   getNodeResults(runId: string): Promise<WorkflowNodeResultRecord[]>
   updateNodeResult(runId: string, nodeId: string, status: string, outputData?: Record<string, unknown>, errorMessage?: string): Promise<void>
   updateRunStatus(runId: string, status: string): Promise<void>
+  getVersions(workflowId: string): Promise<WorkflowVersionRecord[]>
+  createVersion(workflowId: string, changelog?: string): Promise<string>
+  publishVersion(versionId: string): Promise<void>
+  restoreVersion(versionId: string): Promise<void>
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -359,6 +382,43 @@ export class SupabaseWorkflowsRepository implements WorkflowsRepositoryPort {
     const { error } = await supabase.rpc('fn_update_workflow_run_status', {
       p_run_id: runId,
       p_status: status,
+    })
+
+    if (error) this.handleError(error)
+  }
+
+  // ── Workflow Versioning ────────────────────────────────────────────────────
+
+  async getVersions(workflowId: string): Promise<WorkflowVersionRecord[]> {
+    const { data, error } = await supabase.rpc('fn_get_workflow_versions', {
+      p_workflow_id: workflowId,
+    })
+
+    if (error) this.handleError(error)
+    return (data ?? []) as WorkflowVersionRecord[]
+  }
+
+  async createVersion(workflowId: string, changelog?: string): Promise<string> {
+    const { data, error } = await supabase.rpc('fn_create_workflow_version', {
+      p_workflow_id: workflowId,
+      p_changelog: changelog ?? null,
+    })
+
+    if (error) this.handleError(error)
+    return data as string
+  }
+
+  async publishVersion(versionId: string): Promise<void> {
+    const { error } = await supabase.rpc('fn_publish_workflow_version', {
+      p_version_id: versionId,
+    })
+
+    if (error) this.handleError(error)
+  }
+
+  async restoreVersion(versionId: string): Promise<void> {
+    const { error } = await supabase.rpc('fn_restore_workflow_version', {
+      p_version_id: versionId,
     })
 
     if (error) this.handleError(error)
