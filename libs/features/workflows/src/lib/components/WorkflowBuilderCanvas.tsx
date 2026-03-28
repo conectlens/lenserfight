@@ -18,6 +18,7 @@ import {
 import { Pencil } from 'lucide-react'
 import React, { useCallback, useEffect, useRef } from 'react'
 
+import { WorkflowExecutionService } from '@lenserfight/infra/execution'
 import { useSaveWorkflow } from '../hooks/useSaveWorkflow'
 
 import { WorkflowCanvasEdge } from './WorkflowCanvasEdge'
@@ -284,6 +285,20 @@ function WorkflowBuilderCanvasInner({
         type: 'workflowEdge',
         data: { sourceOutputKey: 'output', onRemove: handleRemoveEdge },
       } as Edge
+
+      // Cycle detection: check if adding this edge would create a cycle
+      const allNodes = flowNodesRef.current.map((n) => ({ id: n.id }))
+      const allEdges = [
+        ...flowEdgesRef.current.map((e) => ({ sourceNodeId: e.source, targetNodeId: e.target })),
+        { sourceNodeId: connection.source!, targetNodeId: connection.target! },
+      ]
+      const cycleNodes = WorkflowExecutionService.detectCycle(allNodes, allEdges)
+      if (cycleNodes) {
+        // Reject the connection — cycle detected
+        console.warn('[WorkflowCanvas] Cycle detected, rejecting edge:', cycleNodes)
+        return
+      }
+
       setEdges((eds) => addEdge(newEdge, eds))
       // Auto-layout: apply tree layout after connecting
       setNodes((nds) => computeTreeLayout(nds, [...flowEdgesRef.current, newEdge]))
