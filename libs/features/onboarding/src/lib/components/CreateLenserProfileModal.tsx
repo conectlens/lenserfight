@@ -2,12 +2,12 @@ import { queryKeys } from '@lenserfight/data/cache'
 import { lenserService, preferencesService } from '@lenserfight/data/repositories'
 import { useAuth } from '@lenserfight/features/auth'
 import { InputField } from '@lenserfight/features/auth'
-import { SearchSelectField } from '@lenserfight/ui/forms'
 import { useAIProviders, useAIModelsByProvider } from '@lenserfight/features/generations'
 import { CreateLenserDTO, Lenser } from '@lenserfight/types'
 import { LanguageSelectBox, StepWizard } from '@lenserfight/ui/components'
+import { SearchSelectField } from '@lenserfight/ui/forms'
 import { useWizardStep } from '@lenserfight/ui/routing'
-import { buildAuthReturnUrl } from '@lenserfight/utils/dom'
+import { buildAuthReturnUrl, replaceLocationSafely } from '@lenserfight/utils/dom'
 import { storage } from '@lenserfight/utils/storage'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { Check, X, Loader2 } from 'lucide-react'
@@ -222,6 +222,7 @@ export const CreateLenserProfileModal: React.FC = () => {
       queryClient.setQueryData(queryKeys.lenser.authenticated(), updated)
       queryClient.setQueryData(AUTH_PROFILE_GATE_QUERY_KEY, { kind: 'active', status: 'active' })
       await queryClient.invalidateQueries({ queryKey: AUTH_PROFILE_GATE_QUERY_KEY })
+      replaceLocationSafely(returnTo)
     } catch (err: unknown) {
       setSubmitError(getErrorMessage(err, 'Failed to complete setup. Please try again.'))
     } finally {
@@ -241,6 +242,11 @@ export const CreateLenserProfileModal: React.FC = () => {
       isCompleting={isCompletingStep2}
       nextLabel="Continue"
       completeLabel="Finish"
+      skipButton={
+        currentStep === 2
+          ? { label: 'Skip for now', onClick: handleStep2Complete }
+          : undefined
+      }
     >
       {currentStep === 0 ? (
         /* ── Step 0: handle + display name ── */

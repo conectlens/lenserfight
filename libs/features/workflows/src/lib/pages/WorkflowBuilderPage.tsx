@@ -5,7 +5,7 @@ import { useCreateLens, CreateLensModal } from '@lenserfight/features/lenses'
 import { Badge, Button } from '@lenserfight/ui/components'
 import { SelectField } from '@lenserfight/ui/forms'
 import { useQuery } from '@tanstack/react-query'
-import { ArrowLeft, Bookmark, ChevronDown, GitBranch, GitFork, Pencil, Play, Settings, Swords, ThumbsUp, X } from 'lucide-react'
+import { ArrowLeft, Bookmark, ChevronDown, GitBranch, GitFork, Lock, Pencil, Play, Settings, Swords, ThumbsUp, X } from 'lucide-react'
 import React, { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
@@ -128,7 +128,10 @@ export function WorkflowBuilderPage({ workflowId, onBattleClick }: WorkflowBuild
 
   const modelOptions = models
     .filter((m) => !!m.key && m.is_active)
-    .map((m) => ({ value: m.key, label: `${m.name} (${m.provider})` }))
+    .map((m) => ({
+      value: m.key,
+      label: `${m.name} (${m.providerDisplayName ?? m.provider})`,
+    }))
 
   // ── Loading / error states ─────────────────────────────────────────────────
   if (isLoading) {
@@ -241,6 +244,15 @@ export function WorkflowBuilderPage({ workflowId, onBattleClick }: WorkflowBuild
                   <GitFork size={12} /> Fork
                 </Button>
               )}
+
+              {workflow.visibility === 'private' && (
+                <span
+                  title="Private workflow"
+                  className="flex items-center text-greyscale-400"
+                >
+                  <Lock size={14} />
+                </span>
+              )}
             </>
           )}
 
@@ -256,7 +268,7 @@ export function WorkflowBuilderPage({ workflowId, onBattleClick }: WorkflowBuild
             />
             <Button
               size="sm"
-              onClick={handleRunClick}
+              onClick={() => handleRunClick()}
               isLoading={starting}
               disabled={nodes.length === 0}
               className="gap-1.5 w-auto"
