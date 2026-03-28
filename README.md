@@ -94,6 +94,42 @@ npm run docs:dev
 
 ---
 
+## CLI — local installation
+
+The `lf` CLI is built from source and linked globally. Run these steps from the **workspace root**.
+
+**1. Build the CLI**
+
+```bash
+npm exec -- nx run cli:build
+```
+
+This compiles the CLI to `dist/apps/cli/`.
+
+**2. Make the output executable**
+
+```bash
+npm exec -- nx run cli:chmod
+```
+
+**3. Link the CLI globally**
+
+```bash
+npm exec -- nx run cli:link
+```
+
+This runs `npm link` inside `dist/apps/cli/`, registering both `lf` and `lenserfight` as global commands.
+
+**4. Verify**
+
+```bash
+lf --help
+```
+
+> **Note:** Do not run `npm link` from `apps/cli/` directly — that directory contains only source files, not the built output. The link must point at `dist/apps/cli/` where the compiled `main.js` and `package.json` live.
+
+---
+
 ## Open-source strategy
 
 LenserFight follows an open-core model.

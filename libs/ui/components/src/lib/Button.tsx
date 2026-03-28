@@ -7,14 +7,16 @@ export interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElemen
   isLoading?: boolean
   /** When set, visually disables the button but keeps it clickable — shows this message as an error toast on click. */
   contextError?: string | null
+  /** When true, button stretches to full width of its container. */
+  fullWidth?: boolean
 }
 
 const variantClasses: Record<NonNullable<ButtonProps['variant']>, string> = {
   primary:
     'bg-primary text-gray-900 hover:bg-primary-yellow-400 focus:ring-primary/50 shadow-sm border border-transparent',
   secondary:
-    'bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 focus:ring-gray-200 dark:bg-gray-800 dark:border-gray-600 dark:text-gray-200 dark:hover:bg-gray-700 dark:focus:ring-gray-600',
-  dark: 'bg-deep-lens-navy-500 border border-transparent text-white hover:bg-deep-lens-navy-600 focus:ring-deep-lens-navy-500/50 shadow-sm',
+    'bg-greyscale-50 border border-greyscale-300 text-greyscale-900 hover:bg-greyscale-200 focus:ring-greyscale-200 dark:bg-greyscale-800 dark:border-greyscale-700 dark:text-greyscale-50 dark:hover:bg-greyscale-700 dark:focus:ring-greyscale-700',
+  dark: 'bg-[#121212] border border-transparent text-white hover:bg-[#1e1e1e] focus:ring-[#121212]/50 shadow-sm dark:bg-[#121212] dark:hover:bg-[#1e1e1e]',
   ghost:
     'bg-transparent text-gray-600 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-gray-200',
   danger:
@@ -37,13 +39,14 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
       className = '',
       disabled,
       contextError,
+      fullWidth = false,
       onClick,
       ...props
     },
     ref
   ) => {
     const baseStyle =
-      'w-full rounded-lg font-medium transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-1 disabled:opacity-60 disabled:cursor-not-allowed dark:focus:ring-offset-gray-900'
+      'rounded-lg font-medium transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-1 disabled:opacity-60 disabled:cursor-not-allowed dark:focus:ring-offset-gray-900'
 
     const handleClick = (e: React.MouseEvent<HTMLButtonElement>) => {
       if (contextError) {
@@ -56,15 +59,15 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
     return (
       <button
         ref={ref}
-        className={`${baseStyle} ${sizeClasses[size]} ${variantClasses[variant]} ${contextError ? 'opacity-50 cursor-not-allowed' : ''} ${className} flex justify-center items-center`}
+        className={`${baseStyle} ${fullWidth ? 'w-full' : ''} ${sizeClasses[size]} ${variantClasses[variant]} ${contextError ? 'opacity-50 cursor-not-allowed' : ''} ${className} flex justify-center items-center`}
         disabled={disabled || isLoading}
         aria-disabled={!!contextError || disabled || isLoading}
         onClick={handleClick}
         {...props}
       >
-        {isLoading ? (
+        {isLoading && (
           <svg
-            className="animate-spin -ml-1 mr-3 h-5 w-5 text-current"
+            className="animate-spin -ml-1 mr-2 h-4 w-4 shrink-0 text-current"
             xmlns="http://www.w3.org/2000/svg"
             fill="none"
             viewBox="0 0 24 24"
@@ -83,9 +86,8 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
               d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
             />
           </svg>
-        ) : (
-          children
         )}
+        {children}
       </button>
     )
   }

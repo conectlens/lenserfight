@@ -1,36 +1,31 @@
-import type { AppError, UnauthorizedError, NetworkError, ApiError, UnknownError } from './types'
+import type {
+  AppError,
+  UnauthorizedError,
+  ForbiddenError,
+  NotFoundError,
+  ServerError,
+  RateLimitError,
+  NetworkError,
+  ApiError,
+  UnknownError,
+} from './types'
 
-function isUnauthorized(error: unknown): boolean {
-  if (!error || typeof error !== 'object') return false
-  const e = error as Record<string, unknown>
+function getStatus(error: unknown): number | undefined {
+  if (!error || typeof error !== 'object') return undefined
+  const s = (error as Record<string, unknown>)['status']
+  return typeof s === 'number' ? s : undefined
+}
 
-  // Supabase PostgREST JWT auth codes
-  if (e['code'] === 'PGRST301' || e['code'] === 'PGRST302') return true
+function getCode(error: unknown): string | undefined {
+  if (!error || typeof error !== 'object') return undefined
+  const c = (error as Record<string, unknown>)['code']
+  return typeof c === 'string' ? c : undefined
+}
 
-  // PostgreSQL permission denied (RLS, missing grants)
-  if (e['code'] === '42501') return true
-
-  // HTTP 401 or 403
-  if (e['status'] === 401 || e['status'] === 403) return true
-
-  // PostgreSQL RAISE EXCEPTION (P0001) — only treat as unauthorized when message is auth-related
-  if (e['code'] === 'P0001') {
-    const p0001msg = typeof e['message'] === 'string' ? e['message'].toLowerCase() : ''
-    return (
-      p0001msg.includes('authentication required') ||
-      p0001msg.includes('not authenticated') ||
-      p0001msg.includes('profile not found')
-    )
-  }
-
-  // Message-based fallback — covers JWT errors and RLS "permission denied for view/table"
-  const msg = typeof e['message'] === 'string' ? e['message'].toLowerCase() : ''
-  return (
-    msg.includes('jwt') ||
-    msg.includes('unauthorized') ||
-    msg.includes('not authenticated') ||
-    msg.includes('permission denied')
-  )
+function getMessage(error: unknown): string {
+  if (!error || typeof error !== 'object') return ''
+  const m = (error as Record<string, unknown>)['message']
+  return typeof m === 'string' ? m.toLowerCase() : ''
 }
 
 function isNetworkError(error: unknown): boolean {
@@ -42,45 +37,81 @@ function isNetworkError(error: unknown): boolean {
 }
 
 export function normalizeError(error: unknown): AppError {
-  if (isUnauthorized(error)) {
-    const originalMsg =
-      error && typeof error === 'object' ? (error as Record<string, unknown>)['message'] : undefined
+  const status = getStatus(error)
+  const code = getCode(error)
+  const msg = getMessage(error)
+
+  // ── 401 Unauthorized — session missing / JWT expired ───────────────────────
+  if (
+    status === 401 ||
+    code === 'PGRST301' ||
+    code === 'PGRST302' ||
+    msg.includes('jwt') ||
+    msg.includes('not authenticated') ||
+    (code === 'P0001' && (msg.includes('not authenticated') || msg.includes('authentication required')))
+  ) {
     return {
       kind: 'unauthorized',
-      message:
-        typeof originalMsg === 'string' && originalMsg.trim()
-          ? originalMsg
-          : 'You are not authorized to view this content.',
+      statusCode: status ?? 401,
+      message: 'Your session has expired. Please sign in again.',
       originalError: error,
     } satisfies UnauthorizedError
   }
 
-  // API business errors: { error: "Insufficient credit balance" } or { error: { message: "..." } }
-  if (error && typeof error === 'object' && 'error' in (error as object)) {
-    const apiError = (error as Record<string, unknown>)['error']
-
-    // Handle nested error object with message property
-    if (apiError && typeof apiError === 'object' && 'message' in (apiError as object)) {
-      const nestedMsg = (apiError as Record<string, unknown>)['message']
-      if (typeof nestedMsg === 'string' && nestedMsg.trim()) {
-        return {
-          kind: 'api',
-          message: nestedMsg.trim(),
-          originalError: error,
-        } satisfies ApiError
-      }
-    }
-
-    // Handle simple string error message
-    if (typeof apiError === 'string' && apiError.trim()) {
-      return {
-        kind: 'api',
-        message: apiError.trim(),
-        originalError: error,
-      } satisfies ApiError
-    }
+  // ── 403 Forbidden / PG 42501 permission denied ─────────────────────────────
+  if (
+    status === 403 ||
+    code === '42501' ||
+    msg.includes('permission denied') ||
+    msg.includes('unauthorized') ||
+    (code === 'P0001' && msg.includes('profile not found'))
+  ) {
+    const originalMsg =
+      error && typeof error === 'object'
+        ? (error as Record<string, unknown>)['message']
+        : undefined
+    return {
+      kind: 'forbidden',
+      statusCode: status ?? 403,
+      message:
+        typeof originalMsg === 'string' && originalMsg.trim()
+          ? originalMsg.trim()
+          : 'You do not have permission to perform this action.',
+      originalError: error,
+    } satisfies ForbiddenError
   }
 
+  // ── 404 Not Found ──────────────────────────────────────────────────────────
+  if (status === 404) {
+    return {
+      kind: 'not_found',
+      statusCode: 404,
+      message: 'The requested resource was not found.',
+      originalError: error,
+    } satisfies NotFoundError
+  }
+
+  // ── 429 Rate Limit ─────────────────────────────────────────────────────────
+  if (status === 429) {
+    return {
+      kind: 'rate_limit',
+      statusCode: 429,
+      message: 'Too many requests. Please wait a moment before trying again.',
+      originalError: error,
+    } satisfies RateLimitError
+  }
+
+  // ── 5xx Server Error ───────────────────────────────────────────────────────
+  if (status !== undefined && status >= 500) {
+    return {
+      kind: 'server_error',
+      statusCode: status,
+      message: 'Something went wrong on our end. Please try again in a moment.',
+      originalError: error,
+    } satisfies ServerError
+  }
+
+  // ── Network / fetch error ──────────────────────────────────────────────────
   if (isNetworkError(error)) {
     return {
       kind: 'network',
@@ -89,8 +120,35 @@ export function normalizeError(error: unknown): AppError {
     } satisfies NetworkError
   }
 
+  // ── API business errors: { error: "..." } or { error: { message: "..." } } ─
+  if (error && typeof error === 'object' && 'error' in (error as object)) {
+    const apiError = (error as Record<string, unknown>)['error']
+
+    if (apiError && typeof apiError === 'object' && 'message' in (apiError as object)) {
+      const nestedMsg = (apiError as Record<string, unknown>)['message']
+      if (typeof nestedMsg === 'string' && nestedMsg.trim()) {
+        return {
+          kind: 'api',
+          statusCode: status,
+          message: nestedMsg.trim(),
+          originalError: error,
+        } satisfies ApiError
+      }
+    }
+
+    if (typeof apiError === 'string' && apiError.trim()) {
+      return {
+        kind: 'api',
+        statusCode: status,
+        message: apiError.trim(),
+        originalError: error,
+      } satisfies ApiError
+    }
+  }
+
   return {
     kind: 'unknown',
+    statusCode: status,
     message: 'An unexpected error occurred. Please try again.',
     originalError: error,
   } satisfies UnknownError

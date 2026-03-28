@@ -1,10 +1,10 @@
-import { MessageSquare, Tag, CheckCircle } from 'lucide-react'
+import { MessageSquare, CheckCircle } from 'lucide-react'
 import React, { useState } from 'react'
 import { useLocation } from 'react-router-dom'
 
-import { Button } from '@lenserfight/ui/components'
 import { FormError } from '@lenserfight/ui/components'
-import { Modal } from '@lenserfight/ui/modals'
+import { Dialog, ModalFooter } from '@lenserfight/ui/overlays'
+import { SelectField } from '@lenserfight/ui/forms'
 import { useAuth } from '@lenserfight/features/auth'
 import { feedbackService } from '@lenserfight/data/repositories'
 import { ProductTag } from '@lenserfight/types'
@@ -76,7 +76,7 @@ export const FeedbackModal: React.FC<FeedbackModalProps> = ({ isOpen, onClose })
 
   if (success) {
     return (
-      <Modal isOpen={isOpen} onClose={handleClose} title="Feedback Sent">
+      <Dialog open={isOpen} onClose={handleClose} title="Feedback Sent" icon={<CheckCircle size={18} />}>
         <div className="flex flex-col items-center justify-center py-8 text-center animate-in fade-in zoom-in duration-300">
           <div className="w-16 h-16 bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400 rounded-full flex items-center justify-center mb-4">
             <CheckCircle size={32} />
@@ -86,49 +86,21 @@ export const FeedbackModal: React.FC<FeedbackModalProps> = ({ isOpen, onClose })
             Your feedback has been received and helps us improve the platform.
           </p>
         </div>
-      </Modal>
+      </Dialog>
     )
   }
 
   return (
-    <Modal isOpen={isOpen} onClose={handleClose} title="Send Feedback">
+    <Dialog open={isOpen} onClose={handleClose} title="Send Feedback" icon={<MessageSquare size={18} />}>
       <form onSubmit={handleSubmit} className="space-y-5">
         {/* Topic Selection */}
-        <div>
-          <label className="block text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1.5 flex items-center gap-1.5">
-            <Tag size={12} /> Topic
-          </label>
-          <div className="relative">
-            <select
-              value={productTag}
-              onChange={(e) => setProductTag(e.target.value)}
-              className="w-full px-4 py-2.5 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl text-gray-900 dark:text-white text-sm focus:ring-2 focus:ring-primary/50 focus:border-primary outline-none appearance-none cursor-pointer"
-            >
-              <option value="" disabled className="text-gray-500 dark:text-gray-400">
-                Select a topic...
-              </option>
-              {TAG_OPTIONS.map((opt) => (
-                <option
-                  key={opt.value}
-                  value={opt.value}
-                  className="text-gray-900 dark:text-white bg-white dark:bg-gray-800"
-                >
-                  {opt.label}
-                </option>
-              ))}
-            </select>
-            <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-gray-500 dark:text-gray-400">
-              <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M19 9l-7 7-7-7"
-                />
-              </svg>
-            </div>
-          </div>
-        </div>
+        <SelectField
+          label="Topic"
+          value={productTag}
+          onChange={setProductTag}
+          options={TAG_OPTIONS}
+          placeholder="Select a topic..."
+        />
 
         {/* Message */}
         <div>
@@ -153,21 +125,11 @@ export const FeedbackModal: React.FC<FeedbackModalProps> = ({ isOpen, onClose })
 
         {error && <FormError message={error} />}
 
-        <div className="flex gap-3 pt-2">
-          <Button
-            type="button"
-            variant="ghost"
-            onClick={handleClose}
-            disabled={isLoading}
-            className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800"
-          >
-            Cancel
-          </Button>
-          <Button type="submit" isLoading={isLoading}>
-            Submit Feedback
-          </Button>
-        </div>
+        <ModalFooter
+          leftButton={{ label: 'Cancel', onClick: handleClose, disabled: isLoading, variant: 'ghost' }}
+          primaryButton={{ label: 'Submit Feedback', type: 'submit', isLoading }}
+        />
       </form>
-    </Modal>
+    </Dialog>
   )
 }

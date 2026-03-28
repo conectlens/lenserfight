@@ -1,8 +1,9 @@
+import { createAvatar } from '@dicebear/core'
+import { shapes } from '@dicebear/collection'
 import { Trash2 } from 'lucide-react'
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useRef, useCallback } from 'react'
 
-import { Button } from '@lenserfight/ui/components'
-import { Modal } from '@lenserfight/ui/modals'
+import { Dialog, ModalFooter } from '@lenserfight/ui/overlays'
 
 interface BannerSelectionModalProps {
   isOpen: boolean
@@ -12,24 +13,31 @@ interface BannerSelectionModalProps {
   currentUrl?: string | null
 }
 
-const PRESETS = [
-  'https://images.unsplash.com/photo-1579546929518-9e396f3cc809?auto=format&fit=crop&q=80&w=600',
-  'https://images.unsplash.com/photo-1557683316-973673baf926?auto=format&fit=crop&q=80&w=600',
-  'https://images.unsplash.com/photo-1550684848-fac1c5b4e853?auto=format&fit=crop&q=80&w=600',
-  'https://images.unsplash.com/photo-1614850523060-8da1d56ae167?auto=format&fit=crop&q=80&w=600',
-  'https://images.unsplash.com/photo-1558591710-4b4a1ae0f04d?auto=format&fit=crop&q=80&w=600',
-  'https://images.unsplash.com/photo-1534972195531-d756b9bfa9f2?auto=format&fit=crop&q=80&w=600',
-  'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&q=80&w=600',
-  'https://images.unsplash.com/photo-1508615039623-a25605d2b022?auto=format&fit=crop&q=80&w=600',
-  'https://images.unsplash.com/photo-1499951360447-b19be8fe80f5?auto=format&fit=crop&q=80&w=600',
-  'https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&q=80&w=600',
-  'https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?auto=format&fit=crop&q=80&w=600',
-  'https://images.unsplash.com/photo-1472214103451-9374bd1c798e?auto=format&fit=crop&q=80&w=600',
-  'https://images.unsplash.com/photo-1470071459604-3b5ec3a7fe05?auto=format&fit=crop&q=80&w=600',
-  'https://images.unsplash.com/photo-1501854140884-074cf2b2c3af?auto=format&fit=crop&q=80&w=600',
-  'https://images.unsplash.com/photo-1533038590317-7f1d87b21d33?auto=format&fit=crop&q=80&w=600',
-  'https://images.unsplash.com/photo-1519681393798-3828fb4090bb?auto=format&fit=crop&q=80&w=600',
+// 200 abstract seeds producing distinct geometric compositions
+const ALL_BANNER_SEEDS = [
+  'aurora','nebula','prism','vortex','zenith','cobalt','ember','frost','helix','indigo',
+  'jade','krypton','lumen','mosaic','onyx','quasar','radiant','solar','tidal','ultra',
+  'vapor','warp','xenon','yellow','zephyr','abyss','blaze','crimson','delta','echo',
+  'flare','gamma','haze','ionic','jolt','karma','lava','mirage','nova','orbit',
+  'peak','quartz','rift','surge','terra','umbra','vivid','wave','xeno','yield',
+  'azimuth','beacon','cascade','dusk','equinox','fathom','gravity','haven','illume','jewel',
+  'kinetic','lattice','maelstrom','nocturn','oasis','parallax','quill','rupture','strata','tempest',
+  'utopia','vertex','whirl','xylem','yonder','zenon','achroma','bliss','cyan','dune',
+  'electra','fern','glow','hue','iris','jasper','kelp','lime','mint','noir',
+  'opal','pearl','quince','rose','sage','teal','umber','viridian','wheat','xylo',
+  'alabaster','beryl','cerise','dove','ecru','fallow','gesso','hoar','ivory','jet',
+  'khaki','lapis','mallow','neem','ochre','puce','russet','sepia','taupe','umber2',
+  'viole','weld','xanth','yarrow','zin','acacia','birch','cedar','dusk2','elm',
+  'fir','grove','hazel','ilex','juniper','koa','larch','maple','neem2','oak',
+  'pine','quince2','rowan','spruce','teak','ulmus','vine','walnut','xeric','yew',
+  'aeon','brine','cavern','drift','eddy','fjord','gorge','hollow','inlet','jetty',
+  'kelp2','ledge','mist','narrows','outcrop','plateau','rapids','shoal','tarn','undine',
+  'vale','wisp','xyster','yore','zeal','alpha','beta','gamma2','delta2','epsilon',
+  'zeta','eta','theta','iota','kappa','lambda','mu','nu','xi','omicron',
+  'pi','rho','sigma','tau','upsilon','phi','chi','psi','omega','aleph',
 ]
+
+const PAGE_SIZE = 20
 
 export const BannerSelectionModal: React.FC<BannerSelectionModalProps> = ({
   isOpen,
@@ -39,43 +47,99 @@ export const BannerSelectionModal: React.FC<BannerSelectionModalProps> = ({
   currentUrl,
 }) => {
   const [selected, setSelected] = useState<string | null>(null)
+  const [uris, setUris] = useState<string[]>([])
+  const [loadedCount, setLoadedCount] = useState(0)
+  const sentinelRef = useRef<HTMLDivElement>(null)
+  const scrollRef = useRef<HTMLDivElement>(null)
 
+  // Reset when modal opens
   useEffect(() => {
     if (isOpen) {
       setSelected(currentUrl || null)
+      setUris([])
+      setLoadedCount(0)
     }
   }, [isOpen, currentUrl])
 
-  const handleConfirm = () => {
-    onSelect(selected)
-  }
+  // Generate the next batch whenever loadedCount advances
+  useEffect(() => {
+    if (!isOpen) return
+    const seeds = ALL_BANNER_SEEDS.slice(loadedCount, loadedCount + PAGE_SIZE)
+    if (seeds.length === 0) return
 
-  const handleRemove = () => {
-    if (window.confirm('Are you sure you want to remove your header image?')) {
-      onSelect(null)
-    }
-  }
+    const id = requestIdleCallback(
+      () => {
+        const batch = seeds.map((seed) =>
+          createAvatar(shapes, { seed, size: 400 }).toDataUri()
+        )
+        setUris((prev) => [...prev, ...batch])
+      },
+      { timeout: 400 }
+    )
+    return () => cancelIdleCallback(id)
+  }, [isOpen, loadedCount])
+
+  const hasMore = loadedCount + PAGE_SIZE < ALL_BANNER_SEEDS.length
+
+  // Attach IntersectionObserver to the sentinel after each batch renders
+  useEffect(() => {
+    if (!hasMore || uris.length === 0) return
+    const el = sentinelRef.current
+    if (!el) return
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          // Advance by how many we've actually rendered
+          setLoadedCount(uris.length)
+        }
+      },
+      { root: scrollRef.current, threshold: 0.1 }
+    )
+    observer.observe(el)
+    return () => observer.disconnect()
+  }, [hasMore, uris.length])
+
+  const handleConfirm = useCallback(() => onSelect(selected), [onSelect, selected])
+
+  const handleRemove = useCallback(() => {
+    if (window.confirm('Are you sure you want to remove your header image?')) onSelect(null)
+  }, [onSelect])
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title="Choose a Header Image">
-      <div className="max-h-[60vh] overflow-y-auto pr-2 -mr-2">
-        <div className="grid grid-cols-2 gap-4 mb-6">
-          {PRESETS.map((url) => (
+    <Dialog
+      open={isOpen}
+      onClose={onClose}
+      title="Choose a Header Image"
+      maxWidth="max-w-2xl"
+      footer={
+        <ModalFooter
+          leftButton={{ label: <><Trash2 size={16} /> Remove</>, onClick: handleRemove, variant: 'danger' }}
+          rightButtons={[{ label: 'Cancel', onClick: onClose, disabled: isLoading, variant: 'secondary' }]}
+          primaryButton={{ label: 'Save', onClick: handleConfirm, isLoading }}
+        />
+      }
+    >
+      <div ref={scrollRef} className="max-h-[480px] overflow-y-auto pr-1">
+        <div className="grid grid-cols-2 gap-4">
+          {uris.map((uri, i) => (
             <button
-              key={url}
-              onClick={() => setSelected(url)}
+              key={i}
+              onClick={() => setSelected(uri)}
               className={`
-                        relative aspect-video rounded-xl overflow-hidden border-2 transition-all w-full
-                        ${selected === url ? 'border-primary ring-2 ring-primary/30' : 'border-transparent hover:border-gray-200 dark:hover:border-gray-700'}
-                    `}
+                relative aspect-video rounded-xl overflow-hidden border-2 transition-all w-full
+                ${selected === uri
+                  ? 'border-primary ring-2 ring-primary/30'
+                  : 'border-transparent hover:border-gray-200 dark:hover:border-gray-700'}
+              `}
             >
               <img
-                src={url}
+                src={uri}
                 alt="Banner option"
-                className="w-full h-full object-cover bg-gray-100 dark:bg-gray-800"
                 loading="lazy"
+                className="w-full h-full object-cover bg-gray-100 dark:bg-gray-800"
               />
-              {selected === url && (
+              {selected === uri && (
                 <div className="absolute inset-0 bg-primary/10 flex items-center justify-center">
                   <div className="bg-white rounded-full p-1 shadow-sm">
                     <svg
@@ -93,32 +157,16 @@ export const BannerSelectionModal: React.FC<BannerSelectionModalProps> = ({
             </button>
           ))}
         </div>
-      </div>
 
-      <div className="flex flex-col sm:flex-row justify-between items-center gap-3 mt-4 pt-4 border-t border-gray-100 dark:border-gray-700">
-        <button
-          type="button"
-          onClick={handleRemove}
-          className="text-red-500 text-sm font-medium hover:text-red-600 flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors w-full sm:w-auto justify-center sm:justify-start"
-          title="Remove Banner"
-        >
-          <Trash2 size={16} /> Remove
-        </button>
-
-        <div className="flex gap-2 w-full sm:w-auto">
-          <Button
-            variant="secondary"
-            onClick={onClose}
-            disabled={isLoading}
-            className="flex-1 sm:w-auto px-4 dark:bg-gray-700 dark:text-white dark:border-gray-600 dark:hover:bg-gray-600"
-          >
-            Cancel
-          </Button>
-          <Button onClick={handleConfirm} isLoading={isLoading} className="flex-1 sm:w-auto px-6">
-            Save
-          </Button>
-        </div>
+        {hasMore && (
+          <div ref={sentinelRef} className="flex justify-center py-6">
+            <div className="flex items-center gap-2 text-sm text-gray-400">
+              <span className="inline-block w-4 h-4 border-2 border-gray-300 border-t-primary rounded-full animate-spin" />
+              Loading more…
+            </div>
+          </div>
+        )}
       </div>
-    </Modal>
+    </Dialog>
   )
 }

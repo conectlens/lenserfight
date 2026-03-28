@@ -3,11 +3,11 @@ import { lensesService } from '@lenserfight/data/repositories'
 import { useAuth } from '@lenserfight/features/auth'
 import { AIResultsSection } from '@lenserfight/features/generations'
 import { useReportContent } from '@lenserfight/features/home'
-import { CreateLenserProfileModal } from '@lenserfight/features/onboarding'
 import { useShareContext } from '@lenserfight/features/share'
 import { CreateVersionParamInput, ReportReasonEnum } from '@lenserfight/types'
-import { SEOHead, Badge, Card, DesktopFrame } from '@lenserfight/ui/components'
+import { SEOHead, Badge, Button, Card, DesktopFrame } from '@lenserfight/ui/components'
 import { ConfirmModal } from '@lenserfight/ui/modals'
+import { SelectField } from '@lenserfight/ui/forms'
 import { useUI } from '@lenserfight/ui/providers'
 import { useQueryClient } from '@tanstack/react-query'
 import { GitFork, History, Lock, Loader2, Pencil, Trash2, Flag, Play, ChevronDown, ChevronUp } from 'lucide-react'
@@ -45,7 +45,6 @@ export const LensDetailPage: React.FC = () => {
 
   const reportContent = useReportContent()
 
-  const [showProfileModal, setShowProfileModal] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
   const [isReportOpen, setIsReportOpen] = useState(false)
   const [reportReason, setReportReason] = useState<ReportReasonEnum>('spam')
@@ -152,7 +151,7 @@ export const LensDetailPage: React.FC = () => {
 
   const ensureProfile = useCallback((): boolean => {
     if (!hasLenser) {
-      setShowProfileModal(true)
+      navigate('/onboarding', { state: { from: window.location.pathname } })
       return false
     }
     return true
@@ -384,7 +383,7 @@ export const LensDetailPage: React.FC = () => {
                 onClick={() => cloneLens(previewVersionId ?? null)}
                 disabled={isCloning}
                 title={previewVersionId ? 'Clone this version as a new lens' : 'Clone latest version as a new lens'}
-                className="flex items-center gap-1.5 rounded-2xl border border-surface-border bg-surface-base px-3 py-2 text-xs font-medium text-greyscale-600 shadow-sm transition-colors hover:border-status-blue hover:text-greyscale-900 disabled:opacity-50 dark:text-greyscale-400 dark:hover:text-greyscale-50"
+                className="flex items-center gap-1.5 rounded-2xl border border-surface-border bg-surface-base px-3 py-2 text-xs font-medium text-greyscale-600 shadow-sm transition-colors hover:border-primary-yellow-500 hover:text-greyscale-900 disabled:opacity-50 dark:text-greyscale-400 dark:hover:text-greyscale-50"
               >
                 {isCloning ? <Loader2 size={13} className="animate-spin" /> : <GitFork size={13} />}
                 <span>{previewVersionId ? 'Clone this version' : 'Clone'}</span>
@@ -396,8 +395,8 @@ export const LensDetailPage: React.FC = () => {
                 title={showVersionPicker ? 'Hide version history' : 'Show version history'}
                 className={`flex items-center gap-1.5 rounded-2xl border px-3 py-2 text-xs font-medium shadow-sm transition-colors ${
                   showVersionPicker
-                    ? 'border-status-blue bg-status-blue/10 text-status-blue'
-                    : 'border-surface-border bg-surface-base text-greyscale-600 hover:border-status-blue hover:text-greyscale-900 dark:text-greyscale-400 dark:hover:text-greyscale-50'
+                    ? 'border-primary-yellow-500 bg-primary-yellow-500/10 text-primary-yellow-600'
+                    : 'border-surface-border bg-surface-base text-greyscale-600 hover:border-primary-yellow-500 hover:text-greyscale-900 dark:text-greyscale-400 dark:hover:text-greyscale-50'
                 }`}
               >
                 <History size={13} />
@@ -452,7 +451,7 @@ export const LensDetailPage: React.FC = () => {
                           onClick={() => setPreviewVersionId(isSelected ? null : v.id)}
                           className={`flex w-full items-center gap-3 px-4 py-3 text-left transition-colors ${
                             isSelected
-                              ? 'bg-status-blue/10 text-status-blue'
+                              ? 'bg-primary-yellow-500/10 text-primary-yellow-600'
                               : 'bg-surface-base text-greyscale-700 hover:bg-surface-raised dark:text-greyscale-300'
                           }`}
                         >
@@ -491,9 +490,9 @@ export const LensDetailPage: React.FC = () => {
             <button
               type="button"
               onClick={() => setShowRunPanel((v) => !v)}
-              className="flex w-full items-center gap-3 rounded-2xl border border-surface-border bg-surface-base px-4 py-3 text-left transition-colors hover:border-status-blue"
+              className="flex w-full items-center gap-3 rounded-2xl border border-surface-border bg-surface-base px-4 py-3 text-left transition-colors hover:border-primary-yellow-500"
             >
-              <Play size={15} className="flex-shrink-0 text-status-blue" />
+              <Play size={15} className="flex-shrink-0 text-primary-yellow-600" />
               <span className="flex-1 text-sm font-semibold text-greyscale-900 dark:text-greyscale-50">Run Lens</span>
               {showRunPanel ? (
                 <ChevronUp size={15} className="text-greyscale-400" />
@@ -616,7 +615,6 @@ export const LensDetailPage: React.FC = () => {
         lensId={isEditMode && lens ? lens.id : undefined}
       />
 
-      {showProfileModal && <CreateLenserProfileModal onClose={() => setShowProfileModal(false)} />}
 
       <ConfirmModal
         isOpen={isDeleteModalOpen}
@@ -633,34 +631,34 @@ export const LensDetailPage: React.FC = () => {
           <div className="bg-white dark:bg-gray-800 rounded-xl p-6 max-w-sm w-full space-y-4 shadow-xl">
             <h3 className="text-base font-semibold text-gray-900 dark:text-white">Report Lens</h3>
             <p className="text-sm text-gray-500 dark:text-gray-400">Why are you reporting this lens?</p>
-            <select
+            <SelectField
               value={reportReason}
-              onChange={(e) => setReportReason(e.target.value as typeof reportReason)}
-              className="w-full border border-gray-200 dark:border-gray-600 rounded-lg px-3 py-2 text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-            >
-              {(['spam', 'harassment', 'misinformation', 'off_topic', 'other'] as const).map((r) => (
-                <option key={r} value={r}>
-                  {r.replace('_', ' ').replace(/\b\w/g, (c) => c.toUpperCase())}
-                </option>
-              ))}
-            </select>
+              onChange={(v) => setReportReason(v as typeof reportReason)}
+              options={(['spam', 'harassment', 'misinformation', 'off_topic', 'other'] as const).map((r) => ({
+                value: r,
+                label: r.replace('_', ' ').replace(/\b\w/g, (c) => c.toUpperCase()),
+              }))}
+            />
             <div className="flex gap-3 justify-end pt-1">
-              <button
+              <Button
+                variant="ghost"
                 onClick={() => setIsReportOpen(false)}
-                className="px-4 py-2 text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors"
+                className="w-auto"
               >
                 Cancel
-              </button>
-              <button
+              </Button>
+              <Button
+                variant="danger"
                 onClick={() => {
                   reportContent.mutate({ targetType: 'lens', targetId: lens.id, reason: reportReason })
                   setIsReportOpen(false)
                 }}
                 disabled={reportContent.isPending}
-                className="px-4 py-2 text-sm bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors disabled:opacity-50"
+                isLoading={reportContent.isPending}
+                className="w-auto"
               >
                 {reportContent.isPending ? 'Reporting…' : 'Report'}
-              </button>
+              </Button>
             </div>
           </div>
         </div>

@@ -10,6 +10,7 @@ import { resolve } from 'node:path';
 export interface ProjectConfig {
   mode: 'local' | 'cloud';
   supabaseUrl?: string;
+  authBaseUrl?: string;
   dbPort: number;
   apiPort: number;
 }
@@ -22,12 +23,16 @@ export interface UserConfig {
   authToken?: string;
   authRefreshToken?: string;
   authExpiresAt?: string;
+  developerTokenId?: string;
+  developerToken?: string;
+  developerTokenExpiresAt?: string;
 }
 
 /** Merged, fully-resolved config used by all commands. */
 export interface LenserfightConfig {
   mode: 'local' | 'cloud';
   supabaseUrl: string;
+  authBaseUrl: string;
   supabaseAnonKey: string;
   supabaseServiceRoleKey?: string;
   dbPort: number;
@@ -35,6 +40,9 @@ export interface LenserfightConfig {
   authToken?: string;
   authRefreshToken?: string;
   authExpiresAt?: string;
+  developerTokenId?: string;
+  developerToken?: string;
+  developerTokenExpiresAt?: string;
   defaultAdapterId?: string;
 }
 
@@ -44,6 +52,8 @@ export interface LenserfightConfig {
 // ---------------------------------------------------------------------------
 
 const LOCAL_SUPABASE_URL = 'http://127.0.0.1:54321';
+const LOCAL_AUTH_BASE_URL = 'http://localhost:3004';
+const CLOUD_AUTH_BASE_URL = 'https://auth.lenserfight.com';
 
 const LOCAL_ANON_KEY =
   'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6ImFub24iLCJleHAiOjE5ODM4MTI5OTZ9.CRFA0NiK7kyqHDkAkEXER0xnuvvidGu0XP2yJZCqMnY';
@@ -77,7 +87,17 @@ export function loadConfig(cwd = process.cwd()): ProjectConfig {
   try {
     const raw = JSON.parse(readFileSync(path, 'utf-8'));
     // Drop legacy secret fields that may exist in old config files
-    const { supabaseAnonKey: _a, supabaseServiceRoleKey: _s, authToken: _t, authRefreshToken: _r, authExpiresAt: _e, ...safe } = raw;
+    const {
+      supabaseAnonKey: _a,
+      supabaseServiceRoleKey: _s,
+      authToken: _t,
+      authRefreshToken: _r,
+      authExpiresAt: _e,
+      developerTokenId: _dti,
+      developerToken: _dt,
+      developerTokenExpiresAt: _dte,
+      ...safe
+    } = raw;
     return { ...DEFAULT_PROJECT_CONFIG, ...safe };
   } catch {
     return { ...DEFAULT_PROJECT_CONFIG };
@@ -93,7 +113,17 @@ export function saveConfig(
     ? (() => { try { return JSON.parse(readFileSync(path, 'utf-8')); } catch { return {}; } })()
     : {};
   // Strip secret fields — they must never be written to project config
-  const { supabaseAnonKey: _a, supabaseServiceRoleKey: _s, authToken: _t, authRefreshToken: _r, authExpiresAt: _e, ...safe } = { ...existing, ...config } as Record<string, unknown>;
+  const {
+    supabaseAnonKey: _a,
+    supabaseServiceRoleKey: _s,
+    authToken: _t,
+    authRefreshToken: _r,
+    authExpiresAt: _e,
+    developerTokenId: _dti,
+    developerToken: _dt,
+    developerTokenExpiresAt: _dte,
+    ...safe
+  } = { ...existing, ...config } as Record<string, unknown>;
   writeFileSync(path, JSON.stringify(safe, null, 2) + '\n');
 }
 
@@ -146,8 +176,11 @@ export function saveUserConfig(partial: Partial<UserConfig>): void {
 
 interface EnvValues {
   supabaseUrl?: string;
+  authBaseUrl?: string;
   supabaseAnonKey?: string;
   supabaseServiceRoleKey?: string;
+  developerToken?: string;
+  developerTokenExpiresAt?: string;
 }
 
 function parseEnvFile(filePath: string): Record<string, string> {
@@ -183,6 +216,14 @@ export function loadEnvConfig(cwd = process.cwd()): EnvValues {
     file['SUPABASE_URL'] ||
     file['VITE_SUPABASE_URL'];
 
+  const authBaseUrl =
+    process.env['LENSERFIGHT_AUTH_BASE_URL'] ||
+    process.env['AUTH_BASE_URL'] ||
+    process.env['VITE_AUTH_BASE_URL'] ||
+    file['LENSERFIGHT_AUTH_BASE_URL'] ||
+    file['AUTH_BASE_URL'] ||
+    file['VITE_AUTH_BASE_URL'];
+
   const anonKey =
     process.env['SUPABASE_ANON_KEY'] ||
     process.env['VITE_SUPABASE_ANON_KEY'] ||
@@ -193,10 +234,21 @@ export function loadEnvConfig(cwd = process.cwd()): EnvValues {
     process.env['SUPABASE_SERVICE_ROLE_KEY'] ||
     file['SUPABASE_SERVICE_ROLE_KEY'];
 
+  const developerToken =
+    process.env['LENSERFIGHT_DEVELOPER_TOKEN'] ||
+    file['LENSERFIGHT_DEVELOPER_TOKEN'];
+
+  const developerTokenExpiresAt =
+    process.env['LENSERFIGHT_DEVELOPER_TOKEN_EXPIRES_AT'] ||
+    file['LENSERFIGHT_DEVELOPER_TOKEN_EXPIRES_AT'];
+
   return {
     supabaseUrl: url || undefined,
+    authBaseUrl: authBaseUrl || undefined,
     supabaseAnonKey: anonKey || undefined,
     supabaseServiceRoleKey: serviceKey || undefined,
+    developerToken: developerToken || undefined,
+    developerTokenExpiresAt: developerTokenExpiresAt || undefined,
   };
 }
 
@@ -220,6 +272,10 @@ export function resolveConfig(cwd = process.cwd()): LenserfightConfig {
       env.supabaseUrl ||
       project.supabaseUrl ||
       (isLocal ? LOCAL_SUPABASE_URL : ''),
+    authBaseUrl:
+      env.authBaseUrl ||
+      project.authBaseUrl ||
+      (isLocal ? LOCAL_AUTH_BASE_URL : CLOUD_AUTH_BASE_URL),
     supabaseAnonKey:
       env.supabaseAnonKey ||
       user.supabaseAnonKey ||
@@ -228,6 +284,13 @@ export function resolveConfig(cwd = process.cwd()): LenserfightConfig {
       env.supabaseServiceRoleKey ||
       user.supabaseServiceRoleKey ||
       (isLocal ? LOCAL_SERVICE_KEY : undefined),
+    developerToken:
+      env.developerToken ||
+      user.developerToken,
+    developerTokenExpiresAt:
+      env.developerTokenExpiresAt ||
+      user.developerTokenExpiresAt,
+    developerTokenId: user.developerTokenId,
     dbPort: project.dbPort,
     apiPort: project.apiPort,
     authToken: user.authToken,

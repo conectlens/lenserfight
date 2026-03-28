@@ -15,7 +15,7 @@ const colorClasses: Record<StatusDotVariant, string> = {
   success: 'bg-status-green',
   warning: 'bg-primary-yellow-500',
   error:   'bg-status-red',
-  info:    'bg-status-blue',
+  info:    'bg-primary-yellow-500',
   neutral: 'bg-greyscale-400',
   online:  'bg-status-green',
   offline: 'bg-greyscale-400',

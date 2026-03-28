@@ -265,4 +265,7 @@ export const lenserService = {
   cancelDeletionOnLogin: async (): Promise<{ restored: boolean; from_status?: string }> => {
     return lenserRepo.cancelDeletionOnLogin()
   },
+
+  searchLensers: (query: string, limit?: number) =>
+    lenserRepo.searchLensers(query, limit),
 }

@@ -1,4 +1,15 @@
-import { User, AuthStateChangeCallback, UserMetadata } from '@lenserfight/types'
+import {
+  ApproveDeviceRequestDTO,
+  ApproveDeviceRequestResultDTO,
+  AuthStateChangeCallback,
+  DeviceApprovalRequestDTO,
+  DeviceApprovalRequestResultDTO,
+  DeveloperTokenExchangeResultDTO,
+  DeveloperTokenSummaryDTO,
+  ExchangeDeviceApprovalDTO,
+  User,
+  UserMetadata,
+} from '@lenserfight/types'
 import { supabase } from '@lenserfight/data/supabase'
 import { buildAuthReturnUrl } from '@lenserfight/utils/dom'
 
@@ -19,6 +30,11 @@ export interface AuthRepositoryPort {
   signInWithOAuth(provider: 'google' | 'github' | 'azure'): Promise<void>
   resendSignupConfirmation(email: string): Promise<void>
   onAuthStateChange(callback: AuthStateChangeCallback): () => void
+  requestDeviceApproval(dto?: DeviceApprovalRequestDTO): Promise<DeviceApprovalRequestResultDTO>
+  approveDeviceRequest(dto: ApproveDeviceRequestDTO): Promise<ApproveDeviceRequestResultDTO>
+  exchangeDeviceApproval(dto: ExchangeDeviceApprovalDTO): Promise<DeveloperTokenExchangeResultDTO>
+  listDeveloperTokens(): Promise<DeveloperTokenSummaryDTO[]>
+  revokeDeveloperToken(tokenId: string): Promise<void>
 }
 export class SupabaseAuthRepository implements AuthRepositoryPort {
   async login(email: string, password: string, captchaToken?: string): Promise<User> {
@@ -110,5 +126,54 @@ export class SupabaseAuthRepository implements AuthRepositoryPort {
       callback(user || null)
     })
     return () => subscription.unsubscribe()
+  }
+
+  async requestDeviceApproval(
+    dto: DeviceApprovalRequestDTO = {}
+  ): Promise<DeviceApprovalRequestResultDTO> {
+    const { data, error } = await supabase.rpc('fn_auth_request_device_approval', {
+      p_label: dto.label ?? null,
+      p_request_ttl_minutes: dto.requestTtlMinutes ?? null,
+      p_token_ttl_hours: dto.tokenTtlHours ?? null,
+    })
+
+    if (error) throw error
+    return data as DeviceApprovalRequestResultDTO
+  }
+
+  async approveDeviceRequest(
+    dto: ApproveDeviceRequestDTO
+  ): Promise<ApproveDeviceRequestResultDTO> {
+    const { data, error } = await supabase.rpc('fn_auth_approve_device_request', {
+      p_user_code: dto.userCode,
+    })
+
+    if (error) throw error
+    return data as ApproveDeviceRequestResultDTO
+  }
+
+  async exchangeDeviceApproval(
+    dto: ExchangeDeviceApprovalDTO
+  ): Promise<DeveloperTokenExchangeResultDTO> {
+    const { data, error } = await supabase.rpc('fn_auth_exchange_device_approval', {
+      p_request_id: dto.requestId,
+      p_request_secret: dto.requestSecret,
+    })
+
+    if (error) throw error
+    return data as DeveloperTokenExchangeResultDTO
+  }
+
+  async listDeveloperTokens(): Promise<DeveloperTokenSummaryDTO[]> {
+    const { data, error } = await supabase.rpc('fn_auth_list_developer_tokens')
+    if (error) throw error
+    return (data ?? []) as DeveloperTokenSummaryDTO[]
+  }
+
+  async revokeDeveloperToken(tokenId: string): Promise<void> {
+    const { error } = await supabase.rpc('fn_auth_revoke_developer_token', {
+      p_token_id: tokenId,
+    })
+    if (error) throw error
   }
 }
