@@ -94,6 +94,7 @@ export interface UpsertNodeInput {
   position_y: number
   label?: string
   ordinal?: number
+  config?: Record<string, unknown> | null
 }
 
 export interface UpsertEdgeInput {
@@ -125,6 +126,8 @@ export interface WorkflowsRepositoryPort {
   startRun(workflowId: string, inputs?: Record<string, unknown>, globalModelId?: string): Promise<WorkflowRunRecord>
   getRun(runId: string): Promise<WorkflowRunRecord | null>
   getNodeResults(runId: string): Promise<WorkflowNodeResultRecord[]>
+  updateNodeResult(runId: string, nodeId: string, status: string, outputData?: Record<string, unknown>, errorMessage?: string): Promise<void>
+  updateRunStatus(runId: string, status: string): Promise<void>
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -332,5 +335,32 @@ export class SupabaseWorkflowsRepository implements WorkflowsRepositoryPort {
 
     if (error) this.handleError(error)
     return (data ?? []) as WorkflowNodeResultRecord[]
+  }
+
+  async updateNodeResult(
+    runId: string,
+    nodeId: string,
+    status: string,
+    outputData?: Record<string, unknown>,
+    errorMessage?: string
+  ): Promise<void> {
+    const { error } = await supabase.rpc('fn_update_workflow_node_result', {
+      p_run_id: runId,
+      p_node_id: nodeId,
+      p_status: status,
+      p_output_data: outputData ?? null,
+      p_error_message: errorMessage ?? null,
+    })
+
+    if (error) this.handleError(error)
+  }
+
+  async updateRunStatus(runId: string, status: string): Promise<void> {
+    const { error } = await supabase.rpc('fn_update_workflow_run_status', {
+      p_run_id: runId,
+      p_status: status,
+    })
+
+    if (error) this.handleError(error)
   }
 }
