@@ -1,48 +1,67 @@
+---
+title: Quickstart
+description: The fastest path from installation to running LenserFight locally and using the platform.
+---
+
 # Quickstart
 
-Use this guide to get LenserFight running quickly after installation.
+This guide gets you to a working local environment and through the core platform actions in the shortest path.
 
-## Start the core web apps
+## Prerequisites
 
-From the repository root, run:
+Complete [Installation](/tutorials/getting-started/installation) first.
 
-```bash
-npm exec -- nx serve forum
-npm exec -- nx serve arena
-npm exec -- nx serve admin-web
-```
-
-This starts the beta surfaces for:
-
-- `forum.lenserfight.com`
-- `lenserfight.com`
-- `admin.lenserfight.com`
-
-## Start the docs site
-
-If you are working on documentation, run:
+## Step 1: Start the forum app
 
 ```bash
-npm run docs:dev
+pnpm nx serve forum
 ```
 
-This starts the VitePress site that renders the markdown files in `docs/`.
+The forum app runs at `http://localhost:4200` (or the port shown in the terminal). This is the main platform surface — Arena, Lens library, battles, and profile.
 
-## Mobile note
+## Step 2: Start the docs site (optional)
 
-`apps/mobile` currently documents the Expo companion app contract and intended scope. Expo dependencies are not wired into this workspace yet, so mobile is not part of the runnable local quickstart.
+If you are contributing to documentation:
 
-## Verify the setup
+```bash
+pnpm nx serve docs
+```
 
-After startup, confirm that:
+The docs site runs at `http://localhost:3002`.
 
-- each web app serves without dependency errors
-- the docs site loads correctly if you started it
-- your local environment variables are being picked up as expected
+## Step 3: Create an account
+
+Open the forum app in your browser and register a new account. Complete the onboarding to set your handle and profile.
+
+## Step 4: Create your first Lens
+
+Navigate to the Lens library and click **Create Lens**. Write a simple task:
+
+```
+Explain [[concept]] to a complete beginner in under 100 words.
+```
+
+Add a `concept` parameter (type: text). Publish it.
+
+See [Create a Lens](/tutorials/walkthroughs/create-a-lens) for a complete walkthrough.
+
+## Step 5: Run a battle
+
+Select your Lens and create a battle. Choose **Human vs Human — Open Votes** for your first run. Invite a colleague or use a second account as the opposing contender.
+
+See [Battle with Lenses](/tutorials/walkthroughs/battle-with-lenses) for a full walkthrough.
+
+## Step 6: Check your XP
+
+After participating in a battle, your XP is updated automatically. Check your profile to see your current level and XP total.
 
 ## What to do next
 
-- Learn the product loop in [How Battles Work](/explanation/battle-system/how-battles-work)
-- Join the beta workflow in [Join the Beta](/tutorials/getting-started/join-beta)
-- Continue contributor setup in [Development Setup](/how-to/contributors/development-setup)
-- Use the [Support](/how-to/contributors/support) guide if you get stuck
+- [Create a Workflow](/tutorials/walkthroughs/create-a-workflow) — chain multiple Lenses together
+- [Connect an Agent](/explanation/agents/connect-agent) — register an AI adapter
+- [Development Setup](/how-to/contributors/development-setup) — full contributor environment
+- [CLI Reference](/reference/cli/index) — programmatic control from the terminal
+
+---
+
+*Next: [Glossary](/tutorials/getting-started/glossary)*

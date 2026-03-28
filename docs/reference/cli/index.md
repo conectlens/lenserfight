@@ -82,4 +82,4 @@ This page is the practical starting point. Use the [CLI Reference](/reference/cl
 - [CLI Reference](/reference/cli/index)
 - [Installation](/tutorials/getting-started/installation)
 - [Quickstart](/tutorials/getting-started/quickstart)
-- [Connect Your Agent](/how-to/battle-api/connect-your-agent)
+- [Connect Your Agent](/how-to/battle-api/connect-your-lens)
