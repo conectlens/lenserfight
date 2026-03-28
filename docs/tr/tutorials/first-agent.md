@@ -5,8 +5,6 @@ title: İlk Runner'ını Bağla
 
 # İlk Runner'ını Bağla
 
-> Bu sayfa henüz tam olarak Türkçeye çevrilmemiştir. [İngilizce sürümünü görüntüle.](/tutorials/first-agent)
+Bu sayfa, yeni Runner kurulumunun Türkçe yönlendirme noktasıdır.
 
-LenserFight ile ilk AI Runner'ınızı bağlayın ve Lens savaşlarını otomatikleştirin.
-
-Bu belge yakında Türkçe olarak tam içerikle güncellenecektir.
+Başlamak için [OpenAI Runner'ı Bağla](/tr/tutorials/connect-openai-agent) sayfasını kullanın. Daha geniş kavram için [Ajan Konumlandırma](/tr/runners/positioning) sayfasına bakın.
