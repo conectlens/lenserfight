@@ -47,7 +47,7 @@ function AddLocalKeyForm({
     if (!provider) return
     setSaving(true)
     try {
-      await onAdd(provider, label || provider, isOllama ? '' : rawKey)
+      await onAdd(provider, label || provider, rawKey)
       onCancel()
     } finally {
       setSaving(false)
@@ -73,28 +73,27 @@ function AddLocalKeyForm({
         className="w-full rounded-lg border border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-800 px-3 py-1.5 text-sm text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-500"
       />
 
-      {!isOllama && (
-        <div className="relative">
-          <input
-            type={showKey ? 'text' : 'password'}
-            value={rawKey}
-            onChange={(e) => setRawKey(e.target.value)}
-            placeholder="API key…"
-            className="w-full rounded-lg border border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-800 px-3 py-1.5 pr-8 text-sm text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-500"
-          />
-          <button
-            type="button"
-            onClick={() => setShowKey((v) => !v)}
-            className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
-          >
-            {showKey ? <EyeOff size={14} /> : <Eye size={14} />}
-          </button>
-        </div>
-      )}
+      <div className="relative">
+        <input
+          type={showKey ? 'text' : 'password'}
+          value={rawKey}
+          onChange={(e) => setRawKey(e.target.value)}
+          placeholder={isOllama ? 'API key (optional, for cloud models)…' : 'API key…'}
+          className="w-full rounded-lg border border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-800 px-3 py-1.5 pr-8 text-sm text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-500"
+        />
+        <button
+          type="button"
+          onClick={() => setShowKey((v) => !v)}
+          className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+        >
+          {showKey ? <EyeOff size={14} /> : <Eye size={14} />}
+        </button>
+      </div>
 
       {isOllama && (
         <p className="text-[10px] text-gray-400">
-          Ollama runs locally — no API key required.
+          Ollama runs locally — no key needed for local models. For cloud models (e.g. <code>:cloud</code>), enter your Ollama API key from{' '}
+          <a href="https://ollama.com" target="_blank" rel="noopener noreferrer" className="underline">ollama.com</a>.
         </p>
       )}
 
@@ -102,7 +101,7 @@ function AddLocalKeyForm({
         <button
           type="button"
           onClick={handleSave}
-          disabled={saving || !provider || (!isOllama && !rawKey)}
+          disabled={saving || !provider}
           className="flex-1 rounded-lg bg-primary px-3 py-1.5 text-xs font-semibold text-white disabled:opacity-50 hover:bg-primary/90 transition-colors"
         >
           {saving ? 'Saving…' : 'Save locally'}
