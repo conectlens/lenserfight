@@ -14,7 +14,7 @@ import type {
   ExecutionResult,
 } from '@lenserfight/infra/execution'
 import type { Provider } from '@lenserfight/providers'
-import type { AIModel } from '@lenserfight/types'
+import type { AIModel, FundingSource } from '@lenserfight/types'
 
 /** Text-only providers that go through callProvider() from @lenserfight/providers. */
 const TEXT_PROVIDERS = new Set<string>(['openai', 'anthropic', 'google', 'mistral', 'ollama'])
@@ -60,6 +60,14 @@ interface UseWorkflowExecutionOptions {
   nodes: WorkflowNodeRecord[]
   edges: WorkflowEdgeRecord[]
   models: AIModel[]
+  /** Funding source selected in the builder (platform_credit | user_byok_cloud | user_byok_local) */
+  fundingSource?: FundingSource
+  /** Selected local BYOK key id (when fundingSource === 'user_byok_local') */
+  selectedLocalKeyId?: string | null
+  /** Selected cloud BYOK key ref id (when fundingSource === 'user_byok_cloud') */
+  selectedKeyRefId?: string | null
+  /** Async resolver that decrypts a local BYOK key — from useFundingSource.resolveLocalKey */
+  resolveLocalKey?: (keyId: string) => Promise<string>
 }
 
 /**
@@ -75,17 +83,33 @@ interface UseWorkflowExecutionOptions {
  *   4. Supabase Realtime (in useWorkflowRun) picks up changes → UI updates live
  *   5. On completion, run status is updated via fn_update_workflow_run_status
  *
- * Limitation: uses a single global model for all nodes. Per-node model overrides
- * are persisted in workflow_nodes.config for future CF Worker execution.
+ * Supports platform_credit, user_byok_cloud, and user_byok_local funding sources.
+ * Per-node model overrides are persisted in workflow_nodes.config for CF Worker execution.
  */
-export function useWorkflowExecution({ nodes, edges, models }: UseWorkflowExecutionOptions) {
+export function useWorkflowExecution({
+  nodes,
+  edges,
+  models,
+  fundingSource,
+  selectedLocalKeyId,
+  resolveLocalKey,
+}: UseWorkflowExecutionOptions) {
   const isExecutingRef = useRef(false)
+  const abortRef = useRef<AbortController | null>(null)
+
+  const stopExecution = useCallback(() => {
+    abortRef.current?.abort()
+    abortRef.current = null
+  }, [])
 
   const execute = useCallback(
     async (runId: string, globalModelId: string, rootInputs: Record<string, unknown> = {}) => {
       // Guard against StrictMode double-fire
       if (isExecutingRef.current) return
       isExecutingRef.current = true
+
+      const controller = new AbortController()
+      abortRef.current = controller
 
       try {
         // Resolve global model → provider + API key
@@ -97,7 +121,19 @@ export function useWorkflowExecution({ nodes, edges, models }: UseWorkflowExecut
           throw new Error(`Browser-side execution is not supported for provider: ${providerName}`)
         }
 
-        const apiKey = providerName === 'ollama' ? '' : byokKeyResolver.resolve(providerName)
+        // Resolve API key based on funding source
+        let apiKey = ''
+        if (providerName !== 'ollama') {
+          if (fundingSource === 'user_byok_local' && selectedLocalKeyId && resolveLocalKey) {
+            apiKey = await resolveLocalKey(selectedLocalKeyId)
+          } else {
+            // platform_credit or user_byok_cloud: use byokKeyResolver (reads env / cloud-resolved key)
+            apiKey = byokKeyResolver.resolve(providerName)
+          }
+        }
+
+        if (controller.signal.aborted) return
+
         const provider = createTextExecutionProvider(
           providerName as Exclude<Provider, 'fal'>,
           globalModelId,
@@ -124,6 +160,7 @@ export function useWorkflowExecution({ nodes, edges, models }: UseWorkflowExecut
           rootInputs,
 
           async resolveLensTemplate(lensId: string, versionId?: string | null): Promise<string> {
+            if (controller.signal.aborted) return ''
             const version = versionId
               ? await lensesService.getVersionById(versionId)
               : await lensesService.getLatestPublishedVersion(lensId)
@@ -131,6 +168,7 @@ export function useWorkflowExecution({ nodes, edges, models }: UseWorkflowExecut
           },
 
           async onNodeStatusChange(nodeId: string, result: NodeResult): Promise<void> {
+            if (controller.signal.aborted) return
             await workflowsService.updateNodeResult(
               runId,
               nodeId,
@@ -145,16 +183,19 @@ export function useWorkflowExecution({ nodes, edges, models }: UseWorkflowExecut
         const executionService = new WorkflowExecutionService(provider)
         const result = await executionService.executeWorkflow(execNodes, execEdges, ctx)
 
+        if (controller.signal.aborted) return
+
         // Mark run as completed or failed
         await workflowsService.updateRunStatus(runId, result.status)
 
         return result
       } finally {
         isExecutingRef.current = false
+        if (abortRef.current === controller) abortRef.current = null
       }
     },
-    [nodes, edges, models],
+    [nodes, edges, models, fundingSource, selectedLocalKeyId, resolveLocalKey],
   )
 
-  return { execute }
+  return { execute, stopExecution }
 }
