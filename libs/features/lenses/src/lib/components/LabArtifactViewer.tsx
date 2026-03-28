@@ -21,6 +21,7 @@ interface LabArtifactViewerProps {
   streamCredits: number | null
   streamError: string | null
   isOwner?: boolean
+  isAuthenticatedLenser?: boolean
 }
 
 const CopyButton: React.FC<{ text: string }> = ({ text }) => {
@@ -375,6 +376,7 @@ export const LabArtifactViewer: React.FC<LabArtifactViewerProps> = ({
   streamCredits,
   streamError,
   isOwner,
+  isAuthenticatedLenser = false,
 }) => {
   const [showAll, setShowAll] = useState(false)
   const isComparing = comparisonRunIds.length === 2
@@ -423,8 +425,20 @@ export const LabArtifactViewer: React.FC<LabArtifactViewerProps> = ({
     return (
       <div className="mt-3">
         <h2 className="font-semibold mb-2 text-gray-800 dark:text-gray-100">Executions</h2>
-        <div className="flex items-center justify-center h-32 rounded-xl border border-dashed border-gray-200 dark:border-gray-700 text-sm text-gray-400 dark:text-gray-500">
-          Select an execution to view its output.
+        <div className="flex flex-col items-center justify-center gap-2 h-32 rounded-xl border border-dashed border-gray-200 dark:border-gray-700 text-sm text-gray-400 dark:text-gray-500">
+          {isAuthenticatedLenser ? (
+            'Select an execution to view its output.'
+          ) : (
+            <>
+              <span>Sign in or register to view execution output.</span>
+              <a
+                href="/sign-in"
+                className="text-xs font-medium text-primary-yellow-600 hover:text-primary-yellow-700 transition-colors underline-offset-2 hover:underline"
+              >
+                Sign in →
+              </a>
+            </>
+          )}
         </div>
       </div>
     )
