@@ -1,5 +1,16 @@
 import { SupabaseAuthRepository } from '../repositories/authRepository'
-import { User, AuthStateChangeCallback, UserMetadata } from '@lenserfight/types'
+import {
+  ApproveDeviceRequestDTO,
+  ApproveDeviceRequestResultDTO,
+  AuthStateChangeCallback,
+  DeviceApprovalRequestDTO,
+  DeviceApprovalRequestResultDTO,
+  DeveloperTokenExchangeResultDTO,
+  DeveloperTokenSummaryDTO,
+  ExchangeDeviceApprovalDTO,
+  User,
+  UserMetadata,
+} from '@lenserfight/types'
 
 const authRepo = new SupabaseAuthRepository()
 
@@ -47,5 +58,31 @@ export const authService = {
 
   onAuthStateChange: (callback: AuthStateChangeCallback): (() => void) => {
     return authRepo.onAuthStateChange(callback)
+  },
+
+  requestDeviceApproval: (
+    dto: DeviceApprovalRequestDTO = {}
+  ): Promise<DeviceApprovalRequestResultDTO> => {
+    return authRepo.requestDeviceApproval(dto)
+  },
+
+  approveDeviceRequest: (
+    dto: ApproveDeviceRequestDTO
+  ): Promise<ApproveDeviceRequestResultDTO> => {
+    return authRepo.approveDeviceRequest(dto)
+  },
+
+  exchangeDeviceApproval: (
+    dto: ExchangeDeviceApprovalDTO
+  ): Promise<DeveloperTokenExchangeResultDTO> => {
+    return authRepo.exchangeDeviceApproval(dto)
+  },
+
+  listDeveloperTokens: (): Promise<DeveloperTokenSummaryDTO[]> => {
+    return authRepo.listDeveloperTokens()
+  },
+
+  revokeDeveloperToken: async (tokenId: string): Promise<void> => {
+    return authRepo.revokeDeveloperToken(tokenId)
   },
 }

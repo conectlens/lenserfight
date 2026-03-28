@@ -1,0 +1,74 @@
+import {
+  buildAuthAppUrl,
+  clearDeveloperToken,
+  isDeveloperTokenActive,
+  saveDeveloperToken,
+} from './auth';
+
+const mockLoadUserConfig = jest.fn()
+const mockSaveUserConfig = jest.fn()
+const mockResolveConfig = jest.fn()
+
+jest.mock('../config/project-config', () => ({
+  loadUserConfig: () => mockLoadUserConfig(),
+  saveUserConfig: (partial: Record<string, unknown>) => mockSaveUserConfig(partial),
+  resolveConfig: () => mockResolveConfig(),
+}))
+
+describe('developer token CLI helpers', () => {
+  beforeEach(() => {
+    mockLoadUserConfig.mockReset();
+    mockSaveUserConfig.mockReset();
+    mockResolveConfig.mockReset();
+    mockResolveConfig.mockReturnValue({
+      mode: 'local',
+      supabaseUrl: 'http://127.0.0.1:54321',
+      authBaseUrl: 'http://localhost:3004',
+      supabaseAnonKey: 'anon',
+      dbPort: 54322,
+      apiPort: 54321,
+    });
+  });
+
+  it('persists a developer token in the user config', () => {
+    saveDeveloperToken({
+      tokenId: 'tok-1',
+      token: 'dev-token',
+      label: 'CLI',
+      tokenPrefix: 'deadbeef',
+      expiresAt: '2026-03-28T01:00:00Z',
+      createdAt: '2026-03-28T00:00:00Z',
+    });
+
+    expect(mockSaveUserConfig).toHaveBeenCalledWith({
+      developerTokenId: 'tok-1',
+      developerToken: 'dev-token',
+      developerTokenExpiresAt: '2026-03-28T01:00:00Z',
+    });
+  });
+
+  it('clears the stored developer token', () => {
+    clearDeveloperToken();
+
+    expect(mockSaveUserConfig).toHaveBeenCalledWith({
+      developerTokenId: undefined,
+      developerToken: undefined,
+      developerTokenExpiresAt: undefined,
+    });
+  });
+
+  it('treats expired developer tokens as inactive', () => {
+    mockLoadUserConfig.mockReturnValue({
+      developerToken: 'dev-token',
+      developerTokenExpiresAt: '2020-01-01T00:00:00Z',
+    });
+
+    expect(isDeveloperTokenActive()).toBe(false);
+  });
+
+  it('builds auth app URLs from the resolved base URL', () => {
+    expect(buildAuthAppUrl('/device-approval?code=ABCD-EFGH')).toBe(
+      'http://localhost:3004/device-approval?code=ABCD-EFGH'
+    );
+  });
+});

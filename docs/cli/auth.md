@@ -1,16 +1,16 @@
 # Authentication Commands
 
-Manage your LenserFight session. All battle lifecycle commands require authentication.
+Manage your LenserFight session, browser-based device approval, and time-bounded developer tokens.
 
-```
+```bash
 lenserfight auth <subcommand>
 ```
 
----
+## Session commands
 
-## `auth login`
+### `auth login`
 
-Authenticate with email and password. Stores the JWT in `~/.lenserfight/config.json`.
+Authenticate with email and password. Stores the Supabase session tokens in `~/.lenserfight/config.json`.
 
 ```bash
 lenserfight auth login --email you@example.com --password secret
@@ -21,19 +21,15 @@ lenserfight auth login --email you@example.com --password secret
 | `--email` | Yes | Account email address |
 | `--password` | Yes | Account password |
 
----
+### `auth logout`
 
-## `auth logout`
-
-Clear all stored auth tokens from `~/.lenserfight/config.json`.
+Clear stored session tokens and any saved developer token metadata.
 
 ```bash
 lenserfight auth logout
 ```
 
----
-
-## `auth whoami`
+### `auth whoami`
 
 Show the currently authenticated user.
 
@@ -43,9 +39,7 @@ lenserfight auth whoami
 
 Outputs email, lenser handle, and token expiry.
 
----
-
-## `auth refresh`
+### `auth refresh`
 
 Force-refresh the stored access token using the saved refresh token.
 
@@ -53,22 +47,18 @@ Force-refresh the stored access token using the saved refresh token.
 lenserfight auth refresh
 ```
 
-Useful when the token has expired and you want to stay logged in without re-entering credentials.
+Use this when the session is still valid but the access token expired.
 
----
+### `auth token`
 
-## `auth token`
-
-Print the raw access token to stdout. Useful for piping into other tools or scripts.
+Print the raw Supabase session access token to stdout.
 
 ```bash
 lenserfight auth token
-lenserfight auth token | pbcopy   # copy to clipboard (macOS)
+lenserfight auth token | pbcopy   # macOS clipboard
 ```
 
----
-
-## `auth register`
+### `auth register`
 
 Create a new account and lenser profile in one step.
 
@@ -83,11 +73,67 @@ lenserfight auth register \
 |------|----------|-------------|
 | `--email` | Yes | Account email address |
 | `--password` | Yes | Password (min 8 characters) |
-| `--display-name` | Yes | Public display name for your lenser profile |
+| `--display-name` | No | Public display name for your lenser profile |
 
----
+## Device approval
+
+### `auth device request`
+
+Start a short-lived device approval request, open the auth app route, and wait for a developer token to be minted.
+
+```bash
+lenserfight auth device request --label "MacBook Pro"
+```
+
+| Flag | Required | Default | Description |
+|------|----------|---------|-------------|
+| `--label` | No | `null` | Optional display label for the resulting developer token |
+| `--request-ttl-minutes` | No | `10` | How long the approval code stays valid |
+| `--token-ttl-hours` | No | `24` | How long the developer token stays valid |
+| `--json` | No | `false` | Print the initial request payload as JSON |
+
+The command prints the approval code and the auth app URL. Approve it in the browser at `/device-approval` while you are signed in. The CLI then polls until the token is issued and saves it separately from the session tokens.
+
+## Developer tokens
+
+### `auth developer-token current`
+
+Show the locally stored developer token metadata.
+
+```bash
+lenserfight auth developer-token current
+```
+
+### `auth developer-token list`
+
+List the developer tokens associated with the currently signed-in user.
+
+```bash
+lenserfight auth developer-token list
+lenserfight auth developer-token list --json
+```
+
+| Flag | Required | Default | Description |
+|------|----------|---------|-------------|
+| `--json` | No | `false` | Print the token list as JSON |
+
+### `auth developer-token revoke`
+
+Revoke a developer token by UUID.
+
+```bash
+lenserfight auth developer-token revoke <token-id>
+```
+
+## Security model
+
+- Session tokens continue to power the normal Supabase auth flow.
+- Developer tokens are time-bounded and stored separately in `~/.lenserfight/config.json`.
+- The browser approval page only approves the request; it never reveals the session token or password.
+- The approval and token RPCs require an authenticated session.
 
 ## Related
 
-- [Configuration](configuration.md) — where tokens are stored
-- [Community Commands](community.md) — follow lensers after logging in
+- [Configuration](configuration.md) - where tokens are stored
+- [Environment Variables](../reference/environment-variables.md) - env precedence and auth URLs
+- [Community Commands](community.md) - follow lensers after logging in

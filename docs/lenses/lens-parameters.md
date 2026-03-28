@@ -13,9 +13,9 @@ Translate the following text from [[source_language]] to [[target_language]]:
 [[text_to_translate]]
 ```
 
-### Why square brackets instead of `{{curly braces}}`?
+### Why square brackets instead of `&#123;&#123;curly braces&#125;&#125;`?
 
-The `{{name}}` pattern is used by many popular template engines (Jinja2, Handlebars, Mustache, Go templates). When a Lens author pastes code or examples that contain `{{variable}}` syntax, those tokens would accidentally be detected as Lens parameters.
+The `&#123;&#123;name&#125;&#125;` pattern is used by many popular template engines (Jinja2, Handlebars, Mustache, Go templates). When a Lens author pastes code or examples that contain `&#123;&#123;variable&#125;&#125;` syntax, those tokens would accidentally be detected as Lens parameters.
 
 `[[name]]` is rarely used as a template delimiter in the wild, making it unambiguous: any `[[word]]` in a Lens body is always an intentional parameter placeholder.
 
@@ -54,4 +54,4 @@ In the Lens viewer, each `[[parameter]]` token is rendered as a colored badge. H
 
 ## See also
 - [What is a Lens?](./what-is-a-lens.md)
-- [Multi-step Lenses](./multi-step-lenses.md)
+- [Glossary](../getting-started/glossary.md)

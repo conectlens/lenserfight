@@ -37,6 +37,7 @@ LenserFight's database is organized into 10+ PostgreSQL schemas. This page lists
 
 | Schema | Tables | Description |
 |--------|--------|-------------|
+| `authz` | device_approval_requests, developer_tokens | Private auth support schema for device approval and developer tokens |
 | `analytics` | lenser_stats, lenser_activity, shared_links, share_events, page_views, tag_activity_events, product_feedback | Engagement metrics and feedback |
 | `core` | features, languages, settings | Platform-wide configuration |
 | `billing` | plans, product_entitlements, credits | Payment and subscription management |
@@ -87,6 +88,8 @@ tenancy.workspaces ──┬──→ media.objects (workspace_id)
                      └──→ tenancy.workspace_members (1:N)
 
 media.objects ──────→ media.attachments (1:N, binding slots)
+
+authz.device_approval_requests ─→ authz.developer_tokens (1:1 via issued_from_request_id)
 ```
 
 ## PostgREST exposure

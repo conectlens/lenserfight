@@ -38,5 +38,5 @@ Any Lenser can fork a public Lens to create a Relational Lens — a child that i
 
 ## See also
 - [Lens Parameters](./lens-parameters.md)
-- [Multi-step Lenses](./multi-step-lenses.md)
+- [Glossary](../getting-started/glossary.md)
 - [Glossary](../getting-started/glossary.md)

@@ -6,6 +6,31 @@ import { reportCliError } from './error-reporter';
 export interface RpcOptions {
   requireAuth?: boolean;
   useServiceRole?: boolean;
+  useDeveloperToken?: boolean;
+}
+
+export function resolveBearerToken(
+  config: LenserfightConfig,
+  options: RpcOptions = {}
+): string | undefined {
+  const developerTokenIsActive =
+    !!config.developerToken &&
+    (!config.developerTokenExpiresAt ||
+      new Date(config.developerTokenExpiresAt).getTime() >= Date.now())
+
+  if (options.useServiceRole) {
+    return config.supabaseServiceRoleKey
+  }
+
+  if (options.useDeveloperToken) {
+    return developerTokenIsActive ? config.developerToken : config.authToken
+  }
+
+  if (options.requireAuth || config.authToken) {
+    return config.authToken
+  }
+
+  return undefined
 }
 
 export async function callRpc<T = unknown>(
@@ -26,6 +51,8 @@ export async function callRpc<T = unknown>(
     apikey: config.supabaseAnonKey,
   };
 
+  const bearerToken = resolveBearerToken(config, options);
+
   if (options.useServiceRole) {
     if (!config.supabaseServiceRoleKey) {
       throw new Error(
@@ -33,16 +60,15 @@ export async function callRpc<T = unknown>(
       );
     }
     headers['Authorization'] = `Bearer ${config.supabaseServiceRoleKey}`;
-  } else if (options.requireAuth || config.authToken) {
-    const token = config.authToken;
-    if (options.requireAuth && !token) {
+  } else if (bearerToken) {
+    if (options.requireAuth && !bearerToken) {
       throw new Error(
         'Authentication required. Run `lenserfight auth login` first.'
       );
     }
-    if (token) {
-      headers['Authorization'] = `Bearer ${token}`;
-    }
+    headers['Authorization'] = `Bearer ${bearerToken}`;
+  } else if (options.requireAuth) {
+    throw new Error('Authentication required. Run `lenserfight auth login` first.')
   }
 
   const url = `${config.supabaseUrl}/rest/v1/rpc/${functionName}`;

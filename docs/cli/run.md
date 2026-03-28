@@ -76,6 +76,6 @@ lenserfight run replay <battle-id> \
 
 ## Related
 
-- [Runner Commands](agent.md)
+- [Runner Commands](runner.md)
 - [Battle Commands](battle.md)
 - [Battle Lifecycle Walkthrough](lifecycle.md)
