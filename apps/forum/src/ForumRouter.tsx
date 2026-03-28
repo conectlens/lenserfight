@@ -35,6 +35,9 @@ const LazyLensesPage = lazy(() =>
 const LazyLensLabPage = lazy(() =>
   import('@lenserfight/features/lenses').then((module) => ({ default: module.LensLabPage }))
 )
+const LazyMediaGalleryPage = lazy(() =>
+  import('@lenserfight/features/lenses').then((module) => ({ default: module.MediaGalleryPage }))
+)
 const LazySettingsPage = lazy(() =>
   import('@lenserfight/features/settings').then((module) => ({ default: module.SettingsPage }))
 )
@@ -266,6 +269,15 @@ export const ForumRouter: React.FC = () => {
           element={
             <DashboardFrame>
               <LazyLensLabPage />
+            </DashboardFrame>
+          }
+        />
+
+        <Route
+          path="/media"
+          element={
+            <DashboardFrame>
+              <LazyMediaGalleryPage />
             </DashboardFrame>
           }
         />
