@@ -1,4 +1,4 @@
-import { Copy, Eye, Lock, Pencil } from 'lucide-react'
+import { Copy, Eye, Lock, Pencil, GitFork, Check, Loader2 } from 'lucide-react'
 import React from 'react'
 import { Link } from 'react-router-dom'
 
@@ -15,6 +15,10 @@ interface LensDetailCardProps {
   onUse: () => void
   canEdit?: boolean
   onEdit?: () => void
+  onCopy?: () => void
+  onFork?: () => void
+  canFork?: boolean
+  isForking?: boolean
 }
 
 export const LensDetailCard: React.FC<LensDetailCardProps> = ({
@@ -22,7 +26,20 @@ export const LensDetailCard: React.FC<LensDetailCardProps> = ({
   onUse,
   canEdit = false,
   onEdit,
+  onCopy,
+  onFork,
+  canFork = false,
+  isForking = false,
 }) => {
+  const [copied, setCopied] = React.useState(false)
+
+  const handleCopy = () => {
+    if (!onCopy) return
+    onCopy()
+    setCopied(true)
+    setTimeout(() => setCopied(false), 2000)
+  }
+
   return (
     <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden transition-colors">
       <div className="p-8 border-b border-gray-100 dark:border-gray-700">
@@ -59,6 +76,7 @@ export const LensDetailCard: React.FC<LensDetailCardProps> = ({
             )}
             {canEdit && onEdit && (
               <button
+                type="button"
                 onClick={onEdit}
                 className="p-2 bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-gray-500 dark:text-gray-300 hover:text-primary-700 hover:border-primary/40 dark:hover:text-primary-400 rounded-lg shadow-sm transition-colors"
                 title="Edit Lens"
@@ -115,14 +133,42 @@ export const LensDetailCard: React.FC<LensDetailCardProps> = ({
 
       {/* Main Content Area */}
       <div className="bg-gray-50 dark:bg-gray-900 p-8 transition-colors">
-        <div className="flex justify-between items-center mb-3">
+        <div className="mb-3 flex items-center justify-between gap-3">
           <h3 className="text-sm font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
             Lens Template
           </h3>
-          <button className="text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white flex items-center gap-1 text-sm font-medium transition-colors">
-            <Copy size={16} />
-            Copy
-          </button>
+          <div className="flex items-center gap-2">
+            {onFork && (
+              <button
+                type="button"
+                onClick={canFork ? onFork : undefined}
+                disabled={isForking || !canFork}
+                title={canFork ? 'Fork lens' : 'Sign in or register to fork'}
+                className={`flex items-center gap-1 text-sm font-medium transition-colors disabled:opacity-50 ${
+                  canFork
+                    ? 'text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white'
+                    : 'cursor-not-allowed text-gray-400 dark:text-gray-500'
+                }`}
+              >
+                {isForking ? <Loader2 size={16} className="animate-spin" /> : <GitFork size={16} />}
+                Fork
+              </button>
+            )}
+            {onCopy && (
+              <button
+                type="button"
+                onClick={handleCopy}
+                className={`flex items-center gap-1 text-sm font-medium transition-colors ${
+                  copied
+                    ? 'text-status-green'
+                    : 'text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white'
+                }`}
+              >
+                {copied ? <Check size={16} /> : <Copy size={16} />}
+                {copied ? 'Copied' : 'Copy'}
+              </button>
+            )}
+          </div>
         </div>
         <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6 shadow-sm transition-colors">
           <pre className="whitespace-pre-wrap font-sans text-base text-gray-800 dark:text-gray-200 leading-relaxed">

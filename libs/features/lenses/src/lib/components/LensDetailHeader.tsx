@@ -2,7 +2,7 @@ import { ForkNode, LensDetailViewModel } from '@lenserfight/types'
 import { Avatar } from '@lenserfight/ui/components'
 import { TagBadge } from '@lenserfight/ui/components'
 import { formatCount } from '@lenserfight/utils/number'
-import { GitFork, Lock, Bookmark, Pencil, Copy, Check } from 'lucide-react'
+import { GitFork, Lock, Bookmark, Pencil, Copy, Check, Loader2 } from 'lucide-react'
 import React, { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 
@@ -17,6 +17,9 @@ interface LensDetailHeaderProps {
   saveCount: number
   forkTree?: ForkNode[]
   onCopy?: () => void
+  onFork?: () => void
+  canFork?: boolean
+  isForking?: boolean
 }
 
 export const LensDetailHeader: React.FC<LensDetailHeaderProps> = ({
@@ -29,6 +32,9 @@ export const LensDetailHeader: React.FC<LensDetailHeaderProps> = ({
   saveCount,
   forkTree,
   onCopy,
+  onFork,
+  canFork = false,
+  isForking = false,
 }) => {
   const navigate = useNavigate()
   const [copied, setCopied] = useState(false)
@@ -59,6 +65,7 @@ export const LensDetailHeader: React.FC<LensDetailHeaderProps> = ({
         <div className="flex items-center gap-2">
           {canEdit && onEdit && (
             <button
+              type="button"
               onClick={onEdit}
               className="group flex-shrink-0 rounded-2xl border border-surface-border bg-surface-base p-2.5 text-greyscale-500 transition-colors hover:border-primary-yellow-500 hover:text-primary-yellow-600"
               aria-label="Edit lens"
@@ -68,9 +75,10 @@ export const LensDetailHeader: React.FC<LensDetailHeaderProps> = ({
             </button>
           )}
 
-          {/* Copy Action */}
+          {/* Copy Action — visible to everyone */}
           {onCopy && (
             <button
+              type="button"
               onClick={handleCopy}
               className={`group flex-shrink-0 rounded-2xl border p-2.5 transition-colors ${
                 copied
@@ -88,8 +96,31 @@ export const LensDetailHeader: React.FC<LensDetailHeaderProps> = ({
             </button>
           )}
 
+          {/* Fork — authenticated users with lenser profile */}
+          {onFork && (
+            <button
+              type="button"
+              onClick={canFork ? onFork : undefined}
+              disabled={isForking || !canFork}
+              aria-label="Fork this lens"
+              title={canFork ? 'Fork lens' : 'Sign in or register to fork'}
+              className={`group flex-shrink-0 rounded-2xl border p-2.5 transition-colors disabled:opacity-50 ${
+                canFork
+                  ? 'border-surface-border bg-surface-base text-greyscale-500 hover:border-primary-yellow-500 hover:text-primary-yellow-600'
+                  : 'cursor-not-allowed border-surface-border bg-surface-base text-greyscale-400'
+              }`}
+            >
+              {isForking ? (
+                <Loader2 size={18} className="animate-spin" />
+              ) : (
+                <GitFork size={18} className="transition-transform duration-200 group-active:scale-95" />
+              )}
+            </button>
+          )}
+
           {/* Save Action - Top Right */}
           <button
+            type="button"
             onClick={onSave}
             disabled={isSaving}
             className={`
