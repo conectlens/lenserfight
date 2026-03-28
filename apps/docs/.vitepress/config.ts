@@ -166,119 +166,171 @@ export default defineConfig({
       description: 'LenserFight Arena, Forum, Admin ve Mobil için kullanıcı odaklı belgeler.',
       themeConfig: {
         nav: [
-          { text: 'Eğitimler', link: '/tr/tutorials/what-is-lenserfight' },
-          { text: 'Nasıl Yapılır', link: '/tr/guides/share-a-result' },
-          { text: 'Referans', link: '/tr/reference/cli' },
-          { text: 'Açıklama', link: '/tr/guides/xp-sisteminizi-anlayin' },
+          { text: 'Eğitimler', link: '/tr/tutorials/beginner-walkthroughs/what-is-lenserfight' },
+          { text: 'Nasıl Yapılır', link: '/tr/how-to/battle-api/share-a-result' },
+          { text: 'Referans', link: '/tr/reference/cli/index' },
+          { text: 'Açıklama', link: '/tr/explanation/battle-system/how-battles-work' },
         ],
-        sidebar: [
-          {
-            text: 'Eğitimler',
-            items: [
-              {
-                text: 'Başlarken',
-                items: [
-                  { text: 'Genel Bakış', link: '/tr/getting-started/overview' },
-                  { text: "Beta'ya Katıl", link: '/tr/getting-started/join-beta' },
-                  { text: 'Sözlük', link: '/tr/getting-started/glossary' },
-                  { text: 'Kurulum', link: '/tr/tutorials/installation' },
-                  { text: 'Hızlı Başlangıç', link: '/tr/tutorials/quickstart' },
-                ],
-              },
-              {
-                text: 'Yeni Başlayanlar İçin',
-                items: [
-                  { text: 'LenserFight Nedir?', link: '/tr/tutorials/what-is-lenserfight' },
-                  { text: 'İlk Savaşın (Kodsuz)', link: '/tr/tutorials/your-first-battle' },
-                  { text: 'CLI ile İlk Savaş', link: '/tr/tutorials/first-battle-cli' },
-                  { text: 'OpenAI Runner\'ı Bağla', link: '/tr/tutorials/connect-openai-agent' },
-                  { text: 'Harika Lens Yazmak', link: '/tr/tutorials/writing-great-prompts' },
-                ],
-              },
-            ],
-          },
-          {
-            text: 'Nasıl Yapılır',
-            items: [
-              {
-                text: 'Savaş ve API Görevleri',
-                items: [
-                  { text: 'Sonuç Paylaş', link: '/tr/guides/share-a-result' },
-                  { text: 'XP Sisteminizi Anlayın', link: '/tr/guides/xp-sisteminizi-anlayin' },
-                  { text: 'SSS', link: '/tr/help/faq' },
-                ],
-              },
-              {
-                text: 'Katkıda Bulunanlar',
-                items: [
-                  { text: 'Katkılar İçin XP', link: '/tr/contributors/katkilar-icin-xp' },
-                  { text: 'Katkıda Bulunanlar 2. Dalga', link: '/tr/contributors/wave-2-plan' },
-                ],
-              },
-            ],
-          },
-          {
-            text: 'Referans',
-            items: [
-              {
-                text: 'CLI',
-                items: [
-                  { text: 'CLI Referansı', link: '/tr/reference/cli' },
-                  { text: 'CLI Merkezi', link: '/tr/cli/index' },
-                ],
-              },
-              {
-                text: 'Platform ve API',
-                items: [
-                  { text: 'API Genel Bakış', link: '/tr/reference/api-overview' },
-                  { text: 'Yapılandırma', link: '/tr/reference/configuration' },
-                  { text: 'Beta Yol Haritası', link: '/tr/reference/beta-roadmap' },
-                  { text: 'XP Sistemi', link: '/tr/reference/xp-sistemi' },
-                ],
-              },
-              {
-                text: 'Veritabanı',
-                items: [
-                  { text: 'Şemaya Genel Bakış', link: '/tr/database/schema-overview' },
-                  { text: 'Lensers Şeması', link: '/tr/database/schema-lensers' },
-                  { text: 'İçerik Şeması', link: '/tr/database/schema-content' },
-                  { text: 'XP Şeması', link: '/tr/database/schema-xp' },
-                  { text: 'Analitik Şeması', link: '/tr/database/schema-analytics' },
-                  { text: 'AI Şeması', link: '/tr/database/schema-ai' },
-                  { text: 'Savaşlar Şeması', link: '/tr/database/schema-battles' },
-                  { text: 'Diğer Şemalar', link: '/tr/database/schema-other' },
-                  { text: 'RLS Referansı', link: '/tr/database/rls-reference' },
-                  { text: 'RPC Referansı', link: '/tr/database/rpc-reference' },
-                  { text: 'Yerel Kurulum', link: '/tr/database/local-setup' },
-                ],
-              },
-            ],
-          },
-          {
-            text: 'Açıklama',
-            items: [
-              {
-                text: 'Savaş Sistemi',
-                items: [
-                  { text: 'Savaşlar Nasıl Çalışır', link: '/tr/battles/how-battles-work' },
-                  { text: 'Hibrit Puanlama', link: '/tr/battles/hybrid-scoring' },
-                ],
-              },
-              {
-                text: 'Topluluk ve Kullanım Senaryoları',
-                items: [
-                  { text: 'Topluluk Merkezi', link: '/tr/forum/community-hub' },
-                  { text: 'İçerik Üretici Profilleri', link: '/tr/profiles/creator-profiles' },
-                  { text: 'Mobil Yardımcı Uygulama', link: '/tr/mobile/companion-app' },
-                  { text: 'Yönetici Konsolu', link: '/tr/admins/operations-console' },
-                  { text: 'Açık Çekirdek Modeli', link: '/tr/tools/open-core-model' },
-                  { text: 'Ajan Konumlandırma', link: '/tr/runners/positioning' },
-                  { text: 'LenserFight\'ta Lens\'ler', link: '/tr/lenses/lens-usage' },
-                ],
-              },
-            ],
-          },
-        ],
+        sidebar: {
+          // ── Eğitimler ────────────────────────────────────────────────────────
+          '/tr/tutorials/': [
+            {
+              text: 'Eğitimler',
+              items: [
+                { text: 'Başlarken', link: '/tr/tutorials/getting-started/overview' },
+                { text: 'Yeni Başlayanlar İçin', link: '/tr/tutorials/beginner-walkthroughs/what-is-lenserfight' },
+              ],
+            },
+          ],
+          '/tr/tutorials/getting-started/': [
+            {
+              text: 'Başlarken',
+              items: [
+                { text: 'Genel Bakış', link: '/tr/tutorials/getting-started/overview' },
+                { text: "Beta'ya Katıl", link: '/tr/tutorials/getting-started/join-beta' },
+                { text: 'Sözlük', link: '/tr/tutorials/getting-started/glossary' },
+                { text: 'Kurulum', link: '/tr/tutorials/getting-started/installation' },
+                { text: 'Hızlı Başlangıç', link: '/tr/tutorials/getting-started/quickstart' },
+              ],
+            },
+          ],
+          '/tr/tutorials/beginner-walkthroughs/': [
+            {
+              text: 'Yeni Başlayanlar İçin',
+              items: [
+                { text: 'LenserFight Nedir?', link: '/tr/tutorials/beginner-walkthroughs/what-is-lenserfight' },
+                { text: 'İlk Savaşın (Kodsuz)', link: '/tr/tutorials/beginner-walkthroughs/your-first-battle' },
+                { text: 'CLI ile İlk Savaş', link: '/tr/tutorials/beginner-walkthroughs/first-battle-cli' },
+                { text: "OpenAI Agent'ı Bağla", link: '/tr/tutorials/beginner-walkthroughs/connect-openai-agent' },
+                { text: 'Harika Lens Yazmak', link: '/tr/tutorials/beginner-walkthroughs/writing-great-prompts' },
+                { text: 'İlk Agent', link: '/tr/tutorials/beginner-walkthroughs/first-agent' },
+              ],
+            },
+          ],
+
+          // ── Nasıl Yapılır ────────────────────────────────────────────────────
+          '/tr/how-to/': [
+            {
+              text: 'Nasıl Yapılır',
+              items: [
+                { text: 'Savaş ve API Görevleri', link: '/tr/how-to/battle-api/share-a-result' },
+                { text: 'Katkıda Bulunanlar', link: '/tr/how-to/contributors/katkilar-icin-xp' },
+              ],
+            },
+          ],
+          '/tr/how-to/battle-api/': [
+            {
+              text: 'Savaş ve API Görevleri',
+              items: [
+                { text: 'İlk Savaşı Çalıştır', link: '/tr/how-to/battle-api/run-your-first-battle' },
+                { text: 'Sonuç Paylaş', link: '/tr/how-to/battle-api/share-a-result' },
+                { text: 'XP Sisteminizi Anlayın', link: '/tr/how-to/battle-api/xp-sisteminizi-anlayin' },
+              ],
+            },
+          ],
+          '/tr/how-to/contributors/': [
+            {
+              text: 'Katkıda Bulunanlar',
+              items: [
+                { text: 'Katkılar İçin XP', link: '/tr/how-to/contributors/katkilar-icin-xp' },
+                { text: 'Katkıda Bulunanlar 2. Dalga', link: '/tr/how-to/contributors/wave-2-plan' },
+                { text: 'SSS', link: '/tr/how-to/contributors/faq' },
+              ],
+            },
+          ],
+
+          // ── Referans ─────────────────────────────────────────────────────────
+          '/tr/reference/': [
+            {
+              text: 'Referans',
+              items: [
+                { text: 'CLI', link: '/tr/reference/cli/index' },
+                { text: 'Platform ve API', link: '/tr/reference/platform-api/api-overview' },
+                { text: 'Veritabanı', link: '/tr/reference/database/schema-overview' },
+              ],
+            },
+          ],
+          '/tr/reference/cli/': [
+            {
+              text: 'CLI',
+              items: [
+                { text: 'CLI Merkezi', link: '/tr/reference/cli/index' },
+                { text: 'CLI Referansı', link: '/tr/reference/platform-api/cli-reference' },
+              ],
+            },
+          ],
+          '/tr/reference/platform-api/': [
+            {
+              text: 'Platform ve API',
+              items: [
+                { text: 'API Genel Bakış', link: '/tr/reference/platform-api/api-overview' },
+                { text: 'Yapılandırma', link: '/tr/reference/platform-api/configuration' },
+                { text: 'Beta Yol Haritası', link: '/tr/reference/platform-api/beta-roadmap' },
+                { text: 'XP Sistemi', link: '/tr/reference/platform-api/xp-sistemi' },
+              ],
+            },
+          ],
+          '/tr/reference/database/': [
+            {
+              text: 'Veritabanı',
+              items: [
+                { text: 'Şemaya Genel Bakış', link: '/tr/reference/database/schema-overview' },
+                { text: 'Lensers Şeması', link: '/tr/reference/database/schema-lensers' },
+                { text: 'İçerik Şeması', link: '/tr/reference/database/schema-content' },
+                { text: 'XP Şeması', link: '/tr/reference/database/schema-xp' },
+                { text: 'Analitik Şeması', link: '/tr/reference/database/schema-analytics' },
+                { text: 'AI Şeması', link: '/tr/reference/database/schema-ai' },
+                { text: 'Savaşlar Şeması', link: '/tr/reference/database/schema-battles' },
+                { text: 'Diğer Şemalar', link: '/tr/reference/database/schema-other' },
+                { text: 'RLS Referansı', link: '/tr/reference/database/rls-reference' },
+                { text: 'RPC Referansı', link: '/tr/reference/database/rpc-reference' },
+                { text: 'Yerel Kurulum', link: '/tr/reference/database/local-setup' },
+              ],
+            },
+          ],
+
+          // ── Açıklama ─────────────────────────────────────────────────────────
+          '/tr/explanation/': [
+            {
+              text: 'Açıklama',
+              items: [
+                { text: 'Savaş Sistemi', link: '/tr/explanation/battle-system/how-battles-work' },
+                { text: 'Agentlar ve Lensler', link: '/tr/explanation/agents-lenses/positioning' },
+                { text: 'Topluluk ve Kullanım', link: '/tr/explanation/community/community-hub' },
+              ],
+            },
+          ],
+          '/tr/explanation/battle-system/': [
+            {
+              text: 'Savaş Sistemi',
+              items: [
+                { text: 'Savaşlar Nasıl Çalışır', link: '/tr/explanation/battle-system/how-battles-work' },
+                { text: 'Hibrit Puanlama', link: '/tr/explanation/battle-system/hybrid-scoring' },
+              ],
+            },
+          ],
+          '/tr/explanation/agents-lenses/': [
+            {
+              text: 'Agentlar ve Lensler',
+              items: [
+                { text: 'Ajan Konumlandırma', link: '/tr/explanation/agents-lenses/positioning' },
+                { text: "LenserFight'ta Lens'ler", link: '/tr/explanation/agents-lenses/lens-usage' },
+              ],
+            },
+          ],
+          '/tr/explanation/community/': [
+            {
+              text: 'Topluluk ve Kullanım Senaryoları',
+              items: [
+                { text: 'Topluluk Merkezi', link: '/tr/explanation/community/community-hub' },
+                { text: 'İçerik Üretici Profilleri', link: '/tr/explanation/community/creator-profiles' },
+                { text: 'Mobil Yardımcı Uygulama', link: '/tr/explanation/community/companion-app' },
+                { text: 'Yönetici Konsolu', link: '/tr/explanation/community/operations-console' },
+                { text: 'Açık Çekirdek Modeli', link: '/tr/explanation/community/open-core-model' },
+              ],
+            },
+          ],
+        },
       },
     },
   },
@@ -312,177 +364,224 @@ export default defineConfig({
     ],
 
     nav: [
-      { text: 'Tutorials', link: '/tutorials/what-is-lenserfight' },
-      { text: 'How-to', link: '/guides/connect-your-agent' },
-      { text: 'Reference', link: '/reference/cli' },
-      { text: 'Explanation', link: '/explanations/concepts' },
+      { text: 'Tutorials', link: '/tutorials/beginner-walkthroughs/what-is-lenserfight' },
+      { text: 'How-to', link: '/how-to/battle-api/connect-your-agent' },
+      { text: 'Reference', link: '/reference/cli/index' },
+      { text: 'Explanation', link: '/explanation/battle-system/concepts' },
     ],
 
     aside: true,
     outline: [2, 3],
 
-    sidebar: [
-      {
-        text: 'Tutorials',
-        items: [
-          {
-            text: 'Getting Started',
-            items: [
-              { text: 'Overview', link: '/getting-started/overview' },
-              { text: 'Join the Beta', link: '/getting-started/join-beta' },
-              { text: 'Glossary', link: '/getting-started/glossary' },
-              { text: 'Installation', link: '/tutorials/installation' },
-              { text: 'Quickstart', link: '/tutorials/quickstart' },
-            ],
-          },
-          {
-            text: 'Beginner Walkthroughs',
-            items: [
-              { text: 'What is LenserFight?', link: '/tutorials/what-is-lenserfight' },
-              { text: 'Your First Battle (No Code)', link: '/tutorials/your-first-battle' },
-              { text: 'First Battle via CLI', link: '/tutorials/first-battle-cli' },
-              { text: 'Connect an OpenAI Runner', link: '/tutorials/connect-openai-agent' },
-              { text: 'Writing Great Lenses', link: '/tutorials/writing-great-prompts' },
-            ],
-          },
-        ],
-      },
-      {
-        text: 'How-to',
-        items: [
-          {
-            text: 'Battle and API Tasks',
-            items: [
-              { text: 'Connect Your Runner', link: '/guides/connect-your-agent' },
-              { text: 'Share a Result', link: '/guides/share-a-result' },
-              { text: 'Write a Battle Rubric', link: '/guides/write-a-battle-rubric' },
-              { text: 'Call the API', link: '/how-to/call-the-api' },
-              { text: 'Integrate the API', link: '/how-to/integrate-api' },
-              { text: 'Create a Battle Template', link: '/how-to/create-battle-template' },
-              { text: 'Manage Battle Invitations', link: '/how-to/manage-invitations' },
-              { text: 'Debug Runners', link: '/how-to/debug-agents' },
-              { text: 'Deploy a Project', link: '/how-to/deploy-project' },
-            ],
-          },
-          {
-            text: 'Contributors and Maintainers',
-            items: [
-              { text: 'Contributing', link: '/community/contributing' },
-              { text: 'How to Contribute', link: '/contributors/how-to-contribute' },
-              { text: 'Development Setup', link: '/contributing/development-setup' },
-              { text: 'Coding Standards', link: '/contributing/coding-standards' },
-              { text: 'Branching and Versioning', link: '/community/branching' },
-              { text: 'Release Process', link: '/contributing/release-process' },
-              { text: 'XP for Contributors', link: '/contributing/xp-for-contributors' },
-              { text: 'OSS Contribution Roadmap', link: '/contributors/wave-2-plan' },
-              { text: 'Security Policy', link: '/community/security' },
-              { text: 'Support', link: '/community/support' },
-              { text: 'FAQ', link: '/help/faq' },
-            ],
-          },
-        ],
-      },
-      {
-        text: 'Reference',
-        items: [
-          {
-            text: 'CLI',
-            items: [
-              { text: 'CLI Reference', link: '/reference/cli' },
-              { text: 'CLI Hub', link: '/cli/index' },
-              { text: 'Configuration', link: '/cli/configuration' },
-              { text: 'Development Commands', link: '/cli/dev' },
-              { text: 'Authentication Commands', link: '/cli/auth' },
-              { text: 'Battle Commands', link: '/cli/battle' },
-              { text: 'Runner Commands', link: '/cli/runner' },
-              { text: 'Inspect Commands', link: '/cli/inspect' },
-              { text: 'Run Commands', link: '/cli/run' },
-              { text: 'Publish, Rubric & Template Commands', link: '/cli/publish' },
-              { text: 'Lens Commands', link: '/cli/lens' },
-              { text: 'Community Commands', link: '/cli/community' },
-              { text: 'Battle Lifecycle Walkthrough', link: '/cli/lifecycle' },
-              { text: 'Execution Modes', link: '/cli/execution-modes' },
-            ],
-          },
-          {
-            text: 'Platform and API',
-            items: [
-              { text: 'API Overview', link: '/reference/api-overview' },
-              { text: 'Configuration', link: '/reference/configuration' },
-              { text: 'Environment Variables', link: '/reference/environment-variables' },
-              { text: 'Beta Roadmap', link: '/reference/beta-roadmap' },
-              { text: 'Evaluation Methodology', link: '/reference/evaluation-methodology' },
-              { text: 'XP Methodology', link: '/reference/xp-methodology' },
-              { text: 'XP Rules Reference', link: '/reference/xp-rules-reference' },
-              { text: 'Capability Mapper', link: '/architecture/capability-mapper' },
-            ],
-          },
-          {
-            text: 'Database',
-            items: [
-              { text: 'Database Index', link: '/database/index' },
-              { text: 'Schema Overview', link: '/database/schema-overview' },
-              { text: 'Lensers Schema', link: '/database/schema-lensers' },
-              { text: 'Content Schema', link: '/database/schema-content' },
-              { text: 'XP Schema', link: '/database/schema-xp' },
-              { text: 'Analytics Schema', link: '/database/schema-analytics' },
-              { text: 'AI Schema', link: '/database/schema-ai' },
-              { text: 'Battles Schema', link: '/database/schema-battles' },
-              { text: 'Media Schema', link: '/database/schema-media' },
-              { text: 'Tenancy Schema', link: '/database/schema-tenancy' },
-              { text: 'Other Schemas', link: '/database/schema-other' },
-              { text: 'RLS Reference', link: '/database/rls-reference' },
-              { text: 'RPC Reference', link: '/database/rpc-reference' },
-              { text: 'Local Setup', link: '/database/local-setup' },
-              { text: 'Lens Versioning Schema', link: '/database/prompt-versions' },
-            ],
-          },
-        ],
-      },
-      {
-        text: 'Explanation',
-        items: [
-          {
-            text: 'Battle System',
-            items: [
-              { text: 'How Battles Work', link: '/battles/how-battles-work' },
-              { text: 'Hybrid Scoring', link: '/battles/hybrid-scoring' },
-              { text: 'Core Concepts', link: '/explanations/concepts' },
-              { text: 'Domain Model', link: '/explanations/domain-model' },
-              { text: 'Streaming Architecture', link: '/explanations/streaming' },
-              { text: 'System Boundaries', link: '/explanations/system-boundaries' },
-              { text: 'Token Economy', link: '/explanations/token-economy' },
-              { text: 'XP System', link: '/explanations/xp-system' },
-              { text: 'Understanding Your XP', link: '/guides/understanding-your-xp' },
-            ],
-          },
-          {
-            text: 'Runners and Lenses',
-            items: [
-              { text: 'What is a Runner?', link: '/runners/what-is-a-runner' },
-              { text: 'Connect a Runner', link: '/runners/connect-runner' },
-              { text: 'Runner Lifecycle', link: '/runners/runner-lifecycle' },
-              { text: 'Runner Ecosystem Positioning', link: '/runners/positioning' },
-              { text: 'What is a Lens?', link: '/lenses/what-is-a-lens' },
-              { text: 'Lenses in LenserFight', link: '/lenses/lens-usage' },
-              { text: 'Lens Parameters', link: '/lenses/lens-parameters' },
-            ],
-          },
-          {
-            text: 'Community and Use Cases',
-            items: [
-              { text: 'Community Hub', link: '/forum/community-hub' },
-              { text: 'Creator Profiles', link: '/profiles/creator-profiles' },
-              { text: 'LenserFight for Communities', link: '/getting-started/for-communities' },
-              { text: 'LenserFight for Organizations', link: '/getting-started/for-organizations' },
-              { text: 'Mobile Companion App', link: '/mobile/companion-app' },
-              { text: 'Operations Console', link: '/admins/operations-console' },
-              { text: 'Open Core Model', link: '/tools/open-core-model' },
-              { text: 'OSS Contribution Roadmap', link: '/contributors/wave-2-plan' },
-            ],
-          },
-        ],
-      },
-    ],
+    sidebar: {
+      // ── Tutorials ──────────────────────────────────────────────────────────
+      '/tutorials/': [
+        {
+          text: 'Tutorials',
+          items: [
+            { text: 'Getting Started', link: '/tutorials/getting-started/overview' },
+            { text: 'Beginner Walkthroughs', link: '/tutorials/beginner-walkthroughs/what-is-lenserfight' },
+          ],
+        },
+      ],
+      '/tutorials/getting-started/': [
+        {
+          text: 'Getting Started',
+          items: [
+            { text: 'Overview', link: '/tutorials/getting-started/overview' },
+            { text: 'Join the Beta', link: '/tutorials/getting-started/join-beta' },
+            { text: 'Glossary', link: '/tutorials/getting-started/glossary' },
+            { text: 'For Communities', link: '/tutorials/getting-started/for-communities' },
+            { text: 'For Organizations', link: '/tutorials/getting-started/for-organizations' },
+            { text: 'Installation', link: '/tutorials/getting-started/installation' },
+            { text: 'Quickstart', link: '/tutorials/getting-started/quickstart' },
+          ],
+        },
+      ],
+      '/tutorials/beginner-walkthroughs/': [
+        {
+          text: 'Beginner Walkthroughs',
+          items: [
+            { text: 'What is LenserFight?', link: '/tutorials/beginner-walkthroughs/what-is-lenserfight' },
+            { text: 'Your First Battle (No Code)', link: '/tutorials/beginner-walkthroughs/your-first-battle' },
+            { text: 'First Battle via CLI', link: '/tutorials/beginner-walkthroughs/first-battle-cli' },
+            { text: 'Connect an OpenAI Agent', link: '/tutorials/beginner-walkthroughs/connect-openai-agent' },
+            { text: 'Writing Great Lenses', link: '/tutorials/beginner-walkthroughs/writing-great-prompts' },
+            { text: 'First Agent', link: '/tutorials/beginner-walkthroughs/first-agent' },
+          ],
+        },
+      ],
+
+      // ── How-to ─────────────────────────────────────────────────────────────
+      '/how-to/': [
+        {
+          text: 'How-to',
+          items: [
+            { text: 'Battle & API Tasks', link: '/how-to/battle-api/connect-your-agent' },
+            { text: 'Contributors & Maintainers', link: '/how-to/contributors/contributing' },
+          ],
+        },
+      ],
+      '/how-to/battle-api/': [
+        {
+          text: 'Battle & API Tasks',
+          items: [
+            { text: 'Connect Your Agent', link: '/how-to/battle-api/connect-your-agent' },
+            { text: 'Run Your First Battle', link: '/how-to/battle-api/run-your-first-battle' },
+            { text: 'Share a Result', link: '/how-to/battle-api/share-a-result' },
+            { text: 'Write a Battle Rubric', link: '/how-to/battle-api/write-a-battle-rubric' },
+            { text: 'Understanding Your XP', link: '/how-to/battle-api/understanding-your-xp' },
+            { text: 'Call the API', link: '/how-to/battle-api/call-the-api' },
+            { text: 'Integrate the API', link: '/how-to/battle-api/integrate-api' },
+            { text: 'Create a Battle Template', link: '/how-to/battle-api/create-battle-template' },
+            { text: 'Manage Battle Invitations', link: '/how-to/battle-api/manage-invitations' },
+            { text: 'Debug Agents', link: '/how-to/battle-api/debug-agents' },
+            { text: 'Deploy a Project', link: '/how-to/battle-api/deploy-project' },
+          ],
+        },
+      ],
+      '/how-to/contributors/': [
+        {
+          text: 'Contributors & Maintainers',
+          items: [
+            { text: 'Contributing', link: '/how-to/contributors/contributing' },
+            { text: 'How to Contribute', link: '/how-to/contributors/how-to-contribute' },
+            { text: 'Development Setup', link: '/how-to/contributors/development-setup' },
+            { text: 'Coding Standards', link: '/how-to/contributors/coding-standards' },
+            { text: 'Branching and Versioning', link: '/how-to/contributors/branching' },
+            { text: 'Release Process', link: '/how-to/contributors/release-process' },
+            { text: 'XP for Contributors', link: '/how-to/contributors/xp-for-contributors' },
+            { text: 'OSS Contribution Roadmap', link: '/how-to/contributors/wave-2-plan' },
+            { text: 'Code of Conduct', link: '/how-to/contributors/code-of-conduct' },
+            { text: 'Security Policy', link: '/how-to/contributors/security' },
+            { text: 'Support', link: '/how-to/contributors/support' },
+            { text: 'FAQ', link: '/how-to/contributors/faq' },
+          ],
+        },
+      ],
+
+      // ── Reference ──────────────────────────────────────────────────────────
+      '/reference/': [
+        {
+          text: 'Reference',
+          items: [
+            { text: 'CLI', link: '/reference/cli/index' },
+            { text: 'Platform & API', link: '/reference/platform-api/api-overview' },
+            { text: 'Database', link: '/reference/database/schema-overview' },
+          ],
+        },
+      ],
+      '/reference/cli/': [
+        {
+          text: 'CLI',
+          items: [
+            { text: 'CLI Hub', link: '/reference/cli/index' },
+            { text: 'CLI Overview', link: '/reference/cli/cli-reference' },
+            { text: 'Configuration', link: '/reference/cli/configuration' },
+            { text: 'Development Commands', link: '/reference/cli/dev' },
+            { text: 'Authentication Commands', link: '/reference/cli/auth' },
+            { text: 'Battle Commands', link: '/reference/cli/battle' },
+            { text: 'Agent Commands', link: '/reference/cli/agent' },
+            { text: 'Inspect Commands', link: '/reference/cli/inspect' },
+            { text: 'Run Commands', link: '/reference/cli/run' },
+            { text: 'Publish, Rubric & Template Commands', link: '/reference/cli/publish' },
+            { text: 'Lens Commands', link: '/reference/cli/lens' },
+            { text: 'Community Commands', link: '/reference/cli/community' },
+            { text: 'Battle Lifecycle Walkthrough', link: '/reference/cli/lifecycle' },
+            { text: 'Execution Modes', link: '/reference/cli/execution-modes' },
+          ],
+        },
+      ],
+      '/reference/platform-api/': [
+        {
+          text: 'Platform & API',
+          items: [
+            { text: 'API Overview', link: '/reference/platform-api/api-overview' },
+            { text: 'Configuration', link: '/reference/platform-api/configuration' },
+            { text: 'Environment Variables', link: '/reference/platform-api/environment-variables' },
+            { text: 'Beta Roadmap', link: '/reference/platform-api/beta-roadmap' },
+            { text: 'Evaluation Methodology', link: '/reference/platform-api/evaluation-methodology' },
+            { text: 'XP Methodology', link: '/reference/platform-api/xp-methodology' },
+            { text: 'XP Rules Reference', link: '/reference/platform-api/xp-rules-reference' },
+            { text: 'Capability Mapper', link: '/reference/platform-api/capability-mapper' },
+          ],
+        },
+      ],
+      '/reference/database/': [
+        {
+          text: 'Database',
+          items: [
+            { text: 'Database Index', link: '/reference/database/index' },
+            { text: 'Schema Overview', link: '/reference/database/schema-overview' },
+            { text: 'Lensers Schema', link: '/reference/database/schema-lensers' },
+            { text: 'Content Schema', link: '/reference/database/schema-content' },
+            { text: 'XP Schema', link: '/reference/database/schema-xp' },
+            { text: 'Analytics Schema', link: '/reference/database/schema-analytics' },
+            { text: 'AI Schema', link: '/reference/database/schema-ai' },
+            { text: 'Battles Schema', link: '/reference/database/schema-battles' },
+            { text: 'Media Schema', link: '/reference/database/schema-media' },
+            { text: 'Tenancy Schema', link: '/reference/database/schema-tenancy' },
+            { text: 'Other Schemas', link: '/reference/database/schema-other' },
+            { text: 'RLS Reference', link: '/reference/database/rls-reference' },
+            { text: 'RPC Reference', link: '/reference/database/rpc-reference' },
+            { text: 'Local Setup', link: '/reference/database/local-setup' },
+            { text: 'Lens Versioning Schema', link: '/reference/database/prompt-versions' },
+          ],
+        },
+      ],
+
+      // ── Explanation ────────────────────────────────────────────────────────
+      '/explanation/': [
+        {
+          text: 'Explanation',
+          items: [
+            { text: 'Battle System', link: '/explanation/battle-system/how-battles-work' },
+            { text: 'Agents & Lenses', link: '/explanation/agents-lenses/what-is-an-agent' },
+            { text: 'Community & Use Cases', link: '/explanation/community/community-hub' },
+          ],
+        },
+      ],
+      '/explanation/battle-system/': [
+        {
+          text: 'Battle System',
+          items: [
+            { text: 'How Battles Work', link: '/explanation/battle-system/how-battles-work' },
+            { text: 'Hybrid Scoring', link: '/explanation/battle-system/hybrid-scoring' },
+            { text: 'Core Concepts', link: '/explanation/battle-system/concepts' },
+            { text: 'Domain Model', link: '/explanation/battle-system/domain-model' },
+            { text: 'Streaming Architecture', link: '/explanation/battle-system/streaming' },
+            { text: 'System Boundaries', link: '/explanation/battle-system/system-boundaries' },
+            { text: 'Token Economy', link: '/explanation/battle-system/token-economy' },
+            { text: 'XP System', link: '/explanation/battle-system/xp-system' },
+          ],
+        },
+      ],
+      '/explanation/agents-lenses/': [
+        {
+          text: 'Agents & Lenses',
+          items: [
+            { text: 'What is an Agent?', link: '/explanation/agents-lenses/what-is-an-agent' },
+            { text: 'Connect an Agent', link: '/explanation/agents-lenses/connect-agent' },
+            { text: 'Agent Lifecycle', link: '/explanation/agents-lenses/agent-lifecycle' },
+            { text: 'Agent Ecosystem Positioning', link: '/explanation/agents-lenses/positioning' },
+            { text: 'What is a Lens?', link: '/explanation/agents-lenses/what-is-a-lens' },
+            { text: 'Lenses in LenserFight', link: '/explanation/agents-lenses/lens-usage' },
+            { text: 'Lens Parameters', link: '/explanation/agents-lenses/lens-parameters' },
+          ],
+        },
+      ],
+      '/explanation/community/': [
+        {
+          text: 'Community & Use Cases',
+          items: [
+            { text: 'Community Hub', link: '/explanation/community/community-hub' },
+            { text: 'Creator Profiles', link: '/explanation/community/creator-profiles' },
+            { text: 'Mobile Companion App', link: '/explanation/community/companion-app' },
+            { text: 'Operations Console', link: '/explanation/community/operations-console' },
+            { text: 'Open Core Model', link: '/explanation/community/open-core-model' },
+          ],
+        },
+      ],
+    },
   },
 })

@@ -1,18 +1,22 @@
 import consola from 'consola';
 import { toSnakeCaseKeys } from '@lenserfight/utils/text';
-import { resolveConfig, type LenserfightConfig } from '../config/project-config';
+import { resolveConfig, loadUserConfig, saveUserConfig, type LenserfightConfig } from '../config/project-config';
 import { reportCliError } from './error-reporter';
 
 export interface RpcOptions {
   requireAuth?: boolean;
   useServiceRole?: boolean;
   useDeveloperToken?: boolean;
+  /** Explicitly suppress any stored token — use for anon RPC calls. */
+  noAuth?: boolean;
 }
 
 export function resolveBearerToken(
   config: LenserfightConfig,
   options: RpcOptions = {}
 ): string | undefined {
+  if (options.noAuth) return undefined;
+
   const developerTokenIsActive =
     !!config.developerToken &&
     (!config.developerTokenExpiresAt ||
@@ -33,17 +37,52 @@ export function resolveBearerToken(
   return undefined
 }
 
+/** Silently refresh the stored access token using the refresh token if it exists. */
+async function tryRefreshToken(config: LenserfightConfig): Promise<void> {
+  const user = loadUserConfig();
+  if (!user.authRefreshToken) return;
+
+  const res = await fetch(
+    `${config.supabaseUrl}/auth/v1/token?grant_type=refresh_token`,
+    {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        apikey: config.supabaseAnonKey!,
+      },
+      body: JSON.stringify({ refresh_token: user.authRefreshToken }),
+    }
+  );
+
+  if (!res.ok) return; // refresh failed — let the RPC call produce a proper error
+
+  const data = await res.json();
+  saveUserConfig({
+    authToken: data.access_token,
+    authRefreshToken: data.refresh_token,
+    authExpiresAt: new Date(Date.now() + data.expires_in * 1000).toISOString(),
+  });
+}
+
 export async function callRpc<T = unknown>(
   functionName: string,
   params: Record<string, unknown> = {},
   options: RpcOptions = {}
 ): Promise<T> {
-  const config = resolveConfig();
+  let config = resolveConfig();
 
   if (!config.supabaseAnonKey) {
     throw new Error(
       'Supabase anon key not found. Set SUPABASE_ANON_KEY in your environment or run `lenserfight init --mode cloud`.'
     );
+  }
+
+  // Proactively refresh if the stored access token is expired and a refresh token exists.
+  if (!options.noAuth && !options.useServiceRole && config.authToken && config.authExpiresAt) {
+    if (new Date(config.authExpiresAt) <= new Date()) {
+      await tryRefreshToken(config);
+      config = resolveConfig(); // reload after refresh
+    }
   }
 
   const headers: Record<string, string> = {
