@@ -10,7 +10,7 @@ import { ConfirmModal } from '@lenserfight/ui/modals'
 import { timeAgo } from '@lenserfight/utils/date'
 import { FEATURES } from '@lenserfight/utils/env'
 import { useQuery } from '@tanstack/react-query'
-import { ExternalLink, Check, Camera, Eye, Lock, MessageSquareDashed, Coins } from 'lucide-react'
+import { ExternalLink, Check, Camera, Eye, Lock, MessageSquareDashed, Coins, ImageIcon } from 'lucide-react'
 import { AgentsTab } from '../components/AgentsTab'
 import { ApiKeysTab } from '../components/ApiKeysTab'
 import { GeneralTab } from '../components/GeneralTab'
@@ -311,6 +311,12 @@ export const SettingsPage: React.FC = () => {
 
           {/* External Link Style Tabs */}
           <div className="pt-4 border-t border-gray-100 dark:border-gray-800 mt-4 space-y-1">
+            <Link
+              to="/media"
+              className="flex items-center justify-between w-full text-left px-4 py-2.5 rounded-lg text-sm font-medium text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-gray-200 transition-colors"
+            >
+              Media Gallery <ImageIcon size={14} />
+            </Link>
             <a
               href={`${import.meta.env.VITE_WEB_BASE_URL ?? 'https://lenserfight.com'}/policies/privacy`}
               target="_blank"

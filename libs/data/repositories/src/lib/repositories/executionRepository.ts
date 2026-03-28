@@ -62,7 +62,6 @@ export class SupabaseExecutionRepository implements ExecutionRepositoryPort {
       contentJson: (row.content_json as unknown) ?? null,
       visibility: (row.visibility as ExecutionArtifact['visibility']) ?? 'private',
       isPrimaryOutput: (row.is_primary_output as boolean) ?? false,
-      mediaObjectId: (row.media_object_id as string | null) ?? null,
       createdAt: row.created_at as string,
     }
   }
@@ -146,7 +145,7 @@ export class SupabaseExecutionRepository implements ExecutionRepositoryPort {
       .schema('execution')
       .from('artifacts')
       .select(
-        'id, run_id, artifact_kind, content_text, content_json, visibility, is_primary_output, media_object_id, created_at',
+        'id, run_id, artifact_kind, content_text, content_json, visibility, is_primary_output, created_at',
       )
       .eq('run_id', runId)
       .order('is_primary_output', { ascending: false })
