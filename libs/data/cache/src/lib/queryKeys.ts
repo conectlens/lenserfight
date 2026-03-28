@@ -123,6 +123,7 @@ export const queryKeys = {
     edges: (id: string) => [...queryKeys.workflows.all, 'edges', id] as const,
     run: (runId: string) => [...queryKeys.workflows.all, 'run', runId] as const,
     nodeResults: (runId: string) => [...queryKeys.workflows.all, 'nodeResults', runId] as const,
+    versions: (id: string) => [...queryKeys.workflows.all, 'versions', id] as const,
   },
   agents: {
     all: ['agents'] as const,
