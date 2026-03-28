@@ -243,6 +243,7 @@ function WorkflowBuilderCanvasInner({
       const eds = flowEdgesRef.current
       const upsertNodes: UpsertNodeInput[] = nds.map((n, i) => {
         const d = n.data as WorkflowNodeData & { lens_id?: string }
+        const cfg = d.config && Object.keys(d.config).length > 0 ? d.config : undefined
         return {
           id: n.id.startsWith('tmp-') ? undefined : n.id,
           lens_id: d.lens_id ?? n.id,
@@ -251,6 +252,7 @@ function WorkflowBuilderCanvasInner({
           ordinal: d.ordinal ?? i,
           position_x: n.position.x,
           position_y: n.position.y,
+          config: cfg ?? null,
         }
       })
       const upsertEdges: UpsertEdgeInput[] = eds

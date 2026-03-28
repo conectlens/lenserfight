@@ -81,4 +81,16 @@ export const workflowsService = {
 
   getNodeResults: (runId: string): Promise<WorkflowNodeResultRecord[]> =>
     workflowsRepo.getNodeResults(runId),
+
+  updateNodeResult: (
+    runId: string,
+    nodeId: string,
+    status: string,
+    outputData?: Record<string, unknown>,
+    errorMessage?: string
+  ): Promise<void> =>
+    workflowsRepo.updateNodeResult(runId, nodeId, status, outputData, errorMessage),
+
+  updateRunStatus: (runId: string, status: string): Promise<void> =>
+    workflowsRepo.updateRunStatus(runId, status),
 }
