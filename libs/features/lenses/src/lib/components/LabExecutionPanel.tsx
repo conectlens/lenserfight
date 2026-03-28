@@ -1,6 +1,6 @@
 import { AIProvider, AIProviderModel, LensParam, FundingSource, UserApiKey, WalletBalance, LensVersionParam } from '@lenserfight/types'
 import { Button } from '@lenserfight/ui/components'
-import { Loader2, Play, Square } from 'lucide-react'
+import { Lock, Loader2, Play, Square } from 'lucide-react'
 import React, { useState } from 'react'
 
 import { TriggerLabExecutionDTO } from '../hooks/useLabController'
@@ -44,6 +44,14 @@ interface LabExecutionPanelProps {
   isLoadingVersionParams?: boolean
   /** Upload a file for a file-type param. Returns the media_object_id. */
   onFileParamUpload?: (key: string, file: File) => Promise<string>
+  /** When true, the entire panel is replaced with a sign-in/profile gate. */
+  isLocked?: boolean
+  /** Called when the locked CTA is clicked. */
+  onLockedAction?: () => void
+  /** Optional message shown while the panel is locked. */
+  lockedTitle?: string
+  lockedDescription?: string
+  lockedActionLabel?: string
   // Funding source
   fundingSource?: FundingSource
   onFundingSourceChange?: (source: FundingSource) => void
@@ -95,6 +103,11 @@ export const LabExecutionPanel: React.FC<LabExecutionPanelProps> = ({
   onAddLocalKey,
   onRemoveLocalKey,
   onProviderDropdownOpen,
+  isLocked = false,
+  onLockedAction,
+  lockedTitle = 'Run Lens',
+  lockedDescription = 'Sign in or register with a Lenser profile to run this lens and manage executions.',
+  lockedActionLabel = 'Sign in or register',
 }) => {
   const form = useLabParamForm(lensContent, params, versionParams)
 
@@ -127,6 +140,38 @@ export const LabExecutionPanel: React.FC<LabExecutionPanelProps> = ({
     (isLocalByok
       ? !selectedLocalKeyId || !selectedModelKey
       : !effectiveProviderKey || !selectedModelKey)
+
+  if (isLocked) {
+    return (
+      <div className="flex flex-col gap-4 rounded-2xl border border-surface-border bg-surface-base p-4">
+        <div className="flex items-center justify-between">
+          <h4 className="text-sm font-semibold text-greyscale-900 dark:text-greyscale-50">{lockedTitle}</h4>
+          <span className="flex items-center gap-1.5 text-xs text-greyscale-400">
+            <Lock size={12} />
+            Locked
+          </span>
+        </div>
+
+        <div className="rounded-2xl border border-dashed border-surface-border bg-surface-raised p-4">
+          <p className="text-sm font-semibold text-greyscale-900 dark:text-greyscale-50">
+            Sign in or register to continue.
+          </p>
+          <p className="mt-1 text-sm leading-6 text-greyscale-500 dark:text-greyscale-400">
+            {lockedDescription}
+          </p>
+          <div className="mt-4 flex flex-wrap gap-2">
+            <Button
+              type="button"
+              onClick={onLockedAction}
+              className="w-auto"
+            >
+              {lockedActionLabel}
+            </Button>
+          </div>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <>
