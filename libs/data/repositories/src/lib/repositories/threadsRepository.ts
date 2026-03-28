@@ -645,7 +645,7 @@ export class SupabaseThreadsRepository implements ThreadsRepositoryPort {
       return {
         id: row.id as string,
         title: row.title as string,
-        content: '',
+        content: (row.content as string) ?? '',
         author: {
           id: (author.id as string) ?? '',
           displayName: (author.display_name as string) ?? 'Unknown',

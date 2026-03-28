@@ -46,7 +46,7 @@ export const LensRelatedCard: React.FC<LensRelatedCardProps> = ({
   return (
     <div
       onClick={() => onClick(lens.id)}
-      className="group relative flex cursor-pointer items-center gap-4 rounded-2xl border border-surface-border bg-surface-base p-4 pr-10 shadow-sm transition-colors hover:border-status-blue"
+      className="group relative flex cursor-pointer items-center gap-4 rounded-2xl border border-surface-border bg-surface-base p-4 pr-10 shadow-sm transition-colors hover:border-primary-yellow-500"
     >
       {!hideAuthor && (
         <div
@@ -66,7 +66,7 @@ export const LensRelatedCard: React.FC<LensRelatedCardProps> = ({
 
       <div className="flex-1 min-w-0">
         <h4
-          className={`line-clamp-2 font-bold text-greyscale-900 transition-colors group-hover:text-status-blue dark:text-greyscale-0 ${hideAuthor ? 'text-base' : 'text-sm'}`}
+          className={`line-clamp-2 font-bold text-greyscale-900 transition-colors group-hover:text-primary-yellow-600 dark:text-greyscale-0 ${hideAuthor ? 'text-base' : 'text-sm'}`}
         >
           {lens.title}
         </h4>

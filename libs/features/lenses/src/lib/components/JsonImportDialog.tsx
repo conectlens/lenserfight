@@ -1,6 +1,6 @@
 import React, { useMemo, useState } from 'react'
 import { Clipboard, Check, Zap } from 'lucide-react'
-import { Dialog } from '@lenserfight/ui/overlays'
+import { Dialog, ModalFooter } from '@lenserfight/ui/overlays'
 import { Button } from '@lenserfight/ui/components'
 import { LensVersionParam, LensParam } from '@lenserfight/types'
 import { coerceJsonImport, buildJsonTemplate, ImportResult } from '../hooks/useParamImport'
@@ -82,6 +82,16 @@ export const JsonImportDialog: React.FC<JsonImportDialogProps> = ({
       title="Import parameters from JSON"
       description="Paste a JSON object. Keys must match parameter labels."
       maxWidth="max-w-lg"
+      footer={
+        <ModalFooter
+          leftButton={{ label: 'Cancel', onClick: handleClose, variant: 'ghost' }}
+          primaryButton={{
+            label: `Apply${matchedCount > 0 ? ` ${matchedCount} field${matchedCount !== 1 ? 's' : ''}` : ''}`,
+            onClick: handleApply,
+            disabled: !canApply,
+          }}
+        />
+      }
     >
       <div className="flex flex-col gap-4">
         <textarea
@@ -191,19 +201,6 @@ export const JsonImportDialog: React.FC<JsonImportDialogProps> = ({
           </div>
         )}
 
-        <div className="flex items-center justify-end gap-2 pt-2 border-t border-gray-100 dark:border-gray-800">
-          <Button type="button" variant="ghost" size="sm" onClick={handleClose}>
-            Cancel
-          </Button>
-          <Button
-            type="button"
-            size="sm"
-            onClick={handleApply}
-            disabled={!canApply}
-          >
-            Apply {matchedCount > 0 ? `${matchedCount} field${matchedCount !== 1 ? 's' : ''}` : ''}
-          </Button>
-        </div>
       </div>
     </Dialog>
   )

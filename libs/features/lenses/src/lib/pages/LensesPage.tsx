@@ -1,17 +1,14 @@
 import { useAuth } from '@lenserfight/features/auth'
 import { useLensesFeed } from '@lenserfight/features/home'
-import { CreateLenserProfileModal } from '@lenserfight/features/onboarding'
-import { Button } from '@lenserfight/ui/components'
-import { SEOHead } from '@lenserfight/ui/components'
+import { Button, PageHeader, SEOHead } from '@lenserfight/ui/components'
 import { buildAuthReturnUrl } from '@lenserfight/utils/dom'
-import { Plus } from 'lucide-react'
+import { Plus, Search } from 'lucide-react'
 import React, { useState, useCallback, useEffect, useMemo, useRef } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 
 import { CreateLensModal } from '../components/CreateLensModal'
 import { LensesGrid } from '../components/LensesGrid'
-import { LensesSearchBar } from '../components/LensesSearchBar'
-import { LensesSortDropdown } from '../components/LensesSortDropdown'
+import { LensesSortDropdown, type LensesSortOrder } from '../components/LensesSortDropdown'
 import { LensesTagFilter } from '../components/LensesTagFilter'
 import { useAuthenticatedLenser } from '../hooks/useAuthenticatedLenser'
 import { useCreateLens } from '../hooks/useCreateLens'
@@ -24,12 +21,11 @@ export const LensesPage: React.FC = () => {
 
   // URL-synced filters
   const selectedTag = searchParams.get('tag')
-  const sortOrder = (searchParams.get('sort') as 'newest' | 'popular') || 'popular'
+  const sortOrder = (searchParams.get('sort') as LensesSortOrder) || 'popular'
   const searchQuery = searchParams.get('q') ?? ''
 
   // Local state for search input — debounced into URL
   const [searchInput, setSearchInput] = useState(searchQuery)
-  const [showProfileModal, setShowProfileModal] = useState(false)
 
   useEffect(() => {
     const t = setTimeout(() => {
@@ -56,7 +52,7 @@ export const LensesPage: React.FC = () => {
     )
   }
 
-  const handleSortChange = (order: 'newest' | 'popular') => {
+  const handleSortChange = (order: LensesSortOrder) => {
     setSearchParams(
       (prev) => {
         if (order !== 'popular') prev.set('sort', order)
@@ -124,7 +120,7 @@ export const LensesPage: React.FC = () => {
       return
     }
     if (!hasLenser) {
-      setShowProfileModal(true)
+      navigate('/onboarding', { state: { from: '/lenses' } })
     } else {
       openModal()
     }
@@ -135,42 +131,52 @@ export const LensesPage: React.FC = () => {
   }
 
   return (
-    <div className="max-w-7xl mx-auto pb-12 px-2 sm:px-4 lg:px-8">
+    <div className="">
       <SEOHead type="lenses-list" />
 
       {/* Page Header */}
-      <div className="mb-6 sm:mb-8 mt-2">
-        <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white mb-2">
-          Discover Lenses
-        </h1>
-        <p className="text-gray-600 dark:text-gray-400 text-base sm:text-lg">
-          Find, share, and remix the best AI lenses from the community.
-        </p>
-      </div>
+      <PageHeader
+        title="Discover Lenses"
+        description="Find, share, and remix the best AI lenses from the community."
+        className="sm:mb-8 mt-2"
+        actions={
+          <Button
+            onClick={handleCreateClick}
+            className="w-auto px-4 gap-2 flex items-center whitespace-nowrap"
+          >
+            <Plus size={18} />
+            <span className="hidden sm:inline">Create Lens</span>
+            <span className="sm:hidden">Create</span>
+          </Button>
+        }
+      />
 
       {/* Controls Bar */}
       <div className="sticky top-[56px] z-20 bg-gray-50/95 dark:bg-gray-900/95 backdrop-blur py-3 border-b border-gray-100/50 dark:border-gray-800/50 transition-all mb-6 -mx-2 sm:-mx-4 lg:-mx-8 px-2 sm:px-4 lg:px-8">
-        <div className="w-full">
-          <LensesSearchBar value={searchInput} onChange={setSearchInput} />
+        <div className="w-full mb-3">
+          <div className="relative w-full">
+            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+              <Search className="h-5 w-5 text-gray-400 dark:text-gray-500" />
+            </div>
+            <input
+              type="text"
+              className="block w-full pl-10 pr-3 py-2.5 border border-gray-200 dark:border-gray-700 rounded-xl leading-5 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary sm:text-sm transition-all shadow-sm"
+              placeholder="Search for lenses..."
+              value={searchInput}
+              onChange={(e) => setSearchInput(e.target.value)}
+            />
+          </div>
         </div>
 
-        <div className="flex flex-col sm:flex-row gap-4 sm:items-center justify-between min-w-0">
+        <div className="flex flex-col sm:flex-row gap-4 sm:items-center justify-between min-w-0 pt-2">
           <div className="w-full sm:w-auto max-w-full min-w-0">
             <LensesTagFilter selectedTag={selectedTag} onSelect={handleTagSelect} />
           </div>
 
           <div className="flex items-center gap-2 sm:gap-4 shrink-0 justify-between sm:justify-end">
             <div className="min-w-[120px]">
-              <LensesSortDropdown value={sortOrder} onChange={handleSortChange} />
+              <LensesSortDropdown value={sortOrder} onChange={handleSortChange} isAuthenticated={isAuthenticated} />
             </div>
-            <Button
-              onClick={handleCreateClick}
-              className="w-auto px-4 gap-2 flex items-center whitespace-nowrap"
-            >
-              <Plus size={18} />
-              <span className="hidden sm:inline">Create Lens</span>
-              <span className="sm:hidden">Create</span>
-            </Button>
           </div>
         </div>
       </div>
@@ -205,7 +211,6 @@ export const LensesPage: React.FC = () => {
         error={createError}
       />
 
-      {showProfileModal && <CreateLenserProfileModal onClose={() => setShowProfileModal(false)} />}
     </div>
   )
 }

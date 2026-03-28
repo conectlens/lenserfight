@@ -11,6 +11,7 @@ import { timeAgo } from '@lenserfight/utils/date'
 import { FEATURES } from '@lenserfight/utils/env'
 import { useQuery } from '@tanstack/react-query'
 import { ExternalLink, Check, Camera, Eye, Lock, MessageSquareDashed, Coins } from 'lucide-react'
+import { AgentsTab } from '../components/AgentsTab'
 import { ApiKeysTab } from '../components/ApiKeysTab'
 import { GeneralTab } from '../components/GeneralTab'
 import React, { useState, useEffect, useMemo } from 'react'
@@ -82,14 +83,18 @@ export const SettingsPage: React.FC = () => {
   // Tab Logic
   const validTabs = useMemo(() => {
     const tabs = ['account', 'profile', 'api-keys', 'general']
+    if (lenser?.type === 'human') {
+      tabs.push('agents')
+    }
     if (FEATURES.NOTIFICATIONS) {
       tabs.push('notifications')
     }
     return tabs
-  }, [])
+  }, [lenser?.type])
 
   const tabLabel = (t: string) => {
     if (t === 'api-keys') return 'API Keys'
+    if (t === 'agents') return 'Agents'
     return t.charAt(0).toUpperCase() + t.slice(1)
   }
 
@@ -637,18 +642,24 @@ export const SettingsPage: React.FC = () => {
           {/* GENERAL TAB */}
           {activeTab === 'general' && <GeneralTab />}
 
+          {/* AGENTS TAB */}
+          {activeTab === 'agents' && lenser?.type === 'human' && lenser.id && (
+            <AgentsTab lenserId={lenser.id} />
+          )}
+
           {/* NOTIFICATIONS TAB */}
           {activeTab === 'notifications' && FEATURES.NOTIFICATIONS && (
             <div>
               <div className="flex items-center justify-between mb-2">
                 <h2 className="text-xl font-bold text-gray-900 dark:text-white">Notifications</h2>
                 {notifications.some((n) => !n.isRead) && (
-                  <button
+                  <Button
+                    variant="ghost"
                     onClick={handleMarkAllRead}
-                    className="text-sm font-medium text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white flex items-center gap-1 whitespace-nowrap"
+                    className="flex items-center gap-1 w-auto whitespace-nowrap"
                   >
                     <Check size={16} /> Mark all read
-                  </button>
+                  </Button>
                 )}
               </div>
               <p className="text-sm text-gray-500 dark:text-gray-400 mb-6 border-b border-gray-100 dark:border-gray-800 pb-6">

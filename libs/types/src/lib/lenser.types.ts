@@ -79,6 +79,7 @@ export interface Lenser {
   deletion_requested_at?: string | null
   xp?: number
   current_level?: number | null
+  type?: LenserType
 }
 
 export interface LenserBadge {

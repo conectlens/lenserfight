@@ -1,20 +1,15 @@
 import { walletService } from '@lenserfight/data/repositories'
 import { queryKeys } from '@lenserfight/data/cache'
 import { WalletProduct } from '@lenserfight/types'
-import { AlertCircle, Loader2, XCircle } from 'lucide-react'
+import { AlertCircle, XCircle } from 'lucide-react'
 import React, { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { useAuth } from '@lenserfight/features/auth'
-import { SEOHead } from '@lenserfight/ui/components'
+import { Button, SEOHead } from '@lenserfight/ui/components'
 import { useCheckoutStatus } from '../hooks/useCheckoutStatus'
 import { CheckoutSuccessView } from '../views/CheckoutSuccessView'
 import { CheckoutErrorView } from '../views/CheckoutErrorView'
-
-function safeRenderHtml(html: string): string {
-  return html
-    .replace(/<(?!\/?(?:p|strong|em|br)\b)[^>]+>/gi, '')
-    .trim()
-}
+import { sanitizeProductDescription } from '../utils/sanitizeProductDescription'
 
 const POPULAR_INDEX = 1
 
@@ -25,7 +20,7 @@ const CreditPackCard: React.FC<{
   buying: boolean
 }> = ({ product, index, onBuy, buying }) => {
   const isPopular = index === POPULAR_INDEX
-  const safeDescription = safeRenderHtml(product.description ?? '')
+  const safeDescription = sanitizeProductDescription(product.description ?? '')
 
   return (
     <div
@@ -53,17 +48,16 @@ const CreditPackCard: React.FC<{
         one-time · no subscription
       </div>
 
-      <button
+      <Button
+        variant={isPopular ? 'primary' : 'secondary'}
         disabled={buying}
-        className={`mt-auto w-full py-2.5 rounded-xl text-sm font-semibold transition-colors flex items-center justify-center gap-2 ${isPopular
-          ? 'bg-primary hover:bg-yellow-300 text-gray-900'
-          : 'bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-900 dark:text-white'
-          } disabled:opacity-50 disabled:cursor-not-allowed`}
+        isLoading={buying}
         onClick={() => onBuy(product)}
+        fullWidth
+        className="mt-auto"
       >
-        {buying && <Loader2 size={14} className="animate-spin" />}
         {buying ? 'Redirecting…' : 'Buy now'}
-      </button>
+      </Button>
     </div>
   )
 }
@@ -121,7 +115,7 @@ const StoreProductsView: React.FC = () => {
   }
 
   return (
-    <div className="max-w-4xl mx-auto py-16 px-4">
+    <div className="">
       <SEOHead type="default" overrideTitle="Plans & Pricing — LenserFight" />
 
       <div className="text-center mb-12">

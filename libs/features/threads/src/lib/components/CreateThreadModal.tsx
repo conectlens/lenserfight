@@ -2,8 +2,7 @@ import { Globe, Lock } from 'lucide-react'
 import React, { useState, useRef, useEffect } from 'react'
 import { createPortal } from 'react-dom'
 
-import { Button } from '@lenserfight/ui/components'
-import { Modal } from '@lenserfight/ui/modals'
+import { Dialog, ModalFooter } from '@lenserfight/ui/overlays'
 import { RichMentionInput, RichMentionInputHandle } from '@lenserfight/ui/forms'
 import { SelectField } from '@lenserfight/ui/forms'
 import { lensesService } from '@lenserfight/data/repositories'
@@ -236,11 +235,11 @@ export const CreateThreadModal: React.FC<CreateThreadModalProps> = ({
   ]
 
   return (
-    <Modal
-      isOpen={isOpen}
+    <Dialog
+      open={isOpen}
       onClose={handleClose}
       title={initialData ? 'Edit Post' : 'Create New Post'}
-      panelClassName="sm:max-w-xl md:max-w-2xl lg:max-w-3xl"
+      maxWidth="max-w-3xl"
     >
       <form onSubmit={handleSubmit} className="space-y-6" onKeyDown={handleKeyDown}>
         <div className="space-y-4">
@@ -338,21 +337,11 @@ export const CreateThreadModal: React.FC<CreateThreadModalProps> = ({
           </div>
         )}
 
-        <div className="flex gap-3 pt-2">
-          <Button
-            type="button"
-            variant="secondary"
-            onClick={handleClose}
-            disabled={isSubmitting}
-            className="bg-gray-100 dark:bg-gray-700 border-transparent hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-200"
-          >
-            Cancel
-          </Button>
-          <Button type="submit" variant="primary" isLoading={isSubmitting}>
-            {initialData ? 'Update' : 'Publish'}
-          </Button>
-        </div>
+        <ModalFooter
+          leftButton={{ label: 'Cancel', onClick: handleClose, disabled: isSubmitting, variant: 'secondary' }}
+          primaryButton={{ label: initialData ? 'Update' : 'Publish', type: 'submit', isLoading: isSubmitting }}
+        />
       </form>
-    </Modal>
+    </Dialog>
   )
 }

@@ -10,11 +10,7 @@ import {
 import React, { useCallback, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 
-import { Avatar } from '@lenserfight/ui/components'
-import { Button } from '@lenserfight/ui/components'
-import { Card } from '@lenserfight/ui/components'
-import { SEOHead } from '@lenserfight/ui/components'
-import { TagBadge } from '@lenserfight/ui/components'
+import { Avatar, Button, Card, EmptyState, SEOHead, TagBadge } from '@lenserfight/ui/components'
 import { useAuth } from '@lenserfight/features/auth'
 import {
   useThreadsFeed,
@@ -31,9 +27,9 @@ import {
   useUnfollowLenser,
 } from '@lenserfight/features/home'
 import { useLenser } from '@lenserfight/features/profile'
-import { CreateLenserProfileModal } from '@lenserfight/features/onboarding'
 import { CreateThreadModal } from '@lenserfight/features/threads'
 import { buildAuthReturnUrl } from '@lenserfight/utils/dom'
+import { HomePromoSection } from '../components/HomePromoSection'
 import { ThreadsList } from '../components/ThreadsList'
 
 export const HomePage: React.FC = () => {
@@ -44,9 +40,15 @@ export const HomePage: React.FC = () => {
   const showForYou = isAuthenticated && hasLenser
 
   const [isCreateModalOpen, setIsCreateModalOpen] = React.useState(false)
-  const [isProfileModalOpen, setIsProfileModalOpen] = React.useState(false)
   const [feedTab, setFeedTab] = React.useState<'for_you' | 'trending'>('for_you')
   const activeTab = showForYou ? feedTab : 'trending'
+  const [loadSidebarWidgets, setLoadSidebarWidgets] = React.useState(false)
+  const sidebarWidgetsLoading = !loadSidebarWidgets
+
+  React.useEffect(() => {
+    const raf = window.requestAnimationFrame(() => setLoadSidebarWidgets(true))
+    return () => window.cancelAnimationFrame(raf)
+  }, [])
 
   // Global trending feed (always fetched as fallback / trending tab)
   const {
@@ -67,22 +69,29 @@ export const HomePage: React.FC = () => {
   } = usePersonalFeed(showForYou ? lenserId : undefined)
 
   // Sidebar widgets
-  const { data: topPrompts, isLoading: promptsLoading } = useTopLenses()
+  const { data: topPrompts, isLoading: promptsLoading } = useTopLenses(loadSidebarWidgets)
   const { data: personalPromptsData, isLoading: personalPromptsLoading } = usePersonalPrompts(
-    showForYou ? lenserId : undefined
+    showForYou ? lenserId : undefined,
+    loadSidebarWidgets
   )
 
   const {
     data: latestLensers,
     isLoading: lensersLoading,
     isError: lensersError,
-  } = useLatestLensers()
+  } = useLatestLensers(loadSidebarWidgets)
   const { data: suggestedLensers, isLoading: suggestedLoading } = useSuggestedLensers(
-    showForYou ? lenserId : undefined
+    showForYou ? lenserId : undefined,
+    loadSidebarWidgets
   )
 
-  const { data: trendingTags, isLoading: tagsLoading, isError: tagsError } = useTrendingTags()
-  const { data: followedTags } = useFollowedTags(showForYou ? lenserId : undefined)
+  const { data: trendingTags, isLoading: tagsLoading, isError: tagsError } = useTrendingTags(
+    loadSidebarWidgets
+  )
+  const { data: followedTags } = useFollowedTags(
+    showForYou ? lenserId : undefined,
+    loadSidebarWidgets
+  )
 
   // Follow mutations
   const followTag = useFollowTag(lenserId)
@@ -111,7 +120,8 @@ export const HomePage: React.FC = () => {
     showForYou
       ? (personalPromptsData?.pages[0]?.data?.slice(0, 3) ?? [])
       : (topPrompts ?? []).sort((a, b) => b.usageCount - a.usageCount).slice(0, 3)
-  const sidebarPromptsLoading = showForYou ? personalPromptsLoading : promptsLoading
+  const sidebarPromptsLoading =
+    sidebarWidgetsLoading || (showForYou ? personalPromptsLoading : promptsLoading)
 
   const observer = useRef<IntersectionObserver | null>(null)
   const lastThreadElementRef = useCallback(
@@ -138,7 +148,7 @@ export const HomePage: React.FC = () => {
       window.location.href = `${authAppUrl}/login?return_url=${encodeURIComponent(buildAuthReturnUrl(window.location.href))}`
       return
     }
-    if (!hasLenser) return setIsProfileModalOpen(true)
+    if (!hasLenser) return navigate('/onboarding', { state: { from: '/' } })
     setIsCreateModalOpen(true)
   }
 
@@ -167,16 +177,14 @@ export const HomePage: React.FC = () => {
           {showForYou ? (
             <div className="flex bg-gray-100 dark:bg-gray-800 rounded-xl p-1 gap-1">
               {(['for_you', 'trending'] as const).map((tab) => (
-                <button
+                <Button
                   key={tab}
+                  variant={activeTab === tab ? 'primary' : 'ghost'}
+                  size="sm"
                   onClick={() => setFeedTab(tab)}
-                  className={`px-4 py-2 rounded-lg text-sm font-semibold transition-all ${activeTab === tab
-                    ? 'bg-white dark:bg-gray-700 text-gray-900 dark:text-white shadow-sm'
-                    : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
-                    }`}
                 >
                   {tab === 'for_you' ? 'For You' : 'Trending'}
-                </button>
+                </Button>
               ))}
             </div>
           ) : (
@@ -195,20 +203,21 @@ export const HomePage: React.FC = () => {
         </div>
 
         {isEmpty ? (
-          <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 border-dashed p-10 py-16 flex flex-col items-center justify-center text-center shadow-sm">
-            <div className="w-16 h-16 bg-gray-50 dark:bg-gray-700 rounded-full flex items-center justify-center mb-4 text-gray-400 dark:text-gray-500">
-              <MessageSquareOff size={32} strokeWidth={1.5} />
-            </div>
-            <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">No posts yet</h3>
-            <p className="text-gray-500 dark:text-gray-400 max-w-sm mb-8 leading-relaxed">
-              {activeTab === 'for_you'
+          <EmptyState
+            icon={MessageSquareOff}
+            title="No posts yet"
+            description={
+              activeTab === 'for_you'
                 ? 'Follow some lensers and tags to build your personalised feed.'
-                : 'Your feed is currently quiet. Be the first to start a conversation.'}
-            </p>
-            <Button onClick={handleCreateClick} className="flex items-center gap-2 px-6 w-auto">
-              <Plus size={18} /> Create Post
-            </Button>
-          </div>
+                : 'Your feed is currently quiet. Be the first to start a conversation.'
+            }
+            action={
+              <Button onClick={handleCreateClick} className="flex items-center gap-2 px-6 w-auto">
+                <Plus size={18} /> Create Post
+              </Button>
+            }
+            className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 shadow-sm"
+          />
         ) : (
           <div className="space-y-6">
             <ThreadsList
@@ -230,6 +239,9 @@ export const HomePage: React.FC = () => {
       {/* Right Sidebar Widgets */}
       <div className="lg:col-span-4 mt-8 lg:mt-0">
         <div className="space-y-6 lg:pt-[52px]">
+          {/* Discover promo cards — shown to visitors who haven't signed in */}
+          {!isAuthenticated && <HomePromoSection />}
+
           {/* Lenses You May Like / Top Lenses Widget */}
           <Card className="p-0 overflow-hidden bg-white dark:bg-gray-800">
             <div className="px-6 py-4 border-b border-gray-100 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-800/50">
@@ -273,7 +285,7 @@ export const HomePage: React.FC = () => {
             <h3 className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-4">
               {showForYou && suggestedLensers?.length ? 'Suggested Lensers' : 'New Lensers'}
             </h3>
-            {(showForYou ? suggestedLoading : lensersLoading) ? (
+            {(sidebarWidgetsLoading || (showForYou ? suggestedLoading : lensersLoading)) ? (
               <div className="space-y-3">
                 {[1, 2, 3].map((i) => (
                   <div key={i} className="flex gap-2">
@@ -379,7 +391,7 @@ export const HomePage: React.FC = () => {
             <h3 className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-4">
               Trending Tags
             </h3>
-            {tagsLoading ? (
+            {sidebarWidgetsLoading || tagsLoading ? (
               <div className="flex gap-2">
                 <div className="w-12 h-6 bg-gray-200 dark:bg-gray-700 rounded"></div>
                 <div className="w-16 h-6 bg-gray-200 dark:bg-gray-700 rounded"></div>
@@ -424,9 +436,6 @@ export const HomePage: React.FC = () => {
         onSuccess={handleCreateSuccess}
       />
 
-      {isProfileModalOpen && (
-        <CreateLenserProfileModal onClose={() => setIsProfileModalOpen(false)} />
-      )}
     </div>
   )
 }
