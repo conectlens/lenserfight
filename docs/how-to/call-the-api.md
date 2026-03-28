@@ -31,6 +31,16 @@ export JWT
 echo "JWT: $JWT"
 ```
 
+### Device approval flow
+
+The CLI uses a browser approval page for developer-token issuance:
+
+```bash
+lenserfight auth device request --label "MacBook Pro"
+```
+
+The command prints an approval code plus the auth app URL. Sign in at `LENSERFIGHT_AUTH_BASE_URL` and open `/device-approval` to approve the request. The CLI polls until the developer token is minted and then stores it separately from the session token.
+
 ---
 
 ## Wallet Endpoints

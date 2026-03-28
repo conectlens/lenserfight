@@ -34,6 +34,26 @@ const result = await walletService.executeWithWallet({
 })
 ```
 
+## Auth App and Device Approval
+
+The auth browser app has its own base URL, separate from the API gateway:
+
+```ts
+// Frontend and auth app
+const authBaseUrl =
+  import.meta.env.VITE_AUTH_BASE_URL ??
+  'http://localhost:3004'
+```
+
+Use the device approval flow when you need a short-lived developer token for CLI automation:
+
+```bash
+lenserfight auth login --email you@example.com --password secret
+lenserfight auth device request --label "Automation box"
+```
+
+The approval page is `/device-approval`. The resulting developer token is stored separately from the session JWT and can be rotated without invalidating the login session.
+
 ## Authentication
 
 Every user-facing endpoint requires a Supabase JWT. The clients retrieve this automatically from the active session:
@@ -154,9 +174,11 @@ See [Streaming Architecture](/explanations/streaming) for a deep-dive on the SSE
 ```ts
 // .env.local (development)
 VITE_API_URL=http://localhost:8786
+VITE_AUTH_BASE_URL=http://localhost:3004
 
 // .env.production
 VITE_API_URL=https://api.lenserfight.com
+VITE_AUTH_BASE_URL=https://auth.lenserfight.com
 ```
 
 Never commit real API URLs to source — they are injected at build time via environment files. See [Environment Variables](/reference/environment-variables) for all available variables.

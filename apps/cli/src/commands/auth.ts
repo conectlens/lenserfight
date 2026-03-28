@@ -1,5 +1,6 @@
 import { defineCommand } from 'citty';
 import consola from 'consola';
+import { printJson, printTable } from '../utils/output';
 import {
   loginWithEmail,
   clearAuthTokens,
@@ -8,6 +9,15 @@ import {
   refreshAuthToken,
   getAuthToken,
   registerUser,
+  buildAuthAppUrl,
+  clearDeveloperToken,
+  getDeveloperTokenMetadata,
+  isDeveloperTokenActive,
+  listDeveloperTokens,
+  requestDeviceApproval,
+  revokeDeveloperToken,
+  saveDeveloperToken,
+  waitForDeveloperToken,
 } from '../utils/auth';
 
 const login = defineCommand({
@@ -103,7 +113,7 @@ const refresh = defineCommand({
 const token = defineCommand({
   meta: {
     name: 'token',
-    description: 'Print the raw access token (for piping into other tools).',
+    description: 'Print the raw Supabase session token (for piping into other tools).',
   },
   async run() {
     const t = getAuthToken();
@@ -115,6 +125,187 @@ const token = defineCommand({
     process.stdout.write(t + '\n');
   },
 });
+
+const deviceRequest = defineCommand({
+  meta: {
+    name: 'request',
+    description: 'Start a device approval request and wait for a developer token.',
+  },
+  args: {
+    label: {
+      type: 'string',
+      description: 'Optional label for the developer token',
+    },
+    'request-ttl-minutes': {
+      type: 'string',
+      description: 'Device approval request lifetime in minutes',
+      default: '10',
+    },
+    'token-ttl-hours': {
+      type: 'string',
+      description: 'Developer token lifetime in hours',
+      default: '24',
+    },
+    json: {
+      type: 'boolean',
+      description: 'Print the initial request as JSON',
+      default: false,
+    },
+  },
+  async run({ args }) {
+    try {
+      if (!isAuthenticated()) {
+        consola.error('Not authenticated. Run `lenserfight auth login` first.')
+        process.exitCode = 1
+        return
+      }
+
+      const request = await requestDeviceApproval({
+        label: args.label ?? null,
+        requestTtlMinutes: parseInt(args['request-ttl-minutes'] ?? '10', 10),
+        tokenTtlHours: parseInt(args['token-ttl-hours'] ?? '24', 10),
+      })
+
+      const approvalUrl = buildAuthAppUrl(request.verificationUri)
+
+      if (args.json) {
+        printJson({
+          ...request,
+          verificationUrl: approvalUrl,
+        })
+      } else {
+        consola.info('Approval code: %s', request.userCode)
+        consola.info('Open:          %s', approvalUrl)
+        consola.info('Expires at:    %s', request.expiresAt)
+      }
+
+      consola.start('Waiting for approval...')
+      const token = await waitForDeveloperToken(request, (status) => {
+        if (status.status === 'pending') return
+        if (status.status === 'approved') {
+          consola.info('Device approved. Minting developer token...')
+        }
+      })
+      saveDeveloperToken(token)
+      consola.success('Developer token stored locally.')
+      consola.info('Token ID: %s', token.tokenId)
+      consola.info('Expires:  %s', token.expiresAt)
+    } catch (err) {
+      consola.error('Device approval failed: %s', (err as Error).message)
+      process.exitCode = 1
+    }
+  },
+})
+
+const device = defineCommand({
+  meta: {
+    name: 'device',
+    description: 'Create and complete a device approval request.',
+  },
+  subCommands: {
+    request: deviceRequest,
+  },
+})
+
+const developerTokenCurrent = defineCommand({
+  meta: {
+    name: 'current',
+    description: 'Show the locally stored developer token metadata.',
+  },
+  async run() {
+    const meta = getDeveloperTokenMetadata()
+    if (!meta.developerToken) {
+      consola.warn('No developer token stored locally.')
+      return
+    }
+
+    consola.info('Developer token: %s', isDeveloperTokenActive() ? 'active' : 'expired')
+    if (meta.developerTokenId) consola.info('Token ID:       %s', meta.developerTokenId)
+    if (meta.developerTokenExpiresAt) consola.info('Expires at:     %s', meta.developerTokenExpiresAt)
+  },
+})
+
+const developerTokenList = defineCommand({
+  meta: {
+    name: 'list',
+    description: 'List developer tokens for the current signed-in user.',
+  },
+  args: {
+    json: {
+      type: 'boolean',
+      description: 'Print output as JSON',
+      default: false,
+    },
+  },
+  async run({ args }) {
+    try {
+      const tokens = await listDeveloperTokens()
+
+      if (args.json) {
+        printJson(tokens)
+        return
+      }
+
+      if (!tokens.length) {
+        consola.info('No developer tokens found.')
+        return
+      }
+
+      printTable(
+        ['ID', 'Label', 'Prefix', 'Status', 'Expires', 'Revoked'],
+        tokens.map((t) => [
+          t.id.slice(0, 8),
+          t.label ?? '',
+          t.tokenPrefix,
+          t.status,
+          new Date(t.expiresAt).toLocaleString(),
+          t.revokedAt ? new Date(t.revokedAt).toLocaleString() : '',
+        ])
+      )
+    } catch (err) {
+      consola.error('Failed to list developer tokens: %s', (err as Error).message)
+      process.exitCode = 1
+    }
+  },
+})
+
+const developerTokenRevoke = defineCommand({
+  meta: {
+    name: 'revoke',
+    description: 'Revoke a developer token by ID.',
+  },
+  args: {
+    id: {
+      type: 'positional',
+      description: 'Developer token UUID',
+      required: true,
+    },
+  },
+  async run({ args }) {
+    try {
+      await revokeDeveloperToken(args.id)
+      if (getDeveloperTokenMetadata().developerTokenId === args.id) {
+        clearDeveloperToken()
+      }
+      consola.success('Developer token revoked: %s', args.id)
+    } catch (err) {
+      consola.error('Failed to revoke developer token: %s', (err as Error).message)
+      process.exitCode = 1
+    }
+  },
+})
+
+const developerToken = defineCommand({
+  meta: {
+    name: 'developer-token',
+    description: 'Manage time-bounded developer tokens.',
+  },
+  subCommands: {
+    current: developerTokenCurrent,
+    list: developerTokenList,
+    revoke: developerTokenRevoke,
+  },
+})
 
 const register = defineCommand({
   meta: {
@@ -161,7 +352,7 @@ const register = defineCommand({
 export default defineCommand({
   meta: {
     name: 'auth',
-    description: 'Manage authentication: login, logout, whoami, refresh, token, register.',
+    description: 'Manage authentication, device approval, and developer tokens.',
   },
   subCommands: {
     login,
@@ -169,6 +360,8 @@ export default defineCommand({
     whoami,
     refresh,
     token,
+    device,
+    'developer-token': developerToken,
     register,
   },
 });
