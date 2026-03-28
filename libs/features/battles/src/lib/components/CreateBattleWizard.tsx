@@ -4,13 +4,16 @@ import { Input, SegmentedControl, TextArea } from '@lenserfight/ui/forms'
 import { battlesService, workflowsService, lensesService } from '@lenserfight/data/repositories'
 import type { WorkflowRecord } from '@lenserfight/data/repositories'
 import { useAuth } from '@lenserfight/features/auth'
+import { useAIModels } from '@lenserfight/features/generations'
+import { useFundingSource, FundingSourceToggle } from '@lenserfight/features/lenses'
 import { useLenser } from '@lenserfight/features/profile'
 import { useWizardStep } from '@lenserfight/ui/routing'
 import { useQuery } from '@tanstack/react-query'
 import { AnimatePresence, motion } from 'framer-motion'
 import { GitBranch, Layers, Swords } from 'lucide-react'
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useMemo, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
+import type { AIProvider, AIProviderModel } from '@lenserfight/types'
 
 import { BattleTypeSelector } from './BattleTypeSelector'
 import { ContenderInviteStep } from './ContenderInviteStep'
@@ -116,6 +119,26 @@ export const CreateBattleWizard: React.FC<CreateBattleWizardProps> = ({ onSucces
   const [battleType, setBattleType] = useState<BattleType>('human_vs_human_open_votes')
   const [voterEligibility, setVoterEligibility] = useState<VoterEligibility>('open')
   const [handicap, setHandicap] = useState<AIHandicapConfig>(DEFAULT_HANDICAP)
+
+  // Execution context (funding source + model selection for AI battles)
+  const [selectedProviderKey, setSelectedProviderKey] = useState('')
+  const [selectedModelKey, setSelectedModelKey] = useState('')
+  const { models, isLoading: modelsLoading } = useAIModels()
+  const battleFunding = useFundingSource(selectedProviderKey)
+
+  const battleProviders: AIProvider[] = useMemo(() => {
+    const seen = new Set<string>()
+    return models
+      .filter((m) => m.is_active && !!m.key && !seen.has(m.provider) && (seen.add(m.provider), true))
+      .map((m) => ({ key: m.provider, display_name: m.providerDisplayName ?? m.provider, id: m.provider_id ?? '' }))
+  }, [models])
+
+  const battleProviderModels: AIProviderModel[] = useMemo(() => {
+    if (!selectedProviderKey) return []
+    return models
+      .filter((m) => m.is_active && !!m.key && m.provider === selectedProviderKey)
+      .map((m) => ({ key: m.key, name: m.name, inputModalities: m.input_modalities }))
+  }, [models, selectedProviderKey])
 
   // Post-creation
   const [createdBattleSlug, setCreatedBattleSlug] = useState<string | null>(null)
@@ -649,6 +672,33 @@ export const CreateBattleWizard: React.FC<CreateBattleWizardProps> = ({ onSucces
                       <HandicapConfigPanel value={handicap} onChange={setHandicap} />
                     )}
                   </div>
+                </div>
+
+                <div className="border-t border-surface-border pt-6">
+                  <h4 className="mb-4 text-xs font-bold uppercase tracking-wider text-greyscale-400">
+                    Execution Context
+                  </h4>
+                  <FundingSourceToggle
+                    fundingSource={battleFunding.fundingSource}
+                    onFundingSourceChange={battleFunding.setFundingSource}
+                    selectedKeyRefId={battleFunding.selectedKeyRefId}
+                    onKeyRefIdChange={battleFunding.setSelectedKeyRefId}
+                    availableKeys={battleFunding.availableKeys}
+                    selectedLocalKeyId={battleFunding.selectedLocalKeyId}
+                    onLocalKeyIdChange={battleFunding.setSelectedLocalKeyId}
+                    availableLocalKeys={battleFunding.localKeys}
+                    onAddLocalKey={battleFunding.addLocalKey}
+                    walletBalance={battleFunding.walletBalance}
+                    canUseBYOK={battleFunding.canUseBYOK}
+                    providers={battleProviders}
+                    isLoadingProviders={modelsLoading}
+                    providerModels={battleProviderModels}
+                    isLoadingModels={modelsLoading}
+                    selectedProviderKey={selectedProviderKey}
+                    onProviderChange={(key) => { setSelectedProviderKey(key); setSelectedModelKey('') }}
+                    selectedModelKey={selectedModelKey}
+                    onModelChange={setSelectedModelKey}
+                  />
                 </div>
 
                 {error && (
