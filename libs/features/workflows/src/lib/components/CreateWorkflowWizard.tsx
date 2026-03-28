@@ -1,16 +1,18 @@
+import { lensesService, workflowsService } from '@lenserfight/data/repositories'
+import { useAuth } from '@lenserfight/features/auth'
+import { useAIModels } from '@lenserfight/features/generations'
+import { FundingSourceToggle, useFundingSource } from '@lenserfight/features/lenses'
 import { Alert, Badge, Button, StepWizard } from '@lenserfight/ui/components'
-import type { WizardStepConfig } from '@lenserfight/ui/components'
 import { Field, Input, SearchBar, SelectField, TextArea } from '@lenserfight/ui/forms'
 import { useWizardStep } from '@lenserfight/ui/routing'
-import { lensesService } from '@lenserfight/data/repositories'
-import { workflowsService } from '@lenserfight/data/repositories'
-import { useAuth } from '@lenserfight/features/auth'
 import { useQuery } from '@tanstack/react-query'
-import { Check, GitBranch, Layers, Sparkles } from 'lucide-react'
+import { Check, GitBranch, KeyRound, Layers, Sparkles } from 'lucide-react'
 import React, { useState } from 'react'
-import type { LensViewModel, PersonalLensFeedItem } from '@lenserfight/types'
 
 import { useCreateWorkflow } from '../hooks/useCreateWorkflow'
+
+import type { LensViewModel, PersonalLensFeedItem } from '@lenserfight/types'
+import type { WizardStepConfig } from '@lenserfight/ui/components'
 
 export interface CreateWorkflowWizardProps {
   onCreated: (workflowId: string) => void
@@ -29,6 +31,12 @@ const WIZARD_STEPS: WizardStepConfig[] = [
     title: 'Build a Connected Lens workflow',
     description: 'Give your workflow a name and visibility, then pick the starting lenses.',
     icon: <GitBranch size={20} />,
+  },
+  {
+    label: 'Funding & Model',
+    title: 'Choose how to run',
+    description: 'Select a funding source and default AI model for this workflow.',
+    icon: <KeyRound size={20} />,
   },
   {
     label: 'Add Lenses',
@@ -185,17 +193,29 @@ function LensPicker({ lenserId, selected, onToggle }: LensPickerProps) {
 
 export const CreateWorkflowWizard: React.FC<CreateWorkflowWizardProps> = ({ onCreated, onCancel }) => {
   const { user } = useAuth()
-  const { step, goToStep } = useWizardStep({ maxStep: 1 })
+  const { step, goToStep } = useWizardStep({ maxStep: 2 })
   const { submit, isSubmitting, error: submissionError } = useCreateWorkflow()
+  const { models, isLoading: modelsLoading } = useAIModels()
 
   const [title, setTitle] = useState('')
   const [description, setDescription] = useState('')
   const [visibility, setVisibility] = useState<(typeof VISIBILITY_OPTIONS)[number]['value']>('public')
   const [localError, setLocalError] = useState<string | null>(null)
   const [createdWorkflowId, setCreatedWorkflowId] = useState<string | null>(null)
+  const [defaultModelId, setDefaultModelId] = useState<string>(() => {
+    if (typeof window === 'undefined') return ''
+    return localStorage.getItem('lf-workflow-global-model') ?? ''
+  })
+
+  // Funding source (delegates to useFundingSource from lenses feature)
+  const funding = useFundingSource(defaultModelId)
 
   // Lens picker state: map of id → title for selected lenses
   const [selectedLenses, setSelectedLenses] = useState<Map<string, string>>(new Map())
+
+  const modelOptions = models
+    .filter((m) => !!m.key && m.is_active)
+    .map((m) => ({ value: m.key, label: `${m.name} (${m.provider})` }))
 
   const titleValue = title.trim()
   const error = localError ?? submissionError
@@ -216,6 +236,7 @@ export const CreateWorkflowWizard: React.FC<CreateWorkflowWizardProps> = ({ onCr
     setLocalError(null)
     setCreatedWorkflowId(null)
     setSelectedLenses(new Map())
+    setDefaultModelId(localStorage.getItem('lf-workflow-global-model') ?? '')
   }
 
   const handleCancel = () => {
@@ -224,12 +245,21 @@ export const CreateWorkflowWizard: React.FC<CreateWorkflowWizardProps> = ({ onCr
   }
 
   const handleNext = () => {
-    if (titleValue.length < 3) {
-      setLocalError('Title must be at least 3 characters.')
-      return
+    if (step === 0) {
+      if (titleValue.length < 3) {
+        setLocalError('Title must be at least 3 characters.')
+        return
+      }
+      setLocalError(null)
+      goToStep(1)
+    } else if (step === 1) {
+      // Persist model selection for the builder page
+      if (defaultModelId && typeof window !== 'undefined') {
+        localStorage.setItem('lf-workflow-global-model', defaultModelId)
+      }
+      setLocalError(null)
+      goToStep(2)
     }
-    setLocalError(null)
-    goToStep(1)
   }
 
   const handleCreate = async () => {
@@ -297,7 +327,7 @@ export const CreateWorkflowWizard: React.FC<CreateWorkflowWizardProps> = ({ onCr
       steps={WIZARD_STEPS}
       currentStep={step}
       onNext={handleNext}
-      onBack={() => goToStep(0)}
+      onBack={() => goToStep(Math.max(0, step - 1))}
       onComplete={handleCreate}
       onCancel={handleCancel}
       canProceed={step === 0 ? titleValue.length >= 3 : true}
@@ -305,7 +335,7 @@ export const CreateWorkflowWizard: React.FC<CreateWorkflowWizardProps> = ({ onCr
       completeLabel="Create workflow"
       completeIcon={<Sparkles size={14} />}
     >
-      {step === 0 ? (
+      {step === 0 && (
         <div className="space-y-4">
           <Field
             id="workflow-title"
@@ -345,10 +375,41 @@ export const CreateWorkflowWizard: React.FC<CreateWorkflowWizardProps> = ({ onCr
             options={[...VISIBILITY_OPTIONS]}
             placeholder="Choose visibility"
           />
-
-          {/* Submission errors only (validation errors are shown inline on the Field above) */}
         </div>
-      ) : (
+      )}
+
+      {step === 1 && (
+        <div className="space-y-5">
+          <FundingSourceToggle
+            fundingSource={funding.fundingSource}
+            onFundingSourceChange={funding.setFundingSource}
+            selectedKeyRefId={funding.selectedKeyRefId}
+            onKeyRefIdChange={funding.setSelectedKeyRefId}
+            availableKeys={funding.availableKeys}
+            selectedLocalKeyId={funding.selectedLocalKeyId}
+            onLocalKeyIdChange={funding.setSelectedLocalKeyId}
+            availableLocalKeys={funding.localKeys}
+            onAddLocalKey={funding.addLocalKey}
+            walletBalance={funding.walletBalance}
+            canUseBYOK={funding.canUseBYOK}
+          />
+
+          <SelectField
+            label="Default AI Model"
+            value={defaultModelId}
+            onChange={setDefaultModelId}
+            options={modelOptions}
+            placeholder={modelsLoading ? 'Loading models…' : 'Select a model'}
+            disabled={modelsLoading}
+          />
+
+          <p className="text-xs leading-5 text-greyscale-400">
+            You can change the model per-node or globally later in the builder.
+          </p>
+        </div>
+      )}
+
+      {step === 2 && (
         <div className="space-y-4">
           <LensPicker
             lenserId={user?.id}
@@ -358,7 +419,7 @@ export const CreateWorkflowWizard: React.FC<CreateWorkflowWizardProps> = ({ onCr
           <p className="text-xs leading-5 text-greyscale-400">
             Selection is optional — you can add and connect lenses later in the canvas editor.
           </p>
-          {error && step === 1 && (
+          {error && step === 2 && (
             <Alert variant="error" title={error} onDismiss={() => setLocalError(null)} />
           )}
         </div>
