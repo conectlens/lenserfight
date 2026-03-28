@@ -13,15 +13,17 @@ import {
   Youtube,
   Trophy,
   Zap,
+  Bot,
 } from 'lucide-react'
 import React, { useState, useEffect } from 'react'
 
-import { Avatar } from '@lenserfight/ui/components'
+import { Avatar, Button } from '@lenserfight/ui/components'
 import { useLenser } from '@lenserfight/features/profile'
-import { socialLinksService } from '@lenserfight/data/repositories'
+import { agentsService, socialLinksService } from '@lenserfight/data/repositories'
 import { Lenser, LenserStats, SocialLink, RelationshipState } from '@lenserfight/types'
 import { XPSummary } from '@lenserfight/types'
 import { formatCount } from '@lenserfight/utils/number'
+import { FEATURES } from '@lenserfight/utils/env'
 
 import { AvatarSelectionModal } from './AvatarSelectionModal'
 import { BannerSelectionModal } from './BannerSelectionModal'
@@ -36,6 +38,8 @@ interface LenserProfileHeaderProps {
   isOwner: boolean
   onProfileUpdate: (updatedLenser: Lenser) => void
   relationshipState?: RelationshipState | null
+  onManageAgents?: () => void
+  onEditAgent?: () => void
 }
 
 export const LenserProfileHeader: React.FC<LenserProfileHeaderProps> = ({
@@ -45,6 +49,8 @@ export const LenserProfileHeader: React.FC<LenserProfileHeaderProps> = ({
   isOwner,
   onProfileUpdate,
   relationshipState,
+  onManageAgents,
+  onEditAgent,
 }) => {
   const { updateLenserProfile } = useLenser()
 
@@ -79,7 +85,22 @@ export const LenserProfileHeader: React.FC<LenserProfileHeaderProps> = ({
     if (!isOwner) return
     setIsUpdating(true)
     try {
-      const updated = await updateLenserProfile(data)
+      let updated: Lenser
+      if (lenser.type === 'ai') {
+        // AI agent profiles are edited via the secure ownership-checked RPC
+        await agentsService.updateAgentProfile(lenser.id, {
+          display_name: data.display_name,
+          avatar_url: data.avatar_url,
+          banner_url: data.banner_url,
+          bio: data.bio,
+          headline: data.headline,
+          website_url: data.website_url,
+        })
+        // Merge patch into local profile state (no separate fetch needed)
+        updated = { ...lenser, ...data }
+      } else {
+        updated = await updateLenserProfile(data)
+      }
       onProfileUpdate(updated)
       setShowAvatarModal(false)
       setShowBannerModal(false)
@@ -181,7 +202,7 @@ export const LenserProfileHeader: React.FC<LenserProfileHeaderProps> = ({
           />
         ) : (
           <div className="w-full h-full bg-gradient-to-r from-gray-200 to-gray-300 dark:from-gray-700 dark:to-gray-800 flex items-center justify-center">
-            <span className="text-gray-400 dark:text-gray-600 opacity-50 text-4xl md:text-6xl font-black tracking-tighter mix-blend-overlay">
+            <span className="text-gray-500 dark:text-gray-600 opacity-60 text-4xl md:text-6xl font-black tracking-tighter">
               LENSER
             </span>
           </div>
@@ -203,13 +224,14 @@ export const LenserProfileHeader: React.FC<LenserProfileHeaderProps> = ({
         <div className="bg-white dark:bg-gray-800 md:rounded-2xl shadow-sm border-b md:border border-gray-100 dark:border-gray-700 p-6 md:p-8 relative transition-colors">
           {/* Mobile Edit / Follow Button */}
           {isOwner ? (
-            <button
+            <Button
+              variant="ghost"
               onClick={() => setShowEditModal(true)}
-              className="md:hidden absolute top-4 right-4 p-2.5 text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white rounded-full transition-colors z-20 border border-transparent hover:border-gray-200 dark:hover:border-gray-600"
+              className="md:hidden absolute top-4 right-4 !p-2.5 !w-auto rounded-full z-20"
               title="Edit Profile"
             >
               <Pencil size={18} />
-            </button>
+            </Button>
           ) : (
             <div className="md:hidden absolute top-4 right-4 z-20">
               <FollowButton
@@ -316,13 +338,50 @@ export const LenserProfileHeader: React.FC<LenserProfileHeaderProps> = ({
                 </div>
 
                 {isOwner ? (
-                  <button
-                    onClick={() => setShowEditModal(true)}
-                    className="hidden md:flex items-center gap-2 px-4 py-2 rounded-lg border border-gray-200 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 font-medium transition-colors mt-2 md:mt-0"
-                  >
-                    <Pencil size={16} />
-                    Edit Profile
-                  </button>
+                  <div className="hidden md:flex items-center gap-2 mt-2 md:mt-0">
+                    {lenser.type === 'ai' ? (
+                      <>
+                        <Button
+                          variant="secondary"
+                          onClick={() => setShowEditModal(true)}
+                          className="flex items-center gap-2 w-auto"
+                        >
+                          <Pencil size={16} />
+                          Edit Profile
+                        </Button>
+                        <Button
+                          variant="secondary"
+                          onClick={onEditAgent}
+                          className="flex items-center gap-2 w-auto"
+                        >
+                          <Bot size={16} />
+                          Edit Agent
+                        </Button>
+                      </>
+                    ) : (
+                      <>
+                        {FEATURES.AGENTS && onManageAgents && (
+                          <Button
+                            variant="secondary"
+                            onClick={onManageAgents}
+                            title="Manage AI Agents"
+                            className="flex items-center gap-2 w-auto"
+                          >
+                            <Bot size={16} />
+                            Agents
+                          </Button>
+                        )}
+                        <Button
+                          variant="secondary"
+                          onClick={() => setShowEditModal(true)}
+                          className="flex items-center gap-2 w-auto"
+                        >
+                          <Pencil size={16} />
+                          Edit Profile
+                        </Button>
+                      </>
+                    )}
+                  </div>
                 ) : (
                   <div className="hidden md:block mt-2 md:mt-0">
                     <FollowButton

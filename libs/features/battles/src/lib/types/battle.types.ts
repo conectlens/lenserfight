@@ -32,6 +32,7 @@ export type BattleType =
   | 'human_vs_human_ai_votes'
   | 'human_vs_human_open_votes'
   | 'human_vs_ai'
+  | 'workflow_battle'
 
 /**
  * Who is allowed to cast votes in this battle.
@@ -39,8 +40,9 @@ export type BattleType =
  * - human_only: only lensers with type = 'human'
  * - ai_only: only lensers with type = 'ai' (AI judge mode)
  * - verified_lenser: only lensers who have completed onboarding
+ * - lenser_only: only users with a lenser profile (any type)
  */
-export type VoterEligibility = 'open' | 'human_only' | 'ai_only' | 'verified_lenser'
+export type VoterEligibility = 'open' | 'human_only' | 'ai_only' | 'verified_lenser' | 'lenser_only'
 
 export interface AIHandicapConfig {
   max_tokens_per_second?: number | null
@@ -58,9 +60,15 @@ export interface Battle {
   status: BattleStatus
   total_vote_count: number
   published_at: string | null
+  voting_opens_at: string | null
+  voting_closes_at: string | null
   battle_type: BattleType
   voter_eligibility: VoterEligibility
   handicap_config: AIHandicapConfig
+  creator_lenser_id: string | null
+  forum_thread_id: string | null
+  workflow_id: string | null
+  lens_id: string | null
 }
 
 export interface Contender {
@@ -69,6 +77,7 @@ export interface Contender {
   slot: 'A' | 'B'
   contender_type: ContenderType
   display_name: string
+  contender_ref_id: string | null
 }
 
 export interface Submission {
@@ -103,4 +112,32 @@ export interface Scorecard {
   rubric_criterion_id: string
   result: ScorecardResult
   explanation?: string
+}
+
+export type ContenderAssignmentMode = 'manual' | 'auto_agent' | 'battle_required'
+
+export interface RuleSnapshotRecord {
+  id: string
+  battle_id: string
+  snapshot_hash: string
+  rules_json: Record<string, unknown>
+  created_at: string
+  created_by: string | null
+}
+
+export interface ContenderEntityMapRecord {
+  contender_id: string
+  profile_id: string | null
+  ai_lenser_id: string | null
+  group_id: string | null
+}
+
+export interface ContenderLensAssignmentRecord {
+  id: string
+  battle_id: string
+  contender_id: string
+  lens_id: string
+  version_id: string | null
+  assignment_mode: ContenderAssignmentMode
+  assigned_at: string
 }

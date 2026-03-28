@@ -7,6 +7,7 @@ import { Link } from 'react-router-dom'
 import { BattleTypesShowcase } from '../components/BattleTypesShowcase'
 import { GamificationPreview } from '../components/GamificationPreview'
 import { HeroFightPreview } from '../components/HeroFightPreview'
+import { WaitlistForm } from '../components/WaitlistForm'
 
 const ARENA_APP_URL = import.meta.env.VITE_ARENA_URL ?? 'https://run.lenserfight.com'
 
@@ -70,20 +71,13 @@ export const LandHomePage: React.FC = () => {
               </li>
             ))}
           </ul>
-          <div className="flex flex-wrap gap-3">
-            <a
-              href={`${ARENA_APP_URL}/battles/create`}
-              className="inline-flex items-center gap-2 rounded-full bg-greyscale-900 px-5 py-3 text-sm font-bold text-greyscale-0 transition-colors hover:opacity-90 dark:bg-greyscale-0 dark:text-greyscale-900"
-            >
-              Start a battle <ArrowRight size={16} />
-            </a>
-            <a
-              href={`${ARENA_APP_URL}/battles`}
-              className="inline-flex items-center gap-2 rounded-full border border-surface-border bg-surface-base px-5 py-3 text-sm font-semibold text-greyscale-700 transition-colors hover:border-status-blue hover:text-greyscale-900 dark:text-greyscale-300 dark:hover:text-greyscale-0"
-            >
-              Browse battles
-            </a>
-          </div>
+          <WaitlistForm />
+          <a
+            href={`${ARENA_APP_URL}/battles`}
+            className="inline-flex items-center gap-2 text-sm font-medium text-greyscale-500 transition-colors hover:text-greyscale-900 dark:hover:text-greyscale-0"
+          >
+            Browse live battles <ArrowRight size={14} />
+          </a>
         </div>
         <DesktopFrame title="Live battle preview" url="lenserfight.com/battles" label="Auto-cycling demo">
           <HeroFightPreview />
@@ -93,7 +87,7 @@ export const LandHomePage: React.FC = () => {
       {/* ─── 2: Battle types ────────────────────────────────────────── */}
       <section className="mx-auto max-w-6xl px-4 pb-16 sm:px-6 lg:px-8 lg:pb-20">
         <motion.div className="mb-8 space-y-2" variants={fadeUp} initial="hidden" whileInView="visible" viewport={{ once: true }}>
-          <Badge color="blue" variant="outline">Four battle types</Badge>
+          <Badge color="yellow" variant="outline">Four battle types</Badge>
           <h2 className="text-3xl font-black tracking-tight text-greyscale-900 dark:text-greyscale-0">
             Every combination of human and AI
           </h2>
@@ -174,8 +168,8 @@ export const LandHomePage: React.FC = () => {
         <Card className="grid gap-6 p-8 lg:grid-cols-[1fr_auto] lg:items-center">
           <div className="space-y-3">
             <div className="flex items-center gap-2">
-              <Shield size={18} className="text-status-blue" />
-              <Badge color="blue" variant="outline">AI fairness</Badge>
+              <Shield size={18} className="text-[var(--cl-yellow-500)]" />
+              <Badge color="yellow" variant="outline">AI fairness</Badge>
             </div>
             <h2 className="text-2xl font-black tracking-tight text-greyscale-900 dark:text-greyscale-0">
               AI is faster — so we slow it down.
@@ -188,7 +182,7 @@ export const LandHomePage: React.FC = () => {
           </div>
           <Link
             to="/battle-showcase"
-            className="inline-flex shrink-0 items-center gap-2 rounded-full border border-surface-border bg-surface-base px-5 py-3 text-sm font-semibold text-greyscale-700 transition-colors hover:border-status-blue hover:text-greyscale-900 dark:text-greyscale-300 dark:hover:text-greyscale-0"
+            className="inline-flex shrink-0 items-center gap-2 rounded-full border border-surface-border bg-surface-base px-5 py-3 text-sm font-semibold text-greyscale-700 transition-colors hover:border-primary-yellow-500 hover:text-greyscale-900 dark:text-greyscale-300 dark:hover:text-greyscale-0"
           >
             See a live demo
           </Link>

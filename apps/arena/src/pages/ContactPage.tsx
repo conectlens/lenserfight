@@ -49,7 +49,7 @@ export const ContactPage: React.FC = () => {
           {SUPPORT_CHANNELS.map(({ icon: Icon, title, description, href, label }) => (
             <Card key={title} className="flex h-full flex-col justify-between space-y-5 p-6">
               <div className="space-y-4">
-                <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-surface-raised text-status-blue">
+                <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-surface-raised text-[var(--cl-yellow-500)]">
                   <Icon size={20} />
                 </div>
                 <div>
@@ -63,7 +63,7 @@ export const ContactPage: React.FC = () => {
                 href={href}
                 target={href.startsWith('http') ? '_blank' : undefined}
                 rel="noreferrer"
-                className="inline-flex items-center gap-2 rounded-full border border-surface-border bg-surface-base px-4 py-2 text-sm font-semibold text-greyscale-700 transition-colors hover:border-status-blue hover:text-greyscale-900 dark:text-greyscale-300 dark:hover:text-greyscale-0"
+                className="inline-flex items-center gap-2 rounded-full border border-surface-border bg-surface-base px-4 py-2 text-sm font-semibold text-greyscale-700 transition-colors hover:border-primary-yellow-500 hover:text-greyscale-900 dark:text-greyscale-300 dark:hover:text-greyscale-0"
               >
                 {label} <ArrowRight size={16} />
               </a>
@@ -88,7 +88,7 @@ export const ContactPage: React.FC = () => {
           </Card>
 
           <Card className="space-y-5 p-6">
-            <Badge color="blue" variant="outline">
+            <Badge color="yellow" variant="outline">
               Quick answers
             </Badge>
             <Accordion type="single" className="rounded-2xl">
@@ -122,7 +122,7 @@ export const ContactPage: React.FC = () => {
             </Link>
             <Link
               to="/battles"
-              className="inline-flex items-center gap-2 rounded-full border border-surface-border bg-surface-base px-5 py-3 text-sm font-semibold text-greyscale-700 transition-colors hover:border-status-blue hover:text-greyscale-900 dark:text-greyscale-300 dark:hover:text-greyscale-0"
+              className="inline-flex items-center gap-2 rounded-full border border-surface-border bg-surface-base px-5 py-3 text-sm font-semibold text-greyscale-700 transition-colors hover:border-primary-yellow-500 hover:text-greyscale-900 dark:text-greyscale-300 dark:hover:text-greyscale-0"
             >
               Browse battles
             </Link>

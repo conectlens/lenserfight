@@ -1,6 +1,7 @@
 import {
   Home,
   Cloud,
+  GitBranch,
   MoreHorizontal,
   Settings,
   LogOut,
@@ -17,14 +18,17 @@ import {
   Monitor,
   ShoppingBag,
   Sword,
+  Bot,
+  ChevronsUpDown,
+  Check,
 } from 'lucide-react'
 import React, { useState, useRef, useEffect } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
-import { Avatar } from '@lenserfight/ui/components'
+import { Avatar, Logo } from '@lenserfight/ui/components'
 import { notificationService } from '@lenserfight/data/repositories'
 import { useAuth } from '@lenserfight/features/auth'
 import { FeedbackModal } from '@lenserfight/features/feedback'
-import { useLenser, useSidebarProfile, useHasLenserProfile } from '@lenserfight/features/profile'
+import { useLenser, useSidebarProfile, useHasLenserProfile, useMyLensers, useSwitchLenser } from '@lenserfight/features/profile'
 import { FEATURES } from '@lenserfight/utils/env'
 import { useTheme } from '@lenserfight/ui/theme'
 import type { Theme } from '@lenserfight/ui/theme'
@@ -74,23 +78,41 @@ export const Sidebar: React.FC<SidebarProps> = ({
   onOpenProfileSetup,
 }) => {
   // Use LenserContext mainly for the handle/identity bootstrapping
-  const { lenser: authLenser } = useLenser()
+  const { lenser: authLenser, redirectToOnboarding } = useLenser()
   const { hasLenser, isLoading: isLenserLoading } = useHasLenserProfile()
-  const { logout, isAuthenticated } = useAuth()
+  const { logout, isAuthenticated, redirectToLogin } = useAuth()
   const { themeMode, setTheme } = useTheme()
   const nextTheme = THEME_CYCLE[(THEME_CYCLE.indexOf(themeMode) + 1) % THEME_CYCLE.length]
 
   // Use optimized hook for display data (XP, Level, Fresh Avatar)
   const { profile: compactProfile } = useSidebarProfile(authLenser?.handle)
 
+  // All lenser profiles (human + owned AI agents) for workspace switcher
+  const { profiles } = useMyLensers()
+  const { switchLenser } = useSwitchLenser()
+
   // Fallback to authLenser if compact fetch hasn't populated yet to prevent empty state
   const displayProfile = compactProfile || authLenser
+
+  // Auth-gating helpers for nav items that require a Lenser profile
+  const isNavLocked = !hasLenser && !isLenserLoading
+  const navLockReason = !isAuthenticated
+    ? 'Sign in to access'
+    : 'Create a Lenser profile to access'
+  const handleLockedNav = () => {
+    if (!isAuthenticated) redirectToLogin()
+    else redirectToOnboarding()
+  }
 
   const navigate = useNavigate()
   const location = useLocation()
   const [isDropdownOpen, setIsDropdownOpen] = useState(false)
   const dropdownRef = useRef<HTMLDivElement>(null)
   const buttonRef = useRef<HTMLButtonElement>(null)
+
+  const [isSwitcherOpen, setIsSwitcherOpen] = useState(false)
+  const switcherRef = useRef<HTMLDivElement>(null)
+  const switcherButtonRef = useRef<HTMLButtonElement>(null)
 
   const [unreadCount, setUnreadCount] = useState(0)
   const [isFeedbackOpen, setIsFeedbackOpen] = useState(false)
@@ -143,6 +165,32 @@ export const Sidebar: React.FC<SidebarProps> = ({
       document.removeEventListener('keydown', handleKeyDown)
     }
   }, [isDropdownOpen])
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        isSwitcherOpen &&
+        switcherRef.current &&
+        !switcherRef.current.contains(event.target as Node) &&
+        switcherButtonRef.current &&
+        !switcherButtonRef.current.contains(event.target as Node)
+      ) {
+        setIsSwitcherOpen(false)
+      }
+    }
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape' && isSwitcherOpen) {
+        setIsSwitcherOpen(false)
+        switcherButtonRef.current?.focus()
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside)
+    document.addEventListener('keydown', handleKeyDown)
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside)
+      document.removeEventListener('keydown', handleKeyDown)
+    }
+  }, [isSwitcherOpen])
 
   useEffect(() => {
     return () => {
@@ -220,25 +268,9 @@ export const Sidebar: React.FC<SidebarProps> = ({
             onClick={handleLogoClick}
             title="Go Home"
           >
-            <div
-              className={`w-10 h-10 flex items-center justify-center flex-shrink-0 transition-transform group-hover:scale-105`}
-            >
-              <img
-                src="https://cdn.lenserfight.com/brand/lenserfight-logo.png"
-                alt="LenserFight Logo"
-                className="w-full h-full object-contain"
-              />
+            <div className="flex items-center min-w-0 transition-transform group-hover:scale-105">
+              <Logo size={32} showWordmark={showLabels} showBeta={showLabels} />
             </div>
-            {showLabels && (
-              <div className="relative">
-                <span className="font-bold text-lg tracking-tight text-gray-900 dark:text-white truncate">
-                  LenserFight
-                </span>
-                <span className="absolute -bottom-2.5 -right-8 bg-primary text-gray-900 text-[9px] font-bold px-1.5 py-0.5 rounded border border-yellow-300 shadow-sm leading-none tracking-wide">
-                  BETA
-                </span>
-              </div>
-            )}
           </div>
         </div>
 
@@ -273,6 +305,17 @@ export const Sidebar: React.FC<SidebarProps> = ({
             label="Lenses"
             isActive={isRouteActive(location.pathname, '/lenses')}
             collapsed={!showLabels}
+          />
+
+          <SidebarItem
+            onClick={() => handleNavigation('/workflows')}
+            icon={<GitBranch size={20} />}
+            label="Workflows"
+            isActive={isRouteActive(location.pathname, '/workflows')}
+            collapsed={!showLabels}
+            locked={isNavLocked}
+            lockReason={navLockReason}
+            onLockedClick={handleLockedNav}
           />
 
           <SidebarItem
@@ -428,6 +471,73 @@ export const Sidebar: React.FC<SidebarProps> = ({
                   </div>
                 )}
 
+                {/* Workspace switcher — visible when there are multiple profiles (human + AI) */}
+                {showLabels && FEATURES.AGENTS && profiles.length > 1 && (
+                  <div className="relative flex-shrink-0">
+                    <button
+                      ref={switcherButtonRef}
+                      aria-label="Switch workspace"
+                      aria-haspopup="listbox"
+                      aria-expanded={isSwitcherOpen}
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        setIsSwitcherOpen((v) => !v)
+                        setIsDropdownOpen(false)
+                      }}
+                      className={`p-1 rounded-md transition-colors ${isSwitcherOpen ? 'bg-gray-200 dark:bg-gray-600 text-gray-900 dark:text-white' : 'text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700'}`}
+                      title="Switch workspace"
+                    >
+                      <ChevronsUpDown size={14} />
+                    </button>
+
+                    {isSwitcherOpen && (
+                      <div
+                        ref={switcherRef}
+                        role="listbox"
+                        aria-label="Workspace switcher"
+                        className="absolute bottom-full left-0 mb-2 w-56 bg-white dark:bg-gray-800 rounded-2xl shadow-xl border border-gray-100 dark:border-gray-700 py-1 z-50 overflow-hidden"
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        <p className="px-3 pt-2 pb-1 text-[10px] font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500">
+                          Switch workspace
+                        </p>
+                        {/* All profiles: human first, then AI lensers */}
+                        {profiles.map((profile) => (
+                          <button
+                            key={profile.id}
+                            role="option"
+                            aria-selected={profile.is_active}
+                            className={`w-full text-left flex items-center gap-2.5 px-3 py-2 transition-colors ${profile.is_active ? 'bg-gray-50 dark:bg-gray-700/50' : 'hover:bg-gray-50 dark:hover:bg-gray-700/50'}`}
+                            onClick={() => {
+                              setIsSwitcherOpen(false)
+                              switchLenser(profile.id)
+                              navigate(`/lenser/${profile.handle}`)
+                            }}
+                          >
+                            <Avatar src={profile.avatar_url} size="sm" className="!w-6 !h-6 flex-shrink-0" />
+                            <div className="flex-1 min-w-0">
+                              <p className="text-sm font-medium text-gray-900 dark:text-white truncate leading-tight">
+                                {profile.display_name}
+                              </p>
+                              <p className="text-[11px] text-gray-500 dark:text-gray-400 truncate leading-tight">
+                                @{profile.handle}
+                              </p>
+                            </div>
+                            {profile.type === 'ai' && (
+                              <span className="text-[9px] font-semibold uppercase tracking-wide text-gray-400 flex-shrink-0 bg-gray-100 dark:bg-gray-700 px-1 rounded">
+                                AI
+                              </span>
+                            )}
+                            {profile.is_active && (
+                              <Check size={13} className="text-primary flex-shrink-0" />
+                            )}
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )}
+
                 {showLabels && (
                   <div className="relative">
                     <button
@@ -471,6 +581,20 @@ export const Sidebar: React.FC<SidebarProps> = ({
                             <User size={16} className="text-gray-400" />
                             My Profile
                           </button>
+
+                          {FEATURES.AGENTS && hasLenser && (
+                            <button
+                              role="menuitem"
+                              className="w-full text-left px-3 py-2 rounded-lg text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white flex items-center gap-3 transition-colors"
+                              onClick={() => {
+                                setIsDropdownOpen(false)
+                                navigate('/lensers?type=my_agents')
+                              }}
+                            >
+                              <Bot size={16} className="text-gray-400" />
+                              My Agents
+                            </button>
+                          )}
 
                           {FEATURES.NOTIFICATIONS && (
                             <button

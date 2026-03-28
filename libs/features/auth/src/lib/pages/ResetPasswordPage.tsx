@@ -1,4 +1,4 @@
-import { ArrowLeft, AlertCircle } from 'lucide-react'
+import { AlertCircle } from 'lucide-react'
 import React, { useState, useEffect } from 'react'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 
@@ -7,8 +7,8 @@ import { useAuth } from '@lenserfight/features/auth'
 import { useFormValidation } from '@lenserfight/utils/validation'
 import { isRequired, minLength } from '@lenserfight/utils/validation'
 import { AuthCard } from '../components/AuthCard'
-import { AuthButton } from '../components/AuthButton'
-import { AuthFormError } from '../components/AuthFormError'
+import { BackButton } from '../components/BackButton'
+import { Button, FormError } from '@lenserfight/ui/components'
 import { InputField } from '../components/InputField'
 import { PasswordStrengthMeter } from '../components/PasswordStrengthMeter'
 
@@ -73,25 +73,11 @@ export const ResetPasswordPage: React.FC = () => {
     }
   }
 
-  const returnUrl =
-    new URLSearchParams(window.location.search).get('return_url') ??
-    (import.meta.env.VITE_WEB_BASE_URL ?? 'https://forum.lenserfight.com')
-
-  const backButton = (
-    <a
-      href={returnUrl}
-      className="inline-flex items-center gap-2 text-sm font-semibold text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white transition-all bg-white/80 dark:bg-gray-800/80 backdrop-blur-md px-4 py-2.5 rounded-full hover:bg-white dark:hover:bg-gray-800 shadow-sm border border-gray-200/50 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600 w-auto"
-    >
-      <ArrowLeft size={16} />
-      Return back
-    </a>
-  )
-
   // Check for session in real auth mode (Supabase)
   // If not mock, and loading is done, and user is not authenticated, show error.
   if (!isMock && !isAuthLoading && !isAuthenticated) {
     return (
-      <AuthCard title="Reset Password" subtitle="Session Error" backButton={backButton}>
+      <AuthCard title="Reset Password" subtitle="Session Error" backButton={<BackButton />}>
         <div className="flex flex-col items-center justify-center text-center py-6">
           <div className="bg-red-50 p-4 rounded-full mb-4">
             <AlertCircle className="w-8 h-8 text-red-500" />
@@ -102,7 +88,7 @@ export const ResetPasswordPage: React.FC = () => {
             new one.
           </p>
           <Link to="/forgot-password" className="w-full">
-            <AuthButton type="button">Request New Link</AuthButton>
+            <Button type="button" >Request New Link</Button>
           </Link>
         </div>
       </AuthCard>
@@ -122,7 +108,7 @@ export const ResetPasswordPage: React.FC = () => {
     <AuthCard
       title="Set New Password"
       subtitle="Choose a strong password for your account"
-      backButton={backButton}
+      backButton={<BackButton />}
     >
       <form onSubmit={handleSubmit} className="space-y-4" noValidate>
         <div>
@@ -138,7 +124,7 @@ export const ResetPasswordPage: React.FC = () => {
             }
           />
           <PasswordStrengthMeter password={formData.password} />
-          <AuthFormError message={errors.password} />
+          <FormError message={errors.password} />
         </div>
 
         <div>
@@ -153,16 +139,16 @@ export const ResetPasswordPage: React.FC = () => {
               errors.confirmPassword ? 'border-red-500 focus:border-red-500 focus:ring-red-200' : ''
             }
           />
-          <AuthFormError message={errors.confirmPassword} />
+          <FormError message={errors.confirmPassword} />
         </div>
 
         {apiError && (
           <div className="text-red-500 text-sm bg-red-50 p-3 rounded-lg">{apiError}</div>
         )}
 
-        <AuthButton type="submit" isLoading={loading} className="mt-2 text-base font-semibold">
+        <Button type="submit" fullWidth={true} isLoading={loading} className="mt-2 text-base font-semibold">
           Update Password
-        </AuthButton>
+        </Button>
       </form>
 
       <div className="mt-8 text-center text-sm text-gray-500 font-medium">

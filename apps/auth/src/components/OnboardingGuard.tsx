@@ -23,9 +23,9 @@ export const OnboardingGuard: React.FC<{ children: React.ReactNode }> = ({ child
 
     if (!isAuthenticated) {
       const params = new URLSearchParams(window.location.search)
-      const returnUrl = params.get('return_url')
-      const loginUrl = returnUrl
-        ? `/login?return_url=${encodeURIComponent(returnUrl)}`
+      const rawReturnUrl = params.get('return_url')
+      const loginUrl = rawReturnUrl
+        ? `/login?return_url=${encodeURIComponent(sanitizeReturnUrl(rawReturnUrl))}`
         : '/login'
       replaceLocationSafely(loginUrl)
       return

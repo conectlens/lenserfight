@@ -1,8 +1,10 @@
+import { createAvatar } from '@dicebear/core'
+import { micah, openPeeps, pixelArt, toonHead } from '@dicebear/collection'
 import { Trash2 } from 'lucide-react'
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 
-import { Button } from '@lenserfight/ui/components'
-import { Modal } from '@lenserfight/ui/modals'
+import { Dialog, ModalFooter } from '@lenserfight/ui/overlays'
+import { Tabs, TabList, Tab, TabPanel } from '@lenserfight/ui/layout'
 
 interface AvatarSelectionModalProps {
   isOpen: boolean
@@ -12,40 +14,126 @@ interface AvatarSelectionModalProps {
   currentUrl?: string | null
 }
 
-const SEEDS = [
-  'Felix',
-  'Aneka',
-  'Zack',
-  'Sarah',
-  'Buster',
-  'Molly',
-  'Pepper',
-  'Willow',
-  'Garfield',
-  'Salem',
-  'Luna',
-  'Shadow',
-  'Max',
-  'Chloe',
-  'Jack',
-  'Bella',
-  'Rocky',
-  'Daisy',
-  'Buddy',
-  'Lily',
-  'Charlie',
-  'Lucy',
-  'Cooper',
-  'Coco',
-  'Bear',
-  'Sophie',
-  'Teddy',
-  'Sadie',
-  'Duke',
-  'Bailey',
+// 200 diverse seeds for rich variety
+const ALL_SEEDS = [
+  'Felix','Aneka','Zack','Sarah','Buster','Molly','Pepper','Willow','Garfield','Salem',
+  'Luna','Shadow','Max','Chloe','Jack','Bella','Rocky','Daisy','Buddy','Lily',
+  'Charlie','Lucy','Cooper','Coco','Bear','Sophie','Teddy','Sadie','Duke','Bailey',
+  'Amber','Archie','Ash','Atlas','Aurora','Axel','Azure','Blaze','Bloom','Blue',
+  'Bolt','Breeze','Briar','Brook','Bruno','Buck','Cairo','Canyon','Carbon','Cedar',
+  'Chase','Chess','Chip','Chrome','Cipher','Clay','Cliff','Cobalt','Cole','Comet',
+  'Coral','Crest','Cricket','Crimson','Cruz','Crystal','Cyan','Dagger','Dale','Dapper',
+  'Dash','Dawn','Dex','Diego','Dino','Diva','Dixon','Dodge','Domino','Dora',
+  'Drake','Drew','Drifter','Echo','Edge','Elara','Elm','Ember','Emmet','Enigma',
+  'Envy','Epic','Era','Ethan','Ether','Evan','Ezra','Fable','Falcon','Fawn',
+  'Fern','Fiero','Finch','Flare','Flash','Fleet','Flint','Floyd','Flynn','Foam',
+  'Forge','Fox','Fray','Frost','Fury','Galaxy','Gale','Garnet','Ghost','Gizmo',
+  'Glacier','Glen','Glimmer','Glitch','Glow','Granite','Grapple','Grayson','Grit','Grove',
+  'Halo','Hamish','Harbor','Harley','Hawk','Hazel','Heath','Hero','Hex','Hiro',
+  'Holden','Hollow','Homer','Hondo','Hops','Hudson','Hugo','Hunter','Hydra','Icon',
+  'Iggy','Ike','Indie','Indigo','Ion','Iris','Iron','Ivan','Ivory','Ivy',
+  'Jace','Jade','Jagger','Jasper','Jay','Jett','Jinx','Joel','Jonas','Juno',
+  'Kael','Kai','Karma','Keen','Kian','Kilo','Knox','Kodex','Koda','Kova',
+  'Lark','Laser','Latch','Lava','Levi','Link','Lion','Loki','Lotus','Lux',
 ]
 
-const PRESETS = SEEDS.map((seed) => `https://api.dicebear.com/7.x/avataaars/svg?seed=${seed}`)
+const PAGE_SIZE = 30
+
+const AVATAR_STYLES = [
+  { id: 'pixel-art',  label: 'Pixel Art',  collection: pixelArt },
+  { id: 'open-peeps', label: 'Open Peeps', collection: openPeeps },
+  { id: 'micah',      label: 'Micah',      collection: micah },
+  { id: 'toon-head',  label: 'Toon Head',  collection: toonHead },
+] as const
+
+type StyleId = (typeof AVATAR_STYLES)[number]['id']
+
+function useInfiniteAvatars(styleId: StyleId) {
+  const collection = useMemo(
+    () => AVATAR_STYLES.find((s) => s.id === styleId)!.collection,
+    [styleId]
+  )
+  const [page, setPage] = useState(1)
+  const [uris, setUris] = useState<string[]>([])
+  const sentinelRef = useRef<HTMLDivElement>(null)
+
+  // Reset when style changes
+  useEffect(() => {
+    setPage(1)
+    setUris([])
+  }, [styleId])
+
+  // Generate next page of data URIs (deferred so UI stays responsive)
+  useEffect(() => {
+    const start = (page - 1) * PAGE_SIZE
+    const seeds = ALL_SEEDS.slice(start, start + PAGE_SIZE)
+    if (seeds.length === 0) return
+
+    const id = requestIdleCallback(
+      () => {
+        const batch = seeds.map((seed) => createAvatar(collection, { seed }).toDataUri())
+        setUris((prev) => [...prev, ...batch])
+      },
+      { timeout: 300 }
+    )
+    return () => cancelIdleCallback(id)
+  }, [page, collection])
+
+  const hasMore = page * PAGE_SIZE < ALL_SEEDS.length
+
+  // IntersectionObserver sentinel
+  useEffect(() => {
+    if (!hasMore) return
+    const el = sentinelRef.current
+    if (!el) return
+    const observer = new IntersectionObserver(
+      ([entry]) => { if (entry.isIntersecting) setPage((p) => p + 1) },
+      { threshold: 0.1 }
+    )
+    observer.observe(el)
+    return () => observer.disconnect()
+  }, [hasMore, uris.length])
+
+  return { uris, hasMore, sentinelRef }
+}
+
+// Per-tab panel — isolated hook instance
+const AvatarPanel: React.FC<{
+  styleId: StyleId
+  selected: string | null
+  onSelect: (uri: string) => void
+}> = ({ styleId, selected, onSelect }) => {
+  const { uris, hasMore, sentinelRef } = useInfiniteAvatars(styleId)
+
+  return (
+    <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-4">
+      {uris.map((uri) => (
+        <button
+          key={uri}
+          onClick={() => onSelect(uri)}
+          className={`
+            relative aspect-square rounded-full overflow-hidden border-2 transition-all p-1 group
+            ${selected === uri
+              ? 'border-primary ring-2 ring-primary/30'
+              : 'border-transparent hover:border-gray-200 dark:hover:border-gray-700'}
+          `}
+        >
+          <img
+            src={uri}
+            alt="Avatar option"
+            loading="lazy"
+            className="w-full h-full object-cover rounded-full bg-gray-50 dark:bg-gray-700"
+          />
+        </button>
+      ))}
+      {hasMore && (
+        <div ref={sentinelRef} className="col-span-full flex justify-center py-4">
+          <span className="text-sm text-gray-400">Loading more…</span>
+        </div>
+      )}
+    </div>
+  )
+}
 
 export const AvatarSelectionModal: React.FC<AvatarSelectionModalProps> = ({
   isOpen,
@@ -55,70 +143,46 @@ export const AvatarSelectionModal: React.FC<AvatarSelectionModalProps> = ({
   currentUrl,
 }) => {
   const [selected, setSelected] = useState<string | null>(null)
+  const [activeStyle, setActiveStyle] = useState<StyleId>('pixel-art')
 
   useEffect(() => {
-    if (isOpen) {
-      setSelected(currentUrl || null)
-    }
+    if (isOpen) setSelected(currentUrl || null)
   }, [isOpen, currentUrl])
 
-  const handleConfirm = () => {
-    onSelect(selected)
-  }
+  const handleConfirm = useCallback(() => onSelect(selected), [onSelect, selected])
 
-  const handleRemove = () => {
-    if (window.confirm('Are you sure you want to remove your avatar?')) {
-      onSelect(null)
-    }
-  }
+  const handleRemove = useCallback(() => {
+    if (window.confirm('Are you sure you want to remove your avatar?')) onSelect(null)
+  }, [onSelect])
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title="Choose your Lenser">
-      <div className="max-h-[60vh] overflow-y-auto pr-2 -mr-2">
-        <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-4 mb-6">
-          {PRESETS.map((url) => (
-            <button
-              key={url}
-              onClick={() => setSelected(url)}
-              className={`
-                        relative aspect-square rounded-full overflow-hidden border-2 transition-all p-1 group
-                        ${selected === url ? 'border-primary ring-2 ring-primary/30' : 'border-transparent hover:border-gray-200 dark:hover:border-gray-700'}
-                    `}
-            >
-              <img
-                src={url}
-                alt="Avatar option"
-                className="w-full h-full object-cover rounded-full bg-gray-50 dark:bg-gray-700"
-              />
-            </button>
+    <Dialog
+      open={isOpen}
+      onClose={onClose}
+      title="Choose your Lenser"
+      maxWidth="max-w-2xl"
+      footer={
+        <ModalFooter
+          leftButton={{ label: <><Trash2 size={16} /> Remove</>, onClick: handleRemove, variant: 'danger' }}
+          rightButtons={[{ label: 'Cancel', onClick: onClose, disabled: isLoading, variant: 'secondary' }]}
+          primaryButton={{ label: 'Save', onClick: handleConfirm, isLoading }}
+        />
+      }
+    >
+      <Tabs value={activeStyle} onChange={(id) => setActiveStyle(id as StyleId)}>
+        <TabList variant="pills" className="mb-4">
+          {AVATAR_STYLES.map(({ id, label }) => (
+            <Tab key={id} id={id}>{label}</Tab>
           ))}
-        </div>
-      </div>
-
-      <div className="flex flex-col sm:flex-row justify-between items-center gap-3 mt-4 pt-4 border-t border-gray-100 dark:border-gray-700">
-        <button
-          type="button"
-          onClick={handleRemove}
-          className="text-red-500 text-sm font-medium hover:text-red-600 flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors w-full sm:w-auto justify-center sm:justify-start"
-          title="Remove Avatar"
-        >
-          <Trash2 size={16} /> Remove
-        </button>
-
-        <div className="flex gap-2 w-full sm:w-auto">
-          <Button
-            variant="secondary"
-            onClick={onClose}
-            disabled={isLoading}
-            className="flex-1 sm:w-auto px-4 dark:bg-gray-700 dark:text-white dark:border-gray-600 dark:hover:bg-gray-600"
-          >
-            Cancel
-          </Button>
-          <Button onClick={handleConfirm} isLoading={isLoading} className="flex-1 sm:w-auto px-6">
-            Save
-          </Button>
-        </div>
-      </div>
-    </Modal>
+        </TabList>
+        {AVATAR_STYLES.map(({ id }) => (
+          <TabPanel key={id} id={id}>
+            <div className="max-h-[420px] overflow-y-auto pr-1">
+              <AvatarPanel styleId={id} selected={selected} onSelect={setSelected} />
+            </div>
+          </TabPanel>
+        ))}
+      </Tabs>
+    </Dialog>
   )
 }

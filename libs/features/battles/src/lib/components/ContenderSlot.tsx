@@ -48,7 +48,7 @@ export function ContenderSlot({
       {votePercentage !== undefined && (
         <div className="h-2 overflow-hidden rounded-full bg-surface-sunken">
           <motion.div
-            className={`h-full rounded-full ${slot === 'A' ? 'bg-status-blue' : 'bg-primary-yellow-600'}`}
+            className={`h-full rounded-full ${slot === 'A' ? 'bg-primary-yellow-500' : 'bg-primary-yellow-600'}`}
             initial={{ width: '0%' }}
             animate={{ width: `${votePercentage}%` }}
             transition={{ duration: 0.8, ease: 'easeOut' }}

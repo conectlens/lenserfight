@@ -290,3 +290,14 @@ html.dark .lf-btn-outline {
   color: #16a34a;
   background: rgba(22, 163, 74, 0.06);
 }
+
+/* ─── Home page logo hero ─── */
+.lf-home-logo-hero {
+  display: flex;
+  justify-content: center;
+  padding: 2.5rem 0 1rem;
+}
+
+.lf-home-logo-hero .docs-logo__wordmark {
+  font-size: 2rem;
+}

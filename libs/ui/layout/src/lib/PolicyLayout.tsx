@@ -47,7 +47,7 @@ export function PolicyLayout({ title, children }: PolicyLayoutProps) {
                   }`}
                 >
                   <span>{label}</span>
-                  {active && <span className="h-2 w-2 rounded-full bg-status-blue" />}
+                  {active && <span className="h-2 w-2 rounded-full bg-primary-yellow-500" />}
                 </Link>
               )
             })}

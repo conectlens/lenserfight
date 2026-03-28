@@ -49,7 +49,7 @@ export function ScoreSystem({ aggregates, contenders }: ScoreSystemProps) {
       </div>
       <div className="flex items-center justify-between text-xs font-medium text-greyscale-500 dark:text-greyscale-400">
         <span className="flex items-center gap-2">
-          <span className="h-2 w-2 rounded-full bg-status-blue" />
+          <span className="h-2 w-2 rounded-full bg-primary-yellow-500" />
           {contenderA?.display_name ?? 'A'}:
           <strong className="text-greyscale-900 dark:text-greyscale-50">
             <AnimatedCount value={countA} />

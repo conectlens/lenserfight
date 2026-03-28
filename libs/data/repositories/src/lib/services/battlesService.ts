@@ -1,17 +1,26 @@
 import {
   SupabaseBattlesRepository,
   BattleRecord,
+  BattleCommentRecord,
+  GlobalMessageRecord,
+  BattleFeedItemRecord,
+  BattlesFeedOptions,
   ContenderRecord,
   VoteAggregateRecord,
   ScorecardRecord,
   RubricCriterionRecord,
   SubmissionRecord,
   SubmitVoteInput,
+  InviteContenderInput,
+  ContenderLensAssignmentRecord,
+  AssignLensInput,
+  CreateBattleInput,
+  ChatCursor,
 } from '../repositories/battlesRepository'
 
 const battlesRepo = new SupabaseBattlesRepository()
 
-export type { BattleRecord, ContenderRecord, VoteAggregateRecord, ScorecardRecord, RubricCriterionRecord, SubmissionRecord, SubmitVoteInput }
+export type { BattleRecord, BattleCommentRecord, GlobalMessageRecord, BattleFeedItemRecord, BattlesFeedOptions, ContenderRecord, VoteAggregateRecord, ScorecardRecord, RubricCriterionRecord, SubmissionRecord, SubmitVoteInput, InviteContenderInput, ContenderLensAssignmentRecord, AssignLensInput, CreateBattleInput, ChatCursor }
 
 export interface BattleContendersData {
   contenders: ContenderRecord[]
@@ -29,11 +38,20 @@ export interface WinnerInfo {
 }
 
 export const battlesService = {
+  createBattle: (input: CreateBattleInput): Promise<BattleRecord> =>
+    battlesRepo.createBattle(input),
+
   getBattleBySlug: (slug: string): Promise<BattleRecord | null> =>
     battlesRepo.getBattleBySlug(slug),
 
-  getBattlesFeed: (filter?: string, limit?: number): Promise<BattleRecord[]> =>
-    battlesRepo.getBattlesFeed(filter, limit),
+  updateBattle: (id: string, input: Partial<CreateBattleInput>): Promise<BattleRecord> =>
+    battlesRepo.updateBattle(id, input),
+
+  getLatestDraftBattleByWorkflowId: (workflowId: string): Promise<BattleRecord | null> =>
+    battlesRepo.getLatestDraftBattleByWorkflowId(workflowId),
+
+  getBattlesFeed: (filter?: string, limit?: number, cursor?: string, sortBy?: 'newest' | 'most_votes' | 'trending'): Promise<BattleRecord[]> =>
+    battlesRepo.getBattlesFeed(filter, limit, undefined, cursor, sortBy),
 
   getContendersAndSubmissions: async (battleId: string): Promise<BattleContendersData> => {
     const [contenders, submissions] = await Promise.all([
@@ -53,8 +71,53 @@ export const battlesService = {
     return { scorecards, criteria }
   },
 
+  getBattlesFeedItems: (options?: BattlesFeedOptions): Promise<BattleFeedItemRecord[]> =>
+    battlesRepo.getBattlesFeedItems(options),
+
+  getMyVote: (battleId: string): Promise<{ vote_value: string } | null> =>
+    battlesRepo.getMyVote(battleId),
+
   submitVote: (input: SubmitVoteInput): Promise<void> =>
-    battlesRepo.submitVote(input),
+    battlesRepo.submitVote(input).then(() => undefined),
+
+  publishBattle: (battleId: string): Promise<BattleRecord> =>
+    battlesRepo.publishBattle(battleId),
+
+  getBattleComments: (battleId: string, limit?: number, cursor?: ChatCursor): Promise<BattleCommentRecord[]> =>
+    battlesRepo.getBattleComments(battleId, limit, cursor),
+
+  postComment: (battleId: string, lenserId: string, body: string): Promise<BattleCommentRecord> =>
+    battlesRepo.postComment(battleId, lenserId, body),
+
+  getGlobalMessages: (battleId: string, limit?: number, cursor?: ChatCursor): Promise<GlobalMessageRecord[]> =>
+    battlesRepo.getGlobalMessages(battleId, limit, cursor),
+
+  postGlobalMessage: (battleId: string, senderId: string, senderHandle: string, senderRole: string, body: string): Promise<GlobalMessageRecord> =>
+    battlesRepo.postGlobalMessage(battleId, senderId, senderHandle, senderRole, body),
+
+  inviteContender: (input: InviteContenderInput): Promise<ContenderRecord> =>
+    battlesRepo.inviteContender(input),
+
+  submitContenderEntry: (battleId: string, contenderId: string, contentText: string): Promise<SubmissionRecord> =>
+    battlesRepo.submitContenderEntry(battleId, contenderId, contentText),
+
+  linkForumThread: (battleId: string, forumThreadId: string): Promise<void> =>
+    battlesRepo.linkForumThread(battleId, forumThreadId),
+
+  checkVoterEligibility: (battleId: string, lenserId: string): Promise<boolean> =>
+    battlesRepo.checkVoterEligibility(battleId, lenserId),
+
+  assignLensToContender: (input: AssignLensInput): Promise<ContenderLensAssignmentRecord> =>
+    battlesRepo.assignLensToContender(input),
+
+  getLensAssignment: (contenderId: string): Promise<ContenderLensAssignmentRecord | null> =>
+    battlesRepo.getLensAssignment(contenderId),
+
+  openVoting: (battleId: string): Promise<void> =>
+    battlesRepo.openVoting(battleId),
+
+  closeVoting: (battleId: string): Promise<void> =>
+    battlesRepo.closeVoting(battleId),
 
   deriveWinner: (
     aggregates: VoteAggregateRecord[],

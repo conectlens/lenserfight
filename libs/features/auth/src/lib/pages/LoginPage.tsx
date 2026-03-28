@@ -1,5 +1,5 @@
 import { Turnstile } from '@marsidev/react-turnstile'
-import { Eye, EyeOff, ArrowLeft, Check } from 'lucide-react'
+import { Eye, EyeOff, Check, AlertCircle } from 'lucide-react'
 import React, { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 
@@ -8,9 +8,11 @@ import { useAuth } from '@lenserfight/features/auth'
 import { rememberMeStorage } from '@lenserfight/data/supabase'
 import { useFormValidation } from '@lenserfight/utils/validation'
 import { isRequired, isEmail } from '@lenserfight/utils/validation'
+import { normalizeError, type AppError } from '@lenserfight/shared/error'
 import { AuthCard } from '../components/AuthCard'
-import { AuthButton } from '../components/AuthButton'
-import { AuthLoadingOverlay } from '../components/AuthLoadingOverlay'
+import { BackButton } from '../components/BackButton'
+import { Button } from '@lenserfight/ui/components'
+import { Loader } from '@lenserfight/ui/feedback'
 import { InputField } from '../components/InputField'
 
 export const LoginPage: React.FC = () => {
@@ -29,7 +31,7 @@ export const LoginPage: React.FC = () => {
 
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [oauthLoading, setOauthLoading] = useState(false)
-  const [apiError, setApiError] = useState<string | null>(null)
+  const [apiError, setApiError] = useState<AppError | null>(null)
   const [showPassword, setShowPassword] = useState(false)
   const [isSuccess, setIsSuccess] = useState(false)
   const [captchaToken, setCaptchaToken] = useState<string | null>(null)
@@ -48,7 +50,7 @@ export const LoginPage: React.FC = () => {
     if (!validate(formData)) return
 
     if (ENABLE_CAPTCHA && !captchaToken) {
-      setApiError('Please complete the security check.')
+      setApiError({ kind: 'unknown', message: 'Please complete the security check.' })
       return
     }
 
@@ -60,8 +62,8 @@ export const LoginPage: React.FC = () => {
 
       // Success State Trigger - effectively starts the transition animation
       setIsSuccess(true)
-    } catch (err: any) {
-      setApiError(err.message || 'Failed to sign in')
+    } catch (err: unknown) {
+      setApiError(normalizeError(err))
       setIsSubmitting(false) // Only stop loading on error
       if (ENABLE_CAPTCHA) setCaptchaToken(null) // Reset captcha on error
     }
@@ -77,31 +79,17 @@ export const LoginPage: React.FC = () => {
         setIsSuccess(true)
         setTimeout(() => navigate('/', { replace: true }), 1500)
       }
-    } catch (err: any) {
-      setApiError(err.message || `Failed to sign in with ${provider}`)
+    } catch (err: unknown) {
+      setApiError(normalizeError(err))
       setOauthLoading(false)
     }
   }
 
-  const returnUrl =
-    new URLSearchParams(window.location.search).get('return_url') ??
-    (import.meta.env.VITE_WEB_BASE_URL ?? 'https://forum.lenserfight.com')
-
-  const backButton = (
-    <a
-      href={returnUrl}
-      className="inline-flex items-center gap-2 text-sm font-semibold text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white transition-all bg-white/80 dark:bg-gray-800/80 backdrop-blur-md px-4 py-2.5 rounded-full hover:bg-white dark:hover:bg-gray-800 shadow-sm border border-gray-200/50 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600 w-auto"
-    >
-      <ArrowLeft size={16} />
-      Return back
-    </a>
-  )
-
   return (
     <>
-      {isSuccess && <AuthLoadingOverlay isSuccess message="Welcome back, Lenser." />}
+      {isSuccess && <Loader variant="card" isSuccess message="Welcome back, Lenser." />}
 
-      <AuthCard title="Sign In" subtitle="Welcome back, Lenser" backButton={backButton}>
+      <AuthCard title="Sign In" subtitle="Welcome back, Lenser" backButton={<BackButton />}>
         <form onSubmit={handleSubmit} className="space-y-5" noValidate>
           <div>
             <InputField
@@ -178,19 +166,28 @@ export const LoginPage: React.FC = () => {
 
           {apiError && (
             <div className="flex items-start gap-2 bg-red-50 dark:bg-red-900/20 border border-red-100 dark:border-red-800 p-3 rounded-xl text-red-600 dark:text-red-400 text-sm animate-in fade-in slide-in-from-top-1">
-              <span className="mt-0.5">⚠️</span>
-              {apiError}
+              <AlertCircle size={16} className="mt-0.5 flex-shrink-0" />
+              <span>
+                {apiError.kind === 'rate_limit'
+                  ? 'Too many sign-in attempts. Please wait a moment before trying again.'
+                  : apiError.kind === 'forbidden'
+                    ? 'Your account has been suspended. Please contact support.'
+                    : apiError.kind === 'server_error'
+                      ? 'Server error. Please try again in a moment.'
+                      : apiError.message}
+              </span>
             </div>
           )}
 
-          <AuthButton
+          <Button
             type="submit"
+            fullWidth={true}
             isLoading={isSubmitting}
             disabled={oauthLoading || isSuccess || (ENABLE_CAPTCHA && !captchaToken)}
             className="mt-4 py-3 text-base font-bold shadow-lg shadow-[rgba(40,123,255,0.2)]"
           >
             {isSuccess ? 'Signing In...' : 'Sign In'}
-          </AuthButton>
+          </Button>
         </form>
 
         <div className="relative my-8">

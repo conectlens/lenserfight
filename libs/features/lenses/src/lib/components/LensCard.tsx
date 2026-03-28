@@ -102,13 +102,13 @@ export const LensCard: React.FC<LensCardProps> = memo(
         <div className="flex items-center justify-between pt-4 border-t border-gray-50 dark:border-gray-700 mt-auto">
           <div className="flex items-center gap-2 group/author z-10" onClick={handleUserClick}>
             <Avatar
-              src={lens.author.avatarUrl}
-              alt={lens.author.displayName}
+              src={lens.author?.avatarUrl}
+              alt={lens.author?.displayName}
               size="sm"
               className="!w-6 !h-6 ring-2 ring-white dark:ring-gray-800"
             />
             <span className="text-xs font-medium text-gray-500 dark:text-gray-400 group-hover/author:text-gray-900 dark:group-hover/author:text-gray-200 transition-colors truncate max-w-[120px]">
-              {lens.author.displayName}
+              {lens.author?.displayName}
             </span>
           </div>
 

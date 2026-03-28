@@ -25,6 +25,10 @@ const ELIGIBILITY_OPTIONS: Record<BattleType, { value: VoterEligibility; label: 
     { value: 'open', label: 'Open', description: 'Any authenticated lenser can vote.' },
     { value: 'verified_lenser', label: 'Verified lensers', description: 'Only lensers who completed onboarding.' },
   ],
+  workflow_battle: [
+    { value: 'open', label: 'Open', description: 'Any authenticated lenser can vote.' },
+    { value: 'verified_lenser', label: 'Verified lensers', description: 'Only lensers who completed onboarding.' },
+  ],
 }
 
 export function VoterEligibilitySelector({ battleType, value, onChange }: VoterEligibilitySelectorProps) {
@@ -45,7 +49,7 @@ export function VoterEligibilitySelector({ battleType, value, onChange }: VoterE
               className={`flex cursor-pointer items-start gap-3 rounded-2xl border p-4 transition-colors ${
                 isSelected
                   ? 'border-greyscale-900 bg-greyscale-50 dark:border-greyscale-0 dark:bg-greyscale-900'
-                  : 'border-surface-border bg-surface-base hover:border-status-blue'
+                  : 'border-surface-border bg-surface-base hover:border-primary-yellow-500'
               } ${locked ? 'cursor-default opacity-80' : ''}`}
             >
               <input

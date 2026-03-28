@@ -1,5 +1,5 @@
-import { Button } from '@lenserfight/ui/components'
-import { Card } from '@lenserfight/ui/components'
+import { Button, Card } from '@lenserfight/ui/components'
+import { Input } from '@lenserfight/ui/forms'
 import React, { useState } from 'react'
 
 interface BattleShareCardProps {
@@ -23,10 +23,10 @@ export function BattleShareCard({ battleSlug, battleTitle }: BattleShareCardProp
       <p className="text-sm font-semibold text-greyscale-900 dark:text-greyscale-50">Share this result</p>
       <p className="text-xs leading-6 text-greyscale-500 dark:text-greyscale-400">{battleTitle}</p>
       <div className="flex items-center gap-2">
-        <input
+        <Input
           readOnly
           value={url}
-          className="min-w-0 flex-1 rounded-2xl border border-surface-border bg-surface-raised px-3 py-2 font-mono text-xs text-greyscale-600 outline-none dark:text-greyscale-400"
+          className="min-w-0 flex-1 font-mono text-xs text-greyscale-600 dark:text-greyscale-400"
         />
         <Button size="sm" onClick={copy} className="whitespace-nowrap w-auto">
           {copied ? 'Copied!' : 'Copy'}

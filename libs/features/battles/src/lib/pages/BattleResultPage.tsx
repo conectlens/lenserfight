@@ -36,6 +36,8 @@ export function BattleResultPage() {
           contenderB={props.contenderB}
           disabled={props.disabled}
           onVote={props.onVote}
+          voterEligibility={props.voterEligibility}
+          isEligible={props.isEligible}
         />
       )}
       renderRubricPanel={(props) => (

@@ -42,7 +42,7 @@ export const LensBodyViewer: React.FC<LensBodyViewerProps> = ({ content, version
             <button
               onClick={onFork}
               disabled={isForking}
-              className="group/fork relative rounded-2xl border border-surface-border bg-surface-base p-2 text-greyscale-500 shadow-sm transition-colors hover:border-status-blue hover:text-status-blue disabled:cursor-not-allowed disabled:opacity-60"
+              className="group/fork relative rounded-2xl border border-surface-border bg-surface-base p-2 text-greyscale-500 shadow-sm transition-colors hover:border-primary-yellow-500 hover:text-primary-yellow-600 disabled:cursor-not-allowed disabled:opacity-60"
               aria-label="Fork lens"
             >
               {isForking ? <Loader2 size={16} className="animate-spin" /> : <GitFork size={16} />}
@@ -59,7 +59,7 @@ export const LensBodyViewer: React.FC<LensBodyViewerProps> = ({ content, version
                 group/btn relative rounded-2xl border p-2 shadow-sm transition-colors
                 ${copied
                 ? 'border-status-green/30 bg-status-green/10 text-status-green'
-                : 'border-surface-border bg-surface-base text-greyscale-500 hover:border-status-blue hover:text-status-blue'
+                : 'border-surface-border bg-surface-base text-greyscale-500 hover:border-primary-yellow-500 hover:text-primary-yellow-600'
               }
               `}
             aria-label="Copy lens content"

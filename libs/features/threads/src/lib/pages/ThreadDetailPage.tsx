@@ -6,13 +6,13 @@ import { queryKeys } from '@lenserfight/data/cache'
 
 import { Button } from '@lenserfight/ui/components'
 import { ConfirmModal } from '@lenserfight/ui/modals'
+import { SelectField } from '@lenserfight/ui/forms'
 import { SEOHead } from '@lenserfight/ui/components'
 import { useAuth } from '@lenserfight/features/auth'
 import { useShareContext } from '@lenserfight/features/share'
 import { useUI } from '@lenserfight/ui/providers'
 import { threadsService } from '@lenserfight/data/repositories'
 import { useReportContent } from '@lenserfight/features/home'
-import { CreateLenserProfileModal } from '@lenserfight/features/onboarding'
 import { buildAuthReturnUrl } from '@lenserfight/utils/dom'
 import { CreateThreadModal } from '../components/CreateThreadModal'
 import { ReplyComposer } from '../components/ReplyComposer'
@@ -32,7 +32,6 @@ export const ThreadDetailPage: React.FC = () => {
 
   const reportContent = useReportContent()
 
-  const [showProfileModal, setShowProfileModal] = useState(false)
   const [isEditModalOpen, setIsEditModalOpen] = useState(false)
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false)
   const [isDeleting, setIsDeleting] = useState(false)
@@ -106,7 +105,7 @@ export const ThreadDetailPage: React.FC = () => {
       return
     }
     if (!hasLenser) {
-      setShowProfileModal(true)
+      navigate('/onboarding', { state: { from: window.location.pathname } })
       return
     }
     toggleReaction()
@@ -119,7 +118,7 @@ export const ThreadDetailPage: React.FC = () => {
       return
     }
     if (!hasLenser) {
-      setShowProfileModal(true)
+      navigate('/onboarding', { state: { from: window.location.pathname } })
       return
     }
     toggleReplyReaction(replyId)
@@ -219,7 +218,6 @@ export const ThreadDetailPage: React.FC = () => {
         />
       </div>
 
-      {showProfileModal && <CreateLenserProfileModal onClose={() => setShowProfileModal(false)} />}
 
       {isEditModalOpen && (
         <CreateThreadModal
@@ -255,31 +253,24 @@ export const ThreadDetailPage: React.FC = () => {
             <p className="text-sm text-gray-500 dark:text-gray-400">
               Why are you reporting this thread?
             </p>
-            <select
+            <SelectField
               value={reportReason}
-              onChange={(e) =>
-                setReportReason(
-                  e.target.value as 'spam' | 'harassment' | 'misinformation' | 'off_topic' | 'other'
-                )
-              }
-              className="w-full border border-gray-200 dark:border-gray-600 rounded-lg px-3 py-2 text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-            >
-              {(['spam', 'harassment', 'misinformation', 'off_topic', 'other'] as const).map(
-                (r) => (
-                  <option key={r} value={r}>
-                    {r.replace('_', ' ').replace(/\b\w/g, (c) => c.toUpperCase())}
-                  </option>
-                )
-              )}
-            </select>
+              onChange={(v) => setReportReason(v as 'spam' | 'harassment' | 'misinformation' | 'off_topic' | 'other')}
+              options={(['spam', 'harassment', 'misinformation', 'off_topic', 'other'] as const).map((r) => ({
+                value: r,
+                label: r.replace('_', ' ').replace(/\b\w/g, (c) => c.toUpperCase()),
+              }))}
+            />
             <div className="flex gap-3 justify-end pt-1">
-              <button
+              <Button
+                variant="ghost"
                 onClick={() => setIsReportOpen(false)}
-                className="px-4 py-2 text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors"
+                className="w-auto"
               >
                 Cancel
-              </button>
-              <button
+              </Button>
+              <Button
+                variant="danger"
                 onClick={() => {
                   reportContent.mutate({
                     targetType: 'thread',
@@ -289,10 +280,11 @@ export const ThreadDetailPage: React.FC = () => {
                   setIsReportOpen(false)
                 }}
                 disabled={reportContent.isPending}
-                className="px-4 py-2 text-sm bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors disabled:opacity-50"
+                isLoading={reportContent.isPending}
+                className="w-auto"
               >
                 {reportContent.isPending ? 'Reporting…' : 'Report'}
-              </button>
+              </Button>
             </div>
           </div>
         </div>

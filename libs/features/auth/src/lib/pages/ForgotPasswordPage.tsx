@@ -1,5 +1,4 @@
 import { Turnstile } from '@marsidev/react-turnstile'
-import { ArrowLeft } from 'lucide-react'
 import React, { useState } from 'react'
 import { Link } from 'react-router-dom'
 
@@ -8,8 +7,8 @@ import { useAuth } from '@lenserfight/features/auth'
 import { useFormValidation } from '@lenserfight/utils/validation'
 import { isRequired, isEmail } from '@lenserfight/utils/validation'
 import { AuthCard } from '../components/AuthCard'
-import { AuthButton } from '../components/AuthButton'
-import { AuthFormError } from '../components/AuthFormError'
+import { BackButton } from '../components/BackButton'
+import { Button, FormError } from '@lenserfight/ui/components'
 import { InputField } from '../components/InputField'
 
 export const ForgotPasswordPage: React.FC = () => {
@@ -88,32 +87,18 @@ export const ForgotPasswordPage: React.FC = () => {
             </div>
           )}
           <Link to="/auth/login">
-            <AuthButton type="button">Return to Sign In</AuthButton>
+            <Button type="button" >Return to Sign In</Button>
           </Link>
         </div>
       </AuthCard>
     )
   }
 
-  const returnUrl =
-    new URLSearchParams(window.location.search).get('return_url') ??
-    (import.meta.env.VITE_WEB_BASE_URL ?? 'https://forum.lenserfight.com')
-
-  const backButton = (
-    <a
-      href={returnUrl}
-      className="inline-flex items-center gap-2 text-sm font-semibold text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white transition-all bg-white/80 dark:bg-gray-800/80 backdrop-blur-md px-4 py-2.5 rounded-full hover:bg-white dark:hover:bg-gray-800 shadow-sm border border-gray-200/50 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600 w-auto"
-    >
-      <ArrowLeft size={16} />
-      Return back
-    </a>
-  )
-
   return (
     <AuthCard
       title="Reset Password"
       subtitle="Enter your email to receive instructions"
-      backButton={backButton}
+      backButton={<BackButton />}
     >
       <form onSubmit={handleSubmit} className="space-y-6" noValidate>
         <div>
@@ -126,7 +111,7 @@ export const ForgotPasswordPage: React.FC = () => {
             onChange={handleChange}
             className={errors.email ? 'border-red-500 focus:border-red-500 focus:ring-red-200' : ''}
           />
-          <AuthFormError message={errors.email} />
+          <FormError message={errors.email} />
         </div>
 
         {ENABLE_CAPTCHA && (
@@ -139,14 +124,15 @@ export const ForgotPasswordPage: React.FC = () => {
           <div className="text-red-500 text-sm bg-red-50 p-3 rounded-lg">{apiError}</div>
         )}
 
-        <AuthButton
+        <Button
           type="submit"
+          fullWidth={true}
           isLoading={loading}
           disabled={ENABLE_CAPTCHA && !captchaToken}
           className="mt-2 text-base font-semibold"
         >
           Send Reset Link
-        </AuthButton>
+        </Button>
       </form>
 
       <div className="mt-8 text-center text-sm text-gray-500 font-medium">

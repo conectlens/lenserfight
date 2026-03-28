@@ -71,6 +71,6 @@ describe('GatewayGuard', () => {
       expect(mockReplaceLocationSafely).toHaveBeenCalledWith('https://forum.lenserfight.com/from-test')
     })
 
-    expect(screen.getByText('Redirecting...')).not.toBeNull()
+    expect(screen.getByRole('status', { name: 'Redirecting...' })).not.toBeNull()
   })
 })

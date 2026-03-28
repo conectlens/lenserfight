@@ -20,15 +20,16 @@ export const GatewayGuard: React.FC<{ children: React.ReactNode }> = ({ children
   const { data: gate, isLoading: gateLoading, error: gateError } = useAuthProfileGate()
 
   useEffect(() => {
-    if (isLoading || gateLoading || !gate) return
+    if (isLoading || gateLoading) return
+    if (!gate && !gateError) return
     if (isAuthenticated) {
       const params = new URLSearchParams(window.location.search)
       const returnUrl = sanitizeReturnUrl(params.get('return_url'))
-      replaceLocationSafely(getAuthGateRedirectUrl(gate, returnUrl))
+      replaceLocationSafely(gate ? getAuthGateRedirectUrl(gate, returnUrl) : returnUrl)
     }
-  }, [gate, gateLoading, isAuthenticated, isLoading])
+  }, [gate, gateLoading, gateError, isAuthenticated, isLoading])
 
-  if (isLoading || gateLoading || (isAuthenticated && !!gateError) || (isAuthenticated && gate)) {
+  if (isLoading || gateLoading || (isAuthenticated && (!!gate || !!gateError))) {
     return <LoadingOverlay message={isAuthenticated ? 'Redirecting...' : 'Loading...'} />
   }
 

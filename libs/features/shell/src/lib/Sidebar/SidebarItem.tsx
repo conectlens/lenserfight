@@ -7,6 +7,12 @@ interface SidebarItemProps extends React.ButtonHTMLAttributes<HTMLButtonElement>
   isActive?: boolean
   collapsed?: boolean
   isComingSoon?: boolean
+  /** Show a lock indicator and redirect to login/onboarding when clicked */
+  locked?: boolean
+  /** Tooltip shown when hovering a locked item */
+  lockReason?: string
+  /** Called when a locked item is clicked instead of the normal onClick */
+  onLockedClick?: () => void
 }
 
 export const SidebarItem: React.FC<SidebarItemProps> = ({
@@ -15,6 +21,9 @@ export const SidebarItem: React.FC<SidebarItemProps> = ({
   isActive,
   collapsed,
   isComingSoon,
+  locked,
+  lockReason,
+  onLockedClick,
   className = '',
   disabled,
   onClick,
@@ -39,17 +48,25 @@ export const SidebarItem: React.FC<SidebarItemProps> = ({
   } else if (isComingSoon) {
     // Locked/Coming Soon State (Redesigned)
     variantClasses = `
-      bg-gray-50/80 dark:bg-[#121212] 
+      bg-gray-50/80 dark:bg-[#121212]
       border-gray-200/60 dark:border-gray-800
       text-gray-400 dark:text-gray-500
       cursor-not-allowed
     `
+  } else if (locked) {
+    // Auth-locked State — still clickable, but dimmed with lock indicator
+    variantClasses = `
+      border-transparent
+      text-gray-400 dark:text-gray-500
+      opacity-60
+      hover:opacity-80 hover:bg-gray-100 dark:hover:bg-gray-800
+    `
   } else {
     // Inactive Interactive State
     variantClasses = `
-      border-transparent 
-      text-gray-600 dark:text-gray-400 
-      hover:bg-gray-100 dark:hover:bg-gray-800 
+      border-transparent
+      text-gray-600 dark:text-gray-400
+      hover:bg-gray-100 dark:hover:bg-gray-800
       hover:text-gray-900 dark:hover:text-white
     `
   }
@@ -67,6 +84,13 @@ export const SidebarItem: React.FC<SidebarItemProps> = ({
         {isComingSoon && (
           <Lock
             size={14}
+            className="text-gray-400 dark:text-gray-600 ml-2 flex-shrink-0"
+            aria-hidden="true"
+          />
+        )}
+        {locked && !isComingSoon && (
+          <Lock
+            size={12}
             className="text-gray-400 dark:text-gray-600 ml-2 flex-shrink-0"
             aria-hidden="true"
           />
@@ -94,10 +118,10 @@ export const SidebarItem: React.FC<SidebarItemProps> = ({
         {/* Hover Popover */}
         <div
           className={`
-                absolute z-50 px-3 py-1.5 
-                bg-gray-900 dark:bg-gray-100 
-                text-white dark:text-gray-900 
-                text-xs font-bold rounded-lg shadow-xl 
+                absolute z-50 px-3 py-1.5
+                bg-gray-900 dark:bg-gray-100
+                text-white dark:text-gray-900
+                text-xs font-bold rounded-lg shadow-xl
                 whitespace-nowrap pointer-events-none
                 transition-all duration-200 ease-out
                 ${isHovered ? 'opacity-100 scale-100' : 'opacity-0 scale-95'}
@@ -128,6 +152,62 @@ export const SidebarItem: React.FC<SidebarItemProps> = ({
           )}
         </div>
       </div>
+    )
+  }
+
+  // Auth-locked items: clickable, show lock reason tooltip on hover
+  if (locked) {
+    return (
+      <button
+        className={`${baseClasses} ${variantClasses}`}
+        title={collapsed ? lockReason ?? label : undefined}
+        onClick={onLockedClick}
+        onMouseEnter={() => setIsHovered(true)}
+        onMouseLeave={() => setIsHovered(false)}
+        aria-label={`${label} — ${lockReason ?? 'Sign in to access'}`}
+        {...props}
+      >
+        <IconWrapper />
+        <LabelWrapper />
+
+        {/* Lock reason tooltip */}
+        {lockReason && (
+          <div
+            className={`
+              absolute z-50 px-3 py-1.5
+              bg-gray-900 dark:bg-gray-100
+              text-white dark:text-gray-900
+              text-xs font-medium rounded-lg shadow-xl
+              whitespace-nowrap pointer-events-none
+              transition-all duration-200 ease-out
+              ${isHovered ? 'opacity-100 scale-100' : 'opacity-0 scale-95'}
+            `}
+            style={
+              collapsed
+                ? {
+                    left: '100%',
+                    marginLeft: '12px',
+                    top: '50%',
+                    transform: isHovered
+                      ? 'translateY(-50%) translateX(0)'
+                      : 'translateY(-50%) translateX(-4px)',
+                  }
+                : {
+                    right: '12px',
+                    top: '50%',
+                    transform: isHovered
+                      ? 'translateY(-50%) translateX(0)'
+                      : 'translateY(-50%) translateX(4px)',
+                  }
+            }
+          >
+            {lockReason}
+            {collapsed && (
+              <div className="absolute top-1/2 -left-1 -translate-y-1/2 border-4 border-transparent border-r-gray-900 dark:border-r-gray-100"></div>
+            )}
+          </div>
+        )}
+      </button>
     )
   }
 

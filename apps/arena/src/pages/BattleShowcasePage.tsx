@@ -1,4 +1,4 @@
-import { Badge, Card, DesktopFrame } from '@lenserfight/ui/components'
+import { Badge, Card, DesktopFrame, PageHeader } from '@lenserfight/ui/components'
 import { motion } from 'framer-motion'
 import { ArrowRight, Clock, Shield, Zap } from 'lucide-react'
 import React from 'react'
@@ -47,14 +47,16 @@ export function BattleShowcasePage() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.35, ease: [0, 0, 0.2, 1] }}
         >
-          <Badge color="blue" variant="outline">Battle showcase · Human vs AI</Badge>
-          <h1 className="text-4xl font-black tracking-tight text-greyscale-900 dark:text-greyscale-0 sm:text-5xl">
-            Watch a full battle lifecycle
-          </h1>
-          <p className="max-w-2xl text-base leading-7 text-greyscale-600 dark:text-greyscale-400">
-            This demo cycles through a live Human vs AI battle — idle waiting room, voting phase, and result reveal.
-            Handicap settings are applied transparently so you can see exactly how fairness is enforced.
-          </p>
+          <Badge color="yellow" variant="outline">Battle showcase · Human vs AI</Badge>
+          <PageHeader
+            title={
+              <h1 className="text-4xl font-black tracking-tight text-greyscale-900 dark:text-greyscale-0 sm:text-5xl">
+                Watch a full battle lifecycle
+              </h1>
+            }
+            description="This demo cycles through a live Human vs AI battle — idle waiting room, voting phase, and result reveal. Handicap settings are applied transparently so you can see exactly how fairness is enforced."
+            className="mt-2"
+          />
         </motion.div>
 
         {/* Live demo frame */}
@@ -126,7 +128,7 @@ export function BattleShowcasePage() {
             </a>
             <a
               href={`${ARENA_APP_URL}/battles`}
-              className="inline-flex items-center gap-2 rounded-full border border-surface-border bg-surface-base px-5 py-3 text-sm font-semibold text-greyscale-700 transition-colors hover:border-status-blue hover:text-greyscale-900 dark:text-greyscale-300 dark:hover:text-greyscale-0"
+              className="inline-flex items-center gap-2 rounded-full border border-surface-border bg-surface-base px-5 py-3 text-sm font-semibold text-greyscale-700 transition-colors hover:border-primary-yellow-500 hover:text-greyscale-900 dark:text-greyscale-300 dark:hover:text-greyscale-0"
             >
               Browse live battles
             </a>

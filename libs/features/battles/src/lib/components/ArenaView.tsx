@@ -7,9 +7,13 @@ import { useBattle } from '../hooks/useBattle'
 import { useBattleContenders } from '../hooks/useBattleContenders'
 import { useBattleScorecard } from '../hooks/useBattleScorecard'
 import { useBattleStateMachine } from '../hooks/useBattleStateMachine'
+import { usePublishBattle } from '../hooks/usePublishBattle'
 import { useSubmitVote } from '../hooks/useSubmitVote'
 import { useVoteAggregates } from '../hooks/useVoteAggregates'
+import { useVoterEligibility } from '../hooks/useVoterEligibility'
 
+import { BattleChatPanel } from './BattleChatPanel'
+import { BattleCreatorPanel } from './BattleCreatorPanel'
 import { BattleSEOHead } from './BattleSEOHead'
 import { FightView } from './FightView'
 import { PhaseIndicator } from './PhaseIndicator'
@@ -36,6 +40,8 @@ interface ArenaViewRenderProps {
     contenderB: { id: string; displayName: string }
     disabled: boolean
     onVote: (value: 'contender_a' | 'contender_b' | 'draw', rationale: string) => Promise<void>
+    voterEligibility?: import('../types/battle.types').VoterEligibility
+    isEligible: boolean
   }) => React.ReactNode
   renderRubricPanel: (props: {
     criteria: Array<{ id: string; name: string; description?: string; weight: number }>
@@ -79,10 +85,12 @@ export function ArenaView({
   const [xpVisible, setXpVisible] = useState(false)
 
   const { data: battle, isLoading: battleLoading, error: battleError } = useBattle(slug)
+  const { mutate: publishBattle, isPending: isPublishing } = usePublishBattle(slug)
   const { data: contendersData } = useBattleContenders(battle?.id)
   const { data: aggregates = [] } = useVoteAggregates(battle?.id)
   const { data: scorecardData } = useBattleScorecard(battle?.id)
   const { mutateAsync: submitVote } = useSubmitVote(battle?.id)
+  const { isEligible } = useVoterEligibility(battle?.id, currentUserId)
 
   const stateMachine = useBattleStateMachine(battle?.status)
   const currentPhase = forcePhase ?? stateMachine.currentPhase
@@ -233,11 +241,21 @@ export function ArenaView({
         >
           {/* Idle: awaiting submissions */}
           {currentPhase === 'idle' && (
-            <Card className="space-y-3 border border-dashed border-surface-border p-8 text-center">
-              <p className="text-3xl mb-2">⏳</p>
-              <p className="font-semibold text-greyscale-900 dark:text-greyscale-50">Awaiting contender submissions</p>
-              <p className="text-sm text-greyscale-500 dark:text-greyscale-400">This battle is open and the first execution is still in progress.</p>
-            </Card>
+            <>
+              <Card className="space-y-3 border border-dashed border-surface-border p-8 text-center">
+                <p className="text-3xl mb-2">⏳</p>
+                <p className="font-semibold text-greyscale-900 dark:text-greyscale-50">Awaiting contender submissions</p>
+                <p className="text-sm text-greyscale-500 dark:text-greyscale-400">This battle is open and the first execution is still in progress.</p>
+              </Card>
+              {currentUserId && battle?.creator_lenser_id && currentUserId === battle.creator_lenser_id && (
+                <BattleCreatorPanel
+                  battleId={battle.id}
+                  status={battle.status}
+                  onPublish={publishBattle}
+                  isPublishing={isPublishing}
+                />
+              )}
+            </>
           )}
 
           {/* Running: show submissions but no votes yet */}
@@ -272,6 +290,8 @@ export function ArenaView({
                   contenderB: { id: contenderB.id, displayName: contenderB.display_name },
                   disabled: !currentUserId,
                   onVote: handleVote,
+                  voterEligibility: battle.voter_eligibility,
+                  isEligible,
                 })}
             </>
           )}
@@ -297,10 +317,25 @@ export function ArenaView({
               {criteria.length > 0 &&
                 renderRubricPanel({ criteria, scorecardA, scorecardB })}
               {renderShareCard({ battleSlug: battle.slug, battleTitle: battle.title })}
+              {battle.forum_thread_id && (
+                <div className="mt-4 text-center">
+                  <a
+                    href={`/threads/${battle.forum_thread_id}`}
+                    className="text-sm text-primary hover:underline"
+                  >
+                    Discuss in forum →
+                  </a>
+                </div>
+              )}
             </>
           )}
         </motion.div>
       </AnimatePresence>
+
+      {/* Live discussion — visible once battle is open */}
+      {battle.status !== 'draft' && (
+        <BattleChatPanel battleId={battle.id} currentUserId={currentUserId} />
+      )}
 
       {/* Detail page: link to result when published */}
       {(battle.status === 'published' || battle.status === 'closed') && currentPhase !== 'result' && (

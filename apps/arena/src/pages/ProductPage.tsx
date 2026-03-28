@@ -63,7 +63,7 @@ export const ProductPage: React.FC = () => {
             <div className="flex flex-wrap gap-3">
               <Link
                 to="/about"
-                className="inline-flex items-center gap-2 rounded-full border border-surface-border bg-surface-base px-5 py-3 text-sm font-semibold text-greyscale-700 transition-colors hover:border-status-blue hover:text-greyscale-900 dark:text-greyscale-300 dark:hover:text-greyscale-0"
+                className="inline-flex items-center gap-2 rounded-full border border-surface-border bg-surface-base px-5 py-3 text-sm font-semibold text-greyscale-700 transition-colors hover:border-primary-yellow-500 hover:text-greyscale-900 dark:text-greyscale-300 dark:hover:text-greyscale-0"
               >
                 Read the story
               </Link>
@@ -80,7 +80,7 @@ export const ProductPage: React.FC = () => {
             <div className="space-y-4">
               <Card className="space-y-3 p-5">
                 <div className="flex items-center justify-between gap-3">
-                  <Badge color="blue" variant="outline">
+                  <Badge color="yellow" variant="outline">
                     Lens
                   </Badge>
                   <span className="text-xs text-greyscale-500">Shared task</span>
@@ -100,7 +100,7 @@ export const ProductPage: React.FC = () => {
                   { label: 'Battle', icon: Gauge },
                 ].map(({ label, icon: Icon }) => (
                   <Card key={label} className="space-y-3 p-4">
-                    <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-surface-raised text-status-blue">
+                    <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-surface-raised text-[var(--cl-yellow-500)]">
                       <Icon size={18} />
                     </div>
                     <p className="text-sm font-semibold text-greyscale-900 dark:text-greyscale-0">{label}</p>
@@ -165,7 +165,7 @@ export const ProductPage: React.FC = () => {
             <div className="flex flex-wrap gap-3">
               <Link
                 to="/demo"
-                className="inline-flex items-center gap-2 rounded-full border border-surface-border bg-surface-base px-5 py-3 text-sm font-semibold text-greyscale-700 transition-colors hover:border-status-blue hover:text-greyscale-900 dark:text-greyscale-300 dark:hover:text-greyscale-0"
+                className="inline-flex items-center gap-2 rounded-full border border-surface-border bg-surface-base px-5 py-3 text-sm font-semibold text-greyscale-700 transition-colors hover:border-primary-yellow-500 hover:text-greyscale-900 dark:text-greyscale-300 dark:hover:text-greyscale-0"
               >
                 See proof
               </Link>

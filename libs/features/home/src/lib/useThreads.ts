@@ -31,11 +31,12 @@ export const useThreadsFeed = () => {
 export const useLensesFeed = (
   searchQuery: string,
   selectedTag: string | null,
-  sortOrder: 'newest' | 'popular'
+  sortOrder: 'newest' | 'popular' | 'mine'
 ) => {
   return useInfiniteQuery({
     queryKey: keys.lenses.feed({ searchQuery, selectedTag, sortOrder }),
     queryFn: async ({ pageParam = 0 }) => {
+      if (sortOrder === 'mine') return lensesService.getMyLenses(pageParam, 12)
       if (searchQuery) return lensesService.search(searchQuery, pageParam, 12)
       if (selectedTag) return lensesService.filter(selectedTag, pageParam, 12, sortOrder)
       return lensesService.sort(sortOrder, pageParam, 12)
@@ -50,27 +51,30 @@ export const useLensesFeed = (
   })
 }
 
-export const useTopLenses = () => {
+export const useTopLenses = (enabled = true) => {
   return useQuery({
     queryKey: keys.lenses.top,
     queryFn: () => lensesService.getTopLenses(3),
     staleTime: 1000 * 60 * 10,
+    enabled,
   })
 }
 
-export const useTrendingTags = () => {
+export const useTrendingTags = (enabled = true) => {
   return useQuery({
     queryKey: keys.tags.trending,
     queryFn: () => threadsService.getTrendingTags(6),
     staleTime: 1000 * 60 * 15,
+    enabled,
   })
 }
 
-export const useLatestLensers = () => {
+export const useLatestLensers = (enabled = true) => {
   return useQuery({
     queryKey: queryKeys.lenser.latest,
     queryFn: () => lenserService.getLatestJoinedLensers(),
     staleTime: 1000 * 60 * 5,
+    enabled,
   })
 }
 
@@ -138,14 +142,14 @@ export const usePersonalFeed = (lenserId?: string) => {
   })
 }
 
-export const usePersonalPrompts = (lenserId?: string) => {
+export const usePersonalPrompts = (lenserId?: string, enabled = true) => {
   return useInfiniteQuery({
     queryKey: lenserId ? keys.lenses.personal(lenserId) : keys.lenses.feed(),
     queryFn: async ({ pageParam = 0 }) => {
       if (!lenserId) return { data: [], meta: { hasNextPage: false, offset: 0, limit: 20 } }
       return lensesService.getPersonalFeed(lenserId, pageParam, 20)
     },
-    enabled: Boolean(lenserId),
+    enabled: Boolean(lenserId) && enabled,
     initialPageParam: 0,
     getNextPageParam: (lastPage) => {
       if (!lastPage.meta?.hasNextPage) return undefined
@@ -156,20 +160,20 @@ export const usePersonalPrompts = (lenserId?: string) => {
   })
 }
 
-export const useSuggestedLensers = (lenserId?: string) => {
+export const useSuggestedLensers = (lenserId?: string, enabled = true) => {
   return useQuery({
     queryKey: lenserId ? keys.lenser.suggested(lenserId) : keys.lenser.trending,
     queryFn: () => (lenserId ? lenserService.getSuggestedLensers(lenserId, 10) : []),
-    enabled: Boolean(lenserId),
+    enabled: Boolean(lenserId) && enabled,
     staleTime: 1000 * 60 * 10,
   })
 }
 
-export const useFollowedTags = (lenserId?: string) => {
+export const useFollowedTags = (lenserId?: string, enabled = true) => {
   return useQuery({
     queryKey: lenserId ? keys.tags.followed(lenserId) : keys.tags.trending,
     queryFn: () => (lenserId ? tagFollowsService.getFollowedTags(lenserId, 50) : []),
-    enabled: Boolean(lenserId),
+    enabled: Boolean(lenserId) && enabled,
     staleTime: 1000 * 60 * 5,
   })
 }

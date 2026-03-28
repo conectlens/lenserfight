@@ -2,15 +2,16 @@ import React from 'react'
 
 import { FEATURES } from '@lenserfight/utils/env'
 
-type Tab = 'actions' | 'lenses' | 'threads' | 'challenges'
+type Tab = 'actions' | 'lenses' | 'threads' | 'challenges' | 'agents'
 
 interface LenserTabsProps {
   activeTab: Tab
   onChange: (tab: Tab) => void
   hideActions?: boolean
+  showAgents?: boolean
 }
 
-export const LenserTabs: React.FC<LenserTabsProps> = ({ activeTab, onChange, hideActions = false }) => {
+export const LenserTabs: React.FC<LenserTabsProps> = ({ activeTab, onChange, hideActions = false, showAgents = false }) => {
   // Order: Threads, Lenses, Actions
   const tabs: { id: Tab; label: string }[] = [
     { id: 'threads', label: 'Threads' },
@@ -20,6 +21,10 @@ export const LenserTabs: React.FC<LenserTabsProps> = ({ activeTab, onChange, hid
 
   if (FEATURES.CHALLENGES_TAB) {
     tabs.push({ id: 'challenges', label: 'Challenge History' })
+  }
+
+  if (FEATURES.AGENTS && showAgents) {
+    tabs.push({ id: 'agents' as Tab, label: 'Agents' })
   }
 
   return (
