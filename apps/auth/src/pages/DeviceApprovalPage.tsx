@@ -2,12 +2,27 @@ import React, { useEffect, useMemo, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { useAuth } from '@lenserfight/features/auth'
 import { approveDeviceRequest } from '@lenserfight/data/repositories'
+import { supabase } from '@lenserfight/data/supabase'
 import { replaceLocationSafely, sanitizeReturnUrl } from '../utils/validateReturnUrl'
+
+async function storeDeviceLoginSession(userCode: string): Promise<void> {
+  const {
+    data: { session },
+  } = await supabase.auth.getSession()
+  if (!session) throw new Error('No active session to store for device login.')
+  const { error } = await supabase.rpc('fn_auth_store_device_login_session', {
+    p_user_code: userCode,
+    p_access_token: session.access_token,
+    p_refresh_token: session.refresh_token,
+  })
+  if (error) throw error
+}
 
 export const DeviceApprovalPage: React.FC = () => {
   const { isAuthenticated, isLoading } = useAuth()
   const [searchParams] = useSearchParams()
   const initialCode = searchParams.get('code') ?? ''
+  const isLoginMode = searchParams.get('mode') === 'login'
   const [userCode, setUserCode] = useState(initialCode)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [message, setMessage] = useState<string | null>(null)
@@ -50,11 +65,16 @@ export const DeviceApprovalPage: React.FC = () => {
       })
 
       if (result.status === 'approved') {
-        setMessage(
-          result.label
-            ? `Device approved for ${result.label}. You can return to the CLI.`
-            : 'Device approved. You can return to the CLI.'
-        )
+        if (isLoginMode) {
+          await storeDeviceLoginSession(userCode.trim().toUpperCase())
+          setMessage('Login approved. You can return to the terminal.')
+        } else {
+          setMessage(
+            result.label
+              ? `Device approved for ${result.label}. You can return to the CLI.`
+              : 'Device approved. You can return to the CLI.'
+          )
+        }
 
         if (returnUrl) {
           window.setTimeout(() => {
@@ -101,14 +121,15 @@ export const DeviceApprovalPage: React.FC = () => {
         >
           <div className="mb-6">
             <p className="text-xs font-semibold uppercase tracking-[0.32em] text-deep-lens-navy-500">
-              Device approval
+              {isLoginMode ? 'Browser login' : 'Device approval'}
             </p>
             <h1 className="mt-3 text-3xl font-semibold tracking-tight text-gray-950">
-              Approve this CLI session
+              {isLoginMode ? 'Approve this login' : 'Approve this CLI session'}
             </h1>
             <p className="mt-3 text-sm leading-6 text-gray-600">
-              Enter the approval code shown in the CLI. Once you confirm, the CLI
-              can mint a short-lived developer token for automation.
+              {isLoginMode
+                ? 'A sign-in request was made from the CLI. Confirm below to complete the login.'
+                : 'Enter the approval code shown in the CLI. Once you confirm, the CLI can mint a short-lived developer token for automation.'}
             </p>
           </div>
 
@@ -142,7 +163,11 @@ export const DeviceApprovalPage: React.FC = () => {
             disabled={isSubmitting}
             className="mt-6 inline-flex w-full items-center justify-center rounded-2xl bg-deep-lens-navy-500 px-4 py-3 text-sm font-semibold text-white shadow-lg shadow-deep-lens-navy-500/20 transition hover:bg-deep-lens-navy-600 disabled:cursor-not-allowed disabled:opacity-70"
           >
-            {isSubmitting ? 'Approving...' : 'Approve device'}
+            {isSubmitting
+              ? 'Approving...'
+              : isLoginMode
+              ? 'Approve login'
+              : 'Approve device'}
           </button>
 
           <p className="mt-4 text-xs leading-5 text-gray-500">

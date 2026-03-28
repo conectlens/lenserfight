@@ -14,38 +14,59 @@ import {
   getDeveloperTokenMetadata,
   isDeveloperTokenActive,
   listDeveloperTokens,
+  openBrowser,
   requestDeviceApproval,
+  requestDeviceLogin,
   revokeDeveloperToken,
   saveDeveloperToken,
   waitForDeveloperToken,
+  waitForSessionLogin,
 } from '../utils/auth';
 
 const login = defineCommand({
   meta: {
     name: 'login',
-    description: 'Authenticate with your LenserFight account.',
+    description:
+      'Authenticate with your LenserFight account. Omit flags to use browser-based login.',
   },
   args: {
     email: {
       type: 'string',
-      description: 'Account email address',
+      description: 'Account email address (optional — omit to use browser login)',
       alias: 'e',
-      required: true,
     },
     password: {
       type: 'string',
-      description: 'Account password',
+      description: 'Account password (optional — omit to use browser login)',
       alias: 'p',
-      required: true,
     },
   },
   async run({ args }) {
     try {
-      const tokens = await loginWithEmail(args.email, args.password);
-      consola.success(
-        'Logged in successfully. Token expires at %s',
-        tokens.expiresAt
-      );
+      if (args.email && args.password) {
+        // Headless / scripted path — email + password
+        const tokens = await loginWithEmail(args.email, args.password);
+        consola.success('Logged in successfully. Token expires at %s', tokens.expiresAt);
+        return;
+      }
+
+      // Browser-based device login (RFC 8628 Device Authorization Grant)
+      consola.info('Starting browser login...');
+      const request = await requestDeviceLogin();
+      const approvalUrl = buildAuthAppUrl(request.verificationUri);
+
+      openBrowser(approvalUrl);
+      consola.info('Opening browser:  %s', approvalUrl);
+      consola.info('Approval code:    %s', request.userCode);
+      consola.info('If the browser did not open, visit the URL above manually.');
+
+      consola.start('Waiting for browser approval...');
+      const tokens = await waitForSessionLogin(request, (status) => {
+        if (status.status !== 'pending') {
+          consola.info('Browser approved. Completing login...');
+        }
+      });
+      consola.success('Logged in successfully. Token expires at %s', tokens.expiresAt);
     } catch (err) {
       consola.error('Login failed: %s', (err as Error).message);
       process.exitCode = 1;
