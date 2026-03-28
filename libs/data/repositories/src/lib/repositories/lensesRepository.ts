@@ -724,7 +724,14 @@ export class SupabaseLensesRepository implements LensesRepositoryPort {
       .maybeSingle()
     if (error) this.handleError(error)
     if (!data) return null
-    return this.mapVersion(data as Record<string, unknown>)
+    const version = this.mapVersion(data as Record<string, unknown>)
+    const { data: paramsJson } = await supabase
+      .schema('lenses')
+      .rpc('fn_get_version_params_with_tools', { p_version_id: version.id })
+    version.parameters = ((paramsJson ?? []) as Record<string, unknown>[]).map((p) =>
+      this.mapVersionParam(p)
+    )
+    return version
   }
 
   async createVersion(input: CreateLensVersionDTO): Promise<LensVersion> {
