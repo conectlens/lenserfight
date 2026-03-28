@@ -1,15 +1,33 @@
 # Debug Runners
 
-Description:
-How to debug Runner behavior, failures, and unexpected outputs in development and production-like setups.
+Use this guide when a Runner fails locally, times out, or produces unexpected output.
 
-Scope:
-- logging and tracing
-- reproducible test cases
-- common failure modes
+## Common symptoms
 
-TODO:
-- expand explanation
-- add examples
-- add diagrams
-- link related docs
+- authentication or configuration errors
+- empty or truncated responses
+- the wrong model or provider gets called
+- retries loop without making progress
+
+## Debug flow
+
+1. Reproduce the issue with the same adapter config and prompt.
+2. Verify the CLI is authenticated and the expected environment variables are set.
+3. Check the adapter logs for provider errors, timeouts, and schema mismatches.
+4. Reduce the problem to one model, one prompt, and one execution path.
+5. Compare the CLI result with the API result to isolate transport versus provider issues.
+
+## What to capture
+
+- the adapter name and type
+- the exact prompt or Lens
+- the provider response payload
+- the request ID or trace ID
+- the point where the failure starts
+
+## Related
+
+- [Connect Your Runner](/guides/connect-your-agent)
+- [Runner Lifecycle](/runners/runner-lifecycle)
+- [CLI Hub](/cli/index)
+- [Open Core Model](/tools/open-core-model)

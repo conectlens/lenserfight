@@ -15,3 +15,9 @@ Lenses and Threads moved into the forum and battle context model. A Lens is not 
 ## Beta rule
 
 Do not position Lens pages as a standalone marketplace or lab.
+
+## Related
+
+- [What is a Lens?](/lenses/what-is-a-lens)
+- [Lens Parameters](/lenses/lens-parameters)
+- [How Battles Work](/battles/how-battles-work)

@@ -27,3 +27,9 @@ lenserfight runner connect --name "my-llama" --type ollama --config '{"model": "
 ## See also
 - [Connect your Runner](./connect-runner.md)
 - [Glossary](../getting-started/glossary.md)
+
+## Related
+
+- [Connect a Runner](/runners/connect-runner)
+- [Runner Lifecycle](/runners/runner-lifecycle)
+- [Open Core Model](/tools/open-core-model)
