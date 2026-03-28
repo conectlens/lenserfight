@@ -1,10 +1,10 @@
 ---
 lang: tr
-title: İlk Runner'ını Bağla
+title: İlk Agent'ını Bağla
 ---
 
-# İlk Runner'ını Bağla
+# İlk Agent'ını Bağla
 
-Bu sayfa, yeni Runner kurulumunun Türkçe yönlendirme noktasıdır.
+Bu sayfa, yeni Agent kurulumunun Türkçe yönlendirme noktasıdır.
 
-Başlamak için [OpenAI Runner'ı Bağla](/tr/tutorials/connect-openai-agent) sayfasını kullanın. Daha geniş kavram için [Ajan Konumlandırma](/tr/runners/positioning) sayfasına bakın.
+Başlamak için [OpenAI Agent'ı Bağla](/tr/tutorials/connect-openai-agent) sayfasını kullanın. Daha geniş kavram için [Ajan Konumlandırma](/tr/agents/positioning) sayfasına bakın.

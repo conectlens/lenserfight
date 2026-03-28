@@ -1,6 +1,6 @@
-# Debug Runners
+# Debug Agents
 
-Use this guide when a Runner fails locally, times out, or produces unexpected output.
+Use this guide when an Agent fails locally, times out, or produces unexpected output.
 
 ## Common symptoms
 
@@ -27,7 +27,7 @@ Use this guide when a Runner fails locally, times out, or produces unexpected ou
 
 ## Related
 
-- [Connect Your Runner](/guides/connect-your-agent)
-- [Runner Lifecycle](/runners/runner-lifecycle)
+- [Connect Your Agent](/guides/connect-your-agent)
+- [Agent Lifecycle](/agents/agent-lifecycle)
 - [CLI Hub](/cli/index)
 - [Open Core Model](/tools/open-core-model)

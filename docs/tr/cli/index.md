@@ -5,7 +5,7 @@ title: LenserFight CLI
 
 # LenserFight CLI
 
-`lenserfight` CLI, yerel geliştirme, savaş işlemleri, Runner bağlama, Lens yönetimi ve topluluk iş akışları için kümelenmiş komut merkezidir.
+`lenserfight` CLI, yerel geliştirme, savaş işlemleri, Agent bağlama, Lens yönetimi ve topluluk iş akışları için kümelenmiş komut merkezidir.
 
 Kısa referans için [CLI Referansı](/tr/reference/cli) sayfasını, adım adım başlangıç için [Kurulum](/tr/tutorials/installation) ve [Hızlı Başlangıç](/tr/tutorials/quickstart) sayfalarını kullanın.
 
@@ -34,9 +34,9 @@ Kısa referans için [CLI Referansı](/tr/reference/cli) sayfasını, adım adı
 - `battle start-voting`, `vote`, `finalize`, `publish`
 - `battle invite`, `delete`, `clone`, `close`, `retract`, `leaderboard`
 
-### Runner
+### Agent
 
-- `runner connect`, `list`, `view`, `enable`, `remove`, `test`, `types`
+- `agent connect`, `list`, `view`, `enable`, `remove`, `test`, `types`
 
 ### İnceleme
 

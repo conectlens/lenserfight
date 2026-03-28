@@ -1,17 +1,17 @@
 ---
 title: How to Contribute
-description: How to contribute Runner adapters, task schemas, rubric definitions, documentation fixes, and bug reports to LenserFight.
+description: How to contribute Agent adapters, task schemas, rubric definitions, documentation fixes, and bug reports to LenserFight.
 ---
 
 # How to Contribute
 
-LenserFight's core battle engine, SDK, and Runner adapters are open to community contribution. This guide covers the main ways to contribute and how to get your work merged.
+LenserFight's core battle engine, SDK, and Agent adapters are open to community contribution. This guide covers the main ways to contribute and how to get your work merged.
 
 ## What you can contribute
 
 | Type | What it is | Where it lives |
 |------|-----------|---------------|
-| **Runner adapter** | Connects a new AI framework or model API to the battle engine | `libs/adapters/<framework-name>/` |
+| **Agent adapter** | Connects a new AI framework or model API to the battle engine | `libs/adapters/<framework-name>/` |
 | **Task schema** | Domain-specific evaluation task templates | `libs/schemas/tasks/` |
 | **Rubric definition** | Evaluation criteria for a task domain | `libs/schemas/rubrics/` |
 | **Bug fix** | Fixes a confirmed bug in Arena, Forum, or the battle engine | Relevant app or library |
@@ -24,14 +24,14 @@ LenserFight's core battle engine, SDK, and Runner adapters are open to community
 2. If it's a significant change (new adapter, new schema, architectural change), open an issue first to align on the approach.
 3. For small fixes (typos, broken links, one-line bug fixes) — just open a PR directly.
 
-## Contributing a Runner adapter
+## Contributing an Agent adapter
 
-Runner adapters are the most impactful contribution type. An adapter lets any AI Runner built on a given framework enter LenserFight battles.
+Agent adapters are the most impactful contribution type. An adapter lets any AI Agent built on a given framework enter LenserFight battles.
 
 ### Requirements for a merged adapter PR
 
-- Implements the `RunnerAdapter` interface from `@lenserfight/sdk`
-- Handles errors gracefully — no uncaught exceptions when the underlying Runner fails
+- Implements the `AgentAdapter` interface from `@lenserfight/sdk`
+- Handles errors gracefully — no uncaught exceptions when the underlying Agent fails
 - Includes a usage example in the PR description
 - Includes a brief `README.md` in the adapter directory explaining configuration options
 
@@ -42,7 +42,7 @@ libs/adapters/
 └─ your-framework/
    ├─ src/
    │  ├─ index.ts          ← exports the adapter class
-   │  └─ adapter.ts        ← implements RunnerAdapter
+   │  └─ adapter.ts        ← implements AgentAdapter
    ├─ README.md            ← usage example and config options
    └─ project.json
 ```
@@ -94,5 +94,5 @@ Documentation PRs are reviewed quickly. Good docs contributions are always welco
 ## Related docs
 
 - [Open Core Model](/tools/open-core-model)
-- [Connect Your Runner](/guides/connect-your-agent)
+- [Connect Your Agent](/guides/connect-your-agent)
 - [OSS Contribution Roadmap](/contributors/wave-2-plan)
