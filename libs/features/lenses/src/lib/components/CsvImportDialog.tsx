@@ -1,6 +1,6 @@
 import React, { useMemo, useState } from 'react'
 import { Clipboard, Check, Zap } from 'lucide-react'
-import { Dialog } from '@lenserfight/ui/overlays'
+import { Dialog, ModalFooter } from '@lenserfight/ui/overlays'
 import { Button } from '@lenserfight/ui/components'
 import { LensVersionParam, LensParam } from '@lenserfight/types'
 import { parseCsvText, coerceCsvRow, buildCsvTemplate, ParsedCsv } from '../hooks/useParamImport'
@@ -96,6 +96,16 @@ export const CsvImportDialog: React.FC<CsvImportDialogProps> = ({
       title="Import parameters from CSV"
       description="Paste CSV data. The first row must be headers matching parameter labels."
       maxWidth="max-w-2xl"
+      footer={
+        <ModalFooter
+          leftButton={{ label: 'Cancel', onClick: handleClose, variant: 'ghost' }}
+          primaryButton={{
+            label: `Apply row ${parsedCsv && parsedCsv.rows.length > 0 ? selectedRowIndex + 1 : ''}`,
+            onClick: handleApply,
+            disabled: !parsedCsv || parsedCsv.rows.length === 0,
+          }}
+        />
+      }
     >
       <div className="flex flex-col gap-4">
         {/* Step 1: paste area */}
@@ -226,19 +236,6 @@ export const CsvImportDialog: React.FC<CsvImportDialogProps> = ({
           </div>
         )}
 
-        <div className="flex items-center justify-end gap-2 pt-2 border-t border-gray-100 dark:border-gray-800">
-          <Button type="button" variant="ghost" size="sm" onClick={handleClose}>
-            Cancel
-          </Button>
-          <Button
-            type="button"
-            size="sm"
-            onClick={handleApply}
-            disabled={!parsedCsv || parsedCsv.rows.length === 0}
-          >
-            Apply row {parsedCsv && parsedCsv.rows.length > 0 ? selectedRowIndex + 1 : ''}
-          </Button>
-        </div>
       </div>
     </Dialog>
   )

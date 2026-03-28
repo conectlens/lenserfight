@@ -1,7 +1,7 @@
 import React from 'react'
 import { useNavigate } from 'react-router-dom'
 import { XCircle } from 'lucide-react'
-import { SEOHead } from '@lenserfight/ui/components'
+import { Button, SEOHead } from '@lenserfight/ui/components'
 
 /**
  * GRASP: Low Coupling + High Cohesion
@@ -16,7 +16,7 @@ export const CheckoutErrorView: React.FC = () => {
   const navigate = useNavigate()
 
   return (
-    <div className="max-w-4xl mx-auto py-16 px-4">
+    <div className="">
       <SEOHead type="default" overrideTitle="Checkout Incomplete — LenserFight" />
 
       <div className="max-w-md mx-auto flex flex-col items-center text-center">
@@ -45,13 +45,13 @@ export const CheckoutErrorView: React.FC = () => {
 
         {/* Actions */}
         <div className="flex flex-col sm:flex-row items-center justify-center gap-3 w-full">
-          <button
+          <Button
             type="button"
             onClick={() => navigate('/billing', { replace: true })}
-            className="w-full sm:w-auto px-6 py-2.5 rounded-xl bg-primary hover:bg-yellow-300 text-gray-900 text-sm font-semibold transition-colors"
+            className="w-full sm:w-auto px-6"
           >
             Try again
-          </button>
+          </Button>
           <a
             href="mailto:support@lenserfight.com"
             className="w-full sm:w-auto inline-flex items-center justify-center px-6 py-2.5 rounded-xl bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-900 dark:text-white text-sm font-semibold transition-colors"

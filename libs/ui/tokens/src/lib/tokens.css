@@ -24,16 +24,16 @@
   --cl-yellow-900: #8a7322;
 
   /* ── Deep Lens Navy ─────────────────────────────────────── */
-  --cl-navy-50: #e6edf5;
-  --cl-navy-100: #c3d1e4;
-  --cl-navy-200: #9ab4d2;
-  --cl-navy-300: #6b94be;
-  --cl-navy-400: #3c74a9;
-  --cl-navy-500: #213f74;
-  --cl-navy-600: #1a3260;
-  --cl-navy-700: #12244a;
-  --cl-navy-800: #0a1730;
-  --cl-navy-900: #040b14;
+  --cl-navy-50: var(--cl-grey-50);
+  --cl-navy-100: var(--cl-grey-100);
+  --cl-navy-200: var(--cl-grey-200);
+  --cl-navy-300: var(--cl-grey-300);
+  --cl-navy-400: var(--cl-grey-400);
+  --cl-navy-500: var(--cl-grey-500);
+  --cl-navy-600: var(--cl-grey-600);
+  --cl-navy-700: var(--cl-grey-700);
+  --cl-navy-800: var(--cl-grey-800);
+  --cl-navy-900: var(--cl-grey-900);
 
   /* ── Greyscale ──────────────────────────────────────────── */
   --cl-grey-0: #ffffff;
@@ -72,75 +72,81 @@
   --text-secondary: #6B7280;
 
   /* ── Semantic surfaces (light mode defaults) ────────────── */
-  --cl-surface-base:         #ffffff;
-  --cl-surface-raised:       #f8f9fa;
-  --cl-surface-overlay:      #f3f4f5;
-  --cl-surface-sunken:       #e6e7e9;
-  --cl-surface-interactive:  #dcdde0;
-  --cl-surface-border:       #dcdde0;
+  --cl-surface-base: #ffffff;
+  --cl-surface-raised: #f8f9fa;
+  --cl-surface-overlay: #f3f4f5;
+  --cl-surface-sunken: #e6e7e9;
+  --cl-surface-interactive: #dcdde0;
+  --cl-surface-border: #dcdde0;
   --cl-surface-border-subtle: #e6e7e9;
-  --cl-surface-text:         #1f2022;
-  --cl-surface-text-muted:   #6a6b6e;
+  --cl-surface-text: #1f2022;
+  --cl-surface-text-muted: #6a6b6e;
   --cl-surface-text-disabled: #a6a7aa;
 
   /* ── Neumorphic elevation — raised (light mode) ─────────── */
   --cl-elevation-0: none;
-  --cl-elevation-1: 2px 2px 5px rgba(0,0,0,0.07), -2px -2px 5px rgba(255,255,255,0.9);
-  --cl-elevation-2: 4px 4px 10px rgba(0,0,0,0.09), -4px -4px 10px rgba(255,255,255,0.9);
-  --cl-elevation-3: 6px 6px 16px rgba(0,0,0,0.11), -6px -6px 16px rgba(255,255,255,0.85);
-  --cl-elevation-4: 8px 8px 22px rgba(0,0,0,0.13), -8px -8px 22px rgba(255,255,255,0.8);
-  --cl-elevation-5: 12px 12px 30px rgba(0,0,0,0.15), -12px -12px 30px rgba(255,255,255,0.75);
+  --cl-elevation-1: 2px 2px 5px rgba(0, 0, 0, 0.07), -2px -2px 5px rgba(255, 255, 255, 0.9);
+  --cl-elevation-2: 4px 4px 10px rgba(0, 0, 0, 0.09), -4px -4px 10px rgba(255, 255, 255, 0.9);
+  --cl-elevation-3: 6px 6px 16px rgba(0, 0, 0, 0.11), -6px -6px 16px rgba(255, 255, 255, 0.85);
+  --cl-elevation-4: 8px 8px 22px rgba(0, 0, 0, 0.13), -8px -8px 22px rgba(255, 255, 255, 0.8);
+  --cl-elevation-5: 12px 12px 30px rgba(0, 0, 0, 0.15), -12px -12px 30px rgba(255, 255, 255, 0.75);
 
   /* ── Neumorphic elevation — inset/pressed (light mode) ──── */
-  --cl-elevation-inset-1: inset 2px 2px 5px rgba(0,0,0,0.07), inset -2px -2px 5px rgba(255,255,255,0.9);
-  --cl-elevation-inset-2: inset 4px 4px 10px rgba(0,0,0,0.09), inset -4px -4px 10px rgba(255,255,255,0.9);
-  --cl-elevation-inset-3: inset 6px 6px 16px rgba(0,0,0,0.11), inset -6px -6px 16px rgba(255,255,255,0.85);
+  --cl-elevation-inset-1: inset 2px 2px 5px rgba(0, 0, 0, 0.07), inset -2px -2px 5px rgba(255, 255, 255, 0.9);
+  --cl-elevation-inset-2: inset 4px 4px 10px rgba(0, 0, 0, 0.09), inset -4px -4px 10px rgba(255, 255, 255, 0.9);
+  --cl-elevation-inset-3: inset 6px 6px 16px rgba(0, 0, 0, 0.11), inset -6px -6px 16px rgba(255, 255, 255, 0.85);
 
   /* ── Motion ─────────────────────────────────────────────── */
   --cl-duration-instant: 0ms;
-  --cl-duration-fast:    100ms;
-  --cl-duration-normal:  200ms;
-  --cl-duration-slow:    300ms;
-  --cl-duration-xslow:   500ms;
-  --cl-ease-standard:    cubic-bezier(0.4, 0, 0.2, 1);
-  --cl-ease-enter:       cubic-bezier(0, 0, 0.2, 1);
-  --cl-ease-exit:        cubic-bezier(0.4, 0, 1, 1);
-  --cl-ease-spring:      cubic-bezier(0.34, 1.56, 0.64, 1);
+  --cl-duration-fast: 100ms;
+  --cl-duration-normal: 200ms;
+  --cl-duration-slow: 300ms;
+  --cl-duration-xslow: 500ms;
+  --cl-ease-standard: cubic-bezier(0.4, 0, 0.2, 1);
+  --cl-ease-enter: cubic-bezier(0, 0, 0.2, 1);
+  --cl-ease-exit: cubic-bezier(0.4, 0, 1, 1);
+  --cl-ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
 
   /* ── Z-index stack ───────────────────────────────────────── */
-  --cl-z-base:     0;
-  --cl-z-raised:   10;
+  --cl-z-base: 0;
+  --cl-z-raised: 10;
   --cl-z-dropdown: 100;
-  --cl-z-sticky:   200;
-  --cl-z-overlay:  300;
-  --cl-z-modal:    400;
-  --cl-z-toast:    500;
-  --cl-z-tooltip:  600;
+  --cl-z-sticky: 200;
+  --cl-z-overlay: 300;
+  --cl-z-modal: 400;
+  --cl-z-toast: 500;
+  --cl-z-tooltip: 600;
+
+  /* ── Workflow Canvas ────────────────────────────────────── */
+  --cl-workflow-edge: var(--cl-grey-500);
 }
 
 /* ── Dark mode overrides ─────────────────────────────────── */
 html.dark {
   /* Semantic surfaces */
-  --cl-surface-base:         #1a1a1a;
-  --cl-surface-raised:       #141414;
-  --cl-surface-overlay:      #222222;
-  --cl-surface-sunken:       #111111;
-  --cl-surface-interactive:  #2a2a2a;
-  --cl-surface-border:       #333333;
+  --cl-surface-base: #1a1a1a;
+  --cl-surface-raised: #141414;
+  --cl-surface-overlay: #222222;
+  --cl-surface-sunken: #111111;
+  --cl-surface-interactive: #2a2a2a;
+  --cl-surface-border: #333333;
   --cl-surface-border-subtle: #252525;
-  --cl-surface-text:         #f8f9fa;
-  --cl-surface-text-muted:   #86878a;
+  --cl-surface-text: #f8f9fa;
+  --cl-surface-text-muted: #86878a;
   --cl-surface-text-disabled: #4e5053;
 
   /* Neumorphic elevation — raised (dark mode) */
-  --cl-elevation-1: 2px 2px 5px rgba(0,0,0,0.4), -2px -2px 5px rgba(255,255,255,0.04);
-  --cl-elevation-2: 4px 4px 10px rgba(0,0,0,0.5), -4px -4px 10px rgba(255,255,255,0.05);
-  --cl-elevation-3: 6px 6px 16px rgba(0,0,0,0.6), -6px -6px 16px rgba(255,255,255,0.06);
-  --cl-elevation-4: 8px 8px 22px rgba(0,0,0,0.65), -8px -8px 22px rgba(255,255,255,0.06);
-  --cl-elevation-5: 12px 12px 30px rgba(0,0,0,0.7), -12px -12px 30px rgba(255,255,255,0.05);
+  --cl-elevation-1: 2px 2px 5px rgba(0, 0, 0, 0.4), -2px -2px 5px rgba(255, 255, 255, 0.04);
+  --cl-elevation-2: 4px 4px 10px rgba(0, 0, 0, 0.5), -4px -4px 10px rgba(255, 255, 255, 0.05);
+  --cl-elevation-3: 6px 6px 16px rgba(0, 0, 0, 0.6), -6px -6px 16px rgba(255, 255, 255, 0.06);
+  --cl-elevation-4: 8px 8px 22px rgba(0, 0, 0, 0.65), -8px -8px 22px rgba(255, 255, 255, 0.06);
+  --cl-elevation-5: 12px 12px 30px rgba(0, 0, 0, 0.7), -12px -12px 30px rgba(255, 255, 255, 0.05);
 
   /* Neumorphic elevation — inset/pressed (dark mode) */
-  --cl-elevation-inset-1: inset 2px 2px 5px rgba(0,0,0,0.4), inset -2px -2px 5px rgba(255,255,255,0.04);
-  --cl-elevation-inset-2: inset 4px 4px 10px rgba(0,0,0,0.5), inset -4px -4px 10px rgba(255,255,255,0.05);
-  --cl-elevation-inset-3: inset 6px 6px 16px rgba(0,0,0,0.6), inset -6px -6px 16px rgba(255,255,255,0.06);
+  --cl-elevation-inset-1: inset 2px 2px 5px rgba(0, 0, 0, 0.4), inset -2px -2px 5px rgba(255, 255, 255, 0.04);
+  --cl-elevation-inset-2: inset 4px 4px 10px rgba(0, 0, 0, 0.5), inset -4px -4px 10px rgba(255, 255, 255, 0.05);
+  --cl-elevation-inset-3: inset 6px 6px 16px rgba(0, 0, 0, 0.6), inset -6px -6px 16px rgba(255, 255, 255, 0.06);
+
+  /* Workflow Canvas */
+  --cl-workflow-edge: #ffffff;
 }

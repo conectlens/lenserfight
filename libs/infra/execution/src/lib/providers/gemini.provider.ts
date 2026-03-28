@@ -1,0 +1,54 @@
+import type { IExecutionProvider, ExecutionInput, ExecutionResult, MediaType } from '../execution.types'
+
+/**
+ * Google Gemini provider — text and multimodal generation via @google/genai SDK.
+ * @google/genai is already in the monorepo's package.json.
+ *
+ * modelId examples:
+ *   'gemini-2.0-flash'
+ *   'gemini-1.5-pro'
+ *
+ * Multimodal input: pass params.imageUrl to include an inline image part.
+ */
+export class GeminiProvider implements IExecutionProvider {
+  readonly id = 'gemini'
+  readonly supportedMediaTypes: MediaType[] = ['text']
+
+  async execute(modelId: string, input: ExecutionInput): Promise<ExecutionResult> {
+    const start = Date.now()
+
+    const { GoogleGenAI } = await import('@google/genai')
+    const apiKey = (typeof process !== 'undefined' ? process.env['GEMINI_API_KEY'] : undefined) ?? ''
+    const genAI = new GoogleGenAI({ apiKey })
+
+    const parts: unknown[] = [{ text: input.prompt }]
+
+    if (input.params?.imageUrl && typeof input.params.imageUrl === 'string') {
+      parts.push({
+        inlineData: {
+          mimeType: 'image/jpeg',
+          data: input.params.imageUrl, // caller should pass base64 or URL
+        },
+      })
+    }
+
+    const response = await genAI.models.generateContent({
+      model: modelId,
+      contents: [{ role: 'user', parts }],
+    })
+
+    const text = response.text ?? ''
+    const durationMs = Date.now() - start
+
+    return {
+      mediaType: 'text',
+      text,
+      durationMs,
+      metadata: {
+        modelId,
+        promptTokenCount: response.usageMetadata?.promptTokenCount,
+        candidatesTokenCount: response.usageMetadata?.candidatesTokenCount,
+      },
+    }
+  }
+}

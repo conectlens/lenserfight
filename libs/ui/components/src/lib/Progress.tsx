@@ -16,7 +16,7 @@ const colorClasses: Record<ProgressColor, string> = {
   primary: 'bg-primary-yellow-500',
   'status-green': 'bg-status-green',
   'status-red': 'bg-status-red',
-  'status-blue': 'bg-status-blue',
+  'status-blue': 'bg-primary-yellow-500',
 }
 
 export const LinearProgress = React.forwardRef<HTMLDivElement, LinearProgressProps>(
@@ -88,7 +88,7 @@ export function CircularProgress({
     primary: 'stroke-primary-yellow-500',
     'status-green': 'stroke-status-green',
     'status-red': 'stroke-status-red',
-    'status-blue': 'stroke-status-blue',
+    'status-blue': 'stroke-primary-yellow-500',
   }
 
   return (

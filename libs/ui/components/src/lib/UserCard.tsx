@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react'
-import { LogOut, Settings, User as UserIcon, ChevronDown } from 'lucide-react'
+import { LogOut, Settings, User as UserIcon, ChevronDown, ArrowLeftRight } from 'lucide-react'
 import { Avatar } from './Avatar'
 
 /**
@@ -22,6 +22,13 @@ export interface UserCardLenser {
   avatar_url?: string | null
 }
 
+export interface UserCardAgent {
+  id: string
+  display_name: string
+  avatar_url?: string | null
+  handle: string
+}
+
 export interface UserCardProps {
   /** Supabase auth user. null → unauthenticated state. */
   user: UserCardUser | null
@@ -41,6 +48,10 @@ export interface UserCardProps {
    */
   variant?: 'compact' | 'expanded'
   className?: string
+  /** AI agents owned by this lenser. When set, a switch popover is shown. */
+  agents?: UserCardAgent[]
+  /** Called when the user selects an agent to switch to. */
+  onSwitchToAgent?: (agentId: string) => void
 }
 
 /**
@@ -63,6 +74,8 @@ export const UserCard: React.FC<UserCardProps> = ({
   loginUrl = '/auth/login',
   variant = 'compact',
   className = '',
+  agents,
+  onSwitchToAgent,
 }) => {
   const [open, setOpen] = useState(false)
   const [signingOut, setSigningOut] = useState(false)
@@ -159,6 +172,27 @@ export const UserCard: React.FC<UserCardProps> = ({
             {signingOut ? 'Signing out…' : 'Sign out'}
           </button>
         </div>
+
+        {agents && agents.length > 0 && onSwitchToAgent && (
+          <div className="pt-2 border-t border-gray-100 dark:border-gray-700">
+            <p className="px-1 pb-1 text-[10px] font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500 flex items-center gap-1">
+              <ArrowLeftRight size={10} />
+              Switch to Agent
+            </p>
+            <div className="space-y-0.5">
+              {agents.slice(0, 3).map((agent) => (
+                <button
+                  key={agent.id}
+                  onClick={() => onSwitchToAgent(agent.id)}
+                  className="w-full flex items-center gap-2 px-2 py-1.5 rounded-lg text-xs text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+                >
+                  <Avatar src={agent.avatar_url} alt={agent.display_name} size="sm" />
+                  <span className="truncate">{agent.display_name}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
     )
   }
@@ -216,6 +250,25 @@ export const UserCard: React.FC<UserCardProps> = ({
               Settings
             </a>
           </div>
+
+          {agents && agents.length > 0 && onSwitchToAgent && (
+            <div className="border-t border-gray-100 dark:border-gray-700 py-1">
+              <p className="px-4 pt-1 pb-0.5 text-[10px] font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500 flex items-center gap-1">
+                <ArrowLeftRight size={10} />
+                Switch to Agent
+              </p>
+              {agents.slice(0, 3).map((agent) => (
+                <button
+                  key={agent.id}
+                  onClick={() => { onSwitchToAgent(agent.id); setOpen(false) }}
+                  className="w-full flex items-center gap-2.5 px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+                >
+                  <Avatar src={agent.avatar_url} alt={agent.display_name} size="sm" />
+                  <span className="truncate">{agent.display_name}</span>
+                </button>
+              ))}
+            </div>
+          )}
 
           <div className="border-t border-gray-100 dark:border-gray-700 py-1">
             <button

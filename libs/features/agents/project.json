@@ -1,0 +1,9 @@
+{
+  "name": "agents",
+  "$schema": "../../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "libs/features/agents/src",
+  "projectType": "library",
+  "tags": ["layer:feature", "feature:agents"],
+  "// targets": "to see all targets run: nx show project agents --web",
+  "targets": {}
+}
