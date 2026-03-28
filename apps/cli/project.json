@@ -86,6 +86,20 @@
         }
       }
     },
+    "chmod": {
+      "dependsOn": ["build"],
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "chmod 755 dist/apps/cli/main.js"
+      }
+    },
+    "link": {
+      "dependsOn": ["chmod"],
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "cd dist/apps/cli && npm link"
+      }
+    },
     "test": {
       "options": {
         "passWithNoTests": true

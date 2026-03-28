@@ -50,7 +50,7 @@ export const LensDetailHeader: React.FC<LensDetailHeaderProps> = ({
           {canEdit && onEdit && (
             <button
               onClick={onEdit}
-              className="group flex-shrink-0 rounded-2xl border border-surface-border bg-surface-base p-2.5 text-greyscale-500 transition-colors hover:border-status-blue hover:text-status-blue"
+              className="group flex-shrink-0 rounded-2xl border border-surface-border bg-surface-base p-2.5 text-greyscale-500 transition-colors hover:border-primary-yellow-500 hover:text-primary-yellow-600"
               aria-label="Edit lens"
               title="Edit lens"
             >
@@ -67,7 +67,7 @@ export const LensDetailHeader: React.FC<LensDetailHeaderProps> = ({
               ${
                 isSaved
                   ? 'border-primary-yellow-500/40 bg-primary-yellow-500/10 text-primary-yellow-800 dark:text-primary-yellow-400'
-                  : 'border-surface-border bg-surface-base text-greyscale-500 hover:border-status-blue hover:text-status-blue'
+                  : 'border-surface-border bg-surface-base text-greyscale-500 hover:border-primary-yellow-500 hover:text-primary-yellow-600'
               }
             `}
             aria-label={isSaved ? 'Unsave lens' : 'Save lens'}
@@ -106,7 +106,7 @@ export const LensDetailHeader: React.FC<LensDetailHeaderProps> = ({
             size="sm"
             className="!w-6 !h-6"
           />
-          <span className="font-semibold text-greyscale-900 transition-colors group-hover:text-status-blue dark:text-greyscale-200">
+          <span className="font-semibold text-greyscale-900 transition-colors group-hover:text-primary-yellow-600 dark:text-greyscale-200">
             {lens.author.displayName}
           </span>
         </div>
@@ -154,7 +154,7 @@ export const LensDetailHeader: React.FC<LensDetailHeaderProps> = ({
               <button
                 type="button"
                 onClick={() => navigate(`/lenses/${node.forkedFromLensId}`)}
-                className="flex items-center gap-1 transition-colors hover:text-status-blue"
+                className="flex items-center gap-1 transition-colors hover:text-primary-yellow-600"
               >
                 {node.forkedFromLenserAvatarUrl && (
                   <img
@@ -163,7 +163,7 @@ export const LensDetailHeader: React.FC<LensDetailHeaderProps> = ({
                     alt={node.forkedFromLenserHandle}
                   />
                 )}
-                <span className="font-medium text-greyscale-600 transition-colors hover:text-status-blue dark:text-greyscale-400">
+                <span className="font-medium text-greyscale-600 transition-colors hover:text-primary-yellow-600 dark:text-greyscale-400">
                   {node.forkedFromTitle}
                 </span>
                 {node.forkedFromVersionNumber != null && (

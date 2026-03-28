@@ -73,7 +73,8 @@ export const LenserProvider: React.FC<{ children: React.ReactNode }> = ({ childr
 
   // Disabled queries (anon users) remain in React Query's 'pending' status.
   // Normalize isLoading to false so isReady resolves immediately after auth settles.
-  const isLoading = queryEnabled ? queryIsLoading : false
+  // Also hold isLoading while auth itself is still booting to prevent "Be Lenser" flash.
+  const isLoading = authLoading || (queryEnabled ? queryIsLoading : false)
 
   useEffect(() => {
     if (lenser) writeCache(LENSER_CACHE_KEY, lenser)

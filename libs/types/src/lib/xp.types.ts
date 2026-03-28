@@ -47,6 +47,13 @@ export type XPRuleKey =
   | 'CONTRIB_PR_MERGED_DOCS'
   | 'CONTRIB_ISSUE_FILED'
   | 'CONTRIB_REVIEW_GIVEN'
+  // Workflow Marketplace
+  | 'WORKFLOW_FORKED'
+  | 'WORKFLOW_FORK_RECEIVED'
+  | 'WORKFLOW_LIKED'
+  | 'WORKFLOW_LIKE_RECEIVED'
+  | 'WORKFLOW_SAVED'
+  | 'WORKFLOW_SAVE_RECEIVED'
 
 export interface XPApp {
   id: string
@@ -109,3 +116,26 @@ export interface LeaderboardEntry {
 
 export type LeaderboardTimeframe = 'weekly' | 'monthly' | 'all_time'
 export type LeaderboardScope = 'global' | 'season'
+
+export interface XPSeason {
+  id: string
+  slug: string
+  name: string
+  startsAt: string
+  endsAt: string
+  isActive: boolean
+}
+
+export interface SeasonLeaderboardEntry {
+  seasonId: string
+  seasonSlug: string
+  appId: string
+  rank: number
+  lenserId: string
+  totalXp: number
+  user: {
+    displayName: string
+    handle?: string
+    avatarUrl?: string
+  }
+}

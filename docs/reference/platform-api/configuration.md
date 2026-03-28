@@ -1,0 +1,20 @@
+# Configuration
+
+Reference for CLI and auth configuration precedence.
+
+## What to read first
+
+- [CLI Configuration](/reference/cli/configuration)
+- [Environment Variables](environment-variables)
+
+## Rules of thumb
+
+- Keep `.lenserfight.json` free of secrets.
+- Store session tokens and developer tokens in the user config at `~/.lenserfight/config.json`.
+- Use `LENSERFIGHT_AUTH_BASE_URL` when the auth app runs on a separate host.
+- Use `LENSERFIGHT_DEVELOPER_TOKEN` only when you intentionally want to override the saved developer token.
+
+## Related
+
+- [CLI Auth Commands](/reference/cli/auth)
+- [CLI Reference](/reference/cli/index)

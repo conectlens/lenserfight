@@ -129,6 +129,9 @@ export const lensesService = {
     return lensesRepo.getPersonalFeed(offset, limit)
   },
 
+  getMyLenses: (offset = 0, limit = 20): Promise<ApiResponseEnvelope<LensRecord[]>> =>
+    lensesRepo.getMyLenses(offset, limit),
+
   getLenserLenses: async (
     lenserHandle: string,
     offset = 0,
