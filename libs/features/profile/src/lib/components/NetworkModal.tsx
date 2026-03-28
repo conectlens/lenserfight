@@ -3,7 +3,7 @@ import React, { useEffect, useState, useRef, useCallback } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 
 import { Avatar } from '@lenserfight/ui/components'
-import { AppButton } from '@lenserfight/features/shell'
+import { Button } from '@lenserfight/ui/components'
 import { Modal } from '@lenserfight/ui/modals'
 import { lenserService } from '@lenserfight/data/repositories'
 import { FollowsNetworkUser, TrendingLenser } from '@lenserfight/types'
@@ -175,7 +175,7 @@ export const NetworkModal: React.FC<NetworkModalProps> = ({
               </div>
             </Link>
             {user.lenserId !== currentLenserId && (
-              <AppButton
+              <Button
                 size="sm"
                 variant={user.isFollowing ? 'secondary' : 'primary'}
                 onClick={() => handleFollowToggle(user)}
@@ -183,7 +183,7 @@ export const NetworkModal: React.FC<NetworkModalProps> = ({
                 className="!w-auto rounded-full"
               >
                 {user.isFollowing ? 'Following' : 'Follow'}
-              </AppButton>
+              </Button>
             )}
             {index === users.length - 1 && <div ref={lastElementRef} />}
           </div>
@@ -262,7 +262,7 @@ export const NetworkModal: React.FC<NetworkModalProps> = ({
                             </div>
                           </Link>
                           {!isFollowing && (
-                            <AppButton
+                            <Button
                               size="sm"
                               variant="primary"
                               onClick={() => handleTrendingFollow(lenser)}
@@ -270,7 +270,7 @@ export const NetworkModal: React.FC<NetworkModalProps> = ({
                               className="!w-auto rounded-full"
                             >
                               Follow
-                            </AppButton>
+                            </Button>
                           )}
                         </div>
                       )

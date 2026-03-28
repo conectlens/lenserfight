@@ -1,12 +1,12 @@
 import { lensesService, preferencesService } from '@lenserfight/data/repositories'
 import { useAuth } from '@lenserfight/features/auth'
 import { useReportContent } from '@lenserfight/features/home'
-import { CreateLenserProfileModal } from '@lenserfight/features/onboarding'
 import { useShareContext } from '@lenserfight/features/share'
 import { LenserPreferences } from '@lenserfight/types'
 import { ReportReasonEnum } from '@lenserfight/types'
-import { SEOHead } from '@lenserfight/ui/components'
+import { Button, SEOHead } from '@lenserfight/ui/components'
 import { ConfirmModal } from '@lenserfight/ui/modals'
+import { SelectField } from '@lenserfight/ui/forms'
 import { useUI } from '@lenserfight/ui/providers'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { History, Lock, Loader2, Pencil, Trash2, Flag } from 'lucide-react'
@@ -114,7 +114,6 @@ export const LensLabPage: React.FC = () => {
 
   const reportContent = useReportContent()
 
-  const [showProfileModal, setShowProfileModal] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
   const [isReportOpen, setIsReportOpen] = useState(false)
   const [reportReason, setReportReason] = useState<ReportReasonEnum>('spam')
@@ -136,7 +135,7 @@ export const LensLabPage: React.FC = () => {
 
   const ensureProfile = useCallback((): boolean => {
     if (!hasLenser) {
-      setShowProfileModal(true)
+      navigate('/onboarding', { state: { from: window.location.pathname } })
       return false
     }
     return true
@@ -502,7 +501,6 @@ export const LensLabPage: React.FC = () => {
         lensId={isEditMode && lens ? lens.id : undefined}
       />
 
-      {showProfileModal && <CreateLenserProfileModal onClose={() => setShowProfileModal(false)} />}
 
       <ConfirmModal
         isOpen={isDeleteModalOpen}
@@ -521,29 +519,24 @@ export const LensLabPage: React.FC = () => {
             <p className="text-sm text-gray-500 dark:text-gray-400">
               Why are you reporting this lens?
             </p>
-            <select
+            <SelectField
               value={reportReason}
-              onChange={(e) =>
-                setReportReason(
-                  e.target.value as 'spam' | 'harassment' | 'misinformation' | 'off_topic' | 'other'
-                )
-              }
-              className="w-full border border-gray-200 dark:border-gray-600 rounded-lg px-3 py-2 text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-            >
-              {(['spam', 'harassment', 'misinformation', 'off_topic', 'other'] as const).map((r) => (
-                <option key={r} value={r}>
-                  {r.replace('_', ' ').replace(/\b\w/g, (c) => c.toUpperCase())}
-                </option>
-              ))}
-            </select>
+              onChange={(v) => setReportReason(v as 'spam' | 'harassment' | 'misinformation' | 'off_topic' | 'other')}
+              options={(['spam', 'harassment', 'misinformation', 'off_topic', 'other'] as const).map((r) => ({
+                value: r,
+                label: r.replace('_', ' ').replace(/\b\w/g, (c) => c.toUpperCase()),
+              }))}
+            />
             <div className="flex gap-3 justify-end pt-1">
-              <button
+              <Button
+                variant="ghost"
                 onClick={() => setIsReportOpen(false)}
-                className="px-4 py-2 text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors"
+                className="w-auto"
               >
                 Cancel
-              </button>
-              <button
+              </Button>
+              <Button
+                variant="danger"
                 onClick={() => {
                   reportContent.mutate({
                     targetType: 'lens',
@@ -553,10 +546,11 @@ export const LensLabPage: React.FC = () => {
                   setIsReportOpen(false)
                 }}
                 disabled={reportContent.isPending}
-                className="px-4 py-2 text-sm bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors disabled:opacity-50"
+                isLoading={reportContent.isPending}
+                className="w-auto"
               >
                 {reportContent.isPending ? 'Reporting…' : 'Report'}
-              </button>
+              </Button>
             </div>
           </div>
         </div>

@@ -1,19 +1,44 @@
-import React from 'react'
+import React, { useEffect, useContext, useMemo } from 'react'
+import { DialogHeaderContext, DialogFooterContext, ModalFooter } from '@lenserfight/ui/overlays'
 
-import { Button } from './Button'
+import { StepIndicator } from './StepIndicator'
+
+export interface WizardStepConfig {
+  /** Short label shown inside the step indicator rail */
+  label: string
+  /** Heading rendered above the step's children */
+  title: string
+  /** Optional subheading rendered below the title */
+  description?: string
+  /** Optional icon displayed beside the title */
+  icon?: React.ReactNode
+}
 
 interface StepWizardProps {
-  steps: string[]
+  steps: WizardStepConfig[]
   currentStep: number
   children: React.ReactNode
   onNext: () => void
   onBack: () => void
   onComplete: () => void
+  /** Called when Cancel is pressed on step 0 */
+  onCancel?: () => void
   canProceed: boolean
   isNextLoading?: boolean
   isCompleting?: boolean
   nextLabel?: string
   completeLabel?: string
+  /** Optional icon prepended to the complete button label */
+  completeIcon?: React.ReactNode
+  /** Optional skip button shown between Back and primary action (e.g. "Skip for now") */
+  skipButton?: { label: string; onClick: () => void }
+  /**
+   * Per-step validity array. When provided, clicking a step bubble navigates to it
+   * only if all prior steps are valid. If a step is invalid, its inputs are highlighted.
+   */
+  stepValidity?: boolean[]
+  /** Called when user clicks a step bubble and navigation is allowed. */
+  onStepClick?: (step: number) => void
 }
 
 export const StepWizard: React.FC<StepWizardProps> = ({
@@ -23,100 +48,84 @@ export const StepWizard: React.FC<StepWizardProps> = ({
   onNext,
   onBack,
   onComplete,
+  onCancel,
   canProceed,
   isNextLoading = false,
   isCompleting = false,
   nextLabel = 'Next',
   completeLabel = 'Complete',
+  completeIcon,
+  skipButton,
+  stepValidity,
+  onStepClick,
 }) => {
   const isLastStep = currentStep === steps.length - 1
+  const current = steps[currentStep]
+
+  // Push current step header into the parent Dialog's header slot (if inside one)
+  const { setHeader, clearHeader } = useContext(DialogHeaderContext)
+  useEffect(() => {
+    setHeader({ title: current.title, description: current.description, icon: current.icon })
+    return () => clearHeader()
+  }, [current.title, current.description, current.icon, setHeader, clearHeader])
+
+  // Build footer node and hoist it into Dialog's sticky footer slot
+  const { setFooter, clearFooter } = useContext(DialogFooterContext)
+  const footerNode = useMemo(() => (
+    <ModalFooter
+      leftButton={{
+        label: currentStep === 0 && onCancel ? 'Cancel' : '← Back',
+        onClick: currentStep === 0 && onCancel ? onCancel : onBack,
+        disabled: !onCancel && currentStep === 0,
+        variant: 'ghost',
+      }}
+      rightButtons={
+        skipButton
+          ? [{ label: skipButton.label, onClick: skipButton.onClick, variant: 'ghost' }]
+          : undefined
+      }
+      primaryButton={
+        isLastStep
+          ? {
+              label: <>{completeIcon}{completeLabel}</>,
+              onClick: onComplete,
+              disabled: !canProceed || isCompleting,
+              isLoading: isCompleting,
+              className: 'px-6 sm:min-w-[140px]',
+            }
+          : {
+              label: `${nextLabel} →`,
+              onClick: onNext,
+              disabled: !canProceed || isNextLoading,
+              isLoading: isNextLoading,
+              className: 'px-6 sm:min-w-[140px]',
+            }
+      }
+    />
+  ), [currentStep, onCancel, onBack, skipButton, isLastStep, completeIcon, completeLabel,
+      onComplete, canProceed, isCompleting, nextLabel, onNext, isNextLoading])
+
+  useEffect(() => {
+    setFooter(footerNode)
+    return () => clearFooter()
+  }, [footerNode, setFooter, clearFooter])
 
   return (
-    <div className="flex flex-col gap-6">
-      {/* Step indicator */}
-      <div className="flex items-center justify-center gap-2">
-        {steps.map((label, index) => {
-          const isDone = index < currentStep
-          const isCurrent = index === currentStep
-          return (
-            <React.Fragment key={label}>
-              <div className="flex flex-col items-center gap-1">
-                <div
-                  className={[
-                    'w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold transition-colors',
-                    isDone
-                      ? 'bg-primary text-white'
-                      : isCurrent
-                        ? 'ring-2 ring-primary text-primary bg-white dark:bg-gray-800'
-                        : 'bg-gray-100 dark:bg-gray-700 text-gray-400 dark:text-gray-500',
-                  ].join(' ')}
-                >
-                  {isDone ? (
-                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                    </svg>
-                  ) : (
-                    index + 1
-                  )}
-                </div>
-                <span
-                  className={[
-                    'text-xs font-medium',
-                    isCurrent ? 'text-primary' : 'text-gray-400 dark:text-gray-500',
-                  ].join(' ')}
-                >
-                  {label}
-                </span>
-              </div>
-              {index < steps.length - 1 && (
-                <div
-                  className={[
-                    'h-px w-12 mb-5 transition-colors',
-                    isDone ? 'bg-primary' : 'bg-gray-200 dark:bg-gray-700',
-                  ].join(' ')}
-                />
-              )}
-            </React.Fragment>
-          )
-        })}
+    <div className="flex flex-col">
+      {/* Step indicator — separated section */}
+      <div className="pb-5">
+        <StepIndicator
+          steps={steps}
+          currentStep={currentStep}
+          stepValidity={stepValidity}
+          onStepClick={onStepClick}
+        />
       </div>
+
+      <div className="border-t border-surface-border" />
 
       {/* Step content */}
-      <div>{children}</div>
-
-      {/* Navigation */}
-      <div className="flex flex-col-reverse gap-3 border-t border-gray-100 pt-4 dark:border-gray-700 sm:flex-row sm:items-center sm:justify-between">
-        <button
-          type="button"
-          onClick={onBack}
-          disabled={currentStep === 0}
-          className="text-sm font-medium text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white disabled:opacity-30 disabled:cursor-not-allowed transition-colors text-left"
-        >
-          ← Back
-        </button>
-
-        {isLastStep ? (
-          <Button
-            type="button"
-            onClick={onComplete}
-            disabled={!canProceed || isCompleting}
-            isLoading={isCompleting}
-            className="px-6 sm:w-auto sm:min-w-[140px]"
-          >
-            {completeLabel}
-          </Button>
-        ) : (
-          <Button
-            type="button"
-            onClick={onNext}
-            disabled={!canProceed || isNextLoading}
-            isLoading={isNextLoading}
-            className="px-6 sm:w-auto sm:min-w-[140px]"
-          >
-            {nextLabel} →
-          </Button>
-        )}
-      </div>
+      <div className="py-5">{children}</div>
     </div>
   )
 }

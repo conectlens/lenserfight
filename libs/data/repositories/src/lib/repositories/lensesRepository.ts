@@ -381,6 +381,20 @@ export class SupabaseLensesRepository implements LensesRepositoryPort {
     )
   }
 
+  async getMyLenses(offset = 0, limit = 20): Promise<ApiResponseEnvelope<LensRecord[]>> {
+    const start = Date.now()
+    const { data, error } = await supabase.rpc('fn_get_my_lenses', {
+      p_offset: offset,
+      p_limit: limit,
+    })
+    if (error) this.handleError(error)
+    return paginatedResponse(
+      (data ?? []) as unknown as LensRecord[],
+      { limit, offset, hasNextPage: (data?.length ?? 0) >= limit },
+      { durationMs: Date.now() - start },
+    )
+  }
+
   async getByLenser(
     handle: string,
     offset = 0,

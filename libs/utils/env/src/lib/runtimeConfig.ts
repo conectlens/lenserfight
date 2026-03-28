@@ -14,7 +14,7 @@ export const isLocal = MODE === 'development'
 // Seed credentials for local auto-fill (matches supabase/seed.sql)
 export const LOCAL_SEED_CREDENTIALS = {
   email: 'alice@lenserfight.local',
-  password: 'Password123!',
+  password: 'Alice#Lenser2026!',
   displayName: 'Alice Arena',
 } as const
 
@@ -24,6 +24,7 @@ export const FEATURES = {
   LENSER_ACTIVITY: import.meta.env.VITE_FEATURE_LENSER_ACTIVITY === 'true',
   NOTIFICATIONS: import.meta.env.VITE_FEATURE_NOTIFICATIONS === 'true',
   NETWORK_LINKS: import.meta.env.VITE_FEATURE_NETWORK_LINKS === 'true',
+  AGENTS: import.meta.env.VITE_FEATURE_AGENTS === 'true',
 }
 
 // Captcha

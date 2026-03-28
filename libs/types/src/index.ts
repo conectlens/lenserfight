@@ -1,6 +1,9 @@
 export * from './lib/apiKeys.types'
 export * from './lib/media.types'
 export * from './lib/resources.types'
+export * from './lib/agents.types'
+export * from './lib/reputation.types'
+export * from './lib/benchmark.types'
 export * from './lib/wallet.types'
 export * from './lib/execution.types'
 export * from './lib/auth.types'
@@ -89,4 +92,6 @@ export type {
   XPRuleKey,
   XPSource,
   XPSummary,
+  XPSeason,
+  SeasonLeaderboardEntry,
 } from './lib/xp.types'
