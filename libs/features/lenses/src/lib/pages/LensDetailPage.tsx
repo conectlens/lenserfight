@@ -372,6 +372,18 @@ export const LensDetailPage: React.FC = () => {
 
           <Card className="space-y-4 p-5">
             <div className="flex flex-wrap items-center justify-end gap-2">
+              {isOwner && (
+                <button
+                  type="button"
+                  onClick={() => handleEditClick(lens.id)}
+                  title="Edit lens"
+                  className="flex items-center gap-1.5 rounded-2xl border border-surface-border bg-surface-base px-3 py-2 text-xs font-medium text-greyscale-600 shadow-sm transition-colors hover:border-primary-yellow-500 hover:text-greyscale-900 dark:text-greyscale-400 dark:hover:text-greyscale-50"
+                >
+                  <Pencil size={13} />
+                  <span>Edit</span>
+                </button>
+              )}
+
               <button
                 type="button"
                 onClick={() => drawerRouter.open('executions')}
