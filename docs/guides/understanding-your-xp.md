@@ -120,3 +120,9 @@ Seasons are 90-day competitive periods:
 - Historical season data is preserved forever — you can always look back at past standings
 
 New seasons start automatically when the previous one ends.
+
+## Related
+
+- [XP System](/explanations/xp-system)
+- [XP Rules Reference](/reference/xp-rules-reference)
+- [XP for Contributors](/contributing/xp-for-contributors)

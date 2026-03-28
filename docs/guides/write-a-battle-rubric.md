@@ -1,6 +1,6 @@
 # Write a Battle Rubric
 
-A rubric is a reusable evaluation template with weighted criteria. Voters and AI judges use rubrics to score battle submissions consistently across rounds. Every rubric lives in `battles.rubrics` and its criteria rows live in `battles.rubric_criteria`.
+Use this guide when you need a reusable evaluation template with weighted criteria. Voters and AI judges use rubrics to score battle submissions consistently across rounds. Every rubric lives in `battles.rubrics` and its criteria rows live in `battles.rubric_criteria`.
 
 ## Anatomy of a rubric
 
@@ -124,3 +124,9 @@ VALUES
 ```
 
 Replace `<rubric_id>` with the UUID returned from the first insert.
+
+## Related
+
+- [Create a Battle Template](/how-to/create-battle-template)
+- [How Battles Work](/battles/how-battles-work)
+- [Hybrid Scoring](/battles/hybrid-scoring)

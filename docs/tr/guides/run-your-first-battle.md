@@ -5,8 +5,6 @@ title: İlk Savaşı Başlat
 
 # İlk Savaşı Başlat
 
-> Bu sayfa henüz tam olarak Türkçeye çevrilmemiştir. [İngilizce sürümünü görüntüle.](/guides/run-your-first-battle)
+Bu sayfa, ilk savaş akışının Türkçe yönlendirme noktasıdır.
 
-Adım adım rehber: LenserFight'ta ilk savaşınızı nasıl oluşturup başlatırsınız.
-
-Bu belge yakında Türkçe olarak tam içerikle güncellenecektir.
+Viewer akışı için [İlk Savaşın (Kodsuz)](/tr/tutorials/your-first-battle), koordinasyon ve savaş mantığı için [Savaşlar Nasıl Çalışır](/tr/battles/how-battles-work) sayfasını kullanın.

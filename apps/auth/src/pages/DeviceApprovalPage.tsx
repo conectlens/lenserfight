@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { useAuth } from '@lenserfight/features/auth'
-import { approveDeviceRequest } from '@lenserfight/data/repositories'
+import { authService } from '@lenserfight/data/repositories'
 import { supabase } from '@lenserfight/data/supabase'
 import { replaceLocationSafely, sanitizeReturnUrl } from '../utils/validateReturnUrl'
 
@@ -60,7 +60,7 @@ export const DeviceApprovalPage: React.FC = () => {
     setMessage(null)
 
     try {
-      const result = await approveDeviceRequest({
+      const result = await authService.approveDeviceRequest({
         userCode: userCode.trim().toUpperCase(),
       })
 
