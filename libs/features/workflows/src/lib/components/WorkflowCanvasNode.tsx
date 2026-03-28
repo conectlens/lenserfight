@@ -9,6 +9,10 @@ export interface WorkflowNodeConfig {
   model_id?: string | null
   param_overrides?: Record<string, string>
   node_type?: 'lens' | 'image_generate' | 'web_search' | 'http_request'
+  // Per-node funding source override
+  funding_source?: import('@lenserfight/types').FundingSource
+  key_ref_id?: string | null
+  local_key_id?: string | null
 }
 
 export interface WorkflowNodeData {
