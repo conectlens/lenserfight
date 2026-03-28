@@ -90,7 +90,7 @@ export async function streamLocalProvider(req: LocalStreamRequest): Promise<void
   try {
     while (true) {
       const { done, value } = await reader.read()
-      if (done) break
+      if (done || signal.aborted) break
       buffer += decoder.decode(value, { stream: true })
 
       if (isNdjson) {
@@ -133,10 +133,12 @@ export async function streamLocalProvider(req: LocalStreamRequest): Promise<void
       }
     }
 
-    callbacks.onEnd(
-      { input_tokens: totalInputTokens, output_tokens: totalOutputTokens },
-      0, // credits = 0 for local execution
-    )
+    if (!signal.aborted) {
+      callbacks.onEnd(
+        { input_tokens: totalInputTokens, output_tokens: totalOutputTokens },
+        0, // credits = 0 for local execution
+      )
+    }
   } catch (err: unknown) {
     if ((err as Error).name === 'AbortError') {
       // Caller aborted — do not call onError; caller handles state reset
