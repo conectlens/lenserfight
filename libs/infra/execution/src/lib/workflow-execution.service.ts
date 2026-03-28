@@ -50,6 +50,44 @@ export interface WorkflowExecutionContext {
  * 3. Edge data mapping: source.outputData[sourceOutputKey] → target prompt [[label]] replacement.
  */
 export class WorkflowExecutionService {
+  /**
+   * Detects cycles in a workflow DAG using Kahn's algorithm.
+   * Returns the IDs of nodes involved in a cycle, or null if acyclic.
+   */
+  static detectCycle(
+    nodes: { id: string }[],
+    edges: { sourceNodeId: string; targetNodeId: string }[]
+  ): string[] | null {
+    const inDegree = new Map<string, number>(nodes.map((n) => [n.id, 0]))
+    const adjList = new Map<string, string[]>(nodes.map((n) => [n.id, []]))
+
+    for (const edge of edges) {
+      inDegree.set(edge.targetNodeId, (inDegree.get(edge.targetNodeId) ?? 0) + 1)
+      adjList.get(edge.sourceNodeId)?.push(edge.targetNodeId)
+    }
+
+    const queue: string[] = []
+    for (const [id, deg] of inDegree) {
+      if (deg === 0) queue.push(id)
+    }
+
+    let processed = 0
+    let qi = 0
+    while (qi < queue.length) {
+      const current = queue[qi++]
+      processed++
+      for (const neighbor of adjList.get(current) ?? []) {
+        const newDeg = (inDegree.get(neighbor) ?? 0) - 1
+        inDegree.set(neighbor, newDeg)
+        if (newDeg === 0) queue.push(neighbor)
+      }
+    }
+
+    if (processed === nodes.length) return null // acyclic
+
+    // Return nodes that weren't processed (they're in cycles)
+    return nodes.filter((n) => !queue.includes(n.id)).map((n) => n.id)
+  }
   constructor(private readonly provider: IExecutionProvider) {}
 
   async executeWorkflow(
