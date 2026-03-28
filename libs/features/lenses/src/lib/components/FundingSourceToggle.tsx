@@ -76,6 +76,7 @@ function AddLocalKeyForm({
       <div className="relative">
         <input
           type={showKey ? 'text' : 'password'}
+          autoComplete="off"
           value={rawKey}
           onChange={(e) => setRawKey(e.target.value)}
           placeholder={isOllama ? 'API key (optional, for cloud models)…' : 'API key…'}

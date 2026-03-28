@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react'
+import React, { useMemo, useState, useEffect } from 'react'
 import { Clipboard, Check, Zap } from 'lucide-react'
 import { Dialog, ModalFooter } from '@lenserfight/ui/overlays'
 import { Button } from '@lenserfight/ui/components'
@@ -11,6 +11,7 @@ interface CsvImportDialogProps {
   versionParams?: LensVersionParam[]
   legacyParams: LensParam[]
   onApply: (values: Record<string, unknown>) => void
+  currentValues?: Record<string, unknown>
 }
 
 const DELIMITER_LABELS: Record<string, string> = {
@@ -25,6 +26,7 @@ export const CsvImportDialog: React.FC<CsvImportDialogProps> = ({
   versionParams = [],
   legacyParams,
   onApply,
+  currentValues,
 }) => {
   const [rawText, setRawText] = useState('')
   const [parsedCsv, setParsedCsv] = useState<ParsedCsv | null>(null)
@@ -37,6 +39,28 @@ export const CsvImportDialog: React.FC<CsvImportDialogProps> = ({
     () => buildCsvTemplate(versionParams, legacyParams),
     [versionParams, legacyParams],
   )
+
+  // Pre-populate with current values when dialog opens
+  useEffect(() => {
+    if (!open) return
+    if (!currentValues) return
+    const allParamKeys = [
+      ...versionParams.map((p) => p.label),
+      ...legacyParams.map((p) => p.name),
+    ]
+    const matchedKeys = allParamKeys.filter((k) => currentValues[k] !== undefined && currentValues[k] !== '')
+    if (matchedKeys.length > 0) {
+      const headerRow = matchedKeys.join(',')
+      const valueRow = matchedKeys.map((k) => {
+        const v = currentValues[k]
+        const str = Array.isArray(v) ? v.join('|') : String(v ?? '')
+        return str.includes(',') || str.includes('"') || str.includes('\n')
+          ? `"${str.replace(/"/g, '""')}"`
+          : str
+      }).join(',')
+      setRawText(`${headerRow}\n${valueRow}`)
+    }
+  }, [open]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // Pre-compute which header columns match a param
   const allParamKeys = [

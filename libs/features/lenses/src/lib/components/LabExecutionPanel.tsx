@@ -276,6 +276,7 @@ export const LabExecutionPanel: React.FC<LabExecutionPanelProps> = ({
         versionParams={versionParams}
         legacyParams={form.legacyParamSchemas}
         onApply={form.applyImportedValues}
+        currentValues={form.inputValues}
       />
 
       <CsvImportDialog
@@ -284,6 +285,7 @@ export const LabExecutionPanel: React.FC<LabExecutionPanelProps> = ({
         versionParams={versionParams}
         legacyParams={form.legacyParamSchemas}
         onApply={form.applyImportedValues}
+        currentValues={form.inputValues}
       />
     </>
   )
