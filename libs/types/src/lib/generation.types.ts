@@ -38,6 +38,8 @@ export interface AIModel {
   name: string
   /** FK to ai.providers(id). Use this instead of the deprecated provider field. */
   provider_id?: string | null
+  /** Human-readable provider label for UI use. */
+  providerDisplayName?: string | null
   /**
    * @deprecated Use provider_id with a join to ai.providers.
    * This field reflects ai.models.provider (enum) which will be dropped after all callers migrate.
