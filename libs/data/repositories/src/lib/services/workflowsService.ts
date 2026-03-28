@@ -6,6 +6,7 @@ import {
   type WorkflowEdgeRecord,
   type WorkflowRunRecord,
   type WorkflowNodeResultRecord,
+  type WorkflowVersionRecord,
   type CreateWorkflowInput,
   type UpdateWorkflowInput,
   type UpsertNodeInput,
@@ -21,6 +22,7 @@ export type {
   WorkflowEdgeRecord,
   WorkflowRunRecord,
   WorkflowNodeResultRecord,
+  WorkflowVersionRecord,
   CreateWorkflowInput,
   UpdateWorkflowInput,
   UpsertNodeInput,
@@ -93,4 +95,18 @@ export const workflowsService = {
 
   updateRunStatus: (runId: string, status: string): Promise<void> =>
     workflowsRepo.updateRunStatus(runId, status),
+
+  // ── Versioning ──────────────────────────────────────────────────────────────
+
+  getVersions: (workflowId: string): Promise<WorkflowVersionRecord[]> =>
+    workflowsRepo.getVersions(workflowId),
+
+  createVersion: (workflowId: string, changelog?: string): Promise<string> =>
+    workflowsRepo.createVersion(workflowId, changelog),
+
+  publishVersion: (versionId: string): Promise<void> =>
+    workflowsRepo.publishVersion(versionId),
+
+  restoreVersion: (versionId: string): Promise<void> =>
+    workflowsRepo.restoreVersion(versionId),
 }
