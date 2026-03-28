@@ -2,6 +2,8 @@
 
 LenserFight uses PostgreSQL via Supabase with a multi-schema architecture. Each schema owns a bounded domain — battles, user identity, content, XP, analytics, AI, and supporting infrastructure.
 
+The private `authz` schema stores device-approval requests and developer-token state. It is not exposed through PostgREST; clients use `public.fn_auth_*` RPC wrappers.
+
 ## Why multi-schema?
 
 - **Isolation** — each domain has clear ownership and its own RLS policies.

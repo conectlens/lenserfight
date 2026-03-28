@@ -149,4 +149,3 @@ Current version: **v1** (stable). Future versions will be prefixed (e.g. `/v2/ex
 - [Call the API](/how-to/call-the-api) — Step-by-step curl guide for every endpoint
 - [Integrate API](/how-to/integrate-api) — Client setup, auth handling, error strategy
 - [Streaming Architecture](/explanations/streaming) — SSE streaming deep-dive
-- [Credits](/explanation/credits) — Credit packs and pricing

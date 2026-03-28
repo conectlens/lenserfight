@@ -94,6 +94,6 @@ describe('OnboardingGuard', () => {
       expect(mockReplaceLocationSafely).toHaveBeenCalledWith('https://forum.lenserfight.com/welcome')
     })
 
-    expect(screen.getByText('Loading...')).not.toBeNull()
+    expect(screen.getByRole('status', { name: 'Loading...' })).not.toBeNull()
   })
 })

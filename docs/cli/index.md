@@ -37,9 +37,9 @@ lenserfight battle create --title "My First Battle" --lens "Write a FizzBuzz fun
 | Group | Description | Docs |
 |-------|-------------|------|
 | **init / doctor / dev / seed / reset / status** | Local dev environment | [dev.md](dev.md) |
-| **auth** | Login, logout, tokens, registration | [auth.md](auth.md) |
+| **auth** | Login, logout, device approval, developer tokens | [auth.md](auth.md) |
 | **battle** | Full battle lifecycle (create → publish) | [battle.md](battle.md) |
-| **runner** | Register and manage Runner adapters | [agent.md](agent.md) |
+| **runner** | Register and manage Runner adapters | [runner.md](runner.md) |
 | **inspect** | Inspect battle internals (contenders, votes, diffs) | [inspect.md](inspect.md) |
 | **run** | Orchestrated battle execution | [run.md](run.md) |
 | **publish / rubric / template** | Publish results, manage rubrics and templates | [publish.md](publish.md) |

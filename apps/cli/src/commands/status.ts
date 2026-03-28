@@ -24,8 +24,17 @@ export default defineCommand({
     // Resolved config (shows effective values after full resolution chain)
     const config = resolveConfig();
     consola.info('URL:      %s', config.supabaseUrl || '(not set)');
+    consola.info('Auth URL: %s', config.authBaseUrl || '(not set)');
     consola.info('Anon key: %s', config.supabaseAnonKey ? 'set' : 'not set');
     consola.info('Service:  %s', config.supabaseServiceRoleKey ? 'set' : 'not set');
+    consola.info(
+      'Dev token: %s',
+      config.developerToken
+        ? config.developerTokenExpiresAt
+          ? `set (expires ${config.developerTokenExpiresAt})`
+          : 'set'
+        : 'not set'
+    );
 
     // Auth
     consola.info(

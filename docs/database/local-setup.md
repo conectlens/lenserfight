@@ -51,11 +51,12 @@ This is the recommended way to get a clean local database. It executes every mig
 
 ## Verify the Setup
 
-Connect to the local database and confirm the battles schema and XP rules are in place:
+Connect to the local database and confirm the battles schema, XP rules, and auth support schema are in place:
 
 ```bash
 psql postgresql://postgres:postgres@127.0.0.1:54322/postgres \
   -c "\dt battles.*" \
+  -c "\dt authz.*" \
   -c "SELECT action_key, base_xp FROM xp.rules WHERE action_key LIKE 'battle%';"
 ```
 

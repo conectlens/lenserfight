@@ -28,6 +28,95 @@ Parameters are passed as a JSON object in the request body.
 
 ---
 
+## Auth RPCs
+
+The auth approval and developer-token flow lives in the private `authz` schema and is exposed through `public` SECURITY DEFINER wrappers.
+
+### `fn_auth_request_device_approval`
+
+Create a short-lived approval request and return the code the CLI should display.
+
+| Property | Value |
+|----------|-------|
+| **Auth** | authenticated |
+| **Parameters** | `p_label` text (optional), `p_request_ttl_minutes` int (default 10), `p_token_ttl_hours` int (default 24) |
+| **Returns** | jsonb |
+
+```bash
+curl -X POST 'http://127.0.0.1:54321/rest/v1/rpc/fn_auth_request_device_approval' \
+  -H 'apikey: <ANON_KEY>' \
+  -H 'Authorization: Bearer <USER_JWT>' \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "p_label": "MacBook Pro",
+    "p_request_ttl_minutes": 10,
+    "p_token_ttl_hours": 24
+  }'
+```
+
+The response includes `requestId`, `requestSecret`, `userCode`, and `verificationUriComplete`.
+
+### `fn_auth_approve_device_request`
+
+Approve a pending request from the auth app while signed in.
+
+| Property | Value |
+|----------|-------|
+| **Auth** | authenticated |
+| **Parameters** | `p_user_code` text |
+| **Returns** | jsonb |
+
+```bash
+curl -X POST 'http://127.0.0.1:54321/rest/v1/rpc/fn_auth_approve_device_request' \
+  -H 'apikey: <ANON_KEY>' \
+  -H 'Authorization: Bearer <USER_JWT>' \
+  -H 'Content-Type: application/json' \
+  -d '{"p_user_code":"ABCD-EFGH"}'
+```
+
+### `fn_auth_exchange_device_approval`
+
+Poll for approval and mint the developer token once the request is approved.
+
+| Property | Value |
+|----------|-------|
+| **Auth** | authenticated |
+| **Parameters** | `p_request_id` uuid, `p_request_secret` text |
+| **Returns** | jsonb |
+
+```bash
+curl -X POST 'http://127.0.0.1:54321/rest/v1/rpc/fn_auth_exchange_device_approval' \
+  -H 'apikey: <ANON_KEY>' \
+  -H 'Authorization: Bearer <USER_JWT>' \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "p_request_id": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx",
+    "p_request_secret": "..."
+  }'
+```
+
+### `fn_auth_list_developer_tokens`
+
+List the current user's developer tokens.
+
+| Property | Value |
+|----------|-------|
+| **Auth** | authenticated |
+| **Parameters** | none |
+| **Returns** | table of token metadata |
+
+### `fn_auth_revoke_developer_token`
+
+Revoke one developer token belonging to the current user.
+
+| Property | Value |
+|----------|-------|
+| **Auth** | authenticated |
+| **Parameters** | `p_token_id` uuid |
+| **Returns** | void |
+
+---
+
 ## Battle RPCs
 
 ### `fn_battles_create`
