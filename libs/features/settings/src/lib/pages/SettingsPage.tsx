@@ -384,6 +384,7 @@ export const SettingsPage: React.FC = () => {
                   </label>
                   <input
                     disabled
+                    autoComplete="off"
                     value={user?.user_metadata?.display_name || 'N/A'}
                     className="w-full px-4 py-2.5 rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-gray-500 dark:text-gray-400"
                   />
@@ -399,6 +400,7 @@ export const SettingsPage: React.FC = () => {
                   </label>
                   <input
                     disabled
+                    autoComplete="email"
                     value={user?.email || ''}
                     className="w-full px-4 py-2.5 rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-gray-500 dark:text-gray-400"
                   />
@@ -410,6 +412,7 @@ export const SettingsPage: React.FC = () => {
                   </label>
                   <input
                     disabled
+                    autoComplete="off"
                     value={user?.id || ''}
                     className="w-full px-4 py-2.5 rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-gray-500 dark:text-gray-400 font-mono text-xs"
                   />
