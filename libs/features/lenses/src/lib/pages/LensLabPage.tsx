@@ -241,10 +241,9 @@ export const LensLabPage: React.FC = () => {
   }, [lens, setPageTitle, setShareConfig])
 
   const handleCopy = async () => {
-    if (!lens || !ensureProfile() || !lenser) return
+    if (!lens) return
     try {
-      await navigator.clipboard.writeText(lens.content)
-      await actions.copyLens()
+      await navigator.clipboard.writeText(activeLensContent)
     } catch (error) {
       void error
     }
@@ -488,7 +487,7 @@ export const LensLabPage: React.FC = () => {
             onRemoveLocalKey={funding.removeLocalKey}
             onProviderDropdownOpen={handleProviderDropdownOpen}
             isLocked={!hasActiveLenserProfile}
-            onLockedAction={ensureProfile}
+            onSignIn={ensureProfile}
           />
         </div>
       </div>
