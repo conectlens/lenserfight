@@ -2,10 +2,10 @@ import { lensesService, battlesService } from '@lenserfight/data/repositories'
 import { useAuth } from '@lenserfight/features/auth'
 import { useAIModels } from '@lenserfight/features/generations'
 import { useCreateLens, CreateLensModal, useFundingSource, FundingSourceToggle } from '@lenserfight/features/lenses'
-import { Badge, Button } from '@lenserfight/ui/components'
+import { Avatar, Badge, Button } from '@lenserfight/ui/components'
 import { useQuery } from '@tanstack/react-query'
 import { ArrowLeft, Bookmark, ChevronDown, GitBranch, GitFork, Lock, Pencil, Play, Settings, Square, Swords, ThumbsUp, X } from 'lucide-react'
-import React, { useCallback, useMemo, useRef, useState } from 'react'
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
 
@@ -94,23 +94,39 @@ export function WorkflowBuilderPage({ workflowId, onBattleClick }: WorkflowBuild
 
   // ── Lens edit modal (via useCreateLens in edit mode) ────────────────────────
   const lensModal = useCreateLens()
+  const [editingLensId, setEditingLensId] = useState<string | null>(null)
 
   const handleEditLens = async (lensId: string) => {
     try {
-      const lens = await lensesService.getLensDetail(lensId)
+      const lens = await lensesService.getLensDetail(lensId, user?.id)
       if (!lens) return
+      let initialVersionParams = lens.params ?? []
+      if (lens.latestVersionId) {
+        const versionDetail = await lensesService.getVersionById(lens.latestVersionId)
+        initialVersionParams = (versionDetail?.parameters ?? []).map((param) => ({
+          label: param.label,
+          toolId: param.toolId,
+        }))
+      }
+      setEditingLensId(lens.id)
       lensModal.openModal({
-        id: lensId,
+        id: lens.id,
         title: lens.title,
-        content: lens.versions?.[0]?.content ?? '',
+        content: lens.content,
         tags: lens.tags ?? [],
         visibility: lens.visibility,
-        versionParams: lens.versions?.[0]?.params ?? [],
+        versionParams: initialVersionParams,
       })
     } catch {
       // silently ignore — can't edit if fetch fails
     }
   }
+
+  useEffect(() => {
+    if (!lensModal.isOpen) {
+      setEditingLensId(null)
+    }
+  }, [lensModal.isOpen])
 
   // ── Node config panel ───────────────────────────────────────────────────────
   const handleConfigNode = (nodeId: string, lensId: string) => {
@@ -213,7 +229,7 @@ export function WorkflowBuilderPage({ workflowId, onBattleClick }: WorkflowBuild
           <div className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-lg bg-surface-raised">
             <GitBranch size={14} className="text-greyscale-400" />
           </div>
-          <div className="min-w-0">
+          <div className="min-w-0 flex-1">
             <h1 className="truncate text-sm font-bold text-greyscale-900 dark:text-greyscale-50">
               {workflow.title}
             </h1>
@@ -222,6 +238,7 @@ export function WorkflowBuilderPage({ workflowId, onBattleClick }: WorkflowBuild
                 {workflow.description}
               </p>
             )}
+
           </div>
           <Badge color="blue" variant="outline" className="flex-shrink-0 text-xs">
             {nodes.length} node{nodes.length !== 1 ? 's' : ''}
@@ -239,8 +256,9 @@ export function WorkflowBuilderPage({ workflowId, onBattleClick }: WorkflowBuild
                 onClick={toggleLike}
                 disabled={reactionPending}
                 title={liked ? 'Unlike' : 'Like'}
+                aria-pressed={liked}
                 className={`gap-1.5 w-auto rounded-xl px-2.5 py-1 transition-colors ${liked
-                  ? 'border-primary-yellow-500 bg-primary-yellow-500/10 text-primary-yellow-600'
+                  ? 'border-primary-yellow-500 bg-primary-yellow-500/15 text-primary-yellow-700 shadow-sm ring-1 ring-primary-yellow-500/20'
                   : 'border-surface-border bg-surface-raised text-greyscale-500 hover:text-greyscale-900 dark:hover:text-greyscale-100'
                   }`}
               >
@@ -254,8 +272,9 @@ export function WorkflowBuilderPage({ workflowId, onBattleClick }: WorkflowBuild
                 onClick={toggleSave}
                 disabled={reactionPending}
                 title={saved ? 'Unsave' : 'Save'}
+                aria-pressed={saved}
                 className={`gap-1.5 w-auto rounded-xl px-2.5 py-1 transition-colors ${saved
-                  ? 'border-primary-yellow-500 bg-primary-yellow-500/10 text-primary-yellow-600'
+                  ? 'border-primary-yellow-500 bg-primary-yellow-500/15 text-primary-yellow-700 shadow-sm ring-1 ring-primary-yellow-500/20'
                   : 'border-surface-border bg-surface-raised text-greyscale-500 hover:text-greyscale-900 dark:hover:text-greyscale-100'
                   }`}
               >
@@ -269,11 +288,33 @@ export function WorkflowBuilderPage({ workflowId, onBattleClick }: WorkflowBuild
                   size="sm"
                   variant="secondary"
                   onClick={() => setIsEditModalOpen(true)}
-                  className="gap-1.5 w-auto rounded-xl px-2.5 py-1"
+                  className="flex h-8 w-8 items-center justify-center rounded-xl !p-0"
                   title="Edit workflow"
                 >
                   <Pencil size={12} />
                 </Button>
+              )}
+
+              {workflow.parent_workflow_id && (
+                <button
+                  type="button"
+                  onClick={() => navigate(`/workflows/${workflow.parent_workflow_id}`)}
+                  className="mt-1 flex max-w-full items-center gap-2 rounded-full border border-surface-border bg-surface-raised px-2.5 py-1 text-left transition-colors hover:border-primary-yellow-500/40 hover:bg-primary-yellow-500/5"
+                  title={workflow.parent_workflow_title ?? 'Parent workflow'}
+                >
+                  <Avatar
+                    src={workflow.parent_workflow_author_profile?.avatar_url ?? null}
+                    alt={workflow.parent_workflow_author_profile?.display_name ?? 'Parent workflow author'}
+                    size="sm"
+                    className="!w-5 !h-5 ring-1 ring-white dark:ring-surface-base"
+                  />
+                  <span className="truncate text-[11px] font-medium text-greyscale-600 dark:text-greyscale-300">
+                    Forked from {workflow.parent_workflow_title ?? 'Parent workflow'}
+                  </span>
+                  <span className="truncate text-[11px] text-greyscale-400">
+                    @{workflow.parent_workflow_author_profile?.handle ?? 'unknown'}
+                  </span>
+                </button>
               )}
 
               {!isOwner && workflow.visibility === 'public' && (
@@ -348,7 +389,6 @@ export function WorkflowBuilderPage({ workflowId, onBattleClick }: WorkflowBuild
               )}
             </div>
           )}
-
           {/* Run panel toggle */}
           {runId && (
             <Button
@@ -427,11 +467,13 @@ export function WorkflowBuilderPage({ workflowId, onBattleClick }: WorkflowBuild
             lensId={selectedNodeConfig.lensId}
             versionId={selectedNodeConfig.versionId}
             nodeLabel={selectedNodeConfig.nodeLabel}
+            currentUserId={user?.id}
             currentConfig={nodeConfigs[selectedNodeConfig.nodeId] ?? {}}
             nodes={nodes}
             edges={edges}
             onSave={handleSaveNodeConfig}
             onClose={() => setSelectedNodeConfig(null)}
+            onEditLens={handleEditLens}
           />
         )}
 
@@ -509,12 +551,16 @@ export function WorkflowBuilderPage({ workflowId, onBattleClick }: WorkflowBuild
       {/* ── Lens edit modal ─────────────────────────────────────────────────── */}
       <CreateLensModal
         isOpen={lensModal.isOpen}
-        onClose={lensModal.closeModal}
+        onClose={() => {
+          lensModal.closeModal()
+          setEditingLensId(null)
+        }}
         onSubmit={() => lensModal.submit()}
         form={lensModal.form}
         isSubmitting={lensModal.isSubmitting}
         error={lensModal.error}
         isEditMode={lensModal.isEditMode}
+        lensId={editingLensId ?? undefined}
       />
     </div>
   )

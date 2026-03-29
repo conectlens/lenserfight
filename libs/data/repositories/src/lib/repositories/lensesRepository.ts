@@ -20,6 +20,7 @@ export interface LensesRepositoryPort {
   getTopLenses(limit: number): Promise<LensRecord[]>
   getTrendingLenses(lang?: string, offset?: number, limit?: number): Promise<ApiResponseEnvelope<LensViewModel[]>>
   getPersonalFeed(offset?: number, limit?: number): Promise<ApiResponseEnvelope<PersonalLensFeedItem[]>>
+  getFollowingFeed(offset?: number, limit?: number): Promise<ApiResponseEnvelope<LensViewModel[]>>
   getByLenser(
     handle: string,
     offset?: number,
@@ -374,6 +375,44 @@ export class SupabaseLensesRepository implements LensesRepositoryPort {
         personalScore: (row.personal_score as number) ?? 0,
       }
     })
+    return paginatedResponse(
+      items,
+      { limit, offset, hasNextPage: rows.length >= limit },
+      { durationMs: Date.now() - start },
+    )
+  }
+
+  async getFollowingFeed(offset = 0, limit = 20): Promise<ApiResponseEnvelope<LensViewModel[]>> {
+    const start = Date.now()
+    const { data, error } = await supabase.rpc('fn_content_get_following_lenses', {
+      p_limit: limit,
+      p_offset: offset,
+    })
+
+    if (error) this.handleError(error)
+
+    const rows = (data ?? []) as Record<string, unknown>[]
+    const items: LensViewModel[] = rows.map((row) => {
+      const author = (row.author_profile as Record<string, unknown>) ?? {}
+      const reactionTotals = (row.reaction_totals as Record<string, number>) ?? {}
+      return {
+        id: row.id as string,
+        title: row.title as string,
+        description: (row.description as string | null) ?? null,
+        author: {
+          id: (author.id as string) ?? '',
+          displayName: (author.display_name as string) ?? 'Unknown',
+          handle: (author.handle as string) ?? 'unknown',
+          avatarUrl: (author.avatar_url as string | null) ?? null,
+        },
+        tags: (row.tags as TagRecord[]) ?? [],
+        usageCount: reactionTotals['copy'] ?? 0,
+        createdAt: row.created_at as string,
+        visibility: 'public' as const,
+        status: 'published' as const,
+      }
+    })
+
     return paginatedResponse(
       items,
       { limit, offset, hasNextPage: rows.length >= limit },

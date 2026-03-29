@@ -15,7 +15,7 @@ export interface WorkflowEdge {
   targetParamLabel: string
 }
 
-export type NodeStatus = 'pending' | 'running' | 'completed' | 'failed'
+export type NodeStatus = 'pending' | 'running' | 'completed' | 'failed' | 'cancelled'
 
 export interface NodeResult {
   nodeId: string
@@ -26,7 +26,7 @@ export interface NodeResult {
 
 export interface WorkflowRunResult {
   runId: string
-  status: 'completed' | 'failed'
+  status: 'completed' | 'failed' | 'cancelled'
   nodeResults: NodeResult[]
 }
 
@@ -34,6 +34,8 @@ export interface WorkflowExecutionContext {
   runId: string
   /** Root-level inputs for nodes with no incoming edges */
   rootInputs: Record<string, unknown>
+  /** Optional abort signal for cancellation-aware execution */
+  signal?: AbortSignal
   /** Resolves a lens version's template body by lensId + versionId */
   resolveLensTemplate(lensId: string, versionId?: string | null): Promise<string>
   /** Called when a node changes status — used by the CF Worker to write workflow_node_results */
@@ -95,6 +97,12 @@ export class WorkflowExecutionService {
     edges: WorkflowEdge[],
     ctx: WorkflowExecutionContext
   ): Promise<WorkflowRunResult> {
+    const isAbortError = (err: unknown) =>
+      err instanceof DOMException
+        ? err.name === 'AbortError'
+        : !!err && typeof err === 'object' && 'name' in err && (err as { name?: string }).name === 'AbortError'
+
+    const isAborted = () => ctx.signal?.aborted ?? false
     const nodeMap = new Map(nodes.map((n) => [n.id, n]))
     const results = new Map<string, NodeResult>()
 
@@ -107,13 +115,44 @@ export class WorkflowExecutionService {
       dependents.get(edge.sourceNodeId)?.push(edge.targetNodeId)
     }
 
+    const markRemainingCancelled = async () => {
+      const pendingNodes = nodes.filter((node) => {
+        const result = results.get(node.id)
+        return !result || result.status === 'pending' || result.status === 'running'
+      })
+
+      await Promise.all(
+        pendingNodes.map(async (node) => {
+          const cancelledResult: NodeResult = { nodeId: node.id, status: 'cancelled' }
+          results.set(node.id, cancelledResult)
+          await ctx.onNodeStatusChange(node.id, cancelledResult)
+        })
+      )
+    }
+
     // Kahn's algorithm — collect initial wave (no dependencies)
     let wave = nodes.filter((n) => (inDegree.get(n.id) ?? 0) === 0).map((n) => n.id)
 
     while (wave.length > 0) {
+      if (isAborted()) {
+        await markRemainingCancelled()
+        return {
+          runId: ctx.runId,
+          status: 'cancelled',
+          nodeResults: Array.from(results.values()),
+        }
+      }
+
       // Execute current wave concurrently
       await Promise.all(
         wave.map(async (nodeId) => {
+          if (isAborted()) {
+            const cancelledResult: NodeResult = { nodeId, status: 'cancelled' }
+            results.set(nodeId, cancelledResult)
+            await ctx.onNodeStatusChange(nodeId, cancelledResult)
+            return
+          }
+
           const node = nodeMap.get(nodeId)!
           await ctx.onNodeStatusChange(nodeId, { nodeId, status: 'running' })
 
@@ -124,6 +163,13 @@ export class WorkflowExecutionService {
 
             const execInput: ExecutionInput = { prompt: resolvedPrompt }
             const execResult: ExecutionResult = await this.provider.execute(node.lensId, execInput)
+
+            if (isAborted()) {
+              const cancelledResult: NodeResult = { nodeId, status: 'cancelled' }
+              results.set(nodeId, cancelledResult)
+              await ctx.onNodeStatusChange(nodeId, cancelledResult)
+              return
+            }
 
             const outputData: Record<string, unknown> = {
               mediaType: execResult.mediaType,
@@ -138,6 +184,13 @@ export class WorkflowExecutionService {
             results.set(nodeId, nodeResult)
             await ctx.onNodeStatusChange(nodeId, nodeResult)
           } catch (err) {
+            if (isAborted() || isAbortError(err)) {
+              const nodeResult: NodeResult = { nodeId, status: 'cancelled' }
+              results.set(nodeId, nodeResult)
+              await ctx.onNodeStatusChange(nodeId, nodeResult)
+              return
+            }
+
             const nodeResult: NodeResult = {
               nodeId,
               status: 'failed',
@@ -148,6 +201,15 @@ export class WorkflowExecutionService {
           }
         })
       )
+
+      if (isAborted()) {
+        await markRemainingCancelled()
+        return {
+          runId: ctx.runId,
+          status: 'cancelled',
+          nodeResults: Array.from(results.values()),
+        }
+      }
 
       // Build next wave: nodes whose dependencies are all resolved
       const nextWave: string[] = []
@@ -162,6 +224,13 @@ export class WorkflowExecutionService {
     }
 
     const allResults = Array.from(results.values())
+    if (allResults.some((r) => r.status === 'cancelled')) {
+      return {
+        runId: ctx.runId,
+        status: 'cancelled',
+        nodeResults: allResults,
+      }
+    }
     const failed = allResults.some((r) => r.status === 'failed')
 
     return {
