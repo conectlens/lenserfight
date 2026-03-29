@@ -6,13 +6,13 @@ Creator profiles give repeat participants a public identity.
 
 - handle
 - short bio
-- battle history
+- evaluation history
 - simple reputation signals
 - links to recent forum threads
 
 ## Product goal
 
-Profiles should make it easier to follow creators across battles without turning LenserFight into a social network first.
+Profiles should make it easier to follow creators across evaluations without turning LenserFight into a social network first.
 
 ## Out of scope
 

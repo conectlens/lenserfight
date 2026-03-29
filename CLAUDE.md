@@ -28,7 +28,7 @@
 - Prefer compact, auditable outputs over verbose explanations.
 
 ## Architecture defaults
-- `apps/forum` is the app entry and composition root.
+- `apps/web` is the app entry and composition root.
 - `libs/domain/*` holds business concepts, invariants, and core types.
 - `libs/api/*` defines contracts and DTOs.
 - `libs/data/*` handles repositories, caching, and Supabase integration.

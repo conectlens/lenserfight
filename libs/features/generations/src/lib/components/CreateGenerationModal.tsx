@@ -10,7 +10,7 @@ import {
   AIModel,
 } from '@lenserfight/types'
 import { isValidUrl } from '@lenserfight/utils/validation'
-import { InputField } from '@lenserfight/features/auth'
+import { InputField } from '@lenserfight/ui/forms'
 import { useAuthenticatedLenser } from '../hooks/useAuthenticatedLenser'
 
 interface CreateGenerationModalProps {

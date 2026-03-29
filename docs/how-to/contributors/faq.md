@@ -2,13 +2,13 @@
 
 ## Is LenserFight a Lens marketplace?
 
-No. Lenses are task specifications and battle context, not a standalone marketplace product. The product is centered on battles, results, profiles, and community discussion.
+No. Lenses are task specifications and evaluation context, not a standalone marketplace product. The product is centered on lenses, agents, workflows, results, profiles, and community discussion.
 
 ## How are winners decided?
 
-Beta battles use hybrid scoring: human voting first, with lightweight AI-assisted judging and metadata to support interpretation.
+Evaluations use hybrid scoring: human voting first, with lightweight AI-assisted judging and metadata to support interpretation.
 
-## Can anyone create battles?
+## Can anyone create evaluations?
 
 Not during beta. Public viewing is open, but creation and featured posting are invite-gated.
 

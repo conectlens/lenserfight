@@ -4,6 +4,9 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
+    "dev": "node scripts/dev.mjs",
+    "dev:web": "npx nx serve web",
+    "dev:docs": "vitepress dev apps/docs",
     "build": "nx vite:build",
     "preview": "nx vite:preview",
     "lint": "eslint .",
@@ -69,6 +72,7 @@
     "@expo/cli": "~54.0.16",
     "@nx/esbuild": "22.5.4",
     "@nx/eslint": "^22.5.4",
+    "@nx/eslint-plugin": "^22.6.3",
     "@nx/expo": "22.5.4",
     "@nx/jest": "22.5.4",
     "@nx/js": "22.6.0",

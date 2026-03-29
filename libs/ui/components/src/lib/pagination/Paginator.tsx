@@ -11,7 +11,7 @@ interface PaginatorProps {
 }
 
 /**
- * Numbered pagination component for apps/forum, apps/arena, apps/auth, apps/mobile, etc.
+ * Numbered pagination component for apps/web, apps/arena, apps/mobile, etc.
  *
  * Renders: ← Prev  1  2  [3]  4  5  …  12  Next →
  * Accessible: aria-label, aria-current="page", keyboard navigable.

@@ -59,7 +59,7 @@ const SITE_JSON_LD = JSON.stringify({
   '@type': 'WebSite',
   name: 'LenserFight Docs',
   url: DOCS_HOST,
-  description: 'User-first documentation for LenserFight Arena, Forum, Admin, and Mobile.',
+  description: 'User-first documentation for LenserFight — Lenses, Agents, Workflows, and Community.',
   publisher: {
     '@type': 'Organization',
     name: 'LenserFight',
@@ -78,7 +78,7 @@ export default defineConfig({
   cleanUrls: true,
 
   title: 'LenserFight Docs',
-  description: 'Documentation for LenserFight — AI evaluation battles, Lenses, Workflows, and the Arena.',
+  description: 'Documentation for LenserFight — Lenses, Agents, Workflows, and Community.',
 
   sitemap: {
     hostname: DOCS_HOST,
@@ -163,13 +163,13 @@ export default defineConfig({
       lang: 'tr',
       link: '/tr/',
       title: 'LenserFight Belgeleri',
-      description: 'LenserFight Arena, Forum, Admin ve Mobil için kullanıcı odaklı belgeler.',
+      description: 'LenserFight — Lensler, Agentlar, İş Akışları ve Topluluk için belgeler.',
       themeConfig: {
         nav: [
           { text: 'Eğitimler', link: '/tr/tutorials/beginner-walkthroughs/what-is-lenserfight' },
-          { text: 'Nasıl Yapılır', link: '/tr/how-to/battle-api/share-a-result' },
+          { text: 'Nasıl Yapılır', link: '/tr/how-to/contributors/faq' },
           { text: 'Referans', link: '/tr/reference/cli/index' },
-          { text: 'Açıklama', link: '/tr/explanation/battle-system/how-battles-work' },
+          { text: 'Açıklama', link: '/tr/explanation/agents/index' },
         ],
         sidebar: {
           // ── Eğitimler ────────────────────────────────────────────────────────
@@ -200,9 +200,6 @@ export default defineConfig({
               items: [
                 { text: 'Lens Oluştur', link: '/tr/tutorials/walkthroughs/create-a-lens' },
                 { text: 'İş Akışı Oluştur', link: '/tr/tutorials/walkthroughs/create-a-workflow' },
-                { text: 'Lenslerle Savaş', link: '/tr/tutorials/walkthroughs/battle-with-lenses' },
-                { text: 'İş Akışlarıyla Savaş', link: '/tr/tutorials/walkthroughs/battle-with-workflows' },
-                { text: 'Savaş Türleri Nelerdir?', link: '/tr/tutorials/walkthroughs/what-are-battle-types' },
                 { text: 'İş Akışları Nelerdir?', link: '/tr/tutorials/walkthroughs/what-are-workflows' },
               ],
             },
@@ -212,8 +209,6 @@ export default defineConfig({
               text: 'Yeni Başlayanlar İçin',
               items: [
                 { text: 'LenserFight Nedir?', link: '/tr/tutorials/beginner-walkthroughs/what-is-lenserfight' },
-                { text: 'İlk Savaşın (Kodsuz)', link: '/tr/tutorials/beginner-walkthroughs/your-first-battle' },
-                { text: 'CLI ile İlk Savaş', link: '/tr/tutorials/beginner-walkthroughs/first-battle-cli' },
                 { text: "OpenAI Agent'ı Bağla", link: '/tr/tutorials/beginner-walkthroughs/connect-openai-agent' },
                 { text: 'Harika Lens Yazmak', link: '/tr/tutorials/beginner-walkthroughs/writing-great-prompts' },
                 { text: 'İlk Agent', link: '/tr/tutorials/beginner-walkthroughs/first-agent' },
@@ -226,19 +221,7 @@ export default defineConfig({
             {
               text: 'Nasıl Yapılır',
               items: [
-                { text: 'Savaş ve API Görevleri', link: '/tr/how-to/battle-api/connect-your-lens' },
-                { text: 'Katkıda Bulunanlar', link: '/tr/how-to/contributors/katkilar-icin-xp' },
-              ],
-            },
-          ],
-          '/tr/how-to/battle-api/': [
-            {
-              text: 'Savaş ve API Görevleri',
-              items: [
-                { text: "Lens'inizi Bağlayın", link: '/tr/how-to/battle-api/connect-your-lens' },
-                { text: 'İlk Savaşı Çalıştır', link: '/tr/how-to/battle-api/run-your-first-battle' },
-                { text: 'Sonuç Paylaş', link: '/tr/how-to/battle-api/share-a-result' },
-                { text: 'XP Sisteminizi Anlayın', link: '/tr/how-to/battle-api/xp-sisteminizi-anlayin' },
+                { text: 'Katkıda Bulunanlar', link: '/tr/how-to/contributors/faq' },
               ],
             },
           ],
@@ -246,7 +229,6 @@ export default defineConfig({
             {
               text: 'Katkıda Bulunanlar',
               items: [
-                { text: 'Katkılar İçin XP', link: '/tr/how-to/contributors/katkilar-icin-xp' },
                 { text: 'Katkıda Bulunanlar 2. Dalga', link: '/tr/how-to/contributors/wave-2-plan' },
                 { text: 'SSS', link: '/tr/how-to/contributors/faq' },
               ],
@@ -280,7 +262,6 @@ export default defineConfig({
                 { text: 'API Genel Bakış', link: '/tr/reference/platform-api/api-overview' },
                 { text: 'Yapılandırma', link: '/tr/reference/platform-api/configuration' },
                 { text: 'Beta Yol Haritası', link: '/tr/reference/platform-api/beta-roadmap' },
-                { text: 'XP Sistemi', link: '/tr/reference/platform-api/xp-sistemi' },
                 { text: 'Güvenlik', link: '/tr/reference/platform-api/security' },
               ],
             },
@@ -292,11 +273,7 @@ export default defineConfig({
                 { text: 'Şemaya Genel Bakış', link: '/tr/reference/database/schema-overview' },
                 { text: 'Lensers Şeması', link: '/tr/reference/database/schema-lensers' },
                 { text: 'İçerik Şeması', link: '/tr/reference/database/schema-content' },
-                { text: 'XP Şeması', link: '/tr/reference/database/schema-xp' },
-                { text: 'Analitik Şeması', link: '/tr/reference/database/schema-analytics' },
                 { text: 'AI Şeması', link: '/tr/reference/database/schema-ai' },
-                { text: 'Savaşlar Şeması', link: '/tr/reference/database/schema-battles' },
-                { text: 'Diğer Şemalar', link: '/tr/reference/database/schema-other' },
                 { text: 'RLS Referansı', link: '/tr/reference/database/rls-reference' },
                 { text: 'RPC Referansı', link: '/tr/reference/database/rpc-reference' },
                 { text: 'Yerel Kurulum', link: '/tr/reference/database/local-setup' },
@@ -309,19 +286,9 @@ export default defineConfig({
             {
               text: 'Açıklama',
               items: [
-                { text: 'Savaş Sistemi', link: '/tr/explanation/battle-system/how-battles-work' },
                 { text: 'Agentlar', link: '/tr/explanation/agents/index' },
                 { text: 'Lensler', link: '/tr/explanation/lenses/index' },
                 { text: 'Topluluk ve Kullanım', link: '/tr/explanation/community/community-hub' },
-              ],
-            },
-          ],
-          '/tr/explanation/battle-system/': [
-            {
-              text: 'Savaş Sistemi',
-              items: [
-                { text: 'Savaşlar Nasıl Çalışır', link: '/tr/explanation/battle-system/how-battles-work' },
-                { text: 'Hibrit Puanlama', link: '/tr/explanation/battle-system/hybrid-scoring' },
               ],
             },
           ],
@@ -356,7 +323,6 @@ export default defineConfig({
                 { text: 'Topluluk Merkezi', link: '/tr/explanation/community/community-hub' },
                 { text: 'İçerik Üretici Profilleri', link: '/tr/explanation/community/creator-profiles' },
                 { text: 'Mobil Yardımcı Uygulama', link: '/tr/explanation/community/companion-app' },
-                { text: 'Yönetici Konsolu', link: '/tr/explanation/community/operations-console' },
                 { text: 'Açık Çekirdek Modeli', link: '/tr/explanation/community/open-core-model' },
               ],
             },
@@ -396,9 +362,9 @@ export default defineConfig({
 
     nav: [
       { text: 'Tutorials', link: '/tutorials/beginner-walkthroughs/what-is-lenserfight' },
-      { text: 'How-to', link: '/how-to/battle-api/connect-your-lens' },
+      { text: 'How-to', link: '/how-to/contributors/contributing' },
       { text: 'Reference', link: '/reference/cli/index' },
-      { text: 'Explanation', link: '/explanation/battle-system/concepts' },
+      { text: 'Explanation', link: '/explanation/agents/index' },
     ],
 
     aside: true,
@@ -435,9 +401,6 @@ export default defineConfig({
           items: [
             { text: 'Create a Lens', link: '/tutorials/walkthroughs/create-a-lens' },
             { text: 'Create a Workflow', link: '/tutorials/walkthroughs/create-a-workflow' },
-            { text: 'Battle with Lenses', link: '/tutorials/walkthroughs/battle-with-lenses' },
-            { text: 'Battle with Workflows', link: '/tutorials/walkthroughs/battle-with-workflows' },
-            { text: 'What Are Battle Types?', link: '/tutorials/walkthroughs/what-are-battle-types' },
             { text: 'What Are Workflows?', link: '/tutorials/walkthroughs/what-are-workflows' },
           ],
         },
@@ -447,8 +410,6 @@ export default defineConfig({
           text: 'Beginner Walkthroughs',
           items: [
             { text: 'What is LenserFight?', link: '/tutorials/beginner-walkthroughs/what-is-lenserfight' },
-            { text: 'Your First Battle (No Code)', link: '/tutorials/beginner-walkthroughs/your-first-battle' },
-            { text: 'First Battle via CLI', link: '/tutorials/beginner-walkthroughs/first-battle-cli' },
             { text: 'Connect an OpenAI Agent', link: '/tutorials/beginner-walkthroughs/connect-openai-agent' },
             { text: 'Writing Great Lenses', link: '/tutorials/beginner-walkthroughs/writing-great-prompts' },
             { text: 'First Agent', link: '/tutorials/beginner-walkthroughs/first-agent' },
@@ -461,26 +422,7 @@ export default defineConfig({
         {
           text: 'How-to',
           items: [
-            { text: 'Battle & API Tasks', link: '/how-to/battle-api/connect-your-lens' },
             { text: 'Contributors & Maintainers', link: '/how-to/contributors/contributing' },
-          ],
-        },
-      ],
-      '/how-to/battle-api/': [
-        {
-          text: 'Battle & API Tasks',
-          items: [
-            { text: 'Connect Your Lens', link: '/how-to/battle-api/connect-your-lens' },
-            { text: 'Run Your First Battle', link: '/how-to/battle-api/run-your-first-battle' },
-            { text: 'Share a Result', link: '/how-to/battle-api/share-a-result' },
-            { text: 'Write a Battle Rubric', link: '/how-to/battle-api/write-a-battle-rubric' },
-            { text: 'Understanding Your XP', link: '/how-to/battle-api/understanding-your-xp' },
-            { text: 'Call the API', link: '/how-to/battle-api/call-the-api' },
-            { text: 'Integrate the API', link: '/how-to/battle-api/integrate-api' },
-            { text: 'Create a Battle Template', link: '/how-to/battle-api/create-battle-template' },
-            { text: 'Manage Battle Invitations', link: '/how-to/battle-api/manage-invitations' },
-            { text: 'Debug Agents', link: '/how-to/battle-api/debug-agents' },
-            { text: 'Deploy a Project', link: '/how-to/battle-api/deploy-project' },
           ],
         },
       ],
@@ -494,7 +436,6 @@ export default defineConfig({
             { text: 'Coding Standards', link: '/how-to/contributors/coding-standards' },
             { text: 'Branching and Versioning', link: '/how-to/contributors/branching' },
             { text: 'Release Process', link: '/how-to/contributors/release-process' },
-            { text: 'XP for Contributors', link: '/how-to/contributors/xp-for-contributors' },
             { text: 'OSS Contribution Roadmap', link: '/how-to/contributors/wave-2-plan' },
             { text: 'Code of Conduct', link: '/how-to/contributors/code-of-conduct' },
             { text: 'Security Policy', link: '/how-to/contributors/security' },
@@ -524,14 +465,12 @@ export default defineConfig({
             { text: 'Configuration', link: '/reference/cli/configuration' },
             { text: 'Development Commands', link: '/reference/cli/dev' },
             { text: 'Authentication Commands', link: '/reference/cli/auth' },
-            { text: 'Battle Commands', link: '/reference/cli/battle' },
             { text: 'Agent Commands', link: '/reference/cli/agent' },
             { text: 'Inspect Commands', link: '/reference/cli/inspect' },
             { text: 'Run Commands', link: '/reference/cli/run' },
             { text: 'Publish, Rubric & Template Commands', link: '/reference/cli/publish' },
             { text: 'Lens Commands', link: '/reference/cli/lens' },
             { text: 'Community Commands', link: '/reference/cli/community' },
-            { text: 'Battle Lifecycle Walkthrough', link: '/reference/cli/lifecycle' },
             { text: 'Execution Modes', link: '/reference/cli/execution-modes' },
           ],
         },
@@ -544,9 +483,6 @@ export default defineConfig({
             { text: 'Configuration', link: '/reference/platform-api/configuration' },
             { text: 'Environment Variables', link: '/reference/platform-api/environment-variables' },
             { text: 'Beta Roadmap', link: '/reference/platform-api/beta-roadmap' },
-            { text: 'Evaluation Methodology', link: '/reference/platform-api/evaluation-methodology' },
-            { text: 'XP Methodology', link: '/reference/platform-api/xp-methodology' },
-            { text: 'XP Rules Reference', link: '/reference/platform-api/xp-rules-reference' },
             { text: 'Capability Mapper', link: '/reference/platform-api/capability-mapper' },
             { text: 'Security', link: '/reference/platform-api/security' },
           ],
@@ -560,13 +496,9 @@ export default defineConfig({
             { text: 'Schema Overview', link: '/reference/database/schema-overview' },
             { text: 'Lensers Schema', link: '/reference/database/schema-lensers' },
             { text: 'Content Schema', link: '/reference/database/schema-content' },
-            { text: 'XP Schema', link: '/reference/database/schema-xp' },
-            { text: 'Analytics Schema', link: '/reference/database/schema-analytics' },
             { text: 'AI Schema', link: '/reference/database/schema-ai' },
-            { text: 'Battles Schema', link: '/reference/database/schema-battles' },
             { text: 'Media Schema', link: '/reference/database/schema-media' },
             { text: 'Tenancy Schema', link: '/reference/database/schema-tenancy' },
-            { text: 'Other Schemas', link: '/reference/database/schema-other' },
             { text: 'RLS Reference', link: '/reference/database/rls-reference' },
             { text: 'RPC Reference', link: '/reference/database/rpc-reference' },
             { text: 'Local Setup', link: '/reference/database/local-setup' },
@@ -580,25 +512,9 @@ export default defineConfig({
         {
           text: 'Explanation',
           items: [
-            { text: 'Battle System', link: '/explanation/battle-system/how-battles-work' },
             { text: 'Agents', link: '/explanation/agents/index' },
             { text: 'Lenses', link: '/explanation/lenses/index' },
             { text: 'Community & Use Cases', link: '/explanation/community/community-hub' },
-          ],
-        },
-      ],
-      '/explanation/battle-system/': [
-        {
-          text: 'Battle System',
-          items: [
-            { text: 'How Battles Work', link: '/explanation/battle-system/how-battles-work' },
-            { text: 'Hybrid Scoring', link: '/explanation/battle-system/hybrid-scoring' },
-            { text: 'Core Concepts', link: '/explanation/battle-system/concepts' },
-            { text: 'Domain Model', link: '/explanation/battle-system/domain-model' },
-            { text: 'Streaming Architecture', link: '/explanation/battle-system/streaming' },
-            { text: 'System Boundaries', link: '/explanation/battle-system/system-boundaries' },
-            { text: 'Token Economy', link: '/explanation/battle-system/token-economy' },
-            { text: 'XP System', link: '/explanation/battle-system/xp-system' },
           ],
         },
       ],
@@ -633,7 +549,6 @@ export default defineConfig({
             { text: 'Community Hub', link: '/explanation/community/community-hub' },
             { text: 'Creator Profiles', link: '/explanation/community/creator-profiles' },
             { text: 'Mobile Companion App', link: '/explanation/community/companion-app' },
-            { text: 'Operations Console', link: '/explanation/community/operations-console' },
             { text: 'Open Core Model', link: '/explanation/community/open-core-model' },
           ],
         },
