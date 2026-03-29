@@ -1,7 +1,7 @@
 import { Button, StepWizard } from '@lenserfight/ui/components'
 import type { WizardStepConfig } from '@lenserfight/ui/components'
 import { Input, SegmentedControl, TextArea } from '@lenserfight/ui/forms'
-import { battlesService, workflowsService, lensesService } from '@lenserfight/data/repositories'
+import { battlesService, workflowsService, lensesService, battleExecutionService } from '@lenserfight/data/repositories'
 import type { WorkflowRecord } from '@lenserfight/data/repositories'
 import { useAuth } from '@lenserfight/features/auth'
 import { useAIModels } from '@lenserfight/features/generations'
@@ -314,6 +314,20 @@ export const CreateBattleWizard: React.FC<CreateBattleWizardProps> = ({ onSucces
         battle = await battlesService.updateBattle(createdBattleId, battleInput)
       } else {
         battle = await battlesService.createBattle(battleInput)
+      }
+
+      // Persist execution config for AI battles
+      if (battleType === 'ai_vs_ai' && selectedProviderKey && selectedModelKey) {
+        await battleExecutionService.upsertExecutionConfig({
+          battle_id: battle.id,
+          contender_id: null, // Battle-level default config
+          provider_key: selectedProviderKey,
+          model_key: selectedModelKey,
+          funding_source: battleFunding.fundingSource as 'user_byok_cloud' | 'user_byok_local' | 'platform_credit' | 'sponsored',
+          byok_key_ref_id: battleFunding.selectedKeyRefId || undefined,
+          max_tokens: 4096,
+          temperature: 0.7,
+        })
       }
 
       setCreatedBattleSlug(battle.slug)

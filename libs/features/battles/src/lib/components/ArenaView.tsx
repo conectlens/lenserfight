@@ -5,8 +5,10 @@ import { Link } from 'react-router-dom'
 
 import { useBattle } from '../hooks/useBattle'
 import { useBattleContenders } from '../hooks/useBattleContenders'
+import { useBattleExecution } from '../hooks/useBattleExecution'
 import { useBattleScorecard } from '../hooks/useBattleScorecard'
 import { useBattleStateMachine } from '../hooks/useBattleStateMachine'
+import { useLensAssignment } from '../hooks/useLensAssignment'
 import { usePublishBattle } from '../hooks/usePublishBattle'
 import { useSubmitVote } from '../hooks/useSubmitVote'
 import { useVoteAggregates } from '../hooks/useVoteAggregates'
@@ -21,7 +23,7 @@ import { PhaseIndicator } from './PhaseIndicator'
 import { ScoreSystem } from './ScoreSystem'
 import { XPGainToast } from './XPGainToast'
 
-import type { BattleUIPhase } from '../types/battle.types'
+import type { BattleUIPhase, ContenderLensAssignmentRecord } from '../types/battle.types'
 import type { SubmitVoteInput } from '@lenserfight/data/repositories'
 
 // These are passed in from the arena app to avoid coupling
@@ -101,6 +103,22 @@ export function ArenaView({
 
   const contenderA = contenders.find((c) => c.slot === 'A')
   const contenderB = contenders.find((c) => c.slot === 'B')
+
+  // Fetch lens assignments for live arena
+  const { data: lensAssignmentA } = useLensAssignment(contenderA?.id)
+  const { data: lensAssignmentB } = useLensAssignment(contenderB?.id)
+  const lensAssignments = [
+    lensAssignmentA,
+    lensAssignmentB,
+  ].filter(Boolean) as ContenderLensAssignmentRecord[]
+
+  const { startExecution, isExecuting } = useBattleExecution({
+    battle,
+    contenderA,
+    contenderB,
+    lensAssignments,
+    currentUserId,
+  })
   const submissionA = contenderA ? submissions.find((s) => s.contender_id === contenderA.id) : undefined
   const submissionB = contenderB ? submissions.find((s) => s.contender_id === contenderB.id) : undefined
 
@@ -252,8 +270,11 @@ export function ArenaView({
                 <BattleCreatorPanel
                   battleId={battle.id}
                   status={battle.status}
+                  battleType={battle.battle_type}
                   onPublish={publishBattle}
                   isPublishing={isPublishing}
+                  onStartExecution={startExecution}
+                  isStartingExecution={isExecuting}
                 />
               )}
             </>
@@ -267,7 +288,7 @@ export function ArenaView({
                   battle={battle}
                   contenderA={contenderA}
                   contenderB={contenderB}
-                  lensAssignments={[]}
+                  lensAssignments={lensAssignments}
                   currentUserId={currentUserId}
                 />
               ) : (
