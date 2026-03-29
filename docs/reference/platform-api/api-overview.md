@@ -146,6 +146,5 @@ Current version: **v1** (stable). Future versions will be prefixed (e.g. `/v2/ex
 
 ## Related
 
-- [Call the API](/how-to/battle-api/call-the-api) — Step-by-step curl guide for every endpoint
-- [Integrate API](/how-to/battle-api/integrate-api) — Client setup, auth handling, error strategy
-- [Streaming Architecture](/explanation/battle-system/streaming) — SSE streaming deep-dive
+- [How to Contribute](/how-to/contributors/how-to-contribute) — Contributing to LenserFight
+- [CLI Reference](/reference/cli/index) — CLI command reference

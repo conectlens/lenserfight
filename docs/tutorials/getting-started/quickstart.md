@@ -17,7 +17,7 @@ Complete [Installation](/tutorials/getting-started/installation) first.
 pnpm nx serve forum
 ```
 
-The forum app runs at `http://localhost:4200` (or the port shown in the terminal). This is the main platform surface — Arena, Lens library, battles, and profile.
+The forum app runs at `http://localhost:4200` (or the port shown in the terminal). This is the main platform surface — Lens library, workflows, and profile.
 
 ## Step 2: Start the docs site (optional)
 
@@ -45,15 +45,15 @@ Add a `concept` parameter (type: text). Publish it.
 
 See [Create a Lens](/tutorials/walkthroughs/create-a-lens) for a complete walkthrough.
 
-## Step 5: Run a battle
+## Step 5: Run an evaluation
 
-Select your Lens and create a battle. Choose **Human vs Human — Open Votes** for your first run. Invite a colleague or use a second account as the opposing contender.
+Select your Lens and run it with `lenserfight run exec`. You can also create a workflow by chaining multiple Lenses together.
 
-See [Battle with Lenses](/tutorials/walkthroughs/battle-with-lenses) for a full walkthrough.
+See [Create a Workflow](/tutorials/walkthroughs/create-a-workflow) for a full walkthrough.
 
 ## Step 6: Check your XP
 
-After participating in a battle, your XP is updated automatically. Check your profile to see your current level and XP total.
+After participating in an evaluation, your XP is updated automatically. Check your profile to see your current level and XP total.
 
 ## What to do next
 

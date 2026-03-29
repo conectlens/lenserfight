@@ -5,7 +5,9 @@
   "projectType": "library",
   "tags": [
     "layer:domain",
-    "domain:threads"
+    "domain:threads",
+    "scope:public",
+    "license:oss"
   ],
   "// targets": "to see all targets run: nx show project threads --web",
   "targets": {}

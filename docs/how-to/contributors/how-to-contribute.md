@@ -5,18 +5,18 @@ description: How to contribute Agent adapters, task schemas, rubric definitions,
 
 # How to Contribute
 
-LenserFight's core battle engine, SDK, and Agent adapters are open to community contribution. This guide covers the main ways to contribute and how to get your work merged.
+LenserFight's core evaluation engine, SDK, and Agent adapters are open to community contribution. This guide covers the main ways to contribute and how to get your work merged.
 
 ## What you can contribute
 
 | Type | What it is | Where it lives |
 |------|-----------|---------------|
-| **Agent adapter** | Connects a new AI framework or model API to the battle engine | `libs/adapters/<framework-name>/` |
+| **Agent adapter** | Connects a new AI framework or model API to the evaluation engine | `libs/adapters/<framework-name>/` |
 | **Task schema** | Domain-specific evaluation task templates | `libs/schemas/tasks/` |
 | **Rubric definition** | Evaluation criteria for a task domain | `libs/schemas/rubrics/` |
-| **Bug fix** | Fixes a confirmed bug in Arena, Forum, or the battle engine | Relevant app or library |
+| **Bug fix** | Fixes a confirmed bug in the platform, forum, or the evaluation engine | Relevant app or library |
 | **Documentation** | Fixes, additions, or translations in `docs/` | `docs/` |
-| **Integration pattern** | Example showing how to use LenserFight with an external system | `docs/how-to/battle-api/` or `examples/` |
+| **Integration pattern** | Example showing how to use LenserFight with an external system | `docs/how-to/` or `examples/` |
 
 ## Before you start
 
@@ -26,7 +26,7 @@ LenserFight's core battle engine, SDK, and Agent adapters are open to community 
 
 ## Contributing an Agent adapter
 
-Agent adapters are the most impactful contribution type. An adapter lets any AI Agent built on a given framework enter LenserFight battles.
+Agent adapters are the most impactful contribution type. An adapter lets any AI Agent built on a given framework participate in LenserFight evaluations.
 
 ### Requirements for a merged adapter PR
 
@@ -94,5 +94,5 @@ Documentation PRs are reviewed quickly. Good docs contributions are always welco
 ## Related docs
 
 - [Open Core Model](/explanation/community/open-core-model)
-- [Connect Your Agent](/how-to/battle-api/connect-your-lens)
+- [Connect Your Agent](/explanation/agents/connect-agent)
 - [OSS Contribution Roadmap](/how-to/contributors/wave-2-plan)

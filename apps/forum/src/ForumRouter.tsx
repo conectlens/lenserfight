@@ -56,18 +56,6 @@ const LazyWaitingListPage = lazy(() =>
 const LazyStorePage = lazy(() =>
   import('@lenserfight/features/store').then((module) => ({ default: module.StorePage }))
 )
-const LazyBattlesFeedPage = lazy(() =>
-  import('@lenserfight/features/battles').then((module) => ({ default: module.BattlesFeedPage }))
-)
-const LazyBattleDetailPage = lazy(() =>
-  import('@lenserfight/features/battles').then((module) => ({ default: module.BattleDetailPage }))
-)
-const LazyBattleResultPage = lazy(() =>
-  import('@lenserfight/features/battles').then((module) => ({ default: module.BattleResultPage }))
-)
-const LazyCreateBattleWizard = lazy(() =>
-  import('@lenserfight/features/battles').then((module) => ({ default: module.CreateBattleWizard }))
-)
 const LazyAgentManageWizard = lazy(() =>
   import('@lenserfight/features/agents').then((module) => ({ default: module.AgentManageWizard }))
 )
@@ -132,7 +120,7 @@ const WorkflowBuilderPageRoute: React.FC = () => {
     <LazyWorkflowBuilderPage
       workflowId={id!}
       runId={runId}
-      onBattleClick={(workflowId) => navigate(`/battles/create?workflow_id=${workflowId}`)}
+      onBattleClick={(workflowId) => window.open(`${ARENA_APP_URL}/battles/create?workflow_id=${workflowId}`, '_blank')}
     />
   )
 }
@@ -147,24 +135,6 @@ const CreateWorkflowModal: React.FC = () => {
       <LazyCreateWorkflowWizard
         onCreated={(workflowId) => navigate(`/workflows/${workflowId}`)}
         onCancel={() => navigate('/workflows')}
-      />
-    </ModalRoute>
-  )
-}
-
-const CreateBattleModal: React.FC = () => {
-  const navigate = useNavigate()
-  const handleClose = () => navigate('/battles')
-
-  return (
-    <ModalRoute
-      accessCheck={({ isAuthenticated, hasLenser }) => isAuthenticated && hasLenser}
-      maxWidth="max-w-2xl"
-      onClose={handleClose}
-    >
-      <LazyCreateBattleWizard
-        onSuccess={(slug) => navigate(`/battles/${slug}`)}
-        onClose={handleClose}
       />
     </ModalRoute>
   )
@@ -363,28 +333,6 @@ export const ForumRouter: React.FC = () => {
           element={
             <DashboardFrame>
               <LazyStorePage />
-            </DashboardFrame>
-          }
-        />
-
-        <Route
-          path="/battles"
-          element={
-            <DashboardFrame>
-              <LazyBattlesFeedPage />
-            </DashboardFrame>
-          }
-        >
-          <Route path="create" element={<CreateBattleModal />} />
-        </Route>
-
-        <Route path="/battles/:slug" element={<LazyBattleDetailPage />} />
-
-        <Route
-          path="/battles/:slug/result"
-          element={
-            <DashboardFrame>
-              <LazyBattleResultPage />
             </DashboardFrame>
           }
         />

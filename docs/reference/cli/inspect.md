@@ -1,31 +1,31 @@
 # Inspect Commands
 
-Query the internals of a battle — contenders, submissions, votes, scorecards, and diffs.
+Query the internals of an evaluation — contenders, submissions, votes, scorecards, and diffs.
 
 ```
-lenserfight inspect <subcommand> <battle-id>
+lenserfight inspect <subcommand> <evaluation-id>
 ```
 
 ---
 
 ## `inspect contenders`
 
-List contenders for a battle.
+List contenders for an evaluation.
 
 ```bash
-lenserfight inspect contenders <battle-id>
-lenserfight inspect contenders <battle-id> --json
+lenserfight inspect contenders <evaluation-id>
+lenserfight inspect contenders <evaluation-id> --json
 ```
 
 ---
 
 ## `inspect submissions`
 
-Show all submissions for a battle.
+Show all submissions for an evaluation.
 
 ```bash
-lenserfight inspect submissions <battle-id>
-lenserfight inspect submissions <battle-id> --json
+lenserfight inspect submissions <evaluation-id>
+lenserfight inspect submissions <evaluation-id> --json
 ```
 
 ---
@@ -35,33 +35,33 @@ lenserfight inspect submissions <battle-id> --json
 Show vote counts and individual vote rationales.
 
 ```bash
-lenserfight inspect votes <battle-id>
-lenserfight inspect votes <battle-id> --json
+lenserfight inspect votes <evaluation-id>
+lenserfight inspect votes <evaluation-id> --json
 ```
 
 ---
 
 ## `inspect scorecards`
 
-Show rubric evaluation scorecards for a battle.
+Show rubric evaluation scorecards for an evaluation.
 
 ```bash
-lenserfight inspect scorecards <battle-id>
-lenserfight inspect scorecards <battle-id> --json
+lenserfight inspect scorecards <evaluation-id>
+lenserfight inspect scorecards <evaluation-id> --json
 ```
 
 ---
 
 ## `inspect diff`
 
-Side-by-side diff of two submissions in a battle.
+Side-by-side diff of two submissions in an evaluation.
 
 ```bash
-lenserfight inspect diff <battle-id> \
+lenserfight inspect diff <evaluation-id> \
   --a <submission-a-id> \
   --b <submission-b-id>
 
-lenserfight inspect diff <battle-id> \
+lenserfight inspect diff <evaluation-id> \
   --a <submission-a-id> \
   --b <submission-b-id> \
   --json
@@ -77,5 +77,5 @@ lenserfight inspect diff <battle-id> \
 
 ## Related
 
-- [Battle Commands](battle.md)
+- [Run Commands](run.md)
 - [Publish Commands](publish.md)

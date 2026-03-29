@@ -4,7 +4,9 @@
   "sourceRoot": "libs/types/src",
   "projectType": "library",
   "tags": [
-    "layer:types"
+    "layer:types",
+    "scope:shared",
+    "license:shared"
   ],
   "// targets": "to see all targets run: nx show project types --web",
   "targets": {}

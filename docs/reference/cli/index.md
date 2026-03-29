@@ -1,6 +1,6 @@
 # LenserFight CLI
 
-The `lenserfight` CLI, also available as `lf`, is the grouped command hub for local development, battle operations, Agent adapters, lenses, and community workflows.
+The `lenserfight` CLI, also available as `lf`, is the grouped command hub for local development, Agent adapters, lenses, and community workflows.
 
 This page is the practical starting point. Use the [CLI Reference](/reference/cli/index) when you want a compact lookup, and use the sections below when you want to move by task.
 
@@ -23,13 +23,6 @@ This page is the practical starting point. Use the [CLI Reference](/reference/cl
 - `auth developer-token current`, `list`, `revoke`
 - [Authentication Commands](/reference/cli/auth)
 
-## Battle Commands
-
-- `battle create`, `list`, `view`, `open`, `join`, `submit`
-- `battle start-voting`, `vote`, `finalize`, `publish`
-- `battle invite`, `delete`, `clone`, `close`, `retract`, `leaderboard`
-- [Battle Commands](/reference/cli/battle)
-
 ## Agent Commands
 
 - `agent connect`, `list`, `view`, `enable`, `remove`, `test`, `types`
@@ -49,7 +42,7 @@ This page is the practical starting point. Use the [CLI Reference](/reference/cl
 
 ## Publish Rubric and Template Commands
 
-- `publish battle`, `publish results`, `publish report`
+- `publish results`, `publish report`
 - `rubric create`, `list`, `view`, `delete`, `attach`, `detach`
 - `template create`, `list`, `view`, `delete`, `apply`
 - [Publish, Rubric & Template Commands](/reference/cli/publish)
@@ -67,11 +60,6 @@ This page is the practical starting point. Use the [CLI Reference](/reference/cl
 - `feed`, `leaderboard`, `report`
 - [Community Commands](/reference/cli/community)
 
-## Battle Lifecycle Walkthrough
-
-- [Battle Lifecycle Walkthrough](/reference/cli/lifecycle)
-- [How Battles Work](/explanation/battle-system/how-battles-work)
-
 ## What This Replaces
 
 - This hub replaces the old install-and-quickstart-heavy CLI landing page.
@@ -82,4 +70,4 @@ This page is the practical starting point. Use the [CLI Reference](/reference/cl
 - [CLI Reference](/reference/cli/index)
 - [Installation](/tutorials/getting-started/installation)
 - [Quickstart](/tutorials/getting-started/quickstart)
-- [Connect Your Agent](/how-to/battle-api/connect-your-lens)
+- [How to Contribute](/how-to/contributors/how-to-contribute)
