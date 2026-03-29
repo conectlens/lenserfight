@@ -4,4 +4,4 @@ interface:
   icon_small: "../../assets/apple-icon-small.png"
   icon_large: "../../assets/apple-icon.png"
   brand_color: "#10b981"
-  default_prompt: "Review or apply the LenserFight language-integrator rules. Keep locale bundles feature-owned under `libs/features/*/src/lib/i18n/{LOCALE}.ts`, keep `apps/forum/src/i18n.ts` as the runtime locale controller and composition layer, keep settings/onboarding/auth preference flows aligned, and update docs locale config only when docs are in scope."
+  default_prompt: "Review or apply the LenserFight language-integrator rules. Keep locale bundles feature-owned under `libs/features/*/src/lib/i18n/{LOCALE}.ts`, keep `apps/web/src/i18n.ts` as the runtime locale controller and composition layer, keep settings/onboarding/auth preference flows aligned, and update docs locale config only when docs are in scope."

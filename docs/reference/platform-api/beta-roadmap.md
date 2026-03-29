@@ -6,7 +6,7 @@ For the cross-surface product rationale behind this roadmap, see the broader pro
 
 ## Release targets
 
-- `forum.lenserfight.com` in April 2026
+- `lenserfight.com` in April 2026
 - `lenserfight.com` in May 2026
 - `admin.lenserfight.com` before the forum beta
 - `apps/mobile` as the Expo companion app scope for the same core loop

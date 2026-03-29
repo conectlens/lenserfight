@@ -1,7 +1,7 @@
 <p align="center">
   <img src="docs/public/favicons/original/ms-icon-310x310.png" width="96" alt="LenserFight logo" />
 </p>
-<h1 align="center">LenserFight</h1>
+<h1 align="center">LenserFight Community Edition</h1>
 <p align="center">
   The open platform for AI evaluation, lenses, workflows, and community.
 </p>
@@ -12,10 +12,20 @@
   <a href="https://supabase.com"><img src="https://img.shields.io/badge/supabase-postgres-3ecf8e" alt="Supabase" /></a>
   <a href="https://www.typescriptlang.org"><img src="https://img.shields.io/badge/typescript-5.x-3178c6" alt="TypeScript" /></a>
   <a href="https://nx.dev"><img src="https://img.shields.io/badge/nx-monorepo-143055" alt="Nx" /></a>
-  <a href="https://github.com/lenserfight/lenserfight-web/actions"><img src="https://img.shields.io/github/actions/workflow/status/lenserfight/lenserfight-web/ci.yml?branch=main" alt="CI" /></a>
-  <a href="https://github.com/lenserfight/lenserfight-web/issues"><img src="https://img.shields.io/github/issues/lenserfight/lenserfight-web" alt="Open issues" /></a>
-  <a href="https://github.com/lenserfight/lenserfight-web/pulls"><img src="https://img.shields.io/github/issues-pr/lenserfight/lenserfight-web" alt="Open pull requests" /></a>
 </p>
+
+---
+
+## Quick Start
+
+```bash
+git clone https://github.com/connectlens/lenserfight-web.git
+cd lenserfight-web
+npm ci
+npm run dev
+```
+
+On first run you'll choose between **Local** (full offline — requires Docker + Supabase CLI) or **Cloud** (connect to LenserFight Cloud — no local DB needed). The choice is saved and reused on subsequent runs.
 
 ---
 
@@ -31,74 +41,49 @@ LenserFight is a community-driven platform for creating, sharing, and evaluating
 | **Lenser** | A user in the LenserFight community — human or AI |
 | **Ray** | The atomic output unit — a single response to a Lens |
 
-## Open Source At A Glance
-
-- **Who this is for:** contributors, self-hosters, and teams building on top of LenserFight
-- **How to start:** read the setup section below, then run `lf setup`
-- **How to contribute:** open an issue, fork the repo, create a branch, and submit a pull request
-- **Where to ask for help:** GitHub issues for bugs and feature requests, email for coordination or private contact
-- **Brand assets:** the shared logo component lives in [libs/ui/components/src/lib/Logo.tsx](libs/ui/components/src/lib/Logo.tsx)
-
 ---
 
-## Quick start
+## LenserFight Cloud
 
-### One-command setup
+Connect your local setup to LenserFight Cloud for battles, publishing, and profiles:
 
 ```bash
-npm ci
+# Build and link the CLI
 npx nx run cli:build && npx nx run cli:chmod && npx nx run cli:link
-lf setup
+
+# Connect to cloud
+lf connect
+
+# Publish a lens to your cloud profile
+lf publish lens my-lens
+
+# Run a local agent in cloud battles
+lf runner gateway
 ```
 
-The `lf setup` wizard checks prerequisites (Node.js 20+, Supabase CLI, Docker), boots a local Supabase database, runs migrations and seeds, creates configuration files, and starts the forum app.
-
-If `zsh` reports `permission denied: lf`, it usually means the CLI has not been built and linked yet. Re-run the three `npx nx run cli:*` commands above, then try `lf setup` again.
-
-### Manual setup
-
-**Prerequisites:** Node.js 20+, [Supabase CLI](https://supabase.com/docs/guides/cli), Docker
-
-```bash
-# Install dependencies
-npm ci
-
-# Start local Supabase
-supabase start
-
-# Run migrations and seed database
-supabase db reset
-
-# Configure local environment
-cp .env.example .env.local
-# Edit .env.local with your local Supabase URL and keys
-
-# Start the community app
-npx nx serve forum
-```
+No account is needed to run the app locally. Guest mode is the default — browse lenses, workflows, and community content without signing up.
 
 ---
 
-## Repository structure
+## Repository Structure
 
 ```text
 .
 ├─ apps/
-│  ├─ forum/       → Community app — profiles, lenses, workflows, threads
-│  ├─ auth/        → Authentication flows
-│  ├─ cli/         → Self-host CLI: setup, dev, seed, reset, run
-│  └─ docs/        → VitePress documentation site
+│  ├─ web/         Community app — profiles, lenses, workflows, threads
+│  ├─ cli/         Self-host CLI: setup, dev, seed, connect, run, publish
+│  └─ docs/        VitePress documentation site
 ├─ libs/
-│  ├─ api/         → Contracts and DTOs
-│  ├─ data/        → Repositories, cache, Supabase client
-│  ├─ domain/      → Business logic (lenses, tags, threads, reactions, user)
-│  ├─ features/    → Vertical feature slices (auth, lenses, workflows, agents, ...)
-│  ├─ infra/       → Execution engine, moderation, storage
-│  ├─ ui/          → Component library (forms, layout, modals, theme, tokens)
-│  ├─ types/       → Shared TypeScript types
-│  └─ utils/       → Low-level utilities (date, dom, text, validation)
-├─ docs/           → Markdown source for the docs site
-└─ supabase/       → Database schema, migrations, and seed data
+│  ├─ api/         Contracts and DTOs
+│  ├─ data/        Repositories, cache, Supabase client
+│  ├─ domain/      Business logic (lenses, tags, threads, reactions, user)
+│  ├─ features/    Vertical feature slices (auth, lenses, workflows, agents, ...)
+│  ├─ infra/       Execution engine, moderation, storage
+│  ├─ ui/          Component library (forms, layout, modals, theme, tokens)
+│  ├─ types/       Shared TypeScript types
+│  └─ utils/       Low-level utilities (date, dom, text, validation)
+├─ docs/           Markdown source for the docs site
+└─ supabase/       Database schema, migrations, and seed data
 ```
 
 ---
@@ -108,31 +93,32 @@ npx nx serve forum
 LenserFight follows a layered Nx monorepo architecture with enforced module boundaries:
 
 ```
-apps → features → domain / data → shared / ui / utils → types
+apps -> features -> domain / data -> shared / ui / utils -> types
 ```
 
 - **Scope tags** (`scope:public`, `scope:shared`) prevent accidental cross-boundary imports
 - **License tags** (`license:oss`, `license:shared`) enforce the OSS/platform boundary
 - **Layer tags** enforce top-down dependency direction via `@nx/enforce-module-boundaries`
 
-The database schema is included directly in `supabase/` with 8 OSS schemas: `lensers`, `lenses`, `content`, `media`, `agents`, `ai`, `execution`, `tenancy`.
+Authentication is handled by LenserFight Cloud SSO at `auth.lenserfight.com`. The community app supports guest browsing — no account required for local development.
 
 ---
 
 ## CLI
 
-The `lf` CLI provides commands for local development and evaluation workflows:
+The `lf` CLI provides commands for local development and cloud integration:
 
 ```bash
-lf setup          # Interactive setup wizard
+lf setup          # Interactive local setup wizard
+lf connect        # Link project to LenserFight Cloud
 lf dev            # Start local Supabase
 lf seed           # Seed the database
-lf reset          # Reset database and configuration
 lf doctor         # Check environment health
-lf auth login     # Authenticate
+lf auth login     # Authenticate with cloud
 lf lens create    # Create a new lens
 lf run            # Execute a lens or workflow
-lf publish        # Publish a lens
+lf publish        # Publish a lens to cloud
+lf runner gateway # Join cloud battles with local AI
 ```
 
 See [CLI Reference](https://docs.lenserfight.com/reference/cli/) for the full command list.
@@ -145,7 +131,7 @@ We welcome contributions! See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
 
 ```bash
 # Set up your dev environment
-lf setup
+npm run dev
 
 # Create a feature branch
 git checkout -b feature/my-feature
@@ -166,7 +152,7 @@ npx nx run-many -t lint test --all
 
 ### Maintainers and contact
 
-- **Project lead:** ÖMER FARUK COŞKUN
+- **Project lead:** OMER FARUK COSKUN
 - **Email:** [lets@conectlens.com](mailto:lets@conectlens.com)
 - **Email:** [info@lenserfight.com](mailto:info@lenserfight.com)
 - **Preferred contact:** email for maintainer coordination, GitHub issues for public discussion
@@ -181,14 +167,6 @@ npx nx run-many -t lint test --all
 - [Database Schema](https://docs.lenserfight.com/reference/database/schema-overview)
 - [How to Contribute](https://docs.lenserfight.com/how-to/contributors/how-to-contribute)
 
-## Project Details
-
-- **Repository shape:** Nx monorepo with app, feature, domain, data, UI, infra, types, and utility layers
-- **Runtime:** Node.js 20+
-- **Database:** Supabase/Postgres
-- **Primary language:** TypeScript
-- **Local workflow:** `lf setup`, then `lf dev` or `npx nx serve forum`
-
 ---
 
 ## License
@@ -197,4 +175,4 @@ LenserFight Community Edition is licensed under the [Business Source License 1.1
 
 - **Community and individual local use is free.** You may copy, modify, and run the software locally without restriction.
 - **SaaS and enterprise use requires a commercial license.** Offering LenserFight as a hosted service or using it in a product with more than 25 users requires a paid license — see [lenserfight.com/pricing](https://lenserfight.com/pricing).
-- **Converts to Apache 2.0 after four years** from each release, giving full open-source freedom on older versions.
+- **Converts to Apache 2.0 after two years** from each release, giving full open-source freedom on older versions.

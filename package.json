@@ -4,6 +4,9 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
+    "dev": "node scripts/dev.mjs",
+    "dev:web": "npx nx serve web",
+    "dev:docs": "vitepress dev apps/docs",
     "build": "nx vite:build",
     "preview": "nx vite:preview",
     "lint": "eslint .",

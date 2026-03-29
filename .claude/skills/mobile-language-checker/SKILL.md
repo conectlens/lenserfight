@@ -12,8 +12,8 @@ Use this skill to review or adjust language preference flows.
 
 Focus on:
 - `preferredLanguage` persistence and validation
-- `apps/forum/src/i18n.ts` locale registration and bootstrap
-- `apps/forum/src/locales/*.json` bundle consistency
+- `apps/web/src/i18n.ts` locale registration and bootstrap
+- `apps/web/src/locales/*.json` bundle consistency
 - onboarding localization setup in `libs/features/onboarding`
 - in-app language settings and selectors in `libs/features/settings`
 - supported locale consistency between auth, onboarding, and forum i18n

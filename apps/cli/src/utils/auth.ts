@@ -179,8 +179,7 @@ export async function refreshAuthToken(): Promise<AuthTokens> {
 }
 
 export function buildAuthAppUrl(pathname = '/'): string {
-  const config = resolveConfig();
-  return new URL(pathname, config.authBaseUrl).toString();
+  return new URL(pathname, 'https://auth.lenserfight.com').toString();
 }
 
 export async function requestDeviceApproval(

@@ -5,7 +5,7 @@
  * In Tailwind 4, declaring --color-* variables inside @theme auto-generates
  * utility classes like bg-primary-yellow-500, text-status-green, etc.
  *
- * Usage in apps/forum/src/index.css:
+ * Usage in apps/web/src/index.css:
  *   @import '@lenserfight/ui/tokens/tokens.css';   (if bundler resolves it)
  *   — OR copy the variables directly into your @theme {} block.
  */

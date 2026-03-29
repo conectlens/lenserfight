@@ -2,10 +2,10 @@
 
 ## Inspect first
 
-- `apps/forum/src/i18n.ts`
-- `apps/forum/src/locales/en.json`
-- `apps/forum/src/locales/tr.json`
-- `apps/forum/src/index.tsx`
+- `apps/web/src/i18n.ts`
+- `apps/web/src/locales/en.json`
+- `apps/web/src/locales/tr.json`
+- `apps/web/src/index.tsx`
 - `libs/features/onboarding/src/lib/components/CreateLenserProfileModal.tsx`
 - `libs/features/settings/src/lib/components/GeneralTab.tsx`
 - `libs/features/auth/src/lib/context/AuthContext.tsx`
