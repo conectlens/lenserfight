@@ -1,24 +1,28 @@
 import { lensesService, battlesService } from '@lenserfight/data/repositories'
 import { useAuth } from '@lenserfight/features/auth'
-import { useCreateLens, CreateLensModal } from '@lenserfight/features/lenses'
-import { Badge, Button } from '@lenserfight/ui/components'
-import { ArrowLeft, Bookmark, ChevronDown, GitBranch, GitFork, Pencil, Play, Settings, Swords, ThumbsUp, X } from 'lucide-react'
-import React, { useState } from 'react'
+import { useAIModels } from '@lenserfight/features/generations'
+import { useCreateLens, CreateLensModal, useFundingSource, FundingSourceToggle } from '@lenserfight/features/lenses'
+import { Avatar, Badge, Button } from '@lenserfight/ui/components'
+import { useQuery } from '@tanstack/react-query'
+import { ArrowLeft, Bookmark, ChevronDown, GitBranch, GitFork, Lock, Pencil, Play, Settings, Square, Swords, ThumbsUp, X } from 'lucide-react'
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { toast } from 'sonner'
 
+import { CreateWorkflowWizard } from '../components/CreateWorkflowWizard'
 import { WorkflowBuilderCanvas } from '../components/WorkflowBuilderCanvas'
-import { EditWorkflowModal } from '../components/EditWorkflowModal'
 import { WorkflowLensPalette } from '../components/WorkflowLensPalette'
 import { WorkflowNodeConfigPanel } from '../components/WorkflowNodeConfigPanel'
 import { WorkflowProgressView } from '../components/WorkflowProgressView'
-import { WorkflowRunConfigModal } from '../components/WorkflowRunConfigModal'
+import { WorkflowRootInputsPanel } from '../components/WorkflowRootInputsPanel'
 import { useForkWorkflow } from '../hooks/useForkWorkflow'
 import { useWorkflow } from '../hooks/useWorkflow'
+import { useWorkflowExecution } from '../hooks/useWorkflowExecution'
 import { useWorkflowReaction } from '../hooks/useWorkflowReaction'
-import { useQuery } from '@tanstack/react-query'
-import { queryKeys } from '@lenserfight/data/cache'
 import { useWorkflowRun } from '../hooks/useWorkflowRun'
+
 import type { WorkflowNodeConfig } from '../components/WorkflowCanvasNode'
+import type { AIProvider, AIProviderModel } from '@lenserfight/types'
 
 interface WorkflowBuilderPageProps {
   workflowId: string
@@ -30,19 +34,50 @@ export function WorkflowBuilderPage({ workflowId, onBattleClick }: WorkflowBuild
   const navigate = useNavigate()
   const { user } = useAuth()
   const { workflow, nodes, edges, isLoading } = useWorkflow(workflowId)
-  const { startRun, isPending: starting, runId, nodeResults, isRunning } = useWorkflowRun(workflowId)
+  const { startRun, stopRun, isPending: starting, runId, nodeResults, isRunning } = useWorkflowRun(workflowId)
+  const { models, isLoading: modelsLoading } = useAIModels()
   const [showRunPanel, setShowRunPanel] = useState(false)
-  const [showRunConfig, setShowRunConfig] = useState(false)
   const [isEditModalOpen, setIsEditModalOpen] = useState(false)
+
+  // Provider/model selection state (replaces globalModelId SelectField)
+  const [selectedProviderKey, setSelectedProviderKey] = useState('')
+  const [selectedModelKey, setSelectedModelKey] = useState(() => {
+    if (typeof window === 'undefined') return ''
+    return localStorage.getItem('lf-workflow-global-model') ?? ''
+  })
+
   const [paletteCollapsed, setPaletteCollapsed] = useState(
     () => typeof window !== 'undefined' && window.innerWidth < 768
   )
 
-  // Per-node config overrides (in-memory; persisted to DB via migration Phase 2)
+  // ── Funding source (BYOK / platform credit) ────────────────────────────────
+  const funding = useFundingSource(selectedProviderKey)
+  const resolveLocalKeyRef = useRef<((id: string) => Promise<string>) | undefined>(undefined)
+  resolveLocalKeyRef.current = funding.resolveLocalKey
+  const stableResolveLocalKey = useCallback(
+    (keyId: string) =>
+      resolveLocalKeyRef.current
+        ? resolveLocalKeyRef.current(keyId)
+        : Promise.reject(new Error('Local key resolver not ready')),
+    [],
+  )
+
+  const { execute: executeWorkflow, stopExecution } = useWorkflowExecution({
+    nodes,
+    edges,
+    models,
+    fundingSource: funding.fundingSource,
+    selectedKeyRefId: funding.selectedKeyRefId,
+    selectedLocalKeyId: funding.selectedLocalKeyId,
+    resolveLocalKey: stableResolveLocalKey,
+    localKeys: funding.localKeys,
+  })
+
+  // Per-node config overrides — synced to DB via canvas debounced save (workflow_nodes.config)
   const [nodeConfigs, setNodeConfigs] = useState<Record<string, WorkflowNodeConfig>>({})
 
   // Selected node for the config panel
-  const [selectedNodeConfig, setSelectedNodeConfig] = useState<{ nodeId: string; lensId: string; nodeLabel: string } | null>(null)
+  const [selectedNodeConfig, setSelectedNodeConfig] = useState<{ nodeId: string; lensId: string; versionId: string | null; nodeLabel: string } | null>(null)
 
   const isOwner = !!user && user.id === workflow?.lenser_id
   const { mutate: forkWorkflow, isPending: isForking } = useForkWorkflow()
@@ -59,28 +94,49 @@ export function WorkflowBuilderPage({ workflowId, onBattleClick }: WorkflowBuild
 
   // ── Lens edit modal (via useCreateLens in edit mode) ────────────────────────
   const lensModal = useCreateLens()
+  const [editingLensId, setEditingLensId] = useState<string | null>(null)
 
   const handleEditLens = async (lensId: string) => {
     try {
-      const lens = await lensesService.getLensDetail(lensId)
+      const lens = await lensesService.getLensDetail(lensId, user?.id)
       if (!lens) return
+      let initialVersionParams = lens.params ?? []
+      if (lens.latestVersionId) {
+        const versionDetail = await lensesService.getVersionById(lens.latestVersionId)
+        initialVersionParams = (versionDetail?.parameters ?? []).map((param) => ({
+          label: param.label,
+          toolId: param.toolId,
+        }))
+      }
+      setEditingLensId(lens.id)
       lensModal.openModal({
-        id: lensId,
+        id: lens.id,
         title: lens.title,
-        content: lens.versions?.[0]?.content ?? '',
+        content: lens.content,
         tags: lens.tags ?? [],
         visibility: lens.visibility,
-        versionParams: lens.versions?.[0]?.params ?? [],
+        versionParams: initialVersionParams,
       })
     } catch {
       // silently ignore — can't edit if fetch fails
     }
   }
 
+  useEffect(() => {
+    if (!lensModal.isOpen) {
+      setEditingLensId(null)
+    }
+  }, [lensModal.isOpen])
+
   // ── Node config panel ───────────────────────────────────────────────────────
   const handleConfigNode = (nodeId: string, lensId: string) => {
     const node = nodes.find((n) => n.id === nodeId)
-    setSelectedNodeConfig({ nodeId, lensId, nodeLabel: node?.label ?? `Node ${(node?.ordinal ?? 0) + 1}` })
+    setSelectedNodeConfig({
+      nodeId,
+      lensId,
+      versionId: node?.version_id ?? null,
+      nodeLabel: node?.label ?? `Node ${(node?.ordinal ?? 0) + 1}`,
+    })
     // Hide run panel when config panel opens
     setShowRunPanel(false)
   }
@@ -89,15 +145,50 @@ export function WorkflowBuilderPage({ workflowId, onBattleClick }: WorkflowBuild
     setNodeConfigs((prev) => ({ ...prev, [nodeId]: config }))
   }
 
+  // ── Providers/Models derived from flat useAIModels list ─────────────────────
+  const providers: AIProvider[] = useMemo(() => {
+    const seen = new Set<string>()
+    return models
+      .filter((m) => m.is_active && !!m.key && !seen.has(m.provider) && (seen.add(m.provider), true))
+      .map((m) => ({ key: m.provider, display_name: m.providerDisplayName ?? m.provider, id: m.provider_id ?? '' }))
+  }, [models])
+
+  const providerModels: AIProviderModel[] = useMemo(() => {
+    if (!selectedProviderKey) return []
+    return models
+      .filter((m) => m.is_active && !!m.key && m.provider === selectedProviderKey)
+      .map((m) => ({ key: m.key, name: m.name, inputModalities: m.input_modalities }))
+  }, [models, selectedProviderKey])
+
   // ── Run ─────────────────────────────────────────────────────────────────────
-  const handleRunClick = () => {
-    setShowRunConfig(true)
+  const handleModelChange = (value: string) => {
+    setSelectedModelKey(value)
+    if (typeof window !== 'undefined') localStorage.setItem('lf-workflow-global-model', value)
   }
 
-  const handleRun = async (globalModelId: string, inputs: Record<string, unknown>) => {
-    await startRun({ inputs, globalModelId })
-    setShowRunPanel(true)
+  const handleProviderChange = (key: string) => {
+    setSelectedProviderKey(key)
+    setSelectedModelKey('')
+  }
+
+  const canExecute = !!selectedModelKey && funding.isReady
+
+  const handleExecuteClick = async (rootInputs: Record<string, unknown> = {}) => {
+    if (!canExecute) return
+    const run = await startRun({ inputs: rootInputs, globalModelId: selectedModelKey })
     setSelectedNodeConfig(null)
+
+    // Fire execution orchestrator in background — status updates flow via Realtime
+    if (run?.id) {
+      executeWorkflow(run.id, selectedModelKey, rootInputs).catch((err) => {
+        toast.error(`Workflow execution failed: ${err instanceof Error ? err.message : String(err)}`)
+      })
+    }
+  }
+
+  const handleStopClick = () => {
+    stopExecution()
+    stopRun()
   }
 
   // ── Loading / error states ─────────────────────────────────────────────────
@@ -138,7 +229,7 @@ export function WorkflowBuilderPage({ workflowId, onBattleClick }: WorkflowBuild
           <div className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-lg bg-surface-raised">
             <GitBranch size={14} className="text-greyscale-400" />
           </div>
-          <div className="min-w-0">
+          <div className="min-w-0 flex-1">
             <h1 className="truncate text-sm font-bold text-greyscale-900 dark:text-greyscale-50">
               {workflow.title}
             </h1>
@@ -147,6 +238,7 @@ export function WorkflowBuilderPage({ workflowId, onBattleClick }: WorkflowBuild
                 {workflow.description}
               </p>
             )}
+
           </div>
           <Badge color="blue" variant="outline" className="flex-shrink-0 text-xs">
             {nodes.length} node{nodes.length !== 1 ? 's' : ''}
@@ -164,8 +256,9 @@ export function WorkflowBuilderPage({ workflowId, onBattleClick }: WorkflowBuild
                 onClick={toggleLike}
                 disabled={reactionPending}
                 title={liked ? 'Unlike' : 'Like'}
+                aria-pressed={liked}
                 className={`gap-1.5 w-auto rounded-xl px-2.5 py-1 transition-colors ${liked
-                  ? 'border-primary-yellow-500 bg-primary-yellow-500/10 text-primary-yellow-600'
+                  ? 'border-primary-yellow-500 bg-primary-yellow-500/15 text-primary-yellow-700 shadow-sm ring-1 ring-primary-yellow-500/20'
                   : 'border-surface-border bg-surface-raised text-greyscale-500 hover:text-greyscale-900 dark:hover:text-greyscale-100'
                   }`}
               >
@@ -179,8 +272,9 @@ export function WorkflowBuilderPage({ workflowId, onBattleClick }: WorkflowBuild
                 onClick={toggleSave}
                 disabled={reactionPending}
                 title={saved ? 'Unsave' : 'Save'}
+                aria-pressed={saved}
                 className={`gap-1.5 w-auto rounded-xl px-2.5 py-1 transition-colors ${saved
-                  ? 'border-primary-yellow-500 bg-primary-yellow-500/10 text-primary-yellow-600'
+                  ? 'border-primary-yellow-500 bg-primary-yellow-500/15 text-primary-yellow-700 shadow-sm ring-1 ring-primary-yellow-500/20'
                   : 'border-surface-border bg-surface-raised text-greyscale-500 hover:text-greyscale-900 dark:hover:text-greyscale-100'
                   }`}
               >
@@ -188,16 +282,39 @@ export function WorkflowBuilderPage({ workflowId, onBattleClick }: WorkflowBuild
                 {savedCount > 0 && <span>{savedCount}</span>}
               </Button>
 
+              {/* Edit button — owner only, left of Fork */}
               {isOwner && (
                 <Button
                   size="sm"
                   variant="secondary"
                   onClick={() => setIsEditModalOpen(true)}
-                  className="gap-1.5 w-auto rounded-xl px-2.5 py-1"
+                  className="flex h-8 w-8 items-center justify-center rounded-xl !p-0"
                   title="Edit workflow"
                 >
                   <Pencil size={12} />
                 </Button>
+              )}
+
+              {workflow.parent_workflow_id && (
+                <button
+                  type="button"
+                  onClick={() => navigate(`/workflows/${workflow.parent_workflow_id}`)}
+                  className="mt-1 flex max-w-full items-center gap-2 rounded-full border border-surface-border bg-surface-raised px-2.5 py-1 text-left transition-colors hover:border-primary-yellow-500/40 hover:bg-primary-yellow-500/5"
+                  title={workflow.parent_workflow_title ?? 'Parent workflow'}
+                >
+                  <Avatar
+                    src={workflow.parent_workflow_author_profile?.avatar_url ?? null}
+                    alt={workflow.parent_workflow_author_profile?.display_name ?? 'Parent workflow author'}
+                    size="sm"
+                    className="!w-5 !h-5 ring-1 ring-white dark:ring-surface-base"
+                  />
+                  <span className="truncate text-[11px] font-medium text-greyscale-600 dark:text-greyscale-300">
+                    Forked from {workflow.parent_workflow_title ?? 'Parent workflow'}
+                  </span>
+                  <span className="truncate text-[11px] text-greyscale-400">
+                    @{workflow.parent_workflow_author_profile?.handle ?? 'unknown'}
+                  </span>
+                </button>
               )}
 
               {!isOwner && workflow.visibility === 'public' && (
@@ -211,19 +328,42 @@ export function WorkflowBuilderPage({ workflowId, onBattleClick }: WorkflowBuild
                   <GitFork size={12} /> Fork
                 </Button>
               )}
+
+              {workflow.visibility === 'private' && (
+                <span
+                  title="Private workflow"
+                  className="flex items-center text-greyscale-400"
+                >
+                  <Lock size={14} />
+                </span>
+              )}
             </>
           )}
 
-          {/* Run */}
-          <Button
-            size="sm"
-            onClick={handleRunClick}
-            isLoading={starting}
-            disabled={nodes.length === 0}
-            className="gap-1.5 w-auto"
-          >
-            <Play size={12} /> Run
-          </Button>
+          {/* Run — run/stop button (model selector in run drawer) */}
+          <div className="flex items-center gap-1.5">
+            {isRunning ? (
+              <Button
+                size="sm"
+                variant="secondary"
+                onClick={handleStopClick}
+                className="gap-1.5 w-auto border-status-red/30 text-status-red hover:bg-status-red/10"
+                title="Stop workflow"
+              >
+                <Square size={12} /> Stop
+              </Button>
+            ) : (
+              <Button
+                size="sm"
+                onClick={() => { setShowRunPanel(true); setSelectedNodeConfig(null) }}
+                isLoading={starting}
+                disabled={nodes.length === 0}
+                className="gap-1.5 w-auto"
+              >
+                <Play size={12} /> Run
+              </Button>
+            )}
+          </div>
 
           {/* Battle */}
           {onBattleClick && (
@@ -249,7 +389,6 @@ export function WorkflowBuilderPage({ workflowId, onBattleClick }: WorkflowBuild
               )}
             </div>
           )}
-
           {/* Run panel toggle */}
           {runId && (
             <Button
@@ -326,21 +465,24 @@ export function WorkflowBuilderPage({ workflowId, onBattleClick }: WorkflowBuild
           <WorkflowNodeConfigPanel
             nodeId={selectedNodeConfig.nodeId}
             lensId={selectedNodeConfig.lensId}
+            versionId={selectedNodeConfig.versionId}
             nodeLabel={selectedNodeConfig.nodeLabel}
+            currentUserId={user?.id}
             currentConfig={nodeConfigs[selectedNodeConfig.nodeId] ?? {}}
             nodes={nodes}
             edges={edges}
             onSave={handleSaveNodeConfig}
             onClose={() => setSelectedNodeConfig(null)}
+            onEditLens={handleEditLens}
           />
         )}
 
         {/* Run results panel — slides in from the right */}
-        {showRunPanel && runId && !selectedNodeConfig && (
+        {showRunPanel && !selectedNodeConfig && (
           <aside className="flex flex-col w-80 flex-shrink-0 border-l border-surface-border bg-surface-base overflow-hidden">
             <div className="flex items-center justify-between px-4 py-2.5 border-b border-surface-border">
               <p className="text-xs font-semibold text-greyscale-900 dark:text-greyscale-50">
-                Run {isRunning ? '— in progress' : '— complete'}
+                {runId ? `Run ${isRunning ? '— in progress' : '— complete'}` : 'Run Workflow'}
               </p>
               <Button
                 variant="ghost"
@@ -352,38 +494,73 @@ export function WorkflowBuilderPage({ workflowId, onBattleClick }: WorkflowBuild
               </Button>
             </div>
             <div className="flex-1 overflow-y-auto">
-              <WorkflowProgressView nodes={nodes} edges={edges} nodeResults={nodeResults} />
+              {/* Funding source + model selection in run panel */}
+              <div className="px-4 py-3 border-b border-surface-border">
+                <FundingSourceToggle
+                  fundingSource={funding.fundingSource}
+                  onFundingSourceChange={funding.setFundingSource}
+                  selectedKeyRefId={funding.selectedKeyRefId}
+                  onKeyRefIdChange={funding.setSelectedKeyRefId}
+                  availableKeys={funding.availableKeys}
+                  selectedLocalKeyId={funding.selectedLocalKeyId}
+                  onLocalKeyIdChange={funding.setSelectedLocalKeyId}
+                  availableLocalKeys={funding.localKeys}
+                  onAddLocalKey={funding.addLocalKey}
+                  walletBalance={funding.walletBalance}
+                  canUseBYOK={funding.canUseBYOK}
+                  providers={providers}
+                  isLoadingProviders={modelsLoading}
+                  providerModels={providerModels}
+                  isLoadingModels={modelsLoading}
+                  selectedProviderKey={selectedProviderKey}
+                  onProviderChange={handleProviderChange}
+                  selectedModelKey={selectedModelKey}
+                  onModelChange={handleModelChange}
+                />
+              </div>
+              <WorkflowRootInputsPanel
+                nodes={nodes}
+                edges={edges}
+                onSubmit={(rootInputs) => handleExecuteClick(rootInputs)}
+                isRunning={starting || isRunning}
+                canExecute={canExecute}
+              />
+              {runId && (
+                <WorkflowProgressView nodes={nodes} edges={edges} nodeResults={nodeResults} />
+              )}
             </div>
           </aside>
         )}
       </div>
 
-      {/* ── Workflow edit modal ──────────────────────────────────────────────── */}
+      {/* ── Workflow edit modal (wizard in edit mode) ────────────────────────── */}
       {isEditModalOpen && (
-        <EditWorkflowModal
-          isOpen={isEditModalOpen}
-          onClose={() => setIsEditModalOpen(false)}
-          workflow={workflow}
+        <CreateWorkflowWizard
+          editMode
+          initialWorkflow={{
+            id: workflow.id,
+            title: workflow.title,
+            description: workflow.description,
+            visibility: workflow.visibility ?? 'public',
+          }}
+          onCreated={() => setIsEditModalOpen(false)}
+          onCancel={() => setIsEditModalOpen(false)}
         />
       )}
-
-      {/* ── Run configuration modal ──────────────────────────────────────────── */}
-      <WorkflowRunConfigModal
-        isOpen={showRunConfig}
-        onClose={() => setShowRunConfig(false)}
-        onRun={handleRun}
-        isRunning={starting}
-      />
 
       {/* ── Lens edit modal ─────────────────────────────────────────────────── */}
       <CreateLensModal
         isOpen={lensModal.isOpen}
-        onClose={lensModal.closeModal}
+        onClose={() => {
+          lensModal.closeModal()
+          setEditingLensId(null)
+        }}
         onSubmit={() => lensModal.submit()}
         form={lensModal.form}
         isSubmitting={lensModal.isSubmitting}
         error={lensModal.error}
         isEditMode={lensModal.isEditMode}
+        lensId={editingLensId ?? undefined}
       />
     </div>
   )

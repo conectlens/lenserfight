@@ -1,72 +1,119 @@
 import { lensesService } from '@lenserfight/data/repositories'
-import { Button } from '@lenserfight/ui/components'
-import { SelectField } from '@lenserfight/ui/forms'
-import { useQuery } from '@tanstack/react-query'
-import { X } from 'lucide-react'
-import React, { useState, useEffect } from 'react'
-
 import { useAIModels } from '@lenserfight/features/generations'
-import type { WorkflowEdgeRecord, WorkflowNodeRecord } from '@lenserfight/data/repositories'
+import { FundingSourceToggle, LensBodyViewer, useFundingSource, VersionParamFields } from '@lenserfight/features/lenses'
+import { Button } from '@lenserfight/ui/components'
+import { useQuery } from '@tanstack/react-query'
+import { Pencil, X } from 'lucide-react'
+import React, { useState, useEffect, useMemo } from 'react'
+
 import type { WorkflowNodeConfig } from './WorkflowCanvasNode'
+import type { WorkflowEdgeRecord, WorkflowNodeRecord } from '@lenserfight/data/repositories'
+import type { AIProvider, AIProviderModel } from '@lenserfight/types'
 
 interface WorkflowNodeConfigPanelProps {
   nodeId: string
   lensId: string
+  versionId: string | null | undefined
   nodeLabel: string
+  currentUserId?: string
   currentConfig: WorkflowNodeConfig
   nodes: WorkflowNodeRecord[]
   edges: WorkflowEdgeRecord[]
   onSave: (nodeId: string, config: WorkflowNodeConfig) => void
   onClose: () => void
+  onEditLens?: (lensId: string) => void
 }
 
 export function WorkflowNodeConfigPanel({
   nodeId,
   lensId,
+  versionId,
   nodeLabel,
+  currentUserId,
   currentConfig,
   nodes,
   edges,
   onSave,
   onClose,
+  onEditLens,
 }: WorkflowNodeConfigPanelProps) {
-  const [modelId, setModelId] = useState<string>(currentConfig.model_id ?? '')
+  const [selectedProviderKey, setSelectedProviderKey] = useState('')
+  const [selectedModelKey, setSelectedModelKey] = useState(
+    currentConfig.model_id ??
+    (typeof window !== 'undefined' ? (localStorage.getItem('lf-workflow-global-model') ?? '') : '')
+  )
   const [paramOverrides, setParamOverrides] = useState<Record<string, string>>(
     currentConfig.param_overrides ?? {}
   )
 
   const { models, isLoading: modelsLoading } = useAIModels()
+  const nodeFunding = useFundingSource(selectedProviderKey)
 
-  const { data: lensDetail } = useQuery({
-    queryKey: ['lens-detail-config', lensId],
-    queryFn: () => lensesService.getLensDetail(lensId),
+  // Load lens version: use explicit versionId, fall back to latest published, then any draft
+  const { data: lensVersion, isLoading: versionLoading } = useQuery({
+    queryKey: ['lens-version-config', versionId ?? `head-${lensId}`],
+    queryFn: async () => {
+      if (versionId) return lensesService.getVersionById(versionId)
+      const published = await lensesService.getLatestPublishedVersion(lensId)
+      if (published) return published
+      return lensesService.getLatestVersion(lensId)
+    },
     staleTime: 1000 * 60 * 5,
     enabled: !!lensId,
   })
 
   // Reset local state when node changes
   useEffect(() => {
-    setModelId(currentConfig.model_id ?? '')
+    setSelectedModelKey(
+      currentConfig.model_id ??
+      (typeof window !== 'undefined' ? (localStorage.getItem('lf-workflow-global-model') ?? '') : '')
+    )
     setParamOverrides(currentConfig.param_overrides ?? {})
+    setSelectedProviderKey('')
   }, [nodeId, currentConfig.model_id, currentConfig.param_overrides])
 
   // Incoming edge mappings for this node (which params are auto-wired from previous nodes)
   const incomingEdges = edges.filter((e) => e.target_node_id === nodeId)
   const autoWiredParams = new Set(incomingEdges.map((e) => e.target_param_label))
+  const selectedNode = nodes.find((n) => n.id === nodeId)
+  const canEditLens =
+    !!onEditLens &&
+    !!currentUserId &&
+    selectedNode?.lens_visibility === 'private' &&
+    selectedNode?.lens_lenser_id === currentUserId
 
-  const params = lensDetail?.params ?? []
+  const versionParams = lensVersion?.parameters ?? []
+  const isParamsLoading = versionLoading
 
-  const modelOptions = [
-    { value: '', label: 'Use global model (default)' },
-    ...models
-      .filter((m) => !!m.key && m.is_active)
-      .map((m) => ({ value: m.key, label: `${m.name} (${m.provider})` })),
-  ]
+  // Derive providers/models from flat useAIModels list
+  const providers: AIProvider[] = useMemo(() => {
+    const seen = new Set<string>()
+    return models
+      .filter((m) => m.is_active && !!m.key && !seen.has(m.provider) && (seen.add(m.provider), true))
+      .map((m) => ({ key: m.provider, display_name: m.providerDisplayName ?? m.provider, id: m.provider_id ?? '' }))
+  }, [models])
 
-  const handleSave = () => {
+  const providerModels: AIProviderModel[] = useMemo(() => {
+    const effectiveProvider = selectedProviderKey || (
+      nodeFunding.fundingSource === 'user_byok_cloud'
+        ? (nodeFunding.availableKeys.find((k) => k.id === nodeFunding.selectedKeyRefId)?.providerKey ?? '')
+        : nodeFunding.fundingSource === 'user_byok_local'
+          ? (nodeFunding.localKeys.find((k) => k.id === nodeFunding.selectedLocalKeyId)?.provider ?? '')
+          : selectedProviderKey
+    )
+    if (!effectiveProvider) return []
+    return models
+      .filter((m) => m.is_active && !!m.key && m.provider === effectiveProvider)
+      .map((m) => ({ key: m.key, name: m.name, inputModalities: m.input_modalities }))
+  }, [models, selectedProviderKey, nodeFunding.fundingSource, nodeFunding.selectedKeyRefId, nodeFunding.selectedLocalKeyId, nodeFunding.availableKeys, nodeFunding.localKeys])
+
+  const handleSave = async () => {
     onSave(nodeId, {
       ...currentConfig,
-      model_id: modelId || null,
+      model_id: selectedModelKey || null,
+      funding_source: nodeFunding.fundingSource,
+      key_ref_id: nodeFunding.selectedKeyRefId,
+      local_key_id: nodeFunding.selectedLocalKeyId,
       param_overrides: Object.keys(paramOverrides).length > 0 ? paramOverrides : undefined,
     })
     onClose()
@@ -98,82 +145,128 @@ export function WorkflowNodeConfigPanel({
       </div>
 
       <div className="flex-1 overflow-y-auto p-4 space-y-5">
-        {/* Model override */}
-        <div className="space-y-1.5">
-          <SelectField
-            label="AI Model"
-            value={modelId}
-            onChange={setModelId}
-            options={modelOptions}
-            placeholder={modelsLoading ? 'Loading models…' : 'Use global model (default)'}
-            disabled={modelsLoading}
-          />
-          <p className="text-[10px] text-greyscale-400 leading-tight">
-            Leave blank to use the global model selected at run time.
-          </p>
+        <div className="space-y-2 border-surface-border">
+          <div className="flex items-center justify-between gap-2">
+            {canEditLens && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => onEditLens?.(lensId)}
+                className="!p-1 !h-6 !w-6 text-greyscale-400 hover:text-primary-yellow-600 transition-colors flex-shrink-0"
+                title="Edit lens"
+              >
+                <Pencil size={12} />
+              </Button>
+            )}
+          </div>
+          {isParamsLoading ? (
+            <div className="space-y-2">
+              {Array.from({ length: 3 }).map((_, i) => (
+                <div key={i} className="h-10 rounded-xl bg-surface-raised animate-pulse" />
+              ))}
+            </div>
+          ) : lensVersion ? (
+            <LensBodyViewer content={lensVersion.templateBody} versionParams={lensVersion.parameters} />
+          ) : (
+            <div className="rounded-xl border border-surface-border p-3 text-[11px] text-greyscale-400 text-center">
+              No version found for this lens.
+            </div>
+          )}
         </div>
 
-        {/* Parameters */}
-        {params.length > 0 && (
+        <FundingSourceToggle
+          fundingSource={nodeFunding.fundingSource}
+          onFundingSourceChange={nodeFunding.setFundingSource}
+          selectedKeyRefId={nodeFunding.selectedKeyRefId}
+          onKeyRefIdChange={nodeFunding.setSelectedKeyRefId}
+          availableKeys={nodeFunding.availableKeys}
+          selectedLocalKeyId={nodeFunding.selectedLocalKeyId}
+          onLocalKeyIdChange={nodeFunding.setSelectedLocalKeyId}
+          availableLocalKeys={nodeFunding.localKeys}
+          onAddLocalKey={nodeFunding.addLocalKey}
+          walletBalance={nodeFunding.walletBalance}
+          canUseBYOK={nodeFunding.canUseBYOK}
+          providers={providers}
+          isLoadingProviders={modelsLoading}
+          providerModels={providerModels}
+          isLoadingModels={modelsLoading}
+          selectedProviderKey={selectedProviderKey}
+          onProviderChange={(key) => { setSelectedProviderKey(key); setSelectedModelKey('') }}
+          selectedModelKey={selectedModelKey}
+          onModelChange={setSelectedModelKey}
+        />
+
+        {/* Parameters from lens version */}
+        {versionParams.length > 0 && (
           <div className="space-y-2">
             <p className="text-[10px] font-semibold uppercase tracking-wider text-greyscale-400">
               Parameters
             </p>
-            {params.map((param) => {
-              const paramName = param.name
-              const isAutoWired = autoWiredParams.has(paramName)
-              const edge = incomingEdges.find((e) => e.target_param_label === paramName)
+            {/* Auto-wired params display */}
+            {incomingEdges.map((edge) => {
+              const paramLabel = edge.target_param_label
+              if (!paramLabel) return null
               return (
-                <div key={paramName} className="space-y-1">
+                <div key={edge.id} className="space-y-1">
                   <label className="text-[11px] font-medium text-greyscale-600 dark:text-greyscale-300 capitalize">
-                    {paramName}{param.required && <span className="text-status-red ml-0.5">*</span>}
+                    {paramLabel}
                   </label>
-                  {isAutoWired && edge ? (
-                    <div className="flex items-center gap-1.5 rounded-lg border border-dashed border-greyscale-300 dark:border-greyscale-600 bg-surface-raised px-2.5 py-1.5">
-                      <span className="text-[10px] text-greyscale-400">↳ auto from</span>
-                      <span className="text-[10px] font-medium text-primary-yellow-600 truncate">
-                        {getSourceNodeLabel(edge.source_node_id)}.{edge.source_output_key}
-                      </span>
-                    </div>
-                  ) : (
-                    <input
-                      type="text"
-                      value={paramOverrides[paramName] ?? ''}
-                      onChange={(e) =>
-                        setParamOverrides((prev) => ({ ...prev, [paramName]: e.target.value }))
-                      }
-                      placeholder={param.placeholder ?? `Value for {{${paramName}}}`}
-                      className="w-full px-2.5 py-1.5 text-xs bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg text-gray-900 dark:text-white placeholder-gray-400 focus:ring-1 focus:ring-primary/50 focus:border-primary outline-none transition-all"
-                    />
-                  )}
+                  <div className="flex items-center gap-1.5 rounded-lg border border-dashed border-greyscale-300 dark:border-greyscale-600 bg-surface-raised px-2.5 py-1.5">
+                    <span className="text-[10px] text-greyscale-400">{'\u21B3'} auto from</span>
+                    <span className="text-[10px] font-medium text-primary-yellow-600 truncate">
+                      {getSourceNodeLabel(edge.source_node_id)}.{edge.source_output_key}
+                    </span>
+                  </div>
                 </div>
               )
             })}
+            {/* Manual param overrides (non-auto-wired) */}
+            {versionParams.filter((p) => !autoWiredParams.has(p.label)).length > 0 && (
+              <VersionParamFields
+                params={versionParams.filter((p) => !autoWiredParams.has(p.label))}
+                values={paramOverrides}
+                errors={{}}
+                onChange={(name, value) =>
+                  setParamOverrides((prev) => ({ ...prev, [name]: String(value ?? '') }))
+                }
+                onImportJson={() => { }}
+                onImportCsv={() => { }}
+              />
+            )}
           </div>
         )}
 
-        {params.length === 0 && !lensDetail && (
-          <div className="rounded-xl border border-surface-border p-3 text-[11px] text-greyscale-400 text-center">
-            Loading lens parameters…
+        {isParamsLoading && (
+          <div className="space-y-2">
+            {Array.from({ length: 3 }).map((_, i) => (
+              <div key={i} className="h-10 rounded-xl bg-surface-raised animate-pulse" />
+            ))}
           </div>
         )}
 
-        {params.length === 0 && lensDetail && (
+        {!isParamsLoading && versionParams.length === 0 && lensVersion && (
           <div className="rounded-xl border border-surface-border p-3 text-[11px] text-greyscale-400 text-center">
-            This lens has no parameters.
+            This lens version has no parameters.
           </div>
         )}
+
+        {!isParamsLoading && !lensVersion && (
+          <div className="rounded-xl border border-surface-border p-3 text-[11px] text-greyscale-400 text-center">
+            No version found for this lens.
+          </div>
+        )}
+
+        {/* Footer */}
+        <div className="flex items-center justify-end gap-2 px-4 py-3 border-t border-surface-border">
+          <Button variant="secondary" size="sm" onClick={onClose} className="w-auto">
+            Cancel
+          </Button>
+          <Button size="sm" onClick={handleSave} className="w-auto px-4">
+            Save Config
+          </Button>
+        </div>
       </div>
 
-      {/* Footer */}
-      <div className="flex items-center justify-end gap-2 px-4 py-3 border-t border-surface-border">
-        <Button variant="secondary" size="sm" onClick={onClose} className="w-auto">
-          Cancel
-        </Button>
-        <Button size="sm" onClick={handleSave} className="w-auto px-4">
-          Save Config
-        </Button>
-      </div>
     </aside>
   )
 }

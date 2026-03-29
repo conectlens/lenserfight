@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react'
+import React, { useMemo, useState, useEffect } from 'react'
 import { Clipboard, Check, Zap } from 'lucide-react'
 import { Dialog, ModalFooter } from '@lenserfight/ui/overlays'
 import { Button } from '@lenserfight/ui/components'
@@ -11,6 +11,7 @@ interface JsonImportDialogProps {
   versionParams?: LensVersionParam[]
   legacyParams: LensParam[]
   onApply: (values: Record<string, unknown>) => void
+  currentValues?: Record<string, unknown>
 }
 
 export const JsonImportDialog: React.FC<JsonImportDialogProps> = ({
@@ -19,10 +20,27 @@ export const JsonImportDialog: React.FC<JsonImportDialogProps> = ({
   versionParams = [],
   legacyParams,
   onApply,
+  currentValues,
 }) => {
   const [rawText, setRawText] = useState('')
   const [parseResult, setParseResult] = useState<ImportResult | null>(null)
   const [copiedTemplate, setCopiedTemplate] = useState(false)
+
+  // Pre-populate with current values when dialog opens
+  useEffect(() => {
+    if (!open) return
+    if (!currentValues) return
+    const allParamKeys = [
+      ...versionParams.map((p) => p.label),
+      ...legacyParams.map((p) => p.name),
+    ]
+    const filtered = Object.fromEntries(
+      Object.entries(currentValues).filter(([k, v]) => allParamKeys.includes(k) && v !== undefined && v !== '')
+    )
+    if (Object.keys(filtered).length > 0) {
+      setRawText(JSON.stringify(filtered, null, 2))
+    }
+  }, [open]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const totalParams = versionParams.length + legacyParams.length
 
