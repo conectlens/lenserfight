@@ -17,7 +17,6 @@ export * from './lib/components/CreateWorkflowWizard'
 export * from './lib/components/WorkflowLensPalette'
 export * from './lib/components/WorkflowCanvasNode'
 export * from './lib/components/WorkflowCanvasEdge'
-export * from './lib/components/EditWorkflowModal'
 
 // Pages
 export * from './lib/pages/WorkflowsPage'
