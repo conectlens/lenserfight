@@ -18,8 +18,8 @@ only composes them and applies the active language.
 | --- | --- |
 | `libs/features/<feature>/src/lib/i18n/{LOCALE}.ts` | Feature locale bundle |
 | `libs/features/<feature>/src/index.ts` | Re-export feature locale bundle |
-| `apps/forum/src/i18n.ts` | Composes feature locales and handles detection |
-| `apps/forum/src/index.tsx` | Must import `./i18n` before `App` |
+| `apps/web/src/i18n.ts` | Composes feature locales and handles detection |
+| `apps/web/src/index.tsx` | Must import `./i18n` before `App` |
 | `libs/features/settings/src/lib/components/GeneralTab.tsx` | Language picker and save action |
 | `libs/features/onboarding/src/lib/components/CreateLenserProfileModal.tsx` | Initial language capture |
 | `libs/features/auth/src/lib/context/AuthContext.tsx` | Persisted language and session metadata |
@@ -43,7 +43,7 @@ Use the feature's English locale module as the contract.
 ## GRASP Notes
 
 - Information Expert: each feature should own its own locale bundle.
-- Controller: `apps/forum/src/i18n.ts` should compose bundles, not store all
+- Controller: `apps/web/src/i18n.ts` should compose bundles, not store all
   copy itself.
 - Low Coupling: feature libs should not know how other features load bundles.
 - High Cohesion: one feature, one locale module tree, one preference flow.

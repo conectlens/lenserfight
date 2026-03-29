@@ -8,7 +8,6 @@ import {
   configExists,
   LOCAL_SUPABASE_URL,
   LOCAL_ANON_KEY,
-  LOCAL_AUTH_BASE_URL,
 } from '../config/project-config'
 
 function checkTool(name: string, versionFlag = '--version'): string | null {
@@ -41,7 +40,7 @@ export default defineCommand({
     },
     'skip-open': {
       type: 'boolean',
-      description: 'Do not start the forum app after setup',
+      description: 'Do not start the web app after setup',
       default: false,
     },
   },
@@ -121,7 +120,6 @@ export default defineCommand({
         '',
         '# Local app URLs',
         'VITE_WEB_BASE_URL=http://localhost:3001',
-        `VITE_AUTH_BASE_URL=${LOCAL_AUTH_BASE_URL}`,
         'VITE_DOCS_BASE_URL=http://localhost:3002',
         'VITE_STATUS_BASE_URL=http://localhost:3003',
         'VITE_API_URL=http://localhost:8786',
@@ -145,9 +143,9 @@ export default defineCommand({
         '  API:    http://127.0.0.1:54321',
         '  DB:     postgresql://postgres:postgres@127.0.0.1:54322/postgres',
         '  Studio: http://127.0.0.1:54323',
-        '  Forum:  http://localhost:3001',
+        '  Web:    http://localhost:3001',
         '',
-        '  Run `npx nx serve forum` to start the community app.',
+        '  Run `npx nx serve web` to start the community app.',
         '  Run `lf doctor` to check your environment.',
         '  Run `lf status` to see your configuration.',
         '',
@@ -155,15 +153,15 @@ export default defineCommand({
     })
 
     if (!args['skip-open']) {
-      consola.start('Starting forum app...')
-      const child = spawn('npx', ['nx', 'serve', 'forum'], {
+      consola.start('Starting web app...')
+      const child = spawn('npx', ['nx', 'serve', 'web'], {
         cwd,
         stdio: 'inherit',
         shell: true,
         detached: false,
       })
       child.on('error', (err) => {
-        consola.error(`Failed to start forum: ${err.message}`)
+        consola.error(`Failed to start web app: ${err.message}`)
       })
     }
   },

@@ -30,7 +30,7 @@ LenserFight fixes this.
 | Surface | URL | Role |
 |---------|-----|------|
 | **Platform** | `lenserfight.com` | Lens feed, voting, scorecards, shareable result pages |
-| **Forum** | `forum.lenserfight.com` | Community discussion, guides, event threads, feedback |
+| **Forum** | `lenserfight.com` | Community discussion, guides, event threads, feedback |
 | **Mobile** | iOS / Android (Expo) | Companion app — browse, vote, receive notifications |
 
 ## Core concepts

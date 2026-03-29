@@ -82,7 +82,7 @@ export class SupabaseAuthRepository implements AuthRepositoryPort {
 
 
   async requestPasswordReset(email: string, captchaToken?: string): Promise<void> {
-    const authAppUrl = import.meta.env.VITE_AUTH_BASE_URL ?? window.location.origin
+    const authAppUrl = 'https://auth.lenserfight.com'
     const { error } = await supabase.auth.resetPasswordForEmail(email, {
       redirectTo: `${authAppUrl}/reset-password`,
       captchaToken,
@@ -96,7 +96,7 @@ export class SupabaseAuthRepository implements AuthRepositoryPort {
   }
 
   async signInWithOAuth(provider: 'google' | 'github' | 'azure'): Promise<void> {
-    const authAppUrl = import.meta.env.VITE_AUTH_BASE_URL ?? window.location.origin
+    const authAppUrl = 'https://auth.lenserfight.com'
     // Preserve the originating page so /callback can redirect back after OAuth.
     // Priority: explicit return_url query param → current full page URL with any
     // auth-only return_url hop removed.
