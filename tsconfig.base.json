@@ -20,7 +20,6 @@
       "@lenserfight/features/generations": ["libs/features/generations/src/index.ts"],
       "@lenserfight/features/onboarding": ["libs/features/onboarding/src/index.ts"],
       "@lenserfight/features/lenses": ["libs/features/lenses/src/index.ts"],
-      "@lenserfight/features/battles": ["libs/features/battles/src/index.ts"],
       "@lenserfight/features/workflows": ["libs/features/workflows/src/index.ts"],
       "@lenserfight/features/agents": ["libs/features/agents/src/index.ts"],
       "@lenserfight/features/benchmark": ["libs/features/benchmark/src/index.ts"],

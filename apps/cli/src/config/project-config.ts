@@ -10,9 +10,12 @@ import { resolve } from 'node:path';
 export interface ProjectConfig {
   mode: 'local' | 'cloud';
   supabaseUrl?: string;
-  authBaseUrl?: string;
+  cloudApiUrl?: string;
+  cloudId?: string;
   dbPort: number;
   apiPort: number;
+  autoOpenBrowser?: boolean;
+  enabledApps?: string[];
 }
 
 /** User-level config (~/.lenserfight/config.json) — secrets + auth tokens. */
@@ -32,11 +35,14 @@ export interface UserConfig {
 export interface LenserfightConfig {
   mode: 'local' | 'cloud';
   supabaseUrl: string;
-  authBaseUrl: string;
+  cloudApiUrl: string;
+  cloudId?: string;
   supabaseAnonKey: string;
   supabaseServiceRoleKey?: string;
   dbPort: number;
   apiPort: number;
+  autoOpenBrowser?: boolean;
+  enabledApps?: string[];
   authToken?: string;
   authRefreshToken?: string;
   authExpiresAt?: string;
@@ -51,11 +57,10 @@ export interface LenserfightConfig {
 // See: https://supabase.com/docs/guides/self-hosting/docker#api-keys
 // ---------------------------------------------------------------------------
 
-const LOCAL_SUPABASE_URL = 'http://127.0.0.1:54321';
-const LOCAL_AUTH_BASE_URL = 'http://localhost:3004';
-const CLOUD_AUTH_BASE_URL = 'https://auth.lenserfight.com';
+export const LOCAL_SUPABASE_URL = 'http://127.0.0.1:54321';
+const CLOUD_API_URL = 'https://api.lenserfight.com';
 
-const LOCAL_ANON_KEY =
+export const LOCAL_ANON_KEY =
   'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6ImFub24iLCJleHAiOjE5ODM4MTI5OTZ9.CRFA0NiK7kyqHDkAkEXER0xnuvvidGu0XP2yJZCqMnY';
 
 const LOCAL_SERVICE_KEY =
@@ -176,7 +181,7 @@ export function saveUserConfig(partial: Partial<UserConfig>): void {
 
 interface EnvValues {
   supabaseUrl?: string;
-  authBaseUrl?: string;
+  cloudApiUrl?: string;
   supabaseAnonKey?: string;
   supabaseServiceRoleKey?: string;
   developerToken?: string;
@@ -216,13 +221,11 @@ export function loadEnvConfig(cwd = process.cwd()): EnvValues {
     file['SUPABASE_URL'] ||
     file['VITE_SUPABASE_URL'];
 
-  const authBaseUrl =
-    process.env['LENSERFIGHT_AUTH_BASE_URL'] ||
-    process.env['AUTH_BASE_URL'] ||
-    process.env['VITE_AUTH_BASE_URL'] ||
-    file['LENSERFIGHT_AUTH_BASE_URL'] ||
-    file['AUTH_BASE_URL'] ||
-    file['VITE_AUTH_BASE_URL'];
+  const cloudApiUrl =
+    process.env['LENSERFIGHT_CLOUD_API_URL'] ||
+    process.env['VITE_API_URL'] ||
+    file['LENSERFIGHT_CLOUD_API_URL'] ||
+    file['VITE_API_URL'];
 
   const anonKey =
     process.env['SUPABASE_ANON_KEY'] ||
@@ -244,7 +247,7 @@ export function loadEnvConfig(cwd = process.cwd()): EnvValues {
 
   return {
     supabaseUrl: url || undefined,
-    authBaseUrl: authBaseUrl || undefined,
+    cloudApiUrl: cloudApiUrl || undefined,
     supabaseAnonKey: anonKey || undefined,
     supabaseServiceRoleKey: serviceKey || undefined,
     developerToken: developerToken || undefined,
@@ -272,10 +275,13 @@ export function resolveConfig(cwd = process.cwd()): LenserfightConfig {
       env.supabaseUrl ||
       project.supabaseUrl ||
       (isLocal ? LOCAL_SUPABASE_URL : ''),
-    authBaseUrl:
-      env.authBaseUrl ||
-      project.authBaseUrl ||
-      (isLocal ? LOCAL_AUTH_BASE_URL : CLOUD_AUTH_BASE_URL),
+    cloudApiUrl:
+      env.cloudApiUrl ||
+      project.cloudApiUrl ||
+      (isLocal ? 'http://localhost:8786' : CLOUD_API_URL),
+    cloudId: project.cloudId,
+    autoOpenBrowser: project.autoOpenBrowser,
+    enabledApps: project.enabledApps,
     supabaseAnonKey:
       env.supabaseAnonKey ||
       user.supabaseAnonKey ||

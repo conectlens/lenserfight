@@ -10,7 +10,7 @@ interface InfiniteScrollSentinelProps {
 }
 
 /**
- * Passive IntersectionObserver sentinel for apps/forum infinite feeds.
+ * Passive IntersectionObserver sentinel for apps/web infinite feeds.
  *
  * Drop this at the bottom of any list. When it enters the viewport and
  * `hasNextPage` is true, `fetchNextPage` is called automatically.

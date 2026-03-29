@@ -3,6 +3,11 @@
   "$schema": "../../../node_modules/nx/schemas/project-schema.json",
   "sourceRoot": "libs/ui/feedback/src",
   "projectType": "library",
-  "tags": ["layer:ui", "ui:feedback"],
+  "tags": [
+    "layer:ui",
+    "ui:feedback",
+    "scope:shared",
+    "license:shared"
+  ],
   "targets": {}
 }

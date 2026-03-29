@@ -10,9 +10,12 @@ Stores non-secret, machine-specific settings. Safe to gitignore (added automatic
 |-------|------|---------|-------------|
 | `mode` | `local` \| `cloud` | `local` | Target environment |
 | `supabaseUrl` | string | `http://127.0.0.1:54321` | Supabase API URL |
-| `authBaseUrl` | string | `http://localhost:3004` / `https://auth.lenserfight.com` | Browser auth app URL |
+| `cloudApiUrl` | string | `http://localhost:8786` / `https://api.lenserfight.com` | LenserFight Cloud API URL |
+| `cloudId` | string | — | Project identifier on LenserFight Cloud |
 | `dbPort` | number | `54322` | PostgreSQL port |
 | `apiPort` | number | `54321` | PostgREST API port |
+| `autoOpenBrowser` | boolean | — | Auto-open browser on `npm run dev` |
+| `enabledApps` | string[] | — | Apps to start (e.g. `["web", "docs"]`) |
 
 **Keys and tokens are never written here.**
 
@@ -36,13 +39,12 @@ Stores secrets and auth tokens globally per user. Created by `auth login`.
 
 The CLI resolves values per field. Environment variables win first, then `.env.local` / `.env`, then user config, then project config, then local defaults when `mode: local`.
 
-For auth URLs and token overrides, the CLI understands:
+For API URLs and token overrides, the CLI understands:
 
 | Variable | Purpose |
 |----------|---------|
-| `LENSERFIGHT_AUTH_BASE_URL` | Preferred auth app URL |
-| `AUTH_BASE_URL` | Fallback auth app URL |
-| `VITE_AUTH_BASE_URL` | Frontend-friendly auth app URL |
+| `LENSERFIGHT_CLOUD_API_URL` | Preferred Cloud API URL |
+| `VITE_API_URL` | Frontend-friendly API URL |
 | `LENSERFIGHT_DEVELOPER_TOKEN` | Override the stored developer token |
 | `LENSERFIGHT_DEVELOPER_TOKEN_EXPIRES_AT` | Override developer token expiry metadata |
 
@@ -61,6 +63,16 @@ For `mode: local`, the anon key and service role key resolve automatically from 
 
 ## Cloud mode setup
 
+Connect to LenserFight Cloud:
+
+```bash
+lf connect
+```
+
+This opens a browser for authentication, saves your cloud token, and writes `cloudApiUrl` and `cloudId` to `.lenserfight.json`.
+
+Or manually:
+
 ```bash
 # .env.local (project root)
 SUPABASE_URL=https://your-project.supabase.co
@@ -71,12 +83,6 @@ Then initialise:
 
 ```bash
 lenserfight init --mode cloud --url https://your-project.supabase.co
-```
-
-Set the auth app URL if you are running it separately:
-
-```bash
-export LENSERFIGHT_AUTH_BASE_URL="http://localhost:3004"
 ```
 
 ## Related

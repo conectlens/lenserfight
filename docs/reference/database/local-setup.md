@@ -51,16 +51,16 @@ This is the recommended way to get a clean local database. It executes every mig
 
 ## Verify the Setup
 
-Connect to the local database and confirm the battles schema, XP rules, and auth support schema are in place:
+Connect to the local database and confirm the lenses schema, XP rules, and auth support schema are in place:
 
 ```bash
 psql postgresql://postgres:postgres@127.0.0.1:54322/postgres \
-  -c "\dt battles.*" \
+  -c "\dt lenses.*" \
   -c "\dt authz.*" \
-  -c "SELECT action_key, base_xp FROM xp.rules WHERE action_key LIKE 'battle%';"
+  -c "SELECT action_key, base_xp FROM xp.rules LIMIT 10;"
 ```
 
-You should see the 7 battles tables (`rubrics`, `rubric_criteria`, `battles`, `contenders`, `submissions`, `votes`, `scorecards`) and the battle-related XP rules.
+You should see the lenses tables and the XP rules.
 
 ## Access Studio
 
@@ -74,7 +74,7 @@ Seeds are managed as individual numbered files in `supabase/seeds/` and combined
 
 | Range | Purpose |
 |-------|---------|
-| `01–06` | Core dev fixtures: languages, auth users, lenser profiles, AI models, battles, analytics |
+| `01–06` | Core dev fixtures: languages, auth users, lenser profiles, AI models, lenses, analytics |
 | `10–21` | Scale data: ~10k users, threads, prompts, replies, reactions, XP — used for load testing and index benchmarking |
 | `30` | Benchmark & recommendation validation — runs automatically after scale data is loaded |
 

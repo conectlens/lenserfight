@@ -5,7 +5,9 @@
   "projectType": "library",
   "tags": [
     "layer:infra",
-    "infra:analytics"
+    "infra:analytics",
+    "scope:public",
+    "license:private"
   ],
   "// targets": "to see all targets run: nx show project analytics --web",
   "targets": {}

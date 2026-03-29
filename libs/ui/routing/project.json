@@ -3,6 +3,11 @@
   "$schema": "../../../node_modules/nx/schemas/project-schema.json",
   "sourceRoot": "libs/ui/routing/src",
   "projectType": "library",
-  "tags": ["layer:ui", "ui:routing"],
+  "tags": [
+    "layer:ui",
+    "ui:routing",
+    "scope:shared",
+    "license:shared"
+  ],
   "targets": {}
 }

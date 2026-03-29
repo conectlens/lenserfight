@@ -5,7 +5,9 @@
   "projectType": "library",
   "tags": [
     "layer:data",
-    "data:repositories"
+    "data:repositories",
+    "scope:public",
+    "license:oss"
   ],
   "// targets": "to see all targets run: nx show project repositories --web",
   "targets": {}

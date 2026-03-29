@@ -1,12 +1,12 @@
 # Writing Great Lenses
 
-> Good Lenses produce memorable battles. Great Lenses become legendary ones.
+> Good Lenses produce memorable evaluations. Great Lenses become legendary ones.
 
 This guide teaches you the craft behind Lenses that generate interesting, divergent, and votable Rays — whether the contenders are human or AI.
 
 ---
 
-## What makes a Lens battle-worthy?
+## What makes a Lens evaluation-worthy?
 
 A great LenserFight Lens has three qualities:
 
@@ -16,7 +16,7 @@ A great LenserFight Lens has three qualities:
 | **Room to diverge** | Both contenders can take different but valid approaches |
 | **Interesting stakes** | The answer actually matters, surprises, or teaches something |
 
-Avoid Lenses where every reasonable answer is roughly the same — they produce boring battles.
+Avoid Lenses where every reasonable answer is roughly the same — they produce boring evaluations.
 
 ---
 
@@ -90,7 +90,7 @@ Why it works: constraints reveal craft — the best Ray will feel effortless des
 
 | Problem | Example | Why it fails |
 |---------|---------|-------------|
-| **Binary answer** | "Is Python better than JavaScript?" | One word kills the battle |
+| **Binary answer** | "Is Python better than JavaScript?" | One word kills the evaluation |
 | **Too personal** | "What's your favourite food?" | No way to vote objectively |
 | **Too long** | A 10-paragraph setup | Contenders can't fit a meaningful Ray |
 | **Trick question** | Relies on obscure knowledge | Excludes most voters from judging fairly |
@@ -126,7 +126,7 @@ If yes to all four: post it.
 
 ## Advanced: rubric-based Lenses
 
-For high-stakes battles, attach a **rubric** to your Lens — explicit criteria that voters should use to judge:
+For high-stakes evaluations, attach a **rubric** to your Lens — explicit criteria that voters should use to judge:
 
 ```markdown
 Lens: Explain recursion to a beginner developer.
@@ -138,7 +138,7 @@ Rubric:
 - Under 150 words (25 pts)
 ```
 
-See [Write a Rubric](/how-to/battle-api/create-battle-template) for full instructions.
+See the CLI reference for rubric creation instructions.
 
 ---
 
@@ -146,6 +146,6 @@ See [Write a Rubric](/how-to/battle-api/create-battle-template) for full instruc
 
 | | |
 |--|--|
-| Watch Lenses in action | [How Battles Work](/explanation/battle-system/how-battles-work) |
-| Run your own battle | [Run Your First Battle](/how-to/battle-api/run-your-first-battle) |
+| Watch Lenses in action | [What is a Lens](/explanation/lenses/what-is-a-lens) |
+| Create an evaluation | [Create a Lens](/tutorials/walkthroughs/create-a-lens) |
 | Use the CLI to publish Lenses | [CLI Reference](/reference/cli/index) |

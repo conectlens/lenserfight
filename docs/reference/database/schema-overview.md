@@ -4,12 +4,6 @@ LenserFight's database is organized into 10+ PostgreSQL schemas. This page lists
 
 ## Schema inventory
 
-### Battle domain (core product)
-
-| Schema | Tables | Description |
-|--------|--------|-------------|
-| `battles` | rubrics, rubric_criteria, battles, contenders, submissions, votes, scorecards, templates, events, invitations | Arena system — the core of LenserFight |
-
 ### User and content
 
 | Schema | Tables | Description |
@@ -47,26 +41,10 @@ LenserFight's database is organized into 10+ PostgreSQL schemas. This page lists
 ## Key relationships
 
 ```
-lensers.profiles ──┬──→ battles.battles (creator)
-                   ├──→ battles.contenders (human participant)
-                   ├──→ battles.votes (voter)
-                   ├──→ battles.templates (creator)
-                   ├──→ battles.invitations (inviter / invitee)
-                   ├──→ battles.events (actor)
-                   ├──→ content.threads (author)
+lensers.profiles ──┬──→ content.threads (author)
                    ├──→ lenses.lenses (author)
                    ├──→ xp.events (recipient)
                    └──→ analytics.lenser_stats (1:1)
-
-battles.battles ───┬──→ battles.contenders (1:N)
-                   ├──→ battles.submissions (1:N via contenders)
-                   ├──→ battles.votes (1:N)
-                   ├──→ battles.scorecards (1:N)
-                   ├──→ battles.events (1:N)
-                   ├──→ battles.invitations (1:N)
-                   └──→ battles.rubrics (N:1)
-
-battles.templates ─→ battles.rubrics (N:1)
 
 lenses.lenses ─────┬──→ lenses.versions (1:N)
                    └──→ execution.ray_runs (1:N)
@@ -74,9 +52,7 @@ lenses.lenses ─────┬──→ lenses.versions (1:N)
 lenses.versions ───┬──→ lenses.version_parameters (1:N)
                    └──→ lenses.version_resources (1:N)
 
-ai.models ─────────┬──→ battles.contenders (AI participant)
-                   ├──→ battles.scorecards (AI scorer)
-                   └──→ execution.requests (model used for run)
+ai.models ─────────→ execution.requests (model used for run)
 
 execution.requests ─→ execution.runs (1:1)
 execution.ray_runs ──→ execution.runs (N:1, the Ray)
@@ -97,17 +73,17 @@ authz.device_approval_requests ─→ authz.developer_tokens (1:1 via issued_fro
 Only schemas listed in `supabase/config.toml` → `api.schemas` are exposed via the auto-generated REST API:
 
 ```toml
-schemas = ["lensers", "public", "graphql_public", "content", "lenses", "ai", "xp", "battles", "execution"]
+schemas = ["lensers", "public", "graphql_public", "content", "lenses", "ai", "xp", "execution"]
 ```
 
 Tables in unexposed schemas (analytics, core, billing, ops, system) are accessible only through `SECURITY DEFINER` RPC functions in the `public` schema or via direct database connections.
 
 ## Naming conventions
 
-- **Tables**: lowercase plural (`battles`, `contenders`, `profiles`)
+- **Tables**: lowercase plural (`lenses`, `versions`, `profiles`)
 - **Columns**: snake_case (`creator_lenser_id`, `vote_count_a`)
-- **Enums**: `{domain}_{concept}_enum` (e.g., `battle_status_enum`)
-- **Functions**: `fn_{domain}_{verb}` in `public` schema (e.g., `fn_battles_create`)
-- **Triggers**: `trg_{purpose}` (e.g., `trg_award_battle_xp`)
-- **Indexes**: `idx_{table}_{columns}` (e.g., `idx_battles_status`)
-- **Constraints**: `{table}_{description}` (e.g., `battles_voting_window_order`)
+- **Enums**: `{domain}_{concept}_enum` (e.g., `lens_status_enum`)
+- **Functions**: `fn_{domain}_{verb}` in `public` schema (e.g., `fn_lenses_create`)
+- **Triggers**: `trg_{purpose}` (e.g., `trg_award_xp`)
+- **Indexes**: `idx_{table}_{columns}` (e.g., `idx_lenses_status`)
+- **Constraints**: `{table}_{description}` (e.g., `lenses_version_order`)

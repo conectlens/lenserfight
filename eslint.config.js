@@ -1,3 +1,4 @@
+import nxEslintPlugin from '@nx/eslint-plugin'
 import js from '@eslint/js'
 import prettier from 'eslint-config-prettier'
 import importPlugin from 'eslint-plugin-import'
@@ -56,5 +57,77 @@ export default [
         "**/vite.config.*.timestamp*",
         "**/vitest.config.*.timestamp*"
       ]
+  },
+  // Nx module boundary enforcement
+  {
+    plugins: {
+      '@nx': nxEslintPlugin,
+    },
+    rules: {
+      '@nx/enforce-module-boundaries': [
+        'error',
+        {
+          enforceBuildableLibDependency: true,
+          allow: [],
+          depConstraints: [
+            // ── Scope constraints ──────────────────────────────────────
+            { sourceTag: 'scope:public', onlyDependOnLibsWithTags: ['scope:public', 'scope:shared'] },
+            { sourceTag: 'scope:shared', onlyDependOnLibsWithTags: ['scope:shared'] },
+            // ── License constraints — OSS cannot import private ────────
+            { sourceTag: 'license:oss', onlyDependOnLibsWithTags: ['license:oss', 'license:shared'] },
+            // ── Layer direction (top-down only) ────────────────────────
+            {
+              sourceTag: 'layer:app',
+              onlyDependOnLibsWithTags: [
+                'layer:app', 'layer:feature', 'layer:domain', 'layer:data',
+                'layer:api', 'layer:infra', 'layer:providers', 'layer:shared',
+                'layer:ui', 'layer:utils', 'layer:types',
+              ],
+            },
+            {
+              sourceTag: 'layer:feature',
+              onlyDependOnLibsWithTags: [
+                'layer:feature', 'layer:domain', 'layer:data', 'layer:api',
+                'layer:infra', 'layer:shared', 'layer:ui', 'layer:utils', 'layer:types',
+              ],
+            },
+            {
+              sourceTag: 'layer:domain',
+              onlyDependOnLibsWithTags: ['layer:domain', 'layer:shared', 'layer:utils', 'layer:types'],
+            },
+            {
+              sourceTag: 'layer:data',
+              onlyDependOnLibsWithTags: [
+                'layer:data', 'layer:domain', 'layer:api', 'layer:shared',
+                'layer:utils', 'layer:types',
+              ],
+            },
+            {
+              sourceTag: 'layer:infra',
+              onlyDependOnLibsWithTags: [
+                'layer:infra', 'layer:domain', 'layer:data', 'layer:api',
+                'layer:shared', 'layer:ui', 'layer:utils', 'layer:types',
+              ],
+            },
+            {
+              sourceTag: 'layer:ui',
+              onlyDependOnLibsWithTags: ['layer:ui', 'layer:shared', 'layer:utils', 'layer:types'],
+            },
+            {
+              sourceTag: 'layer:utils',
+              onlyDependOnLibsWithTags: ['layer:utils', 'layer:types'],
+            },
+            {
+              sourceTag: 'layer:shared',
+              onlyDependOnLibsWithTags: ['layer:shared', 'layer:utils', 'layer:types'],
+            },
+            {
+              sourceTag: 'layer:types',
+              onlyDependOnLibsWithTags: ['layer:types'],
+            },
+          ],
+        },
+      ],
+    },
   },
 ]
