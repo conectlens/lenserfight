@@ -1,7 +1,7 @@
 import { supabase } from '@lenserfight/data/supabase'
 
 export interface WaitingListRepositoryPort {
-  getIsInWaitingList(): Promise<boolean>
+  getIsInWaitingList(): Promise<boolean | null>
   toggleWaitingList(kvkkApproved: boolean): Promise<boolean>
 }
 
@@ -13,13 +13,13 @@ export interface WaitingListRepositoryPort {
  */
 export class SupabaseWaitingListRepository
   implements WaitingListRepositoryPort {
-  async getIsInWaitingList(): Promise<boolean> {
+  async getIsInWaitingList(): Promise<boolean | null> {
     const { data, error } = await supabase.rpc(
       'fn_lensers_get_is_in_waitinglist'
     )
 
     if (error) throw error
-    return Boolean(data)
+    return data as boolean | null
   }
 
   async toggleWaitingList(kvkkApproved: boolean): Promise<boolean> {

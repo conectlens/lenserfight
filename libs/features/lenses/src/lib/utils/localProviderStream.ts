@@ -34,6 +34,8 @@ export interface LocalStreamRequest {
 const NDJSON_PROVIDERS = new Set(['ollama'])
 
 function buildCorsFriendlyError(provider: string, status: number, body: string): string {
+  if ((status === 401 || status === 403) && provider === 'ollama')
+    return `Ollama authentication failed. Cloud models require an API key. Visit ollama.com to sign in and get your key, then add it in Local BYOK settings.`
   if (status === 401 || status === 403)
     return `Authentication failed for ${provider}. Check your API key.`
   if (status === 429)
@@ -88,7 +90,7 @@ export async function streamLocalProvider(req: LocalStreamRequest): Promise<void
   try {
     while (true) {
       const { done, value } = await reader.read()
-      if (done) break
+      if (done || signal.aborted) break
       buffer += decoder.decode(value, { stream: true })
 
       if (isNdjson) {
@@ -131,10 +133,12 @@ export async function streamLocalProvider(req: LocalStreamRequest): Promise<void
       }
     }
 
-    callbacks.onEnd(
-      { input_tokens: totalInputTokens, output_tokens: totalOutputTokens },
-      0, // credits = 0 for local execution
-    )
+    if (!signal.aborted) {
+      callbacks.onEnd(
+        { input_tokens: totalInputTokens, output_tokens: totalOutputTokens },
+        0, // credits = 0 for local execution
+      )
+    }
   } catch (err: unknown) {
     if ((err as Error).name === 'AbortError') {
       // Caller aborted — do not call onError; caller handles state reset

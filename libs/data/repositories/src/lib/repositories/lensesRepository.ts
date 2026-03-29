@@ -20,6 +20,7 @@ export interface LensesRepositoryPort {
   getTopLenses(limit: number): Promise<LensRecord[]>
   getTrendingLenses(lang?: string, offset?: number, limit?: number): Promise<ApiResponseEnvelope<LensViewModel[]>>
   getPersonalFeed(offset?: number, limit?: number): Promise<ApiResponseEnvelope<PersonalLensFeedItem[]>>
+  getFollowingFeed(lenserId: string, offset?: number, limit?: number): Promise<ApiResponseEnvelope<LensViewModel[]>>
   getByLenser(
     handle: string,
     offset?: number,
@@ -381,6 +382,45 @@ export class SupabaseLensesRepository implements LensesRepositoryPort {
     )
   }
 
+  async getFollowingFeed(lenserId: string, offset = 0, limit = 20): Promise<ApiResponseEnvelope<LensViewModel[]>> {
+    const start = Date.now()
+    const { data, error } = await supabase.rpc('fn_content_get_following_lenses', {
+      p_lenser_id: lenserId,
+      p_limit: limit,
+      p_offset: offset,
+    })
+
+    if (error) this.handleError(error)
+
+    const rows = (data ?? []) as Record<string, unknown>[]
+    const items: LensViewModel[] = rows.map((row) => {
+      const author = (row.author_profile as Record<string, unknown>) ?? {}
+      const reactionTotals = (row.reaction_totals as Record<string, number>) ?? {}
+      return {
+        id: row.id as string,
+        title: row.title as string,
+        description: (row.description as string | null) ?? null,
+        author: {
+          id: (author.id as string) ?? '',
+          displayName: (author.display_name as string) ?? 'Unknown',
+          handle: (author.handle as string) ?? 'unknown',
+          avatarUrl: (author.avatar_url as string | null) ?? null,
+        },
+        tags: (row.tags as TagRecord[]) ?? [],
+        usageCount: reactionTotals['copy'] ?? 0,
+        createdAt: row.created_at as string,
+        visibility: 'public' as const,
+        status: 'published' as const,
+      }
+    })
+
+    return paginatedResponse(
+      items,
+      { limit, offset, hasNextPage: rows.length >= limit },
+      { durationMs: Date.now() - start },
+    )
+  }
+
   async getMyLenses(offset = 0, limit = 20): Promise<ApiResponseEnvelope<LensRecord[]>> {
     const start = Date.now()
     const { data, error } = await supabase.rpc('fn_get_my_lenses', {
@@ -712,6 +752,29 @@ export class SupabaseLensesRepository implements LensesRepositoryPort {
     return (data as { id: string } | null)?.id ?? null
   }
 
+  /** Returns the latest non-archived version regardless of publish status (draft OK). */
+  async getLatestVersion(lensId: string): Promise<LensVersion | null> {
+    const { data, error } = await supabase
+      .schema('lenses')
+      .from('vw_lens_version_history')
+      .select('*')
+      .eq('lens_id', lensId)
+      .neq('status', 'archived')
+      .order('version_number', { ascending: false })
+      .limit(1)
+      .maybeSingle()
+    if (error) this.handleError(error)
+    if (!data) return null
+    const version = this.mapVersion(data as Record<string, unknown>)
+    const { data: paramsJson } = await supabase
+      .schema('lenses')
+      .rpc('fn_get_version_params_with_tools', { p_version_id: version.id })
+    version.parameters = ((paramsJson ?? []) as Record<string, unknown>[]).map((p) =>
+      this.mapVersionParam(p)
+    )
+    return version
+  }
+
   async getLatestPublishedVersion(lensId: string): Promise<LensVersion | null> {
     const { data, error } = await supabase
       .schema('lenses')
@@ -724,7 +787,14 @@ export class SupabaseLensesRepository implements LensesRepositoryPort {
       .maybeSingle()
     if (error) this.handleError(error)
     if (!data) return null
-    return this.mapVersion(data as Record<string, unknown>)
+    const version = this.mapVersion(data as Record<string, unknown>)
+    const { data: paramsJson } = await supabase
+      .schema('lenses')
+      .rpc('fn_get_version_params_with_tools', { p_version_id: version.id })
+    version.parameters = ((paramsJson ?? []) as Record<string, unknown>[]).map((p) =>
+      this.mapVersionParam(p)
+    )
+    return version
   }
 
   async createVersion(input: CreateLensVersionDTO): Promise<LensVersion> {
@@ -768,6 +838,30 @@ export class SupabaseLensesRepository implements LensesRepositoryPort {
       .schema('lenses')
       .rpc('fn_publish_version', { p_version_id: versionId })
     if (error) this.handleError(error)
+  }
+
+  /** Replace the parameter definitions for a lens version (full replace). */
+  async updateVersionParams(versionId: string, params: Array<{ label: string; toolId: string }>): Promise<void> {
+    // Delete all existing params for this version
+    const { error: delError } = await supabase
+      .schema('lenses')
+      .from('version_parameters')
+      .delete()
+      .eq('version_id', versionId)
+    if (delError) this.handleError(delError)
+
+    if (params.length === 0) return
+
+    const rows = params.map((p) => ({
+      version_id: versionId,
+      label: p.label,
+      tool_id: p.toolId,
+    }))
+    const { error: insError } = await supabase
+      .schema('lenses')
+      .from('version_parameters')
+      .insert(rows)
+    if (insError) this.handleError(insError)
   }
 
   async cloneLens(sourceLensId: string, versionId?: string | null): Promise<string> {

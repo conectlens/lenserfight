@@ -1,3 +1,11 @@
+
+import { agentsService, socialLinksService } from '@lenserfight/data/repositories'
+import { useLenser } from '@lenserfight/features/profile'
+import { Lenser, LenserStats, SocialLink, RelationshipState } from '@lenserfight/types'
+import { XPSummary } from '@lenserfight/types'
+import { Avatar, Button } from '@lenserfight/ui/components'
+import { FEATURES } from '@lenserfight/utils/env'
+import { formatCount } from '@lenserfight/utils/number'
 import {
   Camera,
   Pencil,
@@ -17,19 +25,11 @@ import {
 } from 'lucide-react'
 import React, { useState, useEffect } from 'react'
 
-import { Avatar, Button } from '@lenserfight/ui/components'
-import { useLenser } from '@lenserfight/features/profile'
-import { agentsService, socialLinksService } from '@lenserfight/data/repositories'
-import { Lenser, LenserStats, SocialLink, RelationshipState } from '@lenserfight/types'
-import { XPSummary } from '@lenserfight/types'
-import { formatCount } from '@lenserfight/utils/number'
-import { FEATURES } from '@lenserfight/utils/env'
-
 import { AvatarSelectionModal } from './AvatarSelectionModal'
 import { BannerSelectionModal } from './BannerSelectionModal'
 import { EditProfileModal } from './EditProfileModal'
-import { NetworkModal } from './NetworkModal'
 import { FollowButton } from './FollowButton'
+import { NetworkModal } from './NetworkModal'
 
 interface LenserProfileHeaderProps {
   lenser: Lenser & { visibility?: 'public' | 'private' | 'community' }
@@ -224,14 +224,37 @@ export const LenserProfileHeader: React.FC<LenserProfileHeaderProps> = ({
         <div className="bg-white dark:bg-gray-800 md:rounded-2xl shadow-sm border-b md:border border-gray-100 dark:border-gray-700 p-6 md:p-8 relative transition-colors">
           {/* Mobile Edit / Follow Button */}
           {isOwner ? (
-            <Button
-              variant="ghost"
-              onClick={() => setShowEditModal(true)}
-              className="md:hidden absolute top-4 right-4 !p-2.5 !w-auto rounded-full z-20"
-              title="Edit Profile"
-            >
-              <Pencil size={18} />
-            </Button>
+            lenser.type === 'ai' ? (
+              <div className="md:hidden absolute top-4 right-4 z-20 flex items-center gap-2">
+                <Button
+                  variant="ghost"
+                  onClick={() => setShowEditModal(true)}
+                  className="!p-2.5 !w-auto rounded-full"
+                  title="Edit Profile"
+                >
+                  <Pencil size={18} />
+                </Button>
+                {onEditAgent && (
+                  <Button
+                    variant="ghost"
+                    onClick={onEditAgent}
+                    className="!p-2.5 !w-auto rounded-full"
+                    title="Manage Agent"
+                  >
+                    <Bot size={18} />
+                  </Button>
+                )}
+              </div>
+            ) : (
+              <Button
+                variant="ghost"
+                onClick={() => setShowEditModal(true)}
+                className="md:hidden absolute top-4 right-4 !p-2.5 !w-auto rounded-full z-20"
+                title="Edit Profile"
+              >
+                <Pencil size={18} />
+              </Button>
+            )
           ) : (
             <div className="md:hidden absolute top-4 right-4 z-20">
               <FollowButton
@@ -349,14 +372,17 @@ export const LenserProfileHeader: React.FC<LenserProfileHeaderProps> = ({
                           <Pencil size={16} />
                           Edit Profile
                         </Button>
-                        <Button
-                          variant="secondary"
-                          onClick={onEditAgent}
-                          className="flex items-center gap-2 w-auto"
-                        >
-                          <Bot size={16} />
-                          Edit Agent
-                        </Button>
+                        {onEditAgent && (
+                          <Button
+                            variant="secondary"
+                            onClick={onEditAgent}
+                            className="flex items-center gap-2 w-auto"
+                            title="Manage Agent"
+                          >
+                            <Bot size={16} />
+                            Manage Agent
+                          </Button>
+                        )}
                       </>
                     ) : (
                       <>

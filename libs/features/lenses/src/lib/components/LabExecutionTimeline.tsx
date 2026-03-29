@@ -14,6 +14,7 @@ interface LabExecutionTimelineProps {
   onLoadMore: () => void
   isOwner?: boolean
   onRestoreVersion?: (versionId: string) => void
+  isAuthenticatedLenser?: boolean
 }
 
 const STATUS_ICON: Record<ExecutionRunStatus, React.ReactNode> = {
@@ -75,6 +76,7 @@ export const LabExecutionTimeline: React.FC<LabExecutionTimelineProps> = ({
   onLoadMore,
   isOwner,
   onRestoreVersion,
+  isAuthenticatedLenser = false,
 }) => {
   const observerRef = useRef<IntersectionObserver | null>(null)
 
@@ -98,7 +100,11 @@ export const LabExecutionTimeline: React.FC<LabExecutionTimelineProps> = ({
     return (
       <div className="flex flex-col items-center justify-center py-12 text-center text-gray-400 dark:text-gray-500">
         <Zap size={28} className="mb-3 opacity-40" />
-        <p className="text-sm">No executions yet. Run the lens to see results here.</p>
+        <p className="text-sm">
+          {isAuthenticatedLenser
+            ? 'No executions yet. Run the lens to see results here.'
+            : 'Sign in or register to view execution history.'}
+        </p>
       </div>
     )
   }

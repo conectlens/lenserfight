@@ -1,8 +1,9 @@
 import React, { useEffect, useRef, useState, useCallback } from 'react'
-import { Portal } from './Portal'
+
 import { Backdrop } from './Backdrop'
-import { DialogHeaderContext, type DialogHeaderSlot } from './DialogHeaderContext'
 import { DialogFooterContext } from './DialogFooterContext'
+import { DialogHeaderContext, type DialogHeaderSlot } from './DialogHeaderContext'
+import { Portal } from './Portal'
 
 export interface DialogProps {
   open: boolean
@@ -65,15 +66,33 @@ export const Dialog: React.FC<DialogProps> = ({
   const safeDesc = activeDesc ? activeDesc.slice(0, DESC_MAX) : undefined
   const panelRef = useRef<HTMLDivElement>(null)
 
+  const submitActiveForm = useCallback(() => {
+    const panel = panelRef.current
+    if (!panel) return
+
+    const activeElement = document.activeElement
+    const activeForm =
+      activeElement instanceof HTMLElement ? activeElement.closest('form') : null
+    const form = activeForm ?? panel.querySelector('form')
+
+    if (!(form instanceof HTMLFormElement)) return
+    form.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }))
+  }, [])
+
   // Close on Escape
   useEffect(() => {
     if (!open) return
     const handler = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+        e.preventDefault()
+        submitActiveForm()
+        return
+      }
       if (e.key === 'Escape') onClose?.()
     }
     document.addEventListener('keydown', handler)
     return () => document.removeEventListener('keydown', handler)
-  }, [open, onClose])
+  }, [open, onClose, submitActiveForm])
 
   // Auto-focus panel
   useEffect(() => {

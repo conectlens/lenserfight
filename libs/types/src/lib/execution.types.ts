@@ -220,5 +220,16 @@ export interface TriggerExecutionResponse {
   status: ExecutionRunStatus
 }
 
+/** DTO for persisting a local BYOK execution to the database after streaming completes. */
+export interface PersistLocalExecutionDTO {
+  lensId: string
+  versionId?: string
+  provider: string
+  model: string
+  contentText: string
+  tokenInput: number
+  tokenOutput: number
+}
+
 /** Semantic alias — a RayRun is an ExecutionRun produced from a Lens execution */
 export type RayRun = ExecutionRun

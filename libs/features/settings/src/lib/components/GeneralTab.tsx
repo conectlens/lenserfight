@@ -4,6 +4,7 @@ import { useLenser } from '@lenserfight/features/profile'
 import { LenserPreferences } from '@lenserfight/types'
 import { Button } from '@lenserfight/ui/components'
 import { SearchSelectField, SelectField } from '@lenserfight/ui/forms'
+import { useTheme } from '@lenserfight/ui/theme'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import React, { useState, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
@@ -18,6 +19,7 @@ export const GeneralTab: React.FC = () => {
   const { i18n } = useTranslation()
   const { lenser } = useLenser()
   const queryClient = useQueryClient()
+  const { setTheme: applyTheme } = useTheme()
 
   const { data: languages = [] } = useQuery({
     queryKey: ['core', 'languages'],
@@ -84,6 +86,9 @@ export const GeneralTab: React.FC = () => {
       if (language !== currentLanguage) {
         await i18n.changeLanguage(language)
         document.documentElement.lang = language
+      }
+      if (theme !== currentTheme) {
+        applyTheme(theme)
       }
       await queryClient.invalidateQueries({ queryKey: ['preferences'] })
     } catch (e) {
