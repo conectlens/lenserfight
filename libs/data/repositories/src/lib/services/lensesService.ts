@@ -297,6 +297,11 @@ export const lensesService = {
     return lensesRepo.getLatestPublishedVersion(lensId)
   },
 
+  /** Returns the latest non-archived version regardless of publish status (draft OK). */
+  getLatestVersion: async (lensId: string): Promise<LensVersion | null> => {
+    return lensesRepo.getLatestVersion(lensId)
+  },
+
   createVersion: async (input: CreateLensVersionDTO): Promise<LensVersion> => {
     if (!input.templateBody || input.templateBody.trim().length < 50) {
       throw new Error('Template body must be at least 50 characters.')
@@ -318,5 +323,10 @@ export const lensesService = {
 
   getTools: async (category?: string): Promise<ToolRecord[]> => {
     return lensesRepo.getTools(category)
+  },
+
+  /** Replace the parameter definitions for a lens version (full replace). */
+  updateVersionParams: async (versionId: string, params: Array<{ label: string; toolId: string }>): Promise<void> => {
+    return lensesRepo.updateVersionParams(versionId, params)
   },
 }

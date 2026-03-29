@@ -1,14 +1,14 @@
 import { lensesService } from '@lenserfight/data/repositories'
 import { useAIModels } from '@lenserfight/features/generations'
-import { VersionParamFields, FundingSourceToggle, useFundingSource } from '@lenserfight/features/lenses'
+import { LensVersionParameterEditor, VersionParamFields, FundingSourceToggle, useFundingSource } from '@lenserfight/features/lenses'
 import { Button } from '@lenserfight/ui/components'
 import { useQuery } from '@tanstack/react-query'
-import { X } from 'lucide-react'
+import { ChevronDown, X } from 'lucide-react'
 import React, { useState, useEffect, useMemo } from 'react'
 
 import type { WorkflowNodeConfig } from './WorkflowCanvasNode'
 import type { WorkflowEdgeRecord, WorkflowNodeRecord } from '@lenserfight/data/repositories'
-import type { AIProvider, AIProviderModel } from '@lenserfight/types'
+import type { AIProvider, AIProviderModel, CreateVersionParamInput } from '@lenserfight/types'
 
 interface WorkflowNodeConfigPanelProps {
   nodeId: string
@@ -34,37 +34,63 @@ export function WorkflowNodeConfigPanel({
   onClose,
 }: WorkflowNodeConfigPanelProps) {
   const [selectedProviderKey, setSelectedProviderKey] = useState('')
-  const [selectedModelKey, setSelectedModelKey] = useState(currentConfig.model_id ?? '')
+  const [selectedModelKey, setSelectedModelKey] = useState(
+    currentConfig.model_id ??
+      (typeof window !== 'undefined' ? (localStorage.getItem('lf-workflow-global-model') ?? '') : '')
+  )
   const [paramOverrides, setParamOverrides] = useState<Record<string, string>>(
     currentConfig.param_overrides ?? {}
   )
+  const [showParamEditor, setShowParamEditor] = useState(false)
+  const [draftParams, setDraftParams] = useState<CreateVersionParamInput[]>([])
 
   const { models, isLoading: modelsLoading } = useAIModels()
   const nodeFunding = useFundingSource(selectedProviderKey)
 
-  // Load version-specific params: use explicit versionId or fall back to latest published
+  // Load lens version: use explicit versionId, fall back to latest published, then any draft
   const { data: lensVersion, isLoading: versionLoading } = useQuery({
     queryKey: ['lens-version-config', versionId ?? `head-${lensId}`],
-    queryFn: () =>
-      versionId
-        ? lensesService.getVersionById(versionId)
-        : lensesService.getLatestPublishedVersion(lensId),
+    queryFn: async () => {
+      if (versionId) return lensesService.getVersionById(versionId)
+      const published = await lensesService.getLatestPublishedVersion(lensId)
+      if (published) return published
+      return lensesService.getLatestVersion(lensId)
+    },
     staleTime: 1000 * 60 * 5,
     enabled: !!lensId,
   })
 
+  // Load tools for parameter editor
+  const { data: tools = [] } = useQuery({
+    queryKey: ['lens-tools'],
+    queryFn: () => lensesService.getTools(),
+    staleTime: 1000 * 60 * 10,
+  })
+
   // Reset local state when node changes
   useEffect(() => {
-    setSelectedModelKey(currentConfig.model_id ?? '')
+    setSelectedModelKey(
+      currentConfig.model_id ??
+        (typeof window !== 'undefined' ? (localStorage.getItem('lf-workflow-global-model') ?? '') : '')
+    )
     setParamOverrides(currentConfig.param_overrides ?? {})
     setSelectedProviderKey('')
+    setShowParamEditor(false)
   }, [nodeId, currentConfig.model_id, currentConfig.param_overrides])
+
+  // Seed draftParams from loaded version when param editor is opened
+  useEffect(() => {
+    if (showParamEditor && lensVersion?.parameters) {
+      setDraftParams(
+        lensVersion.parameters.map((p) => ({ label: p.label, toolId: p.toolId ?? '' }))
+      )
+    }
+  }, [showParamEditor, lensVersion])
 
   // Incoming edge mappings for this node (which params are auto-wired from previous nodes)
   const incomingEdges = edges.filter((e) => e.target_node_id === nodeId)
   const autoWiredParams = new Set(incomingEdges.map((e) => e.target_param_label))
 
-  // Version params use 'label' as the [[label]] placeholder name
   const versionParams = lensVersion?.parameters ?? []
   const isParamsLoading = versionLoading
 
@@ -90,7 +116,11 @@ export function WorkflowNodeConfigPanel({
       .map((m) => ({ key: m.key, name: m.name, inputModalities: m.input_modalities }))
   }, [models, selectedProviderKey, nodeFunding.fundingSource, nodeFunding.selectedKeyRefId, nodeFunding.selectedLocalKeyId, nodeFunding.availableKeys, nodeFunding.localKeys])
 
-  const handleSave = () => {
+  const handleSave = async () => {
+    // Persist parameter edits if the editor was open
+    if (showParamEditor && lensVersion?.id) {
+      await lensesService.updateVersionParams(lensVersion.id, draftParams)
+    }
     onSave(nodeId, {
       ...currentConfig,
       model_id: selectedModelKey || null,
@@ -216,6 +246,32 @@ export function WorkflowNodeConfigPanel({
         {!isParamsLoading && !lensVersion && (
           <div className="rounded-xl border border-surface-border p-3 text-[11px] text-greyscale-400 text-center">
             No version found for this lens.
+          </div>
+        )}
+
+        {/* Parameter definitions editor (lens owner) */}
+        {lensVersion && tools.length > 0 && (
+          <div className="space-y-2 border-t border-surface-border pt-4">
+            <button
+              type="button"
+              onClick={() => setShowParamEditor((v) => !v)}
+              className="flex w-full items-center justify-between text-[10px] font-semibold uppercase tracking-wider text-greyscale-400 hover:text-greyscale-600 transition-colors"
+            >
+              Edit Parameter Definitions
+              <ChevronDown
+                size={12}
+                className={`transition-transform ${showParamEditor ? 'rotate-180' : ''}`}
+              />
+            </button>
+            {showParamEditor && (
+              <div className="rounded-xl border border-surface-border bg-surface-raised p-3">
+                <LensVersionParameterEditor
+                  parameters={draftParams}
+                  tools={tools}
+                  onChange={setDraftParams}
+                />
+              </div>
+            )}
           </div>
         )}
       </div>
