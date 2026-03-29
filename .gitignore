@@ -82,7 +82,10 @@ apps/docs/.vitepress/dist/
 .vitepress/dist/
 .vite/
 
-supabase/*
+# Supabase — ignore local state, track OSS schema files
+supabase/.branches/
+supabase/.temp/
+supabase/functions/.env
 
 # Expo
 node_modules/

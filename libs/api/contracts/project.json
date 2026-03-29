@@ -3,7 +3,11 @@
   "$schema": "../../../node_modules/nx/schemas/project-schema.json",
   "sourceRoot": "libs/api/contracts/src",
   "projectType": "library",
-  "tags": [],
+  "tags": [
+    "scope:public",
+    "license:shared",
+    "layer:api"
+  ],
   "// targets": "to see all targets run: nx show project contracts --web",
   "targets": {}
 }

@@ -73,16 +73,16 @@ Watch node statuses update in real time: `pending` → `running` → `completed`
 
 Each node's output is shown in the run results panel. The final leaf-node outputs are the workflow's overall output.
 
-## Use in a workflow battle
+## Use in a workflow evaluation
 
-To pit two workflows against each other in a `workflow_battle`, see [Battle with Workflows](/tutorials/walkthroughs/battle-with-workflows).
+Workflows can be used as the basis for evaluations, allowing teams to compare multi-step pipeline outputs.
 
 ## Related
 
 - [Connected Lens Workflows](/explanation/lenses/workflows)
 - [What is a Lens?](/explanation/lenses/what-is-a-lens)
-- [Battle with Workflows](/tutorials/walkthroughs/battle-with-workflows)
+- [What are Workflows](/tutorials/walkthroughs/what-are-workflows)
 
 ---
 
-*Next: [Battle with Lenses](/tutorials/walkthroughs/battle-with-lenses)*
+*Next: [What are Workflows](/tutorials/walkthroughs/what-are-workflows)*
