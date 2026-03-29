@@ -8,7 +8,6 @@ import {
   usePersonalFeed,
   usePersonalPrompts,
   useFollowingFeed,
-  useFollowingPrompts,
   useSuggestedLensers,
   useFollowedTags,
   useFollowTag,
@@ -16,7 +15,6 @@ import {
   useFollowLenser,
   useUnfollowLenser,
 } from '@lenserfight/features/home'
-import { LensesGrid } from '@lenserfight/features/lenses'
 import { useLenser } from '@lenserfight/features/profile'
 import { CreateThreadModal } from '@lenserfight/features/threads'
 import { Avatar, Button, Card, EmptyState, SEOHead, TagBadge } from '@lenserfight/ui/components'
@@ -32,6 +30,7 @@ import {
 import React, { useCallback, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 
+import { FollowingLensesCarousel } from '../components/FollowingLensesCarousel'
 import { HomePromoSection } from '../components/HomePromoSection'
 import { ThreadsList } from '../components/ThreadsList'
 
@@ -84,14 +83,6 @@ export const HomePage: React.FC = () => {
   )
 
   const {
-    data: followingPromptsData,
-    isLoading: followingPromptsLoading,
-  } = useFollowingPrompts(
-    showForYou ? lenserId : undefined,
-    activeTab === 'following'
-  )
-
-  const {
     data: latestLensers,
     isLoading: lensersLoading,
     isError: lensersError,
@@ -131,7 +122,6 @@ export const HomePage: React.FC = () => {
   const threads = activeFeedData?.pages.flatMap((page) => page.data ?? []) || []
   const isEmpty = !activeIsLoading && threads.length === 0
   const followingThreads = followingThreadsData?.data ?? []
-  const followingPrompts = followingPromptsData?.data ?? []
   const isFollowingTab = activeTab === 'following'
 
   // Sidebar lenses: personalised for auth users, top lenses otherwise
@@ -255,20 +245,12 @@ export const HomePage: React.FC = () => {
                   </p>
                 </div>
               </div>
-              {followingPromptsLoading ? (
-                <div className="columns-1 md:columns-2 lg:columns-3 xl:columns-4 gap-6">
-                  {[1, 2, 3, 4].map((i) => (
-                    <div key={i} className="break-inside-avoid mb-6">
-                      <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-100 dark:border-gray-700 h-64 p-6 animate-pulse" />
-                    </div>
-                  ))}
-                </div>
-              ) : followingPrompts.length > 0 ? (
-                <LensesGrid lenses={followingPrompts} isLoading={false} onOpen={(id) => navigate(`/lenses/${id}`)} />
+              {lenserId ? (
+                <FollowingLensesCarousel lenserId={lenserId} />
               ) : (
                 <EmptyState
                   icon={Sparkles}
-                  title="No lens by your followings yet"
+                  title="No lenses by your followings yet"
                   description="Follow lensers to see their public lenses here."
                   className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 shadow-sm"
                 />

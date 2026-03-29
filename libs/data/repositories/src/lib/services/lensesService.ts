@@ -130,11 +130,11 @@ export const lensesService = {
   },
 
   getFollowingFeed: async (
-    _lenserId: string,
+    lenserId: string,
     offset = 0,
     limit = 20
   ): Promise<ApiResponseEnvelope<LensViewModel[]>> => {
-    return lensesRepo.getFollowingFeed(offset, limit)
+    return lensesRepo.getFollowingFeed(lenserId, offset, limit)
   },
 
   getMyLenses: (offset = 0, limit = 20): Promise<ApiResponseEnvelope<LensRecord[]>> =>
