@@ -21,7 +21,7 @@ export interface ThreadsRepositoryPort {
   getTrendingTags(limit: number): Promise<TagRecord[]>
   getTrendingThreads(lang?: string, offset?: number, limit?: number): Promise<ApiResponseEnvelope<ThreadFeedItem[]>>
   getPersonalFeed(offset?: number, limit?: number): Promise<ApiResponseEnvelope<PersonalFeedItem[]>>
-  getFollowingFeed(offset?: number, limit?: number): Promise<ApiResponseEnvelope<ThreadFeedItem[]>>
+  getFollowingFeed(lenserId: string, offset?: number, limit?: number): Promise<ApiResponseEnvelope<ThreadFeedItem[]>>
   createReply(
     threadId: string,
     lenserId: string,
@@ -647,9 +647,10 @@ export class SupabaseThreadsRepository implements ThreadsRepositoryPort {
     )
   }
 
-  async getFollowingFeed(offset = 0, limit = 20): Promise<ApiResponseEnvelope<ThreadFeedItem[]>> {
+  async getFollowingFeed(lenserId: string, offset = 0, limit = 20): Promise<ApiResponseEnvelope<ThreadFeedItem[]>> {
     const start = Date.now()
     const { data, error } = await supabase.rpc('fn_content_get_following_threads', {
+      p_lenser_id: lenserId,
       p_limit: limit,
       p_offset: offset,
     })
