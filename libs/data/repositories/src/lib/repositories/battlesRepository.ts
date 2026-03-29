@@ -5,6 +5,7 @@ import { supabase } from '@lenserfight/data/supabase'
 export type BattleStatus =
   | 'draft'
   | 'open'
+  | 'executing'
   | 'voting'
   | 'scoring'
   | 'closed'
@@ -554,6 +555,15 @@ export class SupabaseBattlesRepository implements BattlesRepositoryPort {
     if (error) this.handleError(error)
     const row = Array.isArray(data) ? data[0] : data
     return row as GlobalMessageRecord
+  }
+
+  async removeContender(contenderId: string): Promise<void> {
+    const { error } = await supabase
+      .schema('battles')
+      .from('contenders')
+      .delete()
+      .eq('id', contenderId)
+    if (error) this.handleError(error)
   }
 
   async inviteContender(input: InviteContenderInput): Promise<ContenderRecord> {

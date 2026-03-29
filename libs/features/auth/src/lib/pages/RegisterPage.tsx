@@ -196,6 +196,7 @@ export const RegisterPage: React.FC = () => {
               label="Password"
               name="password"
               type="password"
+              autoComplete="new-password"
               placeholder="Create a password"
               value={formData.password}
               onChange={handleChange}

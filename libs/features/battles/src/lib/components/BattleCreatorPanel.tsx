@@ -1,29 +1,36 @@
 import React from 'react'
-import { Shield, Rocket, Clock, CheckCircle } from 'lucide-react'
+import { Shield, Rocket, Clock, CheckCircle, Play, Zap } from 'lucide-react'
 import { Card, Badge, Button } from '@lenserfight/ui/components'
-import type { BattleStatus } from '../types/battle.types'
+import type { BattleStatus, BattleType } from '../types/battle.types'
 
 interface BattleCreatorPanelProps {
   battleId: string
   status: BattleStatus
+  battleType?: BattleType
   onPublish: (battleId: string) => void
   isPublishing: boolean
+  onStartExecution?: () => void
+  isStartingExecution?: boolean
 }
 
 const STATUS_CONFIG: Partial<Record<BattleStatus, { label: string; color: 'gray' | 'green' | 'blue' | 'yellow' | 'purple' }>> = {
-  draft:    { label: 'Draft',   color: 'gray'   },
-  open:     { label: 'Open',    color: 'green'  },
-  voting:   { label: 'Voting',  color: 'blue'   },
-  scoring:  { label: 'Scoring', color: 'yellow' },
-  closed:   { label: 'Closed',  color: 'gray'   },
-  published:{ label: 'Published', color: 'purple' },
+  draft:     { label: 'Draft',     color: 'gray'   },
+  open:      { label: 'Open',      color: 'green'  },
+  executing: { label: 'Executing', color: 'yellow' },
+  voting:    { label: 'Voting',    color: 'blue'   },
+  scoring:   { label: 'Scoring',   color: 'yellow' },
+  closed:    { label: 'Closed',    color: 'gray'   },
+  published: { label: 'Published', color: 'purple' },
 }
 
 export const BattleCreatorPanel: React.FC<BattleCreatorPanelProps> = ({
   battleId,
   status,
+  battleType,
   onPublish,
   isPublishing,
+  onStartExecution,
+  isStartingExecution,
 }) => {
   const cfg = STATUS_CONFIG[status]
 
@@ -57,10 +64,32 @@ export const BattleCreatorPanel: React.FC<BattleCreatorPanelProps> = ({
       )}
 
       {status === 'open' && (
+        <div className="space-y-3">
+          <div className="flex items-start gap-3">
+            <Clock size={15} className="mt-0.5 text-status-green flex-shrink-0" />
+            <p className="text-sm text-greyscale-600 dark:text-greyscale-300">
+              Battle is open. Contenders can now submit their entries. The battle will transition to voting once submissions are ready.
+            </p>
+          </div>
+          {battleType === 'ai_vs_ai' && onStartExecution && (
+            <Button
+              onClick={onStartExecution}
+              disabled={isStartingExecution}
+              isLoading={isStartingExecution}
+              className="flex items-center gap-2 w-auto"
+            >
+              <Play size={14} />
+              {isStartingExecution ? 'Starting…' : 'Start Battle Execution'}
+            </Button>
+          )}
+        </div>
+      )}
+
+      {status === 'executing' && (
         <div className="flex items-start gap-3">
-          <Clock size={15} className="mt-0.5 text-status-green flex-shrink-0" />
+          <Zap size={15} className="mt-0.5 text-amber-500 flex-shrink-0 animate-pulse" />
           <p className="text-sm text-greyscale-600 dark:text-greyscale-300">
-            Battle is open. Contenders can now submit their entries. The battle will transition to voting once submissions are ready.
+            AI contenders are competing live. Watch the execution in the arena above.
           </p>
         </div>
       )}

@@ -5,6 +5,7 @@ import type { BattleStatus, BattleUIPhase } from '../types/battle.types'
 const STATUS_TO_PHASE: Record<BattleStatus, BattleUIPhase> = {
   draft: 'idle',
   open: 'idle',
+  executing: 'running',
   voting: 'voting',
   scoring: 'running',
   closed: 'result',

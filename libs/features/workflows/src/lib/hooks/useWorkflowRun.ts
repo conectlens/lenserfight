@@ -50,7 +50,7 @@ export function useWorkflowRun(workflowId: string | undefined) {
           // Check if all nodes are terminal
           setNodeResults((current) => {
             const allDone = current.every(
-              (r) => r.status === 'completed' || r.status === 'failed'
+              (r) => r.status === 'completed' || r.status === 'failed' || r.status === 'cancelled'
             )
             if (allDone) setIsRunning(false)
             return current
@@ -64,8 +64,22 @@ export function useWorkflowRun(workflowId: string | undefined) {
     }
   }, [runId])
 
+  const stopRun = () => {
+    if (!runId) return
+    workflowsService.updateRunStatus(runId, 'cancelled').catch(() => {})
+    setNodeResults((current) =>
+      current.map((result) =>
+        result.status === 'completed' || result.status === 'failed'
+          ? result
+          : { ...result, status: 'cancelled', error_message: result.error_message ?? 'Run cancelled' }
+      )
+    )
+    setIsRunning(false)
+  }
+
   return {
     startRun,
+    stopRun,
     isPending,
     runId,
     nodeResults,

@@ -10,7 +10,10 @@ import { useLensAssignment } from '../hooks/useLensAssignment'
 import { useMyVote } from '../hooks/useMyVote'
 import { useSubmitVote } from '../hooks/useSubmitVote'
 import { useVoteAggregates } from '../hooks/useVoteAggregates'
+import { useBattleLiveSubmission } from '../hooks/useBattleLiveSubmission'
 import { getRenderer } from '../renderers'
+import { BattleLiveArena } from './BattleLiveArena'
+import type { ContenderLensAssignmentRecord } from '../types/battle.types'
 
 import { Drawer } from '@lenserfight/ui/overlays'
 import { ArenaTopBar } from './ArenaTopBar'
@@ -104,6 +107,19 @@ export const ImmersiveArenaView: React.FC<ImmersiveArenaViewProps> = ({ slug, cu
           <a href="/battles" className="text-xs text-primary hover:underline">← Back to battles</a>
         </div>
       </div>
+    )
+  }
+
+  // Show full-screen live arena during execution
+  if (battle.status === 'executing' && currentPhase === 'running') {
+    return (
+      <BattleLiveArena
+        battle={battle}
+        contenderA={contenderA}
+        contenderB={contenderB}
+        lensAssignments={[lensAssignmentA, lensAssignmentB].filter(Boolean) as ContenderLensAssignmentRecord[]}
+        currentUserId={currentUserId}
+      />
     )
   }
 

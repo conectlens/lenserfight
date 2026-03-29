@@ -30,11 +30,42 @@ export const Modal: React.FC<ModalProps> = ({
   contentClassName = '',
   fullWidth = false,
 }) => {
+  const panelRef = React.useRef<HTMLDivElement>(null)
+
+  React.useEffect(() => {
+    if (!isOpen) return
+
+    const submitActiveForm = () => {
+      const panel = panelRef.current
+      if (!panel) return
+
+      const activeElement = document.activeElement
+      const activeForm =
+        activeElement instanceof HTMLElement ? activeElement.closest('form') : null
+      const form = activeForm ?? panel.querySelector('form')
+
+      if (!(form instanceof HTMLFormElement)) return
+      form.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }))
+    }
+
+    const handler = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+        e.preventDefault()
+        submitActiveForm()
+        return
+      }
+    }
+
+    document.addEventListener('keydown', handler)
+    return () => document.removeEventListener('keydown', handler)
+  }, [isOpen])
+
   if (!isOpen) return null
 
   return createPortal(
     <div className="fixed inset-0 z-[9999] flex items-center justify-center p-3 sm:p-4 bg-black/45 backdrop-blur-sm animate-in fade-in duration-200">
       <div
+        ref={panelRef}
         className={[
           'bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-h-[calc(100vh-1.5rem)] sm:max-h-[calc(100vh-2rem)] flex flex-col relative overflow-hidden transform transition-all border border-gray-100 dark:border-gray-700',
           fullWidth ? 'max-w-full' : 'max-w-md',

@@ -1,5 +1,6 @@
 // Types
 export * from './lib/types/battle.types'
+export * from './lib/types/battle-execution.types'
 
 // Hooks
 export * from './lib/hooks/useBattle'
@@ -16,11 +17,18 @@ export * from './lib/hooks/useLenserChat'
 export * from './lib/hooks/useInviteContender'
 export * from './lib/hooks/useSubmitEntry'
 export * from './lib/hooks/useVoterEligibility'
+export * from './lib/hooks/useBattleStream'
+export * from './lib/hooks/useBattleExecution'
+export * from './lib/hooks/useBattleLiveSubmission'
+export * from './lib/hooks/useReplayController'
 
 export * from './lib/types/battle-renderer.types'
 
 // Renderers
 export * from './lib/renderers'
+
+// Replay
+export * from './lib/replay/ReplayStrategy'
 
 // Components
 export * from './lib/components/ArenaView'
@@ -52,6 +60,11 @@ export * from './lib/components/ResultBanner'
 export * from './lib/components/BattleShareCard'
 export * from './lib/components/BattleCreatorPanel'
 export * from './lib/components/BattleChatPanel'
+export * from './lib/components/BattleLiveArena'
+export * from './lib/components/StreamingOutput'
+export * from './lib/components/StreamStatusBar'
+export * from './lib/components/LiveArenaTopBar'
+export * from './lib/components/ReplayControls'
 
 // Pages
 export * from './lib/pages/BattlesFeedPage'

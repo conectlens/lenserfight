@@ -1,16 +1,4 @@
-import {
-  Plus,
-  ChevronRight,
-  MessageSquareOff,
-  AlertCircle,
-  Tag,
-  Sparkles,
-  UserPlus,
-} from 'lucide-react'
-import React, { useCallback, useRef } from 'react'
-import { useNavigate } from 'react-router-dom'
 
-import { Avatar, Button, Card, EmptyState, SEOHead, TagBadge } from '@lenserfight/ui/components'
 import { useAuth } from '@lenserfight/features/auth'
 import {
   useThreadsFeed,
@@ -19,6 +7,7 @@ import {
   useLatestLensers,
   usePersonalFeed,
   usePersonalPrompts,
+  useFollowingFeed,
   useSuggestedLensers,
   useFollowedTags,
   useFollowTag,
@@ -28,7 +17,20 @@ import {
 } from '@lenserfight/features/home'
 import { useLenser } from '@lenserfight/features/profile'
 import { CreateThreadModal } from '@lenserfight/features/threads'
+import { Avatar, Button, Card, EmptyState, SEOHead, TagBadge } from '@lenserfight/ui/components'
 import { buildAuthReturnUrl } from '@lenserfight/utils/dom'
+import {
+  Plus,
+  ChevronRight,
+  MessageSquareOff,
+  AlertCircle,
+  Tag,
+  Sparkles,
+} from 'lucide-react'
+import React, { useCallback, useRef } from 'react'
+import { useNavigate } from 'react-router-dom'
+
+import { FollowingLensesCarousel } from '../components/FollowingLensesCarousel'
 import { HomePromoSection } from '../components/HomePromoSection'
 import { ThreadsList } from '../components/ThreadsList'
 
@@ -40,7 +42,7 @@ export const HomePage: React.FC = () => {
   const showForYou = isAuthenticated && hasLenser
 
   const [isCreateModalOpen, setIsCreateModalOpen] = React.useState(false)
-  const [feedTab, setFeedTab] = React.useState<'for_you' | 'trending'>('for_you')
+  const [feedTab, setFeedTab] = React.useState<'for_you' | 'following' | 'trending'>('for_you')
   const activeTab = showForYou ? feedTab : 'trending'
   const [loadSidebarWidgets, setLoadSidebarWidgets] = React.useState(false)
   const sidebarWidgetsLoading = !loadSidebarWidgets
@@ -66,13 +68,18 @@ export const HomePage: React.FC = () => {
     hasNextPage: hasNextPersonal,
     isFetchingNextPage: isFetchingNextPersonal,
     isLoading: personalLoading,
-  } = usePersonalFeed(showForYou ? lenserId : undefined)
+  } = usePersonalFeed(showForYou ? lenserId : undefined, activeTab === 'for_you')
+
+  const {
+    data: followingThreadsData,
+    isLoading: followingThreadsLoading,
+  } = useFollowingFeed(showForYou ? lenserId : undefined, activeTab === 'following')
 
   // Sidebar widgets
   const { data: topPrompts, isLoading: promptsLoading } = useTopLenses(loadSidebarWidgets)
   const { data: personalPromptsData, isLoading: personalPromptsLoading } = usePersonalPrompts(
     showForYou ? lenserId : undefined,
-    loadSidebarWidgets
+    loadSidebarWidgets && activeTab === 'for_you'
   )
 
   const {
@@ -114,6 +121,8 @@ export const HomePage: React.FC = () => {
   const activeIsLoading = activeTab === 'for_you' ? personalLoading : threadsLoading
   const threads = activeFeedData?.pages.flatMap((page) => page.data ?? []) || []
   const isEmpty = !activeIsLoading && threads.length === 0
+  const followingThreads = followingThreadsData?.data ?? []
+  const isFollowingTab = activeTab === 'following'
 
   // Sidebar lenses: personalised for auth users, top lenses otherwise
   const sidebarPrompts =
@@ -176,14 +185,14 @@ export const HomePage: React.FC = () => {
         <div className="flex items-center justify-between mb-6">
           {showForYou ? (
             <div className="flex bg-gray-100 dark:bg-gray-800 rounded-xl p-1 gap-1">
-              {(['for_you', 'trending'] as const).map((tab) => (
+              {(['for_you', 'following', 'trending'] as const).map((tab) => (
                 <Button
                   key={tab}
                   variant={activeTab === tab ? 'primary' : 'ghost'}
                   size="sm"
                   onClick={() => setFeedTab(tab)}
                 >
-                  {tab === 'for_you' ? 'For You' : 'Trending'}
+                  {tab === 'for_you' ? 'For You' : tab === 'following' ? 'Following' : 'Trending'}
                 </Button>
               ))}
             </div>
@@ -202,7 +211,53 @@ export const HomePage: React.FC = () => {
           )}
         </div>
 
-        {isEmpty ? (
+        {isFollowingTab ? (
+          <div className="space-y-10">
+            <section className="space-y-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h2 className="text-lg font-bold text-gray-900 dark:text-white">Threads</h2>
+                  <p className="text-sm text-gray-500 dark:text-gray-400">
+                    Recent threads from lensers you follow.
+                  </p>
+                </div>
+              </div>
+              {followingThreadsLoading ? (
+                <ThreadsList threads={[]} isLoading onOpenThread={handleOpenThread} />
+              ) : followingThreads.length > 0 ? (
+                <ThreadsList threads={followingThreads} isLoading={false} onOpenThread={handleOpenThread} />
+              ) : (
+                <EmptyState
+                  icon={MessageSquareOff}
+                  title="No followed threads yet"
+                  description="Follow lensers to see their public threads here."
+                  className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 shadow-sm"
+                />
+              )}
+            </section>
+
+            <section className="space-y-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h2 className="text-lg font-bold text-gray-900 dark:text-white">Lenses</h2>
+                  <p className="text-sm text-gray-500 dark:text-gray-400">
+                    Public lenses from the same people in your network.
+                  </p>
+                </div>
+              </div>
+              {lenserId ? (
+                <FollowingLensesCarousel lenserId={lenserId} />
+              ) : (
+                <EmptyState
+                  icon={Sparkles}
+                  title="No lenses by your followings yet"
+                  description="Follow lensers to see their public lenses here."
+                  className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 shadow-sm"
+                />
+              )}
+            </section>
+          </div>
+        ) : isEmpty ? (
           <EmptyState
             icon={MessageSquareOff}
             title="No posts yet"

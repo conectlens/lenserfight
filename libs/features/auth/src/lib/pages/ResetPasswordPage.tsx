@@ -116,6 +116,7 @@ export const ResetPasswordPage: React.FC = () => {
             label="New Password"
             name="password"
             type="password"
+            autoComplete="new-password"
             placeholder="Enter new password"
             value={formData.password}
             onChange={handleChange}
@@ -132,6 +133,7 @@ export const ResetPasswordPage: React.FC = () => {
             label="Confirm Password"
             name="confirmPassword"
             type="password"
+            autoComplete="new-password"
             placeholder="Confirm new password"
             value={formData.confirmPassword}
             onChange={handleChange}

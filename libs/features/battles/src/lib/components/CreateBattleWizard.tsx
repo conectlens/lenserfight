@@ -1,16 +1,19 @@
 import { Button, StepWizard } from '@lenserfight/ui/components'
 import type { WizardStepConfig } from '@lenserfight/ui/components'
 import { Input, SegmentedControl, TextArea } from '@lenserfight/ui/forms'
-import { battlesService, workflowsService, lensesService } from '@lenserfight/data/repositories'
+import { battlesService, workflowsService, lensesService, battleExecutionService } from '@lenserfight/data/repositories'
 import type { WorkflowRecord } from '@lenserfight/data/repositories'
 import { useAuth } from '@lenserfight/features/auth'
+import { useAIModels } from '@lenserfight/features/generations'
+import { useFundingSource, FundingSourceToggle } from '@lenserfight/features/lenses'
 import { useLenser } from '@lenserfight/features/profile'
 import { useWizardStep } from '@lenserfight/ui/routing'
 import { useQuery } from '@tanstack/react-query'
 import { AnimatePresence, motion } from 'framer-motion'
 import { GitBranch, Layers, Swords } from 'lucide-react'
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useMemo, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
+import type { AIProvider, AIProviderModel } from '@lenserfight/types'
 
 import { BattleTypeSelector } from './BattleTypeSelector'
 import { ContenderInviteStep } from './ContenderInviteStep'
@@ -116,6 +119,26 @@ export const CreateBattleWizard: React.FC<CreateBattleWizardProps> = ({ onSucces
   const [battleType, setBattleType] = useState<BattleType>('human_vs_human_open_votes')
   const [voterEligibility, setVoterEligibility] = useState<VoterEligibility>('open')
   const [handicap, setHandicap] = useState<AIHandicapConfig>(DEFAULT_HANDICAP)
+
+  // Execution context (funding source + model selection for AI battles)
+  const [selectedProviderKey, setSelectedProviderKey] = useState('')
+  const [selectedModelKey, setSelectedModelKey] = useState('')
+  const { models, isLoading: modelsLoading } = useAIModels()
+  const battleFunding = useFundingSource(selectedProviderKey)
+
+  const battleProviders: AIProvider[] = useMemo(() => {
+    const seen = new Set<string>()
+    return models
+      .filter((m) => m.is_active && !!m.key && !seen.has(m.provider) && (seen.add(m.provider), true))
+      .map((m) => ({ key: m.provider, display_name: m.providerDisplayName ?? m.provider, id: m.provider_id ?? '' }))
+  }, [models])
+
+  const battleProviderModels: AIProviderModel[] = useMemo(() => {
+    if (!selectedProviderKey) return []
+    return models
+      .filter((m) => m.is_active && !!m.key && m.provider === selectedProviderKey)
+      .map((m) => ({ key: m.key, name: m.name, inputModalities: m.input_modalities }))
+  }, [models, selectedProviderKey])
 
   // Post-creation
   const [createdBattleSlug, setCreatedBattleSlug] = useState<string | null>(null)
@@ -293,6 +316,20 @@ export const CreateBattleWizard: React.FC<CreateBattleWizardProps> = ({ onSucces
         battle = await battlesService.createBattle(battleInput)
       }
 
+      // Persist execution config for AI battles
+      if (battleType === 'ai_vs_ai' && selectedProviderKey && selectedModelKey) {
+        await battleExecutionService.upsertExecutionConfig({
+          battle_id: battle.id,
+          contender_id: null, // Battle-level default config
+          provider_key: selectedProviderKey,
+          model_key: selectedModelKey,
+          funding_source: battleFunding.fundingSource as 'user_byok_cloud' | 'user_byok_local' | 'platform_credit' | 'sponsored',
+          byok_key_ref_id: battleFunding.selectedKeyRefId || undefined,
+          max_tokens: 4096,
+          temperature: 0.7,
+        })
+      }
+
       setCreatedBattleSlug(battle.slug)
       setCreatedBattleId(battle.id)
       setDirection(1)
@@ -317,38 +354,79 @@ export const CreateBattleWizard: React.FC<CreateBattleWizardProps> = ({ onSucces
   const activeBattleId = createdBattleId ?? battleIdFromUrl
 
   const handleInvite = async () => {
-    if (!activeBattleId || (!slotA && !slotB)) {
+    if (!activeBattleId) {
       go(5)
       return
     }
     setInviting(true)
     setInviteError(null)
     try {
+      // Fetch existing contenders to enable idempotent upsert
+      const existing = await battlesService.getContenders(activeBattleId)
+      const existingA = existing.find((c) => c.slot === 'A')
+      const existingB = existing.find((c) => c.slot === 'B')
+
+      // ── Slot A ────────────────────────────────────────────────────────────
       if (slotA) {
-        const result = await inviteA.mutateAsync({
-          battle_id: activeBattleId,
-          slot: 'A',
-          contender_ref_id: slotA.id,
-          display_name: slotA.display_name,
-          contender_type: 'human',
-        })
-        setContenderAId(result.id)
-        setContenderAName(result.display_name)
+        if (existingA && existingA.contender_ref_id === slotA.id) {
+          // Already invited — use existing record, skip insert
+          setContenderAId(existingA.id)
+          setContenderAName(existingA.display_name)
+        } else {
+          if (existingA) {
+            // Different lenser selected — remove stale record first
+            await battlesService.removeContender(existingA.id)
+          }
+          const result = await inviteA.mutateAsync({
+            battle_id: activeBattleId,
+            slot: 'A',
+            contender_ref_id: slotA.id,
+            display_name: slotA.display_name,
+            contender_type: 'human',
+          })
+          setContenderAId(result.id)
+          setContenderAName(result.display_name)
+        }
+      } else if (existingA) {
+        // User cleared slot A — remove from DB
+        await battlesService.removeContender(existingA.id)
+        setContenderAId(undefined)
+        setContenderAName(undefined)
       }
+
+      // ── Slot B ────────────────────────────────────────────────────────────
       if (slotB) {
-        const result = await inviteB.mutateAsync({
-          battle_id: activeBattleId,
-          slot: 'B',
-          contender_ref_id: slotB.id,
-          display_name: slotB.display_name,
-          contender_type: 'human',
-        })
-        setContenderBId(result.id)
-        setContenderBName(result.display_name)
+        if (existingB && existingB.contender_ref_id === slotB.id) {
+          setContenderBId(existingB.id)
+          setContenderBName(existingB.display_name)
+        } else {
+          if (existingB) {
+            await battlesService.removeContender(existingB.id)
+          }
+          const result = await inviteB.mutateAsync({
+            battle_id: activeBattleId,
+            slot: 'B',
+            contender_ref_id: slotB.id,
+            display_name: slotB.display_name,
+            contender_type: 'human',
+          })
+          setContenderBId(result.id)
+          setContenderBName(result.display_name)
+        }
+      } else if (existingB) {
+        await battlesService.removeContender(existingB.id)
+        setContenderBId(undefined)
+        setContenderBName(undefined)
       }
+
       go(5)
     } catch (e) {
-      setInviteError((e as Error).message ?? 'Failed to invite contender.')
+      const msg = (e as any)?.message ?? ''
+      if (msg.includes('contenders_battle_ref_unique') || msg.includes('duplicate key')) {
+        setInviteError('This lenser has already been invited to this battle.')
+      } else {
+        setInviteError('Failed to invite contender. Please try again.')
+      }
     } finally {
       setInviting(false)
     }
@@ -608,6 +686,33 @@ export const CreateBattleWizard: React.FC<CreateBattleWizardProps> = ({ onSucces
                       <HandicapConfigPanel value={handicap} onChange={setHandicap} />
                     )}
                   </div>
+                </div>
+
+                <div className="border-t border-surface-border pt-6">
+                  <h4 className="mb-4 text-xs font-bold uppercase tracking-wider text-greyscale-400">
+                    Execution Context
+                  </h4>
+                  <FundingSourceToggle
+                    fundingSource={battleFunding.fundingSource}
+                    onFundingSourceChange={battleFunding.setFundingSource}
+                    selectedKeyRefId={battleFunding.selectedKeyRefId}
+                    onKeyRefIdChange={battleFunding.setSelectedKeyRefId}
+                    availableKeys={battleFunding.availableKeys}
+                    selectedLocalKeyId={battleFunding.selectedLocalKeyId}
+                    onLocalKeyIdChange={battleFunding.setSelectedLocalKeyId}
+                    availableLocalKeys={battleFunding.localKeys}
+                    onAddLocalKey={battleFunding.addLocalKey}
+                    walletBalance={battleFunding.walletBalance}
+                    canUseBYOK={battleFunding.canUseBYOK}
+                    providers={battleProviders}
+                    isLoadingProviders={modelsLoading}
+                    providerModels={battleProviderModels}
+                    isLoadingModels={modelsLoading}
+                    selectedProviderKey={selectedProviderKey}
+                    onProviderChange={(key) => { setSelectedProviderKey(key); setSelectedModelKey('') }}
+                    selectedModelKey={selectedModelKey}
+                    onModelChange={setSelectedModelKey}
+                  />
                 </div>
 
                 {error && (
