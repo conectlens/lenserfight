@@ -30,14 +30,15 @@ export interface WorkflowNodeData {
   [key: string]: unknown
 }
 
-const VISIBILITY_CLASSES: Record<string, string> = {
-  private: 'opacity-70',
-  unlisted: 'opacity-80',
-  public: '',
+/** Visibility-based border + background styles (overridden by selected state). */
+const VISIBILITY_BORDER: Record<string, string> = {
+  private:  'border-status-red/40 bg-status-red/5 dark:bg-status-red/10',
+  unlisted: 'border-greyscale-400/40 bg-greyscale-100/40 dark:bg-greyscale-800/30',
+  public:   'border-surface-border hover:border-greyscale-300 dark:hover:border-greyscale-600',
 }
 
 const VISIBILITY_ICONS: Record<string, React.ReactNode> = {
-  private: <Lock size={9} className="text-greyscale-400 flex-shrink-0" />,
+  private:  <Lock   size={9} className="text-status-red/70 flex-shrink-0" />,
   unlisted: <EyeOff size={9} className="text-greyscale-400 flex-shrink-0" />,
 }
 
@@ -45,23 +46,17 @@ export function WorkflowCanvasNode({ id, data, selected }: NodeProps) {
   const nodeData = data as WorkflowNodeData
   const { label, ordinal, isPersisted, lens_id, lensVisibility, isLensOwner, onRemove, onConfigNode, onEditLens } = nodeData
 
-  const visibilityClass = lensVisibility ? (VISIBILITY_CLASSES[lensVisibility] ?? '') : ''
   const visibilityIcon = lensVisibility ? (VISIBILITY_ICONS[lensVisibility] ?? null) : null
-
-  const borderClass = lensVisibility === 'private'
-    ? 'border-dashed border-greyscale-300 dark:border-greyscale-600'
-    : lensVisibility === 'unlisted'
-    ? 'border-dotted border-greyscale-300 dark:border-greyscale-600'
-    : ''
+  const visibilityBorder = VISIBILITY_BORDER[lensVisibility ?? 'public'] ?? VISIBILITY_BORDER['public']
 
   return (
     <div
       onDoubleClick={() => { if (onConfigNode && lens_id) onConfigNode(id, lens_id) }}
-      className={`relative flex items-center gap-2 min-w-[160px] max-w-[240px] rounded-2xl border bg-surface-base px-3 py-2.5 shadow-neu-1 transition-colors ${
+      className={`relative flex items-center gap-2 min-w-[160px] max-w-[240px] rounded-2xl border px-3 py-2.5 shadow-neu-1 transition-colors ${
         selected
-          ? 'border-primary-yellow-500 ring-4 ring-primary-yellow-500/15'
-          : borderClass || 'border-surface-border hover:border-greyscale-300 dark:hover:border-greyscale-600'
-      } ${!isPersisted ? 'opacity-60' : ''} ${visibilityClass}`}
+          ? 'border-primary-yellow-500 bg-primary-yellow-500/10 ring-2 ring-primary-yellow-500/30'
+          : visibilityBorder
+      } ${!isPersisted ? 'opacity-60' : ''}`}
     >
       {/* Target handle — left */}
       <Handle
@@ -75,10 +70,8 @@ export function WorkflowCanvasNode({ id, data, selected }: NodeProps) {
         {ordinal + 1}
       </span>
 
-      {/* Visibility icon */}
-      {visibilityIcon && (
-        <span className="flex-shrink-0">{visibilityIcon}</span>
-      )}
+      {/* Visibility icon — colored by type */}
+      {visibilityIcon}
 
       {/* Label */}
       <span className="flex-1 truncate text-xs font-medium text-greyscale-900 dark:text-greyscale-50 leading-tight">
