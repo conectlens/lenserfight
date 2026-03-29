@@ -7,6 +7,8 @@ export interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> 
   startAdornment?: React.ReactNode
   /** Trailing icon/adornment */
   endAdornment?: React.ReactNode
+  /** Called when Ctrl+Enter (or Cmd+Enter on Mac) is pressed */
+  onCtrlEnter?: () => void
 }
 
 /**
@@ -18,7 +20,14 @@ export interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> 
  * <Input startAdornment={<SearchIcon />} placeholder="Search…" />
  */
 export const Input = React.forwardRef<HTMLInputElement, InputProps>(
-  ({ error, startAdornment, endAdornment, className = '', disabled, ...props }, ref) => {
+  ({ error, startAdornment, endAdornment, className = '', disabled, onCtrlEnter, onKeyDown, ...props }, ref) => {
+    const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+      if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
+        e.preventDefault()
+        onCtrlEnter?.()
+      }
+      onKeyDown?.(e)
+    }
     const baseClasses = `
       w-full rounded-xl border bg-surface-raised px-3.5 py-2.5
       text-sm text-greyscale-900 placeholder:text-greyscale-400
@@ -53,6 +62,7 @@ export const Input = React.forwardRef<HTMLInputElement, InputProps>(
           <input
             ref={ref}
             disabled={disabled}
+            onKeyDown={handleKeyDown}
             className={`${baseClasses} ${stateClasses} ${disabledClasses} ${paddingClasses} ${className}`}
             {...props}
           />
@@ -69,6 +79,7 @@ export const Input = React.forwardRef<HTMLInputElement, InputProps>(
       <input
         ref={ref}
         disabled={disabled}
+        onKeyDown={handleKeyDown}
         className={`${baseClasses} ${stateClasses} ${disabledClasses} ${className}`}
         {...props}
       />

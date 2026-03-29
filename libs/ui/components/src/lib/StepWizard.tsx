@@ -1,5 +1,5 @@
-import React, { useEffect, useContext, useMemo } from 'react'
 import { DialogHeaderContext, DialogFooterContext, ModalFooter } from '@lenserfight/ui/overlays'
+import React, { useCallback, useContext, useEffect, useMemo } from 'react'
 
 import { StepIndicator } from './StepIndicator'
 
@@ -61,6 +61,15 @@ export const StepWizard: React.FC<StepWizardProps> = ({
 }) => {
   const isLastStep = currentStep === steps.length - 1
   const current = steps[currentStep]
+  const isPrimaryBlocked = isLastStep ? isCompleting : isNextLoading
+  const handlePrimaryAction = useCallback(() => {
+    if (isPrimaryBlocked || !canProceed) return
+    if (isLastStep) {
+      onComplete()
+      return
+    }
+    onNext()
+  }, [isPrimaryBlocked, canProceed, isLastStep, onComplete, onNext])
 
   // Push current step header into the parent Dialog's header slot (if inside one)
   const { setHeader, clearHeader } = useContext(DialogHeaderContext)
@@ -68,6 +77,18 @@ export const StepWizard: React.FC<StepWizardProps> = ({
     setHeader({ title: current.title, description: current.description, icon: current.icon })
     return () => clearHeader()
   }, [current.title, current.description, current.icon, setHeader, clearHeader])
+
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if (!(e.ctrlKey || e.metaKey) || e.key !== 'Enter') return
+      if (isPrimaryBlocked || !canProceed) return
+      e.preventDefault()
+      handlePrimaryAction()
+    }
+
+    window.addEventListener('keydown', handler)
+    return () => window.removeEventListener('keydown', handler)
+  }, [canProceed, handlePrimaryAction, isPrimaryBlocked])
 
   // Build footer node and hoist it into Dialog's sticky footer slot
   const { setFooter, clearFooter } = useContext(DialogFooterContext)
@@ -88,14 +109,14 @@ export const StepWizard: React.FC<StepWizardProps> = ({
         isLastStep
           ? {
               label: <>{completeIcon}{completeLabel}</>,
-              onClick: onComplete,
+              onClick: handlePrimaryAction,
               disabled: !canProceed || isCompleting,
               isLoading: isCompleting,
               className: 'px-6 sm:min-w-[140px]',
             }
           : {
               label: `${nextLabel} →`,
-              onClick: onNext,
+              onClick: handlePrimaryAction,
               disabled: !canProceed || isNextLoading,
               isLoading: isNextLoading,
               className: 'px-6 sm:min-w-[140px]',
@@ -103,7 +124,7 @@ export const StepWizard: React.FC<StepWizardProps> = ({
       }
     />
   ), [currentStep, onCancel, onBack, skipButton, isLastStep, completeIcon, completeLabel,
-      onComplete, canProceed, isCompleting, nextLabel, onNext, isNextLoading])
+      handlePrimaryAction, canProceed, isCompleting, nextLabel, isNextLoading])
 
   useEffect(() => {
     setFooter(footerNode)

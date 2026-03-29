@@ -1,18 +1,16 @@
+import { useAuth } from '@lenserfight/features/auth'
+import { useLenser } from '@lenserfight/features/profile'
+import { Button } from '@lenserfight/ui/components'
 import {
-  ArrowRight,
   CheckCircle,
   Lock,
   Sparkles,
-  ShieldCheck,
-  Check,
   Loader2,
 } from 'lucide-react'
 import React, { useState } from 'react'
 import { Link } from 'react-router-dom'
 
-import { Button } from '@lenserfight/ui/components'
-import { useAuth } from '@lenserfight/features/auth'
-import { useLenser } from '@lenserfight/features/profile'
+
 import { useWaitingList } from '../hooks/useWaitingList'
 
 export const WaitingListSection: React.FC = () => {
@@ -29,9 +27,43 @@ export const WaitingListSection: React.FC = () => {
    * STATE DERIVATION (IMPORTANT)
    */
   const isCheckingStatus =
-    isAuthenticated && isInWaitingList === null
+    isAuthenticated && hasLenser && isInWaitingList === null
 
   const isJoined = isInWaitingList === true
+  const showAuthCta = !isAuthenticated || !hasLenser
+
+  const authCtaCard = (
+    <div className="max-w-md mx-auto">
+      <div className="bg-white/80 dark:bg-gray-800/80 rounded-3xl p-10 border shadow-xl">
+        <div className="w-16 h-16 bg-gray-100 dark:bg-gray-700 rounded-2xl flex items-center justify-center mx-auto mb-6">
+          <Lock size={28} />
+        </div>
+
+        <h3 className="text-xl font-bold mb-3">
+          {hasLenser ? 'Lenser Exclusive' : 'Create Your Lenser Identity'}
+        </h3>
+
+        <p className="text-gray-500 mb-8">
+          {hasLenser
+            ? 'You must have an active Lenser identity.'
+            : 'Create your Lenser profile before you can join the waitlist.'}
+        </p>
+
+        <div className="grid grid-cols-2 gap-4">
+          <Link to="/auth/login">
+            <Button variant="secondary" className="w-full">
+              Sign In
+            </Button>
+          </Link>
+          <Link to="/register">
+            <Button className="w-full">
+              Register
+            </Button>
+          </Link>
+        </div>
+      </div>
+    </div>
+  )
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -48,8 +80,8 @@ export const WaitingListSection: React.FC = () => {
 
     try {
       await toggleWaitingList(kvkkApproved)
-    } catch (err: any) {
-      setError(err.message || 'Failed to join list.')
+    } catch (err) {
+      setError(err instanceof Error && err.message ? err.message : 'Failed to join list.')
     } finally {
       setIsSubmitting(false)
     }
@@ -97,7 +129,7 @@ export const WaitingListSection: React.FC = () => {
         {/* ===============================
             2️⃣ AUTHENTICATED + LENSER
            =============================== */}
-        {!isCheckingStatus && isAuthenticated && hasLenser && (
+        {!isCheckingStatus && !showAuthCta && (
           <>
             {isJoined ? (
               // ✅ JOINED
@@ -167,36 +199,7 @@ export const WaitingListSection: React.FC = () => {
         {/* ===============================
             3️⃣ NOT AUTHENTICATED
            =============================== */}
-        {!isAuthenticated && (
-          <div className="max-w-md mx-auto">
-            <div className="bg-white/80 dark:bg-gray-800/80 rounded-3xl p-10 border shadow-xl">
-              <div className="w-16 h-16 bg-gray-100 dark:bg-gray-700 rounded-2xl flex items-center justify-center mx-auto mb-6">
-                <Lock size={28} />
-              </div>
-
-              <h3 className="text-xl font-bold mb-3">
-                Lenser Exclusive
-              </h3>
-
-              <p className="text-gray-500 mb-8">
-                You must have an active Lenser identity.
-              </p>
-
-              <div className="grid grid-cols-2 gap-4">
-                <Link to="/auth/login">
-                  <Button variant="secondary" className="w-full">
-                    Sign In
-                  </Button>
-                </Link>
-                <Link to="/register">
-                  <Button className="w-full">
-                    Join Now
-                  </Button>
-                </Link>
-              </div>
-            </div>
-          </div>
-        )}
+        {showAuthCta && authCtaCard}
 
       </div>
     </section>

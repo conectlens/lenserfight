@@ -72,6 +72,9 @@ export class SupabaseAgentsRepository implements AgentsRepositoryPort {
     const e = error as { code?: string; message?: string }
     if (!e) return
     if (e.code === 'PGRST116') throw new Error('Agent not found.')
+    if (e.message?.includes('owner_must_be_active_human_lenser')) {
+      throw new Error('Your account must be active to create AI agents. Try refreshing the page.')
+    }
     throw error
   }
 
@@ -153,11 +156,10 @@ export class SupabaseAgentsRepository implements AgentsRepositoryPort {
     aiLenserId: string,
     policy: Partial<Omit<AgentPolicyRecord, 'id' | 'ai_lenser_id' | 'created_at' | 'updated_at'>>
   ): Promise<void> {
-    const { error } = await supabase
-      .schema('agents')
-      .from('policies')
-      .update({ ...policy, updated_at: new Date().toISOString() })
-      .eq('ai_lenser_id', aiLenserId)
+    const { error } = await supabase.rpc('fn_update_agent_policy', {
+      p_ai_lenser_id: aiLenserId,
+      p_patch: policy,
+    })
 
     if (error) this.handleError(error)
   }

@@ -13,7 +13,7 @@
     <xhtml:link rel="alternate" hreflang="x-default" href="https://forum.lenserfight.com/" />
   </url>
 
-  <!-- Prompts list -->
+  <!-- Lenses list -->
   <url>
     <loc>https://forum.lenserfight.com/len/p</loc>
     <changefreq>hourly</changefreq>

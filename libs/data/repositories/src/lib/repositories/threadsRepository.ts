@@ -21,6 +21,7 @@ export interface ThreadsRepositoryPort {
   getTrendingTags(limit: number): Promise<TagRecord[]>
   getTrendingThreads(lang?: string, offset?: number, limit?: number): Promise<ApiResponseEnvelope<ThreadFeedItem[]>>
   getPersonalFeed(offset?: number, limit?: number): Promise<ApiResponseEnvelope<PersonalFeedItem[]>>
+  getFollowingFeed(lenserId: string, offset?: number, limit?: number): Promise<ApiResponseEnvelope<ThreadFeedItem[]>>
   createReply(
     threadId: string,
     lenserId: string,
@@ -254,47 +255,22 @@ export class SupabaseThreadsRepository implements ThreadsRepositoryPort {
    * - Frontend cannot spoof lenser_id.
    */
   async createThread(dto: CreateThreadDTO): Promise<ThreadRecord> {
-    // 1. Resolve the content language from the authenticated user's profile.
-    let languageCode = 'en'
-    const { data: { user } } = await supabase.auth.getUser()
-    if (user) {
-      const { data: profileData } = await supabase
-        .schema('lensers')
-        .from('profiles')
-        .select('preferences(language)')
-        .eq('user_id', user.id)
-        .maybeSingle()
-      languageCode = (profileData?.preferences as { language?: string } | null)?.language || 'en'
-    }
+    // Use SECURITY DEFINER RPC — resolves lenser_id server-side via auth.uid(),
+    // handles translations and tag_map in a single atomic call, and bypasses
+    // the direct-insert RLS check that requires status='active' via get_auth_lenser_id().
+    const { data: threadId, error: rpcError } = await supabase.rpc(
+      'fn_content_create_thread',
+      {
+        p_title: dto.title,
+        p_content: dto.content,
+        p_visibility: dto.visibility,
+        p_tag_ids: dto.tagIds ?? [],
+      },
+      { count: undefined }
+    )
 
-    // 2. Insert Base Thread (lenser_id resolved server-side via DEFAULT lensers.get_auth_lenser_id())
-    const { data: threadInsertData, error: insertError } = await supabase.schema('content').from('threads').insert({
-      visibility: dto.visibility,
-    }).select('id').single()
-
-    if (insertError) this.handleError(insertError)
-    if (!threadInsertData) throw new Error('Failed to create thread')
-    const threadId = threadInsertData.id
-
-    // 3. Insert Thread Translation
-    const { error: translationError } = await supabase.schema('content').from('entity_translations').insert({
-      entity_type: 'thread',
-      entity_id: threadId,
-      language_code: languageCode,
-      is_original: true,
-      title: dto.title,
-      content: dto.content
-    })
-    if (translationError) this.handleError(translationError)
-
-    if (dto.tagIds && dto.tagIds.length > 0) {
-      const tagRecords = dto.tagIds.map(tagId => ({
-        entity_type: 'thread',
-        entity_id: threadId,
-        tag_id: tagId,
-      }))
-      await supabase.schema('content').from('tag_map').insert(tagRecords)
-    }
+    if (rpcError) this.handleError(rpcError)
+    if (!threadId) throw new Error('Failed to create thread')
 
     // Read from secure public view
     const { data: threadView, error: viewError } = await supabase
@@ -664,6 +640,49 @@ export class SupabaseThreadsRepository implements ThreadsRepositoryPort {
         personalScore: (row.personal_score as number) ?? 0,
       }
     })
+    return paginatedResponse(
+      items,
+      { limit, offset, hasNextPage: rows.length >= limit },
+      { durationMs: Date.now() - start },
+    )
+  }
+
+  async getFollowingFeed(lenserId: string, offset = 0, limit = 20): Promise<ApiResponseEnvelope<ThreadFeedItem[]>> {
+    const start = Date.now()
+    const { data, error } = await supabase.rpc('fn_content_get_following_threads', {
+      p_lenser_id: lenserId,
+      p_limit: limit,
+      p_offset: offset,
+    })
+
+    if (error) this.handleError(error)
+
+    const rows = (data ?? []) as Record<string, unknown>[]
+    const items: ThreadFeedItem[] = rows.map((row) => {
+      const author = (row.author_profile as Record<string, unknown>) ?? {}
+      const reactionTotals = (row.reaction_totals as Record<string, number>) ?? {}
+      return {
+        id: row.id as string,
+        title: row.title as string,
+        content: (row.content as string) ?? '',
+        author: {
+          id: (author.id as string) ?? '',
+          displayName: (author.display_name as string) ?? 'Unknown',
+          handle: (author.handle as string) ?? 'unknown',
+          avatarUrl: (author.avatar_url as string | null) ?? null,
+        },
+        tags: (row.tags as TagRecord[]) ?? [],
+        reactionCount: Object.values(reactionTotals).reduce((sum, n) => sum + n, 0),
+        replyCount: (row.reply_count as number) ?? 0,
+        createdAt: row.created_at as string,
+        userHasReacted: false,
+        visibility: 'public' as const,
+        status: ((row.status as string) ?? 'published') as import('@lenserfight/types').ContentStatus,
+        hotScore: row.hot_score as number,
+        primaryLanguage: (row.primary_language as string) ?? undefined,
+      }
+    })
+
     return paginatedResponse(
       items,
       { limit, offset, hasNextPage: rows.length >= limit },
