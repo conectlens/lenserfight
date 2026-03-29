@@ -21,6 +21,7 @@ export interface ThreadsRepositoryPort {
   getTrendingTags(limit: number): Promise<TagRecord[]>
   getTrendingThreads(lang?: string, offset?: number, limit?: number): Promise<ApiResponseEnvelope<ThreadFeedItem[]>>
   getPersonalFeed(offset?: number, limit?: number): Promise<ApiResponseEnvelope<PersonalFeedItem[]>>
+  getFollowingFeed(offset?: number, limit?: number): Promise<ApiResponseEnvelope<ThreadFeedItem[]>>
   createReply(
     threadId: string,
     lenserId: string,
@@ -639,6 +640,48 @@ export class SupabaseThreadsRepository implements ThreadsRepositoryPort {
         personalScore: (row.personal_score as number) ?? 0,
       }
     })
+    return paginatedResponse(
+      items,
+      { limit, offset, hasNextPage: rows.length >= limit },
+      { durationMs: Date.now() - start },
+    )
+  }
+
+  async getFollowingFeed(offset = 0, limit = 20): Promise<ApiResponseEnvelope<ThreadFeedItem[]>> {
+    const start = Date.now()
+    const { data, error } = await supabase.rpc('fn_content_get_following_threads', {
+      p_limit: limit,
+      p_offset: offset,
+    })
+
+    if (error) this.handleError(error)
+
+    const rows = (data ?? []) as Record<string, unknown>[]
+    const items: ThreadFeedItem[] = rows.map((row) => {
+      const author = (row.author_profile as Record<string, unknown>) ?? {}
+      const reactionTotals = (row.reaction_totals as Record<string, number>) ?? {}
+      return {
+        id: row.id as string,
+        title: row.title as string,
+        content: (row.content as string) ?? '',
+        author: {
+          id: (author.id as string) ?? '',
+          displayName: (author.display_name as string) ?? 'Unknown',
+          handle: (author.handle as string) ?? 'unknown',
+          avatarUrl: (author.avatar_url as string | null) ?? null,
+        },
+        tags: (row.tags as TagRecord[]) ?? [],
+        reactionCount: Object.values(reactionTotals).reduce((sum, n) => sum + n, 0),
+        replyCount: (row.reply_count as number) ?? 0,
+        createdAt: row.created_at as string,
+        userHasReacted: false,
+        visibility: 'public' as const,
+        status: ((row.status as string) ?? 'published') as import('@lenserfight/types').ContentStatus,
+        hotScore: row.hot_score as number,
+        primaryLanguage: (row.primary_language as string) ?? undefined,
+      }
+    })
+
     return paginatedResponse(
       items,
       { limit, offset, hasNextPage: rows.length >= limit },

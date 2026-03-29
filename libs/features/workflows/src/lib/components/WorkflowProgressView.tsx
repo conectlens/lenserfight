@@ -16,6 +16,7 @@ const STATUS_ICONS = {
   running: <Loader size={14} className="text-primary-yellow-600 animate-spin" />,
   completed: <CheckCircle size={14} className="text-status-green" />,
   failed: <XCircle size={14} className="text-status-red" />,
+  cancelled: <XCircle size={14} className="text-status-red" />,
 }
 
 const STATUS_COLORS = {
@@ -23,6 +24,7 @@ const STATUS_COLORS = {
   running: 'border-primary-yellow-500 bg-primary-yellow-500/5',
   completed: 'border-status-green bg-status-green/5',
   failed: 'border-status-red bg-status-red/5',
+  cancelled: 'border-status-red bg-status-red/5',
 }
 
 /** Detects media type from output_data and renders the appropriate element. */
@@ -169,6 +171,7 @@ export function WorkflowProgressView({ nodes, nodeResults }: WorkflowProgressVie
           const result = getResult(node.id)
           const status = result?.status ?? 'pending'
           const isRunning = status === 'running'
+          const displayStatus = status === 'cancelled' ? 'Canceled' : status
 
           return (
             <motion.div
@@ -190,10 +193,10 @@ export function WorkflowProgressView({ nodes, nodeResults }: WorkflowProgressVie
                 <div className="flex items-center gap-1.5">
                   {STATUS_ICONS[status]}
                   <Badge
-                    color={status === 'completed' ? 'green' : status === 'failed' ? 'red' : status === 'running' ? 'blue' : 'gray'}
+                    color={status === 'completed' ? 'green' : status === 'failed' || status === 'cancelled' ? 'red' : status === 'running' ? 'blue' : 'gray'}
                     variant="outline"
                   >
-                    {status}
+                    {displayStatus}
                   </Badge>
                 </div>
               </div>
@@ -204,6 +207,13 @@ export function WorkflowProgressView({ nodes, nodeResults }: WorkflowProgressVie
               {/* Running — streaming indicator */}
               {status === 'running' && (
                 <RunningIndicator data={result?.output_data as Record<string, unknown> | null | undefined} />
+              )}
+
+              {/* Cancelled — explicit terminal state */}
+              {status === 'cancelled' && (
+                <div className="mt-3 rounded-xl border border-status-red/30 bg-status-red/5 p-3 text-xs font-medium text-status-red">
+                  Canceled
+                </div>
               )}
 
               {/* Completed — rich output renderer */}
