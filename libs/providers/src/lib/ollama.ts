@@ -107,9 +107,9 @@ export function transformResponse(data: OllamaResponse): ProviderResponse {
   };
 }
 
-/** Ollama: no auth needed for local inference. */
-export function authHeader(_apiKey: string): Record<string, string> {
-  return {};
+/** Ollama: no auth for local inference; Bearer token required for cloud models. */
+export function authHeader(apiKey: string): Record<string, string> {
+  return apiKey ? { Authorization: `Bearer ${apiKey}` } : {};
 }
 
 // ─── Streaming ────────────────────────────────────────────────────────────────

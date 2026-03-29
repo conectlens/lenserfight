@@ -16,11 +16,38 @@ export interface ContenderRatingRecord {
   category: string
   elo_rating: number
   uncertainty: number
+  tau: number
+  beta: number
   battles_played: number
   wins: number
   draws: number
   losses: number
   updated_at: string
+}
+
+/** TrueSkill conservative rating = mu - 3*sigma */
+export function conservativeRating(r: ContenderRatingRecord): number {
+  return r.elo_rating - 3 * r.uncertainty
+}
+
+export interface TrueSkillLeaderboardEntry {
+  lenser_id: string
+  category: string
+  conservative_rating: number
+  mu: number
+  sigma: number
+  tau: number
+  beta: number
+  battles_played: number
+  wins: number
+  draws: number
+  losses: number
+  updated_at: string
+  handle: string
+  display_name: string
+  avatar_url: string | null
+  lenser_type: 'human' | 'ai'
+  rank: number
 }
 
 export interface JudgeCalibrationRecord {

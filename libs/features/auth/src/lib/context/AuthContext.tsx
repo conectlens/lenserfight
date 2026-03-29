@@ -69,15 +69,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   // on actual sign-out transitions (not null → null for anonymous users).
   const wasAuthenticated = useRef(false)
 
-  const restoreLenserAccountIfNeeded = useCallback(async () => {
+  const restoreLenserAccountIfNeeded = useCallback(async (): Promise<boolean> => {
     try {
       const result = await lenserService.cancelDeletionOnLogin()
       if (result?.restored) {
         queryClient.removeQueries({ queryKey: queryKeys.lenser.authenticated() })
         queryClient.removeQueries({ queryKey: AUTH_PROFILE_GATE_QUERY_KEY })
       }
+      return true
     } catch (err) {
       console.warn('Failed to check account recovery on login', err)
+      return false
     }
   }, [])
 
@@ -110,8 +112,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         const user = await authService.getCurrentUser()
         if (user) {
           if (!sessionStorage.getItem(_deletionCheckKey(user.id))) {
-            sessionStorage.setItem(_deletionCheckKey(user.id), '1')
-            await restoreLenserAccountIfNeeded()
+            const restored = await restoreLenserAccountIfNeeded()
+            if (restored) {
+              sessionStorage.setItem(_deletionCheckKey(user.id), '1')
+            }
           }
           wasAuthenticated.current = true
           setState((s) => ({ ...s, user, isAuthenticated: true, isLoading: false }))
@@ -166,8 +170,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       const user = await authService.login(email, pass, captchaToken)
       if (!sessionStorage.getItem(_deletionCheckKey(user.id))) {
-        sessionStorage.setItem(_deletionCheckKey(user.id), '1')
-        await restoreLenserAccountIfNeeded()
+        const restored = await restoreLenserAccountIfNeeded()
+        if (restored) {
+          sessionStorage.setItem(_deletionCheckKey(user.id), '1')
+        }
       }
       wasAuthenticated.current = true
       setState({ user, isAuthenticated: true, isLoading: false, error: null })

@@ -1,4 +1,4 @@
-import { TriggerExecutionDTO, SetArtifactVisibilityDTO } from '@lenserfight/types'
+import { TriggerExecutionDTO, SetArtifactVisibilityDTO, PersistLocalExecutionDTO } from '@lenserfight/types'
 import { SupabaseExecutionRepository } from '../repositories/executionRepository'
 import { HttpExecutionApiClient } from '../repositories/executionApiClient'
 
@@ -32,4 +32,8 @@ export const executionService = {
 
   setArtifactVisibility: (dto: SetArtifactVisibilityDTO) =>
     repo.setArtifactVisibility(dto),
+
+  /** Persist a completed local BYOK execution to the database. Best-effort — stream output is already visible. */
+  persistLocalExecution: (dto: PersistLocalExecutionDTO) =>
+    repo.persistLocalExecution(dto),
 }

@@ -7,11 +7,22 @@ import { useAuth } from '@lenserfight/features/auth'
 import { useLocalKeyStore } from './useLocalKeyStore'
 import type { LocalKeyMeta } from '@lenserfight/types'
 
+const LS_FUNDING_KEY = 'lf-workflow-funding-source'
+
 export const useFundingSource = (selectedProviderKey: string) => {
   const { isAuthenticated } = useAuth()
-  const [fundingSource, setFundingSource] = useState<FundingSource>('platform_credit')
+  const [fundingSource, setFundingSourceState] = useState<FundingSource>(() => {
+    if (typeof window === 'undefined') return 'platform_credit'
+    const stored = localStorage.getItem(LS_FUNDING_KEY) as FundingSource | null
+    return stored ?? 'platform_credit'
+  })
   const [selectedKeyRefId, setSelectedKeyRefId] = useState<string | null>(null)
   const [selectedLocalKeyId, setSelectedLocalKeyId] = useState<string | null>(null)
+
+  const setFundingSource = (source: FundingSource) => {
+    if (typeof window !== 'undefined') localStorage.setItem(LS_FUNDING_KEY, source)
+    setFundingSourceState(source)
+  }
 
   const { data: allKeys = [] } = useQuery<UserApiKey[]>({
     queryKey: queryKeys.apiKeys.myKeys(),
@@ -49,7 +60,7 @@ export const useFundingSource = (selectedProviderKey: string) => {
       setSelectedLocalKeyId(null)
     }
     if (!canUseBYOK && (fundingSource === 'user_byok_cloud' || fundingSource === 'user_byok_local')) {
-      setFundingSource('platform_credit')
+      setFundingSourceState('platform_credit')
     }
   }, [selectedProviderKey, canUseBYOK]) // eslint-disable-line react-hooks/exhaustive-deps
 

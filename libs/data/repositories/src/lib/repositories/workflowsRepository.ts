@@ -1,5 +1,6 @@
 import { paginatedResponse, type ApiResponseEnvelope } from '@lenserfight/api/contracts'
 import { supabase } from '@lenserfight/data/supabase'
+import type { AuthorProfile } from '@lenserfight/types'
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Types
@@ -15,6 +16,9 @@ export interface WorkflowRecord {
   reaction_totals?: Record<string, number> | null
   fork_count?: number
   parent_workflow_id?: string | null
+  author_profile?: AuthorProfile | null
+  parent_workflow_title?: string | null
+  parent_workflow_author_profile?: AuthorProfile | null
   created_at: string
   updated_at: string
 }
@@ -48,12 +52,15 @@ export interface WorkflowRunRecord {
   id: string
   workflow_id: string
   triggered_by?: string | null
-  status: 'pending' | 'running' | 'completed' | 'failed'
+  status: 'pending' | 'running' | 'completed' | 'failed' | 'cancelled'
   context_inputs: Record<string, unknown>
   global_model_id?: string | null
   started_at?: string | null
   completed_at?: string | null
   created_at: string
+  budget_credits?: number | null
+  spent_credits?: number
+  cost_metadata?: Record<string, unknown>
 }
 
 export interface WorkflowNodeResultRecord {
@@ -61,11 +68,14 @@ export interface WorkflowNodeResultRecord {
   run_id: string
   node_id: string
   execution_run_id?: string | null
-  status: 'pending' | 'running' | 'completed' | 'failed'
+  status: 'pending' | 'running' | 'completed' | 'failed' | 'cancelled'
   output_data?: Record<string, unknown> | null
   error_message?: string | null
   started_at?: string | null
   completed_at?: string | null
+  input_tokens?: number
+  output_tokens?: number
+  cost_credits?: number
 }
 
 export interface WorkflowsListFilter {
@@ -94,6 +104,7 @@ export interface UpsertNodeInput {
   position_y: number
   label?: string
   ordinal?: number
+  config?: Record<string, unknown> | null
 }
 
 export interface UpsertEdgeInput {
@@ -102,6 +113,19 @@ export interface UpsertEdgeInput {
   target_node_id: string
   source_output_key?: string
   target_param_label: string
+}
+
+export interface WorkflowVersionRecord {
+  id: string
+  workflow_id: string
+  version_number: number
+  changelog?: string | null
+  status: 'draft' | 'published' | 'archived'
+  published_at?: string | null
+  created_by?: string | null
+  created_at: string
+  node_count: number
+  edge_count: number
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -125,6 +149,12 @@ export interface WorkflowsRepositoryPort {
   startRun(workflowId: string, inputs?: Record<string, unknown>, globalModelId?: string): Promise<WorkflowRunRecord>
   getRun(runId: string): Promise<WorkflowRunRecord | null>
   getNodeResults(runId: string): Promise<WorkflowNodeResultRecord[]>
+  updateNodeResult(runId: string, nodeId: string, status: string, outputData?: Record<string, unknown>, errorMessage?: string): Promise<void>
+  updateRunStatus(runId: string, status: string): Promise<void>
+  getVersions(workflowId: string): Promise<WorkflowVersionRecord[]>
+  createVersion(workflowId: string, changelog?: string): Promise<string>
+  publishVersion(versionId: string): Promise<void>
+  restoreVersion(versionId: string): Promise<void>
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -196,14 +226,13 @@ export class SupabaseWorkflowsRepository implements WorkflowsRepositoryPort {
   }
 
   async getById(id: string): Promise<WorkflowRecord | null> {
-    const { data, error } = await supabase
-      .from('vw_workflows')
-      .select('id, lenser_id, title, description, visibility, battle_count, reaction_totals, fork_count, parent_workflow_id, created_at, updated_at')
-      .eq('id', id)
-      .maybeSingle()
+    const { data, error } = await supabase.rpc('fn_get_workflow_detail', {
+      p_workflow_id: id,
+    })
 
     if (error) this.handleError(error)
-    return data as WorkflowRecord | null
+    const row = Array.isArray(data) ? data[0] : data
+    return (row ?? null) as WorkflowRecord | null
   }
 
   // ── Reads via public-schema RPCs (lenses schema not exposed to PostgREST) ──
@@ -332,5 +361,69 @@ export class SupabaseWorkflowsRepository implements WorkflowsRepositoryPort {
 
     if (error) this.handleError(error)
     return (data ?? []) as WorkflowNodeResultRecord[]
+  }
+
+  async updateNodeResult(
+    runId: string,
+    nodeId: string,
+    status: string,
+    outputData?: Record<string, unknown>,
+    errorMessage?: string
+  ): Promise<void> {
+    const { error } = await supabase.rpc('fn_update_workflow_node_result', {
+      p_run_id: runId,
+      p_node_id: nodeId,
+      p_status: status,
+      p_output_data: outputData ?? null,
+      p_error_message: errorMessage ?? null,
+    })
+
+    if (error) this.handleError(error)
+  }
+
+  async updateRunStatus(runId: string, status: string): Promise<void> {
+    const { error } = await supabase.rpc('fn_update_workflow_run_status', {
+      p_run_id: runId,
+      p_status: status,
+    })
+
+    if (error) this.handleError(error)
+  }
+
+  // ── Workflow Versioning ────────────────────────────────────────────────────
+
+  async getVersions(workflowId: string): Promise<WorkflowVersionRecord[]> {
+    const { data, error } = await supabase.rpc('fn_get_workflow_versions', {
+      p_workflow_id: workflowId,
+    })
+
+    if (error) this.handleError(error)
+    return (data ?? []) as WorkflowVersionRecord[]
+  }
+
+  async createVersion(workflowId: string, changelog?: string): Promise<string> {
+    const { data, error } = await supabase.rpc('fn_create_workflow_version', {
+      p_workflow_id: workflowId,
+      p_changelog: changelog ?? null,
+    })
+
+    if (error) this.handleError(error)
+    return data as string
+  }
+
+  async publishVersion(versionId: string): Promise<void> {
+    const { error } = await supabase.rpc('fn_publish_workflow_version', {
+      p_version_id: versionId,
+    })
+
+    if (error) this.handleError(error)
+  }
+
+  async restoreVersion(versionId: string): Promise<void> {
+    const { error } = await supabase.rpc('fn_restore_workflow_version', {
+      p_version_id: versionId,
+    })
+
+    if (error) this.handleError(error)
   }
 }

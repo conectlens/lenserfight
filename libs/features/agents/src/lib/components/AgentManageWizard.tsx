@@ -44,10 +44,10 @@ export const AgentManageWizard: React.FC<AgentManageWizardProps> = ({ agentId, h
   const [policyLoading, setPolicyLoading] = useState(false)
 
   const handleTogglePolicy = async (field: string, value: boolean | AgentModelBindingMode) => {
-    if (!agentId) return
+    if (!agentId || !agent) return
     setPolicyLoading(true)
     try {
-      await agentsService.updatePolicy(agentId, { [field]: value })
+      await agentsService.updatePolicy(agent.ai_lenser_id, { [field]: value })
       await queryClient.invalidateQueries({ queryKey: queryKeys.agents.detail(agentId) })
     } catch (e) {
       console.error('Failed to update policy', e)

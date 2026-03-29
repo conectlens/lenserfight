@@ -129,6 +129,14 @@ export const lensesService = {
     return lensesRepo.getPersonalFeed(offset, limit)
   },
 
+  getFollowingFeed: async (
+    lenserId: string,
+    offset = 0,
+    limit = 20
+  ): Promise<ApiResponseEnvelope<LensViewModel[]>> => {
+    return lensesRepo.getFollowingFeed(lenserId, offset, limit)
+  },
+
   getMyLenses: (offset = 0, limit = 20): Promise<ApiResponseEnvelope<LensRecord[]>> =>
     lensesRepo.getMyLenses(offset, limit),
 
@@ -157,11 +165,8 @@ export const lensesService = {
     const record: any = await lensesRepo.getById(id, viewerLenserId)
     if (!record) return null
 
-    if (record.visibility === 'private') {
-      if (!viewerLenserId || record.lenser_id !== viewerLenserId) {
-        throw new Error('401')
-      }
-    }
+    // DB RLS already enforces access — no redundant service-level visibility check needed.
+    // If the DB returned a record, the viewer is authorised to see it.
 
     const [viewModel] = await mapToViewModels([record], viewerLenserId)
     const summary = await reactionService.getReactionSummary('lens', id, viewerLenserId)
@@ -300,6 +305,11 @@ export const lensesService = {
     return lensesRepo.getLatestPublishedVersion(lensId)
   },
 
+  /** Returns the latest non-archived version regardless of publish status (draft OK). */
+  getLatestVersion: async (lensId: string): Promise<LensVersion | null> => {
+    return lensesRepo.getLatestVersion(lensId)
+  },
+
   createVersion: async (input: CreateLensVersionDTO): Promise<LensVersion> => {
     if (!input.templateBody || input.templateBody.trim().length < 50) {
       throw new Error('Template body must be at least 50 characters.')
@@ -321,5 +331,10 @@ export const lensesService = {
 
   getTools: async (category?: string): Promise<ToolRecord[]> => {
     return lensesRepo.getTools(category)
+  },
+
+  /** Replace the parameter definitions for a lens version (full replace). */
+  updateVersionParams: async (versionId: string, params: Array<{ label: string; toolId: string }>): Promise<void> => {
+    return lensesRepo.updateVersionParams(versionId, params)
   },
 }

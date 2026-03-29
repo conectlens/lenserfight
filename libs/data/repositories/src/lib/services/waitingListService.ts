@@ -7,7 +7,7 @@ const repo = new SupabaseWaitingListRepository()
  * Thin orchestration layer, no state
  */
 export const waitingListService = {
-  getIsInWaitingList(): Promise<boolean> {
+  getIsInWaitingList(): Promise<boolean | null> {
     return repo.getIsInWaitingList()
   },
 

@@ -53,6 +53,7 @@ export const useLabController = (lensId: string, isAuthenticated = false, option
   const [streamCredits, setStreamCredits] = useState<number | null>(null)
   const [streamError, setStreamError] = useState<string | null>(null)
   const abortRef = useRef<AbortController | null>(null)
+  const streamOutputRef = useRef('')
 
   // Selection state for artifact viewer + comparison
   const [selectedRunId, setSelectedRunId] = useState<string | null>(null)
@@ -153,6 +154,7 @@ export const useLabController = (lensId: string, isAuthenticated = false, option
       const isActive = () => abortRef.current === controller
       setStreamState('loading')
       setStreamOutput('')
+      streamOutputRef.current = ''
       setStreamRunId(null)
       setStreamUsage(null)
       setStreamCredits(null)
@@ -170,6 +172,7 @@ export const useLabController = (lensId: string, isAuthenticated = false, option
           if (!isActive()) return
           // Collapse runs of 10+ spaces (e.g. Gemini table-padding) to a single space
           const cleaned = content.replace(/ {10,}/g, ' ')
+          streamOutputRef.current += cleaned
           setStreamOutput((prev) => prev + cleaned)
         },
         onEnd: (usage: { input_tokens: number; output_tokens: number }, credits: number) => {
@@ -177,6 +180,26 @@ export const useLabController = (lensId: string, isAuthenticated = false, option
           setStreamUsage(usage)
           setStreamCredits(credits)
           setStreamState('complete')
+
+          // Persist local BYOK executions to the database so they survive page refresh
+          if (dto.fundingSource === 'user_byok_local' && streamOutputRef.current) {
+            executionService
+              .persistLocalExecution({
+                lensId,
+                provider: dto.providerKey,
+                model: dto.modelKey,
+                contentText: streamOutputRef.current,
+                tokenInput: usage.input_tokens,
+                tokenOutput: usage.output_tokens,
+              })
+              .then((runId) => {
+                if (isActive()) setStreamRunId(runId)
+              })
+              .catch(() => {
+                // Best-effort — stream output is already visible to user
+              })
+          }
+
           queryClient.invalidateQueries({ queryKey: queryKeys.executions.history(lensId) })
           setHistoryOffset(0)
         },
@@ -238,6 +261,8 @@ export const useLabController = (lensId: string, isAuthenticated = false, option
   const stopStream = useCallback(() => {
     abortRef.current?.abort()
     abortRef.current = null
+    streamOutputRef.current = ''
+    setStreamOutput('')
     setStreamState('idle')
   }, [])
 
