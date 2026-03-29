@@ -1,6 +1,7 @@
 export type BattleStatus =
   | 'draft'
   | 'open'
+  | 'executing'
   | 'voting'
   | 'scoring'
   | 'closed'

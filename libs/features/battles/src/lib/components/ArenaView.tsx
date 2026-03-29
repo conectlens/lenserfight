@@ -14,6 +14,7 @@ import { useVoterEligibility } from '../hooks/useVoterEligibility'
 
 import { BattleChatPanel } from './BattleChatPanel'
 import { BattleCreatorPanel } from './BattleCreatorPanel'
+import { BattleLiveArena } from './BattleLiveArena'
 import { BattleSEOHead } from './BattleSEOHead'
 import { FightView } from './FightView'
 import { PhaseIndicator } from './PhaseIndicator'
@@ -258,16 +259,28 @@ export function ArenaView({
             </>
           )}
 
-          {/* Running: show submissions but no votes yet */}
+          {/* Running: live execution or static submissions */}
           {currentPhase === 'running' && (
-            <FightView
-              contenderA={contenderA}
-              contenderB={contenderB}
-              submissionA={submissionA}
-              submissionB={submissionB}
-              phase={currentPhase}
-              renderContenderSlot={renderContenderSlot}
-            />
+            <>
+              {battle.status === 'executing' ? (
+                <BattleLiveArena
+                  battle={battle}
+                  contenderA={contenderA}
+                  contenderB={contenderB}
+                  lensAssignments={[]}
+                  currentUserId={currentUserId}
+                />
+              ) : (
+                <FightView
+                  contenderA={contenderA}
+                  contenderB={contenderB}
+                  submissionA={submissionA}
+                  submissionB={submissionB}
+                  phase={currentPhase}
+                  renderContenderSlot={renderContenderSlot}
+                />
+              )}
+            </>
           )}
 
           {/* Voting: live vote tally + vote panel */}
