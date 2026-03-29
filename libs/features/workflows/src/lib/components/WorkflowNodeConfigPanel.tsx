@@ -1,25 +1,27 @@
 import { lensesService } from '@lenserfight/data/repositories'
 import { useAIModels } from '@lenserfight/features/generations'
-import { LensVersionParameterEditor, VersionParamFields, FundingSourceToggle, useFundingSource } from '@lenserfight/features/lenses'
+import { FundingSourceToggle, LensBodyViewer, useFundingSource, VersionParamFields } from '@lenserfight/features/lenses'
 import { Button } from '@lenserfight/ui/components'
 import { useQuery } from '@tanstack/react-query'
-import { ChevronDown, X } from 'lucide-react'
+import { Pencil, X } from 'lucide-react'
 import React, { useState, useEffect, useMemo } from 'react'
 
 import type { WorkflowNodeConfig } from './WorkflowCanvasNode'
 import type { WorkflowEdgeRecord, WorkflowNodeRecord } from '@lenserfight/data/repositories'
-import type { AIProvider, AIProviderModel, CreateVersionParamInput } from '@lenserfight/types'
+import type { AIProvider, AIProviderModel } from '@lenserfight/types'
 
 interface WorkflowNodeConfigPanelProps {
   nodeId: string
   lensId: string
   versionId: string | null | undefined
   nodeLabel: string
+  currentUserId?: string
   currentConfig: WorkflowNodeConfig
   nodes: WorkflowNodeRecord[]
   edges: WorkflowEdgeRecord[]
   onSave: (nodeId: string, config: WorkflowNodeConfig) => void
   onClose: () => void
+  onEditLens?: (lensId: string) => void
 }
 
 export function WorkflowNodeConfigPanel({
@@ -27,22 +29,22 @@ export function WorkflowNodeConfigPanel({
   lensId,
   versionId,
   nodeLabel,
+  currentUserId,
   currentConfig,
   nodes,
   edges,
   onSave,
   onClose,
+  onEditLens,
 }: WorkflowNodeConfigPanelProps) {
   const [selectedProviderKey, setSelectedProviderKey] = useState('')
   const [selectedModelKey, setSelectedModelKey] = useState(
     currentConfig.model_id ??
-      (typeof window !== 'undefined' ? (localStorage.getItem('lf-workflow-global-model') ?? '') : '')
+    (typeof window !== 'undefined' ? (localStorage.getItem('lf-workflow-global-model') ?? '') : '')
   )
   const [paramOverrides, setParamOverrides] = useState<Record<string, string>>(
     currentConfig.param_overrides ?? {}
   )
-  const [showParamEditor, setShowParamEditor] = useState(false)
-  const [draftParams, setDraftParams] = useState<CreateVersionParamInput[]>([])
 
   const { models, isLoading: modelsLoading } = useAIModels()
   const nodeFunding = useFundingSource(selectedProviderKey)
@@ -60,36 +62,25 @@ export function WorkflowNodeConfigPanel({
     enabled: !!lensId,
   })
 
-  // Load tools for parameter editor
-  const { data: tools = [] } = useQuery({
-    queryKey: ['lens-tools'],
-    queryFn: () => lensesService.getTools(),
-    staleTime: 1000 * 60 * 10,
-  })
-
   // Reset local state when node changes
   useEffect(() => {
     setSelectedModelKey(
       currentConfig.model_id ??
-        (typeof window !== 'undefined' ? (localStorage.getItem('lf-workflow-global-model') ?? '') : '')
+      (typeof window !== 'undefined' ? (localStorage.getItem('lf-workflow-global-model') ?? '') : '')
     )
     setParamOverrides(currentConfig.param_overrides ?? {})
     setSelectedProviderKey('')
-    setShowParamEditor(false)
   }, [nodeId, currentConfig.model_id, currentConfig.param_overrides])
-
-  // Seed draftParams from loaded version when param editor is opened
-  useEffect(() => {
-    if (showParamEditor && lensVersion?.parameters) {
-      setDraftParams(
-        lensVersion.parameters.map((p) => ({ label: p.label, toolId: p.toolId ?? '' }))
-      )
-    }
-  }, [showParamEditor, lensVersion])
 
   // Incoming edge mappings for this node (which params are auto-wired from previous nodes)
   const incomingEdges = edges.filter((e) => e.target_node_id === nodeId)
   const autoWiredParams = new Set(incomingEdges.map((e) => e.target_param_label))
+  const selectedNode = nodes.find((n) => n.id === nodeId)
+  const canEditLens =
+    !!onEditLens &&
+    !!currentUserId &&
+    selectedNode?.lens_visibility === 'private' &&
+    selectedNode?.lens_lenser_id === currentUserId
 
   const versionParams = lensVersion?.parameters ?? []
   const isParamsLoading = versionLoading
@@ -117,10 +108,6 @@ export function WorkflowNodeConfigPanel({
   }, [models, selectedProviderKey, nodeFunding.fundingSource, nodeFunding.selectedKeyRefId, nodeFunding.selectedLocalKeyId, nodeFunding.availableKeys, nodeFunding.localKeys])
 
   const handleSave = async () => {
-    // Persist parameter edits if the editor was open
-    if (showParamEditor && lensVersion?.id) {
-      await lensesService.updateVersionParams(lensVersion.id, draftParams)
-    }
     onSave(nodeId, {
       ...currentConfig,
       model_id: selectedModelKey || null,
@@ -158,36 +145,56 @@ export function WorkflowNodeConfigPanel({
       </div>
 
       <div className="flex-1 overflow-y-auto p-4 space-y-5">
-        {/* Funding source + model override */}
-        <div className="space-y-1.5">
-          <p className="text-[10px] font-semibold uppercase tracking-wider text-greyscale-400">
-            Model Override
-          </p>
-          <p className="text-[10px] text-greyscale-400 leading-tight mb-2">
-            Leave blank to use the global model selected at run time.
-          </p>
-          <FundingSourceToggle
-            fundingSource={nodeFunding.fundingSource}
-            onFundingSourceChange={nodeFunding.setFundingSource}
-            selectedKeyRefId={nodeFunding.selectedKeyRefId}
-            onKeyRefIdChange={nodeFunding.setSelectedKeyRefId}
-            availableKeys={nodeFunding.availableKeys}
-            selectedLocalKeyId={nodeFunding.selectedLocalKeyId}
-            onLocalKeyIdChange={nodeFunding.setSelectedLocalKeyId}
-            availableLocalKeys={nodeFunding.localKeys}
-            onAddLocalKey={nodeFunding.addLocalKey}
-            walletBalance={nodeFunding.walletBalance}
-            canUseBYOK={nodeFunding.canUseBYOK}
-            providers={providers}
-            isLoadingProviders={modelsLoading}
-            providerModels={providerModels}
-            isLoadingModels={modelsLoading}
-            selectedProviderKey={selectedProviderKey}
-            onProviderChange={(key) => { setSelectedProviderKey(key); setSelectedModelKey('') }}
-            selectedModelKey={selectedModelKey}
-            onModelChange={setSelectedModelKey}
-          />
+        <div className="space-y-2 border-surface-border">
+          <div className="flex items-center justify-between gap-2">
+            {canEditLens && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => onEditLens?.(lensId)}
+                className="!p-1 !h-6 !w-6 text-greyscale-400 hover:text-primary-yellow-600 transition-colors flex-shrink-0"
+                title="Edit lens"
+              >
+                <Pencil size={12} />
+              </Button>
+            )}
+          </div>
+          {isParamsLoading ? (
+            <div className="space-y-2">
+              {Array.from({ length: 3 }).map((_, i) => (
+                <div key={i} className="h-10 rounded-xl bg-surface-raised animate-pulse" />
+              ))}
+            </div>
+          ) : lensVersion ? (
+            <LensBodyViewer content={lensVersion.templateBody} versionParams={lensVersion.parameters} />
+          ) : (
+            <div className="rounded-xl border border-surface-border p-3 text-[11px] text-greyscale-400 text-center">
+              No version found for this lens.
+            </div>
+          )}
         </div>
+
+        <FundingSourceToggle
+          fundingSource={nodeFunding.fundingSource}
+          onFundingSourceChange={nodeFunding.setFundingSource}
+          selectedKeyRefId={nodeFunding.selectedKeyRefId}
+          onKeyRefIdChange={nodeFunding.setSelectedKeyRefId}
+          availableKeys={nodeFunding.availableKeys}
+          selectedLocalKeyId={nodeFunding.selectedLocalKeyId}
+          onLocalKeyIdChange={nodeFunding.setSelectedLocalKeyId}
+          availableLocalKeys={nodeFunding.localKeys}
+          onAddLocalKey={nodeFunding.addLocalKey}
+          walletBalance={nodeFunding.walletBalance}
+          canUseBYOK={nodeFunding.canUseBYOK}
+          providers={providers}
+          isLoadingProviders={modelsLoading}
+          providerModels={providerModels}
+          isLoadingModels={modelsLoading}
+          selectedProviderKey={selectedProviderKey}
+          onProviderChange={(key) => { setSelectedProviderKey(key); setSelectedModelKey('') }}
+          selectedModelKey={selectedModelKey}
+          onModelChange={setSelectedModelKey}
+        />
 
         {/* Parameters from lens version */}
         {versionParams.length > 0 && (
@@ -222,8 +229,8 @@ export function WorkflowNodeConfigPanel({
                 onChange={(name, value) =>
                   setParamOverrides((prev) => ({ ...prev, [name]: String(value ?? '') }))
                 }
-                onImportJson={() => {}}
-                onImportCsv={() => {}}
+                onImportJson={() => { }}
+                onImportCsv={() => { }}
               />
             )}
           </div>
@@ -249,42 +256,17 @@ export function WorkflowNodeConfigPanel({
           </div>
         )}
 
-        {/* Parameter definitions editor (lens owner) */}
-        {lensVersion && tools.length > 0 && (
-          <div className="space-y-2 border-t border-surface-border pt-4">
-            <button
-              type="button"
-              onClick={() => setShowParamEditor((v) => !v)}
-              className="flex w-full items-center justify-between text-[10px] font-semibold uppercase tracking-wider text-greyscale-400 hover:text-greyscale-600 transition-colors"
-            >
-              Edit Parameter Definitions
-              <ChevronDown
-                size={12}
-                className={`transition-transform ${showParamEditor ? 'rotate-180' : ''}`}
-              />
-            </button>
-            {showParamEditor && (
-              <div className="rounded-xl border border-surface-border bg-surface-raised p-3">
-                <LensVersionParameterEditor
-                  parameters={draftParams}
-                  tools={tools}
-                  onChange={setDraftParams}
-                />
-              </div>
-            )}
-          </div>
-        )}
+        {/* Footer */}
+        <div className="flex items-center justify-end gap-2 px-4 py-3 border-t border-surface-border">
+          <Button variant="secondary" size="sm" onClick={onClose} className="w-auto">
+            Cancel
+          </Button>
+          <Button size="sm" onClick={handleSave} className="w-auto px-4">
+            Save Config
+          </Button>
+        </div>
       </div>
 
-      {/* Footer */}
-      <div className="flex items-center justify-end gap-2 px-4 py-3 border-t border-surface-border">
-        <Button variant="secondary" size="sm" onClick={onClose} className="w-auto">
-          Cancel
-        </Button>
-        <Button size="sm" onClick={handleSave} className="w-auto px-4">
-          Save Config
-        </Button>
-      </div>
     </aside>
   )
 }

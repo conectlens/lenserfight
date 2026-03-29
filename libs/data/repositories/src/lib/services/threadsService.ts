@@ -1,6 +1,4 @@
-import { SupabaseLenserRepository } from '../repositories/lenserRepository'
-import { SupabaseReactionRepository } from '../repositories/reactionRepository'
-import { SupabaseThreadsRepository } from '../repositories/threadsRepository'
+import { ApiResponseEnvelope, paginatedResponse } from '@lenserfight/api/contracts'
 import {
   ThreadFeedItem,
   PersonalFeedItem,
@@ -11,7 +9,10 @@ import {
   CreateThreadDTO,
   ThreadAuthor,
 } from '@lenserfight/types'
-import { ApiResponseEnvelope, paginatedResponse } from '@lenserfight/api/contracts'
+
+import { SupabaseLenserRepository } from '../repositories/lenserRepository'
+import { SupabaseReactionRepository } from '../repositories/reactionRepository'
+import { SupabaseThreadsRepository } from '../repositories/threadsRepository'
 
 import { tagService } from './tagService'
 import { threadInteractionService } from './threadInteractionService'
@@ -236,6 +237,14 @@ export const threadsService = {
       },
       { durationMs: result.meta?.durationMs }
     )
+  },
+
+  getFollowingFeed: async (
+    _lenserId: string,
+    offset = 0,
+    limit = 20
+  ): Promise<ApiResponseEnvelope<ThreadFeedItem[]>> => {
+    return threadsRepo.getFollowingFeed(offset, limit)
   },
 
   // Backward compatibility alias
