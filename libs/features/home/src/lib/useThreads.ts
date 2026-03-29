@@ -120,7 +120,7 @@ export const useTrendingLensers = () => {
 
 // ── Phase 3: Personalized feeds ───────────────────────────────────────────────
 
-export const usePersonalFeed = (lenserId?: string) => {
+export const usePersonalFeed = (lenserId?: string, enabled = true) => {
   return useInfiniteQuery({
     // Use a distinct idle key when lenserId is absent so this disabled observer
     // never shares a query key with useThreadsFeed. Sharing keys caused React
@@ -131,7 +131,7 @@ export const usePersonalFeed = (lenserId?: string) => {
       if (!lenserId) return { data: [], meta: { hasNextPage: false, offset: 0, limit: 20 } }
       return threadsService.getPersonalFeed(lenserId, pageParam, 20)
     },
-    enabled: Boolean(lenserId),
+    enabled: Boolean(lenserId) && enabled,
     initialPageParam: 0,
     getNextPageParam: (lastPage) => {
       if (!lastPage.meta?.hasNextPage) return undefined
@@ -157,6 +157,30 @@ export const usePersonalPrompts = (lenserId?: string, enabled = true) => {
     },
     staleTime: 1000 * 60 * 3,
     gcTime: 1000 * 60 * 15,
+  })
+}
+
+export const useFollowingFeed = (lenserId?: string, enabled = true) => {
+  return useQuery({
+    queryKey: lenserId ? keys.threads.following(lenserId) : ['_following_threads_idle'],
+    queryFn: async () => {
+      if (!lenserId) return { data: [], meta: { hasNextPage: false, offset: 0, limit: 20 } }
+      return threadsService.getFollowingFeed(lenserId, 0, 20)
+    },
+    enabled: Boolean(lenserId) && enabled,
+    staleTime: 1000 * 60 * 3,
+  })
+}
+
+export const useFollowingPrompts = (lenserId?: string, enabled = true) => {
+  return useQuery({
+    queryKey: lenserId ? keys.lenses.following(lenserId) : ['_following_lenses_idle'],
+    queryFn: async () => {
+      if (!lenserId) return { data: [], meta: { hasNextPage: false, offset: 0, limit: 20 } }
+      return lensesService.getFollowingFeed(lenserId, 0, 20)
+    },
+    enabled: Boolean(lenserId) && enabled,
+    staleTime: 1000 * 60 * 3,
   })
 }
 

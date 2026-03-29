@@ -28,6 +28,7 @@ function createTextExecutionProvider(
   provider: Exclude<Provider, 'fal'>,
   modelKey: string,
   apiKey: string,
+  signal?: AbortSignal,
 ): IExecutionProvider {
   return {
     id: provider,
@@ -40,6 +41,7 @@ function createTextExecutionProvider(
         modelKey,
         [{ role: 'user', content: input.prompt }],
         provider === 'anthropic' ? { maxTokens: 4096 } : undefined,
+        signal,
       )
       return {
         mediaType: 'text',
@@ -72,13 +74,6 @@ interface UseWorkflowExecutionOptions {
   localKeys?: LocalKeyMeta[]
 }
 
-/** Config shape stored in workflow_nodes.config (subset used for execution) */
-interface NodeExecutionConfig {
-  model_id?: string | null
-  funding_source?: FundingSource
-  local_key_id?: string | null
-}
-
 /**
  * Browser-side workflow execution orchestrator.
  *
@@ -100,7 +95,6 @@ export function useWorkflowExecution({
   edges,
   models,
   fundingSource,
-  selectedKeyRefId: _selectedKeyRefId,
   selectedLocalKeyId,
   resolveLocalKey,
   localKeys,
@@ -129,7 +123,6 @@ export function useWorkflowExecution({
         const globalModel = models.find((m) => m.key === globalModelId)
         let providerName: string
         if (globalModel) {
-          // eslint-disable-next-line @typescript-eslint/no-deprecated
           providerName = globalModel.provider
         } else if (fundingSource === 'user_byok_local' && selectedLocalKeyId && localKeys?.length) {
           const localKey = localKeys.find((k) => k.id === selectedLocalKeyId)
@@ -153,12 +146,19 @@ export function useWorkflowExecution({
           }
         }
 
-        if (controller.signal.aborted) return
+        if (controller.signal.aborted) {
+          return {
+            runId,
+            status: 'cancelled' as const,
+            nodeResults: [],
+          }
+        }
 
         const globalProvider = createTextExecutionProvider(
           providerName as Exclude<Provider, 'fal'>,
           globalModelId,
           apiKey,
+          controller.signal,
         )
 
         // Map DB records → execution service types.
@@ -181,6 +181,7 @@ export function useWorkflowExecution({
         const ctx: WorkflowExecutionContext = {
           runId,
           rootInputs,
+          signal: controller.signal,
 
           async resolveLensTemplate(lensId: string, versionId?: string | null): Promise<string> {
             if (controller.signal.aborted) return ''
@@ -191,7 +192,6 @@ export function useWorkflowExecution({
           },
 
           async onNodeStatusChange(nodeId: string, result: NodeResult): Promise<void> {
-            if (controller.signal.aborted) return
             await workflowsService.updateNodeResult(
               runId,
               nodeId,
@@ -206,18 +206,25 @@ export function useWorkflowExecution({
         const executionService = new WorkflowExecutionService(globalProvider)
         const result = await executionService.executeWorkflow(execNodes, execEdges, ctx)
 
-        if (controller.signal.aborted) return
-
         // Mark run as completed or failed
         await workflowsService.updateRunStatus(runId, result.status)
 
         return result
+      } catch (error) {
+        if (controller.signal.aborted) {
+          return {
+            runId,
+            status: 'cancelled' as const,
+            nodeResults: [],
+          }
+        }
+        throw error
       } finally {
         isExecutingRef.current = false
         if (abortRef.current === controller) abortRef.current = null
       }
     },
-    [nodes, edges, models, fundingSource, selectedLocalKeyId, resolveLocalKey, localKeys], // eslint-disable-line react-hooks/exhaustive-deps
+    [nodes, edges, models, fundingSource, selectedLocalKeyId, resolveLocalKey, localKeys],
   )
 
   return { execute, stopExecution }

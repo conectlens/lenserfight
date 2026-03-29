@@ -4,6 +4,7 @@ export const queryKeys = {
     feed: () => [...queryKeys.threads.all, 'feed'] as const,
     trending: (lang?: string) => [...queryKeys.threads.all, 'trending', lang] as const,
     personal: (lenserId: string) => [...queryKeys.threads.all, 'personal', lenserId] as const,
+    following: (lenserId: string) => [...queryKeys.threads.all, 'following', lenserId] as const,
     detail: (id: string) => [...queryKeys.threads.all, 'detail', id] as const,
   },
   lenses: {
@@ -12,6 +13,7 @@ export const queryKeys = {
     top: ['lenses', 'top'] as const,
     trending: (lang?: string) => [...queryKeys.lenses.all, 'trending', lang] as const,
     personal: (lenserId: string) => [...queryKeys.lenses.all, 'personal', lenserId] as const,
+    following: (lenserId: string) => [...queryKeys.lenses.all, 'following', lenserId] as const,
     detail: (id: string) => [...queryKeys.lenses.all, 'detail', id] as const,
     composite: (id: string) => [...queryKeys.lenses.all, 'composite', id] as const,
     forkTree: (lensId: string) => [...queryKeys.lenses.all, 'forkTree', lensId] as const,
