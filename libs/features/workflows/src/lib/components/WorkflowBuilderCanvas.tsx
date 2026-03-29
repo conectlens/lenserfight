@@ -271,10 +271,9 @@ function WorkflowBuilderCanvasInner({
     }, 1500)
   }, [readOnly, workflowId, saveWorkflow])
 
-  useEffect(() => {
-    if (!nodeConfigOverrides || Object.keys(nodeConfigOverrides).length === 0) return
-    scheduleSave()
-  }, [nodeConfigOverrides, scheduleSave])
+  // NOTE: nodeConfigOverrides changes are intentionally NOT wired to scheduleSave here.
+  // Config overrides are synced into node data above and are included in the next
+  // save triggered by a drag / connect / drop user action.
 
   // ── Connect nodes ─────────────────────────────────────────────────────────
   const onConnect = useCallback(
