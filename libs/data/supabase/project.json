@@ -5,7 +5,9 @@
   "projectType": "library",
   "tags": [
     "layer:data",
-    "data:supabase"
+    "data:supabase",
+    "scope:public",
+    "license:oss"
   ],
   "// targets": "to see all targets run: nx show project supabase --web",
   "targets": {}

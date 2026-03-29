@@ -3,7 +3,10 @@
   "$schema": "../../node_modules/nx/schemas/project-schema.json",
   "sourceRoot": "apps/docs/src",
   "projectType": "application",
-  "tags": [],
+  "tags": [
+    "scope:public",
+    "license:oss"
+  ],
   "// targets": "to see all targets run: nx show project docs --web",
   "targets": {
     "serve": {

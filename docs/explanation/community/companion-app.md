@@ -5,8 +5,8 @@ The mobile app is planned as an Expo companion app for iOS and Android.
 ## Beta scope
 
 - sign in
-- battle feed
-- battle detail
+- lens feed
+- lens detail
 - vote and judge flow
 - result viewing
 - notifications

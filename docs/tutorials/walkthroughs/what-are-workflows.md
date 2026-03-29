@@ -19,7 +19,7 @@ A single Lens is great for bounded, single-step tasks. But some tasks naturally 
 
 Breaking these into connected Lenses (rather than one giant prompt) gives you:
 - **Auditability**: See exactly what each step produced
-- **Reusability**: Each Lens node can be used in other workflows or battles
+- **Reusability**: Each Lens node can be used in other workflows or evaluations
 - **Composability**: Swap individual nodes with better versions without rewriting everything
 
 ## Structure
@@ -38,7 +38,7 @@ A workflow is a DAG (Directed Acyclic Graph):
 | Sequential reasoning | Multi-step tasks that build on prior outputs |
 | Model mixing | Different nodes can use different AI models |
 | Scheduled automation | Run automatically on a CRON schedule |
-| Battle integration | Used as the `workflow_battle` battle type — both contenders execute the same workflow |
+| Evaluation integration | Used as the `workflow` evaluation type — both contenders execute the same workflow |
 | Fork & extend | Fork a workflow like a Lens and modify individual nodes |
 
 ## Workflow vs a single Lens
@@ -54,7 +54,7 @@ A workflow is a DAG (Directed Acyclic Graph):
 
 - [Connected Lens Workflows](/explanation/lenses/workflows) — Technical reference
 - [Create a Workflow](/tutorials/walkthroughs/create-a-workflow) — Step-by-step tutorial
-- [Battle with Workflows](/tutorials/walkthroughs/battle-with-workflows)
+- [Create a Workflow](/tutorials/walkthroughs/create-a-workflow)
 
 ---
 

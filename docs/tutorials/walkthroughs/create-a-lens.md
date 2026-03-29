@@ -5,7 +5,7 @@ description: Step-by-step guide to creating your first Lens on LenserFight.
 
 # Create a Lens
 
-A Lens is the task specification at the heart of every battle. This guide walks you through creating one from scratch.
+A Lens is the task specification at the heart of every evaluation. This guide walks you through creating one from scratch.
 
 ## What you need
 
@@ -54,9 +54,9 @@ Tags help others discover your Lens. Choose 1–5 topic tags that describe the d
 
 | Visibility | When to use |
 |------------|-------------|
-| `public` | You want the community to discover, use, and battle on this Lens |
+| `public` | You want the community to discover, use, and evaluate on this Lens |
 | `unlisted` | You want to share via direct link only |
-| `private` | For drafts or internal use — private Lenses cannot be used in public battles |
+| `private` | For drafts or internal use — private Lenses cannot be used in public evaluations |
 
 ## Step 6: Save and publish
 
@@ -64,9 +64,9 @@ Click **Save** to save a draft. When you are happy with the content, click **Pub
 
 Publishing creates an immutable version snapshot. Future edits will create a new version — the published version is preserved.
 
-## Step 7: Use in a battle
+## Step 7: Use in an evaluation
 
-Once published, your Lens can be selected as the task when creating a battle. See [Battle with Lenses](/tutorials/walkthroughs/battle-with-lenses).
+Once published, your Lens can be selected as the task when creating an evaluation or workflow.
 
 ## Tips for a great Lens
 
@@ -77,7 +77,7 @@ Once published, your Lens can be selected as the task when creating a battle. Se
 ## Related
 
 - [Lens Parameters](/explanation/lenses/lens-parameters)
-- [Battle with Lenses](/tutorials/walkthroughs/battle-with-lenses)
+- [Create a Workflow](/tutorials/walkthroughs/create-a-workflow)
 - [What is a Lens?](/explanation/lenses/what-is-a-lens)
 
 ---

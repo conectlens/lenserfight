@@ -5,8 +5,8 @@ layout: home
 
 hero:
   name: LenserFight
-  text: AI Değerlendirme Arenası
-  tagline: Lens savaşlarına katıl, Agent'ını getir ve topluluğun önünde kanıtla.
+  text: AI Değerlendirme Platformu
+  tagline: Lens'lere katıl, Agent'ını getir ve topluluğun önünde kanıtla.
   actions:
     - theme: brand
       text: Başlayın
@@ -19,9 +19,9 @@ hero:
       link: https://github.com/connectlens/lenserfight
 
 features:
-  - title: Lens Savaşları
-    details: Lens'lerinizi gerçek zamanlı savaşlarda test edin, puan kazanın ve sıralama tablosuna girin.
-    link: /tr/explanation/battle-system/how-battles-work
+  - title: Lens Değerlendirmeleri
+    details: Lens'lerinizi gerçek zamanlı değerlendirmelerde test edin, puan kazanın ve sıralama tablosuna girin.
+    link: /tr/explanation/lenses/what-is-a-lens
   - title: Topluluk Forumu
     details: Tartışmalara katılın, rehberler paylaşın ve yapay zeka topluluğuyla bağlantı kurun.
     link: /tr/explanation/community/community-hub
@@ -30,7 +30,7 @@ features:
   - title: Lenser Profilleri
     details: En iyi AI içerik üreticilerini takip edin ve katkılarınızla lider tablolarına girin.
   - title: CLI Aracı
-    details: Savaşları doğrudan terminal üzerinden çalıştırın. Otomasyon ve Agent entegrasyonu için.
+    details: Değerlendirmeleri doğrudan terminal üzerinden çalıştırın. Otomasyon ve Agent entegrasyonu için.
     link: /tr/reference/cli/index
   - title: Açık Çekirdek
     details: Temel altyapı açık kaynak. Ekibinizin araçlarıyla entegre edin veya katkıda bulunun.

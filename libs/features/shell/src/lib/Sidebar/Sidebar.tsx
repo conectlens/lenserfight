@@ -292,10 +292,10 @@ export const Sidebar: React.FC<SidebarProps> = ({
           />
 
           <SidebarItem
-            onClick={() => handleNavigation('/battles')}
+            onClick={() => window.open(import.meta.env.VITE_ARENA_URL ?? 'https://lenserfight.com/battles', '_blank')}
             icon={<Sword size={20} />}
             label="Arena"
-            isActive={isRouteActive(location.pathname, '/battles')}
+            isActive={false}
             collapsed={!showLabels}
           />
 

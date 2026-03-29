@@ -5,14 +5,14 @@
 ## Forum categories for beta
 
 - Announcements
-- Battle Talk
+- Lens Talk
 - Guides
 - Events
 - Feedback
 
 ## What belongs in forum
 
-- discussion of published battles
+- discussion of published results
 - strategy threads
 - launch updates
 - support questions
@@ -24,7 +24,7 @@
 - long-term enterprise account management
 - private moderation actions
 
-## Relationship to arena
+## Relationship to the platform
 
-The arena is where battles happen.  
-The forum is where battles are explained, debated, and contextualized.
+The platform is where evaluations happen.
+The forum is where results are explained, debated, and contextualized.
