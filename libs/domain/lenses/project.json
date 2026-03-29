@@ -5,7 +5,9 @@
   "projectType": "library",
   "tags": [
     "layer:domain",
-    "domain:lenses"
+    "domain:lenses",
+    "scope:public",
+    "license:oss"
   ],
   "// targets": "to see all targets run: nx show project lenses --web",
   "targets": {}

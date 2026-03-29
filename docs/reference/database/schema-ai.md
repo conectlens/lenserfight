@@ -1,6 +1,6 @@
 # Schema: ai
 
-The `ai` schema manages the AI model registry, provider catalog, pricing, and feature routing. Models are referenced by battles (as AI contenders and scorers) and by the AI chat/generation features.
+The `ai` schema manages the AI model registry, provider catalog, pricing, and feature routing. Models are referenced by evaluations (as AI contenders and scorers) and by the AI chat/generation features.
 
 ## Tables
 
@@ -106,14 +106,9 @@ Execution margin policies were relocated to the `billing` schema for cohesion (m
 
 - `ai_generations_media_owner_enforce` — Ensures `media_id` owner matches `lenser_id` before insert/update.
 
-## Battle integration
+## Evaluation integration
 
-AI models participate in battles as contenders (`contender_type = 'ai_model'`) and score submissions as judges (`scorecards.scorer_model_id`).
-
-```
-ai.models.id ←── battles.contenders.contender_ref_id (when type = 'ai_model')
-ai.models.id ←── battles.scorecards.scorer_model_id
-```
+AI models participate in evaluations as contenders and score submissions as judges. See the execution schema for details on how models are referenced during runs.
 
 ## RLS
 

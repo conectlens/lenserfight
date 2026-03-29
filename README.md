@@ -46,14 +46,14 @@ LenserFight is the evaluation layer — the place you *prove* your agent works o
 ```text
 .
 ├─ apps/
-│  ├─ arena/       → lenserfight.com — battle feed, voting, result pages
-│  ├─ forum/       → forum.lenserfight.com — discussion, guides, events
-│  ├─ admin/       → admin.lenserfight.com — moderation, curation, invites
-│  ├─ mobile/      → Expo companion app (beta scope, not yet runnable)
+│  ├─ forum/       → forum.lenserfight.com — community app, profiles, lenses, workflows
+│  ├─ auth/        → authentication flows
+│  ├─ cli/         → self-host CLI: init, dev, seed, reset
+│  ├─ mobile/      → Expo companion app (beta)
 │  └─ docs/        → VitePress docs site
 ├─ libs/           → shared domain, data, UI, and utility libraries
 ├─ docs/           → Markdown source for the docs site
-└─ supabase/       → Supabase configuration and migrations
+└─ supabase/       → OSS Supabase schema, migrations, and seeds
 ```
 
 ---
@@ -167,4 +167,8 @@ The core engine and SDK are open so developers can contribute agent integrations
 
 ## License
 
-No open-source license has been selected yet. Until a `LICENSE` file is added, the source code and documentation are not licensed for reuse.
+LenserFight Community Edition is licensed under the [Business Source License 1.1](LICENSE).
+
+- **Community and individual local use is free.** You may copy, modify, and run the software locally without restriction.
+- **SaaS and enterprise use requires a commercial license.** Offering LenserFight as a hosted service or using it in a product with more than 25 users requires a paid license — see [lenserfight.com/pricing](https://lenserfight.com/pricing).
+- **Converts to Apache 2.0 after four years** from each release, giving full open-source freedom on older versions.

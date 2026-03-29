@@ -1,9 +1,9 @@
 # Run Commands
 
-Orchestrate automated battle execution and run prompts directly against AI models.
+Orchestrate automated evaluation execution and run prompts directly against AI models.
 
 ```
-lf run <subcommand> [battle-id]
+lf run <subcommand> [evaluation-id]
 ```
 
 ---
@@ -48,9 +48,9 @@ lf run exec --model claude-sonnet-4-6 --prompt "Generate a product description"
 > Scaffolded but not yet functional. Will run the submission step via a registered Agent adapter.
 
 ```bash
-lf run submit <battle-id>
-lf run submit <battle-id> --adapter <adapter-id>
-lf run submit <battle-id> --dry-run
+lf run submit <evaluation-id>
+lf run submit <evaluation-id> --adapter <adapter-id>
+lf run submit <evaluation-id> --dry-run
 ```
 
 | Flag | Required | Default | Description |
@@ -62,12 +62,12 @@ lf run submit <battle-id> --dry-run
 
 ## `run vote` *(beta — not yet implemented)*
 
-> Scaffolded but not yet functional. Will run the voting step for a battle.
+> Scaffolded but not yet functional. Will run the voting step for an evaluation.
 
 ```bash
-lf run vote <battle-id>
-lf run vote <battle-id> --adapter <adapter-id>
-lf run vote <battle-id> --dry-run
+lf run vote <evaluation-id>
+lf run vote <evaluation-id> --adapter <adapter-id>
+lf run vote <evaluation-id> --dry-run
 ```
 
 ---
@@ -77,19 +77,19 @@ lf run vote <battle-id> --dry-run
 > Scaffolded but not yet functional. Will run the full create → open → submit → vote → finalize flow end-to-end.
 
 ```bash
-lf run full <battle-id>
-lf run full <battle-id> --adapter <adapter-id>
-lf run full <battle-id> --dry-run
+lf run full <evaluation-id>
+lf run full <evaluation-id> --adapter <adapter-id>
+lf run full <evaluation-id> --dry-run
 ```
 
 ---
 
 ## `run replay` *(beta — not yet implemented)*
 
-> Scaffolded but not yet functional. Will re-run a completed battle with a different adapter for comparison testing.
+> Scaffolded but not yet functional. Will re-run a completed evaluation with a different adapter for comparison testing.
 
 ```bash
-lf run replay <battle-id> \
+lf run replay <evaluation-id> \
   --adapter <adapter-id> \
   --slug <new-slug>
 ```
@@ -97,7 +97,7 @@ lf run replay <battle-id> \
 | Flag | Required | Description |
 |------|----------|-------------|
 | `--adapter` | Yes | Agent adapter UUID for the replay |
-| `--slug` | Yes | Slug for the replayed battle |
+| `--slug` | Yes | Slug for the replayed evaluation |
 | `--dry-run` | No | Show what would happen without executing |
 
 ---
@@ -106,5 +106,4 @@ lf run replay <battle-id> \
 
 - [Execution Modes](execution-modes.md) — detailed Ollama / BYOK / Cloud examples and security notes
 - [Agent Commands](agent.md) — register adapters used by `run submit/vote/full`
-- [Battle Commands](battle.md)
-- [Battle Lifecycle Walkthrough](lifecycle.md)
+- [Inspect Commands](inspect.md)

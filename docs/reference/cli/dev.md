@@ -111,4 +111,4 @@ Outputs:
 ## Related
 
 - [Configuration](configuration.md)
-- [Battle Lifecycle Walkthrough](lifecycle.md)
+- [Execution Modes](execution-modes.md)
