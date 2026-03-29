@@ -240,11 +240,11 @@ export const threadsService = {
   },
 
   getFollowingFeed: async (
-    _lenserId: string,
+    lenserId: string,
     offset = 0,
     limit = 20
   ): Promise<ApiResponseEnvelope<ThreadFeedItem[]>> => {
-    return threadsRepo.getFollowingFeed(offset, limit)
+    return threadsRepo.getFollowingFeed(lenserId, offset, limit)
   },
 
   // Backward compatibility alias

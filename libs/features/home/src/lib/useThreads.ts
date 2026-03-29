@@ -173,12 +173,17 @@ export const useFollowingFeed = (lenserId?: string, enabled = true) => {
 }
 
 export const useFollowingPrompts = (lenserId?: string, enabled = true) => {
-  return useQuery({
+  return useInfiniteQuery({
     queryKey: lenserId ? keys.lenses.following(lenserId) : ['_following_lenses_idle'],
-    queryFn: async () => {
+    queryFn: async ({ pageParam = 0 }) => {
       if (!lenserId) return { data: [], meta: { hasNextPage: false, offset: 0, limit: 20 } }
-      return lensesService.getFollowingFeed(lenserId, 0, 20)
+      return lensesService.getFollowingFeed(lenserId, pageParam as number, 20)
     },
+    getNextPageParam: (lastPage) =>
+      lastPage.meta?.hasNextPage
+        ? (lastPage.meta.offset ?? 0) + (lastPage.meta.limit ?? 20)
+        : undefined,
+    initialPageParam: 0,
     enabled: Boolean(lenserId) && enabled,
     staleTime: 1000 * 60 * 3,
   })

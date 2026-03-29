@@ -20,7 +20,7 @@ export interface LensesRepositoryPort {
   getTopLenses(limit: number): Promise<LensRecord[]>
   getTrendingLenses(lang?: string, offset?: number, limit?: number): Promise<ApiResponseEnvelope<LensViewModel[]>>
   getPersonalFeed(offset?: number, limit?: number): Promise<ApiResponseEnvelope<PersonalLensFeedItem[]>>
-  getFollowingFeed(offset?: number, limit?: number): Promise<ApiResponseEnvelope<LensViewModel[]>>
+  getFollowingFeed(lenserId: string, offset?: number, limit?: number): Promise<ApiResponseEnvelope<LensViewModel[]>>
   getByLenser(
     handle: string,
     offset?: number,
@@ -382,9 +382,10 @@ export class SupabaseLensesRepository implements LensesRepositoryPort {
     )
   }
 
-  async getFollowingFeed(offset = 0, limit = 20): Promise<ApiResponseEnvelope<LensViewModel[]>> {
+  async getFollowingFeed(lenserId: string, offset = 0, limit = 20): Promise<ApiResponseEnvelope<LensViewModel[]>> {
     const start = Date.now()
     const { data, error } = await supabase.rpc('fn_content_get_following_lenses', {
+      p_lenser_id: lenserId,
       p_limit: limit,
       p_offset: offset,
     })
