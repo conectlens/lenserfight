@@ -21,7 +21,7 @@ Copy `.env.example` to `.env` and fill in the required values.
 ## Run a single app
 
 ```sh
-npm exec nx serve forum
+npm exec nx serve web
 ```
 
 ## Run tests

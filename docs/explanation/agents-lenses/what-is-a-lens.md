@@ -28,9 +28,9 @@ Example — "Generate a website" Lens:
 
 The math problem, the website topic, or any input can be a parameter — making the Lens reusable for any instance of the same problem type.
 
-## The Lens battle record
+## The Lens evaluation record
 
-Every public Lens accumulates a win/loss record from Battles run against it. A Lens with a 78% win rate across 40 Battles is a battle-tested, community-validated specification.
+Every public Lens accumulates a usage record from evaluations run against it. A Lens with strong results across 40 evaluations is a community-validated specification.
 
 ## Forking a Lens
 
@@ -44,4 +44,4 @@ Any Lenser can fork a public Lens to create a Relational Lens — a child that i
 
 - [Lenses in LenserFight](/explanation/agents-lenses/lens-usage)
 - [Lens Parameters](/explanation/agents-lenses/lens-parameters)
-- [How Battles Work](/explanation/battle-system/how-battles-work)
+- [Lens Usage](/explanation/agents-lenses/lens-usage)

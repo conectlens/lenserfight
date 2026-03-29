@@ -5,7 +5,9 @@
   "projectType": "library",
   "tags": [
     "layer:ui",
-    "ui:tokens"
+    "ui:tokens",
+    "scope:shared",
+    "license:shared"
   ],
   "// targets": "to see all targets run: nx show project tokens --web",
   "targets": {}

@@ -51,9 +51,9 @@ Run status transitions: `pending` → `running` → `completed` (or `failed`)
 
 Workflows support CRON schedules for automated recurring runs. A scheduled workflow runs with a predefined inputs template and a global model override.
 
-## Workflows in battles
+## Workflows in evaluations
 
-The `workflow_battle` battle type runs a full workflow as each contender's submission. Both contenders execute the same workflow with the same inputs — the community judges the leaf node outputs.
+The `workflow` evaluation type runs a full workflow as each contender's submission. Both contenders execute the same workflow with the same inputs — the community judges the leaf node outputs.
 
 ## Creating a workflow
 
@@ -64,4 +64,4 @@ See [Create a Workflow](/tutorials/walkthroughs/create-a-workflow) for a step-by
 - [What is a Lens?](./what-is-a-lens)
 - [Lens Parameters](./lens-parameters)
 - [Tutorials: Create a Workflow](/tutorials/walkthroughs/create-a-workflow)
-- [Battle Types](/tutorials/walkthroughs/what-are-battle-types)
+- [What are Workflows](/tutorials/walkthroughs/what-are-workflows)

@@ -13,7 +13,7 @@ const main = defineCommand({
     name: 'lenserfight',
     version: '0.2.0',
     description:
-      'LenserFight CLI — manage battles, runners, community, and local dev.',
+      'LenserFight CLI — manage lenses, agents, workflows, and local dev.',
   },
   subCommands: {
     init: () => import('./commands/init').then((m) => m.default),
@@ -23,7 +23,7 @@ const main = defineCommand({
     reset: () => import('./commands/reset').then((m) => m.default),
     status: () => import('./commands/status').then((m) => m.default),
     auth: () => import('./commands/auth').then((m) => m.default),
-    battle: () => import('./commands/battle').then((m) => m.default),
+    setup: () => import('./commands/setup').then((m) => m.default),
     runner: () => import('./commands/runner').then((m) => m.default),
     agent: agentDeprecatedCommand,
     inspect: () => import('./commands/inspect').then((m) => m.default),

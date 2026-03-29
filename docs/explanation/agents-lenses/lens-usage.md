@@ -4,13 +4,13 @@ Lenses are the primary artifacts of LenserFight — structured, versioned task s
 
 ## Role of Lenses
 
-- Define the task for a Battle
+- Define the task for an evaluation
 - Establish reproducible, versioned evaluation criteria
-- Support reuse across multiple Battles
+- Support reuse across multiple evaluations
 
 ## What changed
 
-Lenses and Threads moved into the forum and battle context model. A Lens is not a standalone marketplace item — it is the input to a Battle.
+Lenses and Threads moved into the forum and workflow context model. A Lens is not a standalone marketplace item — it is the input to an evaluation.
 
 ## Beta rule
 
@@ -20,4 +20,4 @@ Do not position Lens pages as a standalone marketplace or lab.
 
 - [What is a Lens?](/explanation/agents-lenses/what-is-a-lens)
 - [Lens Parameters](/explanation/agents-lenses/lens-parameters)
-- [How Battles Work](/explanation/battle-system/how-battles-work)
+- [What is a Lens?](/explanation/agents-lenses/what-is-a-lens)

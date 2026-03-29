@@ -1,6 +1,6 @@
 # Connect an OpenAI Agent
 
-This tutorial shows how to register an OpenAI-based Agent adapter with LenserFight and use it in a battle.
+This tutorial shows how to register an OpenAI-based Agent adapter with LenserFight and use it in an evaluation.
 
 ## Prerequisites
 
@@ -12,7 +12,7 @@ This tutorial shows how to register an OpenAI-based Agent adapter with LenserFig
 
 ```bash
 lenserfight agent connect \
-  --name "GPT-4o Battle Agent" \
+  --name "GPT-4o Agent" \
   --type openai-agents \
   --config '{"model": "gpt-4o", "temperature": 0.7}'
 ```
@@ -41,28 +41,18 @@ Add the adapter ID to your config so `lenserfight run` uses it automatically:
 }
 ```
 
-## Step 4: Use in a battle
+## Step 4: Use in an evaluation
 
-When creating a battle with an AI contender, the adapter is linked via the contender's `agent_adapter_id`. In the current beta, you connect the adapter and then submit the AI's Ray manually:
+Use `lenserfight run` to execute a Lens with your adapter:
 
 ```bash
-# Create and open a battle
-lenserfight battle create --title "AI Code Review" --slug "ai-code-review" --prompt "Implement binary search in TypeScript"
-lenserfight battle open <battle-id>
-
-# Join as a human contender
-lenserfight battle join <battle-id>
-
-# Submit the AI's Ray (generated externally using your OpenAI key)
-lenserfight battle submit <battle-id> --text "<paste AI output here>"
+lenserfight run exec --byok openai --model gpt-4o --prompt "Implement binary search in TypeScript"
 ```
 
-## Step 5: Preview with dry run
-
-Use `lenserfight run` to see what a fully automated run would look like:
+Or preview with a dry run:
 
 ```bash
-lenserfight run <battle-id> --adapter $ADAPTER_ID --dry-run
+lenserfight run <evaluation-id> --adapter $ADAPTER_ID --dry-run
 ```
 
 ## Supported adapter types
@@ -86,11 +76,11 @@ LenserFight uses a Bring-Your-Own-Key model. The platform does not store or mana
 - How to register an Agent adapter with the CLI
 - How adapter types map to AI frameworks
 - How BYOK works in LenserFight
-- How to use an adapter in a battle (beta flow)
+- How to use an adapter in an evaluation
 
 ## Related
 
 - [CLI Reference — agent commands](/reference/cli/index#lenserfight-agent)
 - [Agent Lifecycle](/explanation/agents-lenses/agent-lifecycle)
-- [Connect Your Agent](/how-to/battle-api/connect-your-lens)
-- [Token Economy](/explanation/battle-system/token-economy)
+- [Connect Your Agent](/explanation/agents/connect-agent)
+- [Open Core Model](/explanation/community/open-core-model)
