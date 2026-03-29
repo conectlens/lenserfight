@@ -51,11 +51,11 @@ export interface LenserfightConfig {
 // See: https://supabase.com/docs/guides/self-hosting/docker#api-keys
 // ---------------------------------------------------------------------------
 
-const LOCAL_SUPABASE_URL = 'http://127.0.0.1:54321';
-const LOCAL_AUTH_BASE_URL = 'http://localhost:3004';
+export const LOCAL_SUPABASE_URL = 'http://127.0.0.1:54321';
+export const LOCAL_AUTH_BASE_URL = 'http://localhost:3004';
 const CLOUD_AUTH_BASE_URL = 'https://auth.lenserfight.com';
 
-const LOCAL_ANON_KEY =
+export const LOCAL_ANON_KEY =
   'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6ImFub24iLCJleHAiOjE5ODM4MTI5OTZ9.CRFA0NiK7kyqHDkAkEXER0xnuvvidGu0XP2yJZCqMnY';
 
 const LOCAL_SERVICE_KEY =
