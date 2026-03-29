@@ -111,7 +111,8 @@ export async function callProvider(
   apiKey: string,
   model: string,
   messages: ProviderMessage[],
-  options?: ProviderRequestOptions
+  options?: ProviderRequestOptions,
+  signal?: AbortSignal
 ): Promise<ProviderResponse> {
   const adapter = getAdapter(provider);
   const { url: baseUrl, body, headers } = adapter.transformRequest(model, messages, options);
@@ -121,6 +122,7 @@ export async function callProvider(
     method: 'POST',
     headers: { ...headers, ...adapter.authHeader(apiKey) },
     body,
+    signal,
   });
 
   if (!response.ok) {

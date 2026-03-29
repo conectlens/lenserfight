@@ -1,6 +1,7 @@
 import '@xyflow/react/dist/style.css'
 import { queryKeys } from '@lenserfight/data/cache'
 import { workflowsService } from '@lenserfight/data/repositories'
+import { WorkflowExecutionService } from '@lenserfight/infra/execution'
 import { useQueryClient } from '@tanstack/react-query'
 import {
   ReactFlow,
@@ -15,6 +16,7 @@ import {
   useEdgesState,
   useReactFlow,
 } from '@xyflow/react'
+import { Pencil } from 'lucide-react'
 import React, { useCallback, useEffect, useRef } from 'react'
 
 import { useSaveWorkflow } from '../hooks/useSaveWorkflow'
@@ -160,12 +162,13 @@ function WorkflowBuilderCanvasInner({
   onEditLens,
   onEdit,
 }: WorkflowBuilderCanvasProps) {
-  const { screenToFlowPosition } = useReactFlow()
+  const { screenToFlowPosition, fitView } = useReactFlow()
   const { mutateAsync: saveWorkflow } = useSaveWorkflow()
   const queryClient = useQueryClient()
   const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const flowNodesRef = useRef<Node<WorkflowNodeData>[]>([])
   const flowEdgesRef = useRef<Edge[]>([])
+  const hasAppliedInitialLayoutRef = useRef(false)
 
   // ── Remove handlers ──────────────────────────────────────────────────────
   const handleRemoveNode = useCallback((nodeId: string) => {
@@ -203,10 +206,40 @@ function WorkflowBuilderCanvasInner({
     edgeRecords.map((e) => toFlowEdge(e, handleRemoveEdge))
   )
 
-  // Re-seed when DB records arrive (initial fetch)
+  const buildFlowNodes = useCallback(
+    (records: WorkflowNodeRecord[]) =>
+      records.map((n) =>
+        toFlowNode(n, handleRemoveNode, onConfigNode, onEditLens, currentUserId)
+      ),
+    [handleRemoveNode, onConfigNode, onEditLens, currentUserId]
+  )
+
+  const buildFlowEdges = useCallback(
+    (records: WorkflowEdgeRecord[]) => records.map((e) => toFlowEdge(e, handleRemoveEdge)),
+    [handleRemoveEdge]
+  )
+
+  // Re-seed when DB records arrive (initial fetch or persisted save reconciliation)
   useEffect(() => {
-    setNodes(nodeRecords.map((n) => toFlowNode(n, handleRemoveNode, onConfigNode, onEditLens, currentUserId, nodeConfigOverrides)))
-  }, [nodeRecords, handleRemoveNode, onConfigNode, onEditLens, currentUserId, nodeConfigOverrides, setNodes])
+    const nextNodes = buildFlowNodes(nodeRecords)
+    const nextEdges = buildFlowEdges(edgeRecords)
+
+    if (!hasAppliedInitialLayoutRef.current && nextNodes.length > 0) {
+      hasAppliedInitialLayoutRef.current = true
+      setNodes(computeTreeLayout(nextNodes, nextEdges))
+      setEdges(nextEdges)
+
+      if (typeof window !== 'undefined') {
+        window.requestAnimationFrame(() => {
+          fitView({ padding: 0.25, duration: 200 })
+        })
+      }
+      return
+    }
+
+    setNodes(nextNodes)
+    setEdges(nextEdges)
+  }, [nodeRecords, edgeRecords, buildFlowNodes, buildFlowEdges, fitView, setNodes, setEdges])
 
   // Sync config overrides into existing nodes without re-seeding positions
   useEffect(() => {
@@ -217,10 +250,6 @@ function WorkflowBuilderCanvasInner({
       return { ...n, data: { ...n.data, config: override } }
     }))
   }, [nodeConfigOverrides, setNodes])
-
-  useEffect(() => {
-    setEdges(edgeRecords.map((e) => toFlowEdge(e, handleRemoveEdge)))
-  }, [edgeRecords, handleRemoveEdge, setEdges])
 
   // ── Sync refs with latest state ───────────────────────────────────────────
   useEffect(() => { flowNodesRef.current = flowNodes }, [flowNodes])
@@ -243,6 +272,7 @@ function WorkflowBuilderCanvasInner({
       const eds = flowEdgesRef.current
       const upsertNodes: UpsertNodeInput[] = nds.map((n, i) => {
         const d = n.data as WorkflowNodeData & { lens_id?: string }
+        const cfg = d.config && Object.keys(d.config).length > 0 ? d.config : undefined
         return {
           id: n.id.startsWith('tmp-') ? undefined : n.id,
           lens_id: d.lens_id ?? n.id,
@@ -251,21 +281,34 @@ function WorkflowBuilderCanvasInner({
           ordinal: d.ordinal ?? i,
           position_x: n.position.x,
           position_y: n.position.y,
+          config: cfg ?? null,
         }
       })
       const upsertEdges: UpsertEdgeInput[] = eds
-        .filter((e) => !e.id.startsWith('tmp-edge-'))
         .map((e) => ({
-          id: e.id,
+          id: e.id.startsWith('tmp-edge-') ? undefined : e.id,
           source_node_id: e.source,
           target_node_id: e.target,
           source_output_key:
             (e.data as { sourceOutputKey?: string })?.sourceOutputKey ?? 'output',
           target_param_label: e.targetHandle ?? 'input',
         }))
-      saveWorkflow({ workflowId, nodes: upsertNodes, edges: upsertEdges }).catch(() => null)
+      saveWorkflow({ workflowId, nodes: upsertNodes, edges: upsertEdges })
+        .then(({ nodes: savedNodes, edges: savedEdges }) => {
+          setNodes(
+            savedNodes.map((record) =>
+              toFlowNode(record, handleRemoveNode, onConfigNode, onEditLens, currentUserId, nodeConfigOverrides)
+            )
+          )
+          setEdges(savedEdges.map((record) => toFlowEdge(record, handleRemoveEdge)))
+        })
+        .catch(() => null)
     }, 1500)
-  }, [readOnly, workflowId, saveWorkflow])
+  }, [readOnly, workflowId, saveWorkflow, handleRemoveNode, handleRemoveEdge, onConfigNode, onEditLens, currentUserId, nodeConfigOverrides, setNodes, setEdges])
+
+  // NOTE: nodeConfigOverrides changes are intentionally NOT wired to scheduleSave here.
+  // Config overrides are synced into node data above and are included in the next
+  // save triggered by a drag / connect / drop user action.
 
   // ── Connect nodes ─────────────────────────────────────────────────────────
   const onConnect = useCallback(
@@ -276,6 +319,20 @@ function WorkflowBuilderCanvasInner({
         type: 'workflowEdge',
         data: { sourceOutputKey: 'output', onRemove: handleRemoveEdge },
       } as Edge
+
+      // Cycle detection: check if adding this edge would create a cycle
+      const allNodes = flowNodesRef.current.map((n) => ({ id: n.id }))
+      const allEdges = [
+        ...flowEdgesRef.current.map((e) => ({ sourceNodeId: e.source, targetNodeId: e.target })),
+        { sourceNodeId: connection.source!, targetNodeId: connection.target! },
+      ]
+      const cycleNodes = WorkflowExecutionService.detectCycle(allNodes, allEdges)
+      if (cycleNodes) {
+        // Reject the connection — cycle detected
+        console.warn('[WorkflowCanvas] Cycle detected, rejecting edge:', cycleNodes)
+        return
+      }
+
       setEdges((eds) => addEdge(newEdge, eds))
       // Auto-layout: apply tree layout after connecting
       setNodes((nds) => computeTreeLayout(nds, [...flowEdgesRef.current, newEdge]))
@@ -345,9 +402,9 @@ function WorkflowBuilderCanvasInner({
       minZoom={0.2}
       maxZoom={2.5}
       proOptions={{ hideAttribution: true }}
-      connectionLineStyle={{ 
+      connectionLineStyle={{
         stroke: 'var(--cl-workflow-edge)',
-        strokeWidth: 2 
+        strokeWidth: 2
       }}
       className="[--xy-edge-stroke:var(--cl-workflow-edge)] [--xy-edge-stroke-selected:var(--cl-yellow-700)] dark:[--xy-edge-stroke-selected:var(--cl-yellow-500)]"
     >

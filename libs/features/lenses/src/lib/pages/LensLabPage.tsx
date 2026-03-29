@@ -8,13 +8,15 @@ import { Button, SEOHead } from '@lenserfight/ui/components'
 import { ConfirmModal } from '@lenserfight/ui/modals'
 import { SelectField } from '@lenserfight/ui/forms'
 import { useUI } from '@lenserfight/ui/providers'
+import { useDrawerRouter } from '@lenserfight/ui/routing'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
-import { History, Lock, Loader2, Pencil, Trash2, Flag } from 'lucide-react'
+import { History, Lock, Loader2, Pencil, Trash2, Flag, ListVideo } from 'lucide-react'
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 
 
 import { CreateLensModal } from '../components/CreateLensModal'
+import { ExecutionHistoryDrawer } from '../components/ExecutionHistoryDrawer'
 import { LabArtifactViewer } from '../components/LabArtifactViewer'
 import { LabExecutionPanel } from '../components/LabExecutionPanel'
 import { LabExecutionTimeline } from '../components/LabExecutionTimeline'
@@ -33,7 +35,8 @@ export const LensLabPage: React.FC = () => {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
   const { lenser, hasLenser } = useAuthenticatedLenser()
-  const { isLoading: authLoading, isAuthenticated } = useAuth()
+  const drawerRouter = useDrawerRouter()
+  const { isLoading: authLoading, isAuthenticated, redirectToLogin } = useAuth()
   const { setShareConfig } = useShareContext()
   const { setPageActions, setPageTitle } = useUI()
   const queryClient = useQueryClient()
@@ -133,13 +136,21 @@ export const LensLabPage: React.FC = () => {
     isEditMode,
   } = useCreateLens()
 
+  const normalizedLenserHandle = lenser?.handle?.trim().toLowerCase()
+  const hasActiveLenserProfile =
+    !!lenser && hasLenser && normalizedLenserHandle !== 'anon' && normalizedLenserHandle !== 'anonymous'
+
   const ensureProfile = useCallback((): boolean => {
-    if (!hasLenser) {
+    if (!isAuthenticated) {
+      redirectToLogin()
+      return false
+    }
+    if (!hasActiveLenserProfile) {
       navigate('/onboarding', { state: { from: window.location.pathname } })
       return false
     }
     return true
-  }, [hasLenser])
+  }, [hasActiveLenserProfile, isAuthenticated, navigate, redirectToLogin])
 
   const isOwner = !!(lenser && lens && lens.author.id === lenser.id)
 
@@ -188,7 +199,7 @@ export const LensLabPage: React.FC = () => {
       ]
     }
 
-    if (hasLenser) {
+    if (hasActiveLenserProfile) {
       return [
         {
           label: 'Report Lens',
@@ -200,7 +211,7 @@ export const LensLabPage: React.FC = () => {
     }
 
     return []
-  }, [handleDeleteClick, handleEditClick, hasLenser, isOwner, lens?.id])
+  }, [handleDeleteClick, handleEditClick, hasActiveLenserProfile, isOwner, lens?.id])
 
   useEffect(() => {
     setPageActions(pageActions)
@@ -230,10 +241,9 @@ export const LensLabPage: React.FC = () => {
   }, [lens, setPageTitle, setShareConfig])
 
   const handleCopy = async () => {
-    if (!lens || !ensureProfile() || !lenser) return
+    if (!lens) return
     try {
-      await navigator.clipboard.writeText(lens.content)
-      await actions.copyLens()
+      await navigator.clipboard.writeText(activeLensContent)
     } catch (error) {
       void error
     }
@@ -331,13 +341,29 @@ export const LensLabPage: React.FC = () => {
         isSaved={lens.isSaved}
         isSaving={isSaving}
         saveCount={lens.reactionCounts.saved}
+        onCopy={handleCopy}
+        onFork={() => forkLens({})}
+        canFork={hasActiveLenserProfile}
+        isForking={isForking}
       />
 
       {/* Lens body + Execution panel row */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
         <div className="lg:col-span-7 flex flex-col gap-2">
           {/* Viewer toolbar — History icon button */}
-          <div className="flex justify-end">
+          <div className="flex justify-end gap-2">
+            <button
+              type="button"
+              onClick={() => {
+                if (!ensureProfile()) return
+                drawerRouter.open('executions')
+              }}
+              title={hasActiveLenserProfile ? 'View execution history' : 'Sign in or register to view executions'}
+              className="flex items-center gap-1.5 rounded-2xl border border-surface-border bg-surface-base px-3 py-2 text-xs font-medium text-greyscale-600 shadow-sm transition-colors hover:border-primary-yellow-500 hover:text-greyscale-900 dark:text-greyscale-400 dark:hover:text-greyscale-50"
+            >
+              <ListVideo size={13} />
+              <span>Executions</span>
+            </button>
             <button
               type="button"
               onClick={() => { setShowVersionPicker((v) => !v); setSelectedVersionId(null) }}
@@ -360,6 +386,7 @@ export const LensLabPage: React.FC = () => {
             content={activeLensContent}
             onCopy={handleCopy}
             onFork={() => forkLens({})}
+            canFork={hasActiveLenserProfile}
             isForking={isForking}
           />
 
@@ -424,6 +451,7 @@ export const LensLabPage: React.FC = () => {
             streamCredits={lab.streamCredits}
             streamError={lab.streamError}
             isOwner={isOwner}
+            isAuthenticatedLenser={hasActiveLenserProfile}
           />
         </div>
 
@@ -458,6 +486,8 @@ export const LensLabPage: React.FC = () => {
             onAddLocalKey={funding.addLocalKey}
             onRemoveLocalKey={funding.removeLocalKey}
             onProviderDropdownOpen={handleProviderDropdownOpen}
+            isLocked={!hasActiveLenserProfile}
+            onSignIn={ensureProfile}
           />
         </div>
       </div>
@@ -485,6 +515,7 @@ export const LensLabPage: React.FC = () => {
             onLoadMore={lab.loadMoreHistory}
             isOwner={isOwner}
             onRestoreVersion={versionExecution.restoreAndExecute}
+            isAuthenticatedLenser={hasActiveLenserProfile}
           />
         </div>
       </div>
@@ -510,6 +541,17 @@ export const LensLabPage: React.FC = () => {
         message="Are you sure you want to delete this lens? This action cannot be undone."
         confirmLabel="Delete"
         isLoading={isDeleting}
+      />
+
+      <ExecutionHistoryDrawer
+        open={drawerRouter.isOpen('executions')}
+        onClose={drawerRouter.close}
+        lensId={id ?? ''}
+        history={lab.history}
+        isLoadingHistory={lab.isLoadingHistory}
+        hasMoreHistory={lab.hasMoreHistory}
+        loadMoreHistory={lab.loadMoreHistory}
+        onSelectRun={lab.setSelectedRunId}
       />
 
       {isReportOpen && (

@@ -6,6 +6,7 @@ import {
   PromptExecutionRecord,
   ExecutionRunStatus,
   SetArtifactVisibilityDTO,
+  PersistLocalExecutionDTO,
 } from '@lenserfight/types'
 
 // --- Port ---
@@ -18,6 +19,7 @@ export interface ExecutionRepositoryPort {
   getArtifactsForRun(runId: string): Promise<ExecutionArtifact[]>
   pollRunStatus(runId: string): Promise<Pick<ExecutionRun, 'id' | 'status' | 'completedAt' | 'errorCode'>>
   setArtifactVisibility(dto: SetArtifactVisibilityDTO): Promise<void>
+  persistLocalExecution(dto: PersistLocalExecutionDTO): Promise<string>
 }
 
 // --- Supabase Implementation ---
@@ -60,7 +62,6 @@ export class SupabaseExecutionRepository implements ExecutionRepositoryPort {
       contentJson: (row.content_json as unknown) ?? null,
       visibility: (row.visibility as ExecutionArtifact['visibility']) ?? 'private',
       isPrimaryOutput: (row.is_primary_output as boolean) ?? false,
-      mediaObjectId: (row.media_object_id as string | null) ?? null,
       createdAt: row.created_at as string,
     }
   }
@@ -144,7 +145,7 @@ export class SupabaseExecutionRepository implements ExecutionRepositoryPort {
       .schema('execution')
       .from('artifacts')
       .select(
-        'id, run_id, artifact_kind, content_text, content_json, visibility, is_primary_output, media_object_id, created_at',
+        'id, run_id, artifact_kind, content_text, content_json, visibility, is_primary_output, created_at',
       )
       .eq('run_id', runId)
       .order('is_primary_output', { ascending: false })
@@ -183,6 +184,21 @@ export class SupabaseExecutionRepository implements ExecutionRepositoryPort {
     })
 
     if (error) this.handleError(error)
+  }
+
+  async persistLocalExecution(dto: PersistLocalExecutionDTO): Promise<string> {
+    const { data, error } = await supabase.schema('execution').rpc('fn_persist_local_execution', {
+      p_lens_id: dto.lensId,
+      p_version_id: dto.versionId ?? null,
+      p_provider: dto.provider,
+      p_model: dto.model,
+      p_content_text: dto.contentText,
+      p_token_input: dto.tokenInput,
+      p_token_output: dto.tokenOutput,
+    })
+
+    if (error) this.handleError(error)
+    return data as string
   }
 }
 
