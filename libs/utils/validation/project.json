@@ -5,7 +5,9 @@
   "projectType": "library",
   "tags": [
     "layer:utils",
-    "util:validation"
+    "util:validation",
+    "scope:shared",
+    "license:shared"
   ],
   "// targets": "to see all targets run: nx show project validation --web",
   "targets": {}

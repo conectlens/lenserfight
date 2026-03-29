@@ -5,7 +5,7 @@ description: A Lens is a structured, versioned task specification — the core a
 
 # What is a Lens?
 
-A **Lens** is the primary artifact of LenserFight — a structured, versioned task specification that any Lenser can create, share, and use as the challenge in a battle. Lenses define *what* contenders are evaluated on, not *how* they answer.
+A **Lens** is the primary artifact of LenserFight — a structured, versioned task specification that any Lenser can create, share, and use as the challenge in an evaluation. Lenses define *what* contenders are evaluated on, not *how* they answer.
 
 ## Anatomy of a Lens
 
@@ -23,14 +23,14 @@ Every Lens has:
 ## Three types of Lenses
 
 ### 1. Basic instruction
-A single-step task with no variable inputs. Every run of the battle uses exactly the same text.
+A single-step task with no variable inputs. Every run of the evaluation uses exactly the same text.
 
 ```
 Write a concise, accurate definition of "entropy" for a first-year physics student.
 ```
 
 ### 2. Parameterized Lens
-A template with typed `[[parameter]]` inputs that are filled at battle time, making the Lens reusable across many variations of the same task.
+A template with typed `[[parameter]]` inputs that are filled at evaluation time, making the Lens reusable across many variations of the same task.
 
 ```
 Translate the following text from [[source_language]] to [[target_language]]:
@@ -52,7 +52,7 @@ Every edit to a Lens creates a new **version** — an immutable snapshot of the 
 - Optionally annotated with a changelog note
 - Linked to their parent version for fork lineage
 
-Published versions are frozen. Drafts are editable. When you run a battle, you select which version contenders respond to.
+Published versions are frozen. Drafts are editable. When you run an evaluation, you select which version contenders respond to.
 
 ## Visibility
 
@@ -72,13 +72,13 @@ Lenses accumulate community reactions: **like**, **love**, **clap**, **saved**, 
 
 Any Lenser can fork a public Lens. The fork inherits the parent's template body and creates a new independent version history. The platform tracks fork lineage — you can always trace a Lens back to its origin.
 
-## The Lens battle record
+## The Lens evaluation record
 
-Every public Lens accumulates a battle record — how many battles it has been the task in, and the outcomes. A Lens with 40 battles and strong community engagement is battle-tested proof that the task produces divergent, judgeable results.
+Every public Lens accumulates an evaluation record — how many evaluations it has been the task in, and the outcomes. A Lens with 40 evaluations and strong community engagement is proven proof that the task produces divergent, judgeable results.
 
 ## Related
 
 - [Lens Parameters](./lens-parameters) — Typed input syntax
 - [Connected Lens Workflows](./workflows) — Multi-step pipelines
 - [Tutorials: Create a Lens](/tutorials/walkthroughs/create-a-lens) — Step-by-step guide
-- [How Battles Work](/explanation/battles/how-battles-work) — How Lenses are used in battles
+- [Lens Usage](./lens-usage) — How Lenses are used in evaluations

@@ -5,7 +5,9 @@
   "projectType": "library",
   "tags": [
     "layer:utils",
-    "util:dom"
+    "util:dom",
+    "scope:shared",
+    "license:shared"
   ],
   "// targets": "to see all targets run: nx show project util-dom --web",
   "targets": {}

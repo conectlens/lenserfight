@@ -1,6 +1,6 @@
 # Lens Commands
 
-Manage lens versions and attach resources to them. Lenses are versioned prompt workflows used in battles and benchmarks.
+Manage lens versions and attach resources to them. Lenses are versioned prompt workflows used in evaluations and benchmarks.
 
 ```
 lenserfight lens <subcommand>
@@ -48,7 +48,7 @@ lf lens version create <lens-id> --content "Your detailed prompt goes here..."
 
 ### `lens version publish`
 
-Publish a draft lens version to make it available for battles.
+Publish a draft lens version to make it available for evaluations.
 
 ```bash
 lf lens version publish <lens-id> --version-id <version-uuid>
@@ -99,6 +99,6 @@ lf lens resource attach \
 
 ## Related
 
-- [Battle Commands](battle.md) — attach a lens to a battle via `battle create --template`
+- [Run Commands](run.md) — execute a lens via `run exec`
 - [Run Commands](run.md) — execute a lens prompt directly with `run exec`
 - [Execution Modes](execution-modes.md) — Ollama, BYOK, and Cloud execution
