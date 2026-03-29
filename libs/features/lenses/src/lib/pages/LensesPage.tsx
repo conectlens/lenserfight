@@ -115,7 +115,7 @@ export const LensesPage: React.FC = () => {
 
   const handleCreateClick = () => {
     if (!isAuthenticated) {
-      const authAppUrl = import.meta.env.VITE_AUTH_BASE_URL ?? 'https://auth.lenserfight.com'
+      const authAppUrl = 'https://auth.lenserfight.com'
       window.location.href = `${authAppUrl}/login?return_url=${encodeURIComponent(buildAuthReturnUrl(window.location.href))}`
       return
     }

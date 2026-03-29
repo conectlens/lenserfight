@@ -262,7 +262,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, [])
 
   const redirectToLogin = useCallback((delayMs = 0) => {
-    const authAppUrl = (import.meta as any).env?.VITE_AUTH_BASE_URL ?? 'https://auth.lenserfight.com'
+    const authAppUrl = 'https://auth.lenserfight.com'
     const returnUrl = encodeURIComponent(buildAuthReturnUrl(window.location.href))
     const target = `${authAppUrl}/login?return_url=${returnUrl}`
     if (delayMs > 0) {

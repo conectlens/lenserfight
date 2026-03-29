@@ -23,7 +23,7 @@ describe('developer token CLI helpers', () => {
     mockResolveConfig.mockReturnValue({
       mode: 'local',
       supabaseUrl: 'http://127.0.0.1:54321',
-      authBaseUrl: 'http://localhost:3004',
+      cloudApiUrl: 'http://localhost:8786',
       supabaseAnonKey: 'anon',
       dbPort: 54322,
       apiPort: 54321,

@@ -6,7 +6,7 @@ description: Define i18n and internalization rules for forum (React/i18next) and
 # Apps Language Rules
 
 ## Use when
-- Adding new UI strings to `apps/forum` (must add to `en.json` + `tr.json` stubs)
+- Adding new UI strings to `apps/web` (must add to `en.json` + `tr.json` stubs)
 - Writing new documentation pages (English first; Turkish stub in `docs/tr/` recommended)
 - Adding a new locale beyond `en`/`tr`
 - Checking consistency of translations across JSON catalogs
@@ -21,12 +21,12 @@ description: Define i18n and internalization rules for forum (React/i18next) and
 
 ---
 
-## Forum i18n (`apps/forum` — React + i18next)
+## Forum i18n (`apps/web` — React + i18next)
 
 ### Setup
-- i18next initialised in `apps/forum/src/i18n.ts`
-- Locale files: `apps/forum/src/locales/en.json` and `apps/forum/src/locales/tr.json`
-- Imported at app entry (`apps/forum/src/index.tsx`) before `<App />`
+- i18next initialised in `apps/web/src/i18n.ts`
+- Locale files: `apps/web/src/locales/en.json` and `apps/web/src/locales/tr.json`
+- Imported at app entry (`apps/web/src/index.tsx`) before `<App />`
 - Language detection order: `localStorage` (`lf-language` key) → browser navigator → html tag
 - Fallback: English
 
@@ -56,7 +56,7 @@ errors.generic  → "Something went wrong." / "Bir hata oluştu."
 - `SEOHead.tsx` renders `<link rel="canonical">`, `og:locale`, and JSON-LD automatically
 - `hreflang` alternates: include `?lang=tr` query param in alternates (no URL-prefix routing)
 - `<html lang="">` is updated on language change by `LanguageSwitcher`
-- `apps/forum/public/sitemap.xml` includes `xhtml:link` hreflang alternates for static routes
+- `apps/web/public/sitemap.xml` includes `xhtml:link` hreflang alternates for static routes
 
 ---
 
@@ -98,9 +98,9 @@ Bu belge yakında Türkçe olarak tam içerikle güncellenecektir.
 
 ## Adding a new locale (beyond en/tr)
 
-1. **Forum**: Add new JSON file at `apps/forum/src/locales/<code>.json`. Add `{ code, label, short }` to `LANGUAGES` array in `LanguageSwitcher.tsx`. Register resource in `i18n.ts`.
+1. **Forum**: Add new JSON file at `apps/web/src/locales/<code>.json`. Add `{ code, label, short }` to `LANGUAGES` array in `LanguageSwitcher.tsx`. Register resource in `i18n.ts`.
 2. **Docs**: Add `<code>` entry to `locales` in `config.ts`. Create `docs/<code>/` directory. Add `hreflang` to `head`.
-3. **SEO**: Add `<xhtml:link>` hreflang entries to `apps/forum/public/sitemap.xml`.
+3. **SEO**: Add `<xhtml:link>` hreflang entries to `apps/web/public/sitemap.xml`.
 
 ## Load only when needed
 - [i18n and hreflang reference](references/REFERENCE.md)

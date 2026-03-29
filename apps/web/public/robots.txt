@@ -20,4 +20,4 @@ Allow: /
 User-agent: facebookexternalhit
 Allow: /
 
-Sitemap: https://forum.lenserfight.com/sitemap.xml
+Sitemap: https://lenserfight.com/sitemap.xml

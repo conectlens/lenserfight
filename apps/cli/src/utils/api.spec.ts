@@ -4,7 +4,7 @@ describe('resolveBearerToken', () => {
   const config = {
     mode: 'local' as const,
     supabaseUrl: 'http://127.0.0.1:54321',
-    authBaseUrl: 'http://localhost:3004',
+    cloudApiUrl: 'http://localhost:8786',
     supabaseAnonKey: 'anon',
     supabaseServiceRoleKey: 'service',
     developerToken: 'developer',

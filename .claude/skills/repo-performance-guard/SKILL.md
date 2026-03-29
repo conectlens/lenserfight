@@ -28,7 +28,7 @@ Prevent the frontend from freezing or crashing when local Supabase contains larg
 ## Repo-specific gotchas
 
 - Large local seeds in `supabase/seeds/11_*` through `21_*` can make naive queries destroy Vite responsiveness.
-- `apps/forum` is the highest-risk frontend for overfetching because threads, prompts, replies, tags, reactions, and multilingual data all compound payload size.
+- `apps/web` is the highest-risk frontend for overfetching because threads, prompts, replies, tags, reactions, and multilingual data all compound payload size.
 - `libs/data/repositories` and `libs/data/supabase` are likely the central places where unsafe query shapes should be fixed first.
 - If a Supabase view or RPC returns oversized payloads, prefer shrinking it or replacing it with narrower REST-compatible access patterns.
 - Do not fix frontend freezes by only hiding UI. Reduce the query size and retained state size.
