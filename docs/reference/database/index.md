@@ -1,6 +1,6 @@
 # Database
 
-LenserFight uses PostgreSQL via Supabase with a multi-schema architecture. Each schema owns a bounded domain — battles, user identity, content, XP, analytics, AI, and supporting infrastructure.
+LenserFight uses PostgreSQL via Supabase with a multi-schema architecture. Each schema owns a bounded domain — user identity, content, lenses, XP, analytics, AI, and supporting infrastructure.
 
 The private `authz` schema stores device-approval requests and developer-token state. It is not exposed through PostgREST; clients use `public.fn_auth_*` RPC wrappers.
 
@@ -14,7 +14,7 @@ The private `authz` schema stores device-approval requests and developer-token s
 
 | Schema | Purpose | PostgREST |
 |--------|---------|-----------|
-| `battles` | Core product — arenas, contenders, submissions, votes, scoring | Yes |
+| `lenses` | Core product — lenses, versions, parameters, workflows | Yes |
 | `lensers` | User identity — profiles, badges, social links, waiting list | Yes |
 | `content` | Forum content — threads, replies, prompt templates, tags, reactions | Yes |
 | `xp` | Experience points — rules, events, totals, levels, streaks, seasons | Yes |
@@ -31,7 +31,7 @@ The private `authz` schema stores device-approval requests and developer-token s
 ## Navigation
 
 - [Schema Overview](/reference/database/schema-overview) — table inventory and dependency diagram
-- Individual schemas: [lensers](/reference/database/schema-lensers), [content](/reference/database/schema-content), [xp](/reference/database/schema-xp), [analytics](/reference/database/schema-analytics), [ai](/reference/database/schema-ai), [battles](/reference/database/schema-battles), [tenancy](/reference/database/schema-tenancy), [media](/reference/database/schema-media), [other](/reference/database/schema-other)
+- Individual schemas: [lensers](/reference/database/schema-lensers), [content](/reference/database/schema-content), [xp](/reference/database/schema-xp), [analytics](/reference/database/schema-analytics), [ai](/reference/database/schema-ai), [lenses](/reference/database/schema-lenses), [tenancy](/reference/database/schema-tenancy), [media](/reference/database/schema-media), [other](/reference/database/schema-other)
 - [RLS Reference](/reference/database/rls-reference) — row-level security policies per table
 - [RPC Reference](/reference/database/rpc-reference) — all public API functions
 - [Local Setup](/reference/database/local-setup) — run the full database locally

@@ -5,7 +5,9 @@
   "projectType": "library",
   "tags": [
     "layer:ui",
-    "ui:components"
+    "ui:components",
+    "scope:shared",
+    "license:shared"
   ],
   "// targets": "to see all targets run: nx show project components --web",
   "targets": {}

@@ -1,6 +1,6 @@
 # Agent Commands
 
-Register and manage Agent adapters that participate in battles.
+Register and manage Agent adapters that participate in evaluations.
 
 ```
 lenserfight agent <subcommand>

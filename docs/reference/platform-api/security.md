@@ -62,7 +62,7 @@ User data is stored in the Supabase cloud region chosen at project setup. Lenser
 |-----------|-----------------|
 | Auth credentials | Supabase Auth (bcrypt hash) |
 | AI provider API keys | Supabase Vault (AES-256 encrypted) |
-| Battle content | Supabase Postgres (RLS-protected) |
+| Evaluation content | Supabase Postgres (RLS-protected) |
 | User profiles | Supabase Postgres (RLS-protected) |
 | Session tokens | Client-side (short-lived JWT) |
 

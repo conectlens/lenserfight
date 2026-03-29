@@ -14,7 +14,7 @@ language rules across unrelated files or putting i18n ownership in the app shell
 - `libs/features/settings` owns the language selector in the user settings flow.
 - `libs/features/onboarding` owns the initial preferred-language capture.
 - `libs/features/auth` owns preferred-language persistence and session data.
-- `apps/forum/src/i18n.ts` composes feature locale exports and handles runtime
+- `apps/web/src/i18n.ts` composes feature locale exports and handles runtime
   language detection.
 - `apps/docs` is optional and only changes when docs localization is requested.
 
@@ -27,7 +27,7 @@ Use the same locale code everywhere. Do not invent a second translation system.
    `libs/features/<feature>/src/lib/i18n/` so the feature remains the
    information expert for its own copy.
 3. Export the locale from the feature library root.
-4. Compose the new locale in `apps/forum/src/i18n.ts`.
+4. Compose the new locale in `apps/web/src/i18n.ts`.
 5. Update onboarding, settings, and auth language surfaces so they use the same
    locale code.
 6. Update docs locale config only if docs are part of the request.
@@ -38,8 +38,8 @@ Use the same locale code everywhere. Do not invent a second translation system.
 | --- | --- |
 | `libs/features/<feature>/src/lib/i18n/{LOCALE}.ts` | Feature locale bundle |
 | `libs/features/<feature>/src/index.ts` | Re-export feature locale bundle |
-| `apps/forum/src/i18n.ts` | Runtime locale composition and detector |
-| `apps/forum/src/index.tsx` | Imports `./i18n` before `App` |
+| `apps/web/src/i18n.ts` | Runtime locale composition and detector |
+| `apps/web/src/index.tsx` | Imports `./i18n` before `App` |
 | `libs/features/settings/src/lib/components/GeneralTab.tsx` | Language selector and save flow |
 | `libs/features/onboarding/src/lib/components/CreateLenserProfileModal.tsx` | Preferred-language capture |
 | `libs/features/auth/src/lib/context/AuthContext.tsx` | Persisted language and session data |
@@ -63,7 +63,7 @@ Use the same locale code everywhere. Do not invent a second translation system.
 - High Cohesion: one feature, one locale module tree, one responsibility.
 - Protected Variations: keep user-facing language changes behind the feature
   locale exports so app composition stays thin.
-- Controller: use `apps/forum/src/i18n.ts` to coordinate locale selection, not
+- Controller: use `apps/web/src/i18n.ts` to coordinate locale selection, not
   the feature screens themselves.
 
 ## Verification
@@ -83,5 +83,5 @@ If the request touches docs, also validate the docs build.
 - Do not recreate the old nested i18n layout in this repo.
 - Do not split the same locale across multiple competing trees.
 - Do not move locale ownership into the feature screens themselves.
-- Do not move locale ownership back into `apps/forum/src/locales`.
+- Do not move locale ownership back into `apps/web/src/locales`.
 - Do not introduce `.yml` skill copies for this skill.

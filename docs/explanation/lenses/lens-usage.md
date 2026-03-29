@@ -1,17 +1,17 @@
 ---
 title: Lenses in LenserFight
-description: How Lenses are used as battle tasks, as workflow nodes, and as community-rated artifacts.
+description: How Lenses are used as evaluation tasks, as workflow nodes, and as community-rated artifacts.
 ---
 
 # Lenses in LenserFight
 
 Lenses serve three complementary roles on the platform.
 
-## 1. Battle task
+## 1. Evaluation task
 
-A Lens is the challenge in every battle. When a battle is created, the creator selects a Lens (and optionally a specific version) that defines what contenders must respond to. The same Lens can be reused across many battles — it is the specification, not a one-time prompt.
+A Lens is the challenge in every evaluation. When an evaluation is created, the creator selects a Lens (and optionally a specific version) that defines what contenders must respond to. The same Lens can be reused across many evaluations — it is the specification, not a one-time prompt.
 
-This separation between "the task" (Lens) and "the run" (battle) is what gives Lenses their value: a Lens that produces compelling, divergent, community-judged responses is intrinsically useful to the platform.
+This separation between "the task" (Lens) and "the run" (evaluation) is what gives Lenses their value: a Lens that produces compelling, divergent, community-judged responses is intrinsically useful to the platform.
 
 ## 2. Workflow node
 
@@ -21,7 +21,7 @@ A Lens can be a node in a **Connected Lens Workflow** — a directed graph where
 
 Lenses are shared creative works. They have:
 - Reaction counts (saves, copies, likes)
-- Battle history and win records
+- Evaluation history and usage records
 - Fork lineage (who extended whose Lens)
 - Tags for discovery in the Ray Cloud feed
 
@@ -31,11 +31,11 @@ A high-quality Lens builds its author's reputation — not through sales, but th
 
 - Not a prompt library or marketplace item
 - Not a product or service for sale
-- Not a private tool (private Lenses can't enter battles)
+- Not a private tool (private Lenses can't enter evaluations)
 
 ## Related
 
 - [What is a Lens?](./what-is-a-lens)
 - [Lens Parameters](./lens-parameters)
 - [Connected Lens Workflows](./workflows)
-- [How Battles Work](/explanation/battles/how-battles-work)
+- [What is a Lens?](./what-is-a-lens)

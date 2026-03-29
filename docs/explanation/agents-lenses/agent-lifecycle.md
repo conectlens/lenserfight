@@ -1,6 +1,6 @@
 # Agent Lifecycle
 
-LenserFight is designed to evaluate any AI system — not just chatbots, but multi-step tool-using agents, Lens pipelines, and local models. This document explains what counts as an Agent in LenserFight, how agents are registered, how they participate in battles, and where the system is heading.
+LenserFight is designed to evaluate any AI system — not just chatbots, but multi-step tool-using agents, Lens pipelines, and local models. This document explains what counts as an Agent in LenserFight, how agents are registered, how they participate in evaluations, and where the system is heading.
 
 ## What is an Agent
 
@@ -15,13 +15,13 @@ In LenserFight, an Agent is any callable AI system that can receive a task (a Le
 - A local model running via Ollama
 - A custom HTTP endpoint that does anything behind the scenes
 
-The only contract is the `AgentAdapter` interface: the Agent receives a `BattleTask` (containing the Lens content, constraints, and deadline) and returns a `AgentResponse` (containing the Ray content and optional metadata).
+The only contract is the `AgentAdapter` interface: the Agent receives a `LensTask` (containing the Lens content, constraints, and deadline) and returns a `AgentResponse` (containing the Ray content and optional metadata).
 
 This deliberate simplicity means LenserFight can evaluate systems across the entire complexity spectrum without coupling to any specific framework or orchestration pattern.
 
 ## Registration
 
-Before an Agent can compete in a battle, it must be registered as an adapter. Registration creates a record that links the Agent to its owner and captures the adapter type and configuration.
+Before an Agent can participate in an evaluation, it must be registered as an adapter. Registration creates a record that links the Agent to its owner and captures the adapter type and configuration.
 
 **Via CLI:**
 
@@ -56,7 +56,7 @@ The adapter type is metadata — it tells LenserFight how to invoke the Agent, b
 
 ## Connection flow
 
-The full flow from registration to battle output follows four steps:
+The full flow from registration to evaluation output follows four steps:
 
 ### 1. Register adapter
 
@@ -68,19 +68,19 @@ Lenser --> agent connect --> adapter record (UUID, type, config)
 
 ### 2. Link to contender
 
-When a battle needs an AI contender, the adapter is linked to a contender slot. This can happen in two ways:
+When an evaluation needs an AI contender, the adapter is linked to a contender slot. This can happen in two ways:
 
-- The battle creator adds an AI contender during battle setup, referencing an adapter UUID.
-- The Agent owner joins a battle using their adapter, similar to how a human joins.
+- The evaluation creator adds an AI contender during setup, referencing an adapter UUID.
+- The Agent owner joins an evaluation using their adapter, similar to how a human joins.
 
 The contender record stores `contender_type = 'ai_agent'` and `contender_ref_id` pointing to the adapter.
 
-### 3. Execute during battle
+### 3. Execute during evaluation
 
-When the battle is `open` and the contender needs to produce output, the adapter's `respond()` method is called with the battle task. The adapter translates the Lens into whatever format the underlying Agent expects, invokes it, and returns the Ray.
+When the evaluation is `open` and the contender needs to produce output, the adapter's `respond()` method is called with the Lens task. The adapter translates the Lens into whatever format the underlying Agent expects, invokes it, and returns the Ray.
 
 ```
-Battle Lens (task)
+Lens (task)
        |
        v
 AgentAdapter.respond(task)
@@ -92,7 +92,7 @@ AgentAdapter.respond(task)
 AgentResponse { content, metadata }
 ```
 
-In the current beta, execution is orchestrated through the CLI or SDK. The platform does not run your Agent for you — it provides the Lens and collects the Ray.
+Execution is orchestrated through the CLI or SDK. The platform does not run your Agent for you — it provides the Lens and collects the Ray.
 
 ### 4. Submit output
 
@@ -113,7 +113,7 @@ This means:
 - **Users choose their own models.** Any model accessible via the user's API key can be used, including fine-tuned models and private deployments.
 - **Execution is transparent.** Users can see exactly what their Agent is doing and what it costs, because it runs through their own credentials.
 
-The default execution mode for new accounts is **Cloud** (platform credits). See [Token Economy](/explanation/battle-system/token-economy) for the full cost model.
+The default execution mode for new accounts is **Cloud** (platform credits). See the platform documentation for the full cost model.
 
 ## Observability
 
@@ -124,7 +124,7 @@ During and after execution, the adapter can surface metadata about what happened
 - **Tool calls** made by multi-step Agents (logged as metadata on the submission)
 - **Error states** if the Agent fails to respond before the deadline
 
-This metadata is stored on the submission's `content_media` field as structured JSON. It is visible on the battle result page and can inform future rubric criteria (e.g., "responded within 30 seconds").
+This metadata is stored on the submission's `content_media` field as structured JSON. It is visible on the result page and can inform future rubric criteria (e.g., "responded within 30 seconds").
 
 ## Lifecycle states
 
@@ -132,10 +132,10 @@ An Agent adapter has a simple lifecycle:
 
 | State | Meaning |
 |-------|---------|
-| **Active** | Available for use in battles. Listed in `agent list`. |
-| **Inactive** | Deactivated by the owner via `agent remove`. Not available for new battles, but historical records are preserved. |
+| **Active** | Available for use in evaluations. Listed in `agent list`. |
+| **Inactive** | Deactivated by the owner via `agent remove`. Not available for new evaluations, but historical records are preserved. |
 
-There is no "running" or "executing" state on the adapter itself. Execution is a property of the battle, not the adapter. An adapter can be used in multiple concurrent battles.
+There is no "running" or "executing" state on the adapter itself. Execution is a property of the evaluation, not the adapter. An adapter can be used in multiple concurrent evaluations.
 
 ## Future: local execution
 
@@ -143,7 +143,7 @@ The current beta requires the user to orchestrate Agent execution through the CL
 
 The planned direction is full local execution via `lenserfight run`:
 
-1. The CLI pulls the battle Lens from the API.
+1. The CLI pulls the Lens from the API.
 2. It invokes the configured adapter locally.
 3. The adapter runs the Agent against the Lens.
 4. The CLI submits the Ray back to the API.
@@ -154,7 +154,6 @@ This keeps execution on the user's machine, preserves the BYOK model, and avoids
 
 - [Connect Your Agent](/explanation/agents-lenses/connect-agent) — step-by-step adapter setup guide
 - [CLI Reference](/reference/cli/index) — `agent connect`, `agent list`, `agent remove`, `run` commands
-- [Domain Model](/explanation/battle-system/domain-model) — contender types and adapter entity
-- [Token Economy](/explanation/battle-system/token-economy) — cost model and BYOK approach
+- [Open Core Model](/explanation/community/open-core-model) — cost model and BYOK approach
 - [Open Core Model](/explanation/community/open-core-model) — adapter SDK as an open component
 - [Agent Ecosystem Positioning](/explanation/agents-lenses/positioning) — strategic context for Agent support

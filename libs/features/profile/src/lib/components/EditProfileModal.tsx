@@ -7,7 +7,7 @@ import { SelectField } from '@lenserfight/ui/forms'
 import { socialLinksService } from '@lenserfight/data/repositories'
 import { Lenser, SocialLink, SocialPlatform } from '@lenserfight/types'
 import { isValidUrl } from '@lenserfight/utils/validation'
-import { InputField } from '@lenserfight/features/auth'
+import { InputField } from '@lenserfight/ui/forms'
 
 interface EditProfileModalProps {
   isOpen: boolean

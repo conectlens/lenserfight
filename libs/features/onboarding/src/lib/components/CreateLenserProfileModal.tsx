@@ -1,7 +1,7 @@
 import { queryKeys } from '@lenserfight/data/cache'
 import { lenserService, preferencesService } from '@lenserfight/data/repositories'
 import { useAuth } from '@lenserfight/features/auth'
-import { InputField } from '@lenserfight/features/auth'
+import { InputField } from '@lenserfight/ui/forms'
 import { useAIProviders, useAIModelsByProvider } from '@lenserfight/features/generations'
 import { CreateLenserDTO, Lenser } from '@lenserfight/types'
 import { LanguageSelectBox, StepWizard } from '@lenserfight/ui/components'
@@ -98,7 +98,7 @@ export const CreateLenserProfileModal: React.FC = () => {
   useEffect(() => {
     if (authLoading || (isAuthenticated ? lenserLoading : false)) return
     if (!isAuthenticated) {
-      const authAppUrl = import.meta.env.VITE_AUTH_BASE_URL ?? 'https://auth.lenserfight.com'
+      const authAppUrl = 'https://auth.lenserfight.com'
       const returnUrl = encodeURIComponent(buildAuthReturnUrl(window.location.href))
       window.location.href = `${authAppUrl}/login?return_url=${returnUrl}`
     } else if (hasLenser && hasCompletedOnboarding) {

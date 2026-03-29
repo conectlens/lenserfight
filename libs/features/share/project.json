@@ -5,7 +5,9 @@
   "projectType": "library",
   "tags": [
     "layer:feature",
-    "feature:share"
+    "feature:share",
+    "scope:public",
+    "license:oss"
   ],
   "// targets": "to see all targets run: nx show project feature-share --web",
   "targets": {}
