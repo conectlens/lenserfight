@@ -14,7 +14,7 @@ import type {
   ExecutionResult,
 } from '@lenserfight/infra/execution'
 import type { Provider } from '@lenserfight/providers'
-import type { AIModel, FundingSource } from '@lenserfight/types'
+import type { AIModel, FundingSource, LocalKeyMeta } from '@lenserfight/types'
 
 /** Text-only providers that go through callProvider() from @lenserfight/providers. */
 const TEXT_PROVIDERS = new Set<string>(['openai', 'anthropic', 'google', 'mistral', 'ollama'])
@@ -68,6 +68,8 @@ interface UseWorkflowExecutionOptions {
   selectedKeyRefId?: string | null
   /** Async resolver that decrypts a local BYOK key — from useFundingSource.resolveLocalKey */
   resolveLocalKey?: (keyId: string) => Promise<string>
+  /** Local key metadata list — used to resolve provider when model key is an Ollama/local model not in DB */
+  localKeys?: LocalKeyMeta[]
 }
 
 /** Config shape stored in workflow_nodes.config (subset used for execution) */
@@ -101,6 +103,7 @@ export function useWorkflowExecution({
   selectedKeyRefId: _selectedKeyRefId,
   selectedLocalKeyId,
   resolveLocalKey,
+  localKeys,
 }: UseWorkflowExecutionOptions) {
   const isExecutingRef = useRef(false)
   const abortRef = useRef<AbortController | null>(null)
@@ -121,10 +124,20 @@ export function useWorkflowExecution({
 
       try {
         // Resolve global model → provider + API key
+        // For local BYOK (e.g. Ollama), the model key may not exist in the DB model list.
+        // Fall back to deriving the provider from the selected local key's metadata.
         const globalModel = models.find((m) => m.key === globalModelId)
-        if (!globalModel) throw new Error(`Model not found: ${globalModelId}`)
-
-        const providerName = globalModel.provider
+        let providerName: string
+        if (globalModel) {
+          // eslint-disable-next-line @typescript-eslint/no-deprecated
+          providerName = globalModel.provider
+        } else if (fundingSource === 'user_byok_local' && selectedLocalKeyId && localKeys?.length) {
+          const localKey = localKeys.find((k) => k.id === selectedLocalKeyId)
+          if (!localKey) throw new Error(`Model not found: ${globalModelId}`)
+          providerName = localKey.provider
+        } else {
+          throw new Error(`Model not found: ${globalModelId}`)
+        }
         if (!TEXT_PROVIDERS.has(providerName)) {
           throw new Error(`Browser-side execution is not supported for provider: ${providerName}`)
         }
@@ -204,7 +217,7 @@ export function useWorkflowExecution({
         if (abortRef.current === controller) abortRef.current = null
       }
     },
-    [nodes, edges, models, fundingSource, selectedLocalKeyId, resolveLocalKey], // eslint-disable-line react-hooks/exhaustive-deps
+    [nodes, edges, models, fundingSource, selectedLocalKeyId, resolveLocalKey, localKeys], // eslint-disable-line react-hooks/exhaustive-deps
   )
 
   return { execute, stopExecution }

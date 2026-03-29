@@ -9,7 +9,7 @@ import React, { useCallback, useMemo, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
 
-import { EditWorkflowModal } from '../components/EditWorkflowModal'
+import { CreateWorkflowWizard } from '../components/CreateWorkflowWizard'
 import { WorkflowBuilderCanvas } from '../components/WorkflowBuilderCanvas'
 import { WorkflowLensPalette } from '../components/WorkflowLensPalette'
 import { WorkflowNodeConfigPanel } from '../components/WorkflowNodeConfigPanel'
@@ -70,6 +70,7 @@ export function WorkflowBuilderPage({ workflowId, onBattleClick }: WorkflowBuild
     selectedKeyRefId: funding.selectedKeyRefId,
     selectedLocalKeyId: funding.selectedLocalKeyId,
     resolveLocalKey: stableResolveLocalKey,
+    localKeys: funding.localKeys,
   })
 
   // Per-node config overrides — synced to DB via canvas debounced save (workflow_nodes.config)
@@ -262,6 +263,19 @@ export function WorkflowBuilderPage({ workflowId, onBattleClick }: WorkflowBuild
                 {savedCount > 0 && <span>{savedCount}</span>}
               </Button>
 
+              {/* Edit button — owner only, left of Fork */}
+              {isOwner && (
+                <Button
+                  size="sm"
+                  variant="secondary"
+                  onClick={() => setIsEditModalOpen(true)}
+                  className="gap-1.5 w-auto rounded-xl px-2.5 py-1"
+                  title="Edit workflow"
+                >
+                  <Pencil size={12} />
+                </Button>
+              )}
+
               {!isOwner && workflow.visibility === 'public' && (
                 <Button
                   size="sm"
@@ -285,19 +299,8 @@ export function WorkflowBuilderPage({ workflowId, onBattleClick }: WorkflowBuild
             </>
           )}
 
-          {/* Run — edit + run/stop button (model selector moved to run drawer) */}
+          {/* Run — run/stop button (model selector in run drawer) */}
           <div className="flex items-center gap-1.5">
-            {isOwner && (
-              <Button
-                size="sm"
-                variant="secondary"
-                onClick={() => setIsEditModalOpen(true)}
-                className="gap-1.5 w-auto rounded-xl px-2.5 py-1"
-                title="Edit workflow"
-              >
-                <Pencil size={12} />
-              </Button>
-            )}
             {isRunning ? (
               <Button
                 size="sm"
@@ -488,12 +491,18 @@ export function WorkflowBuilderPage({ workflowId, onBattleClick }: WorkflowBuild
         )}
       </div>
 
-      {/* ── Workflow edit modal ──────────────────────────────────────────────── */}
+      {/* ── Workflow edit modal (wizard in edit mode) ────────────────────────── */}
       {isEditModalOpen && (
-        <EditWorkflowModal
-          isOpen={isEditModalOpen}
-          onClose={() => setIsEditModalOpen(false)}
-          workflow={workflow}
+        <CreateWorkflowWizard
+          editMode
+          initialWorkflow={{
+            id: workflow.id,
+            title: workflow.title,
+            description: workflow.description,
+            visibility: workflow.visibility ?? 'public',
+          }}
+          onCreated={() => setIsEditModalOpen(false)}
+          onCancel={() => setIsEditModalOpen(false)}
         />
       )}
 
