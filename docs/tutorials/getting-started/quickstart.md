@@ -14,7 +14,7 @@ Complete [Installation](/tutorials/getting-started/installation) first.
 ## Step 1: Start the forum app
 
 ```bash
-pnpm nx serve forum
+pnpm nx serve web
 ```
 
 The forum app runs at `http://localhost:4200` (or the port shown in the terminal). This is the main platform surface — Lens library, workflows, and profile.

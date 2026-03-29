@@ -1,12 +1,12 @@
-export * from './lib/SessionBoundary'
-export * from './lib/components/AuthExternalRedirect'
-export * from './lib/auth'
-export * from './lib/return-url'
-export * from './lib/components/AuthCard'
-export * from './lib/components/InputField'
-export * from './lib/components/PasswordStrengthMeter'
+// Session management (stays in OSS)
 export * from './lib/context/AuthContext'
-export * from './lib/pages/ForgotPasswordPage'
-export * from './lib/pages/LoginPage'
-export * from './lib/pages/RegisterPage'
-export * from './lib/pages/ResetPasswordPage'
+export * from './lib/SessionBoundary'
+
+// Cross-app auth redirect (redirects to cloud SSO)
+export * from './lib/components/AuthExternalRedirect'
+
+// Return URL utilities
+export * from './lib/return-url'
+
+// Placeholder component
+export * from './lib/auth'

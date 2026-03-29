@@ -77,7 +77,7 @@ This is the standard "npm Script Rewriting" issue from SKILL.md, but triggered b
 For single-project `create-next-app` repos, use whole-repo import into a subdirectory:
 
 ```bash
-nx import /path/to/source apps/forum --ref=main --source=. --no-interactive
+nx import /path/to/source apps/web --ref=main --source=. --no-interactive
 ```
 
 ### `next-env.d.ts`
@@ -178,9 +178,9 @@ No naming conflicts between frameworks.
 
 - Source: `create-next-app@latest` (Next.js 16.1.6, App Router, Tailwind v4, flat ESLint config)
 - Dest: CNW ts preset (Nx 23)
-- Import: whole-repo into `apps/forum`
+- Import: whole-repo into `apps/web`
 - Errors found & fixed:
-  1. pnpm-workspace.yaml: `apps/forum` → `apps/*`
+  1. pnpm-workspace.yaml: `apps/web` → `apps/*`
   2. Stale files: `node_modules/`, `pnpm-lock.yaml`, `pnpm-workspace.yaml`, `.gitignore` — deleted
   3. Nx-rewritten npm scripts (`"build": "nx next:build"`, etc.) — removed
 - No tsconfig changes needed — self-contained config with `noEmit: true`

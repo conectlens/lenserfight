@@ -8,7 +8,7 @@ import { ModalRoute } from '@lenserfight/ui/routing'
 import React, { lazy, Suspense } from 'react'
 import { Navigate, Route, Routes, useNavigate, useParams, useSearchParams } from 'react-router-dom'
 
-const AUTH_APP_URL = import.meta.env.VITE_AUTH_BASE_URL ?? 'https://auth.lenserfight.com'
+const AUTH_APP_URL = 'https://auth.lenserfight.com'
 const ARENA_APP_URL = import.meta.env.VITE_ARENA_URL ?? 'https://lenserfight.com'
 
 const LazyDashboardLayout = lazy(() =>
@@ -165,7 +165,7 @@ const OnboardingModal: React.FC = () => (
   </ModalRoute>
 )
 
-export const ForumRouter: React.FC = () => {
+export const WebRouter: React.FC = () => {
   return (
     <Suspense fallback={<RouteFallback />}>
       <Routes>

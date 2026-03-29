@@ -13,7 +13,7 @@ import React, { Suspense, lazy } from 'react'
 import { HelmetProvider } from 'react-helmet-async'
 import { BrowserRouter } from 'react-router-dom'
 
-import { ForumRouter } from './ForumRouter'
+import { WebRouter } from './WebRouter'
 
 const LazyCreateAgentContent = lazy(() =>
   import('@lenserfight/features/agents').then((module) => ({ default: module.CreateAgentContent }))
@@ -38,7 +38,7 @@ const App: React.FC = () => {
                     <ErrorClearer />
                     <AppToaster />
                     <GlobalErrorRenderer>
-                      <ForumRouter />
+                      <WebRouter />
                       <ModalQueryDriven
                         name="create-agent"
                         accessCheck={({ isAuthenticated, hasLenser }) =>
