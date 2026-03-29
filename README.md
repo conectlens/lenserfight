@@ -53,6 +53,8 @@ lf setup
 
 The `lf setup` wizard checks prerequisites (Node.js 20+, Supabase CLI, Docker), boots a local Supabase database, runs migrations and seeds, creates configuration files, and starts the forum app.
 
+If `zsh` reports `permission denied: lf`, it usually means the CLI has not been built and linked yet. Re-run the three `npx nx run cli:*` commands above, then try `lf setup` again.
+
 ### Manual setup
 
 **Prerequisites:** Node.js 20+, [Supabase CLI](https://supabase.com/docs/guides/cli), Docker
