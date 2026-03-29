@@ -712,6 +712,29 @@ export class SupabaseLensesRepository implements LensesRepositoryPort {
     return (data as { id: string } | null)?.id ?? null
   }
 
+  /** Returns the latest non-archived version regardless of publish status (draft OK). */
+  async getLatestVersion(lensId: string): Promise<LensVersion | null> {
+    const { data, error } = await supabase
+      .schema('lenses')
+      .from('vw_lens_version_history')
+      .select('*')
+      .eq('lens_id', lensId)
+      .neq('status', 'archived')
+      .order('version_number', { ascending: false })
+      .limit(1)
+      .maybeSingle()
+    if (error) this.handleError(error)
+    if (!data) return null
+    const version = this.mapVersion(data as Record<string, unknown>)
+    const { data: paramsJson } = await supabase
+      .schema('lenses')
+      .rpc('fn_get_version_params_with_tools', { p_version_id: version.id })
+    version.parameters = ((paramsJson ?? []) as Record<string, unknown>[]).map((p) =>
+      this.mapVersionParam(p)
+    )
+    return version
+  }
+
   async getLatestPublishedVersion(lensId: string): Promise<LensVersion | null> {
     const { data, error } = await supabase
       .schema('lenses')
@@ -775,6 +798,30 @@ export class SupabaseLensesRepository implements LensesRepositoryPort {
       .schema('lenses')
       .rpc('fn_publish_version', { p_version_id: versionId })
     if (error) this.handleError(error)
+  }
+
+  /** Replace the parameter definitions for a lens version (full replace). */
+  async updateVersionParams(versionId: string, params: Array<{ label: string; toolId: string }>): Promise<void> {
+    // Delete all existing params for this version
+    const { error: delError } = await supabase
+      .schema('lenses')
+      .from('version_parameters')
+      .delete()
+      .eq('version_id', versionId)
+    if (delError) this.handleError(delError)
+
+    if (params.length === 0) return
+
+    const rows = params.map((p) => ({
+      version_id: versionId,
+      label: p.label,
+      tool_id: p.toolId,
+    }))
+    const { error: insError } = await supabase
+      .schema('lenses')
+      .from('version_parameters')
+      .insert(rows)
+    if (insError) this.handleError(insError)
   }
 
   async cloneLens(sourceLensId: string, versionId?: string | null): Promise<string> {

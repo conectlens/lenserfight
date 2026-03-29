@@ -10,6 +10,7 @@ import { Check, GitBranch, KeyRound, Layers, Sparkles } from 'lucide-react'
 import React, { useState } from 'react'
 
 import { useCreateWorkflow } from '../hooks/useCreateWorkflow'
+import { useUpdateWorkflow } from '../hooks/useUpdateWorkflow'
 
 import type { LensViewModel, PersonalLensFeedItem } from '@lenserfight/types'
 import type { WizardStepConfig } from '@lenserfight/ui/components'
@@ -17,6 +18,14 @@ import type { WizardStepConfig } from '@lenserfight/ui/components'
 export interface CreateWorkflowWizardProps {
   onCreated: (workflowId: string) => void
   onCancel: () => void
+  /** When provided, the wizard runs in edit mode: only step 0 is shown and it updates the existing workflow. */
+  editMode?: boolean
+  initialWorkflow?: {
+    id: string
+    title: string
+    description?: string | null
+    visibility: string
+  }
 }
 
 const VISIBILITY_OPTIONS = [
@@ -191,15 +200,19 @@ function LensPicker({ lenserId, selected, onToggle }: LensPickerProps) {
 
 // ─── Wizard ──────────────────────────────────────────────────────────────────
 
-export const CreateWorkflowWizard: React.FC<CreateWorkflowWizardProps> = ({ onCreated, onCancel }) => {
+export const CreateWorkflowWizard: React.FC<CreateWorkflowWizardProps> = ({ onCreated, onCancel, editMode, initialWorkflow }) => {
   const { user } = useAuth()
-  const { step, goToStep } = useWizardStep({ maxStep: 2 })
-  const { submit, isSubmitting, error: submissionError } = useCreateWorkflow()
+  const { step, goToStep } = useWizardStep({ maxStep: editMode ? 0 : 2 })
+  const { submit, isSubmitting: isCreating, error: submissionError } = useCreateWorkflow()
+  const { mutateAsync: updateWorkflow, isPending: isUpdating } = useUpdateWorkflow(initialWorkflow?.id ?? '')
+  const isSubmitting = isCreating || isUpdating
   const { models, isLoading: modelsLoading } = useAIModels()
 
-  const [title, setTitle] = useState('')
-  const [description, setDescription] = useState('')
-  const [visibility, setVisibility] = useState<(typeof VISIBILITY_OPTIONS)[number]['value']>('public')
+  const [title, setTitle] = useState(initialWorkflow?.title ?? '')
+  const [description, setDescription] = useState(initialWorkflow?.description ?? '')
+  const [visibility, setVisibility] = useState<(typeof VISIBILITY_OPTIONS)[number]['value']>(
+    (initialWorkflow?.visibility as (typeof VISIBILITY_OPTIONS)[number]['value']) ?? 'public'
+  )
   const [localError, setLocalError] = useState<string | null>(null)
   const [createdWorkflowId, setCreatedWorkflowId] = useState<string | null>(null)
   const [defaultModelId, setDefaultModelId] = useState<string>(() => {
@@ -268,6 +281,17 @@ export const CreateWorkflowWizard: React.FC<CreateWorkflowWizardProps> = ({ onCr
   const handleCreate = async () => {
     setLocalError(null)
     try {
+      if (editMode && initialWorkflow) {
+        await updateWorkflow({
+          title: titleValue,
+          description: description.trim() || null,
+          visibility,
+        })
+        onCreated(initialWorkflow.id)
+        onCancel()
+        return
+      }
+
       const workflow = await submit({
         title: titleValue,
         description: description.trim() || undefined,
@@ -327,7 +351,7 @@ export const CreateWorkflowWizard: React.FC<CreateWorkflowWizardProps> = ({ onCr
 
   return (
     <StepWizard
-      steps={WIZARD_STEPS}
+      steps={editMode ? [WIZARD_STEPS[0]] : WIZARD_STEPS}
       currentStep={step}
       onNext={handleNext}
       onBack={() => goToStep(Math.max(0, step - 1))}
@@ -335,8 +359,8 @@ export const CreateWorkflowWizard: React.FC<CreateWorkflowWizardProps> = ({ onCr
       onCancel={handleCancel}
       canProceed={step === 0 ? titleValue.length >= 3 : true}
       isCompleting={isSubmitting}
-      completeLabel="Create workflow"
-      completeIcon={<Sparkles size={14} />}
+      completeLabel={editMode ? 'Save Changes' : 'Create workflow'}
+      completeIcon={editMode ? undefined : <Sparkles size={14} />}
     >
       {step === 0 && (
         <div className="space-y-4">
