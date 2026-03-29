@@ -1,6 +1,6 @@
 # Publish, Rubric & Template Commands
 
-Export battle results, create evaluation rubrics, and manage reusable battle templates.
+Export evaluation results, create evaluation rubrics, and manage reusable templates.
 
 ---
 
@@ -10,22 +10,14 @@ Export battle results, create evaluation rubrics, and manage reusable battle tem
 lenserfight publish <subcommand>
 ```
 
-### `publish battle`
-
-Publish a closed battle to make its result page publicly visible.
-
-```bash
-lenserfight publish battle <battle-id>
-```
-
 ### `publish results`
 
 Export result data as JSON or CSV to stdout or a file.
 
 ```bash
-lenserfight publish results <battle-id>
-lenserfight publish results <battle-id> --format csv
-lenserfight publish results <battle-id> --format json --out results.json
+lenserfight publish results <evaluation-id>
+lenserfight publish results <evaluation-id> --format csv
+lenserfight publish results <evaluation-id> --format json --out results.json
 ```
 
 | Flag | Required | Default | Description |
@@ -35,11 +27,11 @@ lenserfight publish results <battle-id> --format json --out results.json
 
 ### `publish report`
 
-Generate a markdown summary report for a finalized battle.
+Generate a markdown summary report for a finalized evaluation.
 
 ```bash
-lenserfight publish report <battle-id>
-lenserfight publish report <battle-id> --out report.md
+lenserfight publish report <evaluation-id>
+lenserfight publish report <evaluation-id> --out report.md
 ```
 
 | Flag | Required | Description |
@@ -50,7 +42,7 @@ lenserfight publish report <battle-id> --out report.md
 
 ## Rubric
 
-Evaluation rubrics define the criteria used to score battle submissions.
+Evaluation rubrics define the criteria used to score submissions.
 
 ```
 lenserfight rubric <subcommand>
@@ -101,30 +93,30 @@ lenserfight rubric delete <rubric-id>
 
 ### `rubric attach`
 
-Attach a rubric to an existing battle.
+Attach a rubric to an existing evaluation.
 
 ```bash
-lenserfight rubric attach --rubric-id <rubric-id> --battle-id <battle-id>
+lenserfight rubric attach --rubric-id <rubric-id> --evaluation-id <evaluation-id>
 ```
 
 | Flag | Required | Description |
 |------|----------|-------------|
 | `--rubric-id` | Yes | Rubric UUID |
-| `--battle-id` | Yes | Battle UUID |
+| `--evaluation-id` | Yes | Evaluation UUID |
 
 ### `rubric detach`
 
-Remove a rubric from a battle.
+Remove a rubric from an evaluation.
 
 ```bash
-lenserfight rubric detach --battle-id <battle-id>
+lenserfight rubric detach --evaluation-id <evaluation-id>
 ```
 
 ---
 
 ## Template
 
-Save battles as templates for rapid reuse.
+Save evaluations as templates for rapid reuse.
 
 ```
 lenserfight template <subcommand>
@@ -132,18 +124,18 @@ lenserfight template <subcommand>
 
 ### `template create`
 
-Save an existing battle as a reusable template.
+Save an existing evaluation as a reusable template.
 
 ```bash
 lenserfight template create \
-  --battle-id <battle-id> \
+  --evaluation-id <evaluation-id> \
   --title "FizzBuzz Template" \
   --description "Classic interview problem"
 ```
 
 | Flag | Required | Description |
 |------|----------|-------------|
-| `--battle-id` | Yes | Battle UUID to save as template |
+| `--evaluation-id` | Yes | Evaluation UUID to save as template |
 | `--title` | Yes | Template title |
 | `--description` | No | Template description |
 
@@ -175,22 +167,21 @@ lenserfight template delete <template-id>
 
 ### `template apply`
 
-Create a new battle from a template.
+Create a new evaluation from a template.
 
 ```bash
-lenserfight template apply <template-id> --title "My Battle"
-lenserfight template apply <template-id> --title "My Battle" --slug "my-battle"
+lenserfight template apply <template-id> --title "My Evaluation"
+lenserfight template apply <template-id> --title "My Evaluation" --slug "my-evaluation"
 ```
 
 | Flag | Required | Description |
 |------|----------|-------------|
-| `--title` | Yes | Title for the new battle |
+| `--title` | Yes | Title for the new evaluation |
 | `--slug` | No | URL-friendly slug (auto-generated if omitted) |
 
 ---
 
 ## Related
 
-- [Battle Commands](battle.md)
 - [Inspect Commands](inspect.md)
-- [Write a Battle Rubric](/how-to/battle-api/write-a-battle-rubric)
+- [Run Commands](run.md)

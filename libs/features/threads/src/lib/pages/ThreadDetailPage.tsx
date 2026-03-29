@@ -100,7 +100,7 @@ export const ThreadDetailPage: React.FC = () => {
 
   const handleToggleReaction = () => {
     if (!isAuthenticated) {
-      const authAppUrl = import.meta.env.VITE_AUTH_BASE_URL ?? 'https://auth.lenserfight.com'
+      const authAppUrl = 'https://auth.lenserfight.com'
       window.location.href = `${authAppUrl}/login?return_url=${encodeURIComponent(buildAuthReturnUrl(window.location.href))}`
       return
     }
@@ -113,7 +113,7 @@ export const ThreadDetailPage: React.FC = () => {
 
   const handleReplyReaction = (replyId: string) => {
     if (!isAuthenticated) {
-      const authAppUrl = import.meta.env.VITE_AUTH_BASE_URL ?? 'https://auth.lenserfight.com'
+      const authAppUrl = 'https://auth.lenserfight.com'
       window.location.href = `${authAppUrl}/login?return_url=${encodeURIComponent(buildAuthReturnUrl(window.location.href))}`
       return
     }

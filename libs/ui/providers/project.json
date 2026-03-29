@@ -3,6 +3,11 @@
   "$schema": "../../../node_modules/nx/schemas/project-schema.json",
   "sourceRoot": "libs/ui/providers/src",
   "projectType": "library",
-  "tags": ["layer:ui", "ui:providers"],
+  "tags": [
+    "layer:ui",
+    "ui:providers",
+    "scope:shared",
+    "license:shared"
+  ],
   "targets": {}
 }

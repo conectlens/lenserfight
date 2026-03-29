@@ -120,7 +120,7 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children, full
 
   const handleOpenProfileSetup = () => {
     if (!isAuthenticated) {
-      const authAppUrl = import.meta.env.VITE_AUTH_BASE_URL ?? 'https://auth.lenserfight.com'
+      const authAppUrl = 'https://auth.lenserfight.com'
       const returnUrl = encodeURIComponent(buildAuthReturnUrl(window.location.href))
       window.location.href = `${authAppUrl}/login?return_url=${returnUrl}`
       return

@@ -207,4 +207,4 @@ Reports are idempotent — reporting the same content twice has no effect. Conte
 ## Related
 
 - [Auth Commands](auth.md) — log in before using community commands
-- [Feed Personalisation](/explanation/battle-system/concepts)
+- [Feed Personalisation](/explanation/community/community-hub)
