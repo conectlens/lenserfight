@@ -21,7 +21,7 @@ Make sure you have:
 
 LenserFight is a TypeScript Nx monorepo with:
 
-- `apps/forum` — main platform app (Vite + React)
+- `apps/web` — main platform app (Vite + React)
 - `apps/docs` — VitePress documentation site
 - `apps/cli` — CLI tool
 - `apps/mobile` — Expo companion app (not yet wired into the workspace)
@@ -48,7 +48,7 @@ Start the platform to verify everything is working:
 
 ```bash
 # Start the forum app (main platform)
-pnpm nx serve forum
+pnpm nx serve web
 
 # Start the docs site
 pnpm nx serve docs

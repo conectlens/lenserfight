@@ -2,8 +2,8 @@
  * Cookie-based Supabase storage adapter.
  *
  * Stores the session token in cookies scoped to the shared parent domain
- * (.lenserfight.com) so auth.lenserfight.com and forum.lenserfight.com
- * both read/write the same session.
+ * (.lenserfight.com) so all subdomains (arena, docs, etc.)
+ * read/write the same session.
  *
  * Chunking: cookies are limited to ~4KB. Supabase sessions can exceed this,
  * so large values are split into multiple cookies and reassembled on read.

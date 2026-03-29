@@ -7,7 +7,7 @@ import { defineConfig } from 'vite'
 
 export default defineConfig(() => ({
   root: import.meta.dirname,
-  cacheDir: '../../node_modules/.vite/apps/forum',
+  cacheDir: '../../node_modules/.vite/apps/web',
   server: {
     port: 3000,
     host: 'localhost',
@@ -22,7 +22,7 @@ export default defineConfig(() => ({
   //   plugins: () => [ nxViteTsPaths() ],
   // },
   build: {
-    outDir: '../../dist/apps/forum',
+    outDir: '../../dist/apps/web',
     emptyOutDir: true,
     reportCompressedSize: true,
     rollupOptions: {
@@ -74,14 +74,14 @@ export default defineConfig(() => ({
     },
   },
   test: {
-    name: 'forum',
+    name: 'web',
     watch: false,
     globals: true,
     environment: 'jsdom',
     include: ['{src,tests}/**/*.{test,spec}.{js,mjs,cjs,ts,mts,cts,jsx,tsx}'],
     reporters: ['default'],
     coverage: {
-      reportsDirectory: '../../coverage/apps/forum',
+      reportsDirectory: '../../coverage/apps/web',
       provider: 'v8' as const,
     },
   },

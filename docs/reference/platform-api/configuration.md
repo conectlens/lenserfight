@@ -1,6 +1,6 @@
 # Configuration
 
-Reference for CLI and auth configuration precedence.
+Reference for CLI configuration precedence.
 
 ## What to read first
 
@@ -11,7 +11,7 @@ Reference for CLI and auth configuration precedence.
 
 - Keep `.lenserfight.json` free of secrets.
 - Store session tokens and developer tokens in the user config at `~/.lenserfight/config.json`.
-- Use `LENSERFIGHT_AUTH_BASE_URL` when the auth app runs on a separate host.
+- Use `lf connect` to link your project to LenserFight Cloud.
 - Use `LENSERFIGHT_DEVELOPER_TOKEN` only when you intentionally want to override the saved developer token.
 
 ## Related

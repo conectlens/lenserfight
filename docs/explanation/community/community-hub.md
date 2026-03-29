@@ -1,6 +1,6 @@
 # Community Hub
 
-`forum.lenserfight.com` is the community layer for LenserFight.
+`lenserfight.com` is the community layer for LenserFight.
 
 ## Forum categories for beta
 
