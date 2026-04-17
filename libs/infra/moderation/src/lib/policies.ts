@@ -85,16 +85,33 @@ export class RegexPolicy implements ModerationPolicy {
  */
 export class SemanticPolicy implements ModerationPolicy {
   name = 'SemanticAICheck'
-  private ai: GoogleGenAI
+  private ai: GoogleGenAI | null
+  private apiKey: string | null
+
+  private resolveApiKey(): string | null {
+    const viteEnv =
+      typeof import.meta !== 'undefined' && import.meta.env
+        ? ((import.meta.env['VITE_GOOGLE_AI_API_KEY'] as string | undefined) ??
+          (import.meta.env['VITE_API_KEY'] as string | undefined))
+        : undefined
+    if (typeof viteEnv === 'string' && viteEnv.trim() !== '') return viteEnv.trim()
+
+    const processEnv = (globalThis as { process?: { env?: Record<string, string | undefined> } }).process
+      ?.env
+    const nodeEnvKey = processEnv?.['GOOGLE_AI_API_KEY'] ?? processEnv?.['API_KEY']
+    if (typeof nodeEnvKey === 'string' && nodeEnvKey.trim() !== '') return nodeEnvKey.trim()
+
+    return null
+  }
 
   constructor() {
     // Ideally this is cached/singleton at a higher level, but for encapsulation we init here.
-    // Assuming API_KEY is available in env.
-    this.ai = new GoogleGenAI({ apiKey: process.env.API_KEY || '' })
+    this.apiKey = this.resolveApiKey()
+    this.ai = this.apiKey ? new GoogleGenAI({ apiKey: this.apiKey }) : null
   }
 
   async check(text: string): Promise<ModerationResult> {
-    if (!process.env.API_KEY) {
+    if (!this.apiKey || !this.ai) {
       console.warn('Moderation: No API Key, skipping Semantic Check')
       return { status: 'approved', confidence: 0, policyName: this.name }
     }
