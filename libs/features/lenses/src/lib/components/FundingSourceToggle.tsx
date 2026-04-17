@@ -1,7 +1,8 @@
-import React, { useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import { Cloud, KeyRound, HardDrive, Globe, Plus, X, Eye, EyeOff } from 'lucide-react'
 import { SearchSelectField, SelectField } from '@lenserfight/ui/forms'
 import { FundingSource, UserApiKey, WalletBalance, BYOK_PROVIDER_LABELS, AIProvider, AIProviderModel } from '@lenserfight/types'
+import { SURFACE } from '@lenserfight/utils/env'
 import { Link } from 'react-router-dom'
 import type { LocalKeyMeta } from '@lenserfight/types'
 import { LabProviderSelector } from './LabProviderSelector'
@@ -164,6 +165,20 @@ export const FundingSourceToggle: React.FC<FundingSourceToggleProps> = ({
   const isByokLocal = fundingSource === 'user_byok_local'
   const isByok = isByokCloud || isByokLocal
   const [showAddLocalKey, setShowAddLocalKey] = useState(false)
+  const localKeyEnabled = SURFACE.edition !== 'cloud'
+  const selectableByokCount = localKeyEnabled
+    ? availableKeys.length + availableLocalKeys.length
+    : availableKeys.length
+  const canSelectByok = localKeyEnabled ? canUseBYOK : availableKeys.length > 0
+
+  useEffect(() => {
+    if (!localKeyEnabled) {
+      setShowAddLocalKey(false)
+      if (fundingSource === 'user_byok_local') {
+        onFundingSourceChange(availableKeys.length > 0 ? 'user_byok_cloud' : 'platform_credit')
+      }
+    }
+  }, [localKeyEnabled, fundingSource, availableKeys.length, onFundingSourceChange])
 
   // Derive effective provider key based on funding mode
   const effectiveProviderKey = isByokCloud
@@ -184,8 +199,13 @@ export const FundingSourceToggle: React.FC<FundingSourceToggleProps> = ({
   } = useOllamaModels(isOllamaLocal)
 
   const handleMyKeyClick = () => {
-    if (!canUseBYOK) return
-    onFundingSourceChange('user_byok_cloud')
+    if (!canSelectByok) return
+    if (availableKeys.length > 0) {
+      onFundingSourceChange('user_byok_cloud')
+      return
+    }
+    if (!localKeyEnabled) return
+    onFundingSourceChange('user_byok_local')
   }
 
   return (
@@ -217,18 +237,19 @@ export const FundingSourceToggle: React.FC<FundingSourceToggleProps> = ({
         <button
           type="button"
           onClick={handleMyKeyClick}
+          disabled={!canSelectByok}
           className={`flex items-center gap-2 p-3 border rounded-lg transition-all text-left ${
             isByok
               ? 'border-primary bg-primary/5 ring-1 ring-primary'
               : 'border-gray-200 dark:border-gray-600 hover:border-gray-300'
-          }`}
+          } ${!canSelectByok ? 'opacity-60 cursor-not-allowed hover:border-gray-200 dark:hover:border-gray-600' : ''}`}
         >
           <KeyRound size={16} className={isByok ? 'text-gray-900 dark:text-white' : 'text-gray-400'} />
           <div className="min-w-0">
             <p className="text-xs font-semibold text-gray-900 dark:text-gray-100">My Key</p>
             <p className="text-[10px] text-gray-500 dark:text-gray-400">
-              {availableKeys.length + availableLocalKeys.length > 0
-                ? `${availableKeys.length + availableLocalKeys.length} key${availableKeys.length + availableLocalKeys.length > 1 ? 's' : ''}`
+              {selectableByokCount > 0
+                ? `${selectableByokCount} key${selectableByokCount > 1 ? 's' : ''}`
                 : 'Add a key'}
             </p>
           </div>
@@ -236,7 +257,7 @@ export const FundingSourceToggle: React.FC<FundingSourceToggleProps> = ({
       </div>
 
       {/* Row 2: Cloud Keys | Local Keys sub-mode (visible when isByok) */}
-      {(isByokCloud || isByokLocal) && (
+      {(isByokCloud || (isByokLocal && localKeyEnabled)) && (
         <div className="grid grid-cols-2 gap-2">
           <button
             type="button"
@@ -254,21 +275,23 @@ export const FundingSourceToggle: React.FC<FundingSourceToggleProps> = ({
             )}
           </button>
 
-          <button
-            type="button"
-            onClick={() => onFundingSourceChange('user_byok_local')}
-            className={`flex items-center gap-1.5 px-3 py-2 border rounded-lg text-xs transition-all ${
-              isByokLocal
-                ? 'border-primary bg-primary/5 ring-1 ring-primary font-semibold text-gray-900 dark:text-gray-100'
-                : 'border-gray-200 dark:border-gray-600 text-gray-600 dark:text-gray-300 hover:border-gray-300'
-            }`}
-          >
-            <HardDrive size={12} />
-            Local Keys
-            {availableLocalKeys.length > 0 && (
-              <span className="ml-auto text-[10px] text-gray-400">{availableLocalKeys.length}</span>
-            )}
-          </button>
+          {localKeyEnabled && (
+            <button
+              type="button"
+              onClick={() => onFundingSourceChange('user_byok_local')}
+              className={`flex items-center gap-1.5 px-3 py-2 border rounded-lg text-xs transition-all ${
+                isByokLocal
+                  ? 'border-primary bg-primary/5 ring-1 ring-primary font-semibold text-gray-900 dark:text-gray-100'
+                  : 'border-gray-200 dark:border-gray-600 text-gray-600 dark:text-gray-300 hover:border-gray-300'
+              }`}
+            >
+              <HardDrive size={12} />
+              Local Keys
+              {availableLocalKeys.length > 0 && (
+                <span className="ml-auto text-[10px] text-gray-400">{availableLocalKeys.length}</span>
+              )}
+            </button>
+          )}
         </div>
       )}
 
@@ -285,7 +308,7 @@ export const FundingSourceToggle: React.FC<FundingSourceToggleProps> = ({
         />
       )}
 
-      {isByokLocal && availableLocalKeys.length > 0 && !showAddLocalKey && (
+      {localKeyEnabled && isByokLocal && availableLocalKeys.length > 0 && !showAddLocalKey && (
         <div className="flex flex-col gap-1.5">
           <SearchSelectField
             value={selectedLocalKeyId ?? ''}
@@ -303,7 +326,7 @@ export const FundingSourceToggle: React.FC<FundingSourceToggleProps> = ({
       )}
 
       {/* Row 4: Inline add local key form */}
-      {isByokLocal && !showAddLocalKey && (
+      {localKeyEnabled && isByokLocal && !showAddLocalKey && (
         <button
           type="button"
           onClick={() => setShowAddLocalKey(true)}
@@ -314,7 +337,7 @@ export const FundingSourceToggle: React.FC<FundingSourceToggleProps> = ({
         </button>
       )}
 
-      {isByokLocal && showAddLocalKey && (
+      {localKeyEnabled && isByokLocal && showAddLocalKey && (
         <AddLocalKeyForm
           onAdd={onAddLocalKey}
           onCancel={() => setShowAddLocalKey(false)}
@@ -328,6 +351,16 @@ export const FundingSourceToggle: React.FC<FundingSourceToggleProps> = ({
           <Link to="/settings/api-keys" className="text-primary-600 dark:text-primary-400 hover:underline">
             Add one in Settings
           </Link>
+        </p>
+      )}
+
+      {!canSelectByok && (
+        <p className="text-xs text-gray-400 dark:text-gray-500">
+          No keys found.{' '}
+          <Link to="/settings/api-keys" className="text-primary-600 dark:text-primary-400 hover:underline">
+            Add cloud key
+          </Link>{' '}
+          {localKeyEnabled ? 'or switch to Local Keys and add one in this panel.' : 'to continue with My Key mode.'}
         </p>
       )}
 
