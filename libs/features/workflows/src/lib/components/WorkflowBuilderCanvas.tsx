@@ -123,6 +123,29 @@ function toFlowEdge(
   }
 }
 
+function nodeFingerprint(node: UpsertNodeInput): string {
+  return JSON.stringify({
+    id: node.id ?? null,
+    lens_id: node.lens_id,
+    version_id: node.version_id ?? null,
+    label: node.label ?? null,
+    ordinal: node.ordinal ?? null,
+    position_x: node.position_x,
+    position_y: node.position_y,
+    config: node.config ?? null,
+  })
+}
+
+function edgeFingerprint(edge: UpsertEdgeInput): string {
+  return JSON.stringify({
+    id: edge.id ?? null,
+    source_node_id: edge.source_node_id,
+    target_node_id: edge.target_node_id,
+    source_output_key: edge.source_output_key ?? 'output',
+    target_param_label: edge.target_param_label,
+  })
+}
+
 // ─── Props ────────────────────────────────────────────────────────────────────
 
 export interface WorkflowBuilderCanvasProps {
@@ -168,6 +191,8 @@ function WorkflowBuilderCanvasInner({
   const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const flowNodesRef = useRef<Node<WorkflowNodeData>[]>([])
   const flowEdgesRef = useRef<Edge[]>([])
+  const lastSavedNodeFingerprintRef = useRef<Map<string, string>>(new Map())
+  const lastSavedEdgeFingerprintRef = useRef<Map<string, string>>(new Map())
   const hasAppliedInitialLayoutRef = useRef(false)
 
   // ── Remove handlers ──────────────────────────────────────────────────────
@@ -255,6 +280,35 @@ function WorkflowBuilderCanvasInner({
   useEffect(() => { flowNodesRef.current = flowNodes }, [flowNodes])
   useEffect(() => { flowEdgesRef.current = flowEdges }, [flowEdges])
 
+  useEffect(() => {
+    const nodeMap = new Map<string, string>()
+    for (const record of nodeRecords) {
+      nodeMap.set(record.id, nodeFingerprint({
+        id: record.id,
+        lens_id: record.lens_id,
+        version_id: record.version_id ?? null,
+        label: record.label ?? undefined,
+        ordinal: record.ordinal,
+        position_x: record.position_x,
+        position_y: record.position_y,
+        config: record.config ?? null,
+      }))
+    }
+    lastSavedNodeFingerprintRef.current = nodeMap
+
+    const edgeMap = new Map<string, string>()
+    for (const record of edgeRecords) {
+      edgeMap.set(record.id, edgeFingerprint({
+        id: record.id,
+        source_node_id: record.source_node_id,
+        target_node_id: record.target_node_id,
+        source_output_key: record.source_output_key,
+        target_param_label: record.target_param_label,
+      }))
+    }
+    lastSavedEdgeFingerprintRef.current = edgeMap
+  }, [nodeRecords, edgeRecords])
+
   // ── Cleanup pending save on unmount ───────────────────────────────────────
   useEffect(() => {
     return () => { if (saveTimerRef.current) clearTimeout(saveTimerRef.current) }
@@ -295,14 +349,126 @@ function WorkflowBuilderCanvasInner({
             (e.data as { sourceOutputKey?: string })?.sourceOutputKey ?? 'output',
           target_param_label: e.targetHandle ?? 'input',
         }))
-      saveWorkflow({ workflowId, nodes: upsertNodes, edges: upsertEdges, persistNodes, persistEdges })
+
+      const hasTemporaryNode = upsertNodes.some((n) => !n.id)
+      const hasTemporaryEdge = upsertEdges.some((e) => !e.id)
+      const useFullReplace = hasTemporaryNode || hasTemporaryEdge
+
+      const changedNodes = useFullReplace
+        ? upsertNodes
+        : upsertNodes.filter((node) => {
+            if (!node.id) return true
+            const previous = lastSavedNodeFingerprintRef.current.get(node.id)
+            return previous !== nodeFingerprint(node)
+          })
+
+      const changedEdges = useFullReplace
+        ? upsertEdges
+        : upsertEdges.filter((edge) => {
+            if (!edge.id) return true
+            const previous = lastSavedEdgeFingerprintRef.current.get(edge.id)
+            return previous !== edgeFingerprint(edge)
+          })
+
+      const shouldPersistNodes = persistNodes && changedNodes.length > 0
+      const shouldPersistEdges = persistEdges && changedEdges.length > 0
+      if (!shouldPersistNodes && !shouldPersistEdges) return
+
+      saveWorkflow({
+        workflowId,
+        nodes: upsertNodes,
+        edges: upsertEdges,
+        nodeDelta: useFullReplace ? undefined : changedNodes,
+        edgeDelta: useFullReplace ? undefined : changedEdges,
+        mergeMode: useFullReplace ? 'replace' : 'merge',
+        persistNodes: shouldPersistNodes,
+        persistEdges: shouldPersistEdges,
+      })
         .then(({ nodes: savedNodes, edges: savedEdges }) => {
-          setNodes(
-            savedNodes.map((record) =>
-              toFlowNode(record, handleRemoveNode, onConfigNode, onEditLens, currentUserId, nodeConfigOverrides)
-            )
-          )
-          setEdges(savedEdges.map((record) => toFlowEdge(record, handleRemoveEdge)))
+          if (useFullReplace) {
+            if (savedNodes.length > 0) {
+              const nextNodeMap = new Map<string, string>()
+              for (const record of savedNodes) {
+                nextNodeMap.set(record.id, nodeFingerprint({
+                  id: record.id,
+                  lens_id: record.lens_id,
+                  version_id: record.version_id ?? null,
+                  label: record.label ?? undefined,
+                  ordinal: record.ordinal,
+                  position_x: record.position_x,
+                  position_y: record.position_y,
+                  config: record.config ?? null,
+                }))
+              }
+              lastSavedNodeFingerprintRef.current = nextNodeMap
+              setNodes(
+                savedNodes.map((record) =>
+                  toFlowNode(record, handleRemoveNode, onConfigNode, onEditLens, currentUserId, nodeConfigOverrides)
+                )
+              )
+            }
+
+            if (savedEdges.length > 0) {
+              const nextEdgeMap = new Map<string, string>()
+              for (const record of savedEdges) {
+                nextEdgeMap.set(record.id, edgeFingerprint({
+                  id: record.id,
+                  source_node_id: record.source_node_id,
+                  target_node_id: record.target_node_id,
+                  source_output_key: record.source_output_key,
+                  target_param_label: record.target_param_label,
+                }))
+              }
+              lastSavedEdgeFingerprintRef.current = nextEdgeMap
+              setEdges(savedEdges.map((record) => toFlowEdge(record, handleRemoveEdge)))
+            }
+            return
+          }
+
+          if (savedNodes.length > 0) {
+            const nextNodeMap = new Map(lastSavedNodeFingerprintRef.current)
+            for (const record of savedNodes) {
+              nextNodeMap.set(record.id, nodeFingerprint({
+                id: record.id,
+                lens_id: record.lens_id,
+                version_id: record.version_id ?? null,
+                label: record.label ?? undefined,
+                ordinal: record.ordinal,
+                position_x: record.position_x,
+                position_y: record.position_y,
+                config: record.config ?? null,
+              }))
+            }
+            lastSavedNodeFingerprintRef.current = nextNodeMap
+            setNodes((prev) => {
+              const byId = new Map(prev.map((n) => [n.id, n]))
+              for (const record of savedNodes) {
+                byId.set(record.id, toFlowNode(record, handleRemoveNode, onConfigNode, onEditLens, currentUserId, nodeConfigOverrides))
+              }
+              return Array.from(byId.values())
+            })
+          }
+
+          if (savedEdges.length > 0) {
+            const nextEdgeMap = new Map(lastSavedEdgeFingerprintRef.current)
+            for (const record of savedEdges) {
+              nextEdgeMap.set(record.id, edgeFingerprint({
+                id: record.id,
+                source_node_id: record.source_node_id,
+                target_node_id: record.target_node_id,
+                source_output_key: record.source_output_key,
+                target_param_label: record.target_param_label,
+              }))
+            }
+            lastSavedEdgeFingerprintRef.current = nextEdgeMap
+            setEdges((prev) => {
+              const byId = new Map(prev.map((e) => [e.id, e]))
+              for (const record of savedEdges) {
+                byId.set(record.id, toFlowEdge(record, handleRemoveEdge))
+              }
+              return Array.from(byId.values())
+            })
+          }
         })
         .catch(() => null)
     }, 1500)
@@ -382,9 +548,9 @@ function WorkflowBuilderCanvasInner({
   )
 
   const onNodeDragStop = useCallback(() => {
-    // Movement-only save should not trigger edge upsert RPC.
-    scheduleSave({ persistEdges: false })
-  }, [scheduleSave])
+    // Intentionally no-op: node position drags are local-only and should not
+    // trigger persistence RPCs.
+  }, [])
 
   return (
     <ReactFlow

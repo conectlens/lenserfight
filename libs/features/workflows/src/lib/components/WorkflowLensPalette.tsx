@@ -1,11 +1,13 @@
 import { lensesService } from '@lenserfight/data/repositories'
 import { useAuth } from '@lenserfight/features/auth'
+import { LENS_KIND_ORDER, LENS_KIND_REGISTRY, resolveLensKindFromTagSlugs } from '@lenserfight/features/lens-kinds'
 import { Button } from '@lenserfight/ui/components'
 import { SearchBar } from '@lenserfight/ui/forms'
 import { useInfiniteQuery, useQuery } from '@tanstack/react-query'
 import { ChevronLeft, ChevronRight, GripVertical } from 'lucide-react'
 import React, { useEffect, useRef, useState } from 'react'
-import type { LensViewModel, PersonalLensFeedItem } from '@lenserfight/types'
+
+import type { LensKind, LensViewModel, PersonalLensFeedItem } from '@lenserfight/types'
 
 export interface DraggedLensData {
   lens_id: string
@@ -30,6 +32,7 @@ export function WorkflowLensPalette({ onDragStart, collapsed, onToggleCollapse }
   const [rawSearch, setRawSearch] = useState('')
   const [debouncedSearch, setDebouncedSearch] = useState('')
   const [allowAutoFetchNextPage, setAllowAutoFetchNextPage] = useState(false)
+  const [kindFilter, setKindFilter] = useState<LensKind | null>(null)
   const sentinelRef = useRef<HTMLDivElement>(null)
 
   // Debounce: only propagate search query after 300ms of inactivity
@@ -84,8 +87,11 @@ export function WorkflowLensPalette({ onDragStart, collapsed, onToggleCollapse }
   const searchResults: LensViewModel[] = searchData?.data ?? []
 
   const isSearching = debouncedSearch.length >= 3
-  const displayLenses: LensViewModel[] =
+  const rawLenses: LensViewModel[] =
     isSearching ? searchResults : effectiveTab === 'mine' ? myLenses : popularLenses
+  const displayLenses: LensViewModel[] = kindFilter
+    ? rawLenses.filter((l) => resolveLensKindFromTagSlugs(l.tags?.map((t) => t.slug) ?? []) === kindFilter)
+    : rawLenses
 
   const activeQuery = isSearching ? null : effectiveTab === 'mine' ? personalQuery : popularQuery
   const isLoading = isSearching ? loadingSearch : activeQuery?.isLoading ?? false
@@ -187,6 +193,36 @@ export function WorkflowLensPalette({ onDragStart, collapsed, onToggleCollapse }
             ))}
           </div>
         )}
+
+        {/* Kind filter */}
+        <div className="flex flex-wrap gap-1">
+          <button
+            type="button"
+            onClick={() => setKindFilter(null)}
+            className={`text-[10px] rounded-full px-2 py-0.5 font-semibold transition-colors ${
+              kindFilter === null
+                ? 'bg-primary-yellow-500/15 text-primary-yellow-600'
+                : 'bg-surface-raised text-greyscale-500 hover:text-greyscale-900 dark:hover:text-greyscale-50'
+            }`}
+          >
+            All
+          </button>
+          {LENS_KIND_ORDER.map((k) => (
+            <button
+              key={k}
+              type="button"
+              onClick={() => setKindFilter(kindFilter === k ? null : k)}
+              title={LENS_KIND_REGISTRY[k].description}
+              className={`text-[10px] rounded-full px-2 py-0.5 font-semibold transition-colors ${
+                kindFilter === k
+                  ? 'bg-primary-yellow-500/15 text-primary-yellow-600'
+                  : 'bg-surface-raised text-greyscale-500 hover:text-greyscale-900 dark:hover:text-greyscale-50'
+              }`}
+            >
+              {LENS_KIND_REGISTRY[k].label}
+            </button>
+          ))}
+        </div>
       </div>
 
       {/* Lens list */}

@@ -6,7 +6,7 @@ export function useWorkflow(workflowId: string | undefined) {
     queryKey: ['workflow-bootstrap', workflowId ?? ''],
     queryFn: () => workflowsService.getBootstrap(workflowId!),
     enabled: !!workflowId,
-    staleTime: 1000 * 30,
+    staleTime: 1000 * 60 * 2,
   })
 
   return {
