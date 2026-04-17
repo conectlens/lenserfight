@@ -264,10 +264,12 @@ function WorkflowBuilderCanvasInner({
   // NOTE: saveWorkflow is called in the timeout callback body, NOT inside a
   // React state updater. State updaters are double-invoked in StrictMode,
   // which would cause duplicate POST requests. Reading state via refs is safe.
-  const scheduleSave = useCallback(() => {
+  const scheduleSave = useCallback((options?: { persistNodes?: boolean; persistEdges?: boolean }) => {
     if (readOnly) return
     if (saveTimerRef.current) clearTimeout(saveTimerRef.current)
     saveTimerRef.current = setTimeout(() => {
+      const persistNodes = options?.persistNodes ?? true
+      const persistEdges = options?.persistEdges ?? true
       const nds = flowNodesRef.current
       const eds = flowEdgesRef.current
       const upsertNodes: UpsertNodeInput[] = nds.map((n, i) => {
@@ -293,7 +295,7 @@ function WorkflowBuilderCanvasInner({
             (e.data as { sourceOutputKey?: string })?.sourceOutputKey ?? 'output',
           target_param_label: e.targetHandle ?? 'input',
         }))
-      saveWorkflow({ workflowId, nodes: upsertNodes, edges: upsertEdges })
+      saveWorkflow({ workflowId, nodes: upsertNodes, edges: upsertEdges, persistNodes, persistEdges })
         .then(({ nodes: savedNodes, edges: savedEdges }) => {
           setNodes(
             savedNodes.map((record) =>
@@ -379,7 +381,10 @@ function WorkflowBuilderCanvasInner({
     [screenToFlowPosition, flowNodes.length, setNodes, scheduleSave, handleRemoveNode, onConfigNode, onEditLens, currentUserId]
   )
 
-  const onNodeDragStop = useCallback(() => scheduleSave(), [scheduleSave])
+  const onNodeDragStop = useCallback(() => {
+    // Movement-only save should not trigger edge upsert RPC.
+    scheduleSave({ persistEdges: false })
+  }, [scheduleSave])
 
   return (
     <ReactFlow

@@ -52,6 +52,28 @@ export interface WorkflowExecutionContext {
  * 3. Edge data mapping: source.outputData[sourceOutputKey] → target prompt [[label]] replacement.
  */
 export class WorkflowExecutionService {
+  private static escapeRegExp(value: string): string {
+    return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+  }
+
+  private static replaceTokenVariants(prompt: string, rawKey: string, value: unknown): string {
+    const valueStr = String(value ?? '')
+    const normalized = rawKey.trim().replace(/\s+/g, '_').toLowerCase()
+    const keyPattern = WorkflowExecutionService.escapeRegExp(rawKey.trim()).replace(/_/g, '[ _]+')
+    const normalizedPattern = WorkflowExecutionService.escapeRegExp(normalized).replace(/_/g, '[ _]+')
+
+    return prompt
+      // Canonical syntax
+      .replaceAll(`[[${rawKey}]]`, valueStr)
+      .replaceAll(`[[${normalized}]]`, valueStr)
+      // Legacy syntax
+      .replaceAll(`{{${rawKey}}}`, valueStr)
+      .replaceAll(`{{${normalized}}}`, valueStr)
+      // Single-bracket placeholders require inner spaces: [ key ]
+      .replace(new RegExp(`\\[\\s+${keyPattern}\\s+\\]`, 'gi'), valueStr)
+      .replace(new RegExp(`\\[\\s+${normalizedPattern}\\s+\\]`, 'gi'), valueStr)
+  }
+
   /**
    * Detects cycles in a workflow DAG using Kahn's algorithm.
    * Returns the IDs of nodes involved in a cycle, or null if acyclic.
@@ -254,12 +276,12 @@ export class WorkflowExecutionService {
     for (const edge of incomingEdges) {
       const sourceResult = results.get(edge.sourceNodeId)
       const value = sourceResult?.outputData?.[edge.sourceOutputKey] ?? ''
-      prompt = prompt.replaceAll(`[[${edge.targetParamLabel}]]`, String(value))
+      prompt = WorkflowExecutionService.replaceTokenVariants(prompt, edge.targetParamLabel, value)
     }
 
     // Replace any remaining [[label]] from rootInputs
     for (const [key, value] of Object.entries(rootInputs)) {
-      prompt = prompt.replaceAll(`[[${key}]]`, String(value))
+      prompt = WorkflowExecutionService.replaceTokenVariants(prompt, key, value)
     }
 
     return prompt
