@@ -5,6 +5,7 @@ import { existsSync, rmSync } from 'node:fs';
 import { homedir } from 'node:os';
 import { resolve } from 'node:path';
 import { findConfigPath } from '../config/project-config';
+import { runCombineSeedsIfPresent } from '../lib/combine-seeds';
 
 const USER_CONFIG_PATH = resolve(homedir(), '.lenserfight', 'config.json');
 
@@ -62,7 +63,9 @@ export default defineCommand({
     if (!args['skip-db']) {
       consola.info('Resetting local database via `supabase db reset` ...');
       try {
-        execSync('npx supabase db reset', { stdio: 'inherit' });
+        const projectRoot = resolve(findConfigPath(), '..');
+        runCombineSeedsIfPresent(projectRoot);
+        execSync('npx supabase db reset', { stdio: 'inherit', cwd: projectRoot });
         consola.success('Database reset complete.');
       } catch {
         consola.error('Database reset failed. Is the local Supabase stack running? Try `npx supabase start` first.');

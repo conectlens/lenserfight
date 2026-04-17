@@ -29,7 +29,7 @@ import { notificationService } from '@lenserfight/data/repositories'
 import { useAuth } from '@lenserfight/features/auth'
 import { FeedbackModal } from '@lenserfight/features/feedback'
 import { useLenser, useSidebarProfile, useHasLenserProfile, useMyLensers, useSwitchLenser } from '@lenserfight/features/profile'
-import { FEATURES } from '@lenserfight/utils/env'
+import { FEATURES, SURFACE } from '@lenserfight/utils/env'
 import { useTheme } from '@lenserfight/ui/theme'
 import type { Theme } from '@lenserfight/ui/theme'
 
@@ -334,13 +334,15 @@ export const Sidebar: React.FC<SidebarProps> = ({
             collapsed={!showLabels}
           />
 
-          <SidebarItem
-            onClick={() => handleNavigation('/billing')}
-            icon={<ShoppingBag size={20} />}
-            label="Plans"
-            isActive={isRouteActive(location.pathname, '/billing')}
-            collapsed={!showLabels}
-          />
+          {SURFACE.showBillingAndStore && (
+            <SidebarItem
+              onClick={() => handleNavigation('/billing')}
+              icon={<ShoppingBag size={20} />}
+              label="Plans"
+              isActive={isRouteActive(location.pathname, '/billing')}
+              collapsed={!showLabels}
+            />
+          )}
 
         </nav>
 
