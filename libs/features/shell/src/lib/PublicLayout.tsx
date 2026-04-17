@@ -2,6 +2,7 @@ import React from 'react'
 import { Link, useNavigate, useLocation } from 'react-router-dom'
 import { useAuth } from '@lenserfight/features/auth'
 import { Footer } from '@lenserfight/ui/layout'
+import { WEB_BASE_URL } from '@lenserfight/utils/env'
 
 interface PublicLayoutProps {
   children: React.ReactNode
@@ -81,7 +82,7 @@ export const PublicLayout: React.FC<PublicLayoutProps> = ({ children }) => {
 
       <main className="flex-1 w-full">{children}</main>
 
-      <Footer navBaseUrl={import.meta.env.VITE_WEB_BASE_URL ?? 'https://lenserfight.com'} />
+      <Footer navBaseUrl={WEB_BASE_URL} />
     </div>
   )
 }

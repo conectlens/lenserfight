@@ -9,7 +9,7 @@ import { Feedback, ProductTag, FeedbackStatus, Notification } from '@lenserfight
 import { Avatar, Button, Card, DangerZone, Table, Column } from '@lenserfight/ui/components'
 import { ConfirmModal } from '@lenserfight/ui/modals'
 import { timeAgo } from '@lenserfight/utils/date'
-import { FEATURES } from '@lenserfight/utils/env'
+import { FEATURES, WEB_BASE_URL } from '@lenserfight/utils/env'
 import { useQuery } from '@tanstack/react-query'
 import { ExternalLink, Check, Camera, Eye, Lock, MessageSquareDashed, Coins, ImageIcon } from 'lucide-react'
 import { AgentsTab } from '../components/AgentsTab'
@@ -319,7 +319,7 @@ export const SettingsPage: React.FC = () => {
               Media Gallery <ImageIcon size={14} />
             </Link>
             <a
-              href={`${import.meta.env.VITE_WEB_BASE_URL ?? 'https://lenserfight.com'}/policies/privacy`}
+              href={`${WEB_BASE_URL}/policies/privacy`}
               target="_blank"
               rel="noopener noreferrer"
               className="flex items-center justify-between w-full text-left px-4 py-2.5 rounded-lg text-sm font-medium text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-gray-200 transition-colors"
@@ -327,7 +327,7 @@ export const SettingsPage: React.FC = () => {
               Privacy & Security <ExternalLink size={14} />
             </a>
             <a
-              href={`${import.meta.env.VITE_WEB_BASE_URL ?? 'https://lenserfight.com'}/policies/terms`}
+              href={`${WEB_BASE_URL}/policies/terms`}
               target="_blank"
               rel="noopener noreferrer"
               className="flex items-center justify-between w-full text-left px-4 py-2.5 rounded-lg text-sm font-medium text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-gray-200 transition-colors"

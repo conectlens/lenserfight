@@ -1,9 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react'
 import { useLocation } from 'react-router-dom'
-import { useAuth } from '@lenserfight/features/auth'
 import { useLenserOptional } from '@lenserfight/features/profile'
 import { Footer } from '@lenserfight/ui/layout'
-import { buildAuthReturnUrl } from '@lenserfight/utils/dom'
+import { WEB_BASE_URL } from '@lenserfight/utils/env'
 import { storage } from '@lenserfight/utils/storage'
 
 import { Header } from './Header'
@@ -24,7 +23,6 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children, full
   const lenser = lenserCtx?.lenser ?? null
   const redirectToOnboarding = lenserCtx?.redirectToOnboarding
   const updateLenserProfile = lenserCtx?.updateLenserProfile
-  const { isAuthenticated } = useAuth()
 
   const location = useLocation()
 
@@ -119,12 +117,6 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children, full
   }
 
   const handleOpenProfileSetup = () => {
-    if (!isAuthenticated) {
-      const authAppUrl = 'https://auth.lenserfight.com'
-      const returnUrl = encodeURIComponent(buildAuthReturnUrl(window.location.href))
-      window.location.href = `${authAppUrl}/login?return_url=${returnUrl}`
-      return
-    }
     redirectToOnboarding?.()
   }
 
@@ -155,7 +147,7 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children, full
               <div className="flex-1 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 text-gray-900 dark:text-gray-100">
                 {children || <div className="text-gray-400 text-center mt-20">No content provided</div>}
               </div>
-              <Footer isDashboard={true} navBaseUrl={import.meta.env.VITE_WEB_BASE_URL ?? 'https://lenserfight.com'} />
+              <Footer isDashboard={true} navBaseUrl={WEB_BASE_URL} />
             </>
           )}
         </main>

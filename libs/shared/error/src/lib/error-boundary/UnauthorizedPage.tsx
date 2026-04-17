@@ -1,6 +1,5 @@
 import React from 'react'
-
-const AUTH_APP_URL = 'https://auth.lenserfight.com'
+import { AUTH_BASE_URL } from '@lenserfight/utils/env'
 
 interface UnauthorizedPageProps {
   onDismiss?: () => void
@@ -34,7 +33,7 @@ export const UnauthorizedPage: React.FC<UnauthorizedPageProps> = ({ onDismiss })
 
       <div className="flex flex-col gap-3 sm:flex-row">
         <a
-          href={AUTH_APP_URL}
+          href={`${AUTH_BASE_URL}/login`}
           className="inline-flex items-center justify-center rounded-lg bg-primary px-5 py-2.5 text-sm font-semibold text-white transition-opacity hover:opacity-90"
         >
           Log in
