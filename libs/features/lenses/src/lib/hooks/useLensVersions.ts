@@ -19,7 +19,7 @@ export const useLensVersions = (lensId: string, options?: { enabled?: boolean })
     queryKey: queryKeys.lensVersions.list(lensId),
     queryFn: () => lensesService.getVersions(lensId),
     enabled: (options?.enabled !== false) && !!lensId,
-    staleTime: 30_000,
+    staleTime: 60_000,
   })
 
   const { mutateAsync: createVersion, isPending: isCreating } = useMutation({
@@ -51,21 +51,24 @@ export const useLensVersions = (lensId: string, options?: { enabled?: boolean })
   }
 }
 
-export const useLensVersionDetail = (versionId: string | null | undefined) => {
+export const useLensVersionDetail = (
+  versionId: string | null | undefined,
+  options?: { enabled?: boolean; staleTime?: number }
+) => {
   return useQuery({
     queryKey: queryKeys.lensVersions.detail(versionId ?? ''),
     queryFn: () => lensesService.getVersionById(versionId!),
-    enabled: !!versionId,
-    staleTime: 60_000,
+    enabled: (options?.enabled !== false) && !!versionId,
+    staleTime: options?.staleTime ?? 120_000,
   })
 }
 
-export const useLatestPublishedVersion = (lensId: string) => {
+export const useLatestPublishedVersion = (lensId: string, options?: { enabled?: boolean; staleTime?: number }) => {
   return useQuery({
     queryKey: queryKeys.lensVersions.latestPublished(lensId),
     queryFn: () => lensesService.getLatestPublishedVersion(lensId),
-    enabled: !!lensId,
-    staleTime: 60_000,
+    enabled: (options?.enabled !== false) && !!lensId,
+    staleTime: options?.staleTime ?? 120_000,
   })
 }
 
@@ -84,7 +87,7 @@ export const useLensVersionsPaginated = (lensId: string, options?: { enabled?: b
     queryKey: queryKeys.lensVersions.listPaginated(lensId, offset),
     queryFn: () => lensesService.getVersionsPaginated(lensId, VERSIONS_PAGE_SIZE, offset),
     enabled,
-    staleTime: 30_000,
+    staleTime: 60_000,
   })
 
   useEffect(() => {
