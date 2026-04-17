@@ -174,6 +174,17 @@ npx nx run-many -t lint test --all
 - [Database Schema](https://docs.lenserfight.com/reference/database/schema-overview)
 - [How to Contribute](https://docs.lenserfight.com/how-to/contributors/how-to-contribute)
 
+### Workflows (Open Source Edition)
+
+Deep-dive on the DAG execution engine, typed IO contracts, and the 9 built-in lens kinds:
+
+- [Open Source Workflows (explanation)](docs/explanation/workflows/open-source-workflows.md) — reference architecture, lens kinds, and the 25 supported tasks.
+- [Execution Engine (reference)](docs/reference/workflows/execution-engine.md) — scheduler, retries, timeouts, moderation, merge strategies.
+- [Contract Schema (reference)](docs/reference/workflows/contract-schema.md) — JSONB shapes for `input_contract` / `output_contract` + `NodeOutputEnvelope`.
+- [Workflow Test Plan (reference)](docs/reference/workflows/test-plan.md) — behavioural matrix any runtime must satisfy.
+- [Create a Lens Kind (how-to)](docs/how-to/workflows/create-a-lens-kind.md) — add `audio`, `3d`, `code-patch`, or any custom kind.
+- [Build a Lens Chain (how-to)](docs/how-to/workflows/build-a-lens-chain.md) — wire the canonical Intent → Plan → Research → Generate → Refine → Validate → Export backbone.
+
 ---
 
 ## License
