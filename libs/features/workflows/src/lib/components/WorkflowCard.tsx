@@ -9,13 +9,14 @@ import type { WorkflowRecord, WorkflowNodeRecord } from '@lenserfight/data/repos
 interface WorkflowCardProps {
   workflow: WorkflowRecord
   nodes?: WorkflowNodeRecord[]
+  nodeCount?: number
   compact?: boolean
   showReactions?: boolean
   onClick?: () => void
 }
 
-export function WorkflowCard({ workflow, nodes, compact, onClick }: WorkflowCardProps) {
-  const nodeCount = nodes?.length ?? 0
+export function WorkflowCard({ workflow, nodes, nodeCount: nodeCountProp, compact, onClick }: WorkflowCardProps) {
+  const nodeCount = nodeCountProp ?? workflow.node_count ?? nodes?.length ?? 0
   const battleCount = workflow.battle_count ?? 0
   const likeCount = (workflow.reaction_totals as Record<string, number> | null | undefined)?.like ?? 0
   const savedCount = (workflow.reaction_totals as Record<string, number> | null | undefined)?.saved ?? 0
