@@ -1,6 +1,13 @@
 # Schema: content
 
-The `content` schema manages all forum and community content — threads, replies, prompt templates, tags, reactions, translations, and media.
+The `content` schema manages forum and community content — threads, replies, tags, reactions, translations, and reaction aggregates.
+
+> **Schema update (OSS):** The former `content.prompt_templates` table has been superseded by `lenses.lenses` + `lenses.versions` + `lenses.version_parameters`. The sections below that describe `prompt_templates` are kept as historical reference only. For the authoritative lens schema see:
+>
+> - [`lenses.lenses`, `lenses.versions`, `lenses.version_parameters`, `lenses.workflows`](./schema-overview.md)
+> - [Open Source Workflows explainer](../../explanation/workflows/open-source-workflows.md)
+>
+> Polymorphic fields throughout this schema (`entity_type_enum`, `tag_map.entity_type`, `reactions.entity_type`) now accept `lens`, `workflow`, and `thread`/`thread_reply` rather than `prompt_template`. Lens versions (`lenses.versions`) additionally carry optional `input_contract` and `output_contract` JSONB columns used by the workflow execution engine; see [Contract Schema Reference](../workflows/contract-schema.md).
 
 ## Tables
 
