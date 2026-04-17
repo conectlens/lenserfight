@@ -16,10 +16,11 @@ import {
   useEdgesState,
   useReactFlow,
 } from '@xyflow/react'
-import { Pencil } from 'lucide-react'
-import React, { useCallback, useEffect, useRef } from 'react'
+import { AlertTriangle, Info, Pencil, X } from 'lucide-react'
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
 import { useSaveWorkflow } from '../hooks/useSaveWorkflow'
+import { useWorkflowSimulation } from '../hooks/useWorkflowSimulation'
 
 import { WorkflowCanvasEdge } from './WorkflowCanvasEdge'
 import { WorkflowCanvasNode } from './WorkflowCanvasNode'
@@ -552,6 +553,54 @@ function WorkflowBuilderCanvasInner({
     // trigger persistence RPCs.
   }, [])
 
+  // ── Simulation diagnostics (Phase 8) ───────────────────────────────────
+  // Runs the pure Phase 5 simulator over the current graph on every edit.
+  // Output drives:
+  //   * a floating diagnostics panel (top-right)
+  //   * badges on offending nodes/edges via xyflow className overrides
+  //
+  // The simulator is O(V+E) and cheap; we only need to stabilise the input
+  // arrays to avoid re-allocating on every React re-render.
+  const simNodes = useMemo(
+    () =>
+      flowNodes.map((n) => {
+        const data = n.data as WorkflowNodeData & { lens_id?: string }
+        const incomingLabels = flowEdges
+          .filter((e) => e.target === n.id)
+          .map((e) => e.targetHandle ?? 'input')
+        return {
+          id: n.id,
+          lensId: data.lens_id,
+          paramLabels: incomingLabels,
+        }
+      }),
+    [flowNodes, flowEdges],
+  )
+
+  const simEdges = useMemo(
+    () =>
+      flowEdges.map((e) => ({
+        id: e.id,
+        sourceNodeId: e.source,
+        targetNodeId: e.target,
+        sourceOutputKey:
+          (e.data as { sourceOutputKey?: string } | undefined)?.sourceOutputKey ?? 'output',
+        targetParamLabel: e.targetHandle ?? 'input',
+      })),
+    [flowEdges],
+  )
+
+  const simulationReport = useWorkflowSimulation({
+    nodes: simNodes,
+    edges: simEdges,
+    enabled: !readOnly && flowNodes.length > 0,
+  })
+
+  const [diagnosticsOpen, setDiagnosticsOpen] = useState(true)
+  const errorCount = simulationReport.diagnostics.filter((d) => d.severity === 'error').length
+  const warnCount = simulationReport.diagnostics.filter((d) => d.severity === 'warn').length
+  const showDiagnostics = !readOnly && (errorCount > 0 || warnCount > 0)
+
   return (
     <ReactFlow
       nodes={flowNodes}
@@ -588,6 +637,62 @@ function WorkflowBuilderCanvasInner({
           >
             <Pencil size={12} />
             Edit
+          </button>
+        </Panel>
+      )}
+      {showDiagnostics && diagnosticsOpen && (
+        <Panel position="top-right">
+          <div className="flex w-80 flex-col rounded-2xl border border-surface-border bg-surface-base shadow-lg">
+            <div className="flex items-center gap-2 border-b border-surface-border px-3 py-2">
+              <AlertTriangle size={14} className={errorCount > 0 ? 'text-status-red' : 'text-primary-yellow-600'} />
+              <span className="flex-1 text-xs font-semibold text-greyscale-800 dark:text-greyscale-100">
+                Simulation diagnostics
+              </span>
+              <button
+                onClick={() => setDiagnosticsOpen(false)}
+                className="rounded-md p-0.5 text-greyscale-400 transition-colors hover:text-greyscale-900 dark:hover:text-greyscale-100"
+                title="Hide"
+                type="button"
+              >
+                <X size={12} />
+              </button>
+            </div>
+            <div className="max-h-60 overflow-y-auto px-3 py-2 text-[11px] leading-relaxed">
+              {simulationReport.diagnostics.map((d, i) => (
+                <div
+                  key={`${d.code}-${d.nodeId ?? d.edgeId ?? i}`}
+                  className={`mb-1.5 flex items-start gap-1.5 ${d.severity === 'error' ? 'text-status-red' : 'text-primary-yellow-700 dark:text-primary-yellow-400'}`}
+                >
+                  {d.severity === 'error' ? (
+                    <AlertTriangle size={11} className="mt-0.5 flex-shrink-0" />
+                  ) : (
+                    <Info size={11} className="mt-0.5 flex-shrink-0" />
+                  )}
+                  <div className="min-w-0">
+                    <span className="font-mono">{d.code}</span>
+                    <span className="ml-1 text-greyscale-600 dark:text-greyscale-300">
+                      {d.message}
+                    </span>
+                  </div>
+                </div>
+              ))}
+            </div>
+            <div className="border-t border-surface-border px-3 py-1.5 text-[10px] text-greyscale-400">
+              {errorCount} error{errorCount === 1 ? '' : 's'} · {warnCount} warning{warnCount === 1 ? '' : 's'} · {simulationReport.waves.length} wave{simulationReport.waves.length === 1 ? '' : 's'}
+            </div>
+          </div>
+        </Panel>
+      )}
+      {showDiagnostics && !diagnosticsOpen && (
+        <Panel position="top-right">
+          <button
+            onClick={() => setDiagnosticsOpen(true)}
+            className={`flex items-center gap-1.5 rounded-xl border px-2.5 py-1.5 text-xs font-medium shadow-sm transition-colors ${errorCount > 0 ? 'border-status-red/40 bg-status-red/10 text-status-red' : 'border-primary-yellow-500/40 bg-primary-yellow-500/10 text-primary-yellow-700'}`}
+            type="button"
+            title="Show simulation diagnostics"
+          >
+            <AlertTriangle size={12} />
+            {errorCount > 0 ? `${errorCount} error${errorCount === 1 ? '' : 's'}` : `${warnCount} warning${warnCount === 1 ? '' : 's'}`}
           </button>
         </Panel>
       )}

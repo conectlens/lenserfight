@@ -1,6 +1,7 @@
 import { queryKeys } from '@lenserfight/data/cache'
 import { workflowsService } from '@lenserfight/data/repositories'
 import type { UpsertNodeInput, UpsertEdgeInput, WorkflowNodeRecord, WorkflowEdgeRecord } from '@lenserfight/data/repositories'
+import { validateWorkflow, type ValidationIssue } from '@lenserfight/infra/execution'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 
 interface SaveWorkflowInput {
@@ -12,6 +13,30 @@ interface SaveWorkflowInput {
   mergeMode?: 'replace' | 'merge'
   persistNodes?: boolean
   persistEdges?: boolean
+  /**
+   * Validation override. Defaults to `true` — pre-save structural validation
+   * blocks writes that would create a cycle, orphan edges, or duplicate node
+   * ids. Pass `false` for callers that intentionally persist partial graphs
+   * (e.g. the initial-template seeding in CreateWorkflowWizard).
+   */
+  validateBeforeSave?: boolean
+}
+
+/**
+ * Surfaces structural validation failures from `validateWorkflow` as a
+ * throwable error carrying the issue list so the UI can highlight offending
+ * nodes/edges.
+ */
+export class WorkflowValidationError extends Error {
+  public readonly issues: ValidationIssue[]
+  constructor(issues: ValidationIssue[]) {
+    const msg =
+      issues[0]?.message ??
+      `Workflow failed structural validation (${issues.length} issue${issues.length === 1 ? '' : 's'})`
+    super(msg)
+    this.name = 'WorkflowValidationError'
+    this.issues = issues
+  }
 }
 
 export function useSaveWorkflow() {
@@ -27,9 +52,40 @@ export function useSaveWorkflow() {
       mergeMode = 'replace',
       persistNodes = true,
       persistEdges = true,
+      validateBeforeSave = true,
     }: SaveWorkflowInput) => {
       const nodesPayload = nodeDelta ?? nodes
       const edgesPayload = edgeDelta ?? edges
+
+      // Pre-save structural validation (Phase 2). Guards against cycles,
+      // orphan edges and duplicate node ids — every one of which would
+      // render the workflow unexecutable. Contract- and routing-level
+      // checks are opt-in and only run when paramLabels / kind are present
+      // on the payload.
+      if (validateBeforeSave && nodes.length > 0) {
+        const result = validateWorkflow(
+          nodes.map((n) => ({
+            id: n.id ?? `__new__:${n.lens_id}:${n.ordinal ?? 0}`,
+            lensId: n.lens_id,
+            versionId: n.version_id ?? null,
+            config: (n.config ?? null) as Record<string, unknown> | null,
+          })),
+          edges.map((e) => ({
+            id: e.id,
+            sourceNodeId: e.source_node_id,
+            targetNodeId: e.target_node_id,
+            sourceOutputKey: e.source_output_key,
+            targetParamLabel: e.target_param_label,
+            condition: e.condition as
+              | { type: 'equals' | 'contains' | 'present' | 'truthy'; value?: unknown }
+              | null
+              | undefined,
+          })),
+        )
+        if (!result.ok) {
+          throw new WorkflowValidationError(result.errors)
+        }
+      }
 
       // Nodes must be persisted before edges — edges have FK constraints on node IDs
       const savedNodes = persistNodes

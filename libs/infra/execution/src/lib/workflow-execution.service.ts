@@ -1,4 +1,5 @@
 import { validateInputs, validateOutput } from './contract-validator'
+import { detectCycle as validatorDetectCycle, PlaceholderUnboundError } from './validator'
 
 import type {
   ExecutionInput,
@@ -20,11 +21,18 @@ import type {
 
 export type NodeStatus =
   | 'pending'
+  | 'awaiting_dependency'
+  | 'queued'
   | 'running'
+  | 'streaming'
+  | 'retrying'
   | 'completed'
   | 'failed'
   | 'cancelled'
   | 'skipped'
+  | 'timed_out'
+  | 'blocked'
+  | 'invalidated'
 
 export type MergeStrategy = 'last_write_wins' | 'concat' | 'array' | 'json_object'
 
@@ -103,6 +111,9 @@ export type EngineEventName =
   | 'node_completed'
   | 'node_cancelled'
   | 'node_skipped'
+  | 'node_blocked'
+  | 'node_invalidated'
+  | 'node_stream_delta'
 
 export interface EngineEvent {
   runId: string
@@ -170,39 +181,14 @@ export class WorkflowExecutionService {
 
   /**
    * Detects cycles in a workflow DAG using Kahn's algorithm.
-   * Returns the IDs of nodes involved in a cycle, or null if acyclic.
+   * Thin delegate over the canonical implementation in `validator.ts` so the
+   * Phase 5 simulator and the builder UI share the exact same algorithm.
    */
   static detectCycle(
     nodes: { id: string }[],
     edges: { sourceNodeId: string; targetNodeId: string }[],
   ): string[] | null {
-    const inDegree = new Map<string, number>(nodes.map((n) => [n.id, 0]))
-    const adjList = new Map<string, string[]>(nodes.map((n) => [n.id, []]))
-
-    for (const edge of edges) {
-      inDegree.set(edge.targetNodeId, (inDegree.get(edge.targetNodeId) ?? 0) + 1)
-      adjList.get(edge.sourceNodeId)?.push(edge.targetNodeId)
-    }
-
-    const queue: string[] = []
-    for (const [id, deg] of inDegree) {
-      if (deg === 0) queue.push(id)
-    }
-
-    let processed = 0
-    let qi = 0
-    while (qi < queue.length) {
-      const current = queue[qi++]
-      processed++
-      for (const neighbor of adjList.get(current) ?? []) {
-        const newDeg = (inDegree.get(neighbor) ?? 0) - 1
-        inDegree.set(neighbor, newDeg)
-        if (newDeg === 0) queue.push(neighbor)
-      }
-    }
-
-    if (processed === nodes.length) return null
-    return nodes.filter((n) => !queue.includes(n.id)).map((n) => n.id)
+    return validatorDetectCycle(nodes, edges)
   }
 
   constructor(private readonly provider: IExecutionProvider) {}
@@ -227,7 +213,18 @@ export class WorkflowExecutionService {
     const markRemainingCancelled = async () => {
       const pendingNodes = nodes.filter((node) => {
         const result = results.get(node.id)
-        return !result || result.status === 'pending' || result.status === 'running'
+        // Mark every non-terminal status as cancelled (Phase 1 node state
+        // machine). Terminal: completed, failed, cancelled, skipped,
+        // timed_out, blocked, invalidated.
+        return (
+          !result ||
+          result.status === 'pending' ||
+          result.status === 'awaiting_dependency' ||
+          result.status === 'queued' ||
+          result.status === 'running' ||
+          result.status === 'streaming' ||
+          result.status === 'retrying'
+        )
       })
 
       await Promise.all(
@@ -344,7 +341,34 @@ export class WorkflowExecutionService {
             results,
             ctx.rootInputs,
           )
-          const resolvedPrompt = renderPrompt(template, renderedInputs)
+
+          // Prompt rendering is strict about unresolved placeholders (§6.2).
+          // A PlaceholderUnboundError surfaces as a `node.blocked` failure
+          // with a structured errorCode so the UI can highlight which label
+          // is missing on the graph.
+          let resolvedPrompt: string
+          try {
+            resolvedPrompt = renderPrompt(template, renderedInputs, contracts.input)
+          } catch (err) {
+            if (err instanceof PlaceholderUnboundError) {
+              const blocked: NodeResult = {
+                nodeId,
+                status: 'failed',
+                error: 'placeholder_unbound',
+                outputData: { placeholder: err.label },
+              }
+              results.set(nodeId, blocked)
+              await ctx.onNodeStatusChange(nodeId, blocked)
+              await emit(ctx, {
+                runId: ctx.runId,
+                nodeId,
+                name: 'node_blocked',
+                metadata: { errorCode: 'placeholder_unbound', label: err.label },
+              })
+              return
+            }
+            throw err
+          }
 
           // ── Input contract validation ───────────────────────────────
           const inputCheck = validateInputs(renderedInputs, contracts.input)
@@ -445,9 +469,12 @@ export class WorkflowExecutionService {
 
           if (providerError) {
             const cause = providerError.cause
+            // Timeouts are persisted with the real `timed_out` status (Phase 1
+            // aligns the DB constraint). All other causes remain `failed`.
+            const terminalStatus: NodeStatus = cause === 'timeout' ? 'timed_out' : 'failed'
             const failed: NodeResult = {
               nodeId,
-              status: 'failed',
+              status: terminalStatus,
               error: errorMessage(providerError.err),
               attempts: attempt,
             }
@@ -491,9 +518,13 @@ export class WorkflowExecutionService {
           // ── Output contract validation ──────────────────────────────
           const outputCheck = validateOutput(envelope, contracts.output)
           if (!outputCheck.ok) {
+            // Output contract violations graduate to `invalidated` — a
+            // distinct terminal state that makes envelope-level failures
+            // (as opposed to provider exceptions) trivially greppable in
+            // the observability views.
             const result: NodeResult = {
               nodeId,
-              status: 'failed',
+              status: 'invalidated',
               error: 'output_contract_violation',
               outputData: {
                 contractErrors: outputCheck.errors,
@@ -867,12 +898,46 @@ function replaceTokenVariants(prompt: string, rawKey: string, value: unknown): s
     .replace(new RegExp(`\\[\\s+${normalizedPattern}\\s+\\]`, 'gi'), valueStr)
 }
 
-function renderPrompt(template: string, rendered: Record<string, unknown>): string {
+/**
+ * Unresolved placeholder pattern. Matches `[[label]]` / `[ label ]` /
+ * `{{label}}` case-insensitively. The engine expects every placeholder to be
+ * resolved OR for the corresponding contract field to be marked optional.
+ */
+const UNRESOLVED_PLACEHOLDER_RE = /(?:\[\[\s*([a-z0-9_ \-]+?)\s*\]\])|(?:\{\{\s*([a-z0-9_ \-]+?)\s*\}\})|(?:\[\s+([a-z0-9_ \-]+?)\s+\])/i
+
+function renderPrompt(
+  template: string,
+  rendered: Record<string, unknown>,
+  inputContract?: LensInputContract | null,
+): string {
   let prompt = template
   for (const [key, value] of Object.entries(rendered)) {
     prompt = replaceTokenVariants(prompt, key, value)
   }
+
+  // Strict placeholder-unbound check (§6.2). A placeholder that survived
+  // expansion means the template asked for a label that neither bindings nor
+  // rootInputs supplied AND the contract does not mark it optional.
+  const leftover = UNRESOLVED_PLACEHOLDER_RE.exec(prompt)
+  if (leftover) {
+    const label = (leftover[1] ?? leftover[2] ?? leftover[3] ?? '').trim()
+    if (label && !isLabelOptional(inputContract, label)) {
+      throw new PlaceholderUnboundError(label)
+    }
+  }
   return prompt
+}
+
+function isLabelOptional(contract: LensInputContract | null | undefined, label: string): boolean {
+  if (!contract) return false
+  const normalized = label.trim().replace(/\s+/g, '_').toLowerCase()
+  for (const [k, field] of Object.entries(contract.fields ?? {})) {
+    const keyNorm = k.trim().replace(/\s+/g, '_').toLowerCase()
+    if (keyNorm === normalized) {
+      return field.required !== true
+    }
+  }
+  return false
 }
 
 function collectParentStatuses(

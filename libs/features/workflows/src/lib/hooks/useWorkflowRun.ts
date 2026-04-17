@@ -1,7 +1,11 @@
 import { workflowsService } from '@lenserfight/data/repositories'
 import { supabase } from '@lenserfight/data/supabase'
 import type { WorkflowNodeResultRecord } from '@lenserfight/data/repositories'
-import type { WorkflowSseEventEnvelope } from '@lenserfight/types'
+import {
+  WorkflowEventType,
+  isTerminalRunEventType,
+  type WorkflowSseEventEnvelope,
+} from '@lenserfight/types'
 import { useMutation } from '@tanstack/react-query'
 import { useEffect, useState } from 'react'
 
@@ -13,8 +17,28 @@ export function useWorkflowRun(workflowId: string | undefined) {
   const [isRunning, setIsRunning] = useState(false)
 
   const { mutateAsync: startRun, isPending } = useMutation({
-    mutationFn: ({ inputs, globalModelId }: { inputs: Record<string, unknown>; globalModelId?: string }) =>
-      workflowsService.startRun(workflowId!, inputs, globalModelId),
+    mutationFn: async ({
+      inputs,
+      globalModelId,
+      idempotencyKey,
+    }: {
+      inputs: Record<string, unknown>
+      globalModelId?: string
+      /**
+       * Phase 9 — when provided, repeated submissions with the same key return
+       * the original run id instead of starting a new one. If omitted, the hook
+       * derives a stable key from sha256(workflowId || canonicalInputs) so UI
+       * double-clicks / React StrictMode double-invocations never create dup
+       * runs. Pass `null` to opt out.
+       */
+      idempotencyKey?: string | null
+    }) => {
+      const key =
+        idempotencyKey === null
+          ? undefined
+          : idempotencyKey ?? (await deriveIdempotencyKey(workflowId!, inputs))
+      return workflowsService.startRun(workflowId!, inputs, globalModelId, key)
+    },
     onSuccess: (run) => {
       setRunId(run.id)
       setNodeResults([])
@@ -181,19 +205,79 @@ export function useWorkflowRun(workflowId: string | undefined) {
 }
 
 function isTerminalRunEvent(type: string): boolean {
-  return type === 'run.completed' || type === 'run.failed' || type === 'run.cancelled'
+  return isTerminalRunEventType(type)
 }
+
+/**
+ * Derives a deterministic idempotency key from the workflow id and the
+ * canonical (sorted-keys) JSON form of the submitted inputs. The Web Crypto
+ * API is available in every supported browser + in the Cloudflare Worker
+ * runtime, so this is safe to run server-side in RSC code paths too.
+ */
+async function deriveIdempotencyKey(
+  workflowId: string,
+  inputs: Record<string, unknown>,
+): Promise<string> {
+  const canonical = canonicalJsonStringify(inputs)
+  const data = new TextEncoder().encode(`${workflowId}|${canonical}`)
+  // Fall back to a time-bucketed hash on runtimes missing SubtleCrypto.
+  if (typeof crypto === 'undefined' || !crypto.subtle) {
+    return `${workflowId}-${Math.floor(Date.now() / 5000)}`
+  }
+  const hash = await crypto.subtle.digest('SHA-256', data)
+  return bufferToHex(hash)
+}
+
+function canonicalJsonStringify(value: unknown): string {
+  if (value === null || typeof value !== 'object') return JSON.stringify(value)
+  if (Array.isArray(value)) {
+    return `[${value.map((v) => canonicalJsonStringify(v)).join(',')}]`
+  }
+  const entries = Object.entries(value as Record<string, unknown>).sort(([a], [b]) =>
+    a < b ? -1 : a > b ? 1 : 0,
+  )
+  return `{${entries
+    .map(([k, v]) => `${JSON.stringify(k)}:${canonicalJsonStringify(v)}`)
+    .join(',')}}`
+}
+
+function bufferToHex(buf: ArrayBuffer): string {
+  const bytes = new Uint8Array(buf)
+  let out = ''
+  for (let i = 0; i < bytes.length; i++) {
+    out += bytes[i].toString(16).padStart(2, '0')
+  }
+  return out
+}
+
+/**
+ * Per-node delta high-water-mark. Lives at module scope because a single
+ * `useWorkflowRun` mounts once per workflow view; the reducer is idempotent
+ * against duplicate delta frames thanks to `deltaIndex` tracking.
+ */
+const seenDeltaIndex = new Map<string, number>()
 
 function applyWorkflowSseEnvelope(
   envelope: WorkflowSseEventEnvelope,
   setNodeResults: Dispatch<SetStateAction<WorkflowNodeResultRecord[]>>,
   setIsRunning: Dispatch<SetStateAction<boolean>>,
 ) {
-  if (envelope.type === 'run.status.changed') {
+  if (envelope.type === WorkflowEventType.RUN_STATUS_CHANGED) {
     const status = String((envelope.payload as Record<string, unknown>)['status'] ?? '').toLowerCase()
-    if (status === 'running' || status === 'queued' || status === 'starting') {
+    if (
+      status === 'running' ||
+      status === 'streaming' ||
+      status === 'queued' ||
+      status === 'starting' ||
+      status === 'recovered'
+    ) {
       setIsRunning(true)
-    } else if (status === 'completed' || status === 'failed' || status === 'cancelled') {
+    } else if (
+      status === 'completed' ||
+      status === 'failed' ||
+      status === 'cancelled' ||
+      status === 'timed_out'
+    ) {
       setIsRunning(false)
     }
     return
@@ -223,17 +307,39 @@ function applyWorkflowSseEnvelope(
 
     const payload = envelope.payload as Record<string, unknown>
     let status = existing.status
-    if (envelope.type.startsWith('node.')) {
-      const suffix = envelope.type.split('.')[1]
-      if (suffix === 'started') status = 'running'
-      else if (suffix === 'completed') status = 'completed'
-      else if (suffix === 'failed') status = 'failed'
-      else if (suffix === 'cancelled') status = 'cancelled'
-      else if (suffix === 'skipped') status = 'skipped'
-      else if (suffix === 'retried') status = 'running'
+    if (envelope.type === WorkflowEventType.NODE_STARTED) status = 'running'
+    else if (envelope.type === WorkflowEventType.NODE_STREAM_DELTA) status = 'streaming'
+    else if (envelope.type === WorkflowEventType.NODE_COMPLETED) status = 'completed'
+    else if (envelope.type === WorkflowEventType.NODE_FAILED) status = 'failed'
+    else if (envelope.type === WorkflowEventType.NODE_CANCELLED) status = 'cancelled'
+    else if (envelope.type === WorkflowEventType.NODE_SKIPPED) status = 'skipped'
+    else if (envelope.type === WorkflowEventType.NODE_TIMED_OUT) status = 'timed_out'
+    else if (envelope.type === WorkflowEventType.NODE_BLOCKED) status = 'blocked'
+    else if (envelope.type === WorkflowEventType.NODE_INVALIDATED) status = 'invalidated'
+    else if (envelope.type === WorkflowEventType.NODE_RETRIED) status = 'retrying'
+    else if (envelope.type === WorkflowEventType.NODE_QUEUED) status = 'queued'
+    // `message.delta` kept for legacy compatibility with older producers.
+    else if (envelope.type === WorkflowEventType.MESSAGE_DELTA) status = 'streaming'
+
+    // Pick up text from either the canonical `text` field (node.stream.delta)
+    // or the legacy `delta` field (message.delta). `deltaIndex` is used to
+    // skip duplicate frames on reconnect.
+    const deltaText =
+      typeof payload['text'] === 'string'
+        ? (payload['text'] as string)
+        : typeof payload['delta'] === 'string'
+          ? (payload['delta'] as string)
+          : null
+
+    let shouldApplyDelta = deltaText != null
+    if (shouldApplyDelta && typeof payload['deltaIndex'] === 'number') {
+      const key = `${envelope.runId}:${nodeId}`
+      const seen = seenDeltaIndex.get(key) ?? -1
+      const idxNum = payload['deltaIndex'] as number
+      if (idxNum <= seen) shouldApplyDelta = false
+      else seenDeltaIndex.set(key, idxNum)
     }
 
-    const delta = typeof payload['delta'] === 'string' ? (payload['delta'] as string) : null
     const previousText =
       typeof existing.output_data?.['output'] === 'string'
         ? (existing.output_data?.['output'] as string)
@@ -241,11 +347,11 @@ function applyWorkflowSseEnvelope(
           ? (existing.output_data?.['text'] as string)
           : ''
     const outputData =
-      delta != null
+      shouldApplyDelta && deltaText != null
         ? {
             ...(existing.output_data ?? {}),
-            output: `${previousText}${delta}`,
-            text: `${previousText}${delta}`,
+            output: `${previousText}${deltaText}`,
+            text: `${previousText}${deltaText}`,
             streaming: true,
           }
         : existing.output_data
@@ -255,8 +361,8 @@ function applyWorkflowSseEnvelope(
       status,
       output_data: outputData,
       error_message:
-        status === 'failed'
-          ? String(payload['error'] ?? existing.error_message ?? 'Node failed')
+        status === 'failed' || status === 'timed_out' || status === 'invalidated'
+          ? String(payload['error'] ?? payload['errorMessage'] ?? existing.error_message ?? 'Node failed')
           : existing.error_message,
     }
 

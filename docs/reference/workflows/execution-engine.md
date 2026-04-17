@@ -154,6 +154,53 @@ type StreamChunk =
 
 The engine calls `onPartialOutput` on every `partial` chunk (throttled client-side) so `WorkflowProgressView` in [`libs/features/workflows/src/lib/components/WorkflowProgressView.tsx`](../../../libs/features/workflows/src/lib/components/WorkflowProgressView.tsx) can reflect live progress.
 
+### Canonical SSE event taxonomy
+
+The enum `WorkflowEventType` in [`libs/types/src/lib/workflow-events.types.ts`](../../../libs/types/src/lib/workflow-events.types.ts) is the single source of truth for every event that crosses the engine / transport / client boundary. Engine-side snake_case names (`node_completed`, `node_started`, …) are translated through `mapEngineEventToSse()` before persistence; never emit a raw string.
+
+Run-scoped events: `run.started`, `run.status.changed`, `run.completed`, `run.failed`, `run.cancelled`, `run.timed_out`, `run.recovered`, `heartbeat`.
+Node-scoped events: `node.queued`, `node.started`, `node.stream.delta`, `node.log`, `node.retried`, `node.completed`, `node.failed`, `node.cancelled`, `node.skipped`, `node.timed_out`, `node.blocked`, `node.invalidated`.
+Gate events: `moderation.flagged`, `contract.violated`.
+
+Every frame is wrapped in a `WorkflowSseEventEnvelope`:
+
+```ts
+interface WorkflowSseEventEnvelope<TPayload = Record<string, unknown>> {
+  eventId: number          // monotonic per runId (advisory lock in fn_append_workflow_run_event)
+  sequence?: number        // mirror of eventId for transport-agnostic consumers
+  type: WorkflowEventType
+  runId: string
+  workflowId?: string
+  timestamp: string        // ISO 8601
+  correlation?: { traceId?: string; parentEventId?: number; wave?: number; phase?: 'engine' | 'transport' | 'client' }
+  payload: TPayload
+}
+```
+
+### `node.stream.delta` ordering
+
+Every partial output emits a `node.stream.delta` event with a `deltaIndex` that is **monotonic per `nodeId`**. The client reducer in [`useWorkflowRun.ts`](../../../libs/features/workflows/src/lib/hooks/useWorkflowRun.ts) keeps a per-`(runId, nodeId)` high-water-mark and drops any delta whose `deltaIndex` is `<= seen`, so duplicate frames delivered after a reconnect are idempotent. A missing delta index (i.e. a gap in the sequence) is a signal the client should tear down the connection and re-open with `afterEventId=<last_event_id>`.
+
+### Reconnection & `Last-Event-ID` fallback
+
+The SSE route in [`apps/api/src/routes/execute/workflow-events.route.ts`](../../../../lenserfight-platform/apps/api/src/routes/execute/workflow-events.route.ts) resumes from a cursor in two ways, in this order of precedence:
+
+1. Query string: `GET /execute/workflows/:runId/events?afterEventId=<n>`
+2. Request header: `Last-Event-ID: <n>`
+
+EventSource implementations (browser native `EventSource` and most polyfills) automatically set `Last-Event-ID` from the last `id:` frame they received. The `?afterEventId=` form is provided for `fetch()`-based clients that do not control the header, and for explicit manual resumes from the UI.
+
+Headers written on every SSE response:
+
+```
+Content-Type: text/event-stream; charset=utf-8
+Cache-Control: no-cache, no-transform
+Connection: keep-alive
+X-Accel-Buffering: no
+```
+
+`X-Accel-Buffering: no` defeats reverse-proxy / CDN buffering that would otherwise stall frames. `Transfer-Encoding: chunked` is implicit when the response body is a `ReadableStream`; never set it explicitly (Cloudflare Workers rejects).
+
 ## Observability
 
 Every status transition emits an `execution.execution_tags` row:
