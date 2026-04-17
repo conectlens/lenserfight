@@ -3,6 +3,7 @@ import { supabase } from '@lenserfight/data/supabase'
 import { WorkflowExecutionService, getExecutionProvider } from '@lenserfight/infra/execution'
 import { createWorkflowModerationGateway } from '@lenserfight/infra/moderation'
 import { byokKeyResolver, callProvider } from '@lenserfight/providers'
+import { mapEngineEventToSse, WorkflowEventType } from '@lenserfight/types'
 import { useCallback, useRef } from 'react'
 
 import { persistNodeMediaArtifact } from '../execution/persistNodeMedia'
@@ -165,6 +166,11 @@ export function useWorkflowExecution({
       const controller = new AbortController()
       abortRef.current = controller
 
+      // Per-node monotonic delta index. Used by `node.stream.delta` so the
+      // client reducer can assemble chunks even if SSE frames arrive out of
+      // order or the transport retransmits.
+      const deltaIndexByNode = new Map<string, number>()
+
       try {
         const appendRunEventSafe = async (
           type: string,
@@ -176,8 +182,8 @@ export function useWorkflowExecution({
             // Observability is best-effort and must never break execution.
           }
         }
-        await appendRunEventSafe('run.started', { status: 'starting' })
-        await appendRunEventSafe('run.status.changed', { status: 'running' })
+        await appendRunEventSafe(WorkflowEventType.RUN_STARTED, { status: 'starting' })
+        await appendRunEventSafe(WorkflowEventType.RUN_STATUS_CHANGED, { status: 'running' })
 
         // Resolve global model → provider + API key
         // For local BYOK (e.g. Ollama), the model key may not exist in the DB model list.
@@ -229,8 +235,8 @@ export function useWorkflowExecution({
         }
 
         if (controller.signal.aborted) {
-          await appendRunEventSafe('run.cancelled', { status: 'cancelled' })
-          await appendRunEventSafe('run.status.changed', { status: 'cancelled' })
+          await appendRunEventSafe(WorkflowEventType.RUN_CANCELLED, { status: 'cancelled' })
+          await appendRunEventSafe(WorkflowEventType.RUN_STATUS_CHANGED, { status: 'cancelled' })
           return {
             runId,
             status: 'cancelled' as const,
@@ -345,20 +351,28 @@ export function useWorkflowExecution({
           async onPartialOutput(nodeId, partial) {
             // Stream partial text into workflow_node_results so the progress panel
             // can render incremental output while the node is still running.
-            await workflowsService.updateNodeResult(runId, nodeId, 'running', {
+            // Status `streaming` replaces the previous `running` so the run-level
+            // state machine can observe first-token-out (§5 node state machine).
+            await workflowsService.updateNodeResult(runId, nodeId, 'streaming', {
               mediaType: 'text',
               output: partial.text,
               text: partial.text,
               streaming: true,
             })
-            await appendRunEventSafe('message.delta', {
+            const deltaIndex = nextDeltaIndex(deltaIndexByNode, nodeId)
+            await appendRunEventSafe(WorkflowEventType.NODE_STREAM_DELTA, {
               nodeId,
+              deltaIndex,
+              text: partial.text,
+              kind: 'text',
+              // Legacy alias kept so older subscribers that still watch
+              // `payload.delta` do not break while we migrate clients.
               delta: partial.text,
             })
           },
 
           async onEvent(event) {
-            await appendRunEventSafe(mapEngineEventType(event.name), {
+            await appendRunEventSafe(mapEngineEventToSse(event.name), {
               nodeId: event.nodeId,
               ...(event.metadata ?? {}),
             })
@@ -373,18 +387,18 @@ export function useWorkflowExecution({
 
         // Mark run as completed or failed
         await workflowsService.updateRunStatus(runId, result.status)
-        await appendRunEventSafe(`run.${result.status}`, { status: result.status })
-        await appendRunEventSafe('run.status.changed', { status: result.status })
+        await appendRunEventSafe(resultStatusToRunEvent(result.status), { status: result.status })
+        await appendRunEventSafe(WorkflowEventType.RUN_STATUS_CHANGED, { status: result.status })
 
         return result
       } catch (error) {
         if (controller.signal.aborted) {
           try {
-            await workflowsService.appendRunEvent(runId, 'run.cancelled', {
+            await workflowsService.appendRunEvent(runId, WorkflowEventType.RUN_CANCELLED, {
               runId,
               status: 'cancelled',
             })
-            await workflowsService.appendRunEvent(runId, 'run.status.changed', {
+            await workflowsService.appendRunEvent(runId, WorkflowEventType.RUN_STATUS_CHANGED, {
               runId,
               status: 'cancelled',
             })
@@ -398,12 +412,12 @@ export function useWorkflowExecution({
           }
         }
         try {
-          await workflowsService.appendRunEvent(runId, 'run.failed', {
+          await workflowsService.appendRunEvent(runId, WorkflowEventType.RUN_FAILED, {
             runId,
             status: 'failed',
             error: error instanceof Error ? error.message : String(error),
           })
-          await workflowsService.appendRunEvent(runId, 'run.status.changed', {
+          await workflowsService.appendRunEvent(runId, WorkflowEventType.RUN_STATUS_CHANGED, {
             runId,
             status: 'failed',
           })
@@ -422,28 +436,28 @@ export function useWorkflowExecution({
   return { execute, stopExecution }
 }
 
-function mapEngineEventType(name: string): string {
-  switch (name) {
-    case 'node_started':
-      return 'node.started'
-    case 'node_completed':
-      return 'node.completed'
-    case 'node_failed':
-      return 'node.failed'
-    case 'node_cancelled':
-      return 'node.cancelled'
-    case 'node_skipped':
-      return 'node.skipped'
-    case 'node_retried':
-      return 'node.retried'
-    case 'timed_out':
-      return 'node.failed'
-    case 'contract_violated':
-      return 'node.failed'
-    case 'moderation_flagged':
-      return 'node.failed'
-    default:
-      return name.replace(/_/g, '.')
+/**
+ * Allocate the next monotonic delta index for a given node. The engine guarantees
+ * that partial outputs for a single node are consumed sequentially inside one
+ * hook instance; we rely on the Map mutation ordering here.
+ */
+function nextDeltaIndex(store: Map<string, number>, nodeId: string): number {
+  const n = (store.get(nodeId) ?? -1) + 1
+  store.set(nodeId, n)
+  return n
+}
+
+/**
+ * Map the engine-level terminal run status onto the canonical SSE run event.
+ */
+function resultStatusToRunEvent(status: 'completed' | 'failed' | 'cancelled'): WorkflowEventType {
+  switch (status) {
+    case 'completed':
+      return WorkflowEventType.RUN_COMPLETED
+    case 'failed':
+      return WorkflowEventType.RUN_FAILED
+    case 'cancelled':
+      return WorkflowEventType.RUN_CANCELLED
   }
 }
 

@@ -33,6 +33,8 @@ export function WorkflowRootInputsPanel({
   nodeConfigOverrides,
 }: WorkflowRootInputsPanelProps) {
   const [inputs, setInputs] = useState<Record<string, string>>({})
+  const renderCountRef = React.useRef(0)
+  renderCountRef.current += 1
 
   // Root nodes = nodes with no incoming edges
   const targetNodeIds = useMemo(() => new Set(edges.map((e) => e.target_node_id)), [edges])
@@ -54,6 +56,9 @@ export function WorkflowRootInputsPanel({
   })
 
   const isLoading = nodeVersionQueries.some((q) => q.isLoading)
+  const versionDataSignature = nodeVersionQueries
+    .map((q) => String((q.data as { id?: string } | undefined)?.id ?? 'none'))
+    .join('|')
 
   // Build per-node param groups (filtered to un-wired params only)
   const paramGroups = useMemo(() => {
@@ -75,13 +80,21 @@ export function WorkflowRootInputsPanel({
         }
       })
       .filter((g) => g.params.length > 0)
-  }, [rootNodes, nodeVersionQueries, edges])
+  }, [rootNodes, versionDataSignature, edges])
+
+  // #region agent log
+  fetch('http://127.0.0.1:7884/ingest/c70fec5e-ec66-4066-9705-fd474b67b4a6',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'ee2d98'},body:JSON.stringify({sessionId:'ee2d98',runId:'pre-fix',hypothesisId:'H1_H3',location:'WorkflowRootInputsPanel.tsx:render',message:'render snapshot',data:{renderCount:renderCountRef.current,nodesLen:nodes.length,edgesLen:edges.length,paramGroupsLen:paramGroups.length,inputsLen:Object.keys(inputs).length,nodeConfigOverridesKeys:nodeConfigOverrides?Object.keys(nodeConfigOverrides).length:0},timestamp:Date.now()})}).catch(()=>{});
+  // #endregion
 
   useEffect(() => {
     if (paramGroups.length === 0) return
+    // #region agent log
+    fetch('http://127.0.0.1:7884/ingest/c70fec5e-ec66-4066-9705-fd474b67b4a6',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'ee2d98'},body:JSON.stringify({sessionId:'ee2d98',runId:'pre-fix',hypothesisId:'H1_H3',location:'WorkflowRootInputsPanel.tsx:useEffect[initInputs]',message:'effect fired',data:{paramGroupsLen:paramGroups.length,nodesLen:nodes.length,overridesKeys:nodeConfigOverrides?Object.keys(nodeConfigOverrides).length:0},timestamp:Date.now()})}).catch(()=>{});
+    // #endregion
 
     setInputs((prev) => {
       const next = { ...prev }
+      let writes = 0
       for (const group of paramGroups) {
         const node = nodes.find((n) => n.id === group.nodeId)
         const persisted = (node?.config?.['param_overrides'] as Record<string, unknown> | undefined) ?? {}
@@ -96,10 +109,19 @@ export function WorkflowRootInputsPanel({
           const value = sessionValue ?? persistedValue
           if (typeof value === 'string' && value.trim() !== '') {
             next[key] = value
+            writes++
           }
         }
       }
-      return next
+      const prevKeys = Object.keys(prev)
+      const nextKeys = Object.keys(next)
+      const sameShape =
+        prevKeys.length === nextKeys.length &&
+        prevKeys.every((k) => prev[k] === next[k])
+      // #region agent log
+      fetch('http://127.0.0.1:7884/ingest/c70fec5e-ec66-4066-9705-fd474b67b4a6',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'ee2d98'},body:JSON.stringify({sessionId:'ee2d98',runId:'pre-fix',hypothesisId:'H2',location:'WorkflowRootInputsPanel.tsx:setInputs(init)',message:'state reconciliation result',data:{writes,prevKeys:prevKeys.length,nextKeys:nextKeys.length,sameShape},timestamp:Date.now()})}).catch(()=>{});
+      // #endregion
+      return sameShape ? prev : next
     })
   }, [paramGroups, nodes, nodeConfigOverrides])
 
@@ -189,7 +211,15 @@ export function WorkflowRootInputsPanel({
               )}
               errors={{}}
               onChange={(name, value) =>
-                setInputs((prev) => ({ ...prev, [`${nodeId}:${name}`]: String(value ?? '') }))
+                setInputs((prev) => {
+                  const key = `${nodeId}:${name}`
+                  const nextVal = String(value ?? '')
+                  const prevVal = prev[key] ?? ''
+                  // #region agent log
+                  fetch('http://127.0.0.1:7884/ingest/c70fec5e-ec66-4066-9705-fd474b67b4a6',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'ee2d98'},body:JSON.stringify({sessionId:'ee2d98',runId:'pre-fix',hypothesisId:'H4_H5',location:'WorkflowRootInputsPanel.tsx:onChange',message:'field change event',data:{nodeId,paramName:name,prevLen:prevVal.length,nextLen:nextVal.length,sameValue:prevVal===nextVal},timestamp:Date.now()})}).catch(()=>{});
+                  // #endregion
+                  return { ...prev, [key]: nextVal }
+                })
               }
               onImportJson={() => {}}
               onImportCsv={() => {}}
