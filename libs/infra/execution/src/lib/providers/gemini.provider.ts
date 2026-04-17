@@ -11,14 +11,20 @@ import type { IExecutionProvider, ExecutionInput, ExecutionResult, MediaType } f
  * Multimodal input: pass params.imageUrl to include an inline image part.
  */
 export class GeminiProvider implements IExecutionProvider {
-  readonly id = 'gemini'
+  /**
+   * Canonical provider id is `google` to match `@lenserfight/providers`. The
+   * legacy `gemini` alias is still registered in execution.registry.ts.
+   */
+  readonly id = 'google'
   readonly supportedMediaTypes: MediaType[] = ['text']
 
   async execute(modelId: string, input: ExecutionInput): Promise<ExecutionResult> {
     const start = Date.now()
 
     const { GoogleGenAI } = await import('@google/genai')
-    const apiKey = (typeof process !== 'undefined' ? process.env['GEMINI_API_KEY'] : undefined) ?? ''
+    const apiKey =
+      String(input.params?.apiKey ?? '') ||
+      (typeof process !== 'undefined' ? process.env['GEMINI_API_KEY'] ?? '' : '')
     const genAI = new GoogleGenAI({ apiKey })
 
     const parts: unknown[] = [{ text: input.prompt }]

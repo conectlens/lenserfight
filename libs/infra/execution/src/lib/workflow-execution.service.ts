@@ -1,4 +1,55 @@
-import type { IExecutionProvider, ExecutionInput, ExecutionResult } from './execution.types'
+import { validateInputs, validateOutput } from './contract-validator'
+
+import type {
+  ExecutionInput,
+  ExecutionResult,
+  IExecutionProvider,
+  IStreamingExecutionProvider,
+  ModerationDecision,
+  ModerationGateway,
+  ModerationPhase,
+  PartialOutputSink,
+} from './execution.types'
+import type {
+  LensInputContract,
+  LensOutputContract,
+  NodeOutputEnvelope,
+} from '@lenserfight/types'
+
+// ── Public types ──────────────────────────────────────────────────────────
+
+export type NodeStatus =
+  | 'pending'
+  | 'running'
+  | 'completed'
+  | 'failed'
+  | 'cancelled'
+  | 'skipped'
+
+export type MergeStrategy = 'last_write_wins' | 'concat' | 'array' | 'json_object'
+
+export type OnParentFailurePolicy = 'skip' | 'propagate' | 'substitute_default'
+
+export type RetryCause = 'timeout' | 'provider_error' | 'rate_limit' | 'contract_violated'
+
+export interface RetryConfig {
+  attempts: number
+  backoffMs?: number
+  maxBackoffMs?: number
+  retryOn?: RetryCause[]
+}
+
+export interface ModerationConfig {
+  policy?: 'off' | 'input' | 'output' | 'both'
+}
+
+export interface WorkflowNodeConfig {
+  retry?: RetryConfig
+  timeoutMs?: number
+  onParentFailure?: OnParentFailurePolicy
+  merge?: MergeStrategy
+  moderation?: ModerationConfig['policy']
+}
 
 export interface WorkflowNode {
   id: string
@@ -6,6 +57,8 @@ export interface WorkflowNode {
   versionId?: string | null
   /** [[label]] param names present in the lens template — resolved from incoming edges */
   paramLabels?: string[]
+  /** Per-node execution policy. Optional; engine uses safe defaults when absent. */
+  config?: WorkflowNodeConfig
 }
 
 export interface WorkflowEdge {
@@ -13,21 +66,49 @@ export interface WorkflowEdge {
   targetNodeId: string
   sourceOutputKey: string
   targetParamLabel: string
+  /** Optional per-edge merge strategy override. Falls back to target node's config.merge. */
+  mergeStrategy?: MergeStrategy | null
+  /** Optional condition — when evaluates false, the edge is skipped. */
+  condition?: EdgeCondition | null
 }
 
-export type NodeStatus = 'pending' | 'running' | 'completed' | 'failed' | 'cancelled'
+export interface EdgeCondition {
+  type: 'equals' | 'contains' | 'present' | 'truthy'
+  /** Value compared against the source output[sourceOutputKey] (or the whole envelope if type='present'). */
+  value?: unknown
+}
 
 export interface NodeResult {
   nodeId: string
   status: NodeStatus
   outputData?: Record<string, unknown>
+  envelope?: NodeOutputEnvelope
   error?: string
+  attempts?: number
 }
 
 export interface WorkflowRunResult {
   runId: string
   status: 'completed' | 'failed' | 'cancelled'
   nodeResults: NodeResult[]
+}
+
+export type EngineEventName =
+  | 'node_started'
+  | 'node_retried'
+  | 'moderation_flagged'
+  | 'contract_violated'
+  | 'timed_out'
+  | 'node_failed'
+  | 'node_completed'
+  | 'node_cancelled'
+  | 'node_skipped'
+
+export interface EngineEvent {
+  runId: string
+  nodeId: string
+  name: EngineEventName
+  metadata?: Record<string, unknown>
 }
 
 export interface WorkflowExecutionContext {
@@ -38,40 +119,53 @@ export interface WorkflowExecutionContext {
   signal?: AbortSignal
   /** Resolves a lens version's template body by lensId + versionId */
   resolveLensTemplate(lensId: string, versionId?: string | null): Promise<string>
+  /** Optional contract resolver — when provided, engine validates inputs/outputs per node. */
+  resolveVersionContracts?(
+    versionId?: string | null,
+  ): Promise<{ input: LensInputContract | null; output: LensOutputContract | null }>
   /** Called when a node changes status — used by the CF Worker to write workflow_node_results */
   onNodeStatusChange(nodeId: string, result: NodeResult): Promise<void>
+  /** Optional partial-output sink for streaming providers (throttled by caller). */
+  onPartialOutput?: PartialOutputSink
+  /** Optional moderation gateway — engine calls it per node based on config.moderation. */
+  moderation?: ModerationGateway
+  /** Optional observability callback for every engine event (execution_tags row). */
+  onEvent?(event: EngineEvent): void | Promise<void>
 }
+
+// ── Defaults ──────────────────────────────────────────────────────────────
+
+const DEFAULT_RETRY: Required<RetryConfig> = {
+  attempts: 1,
+  backoffMs: 500,
+  maxBackoffMs: 8000,
+  retryOn: ['timeout', 'provider_error', 'rate_limit'],
+}
+
+const DEFAULT_TIMEOUT_MS = 60_000
+const DEFAULT_ON_PARENT_FAILURE: OnParentFailurePolicy = 'skip'
+const DEFAULT_MERGE: MergeStrategy = 'last_write_wins'
+const DEFAULT_MODERATION: NonNullable<ModerationConfig['policy']> = 'off'
+
+// ── Service ───────────────────────────────────────────────────────────────
 
 /**
  * Pure workflow execution service — no Supabase calls.
- * The caller (CF Worker) provides the context object that handles all I/O.
+ * The caller (CF Worker or browser hook) provides the context object that
+ * handles all I/O.
  *
- * Algorithm:
+ * Algorithm (see docs/reference/workflows/execution-engine.md):
  * 1. Kahn's topological sort builds execution waves.
  * 2. Nodes in each wave are executed concurrently (Promise.all).
- * 3. Edge data mapping: source.outputData[sourceOutputKey] → target prompt [[label]] replacement.
+ * 3. Each node goes through: input merge → input contract → input moderation
+ *    → provider (+ retry/timeout) → output moderation → output contract →
+ *    persist envelope. Failures propagate per-node according to
+ *    `config.onParentFailure`.
  */
 export class WorkflowExecutionService {
-  private static escapeRegExp(value: string): string {
-    return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
-  }
-
-  private static replaceTokenVariants(prompt: string, rawKey: string, value: unknown): string {
-    const valueStr = String(value ?? '')
-    const normalized = rawKey.trim().replace(/\s+/g, '_').toLowerCase()
-    const keyPattern = WorkflowExecutionService.escapeRegExp(rawKey.trim()).replace(/_/g, '[ _]+')
-    const normalizedPattern = WorkflowExecutionService.escapeRegExp(normalized).replace(/_/g, '[ _]+')
-
-    return prompt
-      // Canonical syntax
-      .replaceAll(`[[${rawKey}]]`, valueStr)
-      .replaceAll(`[[${normalized}]]`, valueStr)
-      // Legacy syntax
-      .replaceAll(`{{${rawKey}}}`, valueStr)
-      .replaceAll(`{{${normalized}}}`, valueStr)
-      // Single-bracket placeholders require inner spaces: [ key ]
-      .replace(new RegExp(`\\[\\s+${keyPattern}\\s+\\]`, 'gi'), valueStr)
-      .replace(new RegExp(`\\[\\s+${normalizedPattern}\\s+\\]`, 'gi'), valueStr)
+  /** Exposed for tests / legacy callers; prefer the module-level helper internally. */
+  static replaceTokenVariants(prompt: string, rawKey: string, value: unknown): string {
+    return replaceTokenVariants(prompt, rawKey, value)
   }
 
   /**
@@ -80,7 +174,7 @@ export class WorkflowExecutionService {
    */
   static detectCycle(
     nodes: { id: string }[],
-    edges: { sourceNodeId: string; targetNodeId: string }[]
+    edges: { sourceNodeId: string; targetNodeId: string }[],
   ): string[] | null {
     const inDegree = new Map<string, number>(nodes.map((n) => [n.id, 0]))
     const adjList = new Map<string, string[]>(nodes.map((n) => [n.id, []]))
@@ -107,28 +201,21 @@ export class WorkflowExecutionService {
       }
     }
 
-    if (processed === nodes.length) return null // acyclic
-
-    // Return nodes that weren't processed (they're in cycles)
+    if (processed === nodes.length) return null
     return nodes.filter((n) => !queue.includes(n.id)).map((n) => n.id)
   }
+
   constructor(private readonly provider: IExecutionProvider) {}
 
   async executeWorkflow(
     nodes: WorkflowNode[],
     edges: WorkflowEdge[],
-    ctx: WorkflowExecutionContext
+    ctx: WorkflowExecutionContext,
   ): Promise<WorkflowRunResult> {
-    const isAbortError = (err: unknown) =>
-      err instanceof DOMException
-        ? err.name === 'AbortError'
-        : !!err && typeof err === 'object' && 'name' in err && (err as { name?: string }).name === 'AbortError'
-
     const isAborted = () => ctx.signal?.aborted ?? false
     const nodeMap = new Map(nodes.map((n) => [n.id, n]))
     const results = new Map<string, NodeResult>()
 
-    // Build adjacency and in-degree maps
     const inDegree = new Map<string, number>(nodes.map((n) => [n.id, 0]))
     const dependents = new Map<string, string[]>(nodes.map((n) => [n.id, []]))
 
@@ -145,95 +232,312 @@ export class WorkflowExecutionService {
 
       await Promise.all(
         pendingNodes.map(async (node) => {
-          const cancelledResult: NodeResult = { nodeId: node.id, status: 'cancelled' }
-          results.set(node.id, cancelledResult)
-          await ctx.onNodeStatusChange(node.id, cancelledResult)
-        })
+          const cancelled: NodeResult = { nodeId: node.id, status: 'cancelled' }
+          results.set(node.id, cancelled)
+          await ctx.onNodeStatusChange(node.id, cancelled)
+          await emit(ctx, { runId: ctx.runId, nodeId: node.id, name: 'node_cancelled' })
+        }),
       )
     }
 
-    // Kahn's algorithm — collect initial wave (no dependencies)
     let wave = nodes.filter((n) => (inDegree.get(n.id) ?? 0) === 0).map((n) => n.id)
 
     while (wave.length > 0) {
       if (isAborted()) {
         await markRemainingCancelled()
-        return {
-          runId: ctx.runId,
-          status: 'cancelled',
-          nodeResults: Array.from(results.values()),
-        }
+        return finish(ctx.runId, results, 'cancelled')
       }
 
-      // Execute current wave concurrently
       await Promise.all(
         wave.map(async (nodeId) => {
+          const node = nodeMap.get(nodeId)
+          if (!node) return
+
           if (isAborted()) {
-            const cancelledResult: NodeResult = { nodeId, status: 'cancelled' }
-            results.set(nodeId, cancelledResult)
-            await ctx.onNodeStatusChange(nodeId, cancelledResult)
+            const cancelled: NodeResult = { nodeId, status: 'cancelled' }
+            results.set(nodeId, cancelled)
+            await ctx.onNodeStatusChange(nodeId, cancelled)
+            await emit(ctx, { runId: ctx.runId, nodeId, name: 'node_cancelled' })
             return
           }
 
-          const node = nodeMap.get(nodeId)!
+          // ── Parent-failure gate ─────────────────────────────────────
+          const parentStatuses = collectParentStatuses(node, edges, results)
+          const onFailure = node.config?.onParentFailure ?? DEFAULT_ON_PARENT_FAILURE
+          if (parentStatuses.hasNonSuccessful) {
+            if (onFailure === 'skip') {
+              const skipped: NodeResult = { nodeId, status: 'skipped' }
+              results.set(nodeId, skipped)
+              await ctx.onNodeStatusChange(nodeId, skipped)
+              await emit(ctx, {
+                runId: ctx.runId,
+                nodeId,
+                name: 'node_skipped',
+                metadata: { reason: 'parent_not_successful' },
+              })
+              return
+            }
+            if (onFailure === 'propagate') {
+              const failed: NodeResult = { nodeId, status: 'failed', error: 'upstream_failure' }
+              results.set(nodeId, failed)
+              await ctx.onNodeStatusChange(nodeId, failed)
+              await emit(ctx, {
+                runId: ctx.runId,
+                nodeId,
+                name: 'node_failed',
+                metadata: { errorCode: 'upstream_failure' },
+              })
+              return
+            }
+            // substitute_default falls through and renders with empty values.
+          }
+
           await ctx.onNodeStatusChange(nodeId, { nodeId, status: 'running' })
+          await emit(ctx, { runId: ctx.runId, nodeId, name: 'node_started' })
 
+          const attempts = Math.max(1, node.config?.retry?.attempts ?? DEFAULT_RETRY.attempts)
+          const retryCfg: Required<RetryConfig> = {
+            attempts,
+            backoffMs: node.config?.retry?.backoffMs ?? DEFAULT_RETRY.backoffMs,
+            maxBackoffMs: node.config?.retry?.maxBackoffMs ?? DEFAULT_RETRY.maxBackoffMs,
+            retryOn: node.config?.retry?.retryOn ?? DEFAULT_RETRY.retryOn,
+          }
+          const timeoutMs = node.config?.timeoutMs ?? DEFAULT_TIMEOUT_MS
+          const moderationPolicy = node.config?.moderation ?? DEFAULT_MODERATION
+
+          // Resolve template + contracts up-front (not retried on transient failures).
+          let template: string
           try {
-            // Resolve template with edge-mapped inputs
-            const template = await ctx.resolveLensTemplate(node.lensId, node.versionId)
-            const resolvedPrompt = this.resolvePrompt(template, nodeId, edges, results, ctx.rootInputs)
-
-            const execInput: ExecutionInput = { prompt: resolvedPrompt }
-            const execResult: ExecutionResult = await this.provider.execute(node.lensId, execInput)
-
-            if (isAborted()) {
-              const cancelledResult: NodeResult = { nodeId, status: 'cancelled' }
-              results.set(nodeId, cancelledResult)
-              await ctx.onNodeStatusChange(nodeId, cancelledResult)
-              return
-            }
-
-            const outputData: Record<string, unknown> = {
-              mediaType: execResult.mediaType,
-              ...(execResult.text !== undefined ? { output: execResult.text, text: execResult.text } : {}),
-              ...(execResult.url !== undefined ? { output: execResult.url, url: execResult.url } : {}),
-              mimeType: execResult.mimeType,
-              durationMs: execResult.durationMs,
-              ...execResult.metadata,
-            }
-
-            const nodeResult: NodeResult = { nodeId, status: 'completed', outputData }
-            results.set(nodeId, nodeResult)
-            await ctx.onNodeStatusChange(nodeId, nodeResult)
+            template = await ctx.resolveLensTemplate(node.lensId, node.versionId)
           } catch (err) {
-            if (isAborted() || isAbortError(err)) {
-              const nodeResult: NodeResult = { nodeId, status: 'cancelled' }
-              results.set(nodeId, nodeResult)
-              await ctx.onNodeStatusChange(nodeId, nodeResult)
-              return
-            }
-
-            const nodeResult: NodeResult = {
+            const result: NodeResult = {
               nodeId,
               status: 'failed',
-              error: err instanceof Error ? err.message : String(err),
+              error: `template_resolution_failed: ${errorMessage(err)}`,
             }
-            results.set(nodeId, nodeResult)
-            await ctx.onNodeStatusChange(nodeId, nodeResult)
+            results.set(nodeId, result)
+            await ctx.onNodeStatusChange(nodeId, result)
+            await emit(ctx, {
+              runId: ctx.runId,
+              nodeId,
+              name: 'node_failed',
+              metadata: { errorCode: 'template_resolution_failed' },
+            })
+            return
           }
-        })
+
+          let contracts: { input: LensInputContract | null; output: LensOutputContract | null } = {
+            input: null,
+            output: null,
+          }
+          if (ctx.resolveVersionContracts && node.versionId) {
+            try {
+              contracts = await ctx.resolveVersionContracts(node.versionId)
+            } catch {
+              contracts = { input: null, output: null }
+            }
+          }
+
+          const renderedInputs = resolveRenderedInputs(
+            node,
+            edges,
+            results,
+            ctx.rootInputs,
+          )
+          const resolvedPrompt = renderPrompt(template, renderedInputs)
+
+          // ── Input contract validation ───────────────────────────────
+          const inputCheck = validateInputs(renderedInputs, contracts.input)
+          if (!inputCheck.ok) {
+            const result: NodeResult = {
+              nodeId,
+              status: 'failed',
+              error: 'input_contract_violation',
+              outputData: { contractErrors: inputCheck.errors },
+            }
+            results.set(nodeId, result)
+            await ctx.onNodeStatusChange(nodeId, result)
+            await emit(ctx, {
+              runId: ctx.runId,
+              nodeId,
+              name: 'contract_violated',
+              metadata: { phase: 'input', errors: inputCheck.errors },
+            })
+            return
+          }
+
+          // ── Input moderation ────────────────────────────────────────
+          if (ctx.moderation && (moderationPolicy === 'input' || moderationPolicy === 'both')) {
+            const decision = await safeCheck(ctx.moderation, 'input', resolvedPrompt, nodeId)
+            if (!decision.allowed) {
+              const result: NodeResult = {
+                nodeId,
+                status: 'failed',
+                error: 'moderation_blocked',
+                outputData: { moderation: decision },
+              }
+              results.set(nodeId, result)
+              await ctx.onNodeStatusChange(nodeId, result)
+              await emit(ctx, {
+                runId: ctx.runId,
+                nodeId,
+                name: 'moderation_flagged',
+                metadata: { phase: 'input', decision },
+              })
+              return
+            }
+          }
+
+          // ── Provider call with retry + timeout ──────────────────────
+          let envelope: NodeOutputEnvelope | null = null
+          let providerError: { cause: RetryCause; err: unknown } | null = null
+          let attempt = 0
+
+          while (attempt < retryCfg.attempts) {
+            attempt++
+            if (isAborted()) break
+
+            try {
+              const execResult = await runWithTimeout(
+                this.provider,
+                node.lensId,
+                { prompt: resolvedPrompt },
+                timeoutMs,
+                ctx.signal,
+                ctx.onPartialOutput ? (partial) => ctx.onPartialOutput?.(nodeId, partial) : undefined,
+              )
+              envelope = toEnvelope(execResult, contracts.output)
+              providerError = null
+              break
+            } catch (err) {
+              if (isAbortError(err) || isAborted()) {
+                providerError = { cause: 'provider_error', err }
+                break
+              }
+              const cause: RetryCause = isTimeoutError(err)
+                ? 'timeout'
+                : isRateLimitError(err)
+                  ? 'rate_limit'
+                  : 'provider_error'
+              providerError = { cause, err }
+
+              const shouldRetry = attempt < retryCfg.attempts && retryCfg.retryOn.includes(cause)
+              if (!shouldRetry) break
+
+              const delay = computeBackoff(retryCfg.backoffMs, retryCfg.maxBackoffMs, attempt)
+              await emit(ctx, {
+                runId: ctx.runId,
+                nodeId,
+                name: 'node_retried',
+                metadata: { attempt, cause, delayMs: delay },
+              })
+              await sleep(delay, ctx.signal)
+            }
+          }
+
+          if (isAbortError(providerError?.err) || isAborted()) {
+            const cancelled: NodeResult = { nodeId, status: 'cancelled' }
+            results.set(nodeId, cancelled)
+            await ctx.onNodeStatusChange(nodeId, cancelled)
+            await emit(ctx, { runId: ctx.runId, nodeId, name: 'node_cancelled' })
+            return
+          }
+
+          if (providerError) {
+            const cause = providerError.cause
+            const failed: NodeResult = {
+              nodeId,
+              status: 'failed',
+              error: errorMessage(providerError.err),
+              attempts: attempt,
+            }
+            results.set(nodeId, failed)
+            await ctx.onNodeStatusChange(nodeId, failed)
+            await emit(ctx, {
+              runId: ctx.runId,
+              nodeId,
+              name: cause === 'timeout' ? 'timed_out' : 'node_failed',
+              metadata: { errorCode: cause, attempts: attempt },
+            })
+            return
+          }
+
+          // ── Output moderation ───────────────────────────────────────
+          if (
+            envelope &&
+            ctx.moderation &&
+            (moderationPolicy === 'output' || moderationPolicy === 'both')
+          ) {
+            const decision = await safeCheck(ctx.moderation, 'output', envelope.output, nodeId)
+            if (!decision.allowed) {
+              const result: NodeResult = {
+                nodeId,
+                status: 'failed',
+                error: 'moderation_blocked',
+                outputData: { moderation: decision },
+              }
+              results.set(nodeId, result)
+              await ctx.onNodeStatusChange(nodeId, result)
+              await emit(ctx, {
+                runId: ctx.runId,
+                nodeId,
+                name: 'moderation_flagged',
+                metadata: { phase: 'output', decision },
+              })
+              return
+            }
+          }
+
+          // ── Output contract validation ──────────────────────────────
+          const outputCheck = validateOutput(envelope, contracts.output)
+          if (!outputCheck.ok) {
+            const result: NodeResult = {
+              nodeId,
+              status: 'failed',
+              error: 'output_contract_violation',
+              outputData: {
+                contractErrors: outputCheck.errors,
+                envelope,
+              },
+              attempts: attempt,
+            }
+            results.set(nodeId, result)
+            await ctx.onNodeStatusChange(nodeId, result)
+            await emit(ctx, {
+              runId: ctx.runId,
+              nodeId,
+              name: 'contract_violated',
+              metadata: { phase: 'output', errors: outputCheck.errors },
+            })
+            return
+          }
+
+          // ── Success ─────────────────────────────────────────────────
+          const outputData: Record<string, unknown> = envelopeToOutputData(envelope!)
+          const result: NodeResult = {
+            nodeId,
+            status: 'completed',
+            envelope: envelope!,
+            outputData,
+            attempts: attempt,
+          }
+          results.set(nodeId, result)
+          await ctx.onNodeStatusChange(nodeId, result)
+          await emit(ctx, {
+            runId: ctx.runId,
+            nodeId,
+            name: 'node_completed',
+            metadata: { attempts: attempt },
+          })
+        }),
       )
 
       if (isAborted()) {
         await markRemainingCancelled()
-        return {
-          runId: ctx.runId,
-          status: 'cancelled',
-          nodeResults: Array.from(results.values()),
-        }
+        return finish(ctx.runId, results, 'cancelled')
       }
 
-      // Build next wave: nodes whose dependencies are all resolved
+      // Build next wave: decrement dependents only for edges whose condition holds.
       const nextWave: string[] = []
       for (const nodeId of wave) {
         for (const dep of dependents.get(nodeId) ?? []) {
@@ -245,45 +549,381 @@ export class WorkflowExecutionService {
       wave = nextWave
     }
 
-    const allResults = Array.from(results.values())
-    if (allResults.some((r) => r.status === 'cancelled')) {
-      return {
-        runId: ctx.runId,
-        status: 'cancelled',
-        nodeResults: allResults,
+    return finish(ctx.runId, results)
+  }
+}
+
+// ── Helpers ───────────────────────────────────────────────────────────────
+
+function safeStringify(value: unknown): string {
+  if (value === undefined || value === null) return ''
+  if (typeof value === 'string') return value
+  try {
+    return JSON.stringify(value)
+  } catch {
+    return String(value)
+  }
+}
+
+function errorMessage(err: unknown): string {
+  return err instanceof Error ? err.message : String(err)
+}
+
+function isAbortError(err: unknown): boolean {
+  if (!err) return false
+  if (err instanceof DOMException) return err.name === 'AbortError'
+  if (typeof err === 'object' && err !== null && 'name' in err) {
+    return (err as { name?: string }).name === 'AbortError'
+  }
+  return false
+}
+
+function isTimeoutError(err: unknown): boolean {
+  if (!err) return false
+  const msg = errorMessage(err).toLowerCase()
+  return msg.includes('timeout') || msg.includes('timed out')
+}
+
+function isRateLimitError(err: unknown): boolean {
+  if (!err) return false
+  const msg = errorMessage(err).toLowerCase()
+  if (msg.includes('rate limit') || msg.includes('429')) return true
+  if (typeof err === 'object' && err !== null && 'status' in err) {
+    const status = (err as { status?: number }).status
+    return status === 429
+  }
+  return false
+}
+
+function computeBackoff(baseMs: number, maxMs: number, attempt: number): number {
+  const exp = Math.min(maxMs, baseMs * Math.pow(2, Math.max(0, attempt - 1)))
+  const jitter = 0.5 + Math.random() * 0.5
+  return Math.round(exp * jitter)
+}
+
+function sleep(ms: number, signal?: AbortSignal): Promise<void> {
+  if (ms <= 0) return Promise.resolve()
+  return new Promise((resolve, reject) => {
+    const timer = setTimeout(() => resolve(), ms)
+    if (signal) {
+      if (signal.aborted) {
+        clearTimeout(timer)
+        reject(new DOMException('aborted', 'AbortError'))
+        return
       }
+      signal.addEventListener(
+        'abort',
+        () => {
+          clearTimeout(timer)
+          reject(new DOMException('aborted', 'AbortError'))
+        },
+        { once: true },
+      )
     }
-    const failed = allResults.some((r) => r.status === 'failed')
+  })
+}
 
-    return {
-      runId: ctx.runId,
-      status: failed ? 'failed' : 'completed',
-      nodeResults: allResults,
+async function runWithTimeout(
+  provider: IExecutionProvider,
+  modelId: string,
+  input: ExecutionInput,
+  timeoutMs: number,
+  parentSignal: AbortSignal | undefined,
+  onPartial: ((partial: { text: string }) => void | Promise<void>) | undefined,
+): Promise<ExecutionResult> {
+  // Prefer streaming if the provider supports it and we have a partial sink.
+  const streaming = provider as IStreamingExecutionProvider
+  if (onPartial && typeof streaming.stream === 'function') {
+    const controller = createLinkedController(parentSignal)
+    const timeoutId = setTimeout(() => controller.abort(new DOMException('timeout', 'AbortError')), timeoutMs)
+    try {
+      let aggregated = ''
+      let media: { url: string; mime?: string } | null = null
+      let finalEnvelope: NodeOutputEnvelope | null = null
+      for await (const chunk of streaming.stream(modelId, input, controller.signal)) {
+        if (chunk.type === 'partial') {
+          aggregated += chunk.text
+          await onPartial({ text: aggregated })
+        } else if (chunk.type === 'media') {
+          media = { url: chunk.url, mime: chunk.mime }
+        } else if (chunk.type === 'final') {
+          finalEnvelope = chunk.envelope
+        }
+      }
+      if (finalEnvelope) {
+        return envelopeToExecutionResult(finalEnvelope)
+      }
+      return {
+        mediaType: media ? guessMediaType(media.mime) : 'text',
+        text: aggregated || undefined,
+        url: media?.url,
+        mimeType: media?.mime,
+      }
+    } finally {
+      clearTimeout(timeoutId)
     }
   }
 
-  private resolvePrompt(
-    template: string,
-    nodeId: string,
-    edges: WorkflowEdge[],
-    results: Map<string, NodeResult>,
-    rootInputs: Record<string, unknown>
-  ): string {
-    let prompt = template
-
-    // Replace [[label]] from incoming edge outputs
-    const incomingEdges = edges.filter((e) => e.targetNodeId === nodeId)
-    for (const edge of incomingEdges) {
-      const sourceResult = results.get(edge.sourceNodeId)
-      const value = sourceResult?.outputData?.[edge.sourceOutputKey] ?? ''
-      prompt = WorkflowExecutionService.replaceTokenVariants(prompt, edge.targetParamLabel, value)
-    }
-
-    // Replace any remaining [[label]] from rootInputs
-    for (const [key, value] of Object.entries(rootInputs)) {
-      prompt = WorkflowExecutionService.replaceTokenVariants(prompt, key, value)
-    }
-
-    return prompt
+  const controller = createLinkedController(parentSignal)
+  const timeoutId = setTimeout(() => controller.abort(new DOMException('timeout', 'AbortError')), timeoutMs)
+  try {
+    return await provider.execute(modelId, input, controller.signal)
+  } finally {
+    clearTimeout(timeoutId)
   }
+}
+
+function createLinkedController(parentSignal?: AbortSignal): AbortController {
+  const controller = new AbortController()
+  if (parentSignal) {
+    if (parentSignal.aborted) {
+      controller.abort(parentSignal.reason)
+    } else {
+      parentSignal.addEventListener(
+        'abort',
+        () => controller.abort(parentSignal.reason),
+        { once: true },
+      )
+    }
+  }
+  return controller
+}
+
+function guessMediaType(mime?: string): 'text' | 'image' | 'video' | 'audio' {
+  if (!mime) return 'text'
+  if (mime.startsWith('image/')) return 'image'
+  if (mime.startsWith('video/')) return 'video'
+  if (mime.startsWith('audio/')) return 'audio'
+  return 'text'
+}
+
+function toEnvelope(
+  execResult: ExecutionResult,
+  outputContract: LensOutputContract | null,
+): NodeOutputEnvelope {
+  const kind = outputContract?.kind ?? (execResult.mediaType === 'image'
+    ? 'image'
+    : execResult.mediaType === 'video'
+      ? 'video'
+      : 'text')
+  const artifactKind = outputContract?.artifactKind ?? (execResult.mediaType === 'audio' ? 'audio' : execResult.mediaType)
+
+  const output = execResult.text ?? execResult.url ?? ''
+  const media = execResult.url
+    ? {
+        url: execResult.url,
+        mime: execResult.mimeType ?? null,
+        width: null,
+        height: null,
+        durationS: null,
+        bytes: null,
+      }
+    : null
+  const envelope: NodeOutputEnvelope = {
+    kind: kind as NodeOutputEnvelope['kind'],
+    artifactKind: artifactKind as NodeOutputEnvelope['artifactKind'],
+    output,
+    media,
+    metadata: {
+      ...(execResult.metadata ?? {}),
+      durationMs: execResult.durationMs,
+      mimeType: execResult.mimeType,
+    },
+  }
+  return envelope
+}
+
+function envelopeToExecutionResult(envelope: NodeOutputEnvelope): ExecutionResult {
+  return {
+    mediaType:
+      envelope.artifactKind === 'image'
+        ? 'image'
+        : envelope.artifactKind === 'video'
+          ? 'video'
+          : envelope.artifactKind === 'audio'
+            ? 'audio'
+            : 'text',
+    text: envelope.output ?? undefined,
+    url: envelope.media?.url ?? undefined,
+    mimeType: envelope.media?.mime ?? undefined,
+    metadata: envelope.metadata,
+  }
+}
+
+function envelopeToOutputData(envelope: NodeOutputEnvelope): Record<string, unknown> {
+  return {
+    mediaType:
+      envelope.artifactKind === 'image'
+        ? 'image'
+        : envelope.artifactKind === 'video'
+          ? 'video'
+          : envelope.artifactKind === 'audio'
+            ? 'audio'
+            : 'text',
+    output: envelope.output,
+    text: envelope.output,
+    ...(envelope.media?.url ? { url: envelope.media.url } : {}),
+    ...(envelope.media?.mime ? { mimeType: envelope.media.mime } : {}),
+    ...(envelope.data ? { data: envelope.data } : {}),
+    ...(envelope.metadata ?? {}),
+    kind: envelope.kind,
+    artifactKind: envelope.artifactKind,
+  }
+}
+
+function resolveRenderedInputs(
+  node: WorkflowNode,
+  edges: WorkflowEdge[],
+  results: Map<string, NodeResult>,
+  rootInputs: Record<string, unknown>,
+): Record<string, unknown> {
+  const incoming = edges.filter((e) => e.targetNodeId === node.id)
+  const grouped = new Map<string, WorkflowEdge[]>()
+  for (const edge of incoming) {
+    const list = grouped.get(edge.targetParamLabel) ?? []
+    list.push(edge)
+    grouped.set(edge.targetParamLabel, list)
+  }
+
+  const defaultMerge = node.config?.merge ?? DEFAULT_MERGE
+  const rendered: Record<string, unknown> = { ...rootInputs }
+
+  for (const [label, group] of grouped.entries()) {
+    const values: { sourceNodeId: string; value: unknown }[] = []
+    for (const edge of group) {
+      if (!isEdgeConditionSatisfied(edge, results)) continue
+      const source = results.get(edge.sourceNodeId)
+      if (!source) continue
+      if (source.status !== 'completed') continue
+      const value = source.outputData?.[edge.sourceOutputKey] ?? source.envelope?.output ?? ''
+      values.push({ sourceNodeId: edge.sourceNodeId, value })
+    }
+    if (values.length === 0) {
+      rendered[label] = rendered[label] ?? ''
+      continue
+    }
+
+    const strategy: MergeStrategy = group[0]?.mergeStrategy ?? defaultMerge
+    rendered[label] = applyMerge(strategy, values)
+  }
+
+  return rendered
+}
+
+function applyMerge(
+  strategy: MergeStrategy,
+  values: { sourceNodeId: string; value: unknown }[],
+): unknown {
+  switch (strategy) {
+    case 'last_write_wins':
+      return values[values.length - 1]?.value ?? ''
+    case 'concat':
+      return values.map((v) => safeStringify(v.value)).join('\n\n')
+    case 'array':
+      return values.map((v) => v.value)
+    case 'json_object': {
+      const obj: Record<string, unknown> = {}
+      for (const v of values) obj[v.sourceNodeId] = v.value
+      return obj
+    }
+  }
+}
+
+function isEdgeConditionSatisfied(edge: WorkflowEdge, results: Map<string, NodeResult>): boolean {
+  if (!edge.condition) return true
+  const source = results.get(edge.sourceNodeId)
+  if (!source || source.status !== 'completed') return false
+  const sourceValue = source.outputData?.[edge.sourceOutputKey] ?? source.envelope?.output ?? null
+  switch (edge.condition.type) {
+    case 'present':
+      return sourceValue !== null && sourceValue !== undefined && sourceValue !== ''
+    case 'truthy':
+      return Boolean(sourceValue)
+    case 'equals':
+      return safeStringify(sourceValue) === safeStringify(edge.condition.value)
+    case 'contains':
+      return typeof sourceValue === 'string' && typeof edge.condition.value === 'string'
+        ? sourceValue.includes(edge.condition.value)
+        : false
+  }
+}
+
+function escapeRegExp(value: string): string {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+}
+
+function replaceTokenVariants(prompt: string, rawKey: string, value: unknown): string {
+  const valueStr = typeof value === 'string' ? value : safeStringify(value)
+  const normalized = rawKey.trim().replace(/\s+/g, '_').toLowerCase()
+  const keyPattern = escapeRegExp(rawKey.trim()).replace(/_/g, '[ _]+')
+  const normalizedPattern = escapeRegExp(normalized).replace(/_/g, '[ _]+')
+
+  return prompt
+    .replaceAll(`[[${rawKey}]]`, valueStr)
+    .replaceAll(`[[${normalized}]]`, valueStr)
+    .replaceAll(`{{${rawKey}}}`, valueStr)
+    .replaceAll(`{{${normalized}}}`, valueStr)
+    .replace(new RegExp(`\\[\\s+${keyPattern}\\s+\\]`, 'gi'), valueStr)
+    .replace(new RegExp(`\\[\\s+${normalizedPattern}\\s+\\]`, 'gi'), valueStr)
+}
+
+function renderPrompt(template: string, rendered: Record<string, unknown>): string {
+  let prompt = template
+  for (const [key, value] of Object.entries(rendered)) {
+    prompt = replaceTokenVariants(prompt, key, value)
+  }
+  return prompt
+}
+
+function collectParentStatuses(
+  node: WorkflowNode,
+  edges: WorkflowEdge[],
+  results: Map<string, NodeResult>,
+): { hasNonSuccessful: boolean } {
+  const parents = edges.filter((e) => e.targetNodeId === node.id).map((e) => e.sourceNodeId)
+  if (parents.length === 0) return { hasNonSuccessful: false }
+  for (const p of parents) {
+    const r = results.get(p)
+    if (!r) continue
+    if (r.status !== 'completed') return { hasNonSuccessful: true }
+  }
+  return { hasNonSuccessful: false }
+}
+
+async function safeCheck(
+  gateway: ModerationGateway,
+  phase: ModerationPhase,
+  text: string,
+  nodeId: string,
+): Promise<ModerationDecision> {
+  try {
+    return await gateway.check(phase, text, nodeId)
+  } catch (err) {
+    return { allowed: true, policy: 'error', reason: `moderation_check_failed: ${errorMessage(err)}` }
+  }
+}
+
+async function emit(ctx: WorkflowExecutionContext, event: EngineEvent): Promise<void> {
+  if (!ctx.onEvent) return
+  try {
+    await ctx.onEvent(event)
+  } catch {
+    // observability failures must never break execution
+  }
+}
+
+function finish(
+  runId: string,
+  results: Map<string, NodeResult>,
+  override?: 'cancelled',
+): WorkflowRunResult {
+  const allResults = Array.from(results.values())
+  if (override === 'cancelled') {
+    return { runId, status: 'cancelled', nodeResults: allResults }
+  }
+  if (allResults.some((r) => r.status === 'cancelled')) {
+    return { runId, status: 'cancelled', nodeResults: allResults }
+  }
+  const failed = allResults.some((r) => r.status === 'failed')
+  return { runId, status: failed ? 'failed' : 'completed', nodeResults: allResults }
 }
