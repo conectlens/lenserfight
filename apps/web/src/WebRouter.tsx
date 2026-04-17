@@ -5,6 +5,7 @@ import { ShareProvider } from '@lenserfight/features/share'
 import { WalletProvider } from '@lenserfight/features/store'
 import { UIProvider } from '@lenserfight/ui/providers'
 import { ModalRoute } from '@lenserfight/ui/routing'
+import { SURFACE } from '@lenserfight/utils/env'
 import React, { lazy, Suspense } from 'react'
 import { Navigate, Route, Routes, useNavigate, useParams, useSearchParams } from 'react-router-dom'
 
@@ -331,9 +332,13 @@ export const WebRouter: React.FC = () => {
         <Route
           path="/billing"
           element={
-            <DashboardFrame>
-              <LazyStorePage />
-            </DashboardFrame>
+            SURFACE.showBillingAndStore ? (
+              <DashboardFrame>
+                <LazyStorePage />
+              </DashboardFrame>
+            ) : (
+              <Navigate to="/" replace />
+            )
           }
         />
 
@@ -369,23 +374,26 @@ export const WebRouter: React.FC = () => {
         <Route path="/agents" element={<Navigate to="/lensers?type=ai" replace />} />
         <Route path="/agents/:id" element={<LazyAgentProfileRedirect />} />
 
-        <Route
-          path="/benchmark"
-          element={
-            <DashboardFrame>
-              <LazyBenchmarkSuitesPage />
-            </DashboardFrame>
-          }
-        />
-
-        <Route
-          path="/benchmark/:id"
-          element={
-            <DashboardFrame>
-              <LazyBenchmarkSuiteDetailPage />
-            </DashboardFrame>
-          }
-        />
+        {SURFACE.showBenchmarkSuite && (
+          <Route
+            path="/benchmark"
+            element={
+              <DashboardFrame>
+                <LazyBenchmarkSuitesPage />
+              </DashboardFrame>
+            }
+          />
+        )}
+        {SURFACE.showBenchmarkSuite && (
+          <Route
+            path="/benchmark/:id"
+            element={
+              <DashboardFrame>
+                <LazyBenchmarkSuiteDetailPage />
+              </DashboardFrame>
+            }
+          />
+        )}
 
         <Route path="/onboarding" element={<OnboardingModal />} />
 
@@ -411,7 +419,10 @@ export const WebRouter: React.FC = () => {
         <Route path="/rays/*" element={<Navigate to="/ray" replace />} />
         <Route path="/len/*" element={<Navigate to="/ray" replace />} />
         <Route path="/leaderboard" element={<Navigate to="/lenserboard" replace />} />
-        <Route path="/store" element={<Navigate to="/billing" replace />} />
+        <Route
+          path="/store"
+          element={<Navigate to={SURFACE.showBillingAndStore ? '/billing' : '/'} replace />}
+        />
 
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>

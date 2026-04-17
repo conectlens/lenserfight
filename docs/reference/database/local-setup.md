@@ -2,9 +2,11 @@
 title: Local Database Setup
 ---
 
-# Local Database Setup
+# Local Database Setup (Community Edition)
 
-This guide walks through setting up the LenserFight PostgreSQL/Supabase backend for local development.
+This guide sets up the **LenserFight Community Edition** PostgreSQL/Supabase stack for local development. The OSS database exposes only public schemas (`lensers`, `lenses`, `content`, `media`, `agents`, `ai`, `execution`, `tenancy`, etc.). It does **not** include private cloud schemas such as `battles`, `billing`, `xp`, `benchmark`, or `authz`.
+
+For the **full LenserFight Cloud / platform** database (all schemas and private seeds), use the private [lenserfight-platform](https://github.com/connectlens-org/lenserfight-platform) repository and its `DEVELOPMENT.md`.
 
 ## Prerequisites
 
@@ -40,71 +42,65 @@ The first `supabase start` pulls Docker images and may take a few minutes. Subse
 To drop the database, recreate it, run all migrations, and apply seed data:
 
 ```bash
-# Regenerate seed.sql from individual files in supabase/seeds/
-cd supabase && bash combine-seeds.sh
+# Regenerate seed.sql from supabase/seed.manifest + supabase/seeds/*.sql
+pnpm supabase:combine-seeds
 
-# Reset — runs all migrations then applies seed.sql
-pnpm supabase db reset
+# Reset — runs all migrations then applies seed.sql (runs combine first)
+pnpm supabase:db:reset
 ```
 
-This is the recommended way to get a clean local database. It executes every migration file in `supabase/migrations/` in order and then runs `supabase/seed.sql`. Always run `combine-seeds.sh` first if any seed file changed.
+This runs every migration in `supabase/migrations/` in order, then `supabase/seed.sql`. Run `pnpm supabase:combine-seeds` whenever you add or rename a file under `supabase/seeds/` and update `supabase/seed.manifest` at the repo root.
 
-## Verify the Setup
+### Guard: private schemas must not appear in OSS migrations
 
-Connect to the local database and confirm the lenses schema, XP rules, and auth support schema are in place:
+From the repo root:
+
+```bash
+pnpm check:oss-migration
+```
+
+## Verify the Setup (OSS schemas)
+
+Confirm core OSS schemas exist (adjust table names if your migration differs):
 
 ```bash
 psql postgresql://postgres:postgres@127.0.0.1:54322/postgres \
+  -c "\dn" \
   -c "\dt lenses.*" \
-  -c "\dt authz.*" \
-  -c "SELECT action_key, base_xp FROM xp.rules LIMIT 10;"
+  -c "\dt content.*"
 ```
 
-You should see the lenses tables and the XP rules.
+You should see namespaces such as `lenses`, `lensers`, `content`, and related tables. Do **not** expect `xp`, `battles`, `benchmark`, or `billing` in Community Edition.
 
 ## Access Studio
 
-Open [http://127.0.0.1:54323](http://127.0.0.1:54323) in your browser. Studio provides a GUI for browsing tables, running SQL, and inspecting RLS policies across all schemas.
+Open [http://127.0.0.1:54323](http://127.0.0.1:54323) in your browser. Studio provides a GUI for browsing tables and inspecting RLS policies for schemas exposed to PostgREST.
 
 ## Seed Data
 
-Seeds are managed as individual numbered files in `supabase/seeds/` and combined into `supabase/seed.sql` before a reset.
+Seeds live in `supabase/seeds/` and are combined into `supabase/seed.sql` before a reset. Community Edition seeds exclude private cloud-only fixtures.
 
-### Seed files
-
-| Range | Purpose |
-|-------|---------|
-| `01–06` | Core dev fixtures: languages, auth users, lenser profiles, AI models, lenses, analytics |
-| `10–21` | Scale data: ~10k users, threads, prompts, replies, reactions, XP — used for load testing and index benchmarking |
-| `30` | Benchmark & recommendation validation — runs automatically after scale data is loaded |
-
-> `supabase/seed.sql` is **auto-generated**. Do not edit it directly. Edit files in `supabase/seeds/` instead.
+> `supabase/seed.sql` is **auto-generated**. Do not edit it directly. Edit `supabase/seeds/*.sql` and `supabase/seed.manifest`, then run `pnpm supabase:combine-seeds`.
 
 ### How to use
 
-**Generate `seed.sql` and reset the database (standard dev setup):**
-
 ```bash
-# 1. Combine individual seed files into seed.sql
-cd supabase && bash combine-seeds.sh
-
-# 2. Reset the database — applies all migrations then runs seed.sql
-pnpm supabase db reset
+pnpm supabase:combine-seeds && pnpm supabase:db:reset
 ```
 
-The reset takes **2–5 minutes** for the core fixtures (files `01–06`) and **25–30 minutes** when scale data (`10–30`) is included.
-
-**Benchmark results** are printed at the end of the reset output, produced by `30_benchmark.sql`. They show query latency for the recommendation and feed RPCs under scale load.
+Reset duration depends on which seed files are included (scale data takes longer).
 
 ### Login Credentials
 
+Use the same values as in [libs/utils/env/src/lib/runtimeConfig.ts](https://github.com/connectlens/lenserfight-web/blob/development/libs/utils/env/src/lib/runtimeConfig.ts) (`LOCAL_SEED_CREDENTIALS`) and your generated `seed.sql` (Alice is the primary dev user).
+
+Example (verify against your current `02_auth_users.sql` / seed):
+
 | User | Email | Password |
 |------|-------|----------|
-| Alice | `alice@lenserfight.local` | `password123` |
-| Bob | `bob@lenserfight.local` | `password123` |
-| Carol | `carol@lenserfight.local` | `password123` |
+| Alice | `alice@lenserfight.local` | See `LOCAL_SEED_CREDENTIALS.password` in `runtimeConfig.ts` |
 
-Use these credentials with the Supabase auth endpoint:
+Use these with the Supabase auth endpoint:
 
 ```bash
 curl -X POST 'http://127.0.0.1:54321/auth/v1/token?grant_type=password' \
@@ -112,17 +108,9 @@ curl -X POST 'http://127.0.0.1:54321/auth/v1/token?grant_type=password' \
   -H 'Content-Type: application/json' \
   -d '{
     "email": "alice@lenserfight.local",
-    "password": "password123"
+    "password": "<password from LOCAL_SEED_CREDENTIALS>"
   }'
 ```
-
-The response includes an `access_token` (JWT) to use as `Authorization: Bearer <token>` in subsequent API calls.
-
-### Adding or modifying seed data
-
-1. Edit or create a file in `supabase/seeds/` following the naming convention `NN_description.sql`.
-2. Run `cd supabase && bash combine-seeds.sh` to regenerate `seed.sql`.
-3. Run `pnpm supabase db reset` to apply the updated seed to your local database.
 
 ## Common Issues
 
@@ -144,6 +132,14 @@ Another process is using the default ports. Check `supabase/config.toml` to chan
 
 ```bash
 lsof -i :54321
+```
+
+### PostgREST: `schema "lenses" does not exist` or 503 after `supabase start`
+
+The DB volume may have been restored **before** migrations created app schemas. Wipe local volumes and reset:
+
+```bash
+pnpm supabase:local:recover
 ```
 
 ### Migration failure
@@ -170,5 +166,5 @@ pnpm supabase <command>
 
 ## Related Documentation
 
-- [RLS Policy Reference](./rls-reference.md) -- row-level security policies per schema and table
-- [RPC Function Reference](./rpc-reference.md) -- available RPC endpoints with auth requirements and examples
+- [RLS Policy Reference](./rls-reference.md) — row-level security policies per schema and table
+- [RPC Function Reference](./rpc-reference.md) — available RPC endpoints with auth requirements and examples

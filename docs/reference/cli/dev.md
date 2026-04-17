@@ -2,6 +2,13 @@
 
 These commands manage your local Supabase stack, project config, and environment health.
 
+From the monorepo root, regenerate `supabase/seed.sql` from `supabase/seed.manifest` before a full reset:
+
+```bash
+pnpm supabase:combine-seeds
+pnpm supabase:db:reset
+```
+
 ---
 
 ## `lenserfight init`
