@@ -1,5 +1,5 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query'
-import { useEffect, useRef, useMemo } from 'react'
+import { useEffect, useRef, useMemo, useState } from 'react'
 
 import { useAuth } from '@lenserfight/features/auth'
 import { analyticsService } from '@lenserfight/infra/analytics'
@@ -10,12 +10,6 @@ import {
   LensViewModel,
 } from '@lenserfight/types'
 import { useAuthenticatedLenser } from './useAuthenticatedLenser'
-
-interface LensDetailData {
-  lens: LensDetailViewModel | null
-  relatedLenses: LensViewModel[]
-  authorLenses: LensViewModel[]
-}
 
 interface UseLensDetailControllerOptions {
   includeRelated?: boolean
@@ -30,36 +24,22 @@ export const useLensDetailController = (
   const { user, isLoading: isAuthLoading } = useAuth()
   const queryClient = useQueryClient()
   const loggedLensViews = useRef(new Set<string>())
+  const [loadSecondaryLists, setLoadSecondaryLists] = useState(false)
 
-  const lensCompositeKey = useMemo(
-    () => ['lens-composite', lensId, { includeRelated }],
-    [lensId, includeRelated]
-  )
-
-  const { data, isLoading, error } = useQuery<LensDetailData, Error>({
-    queryKey: lensCompositeKey,
+  const {
+    data: lens,
+    isLoading: isLoadingLens,
+    error: lensError,
+  } = useQuery<LensDetailViewModel | null, Error>({
+    queryKey: ['lens-core', lensId],
     queryFn: async () => {
       if (!lensId) {
-        return { lens: null, relatedLenses: [], authorLenses: [] }
+        return null
       }
 
-      const lens = await lensesService.getLensDetail(lensId, lenser?.id)
-      if (!lens) throw new Error('404')
-
-      if (!includeRelated) {
-        return { lens, relatedLenses: [], authorLenses: [] }
-      }
-
-      const [related, authorP] = await Promise.all([
-        lensesService.getRelatedLenses(lensId),
-        lensesService.getAuthorLenses(lens.author.handle, 0, 10, lenser?.id),
-      ])
-
-      return {
-        lens,
-        relatedLenses: related,
-        authorLenses: authorP.filter((p) => p.id !== lensId).slice(0, 5),
-      }
+      const lensDetail = await lensesService.getLensDetail(lensId, lenser?.id)
+      if (!lensDetail) throw new Error('404')
+      return lensDetail
     },
     enabled: !!lensId && !isAuthLoading && !isLenserLoading,
     staleTime: 1000 * 60 * 5,
@@ -71,7 +51,33 @@ export const useLensDetailController = (
   })
 
   useEffect(() => {
-    if (!data?.lens || !lensId) return
+    if (!lens || !includeRelated) return
+    // Keep detail on critical path and defer related collections.
+    const id = window.setTimeout(() => setLoadSecondaryLists(true), 0)
+    return () => window.clearTimeout(id)
+  }, [lens, includeRelated])
+
+  const { data: relatedLenses = [] } = useQuery<LensViewModel[]>({
+    queryKey: ['lens-related', lensId],
+    queryFn: () => lensesService.getRelatedLenses(lensId!),
+    enabled: !!lensId && !!lens && includeRelated && loadSecondaryLists,
+    staleTime: 1000 * 60 * 5,
+  })
+
+  const { data: authorLensesRaw = [] } = useQuery<LensViewModel[]>({
+    queryKey: ['lens-author-list', lensId, lens?.author?.handle, lenser?.id],
+    queryFn: () => lensesService.getAuthorLenses(lens!.author.handle, 0, 10, lenser?.id),
+    enabled: !!lensId && !!lens?.author?.handle && includeRelated && loadSecondaryLists,
+    staleTime: 1000 * 60 * 5,
+  })
+
+  const authorLenses = useMemo(
+    () => authorLensesRaw.filter((p) => p.id !== lensId).slice(0, 5),
+    [authorLensesRaw, lensId]
+  )
+
+  useEffect(() => {
+    if (!lens || !lensId) return
 
     if (loggedLensViews.current.has(lensId)) return
     loggedLensViews.current.add(lensId)
@@ -81,25 +87,25 @@ export const useLensDetailController = (
       lenserId: lenser?.id,
     })
 
-    const tagIds = data.lens.tags.map((t) => t.id)
+    const tagIds = lens.tags.map((t) => t.id)
     if (tagIds.length > 0) {
       tagService.recordBatchView(tagIds, 'lens', lensId, lenser?.id)
     }
-  }, [data?.lens, lensId, lenser?.id, user?.id])
+  }, [lens, lensId, lenser?.id, user?.id])
 
   // Actions
   const updateLocalLens = (
     updater: (prev: LensDetailViewModel) => LensDetailViewModel
   ) => {
-    queryClient.setQueryData<LensDetailData>(lensCompositeKey, (old) => {
-      if (!old || !old.lens) return old
-      return { ...old, lens: updater(old.lens) }
+    queryClient.setQueryData<LensDetailViewModel | null>(['lens-core', lensId], (old) => {
+      if (!old) return old
+      return updater(old)
     })
   }
 
   const copyLens = async () => {
-    if (!data?.lens || !lenser) return
-    await lensesService.toggleReaction(data.lens.id, lenser.id, 'copy')
+    if (!lens || !lenser) return
+    await lensesService.toggleReaction(lens.id, lenser.id, 'copy')
     updateLocalLens((prev) => ({
       ...prev,
       reactionCounts: {
@@ -110,9 +116,9 @@ export const useLensDetailController = (
   }
 
   const saveLens = async (): Promise<boolean> => {
-    if (!data?.lens || !lenser) return false
+    if (!lens || !lenser) return false
 
-    const res = await lensesService.toggleReaction(data.lens.id, lenser.id, 'saved')
+    const res = await lensesService.toggleReaction(lens.id, lenser.id, 'saved')
 
     updateLocalLens((prev) => {
       const wasSaved = !!prev.isSaved
@@ -131,15 +137,15 @@ export const useLensDetailController = (
       }
     })
 
-    return res?.added ?? !data.lens.isSaved
+    return res?.added ?? !lens.isSaved
   }
 
   return {
-    lens: data?.lens || null,
-    relatedLenses: data?.relatedLenses || [],
-    authorLenses: data?.authorLenses || [],
-    isLoading: isLoading || isLenserLoading,
-    error: error ? error.message : null,
+    lens: lens || null,
+    relatedLenses,
+    authorLenses,
+    isLoading: isLoadingLens || isLenserLoading,
+    error: lensError ? lensError.message : null,
     actions: {
       copyLens,
       saveLens,
