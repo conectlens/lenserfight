@@ -6,8 +6,13 @@ export * from './lib/hooks/useSaveWorkflow'
 export * from './lib/hooks/useCreateWorkflow'
 export * from './lib/hooks/usePopularWorkflows'
 export * from './lib/hooks/useForkWorkflow'
+export * from './lib/hooks/useTemplateWorkflows'
 export * from './lib/hooks/useWorkflowReaction'
 export * from './lib/hooks/useUpdateWorkflow'
+export * from './lib/hooks/useWorkflowExecution'
+
+// Execution helpers
+export * from './lib/execution/persistNodeMedia'
 
 // Components
 export * from './lib/components/WorkflowCard'

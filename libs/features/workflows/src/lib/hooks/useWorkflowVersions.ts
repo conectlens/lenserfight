@@ -7,6 +7,7 @@ export function useWorkflowVersions(workflowId: string) {
     queryKey: queryKeys.workflows.versions(workflowId),
     queryFn: () => workflowsService.getVersions(workflowId),
     enabled: !!workflowId,
+    staleTime: 1000 * 60 * 2,
   })
 }
 
