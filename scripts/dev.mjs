@@ -96,6 +96,9 @@ async function setupLocal() {
       'VITE_SUPABASE_URL=http://127.0.0.1:54321',
       'VITE_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6ImFub24iLCJleHAiOjE5ODM4MTI5OTZ9.CRFA0NiK7kyqHDkAkEXER0xnuvvidGu0XP2yJZCqMnY',
       '',
+      '# Community Edition UI (matches local OSS Supabase schema)',
+      'VITE_PRODUCT_EDITION=community',
+      '',
       '# Local app URLs',
       'VITE_WEB_BASE_URL=http://localhost:3001',
       'VITE_DOCS_BASE_URL=http://localhost:3002',
@@ -117,6 +120,12 @@ async function setupLocal() {
     console.log('  Supabase may already be running. Continuing...')
   }
 
+  console.log('')
+  console.log('  ── Local database ─────────────────────────────────────────────')
+  console.log('  First time (or after seed changes):')
+  console.log('    pnpm supabase:combine-seeds && pnpm supabase:db:reset')
+  console.log('  (db reset reapplies migrations + seed.sql; can take several minutes.)')
+  console.log('  ──────────────────────────────────────────────────────────────')
   console.log('')
   startApp()
 }

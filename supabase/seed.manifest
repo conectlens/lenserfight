@@ -1,0 +1,24 @@
+# One path per line, relative to supabase/. Order matters (FK / logical load order).
+# Run: pnpm supabase:combine-seeds
+seeds/02_auth_users.sql
+seeds/03_lenser_profiles.sql
+seeds/04_ai_providers.sql
+seeds/04b_ai_models.sql
+seeds/07_ai_models.sql
+seeds/07_ai_lensers.sql
+seeds/13_workspaces.sql
+seeds/14_media_objects.sql
+seeds/15_lens_tools.sql
+seeds/16_origin_types.sql
+seeds/20_scale_setup.sql
+seeds/21_scale_auth_users.sql
+seeds/22_scale_profiles.sql
+seeds/23_scale_tags.sql
+seeds/24_scale_threads.sql
+seeds/25_scale_lenses.sql
+seeds/26_scale_tag_map.sql
+seeds/27_scale_replies.sql
+seeds/28_scale_follows.sql
+seeds/29_scale_reactions.sql
+seeds/31_scale_backfill.sql
+seeds/32_scale_workflows.sql
