@@ -1,6 +1,7 @@
 import { defineCommand } from 'citty';
 import consola from 'consola';
 import { execSync, spawn } from 'node:child_process';
+import { runCombineSeedsIfPresent } from '../lib/combine-seeds';
 
 export default defineCommand({
   meta: {
@@ -19,6 +20,7 @@ export default defineCommand({
     if (args.reset) {
       consola.info('Resetting local database (drop + recreate + migrate + seed)...');
       try {
+        runCombineSeedsIfPresent(process.cwd());
         execSync('supabase db reset', { stdio: 'inherit' });
         consola.success('Database reset complete.');
       } catch {

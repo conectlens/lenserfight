@@ -1,0 +1,41 @@
+name: Seed manifest guard
+
+on:
+  pull_request:
+    paths:
+      - 'supabase/seeds/**'
+      - 'supabase/seed.manifest'
+      - 'supabase/combine-seeds.sh'
+  push:
+    branches:
+      - main
+      - development
+    paths:
+      - 'supabase/seeds/**'
+      - 'supabase/seed.manifest'
+      - 'supabase/combine-seeds.sh'
+
+jobs:
+  verify-generated-seed-sql:
+    name: Combine seeds and diff committed seed.sql
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'pnpm'
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Regenerate supabase/seed.sql
+        run: pnpm supabase:combine-seeds
+
+      - name: Ensure seed.sql matches manifest output
+        run: git diff --exit-code supabase/seed.sql

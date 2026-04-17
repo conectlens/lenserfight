@@ -4,6 +4,7 @@ import { execSync } from 'node:child_process';
 import { existsSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { loadConfig } from '../config/project-config';
+import { runCombineSeedsIfPresent } from '../lib/combine-seeds';
 
 export default defineCommand({
   meta: {
@@ -44,6 +45,7 @@ export default defineCommand({
       consola.info('Seeding local database via `supabase db reset` ...');
 
       try {
+        runCombineSeedsIfPresent(process.cwd());
         execSync('npx supabase db reset', { stdio: 'inherit' });
         consola.success('Seed complete.');
       } catch {
