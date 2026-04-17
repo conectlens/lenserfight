@@ -8,6 +8,55 @@ export type {
   ModerationDecision,
 } from './lib/execution.types'
 export { validateInputs, validateOutput } from './lib/contract-validator'
+export {
+  validateWorkflow,
+  detectCycle,
+  PlaceholderUnboundError,
+} from './lib/validator'
+export type {
+  ValidationIssue,
+  ValidationCode,
+  ValidationResult,
+  ValidationNodeShape,
+  ValidationEdgeShape,
+  ValidateWorkflowOptions,
+} from './lib/validator'
+
+// ── Phase 3 kernel seams ──────────────────────────────────────────────────
+export { Scheduler } from './lib/scheduler'
+export type { SchedulerEdge, SchedulerNode } from './lib/scheduler'
+export {
+  renderPrompt,
+  replaceTokenVariants,
+  resolveRenderedInputs,
+  isEdgeConditionSatisfied,
+} from './lib/prompt-resolver'
+export type {
+  ResolverEdge,
+  ResolverNode,
+  ResolverUpstreamResult,
+} from './lib/prompt-resolver'
+export { EventPublisher } from './lib/event-publisher'
+export type { EnginePublishEvent, EventPublisherConfig } from './lib/event-publisher'
+export { NodeRuntime, computeBackoff, envelopeToOutputData } from './lib/node-runtime'
+export type {
+  NodeRuntimeStatus,
+  NodeRuntimeOutcome,
+  NodeRuntimeInput,
+  NodeRuntimeConfig,
+  RetryPolicy,
+} from './lib/node-runtime'
+export { evaluateBudget, shouldHaltScheduling } from './lib/budget-reconciler'
+export type { BudgetSnapshot, BudgetDecision } from './lib/budget-reconciler'
+export { replayRunEvents } from './lib/replay'
+export type {
+  ReplayEvent,
+  ReplayNodeState,
+  ReplayState,
+  ReplayOptions,
+  WorkflowRunReplayStatus,
+  NodeReplayStatus,
+} from './lib/replay'
 export { FalAIProvider } from './lib/providers/fal-ai.provider'
 export { GeminiProvider } from './lib/providers/gemini.provider'
 export { OpenAIProvider } from './lib/providers/openai.provider'
