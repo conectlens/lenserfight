@@ -22,3 +22,4 @@ seeds/28_scale_follows.sql
 seeds/29_scale_reactions.sql
 seeds/31_scale_backfill.sql
 seeds/32_scale_workflows.sql
+seeds/40_lens_chain_templates.sql
