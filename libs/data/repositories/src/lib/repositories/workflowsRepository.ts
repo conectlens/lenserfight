@@ -104,7 +104,20 @@ export interface WorkflowNodeResultRecord {
   run_id: string
   node_id: string
   execution_run_id?: string | null
-  status: 'pending' | 'running' | 'completed' | 'failed' | 'cancelled' | 'skipped'
+  status:
+    | 'pending'
+    | 'awaiting_dependency'
+    | 'queued'
+    | 'running'
+    | 'streaming'
+    | 'retrying'
+    | 'completed'
+    | 'failed'
+    | 'cancelled'
+    | 'skipped'
+    | 'timed_out'
+    | 'blocked'
+    | 'invalidated'
   output_data?: Record<string, unknown> | null
   error_message?: string | null
   started_at?: string | null
@@ -112,6 +125,12 @@ export interface WorkflowNodeResultRecord {
   input_tokens?: number
   output_tokens?: number
   cost_credits?: number
+  /** Phase 6 observability — retries consumed by NodeRuntime (>= 0). */
+  retry_count?: number
+  /** Phase 6 observability — wall-clock of the final provider attempt (ms). */
+  duration_ms?: number | null
+  /** Phase 6 observability — time-to-first-byte on streamed nodes (ms). */
+  ttfb_ms?: number | null
 }
 
 export interface WorkflowRunEventRecord {
