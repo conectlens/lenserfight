@@ -3,11 +3,12 @@ import React from 'react'
 import { Link } from 'react-router-dom'
 import { useTheme } from '@lenserfight/ui/theme'
 import type { Theme } from '@lenserfight/ui/theme'
+import { WEB_BASE_URL } from '@lenserfight/utils/env'
 
 interface FooterProps {
   isDashboard?: boolean
   /** When set, About/Ecosystem/Contact nav links point to this base URL instead of internal routes.
-   *  Example (Forum app): import.meta.env.VITE_ARENA_URL ?? 'https://lenserfight.com'
+   *  Defaults to `WEB_BASE_URL` from `@lenserfight/utils/env` when passed from the app shell.
    */
   navBaseUrl?: string
 }
@@ -35,8 +36,6 @@ const NAV_LINKS = [
   { to: '/product', label: 'Product' },
   { to: '/contact', label: 'Contact' },
 ]
-
-const WEB_BASE_URL = import.meta.env.VITE_WEB_BASE_URL ?? 'https://lenserfight.com'
 
 export const Footer: React.FC<FooterProps> = ({ isDashboard, navBaseUrl }) => {
   const currentYear = new Date().getFullYear()

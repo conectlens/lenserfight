@@ -12,6 +12,7 @@ import {
 } from '@lenserfight/types'
 import { supabase } from '@lenserfight/data/supabase'
 import { buildAuthReturnUrl } from '@lenserfight/utils/dom'
+import { AUTH_BASE_URL } from '@lenserfight/utils/env'
 
 // --- Port (Interface) ---
 export interface AuthRepositoryPort {
@@ -82,9 +83,8 @@ export class SupabaseAuthRepository implements AuthRepositoryPort {
 
 
   async requestPasswordReset(email: string, captchaToken?: string): Promise<void> {
-    const authAppUrl = 'https://auth.lenserfight.com'
     const { error } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: `${authAppUrl}/reset-password`,
+      redirectTo: `${AUTH_BASE_URL}/reset-password`,
       captchaToken,
     })
     if (error) throw error
@@ -96,7 +96,6 @@ export class SupabaseAuthRepository implements AuthRepositoryPort {
   }
 
   async signInWithOAuth(provider: 'google' | 'github' | 'azure'): Promise<void> {
-    const authAppUrl = 'https://auth.lenserfight.com'
     // Preserve the originating page so /callback can redirect back after OAuth.
     // Priority: explicit return_url query param → current full page URL with any
     // auth-only return_url hop removed.
@@ -108,7 +107,7 @@ export class SupabaseAuthRepository implements AuthRepositoryPort {
     sessionStorage.setItem('auth_return_url', returnUrl)
     const { error } = await supabase.auth.signInWithOAuth({
       provider: provider,
-      options: { redirectTo: `${authAppUrl}/callback` },
+      options: { redirectTo: `${AUTH_BASE_URL}/callback` },
     })
     if (error) throw error
   }

@@ -19,6 +19,7 @@ import { useLenser } from '@lenserfight/features/profile'
 import { CreateThreadModal } from '@lenserfight/features/threads'
 import { Avatar, Button, Card, EmptyState, SEOHead, TagBadge } from '@lenserfight/ui/components'
 import { buildAuthReturnUrl } from '@lenserfight/utils/dom'
+import { AUTH_BASE_URL } from '@lenserfight/utils/env'
 import {
   Plus,
   ChevronRight,
@@ -153,8 +154,7 @@ export const HomePage: React.FC = () => {
 
   const handleCreateClick = () => {
     if (!isAuthenticated) {
-      const authAppUrl = 'https://auth.lenserfight.com'
-      window.location.href = `${authAppUrl}/login?return_url=${encodeURIComponent(buildAuthReturnUrl(window.location.href))}`
+      window.location.href = `${AUTH_BASE_URL}/login?return_url=${encodeURIComponent(buildAuthReturnUrl(window.location.href))}`
       return
     }
     if (!hasLenser) return navigate('/onboarding', { state: { from: '/' } })

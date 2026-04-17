@@ -8,6 +8,7 @@ import { LanguageSelectBox, StepWizard } from '@lenserfight/ui/components'
 import { SearchSelectField } from '@lenserfight/ui/forms'
 import { useWizardStep } from '@lenserfight/ui/routing'
 import { buildAuthReturnUrl, replaceLocationSafely } from '@lenserfight/utils/dom'
+import { ARENA_BASE_URL, AUTH_BASE_URL } from '@lenserfight/utils/env'
 import { storage } from '@lenserfight/utils/storage'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { Check, X, Loader2 } from 'lucide-react'
@@ -92,15 +93,14 @@ export const CreateLenserProfileModal: React.FC = () => {
   const returnTo =
     (location.state as { from?: string } | null)?.from ??
     searchParams.get('return_url') ??
-    import.meta.env.VITE_ARENA_URL ?? 'https://lenserfight.com'
+    ARENA_BASE_URL
 
   // Security redirect: only authenticated users without a profile reach this
   useEffect(() => {
     if (authLoading || (isAuthenticated ? lenserLoading : false)) return
     if (!isAuthenticated) {
-      const authAppUrl = 'https://auth.lenserfight.com'
       const returnUrl = encodeURIComponent(buildAuthReturnUrl(window.location.href))
-      window.location.href = `${authAppUrl}/login?return_url=${returnUrl}`
+      window.location.href = `${AUTH_BASE_URL}/login?return_url=${returnUrl}`
     } else if (hasLenser && hasCompletedOnboarding) {
       // returnTo may be an absolute URL (cross-app redirect) — React Router
       // navigate() only handles same-origin paths, so use location.replace for

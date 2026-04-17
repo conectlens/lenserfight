@@ -5,12 +5,9 @@ import { ShareProvider } from '@lenserfight/features/share'
 import { WalletProvider } from '@lenserfight/features/store'
 import { UIProvider } from '@lenserfight/ui/providers'
 import { ModalRoute } from '@lenserfight/ui/routing'
-import { SURFACE } from '@lenserfight/utils/env'
+import { ARENA_BASE_URL, AUTH_BASE_URL, SURFACE } from '@lenserfight/utils/env'
 import React, { lazy, Suspense } from 'react'
 import { Navigate, Route, Routes, useNavigate, useParams, useSearchParams } from 'react-router-dom'
-
-const AUTH_APP_URL = 'https://auth.lenserfight.com'
-const ARENA_APP_URL = import.meta.env.VITE_ARENA_URL ?? 'https://lenserfight.com'
 
 const LazyDashboardLayout = lazy(() =>
   import('@lenserfight/features/shell').then((module) => ({ default: module.DashboardLayout }))
@@ -121,7 +118,9 @@ const WorkflowBuilderPageRoute: React.FC = () => {
     <LazyWorkflowBuilderPage
       workflowId={id!}
       runId={runId}
-      onBattleClick={(workflowId) => window.open(`${ARENA_APP_URL}/battles/create?workflow_id=${workflowId}`, '_blank')}
+      onBattleClick={(workflowId) =>
+        window.open(`${ARENA_BASE_URL}/battles/create?workflow_id=${workflowId}`, '_blank')
+      }
     />
   )
 }
@@ -171,23 +170,23 @@ export const WebRouter: React.FC = () => {
     <Suspense fallback={<RouteFallback />}>
       <Routes>
         <Route path="/s/:shortId" element={<LazyShortLinkRedirect />} />
-        <Route path="/auth/login" element={<AuthExternalRedirect to={`${AUTH_APP_URL}/login`} />} />
+        <Route path="/auth/login" element={<AuthExternalRedirect to={`${AUTH_BASE_URL}/login`} />} />
         <Route
           path="/auth/register"
-          element={<AuthExternalRedirect to={`${AUTH_APP_URL}/register`} />}
+          element={<AuthExternalRedirect to={`${AUTH_BASE_URL}/register`} />}
         />
         <Route
           path="/auth/forgot-password"
-          element={<AuthExternalRedirect to={`${AUTH_APP_URL}/forgot-password`} />}
+          element={<AuthExternalRedirect to={`${AUTH_BASE_URL}/forgot-password`} />}
         />
         <Route
           path="/auth/reset-password"
-          element={<AuthExternalRedirect to={`${AUTH_APP_URL}/reset-password`} />}
+          element={<AuthExternalRedirect to={`${AUTH_BASE_URL}/reset-password`} />}
         />
-        <Route path="/auth" element={<AuthExternalRedirect to={`${AUTH_APP_URL}/login`} />} />
+        <Route path="/auth" element={<AuthExternalRedirect to={`${AUTH_BASE_URL}/login`} />} />
         <Route
           path="/welcome"
-          element={<AuthExternalRedirect to={`${ARENA_APP_URL}/get-started`} />}
+          element={<AuthExternalRedirect to={`${ARENA_BASE_URL}/get-started`} />}
         />
 
         <Route

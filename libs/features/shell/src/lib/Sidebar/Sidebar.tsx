@@ -29,7 +29,7 @@ import { notificationService } from '@lenserfight/data/repositories'
 import { useAuth } from '@lenserfight/features/auth'
 import { FeedbackModal } from '@lenserfight/features/feedback'
 import { useLenser, useSidebarProfile, useHasLenserProfile, useMyLensers, useSwitchLenser } from '@lenserfight/features/profile'
-import { FEATURES, SURFACE } from '@lenserfight/utils/env'
+import { ARENA_BASE_URL, FEATURES, SURFACE } from '@lenserfight/utils/env'
 import { useTheme } from '@lenserfight/ui/theme'
 import type { Theme } from '@lenserfight/ui/theme'
 
@@ -218,6 +218,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
   const handleProfileClick = () => {
     if (displayProfile?.handle) {
       handleNavigation(`/lenser/${displayProfile.handle}`)
+    } else if (!isAuthenticated) {
+      redirectToLogin()
     } else {
       onOpenProfileSetup()
     }
@@ -292,7 +294,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
           />
 
           <SidebarItem
-            onClick={() => window.open(import.meta.env.VITE_ARENA_URL ?? 'https://lenserfight.com/battles', '_blank')}
+            onClick={() => window.open(`${ARENA_BASE_URL}/battles`, '_blank')}
             icon={<Sword size={20} />}
             label="Arena"
             isActive={false}
@@ -419,7 +421,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 </button>
               ) : (
                 <button
-                  onClick={onOpenProfileSetup}
+                  onClick={() => redirectToLogin()}
                   className={`
                     flex items-center justify-center gap-2 bg-primary hover:bg-yellow-300 text-gray-900 font-bold rounded-xl shadow-lg transition-all w-full h-10
                     ${!showLabels ? 'rounded-full w-10 p-0' : 'px-4'}
