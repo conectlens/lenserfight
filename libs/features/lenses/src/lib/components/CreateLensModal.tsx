@@ -1,18 +1,17 @@
+import { LensKindPicker, resolveLensKindFromTagSlugs } from '@lenserfight/features/lens-kinds'
+import { CreateVersionParamInput, LensKind, VisibilityEnum } from '@lenserfight/types'
+import { FormError } from '@lenserfight/ui/components'
+import { SelectField, LensContentEditor, type LensContentEditorHandle } from '@lenserfight/ui/forms'
+import { Dialog, ModalFooter } from '@lenserfight/ui/overlays'
+import { useFormValidation, isRequired, minLength } from '@lenserfight/utils/validation'
 import { Globe, Lock } from 'lucide-react'
 import React, { useMemo, useRef, useCallback, useEffect } from 'react'
 
-import { LensVersionHistoryButton } from './LensVersionHistoryButton'
-
-import { FormError } from '@lenserfight/ui/components'
-import { Dialog, ModalFooter } from '@lenserfight/ui/overlays'
-import { SelectField, LensContentEditor, type LensContentEditorHandle } from '@lenserfight/ui/forms'
-import { useFormValidation } from '@lenserfight/utils/validation'
-import { CreateVersionParamInput, VisibilityEnum } from '@lenserfight/types'
-import { isRequired, minLength } from '@lenserfight/utils/validation'
+import { useTools } from '../hooks/useTools'
 
 import { ParameterPanel } from './LensParameterPanel'
 import { LensTagInput } from './LensTagInput'
-import { useTools } from '../hooks/useTools'
+import { LensVersionHistoryButton } from './LensVersionHistoryButton'
 
 interface CreateLensModalProps {
   isOpen: boolean
@@ -99,9 +98,22 @@ export const CreateLensModal: React.FC<CreateLensModalProps> = ({
     { value: 'private', label: 'Private', icon: Lock },
   ]
 
+  const selectedKind = useMemo<LensKind | null>(() => resolveLensKindFromTagSlugs(form.tags), [form.tags])
+
+  const handleKindChange = useCallback(
+    (kind: LensKind) => {
+      const slug = `kind:${kind}`
+      const withoutKind = form.tags.filter((t) => !t.startsWith('kind:'))
+      form.setTags([...withoutKind, slug])
+    },
+    [form.tags, form.setTags],
+  )
+
   return (
     <Dialog open={isOpen} onClose={onClose} title={isEditMode ? 'Edit Lens' : 'Create Lens'} maxWidth="max-w-full">
       <form onSubmit={handleSubmit} className="space-y-6" noValidate>
+        <LensKindPicker value={selectedKind} onChange={handleKindChange} />
+
         <div className="space-y-2">
           <label className="text-sm font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
             Title
