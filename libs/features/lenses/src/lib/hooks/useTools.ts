@@ -4,7 +4,7 @@ import { ToolRecord } from '@lenserfight/types'
 
 const STALE_TIME = 10 * 60 * 1000 // tools are static; 10 min stale time
 
-export function useTools(category?: string): {
+export function useTools(category?: string, enabled = true): {
   tools: ToolRecord[]
   isLoading: boolean
   textToolId: string | undefined
@@ -13,6 +13,7 @@ export function useTools(category?: string): {
     queryKey: ['tools', category ?? 'all'],
     queryFn: () => lensesService.getTools(category),
     staleTime: STALE_TIME,
+    enabled,
   })
 
   const tools = data ?? []
