@@ -29,6 +29,7 @@ export function WorkflowLensPalette({ onDragStart, collapsed, onToggleCollapse }
   const [tab, setTab] = useState<PaletteTab>('mine')
   const [rawSearch, setRawSearch] = useState('')
   const [debouncedSearch, setDebouncedSearch] = useState('')
+  const [allowAutoFetchNextPage, setAllowAutoFetchNextPage] = useState(false)
   const sentinelRef = useRef<HTMLDivElement>(null)
 
   // Debounce: only propagate search query after 300ms of inactivity
@@ -36,6 +37,10 @@ export function WorkflowLensPalette({ onDragStart, collapsed, onToggleCollapse }
     const t = setTimeout(() => setDebouncedSearch(rawSearch), 300)
     return () => clearTimeout(t)
   }, [rawSearch])
+
+  useEffect(() => {
+    setAllowAutoFetchNextPage(false)
+  }, [tab, debouncedSearch])
 
   // My lenses — infinite scroll
   const personalQuery = useInfiniteQuery({
@@ -63,7 +68,7 @@ export function WorkflowLensPalette({ onDragStart, collapsed, onToggleCollapse }
     initialPageParam: 0,
     getNextPageParam: (lastPage, pages) =>
       lastPage.meta?.hasNextPage ? pages.length * PAGE_SIZE : undefined,
-    enabled: effectiveTab === 'popular' || myLenses.length === 0,
+    enabled: effectiveTab === 'popular' || (personalQuery.isSuccess && myLenses.length === 0),
     staleTime: 1000 * 60 * 5,
   })
 
@@ -90,7 +95,13 @@ export function WorkflowLensPalette({ onDragStart, collapsed, onToggleCollapse }
     if (!sentinelRef.current || !activeQuery) return
     const observer = new IntersectionObserver(
       ([entry]) => {
-        if (entry.isIntersecting && activeQuery.hasNextPage && !activeQuery.isFetchingNextPage) {
+        if (
+          allowAutoFetchNextPage &&
+          entry.isIntersecting &&
+          activeQuery.hasNextPage &&
+          !activeQuery.isFetchingNextPage &&
+          !activeQuery.isLoading
+        ) {
           activeQuery.fetchNextPage()
         }
       },
@@ -98,7 +109,7 @@ export function WorkflowLensPalette({ onDragStart, collapsed, onToggleCollapse }
     )
     observer.observe(sentinelRef.current)
     return () => observer.disconnect()
-  }, [effectiveTab, isSearching, activeQuery?.hasNextPage, activeQuery?.isFetchingNextPage])
+  }, [allowAutoFetchNextPage, effectiveTab, isSearching, activeQuery?.hasNextPage, activeQuery?.isFetchingNextPage, activeQuery?.isLoading])
 
   const handleDragStart = (e: React.DragEvent, lens: LensViewModel) => {
     const data: DraggedLensData = {
@@ -179,7 +190,10 @@ export function WorkflowLensPalette({ onDragStart, collapsed, onToggleCollapse }
       </div>
 
       {/* Lens list */}
-      <div className="flex-1 overflow-y-auto px-2 pb-3 space-y-1">
+      <div
+        className="flex-1 overflow-y-auto px-2 pb-3 space-y-1"
+        onScroll={() => setAllowAutoFetchNextPage(true)}
+      >
         {isLoading &&
           Array.from({ length: 6 }).map((_, i) => (
             <div key={i} className="h-10 rounded-xl bg-surface-raised animate-pulse" />

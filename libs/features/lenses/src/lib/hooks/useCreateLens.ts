@@ -11,9 +11,9 @@ import { useTools } from './useTools'
 export const useCreateLens = () => {
   const { lenser } = useAuthenticatedLenser()
   const queryClient = useQueryClient()
-  const { textToolId } = useTools()
 
   const [isOpen, setIsOpen] = useState(false)
+  const { textToolId } = useTools(undefined, isOpen)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [editId, setEditId] = useState<string | null>(null)

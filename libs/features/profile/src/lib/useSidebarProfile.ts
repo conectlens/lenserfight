@@ -1,9 +1,8 @@
 import { useState, useEffect } from 'react'
-import { SupabaseLenserRepository } from '@lenserfight/data/repositories'
 import { Lenser } from '@lenserfight/types'
 import { storage } from '@lenserfight/utils/storage'
+import { useQueryClient } from '@tanstack/react-query'
 
-const lenserRepo = new SupabaseLenserRepository()
 const TTL_MS = 1000 * 60 // 1 minute
 
 interface CachedCompact {
@@ -13,6 +12,7 @@ interface CachedCompact {
 }
 
 export const useSidebarProfile = (handle?: string) => {
+  const queryClient = useQueryClient()
   const [profile, setProfile] = useState<Lenser | null>(() => {
     if (!handle) return null
 
@@ -67,26 +67,19 @@ export const useSidebarProfile = (handle?: string) => {
         if (isFresh) return
       }
 
-      // Stale or missing cache → fetch fresh data
-      if (!cached) setIsLoading(true)
-
-      try {
-        const fresh = await lenserRepo.getAuthenticatedLenser()
-        if (mounted && fresh) {
-          const entry: CachedCompact = {
-            fetchedAt: Date.now(),
-            profile: fresh,
-            handle,
-          }
-
-          setProfile(fresh)
-          storage.setItem(cacheKey, JSON.stringify(entry))
+      // Fallback to already-bootstrapped LenserContext query cache instead of issuing
+      // a second profile request from the sidebar mount path.
+      const cachedLenser = queryClient.getQueryData<Lenser | null>(['lenser', 'authenticated'])
+      if (cachedLenser && mounted) {
+        const entry: CachedCompact = {
+          fetchedAt: Date.now(),
+          profile: cachedLenser,
+          handle,
         }
-      } catch (err) {
-        console.warn('Failed to refresh compact profile', err)
-      } finally {
-        if (mounted) setIsLoading(false)
+        setProfile(cachedLenser)
+        storage.setItem(cacheKey, JSON.stringify(entry))
       }
+      if (mounted) setIsLoading(false)
     }
 
     load()
@@ -94,7 +87,7 @@ export const useSidebarProfile = (handle?: string) => {
     return () => {
       mounted = false
     }
-  }, [handle])
+  }, [handle, queryClient])
 
   return { profile, isLoading }
 }

@@ -41,7 +41,7 @@ export const LensLabPage: React.FC = () => {
   const { setPageActions, setPageTitle } = useUI()
   const queryClient = useQueryClient()
 
-  const { lens, isLoading, error, actions } = useLensDetailController(id)
+  const { lens, isLoading, error, actions } = useLensDetailController(id, { includeRelated: false })
 
   const { data: preferences } = useQuery<LenserPreferences | null>({
     queryKey: ['preferences'],

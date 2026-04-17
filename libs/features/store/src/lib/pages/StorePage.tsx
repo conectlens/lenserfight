@@ -1,5 +1,4 @@
 import { walletService } from '@lenserfight/data/repositories'
-import { queryKeys } from '@lenserfight/data/cache'
 import { WalletProduct } from '@lenserfight/types'
 import { AlertCircle, XCircle } from 'lucide-react'
 import React, { useState } from 'react'
@@ -81,8 +80,8 @@ const StoreProductsView: React.FC = () => {
   const [buyingId, setBuyingId] = useState<string | null>(null)
   const [checkoutError, setCheckoutError] = useState<string | null>(null)
 
-  const { data: products = [], isLoading: productsLoading } = useQuery({
-    queryKey: queryKeys.wallet.products,
+  const { data: products = [], isLoading: productsLoading, error: productsError } = useQuery({
+    queryKey: ['wallet-products'],
     queryFn: walletService.getProducts,
     staleTime: 1000 * 60 * 10,
   })
@@ -131,6 +130,15 @@ const StoreProductsView: React.FC = () => {
         <div className="flex items-start gap-3 p-4 mb-6 rounded-xl border border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-400">
           <XCircle size={16} className="flex-shrink-0 mt-0.5" />
           <span className="text-sm">{checkoutError}</span>
+        </div>
+      )}
+
+      {productsError && (
+        <div className="flex items-start gap-3 p-4 mb-6 rounded-xl border border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-400">
+          <XCircle size={16} className="flex-shrink-0 mt-0.5" />
+          <span className="text-sm">
+            {(productsError as Error).message || 'Unable to load plans right now. Please try again.'}
+          </span>
         </div>
       )}
 
