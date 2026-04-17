@@ -60,7 +60,7 @@ export const useFundingSource = (selectedProviderKey: string) => {
       setSelectedLocalKeyId(null)
     }
     if (!canUseBYOK && (fundingSource === 'user_byok_cloud' || fundingSource === 'user_byok_local')) {
-      setFundingSourceState('platform_credit')
+      setFundingSource('platform_credit')
     }
   }, [selectedProviderKey, canUseBYOK]) // eslint-disable-line react-hooks/exhaustive-deps
 

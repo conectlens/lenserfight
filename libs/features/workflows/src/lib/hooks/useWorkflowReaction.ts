@@ -1,8 +1,7 @@
-import { queryKeys } from '@lenserfight/data/cache'
 import { reactionService } from '@lenserfight/data/repositories'
 import { useAuth } from '@lenserfight/features/auth'
 import { useCallback, useEffect, useState } from 'react'
-import { useQueryClient } from '@tanstack/react-query'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 
 interface WorkflowReactionState {
   liked: boolean
@@ -26,19 +25,23 @@ export function useWorkflowReaction(
   })
   const [isPending, setIsPending] = useState(false)
 
-  // Load the current user's reactions on mount
+  const { data: summary } = useQuery({
+    queryKey: ['workflow-reaction-summary', workflowId, user?.id],
+    queryFn: () => reactionService.getReactionSummary('workflow', workflowId, user?.id ?? ''),
+    enabled: !!user?.id && !!workflowId,
+    staleTime: 1000 * 60,
+  })
+
   useEffect(() => {
-    if (!user?.id || !workflowId) return
-    reactionService.getReactionSummary('workflow', workflowId, user.id).then((summary) => {
-      setState((prev) => ({
-        ...prev,
-        liked: summary.userReactions.includes('like'),
-        saved: summary.userReactions.includes('saved'),
-        likeCount: summary.counts.like ?? prev.likeCount,
-        savedCount: summary.counts.saved ?? prev.savedCount,
-      }))
-    }).catch(() => { /* silently ignore */ })
-  }, [workflowId, user?.id])
+    if (!summary) return
+    setState((prev) => ({
+      ...prev,
+      liked: summary.userReactions.includes('like'),
+      saved: summary.userReactions.includes('saved'),
+      likeCount: summary.counts.like ?? prev.likeCount,
+      savedCount: summary.counts.saved ?? prev.savedCount,
+    }))
+  }, [summary])
 
   const toggle = useCallback(async (reaction: 'like' | 'saved') => {
     if (!user?.id || isPending) return
@@ -66,7 +69,7 @@ export function useWorkflowReaction(
         likeCount: result.summary.counts.like  ?? prev.likeCount,
         savedCount: result.summary.counts.saved ?? prev.savedCount,
       }))
-      queryClient.invalidateQueries({ queryKey: queryKeys.workflows.detail(workflowId) })
+      queryClient.invalidateQueries({ queryKey: ['workflows', 'detail', workflowId] })
     } catch {
       // Revert optimistic update on error
       setState((prev) => {

@@ -9,6 +9,7 @@ import React, { useState, useEffect, useMemo } from 'react'
 import type { WorkflowNodeConfig } from './WorkflowCanvasNode'
 import type { WorkflowEdgeRecord, WorkflowNodeRecord } from '@lenserfight/data/repositories'
 import type { AIProvider, AIProviderModel } from '@lenserfight/types'
+import { buildEffectiveVersionParams } from '../utils/workflowTemplateParams'
 
 interface WorkflowNodeConfigPanelProps {
   nodeId: string
@@ -82,7 +83,7 @@ export function WorkflowNodeConfigPanel({
     selectedNode?.lens_visibility === 'private' &&
     selectedNode?.lens_lenser_id === currentUserId
 
-  const versionParams = lensVersion?.parameters ?? []
+  const versionParams = useMemo(() => buildEffectiveVersionParams(lensVersion), [lensVersion])
   const isParamsLoading = versionLoading
 
   // Derive providers/models from flat useAIModels list

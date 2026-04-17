@@ -1,4 +1,4 @@
-import { lensesService, workflowsService } from '@lenserfight/data/repositories'
+import { apiKeysService, lensesService, workflowsService } from '@lenserfight/data/repositories'
 import { WorkflowExecutionService } from '@lenserfight/infra/execution'
 import { byokKeyResolver, callProvider } from '@lenserfight/providers'
 import { useCallback, useRef } from 'react'
@@ -95,6 +95,7 @@ export function useWorkflowExecution({
   edges,
   models,
   fundingSource,
+  selectedKeyRefId,
   selectedLocalKeyId,
   resolveLocalKey,
   localKeys,
@@ -140,8 +141,23 @@ export function useWorkflowExecution({
         if (providerName !== 'ollama') {
           if (fundingSource === 'user_byok_local' && selectedLocalKeyId && resolveLocalKey) {
             apiKey = await resolveLocalKey(selectedLocalKeyId)
+          } else if (fundingSource === 'user_byok_cloud') {
+            if (!selectedKeyRefId) {
+              throw new Error('Select a cloud key before running this workflow.')
+            }
+            const keys = await apiKeysService.getMyKeys()
+            const selectedKey = keys.find((k) => k.id === selectedKeyRefId)
+            if (!selectedKey) {
+              throw new Error('Selected cloud key was not found. Please pick a key again.')
+            }
+            if (selectedKey.providerKey !== providerName) {
+              throw new Error(`Selected cloud key is for ${selectedKey.providerDisplayName}, but the model uses ${providerName}.`)
+            }
+            throw new Error(
+              'Cloud BYOK workflow execution must run on the platform executor. Use platform credit or a local key for browser execution.'
+            )
           } else {
-            // platform_credit or user_byok_cloud: use byokKeyResolver (reads env / cloud-resolved key)
+            // platform_credit path for browser execution falls back to configured provider key.
             apiKey = byokKeyResolver.resolve(providerName)
           }
         }
@@ -224,7 +240,7 @@ export function useWorkflowExecution({
         if (abortRef.current === controller) abortRef.current = null
       }
     },
-    [nodes, edges, models, fundingSource, selectedLocalKeyId, resolveLocalKey, localKeys],
+    [nodes, edges, models, fundingSource, selectedKeyRefId, selectedLocalKeyId, resolveLocalKey, localKeys],
   )
 
   return { execute, stopExecution }

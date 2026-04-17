@@ -4,6 +4,7 @@ import {
   type WorkflowRecord,
   type WorkflowNodeRecord,
   type WorkflowEdgeRecord,
+  type WorkflowBootstrapRecord,
   type WorkflowRunRecord,
   type WorkflowNodeResultRecord,
   type WorkflowVersionRecord,
@@ -20,6 +21,7 @@ export type {
   WorkflowRecord,
   WorkflowNodeRecord,
   WorkflowEdgeRecord,
+  WorkflowBootstrapRecord,
   WorkflowRunRecord,
   WorkflowNodeResultRecord,
   WorkflowVersionRecord,
@@ -47,6 +49,9 @@ export const workflowsService = {
 
   getById: (id: string): Promise<WorkflowRecord | null> =>
     workflowsRepo.getById(id),
+
+  getBootstrap: (workflowId: string): Promise<WorkflowBootstrapRecord | null> =>
+    workflowsRepo.getBootstrap(workflowId),
 
   forkWorkflow: (sourceId: string): Promise<WorkflowRecord> =>
     workflowsRepo.forkWorkflow(sourceId),
