@@ -1,12 +1,13 @@
+import { ARENA_BASE_URL, AUTH_BASE_URL, WEB_BASE_URL } from '@lenserfight/utils/env'
+
 const PROD_ORIGINS = [
-  'https://lenserfight.com',
+  WEB_BASE_URL,
+  ARENA_BASE_URL,
   'https://arena.lenserfight.com',
   'https://admin.lenserfight.com',
 ]
 
-const AUTH_ORIGINS = [
-  'https://auth.lenserfight.com',
-]
+const AUTH_ORIGINS = [new URL(`${AUTH_BASE_URL}/`).origin]
 
 const LOCAL_DIRECT_ORIGINS = [
   'http://localhost:3000',
@@ -22,8 +23,7 @@ const LOCAL_PROXY_ORIGINS = [
 
 const ALLOWED_ORIGINS = [...PROD_ORIGINS, ...LOCAL_DIRECT_ORIGINS, ...LOCAL_PROXY_ORIGINS]
 
-export const DEFAULT_RETURN_URL =
-  import.meta.env.VITE_WEB_BASE_URL ?? 'https://lenserfight.com'
+export const DEFAULT_RETURN_URL = WEB_BASE_URL
 
 export function sanitizeReturnUrl(url: string | null | undefined): string {
   if (!url) return DEFAULT_RETURN_URL
