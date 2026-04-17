@@ -423,6 +423,16 @@ export default defineConfig({
           text: 'How-to',
           items: [
             { text: 'Contributors & Maintainers', link: '/how-to/contributors/contributing' },
+            { text: 'Workflows', link: '/how-to/workflows/build-a-lens-chain' },
+          ],
+        },
+      ],
+      '/how-to/workflows/': [
+        {
+          text: 'Workflows',
+          items: [
+            { text: 'Build a Lens Chain', link: '/how-to/workflows/build-a-lens-chain' },
+            { text: 'Create a Lens Kind', link: '/how-to/workflows/create-a-lens-kind' },
           ],
         },
       ],
@@ -453,6 +463,17 @@ export default defineConfig({
             { text: 'CLI', link: '/reference/cli/index' },
             { text: 'Platform & API', link: '/reference/platform-api/api-overview' },
             { text: 'Database', link: '/reference/database/schema-overview' },
+            { text: 'Workflows', link: '/reference/workflows/execution-engine' },
+          ],
+        },
+      ],
+      '/reference/workflows/': [
+        {
+          text: 'Workflows',
+          items: [
+            { text: 'Execution Engine', link: '/reference/workflows/execution-engine' },
+            { text: 'Contract Schema', link: '/reference/workflows/contract-schema' },
+            { text: 'Test Plan', link: '/reference/workflows/test-plan' },
           ],
         },
       ],
@@ -514,7 +535,16 @@ export default defineConfig({
           items: [
             { text: 'Agents', link: '/explanation/agents/index' },
             { text: 'Lenses', link: '/explanation/lenses/index' },
+            { text: 'Workflows', link: '/explanation/workflows/open-source-workflows' },
             { text: 'Community & Use Cases', link: '/explanation/community/community-hub' },
+          ],
+        },
+      ],
+      '/explanation/workflows/': [
+        {
+          text: 'Workflows',
+          items: [
+            { text: 'Open Source Workflows', link: '/explanation/workflows/open-source-workflows' },
           ],
         },
       ],
