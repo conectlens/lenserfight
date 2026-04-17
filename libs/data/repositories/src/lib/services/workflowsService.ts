@@ -8,11 +8,13 @@ import {
   type WorkflowRunRecord,
   type WorkflowNodeResultRecord,
   type WorkflowVersionRecord,
+  type WorkflowRunEventRecord,
   type CreateWorkflowInput,
   type UpdateWorkflowInput,
   type UpsertNodeInput,
   type UpsertEdgeInput,
   type WorkflowsListFilter,
+  type TemplateWorkflowRecord,
 } from '../repositories/workflowsRepository'
 
 const workflowsRepo = new SupabaseWorkflowsRepository()
@@ -25,11 +27,13 @@ export type {
   WorkflowRunRecord,
   WorkflowNodeResultRecord,
   WorkflowVersionRecord,
+  WorkflowRunEventRecord,
   CreateWorkflowInput,
   UpdateWorkflowInput,
   UpsertNodeInput,
   UpsertEdgeInput,
   WorkflowsListFilter,
+  TemplateWorkflowRecord,
 }
 
 export const workflowsService = {
@@ -46,6 +50,9 @@ export const workflowsService = {
 
   getPopular: (offset: number, limit: number, search?: string): Promise<ApiResponseEnvelope<WorkflowRecord[]>> =>
     workflowsRepo.getPopular(offset, limit, search),
+
+  listTemplates: (limit?: number, offset?: number): Promise<TemplateWorkflowRecord[]> =>
+    workflowsRepo.listTemplates(limit, offset),
 
   getById: (id: string): Promise<WorkflowRecord | null> =>
     workflowsRepo.getById(id),
@@ -80,8 +87,13 @@ export const workflowsService = {
   deleteEdge: (edgeId: string): Promise<void> =>
     workflowsRepo.deleteEdge(edgeId),
 
-  startRun: (workflowId: string, inputs?: Record<string, unknown>, globalModelId?: string): Promise<WorkflowRunRecord> =>
-    workflowsRepo.startRun(workflowId, inputs, globalModelId),
+  startRun: (
+    workflowId: string,
+    inputs?: Record<string, unknown>,
+    globalModelId?: string,
+    idempotencyKey?: string,
+  ): Promise<WorkflowRunRecord> =>
+    workflowsRepo.startRun(workflowId, inputs, globalModelId, idempotencyKey),
 
   getRun: (runId: string): Promise<WorkflowRunRecord | null> =>
     workflowsRepo.getRun(runId),
@@ -100,6 +112,16 @@ export const workflowsService = {
 
   updateRunStatus: (runId: string, status: string): Promise<void> =>
     workflowsRepo.updateRunStatus(runId, status),
+
+  appendRunEvent: (
+    runId: string,
+    type: string,
+    payload?: Record<string, unknown>,
+  ): Promise<WorkflowRunEventRecord | null> =>
+    workflowsRepo.appendRunEvent(runId, type, payload),
+
+  listRunEvents: (runId: string, afterEventId?: number, limit?: number): Promise<WorkflowRunEventRecord[]> =>
+    workflowsRepo.listRunEvents(runId, afterEventId, limit),
 
   // ── Versioning ──────────────────────────────────────────────────────────────
 
