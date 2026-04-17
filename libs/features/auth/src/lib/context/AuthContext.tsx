@@ -3,7 +3,7 @@ import { queryClient, queryKeys } from '@lenserfight/data/cache'
 import { authService, lenserService } from '@lenserfight/data/repositories'
 import { AuthState, UserMetadata } from '@lenserfight/types'
 import { buildAuthReturnUrl } from '@lenserfight/utils/dom'
-import { getEnvMetadata } from '@lenserfight/utils/env'
+import { AUTH_BASE_URL, getEnvMetadata } from '@lenserfight/utils/env'
 import { storage } from '@lenserfight/utils/storage'
 
 interface RegisterOptions {
@@ -262,9 +262,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, [])
 
   const redirectToLogin = useCallback((delayMs = 0) => {
-    const authAppUrl = (import.meta as any).env?.VITE_AUTH_BASE_URL ?? 'https://auth.lenserfight.com'
     const returnUrl = encodeURIComponent(buildAuthReturnUrl(window.location.href))
-    const target = `${authAppUrl}/login?return_url=${returnUrl}`
+    const target = `${AUTH_BASE_URL}/login?return_url=${returnUrl}`
     if (delayMs > 0) {
       setTimeout(() => { window.location.href = target }, delayMs)
     } else {

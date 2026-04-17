@@ -3,7 +3,14 @@ import { Check, AlertCircle, ExternalLink } from 'lucide-react'
 import React, { useState, useEffect } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 
-import { isMock, isLocal, LOCAL_SEED_CREDENTIALS, ENABLE_CAPTCHA, CAPTCHA_SITE_KEY } from '@lenserfight/utils/env'
+import {
+  isMock,
+  isLocal,
+  LOCAL_SEED_CREDENTIALS,
+  ENABLE_CAPTCHA,
+  CAPTCHA_SITE_KEY,
+  WEB_BASE_URL,
+} from '@lenserfight/utils/env'
 import { useAuth } from '@lenserfight/features/auth'
 import { useFormValidation } from '@lenserfight/utils/validation'
 import { isRequired, isEmail } from '@lenserfight/utils/validation'
@@ -151,8 +158,7 @@ export const RegisterPage: React.FC = () => {
       Privacy: 'privacy',
       Cookies: 'cookies',
     }
-    const arenaUrl = import.meta.env.VITE_WEB_BASE_URL ?? 'https://lenserfight.com'
-    window.open(`${arenaUrl}/policies/${slugMap[type]}`, '_blank', 'noopener,noreferrer')
+    window.open(`${WEB_BASE_URL}/policies/${slugMap[type]}`, '_blank', 'noopener,noreferrer')
   }
 
   return (
