@@ -7,6 +7,7 @@ import React, { useState, useMemo } from 'react'
 
 import type { WorkflowNodeRecord, WorkflowEdgeRecord } from '@lenserfight/data/repositories'
 import type { LensVersionParam } from '@lenserfight/types'
+import { buildEffectiveVersionParams } from '../utils/workflowTemplateParams'
 
 interface WorkflowRootInputsPanelProps {
   nodes: WorkflowNodeRecord[]
@@ -34,15 +35,6 @@ export function WorkflowRootInputsPanel({
   const targetNodeIds = useMemo(() => new Set(edges.map((e) => e.target_node_id)), [edges])
   const rootNodes = useMemo(() => nodes.filter((n) => !targetNodeIds.has(n.id)), [nodes, targetNodeIds])
 
-  // Auto-wired params (by incoming edges)
-  const autoWiredParams = useMemo(() => {
-    const wired = new Set<string>()
-    for (const e of edges) {
-      if (e.target_param_label) wired.add(e.target_param_label)
-    }
-    return wired
-  }, [edges])
-
   // Load typed version params for each root node via getLatestPublishedVersion RPC
   const nodeVersionQueries = useQueries({
     queries: rootNodes.map((node) => ({
@@ -50,7 +42,9 @@ export function WorkflowRootInputsPanel({
       queryFn: () =>
         node.version_id
           ? lensesService.getVersionById(node.version_id)
-          : lensesService.getLatestPublishedVersion(node.lens_id),
+          : lensesService.getLatestPublishedVersion(node.lens_id).then((published) =>
+              published ?? lensesService.getLatestVersion(node.lens_id)
+            ),
       staleTime: 1000 * 60 * 5,
       enabled: !!node.lens_id,
     })),
@@ -63,8 +57,13 @@ export function WorkflowRootInputsPanel({
     return rootNodes
       .map((node, i) => {
         const version = nodeVersionQueries[i]?.data
-        const params = (version?.parameters ?? []).filter(
-          (p) => !autoWiredParams.has(p.label)
+        const incomingWired = new Set(
+          edges
+            .filter((e) => e.target_node_id === node.id)
+            .map((e) => e.target_param_label.toLowerCase())
+        )
+        const params = buildEffectiveVersionParams(version).filter(
+          (p) => !incomingWired.has(p.label.toLowerCase())
         )
         return {
           nodeId: node.id,
@@ -73,7 +72,7 @@ export function WorkflowRootInputsPanel({
         }
       })
       .filter((g) => g.params.length > 0)
-  }, [rootNodes, nodeVersionQueries, autoWiredParams])
+  }, [rootNodes, nodeVersionQueries, edges])
 
   // Required param validation
   const allRequiredFilled = useMemo(() => {

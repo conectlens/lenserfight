@@ -48,7 +48,7 @@ export const CreateLensModal: React.FC<CreateLensModalProps> = ({
   lensId,
 }) => {
   const editorRef = useRef<LensContentEditorHandle>(null)
-  const { tools } = useTools()
+  const { tools } = useTools(undefined, isOpen)
 
   const formValues = useMemo(
     () => ({ title: form.title, content: form.content, tags: form.tags }),

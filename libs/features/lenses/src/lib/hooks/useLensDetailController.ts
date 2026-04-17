@@ -17,15 +17,23 @@ interface LensDetailData {
   authorLenses: LensViewModel[]
 }
 
-export const useLensDetailController = (lensId?: string) => {
+interface UseLensDetailControllerOptions {
+  includeRelated?: boolean
+}
+
+export const useLensDetailController = (
+  lensId?: string,
+  options: UseLensDetailControllerOptions = {}
+) => {
+  const { includeRelated = true } = options
   const { lenser, isLoading: isLenserLoading } = useAuthenticatedLenser()
   const { user, isLoading: isAuthLoading } = useAuth()
   const queryClient = useQueryClient()
   const loggedLensViews = useRef(new Set<string>())
 
   const lensCompositeKey = useMemo(
-    () => ['lens-composite', lensId, { viewerId: lenser?.id }],
-    [lensId, lenser?.id]
+    () => ['lens-composite', lensId, { includeRelated }],
+    [lensId, includeRelated]
   )
 
   const { data, isLoading, error } = useQuery<LensDetailData, Error>({
@@ -37,6 +45,10 @@ export const useLensDetailController = (lensId?: string) => {
 
       const lens = await lensesService.getLensDetail(lensId, lenser?.id)
       if (!lens) throw new Error('404')
+
+      if (!includeRelated) {
+        return { lens, relatedLenses: [], authorLenses: [] }
+      }
 
       const [related, authorP] = await Promise.all([
         lensesService.getRelatedLenses(lensId),

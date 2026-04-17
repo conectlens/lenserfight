@@ -48,6 +48,12 @@ export interface WorkflowEdgeRecord {
   target_param_label: string
 }
 
+export interface WorkflowBootstrapRecord {
+  workflow: WorkflowRecord | null
+  nodes: WorkflowNodeRecord[]
+  edges: WorkflowEdgeRecord[]
+}
+
 export interface WorkflowRunRecord {
   id: string
   workflow_id: string
@@ -137,6 +143,7 @@ export interface WorkflowsRepositoryPort {
   listByLenserPaginated(lenserId: string, offset: number, limit: number, filter?: WorkflowsListFilter): Promise<ApiResponseEnvelope<WorkflowRecord[]>>
   getPopular(offset: number, limit: number, search?: string): Promise<ApiResponseEnvelope<WorkflowRecord[]>>
   getById(id: string): Promise<WorkflowRecord | null>
+  getBootstrap(workflowId: string): Promise<WorkflowBootstrapRecord | null>
   getNodes(workflowId: string): Promise<WorkflowNodeRecord[]>
   getEdges(workflowId: string): Promise<WorkflowEdgeRecord[]>
   createWorkflow(input: CreateWorkflowInput): Promise<WorkflowRecord>
@@ -233,6 +240,23 @@ export class SupabaseWorkflowsRepository implements WorkflowsRepositoryPort {
     if (error) this.handleError(error)
     const row = Array.isArray(data) ? data[0] : data
     return (row ?? null) as WorkflowRecord | null
+  }
+
+  async getBootstrap(workflowId: string): Promise<WorkflowBootstrapRecord | null> {
+    const { data, error } = await supabase.rpc('fn_get_workflow_bootstrap', {
+      p_workflow_id: workflowId,
+    })
+
+    if (error) this.handleError(error)
+
+    const row = Array.isArray(data) ? data[0] : data
+    if (!row) return null
+
+    return {
+      workflow: (row.workflow ?? null) as WorkflowRecord | null,
+      nodes: Array.isArray(row.nodes) ? (row.nodes as WorkflowNodeRecord[]) : [],
+      edges: Array.isArray(row.edges) ? (row.edges as WorkflowEdgeRecord[]) : [],
+    }
   }
 
   // ── Reads via public-schema RPCs (lenses schema not exposed to PostgREST) ──
