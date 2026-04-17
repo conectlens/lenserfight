@@ -1,0 +1,14 @@
+{
+  "name": "feature-lens-kinds",
+  "$schema": "../../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "libs/features/lens-kinds/src",
+  "projectType": "library",
+  "tags": [
+    "layer:feature",
+    "feature:lens-kinds",
+    "scope:public",
+    "license:oss"
+  ],
+  "// targets": "to see all targets run: nx show project feature-lens-kinds --web",
+  "targets": {}
+}
