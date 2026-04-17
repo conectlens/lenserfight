@@ -64,7 +64,7 @@ export const useLabController = (lensId: string, isAuthenticated = false, option
     queryKey: queryKeys.executions.history(lensId, historyOffset),
     queryFn: () => executionService.getHistory(lensId, PAGE_SIZE, historyOffset),
     enabled: !!lensId && isAuthenticated,
-    staleTime: 30_000,
+    staleTime: 60_000,
   })
 
   useEffect(() => {

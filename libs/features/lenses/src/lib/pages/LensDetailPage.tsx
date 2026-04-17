@@ -107,9 +107,12 @@ export const LensDetailPage: React.FC = () => {
   })
   const { data: previewVersion, isLoading: isLoadingPreview } = useLensVersionDetail(previewVersionId)
 
-  // Auto-load latest published version on page init so params are available immediately
-  const { data: latestPublished } = useLatestPublishedVersion(id ?? '')
-  const { data: latestPublishedDetail, isLoading: isLoadingLatestDetail } = useLensVersionDetail(latestPublished?.id)
+  const shouldLoadLatestVersionDetail = showRunPanel || showVersionPicker || !!previewVersionId
+  const { data: latestPublished } = useLatestPublishedVersion(id ?? '', { staleTime: 120_000 })
+  const { data: latestPublishedDetail, isLoading: isLoadingLatestDetail } = useLensVersionDetail(
+    latestPublished?.id,
+    { enabled: shouldLoadLatestVersionDetail, staleTime: 120_000 }
+  )
 
   // Explicit version selection takes precedence; falls back to latest published
   const activeVersionParams =
@@ -255,7 +258,9 @@ export const LensDetailPage: React.FC = () => {
         navigate('/lenses')
       } else {
         queryClient.invalidateQueries({ queryKey: ['lens-list'] })
-        queryClient.invalidateQueries({ queryKey: ['lens-composite', lens?.id] })
+        queryClient.invalidateQueries({ queryKey: ['lens-core', lens?.id] })
+        queryClient.invalidateQueries({ queryKey: ['lens-related', lens?.id] })
+        queryClient.invalidateQueries({ queryKey: ['lens-author-list', lens?.id] })
       }
     } finally {
       setIsDeleting(false)
@@ -265,7 +270,9 @@ export const LensDetailPage: React.FC = () => {
 
   const handleCreateSubmit = (newId: string) => {
     if (isEditMode && lens && newId === lens.id) {
-      queryClient.invalidateQueries({ queryKey: ['lens-composite', lens.id] })
+      queryClient.invalidateQueries({ queryKey: ['lens-core', lens.id] })
+      queryClient.invalidateQueries({ queryKey: ['lens-related', lens.id] })
+      queryClient.invalidateQueries({ queryKey: ['lens-author-list', lens.id] })
       // Refresh version data so post-edit params & version list are immediately current
       queryClient.invalidateQueries({ queryKey: queryKeys.lensVersions.latestPublished(lens.id) })
       queryClient.invalidateQueries({ queryKey: queryKeys.lensVersions.all })
