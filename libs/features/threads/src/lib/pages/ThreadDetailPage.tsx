@@ -14,6 +14,7 @@ import { useUI } from '@lenserfight/ui/providers'
 import { threadsService } from '@lenserfight/data/repositories'
 import { useReportContent } from '@lenserfight/features/home'
 import { buildAuthReturnUrl } from '@lenserfight/utils/dom'
+import { AUTH_BASE_URL } from '@lenserfight/utils/env'
 import { CreateThreadModal } from '../components/CreateThreadModal'
 import { ReplyComposer } from '../components/ReplyComposer'
 import { ThreadDetailCard } from '../components/ThreadDetailCard'
@@ -100,8 +101,7 @@ export const ThreadDetailPage: React.FC = () => {
 
   const handleToggleReaction = () => {
     if (!isAuthenticated) {
-      const authAppUrl = 'https://auth.lenserfight.com'
-      window.location.href = `${authAppUrl}/login?return_url=${encodeURIComponent(buildAuthReturnUrl(window.location.href))}`
+      window.location.href = `${AUTH_BASE_URL}/login?return_url=${encodeURIComponent(buildAuthReturnUrl(window.location.href))}`
       return
     }
     if (!hasLenser) {
@@ -113,8 +113,7 @@ export const ThreadDetailPage: React.FC = () => {
 
   const handleReplyReaction = (replyId: string) => {
     if (!isAuthenticated) {
-      const authAppUrl = 'https://auth.lenserfight.com'
-      window.location.href = `${authAppUrl}/login?return_url=${encodeURIComponent(buildAuthReturnUrl(window.location.href))}`
+      window.location.href = `${AUTH_BASE_URL}/login?return_url=${encodeURIComponent(buildAuthReturnUrl(window.location.href))}`
       return
     }
     if (!hasLenser) {

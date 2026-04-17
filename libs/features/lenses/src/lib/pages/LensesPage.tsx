@@ -2,6 +2,7 @@ import { useAuth } from '@lenserfight/features/auth'
 import { useLensesFeed } from '@lenserfight/features/home'
 import { Button, PageHeader, SEOHead } from '@lenserfight/ui/components'
 import { buildAuthReturnUrl } from '@lenserfight/utils/dom'
+import { AUTH_BASE_URL } from '@lenserfight/utils/env'
 import { Plus, Search } from 'lucide-react'
 import React, { useState, useCallback, useEffect, useMemo, useRef } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
@@ -115,8 +116,7 @@ export const LensesPage: React.FC = () => {
 
   const handleCreateClick = () => {
     if (!isAuthenticated) {
-      const authAppUrl = 'https://auth.lenserfight.com'
-      window.location.href = `${authAppUrl}/login?return_url=${encodeURIComponent(buildAuthReturnUrl(window.location.href))}`
+      window.location.href = `${AUTH_BASE_URL}/login?return_url=${encodeURIComponent(buildAuthReturnUrl(window.location.href))}`
       return
     }
     if (!hasLenser) {
