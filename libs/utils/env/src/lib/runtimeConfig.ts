@@ -1,5 +1,31 @@
 import { resolveProductEdition } from './appSurface'
 
+function readPublicBaseUrl(envKey: string, fallback: string): string {
+  const raw = import.meta.env[envKey] as string | undefined
+  const s =
+    typeof raw === 'string' && raw.trim() !== '' ? raw.trim().replace(/\/$/, '') : fallback.replace(/\/$/, '')
+  return s
+}
+
+/** Default local auth origin (`nx serve auth` — see `apps/auth/vite.config.mts`). */
+const DEV_AUTH_BASE_URL = 'http://localhost:3004'
+
+/**
+ * SSO / auth app origin (no trailing slash).
+ * Set `VITE_AUTH_BASE_URL` in repo-root `.env` / `.env.local`.
+ * In Vite dev, if unset, defaults to {@link DEV_AUTH_BASE_URL} instead of production.
+ */
+export const AUTH_BASE_URL = readPublicBaseUrl(
+  'VITE_AUTH_BASE_URL',
+  import.meta.env.DEV ? DEV_AUTH_BASE_URL : 'https://auth.lenserfight.com',
+)
+
+/** Main / arena app origin for battles, get-started, etc. Override with `VITE_ARENA_URL`. */
+export const ARENA_BASE_URL = readPublicBaseUrl('VITE_ARENA_URL', 'https://lenserfight.com')
+
+/** Community web origin (return URLs, links). Override with `VITE_WEB_BASE_URL`. */
+export const WEB_BASE_URL = readPublicBaseUrl('VITE_WEB_BASE_URL', 'https://lenserfight.com')
+
 // Environment
 export const MODE = import.meta.env.MODE // "development", "production", "test"
 export const isProd = MODE === 'production'
