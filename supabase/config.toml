@@ -17,7 +17,7 @@ enabled = false
 [db]
 port = 54322
 shadow_port = 54320
-health_timeout = "2m"
+health_timeout = "10m"
 major_version = 17
 
 [db.pooler]

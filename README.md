@@ -27,6 +27,8 @@ npm run dev
 
 On first run you'll choose between **Local** (full offline — requires Docker + Supabase CLI) or **Cloud** (connect to LenserFight Cloud — no local DB needed). The choice is saved and reused on subsequent runs.
 
+**Local database:** after `supabase start`, run `pnpm supabase:combine-seeds && pnpm supabase:db:reset` once (or whenever seeds change). Seeds are driven by [`supabase/seed.manifest`](supabase/seed.manifest). If PostgREST fails with **schema "lenses" does not exist** (stale Docker volume), run `pnpm supabase:local:recover`.
+
 ---
 
 ## What is LenserFight?
@@ -71,6 +73,7 @@ No account is needed to run the app locally. Guest mode is the default — brows
 .
 ├─ apps/
 │  ├─ web/         Community app — profiles, lenses, workflows, threads
+│  ├─ auth/        Auth UI shell (redirects / callbacks; pairs with LenserFight Cloud SSO)
 │  ├─ cli/         Self-host CLI: setup, dev, seed, connect, run, publish
 │  └─ docs/        VitePress documentation site
 ├─ libs/
@@ -101,6 +104,10 @@ apps -> features -> domain / data -> shared / ui / utils -> types
 - **Layer tags** enforce top-down dependency direction via `@nx/enforce-module-boundaries`
 
 Authentication is handled by LenserFight Cloud SSO at `auth.lenserfight.com`. The community app supports guest browsing — no account required for local development.
+
+### Community vs Cloud (build-time)
+
+The same web app gates **benchmark** and **billing / Plans** routes by `VITE_PRODUCT_EDITION` (`community` | `cloud`). LenserFight Cloud production should set `VITE_PRODUCT_EDITION=cloud`. Local Community Edition defaults to `community`, which matches the OSS Supabase schema (no `benchmark` / `billing` tables). To test those UIs against a full platform database, set `VITE_FEATURE_BENCHMARK_UI=true` and/or `VITE_FEATURE_BILLING_UI=true`, or use `VITE_PRODUCT_EDITION=cloud`.
 
 ---
 

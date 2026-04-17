@@ -9,6 +9,7 @@ import {
   LOCAL_SUPABASE_URL,
   LOCAL_ANON_KEY,
 } from '../config/project-config'
+import { runCombineSeedsIfPresent } from '../lib/combine-seeds'
 
 function checkTool(name: string, versionFlag = '--version'): string | null {
   try {
@@ -93,6 +94,7 @@ export default defineCommand({
       // ── Step 4: Run migrations + seeds ──────────────────────────────────
       consola.start('Running migrations and seeding database...')
       try {
+        runCombineSeedsIfPresent(cwd)
         execSync('supabase db reset', { cwd, stdio: 'inherit' })
         consola.success('Database migrated and seeded')
       } catch (err) {

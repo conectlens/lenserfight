@@ -15,7 +15,12 @@
     "release": "standard-version",
     "docs:dev": "vitepress dev apps/docs",
     "docs:build": "vitepress build apps/docs",
-    "docs:preview": "vitepress preview apps/docs"
+    "docs:preview": "vitepress preview apps/docs",
+    "check:oss-migration": "bash scripts/check-oss-migration-private-schemas.sh",
+    "supabase:combine-seeds": "bash supabase/combine-seeds.sh",
+    "supabase:db:reset": "bash supabase/combine-seeds.sh && supabase db reset --local --yes",
+    "supabase:db:reset:debug": "bash supabase/combine-seeds.sh && supabase db reset --local --yes --debug",
+    "supabase:local:recover": "bash scripts/supabase-local-recover.sh"
   },
   "config": {
     "commitizen": {
