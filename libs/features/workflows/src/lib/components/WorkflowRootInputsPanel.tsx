@@ -3,7 +3,7 @@ import { VersionParamFields } from '@lenserfight/features/lenses'
 import { Button } from '@lenserfight/ui/components'
 import { useQueries } from '@tanstack/react-query'
 import { FileText } from 'lucide-react'
-import React, { useState, useMemo } from 'react'
+import React, { useEffect, useState, useMemo } from 'react'
 
 import type { WorkflowNodeRecord, WorkflowEdgeRecord } from '@lenserfight/data/repositories'
 import type { LensVersionParam } from '@lenserfight/types'
@@ -16,6 +16,8 @@ interface WorkflowRootInputsPanelProps {
   isRunning: boolean
   /** When false, the Execute button is disabled (funding/model not configured). */
   canExecute?: boolean
+  /** Optional in-memory config overrides from the builder session. */
+  nodeConfigOverrides?: Record<string, { param_overrides?: Record<string, string> }>
 }
 
 /**
@@ -28,6 +30,7 @@ export function WorkflowRootInputsPanel({
   onSubmit,
   isRunning,
   canExecute = true,
+  nodeConfigOverrides,
 }: WorkflowRootInputsPanelProps) {
   const [inputs, setInputs] = useState<Record<string, string>>({})
 
@@ -73,6 +76,32 @@ export function WorkflowRootInputsPanel({
       })
       .filter((g) => g.params.length > 0)
   }, [rootNodes, nodeVersionQueries, edges])
+
+  useEffect(() => {
+    if (paramGroups.length === 0) return
+
+    setInputs((prev) => {
+      const next = { ...prev }
+      for (const group of paramGroups) {
+        const node = nodes.find((n) => n.id === group.nodeId)
+        const persisted = (node?.config?.['param_overrides'] as Record<string, unknown> | undefined) ?? {}
+        const session = nodeConfigOverrides?.[group.nodeId]?.param_overrides ?? {}
+
+        for (const param of group.params) {
+          const key = `${group.nodeId}:${param.label}`
+          if (next[key] && next[key].trim() !== '') continue
+
+          const persistedValue = resolveOverrideValue(persisted, param.label)
+          const sessionValue = resolveOverrideValue(session, param.label)
+          const value = sessionValue ?? persistedValue
+          if (typeof value === 'string' && value.trim() !== '') {
+            next[key] = value
+          }
+        }
+      }
+      return next
+    })
+  }, [paramGroups, nodes, nodeConfigOverrides])
 
   // Required param validation
   const allRequiredFilled = useMemo(() => {
@@ -197,4 +226,14 @@ export function WorkflowRootInputsPanel({
       )}
     </form>
   )
+}
+
+function resolveOverrideValue(
+  values: Record<string, unknown> | Record<string, string>,
+  label: string,
+): string | undefined {
+  if (typeof values[label] === 'string') return values[label] as string
+  const lower = label.toLowerCase()
+  const match = Object.entries(values).find(([k, v]) => k.toLowerCase() === lower && typeof v === 'string')
+  return match ? (match[1] as string) : undefined
 }

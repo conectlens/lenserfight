@@ -145,12 +145,29 @@ export function WorkflowBuilderPage({ workflowId, onBattleClick }: WorkflowBuild
       .map((m) => ({ key: m.provider, display_name: m.providerDisplayName ?? m.provider, id: m.provider_id ?? '' }))
   }, [models])
 
+  const effectiveProviderKey = useMemo(() => {
+    if (funding.fundingSource === 'user_byok_cloud') {
+      return funding.availableKeys.find((k) => k.id === funding.selectedKeyRefId)?.providerKey ?? ''
+    }
+    if (funding.fundingSource === 'user_byok_local') {
+      return funding.localKeys.find((k) => k.id === funding.selectedLocalKeyId)?.provider ?? ''
+    }
+    return selectedProviderKey
+  }, [
+    funding.fundingSource,
+    funding.availableKeys,
+    funding.selectedKeyRefId,
+    funding.localKeys,
+    funding.selectedLocalKeyId,
+    selectedProviderKey,
+  ])
+
   const providerModels: AIProviderModel[] = useMemo(() => {
-    if (!selectedProviderKey) return []
+    if (!effectiveProviderKey) return []
     return models
-      .filter((m) => m.is_active && !!m.key && m.provider === selectedProviderKey)
+      .filter((m) => m.is_active && !!m.key && m.provider === effectiveProviderKey)
       .map((m) => ({ key: m.key, name: m.name, inputModalities: m.input_modalities }))
-  }, [models, selectedProviderKey])
+  }, [models, effectiveProviderKey])
 
   // ── Run ─────────────────────────────────────────────────────────────────────
   const handleModelChange = (value: string) => {
@@ -165,17 +182,36 @@ export function WorkflowBuilderPage({ workflowId, onBattleClick }: WorkflowBuild
 
   const canExecute = !!selectedModelKey && funding.isReady
 
+  useEffect(() => {
+    if (funding.fundingSource !== 'user_byok_cloud' || isRunning) return
+    const hasCloudAuthFailure = nodeResults.some((r) =>
+      /invalid[_\s-]?api[_\s-]?key|api key|unauthorized|auth|permission|forbidden/i.test(
+        String(r.error_message ?? '')
+      )
+    )
+    if (!hasCloudAuthFailure) return
+
+    funding.setFundingSource('platform_credit')
+    toast.error('Cloud BYOK key failed authentication. Switched funding mode to Cloud credits.')
+  }, [funding, isRunning, nodeResults])
+
   const handleExecuteClick = async (rootInputs: Record<string, unknown> = {}) => {
     if (!canExecute) return
     const run = await startRun({ inputs: rootInputs, globalModelId: selectedModelKey })
     setSelectedNodeConfig(null)
+    if (!run?.id) return
+
+    if (funding.fundingSource === 'user_byok_cloud') {
+      // Cloud BYOK keys are resolved server-side only. In this mode we enqueue
+      // the run and let the platform executor/worker consume it.
+      toast.message('Workflow queued on platform executor (Cloud BYOK).')
+      return
+    }
 
     // Fire execution orchestrator in background — status updates flow via Realtime
-    if (run?.id) {
-      executeWorkflow(run.id, selectedModelKey, rootInputs).catch((err) => {
-        toast.error(`Workflow execution failed: ${err instanceof Error ? err.message : String(err)}`)
-      })
-    }
+    executeWorkflow(run.id, selectedModelKey, rootInputs).catch((err) => {
+      toast.error(`Workflow execution failed: ${err instanceof Error ? err.message : String(err)}`)
+    })
   }
 
   const handleStopClick = () => {
@@ -505,6 +541,7 @@ export function WorkflowBuilderPage({ workflowId, onBattleClick }: WorkflowBuild
                 onSubmit={(rootInputs) => handleExecuteClick(rootInputs)}
                 isRunning={starting || isRunning}
                 canExecute={canExecute}
+                nodeConfigOverrides={nodeConfigs}
               />
               {runId && (
                 <WorkflowProgressView nodes={nodes} edges={edges} nodeResults={nodeResults} />

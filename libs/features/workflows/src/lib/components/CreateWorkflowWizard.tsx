@@ -1,6 +1,11 @@
 import { lensesService, workflowsService } from '@lenserfight/data/repositories'
 import { useAuth } from '@lenserfight/features/auth'
 import { useAIModels } from '@lenserfight/features/generations'
+import {
+  LENS_KIND_ORDER,
+  LENS_KIND_REGISTRY,
+  resolveLensKindFromTagSlugs,
+} from '@lenserfight/features/lens-kinds'
 import { FundingSourceToggle, useFundingSource } from '@lenserfight/features/lenses'
 import { Alert, Badge, Button, StepWizard } from '@lenserfight/ui/components'
 import { Field, Input, SearchBar, SelectField, TextArea } from '@lenserfight/ui/forms'
@@ -12,7 +17,7 @@ import React, { useState } from 'react'
 import { useCreateWorkflow } from '../hooks/useCreateWorkflow'
 import { useUpdateWorkflow } from '../hooks/useUpdateWorkflow'
 
-import type { LensViewModel, PersonalLensFeedItem } from '@lenserfight/types'
+import type { LensKind, LensViewModel, PersonalLensFeedItem } from '@lenserfight/types'
 import type { WizardStepConfig } from '@lenserfight/ui/components'
 
 export interface CreateWorkflowWizardProps {
@@ -57,7 +62,7 @@ const WIZARD_STEPS: WizardStepConfig[] = [
 
 // ─── Lens picker (inline, no new file) ────────────────────────────────────────
 
-type PickableLens = Pick<LensViewModel, 'id' | 'title' | 'description' | 'visibility'>
+type PickableLens = Pick<LensViewModel, 'id' | 'title' | 'description' | 'visibility' | 'tags'>
 
 interface LensPickerProps {
   lenserId: string | undefined
@@ -68,6 +73,7 @@ interface LensPickerProps {
 function LensPicker({ lenserId, selected, onToggle }: LensPickerProps) {
   const [tab, setTab] = useState<'mine' | 'popular'>('mine')
   const [search, setSearch] = useState('')
+  const [kindFilter, setKindFilter] = useState<LensKind | null>(null)
 
   // My lenses via personal feed (session-based, respects RLS)
   const { data: personalData, isLoading: loadingPersonal } = useQuery({
@@ -99,8 +105,13 @@ function LensPicker({ lenserId, selected, onToggle }: LensPickerProps) {
   })
   const searchResults: PickableLens[] = searchData?.data ?? []
 
-  const displayLenses: PickableLens[] =
+  const rawLenses: PickableLens[] =
     search.length >= 2 ? searchResults : effectiveTab === 'mine' ? myLenses : popularLenses
+  const displayLenses: PickableLens[] = kindFilter
+    ? rawLenses.filter(
+        (l) => resolveLensKindFromTagSlugs(l.tags?.map((t) => t.slug) ?? []) === kindFilter,
+      )
+    : rawLenses
   const isLoading =
     search.length >= 2 ? loadingSearch : effectiveTab === 'mine' ? loadingPersonal : loadingPopular
 
@@ -135,6 +146,36 @@ function LensPicker({ lenserId, selected, onToggle }: LensPickerProps) {
           ))}
         </div>
       )}
+
+      {/* Kind filter */}
+      <div className="flex flex-wrap gap-1.5">
+        <button
+          type="button"
+          onClick={() => setKindFilter(null)}
+          className={`text-xs rounded-full px-2.5 py-1 font-semibold transition-colors ${
+            kindFilter === null
+              ? 'bg-primary-yellow-500/15 text-primary-yellow-600'
+              : 'bg-surface-raised text-greyscale-500 hover:text-greyscale-900 dark:hover:text-greyscale-50'
+          }`}
+        >
+          All kinds
+        </button>
+        {LENS_KIND_ORDER.map((k) => (
+          <button
+            key={k}
+            type="button"
+            onClick={() => setKindFilter(kindFilter === k ? null : k)}
+            title={LENS_KIND_REGISTRY[k].description}
+            className={`text-xs rounded-full px-2.5 py-1 font-semibold transition-colors ${
+              kindFilter === k
+                ? 'bg-primary-yellow-500/15 text-primary-yellow-600'
+                : 'bg-surface-raised text-greyscale-500 hover:text-greyscale-900 dark:hover:text-greyscale-50'
+            }`}
+          >
+            {LENS_KIND_REGISTRY[k].label}
+          </button>
+        ))}
+      </div>
 
       {/* List */}
       <div className="max-h-64 overflow-y-auto space-y-1 rounded-2xl border border-surface-border bg-surface-base p-1">

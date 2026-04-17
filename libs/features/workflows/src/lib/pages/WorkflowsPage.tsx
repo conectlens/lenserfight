@@ -1,17 +1,15 @@
-import { queryKeys } from '@lenserfight/data/cache'
-import type { WorkflowRecord } from '@lenserfight/data/repositories'
-import { workflowsService } from '@lenserfight/data/repositories'
 import { useLenser } from '@lenserfight/features/profile'
 import { Button, EmptyState, InfiniteScrollSentinel, PageHeader } from '@lenserfight/ui/components'
 import { SearchBar, SelectField } from '@lenserfight/ui/forms'
-import { useQuery } from '@tanstack/react-query'
 import { AnimatePresence, motion } from 'framer-motion'
-import { GitBranch, Plus, Search } from 'lucide-react'
+import { GitBranch, Plus, Search, Sparkles } from 'lucide-react'
 import React, { useMemo, useState } from 'react'
 import { Link, Outlet, useSearchParams } from 'react-router-dom'
 
 import { WorkflowCard } from '../components/WorkflowCard'
+import { useForkWorkflow } from '../hooks/useForkWorkflow'
 import { usePopularWorkflows } from '../hooks/usePopularWorkflows'
+import { useTemplateWorkflows } from '../hooks/useTemplateWorkflows'
 import { useWorkflows } from '../hooks/useWorkflows'
 
 const cardVariants = {
@@ -26,20 +24,6 @@ const cardVariants = {
     },
   }),
   exit: { opacity: 0, y: -10, transition: { duration: 0.15 } },
-}
-
-// Per-card node count loader — only fetches nodes (not full detail) to avoid N+1 getById calls.
-function WorkflowCardWithNodes({ workflow }: { workflow: WorkflowRecord }) {
-  const { data: nodes = [] } = useQuery({
-    queryKey: queryKeys.workflows.nodes(workflow.id),
-    queryFn: () => workflowsService.getNodes(workflow.id),
-    staleTime: 1000 * 30,
-  })
-  return (
-    <Link to={`/workflows/${workflow.id}`} className="block">
-      <WorkflowCard workflow={workflow} nodes={nodes} showReactions />
-    </Link>
-  )
 }
 
 const SCOPE_OPTIONS = [
@@ -97,6 +81,8 @@ export function WorkflowsPage({ onCreateWorkflow }: WorkflowsPageProps) {
 
   const myWorkflows = useWorkflows(lenser?.id, myFilter)
   const popularWorkflows = usePopularWorkflows({ search: search || undefined }, scope === 'popular')
+  const templates = useTemplateWorkflows(8)
+  const forkWorkflow = useForkWorkflow()
 
   const active = scope === 'popular' ? popularWorkflows : myWorkflows
   const { data, isLoading, fetchNextPage, hasNextPage, isFetchingNextPage } = active
@@ -152,6 +138,63 @@ export function WorkflowsPage({ onCreateWorkflow }: WorkflowsPageProps) {
         )}
       </div>
 
+      {/* Start from template strip — always visible (tiny, horizontally-scrolling) */}
+      {(templates.isLoading || (templates.data && templates.data.length > 0)) && (
+        <section className="mb-5">
+          <div className="flex items-center justify-between mb-2">
+            <div className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-greyscale-500 dark:text-greyscale-400">
+              <Sparkles size={13} className="text-primary-yellow-500" />
+              Start from template
+            </div>
+            <span className="text-[11px] text-greyscale-400">
+              Forks into your workspace so you can edit safely.
+            </span>
+          </div>
+          <div className="flex gap-3 overflow-x-auto pb-2 -mx-1 px-1 snap-x">
+            {templates.isLoading &&
+              Array.from({ length: 4 }).map((_, i) => (
+                <div
+                  key={i}
+                  className="flex-shrink-0 w-60 h-28 rounded-2xl border border-surface-border bg-surface-raised animate-pulse snap-start"
+                />
+              ))}
+            {templates.data?.map((t) => (
+              <button
+                key={t.id}
+                type="button"
+                disabled={forkWorkflow.isPending}
+                onClick={() => forkWorkflow.mutate(t.id)}
+                className="group flex-shrink-0 w-60 rounded-2xl border border-surface-border bg-surface-base p-3 text-left hover:border-primary-yellow-500/40 hover:bg-primary-yellow-500/5 transition-colors snap-start disabled:opacity-60 disabled:cursor-wait"
+              >
+                <div className="flex items-start justify-between gap-2 mb-1.5">
+                  <p className="text-sm font-semibold text-greyscale-900 dark:text-greyscale-50 leading-tight line-clamp-2">
+                    {t.title.replace(/^Template · /, '')}
+                  </p>
+                  <span className="text-[10px] font-semibold text-greyscale-400 whitespace-nowrap">
+                    {t.node_count} steps
+                  </span>
+                </div>
+                {t.description && (
+                  <p className="text-[11px] leading-4 text-greyscale-500 line-clamp-2 mb-2">
+                    {t.description}
+                  </p>
+                )}
+                <div className="flex flex-wrap gap-1">
+                  {t.kinds.slice(0, 4).map((k) => (
+                    <span
+                      key={k}
+                      className="text-[10px] font-semibold rounded-full bg-surface-raised text-greyscale-500 px-1.5 py-0.5"
+                    >
+                      {k.replace(/^kind-/, '')}
+                    </span>
+                  ))}
+                </div>
+              </button>
+            ))}
+          </div>
+        </section>
+      )}
+
       {isLoading && (
         <div className="columns-1 sm:columns-2 lg:columns-3 gap-3">
           {Array.from({ length: 6 }).map((_, i) => (
@@ -194,7 +237,9 @@ export function WorkflowsPage({ onCreateWorkflow }: WorkflowsPageProps) {
                 exit="exit"
                 className="break-inside-avoid mb-3"
               >
-                <WorkflowCardWithNodes workflow={w} />
+                <Link to={`/workflows/${w.id}`} className="block">
+                  <WorkflowCard workflow={w} nodeCount={w.node_count} showReactions />
+                </Link>
               </motion.div>
             ))}
           </div>
