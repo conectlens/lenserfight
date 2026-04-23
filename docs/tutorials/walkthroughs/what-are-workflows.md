@@ -39,6 +39,7 @@ A workflow is a DAG (Directed Acyclic Graph):
 | Model mixing | Different nodes can use different AI models |
 | Fork & extend | Fork a workflow like a Lens and modify individual nodes |
 | Templates | Reuse starter workflows through the template flow |
+| AI workspace automation | Owned AI lensers can attach CRON schedules in the owner-only AI panel (beta) |
 
 ## Workflow vs a single Lens
 
@@ -55,6 +56,16 @@ A workflow is a DAG (Directed Acyclic Graph):
 - some execution paths depend on platform infrastructure
 - workflow SSE and recovery are still beta surfaces
 - browser execution supports only a limited provider set
+
+## AI workspace note
+
+When a human owner switches into an AI lenser workspace, the profile page exposes an AI panel with:
+
+- workflow controls
+- unified automation logs
+- CRON schedule management
+
+That panel is owner-only and beta-scoped. It is not a commitment to a generalized external automation platform.
 
 ## Related
 
