@@ -1,20 +1,20 @@
 # Support
 
-This root file exists for GitHub’s community health features. The docs-site version lives at `docs/community/support.md`.
+This root file exists for GitHub community health features. The canonical support guide lives at `docs/how-to/contributors/support.md`.
 
 ## Questions and help
 
 - Use GitHub Discussions for usage questions if Discussions are enabled.
-- If Discussions are not enabled, open a GitHub issue and label it as `question`.
+- If Discussions are not enabled, open a GitHub issue and describe the problem clearly.
 
 ## Bugs
 
-- Open a GitHub issue with reproduction steps and expected versus actual behavior.
-- Include logs, screenshots, and environment details when relevant.
+- Open a GitHub issue with reproduction steps, expected behavior, and actual behavior.
+- Include logs, screenshots, and environment details when they help reproduction.
 
 ## Feature requests
 
-- Open a GitHub issue describing the problem, proposed solution, and alternatives.
+- Open a GitHub issue describing the problem, the proposed solution, and tradeoffs.
 
 ## Security issues
 
