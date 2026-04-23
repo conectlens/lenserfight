@@ -1,71 +1,47 @@
 # Schema Overview
 
-LenserFight's database is organized into 10+ PostgreSQL schemas. This page lists every schema, its tables, and how they relate.
+LenserFight Community Edition uses multiple PostgreSQL schemas, but OSS beta docs should emphasize the schemas external developers actually interact with in this repo.
 
-## Schema inventory
-
-### User and content
+## Community Edition schema inventory
 
 | Schema | Tables | Description |
 |--------|--------|-------------|
 | `lensers` | profiles, badges, social_links, waiting_list | User identity and reputation |
 | `content` | threads, thread_replies, tags, tag_map, reactions | Forum content and discovery |
-| `lenses` | lenses, versions, parameters, version_parameters, steps, comment_runs, version_resources | Lens assets and versioning |
-
-### Tenancy and storage
-
-| Schema | Tables | Description |
-|--------|--------|-------------|
+| `lenses` | lenses, versions, version_parameters, workflows, workflow_nodes, workflow_edges, workflow_runs | Lens assets and orchestration |
 | `tenancy` | workspaces, workspace_members | Workspace tenant boundary for multi-tenant isolation |
 | `media` | objects, attachments | Normalized file/media registry replacing ai.resources |
-
-### Progression and AI
-
-| Schema | Tables | Description |
-|--------|--------|-------------|
-| `xp` | rules, events, totals, levels, streaks, seasons | Experience points and leveling |
-| `ai` | models, providers, resources | AI model registry and providers (ai.resources deprecated — use media.objects) |
-| `execution` | requests, runs, ray_runs, artifacts | Lens execution and Ray tracking |
-
-### Analytics and infrastructure
-
-| Schema | Tables | Description |
-|--------|--------|-------------|
-| `authz` | device_approval_requests, developer_tokens | Private auth support schema for device approval and developer tokens |
-| `analytics` | lenser_stats, lenser_activity, shared_links, share_events, page_views, tag_activity_events, product_feedback | Engagement metrics and feedback |
-| `core` | features, languages, settings | Platform-wide configuration |
-| `billing` | plans, product_entitlements, credits | Payment and subscription management |
-| `ops` | (internal) | Moderation and admin operations |
-| `system` | translations | Internationalization and metadata |
+| `ai` | models, providers, keys, generations | AI model registry and execution-adjacent metadata |
+| `execution` | requests, runs, artifacts, request_attachments | Execution history and artifact persistence |
+| `public` | RPC functions | Public RPC entrypoints used by the repo |
 
 ## Key relationships
 
 ```
 lensers.profiles ──┬──→ content.threads (author)
                    ├──→ lenses.lenses (author)
-                   ├──→ xp.events (recipient)
-                   └──→ analytics.lenser_stats (1:1)
+                   └──→ media.objects (owner)
 
 lenses.lenses ─────┬──→ lenses.versions (1:N)
-                   └──→ execution.ray_runs (1:N)
+                   └──→ lenses.workflow_nodes (via lens_id)
 
 lenses.versions ───┬──→ lenses.version_parameters (1:N)
-                   └──→ lenses.version_resources (1:N)
+                   └──→ lenses.workflow_nodes (version pin)
+
+lenses.workflows ──┬──→ lenses.workflow_nodes (1:N)
+                   ├──→ lenses.workflow_edges (1:N)
+                   └──→ lenses.workflow_runs (1:N)
+
+lenses.workflow_runs ──┬──→ lenses.workflow_node_results (1:N)
+                       └──→ lenses.workflow_run_events (1:N)
 
 ai.models ─────────→ execution.requests (model used for run)
-
 execution.requests ─→ execution.runs (1:1)
-execution.ray_runs ──→ execution.runs (N:1, the Ray)
-
-xp.rules ──────────→ xp.events (action_key lookup)
-xp.events ─────────→ xp.totals (aggregated)
 
 tenancy.workspaces ──┬──→ media.objects (workspace_id)
                      └──→ tenancy.workspace_members (1:N)
 
 media.objects ──────→ media.attachments (1:N, binding slots)
-
-authz.device_approval_requests ─→ authz.developer_tokens (1:1 via issued_from_request_id)
 ```
 
 ## PostgREST exposure
@@ -76,7 +52,11 @@ Only schemas listed in `supabase/config.toml` → `api.schemas` are exposed via 
 schemas = ["lensers", "public", "graphql_public", "content", "lenses", "ai", "xp", "execution"]
 ```
 
-Tables in unexposed schemas (analytics, core, billing, ops, system) are accessible only through `SECURITY DEFINER` RPC functions in the `public` schema or via direct database connections.
+The OSS docs should treat `lenses`, `lensers`, `content`, `ai`, `execution`, and `public` as the main API-facing schemas.
+
+## Private or secondary schemas
+
+Other schemas may exist in migrations or private platform flows, but they are not the primary Community Edition contract for external developers.
 
 ## Naming conventions
 
