@@ -5,7 +5,7 @@ import { ShareProvider } from '@lenserfight/features/share'
 import { WalletProvider } from '@lenserfight/features/store'
 import { UIProvider } from '@lenserfight/ui/providers'
 import { ModalRoute } from '@lenserfight/ui/routing'
-import { ARENA_BASE_URL, AUTH_BASE_URL, SURFACE } from '@lenserfight/utils/env'
+import { ARENA_BASE_URL, AUTH_BASE_URL, FEATURES, SURFACE } from '@lenserfight/utils/env'
 import React, { lazy, Suspense } from 'react'
 import { Navigate, Route, Routes, useNavigate, useParams, useSearchParams } from 'react-router-dom'
 
@@ -112,14 +112,16 @@ const WorkflowsPageRoute: React.FC = () => {
 }
 
 const WorkflowBuilderPageRoute: React.FC = () => {
-  const navigate = useNavigate()
   const { id, runId } = useParams<{ id: string; runId?: string }>()
   return (
     <LazyWorkflowBuilderPage
       workflowId={id!}
       runId={runId}
-      onBattleClick={(workflowId) =>
-        window.open(`${ARENA_BASE_URL}/battles/create?workflow_id=${workflowId}`, '_blank')
+      onBattleClick={
+        FEATURES.PUBLIC_BATTLES
+          ? (workflowId) =>
+              window.open(`${ARENA_BASE_URL}/battles/create?workflow_id=${workflowId}`, '_blank')
+          : undefined
       }
     />
   )
@@ -186,7 +188,13 @@ export const WebRouter: React.FC = () => {
         <Route path="/auth" element={<AuthExternalRedirect to={`${AUTH_BASE_URL}/login`} />} />
         <Route
           path="/welcome"
-          element={<AuthExternalRedirect to={`${ARENA_BASE_URL}/get-started`} />}
+          element={
+            FEATURES.PUBLIC_BATTLES ? (
+              <AuthExternalRedirect to={`${ARENA_BASE_URL}/get-started`} />
+            ) : (
+              <Navigate to="/workflows" replace />
+            )
+          }
         />
 
         <Route

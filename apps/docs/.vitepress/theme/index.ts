@@ -9,7 +9,6 @@ import FeedbackButton from './FeedbackButton.vue'
 import WaitingListButton from './WaitingListButton.vue'
 import DocsFooter from './DocsFooter.vue'
 import HotLenses from './HotLenses.vue'
-import LatestBattles from './LatestBattles.vue'
 
 export default {
   ...DefaultTheme,
@@ -28,6 +27,5 @@ export default {
     ctx.app.component('MermaidDiagram', MermaidDiagram)
     ctx.app.component('DocsLogo', DocsLogo)
     ctx.app.component('HotLenses', HotLenses)
-    ctx.app.component('LatestBattles', LatestBattles)
   },
 } satisfies Theme

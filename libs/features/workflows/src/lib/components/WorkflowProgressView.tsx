@@ -14,7 +14,7 @@ import {
   TimerOff,
   XCircle,
 } from 'lucide-react'
-import React, { useState } from 'react'
+import React, { useMemo, useState } from 'react'
 
 import type {
   WorkflowNodeRecord,
@@ -233,7 +233,8 @@ export function WorkflowProgressView({ nodes, nodeResults }: WorkflowProgressVie
     )
   }
 
-  const getResult = (nodeId: string) => nodeResults.find((r) => r.node_id === nodeId)
+  const resultIndex = useMemo(() => new Map(nodeResults.map((r) => [r.node_id, r])), [nodeResults])
+  const getResult = (nodeId: string) => resultIndex.get(nodeId)
 
   return (
     <div className="space-y-3 p-4">

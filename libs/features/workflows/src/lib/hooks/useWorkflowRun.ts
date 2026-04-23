@@ -123,7 +123,6 @@ export function useWorkflowRun(workflowId: string | undefined) {
           const { data } = await supabase.auth.getSession()
           const token = data.session?.access_token
           if (!token) return
-
           const res = await fetch(`${apiBase}/execute/workflows/${runId}/events?afterEventId=${lastEventId}`, {
             method: 'GET',
             headers: {
@@ -132,7 +131,9 @@ export function useWorkflowRun(workflowId: string | undefined) {
             },
             signal: controller.signal,
           })
-          if (!res.ok || !res.body) return
+          if (!res.ok || !res.body) {
+            return
+          }
 
           const reader = res.body.getReader()
           const decoder = new TextDecoder()

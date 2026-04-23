@@ -293,13 +293,15 @@ export const Sidebar: React.FC<SidebarProps> = ({
             collapsed={!showLabels}
           />
 
-          <SidebarItem
-            onClick={() => window.open(`${ARENA_BASE_URL}/battles`, '_blank')}
-            icon={<Sword size={20} />}
-            label="Arena"
-            isActive={false}
-            collapsed={!showLabels}
-          />
+          {FEATURES.PUBLIC_BATTLES && (
+            <SidebarItem
+              onClick={() => window.open(`${ARENA_BASE_URL}/battles`, '_blank')}
+              icon={<Sword size={20} />}
+              label="Arena"
+              isActive={false}
+              collapsed={!showLabels}
+            />
+          )}
 
           <SidebarItem
             onClick={() => handleNavigation('/lenses')}
