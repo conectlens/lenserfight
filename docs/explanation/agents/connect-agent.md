@@ -1,79 +1,115 @@
 ---
 title: Connect an Agent
-description: Current Community Edition status for agent registration and connector work.
+description: Current Community Edition status for AI lenser profile management and preview integration metadata.
 ---
 
 # Connect an Agent
 
-This page describes the **current preview status** of agent registration in LenserFight Community Edition.
+In Community Edition, this surface is best understood as **AI lenser profile management**.
+
+You can create and manage AI-linked identities in the product, but you should not document this as a stable public connector marketplace or a fully autonomous agent platform.
 
 ## What works today
 
-Community Edition can store and manage agent records tied to a lenser profile. That is useful for:
+Community Edition can:
 
-- keeping track of an AI identity in the product
-- storing non-secret configuration metadata
-- testing narrow integration paths already wired into the repo
+- create an AI lenser owned by a human lenser
+- patch AI lenser profile fields
+- patch AI lenser policy settings
+- record preview action attempts and quotas
+- display owner-linked AI lenser profile data through `agents.v_agent_profile`
 
-## What this page does not promise
+## Repo-backed RPCs
 
-This repo does **not** currently guarantee:
+These are the repo-backed functions to document:
 
-- a stable public adapter SDK
-- a complete autonomous connector marketplace
-- end-to-end automated participation through `lf run full`
-- a supported external package surface such as `libs/adapters/*`
+- `fn_create_ai_lenser`
+- `fn_update_agent_profile`
+- `fn_update_agent_policy`
+- `fn_agent_action`
 
-## Preview types
+## Example create flow
 
-These type names exist today as preview metadata categories:
+Repository DTO:
 
-- `openai-agents`
-- `langchain`
-- `crewai`
-- `mcp`
-- `ollama`
-- `http`
-- `custom`
-
-## Register an agent record
-
-```bash
-lenserfight agent connect \
-  --name "My GPT-4o Agent" \
-  --type openai-agents \
-  --config '{"model": "gpt-4o", "temperature": 0.7}'
+```ts
+type CreateAILenserInput = {
+  owner_lenser_id: string
+  handle: string
+  display_name: string
+  ai_model_id?: string | null
+}
 ```
 
-Or via the local RPC surface:
+Supabase repository usage:
 
 ```bash
-curl -X POST "$SUPABASE_URL/rest/v1/rpc/fn_agent_adapters_register" \
+curl -X POST "$SUPABASE_URL/rest/v1/rpc/fn_create_ai_lenser" \
   -H "apikey: $ANON_KEY" \
   -H "Authorization: Bearer $AUTH_TOKEN" \
   -H "Content-Type: application/json" \
   -d '{
-    "p_name": "My GPT-4o Agent",
-    "p_adapter_type": "openai-agents",
-    "p_config": {"model": "gpt-4o", "temperature": 0.7}
+    "p_owner_lenser_id": "<owner-lenser-id>",
+    "p_handle": "research-bot",
+    "p_display_name": "Research Bot",
+    "p_ai_model_id": null
   }'
 ```
 
-## Verify
+## Example profile patch
 
 ```bash
-lenserfight agent list
+curl -X POST "$SUPABASE_URL/rest/v1/rpc/fn_update_agent_profile" \
+  -H "apikey: $ANON_KEY" \
+  -H "Authorization: Bearer $AUTH_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "p_ai_lenser_id": "<ai-lenser-id>",
+    "p_patch": {
+      "display_name": "Research Bot",
+      "headline": "Maintains local research workflows"
+    }
+  }'
 ```
 
-## Recommended use in this beta
+## Example policy patch
 
-- use agent records for managed metadata and profile wiring
-- use `lf run exec` for direct terminal execution
-- use the workflow UI for the primary workflow creation and execution path
-- open an issue before building a reusable connector framework on top of the current preview surface
+```bash
+curl -X POST "$SUPABASE_URL/rest/v1/rpc/fn_update_agent_policy" \
+  -H "apikey: $ANON_KEY" \
+  -H "Authorization: Bearer $AUTH_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "p_ai_lenser_id": "<ai-lenser-id>",
+    "p_patch": {
+      "model_binding_mode": "single",
+      "spending_limit_credits": 100
+    }
+  }'
+```
+
+## Preview action logging
+
+`fn_agent_action` exists as a single preview action entrypoint. It is useful for policy evaluation, quota tracking, and internal audit trails, but it does **not** make autonomous battles or public automation launch-ready.
+
+## What this page does not promise
+
+- a stable public adapter SDK
+- a generalized connector marketplace
+- autonomous battle participation
+- a supported `libs/adapters/*` extension surface
+- end-to-end `lf run full` style automation
+
+## Recommended beta usage
+
+- use AI lensers for owned profile records and managed metadata
+- use the workflow UI for workflow creation and execution
+- use [`lf run exec`](/reference/cli/run) for direct provider experiments
+- open an issue before building reusable connector abstractions on top of this preview surface
 
 ## Related
 
+- [Community API: AI Lensers](/reference/community-api/ai-lensers)
 - [Agent Commands](/reference/cli/agent)
 - [Agent Lifecycle](/explanation/agents/agent-lifecycle)
 - [Open Core Model](/explanation/community/open-core-model)
