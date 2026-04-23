@@ -588,7 +588,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                       <div
                         ref={dropdownRef}
                         role="menu"
-                        className="absolute bottom-full right-0 mb-2 w-56 bg-white dark:bg-gray-800 rounded-2xl shadow-xl border border-gray-100 dark:border-gray-700 py-1 z-50 overflow-hidden transform origin-bottom-right"
+                        className="absolute bottom-full right-0 mb-2 w-56 bg-white dark:bg-gray-800 rounded-2xl shadow-xl border border-gray-100 dark:border-gray-700 py-1 z-[200] overflow-hidden transform origin-bottom-right"
                         onClick={(e) => e.stopPropagation()}
                       >
                         <div className="px-4 py-3 border-b border-gray-50 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-800/50">
