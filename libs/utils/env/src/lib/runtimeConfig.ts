@@ -69,6 +69,10 @@ export const FEATURES = {
   NOTIFICATIONS: featureEnabled('VITE_FEATURE_NOTIFICATIONS', editionIsCloud),
   NETWORK_LINKS: featureEnabled('VITE_FEATURE_NETWORK_LINKS', editionIsCloud),
   AGENTS: featureEnabled('VITE_FEATURE_AGENTS', editionIsCloud),
+  // MVP launch guard: battle entrypoints stay private until public arena is ready.
+  PUBLIC_BATTLES: featureEnabled('VITE_FEATURE_PUBLIC_BATTLES', false),
+  // Supabase publishing and cloud wiring are still staged for post-MVP rollout.
+  SUPABASE_INTEGRATION: featureEnabled('VITE_FEATURE_SUPABASE_INTEGRATION', false),
 }
 
 export { resolveProductEdition, SURFACE } from './appSurface'

@@ -9,10 +9,10 @@ Parameters let a Lens accept typed inputs at run time, making it reusable across
 
 ## Syntax
 
-Use **double square brackets** in the Lens body: `[[parameter_name]]`
+Use **double square brackets** in the Lens body: `\[\[parameter_name\]\]`
 
 Example:
-```
+```text
 Translate the following text from [[source_language]] to [[target_language]]:
 
 [[text_to_translate]]

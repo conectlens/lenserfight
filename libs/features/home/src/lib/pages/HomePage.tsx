@@ -27,6 +27,7 @@ import {
   AlertCircle,
   Tag,
   Sparkles,
+  GitBranch,
 } from 'lucide-react'
 import React, { useCallback, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
@@ -161,6 +162,15 @@ export const HomePage: React.FC = () => {
     setIsCreateModalOpen(true)
   }
 
+  const handleCreateWorkflowClick = () => {
+    if (!isAuthenticated) {
+      window.location.href = `${AUTH_BASE_URL}/login?return_url=${encodeURIComponent(buildAuthReturnUrl(window.location.href))}`
+      return
+    }
+    if (!hasLenser) return navigate('/onboarding', { state: { from: '/' } })
+    navigate('/workflows/manage')
+  }
+
   const handleCreateSuccess = (newThreadId?: string) => {
     if (newThreadId) {
       navigate(`/threads/${newThreadId}`)
@@ -200,11 +210,15 @@ export const HomePage: React.FC = () => {
             <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Your Feed</h1>
           )}
           {!isEmpty && (
-            <div className="w-auto">
+            <div className="w-auto flex items-center gap-2">
               <Button
-                onClick={handleCreateClick}
+                onClick={handleCreateWorkflowClick}
+                variant="outline"
                 className="flex items-center gap-2 px-4 py-2 w-auto"
               >
+                <GitBranch size={18} /> New Workflow
+              </Button>
+              <Button onClick={handleCreateClick} className="flex items-center gap-2 px-4 py-2 w-auto">
                 <Plus size={18} /> New Post
               </Button>
             </div>
