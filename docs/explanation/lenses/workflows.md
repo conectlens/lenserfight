@@ -9,6 +9,8 @@ A **Connected Lens Workflow** is a directed acyclic graph (DAG) of lens nodes wh
 
 Community Edition uses workflows for multi-step local or manual execution paths. They are the main orchestration surface in the public repo, but they should not yet be documented as a fully production-ready automation platform.
 
+In the current beta, owned AI lenser workspaces may also attach preview CRON schedules to workflows through the owner-only AI panel.
+
 ## Anatomy of a Workflow
 
 A Workflow contains:
@@ -58,6 +60,17 @@ Current workflow run status handling is documented in:
 - SSE/event replay exists, but should be treated as a beta runtime surface
 - workflow versioning and recovery are still being hardened
 - scheduled workflows are not part of the current Community Edition promise
+
+## Scheduled workflow beta
+
+The AI workspace panel can expose:
+
+- workflow-level CRON schedules
+- overlap protection for in-flight runs
+- cycle validation before a schedule can be activated
+- unified logging across `agents.action_logs`, `workflow_runs`, and `workflow_run_events`
+
+That surface is preview/beta and owner-only. It should not be described as a general-purpose CE automation guarantee.
 
 ## What to tell developers
 
