@@ -7,6 +7,7 @@ export * from './lib/benchmark.types'
 export * from './lib/wallet.types'
 export * from './lib/execution.types'
 export * from './lib/contracts.types'
+export * from './lib/workflows.types'
 export * from './lib/workflow-events.types'
 export * from './lib/auth.types'
 export * from './lib/contact.types'
@@ -49,6 +50,7 @@ export type {
   TrendingLenser,
   LenserType,
   LenserListItem,
+  WorkspaceIdentity,
 } from './lib/lenser.types'
 export type { LenserBadge as ProfileLenserBadge } from './lib/lenser.types'
 export type {

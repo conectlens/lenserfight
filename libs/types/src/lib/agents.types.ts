@@ -7,6 +7,12 @@ export type AgentActionType =
   | 'submit_entry'
   | 'create_battle'
   | 'spend_credits'
+  | 'run_lens'
+  | 'run_workflow'
+  | 'dispatch_schedule'
+  | 'schedule_skipped'
+  | 'policy_updated'
+  | 'binding_updated'
 export type AgentActionOutcome = 'success' | 'blocked_by_policy' | 'failed' | 'throttled'
 
 export interface AILenserRecord {
@@ -111,3 +117,54 @@ export interface AgentActionResponse {
   result: AgentActionOutcome
   action: AgentActionType
 }
+
+export type AgentAutomationFeedKind =
+  | 'agent_action'
+  | 'workflow_run'
+  | 'workflow_event'
+  | 'schedule_dispatch'
+
+interface AgentAutomationFeedBase {
+  kind: AgentAutomationFeedKind
+  id: string
+  occurred_at: string
+  title: string
+  result: string | null
+  workflow_id: string | null
+  workflow_title: string | null
+  run_id: string | null
+  schedule_id: string | null
+  action_type: AgentActionType | null
+  event_type: string | null
+  payload: Record<string, unknown>
+}
+
+export interface AgentAutomationActionFeedItem extends AgentAutomationFeedBase {
+  kind: 'agent_action'
+  action_type: AgentActionType
+  event_type: null
+}
+
+export interface AgentAutomationRunFeedItem extends AgentAutomationFeedBase {
+  kind: 'workflow_run'
+  action_type: null
+  event_type: null
+}
+
+export interface AgentAutomationEventFeedItem extends AgentAutomationFeedBase {
+  kind: 'workflow_event'
+  action_type: null
+  event_type: string
+}
+
+export interface AgentAutomationScheduleFeedItem extends AgentAutomationFeedBase {
+  kind: 'schedule_dispatch'
+  action_type: AgentActionType
+  event_type: null
+}
+
+export type AgentAutomationFeedItem =
+  | AgentAutomationActionFeedItem
+  | AgentAutomationRunFeedItem
+  | AgentAutomationEventFeedItem
+  | AgentAutomationScheduleFeedItem
