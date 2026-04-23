@@ -1,7 +1,7 @@
 import { Badge, Card } from '@lenserfight/ui/components'
 import { timeAgo } from '@lenserfight/utils/date'
 import { motion } from 'framer-motion'
-import { Bookmark, GitFork, GitBranch, Lock, Swords, ThumbsUp } from 'lucide-react'
+import { Bookmark, GitFork, GitBranch, Lock, ThumbsUp } from 'lucide-react'
 import React from 'react'
 
 import type { WorkflowRecord, WorkflowNodeRecord } from '@lenserfight/data/repositories'
@@ -17,7 +17,6 @@ interface WorkflowCardProps {
 
 export function WorkflowCard({ workflow, nodes, nodeCount: nodeCountProp, compact, onClick }: WorkflowCardProps) {
   const nodeCount = nodeCountProp ?? workflow.node_count ?? nodes?.length ?? 0
-  const battleCount = workflow.battle_count ?? 0
   const likeCount = (workflow.reaction_totals as Record<string, number> | null | undefined)?.like ?? 0
   const savedCount = (workflow.reaction_totals as Record<string, number> | null | undefined)?.saved ?? 0
   const forkCount = workflow.fork_count ?? 0
@@ -73,20 +72,8 @@ export function WorkflowCard({ workflow, nodes, nodeCount: nodeCountProp, compac
           <Badge color="blue" variant="outline">
             {nodeCount} lens{nodeCount !== 1 ? 'es' : ''}
           </Badge>
-          {battleCount > 0 && (
-            <Badge color="gray" variant="outline">
-              <Swords size={10} className="mr-1" />
-              {battleCount} battle{battleCount !== 1 ? 's' : ''}
-            </Badge>
-          )}
           <span className="ml-auto text-xs text-greyscale-400">{timeAgo(workflow.created_at)}</span>
         </div>
-
-        {battleCount > 0 && (
-          <p className="text-xs text-greyscale-500 font-medium">
-            Used in {battleCount} battle{battleCount !== 1 ? 's' : ''}
-          </p>
-        )}
 
         <div className="flex items-center gap-3 pt-1 border-t border-surface-border">
           <span className="flex items-center gap-1 text-xs text-greyscale-400">

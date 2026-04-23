@@ -41,7 +41,6 @@ const VISIBILITY_OPTIONS = [
 const SORT_OPTIONS = [
   { value: 'updated_at', label: 'Last updated' },
   { value: 'created_at', label: 'Newest' },
-  { value: 'battle_count', label: 'Most battles' },
 ]
 
 interface WorkflowsPageProps {
@@ -54,7 +53,7 @@ export function WorkflowsPage({ onCreateWorkflow }: WorkflowsPageProps) {
 
   const scope = (searchParams.get('scope') ?? 'mine') as 'mine' | 'popular'
   const visibility = searchParams.get('visibility') ?? 'all'
-  const sort = (searchParams.get('sort') ?? 'updated_at') as 'updated_at' | 'created_at' | 'battle_count'
+  const sort = (searchParams.get('sort') ?? 'updated_at') as 'updated_at' | 'created_at'
   const search = searchParams.get('q') ?? ''
 
   const [searchInput, setSearchInput] = useState(search)
@@ -95,7 +94,7 @@ export function WorkflowsPage({ onCreateWorkflow }: WorkflowsPageProps) {
     <div className="">
       <PageHeader
         title="Connected Lenses"
-        description="Chain lenses into multi-step workflows and battle them end-to-end."
+        description="Chain lenses into multi-step workflows, run them, and iterate on the output path."
         action={
           <Button onClick={onCreateWorkflow} className="gap-2 w-auto flex-shrink-0">
             <Plus size={15} /> New Workflow
