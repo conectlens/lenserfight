@@ -571,6 +571,7 @@ function WorkflowBuilderCanvasInner({
         return {
           id: n.id,
           lensId: data.lens_id,
+          kind: 'transform',
           paramLabels: incomingLabels,
         }
       }),
