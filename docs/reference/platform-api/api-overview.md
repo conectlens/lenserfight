@@ -1,6 +1,8 @@
-# API Overview
+# Execution Platform Overview
 
-LenserFight exposes a REST API via the **API gateway** (`lf-api-gateway`), a Cloudflare Worker that routes requests to internal workers by path prefix. All platform features (wallet, execution, billing) are served through this single gateway.
+This page is intentionally narrow: it documents the limited **execution-related HTTP endpoints** that Community Edition already references.
+
+It is **not** the canonical onboarding surface for the full product. For OSS developers, start with [Community API](/reference/community-api/index) and treat this page as execution-platform notes only.
 
 ::: warning API URL is determined by NODE_ENV
 **The API base URL changes based on your environment:**
@@ -13,13 +15,15 @@ LenserFight exposes a REST API via the **API gateway** (`lf-api-gateway`), a Clo
 Never hardcode the URL — always read it from the environment variable `VITE_API_URL` (frontend) or `NODE_ENV` (server-side).
 :::
 
-## Request Routing
+## Current HTTP surface
 
 | Path prefix | Worker | Description |
 |-------------|--------|-------------|
 | `/wallet/*` | `lf-wallet-api` | Balance, transactions, checkout, pricing |
 | `/execute/*` | `lf-execution-proxy` | AI model execution (wallet, BYOK, image, stream) |
 | `/webhook/*` | `lf-billing-webhook` | LemonSqueezy billing events |
+
+Community Edition should only rely on the `/execute/*` endpoints already used by the repo.
 
 ## Authentication
 
@@ -68,19 +72,7 @@ Every endpoint returns `ApiResponseEnvelope<T>`:
 | `message` | `string` | Human-readable explanation. |
 | `details` | `object` | Optional structured details (e.g. validation field errors). |
 
-## Endpoints Summary
-
-### Wallet API
-
-| Method | Path | Auth | Description |
-|--------|------|------|-------------|
-| `GET` | `/wallet/balance` | JWT | Get current credit balance |
-| `GET` | `/wallet/transactions` | JWT | Get paginated transaction ledger |
-| `POST` | `/billing/checkout` | JWT | Start a LemonSqueezy checkout session |
-| `GET` | `/billing/products` | None | Active credit packs from DB (`billing.vw_products`) |
-| `GET` | `/wallet/pricing` | JWT | Get model catalog with credit costs |
-
-### Execution Proxy
+## Execution endpoints summary
 
 | Method | Path | Auth | Description |
 |--------|------|------|-------------|
@@ -89,11 +81,12 @@ Every endpoint returns `ApiResponseEnvelope<T>`:
 | `POST` | `/execute/image` | JWT | Generate images via Fal.ai FLUX (charges credits) |
 | `POST` | `/execute/stream` | JWT | Stream AI tokens via SSE (charges credits) |
 
-### Billing Webhook
+## What this page does not promise
 
-| Method | Path | Auth | Description |
-|--------|------|------|-------------|
-| `POST` | `/webhook/lemonsqueezy` | HMAC-SHA256 | Receive and process LemonSqueezy order events |
+- a complete public platform API
+- private worker contracts as a stable OSS integration surface
+- public battles, benchmarking, or enterprise APIs
+- self-host parity with private cloud execution infrastructure
 
 ## Error Code Reference
 
@@ -129,22 +122,17 @@ Every endpoint returns `ApiResponseEnvelope<T>`:
 | `webhook.processing_failed` | 500 | Webhook handler threw an unexpected error |
 | `internal_error` | 500 | Unhandled server error |
 
-## Rate Limits
+## Rate limits
 
 | Endpoint | Limit | Window |
 |----------|-------|--------|
 | `POST /execute/wallet` | 100 requests | Per minute per user |
 | `POST /execute/image` | 30 requests | Per minute per user |
-| `GET /wallet/balance` | 200 requests | Per minute per user |
-| `GET /wallet/transactions` | 100 requests | Per minute per user |
 
 Exceeded limits return **HTTP 429** with a `Retry-After` header.
 
-## Versioning
-
-Current version: **v1** (stable). Future versions will be prefixed (e.g. `/v2/execute/wallet`). Old versions are supported for **12 months** before deprecation.
-
 ## Related
 
-- [How to Contribute](/how-to/contributors/how-to-contribute) — Contributing to LenserFight
-- [CLI Reference](/reference/cli/index) — CLI command reference
+- [Providers and Execution](/reference/community-api/providers-and-execution)
+- [Run Commands](/reference/cli/run)
+- [Community API](/reference/community-api/index)

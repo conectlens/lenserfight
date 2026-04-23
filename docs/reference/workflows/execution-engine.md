@@ -152,7 +152,7 @@ type StreamChunk =
   | { type: 'final'; envelope: NodeOutputEnvelope }
 ```
 
-The engine calls `onPartialOutput` on every `partial` chunk (throttled client-side) so `WorkflowProgressView` in [`libs/features/workflows/src/lib/components/WorkflowProgressView.tsx`](../../../libs/features/workflows/src/lib/components/WorkflowProgressView.tsx) can reflect live progress.
+The engine calls `onPartialOutput` on every `partial` chunk (throttled client-side) so `WorkflowProgressView` in `libs/features/workflows/src/lib/components/WorkflowProgressView.tsx` can reflect live progress.
 
 ### Canonical SSE event taxonomy
 
