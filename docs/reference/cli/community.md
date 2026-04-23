@@ -178,7 +178,7 @@ Output columns: `Rank`, `Handle`, `Display Name`, `XP`, `Level`, `Score`
 
 ## `lenserfight report`
 
-Report a thread or prompt template for moderation review.
+Report a thread or lens for moderation review.
 
 ```bash
 lenserfight report \
@@ -187,14 +187,14 @@ lenserfight report \
   --reason spam
 
 lenserfight report \
-  --type prompt_template \
+  --type lens \
   --id <content-uuid> \
   --reason misinformation
 ```
 
 | Flag | Required | Description |
 |------|----------|-------------|
-| `--type` | Yes | `thread` or `prompt_template` |
+| `--type` | Yes | `thread` or `lens` |
 | `--id` | Yes | UUID of the content to report |
 | `--reason` | Yes | `spam`, `harassment`, `misinformation`, `off_topic`, or `other` |
 
