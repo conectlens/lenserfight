@@ -1,6 +1,14 @@
 import { paginatedResponse, type ApiResponseEnvelope } from '@lenserfight/api/contracts'
 import { supabase } from '@lenserfight/data/supabase'
-import type { AuthorProfile } from '@lenserfight/types'
+import type {
+  AuthorProfile,
+  UpsertWorkflowScheduleInput,
+  WorkflowRunStatus,
+  WorkflowScheduleRecord,
+  WorkflowTriggerMode,
+} from '@lenserfight/types'
+
+import { debugRepositoryEvent } from './debugLogger'
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Types
@@ -86,9 +94,11 @@ export interface WorkflowRunRecord {
   id: string
   workflow_id: string
   triggered_by?: string | null
-  status: 'pending' | 'running' | 'completed' | 'failed' | 'cancelled' | 'skipped'
+  status: WorkflowRunStatus
   context_inputs: Record<string, unknown>
   global_model_id?: string | null
+  schedule_id?: string | null
+  trigger_mode?: WorkflowTriggerMode
   started_at?: string | null
   completed_at?: string | null
   created_at: string
@@ -220,6 +230,9 @@ export interface WorkflowsRepositoryPort {
   updateRunStatus(runId: string, status: string): Promise<void>
   appendRunEvent(runId: string, type: string, payload?: Record<string, unknown>): Promise<WorkflowRunEventRecord | null>
   listRunEvents(runId: string, afterEventId?: number, limit?: number): Promise<WorkflowRunEventRecord[]>
+  getSchedules(workflowId?: string): Promise<WorkflowScheduleRecord[]>
+  upsertSchedule(input: UpsertWorkflowScheduleInput): Promise<WorkflowScheduleRecord | null>
+  deleteSchedule(scheduleId: string): Promise<void>
   getVersions(workflowId: string): Promise<WorkflowVersionRecord[]>
   createVersion(workflowId: string, changelog?: string): Promise<string>
   publishVersion(versionId: string): Promise<void>
@@ -235,22 +248,30 @@ export class SupabaseWorkflowsRepository implements WorkflowsRepositoryPort {
     throw error
   }
 
-  private async timedRpc<T>(rpcName: string, operation: () => Promise<T>): Promise<T> {
+  private async timedRpc<T>(rpcName: string, operation: () => PromiseLike<T>): Promise<T> {
     const startedAt = typeof performance !== 'undefined' ? performance.now() : Date.now()
-    // #region agent log
-    fetch('http://127.0.0.1:7884/ingest/c70fec5e-ec66-4066-9705-fd474b67b4a6',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'ee2d98'},body:JSON.stringify({sessionId:'ee2d98',runId:'pre-fix',hypothesisId:'P2_P3',location:'workflowsRepository.ts:timedRpc',message:'rpc start',data:{rpcName},timestamp:Date.now()})}).catch(()=>{});
-    // #endregion
+    debugRepositoryEvent('workflowsRepository', 'rpc start', { rpcName })
     try {
       return await operation()
     } finally {
       const endedAt = typeof performance !== 'undefined' ? performance.now() : Date.now()
-      // #region agent log
-      fetch('http://127.0.0.1:7884/ingest/c70fec5e-ec66-4066-9705-fd474b67b4a6',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'ee2d98'},body:JSON.stringify({sessionId:'ee2d98',runId:'pre-fix',hypothesisId:'P2_P3',location:'workflowsRepository.ts:timedRpc',message:'rpc end',data:{rpcName,durationMs:Math.round(endedAt-startedAt)},timestamp:Date.now()})}).catch(()=>{});
-      // #endregion
-      if (typeof process !== 'undefined' && process.env.NODE_ENV !== 'production') {
-        // Lightweight local instrumentation for before/after perf verification.
-        console.debug(`[workflowsRepository] ${rpcName} ${Math.round(endedAt - startedAt)}ms`)
-      }
+      debugRepositoryEvent('workflowsRepository', 'rpc end', {
+        rpcName,
+        durationMs: Math.round(endedAt - startedAt),
+      })
+    }
+  }
+
+  private mapScheduleRow(row: WorkflowScheduleRecord): WorkflowScheduleRecord {
+    return {
+      ...row,
+      inputs_template: (row.inputs_template ?? {}) as Record<string, unknown>,
+      global_model_id: row.global_model_id ?? null,
+      last_run_at: row.last_run_at ?? null,
+      last_run_id: row.last_run_id ?? null,
+      last_dispatch_status: row.last_dispatch_status ?? null,
+      last_error_at: row.last_error_at ?? null,
+      last_error_message: row.last_error_message ?? null,
     }
   }
 
@@ -558,6 +579,39 @@ export class SupabaseWorkflowsRepository implements WorkflowsRepositoryPort {
       timestamp: String((row as unknown as Record<string, unknown>)['occurred_at'] ?? row.timestamp ?? ''),
       payload: (row.payload ?? {}) as Record<string, unknown>,
     }))
+  }
+
+  async getSchedules(workflowId?: string): Promise<WorkflowScheduleRecord[]> {
+    const { data, error } = await supabase.rpc(
+      'fn_get_workflow_schedules',
+      workflowId ? { p_workflow_id: workflowId } : {}
+    )
+
+    if (error) this.handleError(error)
+    return ((data ?? []) as WorkflowScheduleRecord[]).map((row) => this.mapScheduleRow(row))
+  }
+
+  async upsertSchedule(input: UpsertWorkflowScheduleInput): Promise<WorkflowScheduleRecord | null> {
+    const { data, error } = await supabase.rpc('fn_upsert_workflow_schedule', {
+      p_workflow_id: input.workflow_id,
+      p_schedule_id: input.schedule_id ?? null,
+      p_cron_expr: input.cron_expr,
+      p_global_model_id: input.global_model_id ?? null,
+      p_inputs_template: input.inputs_template ?? {},
+      p_is_active: input.is_active ?? true,
+    })
+
+    if (error) this.handleError(error)
+    const row = Array.isArray(data) ? data[0] : data
+    return row ? this.mapScheduleRow(row as WorkflowScheduleRecord) : null
+  }
+
+  async deleteSchedule(scheduleId: string): Promise<void> {
+    const { error } = await supabase.rpc('fn_delete_workflow_schedule', {
+      p_schedule_id: scheduleId,
+    })
+
+    if (error) this.handleError(error)
   }
 
   // ── Workflow Versioning ────────────────────────────────────────────────────

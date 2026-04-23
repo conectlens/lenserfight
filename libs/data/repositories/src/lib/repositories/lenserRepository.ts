@@ -46,6 +46,7 @@ export interface LenserRepositoryPort {
   getActivityTimeline(lenserId: string): Promise<LenserActivityPoint[]>
 
   getPublicLenserProfile(handle: string): Promise<LenserProfileDTO>
+  getActiveLenser(): Promise<Lenser | null>
   getAuthenticatedLenser(): Promise<Lenser | null>
   getAuthenticatedProfileGate(): Promise<AuthProfileGate>
 
@@ -181,21 +182,22 @@ export class SupabaseLenserRepository implements LenserRepositoryPort {
   }
 
   async getAuthenticatedLenser(): Promise<Lenser | null> {
-    const { data: { session } } = await supabase.auth.getSession()
+    return this.getActiveLenser()
+  }
+
+  async getActiveLenser(): Promise<Lenser | null> {
+    const {
+      data: { session },
+    } = await supabase.auth.getSession()
     const user = session?.user
     if (!user) return null
 
-    const { data, error } = await supabase
-      .schema('lensers')
-      .from('profiles')
-      .select('*')
-      .eq('user_id', user.id)
-      .eq('status', 'active')
-      .is('deletion_requested_at', null)
-      .maybeSingle()
+    const { data, error } = await supabase.rpc('fn_lensers_get_active_profile')
 
     if (error || !data) return null
-    return data as Lenser
+
+    const row = Array.isArray(data) ? data[0] : data
+    return (row ?? null) as Lenser | null
   }
 
   async getAuthenticatedProfileGate(): Promise<AuthProfileGate> {

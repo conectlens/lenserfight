@@ -16,6 +16,7 @@ import {
   type WorkflowsListFilter,
   type TemplateWorkflowRecord,
 } from '../repositories/workflowsRepository'
+import type { UpsertWorkflowScheduleInput, WorkflowScheduleRecord } from '@lenserfight/types'
 
 const workflowsRepo = new SupabaseWorkflowsRepository()
 
@@ -35,6 +36,7 @@ export type {
   WorkflowsListFilter,
   TemplateWorkflowRecord,
 }
+export type { UpsertWorkflowScheduleInput, WorkflowScheduleRecord }
 
 export const workflowsService = {
   listByLenser: (lenserId: string): Promise<WorkflowRecord[]> =>
@@ -122,6 +124,15 @@ export const workflowsService = {
 
   listRunEvents: (runId: string, afterEventId?: number, limit?: number): Promise<WorkflowRunEventRecord[]> =>
     workflowsRepo.listRunEvents(runId, afterEventId, limit),
+
+  getSchedules: (workflowId?: string): Promise<WorkflowScheduleRecord[]> =>
+    workflowsRepo.getSchedules(workflowId),
+
+  upsertSchedule: (input: UpsertWorkflowScheduleInput): Promise<WorkflowScheduleRecord | null> =>
+    workflowsRepo.upsertSchedule(input),
+
+  deleteSchedule: (scheduleId: string): Promise<void> =>
+    workflowsRepo.deleteSchedule(scheduleId),
 
   // ── Versioning ──────────────────────────────────────────────────────────────
 
