@@ -112,7 +112,7 @@ Register it under a stable key in [`execution.registry.ts`](../../../libs/infra/
 
 ### 6. Seed a template lens
 
-Add an `INSERT` into [`supabase/seeds/40_lens_chain_templates.sql`](../../../supabase/seeds/40_lens_chain_templates.sql) with:
+Add an `INSERT` into `supabase/seeds/40_lens_chain_templates.sql` with:
 
 - A stable UUID (convention: `fff80000-0000-0000-0000-<kind>NN`).
 - `kind-<your-kind>` + `template` tags.

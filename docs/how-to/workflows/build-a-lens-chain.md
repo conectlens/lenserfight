@@ -128,7 +128,7 @@ See [Test Plan §6](../../reference/workflows/test-plan.md#6-conditional-edges-u
 Two ways to ship a chain:
 
 - **Save** via `CreateWorkflowWizard` — creates rows in `lenses.workflows` + `lenses.workflow_nodes` + `lenses.workflow_edges` owned by your lenser.
-- **Seed** via [`supabase/seeds/40_lens_chain_templates.sql`](../../../supabase/seeds/40_lens_chain_templates.sql) — use this for reusable starter chains. Tag the workflow with `template` so it shows up in the "Start from template" strip on `/workflows`.
+- **Seed** via `supabase/seeds/40_lens_chain_templates.sql` — use this for reusable starter chains. Tag the workflow with `template` so it shows up in the "Start from template" strip on `/workflows`.
 
 ## 8. Verify end-to-end
 
