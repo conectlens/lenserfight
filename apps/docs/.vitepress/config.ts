@@ -363,7 +363,7 @@ export default defineConfig({
     nav: [
       { text: 'Tutorials', link: '/tutorials/beginner-walkthroughs/what-is-lenserfight' },
       { text: 'How-to', link: '/how-to/contributors/contributing' },
-      { text: 'Reference', link: '/reference/cli/index' },
+      { text: 'Reference', link: '/reference/community-api/index' },
       { text: 'Explanation', link: '/explanation/agents/index' },
     ],
 
@@ -460,10 +460,25 @@ export default defineConfig({
         {
           text: 'Reference',
           items: [
+            { text: 'Community API', link: '/reference/community-api/index' },
             { text: 'CLI', link: '/reference/cli/index' },
-            { text: 'Platform & API', link: '/reference/platform-api/api-overview' },
+            { text: 'Execution Platform', link: '/reference/platform-api/api-overview' },
             { text: 'Database', link: '/reference/database/schema-overview' },
             { text: 'Workflows', link: '/reference/workflows/execution-engine' },
+          ],
+        },
+      ],
+      '/reference/community-api/': [
+        {
+          text: 'Community API',
+          items: [
+            { text: 'Overview', link: '/reference/community-api/index' },
+            { text: 'Common Contracts', link: '/reference/community-api/common-contracts' },
+            { text: 'Lenses API', link: '/reference/community-api/lenses' },
+            { text: 'Workflows API', link: '/reference/community-api/workflows' },
+            { text: 'Threads API', link: '/reference/community-api/threads' },
+            { text: 'AI Lensers API', link: '/reference/community-api/ai-lensers' },
+            { text: 'Providers and Execution', link: '/reference/community-api/providers-and-execution' },
           ],
         },
       ],
@@ -498,9 +513,9 @@ export default defineConfig({
       ],
       '/reference/platform-api/': [
         {
-          text: 'Platform & API',
+          text: 'Execution Platform',
           items: [
-            { text: 'API Overview', link: '/reference/platform-api/api-overview' },
+            { text: 'Execution Overview', link: '/reference/platform-api/api-overview' },
             { text: 'Configuration', link: '/reference/platform-api/configuration' },
             { text: 'Environment Variables', link: '/reference/platform-api/environment-variables' },
             { text: 'Beta Roadmap', link: '/reference/platform-api/beta-roadmap' },
