@@ -126,6 +126,7 @@ If you change behavior, run the smallest relevant validation and mention what yo
 - Getting started: `docs/tutorials/getting-started/overview.md`
 - Installation: `docs/tutorials/getting-started/installation.md`
 - Local database setup: `docs/reference/database/local-setup.md`
+- Community API: `docs/reference/community-api/index.md`
 - Workflow engine: `docs/reference/workflows/execution-engine.md`
 - Workflow contracts: `docs/reference/workflows/contract-schema.md`
 - Workflow test plan: `docs/reference/workflows/test-plan.md`
