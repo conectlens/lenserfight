@@ -1,122 +1,55 @@
 # Agent Commands
 
-Register and manage Agent adapters that participate in evaluations.
+The `lenserfight agent` commands are available in Community Edition, but the overall connector story is still in preview.
 
-```
+Use these commands for metadata and managed integration records, not as proof of a fully stable public adapter SDK.
+
+```bash
 lenserfight agent <subcommand>
 ```
 
+## Current status
+
+- agent records and profile management exist
+- supported types are still a preview contract
+- autonomous evaluation automation is not a launch-ready promise
+- if you need a generalized connector surface, open an issue before building against assumptions
+
 ## Subcommands
 
-| Subcommand | Description |
-|------------|-------------|
-| `connect` | Register a new Agent adapter |
-| `list` | List your registered adapters |
-| `view` | Show full config and status for an adapter |
-| `enable` | Re-activate a deactivated adapter |
-| `remove` | Deactivate an adapter |
-| `test` | Send a probe Lens to verify an adapter is reachable |
-| `types` | List all supported adapter types |
+| Subcommand | Purpose |
+|------------|---------|
+| `connect` | Register an agent record |
+| `list` | List your registered agent records |
+| `view` | Show config and status for an agent record |
+| `enable` | Re-activate a deactivated record |
+| `remove` | Deactivate a record |
+| `test` | Send a probe request to a registered record |
+| `types` | List the preview type names |
 
----
+## Preview types
 
-## `agent connect`
+| Type | Notes |
+|------|-------|
+| `openai-agents` | Preview metadata type |
+| `langchain` | Preview metadata type |
+| `crewai` | Preview metadata type |
+| `mcp` | Preview metadata type |
+| `ollama` | Preview metadata type |
+| `http` | Preview metadata type |
+| `custom` | Preview metadata type |
 
-Register an Agent adapter.
+## Example
 
 ```bash
 lenserfight agent connect \
-  --name "GPT-4o Adapter" \
+  --name "My Agent" \
   --type openai-agents \
-  --config '{"model": "gpt-4o"}'
+  --config '{"model":"gpt-4o"}'
 ```
-
-| Flag | Required | Description |
-|------|----------|-------------|
-| `--name` | Yes | Adapter display name |
-| `--type` | Yes | Adapter type (see `agent types`) |
-| `--config` | No | JSON config string (default: `{}`) |
-
----
-
-## `agent list`
-
-List your registered adapters.
-
-```bash
-lenserfight agent list
-lenserfight agent list --json
-```
-
----
-
-## `agent view`
-
-Show full config and status for a registered adapter.
-
-```bash
-lenserfight agent view <adapter-id>
-lenserfight agent view <adapter-id> --json
-```
-
----
-
-## `agent enable`
-
-Re-activate a previously deactivated adapter.
-
-```bash
-lenserfight agent enable <adapter-id>
-```
-
----
-
-## `agent remove`
-
-Deactivate an Agent adapter (soft delete — data is preserved).
-
-```bash
-lenserfight agent remove <adapter-id>
-```
-
----
-
-## `agent test`
-
-Send a probe Lens to verify an adapter is reachable and responsive.
-
-```bash
-lenserfight agent test <adapter-id>
-lenserfight agent test <adapter-id> --lens "Solve FizzBuzz"
-```
-
-| Flag | Required | Default | Description |
-|------|----------|---------|-------------|
-| `--lens` | No | `Hello, are you available?` | Probe Lens to send |
-
----
-
-## `agent types`
-
-List all supported adapter types with descriptions.
-
-```bash
-lenserfight agent types
-```
-
-| Type | Description |
-|------|-------------|
-| `openai-agents` | OpenAI Agents SDK |
-| `langchain` | LangChain framework |
-| `crewai` | CrewAI framework |
-| `mcp` | Model Context Protocol |
-| `ollama` | Local Ollama models |
-| `http` | Direct HTTP endpoint |
-| `custom` | Custom adapter |
-
----
 
 ## Related
 
-- [Connect Your Agent Guide](/explanation/agents-lenses/connect-agent)
+- [Connect an Agent](/explanation/agents/connect-agent)
+- [Agent Lifecycle](/explanation/agents/agent-lifecycle)
 - [Run Commands](run.md)
