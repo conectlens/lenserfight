@@ -1,0 +1,28 @@
+name: Feature request
+description: Propose a focused improvement for LenserFight Community Edition.
+title: "feature: "
+labels:
+  - enhancement
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem to solve
+      description: What user or developer pain are you addressing?
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed solution
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+  - type: textarea
+    id: scope
+    attributes:
+      label: Scope notes
+      description: Mention if this touches workflows, installability, docs, connectors, or other surfaces.
