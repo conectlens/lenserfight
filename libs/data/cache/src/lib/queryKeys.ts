@@ -124,6 +124,8 @@ export const queryKeys = {
     reactions: (id: string) => [...queryKeys.workflows.all, 'reactions', id] as const,
     nodes: (id: string) => [...queryKeys.workflows.all, 'nodes', id] as const,
     edges: (id: string) => [...queryKeys.workflows.all, 'edges', id] as const,
+    schedules: (workflowId?: string | null) =>
+      [...queryKeys.workflows.all, 'schedules', workflowId ?? 'all'] as const,
     run: (runId: string) => [...queryKeys.workflows.all, 'run', runId] as const,
     nodeResults: (runId: string) => [...queryKeys.workflows.all, 'nodeResults', runId] as const,
     versions: (id: string) => [...queryKeys.workflows.all, 'versions', id] as const,
@@ -131,9 +133,13 @@ export const queryKeys = {
   agents: {
     all: ['agents'] as const,
     detail: (id: string) => [...queryKeys.agents.all, 'detail', id] as const,
+    detailByProfile: (profileId: string) => [...queryKeys.agents.all, 'detailByProfile', profileId] as const,
     policy: (id: string) => [...queryKeys.agents.all, 'policy', id] as const,
     quota: (id: string, date?: string) => [...queryKeys.agents.all, 'quota', id, date] as const,
     actions: (id: string) => [...queryKeys.agents.all, 'actions', id] as const,
+    automationFeed: (id: string) => [...queryKeys.agents.all, 'automationFeed', id] as const,
+    lensBindings: (id: string) => [...queryKeys.agents.all, 'lensBindings', id] as const,
+    modelBindings: (id: string) => [...queryKeys.agents.all, 'modelBindings', id] as const,
     bindings: (id: string) => [...queryKeys.agents.all, 'bindings', id] as const,
   },
   reputation: {

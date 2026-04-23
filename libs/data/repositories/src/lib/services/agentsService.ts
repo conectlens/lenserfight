@@ -1,5 +1,8 @@
 import {
   AgentActionLogRecord,
+  AgentAutomationFeedItem,
+  AgentLensBindingRecord,
+  AgentModelBindingRecord,
   AgentPolicyRecord,
   AgentQuotaSnapshotRecord,
   CreateAILenserInput,
@@ -17,6 +20,9 @@ export const agentsService = {
   getAgentProfile: (aiLenserId: string): Promise<AgentProfileView | null> =>
     agentsRepo.getAgentProfile(aiLenserId),
 
+  getAgentProfileByProfileId: (profileId: string): Promise<AgentProfileView | null> =>
+    agentsRepo.getAgentProfileByProfileId(profileId),
+
   getAgentsByOwner: (ownerLenserId: string): Promise<AgentProfileView[]> =>
     agentsRepo.getAgentsByOwner(ownerLenserId),
 
@@ -29,15 +35,37 @@ export const agentsService = {
   getActionLogs: (aiLenserId: string, limit?: number): Promise<AgentActionLogRecord[]> =>
     agentsRepo.getActionLogs(aiLenserId, limit),
 
+  getAutomationFeed: (aiLenserId: string, limit?: number, offset?: number): Promise<AgentAutomationFeedItem[]> =>
+    agentsRepo.getAutomationFeed(aiLenserId, limit, offset),
+
   getQuotaSnapshot: (aiLenserId: string, date?: string): Promise<AgentQuotaSnapshotRecord | null> =>
     agentsRepo.getQuotaSnapshot(aiLenserId, date),
+
+  getLensBindings: (aiLenserId: string): Promise<AgentLensBindingRecord[]> =>
+    agentsRepo.getLensBindings(aiLenserId),
+
+  getModelBindings: (aiLenserId: string): Promise<AgentModelBindingRecord[]> =>
+    agentsRepo.getModelBindings(aiLenserId),
+
+  setMainLensBinding: (
+    aiLenserId: string,
+    lensId: string,
+    versionId?: string | null
+  ): Promise<AgentLensBindingRecord | null> =>
+    agentsRepo.setMainLensBinding(aiLenserId, lensId, versionId),
+
+  setDefaultModelBinding: (
+    aiLenserId: string,
+    modelId: string
+  ): Promise<AgentModelBindingRecord | null> =>
+    agentsRepo.setDefaultModelBinding(aiLenserId, modelId),
 
   updatePolicy: (
     aiLenserId: string,
     policy: Partial<Omit<AgentPolicyRecord, 'id' | 'ai_lenser_id' | 'created_at' | 'updated_at'>>
   ): Promise<void> => agentsRepo.updatePolicy(aiLenserId, policy),
 
-  /** Securely patches AI lenser profile fields via fn_update_agent_profile RPC (validates ownership). */
-  updateAgentProfile: (aiLenserId: string, patch: AgentProfilePatch): Promise<void> =>
-    agentsRepo.updateAgentProfile(aiLenserId, patch),
+  /** Securely patches AI lenser workspace profile fields via fn_update_agent_profile RPC (validates ownership). */
+  updateAgentProfile: (profileId: string, patch: AgentProfilePatch): Promise<void> =>
+    agentsRepo.updateAgentProfile(profileId, patch),
 }
