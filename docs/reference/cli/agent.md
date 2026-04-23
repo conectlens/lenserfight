@@ -1,6 +1,6 @@
 # Agent Commands
 
-The `lenserfight agent` commands are available in Community Edition, but the overall connector story is still in preview.
+The `lenserfight agent` commands are available in Community Edition, but they should be treated as **AI lenser profile and preview integration commands**, not as proof of a stable connector SDK.
 
 Use these commands for metadata and managed integration records, not as proof of a fully stable public adapter SDK.
 
@@ -53,3 +53,4 @@ lenserfight agent connect \
 - [Connect an Agent](/explanation/agents/connect-agent)
 - [Agent Lifecycle](/explanation/agents/agent-lifecycle)
 - [Run Commands](run.md)
+- [Community API: AI Lensers](/reference/community-api/ai-lensers)
