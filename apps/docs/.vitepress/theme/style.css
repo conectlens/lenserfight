@@ -3,7 +3,7 @@
   - Reuse LenserFight's Tailwind v4 theme tokens so VitePress variables map to project tokens.
   - This keeps docs styling aligned with the app without redefining colors here.
 */
-@import '../../../forum/src/index.css';
+@import '../../../web/src/index.css';
 
 /* ─── Design tokens (hard-coded fallbacks for VitePress) ─── */
 :root {
