@@ -28,7 +28,7 @@ import { Avatar, Logo } from '@lenserfight/ui/components'
 import { notificationService } from '@lenserfight/data/repositories'
 import { useAuth } from '@lenserfight/features/auth'
 import { FeedbackModal } from '@lenserfight/features/feedback'
-import { useLenser, useSidebarProfile, useHasLenserProfile, useMyLensers, useSwitchLenser } from '@lenserfight/features/profile'
+import { useLenser, useSidebarProfile, useHasLenserProfile, useLenserWorkspace } from '@lenserfight/features/profile'
 import { ARENA_BASE_URL, FEATURES, SURFACE } from '@lenserfight/utils/env'
 import { useTheme } from '@lenserfight/ui/theme'
 import type { Theme } from '@lenserfight/ui/theme'
@@ -88,8 +88,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
   const { profile: compactProfile } = useSidebarProfile(authLenser?.handle)
 
   // All lenser profiles (human + owned AI agents) for workspace switcher
-  const { profiles } = useMyLensers()
-  const { switchLenser } = useSwitchLenser()
+  const { workspaces, switchWorkspace } = useLenserWorkspace()
 
   // Fallback to authLenser if compact fetch hasn't populated yet to prevent empty state
   const displayProfile = compactProfile || authLenser
@@ -476,11 +475,16 @@ export const Sidebar: React.FC<SidebarProps> = ({
                     <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
                       @{displayProfile?.handle || 'guest'}
                     </p>
+                    {displayProfile?.type === 'ai' && (
+                      <p className="mt-1 text-[10px] font-semibold uppercase tracking-wide text-primary-yellow-700 dark:text-primary-yellow-400">
+                        AI workspace active
+                      </p>
+                    )}
                   </div>
                 )}
 
                 {/* Workspace switcher — visible when there are multiple profiles (human + AI) */}
-                {showLabels && FEATURES.AGENTS && profiles.length > 1 && (
+                {showLabels && FEATURES.AGENTS && workspaces.length > 1 && (
                   <div className="relative flex-shrink-0">
                     <button
                       ref={switcherButtonRef}
@@ -503,26 +507,41 @@ export const Sidebar: React.FC<SidebarProps> = ({
                         ref={switcherRef}
                         role="listbox"
                         aria-label="Workspace switcher"
-                        className="absolute bottom-full left-0 mb-2 w-56 bg-white dark:bg-gray-800 rounded-2xl shadow-xl border border-gray-100 dark:border-gray-700 py-1 z-50 overflow-hidden"
+                        className="absolute bottom-full left-0 mb-2 w-56 bg-white dark:bg-gray-800 rounded-2xl shadow-xl border border-gray-100 dark:border-gray-700 py-1 z-[200] overflow-hidden"
                         onClick={(e) => e.stopPropagation()}
                       >
                         <p className="px-3 pt-2 pb-1 text-[10px] font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500">
                           Switch workspace
                         </p>
                         {/* All profiles: human first, then AI lensers */}
-                        {profiles.map((profile) => (
+                        {workspaces.map((profile) => (
                           <button
                             key={profile.id}
                             role="option"
                             aria-selected={profile.is_active}
-                            className={`w-full text-left flex items-center gap-2.5 px-3 py-2 transition-colors ${profile.is_active ? 'bg-gray-50 dark:bg-gray-700/50' : 'hover:bg-gray-50 dark:hover:bg-gray-700/50'}`}
-                            onClick={() => {
+                            className={`w-full text-left flex items-center gap-2.5 px-3 py-2 transition-colors ${
+                              profile.type === 'ai'
+                                ? profile.is_active
+                                  ? 'bg-yellow-50 dark:bg-yellow-900/20'
+                                  : 'hover:bg-yellow-50 dark:hover:bg-yellow-900/20'
+                                : profile.is_active
+                                  ? 'bg-gray-50 dark:bg-gray-700/50'
+                                  : 'hover:bg-gray-50 dark:hover:bg-gray-700/50'
+                            }`}
+                            onClick={async () => {
                               setIsSwitcherOpen(false)
-                              switchLenser(profile.id)
+                              await switchWorkspace(profile.id)
                               navigate(`/lenser/${profile.handle}`)
                             }}
                           >
-                            <Avatar src={profile.avatar_url} size="sm" className="!w-6 !h-6 flex-shrink-0" />
+                            <div className="relative flex-shrink-0">
+                              <Avatar src={profile.avatar_url} size="sm" className="!w-6 !h-6" />
+                              {profile.type === 'ai' && (
+                                <span className="absolute -bottom-1 -right-1 flex items-center justify-center w-3 h-3 rounded-full bg-primary border border-white dark:border-gray-800">
+                                  <Bot size={7} className="text-gray-900" />
+                                </span>
+                              )}
+                            </div>
                             <div className="flex-1 min-w-0">
                               <p className="text-sm font-medium text-gray-900 dark:text-white truncate leading-tight">
                                 {profile.display_name}
@@ -532,7 +551,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                               </p>
                             </div>
                             {profile.type === 'ai' && (
-                              <span className="text-[9px] font-semibold uppercase tracking-wide text-gray-400 flex-shrink-0 bg-gray-100 dark:bg-gray-700 px-1 rounded">
+                              <span className="text-[9px] font-bold uppercase tracking-wide text-yellow-700 dark:text-yellow-400 flex-shrink-0 bg-yellow-100 dark:bg-yellow-900/40 px-1.5 py-0.5 rounded-full">
                                 AI
                               </span>
                             )}
