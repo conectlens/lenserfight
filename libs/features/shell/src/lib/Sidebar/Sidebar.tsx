@@ -23,6 +23,7 @@ import {
   Check,
 } from 'lucide-react'
 import React, { useState, useRef, useEffect } from 'react'
+import { createPortal } from 'react-dom'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { Avatar, Logo } from '@lenserfight/ui/components'
 import { notificationService } from '@lenserfight/data/repositories'
@@ -108,10 +109,12 @@ export const Sidebar: React.FC<SidebarProps> = ({
   const [isDropdownOpen, setIsDropdownOpen] = useState(false)
   const dropdownRef = useRef<HTMLDivElement>(null)
   const buttonRef = useRef<HTMLButtonElement>(null)
+  const [dropdownPos, setDropdownPos] = useState<{ top: number; right: number } | null>(null)
 
   const [isSwitcherOpen, setIsSwitcherOpen] = useState(false)
   const switcherRef = useRef<HTMLDivElement>(null)
   const switcherButtonRef = useRef<HTMLButtonElement>(null)
+  const [switcherPos, setSwitcherPos] = useState<{ top: number; left: number } | null>(null)
 
   const [unreadCount, setUnreadCount] = useState(0)
   const [isFeedbackOpen, setIsFeedbackOpen] = useState(false)
@@ -493,6 +496,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
                       aria-expanded={isSwitcherOpen}
                       onClick={(e) => {
                         e.stopPropagation()
+                        const rect = switcherButtonRef.current?.getBoundingClientRect()
+                        if (rect) setSwitcherPos({ top: rect.top, left: rect.left })
                         setIsSwitcherOpen((v) => !v)
                         setIsDropdownOpen(false)
                       }}
@@ -502,18 +507,24 @@ export const Sidebar: React.FC<SidebarProps> = ({
                       <ChevronsUpDown size={14} />
                     </button>
 
-                    {isSwitcherOpen && (
+                    {isSwitcherOpen && switcherPos && createPortal(
                       <div
                         ref={switcherRef}
                         role="listbox"
                         aria-label="Workspace switcher"
-                        className="absolute bottom-full left-0 mb-2 w-56 bg-white dark:bg-gray-800 rounded-2xl shadow-xl border border-gray-100 dark:border-gray-700 py-1 z-[200] overflow-hidden"
+                        style={{
+                          position: 'fixed',
+                          top: switcherPos.top - 8,
+                          left: switcherPos.left,
+                          transform: 'translateY(-100%)',
+                          zIndex: 9999,
+                        }}
+                        className="w-56 bg-white dark:bg-gray-800 rounded-2xl shadow-xl border border-gray-100 dark:border-gray-700 py-1 overflow-hidden"
                         onClick={(e) => e.stopPropagation()}
                       >
                         <p className="px-3 pt-2 pb-1 text-[10px] font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500">
                           Switch workspace
                         </p>
-                        {/* All profiles: human first, then AI lensers */}
                         {workspaces.map((profile) => (
                           <button
                             key={profile.id}
@@ -560,7 +571,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
                             )}
                           </button>
                         ))}
-                      </div>
+                      </div>,
+                      document.body
                     )}
                   </div>
                 )}
@@ -574,6 +586,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
                       aria-expanded={isDropdownOpen}
                       onClick={(e) => {
                         e.stopPropagation()
+                        const rect = buttonRef.current?.getBoundingClientRect()
+                        if (rect) setDropdownPos({ top: rect.top, right: window.innerWidth - rect.right })
                         setIsDropdownOpen(!isDropdownOpen)
                       }}
                       className={`p-1.5 rounded-lg transition-colors relative ${isDropdownOpen ? 'bg-gray-200 dark:bg-gray-600 text-gray-900 dark:text-white' : 'text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-700'}`}
@@ -584,11 +598,18 @@ export const Sidebar: React.FC<SidebarProps> = ({
                       )}
                     </button>
 
-                    {isDropdownOpen && (
+                    {isDropdownOpen && dropdownPos && createPortal(
                       <div
                         ref={dropdownRef}
                         role="menu"
-                        className="absolute bottom-full right-0 mb-2 w-56 bg-white dark:bg-gray-800 rounded-2xl shadow-xl border border-gray-100 dark:border-gray-700 py-1 z-[200] overflow-hidden transform origin-bottom-right"
+                        style={{
+                          position: 'fixed',
+                          top: dropdownPos.top - 8,
+                          right: dropdownPos.right,
+                          transform: 'translateY(-100%)',
+                          zIndex: 9999,
+                        }}
+                        className="w-56 bg-white dark:bg-gray-800 rounded-2xl shadow-xl border border-gray-100 dark:border-gray-700 py-1 overflow-hidden"
                         onClick={(e) => e.stopPropagation()}
                       >
                         <div className="px-4 py-3 border-b border-gray-50 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-800/50">
@@ -692,7 +713,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
                             Logout
                           </button>
                         </div>
-                      </div>
+                      </div>,
+                      document.body
                     )}
                   </div>
                 )}
