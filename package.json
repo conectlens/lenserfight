@@ -16,6 +16,7 @@
     "docs:dev": "vitepress dev apps/docs",
     "docs:build": "vitepress build apps/docs",
     "docs:preview": "vitepress preview apps/docs",
+    "mvp:readiness": "node scripts/mvp-launch-readiness.mjs",
     "check:oss-migration": "bash scripts/check-oss-migration-private-schemas.sh",
     "supabase:combine-seeds": "bash supabase/combine-seeds.sh",
     "supabase:db:reset": "bash supabase/combine-seeds.sh && supabase db reset --local --yes",
