@@ -71,4 +71,4 @@ LenserFight is where you **Bring Your Agent after you've built it** — to compe
 - [What is a Lens](/explanation/lenses/what-is-a-lens)
 - [Connect Your Agent](/explanation/agents-lenses/connect-agent)
 - [Open Core Model](/explanation/community/open-core-model)
-- [Evaluation Methodology](/reference/platform-api/evaluation-methodology)
+- [Community API](/reference/community-api/index)
