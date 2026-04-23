@@ -237,10 +237,16 @@ export class SupabaseWorkflowsRepository implements WorkflowsRepositoryPort {
 
   private async timedRpc<T>(rpcName: string, operation: () => Promise<T>): Promise<T> {
     const startedAt = typeof performance !== 'undefined' ? performance.now() : Date.now()
+    // #region agent log
+    fetch('http://127.0.0.1:7884/ingest/c70fec5e-ec66-4066-9705-fd474b67b4a6',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'ee2d98'},body:JSON.stringify({sessionId:'ee2d98',runId:'pre-fix',hypothesisId:'P2_P3',location:'workflowsRepository.ts:timedRpc',message:'rpc start',data:{rpcName},timestamp:Date.now()})}).catch(()=>{});
+    // #endregion
     try {
       return await operation()
     } finally {
       const endedAt = typeof performance !== 'undefined' ? performance.now() : Date.now()
+      // #region agent log
+      fetch('http://127.0.0.1:7884/ingest/c70fec5e-ec66-4066-9705-fd474b67b4a6',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'ee2d98'},body:JSON.stringify({sessionId:'ee2d98',runId:'pre-fix',hypothesisId:'P2_P3',location:'workflowsRepository.ts:timedRpc',message:'rpc end',data:{rpcName,durationMs:Math.round(endedAt-startedAt)},timestamp:Date.now()})}).catch(()=>{});
+      // #endregion
       if (typeof process !== 'undefined' && process.env.NODE_ENV !== 'production') {
         // Lightweight local instrumentation for before/after perf verification.
         console.debug(`[workflowsRepository] ${rpcName} ${Math.round(endedAt - startedAt)}ms`)
