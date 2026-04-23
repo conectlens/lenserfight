@@ -1,32 +1,27 @@
 import React from 'react'
+export type LenserTabId =
+  | 'actions'
+  | 'lenses'
+  | 'threads'
+  | 'challenges'
+  | 'agents'
+  | 'overview'
+  | 'workflows'
+  | 'logs'
+  | 'schedules'
 
-import { FEATURES } from '@lenserfight/utils/env'
-
-type Tab = 'actions' | 'lenses' | 'threads' | 'challenges' | 'agents'
-
-interface LenserTabsProps {
-  activeTab: Tab
-  onChange: (tab: Tab) => void
-  hideActions?: boolean
-  showAgents?: boolean
+export interface LenserTabDefinition {
+  id: LenserTabId
+  label: string
 }
 
-export const LenserTabs: React.FC<LenserTabsProps> = ({ activeTab, onChange, hideActions = false, showAgents = false }) => {
-  // Order: Threads, Lenses, Actions
-  const tabs: { id: Tab; label: string }[] = [
-    { id: 'threads', label: 'Threads' },
-    { id: 'lenses', label: 'Lenses' },
-    ...(!hideActions ? [{ id: 'actions' as Tab, label: 'Actions' }] : []),
-  ]
+interface LenserTabsProps {
+  activeTab: LenserTabId
+  onChange: (tab: LenserTabId) => void
+  tabs: LenserTabDefinition[]
+}
 
-  if (FEATURES.CHALLENGES_TAB) {
-    tabs.push({ id: 'challenges', label: 'Challenge History' })
-  }
-
-  if (FEATURES.AGENTS && showAgents) {
-    tabs.push({ id: 'agents' as Tab, label: 'Agents' })
-  }
-
+export const LenserTabs: React.FC<LenserTabsProps> = ({ activeTab, onChange, tabs }) => {
   return (
     <div className="flex items-center gap-8 border-b border-gray-200 dark:border-gray-700 mb-6 overflow-x-auto scrollbar-hide">
       {tabs.map((tab) => (

@@ -18,7 +18,10 @@ export const useCreateAgent = (ownerLenserId: string) => {
         handle,
         display_name: displayName,
       })
-      await queryClient.invalidateQueries({ queryKey: queryKeys.agents.all })
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: queryKeys.agents.all }),
+        queryClient.invalidateQueries({ queryKey: queryKeys.lenser.myLensers() }),
+      ])
       return result
     } catch (e) {
       const msg = e instanceof Error ? e.message : 'Failed to create agent.'

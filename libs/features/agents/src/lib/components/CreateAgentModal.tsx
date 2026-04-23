@@ -1,5 +1,5 @@
 import { lenserService } from '@lenserfight/data/repositories'
-import { useLenser } from '@lenserfight/features/profile'
+import { useLenserWorkspace } from '@lenserfight/features/profile'
 import { Field, Input } from '@lenserfight/ui/forms'
 import { ModalFooter } from '@lenserfight/ui/overlays'
 import { ArrowRight, Check, Loader2, X } from 'lucide-react'
@@ -23,8 +23,8 @@ export interface CreateAgentContentProps {
  * in App.tsx.
  */
 export const CreateAgentContent: React.FC<CreateAgentContentProps> = ({ close }) => {
-  const { lenser } = useLenser()
-  const { submit, isSubmitting } = useCreateAgent(lenser?.id ?? '')
+  const { humanWorkspace } = useLenserWorkspace()
+  const { submit, isSubmitting } = useCreateAgent(humanWorkspace?.id ?? '')
   const navigate = useNavigate()
 
   const [handle, setHandle] = useState('')
@@ -114,7 +114,7 @@ export const CreateAgentContent: React.FC<CreateAgentContentProps> = ({ close })
     }
   }
 
-  const canSubmit = isHandleUnique && displayValue.length >= 2 && !isCheckingHandle
+  const canSubmit = !!humanWorkspace && isHandleUnique && displayValue.length >= 2 && !isCheckingHandle
 
   return (
     <div className="space-y-6">
@@ -183,6 +183,12 @@ export const CreateAgentContent: React.FC<CreateAgentContentProps> = ({ close })
 
       {error && (
         <p className="text-sm font-medium text-status-red">{error}</p>
+      )}
+
+      {!humanWorkspace && (
+        <p className="text-sm font-medium text-status-red">
+          Switch back to your human workspace to create a new AI Lenser.
+        </p>
       )}
 
       <ModalFooter

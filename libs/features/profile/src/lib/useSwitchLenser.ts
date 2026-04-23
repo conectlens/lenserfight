@@ -19,8 +19,9 @@ export function useSwitchLenser() {
     mutationFn: switchActiveLenser,
     onSuccess: async () => {
       await Promise.all([
-        queryClient.invalidateQueries({ queryKey: queryKeys.lenser.authenticated() }),
-        queryClient.invalidateQueries({ queryKey: queryKeys.lenser.myLensers() }),
+        queryClient.invalidateQueries({ queryKey: queryKeys.lenser.all }),
+        queryClient.invalidateQueries({ queryKey: queryKeys.agents.all }),
+        queryClient.invalidateQueries({ queryKey: queryKeys.workflows.all }),
       ])
     },
   })
