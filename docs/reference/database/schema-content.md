@@ -2,12 +2,7 @@
 
 The `content` schema manages forum and community content — threads, replies, tags, reactions, translations, and reaction aggregates.
 
-> **Schema update (OSS):** The former `content.prompt_templates` table has been superseded by `lenses.lenses` + `lenses.versions` + `lenses.version_parameters`. The sections below that describe `prompt_templates` are kept as historical reference only. For the authoritative lens schema see:
->
-> - [`lenses.lenses`, `lenses.versions`, `lenses.version_parameters`, `lenses.workflows`](./schema-overview.md)
-> - [Open Source Workflows explainer](../../explanation/workflows/open-source-workflows.md)
->
-> Polymorphic fields throughout this schema (`entity_type_enum`, `tag_map.entity_type`, `reactions.entity_type`) now accept `lens`, `workflow`, and `thread`/`thread_reply` rather than `prompt_template`. Lens versions (`lenses.versions`) additionally carry optional `input_contract` and `output_contract` JSONB columns used by the workflow execution engine; see [Contract Schema Reference](../workflows/contract-schema.md).
+In Community Edition, this schema should be documented as the home of **threads and shared discovery metadata**, while versioned lenses live in the `lenses` schema.
 
 ## Tables
 
@@ -23,8 +18,8 @@ Forum discussion threads created by lensers.
 | `view_count` | integer | Cached counter |
 | `reply_count` | integer | Cached counter, updated by trigger |
 | `thumbnail_url` | text | Optional thread thumbnail |
-| `linked_prompt_id` | uuid | FK → `content.prompt_templates(id)` ON DELETE SET NULL. Replaces `prompt_data`. |
-| `prompt_data` | jsonb | **DEPRECATED** — use `linked_prompt_id`. Retained for backward compatibility. |
+| `linked_lens_id` | uuid | Optional link to a related lens |
+| `prompt_data` | jsonb | Deprecated compatibility field |
 | `created_at` / `updated_at` | timestamptz | |
 
 ### thread_replies
@@ -41,67 +36,39 @@ Replies within a thread.
 | `deleted_at` | timestamptz | Soft delete timestamp; NULL = active |
 | `created_at` / `updated_at` | timestamptz | |
 
-### prompt_templates
-
-User-created prompt templates shared in the community.
-
-| Column | Type | Notes |
-|--------|------|-------|
-| `id` | uuid (PK) | |
-| `lenser_id` | uuid | FK → `lensers.profiles`, default `lensers.get_auth_lenser_id()` |
-| `visibility` | `visibility_enum` | |
-| `parent_prompt_id` | uuid | FK → prompt_templates (fork origin), nullable |
-| `forked_from_execution_id` | uuid | FK → execution record, nullable |
-| `created_at` / `updated_at` | timestamptz | |
-
 ### entity_translations
 
-Polymorphic translation table for threads and prompt templates. Replaces the former `thread_translations` and `prompt_translations` tables.
+Polymorphic translation table used for content entities.
 
 | Column | Type | Notes |
 |--------|------|-------|
 | `id` | uuid (PK) | |
-| `entity_type` | `entity_type_enum` | `thread`, `prompt_template` |
+| `entity_type` | `entity_type_enum` | Community Edition commonly uses `thread`, `thread_reply`, `lens`, `workflow` |
 | `entity_id` | uuid | References the typed entity |
 | `language_code` | text | FK → `core.languages(code)` ON DELETE RESTRICT |
 | `title` | text | |
-| `description` | text | Prompt-only; nullable for threads |
+| `description` | text | Optional |
 | `content` | text | Body text |
-| `params` | jsonb | Prompt parameterization; nullable for threads |
+| `params` | jsonb | Optional structured metadata |
 | `is_original` | boolean | `true` for the author's original language version |
 | `created_at` | timestamptz | |
 
 **Unique constraint:** `(entity_type, entity_id, language_code)`
 
-**Indexes:**
-- `(entity_type, entity_id)` — entity lookup
-- `(entity_id, language_code)` — translation lookup
-- GIN trigram on `lower(title)` — full-text search
-
-**Migrated from:** `content.prompt_translations` and `content.thread_translations` (dropped).
-
 ### reactions
 
-Unified polymorphic reactions table. Replaces the former `prompt_reactions`, `thread_reactions`, and `thread_reply_reactions` tables.
+Unified polymorphic reactions table for threads, replies, lenses, and workflows.
 
 | Column | Type | Notes |
 |--------|------|-------|
 | `id` | uuid (PK) | |
-| `entity_type` | `entity_type_enum` | `thread`, `thread_reply`, `prompt_template` |
+| `entity_type` | `entity_type_enum` | `thread`, `thread_reply`, `lens`, `workflow` |
 | `entity_id` | uuid | References the typed entity |
 | `lenser_id` | uuid | FK → `lensers.profiles` |
 | `reaction` | `reaction_enum` | `like`, `love`, `clap`, `saved`, `copy` |
 | `created_at` | timestamptz | |
 
 **Uniqueness:** Partial unique index `(entity_type, entity_id, lenser_id, reaction) WHERE reaction <> 'copy'`. Copy reactions are unlimited; all other reaction types are deduplicated per user per entity.
-
-**Indexes:**
-- `(entity_type, entity_id)` — entity reactions
-- `(lenser_id, created_at DESC)` — lenser history
-
-**RLS:** lensers can SELECT all, INSERT own, DELETE own.
-
-**Migrated from:** `content.prompt_reactions`, `content.thread_reactions`, `content.thread_reply_reactions` (all dropped).
 
 ### tags
 
@@ -116,13 +83,13 @@ Taxonomy system for categorizing content.
 
 ### tag_map
 
-Junction table linking tags to entities (threads, prompt templates).
+Junction table linking tags to entities.
 
 | Column | Type | Notes |
 |--------|------|-------|
 | `id` | uuid (PK) | |
 | `tag_id` | uuid | FK → tags |
-| `entity_type` | `entity_type_enum` | `thread`, `prompt_template` |
+| `entity_type` | `entity_type_enum` | typically `thread`, `lens`, `workflow` |
 | `entity_id` | uuid | Polymorphic reference |
 
 ### tag_suggestions
@@ -166,7 +133,6 @@ Uploaded media files linked to lensers.
 
 - `thread_replies_after_insert` → increments `threads.reply_count`
 - `trg_sync_thread_count` → updates `analytics.lenser_stats.thread_count`
-- `trg_sync_prompt_count` → updates `analytics.lenser_stats.prompt_count`
 - `tg_xp_thread_created` → awards XP via `xp.apply()`
 - `ensure_public_tag` → prevents attaching non-public tags
 
@@ -176,7 +142,7 @@ Uploaded media files linked to lensers.
 |------|--------|
 | `visibility_enum` | `public`, `community`, `private` |
 | `tag_visibility_enum` | `public`, `private`, `hidden` |
-| `entity_type_enum` | `thread`, `thread_reply`, `prompt_template` |
+| `entity_type_enum` | `thread`, `thread_reply`, `lens`, `workflow` |
 | `reaction_enum` | `like`, `love`, `clap`, `saved`, `copy` |
 | `report_reason_enum` | `spam`, `harassment`, `misinformation`, `off_topic`, `other` |
 | `suggestion_status_enum` | `pending`, `accepted`, `rejected` |
