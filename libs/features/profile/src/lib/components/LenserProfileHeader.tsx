@@ -1,9 +1,8 @@
 
 import { agentsService, socialLinksService } from '@lenserfight/data/repositories'
-import { useLenser } from '@lenserfight/features/profile'
 import { Lenser, LenserStats, SocialLink, RelationshipState } from '@lenserfight/types'
 import { XPSummary } from '@lenserfight/types'
-import { Avatar, Button } from '@lenserfight/ui/components'
+import { Avatar, Badge, Button } from '@lenserfight/ui/components'
 import { FEATURES } from '@lenserfight/utils/env'
 import { formatCount } from '@lenserfight/utils/number'
 import {
@@ -30,6 +29,7 @@ import { BannerSelectionModal } from './BannerSelectionModal'
 import { EditProfileModal } from './EditProfileModal'
 import { FollowButton } from './FollowButton'
 import { NetworkModal } from './NetworkModal'
+import { useLenser } from '../context/LenserContext'
 
 interface LenserProfileHeaderProps {
   lenser: Lenser & { visibility?: 'public' | 'private' | 'community' }
@@ -40,6 +40,7 @@ interface LenserProfileHeaderProps {
   relationshipState?: RelationshipState | null
   onManageAgents?: () => void
   onEditAgent?: () => void
+  showAIWorkspaceBanner?: boolean
 }
 
 export const LenserProfileHeader: React.FC<LenserProfileHeaderProps> = ({
@@ -51,6 +52,7 @@ export const LenserProfileHeader: React.FC<LenserProfileHeaderProps> = ({
   relationshipState,
   onManageAgents,
   onEditAgent,
+  showAIWorkspaceBanner = false,
 }) => {
   const { updateLenserProfile } = useLenser()
 
@@ -333,6 +335,11 @@ export const LenserProfileHeader: React.FC<LenserProfileHeaderProps> = ({
                     <h1 className="text-2xl md:text-3xl font-bold text-gray-900 dark:text-white leading-tight">
                       {lenser.display_name}
                     </h1>
+                    {lenser.type === 'ai' && (
+                      <Badge color={showAIWorkspaceBanner ? 'yellow' : 'gray'}>
+                        {showAIWorkspaceBanner ? 'AI Workspace' : 'AI Lenser'}
+                      </Badge>
+                    )}
                     {lenser.visibility === 'private' && (
                       <span title="Private profile" className="flex items-center text-gray-400 dark:text-gray-500">
                         <Lock size={16} />
@@ -427,6 +434,18 @@ export const LenserProfileHeader: React.FC<LenserProfileHeaderProps> = ({
               <div className="w-full h-px bg-gray-100 dark:bg-gray-700 my-2 md:hidden"></div>
 
               <div className="flex flex-col gap-2 mb-3 md:mb-4 w-full">
+                {lenser.type === 'ai' && showAIWorkspaceBanner && (
+                  <div className="rounded-2xl border border-primary-yellow-500/30 bg-primary-yellow-500/10 px-4 py-3 text-sm text-gray-700 dark:text-gray-200">
+                    <div className="mb-1 flex items-center gap-2 font-semibold text-gray-900 dark:text-white">
+                      <Bot size={15} />
+                      AI panel active
+                    </div>
+                    <p>
+                      Logs, CRON schedules, workflow orchestration, and secure owner-only bindings are enabled for this workspace.
+                    </p>
+                  </div>
+                )}
+
                 {lenser.headline && (
                   <p className="font-medium text-gray-800 dark:text-gray-200 mt-2 md:mt-0">
                     {lenser.headline}
