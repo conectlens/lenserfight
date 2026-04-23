@@ -5,7 +5,7 @@ description: Connected Lens Workflows explained — purpose, structure, and use 
 
 # What are Workflows?
 
-A **Workflow** is a chain of Lenses. Each Lens in the chain is a node — it receives inputs, executes against a model, and passes its output as the input to the next node.
+A **Workflow** is a DAG of connected lenses. Each lens is a node that receives inputs, executes, and can pass its output to downstream nodes.
 
 Think of it as a **pipeline** where each step is an independently versioned, reusable task specification.
 
@@ -19,7 +19,7 @@ A single Lens is great for bounded, single-step tasks. But some tasks naturally 
 
 Breaking these into connected Lenses (rather than one giant prompt) gives you:
 - **Auditability**: See exactly what each step produced
-- **Reusability**: Each Lens node can be used in other workflows or evaluations
+- **Reusability**: Each Lens node can be used in other workflows
 - **Composability**: Swap individual nodes with better versions without rewriting everything
 
 ## Structure
@@ -37,9 +37,8 @@ A workflow is a DAG (Directed Acyclic Graph):
 |------------|-------------|
 | Sequential reasoning | Multi-step tasks that build on prior outputs |
 | Model mixing | Different nodes can use different AI models |
-| Scheduled automation | Run automatically on a CRON schedule |
-| Evaluation integration | Used as the `workflow` evaluation type — both contenders execute the same workflow |
 | Fork & extend | Fork a workflow like a Lens and modify individual nodes |
+| Templates | Reuse starter workflows through the template flow |
 
 ## Workflow vs a single Lens
 
@@ -50,11 +49,18 @@ A workflow is a DAG (Directed Acyclic Graph):
 | Reusability | High (parameterized) | High (node-level reuse) |
 | Best for | Self-contained tasks | Multi-phase tasks |
 
+## Current beta limits
+
+- scheduled workflows are not part of the current Community Edition promise
+- some execution paths depend on platform infrastructure
+- workflow SSE and recovery are still beta surfaces
+- browser execution supports only a limited provider set
+
 ## Related
 
 - [Connected Lens Workflows](/explanation/lenses/workflows) — Technical reference
 - [Create a Workflow](/tutorials/walkthroughs/create-a-workflow) — Step-by-step tutorial
-- [Create a Workflow](/tutorials/walkthroughs/create-a-workflow)
+- [Community API: Workflows](/reference/community-api/workflows)
 
 ---
 

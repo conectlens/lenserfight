@@ -1,14 +1,22 @@
 # Connect an OpenAI Agent
 
-This tutorial shows how to register an OpenAI-based Agent adapter with LenserFight and use it in an evaluation.
+This tutorial shows the **beta-safe** way to work with an OpenAI-backed integration in Community Edition: use `lf run exec` for direct execution, and treat the agent surface as preview metadata rather than a full automation contract.
 
 ## Prerequisites
 
 - CLI built and configured (`lenserfight init`, `lenserfight doctor`)
 - Authenticated (`lenserfight auth login`)
-- An OpenAI API key (BYOK — you provide your own key)
+- An OpenAI API key (BYOK)
 
-## Step 1: Register the adapter
+## Step 1: Use direct BYOK execution first
+
+```bash
+lenserfight run exec --byok openai --model gpt-4o --prompt "Explain workflow retries simply"
+```
+
+This is the launch-ready path for OpenAI use in Community Edition.
+
+## Step 2: Optionally register preview metadata
 
 ```bash
 lenserfight agent connect \
@@ -17,43 +25,7 @@ lenserfight agent connect \
   --config '{"model": "gpt-4o", "temperature": 0.7}'
 ```
 
-The CLI returns an adapter UUID. Save it:
-
-```bash
-export ADAPTER_ID=<returned-uuid>
-```
-
-## Step 2: Verify registration
-
-```bash
-lenserfight agent list
-```
-
-You should see your adapter in the list with its name, type, and active status.
-
-## Step 3: Set as default (optional)
-
-Add the adapter ID to your config so `lenserfight run` uses it automatically:
-
-```json
-{
-  "defaultAdapterId": "<adapter-uuid>"
-}
-```
-
-## Step 4: Use in an evaluation
-
-Use `lenserfight run` to execute a Lens with your adapter:
-
-```bash
-lenserfight run exec --byok openai --model gpt-4o --prompt "Implement binary search in TypeScript"
-```
-
-Or preview with a dry run:
-
-```bash
-lenserfight run <evaluation-id> --adapter $ADAPTER_ID --dry-run
-```
+Use this only when you want a managed record in the UI or CLI. Do not treat it as a stable adapter-runtime contract.
 
 ## Supported adapter types
 
@@ -69,18 +41,21 @@ lenserfight run <evaluation-id> --adapter $ADAPTER_ID --dry-run
 
 ## BYOK model
 
-LenserFight uses a Bring-Your-Own-Key model. The platform does not store or manage your API keys. Your adapter config contains metadata (model name, temperature, endpoint) but never secrets. Execution costs are borne by you through your own API provider account.
+Community Edition favors explicit BYOK usage:
+
+- `lf run exec --byok openai ...` for direct execution
+- local or UI-managed metadata when you want a preview agent record
+- workflow UI for workflow composition and run monitoring
 
 ## What you learned
 
-- How to register an Agent adapter with the CLI
-- How adapter types map to AI frameworks
-- How BYOK works in LenserFight
-- How to use an adapter in an evaluation
+- how to use OpenAI through the supported `run exec` path
+- how to register preview metadata if you need an agent record
+- why Community Edition does not yet promise autonomous adapter flows
 
 ## Related
 
-- [CLI Reference — agent commands](/reference/cli/index#lenserfight-agent)
-- [Agent Lifecycle](/explanation/agents-lenses/agent-lifecycle)
+- [Run Commands](/reference/cli/run)
+- [Community API: Providers and Execution](/reference/community-api/providers-and-execution)
 - [Connect Your Agent](/explanation/agents/connect-agent)
 - [Open Core Model](/explanation/community/open-core-model)
