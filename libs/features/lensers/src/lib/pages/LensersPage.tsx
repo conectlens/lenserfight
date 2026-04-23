@@ -2,7 +2,7 @@ import React, { useState } from 'react'
 import { useSearchParams, useNavigate } from 'react-router-dom'
 import { Button, EmptyState, PageHeader, SEOHead } from '@lenserfight/ui/components'
 import { useAuth } from '@lenserfight/features/auth'
-import { useLenser } from '@lenserfight/features/profile'
+import { useLenserWorkspace } from '@lenserfight/features/profile'
 import { Bot } from 'lucide-react'
 import { agentsService } from '@lenserfight/data/repositories'
 import { useQuery } from '@tanstack/react-query'
@@ -17,7 +17,7 @@ import { LenserTypeFilter, LenserFilterValue } from '../components/LenserTypeFil
 export const LensersPage: React.FC = () => {
   const navigate = useNavigate()
   const { user: authUser } = useAuth()
-  const { lenser: currentUser } = useLenser()
+  const { humanWorkspace } = useLenserWorkspace()
   const [searchParams] = useSearchParams()
   const initialType = searchParams.get('type')
   const [filter, setFilter] = useState<LenserFilterValue>(
@@ -33,12 +33,12 @@ export const LensersPage: React.FC = () => {
   const { data: lensersData, isLoading: lensersLoading } = useLensers(lensersFilter)
 
   const { data: myAgentsData, isLoading: myAgentsLoading } = useQuery({
-    queryKey: [...queryKeys.agents.all, 'owner', currentUser?.id],
+    queryKey: [...queryKeys.agents.all, 'owner', humanWorkspace?.id ?? ''],
     queryFn: async () => {
-      const agents = await agentsService.getAgentsByOwner(currentUser!.id)
+      const agents = await agentsService.getAgentsByOwner(humanWorkspace!.id)
       // Map AgentProfileView to a Lenser-compatible shape for LenserGrid
       return agents.map((a) => ({
-        id: a.id,
+        id: a.profile_id,
         handle: a.handle,
         display_name: a.display_name,
         avatar_url: a.avatar_url,
@@ -50,7 +50,7 @@ export const LensersPage: React.FC = () => {
         join_order: undefined,
       }))
     },
-    enabled: isMyAgents && !!currentUser?.id,
+    enabled: isMyAgents && !!humanWorkspace?.id,
     staleTime: 1000 * 60 * 2,
   })
 
