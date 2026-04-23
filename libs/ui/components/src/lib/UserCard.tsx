@@ -1,12 +1,10 @@
-import React, { useState, useRef, useEffect } from 'react'
-import { LogOut, Settings, User as UserIcon, ChevronDown, ArrowLeftRight } from 'lucide-react'
+import React, { useEffect, useRef, useState } from 'react'
+import { ArrowLeftRight, ChevronDown, LogOut, Settings, User as UserIcon } from 'lucide-react'
+
+import type { WorkspaceIdentity } from '@lenserfight/types'
+
 import { Avatar } from './Avatar'
 
-/**
- * Minimal types consumed by UserCard.
- * These match the shape of Supabase User and the lensers.profiles table row.
- * Keep them narrow — this component is purely presentational.
- */
 export interface UserCardUser {
   id: string
   email?: string
@@ -22,49 +20,59 @@ export interface UserCardLenser {
   avatar_url?: string | null
 }
 
-export interface UserCardAgent {
-  id: string
-  display_name: string
-  avatar_url?: string | null
-  handle: string
-}
-
 export interface UserCardProps {
-  /** Supabase auth user. null → unauthenticated state. */
   user: UserCardUser | null
-  /** Lenser profile row. null if not yet created or still loading. */
   lenser?: UserCardLenser | null
-  /** Called when the user clicks "Sign out". */
   onLogout: () => Promise<void>
-  /** URL for the Settings page (absolute or path). */
   settingsUrl?: string
-  /** URL for the user's public profile page. */
   profileUrl?: string
-  /** URL for the login page. Shown when user is null. */
   loginUrl?: string
-  /**
-   * compact — just the avatar + chevron in a dropdown trigger (for navbars).
-   * expanded — full card with email, handle, and action buttons.
-   */
   variant?: 'compact' | 'expanded'
   className?: string
-  /** AI agents owned by this lenser. When set, a switch popover is shown. */
-  agents?: UserCardAgent[]
-  /** Called when the user selects an agent to switch to. */
-  onSwitchToAgent?: (agentId: string) => void
+  workspaces?: WorkspaceIdentity[]
+  onSwitchWorkspace?: (lenserProfileId: string) => void
 }
 
-/**
- * UserCard
- *
- * Auth-aware user profile card suitable for inclusion in navbars and sidebars
- * across all web sub-apps. Receives auth state as props — has no direct dependency
- * on AuthContext or LenserContext. Consumers wire it with useAuth() + useLenser().
- *
- * Variants:
- *  - compact: avatar + name + chevron → dropdown with links + logout
- *  - expanded: full card (avatar, name, handle, email, action buttons)
- */
+function WorkspaceSwitchList({
+  workspaces,
+  onSelect,
+}: {
+  workspaces: WorkspaceIdentity[]
+  onSelect: (workspaceId: string) => void
+}) {
+  return (
+    <div className="border-t border-gray-100 dark:border-gray-700 py-1">
+      <p className="px-4 pt-1 pb-0.5 text-[10px] font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500 flex items-center gap-1">
+        <ArrowLeftRight size={10} />
+        Switch workspace
+      </p>
+      {workspaces.slice(0, 4).map((workspace) => (
+        <button
+          key={workspace.id}
+          onClick={() => onSelect(workspace.id)}
+          className="w-full flex items-center gap-2.5 px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+        >
+          <Avatar src={workspace.avatar_url} alt={workspace.display_name} size="sm" />
+          <div className="min-w-0 flex-1 text-left">
+            <p className="truncate">{workspace.display_name}</p>
+            <p className="text-xs text-gray-400 dark:text-gray-500 truncate">@{workspace.handle}</p>
+          </div>
+          {workspace.type === 'ai' && (
+            <span className="rounded bg-gray-100 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wide text-gray-500 dark:bg-gray-700 dark:text-gray-300">
+              AI
+            </span>
+          )}
+          {workspace.is_active && (
+            <span className="text-[9px] font-semibold uppercase tracking-wide text-primary">
+              Active
+            </span>
+          )}
+        </button>
+      ))}
+    </div>
+  )
+}
+
 export const UserCard: React.FC<UserCardProps> = ({
   user,
   lenser,
@@ -74,21 +82,24 @@ export const UserCard: React.FC<UserCardProps> = ({
   loginUrl = '/auth/login',
   variant = 'compact',
   className = '',
-  agents,
-  onSwitchToAgent,
+  workspaces,
+  onSwitchWorkspace,
 }) => {
   const [open, setOpen] = useState(false)
   const [signingOut, setSigningOut] = useState(false)
   const containerRef = useRef<HTMLDivElement>(null)
 
-  // Close dropdown on outside click
   useEffect(() => {
-    const handleClick = (e: MouseEvent) => {
-      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
+    const handleClick = (event: MouseEvent) => {
+      if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
         setOpen(false)
       }
     }
-    if (open) document.addEventListener('mousedown', handleClick)
+
+    if (open) {
+      document.addEventListener('mousedown', handleClick)
+    }
+
     return () => document.removeEventListener('mousedown', handleClick)
   }, [open])
 
@@ -102,7 +113,6 @@ export const UserCard: React.FC<UserCardProps> = ({
     }
   }
 
-  // — Unauthenticated state —
   if (!user) {
     return (
       <a
@@ -122,8 +132,8 @@ export const UserCard: React.FC<UserCardProps> = ({
   const avatarSrc = lenser?.avatar_url || user.user_metadata?.avatar_url || null
   const handle = lenser?.handle ? `@${lenser.handle}` : null
   const resolvedProfileUrl = profileUrl ?? (lenser?.handle ? `/lenser/${lenser.handle}` : undefined)
+  const canSwitchWorkspace = !!workspaces && workspaces.length > 1 && !!onSwitchWorkspace
 
-  // — Expanded variant —
   if (variant === 'expanded') {
     return (
       <div
@@ -173,35 +183,22 @@ export const UserCard: React.FC<UserCardProps> = ({
           </button>
         </div>
 
-        {agents && agents.length > 0 && onSwitchToAgent && (
+        {canSwitchWorkspace && (
           <div className="pt-2 border-t border-gray-100 dark:border-gray-700">
-            <p className="px-1 pb-1 text-[10px] font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500 flex items-center gap-1">
-              <ArrowLeftRight size={10} />
-              Switch to Agent
-            </p>
-            <div className="space-y-0.5">
-              {agents.slice(0, 3).map((agent) => (
-                <button
-                  key={agent.id}
-                  onClick={() => onSwitchToAgent(agent.id)}
-                  className="w-full flex items-center gap-2 px-2 py-1.5 rounded-lg text-xs text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
-                >
-                  <Avatar src={agent.avatar_url} alt={agent.display_name} size="sm" />
-                  <span className="truncate">{agent.display_name}</span>
-                </button>
-              ))}
-            </div>
+            <WorkspaceSwitchList
+              workspaces={workspaces}
+              onSelect={(workspaceId) => onSwitchWorkspace(workspaceId)}
+            />
           </div>
         )}
       </div>
     )
   }
 
-  // — Compact variant (navbar dropdown) —
   return (
     <div ref={containerRef} className={`relative ${className}`}>
       <button
-        onClick={() => setOpen((v) => !v)}
+        onClick={() => setOpen((value) => !value)}
         className="flex items-center gap-2 p-1 pr-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/50"
         aria-haspopup="true"
         aria-expanded={open}
@@ -218,7 +215,6 @@ export const UserCard: React.FC<UserCardProps> = ({
 
       {open && (
         <div className="absolute right-0 mt-2 w-56 bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 py-1 z-50 animate-in fade-in slide-in-from-top-1 duration-150">
-          {/* Identity header */}
           <div className="px-4 py-3 border-b border-gray-100 dark:border-gray-700">
             <p className="text-sm font-bold text-gray-900 dark:text-white truncate">{displayName}</p>
             {handle && (
@@ -229,7 +225,6 @@ export const UserCard: React.FC<UserCardProps> = ({
             )}
           </div>
 
-          {/* Actions */}
           <div className="py-1">
             {resolvedProfileUrl && (
               <a
@@ -251,23 +246,14 @@ export const UserCard: React.FC<UserCardProps> = ({
             </a>
           </div>
 
-          {agents && agents.length > 0 && onSwitchToAgent && (
-            <div className="border-t border-gray-100 dark:border-gray-700 py-1">
-              <p className="px-4 pt-1 pb-0.5 text-[10px] font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500 flex items-center gap-1">
-                <ArrowLeftRight size={10} />
-                Switch to Agent
-              </p>
-              {agents.slice(0, 3).map((agent) => (
-                <button
-                  key={agent.id}
-                  onClick={() => { onSwitchToAgent(agent.id); setOpen(false) }}
-                  className="w-full flex items-center gap-2.5 px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
-                >
-                  <Avatar src={agent.avatar_url} alt={agent.display_name} size="sm" />
-                  <span className="truncate">{agent.display_name}</span>
-                </button>
-              ))}
-            </div>
+          {canSwitchWorkspace && (
+            <WorkspaceSwitchList
+              workspaces={workspaces}
+              onSelect={(workspaceId) => {
+                onSwitchWorkspace(workspaceId)
+                setOpen(false)
+              }}
+            />
           )}
 
           <div className="border-t border-gray-100 dark:border-gray-700 py-1">
