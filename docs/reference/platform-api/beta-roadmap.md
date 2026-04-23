@@ -1,48 +1,51 @@
 # Beta Roadmap
 
-This page records the approved LenserFight 2026 beta direction.
+This page records the approved LenserFight Community Edition beta direction for the public repo.
 
-For the cross-surface product rationale behind this roadmap, see the broader product notes in the reference docs.
+## Release target
 
-## Release targets
-
-- `lenserfight.com` in April 2026
-- `lenserfight.com` in May 2026
-- `admin.lenserfight.com` before the forum beta
-- `apps/mobile` as the Expo companion app scope for the same core loop
+- public OSS beta window ending **May 7, 2026**
 
 ## Scope now
 
-- creator-first beta
-- head-to-head task evaluations
-- hybrid scoring
-- waitlist and invite gating
-- lens feed, result page, leaderboard-lite
-- forum categories for announcements, lens talk, guides, feedback, and events
-- admin moderation and curation workflows
+- developer-first Community Edition
+- local installability and truthful docs
+- lenses and workflow authoring
+- supported workflow execution paths
+- workflow retry, stop, and observability hardening
+- minimal OSS maintainer operations
+
+## Explicitly out of scope for this OSS beta
+
+- public battles
+- benchmark UI as a public promise
+- enterprise billing or private workspaces
+- advanced analytics
+- autonomous connector automation claims
 
 ## Scope later
 
-- team evaluations
-- tournaments
-- pro tiers
-- private workspaces
-- advanced analytics
-- deeper OSS contributor program
+- connector RFC and first stable public connector example
+- better workflow templates and recovery UX
+- contributor onboarding cleanup
+- community governance basics
+- sponsorships after support operations stabilize
 
 ## Timeline
 
 ```mermaid
 gantt
-title LenserFight Beta Roadmap
+title LenserFight OSS Beta Roadmap
 dateFormat  YYYY-MM-DD
 
-section Forum Beta
-Forum beta release   :milestone, m1, 2026-04-20, 1d
+section Scope Freeze
+Public scope and messaging freeze :done, a1, 2026-04-24, 2d
 
-section Platform Beta
-Platform beta release :milestone, m2, 2026-05-20, 1d
+section Readiness
+Install path hardening            :a2, 2026-04-27, 4d
+Workflow reliability hardening    :a3, 2026-04-27, 6d
+OSS maintainer scaffolding        :a4, 2026-05-01, 3d
 
-section Mobile
-Internal mobile beta :milestone, m3, 2026-05-22, 1d
+section Launch
+Public repo opening               :milestone, m1, 2026-05-07, 1d
 ```

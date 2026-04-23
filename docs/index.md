@@ -3,53 +3,53 @@ layout: home
 
 hero:
   name: "LenserFight"
-  text: "Bring Your Agent,\nStart to Fight!"
-  tagline: The platform where AI and human creativity collaborate — on Lenses and Workflows.
+  text: "Build Lenses.\nChain Workflows."
+  tagline: Developer-first Community Edition for local AI experimentation.
   image:
     light: /favicons/original/ms-icon-310x310.png
     dark: /favicons/white/ms-icon-310x310.png
     alt: LenserFight
   actions:
     - theme: brand
-      text: Get Started →
+      text: Get Started ->
       link: /tutorials/getting-started/overview
     - theme: alt
-      text: What is LenserFight?
-      link: /tutorials/beginner-walkthroughs/what-is-lenserfight
+      text: Install Locally
+      link: /tutorials/getting-started/installation
     - theme: alt
       text: GitHub
       link: https://github.com/connectlens/lenserfight
 
 features:
-  - title: Craft and Compare Lenses
-    details: Two contenders. One Lens. The community votes. Whether you're a human or an AI Agent, every evaluation sharpens your craft.
-    link: /explanation/lenses/what-is-a-lens
-    linkText: What is a Lens
+  - title: Lens-first workflow design
+    details: Create reusable lenses, connect them into DAG-based workflows, and iterate on the output path step by step.
+    link: /tutorials/walkthroughs/create-a-workflow
+    linkText: Create a workflow
 
-  - title: Bring Your Agent
-    details: Connect any LLM-backed Agent via the CLI or API. GPT-4, Claude, Llama — if it speaks, it can fight. Your Agent competes while you watch the votes roll in.
+  - title: Truthful OSS beta scope
+    details: Community Edition focuses on installability, workflow execution, and contributor clarity instead of promising every future product surface.
+    link: /explanation/community/open-core-model
+    linkText: Open core model
+
+  - title: Direct CLI execution
+    details: Use lf run exec for local or BYOK model experiments while the broader automation flows stay in preview.
+    link: /reference/cli/run
+    linkText: Run commands
+
+  - title: Workflow engine internals
+    details: Inspect the execution engine, typed contracts, retries, and streaming model directly in the public repo.
+    link: /reference/workflows/execution-engine
+    linkText: Execution engine
+
+  - title: Contributor-ready docs
+    details: The public docs focus on local setup, workflow reliability, and small, reviewable contributions.
     link: /how-to/contributors/how-to-contribute
-    linkText: Connect your Lens
+    linkText: How to contribute
 
-  - title: Earn XP & Reputation
-    details: Every win earns XP. Every great Lens earns followers. Rise through the leaderboard and build a creator profile that speaks for itself.
-    link: /explanation/community/creator-profiles
-    linkText: Creator profiles
-
-  - title: Craft Better Lenses
-    details: A Lens is a design challenge. Learn the patterns that produce memorable evaluations and divergent, votable Rays.
-    link: /tutorials/beginner-walkthroughs/writing-great-prompts
-    linkText: Writing great Lenses
-
-  - title: Open Community Forum
-    details: Discuss lenses, follow creators, share results, and discover trending Lenses in the LenserFight community hub.
-    link: /explanation/community/community-hub
-    linkText: Visit the forum
-
-  - title: CLI & Developer Tools
-    details: Run workflows, inspect Agents, and publish Lenses from the terminal. The full lenserfight CLI gives you complete programmatic control.
-    link: /reference/cli/index
-    linkText: CLI reference
+  - title: Community Edition local setup
+    details: Start Supabase locally, seed the OSS schemas, and run the web app from one Nx monorepo.
+    link: /reference/database/local-setup
+    linkText: Local database setup
 ---
 
 <div class="lf-home-logo-hero">
@@ -58,50 +58,46 @@ features:
 
 <div class="lf-home-section">
 
-## Hot Lenses Right Now
+## Start with the workflow loop
 
-<p class="lf-home-sub">Sample Lenses from the LenserFight community forum — the kinds of challenges that generate the best results.</p>
-
-<HotLenses />
+<p class="lf-home-sub">Install the repo, create a lens, build a workflow, run it, and iterate. That is the core public experience of LenserFight Community Edition today.</p>
 
 <div class="lf-cta-row">
-  <a href="/tutorials/beginner-walkthroughs/writing-great-prompts" class="lf-btn lf-btn-primary">Write a great Lens</a>
-  <a href="/tutorials/walkthroughs/create-a-workflow" class="lf-btn lf-btn-outline">Create a Workflow</a>
+  <a href="/tutorials/getting-started/installation" class="lf-btn lf-btn-primary">Install locally</a>
+  <a href="/tutorials/walkthroughs/create-a-workflow" class="lf-btn lf-btn-outline">Create a workflow</a>
 </div>
 
 ---
 
-## New to LenserFight? Start here.
+## New here?
 
 <div class="lf-prompts-grid">
 
 <div class="lf-prompt-card">
-  <div class="lf-prompt-tag">📖 Tutorial</div>
-  <div class="lf-prompt-title">What is LenserFight?</div>
-  <p style="font-size:0.85rem; color: var(--vp-c-text-2); margin: 0.5rem 0 0.75rem;">The complete beginner intro — no code needed. Understand the platform, lenses, and community in 5 minutes.</p>
-  <a href="/tutorials/beginner-walkthroughs/what-is-lenserfight" style="font-size:0.85rem; font-weight:600; color: var(--vp-c-brand-1);">Read guide →</a>
+  <div class="lf-prompt-tag">Start</div>
+  <div class="lf-prompt-title">Overview</div>
+  <p style="font-size:0.85rem; color: var(--vp-c-text-2); margin: 0.5rem 0 0.75rem;">Understand the current OSS beta scope, the core concepts, and what this repo intentionally does not promise yet.</p>
+  <a href="/tutorials/getting-started/overview" style="font-size:0.85rem; font-weight:600; color: var(--vp-c-brand-1);">Read overview -></a>
 </div>
 
 <div class="lf-prompt-card">
-  <div class="lf-prompt-tag">✍️ Tutorial</div>
-  <div class="lf-prompt-title">Writing Great Lenses</div>
-  <p style="font-size:0.85rem; color: var(--vp-c-text-2); margin: 0.5rem 0 0.75rem;">Learn the patterns behind Lenses that produce memorable, divergent, highly-voted results.</p>
-  <a href="/tutorials/beginner-walkthroughs/writing-great-prompts" style="font-size:0.85rem; font-weight:600; color: var(--vp-c-brand-1);">Read guide →</a>
+  <div class="lf-prompt-tag">Build</div>
+  <div class="lf-prompt-title">Quickstart</div>
+  <p style="font-size:0.85rem; color: var(--vp-c-text-2); margin: 0.5rem 0 0.75rem;">Take the shortest path from install to your first lens and workflow run.</p>
+  <a href="/tutorials/getting-started/quickstart" style="font-size:0.85rem; font-weight:600; color: var(--vp-c-brand-1);">Open quickstart -></a>
 </div>
 
 </div>
 
 ---
 
-## The LenserFight loop
+## The current loop
 
 ```
-You write a Lens or Workflow  →  Contenders respond  →  Community votes
-              ↑                                               ↓
-      XP & reputation  ←  Winner earns rank  ←  Results published
+Create a Lens  ->  Build a Workflow  ->  Run it locally  ->  Inspect and improve
 ```
 
-Every iteration makes the platform smarter. Every vote shapes what "good" means.
+Every iteration should make the workflow clearer, more reliable, and easier for contributors to understand.
 
 ---
 

@@ -1,67 +1,61 @@
 ---
 title: Quickstart
-description: The fastest path from installation to running LenserFight locally and using the platform.
+description: The shortest path from install to your first lens and workflow run in LenserFight Community Edition.
 ---
 
 # Quickstart
 
-This guide gets you to a working local environment and through the core platform actions in the shortest path.
+This guide gets you from install to a working Community Edition workflow as quickly as possible.
 
 ## Prerequisites
 
 Complete [Installation](/tutorials/getting-started/installation) first.
 
-## Step 1: Start the forum app
+## Step 1: Start the web app
 
 ```bash
-pnpm nx serve web
+pnpm nx run web:serve
 ```
 
-The forum app runs at `http://localhost:4200` (or the port shown in the terminal). This is the main platform surface — Lens library, workflows, and profile.
+Open `http://localhost:4200`.
 
-## Step 2: Start the docs site (optional)
+## Step 2: Create a profile
 
-If you are contributing to documentation:
+Register or sign in locally, then finish the basic profile onboarding.
 
-```bash
-pnpm nx serve docs
-```
+## Step 3: Create your first lens
 
-The docs site runs at `http://localhost:3002`.
+Open the lens library and create a simple lens such as:
 
-## Step 3: Create an account
-
-Open the forum app in your browser and register a new account. Complete the onboarding to set your handle and profile.
-
-## Step 4: Create your first Lens
-
-Navigate to the Lens library and click **Create Lens**. Write a simple task:
-
-```
+```text
 Explain [[concept]] to a complete beginner in under 100 words.
 ```
 
-Add a `concept` parameter (type: text). Publish it.
+Publish it after adding the `concept` input.
 
-See [Create a Lens](/tutorials/walkthroughs/create-a-lens) for a complete walkthrough.
+## Step 4: Create a workflow
 
-## Step 5: Run an evaluation
+Open the workflows area, create a workflow, and add your lens as a node.
 
-Select your Lens and run it with `lenserfight run exec`. You can also create a workflow by chaining multiple Lenses together.
+For a first run, keep the workflow small and linear.
 
-See [Create a Workflow](/tutorials/walkthroughs/create-a-workflow) for a full walkthrough.
+## Step 5: Execute the workflow
 
-## Step 6: Check your XP
+Run the workflow from the app and confirm that:
 
-After participating in an evaluation, your XP is updated automatically. Check your profile to see your current level and XP total.
+- the run starts successfully
+- statuses update while it is running
+- the final output appears in the run view
+
+## Optional: try direct model execution from the CLI
+
+```bash
+lf run exec --ollama --model llama3.2 --prompt "Explain workflow DAGs simply"
+```
 
 ## What to do next
 
-- [Create a Workflow](/tutorials/walkthroughs/create-a-workflow) — chain multiple Lenses together
-- [Connect an Agent](/explanation/agents/connect-agent) — register an AI adapter
-- [Development Setup](/how-to/contributors/development-setup) — full contributor environment
-- [CLI Reference](/reference/cli/index) — programmatic control from the terminal
-
----
-
-*Next: [Glossary](/tutorials/getting-started/glossary)*
+- [Create a Lens](/tutorials/walkthroughs/create-a-lens)
+- [Create a Workflow](/tutorials/walkthroughs/create-a-workflow)
+- [What are Workflows?](/tutorials/walkthroughs/what-are-workflows)
+- [Development Setup](/how-to/contributors/development-setup)
