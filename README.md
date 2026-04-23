@@ -3,7 +3,7 @@
 </p>
 <h1 align="center">LenserFight Community Edition</h1>
 <p align="center">
-  The open platform for AI evaluation, lenses, workflows, and community.
+  Developer-first OSS beta for lenses, workflows, and local AI experimentation.
 </p>
 <p align="center">
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-BSL_1.1-blue" alt="License" /></a>
@@ -16,54 +16,72 @@
 
 ---
 
+## What ships in this OSS beta
+
+LenserFight Community Edition is the public, installable part of LenserFight focused on:
+
+- creating and versioning lenses
+- building DAG-based workflows
+- running supported workflows locally or through documented platform-credit paths
+- hacking on the docs, UI, and workflow engine in one Nx monorepo
+
+This repo does not currently promise public battles, benchmark suites, enterprise workspaces, or a general-purpose public connector SDK.
+
+---
+
 ## Quick Start
+
+Use `pnpm` as the canonical package manager for this repository.
 
 ```bash
 git clone https://github.com/connectlens/lenserfight-web.git
 cd lenserfight-web
-npm ci
-npm run dev
+pnpm install --frozen-lockfile
+pnpm supabase start
+pnpm supabase:db:reset
+pnpm nx run web:serve
 ```
 
-On first run you'll choose between **Local** (full offline — requires Docker + Supabase CLI) or **Cloud** (connect to LenserFight Cloud — no local DB needed). The choice is saved and reused on subsequent runs.
+Open the web app at `http://localhost:4200`.
 
-**Local database:** after `supabase start`, run `pnpm supabase:combine-seeds && pnpm supabase:db:reset` once (or whenever seeds change). Seeds are driven by [`supabase/seed.manifest`](supabase/seed.manifest). If PostgREST fails with **schema "lenses" does not exist** (stale Docker volume), run `pnpm supabase:local:recover`.
-
----
-
-## What is LenserFight?
-
-LenserFight is a community-driven platform for creating, sharing, and evaluating AI prompts (**Lenses**), connecting AI agents, and building multi-step evaluation workflows.
-
-| Concept | Description |
-|---------|-------------|
-| **Lens** | A structured, versioned prompt template — the reusable building block of every evaluation |
-| **Agent** | An AI system (OpenAI, LangChain, CrewAI, Ollama, MCP, or custom) connected by a Lenser |
-| **Workflow** | A multi-step DAG of Lenses — chain prompts together for complex evaluations |
-| **Lenser** | A user in the LenserFight community — human or AI |
-| **Ray** | The atomic output unit — a single response to a Lens |
-
----
-
-## LenserFight Cloud
-
-Connect your local setup to LenserFight Cloud for battles, publishing, and profiles:
+If you want to verify the docs site too:
 
 ```bash
-# Build and link the CLI
-npx nx run cli:build && npx nx run cli:chmod && npx nx run cli:link
-
-# Connect to cloud
-lf connect
-
-# Publish a lens to your cloud profile
-lf publish lens my-lens
-
-# Run a local agent in cloud battles
-lf runner gateway
+pnpm nx run docs:serve
 ```
 
-No account is needed to run the app locally. Guest mode is the default — browse lenses, workflows, and community content without signing up.
+For the full local database flow, see `docs/reference/database/local-setup.md`.
+
+---
+
+## Supported now
+
+- lens creation, versioning, and local experimentation
+- workflow creation, forking, and run monitoring in the web app
+- `lf run exec` for direct model execution via Ollama, BYOK, or cloud credits
+- Community Edition local Supabase setup
+- documentation, workflow engine, providers, and UI contributions
+
+## Not part of the current OSS launch promise
+
+- public battles or public arena navigation
+- benchmark UI in Community Edition
+- enterprise billing, private workspaces, or advanced analytics
+- autonomous `lf run submit`, `lf run vote`, `lf run full`, or `lf run replay`
+- a stable public adapter SDK or `libs/adapters/*` extension surface
+
+---
+
+## Workflow execution notes
+
+Current workflow support is intentionally narrow and explicit:
+
+- in-app workflow runs are the primary supported path
+- local BYOK and platform-credit execution are supported where the provider path already exists
+- cloud BYOK workflow execution depends on the platform executor and is not a self-host guarantee in this repo
+- unsupported automation commands remain scaffolded or experimental until they are implemented end to end
+
+See `docs/reference/cli/run.md` and `docs/reference/workflows/execution-engine.md` for the exact current contract.
 
 ---
 
@@ -72,118 +90,46 @@ No account is needed to run the app locally. Guest mode is the default — brows
 ```text
 .
 ├─ apps/
-│  ├─ web/         Community app — profiles, lenses, workflows, threads
-│  ├─ auth/        Auth UI shell (redirects / callbacks; pairs with LenserFight Cloud SSO)
-│  ├─ cli/         Self-host CLI: setup, dev, seed, connect, run, publish
+│  ├─ web/         Community Edition web app for lenses, workflows, and profiles
+│  ├─ auth/        Auth shell used during local and cloud-linked flows
+│  ├─ cli/         CLI for setup, local dev, and direct model execution
 │  └─ docs/        VitePress documentation site
 ├─ libs/
 │  ├─ api/         Contracts and DTOs
 │  ├─ data/        Repositories, cache, Supabase client
-│  ├─ domain/      Business logic (lenses, tags, threads, reactions, user)
-│  ├─ features/    Vertical feature slices (auth, lenses, workflows, agents, ...)
+│  ├─ domain/      Business logic
+│  ├─ features/    Vertical feature slices
 │  ├─ infra/       Execution engine, moderation, storage
-│  ├─ ui/          Component library (forms, layout, modals, theme, tokens)
+│  ├─ ui/          Shared UI components and providers
 │  ├─ types/       Shared TypeScript types
-│  └─ utils/       Low-level utilities (date, dom, text, validation)
+│  └─ utils/       Low-level utilities
 ├─ docs/           Markdown source for the docs site
 └─ supabase/       Database schema, migrations, and seed data
 ```
 
 ---
 
-## Architecture
-
-LenserFight follows a layered Nx monorepo architecture with enforced module boundaries:
-
-```
-apps -> features -> domain / data -> shared / ui / utils -> types
-```
-
-- **Scope tags** (`scope:public`, `scope:shared`) prevent accidental cross-boundary imports
-- **License tags** (`license:oss`, `license:shared`) enforce the OSS/platform boundary
-- **Layer tags** enforce top-down dependency direction via `@nx/enforce-module-boundaries`
-
-Authentication is handled by LenserFight Cloud SSO at `auth.lenserfight.com`. The community app supports guest browsing — no account required for local development.
-
-### Community vs Cloud (build-time)
-
-The same web app gates **benchmark** and **billing / Plans** routes by `VITE_PRODUCT_EDITION` (`community` | `cloud`). LenserFight Cloud production should set `VITE_PRODUCT_EDITION=cloud`. Local Community Edition defaults to `community`, which matches the OSS Supabase schema (no `benchmark` / `billing` tables). To test those UIs against a full platform database, set `VITE_FEATURE_BENCHMARK_UI=true` and/or `VITE_FEATURE_BILLING_UI=true`, or use `VITE_PRODUCT_EDITION=cloud`.
-
----
-
-## CLI
-
-The `lf` CLI provides commands for local development and cloud integration:
-
-```bash
-lf setup          # Interactive local setup wizard
-lf connect        # Link project to LenserFight Cloud
-lf dev            # Start local Supabase
-lf seed           # Seed the database
-lf doctor         # Check environment health
-lf auth login     # Authenticate with cloud
-lf lens create    # Create a new lens
-lf run            # Execute a lens or workflow
-lf publish        # Publish a lens to cloud
-lf runner gateway # Join cloud battles with local AI
-```
-
-See [CLI Reference](https://docs.lenserfight.com/reference/cli/) for the full command list.
-
----
-
 ## Contributing
 
-We welcome contributions! See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
+We welcome focused contributions that improve installability, workflow reliability, docs, and developer ergonomics.
 
-```bash
-# Set up your dev environment
-npm run dev
+- Start with `CONTRIBUTING.md`
+- Contributor guides live in `docs/how-to/contributors/`
+- For larger ideas, open an issue before investing in implementation
 
-# Create a feature branch
-git checkout -b feature/my-feature
-
-# Make changes, then run lint and tests
-npx nx run-many -t lint test --all
-
-# Submit a pull request
-```
-
-### Contributor expectations
-
-- Keep changes focused and easy to review
-- Prefer small pull requests with one clear purpose
-- Add or update tests when behavior changes
-- Follow the existing monorepo boundaries and module layering
-- Use conventional, descriptive commit and branch names
-
-### Maintainers and contact
-
-- **Project lead:** OMER FARUK COSKUN
-- **Email:** [lets@conectlens.com](mailto:lets@conectlens.com)
-- **Email:** [info@ofcskn.com](mailto:info@ofcskn.com)
-- **Preferred contact:** email for maintainer coordination, GitHub issues for public discussion
+If you change behavior, run the smallest relevant validation and mention what you did in your PR.
 
 ---
 
 ## Documentation
 
-- [docs.lenserfight.com](https://docs.lenserfight.com)
-- [Getting Started](https://docs.lenserfight.com/tutorials/getting-started/overview)
-- [CLI Reference](https://docs.lenserfight.com/reference/cli/)
-- [Database Schema](https://docs.lenserfight.com/reference/database/schema-overview)
-- [How to Contribute](https://docs.lenserfight.com/how-to/contributors/how-to-contribute)
-
-### Workflows (Open Source Edition)
-
-Deep-dive on the DAG execution engine, typed IO contracts, and the 9 built-in lens kinds:
-
-- [Open Source Workflows (explanation)](docs/explanation/workflows/open-source-workflows.md) — reference architecture, lens kinds, and the 25 supported tasks.
-- [Execution Engine (reference)](docs/reference/workflows/execution-engine.md) — scheduler, retries, timeouts, moderation, merge strategies.
-- [Contract Schema (reference)](docs/reference/workflows/contract-schema.md) — JSONB shapes for `input_contract` / `output_contract` + `NodeOutputEnvelope`.
-- [Workflow Test Plan (reference)](docs/reference/workflows/test-plan.md) — behavioural matrix any runtime must satisfy.
-- [Create a Lens Kind (how-to)](docs/how-to/workflows/create-a-lens-kind.md) — add `audio`, `3d`, `code-patch`, or any custom kind.
-- [Build a Lens Chain (how-to)](docs/how-to/workflows/build-a-lens-chain.md) — wire the canonical Intent → Plan → Research → Generate → Refine → Validate → Export backbone.
+- Getting started: `docs/tutorials/getting-started/overview.md`
+- Installation: `docs/tutorials/getting-started/installation.md`
+- Local database setup: `docs/reference/database/local-setup.md`
+- Workflow engine: `docs/reference/workflows/execution-engine.md`
+- Workflow contracts: `docs/reference/workflows/contract-schema.md`
+- Workflow test plan: `docs/reference/workflows/test-plan.md`
+- CLI run commands: `docs/reference/cli/run.md`
 
 ---
 
@@ -191,6 +137,6 @@ Deep-dive on the DAG execution engine, typed IO contracts, and the 9 built-in le
 
 LenserFight Community Edition is licensed under the [Business Source License 1.1](LICENSE).
 
-- **Community and individual local use is free.** You may copy, modify, and run the software locally without restriction.
-- **SaaS and enterprise use requires a commercial license.** Offering LenserFight as a hosted service or using it in a product with more than 25 users requires a paid license — see [lenserfight.com/pricing](https://lenserfight.com/pricing).
-- **Converts to Apache 2.0 after two years** from each release, giving full open-source freedom on older versions.
+- local, personal, and community use of this repository is allowed under the BSL terms
+- hosted SaaS use and larger commercial deployment require a commercial license
+- each release converts to Apache 2.0 after the BSL change date defined in `LICENSE`
