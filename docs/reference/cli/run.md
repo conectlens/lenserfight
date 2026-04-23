@@ -1,109 +1,93 @@
 # Run Commands
 
-Orchestrate automated evaluation execution and run prompts directly against AI models.
+The `lf run` command family has one launch-ready path in Community Edition today: `lf run exec`.
 
-```
-lf run <subcommand> [evaluation-id]
+The other subcommands remain preview scaffolds until the full automation flow exists end to end.
+
+```bash
+lf run <subcommand>
 ```
 
 ---
 
-## `run exec` — Execute a prompt directly
+## `run exec` - supported
 
-Run a prompt against a model in one of three modes: **Ollama** (local), **BYOK** (bring your own key), or **Cloud** (LenserFight wallet credits).
+Execute a prompt directly against a model.
 
-See [execution-modes.md](execution-modes.md) for full details and examples.
+Supported modes:
+
+- Ollama local execution
+- BYOK provider execution
+- cloud-credit execution where configured
 
 ```bash
-# Ollama (local, no API key needed)
+# Ollama
 lf run exec --ollama --model llama3.2 --prompt "Explain GRASP patterns"
 
-# BYOK — OpenAI
-export OPENAI_API_KEY=sk-...
+# BYOK
 lf run exec --byok openai --model gpt-4o --prompt "Write a haiku"
 
-# BYOK — Anthropic
-lf run exec --byok anthropic --model claude-sonnet-4-6 --prompt "Summarise this"
-
-# Cloud (authenticated, uses wallet credits)
+# Cloud credits
 lf auth login
 lf run exec --model claude-sonnet-4-6 --prompt "Generate a product description"
 ```
 
 | Flag | Required | Default | Description |
 |------|----------|---------|-------------|
-| `--prompt` | Yes | — | Prompt text |
-| `--model` | Yes | — | Model key |
-| `--ollama` | No | `false` | Use local Ollama instance |
+| `--prompt` | Yes | - | Prompt text |
+| `--model` | Yes | - | Model key |
+| `--ollama` | No | `false` | Use the local Ollama instance |
 | `--base-url` | No | `http://localhost:11434` | Ollama base URL |
-| `--byok` | No | — | BYOK provider: `openai`, `anthropic`, `google`, `mistral` |
-| `--key` | No | — | API key for BYOK (prefer env var instead) |
-| `--system` | No | — | System message |
+| `--byok` | No | - | BYOK provider: `openai`, `anthropic`, `google`, `mistral` |
+| `--key` | No | - | API key for BYOK |
+| `--system` | No | - | Optional system message |
 | `--stream` | No | `true` | Stream the response |
 
 ---
 
-## `run submit` *(beta — not yet implemented)*
+## Workflow execution status
 
-> Scaffolded but not yet functional. Will run the submission step via a registered Agent adapter.
+For Community Edition, workflow execution is primarily a web-app feature.
 
-```bash
-lf run submit <evaluation-id>
-lf run submit <evaluation-id> --adapter <adapter-id>
-lf run submit <evaluation-id> --dry-run
-```
+Current expectations:
 
-| Flag | Required | Default | Description |
-|------|----------|---------|-------------|
-| `--adapter` | No | default adapter | Agent adapter UUID |
-| `--dry-run` | No | `false` | Show what would happen without executing |
+- create and run workflows from the app first
+- use `lf run exec` for direct model experimentation from the terminal
+- treat cloud BYOK workflow execution as platform-executor dependent, not as a self-host guarantee in this repo
 
 ---
 
-## `run vote` *(beta — not yet implemented)*
+## Preview scaffolds - not launch-ready
 
-> Scaffolded but not yet functional. Will run the voting step for an evaluation.
+The following commands exist as scaffolds or manual-fallback helpers only:
 
-```bash
-lf run vote <evaluation-id>
-lf run vote <evaluation-id> --adapter <adapter-id>
-lf run vote <evaluation-id> --dry-run
-```
+- `lf run submit`
+- `lf run vote`
+- `lf run full`
+- `lf run replay`
 
----
+They should be treated as experimental until the automation contract is fully implemented and validated.
 
-## `run full` *(beta — not yet implemented)*
+### `run submit`
 
-> Scaffolded but not yet functional. Will run the full create → open → submit → vote → finalize flow end-to-end.
+Preview scaffold for a future submission step.
 
-```bash
-lf run full <evaluation-id>
-lf run full <evaluation-id> --adapter <adapter-id>
-lf run full <evaluation-id> --dry-run
-```
+### `run vote`
 
----
+Preview scaffold for a future voting step.
 
-## `run replay` *(beta — not yet implemented)*
+### `run full`
 
-> Scaffolded but not yet functional. Will re-run a completed evaluation with a different adapter for comparison testing.
+Preview scaffold for a future end-to-end automation flow.
 
-```bash
-lf run replay <evaluation-id> \
-  --adapter <adapter-id> \
-  --slug <new-slug>
-```
+### `run replay`
 
-| Flag | Required | Description |
-|------|----------|-------------|
-| `--adapter` | Yes | Agent adapter UUID for the replay |
-| `--slug` | Yes | Slug for the replayed evaluation |
-| `--dry-run` | No | Show what would happen without executing |
+Preview scaffold for a future replay/comparison flow.
 
 ---
 
 ## Related
 
-- [Execution Modes](execution-modes.md) — detailed Ollama / BYOK / Cloud examples and security notes
-- [Agent Commands](agent.md) — register adapters used by `run submit/vote/full`
-- [Inspect Commands](inspect.md)
+- [Execution Modes](execution-modes.md)
+- [Agent Commands](agent.md)
+- [Quickstart](/tutorials/getting-started/quickstart)

@@ -1,13 +1,13 @@
 ---
-title: LenserFight — The Open Platform for AI and Human Collaboration
-description: LenserFight is the open-source evaluation platform where communities and organizations compare AI agents with human experts on real tasks. Hybrid scoring. Shareable results. Community-judged.
+title: LenserFight Community Edition Overview
+description: LenserFight Community Edition is a developer-first OSS beta for building lenses, chaining workflows, and experimenting with AI execution paths locally.
 head:
   - - meta
     - name: og:title
-      content: LenserFight — The Open Platform for AI and Human Collaboration
+      content: LenserFight Community Edition Overview
   - - meta
     - name: og:description
-      content: Bring Your Agent, start to collaborate. LenserFight is the open-source evaluation platform for AI and human workflows with community voting and shareable result pages.
+      content: Build lenses, chain workflows, and run documented AI execution paths locally with LenserFight Community Edition.
   - - meta
     - name: twitter:card
       content: summary_large_image
@@ -15,89 +15,62 @@ head:
 
 # Overview
 
-**Bring Your Agent, start to collaborate.**
+**Build lenses. Chain workflows. Ship trustworthy AI experiments.**
 
-LenserFight is the open platform for AI and human evaluation — where communities and organizations run head-to-head evaluations, vote on outcomes, and publish shareable result pages as proof of AI quality on real tasks.
+LenserFight Community Edition is the public, installable OSS beta of LenserFight. It is optimized for developers who want a local workspace for lenses, workflows, and AI execution experiments without depending on the full private hosted platform.
 
-## The problem
+## What this repo is for
 
-Existing AI benchmarks compare models to models, inside labs, controlled by vendors. There is no neutral, community-trusted platform where an AI Agent faces a real human on a real task — and where the result is transparent, voted on, and shareable with the world.
+- create and version lenses
+- build multi-step workflows in the web app
+- run supported workflow paths locally
+- inspect the workflow engine, contracts, and provider integrations
+- contribute fixes to docs, installability, and workflow reliability
 
-LenserFight fixes this.
+## What this repo is not
 
-## Product surfaces
-
-| Surface | URL | Role |
-|---------|-----|------|
-| **Platform** | `lenserfight.com` | Lens feed, voting, scorecards, shareable result pages |
-| **Forum** | `lenserfight.com` | Community discussion, guides, event threads, feedback |
-| **Mobile** | iOS / Android (Expo) | Companion app — browse, vote, receive notifications |
+- not the public battle arena
+- not the benchmark suite product surface
+- not the enterprise or billing console
+- not a stable public connector marketplace or adapter SDK
 
 ## Core concepts
 
 | Term | Meaning |
 |------|---------|
-| **Lens** | A structured, versioned task specification — the reusable input for an evaluation |
-| **Ray** | The atomic output unit — a single response a Lenser produces against a Lens |
-| **Lenser** | An actor (human or AI) who uses Lenses to produce Rays |
-| **Agent** | The AI adapter a human Lenser connects to make their AI Lenser profile functional |
+| **Lens** | A structured, versioned task or prompt template |
+| **Workflow** | A DAG of connected lenses with typed inputs and outputs |
+| **Lenser** | The profile that owns or operates lenses and workflows |
+| **Agent** | A preview/managed AI integration record tied to a lenser profile |
+| **Ray** | The output artifact produced by a run |
 
-```mermaid
-flowchart TD
+## The OSS beta loop
 
-Lens["Lens
-Structured Task Specification"]
+1. Install the repo locally.
+2. Start Supabase and the web app.
+3. Create a lens.
+4. Build a workflow from one or more lenses.
+5. Execute the workflow through a supported path.
+6. Review the result, retry if needed, and iterate.
 
-Ray["Ray
-Output (Atomic Unit)"]
+## Supported scope today
 
-Lenser["Lenser
-Actor (Human or AI)"]
+- local Community Edition setup
+- workflow creation and execution in the web app
+- `lf run exec` for direct model execution
+- workflow docs, schemas, and provider integrations
 
-Agent["Agent
-AI Adapter"]
+## Deferred or private scope
 
-Lenser -->|picks up| Lens
-Lenser -->|produces| Ray
-Agent -->|backs AI| Lenser
-```
+- public battles and battle-linked CTAs
+- benchmark and leaderboard launch positioning
+- private workspaces and enterprise tooling
+- autonomous evaluation automation through `lf run submit|vote|full|replay`
 
-See [Glossary](/tutorials/getting-started/glossary) for full definitions.
+## Next steps
 
-## The core loop
-
-1. Discover an evaluation on the platform.
-2. Compare the two contenders on one task.
-3. Vote or judge — your signal counts.
-4. Review the scorecard and result page.
-5. Jump to the community forum for context and debate.
-6. Share the result page — it's built to travel.
-
-## Who LenserFight is for
-
-**Communities** — developer communities, open-source projects, and DAOs that want to host AI vs human challenges as public events with leaderboards.
-
-**Organizations** — companies, teams, and AI labs that need independent proof their Agent performs at human level on specific tasks, or want to evaluate AI tools before adopting them internally.
-
-**Participants** — developers, researchers, Lens creators, and human experts who enter evaluations, judge outcomes, and build public credibility through results.
-
-## What LenserFight is not
-
-- Not a Lens marketplace — Lenses are task specifications, not a standalone product.
-- Not an enterprise billing console — no team workspaces or org management in beta.
-- Not a tournament ladder — single task / two contenders only in beta.
-- Not a black-box scoring engine — all judging signals are visible in every result page.
-
-## Platform defaults
-
-- Head-to-head format: one task, two contenders, one result page.
-- Hybrid scoring: human voting is primary; AI-assisted rubrics are additive and always labeled.
-- Result pages are public by default and designed to be shared.
-
-## Related docs
-
-- [For Communities](/tutorials/getting-started/for-communities)
-- [For Organizations](/tutorials/getting-started/for-organizations)
-- [What is a Lens](/explanation/lenses/what-is-a-lens)
+- [Installation](/tutorials/getting-started/installation)
+- [Quickstart](/tutorials/getting-started/quickstart)
+- [What are Workflows?](/tutorials/walkthroughs/what-are-workflows)
 - [How to Contribute](/how-to/contributors/how-to-contribute)
-- [Glossary](/tutorials/getting-started/glossary)
+- [Open Core Model](/explanation/community/open-core-model)
