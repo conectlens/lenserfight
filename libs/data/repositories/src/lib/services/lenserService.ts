@@ -50,9 +50,13 @@ const enrichLenserProfile = async (lenser: Lenser | null): Promise<Lenser | null
 }
 
 export const lenserService = {
-  getAuthenticatedLenser: async (): Promise<Lenser | null> => {
-    const lenser = await lenserRepo.getAuthenticatedLenser()
+  getActiveLenser: async (): Promise<Lenser | null> => {
+    const lenser = await lenserRepo.getActiveLenser()
     return enrichLenserProfile(lenser)
+  },
+
+  getAuthenticatedLenser: async (): Promise<Lenser | null> => {
+    return lenserService.getActiveLenser()
   },
 
   getAuthenticatedProfileGate: async (): Promise<AuthProfileGate> => {
