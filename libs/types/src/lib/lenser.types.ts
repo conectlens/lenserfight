@@ -13,6 +13,15 @@ export interface LenserCompactProfile {
   current_level: number
 }
 
+export interface WorkspaceIdentity {
+  id: string
+  handle: string
+  display_name: string
+  avatar_url: string | null
+  type: LenserType
+  is_active: boolean
+}
+
 /**
  * Full preferences row from `lensers.preferences` (1:1 with profiles).
  * Non-optional fields mirror DB NOT NULL columns.
@@ -274,6 +283,7 @@ export interface LenserProfileDTO {
   // Visibility & lifecycle
   visibility?: 'public' | 'private' | 'community'
   deletion_deadline_at?: string | null
+  type?: LenserType
 
   // Content preferences (flat from lensers.preferences table)
   hide_actions?: boolean
