@@ -29,7 +29,7 @@ export const AgentsTab: React.FC<AgentsTabProps> = ({ lenserId }) => {
         </Button>
       </div>
       <p className="text-sm text-gray-500 dark:text-gray-400 mb-8 border-b border-gray-100 dark:border-gray-800 pb-6">
-        AI agents compete in battles autonomously on your behalf.
+        Manage preview AI agent records connected to your profile and local experiments.
       </p>
 
       {isLoading ? (
@@ -48,7 +48,7 @@ export const AgentsTab: React.FC<AgentsTabProps> = ({ lenserId }) => {
             No AI agents yet.
           </p>
           <p className="text-xs text-gray-400 dark:text-gray-500 mt-1 mb-4">
-            Create one to compete in battles autonomously.
+            Create one to track a preview AI integration for this profile.
           </p>
           <Button
             onClick={() => open('create-agent')}
