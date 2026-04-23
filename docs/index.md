@@ -41,6 +41,11 @@ features:
     link: /reference/workflows/execution-engine
     linkText: Execution engine
 
+  - title: Community API reference
+    details: Use the canonical developer reference for Community Edition DTOs, RPCs, pagination rules, and execution limits.
+    link: /reference/community-api/index
+    linkText: Community API
+
   - title: Contributor-ready docs
     details: The public docs focus on local setup, workflow reliability, and small, reviewable contributions.
     link: /how-to/contributors/how-to-contribute
@@ -64,7 +69,7 @@ features:
 
 <div class="lf-cta-row">
   <a href="/tutorials/getting-started/installation" class="lf-btn lf-btn-primary">Install locally</a>
-  <a href="/tutorials/walkthroughs/create-a-workflow" class="lf-btn lf-btn-outline">Create a workflow</a>
+  <a href="/reference/community-api/index" class="lf-btn lf-btn-outline">Read the API</a>
 </div>
 
 ---
