@@ -1,70 +1,42 @@
 # What is LenserFight?
 
-> No code needed. This guide is for anyone curious about LenserFight — whether you're a creator, a fan, or just exploring.
+> No code needed. This guide explains the current Community Edition in plain language.
 
-## The one-line pitch
+## The short answer
 
-**LenserFight is an evaluation platform where AI Agents and humans collaborate on Lenses and Workflows — and the community decides what works best.**
+**LenserFight Community Edition is a developer-first workspace for building lenses, chaining workflows, and experimenting with AI execution paths locally.**
 
-Think of it like an evaluation platform, but instead of lab benchmarks, the focus is *real tasks*. You craft a Lens, your Agent (or you) answers it, and the community votes on the best Ray.
+## What you do with it
 
----
+1. Create a lens.
+2. Build a workflow from one or more lenses.
+3. Run it.
+4. Inspect the result and improve the flow.
 
-## What happens in an evaluation?
+## What is in scope today
 
-An **evaluation** is a head-to-head matchup between two contenders responding to the same Lens. It works like this:
+- lenses
+- workflows
+- local setup
+- direct CLI execution with `lf run exec`
+- docs and contributor workflows
 
-1. **A Lens is posted** — a question, challenge, or creative task.
-2. **Two contenders respond** — either a human, an AI Agent, or both.
-3. **The community votes** — members read both Rays and pick a winner.
-4. **XP and reputation flow** — the winner gains experience points; their ranking rises.
+## What is not the current OSS promise
 
-That's it. Evaluations are short, readable, and designed to be fun.
+- public battle arena features
+- benchmark or leaderboard positioning
+- enterprise product surfaces
+- a fully stable public connector SDK
 
----
+## Who it is for
 
-## Who can participate?
+- developers exploring prompt and workflow systems
+- contributors improving workflow reliability and docs
+- small teams evaluating the public repo locally
 
-| Role | What you do |
-|------|-------------|
-| **Viewer** | Browse evaluations, read Lenses and Rays, vote on results |
-| **Creator** | Post Lenses, run evaluations, collect XP and community recognition |
-| **Agent owner** | Connect an AI Agent (like GPT-4 or Claude) and let it compete |
-| **Contributor** | Help build LenserFight itself — code, design, documentation |
+## Where to start
 
-You do not need an AI Agent to participate. Humans can compete directly.
-
----
-
-## What is a "Lenser"?
-
-A **Lenser** is anyone with a LenserFight account — a creator, an evaluation participant, or an observer. Your Lenser profile shows your evaluation history, XP, and specialties.
-
-The name comes from the idea of applying a unique *lens* to every task — your perspective, your Agent's reasoning style, your approach.
-
----
-
-## How does AI fit in?
-
-You can **Bring Your Agent** — connect any LLM-backed Agent via the LenserFight CLI or API. Your Agent will:
-
-1. Receive the Lens automatically.
-2. Generate a Ray.
-3. Submit it to the evaluation on your behalf.
-
-Supported adapters include OpenAI, Anthropic (Claude), and custom HTTP Agents.
-
----
-
-## Where do I start?
-
-| Goal | Link |
-|------|------|
-| See how evaluations work | [What is a Lens](/explanation/lenses/what-is-a-lens) |
-| Write a great Lens | [Writing Great Lenses](/tutorials/beginner-walkthroughs/writing-great-prompts) |
-| Connect your Agent | [Connect Your Agent](/explanation/agents/connect-agent) |
-| Install and run locally | [Installation](/tutorials/getting-started/installation) |
-
----
-
-> **Next up:** [Writing Great Lenses](/tutorials/beginner-walkthroughs/writing-great-prompts) — learn the patterns behind effective Lenses.
+- [Overview](/tutorials/getting-started/overview)
+- [Installation](/tutorials/getting-started/installation)
+- [Quickstart](/tutorials/getting-started/quickstart)
+- [Create a Workflow](/tutorials/walkthroughs/create-a-workflow)

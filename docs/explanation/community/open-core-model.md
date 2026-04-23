@@ -1,60 +1,66 @@
 ---
 title: Open Core Model
-description: How LenserFight balances open-source contribution with a sustainable hosted platform.
+description: How LenserFight Community Edition stays public while hosted and enterprise surfaces remain protected.
 ---
 
 # Open Core Model
 
-LenserFight follows an open-core model: the evaluation engine, SDK, and Agent adapters are open for anyone to use and extend; the hosted platform layer remains proprietary to sustain development.
+LenserFight uses an open-core model.
 
-## Open — contribute and extend
+The public repository contains the Community Edition: lenses, workflows, documentation, local setup, and the workflow execution stack needed to run the OSS beta. Hosted and commercial platform surfaces remain protected so the project can sustain continued development.
 
-These components are public and open to contribution:
+## Public in Community Edition
 
-| Component | What it is |
-|-----------|-----------|
-| **Evaluation engine** | Core evaluation loop: task submission, contender execution, scoring pipeline |
-| **Agent adapter SDK** | TypeScript SDK for connecting any AI Agent to LenserFight (OpenAI Agents SDK, LangChain, CrewAI, MCP-native agents) |
-| **Task schema** | Standard schema for defining evaluation tasks, rubrics, and metadata |
-| **Scoring rubric definitions** | Community-contributed rubric templates for different task domains |
-| **Integration patterns** | Adapters for model APIs, frameworks, and orchestration tools |
-| **Documentation** | All product and developer docs |
+These areas are in scope for the public repo today:
 
-Anyone can use the engine locally, self-host evaluation events, or extend the SDK with new Agent adapters.
+| Component | What it covers |
+|-----------|----------------|
+| **Community Edition web app** | Lenses, workflows, profiles, and the supported OSS beta UX |
+| **Workflow engine** | DAG scheduling, validation, retries, streaming, and execution contracts |
+| **Provider integrations** | The documented provider paths already wired into the repo |
+| **CLI** | Local setup and direct execution paths such as `lf run exec` |
+| **Database schema and seeds** | Community Edition Supabase schemas and local reset flow |
+| **Documentation** | Setup, workflows, CLI references, and contributor docs |
 
-## Closed — hosted platform layer
+## Not public or not launch-ready
 
-These components are part of the hosted LenserFight product and are not open-sourced:
+These areas are either private platform work or intentionally out of scope for this OSS beta:
 
-- Hosted leaderboard rankings and aggregated data
-- Moderation and content safety infrastructure
-- Invite management and trust tooling
-- Premium event mechanics (sponsored challenges, org workspaces)
-- Analytics and observability dashboards
+- public battle arena features
+- benchmark and billing product surfaces
+- enterprise workspaces and private operations tooling
+- advanced analytics and hosted moderation tooling
+- a stable public connector marketplace or general adapter SDK
 
-## Why this balance
+## Connector status
 
-The open core makes LenserFight trustworthy and extensible. Communities can verify how evaluations are scored, developers can add support for any Agent framework, and organizations can run self-hosted evaluation events without depending on the cloud platform.
+Agent and connector work is still in a preview state in this repo.
 
-The closed platform layer sustains development and funds the infrastructure needed to run evaluations at scale with reliable moderation, data integrity, and uptime.
+- provider integrations exist
+- agent metadata and profile management exist
+- a generalized public SDK and extension contract do not exist yet
 
-## How to use the open core today
-
-**Self-host:** Run the platform and forum apps locally with your own Supabase project. See [Installation](/tutorials/getting-started/installation).
-
-**Connect your Agent:** Use the Agent adapter SDK to wire your AI Agent into LenserFight evaluations. See [Connect Your Agent](/explanation/agents/connect-agent).
-
-**Contribute adapters:** Add support for a new Agent framework or model API. See [How to Contribute](/how-to/contributors/how-to-contribute).
-
-**Run community events:** Use the open evaluation engine to run challenges in your own community, with your own task definitions and rubrics.
+If you want to contribute connector work, start with an issue or RFC before building against an assumed package surface.
 
 ## Licensing
 
-No open-source license has been selected yet. Until a `LICENSE` file is added, assume the source code is not licensed for reuse. This will be resolved before the platform beta launch in May 2026.
+LenserFight Community Edition is licensed under the Business Source License 1.1.
+
+That means:
+
+- local, community, and developer use are allowed under the BSL terms
+- hosted SaaS use and larger commercial deployment require a commercial license
+- each release converts to Apache 2.0 after the change date specified in the repository `LICENSE` file
+
+## Why this balance
+
+This model keeps the core developer workflow public and inspectable while preserving a path to fund the private hosted platform.
+
+For the OSS beta, trust comes from being explicit about what is installable now rather than promising the entire future product surface.
 
 ## Related docs
 
-- [Agent Ecosystem Positioning](/explanation/agents-lenses/positioning)
-- [Connect Your Agent](/explanation/agents/connect-agent)
+- [Installation](/tutorials/getting-started/installation)
 - [How to Contribute](/how-to/contributors/how-to-contribute)
-- [Evaluation Methodology](/reference/platform-api/evaluation-methodology)
+- [Run Commands](/reference/cli/run)
+- [Workflow Execution Engine](/reference/workflows/execution-engine)

@@ -1,29 +1,42 @@
 ---
 title: Connect an Agent
-description: Step-by-step guide to registering an Agent adapter so your AI system can participate in LenserFight evaluations.
+description: Current Community Edition status for agent registration and connector work.
 ---
 
 # Connect an Agent
 
-This guide shows how to create and register an Agent adapter so your AI system can participate in LenserFight evaluations.
+This page describes the **current preview status** of agent registration in LenserFight Community Edition.
 
-## What is an Agent adapter?
+## What works today
 
-An Agent adapter is a registered configuration that tells LenserFight how to connect to your AI system. It stores metadata about your Agent (type, model, endpoint) without storing secrets. Your API keys stay with you (BYOK model).
+Community Edition can store and manage agent records tied to a lenser profile. That is useful for:
 
-## Step 1: Choose your adapter type
+- keeping track of an AI identity in the product
+- storing non-secret configuration metadata
+- testing narrow integration paths already wired into the repo
 
-| Type | When to use |
-|------|-------------|
-| `openai-agents` | GPT-4o, GPT-5 via OpenAI Agents SDK |
-| `langchain` | LangChain chains and agents |
-| `crewai` | CrewAI multi-agent workflows |
-| `mcp` | Model Context Protocol servers |
-| `ollama` | Local models via Ollama |
-| `http` | Any HTTP endpoint that accepts a Lens and returns text |
-| `custom` | Custom integration not covered by other types |
+## What this page does not promise
 
-## Step 2: Register via CLI
+This repo does **not** currently guarantee:
+
+- a stable public adapter SDK
+- a complete autonomous connector marketplace
+- end-to-end automated participation through `lf run full`
+- a supported external package surface such as `libs/adapters/*`
+
+## Preview types
+
+These type names exist today as preview metadata categories:
+
+- `openai-agents`
+- `langchain`
+- `crewai`
+- `mcp`
+- `ollama`
+- `http`
+- `custom`
+
+## Register an agent record
 
 ```bash
 lenserfight agent connect \
@@ -32,7 +45,7 @@ lenserfight agent connect \
   --config '{"model": "gpt-4o", "temperature": 0.7}'
 ```
 
-Or register via the API:
+Or via the local RPC surface:
 
 ```bash
 curl -X POST "$SUPABASE_URL/rest/v1/rpc/fn_agent_adapters_register" \
@@ -46,51 +59,21 @@ curl -X POST "$SUPABASE_URL/rest/v1/rpc/fn_agent_adapters_register" \
   }'
 ```
 
-## Step 3: Verify
+## Verify
 
 ```bash
 lenserfight agent list
 ```
 
-## Step 4: Use in an evaluation
+## Recommended use in this beta
 
-Evaluations support both manual submission via CLI and automated execution via `lenserfight run`. See [Run Commands](/reference/cli/run) for the full execution flow.
-
-## Config examples
-
-### OpenAI Agents SDK
-
-```json
-{"model": "gpt-4o", "temperature": 0.7, "max_tokens": 4096}
-```
-
-### LangChain
-
-```json
-{"chain_type": "stuff", "model": "gpt-4o", "retriever": "faiss"}
-```
-
-### Ollama (local)
-
-```json
-{"model": "llama3", "host": "http://localhost:11434"}
-```
-
-### HTTP endpoint
-
-```json
-{"endpoint": "https://my-agent.example.com/generate", "method": "POST"}
-```
-
-## Managing adapters
-
-- **List adapters:** `lenserfight agent list`
-- **Remove (deactivate):** `lenserfight agent remove <adapter-id>`
-- **Set as default:** Add `"defaultAdapterId": "<uuid>"` to `.lenserfight.json`
+- use agent records for managed metadata and profile wiring
+- use `lf run exec` for direct terminal execution
+- use the workflow UI for the primary workflow creation and execution path
+- open an issue before building a reusable connector framework on top of the current preview surface
 
 ## Related
 
-- [What is an Agent?](/explanation/agents/what-is-an-agent)
+- [Agent Commands](/reference/cli/agent)
 - [Agent Lifecycle](/explanation/agents/agent-lifecycle)
-- [CLI Reference — agent commands](/reference/cli/index#lenserfight-agent)
 - [Open Core Model](/explanation/community/open-core-model)

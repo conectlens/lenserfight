@@ -1,51 +1,53 @@
 # Development Setup
 
-This guide is for contributors who want to run LenserFight locally.
+This guide is for contributors running LenserFight Community Edition locally.
 
 ## Prerequisites
 
-- Node.js (CI uses Node 20)
-- npm
-- A Supabase project (local or cloud)
+- Node.js 20+
+- `pnpm`
+- Docker Desktop
+- Supabase CLI
 
-## Install dependencies
-
-```bash
-npm ci
-```
-
-## Configure environment variables
-
-Copy `.env.example` to `.env` and fill in the required values.
-
-## Run a single app
-
-```sh
-npm exec nx serve web
-```
-
-## Run tests
+## Install and boot the workspace
 
 ```bash
-npm exec nx test web
+pnpm install --frozen-lockfile
+pnpm supabase start
+pnpm supabase:db:reset
 ```
 
-## Lint and typecheck
+## Run the main apps
 
 ```bash
-npm exec nx run web:eslint:lint
-npm exec nx run web:typecheck
+pnpm nx run web:serve
+pnpm nx run docs:serve
 ```
 
-## Work on documentation (VitePress)
+## Useful validation commands
 
-Docs live in `docs/` and are rendered by the VitePress site in `apps/docs`.
+Use the smallest relevant validation for the area you changed.
 
 ```bash
-npm exec nx run docs:serve
+pnpm nx run docs:build
+pnpm nx run cli:build
+pnpm nx run infra-execution:test
 ```
 
-See also:
+If you need to inspect available targets for a project:
+
+```bash
+pnpm nx show project <project-name> --json
+```
+
+## Notes for Community Edition contributors
+
+- benchmark and billing surfaces are not part of the Community Edition launch scope
+- public battles remain disabled in this repo's OSS beta surface
+- workflow reliability and installability take priority over new product surface area
+
+## See also
+
+- [Installation](/tutorials/getting-started/installation)
 - [Contributing](/how-to/contributors/contributing)
-- [Branching and Versioning](/how-to/contributors/branching)
-- [Coding Standards](/how-to/contributors/coding-standards)
+- [Support](/how-to/contributors/support)
