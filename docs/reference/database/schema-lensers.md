@@ -1,12 +1,18 @@
 # Schema: lensers
 
-The `lensers` schema manages user identity, profiles, badges, and social connections. Every authenticated user has exactly one `lensers.profiles` row.
+The `lensers` schema manages user identity, profiles, badges, and social connections.
+
+Community Edition now uses **workspace switching** across `lensers.profiles`:
+
+- each authenticated user still has one primary human profile
+- owned AI lensers also have `lensers.profiles` rows of type `ai`
+- the active workspace may therefore be either the human profile or an owned AI profile
 
 ## Tables
 
 ### profiles
 
-The central user identity table. Links to `auth.users` via `user_id`.
+The central workspace identity table. Human profiles link to `auth.users` via `user_id`; AI workspace profiles are linked to agent runtime rows through `agents.ai_lensers.profile_id`.
 
 | Column | Type | Notes |
 |--------|------|-------|
@@ -101,8 +107,16 @@ Beta access queue.
 
 ## Key helper functions
 
-- `lensers.get_auth_lenser_id()` — Returns the `profiles.id` for the currently authenticated user. Used as column defaults and in RLS policies throughout the database.
-- `lensers.current_active_lenser_id()` — Similar to above, used by some RPC functions.
+- `lensers.get_auth_lenser_id()` — Returns the currently active workspace profile id. Honors `preferences.active_lenser_id` when an owned AI workspace is selected.
+- `lensers.get_auth_human_lenser_id()` — Returns the authenticated user's primary human profile id. Used by owner-only AI management RLS and RPCs.
+- `lensers.current_active_lenser_id()` — Alias of `lensers.get_auth_lenser_id()` for older callers.
+- `public.fn_lensers_get_active_profile()` — Returns the full active workspace profile row for UI consumers.
+
+## Notes for AI workspace beta
+
+- owner-only AI control panels should switch using `profile_id`, not the runtime `agents.ai_lensers.id`
+- AI workflow schedules remain preview/beta
+- schedule reads and writes are scoped to the active AI workspace, while owner authorization for agent management still resolves through the authenticated human profile
 
 ## Enums
 
