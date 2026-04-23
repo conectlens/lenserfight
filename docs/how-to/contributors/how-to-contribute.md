@@ -1,98 +1,65 @@
 ---
 title: How to Contribute
-description: How to contribute Agent adapters, task schemas, rubric definitions, documentation fixes, and bug reports to LenserFight.
+description: How to contribute docs, workflow improvements, installability fixes, and scoped integration work to LenserFight Community Edition.
 ---
 
 # How to Contribute
 
-LenserFight's core evaluation engine, SDK, and Agent adapters are open to community contribution. This guide covers the main ways to contribute and how to get your work merged.
+LenserFight Community Edition is currently optimized for contributions that improve installability, workflow reliability, docs, and the existing provider and UI surface.
 
-## What you can contribute
+## High-value contribution areas
 
-| Type | What it is | Where it lives |
-|------|-----------|---------------|
-| **Agent adapter** | Connects a new AI framework or model API to the evaluation engine | `libs/adapters/<framework-name>/` |
-| **Task schema** | Domain-specific evaluation task templates | `libs/schemas/tasks/` |
-| **Rubric definition** | Evaluation criteria for a task domain | `libs/schemas/rubrics/` |
-| **Bug fix** | Fixes a confirmed bug in the platform, forum, or the evaluation engine | Relevant app or library |
-| **Documentation** | Fixes, additions, or translations in `docs/` | `docs/` |
-| **Integration pattern** | Example showing how to use LenserFight with an external system | `docs/how-to/` or `examples/` |
+| Type | What it is | Where it usually lives |
+|------|------------|------------------------|
+| **Workflow reliability** | Fixes to workflow execution, retries, validation, or run UX | `libs/infra/execution/`, `libs/features/workflows/` |
+| **Lenses and workflow UX** | Improvements to creation, editing, forking, and viewing | `libs/features/lenses/`, `libs/features/workflows/` |
+| **Docs** | Setup, workflow, CLI, or contributor documentation fixes | `docs/` |
+| **Installability** | Local setup, Supabase reset, scripts, and onboarding fixes | root scripts, `supabase/`, `docs/` |
+| **Provider integrations** | Improvements to already-supported provider paths | `libs/providers/`, `libs/infra/execution/` |
+| **Scoped connector proposals** | RFCs or narrowly reviewed previews for future connector work | issue first, then agreed location |
+
+## Important scope note
+
+This repo does **not** currently expose a stable public adapter SDK or a guaranteed `libs/adapters/*` extension contract.
+
+If you want to contribute generalized connector or adapter work:
+
+1. open an issue first
+2. describe the use case and proposed contract
+3. wait for agreement on placement and scope before implementation
 
 ## Before you start
 
-1. Check the issue tracker for existing work on what you want to contribute.
-2. If it's a significant change (new adapter, new schema, architectural change), open an issue first to align on the approach.
-3. For small fixes (typos, broken links, one-line bug fixes) — just open a PR directly.
-
-## Contributing an Agent adapter
-
-Agent adapters are the most impactful contribution type. An adapter lets any AI Agent built on a given framework participate in LenserFight evaluations.
-
-### Requirements for a merged adapter PR
-
-- Implements the `AgentAdapter` interface from `@lenserfight/sdk`
-- Handles errors gracefully — no uncaught exceptions when the underlying Agent fails
-- Includes a usage example in the PR description
-- Includes a brief `README.md` in the adapter directory explaining configuration options
-
-### Adapter directory structure
-
-```text
-libs/adapters/
-└─ your-framework/
-   ├─ src/
-   │  ├─ index.ts          ← exports the adapter class
-   │  └─ adapter.ts        ← implements AgentAdapter
-   ├─ README.md            ← usage example and config options
-   └─ project.json
-```
-
-### Reference implementation
-
-See `libs/adapters/openai-agents/` for a reference implementation. The HTTP adapter at `libs/adapters/http/` is the simplest example.
-
-## Contributing task schemas and rubrics
-
-Task schemas define the structure of evaluation tasks. Rubric definitions specify what criteria judges should use for a given domain.
-
-Good rubric contributions:
-- Are specific to a domain (coding, writing, research, design, etc.)
-- List 3–5 concrete criteria a judge can evaluate
-- Avoid vague language ("is the answer good?") — prefer specific signals ("does the solution handle the empty array edge case?")
+1. Check the issue tracker for related work.
+2. For anything larger than a small fix, open an issue first.
+3. Prefer small, reviewable pull requests over broad speculative refactors.
 
 ## Contribution workflow
 
 1. Fork the repository.
-2. Create a branch: `git checkout -b feat/my-adapter-name`
-3. Make your changes.
-4. Run linting: `npm exec -- nx lint <project-name>`
-5. Open a pull request against `main` with a description of what you've added and why.
+2. Create a branch from `development`.
+3. Make focused changes.
+4. Run the smallest relevant validation for the area you changed.
+5. Open a pull request targeting `development`.
 
-## Code style
+## Validation expectations
 
-- TypeScript throughout — no plain JavaScript
-- Follow existing naming conventions in the library you're contributing to
-- No `any` types in public APIs
-- Keep public API surface small — only export what consumers need
+Examples of small, relevant validation:
 
-## Documentation contributions
+- docs-only change: `pnpm nx run docs:build`
+- workflow engine change: targeted test or lint command for the touched project
+- web UI change: the smallest relevant web check plus a manual smoke note
 
-All docs live in `docs/`. To contribute:
+## Code and docs expectations
 
-1. Find the file to fix or create a new `.md` file in the relevant subdirectory.
-2. Follow the frontmatter pattern used in existing files (`title`, `description`, `head` for SEO where appropriate).
-3. Open a PR with a short description of what you changed and why.
-
-Documentation PRs are reviewed quickly. Good docs contributions are always welcome.
-
-## Community guidelines
-
-- Be concrete in issues and PRs — describe the problem, not just the desired outcome.
-- Be respectful of other contributors' work — critique the approach, not the person.
-- If you're unsure whether something is in scope, open an issue and ask before investing time in an implementation.
+- keep public claims truthful to the current repo state
+- avoid introducing new product promises in docs without implementation backing them
+- keep public API surface small and explicit
+- prefer incremental improvements to installability and workflow reliability
 
 ## Related docs
 
+- [Contributing](/how-to/contributors/contributing)
+- [Development Setup](/how-to/contributors/development-setup)
+- [Support](/how-to/contributors/support)
 - [Open Core Model](/explanation/community/open-core-model)
-- [Connect Your Agent](/explanation/agents/connect-agent)
-- [OSS Contribution Roadmap](/how-to/contributors/wave-2-plan)

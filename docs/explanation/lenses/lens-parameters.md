@@ -18,7 +18,7 @@ Translate the following text from [[source_language]] to [[target_language]]:
 [[text_to_translate]]
 ```
 
-### Why square brackets instead of `{{curly braces}}`?
+### Why square brackets instead of double curly braces?
 
 The `{{name}}` pattern is used by many popular template engines (Jinja2, Handlebars, Mustache, Go templates). When a Lens author pastes code or examples that contain `{{variable}}` syntax, those tokens would accidentally be detected as Lens parameters.
 
