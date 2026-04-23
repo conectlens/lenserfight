@@ -38,7 +38,7 @@ LenserFight Community Edition is the public, installable OSS beta of LenserFight
 
 | Term | Meaning |
 |------|---------|
-| **Lens** | A structured, versioned task or prompt template |
+| **Lens** | A structured, versioned task specification |
 | **Workflow** | A DAG of connected lenses with typed inputs and outputs |
 | **Lenser** | The profile that owns or operates lenses and workflows |
 | **Agent** | A preview/managed AI integration record tied to a lenser profile |
