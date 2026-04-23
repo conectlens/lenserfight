@@ -1,5 +1,8 @@
 import { supabase } from '@lenserfight/data/supabase'
 import {
+  AgentAutomationFeedItem,
+  AgentLensBindingRecord,
+  AgentModelBindingRecord,
   AgentRuntimePref,
   AgentModelBindingMode,
   AgentActionLogRecord,
@@ -16,13 +19,16 @@ import {
 export interface AgentProfileView {
   id: string
   ai_lenser_id: string
+  profile_id: string
   handle: string
   display_name: string
   avatar_url: string | null
+  lenser_type?: 'human' | 'ai'
   runtime_pref: AgentRuntimePref
   is_active: boolean
   suspended_at: string | null
   suspended_reason: string | null
+  created_at?: string
   can_join_battles: boolean
   can_vote: boolean
   can_create_battles: boolean
@@ -41,6 +47,7 @@ export interface AgentProfileView {
   owner_lenser_id: string
   owner_handle: string
   owner_display_name: string
+  owner_avatar_url?: string | null
 }
 
 // --- Port ---
@@ -56,13 +63,19 @@ export interface AgentProfilePatch {
 
 export interface AgentsRepositoryPort {
   getAgentProfile(aiLenserId: string): Promise<AgentProfileView | null>
+  getAgentProfileByProfileId(profileId: string): Promise<AgentProfileView | null>
   getAgentsByOwner(ownerLenserId: string): Promise<AgentProfileView[]>
   createAgent(input: CreateAILenserInput): Promise<CreateAILenserResult>
   recordAction(input: AgentActionInput): Promise<AgentActionResponse>
   getActionLogs(aiLenserId: string, limit?: number): Promise<AgentActionLogRecord[]>
+  getAutomationFeed(aiLenserId: string, limit?: number, offset?: number): Promise<AgentAutomationFeedItem[]>
   getQuotaSnapshot(aiLenserId: string, date?: string): Promise<AgentQuotaSnapshotRecord | null>
+  getLensBindings(aiLenserId: string): Promise<AgentLensBindingRecord[]>
+  getModelBindings(aiLenserId: string): Promise<AgentModelBindingRecord[]>
+  setMainLensBinding(aiLenserId: string, lensId: string, versionId?: string | null): Promise<AgentLensBindingRecord | null>
+  setDefaultModelBinding(aiLenserId: string, modelId: string): Promise<AgentModelBindingRecord | null>
   updatePolicy(aiLenserId: string, policy: Partial<Omit<AgentPolicyRecord, 'id' | 'ai_lenser_id' | 'created_at' | 'updated_at'>>): Promise<void>
-  updateAgentProfile(aiLenserId: string, patch: AgentProfilePatch): Promise<void>
+  updateAgentProfile(profileId: string, patch: AgentProfilePatch): Promise<void>
 }
 
 // --- Supabase Implementation ---
@@ -84,6 +97,18 @@ export class SupabaseAgentsRepository implements AgentsRepositoryPort {
       .from('v_agent_profile')
       .select('*')
       .eq('id', aiLenserId)
+      .maybeSingle()
+
+    if (error) this.handleError(error)
+    return data as AgentProfileView | null
+  }
+
+  async getAgentProfileByProfileId(profileId: string): Promise<AgentProfileView | null> {
+    const { data, error } = await supabase
+      .schema('agents')
+      .from('v_agent_profile')
+      .select('*')
+      .eq('profile_id', profileId)
       .maybeSingle()
 
     if (error) this.handleError(error)
@@ -138,6 +163,24 @@ export class SupabaseAgentsRepository implements AgentsRepositoryPort {
     return (data ?? []) as AgentActionLogRecord[]
   }
 
+  async getAutomationFeed(
+    aiLenserId: string,
+    limit = 100,
+    offset = 0
+  ): Promise<AgentAutomationFeedItem[]> {
+    const { data, error } = await supabase.rpc('fn_get_agent_automation_feed', {
+      p_ai_lenser_id: aiLenserId,
+      p_limit: limit,
+      p_offset: offset,
+    })
+
+    if (error) this.handleError(error)
+    return ((data ?? []) as AgentAutomationFeedItem[]).map((item) => ({
+      ...item,
+      payload: (item.payload ?? {}) as Record<string, unknown>,
+    }))
+  }
+
   async getQuotaSnapshot(aiLenserId: string, date?: string): Promise<AgentQuotaSnapshotRecord | null> {
     const periodDate = date ?? new Date().toISOString().slice(0, 10)
     const { data, error } = await supabase
@@ -152,6 +195,61 @@ export class SupabaseAgentsRepository implements AgentsRepositoryPort {
     return data as AgentQuotaSnapshotRecord | null
   }
 
+  async getLensBindings(aiLenserId: string): Promise<AgentLensBindingRecord[]> {
+    const { data, error } = await supabase
+      .schema('agents')
+      .from('lens_bindings')
+      .select('id, ai_lenser_id, lens_id, version_id, is_default, category_tags, created_at')
+      .eq('ai_lenser_id', aiLenserId)
+      .order('is_default', { ascending: false })
+      .order('created_at', { ascending: false })
+
+    if (error) this.handleError(error)
+    return (data ?? []) as AgentLensBindingRecord[]
+  }
+
+  async getModelBindings(aiLenserId: string): Promise<AgentModelBindingRecord[]> {
+    const { data, error } = await supabase
+      .schema('agents')
+      .from('model_bindings')
+      .select('id, ai_lenser_id, model_id, is_default, category_tags, created_at')
+      .eq('ai_lenser_id', aiLenserId)
+      .order('is_default', { ascending: false })
+      .order('created_at', { ascending: false })
+
+    if (error) this.handleError(error)
+    return (data ?? []) as AgentModelBindingRecord[]
+  }
+
+  async setMainLensBinding(
+    aiLenserId: string,
+    lensId: string,
+    versionId?: string | null
+  ): Promise<AgentLensBindingRecord | null> {
+    const { data, error } = await supabase.rpc('fn_upsert_agent_lens_binding', {
+      p_ai_lenser_id: aiLenserId,
+      p_lens_id: lensId,
+      p_version_id: versionId ?? null,
+      p_is_default: true,
+    })
+
+    if (error) this.handleError(error)
+    const row = Array.isArray(data) ? data[0] : data
+    return (row ?? null) as AgentLensBindingRecord | null
+  }
+
+  async setDefaultModelBinding(aiLenserId: string, modelId: string): Promise<AgentModelBindingRecord | null> {
+    const { data, error } = await supabase.rpc('fn_upsert_agent_model_binding', {
+      p_ai_lenser_id: aiLenserId,
+      p_model_id: modelId,
+      p_is_default: true,
+    })
+
+    if (error) this.handleError(error)
+    const row = Array.isArray(data) ? data[0] : data
+    return (row ?? null) as AgentModelBindingRecord | null
+  }
+
   async updatePolicy(
     aiLenserId: string,
     policy: Partial<Omit<AgentPolicyRecord, 'id' | 'ai_lenser_id' | 'created_at' | 'updated_at'>>
@@ -164,9 +262,9 @@ export class SupabaseAgentsRepository implements AgentsRepositoryPort {
     if (error) this.handleError(error)
   }
 
-  async updateAgentProfile(aiLenserId: string, patch: AgentProfilePatch): Promise<void> {
+  async updateAgentProfile(profileId: string, patch: AgentProfilePatch): Promise<void> {
     const { error } = await supabase.rpc('fn_update_agent_profile', {
-      p_ai_lenser_id: aiLenserId,
+      p_ai_lenser_id: profileId,
       p_patch: patch,
     })
     if (error) this.handleError(error)

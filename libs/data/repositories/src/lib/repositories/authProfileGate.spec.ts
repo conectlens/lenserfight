@@ -1,3 +1,15 @@
+import { vi } from 'vitest'
+
+vi.mock('@lenserfight/data/supabase', () => ({
+  supabase: {
+    rpc: vi.fn(),
+    auth: {
+      getSession: vi.fn(),
+    },
+    schema: vi.fn(),
+  },
+}))
+
 import { mapProfileToAuthProfileGate } from './lenserRepository'
 
 describe('mapProfileToAuthProfileGate', () => {
