@@ -210,63 +210,32 @@ export const walletApiClient = {
     signal: AbortSignal,
     callbacks: StreamCallbacks,
   ): Promise<void> {
+    if (!req.key_ref_id) {
+      callbacks.onError('Cloud BYOK requires a selected key.', 'byok_key_required')
+      return
+    }
     const authHeader = await getAuthHeader()
-    let response: Response
+    callbacks.onStart(`byok-${Date.now()}`)
     try {
-      response = await apiFetch(`${API_BASE}/execute/stream/byok`, {
+      const response = await apiFetch(`${API_BASE}/execute/byok`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          Accept: 'text/event-stream',
           ...authHeader,
         },
         body: JSON.stringify(req),
         signal,
       })
+      const payload = await unwrapEnvelope<ExecuteBYOKResponse>(response)
+      if (signal.aborted) return
+      callbacks.onToken(payload.content ?? '')
+      callbacks.onEnd(payload.usage, 0)
     } catch (err: unknown) {
       if ((err as Error).name === 'AbortError') return
       const envelope = err as { error?: { code?: string; message?: string }; code?: string; message?: string }
       const message = envelope?.error?.message ?? envelope?.message ?? 'An unexpected error occurred.'
       const code = envelope?.error?.code ?? envelope?.code ?? 'internal_error'
       callbacks.onError(message, code)
-      return
-    }
-
-    const reader = response.body!.getReader()
-    const decoder = new TextDecoder()
-    let buffer = ''
-
-    try {
-      while (true) {
-        const { done, value } = await reader.read()
-        if (done || signal.aborted) break
-        buffer += decoder.decode(value, { stream: true })
-        const events = buffer.split('\n\n')
-        buffer = events.pop() ?? ''
-        for (const raw of events) {
-          const line = raw.replace(/^data: /, '').trim()
-          if (!line) continue
-          const evt = JSON.parse(line) as { event: string;[key: string]: unknown }
-          if (evt.event === 'start') callbacks.onStart(evt['run_id'] as string)
-          if (evt.event === 'token') callbacks.onToken(evt['content'] as string)
-          if (evt.event === 'end') {
-            callbacks.onEnd(
-              evt['usage'] as { input_tokens: number; output_tokens: number },
-              evt['credits_charged'] as number,
-            )
-          }
-          if (evt.event === 'error') {
-            callbacks.onError(evt['message'] as string, evt['code'] as string)
-            return
-          }
-        }
-      }
-    } catch (err: unknown) {
-      if ((err as Error).name !== 'AbortError') {
-        callbacks.onError((err as Error).message ?? 'Stream read error', 'internal_error')
-      }
-    } finally {
-      reader.releaseLock()
     }
   },
 }
