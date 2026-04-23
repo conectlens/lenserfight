@@ -162,6 +162,14 @@ export const useLabController = (lensId: string, isAuthenticated = false, option
 
       const resolvedContent = renderLens(dto.lensContent, dto.inputSnapshot, dto.params ?? [])
 
+      if (dto.fundingSource === 'user_byok_cloud' && !dto.byokKeyRefId) {
+        const message = 'Cloud BYOK requires a selected API key.'
+        setStreamError(message)
+        setStreamState('error')
+        toastError(new Error(message))
+        return
+      }
+
       const callbacks = {
         onStart: (runId: string) => {
           if (!isActive()) return

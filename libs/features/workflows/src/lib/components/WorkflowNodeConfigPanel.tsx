@@ -8,8 +8,10 @@ import React, { useState, useEffect, useMemo } from 'react'
 
 import type { WorkflowNodeConfig } from './WorkflowCanvasNode'
 import type { WorkflowEdgeRecord, WorkflowNodeRecord } from '@lenserfight/data/repositories'
-import type { AIProvider, AIProviderModel } from '@lenserfight/types'
+import type { AIProvider, AIProviderModel, LensParam } from '@lenserfight/types'
 import { buildEffectiveVersionParams } from '../utils/workflowTemplateParams'
+import { CsvImportDialog } from '../../../../lenses/src/lib/components/CsvImportDialog'
+import { JsonImportDialog } from '../../../../lenses/src/lib/components/JsonImportDialog'
 
 interface WorkflowNodeConfigPanelProps {
   nodeId: string
@@ -46,6 +48,8 @@ export function WorkflowNodeConfigPanel({
   const [paramOverrides, setParamOverrides] = useState<Record<string, string>>(
     currentConfig.param_overrides ?? {}
   )
+  const [jsonImportOpen, setJsonImportOpen] = useState(false)
+  const [csvImportOpen, setCsvImportOpen] = useState(false)
 
   const { models, isLoading: modelsLoading } = useAIModels()
   const nodeFunding = useFundingSource(selectedProviderKey)
@@ -85,6 +89,11 @@ export function WorkflowNodeConfigPanel({
 
   const versionParams = useMemo(() => buildEffectiveVersionParams(lensVersion), [lensVersion])
   const isParamsLoading = versionLoading
+  const editableParams = useMemo(
+    () => versionParams.filter((p) => !autoWiredParams.has(p.label)),
+    [versionParams, autoWiredParams],
+  )
+  const legacyParams: LensParam[] = []
 
   // Derive providers/models from flat useAIModels list
   const providers: AIProvider[] = useMemo(() => {
@@ -222,16 +231,16 @@ export function WorkflowNodeConfigPanel({
               )
             })}
             {/* Manual param overrides (non-auto-wired) */}
-            {versionParams.filter((p) => !autoWiredParams.has(p.label)).length > 0 && (
+            {editableParams.length > 0 && (
               <VersionParamFields
-                params={versionParams.filter((p) => !autoWiredParams.has(p.label))}
+                params={editableParams}
                 values={paramOverrides}
                 errors={{}}
                 onChange={(name, value) =>
                   setParamOverrides((prev) => ({ ...prev, [name]: String(value ?? '') }))
                 }
-                onImportJson={() => { }}
-                onImportCsv={() => { }}
+                onImportJson={() => setJsonImportOpen(true)}
+                onImportCsv={() => setCsvImportOpen(true)}
               />
             )}
           </div>
@@ -267,6 +276,34 @@ export function WorkflowNodeConfigPanel({
           </Button>
         </div>
       </div>
+
+      <JsonImportDialog
+        open={jsonImportOpen}
+        onClose={() => setJsonImportOpen(false)}
+        versionParams={editableParams}
+        legacyParams={legacyParams}
+        onApply={(patch) =>
+          setParamOverrides((prev) => ({
+            ...prev,
+            ...Object.fromEntries(Object.entries(patch).map(([k, v]) => [k, String(v ?? '')])),
+          }))
+        }
+        currentValues={paramOverrides}
+      />
+
+      <CsvImportDialog
+        open={csvImportOpen}
+        onClose={() => setCsvImportOpen(false)}
+        versionParams={editableParams}
+        legacyParams={legacyParams}
+        onApply={(patch) =>
+          setParamOverrides((prev) => ({
+            ...prev,
+            ...Object.fromEntries(Object.entries(patch).map(([k, v]) => [k, String(v ?? '')])),
+          }))
+        }
+        currentValues={paramOverrides}
+      />
 
     </aside>
   )

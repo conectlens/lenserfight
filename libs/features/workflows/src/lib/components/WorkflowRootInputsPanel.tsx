@@ -6,8 +6,10 @@ import { FileText } from 'lucide-react'
 import React, { useEffect, useState, useMemo } from 'react'
 
 import type { WorkflowNodeRecord, WorkflowEdgeRecord } from '@lenserfight/data/repositories'
-import type { LensVersionParam } from '@lenserfight/types'
+import type { LensParam, LensVersionParam } from '@lenserfight/types'
 import { buildEffectiveVersionParams } from '../utils/workflowTemplateParams'
+import { CsvImportDialog } from '../../../../lenses/src/lib/components/CsvImportDialog'
+import { JsonImportDialog } from '../../../../lenses/src/lib/components/JsonImportDialog'
 
 interface WorkflowRootInputsPanelProps {
   nodes: WorkflowNodeRecord[]
@@ -33,8 +35,9 @@ export function WorkflowRootInputsPanel({
   nodeConfigOverrides,
 }: WorkflowRootInputsPanelProps) {
   const [inputs, setInputs] = useState<Record<string, string>>({})
-  const renderCountRef = React.useRef(0)
-  renderCountRef.current += 1
+  const [jsonImportOpen, setJsonImportOpen] = useState(false)
+  const [csvImportOpen, setCsvImportOpen] = useState(false)
+  const [activeImportNodeId, setActiveImportNodeId] = useState<string | null>(null)
 
   // Root nodes = nodes with no incoming edges
   const targetNodeIds = useMemo(() => new Set(edges.map((e) => e.target_node_id)), [edges])
@@ -82,19 +85,11 @@ export function WorkflowRootInputsPanel({
       .filter((g) => g.params.length > 0)
   }, [rootNodes, versionDataSignature, edges])
 
-  // #region agent log
-  fetch('http://127.0.0.1:7884/ingest/c70fec5e-ec66-4066-9705-fd474b67b4a6',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'ee2d98'},body:JSON.stringify({sessionId:'ee2d98',runId:'pre-fix',hypothesisId:'H1_H3',location:'WorkflowRootInputsPanel.tsx:render',message:'render snapshot',data:{renderCount:renderCountRef.current,nodesLen:nodes.length,edgesLen:edges.length,paramGroupsLen:paramGroups.length,inputsLen:Object.keys(inputs).length,nodeConfigOverridesKeys:nodeConfigOverrides?Object.keys(nodeConfigOverrides).length:0},timestamp:Date.now()})}).catch(()=>{});
-  // #endregion
-
   useEffect(() => {
     if (paramGroups.length === 0) return
-    // #region agent log
-    fetch('http://127.0.0.1:7884/ingest/c70fec5e-ec66-4066-9705-fd474b67b4a6',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'ee2d98'},body:JSON.stringify({sessionId:'ee2d98',runId:'pre-fix',hypothesisId:'H1_H3',location:'WorkflowRootInputsPanel.tsx:useEffect[initInputs]',message:'effect fired',data:{paramGroupsLen:paramGroups.length,nodesLen:nodes.length,overridesKeys:nodeConfigOverrides?Object.keys(nodeConfigOverrides).length:0},timestamp:Date.now()})}).catch(()=>{});
-    // #endregion
 
     setInputs((prev) => {
       const next = { ...prev }
-      let writes = 0
       for (const group of paramGroups) {
         const node = nodes.find((n) => n.id === group.nodeId)
         const persisted = (node?.config?.['param_overrides'] as Record<string, unknown> | undefined) ?? {}
@@ -109,7 +104,6 @@ export function WorkflowRootInputsPanel({
           const value = sessionValue ?? persistedValue
           if (typeof value === 'string' && value.trim() !== '') {
             next[key] = value
-            writes++
           }
         }
       }
@@ -118,9 +112,6 @@ export function WorkflowRootInputsPanel({
       const sameShape =
         prevKeys.length === nextKeys.length &&
         prevKeys.every((k) => prev[k] === next[k])
-      // #region agent log
-      fetch('http://127.0.0.1:7884/ingest/c70fec5e-ec66-4066-9705-fd474b67b4a6',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'ee2d98'},body:JSON.stringify({sessionId:'ee2d98',runId:'pre-fix',hypothesisId:'H2',location:'WorkflowRootInputsPanel.tsx:setInputs(init)',message:'state reconciliation result',data:{writes,prevKeys:prevKeys.length,nextKeys:nextKeys.length,sameShape},timestamp:Date.now()})}).catch(()=>{});
-      // #endregion
       return sameShape ? prev : next
     })
   }, [paramGroups, nodes, nodeConfigOverrides])
@@ -185,6 +176,18 @@ export function WorkflowRootInputsPanel({
     onSubmit(flatInputs)
   }
 
+  const activeImportGroup = activeImportNodeId
+    ? paramGroups.find((group) => group.nodeId === activeImportNodeId) ?? null
+    : null
+  const activeImportValues = activeImportNodeId
+    ? Object.fromEntries(
+        Object.entries(inputs)
+          .filter(([k]) => k.startsWith(`${activeImportNodeId}:`))
+          .map(([k, v]) => [k.split(':').slice(1).join(':'), v]),
+      )
+    : {}
+  const legacyParams: LensParam[] = []
+
   return (
     <form onSubmit={handleSubmit} className="space-y-4 p-4 border-b border-surface-border">
       <div className="flex items-center gap-2">
@@ -214,15 +217,17 @@ export function WorkflowRootInputsPanel({
                 setInputs((prev) => {
                   const key = `${nodeId}:${name}`
                   const nextVal = String(value ?? '')
-                  const prevVal = prev[key] ?? ''
-                  // #region agent log
-                  fetch('http://127.0.0.1:7884/ingest/c70fec5e-ec66-4066-9705-fd474b67b4a6',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'ee2d98'},body:JSON.stringify({sessionId:'ee2d98',runId:'pre-fix',hypothesisId:'H4_H5',location:'WorkflowRootInputsPanel.tsx:onChange',message:'field change event',data:{nodeId,paramName:name,prevLen:prevVal.length,nextLen:nextVal.length,sameValue:prevVal===nextVal},timestamp:Date.now()})}).catch(()=>{});
-                  // #endregion
                   return { ...prev, [key]: nextVal }
                 })
               }
-              onImportJson={() => {}}
-              onImportCsv={() => {}}
+              onImportJson={() => {
+                setActiveImportNodeId(nodeId)
+                setJsonImportOpen(true)
+              }}
+              onImportCsv={() => {
+                setActiveImportNodeId(nodeId)
+                setCsvImportOpen(true)
+              }}
             />
           </div>
         ))}
@@ -254,6 +259,42 @@ export function WorkflowRootInputsPanel({
           Fill all required parameters to continue.
         </p>
       )}
+
+      <JsonImportDialog
+        open={jsonImportOpen}
+        onClose={() => setJsonImportOpen(false)}
+        versionParams={activeImportGroup?.params}
+        legacyParams={legacyParams}
+        onApply={(patch) => {
+          if (!activeImportNodeId) return
+          setInputs((prev) => {
+            const next = { ...prev }
+            for (const [key, value] of Object.entries(patch)) {
+              next[`${activeImportNodeId}:${key}`] = String(value ?? '')
+            }
+            return next
+          })
+        }}
+        currentValues={activeImportValues}
+      />
+
+      <CsvImportDialog
+        open={csvImportOpen}
+        onClose={() => setCsvImportOpen(false)}
+        versionParams={activeImportGroup?.params}
+        legacyParams={legacyParams}
+        onApply={(patch) => {
+          if (!activeImportNodeId) return
+          setInputs((prev) => {
+            const next = { ...prev }
+            for (const [key, value] of Object.entries(patch)) {
+              next[`${activeImportNodeId}:${key}`] = String(value ?? '')
+            }
+            return next
+          })
+        }}
+        currentValues={activeImportValues}
+      />
     </form>
   )
 }
