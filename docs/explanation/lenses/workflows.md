@@ -1,13 +1,13 @@
 ---
 title: Connected Lens Workflows
-description: Chain multiple Lenses into automated multi-step pipelines where the output of each node feeds the next.
+description: Community Edition workflow model for chaining lenses through a DAG with explicit runtime limits.
 ---
 
 # Connected Lens Workflows
 
-A **Connected Lens Workflow** (also called a Workflow or a Lens Workflow) is a directed acyclic graph (DAG) of Lens nodes where the output of each node flows as an input parameter into the next.
+A **Connected Lens Workflow** is a directed acyclic graph (DAG) of lens nodes where one node's output can feed another node's input.
 
-Workflows enable multi-step automation: complex tasks that require sequential reasoning, output transformation, or data flow between models.
+Community Edition uses workflows for multi-step local or manual execution paths. They are the main orchestration surface in the public repo, but they should not yet be documented as a fully production-ready automation platform.
 
 ## Anatomy of a Workflow
 
@@ -15,10 +15,10 @@ A Workflow contains:
 
 | Component | Description |
 |-----------|-------------|
-| **Nodes** | Each node is a Lens (specific version or always-latest) at a position in the DAG |
-| **Edges** | Connections between nodes: source output key → target parameter label |
-| **Run** | A single execution of the workflow with given root inputs |
-| **Schedule** | An optional CRON expression for automated recurring runs |
+| **Nodes** | Each node points at a lens and usually a specific version |
+| **Edges** | Connections from `source_output_key` to `target_param_label` |
+| **Run** | One execution of the workflow with root inputs and a chosen model/funding mode |
+| **Node result** | Persisted status, output, timing, and error data for a node |
 
 ## How data flows
 
@@ -43,25 +43,35 @@ When a workflow runs:
 1. Root nodes execute first, in parallel where possible
 2. As each node completes, its output is passed to downstream nodes via the edge mappings
 3. Each node execution is tracked in `workflow_node_results` with status, output, and timing
-4. Real-time progress is available via platform subscriptions
+4. Progress is surfaced through persisted node results plus best-effort workflow event replay
 
-Run status transitions: `pending` → `running` → `completed` (or `failed`)
+Current workflow run status handling is documented in:
 
-## Scheduled workflows
+- [Open Source Workflows](/explanation/workflows/open-source-workflows)
+- [Execution Engine Reference](/reference/workflows/execution-engine)
+- [Community API: Workflows](/reference/community-api/workflows)
 
-Workflows support CRON schedules for automated recurring runs. A scheduled workflow runs with a predefined inputs template and a global model override.
+## Current Community Edition limits
 
-## Workflows in evaluations
+- browser-side execution supports a limited provider set
+- cloud BYOK workflow execution depends on the platform executor
+- SSE/event replay exists, but should be treated as a beta runtime surface
+- workflow versioning and recovery are still being hardened
+- scheduled workflows are not part of the current Community Edition promise
 
-The `workflow` evaluation type runs a full workflow as each contender's submission. Both contenders execute the same workflow with the same inputs — the community judges the leaf node outputs.
+## What to tell developers
 
-## Creating a workflow
+Community Edition workflows are ready to document as:
 
-See [Create a Workflow](/tutorials/walkthroughs/create-a-workflow) for a step-by-step tutorial.
+- DAG-based orchestration for lenses
+- a supported web-app builder flow
+- a repo-inspectable execution engine
+- a beta runtime with explicit limits
 
 ## Related
 
 - [What is a Lens?](./what-is-a-lens)
 - [Lens Parameters](./lens-parameters)
-- [Tutorials: Create a Workflow](/tutorials/walkthroughs/create-a-workflow)
 - [What are Workflows](/tutorials/walkthroughs/what-are-workflows)
+- [Create a Workflow](/tutorials/walkthroughs/create-a-workflow)
+- [Community API: Workflows](/reference/community-api/workflows)

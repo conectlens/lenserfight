@@ -160,7 +160,7 @@ The engine calls `ModerationGateway.check(envelope, policy)` before the provider
 config.moderation = 'off' | 'input' | 'output' | 'both'
 ```
 
-Default implementation is the already-built `ContentModerationService` in [`libs/infra/moderation`](../../../libs/infra/moderation). A violation marks the node `failed` with `error_message: "moderation_blocked"` and writes an `execution.execution_tags` row with `tag = 'policy_violation'`.
+Default implementation is the already-built `ContentModerationService` in `libs/infra/moderation`. A violation marks the node `failed` with `error_message: "moderation_blocked"` and writes an `execution.execution_tags` row with `tag = 'policy_violation'`.
 
 ## Provider dispatch
 
