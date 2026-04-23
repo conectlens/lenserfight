@@ -285,13 +285,15 @@ export const Sidebar: React.FC<SidebarProps> = ({
             collapsed={!showLabels}
           />
 
-          <SidebarItem
-            onClick={() => handleNavigation('/lenserboard')}
-            icon={<Trophy size={20} />}
-            label="LenserBoard"
-            isActive={isRouteActive(location.pathname, '/lenserboard')}
-            collapsed={!showLabels}
-          />
+          {SURFACE.edition === 'cloud' && (
+            <SidebarItem
+              onClick={() => handleNavigation('/lenserboard')}
+              icon={<Trophy size={20} />}
+              label="LenserBoard"
+              isActive={isRouteActive(location.pathname, '/lenserboard')}
+              collapsed={!showLabels}
+            />
+          )}
 
           {FEATURES.PUBLIC_BATTLES && (
             <SidebarItem
