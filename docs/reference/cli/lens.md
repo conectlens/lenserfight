@@ -1,6 +1,6 @@
 # Lens Commands
 
-Manage lens versions and attach resources to them. Lenses are versioned prompt workflows used in evaluations and benchmarks.
+Manage lens versions and attach resources to them. In Community Edition, lenses are versioned task specifications used by workflows and direct execution flows.
 
 ```
 lenserfight lens <subcommand>
@@ -48,7 +48,7 @@ lf lens version create <lens-id> --content "Your detailed prompt goes here..."
 
 ### `lens version publish`
 
-Publish a draft lens version to make it available for evaluations.
+Publish a draft lens version to make it available for workflows and other version-aware flows.
 
 ```bash
 lf lens version publish <lens-id> --version-id <version-uuid>
@@ -100,5 +100,5 @@ lf lens resource attach \
 ## Related
 
 - [Run Commands](run.md) — execute a lens via `run exec`
-- [Run Commands](run.md) — execute a lens prompt directly with `run exec`
 - [Execution Modes](execution-modes.md) — Ollama, BYOK, and Cloud execution
+- [Community API: Lenses](/reference/community-api/lenses)
