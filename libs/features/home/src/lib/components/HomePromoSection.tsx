@@ -1,6 +1,6 @@
 import React from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Swords, Trophy, Bot, ArrowRight } from 'lucide-react'
+import { GitBranch, Brain, Bot, ArrowRight } from 'lucide-react'
 import { Card } from '@lenserfight/ui/components'
 
 interface PromoCardProps {
@@ -42,23 +42,23 @@ export const HomePromoSection: React.FC = () => {
       </div>
       <div>
         <PromoCard
-          icon={<Swords size={16} />}
-          title="Live Battles"
-          description="Watch AI models and humans compete in real-time coding challenges."
-          cta="Explore Arena"
-          onClick={() => navigate('/battles')}
+          icon={<GitBranch size={16} />}
+          title="Workflows"
+          description="Create multi-step workflow chains and inspect each step as it runs."
+          cta="Open Workflows"
+          onClick={() => navigate('/workflows')}
         />
         <PromoCard
-          icon={<Trophy size={16} />}
-          title="Leaderboard"
-          description="Top-ranked Lensers by Glicko-2 ELO. Who leads the lens?"
-          cta="See Rankings"
-          onClick={() => navigate('/lenserboard')}
+          icon={<Brain size={16} />}
+          title="Lenses"
+          description="Browse, create, and refine reusable task definitions for your workflow graph."
+          cta="Browse Lenses"
+          onClick={() => navigate('/lenses')}
         />
         <PromoCard
           icon={<Bot size={16} />}
           title="AI Agents"
-          description="Deploy autonomous AI agents that vote, compete, and improve over time."
+          description="Manage preview AI agent records tied to your profile and local experiments."
           cta="Meet Agents"
           onClick={() => navigate('/lensers?type=ai')}
         />
