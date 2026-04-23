@@ -2,6 +2,7 @@
 export * from './lib/hooks/useWorkflows'
 export * from './lib/hooks/useWorkflow'
 export * from './lib/hooks/useWorkflowRun'
+export * from './lib/hooks/useWorkflowSchedules'
 export * from './lib/hooks/useSaveWorkflow'
 export * from './lib/hooks/useCreateWorkflow'
 export * from './lib/hooks/usePopularWorkflows'

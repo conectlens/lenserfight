@@ -65,7 +65,7 @@ export const LenserProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     error: queryError,
   } = useQuery<Lenser | null>({
     queryKey: queryKeys.lenser.authenticated(),
-    queryFn: () => lenserService.getAuthenticatedLenser(),
+    queryFn: () => lenserService.getActiveLenser(),
     enabled: queryEnabled,
     staleTime: 1000 * 60 * 5,
     initialData: profileInitialData,
@@ -116,6 +116,7 @@ export const LenserProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   return (
     <LenserContext.Provider
       value={{
+        // `lenser` is the active workspace profile, not always the human owner profile.
         lenser: lenser ?? null,
         hasLenser: !!lenser,
         isLoading,

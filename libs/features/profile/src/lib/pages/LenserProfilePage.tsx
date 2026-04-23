@@ -1,44 +1,63 @@
-import { FolderOpen, MessageSquare, Trophy, Activity, Plus, Bot } from 'lucide-react'
-import React, { useEffect, useState, useRef, useCallback, useMemo } from 'react'
-import { useQuery, useQueryClient } from '@tanstack/react-query'
-import { useParams, useNavigate, Outlet } from 'react-router-dom'
+import { Activity, Bot, FolderOpen, MessageSquare, Plus, Trophy } from 'lucide-react'
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { Outlet, useNavigate, useParams } from 'react-router-dom'
 
-import { Button, EmptyState } from '@lenserfight/ui/components'
-import { ConfirmModal } from '@lenserfight/ui/modals'
-import { SEOHead } from '@lenserfight/ui/components'
-import { FEATURES } from '@lenserfight/utils/env'
-import { useLenser } from '@lenserfight/features/profile'
-import { useAuth } from '@lenserfight/features/auth'
-import { useShareContext } from '@lenserfight/features/share'
-import { useAnalytics } from '@lenserfight/infra/analytics'
 import { queryKeys } from '@lenserfight/data/cache'
-import { lenserService } from '@lenserfight/data/repositories'
-import { lensesService } from '@lenserfight/data/repositories'
-import { reactionService } from '@lenserfight/data/repositories'
-import { threadsService } from '@lenserfight/data/repositories'
-import { Lenser, LenserStats, LenserActivityPoint, LenserProfileDTO, ProfileAccessPayload } from '@lenserfight/types'
-import { LensViewModel } from '@lenserfight/types'
-import { ActivityFeedItem } from '@lenserfight/types'
-import { ThreadFeedItem } from '@lenserfight/types'
-import { XPSummary } from '@lenserfight/types'
+import {
+  agentsService,
+  lenserService,
+  lensesService,
+  reactionService,
+  threadsService,
+  workflowsService,
+} from '@lenserfight/data/repositories'
+import type { WorkflowRecord } from '@lenserfight/data/repositories'
+import { useAuth } from '@lenserfight/features/auth'
+import { AgentCard, useAgentAutomationFeed } from '@lenserfight/features/agents'
+import { useAIModels } from '@lenserfight/features/generations'
+import { CreateLensModal, LensCard, useCreateLens } from '@lenserfight/features/lenses'
 import { ThreadsListCard } from '@lenserfight/features/home'
-import { CreateLensModal } from '@lenserfight/features/lenses'
-import { LensCard } from '@lenserfight/features/lenses'
-import { useCreateLens } from '@lenserfight/features/lenses'
+import { useShareContext } from '@lenserfight/features/share'
 import { CreateThreadModal } from '@lenserfight/features/threads'
-import { AgentCard } from '@lenserfight/features/agents'
+import { useAnalytics } from '@lenserfight/infra/analytics'
+import type {
+  AgentLensBindingRecord,
+  AgentModelBindingRecord,
+  ActivityFeedItem,
+  Lenser,
+  LenserActivityPoint,
+  LenserProfileDTO,
+  LenserStats,
+  LensViewModel,
+  ProfileAccessPayload,
+  ThreadFeedItem,
+  UpsertWorkflowScheduleInput,
+  XPSummary,
+} from '@lenserfight/types'
+import { Button, EmptyState, SEOHead } from '@lenserfight/ui/components'
+import { ConfirmModal } from '@lenserfight/ui/modals'
 import { useModalRouter } from '@lenserfight/ui/routing'
-import { agentsService } from '@lenserfight/data/repositories'
+import { FEATURES } from '@lenserfight/utils/env'
+
+import { AILenserAutomationLogPanel } from '../components/AILenserAutomationLogPanel'
+import { AILenserLensesPanel } from '../components/AILenserLensesPanel'
+import { AILenserOverviewPanel } from '../components/AILenserOverviewPanel'
+import { AILenserSchedulesPanel } from '../components/AILenserSchedulesPanel'
+import { AILenserWorkflowPanel } from '../components/AILenserWorkflowPanel'
+import { AILenserWorkspacePrompt } from '../components/AILenserWorkspacePrompt'
 import { LenserActionsList } from '../components/LenserActionsList'
 import { LenserActivityHeatmap } from '../components/LenserActivityHeatmap'
 import { LenserProfileHeader } from '../components/LenserProfileHeader'
 import { LenserStatsRow } from '../components/LenserStatsRow'
-import { LenserTabs } from '../components/LenserTabs'
+import { LenserTabs, type LenserTabDefinition, type LenserTabId } from '../components/LenserTabs'
+import { OwnerRecoveryBanner } from '../components/OwnerRecoveryBanner'
 import { RestrictedProfileShell } from '../components/RestrictedProfileShell'
 import { UnavailableProfile } from '../components/UnavailableProfile'
-import { OwnerRecoveryBanner } from '../components/OwnerRecoveryBanner'
+import { useLenser } from '../context/LenserContext'
+import { useLenserWorkspace } from '../useLenserWorkspace'
 
-type TabType = 'actions' | 'lenses' | 'threads' | 'challenges' | 'agents'
+type StandardTab = 'actions' | 'lenses' | 'threads' | 'challenges' | 'agents'
 
 interface TabState {
   data: any[]
@@ -54,32 +73,82 @@ const INITIAL_TAB_STATE: TabState = {
   isLoaded: false,
 }
 
-const TAB_MAP: Record<string, TabType> = {
+const TAB_MAP: Record<string, LenserTabId> = {
   t: 'threads',
   p: 'lenses',
   a: 'actions',
   c: 'challenges',
   ag: 'agents',
+  ov: 'overview',
+  wf: 'workflows',
+  lg: 'logs',
+  sc: 'schedules',
 }
 
-const REVERSE_TAB_MAP: Record<string, string> = {
+const REVERSE_TAB_MAP: Record<LenserTabId, string> = {
   threads: 't',
   lenses: 'p',
   actions: 'a',
   challenges: 'c',
   agents: 'ag',
+  overview: 'ov',
+  workflows: 'wf',
+  logs: 'lg',
+  schedules: 'sc',
 }
 
 const PAGE_SIZE = 9
 
+function isStandardTab(tab: LenserTabId): tab is StandardTab {
+  return ['actions', 'lenses', 'threads', 'challenges', 'agents'].includes(tab)
+}
+
+function buildProfileTabs(
+  isAIWorkspacePanel: boolean,
+  isOwner: boolean,
+  viewedProfile: LenserProfileDTO | null
+): LenserTabDefinition[] {
+  if (isAIWorkspacePanel) {
+    return [
+      { id: 'overview', label: 'Overview' },
+      { id: 'lenses', label: 'Lenses' },
+      { id: 'workflows', label: 'Workflows' },
+      { id: 'logs', label: 'Logs' },
+      { id: 'schedules', label: 'Schedules' },
+    ]
+  }
+
+  const tabs: LenserTabDefinition[] = [
+    { id: 'threads', label: 'Threads' },
+    { id: 'lenses', label: 'Lenses' },
+  ]
+
+  if (!(!isOwner && viewedProfile?.hide_actions)) {
+    tabs.push({ id: 'actions', label: 'Actions' })
+  }
+
+  if (FEATURES.CHALLENGES_TAB) {
+    tabs.push({ id: 'challenges', label: 'Challenge History' })
+  }
+
+  if (FEATURES.AGENTS && isOwner && viewedProfile?.type !== 'ai') {
+    tabs.push({ id: 'agents', label: 'Agents' })
+  }
+
+  return tabs
+}
+
 export const LenserProfilePage: React.FC = () => {
   const { handle, tab: routeTab } = useParams<{ handle: string; tab?: string }>()
   const navigate = useNavigate()
-  const { lenser: currentUser } = useLenser() // The currently authenticated user
+  const { lenser: activeWorkspace } = useLenser()
   const { user: authUser, isLoading: isAuthLoading } = useAuth()
   const { setShareConfig } = useShareContext()
   const { trackView } = useAnalytics()
   const queryClient = useQueryClient()
+  const { open: openModal } = useModalRouter()
+  const { workspaces, switchWorkspace, isSwitching } = useLenserWorkspace()
+  const { models = [] } = useAIModels()
 
   const { data: accessPayload = null, isLoading: loadingProfile } = useQuery<ProfileAccessPayload | null>({
     queryKey: [...queryKeys.lenser.profile(handle!), authUser?.id ?? 'anonymous'],
@@ -93,11 +162,46 @@ export const LenserProfilePage: React.FC = () => {
   const routeState = accessPayload?.route_state ?? null
   const viewedProfile = accessPayload?.profile ?? null
   const relationshipState = accessPayload?.relationship_state ?? null
+  const ownedWorkspaceIds = useMemo(() => new Set(workspaces.map((workspace) => workspace.id)), [workspaces])
+  const isOwner = !!viewedProfile && ownedWorkspaceIds.has(viewedProfile.id)
+  const isOwnedAIProfile = viewedProfile?.type === 'ai' && isOwner
+
+  const { data: agentProfile = null } = useQuery({
+    queryKey: queryKeys.agents.detailByProfile(viewedProfile?.id ?? ''),
+    queryFn: () => agentsService.getAgentProfileByProfileId(viewedProfile!.id),
+    enabled: isOwnedAIProfile,
+    staleTime: 1000 * 60 * 5,
+  })
+
+  const isAIWorkspacePanel = !!(
+    viewedProfile &&
+    viewedProfile.type === 'ai' &&
+    isOwner &&
+    activeWorkspace?.id === viewedProfile.id &&
+    agentProfile
+  )
+  const shouldShowAIWorkspacePrompt = !!(
+    viewedProfile &&
+    viewedProfile.type === 'ai' &&
+    isOwner &&
+    activeWorkspace?.id !== viewedProfile.id
+  )
+
+  const tabs = useMemo(
+    () => buildProfileTabs(isAIWorkspacePanel, isOwner, viewedProfile),
+    [isAIWorkspacePanel, isOwner, viewedProfile]
+  )
+
+  const defaultTab: LenserTabId = isAIWorkspacePanel ? 'overview' : 'threads'
+  const routeTabId = routeTab ? TAB_MAP[routeTab] : undefined
+  const activeTab: LenserTabId =
+    routeTabId && tabs.some((tab) => tab.id === routeTabId) ? routeTabId : defaultTab
+  const activeStandardTab = !isAIWorkspacePanel && isStandardTab(activeTab) ? activeTab : null
 
   const { data: activity = [] } = useQuery<LenserActivityPoint[]>({
     queryKey: queryKeys.lenser.activity(handle!),
     queryFn: () => lenserService.getLenserActivity(handle!),
-    enabled: !!handle && !!viewedProfile && FEATURES.LENSER_ACTIVITY,
+    enabled: !!handle && !!viewedProfile && FEATURES.LENSER_ACTIVITY && !isAIWorkspacePanel,
   })
 
   const stats = useMemo<LenserStats | null>(() => {
@@ -122,20 +226,20 @@ export const LenserProfilePage: React.FC = () => {
     }
   }, [viewedProfile])
 
-  const [tabCache, setTabCache] = useState<Record<TabType, TabState>>({
+  const [tabCache, setTabCache] = useState<Record<StandardTab, TabState>>({
     threads: { ...INITIAL_TAB_STATE },
     lenses: { ...INITIAL_TAB_STATE },
     actions: { ...INITIAL_TAB_STATE },
     challenges: { ...INITIAL_TAB_STATE },
     agents: { ...INITIAL_TAB_STATE },
   })
-
   const [loadingTab, setLoadingTab] = useState(false)
+  const [isSavingMainLens, setIsSavingMainLens] = useState(false)
+  const [isSavingDefaultModel, setIsSavingDefaultModel] = useState(false)
   const observer = useRef<IntersectionObserver | null>(null)
 
-  const activeTab: TabType = routeTab && TAB_MAP[routeTab] ? TAB_MAP[routeTab] : 'threads'
-
-  const { data: items, page, hasMore, isLoaded } = tabCache[activeTab]
+  const activeStandardState = activeStandardTab ? tabCache[activeStandardTab] : INITIAL_TAB_STATE
+  const { data: items, page, hasMore } = activeStandardState
 
   const {
     isOpen: isPromptModalOpen,
@@ -150,41 +254,72 @@ export const LenserProfilePage: React.FC = () => {
 
   const [isThreadModalOpen, setIsThreadModalOpen] = useState(false)
   const [editingThread, setEditingThread] = useState<any>(null)
-
-
   const [deleteTarget, setDeleteTarget] = useState<{
     id: string
     type: 'prompt' | 'thread'
   } | null>(null)
   const [isDeleting, setIsDeleting] = useState(false)
 
-  // For AI agent profiles, fetch the agent record to check owner_lenser_id
-  const { data: agentProfile = null } = useQuery({
-    queryKey: queryKeys.agents.detail(viewedProfile?.id ?? ''),
-    queryFn: () => agentsService.getAgentProfile(viewedProfile!.id),
-    enabled: !!viewedProfile && viewedProfile.type === 'ai',
-    staleTime: 1000 * 60 * 5,
+  const { data: aiWorkflows = [] } = useQuery<WorkflowRecord[]>({
+    queryKey: queryKeys.workflows.byLenser(viewedProfile?.id ?? ''),
+    queryFn: () => workflowsService.listByLenser(viewedProfile!.id),
+    enabled: isAIWorkspacePanel,
+    staleTime: 1000 * 30,
   })
 
-  // Ownership Check: true if the authenticated user IS the profile,
-  // or if the authenticated user owns the AI agent profile being viewed
-  const isOwner = !!(
-    currentUser &&
-    handle &&
-    (currentUser.handle.toLowerCase() === handle.toLowerCase() ||
-      (viewedProfile?.type === 'ai' && agentProfile?.owner_lenser_id === currentUser.id))
+  const { data: aiLenses = [] } = useQuery<LensViewModel[]>({
+    queryKey: queryKeys.lenses.personal(viewedProfile?.id ?? ''),
+    queryFn: () =>
+      lensesService.getLenserLenses(viewedProfile!.handle, 0, 48, activeWorkspace?.id),
+    enabled: isAIWorkspacePanel,
+    staleTime: 1000 * 30,
+  })
+
+  const { data: aiLensBindings = [] } = useQuery<AgentLensBindingRecord[]>({
+    queryKey: queryKeys.agents.lensBindings(agentProfile?.ai_lenser_id ?? ''),
+    queryFn: () => agentsService.getLensBindings(agentProfile!.ai_lenser_id),
+    enabled: isAIWorkspacePanel && !!agentProfile?.ai_lenser_id,
+    staleTime: 1000 * 30,
+  })
+
+  const { data: aiModelBindings = [] } = useQuery<AgentModelBindingRecord[]>({
+    queryKey: queryKeys.agents.modelBindings(agentProfile?.ai_lenser_id ?? ''),
+    queryFn: () => agentsService.getModelBindings(agentProfile!.ai_lenser_id),
+    enabled: isAIWorkspacePanel && !!agentProfile?.ai_lenser_id,
+    staleTime: 1000 * 30,
+  })
+
+  const { data: aiSchedules = [] } = useQuery({
+    queryKey: queryKeys.workflows.schedules(null),
+    queryFn: () => workflowsService.getSchedules(),
+    enabled: isAIWorkspacePanel,
+    staleTime: 1000 * 30,
+  })
+  const automationFeedQuery = useAgentAutomationFeed(
+    isAIWorkspacePanel ? agentProfile?.ai_lenser_id : undefined
   )
+  const upsertSchedule = useMutation({
+    mutationFn: (input: UpsertWorkflowScheduleInput) => workflowsService.upsertSchedule(input),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: queryKeys.workflows.schedules(null) })
+    },
+  })
+  const deleteSchedule = useMutation({
+    mutationFn: (scheduleId: string) => workflowsService.deleteSchedule(scheduleId),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: queryKeys.workflows.schedules(null) })
+    },
+  })
 
-  const { open: openModal } = useModalRouter()
+  const defaultLensId = aiLensBindings.find((binding) => binding.is_default)?.lens_id ?? ''
+  const defaultModelId = aiModelBindings.find((binding) => binding.is_default)?.model_id ?? ''
 
-  // Content visibility: 'public' = anyone, 'community' = authenticated only, 'private' = owner only
   const contentVisibility = viewedProfile?.content_visibility ?? 'public'
   const canViewContent =
     isOwner ||
     contentVisibility === 'public' ||
     (contentVisibility === 'community' && !!authUser)
 
-  // Reset tab cache when navigating to a different profile
   useEffect(() => {
     if (!handle) return
     setTabCache({
@@ -196,7 +331,6 @@ export const LenserProfilePage: React.FC = () => {
     })
   }, [handle])
 
-  // Track profile view once loaded
   useEffect(() => {
     if (viewedProfile && handle) {
       trackView('profile', handle)
@@ -215,9 +349,8 @@ export const LenserProfilePage: React.FC = () => {
     return () => setShareConfig(null)
   }, [viewedProfile, setShareConfig])
 
-  const fetchTabData = async (targetTab: TabType, pageNum: number, refresh = false) => {
+  const fetchTabData = async (targetTab: StandardTab, pageNum: number, refresh = false) => {
     if (!viewedProfile) return
-
     if (!refresh && tabCache[targetTab].isLoaded && pageNum === 0) return
 
     if (pageNum === 0) setLoadingTab(true)
@@ -225,33 +358,17 @@ export const LenserProfilePage: React.FC = () => {
     try {
       const offset = pageNum * PAGE_SIZE
       let newItems: any[] = []
-
-      // Viewer ID is used to determine visibility (show private items if owner)
-      const viewerId = currentUser?.id
+      const viewerId = isOwner ? viewedProfile.id : activeWorkspace?.id
 
       switch (targetTab) {
         case 'lenses':
-          newItems = await lensesService.getLenserLenses(
-            viewedProfile.handle,
-            offset,
-            PAGE_SIZE,
-            viewerId
-          )
+          newItems = await lensesService.getLenserLenses(viewedProfile.handle, offset, PAGE_SIZE, viewerId)
           break
         case 'threads':
-          newItems = await threadsService.getThreadsByLenser(
-            viewedProfile.handle,
-            viewerId,
-            offset,
-            PAGE_SIZE
-          )
+          newItems = await threadsService.getThreadsByLenser(viewedProfile.handle, viewerId, offset, PAGE_SIZE)
           break
         case 'actions':
-          newItems = await reactionService.getLenserActivityFeed(
-            viewedProfile.handle,
-            offset,
-            PAGE_SIZE
-          )
+          newItems = await reactionService.getLenserActivityFeed(viewedProfile.handle, offset, PAGE_SIZE)
           break
         case 'agents':
           if (pageNum === 0) {
@@ -263,12 +380,12 @@ export const LenserProfilePage: React.FC = () => {
           break
       }
 
-      setTabCache((prev) => {
-        const currentData = prev[targetTab].data
+      setTabCache((previous) => {
+        const currentData = previous[targetTab].data
         const updatedData = refresh || pageNum === 0 ? newItems : [...currentData, ...newItems]
 
         return {
-          ...prev,
+          ...previous,
           [targetTab]: {
             data: updatedData,
             page: pageNum,
@@ -277,43 +394,39 @@ export const LenserProfilePage: React.FC = () => {
           },
         }
       })
-    } catch (e) {
-      console.error(`Failed to fetch ${targetTab}`, e)
+    } catch (cause) {
+      console.error(`Failed to fetch ${targetTab}`, cause)
     } finally {
       setLoadingTab(false)
     }
   }
 
   useEffect(() => {
-    if (viewedProfile) {
-      // If tab data not loaded, fetch it
-      if (!tabCache[activeTab].isLoaded) {
-        fetchTabData(activeTab, 0)
-      }
+    if (!viewedProfile || !activeStandardTab) return
+    if (!tabCache[activeStandardTab].isLoaded) {
+      fetchTabData(activeStandardTab, 0)
     }
-  }, [activeTab, viewedProfile?.handle, currentUser?.id])
+  }, [activeStandardTab, viewedProfile?.handle, activeWorkspace?.id])
 
   const lastElementRef = useCallback(
     (node: HTMLDivElement) => {
-      if (loadingTab) return
+      if (!activeStandardTab || loadingTab) return
       if (observer.current) observer.current.disconnect()
 
       observer.current = new IntersectionObserver((entries) => {
         if (entries[0].isIntersecting && hasMore) {
-          const nextPage = page + 1
-          fetchTabData(activeTab, nextPage)
+          fetchTabData(activeStandardTab, page + 1)
         }
       })
 
       if (node) observer.current.observe(node)
     },
-    [loadingTab, hasMore, activeTab, page, viewedProfile?.handle]
+    [activeStandardTab, hasMore, loadingTab, page]
   )
 
-  const handleTabChange = (newTab: TabType) => {
+  const handleTabChange = (newTab: LenserTabId) => {
     if (newTab === activeTab) return
-    const code = REVERSE_TAB_MAP[newTab]
-    navigate(`/lenser/${handle}/${code}`)
+    navigate(`/lenser/${handle}/${REVERSE_TAB_MAP[newTab]}`)
   }
 
   const handleProfileUpdate = (_updatedLenser: Lenser) => {
@@ -323,123 +436,165 @@ export const LenserProfilePage: React.FC = () => {
   }
 
   const handleEditPrompt = (id: string) => {
-    const promptToEdit = items.find((p: any) => p.id === id)
-    if (promptToEdit) {
-      lensesService.getLensDetail(id, currentUser?.id).then((detail) => {
-        if (detail) {
-          openPromptModal({
-            id: detail.id,
-            title: detail.title,
-            content: detail.content,
-            tags: detail.tags,
-            visibility: detail.visibility,
-          })
-        }
+    const viewerId = isOwner && viewedProfile ? viewedProfile.id : activeWorkspace?.id
+    lensesService.getLensDetail(id, viewerId).then((detail) => {
+      if (!detail) return
+      openPromptModal({
+        id: detail.id,
+        title: detail.title,
+        content: detail.content,
+        tags: detail.tags,
+        visibility: detail.visibility,
       })
-    }
-  }
-
-  const handleEditThread = (id: string) => {
-    const threadToEdit = items.find((t: any) => t.id === id)
-    if (threadToEdit) {
-      setEditingThread({
-        id: threadToEdit.id,
-        title: threadToEdit.title,
-        content: threadToEdit.content,
-        tags: threadToEdit.tags.map((t: any) => t.name),
-        visibility: threadToEdit.visibility,
-      })
-      setIsThreadModalOpen(true)
-    }
-  }
-
-  const removeCacheItem = (tab: TabType, itemId: string) => {
-    setTabCache((prev) => {
-      const tabState = prev[tab]
-      const newData = tabState.data.filter((item) => item.id !== itemId)
-      return {
-        ...prev,
-        [tab]: { ...tabState, data: newData },
-      }
     })
   }
 
+  const handleEditThread = (id: string) => {
+    const threadToEdit = items.find((thread: any) => thread.id === id)
+    if (!threadToEdit) return
+
+    setEditingThread({
+      id: threadToEdit.id,
+      title: threadToEdit.title,
+      content: threadToEdit.content,
+      tags: threadToEdit.tags.map((tag: any) => tag.name),
+      visibility: threadToEdit.visibility,
+    })
+    setIsThreadModalOpen(true)
+  }
+
+  const removeCacheItem = (tab: StandardTab, itemId: string) => {
+    setTabCache((previous) => ({
+      ...previous,
+      [tab]: {
+        ...previous[tab],
+        data: previous[tab].data.filter((item) => item.id !== itemId),
+      },
+    }))
+  }
+
   const confirmDelete = async () => {
-    if (!deleteTarget || !currentUser) return
+    if (!deleteTarget || !activeWorkspace) return
     setIsDeleting(true)
     try {
-      // Use current user handle for authorization check in service
       if (deleteTarget.type === 'prompt') {
-        await lensesService.deleteLens(deleteTarget.id, currentUser.handle)
+        await lensesService.deleteLens(deleteTarget.id, activeWorkspace.handle)
         removeCacheItem('lenses', deleteTarget.id)
-        alert('Lens deleted successfully.')
       } else {
-        await threadsService.deleteThread(deleteTarget.id, currentUser.handle)
+        await threadsService.deleteThread(deleteTarget.id, activeWorkspace.handle)
         removeCacheItem('threads', deleteTarget.id)
-        alert('Thread deleted successfully.')
       }
       setDeleteTarget(null)
-    } catch (e) {
-      console.error(e)
+    } catch (cause) {
+      console.error(cause)
       alert('Failed to delete item.')
     } finally {
       setIsDeleting(false)
     }
   }
 
-  const handleMutationSuccess = (tab: TabType) => {
+  const handleMutationSuccess = (tab: StandardTab) => {
     fetchTabData(tab, 0, true)
   }
 
-  const handlePromptSubmit = (id: string) => {
+  const handlePromptSubmit = () => {
     handleMutationSuccess('lenses')
   }
 
+  const handleSwitchToAIWorkspace = async () => {
+    if (!viewedProfile) return
+    await switchWorkspace(viewedProfile.id)
+    navigate(`/lenser/${viewedProfile.handle}/${REVERSE_TAB_MAP.overview}`)
+  }
+
+  const handleSelectMainLens = async (lensId: string) => {
+    if (!agentProfile || !lensId) return
+    setIsSavingMainLens(true)
+    try {
+      await agentsService.setMainLensBinding(agentProfile.ai_lenser_id, lensId)
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: queryKeys.agents.lensBindings(agentProfile.ai_lenser_id) }),
+        queryClient.invalidateQueries({ queryKey: queryKeys.agents.automationFeed(agentProfile.ai_lenser_id) }),
+      ])
+    } catch (cause) {
+      console.error('Failed to update main lens binding', cause)
+      alert('Failed to update the main lens.')
+    } finally {
+      setIsSavingMainLens(false)
+    }
+  }
+
+  const handleSelectDefaultModel = async (modelId: string) => {
+    if (!agentProfile || !modelId) return
+    setIsSavingDefaultModel(true)
+    try {
+      await agentsService.setDefaultModelBinding(agentProfile.ai_lenser_id, modelId)
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: queryKeys.agents.modelBindings(agentProfile.ai_lenser_id) }),
+        queryClient.invalidateQueries({ queryKey: queryKeys.agents.automationFeed(agentProfile.ai_lenser_id) }),
+      ])
+    } catch (cause) {
+      console.error('Failed to update default model binding', cause)
+      alert('Failed to update the default model.')
+    } finally {
+      setIsSavingDefaultModel(false)
+    }
+  }
+
+  const handleScheduleSave = async (input: UpsertWorkflowScheduleInput) => {
+    await upsertSchedule.mutateAsync(input)
+    if (agentProfile) {
+      await queryClient.invalidateQueries({ queryKey: queryKeys.agents.automationFeed(agentProfile.ai_lenser_id) })
+    }
+  }
+
+  const handleScheduleDelete = async (scheduleId: string) => {
+    await deleteSchedule.mutateAsync(scheduleId)
+    if (agentProfile) {
+      await queryClient.invalidateQueries({ queryKey: queryKeys.agents.automationFeed(agentProfile.ai_lenser_id) })
+    }
+  }
+
   const SkeletonLoader = () => {
-    if (activeTab === 'lenses') {
+    if (activeStandardTab === 'lenses') {
       return (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {[1, 2, 3].map((i) => (
-            <div
-              key={i}
-              className="h-64 bg-gray-200 dark:bg-gray-800 rounded-xl animate-pulse"
-            ></div>
+        <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
+          {[1, 2, 3].map((item) => (
+            <div key={item} className="h-64 rounded-xl bg-gray-200 animate-pulse dark:bg-gray-800" />
           ))}
         </div>
       )
     }
-    if (activeTab === 'threads') {
+
+    if (activeStandardTab === 'threads') {
       return (
         <div className="space-y-6">
-          {[1, 2].map((i) => (
-            <div
-              key={i}
-              className="h-48 bg-gray-200 dark:bg-gray-800 rounded-2xl animate-pulse"
-            ></div>
+          {[1, 2].map((item) => (
+            <div key={item} className="h-48 rounded-2xl bg-gray-200 animate-pulse dark:bg-gray-800" />
           ))}
         </div>
       )
     }
+
     return (
       <div className="space-y-4">
-        {[1, 2, 3].map((i) => (
-          <div key={i} className="h-20 bg-gray-200 dark:bg-gray-800 rounded-xl animate-pulse"></div>
+        {[1, 2, 3].map((item) => (
+          <div key={item} className="h-20 rounded-xl bg-gray-200 animate-pulse dark:bg-gray-800" />
         ))}
       </div>
     )
   }
 
-
   if (loadingProfile) {
     return (
-      <div className="max-w-7xl mx-auto py-8 px-4">
-        <div className="animate-pulse space-y-8">
-          <div className="h-64 bg-gray-200 dark:bg-gray-800 rounded-3xl"></div>
-          <div className="flex gap-6 mt-4 px-6">
-            <div className="w-32 h-32 rounded-full bg-gray-200 dark:bg-gray-800 -mt-20 border-4 border-white dark:border-gray-900"></div>
+      <div className="mx-auto max-w-7xl px-4 py-8">
+        <div className="space-y-8 animate-pulse">
+          <div className="h-64 rounded-3xl bg-gray-200 dark:bg-gray-800" />
+          <div className="mt-4 flex gap-6 px-6">
+            <div className="h-32 w-32 -mt-20 rounded-full border-4 border-white bg-gray-200 dark:border-gray-900 dark:bg-gray-800" />
             <div className="flex-1 space-y-4 pt-4">
-              <div className="w-1/3 h-8 bg-gray-200 dark:bg-gray-800 rounded"></div>
-              <div className="w-1/4 h-4 bg-gray-200 dark:bg-gray-800 rounded"></div>
+              <div className="h-8 w-1/3 rounded bg-gray-200 dark:bg-gray-800" />
+              <div className="h-4 w-1/4 rounded bg-gray-200 dark:bg-gray-800" />
             </div>
           </div>
         </div>
@@ -447,7 +602,6 @@ export const LenserProfilePage: React.FC = () => {
     )
   }
 
-  // Route state branching
   if (routeState === 'UNAVAILABLE_PROFILE') {
     return <UnavailableProfile />
   }
@@ -457,18 +611,16 @@ export const LenserProfilePage: React.FC = () => {
       <RestrictedProfileShell
         profile={viewedProfile}
         relationshipState={relationshipState}
-        isAuthenticated={!!currentUser}
+        isAuthenticated={!!activeWorkspace}
       />
     )
   }
 
   if (!viewedProfile) {
     return (
-      <div className="flex justify-center items-center min-h-[50vh]">
+      <div className="flex min-h-[50vh] items-center justify-center">
         <div className="text-center">
-          <h2 className="text-xl font-bold text-gray-500 dark:text-gray-400 mb-2">
-            Lenser not found
-          </h2>
+          <h2 className="mb-2 text-xl font-bold text-gray-500 dark:text-gray-400">Lenser not found</h2>
           <Button onClick={() => navigate('/')} className="w-auto" variant="ghost">
             Return Home
           </Button>
@@ -478,7 +630,7 @@ export const LenserProfilePage: React.FC = () => {
   }
 
   return (
-    <div className="max-w-7xl mx-auto pb-12">
+    <div className="mx-auto max-w-7xl pb-12">
       <SEOHead type="profile" data={{ lenser: viewedProfile, stats }} />
 
       {routeState === 'OWNER_RECOVERY_PROFILE' && (
@@ -496,41 +648,100 @@ export const LenserProfilePage: React.FC = () => {
         isOwner={isOwner}
         onProfileUpdate={handleProfileUpdate}
         relationshipState={relationshipState}
-        onManageAgents={isOwner ? () => handleTabChange('agents') : undefined}
+        onManageAgents={
+          isOwner && viewedProfile.type !== 'ai' && FEATURES.AGENTS
+            ? () => handleTabChange('agents')
+            : undefined
+        }
         onEditAgent={
           isOwner && viewedProfile.type === 'ai' && agentProfile
             ? () => navigate(`/lenser/${viewedProfile.handle}/agent?agentId=${agentProfile.ai_lenser_id}`)
             : undefined
         }
+        showAIWorkspaceBanner={isAIWorkspacePanel}
       />
 
-      {stats && (
+      {!isAIWorkspacePanel && stats && (
         <div className="px-4 md:px-0">
-          <LenserStatsRow
-            stats={stats}
-            xpSummary={xpSummary}
-          />
+          <LenserStatsRow stats={stats} xpSummary={xpSummary} />
         </div>
       )}
 
-      {FEATURES.LENSER_ACTIVITY && (
+      {!isAIWorkspacePanel && FEATURES.LENSER_ACTIVITY && (
         <div className="px-4 md:px-0">
           <LenserActivityHeatmap data={activity} />
         </div>
       )}
 
-      <div className="px-0 md:px-0 mt-8">
+      <div className="mt-8 px-0 md:px-0">
+        {shouldShowAIWorkspacePrompt && (
+          <div className="px-4 md:px-0">
+            <AILenserWorkspacePrompt
+              displayName={viewedProfile.display_name}
+              onSwitch={handleSwitchToAIWorkspace}
+              isSwitching={isSwitching}
+            />
+          </div>
+        )}
+
         <div className="px-4 md:px-0">
-          <LenserTabs
-            activeTab={activeTab}
-            onChange={handleTabChange}
-            hideActions={!isOwner && !!viewedProfile?.hide_actions}
-            showAgents={isOwner}
-          />
+          <LenserTabs activeTab={activeTab} onChange={handleTabChange} tabs={tabs} />
         </div>
 
         <div className="min-h-[300px] px-4 md:px-0">
-          {activeTab === 'actions' && (isOwner || !viewedProfile?.hide_actions) && (
+          {isAIWorkspacePanel && activeTab === 'overview' && agentProfile && (
+            <AILenserOverviewPanel
+              agent={agentProfile}
+              lenses={aiLenses}
+              lensBindings={aiLensBindings}
+              modelBindings={aiModelBindings}
+              models={models}
+              workflows={aiWorkflows}
+              schedules={aiSchedules}
+              selectedModelId={defaultModelId}
+              onSelectModel={handleSelectDefaultModel}
+              isSavingModel={isSavingDefaultModel}
+            />
+          )}
+
+          {isAIWorkspacePanel && activeTab === 'lenses' && (
+            <AILenserLensesPanel
+              lenses={aiLenses}
+              lensBindings={aiLensBindings}
+              selectedLensId={defaultLensId}
+              onSelectLens={handleSelectMainLens}
+              isSaving={isSavingMainLens}
+            />
+          )}
+
+          {isAIWorkspacePanel && activeTab === 'workflows' && (
+            <AILenserWorkflowPanel
+              workflows={aiWorkflows}
+              schedules={aiSchedules}
+              onOpenWorkflow={(workflowId) => navigate(`/workflows/${workflowId}`)}
+            />
+          )}
+
+          {isAIWorkspacePanel && activeTab === 'logs' && (
+            <AILenserAutomationLogPanel
+              feed={automationFeedQuery.data ?? []}
+              isLoading={automationFeedQuery.isLoading}
+            />
+          )}
+
+          {isAIWorkspacePanel && activeTab === 'schedules' && (
+            <AILenserSchedulesPanel
+              workflows={aiWorkflows}
+              schedules={aiSchedules}
+              models={models}
+              onSave={handleScheduleSave}
+              onDelete={handleScheduleDelete}
+              isSaving={upsertSchedule.isPending}
+              isDeleting={deleteSchedule.isPending}
+            />
+          )}
+
+          {!isAIWorkspacePanel && activeStandardTab === 'actions' && (isOwner || !viewedProfile.hide_actions) && (
             <>
               {items.length > 0 ? (
                 <LenserActionsList actions={items as ActivityFeedItem[]} />
@@ -540,14 +751,14 @@ export const LenserProfilePage: React.FC = () => {
             </>
           )}
 
-          {activeTab === 'lenses' && !canViewContent && (
+          {!isAIWorkspacePanel && activeStandardTab === 'lenses' && !canViewContent && (
             <EmptyState icon={FolderOpen} title="This content is not public." />
           )}
 
-          {activeTab === 'lenses' && canViewContent && (
+          {!isAIWorkspacePanel && activeStandardTab === 'lenses' && canViewContent && (
             <>
               {items.length > 0 ? (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 gap-6">
+                <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3">
                   {items.map((prompt) => (
                     <div key={prompt.id} className="h-full">
                       <LensCard
@@ -567,10 +778,7 @@ export const LenserProfilePage: React.FC = () => {
                     title="No prompts created yet."
                     action={
                       isOwner && (
-                        <Button
-                          onClick={() => openPromptModal()}
-                          className="!w-auto flex items-center gap-2"
-                        >
+                        <Button onClick={() => openPromptModal()} className="!w-auto flex items-center gap-2">
                           <Plus size={16} /> Create Lens
                         </Button>
                       )
@@ -581,11 +789,11 @@ export const LenserProfilePage: React.FC = () => {
             </>
           )}
 
-          {activeTab === 'threads' && !canViewContent && (
+          {!isAIWorkspacePanel && activeStandardTab === 'threads' && !canViewContent && (
             <EmptyState icon={MessageSquare} title="This content is not public." />
           )}
 
-          {activeTab === 'threads' && canViewContent && (
+          {!isAIWorkspacePanel && activeStandardTab === 'threads' && canViewContent && (
             <>
               {items.length > 0 ? (
                 <div className="space-y-6">
@@ -621,14 +829,14 @@ export const LenserProfilePage: React.FC = () => {
             </>
           )}
 
-          {activeTab === 'challenges' && (
+          {!isAIWorkspacePanel && activeStandardTab === 'challenges' && (
             <EmptyState icon={Trophy} title="No challenge history available." />
           )}
 
-          {activeTab === 'agents' && FEATURES.AGENTS && (
+          {!isAIWorkspacePanel && activeStandardTab === 'agents' && FEATURES.AGENTS && (
             <>
               {items.length > 0 ? (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
                   {items.map((agent) => (
                     <AgentCard key={agent.id} agent={agent} isOwner={isOwner} />
                   ))}
@@ -640,10 +848,7 @@ export const LenserProfilePage: React.FC = () => {
                     title="No AI Agents yet."
                     action={
                       isOwner && (
-                        <Button
-                          onClick={() => openModal('create-agent')}
-                          className="!w-auto flex items-center gap-2"
-                        >
+                        <Button onClick={() => openModal('create-agent')} className="!w-auto flex items-center gap-2">
                           <Plus size={16} /> Create Agent
                         </Button>
                       )
@@ -654,13 +859,13 @@ export const LenserProfilePage: React.FC = () => {
             </>
           )}
 
-          {loadingTab && (
+          {!isAIWorkspacePanel && loadingTab && (
             <div className="mt-6">
               <SkeletonLoader />
             </div>
           )}
 
-          <div ref={lastElementRef} className="h-4" />
+          {!isAIWorkspacePanel && <div ref={lastElementRef} className="h-4" />}
         </div>
       </div>
 
@@ -694,9 +899,7 @@ export const LenserProfilePage: React.FC = () => {
         isLoading={isDeleting}
       />
 
-      {/* Nested route outlet — renders AgentManageModal at /lenser/:handle/agent */}
       <Outlet />
-
     </div>
   )
 }
