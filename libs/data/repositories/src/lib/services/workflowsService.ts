@@ -147,4 +147,10 @@ export const workflowsService = {
 
   restoreVersion: (versionId: string): Promise<void> =>
     workflowsRepo.restoreVersion(versionId),
+
+  // ── Run history ─────────────────────────────────────────────────────────────
+
+  /** Paginated list of past runs for a workflow (owner-only). */
+  listRuns: (workflowId: string, limit?: number, offset?: number): Promise<WorkflowRunRecord[]> =>
+    workflowsRepo.listRuns(workflowId, limit, offset),
 }
