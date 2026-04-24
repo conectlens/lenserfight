@@ -4,16 +4,18 @@ import { useAIModels } from '@lenserfight/features/generations'
 import { useCreateLens, CreateLensModal, useFundingSource, FundingSourceToggle } from '@lenserfight/features/lenses'
 import { Avatar, Badge, Button } from '@lenserfight/ui/components'
 import { useQuery } from '@tanstack/react-query'
-import { ArrowLeft, Bookmark, ChevronDown, GitBranch, GitFork, History, Lock, Pencil, Play, Square, Swords, ThumbsUp, X } from 'lucide-react'
+import { ArrowLeft, Bookmark, CalendarClock, ChevronDown, GitBranch, GitFork, History, Layers, Lock, Pencil, Play, Square, Swords, ThumbsUp, X } from 'lucide-react'
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
 
 import { CreateWorkflowWizard } from '../components/CreateWorkflowWizard'
 import { WorkflowBuilderCanvas } from '../components/WorkflowBuilderCanvas'
+import { WorkflowCronPanel } from '../components/WorkflowCronPanel'
 import { WorkflowFinalOutputBanner } from '../components/WorkflowFinalOutputBanner'
 import { WorkflowLensPalette } from '../components/WorkflowLensPalette'
 import { WorkflowNodeConfigPanel } from '../components/WorkflowNodeConfigPanel'
+import { WorkflowPhasesEditor } from '../components/WorkflowPhasesEditor'
 import { WorkflowProgressView } from '../components/WorkflowProgressView'
 import { WorkflowRootInputsPanel } from '../components/WorkflowRootInputsPanel'
 import { WorkflowRunHistoryPanel } from '../components/WorkflowRunHistoryPanel'
@@ -41,7 +43,8 @@ export function WorkflowBuilderPage({ workflowId, onBattleClick }: WorkflowBuild
   const { models, isLoading: modelsLoading } = useAIModels()
   const [showRunPanel, setShowRunPanel] = useState(false)
   const [isEditModalOpen, setIsEditModalOpen] = useState(false)
-  const [runPanelTab, setRunPanelTab] = useState<'run' | 'history'>('run')
+  const [runPanelTab, setRunPanelTab] = useState<'run' | 'history' | 'schedule'>('run')
+  const [builderMode, setBuilderMode] = useState<'canvas' | 'phases'>('canvas')
   const [selectedHistoryRunId, setSelectedHistoryRunId] = useState<string | null>(null)
 
   // Provider/model selection state (replaces globalModelId SelectField)
@@ -322,6 +325,32 @@ export function WorkflowBuilderPage({ workflowId, onBattleClick }: WorkflowBuild
           </Badge>
         </div>
 
+        {/* Canvas / Phases mode toggle */}
+        <div className="flex items-center gap-0.5 rounded-lg border border-surface-border bg-surface-raised p-0.5 flex-shrink-0">
+          <button
+            type="button"
+            onClick={() => setBuilderMode('canvas')}
+            className={`flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-medium transition-colors ${
+              builderMode === 'canvas'
+                ? 'bg-surface-base text-greyscale-900 dark:text-greyscale-50 shadow-sm'
+                : 'text-greyscale-400 hover:text-greyscale-700 dark:hover:text-greyscale-200'
+            }`}
+          >
+            <GitBranch size={11} /> Canvas
+          </button>
+          <button
+            type="button"
+            onClick={() => setBuilderMode('phases')}
+            className={`flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-medium transition-colors ${
+              builderMode === 'phases'
+                ? 'bg-surface-base text-greyscale-900 dark:text-greyscale-50 shadow-sm'
+                : 'text-greyscale-400 hover:text-greyscale-700 dark:hover:text-greyscale-200'
+            }`}
+          >
+            <Layers size={11} /> Phases
+          </button>
+        </div>
+
         {/* Actions */}
         <div className="flex items-center gap-2 flex-shrink-0">
           {/* Social: Like / Save / Fork — shown when authenticated */}
@@ -476,53 +505,63 @@ export function WorkflowBuilderPage({ workflowId, onBattleClick }: WorkflowBuild
 
       {/* ── Main area ──────────────────────────────────────────────────────── */}
       <div className="flex flex-1 overflow-hidden">
-        {/* Lens palette sidebar */}
-        <WorkflowLensPalette
-          onDragStart={() => undefined}
-          collapsed={paletteCollapsed}
-          onToggleCollapse={() => setPaletteCollapsed((v) => !v)}
-        />
-
-        {/* Canvas — fills remaining space */}
-        <div className="relative flex-1 overflow-hidden">
-          <WorkflowBuilderCanvas
-            workflowId={workflow.id}
-            nodes={nodes}
-            edges={edges}
-            currentUserId={user?.id}
-            nodeConfigOverrides={nodeConfigs}
-            onConfigNode={handleConfigNode}
-            onEditLens={handleEditLens}
-            onEdit={isOwner ? () => setIsEditModalOpen(true) : undefined}
+        {/* Lens palette sidebar — hidden in Phases mode */}
+        {builderMode === 'canvas' && (
+          <WorkflowLensPalette
+            onDragStart={() => undefined}
+            collapsed={paletteCollapsed}
+            onToggleCollapse={() => setPaletteCollapsed((v) => !v)}
           />
+        )}
 
-          {/* Empty state overlay */}
-          {nodes.length === 0 && (
-            <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
-              <div className="text-center space-y-2 opacity-40">
-                <GitBranch size={40} className="mx-auto text-greyscale-300" />
-                <p className="text-sm font-medium text-greyscale-400">
-                  Drag a lens from the left panel to start building
-                </p>
-              </div>
+        {/* Canvas or Phases editor — fills remaining space */}
+        <div className="relative flex-1 overflow-hidden">
+          {builderMode === 'phases' ? (
+            <div className="h-full overflow-y-auto bg-surface-base">
+              <WorkflowPhasesEditor workflowId={workflow.id} isOwner={isOwner} />
             </div>
-          )}
+          ) : (
+            <>
+              <WorkflowBuilderCanvas
+                workflowId={workflow.id}
+                nodes={nodes}
+                edges={edges}
+                currentUserId={user?.id}
+                nodeConfigOverrides={nodeConfigs}
+                onConfigNode={handleConfigNode}
+                onEditLens={handleEditLens}
+                onEdit={isOwner ? () => setIsEditModalOpen(true) : undefined}
+              />
 
-          {/* Battle CTA — shown when workflow has nodes and isn't running */}
-          {nodes.length > 0 && !isRunning && !showRunPanel && !selectedNodeConfig && onBattleClick && (
-            <div className="pointer-events-auto absolute top-3 right-3 flex items-center gap-2 rounded-2xl border border-primary-yellow-500/30 bg-primary-yellow-500/5 px-3 py-2 shadow-sm">
-              <p className="text-xs font-medium text-greyscale-700 dark:text-greyscale-300">
-                Workflow ready.
-              </p>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => onBattleClick(workflow.id)}
-                className="!text-xs !font-semibold !text-primary-yellow-600 hover:!bg-primary-yellow-500/10 w-auto !h-auto !py-1 !px-2"
-              >
-                Battle it →
-              </Button>
-            </div>
+              {/* Empty state overlay */}
+              {nodes.length === 0 && (
+                <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
+                  <div className="text-center space-y-2 opacity-40">
+                    <GitBranch size={40} className="mx-auto text-greyscale-300" />
+                    <p className="text-sm font-medium text-greyscale-400">
+                      Drag a lens from the left panel to start building
+                    </p>
+                  </div>
+                </div>
+              )}
+
+              {/* Battle CTA — shown when workflow has nodes and isn't running */}
+              {nodes.length > 0 && !isRunning && !showRunPanel && !selectedNodeConfig && onBattleClick && (
+                <div className="pointer-events-auto absolute top-3 right-3 flex items-center gap-2 rounded-2xl border border-primary-yellow-500/30 bg-primary-yellow-500/5 px-3 py-2 shadow-sm">
+                  <p className="text-xs font-medium text-greyscale-700 dark:text-greyscale-300">
+                    Workflow ready.
+                  </p>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => onBattleClick(workflow.id)}
+                    className="!text-xs !font-semibold !text-primary-yellow-600 hover:!bg-primary-yellow-500/10 w-auto !h-auto !py-1 !px-2"
+                  >
+                    Battle it →
+                  </Button>
+                </div>
+              )}
+            </>
           )}
         </div>
 
@@ -576,6 +615,18 @@ export function WorkflowBuilderPage({ workflowId, onBattleClick }: WorkflowBuild
                       {historyRuns.length}
                     </span>
                   )}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setRunPanelTab('schedule')}
+                  className={`flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-medium transition-colors ${
+                    runPanelTab === 'schedule'
+                      ? 'bg-surface-raised text-greyscale-900 dark:text-greyscale-50'
+                      : 'text-greyscale-400 hover:text-greyscale-700 dark:hover:text-greyscale-200'
+                  }`}
+                >
+                  <CalendarClock size={11} />
+                  Schedule
                 </button>
               </div>
               <Button
@@ -643,6 +694,8 @@ export function WorkflowBuilderPage({ workflowId, onBattleClick }: WorkflowBuild
                     />
                   )}
                 </>
+              ) : runPanelTab === 'schedule' ? (
+                <WorkflowCronPanel workflowId={workflowId} isOwner={isOwner} />
               ) : (
                 <>
                   <WorkflowRunHistoryPanel
