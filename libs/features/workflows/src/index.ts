@@ -14,6 +14,7 @@ export * from './lib/hooks/useWorkflowExecution'
 export * from './lib/hooks/useWorkflowSimulation'
 export * from './lib/hooks/useWorkflowRunEvents'
 export * from './lib/hooks/useWorkflowRunHistory'
+export * from './lib/hooks/useWorkflowPhases'
 
 // Execution helpers
 export * from './lib/execution/persistNodeMedia'
@@ -30,6 +31,9 @@ export * from './lib/components/WorkflowCanvasEdge'
 export * from './lib/components/WorkflowOutputActions'
 export * from './lib/components/WorkflowRunHistoryPanel'
 export * from './lib/components/WorkflowFinalOutputBanner'
+export * from './lib/components/WorkflowCronPanel'
+export * from './lib/components/WorkflowPhasesEditor'
+export * from './lib/components/WorkflowTaskCard'
 
 // Pages
 export * from './lib/pages/WorkflowsPage'
