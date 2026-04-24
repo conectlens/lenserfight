@@ -11,6 +11,7 @@ import {
   RotateCw,
   ShieldAlert,
   SkipForward,
+  Sparkles,
   TimerOff,
   XCircle,
 } from 'lucide-react'
@@ -21,11 +22,18 @@ import type {
   WorkflowEdgeRecord,
   WorkflowNodeResultRecord,
 } from '@lenserfight/data/repositories'
+import { WorkflowOutputActions } from './WorkflowOutputActions'
 
 interface WorkflowProgressViewProps {
   nodes: WorkflowNodeRecord[]
   edges: WorkflowEdgeRecord[]
   nodeResults: WorkflowNodeResultRecord[]
+  /** ID of the terminal node (no outgoing edges). Highlighted as the workflow result. */
+  terminalNodeId?: string | null
+  /** Called when the user clicks "Post to thread" on a node's output. */
+  onPostToThread?: (text: string, nodeLabel: string) => void
+  /** Called when the user clicks "Use as context" to re-run with this output injected. */
+  onRerunWithContext?: (data: Record<string, unknown>) => void
 }
 
 type NodeStatus = WorkflowNodeResultRecord['status']
@@ -224,7 +232,13 @@ function RunningIndicator({ data }: { data?: Record<string, unknown> | null }) {
   )
 }
 
-export function WorkflowProgressView({ nodes, nodeResults }: WorkflowProgressViewProps) {
+export function WorkflowProgressView({
+  nodes,
+  nodeResults,
+  terminalNodeId,
+  onPostToThread,
+  onRerunWithContext,
+}: WorkflowProgressViewProps) {
   if (nodes.length === 0) {
     return (
       <div className="flex items-center justify-center p-8 text-sm text-greyscale-400">
@@ -246,6 +260,7 @@ export function WorkflowProgressView({ nodes, nodeResults }: WorkflowProgressVie
           const status: NodeStatus = result?.status ?? 'pending'
           const isActive = status === 'running' || status === 'streaming' || status === 'retrying'
           const displayStatus = STATUS_LABELS[status]
+          const isTerminal = node.id === terminalNodeId
 
           return (
             <motion.div
@@ -253,8 +268,18 @@ export function WorkflowProgressView({ nodes, nodeResults }: WorkflowProgressVie
               initial={{ opacity: 0, y: 8 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.2 }}
-              className={`relative rounded-2xl border p-4 transition-colors ${STATUS_COLORS[status]} ${isActive ? 'ring-2 ring-primary-yellow-500/30' : ''}`}
+              className={`relative rounded-2xl border p-4 transition-colors ${STATUS_COLORS[status]} ${isActive ? 'ring-2 ring-primary-yellow-500/30' : ''} ${isTerminal && status === 'completed' ? 'ring-2 ring-primary-yellow-500/50 border-primary-yellow-500/40' : ''}`}
             >
+              {/* Terminal node badge */}
+              {isTerminal && status === 'completed' && (
+                <div className="flex items-center gap-1 mb-2">
+                  <Sparkles size={11} className="text-primary-yellow-500" />
+                  <span className="text-[10px] font-semibold text-primary-yellow-600 dark:text-primary-yellow-400 uppercase tracking-wide">
+                    Workflow Result
+                  </span>
+                </div>
+              )}
+
               <div className="flex items-center gap-3">
                 <div className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-lg bg-surface-raised text-xs font-bold text-greyscale-500">
                   {node.ordinal + 1}
@@ -317,9 +342,17 @@ export function WorkflowProgressView({ nodes, nodeResults }: WorkflowProgressVie
                 </div>
               )}
 
-              {/* Completed — rich output renderer */}
+              {/* Completed — rich output renderer + output actions */}
               {result?.output_data && status === 'completed' && (
-                <OutputRenderer data={result.output_data as Record<string, unknown>} />
+                <>
+                  <OutputRenderer data={result.output_data as Record<string, unknown>} />
+                  <WorkflowOutputActions
+                    outputData={result.output_data as Record<string, unknown>}
+                    nodeLabel={node.label || `Node ${node.ordinal + 1}`}
+                    onPostToThread={onPostToThread ? (text) => onPostToThread(text, node.label || `Node ${node.ordinal + 1}`) : undefined}
+                    onRerunWithContext={onRerunWithContext}
+                  />
+                </>
               )}
 
               {/* Failed — error message */}
