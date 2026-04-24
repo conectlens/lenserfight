@@ -16,7 +16,12 @@ import {
   type WorkflowsListFilter,
   type TemplateWorkflowRecord,
 } from '../repositories/workflowsRepository'
-import type { UpsertWorkflowScheduleInput, WorkflowScheduleRecord } from '@lenserfight/types'
+import type {
+  UpsertWorkflowScheduleInput,
+  WorkflowScheduleRecord,
+  WorkflowPhaseRecord,
+  WorkflowTaskRecord,
+} from '@lenserfight/types'
 
 const workflowsRepo = new SupabaseWorkflowsRepository()
 
@@ -37,6 +42,7 @@ export type {
   TemplateWorkflowRecord,
 }
 export type { UpsertWorkflowScheduleInput, WorkflowScheduleRecord }
+export type { WorkflowPhaseRecord, WorkflowTaskRecord }
 
 export const workflowsService = {
   listByLenser: (lenserId: string): Promise<WorkflowRecord[]> =>
@@ -153,4 +159,35 @@ export const workflowsService = {
   /** Paginated list of past runs for a workflow (owner-only). */
   listRuns: (workflowId: string, limit?: number, offset?: number): Promise<WorkflowRunRecord[]> =>
     workflowsRepo.listRuns(workflowId, limit, offset),
+
+  // ── Phases ──────────────────────────────────────────────────────────────────
+
+  listPhases: (workflowId: string): Promise<WorkflowPhaseRecord[]> =>
+    workflowsRepo.listPhases(workflowId),
+
+  upsertPhase: (phase: Partial<WorkflowPhaseRecord> & { workflow_id: string }): Promise<WorkflowPhaseRecord> =>
+    workflowsRepo.upsertPhase(phase),
+
+  deletePhase: (phaseId: string): Promise<void> =>
+    workflowsRepo.deletePhase(phaseId),
+
+  reorderPhases: (workflowId: string, orderedIds: string[]): Promise<void> =>
+    workflowsRepo.reorderPhases(workflowId, orderedIds),
+
+  // ── Tasks ───────────────────────────────────────────────────────────────────
+
+  listTasks: (phaseId: string): Promise<WorkflowTaskRecord[]> =>
+    workflowsRepo.listTasks(phaseId),
+
+  listTasksByWorkflow: (workflowId: string): Promise<WorkflowTaskRecord[]> =>
+    workflowsRepo.listTasksByWorkflow(workflowId),
+
+  upsertTask: (task: Partial<WorkflowTaskRecord> & { phase_id: string; workflow_id: string }): Promise<WorkflowTaskRecord> =>
+    workflowsRepo.upsertTask(task),
+
+  deleteTask: (taskId: string): Promise<void> =>
+    workflowsRepo.deleteTask(taskId),
+
+  reorderTasks: (phaseId: string, orderedIds: string[]): Promise<void> =>
+    workflowsRepo.reorderTasks(phaseId, orderedIds),
 }
