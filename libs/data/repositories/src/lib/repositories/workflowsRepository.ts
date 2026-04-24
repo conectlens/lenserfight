@@ -237,6 +237,7 @@ export interface WorkflowsRepositoryPort {
   createVersion(workflowId: string, changelog?: string): Promise<string>
   publishVersion(versionId: string): Promise<void>
   restoreVersion(versionId: string): Promise<void>
+  listRuns(workflowId: string, limit?: number, offset?: number): Promise<WorkflowRunRecord[]>
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -649,5 +650,16 @@ export class SupabaseWorkflowsRepository implements WorkflowsRepositoryPort {
     })
 
     if (error) this.handleError(error)
+  }
+
+  async listRuns(workflowId: string, limit = 20, offset = 0): Promise<WorkflowRunRecord[]> {
+    const { data, error } = await supabase.rpc('fn_list_workflow_runs', {
+      p_workflow_id: workflowId,
+      p_limit: limit,
+      p_offset: offset,
+    })
+
+    if (error) this.handleError(error)
+    return (data ?? []) as WorkflowRunRecord[]
   }
 }
