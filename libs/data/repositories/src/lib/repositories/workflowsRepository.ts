@@ -6,6 +6,8 @@ import type {
   WorkflowRunStatus,
   WorkflowScheduleRecord,
   WorkflowTriggerMode,
+  WorkflowPhaseRecord,
+  WorkflowTaskRecord,
 } from '@lenserfight/types'
 
 import { debugRepositoryEvent } from './debugLogger'
@@ -661,5 +663,109 @@ export class SupabaseWorkflowsRepository implements WorkflowsRepositoryPort {
 
     if (error) this.handleError(error)
     return (data ?? []) as WorkflowRunRecord[]
+  }
+
+  // ── Phases ──────────────────────────────────────────────────────────────────
+
+  async listPhases(workflowId: string): Promise<WorkflowPhaseRecord[]> {
+    const { data, error } = await supabase
+      .schema('lenses')
+      .from('workflow_phases')
+      .select('*')
+      .eq('workflow_id', workflowId)
+      .order('ordinal', { ascending: true })
+
+    if (error) this.handleError(error)
+    return (data ?? []) as WorkflowPhaseRecord[]
+  }
+
+  async upsertPhase(phase: Partial<WorkflowPhaseRecord> & { workflow_id: string }): Promise<WorkflowPhaseRecord> {
+    const { data, error } = await supabase
+      .schema('lenses')
+      .from('workflow_phases')
+      .upsert(phase, { onConflict: 'id' })
+      .select()
+      .single()
+
+    if (error) this.handleError(error)
+    return data as WorkflowPhaseRecord
+  }
+
+  async deletePhase(phaseId: string): Promise<void> {
+    const { error } = await supabase
+      .schema('lenses')
+      .from('workflow_phases')
+      .delete()
+      .eq('id', phaseId)
+
+    if (error) this.handleError(error)
+  }
+
+  async reorderPhases(workflowId: string, orderedIds: string[]): Promise<void> {
+    const updates = orderedIds.map((id, index) => ({ id, workflow_id: workflowId, ordinal: index }))
+    const { error } = await supabase
+      .schema('lenses')
+      .from('workflow_phases')
+      .upsert(updates, { onConflict: 'id' })
+
+    if (error) this.handleError(error)
+  }
+
+  // ── Tasks ───────────────────────────────────────────────────────────────────
+
+  async listTasks(phaseId: string): Promise<WorkflowTaskRecord[]> {
+    const { data, error } = await supabase
+      .schema('lenses')
+      .from('workflow_tasks')
+      .select('*')
+      .eq('phase_id', phaseId)
+      .order('ordinal', { ascending: true })
+
+    if (error) this.handleError(error)
+    return (data ?? []) as WorkflowTaskRecord[]
+  }
+
+  async listTasksByWorkflow(workflowId: string): Promise<WorkflowTaskRecord[]> {
+    const { data, error } = await supabase
+      .schema('lenses')
+      .from('workflow_tasks')
+      .select('*')
+      .eq('workflow_id', workflowId)
+      .order('ordinal', { ascending: true })
+
+    if (error) this.handleError(error)
+    return (data ?? []) as WorkflowTaskRecord[]
+  }
+
+  async upsertTask(task: Partial<WorkflowTaskRecord> & { phase_id: string; workflow_id: string }): Promise<WorkflowTaskRecord> {
+    const { data, error } = await supabase
+      .schema('lenses')
+      .from('workflow_tasks')
+      .upsert(task, { onConflict: 'id' })
+      .select()
+      .single()
+
+    if (error) this.handleError(error)
+    return data as WorkflowTaskRecord
+  }
+
+  async deleteTask(taskId: string): Promise<void> {
+    const { error } = await supabase
+      .schema('lenses')
+      .from('workflow_tasks')
+      .delete()
+      .eq('id', taskId)
+
+    if (error) this.handleError(error)
+  }
+
+  async reorderTasks(phaseId: string, orderedIds: string[]): Promise<void> {
+    const updates = orderedIds.map((id, index) => ({ id, phase_id: phaseId, ordinal: index }))
+    const { error } = await supabase
+      .schema('lenses')
+      .from('workflow_tasks')
+      .upsert(updates, { onConflict: 'id' })
+
+    if (error) this.handleError(error)
   }
 }

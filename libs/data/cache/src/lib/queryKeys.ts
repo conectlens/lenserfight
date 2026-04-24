@@ -129,6 +129,9 @@ export const queryKeys = {
     run: (runId: string) => [...queryKeys.workflows.all, 'run', runId] as const,
     nodeResults: (runId: string) => [...queryKeys.workflows.all, 'nodeResults', runId] as const,
     versions: (id: string) => [...queryKeys.workflows.all, 'versions', id] as const,
+    phases: (workflowId: string) => [...queryKeys.workflows.all, 'phases', workflowId] as const,
+    tasks: (phaseId: string) => [...queryKeys.workflows.all, 'tasks', phaseId] as const,
+    tasksByWorkflow: (workflowId: string) => [...queryKeys.workflows.all, 'tasksByWorkflow', workflowId] as const,
   },
   agents: {
     all: ['agents'] as const,
