@@ -12,8 +12,8 @@ import { buildAuthReturnUrl, replaceLocationSafely } from '@lenserfight/utils/do
 import { ARENA_BASE_URL, AUTH_BASE_URL } from '@lenserfight/utils/env'
 import { storage } from '@lenserfight/utils/storage'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
-import { Bot, Check, X, Loader2 } from 'lucide-react'
-import React, { useState, useEffect } from 'react'
+import { Bot, Check, X, Loader2, User, Palette, Sparkles } from 'lucide-react'
+import React, { useState, useEffect, useMemo } from 'react'
 import { useNavigate, useLocation, useSearchParams } from 'react-router-dom'
 
 const AUTH_PROFILE_GATE_QUERY_KEY = ['lenser', 'auth-profile-gate'] as const
@@ -267,7 +267,32 @@ export const CreateLenserProfileModal: React.FC = () => {
 
   return (
     <StepWizard
-      steps={['Profile', 'Personalization', 'AI Setup', 'Your Agent'] as any}
+      steps={useMemo(() => [
+        { 
+          label: 'Profile', 
+          title: 'Create Your Profile', 
+          description: 'Set up your identity on LenserFight',
+          icon: <User size={18} />
+        },
+        { 
+          label: 'Personalization', 
+          title: 'Personalize Experience', 
+          description: 'Choose your language and theme preferences',
+          icon: <Palette size={18} />
+        },
+        { 
+          label: 'AI Setup', 
+          title: 'AI Configuration', 
+          description: 'Optionally configure your AI provider',
+          icon: <Sparkles size={18} />
+        },
+        { 
+          label: 'Your Agent', 
+          title: 'Create an Agent', 
+          description: 'Deploy your first AI assistant',
+          icon: <Bot size={18} />
+        }
+      ], []) as any}
       currentStep={currentStep}
       onNext={handleNext}
       onBack={() => goToStep(Math.max(currentStep - 1, 0))}
