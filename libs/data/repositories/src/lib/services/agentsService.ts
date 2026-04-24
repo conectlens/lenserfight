@@ -68,4 +68,8 @@ export const agentsService = {
   /** Securely patches AI lenser workspace profile fields via fn_update_agent_profile RPC (validates ownership). */
   updateAgentProfile: (profileId: string, patch: AgentProfilePatch): Promise<void> =>
     agentsRepo.updateAgentProfile(profileId, patch),
+
+  /** Updates the agent personality note (role/tone/behavior description). Owner-only via fn_update_agent_personality RPC. */
+  updatePersonality: (aiLenserId: string, note: string | null): Promise<void> =>
+    agentsRepo.updatePersonality(aiLenserId, note),
 }

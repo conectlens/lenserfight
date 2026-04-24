@@ -28,6 +28,7 @@ export interface AgentProfileView {
   is_active: boolean
   suspended_at: string | null
   suspended_reason: string | null
+  personality_note?: string | null
   created_at?: string
   can_join_battles: boolean
   can_vote: boolean
@@ -76,6 +77,7 @@ export interface AgentsRepositoryPort {
   setDefaultModelBinding(aiLenserId: string, modelId: string): Promise<AgentModelBindingRecord | null>
   updatePolicy(aiLenserId: string, policy: Partial<Omit<AgentPolicyRecord, 'id' | 'ai_lenser_id' | 'created_at' | 'updated_at'>>): Promise<void>
   updateAgentProfile(profileId: string, patch: AgentProfilePatch): Promise<void>
+  updatePersonality(aiLenserId: string, note: string | null): Promise<void>
 }
 
 // --- Supabase Implementation ---
@@ -266,6 +268,14 @@ export class SupabaseAgentsRepository implements AgentsRepositoryPort {
     const { error } = await supabase.rpc('fn_update_agent_profile', {
       p_ai_lenser_id: profileId,
       p_patch: patch,
+    })
+    if (error) this.handleError(error)
+  }
+
+  async updatePersonality(aiLenserId: string, note: string | null): Promise<void> {
+    const { error } = await supabase.rpc('fn_update_agent_personality', {
+      p_ai_lenser_id: aiLenserId,
+      p_personality_note: note,
     })
     if (error) this.handleError(error)
   }
