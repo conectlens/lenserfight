@@ -1,12 +1,12 @@
-import { lenserService } from '@lenserfight/data/repositories'
 import { useLenserWorkspace } from '@lenserfight/features/profile'
 import { Field, Input } from '@lenserfight/ui/forms'
 import { ModalFooter } from '@lenserfight/ui/overlays'
 import { ArrowRight, Check, Loader2, X } from 'lucide-react'
-import React, { useEffect, useRef, useState } from 'react'
+import React, { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 
 import { useCreateAgent } from '../hooks/useCreateAgent'
+import { useHandleCheck } from '../hooks/useHandleCheck'
 
 export interface CreateAgentContentProps {
   close: () => void
@@ -27,61 +27,20 @@ export const CreateAgentContent: React.FC<CreateAgentContentProps> = ({ close })
   const { submit, isSubmitting } = useCreateAgent(humanWorkspace?.id ?? '')
   const navigate = useNavigate()
 
-  const [handle, setHandle] = useState('')
   const [displayName, setDisplayName] = useState('')
   const [error, setError] = useState<string | null>(null)
 
-  // Handle uniqueness check state
-  const [isCheckingHandle, setIsCheckingHandle] = useState(false)
-  const [isHandleUnique, setIsHandleUnique] = useState(false)
-  const [handleError, setHandleError] = useState<string | null>(null)
-  const [suggestions, setSuggestions] = useState<string[]>([])
-  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const {
+    handle,
+    setHandle,
+    normalizedHandle,
+    isCheckingHandle,
+    isHandleUnique,
+    handleError,
+    suggestions,
+  } = useHandleCheck(3)
 
-  const normalizedHandle = handle.trim().toLowerCase()
   const displayValue = displayName.trim()
-
-  // Debounced handle uniqueness check
-  useEffect(() => {
-    setIsHandleUnique(false)
-    setSuggestions([])
-
-    if (normalizedHandle.length === 0) { setHandleError(null); return }
-    if (normalizedHandle.length < 3) { setHandleError('Handle must be at least 3 characters.'); return }
-    if (!/^[a-z0-9_-]+$/.test(normalizedHandle)) {
-      setHandleError('Only lowercase letters, numbers, hyphens, and underscores allowed.')
-      return
-    }
-    setHandleError(null)
-
-    if (debounceRef.current) clearTimeout(debounceRef.current)
-    debounceRef.current = setTimeout(async () => {
-      setIsCheckingHandle(true)
-      try {
-        const existing = await lenserService.getLenserByHandle(normalizedHandle)
-        if (existing) {
-          setHandleError('Handle is already taken.')
-          setSuggestions([
-            `${normalizedHandle}123`,
-            `${normalizedHandle}_bot`,
-            `ai_${normalizedHandle}`,
-            `${normalizedHandle}.ai`,
-            `my_${normalizedHandle}`,
-          ])
-          setIsHandleUnique(false)
-        } else {
-          setIsHandleUnique(true)
-          setSuggestions([])
-        }
-      } catch {
-        // Ignore check errors — user can still try to submit
-      } finally {
-        setIsCheckingHandle(false)
-      }
-    }, 500)
-
-    return () => { if (debounceRef.current) clearTimeout(debounceRef.current) }
-  }, [normalizedHandle])
 
   const handleCreate = async () => {
     if (!displayValue || displayValue.length < 2) {
@@ -102,8 +61,7 @@ export const CreateAgentContent: React.FC<CreateAgentContentProps> = ({ close })
     } catch (e) {
       const err = e as { code?: string; message?: string }
       if (err?.code === '23505' || err?.message?.includes('unique')) {
-        setHandleError('Handle is already taken.')
-        setIsHandleUnique(false)
+        setError('Handle is already taken.')
         return
       }
       if (err?.message?.includes('P0004') || err?.message?.includes('Maximum 5')) {

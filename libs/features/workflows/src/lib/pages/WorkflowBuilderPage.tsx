@@ -1,25 +1,28 @@
-import { lensesService } from '@lenserfight/data/repositories'
+import { lensesService, workflowsService } from '@lenserfight/data/repositories'
 import { useAuth } from '@lenserfight/features/auth'
 import { useAIModels } from '@lenserfight/features/generations'
 import { useCreateLens, CreateLensModal, useFundingSource, FundingSourceToggle } from '@lenserfight/features/lenses'
 import { Avatar, Badge, Button } from '@lenserfight/ui/components'
 import { useQuery } from '@tanstack/react-query'
-import { ArrowLeft, Bookmark, ChevronDown, GitBranch, GitFork, Lock, Pencil, Play, Square, Swords, ThumbsUp, X } from 'lucide-react'
+import { ArrowLeft, Bookmark, ChevronDown, GitBranch, GitFork, History, Lock, Pencil, Play, Square, Swords, ThumbsUp, X } from 'lucide-react'
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
 
 import { CreateWorkflowWizard } from '../components/CreateWorkflowWizard'
 import { WorkflowBuilderCanvas } from '../components/WorkflowBuilderCanvas'
+import { WorkflowFinalOutputBanner } from '../components/WorkflowFinalOutputBanner'
 import { WorkflowLensPalette } from '../components/WorkflowLensPalette'
 import { WorkflowNodeConfigPanel } from '../components/WorkflowNodeConfigPanel'
 import { WorkflowProgressView } from '../components/WorkflowProgressView'
 import { WorkflowRootInputsPanel } from '../components/WorkflowRootInputsPanel'
+import { WorkflowRunHistoryPanel } from '../components/WorkflowRunHistoryPanel'
 import { useForkWorkflow } from '../hooks/useForkWorkflow'
 import { useWorkflow } from '../hooks/useWorkflow'
 import { useWorkflowExecution } from '../hooks/useWorkflowExecution'
 import { useWorkflowReaction } from '../hooks/useWorkflowReaction'
 import { useWorkflowRun } from '../hooks/useWorkflowRun'
+import { useWorkflowRunHistory } from '../hooks/useWorkflowRunHistory'
 
 import type { WorkflowNodeConfig } from '../components/WorkflowCanvasNode'
 import type { AIProvider, AIProviderModel } from '@lenserfight/types'
@@ -38,6 +41,8 @@ export function WorkflowBuilderPage({ workflowId, onBattleClick }: WorkflowBuild
   const { models, isLoading: modelsLoading } = useAIModels()
   const [showRunPanel, setShowRunPanel] = useState(false)
   const [isEditModalOpen, setIsEditModalOpen] = useState(false)
+  const [runPanelTab, setRunPanelTab] = useState<'run' | 'history'>('run')
+  const [selectedHistoryRunId, setSelectedHistoryRunId] = useState<string | null>(null)
 
   // Provider/model selection state (replaces globalModelId SelectField)
   const [selectedProviderKey, setSelectedProviderKey] = useState('')
@@ -78,6 +83,40 @@ export function WorkflowBuilderPage({ workflowId, onBattleClick }: WorkflowBuild
 
   // Selected node for the config panel
   const [selectedNodeConfig, setSelectedNodeConfig] = useState<{ nodeId: string; lensId: string; versionId: string | null; nodeLabel: string } | null>(null)
+
+  // ── Run history ─────────────────────────────────────────────────────────────
+  const { data: historyRuns = [] } = useWorkflowRunHistory(workflowId)
+
+  const { data: historyNodeResults = [] } = useQuery({
+    queryKey: ['workflow', workflowId, 'run', selectedHistoryRunId, 'nodeResults'],
+    queryFn: () => workflowsService.getNodeResults(selectedHistoryRunId!),
+    enabled: !!selectedHistoryRunId,
+    staleTime: 1000 * 60,
+  })
+
+  // Terminal node: the node with no outgoing edges
+  const terminalNodeId = useMemo(() => {
+    const targetSet = new Set(edges.map((e) => e.target_node_id))
+    return (
+      nodes
+        .filter((n) => !targetSet.has(n.id))
+        .sort((a, b) => b.ordinal - a.ordinal)[0]?.id ?? null
+    )
+  }, [nodes, edges])
+
+  const terminalNodeResult = nodeResults.find((r) => r.node_id === terminalNodeId)
+  const terminalNodeLabel =
+    nodes.find((n) => n.id === terminalNodeId)?.label ??
+    `Node ${(nodes.find((n) => n.id === terminalNodeId)?.ordinal ?? 0) + 1}`
+
+  // ── Output callbacks — defined after handleExecuteClick (see below) ──────────
+  const handlePostToThread = useCallback(
+    (text: string, nodeLabel: string) => {
+      const body = encodeURIComponent(`**${nodeLabel}**\n\n${text}`)
+      navigate(`/threads/compose?body=${body}`)
+    },
+    [navigate],
+  )
 
   const isOwner = !!user && user.id === workflow?.lenser_id
   const { mutate: forkWorkflow, isPending: isForking } = useForkWorkflow()
@@ -218,6 +257,16 @@ export function WorkflowBuilderPage({ workflowId, onBattleClick }: WorkflowBuild
     stopExecution()
     stopRun()
   }
+
+  const handleRerunWithContext = useCallback(
+    (data: Record<string, unknown>) => {
+      setRunPanelTab('run')
+      setSelectedHistoryRunId(null)
+      handleExecuteClick(data)
+    },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [handleExecuteClick],
+  )
 
   // ── Loading / error states ─────────────────────────────────────────────────
   if (isLoading) {
@@ -497,10 +546,38 @@ export function WorkflowBuilderPage({ workflowId, onBattleClick }: WorkflowBuild
         {/* Run results panel — slides in from the right */}
         {showRunPanel && !selectedNodeConfig && (
           <aside className="flex flex-col w-80 flex-shrink-0 border-l border-surface-border bg-surface-base overflow-hidden">
+            {/* Panel header with tabs */}
             <div className="flex items-center justify-between px-4 py-2.5 border-b border-surface-border">
-              <p className="text-xs font-semibold text-greyscale-900 dark:text-greyscale-50">
-                {runId ? `Run ${isRunning ? '— in progress' : '— complete'}` : 'Run Workflow'}
-              </p>
+              <div className="flex items-center gap-1">
+                <button
+                  type="button"
+                  onClick={() => setRunPanelTab('run')}
+                  className={`px-2.5 py-1 rounded-lg text-xs font-medium transition-colors ${
+                    runPanelTab === 'run'
+                      ? 'bg-surface-raised text-greyscale-900 dark:text-greyscale-50'
+                      : 'text-greyscale-400 hover:text-greyscale-700 dark:hover:text-greyscale-200'
+                  }`}
+                >
+                  Current Run
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setRunPanelTab('history')}
+                  className={`flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-medium transition-colors ${
+                    runPanelTab === 'history'
+                      ? 'bg-surface-raised text-greyscale-900 dark:text-greyscale-50'
+                      : 'text-greyscale-400 hover:text-greyscale-700 dark:hover:text-greyscale-200'
+                  }`}
+                >
+                  <History size={11} />
+                  History
+                  {historyRuns.length > 0 && (
+                    <span className="text-[9px] bg-surface-raised rounded-full px-1.5 py-0.5 text-greyscale-500">
+                      {historyRuns.length}
+                    </span>
+                  )}
+                </button>
+              </div>
               <Button
                 variant="ghost"
                 size="sm"
@@ -510,41 +587,78 @@ export function WorkflowBuilderPage({ workflowId, onBattleClick }: WorkflowBuild
                 <X size={14} />
               </Button>
             </div>
+
             <div className="flex-1 overflow-y-auto">
-              {/* Funding source + model selection in run panel */}
-              <div className="px-4 py-3 border-b border-surface-border">
-                <FundingSourceToggle
-                  fundingSource={funding.fundingSource}
-                  onFundingSourceChange={funding.setFundingSource}
-                  selectedKeyRefId={funding.selectedKeyRefId}
-                  onKeyRefIdChange={funding.setSelectedKeyRefId}
-                  availableKeys={funding.availableKeys}
-                  selectedLocalKeyId={funding.selectedLocalKeyId}
-                  onLocalKeyIdChange={funding.setSelectedLocalKeyId}
-                  availableLocalKeys={funding.localKeys}
-                  onAddLocalKey={funding.addLocalKey}
-                  walletBalance={funding.walletBalance}
-                  canUseBYOK={funding.canUseBYOK}
-                  providers={providers}
-                  isLoadingProviders={modelsLoading}
-                  providerModels={providerModels}
-                  isLoadingModels={modelsLoading}
-                  selectedProviderKey={selectedProviderKey}
-                  onProviderChange={handleProviderChange}
-                  selectedModelKey={selectedModelKey}
-                  onModelChange={handleModelChange}
-                />
-              </div>
-              <WorkflowRootInputsPanel
-                nodes={nodes}
-                edges={edges}
-                onSubmit={(rootInputs) => handleExecuteClick(rootInputs)}
-                isRunning={starting || isRunning}
-                canExecute={canExecute}
-                nodeConfigOverrides={nodeConfigs}
-              />
-              {runId && (
-                <WorkflowProgressView nodes={nodes} edges={edges} nodeResults={nodeResults} />
+              {runPanelTab === 'run' ? (
+                <>
+                  {/* Funding source + model selection */}
+                  <div className="px-4 py-3 border-b border-surface-border">
+                    <FundingSourceToggle
+                      fundingSource={funding.fundingSource}
+                      onFundingSourceChange={funding.setFundingSource}
+                      selectedKeyRefId={funding.selectedKeyRefId}
+                      onKeyRefIdChange={funding.setSelectedKeyRefId}
+                      availableKeys={funding.availableKeys}
+                      selectedLocalKeyId={funding.selectedLocalKeyId}
+                      onLocalKeyIdChange={funding.setSelectedLocalKeyId}
+                      availableLocalKeys={funding.localKeys}
+                      onAddLocalKey={funding.addLocalKey}
+                      walletBalance={funding.walletBalance}
+                      canUseBYOK={funding.canUseBYOK}
+                      providers={providers}
+                      isLoadingProviders={modelsLoading}
+                      providerModels={providerModels}
+                      isLoadingModels={modelsLoading}
+                      selectedProviderKey={selectedProviderKey}
+                      onProviderChange={handleProviderChange}
+                      selectedModelKey={selectedModelKey}
+                      onModelChange={handleModelChange}
+                    />
+                  </div>
+                  <WorkflowRootInputsPanel
+                    nodes={nodes}
+                    edges={edges}
+                    onSubmit={(rootInputs) => handleExecuteClick(rootInputs)}
+                    isRunning={starting || isRunning}
+                    canExecute={canExecute}
+                    nodeConfigOverrides={nodeConfigs}
+                  />
+                  {/* Final output banner — shown above progress when run is complete */}
+                  {runId && terminalNodeId && !isRunning && (
+                    <WorkflowFinalOutputBanner
+                      terminalNodeResult={terminalNodeResult}
+                      nodeLabel={terminalNodeLabel}
+                      onPostToThread={(text) => handlePostToThread(text, terminalNodeLabel)}
+                      onRerunWithContext={handleRerunWithContext}
+                    />
+                  )}
+                  {runId && (
+                    <WorkflowProgressView
+                      nodes={nodes}
+                      edges={edges}
+                      nodeResults={nodeResults}
+                      terminalNodeId={terminalNodeId}
+                      onPostToThread={handlePostToThread}
+                      onRerunWithContext={handleRerunWithContext}
+                    />
+                  )}
+                </>
+              ) : (
+                <>
+                  <WorkflowRunHistoryPanel
+                    workflowId={workflowId}
+                    activeRunId={selectedHistoryRunId}
+                    onSelectRun={(id) => setSelectedHistoryRunId(id)}
+                  />
+                  {selectedHistoryRunId && historyNodeResults.length > 0 && (
+                    <WorkflowProgressView
+                      nodes={nodes}
+                      edges={edges}
+                      nodeResults={historyNodeResults}
+                      terminalNodeId={terminalNodeId}
+                    />
+                  )}
+                </>
               )}
             </div>
           </aside>

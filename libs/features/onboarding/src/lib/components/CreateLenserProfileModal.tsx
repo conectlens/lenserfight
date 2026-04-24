@@ -1,6 +1,7 @@
 import { queryKeys } from '@lenserfight/data/cache'
 import { lenserService, preferencesService } from '@lenserfight/data/repositories'
 import { useAuth } from '@lenserfight/features/auth'
+import { useHandleCheck, useCreateAgent } from '@lenserfight/features/agents'
 import { InputField } from '@lenserfight/ui/forms'
 import { useAIProviders, useAIModelsByProvider } from '@lenserfight/features/generations'
 import { CreateLenserDTO, Lenser } from '@lenserfight/types'
@@ -11,7 +12,7 @@ import { buildAuthReturnUrl, replaceLocationSafely } from '@lenserfight/utils/do
 import { ARENA_BASE_URL, AUTH_BASE_URL } from '@lenserfight/utils/env'
 import { storage } from '@lenserfight/utils/storage'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
-import { Check, X, Loader2 } from 'lucide-react'
+import { Bot, Check, X, Loader2 } from 'lucide-react'
 import React, { useState, useEffect } from 'react'
 import { useNavigate, useLocation, useSearchParams } from 'react-router-dom'
 
@@ -41,7 +42,7 @@ export const CreateLenserProfileModal: React.FC = () => {
   const { isAuthenticated, isLoading: authLoading } = useAuth()
   const queryClient = useQueryClient()
 
-  const { step: currentStep, goToStep } = useWizardStep({ maxStep: 2 })
+  const { step: currentStep, goToStep } = useWizardStep({ maxStep: 3 })
 
   // ── Step 0: handle + display name ──────────────────────────────────
   const [handle, setHandle] = useState('')
@@ -70,6 +71,12 @@ export const CreateLenserProfileModal: React.FC = () => {
     staleTime: 1000 * 60 * 5,
   })
 
+  // ── Step 3: Agent creation (optional) ───────────────────────────
+  const agentHandle = useHandleCheck(3)
+  const [agentDisplayName, setAgentDisplayName] = useState('')
+  const [isCreatingAgent, setIsCreatingAgent] = useState(false)
+  const createAgent = useCreateAgent(lenser?.id ?? '')
+
   const { data: languages = [], isLoading: langsLoading } = useQuery({
     queryKey: ['core', 'languages'],
     queryFn: () => lenserService.getLanguages(),
@@ -84,7 +91,7 @@ export const CreateLenserProfileModal: React.FC = () => {
 
   const hasLenser = !!lenser
   const onboardingStep = lenser?.onboarding_step ?? 0
-  const hasCompletedOnboarding = onboardingStep >= 2
+  const hasCompletedOnboarding = onboardingStep >= 3
   // Treat a disabled lenser query (non-authenticated) as not loading so the
   // redirect effect below is not blocked when the session is expired/invalid.
   const isLoading = authLoading || (isAuthenticated ? lenserLoading : false)
@@ -116,8 +123,8 @@ export const CreateLenserProfileModal: React.FC = () => {
   useEffect(() => {
     if (!hasLenser) return
     if (hasCompletedOnboarding) return
-    if (onboardingStep >= 1 && currentStep === 0) {
-      goToStep(1)
+    if (onboardingStep > 0 && currentStep < onboardingStep) {
+      goToStep(Math.min(onboardingStep, 3))
     }
   }, [currentStep, hasCompletedOnboarding, hasLenser, onboardingStep, goToStep])
 
@@ -204,8 +211,8 @@ export const CreateLenserProfileModal: React.FC = () => {
     }
   }
 
-  // ── Step 2 complete: save AI config + mark onboarding done ──────────
-  const handleStep2Complete = async () => {
+  // ── Step 2 next: save AI config + advance to step 3 ─────────────────
+  const handleStep2Next = async () => {
     setIsCompletingStep2(true)
     setSubmitError(null)
     try {
@@ -215,8 +222,26 @@ export const CreateLenserProfileModal: React.FC = () => {
           ai_model_key: aiModelKey || null,
         })
       }
+      const updated = await lenserService.updateLenserProfile({ onboarding_step: 2 })
+      queryClient.setQueryData(queryKeys.lenser.authenticated(), updated)
+      goToStep(3)
+    } catch (err: unknown) {
+      setSubmitError(getErrorMessage(err, 'Failed to save AI setup. Please try again.'))
+    } finally {
+      setIsCompletingStep2(false)
+    }
+  }
+
+  // ── Step 3 complete: optionally create agent + mark onboarding done ──
+  const handleStep3Complete = async (skipAgent = false) => {
+    setIsCreatingAgent(true)
+    setSubmitError(null)
+    try {
+      if (!skipAgent && agentHandle.normalizedHandle && agentDisplayName.trim() && agentHandle.isHandleUnique) {
+        await createAgent.submit(agentHandle.normalizedHandle, agentDisplayName.trim())
+      }
       const updated = await lenserService.updateLenserProfile({
-        onboarding_step: 2,
+        onboarding_step: 3,
         onboarding_completed_at: new Date().toISOString(),
       })
       queryClient.setQueryData(queryKeys.lenser.authenticated(), updated)
@@ -226,27 +251,39 @@ export const CreateLenserProfileModal: React.FC = () => {
     } catch (err: unknown) {
       setSubmitError(getErrorMessage(err, 'Failed to complete setup. Please try again.'))
     } finally {
-      setIsCompletingStep2(false)
+      setIsCreatingAgent(false)
     }
   }
 
+  const handleNext = () => {
+    if (currentStep === 0) return handleStep0Next()
+    if (currentStep === 1) return handleStep1Next()
+    if (currentStep === 2) return handleStep2Next()
+    return handleStep3Complete()
+  }
+
+  const canProceedForStep =
+    currentStep === 0 ? (isHandleUnique && !!displayName.trim()) : true
+
   return (
     <StepWizard
-      steps={['Profile', 'Personalization', 'AI Setup']}
+      steps={['Profile', 'Personalization', 'AI Setup', 'Your Agent'] as any}
       currentStep={currentStep}
-      onNext={currentStep === 0 ? handleStep0Next : handleStep1Next}
+      onNext={handleNext}
       onBack={() => goToStep(Math.max(currentStep - 1, 0))}
-      onComplete={handleStep2Complete}
-      canProceed={currentStep === 0 ? (isHandleUnique && !!displayName.trim()) : true}
-      isNextLoading={isSubmittingStep0 || isCompletingStep1}
-      isCompleting={isCompletingStep2}
+      onComplete={() => handleStep3Complete()}
+      canProceed={canProceedForStep}
+      isNextLoading={isSubmittingStep0 || isCompletingStep1 || isCompletingStep2}
+      isCompleting={isCreatingAgent}
       nextLabel="Continue"
       completeLabel="Finish"
       skipButton={
         currentStep === 1
           ? { label: 'Skip for now', onClick: () => goToStep(2) }
           : currentStep === 2
-          ? { label: 'Skip for now', onClick: handleStep2Complete }
+          ? { label: 'Skip for now', onClick: () => handleStep2Next() }
+          : currentStep === 3
+          ? { label: 'Skip for now', onClick: () => handleStep3Complete(true) }
           : undefined
       }
     >
@@ -363,7 +400,7 @@ export const CreateLenserProfileModal: React.FC = () => {
             </div>
           )}
         </div>
-      ) : (
+      ) : currentStep === 2 ? (
         /* ── Step 2: AI configuration (optional) ── */
         <div className="space-y-5">
           <p className="text-sm text-gray-500 dark:text-gray-400">
@@ -392,6 +429,78 @@ export const CreateLenserProfileModal: React.FC = () => {
             />
           )}
 
+          {submitError && (
+            <div className="text-red-500 text-sm bg-red-50 dark:bg-red-900/20 p-3 rounded-lg">
+              {submitError}
+            </div>
+          )}
+        </div>
+      ) : (
+        /* ── Step 3: Agent creation (optional) ── */
+        <div className="space-y-5">
+          <div className="flex items-center gap-3 p-3 rounded-xl bg-surface-raised border border-surface-border">
+            <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-lg bg-primary-yellow-500/10">
+              <Bot size={18} className="text-primary-yellow-600" />
+            </div>
+            <div>
+              <p className="text-sm font-semibold text-greyscale-900 dark:text-greyscale-50">
+                Create your first AI Agent
+              </p>
+              <p className="text-xs text-greyscale-500 dark:text-greyscale-400">
+                Agents can be @mentioned in threads and run workflows on your behalf.
+              </p>
+            </div>
+          </div>
+
+          <InputField
+            label="Agent Display Name"
+            placeholder="e.g. My Assistant"
+            value={agentDisplayName}
+            onChange={(e) => setAgentDisplayName(e.target.value)}
+          />
+
+          <div>
+            <div className="relative">
+              <InputField
+                label="Agent Handle"
+                placeholder="e.g. my_assistant"
+                value={agentHandle.handle}
+                onChange={(e) => agentHandle.setHandle(e.target.value.toLowerCase().replace(/\s/g, ''))}
+                error={agentHandle.handleError || undefined}
+                className={agentHandle.isHandleUnique ? '!border-green-500 !focus:ring-green-200' : ''}
+              />
+              <div className="absolute right-3 top-[34px] pointer-events-none">
+                {agentHandle.isCheckingHandle ? (
+                  <Loader2 className="w-5 h-5 text-gray-400 animate-spin" />
+                ) : agentHandle.isHandleUnique ? (
+                  <Check className="w-5 h-5 text-green-500" />
+                ) : agentHandle.handleError && agentHandle.handle.length > 0 ? (
+                  <X className="w-5 h-5 text-red-500" />
+                ) : null}
+              </div>
+            </div>
+
+            {agentHandle.suggestions.length > 0 && (
+              <div className="mt-2 flex flex-wrap gap-2">
+                {agentHandle.suggestions.map((s) => (
+                  <button
+                    key={s}
+                    type="button"
+                    onClick={() => agentHandle.setHandle(s)}
+                    className="px-3 py-1 bg-gray-50 hover:bg-primary/20 border border-gray-200 rounded-full text-xs font-medium text-gray-600 transition-colors"
+                  >
+                    @{s}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {createAgent.error && (
+            <div className="text-red-500 text-sm bg-red-50 dark:bg-red-900/20 p-3 rounded-lg">
+              {createAgent.error}
+            </div>
+          )}
           {submitError && (
             <div className="text-red-500 text-sm bg-red-50 dark:bg-red-900/20 p-3 rounded-lg">
               {submitError}

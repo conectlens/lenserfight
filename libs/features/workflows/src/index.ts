@@ -13,6 +13,7 @@ export * from './lib/hooks/useUpdateWorkflow'
 export * from './lib/hooks/useWorkflowExecution'
 export * from './lib/hooks/useWorkflowSimulation'
 export * from './lib/hooks/useWorkflowRunEvents'
+export * from './lib/hooks/useWorkflowRunHistory'
 
 // Execution helpers
 export * from './lib/execution/persistNodeMedia'
@@ -26,6 +27,9 @@ export * from './lib/components/CreateWorkflowWizard'
 export * from './lib/components/WorkflowLensPalette'
 export * from './lib/components/WorkflowCanvasNode'
 export * from './lib/components/WorkflowCanvasEdge'
+export * from './lib/components/WorkflowOutputActions'
+export * from './lib/components/WorkflowRunHistoryPanel'
+export * from './lib/components/WorkflowFinalOutputBanner'
 
 // Pages
 export * from './lib/pages/WorkflowsPage'
