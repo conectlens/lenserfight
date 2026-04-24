@@ -1,6 +1,6 @@
 import React, { useState } from 'react'
 import { Link } from 'react-router-dom'
-import { BarChart3, BookOpen, Clock, ToggleRight } from 'lucide-react'
+import { BarChart3, BookOpen, Clock, Sparkles, ToggleRight } from 'lucide-react'
 import { useQueryClient } from '@tanstack/react-query'
 import { Button, StepWizard, Badge } from '@lenserfight/ui/components'
 import type { WizardStepConfig } from '@lenserfight/ui/components'
@@ -10,9 +10,12 @@ import { useWizardStep } from '@lenserfight/ui/routing'
 import { queryKeys } from '@lenserfight/data/cache'
 import { agentsService } from '@lenserfight/data/repositories'
 import { AgentModelBindingMode } from '@lenserfight/types'
+import { useCreateLens, CreateLensModal } from '@lenserfight/features/lenses'
 import { useAgentDetail } from '../hooks/useAgentDetail'
+import { useAgentPersonality } from '../hooks/useAgentPersonality'
 import { AgentStatusBadge } from './AgentStatusBadge'
 import { AgentQuotaBar } from './AgentQuotaBar'
+import { AgentPersonalityStep } from './AgentPersonalityStep'
 
 const MODEL_MODES: AgentModelBindingMode[] = ['single', 'multi', 'dynamic']
 
@@ -22,6 +25,12 @@ const WIZARD_STEPS: WizardStepConfig[] = [
     title: 'Agent permissions',
     description: 'Control what this agent is allowed to do.',
     icon: <ToggleRight size={20} />,
+  },
+  {
+    label: 'Personality',
+    title: 'Personality & instruction lens',
+    description: 'Set the agent role, tone, and default instruction prompt.',
+    icon: <Sparkles size={20} />,
   },
   {
     label: 'Status',
@@ -40,8 +49,16 @@ export interface AgentManageWizardProps {
 export const AgentManageWizard: React.FC<AgentManageWizardProps> = ({ agentId, handle, onDone }) => {
   const queryClient = useQueryClient()
   const { data: agent, isLoading } = useAgentDetail(agentId)
-  const { step, nextStep, prevStep } = useWizardStep({ maxStep: 1 })
+  const { step, nextStep, prevStep } = useWizardStep({ maxStep: 2 })
   const [policyLoading, setPolicyLoading] = useState(false)
+
+  // Personality step local state — saved on Next from step 1
+  const [pendingPersonalityNote, setPendingPersonalityNote] = useState<string>('')
+  const [pendingLensId, setPendingLensId] = useState<string | null>(null)
+  const { savePersonalityNote, bindLens, isSaving: personalitySaving, error: personalityError } = useAgentPersonality(agentId)
+
+  // Lens creation modal (for the "Create new lens" button in personality step)
+  const lensModal = useCreateLens()
 
   const handleTogglePolicy = async (field: string, value: boolean | AgentModelBindingMode) => {
     if (!agentId || !agent) return
@@ -54,6 +71,19 @@ export const AgentManageWizard: React.FC<AgentManageWizardProps> = ({ agentId, h
     } finally {
       setPolicyLoading(false)
     }
+  }
+
+  const handlePersonalityNext = async () => {
+    try {
+      await savePersonalityNote(pendingPersonalityNote || null)
+      if (pendingLensId) {
+        await bindLens(pendingLensId)
+      }
+    } catch {
+      // error shown by hook, don't advance
+      return
+    }
+    nextStep()
   }
 
   if (isLoading || !agent) {
@@ -131,6 +161,22 @@ export const AgentManageWizard: React.FC<AgentManageWizardProps> = ({ agentId, h
         </div>
       </div>
     </div>
+  ) : step === 1 ? (
+    <div className="space-y-4">
+      {identityCard}
+      <AgentPersonalityStep
+        aiLenserId={agentId}
+        agentHandle={handle}
+        currentPersonalityNote={agent.personality_note ?? null}
+        currentDefaultLensId={null}
+        onPersonalityNoteChange={setPendingPersonalityNote}
+        onLensSelect={setPendingLensId}
+        onCreateLens={() => lensModal.openModal({})}
+      />
+      {personalityError && (
+        <p className="text-xs text-status-red">{personalityError}</p>
+      )}
+    </div>
   ) : (
     <div className="space-y-4">
       {identityCard}
@@ -191,18 +237,30 @@ export const AgentManageWizard: React.FC<AgentManageWizardProps> = ({ agentId, h
   )
 
   return (
-    <StepWizard
-      steps={WIZARD_STEPS}
-      currentStep={step}
-      onNext={nextStep}
-      onBack={prevStep}
-      onComplete={onDone}
-      onCancel={onDone}
-      canProceed={!policyLoading}
-      completeLabel="Done"
-      completeIcon={<Badge color="green" size="sm">✓</Badge>}
-    >
-      {stepContent}
-    </StepWizard>
+    <>
+      <StepWizard
+        steps={WIZARD_STEPS}
+        currentStep={step}
+        onNext={step === 1 ? handlePersonalityNext : nextStep}
+        onBack={prevStep}
+        onComplete={onDone}
+        onCancel={onDone}
+        canProceed={!policyLoading && !personalitySaving}
+        completeLabel="Done"
+        completeIcon={<Badge color="green" size="sm">✓</Badge>}
+      >
+        {stepContent}
+      </StepWizard>
+
+      <CreateLensModal
+        isOpen={lensModal.isOpen}
+        onClose={lensModal.closeModal}
+        onSubmit={() => lensModal.submit()}
+        form={lensModal.form}
+        isSubmitting={lensModal.isSubmitting}
+        error={lensModal.error}
+        isEditMode={lensModal.isEditMode}
+      />
+    </>
   )
 }
