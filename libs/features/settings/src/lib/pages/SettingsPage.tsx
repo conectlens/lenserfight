@@ -87,9 +87,7 @@ export const SettingsPage: React.FC = () => {
     if (lenser?.type === 'human') {
       tabs.push('agents')
     }
-    if (FEATURES.NOTIFICATIONS) {
-      tabs.push('notifications')
-    }
+    tabs.push('notifications')
     return tabs
   }, [lenser?.type])
 
@@ -664,11 +662,11 @@ export const SettingsPage: React.FC = () => {
           )}
 
           {/* NOTIFICATIONS TAB */}
-          {activeTab === 'notifications' && FEATURES.NOTIFICATIONS && (
+          {activeTab === 'notifications' && (
             <div>
               <div className="flex items-center justify-between mb-2">
                 <h2 className="text-xl font-bold text-gray-900 dark:text-white">Notifications</h2>
-                {notifications.some((n) => !n.isRead) && (
+                {FEATURES.NOTIFICATIONS && notifications.some((n) => !n.isRead) && (
                   <Button
                     variant="ghost"
                     onClick={handleMarkAllRead}
@@ -682,67 +680,106 @@ export const SettingsPage: React.FC = () => {
                 Manage your alerts and updates.
               </p>
 
-              <div className="flex gap-2 mb-6">
-                <button
-                  onClick={() => setNotifTab('All')}
-                  className={`px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${notifTab === 'All' ? 'bg-gray-900 dark:bg-white text-white dark:text-gray-900' : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400'}`}
-                >
-                  All
-                </button>
-                <button
-                  onClick={() => setNotifTab('Unread')}
-                  className={`px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${notifTab === 'Unread' ? 'bg-gray-900 dark:bg-white text-white dark:text-gray-900' : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400'}`}
-                >
-                  Unread
-                </button>
-              </div>
-
-              {notifLoading ? (
-                <div className="space-y-4">
-                  {[1, 2, 3].map((i) => (
-                    <div
-                      key={i}
-                      className="h-20 bg-gray-50 dark:bg-gray-800 animate-pulse rounded-lg"
-                    ></div>
-                  ))}
-                </div>
-              ) : filteredNotifications.length === 0 ? (
-                <div className="py-12 text-center text-gray-400 border border-dashed border-gray-200 dark:border-gray-700 rounded-xl">
-                  <p>No notifications found.</p>
+              {!FEATURES.NOTIFICATIONS ? (
+                /* Coming Soon — blurred skeleton with overlay */
+                <div className="relative rounded-xl overflow-hidden">
+                  {/* Skeleton rows (blurred) */}
+                  <div className="space-y-3 blur-sm pointer-events-none select-none">
+                    {[
+                      { w: 'w-48', sub: 'w-64' },
+                      { w: 'w-56', sub: 'w-48' },
+                      { w: 'w-40', sub: 'w-72' },
+                      { w: 'w-52', sub: 'w-56' },
+                    ].map((row, i) => (
+                      <div
+                        key={i}
+                        className="flex items-center gap-4 p-4 rounded-xl border border-gray-100 dark:border-gray-700 bg-white dark:bg-gray-800/50"
+                      >
+                        <div className="w-2 h-2 rounded-full bg-yellow-400 flex-shrink-0" />
+                        <div className="w-10 h-10 rounded-full bg-gray-200 dark:bg-gray-700 flex-shrink-0" />
+                        <div className="flex-1 space-y-2">
+                          <div className={`h-3 rounded bg-gray-200 dark:bg-gray-700 ${row.w}`} />
+                          <div className={`h-2.5 rounded bg-gray-100 dark:bg-gray-800 ${row.sub}`} />
+                        </div>
+                        <div className="w-10 h-2.5 rounded bg-gray-100 dark:bg-gray-800 flex-shrink-0" />
+                      </div>
+                    ))}
+                  </div>
+                  {/* Frosted glass overlay */}
+                  <div className="absolute inset-0 flex flex-col items-center justify-center bg-white/60 dark:bg-gray-900/60 backdrop-blur-[2px] rounded-xl">
+                    <span className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-gray-900 dark:bg-white text-white dark:text-gray-900 text-sm font-semibold shadow-lg">
+                      Coming Soon
+                    </span>
+                    <p className="mt-3 text-xs text-gray-500 dark:text-gray-400">
+                      Notifications are on their way.
+                    </p>
+                  </div>
                 </div>
               ) : (
-                <div className="space-y-3">
-                  {filteredNotifications.map((notification) => (
-                    <Card
-                      key={notification.id}
-                      className={`p-4 flex items-center gap-4 transition-all hover:bg-gray-50 dark:hover:bg-gray-800 cursor-pointer border-gray-100 dark:border-gray-700 ${!notification.isRead ? 'bg-white dark:bg-gray-800 shadow-sm border-gray-200 dark:border-gray-600' : 'bg-gray-50/50 dark:bg-gray-800/50'}`}
+                <>
+                  <div className="flex gap-2 mb-6">
+                    <button
+                      onClick={() => setNotifTab('All')}
+                      className={`px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${notifTab === 'All' ? 'bg-gray-900 dark:bg-white text-white dark:text-gray-900' : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400'}`}
                     >
-                      {!notification.isRead && (
-                        <div className="w-2 h-2 bg-yellow-400 rounded-full flex-shrink-0"></div>
-                      )}
-                      <div className="flex-shrink-0">
-                        <Avatar
-                          src={notification.actor?.avatarUrl}
-                          alt={notification.actor?.name || 'User'}
-                          size="md"
-                        />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium text-gray-900 dark:text-gray-100">
-                          {notification.title}
-                        </p>
-                        {notification.description && (
-                          <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
-                            {notification.description}
-                          </p>
-                        )}
-                      </div>
-                      <div className="text-xs text-gray-400 dark:text-gray-500 whitespace-nowrap">
-                        {timeAgo(notification.createdAt)}
-                      </div>
-                    </Card>
-                  ))}
-                </div>
+                      All
+                    </button>
+                    <button
+                      onClick={() => setNotifTab('Unread')}
+                      className={`px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${notifTab === 'Unread' ? 'bg-gray-900 dark:bg-white text-white dark:text-gray-900' : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400'}`}
+                    >
+                      Unread
+                    </button>
+                  </div>
+
+                  {notifLoading ? (
+                    <div className="space-y-4">
+                      {[1, 2, 3].map((i) => (
+                        <div
+                          key={i}
+                          className="h-20 bg-gray-50 dark:bg-gray-800 animate-pulse rounded-lg"
+                        ></div>
+                      ))}
+                    </div>
+                  ) : filteredNotifications.length === 0 ? (
+                    <div className="py-12 text-center text-gray-400 border border-dashed border-gray-200 dark:border-gray-700 rounded-xl">
+                      <p>No notifications found.</p>
+                    </div>
+                  ) : (
+                    <div className="space-y-3">
+                      {filteredNotifications.map((notification) => (
+                        <Card
+                          key={notification.id}
+                          className={`p-4 flex items-center gap-4 transition-all hover:bg-gray-50 dark:hover:bg-gray-800 cursor-pointer border-gray-100 dark:border-gray-700 ${!notification.isRead ? 'bg-white dark:bg-gray-800 shadow-sm border-gray-200 dark:border-gray-600' : 'bg-gray-50/50 dark:bg-gray-800/50'}`}
+                        >
+                          {!notification.isRead && (
+                            <div className="w-2 h-2 bg-yellow-400 rounded-full flex-shrink-0"></div>
+                          )}
+                          <div className="flex-shrink-0">
+                            <Avatar
+                              src={notification.actor?.avatarUrl}
+                              alt={notification.actor?.name || 'User'}
+                              size="md"
+                            />
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-medium text-gray-900 dark:text-gray-100">
+                              {notification.title}
+                            </p>
+                            {notification.description && (
+                              <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+                                {notification.description}
+                              </p>
+                            )}
+                          </div>
+                          <div className="text-xs text-gray-400 dark:text-gray-500 whitespace-nowrap">
+                            {timeAgo(notification.createdAt)}
+                          </div>
+                        </Card>
+                      ))}
+                    </div>
+                  )}
+                </>
               )}
             </div>
           )}
