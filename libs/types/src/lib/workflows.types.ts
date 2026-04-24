@@ -32,3 +32,34 @@ export interface UpsertWorkflowScheduleInput {
   inputs_template?: Record<string, unknown>
   is_active?: boolean
 }
+
+// ─── Workflow Phases & Tasks ──────────────────────────────────────────────────
+
+export type WorkflowTaskOutputType = 'text' | 'image' | 'video' | 'audio' | 'file'
+
+export interface WorkflowPhaseRecord {
+  id: string
+  workflow_id: string
+  title: string
+  description: string | null
+  ordinal: number
+  created_at: string
+  updated_at: string
+}
+
+export interface WorkflowTaskRecord {
+  id: string
+  phase_id: string
+  workflow_id: string
+  title: string
+  prompt_text: string | null
+  output_type: WorkflowTaskOutputType
+  model_hint: string | null
+  ordinal: number
+  created_at: string
+  updated_at: string
+}
+
+export interface WorkflowPhaseWithTasks extends WorkflowPhaseRecord {
+  tasks: WorkflowTaskRecord[]
+}
