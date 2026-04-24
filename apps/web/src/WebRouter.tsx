@@ -60,6 +60,9 @@ const LazyAgentManageWizard = lazy(() =>
 const LazyAgentProfileRedirect = lazy(() =>
   import('@lenserfight/features/agents').then((module) => ({ default: module.AgentProfileRedirect }))
 )
+const LazyAgentWorkspacePage = lazy(() =>
+  import('@lenserfight/features/agents').then((module) => ({ default: module.AgentWorkspacePage }))
+)
 const LazyBenchmarkSuitesPage = lazy(() =>
   import('@lenserfight/features/benchmark').then((module) => ({ default: module.BenchmarkSuitesPage }))
 )
@@ -380,6 +383,7 @@ export const WebRouter: React.FC = () => {
 
         <Route path="/agents" element={<Navigate to="/lensers?type=ai" replace />} />
         <Route path="/agents/:id" element={<LazyAgentProfileRedirect />} />
+        <Route path="/agents/:agentId/workspace" element={<LazyAgentWorkspacePage />} />
 
         {SURFACE.showBenchmarkSuite && (
           <Route
