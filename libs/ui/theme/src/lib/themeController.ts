@@ -100,6 +100,8 @@ export const themeController = {
             applyToDOM(dbTheme)
             storage.setItem('theme', dbTheme)
           }
+        }).catch(() => {
+          // ignore background fetch errors
         })
 
         return resolved
@@ -117,7 +119,7 @@ export const themeController = {
           writeCache(userId, resolved)
         } else {
           // Persist current resolved theme to DB (only once)
-          repo.updateTheme(resolved)
+          await repo.updateTheme(resolved)
           writeCache(userId, resolved)
         }
       } catch {
