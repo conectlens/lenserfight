@@ -22,6 +22,7 @@ export interface AILenserRecord {
   is_active: boolean
   suspended_at: string | null
   suspended_reason: string | null
+  personality_note: string | null
   created_at: string
   updated_at: string
 }
