@@ -165,20 +165,17 @@ export const FundingSourceToggle: React.FC<FundingSourceToggleProps> = ({
   const isByokLocal = fundingSource === 'user_byok_local'
   const isByok = isByokCloud || isByokLocal
   const [showAddLocalKey, setShowAddLocalKey] = useState(false)
-  const localKeyEnabled = SURFACE.edition !== 'cloud'
-  const selectableByokCount = localKeyEnabled
-    ? availableKeys.length + availableLocalKeys.length
-    : availableKeys.length
-  const canSelectByok = localKeyEnabled ? canUseBYOK : availableKeys.length > 0
+  const isCloudEdition = SURFACE.edition === 'cloud'
+  const localKeyEnabled = true
+  const selectableByokCount = availableLocalKeys.length
+  const canSelectByok = localKeyEnabled && canUseBYOK
 
   useEffect(() => {
-    if (!localKeyEnabled) {
+    if (!isCloudEdition && (fundingSource === 'platform_credit' || fundingSource === 'user_byok_cloud')) {
       setShowAddLocalKey(false)
-      if (fundingSource === 'user_byok_local') {
-        onFundingSourceChange(availableKeys.length > 0 ? 'user_byok_cloud' : 'platform_credit')
-      }
+      onFundingSourceChange('user_byok_local')
     }
-  }, [localKeyEnabled, fundingSource, availableKeys.length, onFundingSourceChange])
+  }, [isCloudEdition, fundingSource, onFundingSourceChange])
 
   // Derive effective provider key based on funding mode
   const effectiveProviderKey = isByokCloud
@@ -200,11 +197,10 @@ export const FundingSourceToggle: React.FC<FundingSourceToggleProps> = ({
 
   const handleMyKeyClick = () => {
     if (!canSelectByok) return
-    if (availableKeys.length > 0) {
+    if (isCloudEdition && availableKeys.length > 0) {
       onFundingSourceChange('user_byok_cloud')
       return
     }
-    if (!localKeyEnabled) return
     onFundingSourceChange('user_byok_local')
   }
 
@@ -215,24 +211,26 @@ export const FundingSourceToggle: React.FC<FundingSourceToggleProps> = ({
       </label>
 
       {/* Row 1: Cloud | My Key */}
-      <div className="grid grid-cols-2 gap-2">
-        <button
-          type="button"
-          onClick={() => onFundingSourceChange('platform_credit')}
-          className={`flex items-center gap-2 p-3 border rounded-lg transition-all text-left ${
-            isCloud
-              ? 'border-primary bg-primary/5 ring-1 ring-primary'
-              : 'border-gray-200 dark:border-gray-600 hover:border-gray-300'
-          }`}
-        >
-          <Cloud size={16} className={isCloud ? 'text-gray-900 dark:text-white' : 'text-gray-400'} />
-          <div className="min-w-0">
-            <p className="text-xs font-semibold text-gray-900 dark:text-gray-100">Cloud</p>
-            <p className="text-[10px] text-gray-500 dark:text-gray-400 tabular-nums">
-              {walletBalance != null ? `${walletBalance.balance.toLocaleString()} cr` : '—'}
-            </p>
-          </div>
-        </button>
+      <div className={`grid gap-2 ${isCloudEdition ? 'grid-cols-2' : 'grid-cols-1'}`}>
+        {isCloudEdition && (
+          <button
+            type="button"
+            onClick={() => onFundingSourceChange('platform_credit')}
+            className={`flex items-center gap-2 p-3 border rounded-lg transition-all text-left ${
+              isCloud
+                ? 'border-primary bg-primary/5 ring-1 ring-primary'
+                : 'border-gray-200 dark:border-gray-600 hover:border-gray-300'
+            }`}
+          >
+            <Cloud size={16} className={isCloud ? 'text-gray-900 dark:text-white' : 'text-gray-400'} />
+            <div className="min-w-0">
+              <p className="text-xs font-semibold text-gray-900 dark:text-gray-100">Cloud</p>
+              <p className="text-[10px] text-gray-500 dark:text-gray-400 tabular-nums">
+                {walletBalance != null ? `${walletBalance.balance.toLocaleString()} cr` : '—'}
+              </p>
+            </div>
+          </button>
+        )}
 
         <button
           type="button"
@@ -246,7 +244,7 @@ export const FundingSourceToggle: React.FC<FundingSourceToggleProps> = ({
         >
           <KeyRound size={16} className={isByok ? 'text-gray-900 dark:text-white' : 'text-gray-400'} />
           <div className="min-w-0">
-            <p className="text-xs font-semibold text-gray-900 dark:text-gray-100">My Key</p>
+            <p className="text-xs font-semibold text-gray-900 dark:text-gray-100">Local Keys</p>
             <p className="text-[10px] text-gray-500 dark:text-gray-400">
               {selectableByokCount > 0
                 ? `${selectableByokCount} key${selectableByokCount > 1 ? 's' : ''}`
@@ -257,7 +255,7 @@ export const FundingSourceToggle: React.FC<FundingSourceToggleProps> = ({
       </div>
 
       {/* Row 2: Cloud Keys | Local Keys sub-mode (visible when isByok) */}
-      {(isByokCloud || (isByokLocal && localKeyEnabled)) && (
+      {isCloudEdition && (isByokCloud || (isByokLocal && localKeyEnabled)) && (
         <div className="grid grid-cols-2 gap-2">
           <button
             type="button"
@@ -296,7 +294,7 @@ export const FundingSourceToggle: React.FC<FundingSourceToggleProps> = ({
       )}
 
       {/* Row 3: Key selector */}
-      {isByokCloud && availableKeys.length > 0 && (
+      {isCloudEdition && isByokCloud && availableKeys.length > 0 && (
         <SearchSelectField
           value={selectedKeyRefId ?? ''}
           onChange={onKeyRefIdChange}
@@ -345,7 +343,7 @@ export const FundingSourceToggle: React.FC<FundingSourceToggleProps> = ({
       )}
 
       {/* Cloud BYOK — no keys hint */}
-      {isByokCloud && availableKeys.length === 0 && (
+      {isCloudEdition && isByokCloud && availableKeys.length === 0 && (
         <p className="text-xs text-gray-400 dark:text-gray-500">
           No cloud API keys.{' '}
           <Link to="/settings/api-keys" className="text-primary-600 dark:text-primary-400 hover:underline">
@@ -354,18 +352,14 @@ export const FundingSourceToggle: React.FC<FundingSourceToggleProps> = ({
         </p>
       )}
 
-      {!canSelectByok && (
+      {!canSelectByok && localKeyEnabled && availableLocalKeys.length === 0 && (
         <p className="text-xs text-gray-400 dark:text-gray-500">
-          No keys found.{' '}
-          <Link to="/settings/api-keys" className="text-primary-600 dark:text-primary-400 hover:underline">
-            Add cloud key
-          </Link>{' '}
-          {localKeyEnabled ? 'or switch to Local Keys and add one in this panel.' : 'to continue with My Key mode.'}
+          No local keys found. Add one in this panel to get started.
         </p>
       )}
 
       {/* Low balance hint */}
-      {isCloud && walletBalance != null && walletBalance.balance <= 0 && (
+      {isCloudEdition && isCloud && walletBalance != null && walletBalance.balance <= 0 && (
         <p className="text-xs text-amber-600 dark:text-amber-400">
           No credits remaining.{' '}
           <Link to="/billing" className="hover:underline">
