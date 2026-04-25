@@ -1,5 +1,6 @@
 import React, { useId } from 'react'
-import { Button } from '@lenserfight/ui/components'
+
+import { Button } from './Button'
 
 export interface SegmentedOption<T extends string = string> {
   value: T
