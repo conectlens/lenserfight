@@ -135,10 +135,11 @@ export function buildStreamRequest(
  * The pump loop tracks the last event type and passes it as eventType.
  */
 export function parseStreamChunk(line: string, eventType?: string): StreamChunk | null {
-  if (!line.startsWith('data: ')) return null;
+  const json = line.startsWith('data: ') ? line.slice(6).trim() : line.trim();
+  if (!json || json === '[DONE]') return null;
 
   try {
-    const parsed = JSON.parse(line.slice(6).trim());
+    const parsed = JSON.parse(json);
 
     switch (eventType) {
       case 'message_start':

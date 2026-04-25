@@ -91,7 +91,7 @@ export async function streamLocalProvider(req: LocalStreamRequest): Promise<void
     while (true) {
       const { done, value } = await reader.read()
       if (done || signal.aborted) break
-      buffer += decoder.decode(value, { stream: true })
+      buffer += decoder.decode(value, { stream: true }).replace(/\r\n/g, '\n')
 
       if (isNdjson) {
         // NDJSON: split on newlines; each complete line is a full JSON object

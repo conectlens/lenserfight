@@ -106,8 +106,8 @@ export function buildStreamRequest(
 
 /** Mistral SSE: same format as OpenAI (data: JSON, [DONE] sentinel). */
 export function parseStreamChunk(line: string, _eventType?: string): StreamChunk | null {
-  if (!line.startsWith('data: ')) return null;
-  const data = line.slice(6).trim();
+  const data = line.startsWith('data: ') ? line.slice(6).trim() : line.trim();
+  if (!data) return null;
   if (data === '[DONE]') return { done: true };
 
   try {

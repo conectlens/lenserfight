@@ -128,10 +128,11 @@ export function buildStreamRequest(
 
 /** Google SSE: plain JSON chunks; stream ends when body closes (no [DONE]). */
 export function parseStreamChunk(line: string, _eventType?: string): StreamChunk | null {
-  if (!line.startsWith('data: ')) return null;
+  const json = line.startsWith('data: ') ? line.slice(6).trim() : line.trim();
+  if (!json || json === '[DONE]') return null;
 
   try {
-    const parsed = JSON.parse(line.slice(6).trim());
+    const parsed = JSON.parse(json);
     const text = parsed.candidates?.[0]?.content?.parts?.[0]?.text ?? '';
     const meta = parsed.usageMetadata;
     return {

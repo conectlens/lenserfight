@@ -1,4 +1,4 @@
-import { Badge } from '@lenserfight/ui/components'
+import { Badge, StreamingOutput } from '@lenserfight/ui/components'
 import { motion } from 'framer-motion'
 import {
   AlertTriangle,
@@ -211,26 +211,6 @@ function PendingSkeleton() {
   )
 }
 
-/** Streaming text indicator for running nodes */
-function RunningIndicator({ data }: { data?: Record<string, unknown> | null }) {
-  const partialText = (data?.['output'] ?? data?.['text']) as string | undefined
-
-  return (
-    <div className="mt-3 space-y-2">
-      {partialText ? (
-        <div className="rounded-xl bg-surface-base p-3 text-xs text-greyscale-600 dark:text-greyscale-400 font-mono whitespace-pre-wrap break-words leading-relaxed">
-          {partialText}
-          <span className="inline-block w-1.5 h-3 ml-0.5 bg-primary-yellow-500 animate-pulse rounded-sm" />
-        </div>
-      ) : (
-        <div className="flex items-center gap-2 rounded-xl bg-surface-base p-3">
-          <Loader size={12} className="text-primary-yellow-600 animate-spin" />
-          <span className="text-xs text-greyscale-400">Generating…</span>
-        </div>
-      )}
-    </div>
-  )
-}
 
 export function WorkflowProgressView({
   nodes,
@@ -308,9 +288,14 @@ export function WorkflowProgressView({
                 <PendingSkeleton />
               )}
 
-              {/* Running / streaming / retrying — live indicator */}
+              {/* Running / streaming / retrying — live streaming output */}
               {(status === 'running' || status === 'streaming' || status === 'retrying') && (
-                <RunningIndicator data={result?.output_data as Record<string, unknown> | null | undefined} />
+                <div className="mt-3">
+                  <StreamingOutput
+                    state="streaming"
+                    output={((result?.output_data as Record<string, unknown> | null | undefined)?.['output'] ?? (result?.output_data as Record<string, unknown> | null | undefined)?.['text'] ?? '') as string}
+                  />
+                </div>
               )}
 
               {/* Skipped — explicit */}

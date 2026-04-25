@@ -170,30 +170,45 @@ export const walletApiClient = {
     const reader = response.body!.getReader()
     const decoder = new TextDecoder()
     let buffer = ''
+    let lastEventType = ''
 
     try {
       while (true) {
         const { done, value } = await reader.read()
         if (done || signal.aborted) break
-        buffer += decoder.decode(value, { stream: true })
-        const events = buffer.split('\n\n')
-        buffer = events.pop() ?? ''
-        for (const raw of events) {
-          const line = raw.replace(/^data: /, '').trim()
-          if (!line) continue
-          const evt = JSON.parse(line) as { event: string;[key: string]: unknown }
-          if (evt.event === 'start') callbacks.onStart(evt['run_id'] as string)
-          if (evt.event === 'token') callbacks.onToken(evt['content'] as string)
-          if (evt.event === 'end') {
+        buffer += decoder.decode(value, { stream: true }).replace(/\r\n/g, '\n')
+        const frames = buffer.split('\n\n')
+        buffer = frames.pop() ?? ''
+        for (const frame of frames) {
+          let dataStr = ''
+          for (const line of frame.split('\n')) {
+            if (line.startsWith('event:')) {
+              lastEventType = line.slice('event:'.length).trim()
+            } else if (line.startsWith('data:')) {
+              dataStr = line.slice('data:'.length).trim()
+            }
+          }
+          if (!dataStr || dataStr === '[DONE]') continue
+          let evt: { event?: string; [key: string]: unknown }
+          try {
+            evt = JSON.parse(dataStr) as { event?: string; [key: string]: unknown }
+          } catch {
+            continue
+          }
+          const eventType = evt['event'] as string | undefined ?? lastEventType
+          if (eventType === 'start') callbacks.onStart(evt['run_id'] as string)
+          if (eventType === 'token') callbacks.onToken(evt['content'] as string)
+          if (eventType === 'end') {
             callbacks.onEnd(
               evt['usage'] as { input_tokens: number; output_tokens: number },
               evt['credits_charged'] as number,
             )
           }
-          if (evt.event === 'error') {
+          if (eventType === 'error') {
             callbacks.onError(evt['message'] as string, evt['code'] as string)
             return
           }
+          lastEventType = ''
         }
       }
     } catch (err: unknown) {
