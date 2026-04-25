@@ -10,7 +10,7 @@ export * from './lib/Checkbox'
 export * from './lib/Radio'
 export * from './lib/Switch'
 export * from './lib/SearchBar'
-export * from './lib/SegmentedControl'
+// SegmentedControl moved to @lenserfight/ui/components
 // Lens parameter editor primitives
 export * from './lib/ToolField'
 export * from './lib/ParamChip'
