@@ -20,6 +20,13 @@ export const AILenserWorkflowPanel: React.FC<AILenserWorkflowPanelProps> = ({
     return acc
   }, {})
 
+  const activeScheduleCountByWorkflow = schedules
+    .filter((s) => s.is_active)
+    .reduce<Record<string, number>>((acc, schedule) => {
+      acc[schedule.workflow_id] = (acc[schedule.workflow_id] ?? 0) + 1
+      return acc
+    }, {})
+
   if (workflows.length === 0) {
     return (
       <div className="rounded-2xl border border-dashed border-gray-300 p-8 text-center text-sm text-gray-500 dark:border-gray-700 dark:text-gray-400">
@@ -64,7 +71,7 @@ export const AILenserWorkflowPanel: React.FC<AILenserWorkflowPanelProps> = ({
           <div className="flex items-center justify-between rounded-2xl border border-gray-200 bg-white px-4 py-3 text-sm dark:border-gray-700 dark:bg-gray-800">
             <span className="inline-flex items-center gap-2 text-gray-600 dark:text-gray-300">
               <Clock3 size={14} />
-              {scheduleCountByWorkflow[workflow.id] ?? 0} schedule{scheduleCountByWorkflow[workflow.id] === 1 ? '' : 's'}
+              {activeScheduleCountByWorkflow[workflow.id] ?? 0} of {scheduleCountByWorkflow[workflow.id] ?? 0} schedule{scheduleCountByWorkflow[workflow.id] === 1 ? '' : 's'} active
             </span>
             <span className="inline-flex items-center gap-2 text-gray-500 dark:text-gray-400">
               <GitBranch size={14} />
