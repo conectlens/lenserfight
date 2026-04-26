@@ -68,7 +68,7 @@ describe('developer token CLI helpers', () => {
 
   it('builds auth app URLs from the resolved base URL', () => {
     expect(buildAuthAppUrl('/device-approval?code=ABCD-EFGH')).toBe(
-      'http://localhost:3004/device-approval?code=ABCD-EFGH'
+      'https://auth.lenserfight.com/device-approval?code=ABCD-EFGH'
     );
   });
 });
