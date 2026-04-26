@@ -29,6 +29,8 @@ export interface UserConfig {
   developerTokenId?: string;
   developerToken?: string;
   developerTokenExpiresAt?: string;
+  /** Active community context set by `lenserfight communities switch`. */
+  communitySlug?: string;
 }
 
 /** Merged, fully-resolved config used by all commands. */
