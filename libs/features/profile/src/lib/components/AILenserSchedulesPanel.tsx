@@ -18,6 +18,16 @@ interface AILenserSchedulesPanelProps {
 
 const INITIAL_INPUTS = '{}'
 
+function formatRunTime(iso: string | null): string {
+  if (!iso) return 'Never'
+  return new Date(iso).toLocaleString(undefined, {
+    month: 'short',
+    day: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  })
+}
+
 export const AILenserSchedulesPanel: React.FC<AILenserSchedulesPanelProps> = ({
   workflows,
   schedules,
@@ -101,12 +111,15 @@ export const AILenserSchedulesPanel: React.FC<AILenserSchedulesPanelProps> = ({
   return (
     <div className="space-y-6">
       <div className="rounded-2xl border border-gray-200 bg-white p-5 dark:border-gray-700 dark:bg-gray-800">
-        <div className="mb-4 flex items-center gap-2">
+        <div className="mb-1 flex items-center gap-2">
           <Clock3 size={16} className="text-primary-yellow-600" />
           <h3 className="font-semibold text-gray-900 dark:text-white">
-            {editingScheduleId ? 'Edit CRON schedule' : 'Create CRON schedule'}
+            {editingScheduleId ? 'Edit automated execution' : 'Configure automated execution'}
           </h3>
         </div>
+        <p className="mb-4 text-xs text-gray-500 dark:text-gray-400">
+          Schedules trigger linked workflows automatically at the defined cadence. This agent profile provides the execution policy context — it does not initiate execution.
+        </p>
 
         <div className="grid gap-4 md:grid-cols-2">
           <Field id="schedule-workflow" label="Workflow">
@@ -191,6 +204,11 @@ export const AILenserSchedulesPanel: React.FC<AILenserSchedulesPanelProps> = ({
         </div>
       </div>
 
+      <div className="flex items-center gap-2">
+        <h3 className="font-semibold text-gray-900 dark:text-white">Linked schedules</h3>
+        <span className="text-xs text-gray-400">({schedules.length})</span>
+      </div>
+
       {schedules.length === 0 ? (
         <EmptyState icon={Clock3} title="No CRON schedules configured." />
       ) : (
@@ -205,11 +223,24 @@ export const AILenserSchedulesPanel: React.FC<AILenserSchedulesPanelProps> = ({
                   <p className="font-semibold text-gray-900 dark:text-white">
                     {workflowTitleById[schedule.workflow_id] ?? schedule.workflow_title}
                   </p>
-                  <div className="flex flex-wrap gap-2 text-sm text-gray-600 dark:text-gray-300">
-                    <span>CRON: {schedule.cron_expr}</span>
-                    <span>Status: {schedule.is_active ? 'active' : 'paused'}</span>
+                  <div className="flex flex-wrap items-center gap-2 text-sm text-gray-600 dark:text-gray-300">
+                    <code className="rounded bg-gray-100 px-2 py-0.5 text-xs font-mono dark:bg-gray-700">
+                      {schedule.cron_expr}
+                    </code>
+                    <span className={`text-xs font-medium ${schedule.is_active ? 'text-green-600 dark:text-green-400' : 'text-gray-400'}`}>
+                      {schedule.is_active ? '● Active' : '○ Paused'}
+                    </span>
+                  </div>
+                  <div className="flex flex-wrap gap-3 text-xs text-gray-500 dark:text-gray-400">
+                    <span>Last run: {formatRunTime(schedule.last_run_at)}</span>
                     {schedule.last_dispatch_status && (
-                      <span>Last dispatch: {schedule.last_dispatch_status}</span>
+                      <span className={
+                        schedule.last_dispatch_status === 'dispatched' ? 'text-green-600 dark:text-green-400' :
+                        schedule.last_dispatch_status === 'dispatch_failed' ? 'text-red-600 dark:text-red-400' :
+                        'text-yellow-600 dark:text-yellow-400'
+                      }>
+                        {schedule.last_dispatch_status.replace(/_/g, ' ')}
+                      </span>
                     )}
                   </div>
                   {schedule.last_error_message && (

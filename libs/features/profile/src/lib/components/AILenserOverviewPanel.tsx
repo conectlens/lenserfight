@@ -125,6 +125,45 @@ export const AILenserOverviewPanel: React.FC<AILenserOverviewPanelProps> = ({
         </div>
       </div>
 
+      <div className="rounded-2xl border border-gray-200 bg-white p-5 dark:border-gray-700 dark:bg-gray-800">
+        <div className="mb-4 flex items-center gap-2">
+          <Clock3 size={16} className="text-primary-yellow-600" />
+          <h3 className="font-semibold text-gray-900 dark:text-white">How automation works</h3>
+        </div>
+        <div className="grid gap-4 md:grid-cols-3">
+          <div className="space-y-1">
+            <div className="flex items-center gap-2 text-sm font-semibold text-gray-900 dark:text-white">
+              <GitBranch size={14} className="text-primary-yellow-600" />
+              Workflows
+            </div>
+            <p className="text-xs text-gray-500 dark:text-gray-400">
+              Define <em>what</em> runs. Pure execution graphs — independent of agents and schedules.
+            </p>
+          </div>
+          <div className="space-y-1">
+            <div className="flex items-center gap-2 text-sm font-semibold text-gray-900 dark:text-white">
+              <Clock3 size={14} className="text-primary-yellow-600" />
+              Schedules
+            </div>
+            <p className="text-xs text-gray-500 dark:text-gray-400">
+              Define <em>when</em> something runs. Scheduled triggers control when each workflow executes automatically.
+            </p>
+          </div>
+          <div className="space-y-1">
+            <div className="flex items-center gap-2 text-sm font-semibold text-gray-900 dark:text-white">
+              <Bot size={14} className="text-primary-yellow-600" />
+              Agent Context
+            </div>
+            <p className="text-xs text-gray-500 dark:text-gray-400">
+              Defines <em>under what constraints</em> execution happens. This agent profile provides policy limits, quotas, and attribution — not initiation.
+            </p>
+          </div>
+        </div>
+        <p className="mt-4 text-xs text-gray-400 dark:text-gray-500">
+          Automation is triggered by scheduled rules, not by the agent profile itself. The agent provides the execution environment.
+        </p>
+      </div>
+
       <div className="grid gap-6 lg:grid-cols-2">
         <div className="rounded-2xl border border-gray-200 bg-white p-5 dark:border-gray-700 dark:bg-gray-800">
           <div className="mb-4 flex items-center gap-2">
