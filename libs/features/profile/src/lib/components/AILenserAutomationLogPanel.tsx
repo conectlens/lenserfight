@@ -43,8 +43,34 @@ export const AILenserAutomationLogPanel: React.FC<AILenserAutomationLogPanelProp
     return <EmptyState icon={Clock3} title="No automation logs yet." />
   }
 
+  const dispatched = feed.filter((i) => i.kind === 'schedule_dispatch' && i.result === 'success').length
+  const failed = feed.filter((i) => i.result === 'failed').length
+  const lastActivity = feed[0]?.occurred_at ?? null
+
   return (
     <div className="space-y-4">
+      <div className="flex flex-wrap gap-3 rounded-2xl border border-gray-200 bg-gray-50 p-4 text-sm dark:border-gray-700 dark:bg-gray-800/50">
+        <span className="text-gray-500 dark:text-gray-400">
+          <span className="font-semibold text-gray-900 dark:text-white">{feed.length}</span> events
+        </span>
+        <span className="text-gray-300 dark:text-gray-600">|</span>
+        <span className="text-gray-500 dark:text-gray-400">
+          <span className="font-semibold text-green-600 dark:text-green-400">{dispatched}</span> dispatched
+        </span>
+        <span className="text-gray-300 dark:text-gray-600">|</span>
+        <span className="text-gray-500 dark:text-gray-400">
+          <span className="font-semibold text-red-600 dark:text-red-400">{failed}</span> failed
+        </span>
+        {lastActivity && (
+          <>
+            <span className="text-gray-300 dark:text-gray-600">|</span>
+            <span className="text-gray-500 dark:text-gray-400">
+              Last: {new Date(lastActivity).toLocaleString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
+            </span>
+          </>
+        )}
+      </div>
+
       <div className="flex flex-wrap gap-2">
         {FILTERS.map((item) => (
           <button

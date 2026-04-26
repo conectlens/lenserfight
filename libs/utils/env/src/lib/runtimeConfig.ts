@@ -73,6 +73,8 @@ export const FEATURES = {
   PUBLIC_BATTLES: featureEnabled('VITE_FEATURE_PUBLIC_BATTLES', false),
   // Supabase publishing and cloud wiring are still staged for post-MVP rollout.
   SUPABASE_INTEGRATION: featureEnabled('VITE_FEATURE_SUPABASE_INTEGRATION', false),
+  // CRON scheduling is out of OSS beta scope — deferred to Wave 2 / post-stabilization.
+  CRON_SCHEDULING: featureEnabled('VITE_FEATURE_CRON_SCHEDULING', false),
 }
 
 export { resolveProductEdition, SURFACE } from './appSurface'
