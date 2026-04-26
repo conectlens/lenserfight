@@ -1,38 +1,133 @@
 ---
 title: LenserFight for Organizations
-description: Current status note for organizations evaluating LenserFight Community Edition.
+description: How teams and SaaS products use LenserFight as an AI lens and agent layer — community accounts, connectors, service tokens, and API integration.
 ---
 
 # LenserFight for Organizations
 
-This page is intentionally narrow for the current OSS beta.
+This guide is for engineering teams and SaaS products that want to integrate LenserFight's lenses, agents, and workflows into their own systems — not just evaluate the community repo locally.
 
-## Current status
+---
 
-LenserFight Community Edition is optimized for developers and small teams who want to evaluate the public repo locally.
+## What organizations can do today
 
-What organizations can do today:
+| Capability | Available |
+|-----------|-----------|
+| Create a community (organisation) account | Developer plan and above |
+| Publish lenses under a community identity | ✓ |
+| Register service connectors with scoped tokens | Developer plan and above |
+| Fetch public lenses, agents, and workflows via API | ✓ (with service token) |
+| Run lenses using BYOK (your own API keys) | Developer plan and above |
+| Invite team members to a community | ✓ |
+| Connect external systems via webhooks | Team plan and above |
+| Private community (not listed in directory) | Team plan and above |
+| SSO / SAML | Enterprise |
 
-- run the Community Edition locally for internal exploration
-- inspect the workflow engine, contracts, and provider integrations
-- use the OSS repo as a starting point for evaluation experiments
+---
 
-What this repo does **not** currently promise:
+## Core concept: the community account
 
-- public benchmark campaigns
-- enterprise workspaces
-- hosted moderation and operations tooling
-- launch-ready private evaluation management
+An **organisation account** on LenserFight is called a **community**. It is a shared identity that your team and external systems act under:
 
-## If you are evaluating LenserFight for company use
+- Lenses and agents published by your team appear under `@your-org`
+- Service tokens issued to your connectors are scoped to your community
+- Team members can be invited with `member`, `moderator`, or `admin` roles
 
-Start here first:
+---
 
-- [Overview](/tutorials/getting-started/overview)
-- [Installation](/tutorials/getting-started/installation)
-- [Local Database Setup](/reference/database/local-setup)
-- [Open Core Model](/explanation/community/open-core-model)
+## Integration architecture
 
-## Commercial or hosted questions
+```
+Your Backend
+    │
+    │  Authorization: Bearer $LENSERFIGHT_API_KEY
+    ▼
+LenserFight REST API (/v1)
+    │
+    ├── /lenses         ← browse and execute lenses
+    ├── /agents         ← discover and invoke agents
+    └── /workflows      ← run workflows
+```
 
-Community Edition is BSL-licensed. If you are evaluating hosted, SaaS, or larger commercial use, use the licensing and maintainer contact paths documented in the repository root.
+The service token is the only long-lived credential your backend needs. It is scoped to the minimum permissions your integration requires.
+
+---
+
+## Quick setup
+
+```bash
+# 1. Log in
+lf auth login
+
+# 2. Create your community
+lf communities create --name "Chainabit" --slug chainabit
+
+# 3. Register a service connector
+lf communities switch chainabit
+lf connectors add \
+  --name "Chainabit Backend" \
+  --slug chainabit-backend \
+  --scopes "lenses:read,agents:read,workflows:read"
+# → prints your service token once
+
+# 4. Use the token in your backend
+export LENSERFIGHT_API_KEY=lf_svc_...
+curl https://api.lenserfight.com/v1/lenses \
+  -H "Authorization: Bearer $LENSERFIGHT_API_KEY"
+```
+
+For the complete walkthrough, see [SaaS Integration Quickstart](/how-to/integrations/saas-quickstart).
+
+---
+
+## Common integration scenarios
+
+### Scenario A: Chainabit embeds LenserFight agents
+
+Chainabit is a blockchain analytics SaaS. It wants to surface LenserFight's AI lensers in its dashboard as data enrichment agents.
+
+1. Chainabit creates a community account (`chainabit`).
+2. Registers a read-only connector with `agents:read,lenses:read`.
+3. Its backend fetches available agents and lens metadata from the API.
+4. When a user runs an analysis, Chainabit's backend calls the lens execution endpoint.
+5. The result is rendered in Chainabit's UI.
+
+### Scenario B: Google Cloud Function uses LenserFight lenses
+
+A scheduled Cloud Function processes daily data using LenserFight lenses for summarisation and classification.
+
+1. An org token with `lenses:read,workflows:read` is stored as a GCP Secret.
+2. The function reads the secret at runtime and calls the LenserFight API.
+3. Results are written to BigQuery.
+4. No user session is involved at any point.
+
+### Scenario C: Individual developer scripts
+
+An independent developer writes Python scripts that use LenserFight lenses for content processing.
+
+1. Gets a developer token via `lf auth device request`.
+2. Sets `LENSERFIGHT_API_KEY` in their shell.
+3. Calls the REST API or uses `lf lenses use <slug>` in scripts.
+4. Private lenses are accessible under their personal account.
+
+---
+
+## Licensing
+
+LenserFight Community Edition is under the **Business Source License 1.1**. Self-hosting for local evaluation is permitted. **Building a production SaaS or hosted product on top of LenserFight requires a commercial license.**
+
+If you are shipping a product that uses LenserFight as a dependency or that re-hosts any LenserFight surface, contact the team before going to production. See [Open Core Model](/explanation/community/open-core-model) for details.
+
+---
+
+## Next steps
+
+| What you want to do | Where to go |
+|--------------------|-------------|
+| Full integration walkthrough | [SaaS Integration Quickstart](/how-to/integrations/saas-quickstart) |
+| Token types and scopes | [Token Reference](/reference/platform-api/tokens) |
+| Plan limits and pricing | [Pricing & Plans](/reference/platform-api/pricing) |
+| CLI: community management | [Communities CLI](/reference/cli/communities) |
+| CLI: connector management | [Connectors CLI](/reference/cli/connectors) |
+| REST API reference | [Community API](/reference/community-api/index) |
+| License terms | [Open Core Model](/explanation/community/open-core-model) |
