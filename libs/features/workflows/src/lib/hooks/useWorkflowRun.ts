@@ -3,6 +3,7 @@ import { supabase } from '@lenserfight/data/supabase'
 import type { WorkflowNodeResultRecord } from '@lenserfight/data/repositories'
 import {
   WorkflowEventType,
+  isTerminalNodeStatus,
   isTerminalRunEventType,
   type WorkflowSseEventEnvelope,
 } from '@lenserfight/types'
@@ -11,7 +12,7 @@ import { useEffect, useState } from 'react'
 
 import type { Dispatch, SetStateAction } from 'react'
 
-export function useWorkflowRun(workflowId: string | undefined) {
+export function useWorkflowRun(workflowId: string | undefined, options?: { skipSse?: boolean }) {
   const [runId, setRunId] = useState<string | null>(null)
   const [nodeResults, setNodeResults] = useState<WorkflowNodeResultRecord[]>([])
   const [isRunning, setIsRunning] = useState(false)
@@ -53,15 +54,7 @@ export function useWorkflowRun(workflowId: string | undefined) {
     // Load initial node results
     workflowsService.getNodeResults(runId).then((rows) => {
       setNodeResults(rows)
-      const allDone =
-        rows.length > 0 &&
-        rows.every(
-          (r) =>
-            r.status === 'completed' ||
-            r.status === 'failed' ||
-            r.status === 'cancelled' ||
-            r.status === 'skipped'
-        )
+      const allDone = rows.length > 0 && rows.every((r) => isTerminalNodeStatus(r.status))
       if (allDone) setIsRunning(false)
     })
 
@@ -85,15 +78,7 @@ export function useWorkflowRun(workflowId: string | undefined) {
               next[idx] = updated
             }
 
-            const allDone =
-              next.length > 0 &&
-              next.every(
-                (r) =>
-                  r.status === 'completed' ||
-                  r.status === 'failed' ||
-                  r.status === 'cancelled' ||
-                  r.status === 'skipped'
-              )
+            const allDone = next.length > 0 && next.every((r) => isTerminalNodeStatus(r.status))
             if (allDone) setIsRunning(false)
             return next
           })
@@ -108,8 +93,10 @@ export function useWorkflowRun(workflowId: string | undefined) {
 
   // SSE stream (platform API) for rich workflow timeline events.
   // Realtime remains as a fallback and source of truth for persisted rows.
+  // Skipped when running locally (user_byok_local) — events arrive via Realtime instead.
   useEffect(() => {
     if (!runId) return
+    if (options?.skipSse) return
     const apiBase = import.meta.env.VITE_API_URL as string | undefined
     if (!apiBase) return
 
@@ -187,7 +174,7 @@ export function useWorkflowRun(workflowId: string | undefined) {
     workflowsService.updateRunStatus(runId, 'cancelled').catch(() => {})
     setNodeResults((current) =>
       current.map((result) =>
-        result.status === 'completed' || result.status === 'failed' || result.status === 'skipped'
+        isTerminalNodeStatus(result.status)
           ? result
           : { ...result, status: 'cancelled', error_message: result.error_message ?? 'Run cancelled' }
       )
@@ -308,19 +295,40 @@ function applyWorkflowSseEnvelope(
 
     const payload = envelope.payload as Record<string, unknown>
     let status = existing.status
-    if (envelope.type === WorkflowEventType.NODE_STARTED) status = 'running'
-    else if (envelope.type === WorkflowEventType.NODE_STREAM_DELTA) status = 'streaming'
-    else if (envelope.type === WorkflowEventType.NODE_COMPLETED) status = 'completed'
+    let waitingReason = existing.waiting_reason ?? null
+    if (envelope.type === WorkflowEventType.NODE_STARTED) {
+      status = 'running'
+      waitingReason = null
+    } else if (envelope.type === WorkflowEventType.NODE_STREAM_DELTA) {
+      status = 'streaming'
+      waitingReason = null
+    } else if (envelope.type === WorkflowEventType.NODE_COMPLETED) status = 'completed'
     else if (envelope.type === WorkflowEventType.NODE_FAILED) status = 'failed'
     else if (envelope.type === WorkflowEventType.NODE_CANCELLED) status = 'cancelled'
     else if (envelope.type === WorkflowEventType.NODE_SKIPPED) status = 'skipped'
     else if (envelope.type === WorkflowEventType.NODE_TIMED_OUT) status = 'timed_out'
     else if (envelope.type === WorkflowEventType.NODE_BLOCKED) status = 'blocked'
     else if (envelope.type === WorkflowEventType.NODE_INVALIDATED) status = 'invalidated'
-    else if (envelope.type === WorkflowEventType.NODE_RETRIED) status = 'retrying'
-    else if (envelope.type === WorkflowEventType.NODE_QUEUED) status = 'queued'
+    else if (envelope.type === WorkflowEventType.NODE_RETRIED) {
+      status = 'retrying'
+      const reason = String(payload['waitingReason'] ?? '')
+      waitingReason = reason || 'retry_backoff'
+    } else if (envelope.type === WorkflowEventType.NODE_QUEUED) {
+      status = 'queued'
+      waitingReason = String(payload['waitingReason'] ?? 'queued')
+    } else if (envelope.type === WorkflowEventType.NODE_WAITING) {
+      const reason = String(payload['waitingReason'] ?? 'dependency')
+      // Map reason → status: only retry-driven waits use `retrying`; other
+      // waits use `awaiting_dependency` so the inspector knows whether to
+      // show the spinner or the queued badge.
+      status = reason === 'retry_backoff' || reason === 'rate_limit' ? 'retrying' : 'awaiting_dependency'
+      waitingReason = reason
+    }
     // `message.delta` kept for legacy compatibility with older producers.
-    else if (envelope.type === WorkflowEventType.MESSAGE_DELTA) status = 'streaming'
+    else if (envelope.type === WorkflowEventType.MESSAGE_DELTA) {
+      status = 'streaming'
+      waitingReason = null
+    }
 
     // Pick up text from either the canonical `text` field (node.stream.delta)
     // or the legacy `delta` field (message.delta). `deltaIndex` is used to
@@ -360,9 +368,13 @@ function applyWorkflowSseEnvelope(
     const updated: WorkflowNodeResultRecord = {
       ...existing,
       status,
+      waiting_reason: waitingReason,
       output_data: outputData,
       error_message:
-        status === 'failed' || status === 'timed_out' || status === 'invalidated'
+        status === 'failed' ||
+        status === 'timed_out' ||
+        status === 'invalidated' ||
+        status === 'blocked'
           ? String(payload['error'] ?? payload['errorMessage'] ?? existing.error_message ?? 'Node failed')
           : existing.error_message,
     }
