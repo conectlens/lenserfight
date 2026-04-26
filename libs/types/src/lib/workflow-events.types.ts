@@ -35,6 +35,12 @@ export const WorkflowEventType = {
   RUN_RECOVERED: 'run.recovered',
   // Node lifecycle
   NODE_QUEUED: 'node.queued',
+  /**
+   * N8N-style waiting transition. Emitted when a node enters
+   * `awaiting_dependency` (waiting on parents) or `retrying`
+   * (rate-limit / backoff). Payload always carries `waitingReason`.
+   */
+  NODE_WAITING: 'node.waiting',
   NODE_STARTED: 'node.started',
   NODE_STREAM_DELTA: 'node.stream.delta',
   NODE_LOG: 'node.log',
@@ -46,6 +52,8 @@ export const WorkflowEventType = {
   NODE_TIMED_OUT: 'node.timed_out',
   NODE_BLOCKED: 'node.blocked',
   NODE_INVALIDATED: 'node.invalidated',
+  /** Field-level provenance edge recorded by the engine. */
+  NODE_PROVENANCE: 'node.provenance',
   // Gates / validation surfaces
   MODERATION_FLAGGED: 'moderation.flagged',
   CONTRACT_VIOLATED: 'contract.violated',
@@ -184,6 +192,7 @@ export interface NodeCompletedPayload {
  */
 export const ENGINE_EVENT_TO_SSE: Record<string, WorkflowEventType> = {
   node_queued: WorkflowEventType.NODE_QUEUED,
+  node_waiting: WorkflowEventType.NODE_WAITING,
   node_started: WorkflowEventType.NODE_STARTED,
   node_retried: WorkflowEventType.NODE_RETRIED,
   node_completed: WorkflowEventType.NODE_COMPLETED,
@@ -192,6 +201,7 @@ export const ENGINE_EVENT_TO_SSE: Record<string, WorkflowEventType> = {
   node_skipped: WorkflowEventType.NODE_SKIPPED,
   node_blocked: WorkflowEventType.NODE_BLOCKED,
   node_invalidated: WorkflowEventType.NODE_INVALIDATED,
+  node_provenance: WorkflowEventType.NODE_PROVENANCE,
   node_stream_delta: WorkflowEventType.NODE_STREAM_DELTA,
   node_log: WorkflowEventType.NODE_LOG,
   timed_out: WorkflowEventType.NODE_TIMED_OUT,
@@ -273,10 +283,125 @@ export const TERMINAL_RUN_STATUSES: readonly WorkflowRunStatus[] = [
   'timed_out',
 ]
 
+/**
+ * Statuses that indicate the engine considers the node "actively executing"
+ * right now. Used by the n8n-style inspector to render the active step ring
+ * and by the run-state projection to derive `is_running`.
+ */
+export const ACTIVE_NODE_STATUSES: readonly WorkflowNodeStatus[] = [
+  'running',
+  'streaming',
+  'retrying',
+]
+
+/**
+ * Statuses that indicate the node is waiting for something external (parent
+ * dependency, scheduler queue, retry backoff, etc.). The waiting reason is
+ * persisted on the node row when the status is one of these.
+ */
+export const WAITING_NODE_STATUSES: readonly WorkflowNodeStatus[] = [
+  'awaiting_dependency',
+  'queued',
+  'retrying',
+]
+
 export function isTerminalNodeStatus(status: string): status is WorkflowNodeStatus {
   return (TERMINAL_NODE_STATUSES as readonly string[]).includes(status)
 }
 
 export function isTerminalRunStatus(status: string): status is WorkflowRunStatus {
   return (TERMINAL_RUN_STATUSES as readonly string[]).includes(status)
+}
+
+export function isActiveNodeStatus(status: string): status is WorkflowNodeStatus {
+  return (ACTIVE_NODE_STATUSES as readonly string[]).includes(status)
+}
+
+export function isWaitingNodeStatus(status: string): status is WorkflowNodeStatus {
+  return (WAITING_NODE_STATUSES as readonly string[]).includes(status)
+}
+
+// ─── Waiting reason taxonomy (n8n-style) ──────────────────────────────────
+
+/**
+ * Why a node is currently waiting. Persisted in
+ * `lenses.workflow_node_results.waiting_reason` so the inspector can render
+ * "Waiting for X" with no additional fetch.
+ */
+export const WORKFLOW_WAITING_REASONS = [
+  'dependency',
+  'condition_false',
+  'rate_limit',
+  'retry_backoff',
+  'human_input',
+  'external_callback',
+  'queued',
+] as const
+export type WorkflowWaitingReason = (typeof WORKFLOW_WAITING_REASONS)[number]
+
+export function isWaitingReason(value: string): value is WorkflowWaitingReason {
+  return (WORKFLOW_WAITING_REASONS as readonly string[]).includes(value)
+}
+
+// ─── Run state projection (n8n inspector) ─────────────────────────────────
+
+/**
+ * Shape returned by `public.fn_get_workflow_run_state(p_run_id)`. One round
+ * trip drives the entire execution inspector — active node, waiting/executed
+ * counts, ordered node results, and provenance edge counts.
+ */
+export interface WorkflowRunStateNodeResult {
+  id: string
+  node_id: string
+  node_label: string | null
+  node_ordinal: number | null
+  status: WorkflowNodeStatus
+  waiting_reason: WorkflowWaitingReason | string | null
+  output_data: Record<string, unknown> | null
+  error_message: string | null
+  retry_count: number | null
+  duration_ms: number | null
+  ttfb_ms: number | null
+  started_at: string | null
+  completed_at: string | null
+}
+
+export interface WorkflowRunStateProjection {
+  run_id: string
+  workflow_id: string
+  status: WorkflowRunStatus
+  active_node_id: string | null
+  pending_count: number
+  waiting_count: number
+  in_flight_count: number
+  executed_count: number
+  failed_count: number
+  is_running: boolean
+  started_at: string | null
+  completed_at: string | null
+  parent_run_id: string | null
+  recursion_depth: number
+  node_results: WorkflowRunStateNodeResult[]
+  upstream_count: number
+  downstream_count: number
+}
+
+/**
+ * Provenance edge returned by `fn_get_run_provenance`. Direction tells the UI
+ * whether the edge brings data INTO the current run (`upstream`) or FROM the
+ * current run to a downstream consumer (`downstream`).
+ */
+export interface WorkflowRunProvenanceEdge {
+  id: string
+  direction: 'upstream' | 'downstream'
+  source_run_id: string
+  source_workflow_id: string
+  source_node_id: string
+  source_output_path: string
+  target_run_id: string
+  target_workflow_id: string
+  target_node_id: string
+  target_input_path: string
+  transform: Record<string, unknown> | null
+  created_at: string
 }

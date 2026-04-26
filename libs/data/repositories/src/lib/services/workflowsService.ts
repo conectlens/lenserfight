@@ -15,12 +15,16 @@ import {
   type UpsertEdgeInput,
   type WorkflowsListFilter,
   type TemplateWorkflowRecord,
+  type UpdateNodeResultOptions,
+  type RecordRunProvenanceInput,
 } from '../repositories/workflowsRepository'
 import type {
   UpsertWorkflowScheduleInput,
   WorkflowScheduleRecord,
   WorkflowPhaseRecord,
   WorkflowTaskRecord,
+  WorkflowRunStateProjection,
+  WorkflowRunProvenanceEdge,
 } from '@lenserfight/types'
 
 const workflowsRepo = new SupabaseWorkflowsRepository()
@@ -43,6 +47,12 @@ export type {
 }
 export type { UpsertWorkflowScheduleInput, WorkflowScheduleRecord }
 export type { WorkflowPhaseRecord, WorkflowTaskRecord }
+export type {
+  UpdateNodeResultOptions,
+  RecordRunProvenanceInput,
+  WorkflowRunStateProjection,
+  WorkflowRunProvenanceEdge,
+}
 
 export const workflowsService = {
   listByLenser: (lenserId: string): Promise<WorkflowRecord[]> =>
@@ -114,12 +124,33 @@ export const workflowsService = {
     nodeId: string,
     status: string,
     outputData?: Record<string, unknown>,
-    errorMessage?: string
+    errorMessage?: string,
+    options?: UpdateNodeResultOptions,
   ): Promise<void> =>
-    workflowsRepo.updateNodeResult(runId, nodeId, status, outputData, errorMessage),
+    workflowsRepo.updateNodeResult(runId, nodeId, status, outputData, errorMessage, options),
 
   updateRunStatus: (runId: string, status: string): Promise<void> =>
     workflowsRepo.updateRunStatus(runId, status),
+
+  // ── N8N-style execution inspector ───────────────────────────────────────────
+
+  /**
+   * Single-round-trip canonical run projection. Returns the active node,
+   * waiting/executed counts, ordered node results, and provenance edge counts.
+   */
+  getRunState: (runId: string): Promise<WorkflowRunStateProjection | null> =>
+    workflowsRepo.getRunState(runId),
+
+  /**
+   * Field-level cross-workflow provenance edges for one run. Combines both
+   * `upstream` (data into this run) and `downstream` (data leaving this run).
+   */
+  getRunProvenance: (runId: string): Promise<WorkflowRunProvenanceEdge[]> =>
+    workflowsRepo.getRunProvenance(runId),
+
+  /** Records a single field-level data handoff between two nodes. */
+  recordRunProvenance: (input: RecordRunProvenanceInput): Promise<string> =>
+    workflowsRepo.recordRunProvenance(input),
 
   appendRunEvent: (
     runId: string,

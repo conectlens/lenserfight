@@ -144,4 +144,78 @@ describe('replayRunEvents', () => {
     expect(a.attempts).toBeGreaterThanOrEqual(3)
     expect(a.status).toBe('completed')
   })
+
+  // ── N8N waiting + provenance event coverage ───────────────────────────────
+
+  it('maps NODE_WAITING(dependency) to awaiting_dependency', () => {
+    const events: ReplayEvent[] = [
+      ev(1, WorkflowEventType.RUN_STARTED, { status: 'running' }),
+      ev(2, WorkflowEventType.NODE_WAITING, {
+        nodeId: nodeA,
+        waitingReason: 'dependency',
+      }),
+    ]
+    const state = replayRunEvents(events, { knownNodeIds: [nodeA] })
+
+    const a = state.nodes.get(nodeA)!
+    expect(a.status).toBe('awaiting_dependency')
+    expect(a.terminal).toBe(false)
+    expect(state.unresolvedNodeIds).toContain(nodeA)
+  })
+
+  it('maps NODE_WAITING(rate_limit) to retrying so the inspector spinner stays', () => {
+    const events: ReplayEvent[] = [
+      ev(1, WorkflowEventType.NODE_STARTED, { nodeId: nodeA }),
+      ev(2, WorkflowEventType.NODE_WAITING, {
+        nodeId: nodeA,
+        waitingReason: 'rate_limit',
+      }),
+    ]
+    const state = replayRunEvents(events)
+    const a = state.nodes.get(nodeA)!
+    expect(a.status).toBe('retrying')
+    expect(state.interruptedNodeIds).toContain(nodeA)
+  })
+
+  it('treats NODE_WAITING(queued) as queued', () => {
+    const events: ReplayEvent[] = [
+      ev(1, WorkflowEventType.NODE_WAITING, {
+        nodeId: nodeA,
+        waitingReason: 'queued',
+      }),
+    ]
+    const state = replayRunEvents(events)
+    expect(state.nodes.get(nodeA)?.status).toBe('queued')
+  })
+
+  it('NODE_WAITING does not revive a terminal node', () => {
+    const events: ReplayEvent[] = [
+      ev(1, WorkflowEventType.NODE_STARTED, { nodeId: nodeA }),
+      ev(2, WorkflowEventType.NODE_COMPLETED, { nodeId: nodeA }),
+      ev(3, WorkflowEventType.NODE_WAITING, {
+        nodeId: nodeA,
+        waitingReason: 'dependency',
+      }),
+    ]
+    const state = replayRunEvents(events)
+    const a = state.nodes.get(nodeA)!
+    expect(a.status).toBe('completed')
+    expect(a.terminal).toBe(true)
+  })
+
+  it('NODE_PROVENANCE is a no-op for the lifecycle but still updates lastEventId', () => {
+    const events: ReplayEvent[] = [
+      ev(1, WorkflowEventType.NODE_STARTED, { nodeId: nodeA }),
+      ev(2, WorkflowEventType.NODE_PROVENANCE, {
+        nodeId: nodeA,
+        sourceField: 'output.text',
+        targetField: 'inputs.prompt',
+      }),
+      ev(3, WorkflowEventType.NODE_COMPLETED, { nodeId: nodeA }),
+    ]
+    const state = replayRunEvents(events)
+    const a = state.nodes.get(nodeA)!
+    expect(a.status).toBe('completed')
+    expect(state.lastEventId).toBe(3)
+  })
 })
