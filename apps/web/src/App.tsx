@@ -2,7 +2,7 @@
 import { queryClient } from '@lenserfight/data/cache'
 import { AuthProvider, SessionBoundary } from '@lenserfight/features/auth'
 import { LenserProvider } from '@lenserfight/features/profile'
-import { GlobalAnalytics } from '@lenserfight/infra/analytics'
+import { GlobalAnalytics, PostHogProvider } from '@lenserfight/infra/analytics'
 import { ErrorProvider, GlobalErrorRenderer, ErrorClearer } from '@lenserfight/shared/error'
 import { AppToaster } from '@lenserfight/ui/components'
 import { ModalQueryDriven } from '@lenserfight/ui/routing'
@@ -34,6 +34,7 @@ const App: React.FC = () => {
                       v7_relativeSplatPath: true,
                     }}
                   >
+                    <PostHogProvider />
                     <GlobalAnalytics />
                     <ErrorClearer />
                     <AppToaster />
