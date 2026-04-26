@@ -114,7 +114,7 @@ function buildProfileTabs(
       { id: 'lenses', label: 'Lenses' },
       { id: 'workflows', label: 'Workflows' },
       { id: 'logs', label: 'Logs' },
-      { id: 'schedules', label: 'Schedules' },
+      ...(FEATURES.CRON_SCHEDULING ? [{ id: 'schedules' as const, label: 'Schedules' }] : []),
     ]
   }
 
@@ -729,7 +729,7 @@ export const LenserProfilePage: React.FC = () => {
             />
           )}
 
-          {isAIWorkspacePanel && activeTab === 'schedules' && (
+          {FEATURES.CRON_SCHEDULING && isAIWorkspacePanel && activeTab === 'schedules' && (
             <AILenserSchedulesPanel
               workflows={aiWorkflows}
               schedules={aiSchedules}
