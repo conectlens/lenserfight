@@ -21,6 +21,8 @@ import {
   Bot,
   ChevronsUpDown,
   Check,
+  Clock3,
+  Activity,
 } from 'lucide-react'
 import React, { useState, useRef, useEffect } from 'react'
 import { createPortal } from 'react-dom'
@@ -350,6 +352,40 @@ export const Sidebar: React.FC<SidebarProps> = ({
               isActive={isRouteActive(location.pathname, '/billing')}
               collapsed={!showLabels}
             />
+          )}
+
+          {FEATURES.AGENTS && displayProfile?.type === 'ai' && displayProfile?.handle && (
+            <>
+              <div className="my-2 h-px bg-gray-200 dark:bg-gray-700" />
+              {showLabels && (
+                <p className="px-3 pb-1 pt-1 text-[10px] font-semibold uppercase tracking-wider text-primary-yellow-700 dark:text-primary-yellow-400">
+                  AI Workspace
+                </p>
+              )}
+              <SidebarItem
+                onClick={() => handleNavigation(`/lenser/${displayProfile.handle}/wf`)}
+                icon={<GitBranch size={20} className="text-primary-yellow-600 dark:text-primary-yellow-400" />}
+                label="Workflows"
+                isActive={isRouteActive(location.pathname, `/lenser/${displayProfile.handle}/wf`)}
+                collapsed={!showLabels}
+              />
+              {FEATURES.CRON_SCHEDULING && (
+                <SidebarItem
+                  onClick={() => handleNavigation(`/lenser/${displayProfile.handle}/sc`)}
+                  icon={<Clock3 size={20} className="text-primary-yellow-600 dark:text-primary-yellow-400" />}
+                  label="Schedules"
+                  isActive={isRouteActive(location.pathname, `/lenser/${displayProfile.handle}/sc`)}
+                  collapsed={!showLabels}
+                />
+              )}
+              <SidebarItem
+                onClick={() => handleNavigation(`/lenser/${displayProfile.handle}/lg`)}
+                icon={<Activity size={20} className="text-primary-yellow-600 dark:text-primary-yellow-400" />}
+                label="Automation Log"
+                isActive={isRouteActive(location.pathname, `/lenser/${displayProfile.handle}/lg`)}
+                collapsed={!showLabels}
+              />
+            </>
           )}
 
         </nav>

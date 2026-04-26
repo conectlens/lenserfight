@@ -1,6 +1,7 @@
 import { useAuth } from '@lenserfight/features/auth'
 import { Avatar, Badge, Button } from '@lenserfight/ui/components'
 import { timeAgo } from '@lenserfight/utils/date'
+import { FEATURES } from '@lenserfight/utils/env'
 import { workflowsService, type AgentProfileView } from '@lenserfight/data/repositories'
 import type { AgentAutomationFeedItem } from '@lenserfight/types'
 import { useQuery } from '@tanstack/react-query'
@@ -31,7 +32,7 @@ const TABS: { id: WorkspaceTab; label: string; icon: React.ReactNode }[] = [
   { id: 'logs', label: 'Logs', icon: <ScrollText size={14} /> },
   { id: 'workflows', label: 'Workflows', icon: <GitBranch size={14} /> },
   { id: 'executions', label: 'Execution History', icon: <Zap size={14} /> },
-  { id: 'cron', label: 'CRON', icon: <CalendarClock size={14} /> },
+  ...(FEATURES.CRON_SCHEDULING ? [{ id: 'cron' as const, label: 'CRON', icon: <CalendarClock size={14} /> }] : []),
 ]
 
 export function AgentWorkspacePage() {
@@ -151,7 +152,7 @@ export function AgentWorkspacePage() {
           isLoading={feedLoading}
         />
       )}
-      {activeTab === 'cron' && (
+      {FEATURES.CRON_SCHEDULING && activeTab === 'cron' && (
         <CronTab workflows={agentWorkflows} agentId={agent.id} isOwner={isOwner} />
       )}
     </div>

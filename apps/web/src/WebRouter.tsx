@@ -234,7 +234,9 @@ export const WebRouter: React.FC = () => {
           path="/threads/compose"
           element={
             <DashboardFrame>
-              <LazyThreadComposePage />
+              <ModalRoute accessCheck={({ isAuthenticated, hasLenser }) => isAuthenticated && hasLenser}>
+                <LazyThreadComposePage />
+              </ModalRoute>
             </DashboardFrame>
           }
         />
