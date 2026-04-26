@@ -25,6 +25,10 @@ import { useWorkflowExecution } from '../hooks/useWorkflowExecution'
 import { useWorkflowReaction } from '../hooks/useWorkflowReaction'
 import { useWorkflowRun } from '../hooks/useWorkflowRun'
 import { useWorkflowRunHistory } from '../hooks/useWorkflowRunHistory'
+import {
+  useWorkflowRunProvenance,
+  useWorkflowRunState,
+} from '../hooks/useWorkflowRunState'
 
 import type { WorkflowNodeConfig } from '../components/WorkflowCanvasNode'
 import type { AIProvider, AIProviderModel } from '@lenserfight/types'
@@ -39,7 +43,6 @@ export function WorkflowBuilderPage({ workflowId, onBattleClick }: WorkflowBuild
   const navigate = useNavigate()
   const { user } = useAuth()
   const { workflow, nodes, edges, isLoading } = useWorkflow(workflowId)
-  const { startRun, stopRun, isPending: starting, runId, nodeResults, isRunning } = useWorkflowRun(workflowId)
   const { models, isLoading: modelsLoading } = useAIModels()
   const [showRunPanel, setShowRunPanel] = useState(false)
   const [isEditModalOpen, setIsEditModalOpen] = useState(false)
@@ -60,6 +63,10 @@ export function WorkflowBuilderPage({ workflowId, onBattleClick }: WorkflowBuild
 
   // ── Funding source (BYOK / platform credit) ────────────────────────────────
   const funding = useFundingSource(selectedProviderKey)
+
+  const { startRun, stopRun, isPending: starting, runId, nodeResults, isRunning } = useWorkflowRun(workflowId, {
+    skipSse: funding.fundingSource === 'user_byok_local',
+  })
   const resolveLocalKeyRef = useRef<((id: string) => Promise<string>) | undefined>(undefined)
   resolveLocalKeyRef.current = funding.resolveLocalKey
   const stableResolveLocalKey = useCallback(
@@ -96,6 +103,15 @@ export function WorkflowBuilderPage({ workflowId, onBattleClick }: WorkflowBuild
     enabled: !!selectedHistoryRunId,
     staleTime: 1000 * 60,
   })
+
+  // N8N inspector — drive the live run strip from the canonical projection so
+  // active node + waiting reasons reflect engine state instead of just SSE
+  // frames. The history variant uses the same projection scoped to the
+  // selected run so replays show identical lineage badges.
+  const { data: liveRunState } = useWorkflowRunState(runId)
+  const { data: liveProvenance = [] } = useWorkflowRunProvenance(runId)
+  const { data: historyRunState } = useWorkflowRunState(selectedHistoryRunId)
+  const { data: historyProvenance = [] } = useWorkflowRunProvenance(selectedHistoryRunId)
 
   // Terminal node: the node with no outgoing edges
   const terminalNodeId = useMemo(() => {
@@ -691,6 +707,11 @@ export function WorkflowBuilderPage({ workflowId, onBattleClick }: WorkflowBuild
                       terminalNodeId={terminalNodeId}
                       onPostToThread={handlePostToThread}
                       onRerunWithContext={handleRerunWithContext}
+                      provenance={liveProvenance}
+                      activeNodeId={liveRunState?.active_node_id ?? null}
+                      runStartedAt={liveRunState?.started_at ?? null}
+                      runCompletedAt={liveRunState?.completed_at ?? null}
+                      runStatus={liveRunState?.status ?? null}
                     />
                   )}
                 </>
@@ -709,6 +730,11 @@ export function WorkflowBuilderPage({ workflowId, onBattleClick }: WorkflowBuild
                       edges={edges}
                       nodeResults={historyNodeResults}
                       terminalNodeId={terminalNodeId}
+                      provenance={historyProvenance}
+                      activeNodeId={historyRunState?.active_node_id ?? null}
+                      runStartedAt={historyRunState?.started_at ?? null}
+                      runCompletedAt={historyRunState?.completed_at ?? null}
+                      runStatus={historyRunState?.status ?? null}
                     />
                   )}
                 </>

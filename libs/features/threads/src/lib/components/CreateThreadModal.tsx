@@ -25,6 +25,7 @@ interface CreateThreadModalProps {
     tags: string[]
     visibility: Visibility
   } | null
+  initialContent?: string
 }
 
 export const CreateThreadModal: React.FC<CreateThreadModalProps> = ({
@@ -32,6 +33,7 @@ export const CreateThreadModal: React.FC<CreateThreadModalProps> = ({
   onClose,
   onSuccess,
   initialData,
+  initialContent,
 }) => {
   const { createThread, isSubmitting, error } = useCreateThread()
   const [title, setTitle] = useState('')
@@ -62,11 +64,11 @@ export const CreateThreadModal: React.FC<CreateThreadModalProps> = ({
         setVisibility(initialData.visibility)
       } else {
         setTitle('')
-        setContent('')
+        setContent(initialContent ?? '')
         setVisibility('public')
       }
     }
-  }, [isOpen, initialData])
+  }, [isOpen, initialData, initialContent])
 
   // Prompt mention suggestions
   useEffect(() => {

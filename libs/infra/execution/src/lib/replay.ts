@@ -198,6 +198,30 @@ function applyEvent(state: ReplayState, ev: ReplayEvent): void {
     case WorkflowEventType.NODE_QUEUED:
       if (!node.terminal) node.status = 'queued'
       break
+    case WorkflowEventType.NODE_WAITING:
+      if (!node.terminal) {
+        // Map waiting reasons to the engine's node status taxonomy. Reasons
+        // tied to "queued for next wave" or "awaiting upstream" map to the
+        // pre-execution lifecycle states; rate_limit / retry_backoff map to
+        // `retrying` because the node has already been attempted at least
+        // once.
+        const reason = typeof payload['waitingReason'] === 'string'
+          ? (payload['waitingReason'] as string)
+          : null
+        if (reason === 'rate_limit' || reason === 'retry_backoff') {
+          node.status = 'retrying'
+        } else if (reason === 'queued') {
+          node.status = 'queued'
+        } else {
+          node.status = 'awaiting_dependency'
+        }
+      }
+      break
+    case WorkflowEventType.NODE_PROVENANCE:
+      // Pure audit signal — does not advance node lifecycle. Capturing it in
+      // the reducer ensures the replay driver does not log warnings about
+      // unknown event types and keeps `lastEventId` accurate.
+      break
     case WorkflowEventType.NODE_STARTED:
       if (!node.terminal) {
         node.status = 'running'
