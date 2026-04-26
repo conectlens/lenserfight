@@ -15,6 +15,7 @@ export * from './lib/hooks/useWorkflowSimulation'
 export * from './lib/hooks/useWorkflowRunEvents'
 export * from './lib/hooks/useWorkflowRunHistory'
 export * from './lib/hooks/useWorkflowPhases'
+export * from './lib/hooks/useWorkflowRunState'
 
 // Execution helpers
 export * from './lib/execution/persistNodeMedia'

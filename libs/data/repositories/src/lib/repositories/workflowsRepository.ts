@@ -4,6 +4,8 @@ import type {
   AuthorProfile,
   UpsertWorkflowScheduleInput,
   WorkflowRunStatus,
+  WorkflowRunStateProjection,
+  WorkflowRunProvenanceEdge,
   WorkflowScheduleRecord,
   WorkflowTriggerMode,
   WorkflowPhaseRecord,
@@ -143,6 +145,13 @@ export interface WorkflowNodeResultRecord {
   duration_ms?: number | null
   /** Phase 6 observability — time-to-first-byte on streamed nodes (ms). */
   ttfb_ms?: number | null
+  /**
+   * N8N-style — populated when status is `awaiting_dependency`, `queued`, or
+   * `retrying`. Cleared on every transition out of a waiting status.
+   * Conventional values: dependency, condition_false, rate_limit,
+   * retry_backoff, human_input, external_callback, queued.
+   */
+  waiting_reason?: string | null
 }
 
 export interface WorkflowRunEventRecord {
@@ -205,6 +214,38 @@ export interface WorkflowVersionRecord {
   edge_count: number
 }
 
+/**
+ * Optional metadata passed to `updateNodeResult`. All fields map directly to
+ * the matching `p_*` arguments on `public.fn_update_workflow_node_result`.
+ */
+export interface UpdateNodeResultOptions {
+  /** Number of provider retries consumed so far. */
+  retryCount?: number | null
+  /** Wall-clock duration (ms) of the final provider attempt. */
+  durationMs?: number | null
+  /** Time-to-first-byte (ms) for streaming providers. */
+  ttfbMs?: number | null
+  /**
+   * Why the node is currently waiting. Only persisted when status is one of
+   * `awaiting_dependency`, `queued`, or `retrying`.
+   */
+  waitingReason?: string | null
+}
+
+/**
+ * Input to `recordRunProvenance` (1:1 with `fn_record_run_provenance`).
+ */
+export interface RecordRunProvenanceInput {
+  sourceRunId: string
+  sourceNodeId: string
+  sourceOutputPath: string
+  targetRunId: string
+  targetNodeId: string
+  targetInputPath: string
+  /** Optional mapping/transform metadata captured at edge-binding time. */
+  transform?: Record<string, unknown> | null
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 // Port
 // ─────────────────────────────────────────────────────────────────────────────
@@ -228,10 +269,34 @@ export interface WorkflowsRepositoryPort {
   startRun(workflowId: string, inputs?: Record<string, unknown>, globalModelId?: string, idempotencyKey?: string): Promise<WorkflowRunRecord>
   getRun(runId: string): Promise<WorkflowRunRecord | null>
   getNodeResults(runId: string): Promise<WorkflowNodeResultRecord[]>
-  updateNodeResult(runId: string, nodeId: string, status: string, outputData?: Record<string, unknown>, errorMessage?: string): Promise<void>
+  updateNodeResult(
+    runId: string,
+    nodeId: string,
+    status: string,
+    outputData?: Record<string, unknown>,
+    errorMessage?: string,
+    options?: UpdateNodeResultOptions,
+  ): Promise<void>
   updateRunStatus(runId: string, status: string): Promise<void>
   appendRunEvent(runId: string, type: string, payload?: Record<string, unknown>): Promise<WorkflowRunEventRecord | null>
   listRunEvents(runId: string, afterEventId?: number, limit?: number): Promise<WorkflowRunEventRecord[]>
+  /**
+   * N8N-style canonical run projection. Returns the active node, waiting/
+   * executed counts, ordered node results, and provenance edge counts in
+   * one round trip. Drives the workflow execution inspector.
+   */
+  getRunState(runId: string): Promise<WorkflowRunStateProjection | null>
+  /**
+   * Field-level cross-workflow provenance edges for a single run. Returns
+   * both `upstream` (data into this run) and `downstream` (data leaving this
+   * run) edges so the inspector can render both lineage tabs at once.
+   */
+  getRunProvenance(runId: string): Promise<WorkflowRunProvenanceEdge[]>
+  /**
+   * Records a single field-level data handoff. Idempotent on the
+   * (source, target, path) tuple.
+   */
+  recordRunProvenance(input: RecordRunProvenanceInput): Promise<string>
   getSchedules(workflowId?: string): Promise<WorkflowScheduleRecord[]>
   upsertSchedule(input: UpsertWorkflowScheduleInput): Promise<WorkflowScheduleRecord | null>
   deleteSchedule(scheduleId: string): Promise<void>
@@ -517,17 +582,58 @@ export class SupabaseWorkflowsRepository implements WorkflowsRepositoryPort {
     nodeId: string,
     status: string,
     outputData?: Record<string, unknown>,
-    errorMessage?: string
+    errorMessage?: string,
+    options?: UpdateNodeResultOptions,
   ): Promise<void> {
-    const { error } = await supabase.rpc('fn_update_workflow_node_result', {
+    const payload: Record<string, unknown> = {
       p_run_id: runId,
       p_node_id: nodeId,
       p_status: status,
       p_output_data: outputData ?? null,
       p_error_message: errorMessage ?? null,
+    }
+    if (options?.retryCount !== undefined) payload['p_retry_count'] = options.retryCount
+    if (options?.durationMs !== undefined) payload['p_duration_ms'] = options.durationMs
+    if (options?.ttfbMs !== undefined) payload['p_ttfb_ms'] = options.ttfbMs
+    if (options?.waitingReason !== undefined) payload['p_waiting_reason'] = options.waitingReason
+
+    const { error } = await supabase.rpc('fn_update_workflow_node_result', payload)
+
+    if (error) this.handleError(error)
+  }
+
+  async getRunState(runId: string): Promise<WorkflowRunStateProjection | null> {
+    const { data, error } = await this.timedRpc('fn_get_workflow_run_state', () =>
+      supabase.rpc('fn_get_workflow_run_state', { p_run_id: runId }),
+    )
+
+    if (error) this.handleError(error)
+    const row = Array.isArray(data) ? data[0] : data
+    return (row ?? null) as WorkflowRunStateProjection | null
+  }
+
+  async getRunProvenance(runId: string): Promise<WorkflowRunProvenanceEdge[]> {
+    const { data, error } = await this.timedRpc('fn_get_run_provenance', () =>
+      supabase.rpc('fn_get_run_provenance', { p_run_id: runId }),
+    )
+
+    if (error) this.handleError(error)
+    return (data ?? []) as WorkflowRunProvenanceEdge[]
+  }
+
+  async recordRunProvenance(input: RecordRunProvenanceInput): Promise<string> {
+    const { data, error } = await supabase.rpc('fn_record_run_provenance', {
+      p_source_run_id: input.sourceRunId,
+      p_source_node_id: input.sourceNodeId,
+      p_source_output_path: input.sourceOutputPath,
+      p_target_run_id: input.targetRunId,
+      p_target_node_id: input.targetNodeId,
+      p_target_input_path: input.targetInputPath,
+      p_transform: input.transform ?? null,
     })
 
     if (error) this.handleError(error)
+    return data as string
   }
 
   async updateRunStatus(runId: string, status: string): Promise<void> {

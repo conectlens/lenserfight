@@ -346,6 +346,10 @@ export function useWorkflowExecution({
               result.status,
               outputData,
               result.error,
+              {
+                retryCount: result.attempts ?? null,
+                waitingReason: result.waitingReason ?? null,
+              },
             )
           },
           async onPartialOutput(nodeId, partial) {
@@ -376,6 +380,24 @@ export function useWorkflowExecution({
               nodeId: event.nodeId,
               ...(event.metadata ?? {}),
             })
+          },
+
+          async onProvenance(handoff) {
+            // Persist field-level data lineage. Best-effort — failures here
+            // never break execution.
+            try {
+              await workflowsService.recordRunProvenance({
+                sourceRunId: handoff.sourceRunId,
+                sourceNodeId: handoff.sourceNodeId,
+                sourceOutputPath: handoff.sourceOutputPath,
+                targetRunId: handoff.targetRunId,
+                targetNodeId: handoff.targetNodeId,
+                targetInputPath: handoff.targetInputPath,
+                transform: handoff.transform ?? null,
+              })
+            } catch {
+              // observability is best-effort
+            }
           },
 
           moderation,

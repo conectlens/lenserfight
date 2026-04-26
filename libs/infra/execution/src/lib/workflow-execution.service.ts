@@ -93,6 +93,12 @@ export interface NodeResult {
   envelope?: NodeOutputEnvelope
   error?: string
   attempts?: number
+  /**
+   * Populated when `status` is `awaiting_dependency` | `queued` | `retrying`.
+   * Mirrors `WaitingReason` so the run-state projection knows why the node is
+   * not currently executing.
+   */
+  waitingReason?: WaitingReason | null
 }
 
 export interface WorkflowRunResult {
@@ -102,6 +108,8 @@ export interface WorkflowRunResult {
 }
 
 export type EngineEventName =
+  | 'node_queued'
+  | 'node_waiting'
   | 'node_started'
   | 'node_retried'
   | 'moderation_flagged'
@@ -115,6 +123,20 @@ export type EngineEventName =
   | 'node_invalidated'
   | 'node_stream_delta'
 
+/**
+ * Why a node is currently waiting. Mirrors the canonical taxonomy in
+ * `WORKFLOW_WAITING_REASONS` so the engine, transport, and UI agree on
+ * which value is being persisted into `workflow_node_results.waiting_reason`.
+ */
+export type WaitingReason =
+  | 'dependency'
+  | 'condition_false'
+  | 'rate_limit'
+  | 'retry_backoff'
+  | 'human_input'
+  | 'external_callback'
+  | 'queued'
+
 export interface EngineEvent {
   runId: string
   nodeId: string
@@ -122,8 +144,29 @@ export interface EngineEvent {
   metadata?: Record<string, unknown>
 }
 
+/**
+ * Field-level handoff captured by the engine each time a downstream node
+ * successfully reads a parent node's output. Mirrors
+ * `lenses.workflow_run_provenance` so the persistence layer can write it
+ * verbatim.
+ */
+export interface ProvenanceHandoff {
+  sourceRunId: string
+  sourceNodeId: string
+  sourceOutputPath: string
+  targetRunId: string
+  targetNodeId: string
+  targetInputPath: string
+  transform?: Record<string, unknown> | null
+}
+
 export interface WorkflowExecutionContext {
   runId: string
+  /**
+   * Optional parent run id when this run is a subflow. Used to derive
+   * cross-workflow provenance edges where data crosses the run boundary.
+   */
+  parentRunId?: string | null
   /** Root-level inputs for nodes with no incoming edges */
   rootInputs: Record<string, unknown>
   /** Optional abort signal for cancellation-aware execution */
@@ -142,6 +185,14 @@ export interface WorkflowExecutionContext {
   moderation?: ModerationGateway
   /** Optional observability callback for every engine event (execution_tags row). */
   onEvent?(event: EngineEvent): void | Promise<void>
+  /**
+   * Optional sink for field-level provenance handoffs. When provided, the
+   * engine calls this once per resolved edge whose value was actually used by
+   * the target node so the persistence layer can write
+   * `lenses.workflow_run_provenance` rows. Errors are swallowed by the engine
+   * — provenance is best-effort observability.
+   */
+  onProvenance?(handoff: ProvenanceHandoff): void | Promise<void>
 }
 
 // ── Defaults ──────────────────────────────────────────────────────────────
@@ -236,6 +287,46 @@ export class WorkflowExecutionService {
         }),
       )
     }
+
+    // Mark every node that still has unresolved upstream edges as
+    // `awaiting_dependency` up-front so the n8n-style inspector can render the
+    // waiting badge instead of "pending" on initial fetch. Nodes with zero
+    // incoming edges are immediately `queued` so the active vs waiting count
+    // is accurate from event #0.
+    await Promise.all(
+      nodes.map(async (n) => {
+        const degree = inDegree.get(n.id) ?? 0
+        if (degree === 0) {
+          const queued: NodeResult = {
+            nodeId: n.id,
+            status: 'queued',
+            waitingReason: 'queued',
+          }
+          results.set(n.id, queued)
+          await ctx.onNodeStatusChange(n.id, queued)
+          await emit(ctx, {
+            runId: ctx.runId,
+            nodeId: n.id,
+            name: 'node_queued',
+            metadata: { waitingReason: 'queued' },
+          })
+        } else {
+          const awaiting: NodeResult = {
+            nodeId: n.id,
+            status: 'awaiting_dependency',
+            waitingReason: 'dependency',
+          }
+          results.set(n.id, awaiting)
+          await ctx.onNodeStatusChange(n.id, awaiting)
+          await emit(ctx, {
+            runId: ctx.runId,
+            nodeId: n.id,
+            name: 'node_waiting',
+            metadata: { waitingReason: 'dependency' },
+          })
+        }
+      }),
+    )
 
     let wave = nodes.filter((n) => (inDegree.get(n.id) ?? 0) === 0).map((n) => n.id)
 
@@ -335,12 +426,41 @@ export class WorkflowExecutionService {
             }
           }
 
+          const provenanceHandoffs: ProvenanceHandoff[] = []
           const renderedInputs = resolveRenderedInputs(
             node,
             edges,
             results,
             ctx.rootInputs,
+            (handoff) => provenanceHandoffs.push(handoff),
+            ctx.runId,
           )
+
+          // Field-level provenance: emit one record per edge whose value was
+          // actually used by this node. Best-effort — provenance writes must
+          // never break execution.
+          if (ctx.onProvenance) {
+            await Promise.all(
+              provenanceHandoffs.map(async (h) => {
+                try {
+                  await ctx.onProvenance!(h)
+                  await emit(ctx, {
+                    runId: ctx.runId,
+                    nodeId: h.targetNodeId,
+                    name: 'node_provenance',
+                    metadata: {
+                      sourceRunId: h.sourceRunId,
+                      sourceNodeId: h.sourceNodeId,
+                      sourceOutputPath: h.sourceOutputPath,
+                      targetInputPath: h.targetInputPath,
+                    },
+                  })
+                } catch {
+                  // observability is best-effort
+                }
+              }),
+            )
+          }
 
           // Prompt rendering is strict about unresolved placeholders (§6.2).
           // A PlaceholderUnboundError surfaces as a `node.blocked` failure
@@ -351,9 +471,12 @@ export class WorkflowExecutionService {
             resolvedPrompt = renderPrompt(template, renderedInputs, contracts.input)
           } catch (err) {
             if (err instanceof PlaceholderUnboundError) {
+              // `blocked` is the canonical terminal status for unresolved
+              // placeholders so the inspector renders the matching badge and
+              // the run-state projection counts it under `failed_count`.
               const blocked: NodeResult = {
                 nodeId,
-                status: 'failed',
+                status: 'blocked',
                 error: 'placeholder_unbound',
                 outputData: { placeholder: err.label },
               }
@@ -449,6 +572,25 @@ export class WorkflowExecutionService {
               if (!shouldRetry) break
 
               const delay = computeBackoff(retryCfg.backoffMs, retryCfg.maxBackoffMs, attempt)
+              const waitingReason: WaitingReason =
+                cause === 'rate_limit' ? 'rate_limit' : 'retry_backoff'
+
+              // Persist the waiting state so the inspector renders
+              // "Waiting · retry backoff" while the timer ticks.
+              const retrying: NodeResult = {
+                nodeId,
+                status: 'retrying',
+                waitingReason,
+                attempts: attempt,
+              }
+              results.set(nodeId, retrying)
+              await ctx.onNodeStatusChange(nodeId, retrying)
+              await emit(ctx, {
+                runId: ctx.runId,
+                nodeId,
+                name: 'node_waiting',
+                metadata: { waitingReason, attempt, cause, delayMs: delay },
+              })
               await emit(ctx, {
                 runId: ctx.runId,
                 nodeId,
@@ -807,6 +949,8 @@ function resolveRenderedInputs(
   edges: WorkflowEdge[],
   results: Map<string, NodeResult>,
   rootInputs: Record<string, unknown>,
+  onProvenance?: (handoff: ProvenanceHandoff) => void,
+  runId: string = '',
 ): Record<string, unknown> {
   const incoming = edges.filter((e) => e.targetNodeId === node.id)
   const grouped = new Map<string, WorkflowEdge[]>()
@@ -820,14 +964,30 @@ function resolveRenderedInputs(
   const rendered: Record<string, unknown> = { ...rootInputs }
 
   for (const [label, group] of grouped.entries()) {
-    const values: { sourceNodeId: string; value: unknown }[] = []
+    const values: { sourceNodeId: string; value: unknown; sourceOutputKey: string }[] = []
     for (const edge of group) {
       if (!isEdgeConditionSatisfied(edge, results)) continue
       const source = results.get(edge.sourceNodeId)
       if (!source) continue
       if (source.status !== 'completed') continue
       const value = source.outputData?.[edge.sourceOutputKey] ?? source.envelope?.output ?? ''
-      values.push({ sourceNodeId: edge.sourceNodeId, value })
+      values.push({
+        sourceNodeId: edge.sourceNodeId,
+        value,
+        sourceOutputKey: edge.sourceOutputKey,
+      })
+
+      if (onProvenance && runId) {
+        onProvenance({
+          sourceRunId: runId,
+          sourceNodeId: edge.sourceNodeId,
+          sourceOutputPath: edge.sourceOutputKey || 'output',
+          targetRunId: runId,
+          targetNodeId: node.id,
+          targetInputPath: edge.targetParamLabel,
+          transform: edge.mergeStrategy ? { mergeStrategy: edge.mergeStrategy } : null,
+        })
+      }
     }
     if (values.length === 0) {
       rendered[label] = rendered[label] ?? ''
@@ -989,6 +1149,15 @@ function finish(
   if (allResults.some((r) => r.status === 'cancelled')) {
     return { runId, status: 'cancelled', nodeResults: allResults }
   }
-  const failed = allResults.some((r) => r.status === 'failed')
+  // Phase 2 — every terminal non-success node status counts as a run failure
+  // (not just `failed`). Without this, a run with a `timed_out`, `blocked`,
+  // or `invalidated` node is misreported as "completed" to the UI.
+  const failed = allResults.some(
+    (r) =>
+      r.status === 'failed' ||
+      r.status === 'timed_out' ||
+      r.status === 'blocked' ||
+      r.status === 'invalidated',
+  )
   return { runId, status: failed ? 'failed' : 'completed', nodeResults: allResults }
 }
