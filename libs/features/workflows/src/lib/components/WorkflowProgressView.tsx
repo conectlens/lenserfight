@@ -128,6 +128,25 @@ const WAITING_REASON_LABELS: Record<string, string> = {
   queued: 'Queued for next wave',
 }
 
+const ERROR_CODE_LABELS: Record<string, string> = {
+  upstream_failure: 'This node was skipped because an upstream node failed.',
+  input_contract_violation: 'Input validation failed — check this node\'s configuration.',
+  output_contract_violation: 'Output failed contract validation.',
+  placeholder_unbound: 'A required template variable was not provided.',
+  moderation_blocked: 'Content was blocked by the moderation policy.',
+  template_resolution_failed: 'Could not load the lens template.',
+}
+
+function formatNodeError(raw: string | null | undefined): string {
+  if (!raw) return ''
+  const known = ERROR_CODE_LABELS[raw]
+  if (known) return known
+  const colonSplit = raw.startsWith('template_resolution_failed: ')
+    ? raw.slice('template_resolution_failed: '.length)
+    : null
+  return colonSplit ?? raw
+}
+
 function badgeColorFor(status: NodeStatus): 'green' | 'red' | 'blue' | 'yellow' | 'gray' {
   switch (status) {
     case 'completed':
@@ -724,7 +743,7 @@ export function WorkflowProgressView({
               )}
 
               {result?.error_message && status === 'failed' && (
-                <p className="mt-2 text-xs text-status-red">{result.error_message}</p>
+                <p className="mt-2 text-xs text-status-red">{formatNodeError(result.error_message)}</p>
               )}
 
               {(status === 'completed' || status === 'failed' || status === 'timed_out') && (
