@@ -189,8 +189,10 @@ export default defineConfig({
               items: [
                 { text: 'Genel Bakış', link: '/tr/tutorials/getting-started/overview' },
                 { text: 'Sözlük', link: '/tr/tutorials/getting-started/glossary' },
+                { text: 'Organizasyonlar İçin', link: '/tr/tutorials/getting-started/for-organizations' },
                 { text: 'Kurulum', link: '/tr/tutorials/getting-started/installation' },
                 { text: 'Hızlı Başlangıç', link: '/tr/tutorials/getting-started/quickstart' },
+                { text: 'SaaS Entegrasyonu', link: '/tr/how-to/integrations/saas-quickstart' },
               ],
             },
           ],
@@ -221,7 +223,18 @@ export default defineConfig({
             {
               text: 'Nasıl Yapılır',
               items: [
+                { text: 'Entegrasyonlar', link: '/tr/how-to/integrations/index' },
                 { text: 'Katkıda Bulunanlar', link: '/tr/how-to/contributors/faq' },
+              ],
+            },
+          ],
+          '/tr/how-to/integrations/': [
+            {
+              text: 'Entegrasyonlar',
+              items: [
+                { text: 'Genel Bakış', link: '/tr/how-to/integrations/index' },
+                { text: 'SaaS Entegrasyon Hızlı Başlangıcı', link: '/tr/how-to/integrations/saas-quickstart' },
+                { text: 'Organizasyon Token Yönetimi', link: '/tr/how-to/integrations/manage-org-tokens' },
               ],
             },
           ],
@@ -251,7 +264,10 @@ export default defineConfig({
               text: 'CLI',
               items: [
                 { text: 'CLI Merkezi', link: '/tr/reference/cli/index' },
-                { text: 'CLI Referansı', link: '/tr/reference/cli/cli-reference' },
+                { text: 'CLI Genel Bakış', link: '/tr/reference/cli/cli-reference' },
+                { text: 'Lens Keşfi', link: '/tr/reference/cli/lenses-discovery' },
+                { text: 'Bağlantı ve Konnektörler', link: '/tr/reference/cli/connectors' },
+                { text: 'Topluluklar', link: '/tr/reference/cli/communities' },
               ],
             },
           ],
@@ -261,6 +277,9 @@ export default defineConfig({
               items: [
                 { text: 'API Genel Bakış', link: '/tr/reference/platform-api/api-overview' },
                 { text: 'Yapılandırma', link: '/tr/reference/platform-api/configuration' },
+                { text: 'Token Referansı', link: '/tr/reference/platform-api/tokens' },
+                { text: 'Fiyatlandırma ve Planlar', link: '/tr/reference/platform-api/pricing' },
+                { text: 'URL Kuralları', link: '/tr/reference/platform-api/url-conventions' },
                 { text: 'Beta Yol Haritası', link: '/tr/reference/platform-api/beta-roadmap' },
                 { text: 'Güvenlik', link: '/tr/reference/platform-api/security' },
               ],
@@ -392,6 +411,7 @@ export default defineConfig({
             { text: 'For Organizations', link: '/tutorials/getting-started/for-organizations' },
             { text: 'Installation', link: '/tutorials/getting-started/installation' },
             { text: 'Quickstart', link: '/tutorials/getting-started/quickstart' },
+            { text: 'SaaS Integration', link: '/how-to/integrations/saas-quickstart' },
           ],
         },
       ],
@@ -422,8 +442,19 @@ export default defineConfig({
         {
           text: 'How-to',
           items: [
+            { text: 'Integrations', link: '/how-to/integrations/index' },
             { text: 'Contributors & Maintainers', link: '/how-to/contributors/contributing' },
             { text: 'Workflows', link: '/how-to/workflows/build-a-lens-chain' },
+          ],
+        },
+      ],
+      '/how-to/integrations/': [
+        {
+          text: 'Integrations',
+          items: [
+            { text: 'Overview', link: '/how-to/integrations/index' },
+            { text: 'SaaS Integration Quickstart', link: '/how-to/integrations/saas-quickstart' },
+            { text: 'Manage Organisation Tokens', link: '/how-to/integrations/manage-org-tokens' },
           ],
         },
       ],
@@ -501,12 +532,15 @@ export default defineConfig({
             { text: 'Configuration', link: '/reference/cli/configuration' },
             { text: 'Development Commands', link: '/reference/cli/dev' },
             { text: 'Authentication Commands', link: '/reference/cli/auth' },
+            { text: 'Lens Management', link: '/reference/cli/lens' },
+            { text: 'Lens Discovery', link: '/reference/cli/lenses-discovery' },
+            { text: 'Connect & Connectors', link: '/reference/cli/connectors' },
+            { text: 'Communities', link: '/reference/cli/communities' },
+            { text: 'Community & Social', link: '/reference/cli/community' },
             { text: 'Agent Commands', link: '/reference/cli/agent' },
-            { text: 'Inspect Commands', link: '/reference/cli/inspect' },
             { text: 'Run Commands', link: '/reference/cli/run' },
+            { text: 'Inspect Commands', link: '/reference/cli/inspect' },
             { text: 'Publish, Rubric & Template Commands', link: '/reference/cli/publish' },
-            { text: 'Lens Commands', link: '/reference/cli/lens' },
-            { text: 'Community Commands', link: '/reference/cli/community' },
             { text: 'Execution Modes', link: '/reference/cli/execution-modes' },
           ],
         },
@@ -518,6 +552,9 @@ export default defineConfig({
             { text: 'Execution Overview', link: '/reference/platform-api/api-overview' },
             { text: 'Configuration', link: '/reference/platform-api/configuration' },
             { text: 'Environment Variables', link: '/reference/platform-api/environment-variables' },
+            { text: 'Token Reference', link: '/reference/platform-api/tokens' },
+            { text: 'Pricing & Plans', link: '/reference/platform-api/pricing' },
+            { text: 'URL Conventions', link: '/reference/platform-api/url-conventions' },
             { text: 'Beta Roadmap', link: '/reference/platform-api/beta-roadmap' },
             { text: 'Capability Mapper', link: '/reference/platform-api/capability-mapper' },
             { text: 'Security', link: '/reference/platform-api/security' },
