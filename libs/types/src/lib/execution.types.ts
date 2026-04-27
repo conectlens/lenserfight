@@ -181,6 +181,33 @@ export interface RequestAttachment {
 
 // --- HTTP API DTOs (VITE_API_URL) ---
 
+/**
+ * Parameters for generative media executions (image / video / audio).
+ * Stored in execution.requests.input_snapshot under the key "generative_media_params".
+ * All fields beyond output_modality are optional and provider-specific.
+ */
+export interface GenerativeMediaParams {
+  output_modality: 'image' | 'video' | 'audio' | 'music'
+  // image
+  width?: number
+  height?: number
+  aspect_ratio?: string
+  quality?: 'standard' | 'hd'
+  style?: string
+  /** Number of images to generate (1–4). */
+  n?: number
+  // video
+  duration_s?: number
+  fps?: number
+  // audio / music
+  voice_id?: string
+  speed?: number
+  format?: 'mp3' | 'wav' | 'opus' | 'flac'
+  // shared
+  negative_prompt?: string
+  seed?: number
+}
+
 export interface TriggerExecutionDTO {
   /** Legacy path — lens asset id. Use version_id for versioned executions. */
   lens_id?: string
@@ -197,6 +224,8 @@ export interface TriggerExecutionDTO {
   funding_source: FundingSource
   origin_type: ExecutionOriginType
   byok_key_ref_id?: string
+  /** Present for generative media executions (image/video/audio/music). */
+  generative_media_params?: GenerativeMediaParams
 }
 
 /** Typed input binding — mirrors execution.inputs */
