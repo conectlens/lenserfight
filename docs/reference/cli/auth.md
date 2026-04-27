@@ -71,12 +71,17 @@ Use this when the session is still valid but the access token expired.
 
 ### `auth token`
 
-Print the raw Supabase session access token to stdout.
+Print the session access token to stdout.
 
 ```bash
 lenserfight auth token
+lenserfight auth token --format bearer
 lenserfight auth token | pbcopy   # macOS clipboard
 ```
+
+| Flag | Required | Default | Description |
+|------|----------|---------|-------------|
+| `--format` | No | `raw` | `raw` prints the token only. `bearer` prints `Bearer <token>`. |
 
 ### `auth register`
 

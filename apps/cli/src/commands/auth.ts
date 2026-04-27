@@ -136,14 +136,21 @@ const token = defineCommand({
     name: 'token',
     description: 'Print the raw Supabase session token (for piping into other tools).',
   },
-  async run() {
+  args: {
+    format: {
+      type: 'string',
+      description: 'Output format: raw or bearer',
+      default: 'raw',
+    },
+  },
+  async run({ args }) {
     const t = getAuthToken();
     if (!t) {
       consola.error('Not authenticated. Run `lenserfight auth login` first.');
       process.exitCode = 1;
       return;
     }
-    process.stdout.write(t + '\n');
+    process.stdout.write((args.format === 'bearer' ? `Bearer ${t}` : t) + '\n');
   },
 });
 

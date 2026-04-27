@@ -27,14 +27,22 @@ export function resolveBearerToken(
     (!config.developerTokenExpiresAt ||
       new Date(config.developerTokenExpiresAt).getTime() >= Date.now())
 
-  // Precedence: LENSERFIGHT_API_KEY → developer token → session token
+  // Precedence:
+  // 1. Explicit API key from env
+  // 2. Developer token when explicitly requested for automation
+  // 3. Stored session token
+  // 4. Stored developer token fallback
   if (config.apiKey) return config.apiKey
 
-  if (developerTokenIsActive || options.useDeveloperToken) {
+  if (options.useDeveloperToken && developerTokenIsActive) {
     return config.developerToken
   }
 
   if (config.authToken) return config.authToken
+
+  if (developerTokenIsActive) {
+    return config.developerToken
+  }
 
   return undefined
 }
