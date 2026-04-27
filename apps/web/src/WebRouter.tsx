@@ -24,6 +24,11 @@ const LazyLensersPage = lazy(() =>
 const LazyLenserProfilePage = lazy(() =>
   import('@lenserfight/features/profile').then((module) => ({ default: module.LenserProfilePage }))
 )
+const LazyAICatalogShowroomPage = lazy(() =>
+  import('@lenserfight/features/generations').then((module) => ({
+    default: module.AICatalogShowroomPage,
+  }))
+)
 const LazyPendingRequestsPage = lazy(() =>
   import('@lenserfight/features/profile').then((module) => ({ default: module.PendingRequestsPage }))
 )
@@ -62,6 +67,11 @@ const LazyAgentProfileRedirect = lazy(() =>
 )
 const LazyAgentWorkspacePage = lazy(() =>
   import('@lenserfight/features/agents').then((module) => ({ default: module.AgentWorkspacePage }))
+)
+const LazyAgentControlRoomPage = lazy(() =>
+  import('@lenserfight/features/agents').then((module) => ({
+    default: module.AgentControlRoomPage,
+  }))
 )
 const LazyBenchmarkSuitesPage = lazy(() =>
   import('@lenserfight/features/benchmark').then((module) => ({ default: module.BenchmarkSuitesPage }))
@@ -228,6 +238,15 @@ export const WebRouter: React.FC = () => {
         />
 
         <Route
+          path="/ai/catalog"
+          element={
+            <DashboardFrame>
+              <LazyAICatalogShowroomPage />
+            </DashboardFrame>
+          }
+        />
+
+        <Route
           path="/threads/compose"
           element={
             <DashboardFrame>
@@ -326,6 +345,20 @@ export const WebRouter: React.FC = () => {
           element={
             <DashboardFrame>
               <LazyLenserProfilePage />
+            </DashboardFrame>
+          }
+        />
+
+        <Route
+          path="/lenser/:handle/ag"
+          element={<Navigate to="overview" replace />}
+        />
+
+        <Route
+          path="/lenser/:handle/ag/:section"
+          element={
+            <DashboardFrame>
+              <LazyAgentControlRoomPage />
             </DashboardFrame>
           }
         />
