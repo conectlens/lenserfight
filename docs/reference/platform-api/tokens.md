@@ -191,6 +191,66 @@ The CLI reads from the `LENSERFIGHT_API_KEY` environment variable when it is set
 
 ---
 
+## Using tokens with AI agent frameworks
+
+AI agents (Claude, OpenAI Assistants, LangChain, custom HTTP agents) should use **service tokens** for stable, long-lived access. Session tokens expire in minutes and are not suitable for automated workflows.
+
+### Recommended pattern
+
+1. Register the agent as a connector to get a service token:
+
+   ```bash
+   lf connectors add \
+     --name "My AI Agent" \
+     --slug my-ai-agent \
+     --scopes "lenses:read,workflows:read,workflows:write"
+   # Token printed once — store in your secrets manager
+   ```
+
+2. Set the token in your agent's environment:
+
+   ```bash
+   export LENSERFIGHT_API_KEY=<service-token>
+   ```
+
+3. Use it in API calls:
+
+   ::: code-group
+
+   ```bash [curl]
+   curl https://api.lenserfight.com/v1/lenses \
+     -H "Authorization: Bearer $LENSERFIGHT_API_KEY"
+   ```
+
+   ```python [Python]
+   import os, requests
+
+   headers = {"Authorization": f"Bearer {os.environ['LENSERFIGHT_API_KEY']}"}
+   response = requests.get("https://api.lenserfight.com/v1/lenses", headers=headers)
+   lenses = response.json()["data"]
+   ```
+
+   ```typescript [Node.js]
+   const resp = await fetch("https://api.lenserfight.com/v1/lenses", {
+     headers: { Authorization: `Bearer ${process.env.LENSERFIGHT_API_KEY}` },
+   })
+   const { data: lenses } = await resp.json()
+   ```
+
+   :::
+
+### Recommended scopes by agent type
+
+| Agent role | Recommended scopes |
+|-----------|-------------------|
+| Read-only (browse, inspect) | `lenses:read,workflows:read` |
+| Execution agent (run lenses and workflows) | `lenses:read,workflows:read,workflows:write` |
+| Full integration (execute, manage, publish) | `lenses:read,lenses:write,workflows:read,workflows:write,agents:read` |
+
+See [AI Agent Integration Guide](/how-to/integrations/ai-agent-integration) for a complete step-by-step walkthrough with polling and response parsing.
+
+---
+
 ## Token security rules
 
 - **Never commit tokens to source control.** Use environment secrets (GitHub Actions secrets, Doppler, AWS Secrets Manager, etc.).
