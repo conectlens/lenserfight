@@ -34,6 +34,12 @@ export interface WorkflowRecord {
   parent_workflow_author_profile?: AuthorProfile | null
   created_at: string
   updated_at: string
+  /**
+   * Aggregated output modalities across all nodes in this workflow.
+   * Populated by the DB view when `kinds` are tagged on nodes.
+   * Values: 'text' | 'image' | 'video' | 'audio' | 'music'
+   */
+  output_modalities?: string[] | null
 }
 
 /**
