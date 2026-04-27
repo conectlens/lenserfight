@@ -29,6 +29,16 @@ const LazyAICatalogShowroomPage = lazy(() =>
     default: module.AICatalogShowroomPage,
   }))
 )
+const LazyAICatalogModelDetailPage = lazy(() =>
+  import('@lenserfight/features/generations').then((module) => ({
+    default: module.AICatalogModelDetailPage,
+  }))
+)
+const LazyAICatalogModelsPage = lazy(() =>
+  import('@lenserfight/features/generations').then((module) => ({
+    default: module.AICatalogModelsPage,
+  }))
+)
 const LazyPendingRequestsPage = lazy(() =>
   import('@lenserfight/features/profile').then((module) => ({ default: module.PendingRequestsPage }))
 )
@@ -242,6 +252,24 @@ export const WebRouter: React.FC = () => {
           element={
             <DashboardFrame>
               <LazyAICatalogShowroomPage />
+            </DashboardFrame>
+          }
+        />
+
+        <Route
+          path="/ai/catalog/models"
+          element={
+            <DashboardFrame>
+              <LazyAICatalogModelsPage />
+            </DashboardFrame>
+          }
+        />
+
+        <Route
+          path="/ai/catalog/:providerKey/:modelKey"
+          element={
+            <DashboardFrame>
+              <LazyAICatalogModelDetailPage />
             </DashboardFrame>
           }
         />

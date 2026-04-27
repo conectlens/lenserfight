@@ -3,5 +3,5 @@ import React from 'react'
 import { AICatalogShowroom } from '../components/AICatalogShowroom'
 
 export const AICatalogShowroomPage: React.FC = () => {
-  return <AICatalogShowroom />
+  return <AICatalogShowroom focus="providers" title="AI Providers" />
 }
