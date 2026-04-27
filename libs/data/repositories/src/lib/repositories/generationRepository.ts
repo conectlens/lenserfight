@@ -11,10 +11,27 @@ import {
 
 type AIModelPublicRow = {
   id: string
-  key: string | null
-  name: string
+  provider_id: string
   provider_key: AIModel['provider']
   provider_name: string
+  key: string
+  name: string
+  description: string
+  docs_url?: string | null
+  support_level?: AIModel['support_level']
+  status?: AIModel['status']
+  capabilities?: AIModel['capabilities']
+  input_modalities?: string[] | null
+  output_modalities?: string[] | null
+  context_window_tokens?: number | null
+  supports_tools?: boolean
+  supports_json_schema?: boolean
+  supports_vision?: boolean
+  supports_streaming?: boolean
+  use_cases?: string[] | null
+  developer_summary?: string | null
+  user_summary?: string | null
+  metadata?: Record<string, unknown> | null
   is_active: boolean
 }
 
@@ -91,33 +108,49 @@ export class SupabaseGenerationRepository implements GenerationRepositoryPort {
   }
 
   async getActiveProviders(): Promise<AIProvider[]> {
-    const { data, error } = await supabase.rpc('get_active_providers')
+    const { data, error } = await supabase.rpc('fn_ai_catalog_providers')
     if (error) {
-      console.warn('get_active_providers failed', error)
+      console.warn('fn_ai_catalog_providers failed', error)
       return []
     }
-    return ((data ?? []) as { id: string; key: string; display_name: string }[]).map((p) => ({
-      id: p.id,
-      key: p.key,
-      display_name: p.display_name,
+    return ((data ?? []) as Record<string, unknown>[]).map((p) => ({
+      id: String(p.id ?? ''),
+      key: String(p.key ?? ''),
+      display_name: String(p.display_name ?? ''),
+      base_url: (p.base_url as string | null | undefined) ?? null,
+      docs_url: (p.docs_url as string | null | undefined) ?? null,
+      support_level: (p.support_level as AIProvider['support_level']) ?? 'catalog_only',
+      logo_slug: (p.logo_slug as string | null | undefined) ?? null,
+      metadata: (p.metadata as Record<string, unknown> | null | undefined) ?? {},
+      is_active: (p.is_active as boolean | undefined) ?? false,
     }))
   }
 
   async getModelsByProvider(providerKey: string): Promise<AIProviderModel[]> {
-    const { data, error } = await supabase.rpc('get_active_models_by_provider', {
+    const { data, error } = await supabase.rpc('fn_ai_catalog_models', {
       p_provider_key: providerKey,
+      p_support_level: null,
+      p_capability: null,
+      p_modality: null,
     })
     if (error) {
-      console.warn('get_active_models_by_provider failed', error)
+      console.warn('fn_ai_catalog_models failed', error)
       return []
     }
     return ((data ?? []) as Record<string, unknown>[]).map((m) => ({
       id: (m.id as string | undefined) ?? undefined,
-      name: m.name as string,
-      key: m.key as string,
+      name: String(m.name ?? ''),
+      key: String(m.key ?? ''),
+      provider_key: (m.provider_key as string | undefined) ?? providerKey,
       inputModalities: (m.input_modalities as string[] | null) ?? ['text'],
       outputModalities: (m.output_modalities as string[] | null) ?? ['text'],
       contextWindowTokens: (m.context_window_tokens as number | undefined) ?? undefined,
+      support_level: (m.support_level as AIProviderModel['support_level']) ?? 'catalog_only',
+      status: (m.status as AIProviderModel['status']) ?? 'active',
+      capabilities: (m.capabilities as string[] | undefined) ?? [],
+      supportsStreaming: (m.supports_streaming as boolean | undefined) ?? false,
+      developer_summary: (m.developer_summary as string | undefined) ?? '',
+      user_summary: (m.user_summary as string | undefined) ?? '',
     }))
   }
 
@@ -177,32 +210,48 @@ export class SupabaseGenerationRepository implements GenerationRepositoryPort {
   }
 
   async getAIModels(): Promise<AIModel[]> {
-    const { data, error } = await supabase.from('vw_ai_models_public').select('*').limit(50)
+    const { data, error } = await supabase.rpc('fn_ai_catalog_models', {
+      p_provider_key: null,
+      p_support_level: null,
+      p_capability: null,
+      p_modality: null,
+    })
 
     if (error) {
-      console.warn('Failed to fetch ai_models, returning empty list.', error)
+      console.warn('Failed to fetch AI catalog models, returning empty list.', error)
       return []
     }
 
     return ((data ?? []) as AIModelPublicRow[])
-      .filter((row) => !!row.key)
       .map((row) => ({
         id: row.id,
-        key: row.key!,
+        key: row.key,
         name: row.name,
         provider: row.provider_key,
+        provider_id: row.provider_id,
         providerDisplayName: row.provider_name,
         version: null,
-        provider_url: null,
-        description: '',
-        capabilities: [],
+        provider_url: row.docs_url ?? null,
+        description: row.description ?? '',
+        capabilities: row.capabilities ?? [],
+        docs_url: row.docs_url ?? null,
+        support_level: row.support_level ?? 'catalog_only',
+        status: row.status ?? 'active',
         temperature: 0,
-        max_tokens: 0,
+        max_tokens: row.context_window_tokens ?? 0,
         pricing_tier: null,
         is_public: true,
         is_active: row.is_active,
-        input_modalities: ['text'],
-        output_modalities: ['text'],
+        supports_tools: row.supports_tools ?? false,
+        supports_json_schema: row.supports_json_schema ?? false,
+        supports_vision: row.supports_vision ?? false,
+        supports_streaming: row.supports_streaming ?? false,
+        use_cases: row.use_cases ?? [],
+        developer_summary: row.developer_summary ?? '',
+        user_summary: row.user_summary ?? '',
+        metadata: row.metadata ?? {},
+        input_modalities: row.input_modalities ?? ['text'],
+        output_modalities: row.output_modalities ?? ['text'],
         created_at: '',
       }))
   }
