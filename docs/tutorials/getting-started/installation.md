@@ -7,9 +7,11 @@ description: Prepare your machine and local environment for LenserFight Communit
 
 Use this guide for a clean-machine Community Edition setup.
 
-## Prerequisites
+## Option A — Full Supabase setup
 
-Make sure you have:
+Use this path for full multi-user functionality, RLS-enforced data isolation, and production media uploads.
+
+### Prerequisites
 
 - Node.js 20+
 - `pnpm`
@@ -18,7 +20,7 @@ Make sure you have:
 
 > `pnpm` is the canonical package manager for this repository.
 
-## Install dependencies
+### Install dependencies
 
 From the repository root:
 
@@ -26,7 +28,7 @@ From the repository root:
 pnpm install --frozen-lockfile
 ```
 
-## Start local services
+### Start local services
 
 ```bash
 pnpm supabase start
@@ -39,13 +41,40 @@ If local Supabase gets into a bad state, use:
 pnpm supabase:local:recover
 ```
 
-## Run the web app
+### Run the web app
 
 ```bash
 pnpm nx run web:serve
 ```
 
 The web app runs at `http://localhost:4200` by default.
+
+---
+
+## Option B — Local file storage (no Docker)
+
+Use this path to start immediately without Docker or Supabase. Data is stored in `~/.lenserfight/`. No database setup required.
+
+**Requirements:** Node.js 20+ and pnpm only.
+
+```bash
+# 1. Create the local data directories
+mkdir -p ~/.lenserfight/lenses ~/.lenserfight/media
+
+# 2. Create a minimal config file
+echo '{ "defaultAdapterId": "local" }' > ~/.lenserfight/config.json
+
+# 3. Set the data source
+echo 'VITE_DATA_SOURCE=file' >> .env.local
+
+# 4. Install dependencies and start the app
+pnpm install --frozen-lockfile
+pnpm nx run web:serve
+```
+
+See [Local File Storage Tutorial](/tutorials/getting-started/local-file-storage) for the full walkthrough, including migrating to Supabase later.
+
+---
 
 ## Optional: run the docs site
 
@@ -94,6 +123,7 @@ For the full database walkthrough, see [Local Database Setup](/reference/databas
 
 ## Related guides
 
+- [Local File Storage Tutorial](/tutorials/getting-started/local-file-storage) — start without Docker
 - [Quickstart](/tutorials/getting-started/quickstart)
 - [Overview](/tutorials/getting-started/overview)
 - [Development Setup](/how-to/contributors/development-setup)
