@@ -12,6 +12,7 @@ export interface ProjectConfig {
   supabaseUrl?: string;
   cloudApiUrl?: string;
   cloudId?: string;
+  defaultStorageAdapter?: 'supabase' | 'local';
   dbPort: number;
   apiPort: number;
   autoOpenBrowser?: boolean;
@@ -31,6 +32,16 @@ export interface UserConfig {
   developerTokenExpiresAt?: string;
   /** Active community context set by `lenserfight communities switch`. */
   communitySlug?: string;
+  onboarding?: Record<string, OnboardingStateSnapshot>;
+}
+
+export interface OnboardingStateSnapshot {
+  status: 'not_started' | 'in_progress' | 'partial' | 'complete';
+  mode: 'local' | 'cloud';
+  completedSteps: string[];
+  skippedSteps: string[];
+  lastError?: string;
+  updatedAt: string;
 }
 
 /** Merged, fully-resolved config used by all commands. */
@@ -39,12 +50,14 @@ export interface LenserfightConfig {
   supabaseUrl: string;
   cloudApiUrl: string;
   cloudId?: string;
+  defaultStorageAdapter?: 'supabase' | 'local';
   supabaseAnonKey: string;
   supabaseServiceRoleKey?: string;
   dbPort: number;
   apiPort: number;
   autoOpenBrowser?: boolean;
   enabledApps?: string[];
+  ollamaBaseUrl?: string;
   apiKey?: string;
   authToken?: string;
   authRefreshToken?: string;
@@ -187,6 +200,8 @@ interface EnvValues {
   cloudApiUrl?: string;
   supabaseAnonKey?: string;
   supabaseServiceRoleKey?: string;
+  defaultStorageAdapter?: 'supabase' | 'local';
+  ollamaBaseUrl?: string;
   apiKey?: string;
   developerToken?: string;
   developerTokenExpiresAt?: string;
@@ -241,6 +256,16 @@ export function loadEnvConfig(cwd = process.cwd()): EnvValues {
     process.env['SUPABASE_SERVICE_ROLE_KEY'] ||
     file['SUPABASE_SERVICE_ROLE_KEY'];
 
+  const defaultStorageAdapterRaw =
+    process.env['VITE_DEFAULT_STORAGE_ADAPTER'] ||
+    file['VITE_DEFAULT_STORAGE_ADAPTER'];
+
+  const ollamaBaseUrl =
+    process.env['LENSERFIGHT_OLLAMA_BASE_URL'] ||
+    process.env['VITE_OLLAMA_BASE_URL'] ||
+    file['LENSERFIGHT_OLLAMA_BASE_URL'] ||
+    file['VITE_OLLAMA_BASE_URL'];
+
   const apiKey =
     process.env['LENSERFIGHT_API_KEY'] ||
     file['LENSERFIGHT_API_KEY'];
@@ -258,6 +283,11 @@ export function loadEnvConfig(cwd = process.cwd()): EnvValues {
     cloudApiUrl: cloudApiUrl || undefined,
     supabaseAnonKey: anonKey || undefined,
     supabaseServiceRoleKey: serviceKey || undefined,
+    defaultStorageAdapter:
+      defaultStorageAdapterRaw === 'local' || defaultStorageAdapterRaw === 'supabase'
+        ? defaultStorageAdapterRaw
+        : undefined,
+    ollamaBaseUrl: ollamaBaseUrl || undefined,
     apiKey: apiKey || undefined,
     developerToken: developerToken || undefined,
     developerTokenExpiresAt: developerTokenExpiresAt || undefined,
@@ -289,6 +319,10 @@ export function resolveConfig(cwd = process.cwd()): LenserfightConfig {
       project.cloudApiUrl ||
       (isLocal ? 'http://localhost:8786' : CLOUD_API_URL),
     cloudId: project.cloudId,
+    defaultStorageAdapter:
+      env.defaultStorageAdapter ||
+      project.defaultStorageAdapter ||
+      (isLocal ? 'supabase' : undefined),
     autoOpenBrowser: project.autoOpenBrowser,
     enabledApps: project.enabledApps,
     supabaseAnonKey:
@@ -307,6 +341,7 @@ export function resolveConfig(cwd = process.cwd()): LenserfightConfig {
       env.developerTokenExpiresAt ||
       user.developerTokenExpiresAt,
     developerTokenId: user.developerTokenId,
+    ollamaBaseUrl: env.ollamaBaseUrl,
     dbPort: project.dbPort,
     apiPort: project.apiPort,
     authToken: user.authToken,
@@ -314,4 +349,44 @@ export function resolveConfig(cwd = process.cwd()): LenserfightConfig {
     authExpiresAt: user.authExpiresAt,
     defaultAdapterId: user.defaultAdapterId,
   };
+}
+
+export function getWorkspaceKey(cwd = process.cwd()): string {
+  return resolve(cwd)
+}
+
+export function getOnboardingState(cwd = process.cwd()): OnboardingStateSnapshot | null {
+  const user = loadUserConfig()
+  const key = getWorkspaceKey(cwd)
+  return user.onboarding?.[key] ?? null
+}
+
+export function saveOnboardingState(
+  partial: Partial<OnboardingStateSnapshot>,
+  cwd = process.cwd(),
+): OnboardingStateSnapshot {
+  const user = loadUserConfig()
+  const key = getWorkspaceKey(cwd)
+  const current = user.onboarding?.[key] ?? {
+    status: 'not_started' as const,
+    mode: 'local' as const,
+    completedSteps: [],
+    skippedSteps: [],
+    updatedAt: new Date().toISOString(),
+  }
+
+  const next: OnboardingStateSnapshot = {
+    ...current,
+    ...partial,
+    updatedAt: new Date().toISOString(),
+  }
+
+  saveUserConfig({
+    onboarding: {
+      ...(user.onboarding ?? {}),
+      [key]: next,
+    },
+  })
+
+  return next
 }

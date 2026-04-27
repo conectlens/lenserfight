@@ -50,7 +50,7 @@ VITE_API_URL=http://localhost:8786
 | Variable | Default | Values | Description |
 |----------|---------|--------|-------------|
 | `VITE_DATA_SOURCE` | `supabase` | `supabase` \| `file` | Selects the active storage backend. `file` uses `~/.lenserfight/` local storage; no Supabase required. |
-| `VITE_DEFAULT_STORAGE_ADAPTER` | `supabase` | `supabase` \| `local` \| `r2` | Overrides the default adapter in `storage.registry.ts`. Only needed when `VITE_DATA_SOURCE=file` does not set the adapter automatically. |
+| `VITE_DEFAULT_STORAGE_ADAPTER` | `supabase` | `supabase` \| `local` | Overrides the default adapter in `storage.registry.ts`. `r2` is intentionally rejected until the adapter is implemented. |
 
 See [Storage Adapters](/reference/platform-api/storage-adapters) for the full adapter reference and `~/.lenserfight/` directory layout.
 
@@ -67,6 +67,8 @@ See [Storage Adapters](/reference/platform-api/storage-adapters) for the full ad
 | `VITE_STATUS_BASE_URL` | `http://localhost:3003` | Status page base URL |
 | `VITE_ARENA_URL` | `http://localhost:4200` | Arena URL (same as web in community edition) |
 | `LENSERFIGHT_CLOUD_API_URL` | `https://api.lenserfight.com` | CLI override for the cloud API base URL |
+| `LENSERFIGHT_OLLAMA_BASE_URL` | `http://localhost:11434` | Node/CLI/server override for the Ollama base URL |
+| `VITE_OLLAMA_BASE_URL` | `http://localhost:11434` | Browser-build override for the Ollama base URL |
 
 ---
 
@@ -78,7 +80,7 @@ See [Storage Adapters](/reference/platform-api/storage-adapters) for the full ad
 | `LENSERFIGHT_DEVELOPER_TOKEN` | CLI | Override the developer token stored in `~/.lenserfight/config.json` |
 | `LENSERFIGHT_DEVELOPER_TOKEN_EXPIRES_AT` | CLI | Override the stored developer token expiry (ISO 8601 string) |
 
-Token precedence in the CLI: `LENSERFIGHT_API_KEY` → `LENSERFIGHT_DEVELOPER_TOKEN` → stored session → stored developer token.
+Token precedence in the CLI: `LENSERFIGHT_API_KEY` → explicit developer-token automation path → stored session → stored developer token.
 
 ---
 
@@ -97,7 +99,7 @@ All feature flags default to `false`. Set to `true` to enable in dev/test builds
 | Variable | Description |
 |----------|-------------|
 | `VITE_FEATURE_AGENTS` | AI workspace — agent management and automation log |
-| `VITE_FEATURE_CRON_SCHEDULING` | Scheduled workflow execution via cron |
+| `VITE_FEATURE_CRON_SCHEDULING` | Reserved Wave 2 flag for scheduled workflow execution. Keep disabled in public cloud and OSS builds for now. |
 | `VITE_FEATURE_NOTIFICATIONS` | In-app notification system |
 | `VITE_FEATURE_NETWORK_LINKS` | Social graph link display on profiles |
 | `VITE_FEATURE_LENSER_ACTIVITY` | Per-lenser activity feed |

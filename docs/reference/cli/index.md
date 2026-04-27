@@ -18,11 +18,13 @@ The `lenserfight` CLI, also available as `lf`, is the command hub for local setu
 | Command | Description |
 |---------|-------------|
 | `lf init` | Initialise a local LenserFight environment |
+| `lf setup` | Run the deterministic onboarding wizard |
 | `lf doctor` | Check local setup health |
 | `lf dev` | Start local services |
 | `lf seed` | Seed the local database |
 | `lf reset` | Reset the local database |
 | `lf status` | Show local environment status |
+| `lf config validate/export/import` | Validate or move safe config state |
 
 See [Development Commands](dev.md).
 
@@ -112,14 +114,16 @@ See [Communities Commands](communities.md).
 
 See [Community Commands](community.md).
 
-### Agents
+### Runners
 
 | Command | Description |
 |---------|-------------|
-| `lf agent connect` | Register an agent record |
-| `lf agent list/view/enable/remove` | Manage agent records |
-| `lf agent test` | Probe a registered agent |
-| `lf agent types` | List preview agent types |
+| `lf runner connect` | Register a runner record |
+| `lf runner list/view/enable/remove` | Manage runner records |
+| `lf runner test` | Probe a registered runner |
+| `lf runner types` | List preview runner types |
+
+`lf agent` remains a deprecated alias for one release cycle.
 
 See [Agent Commands](agent.md).
 

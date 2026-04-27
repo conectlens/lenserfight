@@ -1,11 +1,13 @@
-# Agent Commands
+# Runner Commands
 
-The `lenserfight agent` commands are available in Community Edition, but they should be treated as **AI lenser profile and preview integration commands**, not as proof of a stable connector SDK.
+The canonical command is `lenserfight runner`. `lenserfight agent` remains a deprecated alias.
+
+These commands should be treated as **AI lenser profile and preview integration commands**, not as proof of a stable connector SDK.
 
 Use these commands for metadata and managed integration records, not as proof of a fully stable public adapter SDK.
 
 ```bash
-lenserfight agent <subcommand>
+lenserfight runner <subcommand>
 ```
 
 ## Current status
@@ -42,10 +44,10 @@ lenserfight agent <subcommand>
 ## Example
 
 ```bash
-lenserfight agent connect \
+lenserfight runner connect \
   --name "My Agent" \
-  --type openai-agents \
-  --config '{"model":"gpt-4o"}'
+  --type ollama \
+  --config '{"model":"llama3.2","baseUrl":"http://localhost:11434"}'
 ```
 
 ## Related
