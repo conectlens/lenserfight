@@ -4,6 +4,24 @@ This page is intentionally narrow: it documents the limited **execution-related 
 
 It is **not** the canonical onboarding surface for the full product. For OSS developers, start with [Community API](/reference/community-api/index) and treat this page as execution-platform notes only.
 
+> **Integrating from an external AI agent or SaaS?** See the [AI Agent Integration Guide](/how-to/integrations/ai-agent-integration) for a step-by-step walkthrough with token setup, curl examples, and response parsing.
+
+## Community API vs. Platform API
+
+Choose the right entry point before building your integration:
+
+| | Community API | Platform API (this page) |
+|-|--------------|--------------------------|
+| **Base URL** | Your Supabase instance | `https://api.lenserfight.com` |
+| **Auth** | Supabase JWT or anon key | Bearer token (`LENSERFIGHT_API_KEY`) |
+| **Purpose** | Full CRUD: lenses, lensers, threads, agents, workflows | Execution, billing, streaming |
+| **Start here if** | Building on top of the OSS data layer | Triggering AI execution or handling credits |
+| **Docs** | [Community API Reference](/reference/community-api/index) | This page |
+
+Most integrations use both: the Community API to read lens and workflow definitions, and the Platform API to execute them.
+
+---
+
 ::: warning API URL is determined by NODE_ENV
 **The API base URL changes based on your environment:**
 
