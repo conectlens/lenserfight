@@ -1,3 +1,5 @@
+import { readdirSync, readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
 import { defineCommand } from 'citty';
 import consola from 'consola';
 import { callRpc, handleError } from '../utils/api';
@@ -284,6 +286,176 @@ const resource = defineCommand({
 });
 
 // ---------------------------------------------------------------------------
+// lens import
+// ---------------------------------------------------------------------------
+interface LocalLensFile {
+  id?: string;
+  title?: string;
+  description?: string;
+  template_body?: string;
+  body?: string;
+  visibility?: string;
+}
+
+type ImportStatus = 'imported' | 'skipped' | 'failed';
+
+interface ImportResult {
+  file: string;
+  status: ImportStatus;
+  lensId?: string;
+  reason?: string;
+}
+
+const lensImport = defineCommand({
+  meta: {
+    name: 'import',
+    description: 'Import lenses from a local directory into Supabase (e.g. after migrating from file mode).',
+  },
+  args: {
+    from: {
+      type: 'string',
+      description: 'Directory containing lens JSON files (e.g. ~/.lenserfight/lenses/)',
+      required: true,
+    },
+    json: {
+      type: 'boolean',
+      description: 'Output results as JSON',
+      default: false,
+    },
+  },
+  async run({ args }) {
+    const dir = resolve(args.from.replace(/^~/, process.env['HOME'] ?? ''));
+    let files: string[];
+    try {
+      files = readdirSync(dir).filter((f) => f.endsWith('.json'));
+    } catch {
+      consola.error('Cannot read directory: %s', dir);
+      process.exitCode = 1;
+      return;
+    }
+
+    if (files.length === 0) {
+      consola.info('No JSON files found in %s', dir);
+      return;
+    }
+
+    const { resolveConfig } = await import('../config/project-config');
+    const config = resolveConfig();
+
+    const authHeader = config.apiKey
+      ? config.apiKey
+      : config.developerToken ?? config.authToken;
+
+    if (!authHeader) {
+      consola.error('Authentication required. Run `lf auth login` or set LENSERFIGHT_API_KEY.');
+      process.exitCode = 1;
+      return;
+    }
+
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/json',
+      apikey: config.supabaseAnonKey ?? '',
+      Authorization: `Bearer ${authHeader}`,
+      Prefer: 'return=representation',
+    };
+
+    const results: ImportResult[] = [];
+
+    for (const file of files) {
+      const filePath = resolve(dir, file);
+      let lens: LocalLensFile;
+      try {
+        lens = JSON.parse(readFileSync(filePath, 'utf-8')) as LocalLensFile;
+      } catch {
+        results.push({ file, status: 'failed', reason: 'invalid JSON' });
+        continue;
+      }
+
+      if (!lens.title) {
+        results.push({ file, status: 'skipped', reason: 'missing title' });
+        continue;
+      }
+
+      const templateBody = lens.template_body ?? lens.body;
+
+      try {
+        // 1. Create the lens record
+        const lensRes = await fetch(
+          `${config.supabaseUrl}/rest/v1/lenses?schema=lenses`,
+          {
+            method: 'POST',
+            headers,
+            body: JSON.stringify({
+              visibility: lens.visibility ?? 'public',
+            }),
+          }
+        );
+
+        if (!lensRes.ok) {
+          const err = await lensRes.json().catch(() => ({})) as Record<string, unknown>;
+          results.push({ file, status: 'failed', reason: String(err['message'] ?? lensRes.statusText) });
+          continue;
+        }
+
+        const [lensRow] = (await lensRes.json()) as Array<Record<string, unknown>>;
+        const lensId = String(lensRow['id']);
+
+        // 2. Create entity translation (title + description)
+        const transRes = await fetch(
+          `${config.supabaseUrl}/rest/v1/entity_translations?schema=content`,
+          {
+            method: 'POST',
+            headers: { ...headers, Prefer: 'return=minimal' },
+            body: JSON.stringify({
+              entity_id: lensId,
+              entity_type: 'lens',
+              title: lens.title,
+              description: lens.description ?? null,
+              language_code: 'en',
+              is_original: true,
+            }),
+          }
+        );
+
+        if (!transRes.ok) {
+          const err = await transRes.json().catch(() => ({})) as Record<string, unknown>;
+          results.push({ file, status: 'failed', reason: String(err['message'] ?? transRes.statusText) });
+          continue;
+        }
+
+        // 3. Create a draft version if template body is available
+        if (templateBody && templateBody.trim().length >= MIN_TEMPLATE_LENGTH) {
+          await callRpc(
+            'fn_lenses_create_version',
+            { p_lens_id: lensId, p_template_body: templateBody },
+            { requireAuth: true }
+          );
+        }
+
+        results.push({ file, status: 'imported', lensId });
+      } catch (err) {
+        results.push({ file, status: 'failed', reason: (err as Error).message });
+      }
+    }
+
+    if (args.json) {
+      printJson(results);
+      return;
+    }
+
+    printTable(
+      ['File', 'Status', 'Lens ID', 'Reason'],
+      results.map((r) => [r.file, r.status, r.lensId ?? '—', r.reason ?? '—'])
+    );
+
+    const imported = results.filter((r) => r.status === 'imported').length;
+    const failed = results.filter((r) => r.status === 'failed').length;
+    const skipped = results.filter((r) => r.status === 'skipped').length;
+    consola.info('Done: %d imported, %d skipped, %d failed.', imported, skipped, failed);
+  },
+});
+
+// ---------------------------------------------------------------------------
 // Root command
 // ---------------------------------------------------------------------------
 export default defineCommand({
@@ -294,5 +466,6 @@ export default defineCommand({
   subCommands: {
     version,
     resource,
+    import: lensImport,
   },
 });
