@@ -1,7 +1,4 @@
 import {
-  Home,
-  Cloud,
-  GitBranch,
   MoreHorizontal,
   Settings,
   LogOut,
@@ -9,19 +6,12 @@ import {
   Sparkles,
   MessageSquarePlus,
   Bell,
-  Users,
-  Brain,
-  Trophy,
   Sun,
   Moon,
   Monitor,
-  ShoppingBag,
-  Sword,
   Bot,
   ChevronsUpDown,
   Check,
-  Clock3,
-  Activity,
 } from 'lucide-react'
 import React, { useState, useRef, useEffect } from 'react'
 import { createPortal } from 'react-dom'
@@ -31,11 +21,15 @@ import { notificationService } from '@lenserfight/data/repositories'
 import { useAuth } from '@lenserfight/features/auth'
 import { FeedbackModal } from '@lenserfight/features/feedback'
 import { useLenser, useSidebarProfile, useHasLenserProfile, useLenserWorkspace } from '@lenserfight/features/profile'
-import { ARENA_BASE_URL, FEATURES, SURFACE } from '@lenserfight/utils/env'
+import { FEATURES } from '@lenserfight/utils/env'
 import { useTheme } from '@lenserfight/ui/theme'
 import type { Theme } from '@lenserfight/ui/theme'
 
 import { SidebarItem } from './SidebarItem'
+import { buildAgentSidebarSections } from './agentSidebar'
+import { buildHumanSidebarSections } from './humanSidebar'
+import { SidebarModeHeader } from './SidebarModeHeader'
+import { useWorkspaceMode } from './useWorkspaceMode'
 
 const THEME_CYCLE: Theme[] = ['light', 'dark', 'system']
 const THEME_ICONS: Record<Theme, React.ReactNode> = {
@@ -107,6 +101,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
   const navigate = useNavigate()
   const location = useLocation()
+  const workspaceMode = useWorkspaceMode(displayProfile)
   const [isDropdownOpen, setIsDropdownOpen] = useState(false)
   const dropdownRef = useRef<HTMLDivElement>(null)
   const buttonRef = useRef<HTMLButtonElement>(null)
@@ -203,9 +198,14 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
   const desktopWidthClass = isOpen ? 'w-64' : 'w-20'
 
+  const chromeClass =
+    workspaceMode === 'agent'
+      ? 'bg-[#fff8ef] dark:bg-[#0f0d0a] border-r border-amber-200/80 dark:border-amber-500/20'
+      : 'bg-gray-50 dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700'
+
   const containerClass = isMobile
-    ? `fixed inset-y-0 left-0 h-full w-64 bg-gray-50 dark:bg-gray-800 z-50 shadow-2xl transform transition-transform duration-300 ease-out flex flex-col ${isOpen ? 'translate-x-0' : '-translate-x-full'}`
-    : `sticky top-0 h-screen flex-shrink-0 bg-gray-50 dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 transition-all duration-300 ease-in-out flex flex-col ${desktopWidthClass}`
+    ? `fixed inset-y-0 left-0 h-full w-64 ${chromeClass} z-50 shadow-2xl transform transition-transform duration-300 ease-out flex flex-col ${isOpen ? 'translate-x-0' : '-translate-x-full'}`
+    : `sticky top-0 h-screen flex-shrink-0 ${chromeClass} transition-all duration-300 ease-in-out flex flex-col ${desktopWidthClass}`
 
   const showOverlay = isMobile && isOpen
 
@@ -217,6 +217,11 @@ export const Sidebar: React.FC<SidebarProps> = ({
     navigate(path)
     if (isMobile) onCloseMobile()
   }
+
+  const navSections =
+    workspaceMode === 'agent' && displayProfile?.handle
+      ? buildAgentSidebarSections(displayProfile.handle)
+      : buildHumanSidebarSections({ isNavLocked })
 
   const handleProfileClick = () => {
     if (displayProfile?.handle) {
@@ -279,117 +284,47 @@ export const Sidebar: React.FC<SidebarProps> = ({
           </div>
         </div>
 
-        <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto scrollbar-hide flex flex-col">
-          <SidebarItem
-            onClick={() => handleNavigation('/')}
-            icon={<Home size={20} />}
-            label="Home"
-            isActive={isRouteActive(location.pathname, '/', true)}
-            collapsed={!showLabels}
-          />
-
-          {SURFACE.edition === 'cloud' && (
-            <SidebarItem
-              onClick={() => handleNavigation('/lenserboard')}
-              icon={<Trophy size={20} />}
-              label="LenserBoard"
-              isActive={isRouteActive(location.pathname, '/lenserboard')}
-              collapsed={!showLabels}
-            />
-          )}
-
-          {FEATURES.PUBLIC_BATTLES && (
-            <SidebarItem
-              onClick={() => window.open(`${ARENA_BASE_URL}/battles`, '_blank')}
-              icon={<Sword size={20} />}
-              label="Arena"
-              isActive={false}
-              collapsed={!showLabels}
-            />
-          )}
-
-          <SidebarItem
-            onClick={() => handleNavigation('/lenses')}
-            icon={<Brain size={20} />}
-            label="Lenses"
-            isActive={isRouteActive(location.pathname, '/lenses')}
-            collapsed={!showLabels}
-          />
-
-          <SidebarItem
-            onClick={() => handleNavigation('/workflows')}
-            icon={<GitBranch size={20} />}
-            label="Workflows"
-            isActive={isRouteActive(location.pathname, '/workflows')}
-            collapsed={!showLabels}
-            locked={isNavLocked}
-            lockReason={navLockReason}
-            onLockedClick={handleLockedNav}
-          />
-
-          <SidebarItem
-            onClick={() => handleNavigation('/ray')}
-            icon={<Cloud size={20} />}
-            label="Ray Cloud"
-            isActive={isRouteActive(location.pathname, '/ray')}
-            collapsed={!showLabels}
-          />
-
-          <SidebarItem
-            onClick={() => handleNavigation('/lensers')}
-            icon={<Users size={20} />}
-            label="Lensers"
-            isActive={isRouteActive(location.pathname, '/lensers')}
-            collapsed={!showLabels}
-          />
-
-          {SURFACE.showBillingAndStore && (
-            <SidebarItem
-              onClick={() => handleNavigation('/billing')}
-              icon={<ShoppingBag size={20} />}
-              label="Plans"
-              isActive={isRouteActive(location.pathname, '/billing')}
-              collapsed={!showLabels}
-            />
-          )}
-
-          {FEATURES.AGENTS && displayProfile?.type === 'ai' && displayProfile?.handle && (
-            <>
-              <div className="my-2 h-px bg-gray-200 dark:bg-gray-700" />
-              {showLabels && (
-                <p className="px-3 pb-1 pt-1 text-[10px] font-semibold uppercase tracking-wider text-primary-yellow-700 dark:text-primary-yellow-400">
-                  AI Workspace
-                </p>
-              )}
-              <SidebarItem
-                onClick={() => handleNavigation(`/lenser/${displayProfile.handle}/wf`)}
-                icon={<GitBranch size={20} className="text-primary-yellow-600 dark:text-primary-yellow-400" />}
-                label="Workflows"
-                isActive={isRouteActive(location.pathname, `/lenser/${displayProfile.handle}/wf`)}
-                collapsed={!showLabels}
-              />
-              {FEATURES.CRON_SCHEDULING && (
-                <SidebarItem
-                  onClick={() => handleNavigation(`/lenser/${displayProfile.handle}/sc`)}
-                  icon={<Clock3 size={20} className="text-primary-yellow-600 dark:text-primary-yellow-400" />}
-                  label="Schedules"
-                  isActive={isRouteActive(location.pathname, `/lenser/${displayProfile.handle}/sc`)}
-                  collapsed={!showLabels}
-                />
-              )}
-              <SidebarItem
-                onClick={() => handleNavigation(`/lenser/${displayProfile.handle}/lg`)}
-                icon={<Activity size={20} className="text-primary-yellow-600 dark:text-primary-yellow-400" />}
-                label="Automation Log"
-                isActive={isRouteActive(location.pathname, `/lenser/${displayProfile.handle}/lg`)}
-                collapsed={!showLabels}
-              />
-            </>
-          )}
-
+        <nav className="flex-1 overflow-y-auto scrollbar-hide flex flex-col pt-4 pb-2">
+          <div className="px-3 space-y-3">
+            {navSections.map((section) => (
+              <div key={section.id}>
+                {section.label && showLabels && (
+                  <p
+                    className={`px-3 pb-1 text-[10px] font-semibold uppercase tracking-[0.18em] ${workspaceMode === 'agent'
+                        ? 'text-amber-700 dark:text-amber-300'
+                        : 'text-gray-500 dark:text-gray-400'
+                      }`}
+                  >
+                    {section.label}
+                  </p>
+                )}
+                <div className="space-y-1">
+                  {section.items.map((item) => (
+                    <SidebarItem
+                      key={item.id}
+                      onClick={() => {
+                        if (item.externalHref) {
+                          window.open(item.externalHref, '_blank')
+                          return
+                        }
+                        if (item.path) handleNavigation(item.path)
+                      }}
+                      icon={item.icon}
+                      label={item.label}
+                      isActive={item.path ? isRouteActive(location.pathname, item.activePath ?? item.path, item.exact) : false}
+                      collapsed={!showLabels}
+                      locked={item.locked}
+                      lockReason={item.locked ? navLockReason : undefined}
+                      onLockedClick={item.locked ? handleLockedNav : undefined}
+                    />
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
         </nav>
 
-        <div className="flex-shrink-0 px-3 pb-3 pt-2 bg-gray-50 dark:bg-gray-800 mt-auto space-y-3">
+        <div className={`flex-shrink-0 px-3 pb-3 pt-2 mt-auto space-y-3 ${workspaceMode === 'agent' ? 'bg-[#fff8ef] dark:bg-[#0f0d0a]' : 'bg-gray-50 dark:bg-gray-800'}`}>
           {/* Feedback Button */}
           <div
             className={`${!showLabels ? '' : 'animate-in slide-in-from-bottom-3 duration-500 delay-75'}`}
@@ -546,15 +481,14 @@ export const Sidebar: React.FC<SidebarProps> = ({
                             key={profile.id}
                             role="option"
                             aria-selected={profile.is_active}
-                            className={`w-full text-left flex items-center gap-2.5 px-3 py-2 transition-colors ${
-                              profile.type === 'ai'
+                            className={`w-full text-left flex items-center gap-2.5 px-3 py-2 transition-colors ${profile.type === 'ai'
                                 ? profile.is_active
                                   ? 'bg-yellow-50 dark:bg-yellow-900/20'
                                   : 'hover:bg-yellow-50 dark:hover:bg-yellow-900/20'
                                 : profile.is_active
                                   ? 'bg-gray-50 dark:bg-gray-700/50'
                                   : 'hover:bg-gray-50 dark:hover:bg-gray-700/50'
-                            }`}
+                              }`}
                             onClick={async () => {
                               setIsSwitcherOpen(false)
                               await switchWorkspace(profile.id)
