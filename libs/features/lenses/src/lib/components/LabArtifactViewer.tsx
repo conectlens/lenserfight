@@ -102,9 +102,33 @@ function VisibilityToggle({
   )
 }
 
+function AudioWaveLoader() {
+  return (
+    <div className="flex items-center justify-center gap-[3px] h-16 px-4 bg-surface-raised rounded-xl" aria-label="Loading audio…">
+      {Array.from({ length: 20 }).map((_, i) => (
+        <span
+          key={i}
+          className="inline-block w-1 rounded-full bg-greyscale-400 dark:bg-greyscale-500 opacity-70"
+          style={{
+            height: `${8 + Math.abs(Math.sin(i * 0.7)) * 24}px`,
+            animationDelay: `${i * 60}ms`,
+            animation: 'wave-bar 1.1s ease-in-out infinite alternate',
+          }}
+        />
+      ))}
+      <style>{`
+        @keyframes wave-bar {
+          from { transform: scaleY(0.4); opacity: 0.5; }
+          to   { transform: scaleY(1);   opacity: 1;   }
+        }
+      `}</style>
+    </div>
+  )
+}
+
 function MediaArtifactBlock({ artifact, isOwner, runId }: { artifact: ExecutionArtifact; isOwner?: boolean; runId: string }) {
   // Resolve signed read URL when mediaObjectId is present
-  const { data: signedUrl } = useQuery({
+  const { data: signedUrl, isLoading } = useQuery({
     queryKey: ['media-signed-url', artifact.mediaObjectId],
     queryFn: () => mediaRepository.getSignedReadUrl(artifact.mediaObjectId!),
     enabled: !!artifact.mediaObjectId,
@@ -120,13 +144,31 @@ function MediaArtifactBlock({ artifact, isOwner, runId }: { artifact: ExecutionA
     }
   }
 
+  const kind = mediaTypeFromKind()
+
+  const renderLoader = () => {
+    if (kind === 'audio') {
+      return <AudioWaveLoader />
+    }
+    // image / video — square skeleton
+    return (
+      <div className="relative w-full aspect-square bg-surface-raised animate-pulse rounded-xl overflow-hidden">
+        <div className="absolute inset-0 flex items-center justify-center">
+          <Loader2 size={28} className="animate-spin text-greyscale-400" />
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className="overflow-hidden rounded-2xl border border-surface-border">
-      <MediaViewer
-        mediaType={mediaTypeFromKind()}
-        url={signedUrl ?? null}
-        name={artifact.mediaObjectId ?? undefined}
-      />
+      {isLoading ? renderLoader() : (
+        <MediaViewer
+          mediaType={kind}
+          url={signedUrl ?? null}
+          name={artifact.mediaObjectId ?? undefined}
+        />
+      )}
       {isOwner && (
         <div className="flex items-center justify-end border-t border-surface-border bg-surface-raised px-3 py-1.5">
           <VisibilityToggle
