@@ -89,6 +89,27 @@ export class CapabilityMapper {
     }
     return [];
   }
+
+  /**
+   * Pre-flight check for generative media executions.
+   * Call BEFORE dispatching to a generative provider to surface errors without
+   * consuming credits or hitting the API.
+   */
+  validateGenerativeRequest(
+    outputModality: 'image' | 'video' | 'audio' | 'music',
+    model: ModelCapabilities
+  ): ValidationError[] {
+    const errors: ValidationError[] = [];
+    // music maps to audio modality on the model side
+    const checkModality = outputModality === 'music' ? 'audio' : outputModality;
+    if (!model.outputModalities.includes(checkModality)) {
+      errors.push({
+        field: 'output_modality',
+        message: `Model cannot produce '${outputModality}' output. Supported: ${model.outputModalities.join(', ')}`,
+      });
+    }
+    return errors;
+  }
 }
 
 export const capabilityMapper = new CapabilityMapper();

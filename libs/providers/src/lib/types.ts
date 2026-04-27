@@ -2,6 +2,16 @@
 
 export type Provider = 'openai' | 'anthropic' | 'google' | 'mistral' | 'ollama' | 'fal';
 
+export type GenerativeMediaProvider =
+  | 'openai'      // DALL-E (image), Sora (video)
+  | 'google'      // Imagen (image), Veo (video), Lyria (audio)
+  | 'stability'   // Stable Diffusion (image)
+  | 'elevenlabs'  // TTS / voice cloning (audio)
+  | 'kling'       // Video generation
+  | 'suno'        // Music generation
+  | 'midjourney'  // Image generation
+  | 'fal';        // Flux (image)
+
 // ─── Multimodal Content Parts ─────────────────────────────────────────────────
 // ContentPart is the indirection layer between unified message format and
 // provider-specific wire formats. Keeps provider adapters decoupled from callers.
@@ -47,6 +57,55 @@ export interface ProviderResponse {
 export interface ImageResponse {
   urls: string[];
   units: number;
+}
+
+/** Returned immediately by async providers (video, long audio). */
+export interface AsyncGenerationResponse {
+  status: 'pending';
+  taskId: string;
+  /** Estimated seconds until completion, if the provider provides it. */
+  estimatedSeconds?: number;
+}
+
+/** Returned when generation is complete (sync image or polled async result). */
+export interface GenerativeMediaResult {
+  status: 'completed';
+  /** Public or signed URL(s) of the generated media. */
+  urls: string[];
+  mimeType: string;
+  /** Width in pixels (images only). */
+  width?: number;
+  /** Height in pixels (images only). */
+  height?: number;
+  /** Duration in seconds (video / audio). */
+  durationSeconds?: number;
+}
+
+export type GenerativeMediaResponse = AsyncGenerationResponse | GenerativeMediaResult;
+
+/**
+ * Adapter for generative media providers (image / video / audio / music).
+ * Sync providers (image) return GenerativeMediaResult directly.
+ * Async providers (video / audio) return AsyncGenerationResponse; callers
+ * must poll via pollTask() until status = 'completed'.
+ */
+export interface GenerativeMediaAdapter {
+  /** Submit a generation request. */
+  generate(
+    apiKey: string,
+    model: string,
+    prompt: string,
+    params?: Record<string, unknown>
+  ): Promise<GenerativeMediaResponse>;
+
+  /** Poll a previously submitted async task. Only required for async providers. */
+  pollTask?(
+    apiKey: string,
+    taskId: string
+  ): Promise<GenerativeMediaResponse>;
+
+  /** Auth header builder (used by callGenerativeMedia registry). */
+  authHeader(apiKey: string): Record<string, string>;
 }
 
 // ─── Adapter Contracts ────────────────────────────────────────────────────────
