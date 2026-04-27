@@ -17,6 +17,7 @@ export type ProviderEnum =
   | 'openai'
   | 'anthropic'
   | 'google'
+  | 'ollama'
   | 'meta'
   | 'midjourney'
   | 'stability'
@@ -25,17 +26,39 @@ export type ProviderEnum =
   | 'suno'
   | 'fal'
   | 'mistral'
+  | 'openrouter'
+  | 'perplexity'
+  | 'xai'
+  | 'groq'
+  | 'deepseek'
+  | 'bedrock'
+  | 'runway'
+  | 'litellm'
+  | 'lmstudio'
   | 'other'
 export type AICapabilityEnum =
+  | 'chat'
+  | 'reasoning'
+  | 'tools'
+  | 'vision'
+  | 'json_schema'
   | 'text_generation'
   | 'image_generation'
   | 'video_generation'
   | 'audio_generation'
   | 'music_generation'
+  | 'code'
+  | 'text'
+  | 'image'
+  | 'document'
+  | 'audio'
+  | 'video'
 /**
  * DB source: ai.model_tier_enum (relocated from public.pricing_tier_enum in migration 20260440000010).
  */
 export type PricingTierEnum = 'free' | 'paid' | 'enterprise'
+export type AIProviderSupportLevel = 'runnable' | 'byok_only' | 'catalog_only' | 'deprecated'
+export type AIModelStatus = 'active' | 'preview' | 'deprecated' | 'legacy'
 
 export interface AIModel {
   id: string // uuid
@@ -54,11 +77,22 @@ export interface AIModel {
   provider_url?: string | null
   description: string
   capabilities: AICapabilityEnum[]
+  docs_url?: string | null
+  support_level?: AIProviderSupportLevel
+  status?: AIModelStatus
   temperature: number
   max_tokens: number
   pricing_tier?: PricingTierEnum | null
   is_public: boolean
   is_active: boolean
+  supports_tools?: boolean
+  supports_json_schema?: boolean
+  supports_vision?: boolean
+  supports_streaming?: boolean
+  use_cases?: string[]
+  developer_summary?: string
+  user_summary?: string
+  metadata?: Record<string, unknown>
   /**
    * Extensible input modality list. Source of truth for CapabilityMapper validation.
    * Values: 'text' | 'image' | 'document' | 'audio' | 'video' (migration 45).
@@ -100,12 +134,19 @@ export interface AIProvider {
   id: string
   key: string
   display_name: string
+  base_url?: string | null
+  docs_url?: string | null
+  support_level?: AIProviderSupportLevel
+  logo_slug?: string | null
+  metadata?: Record<string, unknown>
+  is_active?: boolean
 }
 
 export interface AIProviderModel {
   name: string
   key: string
   id?: string
+  provider_key?: string
   /** Input modalities supported by this model (from ai.models.input_modalities).
    *  Values: 'text' | 'image' | 'document' | 'audio' | 'video'.
    *  Used by attachment validation to determine which file types are allowed.
@@ -114,6 +155,12 @@ export interface AIProviderModel {
   /** Output modalities (from ai.models.output_modalities). */
   outputModalities?: string[]
   contextWindowTokens?: number
+  support_level?: AIProviderSupportLevel
+  status?: AIModelStatus
+  capabilities?: string[]
+  supportsStreaming?: boolean
+  developer_summary?: string
+  user_summary?: string
 }
 
 export interface GenerationFilterOptions {
