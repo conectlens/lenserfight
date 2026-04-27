@@ -330,6 +330,61 @@ export const LENS_KIND_REGISTRY: Record<LensKind, LensKindDefinition> = {
     promptSkeleton:
       'You are a routing agent. Choose exactly one route for the message.\nMessage: [[message]]\nRoutes: [[routes]]\n\nReturn JSON {route, reason}.',
   },
+  audio: {
+    kind: 'audio',
+    tagSlug: 'kind:audio',
+    label: 'Audio',
+    description: 'Text-to-speech, voice cloning, and audio generation.',
+    icon: 'mic',
+    badgeColor: 'orange',
+    defaultInputContract: {
+      kind: 'audio',
+      fields: {
+        script: { type: 'string', required: true, description: 'Text to convert to speech.' },
+        voice_id: { type: 'string', description: 'Provider voice identifier.' },
+      },
+    },
+    defaultOutputContract: {
+      kind: 'audio',
+      artifactKind: 'audio',
+      schema: {
+        url: { type: 'url', required: true },
+        duration_s: { type: 'number' },
+        format: { type: 'string' },
+      },
+    },
+    suggestedToolCategories: ['input', 'media'],
+    suggestedInputModalities: ['text'],
+    suggestedOutputModalities: ['audio'],
+    promptSkeleton: 'Convert the following text to natural speech:\n\n[[script]]',
+  },
+  music: {
+    kind: 'music',
+    tagSlug: 'kind:music',
+    label: 'Music',
+    description: 'AI music and song generation from text prompts.',
+    icon: 'music',
+    badgeColor: 'pink',
+    defaultInputContract: {
+      kind: 'music',
+      fields: {
+        prompt: { type: 'string', required: true, description: 'Music style / mood description.' },
+        style: { type: 'string', description: 'Genre or style tags.' },
+      },
+    },
+    defaultOutputContract: {
+      kind: 'music',
+      artifactKind: 'audio',
+      schema: {
+        url: { type: 'url', required: true },
+        duration_s: { type: 'number' },
+      },
+    },
+    suggestedToolCategories: ['input', 'media'],
+    suggestedInputModalities: ['text'],
+    suggestedOutputModalities: ['audio'],
+    promptSkeleton: 'Generate music that is [[prompt]].\nStyle: [[style]]',
+  },
 }
 
 /** Ordered list of all kinds — stable UI ordering. */
@@ -337,6 +392,8 @@ export const LENS_KIND_ORDER: LensKind[] = [
   'text',
   'image',
   'video',
+  'audio',
+  'music',
   'research',
   'pdf',
   'transform',
