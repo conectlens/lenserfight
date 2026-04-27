@@ -17,7 +17,7 @@
  *
  * Credits are always 0 for local execution — the platform does not bill for BYOK-local runs.
  */
-import { streamProvider, getStreamAdapter } from '@lenserfight/providers'
+import { streamProvider, getStreamAdapter, OLLAMA_DEFAULT_BASE_URL } from '@lenserfight/providers'
 import type { ProviderMessage } from '@lenserfight/providers'
 import type { StreamCallbacks } from '@lenserfight/types'
 
@@ -63,7 +63,7 @@ export async function streamLocalProvider(req: LocalStreamRequest): Promise<void
     if (msg.includes('Failed to fetch') || msg.includes('NetworkError') || msg.toLowerCase().includes('cors')) {
       callbacks.onError(
         provider === 'ollama'
-          ? `Could not connect to Ollama at http://localhost:11434. Is it running? (Make sure CORS is enabled with OLLAMA_ORIGINS="*")`
+          ? `Could not connect to Ollama at ${OLLAMA_DEFAULT_BASE_URL}. Is it running? (Make sure CORS is enabled with OLLAMA_ORIGINS="*")`
           : `Network error calling ${provider}. This may be a CORS restriction — some providers block direct browser requests. Error: ${msg}`,
         'local_network_error',
       )
