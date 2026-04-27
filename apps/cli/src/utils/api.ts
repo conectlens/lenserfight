@@ -17,22 +17,24 @@ export function resolveBearerToken(
 ): string | undefined {
   if (options.noAuth) return undefined;
 
+  // Privileged internal path — overrides everything except noAuth.
+  if (options.useServiceRole) {
+    return config.supabaseServiceRoleKey
+  }
+
   const developerTokenIsActive =
     !!config.developerToken &&
     (!config.developerTokenExpiresAt ||
       new Date(config.developerTokenExpiresAt).getTime() >= Date.now())
 
-  if (options.useServiceRole) {
-    return config.supabaseServiceRoleKey
+  // Precedence: LENSERFIGHT_API_KEY → developer token → session token
+  if (config.apiKey) return config.apiKey
+
+  if (developerTokenIsActive || options.useDeveloperToken) {
+    return config.developerToken
   }
 
-  if (options.useDeveloperToken) {
-    return developerTokenIsActive ? config.developerToken : config.authToken
-  }
-
-  if (options.requireAuth || config.authToken) {
-    return config.authToken
-  }
+  if (config.authToken) return config.authToken
 
   return undefined
 }
