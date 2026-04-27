@@ -45,6 +45,7 @@ export interface LenserfightConfig {
   apiPort: number;
   autoOpenBrowser?: boolean;
   enabledApps?: string[];
+  apiKey?: string;
   authToken?: string;
   authRefreshToken?: string;
   authExpiresAt?: string;
@@ -186,6 +187,7 @@ interface EnvValues {
   cloudApiUrl?: string;
   supabaseAnonKey?: string;
   supabaseServiceRoleKey?: string;
+  apiKey?: string;
   developerToken?: string;
   developerTokenExpiresAt?: string;
 }
@@ -239,6 +241,10 @@ export function loadEnvConfig(cwd = process.cwd()): EnvValues {
     process.env['SUPABASE_SERVICE_ROLE_KEY'] ||
     file['SUPABASE_SERVICE_ROLE_KEY'];
 
+  const apiKey =
+    process.env['LENSERFIGHT_API_KEY'] ||
+    file['LENSERFIGHT_API_KEY'];
+
   const developerToken =
     process.env['LENSERFIGHT_DEVELOPER_TOKEN'] ||
     file['LENSERFIGHT_DEVELOPER_TOKEN'];
@@ -252,6 +258,7 @@ export function loadEnvConfig(cwd = process.cwd()): EnvValues {
     cloudApiUrl: cloudApiUrl || undefined,
     supabaseAnonKey: anonKey || undefined,
     supabaseServiceRoleKey: serviceKey || undefined,
+    apiKey: apiKey || undefined,
     developerToken: developerToken || undefined,
     developerTokenExpiresAt: developerTokenExpiresAt || undefined,
   };
@@ -292,6 +299,7 @@ export function resolveConfig(cwd = process.cwd()): LenserfightConfig {
       env.supabaseServiceRoleKey ||
       user.supabaseServiceRoleKey ||
       (isLocal ? LOCAL_SERVICE_KEY : undefined),
+    apiKey: env.apiKey,
     developerToken:
       env.developerToken ||
       user.developerToken,
