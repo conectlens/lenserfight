@@ -97,6 +97,13 @@ const REVERSE_TAB_MAP: Record<LenserTabId, string> = {
   schedules: 'sc',
 }
 
+const LEGACY_AGENT_TAB_REDIRECTS: Record<string, string> = {
+  ov: 'overview',
+  wf: 'workflows',
+  lg: 'logs',
+  sc: 'schedules',
+}
+
 const PAGE_SIZE = 9
 
 function isStandardTab(tab: LenserTabId): tab is StandardTab {
@@ -258,6 +265,13 @@ export const LenserProfilePage: React.FC = () => {
     id: string
     type: 'prompt' | 'thread'
   } | null>(null)
+
+  useEffect(() => {
+    if (!handle || !routeTab || !viewedProfile || viewedProfile.type !== 'ai' || !isOwner) return
+    const targetSection = LEGACY_AGENT_TAB_REDIRECTS[routeTab]
+    if (!targetSection) return
+    navigate(`/lenser/${handle}/ag/${targetSection}`, { replace: true })
+  }, [handle, routeTab, viewedProfile, isOwner, navigate])
   const [isDeleting, setIsDeleting] = useState(false)
 
   const { data: aiWorkflows = [] } = useQuery<WorkflowRecord[]>({
