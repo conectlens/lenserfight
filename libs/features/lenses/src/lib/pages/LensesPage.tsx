@@ -3,7 +3,8 @@ import { useLensesFeed } from '@lenserfight/features/home'
 import { Button, PageHeader, SEOHead } from '@lenserfight/ui/components'
 import { buildAuthReturnUrl } from '@lenserfight/utils/dom'
 import { AUTH_BASE_URL } from '@lenserfight/utils/env'
-import { Plus, Search } from 'lucide-react'
+import type { LensViewModel } from '@lenserfight/types'
+import { Plus, Search, AlignLeft, ImageIcon, Video, Mic, Music } from 'lucide-react'
 import React, { useState, useCallback, useEffect, useMemo, useRef } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 
@@ -13,6 +14,17 @@ import { LensesSortDropdown, type LensesSortOrder } from '../components/LensesSo
 import { LensesTagFilter } from '../components/LensesTagFilter'
 import { useAuthenticatedLenser } from '../hooks/useAuthenticatedLenser'
 import { useCreateLens } from '../hooks/useCreateLens'
+
+type OutputKindFilter = 'all' | 'text' | 'image' | 'video' | 'audio' | 'music'
+
+const OUTPUT_KIND_TABS: { value: OutputKindFilter; label: string; Icon: React.ElementType }[] = [
+  { value: 'all',   label: 'All',   Icon: AlignLeft },
+  { value: 'text',  label: 'Text',  Icon: AlignLeft },
+  { value: 'image', label: 'Image', Icon: ImageIcon },
+  { value: 'video', label: 'Video', Icon: Video },
+  { value: 'audio', label: 'Audio', Icon: Mic },
+  { value: 'music', label: 'Music', Icon: Music },
+]
 
 export const LensesPage: React.FC = () => {
   const navigate = useNavigate()
@@ -24,6 +36,7 @@ export const LensesPage: React.FC = () => {
   const selectedTag = searchParams.get('tag')
   const sortOrder = (searchParams.get('sort') as LensesSortOrder) || 'popular'
   const searchQuery = searchParams.get('q') ?? ''
+  const outputKindFilter = (searchParams.get('kind') as OutputKindFilter) || 'all'
 
   // Local state for search input — debounced into URL
   const [searchInput, setSearchInput] = useState(searchQuery)
@@ -64,6 +77,17 @@ export const LensesPage: React.FC = () => {
     )
   }
 
+  const handleKindChange = (kind: OutputKindFilter) => {
+    setSearchParams(
+      (prev) => {
+        if (kind !== 'all') prev.set('kind', kind)
+        else prev.delete('kind')
+        return prev
+      },
+      { replace: true }
+    )
+  }
+
   // React Query Hook
   const { data, fetchNextPage, hasNextPage, isFetchingNextPage, isLoading } = useLensesFeed(
     searchQuery,
@@ -74,16 +98,20 @@ export const LensesPage: React.FC = () => {
   const lenses = useMemo(() => {
     const seen = new Set<string>()
 
-    return (
-      data?.pages
-        .flatMap((page) => page.data ?? [])
-        .filter((lens) => {
-          if (seen.has(lens.id)) return false
-          seen.add(lens.id)
-          return true
-        }) ?? []
-    )
-  }, [data])
+    const raw = (data?.pages.flatMap((page) => (page.data ?? []) as LensViewModel[]) ?? []) as LensViewModel[]
+
+    return raw
+      .filter((lens) => {
+        if (seen.has(lens.id)) return false
+        seen.add(lens.id)
+        return true
+      })
+      .filter((lens) => {
+        if (outputKindFilter === 'all') return true
+        const kind = lens.outputKind ?? 'text'
+        return kind === outputKindFilter
+      })
+  }, [data, outputKindFilter])
 
   // Create Lens Logic
   const {
@@ -153,6 +181,7 @@ export const LensesPage: React.FC = () => {
 
       {/* Controls Bar */}
       <div className="sticky top-[56px] z-20 bg-gray-50/95 dark:bg-gray-900/95 backdrop-blur py-3 border-b border-gray-100/50 dark:border-gray-800/50 transition-all mb-6 -mx-2 sm:-mx-4 lg:-mx-8 px-2 sm:px-4 lg:px-8">
+        {/* Search */}
         <div className="w-full mb-3">
           <div className="relative w-full">
             <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -168,7 +197,29 @@ export const LensesPage: React.FC = () => {
           </div>
         </div>
 
-        <div className="flex flex-col sm:flex-row gap-4 sm:items-center justify-between min-w-0 pt-2">
+        {/* Output-kind filter tabs */}
+        <div className="flex items-center gap-1 overflow-x-auto pb-1 mb-2 no-scrollbar">
+          {OUTPUT_KIND_TABS.map(({ value, label, Icon }) => {
+            const isActive = outputKindFilter === value
+            return (
+              <button
+                key={value}
+                onClick={() => handleKindChange(value)}
+                className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition-all border ${
+                  isActive
+                    ? 'bg-primary text-white border-primary shadow-sm'
+                    : 'bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 border-gray-200 dark:border-gray-700 hover:border-primary/50 hover:text-primary dark:hover:text-primary-400'
+                }`}
+              >
+                <Icon size={12} />
+                {label}
+              </button>
+            )
+          })}
+        </div>
+
+        {/* Tag filter + sort */}
+        <div className="flex flex-col sm:flex-row gap-4 sm:items-center justify-between min-w-0 pt-1">
           <div className="w-full sm:w-auto max-w-full min-w-0">
             <LensesTagFilter selectedTag={selectedTag} onSelect={handleTagSelect} />
           </div>
