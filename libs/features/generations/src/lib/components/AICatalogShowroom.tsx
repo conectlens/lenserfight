@@ -6,6 +6,7 @@ import { Input, SelectField } from '@lenserfight/ui/forms'
 import { PageHeader, Stack } from '@lenserfight/ui/layout'
 import { Heading, Surface, Text } from '@lenserfight/ui/primitives'
 import React, { useMemo, useState } from 'react'
+import { Link, useNavigate } from 'react-router-dom'
 import { Sparkles, Search, Layers, Box, Info } from 'lucide-react'
 
 import { useAICatalogModels, useAICatalogProviders, useCatalogProviderKeys } from '../hooks/useAICatalog'
@@ -36,6 +37,7 @@ export const AICatalogShowroom: React.FC<AICatalogShowroomProps> = ({
   const [search, setSearch] = useState('')
   const [selectedKeys, setSelectedKeys] = useState<string[]>([])
   const [activeModelKey, setActiveModelKey] = useState<string | null>(null)
+  const navigate = useNavigate()
 
   const { data: providers = [], isLoading: providersLoading } = useAICatalogProviders()
   const { data: models = [], isLoading: modelsLoading } = useAICatalogModels({
@@ -171,7 +173,8 @@ export const AICatalogShowroom: React.FC<AICatalogShowroomProps> = ({
                   <Surface
                     key={provider.key}
                     variant="raised"
-                    className="rounded-[28px] p-6 flex flex-col h-full hover:shadow-neu-3 transition-all duration-300"
+                    className="rounded-[28px] p-6 flex flex-col h-full hover:shadow-neu-3 transition-all duration-300 cursor-pointer"
+                    onClick={() => focus === 'providers' ? navigate(`/ai/catalog/models`) : setProviderFilter(provider.key)}
                   >
                     <div className="flex items-start justify-between gap-3">
                       <div>
@@ -225,24 +228,20 @@ export const AICatalogShowroom: React.FC<AICatalogShowroomProps> = ({
                       key={compareKey}
                       variant={isActive ? 'inset' : 'raised'}
                       className={`
-                        rounded-[28px] p-6 transition-all duration-300 group relative
+                        rounded-[28px] p-6 transition-all duration-300 group relative cursor-pointer
                         ${!isActive ? 'hover:shadow-neu-3' : ''}
                       `}
+                      onClick={() => navigate(`/ai/catalog/${model.provider_key}/${model.key}`)}
+                      onMouseEnter={() => setActiveModelKey(compareKey)}
                     >
                       <div className="flex items-start justify-between gap-3">
                         <div className="min-w-0">
                           <Text variant="caption" color="muted" className="uppercase tracking-widest font-bold">
                             {model.provider_name}
                           </Text>
-                          <button
-                            type="button"
-                            onClick={() => setActiveModelKey(compareKey)}
-                            className="mt-1 block text-left"
-                          >
-                            <Heading level={3} size="h3" className="text-greyscale-900 group-hover:text-primary-yellow-600 dark:text-white dark:group-hover:text-primary-yellow-400 transition-colors">
-                              {model.name}
-                            </Heading>
-                          </button>
+                          <Heading level={3} size="h3" className="mt-1 text-greyscale-900 group-hover:text-primary-yellow-600 dark:text-white dark:group-hover:text-primary-yellow-400 transition-colors">
+                            {model.name}
+                          </Heading>
                         </div>
                         <Badge color={supportTone(model.support_level)} variant="outline">
                           {model.support_level}
@@ -273,7 +272,8 @@ export const AICatalogShowroom: React.FC<AICatalogShowroomProps> = ({
                           variant={selected ? 'primary' : 'secondary'}
                           size="sm"
                           className="flex-1"
-                          onClick={() =>
+                          onClick={(e) => {
+                            e.stopPropagation()
                             setSelectedKeys((current) =>
                               current.includes(compareKey)
                                 ? current.filter((value) => value !== compareKey)
@@ -281,7 +281,7 @@ export const AICatalogShowroom: React.FC<AICatalogShowroomProps> = ({
                                   ? [...current.slice(1), compareKey]
                                   : [...current, compareKey]
                             )
-                          }
+                          }}
                         >
                           {selected ? 'Comparing' : 'Compare'}
                         </Button>
@@ -290,7 +290,7 @@ export const AICatalogShowroom: React.FC<AICatalogShowroomProps> = ({
                             variant="dark"
                             size="sm"
                             className="flex-1"
-                            onClick={() => onModelSelect(model)}
+                            onClick={(e) => { e.stopPropagation(); onModelSelect(model) }}
                           >
                             Use in agent
                           </Button>
@@ -304,11 +304,18 @@ export const AICatalogShowroom: React.FC<AICatalogShowroomProps> = ({
 
             <Stack gap="gap-6" className="h-full">
               <Surface variant="raised" className="rounded-[28px] p-6 h-fit sticky top-6">
-                <div className="flex items-center gap-2 mb-4">
-                  <Info size={16} className="text-primary-yellow-600" />
-                  <Text variant="caption" color="muted" className="uppercase tracking-widest font-bold">
-                    Model Details
-                  </Text>
+                <div className="flex items-center justify-between mb-4">
+                  <Badge color="yellow" variant="outline" className="gap-1.5 py-1 px-3">
+                    <Info size={14} />
+                    <span className="uppercase tracking-widest text-[10px] font-black">Model Details</span>
+                  </Badge>
+                  {activeModel && (
+                    <Link to={`/ai/catalog/${activeModel.provider_key}/${activeModel.key}`}>
+                      <Text variant="caption" className="text-primary-yellow-600 hover:underline font-bold">
+                        Full Specs
+                      </Text>
+                    </Link>
+                  )}
                 </div>
                 {activeModel ? (
                   <Stack gap="gap-4">
@@ -353,12 +360,10 @@ export const AICatalogShowroom: React.FC<AICatalogShowroomProps> = ({
 
               <Surface variant="raised" className="rounded-[28px] p-6 h-fit">
                 <div className="flex items-center justify-between mb-4">
-                  <div className="flex items-center gap-2">
-                    <Layers size={16} className="text-primary-yellow-600" />
-                    <Text variant="caption" color="muted" className="uppercase tracking-widest font-bold">
-                      Compare Models
-                    </Text>
-                  </div>
+                  <Badge color="gray" variant="outline" className="gap-1.5 py-1 px-3">
+                    <Layers size={14} />
+                    <span className="uppercase tracking-widest text-[10px] font-black">Compare Models</span>
+                  </Badge>
                   <Badge color="yellow" variant="solid" size="sm">{selectedModels.length}/3</Badge>
                 </div>
                 {selectedModels.length === 0 ? (
