@@ -11,7 +11,6 @@ import {
   Bell,
   Users,
   Brain,
-  Rocket,
   Trophy,
   Sun,
   Moon,
@@ -391,25 +390,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
         </nav>
 
         <div className="flex-shrink-0 px-3 pb-3 pt-2 bg-gray-50 dark:bg-gray-800 mt-auto space-y-3">
-          {/* Waiting List Button */}
-          <div className={`${!showLabels ? '' : 'animate-in slide-in-from-bottom-2 duration-500'}`}>
-            <SidebarItem
-              onClick={() => handleNavigation('/waiting-list')}
-              icon={<Rocket size={20} className="text-[#121212] dark:text-gray-100" />}
-              label="Join Waitlist"
-              isActive={isRouteActive(location.pathname, '/waiting-list')}
-              collapsed={!showLabels}
-              className={`
-                 !my-0 
-                 border border-[#121212] dark:border-gray-500
-                 text-[#121212] dark:text-gray-100 font-bold 
-                 hover:bg-transparent 
-                 hover:shadow-md 
-                 transition-all
-               `}
-            />
-          </div>
-
           {/* Feedback Button */}
           <div
             className={`${!showLabels ? '' : 'animate-in slide-in-from-bottom-3 duration-500 delay-75'}`}

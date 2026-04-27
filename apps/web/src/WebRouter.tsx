@@ -51,9 +51,6 @@ const LazyThreadDetailPage = lazy(() =>
 const LazyThreadComposePage = lazy(() =>
   import('@lenserfight/features/threads').then((module) => ({ default: module.ThreadComposePage }))
 )
-const LazyWaitingListPage = lazy(() =>
-  import('@lenserfight/features/waiting-list').then((module) => ({ default: module.WaitingListPage }))
-)
 const LazyStorePage = lazy(() =>
   import('@lenserfight/features/store').then((module) => ({ default: module.StorePage }))
 )
@@ -344,14 +341,6 @@ export const WebRouter: React.FC = () => {
           }
         />
 
-        <Route
-          path="/waiting-list"
-          element={
-            <DashboardFrame>
-              <LazyWaitingListPage />
-            </DashboardFrame>
-          }
-        />
 
         <Route
           path="/billing"

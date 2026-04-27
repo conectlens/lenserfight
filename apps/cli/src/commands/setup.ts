@@ -1,170 +1,179 @@
 import { defineCommand } from 'citty'
-import consola from 'consola'
-import { execSync, spawn } from 'node:child_process'
-import { existsSync, writeFileSync } from 'node:fs'
-import { resolve } from 'node:path'
+import { spawn } from 'node:child_process'
 import {
-  saveConfig,
-  configExists,
-  LOCAL_SUPABASE_URL,
-  LOCAL_ANON_KEY,
-} from '../config/project-config'
-import { runCombineSeedsIfPresent } from '../lib/combine-seeds'
+  loadOnboardingSnapshot,
+  markOnboardingComplete,
+  markOnboardingFailed,
+  markOnboardingStarted,
+  markOnboardingStep,
+} from '../lib/onboarding/state'
+import type { OnboardingStep, SetupOptions } from '../lib/onboarding/schema'
+import { detectPrerequisitesStep } from '../lib/onboarding/steps/prerequisites'
+import { verifyWorkspaceStep } from '../lib/onboarding/steps/verify-workspace'
+import { configureProjectStep } from '../lib/onboarding/steps/configure-project'
+import { startServicesStep } from '../lib/onboarding/steps/start-services'
+import { handoffStep } from '../lib/onboarding/steps/handoff'
+import { printInfo, printJson, printSuccess, printWarn } from '../utils/output'
 
-function checkTool(name: string, versionFlag = '--version'): string | null {
-  try {
-    return execSync(`${name} ${versionFlag}`, { encoding: 'utf-8' }).trim().split('\n')[0]
-  } catch {
-    return null
-  }
-}
+const STEPS: OnboardingStep[] = [
+  detectPrerequisitesStep,
+  verifyWorkspaceStep,
+  configureProjectStep,
+  startServicesStep,
+  handoffStep,
+]
 
-function checkDocker(): boolean {
-  try {
-    execSync('docker info', { stdio: 'ignore' })
-    return true
-  } catch {
-    return false
+function resolveSetupOptions(args: Record<string, unknown>): SetupOptions {
+  return {
+    mode: args.mode === 'cloud' ? 'cloud' : 'local',
+    dryRun: Boolean(args['dry-run']),
+    nonInteractive: Boolean(args['non-interactive']),
+    resume: Boolean(args.resume),
+    skipDb: Boolean(args['skip-db']),
+    skipAuth: Boolean(args['skip-auth']),
+    skipOpen: Boolean(args['skip-open']),
+    ollama: Boolean(args.ollama),
+    ollamaBaseUrl: typeof args['ollama-base-url'] === 'string' ? args['ollama-base-url'] : undefined,
+    json: Boolean(args.json),
+    verbose: Boolean(args.verbose),
   }
 }
 
 export default defineCommand({
   meta: {
     name: 'setup',
-    description: 'Interactive setup wizard for local LenserFight development.',
+    description: 'Deterministic onboarding wizard for local and cloud LenserFight environments.',
   },
   args: {
+    mode: {
+      type: 'string',
+      description: 'Setup mode: local or cloud',
+      default: 'local',
+    },
+    'dry-run': {
+      type: 'boolean',
+      description: 'Preview actions without mutating the workspace',
+      default: false,
+    },
+    'non-interactive': {
+      type: 'boolean',
+      description: 'Disable prompts and rely on flags/env/config only',
+      default: false,
+    },
+    resume: {
+      type: 'boolean',
+      description: 'Resume from the previous onboarding state',
+      default: false,
+    },
     'skip-db': {
       type: 'boolean',
-      description: 'Skip database setup (Supabase start + migration + seed)',
+      description: 'Skip starting and resetting the local database',
+      default: false,
+    },
+    'skip-auth': {
+      type: 'boolean',
+      description: 'Skip any auth guidance during handoff',
       default: false,
     },
     'skip-open': {
       type: 'boolean',
-      description: 'Do not start the web app after setup',
+      description: 'Do not launch the web app after setup',
+      default: false,
+    },
+    ollama: {
+      type: 'boolean',
+      description: 'Require a reachable Ollama endpoint during setup',
+      default: false,
+    },
+    'ollama-base-url': {
+      type: 'string',
+      description: 'Override the Ollama base URL used during checks and .env generation',
+    },
+    json: {
+      type: 'boolean',
+      description: 'Emit a JSON summary instead of human logs',
+      default: false,
+    },
+    verbose: {
+      type: 'boolean',
+      description: 'Print additional setup detail',
       default: false,
     },
   },
   async run({ args }) {
-    consola.box('LenserFight Local Setup')
-    const cwd = process.cwd()
+    const options = resolveSetupOptions(args as Record<string, unknown>)
+    const previous = loadOnboardingSnapshot()
+    const results: Array<{ step: string; status: string; detail: string }> = []
 
-    // ── Step 1: Prerequisites ─────────────────────────────────────────────
-    consola.start('Checking prerequisites...')
-
-    const nodeVersion = process.version
-    const nodeMajor = parseInt(nodeVersion.slice(1).split('.')[0], 10)
-    if (nodeMajor < 20) {
-      consola.error(`Node.js >= 20 required (found ${nodeVersion}). Install from https://nodejs.org`)
-      process.exit(1)
+    if (!options.json) {
+      printInfo('Starting onboarding in %s mode', options.mode)
+      if (options.resume && previous) {
+        printInfo('Resuming from onboarding state updated at %s', previous.updatedAt)
+      }
     }
-    consola.success(`Node.js ${nodeVersion}`)
 
-    const supabaseVersion = checkTool('supabase', '--version')
-    if (!supabaseVersion) {
-      consola.error('Supabase CLI not found. Install: npm i -g supabase or brew install supabase/tap/supabase')
-      process.exit(1)
-    }
-    consola.success(`Supabase CLI ${supabaseVersion}`)
+    markOnboardingStarted(options.mode)
 
-    if (!checkDocker()) {
-      consola.error('Docker is not running. Start Docker Desktop and try again.')
-      process.exit(1)
-    }
-    consola.success('Docker is running')
+    try {
+      for (const step of STEPS) {
+        if (options.resume && previous?.completedSteps.includes(step.id)) {
+          results.push({ step: step.id, status: 'skipped', detail: 'Already completed in prior run' })
+          continue
+        }
 
-    // ── Step 2: Verify schema files ─────────────────────────────────────
-    const configToml = resolve(cwd, 'supabase', 'config.toml')
-    if (!existsSync(configToml)) {
-      consola.error('supabase/config.toml not found. Ensure you cloned the repository correctly.')
-      process.exit(1)
-    }
-    consola.success('Supabase schema ready')
+        if (step.shouldSkip?.(options)) {
+          markOnboardingStep(step.id, 'skipped')
+          results.push({ step: step.id, status: 'skipped', detail: 'Skipped by options' })
+          continue
+        }
 
-    // ── Step 3: Boot local Supabase ───────────────────────────────────────
-    if (!args['skip-db']) {
-      consola.start('Starting local Supabase (this may take a minute on first run)...')
-      try {
-        execSync('supabase start', { cwd, stdio: 'inherit' })
-        consola.success('Local Supabase is running')
-      } catch {
-        consola.warn('supabase start may have already been running. Continuing...')
+        const result = await step.run(options)
+        markOnboardingStep(step.id, result.status)
+        results.push({ step: result.id, status: result.status, detail: result.detail })
       }
 
-      // ── Step 4: Run migrations + seeds ──────────────────────────────────
-      consola.start('Running migrations and seeding database...')
-      try {
-        runCombineSeedsIfPresent(cwd)
-        execSync('supabase db reset', { cwd, stdio: 'inherit' })
-        consola.success('Database migrated and seeded')
-      } catch (err) {
-        consola.error('Database reset failed. Check the output above for details.')
-        process.exit(1)
+      markOnboardingComplete(options.mode)
+
+      if (!options.skipOpen && !options.dryRun && options.mode === 'local') {
+        spawn('pnpm', ['nx', 'run', 'web:serve'], {
+          cwd: process.cwd(),
+          stdio: 'inherit',
+          shell: true,
+          detached: false,
+        })
       }
-    } else {
-      consola.info('Skipping database setup (--skip-db)')
-    }
 
-    // ── Step 5: Create .lenserfight.json ──────────────────────────────────
-    if (!configExists(cwd)) {
-      saveConfig({ mode: 'local', dbPort: 54322, apiPort: 54321 }, cwd)
-      consola.success('Created .lenserfight.json (local mode)')
-    } else {
-      consola.info('.lenserfight.json already exists, skipping')
-    }
+      if (options.json) {
+        printJson({
+          mode: options.mode,
+          status: 'complete',
+          results,
+        })
+        return
+      }
 
-    // ── Step 6: Create .env.local ─────────────────────────────────────────
-    const envLocalPath = resolve(cwd, '.env.local')
-    if (!existsSync(envLocalPath)) {
-      const envContent = [
-        `VITE_SUPABASE_URL=${LOCAL_SUPABASE_URL}`,
-        `VITE_SUPABASE_ANON_KEY=${LOCAL_ANON_KEY}`,
-        '',
-        '# Local app URLs',
-        'VITE_WEB_BASE_URL=http://localhost:3001',
-        'VITE_DOCS_BASE_URL=http://localhost:3002',
-        'VITE_STATUS_BASE_URL=http://localhost:3003',
-        'VITE_API_URL=http://localhost:8786',
-        '',
-        '# Captcha (test key for local dev)',
-        'VITE_CAPTCHA_SITE_KEY=1x00000000000000000000AA',
-        '',
-      ].join('\n')
+      for (const result of results) {
+        if (result.status === 'completed') printSuccess('%s: %s', result.step, result.detail)
+        else printWarn('%s: %s', result.step, result.detail)
+      }
+      printSuccess('Onboarding complete.')
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error)
+      markOnboardingFailed(message)
 
-      writeFileSync(envLocalPath, envContent, 'utf-8')
-      consola.success('Created .env.local with local Supabase configuration')
-    } else {
-      consola.info('.env.local already exists, skipping')
-    }
+      if (options.json) {
+        printJson({
+          mode: options.mode,
+          status: 'partial',
+          error: message,
+          results,
+        })
+        process.exitCode = 1
+        return
+      }
 
-    // ── Step 7: Open forum app ────────────────────────────────────────────
-    consola.box({
-      title: 'Setup complete!',
-      message: [
-        '',
-        '  API:    http://127.0.0.1:54321',
-        '  DB:     postgresql://postgres:postgres@127.0.0.1:54322/postgres',
-        '  Studio: http://127.0.0.1:54323',
-        '  Web:    http://localhost:3001',
-        '',
-        '  Run `npx nx serve web` to start the community app.',
-        '  Run `lf doctor` to check your environment.',
-        '  Run `lf status` to see your configuration.',
-        '',
-      ].join('\n'),
-    })
-
-    if (!args['skip-open']) {
-      consola.start('Starting web app...')
-      const child = spawn('npx', ['nx', 'serve', 'web'], {
-        cwd,
-        stdio: 'inherit',
-        shell: true,
-        detached: false,
-      })
-      child.on('error', (err) => {
-        consola.error(`Failed to start web app: ${err.message}`)
-      })
+      printWarn('Onboarding stopped: %s', message)
+      process.exitCode = 1
     }
   },
 })

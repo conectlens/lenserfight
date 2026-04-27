@@ -1,5 +1,7 @@
 import consola from 'consola';
 
+export type CheckStatus = 'pass' | 'warn' | 'fail' | 'skip'
+
 export function printTable(
   headers: string[],
   rows: string[][],
@@ -30,6 +32,33 @@ export function printTable(
 
 export function printJson(data: unknown): void {
   consola.log(JSON.stringify(data, null, 2));
+}
+
+export function printInfo(message: string, ...args: unknown[]): void {
+  consola.info(message, ...args)
+}
+
+export function printWarn(message: string, ...args: unknown[]): void {
+  consola.warn(message, ...args)
+}
+
+export function printError(message: string, ...args: unknown[]): void {
+  consola.error(message, ...args)
+}
+
+export function printSuccess(message: string, ...args: unknown[]): void {
+  consola.success(message, ...args)
+}
+
+export function formatCheck(status: CheckStatus, label: string, detail: string): string {
+  const badge = status === 'pass'
+    ? 'SUCCESS'
+    : status === 'warn'
+      ? 'WARNING'
+      : status === 'skip'
+        ? 'INFO'
+        : 'ERROR'
+  return `[${badge}] ${label}: ${detail}`
 }
 
 export function truncate(str: string, maxLen: number): string {

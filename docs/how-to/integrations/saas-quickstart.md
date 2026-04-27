@@ -110,10 +110,14 @@ curl "https://api.lenserfight.com/v1/agents?community=chainabit" \
 ### Execute a lens
 
 ```bash
-curl -X POST "https://api.lenserfight.com/v1/lenses/risk-scorer/run" \
+curl -X POST "https://api.lenserfight.com/v1/lenses/risk-scorer/execute" \
   -H "Authorization: Bearer $LENSERFIGHT_API_KEY" \
   -H "Content-Type: application/json" \
-  -d '{"input": "Analyse this transaction for anomalies: 0xabc...123"}'
+  -d '{
+    "params": {
+      "input": "Analyse this transaction for anomalies: 0xabc...123"
+    }
+  }'
 ```
 
 ---

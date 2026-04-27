@@ -1,100 +1,121 @@
-import { defineCommand } from 'citty';
-import consola from 'consola';
-import { execSync } from 'node:child_process';
-import { configExists, loadConfig } from '../config/project-config';
+import { defineCommand } from 'citty'
+import {
+  configExists,
+  getOnboardingState,
+  loadConfig,
+  resolveConfig,
+} from '../config/project-config'
+import {
+  detectCloudApi,
+  detectDocker,
+  detectNode,
+  detectOllama,
+  detectSupabaseCli,
+} from '../lib/onboarding/detect'
+import { byokKeyResolver } from '@lenserfight/providers'
+import { formatCheck, printJson, printSuccess, printWarn, printError } from '../utils/output'
 
-function checkCommand(cmd: string): string | null {
-  try {
-    return execSync(`which ${cmd}`, { encoding: 'utf-8' }).trim();
-  } catch {
-    return null;
-  }
-}
-
-function checkVersion(cmd: string): string | null {
-  try {
-    return execSync(`${cmd} --version`, { encoding: 'utf-8' }).trim();
-  } catch {
-    return null;
-  }
-}
+type DoctorCheckId = 'core' | 'api' | 'byok' | 'ollama'
 
 export default defineCommand({
   meta: {
     name: 'doctor',
-    description: 'Validate environment: Node, Supabase CLI, DB, config.',
+    description: 'Validate environment health for local and cloud LenserFight flows.',
   },
-  async run() {
-    let hasError = false;
+  args: {
+    mode: {
+      type: 'string',
+      description: 'Check mode: local or cloud',
+    },
+    json: {
+      type: 'boolean',
+      description: 'Emit structured JSON',
+      default: false,
+    },
+    check: {
+      type: 'string',
+      description: 'Run an additional targeted check: api, byok, ollama',
+    },
+  },
+  async run({ args }) {
+    const resolved = resolveConfig()
+    const mode = args.mode === 'cloud' ? 'cloud' : args.mode === 'local' ? 'local' : resolved.mode
+    const requestedCheck = (args.check as DoctorCheckId | undefined) ?? 'core'
+    let hasError = false
 
-    // Node.js version
-    const nodeVersion = process.version;
-    const nodeMajor = parseInt(nodeVersion.replace('v', ''), 10);
-    if (nodeMajor >= 20) {
-      consola.success('Node.js %s', nodeVersion);
-    } else {
-      consola.error('Node.js %s (requires >= 20)', nodeVersion);
-      hasError = true;
+    const results: Array<{ id: string; status: 'pass' | 'warn' | 'fail'; detail: string }> = []
+    const push = (id: string, status: 'pass' | 'warn' | 'fail', detail: string) => {
+      results.push({ id, status, detail })
+      if (status === 'fail') hasError = true
     }
 
-    // Supabase CLI
-    const supabasePath = checkCommand('supabase');
-    if (supabasePath) {
-      const version = checkVersion('supabase') || 'unknown';
-      consola.success('Supabase CLI: %s', version);
-    } else {
-      consola.error('Supabase CLI not found. Install: npm i -g supabase');
-      hasError = true;
+    const node = detectNode()
+    push('node', node.ok ? 'pass' : 'fail', node.detail)
+
+    if (mode === 'local') {
+      const supabase = detectSupabaseCli()
+      push('supabase_cli', supabase.ok ? 'pass' : 'fail', supabase.detail)
+
+      const docker = detectDocker()
+      push('docker', docker.ok ? 'pass' : 'fail', docker.detail)
     }
 
-    // Docker
-    const dockerPath = checkCommand('docker');
-    if (dockerPath) {
-      try {
-        execSync('docker info', { stdio: 'ignore' });
-        consola.success('Docker: running');
-      } catch {
-        consola.error('Docker installed but not running. Start Docker Desktop.');
-        hasError = true;
-      }
-    } else {
-      consola.error('Docker not found. Install Docker Desktop.');
-      hasError = true;
-    }
-
-    // Config file
     if (configExists()) {
-      const config = loadConfig();
-      consola.success('Config: .lenserfight.json (mode: %s)', config.mode);
-
-      if (config.mode === 'local') {
-        // Check if local Supabase is running
-        try {
-          const status = execSync('supabase status 2>&1', {
-            encoding: 'utf-8',
-          });
-          if (status.includes('API URL')) {
-            consola.success('Local Supabase: running');
-          } else {
-            consola.warn(
-              'Local Supabase may not be running. Run `supabase start`.'
-            );
-          }
-        } catch {
-          consola.warn(
-            'Could not check Supabase status. Run `supabase start`.'
-          );
-        }
-      }
+      const config = loadConfig()
+      push('project_config', 'pass', `.lenserfight.json present (mode=${config.mode})`)
     } else {
-      consola.warn('No .lenserfight.json found. Run `lenserfight init`.');
+      push('project_config', 'warn', 'No .lenserfight.json found. Run `lf setup` or `lf init`.')
+    }
+
+    const onboarding = getOnboardingState()
+    if (onboarding) {
+      push('onboarding', onboarding.status === 'complete' ? 'pass' : 'warn', onboarding.status)
+    }
+
+    if (requestedCheck === 'api') {
+      const api = await detectCloudApi(resolved.cloudApiUrl)
+      push('cloud_api', api.ok ? 'pass' : 'fail', api.detail)
+    }
+
+    if (requestedCheck === 'ollama') {
+      const ollama = await detectOllama(resolved.ollamaBaseUrl)
+      push('ollama', ollama.ok ? 'pass' : 'fail', ollama.detail)
+    }
+
+    if (requestedCheck === 'byok') {
+      const providers = ['openai', 'anthropic', 'google', 'mistral'] as const
+      for (const provider of providers) {
+        const ok = byokKeyResolver.has(provider)
+        push(
+          `byok_${provider}`,
+          ok ? 'pass' : 'warn',
+          ok ? 'Configured' : 'No key detected in the environment',
+        )
+      }
+    }
+
+    if (args.json) {
+      printJson({
+        mode,
+        status: hasError ? 'failed' : 'passed',
+        checks: results,
+      })
+      process.exitCode = hasError ? 1 : 0
+      return
+    }
+
+    for (const result of results) {
+      const line = formatCheck(result.status, result.id, result.detail)
+      if (result.status === 'pass') printSuccess(line)
+      else if (result.status === 'warn') printWarn(line)
+      else printError(line)
     }
 
     if (hasError) {
-      consola.error('Some checks failed. Fix the issues above.');
-      process.exitCode = 1;
+      printError('Some checks failed.')
+      process.exitCode = 1
     } else {
-      consola.success('All checks passed!');
+      printSuccess('All requested checks passed.')
     }
   },
-});
+})

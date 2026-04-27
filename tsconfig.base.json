@@ -56,6 +56,7 @@
       "@lenserfight/ui/tokens": ["libs/ui/tokens/src/index.ts"],
       "@lenserfight/utils/date": ["libs/utils/date/src/index.ts"],
       "@lenserfight/utils/env": ["libs/utils/env/src/index.ts"],
+      "@lenserfight/utils/logger": ["libs/utils/logger/src/index.ts"],
       "@lenserfight/utils/storage": ["libs/utils/storage/src/index.ts"],
       "@lenserfight/utils/validation": ["libs/utils/validation/src/index.ts"],
       "@lenserfight/features/shell": ["libs/features/shell/src/index.ts"],
