@@ -7,7 +7,24 @@ import type { ProviderMessage, ProviderRequestOptions, ProviderResponse, StreamC
 // - Streaming: NDJSON (one JSON object per line, not SSE format)
 // - Base URL is configurable for non-standard local setups
 
-const DEFAULT_BASE_URL = 'http://localhost:11434';
+const FALLBACK_BASE_URL = 'http://localhost:11434';
+
+function resolveEnvBaseUrl(): string | undefined {
+  const nodeValue =
+    typeof process !== 'undefined' ? process.env['LENSERFIGHT_OLLAMA_BASE_URL'] : undefined
+  if (nodeValue?.trim()) return nodeValue.trim().replace(/\/$/, '')
+
+  const viteEnv = (import.meta as ImportMeta & { env?: Record<string, string | undefined> }).env
+  const viteValue = viteEnv?.['VITE_OLLAMA_BASE_URL']
+  if (viteValue?.trim()) return viteValue.trim().replace(/\/$/, '')
+
+  return undefined
+}
+
+export function resolveOllamaBaseUrl(baseUrl?: string): string {
+  if (baseUrl?.trim()) return baseUrl.trim().replace(/\/$/, '')
+  return resolveEnvBaseUrl() ?? FALLBACK_BASE_URL
+}
 
 // ─── Wire Types ───────────────────────────────────────────────────────────────
 
@@ -91,7 +108,7 @@ export function transformRequest(
   };
 
   return {
-    url: `${baseUrl ?? DEFAULT_BASE_URL}/api/chat`,
+    url: `${resolveOllamaBaseUrl(baseUrl)}/api/chat`,
     body: JSON.stringify(body),
     headers: { 'Content-Type': 'application/json' },
   };
@@ -135,7 +152,7 @@ export function buildStreamRequest(
   };
 
   return {
-    url: `${baseUrl ?? DEFAULT_BASE_URL}/api/chat`,
+    url: `${resolveOllamaBaseUrl(baseUrl)}/api/chat`,
     body: JSON.stringify(body),
     headers: { 'Content-Type': 'application/json' },
   };
@@ -170,4 +187,4 @@ export function parseStreamChunk(line: string, _eventType?: string): StreamChunk
   }
 }
 
-export { DEFAULT_BASE_URL as OLLAMA_DEFAULT_BASE_URL };
+export const OLLAMA_DEFAULT_BASE_URL = resolveOllamaBaseUrl()
