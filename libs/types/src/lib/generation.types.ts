@@ -20,6 +20,10 @@ export type ProviderEnum =
   | 'meta'
   | 'midjourney'
   | 'stability'
+  | 'elevenlabs'
+  | 'kling'
+  | 'suno'
+  | 'fal'
   | 'mistral'
   | 'other'
 export type AICapabilityEnum =
@@ -27,6 +31,7 @@ export type AICapabilityEnum =
   | 'image_generation'
   | 'video_generation'
   | 'audio_generation'
+  | 'music_generation'
 /**
  * DB source: ai.model_tier_enum (relocated from public.pricing_tier_enum in migration 20260440000010).
  */

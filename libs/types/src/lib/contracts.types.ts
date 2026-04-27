@@ -17,6 +17,8 @@ export type LensKind =
   | 'text'
   | 'image'
   | 'video'
+  | 'audio'
+  | 'music'
   | 'research'
   | 'pdf'
   | 'transform'
