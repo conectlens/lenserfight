@@ -35,6 +35,8 @@ const KIND_DEFAULT_TEXT: Record<LensKind, string> = {
   text: '[sim] sample text output',
   image: '[sim] https://example.invalid/image.png',
   video: '[sim] https://example.invalid/video.mp4',
+  audio: '[sim] https://example.invalid/audio.mp3',
+  music: '[sim] https://example.invalid/music.mp3',
   research: '[sim] synthesised findings',
   pdf: '[sim] https://example.invalid/export.pdf',
   transform: '[sim] transformed payload',
