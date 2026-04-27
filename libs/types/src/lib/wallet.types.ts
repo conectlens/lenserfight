@@ -63,7 +63,7 @@ export interface TokenUsage {
 }
 
 export interface ExecuteRequest {
-  provider: 'openai' | 'anthropic' | 'google'
+  provider: 'openai' | 'anthropic' | 'google' | 'mistral' | 'ollama'
   model: string
   messages: Message[]
   max_tokens?: number
@@ -80,7 +80,7 @@ export interface ExecuteResponse {
 
 export interface ExecuteByokRequest {
   key_ref_id: string
-  provider?: 'openai' | 'anthropic' | 'google'
+  provider?: 'openai' | 'anthropic' | 'google' | 'mistral'
   model: string
   messages: Message[]
   max_tokens?: number
