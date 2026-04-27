@@ -184,6 +184,11 @@ const AgentManageModal: React.FC = () => {
   )
 }
 
+const AgentControlRoomOverviewRedirect: React.FC = () => {
+  const { handle } = useParams<{ handle: string }>()
+  return <Navigate to={`/lenser/${handle}/ag/overview`} replace />
+}
+
 const OnboardingModal: React.FC = () => (
   <ModalRoute maxWidth="max-w-xl sm:max-w-2xl" dismissOnBackdrop={false}>
     <LazyCreateLenserProfileModal />
@@ -379,7 +384,7 @@ export const WebRouter: React.FC = () => {
 
         <Route
           path="/lenser/:handle/ag"
-          element={<Navigate to="overview" replace />}
+          element={<AgentControlRoomOverviewRedirect />}
         />
 
         <Route
