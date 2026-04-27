@@ -4,10 +4,11 @@ import { Button } from '@lenserfight/ui/components'
 import { MetricCard } from '@lenserfight/ui/data-display'
 import { Input, SelectField } from '@lenserfight/ui/forms'
 import { PageHeader, Stack } from '@lenserfight/ui/layout'
+import { Drawer } from '@lenserfight/ui/overlays'
 import { Heading, Surface, Text } from '@lenserfight/ui/primitives'
 import React, { useMemo, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { Sparkles, Search, Layers, Box, Info } from 'lucide-react'
+import { Sparkles, Search, Layers, Box, Info, CheckCircle2, XCircle, X } from 'lucide-react'
 
 import { useAICatalogModels, useAICatalogProviders, useCatalogProviderKeys } from '../hooks/useAICatalog'
 
@@ -37,6 +38,7 @@ export const AICatalogShowroom: React.FC<AICatalogShowroomProps> = ({
   const [search, setSearch] = useState('')
   const [selectedKeys, setSelectedKeys] = useState<string[]>([])
   const [activeModelKey, setActiveModelKey] = useState<string | null>(null)
+  const [compareOpen, setCompareOpen] = useState(false)
   const navigate = useNavigate()
 
   const { data: providers = [], isLoading: providersLoading } = useAICatalogProviders()
@@ -358,45 +360,186 @@ export const AICatalogShowroom: React.FC<AICatalogShowroomProps> = ({
                 )}
               </Surface>
 
-              <Surface variant="raised" className="rounded-[28px] p-6 h-fit">
-                <div className="flex items-center justify-between mb-4">
-                  <Badge color="gray" variant="outline" className="gap-1.5 py-1 px-3">
-                    <Layers size={14} />
-                    <span className="uppercase tracking-widest text-[10px] font-black">Compare Models</span>
-                  </Badge>
-                  <Badge color="yellow" variant="solid" size="sm">{selectedModels.length}/3</Badge>
-                </div>
-                {selectedModels.length === 0 ? (
-                  <Text variant="body-m" color="muted" className="py-4 text-center italic text-sm">
-                    Add up to three models to compare context, tools, support tier, and provider readiness.
-                  </Text>
-                ) : (
-                  <Stack gap="gap-4">
-                    {selectedModels.map((model) => (
-                      <Surface key={`${model.provider_key}/${model.key}`} variant="inset" className="p-4 rounded-2xl border border-surface-border">
-                        <Heading level={4} size="h3" className="text-base font-bold text-greyscale-900 dark:text-white">
-                          {model.name}
-                        </Heading>
-                        <Text variant="caption" color="muted" className="font-medium">{model.provider_name}</Text>
-                        <div className="mt-4 grid grid-cols-2 gap-y-2 text-xs font-medium">
-                          <Text color="muted">Context</Text>
-                          <Text className="text-right tabular-nums">{model.context_window_tokens?.toLocaleString() ?? 'n/a'}</Text>
-                          <Text color="muted">Streaming</Text>
-                          <Text className="text-right">{model.supports_streaming ? 'Yes' : 'No'}</Text>
-                          <Text color="muted">Tools</Text>
-                          <Text className="text-right">{model.supports_tools ? 'Yes' : 'No'}</Text>
-                          <Text color="muted">Status</Text>
-                          <Text className="text-right" color={model.status === 'active' ? 'success' : 'default'}>{model.status}</Text>
-                        </div>
-                      </Surface>
-                    ))}
-                  </Stack>
-                )}
-              </Surface>
             </Stack>
           </section>
         )}
       </Stack>
+
+      {/* ── Floating compare bar ─────────────────────────────────────────── */}
+      {selectedModels.length > 0 && (
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-[800] flex items-center gap-3 bg-surface-raised/95 backdrop-blur-md shadow-neu-4 rounded-2xl px-5 py-3 border border-surface-border">
+          <div className="flex items-center gap-2">
+            {selectedModels.map((model) => {
+              const key = `${model.provider_key}/${model.key}`
+              return (
+                <div
+                  key={key}
+                  className="flex items-center gap-1.5 bg-surface-sunken rounded-xl px-3 py-1.5 text-xs font-semibold text-greyscale-800 dark:text-greyscale-200"
+                >
+                  <span className="max-w-[120px] truncate">{model.name}</span>
+                  <button
+                    type="button"
+                    className="text-greyscale-400 hover:text-greyscale-700 dark:hover:text-greyscale-300 transition-colors"
+                    onClick={() => setSelectedKeys((prev) => prev.filter((k) => k !== key))}
+                    aria-label={`Remove ${model.name}`}
+                  >
+                    <X size={12} />
+                  </button>
+                </div>
+              )
+            })}
+          </div>
+          <div className="w-px h-5 bg-surface-border shrink-0" />
+          <Button variant="primary" size="sm" className="shrink-0 gap-1.5" onClick={() => setCompareOpen(true)}>
+            <Layers size={14} />
+            Compare {selectedModels.length}/3
+          </Button>
+          <Button variant="secondary" size="sm" className="shrink-0" onClick={() => setSelectedKeys([])}>
+            Clear
+          </Button>
+        </div>
+      )}
+
+      {/* ── Compare drawer ───────────────────────────────────────────────── */}
+      <Drawer
+        open={compareOpen}
+        onClose={() => setCompareOpen(false)}
+        title="Model Comparison"
+        side="bottom"
+        height="h-[72vh]"
+      >
+        {selectedModels.length === 0 ? (
+          <Text variant="body-m" color="muted" className="py-16 text-center italic">
+            Select models from the catalog to compare them here.
+          </Text>
+        ) : (
+          <div className="min-w-0 overflow-x-auto">
+            {/* Column headers */}
+            <div
+              className="grid gap-3 mb-2"
+              style={{ gridTemplateColumns: `180px repeat(${selectedModels.length}, 1fr)` }}
+            >
+              <div />
+              {selectedModels.map((model) => {
+                const key = `${model.provider_key}/${model.key}`
+                return (
+                  <Surface key={key} variant="inset" className="rounded-2xl p-4 text-center relative">
+                    <button
+                      type="button"
+                      aria-label={`Remove ${model.name}`}
+                      className="absolute top-2 right-2 text-greyscale-400 hover:text-greyscale-700 dark:hover:text-greyscale-300 transition-colors"
+                      onClick={() => setSelectedKeys((prev) => prev.filter((k) => k !== key))}
+                    >
+                      <X size={14} />
+                    </button>
+                    <Text variant="caption" color="muted" className="uppercase tracking-widest font-bold block">
+                      {model.provider_name}
+                    </Text>
+                    <Heading level={3} size="h3" className="mt-1 text-greyscale-900 dark:text-white">
+                      {model.name}
+                    </Heading>
+                    <div className="mt-2 flex justify-center">
+                      <Badge color={supportTone(model.support_level)} variant="outline" size="sm">
+                        {model.support_level}
+                      </Badge>
+                    </div>
+                  </Surface>
+                )
+              })}
+            </div>
+
+            {/* Spec rows */}
+            {(
+              [
+                {
+                  label: 'Context Window',
+                  render: (m: AIModelCatalogEntry) => (
+                    <Text variant="caption" className="font-mono font-bold tabular-nums">
+                      {m.context_window_tokens ? `${(m.context_window_tokens / 1000).toFixed(0)}k` : 'n/a'}
+                    </Text>
+                  ),
+                },
+                {
+                  label: 'Status',
+                  render: (m: AIModelCatalogEntry) => (
+                    <Badge color={m.status === 'active' ? 'green' : 'yellow'} variant="solid" size="sm">
+                      {m.status}
+                    </Badge>
+                  ),
+                },
+                {
+                  label: 'Streaming',
+                  render: (m: AIModelCatalogEntry) =>
+                    m.supports_streaming
+                      ? <CheckCircle2 size={18} className="text-status-green" />
+                      : <XCircle size={18} className="text-greyscale-300 dark:text-greyscale-600" />,
+                },
+                {
+                  label: 'Tool Use',
+                  render: (m: AIModelCatalogEntry) =>
+                    m.supports_tools
+                      ? <CheckCircle2 size={18} className="text-status-green" />
+                      : <XCircle size={18} className="text-greyscale-300 dark:text-greyscale-600" />,
+                },
+                {
+                  label: 'Vision',
+                  render: (m: AIModelCatalogEntry) =>
+                    m.supports_vision
+                      ? <CheckCircle2 size={18} className="text-status-green" />
+                      : <XCircle size={18} className="text-greyscale-300 dark:text-greyscale-600" />,
+                },
+                {
+                  label: 'JSON Schema',
+                  render: (m: AIModelCatalogEntry) =>
+                    m.supports_json_schema
+                      ? <CheckCircle2 size={18} className="text-status-green" />
+                      : <XCircle size={18} className="text-greyscale-300 dark:text-greyscale-600" />,
+                },
+              ] as { label: string; render: (m: AIModelCatalogEntry) => React.ReactNode }[]
+            ).map(({ label, render }) => (
+              <div
+                key={label}
+                className="grid gap-3 items-center border-t border-surface-border"
+                style={{ gridTemplateColumns: `180px repeat(${selectedModels.length}, 1fr)` }}
+              >
+                <Text variant="caption" color="muted" className="py-4 font-bold uppercase tracking-widest text-[10px]">
+                  {label}
+                </Text>
+                {selectedModels.map((model) => (
+                  <div
+                    key={`${model.provider_key}/${model.key}`}
+                    className="py-4 flex justify-center items-center"
+                  >
+                    {render(model)}
+                  </div>
+                ))}
+              </div>
+            ))}
+
+            {/* Action row */}
+            <div
+              className="grid gap-3 pt-4 border-t border-surface-border"
+              style={{ gridTemplateColumns: `180px repeat(${selectedModels.length}, 1fr)` }}
+            >
+              <div />
+              {selectedModels.map((model) => (
+                <Button
+                  key={`${model.provider_key}/${model.key}`}
+                  variant="secondary"
+                  size="sm"
+                  className="w-full"
+                  onClick={() => {
+                    setCompareOpen(false)
+                    navigate(`/ai/catalog/${model.provider_key}/${model.key}`)
+                  }}
+                >
+                  Full Specs
+                </Button>
+              ))}
+            </div>
+          </div>
+        )}
+      </Drawer>
     </div>
   )
 }
