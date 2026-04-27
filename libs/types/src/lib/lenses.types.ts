@@ -75,6 +75,8 @@ export interface LensViewModel {
   visibility: VisibilityEnum
   status: ContentStatus
   latestVersionNumber?: number
+  /** Output modality declared on the latest version's output_contract.kind. */
+  outputKind?: 'text' | 'image' | 'video' | 'audio' | 'music' | null
 }
 
 export interface PersonalLensFeedItem extends LensViewModel {
