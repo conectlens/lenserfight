@@ -287,6 +287,154 @@ WITH model_seed AS (
         false,
         'https://docs.mistral.ai/models/magistral-small-1-2-25-09',
         false
+      ),
+
+      -- -----------------------------------------------------------------------
+      -- OpenAI generative media models
+      -- -----------------------------------------------------------------------
+      (
+        'DALL-E 4',
+        ARRAY['image_generation']::text[],
+        'dall-e-4',
+        'openai',
+        0,
+        false,
+        false,
+        false,
+        'https://platform.openai.com/docs/models/dall-e',
+        true
+      ),
+      (
+        'Sora 2.0',
+        ARRAY['video_generation']::text[],
+        'sora-2.0',
+        'openai',
+        0,
+        false,
+        false,
+        false,
+        'https://platform.openai.com/docs/models/sora',
+        true
+      ),
+
+      -- -----------------------------------------------------------------------
+      -- Google generative media models
+      -- -----------------------------------------------------------------------
+      (
+        'Imagen 4',
+        ARRAY['image_generation']::text[],
+        'imagen-4',
+        'google',
+        0,
+        false,
+        false,
+        false,
+        'https://cloud.google.com/vertex-ai/generative-ai/docs/image/overview',
+        true
+      ),
+      (
+        'Veo 3',
+        ARRAY['video_generation']::text[],
+        'veo-3',
+        'google',
+        0,
+        false,
+        false,
+        false,
+        'https://cloud.google.com/vertex-ai/generative-ai/docs/video/overview',
+        true
+      ),
+      (
+        'Lyria 2',
+        ARRAY['audio_generation','music_generation']::text[],
+        'lyria-2',
+        'google',
+        0,
+        false,
+        false,
+        false,
+        'https://deepmind.google/technologies/lyria/',
+        true
+      ),
+
+      -- -----------------------------------------------------------------------
+      -- Stability AI models (image generation)
+      -- -----------------------------------------------------------------------
+      (
+        'Stable Diffusion 4',
+        ARRAY['image_generation']::text[],
+        'stable-diffusion-4',
+        'stability',
+        0,
+        false,
+        false,
+        false,
+        'https://stability.ai/stable-diffusion',
+        true
+      ),
+
+      -- -----------------------------------------------------------------------
+      -- ElevenLabs (audio / TTS)
+      -- -----------------------------------------------------------------------
+      (
+        'ElevenLabs v4',
+        ARRAY['audio_generation']::text[],
+        'elevenlabs-v4',
+        'elevenlabs',
+        0,
+        false,
+        false,
+        false,
+        'https://elevenlabs.io/docs/api-reference/text-to-speech',
+        true
+      ),
+
+      -- -----------------------------------------------------------------------
+      -- Midjourney (image generation)
+      -- -----------------------------------------------------------------------
+      (
+        'Midjourney 7',
+        ARRAY['image_generation']::text[],
+        'midjourney-7',
+        'midjourney',
+        0,
+        false,
+        false,
+        false,
+        'https://www.midjourney.com',
+        false
+      ),
+
+      -- -----------------------------------------------------------------------
+      -- Kling (video generation)
+      -- -----------------------------------------------------------------------
+      (
+        'Kling 2.0',
+        ARRAY['video_generation']::text[],
+        'kling-2.0',
+        'kling',
+        0,
+        false,
+        false,
+        false,
+        'https://klingai.com',
+        true
+      ),
+
+      -- -----------------------------------------------------------------------
+      -- Suno (music generation)
+      -- -----------------------------------------------------------------------
+      (
+        'Suno v5',
+        ARRAY['audio_generation','music_generation']::text[],
+        'suno-v5',
+        'suno',
+        0,
+        false,
+        false,
+        false,
+        'https://suno.com',
+        true
       )
   ) AS t(
     name,
@@ -368,3 +516,49 @@ WHERE key IN (
   'gemini-3.1-pro-preview',
   'gemini-3.1-flash-lite-preview'
 );
+
+-- ---------------------------------------------------------------------------
+-- Patch input/output modalities for all existing text models
+-- (ensures CapabilityMapper.validate() works correctly on every model)
+-- ---------------------------------------------------------------------------
+UPDATE ai.models
+SET
+  input_modalities  = COALESCE(NULLIF(input_modalities, '{}'), ARRAY['text']),
+  output_modalities = COALESCE(NULLIF(output_modalities, '{}'), ARRAY['text'])
+WHERE
+  (input_modalities IS NULL OR input_modalities = '{}')
+  OR (output_modalities IS NULL OR output_modalities = '{}');
+
+-- Vision-capable text models also accept image inputs
+UPDATE ai.models
+SET input_modalities = ARRAY['text','image','document']
+WHERE supports_vision = true
+  AND NOT (input_modalities @> ARRAY['image']);
+
+-- ---------------------------------------------------------------------------
+-- Set input/output modalities for generative media models
+-- ---------------------------------------------------------------------------
+UPDATE ai.models SET
+  input_modalities  = ARRAY['text'],
+  output_modalities = ARRAY['image'],
+  context_window_tokens = 0
+WHERE key IN ('dall-e-4','imagen-4','stable-diffusion-4','midjourney-7');
+
+-- Image-to-image capable (accept image input as reference)
+UPDATE ai.models SET
+  input_modalities  = ARRAY['text','image'],
+  output_modalities = ARRAY['image'],
+  context_window_tokens = 0
+WHERE key IN ('stable-diffusion-4');
+
+UPDATE ai.models SET
+  input_modalities  = ARRAY['text'],
+  output_modalities = ARRAY['video'],
+  context_window_tokens = 0
+WHERE key IN ('sora-2.0','veo-3','kling-2.0');
+
+UPDATE ai.models SET
+  input_modalities  = ARRAY['text'],
+  output_modalities = ARRAY['audio'],
+  context_window_tokens = 0
+WHERE key IN ('elevenlabs-v4','lyria-2','suno-v5');

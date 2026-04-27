@@ -44,6 +44,48 @@ WITH provider_seed AS (
         'http://localhost:11434/api',
         'https://docs.ollama.com/api/introduction',
         true
+      ),
+      (
+        'stability',
+        'Stability AI',
+        'https://api.stability.ai',
+        'https://platform.stability.ai/docs/api-reference',
+        true
+      ),
+      (
+        'elevenlabs',
+        'ElevenLabs',
+        'https://api.elevenlabs.io',
+        'https://elevenlabs.io/docs/api-reference',
+        true
+      ),
+      (
+        'kling',
+        'Kling AI',
+        'https://api.klingai.com',
+        'https://klingai.com/docs',
+        true
+      ),
+      (
+        'suno',
+        'Suno',
+        'https://api.sunoapi.org',
+        'https://suno.com/docs',
+        true
+      ),
+      (
+        'midjourney',
+        'Midjourney',
+        'https://api.midjourney.com',
+        'https://docs.midjourney.com',
+        false
+      ),
+      (
+        'fal',
+        'fal.ai',
+        'https://fal.run',
+        'https://fal.ai/docs',
+        true
       )
   ) AS t(
     key,
