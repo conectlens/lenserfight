@@ -164,7 +164,61 @@ Or use the local project binary:
 pnpm supabase <command>
 ```
 
+---
+
+## Alternative: No-Supabase local mode
+
+If you want to try LenserFight without Docker or a database, use the local file storage adapter. Data is stored in `~/.lenserfight/` on your machine.
+
+### What works without Supabase
+
+| Feature | Local mode |
+|---------|-----------|
+| Lens authoring and editing | ✅ |
+| Local lens execution (BYOK) | ✅ |
+| CLI commands | ✅ |
+| Workflow authoring | ✅ |
+| Auth / sessions | — requires Supabase |
+| Multi-user access | — requires Supabase |
+| RLS-enforced data isolation | — requires Supabase |
+
+### Quick setup
+
+```bash
+# Create local directories
+mkdir -p ~/.lenserfight/lenses ~/.lenserfight/media
+
+# Configure the adapter
+echo '{ "defaultAdapterId": "local" }' > ~/.lenserfight/config.json
+
+# Set data source
+echo 'VITE_DATA_SOURCE=file' >> .env.local
+
+# Start the app
+pnpm nx run web:serve
+```
+
+### Local directory layout
+
+```
+~/.lenserfight/
+├── config.json          # Adapter config and auth tokens
+├── lenses/              # One JSON file per lens
+├── lensers/             # Lenser profile data
+├── media/               # File uploads by bucket
+│   └── objects.json     # Metadata index
+├── workflows/
+└── agents/
+```
+
+See [Storage Adapters Reference](/reference/platform-api/storage-adapters) for the full interface spec and adapter selection details.
+See [Local File Storage Tutorial](/tutorials/getting-started/local-file-storage) for the complete step-by-step walkthrough.
+
+---
+
 ## Related Documentation
 
 - [RLS Policy Reference](./rls-reference.md) — row-level security policies per schema and table
 - [RPC Function Reference](./rpc-reference.md) — available RPC endpoints with auth requirements and examples
+- [Storage Adapters](/reference/platform-api/storage-adapters) — pluggable storage backends
+- [Local File Storage Tutorial](/tutorials/getting-started/local-file-storage) — start without Docker
