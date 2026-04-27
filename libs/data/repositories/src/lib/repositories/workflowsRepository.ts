@@ -339,13 +339,24 @@ export class SupabaseWorkflowsRepository implements WorkflowsRepositoryPort {
   private mapScheduleRow(row: WorkflowScheduleRecord): WorkflowScheduleRecord {
     return {
       ...row,
+      timezone: row.timezone ?? 'UTC',
       inputs_template: (row.inputs_template ?? {}) as Record<string, unknown>,
       global_model_id: row.global_model_id ?? null,
+      assignee_type: row.assignee_type ?? 'agent',
+      assignee_id: row.assignee_id ?? null,
+      workflow_assignment_id: row.workflow_assignment_id ?? null,
+      approval_policy: (row.approval_policy ?? {}) as Record<string, unknown>,
+      retry_policy: (row.retry_policy ?? {}) as Record<string, unknown>,
+      failure_policy: (row.failure_policy ?? {}) as Record<string, unknown>,
+      queue_policy: (row.queue_policy ?? {}) as Record<string, unknown>,
+      next_run_at: row.next_run_at ?? null,
       last_run_at: row.last_run_at ?? null,
       last_run_id: row.last_run_id ?? null,
       last_dispatch_status: row.last_dispatch_status ?? null,
       last_error_at: row.last_error_at ?? null,
       last_error_message: row.last_error_message ?? null,
+      last_completed_at: row.last_completed_at ?? null,
+      last_result: (row.last_result ?? {}) as Record<string, unknown>,
     }
   }
 
@@ -711,9 +722,17 @@ export class SupabaseWorkflowsRepository implements WorkflowsRepositoryPort {
       p_workflow_id: input.workflow_id,
       p_schedule_id: input.schedule_id ?? null,
       p_cron_expr: input.cron_expr,
+      p_timezone: input.timezone ?? 'UTC',
       p_global_model_id: input.global_model_id ?? null,
       p_inputs_template: input.inputs_template ?? {},
       p_is_active: input.is_active ?? true,
+      p_assignee_type: input.assignee_type ?? 'agent',
+      p_assignee_id: input.assignee_id ?? null,
+      p_workflow_assignment_id: input.workflow_assignment_id ?? null,
+      p_approval_policy: input.approval_policy ?? { requiresApproval: true },
+      p_retry_policy: input.retry_policy ?? { maxRetries: 1 },
+      p_failure_policy: input.failure_policy ?? { mode: 'isolate' },
+      p_queue_policy: input.queue_policy ?? { mode: 'parallel' },
     })
 
     if (error) this.handleError(error)
