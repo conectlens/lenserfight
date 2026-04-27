@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react'
-import { ArrowLeftRight, ChevronDown, LogOut, Settings, User as UserIcon } from 'lucide-react'
+import { ArrowLeftRight, ChevronDown, LogOut, Settings, User as UserIcon, Cpu } from 'lucide-react'
 
 import type { WorkspaceIdentity } from '@lenserfight/types'
 
@@ -173,6 +173,15 @@ export const UserCard: React.FC<UserCardProps> = ({
             <Settings size={14} />
             Settings
           </a>
+          <a
+            href="/docs/reference/ai-models"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center gap-1.5 text-xs font-medium text-gray-600 dark:text-gray-300 hover:text-primary dark:hover:text-primary-400 transition-colors px-2 py-1.5 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700"
+          >
+            <Cpu size={14} />
+            Models
+          </a>
           <button
             onClick={handleLogout}
             disabled={signingOut}
@@ -243,6 +252,16 @@ export const UserCard: React.FC<UserCardProps> = ({
             >
               <Settings size={15} className="text-gray-400" />
               Settings
+            </a>
+            <a
+              href="/docs/reference/ai-models"
+              target="_blank"
+              rel="noopener noreferrer"
+              onClick={() => setOpen(false)}
+              className="flex items-center gap-2.5 px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+            >
+              <Cpu size={15} className="text-gray-400" />
+              Models
             </a>
           </div>
 
