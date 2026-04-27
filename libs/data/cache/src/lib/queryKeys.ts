@@ -75,6 +75,13 @@ export const queryKeys = {
   aiModels: {
     all: ['ai-models'] as const,
   },
+  aiCatalog: {
+    all: ['ai-catalog'] as const,
+    providers: () => [...queryKeys.aiCatalog.all, 'providers'] as const,
+    models: (filter?: Record<string, unknown>) => [...queryKeys.aiCatalog.all, 'models', filter ?? {}] as const,
+    modelDetail: (providerKey: string, modelKey: string) =>
+      [...queryKeys.aiCatalog.all, 'model', providerKey, modelKey] as const,
+  },
   wallet: {
     balance: ['wallet', 'balance'] as const,
     products: ['wallet', 'products'] as const,
@@ -144,6 +151,8 @@ export const queryKeys = {
     lensBindings: (id: string) => [...queryKeys.agents.all, 'lensBindings', id] as const,
     modelBindings: (id: string) => [...queryKeys.agents.all, 'modelBindings', id] as const,
     bindings: (id: string) => [...queryKeys.agents.all, 'bindings', id] as const,
+    workspaceBootstrap: (handle: string) => [...queryKeys.agents.all, 'workspaceBootstrap', handle] as const,
+    teams: (aiLenserId: string) => [...queryKeys.agents.all, 'teams', aiLenserId] as const,
   },
   reputation: {
     all: ['reputation'] as const,
