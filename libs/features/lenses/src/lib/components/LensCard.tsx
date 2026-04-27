@@ -1,10 +1,37 @@
-import { Lock, Copy, Pencil, Trash2 } from 'lucide-react'
+import { Lock, Copy, Pencil, Trash2, ImageIcon, Video, Music, Mic } from 'lucide-react'
 import React, { memo } from 'react'
 import { useNavigate } from 'react-router-dom'
 
 import { Avatar } from '@lenserfight/ui/components'
 import { LensViewModel } from '@lenserfight/types'
 import { formatCount } from '@lenserfight/utils/number'
+
+type OutputKind = LensViewModel['outputKind']
+
+type MediaOutputKind = 'image' | 'video' | 'audio' | 'music'
+
+const MEDIA_OUTPUT_KIND_META: Record<
+  MediaOutputKind,
+  { label: string; Icon: React.ElementType; className: string }
+> = {
+  image: { label: 'Image', Icon: ImageIcon, className: 'bg-violet-50 text-violet-700 border-violet-200 dark:bg-violet-900/20 dark:text-violet-300 dark:border-violet-800' },
+  video: { label: 'Video', Icon: Video, className: 'bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-900/20 dark:text-blue-300 dark:border-blue-800' },
+  audio: { label: 'Audio', Icon: Mic, className: 'bg-orange-50 text-orange-700 border-orange-200 dark:bg-orange-900/20 dark:text-orange-300 dark:border-orange-800' },
+  music: { label: 'Music', Icon: Music, className: 'bg-pink-50 text-pink-700 border-pink-200 dark:bg-pink-900/20 dark:text-pink-300 dark:border-pink-800' },
+}
+
+function OutputKindBadge({ kind }: { kind: OutputKind }) {
+  if (!kind || kind === 'text') return null
+  const meta = MEDIA_OUTPUT_KIND_META[kind as MediaOutputKind]
+  if (!meta) return null
+  const { label, Icon, className } = meta
+  return (
+    <span className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-[10px] font-semibold border ${className}`}>
+      <Icon size={10} />
+      {label}
+    </span>
+  )
+}
 
 interface LensCardProps {
   lens: LensViewModel
@@ -63,14 +90,14 @@ export const LensCard: React.FC<LensCardProps> = memo(
           <h3 className="text-xl font-bold text-gray-900 dark:text-white leading-tight group-hover:text-primary-800 dark:group-hover:text-primary-400 transition-colors pr-8">
             {lens.title}
           </h3>
-          {lens.visibility === 'private' && (
-            <div
-              className="text-gray-300 dark:text-gray-600 ml-2 mt-1 flex-shrink-0"
-              title="Private Lens"
-            >
-              <Lock size={14} />
-            </div>
-          )}
+          <div className="flex items-center gap-1.5 ml-2 mt-0.5 flex-shrink-0">
+            <OutputKindBadge kind={lens.outputKind} />
+            {lens.visibility === 'private' && (
+              <div className="text-gray-300 dark:text-gray-600" title="Private Lens">
+                <Lock size={14} />
+              </div>
+            )}
+          </div>
         </div>
 
         <div className="mb-6 flex-1">
