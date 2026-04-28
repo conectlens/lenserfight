@@ -1,8 +1,10 @@
 import { queryKeys } from '@lenserfight/data/cache'
 import { agentWorkspaceService } from '@lenserfight/data/repositories'
+import { AlertDialog } from '@lenserfight/ui/overlays'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { ClipboardList, Pencil, Plus, Trash2 } from 'lucide-react'
 import React, { useState } from 'react'
+import { toast } from 'sonner'
 
 import { useAgentWorkspace } from '../../context/AgentWorkspaceContext'
 import { MemoryProfileDrawer } from '../drawers/MemoryProfileDrawer'
@@ -17,6 +19,11 @@ export const MemorySection: React.FC = () => {
   const queryClient = useQueryClient()
   const [drawerOpen, setDrawerOpen] = useState(false)
   const [editing, setEditing] = useState<AgentMemoryProfileRecord | null>(null)
+  const [confirmState, setConfirmState] = useState<{
+    title: string
+    body: string
+    onConfirm: () => void
+  } | null>(null)
 
   const profiles =
     (bootstrap?.profiles.memory as AgentMemoryProfileRecord[] | undefined) ?? []
@@ -29,7 +36,8 @@ export const MemorySection: React.FC = () => {
 
   const remove = useMutation({
     mutationFn: (id: string) => agentWorkspaceService.deleteMemoryProfile(id),
-    onSuccess: invalidate,
+    onSuccess: () => { toast.success('Memory profile deleted'); invalidate() },
+    onError: (e) => toast.error((e as Error).message),
   })
 
   const openCreate = () => {
@@ -73,11 +81,13 @@ export const MemorySection: React.FC = () => {
               record={p}
               canManage={isAgentOwner}
               onEdit={() => openEdit(p)}
-              onDelete={() => {
-                if (confirm(`Delete memory profile "${p.name}"?`)) {
-                  remove.mutate(p.id)
-                }
-              }}
+              onDelete={() =>
+                setConfirmState({
+                  title: 'Delete memory profile?',
+                  body: `Delete "${p.name}"? This cannot be undone.`,
+                  onConfirm: () => remove.mutate(p.id),
+                })
+              }
             />
           ))}
         </div>
@@ -92,6 +102,19 @@ export const MemorySection: React.FC = () => {
           onSaved={invalidate}
         />
       )}
+
+      <AlertDialog
+        open={!!confirmState}
+        onClose={() => setConfirmState(null)}
+        title={confirmState?.title ?? ''}
+        bodyText={confirmState?.body}
+        variant="destructive"
+        confirmAction={{
+          label: 'Delete',
+          onClick: () => { confirmState?.onConfirm(); setConfirmState(null) },
+          loading: remove.isPending,
+        }}
+      />
     </SectionPage>
   )
 }

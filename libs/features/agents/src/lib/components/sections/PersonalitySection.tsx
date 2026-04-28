@@ -1,8 +1,10 @@
 import { queryKeys } from '@lenserfight/data/cache'
 import { agentWorkspaceService } from '@lenserfight/data/repositories'
+import { AlertDialog } from '@lenserfight/ui/overlays'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { ClipboardList, Pencil, Plus, Trash2 } from 'lucide-react'
 import React, { useState } from 'react'
+import { toast } from 'sonner'
 
 import { useAgentWorkspace } from '../../context/AgentWorkspaceContext'
 import { PersonalityProfileDrawer } from '../drawers/PersonalityProfileDrawer'
@@ -16,9 +18,12 @@ export const PersonalitySection: React.FC = () => {
   const { bootstrap, profile, viewMode } = useAgentWorkspace()
   const queryClient = useQueryClient()
   const [drawerOpen, setDrawerOpen] = useState(false)
-  const [editing, setEditing] = useState<AgentPersonalityProfileRecord | null>(
-    null
-  )
+  const [editing, setEditing] = useState<AgentPersonalityProfileRecord | null>(null)
+  const [confirmState, setConfirmState] = useState<{
+    title: string
+    body: string
+    onConfirm: () => void
+  } | null>(null)
 
   const profiles =
     (bootstrap?.profiles.personality as
@@ -34,7 +39,8 @@ export const PersonalitySection: React.FC = () => {
   const remove = useMutation({
     mutationFn: (id: string) =>
       agentWorkspaceService.deletePersonalityProfile(id),
-    onSuccess: invalidate,
+    onSuccess: () => { toast.success('Personality profile deleted'); invalidate() },
+    onError: (e) => toast.error((e as Error).message),
   })
 
   return (
@@ -95,11 +101,13 @@ export const PersonalitySection: React.FC = () => {
                     </button>
                     <button
                       type="button"
-                      onClick={() => {
-                        if (confirm(`Delete personality "${p.name}"?`)) {
-                          remove.mutate(p.id)
-                        }
-                      }}
+                      onClick={() =>
+                        setConfirmState({
+                          title: 'Delete personality profile?',
+                          body: `Delete "${p.name}"? This cannot be undone.`,
+                          onConfirm: () => remove.mutate(p.id),
+                        })
+                      }
                       className="rounded-xl border border-gray-200 p-2 text-gray-500 hover:text-red-600 dark:border-gray-700 dark:text-gray-400"
                       aria-label="Delete"
                     >
@@ -125,6 +133,19 @@ export const PersonalitySection: React.FC = () => {
           onSaved={invalidate}
         />
       )}
+
+      <AlertDialog
+        open={!!confirmState}
+        onClose={() => setConfirmState(null)}
+        title={confirmState?.title ?? ''}
+        bodyText={confirmState?.body}
+        variant="destructive"
+        confirmAction={{
+          label: 'Delete',
+          onClick: () => { confirmState?.onConfirm(); setConfirmState(null) },
+          loading: remove.isPending,
+        }}
+      />
     </SectionPage>
   )
 }
