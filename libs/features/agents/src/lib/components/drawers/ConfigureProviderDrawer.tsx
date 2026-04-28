@@ -1,4 +1,8 @@
+import { queryKeys } from '@lenserfight/data/cache'
+import { agentWorkspaceService } from '@lenserfight/data/repositories'
+import type { ProviderConfigRecord } from '@lenserfight/types'
 import { Drawer } from '@lenserfight/ui/overlays'
+import { useQueryClient } from '@tanstack/react-query'
 import { CheckCircle, XCircle } from 'lucide-react'
 import React, { useEffect, useState } from 'react'
 
@@ -6,32 +10,39 @@ export interface ProviderInfo {
   key: string
   name: string
   status?: 'healthy' | 'error' | 'unconfigured'
+  config?: ProviderConfigRecord | null
 }
 
 interface ConfigureProviderDrawerProps {
   open: boolean
   onClose: () => void
   provider: ProviderInfo
+  aiLenserId: string
 }
 
 export const ConfigureProviderDrawer: React.FC<ConfigureProviderDrawerProps> = ({
   open,
   onClose,
   provider,
+  aiLenserId,
 }) => {
+  const queryClient = useQueryClient()
+
   const [apiKey, setApiKey] = useState('')
   const [baseUrl, setBaseUrl] = useState('')
   const [healthStatus, setHealthStatus] = useState<'idle' | 'checking' | 'ok' | 'error'>('idle')
   const [healthMessage, setHealthMessage] = useState('')
-  const [saving, setSaving] = useState(false)
+  const [submitting, setSubmitting] = useState(false)
+  const [error, setError] = useState<string | null>(null)
   const [saved, setSaved] = useState(false)
 
   useEffect(() => {
     if (!open) return
     setApiKey('')
-    setBaseUrl('')
+    setBaseUrl(provider.config?.base_url ?? '')
     setHealthStatus('idle')
     setHealthMessage('')
+    setError(null)
     setSaved(false)
   }, [open, provider.key])
 
@@ -39,26 +50,37 @@ export const ConfigureProviderDrawer: React.FC<ConfigureProviderDrawerProps> = (
     setHealthStatus('checking')
     setHealthMessage('')
     try {
-      // Placeholder — real integration calls supabase.functions.invoke('test-provider', { body: { provider_key, api_key } })
-      await new Promise((r) => setTimeout(r, 800))
-      setHealthStatus('ok')
-      setHealthMessage('Provider responded successfully.')
-    } catch {
+      const result = await agentWorkspaceService.testProvider(aiLenserId, provider.key)
+      setHealthStatus(result.status === 'healthy' ? 'ok' : 'error')
+      setHealthMessage(result.message)
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.agents.providers(aiLenserId),
+      })
+    } catch (err) {
       setHealthStatus('error')
-      setHealthMessage('Health check failed. Verify the API key and try again.')
+      setHealthMessage((err as Error).message ?? 'Health check failed.')
     }
   }
 
   const handleSave = async () => {
     if (!apiKey.trim()) return
-    setSaving(true)
+    setSubmitting(true)
+    setError(null)
     try {
-      // Placeholder — real integration calls agentWorkspaceService.configureProvider(...)
-      // The API key is stored via Supabase Vault or environment secrets, never in plaintext columns.
-      await new Promise((r) => setTimeout(r, 600))
+      await agentWorkspaceService.configureProvider(
+        aiLenserId,
+        provider.key,
+        apiKey,
+        baseUrl.trim() || null
+      )
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.agents.providers(aiLenserId),
+      })
       setSaved(true)
+    } catch (err) {
+      setError((err as Error).message ?? 'Save failed')
     } finally {
-      setSaving(false)
+      setSubmitting(false)
     }
   }
 
@@ -73,8 +95,16 @@ export const ConfigureProviderDrawer: React.FC<ConfigureProviderDrawerProps> = (
       <div className="space-y-5">
         <div className="rounded-2xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm dark:border-gray-700 dark:bg-gray-800">
           <p className="font-mono text-xs text-gray-500 dark:text-gray-400">
-            provider key: <span className="font-semibold text-gray-900 dark:text-white">{provider.key}</span>
+            provider key:{' '}
+            <span className="font-semibold text-gray-900 dark:text-white">
+              {provider.key}
+            </span>
           </p>
+          {provider.config?.configured_at && (
+            <p className="mt-1 font-mono text-xs text-gray-400 dark:text-gray-500">
+              configured: {new Date(provider.config.configured_at).toLocaleString()}
+            </p>
+          )}
         </div>
 
         <Field label="API Key">
@@ -128,9 +158,11 @@ export const ConfigureProviderDrawer: React.FC<ConfigureProviderDrawerProps> = (
           </p>
         )}
 
-        <p className="rounded-2xl border border-amber-200 bg-amber-50/70 px-3 py-2 text-xs text-amber-700 dark:border-amber-500/20 dark:bg-amber-500/10 dark:text-amber-300">
-          BYOK key storage via Supabase Vault is pending security review. Configuration is saved locally until the vault integration ships.
-        </p>
+        {error && (
+          <p className="rounded-2xl border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700 dark:border-red-500/30 dark:bg-red-500/10 dark:text-red-200">
+            {error}
+          </p>
+        )}
 
         <div className="flex justify-end gap-2 pt-2">
           <button
@@ -143,10 +175,10 @@ export const ConfigureProviderDrawer: React.FC<ConfigureProviderDrawerProps> = (
           <button
             type="button"
             onClick={handleSave}
-            disabled={saving || !apiKey.trim()}
+            disabled={submitting || !apiKey.trim()}
             className="rounded-2xl bg-gray-900 px-4 py-2 text-sm font-semibold text-white transition hover:bg-amber-600 disabled:opacity-50 dark:bg-white dark:text-gray-900"
           >
-            {saving ? 'Saving…' : 'Save'}
+            {submitting ? 'Saving…' : 'Save'}
           </button>
         </div>
       </div>
@@ -157,7 +189,10 @@ export const ConfigureProviderDrawer: React.FC<ConfigureProviderDrawerProps> = (
 const inputClass =
   'w-full rounded-2xl border border-gray-200 bg-white px-4 py-2.5 text-sm text-gray-900 outline-none focus:border-amber-400 dark:border-gray-700 dark:bg-gray-900 dark:text-white'
 
-const Field: React.FC<{ label: string; children: React.ReactNode }> = ({ label, children }) => (
+const Field: React.FC<{ label: string; children: React.ReactNode }> = ({
+  label,
+  children,
+}) => (
   <label className="block">
     <span className="mb-1 block text-xs font-semibold uppercase tracking-[0.18em] text-gray-500 dark:text-gray-400">
       {label}

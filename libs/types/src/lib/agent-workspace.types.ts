@@ -197,3 +197,16 @@ export interface AgentWorkspaceBootstrap {
   }
   workflow_assignments: AgentWorkflowAssignmentRecord[]
 }
+
+export interface ProviderConfigRecord {
+  id: string
+  ai_lenser_id: string
+  provider_key: string
+  ai_key_id: string | null
+  base_url: string | null
+  status: 'healthy' | 'error' | 'unconfigured'
+  last_checked_at: string | null
+  configured_at: string | null
+  created_at: string
+  updated_at: string
+}
