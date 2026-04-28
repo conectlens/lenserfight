@@ -5,25 +5,68 @@ export { AgentPolicySummary } from './lib/components/AgentPolicySummary'
 export { CreateAgentContent } from './lib/components/CreateAgentModal'
 export { AgentManageWizard } from './lib/components/AgentManageWizard'
 export { AgentProfileRedirect } from './lib/components/AgentProfileRedirect'
+export { AgentPersonalityStep } from './lib/components/AgentPersonalityStep'
+export { AgentWorkspacePage } from './lib/pages/AgentWorkspacePage'
+export { AgentRouteShell } from './lib/components/AgentRouteShell'
+export { AgentWorkspaceShell } from './lib/components/AgentWorkspaceShell'
+export { AgentSidebarNav } from './lib/components/AgentSidebarNav'
+export type { AgentSection } from './lib/components/AgentSidebarNav'
+export { AgentsGrid } from './lib/components/AgentsGrid'
+export { EmptyPanel as AgentEmptyPanel } from './lib/components/EmptyPanel'
+export { ApprovalDecisionDialog } from './lib/components/ApprovalDecisionDialog'
+export { CrossAgentActivityFeed } from './lib/components/CrossAgentActivityFeed'
+export { SectionErrorBoundary } from './lib/components/SectionErrorBoundary'
+
+// Sections (composable per-route renderers used by AgentWorkspaceShell)
+export {
+  AgentTeamSection,
+  ApprovalQueueSection,
+  ApprovalsSection,
+  CostMonitorSection,
+  CostSection,
+  EvaluationsSection,
+  LogsSection,
+  MemorySection,
+  ModelsSection,
+  OverviewSection,
+  PersonalitySection,
+  ProvidersSection,
+  RunsSection,
+  SchedulesSection,
+  ScratchpadSection,
+  SectionPage,
+  SettingsSection,
+  ToolsSection,
+  WorkflowsSection,
+} from './lib/components/sections'
+
+// CRUD drawers
+export { MemoryProfileDrawer } from './lib/components/drawers/MemoryProfileDrawer'
+export { PersonalityProfileDrawer } from './lib/components/drawers/PersonalityProfileDrawer'
+export { ToolProfileDrawer } from './lib/components/drawers/ToolProfileDrawer'
+export { RegisterToolDrawer } from './lib/components/drawers/RegisterToolDrawer'
+export { AssignToolDrawer } from './lib/components/drawers/AssignToolDrawer'
+export { ScheduleDrawer } from './lib/components/drawers/ScheduleDrawer'
+export { EvaluationDrawer } from './lib/components/drawers/EvaluationDrawer'
+
+// Context
+export {
+  AgentWorkspaceProvider,
+  useAgentWorkspace,
+  useAgentWorkspaceOptional,
+} from './lib/context/AgentWorkspaceContext'
+export type {
+  AgentViewMode,
+  AgentWorkspaceContextValue,
+} from './lib/context/AgentWorkspaceContext'
+
+// Hooks
 export { useAgents } from './lib/hooks/useAgents'
 export { useAgentDetail } from './lib/hooks/useAgentDetail'
 export { useAgentAutomationFeed } from './lib/hooks/useAgentAutomationFeed'
 export { useCreateAgent } from './lib/hooks/useCreateAgent'
 export { useHandleCheck } from './lib/hooks/useHandleCheck'
 export { useAgentPersonality } from './lib/hooks/useAgentPersonality'
-export { AgentPersonalityStep } from './lib/components/AgentPersonalityStep'
-export { AgentWorkspacePage } from './lib/pages/AgentWorkspacePage'
-export { AgentControlRoomPage } from './lib/pages/AgentControlRoomPage'
-export { HumanAgentsOverviewPage } from './lib/pages/HumanAgentsOverviewPage'
-export { HumanAgentsPublicOverviewPage } from './lib/pages/HumanAgentsPublicOverviewPage'
-export { AgentPublicOverviewPage } from './lib/pages/AgentPublicOverviewPage'
-export { AgentRouteShell } from './lib/components/AgentRouteShell'
-export { AgentsGrid } from './lib/components/AgentsGrid'
-export { EmptyPanel as AgentEmptyPanel } from './lib/components/EmptyPanel'
-export { ApprovalDecisionDialog } from './lib/components/ApprovalDecisionDialog'
-export { ApprovalQueueSection } from './lib/components/sections/ApprovalQueueSection'
-export { CostMonitorSection } from './lib/components/sections/CostMonitorSection'
-export { CrossAgentActivityFeed } from './lib/components/CrossAgentActivityFeed'
-export { SectionErrorBoundary } from './lib/components/SectionErrorBoundary'
 export { useAgentRouteMode } from './lib/hooks/useAgentRouteMode'
 export type { AgentRouteMode } from './lib/hooks/useAgentRouteMode'
+export { useAgentWorkspaceData } from './lib/hooks/useAgentWorkspaceData'
