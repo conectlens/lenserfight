@@ -41,6 +41,12 @@ export {
 } from './lib/components/sections'
 
 // CRUD drawers
+export { CreateTeamDrawer } from './lib/components/drawers/CreateTeamDrawer'
+export { AddTeamMemberDrawer } from './lib/components/drawers/AddTeamMemberDrawer'
+export { TeamEdgesDrawer } from './lib/components/drawers/TeamEdgesDrawer'
+export { BindModelDrawer } from './lib/components/drawers/BindModelDrawer'
+export { ConfigureProviderDrawer } from './lib/components/drawers/ConfigureProviderDrawer'
+export type { ProviderInfo } from './lib/components/drawers/ConfigureProviderDrawer'
 export { MemoryProfileDrawer } from './lib/components/drawers/MemoryProfileDrawer'
 export { PersonalityProfileDrawer } from './lib/components/drawers/PersonalityProfileDrawer'
 export { ToolProfileDrawer } from './lib/components/drawers/ToolProfileDrawer'
