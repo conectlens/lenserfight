@@ -150,7 +150,7 @@ export interface AgentWorkspaceRepositoryPort {
   addTeamMember(input: { team_id: string; agent_id: string; role: string; responsibility?: string | null; lane?: number; sort_order?: number }): Promise<AgentTeamMemberRecord>
   updateTeamMember(id: string, patch: Partial<AgentTeamMemberRecord>): Promise<AgentTeamMemberRecord>
   deleteTeamMember(id: string): Promise<void>
-  upsertTeamEdge(input: { team_id: string; from_agent: string; to_agent: string; edge_type: string; is_blocking?: boolean }): Promise<AgentTeamEdgeRecord>
+  upsertTeamEdge(input: { team_id: string; source_member_id: string; target_member_id: string; edge_type: string; is_blocking?: boolean }): Promise<AgentTeamEdgeRecord>
   deleteTeamEdge(id: string): Promise<void>
 }
 
@@ -844,8 +844,8 @@ export class SupabaseAgentWorkspaceRepository implements AgentWorkspaceRepositor
 
   async upsertTeamEdge(input: {
     team_id: string
-    from_agent: string
-    to_agent: string
+    source_member_id: string
+    target_member_id: string
     edge_type: string
     is_blocking?: boolean
   }): Promise<AgentTeamEdgeRecord> {
@@ -854,8 +854,8 @@ export class SupabaseAgentWorkspaceRepository implements AgentWorkspaceRepositor
       .from('team_edges')
       .insert({
         team_id: input.team_id,
-        from_agent: input.from_agent,
-        to_agent: input.to_agent,
+        source_member_id: input.source_member_id,
+        target_member_id: input.target_member_id,
         edge_type: input.edge_type,
         is_blocking: input.is_blocking ?? false,
       })
