@@ -1,6 +1,6 @@
 import { defineCommand } from 'citty'
 import consola from 'consola'
-import { callRest, handleError } from '../utils/api'
+import { callRest, callRpc, handleError } from '../utils/api'
 import { printJson, printTable, truncate } from '../utils/output'
 
 interface TeamRunRow {
@@ -169,74 +169,43 @@ const approvalInspect = defineCommand({
 
 // ─── approval approve / reject ─────────────────────────────────────────────
 //
-// Today's path: PATCH `agents.team_runs.approval_status` directly. The owner-
-// authoritative `agents.can_manage_ai_lenser()` RLS policy enforces that only
-// the workspace owner can mutate the row. Decision audit fields are merged
-// into `metadata` via JSONB concatenation on the client (the engine writes
-// the agent_run_events row when the proposed `fn_decide_approval` lands).
-//
-// Caveat: the runtime's reaction to a status flip is the still-future
-// fn_decide_approval RPC. Until that ships, an approved row may not auto-
-// resume the underlying workflow run; the CLI surfaces this in the output.
+// Backed by `public.fn_decide_approval` (added in migration
+// 20260429010000_approval_decide.sql). The RPC mutates approval_status,
+// merges decision audit into metadata, appends an agent_run_events row, and
+// transitions the underlying workflow_run atomically.
 
-async function fetchTeamRun(id: string): Promise<TeamRunRow | null> {
-  const rows = await callRest<TeamRunRow[]>(
-    'agents',
-    'team_runs',
-    'GET',
-    undefined,
-    {
-      requireAuth: true,
-      query: { id: `eq.${id}`, select: '*' },
-    }
-  )
-  return rows?.[0] ?? null
+interface DecisionResultRow {
+  request_id: string
+  ai_lenser_id: string
+  team_id: string | null
+  workflow_id: string | null
+  workflow_run_id: string | null
+  workflow_assignment_id: string | null
+  approval_status: 'approved' | 'rejected'
+  run_status: string
+  metadata: Record<string, unknown>
+  decided_at: string
 }
 
-async function decide(
+async function decideViaRpc(
   requestId: string,
-  decision: 'approved' | 'rejected',
+  decision: 'approved' | 'rejected' | 'modified',
   reason: string,
   modifications: Record<string, unknown> | undefined
-): Promise<TeamRunRow> {
-  const existing = await fetchTeamRun(requestId)
-  if (!existing) {
-    throw new Error(`Approval request ${requestId} not found.`)
-  }
-  if (existing.approval_status !== 'pending') {
-    throw new Error(
-      `Request ${requestId} is in status "${existing.approval_status}", cannot mutate.`
-    )
-  }
-
-  const decisionMeta: Record<string, unknown> = {
-    decision_at: new Date().toISOString(),
-    decision_reason: reason || null,
-  }
-  if (modifications) decisionMeta.decision_modifications = modifications
-
-  const mergedMetadata = {
-    ...(existing.metadata ?? {}),
-    ...decisionMeta,
-  }
-
-  const rows = await callRest<TeamRunRow[]>(
-    'agents',
-    'team_runs',
-    'PATCH',
+): Promise<DecisionResultRow> {
+  const rows = await callRpc<DecisionResultRow[]>(
+    'fn_decide_approval',
     {
-      approval_status: decision,
-      metadata: mergedMetadata,
+      p_team_run_id: requestId,
+      p_decision: decision,
+      p_reason: reason || null,
+      p_modifications: modifications ?? null,
     },
-    {
-      requireAuth: true,
-      query: { id: `eq.${requestId}` },
-      prefer: 'return=representation',
-    }
+    { requireAuth: true }
   )
-  const updated = rows?.[0]
-  if (!updated) throw new Error('PATCH returned no row.')
-  return updated
+  const result = Array.isArray(rows) ? rows[0] : (rows as unknown as DecisionResultRow)
+  if (!result) throw new Error('fn_decide_approval returned no rows.')
+  return result
 }
 
 const approvalApprove = defineCommand({
@@ -253,19 +222,18 @@ const approvalApprove = defineCommand({
     reason: { type: 'string', description: 'Decision reason', default: '' },
     modifications: {
       type: 'string',
-      description: 'JSON object: input modifications applied on resume',
+      description:
+        'JSON object: input modifications applied on resume. When set, decision becomes "modified".',
       default: '',
     },
   },
   async run({ args }) {
     try {
       const modifications = parseJsonArg(args.modifications, 'modifications')
-      const updated = await decide(args.request, 'approved', args.reason, modifications)
-      consola.success('Request %s approved.', updated.id)
-      consola.warn(
-        'Note: engine-side resume relies on the proposed `fn_decide_approval` RPC. ' +
-          'Until that lands, the underlying workflow_run may need manual restart.'
-      )
+      const decision: 'approved' | 'modified' = modifications ? 'modified' : 'approved'
+      const result = await decideViaRpc(args.request, decision, args.reason, modifications)
+      consola.success('Request %s %s.', result.request_id, result.approval_status)
+      consola.info('Run status: %s · Decided at: %s', result.run_status, result.decided_at)
     } catch (err) {
       handleError(err)
     }
@@ -287,8 +255,9 @@ const approvalReject = defineCommand({
   },
   async run({ args }) {
     try {
-      const updated = await decide(args.request, 'rejected', args.reason, undefined)
-      consola.success('Request %s rejected.', updated.id)
+      const result = await decideViaRpc(args.request, 'rejected', args.reason, undefined)
+      consola.success('Request %s rejected.', result.request_id)
+      consola.info('Run status: %s · Decided at: %s', result.run_status, result.decided_at)
     } catch (err) {
       handleError(err)
     }
