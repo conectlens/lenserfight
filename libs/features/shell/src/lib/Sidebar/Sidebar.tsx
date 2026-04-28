@@ -492,7 +492,11 @@ export const Sidebar: React.FC<SidebarProps> = ({
                             onClick={async () => {
                               setIsSwitcherOpen(false)
                               await switchWorkspace(profile.id)
-                              navigate(`/lenser/${profile.handle}`)
+                              navigate(
+                                profile.type === 'ai'
+                                  ? `/lenser/${profile.handle}/ag/overview`
+                                  : `/lenser/${profile.handle}`
+                              )
                             }}
                           >
                             <div className="relative flex-shrink-0">
