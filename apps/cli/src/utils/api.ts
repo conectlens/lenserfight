@@ -144,3 +144,92 @@ export function handleError(err: unknown): void {
   reportCliError(err);
   process.exitCode = 1;
 }
+
+// ─── REST helper for tables on non-default schemas ─────────────────────────
+//
+// callRpc covers `public.fn_*` RPCs but ConnectedLenses commands also need to
+// read/write tables in the `agents`, `lenses`, and `lensers` schemas where no
+// dedicated RPC exists yet (team CRUD, approval queue, run inspection). RLS
+// stays in force because we send the user's bearer token and PostgREST runs
+// the policies.
+
+export type RestMethod = 'GET' | 'POST' | 'PATCH' | 'DELETE'
+
+export interface RestOptions extends RpcOptions {
+  /** Query string params (filters, select clauses, ordering). */
+  query?: Record<string, string | number | boolean | undefined>
+  /** PostgREST `Prefer` header value, e.g. `return=representation`. */
+  prefer?: string
+}
+
+export async function callRest<T = unknown>(
+  schema: string,
+  table: string,
+  method: RestMethod,
+  body?: Record<string, unknown> | Array<Record<string, unknown>>,
+  options: RestOptions = {}
+): Promise<T> {
+  let config = resolveConfig()
+
+  if (!config.supabaseAnonKey) {
+    throw new Error(
+      'Supabase anon key not found. Set SUPABASE_ANON_KEY in your environment or run `lenserfight init --mode cloud`.'
+    )
+  }
+
+  if (!options.noAuth && !options.useServiceRole && config.authToken && config.authExpiresAt) {
+    if (new Date(config.authExpiresAt) <= new Date()) {
+      await tryRefreshToken(config)
+      config = resolveConfig()
+    }
+  }
+
+  const headers: Record<string, string> = {
+    'Content-Type': 'application/json',
+    apikey: config.supabaseAnonKey,
+  }
+  if (options.prefer) headers['Prefer'] = options.prefer
+
+  const bearerToken = resolveBearerToken(config, options)
+  if (options.useServiceRole) {
+    if (!config.supabaseServiceRoleKey) {
+      throw new Error(
+        'Service role key not found. Set SUPABASE_SERVICE_ROLE_KEY in your environment or ~/.lenserfight/config.json.'
+      )
+    }
+    headers['Authorization'] = `Bearer ${config.supabaseServiceRoleKey}`
+  } else if (bearerToken) {
+    headers['Authorization'] = `Bearer ${bearerToken}`
+  } else if (options.requireAuth) {
+    throw new Error('Authentication required. Run `lenserfight auth login` first.')
+  }
+
+  const params = new URLSearchParams()
+  params.set('schema', schema)
+  if (options.query) {
+    for (const [key, value] of Object.entries(options.query)) {
+      if (value === undefined) continue
+      params.append(key, String(value))
+    }
+  }
+  const url = `${config.supabaseUrl}/rest/v1/${table}?${params.toString()}`
+
+  const res = await fetch(url, {
+    method,
+    headers,
+    body: body ? JSON.stringify(body) : undefined,
+  })
+
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({ message: res.statusText }))
+    throw Object.assign(
+      new Error(err.message || err.error || res.statusText),
+      { status: res.status, code: err.code }
+    )
+  }
+
+  if (res.status === 204) return undefined as T
+  const text = await res.text()
+  if (!text) return undefined as T
+  return JSON.parse(text) as T
+}

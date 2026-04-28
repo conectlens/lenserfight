@@ -48,6 +48,10 @@ const main = defineCommand({
     feed: () => import('./commands/feed').then((m) => m.default),
     leaderboard: () => import('./commands/leaderboard').then((m) => m.default),
     report: () => import('./commands/report').then((m) => m.default),
+    team: () => import('./commands/team').then((m) => m.default),
+    schedule: () => import('./commands/schedule').then((m) => m.default),
+    approval: () => import('./commands/approval').then((m) => m.default),
+    execution: () => import('./commands/execution').then((m) => m.default),
   },
 });
 
