@@ -1,7 +1,8 @@
 import { queryKeys } from '@lenserfight/data/cache'
 import { agentWorkspaceService } from '@lenserfight/data/repositories'
+import type { AgentRunEventRecord, AgentTeamRunRecord, FleetLogRow } from '@lenserfight/types'
 import { useQuery } from '@tanstack/react-query'
-import { ClipboardList } from 'lucide-react'
+import { ChevronDown, ChevronRight, ClipboardList } from 'lucide-react'
 import React, { useState } from 'react'
 
 import { useAgentWorkspace } from '../../context/AgentWorkspaceContext'
@@ -10,23 +11,123 @@ import { EmptyPanel } from '../EmptyPanel'
 import { formatDateTime } from './_shared'
 import { SectionPage } from './SectionPage'
 
-import type { FleetLogRow } from '@lenserfight/types'
+// ─── Per-run event accordion (agent_owner mode) ───────────────────────────────
+
+const RunEventsAccordion: React.FC<{
+  run: AgentTeamRunRecord
+  aiLenserId: string
+  eventTypeFilter: string
+}> = ({ run, aiLenserId, eventTypeFilter }) => {
+  const [expanded, setExpanded] = useState(false)
+
+  const events = useQuery<AgentRunEventRecord[]>({
+    queryKey: queryKeys.agents.runEvents(aiLenserId, run.id, eventTypeFilter),
+    queryFn: () =>
+      agentWorkspaceService.listAgentRunEvents(aiLenserId, {
+        runId: run.id,
+        eventType: eventTypeFilter || undefined,
+        limit: 200,
+      }),
+    enabled: expanded,
+    staleTime: 30_000,
+  })
+
+  return (
+    <div className="rounded-[20px] border border-gray-200 bg-white shadow-sm dark:border-gray-800 dark:bg-gray-900">
+      <button
+        type="button"
+        className="flex w-full items-center justify-between px-4 py-3 text-left"
+        onClick={() => setExpanded((v) => !v)}
+        aria-expanded={expanded}
+      >
+        <div className="flex items-center gap-3">
+          {expanded ? (
+            <ChevronDown size={15} className="text-amber-600 dark:text-amber-400" />
+          ) : (
+            <ChevronRight size={15} className="text-gray-400" />
+          )}
+          <span className="font-mono text-sm font-semibold text-gray-900 dark:text-white">
+            Run {run.id.slice(0, 8)}
+          </span>
+        </div>
+        <div className="flex items-center gap-3 text-xs text-gray-500 dark:text-gray-400">
+          <span className="rounded-full border border-gray-200 px-2 py-0.5 font-semibold dark:border-gray-700">
+            {run.status}
+          </span>
+          <span>{formatDateTime(run.started_at)}</span>
+        </div>
+      </button>
+
+      {expanded && (
+        <div className="border-t border-gray-100 px-4 pb-3 pt-2 dark:border-gray-800">
+          {events.isLoading ? (
+            <p className="py-4 text-center text-xs text-gray-500">Loading events…</p>
+          ) : (events.data ?? []).length === 0 ? (
+            <p className="py-4 text-center text-xs text-gray-400">
+              No events yet for this run.
+            </p>
+          ) : (
+            <div className="space-y-1.5">
+              {(events.data ?? []).map((ev) => (
+                <div
+                  key={ev.id}
+                  className="rounded-[14px] border border-gray-100 bg-gray-50 px-3 py-2 text-xs dark:border-gray-800 dark:bg-gray-950"
+                >
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span className="font-mono text-gray-400 dark:text-gray-500">
+                      {formatDateTime(ev.occurred_at)}
+                    </span>
+                    <span className="rounded-full border border-amber-200 px-2 py-0.5 font-semibold text-amber-700 dark:border-amber-500/30 dark:text-amber-300">
+                      {ev.event_type}
+                    </span>
+                    {ev.agent_run_step_id && (
+                      <span className="font-mono text-gray-400 dark:text-gray-500">
+                        step {ev.agent_run_step_id.slice(0, 8)}
+                      </span>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  )
+}
+
+// ─── Main section ─────────────────────────────────────────────────────────────
 
 export const LogsSection: React.FC = () => {
   const { viewMode, profile, bootstrap } = useAgentWorkspace()
   const [eventFilter, setEventFilter] = useState('')
 
   if (viewMode === 'human_owner') {
-    return <HumanFleetLogs humanLenserId={profile.id} eventFilter={eventFilter} onChange={setEventFilter} />
+    return (
+      <HumanFleetLogs
+        humanLenserId={profile.id}
+        eventFilter={eventFilter}
+        onChange={setEventFilter}
+      />
+    )
   }
 
+  const aiLenserId = bootstrap?.ai_lenser_id ?? ''
   const runs = bootstrap?.runs ?? []
 
   return (
     <SectionPage
       eyebrow="Logs"
       title="Run event stream"
-      description="Detailed event-level audit trail per run. Filter by event_type to focus on tool calls, approvals, or step transitions."
+      description="Click a run to expand its events. Filter by event_type to focus on tool calls, approvals, or step transitions."
+      toolbar={
+        <input
+          value={eventFilter}
+          onChange={(e) => setEventFilter(e.target.value)}
+          placeholder="event_type filter"
+          className="w-48 rounded-2xl border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 dark:border-gray-700 dark:bg-gray-900 dark:text-white"
+        />
+      }
     >
       {runs.length === 0 ? (
         <EmptyPanel
@@ -37,25 +138,20 @@ export const LogsSection: React.FC = () => {
       ) : (
         <div className="space-y-3">
           {runs.map((run) => (
-            <div
+            <RunEventsAccordion
               key={run.id}
-              className="rounded-[20px] border border-gray-200 bg-white p-4 text-sm shadow-sm dark:border-gray-800 dark:bg-gray-900"
-            >
-              <div className="flex items-center justify-between">
-                <span className="font-semibold text-gray-900 dark:text-white">
-                  Run {run.id.slice(0, 8)}
-                </span>
-                <span className="text-xs text-gray-500 dark:text-gray-400">
-                  {run.status}
-                </span>
-              </div>
-            </div>
+              run={run}
+              aiLenserId={aiLenserId}
+              eventTypeFilter={eventFilter}
+            />
           ))}
         </div>
       )}
     </SectionPage>
   )
 }
+
+// ─── Human fleet log (human_owner mode — unchanged) ──────────────────────────
 
 const HumanFleetLogs: React.FC<{
   humanLenserId: string
