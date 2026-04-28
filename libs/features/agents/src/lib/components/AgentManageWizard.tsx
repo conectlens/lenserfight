@@ -86,6 +86,14 @@ export const AgentManageWizard: React.FC<AgentManageWizardProps> = ({ agentId, h
     nextStep()
   }
 
+  if (!agentId) {
+    return (
+      <p className="py-4 text-sm text-status-red">
+        No agent ID provided. Open this dialog from the agent management panel.
+      </p>
+    )
+  }
+
   if (isLoading || !agent) {
     return (
       <div className="space-y-4 animate-pulse py-4">

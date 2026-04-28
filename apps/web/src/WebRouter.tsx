@@ -173,6 +173,10 @@ const AgentManageModal: React.FC = () => {
 
   const closeModal = () => navigate(`/lenser/${handle}`, { replace: true })
 
+  if (!agentId) {
+    return <Navigate to={`/lenser/${handle}`} replace />
+  }
+
   return (
     <ModalRoute
       accessCheck={({ isAuthenticated, hasLenser }) => isAuthenticated && hasLenser}
