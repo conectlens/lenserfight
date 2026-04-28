@@ -32,7 +32,11 @@ import {
   Sparkles,
 } from 'lucide-react'
 import React, { useMemo, useState } from 'react'
-import { Link, Navigate, useNavigate, useParams } from 'react-router-dom'
+import { Link, useNavigate, useParams } from 'react-router-dom'
+import { EmptyPanel } from '../components/EmptyPanel'
+import { ApprovalQueueSection } from '../components/sections/ApprovalQueueSection'
+import { CostMonitorSection } from '../components/sections/CostMonitorSection'
+import { SectionErrorBoundary } from '../components/SectionErrorBoundary'
 
 type AgentControlRoomSection =
   | 'overview'
@@ -40,6 +44,7 @@ type AgentControlRoomSection =
   | 'team'
   | 'workflows'
   | 'schedules'
+  | 'approvals'
   | 'memory'
   | 'personality'
   | 'tools'
@@ -48,6 +53,7 @@ type AgentControlRoomSection =
   | 'runs'
   | 'logs'
   | 'evaluations'
+  | 'cost'
   | 'settings'
 
 const VALID_SECTIONS = new Set<AgentControlRoomSection>([
@@ -56,6 +62,7 @@ const VALID_SECTIONS = new Set<AgentControlRoomSection>([
   'team',
   'workflows',
   'schedules',
+  'approvals',
   'memory',
   'personality',
   'tools',
@@ -64,6 +71,7 @@ const VALID_SECTIONS = new Set<AgentControlRoomSection>([
   'runs',
   'logs',
   'evaluations',
+  'cost',
   'settings',
 ])
 
@@ -107,29 +115,6 @@ function StatCard({ label, value, detail }: { label: string; value: string; deta
       <p className="text-xs uppercase tracking-[0.18em] text-gray-500 dark:text-gray-400">{label}</p>
       <p className="mt-3 text-3xl font-black tracking-tight text-gray-900 dark:text-white">{value}</p>
       <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">{detail}</p>
-    </div>
-  )
-}
-
-function EmptyPanel({
-  icon,
-  title,
-  description,
-  children,
-}: {
-  icon: React.ReactNode
-  title: string
-  description: string
-  children?: React.ReactNode
-}) {
-  return (
-    <div className="rounded-[28px] border border-dashed border-gray-300 bg-white/80 p-8 text-center shadow-sm dark:border-gray-700 dark:bg-gray-900">
-      <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-amber-100 text-amber-700 dark:bg-amber-500/10 dark:text-amber-300">
-        {icon}
-      </div>
-      <h3 className="mt-4 text-lg font-semibold text-gray-900 dark:text-white">{title}</h3>
-      <p className="mt-2 text-sm leading-6 text-gray-500 dark:text-gray-400">{description}</p>
-      {children}
     </div>
   )
 }
@@ -378,14 +363,14 @@ export const AgentControlRoomPage: React.FC = () => {
     },
   })
 
-  if (!handle) return <Navigate to="/" replace />
-
-  if (!accessLoading && (!viewedProfile || viewedProfile.type !== 'ai' || !isOwner)) {
-    return <Navigate to={`/lenser/${handle}`} replace />
-  }
-
+  // Mode guards (handle / type / ownership) are enforced by AgentRouteShell
+  // before this component mounts. This page renders only the Agent-Owner mode.
   if (accessLoading || agentLoading) {
     return <div className="py-20 text-center text-sm text-gray-500 dark:text-gray-400">Loading agent control room…</div>
+  }
+
+  if (!viewedProfile) {
+    return <div className="py-20 text-center text-sm text-gray-500 dark:text-gray-400">Profile unavailable.</div>
   }
 
   if (shouldSwitchWorkspace && viewedProfile) {
@@ -673,6 +658,15 @@ export const AgentControlRoomPage: React.FC = () => {
     team: renderTeam(),
     workflows: renderWorkflows(),
     schedules: renderSchedules(),
+    approvals: bootstrap ? (
+      <ApprovalQueueSection aiLenserId={bootstrap.ai_lenser_id} />
+    ) : (
+      <EmptyPanel
+        icon={<ClipboardList size={20} />}
+        title="Workspace not bootstrapped"
+        description="The approval queue requires the workspace bootstrap to load first."
+      />
+    ),
     memory: (
       <div className="space-y-6">
         <ProfileCard title="Create memory profile" subtitle="Control whether runs share context, how long memory survives, and who can see it.">
@@ -793,6 +787,15 @@ export const AgentControlRoomPage: React.FC = () => {
         description="This section is reserved for model and workflow eval runs, scorecards, and release-readiness comparisons once evaluator pipelines are wired in."
       />
     ),
+    cost: bootstrap ? (
+      <CostMonitorSection aiLenserId={bootstrap.ai_lenser_id} />
+    ) : (
+      <EmptyPanel
+        icon={<Sparkles size={20} />}
+        title="Workspace not bootstrapped"
+        description="The cost monitor requires the workspace bootstrap to load first."
+      />
+    ),
     settings: (
       <ProfileCard title="Workspace settings" subtitle="Operational configuration is separated from public profile identity in the control room.">
         <div className="space-y-3 text-sm text-gray-600 dark:text-gray-300">
@@ -838,7 +841,9 @@ export const AgentControlRoomPage: React.FC = () => {
           </div>
         </div>
       )}
-      {contentBySection[resolvedSection]}
+      <SectionErrorBoundary sectionName={resolvedSection}>
+        {contentBySection[resolvedSection]}
+      </SectionErrorBoundary>
     </SectionShell>
   )
 }
