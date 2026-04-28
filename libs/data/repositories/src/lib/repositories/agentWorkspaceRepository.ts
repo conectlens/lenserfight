@@ -12,8 +12,24 @@ import type {
   ApprovalDecisionResult,
   ApprovalRequestView,
   ApprovalStatus,
+  AssignToolInput,
+  CompleteScratchpadRunInput,
   CostSummary,
+  CreateEvaluationInput,
+  CreateScratchpadRunInput,
   CrossAgentFeedItem,
+  EvaluationCaseResultRow,
+  EvaluationRecord,
+  EvaluationRunRecord,
+  FleetLogRow,
+  FleetOverview,
+  FleetRunRow,
+  RegisterToolInput,
+  ScratchpadRunRecord,
+  ToolAssignmentRecord,
+  ToolRegistryRecord,
+  UpdateWorkspaceSettingsPatch,
+  WorkspaceSettingsRecord,
 } from '@lenserfight/types'
 
 export interface CreateAgentTeamInput {
@@ -86,6 +102,56 @@ export interface AgentWorkspaceRepositoryPort {
   decideApproval(input: ApprovalDecisionInput): Promise<ApprovalDecisionResult>
   getHumanActivityFeed(humanLenserId: string, limit?: number, offset?: number): Promise<CrossAgentFeedItem[]>
   getCostSummary(aiLenserId: string): Promise<CostSummary>
+
+  // Scratchpad
+  listScratchpadRuns(aiLenserId: string, limit?: number): Promise<ScratchpadRunRecord[]>
+  createScratchpadRun(input: CreateScratchpadRunInput): Promise<ScratchpadRunRecord>
+  completeScratchpadRun(input: CompleteScratchpadRunInput): Promise<ScratchpadRunRecord>
+  promoteScratchpadToMemory(runId: string, memoryProfileId: string): Promise<AgentMemoryProfileRecord>
+
+  // Evaluations
+  listEvaluations(ownerLenserId: string): Promise<EvaluationRecord[]>
+  createEvaluation(input: CreateEvaluationInput): Promise<EvaluationRecord>
+  runEvaluation(evaluationId: string, modelId?: string | null): Promise<string>
+  getEvaluationResults(runId: string): Promise<EvaluationCaseResultRow[]>
+  listEvaluationRuns(evaluationId: string): Promise<EvaluationRunRecord[]>
+
+  // Tools registry
+  listToolRegistry(ownerLenserId: string): Promise<ToolRegistryRecord[]>
+  registerTool(input: RegisterToolInput): Promise<ToolRegistryRecord>
+  assignTool(input: AssignToolInput): Promise<ToolAssignmentRecord>
+  revokeTool(aiLenserId: string, toolId: string): Promise<void>
+  listToolAssignments(aiLenserId: string): Promise<ToolAssignmentRecord[]>
+
+  // Fleet aggregations
+  getFleetOverview(humanLenserId: string): Promise<FleetOverview | null>
+  listFleetRuns(humanLenserId: string, opts?: { status?: string; agentId?: string; since?: string; limit?: number; offset?: number }): Promise<FleetRunRow[]>
+  listFleetLogs(humanLenserId: string, opts?: { runId?: string; eventType?: string; limit?: number; offset?: number }): Promise<FleetLogRow[]>
+
+  // Workspace settings
+  getWorkspaceSettings(aiLenserId: string): Promise<WorkspaceSettingsRecord | null>
+  updateWorkspaceSettings(aiLenserId: string, patch: UpdateWorkspaceSettingsPatch): Promise<WorkspaceSettingsRecord>
+  exportWorkspace(aiLenserId: string): Promise<Record<string, unknown>>
+  requestWorkspaceDeletion(aiLenserId: string, reason?: string | null): Promise<WorkspaceSettingsRecord>
+
+  // Mutations on existing per-agent profiles
+  updateMemoryProfile(id: string, patch: Partial<AgentMemoryProfileRecord>): Promise<AgentMemoryProfileRecord>
+  deleteMemoryProfile(id: string): Promise<void>
+  updatePersonalityProfile(id: string, patch: Partial<AgentPersonalityProfileRecord>): Promise<AgentPersonalityProfileRecord>
+  deletePersonalityProfile(id: string): Promise<void>
+  updateToolProfile(id: string, patch: Partial<AgentToolProfileRecord>): Promise<AgentToolProfileRecord>
+  deleteToolProfile(id: string): Promise<void>
+  updateModelProfile(id: string, patch: Partial<AgentModelProfileRecord>): Promise<AgentModelProfileRecord>
+  deleteModelProfile(id: string): Promise<void>
+
+  // Team mutations
+  updateTeam(id: string, patch: Partial<AgentTeamRecord>): Promise<AgentTeamRecord>
+  deleteTeam(id: string): Promise<void>
+  addTeamMember(input: { team_id: string; agent_id: string; role: string; responsibility?: string | null; lane?: number; sort_order?: number }): Promise<AgentTeamMemberRecord>
+  updateTeamMember(id: string, patch: Partial<AgentTeamMemberRecord>): Promise<AgentTeamMemberRecord>
+  deleteTeamMember(id: string): Promise<void>
+  upsertTeamEdge(input: { team_id: string; from_agent: string; to_agent: string; edge_type: string; is_blocking?: boolean }): Promise<AgentTeamEdgeRecord>
+  deleteTeamEdge(id: string): Promise<void>
 }
 
 export class SupabaseAgentWorkspaceRepository implements AgentWorkspaceRepositoryPort {
@@ -352,5 +418,454 @@ export class SupabaseAgentWorkspaceRepository implements AgentWorkspaceRepositor
         votes_used: row.votes_used,
       })),
     }
+  }
+
+  // ─── Scratchpad ────────────────────────────────────────────────────────────
+
+  async listScratchpadRuns(
+    aiLenserId: string,
+    limit = 50
+  ): Promise<ScratchpadRunRecord[]> {
+    const { data, error } = await supabase
+      .schema('agents')
+      .from('scratchpad_runs')
+      .select('*')
+      .eq('ai_lenser_id', aiLenserId)
+      .order('started_at', { ascending: false })
+      .limit(limit)
+    if (error) throw error
+    return (data ?? []) as ScratchpadRunRecord[]
+  }
+
+  async createScratchpadRun(
+    input: CreateScratchpadRunInput
+  ): Promise<ScratchpadRunRecord> {
+    const { data, error } = await supabase.rpc('fn_create_scratchpad_run', {
+      p_ai_lenser_id: input.ai_lenser_id,
+      p_prompt: input.prompt,
+      p_model_id: input.model_id ?? null,
+      p_metadata: input.metadata ?? {},
+    })
+    if (error) throw error
+    return data as ScratchpadRunRecord
+  }
+
+  async completeScratchpadRun(
+    input: CompleteScratchpadRunInput
+  ): Promise<ScratchpadRunRecord> {
+    const { data, error } = await supabase.rpc('fn_complete_scratchpad_run', {
+      p_run_id: input.run_id,
+      p_output: input.output,
+      p_status: input.status ?? 'completed',
+      p_cost_credits: input.cost_credits ?? 0,
+      p_error: input.error ?? null,
+    })
+    if (error) throw error
+    return data as ScratchpadRunRecord
+  }
+
+  async promoteScratchpadToMemory(
+    runId: string,
+    memoryProfileId: string
+  ): Promise<AgentMemoryProfileRecord> {
+    const { data, error } = await supabase.rpc('fn_promote_scratchpad_to_memory', {
+      p_run_id: runId,
+      p_memory_profile_id: memoryProfileId,
+    })
+    if (error) throw error
+    return data as AgentMemoryProfileRecord
+  }
+
+  // ─── Evaluations ───────────────────────────────────────────────────────────
+
+  async listEvaluations(ownerLenserId: string): Promise<EvaluationRecord[]> {
+    const { data, error } = await supabase
+      .schema('agents')
+      .from('evaluations')
+      .select('*')
+      .eq('owner_lenser_id', ownerLenserId)
+      .order('created_at', { ascending: false })
+    if (error) throw error
+    return (data ?? []) as EvaluationRecord[]
+  }
+
+  async createEvaluation(
+    input: CreateEvaluationInput
+  ): Promise<EvaluationRecord> {
+    const { data, error } = await supabase
+      .schema('agents')
+      .from('evaluations')
+      .insert({
+        owner_lenser_id: input.owner_lenser_id,
+        ai_lenser_id: input.ai_lenser_id ?? null,
+        target_type: input.target_type,
+        target_id: input.target_id,
+        name: input.name,
+        description: input.description ?? null,
+        scoring_rules: input.scoring_rules ?? {},
+        dataset_uri: input.dataset_uri ?? null,
+      })
+      .select('*')
+      .single()
+    if (error) throw error
+    const evalRow = data as EvaluationRecord
+    if (input.cases && input.cases.length > 0) {
+      const cases = input.cases.map((c) => ({
+        evaluation_id: evalRow.id,
+        input: c.input,
+        expected: c.expected ?? null,
+        weight: c.weight ?? 1,
+        tags: c.tags ?? [],
+      }))
+      const { error: casesError } = await supabase
+        .schema('agents')
+        .from('evaluation_cases')
+        .insert(cases)
+      if (casesError) throw casesError
+    }
+    return evalRow
+  }
+
+  async runEvaluation(
+    evaluationId: string,
+    modelId?: string | null
+  ): Promise<string> {
+    const { data, error } = await supabase.rpc('fn_run_evaluation', {
+      p_evaluation_id: evaluationId,
+      p_model_id: modelId ?? null,
+    })
+    if (error) throw error
+    return data as string
+  }
+
+  async getEvaluationResults(
+    runId: string
+  ): Promise<EvaluationCaseResultRow[]> {
+    const { data, error } = await supabase
+      .schema('agents')
+      .from('evaluation_results_v')
+      .select('*')
+      .eq('run_id', runId)
+    if (error) throw error
+    return (data ?? []) as EvaluationCaseResultRow[]
+  }
+
+  async listEvaluationRuns(
+    evaluationId: string
+  ): Promise<EvaluationRunRecord[]> {
+    const { data, error } = await supabase
+      .schema('agents')
+      .from('evaluation_runs')
+      .select('*')
+      .eq('evaluation_id', evaluationId)
+      .order('started_at', { ascending: false })
+    if (error) throw error
+    return (data ?? []) as EvaluationRunRecord[]
+  }
+
+  // ─── Tools registry ────────────────────────────────────────────────────────
+
+  async listToolRegistry(
+    ownerLenserId: string
+  ): Promise<ToolRegistryRecord[]> {
+    const { data, error } = await supabase
+      .schema('agents')
+      .from('tools_registry')
+      .select('*')
+      .eq('owner_lenser_id', ownerLenserId)
+      .order('name', { ascending: true })
+    if (error) throw error
+    return (data ?? []) as ToolRegistryRecord[]
+  }
+
+  async registerTool(input: RegisterToolInput): Promise<ToolRegistryRecord> {
+    const { data, error } = await supabase.rpc('fn_register_tool', {
+      p_key: input.key,
+      p_name: input.name,
+      p_description: input.description ?? null,
+      p_category: input.category ?? 'general',
+      p_schema_input: input.schema_input ?? {},
+      p_schema_output: input.schema_output ?? {},
+      p_auth_method: input.auth_method ?? 'none',
+      p_requires_approval: input.requires_approval ?? false,
+      p_is_dangerous: input.is_dangerous ?? false,
+    })
+    if (error) throw error
+    return data as ToolRegistryRecord
+  }
+
+  async assignTool(input: AssignToolInput): Promise<ToolAssignmentRecord> {
+    const { data, error } = await supabase.rpc('fn_assign_tool', {
+      p_ai_lenser_id: input.ai_lenser_id,
+      p_tool_id: input.tool_id,
+      p_profile_id: input.profile_id ?? null,
+      p_allowed: input.allowed ?? true,
+    })
+    if (error) throw error
+    return data as ToolAssignmentRecord
+  }
+
+  async revokeTool(aiLenserId: string, toolId: string): Promise<void> {
+    const { error } = await supabase.rpc('fn_revoke_tool', {
+      p_ai_lenser_id: aiLenserId,
+      p_tool_id: toolId,
+    })
+    if (error) throw error
+  }
+
+  async listToolAssignments(
+    aiLenserId: string
+  ): Promise<ToolAssignmentRecord[]> {
+    const { data, error } = await supabase
+      .schema('agents')
+      .from('tool_assignments')
+      .select('*')
+      .eq('ai_lenser_id', aiLenserId)
+    if (error) throw error
+    return (data ?? []) as ToolAssignmentRecord[]
+  }
+
+  // ─── Fleet aggregations ────────────────────────────────────────────────────
+
+  async getFleetOverview(humanLenserId: string): Promise<FleetOverview | null> {
+    const { data, error } = await supabase
+      .schema('agents')
+      .from('v_human_fleet_overview')
+      .select('*')
+      .eq('human_lenser_id', humanLenserId)
+      .maybeSingle()
+    if (error) throw error
+    return (data as FleetOverview | null) ?? null
+  }
+
+  async listFleetRuns(
+    humanLenserId: string,
+    opts: {
+      status?: string
+      agentId?: string
+      since?: string
+      limit?: number
+      offset?: number
+    } = {}
+  ): Promise<FleetRunRow[]> {
+    const { data, error } = await supabase.rpc('fn_human_fleet_runs', {
+      p_human_lenser_id: humanLenserId,
+      p_status: opts.status ?? null,
+      p_agent_id: opts.agentId ?? null,
+      p_since: opts.since ?? null,
+      p_limit: opts.limit ?? 50,
+      p_offset: opts.offset ?? 0,
+    })
+    if (error) throw error
+    return (data ?? []) as FleetRunRow[]
+  }
+
+  async listFleetLogs(
+    humanLenserId: string,
+    opts: {
+      runId?: string
+      eventType?: string
+      limit?: number
+      offset?: number
+    } = {}
+  ): Promise<FleetLogRow[]> {
+    const { data, error } = await supabase.rpc('fn_human_fleet_logs', {
+      p_human_lenser_id: humanLenserId,
+      p_run_id: opts.runId ?? null,
+      p_event_type: opts.eventType ?? null,
+      p_limit: opts.limit ?? 100,
+      p_offset: opts.offset ?? 0,
+    })
+    if (error) throw error
+    return (data ?? []) as FleetLogRow[]
+  }
+
+  // ─── Workspace settings ────────────────────────────────────────────────────
+
+  async getWorkspaceSettings(
+    aiLenserId: string
+  ): Promise<WorkspaceSettingsRecord | null> {
+    const { data, error } = await supabase
+      .schema('agents')
+      .from('workspace_settings')
+      .select('*')
+      .eq('ai_lenser_id', aiLenserId)
+      .maybeSingle()
+    if (error) throw error
+    return (data as WorkspaceSettingsRecord | null) ?? null
+  }
+
+  async updateWorkspaceSettings(
+    aiLenserId: string,
+    patch: UpdateWorkspaceSettingsPatch
+  ): Promise<WorkspaceSettingsRecord> {
+    const { data, error } = await supabase.rpc('fn_update_workspace_settings', {
+      p_ai_lenser_id: aiLenserId,
+      p_patch: patch as Record<string, unknown>,
+    })
+    if (error) throw error
+    return data as WorkspaceSettingsRecord
+  }
+
+  async exportWorkspace(
+    aiLenserId: string
+  ): Promise<Record<string, unknown>> {
+    const { data, error } = await supabase.rpc('fn_export_workspace', {
+      p_ai_lenser_id: aiLenserId,
+    })
+    if (error) throw error
+    return (data as Record<string, unknown>) ?? {}
+  }
+
+  async requestWorkspaceDeletion(
+    aiLenserId: string,
+    reason?: string | null
+  ): Promise<WorkspaceSettingsRecord> {
+    const { data, error } = await supabase.rpc('fn_request_workspace_deletion', {
+      p_ai_lenser_id: aiLenserId,
+      p_reason: reason ?? null,
+    })
+    if (error) throw error
+    return data as WorkspaceSettingsRecord
+  }
+
+  // ─── Profile mutations (Memory / Personality / Tool / Model) ───────────────
+
+  private async updateInTable<T>(
+    table: string,
+    id: string,
+    patch: Partial<T>
+  ): Promise<T> {
+    const { data, error } = await supabase
+      .schema('agents')
+      .from(table)
+      .update(patch as Record<string, unknown>)
+      .eq('id', id)
+      .select('*')
+      .single()
+    if (error) throw error
+    return data as T
+  }
+
+  private async deleteFromTable(table: string, id: string): Promise<void> {
+    const { error } = await supabase
+      .schema('agents')
+      .from(table)
+      .delete()
+      .eq('id', id)
+    if (error) throw error
+  }
+
+  updateMemoryProfile(id: string, patch: Partial<AgentMemoryProfileRecord>) {
+    return this.updateInTable<AgentMemoryProfileRecord>(
+      'memory_profiles',
+      id,
+      patch
+    )
+  }
+  deleteMemoryProfile(id: string) {
+    return this.deleteFromTable('memory_profiles', id)
+  }
+  updatePersonalityProfile(
+    id: string,
+    patch: Partial<AgentPersonalityProfileRecord>
+  ) {
+    return this.updateInTable<AgentPersonalityProfileRecord>(
+      'personality_profiles',
+      id,
+      patch
+    )
+  }
+  deletePersonalityProfile(id: string) {
+    return this.deleteFromTable('personality_profiles', id)
+  }
+  updateToolProfile(id: string, patch: Partial<AgentToolProfileRecord>) {
+    return this.updateInTable<AgentToolProfileRecord>(
+      'tool_profiles',
+      id,
+      patch
+    )
+  }
+  deleteToolProfile(id: string) {
+    return this.deleteFromTable('tool_profiles', id)
+  }
+  updateModelProfile(id: string, patch: Partial<AgentModelProfileRecord>) {
+    return this.updateInTable<AgentModelProfileRecord>(
+      'model_profiles',
+      id,
+      patch
+    )
+  }
+  deleteModelProfile(id: string) {
+    return this.deleteFromTable('model_profiles', id)
+  }
+
+  // ─── Team mutations ────────────────────────────────────────────────────────
+
+  updateTeam(id: string, patch: Partial<AgentTeamRecord>) {
+    return this.updateInTable<AgentTeamRecord>('teams', id, patch)
+  }
+  deleteTeam(id: string) {
+    return this.deleteFromTable('teams', id)
+  }
+
+  async addTeamMember(input: {
+    team_id: string
+    agent_id: string
+    role: string
+    responsibility?: string | null
+    lane?: number
+    sort_order?: number
+  }): Promise<AgentTeamMemberRecord> {
+    const { data, error } = await supabase
+      .schema('agents')
+      .from('team_members')
+      .insert({
+        team_id: input.team_id,
+        agent_id: input.agent_id,
+        role: input.role,
+        responsibility: input.responsibility ?? null,
+        lane: input.lane ?? 0,
+        sort_order: input.sort_order ?? 0,
+        is_active: true,
+      })
+      .select('*')
+      .single()
+    if (error) throw error
+    return data as AgentTeamMemberRecord
+  }
+
+  updateTeamMember(id: string, patch: Partial<AgentTeamMemberRecord>) {
+    return this.updateInTable<AgentTeamMemberRecord>('team_members', id, patch)
+  }
+  deleteTeamMember(id: string) {
+    return this.deleteFromTable('team_members', id)
+  }
+
+  async upsertTeamEdge(input: {
+    team_id: string
+    from_agent: string
+    to_agent: string
+    edge_type: string
+    is_blocking?: boolean
+  }): Promise<AgentTeamEdgeRecord> {
+    const { data, error } = await supabase
+      .schema('agents')
+      .from('team_edges')
+      .insert({
+        team_id: input.team_id,
+        from_agent: input.from_agent,
+        to_agent: input.to_agent,
+        edge_type: input.edge_type,
+        is_blocking: input.is_blocking ?? false,
+      })
+      .select('*')
+      .single()
+    if (error) throw error
+    return data as AgentTeamEdgeRecord
+  }
+
+  deleteTeamEdge(id: string) {
+    return this.deleteFromTable('team_edges', id)
   }
 }
