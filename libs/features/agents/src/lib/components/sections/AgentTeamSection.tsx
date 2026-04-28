@@ -1,9 +1,11 @@
 import { queryKeys } from '@lenserfight/data/cache'
 import { agentWorkspaceService } from '@lenserfight/data/repositories'
-import { useMutation, useQueryClient } from '@tanstack/react-query'
 import type { AgentTeamEdgeRecord, AgentTeamMemberRecord, AgentTeamRecord } from '@lenserfight/types'
+import { AlertDialog } from '@lenserfight/ui/overlays'
+import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { Bot, GitMerge, Plus, Trash2, UserPlus } from 'lucide-react'
 import React, { useState } from 'react'
+import { toast } from 'sonner'
 
 import { useAgentWorkspace } from '../../context/AgentWorkspaceContext'
 import { AddTeamMemberDrawer } from '../drawers/AddTeamMemberDrawer'
@@ -28,6 +30,11 @@ export const AgentTeamSection: React.FC = () => {
     open: boolean
     team: AgentTeamRecord | null
   }>({ open: false, team: null })
+  const [confirmState, setConfirmState] = useState<{
+    title: string
+    body: string
+    onConfirm: () => void
+  } | null>(null)
 
   const teams = bootstrap?.teams ?? []
 
@@ -38,12 +45,14 @@ export const AgentTeamSection: React.FC = () => {
 
   const deleteMember = useMutation({
     mutationFn: (id: string) => agentWorkspaceService.deleteTeamMember(id),
-    onSuccess: invalidate,
+    onSuccess: () => { toast.success('Member removed'); invalidate() },
+    onError: (e) => toast.error((e as Error).message),
   })
 
   const deleteTeam = useMutation({
     mutationFn: (id: string) => agentWorkspaceService.deleteTeam(id),
-    onSuccess: invalidate,
+    onSuccess: () => { toast.success('Team deleted'); invalidate() },
+    onError: (e) => toast.error((e as Error).message),
   })
 
   const edgesTeam = edgesState.team
@@ -134,11 +143,13 @@ export const AgentTeamSection: React.FC = () => {
                       </button>
                       <button
                         type="button"
-                        onClick={() => {
-                          if (confirm(`Delete team "${team.name}"?`)) {
-                            deleteTeam.mutate(team.id)
-                          }
-                        }}
+                        onClick={() =>
+                          setConfirmState({
+                            title: 'Delete team?',
+                            body: `Delete "${team.name}"? This cannot be undone.`,
+                            onConfirm: () => deleteTeam.mutate(team.id),
+                          })
+                        }
                         aria-label="Delete team"
                         className="rounded-2xl border border-gray-200 p-1.5 text-gray-400 hover:bg-red-50 hover:text-red-600 dark:border-gray-700 dark:hover:bg-red-500/10 dark:hover:text-red-400"
                       >
@@ -162,11 +173,13 @@ export const AgentTeamSection: React.FC = () => {
                             initial: member,
                           })
                         }
-                        onDelete={() => {
-                          if (confirm('Remove this member from the team?')) {
-                            deleteMember.mutate(member.id)
-                          }
-                        }}
+                        onDelete={() =>
+                          setConfirmState({
+                            title: 'Remove member?',
+                            body: 'Remove this member from the team? This cannot be undone.',
+                            onConfirm: () => deleteMember.mutate(member.id),
+                          })
+                        }
                       />
                     ))}
                   </div>
@@ -205,6 +218,19 @@ export const AgentTeamSection: React.FC = () => {
           onChanged={invalidate}
         />
       )}
+
+      <AlertDialog
+        open={!!confirmState}
+        onClose={() => setConfirmState(null)}
+        title={confirmState?.title ?? ''}
+        bodyText={confirmState?.body}
+        variant="destructive"
+        confirmAction={{
+          label: 'Delete',
+          onClick: () => { confirmState?.onConfirm(); setConfirmState(null) },
+          loading: deleteTeam.isPending || deleteMember.isPending,
+        }}
+      />
     </SectionPage>
   )
 }

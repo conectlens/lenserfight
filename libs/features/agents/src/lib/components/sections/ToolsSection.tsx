@@ -1,5 +1,6 @@
 import { queryKeys } from '@lenserfight/data/cache'
 import { agentWorkspaceService } from '@lenserfight/data/repositories'
+import { AlertDialog } from '@lenserfight/ui/overlays'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import {
   ClipboardList,
@@ -9,6 +10,7 @@ import {
   Trash2,
 } from 'lucide-react'
 import React, { useState } from 'react'
+import { toast } from 'sonner'
 
 import { useAgentWorkspace } from '../../context/AgentWorkspaceContext'
 import { AssignToolDrawer } from '../drawers/AssignToolDrawer'
@@ -38,6 +40,11 @@ export const ToolsSection: React.FC = () => {
   const [registerEditing, setRegisterEditing] =
     useState<ToolRegistryRecord | null>(null)
   const [assignDrawer, setAssignDrawer] = useState(false)
+  const [confirmState, setConfirmState] = useState<{
+    title: string
+    body: string
+    onConfirm: () => void
+  } | null>(null)
 
   const isAgentOwner = viewMode === 'agent_owner'
   const profiles =
@@ -73,12 +80,14 @@ export const ToolsSection: React.FC = () => {
 
   const removeProfile = useMutation({
     mutationFn: (id: string) => agentWorkspaceService.deleteToolProfile(id),
-    onSuccess: invalidateBootstrap,
+    onSuccess: () => { toast.success('Tool profile deleted'); invalidateBootstrap() },
+    onError: (e) => toast.error((e as Error).message),
   })
   const revoke = useMutation({
     mutationFn: (toolId: string) =>
       agentWorkspaceService.revokeTool(bootstrap!.ai_lenser_id, toolId),
-    onSuccess: invalidateAssignments,
+    onSuccess: () => { toast.success('Tool assignment revoked'); invalidateAssignments() },
+    onError: (e) => toast.error((e as Error).message),
   })
 
   const tabs: Array<{ id: Tab; label: string }> = [
@@ -198,11 +207,13 @@ export const ToolsSection: React.FC = () => {
                       </button>
                       <button
                         type="button"
-                        onClick={() => {
-                          if (confirm(`Delete tool profile "${p.name}"?`)) {
-                            removeProfile.mutate(p.id)
-                          }
-                        }}
+                        onClick={() =>
+                          setConfirmState({
+                            title: 'Delete tool profile?',
+                            body: `Delete "${p.name}"? This cannot be undone.`,
+                            onConfirm: () => removeProfile.mutate(p.id),
+                          })
+                        }
                         className={iconBtn}
                         aria-label="Delete"
                       >
@@ -314,11 +325,13 @@ export const ToolsSection: React.FC = () => {
                   </div>
                   <button
                     type="button"
-                    onClick={() => {
-                      if (confirm('Revoke this tool assignment?')) {
-                        revoke.mutate(assignment.tool_id)
-                      }
-                    }}
+                    onClick={() =>
+                      setConfirmState({
+                        title: 'Revoke tool assignment?',
+                        body: 'Revoke access to this tool? New runs will no longer have it available.',
+                        onConfirm: () => revoke.mutate(assignment.tool_id),
+                      })
+                    }
                     className={iconBtn}
                     aria-label="Revoke"
                   >
@@ -354,6 +367,19 @@ export const ToolsSection: React.FC = () => {
           />
         </>
       )}
+
+      <AlertDialog
+        open={!!confirmState}
+        onClose={() => setConfirmState(null)}
+        title={confirmState?.title ?? ''}
+        bodyText={confirmState?.body}
+        variant="destructive"
+        confirmAction={{
+          label: 'Confirm',
+          onClick: () => { confirmState?.onConfirm(); setConfirmState(null) },
+          loading: removeProfile.isPending || revoke.isPending,
+        }}
+      />
     </SectionPage>
   )
 }

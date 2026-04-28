@@ -17,8 +17,10 @@ const RunEventsAccordion: React.FC<{
   run: AgentTeamRunRecord
   aiLenserId: string
   eventTypeFilter: string
-}> = ({ run, aiLenserId, eventTypeFilter }) => {
+  payloadSearch?: string
+}> = ({ run, aiLenserId, eventTypeFilter, payloadSearch }) => {
   const [expanded, setExpanded] = useState(false)
+  const [expandedEventId, setExpandedEventId] = useState<string | null>(null)
 
   const events = useQuery<AgentRunEventRecord[]>({
     queryKey: queryKeys.agents.runEvents(aiLenserId, run.id, eventTypeFilter),
@@ -30,6 +32,11 @@ const RunEventsAccordion: React.FC<{
       }),
     enabled: expanded,
     staleTime: 30_000,
+  })
+
+  const visibleEvents = (events.data ?? []).filter((ev) => {
+    if (!payloadSearch) return true
+    return JSON.stringify(ev.payload).toLowerCase().includes(payloadSearch.toLowerCase())
   })
 
   return (
@@ -62,32 +69,57 @@ const RunEventsAccordion: React.FC<{
         <div className="border-t border-gray-100 px-4 pb-3 pt-2 dark:border-gray-800">
           {events.isLoading ? (
             <p className="py-4 text-center text-xs text-gray-500">Loading events…</p>
-          ) : (events.data ?? []).length === 0 ? (
+          ) : visibleEvents.length === 0 ? (
             <p className="py-4 text-center text-xs text-gray-400">
-              No events yet for this run.
+              {payloadSearch ? 'No events match the payload filter.' : 'No events yet for this run.'}
             </p>
           ) : (
             <div className="space-y-1.5">
-              {(events.data ?? []).map((ev) => (
-                <div
-                  key={ev.id}
-                  className="rounded-[14px] border border-gray-100 bg-gray-50 px-3 py-2 text-xs dark:border-gray-800 dark:bg-gray-950"
-                >
-                  <div className="flex flex-wrap items-center gap-2">
-                    <span className="font-mono text-gray-400 dark:text-gray-500">
-                      {formatDateTime(ev.occurred_at)}
-                    </span>
-                    <span className="rounded-full border border-amber-200 px-2 py-0.5 font-semibold text-amber-700 dark:border-amber-500/30 dark:text-amber-300">
-                      {ev.event_type}
-                    </span>
-                    {ev.agent_run_step_id && (
+              {visibleEvents.map((ev) => {
+                const hasPayload = Object.keys(ev.payload ?? {}).length > 0
+                const isExpanded = expandedEventId === ev.id
+                return (
+                  <div
+                    key={ev.id}
+                    className="rounded-[14px] border border-gray-100 bg-gray-50 dark:border-gray-800 dark:bg-gray-950"
+                  >
+                    <button
+                      type="button"
+                      disabled={!hasPayload}
+                      onClick={() =>
+                        setExpandedEventId(isExpanded ? null : ev.id)
+                      }
+                      className="flex w-full flex-wrap items-center gap-2 px-3 py-2 text-left text-xs disabled:cursor-default"
+                    >
+                      <ChevronDown
+                        size={12}
+                        className={`transition-transform ${hasPayload ? 'text-gray-400' : 'text-transparent'} ${isExpanded ? 'rotate-0' : '-rotate-90'}`}
+                      />
                       <span className="font-mono text-gray-400 dark:text-gray-500">
-                        step {ev.agent_run_step_id.slice(0, 8)}
+                        {formatDateTime(ev.occurred_at)}
                       </span>
+                      <span className="rounded-full border border-amber-200 px-2 py-0.5 font-semibold text-amber-700 dark:border-amber-500/30 dark:text-amber-300">
+                        {ev.event_type}
+                      </span>
+                      {ev.agent_run_step_id && (
+                        <span className="font-mono text-gray-400 dark:text-gray-500">
+                          step {ev.agent_run_step_id.slice(0, 8)}
+                        </span>
+                      )}
+                    </button>
+                    {isExpanded && hasPayload && (
+                      <pre className="overflow-auto border-t border-gray-100 px-3 pb-3 pt-2 font-mono text-xs leading-5 text-amber-100 dark:border-gray-800 bg-gray-950 rounded-b-[14px]">
+                        {JSON.stringify(ev.payload, null, 2)}
+                      </pre>
+                    )}
+                    {isExpanded && !hasPayload && (
+                      <p className="border-t border-gray-100 px-3 pb-2 pt-1 text-xs text-gray-400 dark:border-gray-800">
+                        No payload data.
+                      </p>
                     )}
                   </div>
-                </div>
-              ))}
+                )
+              })}
             </div>
           )}
         </div>
@@ -101,6 +133,7 @@ const RunEventsAccordion: React.FC<{
 export const LogsSection: React.FC = () => {
   const { viewMode, profile, bootstrap } = useAgentWorkspace()
   const [eventFilter, setEventFilter] = useState('')
+  const [payloadSearch, setPayloadSearch] = useState('')
 
   if (viewMode === 'human_owner') {
     return (
@@ -119,14 +152,22 @@ export const LogsSection: React.FC = () => {
     <SectionPage
       eyebrow="Logs"
       title="Run event stream"
-      description="Click a run to expand its events. Filter by event_type to focus on tool calls, approvals, or step transitions."
+      description="Click a run to expand its events. Click an event to inspect its payload. Filter by event_type or search within payloads."
       toolbar={
-        <input
-          value={eventFilter}
-          onChange={(e) => setEventFilter(e.target.value)}
-          placeholder="event_type filter"
-          className="w-48 rounded-2xl border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 dark:border-gray-700 dark:bg-gray-900 dark:text-white"
-        />
+        <div className="flex gap-2">
+          <input
+            value={eventFilter}
+            onChange={(e) => setEventFilter(e.target.value)}
+            placeholder="event_type filter"
+            className="w-44 rounded-2xl border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 dark:border-gray-700 dark:bg-gray-900 dark:text-white"
+          />
+          <input
+            value={payloadSearch}
+            onChange={(e) => setPayloadSearch(e.target.value)}
+            placeholder="payload search"
+            className="w-44 rounded-2xl border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 dark:border-gray-700 dark:bg-gray-900 dark:text-white"
+          />
+        </div>
       }
     >
       {runs.length === 0 ? (
@@ -143,6 +184,7 @@ export const LogsSection: React.FC = () => {
               run={run}
               aiLenserId={aiLenserId}
               eventTypeFilter={eventFilter}
+              payloadSearch={payloadSearch}
             />
           ))}
         </div>
@@ -151,7 +193,7 @@ export const LogsSection: React.FC = () => {
   )
 }
 
-// ─── Human fleet log (human_owner mode — unchanged) ──────────────────────────
+// ─── Human fleet log (human_owner mode) ──────────────────────────────────────
 
 const HumanFleetLogs: React.FC<{
   humanLenserId: string
