@@ -111,6 +111,12 @@ export const agentWorkspaceService = {
   getFleetOverview: agentWorkspaceRepo.getFleetOverview.bind(agentWorkspaceRepo),
   listFleetRuns: agentWorkspaceRepo.listFleetRuns.bind(agentWorkspaceRepo),
   listFleetLogs: agentWorkspaceRepo.listFleetLogs.bind(agentWorkspaceRepo),
+  listAgentRunEvents: agentWorkspaceRepo.listAgentRunEvents.bind(agentWorkspaceRepo),
+
+  // Provider configs (BYOK)
+  listProviderConfigs: agentWorkspaceRepo.listProviderConfigs.bind(agentWorkspaceRepo),
+  configureProvider: agentWorkspaceRepo.configureProvider.bind(agentWorkspaceRepo),
+  testProvider: agentWorkspaceRepo.testProvider.bind(agentWorkspaceRepo),
 
   // Workspace settings
   getWorkspaceSettings: agentWorkspaceRepo.getWorkspaceSettings.bind(agentWorkspaceRepo),

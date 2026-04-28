@@ -3,6 +3,7 @@ import type {
   AgentMemoryProfileRecord,
   AgentModelProfileRecord,
   AgentPersonalityProfileRecord,
+  AgentRunEventRecord,
   AgentTeamEdgeRecord,
   AgentTeamMemberRecord,
   AgentTeamRecord,
@@ -24,6 +25,7 @@ import type {
   FleetLogRow,
   FleetOverview,
   FleetRunRow,
+  ProviderConfigRecord,
   RegisterToolInput,
   ScratchpadRunRecord,
   ToolAssignmentRecord,
@@ -127,6 +129,12 @@ export interface AgentWorkspaceRepositoryPort {
   getFleetOverview(humanLenserId: string): Promise<FleetOverview | null>
   listFleetRuns(humanLenserId: string, opts?: { status?: string; agentId?: string; since?: string; limit?: number; offset?: number }): Promise<FleetRunRow[]>
   listFleetLogs(humanLenserId: string, opts?: { runId?: string; eventType?: string; limit?: number; offset?: number }): Promise<FleetLogRow[]>
+  listAgentRunEvents(aiLenserId: string, opts?: { runId?: string; eventType?: string; limit?: number }): Promise<AgentRunEventRecord[]>
+
+  // Provider configs (BYOK)
+  listProviderConfigs(aiLenserId: string): Promise<ProviderConfigRecord[]>
+  configureProvider(aiLenserId: string, providerKey: string, apiKey: string, baseUrl?: string | null): Promise<ProviderConfigRecord>
+  testProvider(aiLenserId: string, providerKey: string): Promise<{ status: 'healthy' | 'error'; message: string }>
 
   // Workspace settings
   getWorkspaceSettings(aiLenserId: string): Promise<WorkspaceSettingsRecord | null>
@@ -678,6 +686,66 @@ export class SupabaseAgentWorkspaceRepository implements AgentWorkspaceRepositor
     })
     if (error) throw error
     return (data ?? []) as FleetLogRow[]
+  }
+
+  async listAgentRunEvents(
+    aiLenserId: string,
+    opts: { runId?: string; eventType?: string; limit?: number } = {}
+  ): Promise<AgentRunEventRecord[]> {
+    const { data, error } = await supabase.rpc('fn_agent_run_events', {
+      p_ai_lenser_id: aiLenserId,
+      p_run_id: opts.runId ?? null,
+      p_event_type: opts.eventType ?? null,
+      p_limit: opts.limit ?? 100,
+    })
+    if (error) throw error
+    return (data ?? []) as AgentRunEventRecord[]
+  }
+
+  // ─── Provider configs (BYOK) ───────────────────────────────────────────────
+
+  async listProviderConfigs(aiLenserId: string): Promise<ProviderConfigRecord[]> {
+    const { data, error } = await supabase.rpc('fn_get_provider_configs', {
+      p_ai_lenser_id: aiLenserId,
+    })
+    if (error) throw error
+    return (data ?? []) as ProviderConfigRecord[]
+  }
+
+  async configureProvider(
+    aiLenserId: string,
+    providerKey: string,
+    apiKey: string,
+    baseUrl?: string | null
+  ): Promise<ProviderConfigRecord> {
+    // Store key via existing fn_store_api_key (vault write, returns ai.keys.id)
+    const { data: keyId, error: keyErr } = await supabase.rpc('fn_store_api_key', {
+      p_provider: providerKey,
+      p_label: `agent-byok-${providerKey}`,
+      p_raw_key: apiKey,
+    })
+    if (keyErr) throw keyErr
+
+    const { data, error } = await supabase.rpc('fn_upsert_provider_config', {
+      p_ai_lenser_id: aiLenserId,
+      p_provider_key: providerKey,
+      p_base_url: baseUrl ?? null,
+      p_status: 'unconfigured',
+      p_ai_key_id: keyId as string,
+    })
+    if (error) throw error
+    return data as ProviderConfigRecord
+  }
+
+  async testProvider(
+    aiLenserId: string,
+    providerKey: string
+  ): Promise<{ status: 'healthy' | 'error'; message: string }> {
+    const { data, error } = await supabase.functions.invoke('test-provider', {
+      body: { ai_lenser_id: aiLenserId, provider_key: providerKey },
+    })
+    if (error) throw error
+    return data as { status: 'healthy' | 'error'; message: string }
   }
 
   // ─── Workspace settings ────────────────────────────────────────────────────
