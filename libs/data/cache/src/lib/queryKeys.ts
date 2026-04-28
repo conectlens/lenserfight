@@ -209,6 +209,12 @@ export const queryKeys = {
       ] as const,
     providers: (aiLenserId: string) =>
       [...queryKeys.agents.all, 'providers', aiLenserId] as const,
+    runSteps: (aiLenserId: string, runId: string) =>
+      [...queryKeys.agents.all, 'runSteps', aiLenserId, runId] as const,
+    workflowAssignments: (aiLenserId: string) =>
+      [...queryKeys.agents.all, 'workflowAssignments', aiLenserId] as const,
+    evaluationCases: (evaluationId: string) =>
+      [...queryKeys.agents.all, 'evaluationCases', evaluationId] as const,
   },
   reputation: {
     all: ['reputation'] as const,
