@@ -153,6 +153,14 @@ export const queryKeys = {
     bindings: (id: string) => [...queryKeys.agents.all, 'bindings', id] as const,
     workspaceBootstrap: (handle: string) => [...queryKeys.agents.all, 'workspaceBootstrap', handle] as const,
     teams: (aiLenserId: string) => [...queryKeys.agents.all, 'teams', aiLenserId] as const,
+    approvals: (aiLenserId: string, status?: string) =>
+      [...queryKeys.agents.all, 'approvals', aiLenserId, status ?? 'pending'] as const,
+    approvalRequest: (requestId: string) =>
+      [...queryKeys.agents.all, 'approval', requestId] as const,
+    humanActivityFeed: (humanLenserId: string, limit?: number, offset?: number) =>
+      [...queryKeys.agents.all, 'humanActivityFeed', humanLenserId, limit, offset] as const,
+    costSummary: (aiLenserId: string) =>
+      [...queryKeys.agents.all, 'costSummary', aiLenserId] as const,
   },
   reputation: {
     all: ['reputation'] as const,
