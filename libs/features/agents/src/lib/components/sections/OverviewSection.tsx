@@ -1,5 +1,6 @@
 import { queryKeys } from '@lenserfight/data/cache'
 import { agentWorkspaceService } from '@lenserfight/data/repositories'
+import { useLenserWorkspace } from '@lenserfight/features/profile'
 import { useQuery } from '@tanstack/react-query'
 import { Bot, GitBranch, Sparkles } from 'lucide-react'
 import React from 'react'
@@ -237,6 +238,12 @@ export const OverviewSection: React.FC = () => {
 
 const HumanOwnerOverview: React.FC = () => {
   const { profile, ownedAgents, ownedAgentsLoading } = useAgentWorkspace()
+  const { humanWorkspace } = useLenserWorkspace()
+  // humanWorkspace.id is always the current auth user's human profile — guaranteed
+  // to match get_auth_human_lenser_id() inside fn_get_human_activity_feed.
+  // Using profile.id (from the route) risks a 42501 if the route profile is a
+  // co-owned or mismatched workspace entry.
+  const feedLenserId = humanWorkspace?.id ?? profile.id
   const overview = useQuery<FleetOverview | null>({
     queryKey: queryKeys.agents.fleetOverview(profile.id),
     queryFn: () => agentWorkspaceService.getFleetOverview(profile.id),
@@ -294,7 +301,7 @@ const HumanOwnerOverview: React.FC = () => {
         />
       )}
       <div className="mt-6">
-        <CrossAgentActivityFeed humanLenserId={profile.id} />
+        <CrossAgentActivityFeed humanLenserId={feedLenserId} />
       </div>
     </SectionPage>
   )
