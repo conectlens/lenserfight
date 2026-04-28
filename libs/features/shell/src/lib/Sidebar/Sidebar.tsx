@@ -84,7 +84,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
   const { profile: compactProfile } = useSidebarProfile(authLenser?.handle)
 
   // All lenser profiles (human + owned AI agents) for workspace switcher
-  const { workspaces, switchWorkspace } = useLenserWorkspace()
+  const { workspaces, activeWorkspace, switchWorkspace } = useLenserWorkspace()
 
   // Fallback to authLenser if compact fetch hasn't populated yet to prevent empty state
   const displayProfile = compactProfile || authLenser
@@ -101,7 +101,10 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
   const navigate = useNavigate()
   const location = useLocation()
-  const workspaceMode = useWorkspaceMode(displayProfile)
+  // Workspace mode is driven by the active workspace identity, not the URL.
+  // activeWorkspace comes from fn_get_my_lensers (server-authoritative); fall back
+  // to displayProfile only while the workspace list is still loading.
+  const workspaceMode = useWorkspaceMode(activeWorkspace ?? displayProfile)
   const [isDropdownOpen, setIsDropdownOpen] = useState(false)
   const dropdownRef = useRef<HTMLDivElement>(null)
   const buttonRef = useRef<HTMLButtonElement>(null)
@@ -219,8 +222,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
   }
 
   const navSections =
-    workspaceMode === 'agent' && displayProfile?.handle
-      ? buildAgentSidebarSections(displayProfile.handle)
+    workspaceMode === 'agent' && activeWorkspace?.handle
+      ? buildAgentSidebarSections(activeWorkspace.handle)
       : buildHumanSidebarSections({ isNavLocked })
 
   const handleProfileClick = () => {
@@ -492,11 +495,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                             onClick={async () => {
                               setIsSwitcherOpen(false)
                               await switchWorkspace(profile.id)
-                              navigate(
-                                profile.type === 'ai'
-                                  ? `/lenser/${profile.handle}/ag/overview`
-                                  : `/lenser/${profile.handle}`
-                              )
+                              navigate(`/lenser/${profile.handle}`)
                             }}
                           >
                             <div className="relative flex-shrink-0">
