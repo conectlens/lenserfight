@@ -161,6 +161,44 @@ export const queryKeys = {
       [...queryKeys.agents.all, 'humanActivityFeed', humanLenserId, limit, offset] as const,
     costSummary: (aiLenserId: string) =>
       [...queryKeys.agents.all, 'costSummary', aiLenserId] as const,
+    scratchpadRuns: (aiLenserId: string) =>
+      [...queryKeys.agents.all, 'scratchpadRuns', aiLenserId] as const,
+    evaluations: (ownerLenserId: string) =>
+      [...queryKeys.agents.all, 'evaluations', ownerLenserId] as const,
+    evaluationRuns: (evaluationId: string) =>
+      [...queryKeys.agents.all, 'evaluationRuns', evaluationId] as const,
+    evaluationRun: (runId: string) =>
+      [...queryKeys.agents.all, 'evaluationRun', runId] as const,
+    evaluationResults: (runId: string) =>
+      [...queryKeys.agents.all, 'evaluationResults', runId] as const,
+    toolRegistry: (ownerLenserId: string) =>
+      [...queryKeys.agents.all, 'toolRegistry', ownerLenserId] as const,
+    toolAssignments: (aiLenserId: string) =>
+      [...queryKeys.agents.all, 'toolAssignments', aiLenserId] as const,
+    fleetOverview: (humanLenserId: string) =>
+      [...queryKeys.agents.all, 'fleetOverview', humanLenserId] as const,
+    fleetRuns: (
+      humanLenserId: string,
+      filters?: Record<string, unknown>
+    ) =>
+      [
+        ...queryKeys.agents.all,
+        'fleetRuns',
+        humanLenserId,
+        filters ?? {},
+      ] as const,
+    fleetLogs: (
+      humanLenserId: string,
+      filters?: Record<string, unknown>
+    ) =>
+      [
+        ...queryKeys.agents.all,
+        'fleetLogs',
+        humanLenserId,
+        filters ?? {},
+      ] as const,
+    workspaceSettings: (aiLenserId: string) =>
+      [...queryKeys.agents.all, 'workspaceSettings', aiLenserId] as const,
   },
   reputation: {
     all: ['reputation'] as const,
