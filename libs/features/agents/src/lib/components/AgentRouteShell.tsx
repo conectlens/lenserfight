@@ -1,15 +1,9 @@
-import React, { Suspense, lazy } from 'react'
+import React from 'react'
 import { useParams } from 'react-router-dom'
-import { useAgentRouteMode } from '../hooks/useAgentRouteMode'
-import { HumanAgentsOverviewPage } from '../pages/HumanAgentsOverviewPage'
-import { HumanAgentsPublicOverviewPage } from '../pages/HumanAgentsPublicOverviewPage'
-import { AgentPublicOverviewPage } from '../pages/AgentPublicOverviewPage'
 
-const LazyAgentControlRoomPage = lazy(() =>
-  import('../pages/AgentControlRoomPage').then((m) => ({
-    default: m.AgentControlRoomPage,
-  }))
-)
+import { useAgentRouteMode } from '../hooks/useAgentRouteMode'
+
+import { AgentWorkspaceShell } from './AgentWorkspaceShell'
 
 const LoadingSkeleton: React.FC = () => (
   <div className="space-y-4 py-10">
@@ -37,9 +31,9 @@ const NotFound: React.FC<{ handle: string }> = ({ handle }) => (
 )
 
 /**
- * The non-negotiable rule: /lenser/:handle/ag/* must always resolve.
- * This dispatcher reads `useAgentRouteMode(handle)` and renders one of five
- * components. It never redirects, never blocks on empty collections.
+ * /lenser/:handle/ag/* must always resolve. This dispatcher reads
+ * `useAgentRouteMode(handle)` and renders the unified `AgentWorkspaceShell` —
+ * one shell, one sidebar — switching content semantics by viewMode.
  *
  * Spec: docs/connected-lenses/frontend-integration.md#route-resolution-contract
  */
@@ -53,16 +47,9 @@ export const AgentRouteShell: React.FC = () => {
     case 'not_found':
       return <NotFound handle={mode.handle} />
     case 'human_owner':
-      return <HumanAgentsOverviewPage profile={mode.profile} />
     case 'human_public':
-      return <HumanAgentsPublicOverviewPage profile={mode.profile} />
     case 'agent_owner':
-      return (
-        <Suspense fallback={<LoadingSkeleton />}>
-          <LazyAgentControlRoomPage />
-        </Suspense>
-      )
     case 'agent_public':
-      return <AgentPublicOverviewPage profile={mode.profile} />
+      return <AgentWorkspaceShell viewMode={mode.kind} profile={mode.profile} />
   }
 }
