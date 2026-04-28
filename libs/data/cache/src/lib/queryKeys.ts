@@ -199,6 +199,16 @@ export const queryKeys = {
       ] as const,
     workspaceSettings: (aiLenserId: string) =>
       [...queryKeys.agents.all, 'workspaceSettings', aiLenserId] as const,
+    runEvents: (aiLenserId: string, runId?: string, eventType?: string) =>
+      [
+        ...queryKeys.agents.all,
+        'runEvents',
+        aiLenserId,
+        runId ?? 'all',
+        eventType ?? '',
+      ] as const,
+    providers: (aiLenserId: string) =>
+      [...queryKeys.agents.all, 'providers', aiLenserId] as const,
   },
   reputation: {
     all: ['reputation'] as const,
