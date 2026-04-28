@@ -4,10 +4,12 @@ import type {
   AgentModelProfileRecord,
   AgentPersonalityProfileRecord,
   AgentRunEventRecord,
+  AgentRunStepRecord,
   AgentTeamEdgeRecord,
   AgentTeamMemberRecord,
   AgentTeamRecord,
   AgentToolProfileRecord,
+  AgentWorkflowAssignmentRecord,
   AgentWorkspaceBootstrap,
   ApprovalDecisionInput,
   ApprovalDecisionResult,
@@ -19,6 +21,7 @@ import type {
   CreateEvaluationInput,
   CreateScratchpadRunInput,
   CrossAgentFeedItem,
+  EvaluationCaseRecord,
   EvaluationCaseResultRow,
   EvaluationRecord,
   EvaluationRunRecord,
@@ -88,6 +91,26 @@ export interface CreateAgentModelProfileInput {
 export interface ListApprovalRequestsOptions {
   status?: ApprovalStatus
   limit?: number
+}
+
+export interface CreateWorkflowAssignmentInput {
+  ai_lenser_id: string
+  workflow_id: string
+  assignee_kind: 'agent' | 'team'
+  assignee_ai_lenser_id?: string | null
+  assignee_team_id?: string | null
+  approval_policy?: Record<string, unknown>
+  retry_policy?: Record<string, unknown>
+  failure_policy?: Record<string, unknown>
+  is_active?: boolean
+}
+
+export interface CreateEvaluationCaseInput {
+  evaluation_id: string
+  input: Record<string, unknown>
+  expected?: Record<string, unknown> | null
+  weight?: number
+  tags?: string[]
 }
 
 export interface AgentWorkspaceRepositoryPort {
@@ -160,6 +183,22 @@ export interface AgentWorkspaceRepositoryPort {
   deleteTeamMember(id: string): Promise<void>
   upsertTeamEdge(input: { team_id: string; source_member_id: string; target_member_id: string; edge_type: string; is_blocking?: boolean }): Promise<AgentTeamEdgeRecord>
   deleteTeamEdge(id: string): Promise<void>
+
+  // Run step inspection
+  listAgentRunSteps(aiLenserId: string, runId: string): Promise<AgentRunStepRecord[]>
+  cancelAgentRun(aiLenserId: string, runId: string): Promise<void>
+  retryAgentRun(aiLenserId: string, runId: string): Promise<string>
+
+  // Workflow assignments
+  listWorkflowAssignments(aiLenserId: string): Promise<AgentWorkflowAssignmentRecord[]>
+  createWorkflowAssignment(input: CreateWorkflowAssignmentInput): Promise<AgentWorkflowAssignmentRecord>
+  updateWorkflowAssignment(id: string, patch: Partial<AgentWorkflowAssignmentRecord>): Promise<AgentWorkflowAssignmentRecord>
+  deleteWorkflowAssignment(id: string): Promise<void>
+
+  // Evaluation cases
+  listEvaluationCases(evaluationId: string): Promise<EvaluationCaseRecord[]>
+  createEvaluationCase(input: CreateEvaluationCaseInput): Promise<EvaluationCaseRecord>
+  deleteEvaluationCase(id: string): Promise<void>
 }
 
 export class SupabaseAgentWorkspaceRepository implements AgentWorkspaceRepositoryPort {
@@ -935,5 +974,107 @@ export class SupabaseAgentWorkspaceRepository implements AgentWorkspaceRepositor
 
   deleteTeamEdge(id: string) {
     return this.deleteFromTable('team_edges', id)
+  }
+
+  async listAgentRunSteps(aiLenserId: string, runId: string): Promise<AgentRunStepRecord[]> {
+    const { data, error } = await supabase
+      .schema('agents')
+      .from('agent_run_steps')
+      .select('*')
+      .eq('team_run_id', runId)
+      .order('started_at', { ascending: true })
+    if (error) throw error
+    return (data ?? []) as AgentRunStepRecord[]
+  }
+
+  async cancelAgentRun(aiLenserId: string, runId: string): Promise<void> {
+    const { error } = await supabase
+      .schema('agents')
+      .from('team_runs')
+      .update({ status: 'cancelled' })
+      .eq('id', runId)
+      .eq('ai_lenser_id', aiLenserId)
+    if (error) throw error
+  }
+
+  async retryAgentRun(aiLenserId: string, runId: string): Promise<string> {
+    const { data, error } = await supabase.rpc('fn_retry_agent_run', {
+      p_ai_lenser_id: aiLenserId,
+      p_run_id: runId,
+    })
+    if (error) throw error
+    return data as string
+  }
+
+  async listWorkflowAssignments(aiLenserId: string): Promise<AgentWorkflowAssignmentRecord[]> {
+    const { data, error } = await supabase
+      .schema('agents')
+      .from('workflow_assignments')
+      .select('*')
+      .eq('ai_lenser_id', aiLenserId)
+      .order('created_at', { ascending: false })
+    if (error) throw error
+    return (data ?? []) as AgentWorkflowAssignmentRecord[]
+  }
+
+  async createWorkflowAssignment(input: CreateWorkflowAssignmentInput): Promise<AgentWorkflowAssignmentRecord> {
+    const { data, error } = await supabase
+      .schema('agents')
+      .from('workflow_assignments')
+      .insert({
+        ai_lenser_id: input.ai_lenser_id,
+        workflow_id: input.workflow_id,
+        assignee_kind: input.assignee_kind,
+        assignee_ai_lenser_id: input.assignee_ai_lenser_id ?? null,
+        assignee_team_id: input.assignee_team_id ?? null,
+        approval_policy: input.approval_policy ?? {},
+        retry_policy: input.retry_policy ?? {},
+        failure_policy: input.failure_policy ?? {},
+        is_active: input.is_active ?? true,
+      })
+      .select('*')
+      .single()
+    if (error) throw error
+    return data as AgentWorkflowAssignmentRecord
+  }
+
+  updateWorkflowAssignment(id: string, patch: Partial<AgentWorkflowAssignmentRecord>) {
+    return this.updateInTable<AgentWorkflowAssignmentRecord>('workflow_assignments', id, patch)
+  }
+
+  deleteWorkflowAssignment(id: string) {
+    return this.deleteFromTable('workflow_assignments', id)
+  }
+
+  async listEvaluationCases(evaluationId: string): Promise<EvaluationCaseRecord[]> {
+    const { data, error } = await supabase
+      .schema('agents')
+      .from('evaluation_cases')
+      .select('*')
+      .eq('evaluation_id', evaluationId)
+      .order('created_at', { ascending: true })
+    if (error) throw error
+    return (data ?? []) as EvaluationCaseRecord[]
+  }
+
+  async createEvaluationCase(input: CreateEvaluationCaseInput): Promise<EvaluationCaseRecord> {
+    const { data, error } = await supabase
+      .schema('agents')
+      .from('evaluation_cases')
+      .insert({
+        evaluation_id: input.evaluation_id,
+        input: input.input,
+        expected: input.expected ?? null,
+        weight: input.weight ?? 1,
+        tags: input.tags ?? [],
+      })
+      .select('*')
+      .single()
+    if (error) throw error
+    return data as EvaluationCaseRecord
+  }
+
+  deleteEvaluationCase(id: string) {
+    return this.deleteFromTable('evaluation_cases', id)
   }
 }
