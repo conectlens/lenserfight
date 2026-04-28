@@ -288,3 +288,236 @@ export interface CrossAgentFeedItem {
   action_type: AgentActionType | null
   payload: Record<string, unknown>
 }
+
+// ─── Scratchpad runs (F-PHASE2) ──────────────────────────────────────────────
+
+export type ScratchpadRunStatus =
+  | 'queued'
+  | 'running'
+  | 'completed'
+  | 'failed'
+  | 'cancelled'
+
+export interface ScratchpadRunRecord {
+  id: string
+  ai_lenser_id: string
+  actor_lenser_id: string
+  prompt: string
+  model_id: string | null
+  tool_calls: Array<Record<string, unknown>>
+  output: string | null
+  status: ScratchpadRunStatus
+  error: string | null
+  cost_credits: number
+  metadata: Record<string, unknown>
+  started_at: string
+  completed_at: string | null
+  created_at: string
+}
+
+export interface CreateScratchpadRunInput {
+  ai_lenser_id: string
+  prompt: string
+  model_id?: string | null
+  metadata?: Record<string, unknown>
+}
+
+export interface CompleteScratchpadRunInput {
+  run_id: string
+  output: string
+  status?: ScratchpadRunStatus
+  cost_credits?: number
+  error?: string | null
+}
+
+// ─── Evaluations (F-PHASE2) ──────────────────────────────────────────────────
+
+export type EvaluationTargetType = 'lens' | 'workflow' | 'agent' | 'team'
+export type EvaluationRunStatus =
+  | 'queued'
+  | 'running'
+  | 'completed'
+  | 'failed'
+  | 'cancelled'
+
+export interface EvaluationRecord {
+  id: string
+  owner_lenser_id: string
+  ai_lenser_id: string | null
+  target_type: EvaluationTargetType
+  target_id: string
+  name: string
+  description: string | null
+  scoring_rules: Record<string, unknown>
+  dataset_uri: string | null
+  created_at: string
+  updated_at: string
+}
+
+export interface EvaluationCaseRecord {
+  id: string
+  evaluation_id: string
+  input: Record<string, unknown>
+  expected: Record<string, unknown> | null
+  weight: number
+  tags: string[]
+  created_at: string
+}
+
+export interface EvaluationRunRecord {
+  id: string
+  evaluation_id: string
+  model_id: string | null
+  status: EvaluationRunStatus
+  score: number | null
+  summary: Record<string, unknown>
+  started_at: string
+  completed_at: string | null
+}
+
+export interface EvaluationCaseResultRow {
+  result_id: string
+  run_id: string
+  evaluation_id: string
+  run_status: EvaluationRunStatus
+  run_score: number | null
+  started_at: string
+  completed_at: string | null
+  case_id: string
+  input: Record<string, unknown>
+  expected: Record<string, unknown> | null
+  weight: number
+  tags: string[]
+  case_score: number | null
+  case_output: Record<string, unknown> | null
+  case_error: string | null
+}
+
+export interface CreateEvaluationInput {
+  owner_lenser_id: string
+  ai_lenser_id?: string | null
+  target_type: EvaluationTargetType
+  target_id: string
+  name: string
+  description?: string | null
+  scoring_rules?: Record<string, unknown>
+  dataset_uri?: string | null
+  cases?: Array<Pick<EvaluationCaseRecord, 'input' | 'expected' | 'weight' | 'tags'>>
+}
+
+// ─── Tools registry (F-PHASE2) ───────────────────────────────────────────────
+
+export type ToolAuthMethod = 'none' | 'api_key' | 'oauth' | 'service_account'
+export type ToolStatus = 'active' | 'disabled' | 'deprecated'
+
+export interface ToolRegistryRecord {
+  id: string
+  owner_lenser_id: string
+  key: string
+  name: string
+  description: string | null
+  category: string
+  schema_input: Record<string, unknown>
+  schema_output: Record<string, unknown>
+  auth_method: ToolAuthMethod
+  requires_approval: boolean
+  is_dangerous: boolean
+  status: ToolStatus
+  created_at: string
+  updated_at: string
+}
+
+export interface ToolAssignmentRecord {
+  id: string
+  ai_lenser_id: string
+  tool_id: string
+  profile_id: string | null
+  allowed: boolean
+  created_at: string
+}
+
+export interface RegisterToolInput {
+  key: string
+  name: string
+  description?: string | null
+  category?: string
+  schema_input?: Record<string, unknown>
+  schema_output?: Record<string, unknown>
+  auth_method?: ToolAuthMethod
+  requires_approval?: boolean
+  is_dangerous?: boolean
+}
+
+export interface AssignToolInput {
+  ai_lenser_id: string
+  tool_id: string
+  profile_id?: string | null
+  allowed?: boolean
+}
+
+// ─── Fleet aggregations (F-PHASE2) ───────────────────────────────────────────
+
+export interface FleetOverview {
+  human_lenser_id: string
+  agents_total: number
+  agents_active: number
+  credits_30d: number
+  runs_24h: number
+  approvals_pending: number
+  schedules_active: number
+}
+
+export interface FleetRunRow {
+  human_lenser_id: string
+  run_id: string
+  ai_lenser_id: string
+  agent_handle: string
+  team_id: string | null
+  workflow_id: string | null
+  status: string
+  approval_status: string | null
+  metadata: Record<string, unknown>
+  created_at: string
+  started_at: string | null
+  completed_at: string | null
+}
+
+export interface FleetLogRow {
+  human_lenser_id: string
+  event_id: string
+  team_run_id: string
+  ai_lenser_id: string
+  agent_handle: string
+  event_type: string
+  payload: Record<string, unknown>
+  occurred_at: string
+}
+
+// ─── Workspace settings (F-PHASE2) ───────────────────────────────────────────
+
+export type ApprovalDefault = 'auto' | 'require_human' | 'deny'
+
+export interface WorkspaceSettingsRecord {
+  ai_lenser_id: string
+  default_model_id: string | null
+  default_provider_key: string | null
+  approval_default: ApprovalDefault
+  retention_days: number
+  max_daily_credits: number
+  webhooks: Array<{ url: string; events?: string[] }>
+  api_access_enabled: boolean
+  metadata: Record<string, unknown>
+  created_at: string
+  updated_at: string
+}
+
+export interface UpdateWorkspaceSettingsPatch {
+  default_model_id?: string | null
+  default_provider_key?: string | null
+  approval_default?: ApprovalDefault
+  retention_days?: number
+  max_daily_credits?: number
+  webhooks?: Array<{ url: string; events?: string[] }>
+  api_access_enabled?: boolean
+  metadata?: Record<string, unknown>
+}
