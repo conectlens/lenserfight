@@ -8,6 +8,12 @@ import type {
   AgentTeamRecord,
   AgentToolProfileRecord,
   AgentWorkspaceBootstrap,
+  ApprovalDecisionInput,
+  ApprovalDecisionResult,
+  ApprovalRequestView,
+  ApprovalStatus,
+  CostSummary,
+  CrossAgentFeedItem,
 } from '@lenserfight/types'
 
 export interface CreateAgentTeamInput {
@@ -61,6 +67,11 @@ export interface CreateAgentModelProfileInput {
   params?: Record<string, unknown>
 }
 
+export interface ListApprovalRequestsOptions {
+  status?: ApprovalStatus
+  limit?: number
+}
+
 export interface AgentWorkspaceRepositoryPort {
   getWorkspaceBootstrap(handle: string): Promise<AgentWorkspaceBootstrap | null>
   createTeam(input: CreateAgentTeamInput): Promise<AgentTeamRecord | null>
@@ -70,6 +81,11 @@ export interface AgentWorkspaceRepositoryPort {
   createMemoryProfile(input: CreateAgentMemoryProfileInput): Promise<AgentMemoryProfileRecord | null>
   createToolProfile(input: CreateAgentToolProfileInput): Promise<AgentToolProfileRecord | null>
   createModelProfile(input: CreateAgentModelProfileInput): Promise<AgentModelProfileRecord | null>
+  listApprovalRequests(aiLenserId: string, options?: ListApprovalRequestsOptions): Promise<ApprovalRequestView[]>
+  getApprovalRequest(requestId: string): Promise<ApprovalRequestView | null>
+  decideApproval(input: ApprovalDecisionInput): Promise<ApprovalDecisionResult>
+  getHumanActivityFeed(humanLenserId: string, limit?: number, offset?: number): Promise<CrossAgentFeedItem[]>
+  getCostSummary(aiLenserId: string): Promise<CostSummary>
 }
 
 export class SupabaseAgentWorkspaceRepository implements AgentWorkspaceRepositoryPort {
@@ -212,5 +228,129 @@ export class SupabaseAgentWorkspaceRepository implements AgentWorkspaceRepositor
 
     if (error) throw error
     return (data as AgentModelProfileRecord | null) ?? null
+  }
+
+  async listApprovalRequests(
+    aiLenserId: string,
+    options: ListApprovalRequestsOptions = {}
+  ): Promise<ApprovalRequestView[]> {
+    let query = supabase
+      .schema('agents')
+      .from('approval_requests_v')
+      .select('*')
+      .eq('ai_lenser_id', aiLenserId)
+      .order('requested_at', { ascending: false })
+
+    if (options.status) {
+      query = query.eq('approval_status', options.status)
+    } else {
+      query = query.eq('approval_status', 'pending')
+    }
+
+    if (options.limit) query = query.limit(options.limit)
+
+    const { data, error } = await query
+    if (error) throw error
+    return (data ?? []) as ApprovalRequestView[]
+  }
+
+  async getApprovalRequest(requestId: string): Promise<ApprovalRequestView | null> {
+    const { data, error } = await supabase
+      .schema('agents')
+      .from('approval_requests_v')
+      .select('*')
+      .eq('request_id', requestId)
+      .maybeSingle()
+
+    if (error) throw error
+    return (data as ApprovalRequestView | null) ?? null
+  }
+
+  async decideApproval(input: ApprovalDecisionInput): Promise<ApprovalDecisionResult> {
+    const { data, error } = await supabase.rpc('fn_decide_approval', {
+      p_team_run_id: input.team_run_id,
+      p_decision: input.decision,
+      p_reason: input.reason ?? null,
+      p_modifications: input.modifications ?? null,
+    })
+    if (error) throw error
+    const rows = (data ?? []) as ApprovalDecisionResult[]
+    if (rows.length === 0) {
+      throw new Error('fn_decide_approval returned no rows.')
+    }
+    return rows[0]
+  }
+
+  async getHumanActivityFeed(
+    humanLenserId: string,
+    limit = 50,
+    offset = 0
+  ): Promise<CrossAgentFeedItem[]> {
+    const { data, error } = await supabase.rpc('fn_get_human_activity_feed', {
+      p_human_lenser_id: humanLenserId,
+      p_limit: limit,
+      p_offset: offset,
+    })
+    if (error) throw error
+    return (data ?? []) as CrossAgentFeedItem[]
+  }
+
+  async getCostSummary(aiLenserId: string): Promise<CostSummary> {
+    const { data: snapshots, error } = await supabase
+      .schema('agents')
+      .from('quota_snapshots')
+      .select('period_date, credits_spent, battles_used, votes_used')
+      .eq('ai_lenser_id', aiLenserId)
+      .order('period_date', { ascending: false })
+      .limit(30)
+
+    if (error) throw error
+
+    const { data: policy, error: policyError } = await supabase
+      .schema('agents')
+      .from('policies')
+      .select('spending_limit_credits')
+      .eq('ai_lenser_id', aiLenserId)
+      .maybeSingle()
+
+    if (policyError) throw policyError
+
+    const today = new Date()
+    today.setUTCHours(0, 0, 0, 0)
+    const todayIso = today.toISOString().slice(0, 10)
+    const sevenDaysAgo = new Date(today.getTime() - 6 * 86400_000).toISOString().slice(0, 10)
+    const thirtyDaysAgo = new Date(today.getTime() - 29 * 86400_000).toISOString().slice(0, 10)
+
+    type Snapshot = {
+      period_date: string
+      credits_spent: number | string
+      battles_used: number
+      votes_used: number
+    }
+    const rows = (snapshots ?? []) as Snapshot[]
+
+    const sumCredits = (since: string) =>
+      rows
+        .filter((row) => row.period_date >= since)
+        .reduce((acc, row) => acc + Number(row.credits_spent ?? 0), 0)
+
+    const todayRow = rows.find((row) => row.period_date === todayIso)
+
+    return {
+      ai_lenser_id: aiLenserId,
+      today_credits: Number(todayRow?.credits_spent ?? 0),
+      seven_day_credits: sumCredits(sevenDaysAgo),
+      thirty_day_credits: sumCredits(thirtyDaysAgo),
+      today_battles: todayRow?.battles_used ?? 0,
+      today_votes: todayRow?.votes_used ?? 0,
+      spending_limit_credits:
+        (policy as { spending_limit_credits?: number } | null)?.spending_limit_credits ?? null,
+      daily: rows.map((row) => ({
+        period_date: row.period_date,
+        credits_spent: Number(row.credits_spent ?? 0),
+        battles_used: row.battles_used,
+        votes_used: row.votes_used,
+      })),
+    }
   }
 }
