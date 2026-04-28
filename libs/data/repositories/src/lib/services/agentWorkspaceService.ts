@@ -7,6 +7,11 @@ import type {
   AgentTeamRecord,
   AgentToolProfileRecord,
   AgentWorkspaceBootstrap,
+  ApprovalDecisionInput,
+  ApprovalDecisionResult,
+  ApprovalRequestView,
+  CostSummary,
+  CrossAgentFeedItem,
 } from '@lenserfight/types'
 
 import {
@@ -16,6 +21,7 @@ import {
   type CreateAgentPersonalityProfileInput,
   type CreateAgentTeamInput,
   type CreateAgentToolProfileInput,
+  type ListApprovalRequestsOptions,
 } from '../repositories/agentWorkspaceRepository'
 
 const agentWorkspaceRepo = new SupabaseAgentWorkspaceRepository()
@@ -26,6 +32,7 @@ export type {
   CreateAgentPersonalityProfileInput,
   CreateAgentTeamInput,
   CreateAgentToolProfileInput,
+  ListApprovalRequestsOptions,
 }
 
 export const agentWorkspaceService = {
@@ -57,4 +64,26 @@ export const agentWorkspaceService = {
   createModelProfile: (
     input: CreateAgentModelProfileInput
   ): Promise<AgentModelProfileRecord | null> => agentWorkspaceRepo.createModelProfile(input),
+
+  listApprovalRequests: (
+    aiLenserId: string,
+    options?: ListApprovalRequestsOptions
+  ): Promise<ApprovalRequestView[]> =>
+    agentWorkspaceRepo.listApprovalRequests(aiLenserId, options),
+
+  getApprovalRequest: (requestId: string): Promise<ApprovalRequestView | null> =>
+    agentWorkspaceRepo.getApprovalRequest(requestId),
+
+  decideApproval: (input: ApprovalDecisionInput): Promise<ApprovalDecisionResult> =>
+    agentWorkspaceRepo.decideApproval(input),
+
+  getHumanActivityFeed: (
+    humanLenserId: string,
+    limit?: number,
+    offset?: number
+  ): Promise<CrossAgentFeedItem[]> =>
+    agentWorkspaceRepo.getHumanActivityFeed(humanLenserId, limit, offset),
+
+  getCostSummary: (aiLenserId: string): Promise<CostSummary> =>
+    agentWorkspaceRepo.getCostSummary(aiLenserId),
 }
