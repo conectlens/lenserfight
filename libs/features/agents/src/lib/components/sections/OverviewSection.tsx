@@ -4,7 +4,7 @@ import { useLenserWorkspace } from '@lenserfight/features/profile'
 import { useQuery } from '@tanstack/react-query'
 import { Bot, GitBranch, Sparkles } from 'lucide-react'
 import React from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 
 import { useAgentWorkspace } from '../../context/AgentWorkspaceContext'
 import { AgentsGrid } from '../AgentsGrid'
@@ -239,6 +239,7 @@ export const OverviewSection: React.FC = () => {
 const HumanOwnerOverview: React.FC = () => {
   const { profile, ownedAgents, ownedAgentsLoading } = useAgentWorkspace()
   const { humanWorkspace } = useLenserWorkspace()
+  const navigate = useNavigate()
   // humanWorkspace.id is always the current auth user's human profile — guaranteed
   // to match get_auth_human_lenser_id() inside fn_get_human_activity_feed.
   // Using profile.id (from the route) risks a 42501 if the route profile is a
@@ -295,9 +296,7 @@ const HumanOwnerOverview: React.FC = () => {
         <AgentsGrid
           agents={ownedAgents}
           mode="owner"
-          onCreateAgent={() =>
-            (window.location.href = `/lenser/${profile.handle}/agent`)
-          }
+          onCreateAgent={() => navigate(`/lenser/${profile.handle}?modal=create-agent`)}
         />
       )}
       <div className="mt-6">
