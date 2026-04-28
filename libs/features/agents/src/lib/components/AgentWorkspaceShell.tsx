@@ -9,12 +9,7 @@ import {
 } from '../context/AgentWorkspaceContext'
 import { useAgentWorkspaceData } from '../hooks/useAgentWorkspaceData'
 
-import {
-  AgentSidebarNav,
-  defaultSection,
-  isVisibleSection,
-  type AgentSection,
-} from './AgentSidebarNav'
+import { defaultSection, isVisibleSection, type AgentSection } from './agentNavConfig'
 import { EmptyPanel } from './EmptyPanel'
 import { SectionErrorBoundary } from './SectionErrorBoundary'
 import {
@@ -192,20 +187,9 @@ export const AgentWorkspaceShell: React.FC<AgentWorkspaceShellProps> = ({
       switchWorkspace={() => switchWorkspace(profile.id)}
       isSwitching={isSwitching}
     >
-      <div className="grid gap-6 lg:grid-cols-[260px_1fr]">
-        <aside className="lg:sticky lg:top-6 lg:self-start">
-          <AgentSidebarNav
-            handle={profile.handle}
-            viewMode={viewMode}
-            activeSection={activeSection}
-          />
-        </aside>
-        <main className="min-w-0">
-          <SectionErrorBoundary sectionName={activeSection}>
-            <SectionComponent />
-          </SectionErrorBoundary>
-        </main>
-      </div>
+      <SectionErrorBoundary sectionName={activeSection}>
+        <SectionComponent />
+      </SectionErrorBoundary>
     </AgentWorkspaceProvider>
   )
 }
