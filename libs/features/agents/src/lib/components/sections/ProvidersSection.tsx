@@ -1,28 +1,66 @@
+import { queryKeys } from '@lenserfight/data/cache'
+import { agentWorkspaceService } from '@lenserfight/data/repositories'
+import type { ProviderConfigRecord } from '@lenserfight/types'
 import { AICatalogShowroom } from '@lenserfight/features/generations'
+import { useQuery } from '@tanstack/react-query'
 import { Settings2 } from 'lucide-react'
 import React, { useState } from 'react'
 
 import { useAgentWorkspace } from '../../context/AgentWorkspaceContext'
-import type { ProviderInfo } from '../drawers/ConfigureProviderDrawer'
-import { ConfigureProviderDrawer } from '../drawers/ConfigureProviderDrawer'
+import {
+  ConfigureProviderDrawer,
+  type ProviderInfo,
+} from '../drawers/ConfigureProviderDrawer'
 
 import { SectionPage } from './SectionPage'
 
-const KNOWN_PROVIDERS: ProviderInfo[] = [
-  { key: 'anthropic', name: 'Anthropic', status: 'unconfigured' },
-  { key: 'openai', name: 'OpenAI', status: 'unconfigured' },
-  { key: 'google', name: 'Google Gemini', status: 'unconfigured' },
-  { key: 'mistral', name: 'Mistral AI', status: 'unconfigured' },
-  { key: 'fal', name: 'fal.ai', status: 'unconfigured' },
-  { key: 'elevenlabs', name: 'ElevenLabs', status: 'unconfigured' },
-  { key: 'stability', name: 'Stability AI', status: 'unconfigured' },
-  { key: 'ollama', name: 'Ollama (self-hosted)', status: 'unconfigured' },
+const KNOWN_PROVIDERS: Pick<ProviderInfo, 'key' | 'name'>[] = [
+  { key: 'anthropic', name: 'Anthropic' },
+  { key: 'openai', name: 'OpenAI' },
+  { key: 'google', name: 'Google Gemini' },
+  { key: 'mistral', name: 'Mistral AI' },
+  { key: 'fal', name: 'fal.ai' },
+  { key: 'elevenlabs', name: 'ElevenLabs' },
+  { key: 'stability', name: 'Stability AI' },
+  { key: 'ollama', name: 'Ollama (self-hosted)' },
 ]
 
+const STATUS_LABEL: Record<string, string> = {
+  healthy: 'Connected',
+  error: 'Error',
+  unconfigured: 'Not configured',
+}
+
+const STATUS_CLASS: Record<string, string> = {
+  healthy: 'text-green-600 dark:text-green-400',
+  error: 'text-red-500 dark:text-red-400',
+  unconfigured: 'text-gray-400',
+}
+
 export const ProvidersSection: React.FC = () => {
-  const { viewMode } = useAgentWorkspace()
+  const { viewMode, bootstrap } = useAgentWorkspace()
   const isOwner = viewMode === 'agent_owner'
+  const aiLenserId = bootstrap?.ai_lenser_id ?? ''
+
   const [configTarget, setConfigTarget] = useState<ProviderInfo | null>(null)
+
+  const configsQuery = useQuery<ProviderConfigRecord[]>({
+    queryKey: queryKeys.agents.providers(aiLenserId),
+    queryFn: () => agentWorkspaceService.listProviderConfigs(aiLenserId),
+    enabled: isOwner && !!aiLenserId,
+    staleTime: 30_000,
+  })
+
+  const configMap = new Map(
+    (configsQuery.data ?? []).map((c) => [c.provider_key, c])
+  )
+
+  const providers: ProviderInfo[] = KNOWN_PROVIDERS.map((p) => ({
+    key: p.key,
+    name: p.name,
+    status: configMap.get(p.key)?.status ?? 'unconfigured',
+    config: configMap.get(p.key) ?? null,
+  }))
 
   return (
     <SectionPage
@@ -32,14 +70,18 @@ export const ProvidersSection: React.FC = () => {
     >
       {isOwner && (
         <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-          {KNOWN_PROVIDERS.map((p) => (
+          {providers.map((p) => (
             <div
               key={p.key}
               className="flex items-center justify-between rounded-[20px] border border-gray-200 bg-white px-4 py-3 shadow-sm dark:border-gray-800 dark:bg-gray-900"
             >
               <div>
-                <p className="text-sm font-semibold text-gray-900 dark:text-white">{p.name}</p>
-                <p className="mt-0.5 text-xs text-gray-400">{p.status}</p>
+                <p className="text-sm font-semibold text-gray-900 dark:text-white">
+                  {p.name}
+                </p>
+                <p className={`mt-0.5 text-xs ${STATUS_CLASS[p.status ?? 'unconfigured']}`}>
+                  {STATUS_LABEL[p.status ?? 'unconfigured']}
+                </p>
               </div>
               <button
                 type="button"
@@ -61,6 +103,7 @@ export const ProvidersSection: React.FC = () => {
           open={!!configTarget}
           onClose={() => setConfigTarget(null)}
           provider={configTarget}
+          aiLenserId={aiLenserId}
         />
       )}
     </SectionPage>
