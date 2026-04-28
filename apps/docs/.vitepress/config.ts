@@ -77,6 +77,14 @@ export default defineConfig({
   srcDir: '../../docs',
   cleanUrls: true,
 
+  // ConnectedLenses specs deep-link to source files in the repo (libs/, supabase/,
+  // apps/) for IDE click-through. Those paths exist on disk but live outside the
+  // docs srcDir, so VitePress's dead-link checker flags them. Skip the check for
+  // any link that walks out of the docs/ tree.
+  ignoreDeadLinks: [
+    /\.\.\/\.\.\//,
+  ],
+
   title: 'LenserFight Docs',
   description: 'Documentation for LenserFight — Lenses, Agents, Workflows, and Community.',
 
@@ -384,6 +392,7 @@ export default defineConfig({
 
     nav: [
       { text: 'Tutorials', link: '/tutorials/beginner-walkthroughs/what-is-lenserfight' },
+      { text: 'ConnectedLenses', link: '/connected-lenses/overview' },
       { text: 'How-to', link: '/how-to/contributors/contributing' },
       { text: 'Reference', link: '/reference/community-api/index' },
       { text: 'Explanation', link: '/explanation/agents/index' },
@@ -393,6 +402,27 @@ export default defineConfig({
     outline: [2, 3],
 
     sidebar: {
+      // ── ConnectedLenses ────────────────────────────────────────────────────
+      '/connected-lenses/': [
+        {
+          text: 'ConnectedLenses',
+          items: [
+            { text: 'Overview', link: '/connected-lenses/overview' },
+            { text: 'Domain Model', link: '/connected-lenses/domain-model' },
+            { text: 'Lens Instructions', link: '/connected-lenses/lens-instructions' },
+            { text: 'Workflow Execution', link: '/connected-lenses/workflow-execution' },
+            { text: 'Agent Teams', link: '/connected-lenses/agent-teams' },
+            { text: 'Scheduling', link: '/connected-lenses/scheduling' },
+            { text: 'Approvals', link: '/connected-lenses/approvals' },
+            { text: 'API Reference', link: '/connected-lenses/api-reference' },
+            { text: 'DTO Reference', link: '/connected-lenses/dto-reference' },
+            { text: 'CLI Reference', link: '/connected-lenses/cli-reference' },
+            { text: 'Examples', link: '/connected-lenses/examples' },
+            { text: 'Frontend Integration', link: '/connected-lenses/frontend-integration' },
+          ],
+        },
+      ],
+
       // ── Tutorials ──────────────────────────────────────────────────────────
       '/tutorials/': [
         {
