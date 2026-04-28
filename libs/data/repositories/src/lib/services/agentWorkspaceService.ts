@@ -21,6 +21,8 @@ import {
   type CreateAgentPersonalityProfileInput,
   type CreateAgentTeamInput,
   type CreateAgentToolProfileInput,
+  type CreateEvaluationCaseInput,
+  type CreateWorkflowAssignmentInput,
   type ListApprovalRequestsOptions,
 } from '../repositories/agentWorkspaceRepository'
 
@@ -32,6 +34,8 @@ export type {
   CreateAgentPersonalityProfileInput,
   CreateAgentTeamInput,
   CreateAgentToolProfileInput,
+  CreateEvaluationCaseInput,
+  CreateWorkflowAssignmentInput,
   ListApprovalRequestsOptions,
 }
 
@@ -142,4 +146,20 @@ export const agentWorkspaceService = {
   deleteTeamMember: agentWorkspaceRepo.deleteTeamMember.bind(agentWorkspaceRepo),
   upsertTeamEdge: agentWorkspaceRepo.upsertTeamEdge.bind(agentWorkspaceRepo),
   deleteTeamEdge: agentWorkspaceRepo.deleteTeamEdge.bind(agentWorkspaceRepo),
+
+  // Run step inspection
+  listAgentRunSteps: agentWorkspaceRepo.listAgentRunSteps.bind(agentWorkspaceRepo),
+  cancelAgentRun: agentWorkspaceRepo.cancelAgentRun.bind(agentWorkspaceRepo),
+  retryAgentRun: agentWorkspaceRepo.retryAgentRun.bind(agentWorkspaceRepo),
+
+  // Workflow assignments
+  listWorkflowAssignments: agentWorkspaceRepo.listWorkflowAssignments.bind(agentWorkspaceRepo),
+  createWorkflowAssignment: agentWorkspaceRepo.createWorkflowAssignment.bind(agentWorkspaceRepo),
+  updateWorkflowAssignment: agentWorkspaceRepo.updateWorkflowAssignment.bind(agentWorkspaceRepo),
+  deleteWorkflowAssignment: agentWorkspaceRepo.deleteWorkflowAssignment.bind(agentWorkspaceRepo),
+
+  // Evaluation cases
+  listEvaluationCases: agentWorkspaceRepo.listEvaluationCases.bind(agentWorkspaceRepo),
+  createEvaluationCase: agentWorkspaceRepo.createEvaluationCase.bind(agentWorkspaceRepo),
+  deleteEvaluationCase: agentWorkspaceRepo.deleteEvaluationCase.bind(agentWorkspaceRepo),
 }
