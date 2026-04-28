@@ -2,9 +2,11 @@ import { queryKeys } from '@lenserfight/data/cache'
 import { agentWorkspaceService } from '@lenserfight/data/repositories'
 import { AICatalogShowroom } from '@lenserfight/features/generations'
 import type { AgentModelProfileRecord } from '@lenserfight/types'
+import { AlertDialog } from '@lenserfight/ui/overlays'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { Pencil, Star, Trash2 } from 'lucide-react'
 import React, { useState } from 'react'
+import { toast } from 'sonner'
 
 import { useAgentWorkspace } from '../../context/AgentWorkspaceContext'
 import { BindModelDrawer } from '../drawers/BindModelDrawer'
@@ -16,6 +18,11 @@ export const ModelsSection: React.FC = () => {
   const queryClient = useQueryClient()
   const isOwner = viewMode === 'agent_owner'
   const [editTarget, setEditTarget] = useState<AgentModelProfileRecord | null>(null)
+  const [confirmState, setConfirmState] = useState<{
+    title: string
+    body: string
+    onConfirm: () => void
+  } | null>(null)
 
   const modelProfiles = (bootstrap?.profiles?.models as AgentModelProfileRecord[] | undefined) ?? []
 
@@ -41,12 +48,14 @@ export const ModelsSection: React.FC = () => {
         support_level: model.support_level,
         params: { temperature: 0.4, maxTokens: 4096 },
       }),
-    onSuccess: invalidate,
+    onSuccess: () => { toast.success('Model profile created'); invalidate() },
+    onError: (e) => toast.error((e as Error).message),
   })
 
   const deleteProfile = useMutation({
     mutationFn: (id: string) => agentWorkspaceService.deleteModelProfile(id),
-    onSuccess: invalidate,
+    onSuccess: () => { toast.success('Model profile deleted'); invalidate() },
+    onError: (e) => toast.error((e as Error).message),
   })
 
   return (
@@ -127,11 +136,13 @@ export const ModelsSection: React.FC = () => {
                           </button>
                           <button
                             type="button"
-                            onClick={() => {
-                              if (confirm(`Delete model profile "${mp.name}"?`)) {
-                                deleteProfile.mutate(mp.id)
-                              }
-                            }}
+                            onClick={() =>
+                              setConfirmState({
+                                title: 'Delete model profile?',
+                                body: `Delete "${mp.name}"? This cannot be undone.`,
+                                onConfirm: () => deleteProfile.mutate(mp.id),
+                              })
+                            }
                             aria-label="Delete model profile"
                             className="rounded-xl p-1.5 text-gray-400 hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-500/10 dark:hover:text-red-400"
                           >
@@ -159,6 +170,19 @@ export const ModelsSection: React.FC = () => {
           }}
         />
       )}
+
+      <AlertDialog
+        open={!!confirmState}
+        onClose={() => setConfirmState(null)}
+        title={confirmState?.title ?? ''}
+        bodyText={confirmState?.body}
+        variant="destructive"
+        confirmAction={{
+          label: 'Delete',
+          onClick: () => { confirmState?.onConfirm(); setConfirmState(null) },
+          loading: deleteProfile.isPending,
+        }}
+      />
     </SectionPage>
   )
 }

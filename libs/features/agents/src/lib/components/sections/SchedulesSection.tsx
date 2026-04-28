@@ -1,8 +1,10 @@
 import { queryKeys } from '@lenserfight/data/cache'
 import { workflowsService } from '@lenserfight/data/repositories'
+import { AlertDialog } from '@lenserfight/ui/overlays'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { CalendarClock, Pencil, Plus, Trash2 } from 'lucide-react'
 import React, { useState } from 'react'
+import { toast } from 'sonner'
 
 import { useAgentWorkspace } from '../../context/AgentWorkspaceContext'
 import { ScheduleDrawer } from '../drawers/ScheduleDrawer'
@@ -18,6 +20,11 @@ export const SchedulesSection: React.FC = () => {
   const queryClient = useQueryClient()
   const [drawerOpen, setDrawerOpen] = useState(false)
   const [editing, setEditing] = useState<WorkflowScheduleRecord | null>(null)
+  const [confirmState, setConfirmState] = useState<{
+    title: string
+    body: string
+    onConfirm: () => void
+  } | null>(null)
 
   const isAgentOwner = viewMode === 'agent_owner'
   const canManage = isAgentOwner || viewMode === 'human_owner'
@@ -30,7 +37,8 @@ export const SchedulesSection: React.FC = () => {
 
   const remove = useMutation({
     mutationFn: (id: string) => workflowsService.deleteSchedule(id),
-    onSuccess: invalidate,
+    onSuccess: () => { toast.success('Schedule deleted'); invalidate() },
+    onError: (e) => toast.error((e as Error).message),
   })
 
   const togglePause = useMutation({
@@ -45,7 +53,8 @@ export const SchedulesSection: React.FC = () => {
         assignee_id: s.assignee_id ?? null,
         inputs_template: s.inputs_template ?? {},
       }),
-    onSuccess: invalidate,
+    onSuccess: (_, s) => { toast.success(s.is_active ? 'Schedule paused' : 'Schedule resumed'); invalidate() },
+    onError: (e) => toast.error((e as Error).message),
   })
 
   return (
@@ -139,11 +148,13 @@ export const SchedulesSection: React.FC = () => {
                       </button>
                       <button
                         type="button"
-                        onClick={() => {
-                          if (confirm('Delete this schedule?')) {
-                            remove.mutate(schedule.id)
-                          }
-                        }}
+                        onClick={() =>
+                          setConfirmState({
+                            title: 'Delete schedule?',
+                            body: 'Delete this schedule? Dispatch will stop immediately.',
+                            onConfirm: () => remove.mutate(schedule.id),
+                          })
+                        }
                         className="rounded-xl border border-gray-200 p-2 text-gray-500 hover:text-red-600 dark:border-gray-700 dark:text-gray-400"
                         aria-label="Delete"
                       >
@@ -168,6 +179,19 @@ export const SchedulesSection: React.FC = () => {
           onSaved={invalidate}
         />
       )}
+
+      <AlertDialog
+        open={!!confirmState}
+        onClose={() => setConfirmState(null)}
+        title={confirmState?.title ?? ''}
+        bodyText={confirmState?.body}
+        variant="destructive"
+        confirmAction={{
+          label: 'Delete',
+          onClick: () => { confirmState?.onConfirm(); setConfirmState(null) },
+          loading: remove.isPending,
+        }}
+      />
     </SectionPage>
   )
 }
