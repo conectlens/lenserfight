@@ -5,6 +5,8 @@ import type {
   WorkflowRecord,
 } from '@lenserfight/data/repositories'
 import type {
+  AgentLensBindingRecord,
+  AgentModelBindingRecord,
   AgentWorkspaceBootstrap,
   LenserProfileDTO,
   WorkflowScheduleRecord,
@@ -16,16 +18,28 @@ export type AgentViewMode =
   | 'human_owner'
   | 'human_public'
 
+export type AgentWorkspaceBootstrapState =
+  | { kind: 'idle' }
+  | { kind: 'loading' }
+  | { kind: 'ready' }
+  | { kind: 'missing' }
+  | { kind: 'failed'; message?: string }
+
 export interface AgentWorkspaceContextValue {
   viewMode: AgentViewMode
   profile: LenserProfileDTO
   isOwner: boolean
   agentProfile: AgentProfileView | null
   bootstrap: AgentWorkspaceBootstrap | null
+  bootstrapState: AgentWorkspaceBootstrapState
   schedules: WorkflowScheduleRecord[]
   workflows: WorkflowRecord[]
-  ownedAgents: AgentProfileView[]
-  ownedAgentsLoading: boolean
+  ownerFleetAgents: AgentProfileView[]
+  ownerFleetAgentsLoading: boolean
+  activeTeamId: string | null
+  instructionBindings: AgentLensBindingRecord[]
+  modelBindings: AgentModelBindingRecord[]
+  defaultInstructionBinding: AgentLensBindingRecord | null
   isLoading: boolean
   shouldSwitchWorkspace: boolean
   switchWorkspace: () => void
