@@ -1,14 +1,13 @@
-import { ClipboardList } from 'lucide-react'
 import React from 'react'
 
 import { useAgentWorkspace } from '../../context/AgentWorkspaceContext'
-import { EmptyPanel } from '../EmptyPanel'
+import { BootstrapStatusPanel } from '../BootstrapStatusPanel'
 
 import { ApprovalQueueSection } from './ApprovalQueueSection'
 import { SectionPage } from './SectionPage'
 
 export const ApprovalsSection: React.FC = () => {
-  const { bootstrap } = useAgentWorkspace()
+  const { bootstrap, bootstrapState } = useAgentWorkspace()
 
   return (
     <SectionPage
@@ -16,14 +15,10 @@ export const ApprovalsSection: React.FC = () => {
       title="Human approval gates"
       description="Outbound side effects pause here until a human approves, rejects, or modifies. Approving resumes the workflow run; rejecting cancels it."
     >
-      {bootstrap ? (
-        <ApprovalQueueSection aiLenserId={bootstrap.ai_lenser_id} />
+      {!bootstrap ? (
+        <BootstrapStatusPanel state={bootstrapState} />
       ) : (
-        <EmptyPanel
-          icon={<ClipboardList size={20} />}
-          title="Workspace not bootstrapped"
-          description="The approval queue requires the workspace bootstrap to load first."
-        />
+        <ApprovalQueueSection aiLenserId={bootstrap.ai_lenser_id} />
       )}
     </SectionPage>
   )

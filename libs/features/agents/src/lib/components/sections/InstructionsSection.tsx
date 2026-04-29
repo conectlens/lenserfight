@@ -1,0 +1,267 @@
+import { queryKeys } from '@lenserfight/data/cache'
+import { agentsService, lensesService } from '@lenserfight/data/repositories'
+import { useLenserWorkspace } from '@lenserfight/features/profile'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
+import { Bot, Search, Sparkles } from 'lucide-react'
+import React, { useEffect, useMemo, useState } from 'react'
+import { Link } from 'react-router-dom'
+
+import { useAgentWorkspace } from '../../context/AgentWorkspaceContext'
+import { EmptyPanel } from '../EmptyPanel'
+
+import { ProfileCard } from './_shared'
+import { BootstrapStatusPanel } from '../BootstrapStatusPanel'
+import { SectionPage } from './SectionPage'
+
+import type { LensVersion, LensViewModel } from '@lenserfight/types'
+
+export const InstructionsSection: React.FC = () => {
+  const {
+    profile,
+    agentProfile,
+    bootstrapState,
+    defaultInstructionBinding,
+    instructionBindings,
+    isOwner,
+  } = useAgentWorkspace()
+  const { humanWorkspace } = useLenserWorkspace()
+  const queryClient = useQueryClient()
+  const [search, setSearch] = useState('')
+  const [selectedLensId, setSelectedLensId] = useState('')
+  const [selectedVersionId, setSelectedVersionId] = useState('')
+  const [saving, setSaving] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+
+  const lensOwner = humanWorkspace ?? profile
+
+  const ownedLensesQuery = useQuery<LensViewModel[]>({
+    queryKey: queryKeys.lenses.personal(lensOwner.id),
+    queryFn: () => lensesService.getLenserLenses(lensOwner.handle, 0, 60, lensOwner.id),
+    enabled: isOwner,
+    staleTime: 30_000,
+  })
+
+  const searchQuery = useQuery({
+    queryKey: [...queryKeys.lenses.feed({ search }), 'instructions-search', search],
+    queryFn: () => lensesService.search(search, 0, 20),
+    enabled: isOwner && search.trim().length >= 2,
+    staleTime: 15_000,
+  })
+
+  const lensOptions = useMemo(() => {
+    if (search.trim().length >= 2) {
+      return searchQuery.data?.data ?? []
+    }
+    return ownedLensesQuery.data ?? []
+  }, [ownedLensesQuery.data, search, searchQuery.data])
+
+  const selectedLens = lensOptions.find((lens) => lens.id === selectedLensId) ?? null
+
+  const versionsQuery = useQuery<LensVersion[]>({
+    queryKey: queryKeys.lensVersions.list(selectedLensId),
+    queryFn: () => lensesService.getVersions(selectedLensId),
+    enabled: !!selectedLensId,
+    staleTime: 30_000,
+  })
+
+  useEffect(() => {
+    if (!selectedLensId && defaultInstructionBinding?.lens_id) {
+      setSelectedLensId(defaultInstructionBinding.lens_id)
+      setSelectedVersionId(defaultInstructionBinding.version_id ?? '')
+    }
+  }, [defaultInstructionBinding, selectedLensId])
+
+  useEffect(() => {
+    if (!selectedLensId || selectedVersionId) return
+    const latestVersion = versionsQuery.data?.find((version) => version.status === 'published')
+    if (latestVersion) {
+      setSelectedVersionId(latestVersion.id)
+    }
+  }, [selectedLensId, selectedVersionId, versionsQuery.data])
+
+  const handleBind = async () => {
+    if (!agentProfile?.ai_lenser_id || !selectedLensId) return
+    setSaving(true)
+    setError(null)
+    try {
+      await agentsService.setMainLensBinding(
+        agentProfile.ai_lenser_id,
+        selectedLensId,
+        selectedVersionId || null
+      )
+      await Promise.all([
+        queryClient.invalidateQueries({
+          queryKey: queryKeys.agents.lensBindings(agentProfile.ai_lenser_id),
+        }),
+        queryClient.invalidateQueries({
+          queryKey: queryKeys.agents.workspaceBootstrap(profile.handle),
+        }),
+      ])
+    } catch (cause) {
+      setError((cause as Error).message ?? 'Failed to bind instruction lens.')
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  return (
+    <SectionPage
+      eyebrow="Instructions"
+      title="Instruction lens binding"
+      description="Instead of personality profiles, the selected AI lenser now uses a bound lens version as its default instruction source. That keeps instructions versioned, reusable, and consistent with the rest of the product."
+      toolbar={
+        <Link
+          to="/lenses"
+          className="rounded-2xl border border-gray-200 px-4 py-2 text-sm font-semibold text-gray-700 transition hover:border-amber-300 hover:text-amber-700 dark:border-gray-700 dark:text-gray-200"
+        >
+          Open lens studio
+        </Link>
+      }
+    >
+      <BootstrapStatusPanel state={bootstrapState} />
+
+      <div className="grid gap-6 xl:grid-cols-[0.95fr_1.05fr]">
+        <ProfileCard
+          title="Current default"
+          subtitle="Owner-initiated runs fall back to this instruction source unless a workflow node overrides it."
+        >
+          {defaultInstructionBinding ? (
+            <div className="space-y-3 text-sm text-gray-600 dark:text-gray-300">
+              <Row
+                label="Lens"
+                value={defaultInstructionBinding.lens_id.slice(0, 8)}
+              />
+              <Row
+                label="Version"
+                value={
+                  defaultInstructionBinding.version_id
+                    ? defaultInstructionBinding.version_id.slice(0, 8)
+                    : 'Latest published'
+                }
+              />
+              <Row
+                label="Bindings"
+                value={String(instructionBindings.length)}
+              />
+            </div>
+          ) : (
+            <EmptyPanel
+              icon={<Bot size={20} />}
+              title="No instruction lens bound"
+              description="Bind a lens version here so the selected AI lenser has a canonical instruction source instead of ad hoc personality text."
+            />
+          )}
+        </ProfileCard>
+
+        <ProfileCard
+          title="Bind a lens version"
+          subtitle="Choose a reusable lens and optionally pin a specific published version."
+        >
+          <div className="space-y-4">
+            <label className="block">
+              <span className="mb-1 block text-xs font-semibold uppercase tracking-[0.18em] text-gray-500 dark:text-gray-400">
+                Search lenses
+              </span>
+              <div className="relative">
+                <Search
+                  size={16}
+                  className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
+                />
+                <input
+                  value={search}
+                  onChange={(event) => setSearch(event.target.value)}
+                  placeholder="Search your lenses or public instruction lenses..."
+                  className="w-full rounded-2xl border border-gray-200 bg-white py-2.5 pl-10 pr-4 text-sm text-gray-900 outline-none focus:border-amber-400 dark:border-gray-700 dark:bg-gray-900 dark:text-white"
+                />
+              </div>
+            </label>
+
+            <div className="grid gap-4 md:grid-cols-2">
+              <label className="block">
+                <span className="mb-1 block text-xs font-semibold uppercase tracking-[0.18em] text-gray-500 dark:text-gray-400">
+                  Lens
+                </span>
+                <select
+                  value={selectedLensId}
+                  onChange={(event) => {
+                    setSelectedLensId(event.target.value)
+                    setSelectedVersionId('')
+                  }}
+                  className="w-full rounded-2xl border border-gray-200 bg-white px-4 py-2.5 text-sm text-gray-900 outline-none focus:border-amber-400 dark:border-gray-700 dark:bg-gray-900 dark:text-white"
+                >
+                  <option value="">Select a lens</option>
+                  {lensOptions.map((lens) => (
+                    <option key={lens.id} value={lens.id}>
+                      {lens.title}
+                    </option>
+                  ))}
+                </select>
+              </label>
+
+              <label className="block">
+                <span className="mb-1 block text-xs font-semibold uppercase tracking-[0.18em] text-gray-500 dark:text-gray-400">
+                  Version
+                </span>
+                <select
+                  value={selectedVersionId}
+                  onChange={(event) => setSelectedVersionId(event.target.value)}
+                  disabled={!selectedLensId || versionsQuery.isLoading}
+                  className="w-full rounded-2xl border border-gray-200 bg-white px-4 py-2.5 text-sm text-gray-900 outline-none focus:border-amber-400 disabled:opacity-50 dark:border-gray-700 dark:bg-gray-900 dark:text-white"
+                >
+                  <option value="">Latest published</option>
+                  {(versionsQuery.data ?? []).map((version) => (
+                    <option key={version.id} value={version.id}>
+                      v{version.versionNumber} · {version.status}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            </div>
+
+            {selectedLens && (
+              <div className="rounded-[20px] border border-gray-200 bg-gray-50 p-4 text-sm text-gray-600 dark:border-gray-800 dark:bg-gray-950 dark:text-gray-300">
+                <div className="font-semibold text-gray-900 dark:text-white">
+                  {selectedLens.title}
+                </div>
+                {selectedLens.description && (
+                  <p className="mt-2 leading-6">{selectedLens.description}</p>
+                )}
+              </div>
+            )}
+
+            {error && (
+              <p className="rounded-2xl border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700 dark:border-red-500/30 dark:bg-red-500/10 dark:text-red-200">
+                {error}
+              </p>
+            )}
+
+            <div className="flex flex-wrap gap-3">
+              <button
+                type="button"
+                onClick={handleBind}
+                disabled={!selectedLensId || saving}
+                className="inline-flex items-center gap-2 rounded-2xl bg-gray-900 px-4 py-2 text-sm font-semibold text-white transition hover:bg-amber-600 disabled:opacity-50 dark:bg-white dark:text-gray-900"
+              >
+                <Sparkles size={14} />
+                {saving ? 'Binding…' : 'Bind instruction lens'}
+              </button>
+              <Link
+                to="/lenses"
+                className="inline-flex items-center gap-2 rounded-2xl border border-gray-200 px-4 py-2 text-sm font-semibold text-gray-700 transition hover:border-amber-300 hover:text-amber-700 dark:border-gray-700 dark:text-gray-200"
+              >
+                Create a new lens
+              </Link>
+            </div>
+          </div>
+        </ProfileCard>
+      </div>
+    </SectionPage>
+  )
+}
+
+const Row: React.FC<{ label: string; value: string }> = ({ label, value }) => (
+  <div className="flex items-center justify-between gap-3">
+    <span>{label}</span>
+    <span className="font-semibold text-gray-900 dark:text-white">{value}</span>
+  </div>
+)
