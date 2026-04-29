@@ -193,6 +193,11 @@ const AgentControlRoomOverviewRedirect: React.FC = () => {
   return <Navigate to={`/lenser/${handle}/ag/overview`} replace />
 }
 
+const LenserAgentSectionRedirect: React.FC<{ section: string }> = ({ section }) => {
+  const { handle } = useParams<{ handle: string }>()
+  return <Navigate to={`/lenser/${handle}/ag/${section}`} replace />
+}
+
 const OnboardingModal: React.FC = () => (
   <ModalRoute maxWidth="max-w-xl sm:max-w-2xl" dismissOnBackdrop={false}>
     <LazyCreateLenserProfileModal />
@@ -392,12 +397,42 @@ export const WebRouter: React.FC = () => {
         />
 
         <Route
+          path="/lenser/:handle/ag/personality"
+          element={<LenserAgentSectionRedirect section="instructions" />}
+        />
+
+        <Route
           path="/lenser/:handle/ag/:section"
           element={
             <DashboardFrame>
               <LazyAgentRouteShell />
             </DashboardFrame>
           }
+        />
+
+        <Route
+          path="/lenser/:handle/workflows"
+          element={<LenserAgentSectionRedirect section="workflows" />}
+        />
+
+        <Route
+          path="/lenser/:handle/ov"
+          element={<LenserAgentSectionRedirect section="overview" />}
+        />
+
+        <Route
+          path="/lenser/:handle/wf"
+          element={<LenserAgentSectionRedirect section="workflows" />}
+        />
+
+        <Route
+          path="/lenser/:handle/lg"
+          element={<LenserAgentSectionRedirect section="logs" />}
+        />
+
+        <Route
+          path="/lenser/:handle/sc"
+          element={<LenserAgentSectionRedirect section="schedules" />}
         />
 
         <Route path="/settings" element={<Navigate to="/settings/account" replace />} />
