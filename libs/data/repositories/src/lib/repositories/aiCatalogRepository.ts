@@ -15,12 +15,17 @@ export interface AICatalogRepositoryPort {
 }
 
 export class SupabaseAICatalogRepository implements AICatalogRepositoryPort {
+  private parseNumber(value: unknown): number | null {
+    if (value === null || value === undefined || value === '') return null
+    const parsed = Number(value)
+    return Number.isFinite(parsed) ? parsed : null
+  }
+
   async listProviders(): Promise<AIProvider[]> {
     const { data, error } = await supabase.rpc('fn_ai_catalog_providers')
 
     if (error) {
-      console.warn('fn_ai_catalog_providers failed', error)
-      return []
+      throw error
     }
 
     return ((data ?? []) as Record<string, unknown>[]).map((row) => ({
@@ -45,8 +50,7 @@ export class SupabaseAICatalogRepository implements AICatalogRepositoryPort {
     })
 
     if (error) {
-      console.warn('fn_ai_catalog_models failed', error)
-      return []
+      throw error
     }
 
     return ((data ?? []) as Record<string, unknown>[]).map((row) => this.mapModelRow(row))
@@ -59,8 +63,7 @@ export class SupabaseAICatalogRepository implements AICatalogRepositoryPort {
     })
 
     if (error) {
-      console.warn('fn_ai_catalog_model_detail failed', error)
-      return null
+      throw error
     }
 
     const row = Array.isArray(data) ? data[0] : data
@@ -91,6 +94,11 @@ export class SupabaseAICatalogRepository implements AICatalogRepositoryPort {
       developer_summary: String(row.developer_summary ?? ''),
       user_summary: String(row.user_summary ?? ''),
       metadata: (row.metadata as Record<string, unknown> | null | undefined) ?? {},
+      unit_type:
+        (row.unit_type as AIModelCatalogEntry['unit_type'] | undefined) ?? null,
+      cost_per_unit: this.parseNumber(row.cost_per_unit),
+      input_cost_per_1k_tokens: this.parseNumber(row.input_cost_per_1k_tokens),
+      output_cost_per_1k_tokens: this.parseNumber(row.output_cost_per_1k_tokens),
       is_active: (row.is_active as boolean | undefined) ?? false,
     }
   }
