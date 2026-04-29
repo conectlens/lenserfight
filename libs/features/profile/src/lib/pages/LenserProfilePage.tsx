@@ -111,20 +111,10 @@ function isStandardTab(tab: LenserTabId): tab is StandardTab {
 }
 
 function buildProfileTabs(
-  isAIWorkspacePanel: boolean,
+  _isAIWorkspacePanel: boolean,
   isOwner: boolean,
   viewedProfile: LenserProfileDTO | null
 ): LenserTabDefinition[] {
-  if (isAIWorkspacePanel) {
-    return [
-      { id: 'overview', label: 'Overview' },
-      { id: 'lenses', label: 'Lenses' },
-      { id: 'workflows', label: 'Workflows' },
-      { id: 'logs', label: 'Logs' },
-      ...(FEATURES.CRON_SCHEDULING ? [{ id: 'schedules' as const, label: 'Schedules' }] : []),
-    ]
-  }
-
   const tabs: LenserTabDefinition[] = [
     { id: 'threads', label: 'Threads' },
     { id: 'lenses', label: 'Lenses' },
@@ -180,30 +170,19 @@ export const LenserProfilePage: React.FC = () => {
     staleTime: 1000 * 60 * 5,
   })
 
-  const isAIWorkspacePanel = !!(
-    viewedProfile &&
-    viewedProfile.type === 'ai' &&
-    isOwner &&
-    activeWorkspace?.id === viewedProfile.id &&
-    agentProfile
-  )
-  const shouldShowAIWorkspacePrompt = !!(
-    viewedProfile &&
-    viewedProfile.type === 'ai' &&
-    isOwner &&
-    activeWorkspace?.id !== viewedProfile.id
-  )
+  const isAIWorkspacePanel = false
+  const shouldShowAIWorkspacePrompt = isOwnedAIProfile
 
   const tabs = useMemo(
-    () => buildProfileTabs(isAIWorkspacePanel, isOwner, viewedProfile),
-    [isAIWorkspacePanel, isOwner, viewedProfile]
+    () => buildProfileTabs(false, isOwner, viewedProfile),
+    [isOwner, viewedProfile]
   )
 
-  const defaultTab: LenserTabId = isAIWorkspacePanel ? 'overview' : 'threads'
+  const defaultTab: LenserTabId = 'threads'
   const routeTabId = routeTab ? TAB_MAP[routeTab] : undefined
   const activeTab: LenserTabId =
     routeTabId && tabs.some((tab) => tab.id === routeTabId) ? routeTabId : defaultTab
-  const activeStandardTab = !isAIWorkspacePanel && isStandardTab(activeTab) ? activeTab : null
+  const activeStandardTab = isStandardTab(activeTab) ? activeTab : null
 
   const { data: activity = [] } = useQuery<LenserActivityPoint[]>({
     queryKey: queryKeys.lenser.activity(handle!),
@@ -517,8 +496,7 @@ export const LenserProfilePage: React.FC = () => {
 
   const handleSwitchToAIWorkspace = async () => {
     if (!viewedProfile) return
-    await switchWorkspace(viewedProfile.id)
-    navigate(`/lenser/${viewedProfile.handle}/${REVERSE_TAB_MAP.overview}`)
+    navigate(`/lenser/${viewedProfile.handle}/ag/overview`)
   }
 
   const handleSelectMainLens = async (lensId: string) => {

@@ -27,10 +27,10 @@ export const AILenserWorkspacePrompt: React.FC<AILenserWorkspacePromptProps> = (
           </div>
           <div>
             <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
-              Switch into {displayName}
+              Open the {displayName} control room
             </h2>
             <p className="text-sm text-gray-600 dark:text-gray-300">
-              Activate this AI workspace to manage main lenses, connected workflows, CRON jobs, and automation logs.
+              Keep the public profile focused on content. Use the control room for instructions, builder topology, workflow assignments, schedules, and automation logs.
             </p>
           </div>
         </div>
@@ -52,7 +52,7 @@ export const AILenserWorkspacePrompt: React.FC<AILenserWorkspacePromptProps> = (
       </div>
 
       <Button onClick={onSwitch} disabled={isSwitching} className="w-auto whitespace-nowrap">
-        {isSwitching ? 'Switching...' : 'Switch To AI Workspace'}
+        {isSwitching ? 'Opening...' : 'Open Control Room'}
       </Button>
     </div>
   </div>
