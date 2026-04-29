@@ -4,7 +4,7 @@ import { useAICatalogModels } from '@lenserfight/features/generations'
 import type { AIModelCatalogEntry, AgentModelProfileRecord } from '@lenserfight/types'
 import { AlertDialog } from '@lenserfight/ui/overlays'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
-import { Cpu, Pencil, Star, Trash2 } from 'lucide-react'
+import { AlertTriangle, Cpu, Pencil, Star, Trash2 } from 'lucide-react'
 import React, { useMemo, useState } from 'react'
 import { toast } from 'sonner'
 
@@ -16,9 +16,8 @@ import { ProfileCard } from './_shared'
 import { SectionPage } from './SectionPage'
 
 export const ModelsSection: React.FC = () => {
-  const { bootstrap, profile, viewMode } = useAgentWorkspace()
+  const { bootstrap, profile, isOwner, agentProfile } = useAgentWorkspace()
   const queryClient = useQueryClient()
-  const isOwner = viewMode === 'agent_owner'
   const [editTarget, setEditTarget] = useState<AgentModelProfileRecord | null>(null)
   const [confirmState, setConfirmState] = useState<{
     title: string
@@ -29,6 +28,9 @@ export const ModelsSection: React.FC = () => {
   const catalogQuery = useAICatalogModels()
   const modelProfiles =
     (bootstrap?.profiles?.models as AgentModelProfileRecord[] | undefined) ?? []
+
+  const isSingleProviderMode = agentProfile?.model_binding_mode === 'single'
+  const effectiveProvider = modelProfiles.length > 0 ? modelProfiles[0].provider_key : null
 
   const sortedModels = useMemo(
     () => [...(catalogQuery.data ?? [])].sort(compareModelsByCost),
@@ -73,6 +75,23 @@ export const ModelsSection: React.FC = () => {
       title="Model catalog"
       description="Review every available model, sorted by current list price, then bind the ones that should be available to this AI lenser. Models without pricing remain visible but sort after priced entries."
     >
+      {isSingleProviderMode && effectiveProvider && (
+        <div className="flex items-start gap-3 rounded-2xl border border-amber-200 bg-amber-50/70 px-4 py-3 text-sm text-amber-800 dark:border-amber-500/20 dark:bg-amber-500/10 dark:text-amber-200">
+          <AlertTriangle size={16} className="mt-0.5 flex-shrink-0" />
+          <span>
+            Single-provider mode active: <span className="font-semibold">{effectiveProvider}</span>. Only models from this provider can be added. Remove all bindings first to switch providers.
+          </span>
+        </div>
+      )}
+      {isSingleProviderMode && !effectiveProvider && (
+        <div className="flex items-start gap-3 rounded-2xl border border-blue-200 bg-blue-50/70 px-4 py-3 text-sm text-blue-800 dark:border-blue-500/20 dark:bg-blue-500/10 dark:text-blue-200">
+          <AlertTriangle size={16} className="mt-0.5 flex-shrink-0" />
+          <span>
+            Single-provider mode: the first model you bind will lock this agent to that provider.
+          </span>
+        </div>
+      )}
+
       <ProfileCard
         title="Catalog"
         subtitle="This is the catalog view for the selected AI lenser. Bind from here instead of jumping to the global showroom."
@@ -129,14 +148,20 @@ export const ModelsSection: React.FC = () => {
                     </td>
                     {isOwner && (
                       <td className="px-4 py-3">
-                        <button
-                          type="button"
-                          onClick={() => bootstrap && create.mutate(model)}
-                          disabled={!bootstrap || create.isPending}
-                          className="rounded-2xl border border-gray-200 px-3 py-1.5 text-xs font-semibold text-gray-700 transition hover:border-amber-300 hover:text-amber-700 disabled:opacity-50 dark:border-gray-700 dark:text-gray-200"
-                        >
-                          Bind model
-                        </button>
+                        {isSingleProviderMode && effectiveProvider && model.provider_key !== effectiveProvider ? (
+                          <span className="text-xs text-gray-400 dark:text-gray-600" title={`Only ${effectiveProvider} models allowed`}>
+                            Locked
+                          </span>
+                        ) : (
+                          <button
+                            type="button"
+                            onClick={() => bootstrap && create.mutate(model)}
+                            disabled={!bootstrap || create.isPending}
+                            className="rounded-2xl border border-gray-200 px-3 py-1.5 text-xs font-semibold text-gray-700 transition hover:border-amber-300 hover:text-amber-700 disabled:opacity-50 dark:border-gray-700 dark:text-gray-200"
+                          >
+                            Bind model
+                          </button>
+                        )}
                       </td>
                     )}
                   </tr>
