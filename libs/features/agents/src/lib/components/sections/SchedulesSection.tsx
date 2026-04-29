@@ -85,7 +85,23 @@ export const SchedulesSection: React.FC = () => {
             icon={<CalendarClock size={20} />}
             title="No schedules yet"
             description="Use workflow schedules to dispatch manual, CRON-based, or team-assigned automation runs."
-          />
+          >
+            {canManage ? (
+              <div className="mt-6 flex justify-center">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setEditing(null)
+                    setDrawerOpen(true)
+                  }}
+                  disabled={workflows.length === 0}
+                  className="rounded-2xl bg-gray-900 px-4 py-2 text-sm font-semibold text-white transition hover:bg-amber-600 disabled:opacity-50 dark:bg-white dark:text-gray-900"
+                >
+                  {workflows.length === 0 ? 'Create a workflow first' : 'New schedule'}
+                </button>
+              </div>
+            ) : undefined}
+          </EmptyPanel>
         ) : (
           schedules.map((schedule) => (
             <div

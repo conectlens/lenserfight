@@ -145,7 +145,17 @@ export const EvaluationsSection: React.FC = () => {
           icon={<ListChecks size={20} />}
           title="No evaluations yet"
           description="Create an evaluation suite for a lens, workflow, agent, or team. Add cases and run them against a model to score behavior."
-        />
+        >
+          <div className="mt-6 flex justify-center">
+            <button
+              type="button"
+              onClick={() => setDrawerOpen(true)}
+              className="rounded-2xl bg-gray-900 px-4 py-2 text-sm font-semibold text-white transition hover:bg-amber-600 dark:bg-white dark:text-gray-900"
+            >
+              New evaluation
+            </button>
+          </div>
+        </EmptyPanel>
       ) : (
         <div className="grid gap-4">
           {(evals.data ?? []).map((e) => (
