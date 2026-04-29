@@ -3,10 +3,13 @@ import { Drawer } from '@lenserfight/ui/overlays'
 import type { ToolAuthMethod, ToolRegistryRecord } from '@lenserfight/types'
 import React, { useEffect, useState } from 'react'
 
+import type { ToolTemplatePreset } from '../toolTemplates'
+
 interface Props {
   open: boolean
   onClose: () => void
   initial?: ToolRegistryRecord | null
+  preset?: ToolTemplatePreset | null
   onSaved?: (record: ToolRegistryRecord) => void
 }
 
@@ -16,6 +19,7 @@ export const RegisterToolDrawer: React.FC<Props> = ({
   open,
   onClose,
   initial,
+  preset,
   onSaved,
 }) => {
   const isEdit = !!initial
@@ -41,17 +45,18 @@ export const RegisterToolDrawer: React.FC<Props> = ({
 
   useEffect(() => {
     if (!open) return
-    setKey(initial?.key ?? '')
-    setName(initial?.name ?? '')
-    setDescription(initial?.description ?? '')
-    setCategory(initial?.category ?? 'general')
-    setAuthMethod(initial?.auth_method ?? 'none')
-    setRequiresApproval(initial?.requires_approval ?? false)
-    setIsDangerous(initial?.is_dangerous ?? false)
-    setSchemaInput(JSON.stringify(initial?.schema_input ?? {}, null, 2))
-    setSchemaOutput(JSON.stringify(initial?.schema_output ?? {}, null, 2))
+    const source = initial ?? preset ?? null
+    setKey(source?.key ?? '')
+    setName(source?.name ?? '')
+    setDescription(source?.description ?? '')
+    setCategory(source?.category ?? 'general')
+    setAuthMethod(source?.auth_method ?? 'none')
+    setRequiresApproval(source?.requires_approval ?? false)
+    setIsDangerous(source?.is_dangerous ?? false)
+    setSchemaInput(JSON.stringify(source?.schema_input ?? {}, null, 2))
+    setSchemaOutput(JSON.stringify(source?.schema_output ?? {}, null, 2))
     setError(null)
-  }, [open, initial])
+  }, [open, initial, preset])
 
   const handleSave = async () => {
     setSubmitting(true)
@@ -98,6 +103,11 @@ export const RegisterToolDrawer: React.FC<Props> = ({
       title={isEdit ? 'Edit tool registration' : 'Register tool'}
     >
       <div className="space-y-4">
+        {!isEdit && preset && (
+          <div className="rounded-2xl border border-amber-200 bg-amber-50/70 px-4 py-3 text-sm text-amber-800 dark:border-amber-500/20 dark:bg-amber-500/10 dark:text-amber-200">
+            Starting from template: <span className="font-semibold">{preset.label}</span>
+          </div>
+        )}
         <Field label="Key (unique within owner)">
           <input value={key} onChange={(e) => setKey(e.target.value)} placeholder="search.web" className={inputClass} disabled={isEdit} />
         </Field>
