@@ -32,7 +32,7 @@ export type AgentSection =
   | 'schedules'
   | 'evaluations'
   | 'memory'
-  | 'personality'
+  | 'instructions'
   | 'tools'
   | 'models'
   | 'providers'
@@ -67,7 +67,7 @@ export const NAV_ITEMS: AgentNavItem[] = [
   // OPERATE
   { id: 'overview', label: 'Overview', zone: 'operate', icon: Layers, visibleIn: PUBLIC_VISIBLE },
   { id: 'scratchpad', label: 'Scratchpad', zone: 'operate', icon: FileStack, visibleIn: AGENT_OWNER_ONLY },
-  { id: 'team', label: 'Agent Team', zone: 'operate', icon: Network, visibleIn: OWNER_ONLY },
+  { id: 'team', label: 'Builder', zone: 'operate', icon: Network, visibleIn: OWNER_ONLY },
   { id: 'runs', label: 'Runs', zone: 'operate', icon: Activity, visibleIn: PUBLIC_VISIBLE },
   { id: 'logs', label: 'Logs', zone: 'operate', icon: ClipboardList, visibleIn: OWNER_ONLY },
   // AUTOMATE
@@ -76,7 +76,7 @@ export const NAV_ITEMS: AgentNavItem[] = [
   { id: 'evaluations', label: 'Evaluations', zone: 'automate', icon: ListChecks, visibleIn: OWNER_ONLY },
   // CONFIGURE
   { id: 'memory', label: 'Memory', zone: 'configure', icon: Sparkles, visibleIn: OWNER_ONLY },
-  { id: 'personality', label: 'Personality', zone: 'configure', icon: Bot, visibleIn: OWNER_ONLY },
+  { id: 'instructions', label: 'Instructions', zone: 'configure', icon: Bot, visibleIn: OWNER_ONLY },
   { id: 'tools', label: 'Tools', zone: 'configure', icon: Wrench, visibleIn: OWNER_ONLY },
   { id: 'models', label: 'Models', zone: 'configure', icon: Cpu, visibleIn: OWNER_ONLY },
   { id: 'providers', label: 'Providers', zone: 'configure', icon: AlertTriangle, visibleIn: OWNER_ONLY },
@@ -84,6 +84,10 @@ export const NAV_ITEMS: AgentNavItem[] = [
   { id: 'cost', label: 'Cost', zone: 'configure', icon: Coins, visibleIn: OWNER_ONLY },
   { id: 'settings', label: 'Settings', zone: 'configure', icon: SettingsIcon, visibleIn: AGENT_OWNER_ONLY },
 ]
+
+export const LEGACY_AGENT_SECTION_ALIASES: Record<string, AgentSection> = {
+  personality: 'instructions',
+}
 
 export const AGENT_NAV_ZONES: AgentNavZone[] = ['operate', 'automate', 'configure']
 
