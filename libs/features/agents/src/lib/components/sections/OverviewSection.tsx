@@ -1,24 +1,31 @@
 import { queryKeys } from '@lenserfight/data/cache'
 import { agentWorkspaceService } from '@lenserfight/data/repositories'
 import { useLenserWorkspace } from '@lenserfight/features/profile'
+import { useModalRouter } from '@lenserfight/ui/routing'
 import { useQuery } from '@tanstack/react-query'
-import { Bot, GitBranch, Sparkles } from 'lucide-react'
+import {
+  Activity,
+  Bot,
+  Brain,
+  CalendarClock,
+  GitBranch,
+  Network,
+  Sparkles,
+  Wrench,
+} from 'lucide-react'
 import React from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 
 import { useAgentWorkspace } from '../../context/AgentWorkspaceContext'
 import { AgentsGrid } from '../AgentsGrid'
+import { BootstrapStatusPanel } from '../BootstrapStatusPanel'
 import { CrossAgentActivityFeed } from '../CrossAgentActivityFeed'
 import { EmptyPanel } from '../EmptyPanel'
 
-import { ProfileCard, StatCard, TeamBoard } from './_shared'
+import { ProfileCard, StatCard } from './_shared'
 import { SectionPage } from './SectionPage'
 
-import type {
-  AgentTeamEdgeRecord,
-  AgentTeamMemberRecord,
-  FleetOverview,
-} from '@lenserfight/types'
+import type { FleetOverview } from '@lenserfight/types'
 
 export const OverviewSection: React.FC = () => {
   const ctx = useAgentWorkspace()
@@ -26,11 +33,12 @@ export const OverviewSection: React.FC = () => {
     viewMode,
     profile,
     bootstrap,
-    agentProfile,
-    schedules,
+    bootstrapState,
     workflows,
-    ownedAgents,
-    ownedAgentsLoading,
+    schedules,
+    ownerFleetAgents,
+    ownerFleetAgentsLoading,
+    defaultInstructionBinding,
   } = ctx
 
   if (viewMode === 'human_owner') {
@@ -38,16 +46,16 @@ export const OverviewSection: React.FC = () => {
   }
 
   if (viewMode === 'human_public') {
-    const publicAgents = ownedAgents.filter(
-      (a) => a.is_active && !a.suspended_at
+    const publicAgents = ownerFleetAgents.filter(
+      (agent) => agent.is_active && !agent.suspended_at
     )
     return (
       <SectionPage
         eyebrow="Public agents"
         title={`Agents by @${profile.handle}`}
-        description="A read-only view of agents this Lenser publishes publicly."
+        description="A read-only view of the public AI lensers published by this profile."
       >
-        {ownedAgentsLoading ? (
+        {ownerFleetAgentsLoading ? (
           <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
             {Array.from({ length: 3 }).map((_, idx) => (
               <div
@@ -64,84 +72,55 @@ export const OverviewSection: React.FC = () => {
   }
 
   if (viewMode === 'agent_public') {
+    const activeTeams = bootstrap?.teams.filter((team) => team.is_active).length ?? 0
     return (
       <SectionPage
         eyebrow="Agent overview"
         title={profile.display_name || `@${profile.handle}`}
-        description="A public read-only view of this Agent Lenser. Sign in as the owner to access the control room, schedules, and approvals."
+        description="Public profile surface for this AI lenser. Operational editing, builder access, and approval controls remain owner-only."
       >
-        <div className="grid gap-4 md:grid-cols-3">
+        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
           <StatCard
-            label="Status"
-            value={agentProfile?.is_active ? 'Active' : 'Inactive'}
-            detail={`Runtime: ${agentProfile?.runtime_pref ?? 'unknown'}`}
+            label="Instruction"
+            value={defaultInstructionBinding ? 'Bound' : 'Unset'}
+            detail="Default instruction source for owner-initiated runs."
           />
           <StatCard
-            label="Public lenses"
-            value={String(agentProfile?.lens_count ?? 0)}
-            detail="Visible in the public lens library."
+            label="Workflows"
+            value={String(workflows.length)}
+            detail="Published and private workflow count visible to this viewer."
           />
           <StatCard
-            label="Models bound"
-            value={String(agentProfile?.model_count ?? 0)}
-            detail="Visible to the public catalog only."
+            label="Schedules"
+            value={String(schedules.length)}
+            detail="Scheduled workflow triggers attached to this agent."
           />
-        </div>
-        <div className="mt-6 space-y-4">
-          {workflows.length === 0 ? (
-            <EmptyPanel
-              icon={<Sparkles size={22} />}
-              title="No public workflows yet"
-              description="This agent has not published any public workflows."
-            />
-          ) : (
-            workflows.map((workflow) => (
-              <div
-                key={workflow.id}
-                className="rounded-[24px] border border-gray-200 bg-white p-5 shadow-sm dark:border-gray-800 dark:bg-gray-900"
-              >
-                <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-                  <div>
-                    <h3 className="flex items-center gap-2 text-lg font-semibold text-gray-900 dark:text-white">
-                      <GitBranch size={18} className="text-amber-500" />
-                      {workflow.title}
-                    </h3>
-                    <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">
-                      {workflow.description ?? 'No workflow description.'}
-                    </p>
-                  </div>
-                  <Link
-                    to={`/workflows/${workflow.id}`}
-                    className="inline-flex items-center gap-2 rounded-2xl border border-gray-200 px-4 py-2 text-sm font-semibold text-gray-700 transition hover:border-amber-300 hover:text-amber-700 dark:border-gray-700 dark:text-gray-200"
-                  >
-                    Open
-                  </Link>
-                </div>
-              </div>
-            ))
-          )}
+          <StatCard
+            label="Builder"
+            value={String(activeTeams)}
+            detail="Active team graph count managed by the owner."
+          />
         </div>
       </SectionPage>
     )
   }
 
-  // agent_owner
   const teams = bootstrap?.teams ?? []
-  const activeTeam = teams[0] ?? null
-  const activeMembers =
-    (activeTeam?.members as AgentTeamMemberRecord[] | undefined) ?? []
-  const activeEdges =
-    (activeTeam?.edges as AgentTeamEdgeRecord[] | undefined) ?? []
+  const activeTeam = teams.find((team) => team.is_active) ?? teams[0] ?? null
   const blockedRuns = (bootstrap?.runs ?? []).filter(
-    (r) => r.status === 'blocked'
+    (run) => run.status === 'blocked'
   ).length
-  const approvalBacklog = (bootstrap?.runs ?? []).filter(
-    (r) => r.approval_status === 'pending'
+  const pendingApprovals = (bootstrap?.runs ?? []).filter(
+    (run) => run.approval_status === 'pending'
   ).length
+  const defaultModelProfile =
+    (bootstrap?.profiles.models ?? []).find((profileRecord) => profileRecord.is_default) ??
+    bootstrap?.profiles.models?.[0] ??
+    null
   const scheduleHealth =
     schedules.length === 0
       ? 'No schedules'
-      : schedules.some((s) => s.last_dispatch_status === 'dispatch_failed')
+      : schedules.some((schedule) => schedule.last_dispatch_status === 'dispatch_failed')
         ? 'Needs attention'
         : 'Healthy'
 
@@ -149,86 +128,133 @@ export const OverviewSection: React.FC = () => {
     <SectionPage
       eyebrow="Agent control room"
       title={`@${profile.handle}`}
-      description="Operational dashboard: teams, schedules, runs, approvals, and runtime state for this autonomous workspace."
+      description="Operational home for this AI lenser. Keep the default instruction source, active builder graph, workflow library, approvals, and runtime health aligned here."
+      toolbar={
+        <div className="flex flex-wrap gap-2">
+          <Link
+            to={`/lenser/${profile.handle}/ag/scratchpad`}
+            className="inline-flex items-center gap-2 rounded-2xl bg-gray-900 px-4 py-2 text-sm font-semibold text-white transition hover:bg-amber-600 dark:bg-white dark:text-gray-900"
+          >
+            <Brain size={14} />
+            Open workbench
+          </Link>
+          <Link
+            to={`/lenser/${profile.handle}/ag/team`}
+            className="inline-flex items-center gap-2 rounded-2xl border border-gray-200 px-4 py-2 text-sm font-semibold text-gray-700 transition hover:border-amber-300 hover:text-amber-700 dark:border-gray-700 dark:text-gray-200"
+          >
+            <Network size={14} />
+            Open builder
+          </Link>
+        </div>
+      }
     >
+      <BootstrapStatusPanel state={bootstrapState} />
+
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         <StatCard
-          label="Teams"
+          label="Instruction"
+          value={defaultInstructionBinding ? 'Bound' : 'Unset'}
+          detail="Lens-version-backed instruction source."
+        />
+        <StatCard
+          label="Builder"
           value={String(teams.length)}
-          detail="Parallel operator groups configured."
+          detail={`${activeTeam ? activeTeam.name : 'No active team'} in focus.`}
         />
         <StatCard
-          label="Runs"
-          value={String(bootstrap?.runs.length ?? 0)}
-          detail="Recent persisted control-room runs."
-        />
-        <StatCard
-          label="Approvals"
-          value={String(approvalBacklog)}
-          detail="Pending human approval gates."
+          label="Workflows"
+          value={String(workflows.length)}
+          detail={`${pendingApprovals} approval gate${pendingApprovals === 1 ? '' : 's'} pending.`}
         />
         <StatCard
           label="Schedules"
           value={String(schedules.length)}
-          detail={`Scheduler: ${scheduleHealth}.`}
+          detail={`Scheduler health: ${scheduleHealth}.`}
         />
       </div>
-      <div className="grid gap-6 xl:grid-cols-[1.2fr_0.8fr]">
-        {activeTeam ? (
-          <TeamBoard
-            team={activeTeam}
-            members={activeMembers}
-            edges={activeEdges}
-          />
-        ) : (
-          <EmptyPanel
-            icon={<Bot size={22} />}
-            title="Create your first agent team"
-            description="Start with one lead operator, then expand into specialist lanes for review, delegation, or parallel execution."
-          />
-        )}
+
+      <div className="grid gap-6 xl:grid-cols-[1.15fr_0.85fr]">
+        <ProfileCard
+          title="Next actions"
+          subtitle="Use the control room surfaces intentionally so users are not forced through duplicated concepts."
+        >
+          <div className="grid gap-3 sm:grid-cols-2">
+            <QuickLinkCard
+              to={`/lenser/${profile.handle}/ag/instructions`}
+              icon={<Sparkles size={16} />}
+              title="Instructions"
+              description="Bind a default instruction lens version."
+            />
+            <QuickLinkCard
+              to={`/lenser/${profile.handle}/ag/scratchpad`}
+              icon={<Brain size={16} />}
+              title="Scratchpad"
+              description="Test ideas privately on the solo workbench."
+            />
+            <QuickLinkCard
+              to={`/lenser/${profile.handle}/ag/team`}
+              icon={<Network size={16} />}
+              title="Builder"
+              description="Shape the live multi-agent graph and handoffs."
+            />
+            <QuickLinkCard
+              to={`/lenser/${profile.handle}/ag/workflows`}
+              icon={<GitBranch size={16} />}
+              title="Workflows"
+              description="Manage the saved automation library and assignments."
+            />
+          </div>
+        </ProfileCard>
+
         <div className="space-y-6">
           <ProfileCard
-            title="Runtime"
-            subtitle="Current execution-state summary."
+            title="Runtime defaults"
+            subtitle="The selected agent’s baseline behavior before a workflow overrides it."
           >
             <div className="space-y-3 text-sm text-gray-600 dark:text-gray-300">
-              <div className="flex items-center justify-between">
-                <span>Workspace</span>
-                <span className="font-semibold text-gray-900 dark:text-white">
-                  @{profile.handle}
-                </span>
-              </div>
-              <div className="flex items-center justify-between">
-                <span>Run blockers</span>
-                <span className="font-semibold text-gray-900 dark:text-white">
-                  {blockedRuns}
-                </span>
-              </div>
-              <div className="flex items-center justify-between">
-                <span>Scheduler health</span>
-                <span className="font-semibold text-gray-900 dark:text-white">
-                  {scheduleHealth}
-                </span>
-              </div>
-              <div className="flex items-center justify-between">
-                <span>Default runtime</span>
-                <span className="font-semibold text-gray-900 dark:text-white">
-                  {agentProfile?.runtime_pref ?? 'unknown'}
-                </span>
-              </div>
+              <Row
+                label="Instruction source"
+                value={
+                  defaultInstructionBinding
+                    ? `Lens ${defaultInstructionBinding.lens_id.slice(0, 8)}`
+                    : 'Not configured'
+                }
+              />
+              <Row
+                label="Default model profile"
+                value={defaultModelProfile?.name ?? 'Not configured'}
+              />
+              <Row label="Blocked runs" value={String(blockedRuns)} />
+              <Row label="Pending approvals" value={String(pendingApprovals)} />
             </div>
           </ProfileCard>
+
           <ProfileCard
-            title="Next actions"
-            subtitle="Recommended setup sequence."
+            title="Builder focus"
+            subtitle="Builder owns the live agent graph. Workflows stay in the library surface."
           >
-            <ol className="space-y-3 text-sm text-gray-600 dark:text-gray-300">
-              <li>1. Create a team and assign lanes for delegation.</li>
-              <li>2. Define personality and memory profiles.</li>
-              <li>3. Bind a model profile and tool profile.</li>
-              <li>4. Attach workflows and activate CRON schedules.</li>
-            </ol>
+            {activeTeam ? (
+              <div className="space-y-3 text-sm text-gray-600 dark:text-gray-300">
+                <Row label="Active team" value={activeTeam.name} />
+                <Row label="Members" value={String(activeTeam.member_count ?? 0)} />
+                <Row
+                  label="Edges"
+                  value={String((activeTeam.edges ?? []).length)}
+                />
+                <Link
+                  to={`/lenser/${profile.handle}/ag/team`}
+                  className="inline-flex items-center gap-2 rounded-2xl border border-gray-200 px-4 py-2 text-sm font-semibold text-gray-700 transition hover:border-amber-300 hover:text-amber-700 dark:border-gray-700 dark:text-gray-200"
+                >
+                  Open builder
+                </Link>
+              </div>
+            ) : (
+              <EmptyPanel
+                icon={<Network size={20} />}
+                title="No active team exists"
+                description="Open Builder to create the first team graph and connect agents into a professional workflow topology."
+              />
+            )}
           </ProfileCard>
         </div>
       </div>
@@ -237,71 +263,128 @@ export const OverviewSection: React.FC = () => {
 }
 
 const HumanOwnerOverview: React.FC = () => {
-  const { profile, ownedAgents, ownedAgentsLoading } = useAgentWorkspace()
+  const { profile, ownerFleetAgents, ownerFleetAgentsLoading } = useAgentWorkspace()
   const { humanWorkspace } = useLenserWorkspace()
+  const { open } = useModalRouter()
   const navigate = useNavigate()
-  // humanWorkspace.id is always the current auth user's human profile — guaranteed
-  // to match get_auth_human_lenser_id() inside fn_get_human_activity_feed.
-  // Using profile.id (from the route) risks a 42501 if the route profile is a
-  // co-owned or mismatched workspace entry.
   const feedLenserId = humanWorkspace?.id ?? profile.id
+
   const overview = useQuery<FleetOverview | null>({
-    queryKey: queryKeys.agents.fleetOverview(profile.id),
-    queryFn: () => agentWorkspaceService.getFleetOverview(profile.id),
+    queryKey: queryKeys.agents.fleetOverview(feedLenserId),
+    queryFn: () => agentWorkspaceService.getFleetOverview(feedLenserId),
+    enabled: !!feedLenserId,
     staleTime: 30_000,
   })
-  const totalAgents = overview.data?.agents_total ?? ownedAgents.length
+
+  const totalAgents = overview.data?.agents_total ?? ownerFleetAgents.length
   const activeAgents =
     overview.data?.agents_active ??
-    ownedAgents.filter((a) => a.is_active && !a.suspended_at).length
+    ownerFleetAgents.filter((agent) => agent.is_active && !agent.suspended_at).length
 
   return (
     <SectionPage
       eyebrow="Your agent fleet"
-      title={`Agents owned by @${profile.handle}`}
-      description="Manage every Agent Lenser you own from one place. Open an agent to enter its control room, scratchpad, schedules, and approvals."
+      title={`@${profile.handle}`}
+      description="Fleet-level owner surface for the human workspace. Create new agents here and audit recent cross-agent activity without dropping into a single AI lenser."
+      toolbar={
+        <button
+          type="button"
+          onClick={() => open('create-agent')}
+          className="rounded-2xl bg-gray-900 px-4 py-2 text-sm font-semibold text-white transition hover:bg-amber-600 dark:bg-white dark:text-gray-900"
+        >
+          Create agent
+        </button>
+      }
     >
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         <StatCard
           label="Agents"
           value={String(totalAgents)}
-          detail="Total agents you currently own."
+          detail="Total AI lensers owned by this human workspace."
         />
         <StatCard
           label="Active"
           value={String(activeAgents)}
-          detail="Active and not suspended."
+          detail="Currently active and not suspended."
+        />
+        <StatCard
+          label="Runs (24h)"
+          value={String(overview.data?.runs_24h ?? 0)}
+          detail="Team runs dispatched across the fleet."
         />
         <StatCard
           label="Approvals"
           value={String(overview.data?.approvals_pending ?? 0)}
-          detail="Pending across the fleet."
-        />
-        <StatCard
-          label="Schedules"
-          value={String(overview.data?.schedules_active ?? 0)}
-          detail={`Active dispatch jobs · ${overview.data?.runs_24h ?? 0} runs in last 24h`}
+          detail="Pending owner approval gates."
         />
       </div>
-      {ownedAgentsLoading ? (
-        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-          {Array.from({ length: 3 }).map((_, idx) => (
-            <div
-              key={idx}
-              className="h-44 animate-pulse rounded-2xl border border-gray-100 bg-gray-50 dark:border-gray-700 dark:bg-gray-900"
+
+      <div className="grid gap-6 xl:grid-cols-[1.05fr_0.95fr]">
+        <ProfileCard
+          title="Agents"
+          subtitle="Create or jump into any AI lenser you own."
+          toolbar={
+            <button
+              type="button"
+              onClick={() => navigate('/lensers?type=ai')}
+              className="rounded-2xl border border-gray-200 px-3 py-2 text-xs font-semibold text-gray-700 transition hover:border-amber-300 hover:text-amber-700 dark:border-gray-700 dark:text-gray-200"
+            >
+              Browse all
+            </button>
+          }
+        >
+          {ownerFleetAgentsLoading ? (
+            <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-2">
+              {Array.from({ length: 4 }).map((_, idx) => (
+                <div
+                  key={idx}
+                  className="h-44 animate-pulse rounded-2xl border border-gray-100 bg-gray-50 dark:border-gray-700 dark:bg-gray-900"
+                />
+              ))}
+            </div>
+          ) : (
+            <AgentsGrid
+              agents={ownerFleetAgents}
+              mode="owner"
+              onCreateAgent={() => open('create-agent')}
             />
-          ))}
-        </div>
-      ) : (
-        <AgentsGrid
-          agents={ownedAgents}
-          mode="owner"
-          onCreateAgent={() => navigate(`/lenser/${profile.handle}?modal=create-agent`)}
-        />
-      )}
-      <div className="mt-6">
-        <CrossAgentActivityFeed humanLenserId={feedLenserId} />
+          )}
+        </ProfileCard>
+
+        <ProfileCard
+          title="Cross-agent activity"
+          subtitle="Recent approvals, runs, and scheduled dispatches across every owned AI lenser."
+        >
+          <CrossAgentActivityFeed humanLenserId={feedLenserId} limit={25} />
+        </ProfileCard>
       </div>
     </SectionPage>
   )
 }
+
+const Row: React.FC<{ label: string; value: string }> = ({ label, value }) => (
+  <div className="flex items-center justify-between gap-3">
+    <span>{label}</span>
+    <span className="font-semibold text-gray-900 dark:text-white">{value}</span>
+  </div>
+)
+
+const QuickLinkCard: React.FC<{
+  to: string
+  icon: React.ReactNode
+  title: string
+  description: string
+}> = ({ to, icon, title, description }) => (
+  <Link
+    to={to}
+    className="rounded-[24px] border border-gray-200 bg-gray-50 p-4 transition hover:border-amber-300 hover:bg-amber-50/60 dark:border-gray-800 dark:bg-gray-950 dark:hover:border-amber-500/40 dark:hover:bg-amber-500/10"
+  >
+    <div className="flex items-center gap-2 text-sm font-semibold text-gray-900 dark:text-white">
+      {icon}
+      {title}
+    </div>
+    <p className="mt-2 text-sm leading-6 text-gray-500 dark:text-gray-400">
+      {description}
+    </p>
+  </Link>
+)

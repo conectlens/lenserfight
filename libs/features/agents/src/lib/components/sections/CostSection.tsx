@@ -1,14 +1,13 @@
-import { Sparkles } from 'lucide-react'
 import React from 'react'
 
 import { useAgentWorkspace } from '../../context/AgentWorkspaceContext'
-import { EmptyPanel } from '../EmptyPanel'
+import { BootstrapStatusPanel } from '../BootstrapStatusPanel'
 
 import { CostMonitorSection } from './CostMonitorSection'
 import { SectionPage } from './SectionPage'
 
 export const CostSection: React.FC = () => {
-  const { bootstrap } = useAgentWorkspace()
+  const { bootstrap, bootstrapState } = useAgentWorkspace()
 
   return (
     <SectionPage
@@ -16,14 +15,10 @@ export const CostSection: React.FC = () => {
       title="Spend and quota monitoring"
       description="Daily quota counters, recent spend windows, and peak day. Useful for catching runaway loops, scheduled job cost overruns, or unexpected upstream pricing changes."
     >
-      {bootstrap ? (
-        <CostMonitorSection aiLenserId={bootstrap.ai_lenser_id} />
+      {!bootstrap ? (
+        <BootstrapStatusPanel state={bootstrapState} />
       ) : (
-        <EmptyPanel
-          icon={<Sparkles size={20} />}
-          title="Workspace not bootstrapped"
-          description="The cost monitor requires the workspace bootstrap to load first."
-        />
+        <CostMonitorSection aiLenserId={bootstrap.ai_lenser_id} />
       )}
     </SectionPage>
   )
