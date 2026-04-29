@@ -1,7 +1,7 @@
 import { useLenser, useLenserWorkspace } from '@lenserfight/features/profile'
 import { AlertTriangle, Bot } from 'lucide-react'
 import React, { useMemo } from 'react'
-import { useNavigate, useParams } from 'react-router-dom'
+import { Navigate, useNavigate, useParams } from 'react-router-dom'
 
 import {
   AgentWorkspaceProvider,
@@ -9,7 +9,12 @@ import {
 } from '../context/AgentWorkspaceContext'
 import { useAgentWorkspaceData } from '../hooks/useAgentWorkspaceData'
 
-import { defaultSection, isVisibleSection, type AgentSection } from './agentNavConfig'
+import {
+  defaultSection,
+  isVisibleSection,
+  LEGACY_AGENT_SECTION_ALIASES,
+  type AgentSection,
+} from './agentNavConfig'
 import { EmptyPanel } from './EmptyPanel'
 import { SectionErrorBoundary } from './SectionErrorBoundary'
 import {
@@ -21,7 +26,7 @@ import {
   MemorySection,
   ModelsSection,
   OverviewSection,
-  PersonalitySection,
+  InstructionsSection,
   ProvidersSection,
   RunsSection,
   SchedulesSection,
@@ -44,7 +49,7 @@ const VALID_SECTIONS: AgentSection[] = [
   'schedules',
   'evaluations',
   'memory',
-  'personality',
+  'instructions',
   'tools',
   'models',
   'providers',
@@ -63,7 +68,7 @@ const SECTION_COMPONENT: Record<AgentSection, React.ComponentType> = {
   schedules: SchedulesSection,
   evaluations: EvaluationsSection,
   memory: MemorySection,
-  personality: PersonalitySection,
+  instructions: InstructionsSection,
   tools: ToolsSection,
   models: ModelsSection,
   providers: ProvidersSection,
@@ -84,7 +89,7 @@ export const AgentWorkspaceShell: React.FC<AgentWorkspaceShellProps> = ({
   const { section } = useParams<{ section?: string }>()
   const navigate = useNavigate()
   const { lenser: activeWorkspace } = useLenser()
-  const { workspaces, switchWorkspace, isSwitching } = useLenserWorkspace()
+  const { workspaces, humanWorkspace, switchWorkspace, isSwitching } = useLenserWorkspace()
 
   const isOwner = useMemo(
     () => workspaces.some((w) => w.id === profile.id),
@@ -100,14 +105,26 @@ export const AgentWorkspaceShell: React.FC<AgentWorkspaceShellProps> = ({
     viewedProfileType: profile.type as 'human' | 'ai',
     isOwner,
     shouldSwitchWorkspace,
+    ownerHumanLenserId: humanWorkspace?.id,
   })
 
-  const requestedSection = (section ?? '') as AgentSection
+  const requestedSection = (LEGACY_AGENT_SECTION_ALIASES[section ?? ''] ??
+    section ??
+    '') as AgentSection
   const isKnown = VALID_SECTIONS.includes(requestedSection)
   const isVisible = isKnown && isVisibleSection(requestedSection, viewMode)
   const activeSection: AgentSection = isVisible
     ? requestedSection
     : defaultSection(viewMode)
+
+  if (section && LEGACY_AGENT_SECTION_ALIASES[section]) {
+    return (
+      <Navigate
+        to={`/lenser/${profile.handle}/ag/${LEGACY_AGENT_SECTION_ALIASES[section]}`}
+        replace
+      />
+    )
+  }
 
   if (shouldSwitchWorkspace) {
     return (
@@ -143,7 +160,7 @@ export const AgentWorkspaceShell: React.FC<AgentWorkspaceShellProps> = ({
     )
   }
 
-  if (data.bootstrapError && viewMode === 'agent_owner') {
+  if (data.bootstrapState.kind === 'failed' && viewMode === 'agent_owner') {
     return (
       <SectionPage
         eyebrow="Agent workspace"
@@ -156,9 +173,8 @@ export const AgentWorkspaceShell: React.FC<AgentWorkspaceShellProps> = ({
             <div>
               <p className="font-semibold">Workspace bootstrap failed</p>
               <p className="mt-1">
-                The control-room RPC did not return bootstrap data. Review the
-                migration, RLS, and ownership helpers before relying on this
-                workspace in production.
+                {data.bootstrapState.message ??
+                  'The control-room RPC did not return bootstrap data. Review the migration, RLS, and ownership helpers before relying on this workspace in production.'}
               </p>
             </div>
           </div>
@@ -176,12 +192,22 @@ export const AgentWorkspaceShell: React.FC<AgentWorkspaceShellProps> = ({
       isOwner={isOwner}
       agentProfile={data.agentProfile}
       bootstrap={data.bootstrap}
+      bootstrapState={data.bootstrapState}
       schedules={data.schedules}
       workflows={data.workflows}
-      ownedAgents={data.ownedAgents}
-      ownedAgentsLoading={data.ownedAgentsLoading}
+      ownerFleetAgents={data.ownerFleetAgents}
+      ownerFleetAgentsLoading={data.ownerFleetAgentsLoading}
+      activeTeamId={
+        (data.bootstrap?.teams.find((team) => team.is_active) ?? data.bootstrap?.teams[0])?.id ??
+        null
+      }
+      instructionBindings={data.instructionBindings}
+      modelBindings={data.modelBindings}
+      defaultInstructionBinding={data.defaultInstructionBinding}
       isLoading={
-        data.agentLoading || data.bootstrapLoading || data.ownedAgentsLoading
+        data.agentLoading ||
+        data.bootstrapState.kind === 'loading' ||
+        data.ownerFleetAgentsLoading
       }
       shouldSwitchWorkspace={shouldSwitchWorkspace}
       switchWorkspace={() => switchWorkspace(profile.id)}
