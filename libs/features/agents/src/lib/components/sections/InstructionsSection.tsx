@@ -1,10 +1,10 @@
 import { queryKeys } from '@lenserfight/data/cache'
 import { agentsService, lensesService } from '@lenserfight/data/repositories'
 import { useLenserWorkspace } from '@lenserfight/features/profile'
-import { useQuery, useQueryClient } from '@tanstack/react-query'
-import { Bot, Search, Sparkles } from 'lucide-react'
+import { Drawer } from '@lenserfight/ui/overlays'
+import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query'
+import { Bot, Plus, Search, Sparkles } from 'lucide-react'
 import React, { useEffect, useMemo, useState } from 'react'
-import { Link } from 'react-router-dom'
 
 import { useAgentWorkspace } from '../../context/AgentWorkspaceContext'
 import { EmptyPanel } from '../EmptyPanel'
@@ -31,14 +31,36 @@ export const InstructionsSection: React.FC = () => {
   const [selectedVersionId, setSelectedVersionId] = useState('')
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [createLensDrawer, setCreateLensDrawer] = useState(false)
+  const [newLensTitle, setNewLensTitle] = useState('')
+  const [newLensError, setNewLensError] = useState<string | null>(null)
 
-  const lensOwner = humanWorkspace ?? profile
+  const ownerHandle = humanWorkspace?.handle ?? agentProfile?.owner_handle ?? profile.handle
+  const ownerId = humanWorkspace?.id ?? agentProfile?.owner_lenser_id ?? profile.id
 
   const ownedLensesQuery = useQuery<LensViewModel[]>({
-    queryKey: queryKeys.lenses.personal(lensOwner.id),
-    queryFn: () => lensesService.getLenserLenses(lensOwner.handle, 0, 60, lensOwner.id),
+    queryKey: queryKeys.lenses.personal(ownerId),
+    queryFn: () => lensesService.getLenserLenses(ownerHandle, 0, 60, ownerId),
     enabled: isOwner,
     staleTime: 30_000,
+  })
+
+  const [newLensContent, setNewLensContent] = useState('')
+
+  const createLens = useMutation({
+    mutationFn: async ({ title, content }: { title: string; content: string }) => {
+      return lensesService.createLens({ title, content, visibility: 'private', tagIds: [] })
+    },
+    onSuccess: async (newLens) => {
+      await queryClient.invalidateQueries({ queryKey: queryKeys.lenses.personal(ownerId) })
+      setSelectedLensId(newLens.id)
+      setSelectedVersionId('')
+      setCreateLensDrawer(false)
+      setNewLensTitle('')
+      setNewLensContent('')
+      setNewLensError(null)
+    },
+    onError: (cause) => setNewLensError((cause as Error).message ?? 'Failed to create lens.'),
   })
 
   const searchQuery = useQuery({
@@ -110,12 +132,12 @@ export const InstructionsSection: React.FC = () => {
       title="Instruction lens binding"
       description="Instead of personality profiles, the selected AI lenser now uses a bound lens version as its default instruction source. That keeps instructions versioned, reusable, and consistent with the rest of the product."
       toolbar={
-        <Link
-          to="/lenses"
+        <a
+          href="/lenses"
           className="rounded-2xl border border-gray-200 px-4 py-2 text-sm font-semibold text-gray-700 transition hover:border-amber-300 hover:text-amber-700 dark:border-gray-700 dark:text-gray-200"
         >
           Open lens studio
-        </Link>
+        </a>
       }
     >
       <BootstrapStatusPanel state={bootstrapState} />
@@ -245,16 +267,80 @@ export const InstructionsSection: React.FC = () => {
                 <Sparkles size={14} />
                 {saving ? 'Binding…' : 'Bind instruction lens'}
               </button>
-              <Link
-                to="/lenses"
+              <button
+                type="button"
+                onClick={() => { setNewLensTitle(''); setNewLensContent(''); setNewLensError(null); setCreateLensDrawer(true) }}
                 className="inline-flex items-center gap-2 rounded-2xl border border-gray-200 px-4 py-2 text-sm font-semibold text-gray-700 transition hover:border-amber-300 hover:text-amber-700 dark:border-gray-700 dark:text-gray-200"
               >
+                <Plus size={14} />
                 Create a new lens
-              </Link>
+              </button>
             </div>
           </div>
         </ProfileCard>
       </div>
+      <Drawer
+        open={createLensDrawer}
+        onClose={() => setCreateLensDrawer(false)}
+        side="right"
+        width="w-[480px]"
+        title="Create a new lens"
+      >
+        <div className="space-y-4">
+          <p className="text-sm text-gray-500 dark:text-gray-400">
+            The lens will be created as a private draft. You can publish it from the lens studio later.
+          </p>
+          <label className="block">
+            <span className="mb-1 block text-xs font-semibold uppercase tracking-[0.18em] text-gray-500 dark:text-gray-400">
+              Title
+            </span>
+            <input
+              value={newLensTitle}
+              onChange={(e) => setNewLensTitle(e.target.value)}
+              placeholder="e.g. System instructions v1"
+              className="w-full rounded-2xl border border-gray-200 bg-white px-4 py-2.5 text-sm text-gray-900 outline-none focus:border-amber-400 dark:border-gray-700 dark:bg-gray-900 dark:text-white"
+            />
+          </label>
+          <label className="block">
+            <span className="mb-1 block text-xs font-semibold uppercase tracking-[0.18em] text-gray-500 dark:text-gray-400">
+              Content
+            </span>
+            <textarea
+              rows={8}
+              value={newLensContent}
+              onChange={(e) => setNewLensContent(e.target.value)}
+              placeholder="Write the instruction content for this lens (at least 50 characters)..."
+              className="w-full resize-none rounded-2xl border border-gray-200 bg-white px-4 py-2.5 text-sm text-gray-900 outline-none focus:border-amber-400 dark:border-gray-700 dark:bg-gray-900 dark:text-white"
+            />
+            <span className="mt-1 block text-xs text-gray-400 dark:text-gray-500">
+              {newLensContent.length} / 50 min characters
+            </span>
+          </label>
+          {newLensError && (
+            <p className="rounded-2xl border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700 dark:border-red-500/30 dark:bg-red-500/10 dark:text-red-200">
+              {newLensError}
+            </p>
+          )}
+          <div className="flex justify-end gap-2 pt-2">
+            <button
+              type="button"
+              onClick={() => setCreateLensDrawer(false)}
+              className="rounded-2xl border border-gray-200 px-4 py-2 text-sm font-semibold text-gray-700 hover:border-gray-400 dark:border-gray-700 dark:text-gray-200"
+            >
+              Cancel
+            </button>
+            <button
+              type="button"
+              onClick={() => { if (newLensTitle.trim() && newLensContent.trim()) createLens.mutate({ title: newLensTitle.trim(), content: newLensContent.trim() }) }}
+              disabled={createLens.isPending || !newLensTitle.trim() || newLensContent.trim().length < 50}
+              className="inline-flex items-center gap-2 rounded-2xl bg-gray-900 px-4 py-2 text-sm font-semibold text-white transition hover:bg-amber-600 disabled:opacity-50 dark:bg-white dark:text-gray-900"
+            >
+              <Plus size={14} />
+              {createLens.isPending ? 'Creating…' : 'Create lens'}
+            </button>
+          </div>
+        </div>
+      </Drawer>
     </SectionPage>
   )
 }

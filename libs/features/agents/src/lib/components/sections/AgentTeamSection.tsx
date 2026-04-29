@@ -29,13 +29,12 @@ export const AgentTeamSection: React.FC = () => {
     profile,
     bootstrap,
     bootstrapState,
-    viewMode,
+    isOwner,
     activeTeamId,
     ownerFleetAgents,
     ownerFleetAgentsLoading,
   } = useAgentWorkspace()
   const queryClient = useQueryClient()
-  const isAgentOwner = viewMode === 'agent_owner'
 
   const [selectedTeamId, setSelectedTeamId] = useState(activeTeamId ?? '')
   const [createTeamOpen, setCreateTeamOpen] = useState(false)
@@ -191,7 +190,7 @@ export const AgentTeamSection: React.FC = () => {
   const edgesTeamEdges =
     (edgesState.team ? teams.find((team) => team.id === edgesState.team?.id)?.edges ?? [] : []) as AgentTeamEdgeRecord[]
 
-  if (!isAgentOwner) {
+  if (!isOwner) {
     return (
       <SectionPage
         eyebrow="Builder"
@@ -200,8 +199,8 @@ export const AgentTeamSection: React.FC = () => {
       >
         <EmptyPanel
           icon={<Network size={20} />}
-          title="Builder is owner-only"
-          description="Public viewers can inspect the overview and workflow library, but only the owner can edit the team graph."
+          title="Owner access required"
+          description="Only the owner of this AI lenser can view and edit the builder graph."
         />
       </SectionPage>
     )
@@ -216,7 +215,8 @@ export const AgentTeamSection: React.FC = () => {
         <button
           type="button"
           onClick={() => setCreateTeamOpen(true)}
-          className="inline-flex items-center gap-2 rounded-2xl bg-gray-900 px-4 py-2 text-sm font-semibold text-white transition hover:bg-amber-600 dark:bg-white dark:text-gray-900"
+          disabled={!bootstrap}
+          className="inline-flex items-center gap-2 rounded-2xl bg-gray-900 px-4 py-2 text-sm font-semibold text-white transition hover:bg-amber-600 disabled:opacity-50 dark:bg-white dark:text-gray-900"
         >
           <Plus size={14} />
           New team
@@ -225,27 +225,26 @@ export const AgentTeamSection: React.FC = () => {
     >
       <BootstrapStatusPanel state={bootstrapState} />
 
-      {bootstrap && (
-        <AgentGraphShell
-          nodes={nodes}
-          edges={edges}
-          onConnect={handleConnect}
-          emptyState={{
-            title: selectedTeam ? 'No members on this builder yet' : 'No active team exists',
-            description: selectedTeam
-              ? 'Add agents from the owner palette to start composing a live team graph.'
-              : 'Create a builder team first, then connect agents on the canvas to shape professional handoffs and review lanes.',
-            action: (
-              <button
-                type="button"
-                onClick={() => setCreateTeamOpen(true)}
-                className="rounded-2xl bg-gray-900 px-4 py-2 text-sm font-semibold text-white transition hover:bg-amber-600 dark:bg-white dark:text-gray-900"
-              >
-                Create team
-              </button>
-            ),
-          }}
-          sidePanel={
+      <AgentGraphShell
+        nodes={nodes}
+        edges={edges}
+        onConnect={bootstrap ? handleConnect : undefined}
+        emptyState={{
+          title: selectedTeam ? 'No members on this builder yet' : 'No active team exists',
+          description: selectedTeam
+            ? 'Add agents from the owner palette to start composing a live team graph.'
+            : 'Create a builder team first, then connect agents on the canvas to shape professional handoffs and review lanes.',
+          action: bootstrap ? (
+            <button
+              type="button"
+              onClick={() => setCreateTeamOpen(true)}
+              className="rounded-2xl bg-gray-900 px-4 py-2 text-sm font-semibold text-white transition hover:bg-amber-600 dark:bg-white dark:text-gray-900"
+            >
+              Create team
+            </button>
+          ) : undefined,
+        }}
+        sidePanel={
             <>
               <ProfileCard
                 title="Team in focus"
@@ -288,7 +287,7 @@ export const AgentTeamSection: React.FC = () => {
                             setAddMemberState({
                               open: true,
                               teamId: selectedTeam.id,
-                              defaultAgentId: bootstrap.ai_lenser_id,
+                              defaultAgentId: bootstrap?.ai_lenser_id,
                               initial: null,
                             })
                           }
@@ -399,7 +398,6 @@ export const AgentTeamSection: React.FC = () => {
             </>
           }
         />
-      )}
 
       <div className="grid gap-4 md:grid-cols-2">
         {members.map((member) => (
@@ -425,17 +423,15 @@ export const AgentTeamSection: React.FC = () => {
         ))}
       </div>
 
-      {bootstrap && (
-        <CreateTeamDrawer
-          open={createTeamOpen}
-          onClose={() => setCreateTeamOpen(false)}
-          aiLenserId={bootstrap.ai_lenser_id}
-          onCreated={() => {
-            invalidate()
-            setCreateTeamOpen(false)
-          }}
-        />
-      )}
+      <CreateTeamDrawer
+        open={createTeamOpen && !!bootstrap}
+        onClose={() => setCreateTeamOpen(false)}
+        aiLenserId={bootstrap?.ai_lenser_id ?? ''}
+        onCreated={() => {
+          invalidate()
+          setCreateTeamOpen(false)
+        }}
+      />
 
       <AddTeamMemberDrawer
         open={addMemberState.open}
