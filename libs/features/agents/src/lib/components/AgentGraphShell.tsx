@@ -46,7 +46,7 @@ export const AgentGraphShell: React.FC<AgentGraphShellProps> = ({
           fitViewOptions={{ padding: 0.2 }}
           panOnScroll
           nodesConnectable={!readOnly}
-          nodesDraggable={false}
+          nodesDraggable={!readOnly}
           nodesFocusable={!readOnly}
           elementsSelectable={!readOnly}
           proOptions={{ hideAttribution: true }}

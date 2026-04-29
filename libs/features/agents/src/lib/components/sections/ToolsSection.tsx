@@ -35,7 +35,7 @@ import type {
 type Tab = 'templates' | 'registry' | 'profiles' | 'assignments'
 
 export const ToolsSection: React.FC = () => {
-  const { bootstrap, profile, viewMode } = useAgentWorkspace()
+  const { bootstrap, profile, isOwner } = useAgentWorkspace()
   const { humanWorkspace } = useLenserWorkspace()
   const queryClient = useQueryClient()
   const [tab, setTab] = useState<Tab>('templates')
@@ -55,7 +55,6 @@ export const ToolsSection: React.FC = () => {
     onConfirm: () => void
   } | null>(null)
 
-  const isAgentOwner = viewMode === 'agent_owner'
   const registryOwnerId = humanWorkspace?.id ?? profile.id
   const profiles =
     (bootstrap?.profiles.tools as AgentToolProfileRecord[] | undefined) ?? []
@@ -63,7 +62,7 @@ export const ToolsSection: React.FC = () => {
   const registryQuery = useQuery<ToolRegistryRecord[]>({
     queryKey: queryKeys.agents.toolRegistry(registryOwnerId),
     queryFn: () => agentWorkspaceService.listToolRegistry(registryOwnerId),
-    enabled: isAgentOwner,
+    enabled: isOwner,
     staleTime: 30_000,
   })
 
@@ -71,7 +70,7 @@ export const ToolsSection: React.FC = () => {
     queryKey: queryKeys.agents.toolAssignments(bootstrap?.ai_lenser_id ?? ''),
     queryFn: () =>
       agentWorkspaceService.listToolAssignments(bootstrap!.ai_lenser_id),
-    enabled: isAgentOwner && !!bootstrap?.ai_lenser_id,
+    enabled: isOwner && !!bootstrap?.ai_lenser_id,
     staleTime: 30_000,
   })
 
@@ -128,7 +127,7 @@ export const ToolsSection: React.FC = () => {
   }
 
   const toolbar = (() => {
-    if (!isAgentOwner || !bootstrap) return undefined
+    if (!isOwner || !bootstrap) return undefined
 
     if (tab === 'templates') {
       return (
@@ -485,7 +484,7 @@ export const ToolsSection: React.FC = () => {
           </div>
         ))}
 
-      {isAgentOwner && bootstrap && (
+      {isOwner && bootstrap && (
         <>
           <ToolProfileDrawer
             open={profileDrawer}
