@@ -1,16 +1,18 @@
 import { queryKeys } from '@lenserfight/data/cache'
 import { agentWorkspaceService } from '@lenserfight/data/repositories'
-import { AICatalogShowroom } from '@lenserfight/features/generations'
-import type { AgentModelProfileRecord } from '@lenserfight/types'
+import { useAICatalogModels } from '@lenserfight/features/generations'
+import type { AIModelCatalogEntry, AgentModelProfileRecord } from '@lenserfight/types'
 import { AlertDialog } from '@lenserfight/ui/overlays'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
-import { Pencil, Star, Trash2 } from 'lucide-react'
-import React, { useState } from 'react'
+import { Cpu, Pencil, Star, Trash2 } from 'lucide-react'
+import React, { useMemo, useState } from 'react'
 import { toast } from 'sonner'
 
 import { useAgentWorkspace } from '../../context/AgentWorkspaceContext'
 import { BindModelDrawer } from '../drawers/BindModelDrawer'
+import { EmptyPanel } from '../EmptyPanel'
 
+import { ProfileCard } from './_shared'
 import { SectionPage } from './SectionPage'
 
 export const ModelsSection: React.FC = () => {
@@ -24,7 +26,14 @@ export const ModelsSection: React.FC = () => {
     onConfirm: () => void
   } | null>(null)
 
-  const modelProfiles = (bootstrap?.profiles?.models as AgentModelProfileRecord[] | undefined) ?? []
+  const catalogQuery = useAICatalogModels()
+  const modelProfiles =
+    (bootstrap?.profiles?.models as AgentModelProfileRecord[] | undefined) ?? []
+
+  const sortedModels = useMemo(
+    () => [...(catalogQuery.data ?? [])].sort(compareModelsByCost),
+    [catalogQuery.data]
+  )
 
   const invalidate = () =>
     queryClient.invalidateQueries({
@@ -32,13 +41,7 @@ export const ModelsSection: React.FC = () => {
     })
 
   const create = useMutation({
-    mutationFn: (model: {
-      provider_key: string
-      key: string
-      name: string
-      id: string
-      support_level: string
-    }) =>
+    mutationFn: (model: AIModelCatalogEntry) =>
       agentWorkspaceService.createModelProfile({
         ai_lenser_id: bootstrap!.ai_lenser_id,
         name: `${model.name} profile`,
@@ -48,42 +51,110 @@ export const ModelsSection: React.FC = () => {
         support_level: model.support_level,
         params: { temperature: 0.4, maxTokens: 4096 },
       }),
-    onSuccess: () => { toast.success('Model profile created'); invalidate() },
-    onError: (e) => toast.error((e as Error).message),
+    onSuccess: () => {
+      toast.success('Model profile created')
+      invalidate()
+    },
+    onError: (cause) => toast.error((cause as Error).message),
   })
 
   const deleteProfile = useMutation({
     mutationFn: (id: string) => agentWorkspaceService.deleteModelProfile(id),
-    onSuccess: () => { toast.success('Model profile deleted'); invalidate() },
-    onError: (e) => toast.error((e as Error).message),
+    onSuccess: () => {
+      toast.success('Model profile deleted')
+      invalidate()
+    },
+    onError: (cause) => toast.error((cause as Error).message),
   })
 
   return (
     <SectionPage
       eyebrow="Models"
-      title="Model catalog and bindings"
-      description="Browse available LLMs and bind defaults / fallbacks to this workspace. Selecting a model creates a model profile bound to the agent."
+      title="Model catalog"
+      description="Review every available model, sorted by current list price, then bind the ones that should be available to this AI lenser. Models without pricing remain visible but sort after priced entries."
     >
-      {isOwner && (
-        <AICatalogShowroom
-          embedded
-          focus="models"
-          title="Agent model showroom"
-          onModelSelect={(model) =>
-            bootstrap &&
-            create.mutate({
-              id: model.id,
-              key: model.key,
-              name: model.name,
-              provider_key: model.provider_key,
-              support_level: model.support_level,
-            })
-          }
-        />
-      )}
+      <ProfileCard
+        title="Catalog"
+        subtitle="This is the catalog view for the selected AI lenser. Bind from here instead of jumping to the global showroom."
+      >
+        {catalogQuery.isLoading ? (
+          <CenteredLoader label="Loading models..." />
+        ) : catalogQuery.isError ? (
+          <EmptyPanel
+            icon={<Cpu size={20} />}
+            title="Models failed to load"
+            description={
+              catalogQuery.error instanceof Error
+                ? catalogQuery.error.message
+                : 'The AI catalog request failed.'
+            }
+          />
+        ) : sortedModels.length === 0 ? (
+          <EmptyPanel
+            icon={<Cpu size={20} />}
+            title="No models available"
+            description="The catalog RPC returned no active models. Check the provider and pricing seed state before relying on this page."
+          />
+        ) : (
+          <div className="overflow-x-auto rounded-[24px] border border-gray-200 dark:border-gray-800">
+            <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-800">
+              <thead className="bg-gray-50 dark:bg-gray-950">
+                <tr className="text-left text-xs font-semibold uppercase tracking-[0.18em] text-gray-500 dark:text-gray-400">
+                  <th className="px-4 py-3">Model</th>
+                  <th className="px-4 py-3">Provider</th>
+                  <th className="px-4 py-3">Cost</th>
+                  <th className="px-4 py-3">Support</th>
+                  {isOwner && <th className="px-4 py-3" />}
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-200 bg-white text-sm dark:divide-gray-800 dark:bg-gray-900">
+                {sortedModels.map((model) => (
+                  <tr key={model.id}>
+                    <td className="px-4 py-3">
+                      <div className="font-medium text-gray-900 dark:text-white">
+                        {model.name}
+                      </div>
+                      <div className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                        {model.key}
+                      </div>
+                    </td>
+                    <td className="px-4 py-3 text-gray-600 dark:text-gray-300">
+                      {model.provider_name}
+                    </td>
+                    <td className="px-4 py-3 text-gray-600 dark:text-gray-300">
+                      {formatModelPricing(model)}
+                    </td>
+                    <td className="px-4 py-3 text-gray-600 dark:text-gray-300">
+                      {model.support_level}
+                    </td>
+                    {isOwner && (
+                      <td className="px-4 py-3">
+                        <button
+                          type="button"
+                          onClick={() => bootstrap && create.mutate(model)}
+                          disabled={!bootstrap || create.isPending}
+                          className="rounded-2xl border border-gray-200 px-3 py-1.5 text-xs font-semibold text-gray-700 transition hover:border-amber-300 hover:text-amber-700 disabled:opacity-50 dark:border-gray-700 dark:text-gray-200"
+                        >
+                          Bind model
+                        </button>
+                      </td>
+                    )}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </ProfileCard>
 
-      {modelProfiles.length > 0 && (
-        <div className="mt-6">
+      {modelProfiles.length === 0 ? (
+        <EmptyPanel
+          icon={<Star size={20} />}
+          title="No bound model profiles yet"
+          description="Bind at least one model from the catalog above so the selected AI lenser has an explicit runtime default and fallback set."
+        />
+      ) : (
+        <div>
           <p className="mb-3 text-xs font-semibold uppercase tracking-[0.18em] text-gray-500 dark:text-gray-400">
             Bound model profiles
           </p>
@@ -100,22 +171,22 @@ export const ModelsSection: React.FC = () => {
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-200 bg-white text-sm dark:divide-gray-800 dark:bg-gray-900">
-                {modelProfiles.map((mp) => (
-                  <tr key={mp.id}>
+                {modelProfiles.map((modelProfile) => (
+                  <tr key={modelProfile.id}>
                     <td className="px-4 py-3 font-medium text-gray-900 dark:text-white">
-                      {mp.name}
+                      {modelProfile.name}
                     </td>
                     <td className="px-4 py-3 font-mono text-xs text-gray-500 dark:text-gray-400">
-                      {mp.model_key ?? mp.model_id ?? '—'}
+                      {modelProfile.model_key ?? modelProfile.model_id ?? '—'}
                     </td>
                     <td className="px-4 py-3 text-gray-500 dark:text-gray-400">
-                      {mp.provider_key ?? '—'}
+                      {modelProfile.provider_key ?? '—'}
                     </td>
                     <td className="px-4 py-3 text-gray-500 dark:text-gray-400">
-                      {(mp.params?.temperature as number | undefined) ?? '—'}
+                      {(modelProfile.params?.temperature as number | undefined) ?? '—'}
                     </td>
                     <td className="px-4 py-3">
-                      {mp.is_default && (
+                      {modelProfile.is_default && (
                         <Star
                           size={14}
                           className="text-amber-500"
@@ -128,7 +199,7 @@ export const ModelsSection: React.FC = () => {
                         <div className="flex items-center gap-1">
                           <button
                             type="button"
-                            onClick={() => setEditTarget(mp)}
+                            onClick={() => setEditTarget(modelProfile)}
                             aria-label="Edit model profile"
                             className="rounded-xl p-1.5 text-gray-400 hover:bg-gray-100 hover:text-gray-700 dark:hover:bg-gray-800 dark:hover:text-gray-200"
                           >
@@ -139,8 +210,8 @@ export const ModelsSection: React.FC = () => {
                             onClick={() =>
                               setConfirmState({
                                 title: 'Delete model profile?',
-                                body: `Delete "${mp.name}"? This cannot be undone.`,
-                                onConfirm: () => deleteProfile.mutate(mp.id),
+                                body: `Delete "${modelProfile.name}"? This cannot be undone.`,
+                                onConfirm: () => deleteProfile.mutate(modelProfile.id),
                               })
                             }
                             aria-label="Delete model profile"
@@ -179,10 +250,67 @@ export const ModelsSection: React.FC = () => {
         variant="destructive"
         confirmAction={{
           label: 'Delete',
-          onClick: () => { confirmState?.onConfirm(); setConfirmState(null) },
+          onClick: () => {
+            confirmState?.onConfirm()
+            setConfirmState(null)
+          },
           loading: deleteProfile.isPending,
         }}
       />
     </SectionPage>
   )
 }
+
+function compareModelsByCost(left: AIModelCatalogEntry, right: AIModelCatalogEntry) {
+  const leftScore = modelCostScore(left)
+  const rightScore = modelCostScore(right)
+
+  if (leftScore === null && rightScore === null) {
+    return left.name.localeCompare(right.name)
+  }
+  if (leftScore === null) return 1
+  if (rightScore === null) return -1
+  if (leftScore !== rightScore) return leftScore - rightScore
+  return left.name.localeCompare(right.name)
+}
+
+function modelCostScore(model: AIModelCatalogEntry): number | null {
+  if (model.unit_type && model.unit_type !== 'tokens') {
+    return model.cost_per_unit
+  }
+  if (
+    model.input_cost_per_1k_tokens === null &&
+    model.output_cost_per_1k_tokens === null
+  ) {
+    return null
+  }
+  return (
+    (model.input_cost_per_1k_tokens ?? 0) +
+    (model.output_cost_per_1k_tokens ?? 0)
+  )
+}
+
+function formatModelPricing(model: AIModelCatalogEntry): string {
+  if (model.unit_type && model.unit_type !== 'tokens') {
+    return model.cost_per_unit !== null
+      ? `$${model.cost_per_unit.toFixed(4)} / ${model.unit_type}`
+      : 'Pricing unavailable'
+  }
+
+  if (
+    model.input_cost_per_1k_tokens === null &&
+    model.output_cost_per_1k_tokens === null
+  ) {
+    return 'Pricing unavailable'
+  }
+
+  const input = model.input_cost_per_1k_tokens?.toFixed(4) ?? '0.0000'
+  const output = model.output_cost_per_1k_tokens?.toFixed(4) ?? '0.0000'
+  return `$${input} in / $${output} out`
+}
+
+const CenteredLoader: React.FC<{ label: string }> = ({ label }) => (
+  <div className="flex min-h-[280px] items-center justify-center rounded-[24px] border border-gray-200 bg-white text-sm text-gray-500 dark:border-gray-800 dark:bg-gray-900 dark:text-gray-400">
+    {label}
+  </div>
+)
