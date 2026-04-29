@@ -21,6 +21,7 @@ import { notificationService } from '@lenserfight/data/repositories'
 import { useAuth } from '@lenserfight/features/auth'
 import { FeedbackModal } from '@lenserfight/features/feedback'
 import { useLenser, useSidebarProfile, useHasLenserProfile, useLenserWorkspace } from '@lenserfight/features/profile'
+import { AgentSettingsSheet } from '@lenserfight/features/agents'
 import { FEATURES } from '@lenserfight/utils/env'
 import { useTheme } from '@lenserfight/ui/theme'
 import type { Theme } from '@lenserfight/ui/theme'
@@ -28,7 +29,6 @@ import type { Theme } from '@lenserfight/ui/theme'
 import { SidebarItem } from './SidebarItem'
 import { buildAgentSidebarSections } from './agentSidebar'
 import { buildHumanSidebarSections } from './humanSidebar'
-import { SidebarModeHeader } from './SidebarModeHeader'
 import { useWorkspaceMode } from './useWorkspaceMode'
 
 const THEME_CYCLE: Theme[] = ['light', 'dark', 'system']
@@ -117,8 +117,11 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
   const [unreadCount, setUnreadCount] = useState(0)
   const [isFeedbackOpen, setIsFeedbackOpen] = useState(false)
+  const [agentSettingsOpen, setAgentSettingsOpen] = useState(false)
   const [shownThemeName, setShownThemeName] = useState<string | null>(null)
   const themeNameTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  const isAIWorkspace = workspaceMode === 'agent'
 
   useEffect(() => {
     if (!authLenser || !FEATURES.NOTIFICATIONS) return
@@ -583,7 +586,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                             My Profile
                           </button>
 
-                          {FEATURES.AGENTS && hasLenser && (
+                          {FEATURES.AGENTS && hasLenser && !isAIWorkspace && (
                             <button
                               role="menuitem"
                               className="w-full text-left px-3 py-2 rounded-lg text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white flex items-center gap-3 transition-colors"
@@ -594,6 +597,20 @@ export const Sidebar: React.FC<SidebarProps> = ({
                             >
                               <Bot size={16} className="text-gray-400" />
                               My Agents
+                            </button>
+                          )}
+
+                          {isAIWorkspace && activeWorkspace && (
+                            <button
+                              role="menuitem"
+                              className="w-full text-left px-3 py-2 rounded-lg text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white flex items-center gap-3 transition-colors"
+                              onClick={() => {
+                                setIsDropdownOpen(false)
+                                navigate(`/lenser/${activeWorkspace.handle}/ag/overview`)
+                              }}
+                            >
+                              <Bot size={16} className="text-amber-500" />
+                              Control Room
                             </button>
                           )}
 
@@ -639,17 +656,31 @@ export const Sidebar: React.FC<SidebarProps> = ({
                             </span>
                           </button>
 
-                          <button
-                            role="menuitem"
-                            className="w-full text-left px-3 py-2 rounded-lg text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white flex items-center gap-3 transition-colors"
-                            onClick={() => {
-                              setIsDropdownOpen(false)
-                              navigate('/settings/account')
-                            }}
-                          >
-                            <Settings size={16} className="text-gray-400" />
-                            Settings
-                          </button>
+                          {isAIWorkspace && activeWorkspace ? (
+                            <button
+                              role="menuitem"
+                              className="w-full text-left px-3 py-2 rounded-lg text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white flex items-center gap-3 transition-colors"
+                              onClick={() => {
+                                setIsDropdownOpen(false)
+                                setAgentSettingsOpen(true)
+                              }}
+                            >
+                              <Bot size={16} className="text-amber-500" />
+                              Agent Settings
+                            </button>
+                          ) : (
+                            <button
+                              role="menuitem"
+                              className="w-full text-left px-3 py-2 rounded-lg text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white flex items-center gap-3 transition-colors"
+                              onClick={() => {
+                                setIsDropdownOpen(false)
+                                navigate('/settings/account')
+                              }}
+                            >
+                              <Settings size={16} className="text-gray-400" />
+                              Settings
+                            </button>
+                          )}
                         </div>
                         <div className="h-px bg-gray-100 dark:bg-gray-700 my-0"></div>
                         <div className="p-1">
@@ -678,6 +709,15 @@ export const Sidebar: React.FC<SidebarProps> = ({
       </aside>
 
       <FeedbackModal isOpen={isFeedbackOpen} onClose={() => setIsFeedbackOpen(false)} />
+
+      {isAIWorkspace && activeWorkspace && (
+        <AgentSettingsSheet
+          open={agentSettingsOpen}
+          onClose={() => setAgentSettingsOpen(false)}
+          profileId={activeWorkspace.id}
+          handle={activeWorkspace.handle}
+        />
+      )}
     </>
   )
 }
