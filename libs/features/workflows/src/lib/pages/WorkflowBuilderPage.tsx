@@ -6,7 +6,7 @@ import { Avatar, Badge, Button } from '@lenserfight/ui/components'
 import { useQuery } from '@tanstack/react-query'
 import { ArrowLeft, Bookmark, CalendarClock, ChevronDown, GitBranch, GitFork, History, Layers, Lock, Pencil, Play, Square, Swords, ThumbsUp, X } from 'lucide-react'
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import { toast } from 'sonner'
 
 import { CreateWorkflowWizard } from '../components/CreateWorkflowWizard'
@@ -41,6 +41,7 @@ interface WorkflowBuilderPageProps {
 
 export function WorkflowBuilderPage({ workflowId, onBattleClick }: WorkflowBuilderPageProps) {
   const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
   const { user } = useAuth()
   const { workflow, nodes, edges, isLoading } = useWorkflow(workflowId)
   const { models, isLoading: modelsLoading } = useAIModels()
@@ -49,6 +50,7 @@ export function WorkflowBuilderPage({ workflowId, onBattleClick }: WorkflowBuild
   const [runPanelTab, setRunPanelTab] = useState<'run' | 'history' | 'schedule'>('run')
   const [builderMode, setBuilderMode] = useState<'canvas' | 'phases'>('canvas')
   const [selectedHistoryRunId, setSelectedHistoryRunId] = useState<string | null>(null)
+  const returnTo = searchParams.get('returnTo') || '/workflows'
 
   // Provider/model selection state (replaces globalModelId SelectField)
   const [selectedProviderKey, setSelectedProviderKey] = useState('')
@@ -313,7 +315,7 @@ export function WorkflowBuilderPage({ workflowId, onBattleClick }: WorkflowBuild
         <Button
           variant="ghost"
           size="sm"
-          onClick={() => navigate('/workflows')}
+          onClick={() => navigate(returnTo)}
           className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-xl !p-0 text-greyscale-400 hover:text-greyscale-700 hover:bg-surface-raised transition-colors dark:hover:text-greyscale-200"
           title="Back to workflows"
         >
