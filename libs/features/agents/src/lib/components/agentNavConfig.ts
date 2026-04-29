@@ -3,6 +3,7 @@ import {
   Activity,
   AlertTriangle,
   Bot,
+  Brain,
   CalendarClock,
   ClipboardCheck,
   ClipboardList,
@@ -33,6 +34,7 @@ export type AgentSection =
   | 'evaluations'
   | 'memory'
   | 'instructions'
+  | 'personality'
   | 'tools'
   | 'models'
   | 'providers'
@@ -77,6 +79,7 @@ export const NAV_ITEMS: AgentNavItem[] = [
   // CONFIGURE
   { id: 'memory', label: 'Memory', zone: 'configure', icon: Sparkles, visibleIn: OWNER_ONLY },
   { id: 'instructions', label: 'Instructions', zone: 'configure', icon: Bot, visibleIn: OWNER_ONLY },
+  { id: 'personality', label: 'Personality', zone: 'configure', icon: Brain, visibleIn: OWNER_ONLY },
   { id: 'tools', label: 'Tools', zone: 'configure', icon: Wrench, visibleIn: OWNER_ONLY },
   { id: 'models', label: 'Models', zone: 'configure', icon: Cpu, visibleIn: OWNER_ONLY },
   { id: 'providers', label: 'Providers', zone: 'configure', icon: AlertTriangle, visibleIn: OWNER_ONLY },
@@ -85,9 +88,7 @@ export const NAV_ITEMS: AgentNavItem[] = [
   { id: 'settings', label: 'Settings', zone: 'configure', icon: SettingsIcon, visibleIn: AGENT_OWNER_ONLY },
 ]
 
-export const LEGACY_AGENT_SECTION_ALIASES: Record<string, AgentSection> = {
-  personality: 'instructions',
-}
+export const LEGACY_AGENT_SECTION_ALIASES: Record<string, AgentSection> = {}
 
 export const AGENT_NAV_ZONES: AgentNavZone[] = ['operate', 'automate', 'configure']
 
