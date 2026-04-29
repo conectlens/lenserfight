@@ -397,11 +397,6 @@ export const WebRouter: React.FC = () => {
         />
 
         <Route
-          path="/lenser/:handle/ag/personality"
-          element={<LenserAgentSectionRedirect section="instructions" />}
-        />
-
-        <Route
           path="/lenser/:handle/ag/:section"
           element={
             <DashboardFrame>
@@ -434,6 +429,20 @@ export const WebRouter: React.FC = () => {
           path="/lenser/:handle/sc"
           element={<LenserAgentSectionRedirect section="schedules" />}
         />
+
+        <Route path="/lenser/:handle/rv" element={<LenserAgentSectionRedirect section="runs" />} />
+        <Route path="/lenser/:handle/ap" element={<LenserAgentSectionRedirect section="approvals" />} />
+        <Route path="/lenser/:handle/me" element={<LenserAgentSectionRedirect section="memory" />} />
+        <Route path="/lenser/:handle/in" element={<LenserAgentSectionRedirect section="instructions" />} />
+        <Route path="/lenser/:handle/to" element={<LenserAgentSectionRedirect section="tools" />} />
+        <Route path="/lenser/:handle/mo" element={<LenserAgentSectionRedirect section="models" />} />
+        <Route path="/lenser/:handle/pr" element={<LenserAgentSectionRedirect section="providers" />} />
+        <Route path="/lenser/:handle/co" element={<LenserAgentSectionRedirect section="cost" />} />
+        <Route path="/lenser/:handle/st" element={<LenserAgentSectionRedirect section="settings" />} />
+        <Route path="/lenser/:handle/sp" element={<LenserAgentSectionRedirect section="scratchpad" />} />
+        <Route path="/lenser/:handle/tm" element={<LenserAgentSectionRedirect section="team" />} />
+        <Route path="/lenser/:handle/pe" element={<LenserAgentSectionRedirect section="personality" />} />
+        <Route path="/lenser/:handle/ev" element={<LenserAgentSectionRedirect section="evaluations" />} />
 
         <Route path="/settings" element={<Navigate to="/settings/account" replace />} />
 

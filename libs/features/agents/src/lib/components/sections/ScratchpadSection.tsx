@@ -150,8 +150,7 @@ export const ScratchpadSection: React.FC = () => {
     mutationFn: (runId: string) =>
       agentWorkspaceService.completeScratchpadRun({
         run_id: runId,
-        output:
-          'Scratchpad executor is not wired in this environment yet. This placeholder completion keeps the workbench history usable.',
+        output: null,
         status: 'completed',
       }),
     onSuccess: () => {

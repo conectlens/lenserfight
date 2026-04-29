@@ -15,7 +15,7 @@ import { SectionPage } from './SectionPage'
 import type { AgentPersonalityProfileRecord } from '@lenserfight/types'
 
 export const PersonalitySection: React.FC = () => {
-  const { bootstrap, profile, viewMode } = useAgentWorkspace()
+  const { bootstrap, profile, isOwner } = useAgentWorkspace()
   const queryClient = useQueryClient()
   const [drawerOpen, setDrawerOpen] = useState(false)
   const [editing, setEditing] = useState<AgentPersonalityProfileRecord | null>(null)
@@ -29,7 +29,6 @@ export const PersonalitySection: React.FC = () => {
     (bootstrap?.profiles.personality as
       | AgentPersonalityProfileRecord[]
       | undefined) ?? []
-  const isAgentOwner = viewMode === 'agent_owner'
 
   const invalidate = () =>
     queryClient.invalidateQueries({
@@ -49,7 +48,7 @@ export const PersonalitySection: React.FC = () => {
       title="Personality profiles"
       description="Set communication style, autonomy posture, escalation behavior, and decision style. Personality cannot grant tools or memory access; it only shapes how the agent communicates and reasons."
       toolbar={
-        isAgentOwner && bootstrap ? (
+        isOwner && bootstrap ? (
           <button
             type="button"
             onClick={() => {
@@ -69,7 +68,22 @@ export const PersonalitySection: React.FC = () => {
           icon={<ClipboardList size={20} />}
           title="No personality profiles yet"
           description="Profiles let owners tune tone, expertise, autonomy, and escalation rules per workflow or team."
-        />
+        >
+          {isOwner && bootstrap ? (
+            <div className="mt-6 flex justify-center">
+              <button
+                type="button"
+                onClick={() => {
+                  setEditing(null)
+                  setDrawerOpen(true)
+                }}
+                className="rounded-2xl bg-gray-900 px-4 py-2 text-sm font-semibold text-white transition hover:bg-amber-600 dark:bg-white dark:text-gray-900"
+              >
+                Create personality profile
+              </button>
+            </div>
+          ) : undefined}
+        </EmptyPanel>
       ) : (
         <div className="grid gap-4 md:grid-cols-2">
           {profiles.map((p) => (
@@ -86,7 +100,7 @@ export const PersonalitySection: React.FC = () => {
                     {p.tone} · {p.expertise_level} · {p.autonomy_level}
                   </p>
                 </div>
-                {isAgentOwner && (
+                {isOwner && (
                   <div className="flex gap-2">
                     <button
                       type="button"
@@ -124,7 +138,7 @@ export const PersonalitySection: React.FC = () => {
         </div>
       )}
 
-      {isAgentOwner && bootstrap && (
+      {isOwner && bootstrap && (
         <PersonalityProfileDrawer
           open={drawerOpen}
           onClose={() => setDrawerOpen(false)}
