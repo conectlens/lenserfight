@@ -298,6 +298,27 @@ export type ScratchpadRunStatus =
   | 'failed'
   | 'cancelled'
 
+export interface ScratchpadCanvasState {
+  nodes: Array<{
+    id: string
+    x: number
+    y: number
+    label: string
+  }>
+  edges: Array<{
+    id: string
+    source: string
+    target: string
+  }>
+}
+
+export interface ScratchpadRunMetadata {
+  instruction_lens_id?: string | null
+  instruction_version_id?: string | null
+  canvas_state?: ScratchpadCanvasState | null
+  [key: string]: unknown
+}
+
 export interface ScratchpadRunRecord {
   id: string
   ai_lenser_id: string
@@ -309,7 +330,7 @@ export interface ScratchpadRunRecord {
   status: ScratchpadRunStatus
   error: string | null
   cost_credits: number
-  metadata: Record<string, unknown>
+  metadata: ScratchpadRunMetadata
   started_at: string
   completed_at: string | null
   created_at: string
@@ -319,7 +340,7 @@ export interface CreateScratchpadRunInput {
   ai_lenser_id: string
   prompt: string
   model_id?: string | null
-  metadata?: Record<string, unknown>
+  metadata?: ScratchpadRunMetadata
 }
 
 export interface CompleteScratchpadRunInput {

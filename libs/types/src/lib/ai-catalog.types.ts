@@ -23,5 +23,9 @@ export interface AIModelCatalogEntry {
   developer_summary: string
   user_summary: string
   metadata: Record<string, unknown>
+  unit_type: 'tokens' | 'image' | 'video_second' | 'audio_second' | null
+  cost_per_unit: number | null
+  input_cost_per_1k_tokens: number | null
+  output_cost_per_1k_tokens: number | null
   is_active: boolean
 }
