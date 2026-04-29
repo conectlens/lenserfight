@@ -29,7 +29,7 @@ export {
   MemorySection,
   ModelsSection,
   OverviewSection,
-  PersonalitySection,
+  InstructionsSection,
   ProvidersSection,
   RunsSection,
   SchedulesSection,
