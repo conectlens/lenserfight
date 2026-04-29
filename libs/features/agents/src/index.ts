@@ -1,3 +1,4 @@
+export { AgentSettingsSheet } from './lib/components/AgentSettingsSheet'
 export { AgentCard } from './lib/components/AgentCard'
 export { AgentStatusBadge } from './lib/components/AgentStatusBadge'
 export { AgentQuotaBar } from './lib/components/AgentQuotaBar'

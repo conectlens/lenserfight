@@ -24,12 +24,11 @@ export const ScratchpadSection: React.FC = () => {
     profile,
     bootstrap,
     bootstrapState,
-    viewMode,
+    isOwner,
     defaultInstructionBinding,
     modelBindings,
   } = useAgentWorkspace()
   const queryClient = useQueryClient()
-  const isAgentOwner = viewMode === 'agent_owner'
 
   const [prompt, setPrompt] = useState('')
   const [error, setError] = useState<string | null>(null)
@@ -39,7 +38,7 @@ export const ScratchpadSection: React.FC = () => {
   const runs = useQuery<ScratchpadRunRecord[]>({
     queryKey: queryKeys.agents.scratchpadRuns(bootstrap?.ai_lenser_id ?? ''),
     queryFn: () => agentWorkspaceService.listScratchpadRuns(bootstrap!.ai_lenser_id),
-    enabled: isAgentOwner && !!bootstrap?.ai_lenser_id,
+    enabled: isOwner && !!bootstrap?.ai_lenser_id,
     staleTime: 5_000,
   })
 
@@ -172,7 +171,7 @@ export const ScratchpadSection: React.FC = () => {
     onSuccess: invalidateRuns,
   })
 
-  if (!isAgentOwner) {
+  if (!isOwner) {
     return (
       <SectionPage
         eyebrow="Scratchpad"
