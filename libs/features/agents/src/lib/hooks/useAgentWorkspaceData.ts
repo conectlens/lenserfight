@@ -83,13 +83,18 @@ export function useAgentWorkspaceData({
     staleTime: 15_000,
   })
 
+  // Workflows are owned by the human lenser, not the AI agent.
+  // In agent_owner mode use the human owner's ID; in human_owner mode use the profile ID directly.
+  const workflowsOwnerId = isAgentOwner
+    ? (ownerFleetOwnerId ?? null)
+    : isHumanOwner
+      ? viewedProfileId
+      : null
+
   const workflowsQuery = useQuery<WorkflowRecord[]>({
-    queryKey: queryKeys.workflows.byLenser(viewedProfileId ?? ''),
-    queryFn: () => workflowsService.listByLenser(viewedProfileId!),
-    enabled:
-      (isAgentOwner || isHumanOwner) &&
-      !!viewedProfileId &&
-      !shouldSwitchWorkspace,
+    queryKey: queryKeys.workflows.byLenser(workflowsOwnerId ?? ''),
+    queryFn: () => workflowsService.listByLenser(workflowsOwnerId!),
+    enabled: !!workflowsOwnerId && !shouldSwitchWorkspace,
     staleTime: 60_000,
   })
 

@@ -4,14 +4,10 @@ import { useLenserWorkspace } from '@lenserfight/features/profile'
 import { useModalRouter } from '@lenserfight/ui/routing'
 import { useQuery } from '@tanstack/react-query'
 import {
-  Activity,
-  Bot,
   Brain,
-  CalendarClock,
   GitBranch,
   Network,
   Sparkles,
-  Wrench,
 } from 'lucide-react'
 import React from 'react'
 import { Link, useNavigate } from 'react-router-dom'
@@ -40,6 +36,7 @@ export const OverviewSection: React.FC = () => {
     ownerFleetAgentsLoading,
     defaultInstructionBinding,
   } = ctx
+  const { open } = useModalRouter()
 
   if (viewMode === 'human_owner') {
     return <HumanOwnerOverview />
@@ -258,6 +255,37 @@ export const OverviewSection: React.FC = () => {
           </ProfileCard>
         </div>
       </div>
+
+      <ProfileCard
+        title="Your agents"
+        subtitle="All AI lensers you own. Open one to enter its control room."
+        toolbar={
+          <button
+            type="button"
+            onClick={() => open('create-agent')}
+            className="rounded-2xl border border-gray-200 px-3 py-2 text-xs font-semibold text-gray-700 transition hover:border-amber-300 hover:text-amber-700 dark:border-gray-700 dark:text-gray-200"
+          >
+            Create agent
+          </button>
+        }
+      >
+        {ownerFleetAgentsLoading ? (
+          <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+            {Array.from({ length: 3 }).map((_, idx) => (
+              <div
+                key={idx}
+                className="h-36 animate-pulse rounded-2xl border border-gray-100 bg-gray-50 dark:border-gray-700 dark:bg-gray-900"
+              />
+            ))}
+          </div>
+        ) : (
+          <AgentsGrid
+            agents={ownerFleetAgents}
+            mode="owner"
+            onCreateAgent={() => open('create-agent')}
+          />
+        )}
+      </ProfileCard>
     </SectionPage>
   )
 }
