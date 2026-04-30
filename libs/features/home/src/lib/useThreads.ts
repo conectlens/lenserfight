@@ -144,15 +144,15 @@ export const usePersonalFeed = (lenserId?: string, enabled = true) => {
 
 export const usePersonalPrompts = (lenserId?: string, enabled = true) => {
   return useInfiniteQuery({
-    queryKey: lenserId ? keys.lenses.personal(lenserId) : keys.lenses.feed(),
+    queryKey: lenserId ? keys.lenses.personal(lenserId) : ['_personal_prompts_idle'],
     queryFn: async ({ pageParam = 0 }) => {
       if (!lenserId) return { data: [], meta: { hasNextPage: false, offset: 0, limit: 20 } }
       return lensesService.getPersonalFeed(lenserId, pageParam, 20)
     },
     enabled: Boolean(lenserId) && enabled,
     initialPageParam: 0,
-    getNextPageParam: (lastPage) => {
-      if (!lastPage.meta?.hasNextPage) return undefined
+    getNextPageParam: (lastPage, pages) => {
+      if (!pages || !lastPage?.meta?.hasNextPage) return undefined
       return (lastPage.meta.offset ?? 0) + (lastPage.meta.limit ?? 20)
     },
     staleTime: 1000 * 60 * 3,
