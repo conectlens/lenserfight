@@ -126,6 +126,10 @@ export const AgentWorkspaceShell: React.FC<AgentWorkspaceShellProps> = ({
     )
   }
 
+  if (isKnown && !isVisible) {
+    return <Navigate replace to={`/lenser/${profile.handle}/ag/overview`} />
+  }
+
   if (shouldSwitchWorkspace) {
     return (
       <SectionPage
