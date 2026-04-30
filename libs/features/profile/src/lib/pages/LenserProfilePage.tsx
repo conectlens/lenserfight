@@ -260,7 +260,7 @@ export const LenserProfilePage: React.FC = () => {
   })
 
   const { data: aiLenses = [] } = useQuery<LensViewModel[]>({
-    queryKey: queryKeys.lenses.personal(viewedProfile?.id ?? ''),
+    queryKey: queryKeys.lenses.byOwner(viewedProfile?.id ?? ''),
     queryFn: () =>
       lensesService.getLenserLenses(viewedProfile!.handle, 0, 48, activeWorkspace?.id),
     enabled: isAIWorkspacePanel,

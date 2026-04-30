@@ -13,6 +13,7 @@ export const queryKeys = {
     top: ['lenses', 'top'] as const,
     trending: (lang?: string) => [...queryKeys.lenses.all, 'trending', lang] as const,
     personal: (lenserId: string) => [...queryKeys.lenses.all, 'personal', lenserId] as const,
+    byOwner: (lenserId: string) => [...queryKeys.lenses.all, 'byOwner', lenserId] as const,
     following: (lenserId: string) => [...queryKeys.lenses.all, 'following', lenserId] as const,
     detail: (id: string) => [...queryKeys.lenses.all, 'detail', id] as const,
     composite: (id: string) => [...queryKeys.lenses.all, 'composite', id] as const,

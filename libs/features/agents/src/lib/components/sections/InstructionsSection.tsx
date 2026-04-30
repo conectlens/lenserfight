@@ -41,7 +41,7 @@ export const InstructionsSection: React.FC = () => {
   const ownerId = humanWorkspace?.id ?? agentProfile?.owner_lenser_id ?? profile.id
 
   const ownedLensesQuery = useQuery({
-    queryKey: queryKeys.lenses.personal(ownerId),
+    queryKey: queryKeys.lenses.byOwner(ownerId),
     queryFn: () => lensesService.getMyLenses(0, 60),
     // Defer until we have a real human owner ID to avoid querying under the AI lenser's ID
     enabled: isOwner && (!!humanWorkspace?.id || !!agentProfile?.owner_lenser_id),
@@ -62,7 +62,7 @@ export const InstructionsSection: React.FC = () => {
       return lensesService.createLens({ title, content, visibility: 'private', tagIds: [] })
     },
     onSuccess: async (newLens) => {
-      await queryClient.invalidateQueries({ queryKey: queryKeys.lenses.personal(ownerId) })
+      await queryClient.invalidateQueries({ queryKey: queryKeys.lenses.byOwner(ownerId) })
       setSelectedLensId(newLens.id)
       setSelectedVersionId('')
       setCreateLensDrawer(false)
