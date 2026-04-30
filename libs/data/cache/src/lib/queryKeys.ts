@@ -161,6 +161,8 @@ export const queryKeys = {
       [...queryKeys.agents.all, 'humanActivityFeed', humanLenserId, limit, offset] as const,
     costSummary: (aiLenserId: string) =>
       [...queryKeys.agents.all, 'costSummary', aiLenserId] as const,
+    memoryProfiles: (aiLenserId: string) =>
+      [...queryKeys.agents.all, 'memoryProfiles', aiLenserId] as const,
     scratchpadRuns: (aiLenserId: string) =>
       [...queryKeys.agents.all, 'scratchpadRuns', aiLenserId] as const,
     evaluations: (ownerLenserId: string) =>
