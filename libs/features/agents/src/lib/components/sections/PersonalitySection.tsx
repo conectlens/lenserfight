@@ -33,7 +33,7 @@ export const PersonalitySection: React.FC = () => {
 
   const saveNote = useMutation({
     mutationFn: () =>
-      agentsService.updatePersonality(bootstrap!.ai_lenser_id, noteText),
+      agentsService.updatePersonality(agentProfile!.ai_lenser_id, noteText),
     onSuccess: () => {
       toast.success('Personality note saved')
       queryClient.invalidateQueries({
@@ -97,7 +97,7 @@ export const PersonalitySection: React.FC = () => {
             <button
               type="button"
               onClick={() => saveNote.mutate()}
-              disabled={saveNote.isPending || !bootstrap}
+              disabled={saveNote.isPending || !agentProfile?.ai_lenser_id}
               className="inline-flex items-center gap-2 rounded-2xl bg-gray-900 px-4 py-2 text-sm font-semibold text-white transition hover:bg-amber-600 disabled:opacity-50 dark:bg-white dark:text-gray-900"
             >
               {saveNote.isPending ? 'Saving…' : 'Save note'}
