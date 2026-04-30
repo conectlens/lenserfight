@@ -1,27 +1,36 @@
 import { queryKeys } from '@lenserfight/data/cache'
-import { agentWorkspaceService, agentsService } from '@lenserfight/data/repositories'
-import type { AgentProfileView } from '@lenserfight/data/repositories'
+import {
+  agentWorkspaceService,
+  agentsService,
+  workflowsService,
+  type AgentProfileView,
+  type WorkflowRecord,
+} from '@lenserfight/data/repositories'
 import { Drawer } from '@lenserfight/ui/overlays'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import {
   AlertTriangle,
   Bot,
+  CalendarClock,
   Download,
-  ExternalLink,
+  Pencil,
   Save,
   Trash2,
 } from 'lucide-react'
 import React, { useEffect, useState } from 'react'
 import { toast } from 'sonner'
 
+import { ScheduleDrawer } from './drawers/ScheduleDrawer'
+
 import type {
   ApprovalDefault,
+  WorkflowScheduleRecord,
   WorkspaceSettingsRecord,
 } from '@lenserfight/types'
 
 const APPROVAL_OPTIONS: ApprovalDefault[] = ['auto', 'require_human', 'deny']
 
-type Tab = 'identity' | 'runtime' | 'advanced'
+type Tab = 'identity' | 'runtime' | 'schedules' | 'personality' | 'advanced'
 
 interface Props {
   open: boolean
@@ -54,6 +63,24 @@ export const AgentSettingsSheet: React.FC<Props> = ({
     staleTime: 30_000,
   })
 
+  const schedulesQuery = useQuery<WorkflowScheduleRecord[]>({
+    queryKey: queryKeys.workflows.schedules(null),
+    queryFn: () => workflowsService.getSchedules(),
+    enabled: open && tab === 'schedules',
+    staleTime: 30_000,
+  })
+
+  const agentSchedules = (schedulesQuery.data ?? []).filter(
+    (s) => s.assignee_id === agent?.ai_lenser_id
+  )
+
+  const workflowsQuery = useQuery<WorkflowRecord[]>({
+    queryKey: queryKeys.workflows.byLenser(agent?.owner_lenser_id ?? ''),
+    queryFn: () => workflowsService.listByLenser(agent!.owner_lenser_id),
+    enabled: open && tab === 'schedules' && !!agent?.owner_lenser_id,
+    staleTime: 60_000,
+  })
+
   const [displayName, setDisplayName] = useState('')
   const [avatarUrl, setAvatarUrl] = useState('')
   const [headline, setHeadline] = useState('')
@@ -62,8 +89,12 @@ export const AgentSettingsSheet: React.FC<Props> = ({
   const [retentionDays, setRetentionDays] = useState(90)
   const [maxDailyCredits, setMaxDailyCredits] = useState(1000)
   const [apiAccessEnabled, setApiAccessEnabled] = useState(false)
+  const [noteText, setNoteText] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [okMsg, setOkMsg] = useState<string | null>(null)
+
+  const [schedDrawerOpen, setSchedDrawerOpen] = useState(false)
+  const [schedEditing, setSchedEditing] = useState<WorkflowScheduleRecord | null>(null)
 
   useEffect(() => {
     if (!agent) return
@@ -71,6 +102,7 @@ export const AgentSettingsSheet: React.FC<Props> = ({
     setAvatarUrl('')
     setHeadline('')
     setBio('')
+    setNoteText(agent.personality_note ?? '')
   }, [agent])
 
   useEffect(() => {
@@ -121,6 +153,36 @@ export const AgentSettingsSheet: React.FC<Props> = ({
     onError: (cause) => setError((cause as Error).message ?? 'Failed to save.'),
   })
 
+  const savePersonality = useMutation({
+    mutationFn: () => agentsService.updatePersonality(agent!.ai_lenser_id, noteText || null),
+    onSuccess: async () => {
+      setOkMsg('Personality note saved.')
+      setError(null)
+      toast.success('Personality note updated')
+      await queryClient.invalidateQueries({ queryKey: queryKeys.agents.detailByProfile(profileId) })
+    },
+    onError: (cause) => setError((cause as Error).message ?? 'Failed to save.'),
+  })
+
+  const togglePause = useMutation({
+    mutationFn: (s: WorkflowScheduleRecord) =>
+      workflowsService.upsertSchedule({
+        workflow_id: s.workflow_id,
+        schedule_id: s.id,
+        cron_expr: s.cron_expr,
+        timezone: s.timezone ?? 'UTC',
+        is_active: !s.is_active,
+        assignee_type: (s.assignee_type as 'agent' | 'team') ?? 'agent',
+        assignee_id: s.assignee_id ?? null,
+        inputs_template: s.inputs_template ?? {},
+      }),
+    onSuccess: (_, s) => {
+      toast.success(s.is_active ? 'Schedule paused' : 'Schedule resumed')
+      queryClient.invalidateQueries({ queryKey: queryKeys.workflows.schedules(null) })
+    },
+    onError: (e) => toast.error((e as Error).message),
+  })
+
   const exportBundle = useMutation({
     mutationFn: () => agentWorkspaceService.exportWorkspace(agent!.ai_lenser_id),
     onSuccess: (data) => {
@@ -148,6 +210,8 @@ export const AgentSettingsSheet: React.FC<Props> = ({
   const tabs: Array<{ id: Tab; label: string }> = [
     { id: 'identity', label: 'Identity' },
     { id: 'runtime', label: 'Runtime' },
+    { id: 'schedules', label: 'Schedules' },
+    { id: 'personality', label: 'Personality' },
     { id: 'advanced', label: 'Advanced' },
   ]
 
@@ -182,15 +246,6 @@ export const AgentSettingsSheet: React.FC<Props> = ({
                 @{handle} · {agent.runtime_pref}
               </p>
             </div>
-            <a
-              href={`/lenser/${handle}/ag/settings`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex-shrink-0 text-gray-400 hover:text-amber-600 dark:hover:text-amber-400"
-              title="Open full settings page"
-            >
-              <ExternalLink size={14} />
-            </a>
           </div>
 
           <div className="flex gap-1 border-b border-gray-200 pb-1 dark:border-gray-700">
@@ -267,16 +322,10 @@ export const AgentSettingsSheet: React.FC<Props> = ({
                   <Save size={14} />
                   {saveIdentity.isPending ? 'Saving…' : 'Save identity'}
                 </button>
-                <a
-                  href={`/lenser/${handle}/ag/instructions`}
-                  className={secondaryBtn}
-                >
+                <a href={`/lenser/${handle}/ag/instructions`} className={secondaryBtn}>
                   Manage instructions
                 </a>
-                <a
-                  href={`/lenser/${handle}/ag/models`}
-                  className={secondaryBtn}
-                >
+                <a href={`/lenser/${handle}/ag/models`} className={secondaryBtn}>
                   Manage models
                 </a>
               </div>
@@ -338,11 +387,114 @@ export const AgentSettingsSheet: React.FC<Props> = ({
                   <Save size={14} />
                   {saveRuntime.isPending ? 'Saving…' : 'Save runtime'}
                 </button>
-                <a
-                  href={`/lenser/${handle}/ag/providers`}
-                  className={secondaryBtn}
-                >
+                <a href={`/lenser/${handle}/ag/providers`} className={secondaryBtn}>
                   API keys & providers
+                </a>
+              </div>
+            </div>
+          )}
+
+          {tab === 'schedules' && (
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <p className="text-sm text-gray-500 dark:text-gray-400">
+                  CRON schedules assigned to this agent.
+                </p>
+                <button
+                  type="button"
+                  onClick={() => { setSchedEditing(null); setSchedDrawerOpen(true) }}
+                  disabled={(workflowsQuery.data ?? []).length === 0}
+                  className={primaryBtn}
+                >
+                  <CalendarClock size={14} />
+                  New schedule
+                </button>
+              </div>
+              {schedulesQuery.isLoading ? (
+                <div className="space-y-3">
+                  {[1, 2].map((i) => (
+                    <div key={i} className="h-20 animate-pulse rounded-[20px] border border-gray-100 bg-gray-50 dark:border-gray-800 dark:bg-gray-900" />
+                  ))}
+                </div>
+              ) : agentSchedules.length === 0 ? (
+                <div className="flex flex-col items-center gap-2 rounded-[20px] border border-gray-200 bg-gray-50 px-4 py-8 text-sm text-gray-500 dark:border-gray-800 dark:bg-gray-900 dark:text-gray-400">
+                  <CalendarClock size={22} className="text-gray-300 dark:text-gray-600" />
+                  <p>No schedules assigned to this agent yet.</p>
+                </div>
+              ) : (
+                agentSchedules.map((s) => (
+                  <div key={s.id} className="rounded-[20px] border border-gray-200 bg-white p-4 dark:border-gray-800 dark:bg-gray-900">
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="min-w-0 flex-1">
+                        <p className="truncate text-sm font-semibold text-gray-900 dark:text-white">
+                          {s.workflow_title}
+                        </p>
+                        <p className="mt-1 font-mono text-xs text-gray-600 dark:text-gray-300">
+                          {s.cron_expr}
+                        </p>
+                        <div className="mt-1 flex items-center gap-2">
+                          <span
+                            className={`text-[11px] font-semibold ${
+                              s.is_active
+                                ? 'text-emerald-600 dark:text-emerald-400'
+                                : 'text-gray-400'
+                            }`}
+                          >
+                            {s.is_active ? 'Active' : 'Paused'}
+                          </span>
+                          <span className="text-[11px] text-gray-400">{s.timezone}</span>
+                        </div>
+                      </div>
+                      <div className="flex flex-shrink-0 gap-1.5">
+                        <button
+                          type="button"
+                          onClick={() => togglePause.mutate(s)}
+                          className="rounded-xl border border-gray-200 px-2.5 py-1 text-xs font-semibold text-gray-600 hover:border-amber-300 hover:text-amber-700 dark:border-gray-700 dark:text-gray-300"
+                        >
+                          {s.is_active ? 'Pause' : 'Resume'}
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => { setSchedEditing(s); setSchedDrawerOpen(true) }}
+                          className="rounded-xl border border-gray-200 p-1.5 text-gray-500 hover:text-amber-600 dark:border-gray-700 dark:text-gray-400"
+                          aria-label="Edit schedule"
+                        >
+                          <Pencil size={13} />
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+          )}
+
+          {tab === 'personality' && (
+            <div className="space-y-4">
+              <p className="text-sm text-gray-500 dark:text-gray-400">
+                The global personality note shapes every run for this agent. For per-workflow overrides, use personality profiles from the full workspace.
+              </p>
+              <SheetField label="Global personality note">
+                <textarea
+                  rows={6}
+                  value={noteText}
+                  onChange={(e) => setNoteText(e.target.value)}
+                  placeholder="e.g. You are a helpful assistant that prioritizes clear, concise answers. Always ask clarifying questions before taking irreversible actions."
+                  className={`${inputClass} resize-none`}
+                />
+              </SheetField>
+              <div className="flex flex-wrap gap-3 pt-1">
+                <button
+                  type="button"
+                  onClick={() => savePersonality.mutate()}
+                  disabled={savePersonality.isPending || !agent}
+                  className={primaryBtn}
+                >
+                  <Save size={14} />
+                  {savePersonality.isPending ? 'Saving…' : 'Save note'}
+                </button>
+                <a href={`/lenser/${handle}/ag/personality`} className={secondaryBtn}>
+                  Full personality settings
                 </a>
               </div>
             </div>
@@ -386,6 +538,17 @@ export const AgentSettingsSheet: React.FC<Props> = ({
               </div>
             </div>
           )}
+
+          <ScheduleDrawer
+            open={schedDrawerOpen}
+            onClose={() => setSchedDrawerOpen(false)}
+            workflows={workflowsQuery.data ?? []}
+            initial={schedEditing}
+            defaultAssigneeId={agent.ai_lenser_id}
+            onSaved={() => {
+              queryClient.invalidateQueries({ queryKey: queryKeys.workflows.schedules(null) })
+            }}
+          />
         </div>
       )}
     </Drawer>
