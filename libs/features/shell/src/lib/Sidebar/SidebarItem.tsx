@@ -7,6 +7,8 @@ interface SidebarItemProps extends React.ButtonHTMLAttributes<HTMLButtonElement>
   isActive?: boolean
   collapsed?: boolean
   isComingSoon?: boolean
+  /** When set, renders as an <a> tag opening this URL in a new tab instead of a button */
+  externalHref?: string
   /** Show a lock indicator and redirect to login/onboarding when clicked */
   locked?: boolean
   /** Tooltip shown when hovering a locked item */
@@ -21,6 +23,7 @@ export const SidebarItem: React.FC<SidebarItemProps> = ({
   isActive,
   collapsed,
   isComingSoon,
+  externalHref,
   locked,
   lockReason,
   onLockedClick,
@@ -208,6 +211,21 @@ export const SidebarItem: React.FC<SidebarItemProps> = ({
           </div>
         )}
       </button>
+    )
+  }
+
+  if (externalHref) {
+    return (
+      <a
+        href={externalHref}
+        target="_blank"
+        rel="noopener noreferrer"
+        title={collapsed ? label : undefined}
+        className={`${baseClasses} ${variantClasses} no-underline`}
+      >
+        <IconWrapper />
+        <LabelWrapper />
+      </a>
     )
   }
 
