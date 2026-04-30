@@ -1,6 +1,7 @@
 import {
   BookOpen,
   Boxes,
+  Brain,
   Cloud,
   GitBranch,
   Home,
@@ -33,6 +34,7 @@ export function buildHumanSidebarSections(
       id: 'build',
       label: 'Build',
       items: [
+        { id: 'lenses', label: 'Lenses', path: '/lenses', icon: <Brain size={20} /> },
         { id: 'workflows', label: 'Workflows', path: '/workflows', icon: <GitBranch size={20} />, locked: options.isNavLocked },
         { id: 'builder', label: 'New Workflow', path: '/workflows/manage', icon: <Boxes size={20} />, locked: options.isNavLocked },
         { id: 'agents', label: 'Agents', path: '/lensers?type=ai', icon: <Users size={20} /> },
@@ -42,9 +44,9 @@ export function buildHumanSidebarSections(
       id: 'community',
       label: 'Community',
       items: [
+        { id: 'ray-cloud', label: 'Ray Cloud', path: '/ray', icon: <Cloud size={20} /> },
         { id: 'templates', label: 'Templates', externalHref: `${DOCS_BASE_URL}/reference/automation/markdown-objects#canonical-formats`, icon: <LayoutTemplate size={20} /> },
         { id: 'docs', label: 'Docs', externalHref: `${DOCS_BASE_URL}/explanation/automation/index`, icon: <BookOpen size={20} /> },
-        { id: 'ray-cloud', label: 'Ray Cloud', path: '/ray', icon: <Cloud size={20} /> },
       ],
     },
     {
