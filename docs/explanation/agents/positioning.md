@@ -1,74 +1,147 @@
 ---
 title: LenserFight in the Agent Ecosystem
-description: Where LenserFight fits in the agentic AI stack — as the evaluation layer for AI and human collaboration.
+description: How LenserFight is positioned right now: an open-core automation workspace for AI agents, tools, workflows, evaluations, and private battles.
 ---
 
-# Agent Ecosystem Positioning
+# LenserFight in the Agent Ecosystem
 
-LenserFight is the **evaluation layer** in the current agentic AI stack.
+LenserFight should currently be understood as an **open-core AI automation workspace**.
 
-## The gap LenserFight fills
+It is where users:
 
-The current AI ecosystem has solved reasoning capability. The new bottleneck is trust and evidence: how do you *prove* your Agent performs well on real tasks, in front of a real audience, without lab conditions?
+- build and configure agents
+- compose workflows
+- connect tools
+- run local or hosted automations
+- coordinate agent teams
+- inspect logs and reports
+- evaluate prompts, models, agents, and workflows
+- run private battles before optionally publishing selected outputs later
 
-| Existing tool | What it does | What it lacks |
-|---------------|-------------|---------------|
-| LMSYS Chatbot Arena | Model vs model comparison via human vote | No AI vs human; no real tasks; no shareable result artifact |
-| HuggingFace Leaderboard | Static benchmark scores | No live evaluations, no community judgment, no org-hosted events |
-| SWE-bench / GAIA | Lab coding/reasoning benchmarks | No human contenders; controlled by research labs; not community-driven |
-| OpenHands, CrewAI | Agent execution frameworks | Execution only — no evaluation surface, no public result pages |
+## What LenserFight is now
 
-LenserFight is where you **Bring Your Agent after you've built it** — to compete, be judged by the community, and publish proof.
+The current product direction is:
 
-## Where LenserFight sits in the stack
+> An open-core AI automation platform where users build agent workspaces, coordinate agent teams, connect tools, run workflows, and privately evaluate agents, prompts, models, and workflows before optionally publishing selected outputs to the community.
 
-```
-┌─────────────────────────────────────────────┐
-│  Foundation models / agent frameworks       │
-│  (OpenAI Agents SDK, LangChain, CrewAI, MCP) │
-└────────────────────┬────────────────────────┘
-                     ↓
-┌─────────────────────────────────────────────┐
-│  LenserFight — evaluation layer              │
-│  · head-to-head tasks (AI vs human)          │
-│  · community voting + hybrid scoring         │
-│  · public result pages + shareable artifacts │
-│  · org-hosted challenges and leaderboards    │
-└────────────────────┬────────────────────────┘
-                     ↓
-┌─────────────────────────────────────────────┐
-│  Open dataset                                │
-│  · anonymized fight logs                     │
-│  · community-voted outcomes                  │
-│  · capability evidence for research          │
-└─────────────────────────────────────────────┘
-```
+That means LenserFight is no longer best described as:
 
-## What LenserFight is in the Agent ecosystem
+- a public battle arena first
+- a prompt marketplace first
+- a forum or social network first
 
-**A neutral evaluation surface.** LenserFight is not controlled by any model vendor, cloud provider, or research lab. Communities and organizations run evaluations on Lenses they define, and the community judges.
+Those surfaces still matter, but they are downstream of the automation system.
 
-**A proof-of-work artifact generator.** Every evaluation produces a public result page — a shareable, linkable record of how an AI Agent performed versus a human expert on a specific Lens.
+## The core problem LenserFight solves
 
-**A community benchmark engine.** Instead of top-down lab benchmarks, LenserFight enables bottom-up evaluation: any community can define what "good performance" looks like for their domain and run a public challenge around it.
+Most agent stacks stop at execution:
 
-## LenserFight's product stance on Agents
+- model SDKs produce completions
+- tool layers expose capabilities
+- workflow engines orchestrate steps
+- observability products track runtime data
 
-- **Observe and compare** — LenserFight surfaces Agent behavior in head-to-head Lens conditions, not in abstract benchmarks.
-- **Stay model-agnostic** — any Agent that can respond to a Lens can enter an evaluation. The platform adapts to models, not the other way around.
-- **Keep evaluation understandable** — every judging signal is visible. Participants know exactly what was scored and how.
-- **Generate shareable evidence** — result pages are designed to be published on GitHub READMEs, blog posts, LinkedIn, and social threads.
+The missing layer is a **workspace-native system** where agents can actually operate as first-class users inside bounded environments:
 
-## What LenserFight is not
+- inspect available objects
+- propose and draft automations
+- coordinate with other agents
+- use tools
+- run evaluations
+- explain failures
+- generate reports
 
-- Not an Agent builder or workflow orchestrator.
-- Not a Lens lab or generation tool.
-- Not an enterprise control plane or Agent registry.
-- Not a replacement for research benchmarks — it complements them with community-judged, real-task evidence.
+LenserFight fills that gap by combining:
 
-## Related docs
+- portable markdown-defined objects
+- local-first execution
+- workspace-scoped permissions
+- evaluation and comparison flows
+- hosted/private operations for teams
 
-- [What is a Lens](/explanation/lenses/what-is-a-lens)
-- [Connect Your Agent](/explanation/agents/connect-agent)
+## Where private battles fit
+
+Private battles still matter because they help teams compare:
+
+- agent vs agent
+- workflow vs workflow
+- model vs model
+- prompt vs prompt
+- old version vs new version
+
+They remain important for:
+
+- internal QA
+- enterprise benchmarking
+- release validation
+
+But they should **not dominate the product UX yet**.
+
+Users need to build, run, inspect, and improve automation systems before battle-style comparison becomes the primary activity.
+
+## Core object model
+
+| Object | Job |
+|---|---|
+| Workspace | Root boundary for ownership, permissions, memory, runs, and tools |
+| Agent | Executable actor with instructions, model policy, tools, memory, and safety limits |
+| Agent Team | Persistent coordination structure for multi-agent work |
+| Tool | Callable capability with auth, risk, cost, and approval policy |
+| Lens | Structured task or evaluation unit |
+| Skill | Reusable knowledge/procedure package an agent can activate |
+| Workflow | Ordered automation across tools, agents, and approval gates |
+| Run | Concrete execution record |
+| Evaluation | Scoring or regression surface |
+| Private Battle | Comparative evaluation workflow |
+
+## Product stance on agents
+
+LenserFight should not over-restrict agents into chatbot-only behavior.
+
+Agents should be able to:
+
+- explore the workspace
+- inspect lenses, skills, tools, workflows, runs, and logs
+- suggest new automations
+- create draft objects
+- simulate runs
+- execute approved workflows
+- generate reports
+- request human approval when needed
+
+The principle is:
+
+> Let agents explore and propose freely. Require approval for risky, costly, destructive, public, or external actions.
+
+## Open core vs hosted layer
+
+### Open core
+
+The open-source layer should own:
+
+- canonical markdown object formats
+- local workspace layout
+- CLI
+- workflow runner
+- tool interface
+- provider adapters
+- example agents, tools, workflows, and evaluations
+
+### Hosted/private layer
+
+The private platform should own:
+
+- private workspaces
+- advanced access control
+- hosted execution
+- private tools and secrets
+- enterprise evaluations
+- advanced observability
+- verified reports
+
+## Related
+
+- [Automation Workspace Overview](/explanation/automation/index)
+- [What is an Agent?](/explanation/agents/what-is-an-agent)
 - [Open Core Model](/explanation/community/open-core-model)
-- [Community API](/reference/community-api/index)
+- [Markdown Object Formats](/reference/automation/markdown-objects)

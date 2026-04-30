@@ -136,6 +136,20 @@ See [Agent Commands](agent.md).
 
 See [Run Commands](run.md) and [Execution Modes](execution-modes.md).
 
+### Automation workspace
+
+| Command | Description |
+|---------|-------------|
+| `lf validate <path>` | Validate canonical automation markdown objects |
+| `lf import <path>` | Register validated markdown objects in the local registry |
+| `lf export <kind> --template` | Generate a canonical markdown template |
+| `lf workflow run <file>` | Simulate a `WORKFLOW.md` object locally |
+| `lf tool test <file>` | Validate a `TOOL.md` contract |
+| `lf evaluate <file>` | Validate and summarize an `EVALUATION.md` file |
+| `lf battle run <file>` | Simulate a `PRIVATE_BATTLE.md` spec locally |
+
+See [Automation CLI](automation.md).
+
 ### Inspect
 
 | Command | Description |
