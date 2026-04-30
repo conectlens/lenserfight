@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react'
-import { Cloud, KeyRound, HardDrive, Globe, Plus, X, Eye, EyeOff } from 'lucide-react'
+import { Cloud, KeyRound, HardDrive, Globe, Plus, X, Eye, EyeOff, Pencil } from 'lucide-react'
 import { SearchSelectField, SelectField } from '@lenserfight/ui/forms'
+import { Dialog } from '@lenserfight/ui/overlays'
 import { FundingSource, UserApiKey, WalletBalance, BYOK_PROVIDER_LABELS, AIProvider, AIProviderModel } from '@lenserfight/types'
 import { SURFACE } from '@lenserfight/utils/env'
 import { Link } from 'react-router-dom'
@@ -21,6 +22,7 @@ interface FundingSourceToggleProps {
   availableLocalKeys: LocalKeyMeta[]
   onAddLocalKey: (provider: string, label: string, rawKey: string) => Promise<void>
   onRemoveLocalKey?: (id: string) => Promise<void>
+  onUpdateLocalKey?: (id: string, rawKey: string, label: string) => Promise<void>
   // Common
   walletBalance: WalletBalance | undefined
   canUseBYOK: boolean
@@ -136,6 +138,110 @@ function AddLocalKeyForm({
   )
 }
 
+function EditLocalKeyModal({
+  keyMeta,
+  onSave,
+  onClose,
+}: {
+  keyMeta: LocalKeyMeta
+  onSave: (id: string, rawKey: string, label: string) => Promise<void>
+  onClose: () => void
+}) {
+  const [label, setLabel] = useState(keyMeta.label !== keyMeta.provider ? keyMeta.label : '')
+  const [rawKey, setRawKey] = useState('')
+  const [showKey, setShowKey] = useState(false)
+  const [saving, setSaving] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+
+  const providerLabel = BYOK_PROVIDER_LABELS[keyMeta.provider as keyof typeof BYOK_PROVIDER_LABELS] ?? keyMeta.provider
+  const isOllama = keyMeta.provider === 'ollama'
+
+  const handleSave = async () => {
+    if (!rawKey && !isOllama) {
+      setError('Please enter a new API key.')
+      return
+    }
+    setSaving(true)
+    setError(null)
+    try {
+      await onSave(keyMeta.id, rawKey, label || keyMeta.provider)
+      onClose()
+    } catch {
+      setError('Failed to update key. Please try again.')
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  return (
+    <Dialog
+      open
+      onClose={onClose}
+      title={`Update ${providerLabel} key`}
+      description={keyMeta.label && keyMeta.label !== keyMeta.provider ? keyMeta.label : undefined}
+      maxWidth="max-w-sm"
+    >
+      <div className="flex flex-col gap-3 p-1">
+        <div>
+          <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Label</label>
+          <input
+            type="text"
+            value={label}
+            onChange={(e) => setLabel(e.target.value)}
+            placeholder="Label (optional)"
+            className="w-full rounded-lg border border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-800 px-3 py-1.5 text-sm text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-500"
+          />
+        </div>
+
+        <div>
+          <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">
+            New API key{isOllama ? ' (optional)' : ''}
+          </label>
+          <div className="relative">
+            <input
+              type={showKey ? 'text' : 'password'}
+              autoComplete="off"
+              value={rawKey}
+              onChange={(e) => setRawKey(e.target.value)}
+              placeholder={isOllama ? 'Leave blank to keep existing…' : 'Paste new key…'}
+              className="w-full rounded-lg border border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-800 px-3 py-1.5 pr-8 text-sm text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-500"
+            />
+            <button
+              type="button"
+              onClick={() => setShowKey((v) => !v)}
+              className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+            >
+              {showKey ? <EyeOff size={14} /> : <Eye size={14} />}
+            </button>
+          </div>
+        </div>
+
+        {error && <p className="text-xs text-red-500">{error}</p>}
+
+        <p className="text-[10px] text-gray-400">Encrypted in your browser. Never sent to our servers.</p>
+
+        <div className="flex gap-2 pt-1">
+          <button
+            type="button"
+            onClick={handleSave}
+            disabled={saving}
+            className="flex-1 rounded-lg bg-primary px-3 py-1.5 text-xs font-semibold text-white disabled:opacity-50 hover:bg-primary/90 transition-colors"
+          >
+            {saving ? 'Saving…' : 'Update key'}
+          </button>
+          <button
+            type="button"
+            onClick={onClose}
+            className="rounded-lg border border-gray-200 dark:border-gray-600 px-3 py-1.5 text-xs text-gray-500 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+          >
+            Cancel
+          </button>
+        </div>
+      </div>
+    </Dialog>
+  )
+}
+
 export const FundingSourceToggle: React.FC<FundingSourceToggleProps> = ({
   fundingSource,
   onFundingSourceChange,
@@ -147,6 +253,7 @@ export const FundingSourceToggle: React.FC<FundingSourceToggleProps> = ({
   availableLocalKeys,
   onAddLocalKey,
   onRemoveLocalKey: _onRemoveLocalKey,
+  onUpdateLocalKey,
   walletBalance,
   canUseBYOK,
   // Model/Provider selection props
@@ -165,6 +272,7 @@ export const FundingSourceToggle: React.FC<FundingSourceToggleProps> = ({
   const isByokLocal = fundingSource === 'user_byok_local'
   const isByok = isByokCloud || isByokLocal
   const [showAddLocalKey, setShowAddLocalKey] = useState(false)
+  const [editingKey, setEditingKey] = useState<LocalKeyMeta | null>(null)
   const isCloudEdition = SURFACE.edition === 'cloud'
   const localKeyEnabled = true
   const selectableByokCount = availableLocalKeys.length
@@ -308,19 +416,44 @@ export const FundingSourceToggle: React.FC<FundingSourceToggleProps> = ({
 
       {localKeyEnabled && isByokLocal && availableLocalKeys.length > 0 && !showAddLocalKey && (
         <div className="flex flex-col gap-1.5">
-          <SearchSelectField
-            value={selectedLocalKeyId ?? ''}
-            onChange={onLocalKeyIdChange}
-            placeholder="Select a local key"
-            options={availableLocalKeys.map((k) => ({
-              value: k.id,
-              label: `${BYOK_PROVIDER_LABELS[k.provider as keyof typeof BYOK_PROVIDER_LABELS] ?? k.provider}${k.label && k.label !== k.provider ? ` — ${k.label}` : ''}`,
-            }))}
-          />
+          <div className="flex items-center gap-1.5">
+            <div className="flex-1 min-w-0">
+              <SearchSelectField
+                value={selectedLocalKeyId ?? ''}
+                onChange={onLocalKeyIdChange}
+                placeholder="Select a local key"
+                options={availableLocalKeys.map((k) => ({
+                  value: k.id,
+                  label: `${BYOK_PROVIDER_LABELS[k.provider as keyof typeof BYOK_PROVIDER_LABELS] ?? k.provider}${k.label && k.label !== k.provider ? ` — ${k.label}` : ''}`,
+                }))}
+              />
+            </div>
+            {onUpdateLocalKey && selectedLocalKeyId && (
+              <button
+                type="button"
+                onClick={() => {
+                  const key = availableLocalKeys.find((k) => k.id === selectedLocalKeyId)
+                  if (key) setEditingKey(key)
+                }}
+                className="shrink-0 p-1.5 rounded-lg border border-gray-200 dark:border-gray-600 text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:border-gray-300 transition-colors"
+                title="Update this key"
+              >
+                <Pencil size={13} />
+              </button>
+            )}
+          </div>
           <p className="text-[10px] text-gray-400 dark:text-gray-500">
             Encrypted in your browser. Never sent to our servers.
           </p>
         </div>
+      )}
+
+      {editingKey && onUpdateLocalKey && (
+        <EditLocalKeyModal
+          keyMeta={editingKey}
+          onSave={onUpdateLocalKey}
+          onClose={() => setEditingKey(null)}
+        />
       )}
 
       {/* Row 4: Inline add local key form */}

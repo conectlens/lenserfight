@@ -151,8 +151,8 @@ export const usePersonalPrompts = (lenserId?: string, enabled = true) => {
     },
     enabled: Boolean(lenserId) && enabled,
     initialPageParam: 0,
-    getNextPageParam: (lastPage, pages) => {
-      if (!pages || !lastPage?.meta?.hasNextPage) return undefined
+    getNextPageParam: (lastPage) => {
+      if (!lastPage?.meta?.hasNextPage) return undefined
       return (lastPage.meta.offset ?? 0) + (lastPage.meta.limit ?? 20)
     },
     staleTime: 1000 * 60 * 3,

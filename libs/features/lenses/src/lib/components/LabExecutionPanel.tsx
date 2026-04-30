@@ -63,6 +63,7 @@ interface LabExecutionPanelProps {
   availableLocalKeys?: LocalKeyMeta[]
   onAddLocalKey?: (provider: string, label: string, rawKey: string) => Promise<void>
   onRemoveLocalKey?: (id: string) => Promise<void>
+  onUpdateLocalKey?: (id: string, rawKey: string, label: string) => Promise<void>
   /** Called when the user first opens the provider dropdown — triggers lazy data fetch */
   onProviderDropdownOpen?: () => void
 }
@@ -99,6 +100,7 @@ export const LabExecutionPanel: React.FC<LabExecutionPanelProps> = ({
   availableLocalKeys,
   onAddLocalKey,
   onRemoveLocalKey,
+  onUpdateLocalKey,
   onProviderDropdownOpen,
   isLocked = false,
   lockedTitle = 'Run Lens',
@@ -192,6 +194,7 @@ export const LabExecutionPanel: React.FC<LabExecutionPanelProps> = ({
               availableLocalKeys={availableLocalKeys ?? []}
               onAddLocalKey={onAddLocalKey ?? (async () => { })}
               onRemoveLocalKey={onRemoveLocalKey}
+              onUpdateLocalKey={onUpdateLocalKey}
               walletBalance={walletBalance}
               canUseBYOK={canUseBYOK ?? false}
               providers={providers}
