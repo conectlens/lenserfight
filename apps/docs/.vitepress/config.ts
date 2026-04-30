@@ -528,9 +528,19 @@ export default defineConfig({
           items: [
             { text: 'Community API', link: '/reference/community-api/index' },
             { text: 'CLI', link: '/reference/cli/index' },
+            { text: 'Automation Objects', link: '/reference/automation/markdown-objects' },
             { text: 'Execution Platform', link: '/reference/platform-api/api-overview' },
             { text: 'Database', link: '/reference/database/schema-overview' },
             { text: 'Workflows', link: '/reference/workflows/execution-engine' },
+          ],
+        },
+      ],
+      '/reference/automation/': [
+        {
+          text: 'Automation Objects',
+          items: [
+            { text: 'Markdown Object Formats', link: '/reference/automation/markdown-objects' },
+            { text: 'Agent Exploration API', link: '/reference/automation/agent-exploration-api' },
           ],
         },
       ],
@@ -569,6 +579,7 @@ export default defineConfig({
             { text: 'Authentication Commands', link: '/reference/cli/auth' },
             { text: 'Lens Management', link: '/reference/cli/lens' },
             { text: 'Lens Discovery', link: '/reference/cli/lenses-discovery' },
+            { text: 'Automation CLI', link: '/reference/cli/automation' },
             { text: 'Connect & Connectors', link: '/reference/cli/connectors' },
             { text: 'Communities', link: '/reference/cli/communities' },
             { text: 'Community & Social', link: '/reference/cli/community' },
@@ -621,10 +632,19 @@ export default defineConfig({
         {
           text: 'Explanation',
           items: [
+            { text: 'Automation', link: '/explanation/automation/index' },
             { text: 'Agents', link: '/explanation/agents/index' },
             { text: 'Lenses', link: '/explanation/lenses/index' },
             { text: 'Workflows', link: '/explanation/workflows/open-source-workflows' },
             { text: 'Community & Use Cases', link: '/explanation/community/community-hub' },
+          ],
+        },
+      ],
+      '/explanation/automation/': [
+        {
+          text: 'Automation',
+          items: [
+            { text: 'Automation Workspace Overview', link: '/explanation/automation/index' },
           ],
         },
       ],
