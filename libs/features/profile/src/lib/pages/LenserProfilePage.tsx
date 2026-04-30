@@ -144,7 +144,7 @@ export const LenserProfilePage: React.FC = () => {
   const { trackView } = useAnalytics()
   const queryClient = useQueryClient()
   const { open: openModal } = useModalRouter()
-  const { workspaces, switchWorkspace, isSwitching } = useLenserWorkspace()
+  const { isOwnedWorkspace, switchWorkspace, isSwitching } = useLenserWorkspace()
   const { models = [] } = useAIModels()
 
   const { data: accessPayload = null, isLoading: loadingProfile } = useQuery<ProfileAccessPayload | null>({
@@ -159,8 +159,7 @@ export const LenserProfilePage: React.FC = () => {
   const routeState = accessPayload?.route_state ?? null
   const viewedProfile = accessPayload?.profile ?? null
   const relationshipState = accessPayload?.relationship_state ?? null
-  const ownedWorkspaceIds = useMemo(() => new Set(workspaces.map((workspace) => workspace.id)), [workspaces])
-  const isOwner = !!viewedProfile && ownedWorkspaceIds.has(viewedProfile.id)
+  const isOwner = !!viewedProfile && isOwnedWorkspace(viewedProfile.id)
   const isOwnedAIProfile = viewedProfile?.type === 'ai' && isOwner
 
   const { data: agentProfile = null } = useQuery({

@@ -14,12 +14,21 @@ export function useLenserWorkspace() {
     [switchLenser]
   )
 
+  const isOwnedWorkspace = useCallback(
+    (workspaceId: string | null | undefined) => {
+      if (!workspaceId) return false
+      return activeWorkspace?.id === workspaceId || workspaces.some((workspace) => workspace.id === workspaceId)
+    },
+    [activeWorkspace?.id, workspaces]
+  )
+
   return {
     workspaces,
     activeWorkspace,
     humanWorkspace,
     isLoading,
     isSwitching,
+    isOwnedWorkspace,
     switchWorkspace,
   }
 }

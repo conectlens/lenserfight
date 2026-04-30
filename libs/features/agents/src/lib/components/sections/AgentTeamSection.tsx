@@ -7,6 +7,7 @@ import type {
   AgentTeamRecord,
 } from '@lenserfight/types'
 import { AlertDialog } from '@lenserfight/ui/overlays'
+import { useModalRouter } from '@lenserfight/ui/routing'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import type { Connection, Edge, Node } from '@xyflow/react'
 import { Bot, GitMerge, Network, Plus, Trash2, UserPlus } from 'lucide-react'
@@ -34,6 +35,7 @@ export const AgentTeamSection: React.FC = () => {
     ownerFleetAgents,
     ownerFleetAgentsLoading,
   } = useAgentWorkspace()
+  const { open } = useModalRouter()
   const queryClient = useQueryClient()
 
   const [selectedTeamId, setSelectedTeamId] = useState(activeTeamId ?? '')
@@ -353,7 +355,17 @@ export const AgentTeamSection: React.FC = () => {
                     icon={<Bot size={18} />}
                     title="No agents in this fleet"
                     description="Create AI lensers from the human overview first, then return here to compose a builder graph."
-                  />
+                  >
+                    <div className="mt-6 flex justify-center">
+                      <button
+                        type="button"
+                        onClick={() => open('create-agent')}
+                        className="rounded-2xl bg-gray-900 px-4 py-2 text-sm font-semibold text-white transition hover:bg-amber-600 dark:bg-white dark:text-gray-900"
+                      >
+                        Create AI Lenser
+                      </button>
+                    </div>
+                  </EmptyPanel>
                 ) : (
                   <div className="space-y-3">
                     {ownerFleetAgents.map((agent) => {

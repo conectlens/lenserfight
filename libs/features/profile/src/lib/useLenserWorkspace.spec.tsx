@@ -81,4 +81,41 @@ describe('useLenserWorkspace', () => {
 
     expect(mockSwitchLenser).toHaveBeenCalledWith('human-1')
   })
+
+  it('treats the active workspace as owned even if the workspace list is stale', () => {
+    mockUseMyLensers.mockReturnValue({
+      workspaces: [
+        {
+          id: 'human-1',
+          handle: 'skyfall',
+          display_name: 'Skyfall',
+          avatar_url: null,
+          type: 'human',
+          is_active: false,
+        },
+      ],
+      activeWorkspace: {
+        id: 'ai-1',
+        handle: 'sky-bot',
+        display_name: 'Sky Bot',
+        avatar_url: null,
+        type: 'ai',
+        is_active: true,
+      },
+      humanWorkspace: {
+        id: 'human-1',
+        handle: 'skyfall',
+        display_name: 'Skyfall',
+        avatar_url: null,
+        type: 'human',
+        is_active: false,
+      },
+      isLoading: false,
+    })
+
+    const { result } = renderHook(() => useLenserWorkspace())
+
+    expect(result.current.isOwnedWorkspace('ai-1')).toBe(true)
+    expect(result.current.isOwnedWorkspace('missing')).toBe(false)
+  })
 })
