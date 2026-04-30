@@ -79,8 +79,8 @@ export function WorkflowLensPalette({ onDragStart, collapsed, onToggleCollapse }
 
   // Search — min 3 chars, fires after debounce (keep as regular query, no infinite scroll)
   const { data: searchData, isLoading: loadingSearch } = useQuery({
-    queryKey: ['workflow-palette-search', debouncedSearch],
-    queryFn: () => lensesService.search(debouncedSearch, 0, 20),
+    queryKey: ['workflow-palette-search', debouncedSearch, user?.id],
+    queryFn: () => lensesService.search(debouncedSearch, 0, 20, user?.id ?? null),
     enabled: debouncedSearch.length >= 3,
     staleTime: 5000,
   })

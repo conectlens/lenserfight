@@ -31,6 +31,7 @@ export const AgentTeamSection: React.FC = () => {
     bootstrap,
     bootstrapState,
     isOwner,
+    agentProfile,
     activeTeamId,
     ownerFleetAgents,
     ownerFleetAgentsLoading,
@@ -164,12 +165,11 @@ export const AgentTeamSection: React.FC = () => {
       const agent = ownerFleetAgents.find((candidate) => candidate.ai_lenser_id === member.agent_id)
       return {
         id: member.id,
+        type: 'agentNode',
         position: positions[index] ?? { x: member.lane * 280, y: index * 150 },
         data: {
-          label: [
-            member.role.replaceAll('_', ' '),
-            agent?.display_name || agent?.handle || member.agent_id.slice(0, 8),
-          ].join(' · '),
+          label: member.role.replaceAll('_', ' '),
+          sublabel: agent?.display_name || agent?.handle || member.agent_id.slice(0, 8),
         },
       }
     })
@@ -217,7 +217,7 @@ export const AgentTeamSection: React.FC = () => {
         <button
           type="button"
           onClick={() => setCreateTeamOpen(true)}
-          disabled={!bootstrap}
+          disabled={!agentProfile?.ai_lenser_id}
           className="inline-flex items-center gap-2 rounded-2xl bg-gray-900 px-4 py-2 text-sm font-semibold text-white transition hover:bg-amber-600 disabled:opacity-50 dark:bg-white dark:text-gray-900"
         >
           <Plus size={14} />
@@ -231,10 +231,44 @@ export const AgentTeamSection: React.FC = () => {
         nodes={nodes}
         edges={edges}
         onConnect={bootstrap ? handleConnect : undefined}
+        onDropAgent={
+          selectedTeam
+            ? (agentId) =>
+                setAddMemberState({
+                  open: true,
+                  teamId: selectedTeam.id,
+                  defaultAgentId: agentId,
+                  initial: null,
+                })
+            : undefined
+        }
+        onAddMember={
+          selectedTeam
+            ? () =>
+                setAddMemberState({
+                  open: true,
+                  teamId: selectedTeam.id,
+                  defaultAgentId: agentProfile?.ai_lenser_id,
+                  initial: null,
+                })
+            : undefined
+        }
+        onNodeEdit={(nodeId) => {
+          const member = members.find((m) => m.id === nodeId)
+          if (!member || !selectedTeam) return
+          setAddMemberState({ open: true, teamId: selectedTeam.id, initial: member })
+        }}
+        onNodeRemove={(nodeId) =>
+          setConfirmState({
+            title: 'Remove member?',
+            body: 'Remove this agent from the active builder team? This cannot be undone.',
+            onConfirm: () => deleteMember.mutate(nodeId),
+          })
+        }
         emptyState={{
           title: selectedTeam ? 'No members on this builder yet' : 'No active team exists',
           description: selectedTeam
-            ? 'Add agents from the owner palette to start composing a live team graph.'
+            ? 'Drag an agent from the palette or right-click the canvas to add a member.'
             : 'Create a builder team first, then connect agents on the canvas to shape professional handoffs and review lanes.',
           action: bootstrap ? (
             <button
@@ -438,7 +472,7 @@ export const AgentTeamSection: React.FC = () => {
       <CreateTeamDrawer
         open={createTeamOpen && !!bootstrap}
         onClose={() => setCreateTeamOpen(false)}
-        aiLenserId={bootstrap?.ai_lenser_id ?? ''}
+        aiLenserId={agentProfile?.ai_lenser_id ?? ''}
         onCreated={() => {
           invalidate()
           setCreateTeamOpen(false)
@@ -500,7 +534,14 @@ const PaletteAgentCard: React.FC<{
   disabled: boolean
   onAdd: () => void
 }> = ({ agent, onCanvas, disabled, onAdd }) => (
-  <div className="rounded-2xl border border-gray-200 bg-gray-50 p-4 dark:border-gray-700 dark:bg-gray-950">
+  <div
+    draggable={!disabled && !onCanvas}
+    onDragStart={(e) => {
+      e.dataTransfer.setData('agent-id', agent.ai_lenser_id)
+      e.dataTransfer.effectAllowed = 'move'
+    }}
+    className="rounded-2xl border border-gray-200 bg-gray-50 p-4 dark:border-gray-700 dark:bg-gray-950"
+  >
     <div className="flex items-start justify-between gap-3">
       <div className="min-w-0">
         <p className="truncate text-sm font-semibold text-gray-900 dark:text-white">

@@ -7,12 +7,25 @@ import {
   MiniMap,
   ReactFlow,
   ReactFlowProvider,
+  useReactFlow,
   type Connection,
   type Edge,
   type Node,
+  type NodeMouseHandler,
   type OnConnect,
 } from '@xyflow/react'
-import React from 'react'
+import React, { useCallback, useRef, useState } from 'react'
+
+import { AgentCanvasContextMenu } from './AgentCanvasContextMenu'
+import { AgentCanvasNode } from './AgentCanvasNode'
+
+const nodeTypes = { agentNode: AgentCanvasNode }
+
+interface ContextMenuState {
+  x: number
+  y: number
+  nodeId?: string
+}
 
 interface AgentGraphShellProps {
   nodes: Node[]
@@ -25,23 +38,82 @@ interface AgentGraphShellProps {
     action?: React.ReactNode
   }
   readOnly?: boolean
+  onDropAgent?: (agentId: string, position: { x: number; y: number }) => void
+  onNodeEdit?: (nodeId: string) => void
+  onNodeRemove?: (nodeId: string) => void
+  onAddMember?: () => void
 }
 
-export const AgentGraphShell: React.FC<AgentGraphShellProps> = ({
+const FlowCanvas: React.FC<AgentGraphShellProps> = ({
   nodes,
   edges,
   onConnect,
   sidePanel,
   emptyState,
   readOnly = false,
-}) => (
-  <ReactFlowProvider>
+  onDropAgent,
+  onNodeEdit,
+  onNodeRemove,
+  onAddMember,
+}) => {
+  const { screenToFlowPosition } = useReactFlow()
+  const containerRef = useRef<HTMLDivElement>(null)
+  const [contextMenu, setContextMenu] = useState<ContextMenuState | null>(null)
+
+  const resolveContainerOffset = () => {
+    const rect = containerRef.current?.getBoundingClientRect()
+    return rect ? { left: rect.left, top: rect.top } : { left: 0, top: 0 }
+  }
+
+  const handlePaneContextMenu = useCallback(
+    (e: React.MouseEvent) => {
+      e.preventDefault()
+      const { left, top } = resolveContainerOffset()
+      setContextMenu({ x: e.clientX - left, y: e.clientY - top })
+    },
+    []
+  )
+
+  const handleNodeContextMenu: NodeMouseHandler = useCallback(
+    (e, node) => {
+      e.preventDefault()
+      const { left, top } = resolveContainerOffset()
+      setContextMenu({ x: e.clientX - left, y: e.clientY - top, nodeId: node.id })
+    },
+    []
+  )
+
+  const handleDragOver = useCallback((e: React.DragEvent) => {
+    e.preventDefault()
+    e.dataTransfer.dropEffect = 'move'
+  }, [])
+
+  const handleDrop = useCallback(
+    (e: React.DragEvent) => {
+      e.preventDefault()
+      const agentId = e.dataTransfer.getData('agent-id')
+      if (!agentId || !onDropAgent) return
+      const position = screenToFlowPosition({ x: e.clientX, y: e.clientY })
+      onDropAgent(agentId, position)
+    },
+    [onDropAgent, screenToFlowPosition]
+  )
+
+  const closeMenu = useCallback(() => setContextMenu(null), [])
+
+  return (
     <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_360px]">
-      <div className="relative min-h-[560px] overflow-hidden rounded-[28px] border border-gray-200 bg-white shadow-sm dark:border-gray-800 dark:bg-gray-900">
+      <div
+        ref={containerRef}
+        className="relative min-h-[560px] overflow-hidden rounded-[28px] border border-gray-200 bg-white shadow-sm dark:border-gray-800 dark:bg-gray-900"
+        onDragOver={handleDragOver}
+        onDrop={handleDrop}
+      >
         <ReactFlow
           nodes={nodes}
           edges={edges}
           onConnect={onConnect}
+          nodeTypes={nodeTypes}
           fitView
           fitViewOptions={{ padding: 0.2 }}
           panOnScroll
@@ -50,6 +122,9 @@ export const AgentGraphShell: React.FC<AgentGraphShellProps> = ({
           nodesFocusable={!readOnly}
           elementsSelectable={!readOnly}
           proOptions={{ hideAttribution: true }}
+          onPaneContextMenu={handlePaneContextMenu}
+          onNodeContextMenu={handleNodeContextMenu}
+          onPaneClick={closeMenu}
         >
           <Background
             variant={BackgroundVariant.Dots}
@@ -82,9 +157,31 @@ export const AgentGraphShell: React.FC<AgentGraphShellProps> = ({
             </div>
           </div>
         )}
+
+        {contextMenu && (
+          <AgentCanvasContextMenu
+            x={contextMenu.x}
+            y={contextMenu.y}
+            nodeId={contextMenu.nodeId}
+            onAddMember={() => { onAddMember?.(); closeMenu() }}
+            onEditMember={contextMenu.nodeId && onNodeEdit
+              ? () => { onNodeEdit(contextMenu.nodeId!); closeMenu() }
+              : undefined}
+            onRemoveMember={contextMenu.nodeId && onNodeRemove
+              ? () => { onNodeRemove(contextMenu.nodeId!); closeMenu() }
+              : undefined}
+            onClose={closeMenu}
+          />
+        )}
       </div>
 
       <div className="space-y-4">{sidePanel}</div>
     </div>
+  )
+}
+
+export const AgentGraphShell: React.FC<AgentGraphShellProps> = (props) => (
+  <ReactFlowProvider>
+    <FlowCanvas {...props} />
   </ReactFlowProvider>
 )
