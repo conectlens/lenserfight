@@ -15,6 +15,7 @@ import type {
   WorkflowScheduleRecord,
 } from '@lenserfight/types'
 import type { AgentWorkspaceBootstrapState } from '../context/AgentWorkspaceContext'
+import { resolveOwnerFleetOwnerId } from './resolveOwnerFleetOwnerId'
 
 interface UseAgentWorkspaceDataParams {
   handle: string
@@ -60,6 +61,13 @@ export function useAgentWorkspaceData({
       staleTime: 60_000,
     })
 
+  const ownerFleetOwnerId = resolveOwnerFleetOwnerId({
+    ownerHumanLenserId,
+    agentOwnerLenserId: agentProfile?.owner_lenser_id ?? null,
+    viewedProfileId,
+    viewedProfileType,
+  })
+
   const bootstrapQuery = useQuery<AgentWorkspaceBootstrap | null>({
     queryKey: queryKeys.agents.workspaceBootstrap(handle),
     queryFn: () => agentWorkspaceService.getWorkspaceBootstrap(handle),
@@ -86,9 +94,9 @@ export function useAgentWorkspaceData({
   })
 
   const ownerFleetAgentsQuery = useQuery<AgentProfileView[]>({
-    queryKey: [...queryKeys.agents.all, 'byOwner', ownerHumanLenserId ?? viewedProfileId ?? ''],
-    queryFn: () => agentsService.getAgentsByOwner(ownerHumanLenserId ?? viewedProfileId!),
-    enabled: (isHumanOwner || isAgentOwner) && !!(ownerHumanLenserId ?? viewedProfileId),
+    queryKey: [...queryKeys.agents.all, 'byOwner', ownerFleetOwnerId ?? ''],
+    queryFn: () => agentsService.getAgentsByOwner(ownerFleetOwnerId!),
+    enabled: (isHumanOwner || isAgentOwner) && !!ownerFleetOwnerId,
     staleTime: 30_000,
   })
 
