@@ -348,22 +348,20 @@ export function WorkflowBuilderPage({ workflowId, onBattleClick }: WorkflowBuild
           <button
             type="button"
             onClick={() => setBuilderMode('canvas')}
-            className={`flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-medium transition-colors ${
-              builderMode === 'canvas'
-                ? 'bg-surface-base text-greyscale-900 dark:text-greyscale-50 shadow-sm'
-                : 'text-greyscale-400 hover:text-greyscale-700 dark:hover:text-greyscale-200'
-            }`}
+            className={`flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-medium transition-colors ${builderMode === 'canvas'
+              ? 'bg-surface-base text-greyscale-900 dark:text-greyscale-50 shadow-sm'
+              : 'text-greyscale-400 hover:text-greyscale-700 dark:hover:text-greyscale-200'
+              }`}
           >
             <GitBranch size={11} /> Canvas
           </button>
           <button
             type="button"
             onClick={() => setBuilderMode('phases')}
-            className={`flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-medium transition-colors ${
-              builderMode === 'phases'
-                ? 'bg-surface-base text-greyscale-900 dark:text-greyscale-50 shadow-sm'
-                : 'text-greyscale-400 hover:text-greyscale-700 dark:hover:text-greyscale-200'
-            }`}
+            className={`flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-medium transition-colors ${builderMode === 'phases'
+              ? 'bg-surface-base text-greyscale-900 dark:text-greyscale-50 shadow-sm'
+              : 'text-greyscale-400 hover:text-greyscale-700 dark:hover:text-greyscale-200'
+              }`}
           >
             <Layers size={11} /> Phases
           </button>
@@ -489,19 +487,6 @@ export function WorkflowBuilderPage({ workflowId, onBattleClick }: WorkflowBuild
             )}
           </div>
 
-          {/* Battle */}
-          {onBattleClick && (
-            <div className="flex items-center gap-1.5">
-              <Button
-                size="sm"
-                variant="secondary"
-                onClick={() => onBattleClick(workflow.id)}
-                className="gap-1.5 w-auto"
-              >
-                <Swords size={12} /> Battle it
-              </Button>
-            </div>
-          )}
           {/* Run panel toggle */}
           {runId && (
             <Button
@@ -562,23 +547,6 @@ export function WorkflowBuilderPage({ workflowId, onBattleClick }: WorkflowBuild
                   </div>
                 </div>
               )}
-
-              {/* Battle CTA — shown when workflow has nodes and isn't running */}
-              {nodes.length > 0 && !isRunning && !showRunPanel && !selectedNodeConfig && onBattleClick && (
-                <div className="pointer-events-auto absolute top-3 right-3 flex items-center gap-2 rounded-2xl border border-primary-yellow-500/30 bg-primary-yellow-500/5 px-3 py-2 shadow-sm">
-                  <p className="text-xs font-medium text-greyscale-700 dark:text-greyscale-300">
-                    Workflow ready.
-                  </p>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => onBattleClick(workflow.id)}
-                    className="!text-xs !font-semibold !text-primary-yellow-600 hover:!bg-primary-yellow-500/10 w-auto !h-auto !py-1 !px-2"
-                  >
-                    Battle it →
-                  </Button>
-                </div>
-              )}
             </>
           )}
         </div>
@@ -609,22 +577,20 @@ export function WorkflowBuilderPage({ workflowId, onBattleClick }: WorkflowBuild
                 <button
                   type="button"
                   onClick={() => setRunPanelTab('run')}
-                  className={`px-2.5 py-1 rounded-lg text-xs font-medium transition-colors ${
-                    runPanelTab === 'run'
-                      ? 'bg-surface-raised text-greyscale-900 dark:text-greyscale-50'
-                      : 'text-greyscale-400 hover:text-greyscale-700 dark:hover:text-greyscale-200'
-                  }`}
+                  className={`px-2.5 py-1 rounded-lg text-xs font-medium transition-colors ${runPanelTab === 'run'
+                    ? 'bg-surface-raised text-greyscale-900 dark:text-greyscale-50'
+                    : 'text-greyscale-400 hover:text-greyscale-700 dark:hover:text-greyscale-200'
+                    }`}
                 >
                   Current Run
                 </button>
                 <button
                   type="button"
                   onClick={() => setRunPanelTab('history')}
-                  className={`flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-medium transition-colors ${
-                    runPanelTab === 'history'
-                      ? 'bg-surface-raised text-greyscale-900 dark:text-greyscale-50'
-                      : 'text-greyscale-400 hover:text-greyscale-700 dark:hover:text-greyscale-200'
-                  }`}
+                  className={`flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-medium transition-colors ${runPanelTab === 'history'
+                    ? 'bg-surface-raised text-greyscale-900 dark:text-greyscale-50'
+                    : 'text-greyscale-400 hover:text-greyscale-700 dark:hover:text-greyscale-200'
+                    }`}
                 >
                   <History size={11} />
                   History
@@ -637,11 +603,10 @@ export function WorkflowBuilderPage({ workflowId, onBattleClick }: WorkflowBuild
                 <button
                   type="button"
                   onClick={() => setRunPanelTab('schedule')}
-                  className={`flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-medium transition-colors ${
-                    runPanelTab === 'schedule'
-                      ? 'bg-surface-raised text-greyscale-900 dark:text-greyscale-50'
-                      : 'text-greyscale-400 hover:text-greyscale-700 dark:hover:text-greyscale-200'
-                  }`}
+                  className={`flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-medium transition-colors ${runPanelTab === 'schedule'
+                    ? 'bg-surface-raised text-greyscale-900 dark:text-greyscale-50'
+                    : 'text-greyscale-400 hover:text-greyscale-700 dark:hover:text-greyscale-200'
+                    }`}
                 >
                   <CalendarClock size={11} />
                   Schedule
