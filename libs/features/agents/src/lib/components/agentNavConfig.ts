@@ -68,7 +68,7 @@ const AGENT_OWNER_ONLY: AgentViewMode[] = ['agent_owner']
 export const NAV_ITEMS: AgentNavItem[] = [
   // OPERATE
   { id: 'overview', label: 'Overview', zone: 'operate', icon: Layers, visibleIn: PUBLIC_VISIBLE },
-  { id: 'scratchpad', label: 'Scratchpad', zone: 'operate', icon: FileStack, visibleIn: OWNER_ONLY },
+  { id: 'scratchpad', label: 'Scratchpad', zone: 'operate', icon: FileStack, visibleIn: AGENT_OWNER_ONLY },
   { id: 'team', label: 'Builder', zone: 'operate', icon: Network, visibleIn: OWNER_ONLY },
   { id: 'runs', label: 'Runs', zone: 'operate', icon: Activity, visibleIn: PUBLIC_VISIBLE },
   { id: 'logs', label: 'Logs', zone: 'operate', icon: ClipboardList, visibleIn: OWNER_ONLY },

@@ -194,6 +194,23 @@ export const ScratchpadSection: React.FC = () => {
     >
       <BootstrapStatusPanel state={bootstrapState} />
 
+      {bootstrapState.kind === 'loading' && (
+        <div className="space-y-4">
+          <div className="grid gap-4 xl:grid-cols-[1fr_360px]">
+            <div className="h-80 animate-pulse rounded-[24px] border border-gray-100 bg-gray-50 dark:border-gray-700 dark:bg-gray-900" />
+            <div className="space-y-4">
+              {[120, 96, 80].map((h, idx) => (
+                <div
+                  key={idx}
+                  style={{ height: h }}
+                  className="animate-pulse rounded-[24px] border border-gray-100 bg-gray-50 dark:border-gray-700 dark:bg-gray-900"
+                />
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
       {bootstrap && (
         <AgentGraphShell
           readOnly

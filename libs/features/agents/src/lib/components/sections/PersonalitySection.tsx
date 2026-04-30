@@ -1,21 +1,22 @@
 import { queryKeys } from '@lenserfight/data/cache'
-import { agentWorkspaceService } from '@lenserfight/data/repositories'
+import { agentWorkspaceService, agentsService } from '@lenserfight/data/repositories'
 import { AlertDialog } from '@lenserfight/ui/overlays'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { ClipboardList, Pencil, Plus, Trash2 } from 'lucide-react'
-import React, { useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import { toast } from 'sonner'
 
 import { useAgentWorkspace } from '../../context/AgentWorkspaceContext'
 import { PersonalityProfileDrawer } from '../drawers/PersonalityProfileDrawer'
 import { EmptyPanel } from '../EmptyPanel'
 
+import { ProfileCard } from './_shared'
 import { SectionPage } from './SectionPage'
 
 import type { AgentPersonalityProfileRecord } from '@lenserfight/types'
 
 export const PersonalitySection: React.FC = () => {
-  const { bootstrap, profile, isOwner } = useAgentWorkspace()
+  const { bootstrap, profile, isOwner, agentProfile } = useAgentWorkspace()
   const queryClient = useQueryClient()
   const [drawerOpen, setDrawerOpen] = useState(false)
   const [editing, setEditing] = useState<AgentPersonalityProfileRecord | null>(null)
@@ -24,6 +25,23 @@ export const PersonalitySection: React.FC = () => {
     body: string
     onConfirm: () => void
   } | null>(null)
+  const [noteText, setNoteText] = useState('')
+
+  useEffect(() => {
+    setNoteText(agentProfile?.personality_note ?? '')
+  }, [agentProfile?.personality_note])
+
+  const saveNote = useMutation({
+    mutationFn: () =>
+      agentsService.updatePersonality(bootstrap!.ai_lenser_id, noteText),
+    onSuccess: () => {
+      toast.success('Personality note saved')
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.agents.detailByProfile(profile.id),
+      })
+    },
+    onError: (e) => toast.error((e as Error).message),
+  })
 
   const profiles =
     (bootstrap?.profiles.personality as
@@ -45,8 +63,8 @@ export const PersonalitySection: React.FC = () => {
   return (
     <SectionPage
       eyebrow="Personality"
-      title="Personality profiles"
-      description="Set communication style, autonomy posture, escalation behavior, and decision style. Personality cannot grant tools or memory access; it only shapes how the agent communicates and reasons."
+      title="Personality &amp; communication style"
+      description="Shape how the agent communicates, reasons, and escalates. The global note applies to every run. Personality profiles layer structured overrides on top for specific workflows or teams."
       toolbar={
         isOwner && bootstrap ? (
           <button
@@ -63,6 +81,42 @@ export const PersonalitySection: React.FC = () => {
         ) : undefined
       }
     >
+      {isOwner && (
+        <ProfileCard
+          title="Global personality note"
+          subtitle="Free-form description of this agent's role, tone, and baseline behavior. Applied to every run unless overridden by a profile."
+        >
+          <div className="space-y-3">
+            <textarea
+              rows={4}
+              value={noteText}
+              onChange={(e) => setNoteText(e.target.value)}
+              placeholder="e.g. You are a helpful assistant that prioritizes clear, concise answers. Always ask clarifying questions before taking irreversible actions."
+              className="w-full rounded-2xl border border-gray-200 bg-white px-4 py-2.5 text-sm text-gray-900 outline-none focus:border-amber-400 resize-none dark:border-gray-700 dark:bg-gray-900 dark:text-white"
+            />
+            <button
+              type="button"
+              onClick={() => saveNote.mutate()}
+              disabled={saveNote.isPending || !bootstrap}
+              className="inline-flex items-center gap-2 rounded-2xl bg-gray-900 px-4 py-2 text-sm font-semibold text-white transition hover:bg-amber-600 disabled:opacity-50 dark:bg-white dark:text-gray-900"
+            >
+              {saveNote.isPending ? 'Saving…' : 'Save note'}
+            </button>
+          </div>
+        </ProfileCard>
+      )}
+
+      <div className="rounded-[24px] border border-gray-200 bg-gray-50 p-5 dark:border-gray-800 dark:bg-gray-950">
+        <h3 className="text-sm font-semibold text-gray-900 dark:text-white">Global note vs. personality profiles</h3>
+        <p className="mt-2 text-sm leading-6 text-gray-600 dark:text-gray-300">
+          The <strong className="font-semibold text-gray-800 dark:text-gray-100">global note</strong> is a
+          free-text baseline applied to every run. <strong className="font-semibold text-gray-800 dark:text-gray-100">Personality
+          profiles</strong> add structured overrides — tone, expertise level, autonomy posture, escalation
+          rules — that can be scoped to a specific workflow or team graph.
+          Profiles cannot grant tools or memory access; they only shape communication and reasoning.
+        </p>
+      </div>
+
       {profiles.length === 0 ? (
         <EmptyPanel
           icon={<ClipboardList size={20} />}
