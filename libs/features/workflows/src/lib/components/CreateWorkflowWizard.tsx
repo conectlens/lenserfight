@@ -458,6 +458,7 @@ export const CreateWorkflowWizard: React.FC<CreateWorkflowWizardProps> = ({ onCr
             onLocalKeyIdChange={funding.setSelectedLocalKeyId}
             availableLocalKeys={funding.localKeys}
             onAddLocalKey={funding.addLocalKey}
+            onUpdateLocalKey={funding.updateLocalKey}
             walletBalance={funding.walletBalance}
             canUseBYOK={funding.canUseBYOK}
           />

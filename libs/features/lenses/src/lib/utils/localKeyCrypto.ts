@@ -137,6 +137,24 @@ export async function getLocalKeyById(id: string): Promise<LocalKey | undefined>
   })
 }
 
+export async function updateLocalKey(id: string, rawKey: string, label: string): Promise<void> {
+  const db = await openLocalKeyDb()
+  const existing: LocalKey | undefined = await new Promise((resolve, reject) => {
+    const req = db.transaction(STORE_NAME, 'readonly').objectStore(STORE_NAME).get(id)
+    req.onsuccess = () => resolve(req.result as LocalKey | undefined)
+    req.onerror = () => reject(req.error)
+  })
+  if (!existing) throw new Error(`Local key not found: ${id}`)
+  const { encryptedKey, iv } = await encryptKey(rawKey)
+  const updated: LocalKey = { ...existing, encryptedKey, iv, label }
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(STORE_NAME, 'readwrite')
+    tx.objectStore(STORE_NAME).put(updated)
+    tx.oncomplete = () => resolve()
+    tx.onerror = () => reject(tx.error)
+  })
+}
+
 export async function deleteLocalKey(id: string): Promise<void> {
   const db = await openLocalKeyDb()
   return new Promise((resolve, reject) => {
