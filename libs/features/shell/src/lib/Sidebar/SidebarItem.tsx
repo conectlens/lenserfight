@@ -1,4 +1,4 @@
-import { Lock } from 'lucide-react'
+import { ExternalLink, Lock } from 'lucide-react'
 import React, { useState } from 'react'
 
 interface SidebarItemProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
@@ -95,6 +95,13 @@ export const SidebarItem: React.FC<SidebarItemProps> = ({
           <Lock
             size={12}
             className="text-gray-400 dark:text-gray-600 ml-2 flex-shrink-0"
+            aria-hidden="true"
+          />
+        )}
+        {externalHref && !locked && !isComingSoon && (
+          <ExternalLink
+            size={11}
+            className="text-gray-400 dark:text-gray-600 ml-2 flex-shrink-0 opacity-70"
             aria-hidden="true"
           />
         )}
