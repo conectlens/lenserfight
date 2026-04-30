@@ -12,10 +12,11 @@ import { Field, Input, SearchBar, SelectField, TextArea } from '@lenserfight/ui/
 import { useWizardStep } from '@lenserfight/ui/routing'
 import { useQuery } from '@tanstack/react-query'
 import { CalendarClock, Check, GitBranch, KeyRound, Layers, Sparkles } from 'lucide-react'
-import React, { useState } from 'react'
+import React, { useRef, useState } from 'react'
 
 import { useCreateWorkflow } from '../hooks/useCreateWorkflow'
 import { useUpdateWorkflow } from '../hooks/useUpdateWorkflow'
+import type { WorkflowCronPanelRef } from './WorkflowCronPanel'
 import { WorkflowCronPanel } from './WorkflowCronPanel'
 
 import type { LensKind, LensViewModel, PersonalLensFeedItem } from '@lenserfight/types'
@@ -271,6 +272,8 @@ export const CreateWorkflowWizard: React.FC<CreateWorkflowWizardProps> = ({ onCr
   // Funding source (delegates to useFundingSource from lenses feature)
   const funding = useFundingSource(defaultModelId)
 
+  const cronPanelRef = useRef<WorkflowCronPanelRef>(null)
+
   // Lens picker state: map of id → title for selected lenses
   const [selectedLenses, setSelectedLenses] = useState<Map<string, string>>(new Map())
 
@@ -311,8 +314,9 @@ export const CreateWorkflowWizard: React.FC<CreateWorkflowWizardProps> = ({ onCr
   const handleCreate = async () => {
     setLocalError(null)
     try {
-      // Case A: create mode, step 3 — workflow already created, just finish
+      // Case A: create mode, step 3 — workflow already created, flush any pending cron then finish
       if (!editMode && createdWorkflowId) {
+        await cronPanelRef.current?.save()
         onCreated(createdWorkflowId)
         return
       }
@@ -491,9 +495,14 @@ export const CreateWorkflowWizard: React.FC<CreateWorkflowWizardProps> = ({ onCr
 
       {step === 3 && createdWorkflowId && (
         <div className="space-y-3">
-          <WorkflowCronPanel workflowId={createdWorkflowId} isOwner={true} />
+          <WorkflowCronPanel
+            ref={cronPanelRef}
+            workflowId={createdWorkflowId}
+            isOwner={true}
+            hideSaveButton={true}
+          />
           <p className="text-xs leading-5 text-greyscale-400 px-1">
-            Schedules save automatically. You can also manage them later from the Run panel.
+            Schedules save when you click Done or skip. You can also manage them later from the Run panel.
           </p>
         </div>
       )}
