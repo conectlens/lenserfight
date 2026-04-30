@@ -73,10 +73,12 @@ export const InstructionsSection: React.FC = () => {
     onError: (cause) => setNewLensError((cause as Error).message ?? 'Failed to create lens.'),
   })
 
+  const agentHandle = agentProfile?.handle ?? ''
+
   const searchQuery = useQuery({
-    queryKey: [...queryKeys.lenses.feed({ search }), 'instructions-search', search],
-    queryFn: () => lensesService.search(search, 0, 20),
-    enabled: isOwner && search.trim().length >= 2,
+    queryKey: [...queryKeys.lenses.feed({ search }), 'instructions-search', search, agentHandle],
+    queryFn: () => lensesService.search(search, 0, 20, agentProfile?.profile_id ?? null),
+    enabled: isOwner && search.trim().length >= 2 && !!agentHandle,
     staleTime: 15_000,
   })
 
@@ -119,15 +121,6 @@ export const InstructionsSection: React.FC = () => {
 
   const versionParams: LensVersionParam[] = selectedVersionDetailQuery.data?.parameters ?? []
 
-  const allRequiredParamsFilled = useMemo(() => {
-    if (versionParams.length === 0) return true
-    return versionParams.every((param) => {
-      if (!param.tool.required) return true
-      const val = paramValues[param.label]
-      return val !== undefined && val !== null && val !== ''
-    })
-  }, [versionParams, paramValues])
-
   useEffect(() => {
     if (!selectedLensId && defaultInstructionBinding?.lens_id) {
       setSelectedLensId(defaultInstructionBinding.lens_id)
@@ -141,7 +134,11 @@ export const InstructionsSection: React.FC = () => {
   }, [effectiveVersionId])
 
   const handleBind = async () => {
-    if (!agentProfile?.ai_lenser_id || !selectedLensId) return
+    if (!agentProfile?.ai_lenser_id) {
+      setError('Agent profile not loaded. Please refresh the page.')
+      return
+    }
+    if (!selectedLensId) return
     setSaving(true)
     setError(null)
     try {
@@ -301,12 +298,19 @@ export const InstructionsSection: React.FC = () => {
               </div>
             )}
 
-            {selectedVersionDetailQuery.isLoading && (
+            {effectiveVersionId && selectedVersionDetailQuery.isLoading && (
               <p className="text-xs text-gray-400 dark:text-gray-500">Loading version parameters…</p>
+            )}
+
+            {effectiveVersionId && !selectedVersionDetailQuery.isLoading && selectedVersionDetailQuery.data === null && (
+              <p className="text-xs text-amber-500 dark:text-amber-400">Could not load version details. The version may be unavailable or you may not have access.</p>
             )}
 
             {versionParams.length > 0 && (
               <div className="rounded-[20px] border border-gray-200 bg-gray-50 p-4 dark:border-gray-800 dark:bg-gray-950">
+                <p className="mb-3 text-xs text-gray-400 dark:text-gray-500">
+                  These parameters are shown for reference. Fill them to preview execution, but the binding itself does not store parameter values.
+                </p>
                 <VersionParamFields
                   params={versionParams}
                   values={paramValues}
@@ -330,7 +334,7 @@ export const InstructionsSection: React.FC = () => {
               <button
                 type="button"
                 onClick={handleBind}
-                disabled={!selectedLensId || saving || !allRequiredParamsFilled}
+                disabled={!selectedLensId || saving}
                 className="inline-flex items-center gap-2 rounded-2xl bg-gray-900 px-4 py-2 text-sm font-semibold text-white transition hover:bg-amber-600 disabled:opacity-50 dark:bg-white dark:text-gray-900"
               >
                 <Sparkles size={14} />
