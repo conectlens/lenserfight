@@ -1,6 +1,12 @@
 import { defineCommand } from 'citty';
 import consola from 'consola';
+import { type PrivateBattleFrontmatter } from '@lenserfight/types';
 import { callRpc, handleError } from '../utils/api';
+import {
+  buildWorkflowSimulationReport,
+  parseAutomationDocument,
+  writeWorkflowSimulationArtifacts,
+} from '../utils/automation-objects';
 import { printTable, printJson, truncate } from '../utils/output';
 
 // ---------------------------------------------------------------------------
@@ -236,6 +242,70 @@ const view = defineCommand({
     }
   },
 });
+
+// ---------------------------------------------------------------------------
+// battle run (file-first private battle scaffold)
+// ---------------------------------------------------------------------------
+const run = defineCommand({
+  meta: {
+    name: 'run',
+    description: 'Simulate a file-first PRIVATE_BATTLE.md locally and emit a report.',
+  },
+  args: {
+    file: {
+      type: 'positional',
+      description: 'Path to PRIVATE_BATTLE.md',
+      required: true,
+    },
+    json: {
+      type: 'boolean',
+      description: 'Output the generated battle summary as JSON',
+      default: false,
+    },
+  },
+  async run({ args }) {
+    const parsed = parseAutomationDocument(args.file)
+    if (!parsed.ok || parsed.kind !== 'private_battle' || !parsed.document) {
+      consola.error('Private battle validation failed for %s', args.file)
+      for (const issue of parsed.issues) {
+        consola.error('  - %s: %s', issue.path, issue.message)
+      }
+      process.exitCode = 1
+      return
+    }
+
+    const frontmatter = parsed.document.frontmatter as PrivateBattleFrontmatter
+    const participants = (frontmatter.participants ?? []).map((participant) => `${participant.type}:${participant.ref}`)
+    const summary = {
+      source: {
+        kind: 'private_battle',
+        id: frontmatter.id,
+        name: frontmatter.name,
+      },
+      participants,
+      evaluation_method: frontmatter.evaluation_method ?? 'unspecified',
+      metrics: frontmatter.metrics ?? [],
+      generated_at: new Date().toISOString(),
+    }
+
+    const report = buildWorkflowSimulationReport(
+      frontmatter.name ?? frontmatter.id,
+      participants.length >= 2 ? 'ready' : 'blocked',
+      participants.length > 0 ? participants : ['No participants were declared in the battle spec.']
+    )
+    const artifacts = writeWorkflowSimulationArtifacts(frontmatter.slug ?? frontmatter.id, summary, report)
+
+    if (args.json) {
+      printJson({ ...summary, artifacts })
+      return
+    }
+
+    consola.success('Simulated private battle %s', frontmatter.name ?? frontmatter.id)
+    consola.info('Participants: %d', participants.length)
+    consola.info('JSON report: %s', artifacts.jsonPath)
+    consola.info('Markdown report: %s', artifacts.reportPath)
+  },
+})
 
 // ---------------------------------------------------------------------------
 // battle submit
@@ -620,6 +690,7 @@ export default defineCommand({
   subCommands: {
     create,
     join,
+    run,
     list,
     view,
     submit,
