@@ -60,24 +60,26 @@ const VALID_SECTIONS: AgentSection[] = [
   'settings',
 ]
 
-const SECTION_COMPONENT: Record<AgentSection, React.ComponentType> = {
-  overview: OverviewSection,
-  scratchpad: ScratchpadSection,
-  team: AgentTeamSection,
-  runs: RunsSection,
-  logs: LogsSection,
-  workflows: WorkflowsSection,
-  schedules: SchedulesSection,
-  evaluations: EvaluationsSection,
-  memory: MemorySection,
-  instructions: InstructionsSection,
-  personality: PersonalitySection,
-  tools: ToolsSection,
-  models: ModelsSection,
-  providers: ProvidersSection,
-  approvals: ApprovalsSection,
-  cost: CostSection,
-  settings: SettingsSection,
+function getSectionComponent(section: AgentSection): React.ComponentType {
+  switch (section) {
+    case 'overview': return OverviewSection
+    case 'scratchpad': return ScratchpadSection
+    case 'team': return AgentTeamSection
+    case 'runs': return RunsSection
+    case 'logs': return LogsSection
+    case 'workflows': return WorkflowsSection
+    case 'schedules': return SchedulesSection
+    case 'evaluations': return EvaluationsSection
+    case 'memory': return MemorySection
+    case 'instructions': return InstructionsSection
+    case 'personality': return PersonalitySection
+    case 'tools': return ToolsSection
+    case 'models': return ModelsSection
+    case 'providers': return ProvidersSection
+    case 'approvals': return ApprovalsSection
+    case 'cost': return CostSection
+    case 'settings': return SettingsSection
+  }
 }
 
 interface AgentWorkspaceShellProps {
@@ -187,7 +189,7 @@ export const AgentWorkspaceShell: React.FC<AgentWorkspaceShellProps> = ({
     )
   }
 
-  const SectionComponent = SECTION_COMPONENT[activeSection]
+  const SectionComponent = getSectionComponent(activeSection)
 
   return (
     <AgentWorkspaceProvider
