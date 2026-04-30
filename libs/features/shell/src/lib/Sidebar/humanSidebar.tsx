@@ -6,6 +6,8 @@ import {
   Boxes,
   ClipboardList,
   Cloud,
+  Cpu,
+  Database,
   FileStack,
   GitBranch,
   Home,
@@ -17,6 +19,7 @@ import {
   Sparkles,
   TerminalSquare,
   Users,
+  Users2,
   Wrench,
 } from 'lucide-react'
 
@@ -32,19 +35,24 @@ interface BuildHumanSidebarOptions {
 export function buildHumanSidebarSections(
   options: BuildHumanSidebarOptions
 ): SidebarNavSectionConfig[] {
+  const hasActiveWorkspace = !!options.activeWorkspaceHandle
   const agentBase = options.activeWorkspaceHandle
     ? `/lenser/${options.activeWorkspaceHandle}/ag`
-    : '/lensers?type=ai'
+    : ''
 
-  return [
+  const sections: SidebarNavSectionConfig[] = [
     {
       id: 'operate',
       label: 'Operate',
       items: [
         { id: 'overview', label: 'Overview', path: '/', exact: true, icon: <Home size={20} /> },
-        { id: 'agent-workspace', label: 'Agent Workspace', path: `${agentBase}/overview`, icon: <Bot size={20} /> },
-        { id: 'runs', label: 'Runs', path: `${agentBase}/runs`, icon: <Activity size={20} /> },
-        { id: 'logs', label: 'Logs', path: `${agentBase}/logs`, icon: <ClipboardList size={20} /> },
+        ...(hasActiveWorkspace
+          ? [
+              { id: 'agent-workspace', label: 'Agent Workspace', path: `${agentBase}/overview`, icon: <Bot size={20} /> },
+              { id: 'runs', label: 'Runs', path: `${agentBase}/runs`, icon: <Activity size={20} /> },
+              { id: 'logs', label: 'Logs', path: `${agentBase}/logs`, icon: <ClipboardList size={20} /> },
+            ]
+          : []),
       ],
     },
     {
@@ -58,9 +66,11 @@ export function buildHumanSidebarSections(
           icon: <GitBranch size={20} />,
           locked: options.isNavLocked,
         },
-        { id: 'builder', label: 'Builder', path: '/workflows/manage', icon: <Boxes size={20} />, locked: options.isNavLocked },
+        { id: 'builder', label: 'New Workflow', path: '/workflows/manage', icon: <Boxes size={20} />, locked: options.isNavLocked },
         { id: 'agents', label: 'Agents', path: '/lensers?type=ai', icon: <Users size={20} /> },
-        { id: 'agent-teams', label: 'Agent Teams', path: `${agentBase}/team`, icon: <Sparkles size={20} /> },
+        ...(hasActiveWorkspace
+          ? [{ id: 'agent-teams', label: 'Agent Teams', path: `${agentBase}/team`, icon: <Users2 size={20} /> }]
+          : []),
         { id: 'lenses', label: 'Lenses', path: '/lenses', icon: <Brain size={20} /> },
         { id: 'skills', label: 'Skills', externalHref: `${DOCS_BASE_URL}/reference/automation/markdown-objects#skillmd`, icon: <FileStack size={20} /> },
       ],
@@ -69,19 +79,24 @@ export function buildHumanSidebarSections(
       id: 'automate',
       label: 'Automate',
       items: [
-        { id: 'automations', label: 'Automations', path: '/workflows', icon: <GitBranch size={20} /> },
-        { id: 'evaluations', label: 'Evaluations', path: `${agentBase}/evaluations`, icon: <Sparkles size={20} /> },
+        ...(hasActiveWorkspace
+          ? [{ id: 'evaluations', label: 'Evaluations', path: `${agentBase}/evaluations`, icon: <Sparkles size={20} /> }]
+          : []),
       ],
     },
     {
       id: 'configure',
       label: 'Configure',
       items: [
-        { id: 'tools', label: 'Tools', path: `${agentBase}/tools`, icon: <Wrench size={20} /> },
-        { id: 'models', label: 'Models', path: '/ai/catalog/models', icon: <Sparkles size={20} /> },
+        ...(hasActiveWorkspace
+          ? [
+              { id: 'tools', label: 'Tools', path: `${agentBase}/tools`, icon: <Wrench size={20} /> },
+              { id: 'memory', label: 'Memory', path: `${agentBase}/memory`, icon: <Database size={20} /> },
+              { id: 'instructions', label: 'Instructions', path: `${agentBase}/instructions`, icon: <FileStack size={20} /> },
+            ]
+          : []),
+        { id: 'models', label: 'Models', path: '/ai/catalog/models', icon: <Cpu size={20} /> },
         { id: 'providers', label: 'Providers', path: '/ai/catalog', icon: <PlugZap size={20} /> },
-        { id: 'memory', label: 'Memory', path: `${agentBase}/memory`, icon: <Brain size={20} /> },
-        { id: 'instructions', label: 'Instructions', path: `${agentBase}/instructions`, icon: <FileStack size={20} /> },
       ],
     },
     {
@@ -106,4 +121,6 @@ export function buildHumanSidebarSections(
       ],
     },
   ]
+
+  return sections.filter((section) => section.items.length > 0)
 }
