@@ -308,23 +308,6 @@ export const CreateWorkflowWizard: React.FC<CreateWorkflowWizardProps> = ({ onCr
     onCancel()
   }
 
-  const handleNext = () => {
-    if (step === 0) {
-      if (titleValue.length < 3) {
-        setLocalError('Title must be at least 3 characters.')
-        return
-      }
-      setLocalError(null)
-      goToStep(1)
-    } else if (step === 1 && !editMode) {
-      if (defaultModelId && typeof window !== 'undefined') {
-        localStorage.setItem('lf-workflow-global-model', defaultModelId)
-      }
-      setLocalError(null)
-      goToStep(2)
-    }
-  }
-
   const handleCreate = async () => {
     setLocalError(null)
     try {
@@ -375,6 +358,25 @@ export const CreateWorkflowWizard: React.FC<CreateWorkflowWizardProps> = ({ onCr
             ? (err as { message: string }).message
             : 'Something went wrong. Please try again.'
       setLocalError(msg)
+    }
+  }
+
+  const handleNext = () => {
+    if (step === 0) {
+      if (titleValue.length < 3) {
+        setLocalError('Title must be at least 3 characters.')
+        return
+      }
+      setLocalError(null)
+      goToStep(1)
+    } else if (step === 1 && !editMode) {
+      if (defaultModelId && typeof window !== 'undefined') {
+        localStorage.setItem('lf-workflow-global-model', defaultModelId)
+      }
+      setLocalError(null)
+      goToStep(2)
+    } else if (step === 2) {
+      handleCreate()
     }
   }
 
