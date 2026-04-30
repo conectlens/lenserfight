@@ -72,7 +72,6 @@ export function buildHumanSidebarSections(
           ? [{ id: 'agent-teams', label: 'Agent Teams', path: `${agentBase}/team`, icon: <Users2 size={20} /> }]
           : []),
         { id: 'lenses', label: 'Lenses', path: '/lenses', icon: <Brain size={20} /> },
-        { id: 'skills', label: 'Skills', externalHref: `${DOCS_BASE_URL}/reference/automation/markdown-objects#skillmd`, icon: <FileStack size={20} /> },
       ],
     },
     {
@@ -118,6 +117,7 @@ export function buildHumanSidebarSections(
         ...(SURFACE.showBillingAndStore
           ? [{ id: 'billing', label: 'Plans', path: '/billing', icon: <ShoppingBag size={20} /> }]
           : []),
+        { id: 'skills', label: 'Skills', externalHref: `${DOCS_BASE_URL}/reference/automation/markdown-objects#skillmd`, icon: <FileStack size={20} /> },
       ],
     },
   ]
