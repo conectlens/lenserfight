@@ -587,6 +587,7 @@ export const LensDetailPage: React.FC = () => {
                   availableLocalKeys={funding.localKeys}
                   onAddLocalKey={funding.addLocalKey}
                   onRemoveLocalKey={funding.removeLocalKey}
+                  onUpdateLocalKey={funding.updateLocalKey}
                   onProviderDropdownOpen={handleProviderDropdownOpen}
                   isLocked={!hasActiveLenserProfile}
                   onSignIn={ensureProfile}
