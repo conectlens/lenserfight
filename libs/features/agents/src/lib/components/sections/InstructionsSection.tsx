@@ -80,9 +80,11 @@ export const InstructionsSection: React.FC = () => {
 
   const lensOptions = useMemo(() => {
     if (search.trim().length >= 2) {
-      return searchQuery.data?.data ?? []
+      const data = searchQuery.data
+      return Array.isArray(data) ? data : (data?.data ?? [])
     }
-    return ownedLensesQuery.data ?? []
+    const data = ownedLensesQuery.data
+    return Array.isArray(data) ? data : (data?.data ?? [])
   }, [ownedLensesQuery.data, search, searchQuery.data])
 
   const selectedLens = lensOptions.find((lens) => lens.id === selectedLensId) ?? null
