@@ -7,6 +7,7 @@ import {
   getLocalKeys,
   getLocalKeyById,
   deleteLocalKey,
+  updateLocalKey,
 } from '../utils/localKeyCrypto'
 
 export interface UseLocalKeyStore {
@@ -15,6 +16,8 @@ export interface UseLocalKeyStore {
   /** Add a new encrypted local key. Pass rawKey='' for Ollama (no key needed). */
   addKey: (provider: string, label: string, rawKey: string) => Promise<void>
   removeKey: (id: string) => Promise<void>
+  /** Replace the encrypted key and label for an existing entry. */
+  updateKey: (id: string, rawKey: string, label: string) => Promise<void>
   /** Decrypt and return the raw key at execution time — never stored in state. */
   resolveKey: (id: string) => Promise<string>
 }
@@ -50,11 +53,17 @@ export function useLocalKeyStore(): UseLocalKeyStore {
     setLocalKeys((prev) => prev.filter((k) => k.id !== id))
   }, [])
 
+  const updateKey = useCallback(async (id: string, rawKey: string, label: string) => {
+    await updateLocalKey(id, rawKey, label)
+    const keys = await getLocalKeys()
+    setLocalKeys(toMeta(keys))
+  }, [])
+
   const resolveKey = useCallback(async (id: string): Promise<string> => {
     const entry = await getLocalKeyById(id)
     if (!entry) throw new Error(`Local key not found: ${id}`)
     return decryptKey(entry.encryptedKey, entry.iv)
   }, [])
 
-  return { localKeys, isLoading, addKey, removeKey, resolveKey }
+  return { localKeys, isLoading, addKey, removeKey, updateKey, resolveKey }
 }

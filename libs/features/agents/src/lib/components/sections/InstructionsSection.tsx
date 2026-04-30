@@ -1,5 +1,6 @@
 import { queryKeys } from '@lenserfight/data/cache'
 import { agentsService, lensesService } from '@lenserfight/data/repositories'
+import { VersionParamFields } from '@lenserfight/features/lenses'
 import { useLenserWorkspace } from '@lenserfight/features/profile'
 import { Drawer } from '@lenserfight/ui/overlays'
 import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query'
@@ -13,7 +14,7 @@ import { ProfileCard } from './_shared'
 import { BootstrapStatusPanel } from '../BootstrapStatusPanel'
 import { SectionPage } from './SectionPage'
 
-import type { LensVersion, LensViewModel } from '@lenserfight/types'
+import type { LensVersion, LensVersionParam } from '@lenserfight/types'
 
 export const InstructionsSection: React.FC = () => {
   const {
@@ -31,16 +32,17 @@ export const InstructionsSection: React.FC = () => {
   const [selectedVersionId, setSelectedVersionId] = useState('')
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [paramValues, setParamValues] = useState<Record<string, unknown>>({})
+  const [paramErrors, setParamErrors] = useState<Record<string, string>>({})
   const [createLensDrawer, setCreateLensDrawer] = useState(false)
   const [newLensTitle, setNewLensTitle] = useState('')
   const [newLensError, setNewLensError] = useState<string | null>(null)
 
-  const ownerHandle = humanWorkspace?.handle ?? agentProfile?.owner_handle ?? profile.handle
   const ownerId = humanWorkspace?.id ?? agentProfile?.owner_lenser_id ?? profile.id
 
-  const ownedLensesQuery = useQuery<LensViewModel[]>({
+  const ownedLensesQuery = useQuery({
     queryKey: queryKeys.lenses.personal(ownerId),
-    queryFn: () => lensesService.getLenserLenses(ownerHandle, 0, 60, ownerId),
+    queryFn: () => lensesService.getMyLenses(0, 60),
     // Defer until we have a real human owner ID to avoid querying under the AI lenser's ID
     enabled: isOwner && (!!humanWorkspace?.id || !!agentProfile?.owner_lenser_id),
     staleTime: 30_000,
@@ -96,6 +98,36 @@ export const InstructionsSection: React.FC = () => {
     staleTime: 30_000,
   })
 
+  // Resolve the best version to preview params for — even when the dropdown shows "Latest published".
+  // Prefers published, falls back to the first available version (draft/archived).
+  const effectiveVersionId = useMemo(() => {
+    if (selectedVersionId) return selectedVersionId
+    const versions = versionsQuery.data ?? []
+    return (
+      versions.find((v) => v.status === 'published')?.id ??
+      versions[0]?.id ??
+      ''
+    )
+  }, [selectedVersionId, versionsQuery.data])
+
+  const selectedVersionDetailQuery = useQuery<LensVersion | null>({
+    queryKey: queryKeys.lensVersions.detail(effectiveVersionId),
+    queryFn: () => lensesService.getVersionById(effectiveVersionId),
+    enabled: !!effectiveVersionId,
+    staleTime: 60_000,
+  })
+
+  const versionParams: LensVersionParam[] = selectedVersionDetailQuery.data?.parameters ?? []
+
+  const allRequiredParamsFilled = useMemo(() => {
+    if (versionParams.length === 0) return true
+    return versionParams.every((param) => {
+      if (!param.tool.required) return true
+      const val = paramValues[param.label]
+      return val !== undefined && val !== null && val !== ''
+    })
+  }, [versionParams, paramValues])
+
   useEffect(() => {
     if (!selectedLensId && defaultInstructionBinding?.lens_id) {
       setSelectedLensId(defaultInstructionBinding.lens_id)
@@ -104,12 +136,9 @@ export const InstructionsSection: React.FC = () => {
   }, [defaultInstructionBinding, selectedLensId])
 
   useEffect(() => {
-    if (!selectedLensId || selectedVersionId) return
-    const latestVersion = versionsQuery.data?.find((version) => version.status === 'published')
-    if (latestVersion) {
-      setSelectedVersionId(latestVersion.id)
-    }
-  }, [selectedLensId, selectedVersionId, versionsQuery.data])
+    setParamValues({})
+    setParamErrors({})
+  }, [effectiveVersionId])
 
   const handleBind = async () => {
     if (!agentProfile?.ai_lenser_id || !selectedLensId) return
@@ -272,6 +301,25 @@ export const InstructionsSection: React.FC = () => {
               </div>
             )}
 
+            {selectedVersionDetailQuery.isLoading && (
+              <p className="text-xs text-gray-400 dark:text-gray-500">Loading version parameters…</p>
+            )}
+
+            {versionParams.length > 0 && (
+              <div className="rounded-[20px] border border-gray-200 bg-gray-50 p-4 dark:border-gray-800 dark:bg-gray-950">
+                <VersionParamFields
+                  params={versionParams}
+                  values={paramValues}
+                  errors={paramErrors}
+                  onChange={(name, value) =>
+                    setParamValues((prev) => ({ ...prev, [name]: value }))
+                  }
+                  onImportJson={() => {}}
+                  onImportCsv={() => {}}
+                />
+              </div>
+            )}
+
             {error && (
               <p className="rounded-2xl border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700 dark:border-red-500/30 dark:bg-red-500/10 dark:text-red-200">
                 {error}
@@ -282,7 +330,7 @@ export const InstructionsSection: React.FC = () => {
               <button
                 type="button"
                 onClick={handleBind}
-                disabled={!selectedLensId || saving}
+                disabled={!selectedLensId || saving || !allRequiredParamsFilled}
                 className="inline-flex items-center gap-2 rounded-2xl bg-gray-900 px-4 py-2 text-sm font-semibold text-white transition hover:bg-amber-600 disabled:opacity-50 dark:bg-white dark:text-gray-900"
               >
                 <Sparkles size={14} />
