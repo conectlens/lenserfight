@@ -54,9 +54,10 @@ export const MemorySection: React.FC = () => {
       title="Memory profiles"
       description="Control whether runs share context, how long memory survives, and who can see it. Profiles can be scoped to a team, a single agent, or a workflow."
       toolbar={
-        isOwner && bootstrap ? (
+        isOwner ? (
           <button
             type="button"
+            disabled={!bootstrap}
             onClick={openCreate}
             className="inline-flex items-center gap-2 rounded-2xl bg-gray-900 px-4 py-2 text-sm font-semibold text-white transition hover:bg-amber-600 dark:bg-white dark:text-gray-900"
           >
@@ -72,12 +73,13 @@ export const MemorySection: React.FC = () => {
           title="No memory profiles yet"
           description="Define short-term, long-term, or shared team memory before enabling collaborative runs."
         >
-          {isOwner && bootstrap ? (
+          {isOwner ? (
             <div className="mt-6 flex justify-center">
               <button
                 type="button"
+                disabled={!bootstrap}
                 onClick={openCreate}
-                className="rounded-2xl bg-gray-900 px-4 py-2 text-sm font-semibold text-white transition hover:bg-amber-600 dark:bg-white dark:text-gray-900"
+                className="rounded-2xl bg-gray-900 px-4 py-2 text-sm font-semibold text-white transition hover:bg-amber-600 disabled:opacity-50 dark:bg-white dark:text-gray-900"
               >
                 Create memory profile
               </button>

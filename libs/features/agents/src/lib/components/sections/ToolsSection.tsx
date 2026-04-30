@@ -127,7 +127,7 @@ export const ToolsSection: React.FC = () => {
   }
 
   const toolbar = (() => {
-    if (!isOwner || !bootstrap) return undefined
+    if (!isOwner) return undefined
 
     if (tab === 'templates') {
       return (
@@ -484,6 +484,15 @@ export const ToolsSection: React.FC = () => {
           </div>
         ))}
 
+      {isOwner && (
+        <RegisterToolDrawer
+          open={registerDrawer}
+          onClose={() => setRegisterDrawer(false)}
+          initial={registerEditing}
+          preset={registerPreset}
+          onSaved={invalidateRegistry}
+        />
+      )}
       {isOwner && bootstrap && (
         <>
           <ToolProfileDrawer
@@ -492,13 +501,6 @@ export const ToolsSection: React.FC = () => {
             aiLenserId={bootstrap.ai_lenser_id}
             initial={profileEditing}
             onSaved={invalidateBootstrap}
-          />
-          <RegisterToolDrawer
-            open={registerDrawer}
-            onClose={() => setRegisterDrawer(false)}
-            initial={registerEditing}
-            preset={registerPreset}
-            onSaved={invalidateRegistry}
           />
           <AssignToolDrawer
             open={assignDrawer}

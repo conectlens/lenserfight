@@ -41,7 +41,8 @@ export const InstructionsSection: React.FC = () => {
   const ownedLensesQuery = useQuery<LensViewModel[]>({
     queryKey: queryKeys.lenses.personal(ownerId),
     queryFn: () => lensesService.getLenserLenses(ownerHandle, 0, 60, ownerId),
-    enabled: isOwner,
+    // Defer until we have a real human owner ID to avoid querying under the AI lenser's ID
+    enabled: isOwner && (!!humanWorkspace?.id || !!agentProfile?.owner_lenser_id),
     staleTime: 30_000,
   })
 
