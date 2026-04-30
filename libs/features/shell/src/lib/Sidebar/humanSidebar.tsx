@@ -1,37 +1,56 @@
 import {
+  Activity,
+  BookOpen,
   Brain,
+  Bot,
+  Boxes,
+  ClipboardList,
   Cloud,
+  FileStack,
   GitBranch,
   Home,
+  KeyRound,
+  LayoutTemplate,
+  PlugZap,
+  ScrollText,
   ShoppingBag,
   Sparkles,
-  Trophy,
+  TerminalSquare,
   Users,
+  Wrench,
 } from 'lucide-react'
 
-import { ARENA_BASE_URL, FEATURES, SURFACE } from '@lenserfight/utils/env'
+import { DOCS_BASE_URL, SURFACE } from '@lenserfight/utils/env'
 
 import type { SidebarNavSectionConfig } from './sidebarModes'
 
 interface BuildHumanSidebarOptions {
   isNavLocked: boolean
+  activeWorkspaceHandle?: string
 }
 
 export function buildHumanSidebarSections(
   options: BuildHumanSidebarOptions
 ): SidebarNavSectionConfig[] {
+  const agentBase = options.activeWorkspaceHandle
+    ? `/lenser/${options.activeWorkspaceHandle}/ag`
+    : '/lensers?type=ai'
+
   return [
     {
-      id: 'core',
+      id: 'operate',
+      label: 'Operate',
       items: [
-        { id: 'home', label: 'Home', path: '/', exact: true, icon: <Home size={20} /> },
-        ...(SURFACE.edition === 'cloud'
-          ? [{ id: 'lenserboard', label: 'LenserBoard', path: '/lenserboard', icon: <Trophy size={20} /> }]
-          : []),
-        ...(FEATURES.PUBLIC_BATTLES
-          ? [{ id: 'arena', label: 'Arena', externalHref: `${ARENA_BASE_URL}/battles`, icon: <Sparkles size={20} /> }]
-          : []),
-        { id: 'lenses', label: 'Lenses', path: '/lenses', icon: <Brain size={20} /> },
+        { id: 'overview', label: 'Overview', path: '/', exact: true, icon: <Home size={20} /> },
+        { id: 'agent-workspace', label: 'Agent Workspace', path: `${agentBase}/overview`, icon: <Bot size={20} /> },
+        { id: 'runs', label: 'Runs', path: `${agentBase}/runs`, icon: <Activity size={20} /> },
+        { id: 'logs', label: 'Logs', path: `${agentBase}/logs`, icon: <ClipboardList size={20} /> },
+      ],
+    },
+    {
+      id: 'build',
+      label: 'Build',
+      items: [
         {
           id: 'workflows',
           label: 'Workflows',
@@ -39,9 +58,48 @@ export function buildHumanSidebarSections(
           icon: <GitBranch size={20} />,
           locked: options.isNavLocked,
         },
+        { id: 'builder', label: 'Builder', path: '/workflows/manage', icon: <Boxes size={20} />, locked: options.isNavLocked },
+        { id: 'agents', label: 'Agents', path: '/lensers?type=ai', icon: <Users size={20} /> },
+        { id: 'agent-teams', label: 'Agent Teams', path: `${agentBase}/team`, icon: <Sparkles size={20} /> },
+        { id: 'lenses', label: 'Lenses', path: '/lenses', icon: <Brain size={20} /> },
+        { id: 'skills', label: 'Skills', externalHref: `${DOCS_BASE_URL}/reference/automation/markdown-objects#skillmd`, icon: <FileStack size={20} /> },
+      ],
+    },
+    {
+      id: 'automate',
+      label: 'Automate',
+      items: [
+        { id: 'automations', label: 'Automations', path: '/workflows', icon: <GitBranch size={20} /> },
+        { id: 'evaluations', label: 'Evaluations', path: `${agentBase}/evaluations`, icon: <Sparkles size={20} /> },
+      ],
+    },
+    {
+      id: 'configure',
+      label: 'Configure',
+      items: [
+        { id: 'tools', label: 'Tools', path: `${agentBase}/tools`, icon: <Wrench size={20} /> },
+        { id: 'models', label: 'Models', path: '/ai/catalog/models', icon: <Sparkles size={20} /> },
+        { id: 'providers', label: 'Providers', path: '/ai/catalog', icon: <PlugZap size={20} /> },
+        { id: 'memory', label: 'Memory', path: `${agentBase}/memory`, icon: <Brain size={20} /> },
+        { id: 'instructions', label: 'Instructions', path: `${agentBase}/instructions`, icon: <FileStack size={20} /> },
+      ],
+    },
+    {
+      id: 'community',
+      label: 'Community',
+      items: [
+        { id: 'templates', label: 'Templates', externalHref: `${DOCS_BASE_URL}/reference/automation/markdown-objects#canonical-formats`, icon: <LayoutTemplate size={20} /> },
+        { id: 'docs', label: 'Docs', externalHref: `${DOCS_BASE_URL}/explanation/automation/index`, icon: <BookOpen size={20} /> },
         { id: 'ray-cloud', label: 'Ray Cloud', path: '/ray', icon: <Cloud size={20} /> },
-        { id: 'lensers', label: 'Lensers', path: '/lensers', icon: <Users size={20} /> },
-        { id: 'ai-catalog', label: 'AI Catalog', path: '/ai/catalog', icon: <Sparkles size={20} /> },
+      ],
+    },
+    {
+      id: 'developer',
+      label: 'Developer',
+      items: [
+        { id: 'api-keys', label: 'API Keys', path: '/settings/api-keys', icon: <KeyRound size={20} /> },
+        { id: 'cli', label: 'CLI', externalHref: `${DOCS_BASE_URL}/reference/cli/index`, icon: <TerminalSquare size={20} /> },
+        { id: 'local-runtime', label: 'Local Runtime', externalHref: `${DOCS_BASE_URL}/reference/cli/dev`, icon: <ScrollText size={20} /> },
         ...(SURFACE.showBillingAndStore
           ? [{ id: 'billing', label: 'Plans', path: '/billing', icon: <ShoppingBag size={20} /> }]
           : []),
