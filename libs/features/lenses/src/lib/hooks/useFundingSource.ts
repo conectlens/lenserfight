@@ -4,6 +4,7 @@ import { queryKeys } from '@lenserfight/data/cache'
 import { apiKeysService, walletApiClient } from '@lenserfight/data/repositories'
 import { UserApiKey, FundingSource, WalletBalance } from '@lenserfight/types'
 import { useAuth } from '@lenserfight/features/auth'
+import { SURFACE } from '@lenserfight/utils/env'
 import { useLocalKeyStore } from './useLocalKeyStore'
 import type { LocalKeyMeta } from '@lenserfight/types'
 
@@ -34,7 +35,7 @@ export const useFundingSource = (selectedProviderKey: string) => {
   const { data: walletBalance } = useQuery<WalletBalance>({
     queryKey: queryKeys.wallet.balance,
     queryFn: () => walletApiClient.getBalance(),
-    enabled: isAuthenticated,
+    enabled: isAuthenticated && SURFACE.showBillingAndStore,
     staleTime: 1000 * 60 * 2,
   })
 
@@ -43,6 +44,7 @@ export const useFundingSource = (selectedProviderKey: string) => {
     isLoading: isLoadingLocalKeys,
     addKey: addLocalKey,
     removeKey: removeLocalKey,
+    updateKey: updateLocalKey,
     resolveKey: resolveLocalKey,
   } = useLocalKeyStore()
 
@@ -97,6 +99,7 @@ export const useFundingSource = (selectedProviderKey: string) => {
     isLoadingLocalKeys,
     addLocalKey,
     removeLocalKey,
+    updateLocalKey,
     resolveLocalKey,
     walletBalance,
     canUseBYOK,
