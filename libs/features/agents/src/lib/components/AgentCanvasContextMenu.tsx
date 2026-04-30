@@ -14,6 +14,7 @@ interface AgentCanvasContextMenuProps {
   /** When defined, the menu is anchored to a node; otherwise it's a pane menu. */
   nodeId?: string
   onAddMember: () => void
+  onManageEdges?: () => void
   onEditMember?: () => void
   onRemoveMember?: () => void
   onClose: () => void
@@ -24,6 +25,7 @@ export const AgentCanvasContextMenu: React.FC<AgentCanvasContextMenuProps> = ({
   y,
   nodeId,
   onAddMember,
+  onManageEdges,
   onEditMember,
   onRemoveMember,
   onClose,
@@ -52,7 +54,9 @@ export const AgentCanvasContextMenu: React.FC<AgentCanvasContextMenuProps> = ({
       ]
     : [
         { label: 'Add member here', icon: <UserPlus size={14} />, onClick: onAddMember },
-        { label: 'Manage edges', icon: <Network size={14} />, onClick: onClose },
+        ...(onManageEdges
+          ? [{ label: 'Manage edges', icon: <Network size={14} />, onClick: onManageEdges }]
+          : []),
       ]
 
   if (items.length === 0) return null
