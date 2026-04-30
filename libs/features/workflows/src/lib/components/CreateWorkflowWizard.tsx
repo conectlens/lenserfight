@@ -7,15 +7,16 @@ import {
   resolveLensKindFromTagSlugs,
 } from '@lenserfight/features/lens-kinds'
 import { FundingSourceToggle, useFundingSource } from '@lenserfight/features/lenses'
-import { Alert, Badge, Button, StepWizard } from '@lenserfight/ui/components'
+import { Alert, Button, StepWizard } from '@lenserfight/ui/components'
 import { Field, Input, SearchBar, SelectField, TextArea } from '@lenserfight/ui/forms'
 import { useWizardStep } from '@lenserfight/ui/routing'
 import { useQuery } from '@tanstack/react-query'
-import { Check, GitBranch, KeyRound, Layers, Sparkles } from 'lucide-react'
+import { CalendarClock, Check, GitBranch, KeyRound, Layers, Sparkles } from 'lucide-react'
 import React, { useState } from 'react'
 
 import { useCreateWorkflow } from '../hooks/useCreateWorkflow'
 import { useUpdateWorkflow } from '../hooks/useUpdateWorkflow'
+import { WorkflowCronPanel } from './WorkflowCronPanel'
 
 import type { LensKind, LensViewModel, PersonalLensFeedItem } from '@lenserfight/types'
 import type { WizardStepConfig } from '@lenserfight/ui/components'
@@ -57,6 +58,12 @@ const WIZARD_STEPS: WizardStepConfig[] = [
     title: 'Choose starting lenses',
     description: 'Pick one or more lenses to add as nodes. You can always add more in the canvas editor.',
     icon: <Layers size={20} />,
+  },
+  {
+    label: 'Schedule',
+    title: 'Schedule your workflow',
+    description: 'Set up a recurring CRON schedule — optional, skip anytime.',
+    icon: <CalendarClock size={20} />,
   },
 ]
 
@@ -243,7 +250,7 @@ function LensPicker({ lenserId, selected, onToggle }: LensPickerProps) {
 
 export const CreateWorkflowWizard: React.FC<CreateWorkflowWizardProps> = ({ onCreated, onCancel, editMode, initialWorkflow }) => {
   const { user } = useAuth()
-  const { step, goToStep } = useWizardStep({ maxStep: editMode ? 0 : 2 })
+  const { step, goToStep } = useWizardStep({ maxStep: editMode ? 1 : 3 })
   const { submit, isSubmitting: isCreating, error: submissionError } = useCreateWorkflow()
   const { mutateAsync: updateWorkflow, isPending: isUpdating } = useUpdateWorkflow(initialWorkflow?.id ?? '')
   const isSubmitting = isCreating || isUpdating
@@ -309,8 +316,7 @@ export const CreateWorkflowWizard: React.FC<CreateWorkflowWizardProps> = ({ onCr
       }
       setLocalError(null)
       goToStep(1)
-    } else if (step === 1) {
-      // Persist model selection for the builder page
+    } else if (step === 1 && !editMode) {
       if (defaultModelId && typeof window !== 'undefined') {
         localStorage.setItem('lf-workflow-global-model', defaultModelId)
       }
@@ -322,6 +328,13 @@ export const CreateWorkflowWizard: React.FC<CreateWorkflowWizardProps> = ({ onCr
   const handleCreate = async () => {
     setLocalError(null)
     try {
+      // Case A: create mode, step 3 — workflow already created, just finish
+      if (!editMode && createdWorkflowId) {
+        onCreated(createdWorkflowId)
+        return
+      }
+
+      // Case B: edit mode, step 1 — save metadata changes and close
       if (editMode && initialWorkflow) {
         await updateWorkflow({
           title: titleValue,
@@ -333,13 +346,13 @@ export const CreateWorkflowWizard: React.FC<CreateWorkflowWizardProps> = ({ onCr
         return
       }
 
+      // Case C: create mode, step 2 — create workflow, advance to schedule step
       const workflow = await submit({
         title: titleValue,
         description: description.trim() || undefined,
         visibility,
       })
 
-      // Upsert selected lenses as initial nodes
       if (selectedLenses.size > 0) {
         const nodes = Array.from(selectedLenses.entries()).map(([lens_id, label], i) => ({
           lens_id,
@@ -353,9 +366,8 @@ export const CreateWorkflowWizard: React.FC<CreateWorkflowWizardProps> = ({ onCr
       }
 
       setCreatedWorkflowId(workflow.id)
-      onCreated(workflow.id)
+      goToStep(3)
     } catch (err) {
-      // Stay on current step — never navigate back automatically on error
       const msg =
         err instanceof Error
           ? err.message
@@ -366,33 +378,9 @@ export const CreateWorkflowWizard: React.FC<CreateWorkflowWizardProps> = ({ onCr
     }
   }
 
-  if (createdWorkflowId) {
-    return (
-      <div className="flex flex-col items-center gap-4 py-4 text-center">
-        <div className="flex h-14 w-14 items-center justify-center rounded-full bg-status-green/10">
-          <Check size={28} className="text-status-green" />
-        </div>
-        <div className="space-y-2">
-          <Badge color="green" variant="outline">Workflow created</Badge>
-          <h2 className="text-2xl font-black tracking-tight text-greyscale-900 dark:text-greyscale-50">
-            Your workflow is ready.
-          </h2>
-          <p className="text-sm leading-6 text-greyscale-500 dark:text-greyscale-400">
-            {selectedLenses.size > 0
-              ? `Added ${selectedLenses.size} lens${selectedLenses.size > 1 ? 'es' : ''} as nodes. Connect them in the canvas builder.`
-              : 'We saved the metadata and handed you off to the builder so you can start connecting lenses.'}
-          </p>
-        </div>
-        <Button onClick={handleCancel} variant="ghost" className="w-auto">
-          Close
-        </Button>
-      </div>
-    )
-  }
-
   return (
     <StepWizard
-      steps={editMode ? [WIZARD_STEPS[0]] : WIZARD_STEPS}
+      steps={editMode ? [WIZARD_STEPS[0], WIZARD_STEPS[3]] : WIZARD_STEPS}
       currentStep={step}
       onNext={handleNext}
       onBack={() => goToStep(Math.max(0, step - 1))}
@@ -400,8 +388,13 @@ export const CreateWorkflowWizard: React.FC<CreateWorkflowWizardProps> = ({ onCr
       onCancel={handleCancel}
       canProceed={step === 0 ? titleValue.length >= 3 : true}
       isCompleting={isSubmitting}
-      completeLabel={editMode ? 'Save Changes' : 'Create workflow'}
-      completeIcon={editMode ? undefined : <Sparkles size={14} />}
+      completeLabel={editMode ? 'Save Changes' : createdWorkflowId ? 'Done' : 'Create workflow'}
+      completeIcon={editMode || createdWorkflowId ? undefined : <Sparkles size={14} />}
+      skipButton={
+        !editMode && step === 3
+          ? { label: 'Skip for now', onClick: () => onCreated(createdWorkflowId!) }
+          : undefined
+      }
     >
       {step === 0 && (
         <div className="space-y-4">
@@ -446,7 +439,7 @@ export const CreateWorkflowWizard: React.FC<CreateWorkflowWizardProps> = ({ onCr
         </div>
       )}
 
-      {step === 1 && (
+      {step === 1 && !editMode && (
         <div className="space-y-5">
           <FundingSourceToggle
             fundingSource={funding.fundingSource}
@@ -492,6 +485,19 @@ export const CreateWorkflowWizard: React.FC<CreateWorkflowWizardProps> = ({ onCr
             <Alert variant="error" title={error} onDismiss={() => setLocalError(null)} />
           )}
         </div>
+      )}
+
+      {step === 3 && createdWorkflowId && (
+        <div className="space-y-3">
+          <WorkflowCronPanel workflowId={createdWorkflowId} isOwner={true} />
+          <p className="text-xs leading-5 text-greyscale-400 px-1">
+            Schedules save automatically. You can also manage them later from the Run panel.
+          </p>
+        </div>
+      )}
+
+      {step === 1 && editMode && initialWorkflow && (
+        <WorkflowCronPanel workflowId={initialWorkflow.id} isOwner={true} />
       )}
     </StepWizard>
   )

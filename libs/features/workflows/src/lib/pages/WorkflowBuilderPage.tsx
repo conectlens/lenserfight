@@ -3,6 +3,7 @@ import { useAuth } from '@lenserfight/features/auth'
 import { useAIModels } from '@lenserfight/features/generations'
 import { useCreateLens, CreateLensModal, useFundingSource, FundingSourceToggle } from '@lenserfight/features/lenses'
 import { Avatar, Badge, Button } from '@lenserfight/ui/components'
+import { Dialog } from '@lenserfight/ui/overlays'
 import { useQuery } from '@tanstack/react-query'
 import { ArrowLeft, Bookmark, CalendarClock, ChevronDown, GitBranch, GitFork, History, Layers, Lock, Pencil, Play, Square, Swords, ThumbsUp, X } from 'lucide-react'
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
@@ -41,7 +42,7 @@ interface WorkflowBuilderPageProps {
 
 export function WorkflowBuilderPage({ workflowId, onBattleClick }: WorkflowBuilderPageProps) {
   const navigate = useNavigate()
-  const [searchParams] = useSearchParams()
+  const [searchParams, setSearchParams] = useSearchParams()
   const { user } = useAuth()
   const { workflow, nodes, edges, isLoading } = useWorkflow(workflowId)
   const { models, isLoading: modelsLoading } = useAIModels()
@@ -138,6 +139,18 @@ export function WorkflowBuilderPage({ workflowId, onBattleClick }: WorkflowBuild
     },
     [navigate],
   )
+
+  const handleEditClose = useCallback(() => {
+    setIsEditModalOpen(false)
+    setSearchParams(
+      (prev) => {
+        const next = new URLSearchParams(prev)
+        next.delete('step')
+        return next
+      },
+      { replace: true },
+    )
+  }, [setSearchParams])
 
   const isOwner = !!user && user.id === workflow?.lenser_id
   const { mutate: forkWorkflow, isPending: isForking } = useForkWorkflow()
@@ -410,10 +423,10 @@ export function WorkflowBuilderPage({ workflowId, onBattleClick }: WorkflowBuild
                   size="sm"
                   variant="secondary"
                   onClick={() => setIsEditModalOpen(true)}
-                  className="flex h-8 w-8 items-center justify-center rounded-xl !p-0"
+                  className="gap-1.5 w-auto rounded-xl px-2.5 py-1"
                   title="Edit workflow"
                 >
-                  <Pencil size={12} />
+                  <Pencil size={12} /> Edit
                 </Button>
               )}
 
@@ -714,17 +727,23 @@ export function WorkflowBuilderPage({ workflowId, onBattleClick }: WorkflowBuild
 
       {/* ── Workflow edit modal (wizard in edit mode) ────────────────────────── */}
       {isEditModalOpen && (
-        <CreateWorkflowWizard
-          editMode
-          initialWorkflow={{
-            id: workflow.id,
-            title: workflow.title,
-            description: workflow.description,
-            visibility: workflow.visibility ?? 'public',
-          }}
-          onCreated={() => setIsEditModalOpen(false)}
-          onCancel={() => setIsEditModalOpen(false)}
-        />
+        <Dialog
+          open={isEditModalOpen}
+          onClose={handleEditClose}
+          maxWidth="max-w-2xl"
+        >
+          <CreateWorkflowWizard
+            editMode
+            initialWorkflow={{
+              id: workflow.id,
+              title: workflow.title,
+              description: workflow.description,
+              visibility: workflow.visibility ?? 'public',
+            }}
+            onCreated={handleEditClose}
+            onCancel={handleEditClose}
+          />
+        </Dialog>
       )}
 
       {/* ── Lens edit modal ─────────────────────────────────────────────────── */}
