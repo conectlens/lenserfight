@@ -694,6 +694,7 @@ export default defineCommand({
     'add-edge': teamAddEdge,
     assign: teamAssign,
     dispatch: teamDispatch,
+    run: teamDispatch,
     runs: teamRuns,
   },
 })
