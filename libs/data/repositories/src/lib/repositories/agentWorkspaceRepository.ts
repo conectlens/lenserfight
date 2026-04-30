@@ -166,6 +166,7 @@ export interface AgentWorkspaceRepositoryPort {
   requestWorkspaceDeletion(aiLenserId: string, reason?: string | null): Promise<WorkspaceSettingsRecord>
 
   // Mutations on existing per-agent profiles
+  listMemoryProfiles(aiLenserId: string): Promise<AgentMemoryProfileRecord[]>
   updateMemoryProfile(id: string, patch: Partial<AgentMemoryProfileRecord>): Promise<AgentMemoryProfileRecord>
   deleteMemoryProfile(id: string): Promise<void>
   updatePersonalityProfile(id: string, patch: Partial<AgentPersonalityProfileRecord>): Promise<AgentPersonalityProfileRecord>
@@ -861,6 +862,17 @@ export class SupabaseAgentWorkspaceRepository implements AgentWorkspaceRepositor
       .delete()
       .eq('id', id)
     if (error) throw error
+  }
+
+  async listMemoryProfiles(aiLenserId: string): Promise<AgentMemoryProfileRecord[]> {
+    const { data, error } = await supabase
+      .schema('agents')
+      .from('memory_profiles')
+      .select('*')
+      .eq('ai_lenser_id', aiLenserId)
+      .order('created_at', { ascending: false })
+    if (error) throw error
+    return (data ?? []) as AgentMemoryProfileRecord[]
   }
 
   updateMemoryProfile(id: string, patch: Partial<AgentMemoryProfileRecord>) {
