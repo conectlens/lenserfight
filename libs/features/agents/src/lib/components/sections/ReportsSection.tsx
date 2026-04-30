@@ -61,26 +61,6 @@ export const ReportsSection: React.FC = () => {
             </div>
           </div>
         </ProfileCard>
-
-        <ProfileCard
-          title="What belongs here"
-          subtitle="This is the report-facing companion to Runs and Logs."
-        >
-          <ul className="space-y-3 text-sm text-gray-600 dark:text-gray-300">
-            <li>Workspace summaries for operators and managers</li>
-            <li>Evaluation and private battle result digests</li>
-            <li>Cost, latency, approval, and failure trend snapshots</li>
-          </ul>
-        </ProfileCard>
-
-        <ProfileCard
-          title="Current foundation"
-          subtitle="The workspace already tracks the data needed for report generation."
-        >
-          <p className="text-sm leading-6 text-gray-600 dark:text-gray-300">
-            The current repo already records runs, logs, schedules, approvals, and evaluations. This surface turns those signals into operator-facing summaries before deeper benchmark and publication flows are layered on top.
-          </p>
-        </ProfileCard>
       </div>
     </SectionPage>
   )
