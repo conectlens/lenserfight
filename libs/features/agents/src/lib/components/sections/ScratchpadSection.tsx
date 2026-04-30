@@ -173,14 +173,14 @@ export const ScratchpadSection: React.FC = () => {
   if (!isOwner) {
     return (
       <SectionPage
-        eyebrow="Scratchpad"
+        eyebrow="Drafts"
         title="Private workbench"
-        description="The scratchpad is the owner-only solo canvas for testing prompts, tools, and instruction bindings."
+        description="Drafts are the owner-only solo workbench for testing prompts, tools, instructions, and early automation ideas before they become reusable workflows or shared team assets."
       >
         <EmptyPanel
           icon={<Brain size={20} />}
-          title="Scratchpad is owner-only"
-          description="Public viewers can inspect the agent overview, but only the owner can use the solo workbench."
+          title="Drafts are owner-only"
+          description="Public viewers can inspect the agent overview, but only the owner can use the private workbench for drafts and experiments."
         />
       </SectionPage>
     )
@@ -188,9 +188,9 @@ export const ScratchpadSection: React.FC = () => {
 
   return (
     <SectionPage
-      eyebrow="Scratchpad"
+      eyebrow="Drafts"
       title={`${profile.display_name || `@${profile.handle}`} workbench`}
-      description="The scratchpad is a private solo canvas. Use it to test prompts against the selected AI lenser, keep the default instruction source in view, and preserve each run with the lens-version metadata that shaped it."
+      description="The drafts workbench is a private solo canvas. Use it to test prompts against the selected AI lenser, keep the default instruction source in view, and preserve each run with the lens-version metadata that shaped it."
     >
       <BootstrapStatusPanel state={bootstrapState} />
 
@@ -224,8 +224,8 @@ export const ScratchpadSection: React.FC = () => {
           sidePanel={
             <>
               <ProfileCard
-                title="Run scratchpad"
-                subtitle="Prompt the selected AI lenser directly from the private workbench."
+                title="Run draft workbench"
+                subtitle="Prompt the selected AI lenser directly from the private automation workbench."
               >
                 <div className="space-y-4">
                   <label className="block">

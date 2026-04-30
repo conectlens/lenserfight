@@ -14,6 +14,7 @@ import {
   Layers,
   ListChecks,
   Network,
+  PanelTopOpen,
   Settings as SettingsIcon,
   Sparkles,
   Wrench,
@@ -26,6 +27,7 @@ import type { AgentViewMode } from '../context/AgentWorkspaceContext'
 export type AgentSection =
   | 'overview'
   | 'scratchpad'
+  | 'reports'
   | 'team'
   | 'runs'
   | 'logs'
@@ -42,7 +44,7 @@ export type AgentSection =
   | 'cost'
   | 'settings'
 
-export type AgentNavZone = 'operate' | 'automate' | 'configure'
+export type AgentNavZone = 'operate' | 'build' | 'automate' | 'configure'
 
 export interface AgentNavItem {
   id: AgentSection
@@ -68,12 +70,14 @@ const AGENT_OWNER_ONLY: AgentViewMode[] = ['agent_owner']
 export const NAV_ITEMS: AgentNavItem[] = [
   // OPERATE
   { id: 'overview', label: 'Overview', zone: 'operate', icon: Layers, visibleIn: PUBLIC_VISIBLE },
-  { id: 'scratchpad', label: 'Scratchpad', zone: 'operate', icon: FileStack, visibleIn: AGENT_OWNER_ONLY },
-  { id: 'team', label: 'Builder', zone: 'operate', icon: Network, visibleIn: OWNER_ONLY },
+  { id: 'scratchpad', label: 'Drafts', zone: 'operate', icon: FileStack, visibleIn: AGENT_OWNER_ONLY },
   { id: 'runs', label: 'Runs', zone: 'operate', icon: Activity, visibleIn: PUBLIC_VISIBLE },
   { id: 'logs', label: 'Logs', zone: 'operate', icon: ClipboardList, visibleIn: OWNER_ONLY },
+  { id: 'reports', label: 'Reports', zone: 'operate', icon: PanelTopOpen, visibleIn: OWNER_ONLY },
+  // BUILD
+  { id: 'team', label: 'Agent Teams', zone: 'build', icon: Network, visibleIn: OWNER_ONLY },
+  { id: 'workflows', label: 'Workflows', zone: 'build', icon: GitBranch, visibleIn: PUBLIC_VISIBLE },
   // AUTOMATE
-  { id: 'workflows', label: 'Workflows', zone: 'automate', icon: GitBranch, visibleIn: PUBLIC_VISIBLE },
   { id: 'schedules', label: 'Schedules', zone: 'automate', icon: CalendarClock, visibleIn: OWNER_ONLY, enabled: FEATURES.CRON_SCHEDULING },
   { id: 'evaluations', label: 'Evaluations', zone: 'automate', icon: ListChecks, visibleIn: OWNER_ONLY },
   // CONFIGURE
@@ -83,17 +87,18 @@ export const NAV_ITEMS: AgentNavItem[] = [
   { id: 'tools', label: 'Tools', zone: 'configure', icon: Wrench, visibleIn: OWNER_ONLY },
   { id: 'models', label: 'Models', zone: 'configure', icon: Cpu, visibleIn: OWNER_ONLY },
   { id: 'providers', label: 'Providers', zone: 'configure', icon: AlertTriangle, visibleIn: OWNER_ONLY },
-  { id: 'approvals', label: 'Approvals', zone: 'configure', icon: ClipboardCheck, visibleIn: OWNER_ONLY },
+  { id: 'approvals', label: 'Permissions', zone: 'configure', icon: ClipboardCheck, visibleIn: OWNER_ONLY },
   { id: 'cost', label: 'Cost', zone: 'configure', icon: Coins, visibleIn: OWNER_ONLY },
   { id: 'settings', label: 'Settings', zone: 'configure', icon: SettingsIcon, visibleIn: AGENT_OWNER_ONLY },
 ]
 
 export const LEGACY_AGENT_SECTION_ALIASES: Record<string, AgentSection> = {}
 
-export const AGENT_NAV_ZONES: AgentNavZone[] = ['operate', 'automate', 'configure']
+export const AGENT_NAV_ZONES: AgentNavZone[] = ['operate', 'build', 'automate', 'configure']
 
 export const ZONE_LABELS: Record<AgentNavZone, string> = {
   operate: 'Operate',
+  build: 'Build',
   automate: 'Automate',
   configure: 'Configure',
 }
