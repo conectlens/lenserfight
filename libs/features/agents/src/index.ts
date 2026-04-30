@@ -32,6 +32,7 @@ export {
   OverviewSection,
   InstructionsSection,
   ProvidersSection,
+  ReportsSection,
   RunsSection,
   SchedulesSection,
   ScratchpadSection,

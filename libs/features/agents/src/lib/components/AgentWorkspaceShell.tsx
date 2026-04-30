@@ -29,6 +29,7 @@ import {
   InstructionsSection,
   PersonalitySection,
   ProvidersSection,
+  ReportsSection,
   RunsSection,
   SchedulesSection,
   ScratchpadSection,
@@ -43,6 +44,7 @@ import type { LenserProfileDTO } from '@lenserfight/types'
 const VALID_SECTIONS: AgentSection[] = [
   'overview',
   'scratchpad',
+  'reports',
   'team',
   'runs',
   'logs',
@@ -64,6 +66,7 @@ function getSectionComponent(section: AgentSection): React.ComponentType {
   switch (section) {
     case 'overview': return OverviewSection
     case 'scratchpad': return ScratchpadSection
+    case 'reports': return ReportsSection
     case 'team': return AgentTeamSection
     case 'runs': return RunsSection
     case 'logs': return LogsSection
