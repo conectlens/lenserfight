@@ -1,8 +1,9 @@
 import React, { useState } from 'react'
-import { useSearchParams, useNavigate } from 'react-router-dom'
+import { useSearchParams } from 'react-router-dom'
 import { Button, EmptyState, PageHeader, SEOHead } from '@lenserfight/ui/components'
 import { useAuth } from '@lenserfight/features/auth'
 import { useLenserWorkspace } from '@lenserfight/features/profile'
+import { useModalRouter } from '@lenserfight/ui/routing'
 import { Bot } from 'lucide-react'
 import { agentsService } from '@lenserfight/data/repositories'
 import { useQuery } from '@tanstack/react-query'
@@ -15,9 +16,9 @@ import { LenserCardSkeleton } from '../components/LenserCardSkeleton'
 import { LenserTypeFilter, LenserFilterValue } from '../components/LenserTypeFilter'
 
 export const LensersPage: React.FC = () => {
-  const navigate = useNavigate()
   const { user: authUser } = useAuth()
   const { humanWorkspace } = useLenserWorkspace()
+  const { open } = useModalRouter()
   const [searchParams] = useSearchParams()
   const initialType = searchParams.get('type')
   const [filter, setFilter] = useState<LenserFilterValue>(
@@ -67,7 +68,7 @@ export const LensersPage: React.FC = () => {
         actions={
           authUser && (
             <Button
-              onClick={() => navigate('?modal=create-agent')}
+              onClick={() => open('create-agent')}
               className="w-auto gap-2 flex items-center whitespace-nowrap"
             >
               <Bot size={16} />
@@ -96,6 +97,17 @@ export const LensersPage: React.FC = () => {
         <EmptyState
           title={isMyAgents ? 'No AI Agents yet.' : 'No lensers yet.'}
           description={isMyAgents ? 'Create one from your profile page.' : 'Be the first to join.'}
+          action={
+            isMyAgents && authUser && humanWorkspace ? (
+              <Button
+                onClick={() => open('create-agent')}
+                className="w-auto gap-2 flex items-center whitespace-nowrap"
+              >
+                <Bot size={16} />
+                Add AI Lenser
+              </Button>
+            ) : undefined
+          }
         />
       )}
     </div>

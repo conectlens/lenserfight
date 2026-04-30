@@ -47,6 +47,13 @@ export const InstructionsSection: React.FC = () => {
 
   const [newLensContent, setNewLensContent] = useState('')
 
+  const openCreateLensDrawer = () => {
+    setNewLensTitle('')
+    setNewLensContent('')
+    setNewLensError(null)
+    setCreateLensDrawer(true)
+  }
+
   const createLens = useMutation({
     mutationFn: async ({ title, content }: { title: string; content: string }) => {
       return lensesService.createLens({ title, content, visibility: 'private', tagIds: [] })
@@ -171,7 +178,18 @@ export const InstructionsSection: React.FC = () => {
               icon={<Bot size={20} />}
               title="No instruction lens bound"
               description="Bind a lens version here so the selected AI lenser has a canonical instruction source instead of ad hoc personality text."
-            />
+            >
+              <div className="mt-6 flex justify-center">
+                <button
+                  type="button"
+                  onClick={openCreateLensDrawer}
+                  className="inline-flex items-center gap-2 rounded-2xl bg-gray-900 px-4 py-2 text-sm font-semibold text-white transition hover:bg-amber-600 dark:bg-white dark:text-gray-900"
+                >
+                  <Plus size={14} />
+                  Create instruction lens
+                </button>
+              </div>
+            </EmptyPanel>
           )}
         </ProfileCard>
 
@@ -269,7 +287,7 @@ export const InstructionsSection: React.FC = () => {
               </button>
               <button
                 type="button"
-                onClick={() => { setNewLensTitle(''); setNewLensContent(''); setNewLensError(null); setCreateLensDrawer(true) }}
+                onClick={openCreateLensDrawer}
                 className="inline-flex items-center gap-2 rounded-2xl border border-gray-200 px-4 py-2 text-sm font-semibold text-gray-700 transition hover:border-amber-300 hover:text-amber-700 dark:border-gray-700 dark:text-gray-200"
               >
                 <Plus size={14} />
