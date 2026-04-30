@@ -1,7 +1,7 @@
 import { queryKeys } from '@lenserfight/data/cache'
 import { agentWorkspaceService } from '@lenserfight/data/repositories'
 import { AlertDialog } from '@lenserfight/ui/overlays'
-import { useMutation, useQueryClient } from '@tanstack/react-query'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Brain, Clock, Layers, Pencil, Plus, RefreshCcw, Trash2 } from 'lucide-react'
 import React, { useState } from 'react'
 import { toast } from 'sonner'
@@ -15,7 +15,7 @@ import { SectionPage } from './SectionPage'
 import type { AgentMemoryProfileRecord } from '@lenserfight/types'
 
 export const MemorySection: React.FC = () => {
-  const { bootstrap, profile, isOwner } = useAgentWorkspace()
+  const { isOwner, agentProfile, ownerFleetAgents, viewMode } = useAgentWorkspace()
   const queryClient = useQueryClient()
   const [drawerOpen, setDrawerOpen] = useState(false)
   const [editing, setEditing] = useState<AgentMemoryProfileRecord | null>(null)
@@ -24,13 +24,25 @@ export const MemorySection: React.FC = () => {
     body: string
     onConfirm: () => void
   } | null>(null)
+  const [selectedFleetAgent, setSelectedFleetAgent] = useState<{ ai_lenser_id: string; handle: string; display_name: string } | null>(null)
 
-  const profiles =
-    (bootstrap?.profiles.memory as AgentMemoryProfileRecord[] | undefined) ?? []
+  const aiLenserId: string | null =
+    viewMode === 'human_owner'
+      ? (selectedFleetAgent?.ai_lenser_id ?? null)
+      : (agentProfile?.ai_lenser_id ?? null)
+
+  const profilesQuery = useQuery<AgentMemoryProfileRecord[]>({
+    queryKey: queryKeys.agents.memoryProfiles(aiLenserId ?? ''),
+    queryFn: () => agentWorkspaceService.listMemoryProfiles(aiLenserId!),
+    enabled: !!aiLenserId,
+    staleTime: 15_000,
+  })
+
+  const profiles = profilesQuery.data ?? []
 
   const invalidate = () =>
     queryClient.invalidateQueries({
-      queryKey: queryKeys.agents.workspaceBootstrap(profile.handle),
+      queryKey: queryKeys.agents.memoryProfiles(aiLenserId ?? ''),
     })
 
   const remove = useMutation({
@@ -54,10 +66,9 @@ export const MemorySection: React.FC = () => {
       title="Memory profiles"
       description="Control whether runs share context, how long memory survives, and who can see it. Profiles can be scoped to a team, a single agent, or a workflow."
       toolbar={
-        isOwner ? (
+        isOwner && aiLenserId ? (
           <button
             type="button"
-            disabled={!bootstrap}
             onClick={openCreate}
             className="inline-flex items-center gap-2 rounded-2xl bg-gray-900 px-4 py-2 text-sm font-semibold text-white transition hover:bg-amber-600 dark:bg-white dark:text-gray-900"
           >
@@ -67,19 +78,51 @@ export const MemorySection: React.FC = () => {
         ) : undefined
       }
     >
-      {profiles.length === 0 ? (
+      {viewMode === 'human_owner' && ownerFleetAgents.length > 0 && (
+        <div className="rounded-[24px] border border-gray-200 bg-white p-4 dark:border-gray-800 dark:bg-gray-900">
+          <label className="mb-2 block text-xs font-semibold uppercase tracking-[0.16em] text-gray-500 dark:text-gray-400">
+            Agent
+          </label>
+          <select
+            value={selectedFleetAgent?.ai_lenser_id ?? ''}
+            onChange={(e) => {
+              const agent = ownerFleetAgents.find((a) => a.ai_lenser_id === e.target.value) ?? null
+              setSelectedFleetAgent(agent)
+            }}
+            className="w-full rounded-2xl border border-gray-200 bg-white px-4 py-2.5 text-sm text-gray-900 outline-none focus:border-amber-400 dark:border-gray-700 dark:bg-gray-900 dark:text-white"
+          >
+            <option value="">Select an agent…</option>
+            {ownerFleetAgents.map((a) => (
+              <option key={a.ai_lenser_id} value={a.ai_lenser_id}>
+                {a.display_name} (@{a.handle})
+              </option>
+            ))}
+          </select>
+        </div>
+      )}
+
+      {viewMode === 'human_owner' && !aiLenserId ? (
+        <EmptyPanel
+          icon={<Brain size={20} />}
+          title={ownerFleetAgents.length === 0 ? 'No agents in your fleet' : 'Select an agent'}
+          description={
+            ownerFleetAgents.length === 0
+              ? 'Create an AI agent first, then return here to configure its memory profiles.'
+              : 'Pick an agent above to view and manage its memory profiles.'
+          }
+        />
+      ) : profiles.length === 0 ? (
         <EmptyPanel
           icon={<Brain size={20} />}
           title="No memory profiles yet"
           description="Define short-term, long-term, or shared team memory before enabling collaborative runs."
         >
-          {isOwner ? (
+          {isOwner && aiLenserId ? (
             <div className="mt-6 flex justify-center">
               <button
                 type="button"
-                disabled={!bootstrap}
                 onClick={openCreate}
-                className="rounded-2xl bg-gray-900 px-4 py-2 text-sm font-semibold text-white transition hover:bg-amber-600 disabled:opacity-50 dark:bg-white dark:text-gray-900"
+                className="rounded-2xl bg-gray-900 px-4 py-2 text-sm font-semibold text-white transition hover:bg-amber-600 dark:bg-white dark:text-gray-900"
               >
                 Create memory profile
               </button>
@@ -106,11 +149,11 @@ export const MemorySection: React.FC = () => {
         </div>
       )}
 
-      {isOwner && bootstrap && (
+      {isOwner && aiLenserId && (
         <MemoryProfileDrawer
           open={drawerOpen}
           onClose={() => setDrawerOpen(false)}
-          aiLenserId={bootstrap.ai_lenser_id}
+          aiLenserId={aiLenserId}
           initial={editing}
           onSaved={invalidate}
         />
