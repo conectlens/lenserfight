@@ -216,7 +216,12 @@ export class SupabaseLensesRepository implements LensesRepositoryPort {
     )
   }
 
-  async search(query: string, offset = 0, limit = 10): Promise<ApiResponseEnvelope<LensRecord[]>> {
+  async search(
+    query: string,
+    offset = 0,
+    limit = 10,
+    ownerId?: string | null
+  ): Promise<ApiResponseEnvelope<LensRecord[]>> {
     const start = Date.now()
     const { data, error } = await supabase
       .from('vw_lenses_public')
@@ -225,9 +230,29 @@ export class SupabaseLensesRepository implements LensesRepositoryPort {
       .range(offset, offset + limit - 1)
 
     if (error) this.handleError(error)
+    const publicResults = (data ?? []) as unknown as LensRecord[]
+
+    let privateResults: LensRecord[] = []
+    if (ownerId) {
+      const { data: privData } = await supabase
+        .schema('lenses')
+        .from('lenses')
+        .select('id, title, description, lenser_id, visibility, created_at')
+        .eq('lenser_id', ownerId)
+        .neq('visibility', 'public')
+        .ilike('title', `%${query}%`)
+        .range(0, limit - 1)
+
+      if (privData) {
+        const publicIds = new Set(publicResults.map((r) => r.id))
+        privateResults = (privData as unknown as LensRecord[]).filter((r) => !publicIds.has(r.id))
+      }
+    }
+
+    const combined = [...privateResults, ...publicResults]
     return paginatedResponse(
-      (data ?? []) as unknown as LensRecord[],
-      { limit, offset, hasNextPage: (data?.length ?? 0) >= limit },
+      combined,
+      { limit, offset, hasNextPage: combined.length >= limit },
       { durationMs: Date.now() - start },
     )
   }

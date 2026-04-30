@@ -1,0 +1,85 @@
+import { Network, Pencil, Trash2, UserPlus } from 'lucide-react'
+import React, { useEffect, useRef } from 'react'
+
+interface MenuItem {
+  label: string
+  icon: React.ReactNode
+  onClick: () => void
+  variant?: 'default' | 'destructive'
+}
+
+interface AgentCanvasContextMenuProps {
+  x: number
+  y: number
+  /** When defined, the menu is anchored to a node; otherwise it's a pane menu. */
+  nodeId?: string
+  onAddMember: () => void
+  onEditMember?: () => void
+  onRemoveMember?: () => void
+  onClose: () => void
+}
+
+export const AgentCanvasContextMenu: React.FC<AgentCanvasContextMenuProps> = ({
+  x,
+  y,
+  nodeId,
+  onAddMember,
+  onEditMember,
+  onRemoveMember,
+  onClose,
+}) => {
+  const ref = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    const handleKey = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose() }
+    const handleClick = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) onClose()
+    }
+    document.addEventListener('keydown', handleKey)
+    document.addEventListener('mousedown', handleClick)
+    return () => {
+      document.removeEventListener('keydown', handleKey)
+      document.removeEventListener('mousedown', handleClick)
+    }
+  }, [onClose])
+
+  const items: MenuItem[] = nodeId
+    ? [
+        ...(onEditMember ? [{ label: 'Edit member', icon: <Pencil size={14} />, onClick: onEditMember }] : []),
+        ...(onRemoveMember
+          ? [{ label: 'Remove member', icon: <Trash2 size={14} />, onClick: onRemoveMember, variant: 'destructive' as const }]
+          : []),
+      ]
+    : [
+        { label: 'Add member here', icon: <UserPlus size={14} />, onClick: onAddMember },
+        { label: 'Manage edges', icon: <Network size={14} />, onClick: onClose },
+      ]
+
+  if (items.length === 0) return null
+
+  return (
+    <div
+      ref={ref}
+      style={{ left: x, top: y }}
+      className="pointer-events-auto absolute z-50 min-w-[168px] overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-lg dark:border-gray-700 dark:bg-gray-900"
+      onContextMenu={(e) => e.preventDefault()}
+    >
+      {items.map((item, idx) => (
+        <button
+          key={idx}
+          type="button"
+          onClick={() => { item.onClick(); onClose() }}
+          className={[
+            'flex w-full items-center gap-2.5 px-4 py-2.5 text-sm font-medium transition hover:bg-gray-50 dark:hover:bg-gray-800',
+            item.variant === 'destructive'
+              ? 'text-red-600 dark:text-red-400'
+              : 'text-gray-700 dark:text-gray-200',
+          ].join(' ')}
+        >
+          {item.icon}
+          {item.label}
+        </button>
+      ))}
+    </div>
+  )
+}
