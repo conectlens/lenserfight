@@ -66,8 +66,8 @@ export const lensesService = {
     }, { durationMs: result.meta?.durationMs })
   },
 
-  search: async (query: string, offset = 0, limit = 10): Promise<ApiResponseEnvelope<LensViewModel[]>> => {
-    const result = await lensesRepo.search(query, offset, limit)
+  search: async (query: string, offset = 0, limit = 10, ownerId?: string | null): Promise<ApiResponseEnvelope<LensViewModel[]>> => {
+    const result = await lensesRepo.search(query, offset, limit, ownerId)
     const items = await mapToViewModels(result.data ?? [])
     return paginatedResponse(items, {
       limit: result.meta?.limit ?? limit,

@@ -304,10 +304,13 @@ const HumanOwnerOverview: React.FC = () => {
     staleTime: 30_000,
   })
 
-  const totalAgents = overview.data?.agents_total ?? ownerFleetAgents.length
-  const activeAgents =
-    overview.data?.agents_active ??
-    ownerFleetAgents.filter((agent) => agent.is_active && !agent.suspended_at).length
+  const overviewReady = !overview.isLoading && !ownerFleetAgentsLoading
+  const totalAgents = overviewReady
+    ? (overview.data?.agents_total ?? ownerFleetAgents.length)
+    : null
+  const activeAgents = overviewReady
+    ? (overview.data?.agents_active ?? ownerFleetAgents.filter((a) => a.is_active && !a.suspended_at).length)
+    : null
 
   return (
     <SectionPage
@@ -327,22 +330,22 @@ const HumanOwnerOverview: React.FC = () => {
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         <StatCard
           label="Agents"
-          value={String(totalAgents)}
+          value={totalAgents !== null ? String(totalAgents) : '…'}
           detail="Total AI lensers owned by this human workspace."
         />
         <StatCard
           label="Active"
-          value={String(activeAgents)}
+          value={activeAgents !== null ? String(activeAgents) : '…'}
           detail="Currently active and not suspended."
         />
         <StatCard
           label="Runs (24h)"
-          value={String(overview.data?.runs_24h ?? 0)}
+          value={overview.isLoading ? '…' : String(overview.data?.runs_24h ?? 0)}
           detail="Team runs dispatched across the fleet."
         />
         <StatCard
           label="Approvals"
-          value={String(overview.data?.approvals_pending ?? 0)}
+          value={overview.isLoading ? '…' : String(overview.data?.approvals_pending ?? 0)}
           detail="Pending owner approval gates."
         />
       </div>
