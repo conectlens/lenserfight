@@ -227,7 +227,10 @@ export const Sidebar: React.FC<SidebarProps> = ({
   const navSections =
     workspaceMode === 'agent' && activeWorkspace?.handle
       ? buildAgentSidebarSections(activeWorkspace.handle)
-      : buildHumanSidebarSections({ isNavLocked })
+      : buildHumanSidebarSections({
+          isNavLocked,
+          activeWorkspaceHandle: activeWorkspace?.handle ?? displayProfile?.handle,
+        })
 
   const handleProfileClick = () => {
     if (displayProfile?.handle) {
@@ -308,13 +311,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
                   {section.items.map((item) => (
                     <SidebarItem
                       key={item.id}
-                      onClick={() => {
-                        if (item.externalHref) {
-                          window.open(item.externalHref, '_blank')
-                          return
-                        }
-                        if (item.path) handleNavigation(item.path)
-                      }}
+                      externalHref={item.externalHref}
+                      onClick={item.path ? () => handleNavigation(item.path!) : undefined}
                       icon={item.icon}
                       label={item.label}
                       isActive={item.path ? isRouteActive(location.pathname, item.activePath ?? item.path, item.exact) : false}
