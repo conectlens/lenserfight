@@ -1,6 +1,6 @@
 import { useLenser, useLenserWorkspace } from '@lenserfight/features/profile'
 import { AlertTriangle, Bot } from 'lucide-react'
-import React, { useMemo } from 'react'
+import React from 'react'
 import { Navigate, useNavigate, useParams } from 'react-router-dom'
 
 import {
@@ -92,12 +92,9 @@ export const AgentWorkspaceShell: React.FC<AgentWorkspaceShellProps> = ({
   const { section } = useParams<{ section?: string }>()
   const navigate = useNavigate()
   const { lenser: activeWorkspace } = useLenser()
-  const { workspaces, humanWorkspace, switchWorkspace, isSwitching } = useLenserWorkspace()
+  const { humanWorkspace, isOwnedWorkspace, switchWorkspace, isSwitching } = useLenserWorkspace()
 
-  const isOwner = useMemo(
-    () => workspaces.some((w) => w.id === profile.id),
-    [workspaces, profile.id]
-  )
+  const isOwner = isOwnedWorkspace(profile.id)
 
   const shouldSwitchWorkspace =
     viewMode === 'agent_owner' && activeWorkspace?.id !== profile.id
