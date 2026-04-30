@@ -132,6 +132,22 @@ export const EvaluationsSection: React.FC = () => {
         ) : undefined
       }
     >
+      {isOwner && (
+        <div className="rounded-[24px] border border-gray-200 bg-gray-50 p-5 dark:border-gray-800 dark:bg-gray-950">
+          <h3 className="text-sm font-semibold text-gray-900 dark:text-white">What are evaluations?</h3>
+          <p className="mt-2 text-sm leading-6 text-gray-600 dark:text-gray-300">
+            An evaluation suite is a named collection of test cases. Each case defines an expected
+            input → output pair. Run the suite against a model to score agent behavior and catch
+            regressions before production. Cases stay reusable across runs.
+          </p>
+          <p className="mt-2 text-xs text-gray-500 dark:text-gray-400">
+            Start with <strong className="font-semibold text-gray-700 dark:text-gray-200">New evaluation</strong> above,
+            add test cases inside the drawer, then hit <strong className="font-semibold text-gray-700 dark:text-gray-200">Run</strong> to
+            queue an execution and review case-by-case scores.
+          </p>
+        </div>
+      )}
+
       {!isOwner ? (
         <EmptyPanel
           icon={<Sparkles size={20} />}

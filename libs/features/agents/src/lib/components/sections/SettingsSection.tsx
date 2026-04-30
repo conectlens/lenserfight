@@ -17,11 +17,21 @@ import type {
 
 const APPROVAL_OPTIONS: ApprovalDefault[] = ['auto', 'require_human', 'deny']
 
+type Tab = 'identity' | 'runtime' | 'export'
+
+const TAB_LABELS: Record<Tab, string> = {
+  identity: 'Identity',
+  runtime: 'Runtime',
+  export: 'Export & Danger',
+}
+
 export const SettingsSection: React.FC = () => {
   const { profile, agentProfile, bootstrap, bootstrapState, viewMode } =
     useAgentWorkspace()
   const queryClient = useQueryClient()
   const isAgentOwner = viewMode === 'agent_owner'
+
+  const [tab, setTab] = useState<Tab>('identity')
 
   const settingsQuery = useQuery<WorkspaceSettingsRecord | null>({
     queryKey: queryKeys.agents.workspaceSettings(bootstrap?.ai_lenser_id ?? ''),
@@ -166,203 +176,229 @@ export const SettingsSection: React.FC = () => {
           Settings can only be edited by the agent owner.
         </p>
       ) : bootstrap ? (
-        <>
-          <div className="grid gap-6 xl:grid-cols-[1fr_1fr]">
-            <ProfileCard
-              title="Identity"
-              subtitle="Update how this AI lenser appears to owners and public viewers."
-            >
-              <div className="space-y-4">
-                <Field label="Display name">
-                  <input
-                    value={displayName}
-                    onChange={(event) => setDisplayName(event.target.value)}
-                    className={inputClass}
-                  />
-                </Field>
-                <Field label="Avatar URL">
-                  <input
-                    value={avatarUrl}
-                    onChange={(event) => setAvatarUrl(event.target.value)}
-                    placeholder="https://..."
-                    className={inputClass}
-                  />
-                </Field>
-                <Field label="Banner URL">
-                  <input
-                    value={bannerUrl}
-                    onChange={(event) => setBannerUrl(event.target.value)}
-                    placeholder="https://..."
-                    className={inputClass}
-                  />
-                </Field>
-                <Field label="Headline">
-                  <input
-                    value={headline}
-                    onChange={(event) => setHeadline(event.target.value)}
-                    className={inputClass}
-                  />
-                </Field>
-                <Field label="Bio">
-                  <textarea
-                    rows={4}
-                    value={bio}
-                    onChange={(event) => setBio(event.target.value)}
-                    className={`${inputClass} resize-none`}
-                  />
-                </Field>
-                <button
-                  type="button"
-                  onClick={() => saveIdentity.mutate()}
-                  disabled={saveIdentity.isPending}
-                  className="inline-flex items-center gap-2 rounded-2xl bg-gray-900 px-4 py-2 text-sm font-semibold text-white transition hover:bg-amber-600 disabled:opacity-50 dark:bg-white dark:text-gray-900"
-                >
-                  <Save size={16} />
-                  {saveIdentity.isPending ? 'Saving...' : 'Save identity'}
-                </button>
-              </div>
-            </ProfileCard>
-
-            <ProfileCard
-              title="Runtime and defaults"
-              subtitle="Execution defaults apply unless a workflow or builder assignment overrides them."
-            >
-              <div className="space-y-4">
-                <div className="rounded-2xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm text-gray-600 dark:border-gray-700 dark:bg-gray-950 dark:text-gray-300">
-                  Runtime preference: <span className="font-semibold text-gray-900 dark:text-white">{agentProfile?.runtime_pref ?? 'unknown'}</span>
-                </div>
-
-                <Field label="Approval default">
-                  <select
-                    value={approvalDefault}
-                    onChange={(event) =>
-                      setApprovalDefault(event.target.value as ApprovalDefault)
-                    }
-                    className={inputClass}
-                  >
-                    {APPROVAL_OPTIONS.map((option) => (
-                      <option key={option} value={option}>
-                        {option}
-                      </option>
-                    ))}
-                  </select>
-                </Field>
-
-                <div className="grid grid-cols-2 gap-3">
-                  <Field label="Retention (days)">
-                    <input
-                      type="number"
-                      min={1}
-                      value={retentionDays}
-                      onChange={(event) => setRetentionDays(Number(event.target.value))}
-                      className={inputClass}
-                    />
-                  </Field>
-                  <Field label="Max daily credits">
-                    <input
-                      type="number"
-                      min={0}
-                      value={maxDailyCredits}
-                      onChange={(event) =>
-                        setMaxDailyCredits(Number(event.target.value))
-                      }
-                      className={inputClass}
-                    />
-                  </Field>
-                </div>
-
-                <label className="flex items-center gap-2 rounded-2xl border border-gray-200 px-3 py-2 text-sm dark:border-gray-700">
-                  <input
-                    type="checkbox"
-                    checked={apiAccessEnabled}
-                    onChange={(event) => setApiAccessEnabled(event.target.checked)}
-                  />
-                  <span>External API access enabled</span>
-                </label>
-
-                <Field label="Webhooks (JSON array)">
-                  <textarea
-                    rows={4}
-                    value={webhooksJson}
-                    onChange={(event) => setWebhooksJson(event.target.value)}
-                    className={`${inputClass} resize-none font-mono text-xs`}
-                    placeholder='[{"url":"https://..."}]'
-                  />
-                </Field>
-
-                <button
-                  type="button"
-                  onClick={() => saveDefaults.mutate()}
-                  disabled={saveDefaults.isPending}
-                  className="inline-flex items-center gap-2 rounded-2xl bg-gray-900 px-4 py-2 text-sm font-semibold text-white transition hover:bg-amber-600 disabled:opacity-50 dark:bg-white dark:text-gray-900"
-                >
-                  <Save size={16} />
-                  {saveDefaults.isPending ? 'Saving...' : 'Save defaults'}
-                </button>
-              </div>
-            </ProfileCard>
+        <div className="flex flex-col gap-8 md:flex-row md:gap-12">
+          <div className="w-full flex-shrink-0 space-y-1 md:w-48">
+            {(['identity', 'runtime', 'export'] as const).map((t) => (
+              <button
+                key={t}
+                type="button"
+                onClick={() => setTab(t)}
+                className={
+                  tab === t
+                    ? 'w-full rounded-lg px-4 py-2.5 text-left text-sm font-medium bg-gray-100 text-gray-900 dark:bg-gray-800 dark:text-white'
+                    : 'w-full rounded-lg px-4 py-2.5 text-left text-sm font-medium text-gray-500 hover:bg-gray-50 hover:text-gray-900 dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-white'
+                }
+              >
+                {TAB_LABELS[t]}
+              </button>
+            ))}
           </div>
 
-          {(error || okMsg) && (
-            <div className="space-y-3">
-              {error && (
-                <p className="rounded-2xl border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700 dark:border-red-500/30 dark:bg-red-500/10 dark:text-red-200">
-                  {error}
-                </p>
-              )}
-              {okMsg && (
-                <p className="rounded-2xl border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-700 dark:border-emerald-500/30 dark:bg-emerald-500/10 dark:text-emerald-200">
-                  {okMsg}
-                </p>
-              )}
-            </div>
-          )}
-
-          <div className="grid gap-6 xl:grid-cols-[0.9fr_1.1fr]">
-            <ProfileCard
-              title="Export"
-              subtitle="Export an immutable JSON snapshot of teams, bindings, policies, settings, and assignments."
-            >
-              <button
-                type="button"
-                onClick={() => exportBundle.mutate()}
-                disabled={exportBundle.isPending}
-                className="inline-flex items-center gap-2 rounded-2xl border border-gray-200 px-4 py-2 text-sm font-semibold text-gray-700 transition hover:border-amber-300 hover:text-amber-700 disabled:opacity-50 dark:border-gray-700 dark:text-gray-200"
-              >
-                <Download size={16} />
-                {exportBundle.isPending ? 'Exporting...' : 'Export workspace'}
-              </button>
-            </ProfileCard>
-
-            <ProfileCard
-              title="Danger zone"
-              subtitle="Deletion is gated behind admin review. It does not erase data immediately."
-            >
-              <div className="flex items-start gap-3 rounded-2xl border border-red-200 bg-red-50 p-4 text-sm text-red-700 dark:border-red-500/30 dark:bg-red-500/10 dark:text-red-200">
-                <AlertTriangle size={18} className="mt-0.5 flex-shrink-0" />
-                <div className="flex-1">
-                  <p className="font-semibold">Request workspace deletion</p>
-                  <p className="mt-1 text-xs leading-5">
-                    Submit a deletion request when this AI lenser should be removed
-                    from service. An administrator must confirm before any data is
-                    deleted.
+          <div className="flex-1 max-w-2xl space-y-6">
+            {(error || okMsg) && (
+              <div className="space-y-3">
+                {error && (
+                  <p className="rounded-2xl border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700 dark:border-red-500/30 dark:bg-red-500/10 dark:text-red-200">
+                    {error}
                   </p>
+                )}
+                {okMsg && (
+                  <p className="rounded-2xl border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-700 dark:border-emerald-500/30 dark:bg-emerald-500/10 dark:text-emerald-200">
+                    {okMsg}
+                  </p>
+                )}
+              </div>
+            )}
+
+            {tab === 'identity' && (
+              <ProfileCard
+                title="Identity"
+                subtitle="Update how this AI lenser appears to owners and public viewers."
+              >
+                <div className="space-y-4">
+                  <Field label="Display name">
+                    <input
+                      value={displayName}
+                      onChange={(event) => setDisplayName(event.target.value)}
+                      className={inputClass}
+                    />
+                  </Field>
+                  <Field label="Avatar URL">
+                    <input
+                      value={avatarUrl}
+                      onChange={(event) => setAvatarUrl(event.target.value)}
+                      placeholder="https://..."
+                      className={inputClass}
+                    />
+                  </Field>
+                  <Field label="Banner URL">
+                    <input
+                      value={bannerUrl}
+                      onChange={(event) => setBannerUrl(event.target.value)}
+                      placeholder="https://..."
+                      className={inputClass}
+                    />
+                  </Field>
+                  <Field label="Headline">
+                    <input
+                      value={headline}
+                      onChange={(event) => setHeadline(event.target.value)}
+                      className={inputClass}
+                    />
+                  </Field>
+                  <Field label="Bio">
+                    <textarea
+                      rows={4}
+                      value={bio}
+                      onChange={(event) => setBio(event.target.value)}
+                      className={`${inputClass} resize-none`}
+                    />
+                  </Field>
                   <button
                     type="button"
-                    onClick={() => {
-                      const reason = prompt('Reason for deletion?') ?? ''
-                      if (reason) requestDeletion.mutate(reason)
-                    }}
-                    className="mt-3 inline-flex items-center gap-2 rounded-2xl border border-red-300 bg-white px-3 py-1.5 text-xs font-semibold text-red-700 hover:bg-red-100 dark:bg-gray-900 dark:hover:bg-red-500/20"
+                    onClick={() => saveIdentity.mutate()}
+                    disabled={saveIdentity.isPending}
+                    className="inline-flex items-center gap-2 rounded-2xl bg-gray-900 px-4 py-2 text-sm font-semibold text-white transition hover:bg-amber-600 disabled:opacity-50 dark:bg-white dark:text-gray-900"
                   >
-                    <Trash2 size={14} />
-                    Request deletion
+                    <Save size={16} />
+                    {saveIdentity.isPending ? 'Saving...' : 'Save identity'}
                   </button>
                 </div>
+              </ProfileCard>
+            )}
+
+            {tab === 'runtime' && (
+              <ProfileCard
+                title="Runtime and defaults"
+                subtitle="Execution defaults apply unless a workflow or builder assignment overrides them."
+              >
+                <div className="space-y-4">
+                  <div className="rounded-2xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm text-gray-600 dark:border-gray-700 dark:bg-gray-950 dark:text-gray-300">
+                    Runtime preference:{' '}
+                    <span className="font-semibold text-gray-900 dark:text-white">
+                      {agentProfile?.runtime_pref ?? 'unknown'}
+                    </span>
+                  </div>
+
+                  <Field label="Approval default">
+                    <select
+                      value={approvalDefault}
+                      onChange={(event) =>
+                        setApprovalDefault(event.target.value as ApprovalDefault)
+                      }
+                      className={inputClass}
+                    >
+                      {APPROVAL_OPTIONS.map((option) => (
+                        <option key={option} value={option}>
+                          {option}
+                        </option>
+                      ))}
+                    </select>
+                  </Field>
+
+                  <div className="grid grid-cols-2 gap-3">
+                    <Field label="Retention (days)">
+                      <input
+                        type="number"
+                        min={1}
+                        value={retentionDays}
+                        onChange={(event) => setRetentionDays(Number(event.target.value))}
+                        className={inputClass}
+                      />
+                    </Field>
+                    <Field label="Max daily credits">
+                      <input
+                        type="number"
+                        min={0}
+                        value={maxDailyCredits}
+                        onChange={(event) =>
+                          setMaxDailyCredits(Number(event.target.value))
+                        }
+                        className={inputClass}
+                      />
+                    </Field>
+                  </div>
+
+                  <label className="flex items-center gap-2 rounded-2xl border border-gray-200 px-3 py-2 text-sm dark:border-gray-700">
+                    <input
+                      type="checkbox"
+                      checked={apiAccessEnabled}
+                      onChange={(event) => setApiAccessEnabled(event.target.checked)}
+                    />
+                    <span>External API access enabled</span>
+                  </label>
+
+                  <Field label="Webhooks (JSON array)">
+                    <textarea
+                      rows={4}
+                      value={webhooksJson}
+                      onChange={(event) => setWebhooksJson(event.target.value)}
+                      className={`${inputClass} resize-none font-mono text-xs`}
+                      placeholder='[{"url":"https://..."}]'
+                    />
+                  </Field>
+
+                  <button
+                    type="button"
+                    onClick={() => saveDefaults.mutate()}
+                    disabled={saveDefaults.isPending}
+                    className="inline-flex items-center gap-2 rounded-2xl bg-gray-900 px-4 py-2 text-sm font-semibold text-white transition hover:bg-amber-600 disabled:opacity-50 dark:bg-white dark:text-gray-900"
+                  >
+                    <Save size={16} />
+                    {saveDefaults.isPending ? 'Saving...' : 'Save defaults'}
+                  </button>
+                </div>
+              </ProfileCard>
+            )}
+
+            {tab === 'export' && (
+              <div className="space-y-6">
+                <ProfileCard
+                  title="Export"
+                  subtitle="Export an immutable JSON snapshot of teams, bindings, policies, settings, and assignments."
+                >
+                  <button
+                    type="button"
+                    onClick={() => exportBundle.mutate()}
+                    disabled={exportBundle.isPending}
+                    className="inline-flex items-center gap-2 rounded-2xl border border-gray-200 px-4 py-2 text-sm font-semibold text-gray-700 transition hover:border-amber-300 hover:text-amber-700 disabled:opacity-50 dark:border-gray-700 dark:text-gray-200"
+                  >
+                    <Download size={16} />
+                    {exportBundle.isPending ? 'Exporting...' : 'Export workspace'}
+                  </button>
+                </ProfileCard>
+
+                <ProfileCard
+                  title="Danger zone"
+                  subtitle="Deletion is gated behind admin review. It does not erase data immediately."
+                >
+                  <div className="flex items-start gap-3 rounded-2xl border border-red-200 bg-red-50 p-4 text-sm text-red-700 dark:border-red-500/30 dark:bg-red-500/10 dark:text-red-200">
+                    <AlertTriangle size={18} className="mt-0.5 flex-shrink-0" />
+                    <div className="flex-1">
+                      <p className="font-semibold">Request workspace deletion</p>
+                      <p className="mt-1 text-xs leading-5">
+                        Submit a deletion request when this AI lenser should be removed
+                        from service. An administrator must confirm before any data is
+                        deleted.
+                      </p>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const reason = prompt('Reason for deletion?') ?? ''
+                          if (reason) requestDeletion.mutate(reason)
+                        }}
+                        className="mt-3 inline-flex items-center gap-2 rounded-2xl border border-red-300 bg-white px-3 py-1.5 text-xs font-semibold text-red-700 hover:bg-red-100 dark:bg-gray-900 dark:hover:bg-red-500/20"
+                      >
+                        <Trash2 size={14} />
+                        Request deletion
+                      </button>
+                    </div>
+                  </div>
+                </ProfileCard>
               </div>
-            </ProfileCard>
+            )}
           </div>
-        </>
+        </div>
       ) : null}
     </SectionPage>
   )

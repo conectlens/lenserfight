@@ -65,6 +65,22 @@ export const CostMonitorSection: React.FC<CostMonitorSectionProps> = ({ aiLenser
     )
   }
 
+  const hasNoData =
+    data.today_credits === 0 &&
+    data.seven_day_credits === 0 &&
+    data.thirty_day_credits === 0 &&
+    data.daily.length === 0
+
+  if (hasNoData) {
+    return (
+      <EmptyPanel
+        icon={<Sparkles size={22} />}
+        title="No cost data yet"
+        description="Quota snapshots are written on first action of the day. Run a workflow or an agent action to start populating this view."
+      />
+    )
+  }
+
   const limitText =
     data.spending_limit_credits == null || data.spending_limit_credits < 0
       ? 'No spending cap'
