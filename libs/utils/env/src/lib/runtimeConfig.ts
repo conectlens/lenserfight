@@ -26,6 +26,9 @@ export const ARENA_BASE_URL = readPublicBaseUrl('VITE_ARENA_URL', 'https://lense
 /** Community web origin (return URLs, links). Override with `VITE_WEB_BASE_URL`. */
 export const WEB_BASE_URL = readPublicBaseUrl('VITE_WEB_BASE_URL', 'https://lenserfight.com')
 
+/** Documentation site origin. Override with `VITE_DOCS_BASE_URL` (e.g. http://localhost:5174 in local dev). */
+export const DOCS_BASE_URL = readPublicBaseUrl('VITE_DOCS_BASE_URL', 'https://docs.lenserfight.com')
+
 // Environment
 export const MODE = import.meta.env.MODE // "development", "production", "test"
 export const isProd = MODE === 'production'
