@@ -129,6 +129,7 @@ export const agentWorkspaceService = {
   requestWorkspaceDeletion: agentWorkspaceRepo.requestWorkspaceDeletion.bind(agentWorkspaceRepo),
 
   // Profile mutations
+  listMemoryProfiles: agentWorkspaceRepo.listMemoryProfiles.bind(agentWorkspaceRepo),
   updateMemoryProfile: agentWorkspaceRepo.updateMemoryProfile.bind(agentWorkspaceRepo),
   deleteMemoryProfile: agentWorkspaceRepo.deleteMemoryProfile.bind(agentWorkspaceRepo),
   updatePersonalityProfile: agentWorkspaceRepo.updatePersonalityProfile.bind(agentWorkspaceRepo),
