@@ -227,10 +227,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
   const navSections =
     workspaceMode === 'agent' && activeWorkspace?.handle
       ? buildAgentSidebarSections(activeWorkspace.handle)
-      : buildHumanSidebarSections({
-          isNavLocked,
-          activeWorkspaceHandle: activeWorkspace?.handle ?? displayProfile?.handle,
-        })
+      : buildHumanSidebarSections({ isNavLocked })
 
   const handleProfileClick = () => {
     if (displayProfile?.handle) {
