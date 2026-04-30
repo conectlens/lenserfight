@@ -233,7 +233,7 @@ export const AgentTeamSection: React.FC = () => {
         onConnect={bootstrap ? handleConnect : undefined}
         onDropAgent={
           selectedTeam
-            ? (agentId) =>
+            ? (agentId, _position) =>
                 setAddMemberState({
                   open: true,
                   teamId: selectedTeam.id,
@@ -251,6 +251,11 @@ export const AgentTeamSection: React.FC = () => {
                   defaultAgentId: agentProfile?.ai_lenser_id,
                   initial: null,
                 })
+            : undefined
+        }
+        onManageEdges={
+          selectedTeam
+            ? () => setEdgesState({ open: true, team: selectedTeam })
             : undefined
         }
         onNodeEdit={(nodeId) => {

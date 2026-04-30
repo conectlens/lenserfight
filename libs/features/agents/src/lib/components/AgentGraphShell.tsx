@@ -42,6 +42,7 @@ interface AgentGraphShellProps {
   onNodeEdit?: (nodeId: string) => void
   onNodeRemove?: (nodeId: string) => void
   onAddMember?: () => void
+  onManageEdges?: () => void
 }
 
 const FlowCanvas: React.FC<AgentGraphShellProps> = ({
@@ -55,6 +56,7 @@ const FlowCanvas: React.FC<AgentGraphShellProps> = ({
   onNodeEdit,
   onNodeRemove,
   onAddMember,
+  onManageEdges,
 }) => {
   const { screenToFlowPosition } = useReactFlow()
   const containerRef = useRef<HTMLDivElement>(null)
@@ -164,6 +166,7 @@ const FlowCanvas: React.FC<AgentGraphShellProps> = ({
             y={contextMenu.y}
             nodeId={contextMenu.nodeId}
             onAddMember={() => { onAddMember?.(); closeMenu() }}
+            onManageEdges={onManageEdges ? () => { onManageEdges(); closeMenu() } : undefined}
             onEditMember={contextMenu.nodeId && onNodeEdit
               ? () => { onNodeEdit(contextMenu.nodeId!); closeMenu() }
               : undefined}
