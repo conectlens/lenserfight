@@ -1,6 +1,7 @@
 import { defineCommand } from 'citty';
 import consola from 'consola';
-import { callRpc, handleError } from '../utils/api';
+import { callRpc, callRest, handleError } from '../utils/api';
+import { printTable } from '../utils/output';
 import { resolveConfig as loadConfig } from '../config/project-config';
 import {
   getAdapter,
@@ -503,6 +504,275 @@ const exec = defineCommand({
 });
 
 // ---------------------------------------------------------------------------
+// Shared: resolve ai_lenser_id from a @handle string
+// ---------------------------------------------------------------------------
+async function resolveAiLenserId(handle: string): Promise<string> {
+  const rows = await callRest<Array<{ id: string }>>(
+    'lensers',
+    'profiles',
+    'GET',
+    undefined,
+    {
+      requireAuth: true,
+      query: { select: 'id', handle: `eq.${handle}` },
+    }
+  )
+  const profile = rows?.[0]
+  if (!profile) throw new Error(`No profile found for handle @${handle}`)
+
+  const agents = await callRest<Array<{ id: string }>>(
+    'agents',
+    'ai_lensers',
+    'GET',
+    undefined,
+    {
+      requireAuth: true,
+      query: { select: 'id', profile_id: `eq.${profile.id}` },
+    }
+  )
+  const agent = agents?.[0]
+  if (!agent) throw new Error(`No AI agent found for @${handle}`)
+  return agent.id
+}
+
+// Idempotent: create or get the run report for a given team_run_id.
+async function getOrCreateRunReport(runId: string): Promise<string> {
+  const result = await callRpc<{ id: string } | string>(
+    'fn_create_run_report',
+    { p_team_run_id: runId },
+    { requireAuth: true }
+  )
+  if (typeof result === 'string') return result
+  if (result && typeof result === 'object' && 'id' in result) return String(result['id'])
+  throw new Error('fn_create_run_report returned unexpected shape.')
+}
+
+// ---------------------------------------------------------------------------
+// run cancel
+// ---------------------------------------------------------------------------
+const cancel = defineCommand({
+  meta: {
+    name: 'cancel',
+    description: 'Cancel an active run.',
+  },
+  args: {
+    run_id: {
+      type: 'positional',
+      description: 'Team run UUID',
+      required: true,
+    },
+    reason: {
+      type: 'string',
+      description: 'Optional cancellation reason',
+      default: '',
+    },
+  },
+  async run({ args }) {
+    try {
+      await callRpc(
+        'fn_cancel_run',
+        {
+          p_team_run_id: args.run_id,
+          ...(args.reason ? { p_reason: args.reason } : {}),
+        },
+        { requireAuth: true }
+      )
+      consola.success('Run %s cancelled.', args.run_id)
+    } catch (err) {
+      handleError(err)
+    }
+  },
+})
+
+// ---------------------------------------------------------------------------
+// run report
+// ---------------------------------------------------------------------------
+const report = defineCommand({
+  meta: {
+    name: 'report',
+    description: 'Generate or retrieve the report for a run.',
+  },
+  args: {
+    run_id: {
+      type: 'positional',
+      description: 'Team run UUID',
+      required: true,
+    },
+    format: {
+      type: 'string',
+      description: 'Output format: table | json (default table)',
+      default: 'table',
+    },
+  },
+  async run({ args }) {
+    if (args.format !== 'table' && args.format !== 'json') {
+      consola.error('--format must be "table" or "json".')
+      process.exitCode = 1
+      return
+    }
+    try {
+      const reportId = await getOrCreateRunReport(args.run_id)
+
+      const rows = await callRest<Array<Record<string, unknown>>>(
+        'agents',
+        'run_reports',
+        'GET',
+        undefined,
+        {
+          requireAuth: true,
+          query: { select: '*', id: `eq.${reportId}` },
+        }
+      )
+      const r = rows?.[0]
+      if (!r) {
+        consola.error('Run report %s not found.', reportId)
+        process.exitCode = 1
+        return
+      }
+
+      if (args.format === 'json') {
+        consola.log(JSON.stringify(r, null, 2))
+        return
+      }
+
+      printTable(
+        ['Field', 'Value'],
+        [
+          ['title', String(r['title'] ?? '—')],
+          ['outcome', String(r['outcome'] ?? '—')],
+          ['total_steps', String(r['total_steps'] ?? '—')],
+          ['total_cost_estimate', String(r['total_cost_estimate'] ?? '—')],
+          ['evaluation_score', String(r['evaluation_score'] ?? '—')],
+          ['created_at', r['created_at'] ? new Date(String(r['created_at'])).toLocaleString() : '—'],
+        ]
+      )
+    } catch (err) {
+      handleError(err)
+    }
+  },
+})
+
+// ---------------------------------------------------------------------------
+// run incidents
+// ---------------------------------------------------------------------------
+const incidents = defineCommand({
+  meta: {
+    name: 'incidents',
+    description: 'List incidents for a run.',
+  },
+  args: {
+    run_id: {
+      type: 'positional',
+      description: 'Team run UUID',
+      required: true,
+    },
+    severity: {
+      type: 'string',
+      description: 'Filter by severity: low | medium | high | critical',
+      default: '',
+    },
+  },
+  async run({ args }) {
+    const validSeverities = ['low', 'medium', 'high', 'critical']
+    if (args.severity && !validSeverities.includes(args.severity)) {
+      consola.error(
+        'Invalid --severity "%s". Allowed: %s',
+        args.severity,
+        validSeverities.join(', ')
+      )
+      process.exitCode = 1
+      return
+    }
+    try {
+      const reportId = await getOrCreateRunReport(args.run_id)
+
+      const query: Record<string, string | number | boolean> = {
+        select: 'id,incident_type,severity,title,resolved_at',
+        run_report_id: `eq.${reportId}`,
+        order: 'severity.desc',
+      }
+      if (args.severity) query['severity'] = `eq.${args.severity}`
+
+      const rows = await callRest<Array<Record<string, unknown>>>(
+        'agents',
+        'run_incidents',
+        'GET',
+        undefined,
+        { requireAuth: true, query }
+      )
+
+      if (!rows || rows.length === 0) {
+        consola.info('No incidents found for run %s.', args.run_id)
+        return
+      }
+
+      printTable(
+        ['Type', 'Severity', 'Title', 'Resolved'],
+        rows.map((r) => [
+          String(r['incident_type'] ?? '—'),
+          String(r['severity'] ?? '—'),
+          String(r['title'] ?? '—'),
+          r['resolved_at'] ? new Date(String(r['resolved_at'])).toLocaleString() : 'open',
+        ])
+      )
+    } catch (err) {
+      handleError(err)
+    }
+  },
+})
+
+// ---------------------------------------------------------------------------
+// run policy-check
+// ---------------------------------------------------------------------------
+const policyCheck = defineCommand({
+  meta: {
+    name: 'policy-check',
+    description: 'Evaluate pre-run policy for an agent.',
+  },
+  args: {
+    handle: {
+      type: 'positional',
+      description: 'Agent handle (without @)',
+      required: true,
+    },
+    'workflow-id': {
+      type: 'string',
+      description: 'Optional workflow UUID',
+      default: '',
+    },
+    'dry-run': {
+      type: 'boolean',
+      description: 'Skip RPC, just show current settings',
+      default: false,
+    },
+  },
+  async run({ args }) {
+    if (args['dry-run']) {
+      consola.info('[dry-run] Would evaluate pre-run policy for @%s', args.handle)
+      if (args['workflow-id']) consola.info('[dry-run] Workflow: %s', args['workflow-id'])
+      return
+    }
+    try {
+      const aiLenserId = await resolveAiLenserId(args.handle)
+      const result = await callRpc<Record<string, unknown>>(
+        'fn_evaluate_pre_run_policy',
+        {
+          p_ai_lenser_id: aiLenserId,
+          p_workflow_id: args['workflow-id'] || null,
+          p_context: {},
+        },
+        { requireAuth: true }
+      )
+      const verdict = String(result?.['verdict'] ?? result?.['decision'] ?? '(unknown)')
+      consola.info('Verdict: %s', verdict)
+      if (result?.['reason']) consola.info('Reason:  %s', result['reason'])
+    } catch (err) {
+      handleError(err)
+    }
+  },
+})
+
+// ---------------------------------------------------------------------------
 // Root command
 // ---------------------------------------------------------------------------
 export default defineCommand({
@@ -516,5 +786,9 @@ export default defineCommand({
     full,
     replay,
     exec,
+    cancel,
+    report,
+    incidents,
+    'policy-check': policyCheck,
   },
 });
