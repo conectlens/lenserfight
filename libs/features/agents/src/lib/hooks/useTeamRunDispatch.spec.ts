@@ -28,6 +28,18 @@ vi.mock('@lenserfight/data/repositories', () => ({
     updateNodeResult: vi.fn(),
     appendRunEvent: vi.fn(),
   },
+  memoryService: {
+    readMemoryEntries: vi.fn().mockResolvedValue([]),
+    writeMemoryEntry: vi.fn().mockResolvedValue('mem-id'),
+  },
+  toolsService: {
+    invokeTool: vi.fn().mockResolvedValue('inv-id'),
+    completeInvocation: vi.fn().mockResolvedValue(undefined),
+    approveInvocation: vi.fn().mockResolvedValue(undefined),
+    rejectInvocation: vi.fn().mockResolvedValue(undefined),
+    listInvocations: vi.fn().mockResolvedValue([]),
+    listPendingApprovals: vi.fn().mockResolvedValue([]),
+  },
 }))
 
 const mockExecuteWorkflow = vi.fn().mockResolvedValue({ status: 'completed', nodeResults: [] })
@@ -239,5 +251,277 @@ describe('useTeamRunDispatch', () => {
       'completed',
       expect.any(String),
     )
+  })
+
+  describe('memory injection and write gate', () => {
+    const memoryProfile = {
+      id: 'mem-profile-1',
+      ai_lenser_id: 'ai-lenser-1',
+      name: 'Default',
+      scope_type: 'agent',
+      isolation_mode: 'isolated',
+      retention_days: 30,
+      visibility: 'private',
+      summary_strategy: 'rolling_summary',
+      reset_policy: 'manual',
+      is_default: true,
+      created_at: '2026-05-01T00:00:00Z',
+      updated_at: '2026-05-01T00:00:00Z',
+    }
+
+    it('prepends a Context Memory block to the lens template when entries exist', async () => {
+      const { agentWorkspaceService, lensesService, memoryService, workflowsService } =
+        await import('@lenserfight/data/repositories')
+
+      vi.mocked(workflowsService.startRun).mockResolvedValue({
+        id: 'workflow-run-1',
+        workflow_id: 'workflow-1',
+        status: 'pending',
+        context_inputs: {},
+        created_at: '2026-05-01T00:00:00Z',
+        triggered_by: null,
+      } as never)
+      vi.mocked(agentWorkspaceService.createTeamRun).mockResolvedValue(makeTeamRun())
+      vi.mocked(agentWorkspaceService.appendTeamRunEvent).mockResolvedValue(undefined)
+      vi.mocked(agentWorkspaceService.updateTeamRunStatus).mockResolvedValue(undefined)
+      vi.mocked(workflowsService.getNodes).mockResolvedValue([])
+      vi.mocked(workflowsService.getEdges).mockResolvedValue([])
+      vi.mocked(lensesService.getLatestPublishedVersion).mockResolvedValue({
+        templateBody: 'Original template',
+      } as never)
+      vi.mocked(memoryService.readMemoryEntries).mockResolvedValue([
+        {
+          id: 'm1',
+          profile_id: 'mem-profile-1',
+          ai_lenser_id: 'ai-lenser-1',
+          scope: 'project',
+          source: 'agent',
+          content: 'past insight',
+          embedding_metadata: {},
+          confidence: 0.9,
+          expires_at: null,
+          team_run_id: null,
+          is_redacted: false,
+          created_at: '2026-05-01T00:00:00Z',
+        },
+      ] as never)
+
+      let capturedTemplate = ''
+      mockExecuteWorkflow.mockImplementationOnce(async (_nodes, _edges, ctx) => {
+        capturedTemplate = await ctx.resolveLensTemplate('lens-1', null)
+        return { status: 'completed', nodeResults: [] }
+      })
+
+      const { useTeamRunDispatch } = await import('./useTeamRunDispatch')
+      const { result } = renderHook(() => useTeamRunDispatch())
+
+      await act(async () => {
+        await result.current.dispatch({
+          assignment: makeAssignment(),
+          bootstrap: makeBootstrap({
+            profiles: {
+              personality: [],
+              memory: [memoryProfile],
+              tools: [],
+              models: makeBootstrap().profiles.models,
+            },
+          } as never),
+        })
+      })
+
+      expect(memoryService.readMemoryEntries).toHaveBeenCalledWith({
+        profile_id: 'mem-profile-1',
+        scope: 'project',
+        limit: 5,
+        team_run_id: 'team-run-1',
+      })
+      expect(capturedTemplate).toContain('## Context Memory')
+      expect(capturedTemplate).toContain('past insight')
+      expect(capturedTemplate).toContain('Original template')
+    })
+
+    it('writes buffered memory entries only after a successful run', async () => {
+      const { agentWorkspaceService, memoryService, workflowsService } = await import(
+        '@lenserfight/data/repositories'
+      )
+
+      vi.mocked(workflowsService.startRun).mockResolvedValue({
+        id: 'workflow-run-1',
+        workflow_id: 'workflow-1',
+        status: 'pending',
+        context_inputs: {},
+        created_at: '2026-05-01T00:00:00Z',
+        triggered_by: null,
+      } as never)
+      vi.mocked(agentWorkspaceService.createTeamRun).mockResolvedValue(makeTeamRun())
+      vi.mocked(agentWorkspaceService.appendTeamRunEvent).mockResolvedValue(undefined)
+      vi.mocked(agentWorkspaceService.updateTeamRunStatus).mockResolvedValue(undefined)
+      vi.mocked(workflowsService.getNodes).mockResolvedValue([])
+      vi.mocked(workflowsService.getEdges).mockResolvedValue([])
+
+      mockExecuteWorkflow.mockImplementationOnce(async (_nodes, _edges, ctx) => {
+        await ctx.onNodeStatusChange('node-a', {
+          nodeId: 'node-a',
+          status: 'completed',
+          outputData: {
+            __lf_memory_writes: [
+              { content: 'derived fact', scope: 'project', source: 'agent', confidence: 0.7 },
+            ],
+          },
+        })
+        return { status: 'completed', nodeResults: [] }
+      })
+
+      const { useTeamRunDispatch } = await import('./useTeamRunDispatch')
+      const { result } = renderHook(() => useTeamRunDispatch())
+
+      await act(async () => {
+        await result.current.dispatch({
+          assignment: makeAssignment(),
+          bootstrap: makeBootstrap({
+            profiles: {
+              personality: [],
+              memory: [memoryProfile],
+              tools: [],
+              models: makeBootstrap().profiles.models,
+            },
+          } as never),
+        })
+      })
+
+      // Allow microtasks to flush the fire-and-forget write batch.
+      await new Promise((r) => setTimeout(r, 0))
+
+      expect(memoryService.writeMemoryEntry).toHaveBeenCalledTimes(1)
+      expect(memoryService.writeMemoryEntry).toHaveBeenCalledWith(
+        expect.objectContaining({
+          profile_id: 'mem-profile-1',
+          scope: 'project',
+          source: 'agent',
+          content: 'derived fact',
+          confidence: 0.7,
+          team_run_id: 'team-run-1',
+        }),
+      )
+    })
+
+    it('routes tool_invocation_started events to toolsService.invokeTool', async () => {
+      const { agentWorkspaceService, toolsService, workflowsService } = await import(
+        '@lenserfight/data/repositories'
+      )
+
+      vi.mocked(workflowsService.startRun).mockResolvedValue({
+        id: 'workflow-run-1',
+        workflow_id: 'workflow-1',
+        status: 'pending',
+        context_inputs: {},
+        created_at: '2026-05-01T00:00:00Z',
+        triggered_by: null,
+      } as never)
+      vi.mocked(agentWorkspaceService.createTeamRun).mockResolvedValue(makeTeamRun())
+      vi.mocked(agentWorkspaceService.appendTeamRunEvent).mockResolvedValue(undefined)
+      vi.mocked(agentWorkspaceService.updateTeamRunStatus).mockResolvedValue(undefined)
+      vi.mocked(workflowsService.getNodes).mockResolvedValue([])
+      vi.mocked(workflowsService.getEdges).mockResolvedValue([])
+      vi.mocked(toolsService.invokeTool).mockResolvedValueOnce('inv-99')
+      vi.mocked(toolsService.completeInvocation).mockResolvedValue(undefined)
+
+      mockExecuteWorkflow.mockImplementationOnce(async (_nodes, _edges, ctx) => {
+        await ctx.onEvent({
+          name: 'tool_invocation_started',
+          nodeId: 'node-a',
+          metadata: {
+            callId: 'call-1',
+            toolId: 'tool-x',
+            input: { query: 'hi' },
+            stepId: 'step-1',
+          },
+        })
+        await ctx.onEvent({
+          name: 'tool_invocation_completed',
+          nodeId: 'node-a',
+          metadata: { callId: 'call-1', output: { ok: true }, cost: 0.01 },
+        })
+        return { status: 'completed', nodeResults: [] }
+      })
+
+      const { useTeamRunDispatch } = await import('./useTeamRunDispatch')
+      const { result } = renderHook(() => useTeamRunDispatch())
+
+      await act(async () => {
+        await result.current.dispatch({
+          assignment: makeAssignment(),
+          bootstrap: makeBootstrap(),
+        })
+      })
+
+      expect(toolsService.invokeTool).toHaveBeenCalledWith({
+        team_run_id: 'team-run-1',
+        tool_id: 'tool-x',
+        ai_lenser_id: 'ai-lenser-1',
+        input: { query: 'hi' },
+        agent_run_step_id: 'step-1',
+      })
+      expect(toolsService.completeInvocation).toHaveBeenCalledWith({
+        invocation_id: 'inv-99',
+        status: 'completed',
+        output: { ok: true },
+        cost_estimate: 0.01,
+      })
+    })
+
+    it('does NOT write buffered memory entries when the run fails', async () => {
+      const { agentWorkspaceService, memoryService, workflowsService } = await import(
+        '@lenserfight/data/repositories'
+      )
+
+      vi.mocked(workflowsService.startRun).mockResolvedValue({
+        id: 'workflow-run-1',
+        workflow_id: 'workflow-1',
+        status: 'pending',
+        context_inputs: {},
+        created_at: '2026-05-01T00:00:00Z',
+        triggered_by: null,
+      } as never)
+      vi.mocked(agentWorkspaceService.createTeamRun).mockResolvedValue(makeTeamRun())
+      vi.mocked(agentWorkspaceService.appendTeamRunEvent).mockResolvedValue(undefined)
+      vi.mocked(agentWorkspaceService.updateTeamRunStatus).mockResolvedValue(undefined)
+      vi.mocked(workflowsService.getNodes).mockResolvedValue([])
+      vi.mocked(workflowsService.getEdges).mockResolvedValue([])
+
+      mockExecuteWorkflow.mockImplementationOnce(async (_nodes, _edges, ctx) => {
+        await ctx.onNodeStatusChange('node-a', {
+          nodeId: 'node-a',
+          status: 'completed',
+          outputData: {
+            __lf_memory_writes: [{ content: 'should not persist', scope: 'project', source: 'agent' }],
+          },
+        })
+        throw new Error('Provider failure')
+      })
+
+      const { useTeamRunDispatch } = await import('./useTeamRunDispatch')
+      const { result } = renderHook(() => useTeamRunDispatch())
+
+      await expect(
+        act(async () => {
+          await result.current.dispatch({
+            assignment: makeAssignment(),
+            bootstrap: makeBootstrap({
+              profiles: {
+                personality: [],
+                memory: [memoryProfile],
+                tools: [],
+                models: makeBootstrap().profiles.models,
+              },
+            } as never),
+          })
+        }),
+      ).rejects.toThrow('Provider failure')
+
+      await new Promise((r) => setTimeout(r, 0))
+
+      expect(memoryService.writeMemoryEntry).not.toHaveBeenCalled()
+    })
   })
 })
