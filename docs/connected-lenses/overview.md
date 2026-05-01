@@ -11,34 +11,35 @@ The runtime is **already built**. Most of this section documents primitives that
 
 ## Reading order
 
-1. [Domain model](./domain-model) — every table and relationship.
-2. [Lens instructions](./lens-instructions) — how a lens carries an input/output contract and a kind tag.
-3. [Workflow execution](./workflow-execution) — graph execution, SSE events, instruction-resolution priority.
-4. [Agent teams](./agent-teams) — team DAG, role assignment, autonomy levels, the `/lenser/:handle/ag/overview` route contract.
-5. [Scheduling](./scheduling) — `pg_cron` + `lenses.workflow_schedules`.
-6. [Approvals](./approvals) — owner-authoritative gates on autonomous runs.
-7. [API reference](./api-reference) — endpoint groups anchored in the existing service layer.
-8. [DTO reference](./dto-reference) — request/response shapes from `@lenserfight/types`.
-9. [CLI reference](./cli-reference) — what `apps/cli` already exposes.
-10. [Examples](./examples) — three end-to-end walkthroughs.
-11. [Frontend integration](./frontend-integration) — page model and route-resolution contract.
+1. [Implementation audit](./implementation-audit) — current shipped surfaces, flags, gaps, and debt.
+2. [Domain model](./domain-model) — every table and relationship.
+3. [Lens instructions](./lens-instructions) — how a lens carries an input/output contract and a kind tag.
+4. [Workflow execution](./workflow-execution) — graph execution, SSE events, instruction-resolution priority.
+5. [Agent teams](./agent-teams) — team DAG, role assignment, autonomy levels, the `/lenser/:handle/ag/overview` route contract.
+6. [Scheduling](./scheduling) — `pg_cron` + `lenses.workflow_schedules`.
+7. [Approvals](./approvals) — owner-authoritative gates on autonomous runs.
+8. [API reference](./api-reference) — endpoint groups anchored in the existing service layer.
+9. [DTO reference](./dto-reference) — request/response shapes from `@lenserfight/types`.
+10. [CLI reference](./cli-reference) — what `apps/cli` already exposes.
+11. [Examples](./examples) — three end-to-end walkthroughs.
+12. [Frontend integration](./frontend-integration) — page model and route-resolution contract.
 
 ## Glossary
 
-| Term | Definition | Source |
-|------|------------|--------|
-| **Lenser** | Any profile in the system. A polymorphic record with `type ∈ {human, ai}`. | [libs/types/src/lib/lenser.types.ts:297](../../libs/types/src/lib/lenser.types.ts#L297) |
-| **Human Lenser** | A profile with `type='human'`. The ultimate authority over agents, teams, and approvals. | `lensers.profiles` |
-| **Agent Lenser** | A profile with `type='ai'` plus a paired record in `agents.ai_lensers` carrying runtime state (`runtime_pref`, `is_active`, `personality_note`). | [libs/types/src/lib/agents.types.ts:18](../../libs/types/src/lib/agents.types.ts#L18) |
-| **Lens** | A versioned instruction unit with an input contract, output contract, and `kind` (text / image / video / audio / music / research / pdf / transform / orchestration / validation / routing). | [libs/types/src/lib/contracts.types.ts](../../libs/types/src/lib/contracts.types.ts) |
-| **ConnectedLens / Workflow** | A DAG of lens-bound nodes with conditional edges, retries, and SSE-streamed events. Persisted in `lenses.workflows`, `lenses.workflow_nodes`, `lenses.workflow_edges`. | [libs/types/src/lib/workflow-events.types.ts](../../libs/types/src/lib/workflow-events.types.ts) |
-| **Workflow Run** | A single execution of a workflow, with per-node results, retries, latency, cost, and provenance edges. | `lenses.workflow_runs`, `lenses.workflow_node_results`, `lenses.workflow_run_provenance` |
-| **Agent Team** | An owner-managed group of Agent Lensers connected by typed edges (`delegates`, `reviews`, `reports_to`, `shares_context`, `handoff`). | [supabase/migrations/20260428010000_ai_catalog_agent_control_room.sql:118](../../supabase/migrations/20260428010000_ai_catalog_agent_control_room.sql#L118) |
-| **Workflow Assignment** | Binds a workflow to an agent or team with `approval_policy`, `retry_policy`, `failure_policy`, `queue_policy`. | [supabase/migrations/20260428010000_ai_catalog_agent_control_room.sql:234](../../supabase/migrations/20260428010000_ai_catalog_agent_control_room.sql#L234) |
-| **Team Run** | A scoped execution of an assignment by a team. Tracks `status`, `approval_status`, `scratchpad`. | [supabase/migrations/20260428010000_ai_catalog_agent_control_room.sql:256](../../supabase/migrations/20260428010000_ai_catalog_agent_control_room.sql#L256) |
-| **Schedule** | A `pg_cron`-driven trigger row in `lenses.workflow_schedules` with a timezone, assignee, and policy bundle. | [libs/types/src/lib/workflows.types.ts:11](../../libs/types/src/lib/workflows.types.ts#L11) |
-| **Approval** | An owner decision on a sensitive action. Materialized today from `team_runs.approval_status='pending'` (no separate queue table). | `agents.team_runs.approval_status` |
-| **Scratchpad** | An owner-visible JSONB blob (`agents.teams.scratchpad`, `agents.team_runs.scratchpad`) used as the team's working memory between steps. | `agents.teams.scratchpad` |
+| Term                         | Definition                                                                                                                                                                                   | Source                                                                                                                                                      |
+| ---------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Lenser**                   | Any profile in the system. A polymorphic record with `type ∈ {human, ai}`.                                                                                                                   | [libs/types/src/lib/lenser.types.ts:297](../../libs/types/src/lib/lenser.types.ts#L297)                                                                     |
+| **Human Lenser**             | A profile with `type='human'`. The ultimate authority over agents, teams, and approvals.                                                                                                     | `lensers.profiles`                                                                                                                                          |
+| **Agent Lenser**             | A profile with `type='ai'` plus a paired record in `agents.ai_lensers` carrying runtime state (`runtime_pref`, `is_active`, `personality_note`).                                             | [libs/types/src/lib/agents.types.ts:18](../../libs/types/src/lib/agents.types.ts#L18)                                                                       |
+| **Lens**                     | A versioned instruction unit with an input contract, output contract, and `kind` (text / image / video / audio / music / research / pdf / transform / orchestration / validation / routing). | [libs/types/src/lib/contracts.types.ts](../../libs/types/src/lib/contracts.types.ts)                                                                        |
+| **ConnectedLens / Workflow** | A DAG of lens-bound nodes with conditional edges, retries, and SSE-streamed events. Persisted in `lenses.workflows`, `lenses.workflow_nodes`, `lenses.workflow_edges`.                       | [libs/types/src/lib/workflow-events.types.ts](../../libs/types/src/lib/workflow-events.types.ts)                                                            |
+| **Workflow Run**             | A single execution of a workflow, with per-node results, retries, latency, cost, and provenance edges.                                                                                       | `lenses.workflow_runs`, `lenses.workflow_node_results`, `lenses.workflow_run_provenance`                                                                    |
+| **Agent Team**               | An owner-managed group of Agent Lensers connected by typed edges (`delegates`, `reviews`, `reports_to`, `shares_context`, `handoff`).                                                        | [supabase/migrations/20260428010000_ai_catalog_agent_control_room.sql:118](../../supabase/migrations/20260428010000_ai_catalog_agent_control_room.sql#L118) |
+| **Workflow Assignment**      | Binds a workflow to an agent or team with `approval_policy`, `retry_policy`, `failure_policy`, `queue_policy`.                                                                               | [supabase/migrations/20260428010000_ai_catalog_agent_control_room.sql:234](../../supabase/migrations/20260428010000_ai_catalog_agent_control_room.sql#L234) |
+| **Team Run**                 | A scoped execution of an assignment by a team. Tracks `status`, `approval_status`, `scratchpad`.                                                                                             | [supabase/migrations/20260428010000_ai_catalog_agent_control_room.sql:256](../../supabase/migrations/20260428010000_ai_catalog_agent_control_room.sql#L256) |
+| **Schedule**                 | A `pg_cron`-driven trigger row in `lenses.workflow_schedules` with a timezone, assignee, and policy bundle.                                                                                  | [libs/types/src/lib/workflows.types.ts:11](../../libs/types/src/lib/workflows.types.ts#L11)                                                                 |
+| **Approval**                 | An owner decision on a sensitive action. Materialized today from `team_runs.approval_status='pending'` (no separate queue table).                                                            | `agents.team_runs.approval_status`                                                                                                                          |
+| **Scratchpad**               | An owner-visible JSONB blob (`agents.teams.scratchpad`, `agents.team_runs.scratchpad`) used as the team's working memory between steps.                                                      | `agents.teams.scratchpad`                                                                                                                                   |
 
 ## Mental model
 
@@ -68,12 +69,12 @@ These rules must hold across every surface (route, RPC, CLI, UI):
 
 ## Status
 
-| Layer | Status | Notes |
-|-------|--------|-------|
-| Schema | Production | All core tables exist; one column proposed (`instruction_category` on `lenses.versions`) |
-| RLS | Production | Owner-authoritative via `agents.can_manage_ai_lenser()` |
-| Workflow engine | Production | DAG, conditional edges, retries, streaming, provenance |
-| Scheduling | Production | `pg_cron` + per-schedule policy bundles |
-| Approvals | Partial | Field exists on `team_runs`; queue UI not built |
-| CLI | Partial | `lens`, `lenses`, `lenser`, `run`, `runner`, `models`, `providers`, `gateway`, `inspect`, `publish` exist; `team`, `schedule`, `approval` proposed |
-| Frontend | Partial | `AgentControlRoomPage` exists; human-overview tabs and public-agent overview not built |
+| Layer           | Status     | Notes                                                                                                                                              |
+| --------------- | ---------- | -------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Schema          | Production | All core tables exist; one column proposed (`instruction_category` on `lenses.versions`)                                                           |
+| RLS             | Production | Owner-authoritative via `agents.can_manage_ai_lenser()`                                                                                            |
+| Workflow engine | Production | DAG, conditional edges, retries, streaming, provenance                                                                                             |
+| Scheduling      | Partial    | `pg_cron` schema/runtime exist, but `FEATURES.CRON_SCHEDULING` is off and schedule rollout is gated on the forward RPC repair                      |
+| Approvals       | Partial    | Queue view, decision RPC, and UI ship; broader report/notification integration is still maturing                                                   |
+| CLI             | Partial    | `lens`, `lenses`, `lenser`, `run`, `runner`, `models`, `providers`, `gateway`, `inspect`, `publish` exist; `team`, `schedule`, `approval` proposed |
+| Frontend        | Partial    | `AgentControlRoomPage` exists; human-overview tabs and public-agent overview not built                                                             |
