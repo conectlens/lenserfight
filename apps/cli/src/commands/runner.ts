@@ -1,6 +1,6 @@
 import { defineCommand } from 'citty';
 import consola from 'consola';
-import { callRpc, handleError } from '../utils/api';
+import { callRpc, callRest, handleError } from '../utils/api';
 import { printTable, printJson } from '../utils/output';
 
 const ADAPTER_TYPES = [
@@ -275,10 +275,182 @@ const types = defineCommand({
   },
 });
 
+// ---------------------------------------------------------------------------
+// Shared: resolve ai_lenser_id from a @handle string
+// ---------------------------------------------------------------------------
+async function resolveAiLenserId(handle: string): Promise<string> {
+  const rows = await callRest<Array<{ id: string }>>(
+    'lensers',
+    'profiles',
+    'GET',
+    undefined,
+    {
+      requireAuth: true,
+      query: { select: 'id', handle: `eq.${handle}` },
+    }
+  )
+  const profile = rows?.[0]
+  if (!profile) throw new Error(`No profile found for handle @${handle}`)
+
+  const agents = await callRest<Array<{ id: string }>>(
+    'agents',
+    'ai_lensers',
+    'GET',
+    undefined,
+    {
+      requireAuth: true,
+      query: { select: 'id', profile_id: `eq.${profile.id}` },
+    }
+  )
+  const agent = agents?.[0]
+  if (!agent) throw new Error(`No AI agent found for @${handle}`)
+  return agent.id
+}
+
+// ---------------------------------------------------------------------------
+// runner pause
+// ---------------------------------------------------------------------------
+const pause = defineCommand({
+  meta: {
+    name: 'pause',
+    description: 'Pause an agent — new runs will be blocked.',
+  },
+  args: {
+    handle: {
+      type: 'positional',
+      description: 'Agent handle (without @)',
+      required: true,
+    },
+  },
+  async run({ args }) {
+    try {
+      const aiLenserId = await resolveAiLenserId(args.handle)
+      await callRpc(
+        'fn_pause_agent',
+        { p_ai_lenser_id: aiLenserId },
+        { requireAuth: true }
+      )
+      consola.success('Agent @%s paused. New runs will be blocked.', args.handle)
+    } catch (err) {
+      handleError(err)
+    }
+  },
+})
+
+// ---------------------------------------------------------------------------
+// runner resume
+// ---------------------------------------------------------------------------
+const resume = defineCommand({
+  meta: {
+    name: 'resume',
+    description: 'Resume a paused agent.',
+  },
+  args: {
+    handle: {
+      type: 'positional',
+      description: 'Agent handle (without @)',
+      required: true,
+    },
+  },
+  async run({ args }) {
+    try {
+      const aiLenserId = await resolveAiLenserId(args.handle)
+      await callRpc(
+        'fn_resume_agent',
+        { p_ai_lenser_id: aiLenserId },
+        { requireAuth: true }
+      )
+      consola.success('Agent @%s resumed.', args.handle)
+    } catch (err) {
+      handleError(err)
+    }
+  },
+})
+
+// ---------------------------------------------------------------------------
+// runner status
+// ---------------------------------------------------------------------------
+const runnerStatus = defineCommand({
+  meta: {
+    name: 'status',
+    description: 'Show workspace settings and active run count for an agent.',
+  },
+  args: {
+    handle: {
+      type: 'positional',
+      description: 'Agent handle (without @)',
+      required: true,
+    },
+    json: {
+      type: 'boolean',
+      description: 'Output as JSON',
+      default: false,
+    },
+  },
+  async run({ args }) {
+    try {
+      const aiLenserId = await resolveAiLenserId(args.handle)
+
+      const settingsRows = await callRest<Array<Record<string, unknown>>>(
+        'agents',
+        'workspace_settings',
+        'GET',
+        undefined,
+        {
+          requireAuth: true,
+          query: {
+            select:
+              'global_kill_switch,agent_paused,max_parallel_runs,budget_enforce,max_daily_credits,dark_launch_enabled,dark_launch_pct',
+            ai_lenser_id: `eq.${aiLenserId}`,
+          },
+        }
+      )
+      const settings = settingsRows?.[0] ?? {}
+
+      const activeRuns = await callRest<Array<Record<string, unknown>>>(
+        'agents',
+        'team_runs',
+        'GET',
+        undefined,
+        {
+          requireAuth: true,
+          query: {
+            select: 'id',
+            ai_lenser_id: `eq.${aiLenserId}`,
+            'status': 'in.(queued,running,blocked)',
+          },
+        }
+      )
+      const activeRunCount = activeRuns?.length ?? 0
+
+      if (args.json) {
+        printJson({ ...settings, active_run_count: activeRunCount })
+        return
+      }
+
+      printTable(
+        ['Setting', 'Value'],
+        [
+          ['global_kill_switch', String(settings['global_kill_switch'] ?? false)],
+          ['agent_paused', String(settings['agent_paused'] ?? false)],
+          ['max_parallel_runs', String(settings['max_parallel_runs'] ?? '(unset)')],
+          ['budget_enforce', String(settings['budget_enforce'] ?? false)],
+          ['max_daily_credits', String(settings['max_daily_credits'] ?? '(unset)')],
+          ['dark_launch_enabled', String(settings['dark_launch_enabled'] ?? false)],
+          ['dark_launch_pct', String(settings['dark_launch_pct'] ?? 0) + '%'],
+          ['active_run_count', String(activeRunCount)],
+        ]
+      )
+    } catch (err) {
+      handleError(err)
+    }
+  },
+})
+
 export default defineCommand({
   meta: {
     name: 'runner',
-    description: 'Manage runners: connect, list, view, enable, remove, test, types.',
+    description: 'Manage runners: connect, list, view, enable, remove, test, types, pause, resume, status.',
   },
   subCommands: {
     connect,
@@ -288,6 +460,9 @@ export default defineCommand({
     remove,
     test,
     types,
+    pause,
+    resume,
+    status: runnerStatus,
   },
 });
 
