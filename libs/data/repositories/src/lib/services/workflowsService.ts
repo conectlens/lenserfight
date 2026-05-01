@@ -171,6 +171,9 @@ export const workflowsService = {
   deleteSchedule: (scheduleId: string): Promise<void> =>
     workflowsRepo.deleteSchedule(scheduleId),
 
+  getScheduleHistory: (scheduleId: string) =>
+    workflowsRepo.getScheduleHistory(scheduleId),
+
   // ── Versioning ──────────────────────────────────────────────────────────────
 
   getVersions: (workflowId: string): Promise<WorkflowVersionRecord[]> =>
