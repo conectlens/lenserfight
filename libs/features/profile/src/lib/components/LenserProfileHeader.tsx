@@ -39,8 +39,6 @@ interface LenserProfileHeaderProps {
   onProfileUpdate: (updatedLenser: Lenser) => void
   relationshipState?: RelationshipState | null
   onManageAgents?: () => void
-  onEditAgent?: () => void
-  showAIWorkspaceBanner?: boolean
 }
 
 export const LenserProfileHeader: React.FC<LenserProfileHeaderProps> = ({
@@ -51,8 +49,6 @@ export const LenserProfileHeader: React.FC<LenserProfileHeaderProps> = ({
   onProfileUpdate,
   relationshipState,
   onManageAgents,
-  onEditAgent,
-  showAIWorkspaceBanner = false,
 }) => {
   const { updateLenserProfile } = useLenser()
 
@@ -226,29 +222,7 @@ export const LenserProfileHeader: React.FC<LenserProfileHeaderProps> = ({
         <div className="bg-white dark:bg-gray-800 md:rounded-2xl shadow-sm border-b md:border border-gray-100 dark:border-gray-700 p-6 md:p-8 relative transition-colors">
           {/* Mobile Edit / Follow Button */}
           {isOwner ? (
-            lenser.type === 'ai' ? (
-              <div className="md:hidden absolute top-4 right-4 z-20 flex items-center gap-2">
-                <Button
-                  variant="ghost"
-                  onClick={() => setShowEditModal(true)}
-                  className="!p-2.5 !w-auto rounded-full"
-                  title="Edit Profile"
-                >
-                  <Pencil size={18} />
-                </Button>
-                {onEditAgent && (
-                  <Button
-                    variant="ghost"
-                    onClick={onEditAgent}
-                    className="!p-2.5 !w-auto rounded-full"
-                    title="Manage Agent"
-                  >
-                    <Bot size={18} />
-                  </Button>
-                )}
-              </div>
-            ) : (
-              <Button
+            <Button
                 variant="ghost"
                 onClick={() => setShowEditModal(true)}
                 className="md:hidden absolute top-4 right-4 !p-2.5 !w-auto rounded-full z-20"
@@ -256,7 +230,6 @@ export const LenserProfileHeader: React.FC<LenserProfileHeaderProps> = ({
               >
                 <Pencil size={18} />
               </Button>
-            )
           ) : (
             <div className="md:hidden absolute top-4 right-4 z-20">
               <FollowButton
@@ -336,9 +309,7 @@ export const LenserProfileHeader: React.FC<LenserProfileHeaderProps> = ({
                       {lenser.display_name}
                     </h1>
                     {lenser.type === 'ai' && (
-                      <Badge color={showAIWorkspaceBanner ? 'yellow' : 'gray'}>
-                        {showAIWorkspaceBanner ? 'AI Workspace' : 'AI Lenser'}
-                      </Badge>
+                      <Badge color="gray">AI Lenser</Badge>
                     )}
                     {lenser.visibility === 'private' && (
                       <span title="Private profile" className="flex items-center text-gray-400 dark:text-gray-500">
@@ -369,51 +340,25 @@ export const LenserProfileHeader: React.FC<LenserProfileHeaderProps> = ({
 
                 {isOwner ? (
                   <div className="hidden md:flex items-center gap-2 mt-2 md:mt-0">
-                    {lenser.type === 'ai' ? (
-                      <>
-                        <Button
-                          variant="secondary"
-                          onClick={() => setShowEditModal(true)}
-                          className="flex items-center gap-2 w-auto"
-                        >
-                          <Pencil size={16} />
-                          Edit Profile
-                        </Button>
-                        {onEditAgent && (
-                          <Button
-                            variant="secondary"
-                            onClick={onEditAgent}
-                            className="flex items-center gap-2 w-auto"
-                            title="Manage Agent"
-                          >
-                            <Bot size={16} />
-                            Manage Agent
-                          </Button>
-                        )}
-                      </>
-                    ) : (
-                      <>
-                        {FEATURES.AGENTS && onManageAgents && (
-                          <Button
-                            variant="secondary"
-                            onClick={onManageAgents}
-                            title="Manage AI Agents"
-                            className="flex items-center gap-2 w-auto"
-                          >
-                            <Bot size={16} />
-                            Agents
-                          </Button>
-                        )}
-                        <Button
-                          variant="secondary"
-                          onClick={() => setShowEditModal(true)}
-                          className="flex items-center gap-2 w-auto"
-                        >
-                          <Pencil size={16} />
-                          Edit Profile
-                        </Button>
-                      </>
+                    {FEATURES.AGENTS && onManageAgents && (
+                      <Button
+                        variant="secondary"
+                        onClick={onManageAgents}
+                        title="Manage AI Agents"
+                        className="flex items-center gap-2 w-auto"
+                      >
+                        <Bot size={16} />
+                        Agents
+                      </Button>
                     )}
+                    <Button
+                      variant="secondary"
+                      onClick={() => setShowEditModal(true)}
+                      className="flex items-center gap-2 w-auto"
+                    >
+                      <Pencil size={16} />
+                      Edit Profile
+                    </Button>
                   </div>
                 ) : (
                   <div className="hidden md:block mt-2 md:mt-0">
@@ -434,18 +379,6 @@ export const LenserProfileHeader: React.FC<LenserProfileHeaderProps> = ({
               <div className="w-full h-px bg-gray-100 dark:bg-gray-700 my-2 md:hidden"></div>
 
               <div className="flex flex-col gap-2 mb-3 md:mb-4 w-full">
-                {lenser.type === 'ai' && showAIWorkspaceBanner && (
-                  <div className="rounded-2xl border border-primary-yellow-500/30 bg-primary-yellow-500/10 px-4 py-3 text-sm text-gray-700 dark:text-gray-200">
-                    <div className="mb-1 flex items-center gap-2 font-semibold text-gray-900 dark:text-white">
-                      <Bot size={15} />
-                      AI panel active
-                    </div>
-                    <p>
-                      Logs, CRON schedules, workflow orchestration, and secure owner-only bindings are enabled for this workspace.
-                    </p>
-                  </div>
-                )}
-
                 {lenser.headline && (
                   <p className="font-medium text-gray-800 dark:text-gray-200 mt-2 md:mt-0">
                     {lenser.headline}
