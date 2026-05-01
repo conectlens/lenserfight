@@ -27,6 +27,7 @@ import {
   type UpsertAgentRunStepInput,
   type ListApprovalRequestsOptions,
 } from '../repositories/agentWorkspaceRepository'
+import type { EvaluationBaselineRecord, EvaluationRubricCriterion, EvaluationRubricRecord } from '@lenserfight/types'
 
 const agentWorkspaceRepo = new SupabaseAgentWorkspaceRepository()
 
@@ -41,6 +42,9 @@ export type {
   CreateTeamRunInput,
   UpsertAgentRunStepInput,
   ListApprovalRequestsOptions,
+  EvaluationRubricRecord,
+  EvaluationBaselineRecord,
+  EvaluationRubricCriterion,
 }
 
 export const agentWorkspaceService = {
@@ -173,4 +177,21 @@ export const agentWorkspaceService = {
   updateTeamRunStatus: agentWorkspaceRepo.updateTeamRunStatus.bind(agentWorkspaceRepo),
   appendTeamRunEvent: agentWorkspaceRepo.appendTeamRunEvent.bind(agentWorkspaceRepo),
   upsertAgentRunStep: agentWorkspaceRepo.upsertAgentRunStep.bind(agentWorkspaceRepo),
+
+  // Evaluation rubrics
+  listEvaluationRubrics: agentWorkspaceRepo.listEvaluationRubrics.bind(agentWorkspaceRepo),
+  createEvaluationRubric: (
+    evaluationId: string,
+    criteria: EvaluationRubricCriterion[]
+  ): Promise<EvaluationRubricRecord> =>
+    agentWorkspaceRepo.createEvaluationRubric(evaluationId, criteria),
+
+  // Evaluation baselines
+  getEvaluationBaseline: (evaluationId: string): Promise<EvaluationBaselineRecord | null> =>
+    agentWorkspaceRepo.getEvaluationBaseline(evaluationId),
+  setEvaluationBaseline: (evaluationId: string, runId: string): Promise<EvaluationBaselineRecord> =>
+    agentWorkspaceRepo.setEvaluationBaseline(evaluationId, runId),
+
+  // Post-run evaluation trigger
+  triggerPostRunEvaluations: agentWorkspaceRepo.triggerPostRunEvaluations.bind(agentWorkspaceRepo),
 }
