@@ -36,6 +36,7 @@ const main = defineCommand({
     workflow: () => import('./commands/workflow').then((m) => m.default),
     evaluate: () => import('./commands/evaluate').then((m) => m.default),
     tool: () => import('./commands/tool').then((m) => m.default),
+    memory: () => import('./commands/memory').then((m) => m.default),
     publish: () => import('./commands/publish').then((m) => m.default),
     rubric: () => import('./commands/rubric').then((m) => m.default),
     template: () => import('./commands/template').then((m) => m.default),
