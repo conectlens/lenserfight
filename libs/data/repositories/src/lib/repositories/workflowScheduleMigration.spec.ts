@@ -4,7 +4,7 @@ import { describe, expect, it } from 'vitest'
 
 const migrationPath = join(
   process.cwd(),
-  'supabase/migrations/20260501020000_fix_workflow_schedule_rpc.sql'
+  'supabase/migrations/20260501025000_fix_workflow_schedule_rpc.sql'
 )
 const migrationSql = readFileSync(migrationPath, 'utf8')
 
