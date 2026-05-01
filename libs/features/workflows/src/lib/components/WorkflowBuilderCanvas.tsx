@@ -232,12 +232,22 @@ function WorkflowBuilderCanvasInner({
     edgeRecords.map((e) => toFlowEdge(e, handleRemoveEdge))
   )
 
+  // Stable refs for callbacks so the re-seed effect doesn't depend on them
+  const onConfigNodeRef = useRef(onConfigNode)
+  const onEditLensRef = useRef(onEditLens)
+  const currentUserIdRef = useRef(currentUserId)
+  const nodeConfigOverridesRef = useRef(nodeConfigOverrides)
+  useEffect(() => { onConfigNodeRef.current = onConfigNode }, [onConfigNode])
+  useEffect(() => { onEditLensRef.current = onEditLens }, [onEditLens])
+  useEffect(() => { currentUserIdRef.current = currentUserId }, [currentUserId])
+  useEffect(() => { nodeConfigOverridesRef.current = nodeConfigOverrides }, [nodeConfigOverrides])
+
   const buildFlowNodes = useCallback(
     (records: WorkflowNodeRecord[]) =>
       records.map((n) =>
-        toFlowNode(n, handleRemoveNode, onConfigNode, onEditLens, currentUserId)
+        toFlowNode(n, handleRemoveNode, onConfigNodeRef.current, onEditLensRef.current, currentUserIdRef.current, nodeConfigOverridesRef.current)
       ),
-    [handleRemoveNode, onConfigNode, onEditLens, currentUserId]
+    [handleRemoveNode]
   )
 
   const buildFlowEdges = useCallback(
@@ -245,8 +255,22 @@ function WorkflowBuilderCanvasInner({
     [handleRemoveEdge]
   )
 
-  // Re-seed when DB records arrive (initial fetch or persisted save reconciliation)
+  // Re-seed when DB records change. We fingerprint the records so that parent
+  // re-renders that only change callback references don't wipe the canvas.
+  const nodeRecordsFingerprintRef = useRef<string>('')
+  const edgeRecordsFingerprintRef = useRef<string>('')
+
   useEffect(() => {
+    const nodeFp = JSON.stringify(nodeRecords.map((n) => n.id + n.ordinal + n.position_x + n.position_y))
+    const edgeFp = JSON.stringify(edgeRecords.map((e) => e.id + e.source_node_id + e.target_node_id))
+
+    const nodeChanged = nodeFp !== nodeRecordsFingerprintRef.current
+    const edgeChanged = edgeFp !== edgeRecordsFingerprintRef.current
+    if (!nodeChanged && !edgeChanged) return
+
+    nodeRecordsFingerprintRef.current = nodeFp
+    edgeRecordsFingerprintRef.current = edgeFp
+
     const nextNodes = buildFlowNodes(nodeRecords)
     const nextEdges = buildFlowEdges(edgeRecords)
 
@@ -404,7 +428,7 @@ function WorkflowBuilderCanvasInner({
               lastSavedNodeFingerprintRef.current = nextNodeMap
               setNodes(
                 savedNodes.map((record) =>
-                  toFlowNode(record, handleRemoveNode, onConfigNode, onEditLens, currentUserId, nodeConfigOverrides)
+                  toFlowNode(record, handleRemoveNode, onConfigNodeRef.current, onEditLensRef.current, currentUserIdRef.current, nodeConfigOverridesRef.current)
                 )
               )
             }
@@ -444,7 +468,7 @@ function WorkflowBuilderCanvasInner({
             setNodes((prev) => {
               const byId = new Map(prev.map((n) => [n.id, n]))
               for (const record of savedNodes) {
-                byId.set(record.id, toFlowNode(record, handleRemoveNode, onConfigNode, onEditLens, currentUserId, nodeConfigOverrides))
+                byId.set(record.id, toFlowNode(record, handleRemoveNode, onConfigNodeRef.current, onEditLensRef.current, currentUserIdRef.current, nodeConfigOverridesRef.current))
               }
               return Array.from(byId.values())
             })
@@ -473,7 +497,7 @@ function WorkflowBuilderCanvasInner({
         })
         .catch(() => null)
     }, 1500)
-  }, [readOnly, workflowId, saveWorkflow, handleRemoveNode, handleRemoveEdge, onConfigNode, onEditLens, currentUserId, nodeConfigOverrides, setNodes, setEdges])
+  }, [readOnly, workflowId, saveWorkflow, handleRemoveNode, handleRemoveEdge, setNodes, setEdges])
 
   // NOTE: nodeConfigOverrides changes are intentionally NOT wired to scheduleSave here.
   // Config overrides are synced into node data above and are included in the next
