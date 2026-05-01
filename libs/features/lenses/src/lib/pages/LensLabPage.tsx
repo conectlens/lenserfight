@@ -110,10 +110,10 @@ export const LensLabPage: React.FC = () => {
   const activeVersionParams = activeVersion?.parameters ?? undefined
 
 
-  // Selected model input modalities (for file param validation)
-  const selectedModelInputModalities = lab.providerModels.find(
-    (m) => m.key === lab.selectedModelKey,
-  )?.inputModalities
+  // Selected model input + output modalities
+  const selectedModel = lab.providerModels.find((m) => m.key === lab.selectedModelKey)
+  const selectedModelInputModalities = selectedModel?.inputModalities
+  const selectedModelOutputModalities = selectedModel?.outputModalities
 
   const reportContent = useReportContent()
 
@@ -455,7 +455,15 @@ export const LensLabPage: React.FC = () => {
           />
         </div>
 
-        <div className="lg:col-span-5">
+        <div className="lg:col-span-5 flex flex-col gap-3">
+          {lab.asyncMediaRunId && (
+            <div className="flex items-center gap-3 rounded-2xl border border-primary-yellow-200 bg-primary-yellow-50 px-4 py-3 text-sm dark:border-primary-yellow-800 dark:bg-primary-yellow-950">
+              <Loader2 size={16} className="animate-spin shrink-0 text-primary-yellow-600 dark:text-primary-yellow-400" />
+              <span className="text-primary-yellow-800 dark:text-primary-yellow-200">
+                Generating media — this may take a minute…
+              </span>
+            </div>
+          )}
           <LabExecutionPanel
             lensContent={activeLensContent}
             providers={lab.providers}
@@ -473,6 +481,7 @@ export const LensLabPage: React.FC = () => {
             onStop={lab.stopStream}
             versionParams={activeVersionParams}
             selectedModelInputModalities={selectedModelInputModalities}
+            selectedModelOutputModalities={selectedModelOutputModalities}
             fundingSource={funding.fundingSource}
             onFundingSourceChange={funding.setFundingSource}
             selectedKeyRefId={funding.selectedKeyRefId}
