@@ -4,6 +4,7 @@ import React from 'react'
 export interface AgentNodeData extends Record<string, unknown> {
   label: string
   sublabel?: string
+  agentHandle?: string
 }
 
 export const AgentCanvasNode: React.FC<NodeProps> = ({ data, selected }) => {
@@ -26,9 +27,11 @@ export const AgentCanvasNode: React.FC<NodeProps> = ({ data, selected }) => {
           {d.sublabel}
         </p>
       )}
-      <p className="mt-1.5 text-[10px] font-medium uppercase tracking-wider text-gray-400 dark:text-gray-500">
-        right-click for options
-      </p>
+      {d.agentHandle && (
+        <p className="mt-0.5 max-w-[160px] truncate text-[11px] text-amber-600 dark:text-amber-400">
+          @{d.agentHandle}
+        </p>
+      )}
       <Handle type="source" position={Position.Bottom} className="!bg-amber-500" />
     </div>
   )
