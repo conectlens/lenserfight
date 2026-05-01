@@ -172,14 +172,13 @@ For Agent-Owner mode with zero teams:
 - Reuse the existing `EmptyPanel` pattern at [AgentControlRoomPage.tsx:114-135](../../libs/features/agents/src/lib/pages/AgentControlRoomPage.tsx#L114-L135).
 - CTA: **Create your first agent team** → inline form already present.
 
-## Current vs. desired behavior
+## Workspace entry contract (implemented)
 
-The route resolution **above** is the contract. The current implementation at [AgentControlRoomPage.tsx:260-268](../../libs/features/agents/src/lib/pages/AgentControlRoomPage.tsx#L260-L268) deviates in two places:
+**Profile split decision (implemented):** [`LenserProfilePage.tsx`](../../libs/features/profile/src/lib/pages/LenserProfilePage.tsx) now redirects all `type === 'ai'` profiles to `/lenser/:handle/ag/overview` immediately after the profile resolves. The human-profile page no longer handles AI lensers at all.
 
-1. **Redirects when target is human** — `if (viewedProfile.type !== 'ai') return <Navigate to={\`/lenser/${handle}\`} replace />`. Per non-negotiable rule, this must instead render Human-Owner or Human-Public mode.
-2. **Redirects when viewer is non-owner of an AI profile** — same Navigate call. Must instead render Agent-Public mode.
+**Route dispatch (implemented):** All four modes are handled by [`AgentRouteShell`](../../libs/features/agents/src/lib/components/AgentRouteShell.tsx) → [`AgentWorkspaceShell`](../../libs/features/agents/src/lib/components/AgentWorkspaceShell.tsx). The shell reads `useAgentRouteMode(handle)` and passes the resolved `viewMode` to the unified workspace provider. No redirects on missing agents, empty collections, or non-owner human visitors.
 
-Both deviations are tracked in [Future work](#future-work) as the next code PR.
+The "Current vs. desired" deviations listed in older versions of this doc are resolved. The four-mode contract is now the implementation.
 
 ## Permission decision tree
 
@@ -202,9 +201,6 @@ Authorization helper: [`agents.can_manage_ai_lenser(uuid)`](../../supabase/migra
 
 The following are **Proposed (not yet implemented)**:
 
-- **Route-mode split for `/lenser/:handle/ag/overview`** — render four modes as documented; remove the redirects in [AgentControlRoomPage.tsx:260-268](../../libs/features/agents/src/lib/pages/AgentControlRoomPage.tsx#L260-L268). Build:
-  - `HumanAgentsOverviewPage` (Human-Owner / Human-Public)
-  - `AgentPublicOverviewPage` (Agent-Public)
-- **Cross-agent activity feed component** — aggregates `agents.team_runs`, pending approvals, schedules across every agent owned by the viewing human.
-- **Read-only public agent overview component** — strips scratchpad, approvals, tool/model bindings, and settings from `AgentControlRoomPage`.
+- **Cross-agent activity feed RPC** — `fn_get_human_activity_feed` server-side aggregation to back the `CrossAgentActivityFeed` component currently using a client-side query.
+- **Read-only public agent overview polish** — richer public stats (run count, last active, public automation feed) for Agent-Public mode.
 - **Capability-aware role assignment** — uses the proposed [`instruction_category`](./lens-instructions#future-work) on lens versions to route validation/research/generation lenses to members whose responsibility tag matches.
