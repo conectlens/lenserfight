@@ -169,7 +169,8 @@ export const AgentTeamSection: React.FC = () => {
         position: positions[index] ?? { x: member.lane * 280, y: index * 150 },
         data: {
           label: member.role.replaceAll('_', ' '),
-          sublabel: agent?.display_name || agent?.handle || member.agent_id.slice(0, 8),
+          sublabel: agent?.display_name || member.agent_id.slice(0, 8),
+          agentHandle: agent?.handle,
         },
       }
     })
