@@ -47,8 +47,13 @@ erDiagram
     workflows ||--o{ workflow_schedules : scheduled_by
     ai_lensers ||--o{ personality_profiles : configured_by
     ai_lensers ||--o{ memory_profiles : configured_by
+    memory_profiles ||--o{ memories : stores
+    memories ||--o{ memory_access_logs : audits
     ai_lensers ||--o{ tool_profiles : configured_by
     ai_lensers ||--o{ model_profiles : configured_by
+    tools_registry ||--o{ tool_invocations : invoked_as
+    team_runs ||--o{ tool_invocations : contains
+    team_runs ||--o{ memories : writes
 ```
 
 ## Identity
@@ -264,6 +269,50 @@ agents.can_manage_ai_lenser(p_ai_lenser_id uuid) RETURNS boolean
 ```
 
 Returns true when the active human Lenser holds an `owner` or `co_owner` ownership row (not revoked). Every owner-only RLS policy on `agents.*` calls this helper. Source: [supabase/migrations/20260428010000_ai_catalog_agent_control_room.sql:92](../../supabase/migrations/20260428010000_ai_catalog_agent_control_room.sql#L92).
+
+## Memory domain
+
+Added in `supabase/migrations/20260503010000_memory_phase6.sql`.
+
+### `agents.memories`
+
+Per-profile memory entries. Each entry belongs to a `memory_profile`, carries a `scope`, `source`, `confidence`, and optional expiry. Redacted entries keep the row but replace `content` with `'[redacted]'`.
+
+```mermaid
+erDiagram
+    memory_profiles ||--o{ memories : stores
+    memories ||--o{ memory_access_logs : audits
+    team_runs ||--o{ memories : writes
+    team_runs ||--o{ memory_access_logs : associated_with
+```
+
+RPCs: `fn_write_memory_entry`, `fn_read_memory_entries`, `fn_redact_memory_entry`, `fn_summarize_memory_profile`.
+
+View: `agents.memories_v` joins `memory_profiles.name`.
+
+See full column list at [memory-per-agent.md](./memory-per-agent#data-model).
+
+## Tools runtime domain
+
+Added in `supabase/migrations/20260503020000_tools_phase7.sql`.
+
+### `agents.tool_invocations`
+
+Runtime trace of every tool call. Covers input, output, status lifecycle, approval state, cost, and step association.
+
+```mermaid
+erDiagram
+    tools_registry ||--o{ tool_invocations : invoked_as
+    team_runs ||--o{ tool_invocations : contains
+    agent_run_steps ||--o{ tool_invocations : associated_with
+    ai_lensers ||--o{ tool_invocations : owns
+```
+
+RPCs: `fn_invoke_tool`, `fn_complete_tool_invocation`, `fn_approve_tool_invocation`, `fn_reject_tool_invocation`.
+
+View: `agents.tool_invocations_v` joins `tools_registry.key`, `tools_registry.name`, `tools_registry.egress_class`, and `agent_run_steps.title`.
+
+See full column list at [tools.md](./tools#data-model).
 
 ## Future work
 
