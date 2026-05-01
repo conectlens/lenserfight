@@ -1,5 +1,16 @@
 export type WorkflowTriggerMode = 'manual' | 'schedule' | 'subflow'
 
+export interface WorkflowScheduleRunHistoryRecord {
+  id: string
+  workflow_id: string
+  status: string
+  scheduled_for: string
+  started_at: string | null
+  completed_at: string | null
+  error_message: string | null
+  created_at: string
+}
+
 export type WorkflowScheduleDispatchStatus =
   | 'dispatched'
   | 'skipped_overlap'

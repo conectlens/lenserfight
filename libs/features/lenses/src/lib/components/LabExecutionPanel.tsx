@@ -1,4 +1,4 @@
-import { AIProvider, AIProviderModel, LensParam, FundingSource, UserApiKey, WalletBalance, LensVersionParam } from '@lenserfight/types'
+import { AIProvider, AIProviderModel, LensParam, FundingSource, UserApiKey, WalletBalance, LensVersionParam, GenerativeMediaParams } from '@lenserfight/types'
 import { Button } from '@lenserfight/ui/components'
 import { Loader2, Play, Square } from 'lucide-react'
 import React, { useState } from 'react'
@@ -37,6 +37,8 @@ interface LabExecutionPanelProps {
   versionParams?: LensVersionParam[]
   /** input_modalities from the selected AI model — used to gate file param types. */
   selectedModelInputModalities?: string[]
+  /** output_modalities from the selected AI model — drives the modality selector. */
+  selectedModelOutputModalities?: string[]
   /** Version id to pin execution to (from useVersionExecution). Passed to TriggerLabExecutionDTO. */
   /** True while version params are still loading (prevents freeform fallback flash). */
   isLoadingVersionParams?: boolean
@@ -86,6 +88,7 @@ export const LabExecutionPanel: React.FC<LabExecutionPanelProps> = ({
   params,
   versionParams,
   selectedModelInputModalities,
+  selectedModelOutputModalities,
   isLoadingVersionParams,
   onFileParamUpload,
   fundingSource,
@@ -108,6 +111,28 @@ export const LabExecutionPanel: React.FC<LabExecutionPanelProps> = ({
   onSignIn,
 }) => {
   const form = useLabParamForm(lensContent, params, versionParams)
+
+  // Modality selector — only shown when the model supports non-text output modalities
+  const availableOutputModalities = selectedModelOutputModalities ?? ['text']
+  const nonTextModalities = availableOutputModalities.filter((m) => m !== 'text')
+  const hasMediaModalities = nonTextModalities.length > 0
+  const [selectedModality, setSelectedModality] = useState<'text' | 'image' | 'video' | 'audio' | 'music'>('text')
+  const effectiveModality = hasMediaModalities ? selectedModality : 'text'
+
+  // Media generation params (only used when effectiveModality !== 'text')
+  const [mediaWidth, setMediaWidth] = useState(1024)
+  const [mediaHeight, setMediaHeight] = useState(1024)
+  const [mediaDurationS, setMediaDurationS] = useState(5)
+  const [mediaAspectRatio, setMediaAspectRatio] = useState('16:9')
+
+  const buildMediaParams = (): GenerativeMediaParams | undefined => {
+    if (effectiveModality === 'text') return undefined
+    const base: GenerativeMediaParams = { output_modality: effectiveModality }
+    if (effectiveModality === 'image') return { ...base, width: mediaWidth, height: mediaHeight }
+    if (effectiveModality === 'video') return { ...base, duration_s: mediaDurationS, aspect_ratio: mediaAspectRatio }
+    if (effectiveModality === 'audio' || effectiveModality === 'music') return { ...base, duration_s: mediaDurationS }
+    return base
+  }
 
   const isLocalByok = fundingSource === 'user_byok_local'
   const isCloudByok = fundingSource === 'user_byok_cloud'
@@ -166,6 +191,8 @@ export const LabExecutionPanel: React.FC<LabExecutionPanelProps> = ({
               fundingSource,
               selectedKeyRefId,
               selectedModelInputModalities,
+              output_modality: effectiveModality === 'text' ? undefined : effectiveModality,
+              generative_media_params: buildMediaParams(),
             })
           }
           className="flex flex-col gap-4"
@@ -176,7 +203,13 @@ export const LabExecutionPanel: React.FC<LabExecutionPanelProps> = ({
             {(isTriggeringExecution || isStreaming) && (
               <span className="flex items-center gap-1.5 text-xs text-greyscale-500 dark:text-greyscale-400">
                 <Loader2 size={12} className="animate-spin" />
-                {isConnecting ? 'Connecting…' : isStreaming ? 'Streaming…' : 'Running…'}
+                {isConnecting
+                  ? 'Connecting…'
+                  : effectiveModality !== 'text' && isStreaming
+                    ? `Generating ${effectiveModality}…`
+                    : isStreaming
+                      ? 'Streaming…'
+                      : 'Running…'}
               </span>
             )}
           </div>
@@ -207,6 +240,93 @@ export const LabExecutionPanel: React.FC<LabExecutionPanelProps> = ({
               onModelChange={onModelChange}
               onProviderDropdownOpen={onProviderDropdownOpen}
             />
+          )}
+
+          {/* 2. Output Modality selector — only when model supports non-text outputs */}
+          {hasMediaModalities && (
+            <div className="flex flex-col gap-2">
+              <span className="text-xs font-medium text-greyscale-500 dark:text-greyscale-400">Output</span>
+              <div className="flex flex-wrap gap-1.5">
+                {(['text', ...nonTextModalities] as const).map((m) => (
+                  <button
+                    key={m}
+                    type="button"
+                    onClick={() => setSelectedModality(m as typeof selectedModality)}
+                    className={`rounded-full px-3 py-1 text-xs font-medium transition-colors capitalize ${
+                      effectiveModality === m
+                        ? 'bg-primary-yellow-500 text-greyscale-900'
+                        : 'border border-surface-border bg-surface-raised text-greyscale-600 hover:border-primary-yellow-400 dark:text-greyscale-300'
+                    }`}
+                  >
+                    {m}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* 2b. Media generation params */}
+          {effectiveModality === 'image' && (
+            <div className="flex gap-3">
+              <label className="flex flex-1 flex-col gap-1">
+                <span className="text-xs text-greyscale-500">Width</span>
+                <input
+                  type="number"
+                  min={64} max={4096} step={64}
+                  value={mediaWidth}
+                  onChange={(e) => setMediaWidth(Number(e.target.value))}
+                  className="rounded-xl border border-surface-border bg-surface-raised px-3 py-1.5 text-sm text-greyscale-900 dark:text-greyscale-50"
+                />
+              </label>
+              <label className="flex flex-1 flex-col gap-1">
+                <span className="text-xs text-greyscale-500">Height</span>
+                <input
+                  type="number"
+                  min={64} max={4096} step={64}
+                  value={mediaHeight}
+                  onChange={(e) => setMediaHeight(Number(e.target.value))}
+                  className="rounded-xl border border-surface-border bg-surface-raised px-3 py-1.5 text-sm text-greyscale-900 dark:text-greyscale-50"
+                />
+              </label>
+            </div>
+          )}
+          {effectiveModality === 'video' && (
+            <div className="flex gap-3">
+              <label className="flex flex-1 flex-col gap-1">
+                <span className="text-xs text-greyscale-500">Duration (s)</span>
+                <input
+                  type="number"
+                  min={1} max={60} step={1}
+                  value={mediaDurationS}
+                  onChange={(e) => setMediaDurationS(Number(e.target.value))}
+                  className="rounded-xl border border-surface-border bg-surface-raised px-3 py-1.5 text-sm text-greyscale-900 dark:text-greyscale-50"
+                />
+              </label>
+              <label className="flex flex-1 flex-col gap-1">
+                <span className="text-xs text-greyscale-500">Aspect ratio</span>
+                <select
+                  value={mediaAspectRatio}
+                  onChange={(e) => setMediaAspectRatio(e.target.value)}
+                  className="rounded-xl border border-surface-border bg-surface-raised px-3 py-1.5 text-sm text-greyscale-900 dark:text-greyscale-50"
+                >
+                  {['16:9', '9:16', '1:1', '4:3', '3:4'].map((r) => (
+                    <option key={r} value={r}>{r}</option>
+                  ))}
+                </select>
+              </label>
+            </div>
+          )}
+          {(effectiveModality === 'audio' || effectiveModality === 'music') && (
+            <label className="flex flex-col gap-1">
+              <span className="text-xs text-greyscale-500">Duration (s)</span>
+              <input
+                type="number"
+                min={1} max={300} step={1}
+                value={mediaDurationS}
+                onChange={(e) => setMediaDurationS(Number(e.target.value))}
+                className="rounded-xl border border-surface-border bg-surface-raised px-3 py-1.5 text-sm text-greyscale-900 dark:text-greyscale-50"
+              />
+            </label>
           )}
 
           {/* 3. Version Parameters */}

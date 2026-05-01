@@ -224,6 +224,8 @@ export interface TriggerExecutionDTO {
   funding_source: FundingSource
   origin_type: ExecutionOriginType
   byok_key_ref_id?: string
+  /** The AI lenser executing on behalf of the user. NULL/absent = human-owned run. */
+  ai_lenser_id?: string
   /** Present for generative media executions (image/video/audio/music). */
   generative_media_params?: GenerativeMediaParams
 }
