@@ -23,6 +23,8 @@ The runtime is **already built**. Most of this section documents primitives that
 10. [CLI reference](./cli-reference) — what `apps/cli` already exposes.
 11. [Examples](./examples) — three end-to-end walkthroughs.
 12. [Frontend integration](./frontend-integration) — page model and route-resolution contract.
+13. [Memory Per Agent](./memory-per-agent) — per-profile memory entries, dispatch injection, write gate.
+14. [Tools](./tools) — egress classes, approval flow, invocation runtime traces.
 
 ## Glossary
 
@@ -77,5 +79,7 @@ These rules must hold across every surface (route, RPC, CLI, UI):
 | Scheduling      | Partial    | `pg_cron` schema/runtime exist, but `FEATURES.CRON_SCHEDULING` is off and schedule rollout is gated on the forward RPC repair                      |
 | Approvals       | Partial    | Queue view, decision RPC, and UI ship; broader report/notification integration is still maturing                                                   |
 | Evaluations     | Production | Rubric builder (versioned), regression history chart, baseline tracking, post-run trigger, evaluator assignee role — see [evaluations.md](./evaluations.md) |
-| CLI             | Partial    | `lens`, `lenses`, `lenser`, `run`, `runner`, `models`, `providers`, `gateway`, `inspect`, `publish` exist; `team`, `schedule`, `approval` proposed |
+| Memory Per Agent | Production | Per-profile entry store, read/write audit trail, dispatch injection, write-on-success gate, redaction — see [memory-per-agent.md](./memory-per-agent.md) |
+| Tools           | Production | Egress sandboxing (`none/read_only/write`), approval gate, invocation runtime traces, operator approval queue — see [tools.md](./tools.md) |
+| CLI             | Partial    | `lens`, `lenses`, `lenser`, `run`, `runner`, `models`, `providers`, `gateway`, `inspect`, `publish`, `memory`, `tool` (expanded) exist; `team`, `schedule`, `approval` proposed |
 | Frontend        | Partial    | `AgentControlRoomPage` exists; human-overview tabs and public-agent overview not built                                                             |
