@@ -1,51 +1,51 @@
 ---
 title: Approvals
-description: How owner approval gates work for autonomous agent teams. Today's queue is materialized from agents.team_runs.approval_status — no separate approval table.
+description: How owner approval gates work for autonomous agent teams. The queue is materialized from agents.team_runs into agents.approval_requests_v and resolved through fn_decide_approval.
 ---
 
 # Approvals
 
 Approvals keep the human Lenser authoritative over autonomous agent execution. Whenever a team run touches a sensitive action — publishing output, spending credits, sending external messages, modifying schedules, deleting data — the engine pauses and creates a pending entry that the owner resolves.
 
-The **queue is not a separate table**. It is a projection of [`agents.team_runs`](./domain-model#agents-team-runs) with `approval_status='pending'`, joined to the assignment metadata. This was a deliberate scoping choice — see [Future work](#future-work) for the proposed view that materializes this queue cleanly.
+The **queue is not a separate table**. It is a projection of [`agents.team_runs`](./domain-model#agents-team-runs) with `approval_status='pending'`, materialized as `agents.approval_requests_v` and resolved through `fn_decide_approval`.
 
 ## Approval shape
 
 Today, every approval gate is one row in `agents.team_runs`:
 
-| Column | Approval semantics |
-|--------|--------------------|
-| `id` | Approval request id |
-| `ai_lenser_id` | Whose ownership applies |
-| `team_id` | Which team produced the request |
-| `workflow_id` | Which workflow |
-| `workflow_run_id` | Underlying workflow run (when one exists) |
-| `workflow_assignment_id` | Which assignment dispatched this run |
-| `status` | `queued / running / completed / failed / cancelled / blocked` |
-| `approval_status` | `'pending' \| 'approved' \| 'rejected' \| 'not_required'` |
-| `metadata` | jsonb — gate `kind`, requested permission, requester agent id, action target |
-| `started_at`, `completed_at` | Run timing |
+| Column                       | Approval semantics                                                           |
+| ---------------------------- | ---------------------------------------------------------------------------- |
+| `id`                         | Approval request id                                                          |
+| `ai_lenser_id`               | Whose ownership applies                                                      |
+| `team_id`                    | Which team produced the request                                              |
+| `workflow_id`                | Which workflow                                                               |
+| `workflow_run_id`            | Underlying workflow run (when one exists)                                    |
+| `workflow_assignment_id`     | Which assignment dispatched this run                                         |
+| `status`                     | `queued / running / completed / failed / cancelled / blocked`                |
+| `approval_status`            | `'pending' \| 'approved' \| 'rejected' \| 'not_required'`                    |
+| `metadata`                   | jsonb — gate `kind`, requested permission, requester agent id, action target |
+| `started_at`, `completed_at` | Run timing                                                                   |
 
-The decision is mutated in place: a UI call sets `approval_status='approved'` or `'rejected'`; the engine resumes (approved) or fails the run (rejected) and writes `agents.agent_run_events` with the decision.
+The decision is mutated atomically through `fn_decide_approval`: the RPC updates `approval_status`, appends the decision metadata, and writes `agents.agent_run_events` for the approval outcome.
 
 ## Mandatory gates
 
 These actions **always require owner approval** regardless of the team's autonomy level:
 
-| Gate | Triggers when |
-|------|---------------|
-| `create_agent` | A team proposes spawning a new Agent Lenser |
-| `add_team_member` | A team proposes adding a member to itself or another team |
-| `grant_lens` | A team proposes binding a new lens to an agent (`agents.lens_bindings`) |
-| `grant_tool` | A team proposes adding to a `tool_profile.allow_tools` set |
-| `grant_model` | A team proposes binding a new model to an agent |
-| `publish_output` | A team proposes publishing content publicly (`visibility='public'`) |
-| `external_message` | A team proposes sending email / Slack / webhook to an outside system |
+| Gate                 | Triggers when                                                                                  |
+| -------------------- | ---------------------------------------------------------------------------------------------- |
+| `create_agent`       | A team proposes spawning a new Agent Lenser                                                    |
+| `add_team_member`    | A team proposes adding a member to itself or another team                                      |
+| `grant_lens`         | A team proposes binding a new lens to an agent (`agents.lens_bindings`)                        |
+| `grant_tool`         | A team proposes adding to a `tool_profile.allow_tools` set                                     |
+| `grant_model`        | A team proposes binding a new model to an agent                                                |
+| `publish_output`     | A team proposes publishing content publicly (`visibility='public'`)                            |
+| `external_message`   | A team proposes sending email / Slack / webhook to an outside system                           |
 | `paid_provider_call` | A team proposes calling a paid model when `support_level='byok_only'` and no key is configured |
-| `spend_threshold` | Run-level cost projection exceeds `agents.policies.spending_limit_credits` |
-| `delete_data` | A team proposes deleting a lens / workflow / run / asset |
-| `modify_schedule` | A team proposes editing or pausing/resuming a CRON schedule |
-| `expand_permissions` | A team proposes broadening `permission_scope` on `agents.ownerships` |
+| `spend_threshold`    | Run-level cost projection exceeds `agents.policies.spending_limit_credits`                     |
+| `delete_data`        | A team proposes deleting a lens / workflow / run / asset                                       |
+| `modify_schedule`    | A team proposes editing or pausing/resuming a CRON schedule                                    |
+| `expand_permissions` | A team proposes broadening `permission_scope` on `agents.ownerships`                           |
 
 The list above is the **default**. Owners can extend gates per-assignment via `approval_policy.gates: string[]`, but they cannot remove the default set.
 
@@ -96,10 +96,10 @@ Combined, these answer the audit questions:
 
 Three decision types are supported:
 
-| Decision | Effect |
-|----------|--------|
-| **Approve** | `approval_status='approved'`. Engine claims the run with the original payload. |
-| **Reject** | `approval_status='rejected'`. Run terminates with status `failed`. |
+| Decision               | Effect                                                                                                                                              |
+| ---------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Approve**            | `approval_status='approved'`. Engine claims the run with the original payload.                                                                      |
+| **Reject**             | `approval_status='rejected'`. Run terminates with status `failed`.                                                                                  |
 | **Modify and approve** | `approval_status='approved'` plus an inputs override on `team_runs.metadata.decision_modifications`. Engine claims the run with the merged payload. |
 
 The modify path is how owners safely scope an over-broad request (e.g., reduce token budget, narrow audience, swap model).
@@ -118,16 +118,16 @@ This makes the rule **CRON cannot bypass approvals** mechanically true: the engi
 
 ## RLS posture
 
-[`agents.can_manage_ai_lenser()`](../../supabase/migrations/20260428010000_ai_catalog_agent_control_room.sql#L92) gates every read and write of `agents.team_runs`. Only the owner or co-owner of the AI workspace can:
+[`agents.can_manage_ai_lenser()`](../../supabase/migrations/20260428010000_ai_catalog_agent_control_room.sql#L92) gates every read and write of approval data. Only the owner or co-owner of the AI workspace can:
 
-- See pending requests (read via [`fn_get_agent_workspace_bootstrap`](../../supabase/migrations/20260428010000_ai_catalog_agent_control_room.sql#L917)).
-- Mutate `approval_status`.
+- See pending requests (read via `agents.approval_requests_v` or the bootstrap/fleet views).
+- Resolve requests through `fn_decide_approval`.
 
 ## Future work
 
 The following are **Proposed (not yet implemented)**:
 
-- **`agents.approval_requests_v` view** — materialize the pending queue with joined assignment metadata so the UI can fetch a single list:
+- **Queue enrichment** — extend `agents.approval_requests_v` with more derived fields, filters, and notification-ready payloads:
 
   ```sql
   CREATE OR REPLACE VIEW agents.approval_requests_v AS
@@ -151,8 +151,7 @@ The following are **Proposed (not yet implemented)**:
     AND agents.can_manage_ai_lenser(tr.ai_lenser_id);
   ```
 
-- **`fn_decide_approval(team_run_id, decision, reason, modifications)`** — single RPC that writes the decision atomically (mutate `approval_status`, append `agent_run_events`, optionally apply input modifications). Removes the multi-step client-side mutation that exists today.
-- **Approval UI surface** — a dedicated `/lenser/:handle/ag/approvals` section that renders `agents.approval_requests_v` with approve / reject / modify-and-approve buttons. Currently no dedicated UI exists.
+- **Approval UI refinement** — the dedicated `/lenser/:handle/ag/approvals` section ships today, but still needs richer diffing, filtering, and queue analytics.
 - **Notification fan-out** — an `agents.agent_run_events` listener that pushes pending requests to the human owner via the notification service ([libs/data/repositories/src/lib/services/notificationService.ts](../../libs/data/repositories/src/lib/services/notificationService.ts)).
 - **Optional approval timeout** — `approval_policy.timeoutMinutes`. After the timeout, transition `team_run.status='timed_out'`. No auto-approval mode.
 - **Audit event for bypass attempts** — see [scheduling.md Future work](./scheduling#future-work).
