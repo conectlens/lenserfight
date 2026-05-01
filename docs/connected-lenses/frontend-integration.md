@@ -27,31 +27,31 @@ flowchart TD
     end
 ```
 
-| Page | Today's component | Status |
-|------|-------------------|--------|
-| Lens Library | [`AILenserLensesPanel`](../../libs/features/profile/src/lib/components/AILenserLensesPanel.tsx) and the lenses tab in [`LenserProfilePage`](../../libs/features/profile/src/lib/pages/LenserProfilePage.tsx) | Shipping |
-| Lens Editor | `CreateLensModal` from `@lenserfight/features/lenses` | Shipping |
-| Workflow Canvas | [`WorkflowBuilderPage`](../../libs/features/workflows/src/lib/pages/WorkflowBuilderPage.tsx) at `/workflows/:id` | Shipping |
-| Agent Profile (control room) | [`AgentControlRoomPage`](../../libs/features/agents/src/lib/pages/AgentControlRoomPage.tsx) at `/lenser/:handle/ag/:section` | Shipping |
-| Team Scratchpad | `AgentControlRoomPage` `section='scratchpad'` and `section='team'` | Shipping (read-mostly) |
-| Schedule Manager | `AgentControlRoomPage` `section='schedules'` | Shipping |
-| Approval Queue | — | **Proposed** |
-| Trace Viewer | n8n-style inspector reading [`WorkflowRunStateProjection`](../../libs/types/src/lib/workflow-events.types.ts#L369) | Shipping |
-| Cost Monitor | Surfaces in `AgentControlRoomPage` quota/usage; no dedicated page yet | Partial |
+| Page                         | Today's component                                                                                                                                                                                            | Status                 |
+| ---------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ---------------------- |
+| Lens Library                 | [`AILenserLensesPanel`](../../libs/features/profile/src/lib/components/AILenserLensesPanel.tsx) and the lenses tab in [`LenserProfilePage`](../../libs/features/profile/src/lib/pages/LenserProfilePage.tsx) | Shipping               |
+| Lens Editor                  | `CreateLensModal` from `@lenserfight/features/lenses`                                                                                                                                                        | Shipping               |
+| Workflow Canvas              | [`WorkflowBuilderPage`](../../libs/features/workflows/src/lib/pages/WorkflowBuilderPage.tsx) at `/workflows/:id`                                                                                             | Shipping               |
+| Agent Profile (control room) | [`AgentControlRoomPage`](../../libs/features/agents/src/lib/pages/AgentControlRoomPage.tsx) at `/lenser/:handle/ag/:section`                                                                                 | Shipping               |
+| Team Scratchpad              | `AgentControlRoomPage` `section='scratchpad'` and `section='team'`                                                                                                                                           | Shipping (read-mostly) |
+| Schedule Manager             | `AgentControlRoomPage` `section='schedules'`                                                                                                                                                                 | Shipping               |
+| Approval Queue               | —                                                                                                                                                                                                            | **Proposed**           |
+| Trace Viewer                 | n8n-style inspector reading [`WorkflowRunStateProjection`](../../libs/types/src/lib/workflow-events.types.ts#L369)                                                                                           | Shipping               |
+| Cost Monitor                 | Surfaces in `AgentControlRoomPage` quota/usage; no dedicated page yet                                                                                                                                        | Partial                |
 
 ## Route table
 
 The route definitions live in [apps/web/src/WebRouter.tsx:365-397](../../apps/web/src/WebRouter.tsx#L365-L397).
 
-| Path | Component | Notes |
-|------|-----------|-------|
-| `/lenser/:handle` | `LazyLenserProfilePage` | Profile page (humans + AIs) |
-| `/lenser/:handle/agent` (child) | `AgentManageModal` | Wizard modal for creating/managing agents |
-| `/lenser/:handle/:tab` | `LazyLenserProfilePage` | Profile sub-tabs |
-| `/lenser/:handle/ag` | `AgentControlRoomOverviewRedirect` | Redirects to `/lenser/:handle/ag/overview` |
-| `/lenser/:handle/ag/:section` | `LazyAgentControlRoomPage` | Agent control room |
-| `/workflows/:id` | `LazyWorkflowBuilderPage` | Workflow canvas |
-| `/workflows/:id/run/:runId` | `LazyWorkflowBuilderPage` | Workflow with run inspector |
+| Path                            | Component                          | Notes                                      |
+| ------------------------------- | ---------------------------------- | ------------------------------------------ |
+| `/lenser/:handle`               | `LazyLenserProfilePage`            | Profile page (humans + AIs)                |
+| `/lenser/:handle/agent` (child) | `AgentManageModal`                 | Wizard modal for creating/managing agents  |
+| `/lenser/:handle/:tab`          | `LazyLenserProfilePage`            | Profile sub-tabs                           |
+| `/lenser/:handle/ag`            | `AgentControlRoomOverviewRedirect` | Redirects to `/lenser/:handle/ag/overview` |
+| `/lenser/:handle/ag/:section`   | `LazyAgentControlRoomPage`         | Agent control room                         |
+| `/workflows/:id`                | `LazyWorkflowBuilderPage`          | Workflow canvas                            |
+| `/workflows/:id/run/:runId`     | `LazyWorkflowBuilderPage`          | Workflow with run inspector                |
 
 ## Route-resolution contract for `/lenser/:handle/ag/overview`
 
@@ -76,10 +76,10 @@ flowchart TD
 
 Viewer is the human, the URL points at the human's own handle.
 
-| Tab | Renders |
-|-----|---------|
-| **Agents** | Grid of `AgentCard`s for `agentsService.getAgentsByOwner(humanLenserId)`. Empty state: heading "No agents yet", body "Build your first Agent Lenser to run lenses, workflows, and teams.", CTA **Create Agent** opens `AgentManageModal` (existing child route at [WebRouter.tsx:373](../../apps/web/src/WebRouter.tsx#L373)). |
-| **Activity** | Cross-agent feed: union of pending approvals (`agents.team_runs WHERE approval_status='pending'`), recent team runs, and upcoming schedules — across **every** agent the human owns. Sorted by `occurred_at desc`. |
+| Tab          | Renders                                                                                                                                                                                                                                                                                                                        |
+| ------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| **Agents**   | Grid of `AgentCard`s for `agentsService.getAgentsByOwner(humanLenserId)`. Empty state: heading "No agents yet", body "Build your first Agent Lenser to run lenses, workflows, and teams.", CTA **Create Agent** opens `AgentManageModal` (existing child route at [WebRouter.tsx:373](../../apps/web/src/WebRouter.tsx#L373)). |
+| **Activity** | Cross-agent feed: union of pending approvals (`agents.team_runs WHERE approval_status='pending'`), recent team runs, and upcoming schedules — across **every** agent the human owns. Sorted by `occurred_at desc`.                                                                                                             |
 
 Empty-state contract for Agents tab is the same shape as the existing pattern at [`LenserProfilePage.tsx:850-874`](../../libs/features/profile/src/lib/pages/LenserProfilePage.tsx#L850-L874). Reuse it.
 
@@ -171,16 +171,18 @@ The execution inspector renders [`WorkflowRunStateProjection`](../../libs/types/
 
 Live updates flow over SSE from `lenses.workflow_run_events`. The reducer reuses [`WorkflowEventType`](../../libs/types/src/lib/workflow-events.types.ts#L27) and the [`WorkflowSseEventEnvelope`](../../libs/types/src/lib/workflow-events.types.ts#L123).
 
-## Approval Queue UI (Proposed)
+## Approval Queue UI
 
-A `/lenser/:handle/ag/approvals` section that renders rows from `agents.approval_requests_v` (proposed view; see [approvals.md](./approvals#future-work)) with:
+The `/lenser/:handle/ag/approvals` section now renders rows from `agents.approval_requests_v` and resolves them through `fn_decide_approval`. The current UI supports the core queue operations and still needs richer review ergonomics.
+
+Current responsibilities:
 
 - Gate kind, requester agent, target action.
 - Approve / Reject / Modify-and-Approve buttons.
 - Inline diff for proposed modifications (e.g., reduce token budget).
 - Decision reason field (free text).
 
-Today the approvals lifecycle exists in the schema (`agents.team_runs.approval_status`) but has no dedicated UI surface.
+Follow-up work remains in filtering, richer diff visualization, and notifications, not in basic queue existence.
 
 ## Authorization in components
 
