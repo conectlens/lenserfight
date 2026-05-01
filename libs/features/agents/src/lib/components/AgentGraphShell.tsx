@@ -15,9 +15,10 @@ import {
   type OnConnect,
 } from '@xyflow/react'
 import React, { useCallback, useRef, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 
 import { AgentCanvasContextMenu } from './AgentCanvasContextMenu'
-import { AgentCanvasNode } from './AgentCanvasNode'
+import { AgentCanvasNode, type AgentNodeData } from './AgentCanvasNode'
 
 const nodeTypes = { agentNode: AgentCanvasNode }
 
@@ -25,6 +26,7 @@ interface ContextMenuState {
   x: number
   y: number
   nodeId?: string
+  agentHandle?: string
 }
 
 interface AgentGraphShellProps {
@@ -61,6 +63,7 @@ const FlowCanvas: React.FC<AgentGraphShellProps> = ({
   const { screenToFlowPosition } = useReactFlow()
   const containerRef = useRef<HTMLDivElement>(null)
   const [contextMenu, setContextMenu] = useState<ContextMenuState | null>(null)
+  const navigate = useNavigate()
 
   const resolveContainerOffset = () => {
     const rect = containerRef.current?.getBoundingClientRect()
@@ -68,7 +71,7 @@ const FlowCanvas: React.FC<AgentGraphShellProps> = ({
   }
 
   const handlePaneContextMenu = useCallback(
-    (e: React.MouseEvent) => {
+    (e: MouseEvent | React.MouseEvent) => {
       e.preventDefault()
       const { left, top } = resolveContainerOffset()
       setContextMenu({ x: e.clientX - left, y: e.clientY - top })
@@ -80,7 +83,8 @@ const FlowCanvas: React.FC<AgentGraphShellProps> = ({
     (e, node) => {
       e.preventDefault()
       const { left, top } = resolveContainerOffset()
-      setContextMenu({ x: e.clientX - left, y: e.clientY - top, nodeId: node.id })
+      const agentHandle = (node.data as AgentNodeData).agentHandle
+      setContextMenu({ x: e.clientX - left, y: e.clientY - top, nodeId: node.id, agentHandle })
     },
     []
   )
@@ -165,6 +169,7 @@ const FlowCanvas: React.FC<AgentGraphShellProps> = ({
             x={contextMenu.x}
             y={contextMenu.y}
             nodeId={contextMenu.nodeId}
+            agentHandle={contextMenu.agentHandle}
             onAddMember={() => { onAddMember?.(); closeMenu() }}
             onManageEdges={onManageEdges ? () => { onManageEdges(); closeMenu() } : undefined}
             onEditMember={contextMenu.nodeId && onNodeEdit
@@ -172,6 +177,9 @@ const FlowCanvas: React.FC<AgentGraphShellProps> = ({
               : undefined}
             onRemoveMember={contextMenu.nodeId && onNodeRemove
               ? () => { onNodeRemove(contextMenu.nodeId!); closeMenu() }
+              : undefined}
+            onViewAgent={contextMenu.agentHandle
+              ? () => { navigate(`/lenser/${contextMenu.agentHandle}/ag/overview`); closeMenu() }
               : undefined}
             onClose={closeMenu}
           />

@@ -1,4 +1,4 @@
-import { Network, Pencil, Trash2, UserPlus } from 'lucide-react'
+import { ExternalLink, Network, Pencil, Trash2, UserPlus } from 'lucide-react'
 import React, { useEffect, useRef } from 'react'
 
 interface MenuItem {
@@ -13,10 +13,13 @@ interface AgentCanvasContextMenuProps {
   y: number
   /** When defined, the menu is anchored to a node; otherwise it's a pane menu. */
   nodeId?: string
+  /** Handle of the agent on the node — enables the "View agent" menu item. */
+  agentHandle?: string
   onAddMember: () => void
   onManageEdges?: () => void
   onEditMember?: () => void
   onRemoveMember?: () => void
+  onViewAgent?: () => void
   onClose: () => void
 }
 
@@ -28,6 +31,7 @@ export const AgentCanvasContextMenu: React.FC<AgentCanvasContextMenuProps> = ({
   onManageEdges,
   onEditMember,
   onRemoveMember,
+  onViewAgent,
   onClose,
 }) => {
   const ref = useRef<HTMLDivElement>(null)
@@ -47,6 +51,7 @@ export const AgentCanvasContextMenu: React.FC<AgentCanvasContextMenuProps> = ({
 
   const items: MenuItem[] = nodeId
     ? [
+        ...(onViewAgent ? [{ label: 'View agent', icon: <ExternalLink size={14} />, onClick: onViewAgent }] : []),
         ...(onEditMember ? [{ label: 'Edit member', icon: <Pencil size={14} />, onClick: onEditMember }] : []),
         ...(onRemoveMember
           ? [{ label: 'Remove member', icon: <Trash2 size={14} />, onClick: onRemoveMember, variant: 'destructive' as const }]
