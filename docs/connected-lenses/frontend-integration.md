@@ -114,22 +114,23 @@ Viewer cannot manage the agent.
 
 ### Owner detection
 
-Today: ownership is computed locally in each page. Existing implementations:
+Ownership is computed locally in each page. Existing implementations:
 
-- [`LenserProfilePage.tsx:160-189`](../../libs/features/profile/src/lib/pages/LenserProfilePage.tsx#L160-L189) — `ownedWorkspaceIds.has(viewedProfile.id)` plus `isOwnedAIProfile = viewedProfile?.type === 'ai' && isOwner`.
-- [`AgentControlRoomPage.tsx:260-263`](../../libs/features/agents/src/lib/pages/AgentControlRoomPage.tsx#L260-L263) — `workspaces.some(w => w.id === viewedProfile.id)`.
+- [`AgentRouteShell.tsx`](../../libs/features/agents/src/lib/components/AgentRouteShell.tsx) — reads `useAgentRouteMode(handle)` and routes to the correct view mode. This is the canonical entry point for all `/lenser/:handle/ag/*` routes.
+- [`AgentWorkspaceShell.tsx`](../../libs/features/agents/src/lib/components/AgentWorkspaceShell.tsx) — receives `viewMode` from the shell and passes it down to section components.
 
 Both rely on `useLenserWorkspace()` ([libs/features/profile/src/lib/useLenserWorkspace.ts](../../libs/features/profile/src/lib/useLenserWorkspace.ts)).
 
-There is no centralized `useIsOwner` hook. Adding one as the canonical entry point for the four-mode resolution is a **Proposed** improvement.
+### AI profile redirect contract
 
-## Current vs. desired behavior
+**Implemented:** [`LenserProfilePage.tsx`](../../libs/features/profile/src/lib/pages/LenserProfilePage.tsx) now redirects all `type === 'ai'` profiles to `/lenser/:handle/ag/overview` immediately after the profile loads. AI profiles no longer render the human-workspace tab surface at all.
 
-The current implementation **violates the always-resolve rule** in two places:
+This means:
+- The `/lenser/:handle` route for AI profiles always redirects to `/lenser/:handle/ag/overview`.
+- The `/lenser/:handle/ag/:section` route handles all four modes (human_owner, human_public, agent_owner, agent_public) via `AgentRouteShell` → `AgentWorkspaceShell`.
+- `LenserProfilePage` is now a pure human-workspace page with no AI-specific code.
 
-1. **[AgentControlRoomPage.tsx:265-268](../../libs/features/agents/src/lib/pages/AgentControlRoomPage.tsx#L265-L268)** — when `viewedProfile.type !== 'ai'` OR `!isOwner`, it returns `<Navigate to={\`/lenser/${handle}\`} replace />`. Per the contract, this must instead route to Mode 1/2 (human) or Mode 4 (agent-public).
-
-The fix is **out of scope for this docs PR**. Tracked in [Future work](#future-work).
+## Current behavior (post-split)
 
 ## Cross-agent activity feed (Proposed)
 
@@ -209,18 +210,10 @@ Do not put authorization, RPC dispatching, or domain rules in components or rout
 
 The following are **Proposed (not yet implemented)**:
 
-1. **Route-mode split**:
-   - `HumanAgentsOverviewPage` rendering Human-Owner / Human-Public for human handles.
-   - `AgentPublicOverviewPage` rendering Agent-Public for non-owners of an AI handle.
-   - Remove the redirects at [AgentControlRoomPage.tsx:265-268](../../libs/features/agents/src/lib/pages/AgentControlRoomPage.tsx#L265-L268).
-   - Update the route table at [WebRouter.tsx:386-397](../../apps/web/src/WebRouter.tsx#L386-L397) to dispatch by mode.
+1. **`useIsOwner(profile)`** centralized hook — single source of truth for the `(target.type, viewer.is_owner)` decision, returning a discriminated union for the four modes.
 
-2. **`useIsOwner(profile)`** centralized hook — single source of truth for the `(target.type, viewer.is_owner)` decision, returning a discriminated union for the four modes.
+2. **Cross-agent activity feed RPC** — `fn_get_human_activity_feed` server-side aggregation backing the `CrossAgentActivityFeed` component.
 
-3. **Cross-agent activity feed component** — backed by `fn_get_human_activity_feed` (Proposed RPC).
+3. **Cost Monitor page** — dedicated section reading from `agents.quota_snapshots` and `lenses.workflow_node_results.cost_credits` aggregates.
 
-4. **Approval Queue UI** — new section under `/lenser/:handle/ag/approvals`.
-
-5. **Cost Monitor page** — dedicated section reading from `agents.quota_snapshots` and `lenses.workflow_node_results.cost_credits` aggregates.
-
-6. **`AgentManageModal` for Agent-Public** — show a "Connect" or "Subscribe" affordance when the viewer is not an owner, instead of full management UI.
+4. **`AgentManageModal` for Agent-Public** — show a "Connect" or "Subscribe" affordance when the viewer is not an owner, instead of full management UI.
