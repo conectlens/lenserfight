@@ -76,5 +76,6 @@ These rules must hold across every surface (route, RPC, CLI, UI):
 | Workflow engine | Production | DAG, conditional edges, retries, streaming, provenance                                                                                             |
 | Scheduling      | Partial    | `pg_cron` schema/runtime exist, but `FEATURES.CRON_SCHEDULING` is off and schedule rollout is gated on the forward RPC repair                      |
 | Approvals       | Partial    | Queue view, decision RPC, and UI ship; broader report/notification integration is still maturing                                                   |
+| Evaluations     | Production | Rubric builder (versioned), regression history chart, baseline tracking, post-run trigger, evaluator assignee role — see [evaluations.md](./evaluations.md) |
 | CLI             | Partial    | `lens`, `lenses`, `lenser`, `run`, `runner`, `models`, `providers`, `gateway`, `inspect`, `publish` exist; `team`, `schedule`, `approval` proposed |
 | Frontend        | Partial    | `AgentControlRoomPage` exists; human-overview tabs and public-agent overview not built                                                             |
