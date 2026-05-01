@@ -17,11 +17,17 @@ import { AgentsGrid } from '../AgentsGrid'
 import { BootstrapStatusPanel } from '../BootstrapStatusPanel'
 import { CrossAgentActivityFeed } from '../CrossAgentActivityFeed'
 import { EmptyPanel } from '../EmptyPanel'
+import { ActiveRunsPanel } from '../ActiveRunsPanel'
+import { KillSwitchBanner } from '../KillSwitchBanner'
+import { PolicyDenyLog } from '../PolicyDenyLog'
+import { RecentIncidentsFeed } from '../RecentIncidentsFeed'
+import { useRunUnified } from '../../hooks/useRunUnified'
+import { useWorkspaceControls } from '../../hooks/useWorkspaceControls'
 
 import { ProfileCard, StatCard } from './_shared'
 import { SectionPage } from './SectionPage'
 
-import type { FleetOverview } from '@lenserfight/types'
+import type { AgentWorkspaceBootstrap, FleetOverview } from '@lenserfight/types'
 
 export const OverviewSection: React.FC = () => {
   const ctx = useAgentWorkspace()
@@ -37,6 +43,11 @@ export const OverviewSection: React.FC = () => {
     defaultInstructionBinding,
   } = ctx
   const { open } = useModalRouter()
+
+  // Phase 8: Autonomous Agent OS — hooks must be called unconditionally
+  const agentId = bootstrap?.ai_lenser_id ?? ''
+  const controls = useWorkspaceControls(agentId)
+  const { data: runUnifiedData } = useRunUnified(agentId, { limit: 20 })
 
   if (viewMode === 'human_owner') {
     return <HumanOwnerOverview />
@@ -121,6 +132,13 @@ export const OverviewSection: React.FC = () => {
         ? 'Needs attention'
         : 'Healthy'
 
+  const activeRunCount = (runUnifiedData ?? []).filter((r) =>
+    ['queued', 'running', 'blocked'].includes(r.status)
+  ).length
+  const killSwitchActive =
+    (bootstrap as (AgentWorkspaceBootstrap & { settings?: { global_kill_switch?: boolean } }) | null)
+      ?.settings?.global_kill_switch ?? false
+
   return (
     <SectionPage
       eyebrow="Agent control room"
@@ -147,7 +165,15 @@ export const OverviewSection: React.FC = () => {
     >
       <BootstrapStatusPanel state={bootstrapState} />
 
-      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+      {killSwitchActive && (
+        <KillSwitchBanner
+          aiLenserId={agentId}
+          onResume={() => controls.toggleKillSwitch.mutate(false)}
+          isPending={controls.toggleKillSwitch.isPending}
+        />
+      )}
+
+      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-5">
         <StatCard
           label="Instruction"
           value={defaultInstructionBinding ? 'Bound' : 'Unset'}
@@ -168,9 +194,19 @@ export const OverviewSection: React.FC = () => {
           value={String(schedules.length)}
           detail={`Scheduler health: ${scheduleHealth}.`}
         />
+        <StatCard
+          label="Active Runs"
+          value={String(activeRunCount)}
+          detail={`${pendingApprovals} approval gate${pendingApprovals === 1 ? '' : 's'} pending.`}
+        />
       </div>
 
-      <div className="grid gap-6 xl:grid-cols-[1.15fr_0.85fr]">
+      <div className="grid gap-6 xl:grid-cols-2">
+        <ActiveRunsPanel aiLenserId={agentId} />
+        <RecentIncidentsFeed aiLenserId={agentId} />
+      </div>
+
+      <div className="grid gap-6 xl:grid-cols-2">
         <ProfileCard
           title="Next actions"
           subtitle="Use the control room surfaces intentionally so users are not forced through duplicated concepts."
@@ -203,57 +239,59 @@ export const OverviewSection: React.FC = () => {
           </div>
         </ProfileCard>
 
-        <div className="space-y-6">
-          <ProfileCard
-            title="Runtime defaults"
-            subtitle="The selected agent’s baseline behavior before a workflow overrides it."
-          >
-            <div className="space-y-3 text-sm text-gray-600 dark:text-gray-300">
-              <Row
-                label="Instruction source"
-                value={
-                  defaultInstructionBinding
-                    ? `Lens ${defaultInstructionBinding.lens_id.slice(0, 8)}`
-                    : 'Not configured'
-                }
-              />
-              <Row
-                label="Default model profile"
-                value={defaultModelProfile?.name ?? 'Not configured'}
-              />
-              <Row label="Blocked runs" value={String(blockedRuns)} />
-              <Row label="Pending approvals" value={String(pendingApprovals)} />
-            </div>
-          </ProfileCard>
+        <PolicyDenyLog aiLenserId={agentId} />
+      </div>
 
-          <ProfileCard
-            title="Builder focus"
-            subtitle="Builder owns the live agent graph. Workflows stay in the library surface."
-          >
-            {activeTeam ? (
-              <div className="space-y-3 text-sm text-gray-600 dark:text-gray-300">
-                <Row label="Active team" value={activeTeam.name} />
-                <Row label="Members" value={String(activeTeam.member_count ?? 0)} />
-                <Row
-                  label="Edges"
-                  value={String((activeTeam.edges ?? []).length)}
-                />
-                <Link
-                  to={`/lenser/${profile.handle}/ag/team`}
-                  className="inline-flex items-center gap-2 rounded-2xl border border-gray-200 px-4 py-2 text-sm font-semibold text-gray-700 transition hover:border-amber-300 hover:text-amber-700 dark:border-gray-700 dark:text-gray-200"
-                >
-                  Open builder
-                </Link>
-              </div>
-            ) : (
-              <EmptyPanel
-                icon={<Network size={20} />}
-                title="No active team exists"
-                description="Open Builder to create the first team graph and connect agents into a professional workflow topology."
+      <div className="grid gap-6 xl:grid-cols-[1fr_0.85fr]">
+        <ProfileCard
+          title="Runtime defaults"
+          subtitle="The selected agent's baseline behavior before a workflow overrides it."
+        >
+          <div className="space-y-3 text-sm text-gray-600 dark:text-gray-300">
+            <Row
+              label="Instruction source"
+              value={
+                defaultInstructionBinding
+                  ? `Lens ${defaultInstructionBinding.lens_id.slice(0, 8)}`
+                  : 'Not configured'
+              }
+            />
+            <Row
+              label="Default model profile"
+              value={defaultModelProfile?.name ?? 'Not configured'}
+            />
+            <Row label="Blocked runs" value={String(blockedRuns)} />
+            <Row label="Pending approvals" value={String(pendingApprovals)} />
+          </div>
+        </ProfileCard>
+
+        <ProfileCard
+          title="Builder focus"
+          subtitle="Builder owns the live agent graph. Workflows stay in the library surface."
+        >
+          {activeTeam ? (
+            <div className="space-y-3 text-sm text-gray-600 dark:text-gray-300">
+              <Row label="Active team" value={activeTeam.name} />
+              <Row label="Members" value={String(activeTeam.member_count ?? 0)} />
+              <Row
+                label="Edges"
+                value={String((activeTeam.edges ?? []).length)}
               />
-            )}
-          </ProfileCard>
-        </div>
+              <Link
+                to={`/lenser/${profile.handle}/ag/team`}
+                className="inline-flex items-center gap-2 rounded-2xl border border-gray-200 px-4 py-2 text-sm font-semibold text-gray-700 transition hover:border-amber-300 hover:text-amber-700 dark:border-gray-700 dark:text-gray-200"
+              >
+                Open builder
+              </Link>
+            </div>
+          ) : (
+            <EmptyPanel
+              icon={<Network size={20} />}
+              title="No active team exists"
+              description="Open Builder to create the first team graph and connect agents into a professional workflow topology."
+            />
+          )}
+        </ProfileCard>
       </div>
 
       <ProfileCard
@@ -330,22 +368,22 @@ const HumanOwnerOverview: React.FC = () => {
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         <StatCard
           label="Agents"
-          value={totalAgents !== null ? String(totalAgents) : '…'}
+          value={totalAgents !== null ? String(totalAgents) : '...'}
           detail="Total AI lensers owned by this human workspace."
         />
         <StatCard
           label="Active"
-          value={activeAgents !== null ? String(activeAgents) : '…'}
+          value={activeAgents !== null ? String(activeAgents) : '...'}
           detail="Currently active and not suspended."
         />
         <StatCard
           label="Runs (24h)"
-          value={overview.isLoading ? '…' : String(overview.data?.runs_24h ?? 0)}
+          value={overview.isLoading ? '...' : String(overview.data?.runs_24h ?? 0)}
           detail="Team runs dispatched across the fleet."
         />
         <StatCard
           label="Approvals"
-          value={overview.isLoading ? '…' : String(overview.data?.approvals_pending ?? 0)}
+          value={overview.isLoading ? '...' : String(overview.data?.approvals_pending ?? 0)}
           detail="Pending owner approval gates."
         />
       </div>
