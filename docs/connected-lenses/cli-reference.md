@@ -51,6 +51,8 @@ The full list of subcommands registered in [main.ts](../../apps/cli/src/main.ts)
 | `rubric` | [rubric.ts](../../apps/cli/src/commands/rubric.ts) | Rubric editing |
 | `communities` | [communities.ts](../../apps/cli/src/commands/communities.ts) | Community ops |
 | `battle` | [battle.ts](../../apps/cli/src/commands/battle.ts) | Battle ops |
+| `tool` | [tool.ts](../../apps/cli/src/commands/tool.ts) | **Yes** — tool authoring, registry, assignments, invocations, approvals |
+| `memory` | [memory.ts](../../apps/cli/src/commands/memory.ts) | **Yes** — memory profile + entry management |
 
 ## Lens commands
 
@@ -133,9 +135,47 @@ lenserfight publish <subcommand>
 
 Source: [apps/cli/src/commands/publish.ts](../../apps/cli/src/commands/publish.ts). Publishes lens versions via `fn_publish_lens_version`.
 
+## Memory commands
+
+Full spec: [memory-per-agent.md](./memory-per-agent#cli).
+
+```bash
+lenserfight memory list-profiles --agent <ai-lenser-id>
+lenserfight memory list-entries  --profile <profile-id> [--scope project|conversation|global] [--limit 50]
+lenserfight memory write-entry   --profile <profile-id> --scope project --source manual --content "..." [--confidence 0.8]
+lenserfight memory redact <memory-entry-id> --reason "..."
+lenserfight memory summarize     --profile <profile-id>
+```
+
+All list commands support `--json` for script-friendly output.
+
+Source: [apps/cli/src/commands/memory.ts](../../apps/cli/src/commands/memory.ts)
+
+## Tool commands (expanded)
+
+Full spec: [tools.md](./tools#cli).
+
+```bash
+# Contract authoring
+lenserfight tool test     <path/to/TOOL.md> [--json]
+lenserfight tool register --file <path/to/TOOL.md> [--apply]
+
+# Registry + assignments
+lenserfight tool list [--registry|--assignments|--profiles] [--agent <id>]
+lenserfight tool assign  --tool <tool-id> --agent <ai-lenser-id> [--profile <profile-id>]
+lenserfight tool revoke  --tool <tool-id> --agent <ai-lenser-id>
+
+# Runtime invocations
+lenserfight tool invocations [--status pending|running|completed|failed] [--agent <id>] [--team-run <id>] [--limit 50]
+lenserfight tool approve <invocation-id>
+lenserfight tool reject  <invocation-id> --reason "<text>"
+```
+
+Source: [apps/cli/src/commands/tool.ts](../../apps/cli/src/commands/tool.ts)
+
 ## Future work
 
-Three new top-level commands are needed for full ConnectedLenses CLI parity. None exists today.
+Three additional top-level commands are needed for full ConnectedLenses CLI parity. None exists today.
 
 ### `team` command (Proposed)
 
