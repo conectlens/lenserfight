@@ -4,12 +4,13 @@ import type { WorkflowRecord } from '@lenserfight/data/repositories'
 import type { AgentTeamRecord, AgentWorkflowAssignmentRecord } from '@lenserfight/types'
 import { AlertDialog } from '@lenserfight/ui/overlays'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { GitBranch, Plus, Trash2 } from 'lucide-react'
+import { GitBranch, Loader2, Play, Plus, Trash2 } from 'lucide-react'
 import React, { useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { toast } from 'sonner'
 
 import { useAgentWorkspace } from '../../context/AgentWorkspaceContext'
+import { useTeamRunDispatch } from '../../hooks/useTeamRunDispatch'
 import { WorkflowAssignmentDrawer } from '../drawers/WorkflowAssignmentDrawer'
 import { EmptyPanel } from '../EmptyPanel'
 
@@ -24,6 +25,7 @@ export const WorkflowsSection: React.FC = () => {
   const isAgentOwner = viewMode === 'agent_owner'
   const aiLenserId = bootstrap?.ai_lenser_id ?? ''
   const returnTo = `/lenser/${profile.handle}/ag/workflows`
+  const { dispatch, isPending: isDispatching } = useTeamRunDispatch()
 
   const [assignmentDrawer, setAssignmentDrawer] = useState<{
     open: boolean
@@ -197,6 +199,22 @@ export const WorkflowsSection: React.FC = () => {
               assignments={assignments}
               scheduleCount={workflowSchedules.length}
               latestSchedule={latestSchedule}
+              isDispatching={isDispatching}
+              onRunNow={(assignment) => {
+                if (!bootstrap) return
+                dispatch({ assignment, bootstrap }).then((result) => {
+                  if (result.status === 'pending_approval') {
+                    toast.info('Run queued — waiting for approval')
+                  } else {
+                    toast.success('Run started')
+                    queryClient.invalidateQueries({
+                      queryKey: queryKeys.agents.workspaceBootstrap(profile.handle),
+                    })
+                  }
+                }).catch((err: unknown) => {
+                  toast.error(err instanceof Error ? err.message : 'Dispatch failed')
+                })
+              }}
               onNewAssignment={() =>
                 setAssignmentDrawer({
                   open: true,
@@ -275,6 +293,8 @@ const WorkflowLibraryCard: React.FC<{
   isAgentOwner: boolean
   assignments: AgentWorkflowAssignmentRecord[]
   scheduleCount: number
+  isDispatching: boolean
+  onRunNow: (assignment: AgentWorkflowAssignmentRecord) => void
   latestSchedule: {
     last_run_at: string | null
     last_dispatch_status: string | null
@@ -291,6 +311,8 @@ const WorkflowLibraryCard: React.FC<{
   assignments,
   scheduleCount,
   latestSchedule,
+  isDispatching,
+  onRunNow,
   onNewAssignment,
   onEditAssignment,
   onDeleteAssignment,
@@ -390,6 +412,17 @@ const WorkflowLibraryCard: React.FC<{
                   </span>
                 </div>
                 <div className="flex gap-2">
+                  {assignment.is_active && (
+                    <button
+                      type="button"
+                      disabled={isDispatching}
+                      onClick={() => onRunNow(assignment)}
+                      className="inline-flex items-center gap-1.5 rounded-2xl border border-emerald-200 px-3 py-1.5 text-xs font-semibold text-emerald-700 transition hover:bg-emerald-50 disabled:cursor-not-allowed disabled:opacity-50 dark:border-emerald-500/30 dark:text-emerald-300 dark:hover:bg-emerald-500/10"
+                    >
+                      {isDispatching ? <Loader2 size={12} className="animate-spin" /> : <Play size={12} />}
+                      Run
+                    </button>
+                  )}
                   <button
                     type="button"
                     onClick={() => onEditAssignment(assignment)}

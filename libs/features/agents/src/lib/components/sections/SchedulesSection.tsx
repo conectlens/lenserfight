@@ -2,12 +2,13 @@ import { queryKeys } from '@lenserfight/data/cache'
 import { workflowsService } from '@lenserfight/data/repositories'
 import { AlertDialog } from '@lenserfight/ui/overlays'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
-import { CalendarClock, Pencil, Plus, Trash2 } from 'lucide-react'
+import { CalendarClock, History, Pencil, Plus, Trash2 } from 'lucide-react'
 import React, { useState } from 'react'
 import { toast } from 'sonner'
 
 import { useAgentWorkspace } from '../../context/AgentWorkspaceContext'
 import { ScheduleDrawer } from '../drawers/ScheduleDrawer'
+import { ScheduleRunHistoryDrawer } from '../drawers/ScheduleRunHistoryDrawer'
 import { EmptyPanel } from '../EmptyPanel'
 
 import { formatDateTime } from './_shared'
@@ -24,6 +25,10 @@ export const SchedulesSection: React.FC = () => {
     title: string
     body: string
     onConfirm: () => void
+  } | null>(null)
+  const [historySchedule, setHistorySchedule] = useState<{
+    id: string
+    name: string
   } | null>(null)
 
   const isAgentOwner = viewMode === 'agent_owner'
@@ -142,6 +147,16 @@ export const SchedulesSection: React.FC = () => {
                       {schedule.last_dispatch_status ?? 'never dispatched'}
                     </span>
                   </span>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setHistorySchedule({ id: schedule.id, name: schedule.workflow_title })
+                    }
+                    className="rounded-xl border border-gray-200 p-2 text-gray-500 hover:text-amber-600 dark:border-gray-700 dark:text-gray-400"
+                    aria-label="View run history"
+                  >
+                    <History size={14} />
+                  </button>
                   {canManage && (
                     <>
                       <button
@@ -207,6 +222,13 @@ export const SchedulesSection: React.FC = () => {
           onClick: () => { confirmState?.onConfirm(); setConfirmState(null) },
           loading: remove.isPending,
         }}
+      />
+
+      <ScheduleRunHistoryDrawer
+        open={!!historySchedule}
+        onClose={() => setHistorySchedule(null)}
+        scheduleId={historySchedule?.id ?? null}
+        scheduleName={historySchedule?.name ?? ''}
       />
     </SectionPage>
   )
