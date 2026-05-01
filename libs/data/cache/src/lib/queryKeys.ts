@@ -164,6 +164,12 @@ export const queryKeys = {
       [...queryKeys.agents.all, 'costSummary', aiLenserId] as const,
     memoryProfiles: (aiLenserId: string) =>
       [...queryKeys.agents.all, 'memoryProfiles', aiLenserId] as const,
+    memoryEntries: (profileId: string, scope: string = 'all') =>
+      [...queryKeys.agents.all, 'memoryEntries', profileId, scope] as const,
+    memoryAccessLogs: (memoryId: string) =>
+      [...queryKeys.agents.all, 'memoryAccessLogs', memoryId] as const,
+    memoryProfileSummary: (profileId: string) =>
+      [...queryKeys.agents.all, 'memoryProfileSummary', profileId] as const,
     scratchpadRuns: (aiLenserId: string) =>
       [...queryKeys.agents.all, 'scratchpadRuns', aiLenserId] as const,
     evaluations: (ownerLenserId: string) =>
@@ -178,6 +184,18 @@ export const queryKeys = {
       [...queryKeys.agents.all, 'toolRegistry', ownerLenserId] as const,
     toolAssignments: (aiLenserId: string) =>
       [...queryKeys.agents.all, 'toolAssignments', aiLenserId] as const,
+    toolInvocations: (
+      scope: { aiLenserId?: string; teamRunId?: string; status?: string } = {}
+    ) =>
+      [
+        ...queryKeys.agents.all,
+        'toolInvocations',
+        scope.aiLenserId ?? '',
+        scope.teamRunId ?? '',
+        scope.status ?? '',
+      ] as const,
+    toolApprovalQueue: (aiLenserId: string) =>
+      [...queryKeys.agents.all, 'toolApprovalQueue', aiLenserId] as const,
     fleetOverview: (humanLenserId: string) =>
       [...queryKeys.agents.all, 'fleetOverview', humanLenserId] as const,
     fleetRuns: (
