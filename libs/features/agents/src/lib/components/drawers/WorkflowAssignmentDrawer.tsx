@@ -30,8 +30,8 @@ export const WorkflowAssignmentDrawer: React.FC<Props> = ({
   const isEdit = !!initial
 
   const [workflowId, setWorkflowId] = useState(initial?.workflow_id ?? workflows[0]?.id ?? '')
-  const [assigneeKind, setAssigneeKind] = useState<'agent' | 'team'>(
-    (initial?.assignee_kind as 'agent' | 'team') ?? 'agent'
+  const [assigneeKind, setAssigneeKind] = useState<'agent' | 'team' | 'evaluator'>(
+    (initial?.assignee_kind as 'agent' | 'team' | 'evaluator') ?? 'agent'
   )
   const [assigneeTeamId, setAssigneeTeamId] = useState(initial?.assignee_team_id ?? '')
   const [approvalPolicyJson, setApprovalPolicyJson] = useState(
@@ -47,7 +47,7 @@ export const WorkflowAssignmentDrawer: React.FC<Props> = ({
   useEffect(() => {
     if (!open) return
     setWorkflowId(initial?.workflow_id ?? workflows[0]?.id ?? '')
-    setAssigneeKind((initial?.assignee_kind as 'agent' | 'team') ?? 'agent')
+    setAssigneeKind((initial?.assignee_kind as 'agent' | 'team' | 'evaluator') ?? 'agent')
     setAssigneeTeamId(initial?.assignee_team_id ?? '')
     setApprovalPolicyJson(JSON.stringify(initial?.approval_policy ?? { mode: 'none' }, null, 2))
     setRetryPolicyJson(JSON.stringify(initial?.retry_policy ?? { mode: 'none' }, null, 2))
@@ -76,11 +76,12 @@ export const WorkflowAssignmentDrawer: React.FC<Props> = ({
         throw new Error('Retry policy must be valid JSON')
       }
 
+      const isAgentLike = assigneeKind === 'agent' || assigneeKind === 'evaluator'
       if (isEdit) {
         await agentWorkspaceService.updateWorkflowAssignment(initial!.id, {
           workflow_id: workflowId,
           assignee_kind: assigneeKind,
-          assignee_ai_lenser_id: assigneeKind === 'agent' ? aiLenserId : null,
+          assignee_ai_lenser_id: isAgentLike ? aiLenserId : null,
           assignee_team_id: assigneeKind === 'team' ? (assigneeTeamId || null) : null,
           approval_policy: approvalPolicy,
           retry_policy: retryPolicy,
@@ -92,7 +93,7 @@ export const WorkflowAssignmentDrawer: React.FC<Props> = ({
           ai_lenser_id: aiLenserId,
           workflow_id: workflowId,
           assignee_kind: assigneeKind,
-          assignee_ai_lenser_id: assigneeKind === 'agent' ? aiLenserId : null,
+          assignee_ai_lenser_id: isAgentLike ? aiLenserId : null,
           assignee_team_id: assigneeKind === 'team' ? (assigneeTeamId || null) : null,
           approval_policy: approvalPolicy,
           retry_policy: retryPolicy,
@@ -142,13 +143,19 @@ export const WorkflowAssignmentDrawer: React.FC<Props> = ({
           <Field label="Assignee kind">
             <select
               value={assigneeKind}
-              onChange={(e) => setAssigneeKind(e.target.value as 'agent' | 'team')}
+              onChange={(e) => setAssigneeKind(e.target.value as 'agent' | 'team' | 'evaluator')}
               className={inputClass}
             >
               <option value="agent">agent</option>
               <option value="team">team</option>
+              <option value="evaluator">evaluator</option>
             </select>
           </Field>
+          {assigneeKind === 'evaluator' && (
+            <div className="col-span-2 rounded-2xl border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-700 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-300">
+              Evaluator agents trigger evaluation suites post-run instead of executing workflow nodes.
+            </div>
+          )}
           {assigneeKind === 'team' && (
             <Field label="Team">
               <select
