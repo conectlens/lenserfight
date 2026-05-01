@@ -459,6 +459,7 @@ export interface CreateEvaluationInput {
 
 export type ToolAuthMethod = 'none' | 'api_key' | 'oauth' | 'service_account'
 export type ToolStatus = 'active' | 'disabled' | 'deprecated'
+export type EgressClass = 'none' | 'read_only' | 'write'
 
 export interface ToolRegistryRecord {
   id: string
@@ -473,6 +474,7 @@ export interface ToolRegistryRecord {
   requires_approval: boolean
   is_dangerous: boolean
   status: ToolStatus
+  egress_class?: EgressClass
   created_at: string
   updated_at: string
 }
@@ -503,6 +505,72 @@ export interface AssignToolInput {
   tool_id: string
   profile_id?: string | null
   allowed?: boolean
+}
+
+// ─── Tool invocations (Phase 7) ─────────────────────────────────────────────
+
+export type ToolInvocationStatus =
+  | 'pending'
+  | 'approved'
+  | 'rejected'
+  | 'running'
+  | 'completed'
+  | 'failed'
+
+export type ToolInvocationApprovalStatus =
+  | 'pending'
+  | 'approved'
+  | 'rejected'
+  | 'not_required'
+
+export interface ToolInvocationRecord {
+  id: string
+  team_run_id: string
+  agent_run_step_id: string | null
+  tool_id: string
+  ai_lenser_id: string
+  tool_key?: string
+  tool_name?: string
+  tool_category?: string
+  egress_class?: EgressClass
+  is_dangerous?: boolean
+  step_title?: string | null
+  input: Record<string, unknown>
+  output: Record<string, unknown> | null
+  status: ToolInvocationStatus
+  approval_status: ToolInvocationApprovalStatus
+  approval_required: boolean
+  approval_decided_by: string | null
+  approval_reason: string | null
+  error: string | null
+  cost_estimate: number | null
+  started_at: string | null
+  completed_at: string | null
+  created_at: string
+}
+
+export interface InvokeToolInput {
+  team_run_id: string
+  tool_id: string
+  ai_lenser_id: string
+  input: Record<string, unknown>
+  agent_run_step_id?: string | null
+}
+
+export interface CompleteToolInvocationInput {
+  invocation_id: string
+  status: 'completed' | 'failed'
+  output?: Record<string, unknown> | null
+  error?: string | null
+  cost_estimate?: number | null
+}
+
+export interface ListToolInvocationsOptions {
+  ai_lenser_id?: string
+  team_run_id?: string
+  status?: ToolInvocationStatus
+  approval_status?: ToolInvocationApprovalStatus
+  limit?: number
 }
 
 // ─── Fleet aggregations (F-PHASE2) ───────────────────────────────────────────
