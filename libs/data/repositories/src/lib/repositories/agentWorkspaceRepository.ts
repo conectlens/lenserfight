@@ -8,6 +8,7 @@ import type {
   AgentTeamEdgeRecord,
   AgentTeamMemberRecord,
   AgentTeamRecord,
+  AgentTeamRunRecord,
   AgentToolProfileRecord,
   AgentWorkflowAssignmentRecord,
   AgentWorkspaceBootstrap,
@@ -21,10 +22,13 @@ import type {
   CreateEvaluationInput,
   CreateScratchpadRunInput,
   CrossAgentFeedItem,
+  EvaluationBaselineRecord,
   EvaluationCaseRecord,
   EvaluationCaseResultRow,
   EvaluationRecord,
   EvaluationRunRecord,
+  EvaluationRubricCriterion,
+  EvaluationRubricRecord,
   FleetLogRow,
   FleetOverview,
   FleetRunRow,
@@ -96,7 +100,7 @@ export interface ListApprovalRequestsOptions {
 export interface CreateWorkflowAssignmentInput {
   ai_lenser_id: string
   workflow_id: string
-  assignee_kind: 'agent' | 'team'
+  assignee_kind: 'agent' | 'team' | 'evaluator'
   assignee_ai_lenser_id?: string | null
   assignee_team_id?: string | null
   approval_policy?: Record<string, unknown>
@@ -228,6 +232,17 @@ export interface AgentWorkspaceRepositoryPort {
   listEvaluationCases(evaluationId: string): Promise<EvaluationCaseRecord[]>
   createEvaluationCase(input: CreateEvaluationCaseInput): Promise<EvaluationCaseRecord>
   deleteEvaluationCase(id: string): Promise<void>
+
+  // Evaluation rubrics (versioned scoring criteria)
+  listEvaluationRubrics(evaluationId: string): Promise<EvaluationRubricRecord[]>
+  createEvaluationRubric(evaluationId: string, criteria: EvaluationRubricCriterion[]): Promise<EvaluationRubricRecord>
+
+  // Evaluation baselines (golden-run snapshots)
+  getEvaluationBaseline(evaluationId: string): Promise<EvaluationBaselineRecord | null>
+  setEvaluationBaseline(evaluationId: string, runId: string): Promise<EvaluationBaselineRecord>
+
+  // Post-run evaluation trigger
+  triggerPostRunEvaluations(workflowId: string, teamRunId: string): Promise<void>
 }
 
 export class SupabaseAgentWorkspaceRepository implements AgentWorkspaceRepositoryPort {
@@ -1210,5 +1225,100 @@ export class SupabaseAgentWorkspaceRepository implements AgentWorkspaceRepositor
 
   deleteEvaluationCase(id: string) {
     return this.deleteFromTable('evaluation_cases', id)
+  }
+
+  // ─── Evaluation rubrics ────────────────────────────────────────────────────
+
+  async listEvaluationRubrics(evaluationId: string): Promise<EvaluationRubricRecord[]> {
+    const { data, error } = await supabase
+      .schema('agents')
+      .from('evaluation_rubrics')
+      .select('*')
+      .eq('evaluation_id', evaluationId)
+      .order('version', { ascending: false })
+    if (error) throw error
+    return (data ?? []) as EvaluationRubricRecord[]
+  }
+
+  async createEvaluationRubric(
+    evaluationId: string,
+    criteria: EvaluationRubricCriterion[]
+  ): Promise<EvaluationRubricRecord> {
+    // Mark all existing rubrics for this evaluation as not current
+    await supabase
+      .schema('agents')
+      .from('evaluation_rubrics')
+      .update({ is_current: false })
+      .eq('evaluation_id', evaluationId)
+
+    // Determine next version number
+    const { data: existing } = await supabase
+      .schema('agents')
+      .from('evaluation_rubrics')
+      .select('version')
+      .eq('evaluation_id', evaluationId)
+      .order('version', { ascending: false })
+      .limit(1)
+      .maybeSingle()
+    const nextVersion = ((existing as { version: number } | null)?.version ?? 0) + 1
+
+    const { data, error } = await supabase
+      .schema('agents')
+      .from('evaluation_rubrics')
+      .insert({ evaluation_id: evaluationId, version: nextVersion, criteria, is_current: true })
+      .select('*')
+      .single()
+    if (error) throw error
+    return data as EvaluationRubricRecord
+  }
+
+  // ─── Evaluation baselines ──────────────────────────────────────────────────
+
+  async getEvaluationBaseline(evaluationId: string): Promise<EvaluationBaselineRecord | null> {
+    const { data, error } = await supabase
+      .schema('agents')
+      .from('evaluation_baselines')
+      .select('*')
+      .eq('evaluation_id', evaluationId)
+      .maybeSingle()
+    if (error) throw error
+    return (data as EvaluationBaselineRecord | null) ?? null
+  }
+
+  async setEvaluationBaseline(
+    evaluationId: string,
+    runId: string
+  ): Promise<EvaluationBaselineRecord> {
+    // Fetch the run to capture its score
+    const { data: runData, error: runError } = await supabase
+      .schema('agents')
+      .from('evaluation_runs')
+      .select('score')
+      .eq('id', runId)
+      .single()
+    if (runError) throw runError
+    const score = (runData as { score: number | null }).score
+
+    const { data, error } = await supabase
+      .schema('agents')
+      .from('evaluation_baselines')
+      .upsert(
+        { evaluation_id: evaluationId, run_id: runId, score },
+        { onConflict: 'evaluation_id' }
+      )
+      .select('*')
+      .single()
+    if (error) throw error
+    return data as EvaluationBaselineRecord
+  }
+
+  // ─── Post-run evaluation trigger ──────────────────────────────────────────
+
+  async triggerPostRunEvaluations(workflowId: string, teamRunId: string): Promise<void> {
+    const { error } = await supabase.rpc('fn_trigger_post_run_evaluations', {
+      p_workflow_id: workflowId,
+      p_team_run_id: teamRunId,
+    })
+    if (error) throw error
   }
 }

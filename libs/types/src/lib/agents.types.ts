@@ -394,6 +394,7 @@ export interface EvaluationRunRecord {
   summary: Record<string, unknown>
   started_at: string
   completed_at: string | null
+  rubric_id: string | null
 }
 
 export interface EvaluationCaseResultRow {
@@ -412,6 +413,34 @@ export interface EvaluationCaseResultRow {
   case_score: number | null
   case_output: Record<string, unknown> | null
   case_error: string | null
+  passed: boolean | null
+}
+
+export type EvaluationRubricCriterionOperator = '>=' | '<=' | '=='
+
+export interface EvaluationRubricCriterion {
+  name: string
+  weight: number
+  threshold: number
+  operator: EvaluationRubricCriterionOperator
+}
+
+export interface EvaluationRubricRecord {
+  id: string
+  evaluation_id: string
+  version: number
+  criteria: EvaluationRubricCriterion[]
+  is_current: boolean
+  created_at: string
+}
+
+export interface EvaluationBaselineRecord {
+  id: string
+  evaluation_id: string
+  run_id: string
+  score: number | null
+  set_at: string
+  set_by: string | null
 }
 
 export interface CreateEvaluationInput {
