@@ -254,6 +254,11 @@ export function useTeamRunDispatch() {
         await agentWorkspaceService.appendTeamRunEvent(teamRunId, `run_${finalStatus}`, {
           workflow_run_id: workflowRunId,
         })
+        if (finalStatus === 'completed') {
+          agentWorkspaceService
+            .triggerPostRunEvaluations(assignment.workflow_id, teamRunId)
+            .catch(() => undefined)
+        }
       } catch (err) {
         await agentWorkspaceService.updateTeamRunStatus(
           teamRunId,

@@ -15,6 +15,7 @@ vi.mock('@lenserfight/data/repositories', () => ({
     updateTeamRunStatus: vi.fn(),
     appendTeamRunEvent: vi.fn(),
     upsertAgentRunStep: vi.fn(),
+    triggerPostRunEvaluations: vi.fn().mockResolvedValue(undefined),
   },
   lensesService: {
     getVersionById: vi.fn(),

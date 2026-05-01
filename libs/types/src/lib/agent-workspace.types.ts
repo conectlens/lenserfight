@@ -5,7 +5,7 @@ export type AgentTeamEdgeType =
   | 'reports_to'
   | 'shares_context'
   | 'handoff'
-export type AgentAssignmentKind = 'agent' | 'team'
+export type AgentAssignmentKind = 'agent' | 'team' | 'evaluator'
 export type AgentRunStatus = 'queued' | 'running' | 'completed' | 'failed' | 'cancelled' | 'blocked'
 export type AgentApprovalStatus = 'pending' | 'approved' | 'rejected' | 'not_required'
 export type AgentRunStepStatus =
