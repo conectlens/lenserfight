@@ -89,6 +89,60 @@ export interface AgentMemoryProfileRecord {
   updated_at: string
 }
 
+export type MemoryScope = 'project' | 'conversation' | 'global'
+export type MemorySource = 'user' | 'agent' | 'tool' | 'eval' | 'manual'
+export type MemoryAccessAction = 'read' | 'write' | 'redact'
+
+export interface AgentMemoryEntryRecord {
+  id: string
+  profile_id: string
+  profile_name?: string | null
+  ai_lenser_id: string
+  scope: MemoryScope
+  source: MemorySource
+  content: string
+  embedding_metadata: Record<string, unknown>
+  confidence: number
+  expires_at: string | null
+  team_run_id: string | null
+  is_redacted: boolean
+  created_at: string
+}
+
+export interface AgentMemoryAccessLogRecord {
+  id: string
+  memory_id: string
+  team_run_id: string | null
+  action: MemoryAccessAction
+  context: Record<string, unknown>
+  accessed_at: string
+}
+
+export interface WriteMemoryEntryInput {
+  profile_id: string
+  scope: MemoryScope
+  source: MemorySource
+  content: string
+  confidence?: number
+  expires_at?: string | null
+  team_run_id?: string | null
+  metadata?: Record<string, unknown>
+}
+
+export interface ReadMemoryEntriesInput {
+  profile_id: string
+  scope?: MemoryScope
+  limit?: number
+  team_run_id?: string | null
+}
+
+export interface MemoryProfileSummary {
+  profile_id: string
+  count: number
+  last_written_at: string | null
+  scopes: Record<string, number>
+}
+
 export interface AgentToolProfileRecord {
   id: string
   ai_lenser_id: string
