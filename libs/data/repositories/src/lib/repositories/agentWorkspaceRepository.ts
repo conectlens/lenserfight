@@ -105,6 +105,28 @@ export interface CreateWorkflowAssignmentInput {
   is_active?: boolean
 }
 
+export interface CreateTeamRunInput {
+  ai_lenser_id: string
+  workflow_id: string
+  workflow_run_id: string
+  workflow_assignment_id: string
+  team_id?: string | null
+  approval_status: string
+}
+
+export interface UpsertAgentRunStepInput {
+  team_run_id: string
+  workflow_node_id: string
+  lane: number
+  title: string
+  status: string
+  current_task?: string | null
+  recent_output_summary?: string | null
+  blocker_summary?: string | null
+  started_at?: string | null
+  completed_at?: string | null
+}
+
 export interface CreateEvaluationCaseInput {
   evaluation_id: string
   input: Record<string, unknown>
@@ -195,6 +217,12 @@ export interface AgentWorkspaceRepositoryPort {
   createWorkflowAssignment(input: CreateWorkflowAssignmentInput): Promise<AgentWorkflowAssignmentRecord>
   updateWorkflowAssignment(id: string, patch: Partial<AgentWorkflowAssignmentRecord>): Promise<AgentWorkflowAssignmentRecord>
   deleteWorkflowAssignment(id: string): Promise<void>
+
+  // Team run lifecycle (called by dispatch hook)
+  createTeamRun(input: CreateTeamRunInput): Promise<AgentTeamRunRecord>
+  updateTeamRunStatus(runId: string, status: string, completedAt?: string): Promise<void>
+  appendTeamRunEvent(teamRunId: string, eventType: string, payload: Record<string, unknown>): Promise<void>
+  upsertAgentRunStep(input: UpsertAgentRunStepInput): Promise<AgentRunStepRecord>
 
   // Evaluation cases
   listEvaluationCases(evaluationId: string): Promise<EvaluationCaseRecord[]>
@@ -1056,6 +1084,100 @@ export class SupabaseAgentWorkspaceRepository implements AgentWorkspaceRepositor
 
   deleteWorkflowAssignment(id: string) {
     return this.deleteFromTable('workflow_assignments', id)
+  }
+
+  async createTeamRun(input: CreateTeamRunInput): Promise<AgentTeamRunRecord> {
+    const { data, error } = await supabase
+      .schema('agents')
+      .from('team_runs')
+      .insert({
+        ai_lenser_id: input.ai_lenser_id,
+        workflow_id: input.workflow_id,
+        workflow_run_id: input.workflow_run_id,
+        workflow_assignment_id: input.workflow_assignment_id,
+        team_id: input.team_id ?? null,
+        status: 'running',
+        approval_status: input.approval_status,
+        started_at: new Date().toISOString(),
+      })
+      .select('*')
+      .single()
+    if (error) throw error
+    return data as AgentTeamRunRecord
+  }
+
+  async updateTeamRunStatus(runId: string, status: string, completedAt?: string): Promise<void> {
+    const patch: Record<string, unknown> = { status }
+    if (completedAt) patch['completed_at'] = completedAt
+    const { error } = await supabase
+      .schema('agents')
+      .from('team_runs')
+      .update(patch)
+      .eq('id', runId)
+    if (error) throw error
+  }
+
+  async appendTeamRunEvent(teamRunId: string, eventType: string, payload: Record<string, unknown>): Promise<void> {
+    const { error } = await supabase
+      .schema('agents')
+      .from('agent_run_events')
+      .insert({
+        team_run_id: teamRunId,
+        event_type: eventType,
+        payload,
+        occurred_at: new Date().toISOString(),
+      })
+    if (error) throw error
+  }
+
+  async upsertAgentRunStep(input: UpsertAgentRunStepInput): Promise<AgentRunStepRecord> {
+    const existing = await supabase
+      .schema('agents')
+      .from('agent_run_steps')
+      .select('id')
+      .eq('team_run_id', input.team_run_id)
+      .eq('workflow_node_id', input.workflow_node_id)
+      .maybeSingle()
+
+    if (existing.data) {
+      const patch: Record<string, unknown> = {
+        status: input.status,
+        title: input.title,
+      }
+      if (input.current_task !== undefined) patch['current_task'] = input.current_task
+      if (input.recent_output_summary !== undefined) patch['recent_output_summary'] = input.recent_output_summary
+      if (input.blocker_summary !== undefined) patch['blocker_summary'] = input.blocker_summary
+      if (input.completed_at) patch['completed_at'] = input.completed_at
+      const { data, error } = await supabase
+        .schema('agents')
+        .from('agent_run_steps')
+        .update(patch)
+        .eq('id', (existing.data as { id: string }).id)
+        .select('*')
+        .single()
+      if (error) throw error
+      return data as AgentRunStepRecord
+    }
+
+    const { data, error } = await supabase
+      .schema('agents')
+      .from('agent_run_steps')
+      .insert({
+        team_run_id: input.team_run_id,
+        workflow_node_id: input.workflow_node_id,
+        lane: input.lane,
+        title: input.title,
+        status: input.status,
+        current_task: input.current_task ?? null,
+        recent_output_summary: input.recent_output_summary ?? null,
+        blocker_summary: input.blocker_summary ?? null,
+        started_at: input.started_at ?? new Date().toISOString(),
+        completed_at: input.completed_at ?? null,
+      })
+      .select('*')
+      .single()
+    if (error) throw error
+    return data as AgentRunStepRecord
   }
 
   async listEvaluationCases(evaluationId: string): Promise<EvaluationCaseRecord[]> {
