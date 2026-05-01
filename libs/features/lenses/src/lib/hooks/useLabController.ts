@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback, useRef } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { executionService, walletService, walletApiClient } from '@lenserfight/data/repositories'
 import { queryKeys } from '@lenserfight/data/cache'
-import { LensExecutionHistoryItem, LensParam, ExecuteResponse, StreamState, StreamUsage, FundingSource } from '@lenserfight/types'
+import { LensExecutionHistoryItem, LensParam, ExecuteResponse, StreamState, StreamUsage, FundingSource, GenerativeMediaParams, TriggerExecutionResponse } from '@lenserfight/types'
 import { renderLens } from '@lenserfight/utils/text'
 import { useToast } from '@lenserfight/shared/error'
 import { useAIProviders, useAIModelsByProvider } from '@lenserfight/features/generations'
@@ -21,6 +21,10 @@ export interface TriggerLabExecutionDTO {
   byokKeyRefId?: string
   /** ID of a locally stored encrypted key; resolved by resolveLocalKey at stream time */
   byokLocalKeyId?: string
+  /** When set to a non-text modality, routes through the async API path instead of streaming. */
+  output_modality?: 'image' | 'video' | 'audio' | 'music'
+  /** Provider-specific params for generative media (dimensions, duration, etc.). */
+  generative_media_params?: GenerativeMediaParams
 }
 
 export interface LabControllerOptions {
@@ -54,6 +58,17 @@ export const useLabController = (lensId: string, isAuthenticated = false, option
   const [streamError, setStreamError] = useState<string | null>(null)
   const abortRef = useRef<AbortController | null>(null)
   const streamOutputRef = useRef('')
+  const pollIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
+
+  // Async media run state (image / video / audio / music generation)
+  const [asyncMediaRunId, setAsyncMediaRunId] = useState<string | null>(null)
+
+  // Clean up poll interval on unmount
+  useEffect(() => {
+    return () => {
+      if (pollIntervalRef.current) clearInterval(pollIntervalRef.current)
+    }
+  }, [])
 
   // Selection state for artifact viewer + comparison
   const [selectedRunId, setSelectedRunId] = useState<string | null>(null)
@@ -148,6 +163,70 @@ export const useLabController = (lensId: string, isAuthenticated = false, option
         redirectToLogin(2000)
         return
       }
+      // ── Async media path (image / video / audio / music) ────────────────────
+      if (dto.output_modality) {
+        if (pollIntervalRef.current) clearInterval(pollIntervalRef.current)
+        setStreamState('loading')
+        setStreamError(null)
+        setStreamOutput('')
+        setStreamRunId(null)
+        setAsyncMediaRunId(null)
+        const mediaIsActive = { value: true }
+
+        executionService.triggerExecution({
+          lens_id: lensId,
+          model_id: dto.modelKey,
+          input_snapshot: dto.inputSnapshot,
+          funding_source: dto.fundingSource ?? 'platform_credit',
+          origin_type: 'lens_preview',
+          byok_key_ref_id: dto.byokKeyRefId,
+          generative_media_params: {
+            output_modality: dto.output_modality,
+            ...dto.generative_media_params,
+          },
+        }).then((resp: TriggerExecutionResponse) => {
+          if (!mediaIsActive.value) return
+          const runId = resp.execution_run_id
+          setAsyncMediaRunId(runId)
+          setStreamRunId(runId)
+          setStreamState('streaming')
+
+          pollIntervalRef.current = setInterval(() => {
+            executionService.getRunById(runId).then((run) => {
+              if (!mediaIsActive.value || !run) return
+              if (run.status === 'succeeded') {
+                clearInterval(pollIntervalRef.current!)
+                pollIntervalRef.current = null
+                setAsyncMediaRunId(null)
+                // Reset to idle so LabArtifactViewer switches to the RunArtifacts view
+                // (setting 'complete' would keep StreamingOutput on screen with empty text)
+                setStreamState('idle')
+                setSelectedRunId(runId)
+                queryClient.invalidateQueries({ queryKey: queryKeys.executions.history(lensId) })
+                setHistoryOffset(0)
+              } else if (['failed', 'timed_out', 'cancelled', 'canceled'].includes(run.status)) {
+                clearInterval(pollIntervalRef.current!)
+                pollIntervalRef.current = null
+                setAsyncMediaRunId(null)
+                const msg = `Media generation ${run.status}`
+                setStreamError(msg)
+                setStreamState('error')
+                toastError(new Error(msg))
+              }
+            }).catch(() => { /* transient poll error — keep retrying */ })
+          }, 3000)
+        }).catch((err: unknown) => {
+          if (!mediaIsActive.value) return
+          setStreamError((err as Error).message)
+          setStreamState('error')
+          toastError(err)
+        })
+
+        // Return a cleanup that cancels the poll but does not abort a streaming request
+        return void (abortRef.current = { abort: () => { mediaIsActive.value = false; if (pollIntervalRef.current) { clearInterval(pollIntervalRef.current); pollIntervalRef.current = null } setAsyncMediaRunId(null) } } as AbortController)
+      }
+
+      // ── Streaming text path ──────────────────────────────────────────────────
       abortRef.current?.abort()
       const controller = new AbortController()
       abortRef.current = controller
@@ -271,6 +350,11 @@ export const useLabController = (lensId: string, isAuthenticated = false, option
     abortRef.current = null
     streamOutputRef.current = ''
     setStreamOutput('')
+    if (pollIntervalRef.current) {
+      clearInterval(pollIntervalRef.current)
+      pollIntervalRef.current = null
+    }
+    setAsyncMediaRunId(null)
     setStreamState('idle')
   }, [])
 
@@ -308,6 +392,7 @@ export const useLabController = (lensId: string, isAuthenticated = false, option
     streamError,
     triggerStream,
     stopStream,
+    asyncMediaRunId,
     selectedRunId,
     setSelectedRunId,
     comparisonRunIds,

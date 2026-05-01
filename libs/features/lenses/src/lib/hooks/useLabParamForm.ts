@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react'
-import { LensParam, LensVersionParam, FundingSource } from '@lenserfight/types'
+import { LensParam, LensVersionParam, FundingSource, GenerativeMediaParams } from '@lenserfight/types'
 import { validateParamValues } from '@lenserfight/utils/text'
 import { sanitizeStringInput, validateParamValue } from './useAttachmentValidation'
 import { TriggerLabExecutionDTO } from './useLabController'
@@ -28,6 +28,8 @@ export interface SubmitDeps {
   fundingSource?: FundingSource
   selectedKeyRefId?: string | null
   selectedModelInputModalities?: string[]
+  output_modality?: 'image' | 'video' | 'audio' | 'music'
+  generative_media_params?: GenerativeMediaParams
 }
 
 export interface UseLabParamFormResult {
@@ -137,6 +139,8 @@ export function useLabParamForm(
       fundingSource: deps.fundingSource,
       byokKeyRefId: deps.fundingSource === 'user_byok_cloud' ? deps.selectedKeyRefId ?? undefined : undefined,
       byokLocalKeyId: deps.fundingSource === 'user_byok_local' ? deps.selectedLocalKeyId ?? undefined : undefined,
+      output_modality: deps.output_modality,
+      generative_media_params: deps.generative_media_params,
     })
   }
 
