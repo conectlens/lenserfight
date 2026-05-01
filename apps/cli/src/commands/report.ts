@@ -185,6 +185,143 @@ const list = defineCommand({
 })
 
 // ---------------------------------------------------------------------------
+// report show <reportId>
+// ---------------------------------------------------------------------------
+const show = defineCommand({
+  meta: {
+    name: 'show',
+    description: 'Show full details of a single run report.',
+  },
+  args: {
+    id: {
+      type: 'positional',
+      description: 'Run report UUID',
+      required: true,
+    },
+    json: {
+      type: 'boolean',
+      description: 'Output as JSON',
+      default: false,
+    },
+  },
+  async run({ args }) {
+    try {
+      const rows = await callRest<Array<Record<string, unknown>>>(
+        'agents',
+        'run_reports',
+        'GET',
+        undefined,
+        {
+          requireAuth: true,
+          query: {
+            select:
+              'id,title,summary,outcome,total_steps,total_tool_invocations,total_memory_writes,total_cost_estimate,evaluation_score,metrics,team_run_id,workflow_run_id,created_at',
+            id: `eq.${args.id}`,
+            limit: '1',
+          },
+        }
+      )
+      const report = rows?.[0]
+      if (!report) {
+        consola.error('No run report found with ID: %s', args.id)
+        process.exitCode = 1
+        return
+      }
+
+      if (args.json) {
+        consola.log(JSON.stringify(report, null, 2))
+        return
+      }
+
+      printTable(
+        ['Field', 'Value'],
+        [
+          ['ID', String(report['id'] ?? '—')],
+          ['Title', String(report['title'] ?? '—')],
+          ['Outcome', String(report['outcome'] ?? '—')],
+          ['Steps', String(report['total_steps'] ?? '—')],
+          ['Tool invocations', String(report['total_tool_invocations'] ?? '—')],
+          ['Memory writes', String(report['total_memory_writes'] ?? '—')],
+          ['Cost (credits)', String(report['total_cost_estimate'] ?? '—')],
+          ['Eval score', String(report['evaluation_score'] ?? '—')],
+          ['Team run', String(report['team_run_id'] ?? '—')],
+          ['Workflow run', String(report['workflow_run_id'] ?? '—')],
+          ['Created', report['created_at'] ? new Date(String(report['created_at'])).toISOString() : '—'],
+          ['Summary', String(report['summary'] ?? '—')],
+        ]
+      )
+    } catch (err) {
+      handleError(err)
+    }
+  },
+})
+
+// ---------------------------------------------------------------------------
+// report incidents <reportId>
+// ---------------------------------------------------------------------------
+const incidents = defineCommand({
+  meta: {
+    name: 'incidents',
+    description: 'List incidents attached to a run report.',
+  },
+  args: {
+    id: {
+      type: 'positional',
+      description: 'Run report UUID',
+      required: true,
+    },
+    json: {
+      type: 'boolean',
+      description: 'Output as JSON',
+      default: false,
+    },
+  },
+  async run({ args }) {
+    try {
+      const rows = await callRest<Array<Record<string, unknown>>>(
+        'agents',
+        'run_incidents',
+        'GET',
+        undefined,
+        {
+          requireAuth: true,
+          query: {
+            select:
+              'id,incident_type,severity,title,description,resolved_at,created_at',
+            run_report_id: `eq.${args.id}`,
+            order: 'created_at.asc',
+          },
+        }
+      )
+
+      if (!rows || rows.length === 0) {
+        consola.info('No incidents recorded for report %s.', args.id)
+        return
+      }
+
+      if (args.json) {
+        consola.log(JSON.stringify(rows, null, 2))
+        return
+      }
+
+      printTable(
+        ['ID', 'Type', 'Severity', 'Title', 'Resolved', 'Created'],
+        rows.map((r) => [
+          String(r['id'] ?? '').slice(0, 8) + '…',
+          String(r['incident_type'] ?? '—').replaceAll('_', ' '),
+          String(r['severity'] ?? '—'),
+          String(r['title'] ?? '—').slice(0, 32),
+          r['resolved_at'] ? '✓' : '—',
+          r['created_at'] ? new Date(String(r['created_at'])).toLocaleDateString() : '—',
+        ])
+      )
+    } catch (err) {
+      handleError(err)
+    }
+  },
+})
+
+// ---------------------------------------------------------------------------
 // Root command
 // ---------------------------------------------------------------------------
 export default defineCommand({
@@ -195,5 +332,7 @@ export default defineCommand({
   subCommands: {
     content,
     list,
+    show,
+    incidents,
   },
 });
