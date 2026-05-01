@@ -7,6 +7,7 @@ import type {
   WorkflowRunStateProjection,
   WorkflowRunProvenanceEdge,
   WorkflowScheduleRecord,
+  WorkflowScheduleRunHistoryRecord,
   WorkflowTriggerMode,
   WorkflowPhaseRecord,
   WorkflowTaskRecord,
@@ -117,6 +118,9 @@ export interface WorkflowRunRecord {
   cost_metadata?: Record<string, unknown>
   /** Client-derived hash used to prevent double-trigger on UI retries. Added in migration 20260417140000. */
   idempotency_key?: string | null
+  /** The AI lenser that executed this run. NULL for human-workspace runs. Populated by scheduled
+   *  dispatch and by fn_start_workflow_run when the caller is acting as an AI workspace. */
+  ai_lenser_id?: string | null
 }
 
 export interface WorkflowNodeResultRecord {
@@ -306,6 +310,7 @@ export interface WorkflowsRepositoryPort {
   getSchedules(workflowId?: string): Promise<WorkflowScheduleRecord[]>
   upsertSchedule(input: UpsertWorkflowScheduleInput): Promise<WorkflowScheduleRecord | null>
   deleteSchedule(scheduleId: string): Promise<void>
+  getScheduleHistory(scheduleId: string): Promise<WorkflowScheduleRunHistoryRecord[]>
   getVersions(workflowId: string): Promise<WorkflowVersionRecord[]>
   createVersion(workflowId: string, changelog?: string): Promise<string>
   publishVersion(versionId: string): Promise<void>
@@ -746,6 +751,15 @@ export class SupabaseWorkflowsRepository implements WorkflowsRepositoryPort {
     })
 
     if (error) this.handleError(error)
+  }
+
+  async getScheduleHistory(scheduleId: string): Promise<WorkflowScheduleRunHistoryRecord[]> {
+    const { data, error } = await supabase.rpc('fn_get_workflow_schedule_history', {
+      p_schedule_id: scheduleId,
+    })
+
+    if (error) this.handleError(error)
+    return (data ?? []) as WorkflowScheduleRunHistoryRecord[]
   }
 
   // ── Workflow Versioning ────────────────────────────────────────────────────
