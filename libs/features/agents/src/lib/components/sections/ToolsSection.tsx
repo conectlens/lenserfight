@@ -1,5 +1,5 @@
 import { queryKeys } from '@lenserfight/data/cache'
-import { agentWorkspaceService } from '@lenserfight/data/repositories'
+import { agentWorkspaceService, toolsService } from '@lenserfight/data/repositories'
 import { useLenserWorkspace } from '@lenserfight/features/profile'
 import { AlertDialog } from '@lenserfight/ui/overlays'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
@@ -25,14 +25,23 @@ import {
 } from '../toolTemplates'
 
 import { SectionPage } from './SectionPage'
+import { ToolApprovalQueueTab } from './ToolApprovalQueueTab'
+import { ToolInvocationsTab } from './ToolInvocationsTab'
 
 import type {
   AgentToolProfileRecord,
   ToolAssignmentRecord,
+  ToolInvocationRecord,
   ToolRegistryRecord,
 } from '@lenserfight/types'
 
-type Tab = 'templates' | 'registry' | 'profiles' | 'assignments'
+type Tab =
+  | 'templates'
+  | 'registry'
+  | 'profiles'
+  | 'assignments'
+  | 'invocations'
+  | 'approvals'
 
 export const ToolsSection: React.FC = () => {
   const { bootstrap, profile, isOwner } = useAgentWorkspace()
@@ -105,11 +114,21 @@ export const ToolsSection: React.FC = () => {
     onError: (cause) => toast.error((cause as Error).message),
   })
 
-  const tabs: Array<{ id: Tab; label: string }> = [
+  const approvalQueueQuery = useQuery<ToolInvocationRecord[]>({
+    queryKey: queryKeys.agents.toolApprovalQueue(bootstrap?.ai_lenser_id ?? ''),
+    queryFn: () => toolsService.listPendingApprovals(bootstrap!.ai_lenser_id),
+    enabled: isOwner && !!bootstrap?.ai_lenser_id,
+    staleTime: 10_000,
+  })
+  const pendingApprovalCount = approvalQueueQuery.data?.length ?? 0
+
+  const tabs: Array<{ id: Tab; label: string; badge?: number }> = [
     { id: 'templates', label: 'Templates' },
     { id: 'registry', label: 'Registered tools' },
     { id: 'profiles', label: 'Policies' },
     { id: 'assignments', label: 'Assignments' },
+    { id: 'invocations', label: 'Invocations' },
+    { id: 'approvals', label: 'Approvals', badge: pendingApprovalCount || undefined },
   ]
 
   const registry = registryQuery.data ?? []
@@ -197,13 +216,18 @@ export const ToolsSection: React.FC = () => {
             key={tabItem.id}
             type="button"
             onClick={() => setTab(tabItem.id)}
-            className={`border-b-2 px-4 py-2.5 text-sm font-semibold transition ${
+            className={`flex items-center gap-2 border-b-2 px-4 py-2.5 text-sm font-semibold transition ${
               tab === tabItem.id
                 ? 'border-amber-500 text-amber-700 dark:text-amber-300'
                 : 'border-transparent text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white'
             }`}
           >
             {tabItem.label}
+            {tabItem.badge ? (
+              <span className="inline-flex h-5 min-w-[20px] items-center justify-center rounded-full bg-red-500 px-1.5 text-[10px] font-bold text-white">
+                {tabItem.badge}
+              </span>
+            ) : null}
           </button>
         ))}
       </div>
@@ -483,6 +507,14 @@ export const ToolsSection: React.FC = () => {
             })}
           </div>
         ))}
+
+      {tab === 'invocations' && bootstrap?.ai_lenser_id && (
+        <ToolInvocationsTab aiLenserId={bootstrap.ai_lenser_id} isOwner={isOwner} />
+      )}
+
+      {tab === 'approvals' && bootstrap?.ai_lenser_id && (
+        <ToolApprovalQueueTab aiLenserId={bootstrap.ai_lenser_id} isOwner={isOwner} />
+      )}
 
       {isOwner && (
         <RegisterToolDrawer
