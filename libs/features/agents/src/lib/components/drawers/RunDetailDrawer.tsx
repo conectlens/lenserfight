@@ -1,10 +1,10 @@
 import { queryKeys } from '@lenserfight/data/cache'
 import { agentWorkspaceService } from '@lenserfight/data/repositories'
-import type { AgentRunStepRecord, AgentTeamRunRecord } from '@lenserfight/types'
+import type { AgentRunEventRecord, AgentRunStepRecord, AgentTeamRunRecord } from '@lenserfight/types'
 import { Drawer } from '@lenserfight/ui/overlays'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { AlertTriangle, RotateCcw, X } from 'lucide-react'
-import React from 'react'
+import React, { useState } from 'react'
 import { toast } from 'sonner'
 
 import { formatDateTime } from '../sections/_shared'
@@ -60,12 +60,22 @@ const StepCard: React.FC<{ step: AgentRunStepRecord }> = ({ step }) => (
 
 export const RunDetailDrawer: React.FC<Props> = ({ open, onClose, run, aiLenserId, handle }) => {
   const queryClient = useQueryClient()
+  const [activeTab, setActiveTab] = useState<'steps' | 'events'>('steps')
 
   const steps = useQuery<AgentRunStepRecord[]>({
     queryKey: queryKeys.agents.runSteps(aiLenserId, run?.id ?? ''),
     queryFn: () => agentWorkspaceService.listAgentRunSteps(aiLenserId, run!.id),
     enabled: open && !!run,
     staleTime: 10_000,
+  })
+
+  const isRunning = run?.status === 'running'
+  const events = useQuery<AgentRunEventRecord[]>({
+    queryKey: [...queryKeys.agents.all, 'runEvents', aiLenserId, run?.id ?? ''],
+    queryFn: () => agentWorkspaceService.listAgentRunEvents(aiLenserId, { runId: run!.id }),
+    enabled: open && !!run && activeTab === 'events',
+    staleTime: isRunning ? 0 : 30_000,
+    refetchInterval: isRunning ? 3_000 : false,
   })
 
   const invalidate = () => {
@@ -158,28 +168,69 @@ export const RunDetailDrawer: React.FC<Props> = ({ open, onClose, run, aiLenserI
           </div>
 
           <div>
-            <p className="mb-2 text-xs font-semibold uppercase tracking-[0.18em] text-gray-500 dark:text-gray-400">
-              Execution steps{steps.data ? ` (${steps.data.length})` : ''}
-            </p>
-            {steps.isLoading ? (
-              <div className="space-y-2">
-                {[1, 2].map((i) => (
-                  <div
-                    key={i}
-                    className="h-16 animate-pulse rounded-[16px] border border-gray-100 bg-gray-50 dark:border-gray-800 dark:bg-gray-900"
-                  />
-                ))}
-              </div>
-            ) : (steps.data ?? []).length === 0 ? (
-              <p className="rounded-[16px] border border-gray-100 bg-gray-50 px-4 py-5 text-center text-xs text-gray-400 dark:border-gray-800 dark:bg-gray-950">
-                No steps recorded for this run.
-              </p>
-            ) : (
-              <div className="space-y-2">
-                {(steps.data ?? []).map((step) => (
-                  <StepCard key={step.id} step={step} />
-                ))}
-              </div>
+            <div className="mb-3 flex gap-1 rounded-2xl border border-gray-100 bg-gray-50 p-1 dark:border-gray-800 dark:bg-gray-900">
+              {(['steps', 'events'] as const).map((tab) => (
+                <button
+                  key={tab}
+                  type="button"
+                  onClick={() => setActiveTab(tab)}
+                  className={`flex-1 rounded-[14px] px-3 py-1.5 text-xs font-semibold capitalize transition ${
+                    activeTab === tab
+                      ? 'bg-white text-gray-900 shadow-sm dark:bg-gray-800 dark:text-white'
+                      : 'text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200'
+                  }`}
+                >
+                  {tab}
+                  {tab === 'steps' && steps.data ? ` (${steps.data.length})` : ''}
+                  {tab === 'events' && events.data ? ` (${events.data.length})` : ''}
+                </button>
+              ))}
+            </div>
+
+            {activeTab === 'steps' && (
+              steps.isLoading ? (
+                <div className="space-y-2">
+                  {[1, 2].map((i) => (
+                    <div
+                      key={i}
+                      className="h-16 animate-pulse rounded-[16px] border border-gray-100 bg-gray-50 dark:border-gray-800 dark:bg-gray-900"
+                    />
+                  ))}
+                </div>
+              ) : (steps.data ?? []).length === 0 ? (
+                <p className="rounded-[16px] border border-gray-100 bg-gray-50 px-4 py-5 text-center text-xs text-gray-400 dark:border-gray-800 dark:bg-gray-950">
+                  No steps recorded for this run.
+                </p>
+              ) : (
+                <div className="space-y-2">
+                  {(steps.data ?? []).map((step) => (
+                    <StepCard key={step.id} step={step} />
+                  ))}
+                </div>
+              )
+            )}
+
+            {activeTab === 'events' && (
+              events.isLoading ? (
+                <div className="space-y-2">
+                  {[1, 2, 3].map((i) => (
+                    <div
+                      key={i}
+                      className="h-10 animate-pulse rounded-[12px] border border-gray-100 bg-gray-50 dark:border-gray-800 dark:bg-gray-900"
+                    />
+                  ))}
+                </div>
+              ) : (events.data ?? []).length === 0 ? (
+                <p className="rounded-[16px] border border-gray-100 bg-gray-50 px-4 py-5 text-center text-xs text-gray-400 dark:border-gray-800 dark:bg-gray-950">
+                  No events recorded for this run.
+                </p>
+              ) : (
+                <div className="space-y-1.5">
+                  {(events.data ?? []).map((event) => (
+                    <EventRow key={event.id} event={event} />
+                  ))}
+                </div>
+              )
             )}
           </div>
 
@@ -212,5 +263,30 @@ export const RunDetailDrawer: React.FC<Props> = ({ open, onClose, run, aiLenserI
         </div>
       )}
     </Drawer>
+  )
+}
+
+const EVENT_TYPE_COLORS: Record<string, string> = {
+  dispatch_queued: 'border-blue-200 text-blue-700 dark:border-blue-500/30 dark:text-blue-300',
+  run_completed: 'border-green-200 text-green-700 dark:border-green-500/30 dark:text-green-300',
+  run_failed: 'border-red-200 text-red-700 dark:border-red-500/30 dark:text-red-400',
+  approval_requested: 'border-amber-200 text-amber-700 dark:border-amber-500/30 dark:text-amber-300',
+  node_completed: 'border-emerald-200 text-emerald-700 dark:border-emerald-500/30 dark:text-emerald-300',
+  node_failed: 'border-red-200 text-red-700 dark:border-red-500/30 dark:text-red-400',
+}
+
+const EventRow: React.FC<{ event: AgentRunEventRecord }> = ({ event }) => {
+  const colorClass = EVENT_TYPE_COLORS[event.event_type] ?? 'border-gray-200 text-gray-600 dark:border-gray-700 dark:text-gray-400'
+  return (
+    <div className="flex items-center gap-3 rounded-[12px] border border-gray-100 bg-gray-50 px-3 py-2 dark:border-gray-800 dark:bg-gray-950">
+      <span
+        className={`shrink-0 rounded-full border px-2 py-0.5 text-[10px] font-semibold ${colorClass}`}
+      >
+        {event.event_type}
+      </span>
+      <span className="min-w-0 flex-1 truncate font-mono text-[11px] text-gray-500 dark:text-gray-400">
+        {event.occurred_at ? formatDateTime(event.occurred_at) : '—'}
+      </span>
+    </div>
   )
 }

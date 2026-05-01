@@ -15,6 +15,7 @@ import type {
   WorkflowScheduleRecord,
 } from '@lenserfight/types'
 import type { AgentWorkspaceBootstrapState } from '../context/AgentWorkspaceContext'
+import { filterSchedulesForAgentWorkspace } from './filterSchedulesForAgentWorkspace'
 import { resolveOwnerFleetOwnerId } from './resolveOwnerFleetOwnerId'
 
 interface UseAgentWorkspaceDataParams {
@@ -48,18 +49,15 @@ export function useAgentWorkspaceData({
   shouldSwitchWorkspace,
   ownerHumanLenserId,
 }: UseAgentWorkspaceDataParams): AgentWorkspaceData {
-  const isAgentOwner =
-    isOwner && viewedProfileType === 'ai' && !!viewedProfileId
-  const isHumanOwner =
-    isOwner && viewedProfileType === 'human' && !!viewedProfileId
+  const isAgentOwner = isOwner && viewedProfileType === 'ai' && !!viewedProfileId
+  const isHumanOwner = isOwner && viewedProfileType === 'human' && !!viewedProfileId
 
-  const { data: agentProfile = null, isLoading: agentLoading } =
-    useQuery<AgentProfileView | null>({
-      queryKey: queryKeys.agents.detailByProfile(viewedProfileId ?? ''),
-      queryFn: () => agentsService.getAgentProfileByProfileId(viewedProfileId!),
-      enabled: isAgentOwner,
-      staleTime: 60_000,
-    })
+  const { data: agentProfile = null, isLoading: agentLoading } = useQuery<AgentProfileView | null>({
+    queryKey: queryKeys.agents.detailByProfile(viewedProfileId ?? ''),
+    queryFn: () => agentsService.getAgentProfileByProfileId(viewedProfileId!),
+    enabled: isAgentOwner,
+    staleTime: 60_000,
+  })
 
   const ownerFleetOwnerId = resolveOwnerFleetOwnerId({
     ownerHumanLenserId,
@@ -71,8 +69,7 @@ export function useAgentWorkspaceData({
   const bootstrapQuery = useQuery<AgentWorkspaceBootstrap | null>({
     queryKey: queryKeys.agents.workspaceBootstrap(handle),
     queryFn: () => agentWorkspaceService.getWorkspaceBootstrap(handle),
-    enabled:
-      isAgentOwner && !!agentProfile && !shouldSwitchWorkspace,
+    enabled: isAgentOwner && !!agentProfile && !shouldSwitchWorkspace,
     staleTime: 15_000,
   })
 
@@ -133,19 +130,23 @@ export function useAgentWorkspaceData({
     return { kind: 'missing' }
   })()
 
+  const schedules =
+    isAgentOwner && bootstrapQuery.data
+      ? filterSchedulesForAgentWorkspace(schedulesQuery.data ?? [], bootstrapQuery.data)
+      : []
+
   return {
     agentProfile,
     agentLoading,
     bootstrap: bootstrapQuery.data ?? null,
     bootstrapState,
-    schedules: schedulesQuery.data ?? [],
+    schedules,
     workflows: workflowsQuery.data ?? [],
     ownerFleetAgents: ownerFleetAgentsQuery.data ?? [],
     ownerFleetAgentsLoading: ownerFleetAgentsQuery.isLoading,
     instructionBindings: instructionBindingsQuery.data ?? [],
     modelBindings: modelBindingsQuery.data ?? [],
     defaultInstructionBinding:
-      (instructionBindingsQuery.data ?? []).find((binding) => binding.is_default) ??
-      null,
+      (instructionBindingsQuery.data ?? []).find((binding) => binding.is_default) ?? null,
   }
 }
