@@ -236,6 +236,37 @@ export const queryKeys = {
       [...queryKeys.agents.all, 'workflowAssignments', aiLenserId] as const,
     evaluationCases: (evaluationId: string) =>
       [...queryKeys.agents.all, 'evaluationCases', evaluationId] as const,
+    // Phase 8: Autonomous Agent OS
+    runReports: (aiLenserId: string, limit?: number) =>
+      [...queryKeys.agents.all, 'runReports', aiLenserId, limit ?? 20] as const,
+    runReport: (reportId: string) =>
+      [...queryKeys.agents.all, 'runReport', reportId] as const,
+    runIncidents: (runReportId: string) =>
+      [...queryKeys.agents.all, 'runIncidents', runReportId] as const,
+    policyLog: (
+      aiLenserId: string,
+      filters?: { verdict?: string; policy_type?: string; limit?: number }
+    ) =>
+      [
+        ...queryKeys.agents.all,
+        'policyLog',
+        aiLenserId,
+        filters?.verdict ?? '',
+        filters?.policy_type ?? '',
+        filters?.limit ?? 20,
+      ] as const,
+    runUnified: (
+      aiLenserId: string,
+      filters?: { status?: string; run_type?: string; limit?: number }
+    ) =>
+      [
+        ...queryKeys.agents.all,
+        'runUnified',
+        aiLenserId,
+        filters?.status ?? '',
+        filters?.run_type ?? '',
+        filters?.limit ?? 20,
+      ] as const,
   },
   reputation: {
     all: ['reputation'] as const,
