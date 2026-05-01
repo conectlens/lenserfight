@@ -78,3 +78,8 @@ export { useAgentPersonality } from './lib/hooks/useAgentPersonality'
 export { useAgentRouteMode } from './lib/hooks/useAgentRouteMode'
 export type { AgentRouteMode } from './lib/hooks/useAgentRouteMode'
 export { useAgentWorkspaceData } from './lib/hooks/useAgentWorkspaceData'
+// Phase 8: Autonomous Agent OS hooks
+export { useRunReports, useRunReport, useRunIncidents } from './lib/hooks/useRunReports'
+export { usePolicyLog } from './lib/hooks/usePolicyLog'
+export { useRunUnified } from './lib/hooks/useRunUnified'
+export { useWorkspaceControls } from './lib/hooks/useWorkspaceControls'
