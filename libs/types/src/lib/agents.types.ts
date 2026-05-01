@@ -627,6 +627,13 @@ export interface WorkspaceSettingsRecord {
   metadata: Record<string, unknown>
   created_at: string
   updated_at: string
+  // Phase 8: Autonomous Agent OS controls
+  max_parallel_runs: number
+  global_kill_switch: boolean
+  agent_paused: boolean
+  dark_launch_enabled: boolean
+  dark_launch_pct: number
+  budget_enforce: boolean
 }
 
 export interface UpdateWorkspaceSettingsPatch {
@@ -638,4 +645,110 @@ export interface UpdateWorkspaceSettingsPatch {
   webhooks?: Array<{ url: string; events?: string[] }>
   api_access_enabled?: boolean
   metadata?: Record<string, unknown>
+  max_parallel_runs?: number
+  global_kill_switch?: boolean
+  agent_paused?: boolean
+  dark_launch_enabled?: boolean
+  dark_launch_pct?: number
+  budget_enforce?: boolean
+}
+
+// ─── Phase 8: Autonomous Agent OS ────────────────────────────────────────────
+
+export type RunOutcome = 'success' | 'partial' | 'failed' | 'cancelled' | 'killed'
+
+export type RunIncidentType =
+  | 'tool_failure'
+  | 'budget_exceeded'
+  | 'policy_violation'
+  | 'timeout'
+  | 'step_failure'
+  | 'approval_rejected'
+  | 'kill_switch'
+
+export type IncidentSeverity = 'low' | 'medium' | 'high' | 'critical'
+
+export type PolicyEvaluationPoint = 'pre_run' | 'pre_side_effect' | 'pre_tool'
+
+export type PolicyType =
+  | 'budget'
+  | 'kill_switch'
+  | 'pause'
+  | 'parallel_limit'
+  | 'dark_launch'
+  | 'approval'
+
+export type PolicyVerdict = 'allow' | 'deny' | 'pause' | 'require_approval'
+
+export interface RunReportRecord {
+  id: string
+  ai_lenser_id: string
+  team_run_id: string | null
+  workflow_run_id: string | null
+  title: string
+  summary: string | null
+  metrics: Record<string, unknown>
+  total_steps: number
+  total_tool_invocations: number
+  total_memory_writes: number
+  total_cost_estimate: number
+  evaluation_score: number | null
+  outcome: RunOutcome
+  created_at: string
+}
+
+export interface RunIncidentRecord {
+  id: string
+  run_report_id: string
+  ai_lenser_id: string
+  incident_type: RunIncidentType
+  severity: IncidentSeverity
+  title: string
+  description: string | null
+  context: Record<string, unknown>
+  resolved_at: string | null
+  resolution: string | null
+  created_at: string
+}
+
+export interface PolicyEvaluationRecord {
+  id: string
+  ai_lenser_id: string
+  team_run_id: string | null
+  tool_invocation_id: string | null
+  evaluation_point: PolicyEvaluationPoint
+  policy_type: PolicyType
+  verdict: PolicyVerdict
+  reason: string | null
+  context: Record<string, unknown>
+  evaluated_at: string
+}
+
+export interface PolicyVerdictResult {
+  verdict: PolicyVerdict
+  reason: string | null
+}
+
+export interface RunUnifiedRow {
+  run_id: string
+  run_type: 'team' | 'workflow'
+  ai_lenser_id: string
+  status: string
+  approval_status: string | null
+  total_cost: number
+  step_count: number
+  memory_write_count: number
+  latest_evaluation_score: number | null
+  started_at: string | null
+  completed_at: string | null
+  duration_seconds: number | null
+}
+
+export interface RecordRunIncidentInput {
+  run_report_id: string
+  incident_type: RunIncidentType
+  severity: IncidentSeverity
+  title: string
+  description?: string | null
+  context?: Record<string, unknown>
 }
