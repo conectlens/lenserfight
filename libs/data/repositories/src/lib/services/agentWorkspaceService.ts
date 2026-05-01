@@ -23,6 +23,8 @@ import {
   type CreateAgentToolProfileInput,
   type CreateEvaluationCaseInput,
   type CreateWorkflowAssignmentInput,
+  type CreateTeamRunInput,
+  type UpsertAgentRunStepInput,
   type ListApprovalRequestsOptions,
 } from '../repositories/agentWorkspaceRepository'
 
@@ -36,6 +38,8 @@ export type {
   CreateAgentToolProfileInput,
   CreateEvaluationCaseInput,
   CreateWorkflowAssignmentInput,
+  CreateTeamRunInput,
+  UpsertAgentRunStepInput,
   ListApprovalRequestsOptions,
 }
 
@@ -163,4 +167,10 @@ export const agentWorkspaceService = {
   listEvaluationCases: agentWorkspaceRepo.listEvaluationCases.bind(agentWorkspaceRepo),
   createEvaluationCase: agentWorkspaceRepo.createEvaluationCase.bind(agentWorkspaceRepo),
   deleteEvaluationCase: agentWorkspaceRepo.deleteEvaluationCase.bind(agentWorkspaceRepo),
+
+  // Team run lifecycle
+  createTeamRun: agentWorkspaceRepo.createTeamRun.bind(agentWorkspaceRepo),
+  updateTeamRunStatus: agentWorkspaceRepo.updateTeamRunStatus.bind(agentWorkspaceRepo),
+  appendTeamRunEvent: agentWorkspaceRepo.appendTeamRunEvent.bind(agentWorkspaceRepo),
+  upsertAgentRunStep: agentWorkspaceRepo.upsertAgentRunStep.bind(agentWorkspaceRepo),
 }
