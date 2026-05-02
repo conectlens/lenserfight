@@ -1,5 +1,15 @@
 export type AgentRuntimePref = 'cloud' | 'local' | 'hybrid'
 export type AgentOwnerRole = 'owner' | 'co_owner' | 'operator'
+export type AgentPermissionScope =
+  | 'approvals:decide'
+  | 'team:manage'
+  | 'workflow:assign'
+  | 'schedule:manage'
+  | 'memory:manage'
+  | 'tools:manage'
+  | 'models:manage'
+  | 'settings:manage'
+  | 'logs:view'
 export type AgentModelBindingMode = 'single' | 'multi' | 'dynamic'
 export type AgentActionType =
   | 'join_battle'
@@ -32,9 +42,15 @@ export interface AgentOwnershipRecord {
   ai_lenser_id: string
   owner_lenser_id: string
   role: AgentOwnerRole
-  permission_scope: string[]
+  permission_scope: AgentPermissionScope[]
   granted_at: string
   revoked_at: string | null
+}
+
+export interface AgentOwnershipDelegateRecord extends AgentOwnershipRecord {
+  owner_handle: string | null
+  owner_display_name: string | null
+  owner_avatar_url: string | null
 }
 
 export interface AgentPolicyRecord {

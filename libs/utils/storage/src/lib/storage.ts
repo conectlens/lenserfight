@@ -26,4 +26,14 @@ export const storage = {
       memoryStore.delete(key)
     }
   },
+
+  keys: (): string[] => {
+    try {
+      return Array.from({ length: localStorage.length }, (_, index) => localStorage.key(index)).filter(
+        (key): key is string => !!key
+      )
+    } catch (e) {
+      return Array.from(memoryStore.keys())
+    }
+  },
 }
