@@ -3,10 +3,13 @@ import { Drawer } from '@lenserfight/ui/overlays'
 import type { AgentTeamMemberRecord } from '@lenserfight/types'
 import React, { useEffect, useState } from 'react'
 
+import type { AgentProfileView } from '@lenserfight/data/repositories'
+
 interface AddTeamMemberDrawerProps {
   open: boolean
   onClose: () => void
   teamId: string
+  agents: AgentProfileView[]
   defaultAgentId?: string
   initial?: AgentTeamMemberRecord | null
   onSaved?: () => void
@@ -18,6 +21,7 @@ export const AddTeamMemberDrawer: React.FC<AddTeamMemberDrawerProps> = ({
   open,
   onClose,
   teamId,
+  agents,
   defaultAgentId = '',
   initial,
   onSaved,
@@ -85,14 +89,29 @@ export const AddTeamMemberDrawer: React.FC<AddTeamMemberDrawerProps> = ({
     >
       <div className="space-y-4">
         {!isEdit && (
-          <Field label="Agent ID (UUID)">
-            <input
+          <Field label="Agent">
+            <select
               value={agentId}
               onChange={(e) => setAgentId(e.target.value)}
-              placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
               className={inputClass}
-            />
-            <p className="mt-1 text-xs text-gray-400">UUID of the AI Lenser to add to this team.</p>
+            >
+              <option value="">Select an AI Lenser</option>
+              {agents.map((agent) => (
+                <option key={agent.ai_lenser_id} value={agent.ai_lenser_id}>
+                  {agent.display_name} (@{agent.handle})
+                </option>
+              ))}
+            </select>
+            <p className="mt-1 text-xs text-gray-400">
+              Pick one of the owner&apos;s AI Lensers for this crew slot.
+            </p>
+          </Field>
+        )}
+        {isEdit && (
+          <Field label="Agent">
+            <div className="rounded-2xl border border-gray-200 bg-gray-50 px-4 py-2.5 text-sm text-gray-700 dark:border-gray-700 dark:bg-gray-950 dark:text-gray-200">
+              {(agents.find((agent) => agent.ai_lenser_id === initial?.agent_id)?.display_name ?? initial?.agent_id) || 'Unknown agent'}
+            </div>
           </Field>
         )}
         <Field label="Role">
@@ -152,7 +171,7 @@ export const AddTeamMemberDrawer: React.FC<AddTeamMemberDrawerProps> = ({
           <button
             type="button"
             onClick={handleSave}
-            disabled={submitting}
+            disabled={submitting || (!isEdit && agents.length === 0)}
             className="rounded-2xl bg-gray-900 px-4 py-2 text-sm font-semibold text-white transition hover:bg-amber-600 disabled:opacity-50 dark:bg-white dark:text-gray-900"
           >
             {submitting ? 'Saving…' : isEdit ? 'Save changes' : 'Add member'}

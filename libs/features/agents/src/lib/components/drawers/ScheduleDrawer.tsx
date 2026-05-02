@@ -13,6 +13,8 @@ interface Props {
   initial?: WorkflowScheduleRecord | null
   /** Default assignee target — typically the active ai_lenser_id */
   defaultAssigneeId?: string | null
+  defaultAssigneeType?: 'agent' | 'team'
+  teamOptions?: Array<{ id: string; name: string }>
   onSaved?: () => void
 }
 
@@ -22,6 +24,8 @@ export const ScheduleDrawer: React.FC<Props> = ({
   workflows,
   initial,
   defaultAssigneeId,
+  defaultAssigneeType = 'agent',
+  teamOptions = [],
   onSaved,
 }) => {
   const isEdit = !!initial
@@ -31,7 +35,7 @@ export const ScheduleDrawer: React.FC<Props> = ({
   const [cron, setCron] = useState(initial?.cron_expr ?? '0 9 * * 1')
   const [timezone, setTimezone] = useState(initial?.timezone ?? 'UTC')
   const [assigneeType, setAssigneeType] = useState<'agent' | 'team'>(
-    (initial?.assignee_type as 'agent' | 'team') ?? 'agent'
+    (initial?.assignee_type as 'agent' | 'team') ?? defaultAssigneeType
   )
   const [assigneeId, setAssigneeId] = useState(
     initial?.assignee_id ?? defaultAssigneeId ?? ''
@@ -48,12 +52,12 @@ export const ScheduleDrawer: React.FC<Props> = ({
     setWorkflowId(initial?.workflow_id ?? workflows[0]?.id ?? '')
     setCron(initial?.cron_expr ?? '0 9 * * 1')
     setTimezone(initial?.timezone ?? 'UTC')
-    setAssigneeType((initial?.assignee_type as 'agent' | 'team') ?? 'agent')
+    setAssigneeType((initial?.assignee_type as 'agent' | 'team') ?? defaultAssigneeType)
     setAssigneeId(initial?.assignee_id ?? defaultAssigneeId ?? '')
     setActive(initial?.is_active ?? true)
     setInputsJson(JSON.stringify(initial?.inputs_template ?? {}, null, 2))
     setError(null)
-  }, [open, initial, defaultAssigneeId, workflows])
+  }, [open, initial, defaultAssigneeId, defaultAssigneeType, workflows])
 
   const handleSave = async () => {
     setSubmitting(true)
@@ -138,12 +142,27 @@ export const ScheduleDrawer: React.FC<Props> = ({
             </select>
           </Field>
           <Field label="Assignee ID">
-            <input
-              value={assigneeId}
-              onChange={(e) => setAssigneeId(e.target.value)}
-              placeholder="ai_lensers.id or teams.id"
-              className={inputClass}
-            />
+            {assigneeType === 'team' && teamOptions.length > 0 ? (
+              <select
+                value={assigneeId}
+                onChange={(e) => setAssigneeId(e.target.value)}
+                className={inputClass}
+              >
+                <option value="">— select team —</option>
+                {teamOptions.map((team) => (
+                  <option key={team.id} value={team.id}>
+                    {team.name}
+                  </option>
+                ))}
+              </select>
+            ) : (
+              <input
+                value={assigneeId}
+                onChange={(e) => setAssigneeId(e.target.value)}
+                placeholder="ai_lensers.id or teams.id"
+                className={inputClass}
+              />
+            )}
           </Field>
         </div>
         <Field label="Inputs template (JSON)">
