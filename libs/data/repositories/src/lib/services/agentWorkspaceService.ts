@@ -1,4 +1,5 @@
 import type {
+  AgentOwnershipDelegateRecord,
   AgentMemoryProfileRecord,
   AgentModelProfileRecord,
   AgentPersonalityProfileRecord,
@@ -25,6 +26,7 @@ import {
   type CreateWorkflowAssignmentInput,
   type CreateTeamRunInput,
   type UpsertAgentRunStepInput,
+  type UpsertAgentOwnershipInput,
   type ListApprovalRequestsOptions,
 } from '../repositories/agentWorkspaceRepository'
 import type { EvaluationBaselineRecord, EvaluationRubricCriterion, EvaluationRubricRecord } from '@lenserfight/types'
@@ -41,6 +43,7 @@ export type {
   CreateWorkflowAssignmentInput,
   CreateTeamRunInput,
   UpsertAgentRunStepInput,
+  UpsertAgentOwnershipInput,
   ListApprovalRequestsOptions,
   EvaluationRubricRecord,
   EvaluationBaselineRecord,
@@ -98,6 +101,13 @@ export const agentWorkspaceService = {
 
   getCostSummary: (aiLenserId: string): Promise<CostSummary> =>
     agentWorkspaceRepo.getCostSummary(aiLenserId),
+  listAgentOwnerships: (aiLenserId: string): Promise<AgentOwnershipDelegateRecord[]> =>
+    agentWorkspaceRepo.listAgentOwnerships(aiLenserId),
+  upsertAgentOwnership: (
+    input: UpsertAgentOwnershipInput
+  ): Promise<AgentOwnershipDelegateRecord> => agentWorkspaceRepo.upsertAgentOwnership(input),
+  revokeAgentOwnership: (ownershipId: string): Promise<void> =>
+    agentWorkspaceRepo.revokeAgentOwnership(ownershipId),
 
   // Scratchpad
   listScratchpadRuns: agentWorkspaceRepo.listScratchpadRuns.bind(agentWorkspaceRepo),
