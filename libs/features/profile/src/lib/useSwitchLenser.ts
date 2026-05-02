@@ -1,6 +1,15 @@
 import { supabase } from '@lenserfight/data/supabase'
 import { queryKeys } from '@lenserfight/data/cache'
+import { agentsService, lenserService } from '@lenserfight/data/repositories'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
+import { useAuth } from '@lenserfight/features/auth'
+import type { WorkspaceIdentity } from '@lenserfight/types'
+
+import {
+  clearActiveProfileCaches,
+  storeActiveWorkspaceId,
+  storeWorkspaceSnapshot,
+} from './activeProfileCache'
 
 async function switchActiveLenser(lenserId: string): Promise<void> {
   const { error } = await supabase.rpc('fn_switch_active_lenser', { p_lenser_id: lenserId })
@@ -14,15 +23,54 @@ async function switchActiveLenser(lenserId: string): Promise<void> {
  */
 export function useSwitchLenser() {
   const queryClient = useQueryClient()
+  const { user } = useAuth()
 
   const { mutateAsync, isPending } = useMutation({
     mutationFn: switchActiveLenser,
-    onSuccess: async () => {
+    onSuccess: async (_result, targetProfileId) => {
+      const profiles =
+        queryClient.getQueryData<WorkspaceIdentity[]>(queryKeys.lenser.myLensers()) ?? []
+
+      const updatedProfiles = profiles.map((profile) => ({
+        ...profile,
+        is_active: profile.id === targetProfileId,
+      }))
+
+      if (updatedProfiles.length > 0) {
+        queryClient.setQueryData<WorkspaceIdentity[]>(
+          queryKeys.lenser.myLensers(),
+          updatedProfiles
+        )
+
+        // Persist the updated workspace list and active selection to localStorage
+        // BEFORE clearing profile caches so reload can bootstrap the sidebar instantly.
+        if (user?.id) {
+          storeWorkspaceSnapshot(user.id, updatedProfiles)
+        }
+        storeActiveWorkspaceId(targetProfileId)
+      }
+
+      clearActiveProfileCaches()
+
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: queryKeys.lenser.all }),
         queryClient.invalidateQueries({ queryKey: queryKeys.agents.all }),
         queryClient.invalidateQueries({ queryKey: queryKeys.workflows.all }),
       ])
+
+      await queryClient.fetchQuery({
+        queryKey: queryKeys.lenser.authenticated(),
+        queryFn: () => lenserService.getActiveLenser(),
+      })
+
+      const aiProfile = updatedProfiles.find((p) => p.id === targetProfileId && p.type === 'ai')
+      if (aiProfile) {
+        void queryClient.prefetchQuery({
+          queryKey: queryKeys.agents.detailByProfile(targetProfileId),
+          queryFn: () => agentsService.getAgentProfileByProfileId(targetProfileId),
+          staleTime: 60_000,
+        })
+      }
     },
   })
 
