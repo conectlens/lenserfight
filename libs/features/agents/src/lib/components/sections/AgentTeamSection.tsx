@@ -19,7 +19,9 @@ import { AgentGraphShell } from '../AgentGraphShell'
 import { BootstrapStatusPanel } from '../BootstrapStatusPanel'
 import { AddTeamMemberDrawer } from '../drawers/AddTeamMemberDrawer'
 import { CreateTeamDrawer } from '../drawers/CreateTeamDrawer'
+import { ScheduleDrawer } from '../drawers/ScheduleDrawer'
 import { TeamEdgesDrawer } from '../drawers/TeamEdgesDrawer'
+import { WorkflowAssignmentDrawer } from '../drawers/WorkflowAssignmentDrawer'
 import { EmptyPanel } from '../EmptyPanel'
 
 import { ProfileCard } from './_shared'
@@ -35,6 +37,7 @@ export const AgentTeamSection: React.FC = () => {
     activeTeamId,
     ownerFleetAgents,
     ownerFleetAgentsLoading,
+    workflows,
   } = useAgentWorkspace()
   const { open } = useModalRouter()
   const queryClient = useQueryClient()
@@ -56,6 +59,11 @@ export const AgentTeamSection: React.FC = () => {
     body: string
     onConfirm: () => void
   } | null>(null)
+  const [scheduleDrawerOpen, setScheduleDrawerOpen] = useState(false)
+  const [workflowAssignmentOpen, setWorkflowAssignmentOpen] = useState(false)
+
+  const activeAiLenserId = bootstrap?.ai_lenser_id ?? agentProfile?.ai_lenser_id ?? ''
+  const ownerLenserId = agentProfile?.owner_lenser_id ?? profile.id
 
   useEffect(() => {
     if (selectedTeamId) return
@@ -78,6 +86,10 @@ export const AgentTeamSection: React.FC = () => {
 
   const members = (selectedTeam?.members ?? []) as AgentTeamMemberRecord[]
   const teamEdges = (selectedTeam?.edges ?? []) as AgentTeamEdgeRecord[]
+  const teamOptions = teams.map((team) => ({
+    id: team.id,
+    name: team.name,
+  }))
 
   const invalidate = () =>
     queryClient.invalidateQueries({
@@ -218,7 +230,7 @@ export const AgentTeamSection: React.FC = () => {
         <button
           type="button"
           onClick={() => setCreateTeamOpen(true)}
-          disabled={!agentProfile?.ai_lenser_id}
+          disabled={!activeAiLenserId}
           className="inline-flex items-center gap-2 rounded-2xl bg-gray-900 px-4 py-2 text-sm font-semibold text-white transition hover:bg-amber-600 disabled:opacity-50 dark:bg-white dark:text-gray-900"
         >
           <Plus size={14} />
@@ -329,7 +341,7 @@ export const AgentTeamSection: React.FC = () => {
                             setAddMemberState({
                               open: true,
                               teamId: selectedTeam.id,
-                              defaultAgentId: bootstrap?.ai_lenser_id,
+                              defaultAgentId: activeAiLenserId,
                               initial: null,
                             })
                           }
@@ -350,6 +362,22 @@ export const AgentTeamSection: React.FC = () => {
                         >
                           <GitMerge size={13} />
                           Manage edges
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setScheduleDrawerOpen(true)}
+                          disabled={workflows.length === 0}
+                          className="inline-flex items-center gap-2 rounded-2xl border border-gray-200 px-3 py-2 text-xs font-semibold text-gray-700 transition hover:border-amber-300 hover:text-amber-700 disabled:opacity-50 dark:border-gray-700 dark:text-gray-200"
+                        >
+                          Schedule this team
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setWorkflowAssignmentOpen(true)}
+                          disabled={workflows.length === 0}
+                          className="inline-flex items-center gap-2 rounded-2xl border border-gray-200 px-3 py-2 text-xs font-semibold text-gray-700 transition hover:border-amber-300 hover:text-amber-700 disabled:opacity-50 dark:border-gray-700 dark:text-gray-200"
+                        >
+                          Assign workflow
                         </button>
                         <button
                           type="button"
@@ -478,8 +506,10 @@ export const AgentTeamSection: React.FC = () => {
       <CreateTeamDrawer
         open={createTeamOpen && !!bootstrap}
         onClose={() => setCreateTeamOpen(false)}
-        aiLenserId={agentProfile?.ai_lenser_id ?? ''}
-        onCreated={() => {
+        aiLenserId={activeAiLenserId}
+        ownerLenserId={ownerLenserId}
+        onCreated={(team) => {
+          setSelectedTeamId(team.id)
           invalidate()
           setCreateTeamOpen(false)
         }}
@@ -489,10 +519,39 @@ export const AgentTeamSection: React.FC = () => {
         open={addMemberState.open}
         onClose={() => setAddMemberState((state) => ({ ...state, open: false }))}
         teamId={addMemberState.teamId}
+        agents={ownerFleetAgents}
         defaultAgentId={addMemberState.defaultAgentId}
         initial={addMemberState.initial}
         onSaved={invalidate}
       />
+
+      {selectedTeam && (
+        <>
+          <ScheduleDrawer
+            open={scheduleDrawerOpen}
+            onClose={() => setScheduleDrawerOpen(false)}
+            workflows={workflows}
+            defaultAssigneeId={selectedTeam.id}
+            defaultAssigneeType="team"
+            teamOptions={teamOptions}
+            onSaved={invalidate}
+          />
+
+          <WorkflowAssignmentDrawer
+            open={workflowAssignmentOpen}
+            onClose={() => setWorkflowAssignmentOpen(false)}
+            aiLenserId={activeAiLenserId}
+            workflows={workflows}
+            teams={teamOptions}
+            defaultAssigneeKind="team"
+            defaultTeamId={selectedTeam.id}
+            onSaved={() => {
+              invalidate()
+              setWorkflowAssignmentOpen(false)
+            }}
+          />
+        </>
+      )}
 
       {edgesState.team && (
         <TeamEdgesDrawer

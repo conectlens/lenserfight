@@ -1,4 +1,4 @@
-import { useLenserWorkspace } from '@lenserfight/features/profile'
+import { useLenserWorkspace, useWorkspaceSwitchController } from '@lenserfight/features/profile'
 import { Bot, ChevronLeft } from 'lucide-react'
 import React from 'react'
 
@@ -6,7 +6,8 @@ import { useAgentWorkspace } from '../context/AgentWorkspaceContext'
 
 export const ActiveWorkspaceBanner: React.FC = () => {
   const { viewMode, profile, isSwitching } = useAgentWorkspace()
-  const { humanWorkspace, switchWorkspace } = useLenserWorkspace()
+  const { humanWorkspace } = useLenserWorkspace()
+  const { switchToProfile } = useWorkspaceSwitchController()
 
   if (viewMode !== 'agent_owner') return null
 
@@ -19,7 +20,7 @@ export const ActiveWorkspaceBanner: React.FC = () => {
       {humanWorkspace && (
         <button
           type="button"
-          onClick={() => switchWorkspace(humanWorkspace.id)}
+          onClick={() => switchToProfile(humanWorkspace)}
           disabled={isSwitching}
           className="inline-flex items-center gap-1 rounded-[10px] border border-primary-yellow-300 bg-white px-2.5 py-1 text-xs font-semibold text-primary-yellow-800 transition hover:bg-primary-yellow-100 disabled:opacity-50 dark:border-primary-yellow-500/40 dark:bg-transparent dark:text-primary-yellow-300 dark:hover:bg-primary-yellow-500/10"
         >
