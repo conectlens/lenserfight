@@ -18,6 +18,7 @@ import type { AgentPersonalityProfileRecord } from '@lenserfight/types'
 export const PersonalitySection: React.FC = () => {
   const { bootstrap, profile, isOwner, agentProfile } = useAgentWorkspace()
   const queryClient = useQueryClient()
+  const activeAiLenserId = bootstrap?.ai_lenser_id ?? agentProfile?.ai_lenser_id ?? ''
   const [drawerOpen, setDrawerOpen] = useState(false)
   const [editing, setEditing] = useState<AgentPersonalityProfileRecord | null>(null)
   const [confirmState, setConfirmState] = useState<{
@@ -33,11 +34,14 @@ export const PersonalitySection: React.FC = () => {
 
   const saveNote = useMutation({
     mutationFn: () =>
-      agentsService.updatePersonality(agentProfile!.ai_lenser_id, noteText),
+      agentsService.updatePersonality(activeAiLenserId, noteText),
     onSuccess: () => {
       toast.success('Personality note saved')
-      queryClient.invalidateQueries({
+      void queryClient.invalidateQueries({
         queryKey: queryKeys.agents.detailByProfile(profile.id),
+      })
+      void queryClient.invalidateQueries({
+        queryKey: queryKeys.agents.workspaceBootstrap(profile.handle),
       })
     },
     onError: (e) => toast.error((e as Error).message),
@@ -97,7 +101,7 @@ export const PersonalitySection: React.FC = () => {
             <button
               type="button"
               onClick={() => saveNote.mutate()}
-              disabled={saveNote.isPending || !agentProfile?.ai_lenser_id}
+              disabled={saveNote.isPending || !activeAiLenserId}
               className="inline-flex items-center gap-2 rounded-2xl bg-gray-900 px-4 py-2 text-sm font-semibold text-white transition hover:bg-amber-600 disabled:opacity-50 dark:bg-white dark:text-gray-900"
             >
               {saveNote.isPending ? 'Saving…' : 'Save note'}

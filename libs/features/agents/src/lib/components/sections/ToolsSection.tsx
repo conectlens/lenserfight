@@ -44,7 +44,7 @@ type Tab =
   | 'approvals'
 
 export const ToolsSection: React.FC = () => {
-  const { bootstrap, profile, isOwner } = useAgentWorkspace()
+  const { bootstrap, profile, isOwner, agentProfile } = useAgentWorkspace()
   const { humanWorkspace } = useLenserWorkspace()
   const queryClient = useQueryClient()
   const [tab, setTab] = useState<Tab>('templates')
@@ -58,13 +58,16 @@ export const ToolsSection: React.FC = () => {
   const [registerPreset, setRegisterPreset] =
     useState<ToolTemplatePreset | null>(null)
   const [assignDrawer, setAssignDrawer] = useState(false)
+  const [selectedRegistryToolId, setSelectedRegistryToolId] = useState<string | null>(null)
   const [confirmState, setConfirmState] = useState<{
     title: string
     body: string
     onConfirm: () => void
   } | null>(null)
 
-  const registryOwnerId = humanWorkspace?.id ?? profile.id
+  const activeAiLenserId = bootstrap?.ai_lenser_id ?? agentProfile?.ai_lenser_id ?? ''
+  const registryOwnerId =
+    humanWorkspace?.id ?? agentProfile?.owner_lenser_id ?? profile.id
   const profiles =
     (bootstrap?.profiles.tools as AgentToolProfileRecord[] | undefined) ?? []
 
@@ -76,10 +79,10 @@ export const ToolsSection: React.FC = () => {
   })
 
   const assignmentsQuery = useQuery<ToolAssignmentRecord[]>({
-    queryKey: queryKeys.agents.toolAssignments(bootstrap?.ai_lenser_id ?? ''),
+    queryKey: queryKeys.agents.toolAssignments(activeAiLenserId),
     queryFn: () =>
-      agentWorkspaceService.listToolAssignments(bootstrap!.ai_lenser_id),
-    enabled: isOwner && !!bootstrap?.ai_lenser_id,
+      agentWorkspaceService.listToolAssignments(activeAiLenserId),
+    enabled: isOwner && !!activeAiLenserId,
     staleTime: 30_000,
   })
 
@@ -93,7 +96,7 @@ export const ToolsSection: React.FC = () => {
     })
   const invalidateAssignments = () =>
     queryClient.invalidateQueries({
-      queryKey: queryKeys.agents.toolAssignments(bootstrap?.ai_lenser_id ?? ''),
+      queryKey: queryKeys.agents.toolAssignments(activeAiLenserId),
     })
 
   const removeProfile = useMutation({
@@ -106,7 +109,7 @@ export const ToolsSection: React.FC = () => {
   })
   const revoke = useMutation({
     mutationFn: (toolId: string) =>
-      agentWorkspaceService.revokeTool(bootstrap!.ai_lenser_id, toolId),
+      agentWorkspaceService.revokeTool(activeAiLenserId, toolId),
     onSuccess: () => {
       toast.success('Tool assignment revoked')
       invalidateAssignments()
@@ -115,9 +118,9 @@ export const ToolsSection: React.FC = () => {
   })
 
   const approvalQueueQuery = useQuery<ToolInvocationRecord[]>({
-    queryKey: queryKeys.agents.toolApprovalQueue(bootstrap?.ai_lenser_id ?? ''),
-    queryFn: () => toolsService.listPendingApprovals(bootstrap!.ai_lenser_id),
-    enabled: isOwner && !!bootstrap?.ai_lenser_id,
+    queryKey: queryKeys.agents.toolApprovalQueue(activeAiLenserId),
+    queryFn: () => toolsService.listPendingApprovals(activeAiLenserId),
+    enabled: isOwner && !!activeAiLenserId,
     staleTime: 10_000,
   })
   const pendingApprovalCount = approvalQueueQuery.data?.length ?? 0
@@ -143,6 +146,19 @@ export const ToolsSection: React.FC = () => {
     setRegisterEditing(null)
     setRegisterPreset(preset)
     setRegisterDrawer(true)
+  }
+
+  const handleToolSaved = (record: ToolRegistryRecord) => {
+    queryClient.setQueryData<ToolRegistryRecord[]>(
+      queryKeys.agents.toolRegistry(registryOwnerId),
+      (current = []) => {
+        const others = current.filter((tool) => tool.id !== record.id)
+        return [record, ...others]
+      }
+    )
+    setSelectedRegistryToolId(record.id)
+    setTab('registry')
+    setTimeout(invalidateRegistry, 2000)
   }
 
   const toolbar = (() => {
@@ -315,7 +331,11 @@ export const ToolsSection: React.FC = () => {
             {registry.map((tool) => (
               <div
                 key={tool.id}
-                className="rounded-[24px] border border-gray-200 bg-white p-5 shadow-sm dark:border-gray-800 dark:bg-gray-900"
+                className={`rounded-[24px] border bg-white p-5 shadow-sm transition dark:bg-gray-900 ${
+                  selectedRegistryToolId === tool.id
+                    ? 'border-amber-300 ring-2 ring-amber-200 dark:border-amber-500/40 dark:ring-amber-500/20'
+                    : 'border-gray-200 dark:border-gray-800'
+                }`}
               >
                 <div className="flex items-start justify-between gap-3">
                   <div>
@@ -508,12 +528,12 @@ export const ToolsSection: React.FC = () => {
           </div>
         ))}
 
-      {tab === 'invocations' && bootstrap?.ai_lenser_id && (
-        <ToolInvocationsTab aiLenserId={bootstrap.ai_lenser_id} isOwner={isOwner} />
+      {tab === 'invocations' && activeAiLenserId && (
+        <ToolInvocationsTab aiLenserId={activeAiLenserId} isOwner={isOwner} />
       )}
 
-      {tab === 'approvals' && bootstrap?.ai_lenser_id && (
-        <ToolApprovalQueueTab aiLenserId={bootstrap.ai_lenser_id} isOwner={isOwner} />
+      {tab === 'approvals' && activeAiLenserId && (
+        <ToolApprovalQueueTab aiLenserId={activeAiLenserId} isOwner={isOwner} />
       )}
 
       {isOwner && (
@@ -522,23 +542,24 @@ export const ToolsSection: React.FC = () => {
           onClose={() => setRegisterDrawer(false)}
           initial={registerEditing}
           preset={registerPreset}
-          onSaved={invalidateRegistry}
+          onSaved={handleToolSaved}
         />
       )}
-      {isOwner && bootstrap && (
+      {isOwner && !!activeAiLenserId && (
         <>
           <ToolProfileDrawer
             open={profileDrawer}
             onClose={() => setProfileDrawer(false)}
-            aiLenserId={bootstrap.ai_lenser_id}
+            aiLenserId={activeAiLenserId}
             initial={profileEditing}
             onSaved={invalidateBootstrap}
           />
           <AssignToolDrawer
             open={assignDrawer}
             onClose={() => setAssignDrawer(false)}
-            aiLenserId={bootstrap.ai_lenser_id}
+            aiLenserId={activeAiLenserId}
             registry={registry}
+            preferredToolId={selectedRegistryToolId}
             onAssigned={invalidateAssignments}
           />
         </>
