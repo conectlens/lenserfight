@@ -1,13 +1,14 @@
 import { agentWorkspaceService } from '@lenserfight/data/repositories'
 import { Drawer } from '@lenserfight/ui/overlays'
 import type { ToolRegistryRecord } from '@lenserfight/types'
-import React, { useState } from 'react'
+import React, { useEffect, useState } from 'react'
 
 interface Props {
   open: boolean
   onClose: () => void
   aiLenserId: string
   registry: ToolRegistryRecord[]
+  preferredToolId?: string | null
   onAssigned?: () => void
 }
 
@@ -16,12 +17,26 @@ export const AssignToolDrawer: React.FC<Props> = ({
   onClose,
   aiLenserId,
   registry,
+  preferredToolId = null,
   onAssigned,
 }) => {
   const [toolId, setToolId] = useState<string>(registry[0]?.id ?? '')
   const [allowed, setAllowed] = useState(true)
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
+
+  useEffect(() => {
+    if (!open) return
+
+    const nextToolId =
+      (preferredToolId && registry.some((tool) => tool.id === preferredToolId)
+        ? preferredToolId
+        : registry[0]?.id) ?? ''
+
+    setToolId(nextToolId)
+    setAllowed(true)
+    setError(null)
+  }, [open, preferredToolId, registry])
 
   const handleAssign = async () => {
     setSubmitting(true)
