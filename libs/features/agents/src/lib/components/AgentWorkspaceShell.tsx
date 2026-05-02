@@ -1,4 +1,4 @@
-import { useLenser, useLenserWorkspace } from '@lenserfight/features/profile'
+import { useLenserWorkspace, useWorkspaceSwitchController } from '@lenserfight/features/profile'
 import { AlertTriangle, Bot } from 'lucide-react'
 import React from 'react'
 import { Navigate, useNavigate, useParams } from 'react-router-dom'
@@ -97,8 +97,8 @@ export const AgentWorkspaceShell: React.FC<AgentWorkspaceShellProps> = ({
 }) => {
   const { section } = useParams<{ section?: string }>()
   const navigate = useNavigate()
-  const { lenser: activeWorkspace } = useLenser()
-  const { humanWorkspace, isOwnedWorkspace, switchWorkspace, isSwitching } = useLenserWorkspace()
+  const { humanWorkspace, isOwnedWorkspace, activeWorkspace } = useLenserWorkspace()
+  const { switchToProfile, isSwitching } = useWorkspaceSwitchController()
 
   const isOwner = isOwnedWorkspace(profile.id)
 
@@ -151,7 +151,7 @@ export const AgentWorkspaceShell: React.FC<AgentWorkspaceShellProps> = ({
           <div className="mt-6 flex justify-center gap-3">
             <button
               type="button"
-              onClick={() => switchWorkspace(profile.id)}
+              onClick={() => switchToProfile(profile)}
               disabled={isSwitching}
               className="rounded-2xl bg-gray-900 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-amber-600 disabled:opacity-50 dark:bg-white dark:text-gray-900"
             >
@@ -166,6 +166,45 @@ export const AgentWorkspaceShell: React.FC<AgentWorkspaceShellProps> = ({
             </button>
           </div>
         </EmptyPanel>
+      </SectionPage>
+    )
+  }
+
+  const isAgentContext = isOwner && profile.type === 'ai'
+  if (isAgentContext && (data.agentLoading || data.bootstrapState.kind === 'loading')) {
+    return (
+      <SectionPage eyebrow="Loading" title={`@${profile.handle}`} description="">
+        <div className="space-y-4">
+          {Array.from({ length: 3 }).map((_, i) => (
+            <div
+              key={i}
+              className="h-28 animate-pulse rounded-[24px] border border-gray-100 bg-gray-50 dark:border-gray-800 dark:bg-gray-950"
+            />
+          ))}
+        </div>
+      </SectionPage>
+    )
+  }
+
+  if (isAgentContext && !data.agentProfile && !data.agentLoading && viewMode === 'agent_owner') {
+    return (
+      <SectionPage
+        eyebrow="Agent workspace"
+        title={`@${profile.handle}`}
+        description="Agent workspace data not found."
+      >
+        <div className="rounded-[24px] border border-amber-200 bg-amber-50 px-5 py-4 text-sm text-amber-700 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-200">
+          <div className="flex items-start gap-3">
+            <AlertTriangle size={18} className="mt-0.5 flex-shrink-0" />
+            <div>
+              <p className="font-semibold">Agent workspace not initialized</p>
+              <p className="mt-1">
+                No agent profile was found for this workspace. Ensure the AI lenser was created
+                through the proper provisioning flow and the agent migrations are applied.
+              </p>
+            </div>
+          </div>
+        </div>
       </SectionPage>
     )
   }
@@ -220,7 +259,7 @@ export const AgentWorkspaceShell: React.FC<AgentWorkspaceShellProps> = ({
         data.ownerFleetAgentsLoading
       }
       shouldSwitchWorkspace={shouldSwitchWorkspace}
-      switchWorkspace={() => switchWorkspace(profile.id)}
+      switchWorkspace={() => switchToProfile(profile)}
       isSwitching={isSwitching}
     >
       <div className="flex flex-col gap-3">
