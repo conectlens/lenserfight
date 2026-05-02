@@ -1,21 +1,31 @@
+import { queryKeys } from '@lenserfight/data/cache'
+import { agentWorkspaceService } from '@lenserfight/data/repositories'
 import { Tab, TabList, Tabs } from '@lenserfight/ui/layout'
 import { SelectField } from '@lenserfight/ui/forms'
-import { Brain } from 'lucide-react'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
+import { Brain, Plus } from 'lucide-react'
 import React, { useMemo, useState } from 'react'
 
 import { useAgentWorkspace } from '../../context/AgentWorkspaceContext'
+import { MemoryEntryDrawer } from '../drawers/MemoryEntryDrawer'
+import { MemoryProfileDrawer } from '../drawers/MemoryProfileDrawer'
 import { EmptyPanel } from '../EmptyPanel'
 
 import { MemoryEntriesTab } from './MemoryEntriesTab'
 import { MemoryProfilesTab } from './MemoryProfilesTab'
 import { SectionPage } from './SectionPage'
 
+import type { AgentMemoryProfileRecord } from '@lenserfight/types'
+
 type MemoryTab = 'profiles' | 'entries'
 
 export const MemorySection: React.FC = () => {
-  const { isOwner, agentProfile, ownerFleetAgents, viewMode } = useAgentWorkspace()
+  const { isOwner, agentProfile, ownerFleetAgents, viewMode, bootstrap } = useAgentWorkspace()
+  const queryClient = useQueryClient()
   const [tab, setTab] = useState<MemoryTab>('profiles')
   const [selectedFleetAgentId, setSelectedFleetAgentId] = useState<string>('')
+  const [profileDrawerOpen, setProfileDrawerOpen] = useState(false)
+  const [entryDrawerOpen, setEntryDrawerOpen] = useState(false)
 
   const fleetOptions = useMemo(
     () => [
@@ -31,13 +41,55 @@ export const MemorySection: React.FC = () => {
   const aiLenserId: string | null =
     viewMode === 'human_owner'
       ? selectedFleetAgentId || null
-      : agentProfile?.ai_lenser_id ?? null
+      : bootstrap?.ai_lenser_id ?? agentProfile?.ai_lenser_id ?? null
+
+  const profilesQuery = useQuery<AgentMemoryProfileRecord[]>({
+    queryKey: queryKeys.agents.memoryProfiles(aiLenserId ?? ''),
+    queryFn: () => agentWorkspaceService.listMemoryProfiles(aiLenserId!),
+    enabled: !!aiLenserId,
+    staleTime: 15_000,
+  })
+
+  const profiles = profilesQuery.data ?? []
+  const effectiveProfileId = profiles[0]?.id ?? null
+
+  const invalidateProfiles = async () => {
+    if (!aiLenserId) return
+    await queryClient.invalidateQueries({
+      queryKey: queryKeys.agents.memoryProfiles(aiLenserId),
+    })
+  }
+
+  const handleSetMemory = () => {
+    if (!aiLenserId) return
+
+    if (profiles.length === 0) {
+      setTab('profiles')
+      setProfileDrawerOpen(true)
+      return
+    }
+
+    setTab('entries')
+    setEntryDrawerOpen(true)
+  }
 
   return (
     <SectionPage
       eyebrow="Memory"
       title="Profiles & entries"
       description="Profiles control retention, scope, and visibility. Entries are the actual memory rows agents read on the next run and write after a successful run."
+      toolbar={
+        isOwner && aiLenserId ? (
+          <button
+            type="button"
+            onClick={handleSetMemory}
+            className="inline-flex items-center gap-2 rounded-2xl bg-gray-900 px-4 py-2 text-sm font-semibold text-white transition hover:bg-amber-600 dark:bg-white dark:text-gray-900"
+          >
+            <Plus size={14} />
+            Set memory
+          </button>
+        ) : undefined
+      }
     >
       {viewMode === 'human_owner' && ownerFleetAgents.length > 0 && (
         <div className="rounded-[24px] border border-gray-200 bg-white p-4 dark:border-gray-800 dark:bg-gray-900">
@@ -61,7 +113,8 @@ export const MemorySection: React.FC = () => {
           }
         />
       ) : aiLenserId ? (
-        <Tabs value={tab} onChange={(id) => setTab(id as MemoryTab)}>
+        <>
+          <Tabs value={tab} onChange={(id) => setTab(id as MemoryTab)}>
           <TabList>
             <Tab id="profiles">Profiles</Tab>
             <Tab id="entries">Entries</Tab>
@@ -74,7 +127,35 @@ export const MemorySection: React.FC = () => {
               <MemoryEntriesTab aiLenserId={aiLenserId} isOwner={isOwner} />
             )}
           </div>
-        </Tabs>
+          </Tabs>
+
+          {isOwner && (
+            <>
+              <MemoryProfileDrawer
+                open={profileDrawerOpen}
+                onClose={() => setProfileDrawerOpen(false)}
+                aiLenserId={aiLenserId}
+                onSaved={async () => {
+                  await invalidateProfiles()
+                  setProfileDrawerOpen(false)
+                }}
+              />
+              <MemoryEntryDrawer
+                open={entryDrawerOpen}
+                onClose={() => setEntryDrawerOpen(false)}
+                profileId={effectiveProfileId}
+                canManage={isOwner}
+                onChanged={() => {
+                  if (!effectiveProfileId) return
+                  queryClient.invalidateQueries({
+                    queryKey: queryKeys.agents.memoryEntries(effectiveProfileId),
+                    exact: false,
+                  })
+                }}
+              />
+            </>
+          )}
+        </>
       ) : null}
     </SectionPage>
   )
