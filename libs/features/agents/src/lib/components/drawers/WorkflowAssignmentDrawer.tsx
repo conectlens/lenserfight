@@ -15,6 +15,8 @@ interface Props {
   workflows: WorkflowRecord[]
   teams: Array<{ id: string; name: string }>
   initial?: AgentWorkflowAssignmentRecord | null
+  defaultAssigneeKind?: 'agent' | 'team' | 'evaluator'
+  defaultTeamId?: string | null
   onSaved?: () => void
 }
 
@@ -25,15 +27,17 @@ export const WorkflowAssignmentDrawer: React.FC<Props> = ({
   workflows,
   teams,
   initial,
+  defaultAssigneeKind = 'agent',
+  defaultTeamId = null,
   onSaved,
 }) => {
   const isEdit = !!initial
 
   const [workflowId, setWorkflowId] = useState(initial?.workflow_id ?? workflows[0]?.id ?? '')
   const [assigneeKind, setAssigneeKind] = useState<'agent' | 'team' | 'evaluator'>(
-    (initial?.assignee_kind as 'agent' | 'team' | 'evaluator') ?? 'agent'
+    (initial?.assignee_kind as 'agent' | 'team' | 'evaluator') ?? defaultAssigneeKind
   )
-  const [assigneeTeamId, setAssigneeTeamId] = useState(initial?.assignee_team_id ?? '')
+  const [assigneeTeamId, setAssigneeTeamId] = useState(initial?.assignee_team_id ?? defaultTeamId ?? '')
   const [approvalPolicyJson, setApprovalPolicyJson] = useState(
     JSON.stringify(initial?.approval_policy ?? { mode: 'none' }, null, 2)
   )
@@ -47,17 +51,21 @@ export const WorkflowAssignmentDrawer: React.FC<Props> = ({
   useEffect(() => {
     if (!open) return
     setWorkflowId(initial?.workflow_id ?? workflows[0]?.id ?? '')
-    setAssigneeKind((initial?.assignee_kind as 'agent' | 'team' | 'evaluator') ?? 'agent')
-    setAssigneeTeamId(initial?.assignee_team_id ?? '')
+    setAssigneeKind((initial?.assignee_kind as 'agent' | 'team' | 'evaluator') ?? defaultAssigneeKind)
+    setAssigneeTeamId(initial?.assignee_team_id ?? defaultTeamId ?? '')
     setApprovalPolicyJson(JSON.stringify(initial?.approval_policy ?? { mode: 'none' }, null, 2))
     setRetryPolicyJson(JSON.stringify(initial?.retry_policy ?? { mode: 'none' }, null, 2))
     setIsActive(initial?.is_active ?? true)
     setError(null)
-  }, [open, initial, workflows])
+  }, [open, initial, workflows, defaultAssigneeKind, defaultTeamId])
 
   const handleSave = async () => {
     if (!workflowId) {
       setError('Select a workflow')
+      return
+    }
+    if (assigneeKind === 'team' && !assigneeTeamId) {
+      setError('Select a team')
       return
     }
     setSubmitting(true)
