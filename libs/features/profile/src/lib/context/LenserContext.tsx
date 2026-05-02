@@ -9,6 +9,12 @@ import { buildAuthReturnUrl } from '@lenserfight/utils/dom'
 import { AUTH_BASE_URL } from '@lenserfight/utils/env'
 import { storage } from '@lenserfight/utils/storage'
 
+import {
+  clearActiveProfileCaches,
+  clearAllWorkspaceCaches,
+  getStoredActiveWorkspaceId,
+} from '../activeProfileCache'
+
 interface CachedEntry<T> {
   fetchedAt: number
   data: T
@@ -49,10 +55,17 @@ export const LenserProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   const queryClient = useQueryClient()
 
   const cachedProfile = readCache<Lenser>(LENSER_CACHE_KEY)
+  const storedWorkspaceId = getStoredActiveWorkspaceId()
 
-  // Discard cached profile if it belongs to a different user or if data is null
+  // Accept the cached profile when:
+  // 1. It belongs directly to this auth user (human profile: user_id matches), OR
+  // 2. It is an owned AI workspace that the user explicitly switched to
+  //    (AI profiles have user_id=null; we validate via the stored active workspace key)
   const profileInitialData =
-    cachedProfile?.data && user?.id && cachedProfile.data.user_id === user.id
+    cachedProfile?.data && user?.id && (
+      cachedProfile.data.user_id === user.id ||
+      (storedWorkspaceId != null && cachedProfile.data.id === storedWorkspaceId)
+    )
       ? cachedProfile.data
       : undefined
   const profileInitialDataUpdatedAt = profileInitialData ? cachedProfile?.fetchedAt : undefined
@@ -81,6 +94,14 @@ export const LenserProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     if (lenser) writeCache(LENSER_CACHE_KEY, lenser)
   }, [lenser])
 
+  useEffect(() => {
+    if (cachedProfile?.data && user?.id && cachedProfile.data.user_id && cachedProfile.data.user_id !== user.id) {
+      // Different user logged in — wipe all workspace caches including the snapshot
+      // so stale workspace selection from the previous user doesn't bleed through.
+      clearAllWorkspaceCaches()
+    }
+  }, [cachedProfile?.data, user?.id])
+
   // Invalid JWT errors (user deleted in DB) are handled centrally in AuthContext.initAuth.
   // LenserContext only surfaces the error string for UI consumers.
   const error = queryError ? (queryError as Error).message || 'Failed to load profile' : null
@@ -96,6 +117,7 @@ export const LenserProvider: React.FC<{ children: React.ReactNode }> = ({ childr
 
   const loadLenserProfile = async (force = false): Promise<void> => {
     if (force) {
+      clearActiveProfileCaches()
       await queryClient.invalidateQueries({ queryKey: queryKeys.lenser.authenticated() })
     }
   }
