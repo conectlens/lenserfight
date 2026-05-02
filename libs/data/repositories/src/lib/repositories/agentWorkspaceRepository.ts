@@ -1,5 +1,8 @@
 import { supabase } from '@lenserfight/data/supabase'
 import type {
+  AgentOwnershipDelegateRecord,
+  AgentOwnerRole,
+  AgentPermissionScope,
   AgentMemoryProfileRecord,
   AgentModelProfileRecord,
   AgentPersonalityProfileRecord,
@@ -43,9 +46,17 @@ import type {
 
 export interface CreateAgentTeamInput {
   ai_lenser_id: string
-  agent_id: string
   name: string
   description?: string | null
+  status?: 'active' | 'paused'
+  is_active?: boolean
+  initial_members?: Array<{
+    agent_id: string
+    role: string
+    responsibility?: string | null
+    lane?: number
+    sort_order?: number
+  }>
 }
 
 export interface CreateAgentPersonalityProfileInput {
@@ -139,6 +150,13 @@ export interface CreateEvaluationCaseInput {
   tags?: string[]
 }
 
+export interface UpsertAgentOwnershipInput {
+  ai_lenser_id: string
+  owner_lenser_id: string
+  role: AgentOwnerRole
+  permission_scope?: AgentPermissionScope[]
+}
+
 export interface AgentWorkspaceRepositoryPort {
   getWorkspaceBootstrap(handle: string): Promise<AgentWorkspaceBootstrap | null>
   createTeam(input: CreateAgentTeamInput): Promise<AgentTeamRecord | null>
@@ -153,6 +171,9 @@ export interface AgentWorkspaceRepositoryPort {
   decideApproval(input: ApprovalDecisionInput): Promise<ApprovalDecisionResult>
   getHumanActivityFeed(humanLenserId: string, limit?: number, offset?: number): Promise<CrossAgentFeedItem[]>
   getCostSummary(aiLenserId: string): Promise<CostSummary>
+  listAgentOwnerships(aiLenserId: string): Promise<AgentOwnershipDelegateRecord[]>
+  upsertAgentOwnership(input: UpsertAgentOwnershipInput): Promise<AgentOwnershipDelegateRecord>
+  revokeAgentOwnership(ownershipId: string): Promise<void>
 
   // Scratchpad
   listScratchpadRuns(aiLenserId: string, limit?: number): Promise<ScratchpadRunRecord[]>
@@ -267,6 +288,8 @@ export class SupabaseAgentWorkspaceRepository implements AgentWorkspaceRepositor
         ai_lenser_id: input.ai_lenser_id,
         name: input.name,
         description: input.description ?? null,
+        status: input.status ?? 'active',
+        is_active: input.is_active ?? true,
       })
       .select('*')
       .single()
@@ -274,20 +297,26 @@ export class SupabaseAgentWorkspaceRepository implements AgentWorkspaceRepositor
     if (error) throw error
 
     const team = data as AgentTeamRecord
-    const { error: memberError } = await supabase
-      .schema('agents')
-      .from('team_members')
-      .insert({
-        team_id: team.id,
-        agent_id: input.agent_id,
-        role: 'lead',
-        responsibility: 'Primary operator',
-        lane: 0,
-        sort_order: 0,
-        is_active: true,
-      })
 
-    if (memberError) throw memberError
+    if ((input.initial_members ?? []).length > 0) {
+      const { error: memberError } = await supabase
+        .schema('agents')
+        .from('team_members')
+        .insert(
+          (input.initial_members ?? []).map((member, index) => ({
+            team_id: team.id,
+            agent_id: member.agent_id,
+            role: member.role,
+            responsibility: member.responsibility ?? null,
+            lane: member.lane ?? 0,
+            sort_order: member.sort_order ?? index,
+            is_active: true,
+          }))
+        )
+
+      if (memberError) throw memberError
+    }
+
     return team
   }
 
@@ -509,6 +538,34 @@ export class SupabaseAgentWorkspaceRepository implements AgentWorkspaceRepositor
         votes_used: row.votes_used,
       })),
     }
+  }
+
+  async listAgentOwnerships(aiLenserId: string): Promise<AgentOwnershipDelegateRecord[]> {
+    const { data, error } = await supabase.rpc('fn_list_agent_ownerships', {
+      p_ai_lenser_id: aiLenserId,
+    })
+    if (error) throw error
+    return (data ?? []) as AgentOwnershipDelegateRecord[]
+  }
+
+  async upsertAgentOwnership(
+    input: UpsertAgentOwnershipInput
+  ): Promise<AgentOwnershipDelegateRecord> {
+    const { data, error } = await supabase.rpc('fn_upsert_agent_ownership', {
+      p_ai_lenser_id: input.ai_lenser_id,
+      p_owner_lenser_id: input.owner_lenser_id,
+      p_role: input.role,
+      p_permission_scope: input.permission_scope ?? [],
+    })
+    if (error) throw error
+    return data as AgentOwnershipDelegateRecord
+  }
+
+  async revokeAgentOwnership(ownershipId: string): Promise<void> {
+    const { error } = await supabase.rpc('fn_revoke_agent_ownership', {
+      p_ownership_id: ownershipId,
+    })
+    if (error) throw error
   }
 
   // ─── Scratchpad ────────────────────────────────────────────────────────────

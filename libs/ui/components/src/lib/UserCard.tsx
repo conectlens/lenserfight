@@ -30,7 +30,7 @@ export interface UserCardProps {
   variant?: 'compact' | 'expanded'
   className?: string
   workspaces?: WorkspaceIdentity[]
-  onSwitchWorkspace?: (lenserProfileId: string) => void
+  onSwitchWorkspace?: (lenserProfileId: string) => void | Promise<void>
 }
 
 function WorkspaceSwitchList({
@@ -38,7 +38,7 @@ function WorkspaceSwitchList({
   onSelect,
 }: {
   workspaces: WorkspaceIdentity[]
-  onSelect: (workspaceId: string) => void
+  onSelect: (workspaceId: string) => void | Promise<void>
 }) {
   return (
     <div className="border-t border-gray-100 dark:border-gray-700 py-1">
@@ -111,6 +111,18 @@ export const UserCard: React.FC<UserCardProps> = ({
       setSigningOut(false)
       setOpen(false)
     }
+  }
+
+  const handleWorkspaceSelect = (workspaceId: string) => {
+    if (!onSwitchWorkspace) return
+
+    const result = onSwitchWorkspace(workspaceId)
+    if (result && typeof (result as Promise<void>).then === 'function') {
+      void Promise.resolve(result).finally(() => setOpen(false))
+      return
+    }
+
+    setOpen(false)
   }
 
   if (!user) {
@@ -196,7 +208,7 @@ export const UserCard: React.FC<UserCardProps> = ({
           <div className="pt-2 border-t border-gray-100 dark:border-gray-700">
             <WorkspaceSwitchList
               workspaces={workspaces}
-              onSelect={(workspaceId) => onSwitchWorkspace(workspaceId)}
+              onSelect={handleWorkspaceSelect}
             />
           </div>
         )}
@@ -268,10 +280,7 @@ export const UserCard: React.FC<UserCardProps> = ({
           {canSwitchWorkspace && (
             <WorkspaceSwitchList
               workspaces={workspaces}
-              onSelect={(workspaceId) => {
-                onSwitchWorkspace(workspaceId)
-                setOpen(false)
-              }}
+              onSelect={handleWorkspaceSelect}
             />
           )}
 
