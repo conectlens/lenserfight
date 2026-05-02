@@ -20,7 +20,13 @@ import { Avatar, Logo } from '@lenserfight/ui/components'
 import { notificationService } from '@lenserfight/data/repositories'
 import { useAuth } from '@lenserfight/features/auth'
 import { FeedbackModal } from '@lenserfight/features/feedback'
-import { useLenser, useSidebarProfile, useHasLenserProfile, useLenserWorkspace } from '@lenserfight/features/profile'
+import {
+  useLenser,
+  useSidebarProfile,
+  useHasLenserProfile,
+  useLenserWorkspace,
+  useWorkspaceSwitchController,
+} from '@lenserfight/features/profile'
 import { AgentSettingsSheet } from '@lenserfight/features/agents'
 import { FEATURES } from '@lenserfight/utils/env'
 import { useTheme } from '@lenserfight/ui/theme'
@@ -80,14 +86,16 @@ export const Sidebar: React.FC<SidebarProps> = ({
   const { themeMode, setTheme } = useTheme()
   const nextTheme = THEME_CYCLE[(THEME_CYCLE.indexOf(themeMode) + 1) % THEME_CYCLE.length]
 
-  // Use optimized hook for display data (XP, Level, Fresh Avatar)
-  const { profile: compactProfile } = useSidebarProfile(authLenser?.handle)
-
   // All lenser profiles (human + owned AI agents) for workspace switcher
-  const { workspaces, activeWorkspace, switchWorkspace } = useLenserWorkspace()
+  const { workspaces, activeWorkspace } = useLenserWorkspace()
+  const { switchToProfile } = useWorkspaceSwitchController()
+  const { profile: compactProfile } = useSidebarProfile(
+    activeWorkspace?.handle ?? authLenser?.handle,
+    activeWorkspace?.id ?? authLenser?.id
+  )
 
   // Fallback to authLenser if compact fetch hasn't populated yet to prevent empty state
-  const displayProfile = compactProfile || authLenser
+  const displayProfile = compactProfile || activeWorkspace || authLenser
 
   // Auth-gating helpers for nav items that require a Lenser profile
   const isNavLocked = !hasLenser && !isLenserLoading
@@ -492,8 +500,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                               }`}
                             onClick={async () => {
                               setIsSwitcherOpen(false)
-                              await switchWorkspace(profile.id)
-                              navigate(`/lenser/${profile.handle}`)
+                              await switchToProfile(profile)
                             }}
                           >
                             <div className="relative flex-shrink-0">
