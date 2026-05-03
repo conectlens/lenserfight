@@ -165,10 +165,11 @@ ON CONFLICT (id) DO UPDATE SET
 -- =============================================================================
 -- 4. AI PROVIDERS
 -- =============================================================================
--- Refactored:
--- - Seeds base_url and docs_url
--- - Uses a single source CTE for insert/update
--- - Keeps same upsert semantics
+-- Normalized provider catalog for LenserFight.
+-- Notes:
+-- - keys match LenserFight runtime/provider conventions
+-- - support_level communicates repo-truth, not upstream marketing
+-- - metadata carries provenance and compatibility information
 
 WITH provider_seed AS (
   SELECT *
@@ -178,66 +179,382 @@ WITH provider_seed AS (
         'openai',
         'OpenAI',
         'https://api.openai.com/v1',
-        'https://developers.openai.com/api/docs/',
-        true
+        'https://docs.openclaw.ai/providers/openai',
+        'runnable',
+        'openai',
+        true,
+        jsonb_build_object(
+          'source_url', 'https://docs.openclaw.ai/providers/openai',
+          'source_checked_at', '2026-04-27',
+          'gateway_compatible', true,
+          'platforms', jsonb_build_array('web', 'cli', 'gateway'),
+          'auth_modes', jsonb_build_array('api_key', 'oauth'),
+          'runtime_provider_key', 'openai'
+        )
       ),
       (
         'anthropic',
         'Anthropic',
         'https://api.anthropic.com',
-        'https://docs.anthropic.com/en/docs/get-started',
-        true
+        'https://docs.openclaw.ai/providers/anthropic',
+        'runnable',
+        'anthropic',
+        true,
+        jsonb_build_object(
+          'source_url', 'https://docs.openclaw.ai/providers/anthropic',
+          'source_checked_at', '2026-04-27',
+          'gateway_compatible', true,
+          'platforms', jsonb_build_array('web', 'cli', 'gateway'),
+          'auth_modes', jsonb_build_array('api_key'),
+          'runtime_provider_key', 'anthropic'
+        )
       ),
       (
         'google',
-        'Google',
+        'Google Gemini',
         'https://generativelanguage.googleapis.com',
-        'https://ai.google.dev/gemini-api/docs',
-        true
+        'https://docs.openclaw.ai/providers/google',
+        'runnable',
+        'google',
+        true,
+        jsonb_build_object(
+          'source_url', 'https://docs.openclaw.ai/providers/google',
+          'source_checked_at', '2026-04-27',
+          'gateway_compatible', true,
+          'platforms', jsonb_build_array('web', 'cli', 'gateway'),
+          'auth_modes', jsonb_build_array('api_key'),
+          'runtime_provider_key', 'google'
+        )
       ),
       (
         'mistral',
         'Mistral AI',
         'https://api.mistral.ai/v1',
-        'https://docs.mistral.ai/api',
-        true
+        'https://docs.openclaw.ai/providers/mistral',
+        'runnable',
+        'mistral',
+        true,
+        jsonb_build_object(
+          'source_url', 'https://docs.openclaw.ai/providers/mistral',
+          'source_checked_at', '2026-04-27',
+          'gateway_compatible', true,
+          'platforms', jsonb_build_array('web', 'cli', 'gateway'),
+          'auth_modes', jsonb_build_array('api_key'),
+          'runtime_provider_key', 'mistral'
+        )
       ),
       (
-        'local',
-        'Local / Ollama',
+        'ollama',
+        'Ollama',
         'http://localhost:11434/api',
-        'https://docs.ollama.com/api/introduction',
-        true
+        'https://docs.openclaw.ai/providers/ollama',
+        'runnable',
+        'ollama',
+        true,
+        jsonb_build_object(
+          'source_url', 'https://docs.openclaw.ai/providers/ollama',
+          'source_checked_at', '2026-04-27',
+          'gateway_compatible', true,
+          'platforms', jsonb_build_array('web', 'cli', 'gateway', 'local'),
+          'auth_modes', jsonb_build_array('local'),
+          'runtime_provider_key', 'ollama',
+          'aliases', jsonb_build_array('local')
+        )
+      ),
+      (
+        'fal',
+        'fal.ai',
+        'https://fal.run',
+        'https://docs.openclaw.ai/providers/fal',
+        'runnable',
+        'fal',
+        true,
+        jsonb_build_object(
+          'source_url', 'https://docs.openclaw.ai/providers/fal',
+          'source_checked_at', '2026-04-27',
+          'gateway_compatible', true,
+          'platforms', jsonb_build_array('web', 'cli'),
+          'auth_modes', jsonb_build_array('api_key'),
+          'runtime_provider_key', 'fal'
+        )
+      ),
+      (
+        'stability',
+        'Stability AI',
+        'https://api.stability.ai',
+        'https://platform.stability.ai/docs/api-reference',
+        'runnable',
+        'stability',
+        true,
+        jsonb_build_object(
+          'source_url', 'https://platform.stability.ai/docs/api-reference',
+          'source_checked_at', '2026-04-27',
+          'gateway_compatible', false,
+          'platforms', jsonb_build_array('web', 'cli'),
+          'auth_modes', jsonb_build_array('api_key'),
+          'runtime_provider_key', 'stability'
+        )
+      ),
+      (
+        'elevenlabs',
+        'ElevenLabs',
+        'https://api.elevenlabs.io',
+        'https://docs.openclaw.ai/providers/elevenlabs',
+        'runnable',
+        'elevenlabs',
+        true,
+        jsonb_build_object(
+          'source_url', 'https://docs.openclaw.ai/providers/elevenlabs',
+          'source_checked_at', '2026-04-27',
+          'gateway_compatible', false,
+          'platforms', jsonb_build_array('web', 'cli'),
+          'auth_modes', jsonb_build_array('api_key'),
+          'runtime_provider_key', 'elevenlabs'
+        )
+      ),
+      (
+        'kling',
+        'Kling AI',
+        'https://api.klingai.com',
+        'https://klingai.com/docs',
+        'runnable',
+        'kling',
+        true,
+        jsonb_build_object(
+          'source_url', 'https://klingai.com/docs',
+          'source_checked_at', '2026-04-27',
+          'gateway_compatible', false,
+          'platforms', jsonb_build_array('web', 'cli'),
+          'auth_modes', jsonb_build_array('api_key'),
+          'runtime_provider_key', 'kling'
+        )
+      ),
+      (
+        'suno',
+        'Suno',
+        'https://api.sunoapi.org',
+        'https://suno.com/docs',
+        'runnable',
+        'suno',
+        true,
+        jsonb_build_object(
+          'source_url', 'https://suno.com/docs',
+          'source_checked_at', '2026-04-27',
+          'gateway_compatible', false,
+          'platforms', jsonb_build_array('web', 'cli'),
+          'auth_modes', jsonb_build_array('api_key'),
+          'runtime_provider_key', 'suno'
+        )
+      ),
+      (
+        'openrouter',
+        'OpenRouter',
+        'https://openrouter.ai/api/v1',
+        'https://docs.openclaw.ai/providers/openrouter',
+        'byok_only',
+        'openrouter',
+        true,
+        jsonb_build_object(
+          'source_url', 'https://docs.openclaw.ai/providers/openrouter',
+          'source_checked_at', '2026-04-27',
+          'gateway_compatible', true,
+          'platforms', jsonb_build_array('catalog', 'cli'),
+          'auth_modes', jsonb_build_array('api_key'),
+          'runtime_provider_key', null
+        )
+      ),
+      (
+        'perplexity',
+        'Perplexity',
+        'https://api.perplexity.ai',
+        'https://docs.openclaw.ai/providers/perplexity',
+        'byok_only',
+        'perplexity',
+        true,
+        jsonb_build_object(
+          'source_url', 'https://docs.openclaw.ai/providers/perplexity',
+          'source_checked_at', '2026-04-27',
+          'gateway_compatible', true,
+          'platforms', jsonb_build_array('catalog', 'cli'),
+          'auth_modes', jsonb_build_array('api_key'),
+          'runtime_provider_key', null
+        )
+      ),
+      (
+        'xai',
+        'xAI',
+        'https://api.x.ai/v1',
+        'https://docs.openclaw.ai/providers/xai',
+        'byok_only',
+        'xai',
+        true,
+        jsonb_build_object(
+          'source_url', 'https://docs.openclaw.ai/providers/xai',
+          'source_checked_at', '2026-04-27',
+          'gateway_compatible', true,
+          'platforms', jsonb_build_array('catalog', 'cli'),
+          'auth_modes', jsonb_build_array('api_key'),
+          'runtime_provider_key', null
+        )
+      ),
+      (
+        'groq',
+        'Groq',
+        'https://api.groq.com/openai/v1',
+        'https://docs.openclaw.ai/providers/groq',
+        'catalog_only',
+        'groq',
+        true,
+        jsonb_build_object(
+          'source_url', 'https://docs.openclaw.ai/providers/groq',
+          'source_checked_at', '2026-04-27',
+          'gateway_compatible', true,
+          'platforms', jsonb_build_array('catalog'),
+          'auth_modes', jsonb_build_array('api_key'),
+          'runtime_provider_key', null
+        )
+      ),
+      (
+        'deepseek',
+        'DeepSeek',
+        'https://api.deepseek.com',
+        'https://docs.openclaw.ai/providers/deepseek',
+        'catalog_only',
+        'deepseek',
+        true,
+        jsonb_build_object(
+          'source_url', 'https://docs.openclaw.ai/providers/deepseek',
+          'source_checked_at', '2026-04-27',
+          'gateway_compatible', true,
+          'platforms', jsonb_build_array('catalog'),
+          'auth_modes', jsonb_build_array('api_key'),
+          'runtime_provider_key', null
+        )
+      ),
+      (
+        'bedrock',
+        'Amazon Bedrock',
+        'https://bedrock-runtime.us-east-1.amazonaws.com',
+        'https://docs.openclaw.ai/providers/amazon-bedrock',
+        'catalog_only',
+        'bedrock',
+        true,
+        jsonb_build_object(
+          'source_url', 'https://docs.openclaw.ai/providers',
+          'source_checked_at', '2026-04-27',
+          'gateway_compatible', true,
+          'platforms', jsonb_build_array('catalog'),
+          'auth_modes', jsonb_build_array('aws'),
+          'runtime_provider_key', null
+        )
+      ),
+      (
+        'runway',
+        'Runway',
+        'https://api.dev.runwayml.com',
+        'https://docs.openclaw.ai/providers/runway',
+        'catalog_only',
+        'runway',
+        true,
+        jsonb_build_object(
+          'source_url', 'https://docs.openclaw.ai/providers/runway',
+          'source_checked_at', '2026-04-27',
+          'gateway_compatible', true,
+          'platforms', jsonb_build_array('catalog'),
+          'auth_modes', jsonb_build_array('api_key'),
+          'runtime_provider_key', null
+        )
+      ),
+      (
+        'litellm',
+        'LiteLLM',
+        'https://litellm.ai',
+        'https://docs.openclaw.ai/providers/litellm',
+        'catalog_only',
+        'litellm',
+        true,
+        jsonb_build_object(
+          'source_url', 'https://docs.openclaw.ai/providers/litellm',
+          'source_checked_at', '2026-04-27',
+          'gateway_compatible', true,
+          'platforms', jsonb_build_array('catalog', 'gateway'),
+          'auth_modes', jsonb_build_array('proxy'),
+          'runtime_provider_key', null
+        )
+      ),
+      (
+        'lmstudio',
+        'LM Studio',
+        'http://localhost:1234/v1',
+        'https://docs.openclaw.ai/providers/lm-studio',
+        'catalog_only',
+        'lmstudio',
+        true,
+        jsonb_build_object(
+          'source_url', 'https://docs.openclaw.ai/providers/lm-studio',
+          'source_checked_at', '2026-04-27',
+          'gateway_compatible', true,
+          'platforms', jsonb_build_array('catalog', 'local'),
+          'auth_modes', jsonb_build_array('local'),
+          'runtime_provider_key', null
+        )
+      ),
+      (
+        'midjourney',
+        'Midjourney',
+        'https://api.midjourney.com',
+        'https://docs.midjourney.com',
+        'deprecated',
+        'midjourney',
+        false,
+        jsonb_build_object(
+          'source_url', 'https://docs.midjourney.com',
+          'source_checked_at', '2026-04-27',
+          'gateway_compatible', false,
+          'platforms', jsonb_build_array('catalog'),
+          'auth_modes', jsonb_build_array('api_key'),
+          'runtime_provider_key', 'midjourney'
+        )
       )
   ) AS t(
     key,
     display_name,
     base_url,
     docs_url,
-    is_active
+    support_level,
+    logo_slug,
+    is_active,
+    metadata
   )
 )
-
--- Upsert: insert new rows, update existing rows on key conflict
 INSERT INTO ai.providers (
   key,
   display_name,
   base_url,
   docs_url,
-  is_active
+  support_level,
+  logo_slug,
+  is_active,
+  metadata
 )
 SELECT
   ps.key,
   ps.display_name,
   ps.base_url,
   ps.docs_url,
-  ps.is_active
+  ps.support_level,
+  ps.logo_slug,
+  ps.is_active,
+  ps.metadata
 FROM provider_seed ps
 ON CONFLICT (key) DO UPDATE SET
-  display_name = EXCLUDED.display_name,
-  base_url     = EXCLUDED.base_url,
-  docs_url     = EXCLUDED.docs_url,
-  is_active    = EXCLUDED.is_active;
+  display_name  = EXCLUDED.display_name,
+  base_url      = EXCLUDED.base_url,
+  docs_url      = EXCLUDED.docs_url,
+  support_level = EXCLUDED.support_level,
+  logo_slug     = EXCLUDED.logo_slug,
+  is_active     = EXCLUDED.is_active,
+  metadata      = EXCLUDED.metadata;
 
 
 -- >>> seeds/04b_ai_models.sql
@@ -530,6 +847,154 @@ WITH model_seed AS (
         false,
         'https://docs.mistral.ai/models/magistral-small-1-2-25-09',
         false
+      ),
+
+      -- -----------------------------------------------------------------------
+      -- OpenAI generative media models
+      -- -----------------------------------------------------------------------
+      (
+        'DALL-E 4',
+        ARRAY['image_generation']::text[],
+        'dall-e-4',
+        'openai',
+        0,
+        false,
+        false,
+        false,
+        'https://platform.openai.com/docs/models/dall-e',
+        true
+      ),
+      (
+        'Sora 2.0',
+        ARRAY['video_generation']::text[],
+        'sora-2.0',
+        'openai',
+        0,
+        false,
+        false,
+        false,
+        'https://platform.openai.com/docs/models/sora',
+        true
+      ),
+
+      -- -----------------------------------------------------------------------
+      -- Google generative media models
+      -- -----------------------------------------------------------------------
+      (
+        'Imagen 4',
+        ARRAY['image_generation']::text[],
+        'imagen-4',
+        'google',
+        0,
+        false,
+        false,
+        false,
+        'https://cloud.google.com/vertex-ai/generative-ai/docs/image/overview',
+        true
+      ),
+      (
+        'Veo 3',
+        ARRAY['video_generation']::text[],
+        'veo-3',
+        'google',
+        0,
+        false,
+        false,
+        false,
+        'https://cloud.google.com/vertex-ai/generative-ai/docs/video/overview',
+        true
+      ),
+      (
+        'Lyria 2',
+        ARRAY['audio_generation','music_generation']::text[],
+        'lyria-2',
+        'google',
+        0,
+        false,
+        false,
+        false,
+        'https://deepmind.google/technologies/lyria/',
+        true
+      ),
+
+      -- -----------------------------------------------------------------------
+      -- Stability AI models (image generation)
+      -- -----------------------------------------------------------------------
+      (
+        'Stable Diffusion 4',
+        ARRAY['image_generation']::text[],
+        'stable-diffusion-4',
+        'stability',
+        0,
+        false,
+        false,
+        false,
+        'https://stability.ai/stable-diffusion',
+        true
+      ),
+
+      -- -----------------------------------------------------------------------
+      -- ElevenLabs (audio / TTS)
+      -- -----------------------------------------------------------------------
+      (
+        'ElevenLabs v4',
+        ARRAY['audio_generation']::text[],
+        'elevenlabs-v4',
+        'elevenlabs',
+        0,
+        false,
+        false,
+        false,
+        'https://elevenlabs.io/docs/api-reference/text-to-speech',
+        true
+      ),
+
+      -- -----------------------------------------------------------------------
+      -- Midjourney (image generation)
+      -- -----------------------------------------------------------------------
+      (
+        'Midjourney 7',
+        ARRAY['image_generation']::text[],
+        'midjourney-7',
+        'midjourney',
+        0,
+        false,
+        false,
+        false,
+        'https://www.midjourney.com',
+        false
+      ),
+
+      -- -----------------------------------------------------------------------
+      -- Kling (video generation)
+      -- -----------------------------------------------------------------------
+      (
+        'Kling 2.0',
+        ARRAY['video_generation']::text[],
+        'kling-2.0',
+        'kling',
+        0,
+        false,
+        false,
+        false,
+        'https://klingai.com',
+        true
+      ),
+
+      -- -----------------------------------------------------------------------
+      -- Suno (music generation)
+      -- -----------------------------------------------------------------------
+      (
+        'Suno v5',
+        ARRAY['audio_generation','music_generation']::text[],
+        'suno-v5',
+        'suno',
+        0,
+        false,
+        false,
+        false,
+        'https://suno.com',
+        true
       )
   ) AS t(
     name,
@@ -611,6 +1076,321 @@ WHERE key IN (
   'gemini-3.1-pro-preview',
   'gemini-3.1-flash-lite-preview'
 );
+
+-- ---------------------------------------------------------------------------
+-- Patch input/output modalities for all existing text models
+-- (ensures CapabilityMapper.validate() works correctly on every model)
+-- ---------------------------------------------------------------------------
+UPDATE ai.models
+SET
+  input_modalities  = COALESCE(NULLIF(input_modalities, '{}'), ARRAY['text']),
+  output_modalities = COALESCE(NULLIF(output_modalities, '{}'), ARRAY['text'])
+WHERE
+  (input_modalities IS NULL OR input_modalities = '{}')
+  OR (output_modalities IS NULL OR output_modalities = '{}');
+
+-- Vision-capable text models also accept image inputs
+UPDATE ai.models
+SET input_modalities = ARRAY['text','image','document']
+WHERE supports_vision = true
+  AND NOT (input_modalities @> ARRAY['image']);
+
+-- ---------------------------------------------------------------------------
+-- Set input/output modalities for generative media models
+-- ---------------------------------------------------------------------------
+UPDATE ai.models SET
+  input_modalities  = ARRAY['text'],
+  output_modalities = ARRAY['image'],
+  context_window_tokens = 0
+WHERE key IN ('dall-e-4','imagen-4','stable-diffusion-4','midjourney-7');
+
+-- Image-to-image capable (accept image input as reference)
+UPDATE ai.models SET
+  input_modalities  = ARRAY['text','image'],
+  output_modalities = ARRAY['image'],
+  context_window_tokens = 0
+WHERE key IN ('stable-diffusion-4');
+
+UPDATE ai.models SET
+  input_modalities  = ARRAY['text'],
+  output_modalities = ARRAY['video'],
+  context_window_tokens = 0
+WHERE key IN ('sora-2.0','veo-3','kling-2.0');
+
+UPDATE ai.models SET
+  input_modalities  = ARRAY['text'],
+  output_modalities = ARRAY['audio'],
+  context_window_tokens = 0
+WHERE key IN ('elevenlabs-v4','lyria-2','suno-v5');
+
+-- ---------------------------------------------------------------------------
+-- Catalog enrichment for LenserFight AI showroom / CLI
+-- ---------------------------------------------------------------------------
+WITH extra_model_seed AS (
+  SELECT *
+  FROM (
+    VALUES
+      (
+        'Llama 3.2 3B Instruct',
+        ARRAY['chat']::text[],
+        'llama3.2:3b-instruct',
+        'ollama',
+        131072,
+        false,
+        false,
+        false,
+        'https://docs.openclaw.ai/providers/ollama',
+        true
+      ),
+      (
+        'Qwen 2.5 7B Instruct',
+        ARRAY['chat','tools']::text[],
+        'qwen2.5:7b-instruct',
+        'ollama',
+        131072,
+        true,
+        false,
+        false,
+        'https://docs.openclaw.ai/providers/ollama',
+        true
+      )
+  ) AS t(
+    name,
+    capabilities,
+    key,
+    provider_key,
+    context_window_tokens,
+    supports_tools,
+    supports_json_schema,
+    supports_vision,
+    provider_url,
+    is_active
+  )
+),
+extra_resolved AS (
+  SELECT
+    ems.name,
+    ems.capabilities,
+    ems.key,
+    p.id AS provider_id,
+    ems.context_window_tokens,
+    ems.supports_tools,
+    ems.supports_json_schema,
+    ems.supports_vision,
+    ems.provider_url,
+    ems.is_active
+  FROM extra_model_seed ems
+  JOIN ai.providers p
+    ON p.key = ems.provider_key
+)
+INSERT INTO ai.models (
+  name,
+  capabilities,
+  key,
+  provider_id,
+  context_window_tokens,
+  supports_tools,
+  supports_json_schema,
+  supports_vision,
+  provider_url,
+  is_active
+)
+SELECT
+  er.name,
+  er.capabilities,
+  er.key,
+  er.provider_id,
+  er.context_window_tokens,
+  er.supports_tools,
+  er.supports_json_schema,
+  er.supports_vision,
+  er.provider_url,
+  er.is_active
+FROM extra_resolved er
+ON CONFLICT (key) DO UPDATE SET
+  name                  = EXCLUDED.name,
+  capabilities          = EXCLUDED.capabilities,
+  provider_id           = EXCLUDED.provider_id,
+  context_window_tokens = EXCLUDED.context_window_tokens,
+  supports_tools        = EXCLUDED.supports_tools,
+  supports_json_schema  = EXCLUDED.supports_json_schema,
+  supports_vision       = EXCLUDED.supports_vision,
+  provider_url          = EXCLUDED.provider_url,
+  is_active             = EXCLUDED.is_active;
+
+UPDATE ai.models m
+SET
+  docs_url = COALESCE(m.docs_url, m.provider_url),
+  support_level = COALESCE(
+    CASE
+      WHEN p.support_level = 'deprecated' THEN 'deprecated'
+      WHEN p.support_level = 'catalog_only' THEN 'catalog_only'
+      WHEN p.support_level = 'byok_only' THEN 'byok_only'
+      ELSE 'runnable'
+    END,
+    'catalog_only'
+  ),
+  supports_streaming = (
+    m.supports_tools
+    OR p.key IN ('openai', 'anthropic', 'google', 'mistral', 'ollama')
+  ),
+  status = CASE
+    WHEN m.key ILIKE '%preview%' THEN 'preview'
+    WHEN p.support_level = 'deprecated' THEN 'deprecated'
+    WHEN m.is_active = false THEN 'legacy'
+    ELSE 'active'
+  END,
+  use_cases = CASE
+    WHEN m.output_modalities @> ARRAY['video']::text[] THEN ARRAY['video_generation', 'storyboards', 'motion_concepts']
+    WHEN m.output_modalities @> ARRAY['image']::text[] THEN ARRAY['image_generation', 'creative_direction', 'concept_art']
+    WHEN m.output_modalities @> ARRAY['audio']::text[] THEN ARRAY['audio_generation', 'voiceover', 'music']
+    WHEN m.capabilities @> ARRAY['reasoning']::text[] THEN ARRAY['research', 'planning', 'code_review']
+    WHEN m.supports_tools THEN ARRAY['automation', 'agents', 'structured_tasks']
+    ELSE ARRAY['chat', 'summaries', 'classification']
+  END,
+  description = CASE
+    WHEN COALESCE(nullif(trim(m.description), ''), '') <> '' THEN m.description
+    WHEN m.output_modalities @> ARRAY['video']::text[] THEN m.name || ' is a video generation model in the LenserFight catalog.'
+    WHEN m.output_modalities @> ARRAY['image']::text[] THEN m.name || ' is an image generation model in the LenserFight catalog.'
+    WHEN m.output_modalities @> ARRAY['audio']::text[] THEN m.name || ' is an audio generation model in the LenserFight catalog.'
+    ELSE m.name || ' is a text-first model available in the LenserFight AI catalog.'
+  END,
+  user_summary = CASE
+    WHEN m.output_modalities @> ARRAY['video']::text[] THEN
+      m.name || ' is best when you want to turn an idea into a video draft quickly. It is strong for concept clips, animated explainers, and creative visual experiments, but it is not the right choice for exact factual reasoning or long text tasks.'
+    WHEN m.output_modalities @> ARRAY['image']::text[] THEN
+      m.name || ' is best for turning prompts into visual concepts, illustrations, and polished image variations. It works well for inspiration and creative production, but it is not intended for heavy document reasoning or workflow orchestration.'
+    WHEN m.output_modalities @> ARRAY['audio']::text[] THEN
+      m.name || ' is best for spoken audio, music, or sound-forward workflows. Use it when the output should be heard rather than read, and avoid it for text-heavy analysis.'
+    WHEN m.capabilities @> ARRAY['reasoning']::text[] THEN
+      m.name || ' is best for tasks where the model needs to think through several steps before answering. It is a good fit for planning, research, and code-heavy work, but usually costs more and responds more slowly than lighter models.'
+    WHEN m.supports_tools THEN
+      m.name || ' is best for interactive assistants and automations that need to call tools, follow structure, and work inside workflows. It is a practical default for agent-style product features.'
+    ELSE
+      m.name || ' is best for everyday chat, drafting, extraction, and light summaries. It is easy to use and often faster, but it is not the strongest option for complex multi-step reasoning.'
+  END,
+  developer_summary = CASE
+    WHEN m.output_modalities @> ARRAY['video']::text[] THEN
+      'Strengths: motion generation and creative prototyping. Limitations: async execution, higher cost, weak structured output. Recommended workflows: storyboard generation, marketing concept clips, visual iteration. Avoid for factual QA or JSON-first automation.'
+    WHEN m.output_modalities @> ARRAY['image']::text[] THEN
+      'Strengths: prompt-to-image generation, art direction, concept exploration. Limitations: weaker determinism and no long-context reasoning. Recommended workflows: thumbnail generation, creative mockups, campaign visuals. Avoid when a workflow needs tool use or precise structured outputs.'
+    WHEN m.output_modalities @> ARRAY['audio']::text[] THEN
+      'Strengths: audio-first output, narration, music or voice pipelines. Limitations: poor fit for text reasoning and document analysis. Recommended workflows: TTS, soundtrack drafts, voice assets. Avoid for planning-heavy agents.'
+    WHEN m.capabilities @> ARRAY['reasoning']::text[] THEN
+      'Strengths: deeper reasoning, planning, code review, and long-context analysis. Limitations: higher latency and cost. Recommended workflows: orchestrators, reviewers, research agents, complex workflow nodes. Avoid for cheap high-volume classification.'
+    WHEN m.supports_tools THEN
+      'Strengths: tool calling, workflow orchestration, and structured assistant behavior. Limitations: not always the cheapest model for bulk generation. Recommended workflows: agents, operators, and task runners. Avoid when you only need plain text generation without tool access.'
+    ELSE
+      'Strengths: low-friction chat, summarization, extraction, and support responses. Limitations: lighter reasoning depth and fewer orchestration features. Recommended workflows: drafts, triage, lightweight assistants. Avoid for complex agent planning or multimodal pipelines.'
+  END,
+  metadata = jsonb_strip_nulls(
+    jsonb_build_object(
+      'source_url', COALESCE(m.docs_url, m.provider_url, p.docs_url),
+      'source_checked_at', '2026-04-27',
+      'provider_key', p.key,
+      'provider_support_level', p.support_level,
+      'gateway_compatible', COALESCE((p.metadata ->> 'gateway_compatible')::boolean, false),
+      'platforms', COALESCE(p.metadata -> 'platforms', '[]'::jsonb),
+      'auth_modes', COALESCE(p.metadata -> 'auth_modes', '[]'::jsonb),
+      'pricing', jsonb_build_object(
+        'notes',
+        CASE
+          WHEN p.support_level = 'runnable' THEN 'Pricing varies by provider plan and should be confirmed against the upstream docs before production billing decisions.'
+          ELSE 'Catalog-only pricing reference. Validate upstream billing before wiring runtime execution.'
+        END
+      )
+    )
+  )
+FROM ai.providers p
+WHERE p.id = m.provider_id;
+
+
+-- >>> seeds/04c_ai_model_pricing.sql
+-- =============================================================================
+-- 4C. AI MODEL PRICING SNAPSHOT
+-- =============================================================================
+-- Local seed snapshot used by the agent control room to sort models by cost.
+-- Models without a row remain visible in the UI and render as "Pricing unavailable".
+
+DELETE FROM ai.model_pricing;
+
+WITH pricing_seed AS (
+  SELECT *
+  FROM (
+    VALUES
+      ('openai', 'gpt-5.2', 'tokens', NULL::numeric, 0.01000000::numeric, 0.03000000::numeric),
+      ('openai', 'gpt-4o', 'tokens', NULL::numeric, 0.00500000::numeric, 0.01500000::numeric),
+      ('openai', 'gpt-5.4', 'tokens', NULL::numeric, 0.01200000::numeric, 0.03600000::numeric),
+      ('openai', 'gpt-5.4-mini', 'tokens', NULL::numeric, 0.00200000::numeric, 0.00800000::numeric),
+      ('openai', 'gpt-5.4-nano', 'tokens', NULL::numeric, 0.00050000::numeric, 0.00200000::numeric),
+      ('openai', 'gpt-5.4-pro', 'tokens', NULL::numeric, 0.03000000::numeric, 0.12000000::numeric),
+
+      ('anthropic', 'claude-opus-4-6', 'tokens', NULL::numeric, 0.01500000::numeric, 0.07500000::numeric),
+      ('anthropic', 'claude-sonnet-4-6', 'tokens', NULL::numeric, 0.00300000::numeric, 0.01500000::numeric),
+      ('anthropic', 'claude-haiku-4-5', 'tokens', NULL::numeric, 0.00080000::numeric, 0.00400000::numeric),
+      ('anthropic', 'claude-sonnet-4-5', 'tokens', NULL::numeric, 0.00300000::numeric, 0.01500000::numeric),
+      ('anthropic', 'claude-sonnet-4-0', 'tokens', NULL::numeric, 0.00300000::numeric, 0.01500000::numeric),
+      ('anthropic', 'claude-haiku-3-5', 'tokens', NULL::numeric, 0.00080000::numeric, 0.00400000::numeric),
+
+      ('google', 'gemini-2.5-pro', 'tokens', NULL::numeric, 0.00350000::numeric, 0.01050000::numeric),
+      ('google', 'gemini-2.5-flash', 'tokens', NULL::numeric, 0.00035000::numeric, 0.00105000::numeric),
+      ('google', 'gemini-3-pro-preview', 'tokens', NULL::numeric, 0.00400000::numeric, 0.01200000::numeric),
+      ('google', 'gemini-3-flash-preview', 'tokens', NULL::numeric, 0.00040000::numeric, 0.00120000::numeric),
+      ('google', 'gemini-2.5-flash-lite', 'tokens', NULL::numeric, 0.00010000::numeric, 0.00040000::numeric),
+      ('google', 'gemini-3.1-pro-preview', 'tokens', NULL::numeric, 0.00450000::numeric, 0.01350000::numeric),
+      ('google', 'gemini-3.1-flash-lite-preview', 'tokens', NULL::numeric, 0.00012000::numeric, 0.00045000::numeric),
+
+      ('mistral', 'mistral-large-3', 'tokens', NULL::numeric, 0.00200000::numeric, 0.00600000::numeric),
+      ('mistral', 'magistral-medium-1.2', 'tokens', NULL::numeric, 0.00100000::numeric, 0.00300000::numeric),
+      ('mistral', 'magistral-small-1.2', 'tokens', NULL::numeric, 0.00020000::numeric, 0.00060000::numeric),
+
+      ('openai', 'dall-e-4', 'image', 0.0800000000::numeric, 0::numeric, 0::numeric),
+      ('openai', 'sora-2.0', 'video_second', 0.2500000000::numeric, 0::numeric, 0::numeric),
+      ('google', 'imagen-4', 'image', 0.0400000000::numeric, 0::numeric, 0::numeric),
+      ('google', 'veo-3', 'video_second', 0.2000000000::numeric, 0::numeric, 0::numeric),
+      ('google', 'lyria-2', 'audio_second', 0.0300000000::numeric, 0::numeric, 0::numeric),
+      ('stability', 'stable-diffusion-4', 'image', 0.0200000000::numeric, 0::numeric, 0::numeric),
+      ('elevenlabs', 'elevenlabs-v4', 'audio_second', 0.0012000000::numeric, 0::numeric, 0::numeric),
+      ('midjourney', 'midjourney-7', 'image', 0.0500000000::numeric, 0::numeric, 0::numeric),
+      ('kling', 'kling-2.0', 'video_second', 0.1800000000::numeric, 0::numeric, 0::numeric),
+      ('suno', 'suno-v5', 'audio_second', 0.0250000000::numeric, 0::numeric, 0::numeric)
+  ) AS t(
+    provider_key,
+    model_key,
+    unit_type,
+    cost_per_unit,
+    input_cost_per_1k_tokens,
+    output_cost_per_1k_tokens
+  )
+),
+resolved AS (
+  SELECT
+    m.id AS model_id,
+    pricing_seed.unit_type::ai.unit_type_enum AS unit_type,
+    pricing_seed.cost_per_unit,
+    pricing_seed.input_cost_per_1k_tokens,
+    pricing_seed.output_cost_per_1k_tokens
+  FROM pricing_seed
+  JOIN ai.providers p
+    ON p.key = pricing_seed.provider_key
+  JOIN ai.models m
+    ON m.provider_id = p.id
+   AND m.key = pricing_seed.model_key
+)
+INSERT INTO ai.model_pricing (
+  model_id,
+  unit_type,
+  cost_per_unit,
+  input_cost_per_1k_tokens,
+  output_cost_per_1k_tokens
+)
+SELECT
+  model_id,
+  unit_type,
+  cost_per_unit,
+  input_cost_per_1k_tokens,
+  output_cost_per_1k_tokens
+FROM resolved;
 
 
 -- >>> seeds/07_ai_models.sql
@@ -1328,1883 +2108,6 @@ ON CONFLICT (key) DO NOTHING;
 
 
 
--- >>> seeds/20_scale_setup.sql
--- =============================================================================
--- 10. SCALE SEED SETUP
--- =============================================================================
-
--- Memory tuning for bulk operations
-SET work_mem = '32MB';
-SET maintenance_work_mem = '128MB';
-
--- ---------------------------------------------------------------------------
--- Utility: language picker with weighted distribution
--- ---------------------------------------------------------------------------
-CREATE OR REPLACE FUNCTION public.seed_pick_language(r float)
-RETURNS text LANGUAGE sql IMMUTABLE AS $$
-  SELECT CASE
-    WHEN r < 0.40 THEN 'en'
-    WHEN r < 0.55 THEN 'tr'
-    WHEN r < 0.65 THEN 'es'
-    WHEN r < 0.73 THEN 'fr'
-    WHEN r < 0.80 THEN 'de'
-    WHEN r < 0.85 THEN 'ar'
-    WHEN r < 0.89 THEN 'ja'
-    WHEN r < 0.92 THEN 'ko'
-    WHEN r < 0.95 THEN 'pt'
-    WHEN r < 0.98 THEN 'zh'
-    ELSE 'it'
-  END;
-$$;
-
--- ---------------------------------------------------------------------------
--- Utility: country picker with weighted distribution
--- ---------------------------------------------------------------------------
-CREATE OR REPLACE FUNCTION public.seed_pick_country(r double precision)
-RETURNS text LANGUAGE sql IMMUTABLE AS $$
-  SELECT CASE
-    WHEN r < 0.25 THEN 'US'
-    WHEN r < 0.40 THEN 'TR'
-    WHEN r < 0.50 THEN 'ES'
-    WHEN r < 0.58 THEN 'FR'
-    WHEN r < 0.65 THEN 'DE'
-    WHEN r < 0.72 THEN 'GB'
-    WHEN r < 0.77 THEN 'JP'
-    WHEN r < 0.82 THEN 'KR'
-    WHEN r < 0.87 THEN 'BR'
-    WHEN r < 0.91 THEN 'SA'
-    WHEN r < 0.94 THEN 'IT'
-    WHEN r < 0.96 THEN 'MX'
-    WHEN r < 0.98 THEN 'IN'
-    ELSE 'CA'
-  END;
-$$;
-
--- Pre-computed bcrypt hash for 'seedpassword' (avoids per-row crypt() cost)
-CREATE OR REPLACE FUNCTION public.seed_password_hash()
-RETURNS text LANGUAGE sql IMMUTABLE AS $$
-  SELECT '$2a$06$RzK1X5hN5KqJF5V8OqXYXOqYXOqYXOqYXOqYXOqYXOqYXOqYXOqYX'::text;
-$$;
-
--- ---------------------------------------------------------------------------
--- Disable triggers that interfere with bulk inserts
--- ---------------------------------------------------------------------------
-
--- lensers.profiles triggers
-ALTER TABLE lensers.profiles DISABLE TRIGGER "trg_after_lenser_insert";
-ALTER TABLE lensers.profiles DISABLE TRIGGER "trg_init_lenser_engagement_row";
-ALTER TABLE lensers.profiles DISABLE TRIGGER "trg_log_lenser_join";
-ALTER TABLE lensers.profiles DISABLE TRIGGER "trg_sync_profile_from_auth_metadata";
-ALTER TABLE lensers.profiles DISABLE TRIGGER "trg_enforce_lensers_protections";
-ALTER TABLE lensers.profiles DISABLE TRIGGER "trg_protect_sensitive_lenser_fields";
-
--- lensers.follows trigger disable removed: table dropped in schema_cleanup migration
-
--- content.threads triggers
--- Note: tg_xp_thread_created was removed (duplicate trigger bug fix in migration 20260328130000)
-ALTER TABLE content.threads DISABLE TRIGGER "trg_sync_thread_count";
-ALTER TABLE content.threads DISABLE TRIGGER "trg_xp_on_thread_created";
-ALTER TABLE content.threads DISABLE TRIGGER "trg_xp_thread_visibility_changed";
-
--- lenses.lenses triggers
-ALTER TABLE lenses.lenses DISABLE TRIGGER "trg_sync_lens_count";
-ALTER TABLE lenses.lenses DISABLE TRIGGER "tg_xp_lens_created";
-ALTER TABLE lenses.lenses DISABLE TRIGGER "trg_xp_lens_visibility_changed";
-
--- lenses.workflows triggers
-ALTER TABLE lenses.workflows DISABLE TRIGGER "trg_xp_workflow_created";
-ALTER TABLE lenses.workflows DISABLE TRIGGER "trg_xp_workflow_visibility_changed";
-
-
--- content.thread_replies triggers
-ALTER TABLE content.thread_replies DISABLE TRIGGER "thread_replies_after_insert";
-ALTER TABLE content.thread_replies DISABLE TRIGGER "thread_replies_after_update";
-ALTER TABLE content.thread_replies DISABLE TRIGGER "thread_replies_after_delete";
-ALTER TABLE content.thread_replies DISABLE TRIGGER "trg_xp_on_reply_created";
-ALTER TABLE content.thread_replies DISABLE TRIGGER "trg_xp_on_reply_received";
-
--- content.tag_map triggers
-ALTER TABLE content.tag_map DISABLE TRIGGER "trg_tag_created";
-
--- content reaction triggers (force lenser_id = auth.uid() which is NULL in seed)
-ALTER TABLE content.reactions DISABLE TRIGGER ALL;
-
-
-
--- >>> seeds/21_scale_auth_users.sql
--- =============================================================================
--- 11. SCALE AUTH USERS (10K users + identities)
--- =============================================================================
-
-DO $$
-DECLARE
-  batch_start int;
-  batch_size  int := 10000;
-  total       int := 10000;
-BEGIN
-  FOR batch_start IN 0..total-1 BY batch_size LOOP
-    RAISE NOTICE 'auth.users batch %/% ...', batch_start / batch_size + 1, total / batch_size;
-
-    INSERT INTO auth.users (
-      instance_id, id, aud, role, email, encrypted_password,
-      email_confirmed_at, created_at, updated_at, last_sign_in_at,
-      confirmation_token, confirmation_sent_at,
-      recovery_token, recovery_sent_at,
-      email_change, email_change_token_new, email_change_token_current, email_change_sent_at, email_change_confirm_status,
-      reauthentication_token, reauthentication_sent_at,
-      is_super_admin, is_sso_user, deleted_at, is_anonymous,
-      phone, phone_confirmed_at, phone_change, phone_change_token, phone_change_sent_at,
-      raw_app_meta_data, raw_user_meta_data
-    )
-    SELECT
-      '00000000-0000-0000-0000-000000000000'::uuid,
-      ('a1' || lpad(to_hex(batch_start + gs), 6, '0') || '-0001-4000-8000-000000000000')::uuid,
-      'authenticated', 'authenticated',
-      'seed_user_' || (batch_start + gs) || '@lenserfight.seed',
-      public.seed_password_hash(),
-      now() - (random() * interval '365 days'),
-      now() - (random() * interval '365 days'),
-      now(), now(),
-      '', NULL,
-      '', NULL,
-      '', '', '', NULL, 0,
-      '', NULL,
-      false, false, NULL, false,
-      NULL, NULL, '', '', NULL,
-      '{"provider":"email","providers":["email"]}'::jsonb,
-      jsonb_build_object(
-        'display_name', 'Seed User ' || (batch_start + gs),
-        'preferred_language', public.seed_pick_language(random())
-      )
-    FROM generate_series(0, LEAST(batch_size - 1, total - batch_start - 1)) AS gs
-    ON CONFLICT (id) DO NOTHING;
-  END LOOP;
-END $$;
-
--- Identity records for all seed users
-INSERT INTO auth.identities (
-  id, user_id, provider_id, identity_data, provider,
-  last_sign_in_at, created_at, updated_at
-)
-SELECT
-  u.id, u.id, u.id,
-  jsonb_build_object('sub', u.id::text, 'email', u.email),
-  'email', u.created_at, u.created_at, u.created_at
-FROM auth.users u
-WHERE u.email LIKE '%@lenserfight.seed'
-ON CONFLICT (id) DO NOTHING;
-
-
--- >>> seeds/22_scale_profiles.sql
--- =============================================================================
--- 12. SCALE LENSER PROFILES (5K from 10K users)
--- =============================================================================
-
-INSERT INTO lensers.profiles (
-  id, user_id, handle, display_name, bio,
-  status, visibility, created_at
-)
-SELECT
-  ('b2' || lpad(to_hex(rn), 6, '0') || '-0001-4000-8000-000000000000')::uuid,
-  u.id,
-  'lenser_' || lpad(to_hex(rn), 8, '0'),
-  COALESCE(u.raw_user_meta_data->>'display_name', 'Lenser ' || rn),
-  CASE WHEN random() < 0.3
-    THEN 'Bio for seed lenser #' || rn || '. Exploring AI, creativity, and community.'
-    ELSE NULL
-  END,
-  'active'::"lensers"."lenser_status",
-  'public'::"lensers"."lenser_visibility",
-  u.created_at
-FROM (
-  SELECT id, raw_user_meta_data, created_at,
-    row_number() OVER (ORDER BY id) AS rn
-  FROM auth.users
-  WHERE email LIKE '%@lenserfight.seed'
-  ORDER BY id
-  LIMIT 5000
-) u
-ON CONFLICT (id) DO NOTHING;
-
-INSERT INTO lensers.preferences (lenser_id, language, country_id)
-SELECT
-  p.id,
-  COALESCE(u.raw_user_meta_data->>'preferred_language', 'en'),
-  CASE
-    WHEN random() < 0.25 THEN 'US'
-    WHEN random() < 0.40 THEN 'TR'
-    WHEN random() < 0.50 THEN 'ES'
-    WHEN random() < 0.58 THEN 'FR'
-    WHEN random() < 0.65 THEN 'DE'
-    WHEN random() < 0.72 THEN 'GB'
-    WHEN random() < 0.77 THEN 'JP'
-    WHEN random() < 0.82 THEN 'KR'
-    WHEN random() < 0.87 THEN 'BR'
-    WHEN random() < 0.91 THEN 'SA'
-    WHEN random() < 0.94 THEN 'IT'
-    WHEN random() < 0.96 THEN 'MX'
-    WHEN random() < 0.98 THEN 'IN'
-    ELSE 'CA'
-  END
-FROM (
-  SELECT id, raw_user_meta_data
-  FROM auth.users
-  WHERE email LIKE '%@lenserfight.seed'
-) u
-JOIN lensers.profiles p ON p.user_id = u.id
-ON CONFLICT (lenser_id) DO UPDATE
-SET language = EXCLUDED.language,
-    country_id = EXCLUDED.country_id,
-    updated_at = now();
-
-
--- >>> seeds/23_scale_tags.sql
--- =============================================================================
--- 13. SCALE TAGS (200 tags + multilingual translations)
--- =============================================================================
-
--- Base tags
-INSERT INTO content.tags (id, slug, visibility, created_at)
-SELECT
-  gen_random_uuid(),
-  'tag-' || lpad(gs::text, 4, '0'),
-  'public'::"content"."tag_visibility_enum",
-  now() - (random() * interval '180 days')
-FROM generate_series(1, 200) gs
-ON CONFLICT (slug) DO NOTHING;
-
--- English translations for all tags
-INSERT INTO content.tag_translations (id, tag_id, language_code, name, created_at)
-SELECT
-  gen_random_uuid(), t.id, 'en',
-  initcap(replace(t.slug, '-', ' ')),
-  t.created_at
-FROM content.tags t
-WHERE t.slug LIKE 'tag-%'
-ON CONFLICT DO NOTHING;
-
--- Turkish translations (~60% of tags)
-INSERT INTO content.tag_translations (id, tag_id, language_code, name, created_at)
-SELECT
-  gen_random_uuid(), t.id, 'tr',
-  initcap(replace(t.slug, '-', ' ')) || ' (TR)',
-  t.created_at
-FROM content.tags t
-WHERE t.slug LIKE 'tag-%' AND random() < 0.6
-ON CONFLICT DO NOTHING;
-
--- Spanish translations (~40% of tags)
-INSERT INTO content.tag_translations (id, tag_id, language_code, name, created_at)
-SELECT
-  gen_random_uuid(), t.id, 'es',
-  initcap(replace(t.slug, '-', ' ')) || ' (ES)',
-  t.created_at
-FROM content.tags t
-WHERE t.slug LIKE 'tag-%' AND random() < 0.4
-ON CONFLICT DO NOTHING;
-
--- French translations (~30% of tags)
-INSERT INTO content.tag_translations (id, tag_id, language_code, name, created_at)
-SELECT
-  gen_random_uuid(), t.id, 'fr',
-  initcap(replace(t.slug, '-', ' ')) || ' (FR)',
-  t.created_at
-FROM content.tags t
-WHERE t.slug LIKE 'tag-%' AND random() < 0.3
-ON CONFLICT DO NOTHING;
-
--- German translations (~25% of tags)
-INSERT INTO content.tag_translations (id, tag_id, language_code, name, created_at)
-SELECT
-  gen_random_uuid(), t.id, 'de',
-  initcap(replace(t.slug, '-', ' ')) || ' (DE)',
-  t.created_at
-FROM content.tags t
-WHERE t.slug LIKE 'tag-%' AND random() < 0.25
-ON CONFLICT DO NOTHING;
-
-
--- >>> seeds/24_scale_threads.sql
--- =============================================================================
--- 14. SCALE THREADS (5K threads + translations)
--- =============================================================================
-
--- Step 1: Pre-materialize author assignments with power-law distribution
-DROP TABLE IF EXISTS seed_profile_index;
-CREATE UNLOGGED TABLE seed_profile_index AS
-SELECT
-  p.id,
-  COALESCE(pr.language, 'en') AS preferred_language,
-  row_number() OVER (ORDER BY p.id) - 1 AS idx
-FROM lensers.profiles p
-LEFT JOIN lensers.preferences pr ON pr.lenser_id = p.id
-WHERE p.handle LIKE 'lenser_%'
-ORDER BY p.id;
-
-CREATE INDEX ON seed_profile_index (idx);
-
--- Step 2: Insert threads in batches of 50K
-DO $$
-DECLARE
-  batch_start int;
-  batch_size  int := 5000;
-  total       int := 5000;
-  profile_cnt int;
-BEGIN
-  SELECT count(*) INTO profile_cnt FROM seed_profile_index;
-  IF profile_cnt = 0 THEN
-    RAISE EXCEPTION 'No seed profiles found. Run 12_scale_profiles.sql first.';
-  END IF;
-
-  FOR batch_start IN 0..total-1 BY batch_size LOOP
-    RAISE NOTICE 'content.threads batch %/% ...', batch_start / batch_size + 1, total / batch_size;
-
-    INSERT INTO content.threads (
-      id, lenser_id, visibility, status,
-      view_count, reply_count, created_at, updated_at
-    )
-    SELECT
-      gen_random_uuid(),
-      p.id,
-      CASE
-        WHEN rnd_vis < 0.85 THEN 'public'
-        WHEN rnd_vis < 0.95 THEN 'community'
-        ELSE 'private'
-      END::"content"."visibility_enum",
-      CASE
-        WHEN rnd_stat < 0.90 THEN 'published'
-        WHEN rnd_stat < 0.95 THEN 'draft'
-        ELSE 'archived'
-      END::"content"."content_status",
-      (random() * 10000)::int,
-      0,  -- backfilled later
-      ca,
-      ca + interval '1 hour'
-    FROM (
-      SELECT
-        gs,
-        -- Power-law: author_idx = floor(profile_count * pow(random(), 3))
-        floor(profile_cnt * pow(random(), 3))::int AS author_idx,
-        random() AS rnd_vis,
-        random() AS rnd_stat,
-        now() - (pow(random(), 1.5) * interval '365 days') AS ca
-      FROM generate_series(batch_start, LEAST(batch_start + batch_size - 1, total - 1)) AS gs
-    ) assignments
-    JOIN seed_profile_index p ON p.idx = assignments.author_idx;
-  END LOOP;
-END $$;
-
--- Step 3: Original translations (one per thread, author's language)
-INSERT INTO content.entity_translations (
-  id, entity_type, entity_id, language_code, title, content, is_original, created_at
-)
-SELECT
-  gen_random_uuid(),
-  'thread'::"content"."entity_type_enum",
-  t.id,
-  COALESCE(pr.language, 'en'),
-  'Thread ' || row_number() OVER (ORDER BY t.created_at) || ': '
-    || CASE (row_number() OVER (ORDER BY t.created_at) % 12)
-      WHEN 0  THEN 'Exploring AI creativity'
-      WHEN 1  THEN 'Building better prompts'
-      WHEN 2  THEN 'Code review best practices'
-      WHEN 3  THEN 'Machine learning insights'
-      WHEN 4  THEN 'Community discussion'
-      WHEN 5  THEN 'Creative writing challenge'
-      WHEN 6  THEN 'Technology trends'
-      WHEN 7  THEN 'Design thinking approach'
-      WHEN 8  THEN 'Open source contribution'
-      WHEN 9  THEN 'Data science workflow'
-      WHEN 10 THEN 'Product development'
-      ELSE         'General topic'
-    END,
-  'This is seed content for thread #' || row_number() OVER (ORDER BY t.created_at)
-    || '. ' || repeat(
-      CASE (row_number() OVER (ORDER BY t.created_at) % 5)
-        WHEN 0 THEN 'Artificial intelligence continues to reshape how we think about creativity and problem solving. '
-        WHEN 1 THEN 'The intersection of technology and human expression offers endless possibilities for innovation. '
-        WHEN 2 THEN 'Community-driven development helps build more robust and inclusive software ecosystems. '
-        WHEN 3 THEN 'Effective prompt engineering requires understanding both the model capabilities and the problem domain. '
-        ELSE        'Collaboration across disciplines leads to breakthroughs that no single field could achieve alone. '
-      END,
-      2 + (random() * 4)::int
-    ),
-  true,
-  t.created_at
-FROM content.threads t
-JOIN lensers.profiles p ON p.id = t.lenser_id
-LEFT JOIN lensers.preferences pr ON pr.lenser_id = p.id
-WHERE NOT EXISTS (
-  SELECT 1 FROM content.entity_translations et WHERE et.entity_id = t.id AND et.entity_type = 'thread'::"content"."entity_type_enum" AND et.is_original = true
-);
-
--- Step 4: Secondary translations for ~15% of public threads (English if original is not English, Turkish otherwise)
-INSERT INTO content.entity_translations (
-  id, entity_type, entity_id, language_code, title, content, is_original, created_at
-)
-SELECT
-  gen_random_uuid(),
-  'thread'::"content"."entity_type_enum",
-  t.id,
-  CASE WHEN COALESCE(pr.language, 'en') = 'en' THEN 'tr' ELSE 'en' END,
-  '[Translated] Thread ' || row_number() OVER (ORDER BY t.created_at),
-  '[Translated] Seed content for a multilingual thread. '
-    || repeat('This translated paragraph provides additional linguistic diversity for feed testing. ', 3),
-  false,
-  t.created_at + interval '1 day'
-FROM content.threads t
-JOIN lensers.profiles p ON p.id = t.lenser_id
-LEFT JOIN lensers.preferences pr ON pr.lenser_id = p.id
-WHERE t.visibility = 'public'::"content"."visibility_enum"
-  AND t.status = 'published'::"content"."content_status"
-  AND random() < 0.15;
-
-
--- >>> seeds/25_scale_lenses.sql
--- =============================================================================
--- 15. SCALE LENSES (5K lenses + translations + version_parameters)
--- =============================================================================
--- Covers all generative AI output categories:
---   text · code · image · video · audio · pdf · research · data · transform
--- Each variant has a realistic title, a proper system prompt with [[params]],
--- and typed version_parameters linked to lenses.tools.
--- =============================================================================
-
-DO $$
-DECLARE
-  batch_start int;
-  batch_size  int := 5000;
-  total       int := 5000;
-  profile_cnt int;
-BEGIN
-  SELECT count(*) INTO profile_cnt FROM seed_profile_index;
-
-  FOR batch_start IN 0..total-1 BY batch_size LOOP
-    RAISE NOTICE 'lenses.lenses batch %/% ...', batch_start / batch_size + 1, total / batch_size;
-
-    INSERT INTO lenses.lenses (
-      id, lenser_id, visibility, status, created_at, updated_at
-    )
-    SELECT
-      gen_random_uuid(),
-      p.id,
-      CASE
-        WHEN rnd_vis < 0.82 THEN 'public'
-        WHEN rnd_vis < 0.94 THEN 'community'
-        ELSE 'private'
-      END::"content"."visibility_enum",
-      CASE
-        WHEN rnd_stat < 0.88 THEN 'published'
-        WHEN rnd_stat < 0.94 THEN 'draft'
-        ELSE 'archived'
-      END::"content"."content_status",
-      ca,
-      ca + interval '30 minutes'
-    FROM (
-      SELECT
-        gs,
-        floor(profile_cnt * pow(random(), 3))::int AS author_idx,
-        random() AS rnd_vis,
-        random() AS rnd_stat,
-        now() - (pow(random(), 1.5) * interval '365 days') AS ca
-      FROM generate_series(batch_start, LEAST(batch_start + batch_size - 1, total - 1)) AS gs
-    ) assignments
-    JOIN seed_profile_index p ON p.idx = assignments.author_idx;
-  END LOOP;
-END $$;
-
--- =============================================================================
--- Version 1 for each lens — 18 template variants across all AI output types
--- =============================================================================
-INSERT INTO lenses.versions (
-  lens_id, version_number, template_body, status, changelog, created_at
-)
-SELECT
-  l.id,
-  1,
-  CASE ((row_number() OVER (ORDER BY l.created_at) - 1) % 18)
-    -- 0: Long-form article (text)
-    WHEN 0 THEN
-      'You are an expert editorial writer. Write a well-structured, engaging article on [[topic]] targeting a [[audience]] audience. Length: [[word_count]] words. Tone: [[tone]]. Include a compelling headline, subheadings, and a clear conclusion.'
-
-    -- 1: Code generation (code)
-    WHEN 1 THEN
-      'You are a senior software engineer. Write clean, production-ready [[language]] code that implements [[task]]. Requirements: [[requirements]]. Include inline comments for non-obvious logic, error handling, and a brief usage example.'
-
-    -- 2: Image generation prompt builder (text → image brief)
-    WHEN 2 THEN
-      'You are a visual art director. Generate a detailed image generation prompt for [[subject]]. Specify: art style, composition, lighting, color palette, mood, and negative constraints. Format the output as a single optimized prompt string ready to send to an image model.'
-
-    -- 3: Video script (text → video)
-    WHEN 3 THEN
-      'You are a video content strategist. Write a [[duration]]-second script for a [[format]] video about [[topic]]. Include: hook (first 3 seconds), scene-by-scene breakdown with shot descriptions, narration, on-screen text callouts, and a call-to-action. Pacing: [[pacing]].'
-
-    -- 4: Podcast / audio script (text → audio)
-    WHEN 4 THEN
-      'You are a podcast producer. Write a conversational [[duration]]-minute episode script on [[topic]] for [[show_name]]. Cover: [[talking_points]]. Include host notes, natural pauses, and listener engagement moments. Tone: [[tone]].'
-
-    -- 5: PDF report generator (text → PDF)
-    WHEN 5 THEN
-      'You are a professional report writer. Produce a structured [[report_type]] report titled [[title]] based on the following data and context: [[context]]. Include an executive summary, methodology, key findings with evidence, recommendations, and an appendix outline. Format for PDF export.'
-
-    -- 6: Research synthesis (research)
-    WHEN 6 THEN
-      'You are a research analyst. Synthesize the available evidence on [[research_question]] within the domain of [[domain]]. Identify key findings, conflicting evidence, knowledge gaps, and confidence levels. Emit a JSON object: {summary, findings[], open_questions[], recommended_next_steps[]}.'
-
-    -- 7: Data analysis & insight extraction (data)
-    WHEN 7 THEN
-      'You are a data analyst. Analyze the following dataset: [[data]]. Identify trends, outliers, correlations, and actionable insights. Format your response as: Executive Summary, Key Metrics, Trend Analysis, Anomalies, and Recommendations. Audience: [[audience]].'
-
-    -- 8: Code review (code transform)
-    WHEN 8 THEN
-      'You are a senior code reviewer. Review the following [[language]] code for correctness, performance, security vulnerabilities, and adherence to best practices: [[code]]. Provide: a severity-rated issue list, specific fix suggestions with code snippets, and an overall quality score (1–10).'
-
-    -- 9: Translation & localization (text transform)
-    WHEN 9 THEN
-      'You are a professional translator and localization expert. Translate the following content from [[source_language]] to [[target_language]]: [[content]]. Preserve tone, idioms, and cultural nuance. Flag any terms that require localization review.'
-
-    -- 10: Social media content pack (text)
-    WHEN 10 THEN
-      'You are a social media strategist. Create a content pack for [[platform]] promoting [[topic]]. Produce: 3 caption variants (short/medium/long), 5 hashtag sets, 2 call-to-action variations, and a posting schedule recommendation. Brand voice: [[brand_voice]].'
-
-    -- 11: SEO content optimizer (text transform)
-    WHEN 11 THEN
-      'You are an SEO content specialist. Rewrite the following text to rank for the primary keyword [[keyword]] and secondary keywords [[secondary_keywords]]: [[content]]. Maintain a natural [[tone]] tone, optimize meta description and title tag, and preserve the original intent.'
-
-    -- 12: Product description writer (text)
-    WHEN 12 THEN
-      'You are a conversion copywriter. Write a compelling product description for [[product_name]] in the [[category]] category. Target buyer persona: [[persona]]. Highlight: [[key_features]]. Include a headline, benefit-focused body (150–200 words), and a closing CTA. Tone: [[tone]].'
-
-    -- 13: Meeting summary & action items (text transform)
-    WHEN 13 THEN
-      'You are an executive assistant. Summarize the following meeting transcript into a professional document: [[transcript]]. Extract: key decisions, action items (owner + due date), open questions, and next meeting agenda suggestions. Format as a structured memo.'
-
-    -- 14: Legal / contract clause drafter (text)
-    WHEN 14 THEN
-      'You are a legal drafting assistant. Draft a [[clause_type]] clause for a [[contract_type]] agreement between [[party_a]] and [[party_b]] governed by [[jurisdiction]] law. Requirements: [[requirements]]. Use precise legal language. Flag areas requiring attorney review.'
-
-    -- 15: Image-to-text description (image → text)
-    WHEN 15 THEN
-      'You are an image analyst. Provide a detailed, structured description of the image provided via [[image_url]] or [[image_description]]. Cover: main subjects, composition, color palette, mood, style, and any text visible. Output format: [[output_format]] (alt-text | detailed | accessibility | metadata-json).'
-
-    -- 16: Email campaign writer (text)
-    WHEN 16 THEN
-      'You are an email marketing specialist. Write a [[email_type]] email for [[brand_name]] targeting [[segment]]. Goal: [[goal]]. Include: subject line (A/B variant), preheader, body (personalization hooks, value prop, social proof), and CTA button text. Word count: ~[[word_count]] words.'
-
-    -- 17: Curriculum / training outline (text)
-    WHEN 17 THEN
-      'You are a learning experience designer. Create a [[duration]] training curriculum outline on [[topic]] for [[learner_level]] learners. Include: learning objectives, module breakdown (title + outcomes + activities), assessment strategy, and recommended resources. Format: structured outline.'
-  END,
-  'draft'::"content"."content_status",
-  'Initial version',
-  l.created_at
-FROM lenses.lenses l
-WHERE NOT EXISTS (
-  SELECT 1 FROM lenses.versions v WHERE v.lens_id = l.id
-);
-
--- =============================================================================
--- version_parameters — typed parameters matching each template variant
--- =============================================================================
-WITH numbered_versions AS (
-  SELECT
-    v.id,
-    ((row_number() OVER (ORDER BY l.created_at) - 1) % 18)::int AS variant_idx
-  FROM lenses.versions v
-  JOIN lenses.lenses l ON l.id = v.lens_id
-)
-INSERT INTO lenses.version_parameters (version_id, label, tool_id)
-SELECT
-  nv.id AS version_id,
-  p.label,
-  t.id  AS tool_id
-FROM numbered_versions nv
-CROSS JOIN LATERAL (
-  SELECT label, tool_key FROM (VALUES
-    -- 0: article
-    (0,  'topic',         'textarea'),
-    (0,  'audience',      'text'),
-    (0,  'word_count',    'integer'),
-    (0,  'tone',          'select_option'),
-    -- 1: code generation
-    (1,  'language',      'text'),
-    (1,  'task',          'textarea'),
-    (1,  'requirements',  'textarea'),
-    -- 2: image prompt builder
-    (2,  'subject',       'textarea'),
-    -- 3: video script
-    (3,  'topic',         'textarea'),
-    (3,  'format',        'text'),
-    (3,  'duration',      'integer'),
-    (3,  'pacing',        'select_option'),
-    -- 4: audio / podcast script
-    (4,  'topic',         'textarea'),
-    (4,  'show_name',     'text'),
-    (4,  'duration',      'integer'),
-    (4,  'talking_points','textarea'),
-    (4,  'tone',          'select_option'),
-    -- 5: PDF report
-    (5,  'report_type',   'text'),
-    (5,  'title',         'text'),
-    (5,  'context',       'textarea'),
-    -- 6: research synthesis
-    (6,  'research_question', 'textarea'),
-    (6,  'domain',        'text'),
-    -- 7: data analysis
-    (7,  'data',          'json_data'),
-    (7,  'audience',      'text'),
-    -- 8: code review
-    (8,  'language',      'text'),
-    (8,  'code',          'textarea'),
-    -- 9: translation
-    (9,  'source_language','text'),
-    (9,  'target_language','text'),
-    (9,  'content',       'textarea'),
-    -- 10: social media
-    (10, 'platform',      'text'),
-    (10, 'topic',         'textarea'),
-    (10, 'brand_voice',   'text'),
-    -- 11: SEO optimizer
-    (11, 'keyword',       'text'),
-    (11, 'secondary_keywords', 'text'),
-    (11, 'content',       'textarea'),
-    (11, 'tone',          'select_option'),
-    -- 12: product description
-    (12, 'product_name',  'text'),
-    (12, 'category',      'text'),
-    (12, 'persona',       'text'),
-    (12, 'key_features',  'textarea'),
-    (12, 'tone',          'select_option'),
-    -- 13: meeting summary
-    (13, 'transcript',    'textarea'),
-    -- 14: legal clause
-    (14, 'clause_type',   'text'),
-    (14, 'contract_type', 'text'),
-    (14, 'party_a',       'text'),
-    (14, 'party_b',       'text'),
-    (14, 'jurisdiction',  'text'),
-    (14, 'requirements',  'textarea'),
-    -- 15: image-to-text
-    (15, 'image_url',     'url_link'),
-    (15, 'image_description', 'textarea'),
-    (15, 'output_format', 'select_option'),
-    -- 16: email campaign
-    (16, 'email_type',    'text'),
-    (16, 'brand_name',    'text'),
-    (16, 'segment',       'text'),
-    (16, 'goal',          'textarea'),
-    (16, 'word_count',    'integer'),
-    -- 17: curriculum
-    (17, 'topic',         'textarea'),
-    (17, 'duration',      'text'),
-    (17, 'learner_level', 'select_option')
-  ) AS variants(variant_idx, label, tool_key)
-  WHERE variants.variant_idx = nv.variant_idx
-) p
-JOIN lenses.tools t ON t.key = p.tool_key
-WHERE NOT EXISTS (
-  SELECT 1 FROM lenses.version_parameters vp
-  WHERE vp.version_id = nv.id AND vp.label = p.label
-);
-
--- =============================================================================
--- head_version_id — point each lens at its sole version
--- =============================================================================
-UPDATE lenses.lenses l
-SET head_version_id = v.id
-FROM lenses.versions v
-WHERE v.lens_id = l.id
-  AND l.head_version_id IS NULL;
-
--- =============================================================================
--- Original translations (one per lens)
--- =============================================================================
-INSERT INTO content.entity_translations (
-  id, entity_type, entity_id, language_code, title, description, content, is_original, created_at
-)
-SELECT
-  gen_random_uuid(),
-  'lens'::"content"."entity_type_enum",
-  l.id,
-  COALESCE(pr.language, 'en'),
-  CASE ((row_number() OVER (ORDER BY l.created_at) - 1) % 18)
-    WHEN 0  THEN 'Editorial Article Writer'
-    WHEN 1  THEN 'Code Generator'
-    WHEN 2  THEN 'Image Prompt Architect'
-    WHEN 3  THEN 'Video Script Composer'
-    WHEN 4  THEN 'Podcast Script Writer'
-    WHEN 5  THEN 'PDF Report Generator'
-    WHEN 6  THEN 'Research Synthesizer'
-    WHEN 7  THEN 'Data Insight Extractor'
-    WHEN 8  THEN 'Code Review Assistant'
-    WHEN 9  THEN 'Translation & Localization Engine'
-    WHEN 10 THEN 'Social Media Content Pack'
-    WHEN 11 THEN 'SEO Content Optimizer'
-    WHEN 12 THEN 'Product Description Writer'
-    WHEN 13 THEN 'Meeting Summary & Action Items'
-    WHEN 14 THEN 'Legal Clause Drafter'
-    WHEN 15 THEN 'Image-to-Text Descriptor'
-    WHEN 16 THEN 'Email Campaign Writer'
-    ELSE        'Curriculum & Training Outline'
-  END
-  || ' #' || row_number() OVER (ORDER BY l.created_at),
-  CASE ((row_number() OVER (ORDER BY l.created_at) - 1) % 18)
-    WHEN 0  THEN 'Generates a structured, audience-aware article with headline, subheadings, and a clear conclusion.'
-    WHEN 1  THEN 'Writes production-ready code with error handling and a usage example.'
-    WHEN 2  THEN 'Builds a detailed text-to-image prompt optimised for diffusion models.'
-    WHEN 3  THEN 'Produces a scene-by-scene video script with narration and shot notes.'
-    WHEN 4  THEN 'Writes a conversational podcast episode with host notes and engagement hooks.'
-    WHEN 5  THEN 'Drafts a structured PDF report: exec summary, findings, and recommendations.'
-    WHEN 6  THEN 'Synthesizes research evidence and returns structured JSON findings.'
-    WHEN 7  THEN 'Extracts trends, anomalies, and actionable insights from raw data.'
-    WHEN 8  THEN 'Reviews code for bugs, performance, and security with severity-rated issues.'
-    WHEN 9  THEN 'Translates content across languages while preserving tone and cultural nuance.'
-    WHEN 10 THEN 'Creates captions, hashtags, and posting schedules for a social platform.'
-    WHEN 11 THEN 'Rewrites content to rank for target keywords without sacrificing readability.'
-    WHEN 12 THEN 'Writes a benefit-focused product description with headline and CTA.'
-    WHEN 13 THEN 'Converts a meeting transcript into a structured memo with action items.'
-    WHEN 14 THEN 'Drafts a precise legal clause with jurisdiction-aware language.'
-    WHEN 15 THEN 'Describes an image in multiple formats: alt-text, detailed, or metadata JSON.'
-    WHEN 16 THEN 'Writes a full email campaign with subject line, body, and CTA variants.'
-    ELSE        'Builds a modular training curriculum with objectives, activities, and assessments.'
-  END,
-  NULL,
-  true,
-  l.created_at
-FROM lenses.lenses l
-JOIN lensers.profiles p ON p.id = l.lenser_id
-LEFT JOIN lensers.preferences pr ON pr.lenser_id = p.id
-WHERE NOT EXISTS (
-  SELECT 1 FROM content.entity_translations et
-  WHERE et.entity_id = l.id
-    AND et.entity_type = 'lens'::"content"."entity_type_enum"
-    AND et.is_original = true
-);
-
--- =============================================================================
--- Secondary translations (~15% of published public lenses)
--- =============================================================================
-INSERT INTO content.entity_translations (
-  id, entity_type, entity_id, language_code, title, description, content, is_original, created_at
-)
-SELECT
-  gen_random_uuid(),
-  'lens'::"content"."entity_type_enum",
-  l.id,
-  CASE WHEN COALESCE(pr.language, 'en') = 'en' THEN 'tr' ELSE 'en' END,
-  '[TR] ' || et.title,
-  '[TR] ' || COALESCE(et.description, 'Bu lens çok dilli test için çevrilmiştir.'),
-  '[TR] ' || COALESCE(et.content, 'Lütfen aşağıdaki görevi tamamlayın.'),
-  false,
-  l.created_at + interval '1 day'
-FROM lenses.lenses l
-JOIN lensers.profiles p ON p.id = l.lenser_id
-LEFT JOIN lensers.preferences pr ON pr.lenser_id = p.id
-JOIN content.entity_translations et
-  ON et.entity_id = l.id
-  AND et.entity_type = 'lens'::"content"."entity_type_enum"
-  AND et.is_original = true
-WHERE l.visibility = 'public'::"content"."visibility_enum"
-  AND l.status = 'published'::"content"."content_status"
-  AND random() < 0.15
-  AND NOT EXISTS (
-    SELECT 1 FROM content.entity_translations et2
-    WHERE et2.entity_id = l.id
-      AND et2.entity_type = 'lens'::"content"."entity_type_enum"
-      AND et2.is_original = false
-  );
-
-
--- >>> seeds/26_scale_tag_map.sql
--- =============================================================================
--- 16. SCALE TAG MAP (~3M tag associations)
--- =============================================================================
-
--- Pre-index tags for fast lookup
-DROP TABLE IF EXISTS seed_tag_index;
-CREATE UNLOGGED TABLE seed_tag_index AS
-SELECT id AS tag_id, row_number() OVER (ORDER BY id) - 1 AS tidx
-FROM content.tags
-WHERE slug LIKE 'tag-%';
-
-CREATE INDEX ON seed_tag_index (tidx);
-
--- Tag assignments for threads (~1.5M mappings, avg 1.5 tags per thread)
-DO $$
-DECLARE
-  batch_start int;
-  batch_size  int := 100000;
-  total_threads int;
-  tag_cnt int;
-BEGIN
-  SELECT count(*) INTO total_threads FROM content.threads;
-  SELECT count(*) INTO tag_cnt FROM seed_tag_index;
-
-  RAISE NOTICE 'Tagging % threads with % available tags...', total_threads, tag_cnt;
-
-  -- Process threads in batches
-  FOR batch_start IN 0..total_threads-1 BY batch_size LOOP
-    RAISE NOTICE 'tag_map threads batch starting at %...', batch_start;
-
-    INSERT INTO content.tag_map (id, entity_type, entity_id, tag_id, created_at)
-    SELECT DISTINCT ON (t.id, ti.tag_id)
-      gen_random_uuid(),
-      'thread'::"content"."entity_type_enum",
-      t.id,
-      ti.tag_id,
-      t.created_at
-    FROM (
-      SELECT id, created_at, row_number() OVER (ORDER BY id) - 1 AS rn
-      FROM content.threads
-      ORDER BY id
-      OFFSET batch_start LIMIT batch_size
-    ) t
-    CROSS JOIN LATERAL (
-      -- 1-3 tags per thread, power-law tag selection
-      SELECT (floor(tag_cnt * pow(random(), 2))::int) AS tidx
-      FROM generate_series(1, 1 + (random() * 2)::int)
-    ) tag_picks
-    JOIN seed_tag_index ti ON ti.tidx = tag_picks.tidx
-    ON CONFLICT DO NOTHING;
-  END LOOP;
-END $$;
-
--- Tag assignments for lenses (~1.5M mappings)
-DO $$
-DECLARE
-  batch_start int;
-  batch_size  int := 100000;
-  total_lenses int;
-  tag_cnt int;
-BEGIN
-  SELECT count(*) INTO total_lenses FROM lenses.lenses;
-  SELECT count(*) INTO tag_cnt FROM seed_tag_index;
-
-  FOR batch_start IN 0..total_lenses-1 BY batch_size LOOP
-    RAISE NOTICE 'tag_map lenses batch starting at %...', batch_start;
-
-    INSERT INTO content.tag_map (id, entity_type, entity_id, tag_id, created_at)
-    SELECT DISTINCT ON (pt.id, ti.tag_id)
-      gen_random_uuid(),
-      'lens'::"content"."entity_type_enum",
-      pt.id,
-      ti.tag_id,
-      pt.created_at
-    FROM (
-      SELECT id, created_at, row_number() OVER (ORDER BY id) - 1 AS rn
-      FROM lenses.lenses
-      ORDER BY id
-      OFFSET batch_start LIMIT batch_size
-    ) pt
-    CROSS JOIN LATERAL (
-      SELECT (floor(tag_cnt * pow(random(), 2))::int) AS tidx
-      FROM generate_series(1, 1 + (random() * 2)::int)
-    ) tag_picks
-    JOIN seed_tag_index ti ON ti.tidx = tag_picks.tidx
-    ON CONFLICT DO NOTHING;
-  END LOOP;
-END $$;
-
-
--- >>> seeds/27_scale_replies.sql
--- =============================================================================
--- 17. SCALE THREAD REPLIES (10K replies)
--- =============================================================================
-
-DO $$
-DECLARE
-  batch_start int;
-  batch_size  int := 10000;
-  total       int := 10000;
-  thread_cnt  int;
-  profile_cnt int;
-BEGIN
-  SELECT count(*) INTO thread_cnt
-  FROM content.threads
-  WHERE visibility = 'public'::"content"."visibility_enum"
-    AND status = 'published'::"content"."content_status";
-
-  SELECT count(*) INTO profile_cnt FROM seed_profile_index;
-
-  RAISE NOTICE 'Creating % replies across % public threads...', total, thread_cnt;
-
-  FOR batch_start IN 0..total-1 BY batch_size LOOP
-    RAISE NOTICE 'thread_replies batch %/% ...', batch_start / batch_size + 1, total / batch_size;
-
-    INSERT INTO content.thread_replies (
-      id, thread_id, parent_reply_id, lenser_id,
-      content, status, created_at, updated_at
-    )
-    SELECT
-      gen_random_uuid(),
-      t.id,
-      NULL,  -- top-level replies (no nesting for scale seed)
-      p.id,
-      'Reply #' || (batch_start + gs) || ': '
-        || CASE (gs % 8)
-          WHEN 0 THEN 'Great point! I agree with this perspective.'
-          WHEN 1 THEN 'Interesting take. Have you considered the alternative approach?'
-          WHEN 2 THEN 'Thanks for sharing. This helped me understand the concept better.'
-          WHEN 3 THEN 'I disagree respectfully. Here is my reasoning...'
-          WHEN 4 THEN 'Could you elaborate more on this? I find it fascinating.'
-          WHEN 5 THEN 'This reminds me of a similar discussion from last week.'
-          WHEN 6 THEN 'Well explained! The examples really make it clear.'
-          ELSE        'Adding to the discussion: there are several nuances worth exploring here.'
-        END,
-      'published'::"content"."thread_reply_status",
-      t.created_at + (random() * interval '30 days'),
-      t.created_at + (random() * interval '30 days')
-    FROM generate_series(0, LEAST(batch_size - 1, total - batch_start - 1)) AS gs
-    -- Power-law thread selection: popular threads get more replies
-    JOIN LATERAL (
-      SELECT id, created_at
-      FROM content.threads
-      WHERE visibility = 'public'::"content"."visibility_enum"
-        AND status = 'published'::"content"."content_status"
-      ORDER BY view_count DESC
-      OFFSET floor(thread_cnt * pow(random(), 2))::int
-      LIMIT 1
-    ) t ON true
-    -- Random replier
-    JOIN seed_profile_index p ON p.idx = floor(random() * profile_cnt)::int;
-  END LOOP;
-END $$;
-
-
--- >>> seeds/28_scale_follows.sql
--- =============================================================================
--- 18. SCALE FOLLOWS (10K lenser follows + 2K tag follows)
--- =============================================================================
-
--- Lenser follows (~10K) — inserted into lensers.relationships (status='accepted')
-DO $$
-DECLARE
-  batch_start int;
-  batch_size  int := 10000;
-  total       int := 10000;
-  profile_cnt int;
-BEGIN
-  SELECT count(*) INTO profile_cnt FROM seed_profile_index;
-
-  FOR batch_start IN 0..total-1 BY batch_size LOOP
-    RAISE NOTICE 'lensers.relationships batch %/% ...', batch_start / batch_size + 1, total / batch_size;
-
-    INSERT INTO lensers.relationships (
-        id, source_profile_id, target_profile_id,
-        status, accepted_at, requested_at
-    )
-    SELECT
-      gen_random_uuid(),
-      follower.id,
-      following.id,
-      'accepted',
-      GREATEST(follower.created_at, following.created_at) + (random() * interval '30 days'),
-      GREATEST(follower.created_at, following.created_at) + (random() * interval '30 days')
-    FROM (
-      -- Random follower
-      SELECT p.id, (SELECT created_at FROM lensers.profiles WHERE id = p.id) AS created_at
-      FROM seed_profile_index p
-      WHERE p.idx = floor(random() * profile_cnt)::int
-      LIMIT 1
-    ) follower
-    CROSS JOIN LATERAL (
-      -- Power-law following: popular lensers followed more
-      SELECT p.id, (SELECT created_at FROM lensers.profiles WHERE id = p.id) AS created_at
-      FROM seed_profile_index p
-      WHERE p.idx = floor(profile_cnt * pow(random(), 2))::int
-        AND p.id <> follower.id
-      LIMIT 1
-    ) following
-    CROSS JOIN generate_series(0, LEAST(batch_size - 1, total - batch_start - 1)) AS gs
-    ON CONFLICT DO NOTHING;
-  END LOOP;
-END $$;
-
--- Tag follows (~2K)
-DO $$
-DECLARE
-  profile_cnt int;
-  tag_cnt int;
-BEGIN
-  SELECT count(*) INTO profile_cnt FROM seed_profile_index;
-  SELECT count(*) INTO tag_cnt FROM seed_tag_index;
-
-  RAISE NOTICE 'Creating ~2K tag follows...';
-
-  INSERT INTO lensers.tag_follows (id, lenser_id, tag_id, created_at)
-  SELECT * FROM (
-    SELECT
-      gen_random_uuid(),
-      p.id,
-      ti.tag_id,
-      now() - (random() * interval '180 days')
-    FROM seed_profile_index p
-    CROSS JOIN LATERAL (
-      -- 1-7 tags per lenser, power-law tag popularity
-      SELECT (floor(tag_cnt * pow(random(), 2))::int) AS tidx
-      FROM generate_series(1, 1 + (random() * 6)::int)
-    ) tag_picks
-    JOIN seed_tag_index ti ON ti.tidx = tag_picks.tidx
-    WHERE random() < 0.75  -- throttle to ~500K total
-    LIMIT 2000
-  ) sub
-  ON CONFLICT DO NOTHING;
-END $$;
-
-
--- >>> seeds/29_scale_reactions.sql
--- =============================================================================
--- 19. SCALE REACTIONS (5K thread + 3K prompt + 2K reply reactions)
--- =============================================================================
-
--- ---------------------------------------------------------------------------
--- Thread reactions (~5K)
--- ---------------------------------------------------------------------------
-DO $$
-DECLARE
-  batch_start int;
-  batch_size  int := 5000;
-  total       int := 5000;
-  thread_cnt  int;
-  user_cnt    int;
-BEGIN
-  SELECT count(*) INTO thread_cnt
-  FROM content.threads
-  WHERE visibility = 'public'::"content"."visibility_enum"
-    AND status = 'published'::"content"."content_status";
-
-  SELECT count(*) INTO user_cnt
-  FROM auth.users WHERE email LIKE '%@lenserfight.seed';
-
-  RAISE NOTICE 'Creating % thread reactions across % threads...', total, thread_cnt;
-
-  FOR batch_start IN 0..total-1 BY batch_size LOOP
-    RAISE NOTICE 'thread_reactions batch %/% ...', batch_start / batch_size + 1, total / batch_size;
-
-    INSERT INTO content.reactions (id, entity_type, entity_id, lenser_id, reaction, created_at)
-    SELECT
-      gen_random_uuid(),
-      'thread'::"content"."entity_type_enum",
-      t.id,
-      u.id,
-      (ARRAY['like','love','clap','saved','copy','dislike'])[1 + floor(random() * 6)::int]::"content"."reaction_enum",
-      t.created_at + (random() * interval '60 days')
-    FROM generate_series(0, LEAST(batch_size - 1, total - batch_start - 1)) AS gs
-    -- Power-law thread selection by view_count
-    JOIN LATERAL (
-      SELECT id, created_at FROM content.threads
-      WHERE visibility = 'public'::"content"."visibility_enum"
-        AND status = 'published'::"content"."content_status"
-      ORDER BY view_count DESC
-      OFFSET floor(thread_cnt * pow(random(), 3))::int
-      LIMIT 1
-    ) t ON true
-    -- Random user
-    JOIN LATERAL (
-      SELECT id FROM auth.users
-      WHERE email LIKE '%@lenserfight.seed'
-      OFFSET floor(random() * user_cnt)::int
-      LIMIT 1
-    ) u ON true
-    ON CONFLICT DO NOTHING;
-  END LOOP;
-END $$;
-
--- ---------------------------------------------------------------------------
--- Lens reactions (~3K)
--- ---------------------------------------------------------------------------
-DO $$
-DECLARE
-  batch_start int;
-  batch_size  int := 3000;
-  total       int := 3000;
-  lens_cnt  int;
-  user_cnt    int;
-BEGIN
-  SELECT count(*) INTO lens_cnt
-  FROM lenses.lenses
-  WHERE visibility = 'public'::"content"."visibility_enum"
-    AND status = 'published'::"content"."content_status";
-
-  SELECT count(*) INTO user_cnt
-  FROM auth.users WHERE email LIKE '%@lenserfight.seed';
-
-  RAISE NOTICE 'Creating % lens reactions across % lenses...', total, lens_cnt;
-
-  FOR batch_start IN 0..total-1 BY batch_size LOOP
-    RAISE NOTICE 'lens_reactions batch %/% ...', batch_start / batch_size + 1, total / batch_size;
-
-    INSERT INTO content.reactions (id, entity_type, entity_id, lenser_id, reaction, created_at)
-    SELECT
-      gen_random_uuid(),
-      'lens'::"content"."entity_type_enum",
-      pt.id,
-      u.id,
-      (ARRAY['like','love','clap','saved','copy','dislike'])[1 + floor(random() * 6)::int]::"content"."reaction_enum",
-      pt.created_at + (random() * interval '60 days')
-    FROM generate_series(0, LEAST(batch_size - 1, total - batch_start - 1)) AS gs
-    JOIN LATERAL (
-      SELECT id, created_at FROM lenses.lenses
-      WHERE visibility = 'public'::"content"."visibility_enum"
-        AND status = 'published'::"content"."content_status"
-      OFFSET floor(lens_cnt * pow(random(), 3))::int
-      LIMIT 1
-    ) pt ON true
-    JOIN LATERAL (
-      SELECT id FROM auth.users
-      WHERE email LIKE '%@lenserfight.seed'
-      OFFSET floor(random() * user_cnt)::int
-      LIMIT 1
-    ) u ON true
-    ON CONFLICT DO NOTHING;
-  END LOOP;
-END $$;
-
--- ---------------------------------------------------------------------------
--- Thread reply reactions (~2K)
--- ---------------------------------------------------------------------------
-DO $$
-DECLARE
-  batch_start int;
-  batch_size  int := 2000;
-  total       int := 2000;
-  reply_cnt   int;
-  user_cnt    int;
-BEGIN
-  SELECT count(*) INTO reply_cnt FROM content.thread_replies;
-  SELECT count(*) INTO user_cnt
-  FROM auth.users WHERE email LIKE '%@lenserfight.seed';
-
-  RAISE NOTICE 'Creating % reply reactions across % replies...', total, reply_cnt;
-
-  FOR batch_start IN 0..total-1 BY batch_size LOOP
-    RAISE NOTICE 'reply_reactions batch %/% ...', batch_start / batch_size + 1, total / batch_size;
-
-    INSERT INTO content.reactions (id, entity_type, entity_id, lenser_id, reaction, created_at)
-    SELECT
-      gen_random_uuid(),
-      'thread_reply'::"content"."entity_type_enum",
-      r.id,
-      u.id,
-      (ARRAY['like','love','clap','dislike'])[1 + floor(random() * 4)::int]::"content"."reaction_enum",
-      r.created_at + (random() * interval '30 days')
-    FROM generate_series(0, LEAST(batch_size - 1, total - batch_start - 1)) AS gs
-    JOIN LATERAL (
-      SELECT id, created_at FROM content.thread_replies
-      OFFSET floor(reply_cnt * pow(random(), 2))::int
-      LIMIT 1
-    ) r ON true
-    JOIN LATERAL (
-      SELECT id FROM auth.users
-      WHERE email LIKE '%@lenserfight.seed'
-      OFFSET floor(random() * user_cnt)::int
-      LIMIT 1
-    ) u ON true
-    ON CONFLICT DO NOTHING;
-  END LOOP;
-END $$;
-
-
--- >>> seeds/31_scale_backfill.sql
--- =============================================================================
--- 21. SCALE BACKFILL
--- =============================================================================
-
--- ---------------------------------------------------------------------------
--- Re-enable all disabled triggers
--- ---------------------------------------------------------------------------
-
--- lensers.profiles
-ALTER TABLE lensers.profiles ENABLE TRIGGER "trg_after_lenser_insert";
-ALTER TABLE lensers.profiles ENABLE TRIGGER "trg_init_lenser_engagement_row";
-ALTER TABLE lensers.profiles ENABLE TRIGGER "trg_log_lenser_join";
-ALTER TABLE lensers.profiles ENABLE TRIGGER "trg_sync_profile_from_auth_metadata";
-ALTER TABLE lensers.profiles ENABLE TRIGGER "trg_enforce_lensers_protections";
-ALTER TABLE lensers.profiles ENABLE TRIGGER "trg_protect_sensitive_lenser_fields";
-
--- lensers.follows trigger re-enable removed: table dropped in schema_cleanup migration
-
--- content.threads
--- Note: tg_xp_thread_created was dropped in migration 20260328130000 (duplicate trigger fix)
-ALTER TABLE content.threads ENABLE TRIGGER "trg_sync_thread_count";
-ALTER TABLE content.threads ENABLE TRIGGER "trg_xp_on_thread_created";
-ALTER TABLE content.threads ENABLE TRIGGER "trg_xp_thread_visibility_changed";
-
--- lenses.lenses
--- Note: trg_lenses_create_initial_version and trg_lens_template_updated
--- were dropped in migration 20260324000000_lens_schema_refactor.sql
-ALTER TABLE lenses.lenses ENABLE TRIGGER "trg_sync_lens_count";
-ALTER TABLE lenses.lenses ENABLE TRIGGER "tg_xp_lens_created";
-
--- content.thread_replies
-ALTER TABLE content.thread_replies ENABLE TRIGGER "thread_replies_after_insert";
-ALTER TABLE content.thread_replies ENABLE TRIGGER "thread_replies_after_update";
-ALTER TABLE content.thread_replies ENABLE TRIGGER "thread_replies_after_delete";
-ALTER TABLE content.thread_replies ENABLE TRIGGER "trg_xp_on_reply_created";
-ALTER TABLE content.thread_replies ENABLE TRIGGER "trg_xp_on_reply_received";
-
--- content.tag_map
-ALTER TABLE content.tag_map ENABLE TRIGGER "trg_tag_created";
-
--- content reactions
-ALTER TABLE content.reactions ENABLE TRIGGER ALL;
-
-
--- ---------------------------------------------------------------------------
--- ---------------------------------------------------------------------------
-SELECT id, created_at
-FROM lensers.profiles
-WHERE handle LIKE 'lenser_%'
-ORDER BY created_at, id
-ON CONFLICT (lenser_id) DO NOTHING;
-
--- ---------------------------------------------------------------------------
--- ---------------------------------------------------------------------------
-SELECT
-  p.id,
-  COALESCE(tc.cnt, 0),
-  COALESCE(pc.cnt, 0),
-  COALESCE(frc.cnt, 0),
-  COALESCE(fgc.cnt, 0),
-  now()
-FROM lensers.profiles p
-LEFT JOIN (
-  SELECT lenser_id, count(*)::int AS cnt FROM content.threads GROUP BY lenser_id
-) tc ON tc.lenser_id = p.id
-LEFT JOIN (
-  SELECT lenser_id, count(*)::int AS cnt FROM lenses.lenses GROUP BY lenser_id
-) pc ON pc.lenser_id = p.id
-LEFT JOIN (
-  SELECT target_profile_id AS lenser_id, count(*)::int AS cnt FROM lensers.relationships WHERE status = 'accepted' GROUP BY target_profile_id
-) frc ON frc.lenser_id = p.id
-LEFT JOIN (
-  SELECT source_profile_id AS lenser_id, count(*)::int AS cnt FROM lensers.relationships WHERE status = 'accepted' GROUP BY source_profile_id
-) fgc ON fgc.lenser_id = p.id
-WHERE p.handle LIKE 'lenser_%'
-ON CONFLICT (lenser_id) DO UPDATE SET
-  thread_count = EXCLUDED.thread_count,
-  lens_count = EXCLUDED.lens_count,
-  follower_count = EXCLUDED.follower_count,
-  following_count = EXCLUDED.following_count,
-  updated_at = now();
-
--- ---------------------------------------------------------------------------
--- Backfill thread reply_count
--- ---------------------------------------------------------------------------
-UPDATE content.threads t
-SET reply_count = sub.cnt
-FROM (
-  SELECT thread_id, count(*)::int AS cnt
-  FROM content.thread_replies
-  WHERE status = 'published'::"content"."thread_reply_status"
-    AND deleted_at IS NULL
-  GROUP BY thread_id
-) sub
-WHERE t.id = sub.thread_id
-  AND t.reply_count <> sub.cnt;
-
--- ---------------------------------------------------------------------------
--- Drop temp tables
--- ---------------------------------------------------------------------------
-DROP TABLE IF EXISTS seed_profile_index;
-DROP TABLE IF EXISTS seed_tag_index;
-DROP FUNCTION IF EXISTS public.seed_pick_language(float);
-DROP FUNCTION IF EXISTS public.seed_pick_country(double precision);
-DROP FUNCTION IF EXISTS public.seed_password_hash();
-
--- ---------------------------------------------------------------------------
--- ANALYZE all seeded tables for query planner accuracy
--- ---------------------------------------------------------------------------
-ANALYZE auth.users;
-ANALYZE auth.identities;
-ANALYZE lensers.profiles;
-ANALYZE lensers.relationships;
-ANALYZE lensers.tag_follows;
-ANALYZE lensers.badges;
-ANALYZE content.threads;
-ANALYZE content.entity_translations;
-ANALYZE content.thread_replies;
-ANALYZE content.reactions;
-ANALYZE lenses.lenses;
-ANALYZE lenses.versions;
-ANALYZE content.tags;
-ANALYZE content.tag_translations;
-ANALYZE content.tag_map;
-
--- Reset memory settings
-RESET work_mem;
-RESET maintenance_work_mem;
-
-
--- >>> seeds/32_scale_workflows.sql
--- =============================================================================
--- 32. SCALE WORKFLOWS
--- =============================================================================
--- Seeds 500 realistic workflows across all generative AI output categories:
---   text · code · image · video · audio · pdf · research · data · transform
---
--- Each workflow gets:
---   • A professional title and description
---   • 2–5 workflow_nodes wired in a linear DAG (workflow_edges)
---   • 2–4 workflow_phases with ordered workflow_tasks (phases/tasks model)
---
--- Authors: ~80% human lensers, ~20% AI lenser profiles.
--- Nodes reuse lenses from the pool seeded in 25_scale_lenses.sql.
--- =============================================================================
-
-DO $$
-DECLARE
-  total            int := 500;
-  i                int;
-  wf_id            uuid;
-  lenser_id_val    uuid;
-  node_count       int;
-  node_ids         uuid[];
-  lens_ids         uuid[];
-  all_lens_count   int;
-  all_lenser_ids   uuid[];
-  all_lenser_cnt   int;
-  node_idx         int;
-  curr_node_id     uuid;
-  lens_id_val      uuid;
-  version_id_val   uuid;
-  vis              text;
-  ca               timestamptz;
-  variant_idx      int;
-  phase_id_1       uuid;
-  phase_id_2       uuid;
-  phase_id_3       uuid;
-  phase_id_4       uuid;
-  task_id          uuid;
-  node_label       text;
-
-  -- ---------------------------------------------------------------------------
-  -- 12 professional workflow categories
-  -- ---------------------------------------------------------------------------
-  wf_titles text[][] := ARRAY[
-    -- 0: Long-form content pipeline
-    ARRAY[
-      'Long-Form Article Pipeline',
-      'Researches a topic, builds an outline, drafts and refines a publication-ready article, then exports a PDF.',
-      'ARRAY[''Research & Brief'', ''Draft'', ''Refine'', ''Export'']'
-    ],
-    -- 1: Code generation & review loop
-    ARRAY[
-      'Code Generation & Review Loop',
-      'Generates implementation code, runs a security and quality review, applies fixes, and produces final documentation.',
-      'ARRAY[''Generate'', ''Review'', ''Fix'', ''Document'']'
-    ],
-    -- 2: Text-to-image campaign
-    ARRAY[
-      'Text-to-Image Campaign Builder',
-      'Translates a creative brief into optimised image prompts, renders stills, refines them, and packages a visual kit.',
-      'ARRAY[''Brief'', ''Prompt Engineering'', ''Render'', ''Package'']'
-    ],
-    -- 3: Short-form video production
-    ARRAY[
-      'Short-Form Video Production',
-      'Builds a hook-driven script, generates scene descriptions, renders a video draft, and validates pacing and CTA.',
-      'ARRAY[''Script'', ''Scene Plan'', ''Render'', ''QA'']'
-    ],
-    -- 4: Podcast episode pipeline
-    ARRAY[
-      'Podcast Episode Pipeline',
-      'Outlines episode beats, writes host dialogue and transitions, produces an audio-ready script, and drafts show notes.',
-      'ARRAY[''Outline'', ''Script'', ''Show Notes'', ''Distribution'']'
-    ],
-    -- 5: Research-to-PDF report
-    ARRAY[
-      'Research Brief to PDF Report',
-      'Synthesises evidence for a research question, structures findings, drafts a report, validates it, and exports a PDF.',
-      'ARRAY[''Research'', ''Structure'', ''Draft'', ''Validate'', ''Export'']'
-    ],
-    -- 6: Data analysis & insight report
-    ARRAY[
-      'Data Analysis & Insight Pipeline',
-      'Ingests raw data, extracts statistical insights, writes an executive summary, and generates a shareable report.',
-      'ARRAY[''Ingest'', ''Analyse'', ''Summarise'', ''Report'']'
-    ],
-    -- 7: SEO content optimisation
-    ARRAY[
-      'SEO Content Optimisation Flow',
-      'Audits existing content, rewrites it for target keywords, validates readability and structure, and produces final copy.',
-      'ARRAY[''Audit'', ''Rewrite'', ''Validate'', ''Publish'']'
-    ],
-    -- 8: Multilingual localisation
-    ARRAY[
-      'Multilingual Localisation Pipeline',
-      'Translates source content into multiple locales, checks cultural fluency, and outputs a locale-keyed content pack.',
-      'ARRAY[''Extract'', ''Translate'', ''Review'', ''Package'']'
-    ],
-    -- 9: Email campaign factory
-    ARRAY[
-      'Email Campaign Factory',
-      'Generates subject lines, body copy, and CTA variants for a full drip campaign, then validates deliverability signals.',
-      'ARRAY[''Strategy'', ''Copywriting'', ''A/B Variants'', ''QA'']'
-    ],
-    -- 10: Legal document drafter
-    ARRAY[
-      'Legal Document Drafting Flow',
-      'Drafts contract clauses, reviews for compliance gaps, adds jurisdiction-specific language, and flags review items.',
-      'ARRAY[''Draft'', ''Compliance Review'', ''Localise'', ''Flag'']'
-    ],
-    -- 11: Product launch content kit
-    ARRAY[
-      'Product Launch Content Kit',
-      'Produces launch copy, social posts, press release, product descriptions, and a visual brief from a single product spec.',
-      'ARRAY[''Brief'', ''Copy'', ''Social'', ''Press Release'', ''Visual Brief'']'
-    ]
-  ];
-
-BEGIN
-  -- ---------------------------------------------------------------------------
-  -- Build lenser pool: 80% human / 20% AI
-  -- ---------------------------------------------------------------------------
-  SELECT array_agg(id) INTO all_lenser_ids
-  FROM (
-    SELECT id FROM (
-      SELECT id FROM lensers.profiles
-      WHERE handle LIKE 'lenser_%' AND status = 'active'::"lensers"."lenser_status"
-      ORDER BY random() LIMIT 400
-    ) h
-    UNION ALL
-    SELECT id FROM (
-      SELECT id FROM lensers.profiles
-      WHERE type = 'ai'::"lensers"."lenser_type" AND status = 'active'::"lensers"."lenser_status"
-      ORDER BY random() LIMIT 100
-    ) a
-  ) combined;
-
-  all_lenser_cnt := COALESCE(array_length(all_lenser_ids, 1), 0);
-
-  IF all_lenser_cnt = 0 THEN
-    RAISE NOTICE '32_scale_workflows: no lenser profiles found — skipping.';
-    RETURN;
-  END IF;
-
-  -- Build lens pool for nodes
-  SELECT array_agg(id) INTO lens_ids
-  FROM (
-    SELECT id FROM lenses.lenses
-    WHERE status = 'published'::"content"."content_status"
-    ORDER BY random() LIMIT 3000
-  ) l;
-
-  all_lens_count := COALESCE(array_length(lens_ids, 1), 0);
-
-  IF all_lens_count = 0 THEN
-    RAISE NOTICE '32_scale_workflows: no published lenses found — skipping nodes.';
-  END IF;
-
-  -- ---------------------------------------------------------------------------
-  -- Main loop
-  -- ---------------------------------------------------------------------------
-  FOR i IN 1..total LOOP
-    lenser_id_val := all_lenser_ids[ 1 + (floor(random() * all_lenser_cnt))::int ];
-    variant_idx   := (i - 1) % 12;
-
-    vis := CASE
-      WHEN random() < 0.78 THEN 'public'
-      WHEN random() < 0.92 THEN 'unlisted'
-      ELSE 'private'
-    END;
-
-    ca := now() - (pow(random(), 1.5) * interval '365 days');
-
-    -- -------------------------------------------------------------------------
-    -- Insert workflow
-    -- -------------------------------------------------------------------------
-    wf_id := gen_random_uuid();
-    INSERT INTO lenses.workflows (
-      id, lenser_id, title, description, visibility, created_at, updated_at
-    ) VALUES (
-      wf_id,
-      lenser_id_val,
-      wf_titles[variant_idx + 1][1] || ' #' || i,
-      wf_titles[variant_idx + 1][2],
-      vis,
-      ca,
-      ca + interval '10 minutes'
-    );
-
-    -- -------------------------------------------------------------------------
-    -- Nodes: 2–5, linear DAG
-    -- -------------------------------------------------------------------------
-    IF all_lens_count > 0 THEN
-      node_count := 2 + (floor(random() * 4))::int;   -- 2..5
-      node_ids   := ARRAY[]::uuid[];
-
-      FOR node_idx IN 1..node_count LOOP
-        lens_id_val := lens_ids[ 1 + (floor(random() * all_lens_count))::int ];
-
-        SELECT v.id INTO version_id_val
-        FROM lenses.versions v
-        WHERE v.lens_id = lens_id_val
-        ORDER BY v.version_number DESC
-        LIMIT 1;
-
-        node_label := CASE node_idx
-          WHEN 1 THEN 'Input'
-          WHEN 2 THEN 'Process'
-          WHEN 3 THEN 'Transform'
-          WHEN 4 THEN 'Validate'
-          ELSE        'Output'
-        END;
-
-        curr_node_id := gen_random_uuid();
-        INSERT INTO lenses.workflow_nodes (
-          id, workflow_id, lens_id, version_id,
-          position_x, position_y, label, ordinal, created_at
-        ) VALUES (
-          curr_node_id,
-          wf_id,
-          lens_id_val,
-          version_id_val,
-          (node_idx - 1) * 260.0,
-          0.0,
-          node_label,
-          node_idx,
-          ca + (node_idx * interval '1 minute')
-        );
-
-        node_ids := node_ids || curr_node_id;
-      END LOOP;
-
-      -- Wire nodes in a linear chain
-      FOR node_idx IN 1..node_count - 1 LOOP
-        INSERT INTO lenses.workflow_edges (
-          id, workflow_id, source_node_id, target_node_id,
-          source_output_key, target_param_label
-        ) VALUES (
-          gen_random_uuid(),
-          wf_id,
-          node_ids[node_idx],
-          node_ids[node_idx + 1],
-          'output',
-          CASE ((node_idx - 1) % 6)
-            WHEN 0 THEN 'context'
-            WHEN 1 THEN 'content'
-            WHEN 2 THEN 'data'
-            WHEN 3 THEN 'draft'
-            WHEN 4 THEN 'topic'
-            ELSE        'requirements'
-          END
-        ) ON CONFLICT DO NOTHING;
-      END LOOP;
-    END IF;
-
-    -- -------------------------------------------------------------------------
-    -- Phases & Tasks — hierarchical authoring model
-    -- -------------------------------------------------------------------------
-    CASE variant_idx
-
-      -- 0: Long-form article
-      WHEN 0 THEN
-        phase_id_1 := gen_random_uuid();
-        INSERT INTO lenses.workflow_phases (id, workflow_id, title, description, ordinal, created_at, updated_at)
-        VALUES (phase_id_1, wf_id, 'Research & Brief', 'Gather evidence and define scope.', 1, ca, ca);
-
-        INSERT INTO lenses.workflow_tasks (id, phase_id, workflow_id, title, prompt_text, output_type, model_hint, ordinal, created_at, updated_at) VALUES
-          (gen_random_uuid(), phase_id_1, wf_id, 'Define Research Question', 'Identify the core research question, target audience, desired length, and tone for the article. Output a structured brief in JSON.', 'text', NULL, 1, ca, ca),
-          (gen_random_uuid(), phase_id_1, wf_id, 'Synthesise Evidence', 'Search for primary sources, statistics, and expert opinions that support the research question. Rank findings by relevance and credibility.', 'text', NULL, 2, ca, ca);
-
-        phase_id_2 := gen_random_uuid();
-        INSERT INTO lenses.workflow_phases (id, workflow_id, title, description, ordinal, created_at, updated_at)
-        VALUES (phase_id_2, wf_id, 'Draft', 'Write the initial article draft.', 2, ca, ca);
-
-        INSERT INTO lenses.workflow_tasks (id, phase_id, workflow_id, title, prompt_text, output_type, model_hint, ordinal, created_at, updated_at) VALUES
-          (gen_random_uuid(), phase_id_2, wf_id, 'Write Full Draft', 'Using the research brief and evidence, write a complete article with H1 headline, structured subheadings, engaging intro, body, and conclusion. Cite sources inline.', 'text', NULL, 1, ca, ca);
-
-        phase_id_3 := gen_random_uuid();
-        INSERT INTO lenses.workflow_phases (id, workflow_id, title, description, ordinal, created_at, updated_at)
-        VALUES (phase_id_3, wf_id, 'Refine & Export', 'Polish the draft and export.', 3, ca, ca);
-
-        INSERT INTO lenses.workflow_tasks (id, phase_id, workflow_id, title, prompt_text, output_type, model_hint, ordinal, created_at, updated_at) VALUES
-          (gen_random_uuid(), phase_id_3, wf_id, 'Editorial Polish', 'Improve clarity, tighten pacing, fix grammar, and ensure tone consistency. Return the refined draft only.', 'text', NULL, 1, ca, ca),
-          (gen_random_uuid(), phase_id_3, wf_id, 'Export to PDF', 'Render the refined article into a PDF-ready manifest with sections, page-break hints, and a cover page.', 'file', NULL, 2, ca, ca);
-
-      -- 1: Code generation & review
-      WHEN 1 THEN
-        phase_id_1 := gen_random_uuid();
-        INSERT INTO lenses.workflow_phases (id, workflow_id, title, description, ordinal, created_at, updated_at)
-        VALUES (phase_id_1, wf_id, 'Generate', 'Write the initial implementation.', 1, ca, ca);
-
-        INSERT INTO lenses.workflow_tasks (id, phase_id, workflow_id, title, prompt_text, output_type, model_hint, ordinal, created_at, updated_at) VALUES
-          (gen_random_uuid(), phase_id_1, wf_id, 'Write Implementation', 'Generate clean, production-ready code that fulfils the specification. Include error handling, type annotations, and a brief usage example.', 'text', NULL, 1, ca, ca);
-
-        phase_id_2 := gen_random_uuid();
-        INSERT INTO lenses.workflow_phases (id, workflow_id, title, description, ordinal, created_at, updated_at)
-        VALUES (phase_id_2, wf_id, 'Review', 'Security and quality audit.', 2, ca, ca);
-
-        INSERT INTO lenses.workflow_tasks (id, phase_id, workflow_id, title, prompt_text, output_type, model_hint, ordinal, created_at, updated_at) VALUES
-          (gen_random_uuid(), phase_id_2, wf_id, 'Security Review', 'Audit the generated code for OWASP Top 10 vulnerabilities, injection risks, and insecure defaults. Return a severity-rated issue list.', 'text', NULL, 1, ca, ca),
-          (gen_random_uuid(), phase_id_2, wf_id, 'Quality Review', 'Check for performance anti-patterns, dead code, naming clarity, and adherence to language conventions. Score 1–10 and list improvements.', 'text', NULL, 2, ca, ca);
-
-        phase_id_3 := gen_random_uuid();
-        INSERT INTO lenses.workflow_phases (id, workflow_id, title, description, ordinal, created_at, updated_at)
-        VALUES (phase_id_3, wf_id, 'Fix & Document', 'Apply fixes and write docs.', 3, ca, ca);
-
-        INSERT INTO lenses.workflow_tasks (id, phase_id, workflow_id, title, prompt_text, output_type, model_hint, ordinal, created_at, updated_at) VALUES
-          (gen_random_uuid(), phase_id_3, wf_id, 'Apply Fixes', 'Rewrite the implementation incorporating all review findings. Highlight changed sections with inline comments.', 'text', NULL, 1, ca, ca),
-          (gen_random_uuid(), phase_id_3, wf_id, 'Generate Documentation', 'Write API documentation, parameter descriptions, return value specs, and code examples for the final implementation.', 'text', NULL, 2, ca, ca);
-
-      -- 2: Text-to-image campaign
-      WHEN 2 THEN
-        phase_id_1 := gen_random_uuid();
-        INSERT INTO lenses.workflow_phases (id, workflow_id, title, description, ordinal, created_at, updated_at)
-        VALUES (phase_id_1, wf_id, 'Creative Brief', 'Define visual direction.', 1, ca, ca);
-
-        INSERT INTO lenses.workflow_tasks (id, phase_id, workflow_id, title, prompt_text, output_type, model_hint, ordinal, created_at, updated_at) VALUES
-          (gen_random_uuid(), phase_id_1, wf_id, 'Analyse Brand Brief', 'Extract subject, style, mood, colour palette, and target platform from the creative brief. Emit a structured visual spec JSON.', 'text', NULL, 1, ca, ca);
-
-        phase_id_2 := gen_random_uuid();
-        INSERT INTO lenses.workflow_phases (id, workflow_id, title, description, ordinal, created_at, updated_at)
-        VALUES (phase_id_2, wf_id, 'Prompt Engineering', 'Build optimised image prompts.', 2, ca, ca);
-
-        INSERT INTO lenses.workflow_tasks (id, phase_id, workflow_id, title, prompt_text, output_type, model_hint, ordinal, created_at, updated_at) VALUES
-          (gen_random_uuid(), phase_id_2, wf_id, 'Generate Image Prompts', 'From the visual spec, produce 5 distinct image generation prompts. Each prompt must specify: subject, art style, composition, lighting, colour palette, aspect ratio, and negative constraints.', 'text', NULL, 1, ca, ca);
-
-        phase_id_3 := gen_random_uuid();
-        INSERT INTO lenses.workflow_phases (id, workflow_id, title, description, ordinal, created_at, updated_at)
-        VALUES (phase_id_3, wf_id, 'Render & Package', 'Generate and package visuals.', 3, ca, ca);
-
-        INSERT INTO lenses.workflow_tasks (id, phase_id, workflow_id, title, prompt_text, output_type, model_hint, ordinal, created_at, updated_at) VALUES
-          (gen_random_uuid(), phase_id_3, wf_id, 'Render Still Images', 'Send each optimised prompt to the image generation model. Return the rendered images as a gallery.', 'image', NULL, 1, ca, ca),
-          (gen_random_uuid(), phase_id_3, wf_id, 'Package Visual Kit', 'Compile rendered images, prompts used, and visual spec into a downloadable asset package with naming conventions.', 'file', NULL, 2, ca, ca);
-
-      -- 3: Short-form video
-      WHEN 3 THEN
-        phase_id_1 := gen_random_uuid();
-        INSERT INTO lenses.workflow_phases (id, workflow_id, title, description, ordinal, created_at, updated_at)
-        VALUES (phase_id_1, wf_id, 'Script', 'Write the video script.', 1, ca, ca);
-
-        INSERT INTO lenses.workflow_tasks (id, phase_id, workflow_id, title, prompt_text, output_type, model_hint, ordinal, created_at, updated_at) VALUES
-          (gen_random_uuid(), phase_id_1, wf_id, 'Write Hook & Script', 'Write a hook-driven script for a 60-second social video. Include: 3-second hook, scene breakdown with shot types, narration, on-screen text callouts, and a CTA.', 'text', NULL, 1, ca, ca);
-
-        phase_id_2 := gen_random_uuid();
-        INSERT INTO lenses.workflow_phases (id, workflow_id, title, description, ordinal, created_at, updated_at)
-        VALUES (phase_id_2, wf_id, 'Scene Plan', 'Convert script into production instructions.', 2, ca, ca);
-
-        INSERT INTO lenses.workflow_tasks (id, phase_id, workflow_id, title, prompt_text, output_type, model_hint, ordinal, created_at, updated_at) VALUES
-          (gen_random_uuid(), phase_id_2, wf_id, 'Build Scene Plan', 'Convert the script into a shot-by-shot scene plan. Each scene must declare: duration, shot description, visual style, audio/narration, transitions, and export format.', 'text', NULL, 1, ca, ca);
-
-        phase_id_3 := gen_random_uuid();
-        INSERT INTO lenses.workflow_phases (id, workflow_id, title, description, ordinal, created_at, updated_at)
-        VALUES (phase_id_3, wf_id, 'Render & QA', 'Render video and validate output.', 3, ca, ca);
-
-        INSERT INTO lenses.workflow_tasks (id, phase_id, workflow_id, title, prompt_text, output_type, model_hint, ordinal, created_at, updated_at) VALUES
-          (gen_random_uuid(), phase_id_3, wf_id, 'Render Video', 'Render the video from the scene plan. Preserve continuity between shots and honour the declared duration budget.', 'video', NULL, 1, ca, ca),
-          (gen_random_uuid(), phase_id_3, wf_id, 'QA & Pacing Check', 'Review the rendered video for pacing, CTA clarity, caption accuracy, and platform-specific requirements. Return a pass/fail report.', 'text', NULL, 2, ca, ca);
-
-      -- 4: Podcast episode
-      WHEN 4 THEN
-        phase_id_1 := gen_random_uuid();
-        INSERT INTO lenses.workflow_phases (id, workflow_id, title, description, ordinal, created_at, updated_at)
-        VALUES (phase_id_1, wf_id, 'Episode Outline', 'Plan the episode structure.', 1, ca, ca);
-
-        INSERT INTO lenses.workflow_tasks (id, phase_id, workflow_id, title, prompt_text, output_type, model_hint, ordinal, created_at, updated_at) VALUES
-          (gen_random_uuid(), phase_id_1, wf_id, 'Plan Episode Beats', 'Create a beat-by-beat episode outline: hook, context, 3 talking points, expert insights, listener engagement, and outro.', 'text', NULL, 1, ca, ca);
-
-        phase_id_2 := gen_random_uuid();
-        INSERT INTO lenses.workflow_phases (id, workflow_id, title, description, ordinal, created_at, updated_at)
-        VALUES (phase_id_2, wf_id, 'Script & Audio', 'Write dialogue and produce audio.', 2, ca, ca);
-
-        INSERT INTO lenses.workflow_tasks (id, phase_id, workflow_id, title, prompt_text, output_type, model_hint, ordinal, created_at, updated_at) VALUES
-          (gen_random_uuid(), phase_id_2, wf_id, 'Write Host Dialogue', 'Write the full host dialogue with natural transitions, pauses, listener engagement prompts, and sponsor reads if applicable.', 'text', NULL, 1, ca, ca),
-          (gen_random_uuid(), phase_id_2, wf_id, 'Generate Audio', 'Render the script into audio using a text-to-speech model. Output an audio file ready for post-production.', 'audio', NULL, 2, ca, ca);
-
-        phase_id_3 := gen_random_uuid();
-        INSERT INTO lenses.workflow_phases (id, workflow_id, title, description, ordinal, created_at, updated_at)
-        VALUES (phase_id_3, wf_id, 'Distribution Assets', 'Prepare show notes and metadata.', 3, ca, ca);
-
-        INSERT INTO lenses.workflow_tasks (id, phase_id, workflow_id, title, prompt_text, output_type, model_hint, ordinal, created_at, updated_at) VALUES
-          (gen_random_uuid(), phase_id_3, wf_id, 'Write Show Notes', 'Write SEO-optimised show notes with episode summary, timestamps, key quotes, guest bios, and resource links.', 'text', NULL, 1, ca, ca);
-
-      -- 5: Research-to-PDF
-      WHEN 5 THEN
-        phase_id_1 := gen_random_uuid();
-        INSERT INTO lenses.workflow_phases (id, workflow_id, title, description, ordinal, created_at, updated_at)
-        VALUES (phase_id_1, wf_id, 'Research', 'Gather and synthesise evidence.', 1, ca, ca);
-
-        INSERT INTO lenses.workflow_tasks (id, phase_id, workflow_id, title, prompt_text, output_type, model_hint, ordinal, created_at, updated_at) VALUES
-          (gen_random_uuid(), phase_id_1, wf_id, 'Gather Evidence', 'Identify, rank, and summarise primary sources, statistics, and expert opinions relevant to the research question. Emit JSON: {findings[], summary, open_questions[]}.', 'text', NULL, 1, ca, ca);
-
-        phase_id_2 := gen_random_uuid();
-        INSERT INTO lenses.workflow_phases (id, workflow_id, title, description, ordinal, created_at, updated_at)
-        VALUES (phase_id_2, wf_id, 'Draft Report', 'Structure and write the report.', 2, ca, ca);
-
-        INSERT INTO lenses.workflow_tasks (id, phase_id, workflow_id, title, prompt_text, output_type, model_hint, ordinal, created_at, updated_at) VALUES
-          (gen_random_uuid(), phase_id_2, wf_id, 'Draft Executive Summary', 'Write a 200-word executive summary covering: objective, key findings, and top 3 recommendations.', 'text', NULL, 1, ca, ca),
-          (gen_random_uuid(), phase_id_2, wf_id, 'Write Full Report Body', 'Expand the research findings into a structured report: methodology, findings with evidence, analysis, and recommendations.', 'text', NULL, 2, ca, ca);
-
-        phase_id_3 := gen_random_uuid();
-        INSERT INTO lenses.workflow_phases (id, workflow_id, title, description, ordinal, created_at, updated_at)
-        VALUES (phase_id_3, wf_id, 'Validate & Export', 'Review quality and export.', 3, ca, ca);
-
-        INSERT INTO lenses.workflow_tasks (id, phase_id, workflow_id, title, prompt_text, output_type, model_hint, ordinal, created_at, updated_at) VALUES
-          (gen_random_uuid(), phase_id_3, wf_id, 'Validate Report', 'Score the report against: accuracy, completeness, clarity, and citation quality. Emit: {passed, score, issues[], recommendations[]}.', 'text', NULL, 1, ca, ca),
-          (gen_random_uuid(), phase_id_3, wf_id, 'Export PDF', 'Render the validated report into a PDF manifest with sections, citations, cover page, and page-break hints.', 'file', NULL, 2, ca, ca);
-
-      -- 6: Data analysis
-      WHEN 6 THEN
-        phase_id_1 := gen_random_uuid();
-        INSERT INTO lenses.workflow_phases (id, workflow_id, title, description, ordinal, created_at, updated_at)
-        VALUES (phase_id_1, wf_id, 'Ingest & Profile', 'Load and profile the dataset.', 1, ca, ca);
-
-        INSERT INTO lenses.workflow_tasks (id, phase_id, workflow_id, title, prompt_text, output_type, model_hint, ordinal, created_at, updated_at) VALUES
-          (gen_random_uuid(), phase_id_1, wf_id, 'Profile Dataset', 'Analyse the dataset schema, row count, null rates, value distributions, and data quality issues. Return a JSON profile object.', 'text', NULL, 1, ca, ca);
-
-        phase_id_2 := gen_random_uuid();
-        INSERT INTO lenses.workflow_phases (id, workflow_id, title, description, ordinal, created_at, updated_at)
-        VALUES (phase_id_2, wf_id, 'Analyse', 'Extract insights and detect anomalies.', 2, ca, ca);
-
-        INSERT INTO lenses.workflow_tasks (id, phase_id, workflow_id, title, prompt_text, output_type, model_hint, ordinal, created_at, updated_at) VALUES
-          (gen_random_uuid(), phase_id_2, wf_id, 'Trend & Correlation Analysis', 'Identify trends, seasonality, correlations, and leading indicators in the dataset. Rank by business impact.', 'text', NULL, 1, ca, ca),
-          (gen_random_uuid(), phase_id_2, wf_id, 'Anomaly Detection', 'Flag statistical outliers and data quality anomalies. For each anomaly: describe it, assess severity, and recommend whether to exclude or investigate.', 'text', NULL, 2, ca, ca);
-
-        phase_id_3 := gen_random_uuid();
-        INSERT INTO lenses.workflow_phases (id, workflow_id, title, description, ordinal, created_at, updated_at)
-        VALUES (phase_id_3, wf_id, 'Report', 'Write and deliver the insight report.', 3, ca, ca);
-
-        INSERT INTO lenses.workflow_tasks (id, phase_id, workflow_id, title, prompt_text, output_type, model_hint, ordinal, created_at, updated_at) VALUES
-          (gen_random_uuid(), phase_id_3, wf_id, 'Write Insight Report', 'Produce an executive-ready report: key metrics dashboard, trend narrative, anomaly summary, and top 5 actionable recommendations.', 'text', NULL, 1, ca, ca);
-
-      -- 7: SEO content optimisation
-      WHEN 7 THEN
-        phase_id_1 := gen_random_uuid();
-        INSERT INTO lenses.workflow_phases (id, workflow_id, title, description, ordinal, created_at, updated_at)
-        VALUES (phase_id_1, wf_id, 'Audit', 'Assess the existing content.', 1, ca, ca);
-
-        INSERT INTO lenses.workflow_tasks (id, phase_id, workflow_id, title, prompt_text, output_type, model_hint, ordinal, created_at, updated_at) VALUES
-          (gen_random_uuid(), phase_id_1, wf_id, 'Content SEO Audit', 'Audit the content for: keyword density, semantic coverage, title/meta quality, heading structure, internal link opportunities, and readability score. Emit a prioritised issue list.', 'text', NULL, 1, ca, ca);
-
-        phase_id_2 := gen_random_uuid();
-        INSERT INTO lenses.workflow_phases (id, workflow_id, title, description, ordinal, created_at, updated_at)
-        VALUES (phase_id_2, wf_id, 'Rewrite', 'Optimise the content copy.', 2, ca, ca);
-
-        INSERT INTO lenses.workflow_tasks (id, phase_id, workflow_id, title, prompt_text, output_type, model_hint, ordinal, created_at, updated_at) VALUES
-          (gen_random_uuid(), phase_id_2, wf_id, 'Keyword-Optimised Rewrite', 'Rewrite the content to naturally integrate the primary keyword and secondary keywords. Maintain the original intent and a Flesch reading ease above 60.', 'text', NULL, 1, ca, ca),
-          (gen_random_uuid(), phase_id_2, wf_id, 'Optimise Meta Tags', 'Write an SEO title tag (≤60 chars) and meta description (≤155 chars) that include the primary keyword and drive click-through.', 'text', NULL, 2, ca, ca);
-
-        phase_id_3 := gen_random_uuid();
-        INSERT INTO lenses.workflow_phases (id, workflow_id, title, description, ordinal, created_at, updated_at)
-        VALUES (phase_id_3, wf_id, 'Validate', 'Confirm quality and readiness.', 3, ca, ca);
-
-        INSERT INTO lenses.workflow_tasks (id, phase_id, workflow_id, title, prompt_text, output_type, model_hint, ordinal, created_at, updated_at) VALUES
-          (gen_random_uuid(), phase_id_3, wf_id, 'Final Quality Check', 'Validate the rewritten content: keyword prominence, heading hierarchy, internal links, readability, and E-E-A-T signals. Return {passed, score, notes[]}.', 'text', NULL, 1, ca, ca);
-
-      -- 8: Multilingual localisation
-      WHEN 8 THEN
-        phase_id_1 := gen_random_uuid();
-        INSERT INTO lenses.workflow_phases (id, workflow_id, title, description, ordinal, created_at, updated_at)
-        VALUES (phase_id_1, wf_id, 'Extract', 'Prepare source strings.', 1, ca, ca);
-
-        INSERT INTO lenses.workflow_tasks (id, phase_id, workflow_id, title, prompt_text, output_type, model_hint, ordinal, created_at, updated_at) VALUES
-          (gen_random_uuid(), phase_id_1, wf_id, 'Extract Translatable Strings', 'Parse the source content and extract all user-facing strings. Annotate each string with: context, tone, max-length constraint, and whether it contains placeholders.', 'text', NULL, 1, ca, ca);
-
-        phase_id_2 := gen_random_uuid();
-        INSERT INTO lenses.workflow_phases (id, workflow_id, title, description, ordinal, created_at, updated_at)
-        VALUES (phase_id_2, wf_id, 'Translate', 'Localise strings for each target locale.', 2, ca, ca);
-
-        INSERT INTO lenses.workflow_tasks (id, phase_id, workflow_id, title, prompt_text, output_type, model_hint, ordinal, created_at, updated_at) VALUES
-          (gen_random_uuid(), phase_id_2, wf_id, 'Translate Strings', 'Translate all extracted strings into the target locale. Preserve placeholders, respect max-length constraints, and adapt idioms for cultural fit.', 'text', NULL, 1, ca, ca),
-          (gen_random_uuid(), phase_id_2, wf_id, 'Fluency & Tone Review', 'Review translated strings for fluency, grammatical correctness, and tone consistency. Flag strings that require human review and suggest alternatives.', 'text', NULL, 2, ca, ca);
-
-        phase_id_3 := gen_random_uuid();
-        INSERT INTO lenses.workflow_phases (id, workflow_id, title, description, ordinal, created_at, updated_at)
-        VALUES (phase_id_3, wf_id, 'Package', 'Deliver locale-keyed output.', 3, ca, ca);
-
-        INSERT INTO lenses.workflow_tasks (id, phase_id, workflow_id, title, prompt_text, output_type, model_hint, ordinal, created_at, updated_at) VALUES
-          (gen_random_uuid(), phase_id_3, wf_id, 'Package Locale Files', 'Compile reviewed translations into a locale-keyed JSON file ready for import into the i18n system. Include a change log of flagged items.', 'file', NULL, 1, ca, ca);
-
-      -- 9: Email campaign factory
-      WHEN 9 THEN
-        phase_id_1 := gen_random_uuid();
-        INSERT INTO lenses.workflow_phases (id, workflow_id, title, description, ordinal, created_at, updated_at)
-        VALUES (phase_id_1, wf_id, 'Strategy', 'Define campaign goals and audience.', 1, ca, ca);
-
-        INSERT INTO lenses.workflow_tasks (id, phase_id, workflow_id, title, prompt_text, output_type, model_hint, ordinal, created_at, updated_at) VALUES
-          (gen_random_uuid(), phase_id_1, wf_id, 'Campaign Strategy Brief', 'Define: campaign goal, audience segment, pain points, value proposition, email sequence type (drip/broadcast), and success metrics.', 'text', NULL, 1, ca, ca);
-
-        phase_id_2 := gen_random_uuid();
-        INSERT INTO lenses.workflow_phases (id, workflow_id, title, description, ordinal, created_at, updated_at)
-        VALUES (phase_id_2, wf_id, 'Copywriting', 'Write email copy and variants.', 2, ca, ca);
-
-        INSERT INTO lenses.workflow_tasks (id, phase_id, workflow_id, title, prompt_text, output_type, model_hint, ordinal, created_at, updated_at) VALUES
-          (gen_random_uuid(), phase_id_2, wf_id, 'Write Email Sequence', 'Write a 4-email drip sequence. Each email must include: subject line, preheader, personalised greeting, body (value prop + story + social proof), and CTA button text.', 'text', NULL, 1, ca, ca),
-          (gen_random_uuid(), phase_id_2, wf_id, 'Generate A/B Variants', 'For each email, produce 2 subject line variants and 2 CTA variants optimised for different psychological triggers (urgency vs. curiosity).', 'text', NULL, 2, ca, ca);
-
-        phase_id_3 := gen_random_uuid();
-        INSERT INTO lenses.workflow_phases (id, workflow_id, title, description, ordinal, created_at, updated_at)
-        VALUES (phase_id_3, wf_id, 'QA', 'Validate deliverability and compliance.', 3, ca, ca);
-
-        INSERT INTO lenses.workflow_tasks (id, phase_id, workflow_id, title, prompt_text, output_type, model_hint, ordinal, created_at, updated_at) VALUES
-          (gen_random_uuid(), phase_id_3, wf_id, 'Deliverability & Compliance Check', 'Review each email for: spam trigger words, CAN-SPAM/GDPR compliance (unsubscribe, sender identity), link count, image-to-text ratio, and mobile preview length. Return a pass/fail report.', 'text', NULL, 1, ca, ca);
-
-      -- 10: Legal document drafter
-      WHEN 10 THEN
-        phase_id_1 := gen_random_uuid();
-        INSERT INTO lenses.workflow_phases (id, workflow_id, title, description, ordinal, created_at, updated_at)
-        VALUES (phase_id_1, wf_id, 'Draft', 'Write the initial document.', 1, ca, ca);
-
-        INSERT INTO lenses.workflow_tasks (id, phase_id, workflow_id, title, prompt_text, output_type, model_hint, ordinal, created_at, updated_at) VALUES
-          (gen_random_uuid(), phase_id_1, wf_id, 'Draft Contract Clauses', 'Draft the specified contract clauses using precise legal language. For each clause: state the obligation, define key terms, specify remedies for breach, and note any carve-outs.', 'text', NULL, 1, ca, ca);
-
-        phase_id_2 := gen_random_uuid();
-        INSERT INTO lenses.workflow_phases (id, workflow_id, title, description, ordinal, created_at, updated_at)
-        VALUES (phase_id_2, wf_id, 'Review', 'Compliance and jurisdiction review.', 2, ca, ca);
-
-        INSERT INTO lenses.workflow_tasks (id, phase_id, workflow_id, title, prompt_text, output_type, model_hint, ordinal, created_at, updated_at) VALUES
-          (gen_random_uuid(), phase_id_2, wf_id, 'Compliance Gap Analysis', 'Identify clauses that may conflict with applicable law, regulatory requirements, or standard market practice. Flag gaps and suggest compliant alternatives.', 'text', NULL, 1, ca, ca),
-          (gen_random_uuid(), phase_id_2, wf_id, 'Jurisdiction Localisation', 'Adapt flagged clauses to the governing jurisdiction. Note any terms that require mandatory local language under applicable law.', 'text', NULL, 2, ca, ca);
-
-        phase_id_3 := gen_random_uuid();
-        INSERT INTO lenses.workflow_phases (id, workflow_id, title, description, ordinal, created_at, updated_at)
-        VALUES (phase_id_3, wf_id, 'Final Review', 'Flag items for attorney review.', 3, ca, ca);
-
-        INSERT INTO lenses.workflow_tasks (id, phase_id, workflow_id, title, prompt_text, output_type, model_hint, ordinal, created_at, updated_at) VALUES
-          (gen_random_uuid(), phase_id_3, wf_id, 'Attorney Review Flag', 'Produce a final checklist of clauses and provisions that must be reviewed by a qualified attorney before execution. Explain the risk for each flagged item.', 'text', NULL, 1, ca, ca);
-
-      -- 11: Product launch content kit
-      ELSE
-        phase_id_1 := gen_random_uuid();
-        INSERT INTO lenses.workflow_phases (id, workflow_id, title, description, ordinal, created_at, updated_at)
-        VALUES (phase_id_1, wf_id, 'Brief', 'Analyse product spec and define messaging.', 1, ca, ca);
-
-        INSERT INTO lenses.workflow_tasks (id, phase_id, workflow_id, title, prompt_text, output_type, model_hint, ordinal, created_at, updated_at) VALUES
-          (gen_random_uuid(), phase_id_1, wf_id, 'Messaging Framework', 'Analyse the product spec and define: value proposition, primary differentiators, buyer personas, key messages, and positioning statement.', 'text', NULL, 1, ca, ca);
-
-        phase_id_2 := gen_random_uuid();
-        INSERT INTO lenses.workflow_phases (id, workflow_id, title, description, ordinal, created_at, updated_at)
-        VALUES (phase_id_2, wf_id, 'Content Production', 'Write all launch assets.', 2, ca, ca);
-
-        INSERT INTO lenses.workflow_tasks (id, phase_id, workflow_id, title, prompt_text, output_type, model_hint, ordinal, created_at, updated_at) VALUES
-          (gen_random_uuid(), phase_id_2, wf_id, 'Write Launch Copy', 'Write: hero headline, sub-headline, 3 feature sections, social proof block, and primary CTA.', 'text', NULL, 1, ca, ca),
-          (gen_random_uuid(), phase_id_2, wf_id, 'Social Media Posts', 'Create a 7-day social media post calendar with platform-specific copy (LinkedIn, X, Instagram) and hashtag sets.', 'text', NULL, 2, ca, ca),
-          (gen_random_uuid(), phase_id_2, wf_id, 'Press Release', 'Draft a structured press release: headline, dateline, lead paragraph, body (3 paragraphs), executive quote, and boilerplate.', 'text', NULL, 3, ca, ca);
-
-        phase_id_3 := gen_random_uuid();
-        INSERT INTO lenses.workflow_phases (id, workflow_id, title, description, ordinal, created_at, updated_at)
-        VALUES (phase_id_3, wf_id, 'Visual Brief', 'Define imagery and design direction.', 3, ca, ca);
-
-        INSERT INTO lenses.workflow_tasks (id, phase_id, workflow_id, title, prompt_text, output_type, model_hint, ordinal, created_at, updated_at) VALUES
-          (gen_random_uuid(), phase_id_3, wf_id, 'Visual Direction Brief', 'Write a visual brief for the design team: brand mood, colour palette, typography direction, hero image concept, and icon style.', 'text', NULL, 1, ca, ca),
-          (gen_random_uuid(), phase_id_3, wf_id, 'Generate Hero Image', 'Render a hero image from the visual brief using an image generation model. Aspect ratio: 16:9. Style: photorealistic product marketing.', 'image', NULL, 2, ca, ca);
-
-    END CASE;
-
-  END LOOP;
-
-  RAISE NOTICE '32_scale_workflows: inserted % workflows with nodes, edges, phases, and tasks.', total;
-END $$;
-
-ANALYZE lenses.workflows;
-ANALYZE lenses.workflow_nodes;
-ANALYZE lenses.workflow_edges;
-ANALYZE lenses.workflow_phases;
-ANALYZE lenses.workflow_tasks;
-
-
 -- >>> seeds/40_lens_chain_templates.sql
 -- =============================================================================
 -- 40. LENS CHAIN TEMPLATES — Open Source Workflows
@@ -3787,4 +2690,1565 @@ ANALYZE lenses.workflows;
 ANALYZE lenses.workflow_nodes;
 ANALYZE lenses.workflow_edges;
 ANALYZE content.tag_map;
+
+
+-- >>> seeds/41_developer_lens_templates.sql
+-- =============================================================================
+-- 41. DEVELOPER & COMMUNITY LENS TEMPLATES
+-- =============================================================================
+-- Seeds 13 production-ready lens templates covering developer productivity
+-- (code review, testing, docs, SQL) and community engagement (threads,
+-- challenges, email). All are tagged 'template' and a specific kind-* tag.
+--
+-- UUID convention:  41000000-0001-LLLL-0001-… where LLLL = lens index (hex)
+-- Idempotent: every block is gated with IF NOT EXISTS.
+--
+-- Dependencies:
+--   • migration 20260426020000_developer_kind_tags.sql  (kind-code etc. tags)
+--   • migration 20260417150000_lens_chain_templates.sql (template tag + RPC)
+--   • 04_ai_providers.sql, 04b_ai_models.sql, 07_ai_lensers.sql (AI author)
+--   • 15_lens_tools.sql (text / textarea tools)
+-- =============================================================================
+
+DO $seed$
+DECLARE
+  v_author        uuid;
+  v_tool_text     uuid;
+  v_tool_textarea uuid;
+
+  -- Canonical tags
+  v_tag_template      uuid;
+  v_tag_code          uuid;
+  v_tag_data          uuid;
+  v_tag_planning      uuid;
+  v_tag_community     uuid;
+  v_tag_documentation uuid;
+
+  -- ── Lens 1: Code Reviewer ──────────────────────────────────────────────────
+  v_lens_code_reviewer  uuid := '41000000-0001-0001-0001-000000000001';
+  v_ver_code_reviewer   uuid := '41000000-0001-0001-0001-00000000000a';
+  v_p_cr_code           uuid := '41000000-0001-0001-0001-0000000000a1';
+  v_p_cr_language       uuid := '41000000-0001-0001-0001-0000000000a2';
+
+  -- ── Lens 2: Unit Test Generator ────────────────────────────────────────────
+  v_lens_unit_test      uuid := '41000000-0001-0002-0001-000000000001';
+  v_ver_unit_test       uuid := '41000000-0001-0002-0001-00000000000a';
+  v_p_ut_code           uuid := '41000000-0001-0002-0001-0000000000a1';
+  v_p_ut_framework      uuid := '41000000-0001-0002-0001-0000000000a2';
+
+  -- ── Lens 3: Bug Report Analyzer ────────────────────────────────────────────
+  v_lens_bug_analyzer   uuid := '41000000-0001-0003-0001-000000000001';
+  v_ver_bug_analyzer    uuid := '41000000-0001-0003-0001-00000000000a';
+  v_p_ba_error_log      uuid := '41000000-0001-0003-0001-0000000000a1';
+  v_p_ba_context        uuid := '41000000-0001-0003-0001-0000000000a2';
+
+  -- ── Lens 4: PR Description Writer ──────────────────────────────────────────
+  v_lens_pr_writer      uuid := '41000000-0001-0004-0001-000000000001';
+  v_ver_pr_writer       uuid := '41000000-0001-0004-0001-00000000000a';
+  v_p_pw_diff           uuid := '41000000-0001-0004-0001-0000000000a1';
+  v_p_pw_context        uuid := '41000000-0001-0004-0001-0000000000a2';
+
+  -- ── Lens 5: SQL Query Builder ──────────────────────────────────────────────
+  v_lens_sql_builder    uuid := '41000000-0001-0005-0001-000000000001';
+  v_ver_sql_builder     uuid := '41000000-0001-0005-0001-00000000000a';
+  v_p_sq_requirements   uuid := '41000000-0001-0005-0001-0000000000a1';
+  v_p_sq_schema         uuid := '41000000-0001-0005-0001-0000000000a2';
+
+  -- ── Lens 6: API Doc Generator ─────────────────────────────────────────────
+  v_lens_api_doc        uuid := '41000000-0001-0006-0001-000000000001';
+  v_ver_api_doc         uuid := '41000000-0001-0006-0001-00000000000a';
+  v_p_ad_code           uuid := '41000000-0001-0006-0001-0000000000a1';
+  v_p_ad_format         uuid := '41000000-0001-0006-0001-0000000000a2';
+
+  -- ── Lens 7: Code Explainer ────────────────────────────────────────────────
+  v_lens_code_explainer uuid := '41000000-0001-0007-0001-000000000001';
+  v_ver_code_explainer  uuid := '41000000-0001-0007-0001-00000000000a';
+  v_p_ce_code           uuid := '41000000-0001-0007-0001-0000000000a1';
+  v_p_ce_audience       uuid := '41000000-0001-0007-0001-0000000000a2';
+
+  -- ── Lens 8: Refactoring Advisor ───────────────────────────────────────────
+  v_lens_refactor       uuid := '41000000-0001-0008-0001-000000000001';
+  v_ver_refactor        uuid := '41000000-0001-0008-0001-00000000000a';
+  v_p_ra_code           uuid := '41000000-0001-0008-0001-0000000000a1';
+  v_p_ra_goals          uuid := '41000000-0001-0008-0001-0000000000a2';
+
+  -- ── Lens 9: Meeting Notes Summarizer ──────────────────────────────────────
+  v_lens_meeting        uuid := '41000000-0001-0009-0001-000000000001';
+  v_ver_meeting         uuid := '41000000-0001-0009-0001-00000000000a';
+  v_p_mn_notes          uuid := '41000000-0001-0009-0001-0000000000a1';
+  v_p_mn_attendees      uuid := '41000000-0001-0009-0001-0000000000a2';
+
+  -- ── Lens 10: User Story Generator ─────────────────────────────────────────
+  v_lens_user_story     uuid := '41000000-0001-000a-0001-000000000001';
+  v_ver_user_story      uuid := '41000000-0001-000a-0001-00000000000a';
+  v_p_us_feature        uuid := '41000000-0001-000a-0001-0000000000a1';
+  v_p_us_persona        uuid := '41000000-0001-000a-0001-0000000000a2';
+
+  -- ── Lens 11: Email Draft Writer ───────────────────────────────────────────
+  v_lens_email          uuid := '41000000-0001-000b-0001-000000000001';
+  v_ver_email           uuid := '41000000-0001-000b-0001-00000000000a';
+  v_p_em_intent         uuid := '41000000-0001-000b-0001-0000000000a1';
+  v_p_em_tone           uuid := '41000000-0001-000b-0001-0000000000a2';
+
+  -- ── Lens 12: Thread Starter ───────────────────────────────────────────────
+  v_lens_thread         uuid := '41000000-0001-000c-0001-000000000001';
+  v_ver_thread          uuid := '41000000-0001-000c-0001-00000000000a';
+  v_p_th_topic          uuid := '41000000-0001-000c-0001-0000000000a1';
+  v_p_th_context        uuid := '41000000-0001-000c-0001-0000000000a2';
+
+  -- ── Lens 13: Challenge Creator ────────────────────────────────────────────
+  v_lens_challenge      uuid := '41000000-0001-000d-0001-000000000001';
+  v_ver_challenge       uuid := '41000000-0001-000d-0001-00000000000a';
+  v_p_ch_subject        uuid := '41000000-0001-000d-0001-0000000000a1';
+  v_p_ch_difficulty     uuid := '41000000-0001-000d-0001-0000000000a2';
+
+BEGIN
+  -- ── Resolve dependencies ───────────────────────────────────────────────────
+  SELECT id INTO v_author
+  FROM lensers.profiles
+  WHERE type = 'ai'::lensers.lenser_type AND status = 'active'::lensers.lenser_status
+  ORDER BY created_at ASC LIMIT 1;
+
+  IF v_author IS NULL THEN
+    SELECT id INTO v_author FROM lensers.profiles ORDER BY created_at ASC LIMIT 1;
+  END IF;
+
+  IF v_author IS NULL THEN
+    RAISE NOTICE '41_developer_lens_templates: no lensers.profiles row yet — skipping.';
+    RETURN;
+  END IF;
+
+  SELECT id INTO v_tool_text     FROM lenses.tools WHERE key = 'text';
+  SELECT id INTO v_tool_textarea FROM lenses.tools WHERE key = 'textarea';
+
+  IF v_tool_text IS NULL OR v_tool_textarea IS NULL THEN
+    RAISE NOTICE '41_developer_lens_templates: lenses.tools not seeded yet — skipping.';
+    RETURN;
+  END IF;
+
+  SELECT id INTO v_tag_template      FROM content.tags WHERE slug = 'template';
+  SELECT id INTO v_tag_code          FROM content.tags WHERE slug = 'kind-code';
+  SELECT id INTO v_tag_data          FROM content.tags WHERE slug = 'kind-data';
+  SELECT id INTO v_tag_planning      FROM content.tags WHERE slug = 'kind-planning';
+  SELECT id INTO v_tag_community     FROM content.tags WHERE slug = 'kind-community';
+  SELECT id INTO v_tag_documentation FROM content.tags WHERE slug = 'kind-documentation';
+
+  IF v_tag_template IS NULL OR v_tag_code IS NULL THEN
+    RAISE NOTICE '41_developer_lens_templates: required tags missing — run migration 20260426020000 first.';
+    RETURN;
+  END IF;
+
+  -- ─────────────────────────────────────────────────────────────────────────
+  -- 1) Code Reviewer
+  -- ─────────────────────────────────────────────────────────────────────────
+  IF NOT EXISTS (SELECT 1 FROM lenses.lenses WHERE id = v_lens_code_reviewer) THEN
+    INSERT INTO lenses.lenses (id, lenser_id, visibility, status)
+    VALUES (v_lens_code_reviewer, v_author, 'public', 'published');
+
+    INSERT INTO lenses.versions (id, lens_id, version_number, template_body, status, published_at)
+    VALUES (
+      v_ver_code_reviewer, v_lens_code_reviewer, 1,
+      'You are the Code Reviewer Lens. Analyze the code in [[:' || v_p_cr_code || ']] written in [[:' || v_p_cr_language || ']]. '
+      'Produce a structured review with four sections: (1) Bugs — logic errors, null dereferences, edge cases; '
+      '(2) Security — injection risks, auth bypasses, insecure defaults; '
+      '(3) Style — naming, formatting, dead code; '
+      '(4) Suggestions — concrete refactors with before/after snippets. '
+      'Rate overall quality 1-10. Be direct. Do not rewrite the entire file.',
+      'published', now()
+    );
+
+    UPDATE lenses.lenses SET head_version_id = v_ver_code_reviewer WHERE id = v_lens_code_reviewer;
+
+    INSERT INTO lenses.version_parameters (id, version_id, label, tool_id) VALUES
+      (v_p_cr_code,     v_ver_code_reviewer, 'code',     v_tool_textarea),
+      (v_p_cr_language, v_ver_code_reviewer, 'language', v_tool_text);
+
+    INSERT INTO content.entity_translations (entity_type, entity_id, language_code, is_original, title, description, content)
+    VALUES
+      ('lens', v_lens_code_reviewer, 'en', true,
+       'Code Reviewer (template)',
+       'Reviews code for bugs, security issues, and style — with concrete before/after suggestions.',
+       'You are the Code Reviewer Lens. Review [[code]] written in [[language]] for bugs, security, and style.'),
+      ('lens', v_lens_code_reviewer, 'tr', false,
+       'Kod İnceleyici (şablon)',
+       'Kodu hata, güvenlik sorunu ve stil açısından inceler; somut öneriler sunar.',
+       'Kod İnceleme Lensi''sin. [[language]] dilinde yazılmış [[code]] kodunu incele.');
+
+    INSERT INTO content.tag_map (entity_type, entity_id, tag_id) VALUES
+      ('lens', v_lens_code_reviewer, v_tag_code),
+      ('lens', v_lens_code_reviewer, v_tag_template)
+    ON CONFLICT DO NOTHING;
+  END IF;
+
+  -- ─────────────────────────────────────────────────────────────────────────
+  -- 2) Unit Test Generator
+  -- ─────────────────────────────────────────────────────────────────────────
+  IF NOT EXISTS (SELECT 1 FROM lenses.lenses WHERE id = v_lens_unit_test) THEN
+    INSERT INTO lenses.lenses (id, lenser_id, visibility, status)
+    VALUES (v_lens_unit_test, v_author, 'public', 'published');
+
+    INSERT INTO lenses.versions (id, lens_id, version_number, template_body, status, published_at)
+    VALUES (
+      v_ver_unit_test, v_lens_unit_test, 1,
+      'You are the Unit Test Generator Lens. Given the function or module in [[:' || v_p_ut_code || ']], '
+      'generate a complete test suite using [[:' || v_p_ut_framework || ']]. '
+      'Cover: happy path, boundary values, error cases, null/empty inputs, and any side effects. '
+      'Each test must have a descriptive name following the "should_<behaviour>_when_<condition>" convention. '
+      'Include import statements and any required mocks. Output only runnable test code with inline comments.',
+      'published', now()
+    );
+
+    UPDATE lenses.lenses SET head_version_id = v_ver_unit_test WHERE id = v_lens_unit_test;
+
+    INSERT INTO lenses.version_parameters (id, version_id, label, tool_id) VALUES
+      (v_p_ut_code,      v_ver_unit_test, 'function_code', v_tool_textarea),
+      (v_p_ut_framework, v_ver_unit_test, 'framework',     v_tool_text);
+
+    INSERT INTO content.entity_translations (entity_type, entity_id, language_code, is_original, title, description, content)
+    VALUES
+      ('lens', v_lens_unit_test, 'en', true,
+       'Unit Test Generator (template)',
+       'Generates a complete test suite for a function or module — happy path, edge cases, and error scenarios.',
+       'You are the Unit Test Generator Lens. Generate tests for [[function_code]] using [[framework]].'),
+      ('lens', v_lens_unit_test, 'tr', false,
+       'Birim Test Üreteci (şablon)',
+       'Bir fonksiyon veya modül için tam test paketi üretir; başarılı yol, sınır değerleri ve hata senaryoları.',
+       'Birim Test Üreteci Lensi''sin. [[function_code]] için [[framework]] kullanarak testler üret.');
+
+    INSERT INTO content.tag_map (entity_type, entity_id, tag_id) VALUES
+      ('lens', v_lens_unit_test, v_tag_code),
+      ('lens', v_lens_unit_test, v_tag_template)
+    ON CONFLICT DO NOTHING;
+  END IF;
+
+  -- ─────────────────────────────────────────────────────────────────────────
+  -- 3) Bug Report Analyzer
+  -- ─────────────────────────────────────────────────────────────────────────
+  IF NOT EXISTS (SELECT 1 FROM lenses.lenses WHERE id = v_lens_bug_analyzer) THEN
+    INSERT INTO lenses.lenses (id, lenser_id, visibility, status)
+    VALUES (v_lens_bug_analyzer, v_author, 'public', 'published');
+
+    INSERT INTO lenses.versions (id, lens_id, version_number, template_body, status, published_at)
+    VALUES (
+      v_ver_bug_analyzer, v_lens_bug_analyzer, 1,
+      'You are the Bug Report Analyzer Lens. Examine the error log or stack trace in [[:' || v_p_ba_error_log || ']] '
+      'and the surrounding context in [[:' || v_p_ba_context || ']]. '
+      'Emit a JSON object with: root_cause (string), affected_component (string), '
+      'severity (critical|high|medium|low), reproduction_steps (array of strings), '
+      'likely_fix (string with code snippet if applicable), '
+      'and prevention (string describing how to avoid this class of bug). '
+      'If the log is ambiguous, list the top three candidate causes ranked by probability.',
+      'published', now()
+    );
+
+    UPDATE lenses.lenses SET head_version_id = v_ver_bug_analyzer WHERE id = v_lens_bug_analyzer;
+
+    INSERT INTO lenses.version_parameters (id, version_id, label, tool_id) VALUES
+      (v_p_ba_error_log, v_ver_bug_analyzer, 'error_log', v_tool_textarea),
+      (v_p_ba_context,   v_ver_bug_analyzer, 'context',   v_tool_textarea);
+
+    INSERT INTO content.entity_translations (entity_type, entity_id, language_code, is_original, title, description, content)
+    VALUES
+      ('lens', v_lens_bug_analyzer, 'en', true,
+       'Bug Report Analyzer (template)',
+       'Diagnoses root cause from a stack trace or error log and suggests a concrete fix.',
+       'You are the Bug Report Analyzer Lens. Find the root cause of [[error_log]] given [[context]].'),
+      ('lens', v_lens_bug_analyzer, 'tr', false,
+       'Hata Raporu Analizci (şablon)',
+       'Yığın izinden kök nedeni tespit eder ve somut bir düzeltme önerir.',
+       'Hata Raporu Analizci Lensi''sin. [[context]] bağlamında [[error_log]] hatasının kök nedenini bul.');
+
+    INSERT INTO content.tag_map (entity_type, entity_id, tag_id) VALUES
+      ('lens', v_lens_bug_analyzer, v_tag_code),
+      ('lens', v_lens_bug_analyzer, v_tag_template)
+    ON CONFLICT DO NOTHING;
+  END IF;
+
+  -- ─────────────────────────────────────────────────────────────────────────
+  -- 4) PR Description Writer
+  -- ─────────────────────────────────────────────────────────────────────────
+  IF NOT EXISTS (SELECT 1 FROM lenses.lenses WHERE id = v_lens_pr_writer) THEN
+    INSERT INTO lenses.lenses (id, lenser_id, visibility, status)
+    VALUES (v_lens_pr_writer, v_author, 'public', 'published');
+
+    INSERT INTO lenses.versions (id, lens_id, version_number, template_body, status, published_at)
+    VALUES (
+      v_ver_pr_writer, v_lens_pr_writer, 1,
+      'You are the PR Description Writer Lens. Given the diff summary in [[:' || v_p_pw_diff || ']] '
+      'and background context in [[:' || v_p_pw_context || ']], write a professional pull request description. '
+      'Structure: ## Summary (2-3 bullets on what changed and why), '
+      '## Test Plan (bulleted checklist of manual steps to verify the change), '
+      '## Breaking Changes (if any, else omit), '
+      '## Related Issues (placeholder links). '
+      'Focus on the WHY not the WHAT. Tone: concise, professional, peer-reviewable.',
+      'published', now()
+    );
+
+    UPDATE lenses.lenses SET head_version_id = v_ver_pr_writer WHERE id = v_lens_pr_writer;
+
+    INSERT INTO lenses.version_parameters (id, version_id, label, tool_id) VALUES
+      (v_p_pw_diff,    v_ver_pr_writer, 'diff_summary', v_tool_textarea),
+      (v_p_pw_context, v_ver_pr_writer, 'context',      v_tool_text);
+
+    INSERT INTO content.entity_translations (entity_type, entity_id, language_code, is_original, title, description, content)
+    VALUES
+      ('lens', v_lens_pr_writer, 'en', true,
+       'PR Description Writer (template)',
+       'Writes a structured, professional pull request description from a diff summary — why, test plan, breaking changes.',
+       'You are the PR Description Writer Lens. Write a PR description for [[diff_summary]] with context [[context]].'),
+      ('lens', v_lens_pr_writer, 'tr', false,
+       'PR Açıklaması Yazıcı (şablon)',
+       'Diff özetinden yapılandırılmış, profesyonel bir pull request açıklaması yazar.',
+       'PR Açıklaması Yazıcı Lensi''sin. [[diff_summary]] için [[context]] bağlamında PR açıklaması yaz.');
+
+    INSERT INTO content.tag_map (entity_type, entity_id, tag_id) VALUES
+      ('lens', v_lens_pr_writer, v_tag_documentation),
+      ('lens', v_lens_pr_writer, v_tag_template)
+    ON CONFLICT DO NOTHING;
+  END IF;
+
+  -- ─────────────────────────────────────────────────────────────────────────
+  -- 5) SQL Query Builder
+  -- ─────────────────────────────────────────────────────────────────────────
+  IF NOT EXISTS (SELECT 1 FROM lenses.lenses WHERE id = v_lens_sql_builder) THEN
+    INSERT INTO lenses.lenses (id, lenser_id, visibility, status)
+    VALUES (v_lens_sql_builder, v_author, 'public', 'published');
+
+    INSERT INTO lenses.versions (id, lens_id, version_number, template_body, status, published_at)
+    VALUES (
+      v_ver_sql_builder, v_lens_sql_builder, 1,
+      'You are the SQL Query Builder Lens. Translate the natural language requirements in [[:' || v_p_sq_requirements || ']] '
+      'into a correct, optimized SQL query using the schema hints in [[:' || v_p_sq_schema || ']]. '
+      'Output: (1) the SQL query formatted and commented; '
+      '(2) a brief explanation of the approach (JOINs used, index assumptions, aggregation strategy); '
+      '(3) any caveats — NULLs, performance concerns for large tables, missing indexes. '
+      'Default to PostgreSQL syntax unless the schema hints specify another dialect. '
+      'Do not use SELECT * in production queries.',
+      'published', now()
+    );
+
+    UPDATE lenses.lenses SET head_version_id = v_ver_sql_builder WHERE id = v_lens_sql_builder;
+
+    INSERT INTO lenses.version_parameters (id, version_id, label, tool_id) VALUES
+      (v_p_sq_requirements, v_ver_sql_builder, 'requirements', v_tool_textarea),
+      (v_p_sq_schema,       v_ver_sql_builder, 'schema_hint',  v_tool_textarea);
+
+    INSERT INTO content.entity_translations (entity_type, entity_id, language_code, is_original, title, description, content)
+    VALUES
+      ('lens', v_lens_sql_builder, 'en', true,
+       'SQL Query Builder (template)',
+       'Converts natural language requirements into optimized PostgreSQL queries with explanations.',
+       'You are the SQL Query Builder Lens. Build a SQL query for [[requirements]] using schema [[schema_hint]].'),
+      ('lens', v_lens_sql_builder, 'tr', false,
+       'SQL Sorgu Oluşturucu (şablon)',
+       'Doğal dil gereksinimlerini optimize edilmiş PostgreSQL sorgularına dönüştürür.',
+       'SQL Sorgu Oluşturucu Lensi''sin. [[schema_hint]] şemasını kullanarak [[requirements]] için SQL sorgusu oluştur.');
+
+    INSERT INTO content.tag_map (entity_type, entity_id, tag_id) VALUES
+      ('lens', v_lens_sql_builder, v_tag_data),
+      ('lens', v_lens_sql_builder, v_tag_template)
+    ON CONFLICT DO NOTHING;
+  END IF;
+
+  -- ─────────────────────────────────────────────────────────────────────────
+  -- 6) API Documentation Generator
+  -- ─────────────────────────────────────────────────────────────────────────
+  IF NOT EXISTS (SELECT 1 FROM lenses.lenses WHERE id = v_lens_api_doc) THEN
+    INSERT INTO lenses.lenses (id, lenser_id, visibility, status)
+    VALUES (v_lens_api_doc, v_author, 'public', 'published');
+
+    INSERT INTO lenses.versions (id, lens_id, version_number, template_body, status, published_at)
+    VALUES (
+      v_ver_api_doc, v_lens_api_doc, 1,
+      'You are the API Documentation Generator Lens. Analyze the code or endpoint definition in [[:' || v_p_ad_code || ']] '
+      'and produce documentation in the format specified by [[:' || v_p_ad_format || ']] (e.g. OpenAPI 3.1, JSDoc, tsdoc, Markdown). '
+      'Include for each endpoint/function: description, parameters (name, type, required, default, description), '
+      'return type with example payload, possible error codes and their meaning, and a usage example. '
+      'Infer types from code; mark ambiguous fields with a TODO comment. '
+      'Output only the documentation — no prose wrapper.',
+      'published', now()
+    );
+
+    UPDATE lenses.lenses SET head_version_id = v_ver_api_doc WHERE id = v_lens_api_doc;
+
+    INSERT INTO lenses.version_parameters (id, version_id, label, tool_id) VALUES
+      (v_p_ad_code,   v_ver_api_doc, 'code',        v_tool_textarea),
+      (v_p_ad_format, v_ver_api_doc, 'format_hint', v_tool_text);
+
+    INSERT INTO content.entity_translations (entity_type, entity_id, language_code, is_original, title, description, content)
+    VALUES
+      ('lens', v_lens_api_doc, 'en', true,
+       'API Documentation Generator (template)',
+       'Produces OpenAPI, JSDoc, or Markdown API docs from code — parameters, return types, errors, examples.',
+       'You are the API Doc Generator Lens. Document [[code]] in [[format_hint]] format.'),
+      ('lens', v_lens_api_doc, 'tr', false,
+       'API Dokümantasyon Üreteci (şablon)',
+       'Koddan OpenAPI, JSDoc veya Markdown API dokümantasyonu üretir.',
+       'API Dokümantasyon Üreteci Lensi''sin. [[code]] kodunu [[format_hint]] formatında belgele.');
+
+    INSERT INTO content.tag_map (entity_type, entity_id, tag_id) VALUES
+      ('lens', v_lens_api_doc, v_tag_documentation),
+      ('lens', v_lens_api_doc, v_tag_template)
+    ON CONFLICT DO NOTHING;
+  END IF;
+
+  -- ─────────────────────────────────────────────────────────────────────────
+  -- 7) Code Explainer
+  -- ─────────────────────────────────────────────────────────────────────────
+  IF NOT EXISTS (SELECT 1 FROM lenses.lenses WHERE id = v_lens_code_explainer) THEN
+    INSERT INTO lenses.lenses (id, lenser_id, visibility, status)
+    VALUES (v_lens_code_explainer, v_author, 'public', 'published');
+
+    INSERT INTO lenses.versions (id, lens_id, version_number, template_body, status, published_at)
+    VALUES (
+      v_ver_code_explainer, v_lens_code_explainer, 1,
+      'You are the Code Explainer Lens. Explain the code in [[:' || v_p_ce_code || ']] '
+      'to an audience described as [[:' || v_p_ce_audience || ']]. '
+      'Structure your explanation as: (1) What it does in one sentence; '
+      '(2) How it works — walk through the key steps in plain language, analogies encouraged; '
+      '(3) Why it is designed this way — the intent or constraint behind the approach; '
+      '(4) Gotchas — any subtle behavior or edge case the reader should know. '
+      'Calibrate vocabulary and depth strictly to the stated audience.',
+      'published', now()
+    );
+
+    UPDATE lenses.lenses SET head_version_id = v_ver_code_explainer WHERE id = v_lens_code_explainer;
+
+    INSERT INTO lenses.version_parameters (id, version_id, label, tool_id) VALUES
+      (v_p_ce_code,     v_ver_code_explainer, 'code',     v_tool_textarea),
+      (v_p_ce_audience, v_ver_code_explainer, 'audience', v_tool_text);
+
+    INSERT INTO content.entity_translations (entity_type, entity_id, language_code, is_original, title, description, content)
+    VALUES
+      ('lens', v_lens_code_explainer, 'en', true,
+       'Code Explainer (template)',
+       'Explains complex code in plain language calibrated to a stated audience — what, how, why, and gotchas.',
+       'You are the Code Explainer Lens. Explain [[code]] to [[audience]] — what, how, why, and gotchas.'),
+      ('lens', v_lens_code_explainer, 'tr', false,
+       'Kod Açıklayıcı (şablon)',
+       'Karmaşık kodu belirtilen kitleye uygun sade bir dille açıklar.',
+       'Kod Açıklayıcı Lensi''sin. [[code]] kodunu [[audience]] kitlesine açıkla.');
+
+    INSERT INTO content.tag_map (entity_type, entity_id, tag_id) VALUES
+      ('lens', v_lens_code_explainer, v_tag_code),
+      ('lens', v_lens_code_explainer, v_tag_template)
+    ON CONFLICT DO NOTHING;
+  END IF;
+
+  -- ─────────────────────────────────────────────────────────────────────────
+  -- 8) Refactoring Advisor
+  -- ─────────────────────────────────────────────────────────────────────────
+  IF NOT EXISTS (SELECT 1 FROM lenses.lenses WHERE id = v_lens_refactor) THEN
+    INSERT INTO lenses.lenses (id, lenser_id, visibility, status)
+    VALUES (v_lens_refactor, v_author, 'public', 'published');
+
+    INSERT INTO lenses.versions (id, lens_id, version_number, template_body, status, published_at)
+    VALUES (
+      v_ver_refactor, v_lens_refactor, 1,
+      'You are the Refactoring Advisor Lens. Review the code in [[:' || v_p_ra_code || ']] '
+      'against the stated goals in [[:' || v_p_ra_goals || ']]. '
+      'Produce a prioritized list of refactoring opportunities. For each: '
+      'name the pattern (Extract Function, Replace Conditional with Polymorphism, etc.), '
+      'explain the benefit, show a before/after snippet, and rate effort (low/medium/high). '
+      'Preserve existing behavior — do not introduce new features. '
+      'Flag any refactor that changes the public API or has breaking implications.',
+      'published', now()
+    );
+
+    UPDATE lenses.lenses SET head_version_id = v_ver_refactor WHERE id = v_lens_refactor;
+
+    INSERT INTO lenses.version_parameters (id, version_id, label, tool_id) VALUES
+      (v_p_ra_code,  v_ver_refactor, 'code',  v_tool_textarea),
+      (v_p_ra_goals, v_ver_refactor, 'goals', v_tool_text);
+
+    INSERT INTO content.entity_translations (entity_type, entity_id, language_code, is_original, title, description, content)
+    VALUES
+      ('lens', v_lens_refactor, 'en', true,
+       'Refactoring Advisor (template)',
+       'Identifies prioritized refactoring opportunities with before/after snippets — without changing behavior.',
+       'You are the Refactoring Advisor Lens. Suggest refactors for [[code]] toward goals [[goals]].'),
+      ('lens', v_lens_refactor, 'tr', false,
+       'Yeniden Yapılandırma Danışmanı (şablon)',
+       'Davranışı değiştirmeden önce/sonra kod parçacıklarıyla önceliklendirilmiş yeniden yapılandırma önerileri sunar.',
+       'Yeniden Yapılandırma Danışmanı Lensi''sin. [[goals]] hedefleri için [[code]] koduna yönelik öneriler sun.');
+
+    INSERT INTO content.tag_map (entity_type, entity_id, tag_id) VALUES
+      ('lens', v_lens_refactor, v_tag_code),
+      ('lens', v_lens_refactor, v_tag_template)
+    ON CONFLICT DO NOTHING;
+  END IF;
+
+  -- ─────────────────────────────────────────────────────────────────────────
+  -- 9) Meeting Notes Summarizer
+  -- ─────────────────────────────────────────────────────────────────────────
+  IF NOT EXISTS (SELECT 1 FROM lenses.lenses WHERE id = v_lens_meeting) THEN
+    INSERT INTO lenses.lenses (id, lenser_id, visibility, status)
+    VALUES (v_lens_meeting, v_author, 'public', 'published');
+
+    INSERT INTO lenses.versions (id, lens_id, version_number, template_body, status, published_at)
+    VALUES (
+      v_ver_meeting, v_lens_meeting, 1,
+      'You are the Meeting Notes Summarizer Lens. Convert the raw meeting notes in [[:' || v_p_mn_notes || ']] '
+      'for a meeting attended by [[:' || v_p_mn_attendees || ']] into a structured summary. '
+      'Output sections: ## TL;DR (two sentences max), '
+      '## Decisions (bullet list of decisions made with owner), '
+      '## Action Items (table: Task | Owner | Due Date), '
+      '## Open Questions (items deferred or unresolved), '
+      '## Next Steps. '
+      'Infer due dates from context if mentioned. Do not invent information not in the notes.',
+      'published', now()
+    );
+
+    UPDATE lenses.lenses SET head_version_id = v_ver_meeting WHERE id = v_lens_meeting;
+
+    INSERT INTO lenses.version_parameters (id, version_id, label, tool_id) VALUES
+      (v_p_mn_notes,     v_ver_meeting, 'raw_notes',  v_tool_textarea),
+      (v_p_mn_attendees, v_ver_meeting, 'attendees',  v_tool_text);
+
+    INSERT INTO content.entity_translations (entity_type, entity_id, language_code, is_original, title, description, content)
+    VALUES
+      ('lens', v_lens_meeting, 'en', true,
+       'Meeting Notes Summarizer (template)',
+       'Converts raw meeting notes into TL;DR, decisions, action items, open questions, and next steps.',
+       'You are the Meeting Notes Summarizer Lens. Summarize [[raw_notes]] for attendees [[attendees]].'),
+      ('lens', v_lens_meeting, 'tr', false,
+       'Toplantı Notu Özetleyici (şablon)',
+       'Ham toplantı notlarını TL;DR, kararlar, eylem maddeleri ve açık sorulara dönüştürür.',
+       'Toplantı Notu Özetleyici Lensi''sin. [[attendees]] katılımcıları için [[raw_notes]] notlarını özetle.');
+
+    INSERT INTO content.tag_map (entity_type, entity_id, tag_id) VALUES
+      ('lens', v_lens_meeting, v_tag_planning),
+      ('lens', v_lens_meeting, v_tag_template)
+    ON CONFLICT DO NOTHING;
+  END IF;
+
+  -- ─────────────────────────────────────────────────────────────────────────
+  -- 10) User Story Generator
+  -- ─────────────────────────────────────────────────────────────────────────
+  IF NOT EXISTS (SELECT 1 FROM lenses.lenses WHERE id = v_lens_user_story) THEN
+    INSERT INTO lenses.lenses (id, lenser_id, visibility, status)
+    VALUES (v_lens_user_story, v_author, 'public', 'published');
+
+    INSERT INTO lenses.versions (id, lens_id, version_number, template_body, status, published_at)
+    VALUES (
+      v_ver_user_story, v_lens_user_story, 1,
+      'You are the User Story Generator Lens. Given the feature description in [[:' || v_p_us_feature || ']] '
+      'for the persona [[:' || v_p_us_persona || ']], produce a set of well-formed user stories. '
+      'Each story follows: "As a <persona>, I want <goal>, so that <benefit>." '
+      'For each story also provide: Acceptance Criteria (Given/When/Then format, 2-4 scenarios), '
+      'Story Points estimate (Fibonacci: 1/2/3/5/8/13), and priority (Must/Should/Could). '
+      'Group stories by epic if the feature is large. Flag any ambiguities that need clarification.',
+      'published', now()
+    );
+
+    UPDATE lenses.lenses SET head_version_id = v_ver_user_story WHERE id = v_lens_user_story;
+
+    INSERT INTO lenses.version_parameters (id, version_id, label, tool_id) VALUES
+      (v_p_us_feature, v_ver_user_story, 'feature_description', v_tool_textarea),
+      (v_p_us_persona, v_ver_user_story, 'persona',             v_tool_text);
+
+    INSERT INTO content.entity_translations (entity_type, entity_id, language_code, is_original, title, description, content)
+    VALUES
+      ('lens', v_lens_user_story, 'en', true,
+       'User Story Generator (template)',
+       'Generates user stories with acceptance criteria, story points, and priority from a feature description.',
+       'You are the User Story Generator Lens. Generate user stories for [[feature_description]] as [[persona]].'),
+      ('lens', v_lens_user_story, 'tr', false,
+       'Kullanıcı Hikayesi Üreteci (şablon)',
+       'Özellik açıklamasından kabul kriterleri, hikaye puanları ve öncelik içeren kullanıcı hikayeleri üretir.',
+       'Kullanıcı Hikayesi Üreteci Lensi''sin. [[persona]] olarak [[feature_description]] için kullanıcı hikayeleri üret.');
+
+    INSERT INTO content.tag_map (entity_type, entity_id, tag_id) VALUES
+      ('lens', v_lens_user_story, v_tag_planning),
+      ('lens', v_lens_user_story, v_tag_template)
+    ON CONFLICT DO NOTHING;
+  END IF;
+
+  -- ─────────────────────────────────────────────────────────────────────────
+  -- 11) Email Draft Writer
+  -- ─────────────────────────────────────────────────────────────────────────
+  IF NOT EXISTS (SELECT 1 FROM lenses.lenses WHERE id = v_lens_email) THEN
+    INSERT INTO lenses.lenses (id, lenser_id, visibility, status)
+    VALUES (v_lens_email, v_author, 'public', 'published');
+
+    INSERT INTO lenses.versions (id, lens_id, version_number, template_body, status, published_at)
+    VALUES (
+      v_ver_email, v_lens_email, 1,
+      'You are the Email Draft Writer Lens. Draft a professional email based on the intent in [[:' || v_p_em_intent || ']] '
+      'using the tone specified in [[:' || v_p_em_tone || ']] (e.g. formal, friendly, assertive, empathetic). '
+      'Produce: Subject line (≤60 chars), Body (greeting, context, core ask or update, closing), '
+      'and a one-line suggested follow-up action. '
+      'Calibrate length to urgency — urgent emails are concise, nuanced situations may need more context. '
+      'Do not use hollow filler phrases like "I hope this email finds you well."',
+      'published', now()
+    );
+
+    UPDATE lenses.lenses SET head_version_id = v_ver_email WHERE id = v_lens_email;
+
+    INSERT INTO lenses.version_parameters (id, version_id, label, tool_id) VALUES
+      (v_p_em_intent, v_ver_email, 'intent', v_tool_textarea),
+      (v_p_em_tone,   v_ver_email, 'tone',   v_tool_text);
+
+    INSERT INTO content.entity_translations (entity_type, entity_id, language_code, is_original, title, description, content)
+    VALUES
+      ('lens', v_lens_email, 'en', true,
+       'Email Draft Writer (template)',
+       'Drafts a professional email with subject line and suggested follow-up from an intent description.',
+       'You are the Email Draft Writer Lens. Write an email for [[intent]] in [[tone]] tone.'),
+      ('lens', v_lens_email, 'tr', false,
+       'E-posta Taslağı Yazıcı (şablon)',
+       'Niyet açıklamasından konu satırı ve önerilen takip ile profesyonel e-posta taslağı oluşturur.',
+       'E-posta Taslağı Yazıcı Lensi''sin. [[intent]] için [[tone]] tonunda e-posta yaz.');
+
+    INSERT INTO content.tag_map (entity_type, entity_id, tag_id) VALUES
+      ('lens', v_lens_email, v_tag_community),
+      ('lens', v_lens_email, v_tag_template)
+    ON CONFLICT DO NOTHING;
+  END IF;
+
+  -- ─────────────────────────────────────────────────────────────────────────
+  -- 12) Thread Starter
+  -- ─────────────────────────────────────────────────────────────────────────
+  IF NOT EXISTS (SELECT 1 FROM lenses.lenses WHERE id = v_lens_thread) THEN
+    INSERT INTO lenses.lenses (id, lenser_id, visibility, status)
+    VALUES (v_lens_thread, v_author, 'public', 'published');
+
+    INSERT INTO lenses.versions (id, lens_id, version_number, template_body, status, published_at)
+    VALUES (
+      v_ver_thread, v_lens_thread, 1,
+      'You are the Thread Starter Lens. Create an engaging discussion post on the topic in [[:' || v_p_th_topic || ']] '
+      'informed by the background in [[:' || v_p_th_context || ']]. '
+      'Structure: a compelling opening hook (1-2 sentences), the core idea or question clearly stated, '
+      '2-3 framing sub-questions to invite different angles of response, '
+      'and a closing invitation to participate. '
+      'Tone should be curious, inclusive, and direct — not promotional. '
+      'Avoid clickbait; the hook should earn its intrigue through substance.',
+      'published', now()
+    );
+
+    UPDATE lenses.lenses SET head_version_id = v_ver_thread WHERE id = v_lens_thread;
+
+    INSERT INTO lenses.version_parameters (id, version_id, label, tool_id) VALUES
+      (v_p_th_topic,   v_ver_thread, 'topic',   v_tool_text),
+      (v_p_th_context, v_ver_thread, 'context', v_tool_textarea);
+
+    INSERT INTO content.entity_translations (entity_type, entity_id, language_code, is_original, title, description, content)
+    VALUES
+      ('lens', v_lens_thread, 'en', true,
+       'Thread Starter (template)',
+       'Crafts an engaging community discussion post — hook, core question, sub-questions, and participation invite.',
+       'You are the Thread Starter Lens. Start a discussion on [[topic]] using context [[context]].'),
+      ('lens', v_lens_thread, 'tr', false,
+       'Konu Başlatıcı (şablon)',
+       'İlgi çekici bir topluluk tartışma gönderisi oluşturur — kanca, ana soru, alt sorular ve katılım daveti.',
+       'Konu Başlatıcı Lensi''sin. [[context]] bağlamında [[topic]] üzerine tartışma başlat.');
+
+    INSERT INTO content.tag_map (entity_type, entity_id, tag_id) VALUES
+      ('lens', v_lens_thread, v_tag_community),
+      ('lens', v_lens_thread, v_tag_template)
+    ON CONFLICT DO NOTHING;
+  END IF;
+
+  -- ─────────────────────────────────────────────────────────────────────────
+  -- 13) Challenge Creator
+  -- ─────────────────────────────────────────────────────────────────────────
+  IF NOT EXISTS (SELECT 1 FROM lenses.lenses WHERE id = v_lens_challenge) THEN
+    INSERT INTO lenses.lenses (id, lenser_id, visibility, status)
+    VALUES (v_lens_challenge, v_author, 'public', 'published');
+
+    INSERT INTO lenses.versions (id, lens_id, version_number, template_body, status, published_at)
+    VALUES (
+      v_ver_challenge, v_lens_challenge, 1,
+      'You are the Challenge Creator Lens. Design a LenserFight battle challenge on the subject in [[:' || v_p_ch_subject || ']] '
+      'at difficulty level [[:' || v_p_ch_difficulty || ']] (beginner / intermediate / advanced / expert). '
+      'Output a JSON object with: title (string, ≤80 chars), '
+      'prompt (string — the exact challenge statement given to contestants), '
+      'evaluation_rubric (array of {criterion, weight_pct, description}), '
+      'time_limit_minutes (int), '
+      'example_strong_response (string — what a top answer looks like), '
+      'and tags (array of relevant topic tags). '
+      'The rubric weights must sum to 100. Challenges should be fair, unambiguous, and learnable.',
+      'published', now()
+    );
+
+    UPDATE lenses.lenses SET head_version_id = v_ver_challenge WHERE id = v_lens_challenge;
+
+    INSERT INTO lenses.version_parameters (id, version_id, label, tool_id) VALUES
+      (v_p_ch_subject,    v_ver_challenge, 'subject',    v_tool_text),
+      (v_p_ch_difficulty, v_ver_challenge, 'difficulty', v_tool_text);
+
+    INSERT INTO content.entity_translations (entity_type, entity_id, language_code, is_original, title, description, content)
+    VALUES
+      ('lens', v_lens_challenge, 'en', true,
+       'Challenge Creator (template)',
+       'Designs a LenserFight battle challenge with prompt, evaluation rubric, and example strong response.',
+       'You are the Challenge Creator Lens. Design a [[difficulty]] challenge on [[subject]].'),
+      ('lens', v_lens_challenge, 'tr', false,
+       'Meydan Okuma Oluşturucu (şablon)',
+       'Soru, değerlendirme rubriki ve örnek güçlü yanıtla LenserFight mücadele zorluğu tasarlar.',
+       'Meydan Okuma Oluşturucu Lensi''sin. [[subject]] konusunda [[difficulty]] zorluğunda bir meydan okuma tasarla.');
+
+    INSERT INTO content.tag_map (entity_type, entity_id, tag_id) VALUES
+      ('lens', v_lens_challenge, v_tag_community),
+      ('lens', v_lens_challenge, v_tag_template)
+    ON CONFLICT DO NOTHING;
+  END IF;
+
+  RAISE NOTICE '41_developer_lens_templates: seeded 13 developer/community lens templates for author %.', v_author;
+END
+$seed$;
+
+ANALYZE lenses.lenses;
+ANALYZE lenses.versions;
+ANALYZE lenses.version_parameters;
+ANALYZE content.entity_translations;
+ANALYZE content.tag_map;
+
+
+-- >>> seeds/42_production_workflow_templates.sql
+-- =============================================================================
+-- 42. PRODUCTION WORKFLOW TEMPLATES
+-- =============================================================================
+-- 6 end-to-end workflows chaining lenses from both 40_ (chain templates) and
+-- 41_ (developer/community templates). Every workflow is tagged 'template' so
+-- fn_list_template_workflows() surfaces it on the WorkflowsPage strip.
+--
+-- Lens UUID constants from 40_lens_chain_templates.sql:
+--   Intent      40000000-0001-0001-0001-000000000001
+--   Research    40000000-0001-0003-0001-000000000001
+--   Text Gen    40000000-0001-0004-0001-000000000001
+--   Refine      40000000-0001-0007-0001-000000000001
+--   Validate    40000000-0001-0008-0001-000000000001
+--   Export PDF  40000000-0001-0009-0001-000000000001
+--
+-- Lens UUID constants from 41_developer_lens_templates.sql:
+--   Code Reviewer      41000000-0001-0001-0001-000000000001
+--   Unit Test Gen      41000000-0001-0002-0001-000000000001
+--   Bug Analyzer       41000000-0001-0003-0001-000000000001
+--   PR Writer          41000000-0001-0004-0001-000000000001
+--   SQL Builder        41000000-0001-0005-0001-000000000001
+--   API Doc Gen        41000000-0001-0006-0001-000000000001
+--   Code Explainer     41000000-0001-0007-0001-000000000001
+--   Refactor Advisor   41000000-0001-0008-0001-000000000001
+--   Thread Starter     41000000-0001-000c-0001-000000000001
+--   Challenge Creator  41000000-0001-000d-0001-000000000001
+--
+-- Idempotent: every block is gated with IF NOT EXISTS.
+-- version_id is NULL on all nodes → always executes against the lens HEAD.
+--
+-- Dependencies:
+--   • 07_ai_lensers.sql          (provides v_author)
+--   • 40_lens_chain_templates.sql (lens IDs above)
+--   • 41_developer_lens_templates.sql (lens IDs above)
+--   • migration 20260417150000   (template tag + RPC)
+-- =============================================================================
+
+DO $seed$
+DECLARE
+  v_author    uuid;
+  v_tag_template uuid;
+
+  -- ── 40_ lens constants ──────────────────────────────────────────────────────
+  L40_INTENT      uuid := '40000000-0001-0001-0001-000000000001';
+  L40_RESEARCH    uuid := '40000000-0001-0003-0001-000000000001';
+  L40_GEN_TEXT    uuid := '40000000-0001-0004-0001-000000000001';
+  L40_REFINE      uuid := '40000000-0001-0007-0001-000000000001';
+  L40_VALIDATE    uuid := '40000000-0001-0008-0001-000000000001';
+  L40_EXPORT_PDF  uuid := '40000000-0001-0009-0001-000000000001';
+
+  -- ── 41_ lens constants ──────────────────────────────────────────────────────
+  L41_CODE_REVIEWER  uuid := '41000000-0001-0001-0001-000000000001';
+  L41_UNIT_TEST      uuid := '41000000-0001-0002-0001-000000000001';
+  L41_BUG_ANALYZER   uuid := '41000000-0001-0003-0001-000000000001';
+  L41_PR_WRITER      uuid := '41000000-0001-0004-0001-000000000001';
+  L41_SQL_BUILDER    uuid := '41000000-0001-0005-0001-000000000001';
+  L41_API_DOC        uuid := '41000000-0001-0006-0001-000000000001';
+  L41_CODE_EXPLAINER uuid := '41000000-0001-0007-0001-000000000001';
+  L41_REFACTOR       uuid := '41000000-0001-0008-0001-000000000001';
+  L41_USER_STORY     uuid := '41000000-0001-000a-0001-000000000001';
+  L41_EMAIL          uuid := '41000000-0001-000b-0001-000000000001';
+  L41_THREAD         uuid := '41000000-0001-000c-0001-000000000001';
+  L41_CHALLENGE      uuid := '41000000-0001-000d-0001-000000000001';
+
+  -- ── WF-1: Developer Code Review Suite (3 nodes, 3 phases) ──────────────────
+  WF1 uuid := '42000000-0002-0001-0001-000000000001';
+  WF1_N1 uuid := '42000000-0002-0001-0002-000000000001';  -- Code Reviewer
+  WF1_N2 uuid := '42000000-0002-0001-0002-000000000002';  -- Unit Test Gen
+  WF1_N3 uuid := '42000000-0002-0001-0002-000000000003';  -- PR Writer
+  WF1_P1 uuid := '42000000-0002-0001-0003-000000000001';  -- Phase: Review
+  WF1_P2 uuid := '42000000-0002-0001-0003-000000000002';  -- Phase: Test
+  WF1_P3 uuid := '42000000-0002-0001-0003-000000000003';  -- Phase: Ship
+  WF1_T1 uuid := '42000000-0002-0001-0004-000000000001';
+  WF1_T2 uuid := '42000000-0002-0001-0004-000000000002';
+  WF1_T3 uuid := '42000000-0002-0001-0004-000000000003';
+  WF1_T4 uuid := '42000000-0002-0001-0004-000000000004';
+  WF1_T5 uuid := '42000000-0002-0001-0004-000000000005';
+  WF1_T6 uuid := '42000000-0002-0001-0004-000000000006';
+
+  -- ── WF-2: Bug Investigation & Fix Pipeline (4 nodes, 4 phases) ─────────────
+  WF2 uuid := '42000000-0002-0002-0001-000000000001';
+  WF2_N1 uuid := '42000000-0002-0002-0002-000000000001';  -- Bug Analyzer
+  WF2_N2 uuid := '42000000-0002-0002-0002-000000000002';  -- Code Explainer
+  WF2_N3 uuid := '42000000-0002-0002-0002-000000000003';  -- Refactor Advisor
+  WF2_N4 uuid := '42000000-0002-0002-0002-000000000004';  -- PR Writer
+  WF2_P1 uuid := '42000000-0002-0002-0003-000000000001';  -- Phase: Diagnose
+  WF2_P2 uuid := '42000000-0002-0002-0003-000000000002';  -- Phase: Understand
+  WF2_P3 uuid := '42000000-0002-0002-0003-000000000003';  -- Phase: Fix
+  WF2_P4 uuid := '42000000-0002-0002-0003-000000000004';  -- Phase: Document
+  WF2_T1 uuid := '42000000-0002-0002-0004-000000000001';
+  WF2_T2 uuid := '42000000-0002-0002-0004-000000000002';
+  WF2_T3 uuid := '42000000-0002-0002-0004-000000000003';
+  WF2_T4 uuid := '42000000-0002-0002-0004-000000000004';
+  WF2_T5 uuid := '42000000-0002-0002-0004-000000000005';
+  WF2_T6 uuid := '42000000-0002-0002-0004-000000000006';
+  WF2_T7 uuid := '42000000-0002-0002-0004-000000000007';
+  WF2_T8 uuid := '42000000-0002-0002-0004-000000000008';
+
+  -- ── WF-3: API Documentation Suite (4 nodes, 4 phases) ──────────────────────
+  WF3 uuid := '42000000-0002-0003-0001-000000000001';
+  WF3_N1 uuid := '42000000-0002-0003-0002-000000000001';  -- API Doc Gen
+  WF3_N2 uuid := '42000000-0002-0003-0002-000000000002';  -- Refine (40_)
+  WF3_N3 uuid := '42000000-0002-0003-0002-000000000003';  -- Validate (40_)
+  WF3_N4 uuid := '42000000-0002-0003-0002-000000000004';  -- Export PDF (40_)
+  WF3_P1 uuid := '42000000-0002-0003-0003-000000000001';  -- Phase: Analyze
+  WF3_P2 uuid := '42000000-0002-0003-0003-000000000002';  -- Phase: Document
+  WF3_P3 uuid := '42000000-0002-0003-0003-000000000003';  -- Phase: Quality Gate
+  WF3_P4 uuid := '42000000-0002-0003-0003-000000000004';  -- Phase: Publish
+  WF3_T1 uuid := '42000000-0002-0003-0004-000000000001';
+  WF3_T2 uuid := '42000000-0002-0003-0004-000000000002';
+  WF3_T3 uuid := '42000000-0002-0003-0004-000000000003';
+  WF3_T4 uuid := '42000000-0002-0003-0004-000000000004';
+  WF3_T5 uuid := '42000000-0002-0003-0004-000000000005';
+  WF3_T6 uuid := '42000000-0002-0003-0004-000000000006';
+  WF3_T7 uuid := '42000000-0002-0003-0004-000000000007';
+  WF3_T8 uuid := '42000000-0002-0003-0004-000000000008';
+
+  -- ── WF-4: Sprint Story to SQL (3 nodes, 3 phases) ──────────────────────────
+  WF4 uuid := '42000000-0002-0004-0001-000000000001';
+  WF4_N1 uuid := '42000000-0002-0004-0002-000000000001';  -- User Story Gen
+  WF4_N2 uuid := '42000000-0002-0004-0002-000000000002';  -- SQL Builder
+  WF4_N3 uuid := '42000000-0002-0004-0002-000000000003';  -- PR Writer
+  WF4_P1 uuid := '42000000-0002-0004-0003-000000000001';  -- Phase: Define
+  WF4_P2 uuid := '42000000-0002-0004-0003-000000000002';  -- Phase: Model
+  WF4_P3 uuid := '42000000-0002-0004-0003-000000000003';  -- Phase: Deliver
+  WF4_T1 uuid := '42000000-0002-0004-0004-000000000001';
+  WF4_T2 uuid := '42000000-0002-0004-0004-000000000002';
+  WF4_T3 uuid := '42000000-0002-0004-0004-000000000003';
+  WF4_T4 uuid := '42000000-0002-0004-0004-000000000004';
+  WF4_T5 uuid := '42000000-0002-0004-0004-000000000005';
+  WF4_T6 uuid := '42000000-0002-0004-0004-000000000006';
+
+  -- ── WF-5: Community Engagement Pipeline (3 nodes, 3 phases) ────────────────
+  WF5 uuid := '42000000-0002-0005-0001-000000000001';
+  WF5_N1 uuid := '42000000-0002-0005-0002-000000000001';  -- Thread Starter
+  WF5_N2 uuid := '42000000-0002-0005-0002-000000000002';  -- Challenge Creator
+  WF5_N3 uuid := '42000000-0002-0005-0002-000000000003';  -- Email Draft Writer
+  WF5_P1 uuid := '42000000-0002-0005-0003-000000000001';  -- Phase: Engage
+  WF5_P2 uuid := '42000000-0002-0005-0003-000000000002';  -- Phase: Challenge
+  WF5_P3 uuid := '42000000-0002-0005-0003-000000000003';  -- Phase: Announce
+  WF5_T1 uuid := '42000000-0002-0005-0004-000000000001';
+  WF5_T2 uuid := '42000000-0002-0005-0004-000000000002';
+  WF5_T3 uuid := '42000000-0002-0005-0004-000000000003';
+  WF5_T4 uuid := '42000000-0002-0005-0004-000000000004';
+  WF5_T5 uuid := '42000000-0002-0005-0004-000000000005';
+  WF5_T6 uuid := '42000000-0002-0005-0004-000000000006';
+
+  -- ── WF-6: Research to Community Thread (5 nodes, 5 phases) ─────────────────
+  WF6 uuid := '42000000-0002-0006-0001-000000000001';
+  WF6_N1 uuid := '42000000-0002-0006-0002-000000000001';  -- Intent (40_)
+  WF6_N2 uuid := '42000000-0002-0006-0002-000000000002';  -- Research (40_)
+  WF6_N3 uuid := '42000000-0002-0006-0002-000000000003';  -- Text Gen (40_)
+  WF6_N4 uuid := '42000000-0002-0006-0002-000000000004';  -- Refine (40_)
+  WF6_N5 uuid := '42000000-0002-0006-0002-000000000005';  -- Thread Starter (41_)
+  WF6_P1 uuid := '42000000-0002-0006-0003-000000000001';  -- Phase: Understand
+  WF6_P2 uuid := '42000000-0002-0006-0003-000000000002';  -- Phase: Research
+  WF6_P3 uuid := '42000000-0002-0006-0003-000000000003';  -- Phase: Draft
+  WF6_P4 uuid := '42000000-0002-0006-0003-000000000004';  -- Phase: Polish
+  WF6_P5 uuid := '42000000-0002-0006-0003-000000000005';  -- Phase: Publish
+  WF6_T1  uuid := '42000000-0002-0006-0004-000000000001';
+  WF6_T2  uuid := '42000000-0002-0006-0004-000000000002';
+  WF6_T3  uuid := '42000000-0002-0006-0004-000000000003';
+  WF6_T4  uuid := '42000000-0002-0006-0004-000000000004';
+  WF6_T5  uuid := '42000000-0002-0006-0004-000000000005';
+  WF6_T6  uuid := '42000000-0002-0006-0004-000000000006';
+  WF6_T7  uuid := '42000000-0002-0006-0004-000000000007';
+  WF6_T8  uuid := '42000000-0002-0006-0004-000000000008';
+  WF6_T9  uuid := '42000000-0002-0006-0004-000000000009';
+  WF6_T10 uuid := '42000000-0002-0006-0004-00000000000a';
+
+BEGIN
+  -- ── Resolve shared dependencies ─────────────────────────────────────────────
+  SELECT id INTO v_author
+  FROM lensers.profiles
+  WHERE type = 'ai'::lensers.lenser_type AND status = 'active'::lensers.lenser_status
+  ORDER BY created_at ASC LIMIT 1;
+
+  IF v_author IS NULL THEN
+    SELECT id INTO v_author FROM lensers.profiles ORDER BY created_at ASC LIMIT 1;
+  END IF;
+
+  IF v_author IS NULL THEN
+    RAISE NOTICE '42_production_workflow_templates: no lensers.profiles row yet — skipping.';
+    RETURN;
+  END IF;
+
+  SELECT id INTO v_tag_template FROM content.tags WHERE slug = 'template';
+
+  IF v_tag_template IS NULL THEN
+    RAISE NOTICE '42_production_workflow_templates: template tag missing — run migration 20260417150000 first.';
+    RETURN;
+  END IF;
+
+  -- Guard: 41_ lenses must exist before we can reference them
+  IF NOT EXISTS (SELECT 1 FROM lenses.lenses WHERE id = L41_CODE_REVIEWER) THEN
+    RAISE NOTICE '42_production_workflow_templates: 41_ developer lenses not seeded yet — skipping.';
+    RETURN;
+  END IF;
+
+  -- =============================================================================
+  -- WF-1: Developer Code Review Suite
+  -- Code Reviewer → Unit Test Generator → PR Description Writer
+  -- =============================================================================
+  IF NOT EXISTS (SELECT 1 FROM lenses.workflows WHERE id = WF1) THEN
+    INSERT INTO lenses.workflows (id, lenser_id, title, description, visibility)
+    VALUES (
+      WF1, v_author,
+      'Template · Developer Code Review Suite',
+      'Review code for bugs and style, auto-generate a test suite for the flagged areas, then produce a ready-to-submit PR description. Three-step quality gate for any code change.',
+      'public'
+    );
+
+    INSERT INTO lenses.workflow_nodes (id, workflow_id, lens_id, version_id, position_x, position_y, label, ordinal) VALUES
+      (WF1_N1, WF1, L41_CODE_REVIEWER,  NULL,  0,   0, 'Code Review',    1),
+      (WF1_N2, WF1, L41_UNIT_TEST,      NULL,  220, 0, 'Unit Tests',     2),
+      (WF1_N3, WF1, L41_PR_WRITER,      NULL,  440, 0, 'PR Description', 3);
+
+    INSERT INTO lenses.workflow_edges (workflow_id, source_node_id, target_node_id, source_output_key, target_param_label) VALUES
+      (WF1, WF1_N1, WF1_N2, 'output', 'function_code'),
+      (WF1, WF1_N2, WF1_N3, 'output', 'diff_summary');
+
+    INSERT INTO lenses.workflow_phases (id, workflow_id, title, description, ordinal) VALUES
+      (WF1_P1, WF1, 'Code Review',    'Analyze the code for bugs, security, and style issues.',     1),
+      (WF1_P2, WF1, 'Test Coverage',  'Generate unit tests covering flagged scenarios.',             2),
+      (WF1_P3, WF1, 'Ship',           'Write a structured PR description ready for peer review.',   3);
+
+    INSERT INTO lenses.workflow_tasks (id, phase_id, workflow_id, title, prompt_text, output_type, ordinal) VALUES
+      (WF1_T1, WF1_P1, WF1, 'Review code quality',     'Identify bugs, security issues, and style violations in the submitted code.', 'text', 1),
+      (WF1_T2, WF1_P1, WF1, 'Rate overall quality',    'Score the code 1-10 and summarize the top 3 issues to fix.', 'text', 2),
+      (WF1_T3, WF1_P2, WF1, 'Generate test cases',     'Create unit tests for the happy path, boundary values, and error cases identified in the review.', 'text', 1),
+      (WF1_T4, WF1_P2, WF1, 'Add mocks and imports',   'Include all required imports, mocks, and test runner setup so tests can run immediately.', 'text', 2),
+      (WF1_T5, WF1_P3, WF1, 'Draft PR description',    'Summarize the change, test plan, and any breaking changes for reviewers.', 'text', 1),
+      (WF1_T6, WF1_P3, WF1, 'Finalize PR body',        'Polish the PR description to be concise, professional, and review-ready.', 'text', 2);
+
+    INSERT INTO content.tag_map (entity_type, entity_id, tag_id)
+    VALUES ('workflow'::content.entity_type_enum, WF1, v_tag_template)
+    ON CONFLICT DO NOTHING;
+  END IF;
+
+  -- =============================================================================
+  -- WF-2: Bug Investigation & Fix Pipeline
+  -- Bug Analyzer → Code Explainer → Refactoring Advisor → PR Writer
+  -- =============================================================================
+  IF NOT EXISTS (SELECT 1 FROM lenses.workflows WHERE id = WF2) THEN
+    INSERT INTO lenses.workflows (id, lenser_id, title, description, visibility)
+    VALUES (
+      WF2, v_author,
+      'Template · Bug Investigation & Fix Pipeline',
+      'Diagnose a bug from error logs, explain the root cause in plain language, propose concrete refactoring to fix it, then write the PR description. End-to-end from stack trace to ship.',
+      'public'
+    );
+
+    INSERT INTO lenses.workflow_nodes (id, workflow_id, lens_id, version_id, position_x, position_y, label, ordinal) VALUES
+      (WF2_N1, WF2, L41_BUG_ANALYZER,   NULL,  0,   0, 'Diagnose',  1),
+      (WF2_N2, WF2, L41_CODE_EXPLAINER, NULL,  220, 0, 'Explain',   2),
+      (WF2_N3, WF2, L41_REFACTOR,       NULL,  440, 0, 'Fix',       3),
+      (WF2_N4, WF2, L41_PR_WRITER,      NULL,  660, 0, 'Document',  4);
+
+    INSERT INTO lenses.workflow_edges (workflow_id, source_node_id, target_node_id, source_output_key, target_param_label) VALUES
+      (WF2, WF2_N1, WF2_N2, 'output', 'code'),
+      (WF2, WF2_N2, WF2_N3, 'output', 'code'),
+      (WF2, WF2_N3, WF2_N4, 'output', 'diff_summary');
+
+    INSERT INTO lenses.workflow_phases (id, workflow_id, title, description, ordinal) VALUES
+      (WF2_P1, WF2, 'Diagnose',    'Identify root cause, affected component, and severity from the error log.',   1),
+      (WF2_P2, WF2, 'Understand',  'Explain the bug and its context to the team in plain language.',              2),
+      (WF2_P3, WF2, 'Fix',         'Propose concrete code changes with before/after snippets.',                  3),
+      (WF2_P4, WF2, 'Document',    'Write the PR description for the fix including test plan.',                   4);
+
+    INSERT INTO lenses.workflow_tasks (id, phase_id, workflow_id, title, prompt_text, output_type, ordinal) VALUES
+      (WF2_T1, WF2_P1, WF2, 'Classify root cause',      'Determine whether the bug is a logic error, null dereference, concurrency issue, or external dependency failure.', 'text', 1),
+      (WF2_T2, WF2_P1, WF2, 'Assess severity',           'Rate severity (critical/high/medium/low) and list reproduction steps.', 'text', 2),
+      (WF2_T3, WF2_P2, WF2, 'Explain the bug',           'Describe what went wrong in terms a junior developer can understand.', 'text', 1),
+      (WF2_T4, WF2_P2, WF2, 'Identify gotchas',          'Surface any subtle invariants or assumptions the bug violated.', 'text', 2),
+      (WF2_T5, WF2_P3, WF2, 'Propose refactoring',       'Suggest the minimal code change that fixes the root cause without introducing regressions.', 'text', 1),
+      (WF2_T6, WF2_P3, WF2, 'Flag breaking implications','Note if the fix changes any public API, database schema, or external contract.', 'text', 2),
+      (WF2_T7, WF2_P4, WF2, 'Write PR summary',          'Summarize the bug, root cause, and fix approach in 2-3 bullets.', 'text', 1),
+      (WF2_T8, WF2_P4, WF2, 'Define test plan',          'List the manual steps a reviewer should follow to verify the fix.', 'text', 2);
+
+    INSERT INTO content.tag_map (entity_type, entity_id, tag_id)
+    VALUES ('workflow', WF2, v_tag_template)
+    ON CONFLICT DO NOTHING;
+  END IF;
+
+  -- =============================================================================
+  -- WF-3: API Documentation Suite
+  -- API Doc Generator → Refine (40_) → Validate (40_) → Export PDF (40_)
+  -- =============================================================================
+  IF NOT EXISTS (SELECT 1 FROM lenses.workflows WHERE id = WF3) THEN
+    INSERT INTO lenses.workflows (id, lenser_id, title, description, visibility)
+    VALUES (
+      WF3, v_author,
+      'Template · API Documentation Suite',
+      'Generate API docs from code, refine for clarity and completeness, validate against a spec rubric, then export as a production-ready PDF artifact.',
+      'public'
+    );
+
+    INSERT INTO lenses.workflow_nodes (id, workflow_id, lens_id, version_id, position_x, position_y, label, ordinal) VALUES
+      (WF3_N1, WF3, L41_API_DOC,     NULL,  0,   0, 'Generate Docs', 1),
+      (WF3_N2, WF3, L40_REFINE,      NULL,  220, 0, 'Refine',        2),
+      (WF3_N3, WF3, L40_VALIDATE,    NULL,  440, 0, 'Validate',      3),
+      (WF3_N4, WF3, L40_EXPORT_PDF,  NULL,  660, 0, 'Export PDF',    4);
+
+    INSERT INTO lenses.workflow_edges (workflow_id, source_node_id, target_node_id, source_output_key, target_param_label) VALUES
+      (WF3, WF3_N1, WF3_N2, 'output', 'draft'),
+      (WF3, WF3_N2, WF3_N3, 'output', 'output'),
+      (WF3, WF3_N3, WF3_N4, 'output', 'content');
+
+    INSERT INTO lenses.workflow_phases (id, workflow_id, title, description, ordinal) VALUES
+      (WF3_P1, WF3, 'Analyze',       'Inspect the source code and identify all public APIs to document.',          1),
+      (WF3_P2, WF3, 'Document',      'Generate and refine structured API documentation for each endpoint.',        2),
+      (WF3_P3, WF3, 'Quality Gate',  'Validate the docs against completeness and accuracy requirements.',          3),
+      (WF3_P4, WF3, 'Publish',       'Export a production-ready PDF for distribution or developer portal upload.', 4);
+
+    INSERT INTO lenses.workflow_tasks (id, phase_id, workflow_id, title, prompt_text, output_type, ordinal) VALUES
+      (WF3_T1, WF3_P1, WF3, 'Identify public APIs',       'List all exported functions, endpoints, or methods that require documentation.', 'text', 1),
+      (WF3_T2, WF3_P1, WF3, 'Infer parameter types',      'Extract parameter names, types, and required/optional status from the code.', 'text', 2),
+      (WF3_T3, WF3_P2, WF3, 'Generate API docs draft',    'Produce structured documentation including descriptions, parameters, return types, errors, and usage examples.', 'text', 1),
+      (WF3_T4, WF3_P2, WF3, 'Refine for clarity',         'Improve readability, fix ambiguous phrasing, and ensure consistent terminology.', 'text', 2),
+      (WF3_T5, WF3_P3, WF3, 'Validate completeness',      'Check that every public API has a description, all parameters are documented, and at least one example is present.', 'text', 1),
+      (WF3_T6, WF3_P3, WF3, 'Flag gaps',                  'List any undocumented endpoints, missing return types, or TODO placeholders.', 'text', 2),
+      (WF3_T7, WF3_P4, WF3, 'Prepare PDF manifest',       'Structure the validated docs into sections with proper headings and page-break hints.', 'text', 1),
+      (WF3_T8, WF3_P4, WF3, 'Export and verify',          'Confirm the exported PDF contains all sections, citations, and is ready for the developer portal.', 'text', 2);
+
+    INSERT INTO content.tag_map (entity_type, entity_id, tag_id)
+    VALUES ('workflow', WF3, v_tag_template)
+    ON CONFLICT DO NOTHING;
+  END IF;
+
+  -- =============================================================================
+  -- WF-4: Sprint Story to SQL
+  -- User Story Generator → SQL Query Builder → PR Description Writer
+  -- =============================================================================
+  IF NOT EXISTS (SELECT 1 FROM lenses.workflows WHERE id = WF4) THEN
+    INSERT INTO lenses.workflows (id, lenser_id, title, description, visibility)
+    VALUES (
+      WF4, v_author,
+      'Template · Sprint Story to SQL',
+      'Convert a feature idea into user stories with acceptance criteria, derive the SQL schema or queries needed, then write a PR description — from product brief to database migration ready.',
+      'public'
+    );
+
+    INSERT INTO lenses.workflow_nodes (id, workflow_id, lens_id, version_id, position_x, position_y, label, ordinal) VALUES
+      (WF4_N1, WF4, L41_USER_STORY,  NULL,  0,   0, 'User Stories', 1),
+      (WF4_N2, WF4, L41_SQL_BUILDER, NULL,  220, 0, 'SQL Query',    2),
+      (WF4_N3, WF4, L41_PR_WRITER,   NULL,  440, 0, 'PR Body',      3);
+
+    INSERT INTO lenses.workflow_edges (workflow_id, source_node_id, target_node_id, source_output_key, target_param_label) VALUES
+      (WF4, WF4_N1, WF4_N2, 'output', 'requirements'),
+      (WF4, WF4_N2, WF4_N3, 'output', 'diff_summary');
+
+    INSERT INTO lenses.workflow_phases (id, workflow_id, title, description, ordinal) VALUES
+      (WF4_P1, WF4, 'Define',   'Break the feature down into INVEST-compliant user stories.',                1),
+      (WF4_P2, WF4, 'Model',    'Derive the SQL queries or schema changes required to fulfill the stories.',  2),
+      (WF4_P3, WF4, 'Deliver',  'Write a PR description that links stories to the SQL implementation.',      3);
+
+    INSERT INTO lenses.workflow_tasks (id, phase_id, workflow_id, title, prompt_text, output_type, ordinal) VALUES
+      (WF4_T1, WF4_P1, WF4, 'Draft user stories',       'Write user stories in the "As a / I want / So that" format with Given/When/Then acceptance criteria.', 'text', 1),
+      (WF4_T2, WF4_P1, WF4, 'Estimate story points',    'Assign Fibonacci story points and priority (Must/Should/Could) to each story.', 'text', 2),
+      (WF4_T3, WF4_P2, WF4, 'Build SQL queries',        'Write the PostgreSQL queries or CREATE TABLE / ALTER TABLE statements needed to implement the stories.', 'text', 1),
+      (WF4_T4, WF4_P2, WF4, 'Annotate with caveats',    'Flag NULL handling, index requirements, and any performance concerns for large tables.', 'text', 2),
+      (WF4_T5, WF4_P3, WF4, 'Write PR summary',         'Summarize which stories are addressed and what SQL changes are included.', 'text', 1),
+      (WF4_T6, WF4_P3, WF4, 'Define migration test plan','List steps to test the migration in staging before applying to production.', 'text', 2);
+
+    INSERT INTO content.tag_map (entity_type, entity_id, tag_id)
+    VALUES ('workflow', WF4, v_tag_template)
+    ON CONFLICT DO NOTHING;
+  END IF;
+
+  -- =============================================================================
+  -- WF-5: Community Engagement Pipeline
+  -- Thread Starter → Challenge Creator → Email Draft Writer
+  -- =============================================================================
+  IF NOT EXISTS (SELECT 1 FROM lenses.workflows WHERE id = WF5) THEN
+    INSERT INTO lenses.workflows (id, lenser_id, title, description, visibility)
+    VALUES (
+      WF5, v_author,
+      'Template · Community Engagement Pipeline',
+      'Kick off a community topic with an engaging thread, design a LenserFight challenge around it, then announce the challenge to participants via a professional email. Full community activation loop.',
+      'public'
+    );
+
+    INSERT INTO lenses.workflow_nodes (id, workflow_id, lens_id, version_id, position_x, position_y, label, ordinal) VALUES
+      (WF5_N1, WF5, L41_THREAD,     NULL,  0,   0, 'Open Thread',  1),
+      (WF5_N2, WF5, L41_CHALLENGE,  NULL,  220, 0, 'Challenge',    2),
+      (WF5_N3, WF5, L41_EMAIL, NULL, 440, 0, 'Announce', 3);
+
+    INSERT INTO lenses.workflow_edges (workflow_id, source_node_id, target_node_id, source_output_key, target_param_label) VALUES
+      (WF5, WF5_N1, WF5_N2, 'output', 'subject'),
+      (WF5, WF5_N2, WF5_N3, 'output', 'intent');
+
+    INSERT INTO lenses.workflow_phases (id, workflow_id, title, description, ordinal) VALUES
+      (WF5_P1, WF5, 'Engage',     'Launch an engaging discussion thread to seed community interest.',                  1),
+      (WF5_P2, WF5, 'Challenge',  'Design a fair, learnable LenserFight challenge on the thread topic.',              2),
+      (WF5_P3, WF5, 'Announce',   'Draft a clear announcement email inviting community members to participate.',       3);
+
+    INSERT INTO lenses.workflow_tasks (id, phase_id, workflow_id, title, prompt_text, output_type, ordinal) VALUES
+      (WF5_T1, WF5_P1, WF5, 'Write thread hook',           'Craft a compelling opening sentence that earns curiosity through substance, not clickbait.', 'text', 1),
+      (WF5_T2, WF5_P1, WF5, 'Add discussion sub-questions','Write 2-3 framing questions that invite different perspectives on the topic.', 'text', 2),
+      (WF5_T3, WF5_P2, WF5, 'Design challenge prompt',     'Write a clear, unambiguous challenge statement that participants can attempt within the time limit.', 'text', 1),
+      (WF5_T4, WF5_P2, WF5, 'Define evaluation rubric',    'Create a rubric with 3-5 criteria whose weights sum to 100%.', 'text', 2),
+      (WF5_T5, WF5_P3, WF5, 'Draft announcement email',    'Write a subject line and body that explain the challenge, how to participate, and the deadline.', 'text', 1),
+      (WF5_T6, WF5_P3, WF5, 'Add participation CTA',       'Include a clear call-to-action link and follow-up suggestion for recipients.', 'text', 2);
+
+    INSERT INTO content.tag_map (entity_type, entity_id, tag_id)
+    VALUES ('workflow', WF5, v_tag_template)
+    ON CONFLICT DO NOTHING;
+  END IF;
+
+  -- =============================================================================
+  -- WF-6: Research to Community Thread (cross-template)
+  -- Intent (40_) → Research (40_) → Text Gen (40_) → Refine (40_) → Thread Starter (41_)
+  -- =============================================================================
+  IF NOT EXISTS (SELECT 1 FROM lenses.workflows WHERE id = WF6) THEN
+    INSERT INTO lenses.workflows (id, lenser_id, title, description, visibility)
+    VALUES (
+      WF6, v_author,
+      'Template · Research to Community Thread',
+      'Classify a user request, conduct deep research, draft a long-form text, refine it for quality, then publish as an engaging community thread. Bridges the Connected Lens research pipeline with community distribution.',
+      'public'
+    );
+
+    INSERT INTO lenses.workflow_nodes (id, workflow_id, lens_id, version_id, position_x, position_y, label, ordinal) VALUES
+      (WF6_N1, WF6, L40_INTENT,    NULL,  0,    0, 'Intent',   1),
+      (WF6_N2, WF6, L40_RESEARCH,  NULL,  220,  0, 'Research', 2),
+      (WF6_N3, WF6, L40_GEN_TEXT,  NULL,  440,  0, 'Draft',    3),
+      (WF6_N4, WF6, L40_REFINE,    NULL,  660,  0, 'Refine',   4),
+      (WF6_N5, WF6, L41_THREAD,    NULL,  880,  0, 'Publish',  5);
+
+    INSERT INTO lenses.workflow_edges (workflow_id, source_node_id, target_node_id, source_output_key, target_param_label) VALUES
+      (WF6, WF6_N1, WF6_N2, 'output', 'context'),
+      (WF6, WF6_N2, WF6_N3, 'output', 'context'),
+      (WF6, WF6_N3, WF6_N4, 'output', 'draft'),
+      (WF6, WF6_N4, WF6_N5, 'output', 'context');
+
+    INSERT INTO lenses.workflow_phases (id, workflow_id, title, description, ordinal) VALUES
+      (WF6_P1, WF6, 'Understand', 'Classify the user request into structured intent for downstream lenses.',           1),
+      (WF6_P2, WF6, 'Research',   'Gather, rank, and synthesize the evidence needed to fulfill the plan.',            2),
+      (WF6_P3, WF6, 'Draft',      'Generate a polished, research-grounded long-form text.',                           3),
+      (WF6_P4, WF6, 'Polish',     'Refine the draft for clarity, pacing, and tone without altering intent.',         4),
+      (WF6_P5, WF6, 'Publish',    'Shape the refined content into an engaging community discussion thread.',           5);
+
+    INSERT INTO lenses.workflow_tasks (id, phase_id, workflow_id, title, prompt_text, output_type, ordinal) VALUES
+      (WF6_T1,  WF6_P1, WF6, 'Classify request intent',    'Identify the goal, target media, quality level, and constraints from the raw user request.', 'text', 1),
+      (WF6_T2,  WF6_P1, WF6, 'Suggest downstream kinds',   'Recommend which lens kinds (text, research, image, etc.) are needed to fulfill the request.', 'text', 2),
+      (WF6_T3,  WF6_P2, WF6, 'Gather evidence',            'Collect relevant facts, data, and source references for the research topic.', 'text', 1),
+      (WF6_T4,  WF6_P2, WF6, 'Rank and synthesize',        'Rank findings by confidence and produce a concise synthesis with open questions.', 'text', 2),
+      (WF6_T5,  WF6_P3, WF6, 'Draft long-form content',    'Write a structured, audience-aware article grounded in the research findings.', 'text', 1),
+      (WF6_T6,  WF6_P3, WF6, 'Cite sources inline',        'Add [n] citation markers for every claim sourced from the Research Lens output.', 'text', 2),
+      (WF6_T7,  WF6_P4, WF6, 'Tighten and clarify',        'Improve sentence clarity, remove redundancy, and enforce consistent tone.', 'text', 1),
+      (WF6_T8,  WF6_P4, WF6, 'Verify citations intact',    'Confirm all [n] citation markers are preserved and correctly attributed.', 'text', 2),
+      (WF6_T9,  WF6_P5, WF6, 'Craft discussion hook',      'Write a hook and 2-3 sub-questions that invite community engagement on the research topic.', 'text', 1),
+      (WF6_T10, WF6_P5, WF6, 'Add participation invite',   'Close the thread with a question that encourages replies from both experts and beginners.', 'text', 2);
+
+    INSERT INTO content.tag_map (entity_type, entity_id, tag_id)
+    VALUES ('workflow', WF6, v_tag_template)
+    ON CONFLICT DO NOTHING;
+  END IF;
+
+  RAISE NOTICE '42_production_workflow_templates: seeded 6 production workflow templates for author %.', v_author;
+END
+$seed$;
+
+ANALYZE lenses.workflows;
+ANALYZE lenses.workflow_nodes;
+ANALYZE lenses.workflow_edges;
+ANALYZE lenses.workflow_phases;
+ANALYZE lenses.workflow_tasks;
+ANALYZE content.tag_map;
+
+
+-- >>> seeds/43_ai_agent_lens_bindings.sql
+-- =============================================================================
+-- 43. AI AGENT LENS BINDINGS
+-- =============================================================================
+-- Connects the three demo AI lensers to the developer (41_) and chain-template
+-- (40_) lenses according to each model's strengths:
+--
+--   GPT-4o        (c3000000-…-0001) → code review, testing, SQL, PR writing
+--   Claude Sonnet (c3000000-…-0002) → analysis, documentation, bug diagnosis
+--   Gemini Flash  (c3000000-…-0003) → community, planning, multimodal
+--
+-- AI model profiles in ai.models (GPT-5.4 Pro etc.) and their lenser rows
+-- in lensers.profiles are NOT touched — only new agents.lens_bindings rows.
+--
+-- Idempotent: ON CONFLICT (ai_lenser_id, lens_id) DO NOTHING.
+--
+-- Dependencies:
+--   • 07_ai_lensers.sql             (provides the three deterministic agent IDs)
+--   • 40_lens_chain_templates.sql   (40_ lens UUIDs)
+--   • 41_developer_lens_templates.sql (41_ lens UUIDs)
+-- =============================================================================
+
+DO $seed$
+DECLARE
+  -- Demo agent IDs (deterministic from 07_ai_lensers.sql)
+  AGENT_GPT4O    uuid := 'c3000000-0000-0000-0000-000000000001';
+  AGENT_CLAUDE   uuid := 'c3000000-0000-0000-0000-000000000002';
+  AGENT_GEMINI   uuid := 'c3000000-0000-0000-0000-000000000003';
+
+  -- 40_ lens IDs
+  L40_INTENT     uuid := '40000000-0001-0001-0001-000000000001';
+  L40_PLAN       uuid := '40000000-0001-0002-0001-000000000001';
+  L40_RESEARCH   uuid := '40000000-0001-0003-0001-000000000001';
+  L40_GEN_TEXT   uuid := '40000000-0001-0004-0001-000000000001';
+  L40_GEN_IMAGE  uuid := '40000000-0001-0005-0001-000000000001';
+  L40_GEN_VIDEO  uuid := '40000000-0001-0006-0001-000000000001';
+  L40_REFINE     uuid := '40000000-0001-0007-0001-000000000001';
+  L40_VALIDATE   uuid := '40000000-0001-0008-0001-000000000001';
+  L40_EXPORT_PDF uuid := '40000000-0001-0009-0001-000000000001';
+
+  -- 41_ lens IDs
+  L41_CODE_REVIEWER  uuid := '41000000-0001-0001-0001-000000000001';
+  L41_UNIT_TEST      uuid := '41000000-0001-0002-0001-000000000001';
+  L41_BUG_ANALYZER   uuid := '41000000-0001-0003-0001-000000000001';
+  L41_PR_WRITER      uuid := '41000000-0001-0004-0001-000000000001';
+  L41_SQL_BUILDER    uuid := '41000000-0001-0005-0001-000000000001';
+  L41_API_DOC        uuid := '41000000-0001-0006-0001-000000000001';
+  L41_CODE_EXPLAINER uuid := '41000000-0001-0007-0001-000000000001';
+  L41_REFACTOR       uuid := '41000000-0001-0008-0001-000000000001';
+  L41_MEETING        uuid := '41000000-0001-0009-0001-000000000001';
+  L41_USER_STORY     uuid := '41000000-0001-000a-0001-000000000001';
+  L41_EMAIL          uuid := '41000000-0001-000b-0001-000000000001';
+  L41_THREAD         uuid := '41000000-0001-000c-0001-000000000001';
+  L41_CHALLENGE      uuid := '41000000-0001-000d-0001-000000000001';
+
+BEGIN
+  -- Guard: 41_ lenses must exist
+  IF NOT EXISTS (SELECT 1 FROM lenses.lenses WHERE id = L41_CODE_REVIEWER) THEN
+    RAISE NOTICE '43_ai_agent_lens_bindings: 41_ lenses not seeded yet — skipping.';
+    RETURN;
+  END IF;
+
+  -- Guard: agent rows must exist
+  IF NOT EXISTS (SELECT 1 FROM agents.ai_lensers WHERE id = AGENT_GPT4O) THEN
+    RAISE NOTICE '43_ai_agent_lens_bindings: demo AI lensers not seeded yet — skipping.';
+    RETURN;
+  END IF;
+
+  -- ===========================================================================
+  -- GPT-4o — structured output, tool-calling, code generation
+  -- Default: Code Reviewer (most used capability for developer workflows)
+  -- ===========================================================================
+  INSERT INTO agents.lens_bindings (id, ai_lenser_id, lens_id, version_id, is_default, category_tags)
+  VALUES
+    ('43000000-0001-0001-0001-000000000001', AGENT_GPT4O, L41_CODE_REVIEWER,  NULL, true,  ARRAY['code','review']),
+    ('43000000-0001-0001-0001-000000000002', AGENT_GPT4O, L41_UNIT_TEST,      NULL, false, ARRAY['code','testing']),
+    ('43000000-0001-0001-0001-000000000003', AGENT_GPT4O, L41_SQL_BUILDER,    NULL, false, ARRAY['data','sql']),
+    ('43000000-0001-0001-0001-000000000004', AGENT_GPT4O, L41_PR_WRITER,      NULL, false, ARRAY['documentation','code']),
+    -- 40_ lenses: text generation and PDF export (structured, tool-like)
+    ('43000000-0001-0001-0001-000000000005', AGENT_GPT4O, L40_GEN_TEXT,       NULL, false, ARRAY['text','generation']),
+    ('43000000-0001-0001-0001-000000000006', AGENT_GPT4O, L40_EXPORT_PDF,     NULL, false, ARRAY['export','pdf'])
+  ON CONFLICT (ai_lenser_id, lens_id) DO NOTHING;
+
+  -- ===========================================================================
+  -- Claude Sonnet 4.6 — deep reasoning, long context, nuanced analysis
+  -- Default: Bug Analyzer (requires careful multi-step reasoning)
+  -- ===========================================================================
+  INSERT INTO agents.lens_bindings (id, ai_lenser_id, lens_id, version_id, is_default, category_tags)
+  VALUES
+    ('43000000-0001-0002-0001-000000000001', AGENT_CLAUDE, L41_BUG_ANALYZER,   NULL, true,  ARRAY['code','debugging']),
+    ('43000000-0001-0002-0001-000000000002', AGENT_CLAUDE, L41_CODE_EXPLAINER, NULL, false, ARRAY['code','education']),
+    ('43000000-0001-0002-0001-000000000003', AGENT_CLAUDE, L41_REFACTOR,       NULL, false, ARRAY['code','refactoring']),
+    ('43000000-0001-0002-0001-000000000004', AGENT_CLAUDE, L41_API_DOC,        NULL, false, ARRAY['documentation']),
+    ('43000000-0001-0002-0001-000000000005', AGENT_CLAUDE, L41_MEETING,        NULL, false, ARRAY['planning','summarization']),
+    -- 40_ lenses: intent classification, research, validation (analysis-heavy)
+    ('43000000-0001-0002-0001-000000000006', AGENT_CLAUDE, L40_INTENT,         NULL, false, ARRAY['routing','orchestration']),
+    ('43000000-0001-0002-0001-000000000007', AGENT_CLAUDE, L40_RESEARCH,       NULL, false, ARRAY['research','synthesis']),
+    ('43000000-0001-0002-0001-000000000008', AGENT_CLAUDE, L40_VALIDATE,       NULL, false, ARRAY['validation','quality'])
+  ON CONFLICT (ai_lenser_id, lens_id) DO NOTHING;
+
+  -- ===========================================================================
+  -- Gemini 2.5 Flash — speed, multimodal, community and planning tasks
+  -- Default: Thread Starter (fast, engaging, community-facing)
+  -- ===========================================================================
+  INSERT INTO agents.lens_bindings (id, ai_lenser_id, lens_id, version_id, is_default, category_tags)
+  VALUES
+    ('43000000-0001-0003-0001-000000000001', AGENT_GEMINI, L41_THREAD,      NULL, true,  ARRAY['community','engagement']),
+    ('43000000-0001-0003-0001-000000000002', AGENT_GEMINI, L41_CHALLENGE,   NULL, false, ARRAY['community','challenges']),
+    ('43000000-0001-0003-0001-000000000003', AGENT_GEMINI, L41_EMAIL,       NULL, false, ARRAY['community','email']),
+    ('43000000-0001-0003-0001-000000000004', AGENT_GEMINI, L41_USER_STORY,  NULL, false, ARRAY['planning','stories']),
+    -- 40_ lenses: planning, image/video generation (multimodal strengths)
+    ('43000000-0001-0003-0001-000000000005', AGENT_GEMINI, L40_PLAN,        NULL, false, ARRAY['orchestration','planning']),
+    ('43000000-0001-0003-0001-000000000006', AGENT_GEMINI, L40_GEN_IMAGE,   NULL, false, ARRAY['image','generation']),
+    ('43000000-0001-0003-0001-000000000007', AGENT_GEMINI, L40_GEN_VIDEO,   NULL, false, ARRAY['video','generation']),
+    ('43000000-0001-0003-0001-000000000008', AGENT_GEMINI, L40_REFINE,      NULL, false, ARRAY['transform','refinement'])
+  ON CONFLICT (ai_lenser_id, lens_id) DO NOTHING;
+
+  RAISE NOTICE '43_ai_agent_lens_bindings: seeded lens bindings for GPT-4o, Claude Sonnet 4.6, and Gemini 2.5 Flash.';
+END
+$seed$;
+
+ANALYZE agents.lens_bindings;
+
+
+-- >>> seeds/44_community_profiles.sql
+-- =============================================================================
+-- 44. COMMUNITY PROFILES
+-- =============================================================================
+-- Seeds three community / organization lenser accounts:
+--
+--   ConnectLens           — the platform's community hub
+--   Chainabit             — developer-focused community
+--   LenserFight Community — official LenserFight community space
+--
+-- Each community IS a lenser (GRASP Polymorphism: communities reuse the
+-- existing profile type rather than a separate entity). They are seeded as
+-- human-type profiles backed by their own auth.users so they can log in,
+-- own public lenses, and be followed by other lensers.
+--
+-- ConnectLens is also set as a co-author on the Thread Starter and Challenge
+-- Creator lenses (via lenses.lenses.lenser_id update) so the public template
+-- library appears multi-authored.
+--
+-- UUID ranges:
+--   auth.users   ids: a4000000-0000-0000-0000-00000000000N
+--   profile ids:      b4000000-0000-0000-0000-00000000000N
+--
+-- Idempotent: ON CONFLICT guards on both auth.users and lensers.profiles.
+-- =============================================================================
+
+-- ── 1. Auth users ────────────────────────────────────────────────────────────
+
+INSERT INTO auth.users (
+  instance_id, id, aud, role,
+  email, encrypted_password,
+  email_confirmed_at, created_at, updated_at, last_sign_in_at,
+  confirmation_token, confirmation_sent_at,
+  recovery_token, recovery_sent_at,
+  email_change, email_change_token_new, email_change_token_current, email_change_sent_at, email_change_confirm_status,
+  reauthentication_token, reauthentication_sent_at,
+  is_super_admin, is_sso_user, deleted_at, is_anonymous,
+  phone, phone_confirmed_at, phone_change, phone_change_token, phone_change_sent_at,
+  raw_app_meta_data, raw_user_meta_data
+)
+VALUES
+  -- ConnectLens
+  (
+    '00000000-0000-0000-0000-000000000000',
+    'a4000000-0000-0000-0000-000000000001',
+    'authenticated', 'authenticated',
+    'system@connectlens.local',
+    extensions.crypt('ConnectLens#2026!', extensions.gen_salt('bf')),
+    now(), now(), now(), now(),
+    '', NULL, '', NULL,
+    '', '', '', NULL, 0,
+    '', NULL,
+    false, false, NULL, false,
+    NULL, NULL, '', '', NULL,
+    '{"provider":"email","providers":["email"]}',
+    '{"display_name":"ConnectLens"}'
+  ),
+  -- Chainabit
+  (
+    '00000000-0000-0000-0000-000000000000',
+    'a4000000-0000-0000-0000-000000000002',
+    'authenticated', 'authenticated',
+    'system@chainabit.local',
+    extensions.crypt('Chainabit#2026!', extensions.gen_salt('bf')),
+    now(), now(), now(), now(),
+    '', NULL, '', NULL,
+    '', '', '', NULL, 0,
+    '', NULL,
+    false, false, NULL, false,
+    NULL, NULL, '', '', NULL,
+    '{"provider":"email","providers":["email"]}',
+    '{"display_name":"Chainabit"}'
+  ),
+  -- LenserFight Community
+  (
+    '00000000-0000-0000-0000-000000000000',
+    'a4000000-0000-0000-0000-000000000003',
+    'authenticated', 'authenticated',
+    'community@lenserfight.local',
+    extensions.crypt('LFCommunity#2026!', extensions.gen_salt('bf')),
+    now(), now(), now(), now(),
+    '', NULL, '', NULL,
+    '', '', '', NULL, 0,
+    '', NULL,
+    false, false, NULL, false,
+    NULL, NULL, '', '', NULL,
+    '{"provider":"email","providers":["email"]}',
+    '{"display_name":"LenserFight Community"}'
+  )
+ON CONFLICT (id) DO NOTHING;
+
+-- ── 2. Lenser profiles ───────────────────────────────────────────────────────
+
+INSERT INTO lensers.profiles (
+  id, user_id, handle, display_name, headline, avatar_url, bio,
+  status, visibility, onboarding_step, onboarding_completed_at, type,
+  created_at, updated_at
+)
+VALUES
+  -- ConnectLens — the platform hub
+  (
+    'b4000000-0000-0000-0000-000000000001',
+    'a4000000-0000-0000-0000-000000000001',
+    'connectlens',
+    'ConnectLens',
+    'Where every lenser connects, collaborates, and creates.',
+    'https://api.dicebear.com/9.x/bottts-neutral/svg?seed=connectlens-community-hub',
+    'ConnectLens is the community hub of LenserFight — a space where lensers of every kind (human, AI, and beyond) share templates, run workflows, and build together. Every lenser is welcome here.',
+    'active', 'public', 2, now(),
+    'human'::lensers.lenser_type,
+    now(), now()
+  ),
+  -- Chainabit — developer community
+  (
+    'b4000000-0000-0000-0000-000000000002',
+    'a4000000-0000-0000-0000-000000000002',
+    'chainabit',
+    'Chainabit',
+    'Developer-first community for AI-powered workflows and code lenses.',
+    'https://api.dicebear.com/9.x/bottts-neutral/svg?seed=chainabit-developer-community',
+    'Chainabit is a developer-focused community on LenserFight. We publish code review lenses, SQL builders, test generators, and workflow templates to help developers ship faster with AI. Open source at heart.',
+    'active', 'public', 2, now(),
+    'human'::lensers.lenser_type,
+    now(), now()
+  ),
+  -- LenserFight Community — official space
+  (
+    'b4000000-0000-0000-0000-000000000003',
+    'a4000000-0000-0000-0000-000000000003',
+    'lenserfight_community',
+    'LenserFight Community',
+    'The official LenserFight community — battles, challenges, and announcements.',
+    'https://api.dicebear.com/9.x/bottts-neutral/svg?seed=lenserfight-official-community',
+    'The official LenserFight community profile. Follow for new challenges, community announcements, template highlights, and curated workflows from the team and top lensers.',
+    'active', 'public', 2, now(),
+    'human'::lensers.lenser_type,
+    now(), now()
+  )
+ON CONFLICT (id) DO UPDATE SET
+  display_name   = EXCLUDED.display_name,
+  headline       = EXCLUDED.headline,
+  bio            = EXCLUDED.bio,
+  status         = EXCLUDED.status,
+  visibility     = EXCLUDED.visibility,
+  updated_at     = now();
+
+-- ── 3. Re-attribute two community lenses to ConnectLens ─────────────────────
+-- Thread Starter and Challenge Creator are the most community-facing lenses.
+-- We re-attribute them from the AI system author to the ConnectLens profile
+-- so the public template library reflects a multi-authored library.
+-- Only executes if those lenses exist and ConnectLens profile was just seeded.
+
+DO $$
+DECLARE
+  v_connectlens_id uuid := 'b4000000-0000-0000-0000-000000000001';
+  v_thread_lens    uuid := '41000000-0001-000c-0001-000000000001';
+  v_challenge_lens uuid := '41000000-0001-000d-0001-000000000001';
+BEGIN
+  IF EXISTS (SELECT 1 FROM lensers.profiles WHERE id = v_connectlens_id)
+  AND EXISTS (SELECT 1 FROM lenses.lenses WHERE id = v_thread_lens)
+  THEN
+    UPDATE lenses.lenses
+    SET lenser_id = v_connectlens_id
+    WHERE id IN (v_thread_lens, v_challenge_lens)
+    AND lenser_id != v_connectlens_id;
+
+    RAISE NOTICE '44_community_profiles: re-attributed Thread Starter and Challenge Creator to ConnectLens.';
+  END IF;
+END
+$$;
+
+ANALYZE lensers.profiles;
+
+
+-- >>> seeds/45_workflow_runs.sql
+-- =============================================================================
+-- 45. WORKFLOW RUNS (smoke seed)
+-- =============================================================================
+-- Seeds 2 lenses.workflow_runs rows (one completed, one failed) so that fresh
+-- supabase db reset produces non-empty observability data and Phase 9
+-- acceptance criterion #4 ("≥1 workflow run after seed") is satisfied.
+--
+-- References:
+--   • WF1 (Developer Code Review Suite) from 42_production_workflow_templates.sql
+--   • WF2 (Bug Investigation & Fix Pipeline) from 42_production_workflow_templates.sql
+--
+-- Idempotent: each block is gated with IF NOT EXISTS by run id.
+-- Dependencies:
+--   • 42_production_workflow_templates.sql (creates the workflows referenced)
+-- =============================================================================
+
+DO $seed$
+DECLARE
+  WF1 uuid := '42000000-0002-0001-0001-000000000001';
+  WF2 uuid := '42000000-0002-0002-0001-000000000001';
+
+  RUN_OK   uuid := '45000000-0001-0000-0000-000000000001';
+  RUN_FAIL uuid := '45000000-0002-0000-0000-000000000002';
+
+  v_triggered_by uuid;
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM lenses.workflows WHERE id = WF1) THEN
+    RAISE NOTICE '45_workflow_runs: WF1 not seeded yet — skipping.';
+    RETURN;
+  END IF;
+
+  SELECT id INTO v_triggered_by
+  FROM lensers.profiles
+  WHERE type = 'ai'::lensers.lenser_type AND status = 'active'::lensers.lenser_status
+  ORDER BY created_at ASC LIMIT 1;
+
+  IF v_triggered_by IS NULL THEN
+    SELECT id INTO v_triggered_by FROM lensers.profiles ORDER BY created_at ASC LIMIT 1;
+  END IF;
+
+  -- ── Completed run on WF1 ──────────────────────────────────────────────────
+  IF NOT EXISTS (SELECT 1 FROM lenses.workflow_runs WHERE id = RUN_OK) THEN
+    INSERT INTO lenses.workflow_runs (
+      id, workflow_id, triggered_by, status,
+      context_inputs, started_at, completed_at,
+      global_model_id, budget_credits, spent_credits, cost_metadata
+    ) VALUES (
+      RUN_OK, WF1, v_triggered_by, 'completed',
+      '{"function_code": "function add(a, b) { return a + b; }"}'::jsonb,
+      now() - interval '2 hours', now() - interval '1 hour 58 minutes',
+      'gpt-4o-mini', 1000, 42,
+      '{"summary": "demo seed run, completed"}'::jsonb
+    );
+  END IF;
+
+  -- ── Failed run on WF2 ─────────────────────────────────────────────────────
+  IF NOT EXISTS (SELECT 1 FROM lenses.workflows WHERE id = WF2) THEN
+    RAISE NOTICE '45_workflow_runs: WF2 not seeded yet — skipping failed run.';
+  ELSIF NOT EXISTS (SELECT 1 FROM lenses.workflow_runs WHERE id = RUN_FAIL) THEN
+    INSERT INTO lenses.workflow_runs (
+      id, workflow_id, triggered_by, status,
+      context_inputs, started_at, completed_at,
+      global_model_id, budget_credits, spent_credits, cost_metadata
+    ) VALUES (
+      RUN_FAIL, WF2, v_triggered_by, 'failed',
+      '{"stack_trace": "TypeError: cannot read property of undefined"}'::jsonb,
+      now() - interval '30 minutes', now() - interval '29 minutes',
+      'gpt-4o-mini', 500, 18,
+      '{"summary": "demo seed run, failed at node 1", "error_code": "provider_timeout"}'::jsonb
+    );
+  END IF;
+
+  RAISE NOTICE '45_workflow_runs: seeded smoke workflow runs.';
+END
+$seed$;
 
