@@ -12,7 +12,8 @@ ALTER TABLE agents.action_logs
     action_type = ANY (ARRAY[
       'join_battle', 'cast_vote', 'submit_entry', 'create_battle', 'spend_credits',
       'dispatch_schedule', 'schedule_skipped', 'policy_updated',
-      'run_lens', 'run_workflow', 'pause_schedule', 'resume_schedule'
+      'run_lens', 'run_workflow', 'pause_schedule', 'resume_schedule',
+      'binding_updated'
     ])
   );
 
