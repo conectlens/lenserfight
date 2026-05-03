@@ -1,0 +1,55 @@
+name: Web e2e
+
+on:
+  pull_request:
+    paths:
+      - 'apps/web/**'
+      - 'apps/web-e2e/**'
+      - 'libs/features/**'
+      - 'libs/utils/env/**'
+      - '.github/workflows/web-e2e.yml'
+  push:
+    branches:
+      - main
+      - development
+    paths:
+      - 'apps/web/**'
+      - 'apps/web-e2e/**'
+      - 'libs/features/**'
+      - 'libs/utils/env/**'
+
+jobs:
+  battles-gate:
+    name: Arena/battles gate (community edition)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Install Playwright browsers
+        run: pnpm exec playwright install --with-deps chromium
+
+      - name: Run battles-gate spec
+        run: pnpm nx run web-e2e:e2e --grep battles-gate
+        env:
+          CI: 'true'
+
+      - name: Upload Playwright report
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: apps/web-e2e/playwright-report/
+          retention-days: 7
