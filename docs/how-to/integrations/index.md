@@ -18,11 +18,14 @@ These guides cover how external products and teams connect to LenserFight progra
 
 | Guide | What it covers |
 |-------|----------------|
+| [Build a Connector Adapter](build-an-adapter.md) | Implement a `ConnectorAdapterV1` against the Phase 10 alpha SDK |
+| [Chainabit Reference Example](chainabit-example.md) | Walkthrough of `examples/connectors/chainabit-example/` |
 | [SaaS Integration Quickstart](saas-quickstart.md) | End-to-end: community account → connector → service token → API calls |
 | [Manage Organisation Tokens](manage-org-tokens.md) | Token lifecycle: create, rotate, scope, revoke |
 
 ## Related reference
 
+- [Connectors Reference](/reference/connectors/index) — `ConnectorAdapterV1` interface and scope grammar
 - [Token Reference](/reference/platform-api/tokens) — all token types and scopes
 - [Pricing & Plans](/reference/platform-api/pricing) — quota limits per tier
 - [Connectors](/reference/cli/connectors) — `lenserfight connectors` CLI reference
