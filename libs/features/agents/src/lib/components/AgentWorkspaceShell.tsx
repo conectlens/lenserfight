@@ -19,6 +19,7 @@ import { EmptyPanel } from './EmptyPanel'
 import { SectionErrorBoundary } from './SectionErrorBoundary'
 import {
   AgentTeamSection,
+  AnalyticsSection,
   ApprovalsSection,
   CostSection,
   EvaluationsSection,
@@ -58,6 +59,7 @@ const VALID_SECTIONS: AgentSection[] = [
   'providers',
   'approvals',
   'cost',
+  'analytics',
   'settings',
 ]
 
@@ -80,6 +82,7 @@ function getSectionComponent(section: AgentSection): React.ComponentType {
     case 'providers': return ProvidersSection
     case 'approvals': return ApprovalsSection
     case 'cost': return CostSection
+    case 'analytics': return AnalyticsSection
     case 'settings': return SettingsSection
   }
 }

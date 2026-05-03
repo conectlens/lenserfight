@@ -2,6 +2,7 @@ import type React from 'react'
 import {
   Activity,
   AlertTriangle,
+  BarChart2,
   Bot,
   Brain,
   CalendarClock,
@@ -42,6 +43,7 @@ export type AgentSection =
   | 'providers'
   | 'approvals'
   | 'cost'
+  | 'analytics'
   | 'settings'
 
 export type AgentNavZone = 'operate' | 'build' | 'automate' | 'configure'
@@ -89,6 +91,14 @@ export const NAV_ITEMS: AgentNavItem[] = [
   { id: 'providers', label: 'Providers', zone: 'configure', icon: AlertTriangle, visibleIn: OWNER_ONLY },
   { id: 'approvals', label: 'Permissions', zone: 'configure', icon: ClipboardCheck, visibleIn: OWNER_ONLY },
   { id: 'cost', label: 'Cost', zone: 'configure', icon: Coins, visibleIn: OWNER_ONLY },
+  {
+    id: 'analytics' as const,
+    label: 'Analytics',
+    zone: 'operate' as AgentNavZone,
+    icon: BarChart2,
+    visibleIn: ALL_OWNER_MODES,
+    enabled: FEATURES.AGENT_ANALYTICS,
+  },
   { id: 'settings', label: 'Settings', zone: 'configure', icon: SettingsIcon, visibleIn: AGENT_OWNER_ONLY },
 ]
 
