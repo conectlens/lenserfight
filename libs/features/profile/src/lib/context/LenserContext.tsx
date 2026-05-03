@@ -1,5 +1,3 @@
-import React, { createContext, useContext, useEffect, useCallback } from 'react'
-import { useQuery, useQueryClient } from '@tanstack/react-query'
 
 import { queryKeys } from '@lenserfight/data/cache'
 import { lenserService } from '@lenserfight/data/repositories'
@@ -8,6 +6,8 @@ import { Lenser, CreateLenserDTO } from '@lenserfight/types'
 import { buildAuthReturnUrl } from '@lenserfight/utils/dom'
 import { AUTH_BASE_URL } from '@lenserfight/utils/env'
 import { storage } from '@lenserfight/utils/storage'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
+import React, { createContext, useContext, useEffect, useCallback } from 'react'
 
 import {
   clearActiveProfileCaches,

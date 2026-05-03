@@ -1,13 +1,13 @@
-import React from 'react'
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { UserCheck, UserX, Users } from 'lucide-react'
-import { useNavigate } from 'react-router-dom'
+import { queryKeys } from '@lenserfight/data/cache'
+import { lenserService } from '@lenserfight/data/repositories'
+import { PendingFollowRequest } from '@lenserfight/types'
 import { Avatar } from '@lenserfight/ui/components'
 import { Button } from '@lenserfight/ui/components'
-import { lenserService } from '@lenserfight/data/repositories'
-import { queryKeys } from '@lenserfight/data/cache'
-import { PendingFollowRequest } from '@lenserfight/types'
 import { timeAgo } from '@lenserfight/utils/date'
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { UserCheck, UserX, Users } from 'lucide-react'
+import React from 'react'
+import { useNavigate } from 'react-router-dom'
 
 export const PendingRequestsPage: React.FC = () => {
   const navigate = useNavigate()
