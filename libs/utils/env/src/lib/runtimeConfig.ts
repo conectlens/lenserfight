@@ -78,6 +78,8 @@ export const FEATURES = {
   SUPABASE_INTEGRATION: featureEnabled('VITE_FEATURE_SUPABASE_INTEGRATION', editionIsCloud),
   // CRON scheduling is out of OSS beta scope — deferred to Wave 2 / post-stabilization.
   CRON_SCHEDULING: featureEnabled('VITE_FEATURE_CRON_SCHEDULING', false),
+  // Cloud waiting list gate. Self-hosted/community installs typically bypass this.
+  WAITING_LIST: featureEnabled('VITE_FEATURE_WAITING_LIST', editionIsCloud),
 }
 
 export { resolveProductEdition, SURFACE } from './appSurface'
