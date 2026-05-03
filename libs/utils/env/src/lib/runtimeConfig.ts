@@ -78,6 +78,8 @@ export const FEATURES = {
   SUPABASE_INTEGRATION: featureEnabled('VITE_FEATURE_SUPABASE_INTEGRATION', editionIsCloud),
   // CRON scheduling: on by default for cloud; off by default for self-hosted/community.
   CRON_SCHEDULING: featureEnabled('VITE_FEATURE_CRON_SCHEDULING', editionIsCloud),
+  // Analytics dashboard: cost/quality/performance charts per agent.
+  AGENT_ANALYTICS: featureEnabled('VITE_FEATURE_AGENT_ANALYTICS', editionIsCloud),
   // Cloud waiting list gate. Self-hosted/community installs typically bypass this.
   WAITING_LIST: featureEnabled('VITE_FEATURE_WAITING_LIST', editionIsCloud),
 }
