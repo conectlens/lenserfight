@@ -1,0 +1,17 @@
+{
+  "name": "@lenserfight-examples/chainabit-connector",
+  "version": "0.0.1",
+  "private": true,
+  "description": "Reference connector adapter for LenserFight — minimal Node.js integration demonstrating the lf connectors add → lf connectors test flow.",
+  "type": "module",
+  "scripts": {
+    "demo": "tsx src/index.ts"
+  },
+  "dependencies": {
+    "@lenserfight/adapters-connector": "workspace:*"
+  },
+  "devDependencies": {
+    "tsx": "^4.0.0",
+    "typescript": "^5.0.0"
+  }
+}
