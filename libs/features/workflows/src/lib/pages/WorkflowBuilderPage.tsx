@@ -21,6 +21,7 @@ import { WorkflowPhasesEditor } from '../components/WorkflowPhasesEditor'
 import { WorkflowProgressView } from '../components/WorkflowProgressView'
 import { WorkflowRootInputsPanel } from '../components/WorkflowRootInputsPanel'
 import { WorkflowRunHistoryPanel } from '../components/WorkflowRunHistoryPanel'
+import { WorkflowRunRecoveryBanner } from '../components/WorkflowRunRecoveryBanner'
 import { useForkWorkflow } from '../hooks/useForkWorkflow'
 import { useWorkflow } from '../hooks/useWorkflow'
 import { useWorkflowExecution } from '../hooks/useWorkflowExecution'
@@ -69,7 +70,7 @@ export function WorkflowBuilderPage({ workflowId, onBattleClick }: WorkflowBuild
   // ── Funding source (BYOK / platform credit) ────────────────────────────────
   const funding = useFundingSource(selectedProviderKey)
 
-  const { startRun, stopRun, isPending: starting, runId, nodeResults, isRunning } = useWorkflowRun(workflowId, {
+  const { startRun, stopRun, retryRun, isPending: starting, isRetrying, runId, nodeResults, isRunning } = useWorkflowRun(workflowId, {
     skipSse: funding.fundingSource === 'user_byok_local',
   })
   const resolveLocalKeyRef = useRef<((id: string) => Promise<string>) | undefined>(undefined)
@@ -100,7 +101,7 @@ export function WorkflowBuilderPage({ workflowId, onBattleClick }: WorkflowBuild
   const [selectedNodeConfig, setSelectedNodeConfig] = useState<{ nodeId: string; lensId: string; versionId: string | null; nodeLabel: string } | null>(null)
 
   // ── Run history ─────────────────────────────────────────────────────────────
-  const { data: historyRuns = [] } = useWorkflowRunHistory(workflowId)
+  const { runs: historyRuns } = useWorkflowRunHistory(workflowId)
 
   const { data: historyNodeResults = [] } = useQuery({
     queryKey: ['workflow', workflowId, 'run', selectedHistoryRunId, 'nodeResults'],
@@ -673,6 +674,29 @@ export function WorkflowBuilderPage({ workflowId, onBattleClick }: WorkflowBuild
                     canExecute={canExecute}
                     nodeConfigOverrides={nodeConfigs}
                   />
+                  {/* Recovery banner — shown when the run terminated with failure */}
+                  {runId && !isRunning &&
+                    (liveRunState?.status === 'failed' || liveRunState?.status === 'timed_out') && (
+                    <WorkflowRunRecoveryBanner
+                      runStatus={liveRunState!.status}
+                      failedNodeLabel={
+                        liveRunState?.node_results?.find(
+                          (r) => r.status === 'failed' || r.status === 'timed_out'
+                        )?.node_label ?? null
+                      }
+                      errorMessage={
+                        liveRunState?.node_results?.find(
+                          (r) => r.status === 'failed' || r.status === 'timed_out'
+                        )?.error_message ?? null
+                      }
+                      isRetrying={isRetrying}
+                      onRetry={() => {
+                        retryRun(runId).catch(() => {})
+                        setRunPanelTab('run')
+                        setShowRunPanel(true)
+                      }}
+                    />
+                  )}
                   {/* Final output banner — shown above progress when run is complete */}
                   {runId && terminalNodeId && !isRunning && (
                     <WorkflowFinalOutputBanner
