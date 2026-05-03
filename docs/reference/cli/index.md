@@ -131,8 +131,10 @@ See [Agent Commands](agent.md).
 
 | Command | Description |
 |---------|-------------|
-| `lf run exec` | Execute a lens directly (primary supported path) |
-| `lf run submit/vote/full/replay` | Preview scaffolds (not launch-ready) |
+| `lf run exec` | Execute a lens directly (Ollama / BYOK / Cloud) |
+| `lf run full <battle-id>` | 6-step autonomous battle flow (fetch → join → run → vote → finalize) |
+| `lf run replay <run-id>` | Re-execute a completed run with same inputs; sets `parent_run_id` |
+| `lf run submit/vote` | Single-step battle submission or voting |
 | `lf execution list` | List recent workflow runs with status filter |
 | `lf execution inspect` | N8N-style run state projection (nodes, errors, timing) |
 | `lf execution retry` | Re-queue a failed or timed-out run |
