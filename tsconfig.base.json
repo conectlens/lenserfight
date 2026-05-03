@@ -45,6 +45,7 @@
       "@lenserfight/infra/moderation": ["libs/infra/moderation/src/index.ts"],
       "@lenserfight/infra/storage": ["libs/infra/storage/src/index.ts"],
       "@lenserfight/infra/simulation": ["libs/infra/simulation/src/index.ts"],
+      "@lenserfight/adapters/connector": ["libs/adapters/connector/src/index.ts"],
       "@lenserfight/api/contracts": ["libs/api/contracts/src/index.ts"],
       "@lenserfight/api/dto": ["libs/api/dto/src/index.ts"],
       "@lenserfight/types": ["libs/types/src/index.ts"],
