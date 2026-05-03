@@ -38,8 +38,6 @@ import {
   ToolsSection,
   WorkflowsSection,
 } from './sections'
-import { ActiveWorkspaceBanner } from './ActiveWorkspaceBanner'
-
 import type { LenserProfileDTO } from '@lenserfight/types'
 
 const VALID_SECTIONS: AgentSection[] = [
@@ -263,7 +261,6 @@ export const AgentWorkspaceShell: React.FC<AgentWorkspaceShellProps> = ({
       isSwitching={isSwitching}
     >
       <div className="flex flex-col gap-3">
-        <ActiveWorkspaceBanner />
         <SectionErrorBoundary sectionName={activeSection}>
           <SectionComponent />
         </SectionErrorBoundary>
