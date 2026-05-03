@@ -121,6 +121,10 @@ export interface WorkflowRunRecord {
   /** The AI lenser that executed this run. NULL for human-workspace runs. Populated by scheduled
    *  dispatch and by fn_start_workflow_run when the caller is acting as an AI workspace. */
   ai_lenser_id?: string | null
+  /** Set when this run was created by lf run replay — links back to the source run. */
+  parent_run_id?: string | null
+  /** Nesting depth of subflow chains (0 = root, max 8). */
+  recursion_depth?: number
 }
 
 export interface WorkflowNodeResultRecord {
