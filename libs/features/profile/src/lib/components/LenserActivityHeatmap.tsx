@@ -1,7 +1,7 @@
+import { LenserActivityPoint } from '@lenserfight/types'
+import { Card } from '@lenserfight/ui/components'
 import React from 'react'
 
-import { Card } from '@lenserfight/ui/components'
-import { LenserActivityPoint } from '@lenserfight/types'
 
 interface LenserActivityHeatmapProps {
   data: LenserActivityPoint[]

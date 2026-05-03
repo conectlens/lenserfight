@@ -1,8 +1,9 @@
-import React from 'react'
-import { Lock } from 'lucide-react'
-import { Avatar } from '@lenserfight/ui/components'
 import { LenserProfileDTO, RelationshipState } from '@lenserfight/types'
+import { Avatar } from '@lenserfight/ui/components'
 import { formatCount } from '@lenserfight/utils/number'
+import { Lock } from 'lucide-react'
+import React from 'react'
+
 import { FollowButton } from './FollowButton'
 
 interface RestrictedProfileShellProps {

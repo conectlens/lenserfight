@@ -1,10 +1,10 @@
+import { Button, EmptyState } from '@lenserfight/ui/components'
+import { Field, Input, Switch, TextArea } from '@lenserfight/ui/forms'
 import { AlertCircle, Clock3, Trash2 } from 'lucide-react'
 import React, { useEffect, useMemo, useState } from 'react'
 
 import type { WorkflowRecord } from '@lenserfight/data/repositories'
 import type { AIModel, UpsertWorkflowScheduleInput, WorkflowScheduleRecord } from '@lenserfight/types'
-import { Button, EmptyState } from '@lenserfight/ui/components'
-import { Field, Input, Switch, TextArea } from '@lenserfight/ui/forms'
 
 interface AILenserSchedulesPanelProps {
   workflows: WorkflowRecord[]

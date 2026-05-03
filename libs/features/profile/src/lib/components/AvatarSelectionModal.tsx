@@ -1,10 +1,9 @@
-import { createAvatar } from '@dicebear/core'
 import { micah, openPeeps, pixelArt, toonHead } from '@dicebear/collection'
+import { createAvatar } from '@dicebear/core'
+import { Tabs, TabList, Tab, TabPanel } from '@lenserfight/ui/layout'
+import { Dialog, ModalFooter } from '@lenserfight/ui/overlays'
 import { Trash2 } from 'lucide-react'
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react'
-
-import { Dialog, ModalFooter } from '@lenserfight/ui/overlays'
-import { Tabs, TabList, Tab, TabPanel } from '@lenserfight/ui/layout'
 
 interface AvatarSelectionModalProps {
   isOpen: boolean

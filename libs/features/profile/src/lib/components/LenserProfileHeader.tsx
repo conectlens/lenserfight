@@ -24,12 +24,13 @@ import {
 } from 'lucide-react'
 import React, { useState, useEffect } from 'react'
 
+import { useLenser } from '../context/LenserContext'
+
 import { AvatarSelectionModal } from './AvatarSelectionModal'
 import { BannerSelectionModal } from './BannerSelectionModal'
 import { EditProfileModal } from './EditProfileModal'
 import { FollowButton } from './FollowButton'
 import { NetworkModal } from './NetworkModal'
-import { useLenser } from '../context/LenserContext'
 
 interface LenserProfileHeaderProps {
   lenser: Lenser & { visibility?: 'public' | 'private' | 'community' }
