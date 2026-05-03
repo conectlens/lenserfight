@@ -1,13 +1,14 @@
+import { lenserService } from '@lenserfight/data/repositories'
+import { useToast } from '@lenserfight/shared/error'
+import { FollowsNetworkUser, TrendingLenser } from '@lenserfight/types'
+import { Avatar } from '@lenserfight/ui/components'
+import { Button } from '@lenserfight/ui/components'
+import { Modal } from '@lenserfight/ui/modals'
 import { UserX, Sparkles } from 'lucide-react'
 import React, { useEffect, useState, useRef, useCallback } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 
-import { Avatar } from '@lenserfight/ui/components'
-import { Button } from '@lenserfight/ui/components'
-import { Modal } from '@lenserfight/ui/modals'
-import { lenserService } from '@lenserfight/data/repositories'
-import { FollowsNetworkUser, TrendingLenser } from '@lenserfight/types'
-import { useToast } from '@lenserfight/shared/error'
+
 import { useLenser } from '../context/LenserContext'
 
 const PAGE_SIZE = 20
