@@ -133,8 +133,14 @@ See [Agent Commands](agent.md).
 |---------|-------------|
 | `lf run exec` | Execute a lens directly (primary supported path) |
 | `lf run submit/vote/full/replay` | Preview scaffolds (not launch-ready) |
+| `lf execution list` | List recent workflow runs with status filter |
+| `lf execution inspect` | N8N-style run state projection (nodes, errors, timing) |
+| `lf execution retry` | Re-queue a failed or timed-out run |
+| `lf execution cancel` | Cancel a running or queued run |
+| `lf execution provenance` | Cross-workflow data lineage for a run |
+| `lf execution events` | Full SSE event log for a run |
 
-See [Run Commands](run.md) and [Execution Modes](execution-modes.md).
+See [Run Commands](run.md), [Execution Subcommands](execution.md), and [Execution Modes](execution-modes.md).
 
 ### Automation workspace
 
