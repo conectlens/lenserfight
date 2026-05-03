@@ -1,9 +1,11 @@
-import { act, renderHook, waitFor } from '@testing-library/react'
+import { queryKeys } from '@lenserfight/data/cache'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+import { act, renderHook, waitFor } from '@testing-library/react'
 import React from 'react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { queryKeys } from '@lenserfight/data/cache'
+import { useSwitchLenser } from './useSwitchLenser'
+
 import type { WorkspaceIdentity } from '@lenserfight/types'
 
 const { mockRpc, mockGetActiveLenser, mockClearActiveProfileCaches } = vi.hoisted(() => ({
@@ -28,7 +30,6 @@ vi.mock('./activeProfileCache', () => ({
   clearActiveProfileCaches: () => mockClearActiveProfileCaches(),
 }))
 
-import { useSwitchLenser } from './useSwitchLenser'
 
 function createWrapper(queryClient: QueryClient) {
   return ({ children }: { children: React.ReactNode }) => (
