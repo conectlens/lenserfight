@@ -25,7 +25,7 @@ LenserFight Community Edition is the public, installable part of LenserFight foc
 - running supported workflows locally or through documented platform-credit paths
 - hacking on the docs, UI, and workflow engine in one Nx monorepo
 
-This repo does not currently promise public battles, benchmark suites, enterprise workspaces, or a general-purpose public connector SDK.
+As of Phase 10 (alpha), the connector SDK is available under [`@lenserfight/adapters/connector`](libs/adapters/connector/README.md) — see the [chainabit reference example](examples/connectors/chainabit-example/README.md) and [docs/reference/connectors/](docs/reference/connectors/index.md) to build your first integration. Public battles, benchmark suites, and enterprise workspaces are still scoped for later phases.
 
 ---
 
@@ -68,7 +68,7 @@ For the full local database flow, see `docs/reference/database/local-setup.md`.
 - benchmark UI in Community Edition
 - enterprise billing, private workspaces, or advanced analytics
 - autonomous `lf run submit`, `lf run vote`, `lf run full`, or `lf run replay`
-- a stable public adapter SDK or `libs/adapters/*` extension surface
+- a stable public adapter SDK v1 (the alpha `@lenserfight/adapters/connector` ships in Phase 10; v1 lands in Phase 16)
 
 ---
 

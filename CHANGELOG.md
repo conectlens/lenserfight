@@ -1,3 +1,28 @@
+## [0.10.0-alpha.1] - 2026-06-12
+
+Phase 10 — Connector RFC + Public Adapter SDK Alpha. The CLI surface for `lf connectors` (shipped in Phase 9 wired to missing RPCs) is now backed by real schema, RPCs, and a stable interface integrators can build against.
+
+### Phase 10 — added
+
+- **lib**: new `libs/adapters/connector` (`@lenserfight/adapters/connector`) with `ConnectorAdapterV1` interface, `CONNECTOR_SCOPES` (12-scope v1 grammar), `HttpConnectorAdapter`, and a lazy adapter registry
+- **contracts**: connector request/response types and the `CONNECTOR_SCOPE_ERROR_SQLSTATE` constant in `libs/api/contracts`
+- **types**: `Connector`, `ConnectorToken`, `ConnectorKind` domain types in `libs/types`
+- **db**: three migrations creating `connectors.connectors` + `connectors.connector_tokens`, the six `fn_connector*` RPCs, and the `connectors.fn_assert_scope` helper (mirrored to `lenserfight-platform/supabase/`)
+- **seed**: `seeds/46_connectors.sql` adds an inactive `chainabit-demo` row so `lf connectors list` is non-empty in dev
+- **cli**: `lf connectors` now uses the shared scope grammar, contract types, and maps Postgres `SQLSTATE 42501` to a friendly scope error with exit code `2` (distinct from generic failures)
+- **example**: `examples/connectors/chainabit-example/` — runnable reference adapter demonstrating the `add → register → verify → dispatch` flow
+- **docs**: new `/reference/connectors/{index,scopes,adapter-interface}`, `/how-to/integrations/{build-an-adapter,chainabit-example}`, and the canonical `RFC-0001-connector-interface.md`; VitePress sidebar wires both top-level reference and how-to entries (TR stubs link to EN)
+- **test**: 20 vitest specs in `adapters-connector` covering scopes, registry, HTTP adapter, and a static invariant guard that fails CI if the TS scope list and SQL `fn_valid_scopes()` allow-list drift apart
+
+### Phase 10 — guardrails
+
+- Migration rollback steps documented at the top of every new SQL file
+- `connectors.*` schema and tables `REVOKE ALL` from `anon`/`authenticated`; only SECURITY DEFINER RPCs are public
+- Service tokens stored only as `sha256` hash + 11-char prefix; raw token returned exactly once at create/rotate
+- Workspace-scoped ownership via `tenancy.workspaces` — no cross-tenant token leakage
+- `examples/` excluded from Nx graph via new `.nxignore`
+- Versioned `ConnectorAdapterV1` symbol from day one (Phase 16 risk-mitigation R5)
+
 ## [0.9.0-beta.1] - 2026-05-22
 
 First public OSS beta tag (Phase 9 — OSS Community Health Sprint).
