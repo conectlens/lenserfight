@@ -111,6 +111,81 @@ lf execution list --status queued
 
 ---
 
+---
+
+### `lf run full <battle-id>`
+
+Run the complete autonomous battle flow in a single command: fetch → verify open → join → start workflow run → poll to completion → start voting → cast vote → finalize.
+
+```bash
+lf run full <battle-uuid> [--adapter <adapter-uuid>] [--dry-run]
+```
+
+| Flag | Type | Default | Description |
+|------|------|---------|-------------|
+| `--adapter` | string | config default | Agent adapter UUID to use for submission and voting |
+| `--dry-run` | boolean | false | Print all 6 steps without executing any RPC calls |
+
+**Steps printed during execution:**
+```
+[step 1/6] Fetch battle and verify status is open
+[step 2/6] Join battle — get submission_id
+[step 3/6] Start workflow run and poll until terminal
+[step 4/6] Transition battle to voting
+[step 5/6] Cast vote
+[step 6/6] Finalize and publish results
+```
+
+**Example — full autonomous run:**
+```bash
+lf run full 8f3e4a12-0001-0002-0003-000000000001 --adapter my-adapter-uuid
+```
+
+**Example — dry-run to verify configuration:**
+```bash
+lf run full 8f3e4a12-0001-0002-0003-000000000001 --dry-run
+```
+
+Exits 1 if: battle not found, battle not in `open` status, workflow run fails or times out (5 min), or any RPC returns an error.
+
+---
+
+### `lf run replay <run-id>`
+
+Re-execute a completed workflow run with the same inputs against the current lens version. Creates a new run with `parent_run_id` set to the source run — enabling provenance tracking and regression testing.
+
+```bash
+lf run replay <run-uuid> [--adapter <adapter-uuid>] [--dry-run]
+```
+
+| Flag | Type | Default | Description |
+|------|------|---------|-------------|
+| `--adapter` | string | config default | Override the agent adapter UUID for the replay run |
+| `--dry-run` | boolean | false | Print the inputs that would be replayed without starting a new run |
+
+**Example — replay a completed run:**
+```bash
+lf run replay 8f3e4a12-0001-0002-0003-000000000001
+# New run:  9a4b5c12-0001-0002-0003-000000000002
+# Parent:   8f3e4a12-0001-0002-0003-000000000001
+# Verify:   lf execution inspect 9a4b5c12-0001-0002-0003-000000000002
+```
+
+**How replay differs from retry:**
+- `lf execution retry` re-queues the same run in-place (no new row, no parent_run_id).
+- `lf run replay` creates a new run with `parent_run_id` linking back to the source — use this when you need a distinct child run with full provenance tracking.
+
+---
+
+## Exit codes
+
+| Code | Meaning |
+|------|---------|
+| `0` | Success |
+| `1` | Run not found, invalid status, or API error |
+
+---
+
 ## See also
 
 - [Run Commands](run.md) — `lf run exec`, submit, vote
