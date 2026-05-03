@@ -25,7 +25,7 @@ export type AgentRouteMode =
  * Spec: docs/connected-lenses/frontend-integration.md#route-resolution-contract
  */
 export function useAgentRouteMode(handle: string | undefined): AgentRouteMode {
-  const { isOwnedWorkspace, isLoading: workspacesLoading } = useLenserWorkspace()
+  const { isOwnedWorkspace, workspaces, isLoading: workspacesLoading } = useLenserWorkspace()
 
   const { data: accessPayload, isLoading: profileLoading } = useQuery<
     ProfileAccessPayload | null
@@ -44,7 +44,11 @@ export function useAgentRouteMode(handle: string | undefined): AgentRouteMode {
     if (!profile) return { kind: 'not_found', handle }
 
     const isOwner = isOwnedWorkspace(profile.id)
-    const isAgent = profile.type === 'ai'
+    // fn_lensers_get_profile does not return `type`; use the workspace list
+    // (from fn_get_my_lensers which does return type) as the authoritative
+    // source for owned profiles, falling back to profile.type for others.
+    const workspaceEntry = workspaces.find((w) => w.id === profile.id)
+    const isAgent = (workspaceEntry?.type ?? profile.type) === 'ai'
 
     if (isAgent) {
       return isOwner
@@ -54,5 +58,5 @@ export function useAgentRouteMode(handle: string | undefined): AgentRouteMode {
     return isOwner
       ? { kind: 'human_owner', handle, profile }
       : { kind: 'human_public', handle, profile }
-  }, [handle, profileLoading, workspacesLoading, accessPayload, isOwnedWorkspace])
+  }, [handle, profileLoading, workspacesLoading, accessPayload, isOwnedWorkspace, workspaces])
 }
