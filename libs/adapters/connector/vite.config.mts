@@ -28,8 +28,8 @@ export default defineConfig(() => ({
     lib: {
       entry: 'src/index.ts',
       name: 'adapters-connector',
-      fileName: 'index',
-      formats: ['es' as const],
+      fileName: (format) => format === 'cjs' ? 'index.cjs' : 'index.mjs',
+      formats: ['es', 'cjs'] as const,
     },
     rollupOptions: {
       external: [],
