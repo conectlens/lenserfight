@@ -1,0 +1,46 @@
+# Chainabit Connector Example
+
+Reference integration for LenserFight connectors. Demonstrates the full lifecycle:
+
+```bash
+lenserfight connectors add chainabit \
+  --name "Chainabit" \
+  --slug chainabit \
+  --scopes lenses:read
+
+lenserfight connectors test chainabit
+```
+
+## Setup
+
+```bash
+cp .env.example .env
+# paste the service token printed by `connectors add` into LENSERFIGHT_SERVICE_TOKEN
+pnpm install
+pnpm demo
+```
+
+The demo:
+
+1. Registers a `chainabit` adapter in the connector registry.
+2. Verifies the service token against the registered adapter.
+3. Dispatches a `lens.published` event to the configured webhook endpoint.
+
+## Files
+
+- [src/adapter.ts](src/adapter.ts) — minimal `ConnectorAdapterV1` wrapping the built-in `HttpConnectorAdapter`.
+- [src/index.ts](src/index.ts) — runnable demo flow.
+
+## Token rotation
+
+```bash
+lenserfight connectors rotate chainabit
+```
+
+The previous token is revoked immediately. Update `LENSERFIGHT_SERVICE_TOKEN` and re-run the demo.
+
+## Reference
+
+- [docs/reference/connectors/](../../../docs/reference/connectors/index.md)
+- [docs/how-to/integrations/build-an-adapter.md](../../../docs/how-to/integrations/build-an-adapter.md)
+- [docs/rfcs/RFC-0001-connector-interface.md](../../../docs/rfcs/RFC-0001-connector-interface.md)
