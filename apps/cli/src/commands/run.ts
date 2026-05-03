@@ -351,8 +351,25 @@ const exec = defineCommand({
       description: 'Stream the response token-by-token',
       default: true,
     },
+    'dry-run': {
+      type: 'boolean',
+      description: 'Print the resolved mode/model/prompt without contacting any provider',
+      default: false,
+    },
   },
   async run({ args }) {
+    // ── Dry-run short-circuit ────────────────────────────────────────────────
+    // Must run BEFORE provider/credential resolution so the smoke test can
+    // validate config plumbing without any *_API_KEY env vars set.
+    if (args['dry-run']) {
+      const mode = args.ollama ? 'ollama' : args.byok ? `byok/${args.byok}` : 'cloud';
+      consola.info('[dry-run] mode:   %s', mode);
+      consola.info('[dry-run] model:  %s', args.model);
+      consola.info('[dry-run] prompt: %s', args.prompt.slice(0, 80));
+      if (args.system) consola.info('[dry-run] system: %s', args.system.slice(0, 80));
+      return;
+    }
+
     const messages: Array<{ role: 'system' | 'user'; content: string }> = [];
     if (args.system) messages.push({ role: 'system', content: args.system });
     messages.push({ role: 'user', content: args.prompt });
