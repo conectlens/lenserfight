@@ -1,4 +1,5 @@
 export { AgentTeamSection } from './AgentTeamSection'
+export { AnalyticsSection } from './AnalyticsSection'
 export { ApprovalQueueSection } from './ApprovalQueueSection'
 export { ApprovalsSection } from './ApprovalsSection'
 export { CostMonitorSection } from './CostMonitorSection'
