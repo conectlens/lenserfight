@@ -1,0 +1,68 @@
+name: Seed reset smoke
+
+on:
+  pull_request:
+    paths:
+      - 'supabase/migrations/**'
+      - 'supabase/seeds/**'
+      - 'supabase/seed.manifest'
+      - 'supabase/seed.sql'
+      - 'supabase/config.toml'
+      - 'supabase/combine-seeds.sh'
+      - '.github/workflows/seeds-smoke.yml'
+  push:
+    branches:
+      - main
+      - development
+    paths:
+      - 'supabase/migrations/**'
+      - 'supabase/seeds/**'
+      - 'supabase/seed.manifest'
+      - 'supabase/seed.sql'
+      - 'supabase/config.toml'
+      - 'supabase/combine-seeds.sh'
+
+jobs:
+  db-reset:
+    name: supabase db reset against committed seed.sql
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'pnpm'
+
+      - uses: supabase/setup-cli@v1
+        with:
+          version: latest
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Start Supabase
+        run: supabase start
+
+      - name: Reset database (applies migrations + seed.sql)
+        run: supabase db reset --local --yes
+
+      - name: Acceptance — workflow_runs must be non-empty
+        run: |
+          PSQL="supabase db psql -- -t -A -c"
+          RUNS=$($PSQL "SELECT count(*) FROM lenses.workflow_runs;")
+          AGENTS=$($PSQL "SELECT count(*) FROM agents.ai_lensers;")
+          VERSIONS=$($PSQL "SELECT count(*) FROM lenses.versions;")
+          echo "workflow_runs=$RUNS  ai_lensers=$AGENTS  lens_versions=$VERSIONS"
+          [ "$RUNS" -ge 1 ] || { echo "FAIL: expected ≥1 workflow_runs"; exit 1; }
+          [ "$AGENTS" -ge 1 ] || { echo "FAIL: expected ≥1 ai_lensers"; exit 1; }
+          [ "$VERSIONS" -ge 2 ] || { echo "FAIL: expected ≥2 lens versions"; exit 1; }
+
+      - name: Stop Supabase
+        if: always()
+        run: supabase stop --no-backup
