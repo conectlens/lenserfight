@@ -1,0 +1,76 @@
+# Canonical label set for the LenserFight OSS repo.
+# Synced to GitHub by .github/workflows/labels-sync.yml.
+# Adding/removing/renaming a label here is the only supported way to change
+# repo labels — manual edits in the GitHub UI will be reverted on next sync.
+
+# ── Phase 9 triage labels ──────────────────────────────────────────────────
+- name: p0-install
+  color: b60205
+  description: Setup, install, or local-env failure (auto-applied by install_problem template)
+
+- name: p0-workflow
+  color: b60205
+  description: Workflow run, builder, or execution-engine failure (auto-applied by workflow_problem template)
+
+- name: docs
+  color: 0075ca
+  description: Documentation fix or improvement
+
+- name: good-first-issue
+  color: 7057ff
+  description: Scoped, low-context issue suitable for new contributors
+
+- name: deferred
+  color: cccccc
+  description: Recorded but not on the current roadmap (Phases 9–16)
+
+# ── Standard issue types ───────────────────────────────────────────────────
+- name: bug
+  color: d73a4a
+  description: Something is broken
+
+- name: enhancement
+  color: a2eeef
+  description: Improvement or new functionality
+
+- name: question
+  color: d876e3
+  description: Further information is requested
+
+# ── Status / housekeeping ──────────────────────────────────────────────────
+- name: needs-triage
+  color: fbca04
+  description: Maintainer review pending
+
+- name: blocked
+  color: e99695
+  description: Cannot progress until something else lands
+
+- name: duplicate
+  color: cccccc
+  description: This issue or PR already exists
+
+- name: invalid
+  color: e4e669
+  description: This doesn't seem right
+
+- name: wontfix
+  color: ffffff
+  description: This will not be worked on
+
+# ── Phase / area markers (optional, used by maintainers) ───────────────────
+- name: area:supabase
+  color: 3ecf8e
+  description: Database, migrations, RLS, RPCs
+
+- name: area:cli
+  color: 0e8a16
+  description: lf command-line tool
+
+- name: area:web
+  color: 1d76db
+  description: apps/web frontend
+
+- name: area:docs
+  color: 0075ca
+  description: docs site or contributor guides

@@ -1,0 +1,29 @@
+name: Deferred / parking-lot idea
+description: An idea worth recording but not on the current roadmap (Phases 9–16).
+title: "deferred: "
+labels:
+  - deferred
+body:
+  - type: textarea
+    id: idea
+    attributes:
+      label: The idea
+      description: What's the change or capability?
+    validations:
+      required: true
+  - type: textarea
+    id: motivation
+    attributes:
+      label: Why it might matter
+      description: User pain, ecosystem leverage, or strategic angle.
+    validations:
+      required: true
+  - type: textarea
+    id: out_of_scope_reason
+    attributes:
+      label: Why it's out of scope right now
+      description: e.g. depends on Phase 14 workspaces, blocked by RLS audit, etc.
+  - type: textarea
+    id: links
+    attributes:
+      label: Related issues / discussions
