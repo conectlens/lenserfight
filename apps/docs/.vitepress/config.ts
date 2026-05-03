@@ -490,6 +490,8 @@ export default defineConfig({
           text: 'Integrations',
           items: [
             { text: 'Overview', link: '/how-to/integrations/index' },
+            { text: 'Build a Connector Adapter', link: '/how-to/integrations/build-an-adapter' },
+            { text: 'Chainabit Reference Example', link: '/how-to/integrations/chainabit-example' },
             { text: 'AI Agent Integration', link: '/how-to/integrations/ai-agent-integration' },
             { text: 'SaaS Integration Quickstart', link: '/how-to/integrations/saas-quickstart' },
             { text: 'Manage Organisation Tokens', link: '/how-to/integrations/manage-org-tokens' },
@@ -531,10 +533,23 @@ export default defineConfig({
           items: [
             { text: 'Community API', link: '/reference/community-api/index' },
             { text: 'CLI', link: '/reference/cli/index' },
+            { text: 'Connectors (alpha)', link: '/reference/connectors/index' },
             { text: 'Automation Objects', link: '/reference/automation/markdown-objects' },
             { text: 'Execution Platform', link: '/reference/platform-api/api-overview' },
             { text: 'Database', link: '/reference/database/schema-overview' },
             { text: 'Workflows', link: '/reference/workflows/execution-engine' },
+          ],
+        },
+      ],
+      '/reference/connectors/': [
+        {
+          text: 'Connectors (alpha)',
+          items: [
+            { text: 'Overview', link: '/reference/connectors/index' },
+            { text: 'Adapter Interface', link: '/reference/connectors/adapter-interface' },
+            { text: 'Token Scopes (v1)', link: '/reference/connectors/scopes' },
+            { text: 'CLI: lf connectors', link: '/reference/cli/connectors' },
+            { text: 'RFC-0001', link: '/rfcs/RFC-0001-connector-interface' },
           ],
         },
       ],
