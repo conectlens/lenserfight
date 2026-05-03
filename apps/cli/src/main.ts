@@ -51,6 +51,7 @@ const main = defineCommand({
     models: () => import('./commands/models').then((m) => m.default),
     gateway: () => import('./commands/gateway').then((m) => m.default),
     ai: () => import('./commands/ai').then((m) => m.default),
+    analytics: () => import('./commands/analytics').then((m) => m.default),
     tag: () => import('./commands/tag').then((m) => m.default),
     feed: () => import('./commands/feed').then((m) => m.default),
     leaderboard: () => import('./commands/leaderboard').then((m) => m.default),
