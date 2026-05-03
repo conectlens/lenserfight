@@ -3,6 +3,12 @@
   "private": true,
   "version": "0.0.0",
   "type": "module",
+  "license": "BUSL-1.1",
+  "engines": {
+    "node": ">=22 <23",
+    "pnpm": ">=9 <10"
+  },
+  "packageManager": "pnpm@9.0.0",
   "scripts": {
     "dev": "node scripts/dev.mjs",
     "dev:web": "npx nx serve web",
@@ -21,7 +27,8 @@
     "supabase:combine-seeds": "bash supabase/combine-seeds.sh",
     "supabase:db:reset": "bash supabase/combine-seeds.sh && supabase db reset --local --yes",
     "supabase:db:reset:debug": "bash supabase/combine-seeds.sh && supabase db reset --local --yes --debug",
-    "supabase:local:recover": "bash scripts/supabase-local-recover.sh"
+    "supabase:local:recover": "bash scripts/supabase-local-recover.sh",
+    "smoke": "bash scripts/smoke.sh"
   },
   "config": {
     "commitizen": {
