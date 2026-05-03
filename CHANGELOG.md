@@ -1,3 +1,28 @@
+## [0.9.0-beta.1] - 2026-05-22
+
+First public OSS beta tag (Phase 9 — OSS Community Health Sprint).
+
+> BSL Change Date for this release: 2028-05-22 (two years from release; converts to Apache-2.0 per `LICENSE`).
+
+### Phases 1–8 highlights (already shipped before public open on 2026-05-07)
+
+- Lenses, lens versions, and the workflow builder (DAG editor, run history, observability)
+- AI lenser profiles + agent workspace panels (memory, tools registry, evaluations)
+- Workflow execution engine (Ollama / BYOK / cloud) and `lf run exec`
+- Autonomous Agent OS substrate (Phase 8): schedule plumbing, recursion guards, run state projection
+
+### Phase 9 — fixes & hardening
+
+- **seed**: prune stale `20_*–32_*` scale entries from `supabase/seed.manifest`; add `45_workflow_runs.sql` so `supabase db reset` produces ≥1 workflow run, ≥1 agent, ≥2 lens versions
+- **gate**: `/lenserboard` is now behind `FEATURES.PUBLIC_BATTLES`; onboarding return-URL falls back to `/workflows` when battles are off
+- **flag**: add `VITE_FEATURE_WAITING_LIST` (defaults to `editionIsCloud`); `WaitingListSection` short-circuits when off
+- **cli**: add `--dry-run` to `lf run exec` — short-circuits before any provider/credential resolution; covered by `apps/cli/src/commands/run.spec.ts`
+- **ci**: new `cli-smoke.yml`, `seeds-smoke.yml`, `web-e2e.yml`, `labels-sync.yml` workflows
+- **e2e**: new `apps/web-e2e/` Playwright project with the arena/battles-gate spec
+- **docs**: README gets an OSS-vs-cloud table, self-hosting flags section, and a Community section linking SECURITY/SUPPORT/COC; `contributing.md` gets a "Your first contribution" walkthrough; `development-setup.md` documents the `pnpm smoke` ready-to-PR gate
+- **triage**: relabel `install_problem.yml` to `p0-install`; add `workflow_problem.yml` (`p0-workflow`) and `deferred.yml`; codify the canonical label set in `.github/labels.yml`
+- **tooling**: pin Node 22 + pnpm 9 in `package.json` `engines` + `packageManager`; add `.nvmrc`; new `pnpm smoke` end-to-end gate script
+
 ## [Unreleased] - 2026-03-14
 - Merge pull request #19 from connectlens/development
 - feat: add new Claude skills, agents, and teams, and update Claude configuration and documentation files.

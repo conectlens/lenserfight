@@ -2,7 +2,7 @@ name: Install problem
 description: Report a setup or local install issue.
 title: "install: "
 labels:
-  - install
+  - p0-install
 body:
   - type: textarea
     id: failing_step
