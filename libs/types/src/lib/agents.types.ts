@@ -768,3 +768,41 @@ export interface RecordRunIncidentInput {
   description?: string | null
   context?: Record<string, unknown>
 }
+
+// ─── Analytics dashboard types (Phase 15) ─────────────────────────────────────
+
+export interface AnalyticsCostByModel {
+  model_key: string
+  provider: string
+  total_credits: number
+  total_tokens_in: number
+  total_tokens_out: number
+  run_count: number
+}
+
+export interface AnalyticsCostTimePoint {
+  period_date: string
+  total_credits: number
+}
+
+export interface AnalyticsEvalQualityRow {
+  period_date: string
+  evaluation_name: string
+  pass_rate: number | null
+  mean_score: number | null
+}
+
+export interface AnalyticsWorkflowPerfRow {
+  period_date: string
+  workflow_title: string
+  p50_duration_ms: number | null
+  p95_duration_ms: number | null
+  failure_rate: number | null
+}
+
+export interface AgentAnalyticsSummary {
+  cost_by_model: AnalyticsCostByModel[]
+  cost_time_series: AnalyticsCostTimePoint[]
+  eval_quality: AnalyticsEvalQualityRow[]
+  workflow_perf: AnalyticsWorkflowPerfRow[]
+}
