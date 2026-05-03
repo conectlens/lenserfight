@@ -115,18 +115,18 @@ export const MemorySection: React.FC = () => {
       ) : aiLenserId ? (
         <>
           <Tabs value={tab} onChange={(id) => setTab(id as MemoryTab)}>
-          <TabList>
-            <Tab id="profiles">Profiles</Tab>
-            <Tab id="entries">Entries</Tab>
-          </TabList>
-          <div className="mt-4">
-            {tab === 'profiles' && (
-              <MemoryProfilesTab aiLenserId={aiLenserId} isOwner={isOwner} />
-            )}
-            {tab === 'entries' && (
-              <MemoryEntriesTab aiLenserId={aiLenserId} isOwner={isOwner} />
-            )}
-          </div>
+            <TabList>
+              <Tab id="profiles">Profiles</Tab>
+              <Tab id="entries">Entries</Tab>
+            </TabList>
+            <div className="mt-4">
+              {tab === 'profiles' && (
+                <MemoryProfilesTab aiLenserId={aiLenserId} isOwner={isOwner} />
+              )}
+              {tab === 'entries' && (
+                <MemoryEntriesTab aiLenserId={aiLenserId} isOwner={isOwner} />
+              )}
+            </div>
           </Tabs>
 
           {isOwner && (
