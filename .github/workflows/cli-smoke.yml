@@ -1,0 +1,58 @@
+name: CLI smoke
+
+on:
+  pull_request:
+    paths:
+      - 'apps/cli/**'
+      - 'libs/providers/**'
+      - 'libs/utils/env/**'
+      - '.github/workflows/cli-smoke.yml'
+      - 'package.json'
+      - 'pnpm-lock.yaml'
+  push:
+    branches:
+      - main
+      - development
+    paths:
+      - 'apps/cli/**'
+      - 'libs/providers/**'
+      - 'libs/utils/env/**'
+      - '.github/workflows/cli-smoke.yml'
+
+jobs:
+  cli-dry-run:
+    name: lf run exec --dry-run (no credentials)
+    runs-on: ubuntu-latest
+    env:
+      # Phase 9 acceptance: dry-run must succeed with all *_API_KEY env vars unset.
+      OPENAI_API_KEY: ''
+      ANTHROPIC_API_KEY: ''
+      GOOGLE_API_KEY: ''
+      MISTRAL_API_KEY: ''
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Run CLI unit tests (includes credentialless dry-run spec)
+        run: pnpm nx test cli --testPathPatterns="run.spec.ts"
+
+      - name: Build CLI
+        run: pnpm nx build cli
+
+      - name: Smoke: lf run exec --dry-run
+        run: |
+          node dist/apps/cli/main.js run exec \
+            --prompt "hello" \
+            --model "gpt-4o-mini" \
+            --dry-run
