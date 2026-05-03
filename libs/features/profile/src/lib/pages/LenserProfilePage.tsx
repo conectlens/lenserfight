@@ -1,7 +1,3 @@
-import { Activity, Bot, FolderOpen, MessageSquare, Plus, Trophy } from 'lucide-react'
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { Navigate, Outlet, useNavigate, useParams } from 'react-router-dom'
 
 import { queryKeys } from '@lenserfight/data/cache'
 import {
@@ -11,28 +7,21 @@ import {
   reactionService,
   threadsService,
 } from '@lenserfight/data/repositories'
-import { useAuth } from '@lenserfight/features/auth'
 import { AgentCard } from '@lenserfight/features/agents'
-import { CreateLensModal, LensCard, useCreateLens } from '@lenserfight/features/lenses'
+import { useAuth } from '@lenserfight/features/auth'
 import { ThreadsListCard } from '@lenserfight/features/home'
+import { CreateLensModal, LensCard, useCreateLens } from '@lenserfight/features/lenses'
 import { useShareContext } from '@lenserfight/features/share'
 import { CreateThreadModal } from '@lenserfight/features/threads'
 import { useAnalytics } from '@lenserfight/infra/analytics'
-import type {
-  ActivityFeedItem,
-  Lenser,
-  LenserActivityPoint,
-  LenserProfileDTO,
-  LenserStats,
-  LensViewModel,
-  ProfileAccessPayload,
-  ThreadFeedItem,
-  XPSummary,
-} from '@lenserfight/types'
 import { Button, EmptyState, SEOHead } from '@lenserfight/ui/components'
 import { ConfirmModal } from '@lenserfight/ui/modals'
 import { useModalRouter } from '@lenserfight/ui/routing'
 import { FEATURES } from '@lenserfight/utils/env'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
+import { Activity, Bot, FolderOpen, MessageSquare, Plus, Trophy } from 'lucide-react'
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { Outlet, useNavigate, useParams } from 'react-router-dom'
 
 import { LenserActionsList } from '../components/LenserActionsList'
 import { LenserActivityHeatmap } from '../components/LenserActivityHeatmap'
@@ -44,6 +33,20 @@ import { RestrictedProfileShell } from '../components/RestrictedProfileShell'
 import { UnavailableProfile } from '../components/UnavailableProfile'
 import { useLenser } from '../context/LenserContext'
 import { useLenserWorkspace } from '../useLenserWorkspace'
+
+import { AILenserProfilePage } from './AILenserProfilePage'
+
+import type {
+  ActivityFeedItem,
+  Lenser,
+  LenserActivityPoint,
+  LenserProfileDTO,
+  LenserStats,
+  LensViewModel,
+  ProfileAccessPayload,
+  ThreadFeedItem,
+  XPSummary,
+} from '@lenserfight/types'
 
 type StandardTab = 'actions' | 'lenses' | 'threads' | 'challenges' | 'agents'
 
@@ -69,7 +72,7 @@ const TAB_MAP: Record<string, LenserTabId> = {
   ag: 'agents',
 }
 
-const REVERSE_TAB_MAP: Record<LenserTabId, string> = {
+const REVERSE_TAB_MAP: Partial<Record<LenserTabId, string>> = {
   threads: 't',
   lenses: 'p',
   actions: 'a',
@@ -319,7 +322,9 @@ export const LenserProfilePage: React.FC = () => {
 
   const handleTabChange = (newTab: LenserTabId) => {
     if (newTab === activeTab) return
-    navigate(`/lenser/${handle}/${REVERSE_TAB_MAP[newTab]}`)
+    const shortcode = REVERSE_TAB_MAP[newTab]
+    if (!shortcode) return
+    navigate(`/lenser/${handle}/${shortcode}`)
   }
 
   const handleProfileUpdate = (_updatedLenser: Lenser) => {
@@ -468,9 +473,19 @@ export const LenserProfilePage: React.FC = () => {
     )
   }
 
-  // AI lensers live entirely in the agent workspace. Redirect all visitors there.
   if (viewedProfile.type === 'ai') {
-    return <Navigate to={`/lenser/${handle}/ag/overview`} replace />
+    return (
+      <AILenserProfilePage
+        viewedProfile={viewedProfile}
+        isOwner={isOwner}
+        stats={stats}
+        xpSummary={xpSummary}
+        relationshipState={relationshipState}
+        routeTab={routeTab}
+        handle={handle!}
+        onProfileUpdate={handleProfileUpdate}
+      />
+    )
   }
 
   return (
