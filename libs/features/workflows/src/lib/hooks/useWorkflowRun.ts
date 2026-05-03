@@ -7,12 +7,13 @@ import {
   isTerminalRunEventType,
   type WorkflowSseEventEnvelope,
 } from '@lenserfight/types'
-import { useMutation } from '@tanstack/react-query'
+import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useEffect, useState } from 'react'
 
 import type { Dispatch, SetStateAction } from 'react'
 
 export function useWorkflowRun(workflowId: string | undefined, options?: { skipSse?: boolean }) {
+  const queryClient = useQueryClient()
   const [runId, setRunId] = useState<string | null>(null)
   const [nodeResults, setNodeResults] = useState<WorkflowNodeResultRecord[]>([])
   const [isRunning, setIsRunning] = useState(false)
@@ -182,10 +183,21 @@ export function useWorkflowRun(workflowId: string | undefined, options?: { skipS
     setIsRunning(false)
   }
 
+  const { mutateAsync: retryRun, isPending: isRetrying } = useMutation({
+    mutationFn: (targetRunId: string) =>
+      workflowsService.updateRunStatus(targetRunId, 'queued'),
+    onSuccess: (_data, targetRunId) => {
+      queryClient.invalidateQueries({ queryKey: ['workflow', workflowId, 'runs'] })
+      queryClient.invalidateQueries({ queryKey: ['workflow', 'run-state', targetRunId] })
+    },
+  })
+
   return {
     startRun,
     stopRun,
+    retryRun,
     isPending,
+    isRetrying,
     runId,
     nodeResults,
     isRunning,
