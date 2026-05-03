@@ -143,10 +143,27 @@ export const SchedulesSection: React.FC = () => {
                 <div className="flex flex-shrink-0 items-center gap-2">
                   <span className="text-xs text-gray-500 dark:text-gray-400">
                     Last status:{' '}
-                    <span className="font-semibold text-gray-900 dark:text-white">
+                    <span
+                      className={`font-semibold ${
+                        schedule.last_dispatch_status === 'dispatched'
+                          ? 'text-emerald-600 dark:text-emerald-400'
+                          : schedule.last_dispatch_status === 'dispatch_failed' ||
+                            schedule.last_dispatch_status === 'validation_failed'
+                            ? 'text-red-600 dark:text-red-400'
+                            : 'text-gray-900 dark:text-white'
+                      }`}
+                    >
                       {schedule.last_dispatch_status ?? 'never dispatched'}
                     </span>
                   </span>
+                  {schedule.last_error_at && (
+                    <span
+                      className="rounded-full border border-red-200 px-2 py-0.5 text-[11px] font-semibold text-red-600 dark:border-red-500/30 dark:text-red-400"
+                      title={schedule.last_error_message ?? 'Last dispatch failed'}
+                    >
+                      ! error
+                    </span>
+                  )}
                   <button
                     type="button"
                     onClick={() =>
