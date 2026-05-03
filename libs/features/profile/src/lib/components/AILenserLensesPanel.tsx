@@ -1,8 +1,8 @@
+import { Badge } from '@lenserfight/ui/components'
 import { Brain, Link2 } from 'lucide-react'
 import React from 'react'
 
 import type { AgentLensBindingRecord, LensViewModel } from '@lenserfight/types'
-import { Badge } from '@lenserfight/ui/components'
 
 interface AILenserLensesPanelProps {
   lenses: LensViewModel[]

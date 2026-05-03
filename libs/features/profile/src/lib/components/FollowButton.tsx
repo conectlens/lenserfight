@@ -1,12 +1,12 @@
-import React, { useState } from 'react'
+import { queryKeys } from '@lenserfight/data/cache'
+import { lenserService } from '@lenserfight/data/repositories'
+import { useToast } from '@lenserfight/shared/error'
+import { RelationshipState } from '@lenserfight/types'
+import { Button } from '@lenserfight/ui/components'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { UserPlus, UserCheck, Clock, UserX } from 'lucide-react'
-import { Button } from '@lenserfight/ui/components'
-import { lenserService } from '@lenserfight/data/repositories'
-import { queryKeys } from '@lenserfight/data/cache'
-import { RelationshipState } from '@lenserfight/types'
+import React, { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { useToast } from '@lenserfight/shared/error'
 
 type FollowButtonState = 'follow' | 'requested' | 'following' | 'follow_back' | 'unavailable'
 

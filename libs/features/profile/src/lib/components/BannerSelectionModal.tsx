@@ -1,9 +1,8 @@
-import { createAvatar } from '@dicebear/core'
 import { shapes } from '@dicebear/collection'
+import { createAvatar } from '@dicebear/core'
+import { Dialog, ModalFooter } from '@lenserfight/ui/overlays'
 import { Trash2 } from 'lucide-react'
 import React, { useState, useEffect, useRef, useCallback } from 'react'
-
-import { Dialog, ModalFooter } from '@lenserfight/ui/overlays'
 
 interface BannerSelectionModalProps {
   isOpen: boolean
