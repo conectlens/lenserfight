@@ -110,6 +110,21 @@ export const WorkflowRunHistoryPanel: React.FC<WorkflowRunHistoryPanelProps> = (
                     {run.trigger_mode}
                   </Badge>
                 )}
+                {run.parent_run_id && (
+                  <Badge
+                    color="gray"
+                    variant="outline"
+                    className="text-[10px]"
+                    title={`Parent run: ${run.parent_run_id}`}
+                  >
+                    ↳ sub
+                  </Badge>
+                )}
+                {run.recursion_depth != null && run.recursion_depth > 0 && (
+                  <Badge color="gray" variant="outline" className="text-[10px]">
+                    depth:{run.recursion_depth}
+                  </Badge>
+                )}
                 <span className="ml-auto flex items-center gap-1 text-[10px] text-greyscale-400 flex-shrink-0">
                   <Clock size={9} />
                   {relativeTime(run.completed_at ?? run.started_at ?? run.created_at)}
