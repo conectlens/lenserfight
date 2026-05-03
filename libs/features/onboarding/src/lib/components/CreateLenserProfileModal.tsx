@@ -9,7 +9,7 @@ import { LanguageSelectBox, StepWizard } from '@lenserfight/ui/components'
 import { SearchSelectField } from '@lenserfight/ui/forms'
 import { useWizardStep } from '@lenserfight/ui/routing'
 import { buildAuthReturnUrl, replaceLocationSafely } from '@lenserfight/utils/dom'
-import { ARENA_BASE_URL, AUTH_BASE_URL } from '@lenserfight/utils/env'
+import { ARENA_BASE_URL, AUTH_BASE_URL, FEATURES } from '@lenserfight/utils/env'
 import { storage } from '@lenserfight/utils/storage'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { Bot, Check, X, Loader2, User, Palette, Sparkles } from 'lucide-react'
@@ -100,7 +100,7 @@ export const CreateLenserProfileModal: React.FC = () => {
   const returnTo =
     (location.state as { from?: string } | null)?.from ??
     searchParams.get('return_url') ??
-    ARENA_BASE_URL
+    (FEATURES.PUBLIC_BATTLES ? ARENA_BASE_URL : '/workflows')
 
   // Security redirect: only authenticated users without a profile reach this
   useEffect(() => {

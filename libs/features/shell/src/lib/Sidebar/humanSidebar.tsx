@@ -8,10 +8,11 @@ import {
   KeyRound,
   LayoutTemplate,
   ShoppingBag,
+  Trophy,
   Users,
 } from 'lucide-react'
 
-import { DOCS_BASE_URL, SURFACE } from '@lenserfight/utils/env'
+import { DOCS_BASE_URL, FEATURES, SURFACE } from '@lenserfight/utils/env'
 
 import type { SidebarNavSectionConfig } from './sidebarModes'
 
@@ -44,6 +45,9 @@ export function buildHumanSidebarSections(
       id: 'community',
       label: 'Community',
       items: [
+        ...(FEATURES.PUBLIC_BATTLES
+          ? [{ id: 'lenserboard', label: 'LenserBoard', path: '/lenserboard', icon: <Trophy size={20} /> }]
+          : []),
         { id: 'ray-cloud', label: 'Ray Cloud', path: '/ray', icon: <Cloud size={20} /> },
         { id: 'templates', label: 'Templates', externalHref: `${DOCS_BASE_URL}/reference/automation/markdown-objects#canonical-formats`, icon: <LayoutTemplate size={20} /> },
         { id: 'docs', label: 'Docs', externalHref: `${DOCS_BASE_URL}/explanation/automation/index`, icon: <BookOpen size={20} /> },
