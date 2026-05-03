@@ -151,10 +151,33 @@ const vote = defineCommand({
 // ---------------------------------------------------------------------------
 // run full
 // ---------------------------------------------------------------------------
+
+const TERMINAL_RUN_STATUSES = new Set(['completed', 'failed', 'cancelled', 'timed_out'])
+
+async function pollRunUntilTerminal(
+  runId: string,
+  opts?: { intervalMs?: number; timeoutMs?: number }
+): Promise<string> {
+  const intervalMs = opts?.intervalMs ?? 2_000
+  const timeoutMs = opts?.timeoutMs ?? 5 * 60 * 1_000
+  const start = Date.now()
+  while (Date.now() - start < timeoutMs) {
+    await new Promise<void>((resolve) => setTimeout(resolve, intervalMs))
+    const state = await callRpc<Record<string, unknown>>(
+      'fn_get_workflow_run_state',
+      { p_run_id: runId },
+      { requireAuth: true }
+    )
+    const status = String(state?.status ?? '')
+    if (TERMINAL_RUN_STATUSES.has(status)) return status
+  }
+  return 'timed_out'
+}
+
 const full = defineCommand({
   meta: {
     name: 'full',
-    description: 'Run the full create → open → submit → vote → finalize flow.',
+    description: 'Run the full fetch → verify open → submit → vote → finalize battle flow.',
   },
   args: {
     id: {
@@ -168,7 +191,7 @@ const full = defineCommand({
     },
     'dry-run': {
       type: 'boolean',
-      description: 'Show what would happen without executing',
+      description: 'Print all 6 steps without executing any RPC calls',
       default: false,
     },
   },
@@ -177,52 +200,109 @@ const full = defineCommand({
     const adapterId = args.adapter || config.defaultAdapterId;
 
     if (args['dry-run']) {
-      consola.info('[dry-run] Would run full flow for battle: %s', args.id);
-      if (adapterId) consola.info('[dry-run] Using adapter: %s', adapterId);
-      consola.info('[dry-run] Steps: fetch → verify open → submit → start-voting → vote → finalize');
+      consola.info('[dry-run] Full autonomous flow for battle: %s', args.id);
+      if (adapterId) consola.info('[dry-run] Adapter: %s', adapterId);
+      consola.info('[dry-run] [step 1/6] Fetch battle and verify status is open');
+      consola.info('[dry-run] [step 2/6] Join battle — get submission_id');
+      consola.info('[dry-run] [step 3/6] Start workflow run and poll until terminal');
+      consola.info('[dry-run] [step 4/6] Transition battle to voting');
+      consola.info('[dry-run] [step 5/6] Cast vote');
+      consola.info('[dry-run] [step 6/6] Finalize and publish results');
       return;
     }
 
     try {
-      consola.start('Fetching battle %s...', args.id);
+      // Step 1: Fetch battle and verify open
+      consola.info('[step 1/6] Fetching battle and verifying status...');
       const battle = await callRpc<Record<string, unknown>>(
         'fn_battles_get_public',
         { p_battle_id: args.id }
       );
-
       if (!battle) {
-        consola.error('Battle not found or not public.');
+        consola.error('Battle %s not found or not public.', args.id);
         process.exitCode = 1;
         return;
       }
-
-      consola.info('Battle: %s [%s]', battle.title, battle.status);
-
       if (battle.status !== 'open') {
-        consola.warn('Battle is in %s status. Only open battles can be run.', battle.status);
-        consola.info('Use `lenserfight battle open %s` to open a draft battle.', args.id);
+        consola.error('[step 1/6] Battle is in %s status. Only open battles can run the full flow.', battle.status);
         process.exitCode = 1;
         return;
       }
+      consola.success('[step 1/6] Battle verified: %s [open]', battle.title);
 
-      consola.info('Task: %s', String(battle.task_prompt || '').substring(0, 120));
-
-      if (adapterId) {
-        consola.info('Agent adapter: %s', adapterId);
-        consola.warn('Full automated flow is not yet implemented.');
-      } else {
-        consola.info('No agent adapter specified. Use --adapter <id> or set defaultAdapterId in config.');
-      }
-
-      consola.info(
-        '\nTo complete this battle manually:\n' +
-          '  lenserfight battle submit %s --text "your response"\n' +
-          '  lenserfight battle start-voting %s --closes-at <ISO timestamp>\n' +
-          '  lenserfight battle vote %s --for contender_a --rationale "reason"\n' +
-          '  lenserfight battle finalize %s\n' +
-          '  lenserfight battle publish %s',
-        args.id, args.id, args.id, args.id, args.id
+      // Step 2: Join battle
+      consola.info('[step 2/6] Joining battle...');
+      const join = await callRpc<Record<string, unknown>>(
+        'fn_battles_join',
+        { p_battle_id: args.id, ...(adapterId ? { p_adapter_id: adapterId } : {}) },
+        { requireAuth: true }
       );
+      const submissionId = String(join?.submission_id ?? join?.id ?? '');
+      if (!submissionId) {
+        consola.error('[step 2/6] fn_battles_join returned no submission_id.');
+        process.exitCode = 1;
+        return;
+      }
+      consola.success('[step 2/6] Joined — submission: %s', submissionId.slice(0, 8) + '…');
+
+      // Step 3: Start workflow run and poll until terminal
+      consola.info('[step 3/6] Starting workflow run...');
+      const workflowId = String(battle.workflow_id ?? '');
+      if (!workflowId) {
+        consola.error('[step 3/6] Battle has no associated workflow_id.');
+        process.exitCode = 1;
+        return;
+      }
+      const runResult = await callRpc<Record<string, unknown>>(
+        'fn_start_workflow_run',
+        {
+          p_workflow_id: workflowId,
+          p_context_inputs: { submission_id: submissionId, battle_id: args.id },
+          p_trigger_mode: 'manual',
+        },
+        { requireAuth: true }
+      );
+      const runId = String(runResult?.id ?? runResult?.run_id ?? '');
+      if (!runId) {
+        consola.error('[step 3/6] fn_start_workflow_run returned no run id.');
+        process.exitCode = 1;
+        return;
+      }
+      consola.info('[step 3/6] Run started: %s — polling for completion...', runId.slice(0, 8) + '…');
+      const finalStatus = await pollRunUntilTerminal(runId);
+      if (finalStatus !== 'completed') {
+        consola.error('[step 3/6] Run ended with status: %s. Cannot proceed to voting.', finalStatus);
+        process.exitCode = 1;
+        return;
+      }
+      consola.success('[step 3/6] Run completed.');
+
+      // Step 4: Start voting
+      consola.info('[step 4/6] Transitioning battle to voting...');
+      await callRpc(
+        'fn_battles_start_voting',
+        { p_battle_id: args.id },
+        { requireAuth: true }
+      );
+      consola.success('[step 4/6] Battle moved to voting.');
+
+      // Step 5: Cast vote
+      consola.info('[step 5/6] Casting vote...');
+      await callRpc(
+        'fn_battles_cast_vote',
+        { p_battle_id: args.id, p_submission_id: submissionId },
+        { requireAuth: true }
+      );
+      consola.success('[step 5/6] Vote recorded.');
+
+      // Step 6: Finalize
+      consola.info('[step 6/6] Finalizing battle...');
+      await callRpc(
+        'fn_battles_finalize',
+        { p_battle_id: args.id },
+        { requireAuth: true }
+      );
+      consola.success('[step 6/6] Battle finalized and results published.');
     } catch (err) {
       handleError(err);
     }
@@ -235,57 +315,76 @@ const full = defineCommand({
 const replay = defineCommand({
   meta: {
     name: 'replay',
-    description: 'Re-run a completed battle with a different adapter for comparison.',
+    description: 'Re-execute a completed workflow run with the same inputs against the current lens version.',
   },
   args: {
     id: {
       type: 'positional',
-      description: 'Source battle UUID to replay',
+      description: 'Source workflow run UUID to replay',
       required: true,
     },
     adapter: {
       type: 'string',
-      description: 'Agent adapter UUID to use for the replay',
-      required: true,
-    },
-    slug: {
-      type: 'string',
-      description: 'Slug for the replayed battle',
-      required: true,
+      description: 'Override the agent adapter UUID for the replay run',
+      default: '',
     },
     'dry-run': {
       type: 'boolean',
-      description: 'Show what would happen without executing',
+      description: 'Print the inputs that would be replayed without starting a new run',
       default: false,
     },
   },
   async run({ args }) {
-    if (args['dry-run']) {
-      consola.info('[dry-run] Would clone battle %s and re-run with adapter %s', args.id, args.adapter);
-      return;
-    }
-
     try {
-      const battle = await callRpc<Record<string, unknown>>(
-        'fn_battles_get_public',
-        { p_battle_id: args.id }
+      // Fetch original run to get workflow_id and context_inputs
+      const original = await callRpc<Record<string, unknown>>(
+        'fn_get_workflow_run',
+        { p_run_id: args.id },
+        { requireAuth: true }
       );
-
-      if (!battle) {
-        consola.error('Source battle not found or not public.');
+      if (!original) {
+        consola.error('Run %s not found.', args.id);
         process.exitCode = 1;
         return;
       }
 
-      consola.info('Source battle: %s [%s]', battle.title, battle.status);
-      consola.info('Adapter:       %s', args.adapter);
-      consola.warn('Automated replay is not yet implemented.');
-      consola.info(
-        'To replay manually:\n' +
-          '  lenserfight battle clone %s --title "%s (replay)" --slug %s\n' +
-          '  Then run the new battle with: lenserfight run full <new-id> --adapter %s',
-        args.id, String(battle.title || 'Battle'), args.slug, args.adapter
+      const workflowId = String(original.workflow_id ?? '');
+      const contextInputs = (original.context_inputs ?? {}) as Record<string, unknown>;
+
+      if (args['dry-run']) {
+        consola.info('[dry-run] Would replay run: %s', args.id);
+        consola.info('[dry-run] Workflow:        %s', workflowId || '(unknown)');
+        consola.info('[dry-run] Context inputs:  %s', JSON.stringify(contextInputs).slice(0, 120));
+        if (args.adapter) consola.info('[dry-run] Adapter override: %s', args.adapter);
+        return;
+      }
+
+      const config = loadConfig();
+      const adapterId = args.adapter || config.defaultAdapterId;
+
+      const newRun = await callRpc<Record<string, unknown>>(
+        'fn_start_workflow_run',
+        {
+          p_workflow_id: workflowId,
+          p_context_inputs: contextInputs,
+          p_trigger_mode: 'manual',
+          p_parent_run_id: args.id,
+          ...(adapterId ? { p_adapter_id: adapterId } : {}),
+        },
+        { requireAuth: true }
       );
+
+      const newRunId = String(newRun?.id ?? newRun?.run_id ?? '');
+      if (!newRunId) {
+        consola.error('fn_start_workflow_run returned no run id.');
+        process.exitCode = 1;
+        return;
+      }
+
+      consola.success('Replay run started.');
+      consola.info('New run:  %s', newRunId);
+      consola.info('Parent:   %s', args.id);
+      consola.info('Verify:   lf execution inspect %s', newRunId);
     } catch (err) {
       handleError(err);
     }
