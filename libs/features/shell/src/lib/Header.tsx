@@ -74,7 +74,6 @@ export const Header: React.FC<HeaderProps> = ({ onToggleSidebar }) => {
               onClick={() => switchToProfile(humanWorkspace)}
               disabled={isSwitching}
               isLoading={isSwitching}
-              className="!py-1 !px-2.5 !text-xs !rounded-[8px]"
             >
               {!isSwitching && <ChevronLeft size={11} className="-ml-0.5" />}
               @{humanWorkspace.handle}
