@@ -246,9 +246,13 @@ export const WebRouter: React.FC = () => {
         <Route
           path="/lenserboard"
           element={
-            <DashboardFrame>
-              <LazyLenserBoardPage />
-            </DashboardFrame>
+            FEATURES.PUBLIC_BATTLES ? (
+              <DashboardFrame>
+                <LazyLenserBoardPage />
+              </DashboardFrame>
+            ) : (
+              <Navigate to="/" replace />
+            )
           }
         />
 
