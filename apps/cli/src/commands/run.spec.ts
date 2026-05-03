@@ -55,6 +55,65 @@ async function resolveSubCmd(cmd: AnyCmd, key: string): Promise<AnyCmd> {
   return typeof sub === 'function' ? sub() : (sub as AnyCmd);
 }
 
+describe('run full --dry-run', () => {
+  it('prints 6 steps and makes no RPC calls', async () => {
+    const { default: runCmd } = await import('./run') as { default: AnyCmd };
+    const fullCmd = await resolveSubCmd(runCmd, 'full');
+
+    await fullCmd.run?.({
+      args: { id: 'battle-uuid', adapter: '', 'dry-run': true },
+      cmd: {},
+      rawArgs: [],
+    });
+
+    expect(process.exitCode).toBe(0);
+    expect(mockCallRpc).not.toHaveBeenCalled();
+    expect(consolaInfo).toHaveBeenCalledWith('[dry-run] [step 1/6] Fetch battle and verify status is open');
+    expect(consolaInfo).toHaveBeenCalledWith('[dry-run] [step 6/6] Finalize and publish results');
+  });
+});
+
+describe('run replay --dry-run', () => {
+  it('fetches the original run and prints inputs without starting a new run', async () => {
+    mockCallRpc.mockResolvedValueOnce({
+      workflow_id: 'wf-123',
+      context_inputs: { foo: 'bar' },
+      status: 'completed',
+    });
+
+    const { default: runCmd } = await import('./run') as { default: AnyCmd };
+    const replayCmd = await resolveSubCmd(runCmd, 'replay');
+
+    await replayCmd.run?.({
+      args: { id: 'run-uuid', adapter: '', 'dry-run': true },
+      cmd: {},
+      rawArgs: [],
+    });
+
+    expect(process.exitCode).toBe(0);
+    expect(mockCallRpc).toHaveBeenCalledWith('fn_get_workflow_run', { p_run_id: 'run-uuid' }, { requireAuth: true });
+    expect(consolaInfo).toHaveBeenCalledWith('[dry-run] Would replay run: %s', 'run-uuid');
+    expect(consolaInfo).toHaveBeenCalledWith('[dry-run] Workflow:        %s', 'wf-123');
+    // Must NOT call fn_start_workflow_run
+    expect(mockCallRpc).not.toHaveBeenCalledWith('fn_start_workflow_run', expect.anything(), expect.anything());
+  });
+
+  it('exits 1 when the source run is not found', async () => {
+    mockCallRpc.mockResolvedValueOnce(null);
+
+    const { default: runCmd } = await import('./run') as { default: AnyCmd };
+    const replayCmd = await resolveSubCmd(runCmd, 'replay');
+
+    await replayCmd.run?.({
+      args: { id: 'missing-run', adapter: '', 'dry-run': false },
+      cmd: {},
+      rawArgs: [],
+    });
+
+    expect(process.exitCode).toBe(1);
+  });
+});
+
 describe('run exec --dry-run', () => {
   it('exits 0 with no AI provider credentials in env', async () => {
     const originalEnv = { ...process.env };
