@@ -1,9 +1,9 @@
+import { Badge } from '@lenserfight/ui/components'
 import { Bot, Brain, Clock3, FileText, GitBranch } from 'lucide-react'
 import React from 'react'
 
 import type { AgentProfileView, WorkflowRecord } from '@lenserfight/data/repositories'
 import type { AIModel, AgentLensBindingRecord, AgentModelBindingRecord, LensViewModel, WorkflowScheduleRecord } from '@lenserfight/types'
-import { Badge } from '@lenserfight/ui/components'
 
 interface AILenserOverviewPanelProps {
   agent: AgentProfileView

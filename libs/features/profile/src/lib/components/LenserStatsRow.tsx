@@ -1,10 +1,10 @@
-import { Trophy, MessageSquare, Lightbulb, Hash } from 'lucide-react'
-import React, { useEffect, useState } from 'react'
 
-import { Card } from '@lenserfight/ui/components'
 import { LenserStats } from '@lenserfight/types'
 import { XPSummary } from '@lenserfight/types'
+import { Card } from '@lenserfight/ui/components'
 import { formatCount } from '@lenserfight/utils/number'
+import { Trophy, MessageSquare, Lightbulb, Hash } from 'lucide-react'
+import React, { useEffect, useState } from 'react'
 
 interface LenserStatsRowProps {
   stats: LenserStats

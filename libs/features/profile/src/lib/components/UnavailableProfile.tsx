@@ -1,7 +1,7 @@
+import { Button } from '@lenserfight/ui/components'
+import { UserX } from 'lucide-react'
 import React from 'react'
 import { useNavigate } from 'react-router-dom'
-import { UserX } from 'lucide-react'
-import { Button } from '@lenserfight/ui/components'
 
 export const UnavailableProfile: React.FC = () => {
   const navigate = useNavigate()

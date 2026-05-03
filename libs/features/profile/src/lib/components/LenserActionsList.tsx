@@ -1,10 +1,10 @@
+import { ActivityFeedItem } from '@lenserfight/types'
+import { Card } from '@lenserfight/ui/components'
+import { timeAgo } from '@lenserfight/utils/date'
 import { Heart, Bookmark, ThumbsUp, PartyPopper, Activity } from 'lucide-react'
 import React from 'react'
 import { useNavigate } from 'react-router-dom'
 
-import { Card } from '@lenserfight/ui/components'
-import { ActivityFeedItem } from '@lenserfight/types'
-import { timeAgo } from '@lenserfight/utils/date'
 
 interface LenserActionsListProps {
   actions: ActivityFeedItem[]
