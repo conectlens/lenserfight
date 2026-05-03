@@ -1,8 +1,9 @@
-import type { WorkspaceIdentity } from '@lenserfight/types'
 import { useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 
 import { useLenserWorkspace } from './useLenserWorkspace'
+
+import type { WorkspaceIdentity } from '@lenserfight/types'
 
 function getProfileDestination(profile: WorkspaceIdentity): string {
   return profile.type === 'ai'
