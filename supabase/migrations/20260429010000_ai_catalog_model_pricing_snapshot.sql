@@ -1,3 +1,6 @@
+DROP FUNCTION IF EXISTS public.fn_ai_catalog_model_detail(text, text);
+DROP FUNCTION IF EXISTS public.fn_ai_catalog_models(text, text, text, text);
+
 CREATE OR REPLACE FUNCTION public.fn_ai_catalog_models(
   p_provider_key text DEFAULT NULL,
   p_support_level text DEFAULT NULL,

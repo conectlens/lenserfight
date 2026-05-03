@@ -1,5 +1,8 @@
 -- Include node_count in workflow list RPCs to avoid per-card node fetches (N+1).
 
+DROP FUNCTION IF EXISTS public.fn_get_my_workflows(uuid, integer, integer, text, text, text);
+DROP FUNCTION IF EXISTS public.fn_workflows_get_popular(integer, integer, text);
+
 CREATE OR REPLACE FUNCTION public.fn_get_my_workflows(
   p_lenser_id uuid,
   p_offset integer DEFAULT 0,
