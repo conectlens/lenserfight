@@ -72,6 +72,35 @@ For the full local database flow, see `docs/reference/database/local-setup.md`.
 
 ---
 
+## OSS vs Cloud
+
+`VITE_PRODUCT_EDITION` selects which surfaces compile in. Defaults shown below; any individual flag can be overridden by setting `VITE_FEATURE_<NAME>=true|false` in `.env.local`.
+
+| Surface                 | `community` (default) | `cloud` |
+|-------------------------|-----------------------|---------|
+| Public battles + arena  | off                   | on      |
+| Benchmark suite         | off                   | on      |
+| Billing and store       | off                   | on      |
+| CRON scheduling UI      | off                   | off (Phase 13) |
+| Waiting list gate       | off                   | on      |
+| Notifications, network links, agents UI | off | on |
+
+Phases 12–16 progressively flip more of these flags on for cloud as the corresponding policy/RLS work lands.
+
+### Self-hosting flags
+
+For self-hosted/community installs, set these in `.env.local` to bypass cloud-only gates:
+
+```env
+VITE_PRODUCT_EDITION=community
+VITE_FEATURE_WAITING_LIST=false   # skip the cloud waiting list
+VITE_FEATURE_PUBLIC_BATTLES=false # keep arena entrypoints hidden
+```
+
+`.env.example` has the full list with comments.
+
+---
+
 ## Workflow execution notes
 
 Current workflow support is intentionally narrow and explicit:
@@ -113,11 +142,19 @@ See `docs/reference/cli/run.md` and `docs/reference/workflows/execution-engine.m
 
 We welcome focused contributions that improve installability, workflow reliability, docs, and developer ergonomics.
 
-- Start with `CONTRIBUTING.md`
-- Contributor guides live in `docs/how-to/contributors/`
+- Start with [CONTRIBUTING.md](CONTRIBUTING.md)
+- Contributor guides live in [docs/how-to/contributors/](docs/how-to/contributors/)
 - For larger ideas, open an issue before investing in implementation
 
 If you change behavior, run the smallest relevant validation and mention what you did in your PR.
+
+---
+
+## Community
+
+- [Code of Conduct](CODE_OF_CONDUCT.md) — expected behavior in our spaces
+- [Security policy](SECURITY.md) — how to report a vulnerability privately
+- [Support](SUPPORT.md) — where to ask questions, file bugs, request features
 
 ---
 
