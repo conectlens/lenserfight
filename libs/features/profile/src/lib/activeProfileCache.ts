@@ -1,5 +1,6 @@
 import { LENSER_CACHE_KEY } from '@lenserfight/features/auth'
 import { storage } from '@lenserfight/utils/storage'
+
 import type { WorkspaceIdentity } from '@lenserfight/types'
 
 const SIDEBAR_PROFILE_CACHE_PREFIX = 'sidebar_profile_'
