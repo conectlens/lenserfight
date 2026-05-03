@@ -1,8 +1,7 @@
-import { supabase } from '@lenserfight/data/supabase'
 import { queryKeys } from '@lenserfight/data/cache'
-import { useQuery } from '@tanstack/react-query'
+import { supabase } from '@lenserfight/data/supabase'
 import { useAuth } from '@lenserfight/features/auth'
-import type { WorkspaceIdentity } from '@lenserfight/types'
+import { useQuery } from '@tanstack/react-query'
 import { useEffect, useMemo } from 'react'
 
 import {
@@ -10,6 +9,8 @@ import {
   storeActiveWorkspaceId,
   storeWorkspaceSnapshot,
 } from './activeProfileCache'
+
+import type { WorkspaceIdentity } from '@lenserfight/types'
 
 export type MyLenserProfile = WorkspaceIdentity
 
@@ -34,7 +35,7 @@ export function useMyLensers() {
   // waiting for the fn_get_my_lensers round-trip.
   const snapshot = useMemo(
     () => (user?.id ? getStoredWorkspaceSnapshot(user.id) : null),
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+     
     [user?.id]
   )
 

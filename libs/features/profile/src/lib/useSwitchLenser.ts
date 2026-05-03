@@ -1,15 +1,17 @@
-import { supabase } from '@lenserfight/data/supabase'
 import { queryKeys } from '@lenserfight/data/cache'
 import { agentsService, lenserService } from '@lenserfight/data/repositories'
-import { useMutation, useQueryClient } from '@tanstack/react-query'
+import { supabase } from '@lenserfight/data/supabase'
 import { useAuth } from '@lenserfight/features/auth'
-import type { WorkspaceIdentity } from '@lenserfight/types'
+import { useMutation, useQueryClient } from '@tanstack/react-query'
+
 
 import {
   clearActiveProfileCaches,
   storeActiveWorkspaceId,
   storeWorkspaceSnapshot,
 } from './activeProfileCache'
+
+import type { WorkspaceIdentity } from '@lenserfight/types'
 
 async function switchActiveLenser(lenserId: string): Promise<void> {
   const { error } = await supabase.rpc('fn_switch_active_lenser', { p_lenser_id: lenserId })
