@@ -267,6 +267,10 @@ export const queryKeys = {
         filters?.run_type ?? '',
         filters?.limit ?? 20,
       ] as const,
+    analyticsSummary: (
+      aiLenserId: string,
+      options?: { days?: number; modelKey?: string; workflowId?: string }
+    ) => [...queryKeys.agents.all, 'analyticsSummary', aiLenserId, options ?? {}] as const,
   },
   reputation: {
     all: ['reputation'] as const,
