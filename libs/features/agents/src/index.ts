@@ -21,6 +21,7 @@ export { SectionErrorBoundary } from './lib/components/SectionErrorBoundary'
 // Sections (composable per-route renderers used by AgentWorkspaceShell)
 export {
   AgentTeamSection,
+  AnalyticsSection,
   ApprovalQueueSection,
   ApprovalsSection,
   CostMonitorSection,
