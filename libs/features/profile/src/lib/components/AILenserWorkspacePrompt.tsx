@@ -1,7 +1,7 @@
+import { Badge, Button } from '@lenserfight/ui/components'
 import { Bot, Clock3, FileText, GitBranch } from 'lucide-react'
 import React from 'react'
 
-import { Badge, Button } from '@lenserfight/ui/components'
 
 interface AILenserWorkspacePromptProps {
   displayName: string

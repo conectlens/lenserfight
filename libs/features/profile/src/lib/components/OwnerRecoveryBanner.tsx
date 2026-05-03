@@ -1,9 +1,9 @@
-import React from 'react'
+import { queryKeys } from '@lenserfight/data/cache'
+import { lenserService } from '@lenserfight/data/repositories'
+import { Button } from '@lenserfight/ui/components'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { AlertTriangle } from 'lucide-react'
-import { Button } from '@lenserfight/ui/components'
-import { lenserService } from '@lenserfight/data/repositories'
-import { queryKeys } from '@lenserfight/data/cache'
+import React from 'react'
 
 interface OwnerRecoveryBannerProps {
   handle: string

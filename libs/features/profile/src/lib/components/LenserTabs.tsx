@@ -9,6 +9,14 @@ export type LenserTabId =
   | 'workflows'
   | 'logs'
   | 'schedules'
+  | 'ai_overview'
+  | 'ai_runs'
+  | 'ai_workflows'
+  | 'ai_about'
+  | 'ai_team'
+  | 'ai_threads'
+  | 'ai_actions'
+  | 'ai_cron'
 
 export interface LenserTabDefinition {
   id: LenserTabId

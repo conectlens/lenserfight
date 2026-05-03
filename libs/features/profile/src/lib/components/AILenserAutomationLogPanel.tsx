@@ -1,8 +1,8 @@
+import { Badge, EmptyState } from '@lenserfight/ui/components'
 import { Clock3 } from 'lucide-react'
 import React, { useMemo, useState } from 'react'
 
 import type { AgentAutomationFeedItem, AgentAutomationFeedKind } from '@lenserfight/types'
-import { Badge, EmptyState } from '@lenserfight/ui/components'
 
 const FILTERS: Array<{ id: 'all' | AgentAutomationFeedKind; label: string }> = [
   { id: 'all', label: 'All' },
