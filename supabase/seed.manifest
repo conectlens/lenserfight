@@ -4,6 +4,7 @@ seeds/02_auth_users.sql
 seeds/03_lenser_profiles.sql
 seeds/04_ai_providers.sql
 seeds/04b_ai_models.sql
+seeds/04c_ai_model_pricing.sql
 seeds/07_ai_models.sql
 seeds/07_ai_lensers.sql
 seeds/13_workspaces.sql
@@ -23,3 +24,7 @@ seeds/29_scale_reactions.sql
 seeds/31_scale_backfill.sql
 seeds/32_scale_workflows.sql
 seeds/40_lens_chain_templates.sql
+seeds/41_developer_lens_templates.sql
+seeds/42_production_workflow_templates.sql
+seeds/43_ai_agent_lens_bindings.sql
+seeds/44_community_profiles.sql
