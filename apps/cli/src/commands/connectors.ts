@@ -1,16 +1,37 @@
+import { CONNECTOR_SCOPES, parseScopesCsv } from '@lenserfight/adapters/connector';
+import {
+  CONNECTOR_SCOPE_ERROR_SQLSTATE,
+  type ConnectorCreateResponse,
+  type ConnectorGetResponse,
+  type ConnectorListResponse,
+  type ConnectorRotateResponse,
+  type ConnectorTestResponse,
+} from '@lenserfight/api/contracts';
 import { defineCommand } from 'citty';
 import consola from 'consola';
-import { callRpc, handleError } from '../utils/api';
-import { printTable, printJson, truncate } from '../utils/output';
 
-const TOKEN_SCOPES = [
-  'lenses:read', 'lenses:write',
-  'agents:read', 'agents:write',
-  'workflows:read', 'workflows:write',
-  'threads:read', 'threads:write',
-  'community:read', 'community:write',
-  'connectors:read', 'connectors:write',
-];
+import { callRpc, handleError } from '../utils/api';
+import { printJson, printTable, truncate } from '../utils/output';
+
+interface RpcLikeError {
+  code?: string;
+  status?: number;
+  message?: string;
+}
+
+function handleConnectorError(err: unknown, slug?: string): void {
+  const e = err as RpcLikeError;
+  if (e?.code === CONNECTOR_SCOPE_ERROR_SQLSTATE) {
+    consola.error(
+      'Connector token is missing a required scope%s. Rotate with: lenserfight connectors rotate %s --scopes <scope[,scope...]>',
+      e.message ? ` (${e.message})` : '',
+      slug ?? '<slug>',
+    );
+    process.exitCode = 2;
+    return;
+  }
+  handleError(err);
+}
 
 const list = defineCommand({
   meta: {
@@ -26,13 +47,16 @@ const list = defineCommand({
   },
   async run({ args }) {
     try {
-      const connectors = await callRpc<Array<Record<string, unknown>>>(
+      const connectors = await callRpc<ConnectorListResponse>(
         'fn_connectors_list',
         {},
-        { requireAuth: true }
+        { requireAuth: true },
       );
 
-      if (args.json) { printJson(connectors); return; }
+      if (args.json) {
+        printJson(connectors);
+        return;
+      }
 
       if (!Array.isArray(connectors) || connectors.length === 0) {
         consola.info('No connectors registered.');
@@ -47,10 +71,10 @@ const list = defineCommand({
           truncate(Array.isArray(c.scopes) ? c.scopes.join(' ') : String(c.scopes ?? '—'), 36),
           c.is_active ? 'yes' : 'no',
           c.created_at ? new Date(String(c.created_at)).toLocaleDateString() : '—',
-        ])
+        ]),
       );
     } catch (err) {
-      handleError(err);
+      handleConnectorError(err);
     }
   },
 });
@@ -74,25 +98,37 @@ const view = defineCommand({
   },
   async run({ args }) {
     try {
-      const connector = await callRpc<Record<string, unknown>>(
+      const connector = await callRpc<ConnectorGetResponse>(
         'fn_connector_get',
         { p_slug: args.slug },
-        { requireAuth: true }
+        { requireAuth: true },
       );
 
-      if (!connector) { consola.warn('Connector not found: %s', args.slug); return; }
+      if (!connector) {
+        consola.warn('Connector not found: %s', args.slug);
+        return;
+      }
 
-      if (args.json) { printJson(connector); return; }
+      if (args.json) {
+        printJson(connector);
+        return;
+      }
 
       consola.info('Slug:        %s', connector.slug);
       consola.info('Name:        %s', connector.name);
       consola.info('Active:      %s', connector.is_active ? 'yes' : 'no');
       consola.info('Scopes:      %s', Array.isArray(connector.scopes) ? connector.scopes.join(', ') : '—');
-      consola.info('Created:     %s', connector.created_at ? new Date(String(connector.created_at)).toLocaleDateString() : '—');
-      consola.info('Last Used:   %s', connector.last_used_at ? new Date(String(connector.last_used_at)).toLocaleDateString() : 'never');
+      consola.info(
+        'Created:     %s',
+        connector.created_at ? new Date(String(connector.created_at)).toLocaleDateString() : '—',
+      );
+      consola.info(
+        'Last Used:   %s',
+        connector.last_used_at ? new Date(String(connector.last_used_at)).toLocaleDateString() : 'never',
+      );
       if (connector.description) consola.info('Description: %s', connector.description);
     } catch (err) {
-      handleError(err);
+      handleConnectorError(err, args.slug);
     }
   },
 });
@@ -120,7 +156,7 @@ const add = defineCommand({
     },
     scopes: {
       type: 'string',
-      description: `Comma-separated scopes. Available: ${TOKEN_SCOPES.join(', ')}`,
+      description: `Comma-separated scopes. Available: ${CONNECTOR_SCOPES.join(', ')}`,
       default: 'lenses:read',
     },
     json: {
@@ -130,28 +166,30 @@ const add = defineCommand({
     },
   },
   async run({ args }) {
-    const requestedScopes = args.scopes.split(',').map((s: string) => s.trim()).filter(Boolean);
-    const invalid = requestedScopes.filter((s: string) => !TOKEN_SCOPES.includes(s));
+    const { valid, invalid } = parseScopesCsv(args.scopes);
     if (invalid.length > 0) {
       consola.error('Invalid scopes: %s', invalid.join(', '));
-      consola.info('Available scopes: %s', TOKEN_SCOPES.join(', '));
+      consola.info('Available scopes: %s', CONNECTOR_SCOPES.join(', '));
       process.exitCode = 1;
       return;
     }
 
     try {
-      const result = await callRpc<Record<string, unknown>>(
+      const result = await callRpc<ConnectorCreateResponse>(
         'fn_connector_create',
         {
           p_name: args.name,
           p_slug: args.slug,
           p_description: args.description || null,
-          p_scopes: requestedScopes,
+          p_scopes: valid,
         },
-        { requireAuth: true }
+        { requireAuth: true },
       );
 
-      if (args.json) { printJson(result); return; }
+      if (args.json) {
+        printJson(result);
+        return;
+      }
 
       consola.success('Connector registered: %s', result?.slug ?? args.slug);
       if (result?.service_token) {
@@ -159,7 +197,7 @@ const add = defineCommand({
         consola.info('%s', result.service_token);
       }
     } catch (err) {
-      handleError(err);
+      handleConnectorError(err, args.slug);
     }
   },
 });
@@ -181,7 +219,7 @@ const remove = defineCommand({
       await callRpc('fn_connector_remove', { p_slug: args.slug }, { requireAuth: true });
       consola.success('Connector deactivated: %s', args.slug);
     } catch (err) {
-      handleError(err);
+      handleConnectorError(err, args.slug);
     }
   },
 });
@@ -205,13 +243,16 @@ const rotate = defineCommand({
   },
   async run({ args }) {
     try {
-      const result = await callRpc<Record<string, unknown>>(
+      const result = await callRpc<ConnectorRotateResponse>(
         'fn_connector_rotate',
         { p_slug: args.slug },
-        { requireAuth: true }
+        { requireAuth: true },
       );
 
-      if (args.json) { printJson(result); return; }
+      if (args.json) {
+        printJson(result);
+        return;
+      }
 
       consola.success('Service token rotated for connector: %s', args.slug);
       if (result?.service_token) {
@@ -219,7 +260,7 @@ const rotate = defineCommand({
         consola.info('%s', result.service_token);
       }
     } catch (err) {
-      handleError(err);
+      handleConnectorError(err, args.slug);
     }
   },
 });
@@ -239,10 +280,10 @@ const test = defineCommand({
   async run({ args }) {
     try {
       consola.start('Testing connector %s...', args.slug);
-      const result = await callRpc<Record<string, unknown>>(
+      const result = await callRpc<ConnectorTestResponse>(
         'fn_connector_test',
         { p_slug: args.slug },
-        { requireAuth: true }
+        { requireAuth: true },
       );
 
       if (result?.ok) {
@@ -252,7 +293,7 @@ const test = defineCommand({
         printJson(result);
       }
     } catch (err) {
-      handleError(err);
+      handleConnectorError(err, args.slug);
     }
   },
 });

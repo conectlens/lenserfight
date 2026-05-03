@@ -11,7 +11,7 @@ jest.mock('../utils/output', () => ({
 }));
 
 import { callRpc, handleError } from '../utils/api';
-import { printTable, printJson } from '../utils/output';
+import { printJson, printTable } from '../utils/output';
 
 const mockCallRpc = callRpc as jest.MockedFunction<typeof callRpc>;
 const mockHandleError = handleError as jest.MockedFunction<typeof handleError>;
@@ -50,12 +50,25 @@ describe('connectors list', () => {
     expect(mockPrintTable).not.toHaveBeenCalled();
   });
 
-  it('delegates RPC failures to handleError', async () => {
+  it('delegates non-scope RPC failures to handleError (exit 1)', async () => {
     mockCallRpc.mockRejectedValueOnce(new Error('rpc error'));
     const { default: cmd } = await import('./connectors') as { default: AnyCmd };
     const listCmd = await resolveSubCmd(cmd, 'list');
     await listCmd.run?.({ args: { json: false }, cmd: {}, rawArgs: [] });
     expect(mockHandleError).toHaveBeenCalled();
+  });
+
+  it('maps SQLSTATE 42501 to friendly scope error and exits with code 2', async () => {
+    const scopeErr = Object.assign(new Error('agents:write required'), {
+      code: '42501',
+      status: 403,
+    });
+    mockCallRpc.mockRejectedValueOnce(scopeErr);
+    const { default: cmd } = await import('./connectors') as { default: AnyCmd };
+    const listCmd = await resolveSubCmd(cmd, 'list');
+    await listCmd.run?.({ args: { json: false }, cmd: {}, rawArgs: [] });
+    expect(process.exitCode).toBe(2);
+    expect(mockHandleError).not.toHaveBeenCalled();
   });
 });
 
@@ -73,6 +86,18 @@ describe('connectors add', () => {
     const { default: cmd } = await import('./connectors') as { default: AnyCmd };
     const addCmd = await resolveSubCmd(cmd, 'add');
     await addCmd.run?.({ args: { name: 'Test', slug: 'test', description: '', scopes: 'lenses:read,agents:read', json: false }, cmd: {}, rawArgs: [] });
+    expect(mockCallRpc).toHaveBeenCalledWith(
+      'fn_connector_create',
+      expect.objectContaining({ p_scopes: ['lenses:read', 'agents:read'] }),
+      { requireAuth: true }
+    );
+  });
+
+  it('trims whitespace and ignores empty entries in --scopes', async () => {
+    mockCallRpc.mockResolvedValueOnce({ slug: 'test', service_token: 'tok_abc' });
+    const { default: cmd } = await import('./connectors') as { default: AnyCmd };
+    const addCmd = await resolveSubCmd(cmd, 'add');
+    await addCmd.run?.({ args: { name: 'Test', slug: 'test', description: '', scopes: ' lenses:read , , agents:read ', json: false }, cmd: {}, rawArgs: [] });
     expect(mockCallRpc).toHaveBeenCalledWith(
       'fn_connector_create',
       expect.objectContaining({ p_scopes: ['lenses:read', 'agents:read'] }),
@@ -98,5 +123,24 @@ describe('connectors remove', () => {
     const removeCmd = await resolveSubCmd(cmd, 'remove');
     await removeCmd.run?.({ args: { slug: 'old-svc' }, cmd: {}, rawArgs: [] });
     expect(mockCallRpc).toHaveBeenCalledWith('fn_connector_remove', { p_slug: 'old-svc' }, { requireAuth: true });
+  });
+});
+
+describe('connectors test', () => {
+  it('reports latency on ok response', async () => {
+    mockCallRpc.mockResolvedValueOnce({ ok: true, latency_ms: 42, scopes: ['lenses:read'] });
+    const { default: cmd } = await import('./connectors') as { default: AnyCmd };
+    const testCmd = await resolveSubCmd(cmd, 'test');
+    await testCmd.run?.({ args: { slug: 'demo' }, cmd: {}, rawArgs: [] });
+    expect(mockCallRpc).toHaveBeenCalledWith('fn_connector_test', { p_slug: 'demo' }, { requireAuth: true });
+  });
+
+  it('maps scope error (SQLSTATE 42501) to exit code 2', async () => {
+    mockCallRpc.mockRejectedValueOnce(Object.assign(new Error('connectors:read required'), { code: '42501' }));
+    const { default: cmd } = await import('./connectors') as { default: AnyCmd };
+    const testCmd = await resolveSubCmd(cmd, 'test');
+    await testCmd.run?.({ args: { slug: 'demo' }, cmd: {}, rawArgs: [] });
+    expect(process.exitCode).toBe(2);
+    expect(mockHandleError).not.toHaveBeenCalled();
   });
 });
