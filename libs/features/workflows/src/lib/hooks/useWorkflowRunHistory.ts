@@ -1,17 +1,25 @@
 import { workflowsService } from '@lenserfight/data/repositories'
 import type { WorkflowRunRecord } from '@lenserfight/data/repositories'
-import { useQuery } from '@tanstack/react-query'
+import { useInfiniteQuery } from '@tanstack/react-query'
+import { useMemo } from 'react'
 
 export { type WorkflowRunRecord }
 
-/**
- * Fetches the paginated run history for a workflow (owner-only).
- * Stale after 30 seconds since runs update frequently during active execution.
- */
-export const useWorkflowRunHistory = (workflowId: string | undefined) =>
-  useQuery<WorkflowRunRecord[]>({
+const PAGE_SIZE = 10
+
+export function useWorkflowRunHistory(workflowId: string | undefined) {
+  const query = useInfiniteQuery<WorkflowRunRecord[]>({
     queryKey: ['workflow', workflowId, 'runs'],
-    queryFn: () => workflowsService.listRuns(workflowId!, 20),
+    queryFn: ({ pageParam }) =>
+      workflowsService.listRuns(workflowId!, PAGE_SIZE, (pageParam as number) ?? 0),
+    initialPageParam: 0,
+    getNextPageParam: (lastPage, allPages) =>
+      lastPage.length === PAGE_SIZE ? allPages.flat().length : undefined,
     enabled: !!workflowId,
     staleTime: 1000 * 30,
   })
+
+  const runs = useMemo(() => query.data?.pages.flat() ?? [], [query.data])
+
+  return { ...query, runs }
+}

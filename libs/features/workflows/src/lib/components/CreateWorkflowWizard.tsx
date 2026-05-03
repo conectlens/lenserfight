@@ -11,8 +11,12 @@ import { Alert, Button, StepWizard } from '@lenserfight/ui/components'
 import { Field, Input, SearchBar, SelectField, TextArea } from '@lenserfight/ui/forms'
 import { useWizardStep } from '@lenserfight/ui/routing'
 import { useQuery } from '@tanstack/react-query'
-import { CalendarClock, Check, GitBranch, KeyRound, Layers, Sparkles } from 'lucide-react'
+import { CalendarClock, Check, GitBranch, GitFork, KeyRound, Layers, Sparkles } from 'lucide-react'
 import React, { useRef, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
+import { useMutation } from '@tanstack/react-query'
+
+import { useTemplateWorkflows } from '../hooks/useTemplateWorkflows'
 
 import { useCreateWorkflow } from '../hooks/useCreateWorkflow'
 import { useUpdateWorkflow } from '../hooks/useUpdateWorkflow'
@@ -250,6 +254,16 @@ function LensPicker({ lenserId, selected, onToggle }: LensPickerProps) {
 // ─── Wizard ──────────────────────────────────────────────────────────────────
 
 export const CreateWorkflowWizard: React.FC<CreateWorkflowWizardProps> = ({ onCreated, onCancel, editMode, initialWorkflow }) => {
+  const navigate = useNavigate()
+  const [showTemplatePicker, setShowTemplatePicker] = useState(!editMode)
+  const { data: templates = [], isLoading: templatesLoading } = useTemplateWorkflows(12)
+  const { mutate: forkTemplate, isPending: isForking } = useMutation({
+    mutationFn: (templateId: string) => workflowsService.forkWorkflow(templateId),
+    onSuccess: (newWorkflow) => {
+      onCancel()
+      navigate(`/workflows/${newWorkflow.id}`)
+    },
+  })
   const { user } = useAuth()
   const { step, goToStep } = useWizardStep({ maxStep: editMode ? 1 : 3 })
   const { submit, isSubmitting: isCreating, error: submissionError } = useCreateWorkflow()
@@ -382,6 +396,75 @@ export const CreateWorkflowWizard: React.FC<CreateWorkflowWizardProps> = ({ onCr
     } else if (step === 2) {
       handleCreate()
     }
+  }
+
+  if (showTemplatePicker && !editMode) {
+    return (
+      <div className="space-y-4 p-1">
+        <div>
+          <h2 className="text-base font-bold text-greyscale-900 dark:text-greyscale-50">
+            Start your workflow
+          </h2>
+          <p className="text-sm text-greyscale-400 mt-0.5">
+            Pick a template to get started quickly, or build from scratch.
+          </p>
+        </div>
+
+        <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+          {templatesLoading && Array.from({ length: 4 }).map((_, i) => (
+            <div key={i} className="h-24 rounded-2xl bg-surface-raised animate-pulse" />
+          ))}
+          {!templatesLoading && templates.map((tpl) => (
+            <div
+              key={tpl.id}
+              className="flex flex-col gap-2 rounded-2xl border border-surface-border bg-surface-raised p-3 hover:border-primary-yellow-500/40 hover:bg-primary-yellow-500/5 transition-colors"
+            >
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-semibold text-greyscale-900 dark:text-greyscale-50 truncate leading-tight">
+                  {tpl.title.replace(/^Template\s*·\s*/i, '')}
+                </p>
+                {tpl.description && (
+                  <p className="mt-0.5 text-[11px] text-greyscale-400 line-clamp-2 leading-relaxed">
+                    {tpl.description}
+                  </p>
+                )}
+                <p className="mt-1 text-[10px] text-greyscale-400">
+                  {tpl.node_count} node{tpl.node_count !== 1 ? 's' : ''}
+                </p>
+              </div>
+              <Button
+                size="sm"
+                variant="secondary"
+                isLoading={isForking}
+                onClick={() => forkTemplate(tpl.id)}
+                className="gap-1.5 self-start"
+              >
+                <GitFork size={11} /> Use template
+              </Button>
+            </div>
+          ))}
+        </div>
+
+        <div className="flex items-center gap-3">
+          <div className="h-px flex-1 bg-surface-border" />
+          <span className="text-xs text-greyscale-400">or</span>
+          <div className="h-px flex-1 bg-surface-border" />
+        </div>
+
+        <div className="flex items-center justify-between gap-3">
+          <Button variant="ghost" size="sm" onClick={onCancel}>
+            Cancel
+          </Button>
+          <Button
+            size="sm"
+            onClick={() => setShowTemplatePicker(false)}
+            className="gap-1.5"
+          >
+            <GitBranch size={12} /> Start blank
+          </Button>
+        </div>
+      </div>
+    )
   }
 
   return (
