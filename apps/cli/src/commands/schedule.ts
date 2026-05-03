@@ -444,6 +444,125 @@ const scheduleHistory = defineCommand({
   },
 })
 
+// ─── schedule health ──────────────────────────────────────────────────────
+//
+// Detects schedules that have missed their expected dispatch window.
+// A schedule is MISSED when last_run_at + 2 × inferredInterval < now,
+// or when next_run_at is more than one interval in the past.
+// Exit code 1 when any MISSED schedule is found.
+
+function inferIntervalMinutes(cron: string): number {
+  const parts = cron.trim().split(/\s+/)
+  if (parts.length !== 5) return 60
+  const [minute, hour, , , dow] = parts
+
+  const everyNMin = minute.match(/^\*\/(\d+)$/)
+  if (everyNMin) return parseInt(everyNMin[1], 10)
+
+  const everyNHour = hour.match(/^\*\/(\d+)$/)
+  if (everyNHour) return parseInt(everyNHour[1], 10) * 60
+
+  // Fixed minute field, wildcard hour → fires once per hour
+  if (minute !== '*' && hour === '*') return 60
+  // Fixed hour, wildcard dow → fires daily
+  if (hour !== '*' && dow === '*') return 1440
+  // DOW-constrained → weekly
+  if (dow !== '*') return 10080
+
+  return 60
+}
+
+type HealthStatus = 'OK' | 'MISSED' | 'PAUSED' | 'NEVER_RAN'
+
+const scheduleHealth = defineCommand({
+  meta: {
+    name: 'health',
+    description: 'Detect schedules that have missed their expected dispatch window.',
+  },
+  args: {
+    json: { type: 'boolean', description: 'Output as JSON', default: false },
+  },
+  async run({ args }) {
+    try {
+      const rows = await callRpc<WorkflowScheduleRow[]>(
+        'fn_get_workflow_schedules',
+        { p_workflow_id: null },
+        { requireAuth: true }
+      )
+
+      if (!rows || rows.length === 0) {
+        consola.info('No schedules found.')
+        return
+      }
+
+      const now = Date.now()
+      let anyMissed = false
+
+      const results: Array<WorkflowScheduleRow & { health: HealthStatus }> = rows.map((s) => {
+        if (!s.is_active) return { ...s, health: 'PAUSED' }
+
+        const intervalMs = inferIntervalMinutes(s.cron_expr) * 60_000
+
+        if (!s.last_run_at) {
+          if (s.next_run_at && now - new Date(s.next_run_at).getTime() > intervalMs) {
+            anyMissed = true
+            return { ...s, health: 'MISSED' }
+          }
+          return { ...s, health: 'NEVER_RAN' }
+        }
+
+        const lastRunMs = new Date(s.last_run_at).getTime()
+        if (now > lastRunMs + 2 * intervalMs) {
+          anyMissed = true
+          return { ...s, health: 'MISSED' }
+        }
+        if (s.next_run_at && now - new Date(s.next_run_at).getTime() > intervalMs) {
+          anyMissed = true
+          return { ...s, health: 'MISSED' }
+        }
+
+        return { ...s, health: 'OK' }
+      })
+
+      if (args.json) {
+        printJson(
+          results.map((r) => ({
+            id: r.id,
+            workflow: r.workflow_title,
+            cron: r.cron_expr,
+            interval_minutes: inferIntervalMinutes(r.cron_expr),
+            last_run_at: r.last_run_at,
+            next_run_at: r.next_run_at,
+            health: r.health,
+          }))
+        )
+      } else {
+        printTable(
+          ['ID', 'Workflow', 'CRON', 'Interval', 'Last Run', 'Next Run', 'Health'],
+          results.map((r) => [
+            r.id.slice(0, 8) + '…',
+            truncate(r.workflow_title || r.workflow_id, 20),
+            r.cron_expr,
+            inferIntervalMinutes(r.cron_expr) + 'm',
+            r.last_run_at ? new Date(r.last_run_at).toLocaleString() : '—',
+            r.next_run_at ? new Date(r.next_run_at).toLocaleString() : '—',
+            r.health,
+          ])
+        )
+      }
+
+      if (anyMissed) {
+        consola.warn('One or more schedules have missed their expected dispatch window.')
+        process.exitCode = 1
+      } else {
+        consola.success('All active schedules are healthy.')
+      }
+    } catch (err) {
+      handleError(err)
+    }
+  },
+})
+
 // ─── parent ────────────────────────────────────────────────────────────────
 
 export default defineCommand({
@@ -460,5 +579,6 @@ export default defineCommand({
     resume: scheduleResume,
     delete: scheduleDelete,
     history: scheduleHistory,
+    health: scheduleHealth,
   },
 })
