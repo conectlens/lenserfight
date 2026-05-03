@@ -1,0 +1,41 @@
+name: Release SDK
+
+on:
+  push:
+    tags:
+      - 'release-sdk-v*'
+
+permissions:
+  contents: write
+  id-token: write
+
+jobs:
+  release-sdk:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          registry-url: 'https://registry.npmjs.org'
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build SDK
+        run: pnpm nx build adapters-connector
+
+      - name: Run SDK tests
+        run: pnpm nx test adapters-connector --ci
+
+      - name: Publish to npm
+        run: npm publish dist/libs/adapters/connector --access public --provenance
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
