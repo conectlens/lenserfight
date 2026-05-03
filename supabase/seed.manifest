@@ -17,3 +17,4 @@ seeds/42_production_workflow_templates.sql
 seeds/43_ai_agent_lens_bindings.sql
 seeds/44_community_profiles.sql
 seeds/45_workflow_runs.sql
+seeds/46_connectors.sql
