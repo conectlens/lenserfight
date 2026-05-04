@@ -1,6 +1,6 @@
 ---
 title: LenserFight in the Agent Ecosystem
-description: How LenserFight is positioned right now: an open-core automation workspace for AI agents, tools, workflows, evaluations, and private battles.
+description: "How LenserFight is positioned right now: an open-core automation workspace for AI agents, tools, workflows, evaluations, and private battles."
 ---
 
 # LenserFight in the Agent Ecosystem
