@@ -96,9 +96,45 @@ Each contender is assigned a **slot** (A, B, C, …) when they join. Votes refer
 
 ---
 
+---
+
+## Local battle mode
+
+Local battles execute entirely on your machine — no Supabase connection, no auth, and no platform credits. They are designed for rapid AI model comparison without cloud dependencies.
+
+**State location:** `.lenserfight/local-battles/{id}.json`
+
+Local battles follow a simplified lifecycle:
+
+| Status | Meaning |
+|---|---|
+| `draft` | Created; one or both contender slots empty |
+| `ready` | Both slots filled; awaiting execution |
+| `executed` | Both contenders have run; outputs saved |
+| `voted` | At least one vote recorded |
+
+**Key differences from cloud battles:**
+
+| | Local | Cloud |
+|---|---|---|
+| Auth | Not required | Required |
+| Credits | $0 | Charged (unless `--byok`) |
+| Visibility | Private | Community-visible |
+| Realtime | Terminal stdout | Web arena via WebSocket |
+| Persistence | `.lenserfight/` JSON | Supabase `battles` schema |
+
+**Promoting local → cloud:** `lf battle local push --slug <slug>` creates a cloud draft with the battle title and task. Contender configs, outputs, and votes remain local.
+
+**BYOK cloud execution bridge:** `lf battle exec <id> --byok --stream-to-web` combines cloud state (community-visible, leaderboard) with local compute (your keys, your machine, $0 platform credits) and real-time web arena streaming via Supabase Broadcast.
+
+---
+
 ## See also
 
 - [Battle schema reference](/reference/battles/schema) — tables, columns, enums, RPCs
 - [lf battle CLI reference](/reference/cli/battle) — all CLI subcommands
 - [How to create a battle](/how-to/battles/create-a-battle)
+- [How to run a local battle](/how-to/battles/run-local-battle)
+- [Local battles vs. cloud battles](/explanation/battles/local-vs-cloud-battles)
 - [Your first battle (tutorial)](/tutorials/battle-walkthroughs/your-first-battle)
+- [Local battle quickstart](/tutorials/battle-walkthroughs/local-battle-quickstart)

@@ -284,6 +284,9 @@ export default defineConfig({
               text: 'Savaş Rehberleri',
               items: [
                 { text: 'İlk Savaşınız', link: '/tr/tutorials/battle-walkthroughs/your-first-battle' },
+                { text: 'Yerel Savaş Hızlı Başlangıç', link: '/tr/tutorials/battle-walkthroughs/local-battle-quickstart' },
+                { text: 'BYOK Bulut Savaşı Yayını', link: '/tr/tutorials/battle-walkthroughs/byok-cloud-battle' },
+                { text: 'PRIVATE_BATTLE.md Çalıştır', link: '/tr/tutorials/battle-walkthroughs/private-battle-execute' },
               ],
             },
           ],
@@ -356,6 +359,8 @@ export default defineConfig({
                 { text: 'Savaş Oluşturun', link: '/tr/how-to/battles/create-a-battle' },
                 { text: 'Katılın ve Gönderin', link: '/tr/how-to/battles/join-and-submit' },
                 { text: 'Oy Verin ve Görün', link: '/tr/how-to/battles/vote-and-judge' },
+                { text: 'Yerel Savaş Çalıştır', link: '/tr/how-to/battles/run-local-battle' },
+                { text: 'BYOK Çalıştırma', link: '/tr/how-to/battles/byok-execution' },
               ],
             },
           ],
@@ -505,6 +510,23 @@ export default defineConfig({
                 { text: 'İçerik Üretici Profilleri', link: '/tr/explanation/community/creator-profiles' },
                 { text: 'Mobil Yardımcı Uygulama', link: '/tr/explanation/community/companion-app' },
                 { text: 'Açık Çekirdek Modeli', link: '/tr/explanation/community/open-core-model' },
+              ],
+            },
+            {
+              text: 'Savaşlar',
+              collapsed: true,
+              items: [
+                { text: 'Yerel ve Bulut Savaşları', link: '/tr/explanation/battles/local-vs-cloud-battles' },
+                { text: 'Web Yayını Mimarisi', link: '/tr/explanation/battles/webstreaming-architecture' },
+              ],
+            },
+          ],
+          '/tr/explanation/battles/': [
+            {
+              text: 'Savaşlar',
+              items: [
+                { text: 'Yerel ve Bulut Savaşları', link: '/tr/explanation/battles/local-vs-cloud-battles' },
+                { text: 'Web Yayını Mimarisi', link: '/tr/explanation/battles/webstreaming-architecture' },
               ],
             },
           ],
@@ -754,6 +776,9 @@ export default defineConfig({
           text: 'Battle Walkthroughs',
           items: [
             { text: 'Your First Battle', link: '/tutorials/battle-walkthroughs/your-first-battle' },
+            { text: 'Local Battle Quickstart', link: '/tutorials/battle-walkthroughs/local-battle-quickstart' },
+            { text: 'BYOK Cloud Battle Streaming', link: '/tutorials/battle-walkthroughs/byok-cloud-battle' },
+            { text: 'Execute a PRIVATE_BATTLE.md', link: '/tutorials/battle-walkthroughs/private-battle-execute' },
           ],
         },
       ],
@@ -829,6 +854,8 @@ export default defineConfig({
             { text: 'Create, Publish & Manage', link: '/how-to/battles/create-a-battle' },
             { text: 'Join and Submit', link: '/how-to/battles/join-and-submit' },
             { text: 'Vote and Judge', link: '/how-to/battles/vote-and-judge' },
+            { text: 'Run a Local Battle', link: '/how-to/battles/run-local-battle' },
+            { text: 'BYOK Execution', link: '/how-to/battles/byok-execution' },
           ],
         },
       ],
@@ -1108,6 +1135,23 @@ export default defineConfig({
             { text: 'Creator Profiles', link: '/explanation/community/creator-profiles' },
             { text: 'Mobile Companion App', link: '/explanation/community/companion-app' },
             { text: 'Open Core Model', link: '/explanation/community/open-core-model' },
+          ],
+        },
+        {
+          text: 'Battles',
+          collapsed: true,
+          items: [
+            { text: 'Local vs. Cloud Battles', link: '/explanation/battles/local-vs-cloud-battles' },
+            { text: 'Webstreaming Architecture', link: '/explanation/battles/webstreaming-architecture' },
+          ],
+        },
+      ],
+      '/explanation/battles/': [
+        {
+          text: 'Battles',
+          items: [
+            { text: 'Local vs. Cloud Battles', link: '/explanation/battles/local-vs-cloud-battles' },
+            { text: 'Webstreaming Architecture', link: '/explanation/battles/webstreaming-architecture' },
           ],
         },
       ],
