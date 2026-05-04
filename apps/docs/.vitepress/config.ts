@@ -175,9 +175,10 @@ export default defineConfig({
       themeConfig: {
         nav: [
           { text: 'Eğitimler', link: '/tr/tutorials/beginner-walkthroughs/what-is-lenserfight' },
-          { text: 'Nasıl Yapılır', link: '/tr/how-to/contributors/faq' },
+          { text: 'Agentlar ve İş Akışları', link: '/tr/connected-lenses/overview' },
+          { text: 'Nasıl Yapılır', link: '/tr/how-to/integrations/index' },
           { text: 'Referans', link: '/tr/reference/cli/index' },
-          { text: 'Açıklama', link: '/tr/explanation/agents/index' },
+          { text: 'Açıklama', link: '/tr/explanation/lensers/index' },
         ],
         sidebar: {
           // ── Eğitimler ────────────────────────────────────────────────────────
@@ -197,10 +198,11 @@ export default defineConfig({
               items: [
                 { text: 'Genel Bakış', link: '/tr/tutorials/getting-started/overview' },
                 { text: 'Sözlük', link: '/tr/tutorials/getting-started/glossary' },
-                { text: 'Organizasyonlar İçin', link: '/tr/tutorials/getting-started/for-organizations' },
                 { text: 'Kurulum', link: '/tr/tutorials/getting-started/installation' },
+                { text: 'Hızlı Başlangıç (Web)', link: '/tr/tutorials/getting-started/quickstart' },
+                { text: 'CLI: Baştan Sona', link: '/tr/tutorials/getting-started/cli-getting-started' },
                 { text: 'Yerel Dosya Depolama', link: '/tr/tutorials/getting-started/local-file-storage' },
-                { text: 'Hızlı Başlangıç', link: '/tr/tutorials/getting-started/quickstart' },
+                { text: 'Organizasyonlar İçin', link: '/tr/tutorials/getting-started/for-organizations' },
                 { text: 'SaaS Entegrasyonu', link: '/tr/how-to/integrations/saas-quickstart' },
               ],
             },
@@ -209,6 +211,7 @@ export default defineConfig({
             {
               text: 'Rehberler',
               items: [
+                { text: 'Web Uygulamasını Kullanmak', link: '/tr/tutorials/walkthroughs/using-the-web-app' },
                 { text: 'Lens Oluştur', link: '/tr/tutorials/walkthroughs/create-a-lens' },
                 { text: 'İş Akışı Oluştur', link: '/tr/tutorials/walkthroughs/create-a-workflow' },
                 { text: 'İş Akışları Nelerdir?', link: '/tr/tutorials/walkthroughs/what-are-workflows' },
@@ -316,9 +319,18 @@ export default defineConfig({
             {
               text: 'Açıklama',
               items: [
+                { text: 'Lenserlar', link: '/tr/explanation/lensers/index' },
                 { text: 'Agentlar', link: '/tr/explanation/agents/index' },
                 { text: 'Lensler', link: '/tr/explanation/lenses/index' },
                 { text: 'Topluluk ve Kullanım', link: '/tr/explanation/community/community-hub' },
+              ],
+            },
+          ],
+          '/tr/explanation/lensers/': [
+            {
+              text: 'Lenserlar',
+              items: [
+                { text: 'Lenser Nedir?', link: '/tr/explanation/lensers/index' },
               ],
             },
           ],
@@ -330,6 +342,8 @@ export default defineConfig({
                 { text: 'Agent Nedir?', link: '/tr/explanation/agents/what-is-an-agent' },
                 { text: 'Agent Bağla', link: '/tr/explanation/agents/connect-agent' },
                 { text: 'Agent Yaşam Döngüsü', link: '/tr/explanation/agents/agent-lifecycle' },
+                { text: 'Agent Takımları', link: '/tr/explanation/agents/agent-teams' },
+                { text: 'Çalıştırmalar', link: '/tr/explanation/agents/executions' },
                 { text: 'Agent Ekosistemi', link: '/tr/explanation/agents/positioning' },
               ],
             },
@@ -392,10 +406,10 @@ export default defineConfig({
 
     nav: [
       { text: 'Tutorials', link: '/tutorials/beginner-walkthroughs/what-is-lenserfight' },
-      { text: 'ConnectedLenses', link: '/connected-lenses/overview' },
-      { text: 'How-to', link: '/how-to/contributors/contributing' },
-      { text: 'Reference', link: '/reference/community-api/index' },
-      { text: 'Explanation', link: '/explanation/agents/index' },
+      { text: 'Agents & Workflows', link: '/connected-lenses/overview' },
+      { text: 'How-to Guides', link: '/how-to/integrations/index' },
+      { text: 'Reference', link: '/reference/cli/index' },
+      { text: 'Explanation', link: '/explanation/lensers/index' },
     ],
 
     aside: true,
@@ -443,11 +457,13 @@ export default defineConfig({
           items: [
             { text: 'Overview', link: '/tutorials/getting-started/overview' },
             { text: 'Glossary', link: '/tutorials/getting-started/glossary' },
+            { text: 'Installation', link: '/tutorials/getting-started/installation' },
+            { text: 'Quickstart (Web App)', link: '/tutorials/getting-started/quickstart' },
+            { text: 'CLI: Getting Started (A to Z)', link: '/tutorials/getting-started/cli-getting-started' },
+            { text: 'Local File Storage', link: '/tutorials/getting-started/local-file-storage' },
+            { text: 'Local Models (Ollama)', link: '/tutorials/getting-started/local-models' },
             { text: 'For Communities', link: '/tutorials/getting-started/for-communities' },
             { text: 'For Organizations', link: '/tutorials/getting-started/for-organizations' },
-            { text: 'Installation', link: '/tutorials/getting-started/installation' },
-            { text: 'Local File Storage', link: '/tutorials/getting-started/local-file-storage' },
-            { text: 'Quickstart', link: '/tutorials/getting-started/quickstart' },
             { text: 'SaaS Integration', link: '/how-to/integrations/saas-quickstart' },
           ],
         },
@@ -456,6 +472,7 @@ export default defineConfig({
         {
           text: 'Walkthroughs',
           items: [
+            { text: 'Using the Web App', link: '/tutorials/walkthroughs/using-the-web-app' },
             { text: 'Create a Lens', link: '/tutorials/walkthroughs/create-a-lens' },
             { text: 'Create a Workflow', link: '/tutorials/walkthroughs/create-a-workflow' },
             { text: 'What Are Workflows?', link: '/tutorials/walkthroughs/what-are-workflows' },
@@ -477,11 +494,11 @@ export default defineConfig({
       // ── How-to ─────────────────────────────────────────────────────────────
       '/how-to/': [
         {
-          text: 'How-to',
+          text: 'How-to Guides',
           items: [
             { text: 'Integrations', link: '/how-to/integrations/index' },
+            { text: 'Workflow Guides', link: '/how-to/workflows/build-a-lens-chain' },
             { text: 'Contributors & Maintainers', link: '/how-to/contributors/contributing' },
-            { text: 'Workflows', link: '/how-to/workflows/build-a-lens-chain' },
           ],
         },
       ],
@@ -593,19 +610,55 @@ export default defineConfig({
             { text: 'CLI Hub', link: '/reference/cli/index' },
             { text: 'CLI Overview', link: '/reference/cli/cli-reference' },
             { text: 'Configuration', link: '/reference/cli/configuration' },
+          ],
+        },
+        {
+          text: 'Environment & Dev',
+          items: [
             { text: 'Development Commands', link: '/reference/cli/dev' },
-            { text: 'Authentication Commands', link: '/reference/cli/auth' },
+            { text: 'Execution Modes', link: '/reference/cli/execution-modes' },
+          ],
+        },
+        {
+          text: 'Authentication',
+          items: [
+            { text: 'Auth Commands', link: '/reference/cli/auth' },
+          ],
+        },
+        {
+          text: 'Lenses',
+          items: [
             { text: 'Lens Management', link: '/reference/cli/lens' },
             { text: 'Lens Discovery', link: '/reference/cli/lenses-discovery' },
-            { text: 'Automation CLI', link: '/reference/cli/automation' },
             { text: 'Connect & Connectors', link: '/reference/cli/connectors' },
-            { text: 'Communities', link: '/reference/cli/communities' },
-            { text: 'Community & Social', link: '/reference/cli/community' },
-            { text: 'Agent Commands', link: '/reference/cli/agent' },
+          ],
+        },
+        {
+          text: 'Runners & Agents',
+          items: [
+            { text: 'Runner / Agent Commands', link: '/reference/cli/agent' },
+            { text: 'Agent Lifecycle', link: '/reference/cli/agent-lifecycle' },
+          ],
+        },
+        {
+          text: 'Execution & Runs',
+          items: [
             { text: 'Run Commands', link: '/reference/cli/run' },
             { text: 'Inspect Commands', link: '/reference/cli/inspect' },
-            { text: 'Publish, Rubric & Template Commands', link: '/reference/cli/publish' },
-            { text: 'Execution Modes', link: '/reference/cli/execution-modes' },
+            { text: 'Automation CLI', link: '/reference/cli/automation' },
+          ],
+        },
+        {
+          text: 'Community & Social',
+          items: [
+            { text: 'Communities', link: '/reference/cli/communities' },
+            { text: 'Community & Social', link: '/reference/cli/community' },
+          ],
+        },
+        {
+          text: 'Publishing',
+          items: [
+            { text: 'Publish, Rubric & Template', link: '/reference/cli/publish' },
           ],
         },
       ],
@@ -650,11 +703,20 @@ export default defineConfig({
         {
           text: 'Explanation',
           items: [
-            { text: 'Automation', link: '/explanation/automation/index' },
+            { text: 'Lensers', link: '/explanation/lensers/index' },
             { text: 'Agents', link: '/explanation/agents/index' },
             { text: 'Lenses', link: '/explanation/lenses/index' },
             { text: 'Workflows', link: '/explanation/workflows/open-source-workflows' },
+            { text: 'Automation', link: '/explanation/automation/index' },
             { text: 'Community & Use Cases', link: '/explanation/community/community-hub' },
+          ],
+        },
+      ],
+      '/explanation/lensers/': [
+        {
+          text: 'Lensers',
+          items: [
+            { text: 'What is a Lenser?', link: '/explanation/lensers/index' },
           ],
         },
       ],
@@ -682,9 +744,11 @@ export default defineConfig({
             { text: 'What is an Agent?', link: '/explanation/agents/what-is-an-agent' },
             { text: 'Connect an Agent', link: '/explanation/agents/connect-agent' },
             { text: 'Agent Lifecycle', link: '/explanation/agents/agent-lifecycle' },
-            { text: 'Agent Ecosystem Positioning', link: '/explanation/agents/positioning' },
+            { text: 'Agent Teams', link: '/explanation/agents/agent-teams' },
+            { text: 'Executions & Workflow Runs', link: '/explanation/agents/executions' },
             { text: 'Memory Architecture', link: '/explanation/agents/memory-architecture' },
             { text: 'Tool Sandboxing', link: '/explanation/agents/tool-sandboxing' },
+            { text: 'Agent Ecosystem Positioning', link: '/explanation/agents/positioning' },
           ],
         },
       ],
@@ -696,7 +760,7 @@ export default defineConfig({
             { text: 'What is a Lens?', link: '/explanation/lenses/what-is-a-lens' },
             { text: 'Lenses in LenserFight', link: '/explanation/lenses/lens-usage' },
             { text: 'Lens Parameters', link: '/explanation/lenses/lens-parameters' },
-            { text: 'Workflows', link: '/explanation/lenses/workflows' },
+            { text: 'Connected Lens Workflows', link: '/explanation/lenses/workflows' },
           ],
         },
       ],
