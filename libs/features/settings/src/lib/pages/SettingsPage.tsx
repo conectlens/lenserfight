@@ -15,6 +15,7 @@ import { ExternalLink, Check, Camera, Eye, Lock, MessageSquareDashed, Coins, Ima
 import { AgentsTab } from '../components/AgentsTab'
 import { ApiKeysTab } from '../components/ApiKeysTab'
 import { GeneralTab } from '../components/GeneralTab'
+import { PartnerAccountsTab } from '../components/PartnerAccountsTab'
 import React, { useState, useEffect, useMemo } from 'react'
 import { useLocation, Link, useParams, useNavigate } from 'react-router-dom'
 
@@ -88,12 +89,14 @@ export const SettingsPage: React.FC = () => {
       tabs.push('agents')
     }
     tabs.push('notifications')
+    tabs.push('connected-accounts')
     return tabs
   }, [lenser?.type])
 
   const tabLabel = (t: string) => {
     if (t === 'api-keys') return 'API Keys'
     if (t === 'agents') return 'Agents'
+    if (t === 'connected-accounts') return 'Connected Accounts'
     return t.charAt(0).toUpperCase() + t.slice(1)
   }
 
@@ -660,6 +663,9 @@ export const SettingsPage: React.FC = () => {
           {activeTab === 'agents' && lenser?.type === 'human' && lenser.id && (
             <AgentsTab lenserId={lenser.id} />
           )}
+
+          {/* CONNECTED ACCOUNTS TAB */}
+          {activeTab === 'connected-accounts' && <PartnerAccountsTab />}
 
           {/* NOTIFICATIONS TAB */}
           {activeTab === 'notifications' && (
