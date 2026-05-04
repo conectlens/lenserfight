@@ -1,0 +1,12 @@
+{
+  "name": "infra-partner-provisioning",
+  "$schema": "../../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "libs/infra/partner-provisioning/src",
+  "projectType": "library",
+  "tags": [
+    "layer:infra",
+    "scope:public",
+    "license:oss"
+  ],
+  "targets": {}
+}

@@ -1,4 +1,5 @@
 import { createClient, type SupabaseClient } from '@supabase/supabase-js'
+import { SUPABASE_URL, SUPABASE_ANON_KEY, SUPABASE_SERVICE_ROLE_KEY } from '@lenserfight/utils/env'
 
 export interface SupabaseEnv {
   url: string
@@ -7,15 +8,11 @@ export interface SupabaseEnv {
 }
 
 export function getSupabaseEnv(): SupabaseEnv {
-  const url = process.env['SUPABASE_URL'] || process.env['VITE_SUPABASE_URL']
-  const anonKey = process.env['SUPABASE_ANON_KEY'] || process.env['VITE_SUPABASE_ANON_KEY']
-  const serviceRoleKey = process.env['SUPABASE_SERVICE_ROLE_KEY']
-
-  if (!url || !anonKey || !serviceRoleKey) {
-    throw new Error('SUPABASE_URL, SUPABASE_ANON_KEY, and SUPABASE_SERVICE_ROLE_KEY are required.')
+  return {
+    url: SUPABASE_URL(),
+    anonKey: SUPABASE_ANON_KEY(),
+    serviceRoleKey: SUPABASE_SERVICE_ROLE_KEY(),
   }
-
-  return { url, anonKey, serviceRoleKey }
 }
 
 function createBaseClient(apiKey: string, authorization?: string): SupabaseClient {
