@@ -1,7 +1,8 @@
-import { SupabaseContactRepository } from '../repositories/contactRepository'
 import { CreateContactDTO } from '@lenserfight/types'
+import { createContactRepository } from '../factory'
 
-const repo = new SupabaseContactRepository()
+
+const repo = createContactRepository()
 
 export const contactService = {
   submitMessage: async (data: Omit<CreateContactDTO, 'user_agent'>): Promise<void> => {

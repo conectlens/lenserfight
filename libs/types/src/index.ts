@@ -1,3 +1,5 @@
+export type { Database, Json } from './lib/database.types'
+export type { Row, Insert, Update } from './lib/db-helpers'
 export * from './lib/apiKeys.types'
 export * from './lib/media.types'
 export * from './lib/resources.types'

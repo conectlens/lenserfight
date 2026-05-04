@@ -1,16 +1,15 @@
-import { SupabaseLensesRepository } from '../repositories/lensesRepository'
-import { SupabaseReactionRepository } from '../repositories/reactionRepository'
-import { SupabaseThreadsRepository } from '../repositories/threadsRepository'
 import {
   TargetType,
   ReactionType,
   ReactionSummary,
   ActivityFeedItem,
 } from '@lenserfight/types'
+import { createLensesRepository, createReactionRepository, createThreadsRepository } from '../factory'
 
-const reactionRepo = new SupabaseReactionRepository()
-const threadsRepo = new SupabaseThreadsRepository()
-const lensesRepo = new SupabaseLensesRepository()
+
+const reactionRepo = createReactionRepository()
+const threadsRepo = createThreadsRepository()
+const lensesRepo = createLensesRepository()
 
 export const reactionService = {
   validateTarget: (t: string) => {

@@ -1,7 +1,8 @@
-import { SupabaseShareRepository } from '../repositories/shareRepository'
 import { CreateLinkDTO, SharedLink } from '@lenserfight/types'
+import { createShareRepository } from '../factory'
 
-const shareRepo = new SupabaseShareRepository()
+
+const shareRepo = createShareRepository()
 
 export const shareService = {
   createOrGetSharedLink: async (dto: CreateLinkDTO): Promise<SharedLink> => {

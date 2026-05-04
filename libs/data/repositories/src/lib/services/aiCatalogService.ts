@@ -1,11 +1,11 @@
 import type { AIModelCatalogEntry, AIProvider } from '@lenserfight/types'
 
-import {
-  SupabaseAICatalogRepository,
-  type AIModelCatalogFilter,
+import { type AIModelCatalogFilter,
 } from '../repositories/aiCatalogRepository'
+import { createAICatalogRepository } from '../factory'
 
-const aiCatalogRepo = new SupabaseAICatalogRepository()
+
+const aiCatalogRepo = createAICatalogRepository()
 
 export type { AIModelCatalogFilter }
 

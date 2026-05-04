@@ -3,14 +3,14 @@ import {
   ContenderRatingRecord,
   JudgeCalibrationRecord,
 } from '@lenserfight/types'
-import {
-  SupabaseReputationRepository,
-  EloLeaderboardEntry,
+import { EloLeaderboardEntry,
 } from '../repositories/reputationRepository'
+import { createReputationRepository } from '../factory'
+
 
 export type { EloLeaderboardEntry }
 
-const reputationRepo = new SupabaseReputationRepository()
+const reputationRepo = createReputationRepository()
 
 export const reputationService = {
   getLenserScores: (lenserId: string): Promise<LenserScoreRecord[]> =>
