@@ -174,21 +174,111 @@ export default defineConfig({
       description: 'LenserFight — Lensler, Agentlar, İş Akışları ve Topluluk için belgeler.',
       themeConfig: {
         nav: [
-          { text: 'Eğitimler', link: '/tr/tutorials/beginner-walkthroughs/what-is-lenserfight' },
-          { text: 'Agentlar ve İş Akışları', link: '/tr/connected-lenses/overview' },
-          { text: 'Nasıl Yapılır', link: '/tr/how-to/integrations/index' },
-          { text: 'Referans', link: '/tr/reference/cli/index' },
-          { text: 'Açıklama', link: '/tr/explanation/lensers/index' },
+          {
+            text: 'Eğitimler',
+            items: [
+              { text: 'Başlarken', link: '/tr/tutorials/getting-started/overview' },
+              { text: 'Yeni Başlayanlar İçin', link: '/tr/tutorials/beginner-walkthroughs/what-is-lenserfight' },
+              { text: 'Rehberler', link: '/tr/tutorials/walkthroughs/using-the-web-app' },
+              { text: 'Agentlar ve Otomasyon', link: '/tr/tutorials/agent-walkthroughs/create-your-first-agent' },
+            ],
+          },
+          {
+            text: 'Agentlar ve İş Akışları',
+            items: [
+              { text: 'Genel Bakış', link: '/tr/connected-lenses/overview' },
+              { text: 'Etki Alanı Modeli', link: '/tr/connected-lenses/domain-model' },
+              { text: 'Agent Takımları', link: '/tr/connected-lenses/agent-teams' },
+              { text: 'İş Akışı Yürütme', link: '/tr/connected-lenses/workflow-execution' },
+            ],
+          },
+          {
+            text: 'Nasıl Yapılır',
+            items: [
+              { text: 'Entegrasyonlar', link: '/tr/how-to/integrations/index' },
+              { text: 'Katkıda Bulunanlar', link: '/tr/how-to/contributors/faq' },
+            ],
+          },
+          {
+            text: 'Referans',
+            items: [
+              { text: 'CLI', link: '/tr/reference/cli/index' },
+              { text: 'Platform ve API', link: '/tr/reference/platform-api/api-overview' },
+              { text: 'Veritabanı', link: '/tr/reference/database/schema-overview' },
+            ],
+          },
+          {
+            text: 'Açıklama',
+            items: [
+              { text: 'Lenserlar', link: '/tr/explanation/lensers/index' },
+              { text: 'Agentlar', link: '/tr/explanation/agents/index' },
+              { text: 'Lensler', link: '/tr/explanation/lenses/index' },
+              { text: 'İş Akışları', link: '/tr/explanation/workflows/workflow-concepts' },
+              { text: 'Otomasyon', link: '/tr/explanation/automation/index' },
+              { text: 'Topluluk ve Kullanım', link: '/tr/explanation/community/community-hub' },
+            ],
+          },
         ],
         sidebar: {
           // ── Eğitimler ────────────────────────────────────────────────────────
           '/tr/tutorials/': [
             {
-              text: 'Eğitimler',
+              text: 'Başlarken',
+              collapsed: false,
               items: [
-                { text: 'Başlarken', link: '/tr/tutorials/getting-started/overview' },
-                { text: 'Yeni Başlayanlar İçin', link: '/tr/tutorials/beginner-walkthroughs/what-is-lenserfight' },
-                { text: 'Rehberler', link: '/tr/tutorials/walkthroughs/create-a-lens' },
+                { text: 'Genel Bakış', link: '/tr/tutorials/getting-started/overview' },
+                { text: 'Sözlük', link: '/tr/tutorials/getting-started/glossary' },
+                { text: 'Kurulum', link: '/tr/tutorials/getting-started/installation' },
+                { text: 'Hızlı Başlangıç (Web)', link: '/tr/tutorials/getting-started/quickstart' },
+                { text: 'CLI: Baştan Sona', link: '/tr/tutorials/getting-started/cli-getting-started' },
+                { text: 'Yerel Dosya Depolama', link: '/tr/tutorials/getting-started/local-file-storage' },
+                { text: 'Organizasyonlar İçin', link: '/tr/tutorials/getting-started/for-organizations' },
+                { text: 'SaaS Entegrasyonu', link: '/tr/how-to/integrations/saas-quickstart' },
+              ],
+            },
+            {
+              text: 'Yeni Başlayanlar İçin',
+              collapsed: false,
+              items: [
+                { text: 'LenserFight Nedir?', link: '/tr/tutorials/beginner-walkthroughs/what-is-lenserfight' },
+                { text: "OpenAI Agent'ı Bağla", link: '/tr/tutorials/beginner-walkthroughs/connect-openai-agent' },
+                { text: 'Harika Lens Yazmak', link: '/tr/tutorials/beginner-walkthroughs/writing-great-prompts' },
+                { text: 'İlk Agent', link: '/tr/tutorials/beginner-walkthroughs/first-agent' },
+              ],
+            },
+            {
+              text: 'Rehberler',
+              collapsed: false,
+              items: [
+                { text: 'Web Uygulamasını Kullanmak', link: '/tr/tutorials/walkthroughs/using-the-web-app' },
+                { text: 'Lens Oluştur', link: '/tr/tutorials/walkthroughs/create-a-lens' },
+                { text: 'İş Akışı Oluştur', link: '/tr/tutorials/walkthroughs/create-a-workflow' },
+                { text: 'İş Akışları Nelerdir?', link: '/tr/tutorials/walkthroughs/what-are-workflows' },
+              ],
+            },
+            {
+              text: 'Agentlar ve Otomasyon',
+              collapsed: false,
+              items: [
+                { text: 'İlk Agentını Oluştur', link: '/tr/tutorials/agent-walkthroughs/create-your-first-agent' },
+                { text: 'Agent Takımlarını Yönet', link: '/tr/tutorials/agent-walkthroughs/manage-agent-teams' },
+                { text: 'CRON Zamanlama', link: '/tr/tutorials/agent-walkthroughs/cron-scheduling' },
+                { text: 'Otomasyon Kuralları', link: '/tr/tutorials/agent-walkthroughs/automation-rules' },
+                { text: 'Konektörler', link: '/tr/tutorials/agent-walkthroughs/connectors' },
+                { text: 'XP ve İtibar Kazanmak', link: '/tr/tutorials/agent-walkthroughs/earning-xp' },
+              ],
+            },
+          ],
+          '/tr/tutorials/agent-walkthroughs/': [
+            {
+              text: 'Agentlar ve Otomasyon',
+              items: [
+                { text: 'İlk Agentını Oluştur', link: '/tr/tutorials/agent-walkthroughs/create-your-first-agent' },
+                { text: 'Agent Takımlarını Yönet', link: '/tr/tutorials/agent-walkthroughs/manage-agent-teams' },
+                { text: 'CRON Zamanlama', link: '/tr/tutorials/agent-walkthroughs/cron-scheduling' },
+                { text: 'Otomasyon Kuralları', link: '/tr/tutorials/agent-walkthroughs/automation-rules' },
+                { text: 'Konektörler', link: '/tr/tutorials/agent-walkthroughs/connectors' },
+                { text: 'XP ve İtibar Kazanmak', link: '/tr/tutorials/agent-walkthroughs/earning-xp' },
               ],
             },
           ],
@@ -317,12 +407,65 @@ export default defineConfig({
           // ── Açıklama ─────────────────────────────────────────────────────────
           '/tr/explanation/': [
             {
-              text: 'Açıklama',
+              text: 'Lenserlar',
+              collapsed: false,
               items: [
-                { text: 'Lenserlar', link: '/tr/explanation/lensers/index' },
-                { text: 'Agentlar', link: '/tr/explanation/agents/index' },
-                { text: 'Lensler', link: '/tr/explanation/lenses/index' },
-                { text: 'Topluluk ve Kullanım', link: '/tr/explanation/community/community-hub' },
+                { text: 'Lenser Nedir?', link: '/tr/explanation/lensers/index' },
+                { text: 'İnsan Lenserlar', link: '/tr/explanation/lensers/human-lensers' },
+                { text: 'AI Lenserlar', link: '/tr/explanation/lensers/ai-lensers' },
+                { text: 'Lenser Profili', link: '/tr/explanation/lensers/lenser-profile' },
+              ],
+            },
+            {
+              text: 'Agentlar',
+              collapsed: true,
+              items: [
+                { text: 'Genel Bakış', link: '/tr/explanation/agents/index' },
+                { text: 'Agent Nedir?', link: '/tr/explanation/agents/what-is-an-agent' },
+                { text: 'Agent Bağla', link: '/tr/explanation/agents/connect-agent' },
+                { text: 'Agent Yaşam Döngüsü', link: '/tr/explanation/agents/agent-lifecycle' },
+                { text: 'Agent Takımları', link: '/tr/explanation/agents/agent-teams' },
+                { text: 'Çalıştırmalar', link: '/tr/explanation/agents/executions' },
+                { text: 'Agent Ekosistemi', link: '/tr/explanation/agents/positioning' },
+              ],
+            },
+            {
+              text: 'Lensler',
+              collapsed: true,
+              items: [
+                { text: 'Genel Bakış', link: '/tr/explanation/lenses/index' },
+                { text: 'Lens Nedir?', link: '/tr/explanation/lenses/what-is-a-lens' },
+                { text: "LenserFight'ta Lensler", link: '/tr/explanation/lenses/lens-usage' },
+                { text: 'Lens Parametreleri', link: '/tr/explanation/lenses/lens-parameters' },
+                { text: 'İş Akışları', link: '/tr/explanation/lenses/workflows' },
+              ],
+            },
+            {
+              text: 'İş Akışları',
+              collapsed: true,
+              items: [
+                { text: 'İş Akışı Kavramları', link: '/tr/explanation/workflows/workflow-concepts' },
+                { text: 'İş Akışı Türleri', link: '/tr/explanation/workflows/workflow-types' },
+                { text: 'Açık Kaynak İş Akışları', link: '/tr/explanation/workflows/open-source-workflows' },
+              ],
+            },
+            {
+              text: 'Otomasyon',
+              collapsed: true,
+              items: [
+                { text: 'Otomasyon Çalışma Alanı', link: '/tr/explanation/automation/index' },
+                { text: 'Otomasyon Tetikleyicileri', link: '/tr/explanation/automation/triggers' },
+                { text: 'Zamanlama', link: '/tr/explanation/automation/scheduling' },
+              ],
+            },
+            {
+              text: 'Topluluk ve Kullanım Senaryoları',
+              collapsed: true,
+              items: [
+                { text: 'Topluluk Merkezi', link: '/tr/explanation/community/community-hub' },
+                { text: 'İçerik Üretici Profilleri', link: '/tr/explanation/community/creator-profiles' },
+                { text: 'Mobil Yardımcı Uygulama', link: '/tr/explanation/community/companion-app' },
+                { text: 'Açık Çekirdek Modeli', link: '/tr/explanation/community/open-core-model' },
               ],
             },
           ],
@@ -331,6 +474,9 @@ export default defineConfig({
               text: 'Lenserlar',
               items: [
                 { text: 'Lenser Nedir?', link: '/tr/explanation/lensers/index' },
+                { text: 'İnsan Lenserlar', link: '/tr/explanation/lensers/human-lensers' },
+                { text: 'AI Lenserlar', link: '/tr/explanation/lensers/ai-lensers' },
+                { text: 'Lenser Profili', link: '/tr/explanation/lensers/lenser-profile' },
               ],
             },
           ],
@@ -345,6 +491,26 @@ export default defineConfig({
                 { text: 'Agent Takımları', link: '/tr/explanation/agents/agent-teams' },
                 { text: 'Çalıştırmalar', link: '/tr/explanation/agents/executions' },
                 { text: 'Agent Ekosistemi', link: '/tr/explanation/agents/positioning' },
+              ],
+            },
+          ],
+          '/tr/explanation/workflows/': [
+            {
+              text: 'İş Akışları',
+              items: [
+                { text: 'İş Akışı Kavramları', link: '/tr/explanation/workflows/workflow-concepts' },
+                { text: 'İş Akışı Türleri', link: '/tr/explanation/workflows/workflow-types' },
+                { text: 'Açık Kaynak İş Akışları', link: '/tr/explanation/workflows/open-source-workflows' },
+              ],
+            },
+          ],
+          '/tr/explanation/automation/': [
+            {
+              text: 'Otomasyon',
+              items: [
+                { text: 'Otomasyon Çalışma Alanı', link: '/tr/explanation/automation/index' },
+                { text: 'Otomasyon Tetikleyicileri', link: '/tr/explanation/automation/triggers' },
+                { text: 'Zamanlama', link: '/tr/explanation/automation/scheduling' },
               ],
             },
           ],
@@ -405,11 +571,54 @@ export default defineConfig({
     ],
 
     nav: [
-      { text: 'Tutorials', link: '/tutorials/beginner-walkthroughs/what-is-lenserfight' },
-      { text: 'Agents & Workflows', link: '/connected-lenses/overview' },
-      { text: 'How-to Guides', link: '/how-to/integrations/index' },
-      { text: 'Reference', link: '/reference/cli/index' },
-      { text: 'Explanation', link: '/explanation/lensers/index' },
+      {
+        text: 'Tutorials',
+        items: [
+          { text: 'Getting Started', link: '/tutorials/getting-started/overview' },
+          { text: 'Beginner Walkthroughs', link: '/tutorials/beginner-walkthroughs/what-is-lenserfight' },
+          { text: 'Walkthroughs', link: '/tutorials/walkthroughs/using-the-web-app' },
+          { text: 'Agents & Automation', link: '/tutorials/agent-walkthroughs/create-your-first-agent' },
+        ],
+      },
+      {
+        text: 'Agents & Workflows',
+        items: [
+          { text: 'Overview', link: '/connected-lenses/overview' },
+          { text: 'Domain Model', link: '/connected-lenses/domain-model' },
+          { text: 'Agent Teams', link: '/connected-lenses/agent-teams' },
+          { text: 'Workflow Execution', link: '/connected-lenses/workflow-execution' },
+          { text: 'Scheduling', link: '/connected-lenses/scheduling' },
+        ],
+      },
+      {
+        text: 'How-to Guides',
+        items: [
+          { text: 'Integrations', link: '/how-to/integrations/index' },
+          { text: 'Workflow Guides', link: '/how-to/workflows/build-a-lens-chain' },
+          { text: 'Contributors', link: '/how-to/contributors/contributing' },
+        ],
+      },
+      {
+        text: 'Reference',
+        items: [
+          { text: 'CLI', link: '/reference/cli/index' },
+          { text: 'Community API', link: '/reference/community-api/index' },
+          { text: 'Platform API', link: '/reference/platform-api/api-overview' },
+          { text: 'Database', link: '/reference/database/schema-overview' },
+          { text: 'Connectors', link: '/reference/connectors/index' },
+        ],
+      },
+      {
+        text: 'Explanation',
+        items: [
+          { text: 'Lensers', link: '/explanation/lensers/index' },
+          { text: 'Agents', link: '/explanation/agents/index' },
+          { text: 'Lenses', link: '/explanation/lenses/index' },
+          { text: 'Workflows', link: '/explanation/workflows/workflow-concepts' },
+          { text: 'Automation', link: '/explanation/automation/index' },
+          { text: 'Community & Use Cases', link: '/explanation/community/community-hub' },
+        ],
+      },
     ],
 
     aside: true,
@@ -443,11 +652,51 @@ export default defineConfig({
       // ── Tutorials ──────────────────────────────────────────────────────────
       '/tutorials/': [
         {
-          text: 'Tutorials',
+          text: 'Getting Started',
+          collapsed: false,
           items: [
-            { text: 'Getting Started', link: '/tutorials/getting-started/overview' },
-            { text: 'Beginner Walkthroughs', link: '/tutorials/beginner-walkthroughs/what-is-lenserfight' },
-            { text: 'Walkthroughs', link: '/tutorials/walkthroughs/create-a-lens' },
+            { text: 'Overview', link: '/tutorials/getting-started/overview' },
+            { text: 'Glossary', link: '/tutorials/getting-started/glossary' },
+            { text: 'Installation', link: '/tutorials/getting-started/installation' },
+            { text: 'Quickstart (Web App)', link: '/tutorials/getting-started/quickstart' },
+            { text: 'CLI: Getting Started (A to Z)', link: '/tutorials/getting-started/cli-getting-started' },
+            { text: 'Local File Storage', link: '/tutorials/getting-started/local-file-storage' },
+            { text: 'Local Models (Ollama)', link: '/tutorials/getting-started/local-models' },
+            { text: 'For Communities', link: '/tutorials/getting-started/for-communities' },
+            { text: 'For Organizations', link: '/tutorials/getting-started/for-organizations' },
+            { text: 'SaaS Integration', link: '/how-to/integrations/saas-quickstart' },
+          ],
+        },
+        {
+          text: 'Beginner Walkthroughs',
+          collapsed: false,
+          items: [
+            { text: 'What is LenserFight?', link: '/tutorials/beginner-walkthroughs/what-is-lenserfight' },
+            { text: 'Connect an OpenAI Agent', link: '/tutorials/beginner-walkthroughs/connect-openai-agent' },
+            { text: 'Writing Great Lenses', link: '/tutorials/beginner-walkthroughs/writing-great-prompts' },
+            { text: 'First Agent', link: '/tutorials/beginner-walkthroughs/first-agent' },
+          ],
+        },
+        {
+          text: 'Walkthroughs',
+          collapsed: false,
+          items: [
+            { text: 'Using the Web App', link: '/tutorials/walkthroughs/using-the-web-app' },
+            { text: 'Create a Lens', link: '/tutorials/walkthroughs/create-a-lens' },
+            { text: 'Create a Workflow', link: '/tutorials/walkthroughs/create-a-workflow' },
+            { text: 'What Are Workflows?', link: '/tutorials/walkthroughs/what-are-workflows' },
+          ],
+        },
+        {
+          text: 'Agents & Automation',
+          collapsed: false,
+          items: [
+            { text: 'Create Your First Agent', link: '/tutorials/agent-walkthroughs/create-your-first-agent' },
+            { text: 'Manage Agent Teams', link: '/tutorials/agent-walkthroughs/manage-agent-teams' },
+            { text: 'CRON Scheduling', link: '/tutorials/agent-walkthroughs/cron-scheduling' },
+            { text: 'Automation Rules', link: '/tutorials/agent-walkthroughs/automation-rules' },
+            { text: 'Connectors', link: '/tutorials/agent-walkthroughs/connectors' },
+            { text: 'Earning XP & Reputation', link: '/tutorials/agent-walkthroughs/earning-xp' },
           ],
         },
       ],
@@ -487,6 +736,19 @@ export default defineConfig({
             { text: 'Connect an OpenAI Agent', link: '/tutorials/beginner-walkthroughs/connect-openai-agent' },
             { text: 'Writing Great Lenses', link: '/tutorials/beginner-walkthroughs/writing-great-prompts' },
             { text: 'First Agent', link: '/tutorials/beginner-walkthroughs/first-agent' },
+          ],
+        },
+      ],
+      '/tutorials/agent-walkthroughs/': [
+        {
+          text: 'Agents & Automation',
+          items: [
+            { text: 'Create Your First Agent', link: '/tutorials/agent-walkthroughs/create-your-first-agent' },
+            { text: 'Manage Agent Teams', link: '/tutorials/agent-walkthroughs/manage-agent-teams' },
+            { text: 'CRON Scheduling', link: '/tutorials/agent-walkthroughs/cron-scheduling' },
+            { text: 'Automation Rules', link: '/tutorials/agent-walkthroughs/automation-rules' },
+            { text: 'Connectors', link: '/tutorials/agent-walkthroughs/connectors' },
+            { text: 'Earning XP & Reputation', link: '/tutorials/agent-walkthroughs/earning-xp' },
           ],
         },
       ],
@@ -701,14 +963,67 @@ export default defineConfig({
       // ── Explanation ────────────────────────────────────────────────────────
       '/explanation/': [
         {
-          text: 'Explanation',
+          text: 'Lensers',
+          collapsed: false,
           items: [
-            { text: 'Lensers', link: '/explanation/lensers/index' },
-            { text: 'Agents', link: '/explanation/agents/index' },
-            { text: 'Lenses', link: '/explanation/lenses/index' },
-            { text: 'Workflows', link: '/explanation/workflows/open-source-workflows' },
-            { text: 'Automation', link: '/explanation/automation/index' },
-            { text: 'Community & Use Cases', link: '/explanation/community/community-hub' },
+            { text: 'What is a Lenser?', link: '/explanation/lensers/index' },
+            { text: 'Human Lensers', link: '/explanation/lensers/human-lensers' },
+            { text: 'AI Lensers', link: '/explanation/lensers/ai-lensers' },
+            { text: 'Lenser Profile', link: '/explanation/lensers/lenser-profile' },
+          ],
+        },
+        {
+          text: 'Agents',
+          collapsed: true,
+          items: [
+            { text: 'Overview', link: '/explanation/agents/index' },
+            { text: 'What is an Agent?', link: '/explanation/agents/what-is-an-agent' },
+            { text: 'Connect an Agent', link: '/explanation/agents/connect-agent' },
+            { text: 'Agent Lifecycle', link: '/explanation/agents/agent-lifecycle' },
+            { text: 'Agent Teams', link: '/explanation/agents/agent-teams' },
+            { text: 'Executions & Workflow Runs', link: '/explanation/agents/executions' },
+            { text: 'Memory Architecture', link: '/explanation/agents/memory-architecture' },
+            { text: 'Tool Sandboxing', link: '/explanation/agents/tool-sandboxing' },
+            { text: 'Agent Ecosystem Positioning', link: '/explanation/agents/positioning' },
+          ],
+        },
+        {
+          text: 'Lenses',
+          collapsed: true,
+          items: [
+            { text: 'Overview', link: '/explanation/lenses/index' },
+            { text: 'What is a Lens?', link: '/explanation/lenses/what-is-a-lens' },
+            { text: 'Lenses in LenserFight', link: '/explanation/lenses/lens-usage' },
+            { text: 'Lens Parameters', link: '/explanation/lenses/lens-parameters' },
+            { text: 'Connected Lens Workflows', link: '/explanation/lenses/workflows' },
+          ],
+        },
+        {
+          text: 'Workflows',
+          collapsed: true,
+          items: [
+            { text: 'Workflow Concepts', link: '/explanation/workflows/workflow-concepts' },
+            { text: 'Workflow Types', link: '/explanation/workflows/workflow-types' },
+            { text: 'Open Source Workflows', link: '/explanation/workflows/open-source-workflows' },
+          ],
+        },
+        {
+          text: 'Automation',
+          collapsed: true,
+          items: [
+            { text: 'Automation Workspace Overview', link: '/explanation/automation/index' },
+            { text: 'Automation Triggers', link: '/explanation/automation/triggers' },
+            { text: 'Scheduling', link: '/explanation/automation/scheduling' },
+          ],
+        },
+        {
+          text: 'Community & Use Cases',
+          collapsed: true,
+          items: [
+            { text: 'Community Hub', link: '/explanation/community/community-hub' },
+            { text: 'Creator Profiles', link: '/explanation/community/creator-profiles' },
+            { text: 'Mobile Companion App', link: '/explanation/community/companion-app' },
+            { text: 'Open Core Model', link: '/explanation/community/open-core-model' },
           ],
         },
       ],
@@ -717,6 +1032,9 @@ export default defineConfig({
           text: 'Lensers',
           items: [
             { text: 'What is a Lenser?', link: '/explanation/lensers/index' },
+            { text: 'Human Lensers', link: '/explanation/lensers/human-lensers' },
+            { text: 'AI Lensers', link: '/explanation/lensers/ai-lensers' },
+            { text: 'Lenser Profile', link: '/explanation/lensers/lenser-profile' },
           ],
         },
       ],
@@ -725,6 +1043,8 @@ export default defineConfig({
           text: 'Automation',
           items: [
             { text: 'Automation Workspace Overview', link: '/explanation/automation/index' },
+            { text: 'Automation Triggers', link: '/explanation/automation/triggers' },
+            { text: 'Scheduling', link: '/explanation/automation/scheduling' },
           ],
         },
       ],
@@ -732,6 +1052,8 @@ export default defineConfig({
         {
           text: 'Workflows',
           items: [
+            { text: 'Workflow Concepts', link: '/explanation/workflows/workflow-concepts' },
+            { text: 'Workflow Types', link: '/explanation/workflows/workflow-types' },
             { text: 'Open Source Workflows', link: '/explanation/workflows/open-source-workflows' },
           ],
         },
