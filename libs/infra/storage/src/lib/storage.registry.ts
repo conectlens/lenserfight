@@ -1,6 +1,7 @@
 import { SupabaseStorageAdapter } from './supabase-storage.adapter'
 import { LocalFileStorageAdapter } from './local-storage.adapter'
 import type { StorageAdapterPort, StorageAdapterId } from './storage.types'
+import { isFileDataBackend } from '@lenserfight/utils/env'
 
 const ADAPTERS: Record<StorageAdapterId, () => StorageAdapterPort> = {
   supabase: () => new SupabaseStorageAdapter(),
@@ -10,7 +11,8 @@ const ADAPTERS: Record<StorageAdapterId, () => StorageAdapterPort> = {
   },
 }
 
-let defaultAdapterId: StorageAdapterId = 'supabase'
+// Default to local adapter when VITE_DATA_SOURCE=file so no Supabase is needed.
+let defaultAdapterId: StorageAdapterId = isFileDataBackend ? 'local' : 'supabase'
 
 export function getStorageAdapter(id?: StorageAdapterId): StorageAdapterPort {
   const factory = ADAPTERS[id ?? defaultAdapterId]

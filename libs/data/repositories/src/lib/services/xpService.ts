@@ -1,4 +1,3 @@
-import { SupabaseXPRepository } from '../repositories/xpRepository'
 import {
   XPSummary,
   XPEvent,
@@ -9,8 +8,10 @@ import {
   LeaderboardTimeframe,
   LeaderboardScope,
 } from '@lenserfight/types'
+import { createXPRepository } from '../factory'
 
-const repo = new SupabaseXPRepository()
+
+const repo = createXPRepository()
 
 export const xpService = {
   getStats: async (lenserId: string, appId?: string): Promise<XPSummary | null> => {

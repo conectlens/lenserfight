@@ -234,7 +234,8 @@ export class SupabaseMediaRepository implements MediaRepositoryPort {
   }
 }
 
-export const mediaRepository = new SupabaseMediaRepository()
+import { createMediaRepository } from '../factory'
+export const mediaRepository = createMediaRepository()
 
 /**
  * Helper: full upload session — creates media object, gets signed URL.

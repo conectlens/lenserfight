@@ -1,5 +1,3 @@
-import { SupabaseLenserRepository } from '../repositories/lenserRepository'
-import { SupabaseShareRepository } from '../repositories/shareRepository'
 import {
   Language,
   Lenser,
@@ -24,9 +22,12 @@ import { LensRecord } from '@lenserfight/types'
 import { ThreadRecord } from '@lenserfight/types'
 
 import { shareService } from './shareService'
+import { createLenserRepository, createShareRepository } from '../factory'
+import { isFileDataBackend } from '@lenserfight/utils/env'
 
-const lenserRepo = new SupabaseLenserRepository()
-const shareRepo = new SupabaseShareRepository()
+
+const lenserRepo = createLenserRepository()
+const shareRepo = createShareRepository()
 
 const enrichLenserProfile = async (lenser: Lenser | null): Promise<Lenser | null> => {
   if (!lenser || !lenser.website_url) return lenser
@@ -84,6 +85,11 @@ export const lenserService = {
   updateLenserProfile: async (data: Partial<Lenser>): Promise<Lenser> => {
     if (!data) throw new Error('Lenser handle is required')
 
+    // Skip share-link wrapping in file mode — shareRepository is a stub.
+    if (isFileDataBackend) {
+      return lenserRepo.updateLenser(data)
+    }
+
     // Moderation Check
     // TODO: moderation policy will not be used in the beta version
     // await contentModerationService.validate(data.display_name, data.headline, data.bio);
@@ -126,7 +132,7 @@ export const lenserService = {
 
   requestAccountDeletion: async (handle: string): Promise<void> => {
     if (!handle) throw new Error('Handle is required')
-    await lenserRepo.requestDeletion()
+    await lenserRepo.requestDeletion(handle)
   },
 
   getLenserPrompts: async (

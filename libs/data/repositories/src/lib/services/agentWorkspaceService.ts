@@ -15,9 +15,7 @@ import type {
   CrossAgentFeedItem,
 } from '@lenserfight/types'
 
-import {
-  SupabaseAgentWorkspaceRepository,
-  type CreateAgentMemoryProfileInput,
+import { type CreateAgentMemoryProfileInput,
   type CreateAgentModelProfileInput,
   type CreateAgentPersonalityProfileInput,
   type CreateAgentTeamInput,
@@ -30,8 +28,10 @@ import {
   type ListApprovalRequestsOptions,
 } from '../repositories/agentWorkspaceRepository'
 import type { EvaluationBaselineRecord, EvaluationRubricCriterion, EvaluationRubricRecord } from '@lenserfight/types'
+import { createAgentWorkspaceRepository } from '../factory'
 
-const agentWorkspaceRepo = new SupabaseAgentWorkspaceRepository()
+
+const agentWorkspaceRepo = createAgentWorkspaceRepository()
 
 export type {
   CreateAgentMemoryProfileInput,

@@ -1,7 +1,8 @@
-import { SupabaseFeedbackRepository } from '../repositories/feedbackRepository'
 import { SubmitFeedbackDTO, FeedbackResponse } from '@lenserfight/types'
+import { createFeedbackRepository } from '../factory'
 
-const feedbackRepo = new SupabaseFeedbackRepository()
+
+const feedbackRepo = createFeedbackRepository()
 
 export const feedbackService = {
   submitFeedback: async (dto: SubmitFeedbackDTO): Promise<void> => {

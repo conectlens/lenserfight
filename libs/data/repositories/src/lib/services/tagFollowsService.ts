@@ -1,7 +1,8 @@
-import { SupabaseTagFollowsRepository } from '../repositories/tagFollowsRepository'
 import { TagFollowRecord, ContentReportDTO } from '@lenserfight/types'
+import { createTagFollowsRepository } from '../factory'
 
-const tagFollowsRepo = new SupabaseTagFollowsRepository()
+
+const tagFollowsRepo = createTagFollowsRepository()
 
 export const tagFollowsService = {
   followTag: async (tagId: string): Promise<{ following: boolean }> => {

@@ -4,10 +4,12 @@
  * from ai.resources to media.objects.
  */
 
-import { SupabaseResourcesRepository, startResourceUpload } from '../repositories/resourcesRepository'
+import { startResourceUpload } from '../repositories/resourcesRepository'
 import { PromptResource, VersionResource, CreateResourceDTO, ResourceUploadSession } from '@lenserfight/types'
+import { createResourcesRepository } from '../factory'
 
-const resourcesRepo = new SupabaseResourcesRepository()
+
+const resourcesRepo = createResourcesRepository()
 
 export const resourcesService = {
   getByOwner: async (lenserId: string): Promise<PromptResource[]> => {

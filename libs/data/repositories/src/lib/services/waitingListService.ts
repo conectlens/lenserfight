@@ -1,6 +1,7 @@
-import { SupabaseWaitingListRepository } from '../repositories/waitingListRepository'
 
-const repo = new SupabaseWaitingListRepository()
+import { createWaitingListRepository } from '../factory'
+
+const repo = createWaitingListRepository()
 
 /**
  * Facade:
