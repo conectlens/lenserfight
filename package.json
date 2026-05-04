@@ -28,6 +28,7 @@
     "supabase:db:reset": "bash supabase/combine-seeds.sh && supabase db reset --local --yes",
     "supabase:db:reset:debug": "bash supabase/combine-seeds.sh && supabase db reset --local --yes --debug",
     "supabase:local:recover": "bash scripts/supabase-local-recover.sh",
+    "supabase:gen:types": "supabase gen types typescript --local --schema public,lensers,lenses,agents,ai,execution,content,media,tenancy > libs/types/src/lib/database.types.ts",
     "smoke": "bash scripts/smoke.sh"
   },
   "config": {
@@ -59,6 +60,7 @@
     "expo-status-bar": "~3.0.8",
     "expo-system-ui": "~6.0.8",
     "framer-motion": "^10.16.4",
+    "idb": "^8.0.1",
     "i18next": "^25.8.18",
     "i18next-browser-languagedetector": "^8.2.1",
     "lucide-react": "0.344.0",

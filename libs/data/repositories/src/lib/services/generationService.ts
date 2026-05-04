@@ -1,4 +1,3 @@
-import { SupabaseGenerationRepository } from '../repositories/generationRepository'
 import {
   CreateGenerationDTO,
   AIGeneration,
@@ -7,8 +6,10 @@ import {
   AIProvider,
   AIProviderModel,
 } from '@lenserfight/types'
+import { createGenerationRepository } from '../factory'
 
-const repo = new SupabaseGenerationRepository()
+
+const repo = createGenerationRepository()
 
 export const generationService = {
   getGenerations: async (

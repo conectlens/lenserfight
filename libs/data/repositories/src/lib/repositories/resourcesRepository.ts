@@ -189,7 +189,8 @@ export class SupabaseResourcesRepository implements ResourcesRepositoryPort {
   }
 }
 
-export const resourcesRepository = new SupabaseResourcesRepository()
+import { createResourcesRepository } from '../factory'
+export const resourcesRepository = createResourcesRepository()
 
 /**
  * Helper: full upload session — creates resource, gets signed URL.

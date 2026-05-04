@@ -10,11 +10,13 @@ import {
   AgentActionInput,
   AgentActionResponse,
 } from '@lenserfight/types'
-import { SupabaseAgentsRepository, AgentProfileView, AgentProfilePatch } from '../repositories/agentsRepository'
+import { AgentProfileView, AgentProfilePatch } from '../repositories/agentsRepository'
+import { createAgentsRepository } from '../factory'
+
 
 export type { AgentProfileView, AgentProfilePatch }
 
-const agentsRepo = new SupabaseAgentsRepository()
+const agentsRepo = createAgentsRepository()
 
 export const agentsService = {
   getAgentProfile: (aiLenserId: string): Promise<AgentProfileView | null> =>

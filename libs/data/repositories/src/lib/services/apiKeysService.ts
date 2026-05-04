@@ -1,9 +1,10 @@
-import { SupabaseApiKeysRepository } from '../repositories/apiKeysRepository'
 import { UserApiKey, ByokProvider, CreateApiKeyDTO } from '@lenserfight/types'
+import { createApiKeysRepository } from '../factory'
+
 
 const ALLOWED_PROVIDERS: ByokProvider[] = ['openai', 'anthropic', 'google', 'mistral']
 
-const apiKeysRepo = new SupabaseApiKeysRepository()
+const apiKeysRepo = createApiKeysRepository()
 
 export const apiKeysService = {
   getMyKeys: async (): Promise<UserApiKey[]> => {

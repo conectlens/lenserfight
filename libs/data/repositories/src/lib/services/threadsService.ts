@@ -10,16 +10,15 @@ import {
   ThreadAuthor,
 } from '@lenserfight/types'
 
-import { SupabaseLenserRepository } from '../repositories/lenserRepository'
-import { SupabaseReactionRepository } from '../repositories/reactionRepository'
-import { SupabaseThreadsRepository } from '../repositories/threadsRepository'
 
 import { tagService } from './tagService'
 import { threadInteractionService } from './threadInteractionService'
+import { createLenserRepository, createReactionRepository, createThreadsRepository } from '../factory'
 
-const threadsRepo = new SupabaseThreadsRepository()
-const lenserRepo = new SupabaseLenserRepository()
-const reactionRepo = new SupabaseReactionRepository()
+
+const threadsRepo = createThreadsRepository()
+const lenserRepo = createLenserRepository()
+const reactionRepo = createReactionRepository()
 
 const sumReactionTotals = (reactionTotals?: Record<string, number>): number => {
   return Object.values(reactionTotals ?? {}).reduce((total, count) => total + count, 0)

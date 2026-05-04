@@ -205,4 +205,5 @@ export class SupabaseExecutionRepository implements ExecutionRepositoryPort {
   }
 }
 
-export const executionRepository = new SupabaseExecutionRepository()
+import { createExecutionRepository } from '../factory'
+export const executionRepository = createExecutionRepository()
