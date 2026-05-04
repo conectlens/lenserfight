@@ -13,6 +13,7 @@ import type { Battle, Contender, ContenderLensAssignmentRecord } from '../../typ
 import type { StreamRecording } from '../../types/battle-execution.types'
 import { useBattleExecution } from '../../hooks/execution/useBattleExecution'
 import { useBattleLiveSubmission } from '../../hooks/realtime/useBattleLiveSubmission'
+import { useBattleCliStream } from '../../hooks/realtime/useBattleCliStream'
 import { useReplayController } from '../../hooks/utils/useReplayController'
 import { StreamingOutput } from '../stream/StreamingOutput'
 import { StreamStatusBar } from '../stream/StreamStatusBar'
@@ -79,6 +80,12 @@ export const BattleLiveArena: React.FC<BattleLiveArenaProps> = ({
     mode === 'spectator',
   )
 
+  // --- CLI WebSocket stream (from `lf battle exec --stream-to-web`) ---
+  // Active in spectator mode; merged with liveSubmission, takes priority when streaming.
+  const cliStreamA = useBattleCliStream(mode === 'spectator' ? battle.id : undefined, 'A')
+  const cliStreamB = useBattleCliStream(mode === 'spectator' ? battle.id : undefined, 'B')
+  const isCliStreaming = cliStreamA.state === 'streaming' || cliStreamB.state === 'streaming'
+
   // --- Replay mode ---
   const recordingA = recordings?.find((r) => r.slot === 'A')
   const recordingB = recordings?.find((r) => r.slot === 'B')
@@ -104,10 +111,11 @@ export const BattleLiveArena: React.FC<BattleLiveArenaProps> = ({
     isStreamingA = execution.executionState.contenderA.state === 'streaming'
     isStreamingB = execution.executionState.contenderB.state === 'streaming'
   } else if (mode === 'spectator') {
-    contentA = liveSubmission.liveOutputA
-    contentB = liveSubmission.liveOutputB
-    isStreamingA = liveSubmission.isStreamingA
-    isStreamingB = liveSubmission.isStreamingB
+    // Prefer CLI broadcast stream when it has data; fall back to DB-based live submission
+    contentA = (cliStreamA.output || liveSubmission.liveOutputA)
+    contentB = (cliStreamB.output || liveSubmission.liveOutputB)
+    isStreamingA = cliStreamA.state === 'streaming' || liveSubmission.isStreamingA
+    isStreamingB = cliStreamB.state === 'streaming' || liveSubmission.isStreamingB
   } else if (mode === 'replay') {
     contentA = replayA.output
     contentB = replayB.output
@@ -135,6 +143,11 @@ export const BattleLiveArena: React.FC<BattleLiveArenaProps> = ({
             <span className="text-sm font-semibold text-greyscale-700 dark:text-greyscale-200 truncate">
               {contenderA?.display_name ?? 'Contender A'}
             </span>
+            {isCliStreaming && cliStreamA.state === 'streaming' && (
+              <span className="ml-auto text-xs font-medium text-brand-500 bg-brand-50 dark:bg-brand-950/30 rounded px-2 py-0.5 shrink-0">
+                Streaming from CLI
+              </span>
+            )}
           </div>
           <StreamingOutput content={contentA} isStreaming={isStreamingA} className="p-4 min-h-[200px]" />
           {mode === 'executor' && <StreamStatusBar snapshot={execution.executionState.contenderA} />}
@@ -149,6 +162,11 @@ export const BattleLiveArena: React.FC<BattleLiveArenaProps> = ({
             <span className="text-sm font-semibold text-greyscale-700 dark:text-greyscale-200 truncate">
               {contenderB?.display_name ?? 'Contender B'}
             </span>
+            {isCliStreaming && cliStreamB.state === 'streaming' && (
+              <span className="ml-auto text-xs font-medium text-brand-500 bg-brand-50 dark:bg-brand-950/30 rounded px-2 py-0.5 shrink-0">
+                Streaming from CLI
+              </span>
+            )}
           </div>
           <StreamingOutput content={contentB} isStreaming={isStreamingB} className="p-4 min-h-[200px]" />
           {mode === 'executor' && <StreamStatusBar snapshot={execution.executionState.contenderB} />}
