@@ -1,3 +1,4 @@
-import { SupabasePreferencesRepository } from '../repositories/preferencesRepository'
 
-export const preferencesService = new SupabasePreferencesRepository()
+import { createPreferencesRepository } from '../factory'
+
+export const preferencesService = createPreferencesRepository()

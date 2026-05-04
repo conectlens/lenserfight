@@ -1,6 +1,3 @@
-import { SupabaseLenserRepository } from '../repositories/lenserRepository'
-import { SupabaseLensesRepository } from '../repositories/lensesRepository'
-import { SupabaseReactionRepository } from '../repositories/reactionRepository'
 import {
   LensViewModel,
   LensDetailViewModel,
@@ -17,10 +14,12 @@ import { ApiResponseEnvelope, paginatedResponse } from '@lenserfight/api/contrac
 
 import { reactionService } from './reactionService'
 import { tagService } from './tagService'
+import { createLenserRepository, createLensesRepository, createReactionRepository } from '../factory'
 
-const lensesRepo = new SupabaseLensesRepository()
-const lenserRepo = new SupabaseLenserRepository()
-const reactionRepo = new SupabaseReactionRepository()
+
+const lensesRepo = createLensesRepository()
+const lenserRepo = createLenserRepository()
+const reactionRepo = createReactionRepository()
 
 // Helper to resolve author from denormalized profile
 const resolveAuthor = (record: any): LensAuthor => {

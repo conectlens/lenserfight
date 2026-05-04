@@ -1,8 +1,9 @@
 import { TriggerExecutionDTO, SetArtifactVisibilityDTO, PersistLocalExecutionDTO } from '@lenserfight/types'
-import { SupabaseExecutionRepository } from '../repositories/executionRepository'
 import { HttpExecutionApiClient } from '../repositories/executionApiClient'
+import { createExecutionRepository } from '../factory'
 
-const repo = new SupabaseExecutionRepository()
+
+const repo = createExecutionRepository()
 const apiClient = new HttpExecutionApiClient()
 
 export const executionService = {

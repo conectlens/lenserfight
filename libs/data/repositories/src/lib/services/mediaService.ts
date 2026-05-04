@@ -1,7 +1,9 @@
-import { SupabaseMediaRepository, startMediaUpload } from '../repositories/mediaRepository'
+import { startMediaUpload } from '../repositories/mediaRepository'
 import { MediaObject, MediaAttachment, CreateMediaObjectDTO, UploadSession } from '@lenserfight/types'
+import { createMediaRepository } from '../factory'
 
-const mediaRepo = new SupabaseMediaRepository()
+
+const mediaRepo = createMediaRepository()
 
 export const mediaService = {
   getByOwner: async (lenserId: string): Promise<MediaObject[]> => {

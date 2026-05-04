@@ -320,6 +320,15 @@ export interface WorkflowsRepositoryPort {
   publishVersion(versionId: string): Promise<void>
   restoreVersion(versionId: string): Promise<void>
   listRuns(workflowId: string, limit?: number, offset?: number): Promise<WorkflowRunRecord[]>
+  listPhases(workflowId: string): Promise<WorkflowPhaseRecord[]>
+  upsertPhase(phase: Partial<WorkflowPhaseRecord> & { workflow_id: string }): Promise<WorkflowPhaseRecord>
+  deletePhase(phaseId: string): Promise<void>
+  reorderPhases(workflowId: string, orderedIds: string[]): Promise<void>
+  listTasks(phaseId: string): Promise<WorkflowTaskRecord[]>
+  listTasksByWorkflow(workflowId: string): Promise<WorkflowTaskRecord[]>
+  upsertTask(task: Partial<WorkflowTaskRecord> & { phase_id: string; workflow_id: string }): Promise<WorkflowTaskRecord>
+  deleteTask(taskId: string): Promise<void>
+  reorderTasks(phaseId: string, orderedIds: string[]): Promise<void>
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
