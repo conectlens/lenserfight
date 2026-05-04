@@ -1,7 +1,6 @@
 import type { IncomingMessage, ServerResponse } from 'node:http'
 import { partnerRegistry } from '@lenserfight/infra/partner-provisioning'
 import { authenticateRequest } from '../../lib/auth/authenticate'
-import { sendSuccess } from '../../lib/http'
 import { createServiceSupabaseClient } from '../../lib/supabase'
 import { PartnerProvisioningService } from '../../lib/partners/partners.service'
 
@@ -9,12 +8,13 @@ export async function handlePartnersRefreshTokenRoute(
   req: IncomingMessage,
   res: ServerResponse,
   partnerName: string,
-  requestId: string,
-  startedAt: number,
+  _requestId: string,
+  _startedAt: number,
 ): Promise<void> {
   const auth = await authenticateRequest(req)
   const provider = partnerRegistry.get(partnerName)
   const service = new PartnerProvisioningService(createServiceSupabaseClient())
-  const result = await service.refreshToken(provider, auth.user.id)
-  sendSuccess(res, 200, result, requestId, startedAt)
+  await service.refreshToken(provider, auth.user.id)
+  res.writeHead(204)
+  res.end()
 }

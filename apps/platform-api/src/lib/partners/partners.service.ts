@@ -1,5 +1,5 @@
 import type { SupabaseClient, User } from '@supabase/supabase-js'
-import type { IPartnerProvider, PartnerBalance, PartnerTokenRefreshResult } from '@lenserfight/infra/partner-provisioning'
+import type { IPartnerProvider, PartnerBalance } from '@lenserfight/infra/partner-provisioning'
 import type { PartnerProvisionRecord } from '@lenserfight/types'
 
 interface ProvisionRow {
@@ -56,15 +56,16 @@ export class PartnerProvisioningService {
     return provider.getBalance(externalId)
   }
 
-  async refreshToken(provider: IPartnerProvider, userId: string): Promise<PartnerTokenRefreshResult> {
+  async refreshToken(provider: IPartnerProvider, userId: string): Promise<{ refreshedAt: string }> {
     const externalId = await this.requireExternalId(provider.name, userId)
     const result = await provider.refreshToken(externalId)
+    const refreshedAt = new Date().toISOString()
     await this.serviceClient
       .from('partner_provisions')
-      .update({ token: result.token, updated_at: new Date().toISOString() })
+      .update({ token: result.token, updated_at: refreshedAt })
       .eq('user_id', userId)
       .eq('partner_name', provider.name)
-    return result
+    return { refreshedAt }
   }
 
   async sendClaimEmail(provider: IPartnerProvider, userId: string): Promise<void> {
