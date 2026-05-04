@@ -1,6 +1,7 @@
 import { callProvider } from '@lenserfight/providers'
 import { byokKeyResolver } from '@lenserfight/providers'
 import { nodeLogger } from '@lenserfight/utils/logger'
+import { PLATFORM_API_WORKER_INTERVAL_MS, PLATFORM_API_WORKER_ONCE } from '@lenserfight/utils/env'
 import { createServiceSupabaseClient } from '../lib/supabase'
 
 interface ClaimedRun {
@@ -134,8 +135,8 @@ export async function processNextQueuedRun(): Promise<boolean> {
 }
 
 async function runLoop(): Promise<void> {
-  const intervalMs = parseInt(process.env['PLATFORM_API_WORKER_INTERVAL_MS'] ?? '2000', 10)
-  const once = process.env['PLATFORM_API_WORKER_ONCE'] === 'true'
+  const intervalMs = PLATFORM_API_WORKER_INTERVAL_MS()
+  const once = PLATFORM_API_WORKER_ONCE()
 
   do {
     const processed = await processNextQueuedRun()

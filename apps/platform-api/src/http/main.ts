@@ -1,20 +1,43 @@
 import { createServer } from 'node:http'
 import { randomUUID } from 'node:crypto'
 import { nodeLogger } from '@lenserfight/utils/logger'
+import { partnerRegistry, ChainbitPartnerProvider } from '@lenserfight/infra/partner-provisioning'
+import { PLATFORM_API_PORT, PLATFORM_API_CORS_ORIGIN } from '@lenserfight/utils/env'
 import { sendApiError } from '../lib/http'
 import { handleLensesExecuteRoute } from './routes/lenses-execute.route'
 import { handleRunsGetRoute } from './routes/runs-get.route'
 import { handleWorkflowRunRoute } from './routes/workflows-run.route'
+import { handlePartnersProvisionRoute } from './routes/partners-provision.route'
+import { handlePartnersBalanceRoute } from './routes/partners-balance.route'
+import { handlePartnersRefreshTokenRoute } from './routes/partners-refresh-token.route'
+import { handlePartnersSendClaimRoute } from './routes/partners-send-claim.route'
+
+// Register partner providers — add new partners here, nothing else changes
+partnerRegistry.register(new ChainbitPartnerProvider())
 
 function parsePath(url: string): string[] {
   return new URL(url, 'http://localhost').pathname.split('/').filter(Boolean)
 }
 
-const port = parseInt(process.env['PORT'] ?? '8786', 10)
+const port = PLATFORM_API_PORT()
+
+function applyCorsHeaders(res: ServerResponse): void {
+  res.setHeader('Access-Control-Allow-Origin', PLATFORM_API_CORS_ORIGIN())
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS')
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization')
+}
 
 const server = createServer(async (req, res) => {
   const requestId = randomUUID()
   const startedAt = Date.now()
+
+  applyCorsHeaders(res)
+
+  if (req.method === 'OPTIONS') {
+    res.writeHead(204)
+    res.end()
+    return
+  }
 
   try {
     if (!req.url || !req.method) {
@@ -36,6 +59,31 @@ const server = createServer(async (req, res) => {
     if (req.method === 'POST' && parts[0] === 'v1' && parts[1] === 'workflows' && parts[3] === 'run') {
       await handleWorkflowRunRoute(req, res, parts[2], requestId, startedAt)
       return
+    }
+
+    // Partner provisioning routes — /v1/partners/:name/provision|balance|refresh-token|send-claim
+    if (parts[0] === 'v1' && parts[1] === 'partners' && parts[2]) {
+      const partnerName = parts[2]
+      if (!partnerRegistry.has(partnerName)) {
+        sendApiError(res, 404, { code: 'not_found', message: `Unknown partner: ${partnerName}` }, requestId, startedAt)
+        return
+      }
+      if (req.method === 'POST' && parts[3] === 'provision') {
+        await handlePartnersProvisionRoute(req, res, partnerName, requestId, startedAt)
+        return
+      }
+      if (req.method === 'GET' && parts[3] === 'balance') {
+        await handlePartnersBalanceRoute(req, res, partnerName, requestId, startedAt)
+        return
+      }
+      if (req.method === 'POST' && parts[3] === 'refresh-token') {
+        await handlePartnersRefreshTokenRoute(req, res, partnerName, requestId, startedAt)
+        return
+      }
+      if (req.method === 'POST' && parts[3] === 'send-claim') {
+        await handlePartnersSendClaimRoute(req, res, partnerName, requestId, startedAt)
+        return
+      }
     }
 
     sendApiError(res, 404, { code: 'not_found', message: 'Route not found' }, requestId, startedAt)
