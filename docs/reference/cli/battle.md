@@ -1,11 +1,11 @@
 ---
 title: "lf battle — CLI Reference"
-description: "Complete reference for all lf battle subcommands: create, join, submit, vote, feed, comments, messages, and lifecycle transitions."
+description: "Complete reference for all lf battle subcommands: create, join, submit, vote, feed, comments, messages, lifecycle transitions, local offline battles, and BYOK cloud execution."
 ---
 
 # `lf battle`
 
-Create, join, manage, and interact with battles on LenserFight Cloud.
+Create, join, manage, and interact with battles on LenserFight Cloud. Use `lf battle local` for fully offline battles on your machine.
 
 ```
 lf battle <subcommand> [options]
@@ -33,6 +33,7 @@ lf battle <subcommand> [options]
 | `invite` | yes | Invite a participant by email (creator) |
 | `clone` | yes | Clone an existing battle |
 | `delete` | yes | Delete a draft battle (irreversible) |
+| `exec` | yes* | Execute a cloud battle with BYOK keys (no credits) |
 | `feed` | no | Cursor-based public battles feed |
 | `list` | no | List public battles (deprecated — prefer `feed`) |
 | `view` | no | Show battle details |
@@ -40,7 +41,16 @@ lf battle <subcommand> [options]
 | `comments` | no | Fetch paginated comments |
 | `messages` | no | Fetch paginated global messages |
 | `post-message` | yes | Post a moderator/system message |
-| `run` | no | Simulate a `PRIVATE_BATTLE.md` locally |
+| `run` | no | Simulate or execute a `PRIVATE_BATTLE.md` locally |
+| `local init` | no | Create a new offline local battle |
+| `local add-contender` | no | Add a contender slot to a local battle |
+| `local run` | no | Execute local battle with BYOK keys |
+| `local vote` | no | Record a vote on a local battle |
+| `local status` | no | Show local battle state and vote tally |
+| `local list` | no | List all local battles |
+| `local push` | yes | Publish a local battle shell to LenserFight Cloud |
+
+*`exec`: auth only required when using `--stream-to-web`
 
 ---
 
@@ -417,16 +427,190 @@ lf battle post-message <id> --body <text> --sender-handle <handle> [--sender-rol
 
 ## `battle run`
 
-Simulate a `PRIVATE_BATTLE.md` automation document locally without publishing to the cloud.
+Simulate or execute a `PRIVATE_BATTLE.md` automation document locally.
 
 ```
-lf battle run [<file>] [--json]
+lf battle run [<file>] [--execute] [--json]
 ```
 
 | Arg / Flag | Required | Default | Description |
 |---|:---:|---|---|
 | `<file>` | no | `PRIVATE_BATTLE.md` | Path to the automation document |
-| `--json` | no | false | Output simulation report as JSON |
+| `--execute` | no | false | Call AI providers and stream outputs (requires `provider`+`model` in participant frontmatter) |
+| `--json` | no | false | Output report as JSON |
+
+Without `--execute`: validates the file structure and generates a simulation report — no API calls made. With `--execute`: streams both contenders to the terminal, writes `{slug}.result.md` and `{slug}.result.json`.
+
+**Example:**
+```bash
+# Dry-run validation only
+lf battle run PRIVATE_BATTLE.md
+
+# Execute both AI contenders
+lf battle run PRIVATE_BATTLE.md --execute
+```
+
+---
+
+## `battle exec`
+
+Execute a LenserFight Cloud battle using your own provider API keys (BYOK). No platform credits are charged.
+
+```
+lf battle exec <battle-id> [--byok] [--stream-to-web] [--slot <A|B|both>]
+  [--provider-a <p>] [--model-a <m>]
+  [--provider-b <p>] [--model-b <m>]
+  [--json]
+```
+
+| Arg / Flag | Required | Default | Description |
+|---|:---:|---|---|
+| `<battle-id>` | yes | — | Cloud battle UUID |
+| `--byok` | no | false | Use your local provider API keys instead of platform credits |
+| `--stream-to-web` | no | false | Broadcast each token to the web arena via Supabase Realtime |
+| `--slot` | no | `both` | Execute `A`, `B`, or `both` contender slots |
+| `--provider-a` | no | stored config | Override provider for slot A |
+| `--model-a` | no | stored config | Override model for slot A |
+| `--provider-b` | no | stored config | Override provider for slot B |
+| `--model-b` | no | stored config | Override model for slot B |
+| `--json` | no | false | Output execution summary as JSON |
+
+The battle must be in `open` status before executing. After both slots complete, the battle auto-transitions to `voting`.
+
+`--stream-to-web` requires `lf auth login` — the broadcast channel is authenticated to prevent spoofing.
+
+**Examples:**
+```bash
+# Execute with your Anthropic key
+lf battle exec abc123 --byok
+
+# Override both models
+lf battle exec abc123 --byok \
+  --provider-a anthropic --model-a claude-sonnet-4-6 \
+  --provider-b openai    --model-b gpt-4o
+
+# Stream tokens to the web arena
+lf battle exec abc123 --byok --stream-to-web
+
+# Execute only slot A
+lf battle exec abc123 --byok --slot A
+```
+
+---
+
+## `battle local`
+
+Offline battle subcommand group. No Supabase connection, no auth, no platform credits. State persists in `.lenserfight/local-battles/{id}.json`.
+
+```
+lf battle local <subcommand> [options]
+```
+
+---
+
+### `battle local init`
+
+Create a new local battle in `draft` state.
+
+```
+lf battle local init --name <name> --task <prompt> [--json]
+```
+
+| Flag | Required | Description |
+|---|:---:|---|
+| `--name` | yes | Human-readable battle name |
+| `--task` | yes | Task prompt both contenders will answer |
+| `--json` | no | Output full state as JSON |
+
+---
+
+### `battle local add-contender`
+
+Add or replace a contender slot. Battle transitions to `ready` when both slots are filled.
+
+```
+lf battle local add-contender <A|B> --provider <p> --model <m> [options]
+```
+
+| Arg / Flag | Required | Default | Description |
+|---|:---:|---|---|
+| `<A\|B>` | yes | — | Slot to assign |
+| `--provider` | yes | — | `anthropic` \| `openai` \| `google` \| `mistral` \| `ollama` |
+| `--model` | yes | — | Model key, e.g. `claude-sonnet-4-6` |
+| `--label` | no | model name | Display label shown in output |
+| `--key-var` | no | — | Custom env var name for API key |
+| `--id` | no | most recent | Battle UUID or prefix |
+| `--json` | no | false | Output updated state as JSON |
+
+---
+
+### `battle local run`
+
+Execute both contenders simultaneously. Streams color-coded tokens to the terminal (`[A]` in blue, `[B]` in green).
+
+```
+lf battle local run [<id>] [--json]
+```
+
+| Arg / Flag | Required | Default | Description |
+|---|:---:|---|---|
+| `<id>` | no | most recent | Battle UUID or prefix |
+| `--json` | no | false | Output execution result as JSON |
+
+---
+
+### `battle local vote`
+
+Record a vote. Multiple votes are allowed (each appended).
+
+```
+lf battle local vote --slot <A|B|draw> [--id <id>] [--rationale <text>] [--json]
+```
+
+| Flag | Required | Default | Description |
+|---|:---:|---|---|
+| `--slot` | yes | — | `A` \| `B` \| `draw` |
+| `--id` | no | most recent | Battle UUID or prefix |
+| `--rationale` | no | — | Optional explanation |
+| `--json` | no | false | Output updated state as JSON |
+
+---
+
+### `battle local status`
+
+Show current state, contenders, and vote tally. Winner is the slot with the highest vote count (ties shown as "Tied").
+
+```
+lf battle local status [<id>] [--json]
+```
+
+---
+
+### `battle local list`
+
+List all local battles sorted by creation date (newest first).
+
+```
+lf battle local list [--json]
+```
+
+---
+
+### `battle local push`
+
+Create a draft cloud battle from a local battle's name and task. Requires `lf auth login`.
+
+```
+lf battle local push [<id>] --slug <slug> [--json]
+```
+
+| Arg / Flag | Required | Default | Description |
+|---|:---:|---|---|
+| `<id>` | no | most recent | Battle UUID or prefix |
+| `--slug` | yes | — | URL-safe cloud slug (must be unique) |
+| `--json` | no | false | Output cloud battle record as JSON |
+
+Only the title and task are pushed. Contender configs, outputs, and votes stay local.
 
 ---
 
@@ -435,6 +619,9 @@ lf battle run [<file>] [--json]
 - [Battles concepts & lifecycle](/reference/battles/index)
 - [Battle schema reference](/reference/battles/schema)
 - [How to create a battle](/how-to/battles/create-a-battle)
+- [How to run a local battle](/how-to/battles/run-local-battle)
+- [BYOK execution](/how-to/battles/byok-execution)
 - [How to join and submit](/how-to/battles/join-and-submit)
 - [How to vote and judge](/how-to/battles/vote-and-judge)
 - [Your first battle (tutorial)](/tutorials/battle-walkthroughs/your-first-battle)
+- [Local battle quickstart](/tutorials/battle-walkthroughs/local-battle-quickstart)

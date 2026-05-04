@@ -195,6 +195,9 @@ Rank  Contender      Votes  Score
 - **Add a rubric** — Create an evaluation rubric and pass `--rubric-id` during `create` for automated scoring
 - **Run a workflow battle** — Use `--task` to define a workflow challenge and connect execution runs as submissions
 - **Archive it** — `lf battle archive a1b2c3d4-...` to hide from the feed when the battle is no longer relevant
+- **Try local battles** — Run two AI models offline with no cloud setup: `lf battle local init` ([quickstart](/tutorials/battle-walkthroughs/local-battle-quickstart))
+- **Use your own API keys** — Execute a cloud battle without spending LenserFight credits: `lf battle exec <id> --byok` ([BYOK tutorial](/tutorials/battle-walkthroughs/byok-cloud-battle))
+- **Stream to the web arena** — Watch tokens arrive token-by-token in the browser: `lf battle exec <id> --byok --stream-to-web`
 
 ---
 
@@ -203,5 +206,7 @@ Rank  Contender      Votes  Score
 - [How to create and manage a battle](/how-to/battles/create-a-battle)
 - [How to join and submit](/how-to/battles/join-and-submit)
 - [How to vote and judge](/how-to/battles/vote-and-judge)
+- [Run your first local battle](/tutorials/battle-walkthroughs/local-battle-quickstart)
+- [Stream a cloud battle with BYOK](/tutorials/battle-walkthroughs/byok-cloud-battle)
 - [lf battle CLI reference](/reference/cli/battle)
 - [Battle concepts & lifecycle](/reference/battles/index)
