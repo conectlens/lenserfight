@@ -181,6 +181,7 @@ export default defineConfig({
               { text: 'Yeni Başlayanlar İçin', link: '/tr/tutorials/beginner-walkthroughs/what-is-lenserfight' },
               { text: 'Rehberler', link: '/tr/tutorials/walkthroughs/using-the-web-app' },
               { text: 'Agentlar ve Otomasyon', link: '/tr/tutorials/agent-walkthroughs/create-your-first-agent' },
+              { text: 'Savaş Rehberleri', link: '/tr/tutorials/battle-walkthroughs/your-first-battle' },
             ],
           },
           {
@@ -196,6 +197,7 @@ export default defineConfig({
             text: 'Nasıl Yapılır',
             items: [
               { text: 'Entegrasyonlar', link: '/tr/how-to/integrations/index' },
+              { text: 'Savaş Rehberleri', link: '/tr/how-to/battles/create-a-battle' },
               { text: 'Katkıda Bulunanlar', link: '/tr/how-to/contributors/faq' },
             ],
           },
@@ -203,6 +205,7 @@ export default defineConfig({
             text: 'Referans',
             items: [
               { text: 'CLI', link: '/tr/reference/cli/index' },
+              { text: 'Savaşlar', link: '/tr/reference/battles/index' },
               { text: 'Platform ve API', link: '/tr/reference/platform-api/api-overview' },
               { text: 'Veritabanı', link: '/tr/reference/database/schema-overview' },
             ],
@@ -268,6 +271,21 @@ export default defineConfig({
                 { text: 'XP ve İtibar Kazanmak', link: '/tr/tutorials/agent-walkthroughs/earning-xp' },
               ],
             },
+            {
+              text: 'Savaş Rehberleri',
+              collapsed: false,
+              items: [
+                { text: 'İlk Savaşınız', link: '/tr/tutorials/battle-walkthroughs/your-first-battle' },
+              ],
+            },
+          ],
+          '/tr/tutorials/battle-walkthroughs/': [
+            {
+              text: 'Savaş Rehberleri',
+              items: [
+                { text: 'İlk Savaşınız', link: '/tr/tutorials/battle-walkthroughs/your-first-battle' },
+              ],
+            },
           ],
           '/tr/tutorials/agent-walkthroughs/': [
             {
@@ -326,7 +344,18 @@ export default defineConfig({
               text: 'Nasıl Yapılır',
               items: [
                 { text: 'Entegrasyonlar', link: '/tr/how-to/integrations/index' },
+                { text: 'Savaş Rehberleri', link: '/tr/how-to/battles/create-a-battle' },
                 { text: 'Katkıda Bulunanlar', link: '/tr/how-to/contributors/faq' },
+              ],
+            },
+          ],
+          '/tr/how-to/battles/': [
+            {
+              text: 'Savaş Rehberleri',
+              items: [
+                { text: 'Savaş Oluşturun', link: '/tr/how-to/battles/create-a-battle' },
+                { text: 'Katılın ve Gönderin', link: '/tr/how-to/battles/join-and-submit' },
+                { text: 'Oy Verin ve Görün', link: '/tr/how-to/battles/vote-and-judge' },
               ],
             },
           ],
@@ -357,6 +386,7 @@ export default defineConfig({
               text: 'Referans',
               items: [
                 { text: 'CLI', link: '/tr/reference/cli/index' },
+                { text: 'Savaşlar', link: '/tr/reference/battles/index' },
                 { text: 'Platform ve API', link: '/tr/reference/platform-api/api-overview' },
                 { text: 'Veritabanı', link: '/tr/reference/database/schema-overview' },
               ],
@@ -371,6 +401,15 @@ export default defineConfig({
                 { text: 'Lens Keşfi', link: '/tr/reference/cli/lenses-discovery' },
                 { text: 'Bağlantı ve Konnektörler', link: '/tr/reference/cli/connectors' },
                 { text: 'Topluluklar', link: '/tr/reference/cli/communities' },
+                { text: 'Savaş Komutları', link: '/tr/reference/cli/battle' },
+              ],
+            },
+          ],
+          '/tr/reference/battles/': [
+            {
+              text: 'Savaşlar Referansı',
+              items: [
+                { text: 'Kavramlar ve Yaşam Döngüsü', link: '/tr/reference/battles/index' },
               ],
             },
           ],
@@ -578,6 +617,7 @@ export default defineConfig({
           { text: 'Beginner Walkthroughs', link: '/tutorials/beginner-walkthroughs/what-is-lenserfight' },
           { text: 'Walkthroughs', link: '/tutorials/walkthroughs/using-the-web-app' },
           { text: 'Agents & Automation', link: '/tutorials/agent-walkthroughs/create-your-first-agent' },
+          { text: 'Battle Walkthroughs', link: '/tutorials/battle-walkthroughs/your-first-battle' },
         ],
       },
       {
@@ -595,6 +635,7 @@ export default defineConfig({
         items: [
           { text: 'Integrations', link: '/how-to/integrations/index' },
           { text: 'Workflow Guides', link: '/how-to/workflows/build-a-lens-chain' },
+          { text: 'Battle Guides', link: '/how-to/battles/create-a-battle' },
           { text: 'Contributors', link: '/how-to/contributors/contributing' },
         ],
       },
@@ -602,6 +643,7 @@ export default defineConfig({
         text: 'Reference',
         items: [
           { text: 'CLI', link: '/reference/cli/index' },
+          { text: 'Battles', link: '/reference/battles/index' },
           { text: 'Community API', link: '/reference/community-api/index' },
           { text: 'Platform API', link: '/reference/platform-api/api-overview' },
           { text: 'Database', link: '/reference/database/schema-overview' },
@@ -699,6 +741,21 @@ export default defineConfig({
             { text: 'Earning XP & Reputation', link: '/tutorials/agent-walkthroughs/earning-xp' },
           ],
         },
+        {
+          text: 'Battle Walkthroughs',
+          collapsed: false,
+          items: [
+            { text: 'Your First Battle', link: '/tutorials/battle-walkthroughs/your-first-battle' },
+          ],
+        },
+      ],
+      '/tutorials/battle-walkthroughs/': [
+        {
+          text: 'Battle Walkthroughs',
+          items: [
+            { text: 'Your First Battle', link: '/tutorials/battle-walkthroughs/your-first-battle' },
+          ],
+        },
       ],
       '/tutorials/getting-started/': [
         {
@@ -760,7 +817,18 @@ export default defineConfig({
           items: [
             { text: 'Integrations', link: '/how-to/integrations/index' },
             { text: 'Workflow Guides', link: '/how-to/workflows/build-a-lens-chain' },
+            { text: 'Battle Guides', link: '/how-to/battles/create-a-battle' },
             { text: 'Contributors & Maintainers', link: '/how-to/contributors/contributing' },
+          ],
+        },
+      ],
+      '/how-to/battles/': [
+        {
+          text: 'Battle Guides',
+          items: [
+            { text: 'Create, Publish & Manage', link: '/how-to/battles/create-a-battle' },
+            { text: 'Join and Submit', link: '/how-to/battles/join-and-submit' },
+            { text: 'Vote and Judge', link: '/how-to/battles/vote-and-judge' },
           ],
         },
       ],
@@ -812,6 +880,7 @@ export default defineConfig({
           items: [
             { text: 'Community API', link: '/reference/community-api/index' },
             { text: 'CLI', link: '/reference/cli/index' },
+            { text: 'Battles', link: '/reference/battles/index' },
             { text: 'Connectors (alpha)', link: '/reference/connectors/index' },
             { text: 'Automation Objects', link: '/reference/automation/markdown-objects' },
             { text: 'Execution Platform', link: '/reference/platform-api/api-overview' },
@@ -921,6 +990,21 @@ export default defineConfig({
           text: 'Publishing',
           items: [
             { text: 'Publish, Rubric & Template', link: '/reference/cli/publish' },
+          ],
+        },
+        {
+          text: 'Battles',
+          items: [
+            { text: 'Battle Commands', link: '/reference/cli/battle' },
+          ],
+        },
+      ],
+      '/reference/battles/': [
+        {
+          text: 'Battles Reference',
+          items: [
+            { text: 'Concepts & Lifecycle', link: '/reference/battles/index' },
+            { text: 'Schema Reference', link: '/reference/battles/schema' },
           ],
         },
       ],

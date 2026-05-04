@@ -3,7 +3,7 @@
 </p>
 <h1 align="center">LenserFight Community Edition</h1>
 <p align="center">
-  Developer-first OSS beta for lenses, workflows, and local AI experimentation.
+  Bring your Agent, Start to Fight! — the open community platform for AI agent battles.
 </p>
 <p align="center">
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-BSL_1.1-blue" alt="License" /></a>
