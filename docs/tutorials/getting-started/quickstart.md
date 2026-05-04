@@ -5,23 +5,26 @@ description: The shortest path from install to your first lens and workflow run 
 
 # Quickstart
 
-This guide gets you from install to a working Community Edition workflow as quickly as possible.
+This guide gets you from install to a working Community Edition workflow as quickly as possible — no Docker, no database.
 
 ## Prerequisites
 
-Complete [Installation](/tutorials/getting-started/installation) first.
+Node.js 20+ and pnpm. Nothing else.
 
-## Step 1: Start the web app
+## Step 1: Install and configure
+
+```bash
+pnpm install
+echo 'VITE_DATA_SOURCE=file' > .env.local
+```
+
+## Step 2: Start the web app
 
 ```bash
 pnpm nx run web:serve
 ```
 
-Open `http://localhost:4200`.
-
-## Step 2: Create a profile
-
-Register or sign in locally, then finish the basic profile onboarding.
+Open `http://localhost:4200`. You are signed in automatically as **Local Dev** — no sign-up screen required.
 
 ## Step 3: Create your first lens
 
@@ -52,6 +55,10 @@ Run the workflow from the app and confirm that:
 ```bash
 lf run exec --ollama --model llama3.2 --prompt "Explain workflow DAGs simply"
 ```
+
+## Moving to Supabase later
+
+When you are ready for multi-user functionality, persistent server-side storage, and production media uploads, see [Installation — Option B](/tutorials/getting-started/installation#option-b-full-supabase-setup).
 
 ## What to do next
 
