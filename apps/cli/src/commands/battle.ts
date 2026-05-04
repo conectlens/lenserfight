@@ -680,6 +680,547 @@ const deleteBattle = defineCommand({
 });
 
 // ---------------------------------------------------------------------------
+// battle create-from-template
+// ---------------------------------------------------------------------------
+const createFromTemplate = defineCommand({
+  meta: {
+    name: 'create-from-template',
+    description: 'Create a new draft battle from an existing template.',
+  },
+  args: {
+    'template-id': {
+      type: 'positional',
+      description: 'Template UUID',
+      required: true,
+    },
+    title: {
+      type: 'string',
+      description: 'Title for the new battle',
+      required: true,
+    },
+    slug: {
+      type: 'string',
+      description: 'URL-safe slug for the new battle',
+      required: true,
+    },
+    json: {
+      type: 'boolean',
+      description: 'Output result as JSON',
+      default: false,
+    },
+  },
+  async run({ args }) {
+    try {
+      const result = await callRpc<Record<string, unknown>>(
+        'fn_battles_create_from_template',
+        {
+          p_template_id: args['template-id'],
+          p_title: args.title,
+          p_slug: args.slug,
+        },
+        { requireAuth: true }
+      );
+
+      if (args.json) {
+        printJson(result);
+        return;
+      }
+
+      consola.success('Battle created from template.');
+      consola.info('ID:     %s', result?.['id']);
+      consola.info('Title:  %s', result?.['title'] ?? args.title);
+      consola.info('Status: %s', result?.['status']);
+    } catch (err) {
+      handleError(err);
+    }
+  },
+});
+
+// ---------------------------------------------------------------------------
+// battle vote
+// ---------------------------------------------------------------------------
+const vote = defineCommand({
+  meta: {
+    name: 'vote',
+    description: 'Submit a vote for a battle in voting phase.',
+  },
+  args: {
+    id: {
+      type: 'positional',
+      description: 'Battle UUID',
+      required: true,
+    },
+    contender: {
+      type: 'string',
+      description: 'Contender ID you are voting for',
+      required: true,
+    },
+    value: {
+      type: 'string',
+      description: "Vote value: 'contender_a' | 'contender_b' | 'draw'",
+      required: true,
+    },
+    draw: {
+      type: 'boolean',
+      description: 'Mark this vote as a draw',
+      default: false,
+    },
+    rationale: {
+      type: 'string',
+      description: 'Optional rationale for your vote',
+      default: '',
+    },
+    json: {
+      type: 'boolean',
+      description: 'Output result as JSON',
+      default: false,
+    },
+  },
+  async run({ args }) {
+    const allowedValues = ['contender_a', 'contender_b', 'draw'];
+    if (!allowedValues.includes(args.value)) {
+      consola.error(
+        "Invalid --value. Use one of: 'contender_a', 'contender_b', 'draw'"
+      );
+      process.exitCode = 1;
+      return;
+    }
+
+    try {
+      const result = await callRpc<Record<string, unknown>>(
+        'fn_submit_vote',
+        {
+          p_battle_id: args.id,
+          p_voted_contender_id: args.contender,
+          p_vote_value: args.value,
+          p_is_draw: args.draw,
+          p_rationale: args.rationale || null,
+        },
+        { requireAuth: true }
+      );
+
+      if (args.json) {
+        printJson(result ?? { battle_id: args.id, voted: true });
+        return;
+      }
+
+      consola.success('Vote submitted for battle %s.', args.id);
+    } catch (err) {
+      handleError(err);
+    }
+  },
+});
+
+// ---------------------------------------------------------------------------
+// battle close-voting
+// ---------------------------------------------------------------------------
+const closeVoting = defineCommand({
+  meta: {
+    name: 'close-voting',
+    description:
+      'Close the voting phase and transition battle to scoring (creator only).',
+  },
+  args: {
+    id: {
+      type: 'positional',
+      description: 'Battle UUID',
+      required: true,
+    },
+  },
+  async run({ args }) {
+    try {
+      await callRpc(
+        'fn_battle_close_voting',
+        { p_battle_id: args.id },
+        { requireAuth: true }
+      );
+      consola.success(
+        'Voting closed for battle %s. Now in scoring phase.',
+        args.id
+      );
+      consola.info('Next: lf battle finalize %s', args.id);
+    } catch (err) {
+      handleError(err);
+    }
+  },
+});
+
+// ---------------------------------------------------------------------------
+// battle close
+// ---------------------------------------------------------------------------
+const closeBattle = defineCommand({
+  meta: {
+    name: 'close',
+    description:
+      'Close a battle (alternate path — transitions to closed state).',
+  },
+  args: {
+    id: {
+      type: 'positional',
+      description: 'Battle UUID',
+      required: true,
+    },
+  },
+  async run({ args }) {
+    try {
+      await callRpc(
+        'fn_battles_close',
+        { p_battle_id: args.id },
+        { requireAuth: true }
+      );
+      consola.success('Battle %s closed.', args.id);
+    } catch (err) {
+      handleError(err);
+    }
+  },
+});
+
+// ---------------------------------------------------------------------------
+// battle archive
+// ---------------------------------------------------------------------------
+const archive = defineCommand({
+  meta: {
+    name: 'archive',
+    description: 'Archive a battle — removes it from the public feed.',
+  },
+  args: {
+    id: {
+      type: 'positional',
+      description: 'Battle UUID',
+      required: true,
+    },
+  },
+  async run({ args }) {
+    try {
+      await callRpc(
+        'fn_battles_archive',
+        { p_battle_id: args.id },
+        { requireAuth: true }
+      );
+      consola.success('Battle %s archived.', args.id);
+    } catch (err) {
+      handleError(err);
+    }
+  },
+});
+
+// ---------------------------------------------------------------------------
+// battle retract
+// ---------------------------------------------------------------------------
+const retract = defineCommand({
+  meta: {
+    name: 'retract',
+    description: 'Retract a published battle — reverts it to draft.',
+  },
+  args: {
+    id: {
+      type: 'positional',
+      description: 'Battle UUID',
+      required: true,
+    },
+  },
+  async run({ args }) {
+    try {
+      await callRpc(
+        'fn_battles_retract',
+        { p_battle_id: args.id },
+        { requireAuth: true }
+      );
+      consola.success(
+        'Battle %s retracted and reverted to draft.',
+        args.id
+      );
+    } catch (err) {
+      handleError(err);
+    }
+  },
+});
+
+// ---------------------------------------------------------------------------
+// battle comments
+// ---------------------------------------------------------------------------
+const comments = defineCommand({
+  meta: {
+    name: 'comments',
+    description: 'Fetch paginated comments for a battle.',
+  },
+  args: {
+    id: {
+      type: 'positional',
+      description: 'Battle UUID',
+      required: true,
+    },
+    limit: {
+      type: 'string',
+      description: 'Maximum number of comments to return',
+      default: '20',
+    },
+    'before-ts': {
+      type: 'string',
+      description:
+        'Pagination cursor: return comments before this ISO timestamp',
+      default: '',
+    },
+    'before-id': {
+      type: 'string',
+      description:
+        'Pagination cursor: return comments before this comment UUID',
+      default: '',
+    },
+    json: {
+      type: 'boolean',
+      description: 'Output as JSON',
+      default: false,
+    },
+  },
+  async run({ args }) {
+    try {
+      const rows = await callRpc<Array<Record<string, unknown>>>(
+        'fn_get_battle_comments',
+        {
+          p_battle_id: args.id,
+          p_limit: parseInt(args.limit, 10),
+          p_before_ts: args['before-ts'] || null,
+          p_before_id: args['before-id'] || null,
+        }
+      );
+
+      if (!Array.isArray(rows) || rows.length === 0) {
+        consola.info('No comments found for battle %s.', args.id);
+        return;
+      }
+
+      if (args.json) {
+        printJson(rows);
+        return;
+      }
+
+      printTable(
+        ['ID', 'Author', 'Body', 'Created At'],
+        rows.map((r) => [
+          String(r['id'] ?? '').slice(0, 8) + '…',
+          String(r['author_handle'] ?? r['handle'] ?? '—'),
+          truncate(String(r['body'] ?? ''), 60),
+          String(r['created_at'] ?? ''),
+        ])
+      );
+      consola.info('%d comment(s) shown.', rows.length);
+    } catch (err) {
+      handleError(err);
+    }
+  },
+});
+
+// ---------------------------------------------------------------------------
+// battle messages
+// ---------------------------------------------------------------------------
+const messages = defineCommand({
+  meta: {
+    name: 'messages',
+    description: 'Fetch paginated global messages for a battle.',
+  },
+  args: {
+    id: {
+      type: 'positional',
+      description: 'Battle UUID',
+      required: true,
+    },
+    limit: {
+      type: 'string',
+      description: 'Maximum number of messages to return',
+      default: '20',
+    },
+    'before-ts': {
+      type: 'string',
+      description:
+        'Pagination cursor: return messages before this ISO timestamp',
+      default: '',
+    },
+    'before-id': {
+      type: 'string',
+      description:
+        'Pagination cursor: return messages before this message UUID',
+      default: '',
+    },
+    json: {
+      type: 'boolean',
+      description: 'Output as JSON',
+      default: false,
+    },
+  },
+  async run({ args }) {
+    try {
+      const rows = await callRpc<Array<Record<string, unknown>>>(
+        'fn_get_global_messages',
+        {
+          p_battle_id: args.id,
+          p_limit: parseInt(args.limit, 10),
+          p_before_ts: args['before-ts'] || null,
+          p_before_id: args['before-id'] || null,
+        }
+      );
+
+      if (!Array.isArray(rows) || rows.length === 0) {
+        consola.info('No messages found for battle %s.', args.id);
+        return;
+      }
+
+      if (args.json) {
+        printJson(rows);
+        return;
+      }
+
+      printTable(
+        ['ID', 'Sender', 'Role', 'Body', 'Sent At'],
+        rows.map((r) => [
+          String(r['id'] ?? '').slice(0, 8) + '…',
+          String(r['sender_handle'] ?? '—'),
+          String(r['sender_role'] ?? '—'),
+          truncate(String(r['body'] ?? ''), 48),
+          String(r['created_at'] ?? ''),
+        ])
+      );
+      consola.info('%d message(s) shown.', rows.length);
+    } catch (err) {
+      handleError(err);
+    }
+  },
+});
+
+// ---------------------------------------------------------------------------
+// battle post-message
+// ---------------------------------------------------------------------------
+const postMessage = defineCommand({
+  meta: {
+    name: 'post-message',
+    description: 'Post a global moderator/system message to a battle.',
+  },
+  args: {
+    id: {
+      type: 'positional',
+      description: 'Battle UUID',
+      required: true,
+    },
+    body: {
+      type: 'string',
+      description: 'Message body text',
+      required: true,
+    },
+    'sender-handle': {
+      type: 'string',
+      description: 'Handle of the sender',
+      required: true,
+    },
+    'sender-role': {
+      type: 'string',
+      description: "Sender role: 'moderator' | 'system' | 'creator'",
+      default: 'moderator',
+    },
+  },
+  async run({ args }) {
+    try {
+      await callRpc(
+        'fn_post_global_message',
+        {
+          p_battle_id: args.id,
+          p_body: args.body,
+          p_sender_handle: args['sender-handle'],
+          p_sender_role: args['sender-role'],
+        },
+        { requireAuth: true }
+      );
+      consola.success('Message posted to battle %s.', args.id);
+    } catch (err) {
+      handleError(err);
+    }
+  },
+});
+
+// ---------------------------------------------------------------------------
+// battle feed
+// ---------------------------------------------------------------------------
+const feed = defineCommand({
+  meta: {
+    name: 'feed',
+    description:
+      'Fetch the cursor-based public battles feed (replaces deprecated list).',
+  },
+  args: {
+    status: {
+      type: 'string',
+      description:
+        'Filter by status: draft | open | voting | scoring | published',
+      default: '',
+    },
+    'battle-type': {
+      type: 'string',
+      description: 'Filter by battle type',
+      default: '',
+    },
+    limit: {
+      type: 'string',
+      description: 'Maximum results per page',
+      default: '20',
+    },
+    cursor: {
+      type: 'string',
+      description: 'Pagination cursor returned from previous feed call',
+      default: '',
+    },
+    json: {
+      type: 'boolean',
+      description: 'Output as JSON',
+      default: false,
+    },
+  },
+  async run({ args }) {
+    try {
+      const result = await callRpc<
+        Array<Record<string, unknown>> | Record<string, unknown>
+      >('fn_get_battles_feed', {
+        p_status: args.status || null,
+        p_battle_type: args['battle-type'] || null,
+        p_limit: parseInt(args.limit, 10),
+        p_cursor: args.cursor || null,
+      });
+
+      const battles = Array.isArray(result)
+        ? result
+        : ((result as Record<string, unknown>)?.[
+            'data'
+          ] as Array<Record<string, unknown>> | undefined) ?? [];
+
+      if (battles.length === 0) {
+        consola.info('No battles in feed.');
+        return;
+      }
+
+      if (args.json) {
+        printJson(result);
+        return;
+      }
+
+      printTable(
+        ['ID', 'Title', 'Status', 'Type'],
+        battles.map((b) => [
+          String(b['id'] ?? '').slice(0, 8) + '…',
+          truncate(String(b['title'] ?? ''), 32),
+          String(b['status'] ?? ''),
+          String(b['battle_type'] ?? '—'),
+        ])
+      );
+
+      const next = (result as Record<string, unknown>)?.['next_cursor'];
+      if (next) {
+        consola.info('Next page: lf battle feed --cursor %s', next);
+      }
+    } catch (err) {
+      handleError(err);
+    }
+  },
+});
+
+// ---------------------------------------------------------------------------
 // Root command
 // ---------------------------------------------------------------------------
 export default defineCommand({
@@ -702,5 +1243,15 @@ export default defineCommand({
     invite,
     clone,
     delete: deleteBattle,
+    'create-from-template': createFromTemplate,
+    vote,
+    'close-voting': closeVoting,
+    close: closeBattle,
+    archive,
+    retract,
+    comments,
+    messages,
+    'post-message': postMessage,
+    feed,
   },
 });
