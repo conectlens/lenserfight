@@ -6,8 +6,6 @@ export * from './lib/LanguageSelectBox'
 export { StarBackground } from './lib/StarBackground'
 
 // New apps/land components
-export * from './lib/ArenaView'
-export * from './lib/FightView'
 export * from './lib/AgentPanel'
 export * from './lib/LenserPanel'
 export * from './lib/ActionBar'

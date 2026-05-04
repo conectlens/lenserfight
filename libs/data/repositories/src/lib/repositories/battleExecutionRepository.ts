@@ -1,6 +1,6 @@
 import { supabase } from '@lenserfight/data/supabase'
 
-import type { BattleStatus } from '../repositories/battlesRepository'
+import type { BattleStatus } from './battlesRepository'
 
 // --- Record Types ---
 
@@ -64,9 +64,9 @@ export interface StreamRecordingRecord {
   created_at: string
 }
 
-// --- Service ---
+// --- Repository ---
 
-export const battleExecutionService = {
+export const battleExecutionRepository = {
   // --- Execution Config ---
 
   async getExecutionConfig(
@@ -282,3 +282,7 @@ export const battleExecutionService = {
     return (data ?? []) as StreamRecordingRecord[]
   },
 }
+
+// Back-compat alias so existing imports of `battleExecutionService` keep working
+// without a broad find-and-replace. Remove once all call sites are updated.
+export const battleExecutionService = battleExecutionRepository
