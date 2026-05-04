@@ -249,13 +249,18 @@ const view = defineCommand({
 const run = defineCommand({
   meta: {
     name: 'run',
-    description: 'Simulate a file-first PRIVATE_BATTLE.md locally and emit a report.',
+    description: 'Simulate or execute a PRIVATE_BATTLE.md locally.',
   },
   args: {
     file: {
       type: 'positional',
-      description: 'Path to PRIVATE_BATTLE.md',
-      required: true,
+      description: 'Path to PRIVATE_BATTLE.md (defaults to ./PRIVATE_BATTLE.md)',
+      required: false,
+    },
+    execute: {
+      type: 'boolean',
+      description: 'Actually call AI providers and stream outputs (requires provider/model in participant frontmatter)',
+      default: false,
     },
     json: {
       type: 'boolean',
@@ -264,9 +269,10 @@ const run = defineCommand({
     },
   },
   async run({ args }) {
-    const parsed = parseAutomationDocument(args.file)
+    const filePath = args.file || 'PRIVATE_BATTLE.md'
+    const parsed = parseAutomationDocument(filePath)
     if (!parsed.ok || parsed.kind !== 'private_battle' || !parsed.document) {
-      consola.error('Private battle validation failed for %s', args.file)
+      consola.error('Private battle validation failed for %s', filePath)
       for (const issue of parsed.issues) {
         consola.error('  - %s: %s', issue.path, issue.message)
       }
@@ -276,6 +282,81 @@ const run = defineCommand({
 
     const frontmatter = parsed.document.frontmatter as PrivateBattleFrontmatter
     const participants = (frontmatter.participants ?? []).map((participant) => `${participant.type}:${participant.ref}`)
+
+    // ── Execution mode ───────────────────────────────────────────────────────
+    if (args.execute) {
+      const execParticipants = (frontmatter.participants ?? []).filter(
+        (p) => p.provider && p.model
+      );
+      if (execParticipants.length < 2) {
+        consola.error(
+          'Execution requires at least 2 participants with `provider` and `model` set in frontmatter.'
+        );
+        consola.info('Example frontmatter:');
+        consola.info('  participants:');
+        consola.info('    - type: model');
+        consola.info('      ref: claude');
+        consola.info('      provider: anthropic');
+        consola.info('      model: claude-sonnet-4-6');
+        process.exitCode = 1;
+        return;
+      }
+
+      // Build a local battle state from the frontmatter and run it
+      const { localBattleStore: lbs, localBattleRunner: lbr } = await import('../utils/local-battle-engine');
+      const state = lbs.create(
+        frontmatter.name ?? frontmatter.id ?? 'PRIVATE_BATTLE',
+        String((parsed.document as any).body ?? frontmatter.name ?? 'Complete the task.')
+      );
+
+      // Add up to 2 contenders
+      const [pA, pB] = execParticipants;
+      lbs.addContender(state.id, {
+        slot: 'A',
+        label: pA.ref,
+        provider: pA.provider!,
+        model: pA.model!,
+        keyVar: pA.key_var,
+      });
+      lbs.addContender(state.id, {
+        slot: 'B',
+        label: pB.ref,
+        provider: pB.provider!,
+        model: pB.model!,
+        keyVar: pB.key_var,
+      });
+
+      const loaded = lbs.load(state.id);
+      consola.start('Executing %s…', frontmatter.name ?? frontmatter.id);
+      const RESET = '\x1b[0m', BLUE = '\x1b[34m', GREEN = '\x1b[32m';
+
+      const result = await lbr.run(loaded, (slot, delta) => {
+        const color = slot === 'A' ? BLUE : GREEN;
+        process.stdout.write(`${color}[${slot}]${RESET} ${delta}`);
+      });
+
+      process.stdout.write('\n\n');
+      lbs.markExecuted(state.id, result);
+
+      // Write result files alongside the source file
+      const { writeFileSync: wfs } = require('node:fs') as typeof import('node:fs');
+      const { resolve: res } = require('node:path') as typeof import('node:path');
+      const base = (frontmatter.slug ?? frontmatter.id ?? 'battle').replace(/[^a-z0-9-]/gi, '-').toLowerCase();
+      const resultMd = res(process.cwd(), `${base}.result.md`);
+      const resultJson = res(process.cwd(), `${base}.result.json`);
+      wfs(resultMd, `# ${frontmatter.name ?? base} — Results\n\n## Contender A (${pA.provider}/${pA.model})\n\n${result.A}\n\n---\n\n## Contender B (${pB.provider}/${pB.model})\n\n${result.B}\n`, 'utf-8');
+      wfs(resultJson, JSON.stringify({ ...result, battle: state }, null, 2), 'utf-8');
+
+      if (args.json) { printJson({ ...result, resultMd, resultJson }); return; }
+      consola.success('Execution complete in %dms.', result.durationMs);
+      consola.info('Results: %s', resultMd);
+      consola.info('JSON:    %s', resultJson);
+      consola.info('');
+      consola.info('Vote: lf battle local vote --slot A|B|draw --id %s', state.id.slice(0, 8));
+      return;
+    }
+
+    // ── Simulation-only mode (original behaviour) ────────────────────────────
     const summary = {
       source: {
         kind: 'private_battle',
@@ -304,6 +385,11 @@ const run = defineCommand({
     consola.info('Participants: %d', participants.length)
     consola.info('JSON report: %s', artifacts.jsonPath)
     consola.info('Markdown report: %s', artifacts.reportPath)
+    if (participants.some((_, i) => (frontmatter.participants?.[i]?.provider))) {
+      consola.info('')
+      consola.info('Tip: participants have provider/model set — run with --execute to actually call AI:')
+      consola.info('  lf battle run %s --execute', filePath)
+    }
   },
 })
 
@@ -1221,6 +1307,418 @@ const feed = defineCommand({
 });
 
 // ---------------------------------------------------------------------------
+// battle local — offline dev battle subcommand group
+// ---------------------------------------------------------------------------
+import {
+  localBattleStore,
+  localBattleRunner,
+  type LocalContenderConfig,
+} from '../utils/local-battle-engine';
+
+const localInit = defineCommand({
+  meta: { name: 'init', description: 'Create a new local battle (no cloud required).' },
+  args: {
+    name:  { type: 'string', description: 'Battle name', required: true },
+    task:  { type: 'string', description: 'Task prompt both contenders will answer', required: true },
+    json:  { type: 'boolean', description: 'Output result as JSON', default: false },
+  },
+  async run({ args }) {
+    try {
+      const state = localBattleStore.create(args.name, args.task);
+      if (args.json) { printJson(state); return; }
+      consola.success('Local battle created.');
+      consola.info('ID:   %s', state.id);
+      consola.info('Name: %s', state.name);
+      consola.info('');
+      consola.info('Next steps:');
+      consola.info('  lf battle local add-contender A --provider anthropic --model claude-haiku-4-5');
+      consola.info('  lf battle local add-contender B --provider ollama    --model llama3');
+      consola.info('  lf battle local run %s', state.id.slice(0, 8));
+    } catch (err) { handleError(err); }
+  },
+});
+
+const localAddContender = defineCommand({
+  meta: { name: 'add-contender', description: 'Add or replace a contender slot (A or B).' },
+  args: {
+    slot:     { type: 'positional', description: 'A or B', required: true },
+    provider: { type: 'string',     description: 'Provider: anthropic | openai | google | mistral | ollama', required: true },
+    model:    { type: 'string',     description: 'Model key, e.g. claude-sonnet-4-6', required: true },
+    label:    { type: 'string',     description: 'Display label (defaults to model name)', default: '' },
+    'key-var':{ type: 'string',     description: 'Custom env var for API key override', default: '' },
+    id:       { type: 'string',     description: 'Local battle ID (omit to use most recent)', default: '' },
+    json:     { type: 'boolean',    description: 'Output result as JSON', default: false },
+  },
+  async run({ args }) {
+    const slot = args.slot.toUpperCase() as 'A' | 'B';
+    if (slot !== 'A' && slot !== 'B') {
+      consola.error('Slot must be A or B'); process.exitCode = 1; return;
+    }
+    try {
+      const state = args.id ? localBattleStore.load(args.id) : localBattleStore.list()[0];
+      if (!state) { consola.error('No local battles found. Run `lf battle local init` first.'); process.exitCode = 1; return; }
+      const cfg: LocalContenderConfig = {
+        slot,
+        label: args.label || args.model,
+        provider: args.provider,
+        model: args.model,
+        keyVar: args['key-var'] || undefined,
+      };
+      const updated = localBattleStore.addContender(state.id, cfg);
+      if (args.json) { printJson(updated); return; }
+      consola.success('Contender %s set: %s/%s', slot, args.provider, args.model);
+      consola.info('Status: %s', updated.status);
+    } catch (err) { handleError(err); }
+  },
+});
+
+const localRun = defineCommand({
+  meta: { name: 'run', description: 'Execute both contenders locally using BYOK keys.' },
+  args: {
+    id:   { type: 'string',  description: 'Local battle ID (omit to use most recent)', default: '' },
+    json: { type: 'boolean', description: 'Output result as JSON', default: false },
+  },
+  async run({ args }) {
+    try {
+      const state = args.id ? localBattleStore.resolve(args.id) : localBattleStore.list()[0];
+      if (!state) { consola.error('No local battles found. Run `lf battle local init` first.'); process.exitCode = 1; return; }
+      if (state.status === 'draft') {
+        consola.error('Add both contenders first:');
+        consola.info('  lf battle local add-contender A --provider <p> --model <m>');
+        consola.info('  lf battle local add-contender B --provider <p> --model <m>');
+        process.exitCode = 1; return;
+      }
+
+      const cA = state.contenders.find((c) => c.slot === 'A')!;
+      const cB = state.contenders.find((c) => c.slot === 'B')!;
+      consola.start('Running "%s"', state.name);
+      consola.info('A: %s/%s  vs  B: %s/%s', cA.provider, cA.model, cB.provider, cB.model);
+      consola.info('Task: %s', state.task);
+      process.stdout.write('\n');
+
+      const RESET = '\x1b[0m', BLUE = '\x1b[34m', GREEN = '\x1b[32m';
+      const bufA: string[] = [], bufB: string[] = [];
+
+      const result = await localBattleRunner.run(
+        state,
+        (slot, delta) => {
+          if (slot === 'A') { bufA.push(delta); process.stdout.write(`${BLUE}[A]${RESET} ${delta}`); }
+          else              { bufB.push(delta); process.stdout.write(`${GREEN}[B]${RESET} ${delta}`); }
+        },
+      );
+
+      process.stdout.write('\n\n');
+      const updated = localBattleStore.markExecuted(state.id, result);
+
+      if (args.json) { printJson(updated); return; }
+
+      consola.success('Execution complete in %dms.', result.durationMs);
+      consola.info('Tokens — A: %d  B: %d', result.tokensA, result.tokensB);
+      consola.info('');
+      consola.info('Next: lf battle local vote %s --slot A|B|draw', state.id.slice(0, 8));
+    } catch (err) { handleError(err); }
+  },
+});
+
+const localVote = defineCommand({
+  meta: { name: 'vote', description: 'Cast a vote on a locally executed battle.' },
+  args: {
+    slot:      { type: 'string',  description: 'A | B | draw', required: true },
+    id:        { type: 'string',  description: 'Local battle ID (omit to use most recent)', default: '' },
+    rationale: { type: 'string',  description: 'Optional rationale', default: '' },
+    json:      { type: 'boolean', description: 'Output result as JSON', default: false },
+  },
+  async run({ args }) {
+    const slot = args.slot.toLowerCase() as 'a' | 'b' | 'draw';
+    if (!['a', 'b', 'draw'].includes(slot)) {
+      consola.error('--slot must be A, B, or draw'); process.exitCode = 1; return;
+    }
+    try {
+      const state = args.id ? localBattleStore.resolve(args.id) : localBattleStore.list()[0];
+      if (!state) { consola.error('No local battles found.'); process.exitCode = 1; return; }
+      if (state.status !== 'executed' && state.status !== 'voted') {
+        consola.error('Run the battle first: lf battle local run'); process.exitCode = 1; return;
+      }
+      const vote = {
+        slot: (slot === 'a' ? 'A' : slot === 'b' ? 'B' : 'draw') as 'A' | 'B' | 'draw',
+        rationale: args.rationale || undefined,
+        votedAt: new Date().toISOString(),
+      };
+      const updated = localBattleStore.recordVote(state.id, vote);
+      if (args.json) { printJson(updated); return; }
+      consola.success('Vote recorded: %s', vote.slot);
+      if (args.rationale) consola.info('Rationale: %s', args.rationale);
+    } catch (err) { handleError(err); }
+  },
+});
+
+const localStatus = defineCommand({
+  meta: { name: 'status', description: 'Show the current state and vote tally of a local battle.' },
+  args: {
+    id:   { type: 'string',  description: 'Local battle ID (omit to use most recent)', default: '' },
+    json: { type: 'boolean', description: 'Output as JSON', default: false },
+  },
+  async run({ args }) {
+    try {
+      const state = args.id ? localBattleStore.resolve(args.id) : localBattleStore.list()[0];
+      if (!state) { consola.info('No local battles yet. Run `lf battle local init`.'); return; }
+      if (args.json) { printJson(state); return; }
+
+      consola.log('');
+      consola.log('  Name:   %s', state.name);
+      consola.log('  ID:     %s', state.id);
+      consola.log('  Status: %s', state.status);
+      consola.log('  Task:   %s', state.task);
+
+      if (state.contenders.length) {
+        consola.log('');
+        for (const c of state.contenders) {
+          consola.log('  Contender %s: %s/%s', c.slot, c.provider, c.model);
+        }
+      }
+
+      if (state.votes.length) {
+        const tally = { A: 0, B: 0, draw: 0 };
+        for (const v of state.votes) tally[v.slot]++;
+        consola.log('');
+        consola.log('  Votes — A: %d  B: %d  Draw: %d', tally.A, tally.B, tally.draw);
+        const winner = tally.A > tally.B ? 'A' : tally.B > tally.A ? 'B' : tally.draw > 0 ? 'Draw' : 'Tied';
+        consola.log('  Winner: %s', winner);
+      }
+      consola.log('');
+    } catch (err) { handleError(err); }
+  },
+});
+
+const localList = defineCommand({
+  meta: { name: 'list', description: 'List all local battles.' },
+  args: {
+    json: { type: 'boolean', description: 'Output as JSON', default: false },
+  },
+  async run({ args }) {
+    try {
+      const all = localBattleStore.list();
+      if (!all.length) { consola.info('No local battles. Run `lf battle local init` to create one.'); return; }
+      if (args.json) { printJson(all); return; }
+      printTable(
+        ['ID', 'Name', 'Status', 'Contenders'],
+        all.map((s) => [
+          s.id.slice(0, 8) + '…',
+          truncate(s.name, 32),
+          s.status,
+          s.contenders.map((c) => `${c.slot}:${c.provider}/${c.model}`).join('  ') || '—',
+        ])
+      );
+    } catch (err) { handleError(err); }
+  },
+});
+
+const localPush = defineCommand({
+  meta: { name: 'push', description: 'Push a local battle to LenserFight Cloud as a draft.' },
+  args: {
+    id:    { type: 'string',  description: 'Local battle ID (omit to use most recent)', default: '' },
+    slug:  { type: 'string',  description: 'Cloud URL slug (required)', required: true },
+    json:  { type: 'boolean', description: 'Output result as JSON', default: false },
+  },
+  async run({ args }) {
+    try {
+      const state = args.id ? localBattleStore.resolve(args.id) : localBattleStore.list()[0];
+      if (!state) { consola.error('No local battles found.'); process.exitCode = 1; return; }
+
+      const battle = await callRpc<Record<string, unknown>>(
+        'fn_battles_create',
+        {
+          p_title: state.name,
+          p_slug: args.slug,
+          p_task_prompt: state.task,
+          p_rubric_id: null,
+        },
+        { requireAuth: true }
+      );
+
+      if (args.json) { printJson(battle); return; }
+      consola.success('Local battle "%s" pushed to cloud.', state.name);
+      consola.info('Cloud ID:  %s', battle['id']);
+      consola.info('Status:    %s', battle['status']);
+      consola.info('');
+      consola.info('Continue: lf battle open %s', battle['id']);
+    } catch (err) { handleError(err); }
+  },
+});
+
+const local = defineCommand({
+  meta: { name: 'local', description: 'Manage offline local battles (no cloud or auth required).' },
+  subCommands: {
+    init: localInit,
+    'add-contender': localAddContender,
+    run: localRun,
+    vote: localVote,
+    status: localStatus,
+    list: localList,
+    push: localPush,
+  },
+});
+
+// ---------------------------------------------------------------------------
+// battle exec — cloud battle BYOK execution with optional web streaming
+// ---------------------------------------------------------------------------
+import {
+  byokKeyResolver,
+  getStreamAdapter as _getStreamAdapter,
+} from '@lenserfight/providers';
+import type { ProviderMessage as _ProviderMessage } from '@lenserfight/providers';
+
+const exec = defineCommand({
+  meta: {
+    name: 'exec',
+    description: 'Execute a cloud battle with your own API keys (BYOK), optionally streaming tokens to the web UI.',
+  },
+  args: {
+    id:             { type: 'positional', description: 'Battle UUID', required: true },
+    'provider-a':   { type: 'string',  description: 'Provider for slot A override', default: '' },
+    'model-a':      { type: 'string',  description: 'Model for slot A override', default: '' },
+    'provider-b':   { type: 'string',  description: 'Provider for slot B override', default: '' },
+    'model-b':      { type: 'string',  description: 'Model for slot B override', default: '' },
+    byok:           { type: 'boolean', description: 'Use local BYOK keys instead of cloud billing', default: false },
+    'stream-to-web':{ type: 'boolean', description: 'Broadcast tokens to web UI via Supabase Realtime', default: false },
+    slot:           { type: 'string',  description: 'Execute only one slot: A | B | both', default: 'both' },
+    json:           { type: 'boolean', description: 'Output summary as JSON', default: false },
+  },
+  async run({ args }) {
+    const { BattleStreamBroadcaster } = await import('../utils/battle-stream-broadcaster');
+
+    try {
+      // 1. Fetch battle
+      const battle = await callRpc<Record<string, unknown>>(
+        'fn_battles_get_public',
+        { p_battle_id: args.id }
+      );
+      if (!battle) { consola.error('Battle not found or not public.'); process.exitCode = 1; return; }
+
+      consola.start('Executing battle: %s', battle['title']);
+      consola.info('Task: %s', battle['task_prompt']);
+
+      // 2. Fetch contenders
+      const contenders = await callRpc<Array<Record<string, unknown>>>(
+        'fn_battles_get_public',
+        { p_battle_id: args.id }
+      );
+
+      // 3. Fetch execution configs for each contender
+      const configsRaw = await callRpc<Array<Record<string, unknown>>>(
+        'fn_get_battle_execution_configs',
+        { p_battle_id: args.id }
+      ).catch(() => [] as Array<Record<string, unknown>>);
+
+      const cfgA = configsRaw.find((c) => c['slot'] === 'A') ?? {};
+      const cfgB = configsRaw.find((c) => c['slot'] === 'B') ?? {};
+
+      const providerA = (args['provider-a'] || String(cfgA['provider_key'] ?? 'anthropic')) as Parameters<typeof _getStreamAdapter>[0];
+      const modelA    = args['model-a']    || String(cfgA['model_key']    ?? 'claude-sonnet-4-6');
+      const providerB = (args['provider-b'] || String(cfgB['provider_key'] ?? 'anthropic')) as Parameters<typeof _getStreamAdapter>[0];
+      const modelB    = args['model-b']    || String(cfgB['model_key']    ?? 'claude-sonnet-4-6');
+
+      const task = String(battle['task_prompt'] ?? '');
+      const messages: _ProviderMessage[] = [{ role: 'user', content: task }];
+
+      const RESET = '\x1b[0m', BLUE = '\x1b[34m', GREEN = '\x1b[32m';
+
+      const runSlot = async (slot: 'A' | 'B', provider: Parameters<typeof _getStreamAdapter>[0], model: string) => {
+        const broadcaster = args['stream-to-web']
+          ? new BattleStreamBroadcaster()
+          : null;
+
+        if (broadcaster) await broadcaster.open(args.id, slot);
+
+        const apiKey = args.byok
+          ? byokKeyResolver.resolve(provider)
+          : '';
+
+        if (args.byok && !apiKey && provider !== 'ollama') {
+          consola.error('[%s] No API key found for provider %s. Set %s_API_KEY env var.', slot, provider, provider.toUpperCase());
+          return { slot, output: '', tokens: 0 };
+        }
+
+        const adapter = _getStreamAdapter(provider);
+        const { url, body, headers } = adapter.buildStreamRequest(model, messages, { maxTokens: 4096 });
+        const authHeaders = args.byok ? adapter.authHeader(apiKey) : {};
+
+        consola.start('[%s] Streaming %s/%s…', slot, provider, model);
+
+        const res = await fetch(url, {
+          method: 'POST',
+          headers: { ...headers, ...authHeaders },
+          body,
+        });
+
+        if (!res.ok || !res.body) {
+          const text = await res.text();
+          consola.error('[%s] Provider error %d: %s', slot, res.status, text);
+          broadcaster?.broadcastError(`Provider error ${res.status}`);
+          await broadcaster?.close();
+          return { slot, output: '', tokens: 0 };
+        }
+
+        let output = '';
+        let tokens = 0;
+        let eventType: string | undefined;
+        const reader = res.body.getReader();
+        const decoder = new TextDecoder();
+        let buf = '';
+        const startedAt = Date.now();
+
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+          buf += decoder.decode(value, { stream: true });
+          const lines = buf.split('\n');
+          buf = lines.pop() ?? '';
+          for (const line of lines) {
+            if (line.startsWith('event: ')) { eventType = line.slice(7).trim(); continue; }
+            if (!line.startsWith('data: ') && !line.trim()) continue;
+            const chunk = adapter.parseStreamChunk(line, eventType);
+            if (chunk?.content) {
+              output += chunk.content;
+              tokens++;
+              const color = slot === 'A' ? BLUE : GREEN;
+              process.stdout.write(`${color}[${slot}]${RESET} ${chunk.content}`);
+              broadcaster?.broadcastToken(chunk.content, Date.now() - startedAt);
+            }
+            if (chunk?.done) break;
+          }
+        }
+
+        broadcaster?.broadcastEnd({ input_tokens: 0, output_tokens: tokens });
+        await broadcaster?.close();
+        return { slot, output, tokens };
+      };
+
+      const slotArg = args.slot.toUpperCase();
+      const slots: Array<['A' | 'B', Parameters<typeof _getStreamAdapter>[0], string]> = [];
+      if (slotArg === 'A' || slotArg === 'BOTH') slots.push(['A', providerA, modelA]);
+      if (slotArg === 'B' || slotArg === 'BOTH') slots.push(['B', providerB, modelB]);
+
+      process.stdout.write('\n');
+      const results = await Promise.all(slots.map(([s, p, m]) => runSlot(s, p, m)));
+      process.stdout.write('\n');
+
+      if (args.json) { printJson(results); return; }
+
+      consola.success('Execution complete.');
+      printTable(
+        ['Slot', 'Provider', 'Model', 'Tokens'],
+        results.map((r) => {
+          const s = slots.find(([sl]) => sl === r.slot)!;
+          return [r.slot, s[1], s[2], String(r.tokens)];
+        })
+      );
+      consola.info('');
+      consola.info('If battle transitioned to voting: lf battle start-voting %s --closes-at <iso>', args.id);
+    } catch (err) { handleError(err); }
+  },
+});
+
+// ---------------------------------------------------------------------------
 // Root command
 // ---------------------------------------------------------------------------
 export default defineCommand({
@@ -1253,5 +1751,7 @@ export default defineCommand({
     messages,
     'post-message': postMessage,
     feed,
+    local,
+    exec,
   },
 });
