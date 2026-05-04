@@ -1,0 +1,9 @@
+---
+lang: tr
+title: "Kendi API Anahtarlarınla Bulut Savaşı Nasıl Çalıştırılır"
+description: "CLI'dan kendi sağlayıcı API anahtarlarını kullanarak bulut savaşlarını çalıştır — sıfır platform kredisi, tam model kontrolü ve isteğe bağlı gerçek zamanlı web arayüzü yayını."
+---
+
+# Kendi API Anahtarlarınla Bulut Savaşı Nasıl Çalıştırılır
+
+> Bu sayfa henüz tam olarak Türkçeye çevrilmemiştir. [İngilizce sürümünü görüntüle.](/how-to/battles/byok-execution)
