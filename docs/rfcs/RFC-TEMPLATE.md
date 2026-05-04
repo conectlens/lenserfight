@@ -1,9 +1,9 @@
 ---
-title: "RFC-XXXX: <Title>"
+title: "RFC-XXXX: &lt;Title&gt;"
 description: One-line summary of this RFC.
 ---
 
-# RFC-XXXX: <Title>
+# RFC-XXXX: &lt;Title&gt;
 
 | | |
 |---|---|
