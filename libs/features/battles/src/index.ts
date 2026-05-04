@@ -22,6 +22,7 @@ export * from './lib/hooks/mutations/useSubmitVote'
 export * from './lib/hooks/mutations/useWorkflowSubmission'
 
 // ── Hooks — realtime (Supabase subscriptions) ────────────────────────────────
+export * from './lib/hooks/realtime/useBattleCliStream'
 export * from './lib/hooks/realtime/useBattleComments'
 export * from './lib/hooks/realtime/useBattleLiveSubmission'
 export * from './lib/hooks/realtime/useBattleStateSync'
