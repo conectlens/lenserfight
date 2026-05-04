@@ -1,13 +1,13 @@
 import React from 'react'
 import { useParams } from 'react-router-dom'
 
-import { ArenaView } from '../components/ArenaView'
-import { BattleShareCard } from '../components/BattleShareCard'
-import { BattleStatusBadge } from '../components/BattleStatusBadge'
-import { ContenderSlot } from '../components/ContenderSlot'
-import { ResultBanner } from '../components/ResultBanner'
-import { RubricPanel } from '../components/RubricPanel'
-import { VotePanel } from '../components/VotePanel'
+import { ArenaView } from '../components/arena/ArenaView'
+import { BattleShareCard } from '../components/display/BattleShareCard'
+import { BattleStatusBadge } from '../components/display/BattleStatusBadge'
+import { ContenderSlot } from '../components/submission/ContenderSlot'
+import { ResultBanner } from '../components/scoring/ResultBanner'
+import { RubricPanel } from '../components/scoring/RubricPanel'
+import { VotePanel } from '../components/scoring/VotePanel'
 
 import type { BattleStatus } from '../types/battle.types'
 

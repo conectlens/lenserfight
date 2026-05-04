@@ -1,72 +1,101 @@
-// Types
+// ── Types ────────────────────────────────────────────────────────────────────
 export * from './lib/types/battle.types'
 export * from './lib/types/battle-execution.types'
-
-// Hooks
-export * from './lib/hooks/useBattle'
-export * from './lib/hooks/useBattleContenders'
-export * from './lib/hooks/useBattleScorecard'
-export * from './lib/hooks/useBattlesFeed'
-export * from './lib/hooks/useBattleStateMachine'
-export * from './lib/hooks/useBattleStateSync'
-export * from './lib/hooks/useSubmitVote'
-export * from './lib/hooks/useVoteAggregates'
-export * from './lib/hooks/usePublishBattle'
-export * from './lib/hooks/useBattleComments'
-export * from './lib/hooks/useLenserChat'
-export * from './lib/hooks/useInviteContender'
-export * from './lib/hooks/useSubmitEntry'
-export * from './lib/hooks/useVoterEligibility'
-export * from './lib/hooks/useBattleStream'
-export * from './lib/hooks/useBattleExecution'
-export * from './lib/hooks/useBattleLiveSubmission'
-export * from './lib/hooks/useReplayController'
-
 export * from './lib/types/battle-renderer.types'
 
-// Renderers
+// ── Hooks — query (read-only data fetching) ──────────────────────────────────
+export * from './lib/hooks/query/useBattle'
+export * from './lib/hooks/query/useBattleContenders'
+export * from './lib/hooks/query/useBattleScorecard'
+export * from './lib/hooks/query/useBattlesFeed'
+export * from './lib/hooks/query/useLensAssignment'
+export * from './lib/hooks/query/useMyVote'
+export * from './lib/hooks/query/useVoteAggregates'
+export * from './lib/hooks/query/useVoterEligibility'
+
+// ── Hooks — mutations (write / action) ───────────────────────────────────────
+export * from './lib/hooks/mutations/useAssignLens'
+export * from './lib/hooks/mutations/useInviteContender'
+export * from './lib/hooks/mutations/usePublishBattle'
+export * from './lib/hooks/mutations/useSubmitEntry'
+export * from './lib/hooks/mutations/useSubmitVote'
+export * from './lib/hooks/mutations/useWorkflowSubmission'
+
+// ── Hooks — realtime (Supabase subscriptions) ────────────────────────────────
+export * from './lib/hooks/realtime/useBattleComments'
+export * from './lib/hooks/realtime/useBattleLiveSubmission'
+export * from './lib/hooks/realtime/useBattleStateSync'
+export * from './lib/hooks/realtime/useLenserChat'
+
+// ── Hooks — execution (AI stream orchestration) ──────────────────────────────
+export * from './lib/hooks/execution/useBattleExecution'
+export * from './lib/hooks/execution/useBattleStream'
+
+// ── Hooks — utils (pure stateless utilities) ─────────────────────────────────
+export * from './lib/hooks/utils/useBattleStateMachine'
+export * from './lib/hooks/utils/useCountdown'
+export * from './lib/hooks/utils/useReplayController'
+
+// ── Renderers ────────────────────────────────────────────────────────────────
 export * from './lib/renderers'
 
-// Replay
+// ── Replay strategies ────────────────────────────────────────────────────────
 export * from './lib/replay/ReplayStrategy'
 
-// Components
-export * from './lib/components/ArenaView'
-export * from './lib/components/ChatMessage'
-export * from './lib/components/ArenaTopBar'
-export * from './lib/components/ArenaContenderColumn'
-export * from './lib/components/ArenaCenterZone'
-export * from './lib/components/LenserChatRail'
-export * from './lib/components/ImmersiveArenaView'
-export * from './lib/components/BattleSEOHead'
-export * from './lib/components/FightView'
-export * from './lib/components/PhaseIndicator'
-export * from './lib/components/ScoreSystem'
-export * from './lib/components/XPGainToast'
+// ── Components — arena (layout shell and sub-zones) ──────────────────────────
+export * from './lib/components/arena/ArenaView'
+export * from './lib/components/arena/ArenaCenterZone'
+export * from './lib/components/arena/ArenaContenderColumn'
+export * from './lib/components/arena/ArenaTopBar'
+export * from './lib/components/arena/FightView'
+export * from './lib/components/arena/ImmersiveArenaView'
+export * from './lib/components/arena/BattleLiveArena'
+export * from './lib/components/arena/LiveArenaTopBar'
 
-// Battle creation wizard
-export * from './lib/components/CreateBattleWizard'
-export * from './lib/components/ContenderInviteStep'
-export * from './lib/components/SubmitTextForm'
+// ── Components — creation (wizard flow and steps) ────────────────────────────
+export * from './lib/components/creation/CreateBattleWizard'
+export * from './lib/components/creation/BattleTypeSelector'
+export * from './lib/components/creation/ContenderInviteStep'
+export * from './lib/components/creation/HandicapConfigPanel'
+export * from './lib/components/creation/LensAssignmentStep'
+export * from './lib/components/creation/LenserSearchPicker'
+export * from './lib/components/creation/VoterEligibilitySelector'
+export * from './lib/components/creation/BattleRulesDrawer'
 
-// Battle UI components
-export * from './lib/components/BattleCard'
-export * from './lib/components/BattleStatusBadge'
-export * from './lib/components/ContenderSlot'
-export * from './lib/components/SubmissionViewer'
-export * from './lib/components/RubricPanel'
-export * from './lib/components/VotePanel'
-export * from './lib/components/ResultBanner'
-export * from './lib/components/BattleShareCard'
-export * from './lib/components/BattleCreatorPanel'
-export * from './lib/components/BattleChatPanel'
-export * from './lib/components/BattleLiveArena'
-export * from './lib/components/StreamingOutput'
-export * from './lib/components/StreamStatusBar'
-export * from './lib/components/LiveArenaTopBar'
-export * from './lib/components/ReplayControls'
+// ── Components — display (presentational cards, badges, indicators) ───────────
+export * from './lib/components/display/BattleCard'
+export * from './lib/components/display/BattleStatusBadge'
+export * from './lib/components/display/BattleSEOHead'
+export * from './lib/components/display/BattleShareCard'
+export * from './lib/components/display/BattleCreatorPanel'
+export * from './lib/components/display/PhaseIndicator'
+export * from './lib/components/display/TrueSkillBadge'
+export * from './lib/components/display/XPGainToast'
 
-// Pages
+// ── Components — scoring (vote, rubric, result, score) ───────────────────────
+export * from './lib/components/scoring/VotePanel'
+export * from './lib/components/scoring/RubricPanel'
+export * from './lib/components/scoring/ResultBanner'
+export * from './lib/components/scoring/ScoreSystem'
+
+// ── Components — submission (forms and viewers) ───────────────────────────────
+export * from './lib/components/submission/ContenderSlot'
+export * from './lib/components/submission/SubmissionViewer'
+export * from './lib/components/submission/SubmitTextForm'
+export * from './lib/components/submission/SubmitWorkflowForm'
+export * from './lib/components/submission/WorkflowSubmissionViewer'
+
+// ── Components — stream (live streaming and replay) ───────────────────────────
+export * from './lib/components/stream/StreamingOutput'
+export * from './lib/components/stream/StreamStatusBar'
+export * from './lib/components/stream/ReplayControls'
+
+// ── Components — chat (messaging panels) ─────────────────────────────────────
+export * from './lib/components/chat/BattleChatPanel'
+export * from './lib/components/chat/LenserChatRail'
+export * from './lib/components/chat/ChatMessage'
+
+// ── Pages ────────────────────────────────────────────────────────────────────
 export * from './lib/pages/BattlesFeedPage'
 export * from './lib/pages/BattleDetailPage'
 export * from './lib/pages/BattleResultPage'

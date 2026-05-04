@@ -5,9 +5,9 @@ import React from 'react'
 import { useNavigate, Outlet, useSearchParams } from 'react-router-dom'
 import { PlusCircle, Zap } from 'lucide-react'
 
-import { BattleCard } from '../components/BattleCard'
-import { useBattlesFeed } from '../hooks/useBattlesFeed'
-import type { BattlesFeedSortBy } from '../hooks/useBattlesFeed'
+import { BattleCard } from '../components/display/BattleCard'
+import { useBattlesFeed } from '../hooks/query/useBattlesFeed'
+import type { BattlesFeedSortBy } from '../hooks/query/useBattlesFeed'
 
 import type { BattleType } from '../types/battle.types'
 
