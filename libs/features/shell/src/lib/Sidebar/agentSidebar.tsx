@@ -17,7 +17,7 @@ export function buildAgentSidebarSections(handle: string): SidebarNavSectionConf
         return {
           id: item.id,
           label: item.label,
-          path: `${base}/${item.id}`,
+          path: item.path ?? `${base}/${item.id}`,
           icon: <Icon size={20} />,
         }
       }),
