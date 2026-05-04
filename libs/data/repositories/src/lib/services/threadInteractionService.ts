@@ -1,14 +1,13 @@
-import { SupabaseLenserRepository } from '../repositories/lenserRepository'
-import { SupabaseReactionRepository } from '../repositories/reactionRepository'
-import { SupabaseThreadsRepository } from '../repositories/threadsRepository'
 import { ThreadReplyViewModel } from '@lenserfight/types'
 import { MentionParser } from '@lenserfight/utils/text'
 
 import { reactionService } from './reactionService'
+import { createLenserRepository, createReactionRepository, createThreadsRepository } from '../factory'
 
-const threadsRepo = new SupabaseThreadsRepository()
-const lenserRepo = new SupabaseLenserRepository()
-const reactionRepo = new SupabaseReactionRepository()
+
+const threadsRepo = createThreadsRepository()
+const lenserRepo = createLenserRepository()
+const reactionRepo = createReactionRepository()
 
 export const threadInteractionService = {
   toggleThreadReaction: async (

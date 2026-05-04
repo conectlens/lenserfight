@@ -1,7 +1,8 @@
-import { SupabaseSocialLinksRepository } from '../repositories/socialLinksRepository'
 import { SocialLink, SocialPlatform } from '@lenserfight/types'
+import { createSocialLinksRepository } from '../factory'
 
-const repo = new SupabaseSocialLinksRepository()
+
+const repo = createSocialLinksRepository()
 
 export const socialLinksService = {
   getLinks: async (handle: string): Promise<SocialLink[]> => {

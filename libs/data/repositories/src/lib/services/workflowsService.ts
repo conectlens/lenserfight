@@ -1,7 +1,5 @@
 import type { ApiResponseEnvelope } from '@lenserfight/api/contracts'
-import {
-  SupabaseWorkflowsRepository,
-  type WorkflowRecord,
+import { type WorkflowRecord,
   type WorkflowNodeRecord,
   type WorkflowEdgeRecord,
   type WorkflowBootstrapRecord,
@@ -26,8 +24,10 @@ import type {
   WorkflowRunStateProjection,
   WorkflowRunProvenanceEdge,
 } from '@lenserfight/types'
+import { createWorkflowsRepository } from '../factory'
 
-const workflowsRepo = new SupabaseWorkflowsRepository()
+
+const workflowsRepo = createWorkflowsRepository()
 
 export type {
   WorkflowRecord,

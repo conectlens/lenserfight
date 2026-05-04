@@ -6,12 +6,12 @@ import type {
   WriteMemoryEntryInput,
 } from '@lenserfight/types'
 
+import { createMemoryRepository } from '../factory'
 import {
   type ListMemoryEntriesOptions,
-  SupabaseMemoryRepository,
 } from '../repositories/memoryRepository'
 
-const memoryRepo = new SupabaseMemoryRepository()
+const memoryRepo = createMemoryRepository()
 
 export type { ListMemoryEntriesOptions }
 

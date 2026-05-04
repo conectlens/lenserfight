@@ -6,9 +6,10 @@ import {
   CreateBenchmarkTaskInput,
   InvalidateResultInput,
 } from '@lenserfight/types'
-import { SupabaseBenchmarkRepository } from '../repositories/benchmarkRepository'
+import { createBenchmarkRepository } from '../factory'
 
-const benchmarkRepo = new SupabaseBenchmarkRepository()
+
+const benchmarkRepo = createBenchmarkRepository()
 
 export const benchmarkService = {
   listSuites: (creatorLenserId?: string): Promise<BenchmarkSuiteRecord[]> =>

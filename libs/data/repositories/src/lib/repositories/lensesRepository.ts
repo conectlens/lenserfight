@@ -5,7 +5,7 @@ import { ApiResponseEnvelope, paginatedResponse } from '@lenserfight/api/contrac
 // --- Port (Interface) ---
 export interface LensesRepositoryPort {
   getAll(offset?: number, limit?: number): Promise<ApiResponseEnvelope<LensRecord[]>>
-  search(query: string, offset?: number, limit?: number): Promise<ApiResponseEnvelope<LensRecord[]>>
+  search(query: string, offset?: number, limit?: number, ownerId?: string | null): Promise<ApiResponseEnvelope<LensRecord[]>>
   filterByTag(
     tagSlug: string | null,
     sort?: string,
@@ -43,6 +43,9 @@ export interface LensesRepositoryPort {
   cloneLens(sourceLensId: string, versionId?: string | null): Promise<string>
   getForkTree(lensId: string, limit?: number): Promise<ForkNode[]>
   getTools(category?: string): Promise<ToolRecord[]>
+  getMyLenses(offset?: number, limit?: number): Promise<ApiResponseEnvelope<LensRecord[]>>
+  getLatestVersion(lensId: string): Promise<LensVersion | null>
+  updateVersionParams(versionId: string, params: Array<{ label: string; toolId: string }>): Promise<void>
 }
 
 // Fallback data for Mock Mode

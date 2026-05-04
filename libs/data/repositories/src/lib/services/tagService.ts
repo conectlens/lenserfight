@@ -1,8 +1,9 @@
 import { TagDomainError, TagValidator } from '@lenserfight/domain/tags'
-import { SupabaseTagRepository } from '../repositories/tagRepository'
 import { TagUsage, TagDTO, TagActivityEventDTO, ContentType } from '@lenserfight/types'
+import { createTagRepository } from '../factory'
 
-const tagRepo = new SupabaseTagRepository()
+
+const tagRepo = createTagRepository()
 
 // --- Cache Implementation ---
 interface TagCache {

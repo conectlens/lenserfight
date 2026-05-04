@@ -4,10 +4,11 @@ import type {
   ListToolInvocationsOptions,
   ToolInvocationRecord,
 } from '@lenserfight/types'
+import { createToolsRepository } from '../factory'
 
-import { SupabaseToolsRepository } from '../repositories/toolsRepository'
 
-const toolsRepo = new SupabaseToolsRepository()
+
+const toolsRepo = createToolsRepository()
 
 export const toolsService = {
   listInvocations: (

@@ -1,4 +1,3 @@
-import { SupabaseAuthRepository } from '../repositories/authRepository'
 import {
   ApproveDeviceRequestDTO,
   ApproveDeviceRequestResultDTO,
@@ -11,8 +10,9 @@ import {
   User,
   UserMetadata,
 } from '@lenserfight/types'
+import { createAuthRepository } from '../factory'
 
-const authRepo = new SupabaseAuthRepository()
+const authRepo = createAuthRepository()
 
 export const authService = {
   login: async (email: string, password: string, captchaToken?: string): Promise<User> => {

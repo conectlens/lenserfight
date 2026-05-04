@@ -1,10 +1,12 @@
 import { TagUsage, TagActivityEventDTO, TagDTO } from '@lenserfight/types'
 import { supabase } from '@lenserfight/data/supabase'
 
+export type TagDTOExtended = TagDTO & { total_usage?: number; trend_score_7d?: number; created_at?: string }
+
 export interface TagRepositoryPort {
   getAllTagsWithCounts(limit?: number): Promise<TagUsage[]>
-  findBySlug(slug: string): Promise<TagDTO | null>
-  findById(id: string): Promise<TagDTO | null>
+  findBySlug(slug: string): Promise<TagDTOExtended | null>
+  findById(id: string): Promise<TagDTOExtended | null>
   createTag(name: string, slug: string): Promise<TagDTO>
   searchTags(query: string, lang?: string, limit?: number): Promise<TagUsage[]>
   recordActivity(event: TagActivityEventDTO): Promise<void>
