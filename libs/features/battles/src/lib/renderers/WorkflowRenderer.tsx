@@ -3,7 +3,7 @@ import { GitBranch } from 'lucide-react'
 import { motion } from 'framer-motion'
 
 import type { BattleContentRenderer } from '../types/battle-renderer.types'
-import { WorkflowSubmissionViewer } from '../components/WorkflowSubmissionViewer'
+import { WorkflowSubmissionViewer } from '../components/submission/WorkflowSubmissionViewer'
 
 const WorkflowIdleAnimation: React.FC = () => (
   <div className="flex h-full min-h-[120px] flex-col items-center justify-center gap-3 p-6">
