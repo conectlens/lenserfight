@@ -91,6 +91,15 @@ const LazyBenchmarkSuiteDetailPage = lazy(() =>
     default: module.BenchmarkSuiteDetailPage,
   }))
 )
+const LazyBattlesFeedPage = lazy(() =>
+  import('@lenserfight/features/battles').then((module) => ({ default: module.BattlesFeedPage }))
+)
+const LazyBattleDetailPage = lazy(() =>
+  import('@lenserfight/features/battles').then((module) => ({ default: module.BattleDetailPage }))
+)
+const LazyBattleResultPage = lazy(() =>
+  import('@lenserfight/features/battles').then((module) => ({ default: module.BattleResultPage }))
+)
 const LazyWorkflowsPage = lazy(() =>
   import('@lenserfight/features/workflows').then((module) => ({ default: module.WorkflowsPage }))
 )
@@ -255,6 +264,21 @@ export const WebRouter: React.FC = () => {
             )
           }
         />
+
+        {FEATURES.PUBLIC_BATTLES && (
+          <>
+            <Route
+              path="/battles"
+              element={
+                <DashboardFrame>
+                  <LazyBattlesFeedPage />
+                </DashboardFrame>
+              }
+            />
+            <Route path="/battles/:slug" element={<LazyBattleDetailPage />} />
+            <Route path="/battles/:slug/result" element={<LazyBattleResultPage />} />
+          </>
+        )}
 
         <Route
           path="/lensers"
