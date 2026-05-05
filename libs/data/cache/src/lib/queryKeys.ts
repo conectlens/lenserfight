@@ -123,6 +123,9 @@ export const queryKeys = {
     lensAssignment: (contenderId: string) => [...queryKeys.battles.all, 'lensAssignment', contenderId] as const,
     trending: (cursor?: number) => [...queryKeys.battles.all, 'trending', cursor ?? null] as const,
     lenserboard: () => [...queryKeys.battles.all, 'lenserboard'] as const,
+    aiJudgeVerdicts: (battleId: string) => [...queryKeys.battles.all, 'aiJudgeVerdicts', battleId] as const,
+    executionJobs: (battleId: string) => [...queryKeys.battles.all, 'executionJobs', battleId] as const,
+    dlq: (battleId: string) => [...queryKeys.battles.all, 'dlq', battleId] as const,
   },
   workflows: {
     all: ['workflows'] as const,
