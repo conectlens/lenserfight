@@ -70,6 +70,26 @@ export interface Battle {
   forum_thread_id: string | null
   workflow_id: string | null
   lens_id: string | null
+  execution_starts_at: string | null
+  auto_publish: boolean
+  voting_duration_hours: number
+  vote_velocity: number
+  og_image_url: string | null
+}
+
+export interface BattleExecutionJob {
+  id: string
+  battle_id: string
+  contender_id: string
+  slot: 'A' | 'B'
+  status: 'queued' | 'claimed' | 'running' | 'completed' | 'failed'
+  worker_id: string | null
+  claimed_at: string | null
+  completed_at: string | null
+  retry_count: number
+  max_retries: number
+  error_message: string | null
+  created_at: string
 }
 
 export interface Contender {

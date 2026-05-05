@@ -56,7 +56,12 @@ export function BattleResultPage() {
         />
       )}
       renderShareCard={(props) => (
-        <BattleShareCard battleSlug={props.battleSlug} battleTitle={props.battleTitle} />
+        <BattleShareCard
+          battleSlug={props.battleSlug}
+          battleTitle={props.battleTitle}
+          winnerName={props.winnerName}
+          ogImageUrl={props.ogImageUrl}
+        />
       )}
       renderStatusBadge={(props) => (
         <BattleStatusBadge status={props.status as BattleStatus} />
