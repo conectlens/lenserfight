@@ -1,11 +1,11 @@
 import { feedbackService } from '@lenserfight/data/repositories'
 import { lenserService } from '@lenserfight/data/repositories'
-import { notificationService } from '@lenserfight/data/repositories'
+import { useNotifications } from '@lenserfight/features/notifications'
 import { useAuth } from '@lenserfight/features/auth'
 import { InputField } from '@lenserfight/ui/forms'
 import { useWallet } from '@lenserfight/features/store'
 import { AvatarSelectionModal, useLenser } from '@lenserfight/features/profile'
-import { Feedback, ProductTag, FeedbackStatus, Notification } from '@lenserfight/types'
+import { Feedback, ProductTag, FeedbackStatus } from '@lenserfight/types'
 import { Avatar, Button, Card, DangerZone, Table, Column } from '@lenserfight/ui/components'
 import { ConfirmModal } from '@lenserfight/ui/modals'
 import { timeAgo } from '@lenserfight/utils/date'
@@ -119,8 +119,7 @@ export const SettingsPage: React.FC = () => {
   const [isSaving, setIsSaving] = useState(false)
   const [showAvatarModal, setShowAvatarModal] = useState(false)
   // Notifications State
-  const [notifications, setNotifications] = useState<Notification[]>([])
-  const [notifLoading, setNotifLoading] = useState(false)
+  const { notifications, isLoading: notifLoading, markAllRead } = useNotifications(50)
   const [notifTab, setNotifTab] = useState<'All' | 'Unread'>('All')
 
   // Deletion State
@@ -151,19 +150,6 @@ export const SettingsPage: React.FC = () => {
       })
     }
   }, [lenser])
-
-  useEffect(() => {
-    if (activeTab === 'notifications' && FEATURES.NOTIFICATIONS) {
-      loadNotifications()
-    }
-  }, [activeTab])
-
-  const loadNotifications = async () => {
-    setNotifLoading(true)
-    const data = await notificationService.getNotifications()
-    setNotifications(data)
-    setNotifLoading(false)
-  }
 
   const handleProfileChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
@@ -200,11 +186,6 @@ export const SettingsPage: React.FC = () => {
     }
   }
 
-  const handleMarkAllRead = async () => {
-    await notificationService.markAllAsRead()
-    setNotifications((prev) => prev.map((n) => ({ ...n, isRead: true })))
-  }
-
   const handleDeleteRequest = async () => {
     if (!lenser) return
     setIsDeleting(true)
@@ -227,7 +208,7 @@ export const SettingsPage: React.FC = () => {
 
   // Filter Notifications
   const filteredNotifications = notifications.filter((n) => {
-    if (notifTab === 'Unread') return !n.isRead
+    if (notifTab === 'Unread') return !n.read_at
     return true
   })
 
@@ -672,10 +653,10 @@ export const SettingsPage: React.FC = () => {
             <div>
               <div className="flex items-center justify-between mb-2">
                 <h2 className="text-xl font-bold text-gray-900 dark:text-white">Notifications</h2>
-                {FEATURES.NOTIFICATIONS && notifications.some((n) => !n.isRead) && (
+                {FEATURES.NOTIFICATIONS && notifications.some((n) => !n.read_at) && (
                   <Button
                     variant="ghost"
-                    onClick={handleMarkAllRead}
+                    onClick={markAllRead}
                     className="flex items-center gap-1 w-auto whitespace-nowrap"
                   >
                     <Check size={16} /> Mark all read
@@ -756,30 +737,23 @@ export const SettingsPage: React.FC = () => {
                       {filteredNotifications.map((notification) => (
                         <Card
                           key={notification.id}
-                          className={`p-4 flex items-center gap-4 transition-all hover:bg-gray-50 dark:hover:bg-gray-800 cursor-pointer border-gray-100 dark:border-gray-700 ${!notification.isRead ? 'bg-white dark:bg-gray-800 shadow-sm border-gray-200 dark:border-gray-600' : 'bg-gray-50/50 dark:bg-gray-800/50'}`}
+                          className={`p-4 flex items-center gap-4 transition-all hover:bg-gray-50 dark:hover:bg-gray-800 cursor-pointer border-gray-100 dark:border-gray-700 ${!notification.read_at ? 'bg-white dark:bg-gray-800 shadow-sm border-gray-200 dark:border-gray-600' : 'bg-gray-50/50 dark:bg-gray-800/50'}`}
                         >
-                          {!notification.isRead && (
+                          {!notification.read_at && (
                             <div className="w-2 h-2 bg-yellow-400 rounded-full flex-shrink-0"></div>
                           )}
-                          <div className="flex-shrink-0">
-                            <Avatar
-                              src={notification.actor?.avatarUrl}
-                              alt={notification.actor?.name || 'User'}
-                              size="md"
-                            />
-                          </div>
                           <div className="flex-1 min-w-0">
                             <p className="text-sm font-medium text-gray-900 dark:text-gray-100">
                               {notification.title}
                             </p>
-                            {notification.description && (
+                            {notification.body && (
                               <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
-                                {notification.description}
+                                {notification.body}
                               </p>
                             )}
                           </div>
                           <div className="text-xs text-gray-400 dark:text-gray-500 whitespace-nowrap">
-                            {timeAgo(notification.createdAt)}
+                            {timeAgo(notification.created_at)}
                           </div>
                         </Card>
                       ))}
