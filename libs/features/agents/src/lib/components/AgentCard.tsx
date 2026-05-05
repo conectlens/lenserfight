@@ -6,6 +6,7 @@ import { AgentProfileView } from '@lenserfight/data/repositories'
 import { AgentStatusBadge } from './AgentStatusBadge'
 import { AgentPolicySummary } from './AgentPolicySummary'
 import { AgentQuotaBar } from './AgentQuotaBar'
+import { AgentBattleStatsPanel } from './AgentBattleStatsPanel'
 
 interface AgentCardProps {
   agent: AgentProfileView
@@ -46,6 +47,14 @@ export const AgentCard: React.FC<AgentCardProps> = ({ agent, isOwner = false }) 
       maxDailyBattles={agent.max_daily_battles}
       votesUsed={agent.votes_used}
       maxDailyVotes={agent.max_daily_votes}
+    />
+
+    {/* All-time battle stats */}
+    <AgentBattleStatsPanel
+      totalBattles={agent.total_battles ?? 0}
+      battlesWon={agent.battles_won ?? 0}
+      battlesLost={agent.battles_lost ?? 0}
+      winRate={agent.win_rate ?? null}
     />
 
     {/* Footer actions */}

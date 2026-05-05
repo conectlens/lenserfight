@@ -1,6 +1,8 @@
 import React from 'react'
 import type { Contender, Submission, VoteAggregate } from '../../types/battle.types'
 import type { BattleContentRenderer } from '../../types/battle-renderer.types'
+import type { PublicExecutionJobRecord } from '../../hooks/query/useExecutionJobs'
+import { ExecutionStatusBadge } from './ExecutionStatusBadge'
 import { SubmitTextForm } from '../submission/SubmitTextForm'
 
 interface LensAssignmentBadgeInfo {
@@ -20,6 +22,7 @@ interface ArenaContenderColumnProps {
   taskPrompt?: string
   currentUserId?: string
   lensAssignment?: LensAssignmentBadgeInfo | null
+  executionJob?: PublicExecutionJobRecord | null
   className?: string
 }
 
@@ -35,6 +38,7 @@ export const ArenaContenderColumn: React.FC<ArenaContenderColumnProps> = ({
   taskPrompt,
   currentUserId,
   lensAssignment,
+  executionJob,
   className = '',
 }) => {
   const voteCount = aggregate?.raw_vote_count ?? 0
@@ -72,6 +76,12 @@ export const ArenaContenderColumn: React.FC<ArenaContenderColumnProps> = ({
               <span className="rounded bg-surface-interactive px-1.5 py-0.5 text-[10px] font-semibold text-surface-text-muted border border-surface-border-subtle uppercase tracking-wider">
                 lens
               </span>
+            )}
+            {executionJob && (
+              <ExecutionStatusBadge
+                status={executionJob.status}
+                retryCount={executionJob.retry_count}
+              />
             )}
           </div>
         </div>

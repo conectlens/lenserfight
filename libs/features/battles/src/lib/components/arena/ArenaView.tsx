@@ -13,6 +13,7 @@ import { usePublishBattle } from '../../hooks/mutations/usePublishBattle'
 import { useSubmitVote } from '../../hooks/mutations/useSubmitVote'
 import { useVoteAggregates } from '../../hooks/query/useVoteAggregates'
 import { useVoterEligibility } from '../../hooks/query/useVoterEligibility'
+import { useAiJudgeVerdicts } from '../../hooks/query/useAiJudgeVerdicts'
 
 import { BattleChatPanel } from '../chat/BattleChatPanel'
 import { BattleCreatorPanel } from '../display/BattleCreatorPanel'
@@ -50,6 +51,8 @@ interface ArenaViewRenderProps {
     criteria: Array<{ id: string; name: string; description?: string; weight: number }>
     scorecardA: Array<{ rubricCriterionId: string; result: string; explanation?: string }>
     scorecardB: Array<{ rubricCriterionId: string; result: string; explanation?: string }>
+    verdictsA: import('../../hooks/query/useAiJudgeVerdicts').AiJudgeVerdictRecord[]
+    verdictsB: import('../../hooks/query/useAiJudgeVerdicts').AiJudgeVerdictRecord[]
   }) => React.ReactNode
   renderResultBanner: (props: {
     winnerName?: string
@@ -139,6 +142,10 @@ export function ArenaView({
         .filter((s) => s.contender_id === contenderB.id)
         .map((s) => ({ rubricCriterionId: s.rubric_criterion_id, result: s.result, explanation: s.explanation }))
     : []
+
+  const { data: aiVerdicts = [] } = useAiJudgeVerdicts(battle?.id)
+  const verdictsA = contenderA ? aiVerdicts.filter((v) => v.contender_id === contenderA.id) : []
+  const verdictsB = contenderB ? aiVerdicts.filter((v) => v.contender_id === contenderB.id) : []
 
   // Derive winner from aggregates for result phase
   let winnerSlot: 'A' | 'B' | 'draw' | undefined
@@ -349,7 +356,7 @@ export function ArenaView({
                 renderContenderSlot={renderContenderSlot}
               />
               {criteria.length > 0 &&
-                renderRubricPanel({ criteria, scorecardA, scorecardB })}
+                renderRubricPanel({ criteria, scorecardA, scorecardB, verdictsA, verdictsB })}
               {renderShareCard({ battleSlug: battle.slug, battleTitle: battle.title, winnerName, ogImageUrl: battle.og_image_url ?? null })}
               {battle.forum_thread_id && (
                 <div className="mt-4 text-center">
