@@ -211,9 +211,9 @@ DECLARE
   v_unread    BIGINT;
 BEGIN
   SELECT COUNT(*) INTO v_unread
-  FROM   public.notifications
-  WHERE  lenser_id = v_lenser_id
-  AND    read_at IS NULL;
+  FROM   public.notifications AS nc
+  WHERE  nc.lenser_id = v_lenser_id
+  AND    nc.read_at IS NULL;
 
   RETURN QUERY
     SELECT
