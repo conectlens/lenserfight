@@ -1719,6 +1719,259 @@ const exec = defineCommand({
 });
 
 // ---------------------------------------------------------------------------
+// battle schedule  — set execution_starts_at for autonomous execution
+// ---------------------------------------------------------------------------
+const schedule = defineCommand({
+  meta: {
+    name: 'schedule',
+    description: 'Schedule a battle for automatic server-side AI execution.',
+  },
+  args: {
+    id: {
+      type: 'positional',
+      description: 'Battle UUID',
+      required: true,
+    },
+    'starts-at': {
+      type: 'string',
+      description: 'ISO 8601 datetime when execution should begin (e.g. 2026-10-15T14:00:00Z)',
+      required: true,
+    },
+    'voting-duration-hours': {
+      type: 'string',
+      description: 'Hours the voting window stays open after execution (default: 24)',
+      default: '24',
+    },
+    'no-auto-publish': {
+      type: 'boolean',
+      description: 'Disable automatic result publication after voting closes',
+      default: false,
+    },
+    json: {
+      type: 'boolean',
+      description: 'Output result as JSON',
+      default: false,
+    },
+  },
+  async run({ args }) {
+    try {
+      // Validate the datetime locally before round-tripping to the server
+      const startsAt = new Date(args['starts-at']);
+      if (isNaN(startsAt.getTime())) {
+        consola.error('Invalid --starts-at value. Use ISO 8601 format, e.g. 2026-10-15T14:00:00Z');
+        process.exit(1);
+      }
+      if (startsAt.getTime() <= Date.now()) {
+        consola.error('--starts-at must be in the future.');
+        process.exit(1);
+      }
+
+      const { createClient } = await import('@supabase/supabase-js');
+      const { getEnv } = await import('../utils/env');
+      const client = createClient(getEnv('SUPABASE_URL'), getEnv('SUPABASE_ANON_KEY'));
+
+      const { error } = await client
+        .schema('battles')
+        .from('battles')
+        .update({
+          execution_starts_at:   startsAt.toISOString(),
+          voting_duration_hours: parseInt(args['voting-duration-hours'], 10),
+          auto_publish:          !args['no-auto-publish'],
+        })
+        .eq('id', args.id);
+
+      if (error) throw error;
+
+      if (args.json) {
+        printJson({ battle_id: args.id, execution_starts_at: startsAt.toISOString() });
+        return;
+      }
+
+      consola.success('Battle %s scheduled.', args.id);
+      consola.info('Execution starts at: %s', startsAt.toLocaleString());
+      consola.info('Voting duration:     %sh', args['voting-duration-hours']);
+      consola.info('Auto-publish:        %s', args['no-auto-publish'] ? 'disabled' : 'enabled');
+      consola.info('');
+      consola.info('Track job status: lf battle jobs %s', args.id);
+    } catch (err) {
+      handleError(err);
+    }
+  },
+});
+
+// ---------------------------------------------------------------------------
+// battle jobs  — inspect execution job queue for a battle
+// ---------------------------------------------------------------------------
+const jobs = defineCommand({
+  meta: {
+    name: 'jobs',
+    description: 'Show execution job status for a battle.',
+  },
+  args: {
+    id: {
+      type: 'positional',
+      description: 'Battle UUID',
+      required: true,
+    },
+    json: {
+      type: 'boolean',
+      description: 'Output as JSON',
+      default: false,
+    },
+  },
+  async run({ args }) {
+    try {
+      const { createClient } = await import('@supabase/supabase-js');
+      const { getEnv } = await import('../utils/env');
+      const client = createClient(getEnv('SUPABASE_URL'), getEnv('SUPABASE_SERVICE_ROLE_KEY'));
+
+      const { data, error } = await client
+        .schema('battles')
+        .from('battle_execution_jobs')
+        .select('id, slot, status, worker_id, retry_count, max_retries, error_message, claimed_at, completed_at, created_at')
+        .eq('battle_id', args.id)
+        .order('slot');
+
+      if (error) throw error;
+
+      if (!data || data.length === 0) {
+        consola.info('No execution jobs found for battle %s.', args.id);
+        consola.info('If the battle is scheduled, jobs will appear after the execution_starts_at time.');
+        return;
+      }
+
+      if (args.json) {
+        printJson(data);
+        return;
+      }
+
+      printTable(
+        ['Slot', 'Status', 'Retries', 'Worker', 'Completed At', 'Error'],
+        data.map((j: Record<string, unknown>) => [
+          String(j['slot'] ?? ''),
+          String(j['status'] ?? ''),
+          `${j['retry_count'] ?? 0}/${j['max_retries'] ?? 3}`,
+          j['worker_id'] ? String(j['worker_id']).slice(0, 16) + '…' : '—',
+          j['completed_at'] ? new Date(j['completed_at'] as string).toLocaleString() : '—',
+          j['error_message'] ? truncate(String(j['error_message']), 40) : '—',
+        ])
+      );
+    } catch (err) {
+      handleError(err);
+    }
+  },
+});
+
+// ---------------------------------------------------------------------------
+// tournament subcommand (nested)
+// ---------------------------------------------------------------------------
+const tournamentCreate = defineCommand({
+  meta: { name: 'create', description: 'Create a new tournament.' },
+  args: {
+    title:          { type: 'string', description: 'Tournament title', required: true },
+    format:         { type: 'string', description: 'single_elimination | round_robin | swiss', default: 'single_elimination' },
+    'max-contenders': { type: 'string', description: 'Maximum number of contenders', default: '8' },
+    'battle-type':  { type: 'string', description: 'Battle type for matches', default: 'ai_vs_ai' },
+    'ai-judge':     { type: 'boolean', description: 'Enable AI judge', default: false },
+    json:           { type: 'boolean', description: 'Output as JSON', default: false },
+  },
+  async run({ args }) {
+    try {
+      const data = await callRpc<Record<string, unknown>>(
+        'fn_create_tournament',
+        {
+          p_title:             args.title,
+          p_format:            args.format,
+          p_max_contenders:    parseInt(args['max-contenders'] as string, 10),
+          p_battle_type:       args['battle-type'],
+          p_ai_judge_enabled:  args['ai-judge'],
+        },
+        { requireAuth: true }
+      );
+      if (args.json) { printJson(data); return; }
+      consola.success('Tournament created.');
+      consola.info('ID:   %s', data['id']);
+      consola.info('Slug: %s', data['slug']);
+      consola.info('Next: lf battle tournament register %s', data['id']);
+    } catch (err) { handleError(err); }
+  },
+});
+
+const tournamentRegister = defineCommand({
+  meta: { name: 'register', description: 'Register yourself as a contender in a tournament.' },
+  args: {
+    id: { type: 'positional', description: 'Tournament UUID', required: true },
+  },
+  async run({ args }) {
+    try {
+      const data = await callRpc<Record<string, unknown>>(
+        'fn_register_tournament_contender',
+        { p_tournament_id: args.id },
+        { requireAuth: true }
+      );
+      consola.success('Registered as contender in tournament %s.', args.id);
+      consola.info('Contender ID: %s', data['id']);
+    } catch (err) { handleError(err); }
+  },
+});
+
+const tournamentStart = defineCommand({
+  meta: { name: 'start', description: 'Start the tournament — seeds bracket and creates round 1 battles.' },
+  args: {
+    id: { type: 'positional', description: 'Tournament UUID', required: true },
+  },
+  async run({ args }) {
+    try {
+      await callRpc<void>('fn_start_tournament', { p_tournament_id: args.id }, { requireAuth: true });
+      consola.success('Tournament %s started. Round 1 battles are being created.', args.id);
+    } catch (err) { handleError(err); }
+  },
+});
+
+const tournamentBracket = defineCommand({
+  meta: { name: 'bracket', description: 'Show the tournament bracket.' },
+  args: {
+    id:   { type: 'positional', description: 'Tournament UUID', required: true },
+    json: { type: 'boolean', description: 'Output as JSON', default: false },
+  },
+  async run({ args }) {
+    try {
+      const data = await callRpc<Array<Record<string, unknown>>>(
+        'fn_get_tournament_bracket',
+        { p_tournament_id: args.id },
+        { requireAuth: false }
+      );
+      if (args.json) { printJson(data); return; }
+      if (!data || data.length === 0) {
+        consola.info('No bracket data yet — start the tournament first.');
+        return;
+      }
+      printTable(
+        ['Round', 'Round Status', 'Battle Slug', 'A', 'B', 'Winner'],
+        data.map((m) => [
+          String(m['round_number'] ?? ''),
+          String(m['round_status'] ?? ''),
+          m['battle_slug'] ? String(m['battle_slug']) : '(pending)',
+          m['contender_a_lenser_id'] ? String(m['contender_a_lenser_id']).slice(0, 8) : '—',
+          m['contender_b_lenser_id'] ? String(m['contender_b_lenser_id']).slice(0, 8) : '—',
+          m['winner_lenser_id'] ? String(m['winner_lenser_id']).slice(0, 8) : '—',
+        ])
+      );
+    } catch (err) { handleError(err); }
+  },
+});
+
+const tournament = defineCommand({
+  meta: { name: 'tournament', description: 'Manage LenserFight tournaments.' },
+  subCommands: {
+    create:   tournamentCreate,
+    register: tournamentRegister,
+    start:    tournamentStart,
+    bracket:  tournamentBracket,
+  },
+});
+
+// ---------------------------------------------------------------------------
 // Root command
 // ---------------------------------------------------------------------------
 export default defineCommand({
@@ -1753,5 +2006,8 @@ export default defineCommand({
     feed,
     local,
     exec,
+    schedule,
+    jobs,
+    tournament,
   },
 });
