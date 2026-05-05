@@ -9,12 +9,14 @@ import {
   type WorkflowScheduleRecord,
 } from '@lenserfight/data/repositories'
 import {
+  AgentManageWizard,
   AgentPolicySummary,
   AgentStatusBadge,
   useRunUnified,
 } from '@lenserfight/features/agents'
 import { ThreadsListCard } from '@lenserfight/features/home'
 import { EmptyState } from '@lenserfight/ui/components'
+import { Modal } from '@lenserfight/ui/modals'
 import { useQuery } from '@tanstack/react-query'
 import {
   Activity,
@@ -104,6 +106,7 @@ export const AILenserProfilePage: React.FC<AILenserProfilePageProps> = ({
   onProfileUpdate,
 }) => {
   const navigate = useNavigate()
+  const [showAgentWizard, setShowAgentWizard] = React.useState(false)
 
   const activeTab: LenserTabId =
     (routeTab && AI_TAB_MAP[routeTab]) || 'ai_threads'
@@ -164,6 +167,7 @@ export const AILenserProfilePage: React.FC<AILenserProfilePageProps> = ({
         isOwner={isOwner}
         onProfileUpdate={onProfileUpdate}
         relationshipState={relationshipState}
+        onEditAgent={() => setShowAgentWizard(true)}
       />
 
       <div className="mt-8 px-4 md:px-0">
@@ -245,6 +249,21 @@ export const AILenserProfilePage: React.FC<AILenserProfilePageProps> = ({
           )}
         </div>
       </div>
+
+      {agentProfile && (
+        <Modal
+          isOpen={showAgentWizard}
+          onClose={() => setShowAgentWizard(false)}
+          title={`Edit ${viewedProfile.display_name}`}
+          size="lg"
+        >
+          <AgentManageWizard
+            agentId={agentProfile.id}
+            handle={handle}
+            onDone={() => setShowAgentWizard(false)}
+          />
+        </Modal>
+      )}
     </div>
   )
 }
