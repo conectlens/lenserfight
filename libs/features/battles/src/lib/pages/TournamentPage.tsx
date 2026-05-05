@@ -2,9 +2,10 @@ import { EmptyState, SEOHead } from '@lenserfight/ui/components'
 import { tournamentRepository } from '@lenserfight/data/repositories'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { queryKeys } from '@lenserfight/data/cache'
+import { useLenserOptional } from '@lenserfight/features/profile'
 import { motion } from 'framer-motion'
 import { Trophy, Users, Zap, Play } from 'lucide-react'
-import React from 'react'
+import React, { useState } from 'react'
 import { useParams, Link } from 'react-router-dom'
 
 import { TournamentBracket } from '../components/tournament/TournamentBracket'
@@ -20,6 +21,9 @@ const STATUS_LABELS = {
 export function TournamentPage() {
   const { slug } = useParams<{ slug: string }>()
   const qc = useQueryClient()
+  const lenserCtx = useLenserOptional()
+  const currentLenserId = lenserCtx?.lenser?.id
+  const [advancingMatchId, setAdvancingMatchId] = useState<string | null>(null)
 
   const { data: tournament, isLoading } = useQuery({
     queryKey: [...queryKeys.battles.all, 'tournament', slug],
@@ -51,6 +55,15 @@ export function TournamentPage() {
     mutationFn: () => tournamentRepository.startTournament(tournament!.id),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: [...queryKeys.battles.all, 'tournament', slug] })
+      qc.invalidateQueries({ queryKey: [...queryKeys.battles.all, 'tournament-bracket', tournament!.id] })
+    },
+  })
+
+  const advanceMutation = useMutation({
+    mutationFn: (matchId: string) => tournamentRepository.advanceTournament(matchId),
+    onMutate: (matchId) => setAdvancingMatchId(matchId),
+    onSettled: () => setAdvancingMatchId(null),
+    onSuccess: () => {
       qc.invalidateQueries({ queryKey: [...queryKeys.battles.all, 'tournament-bracket', tournament!.id] })
     },
   })
@@ -165,7 +178,15 @@ export function TournamentPage() {
         {(tournament.status === 'active' || tournament.status === 'completed') && (
           <div className="space-y-3">
             <h2 className="text-sm font-semibold text-greyscale-300 uppercase tracking-wide">Bracket</h2>
-            <TournamentBracket matches={bracket} />
+            <TournamentBracket
+              matches={bracket}
+              onAdvance={
+                currentLenserId && tournament.creator_lenser_id === currentLenserId
+                  ? (matchId) => advanceMutation.mutate(matchId)
+                  : undefined
+              }
+              advancingMatchId={advancingMatchId}
+            />
           </div>
         )}
 
