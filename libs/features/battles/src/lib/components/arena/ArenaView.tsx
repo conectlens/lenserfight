@@ -57,7 +57,7 @@ interface ArenaViewRenderProps {
     voteA: number
     voteB: number
   }) => React.ReactNode
-  renderShareCard: (props: { battleSlug: string; battleTitle: string }) => React.ReactNode
+  renderShareCard: (props: { battleSlug: string; battleTitle: string; winnerName?: string | null; ogImageUrl?: string | null }) => React.ReactNode
   renderStatusBadge: (props: { status: string }) => React.ReactNode
 }
 
@@ -350,7 +350,7 @@ export function ArenaView({
               />
               {criteria.length > 0 &&
                 renderRubricPanel({ criteria, scorecardA, scorecardB })}
-              {renderShareCard({ battleSlug: battle.slug, battleTitle: battle.title })}
+              {renderShareCard({ battleSlug: battle.slug, battleTitle: battle.title, winnerName, ogImageUrl: battle.og_image_url ?? null })}
               {battle.forum_thread_id && (
                 <div className="mt-4 text-center">
                   <a

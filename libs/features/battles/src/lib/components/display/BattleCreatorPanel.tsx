@@ -2,6 +2,7 @@ import React from 'react'
 import { Shield, Rocket, Clock, CheckCircle, Play, Zap } from 'lucide-react'
 import { Card, Badge, Button } from '@lenserfight/ui/components'
 import type { BattleStatus, BattleType } from '../../types/battle.types'
+import { ExecutionCountdown } from './ExecutionCountdown'
 
 interface BattleCreatorPanelProps {
   battleId: string
@@ -11,6 +12,8 @@ interface BattleCreatorPanelProps {
   isPublishing: boolean
   onStartExecution?: () => void
   isStartingExecution?: boolean
+  executionStartsAt?: string | null
+  autoPublish?: boolean
 }
 
 const STATUS_CONFIG: Partial<Record<BattleStatus, { label: string; color: 'gray' | 'green' | 'blue' | 'yellow' | 'purple' }>> = {
@@ -31,7 +34,10 @@ export const BattleCreatorPanel: React.FC<BattleCreatorPanelProps> = ({
   isPublishing,
   onStartExecution,
   isStartingExecution,
+  executionStartsAt,
+  autoPublish,
 }) => {
+  const isAutoExecution = !!executionStartsAt
   const cfg = STATUS_CONFIG[status]
 
   return (
@@ -65,22 +71,36 @@ export const BattleCreatorPanel: React.FC<BattleCreatorPanelProps> = ({
 
       {status === 'open' && (
         <div className="space-y-3">
-          <div className="flex items-start gap-3">
-            <Clock size={15} className="mt-0.5 text-status-green flex-shrink-0" />
-            <p className="text-sm text-greyscale-600 dark:text-greyscale-300">
-              Battle is open. Contenders can now submit their entries. The battle will transition to voting once submissions are ready.
-            </p>
-          </div>
-          {battleType === 'ai_vs_ai' && onStartExecution && (
-            <Button
-              onClick={onStartExecution}
-              disabled={isStartingExecution}
-              isLoading={isStartingExecution}
-              className="flex items-center gap-2 w-auto"
-            >
-              <Play size={14} />
-              {isStartingExecution ? 'Starting…' : 'Start Battle Execution'}
-            </Button>
+          {isAutoExecution ? (
+            <div className="space-y-2">
+              <div className="flex items-start gap-3">
+                <Clock size={15} className="mt-0.5 text-status-green flex-shrink-0" />
+                <p className="text-sm text-greyscale-600 dark:text-greyscale-300">
+                  This battle is scheduled for automatic execution. No action needed.
+                </p>
+              </div>
+              <ExecutionCountdown executionStartsAt={executionStartsAt!} className="pl-[22px]" />
+            </div>
+          ) : (
+            <>
+              <div className="flex items-start gap-3">
+                <Clock size={15} className="mt-0.5 text-status-green flex-shrink-0" />
+                <p className="text-sm text-greyscale-600 dark:text-greyscale-300">
+                  Battle is open. Contenders can now submit their entries. The battle will transition to voting once submissions are ready.
+                </p>
+              </div>
+              {battleType === 'ai_vs_ai' && onStartExecution && (
+                <Button
+                  onClick={onStartExecution}
+                  disabled={isStartingExecution}
+                  isLoading={isStartingExecution}
+                  className="flex items-center gap-2 w-auto"
+                >
+                  <Play size={14} />
+                  {isStartingExecution ? 'Starting…' : 'Start Battle Execution'}
+                </Button>
+              )}
+            </>
           )}
         </div>
       )}
@@ -89,7 +109,9 @@ export const BattleCreatorPanel: React.FC<BattleCreatorPanelProps> = ({
         <div className="flex items-start gap-3">
           <Zap size={15} className="mt-0.5 text-amber-500 flex-shrink-0 animate-pulse" />
           <p className="text-sm text-greyscale-600 dark:text-greyscale-300">
-            AI contenders are competing live. Watch the execution in the arena above.
+            {isAutoExecution
+              ? 'AI contenders are running automatically in the cloud. Results will be ready soon.'
+              : 'AI contenders are competing live. Watch the execution in the arena above.'}
           </p>
         </div>
       )}
@@ -103,7 +125,33 @@ export const BattleCreatorPanel: React.FC<BattleCreatorPanelProps> = ({
         </div>
       )}
 
-      {(status === 'scoring' || status === 'closed' || status === 'published') && (
+      {status === 'closed' && autoPublish && (
+        <div className="flex items-start gap-3">
+          <Zap size={15} className="mt-0.5 text-status-blue flex-shrink-0" />
+          <p className="text-sm text-greyscale-600 dark:text-greyscale-300">
+            Results are being published automatically. They will be visible to everyone shortly.
+          </p>
+        </div>
+      )}
+
+      {status === 'closed' && !autoPublish && (
+        <div className="space-y-3">
+          <p className="text-sm text-greyscale-600 dark:text-greyscale-300">
+            Voting has closed. Publish the results to make them visible to everyone.
+          </p>
+          <Button
+            onClick={() => onPublish(battleId)}
+            disabled={isPublishing}
+            isLoading={isPublishing}
+            className="flex items-center gap-2 w-auto"
+          >
+            <Rocket size={14} />
+            {isPublishing ? 'Publishing…' : 'Publish Results'}
+          </Button>
+        </div>
+      )}
+
+      {(status === 'scoring' || status === 'published') && (
         <div className="flex items-start gap-3">
           <CheckCircle size={15} className="mt-0.5 text-greyscale-400 flex-shrink-0" />
           <p className="text-sm text-greyscale-500 dark:text-greyscale-400">

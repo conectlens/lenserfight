@@ -305,8 +305,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 {section.label && showLabels && (
                   <p
                     className={`px-3 pb-1 text-[10px] font-semibold uppercase tracking-[0.18em] ${workspaceMode === 'agent'
-                        ? 'text-amber-700 dark:text-amber-300'
-                        : 'text-gray-500 dark:text-gray-400'
+                      ? 'text-amber-700 dark:text-amber-300'
+                      : 'text-gray-500 dark:text-gray-400'
                       }`}
                   >
                     {section.label}
@@ -421,10 +421,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                       </div>
                     )}
                   </div>
-
-                  {FEATURES.NOTIFICATIONS && unreadCount > 0 && (
-                    <div className="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 border-2 border-white dark:border-gray-900 rounded-full bg-red-500"></div>
-                  )}
+                  <div className="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 border-2 border-white dark:border-gray-900 rounded-full bg-red-500"></div>
                 </div>
 
                 {showLabels && (
@@ -491,12 +488,12 @@ export const Sidebar: React.FC<SidebarProps> = ({
                             role="option"
                             aria-selected={profile.is_active}
                             className={`w-full text-left flex items-center gap-2.5 px-3 py-2 transition-colors ${profile.type === 'ai'
-                                ? profile.is_active
-                                  ? 'bg-yellow-50 dark:bg-yellow-900/20'
-                                  : 'hover:bg-yellow-50 dark:hover:bg-yellow-900/20'
-                                : profile.is_active
-                                  ? 'bg-gray-50 dark:bg-gray-700/50'
-                                  : 'hover:bg-gray-50 dark:hover:bg-gray-700/50'
+                              ? profile.is_active
+                                ? 'bg-yellow-50 dark:bg-yellow-900/20'
+                                : 'hover:bg-yellow-50 dark:hover:bg-yellow-900/20'
+                              : profile.is_active
+                                ? 'bg-gray-50 dark:bg-gray-700/50'
+                                : 'hover:bg-gray-50 dark:hover:bg-gray-700/50'
                               }`}
                             onClick={async () => {
                               setIsSwitcherOpen(false)
@@ -616,29 +613,33 @@ export const Sidebar: React.FC<SidebarProps> = ({
                             </button>
                           )}
 
-                          {FEATURES.NOTIFICATIONS && (
-                            <button
-                              role="menuitem"
-                              className="w-full text-left px-3 py-2 rounded-lg text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white flex items-center gap-3 transition-colors"
-                              onClick={() => {
-                                setIsDropdownOpen(false)
-                                navigate('/settings/notifications')
-                              }}
-                            >
-                              <div className="relative">
-                                <Bell size={16} className="text-gray-400" />
-                                {unreadCount > 0 && (
-                                  <span className="absolute -top-0.5 -right-0.5 w-2 h-2 bg-red-500 rounded-full"></span>
-                                )}
-                              </div>
-                              <span className="flex-1">Notifications</span>
+                          <button
+                            role="menuitem"
+                            className="w-full text-left px-3 py-2 rounded-lg text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white flex items-center gap-3 transition-colors"
+                            onClick={() => {
+                              setIsDropdownOpen(false)
+                              navigate('/notifications')
+                            }}
+                          >
+                            <div className="relative flex-shrink-0">
+                              <Bell
+                                size={16}
+                                className={unreadCount > 0 ? 'text-primary-yellow-500' : 'text-gray-400'}
+                              />
                               {unreadCount > 0 && (
-                                <span className="bg-red-500 text-white text-[10px] font-bold px-1.5 rounded-full h-4 flex items-center justify-center">
-                                  {unreadCount}
-                                </span>
+                                <>
+                                  <span className="absolute -top-0.5 -right-0.5 w-2 h-2 bg-primary-yellow-500 rounded-full animate-pulse" />
+                                  <span className="absolute -top-0.5 -right-0.5 w-2 h-2 bg-primary-yellow-500 rounded-full opacity-60 animate-ping" />
+                                </>
                               )}
-                            </button>
-                          )}
+                            </div>
+                            <span className="flex-1">Notifications</span>
+                            {unreadCount > 0 && (
+                              <span className="bg-primary-yellow-500 text-black text-[10px] font-bold px-1.5 rounded-full h-4 flex items-center justify-center leading-none">
+                                {unreadCount > 99 ? '99+' : unreadCount}
+                              </span>
+                            )}
+                          </button>
 
                           <button
                             role="menuitem"
