@@ -112,6 +112,9 @@ const LazyNotificationsPage = lazy(() =>
 const LazyTournamentPage = lazy(() =>
   import('@lenserfight/features/battles').then((module) => ({ default: module.TournamentPage }))
 )
+const LazyAdminDashboardPage = lazy(() =>
+  import('@lenserfight/features/battles').then((module) => ({ default: module.AdminDashboardPage }))
+)
 const LazyWorkflowsPage = lazy(() =>
   import('@lenserfight/features/workflows').then((module) => ({ default: module.WorkflowsPage }))
 )
@@ -312,6 +315,7 @@ export const WebRouter: React.FC = () => {
               }
             />
             <Route path="/tournaments/:slug" element={<LazyTournamentPage />} />
+            <Route path="/admin" element={<LazyAdminDashboardPage />} />
             <Route path="/battles/:slug" element={<LazyBattleDetailPage />} />
             <Route path="/battles/:slug/result" element={<LazyBattleResultPage />} />
           </>
