@@ -16,11 +16,14 @@ import {
   AssignLensInput,
   CreateBattleInput,
   ChatCursor,
+  AiJudgeVerdictRecord,
+  DLQEntryRecord,
+  PublicExecutionJobRecord,
 } from '../repositories/battlesRepository'
 
 const battlesRepo = new SupabaseBattlesRepository()
 
-export type { BattleRecord, BattleCommentRecord, GlobalMessageRecord, BattleFeedItemRecord, BattlesFeedOptions, ContenderRecord, VoteAggregateRecord, ScorecardRecord, RubricCriterionRecord, SubmissionRecord, SubmitVoteInput, InviteContenderInput, ContenderLensAssignmentRecord, AssignLensInput, CreateBattleInput, ChatCursor }
+export type { BattleRecord, BattleCommentRecord, GlobalMessageRecord, BattleFeedItemRecord, BattlesFeedOptions, ContenderRecord, VoteAggregateRecord, ScorecardRecord, RubricCriterionRecord, SubmissionRecord, SubmitVoteInput, InviteContenderInput, ContenderLensAssignmentRecord, AssignLensInput, CreateBattleInput, ChatCursor, AiJudgeVerdictRecord, DLQEntryRecord, PublicExecutionJobRecord }
 
 export interface BattleContendersData {
   contenders: ContenderRecord[]
@@ -124,6 +127,27 @@ export const battlesService = {
 
   closeVoting: (battleId: string): Promise<void> =>
     battlesRepo.closeVoting(battleId),
+
+  getAiJudgeVerdicts: (battleId: string): Promise<AiJudgeVerdictRecord[]> =>
+    battlesRepo.getAiJudgeVerdicts(battleId),
+
+  getAiJudgeVerdictsByContender: async (battleId: string): Promise<Record<string, AiJudgeVerdictRecord[]>> => {
+    const verdicts = await battlesRepo.getAiJudgeVerdicts(battleId)
+    return verdicts.reduce<Record<string, AiJudgeVerdictRecord[]>>((acc, v) => {
+      if (!acc[v.contender_id]) acc[v.contender_id] = []
+      acc[v.contender_id].push(v)
+      return acc
+    }, {})
+  },
+
+  getDLQEntries: (opts?: { battleId?: string; unresolvedOnly?: boolean; limit?: number }): Promise<DLQEntryRecord[]> =>
+    battlesRepo.getDLQEntries(opts),
+
+  retryDLQEntry: (deadLetterId: string): Promise<void> =>
+    battlesRepo.retryDLQEntry(deadLetterId),
+
+  getPublicExecutionJobs: (battleId: string): Promise<PublicExecutionJobRecord[]> =>
+    battlesRepo.getPublicExecutionJobs(battleId),
 
   deriveWinner: (
     aggregates: VoteAggregateRecord[],
