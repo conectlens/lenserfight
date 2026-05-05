@@ -168,6 +168,43 @@ export const CreateLenserProfileModal: React.FC = () => {
     return () => clearTimeout(timer)
   }, [handle])
 
+  // Guard: if loaded but no profile yet and navigated past step 0, reset to step 0
+  // to prevent fn_lensers_update_preferences from throwing "Profile not found".
+  useEffect(() => {
+    if (isLoading || !isAuthenticated) return
+    if (!hasLenser && currentStep > 0) {
+      goToStep(0)
+    }
+  }, [isLoading, isAuthenticated, hasLenser, currentStep, goToStep])
+
+  // Hoist steps array before early returns so useMemo is called unconditionally
+  const wizardSteps = useMemo(() => [
+    {
+      label: 'Profile',
+      title: 'Create Your Profile',
+      description: 'Set up your identity on LenserFight',
+      icon: <User size={18} />,
+    },
+    {
+      label: 'Personalization',
+      title: 'Personalize Experience',
+      description: 'Choose your language and theme preferences',
+      icon: <Palette size={18} />,
+    },
+    {
+      label: 'AI Setup',
+      title: 'AI Configuration',
+      description: 'Optionally configure your AI provider',
+      icon: <Sparkles size={18} />,
+    },
+    {
+      label: 'Your Agent',
+      title: 'Create an Agent',
+      description: 'Deploy your first AI assistant',
+      icon: <Bot size={18} />,
+    },
+  ], [])
+
   if (authLoading || isLoading || !isAuthenticated) return null
   if (hasLenser && hasCompletedOnboarding) return null
 
@@ -267,32 +304,7 @@ export const CreateLenserProfileModal: React.FC = () => {
 
   return (
     <StepWizard
-      steps={useMemo(() => [
-        { 
-          label: 'Profile', 
-          title: 'Create Your Profile', 
-          description: 'Set up your identity on LenserFight',
-          icon: <User size={18} />
-        },
-        { 
-          label: 'Personalization', 
-          title: 'Personalize Experience', 
-          description: 'Choose your language and theme preferences',
-          icon: <Palette size={18} />
-        },
-        { 
-          label: 'AI Setup', 
-          title: 'AI Configuration', 
-          description: 'Optionally configure your AI provider',
-          icon: <Sparkles size={18} />
-        },
-        { 
-          label: 'Your Agent', 
-          title: 'Create an Agent', 
-          description: 'Deploy your first AI assistant',
-          icon: <Bot size={18} />
-        }
-      ], []) as any}
+      steps={wizardSteps as any}
       currentStep={currentStep}
       onNext={handleNext}
       onBack={() => goToStep(Math.max(currentStep - 1, 0))}
