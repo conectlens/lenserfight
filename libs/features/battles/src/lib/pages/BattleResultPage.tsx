@@ -45,6 +45,8 @@ export function BattleResultPage() {
           criteria={props.criteria}
           scorecardA={props.scorecardA}
           scorecardB={props.scorecardB}
+          verdictsA={props.verdictsA}
+          verdictsB={props.verdictsB}
         />
       )}
       renderResultBanner={(props) => (

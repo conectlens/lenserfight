@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion'
-import { Swords, Trophy, Clock } from 'lucide-react'
+import { Swords, Trophy, Clock, ChevronRight } from 'lucide-react'
 import React from 'react'
 import { Link } from 'react-router-dom'
 
@@ -7,11 +7,13 @@ import type { TournamentMatchRecord } from '@lenserfight/data/repositories'
 
 interface MatchSlotProps {
   lenserId: string | null
+  handle: string | null
+  avatarUrl: string | null
   isWinner: boolean
   label: string
 }
 
-function MatchSlot({ lenserId, isWinner, label }: MatchSlotProps) {
+function MatchSlot({ lenserId, handle, avatarUrl, isWinner, label }: MatchSlotProps) {
   if (!lenserId) {
     return (
       <div className="flex items-center gap-2 rounded-lg bg-greyscale-800 px-3 py-2 opacity-40">
@@ -19,6 +21,8 @@ function MatchSlot({ lenserId, isWinner, label }: MatchSlotProps) {
       </div>
     )
   }
+
+  const initials = handle ? handle.slice(0, 2).toUpperCase() : '??'
 
   return (
     <div
@@ -30,10 +34,21 @@ function MatchSlot({ lenserId, isWinner, label }: MatchSlotProps) {
       ].join(' ')}
     >
       {isWinner && <Trophy size={12} className="text-yellow-400 shrink-0" />}
+      {avatarUrl ? (
+        <img
+          src={avatarUrl}
+          alt={handle ?? ''}
+          className="w-5 h-5 rounded-full object-cover shrink-0"
+        />
+      ) : (
+        <span className="w-5 h-5 rounded-full bg-greyscale-700 flex items-center justify-center text-[9px] font-bold text-greyscale-400 shrink-0">
+          {initials}
+        </span>
+      )}
       <span
-        className={['text-xs font-medium truncate max-w-[120px]', isWinner ? 'text-yellow-300' : 'text-greyscale-200'].join(' ')}
+        className={['text-xs font-medium truncate max-w-[100px]', isWinner ? 'text-yellow-300' : 'text-greyscale-200'].join(' ')}
       >
-        {lenserId.slice(0, 8)}…
+        {handle ? `@${handle}` : lenserId.slice(0, 8) + '…'}
       </span>
     </div>
   )
@@ -41,22 +56,27 @@ function MatchSlot({ lenserId, isWinner, label }: MatchSlotProps) {
 
 interface BracketMatchProps {
   match: TournamentMatchRecord
+  onAdvance?: (matchId: string) => void
+  isAdvancing?: boolean
 }
 
-function BracketMatch({ match }: BracketMatchProps) {
+function BracketMatch({ match, onAdvance, isAdvancing }: BracketMatchProps) {
   const isPending = !match.battle_id
   const isComplete = !!match.winner_lenser_id
+  const canAdvance = isComplete && !!onAdvance
 
   const inner = (
     <div
       className={[
-        'rounded-xl border p-3 flex flex-col gap-1.5 w-44',
+        'rounded-xl border p-3 flex flex-col gap-1.5 w-48',
         isPending ? 'border-greyscale-800 opacity-50' : 'border-greyscale-700',
         isComplete ? 'border-yellow-800/50' : '',
       ].join(' ')}
     >
       <MatchSlot
         lenserId={match.contender_a_lenser_id}
+        handle={match.contender_a_handle}
+        avatarUrl={match.contender_a_avatar_url}
         isWinner={match.winner_lenser_id === match.contender_a_lenser_id}
         label="TBD"
       />
@@ -65,6 +85,8 @@ function BracketMatch({ match }: BracketMatchProps) {
       </div>
       <MatchSlot
         lenserId={match.contender_b_lenser_id}
+        handle={match.contender_b_handle}
+        avatarUrl={match.contender_b_avatar_url}
         isWinner={match.winner_lenser_id === match.contender_b_lenser_id}
         label="TBD"
       />
@@ -73,6 +95,17 @@ function BracketMatch({ match }: BracketMatchProps) {
           <Clock size={9} />
           Pending
         </div>
+      )}
+      {canAdvance && (
+        <button
+          type="button"
+          onClick={(e) => { e.preventDefault(); onAdvance(match.match_id) }}
+          disabled={isAdvancing}
+          className="mt-1 flex items-center justify-center gap-1 rounded-lg bg-yellow-400/10 border border-yellow-700/40 px-2 py-1 text-[10px] font-semibold text-yellow-400 hover:bg-yellow-400/20 transition-colors disabled:opacity-50"
+        >
+          <ChevronRight size={10} />
+          {isAdvancing ? 'Advancing…' : 'Advance →'}
+        </button>
       )}
     </div>
   )
@@ -92,9 +125,11 @@ interface RoundColumnProps {
   roundNumber: number
   status: string
   matches: TournamentMatchRecord[]
+  onAdvance?: (matchId: string) => void
+  advancingMatchId?: string | null
 }
 
-function RoundColumn({ roundNumber, status, matches }: RoundColumnProps) {
+function RoundColumn({ roundNumber, status, matches, onAdvance, advancingMatchId }: RoundColumnProps) {
   return (
     <div className="flex flex-col gap-2 items-center">
       <div className="flex items-center gap-1.5 mb-3">
@@ -118,7 +153,11 @@ function RoundColumn({ roundNumber, status, matches }: RoundColumnProps) {
             animate={{ opacity: 1, scale: 1 }}
             transition={{ duration: 0.25 }}
           >
-            <BracketMatch match={m} />
+            <BracketMatch
+              match={m}
+              onAdvance={onAdvance}
+              isAdvancing={advancingMatchId === m.match_id}
+            />
           </motion.div>
         ))}
       </div>
@@ -128,9 +167,11 @@ function RoundColumn({ roundNumber, status, matches }: RoundColumnProps) {
 
 interface TournamentBracketProps {
   matches: TournamentMatchRecord[]
+  onAdvance?: (matchId: string) => void
+  advancingMatchId?: string | null
 }
 
-export function TournamentBracket({ matches }: TournamentBracketProps) {
+export function TournamentBracket({ matches, onAdvance, advancingMatchId }: TournamentBracketProps) {
   if (matches.length === 0) {
     return (
       <div className="rounded-xl border border-greyscale-800 bg-greyscale-900 p-8 text-center">
@@ -161,6 +202,8 @@ export function TournamentBracket({ matches }: TournamentBracketProps) {
               roundNumber={rn}
               status={round.status}
               matches={round.matches}
+              onAdvance={onAdvance}
+              advancingMatchId={advancingMatchId}
             />
           )
         })}
