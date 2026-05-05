@@ -39,6 +39,8 @@ interface AgentWorkspaceData {
   instructionBindings: AgentLensBindingRecord[]
   modelBindings: AgentModelBindingRecord[]
   defaultInstructionBinding: AgentLensBindingRecord | null
+  personalityBindings: AgentLensBindingRecord[]
+  defaultPersonalityBinding: AgentLensBindingRecord | null
 }
 
 export function useAgentWorkspaceData({
@@ -146,7 +148,16 @@ export function useAgentWorkspaceData({
     ownerFleetAgentsLoading: ownerFleetAgentsQuery.isLoading,
     instructionBindings: instructionBindingsQuery.data ?? [],
     modelBindings: modelBindingsQuery.data ?? [],
+    personalityBindings: (instructionBindingsQuery.data ?? []).filter((b) =>
+      b.category_tags.includes('personality')
+    ),
+    defaultPersonalityBinding:
+      (instructionBindingsQuery.data ?? []).find(
+        (b) => b.is_default && b.category_tags.includes('personality')
+      ) ?? null,
     defaultInstructionBinding:
-      (instructionBindingsQuery.data ?? []).find((binding) => binding.is_default) ?? null,
+      (instructionBindingsQuery.data ?? []).find(
+        (b) => b.is_default && !b.category_tags.includes('personality')
+      ) ?? null,
   }
 }
