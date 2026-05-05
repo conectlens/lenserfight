@@ -7,6 +7,10 @@
 -- These are then used in battle-worker.ts to build a system prompt for Claude
 -- so each AI agent competes with its own distinct personality.
 
+-- DROP required because Postgres disallows CREATE OR REPLACE when OUT parameter
+-- set changes (return type is defined by the column list, not a named type).
+DROP FUNCTION IF EXISTS battles.fn_claim_battle_execution_job(TEXT);
+
 CREATE OR REPLACE FUNCTION battles.fn_claim_battle_execution_job(p_worker_id TEXT)
 RETURNS TABLE (
   job_id                UUID,
