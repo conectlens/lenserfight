@@ -245,6 +245,8 @@ export const AgentWorkspaceShell: React.FC<AgentWorkspaceShellProps> = ({
       instructionBindings={data.instructionBindings}
       modelBindings={data.modelBindings}
       defaultInstructionBinding={data.defaultInstructionBinding}
+      personalityBindings={data.personalityBindings}
+      defaultPersonalityBinding={data.defaultPersonalityBinding}
       isLoading={
         data.agentLoading ||
         data.bootstrapState.kind === 'loading' ||
