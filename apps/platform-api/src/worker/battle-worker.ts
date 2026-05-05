@@ -1,4 +1,5 @@
 import { callProvider } from '@lenserfight/providers'
+import type { ProviderMessage } from '@lenserfight/providers'
 import { byokKeyResolver } from '@lenserfight/providers'
 import { nodeLogger } from '@lenserfight/utils/logger'
 import { createServiceSupabaseClient } from '../lib/supabase'
@@ -17,6 +18,10 @@ interface ClaimedBattleJob {
   max_tokens: number
   temperature: number
   retry_count: number
+  // personality fields — populated when contender_type = 'ai_agent'
+  ai_lenser_id: string | null
+  personality_note: string | null
+  personality_version_id: string | null
 }
 
 const WORKER_ID = process.env['BATTLE_WORKER_ID'] ?? `battle-worker-${process.pid}`
@@ -74,12 +79,34 @@ export async function processNextBattleJob(): Promise<boolean> {
       prompt = rendered as string
     }
 
+    // Build system prompt from agent personality (ai_agent contenders only).
+    // Personality lens template takes precedence over the plain personality_note.
+    let systemPrompt: string | undefined
+    if (job.personality_version_id) {
+      const { data: rendered, error: renderErr } = await serviceClient
+        .schema('lenses')
+        .rpc('fn_render_template', {
+          p_version_id: job.personality_version_id,
+          p_inputs: {},
+        })
+      if (!renderErr && rendered) {
+        systemPrompt = rendered as string
+      }
+    } else if (job.personality_note) {
+      systemPrompt = job.personality_note
+    }
+
+    const messages: ProviderMessage[] = [
+      ...(systemPrompt ? [{ role: 'system' as const, content: systemPrompt }] : []),
+      { role: 'user' as const, content: prompt },
+    ]
+
     const apiKey = await resolveApiKey(job)
     const response = await callProvider(
       job.provider_key as 'openai' | 'anthropic' | 'google' | 'mistral' | 'ollama',
       apiKey,
       job.model_key,
-      [{ role: 'user', content: prompt }],
+      messages,
     )
 
     await serviceClient
