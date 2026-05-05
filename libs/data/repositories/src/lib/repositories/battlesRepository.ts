@@ -42,6 +42,53 @@ export interface BattleRecord {
   forum_thread_id: string | null
   workflow_id: string | null
   lens_id: string | null
+  execution_starts_at: string | null
+  auto_publish: boolean
+  voting_duration_hours: number
+  vote_velocity: number
+  og_image_url: string | null
+}
+
+export interface TrendingBattleRecord {
+  id: string
+  slug: string
+  title: string
+  status: string
+  published_at: string | null
+  battle_type: string
+  total_vote_count: number
+  vote_velocity: number
+  og_image_url: string | null
+  contender_a_name: string | null
+  contender_b_name: string | null
+  winner_slot: 'A' | 'B' | null
+}
+
+export interface TrendingBattlesOptions {
+  limit?: number
+  cursor?: number | null
+}
+
+export interface BattleExecutionJobRecord {
+  id: string
+  battle_id: string
+  contender_id: string
+  slot: 'A' | 'B'
+  status: 'queued' | 'claimed' | 'running' | 'completed' | 'failed'
+  worker_id: string | null
+  claimed_at: string | null
+  completed_at: string | null
+  retry_count: number
+  max_retries: number
+  error_message: string | null
+  created_at: string
+}
+
+export interface ScheduleBattleInput {
+  battle_id: string
+  execution_starts_at: string
+  voting_duration_hours?: number
+  auto_publish?: boolean
 }
 
 export interface AIHandicapPolicyRecord {
@@ -223,6 +270,9 @@ export interface BattlesRepositoryPort {
   getLatestDraftBattleByWorkflowId(workflowId: string): Promise<BattleRecord | null>
   openVoting(battleId: string): Promise<void>
   closeVoting(battleId: string): Promise<void>
+  scheduleBattle(input: ScheduleBattleInput): Promise<BattleRecord>
+  getBattleExecutionJobs(battleId: string): Promise<BattleExecutionJobRecord[]>
+  getTrendingBattles(options?: TrendingBattlesOptions): Promise<TrendingBattleRecord[]>
 }
 
 // --- Supabase Implementation ---
@@ -236,7 +286,7 @@ export class SupabaseBattlesRepository implements BattlesRepositoryPort {
   }
 
   private readonly battleSelect =
-    'id, slug, title, task_prompt, status, total_vote_count, published_at, voting_opens_at, voting_closes_at, battle_type, voter_eligibility, handicap_config, creator_lenser_id, forum_thread_id, workflow_id, lens_id'
+    'id, slug, title, task_prompt, status, total_vote_count, published_at, voting_opens_at, voting_closes_at, battle_type, voter_eligibility, handicap_config, creator_lenser_id, forum_thread_id, workflow_id, lens_id, execution_starts_at, auto_publish, voting_duration_hours, vote_velocity, og_image_url'
 
   async getBattleBySlug(slug: string): Promise<BattleRecord | null> {
     const { data, error } = await supabase
@@ -649,5 +699,41 @@ export class SupabaseBattlesRepository implements BattlesRepositoryPort {
   async closeVoting(battleId: string): Promise<void> {
     const { error } = await supabase.rpc('fn_battle_close_voting', { p_battle_id: battleId })
     if (error) this.handleError(error)
+  }
+
+  async scheduleBattle(input: ScheduleBattleInput): Promise<BattleRecord> {
+    const { data, error } = await supabase
+      .schema('battles')
+      .from('battles')
+      .update({
+        execution_starts_at:   input.execution_starts_at,
+        voting_duration_hours: input.voting_duration_hours ?? 24,
+        auto_publish:          input.auto_publish ?? true,
+      })
+      .eq('id', input.battle_id)
+      .select(this.battleSelect)
+      .single()
+    if (error) this.handleError(error)
+    return data as BattleRecord
+  }
+
+  async getBattleExecutionJobs(battleId: string): Promise<BattleExecutionJobRecord[]> {
+    const { data, error } = await supabase
+      .schema('battles')
+      .from('battle_execution_jobs')
+      .select('id, battle_id, contender_id, slot, status, worker_id, claimed_at, completed_at, retry_count, max_retries, error_message, created_at')
+      .eq('battle_id', battleId)
+      .order('slot')
+    if (error) this.handleError(error)
+    return (data ?? []) as BattleExecutionJobRecord[]
+  }
+
+  async getTrendingBattles(options?: TrendingBattlesOptions): Promise<TrendingBattleRecord[]> {
+    const { data, error } = await supabase.rpc('fn_get_trending_battles', {
+      p_limit:  options?.limit ?? 20,
+      p_cursor: options?.cursor ?? null,
+    })
+    if (error) this.handleError(error)
+    return (data ?? []) as TrendingBattleRecord[]
   }
 }
