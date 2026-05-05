@@ -11,6 +11,7 @@ import { useMyVote } from '../../hooks/query/useMyVote'
 import { useSubmitVote } from '../../hooks/mutations/useSubmitVote'
 import { useVoteAggregates } from '../../hooks/query/useVoteAggregates'
 import { useBattleLiveSubmission } from '../../hooks/realtime/useBattleLiveSubmission'
+import { useExecutionJobs } from '../../hooks/query/useExecutionJobs'
 import { getRenderer } from '../../renderers'
 import { BattleLiveArena } from './BattleLiveArena'
 import type { ContenderLensAssignmentRecord } from '../../types/battle.types'
@@ -67,6 +68,10 @@ export const ImmersiveArenaView: React.FC<ImmersiveArenaViewProps> = ({ slug }) 
   const totalVotes = (aggA?.raw_vote_count ?? 0) + (aggB?.raw_vote_count ?? 0)
 
   const isOwner = !!(battle?.creator_lenser_id && lenser?.id && battle.creator_lenser_id === lenser.id)
+
+  const { data: executionJobs = [] } = useExecutionJobs(battle?.id, battle?.status as import('../../types/battle.types').BattleStatus | undefined)
+  const executionJobA = executionJobs.find((j) => j.slot === 'A')
+  const executionJobB = executionJobs.find((j) => j.slot === 'B')
 
   const handleVote = async (value: 'contender_a' | 'contender_b' | 'draw', rationale: string) => {
     if (!currentUserId || !contenderA || !contenderB) return
@@ -175,6 +180,7 @@ export const ImmersiveArenaView: React.FC<ImmersiveArenaViewProps> = ({ slug }) 
               taskPrompt={battle.task_prompt}
               currentUserId={currentUserId}
               lensAssignment={lensAssignmentA}
+              executionJob={executionJobA}
               className="order-1 md:order-none md:border-r border-surface-border-subtle"
             />
             <ArenaCenterZone
@@ -201,6 +207,7 @@ export const ImmersiveArenaView: React.FC<ImmersiveArenaViewProps> = ({ slug }) 
               taskPrompt={battle.task_prompt}
               currentUserId={currentUserId}
               lensAssignment={lensAssignmentB}
+              executionJob={executionJobB}
               className="order-2 md:order-none"
             />
           </div>
