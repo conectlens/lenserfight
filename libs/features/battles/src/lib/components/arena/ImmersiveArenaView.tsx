@@ -1,6 +1,6 @@
 import React, { lazy, Suspense, useState } from 'react'
 import { useAuth } from '@lenserfight/features/auth'
-import { useLenser } from '@lenserfight/features/profile'
+import { useLenserOptional } from '@lenserfight/features/profile'
 
 import { useBattle } from '../../hooks/query/useBattle'
 import { useBattleContenders } from '../../hooks/query/useBattleContenders'
@@ -29,12 +29,14 @@ import { ResultBanner } from '../scoring/ResultBanner'
 
 interface ImmersiveArenaViewProps {
   slug: string
-  currentUserId?: string
 }
 
-export const ImmersiveArenaView: React.FC<ImmersiveArenaViewProps> = ({ slug, currentUserId }) => {
+export const ImmersiveArenaView: React.FC<ImmersiveArenaViewProps> = ({ slug }) => {
   const { isAuthenticated } = useAuth()
-  const { lenser, hasLenser } = useLenser()
+  const lenserCtx = useLenserOptional()
+  const lenser = lenserCtx?.lenser ?? null
+  const hasLenser = lenserCtx?.hasLenser ?? false
+  const currentUserId = lenser?.id
   const [chatOpen, setChatOpen] = useState(false)
   const [rulesOpen, setRulesOpen] = useState(false)
 
