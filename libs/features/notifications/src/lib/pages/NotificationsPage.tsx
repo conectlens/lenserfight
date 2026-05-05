@@ -3,8 +3,9 @@ import { Bell, CheckCheck } from 'lucide-react'
 import { Button } from '@lenserfight/ui/components'
 import { useNotifications } from '../hooks/useNotifications'
 import type { NotificationRecord } from '@lenserfight/data/repositories'
+import { NOTIFICATION_CATEGORY_MAP, type NotificationType, type NotificationCategory } from '@lenserfight/types'
 
-type FilterTab = 'all' | 'unread' | 'battle_result'
+type FilterTab = 'all' | 'unread' | NotificationCategory
 
 function NotificationRow({ n, onRead }: { n: NotificationRecord; onRead: (id: string) => void }) {
   return (
@@ -38,7 +39,7 @@ function NotificationRow({ n, onRead }: { n: NotificationRecord; onRead: (id: st
         <p className="text-xs text-greyscale-400 mt-1">{new Date(n.created_at).toLocaleString()}</p>
       </div>
       <span className="flex-shrink-0 text-xs text-greyscale-400 capitalize mt-0.5">
-        {n.type.replace('_', ' ')}
+        {n.type.replace(/_/g, ' ')}
       </span>
     </div>
   )
@@ -51,14 +52,18 @@ export function NotificationsPage() {
 
   const filtered = notifications.filter((n) => {
     if (tab === 'unread') return !n.read_at
-    if (tab === 'battle_result') return n.type === 'battle_result'
-    return true
+    if (tab === 'all') return true
+    return NOTIFICATION_CATEGORY_MAP[n.type as NotificationType] === (tab as NotificationCategory)
   })
 
   const tabs: { id: FilterTab; label: string }[] = [
-    { id: 'all',          label: 'All' },
-    { id: 'unread',       label: `Unread${unreadCount > 0 ? ` (${unreadCount})` : ''}` },
-    { id: 'battle_result', label: 'Battle Results' },
+    { id: 'all',     label: 'All' },
+    { id: 'unread',  label: `Unread${unreadCount > 0 ? ` (${unreadCount})` : ''}` },
+    { id: 'battle',  label: 'Battles' },
+    { id: 'social',  label: 'Social' },
+    { id: 'content', label: 'Content' },
+    { id: 'agent',   label: 'Agent' },
+    { id: 'system',  label: 'System' },
   ]
 
   return (
@@ -82,13 +87,13 @@ export function NotificationsPage() {
       </div>
 
       {/* Tabs */}
-      <div className="flex gap-1 mb-4 border-b border-surface-border">
+      <div className="flex gap-1 mb-4 border-b border-surface-border overflow-x-auto">
         {tabs.map((t) => (
           <button
             key={t.id}
             type="button"
             onClick={() => { setTab(t.id); setPage(1) }}
-            className={`px-4 py-2.5 text-sm font-medium transition-colors border-b-2 -mb-px ${
+            className={`px-4 py-2.5 text-sm font-medium transition-colors border-b-2 -mb-px whitespace-nowrap ${
               tab === t.id
                 ? 'border-primary-yellow-500 text-greyscale-900 dark:text-greyscale-50'
                 : 'border-transparent text-greyscale-500 hover:text-greyscale-700 dark:hover:text-greyscale-300'
