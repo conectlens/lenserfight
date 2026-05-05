@@ -121,6 +121,8 @@ export const queryKeys = {
     comments: (battleId: string) => [...queryKeys.battles.all, 'comments', battleId] as const,
     globalChat: (battleId: string) => [...queryKeys.battles.all, 'globalChat', battleId] as const,
     lensAssignment: (contenderId: string) => [...queryKeys.battles.all, 'lensAssignment', contenderId] as const,
+    trending: (cursor?: number) => [...queryKeys.battles.all, 'trending', cursor ?? null] as const,
+    lenserboard: () => [...queryKeys.battles.all, 'lenserboard'] as const,
   },
   workflows: {
     all: ['workflows'] as const,
