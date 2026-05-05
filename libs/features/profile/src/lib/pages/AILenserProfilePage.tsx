@@ -34,6 +34,7 @@ import { AILenserWorkflowPanel } from '../components/AILenserWorkflowPanel'
 import { LenserActionsList } from '../components/LenserActionsList'
 import { LenserProfileHeader } from '../components/LenserProfileHeader'
 import { LenserTabs, type LenserTabDefinition, type LenserTabId } from '../components/LenserTabs'
+import { useWorkspaceSwitchController } from '../useWorkspaceSwitchController'
 
 import type {
   ActivityFeedItem,
@@ -105,6 +106,7 @@ export const AILenserProfilePage: React.FC<AILenserProfilePageProps> = ({
   onProfileUpdate,
 }) => {
   const navigate = useNavigate()
+  const { switchToProfile } = useWorkspaceSwitchController()
   const [showAgentWizard, setShowAgentWizard] = React.useState(false)
 
   const activeTab: LenserTabId =
@@ -167,7 +169,7 @@ export const AILenserProfilePage: React.FC<AILenserProfilePageProps> = ({
         onProfileUpdate={onProfileUpdate}
         relationshipState={relationshipState}
         onEditAgent={() => setShowAgentWizard(true)}
-        onControlRoom={() => navigate(`/lenser/${handle}/ag/overview`)}
+        onControlRoom={() => switchToProfile(viewedProfile)}
       />
 
       <div className="mt-8 px-4 md:px-0">
