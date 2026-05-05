@@ -17,7 +17,7 @@ import React, { useState, useRef, useEffect } from 'react'
 import { createPortal } from 'react-dom'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { Avatar, Logo } from '@lenserfight/ui/components'
-import { notificationService } from '@lenserfight/data/repositories'
+import { useNotifications } from '@lenserfight/features/notifications'
 import { useAuth } from '@lenserfight/features/auth'
 import { FeedbackModal } from '@lenserfight/features/feedback'
 import {
@@ -123,32 +123,13 @@ export const Sidebar: React.FC<SidebarProps> = ({
   const switcherButtonRef = useRef<HTMLButtonElement>(null)
   const [switcherPos, setSwitcherPos] = useState<{ top: number; left: number } | null>(null)
 
-  const [unreadCount, setUnreadCount] = useState(0)
+  const { unreadCount } = useNotifications(1)
   const [isFeedbackOpen, setIsFeedbackOpen] = useState(false)
   const [agentSettingsOpen, setAgentSettingsOpen] = useState(false)
   const [shownThemeName, setShownThemeName] = useState<string | null>(null)
   const themeNameTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   const isAIWorkspace = workspaceMode === 'agent'
-
-  useEffect(() => {
-    if (!authLenser || !FEATURES.NOTIFICATIONS) return
-
-    let isMounted = true
-    const fetchNotifications = async () => {
-      try {
-        const count = await notificationService.getUnreadCount()
-        if (isMounted) setUnreadCount(count)
-      } catch (e) {
-        console.error('Failed to fetch sidebar notifications', e)
-      }
-    }
-    fetchNotifications()
-
-    return () => {
-      isMounted = false
-    }
-  }, [authLenser?.id])
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {

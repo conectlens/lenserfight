@@ -1,22 +1,13 @@
 import { supabase } from '@lenserfight/data/supabase'
+import type { NotificationRow } from '@lenserfight/types'
 
-export type NotificationType = 'battle_result' | 'battle_started' | 'vote_reminder' | 'badge_awarded' | 'system'
-
-export interface NotificationRecord {
-  id: string
-  type: NotificationType
-  title: string
-  body: string | null
-  action_url: string | null
-  metadata: Record<string, unknown>
-  read_at: string | null
-  created_at: string
-  unread_count: number
-}
+// Backward-compat alias — existing consumers (useNotifications, useNotificationToast, NotificationsPage) use NotificationRecord
+export type NotificationRecord = NotificationRow
 
 export interface NotificationsRepositoryPort {
   getNotifications(limit?: number, cursor?: string): Promise<NotificationRecord[]>
   markRead(ids: string[]): Promise<number>
+  getUnreadCount(): Promise<number>
 }
 
 export class SupabaseNotificationsRepository implements NotificationsRepositoryPort {
@@ -34,6 +25,12 @@ export class SupabaseNotificationsRepository implements NotificationsRepositoryP
     const { data, error } = await supabase.rpc('fn_mark_notifications_read', {
       p_notification_ids: ids,
     })
+    if (error) throw error
+    return (data as number) ?? 0
+  }
+
+  async getUnreadCount(): Promise<number> {
+    const { data, error } = await supabase.rpc('fn_get_unread_notification_count')
     if (error) throw error
     return (data as number) ?? 0
   }
