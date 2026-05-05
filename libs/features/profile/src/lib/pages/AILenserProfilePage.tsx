@@ -31,7 +31,6 @@ import React from 'react'
 import { useNavigate } from 'react-router-dom'
 
 import { AILenserWorkflowPanel } from '../components/AILenserWorkflowPanel'
-import { AILenserWorkspacePrompt } from '../components/AILenserWorkspacePrompt'
 import { LenserActionsList } from '../components/LenserActionsList'
 import { LenserProfileHeader } from '../components/LenserProfileHeader'
 import { LenserTabs, type LenserTabDefinition, type LenserTabId } from '../components/LenserTabs'
@@ -168,15 +167,10 @@ export const AILenserProfilePage: React.FC<AILenserProfilePageProps> = ({
         onProfileUpdate={onProfileUpdate}
         relationshipState={relationshipState}
         onEditAgent={() => setShowAgentWizard(true)}
+        onControlRoom={() => navigate(`/lenser/${handle}/ag/overview`)}
       />
 
       <div className="mt-8 px-4 md:px-0">
-        {isOwner && (
-          <AILenserWorkspacePrompt
-            displayName={viewedProfile.display_name}
-            onSwitch={() => navigate(`/lenser/${handle}/ag/overview`)}
-          />
-        )}
 
         <LenserTabs activeTab={activeTab} onChange={handleTabChange} tabs={AI_TABS} />
 
