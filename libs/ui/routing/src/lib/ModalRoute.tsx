@@ -1,7 +1,7 @@
 import React from 'react'
 import { Navigate, useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '@lenserfight/features/auth'
-import { useLenser } from '@lenserfight/features/profile'
+import { useLenserOptional } from '@lenserfight/features/profile'
 import { Dialog } from '@lenserfight/ui/overlays'
 
 export interface ModalAccessContext {
@@ -75,7 +75,7 @@ export const ModalRoute: React.FC<ModalRouteProps> = ({
   const navigate = useNavigate()
   const location = useLocation()
   const { isAuthenticated } = useAuth()
-  const { hasLenser } = useLenser()
+  const hasLenser = useLenserOptional()?.hasLenser ?? false
 
   if (accessCheck && !accessCheck({ isAuthenticated, hasLenser })) {
     return <Navigate to={fallback} state={{ from: location }} replace />
