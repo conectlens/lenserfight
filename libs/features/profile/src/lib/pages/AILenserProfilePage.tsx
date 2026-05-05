@@ -16,7 +16,7 @@ import {
 } from '@lenserfight/features/agents'
 import { ThreadsListCard } from '@lenserfight/features/home'
 import { EmptyState } from '@lenserfight/ui/components'
-import { Modal } from '@lenserfight/ui/modals'
+import { Dialog } from '@lenserfight/ui/overlays'
 import { useQuery } from '@tanstack/react-query'
 import {
   Activity,
@@ -247,18 +247,18 @@ export const AILenserProfilePage: React.FC<AILenserProfilePageProps> = ({
       </div>
 
       {agentProfile && (
-        <Modal
-          isOpen={showAgentWizard}
+        <Dialog
+          open={showAgentWizard}
           onClose={() => setShowAgentWizard(false)}
           title={`Edit ${viewedProfile.display_name}`}
-          size="lg"
+          maxWidth="max-w-2xl"
         >
           <AgentManageWizard
             agentId={agentProfile.id}
             handle={handle}
             onDone={() => setShowAgentWizard(false)}
           />
-        </Modal>
+        </Dialog>
       )}
     </div>
   )
