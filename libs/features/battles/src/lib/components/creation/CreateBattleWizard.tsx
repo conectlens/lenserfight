@@ -23,6 +23,7 @@ import type { LenserSearchResult } from './LenserSearchPicker'
 import { VoterEligibilitySelector } from './VoterEligibilitySelector'
 
 import type { AIHandicapConfig, BattleType, VoterEligibility } from '../../types/battle.types'
+import type { ScheduleBattleInput } from '@lenserfight/data/repositories'
 import type { LensViewModel } from '@lenserfight/types'
 import { useInviteContender } from '../../hooks/mutations/useInviteContender'
 
@@ -35,7 +36,7 @@ const WIZARD_STEPS: WizardStepConfig[] = [
     description: 'Select whether you want to battle with a connected workflow or a single lens prompt.',
   },
   {
-    label: 'Source', // Was 'Pick'
+    label: 'Source',
     title: 'Select your source',
     description: 'Choose which workflow or lens to use for this battle.',
   },
@@ -45,9 +46,14 @@ const WIZARD_STEPS: WizardStepConfig[] = [
     description: 'Give your battle a title and, if using a lens, a prompt.',
   },
   {
-    label: 'Config', // Merged 3 & 4
+    label: 'Config',
     title: 'Battle configuration',
     description: 'Choose battle mode, voter eligibility, and AI handicap settings.',
+  },
+  {
+    label: 'Schedule',
+    title: 'Schedule execution',
+    description: 'Set when AI contenders execute automatically. Optional — skip to run manually.',
   },
   {
     label: 'Contenders',
@@ -92,6 +98,7 @@ export const CreateBattleWizard: React.FC<CreateBattleWizardProps> = ({ onSucces
   const navigate = useNavigate()
   const [searchParams, setSearchParams] = useSearchParams()
   const { step, goToStep } = useWizardStep({ maxStep: WIZARD_STEPS.length })
+  const AUTO_EXEC_TYPES: BattleType[] = ['ai_vs_ai', 'workflow_battle']
 
   const [direction, setDirection] = useState(1)
   const [submitting, setSubmitting] = useState(false)
@@ -140,6 +147,12 @@ export const CreateBattleWizard: React.FC<CreateBattleWizardProps> = ({ onSucces
       .map((m) => ({ key: m.key, name: m.name, inputModalities: m.input_modalities }))
   }, [models, selectedProviderKey])
 
+  // Step 4 — scheduling (optional, only for ai_vs_ai / workflow_battle)
+  const [scheduleEnabled, setScheduleEnabled] = useState(false)
+  const [executionStartsAt, setExecutionStartsAt] = useState('')
+  const [votingDurationHours, setVotingDurationHours] = useState(24)
+  const [autoPublish, setAutoPublish] = useState(true)
+
   // Post-creation
   const [createdBattleSlug, setCreatedBattleSlug] = useState<string | null>(null)
   const [createdBattleId, setCreatedBattleId] = useState<string | null>(null)
@@ -166,7 +179,7 @@ export const CreateBattleWizard: React.FC<CreateBattleWizardProps> = ({ onSucces
   }, []) // eslint-disable-line
 
   // ── Fetch existing battle for editing ─────────────────────────────────────
-  const isEditMode = !!battleIdFromUrl && step < 4
+  const isEditMode = !!battleIdFromUrl && step < 5
 
   useEffect(() => {
     if (battleIdFromUrl && step < 4) {
@@ -209,9 +222,9 @@ export const CreateBattleWizard: React.FC<CreateBattleWizardProps> = ({ onSucces
     }
   }, [battleIdFromUrl]) // eslint-disable-line
 
-  // Guard: if URL claims step >= 4 but there's no battleId, reset to step 0
+  // Guard: if URL claims step >= 5 but there's no battleId, reset to step 0
   useEffect(() => {
-    if (step >= 4 && !battleIdFromUrl) {
+    if (step >= 5 && !battleIdFromUrl) {
       navigate('/battles/create', { replace: true })
     }
   }, []) // eslint-disable-line
@@ -275,7 +288,7 @@ export const CreateBattleWizard: React.FC<CreateBattleWizardProps> = ({ onSucces
       return battleFormat === 'workflow' ? !!selectedWorkflowId : !!selectedLensId
     }
     if (step === 2) return title.trim().length >= 3
-    // Steps 4 & 5 are always skippable
+    // Steps 4, 5, 6 are always skippable
     return true
   })()
 
@@ -284,6 +297,7 @@ export const CreateBattleWizard: React.FC<CreateBattleWizardProps> = ({ onSucces
     battleFormat === 'workflow' ? !!selectedWorkflowId : !!selectedLensId,
     title.trim().length >= 3,
     true, // config step always valid
+    true, // schedule always skippable
     true, // contenders always skippable
     true, // lenses always skippable
   ]
@@ -342,6 +356,20 @@ export const CreateBattleWizard: React.FC<CreateBattleWizardProps> = ({ onSucces
         },
         { replace: false }
       )
+      // If schedule is enabled for this battle type, apply it immediately
+      if (
+        scheduleEnabled &&
+        executionStartsAt &&
+        AUTO_EXEC_TYPES.includes(battleType)
+      ) {
+        const scheduleInput: ScheduleBattleInput = {
+          battle_id:             battle.id,
+          execution_starts_at:   executionStartsAt,
+          voting_duration_hours: votingDurationHours,
+          auto_publish:          autoPublish,
+        }
+        await battlesService.scheduleBattle(scheduleInput)
+      }
     } catch (e) {
       setError((e as Error).message ?? 'Something went wrong. Please try again.')
     } finally {
@@ -440,13 +468,15 @@ export const CreateBattleWizard: React.FC<CreateBattleWizardProps> = ({ onSucces
   const skipButton = step === 4
     ? { label: 'Skip for now', onClick: () => go(5) }
     : step === 5
-      ? { label: 'Skip for now', onClick: handleFinish }
-      : undefined
+      ? { label: 'Skip for now', onClick: () => go(6) }
+      : step === 6
+        ? { label: 'Skip for now', onClick: handleFinish }
+        : undefined
 
   // Next / complete handler varies by step
   const handleNext = step === 3
     ? handleCreateBattle
-    : step === 4
+    : step === 5
       ? handleInvite
       : () => go(step + 1)
 
@@ -462,11 +492,11 @@ export const CreateBattleWizard: React.FC<CreateBattleWizardProps> = ({ onSucces
         onComplete={handleComplete}
         onCancel={onClose}
         canProceed={canProceed}
-        isCompleting={step === 3 ? submitting : step === 4 ? inviting : false}
-        isNextLoading={step === 3 ? submitting : step === 4 ? inviting : false}
+        isCompleting={step === 3 ? submitting : step === 5 ? inviting : false}
+        isNextLoading={step === 3 ? submitting : step === 5 ? inviting : false}
         completeLabel="Go to Battle"
         completeIcon={<Swords size={15} className="mr-1.5" />}
-        nextLabel={step === 3 ? (isEditMode ? 'Update Battle' : 'Create Battle') : step === 4 ? 'Invite' : 'Next'}
+        nextLabel={step === 3 ? (isEditMode ? 'Update Battle' : 'Create Battle') : step === 5 ? 'Invite' : 'Next'}
         skipButton={skipButton}
         stepValidity={stepValidity}
         onStepClick={go}
@@ -723,8 +753,107 @@ export const CreateBattleWizard: React.FC<CreateBattleWizardProps> = ({ onSucces
               </div>
             )}
 
-            {/* ── Step 4: Invite contenders ─────────────────────────── */}
+            {/* ── Step 4: Schedule execution ────────────────────────── */}
             {step === 4 && (
+              <div className="space-y-5">
+                {AUTO_EXEC_TYPES.includes(battleType) ? (
+                  <>
+                    <div className="flex items-center justify-between gap-4">
+                      <div>
+                        <p className="text-sm font-semibold text-greyscale-900 dark:text-greyscale-50">
+                          Automatic execution
+                        </p>
+                        <p className="text-xs text-greyscale-400 mt-0.5">
+                          AI contenders run server-side at the scheduled time — no manual trigger needed.
+                        </p>
+                      </div>
+                      <button
+                        type="button"
+                        role="switch"
+                        aria-checked={scheduleEnabled}
+                        onClick={() => setScheduleEnabled((v) => !v)}
+                        className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 focus:outline-none ${
+                          scheduleEnabled ? 'bg-primary-yellow-500' : 'bg-greyscale-200 dark:bg-greyscale-700'
+                        }`}
+                      >
+                        <span
+                          className={`inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ${
+                            scheduleEnabled ? 'translate-x-5' : 'translate-x-0'
+                          }`}
+                        />
+                      </button>
+                    </div>
+
+                    {scheduleEnabled && (
+                      <div className="space-y-4 rounded-2xl border border-surface-border p-4">
+                        <div>
+                          <label className="mb-2 block text-sm font-semibold text-greyscale-900 dark:text-greyscale-0">
+                            Execution start time
+                          </label>
+                          <input
+                            type="datetime-local"
+                            value={executionStartsAt}
+                            onChange={(e) => setExecutionStartsAt(e.target.value)}
+                            min={new Date(Date.now() + 60_000).toISOString().slice(0, 16)}
+                            className="w-full rounded-xl border border-surface-border bg-surface-raised px-3 py-2 text-sm text-greyscale-900 dark:text-greyscale-50 focus:border-primary-yellow-500 focus:outline-none"
+                          />
+                        </div>
+
+                        <div>
+                          <label className="mb-2 block text-sm font-semibold text-greyscale-900 dark:text-greyscale-0">
+                            Voting window
+                          </label>
+                          <select
+                            value={votingDurationHours}
+                            onChange={(e) => setVotingDurationHours(Number(e.target.value))}
+                            className="w-full rounded-xl border border-surface-border bg-surface-raised px-3 py-2 text-sm text-greyscale-900 dark:text-greyscale-50 focus:border-primary-yellow-500 focus:outline-none"
+                          >
+                            {[1, 6, 12, 24, 48, 72].map((h) => (
+                              <option key={h} value={h}>
+                                {h === 1 ? '1 hour' : `${h} hours`}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+
+                        <div className="flex items-center justify-between gap-4">
+                          <div>
+                            <p className="text-sm font-semibold text-greyscale-900 dark:text-greyscale-50">
+                              Auto-publish results
+                            </p>
+                            <p className="text-xs text-greyscale-400 mt-0.5">
+                              Results publish automatically after voting closes.
+                            </p>
+                          </div>
+                          <button
+                            type="button"
+                            role="switch"
+                            aria-checked={autoPublish}
+                            onClick={() => setAutoPublish((v) => !v)}
+                            className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 focus:outline-none ${
+                              autoPublish ? 'bg-primary-yellow-500' : 'bg-greyscale-200 dark:bg-greyscale-700'
+                            }`}
+                          >
+                            <span
+                              className={`inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ${
+                                autoPublish ? 'translate-x-5' : 'translate-x-0'
+                              }`}
+                            />
+                          </button>
+                        </div>
+                      </div>
+                    )}
+                  </>
+                ) : (
+                  <p className="py-6 text-center text-sm text-greyscale-400">
+                    Automatic scheduling is only available for AI vs AI and Workflow battles.
+                  </p>
+                )}
+              </div>
+            )}
+
+            {/* ── Step 5: Invite contenders ─────────────────────────── */}
+            {step === 5 && (
               <ContenderInviteStep
                 slotA={slotA}
                 slotB={slotB}
@@ -734,8 +863,8 @@ export const CreateBattleWizard: React.FC<CreateBattleWizardProps> = ({ onSucces
               />
             )}
 
-            {/* ── Step 5: Assign Lenses ─────────────────────────────── */}
-            {step === 5 && activeBattleId && (
+            {/* ── Step 6: Assign Lenses ─────────────────────────────── */}
+            {step === 6 && activeBattleId && (
               <LensAssignmentStep
                 battleId={activeBattleId}
                 contenderAId={contenderAId}
