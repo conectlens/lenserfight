@@ -21,6 +21,7 @@ import {
   Trophy,
   Zap,
   Bot,
+  LayoutDashboard,
 } from 'lucide-react'
 import React, { useState, useEffect } from 'react'
 
@@ -41,6 +42,7 @@ interface LenserProfileHeaderProps {
   relationshipState?: RelationshipState | null
   onManageAgents?: () => void
   onEditAgent?: () => void
+  onControlRoom?: () => void
 }
 
 export const LenserProfileHeader: React.FC<LenserProfileHeaderProps> = ({
@@ -52,6 +54,7 @@ export const LenserProfileHeader: React.FC<LenserProfileHeaderProps> = ({
   relationshipState,
   onManageAgents,
   onEditAgent,
+  onControlRoom,
 }) => {
   const { updateLenserProfile } = useLenser()
 
@@ -244,6 +247,16 @@ export const LenserProfileHeader: React.FC<LenserProfileHeaderProps> = ({
                   <Bot size={18} />
                 </Button>
               )}
+              {lenser.type === 'ai' && onControlRoom && (
+                <Button
+                  variant="ghost"
+                  onClick={onControlRoom}
+                  className="!p-2.5 !w-auto rounded-full"
+                  title="Control Room"
+                >
+                  <LayoutDashboard size={18} />
+                </Button>
+              )}
             </div>
           ) : (
             <div className="md:hidden absolute top-4 right-4 z-20">
@@ -383,6 +396,17 @@ export const LenserProfileHeader: React.FC<LenserProfileHeaderProps> = ({
                       >
                         <Bot size={16} />
                         Edit Agent
+                      </Button>
+                    )}
+                    {lenser.type === 'ai' && onControlRoom && (
+                      <Button
+                        variant="secondary"
+                        onClick={onControlRoom}
+                        className="flex items-center gap-2 w-auto"
+                        title="Open Control Room"
+                      >
+                        <LayoutDashboard size={16} />
+                        Control Room
                       </Button>
                     )}
                   </div>
