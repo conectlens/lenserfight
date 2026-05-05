@@ -557,6 +557,71 @@ const scheduleHealth = defineCommand({
       } else {
         consola.success('All active schedules are healthy.')
       }
+
+      // ── Worker heartbeats ─────────────────────────────────────────────────
+      try {
+        const { createClient } = await import('@supabase/supabase-js')
+        const { getEnv } = await import('../utils/env')
+        const svcClient = createClient(getEnv('SUPABASE_URL'), getEnv('SUPABASE_SERVICE_ROLE_KEY'))
+
+        const { data: workers } = await svcClient
+          .schema('platform')
+          .rpc('fn_get_worker_health')
+
+        if (workers && workers.length > 0) {
+          consola.info('')
+          consola.info('Workers:')
+          printTable(
+            ['Worker ID', 'Type', 'Last Seen', 'Healthy', 'Secs Ago'],
+            (workers as Array<Record<string, unknown>>).map((w) => [
+              String(w['worker_id']).slice(0, 24) + '…',
+              String(w['worker_type'] ?? ''),
+              w['last_seen_at'] ? new Date(w['last_seen_at'] as string).toLocaleString() : '—',
+              w['is_healthy'] ? 'YES' : 'NO',
+              String(w['seconds_since'] ?? '?'),
+            ])
+          )
+          const anyUnhealthy = (workers as Array<Record<string, unknown>>).some((w) => !w['is_healthy'])
+          if (anyUnhealthy) {
+            consola.warn('One or more workers have not reported a heartbeat in > 30 seconds.')
+            process.exitCode = 1
+          }
+        }
+
+        // ── DLQ counts ─────────────────────────────────────────────────────
+        const [battleDlq, workflowDlq] = await Promise.all([
+          svcClient
+            .schema('battles')
+            .from('battle_execution_dead_letters')
+            .select('id', { count: 'exact', head: true })
+            .is('resolved_at', null),
+          svcClient
+            .schema('lenses')
+            .from('workflow_run_dead_letters')
+            .select('id', { count: 'exact', head: true })
+            .is('resolved_at', null),
+        ])
+
+        const battleDlqCount   = battleDlq.count   ?? 0
+        const workflowDlqCount = workflowDlq.count ?? 0
+
+        consola.info('')
+        consola.info('Dead-Letter Queue:')
+        printTable(
+          ['Queue', 'Unresolved'],
+          [
+            ['Battle Execution DLQ', String(battleDlqCount)],
+            ['Workflow Run DLQ',     String(workflowDlqCount)],
+          ]
+        )
+        if (battleDlqCount > 0 || workflowDlqCount > 0) {
+          consola.warn('There are unresolved dead-letter entries. Run: lf battle jobs <id> --dead-letters')
+          process.exitCode = 1
+        }
+      } catch {
+        // Worker health is best-effort; don't fail the main health check
+        consola.warn('Could not fetch worker health (service role key may be required)')
+      }
     } catch (err) {
       handleError(err)
     }

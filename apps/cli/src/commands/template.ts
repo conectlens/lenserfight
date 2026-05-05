@@ -211,12 +211,107 @@ const apply = defineCommand({
 });
 
 // ---------------------------------------------------------------------------
+// template set-recurrence
+// ---------------------------------------------------------------------------
+const setRecurrence = defineCommand({
+  meta: {
+    name: 'set-recurrence',
+    description: 'Set a recurrence rule on a template so battles are created automatically.',
+  },
+  args: {
+    id:              { type: 'positional', description: 'Template UUID', required: true },
+    recurrence:      { type: 'string', description: 'iCal RRULE (e.g. FREQ=DAILY, FREQ=WEEKLY)', required: true },
+    'starts-at':     { type: 'string', description: 'ISO timestamp for first run (default: now)', default: '' },
+    'auto-start-delay-hours': {
+      type: 'string',
+      description: 'Hours after template fires before battle execution_starts_at',
+      default: '1',
+    },
+  },
+  async run({ args }) {
+    try {
+      const { createClient } = await import('@supabase/supabase-js');
+      const { getEnv } = await import('../utils/env');
+      const client = createClient(getEnv('SUPABASE_URL'), getEnv('SUPABASE_SERVICE_ROLE_KEY'));
+
+      const nextRunAt = args['starts-at']
+        ? new Date(args['starts-at'] as string).toISOString()
+        : new Date().toISOString();
+
+      const { error } = await client
+        .schema('battles')
+        .from('templates')
+        .update({
+          recurrence_rule:        args.recurrence,
+          next_run_at:            nextRunAt,
+          auto_start_delay_hours: parseInt(args['auto-start-delay-hours'] as string, 10),
+        })
+        .eq('id', args.id);
+
+      if (error) throw error;
+
+      consola.success('Recurrence set on template %s.', args.id);
+      consola.info('Rule:       %s', args.recurrence);
+      consola.info('First run:  %s', nextRunAt);
+      consola.info('Battles will be auto-dispatched hourly by fn_dispatch_recurring_battle_templates.');
+    } catch (err) { handleError(err); }
+  },
+});
+
+// ---------------------------------------------------------------------------
+// template list-recurring
+// ---------------------------------------------------------------------------
+const listRecurring = defineCommand({
+  meta: {
+    name: 'list-recurring',
+    description: 'List all templates with a recurrence rule.',
+  },
+  args: {
+    json: { type: 'boolean', description: 'Output as JSON', default: false },
+  },
+  async run({ args }) {
+    try {
+      const { createClient } = await import('@supabase/supabase-js');
+      const { getEnv } = await import('../utils/env');
+      const client = createClient(getEnv('SUPABASE_URL'), getEnv('SUPABASE_SERVICE_ROLE_KEY'));
+
+      const { data, error } = await client
+        .schema('battles')
+        .from('templates')
+        .select('id, title, recurrence_rule, next_run_at, auto_start_delay_hours')
+        .not('recurrence_rule', 'is', null)
+        .order('next_run_at', { ascending: true });
+
+      if (error) throw error;
+
+      if (args.json) { printJson(data ?? []); return; }
+
+      if (!data || data.length === 0) {
+        consola.info('No recurring templates. Use: lf template set-recurrence <id> --recurrence FREQ=DAILY');
+        return;
+      }
+
+      printTable(
+        ['ID', 'Title', 'Rule', 'Next Run At', 'Delay (h)'],
+        (data as Array<Record<string, unknown>>).map((t) => [
+          String(t['id']).slice(0, 8) + '…',
+          truncate(String(t['title'] ?? ''), 30),
+          String(t['recurrence_rule'] ?? ''),
+          t['next_run_at'] ? new Date(t['next_run_at'] as string).toLocaleString() : '—',
+          String(t['auto_start_delay_hours'] ?? 1),
+        ])
+      );
+    } catch (err) { handleError(err); }
+  },
+});
+
+// ---------------------------------------------------------------------------
 // Root command
 // ---------------------------------------------------------------------------
 export default defineCommand({
   meta: {
     name: 'template',
-    description: 'Manage battle templates: create, list, view, delete, apply.',
+    description: 'Manage battle templates: create, list, view, delete, apply, recurrence.',
   },
   subCommands: {
     create,
@@ -224,5 +319,7 @@ export default defineCommand({
     view,
     delete: deleteTemplate,
     apply,
+    'set-recurrence': setRecurrence,
+    'list-recurring': listRecurring,
   },
 });
