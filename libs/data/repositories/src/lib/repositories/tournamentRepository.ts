@@ -34,8 +34,14 @@ export interface TournamentMatchRecord {
   battle_id: string | null
   battle_slug: string | null
   contender_a_lenser_id: string | null
+  contender_a_handle: string | null
+  contender_a_avatar_url: string | null
   contender_b_lenser_id: string | null
+  contender_b_handle: string | null
+  contender_b_avatar_url: string | null
   winner_lenser_id: string | null
+  winner_handle: string | null
+  winner_avatar_url: string | null
 }
 
 export interface TournamentRepositoryPort {
@@ -52,6 +58,7 @@ export interface TournamentRepositoryPort {
   }): Promise<TournamentRecord>
   registerContender(tournamentId: string): Promise<TournamentContenderRecord>
   startTournament(tournamentId: string): Promise<void>
+  advanceTournament(matchId: string): Promise<void>
 }
 
 export class SupabaseTournamentRepository implements TournamentRepositoryPort {
@@ -125,6 +132,13 @@ export class SupabaseTournamentRepository implements TournamentRepositoryPort {
   async startTournament(tournamentId: string): Promise<void> {
     const { error } = await supabase.rpc('fn_start_tournament', {
       p_tournament_id: tournamentId,
+    })
+    if (error) throw error
+  }
+
+  async advanceTournament(matchId: string): Promise<void> {
+    const { error } = await supabase.rpc('fn_advance_tournament', {
+      p_match_id: matchId,
     })
     if (error) throw error
   }

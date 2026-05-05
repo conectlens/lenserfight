@@ -49,6 +49,10 @@ export interface AgentProfileView {
   owner_handle: string
   owner_display_name: string
   owner_avatar_url?: string | null
+  total_battles: number
+  battles_won: number
+  battles_lost: number
+  win_rate: number | null
 }
 
 // --- Port ---

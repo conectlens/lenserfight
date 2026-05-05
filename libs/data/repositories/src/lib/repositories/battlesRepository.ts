@@ -164,6 +164,42 @@ export interface ScorecardRecord {
   explanation?: string
 }
 
+export interface AiJudgeVerdictRecord {
+  id: string
+  contender_id: string
+  criterion_id: string | null
+  score: number
+  rationale: string | null
+  model_key: string
+  run_id: string | null
+  created_at: string
+}
+
+export interface DLQEntryRecord {
+  id: string
+  job_id: string
+  battle_id: string
+  contender_id: string
+  slot: string | null
+  error_code: string | null
+  error_message: string | null
+  attempt_count: number
+  payload: Record<string, unknown>
+  resolved_at: string | null
+  created_at: string
+}
+
+export interface PublicExecutionJobRecord {
+  id: string
+  battle_id: string
+  slot: 'A' | 'B'
+  status: 'queued' | 'claimed' | 'running' | 'completed' | 'failed'
+  claimed_at: string | null
+  completed_at: string | null
+  retry_count: number
+  created_at: string
+}
+
 export interface SubmitVoteInput {
   battle_id: string
   voter_lenser_id: string
@@ -273,6 +309,10 @@ export interface BattlesRepositoryPort {
   scheduleBattle(input: ScheduleBattleInput): Promise<BattleRecord>
   getBattleExecutionJobs(battleId: string): Promise<BattleExecutionJobRecord[]>
   getTrendingBattles(options?: TrendingBattlesOptions): Promise<TrendingBattleRecord[]>
+  getAiJudgeVerdicts(battleId: string): Promise<AiJudgeVerdictRecord[]>
+  getDLQEntries(opts?: { battleId?: string; unresolvedOnly?: boolean; limit?: number }): Promise<DLQEntryRecord[]>
+  retryDLQEntry(deadLetterId: string): Promise<void>
+  getPublicExecutionJobs(battleId: string): Promise<PublicExecutionJobRecord[]>
 }
 
 // --- Supabase Implementation ---
@@ -735,5 +775,47 @@ export class SupabaseBattlesRepository implements BattlesRepositoryPort {
     })
     if (error) this.handleError(error)
     return (data ?? []) as TrendingBattleRecord[]
+  }
+
+  async getAiJudgeVerdicts(battleId: string): Promise<AiJudgeVerdictRecord[]> {
+    const { data, error } = await supabase.rpc('fn_get_ai_judge_verdicts', {
+      p_battle_id: battleId,
+    })
+    if (error) this.handleError(error)
+    return (data ?? []) as AiJudgeVerdictRecord[]
+  }
+
+  async getDLQEntries(opts?: { battleId?: string; unresolvedOnly?: boolean; limit?: number }): Promise<DLQEntryRecord[]> {
+    let query = supabase
+      .schema('battles')
+      .from('battle_execution_dead_letters')
+      .select('id, job_id, battle_id, contender_id, slot, error_code, error_message, attempt_count, payload, resolved_at, created_at')
+      .order('created_at', { ascending: false })
+
+    if (opts?.battleId) query = query.eq('battle_id', opts.battleId)
+    if (opts?.unresolvedOnly) query = query.is('resolved_at', null)
+    if (opts?.limit) query = query.limit(opts.limit)
+
+    const { data, error } = await query
+    if (error) this.handleError(error)
+    return (data ?? []) as DLQEntryRecord[]
+  }
+
+  async retryDLQEntry(deadLetterId: string): Promise<void> {
+    const { error } = await supabase.rpc('fn_retry_dead_letter_battle_job', {
+      p_dead_letter_id: deadLetterId,
+    })
+    if (error) this.handleError(error)
+  }
+
+  async getPublicExecutionJobs(battleId: string): Promise<PublicExecutionJobRecord[]> {
+    const { data, error } = await supabase
+      .schema('battles')
+      .from('v_execution_jobs_public')
+      .select('id, battle_id, slot, status, claimed_at, completed_at, retry_count, created_at')
+      .eq('battle_id', battleId)
+      .order('slot')
+    if (error) this.handleError(error)
+    return (data ?? []) as PublicExecutionJobRecord[]
   }
 }
