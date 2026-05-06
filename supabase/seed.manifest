@@ -1,5 +1,8 @@
-# One path per line, relative to supabase/. Order matters (FK / logical load order).
-# Run: pnpm supabase:combine-seeds
+# Shared seeds (relative to supabase/), then private cloud seeds.
+# Order matters. Run: pnpm supabase:combine-seeds
+#
+# core.languages MUST load before lensers.profiles (trigger creates preferences.language → FK).
+seeds/private/01_core_languages.sql
 seeds/02_auth_users.sql
 seeds/03_lenser_profiles.sql
 seeds/04_ai_providers.sql
@@ -16,7 +19,30 @@ seeds/41_developer_lens_templates.sql
 seeds/42_production_workflow_templates.sql
 seeds/43_ai_agent_lens_bindings.sql
 seeds/44_community_profiles.sql
-seeds/45_workflow_runs.sql
 seeds/46_connectors.sql
-seeds/48_workflow_templates.sql
-# seeds/49_analytics_phase15.sql — analytics schema is platform-only, excluded from OSS
+seeds/private/01_currencies.sql
+seeds/private/03_regions.sql
+seeds/private/04_subregions.sql
+seeds/private/05_battles.sql
+seeds/private/05_countries.sql
+seeds/private/05_organizations.sql
+seeds/49_analytics_phase15.sql
+seeds/private/06_analytics.sql
+seeds/private/06_states.sql
+seeds/private/07_cities_01.sql
+seeds/private/07_cities_02.sql
+seeds/private/07_cities_03.sql
+seeds/private/07_cities_04.sql
+seeds/private/07_cities_05.sql
+seeds/private/07_cities_06.sql
+seeds/private/07_cities_07.sql
+seeds/private/07_cities_08.sql
+seeds/private/07_cities_09.sql
+seeds/private/07_cities_10.sql
+seeds/private/08_ai_model_pricing.sql
+seeds/private/10_credit_valuation_policy.sql
+seeds/private/11_execution_margin_policies.sql
+seeds/private/12_store_products.sql
+seeds/private/17_xp_ruleset.sql
+seeds/private/30_scale_xp.sql
+seeds/private/40_benchmark.sql
