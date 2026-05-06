@@ -29,6 +29,29 @@ export const WEB_BASE_URL = readPublicBaseUrl('VITE_WEB_BASE_URL', 'https://lens
 /** Documentation site origin. Override with `VITE_DOCS_BASE_URL` (e.g. http://localhost:5174 in local dev). */
 export const DOCS_BASE_URL = readPublicBaseUrl('VITE_DOCS_BASE_URL', 'https://docs.lenserfight.com')
 
+/** Chainabit web app origin — used for deep-links to wallet top-up and partner attribution. Override with `VITE_CHAINABIT_APP_URL`. */
+export const CHAINABIT_APP_URL = readPublicBaseUrl('VITE_CHAINABIT_APP_URL', 'https://app.chainabit.com')
+
+/**
+ * LenserFight Platform API base URL (no trailing slash).
+ * In development defaults to the ngrok tunnel to bypass CORS restrictions on localhost.
+ * Override with `VITE_API_URL`.
+ */
+export const VITE_API_BASE_URL = readPublicBaseUrl(
+  'VITE_API_URL',
+  import.meta.env.DEV ? 'https://wyatt-proportioned-ashlyn.ngrok-free.dev' : 'https://api.lenserfight.com',
+)
+
+/**
+ * Chainabit partner API base URL (no trailing slash).
+ * Used exclusively for /v1/partners/* provisioning endpoints.
+ * In development defaults to the ngrok tunnel. Override with `VITE_CHAINABIT_API_URL`.
+ */
+export const CHAINABIT_API_BASE_URL = readPublicBaseUrl(
+  'VITE_CHAINABIT_API_URL',
+  import.meta.env.DEV ? 'https://wyatt-proportioned-ashlyn.ngrok-free.dev' : 'https://api.lenserfight.com',
+)
+
 // Environment
 export const MODE = import.meta.env.MODE // "development", "production", "test"
 export const isProd = MODE === 'production'
