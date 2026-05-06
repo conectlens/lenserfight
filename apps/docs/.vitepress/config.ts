@@ -606,7 +606,7 @@ export default defineConfig({
   vite: {
     plugins: [tailwind(), rawMarkdownPlugin()],
     server: {
-      host: '127.0.0.1',
+      host: '0.0.0.0',
     },
     optimizeDeps: {
       exclude: ['mermaid'],
