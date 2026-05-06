@@ -12,11 +12,11 @@ export default defineConfig(() => ({
   cacheDir: '../../node_modules/.vite/apps/auth',
   server: {
     port: 3004,
-    host: 'localhost',
+    host: '0.0.0.0',
   },
   preview: {
     port: 3004,
-    host: 'localhost',
+    host: '0.0.0.0',
   },
   plugins: [react(), tailwindcss(), nxViteTsPaths(), nxCopyAssetsPlugin(['*.md'])],
   // Uncomment this if you are using workers.
