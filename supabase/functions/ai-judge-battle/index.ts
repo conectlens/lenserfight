@@ -1,235 +1,241 @@
 // Supabase Edge Function: ai-judge-battle
 //
-// Invoked by battles.fn_auto_finalize_battles() via net.http_post when
-// ai_judge_enabled = TRUE on the battle. Scores each contender submission
-// using Claude and records verdicts via fn_record_ai_judge_verdict(), which
-// then triggers finalization automatically.
-//
-// Expected POST body: { battle_id: string }
+// Purpose: Use Claude to judge a battle by scoring both submissions against rubric criteria.
+// Invoked via pg_net from fn_auto_finalize_battles when ai_judge_enabled=TRUE and battle
+// enters scoring status. Calls fn_record_ai_judge_verdict to persist scores and trigger finalization.
+// Requires ANTHROPIC_API_KEY in Supabase Secrets.
 
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+const ANTHROPIC_API_KEY = Deno.env.get('ANTHROPIC_API_KEY')
+const SUPABASE_URL = Deno.env.get('SUPABASE_URL') ?? ''
+const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
 
-const SUPABASE_URL        = Deno.env.get('SUPABASE_URL')!;
-const SUPABASE_SERVICE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
-const ANTHROPIC_API_KEY   = Deno.env.get('ANTHROPIC_API_KEY')!;
+const MODEL = 'claude-sonnet-4-6'
 
-const DEFAULT_MODEL = 'claude-sonnet-4-6';
-
-interface Battle {
-  id: string;
-  task_prompt: string;
-  ai_judge_prompt: string | null;
-  ai_judge_model_key: string | null;
+interface RequestPayload {
+  battle_id: string
 }
 
-interface Submission {
-  contender_id: string;
-  content_text: string | null;
-  slot: string;
+interface ContenderRow {
+  id: string
+  slot: 'A' | 'B'
+  display_name: string
 }
 
-interface RubricCriterion {
-  id: string;
-  title: string;
-  description: string | null;
-  weight: number;
+interface SubmissionRow {
+  contender_id: string
+  content_text: string | null
 }
 
-interface Verdict {
-  contender_id: string;
-  criterion_id: string | null;
-  score: number;
-  rationale: string;
-  model_key: string;
+interface CriterionRow {
+  id: string
+  title: string
+  description: string | null
+  weight: number
 }
 
-interface AnthropicResponse {
-  content: Array<{ type: string; text: string }>;
+interface BattleRow {
+  id: string
+  title: string
+  task_prompt: string
+  ai_judge_model_key: string | null
+  ai_judge_prompt: string | null
 }
 
-async function callClaude(
-  model: string,
-  systemPrompt: string,
-  userPrompt: string,
-): Promise<string> {
-  const res = await fetch('https://api.anthropic.com/v1/messages', {
-    method: 'POST',
-    headers: {
-      'Content-Type':    'application/json',
-      'x-api-key':       ANTHROPIC_API_KEY,
-      'anthropic-version': '2023-06-01',
-    },
-    body: JSON.stringify({
-      model,
-      max_tokens: 2048,
-      system: systemPrompt,
-      messages: [{ role: 'user', content: userPrompt }],
-    }),
-  });
-
-  if (!res.ok) {
-    const text = await res.text();
-    throw new Error(`Anthropic error ${res.status}: ${text}`);
-  }
-
-  const data = await res.json() as AnthropicResponse;
-  const textBlock = data.content.find((b) => b.type === 'text');
-  return textBlock?.text ?? '';
+interface JudgeVerdict {
+  contender_id: string
+  criterion_id: string | null
+  score: number
+  rationale: string
+  model_key: string
 }
 
-function buildSystemPrompt(battle: Battle, criteria: RubricCriterion[]): string {
-  const rubricSection = criteria.length > 0
-    ? `\n\nScoring rubric:\n${criteria.map((c) =>
-        `- ${c.title} (weight ${c.weight}): ${c.description ?? ''}`
-      ).join('\n')}`
-    : '';
-
-  const customInstructions = battle.ai_judge_prompt
-    ? `\n\nAdditional judging instructions:\n${battle.ai_judge_prompt}`
-    : '';
-
-  return `You are a neutral AI judge evaluating submissions to a creative battle. Your role is to score each submission fairly and objectively.
-
-Score each submission on a scale of 0–10 for ${criteria.length > 0 ? 'each rubric criterion' : 'overall quality'}.${rubricSection}${customInstructions}
-
-Respond ONLY with a valid JSON array. Each element must have:
-- "contender_id": the exact UUID provided
-${criteria.length > 0 ? '- "criterion_id": the exact criterion UUID provided\n' : ''}- "score": number between 0 and 10 (decimals allowed)
-- "rationale": one concise sentence explaining the score
-
-No markdown, no explanation outside the JSON array.`;
+function buildSystemPrompt(customPrompt: string | null): string {
+  const base = `You are an impartial AI judge evaluating battle submissions.
+Score each submission fairly based on the provided criteria.
+Return your verdict as a JSON object with the structure shown below.
+Be objective, concise, and use the full scoring range (0–10).`
+  return customPrompt ? `${customPrompt}\n\n${base}` : base
 }
 
 function buildUserPrompt(
-  battle: Battle,
-  submissions: Submission[],
-  criteria: RubricCriterion[],
+  battle: BattleRow,
+  contenders: ContenderRow[],
+  submissions: SubmissionRow[],
+  criteria: CriterionRow[]
 ): string {
-  const submissionBlocks = submissions
-    .map((s, i) => `=== Submission ${i + 1} (Slot ${s.slot}) ===
-Contender ID: ${s.contender_id}
-Content:
-${s.content_text ?? '[No content submitted]'}`)
-    .join('\n\n');
+  const subMap = new Map(submissions.map((s) => [s.contender_id, s.content_text ?? '(no submission)']))
 
-  const criteriaBlock = criteria.length > 0
-    ? `\nCriteria to score against:\n${criteria.map((c) => `- ID: ${c.id}  Title: ${c.title}`).join('\n')}`
-    : '';
+  const subA = contenders.find((c) => c.slot === 'A')
+  const subB = contenders.find((c) => c.slot === 'B')
 
-  return `Task prompt: ${battle.task_prompt}
+  const criteriaBlock =
+    criteria.length > 0
+      ? criteria
+          .map((c) => `- ${c.title} (weight ${c.weight}): ${c.description ?? 'No description'}`)
+          .join('\n')
+      : '- Overall quality (weight 1): Evaluate overall quality, relevance, and completeness.'
+
+  const criteriaIds = criteria.length > 0 ? criteria.map((c) => c.id) : [null]
+
+  return `# Battle Task
+${battle.task_prompt}
+
+# Contender A: ${subA?.display_name ?? 'A'}
+${subA ? subMap.get(subA.id) ?? '(no submission)' : '(missing)'}
+
+# Contender B: ${subB?.display_name ?? 'B'}
+${subB ? subMap.get(subB.id) ?? '(no submission)' : '(missing)'}
+
+# Scoring Criteria
 ${criteriaBlock}
 
-Submissions to evaluate:
+# Instructions
+Score each contender on each criterion from 0 to 10.
+Return ONLY valid JSON in this exact format:
 
-${submissionBlocks}
-
-Return a JSON array of verdict objects as specified in your instructions.`;
+{
+  "verdicts": [
+    ${
+      contenders
+        .flatMap((c) =>
+          criteriaIds.map((cid) =>
+            JSON.stringify({
+              contender_id: c.id,
+              criterion_id: cid,
+              score: 7.5,
+              rationale: 'Example rationale',
+              model_key: MODEL,
+            })
+          )
+        )
+        .join(',\n    ')
+    }
+  ]
+}`
 }
 
 Deno.serve(async (req: Request) => {
   if (req.method !== 'POST') {
-    return new Response(JSON.stringify({ error: 'Method not allowed' }), {
-      status: 405,
-      headers: { 'Content-Type': 'application/json' },
-    });
+    return new Response('Method not allowed', { status: 405 })
   }
 
-  let battle_id: string;
+  let payload: RequestPayload
   try {
-    const body = await req.json() as { battle_id?: string };
-    if (!body.battle_id) throw new Error('Missing battle_id');
-    battle_id = body.battle_id;
-  } catch (err) {
-    return new Response(JSON.stringify({ error: String(err) }), {
-      status: 400,
+    payload = await req.json() as RequestPayload
+  } catch {
+    return new Response('Invalid JSON', { status: 400 })
+  }
+
+  const { battle_id } = payload
+  if (!battle_id) return new Response('Missing battle_id', { status: 400 })
+
+  if (!ANTHROPIC_API_KEY) {
+    console.warn('ANTHROPIC_API_KEY not set — skipping AI judge')
+    return new Response(JSON.stringify({ skipped: true, reason: 'no_api_key' }), {
+      status: 200,
       headers: { 'Content-Type': 'application/json' },
-    });
+    })
   }
 
-  const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY, {
-    db: { schema: 'battles' },
-  });
+  if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
+    return new Response('Supabase credentials not configured', { status: 500 })
+  }
 
+  // Fetch battle data
+  const headers = {
+    'apikey': SUPABASE_SERVICE_ROLE_KEY,
+    'Authorization': `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
+    'Content-Type': 'application/json',
+  }
+
+  const [battleRes, contendersRes, submissionsRes, criteriaRes] = await Promise.all([
+    fetch(`${SUPABASE_URL}/rest/v1/battles?id=eq.${battle_id}&schema=battles&select=id,title,task_prompt,ai_judge_model_key,ai_judge_prompt`, { headers }),
+    fetch(`${SUPABASE_URL}/rest/v1/contenders?battle_id=eq.${battle_id}&schema=battles&select=id,slot,display_name`, { headers }),
+    fetch(`${SUPABASE_URL}/rest/v1/submissions?battle_id=eq.${battle_id}&schema=battles&select=contender_id,content_text`, { headers }),
+    fetch(`${SUPABASE_URL}/rest/v1/rpc/fn_get_battle_rubric_criteria?p_battle_id=${battle_id}`, { method: 'POST', headers, body: JSON.stringify({ p_battle_id: battle_id }) }),
+  ])
+
+  const [battles, contenders, submissions, criteria] = await Promise.all([
+    battleRes.json() as Promise<BattleRow[]>,
+    contendersRes.json() as Promise<ContenderRow[]>,
+    submissionsRes.json() as Promise<SubmissionRow[]>,
+    criteriaRes.ok ? criteriaRes.json() as Promise<CriterionRow[]> : Promise.resolve([]),
+  ])
+
+  const battle = battles[0]
+  if (!battle) {
+    return new Response(`Battle ${battle_id} not found`, { status: 404 })
+  }
+
+  const judgeModel = battle.ai_judge_model_key ?? MODEL
+  const systemPrompt = buildSystemPrompt(battle.ai_judge_prompt)
+  const userPrompt = buildUserPrompt(battle, contenders, submissions, criteria as CriterionRow[])
+
+  // Call Anthropic Messages API
+  const anthropicRes = await fetch('https://api.anthropic.com/v1/messages', {
+    method: 'POST',
+    headers: {
+      'x-api-key': ANTHROPIC_API_KEY,
+      'anthropic-version': '2023-06-01',
+      'content-type': 'application/json',
+    },
+    body: JSON.stringify({
+      model: judgeModel,
+      max_tokens: 2048,
+      system: systemPrompt,
+      messages: [{ role: 'user', content: userPrompt }],
+    }),
+  })
+
+  if (!anthropicRes.ok) {
+    const errText = await anthropicRes.text()
+    console.error('Anthropic API error:', errText)
+    return new Response(JSON.stringify({ error: 'anthropic_error', message: errText }), {
+      status: 502,
+      headers: { 'Content-Type': 'application/json' },
+    })
+  }
+
+  const anthropicData = await anthropicRes.json() as {
+    content: Array<{ type: string; text: string }>
+  }
+
+  const responseText = anthropicData.content.find((c) => c.type === 'text')?.text ?? ''
+
+  // Parse JSON from response
+  let verdicts: JudgeVerdict[]
   try {
-    // Fetch battle details
-    const { data: battleData, error: battleErr } = await supabase
-      .from('battles')
-      .select('id, task_prompt, ai_judge_prompt, ai_judge_model_key')
-      .eq('id', battle_id)
-      .single();
-
-    if (battleErr || !battleData) {
-      throw new Error(`Battle not found: ${battleErr?.message}`);
-    }
-
-    const battle = battleData as Battle;
-    const model = battle.ai_judge_model_key ?? DEFAULT_MODEL;
-
-    // Fetch submissions with contender slot
-    const { data: submissionData, error: submErr } = await supabase
-      .from('submissions')
-      .select('contender_id, content_text, contenders(slot)')
-      .eq('battle_id', battle_id)
-      .eq('status', 'submitted');
-
-    if (submErr) throw new Error(`Submissions fetch failed: ${submErr.message}`);
-
-    const submissions: Submission[] = (submissionData ?? []).map((s: Record<string, unknown>) => ({
-      contender_id: s['contender_id'] as string,
-      content_text: s['content_text'] as string | null,
-      slot: (s['contenders'] as Record<string, unknown>)?.['slot'] as string ?? '?',
-    }));
-
-    if (submissions.length === 0) {
-      throw new Error('No submissions found for battle');
-    }
-
-    // Fetch rubric criteria (if any)
-    const { data: criteriaData } = await supabase
-      .from('rubric_criteria')
-      .select('id, title, description, weight')
-      .eq('battle_id', battle_id);
-
-    const criteria = (criteriaData ?? []) as RubricCriterion[];
-
-    // Build prompts and call Claude
-    const systemPrompt = buildSystemPrompt(battle, criteria);
-    const userPrompt   = buildUserPrompt(battle, submissions, criteria);
-
-    const rawResponse = await callClaude(model, systemPrompt, userPrompt);
-
-    // Parse JSON response — strip any accidental markdown fences
-    const jsonText = rawResponse.replace(/^```(?:json)?\n?/, '').replace(/\n?```$/, '').trim();
-    const parsed = JSON.parse(jsonText) as Array<Record<string, unknown>>;
-
-    const verdicts: Verdict[] = parsed.map((v) => ({
-      contender_id: v['contender_id'] as string,
-      criterion_id: (v['criterion_id'] as string | null) ?? null,
-      score:        Number(v['score']),
-      rationale:    String(v['rationale'] ?? ''),
-      model_key:    model,
-    }));
-
-    // Record verdicts — this triggers fn_battles_finalize internally
-    const publicClient = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY);
-    const { error: verdictErr } = await publicClient
-      .schema('battles')
-      .rpc('fn_record_ai_judge_verdict', {
-        p_battle_id: battle_id,
-        p_verdicts:  JSON.stringify(verdicts),
-      });
-
-    if (verdictErr) throw new Error(`fn_record_ai_judge_verdict failed: ${verdictErr.message}`);
-
-    return new Response(
-      JSON.stringify({ ok: true, verdicts_recorded: verdicts.length }),
-      { status: 200, headers: { 'Content-Type': 'application/json' } },
-    );
-  } catch (err) {
-    console.error('[ai-judge-battle]', err);
-    return new Response(
-      JSON.stringify({ error: String(err) }),
-      { status: 500, headers: { 'Content-Type': 'application/json' } },
-    );
+    const jsonMatch = responseText.match(/\{[\s\S]*\}/)
+    if (!jsonMatch) throw new Error('No JSON found in response')
+    const parsed = JSON.parse(jsonMatch[0]) as { verdicts: JudgeVerdict[] }
+    verdicts = parsed.verdicts.map((v) => ({ ...v, model_key: judgeModel }))
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : String(e)
+    console.error('Failed to parse AI judge response:', msg, responseText)
+    return new Response(JSON.stringify({ error: 'parse_failed', message: msg }), {
+      status: 500,
+      headers: { 'Content-Type': 'application/json' },
+    })
   }
-});
+
+  // Persist verdicts via RPC
+  const persistRes = await fetch(`${SUPABASE_URL}/rest/v1/rpc/fn_record_ai_judge_verdict`, {
+    method: 'POST',
+    headers,
+    body: JSON.stringify({ p_battle_id: battle_id, p_verdicts: verdicts }),
+  })
+
+  if (!persistRes.ok) {
+    const errText = await persistRes.text()
+    console.error('fn_record_ai_judge_verdict error:', errText)
+    return new Response(JSON.stringify({ error: 'persist_failed', message: errText }), {
+      status: 500,
+      headers: { 'Content-Type': 'application/json' },
+    })
+  }
+
+  return new Response(JSON.stringify({ verdicts_recorded: verdicts.length }), {
+    status: 200,
+    headers: { 'Content-Type': 'application/json' },
+  })
+})
