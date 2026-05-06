@@ -137,36 +137,27 @@ export const AgentWorkspaceShell: React.FC<AgentWorkspaceShellProps> = ({
     return <Navigate replace to={`/lenser/${profile.handle}/ag/overview`} />
   }
 
+  React.useEffect(() => {
+    if (shouldSwitchWorkspace && !isSwitching) {
+      switchToProfile(profile).catch((err) => {
+        console.error('Auto-switch failed', err)
+      })
+    }
+  }, [shouldSwitchWorkspace, isSwitching, switchToProfile, profile])
+
   if (shouldSwitchWorkspace) {
     return (
       <SectionPage
-        eyebrow="Switch workspace"
-        title="Activate this agent workspace first"
-        description="The control room is owner-only and runs against the currently active workspace. Switch into this AI lenser before managing teams, schedules, or memory."
+        eyebrow="Workspace"
+        title={`Activating @${profile.handle}`}
+        description="Switching context to owner workspace..."
       >
-        <EmptyPanel
-          icon={<Bot size={22} />}
-          title={`Switch into @${profile.handle}`}
-          description="Once this AI workspace is active, the sidebar and route tree will flip into agent-mode and expose the full control-room navigation."
-        >
-          <div className="mt-6 flex justify-center gap-3">
-            <button
-              type="button"
-              onClick={() => switchToProfile(profile)}
-              disabled={isSwitching}
-              className="rounded-2xl bg-gray-900 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-amber-600 disabled:opacity-50 dark:bg-white dark:text-gray-900"
-            >
-              {isSwitching ? 'Switching…' : 'Switch workspace'}
-            </button>
-            <button
-              type="button"
-              onClick={() => navigate(`/lenser/${profile.handle}`)}
-              className="rounded-2xl border border-gray-200 px-4 py-2.5 text-sm font-semibold text-gray-700 transition hover:border-amber-300 hover:text-amber-700 dark:border-gray-700 dark:text-gray-200"
-            >
-              Back to profile
-            </button>
-          </div>
-        </EmptyPanel>
+        <div className="flex flex-col gap-6 items-center justify-center h-64">
+          <div className="h-10 w-10 animate-spin rounded-full border-4 border-amber-500 border-t-transparent" />
+          <p className="text-sm font-medium text-amber-600 animate-pulse">
+            Switching into agent workspace...
+          </p>
+        </div>
       </SectionPage>
     )
   }
@@ -254,6 +245,8 @@ export const AgentWorkspaceShell: React.FC<AgentWorkspaceShellProps> = ({
       instructionBindings={data.instructionBindings}
       modelBindings={data.modelBindings}
       defaultInstructionBinding={data.defaultInstructionBinding}
+      personalityBindings={data.personalityBindings}
+      defaultPersonalityBinding={data.defaultPersonalityBinding}
       isLoading={
         data.agentLoading ||
         data.bootstrapState.kind === 'loading' ||

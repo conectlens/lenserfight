@@ -40,6 +40,8 @@ export interface AgentWorkspaceContextValue {
   instructionBindings: AgentLensBindingRecord[]
   modelBindings: AgentModelBindingRecord[]
   defaultInstructionBinding: AgentLensBindingRecord | null
+  personalityBindings: AgentLensBindingRecord[]
+  defaultPersonalityBinding: AgentLensBindingRecord | null
   isLoading: boolean
   shouldSwitchWorkspace: boolean
   switchWorkspace: () => void

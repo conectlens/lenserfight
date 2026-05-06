@@ -104,23 +104,29 @@ export class FileAgentsRepository implements AgentsRepositoryPort {
     return null
   }
 
-  async getLensBindings(aiLenserId: string): Promise<AgentLensBindingRecord[]> {
-    return lensBindingStore.findWhere((b) => b.ai_lenser_id === aiLenserId)
+  async getLensBindings(aiLenserId: string, limit = 50, offset = 0): Promise<AgentLensBindingRecord[]> {
+    const all = await lensBindingStore.findWhere((b) => b.ai_lenser_id === aiLenserId)
+    return all.slice(offset, offset + limit)
   }
 
-  async getModelBindings(aiLenserId: string): Promise<AgentModelBindingRecord[]> {
-    return modelBindingStore.findWhere((b) => b.ai_lenser_id === aiLenserId)
+  async getModelBindings(aiLenserId: string, limit = 50, offset = 0): Promise<AgentModelBindingRecord[]> {
+    const all = await modelBindingStore.findWhere((b) => b.ai_lenser_id === aiLenserId)
+    return all.slice(offset, offset + limit)
   }
 
   async setMainLensBinding(
     aiLenserId: string,
     lensId: string,
-    versionId?: string | null
+    versionId?: string | null,
+    categoryTags: string[] = []
   ): Promise<AgentLensBindingRecord | null> {
-    // Clear existing default binding
+    const isPersonality = categoryTags.includes('personality')
     const existing = await lensBindingStore.findWhere((b) => b.ai_lenser_id === aiLenserId && b.is_default)
     for (const b of existing) {
-      await lensBindingStore.save({ ...b, is_default: false })
+      const bIsPersonality = b.category_tags.includes('personality')
+      if (bIsPersonality === isPersonality) {
+        await lensBindingStore.save({ ...b, is_default: false })
+      }
     }
     const binding: AgentLensBindingRecord = {
       id: crypto.randomUUID(),
@@ -128,7 +134,7 @@ export class FileAgentsRepository implements AgentsRepositoryPort {
       lens_id: lensId,
       version_id: versionId ?? null,
       is_default: true,
-      category_tags: [],
+      category_tags: categoryTags,
       created_at: new Date().toISOString(),
     }
     await lensBindingStore.save(binding)

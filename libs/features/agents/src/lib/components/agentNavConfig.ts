@@ -18,6 +18,7 @@ import {
   PanelTopOpen,
   Settings as SettingsIcon,
   Sparkles,
+  Swords,
   Wrench,
 } from 'lucide-react'
 
@@ -45,6 +46,7 @@ export type AgentSection =
   | 'cost'
   | 'analytics'
   | 'settings'
+  | 'battles'
 
 export type AgentNavZone = 'operate' | 'build' | 'automate' | 'configure'
 
@@ -56,6 +58,8 @@ export interface AgentNavItem {
   visibleIn: AgentViewMode[]
   /** When false the item is hidden regardless of viewMode. */
   enabled?: boolean
+  /** Overrides the auto-generated workspace path. Use for community-level links. */
+  path?: string
 }
 
 const ALL_OWNER_MODES: AgentViewMode[] = ['agent_owner', 'human_owner']
@@ -100,6 +104,15 @@ export const NAV_ITEMS: AgentNavItem[] = [
     enabled: FEATURES.AGENT_ANALYTICS,
   },
   { id: 'settings', label: 'Settings', zone: 'configure', icon: SettingsIcon, visibleIn: AGENT_OWNER_ONLY },
+  {
+    id: 'battles',
+    label: 'Battles',
+    zone: 'operate',
+    icon: Swords,
+    visibleIn: PUBLIC_VISIBLE,
+    enabled: FEATURES.PUBLIC_BATTLES,
+    path: '/battles',
+  },
 ]
 
 export const LEGACY_AGENT_SECTION_ALIASES: Record<string, AgentSection> = {}

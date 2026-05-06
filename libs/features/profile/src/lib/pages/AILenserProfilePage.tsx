@@ -9,12 +9,14 @@ import {
   type WorkflowScheduleRecord,
 } from '@lenserfight/data/repositories'
 import {
+  AgentManageWizard,
   AgentPolicySummary,
   AgentStatusBadge,
   useRunUnified,
 } from '@lenserfight/features/agents'
 import { ThreadsListCard } from '@lenserfight/features/home'
 import { EmptyState } from '@lenserfight/ui/components'
+import { Dialog } from '@lenserfight/ui/overlays'
 import { useQuery } from '@tanstack/react-query'
 import {
   Activity,
@@ -29,10 +31,10 @@ import React from 'react'
 import { useNavigate } from 'react-router-dom'
 
 import { AILenserWorkflowPanel } from '../components/AILenserWorkflowPanel'
-import { AILenserWorkspacePrompt } from '../components/AILenserWorkspacePrompt'
 import { LenserActionsList } from '../components/LenserActionsList'
 import { LenserProfileHeader } from '../components/LenserProfileHeader'
 import { LenserTabs, type LenserTabDefinition, type LenserTabId } from '../components/LenserTabs'
+import { useWorkspaceSwitchController } from '../useWorkspaceSwitchController'
 
 import type {
   ActivityFeedItem,
@@ -54,36 +56,30 @@ type AgentProfileView = NonNullable<
 // ── Tab config ───────────────────────────────────────────────────────────────
 
 const AI_TAB_MAP: Record<string, LenserTabId> = {
-  ao: 'ai_overview',
-  ar: 'ai_runs',
-  aw: 'ai_workflows',
-  ab: 'ai_about',
-  at: 'ai_team',
   ath: 'ai_threads',
+  ab: 'ai_about',
+  aw: 'ai_workflows',
   aac: 'ai_actions',
-  acr: 'ai_cron',
+  // Legacy mappings for backward compatibility
+  ao: 'ai_about',
+  at: 'ai_about',
+  ar: 'ai_actions',
+  act: 'ai_actions',
+  acr: 'ai_workflows',
 }
 
 const AI_REVERSE_TAB_MAP: Partial<Record<LenserTabId, string>> = {
-  ai_overview: 'ao',
-  ai_runs: 'ar',
-  ai_workflows: 'aw',
-  ai_about: 'ab',
-  ai_team: 'at',
   ai_threads: 'ath',
+  ai_about: 'ab',
+  ai_workflows: 'aw',
   ai_actions: 'aac',
-  ai_cron: 'acr',
 }
 
 const AI_TABS: LenserTabDefinition[] = [
-  { id: 'ai_overview', label: 'Overview' },
-  { id: 'ai_runs', label: 'Runs' },
-  { id: 'ai_workflows', label: 'Workflows' },
-  { id: 'ai_about', label: 'About' },
-  { id: 'ai_team', label: 'Team' },
   { id: 'ai_threads', label: 'Threads' },
-  { id: 'ai_actions', label: 'Actions' },
-  { id: 'ai_cron', label: 'Schedules' },
+  { id: 'ai_about', label: 'About' },
+  { id: 'ai_workflows', label: 'Workflows' },
+  { id: 'ai_actions', label: 'Activity' },
 ]
 
 // ── Main component ───────────────────────────────────────────────────────────
@@ -110,9 +106,11 @@ export const AILenserProfilePage: React.FC<AILenserProfilePageProps> = ({
   onProfileUpdate,
 }) => {
   const navigate = useNavigate()
+  const { switchToProfile } = useWorkspaceSwitchController()
+  const [showAgentWizard, setShowAgentWizard] = React.useState(false)
 
   const activeTab: LenserTabId =
-    (routeTab && AI_TAB_MAP[routeTab]) || 'ai_overview'
+    (routeTab && AI_TAB_MAP[routeTab]) || 'ai_threads'
 
   const handleTabChange = (tab: LenserTabId) => {
     if (tab === activeTab) return
@@ -131,14 +129,14 @@ export const AILenserProfilePage: React.FC<AILenserProfilePageProps> = ({
   const { data: workflows = [] } = useQuery({
     queryKey: queryKeys.workflows.byLenser(viewedProfile.id),
     queryFn: () => workflowsService.listByLenser(viewedProfile.id),
-    enabled: activeTab === 'ai_workflows' || activeTab === 'ai_cron',
+    enabled: activeTab === 'ai_workflows',
     staleTime: 60_000,
   })
 
   const { data: schedules = [] } = useQuery({
     queryKey: queryKeys.workflows.schedules(),
     queryFn: () => workflowsService.getSchedules(),
-    enabled: (activeTab === 'ai_workflows' || activeTab === 'ai_cron') && workflows.length > 0,
+    enabled: activeTab === 'ai_workflows' && workflows.length > 0,
     staleTime: 60_000,
   })
 
@@ -170,48 +168,15 @@ export const AILenserProfilePage: React.FC<AILenserProfilePageProps> = ({
         isOwner={isOwner}
         onProfileUpdate={onProfileUpdate}
         relationshipState={relationshipState}
+        onEditAgent={() => setShowAgentWizard(true)}
+        onControlRoom={() => switchToProfile(viewedProfile)}
       />
 
       <div className="mt-8 px-4 md:px-0">
-        {isOwner && (
-          <AILenserWorkspacePrompt
-            displayName={viewedProfile.display_name}
-            onSwitch={() => navigate(`/lenser/${handle}/ag/overview`)}
-          />
-        )}
 
         <LenserTabs activeTab={activeTab} onChange={handleTabChange} tabs={AI_TABS} />
 
         <div className="min-h-[300px]">
-          {activeTab === 'ai_overview' && (
-            <OverviewTab agentProfile={agentProfile} loading={agentLoading} />
-          )}
-
-          {activeTab === 'ai_runs' && (
-            <RunsTab
-              runs={runs}
-              loading={agentLoading || runsLoading}
-              isOwner={isOwner}
-              handle={handle}
-            />
-          )}
-
-          {activeTab === 'ai_workflows' && (
-            <AILenserWorkflowPanel
-              workflows={workflows}
-              schedules={schedules}
-              onOpenWorkflow={(id) => navigate(`/workflows/${id}`)}
-            />
-          )}
-
-          {activeTab === 'ai_about' && (
-            <AboutTab profile={viewedProfile} agentProfile={agentProfile} />
-          )}
-
-          {activeTab === 'ai_team' && (
-            <TeamTab isOwner={isOwner} handle={handle} />
-          )}
-
           {activeTab === 'ai_threads' && (
             <ThreadsTab
               threads={threads as ThreadFeedItem[]}
@@ -220,23 +185,81 @@ export const AILenserProfilePage: React.FC<AILenserProfilePageProps> = ({
             />
           )}
 
-          {activeTab === 'ai_actions' && (
-            <ActionsTab
-              actions={actions as ActivityFeedItem[]}
-              loading={actionsLoading}
-            />
+          {activeTab === 'ai_about' && (
+            <div className="space-y-8">
+              <OverviewTab agentProfile={agentProfile} loading={agentLoading} />
+              <AboutTab profile={viewedProfile} agentProfile={agentProfile} />
+              <TeamTab isOwner={isOwner} handle={handle} />
+            </div>
           )}
 
-          {activeTab === 'ai_cron' && (
-            <CronTab
-              schedules={schedules}
-              workflows={workflows}
-              isOwner={isOwner}
-              handle={handle}
-            />
+          {activeTab === 'ai_workflows' && (
+            <div className="space-y-12">
+              <AILenserWorkflowPanel
+                workflows={workflows}
+                schedules={schedules}
+                onOpenWorkflow={(id) => navigate(`/workflows/${id}`)}
+              />
+              {(isOwner || schedules.length > 0) && (
+                <div className="border-t border-gray-100 pt-8 dark:border-gray-800">
+                  <h3 className="mb-6 text-lg font-bold text-gray-900 dark:text-white flex items-center gap-2">
+                    <CalendarClock className="text-primary" size={20} />
+                    Active Schedules
+                  </h3>
+                  <CronTab
+                    schedules={schedules}
+                    workflows={workflows}
+                    isOwner={isOwner}
+                    handle={handle}
+                  />
+                </div>
+              )}
+            </div>
+          )}
+
+          {activeTab === 'ai_actions' && (
+            <div className="grid gap-10 lg:grid-cols-2">
+              <div>
+                <h3 className="mb-6 text-lg font-bold text-gray-900 dark:text-white flex items-center gap-2">
+                  <Activity className="text-primary" size={20} />
+                  System Runs
+                </h3>
+                <RunsTab
+                  runs={runs}
+                  loading={agentLoading || runsLoading}
+                  isOwner={isOwner}
+                  handle={handle}
+                />
+              </div>
+              <div>
+                <h3 className="mb-6 text-lg font-bold text-gray-900 dark:text-white flex items-center gap-2">
+                  <MessageSquare className="text-primary" size={20} />
+                  Recent Reactions
+                </h3>
+                <ActionsTab
+                  actions={actions as ActivityFeedItem[]}
+                  loading={actionsLoading}
+                />
+              </div>
+            </div>
           )}
         </div>
       </div>
+
+      {agentProfile && (
+        <Dialog
+          open={showAgentWizard}
+          onClose={() => setShowAgentWizard(false)}
+          title={`Edit ${viewedProfile.display_name}`}
+          maxWidth="max-w-2xl"
+        >
+          <AgentManageWizard
+            agentId={agentProfile.id}
+            handle={handle}
+            onDone={() => setShowAgentWizard(false)}
+          />
+        </Dialog>
+      )}
     </div>
   )
 }
@@ -458,27 +481,7 @@ function AboutTab({
         </div>
       )}
 
-      {agentProfile && (
-        <div className="rounded-2xl border border-gray-200 bg-white p-5 dark:border-gray-700 dark:bg-gray-800">
-          <p className="mb-3 text-xs font-medium text-gray-500 dark:text-gray-400">Runtime</p>
-          <div className="flex flex-wrap gap-4 text-sm text-gray-600 dark:text-gray-300">
-            <span>
-              Runtime preference:{' '}
-              <span className="font-medium capitalize text-gray-900 dark:text-white">
-                {agentProfile.runtime_pref}
-              </span>
-            </span>
-            <span>
-              Model binding mode:{' '}
-              <span className="font-medium capitalize text-gray-900 dark:text-white">
-                {agentProfile.model_binding_mode}
-              </span>
-            </span>
-          </div>
-        </div>
-      )}
-
-      {!hasBio && !hasPersonality && !agentProfile && (
+      {!hasBio && !hasPersonality && (
         <EmptyState icon={Info} title="No description provided." />
       )}
     </div>

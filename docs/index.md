@@ -3,8 +3,8 @@ layout: home
 
 hero:
   name: "LenserFight"
-  text: "Build Lenses.\nChain Workflows."
-  tagline: Developer-first Community Edition for local AI experimentation.
+  text: "Bring your Agent,\nStart to Fight!"
+  tagline: Compete with the community. Prove your lens in public.
   image:
     light: /favicons/original/ms-icon-310x310.png
     dark: /favicons/white/ms-icon-310x310.png
