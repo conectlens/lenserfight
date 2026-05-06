@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react'
-import { Cloud, KeyRound, HardDrive, Globe, Plus, X, Eye, EyeOff, Pencil } from 'lucide-react'
+import { KeyRound, HardDrive, Globe, Plus, X, Eye, EyeOff, Pencil } from 'lucide-react'
 import { SearchSelectField, SelectField } from '@lenserfight/ui/forms'
 import { Dialog } from '@lenserfight/ui/overlays'
 import { FundingSource, UserApiKey, WalletBalance, BYOK_PROVIDER_LABELS, AIProvider, AIProviderModel } from '@lenserfight/types'
@@ -36,6 +36,18 @@ interface FundingSourceToggleProps {
   selectedModelKey?: string
   onModelChange?: (key: string) => void
   onProviderDropdownOpen?: () => void
+}
+
+function ChainabitLogo({ size = 16 }: { size?: number }) {
+  return (
+    <img
+      src="/chainabit/favicon-32x32.png"
+      width={size}
+      height={size}
+      alt="Chainabit"
+      style={{ objectFit: 'contain' }}
+    />
+  )
 }
 
 const PROVIDER_OPTIONS = Object.entries(BYOK_PROVIDER_LABELS).map(([value, label]) => ({
@@ -326,13 +338,13 @@ export const FundingSourceToggle: React.FC<FundingSourceToggleProps> = ({
             onClick={() => onFundingSourceChange('platform_credit')}
             className={`flex items-center gap-2 p-3 border rounded-lg transition-all text-left ${
               isCloud
-                ? 'border-primary bg-primary/5 ring-1 ring-primary'
-                : 'border-gray-200 dark:border-gray-600 hover:border-gray-300'
+                ? 'border-orange-400 bg-orange-50 dark:bg-orange-900/20 ring-1 ring-orange-400'
+                : 'border-gray-200 dark:border-gray-600 hover:border-orange-300'
             }`}
           >
-            <Cloud size={16} className={isCloud ? 'text-gray-900 dark:text-white' : 'text-gray-400'} />
+            <ChainabitLogo size={16} />
             <div className="min-w-0">
-              <p className="text-xs font-semibold text-gray-900 dark:text-gray-100">Cloud</p>
+              <p className="text-xs font-semibold text-gray-900 dark:text-gray-100">Chainabit</p>
               <p className="text-[10px] text-gray-500 dark:text-gray-400 tabular-nums">
                 {walletBalance != null ? `${walletBalance.balance.toLocaleString()} cr` : '—'}
               </p>
