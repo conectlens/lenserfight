@@ -23,6 +23,7 @@ interface AuthContextType extends AuthState {
   requestPasswordReset: (email: string, captchaToken?: string) => Promise<void>
   resetPassword: (password: string, token?: string) => Promise<void>
   signInWithOAuth: (provider: 'google' | 'github' | 'azure') => Promise<void>
+  signInWithChainabit: () => Promise<void>
   resendSignupConfirmation: (email: string) => Promise<void>
   /** Redirect to the external auth app login page, preserving the current page as return_url. */
   redirectToLogin: (delayMs?: number) => void
@@ -257,6 +258,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   }, [])
 
+  const signInWithChainabit = useCallback(async () => {
+    try {
+      await authService.signInWithChainabit()
+    } catch (err: unknown) {
+      const message = getErrorMessage(err)
+      setState((s) => ({ ...s, error: message }))
+      throw err
+    }
+  }, [])
+
   const resendSignupConfirmation = useCallback(async (email: string) => {
     await authService.resendSignupConfirmation(email)
   }, [])
@@ -281,6 +292,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         requestPasswordReset,
         resetPassword,
         signInWithOAuth,
+        signInWithChainabit,
         resendSignupConfirmation,
         redirectToLogin,
       }}

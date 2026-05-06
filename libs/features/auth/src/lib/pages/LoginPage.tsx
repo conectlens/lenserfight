@@ -16,7 +16,7 @@ import { Loader } from '@lenserfight/ui/feedback'
 import { InputField } from '../components/InputField'
 
 export const LoginPage: React.FC = () => {
-  const { login, signInWithOAuth } = useAuth()
+  const { login, signInWithOAuth, signInWithChainabit } = useAuth()
   const navigate = useNavigate()
 
   const [formData, setFormData] = useState({
@@ -66,6 +66,17 @@ export const LoginPage: React.FC = () => {
       setApiError(normalizeError(err))
       setIsSubmitting(false) // Only stop loading on error
       if (ENABLE_CAPTCHA) setCaptchaToken(null) // Reset captcha on error
+    }
+  }
+
+  const handleChainabit = async () => {
+    setOauthLoading(true)
+    setApiError(null)
+    try {
+      await signInWithChainabit()
+    } catch (err: unknown) {
+      setApiError(normalizeError(err))
+      setOauthLoading(false)
     }
   }
 
@@ -200,6 +211,21 @@ export const LoginPage: React.FC = () => {
             </span>
           </div>
         </div>
+
+        {/* Chainabit — primary OAuth CTA */}
+        <button
+          type="button"
+          onClick={handleChainabit}
+          disabled={oauthLoading || isSubmitting || isSuccess}
+          className="w-full flex items-center justify-center gap-3 py-2.5 mb-3 border border-orange-300 dark:border-orange-700 rounded-xl bg-orange-50 dark:bg-orange-900/20 hover:bg-orange-100 dark:hover:bg-orange-900/40 transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed font-semibold text-sm text-orange-700 dark:text-orange-300"
+          title="Sign in with Chainabit"
+        >
+          <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none">
+            <circle cx="12" cy="12" r="10" fill="#FF6B35" />
+            <path d="M8 12l3 3 5-5" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+          Continue with Chainabit
+        </button>
 
         {/* OAuth Buttons - Active */}
         <div className="grid grid-cols-3 gap-3">
