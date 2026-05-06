@@ -16,12 +16,9 @@ import {
 } from '@lenserfight/types'
 import type { ApiResponseEnvelope } from '@lenserfight/api/contracts'
 import { apiFetch, unwrapEnvelope } from '../apiFetch'
+import { VITE_API_BASE_URL } from '@lenserfight/utils/env'
 
-if (!import.meta.env.VITE_API_URL) {
-  console.warn('[walletApiClient] VITE_API_URL is not set — wallet calls will fail.')
-}
-
-const API_BASE = import.meta.env.VITE_API_URL as string
+const API_BASE = VITE_API_BASE_URL
 
 type WalletProductApi = Omit<WalletProduct, 'variantId'> & {
   variant_id: string

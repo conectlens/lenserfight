@@ -1,12 +1,9 @@
 import { supabase } from '@lenserfight/data/supabase'
 import { apiFetch, unwrapEnvelope } from '@lenserfight/data/repositories'
+import { CHAINABIT_API_BASE_URL } from '@lenserfight/utils/env'
 import type { PartnerBalance, PartnerProvision, PartnerTokenRefreshResult } from './partner-provider.interface'
 
-if (!import.meta.env.VITE_API_URL) {
-  console.warn('[partnerApiClient] VITE_API_URL is not set — partner calls will fail.')
-}
-
-const API_BASE = import.meta.env.VITE_API_URL as string
+const API_BASE = CHAINABIT_API_BASE_URL
 
 async function getAuthHeader(): Promise<Record<string, string>> {
   const { data } = await supabase.auth.getSession()

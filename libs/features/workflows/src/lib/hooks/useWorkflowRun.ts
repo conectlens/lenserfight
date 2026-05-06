@@ -7,6 +7,7 @@ import {
   isTerminalRunEventType,
   type WorkflowSseEventEnvelope,
 } from '@lenserfight/types'
+import { VITE_API_BASE_URL } from '@lenserfight/utils/env'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useEffect, useState } from 'react'
 
@@ -98,7 +99,7 @@ export function useWorkflowRun(workflowId: string | undefined, options?: { skipS
   useEffect(() => {
     if (!runId) return
     if (options?.skipSse) return
-    const apiBase = import.meta.env.VITE_API_URL as string | undefined
+    const apiBase = VITE_API_BASE_URL || undefined
     if (!apiBase) return
 
     const controller = new AbortController()

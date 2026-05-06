@@ -1,15 +1,9 @@
 import { supabase } from '@lenserfight/data/supabase'
 import { TriggerExecutionDTO, TriggerExecutionResponse } from '@lenserfight/types'
 import { apiFetch } from '../apiFetch'
+import { VITE_API_BASE_URL } from '@lenserfight/utils/env'
 
-if (!import.meta.env.VITE_API_URL) {
-  console.warn(
-    '[executionApiClient] VITE_API_URL is not set — triggerExecution calls will fail. ' +
-      'Note: this client routes to the internal /v1/executions worker, not /execute/wallet.',
-  )
-}
-
-const API_BASE = import.meta.env.VITE_API_URL as string
+const API_BASE = VITE_API_BASE_URL
 
 // --- Port ---
 

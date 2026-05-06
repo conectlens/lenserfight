@@ -1,6 +1,7 @@
 import { walletService } from '@lenserfight/data/repositories'
 import { WalletProduct } from '@lenserfight/types'
-import { AlertCircle, XCircle } from 'lucide-react'
+import { CHAINABIT_APP_URL } from '@lenserfight/utils/env'
+import { AlertCircle, ExternalLink, XCircle, Zap } from 'lucide-react'
 import React, { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { useAuth } from '@lenserfight/features/auth'
@@ -124,6 +125,25 @@ const StoreProductsView: React.FC = () => {
         <p className="text-gray-500 dark:text-gray-400">
           Buy credits once. Run any model. No subscription required.
         </p>
+      </div>
+
+      {/* Chainabit wallet deep-link */}
+      <div className="flex items-center justify-between p-4 mb-6 rounded-xl border border-orange-200 dark:border-orange-800 bg-orange-50 dark:bg-orange-900/10">
+        <div className="flex items-center gap-2.5">
+          <Zap size={16} className="text-orange-500 shrink-0" />
+          <span className="text-sm text-orange-800 dark:text-orange-200 font-medium">
+            Have a Chainabit account? Top up your wallet directly on Chainabit.
+          </span>
+        </div>
+        <a
+          href={`${CHAINABIT_APP_URL}/wallet?utm_source=lenserfight`}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="flex items-center gap-1.5 text-xs font-semibold text-orange-700 dark:text-orange-300 hover:underline shrink-0 ml-4"
+        >
+          Top up on Chainabit
+          <ExternalLink size={12} />
+        </a>
       </div>
 
       {checkoutError && (
