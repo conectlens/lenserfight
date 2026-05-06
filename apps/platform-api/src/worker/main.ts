@@ -1,7 +1,27 @@
 import { callProvider } from '@lenserfight/providers'
 import { byokKeyResolver } from '@lenserfight/providers'
 import { nodeLogger } from '@lenserfight/utils/logger'
+import { PLATFORM_API_WORKER_INTERVAL_MS, PLATFORM_API_WORKER_ONCE } from '@lenserfight/utils/env'
 import { createServiceSupabaseClient } from '../lib/supabase'
+import { processNextBattleJob } from './battle-worker'
+import { processNextScheduledWorkflow } from './scheduled-workflow-worker'
+
+const WORKER_ID = process.env['BATTLE_WORKER_ID'] ?? `worker-${process.pid}`
+const HEARTBEAT_INTERVAL_MS = parseInt(process.env['WORKER_HEARTBEAT_INTERVAL_MS'] ?? '10000', 10)
+
+async function emitHeartbeat(): Promise<void> {
+  if (process.env['FEATURE_WORKER_HEALTH_MONITORING'] !== 'true') return
+  try {
+    const serviceClient = createServiceSupabaseClient()
+    await serviceClient.schema('platform').rpc('fn_upsert_worker_heartbeat', {
+      p_worker_id:   WORKER_ID,
+      p_worker_type: 'combined',
+      p_metadata:    { pid: process.pid, uptime: process.uptime() },
+    })
+  } catch {
+    // Heartbeat failure must not crash the worker
+  }
+}
 
 interface ClaimedRun {
   run_id: string
@@ -134,15 +154,39 @@ export async function processNextQueuedRun(): Promise<boolean> {
 }
 
 async function runLoop(): Promise<void> {
-  const intervalMs = parseInt(process.env['PLATFORM_API_WORKER_INTERVAL_MS'] ?? '2000', 10)
-  const once = process.env['PLATFORM_API_WORKER_ONCE'] === 'true'
+  const intervalMs = PLATFORM_API_WORKER_INTERVAL_MS()
+  const once = PLATFORM_API_WORKER_ONCE()
+  const battleWorkerEnabled = process.env['PLATFORM_API_BATTLE_WORKER_ENABLED'] === 'true'
+  const scheduledWorkflowWorkerEnabled = process.env['PLATFORM_API_SCHEDULED_WORKFLOW_WORKER_ENABLED'] === 'true'
+
+  // Start heartbeat timer (independent of main loop)
+  let heartbeatTimer: ReturnType<typeof setInterval> | undefined
+  if (!once) {
+    heartbeatTimer = setInterval(emitHeartbeat, HEARTBEAT_INTERVAL_MS)
+    await emitHeartbeat()
+  }
 
   do {
-    const processed = await processNextQueuedRun()
+    const results = await Promise.allSettled([
+      processNextQueuedRun(),
+      battleWorkerEnabled ? processNextBattleJob() : Promise.resolve(false),
+      scheduledWorkflowWorkerEnabled ? processNextScheduledWorkflow() : Promise.resolve(false),
+    ])
+
+    const processed = results.some((r) => r.status === 'fulfilled' && r.value === true)
+
+    for (const r of results) {
+      if (r.status === 'rejected') {
+        nodeLogger.error('worker tick error', { message: String(r.reason) })
+      }
+    }
+
     if (!processed && once) break
     if (once) break
-    await new Promise((resolve) => setTimeout(resolve, intervalMs))
+    if (!processed) await new Promise((resolve) => setTimeout(resolve, intervalMs))
   } while (true)
+
+  if (heartbeatTimer) clearInterval(heartbeatTimer)
 }
 
 runLoop().catch((error) => {

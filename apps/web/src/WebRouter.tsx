@@ -91,6 +91,30 @@ const LazyBenchmarkSuiteDetailPage = lazy(() =>
     default: module.BenchmarkSuiteDetailPage,
   }))
 )
+const LazyBattlesFeedPage = lazy(() =>
+  import('@lenserfight/features/battles').then((module) => ({ default: module.BattlesFeedPage }))
+)
+const LazyCreateBattleWizard = lazy(() =>
+  import('@lenserfight/features/battles').then((module) => ({ default: module.CreateBattleWizard }))
+)
+const LazyBattleDetailPage = lazy(() =>
+  import('@lenserfight/features/battles').then((module) => ({ default: module.BattleDetailPage }))
+)
+const LazyBattleResultPage = lazy(() =>
+  import('@lenserfight/features/battles').then((module) => ({ default: module.BattleResultPage }))
+)
+const LazyBattleLenserboardPage = lazy(() =>
+  import('@lenserfight/features/battles').then((module) => ({ default: module.BattleLenserboardPage }))
+)
+const LazyNotificationsPage = lazy(() =>
+  import('@lenserfight/features/notifications').then((module) => ({ default: module.NotificationsPage }))
+)
+const LazyTournamentPage = lazy(() =>
+  import('@lenserfight/features/battles').then((module) => ({ default: module.TournamentPage }))
+)
+const LazyAdminDashboardPage = lazy(() =>
+  import('@lenserfight/features/battles').then((module) => ({ default: module.AdminDashboardPage }))
+)
 const LazyWorkflowsPage = lazy(() =>
   import('@lenserfight/features/workflows').then((module) => ({ default: module.WorkflowsPage }))
 )
@@ -136,14 +160,14 @@ const WorkflowsPageRoute: React.FC = () => {
 
 const WorkflowBuilderPageRoute: React.FC = () => {
   const { id, runId } = useParams<{ id: string; runId?: string }>()
+  const navigate = useNavigate()
   return (
     <LazyWorkflowBuilderPage
       workflowId={id!}
       runId={runId}
       onBattleClick={
         FEATURES.PUBLIC_BATTLES
-          ? (workflowId) =>
-              window.open(`${ARENA_BASE_URL}/battles/create?workflow_id=${workflowId}`, '_blank')
+          ? (workflowId) => navigate(`/battles/create?workflow_id=${workflowId}`)
           : undefined
       }
     />
@@ -196,6 +220,21 @@ const AgentControlRoomOverviewRedirect: React.FC = () => {
 const LenserAgentSectionRedirect: React.FC<{ section: string }> = ({ section }) => {
   const { handle } = useParams<{ handle: string }>()
   return <Navigate to={`/lenser/${handle}/ag/${section}`} replace />
+}
+
+const CreateBattleRoute: React.FC = () => {
+  const navigate = useNavigate()
+  return (
+    <ModalRoute
+      accessCheck={({ isAuthenticated, hasLenser }) => isAuthenticated && hasLenser}
+      maxWidth="max-w-3xl"
+    >
+      <LazyCreateBattleWizard
+        onSuccess={(slug) => navigate(`/battles/${slug}`)}
+        onClose={() => navigate('/battles')}
+      />
+    </ModalRoute>
+  )
 }
 
 const OnboardingModal: React.FC = () => (
@@ -255,6 +294,32 @@ export const WebRouter: React.FC = () => {
             )
           }
         />
+
+        {FEATURES.PUBLIC_BATTLES && (
+          <>
+            <Route
+              path="/battles"
+              element={
+                <DashboardFrame>
+                  <LazyBattlesFeedPage />
+                </DashboardFrame>
+              }
+            />
+            <Route path="/battles/lenserboard" element={<LazyBattleLenserboardPage />} />
+            <Route
+              path="/battles/create"
+              element={
+                <DashboardFrame>
+                  <CreateBattleRoute />
+                </DashboardFrame>
+              }
+            />
+            <Route path="/tournaments/:slug" element={<LazyTournamentPage />} />
+            <Route path="/admin" element={<LazyAdminDashboardPage />} />
+            <Route path="/battles/:slug" element={<LazyBattleDetailPage />} />
+            <Route path="/battles/:slug/result" element={<LazyBattleResultPage />} />
+          </>
+        )}
 
         <Route
           path="/lensers"
@@ -447,6 +512,15 @@ export const WebRouter: React.FC = () => {
         <Route path="/lenser/:handle/tm" element={<LenserAgentSectionRedirect section="team" />} />
         <Route path="/lenser/:handle/pe" element={<LenserAgentSectionRedirect section="personality" />} />
         <Route path="/lenser/:handle/ev" element={<LenserAgentSectionRedirect section="evaluations" />} />
+
+        <Route
+          path="/notifications"
+          element={
+            <DashboardFrame>
+              <LazyNotificationsPage />
+            </DashboardFrame>
+          }
+        />
 
         <Route path="/settings" element={<Navigate to="/settings/account" replace />} />
 

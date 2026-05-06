@@ -43,18 +43,26 @@ export const agentsService = {
   getQuotaSnapshot: (aiLenserId: string, date?: string): Promise<AgentQuotaSnapshotRecord | null> =>
     agentsRepo.getQuotaSnapshot(aiLenserId, date),
 
-  getLensBindings: (aiLenserId: string): Promise<AgentLensBindingRecord[]> =>
-    agentsRepo.getLensBindings(aiLenserId),
+  getLensBindings: (aiLenserId: string, limit?: number, offset?: number): Promise<AgentLensBindingRecord[]> =>
+    agentsRepo.getLensBindings(aiLenserId, limit, offset),
 
-  getModelBindings: (aiLenserId: string): Promise<AgentModelBindingRecord[]> =>
-    agentsRepo.getModelBindings(aiLenserId),
+  getModelBindings: (aiLenserId: string, limit?: number, offset?: number): Promise<AgentModelBindingRecord[]> =>
+    agentsRepo.getModelBindings(aiLenserId, limit, offset),
 
   setMainLensBinding: (
     aiLenserId: string,
     lensId: string,
+    versionId?: string | null,
+    categoryTags?: string[]
+  ): Promise<AgentLensBindingRecord | null> =>
+    agentsRepo.setMainLensBinding(aiLenserId, lensId, versionId, categoryTags),
+
+  setPersonalityLensBinding: (
+    aiLenserId: string,
+    lensId: string,
     versionId?: string | null
   ): Promise<AgentLensBindingRecord | null> =>
-    agentsRepo.setMainLensBinding(aiLenserId, lensId, versionId),
+    agentsRepo.setMainLensBinding(aiLenserId, lensId, versionId, ['personality']),
 
   setDefaultModelBinding: (
     aiLenserId: string,

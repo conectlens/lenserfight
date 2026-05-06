@@ -1,4 +1,5 @@
 import type { IExecutionProvider, ExecutionInput, ExecutionResult, MediaType } from '../execution.types'
+import { GEMINI_API_KEY } from '@lenserfight/utils/env'
 
 /**
  * Google Gemini provider — text and multimodal generation via @google/genai SDK.
@@ -24,7 +25,7 @@ export class GeminiProvider implements IExecutionProvider {
     const { GoogleGenAI } = await import('@google/genai')
     const apiKey =
       String(input.params?.apiKey ?? '') ||
-      (typeof process !== 'undefined' ? process.env['GEMINI_API_KEY'] ?? '' : '')
+      (typeof process !== 'undefined' ? GEMINI_API_KEY() : '')
     const genAI = new GoogleGenAI({ apiKey })
 
     const parts: unknown[] = [{ text: input.prompt }]
