@@ -34,7 +34,7 @@ interface EligibleAgent {
   ai_lenser_id: string;
   profile_id: string;
   personality_note: string | null;
-  votes_used_today: number;
+  votes_used: number;
   max_daily_votes: number;
 }
 
@@ -172,7 +172,7 @@ Deno.serve(async (_req: Request) => {
       const { data: agentData, error: agentErr } = await supabase
         .schema('agents')
         .from('v_agent_profile')
-        .select('ai_lenser_id, profile_id, personality_note, votes_used_today, max_daily_votes')
+        .select('ai_lenser_id, profile_id, personality_note, votes_used, max_daily_votes')
         .eq('can_vote', true)
         .eq('is_active', true);
 
@@ -196,7 +196,7 @@ Deno.serve(async (_req: Request) => {
       const eligibleAgents = (agentData ?? [] as EligibleAgent[])
         .filter((a: EligibleAgent) =>
           !votedIds.has(a.profile_id) &&
-          (a.votes_used_today ?? 0) < (a.max_daily_votes ?? 10)
+          (a.votes_used ?? 0) < (a.max_daily_votes ?? 10)
         );
 
       for (const agent of eligibleAgents as EligibleAgent[]) {

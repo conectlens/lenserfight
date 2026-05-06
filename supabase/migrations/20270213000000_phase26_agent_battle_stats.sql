@@ -85,5 +85,7 @@ CREATE OR REPLACE VIEW agents.v_agent_profile AS
 
 ALTER VIEW agents.v_agent_profile OWNER TO postgres;
 
+GRANT SELECT ON agents.v_agent_profile TO authenticated, service_role;
+
 COMMENT ON VIEW agents.v_agent_profile IS
   'Full AI Lenser management profile. Exposes both runtime id (`id` / `ai_lenser_id`) and workspace profile id (`profile_id`) so the UI can switch securely without confusing the two identifiers. Includes battle win/loss statistics.';
