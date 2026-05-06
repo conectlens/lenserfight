@@ -15,6 +15,9 @@ const LazyDashboardLayout = lazy(() =>
 const LazyHomePage = lazy(() =>
   import('@lenserfight/features/home').then((module) => ({ default: module.HomePage }))
 )
+const LazyAboutPage = lazy(() =>
+  import('@lenserfight/features/home').then((module) => ({ default: module.AboutPage }))
+)
 const LazyLenserBoardPage = lazy(() =>
   import('@lenserfight/features/lenserboard').then((module) => ({ default: module.LenserBoardPage }))
 )
@@ -41,6 +44,12 @@ const LazyAICatalogModelsPage = lazy(() =>
 )
 const LazyPendingRequestsPage = lazy(() =>
   import('@lenserfight/features/profile').then((module) => ({ default: module.PendingRequestsPage }))
+)
+const LazyFollowersPage = lazy(() =>
+  import('@lenserfight/features/profile').then((module) => ({ default: module.FollowersPage }))
+)
+const LazyFollowingPage = lazy(() =>
+  import('@lenserfight/features/profile').then((module) => ({ default: module.FollowingPage }))
 )
 const LazyLensesPage = lazy(() =>
   import('@lenserfight/features/lenses').then((module) => ({ default: module.LensesPage }))
@@ -283,6 +292,15 @@ export const WebRouter: React.FC = () => {
         />
 
         <Route
+          path="/about"
+          element={
+            <DashboardFrame>
+              <LazyAboutPage />
+            </DashboardFrame>
+          }
+        />
+
+        <Route
           path="/lenserboard"
           element={
             FEATURES.PUBLIC_BATTLES ? (
@@ -436,6 +454,24 @@ export const WebRouter: React.FC = () => {
           element={
             <DashboardFrame>
               <LazyPendingRequestsPage />
+            </DashboardFrame>
+          }
+        />
+
+        <Route
+          path="/lenser/:handle/followers"
+          element={
+            <DashboardFrame>
+              <LazyFollowersPage />
+            </DashboardFrame>
+          }
+        />
+
+        <Route
+          path="/lenser/:handle/following"
+          element={
+            <DashboardFrame>
+              <LazyFollowingPage />
             </DashboardFrame>
           }
         />
