@@ -24,10 +24,15 @@ const getRememberMe = (): boolean => {
   }
 }
 
+const isIpAddress = (hostname: string): boolean => /^[\d.]+$/.test(hostname) || hostname.includes(':')
+
 const getCookieDomain = (): string => {
   const hostname = window.location.hostname
   if (hostname === 'localhost' || hostname === '127.0.0.1') return hostname
   if (hostname.endsWith('.localhost')) return '.localhost'
+  // IP addresses (IPv4 like 100.88.x.x, IPv6) must be used verbatim —
+  // a leading-dot domain like ".58.68" is invalid and browsers silently drop the cookie.
+  if (isIpAddress(hostname)) return hostname
   const parts = hostname.split('.')
   return parts.length > 2 ? '.' + parts.slice(-2).join('.') : hostname
 }
