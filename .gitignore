@@ -103,3 +103,6 @@ web-build/
 cache/
 
 .data/
+
+# Large seed data — not committed to git
+supabase/seed.sql
