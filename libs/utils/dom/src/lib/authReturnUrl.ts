@@ -25,6 +25,22 @@ const ALLOWED_ORIGINS = [...PROD_ORIGINS, ...LOCAL_DIRECT_ORIGINS, ...LOCAL_PROX
 
 export const DEFAULT_RETURN_URL = WEB_BASE_URL
 
+function isAllowedOrigin(origin: string): boolean {
+  if (ALLOWED_ORIGINS.includes(origin)) return true
+  if (typeof window !== 'undefined') {
+    // Accept any origin on the same host as the current page so Tailscale/custom-host
+    // dev setups work across apps (e.g. auth on :3004 accepting return URLs to web on :3000).
+    try {
+      const currentHost = new URL(window.location.origin).hostname
+      const targetHost = new URL(origin).hostname
+      if (currentHost === targetHost && currentHost !== 'localhost') return true
+    } catch {
+      // ignore
+    }
+  }
+  return false
+}
+
 export function sanitizeReturnUrl(url: string | null | undefined): string {
   if (!url) return DEFAULT_RETURN_URL
 
@@ -34,7 +50,7 @@ export function sanitizeReturnUrl(url: string | null | undefined): string {
       return DEFAULT_RETURN_URL
     }
 
-    if (ALLOWED_ORIGINS.includes(parsed.origin)) {
+    if (isAllowedOrigin(parsed.origin)) {
       if (parsed.pathname === '/auth' || parsed.pathname.startsWith('/auth/')) {
         return DEFAULT_RETURN_URL
       }
