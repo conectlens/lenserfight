@@ -118,7 +118,7 @@ export const LenserProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   const loadLenserProfile = async (force = false): Promise<void> => {
     if (force) {
       clearActiveProfileCaches()
-      await queryClient.invalidateQueries({ queryKey: queryKeys.lenser.authenticated() })
+      await queryClient.refetchQueries({ queryKey: queryKeys.lenser.authenticated() })
     }
   }
 

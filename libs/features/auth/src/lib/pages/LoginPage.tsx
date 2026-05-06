@@ -220,10 +220,7 @@ export const LoginPage: React.FC = () => {
           className="w-full flex items-center justify-center gap-3 py-2.5 mb-3 border border-orange-300 dark:border-orange-700 rounded-xl bg-orange-50 dark:bg-orange-900/20 hover:bg-orange-100 dark:hover:bg-orange-900/40 transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed font-semibold text-sm text-orange-700 dark:text-orange-300"
           title="Sign in with Chainabit"
         >
-          <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none">
-            <circle cx="12" cy="12" r="10" fill="#FF6B35" />
-            <path d="M8 12l3 3 5-5" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-          </svg>
+          <img src="/chainabit/favicon-32x32.png" width={20} height={20} alt="Chainabit" style={{ objectFit: 'contain' }} />
           Continue with Chainabit
         </button>
 

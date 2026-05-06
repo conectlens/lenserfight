@@ -74,7 +74,7 @@ max_indexes = 5
 [auth]
 enabled = true
 site_url = "http://127.0.0.1:3000"
-additional_redirect_urls = ["https://127.0.0.1:3000"]
+additional_redirect_urls = ["https://127.0.0.1:3000", "http://localhost:3004/callback"]
 jwt_expiry = 3600
 enable_refresh_token_rotation = true
 refresh_token_reuse_interval = 10
@@ -136,6 +136,13 @@ redirect_uri = ""
 url = ""
 skip_nonce_check = false
 email_optional = false
+
+# Chainabit — self-hosted OIDC provider configured via the keycloak slot.
+[auth.external.keycloak]
+enabled = true
+client_id = "env(SUPABASE_AUTH_CHAINABIT_CLIENT_ID)"
+secret = "env(SUPABASE_AUTH_CHAINABIT_SECRET)"
+url = "env(CHAINABIT_API_URL)"
 
 [auth.web3.solana]
 enabled = false
