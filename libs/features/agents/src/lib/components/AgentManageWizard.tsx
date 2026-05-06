@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, useCallback } from 'react'
 import { Link } from 'react-router-dom'
 import { BarChart3, BookOpen, Clock, Sparkles, ToggleRight } from 'lucide-react'
 import { useQueryClient } from '@tanstack/react-query'
@@ -39,6 +39,85 @@ const WIZARD_STEPS: WizardStepConfig[] = [
     icon: <BarChart3 size={20} />,
   },
 ]
+
+interface QuotaEditFormProps {
+  agentId: string
+  agent: import('@lenserfight/data/repositories').AgentProfileView
+  queryClient: import('@tanstack/react-query').QueryClient
+}
+
+const QuotaEditForm: React.FC<QuotaEditFormProps> = ({ agentId, agent, queryClient }) => {
+  const [maxBattles, setMaxBattles] = useState(agent.max_daily_battles)
+  const [maxVotes, setMaxVotes] = useState(agent.max_daily_votes)
+  const [saving, setSaving] = useState(false)
+  const [saved, setSaved] = useState(false)
+
+  const handleSave = useCallback(async () => {
+    setSaving(true)
+    setSaved(false)
+    try {
+      await agentsService.updatePolicy(agentId, {
+        max_daily_battles: maxBattles,
+        max_daily_votes: maxVotes,
+      })
+      await queryClient.invalidateQueries({ queryKey: queryKeys.agents.detail(agentId) })
+      setSaved(true)
+      setTimeout(() => setSaved(false), 2000)
+    } finally {
+      setSaving(false)
+    }
+  }, [agentId, maxBattles, maxVotes, queryClient])
+
+  return (
+    <div className="bg-surface-raised border border-surface-border rounded-xl p-4">
+      <div className="flex items-center justify-between mb-3">
+        <div className="flex items-center gap-2">
+          <Clock size={14} className="text-greyscale-500" />
+          <span className="text-xs font-medium text-greyscale-500 dark:text-greyscale-400 uppercase tracking-wide">
+            Daily Limits
+          </span>
+        </div>
+        <button
+          onClick={handleSave}
+          disabled={saving}
+          className="text-xs font-semibold text-primary-yellow-600 dark:text-primary-yellow-400 hover:underline disabled:opacity-50"
+        >
+          {saving ? 'Saving…' : saved ? 'Saved ✓' : 'Save'}
+        </button>
+      </div>
+      <div className="grid grid-cols-3 gap-3 text-sm">
+        <div>
+          <label className="text-greyscale-400 text-xs mb-1 block">Battles / day</label>
+          <input
+            type="number"
+            min={0}
+            max={100}
+            value={maxBattles}
+            onChange={(e) => setMaxBattles(Number(e.target.value))}
+            className="w-full rounded-lg border border-surface-border bg-surface-base px-2 py-1 text-sm font-bold text-greyscale-900 dark:text-greyscale-50 focus:outline-none focus:ring-2 focus:ring-primary-yellow-500"
+          />
+        </div>
+        <div>
+          <label className="text-greyscale-400 text-xs mb-1 block">Votes / day</label>
+          <input
+            type="number"
+            min={0}
+            max={100}
+            value={maxVotes}
+            onChange={(e) => setMaxVotes(Number(e.target.value))}
+            className="w-full rounded-lg border border-surface-border bg-surface-base px-2 py-1 text-sm font-bold text-greyscale-900 dark:text-greyscale-50 focus:outline-none focus:ring-2 focus:ring-primary-yellow-500"
+          />
+        </div>
+        <div>
+          <p className="text-greyscale-400 text-xs mb-1">Credits</p>
+          <p className="font-bold text-greyscale-900 dark:text-greyscale-50 py-1">
+            {agent.spending_limit_credits.toLocaleString()}
+          </p>
+        </div>
+      </div>
+    </div>
+  )
+}
 
 export interface AgentManageWizardProps {
   agentId: string
@@ -205,31 +284,8 @@ export const AgentManageWizard: React.FC<AgentManageWizardProps> = ({ agentId, h
         />
       </div>
 
-      {/* Daily limits */}
-      <div className="bg-surface-raised border border-surface-border rounded-xl p-4">
-        <div className="flex items-center gap-2 mb-3">
-          <Clock size={14} className="text-greyscale-500" />
-          <span className="text-xs font-medium text-greyscale-500 dark:text-greyscale-400 uppercase tracking-wide">
-            Daily Limits
-          </span>
-        </div>
-        <div className="grid grid-cols-3 gap-3 text-sm">
-          <div>
-            <p className="text-greyscale-400 text-xs mb-0.5">Battles</p>
-            <p className="font-bold text-greyscale-900 dark:text-greyscale-50">{agent.max_daily_battles}</p>
-          </div>
-          <div>
-            <p className="text-greyscale-400 text-xs mb-0.5">Votes</p>
-            <p className="font-bold text-greyscale-900 dark:text-greyscale-50">{agent.max_daily_votes}</p>
-          </div>
-          <div>
-            <p className="text-greyscale-400 text-xs mb-0.5">Credits</p>
-            <p className="font-bold text-greyscale-900 dark:text-greyscale-50">
-              {agent.spending_limit_credits.toLocaleString()}
-            </p>
-          </div>
-        </div>
-      </div>
+      {/* Daily limits — editable */}
+      <QuotaEditForm agentId={agentId} agent={agent} queryClient={queryClient} />
 
       {/* Public profile link */}
       <div className="flex items-center gap-2 text-sm">

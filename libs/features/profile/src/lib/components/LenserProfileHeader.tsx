@@ -21,6 +21,7 @@ import {
   Trophy,
   Zap,
   Bot,
+  LayoutDashboard,
 } from 'lucide-react'
 import React, { useState, useEffect } from 'react'
 
@@ -40,6 +41,8 @@ interface LenserProfileHeaderProps {
   onProfileUpdate: (updatedLenser: Lenser) => void
   relationshipState?: RelationshipState | null
   onManageAgents?: () => void
+  onEditAgent?: () => void
+  onControlRoom?: () => void
 }
 
 export const LenserProfileHeader: React.FC<LenserProfileHeaderProps> = ({
@@ -50,6 +53,8 @@ export const LenserProfileHeader: React.FC<LenserProfileHeaderProps> = ({
   onProfileUpdate,
   relationshipState,
   onManageAgents,
+  onEditAgent,
+  onControlRoom,
 }) => {
   const { updateLenserProfile } = useLenser()
 
@@ -223,14 +228,36 @@ export const LenserProfileHeader: React.FC<LenserProfileHeaderProps> = ({
         <div className="bg-white dark:bg-gray-800 md:rounded-2xl shadow-sm border-b md:border border-gray-100 dark:border-gray-700 p-6 md:p-8 relative transition-colors">
           {/* Mobile Edit / Follow Button */}
           {isOwner ? (
-            <Button
+            <div className="md:hidden absolute top-4 right-4 flex gap-2 z-20">
+              <Button
                 variant="ghost"
                 onClick={() => setShowEditModal(true)}
-                className="md:hidden absolute top-4 right-4 !p-2.5 !w-auto rounded-full z-20"
+                className="!p-2.5 !w-auto rounded-full"
                 title="Edit Profile"
               >
                 <Pencil size={18} />
               </Button>
+              {lenser.type === 'ai' && onEditAgent && (
+                <Button
+                  variant="ghost"
+                  onClick={onEditAgent}
+                  className="!p-2.5 !w-auto rounded-full"
+                  title="Edit Agent Details"
+                >
+                  <Bot size={18} />
+                </Button>
+              )}
+              {lenser.type === 'ai' && onControlRoom && (
+                <Button
+                  variant="ghost"
+                  onClick={onControlRoom}
+                  className="!p-2.5 !w-auto rounded-full"
+                  title="Control Room"
+                >
+                  <LayoutDashboard size={18} />
+                </Button>
+              )}
+            </div>
           ) : (
             <div className="md:hidden absolute top-4 right-4 z-20">
               <FollowButton
@@ -360,6 +387,28 @@ export const LenserProfileHeader: React.FC<LenserProfileHeaderProps> = ({
                       <Pencil size={16} />
                       Edit Profile
                     </Button>
+                    {lenser.type === 'ai' && onEditAgent && (
+                      <Button
+                        variant="secondary"
+                        onClick={onEditAgent}
+                        className="flex items-center gap-2 w-auto"
+                        title="Edit Agent Details"
+                      >
+                        <Bot size={16} />
+                        Edit Agent
+                      </Button>
+                    )}
+                    {lenser.type === 'ai' && onControlRoom && (
+                      <Button
+                        variant="secondary"
+                        onClick={onControlRoom}
+                        className="flex items-center gap-2 w-auto"
+                        title="Open Control Room"
+                      >
+                        <LayoutDashboard size={16} />
+                        Control Room
+                      </Button>
+                    )}
                   </div>
                 ) : (
                   <div className="hidden md:block mt-2 md:mt-0">

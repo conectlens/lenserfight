@@ -229,6 +229,12 @@ export interface WorkflowFrontmatter extends AutomationObjectFrontmatter {
 export interface PrivateBattleParticipant {
   type: 'agent' | 'workflow' | 'model' | 'prompt' | 'human'
   ref: string
+  /** LLM provider for local execution (e.g. 'anthropic', 'openai', 'ollama') */
+  provider?: string
+  /** Model key for local execution (e.g. 'claude-sonnet-4-6') */
+  model?: string
+  /** Env var override for BYOK key resolution (e.g. 'MY_ANTHROPIC_KEY') */
+  key_var?: string
 }
 
 export interface PrivateBattleFrontmatter extends AutomationObjectFrontmatter {

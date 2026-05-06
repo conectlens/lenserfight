@@ -3,6 +3,7 @@ import { queryClient } from '@lenserfight/data/cache'
 import { AuthProvider, SessionBoundary } from '@lenserfight/features/auth'
 import { LenserProvider } from '@lenserfight/features/profile'
 import { GlobalAnalytics, PostHogProvider } from '@lenserfight/infra/analytics'
+import { usePartnerProvisioning } from '@lenserfight/features/onboarding'
 import { ErrorProvider, GlobalErrorRenderer, ErrorClearer } from '@lenserfight/shared/error'
 import { AppToaster } from '@lenserfight/ui/components'
 import { ModalQueryDriven } from '@lenserfight/ui/routing'
@@ -18,6 +19,11 @@ import { WebRouter } from './WebRouter'
 const LazyCreateAgentContent = lazy(() =>
   import('@lenserfight/features/agents').then((module) => ({ default: module.CreateAgentContent }))
 )
+
+function PartnerProvisioningBootstrap() {
+  usePartnerProvisioning()
+  return null
+}
 
 const App: React.FC = () => {
   return (
@@ -36,6 +42,7 @@ const App: React.FC = () => {
                   >
                     <PostHogProvider />
                     <GlobalAnalytics />
+                    <PartnerProvisioningBootstrap />
                     <ErrorClearer />
                     <AppToaster />
                     <GlobalErrorRenderer>

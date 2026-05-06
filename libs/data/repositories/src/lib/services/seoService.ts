@@ -229,7 +229,7 @@ export const seoService = {
     },
   }),
 
-  getBattleMeta: (battle?: { id: string; slug: string; title: string; task_prompt: string; published_at: string | null } | null): SEOMetadata => {
+  getBattleMeta: (battle?: { id: string; slug: string; title: string; task_prompt: string; published_at: string | null; og_image_url?: string | null } | null): SEOMetadata => {
     if (!battle) {
       return {
         title: 'Battle Not Found | LenserFight Arena',
@@ -246,7 +246,7 @@ export const seoService = {
       title: `${battle.title} — LenserFight Arena`,
       description: desc,
       url: pageUrl,
-      ogImage: ARENA_OG_IMAGE,
+      ogImage: battle.og_image_url ?? ARENA_OG_IMAGE,
       jsonLd: {
         '@context': 'https://schema.org',
         '@type': 'SportsEvent',
