@@ -13,7 +13,7 @@ export const ChainabitOnboardingModal: React.FC = () => {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  const isVisible = lenser?.onboarding_step === 1
+  const isVisible = lenser?.type === 'human' && lenser?.onboarding_step === 1
 
   const handleSubmit = async () => {
     if (!handle.trim() || !displayName.trim()) {

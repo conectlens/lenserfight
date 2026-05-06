@@ -18,3 +18,5 @@ seeds/43_ai_agent_lens_bindings.sql
 seeds/44_community_profiles.sql
 seeds/45_workflow_runs.sql
 seeds/46_connectors.sql
+seeds/48_workflow_templates.sql
+# seeds/49_analytics_phase15.sql — analytics schema is platform-only, excluded from OSS
