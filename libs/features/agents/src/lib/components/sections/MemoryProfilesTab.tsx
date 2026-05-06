@@ -50,22 +50,6 @@ export const MemoryProfilesTab: React.FC<MemoryProfilesTabProps> = ({ aiLenserId
 
   return (
     <div className="space-y-4">
-      {isOwner && (
-        <div className="flex justify-end">
-          <Button
-            variant="dark"
-            size="sm"
-            onClick={() => {
-              setEditing(null)
-              setDrawerOpen(true)
-            }}
-          >
-            <Plus size={14} className="mr-2 inline" />
-            New memory profile
-          </Button>
-        </div>
-      )}
-
       {profiles.length === 0 ? (
         <EmptyPanel
           icon={<Brain size={20} />}
