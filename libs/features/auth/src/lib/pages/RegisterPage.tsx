@@ -23,7 +23,7 @@ import { InputField } from '../components/InputField'
 import { PasswordStrengthMeter } from '../components/PasswordStrengthMeter'
 
 export const RegisterPage: React.FC = () => {
-  const { register, logout, resendSignupConfirmation, isAuthenticated, signInWithOAuth } = useAuth()
+  const { register, logout, resendSignupConfirmation, isAuthenticated, signInWithOAuth, signInWithChainabit } = useAuth()
   const navigate = useNavigate()
 
   const [formData, setFormData] = useState({
@@ -133,6 +133,17 @@ export const RegisterPage: React.FC = () => {
       }
       setLoading(false)
       if (ENABLE_CAPTCHA) setCaptchaToken(null)
+    }
+  }
+
+  const handleChainabit = async () => {
+    setOauthLoading(true)
+    setApiError(null)
+    try {
+      await signInWithChainabit()
+    } catch (err: unknown) {
+      setApiError(normalizeError(err))
+      setOauthLoading(false)
     }
   }
 
@@ -315,6 +326,18 @@ export const RegisterPage: React.FC = () => {
             </span>
           </div>
         </div>
+
+        {/* Chainabit — primary OAuth CTA */}
+        <button
+          type="button"
+          onClick={handleChainabit}
+          disabled={oauthLoading || loading || isSuccess}
+          className="w-full flex items-center justify-center gap-3 py-2.5 mb-3 border border-orange-300 dark:border-orange-700 rounded-xl bg-orange-50 dark:bg-orange-900/20 hover:bg-orange-100 dark:hover:bg-orange-900/40 transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed font-semibold text-sm text-orange-700 dark:text-orange-300"
+          title="Sign up with Chainabit"
+        >
+          <img src="/chainabit/favicon-32x32.png" width={20} height={20} alt="Chainabit" style={{ objectFit: 'contain' }} />
+          Continue with Chainabit
+        </button>
 
         {/* OAuth Buttons */}
         <div className="grid grid-cols-3 gap-3">
