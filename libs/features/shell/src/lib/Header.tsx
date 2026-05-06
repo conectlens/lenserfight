@@ -1,9 +1,11 @@
 import { useAuth } from '@lenserfight/features/auth'
+import { useUnreadCount } from '@lenserfight/features/notifications'
 import { useLenser, useLenserWorkspace, useWorkspaceSwitchController } from '@lenserfight/features/profile'
 import { ShareModal, useShareContext } from '@lenserfight/features/share'
+import { useWallet } from '@lenserfight/features/store'
 import { ActionMenu, Breadcrumbs, Button } from '@lenserfight/ui/components'
 import { useUI } from '@lenserfight/ui/providers'
-import { Bot, ChevronLeft, Menu, Share2, Shield, LogOut } from 'lucide-react'
+import { Bell, ChevronLeft, Menu, Share2, Shield, LogOut, Zap } from 'lucide-react'
 import React, { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 
@@ -23,6 +25,8 @@ export const Header: React.FC<HeaderProps> = ({ onToggleSidebar }) => {
   const { switchToProfile, isSwitching } = useWorkspaceSwitchController()
 
   const isAgentOwner = activeWorkspace?.type === 'ai'
+  const { balance, isLoading: walletLoading } = useWallet()
+  const unreadCount = useUnreadCount()
 
   const handleLogout = async () => {
     await logout()
@@ -78,6 +82,33 @@ export const Header: React.FC<HeaderProps> = ({ onToggleSidebar }) => {
               {!isSwitching && <ChevronLeft size={11} className="-ml-0.5" />}
               @{humanWorkspace.handle}
             </Button>
+          )}
+
+          {isAuthenticated && (
+            <button
+              onClick={() => navigate('/notifications')}
+              className="relative p-2 rounded-lg text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-gray-100 transition-colors"
+              title="Notifications"
+              aria-label="Notifications"
+            >
+              <Bell size={20} />
+              {unreadCount > 0 && (
+                <span className="absolute top-1 right-1 min-w-[16px] h-4 flex items-center justify-center rounded-full bg-red-500 text-white text-[9px] font-bold px-0.5 leading-none">
+                  {unreadCount > 99 ? '99+' : unreadCount}
+                </span>
+              )}
+            </button>
+          )}
+
+          {isAuthenticated && balance !== null && (
+            <button
+              onClick={() => navigate('/billing')}
+              className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-semibold text-yellow-700 dark:text-yellow-300 bg-yellow-50 dark:bg-yellow-900/20 hover:bg-yellow-100 dark:hover:bg-yellow-900/40 transition-colors"
+              title="Wallet balance — click to top up"
+            >
+              <Zap size={13} className="shrink-0" />
+              {walletLoading ? '…' : balance.toLocaleString()}
+            </button>
           )}
 
           {isAuthenticated && (

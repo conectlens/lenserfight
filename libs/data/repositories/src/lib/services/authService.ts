@@ -52,6 +52,10 @@ export const authService = {
     return authRepo.signInWithOAuth(provider)
   },
 
+  signInWithChainabit: async (): Promise<void> => {
+    return authRepo.signInWithChainabit()
+  },
+
   resendSignupConfirmation: async (email: string): Promise<void> => {
     return authRepo.resendSignupConfirmation(email)
   },
