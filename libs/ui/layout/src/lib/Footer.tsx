@@ -71,6 +71,16 @@ export const Footer: React.FC<FooterProps> = ({ isDashboard, navBaseUrl }) => {
               Powered by ConectLens
               <ExternalLink size={10} />
             </a>
+            <span className="hidden md:inline text-gray-300 dark:text-gray-700">·</span>
+            <a
+              href="https://app.chainabit.com?utm_source=lenserfight_footer"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center gap-1 text-xs text-orange-500 dark:text-orange-400 hover:text-orange-700 dark:hover:text-orange-300 transition-colors font-medium"
+            >
+              Sponsored by Chainabit
+              <ExternalLink size={10} />
+            </a>
           </div>
         </div>
 

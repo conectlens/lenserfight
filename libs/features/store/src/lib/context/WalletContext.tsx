@@ -1,8 +1,9 @@
-import React, { createContext, useContext, useCallback, useEffect } from 'react'
-import { useQuery } from '@tanstack/react-query'
+import React, { createContext, useContext, useCallback, useEffect, useRef } from 'react'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { queryKeys } from '@lenserfight/data/cache'
 import { walletService } from '@lenserfight/data/repositories'
+import { supabase } from '@lenserfight/data/supabase'
 import { useAuth } from '@lenserfight/features/auth'
 import { useLenser } from '@lenserfight/features/profile'
 import { SURFACE } from '@lenserfight/utils/env'
@@ -19,8 +20,10 @@ const WalletContext = createContext<WalletContextType | undefined>(undefined)
 
 export const WalletProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { isAuthenticated } = useAuth()
-  const { hasLenser } = useLenser()
+  const { hasLenser, lenser } = useLenser()
   const navigate = useNavigate()
+  const qc = useQueryClient()
+  const channelRef = useRef<ReturnType<typeof supabase.channel> | null>(null)
 
   const {
     data,
@@ -37,6 +40,22 @@ export const WalletProvider: React.FC<{ children: React.ReactNode }> = ({ childr
 
   const balance = data?.balance ?? null
   const error = queryError ? (queryError as Error).message || 'Failed to load balance' : null
+
+  // Subscribe to Chainabit webhook broadcast so balance refreshes without polling
+  useEffect(() => {
+    const lenserId = lenser?.id
+    if (!lenserId) return
+
+    const channel = supabase
+      .channel(`wallet:${lenserId}`)
+      .on('broadcast', { event: 'balance_updated' }, () => {
+        qc.invalidateQueries({ queryKey: queryKeys.wallet.balance })
+      })
+      .subscribe()
+
+    channelRef.current = channel
+    return () => { channel.unsubscribe() }
+  }, [lenser?.id, qc])
 
   const redirectToStore = useCallback(
     (delayMs = 0) => {

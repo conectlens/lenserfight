@@ -1,4 +1,5 @@
 export * from './lib/components/ThreadsList'
 export * from './lib/components/ThreadsListCard'
+export * from './lib/pages/AboutPage'
 export * from './lib/pages/HomePage'
 export * from './lib/useThreads'
