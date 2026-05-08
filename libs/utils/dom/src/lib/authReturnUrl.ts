@@ -21,9 +21,15 @@ const LOCAL_PROXY_ORIGINS = [
   'http://admin.localhost:8080',
 ]
 
+// Ports used by local app servers. When rewriting localhost ↔ IP, we preserve the port.
+const LOCAL_APP_PORTS = new Set([3000, 3001, 3002, 3003, 3004, 8080])
+
 const ALLOWED_ORIGINS = [...PROD_ORIGINS, ...LOCAL_DIRECT_ORIGINS, ...LOCAL_PROXY_ORIGINS]
 
 export const DEFAULT_RETURN_URL = WEB_BASE_URL
+
+const isIpAddress = (hostname: string): boolean =>
+  /^[\d.]+$/.test(hostname) || hostname.includes(':')
 
 function isAllowedOrigin(origin: string): boolean {
   if (ALLOWED_ORIGINS.includes(origin)) return true
@@ -41,6 +47,43 @@ function isAllowedOrigin(origin: string): boolean {
   return false
 }
 
+/**
+ * Rewrite the hostname of a return URL to match the current page's hostname
+ * when one side is a bare IP and the other is localhost.
+ *
+ * In dev, apps may run on a Tailscale IP (e.g. 100.x.x.x) while the return
+ * URL still says "localhost". Cookies are scoped to the hostname that wrote
+ * them, so a cross-host redirect loses the session entirely. Rewriting the
+ * hostname keeps the cookie domain consistent.
+ *
+ * Only applies to known local app ports — never rewrites production URLs.
+ */
+function rewriteHostIfCrossLocalHost(parsed: URL): URL {
+  if (typeof window === 'undefined') return parsed
+  try {
+    const currentHostname = window.location.hostname
+    const targetHostname = parsed.hostname
+    const port = parsed.port ? parseInt(parsed.port, 10) : 80
+
+    if (!LOCAL_APP_PORTS.has(port)) return parsed
+    if (currentHostname === targetHostname) return parsed
+
+    const currentIsIp = isIpAddress(currentHostname)
+    const targetIsLocalhost = targetHostname === 'localhost' || targetHostname === '127.0.0.1'
+    const targetIsIp = isIpAddress(targetHostname)
+    const currentIsLocalhost = currentHostname === 'localhost' || currentHostname === '127.0.0.1'
+
+    if ((currentIsIp && targetIsLocalhost) || (currentIsLocalhost && targetIsIp)) {
+      const rewritten = new URL(parsed.toString())
+      rewritten.hostname = currentHostname
+      return rewritten
+    }
+  } catch {
+    // ignore — return original
+  }
+  return parsed
+}
+
 export function sanitizeReturnUrl(url: string | null | undefined): string {
   if (!url) return DEFAULT_RETURN_URL
 
@@ -50,6 +93,16 @@ export function sanitizeReturnUrl(url: string | null | undefined): string {
       return DEFAULT_RETURN_URL
     }
 
+    const rewritten = rewriteHostIfCrossLocalHost(parsed)
+
+    if (isAllowedOrigin(rewritten.origin)) {
+      if (rewritten.pathname === '/auth' || rewritten.pathname.startsWith('/auth/')) {
+        return DEFAULT_RETURN_URL
+      }
+      return rewritten.toString()
+    }
+
+    // Fallback: check the original origin too (e.g. if rewrite wasn't needed)
     if (isAllowedOrigin(parsed.origin)) {
       if (parsed.pathname === '/auth' || parsed.pathname.startsWith('/auth/')) {
         return DEFAULT_RETURN_URL

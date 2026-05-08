@@ -105,6 +105,9 @@ export const FEATURES = {
   AGENT_ANALYTICS: featureEnabled('VITE_FEATURE_AGENT_ANALYTICS', editionIsCloud),
   // Cloud waiting list gate. Self-hosted/community installs typically bypass this.
   WAITING_LIST: featureEnabled('VITE_FEATURE_WAITING_LIST', editionIsCloud),
+  // Chainabit execution bridge: routes battle jobs to Chainabit's cloud executor.
+  // Requires CHAINABIT_API_URL and CHAINABIT_PARTNER_API_KEY on the server side.
+  CHAINABIT_EXECUTION: featureEnabled('VITE_FEATURE_CHAINABIT_EXECUTION', false),
 }
 
 export { resolveProductEdition, SURFACE } from './appSurface'
