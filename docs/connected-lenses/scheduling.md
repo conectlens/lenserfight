@@ -5,6 +5,10 @@ description: pg_cron-driven workflow schedules. Covers the schedule row, policy 
 
 # Scheduling
 
+::: warning Status: Preview
+CRON scheduling requires a full Supabase instance and the `VITE_FEATURE_CRON_SCHEDULING=true` flag. It is **disabled by default** in self-hosted Community Edition installs. See [Known Preview Surfaces](/reference/known-preview-surfaces).
+:::
+
 ConnectedLenses workflows can be triggered on a CRON schedule. The mechanism is `pg_cron` driving rows in [`lenses.workflow_schedules`](./domain-model#lenses-workflow-schedules), each carrying a five-field CRON expression, a timezone, an assignee (agent or team), and a four-policy bundle (approval / retry / failure / queue).
 
 ## Architecture
@@ -124,6 +128,59 @@ Each schedule (and each [`agents.workflow_assignments`](./domain-model#agents-wo
 | `mode` | `'parallel' \| 'serial'` | Whether the schedule may overlap its previous run |
 | `maxConcurrency` | int | Per-schedule concurrency cap |
 | `priority` | int | Worker queue priority |
+
+## Timezone behavior
+
+The `timezone` column accepts any IANA timezone string. The dispatch function converts the CRON expression to UTC using `pg_catalog.timezone()` before computing `next_run_at`.
+
+**Key rule:** pg_cron itself always fires on UTC clock ticks. The timezone field only affects how your CRON expression is interpreted, not when pg_cron wakes up.
+
+### Examples
+
+| Timezone | CRON | Wall-clock meaning | UTC equivalent (winter) | UTC equivalent (summer) |
+|----------|----|-------------------|------------------------|------------------------|
+| `UTC` | `0 8 * * *` | 08:00 UTC | 08:00 | 08:00 |
+| `Europe/Istanbul` | `0 8 * * *` | 08:00 Turkey time (UTC+3, **no DST**) | 05:00 | 05:00 |
+| `America/New_York` | `0 8 * * *` | 08:00 Eastern time (DST-aware) | 13:00 (EST) | 12:00 (EDT) |
+
+`Europe/Istanbul` has no daylight saving time — the UTC offset stays at +3 year-round. `America/New_York` observes DST, so the UTC equivalent shifts by one hour between winter (EST, UTC−5) and summer (EDT, UTC−4).
+
+**Recommendation:** Use `UTC` for automated systems that must fire at a precise UTC clock time. Use a named IANA timezone (e.g., `Europe/Istanbul`) for schedules that should track a local business day.
+
+### Verify your timezone
+
+```sql
+-- Confirm pg_cron fires at the expected UTC time for your expression
+SELECT timezone('Europe/Istanbul', now()) AS istanbul_now,
+       now() AT TIME ZONE 'UTC' AS utc_now;
+```
+
+## Self-hosted pg_cron requirements
+
+**Supabase Cloud:** pg_cron is pre-installed. No setup required.
+
+**Self-hosted Supabase:** pg_cron must be enabled explicitly.
+
+1. Add to `postgresql.conf`:
+   ```
+   shared_preload_libraries = 'pg_cron'
+   cron.database_name = 'postgres'
+   ```
+
+2. Restart Postgres, then run:
+   ```sql
+   CREATE EXTENSION IF NOT EXISTS pg_cron;
+   ```
+
+3. Verify:
+   ```sql
+   SELECT * FROM pg_extension WHERE extname = 'pg_cron';
+   -- Must return one row
+   ```
+
+4. Grant the dispatch function permission to run as superuser or ensure `pg_cron` is configured with the correct `cron.database_name`.
+
+If pg_cron is missing, the `dispatch-scheduled-workflows` job will not be registered on migration and CRON scheduling will silently do nothing. Run `lf schedule health` to detect this — a healthy install shows `worker: ok` and `pg_cron: registered`.
 
 ## Missed-run policy
 
