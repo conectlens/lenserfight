@@ -1,0 +1,35 @@
+{
+  "ignorePatterns": [
+    { "pattern": "^http://localhost" },
+    { "pattern": "^https?://localhost" },
+    { "pattern": "^http://127\\." },
+    { "pattern": "^https?://127\\." },
+    { "pattern": "^http://0\\.0\\.0\\.0" },
+    { "pattern": "^https?://10\\." },
+    { "pattern": "^https?://192\\.168\\." },
+    { "pattern": "^https?://172\\.(1[6-9]|2[0-9]|3[0-1])\\." },
+    { "pattern": "^https?://[^/]+\\.local(/|$)" },
+    { "pattern": "^https?://[^/]+\\.internal(/|$)" },
+    { "pattern": "^mailto:" },
+    { "pattern": "^#" }
+  ],
+  "replacementPatterns": [
+    {
+      "pattern": "^/",
+      "replacement": "https://docs.lenserfight.com/"
+    }
+  ],
+  "httpHeaders": [
+    {
+      "urls": ["https://github.com", "https://api.github.com"],
+      "headers": {
+        "Accept": "text/html,application/xhtml+xml"
+      }
+    }
+  ],
+  "timeout": "20s",
+  "retryOn429": true,
+  "retryCount": 3,
+  "fallbackRetryDelay": "30s",
+  "aliveStatusCodes": [200, 206, 301, 302, 303, 307, 308, 403, 429]
+}
