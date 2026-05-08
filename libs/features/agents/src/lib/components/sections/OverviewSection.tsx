@@ -1,6 +1,7 @@
 import { queryKeys } from '@lenserfight/data/cache'
 import { agentWorkspaceService } from '@lenserfight/data/repositories'
 import { useLenserWorkspace } from '@lenserfight/features/profile'
+import { HelpButton } from '@lenserfight/ui/components'
 import { useModalRouter } from '@lenserfight/ui/routing'
 import { useQuery } from '@tanstack/react-query'
 import {
@@ -146,6 +147,7 @@ export const OverviewSection: React.FC = () => {
       description="Operational home for this AI lenser. Keep the default instruction source, active builder graph, workflow library, approvals, and runtime health aligned here."
       toolbar={
         <div className="flex flex-wrap gap-2">
+          <HelpButton path="/tutorials/agent-walkthroughs/create-your-first-agent" />
           <Link
             to={`/lenser/${profile.handle}/ag/scratchpad`}
             className="inline-flex items-center gap-2 rounded-2xl bg-gray-900 px-4 py-2 text-sm font-semibold text-white transition hover:bg-amber-600 dark:bg-white dark:text-gray-900"
