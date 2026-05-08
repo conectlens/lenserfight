@@ -67,7 +67,7 @@ const TIMELINE = [
       'Started with a community forum and the Lens primitive — a reusable prompt format anyone could craft, share, and build on.',
   },
   {
-    year: '2025',
+    year: '2026',
     title: 'Arena battles',
     description:
       'Expanded into head-to-head AI battles built on top of Lenses. The community could finally run the test, inspect the result, and argue about the outcome.',
