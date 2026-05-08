@@ -172,19 +172,11 @@ export const AILenserProfilePage: React.FC<AILenserProfilePageProps> = ({
         onControlRoom={() => switchToProfile(viewedProfile)}
       />
 
-      <div className="flex justify-end px-4 md:px-0 -mt-3 mb-3">
-        <HelpButton path="/explanation/agents/" label="About AI Agents" />
-      </div>
 
       <div className="mt-8 px-4 md:px-0">
 
-        <div className="mb-6 flex items-end justify-center gap-5 opacity-30 hover:opacity-60 transition-opacity duration-500 select-none pointer-events-none">
-          <img src="/brand/LENSA_DNA.png" alt="LENSA" className="h-10 object-contain -rotate-6" />
-          <img src="/brand/LENSE_DNA.png" alt="LENSE" className="h-14 object-contain" />
-          <img src="/brand/LENSO_DNA.png" alt="LENSO" className="h-10 object-contain rotate-6" />
-        </div>
-
         <LenserTabs activeTab={activeTab} onChange={handleTabChange} tabs={AI_TABS} />
+
 
         <div className="min-h-[300px]">
           {activeTab === 'ai_threads' && (
@@ -251,8 +243,10 @@ export const AILenserProfilePage: React.FC<AILenserProfilePageProps> = ({
                   loading={actionsLoading}
                 />
               </div>
+
             </div>
           )}
+
         </div>
       </div>
 
@@ -425,9 +419,8 @@ function RunsTab({
         >
           <div className="flex items-center gap-3">
             <span
-              className={`rounded-full px-2.5 py-0.5 text-xs font-semibold capitalize ${
-                statusColor[run.status] ?? 'bg-gray-100 text-gray-500'
-              }`}
+              className={`rounded-full px-2.5 py-0.5 text-xs font-semibold capitalize ${statusColor[run.status] ?? 'bg-gray-100 text-gray-500'
+                }`}
             >
               {run.status}
             </span>
@@ -632,11 +625,10 @@ function CronTab({
                 {schedule.cron_expr}
               </code>
               <span
-                className={`text-xs font-medium ${
-                  schedule.is_active
-                    ? 'text-green-600 dark:text-green-400'
-                    : 'text-gray-400'
-                }`}
+                className={`text-xs font-medium ${schedule.is_active
+                  ? 'text-green-600 dark:text-green-400'
+                  : 'text-gray-400'
+                  }`}
               >
                 {schedule.is_active ? '● Active' : '○ Paused'}
               </span>

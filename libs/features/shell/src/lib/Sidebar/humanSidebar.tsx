@@ -4,6 +4,7 @@ import {
   Brain,
   Cloud,
   Cpu,
+  ExternalLink,
   GitBranch,
   Home,
   KeyRound,
@@ -16,7 +17,7 @@ import {
   Users,
 } from 'lucide-react'
 
-import { DOCS_BASE_URL, FEATURES, SURFACE } from '@lenserfight/utils/env'
+import { ARENA_BASE_URL, DOCS_BASE_URL, FEATURES, SURFACE } from '@lenserfight/utils/env'
 
 import type { SidebarNavSectionConfig } from './sidebarModes'
 
@@ -61,6 +62,7 @@ export function buildHumanSidebarSections(
         { id: 'templates', label: 'Templates', externalHref: `${DOCS_BASE_URL}/reference/automation/markdown-objects#canonical-formats`, icon: <LayoutTemplate size={20} /> },
         { id: 'getting-started', label: 'Getting Started', externalHref: `${DOCS_BASE_URL}/tutorials/getting-started/overview`, icon: <BookOpen size={20} /> },
         { id: 'docs-home', label: 'Docs', externalHref: DOCS_BASE_URL, icon: <Library size={20} /> },
+        { id: 'arena-home', label: 'Arena', externalHref: ARENA_BASE_URL, icon: <ExternalLink size={20} /> },
       ],
     },
     {

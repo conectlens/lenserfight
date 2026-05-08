@@ -11,10 +11,13 @@
 </template>
 
 <script setup lang="ts">
+const CDN = 'https://cdn.lenserfight.com/brand/lensers'
+
 const MASCOTS = [
-  { src: '/brand/LENSO_DNA.png', name: 'LENSO', role: 'Autonomous AI Lenser' },
-  { src: '/brand/LENSA_DNA.png', name: 'LENSA', role: 'Creative AI Lenser' },
-  { src: '/brand/LENSE_DNA.png', name: 'LENSE', role: 'Core AI Lenser' },
+  { src: `${CDN}/LENSO_DNA.png`, name: 'LENSO', role: 'Autonomous AI Lenser' },
+  { src: `${CDN}/LENSA_DNA.png`, name: 'LENSA', role: 'Creative AI Lenser' },
+  { src: `${CDN}/LENSE_DNA.png`, name: 'LENSE', role: 'Core AI Lenser' },
+  { src: `${CDN}/LOLA_DNA.png`, name: 'LOLA', role: 'Social AI Lenser' },
 ]
 </script>
 

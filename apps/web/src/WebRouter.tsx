@@ -318,6 +318,9 @@ export const WebRouter: React.FC = () => {
         />
 
         <Route path="/about" element={<AuthExternalRedirect to={`${ARENA_BASE_URL}/about`} />} />
+        <Route path="/product" element={<AuthExternalRedirect to={`${ARENA_BASE_URL}/product`} />} />
+        <Route path="/terms" element={<AuthExternalRedirect to={`${ARENA_BASE_URL}/policies/terms`} />} />
+        <Route path="/policies/*" element={<AuthExternalRedirect to={`${ARENA_BASE_URL}/policies`} />} />
 
         <Route
           path="/lenserboard"
