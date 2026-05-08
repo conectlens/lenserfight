@@ -57,7 +57,17 @@ function isLiveSpectatorBattle(b: SpectatorBattle | null): boolean {
   return !!b && b.status === 'voting'
 }
 
-export function SpectatorFeedWidget() {
+interface SpectatorFeedWidgetProps {
+  /**
+   * Override the URL for each battle link.
+   * Defaults to the in-app relative path `/battles/${slug}`.
+   * Pass an absolute URL builder when embedding in a context without
+   * an in-app router catch (e.g. the marketing site).
+   */
+  getBattleHref?: (slug: string) => string
+}
+
+export function SpectatorFeedWidget({ getBattleHref }: SpectatorFeedWidgetProps = {}) {
   const [items, setItems] = useState<SpectatorBattle[]>([])
   const itemsRef = useRef(items)
   itemsRef.current = items
@@ -182,12 +192,10 @@ export function SpectatorFeedWidget() {
         </div>
       ) : (
         <ul className="divide-y divide-surface-border">
-          {sorted.map((b) => (
-            <li key={b.id}>
-              <Link
-                to={`/battles/${b.slug}`}
-                className="flex items-center justify-between gap-3 px-4 py-3 hover:bg-foreground/5 transition-colors"
-              >
+          {sorted.map((b) => {
+            const href = getBattleHref ? getBattleHref(b.slug) : `/battles/${b.slug}`
+            const inner = (
+              <>
                 <div className="min-w-0 flex-1">
                   <p className="truncate text-sm font-semibold text-foreground">{b.title}</p>
                   <p className="text-[11px] text-foreground/60">Voting</p>
@@ -198,9 +206,28 @@ export function SpectatorFeedWidget() {
                 >
                   {b.total_vote_count} votes
                 </div>
-              </Link>
-            </li>
-          ))}
+              </>
+            )
+            return (
+              <li key={b.id}>
+                {getBattleHref ? (
+                  <a
+                    href={href}
+                    className="flex items-center justify-between gap-3 px-4 py-3 hover:bg-foreground/5 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-red-500"
+                  >
+                    {inner}
+                  </a>
+                ) : (
+                  <Link
+                    to={href}
+                    className="flex items-center justify-between gap-3 px-4 py-3 hover:bg-foreground/5 transition-colors"
+                  >
+                    {inner}
+                  </Link>
+                )}
+              </li>
+            )
+          })}
         </ul>
       )}
     </Card>

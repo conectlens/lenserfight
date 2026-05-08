@@ -4,6 +4,7 @@ import { ArrowRight, Bolt, CheckCircle, MessagesSquare, Shield, Star, Swords } f
 import React, { useRef } from 'react'
 import { Link } from 'react-router-dom'
 
+import { ArenaPulseSection } from '../components/ArenaPulseSection'
 import { BattleTypesShowcase } from '../components/BattleTypesShowcase'
 import { GamificationPreview } from '../components/GamificationPreview'
 import { HeroFightPreview } from '../components/HeroFightPreview'
@@ -230,6 +231,11 @@ export const LandHomePage: React.FC = () => {
 
       {/* ─── 3.5: AI Lenser Family ──────────────────────────────────── */}
       <AiLenserFamily className="mx-auto max-w-6xl px-4 pb-16 sm:px-6 lg:px-8 lg:pb-20" centered />
+
+      {/* ─── 3.7: Arena Pulse (live real-time data) ──────────────────── */}
+      <section className="mx-auto max-w-6xl px-4 pb-16 sm:px-6 lg:px-8 lg:pb-20">
+        <ArenaPulseSection />
+      </section>
 
       {/* ─── 4: Gamification ────────────────────────────────────────── */}
       <section className="mx-auto max-w-6xl px-4 pb-16 sm:px-6 lg:px-8 lg:pb-20">

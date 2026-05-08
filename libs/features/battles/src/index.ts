@@ -64,6 +64,9 @@ export * from './lib/components/TemplateManagementPanel'
 // ── Components — spectator (live public battles widget) ──────────────────────
 export * from './lib/components/SpectatorFeedWidget'
 
+// ── Components — arena discovery widgets ─────────────────────────────────────
+export * from './lib/components/ArenaTrendingBattlesWidget'
+
 // ── Components — replay (chronological event timeline) ───────────────────────
 export * from './lib/components/replay/BattleReplayTimeline'
 
@@ -79,6 +82,8 @@ export * from './lib/components/creation/BattleRulesDrawer'
 
 // ── Components — display (presentational cards, badges, indicators) ───────────
 export * from './lib/components/display/BattleCard'
+export * from './lib/components/display/LiveBattleCard'
+export * from './lib/components/display/HotBattleCard'
 export * from './lib/components/display/BattleStatusBadge'
 export * from './lib/components/display/BattleSEOHead'
 export * from './lib/components/display/BattleShareCard'

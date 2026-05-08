@@ -28,5 +28,20 @@
     "title": "Get Started",
     "subtitle": "Join the arena and start battling",
     "cta": "Open Arena"
+  },
+  "arena": {
+    "pulse": {
+      "title": "Arena Pulse",
+      "subtitle": "Live battles, trending fights, hot threads, and rising lenses — happening right now.",
+      "live": "Live Battles",
+      "hot": "Hot Battles",
+      "threads": "Hot Threads",
+      "lenses": "Trending Lenses",
+      "cta": "Explore the Arena",
+      "noLive": "No live battles right now",
+      "noHot": "No trending battles yet",
+      "noThreads": "No hot threads yet",
+      "noLenses": "No trending lenses yet"
+    }
   }
 }
