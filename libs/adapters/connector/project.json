@@ -13,7 +13,8 @@
     "build": {
       "executor": "@nx/vite:build",
       "options": {
-        "configFile": "libs/adapters/connector/vite.config.mts"
+        "configFile": "libs/adapters/connector/vite.config.mts",
+        "outputPath": "dist/libs/adapters/connector"
       },
       "outputs": ["{workspaceRoot}/dist/libs/adapters/connector"]
     },

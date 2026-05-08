@@ -233,9 +233,8 @@ const setRecurrence = defineCommand({
   },
   async run({ args }) {
     try {
-      const { createClient } = await import('@supabase/supabase-js');
-      const { getEnv } = await import('../utils/env');
-      const client = createClient(getEnv('SUPABASE_URL'), getEnv('SUPABASE_SERVICE_ROLE_KEY'));
+      const { createServiceClient } = await import('../utils/supabase-client');
+      const client = await createServiceClient();
 
       const nextRunAt = args['starts-at']
         ? new Date(args['starts-at'] as string).toISOString()
@@ -274,9 +273,8 @@ const listRecurring = defineCommand({
   },
   async run({ args }) {
     try {
-      const { createClient } = await import('@supabase/supabase-js');
-      const { getEnv } = await import('../utils/env');
-      const client = createClient(getEnv('SUPABASE_URL'), getEnv('SUPABASE_SERVICE_ROLE_KEY'));
+      const { createServiceClient } = await import('../utils/supabase-client');
+      const client = await createServiceClient();
 
       const { data, error } = await client
         .schema('battles')
