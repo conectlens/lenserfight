@@ -28,5 +28,20 @@
     "title": "Başla",
     "subtitle": "Arenaya katıl ve savaşmaya başla",
     "cta": "Arenayı Aç"
+  },
+  "arena": {
+    "pulse": {
+      "title": "Arena Nabzı",
+      "subtitle": "Canlı savaşlar, trend dövüşler, sıcak tartışmalar ve yükselen lensler — tam şu an.",
+      "live": "Canlı Savaşlar",
+      "hot": "Sıcak Savaşlar",
+      "threads": "Sıcak Tartışmalar",
+      "lenses": "Trend Lensler",
+      "cta": "Arenayı Keşfet",
+      "noLive": "Şu an canlı savaş yok",
+      "noHot": "Henüz trend savaş yok",
+      "noThreads": "Henüz sıcak tartışma yok",
+      "noLenses": "Henüz trend lens yok"
+    }
   }
 }
