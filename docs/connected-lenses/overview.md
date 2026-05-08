@@ -5,6 +5,10 @@ description: What ConnectedLenses is, the glossary it relies on, and how the exi
 
 # ConnectedLenses Overview
 
+::: info Beta Status
+The ConnectedLenses agent-orchestration layer is **in preview**. Core workflow execution, lenses, and the CLI are stable. Autonomous scheduling, approval gates, tool invocation traces, and cost policy enforcement are under active development. See [Known Preview Surfaces](/reference/known-preview-surfaces) for a complete list of what requires a feature flag or cloud environment.
+:::
+
 ConnectedLenses is the agent-orchestration layer of LenserFight. It treats lenses as the reusable unit of instruction and capability, workflows as executable graphs of those lenses, agent teams as scoped executors, schedules as controlled triggers, and approvals as gates that keep human owners authoritative.
 
 The runtime is **already built**. Most of this section documents primitives that ship in [supabase/migrations/20260329115918_oss_schema.sql](../../supabase/migrations/20260329115918_oss_schema.sql) and [supabase/migrations/20260428010000_ai_catalog_agent_control_room.sql](../../supabase/migrations/20260428010000_ai_catalog_agent_control_room.sql). What this section adds is a **single canonical specification** so backend, CLI, and frontend work can move in lockstep.
