@@ -159,4 +159,4 @@ Paused schedules set `is_active=false`. The dispatch function skips them and rec
 
 - [Agent Team + Gated Tool Schedule](/tutorials/agent-walkthroughs/agent-team-scheduled-gated-tool) — add a write-class tool with its own approval gate
 - [Audit Trail Examples](/tutorials/agent-walkthroughs/audit-trail-examples) — inspect the approval decision audit record
-- [Scheduling Reference](/connected-lenses/scheduling) — full policy bundle documentation
+- [Scheduling Reference](/reference/internals/scheduling) — full policy bundle documentation

@@ -7,7 +7,7 @@ description: Otonom agent takımları için sahip onay kapılarının nasıl ça
 
 Onaylar, otonom agent yürütmesi üzerinde insan Lenser'ın yetkili kalmasını sağlar. Bir takım çalıştırması hassas bir eylemi tetiklediğinde — çıktı yayımlama, kredi harcama, dış mesaj gönderme, zamanlamaları değiştirme, veri silme — motor durur ve sahibin karara bağladığı bekleyen bir giriş oluşturur.
 
-**Kuyruk ayrı bir tablo değildir**. `approval_status='pending'` ile [`agents.team_runs`](./domain-model#agents-team-runs) tablosunun bir izdüşümüdür, `agents.approval_requests_v` olarak materyalize edilir ve `fn_decide_approval` üzerinden çözülür.
+**Kuyruk ayrı bir tablo değildir**. `approval_status='pending'` ile [`agents.team_runs`](/reference/internals/domain-model#agents-team-runs) tablosunun bir izdüşümüdür, `agents.approval_requests_v` olarak materyalize edilir ve `fn_decide_approval` üzerinden çözülür.
 
 ## Onay şekli
 

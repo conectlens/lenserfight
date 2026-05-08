@@ -11,7 +11,17 @@ The ConnectedLenses agent-orchestration layer is **in preview**. Core workflow e
 
 ConnectedLenses is the agent-orchestration layer of LenserFight. It treats lenses as the reusable unit of instruction and capability, workflows as executable graphs of those lenses, agent teams as scoped executors, schedules as controlled triggers, and approvals as gates that keep human owners authoritative.
 
-The runtime is **already built**. Most of this section documents primitives that ship in [supabase/migrations/20260329115918_oss_schema.sql](../../supabase/migrations/20260329115918_oss_schema.sql) and [supabase/migrations/20260428010000_ai_catalog_agent_control_room.sql](../../supabase/migrations/20260428010000_ai_catalog_agent_control_room.sql). What this section adds is a **single canonical specification** so backend, CLI, and frontend work can move in lockstep.
+The runtime is **already built**. Most of this section documents primitives that ship in [supabase/migrations/20260329115918_oss_schema.sql](../../../supabase/migrations/20260329115918_oss_schema.sql) and [supabase/migrations/20260428010000_ai_catalog_agent_control_room.sql](../../../supabase/migrations/20260428010000_ai_catalog_agent_control_room.sql). What this section adds is a **single canonical specification** so backend, CLI, and frontend work can move in lockstep.
+
+## Why this matters for battles
+
+A "battle" is not a separate stack — it is a workflow run with two contender branches and a judge node. That means:
+
+- A lens you publish for a battle is the **same lens** an agent team can call from a scheduled workflow.
+- A local Ollama run via `lf battle local run` exercises the same execution engine that the cloud arena streams to spectators.
+- The judge that scores a public battle is a Connected Lens with an output contract — you can fork it, replace it, or run it offline.
+
+If you want to compete on the public leaderboard without ever touching cloud compute, the BYOK + ConnectedLenses combination lets you keep your provider keys local while broadcasting tokens to the arena. See [Local vs. Cloud Battles](/explanation/battles/local-vs-cloud-battles) and [BYOK Cloud Battle Streaming](/tutorials/battle-walkthroughs/byok-cloud-battle).
 
 ## Reading order
 
