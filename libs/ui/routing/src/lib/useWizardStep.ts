@@ -1,3 +1,4 @@
+import { useCallback } from 'react'
 import { useSearchParams } from 'react-router-dom'
 
 export interface UseWizardStepOptions {
@@ -39,7 +40,7 @@ export const useWizardStep = (options: UseWizardStepOptions = {}): UseWizardStep
   const raw = parseInt(searchParams.get('step') ?? String(minStep), 10)
   const step = Number.isNaN(raw) ? minStep : Math.min(Math.max(raw, minStep), maxStep === Infinity ? raw : maxStep)
 
-  const goToStep = (n: number) => {
+  const goToStep = useCallback((n: number) => {
     const clamped = Math.min(
       Math.max(n, minStep),
       maxStep === Infinity ? n : maxStep
@@ -52,13 +53,16 @@ export const useWizardStep = (options: UseWizardStepOptions = {}): UseWizardStep
       },
       { replace: false }
     )
-  }
+  }, [minStep, maxStep, setSearchParams])
+
+  const nextStep = useCallback(() => goToStep(step + 1), [goToStep, step])
+  const prevStep = useCallback(() => goToStep(step - 1), [goToStep, step])
 
   return {
     step,
     goToStep,
-    nextStep: () => goToStep(step + 1),
-    prevStep: () => goToStep(step - 1),
+    nextStep,
+    prevStep,
     isFirstStep: step <= minStep,
     isLastStep: maxStep !== Infinity && step >= maxStep,
   }
