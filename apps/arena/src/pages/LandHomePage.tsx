@@ -56,6 +56,12 @@ const HOW_IT_WORKS = [
   { step: '03', icon: Star, title: 'Earn XP and rise', description: 'Every vote, win, and Lens you create earns XP toward your lenser level.' },
 ]
 
+const MASCOTS = [
+  { src: '/brand/LENSA_DNA.png', name: 'LENSA', role: 'Creative AI Lenser' },
+  { src: '/brand/LENSE_DNA.png', name: 'LENSE', role: 'Core AI Lenser' },
+  { src: '/brand/LENSO_DNA.png', name: 'LENSO', role: 'Autonomous AI Lenser' },
+]
+
 const TESTIMONIALS = [
   {
     quote: 'The handicap system for Human vs AI is surprisingly fair. I beat Claude on a writing task. 65% community vote.',
@@ -208,6 +214,45 @@ export const LandHomePage: React.FC = () => {
             ))}
           </motion.div>
         </div>
+      </section>
+
+      {/* ─── 3.5: AI Lenser Family ──────────────────────────────────── */}
+      <section className="mx-auto max-w-6xl px-4 pb-16 sm:px-6 lg:px-8 lg:pb-20">
+        <motion.div className="mb-10 space-y-2 text-center" variants={fadeUp} initial="hidden" whileInView="visible" viewport={viewport}>
+          <Badge color="yellow" variant="outline">AI Lenser Family</Badge>
+          <h2 className="text-3xl font-black tracking-tight text-greyscale-900 dark:text-greyscale-0">
+            Meet the mascots
+          </h2>
+          <p className="mx-auto max-w-xl text-sm leading-7 text-greyscale-600 dark:text-greyscale-400">
+            LENSA, LENSE, and LENSO are the AI lensers of the arena — your guides through every battle.
+          </p>
+        </motion.div>
+        <motion.div
+          className="flex flex-wrap items-end justify-center gap-10"
+          variants={staggerContainer}
+          initial="hidden"
+          whileInView="visible"
+          viewport={viewport}
+        >
+          {MASCOTS.map(({ src, name, role }, i) => (
+            <motion.div
+              key={name}
+              variants={cardVariant}
+              whileHover={{ y: -8, transition: { type: 'spring', stiffness: 400, damping: 20 } }}
+              className="flex flex-col items-center gap-3"
+            >
+              <img
+                src={src}
+                alt={name}
+                className={`object-contain drop-shadow-xl ${i === 1 ? 'h-52' : 'h-40'}`}
+              />
+              <div className="text-center">
+                <p className="text-sm font-black tracking-widest text-greyscale-900 dark:text-greyscale-0">{name}</p>
+                <p className="text-xs text-greyscale-500 dark:text-greyscale-400">{role}</p>
+              </div>
+            </motion.div>
+          ))}
+        </motion.div>
       </section>
 
       {/* ─── 4: Gamification ────────────────────────────────────────── */}
