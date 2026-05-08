@@ -3,34 +3,14 @@ import { callRest } from '../utils/api'
 import { getActiveProfileName } from '../utils/profiles'
 import { resolveConfig } from '../config/project-config'
 import { truncate } from '../utils/output'
-
-// ─── ANSI helpers ────────────────────────────────────────────────────────────
-//
-// No color dep is available in this workspace, so all styling is raw ANSI.
-
-const ANSI = {
-  reset: '\x1b[0m',
-  bold: '\x1b[1m',
-  dim: '\x1b[2m',
-  green: '\x1b[32m',
-  red: '\x1b[31m',
-  yellow: '\x1b[33m',
-  cyan: '\x1b[36m',
-  bgGreen: '\x1b[42m',
-  bgRed: '\x1b[41m',
-  white: '\x1b[37m',
-  hideCursor: '\x1b[?25l',
-  showCursor: '\x1b[?25h',
-  clearScreen: '\x1b[2J',
-  homeCursor: '\x1b[H',
-}
+import { A, sym } from '../utils/ansi'
 
 // Pure helpers — exported for unit tests without standing up a TTY.
 
 export function formatHealthStatus(ok: boolean): string {
   return ok
-    ? `${ANSI.bgGreen}${ANSI.white}${ANSI.bold} HEALTHY ${ANSI.reset}`
-    : `${ANSI.bgRed}${ANSI.white}${ANSI.bold}  DOWN   ${ANSI.reset}`
+    ? `${A.bgGreen}${A.white}${A.bold} ${sym.pass} HEALTHY ${A.reset}`
+    : `${A.bgRed}${A.white}${A.bold} ${sym.fail}  DOWN   ${A.reset}`
 }
 
 interface ActionLogRow {
@@ -44,9 +24,13 @@ interface ActionLogRow {
 
 export function formatActionLogRow(row: ActionLogRow): string {
   const ts = row.created_at ? new Date(row.created_at).toLocaleTimeString() : '—'
-  const action = (row.action_type ?? '—').padEnd(18)
+  const action = (row.action_type ?? '—').padEnd(20)
   const payload = row.payload ? JSON.stringify(row.payload) : ''
-  return `${ANSI.dim}${ts}${ANSI.reset}  ${ANSI.cyan}${action}${ANSI.reset}  ${truncate(payload, 80)}`
+  return `${A.gray}${ts}${A.reset}  ${A.brightCyan}${action}${A.reset}  ${A.dim}${truncate(payload, 72)}${A.reset}`
+}
+
+function keyBind(key: string, label: string): string {
+  return `${A.gray}[${A.reset}${A.brightYellow}${key}${A.reset}${A.gray}]${A.reset} ${A.dim}${label}${A.reset}`
 }
 
 // ─── Health probe ────────────────────────────────────────────────────────────
@@ -55,8 +39,6 @@ async function probeHealth(): Promise<boolean> {
   try {
     const config = resolveConfig()
     if (!config.supabaseUrl) return false
-    // Hit the platform-api /health endpoint when available; fall back to
-    // a basic Supabase reachability check.
     const probeUrls = [
       config.cloudApiUrl ? `${config.cloudApiUrl}/health` : null,
       `${config.supabaseUrl}/auth/v1/health`,
@@ -111,30 +93,37 @@ async function renderFrame(): Promise<void> {
   ])
 
   const out = process.stdout
-  out.write(ANSI.homeCursor + ANSI.clearScreen)
+  out.write(A.homeCursor + A.clearScreen)
 
-  // Header
-  out.write(`${ANSI.bold}LenserFight TUI${ANSI.reset}  `)
-  out.write(`profile=${ANSI.cyan}${profile}${ANSI.reset}  `)
-  out.write(`${formatHealthStatus(healthy)}\n`)
-  out.write(`${ANSI.dim}${new Date().toLocaleString()} · refresh 2s${ANSI.reset}\n`)
-  out.write('\n')
+  // ── Header ────────────────────────────────────────────────────────────────
+  const brand = `${A.brightMagenta}${A.bold}${sym.fight}  LenserFight${A.reset}`
+  const profilePart = `${A.gray}profile${A.reset}  ${A.brightCyan}${profile}${A.reset}`
+  const health = formatHealthStatus(healthy)
 
-  // Logs
-  out.write(`${ANSI.bold}Recent agent action logs${ANSI.reset}\n`)
+  out.write(`\n  ${brand}   ${A.gray}│${A.reset}   ${profilePart}   ${A.gray}│${A.reset}   ${health}\n`)
+  out.write(`  ${A.gray}${'─'.repeat(60)}${A.reset}\n`)
+  out.write(`  ${A.gray}${new Date().toLocaleString()}  ${sym.dot}  refresh 2s${A.reset}\n\n`)
+
+  // ── Logs section ──────────────────────────────────────────────────────────
+  out.write(`  ${A.bold}${A.brightWhite}Recent agent logs${A.reset}  ${A.gray}${sym.dot}${sym.dot}${sym.dot}${A.reset}\n\n`)
   if (logs.length === 0) {
-    out.write(`${ANSI.dim}  (no action logs yet — waiting…)${ANSI.reset}\n`)
+    out.write(`  ${A.gray}${sym.dot}  No action logs yet  ${sym.arrow}  waiting for events…${A.reset}\n`)
   } else {
     for (const row of logs) {
       out.write('  ' + formatActionLogRow(row) + '\n')
     }
   }
 
-  // Key bindings
+  // ── Key bindings ──────────────────────────────────────────────────────────
   out.write('\n')
-  out.write(
-    `${ANSI.dim}[a] approvals  [b] battles  [s] schedules  [m] memory  [q/Esc] quit${ANSI.reset}\n`,
-  )
+  const bindings = [
+    keyBind('a', 'approvals'),
+    keyBind('b', 'battles'),
+    keyBind('s', 'schedules'),
+    keyBind('m', 'memory'),
+    keyBind('q', 'quit'),
+  ].join(`  ${A.gray}${sym.dot}${A.reset}  `)
+  out.write(`  ${bindings}\n`)
 }
 
 // ─── Key dispatch ────────────────────────────────────────────────────────────
@@ -150,16 +139,17 @@ let restoreCleanup = () => { /* installed in runDashboard */ }
 
 function runChild(argv: string[]): Promise<void> {
   return new Promise((resolve) => {
-    process.stdout.write(ANSI.showCursor)
-    process.stdout.write(ANSI.clearScreen + ANSI.homeCursor)
-    process.stdout.write(`Running: lf ${argv.join(' ')}\n\n`)
+    process.stdout.write(A.showCursor)
+    process.stdout.write(A.clearScreen + A.homeCursor)
+    process.stdout.write(`\n  ${A.bold}${A.brightCyan}${sym.run}  lf ${argv.join(' ')}${A.reset}\n\n`)
     const child = spawn('lf', argv, { stdio: 'inherit' })
     child.on('exit', () => {
-      process.stdout.write('\nPress q to return to the dashboard…\n')
+      process.stdout.write(`\n  ${A.gray}Press ${A.reset}${A.brightYellow}q${A.reset}${A.gray} to return to the dashboard…${A.reset}\n`)
       resolve()
     })
     child.on('error', () => {
-      process.stdout.write('\n[error] could not spawn lf — is it on PATH?\nPress q to return.\n')
+      process.stdout.write(`\n  ${A.brightRed}${sym.fail}  could not spawn lf — is it on PATH?${A.reset}\n`)
+      process.stdout.write(`  ${A.gray}Press ${A.reset}${A.brightYellow}q${A.reset}${A.gray} to return.${A.reset}\n`)
       resolve()
     })
   })
@@ -175,7 +165,7 @@ export async function runDashboard(): Promise<void> {
   }
 
   const out = process.stdout
-  out.write(ANSI.hideCursor)
+  out.write(A.hideCursor)
 
   let timer: NodeJS.Timeout | null = null
   let inChild = false
@@ -185,7 +175,7 @@ export async function runDashboard(): Promise<void> {
     timer = null
     try { process.stdin.setRawMode(false) } catch { /* ignore */ }
     process.stdin.pause()
-    out.write(ANSI.showCursor)
+    out.write(A.showCursor)
     out.write('\n')
   }
   restoreCleanup = cleanup
