@@ -2,6 +2,17 @@ import { supabase } from '@lenserfight/data/supabase'
 
 // --- Types ---
 
+export interface BattleTemplateRecord {
+  id: string
+  title: string
+  description: string | null
+  task_prompt: string
+  is_public: boolean
+  max_contenders: number
+  created_at: string
+  updated_at: string
+}
+
 export type BattleStatus =
   | 'draft'
   | 'open'
@@ -298,7 +309,8 @@ export interface BattlesRepositoryPort {
   getGlobalMessages(battleId: string, limit?: number, cursor?: ChatCursor): Promise<GlobalMessageRecord[]>
   postGlobalMessage(battleId: string, senderId: string, senderHandle: string, senderRole: string, body: string): Promise<GlobalMessageRecord>
   inviteContender(input: InviteContenderInput): Promise<ContenderRecord>
-  submitContenderEntry(battleId: string, contenderId: string, contentText: string): Promise<SubmissionRecord>
+  /** Caller should invoke contentModerationService.validate(contentText) before calling this. */
+  submitContenderEntry(battleId: string, contenderId: string, contentText: string, validate?: (text: string) => Promise<void>): Promise<SubmissionRecord>
   linkForumThread(battleId: string, forumThreadId: string): Promise<void>
   assignLensToContender(input: AssignLensInput): Promise<ContenderLensAssignmentRecord>
   getLensAssignment(contenderId: string): Promise<ContenderLensAssignmentRecord | null>
@@ -313,6 +325,9 @@ export interface BattlesRepositoryPort {
   getDLQEntries(opts?: { battleId?: string; unresolvedOnly?: boolean; limit?: number }): Promise<DLQEntryRecord[]>
   retryDLQEntry(deadLetterId: string): Promise<void>
   getPublicExecutionJobs(battleId: string): Promise<PublicExecutionJobRecord[]>
+  listBattleTemplates(): Promise<BattleTemplateRecord[]>
+  toggleBattleTemplatePublic(id: string, isPublic: boolean): Promise<void>
+  createBattleFromTemplate(templateId: string, title: string, slug: string): Promise<string>
 }
 
 // --- Supabase Implementation ---
@@ -447,7 +462,11 @@ export class SupabaseBattlesRepository implements BattlesRepositoryPort {
       p_is_draw: input.is_draw ?? input.vote_value === 'draw',
       p_rationale: input.rationale ?? null,
     })
-    if (error) this.handleError(error)
+    if (error) {
+      // P0429 / RATE_LIMIT: propagate as-is so the mutation hook / feature layer can call
+      // handleRateLimitError and show a toast. The repository must not import UI-layer handlers.
+      this.handleError(error)
+    }
     return data as { vote_id: string; status: string; battle_id: string }
   }
 
@@ -675,7 +694,14 @@ export class SupabaseBattlesRepository implements BattlesRepositoryPort {
     return data as ContenderRecord
   }
 
-  async submitContenderEntry(battleId: string, contenderId: string, contentText: string): Promise<SubmissionRecord> {
+  async submitContenderEntry(
+    battleId: string,
+    contenderId: string,
+    contentText: string,
+    // TODO: caller should invoke contentModerationService.validate before calling this.
+    validate?: (text: string) => Promise<void>,
+  ): Promise<SubmissionRecord> {
+    if (validate) await validate(contentText)
     const { data, error } = await supabase
       .schema('battles')
       .from('submissions')
@@ -818,4 +844,36 @@ export class SupabaseBattlesRepository implements BattlesRepositoryPort {
     if (error) this.handleError(error)
     return (data ?? []) as PublicExecutionJobRecord[]
   }
+
+  async listBattleTemplates(): Promise<BattleTemplateRecord[]> {
+    const { data, error } = await supabase
+      .schema('battles')
+      .from('templates')
+      .select('id, title, description, task_prompt, is_public, max_contenders, created_at, updated_at')
+      .is('deleted_at', null)
+      .order('created_at', { ascending: false })
+    if (error) this.handleError(error)
+    return (data ?? []) as BattleTemplateRecord[]
+  }
+
+  async toggleBattleTemplatePublic(id: string, isPublic: boolean): Promise<void> {
+    const { error } = await supabase
+      .schema('battles')
+      .from('templates')
+      .update({ is_public: isPublic, updated_at: new Date().toISOString() })
+      .eq('id', id)
+    if (error) this.handleError(error)
+  }
+
+  async createBattleFromTemplate(templateId: string, title: string, slug: string): Promise<string> {
+    const { data, error } = await supabase.rpc('fn_battles_create_from_template', {
+      p_template_id: templateId,
+      p_title: title,
+      p_slug: slug,
+    })
+    if (error) this.handleError(error)
+    return data as string
+  }
 }
+
+export const battlesRepository = new SupabaseBattlesRepository()

@@ -13,6 +13,7 @@ export interface ToolsRepository {
   completeInvocation(input: CompleteToolInvocationInput): Promise<void>
   approveInvocation(invocationId: string): Promise<void>
   rejectInvocation(invocationId: string, reason?: string): Promise<void>
+  recordToolDecision(logId: string, decision: 'approved' | 'rejected', reason?: string): Promise<void>
 }
 
 export class SupabaseToolsRepository implements ToolsRepository {
@@ -68,6 +69,11 @@ export class SupabaseToolsRepository implements ToolsRepository {
     if (error) throw error
   }
 
+  // approveInvocation / rejectInvocation call fn_approve_tool_invocation and
+  // fn_reject_tool_invocation respectively — these operate on a tool_invocations row by id.
+  // recordToolDecision calls fn_decide_tool_invocation which operates on an approval_logs row
+  // by log id. The two RPC families are NOT redundant: approveInvocation targets invocation-level
+  // state while recordToolDecision records an auditable human decision against a log entry.
   async approveInvocation(invocationId: string): Promise<void> {
     const { error } = await supabase.rpc('fn_approve_tool_invocation', {
       p_invocation_id: invocationId,
@@ -78,6 +84,19 @@ export class SupabaseToolsRepository implements ToolsRepository {
   async rejectInvocation(invocationId: string, reason?: string): Promise<void> {
     const { error } = await supabase.rpc('fn_reject_tool_invocation', {
       p_invocation_id: invocationId,
+      p_reason: reason ?? null,
+    })
+    if (error) throw error
+  }
+
+  async recordToolDecision(
+    logId: string,
+    decision: 'approved' | 'rejected',
+    reason?: string,
+  ): Promise<void> {
+    const { error } = await supabase.rpc('fn_decide_tool_invocation', {
+      p_log_id: logId,
+      p_decision: decision,
       p_reason: reason ?? null,
     })
     if (error) throw error
