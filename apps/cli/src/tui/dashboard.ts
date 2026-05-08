@@ -132,7 +132,7 @@ const KEY_BINDINGS: Record<string, string[]> = {
   a: ['approval', 'list'],
   b: ['battle', 'list'],
   s: ['schedule', 'list'],
-  m: ['memory', 'list-entries'],
+  m: ['memory'],
 }
 
 let restoreCleanup = () => { /* installed in runDashboard */ }
