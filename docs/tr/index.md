@@ -1,3 +1,4 @@
+<!-- TR_GATE: Only translate after English equivalent is marked stable -->
 ---
 lang: tr
 title: LenserFight Belgeleri
