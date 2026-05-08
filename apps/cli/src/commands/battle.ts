@@ -84,13 +84,28 @@ const create = defineCommand({
 const join = defineCommand({
   meta: {
     name: 'join',
-    description: 'Join an open battle as a contender.',
+    description: 'Join an open battle as a human, AI agent, or agent team.',
   },
   args: {
     id: {
       type: 'positional',
       description: 'Battle UUID',
       required: true,
+    },
+    agent: {
+      type: 'string',
+      description: 'AI agent UUID to join as (omit for human participation)',
+      default: '',
+    },
+    runner: {
+      type: 'string',
+      description: 'Execution mode: local | cloud | manual (default: cloud)',
+      default: 'cloud',
+    },
+    device: {
+      type: 'string',
+      description: 'Device UUID for local runner execution',
+      default: '',
     },
     json: {
       type: 'boolean',
@@ -99,10 +114,19 @@ const join = defineCommand({
     },
   },
   async run({ args }) {
+    if (args.runner === 'local' && !args.device) {
+      consola.warn('Local runner selected but no --device provided. Use `lf gateway devices` to find your device ID.');
+    }
+
     try {
       const result = await callRpc<Record<string, unknown>>(
         'fn_battles_join',
-        { p_battle_id: args.id },
+        {
+          p_battle_id: args.id,
+          p_agent_id: args.agent || null,
+          p_runner_mode: args.runner || 'cloud',
+          p_device_id: args.device || null,
+        },
         { requireAuth: true }
       );
 
@@ -112,10 +136,17 @@ const join = defineCommand({
       }
 
       consola.success('Joined battle %s.', args.id);
+      if (args.agent) consola.info('Agent:  %s', args.agent);
+      if (args.runner !== 'cloud') consola.info('Runner: %s', args.runner);
+      if (args.device) consola.info('Device: %s', args.device);
       consola.info('');
       consola.info('Submit your entry:');
-      consola.info('  lf battle submit %s --text "your response"', args.id);
-      consola.info('  lf run exec --prompt "..." --model claude-sonnet-4-6 --byok anthropic  (then submit the output)');
+      if (args.runner === 'local') {
+        consola.info('  lf battle submit %s --run-id <run-id> --attestation', args.id);
+      } else {
+        consola.info('  lf battle submit %s --text "your response"', args.id);
+        consola.info('  lf run exec --prompt "..." --model claude-sonnet-4-6 --byok anthropic  (then submit with --run-id)');
+      }
     } catch (err) {
       handleError(err);
     }
@@ -421,6 +452,16 @@ const submit = defineCommand({
       description: 'Execution run ID — attach a Cloud execution run as your submission',
       default: '',
     },
+    attestation: {
+      type: 'boolean',
+      description: 'Include execution attestation metadata for trusted local execution',
+      default: false,
+    },
+    'device-id': {
+      type: 'string',
+      description: 'Device UUID used for local execution (required with --attestation)',
+      default: '',
+    },
     json: {
       type: 'boolean',
       description: 'Output result as JSON',
@@ -458,6 +499,28 @@ const submit = defineCommand({
         { requireAuth: true }
       );
 
+      if (args.attestation && args['run-id']) {
+        const submissionId = result?.['id'] as string | undefined;
+        if (submissionId) {
+          await callRpc<void>(
+            'fn_record_execution_attestation',
+            {
+              p_run_id: args['run-id'],
+              p_device_id: args['device-id'] || null,
+              p_signed: true,
+              p_device_trusted: !!args['device-id'],
+            },
+            { requireAuth: true }
+          );
+          await callRpc<void>(
+            'fn_compute_submission_trust',
+            { p_submission_id: submissionId },
+            { requireAuth: true }
+          );
+          consola.success('Execution attestation recorded.');
+        }
+      }
+
       if (args.json) {
         printJson(result ?? { battle_id: args.id, submitted: true });
         return;
@@ -465,6 +528,7 @@ const submit = defineCommand({
 
       consola.success('Submission recorded for battle %s.', args.id);
       if (result?.['id']) consola.info('Submission ID: %s', result['id']);
+      if (args.attestation) consola.info('Trust level computed. Use `lf inspect submission %s` to view.', result?.['id'] ?? args.id);
     } catch (err) {
       handleError(err);
     }
