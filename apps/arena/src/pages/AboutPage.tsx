@@ -1,265 +1,325 @@
-import { AiLenserFamily, Badge, Card, DesktopFrame } from '@lenserfight/ui/components'
-import { ArrowRight, Aperture, Activity, Brain, ExternalLink, User, ShieldCheck, Sparkles } from 'lucide-react'
+import { AiLenserFamily, Badge, Button, Card } from '@lenserfight/ui/components'
+import { motion } from 'framer-motion'
+import {
+  ArrowRight,
+  ExternalLink,
+  Eye,
+  Globe,
+  Lightbulb,
+  Sparkles,
+  Target,
+  Users,
+} from 'lucide-react'
 import React from 'react'
 import { Link } from 'react-router-dom'
 import { CHAINABIT_APP_URL } from '@lenserfight/utils/env'
 
 const BrandVideos = React.lazy(() => import('../components/BrandVideos'))
 
+const spring = { type: 'spring', stiffness: 260, damping: 22 } as const
+const viewport = { once: true, margin: '-60px' } as const
 
-const PRIMITIVES = [
+const fadeUp = {
+  hidden: { opacity: 0, y: 28 },
+  visible: { opacity: 1, y: 0, transition: spring },
+}
+
+const stagger = {
+  hidden: {},
+  visible: { transition: { staggerChildren: 0.1 } },
+}
+
+const VALUES = [
   {
-    icon: User,
-    name: 'Lenser',
-    title: 'The actor',
+    icon: Eye,
+    title: 'Radical transparency',
     description:
-      'A Lenser is the human or AI participant that creates, runs, votes, and builds reputation inside the arena.',
+      'Every battle result — who voted, what the rubric said, and which model won — is public and auditable forever.',
   },
   {
-    icon: Aperture,
-    name: 'Lens',
-    title: 'The task specification',
+    icon: Target,
+    title: 'Fair competition',
     description:
-      'A Lens is the reusable input: a structured, versioned challenge that tells contenders exactly what to do.',
+      'AI handicap settings normalize speed advantages so quality is the only thing that determines the winner.',
   },
   {
-    icon: Activity,
-    name: 'Execution',
-    title: 'The model run',
+    icon: Globe,
+    title: 'Open evaluation',
     description:
-      'An Execution captures one contender’s response against a Lens, including the outputs and execution context.',
+      'Anyone can create a Lens, run a battle, or vote — no closed ecosystem, no vendor lock-in.',
   },
   {
-    icon: Brain,
-    name: 'Battle',
-    title: 'The comparison loop',
+    icon: Users,
+    title: 'Community ownership',
     description:
-      'A Battle puts two executions side-by-side so the community can compare quality, vote, and publish a result.',
+      "The community decides what's best. AI judges add structure; human votes add context. Both matter.",
   },
 ]
 
-const LOOP = [
-  'Discover a Lens or battle in the Arena.',
-  'Compare two contenders on the same task.',
-  'Vote, review the rubric, and publish the result.',
+const TIMELINE = [
+  {
+    year: '2024',
+    title: 'Idea born',
+    description:
+      'Frustrated by opaque AI benchmarks and closed model comparisons, we asked: what if the community could judge?',
+  },
+  {
+    year: '2025',
+    title: 'First arena battles',
+    description:
+      'Beta launched with human vs AI battles. Community voted on over 10,000 battles in the first month.',
+  },
+  {
+    year: '2026',
+    title: 'Full platform',
+    description:
+      'Tournaments, AI judge scoring, XP progression, and the full Lens primitive ecosystem — the arena is live.',
+  },
 ]
 
 export const AboutPage: React.FC = () => {
   return (
     <div className="relative overflow-hidden bg-surface-base text-surface-text">
-      <div className="absolute inset-x-0 top-0 -z-10 h-[26rem] bg-[radial-gradient(circle_at_top,_rgba(255,222,89,0.18),_transparent_55%),radial-gradient(circle_at_left,_rgba(40,123,255,0.12),_transparent_40%),linear-gradient(180deg,rgba(248,249,250,0.9),transparent)] dark:bg-[radial-gradient(circle_at_top,_rgba(255,222,89,0.12),_transparent_45%),radial-gradient(circle_at_left,_rgba(40,123,255,0.1),_transparent_42%),linear-gradient(180deg,rgba(26,26,26,0.9),transparent)]" />
+      {/* Brand-yellow tinted gradient — softer than Home */}
+      <div className="absolute inset-x-0 top-0 -z-10 h-[32rem] bg-[radial-gradient(ellipse_at_top_left,_rgba(255,222,89,0.16),_transparent_55%),radial-gradient(ellipse_at_top_right,_rgba(255,222,89,0.08),_transparent_50%),linear-gradient(180deg,rgba(248,249,250,0.95),transparent)] dark:bg-[radial-gradient(ellipse_at_top_left,_rgba(255,222,89,0.12),_transparent_50%),radial-gradient(ellipse_at_top_right,_rgba(255,222,89,0.06),_transparent_45%),linear-gradient(180deg,rgba(26,26,26,0.95),transparent)]" />
 
-      <section className="mx-auto max-w-6xl px-4 py-16 sm:px-6 lg:px-8 lg:py-24">
-        <div className="grid gap-10 lg:grid-cols-[1.05fr_0.95fr] lg:items-center">
-          <div className="space-y-6">
-            <Badge color="yellow" variant="outline">
-              About the Arena
-            </Badge>
-            <div className="space-y-4">
-              <h1 className="max-w-3xl text-4xl font-black tracking-tight text-greyscale-900 dark:text-greyscale-0 sm:text-5xl lg:text-6xl">
-                A clearer way to compare model quality, human judgment, and execution context.
-              </h1>
-              <p className="max-w-2xl text-lg leading-8 text-greyscale-600 dark:text-greyscale-400">
-                LenserFight turns evaluation into a public product loop. A Lenser defines the task, contenders
-                execute the Lens, the community votes, and the result becomes a shareable artifact.
-              </p>
-            </div>
+      {/* ── HERO — editorial manifesto style ──────────────────────────── */}
+      <section className="mx-auto max-w-6xl px-4 pt-16 pb-20 sm:px-6 lg:px-8 lg:pt-24 lg:pb-28">
+        <motion.div
+          className="max-w-4xl"
+          variants={stagger}
+          initial="hidden"
+          animate="visible"
+        >
+          <motion.div variants={fadeUp}>
+            <Badge color="yellow" variant="outline">Our mission</Badge>
+          </motion.div>
 
-            <div className="flex flex-wrap gap-3">
-              <Link
-                to="/battles"
-                className="inline-flex items-center gap-2 rounded-full bg-greyscale-900 px-5 py-3 text-sm font-bold text-greyscale-0 transition-colors hover:opacity-90 dark:bg-greyscale-0 dark:text-greyscale-900"
-              >
+          <motion.h1
+            variants={fadeUp}
+            className="mt-5 text-5xl font-black tracking-tight text-greyscale-900 dark:text-greyscale-0 sm:text-6xl lg:text-7xl"
+          >
+            AI evaluation{' '}
+            <span className="relative inline-block">
+              <span className="relative z-10">deserves</span>
+              <span className="absolute inset-x-0 bottom-1 -z-10 h-4 rounded bg-primary-yellow-500/30" />
+            </span>{' '}
+            a public arena.
+          </motion.h1>
+
+          <motion.p
+            variants={fadeUp}
+            className="mt-6 max-w-2xl text-xl leading-9 text-greyscale-600 dark:text-greyscale-400"
+          >
+            Closed benchmarks hide the reasoning. Private leaderboards hide the community.
+            LenserFight makes every comparison public, every vote visible, and every result shareable.
+          </motion.p>
+
+          <motion.div variants={fadeUp} className="mt-8 flex flex-wrap gap-3">
+            <Link to="/battles">
+              <Button variant="primary" size="lg">
                 Enter the Arena <ArrowRight size={16} />
-              </Link>
-              <Link
-                to="/product"
-                className="inline-flex items-center gap-2 rounded-full border border-surface-border bg-surface-base px-5 py-3 text-sm font-semibold text-greyscale-700 transition-colors hover:border-primary-yellow-500 hover:text-greyscale-900 dark:text-greyscale-300 dark:hover:text-greyscale-0"
-              >
-                Explore primitives
-              </Link>
-            </div>
+              </Button>
+            </Link>
+            <Link to="/product">
+              <Button variant="secondary" size="lg">
+                How it works
+              </Button>
+            </Link>
+          </motion.div>
+        </motion.div>
 
-            <div className="grid gap-3 sm:grid-cols-3">
-              {['Transparent voting', 'Shareable results', 'Hybrid scoring'].map((item) => (
-                <Card key={item} className="p-4">
-                  <p className="text-sm font-semibold text-greyscale-900 dark:text-greyscale-50">{item}</p>
-                  <p className="mt-1 text-sm leading-6 text-greyscale-500 dark:text-greyscale-400">
-                    Built to make the evaluation outcome legible at a glance.
-                  </p>
-                </Card>
-              ))}
-            </div>
-          </div>
-
-          <DesktopFrame title="Battle result preview" url="lenserfight.com/battles/recursion/result" label="Public result page">
-            <div className="space-y-4">
-              <Card className="p-5">
-                <div className="flex flex-wrap items-center justify-between gap-3">
-                  <div>
-                    <p className="text-xs font-semibold uppercase tracking-[0.24em] text-greyscale-500">
-                      Lens
-                    </p>
-                    <h2 className="mt-1 text-lg font-bold text-greyscale-900 dark:text-greyscale-50">
-                      Explain recursion to a 10-year-old
-                    </h2>
-                  </div>
-                  <Badge color="green">Published</Badge>
-                </div>
-                <p className="mt-4 text-sm leading-7 text-greyscale-600 dark:text-greyscale-400">
-                  Two contenders answer the same prompt. The winner is visible, the rubric is visible, and the
-                  discussion can travel.
-                </p>
-              </Card>
-
-              <div className="grid gap-4 md:grid-cols-2">
-                {['Runner A: GPT-4o', 'Runner B: Claude'].map((label, index) => (
-                  <Card key={label} className="space-y-3 p-5">
-                    <div className="flex items-center justify-between">
-                      <Badge color={index === 0 ? 'blue' : 'purple'} variant="outline">
-                        {index === 0 ? 'A' : 'B'}
-                      </Badge>
-                      <span className="text-xs text-greyscale-500">Vote share</span>
-                    </div>
-                    <p className="text-sm font-semibold text-greyscale-900 dark:text-greyscale-50">{label}</p>
-                    <p className="text-sm leading-7 text-greyscale-600 dark:text-greyscale-400">
-                      Clear output, visible context, and a direct path to the comparison result.
-                    </p>
-                  </Card>
-                ))}
-              </div>
-            </div>
-          </DesktopFrame>
-        </div>
+        {/* Stat strip */}
+        <motion.div
+          className="mt-14 grid gap-px overflow-hidden rounded-3xl border border-surface-border bg-surface-border sm:grid-cols-3"
+          variants={stagger}
+          initial="hidden"
+          animate="visible"
+        >
+          {[
+            { value: '10K+', label: 'Battles judged' },
+            { value: '4', label: 'Battle types' },
+            { value: '100%', label: 'Public results' },
+          ].map(({ value, label }) => (
+            <motion.div
+              key={label}
+              variants={fadeUp}
+              className="bg-surface-base px-8 py-7 text-center"
+            >
+              <p className="text-4xl font-black tracking-tight text-greyscale-900 dark:text-greyscale-0">{value}</p>
+              <p className="mt-1 text-sm text-greyscale-500 dark:text-greyscale-400">{label}</p>
+            </motion.div>
+          ))}
+        </motion.div>
       </section>
 
-      <section className="mx-auto max-w-6xl px-4 pb-16 sm:px-6 lg:px-8 lg:pb-24">
-        <div className="grid gap-6 lg:grid-cols-2 xl:grid-cols-4">
-          {PRIMITIVES.map(({ icon: Icon, name, title, description }) => (
-            <Card key={name} className="h-full space-y-4">
-              <div className="flex items-center gap-3">
-                <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-primary-yellow-500/15 text-primary-yellow-800 dark:bg-primary-yellow-500/10 dark:text-primary-yellow-400">
+      {/* ── ORIGIN STORY / TIMELINE ────────────────────────────────────── */}
+      <section className="mx-auto max-w-6xl px-4 pb-20 sm:px-6 lg:px-8 lg:pb-28">
+        <motion.div variants={fadeUp} initial="hidden" whileInView="visible" viewport={viewport}>
+          <Badge color="purple" variant="outline">Our story</Badge>
+          <h2 className="mt-3 text-3xl font-black tracking-tight text-greyscale-900 dark:text-greyscale-0">
+            Built from frustration, refined by community.
+          </h2>
+          <p className="mt-3 max-w-2xl text-sm leading-7 text-greyscale-600 dark:text-greyscale-400">
+            We didn't want another benchmark nobody could reproduce. We wanted a platform where anyone
+            could run the test, inspect the result, and argue about the outcome.
+          </p>
+        </motion.div>
+
+        <motion.div
+          className="relative mt-10"
+          variants={stagger}
+          initial="hidden"
+          whileInView="visible"
+          viewport={viewport}
+        >
+          <div className="absolute bottom-6 left-[3.25rem] top-6 hidden w-px bg-surface-border sm:block" />
+
+          <div className="space-y-4">
+            {TIMELINE.map(({ year, title, description }) => (
+              <motion.div key={year} variants={fadeUp} className="flex gap-5">
+                <div className="flex flex-shrink-0 flex-col items-center gap-2 sm:w-24">
+                  <div className="z-10 flex h-12 w-12 items-center justify-center rounded-2xl bg-primary-yellow-500 text-sm font-black text-greyscale-900">
+                    {year}
+                  </div>
+                </div>
+                <Card className="flex-1 p-5">
+                  <p className="text-base font-bold text-greyscale-900 dark:text-greyscale-50">{title}</p>
+                  <p className="mt-2 text-sm leading-7 text-greyscale-600 dark:text-greyscale-400">{description}</p>
+                </Card>
+              </motion.div>
+            ))}
+          </div>
+        </motion.div>
+      </section>
+
+      {/* ── VALUES ─────────────────────────────────────────────────────── */}
+      <section className="mx-auto max-w-6xl px-4 pb-20 sm:px-6 lg:px-8 lg:pb-28">
+        <motion.div variants={fadeUp} initial="hidden" whileInView="visible" viewport={viewport}>
+          <Badge color="green" variant="outline">What we believe</Badge>
+          <h2 className="mt-3 text-3xl font-black tracking-tight text-greyscale-900 dark:text-greyscale-0">
+            Four principles drive every design decision.
+          </h2>
+        </motion.div>
+
+        <motion.div
+          className="mt-8 grid gap-5 sm:grid-cols-2 xl:grid-cols-4"
+          variants={stagger}
+          initial="hidden"
+          whileInView="visible"
+          viewport={viewport}
+        >
+          {VALUES.map(({ icon: Icon, title, description }) => (
+            <motion.div key={title} variants={fadeUp}>
+              <Card className="h-full space-y-4 border-t-4 border-t-primary-yellow-500/40 p-6 transition-colors hover:border-t-primary-yellow-500">
+                <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-primary-yellow-500/15 text-primary-yellow-700 dark:text-primary-yellow-400">
                   <Icon size={20} />
                 </div>
-                <div>
-                  <Badge color="gray" variant="outline">
-                    {name}
-                  </Badge>
-                  <h3 className="mt-2 text-lg font-bold text-greyscale-900 dark:text-greyscale-50">{title}</h3>
-                </div>
-              </div>
-              <p className="text-sm leading-7 text-greyscale-600 dark:text-greyscale-400">{description}</p>
-            </Card>
+                <h3 className="text-base font-bold text-greyscale-900 dark:text-greyscale-50">{title}</h3>
+                <p className="text-sm leading-7 text-greyscale-600 dark:text-greyscale-400">{description}</p>
+              </Card>
+            </motion.div>
           ))}
-        </div>
+        </motion.div>
       </section>
 
-      <section className="mx-auto max-w-6xl px-4 pb-16 sm:px-6 lg:px-8 lg:pb-24">
-        <div className="grid gap-6 lg:grid-cols-[0.95fr_1.05fr]">
-          <Card className="space-y-4 p-6">
-            <Badge color="yellow" variant="outline">
-              How it works
-            </Badge>
-            <h2 className="text-2xl font-black tracking-tight text-greyscale-900 dark:text-greyscale-50">
-              The loop is deliberately simple.
-            </h2>
-            <div className="space-y-3">
-              {LOOP.map((step, index) => (
-                <div key={step} className="flex gap-3 rounded-2xl border border-surface-border bg-surface-raised p-4">
-                  <div className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-surface-base text-sm font-bold text-surface-text">
-                    {index + 1}
-                  </div>
-                  <p className="text-sm leading-7 text-greyscale-600 dark:text-greyscale-400">{step}</p>
-                </div>
-              ))}
-            </div>
-          </Card>
-
-          <Card className="space-y-5 p-6">
-            <div className="flex items-center gap-3">
-              <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[color-mix(in_srgb,var(--cl-yellow-500)_12%,transparent)] text-[var(--cl-yellow-500)]">
-                <ShieldCheck size={20} />
-              </div>
-              <div>
-                <Badge color="green" variant="outline">
-                  Trust signal
-                </Badge>
-                <h2 className="mt-2 text-2xl font-black tracking-tight text-greyscale-900 dark:text-greyscale-50">
-                  Built to make outcome quality legible
-                </h2>
-              </div>
-            </div>
-            <p className="text-sm leading-7 text-greyscale-600 dark:text-greyscale-400">
-              The public result page shows what was compared, who won, why they won, and how to share the outcome.
-              That keeps the product useful for creators, reviewers, and stakeholders.
-            </p>
-            <div className="flex flex-wrap gap-3">
-              <Link
-                to="/demo"
-                className="inline-flex items-center gap-2 rounded-full border border-surface-border bg-surface-base px-5 py-3 text-sm font-semibold text-greyscale-700 transition-colors hover:border-primary-yellow-500 hover:text-greyscale-900 dark:text-greyscale-300 dark:hover:text-greyscale-0"
-              >
-                See proof
-              </Link>
-              <Link
-                to="/contact"
-                className="inline-flex items-center gap-2 rounded-full bg-greyscale-900 px-5 py-3 text-sm font-bold text-greyscale-0 transition-colors hover:opacity-90 dark:bg-greyscale-0 dark:text-greyscale-900"
-              >
-                Contact us <Sparkles size={16} />
-              </Link>
-            </div>
-          </Card>
-        </div>
-      </section>
-
-      <section className="mx-auto max-w-6xl px-4 pb-16 sm:px-6 lg:px-8 lg:pb-24">
-        <div className="mb-10 space-y-2">
-          <Badge color="yellow" variant="outline">Brand Cinematics</Badge>
-          <h2 className="text-2xl font-black tracking-tight text-greyscale-900 dark:text-greyscale-0">
-            Motion Assets
-          </h2>
-          <p className="max-w-xl text-sm leading-7 text-greyscale-600 dark:text-greyscale-400">
-            Cinematic benchmarks require cinematic identity. These motion assets define the look and feel of the LenserFight experience.
-          </p>
-        </div>
-        <React.Suspense fallback={<div className="h-[300px] w-full animate-pulse rounded-[2rem] bg-surface-raised" />}>
-          <BrandVideos />
-        </React.Suspense>
-      </section>
-
-      {/* ─── AI Lenser Family ─────────────────────────────────────── */}
-      <AiLenserFamily className="mx-auto max-w-6xl px-4 pb-16 sm:px-6 lg:px-8 lg:pb-24" />
-
-      {/* ─── Sponsors ─────────────────────────────────────────────── */}
+      {/* ── WHY IT MATTERS — pull-quote callout ───────────────────────── */}
       <section className="mx-auto max-w-6xl px-4 pb-20 sm:px-6 lg:px-8 lg:pb-28">
-        <div className="mb-6 space-y-1">
+        <motion.div
+          initial={{ opacity: 0, y: 28, scale: 0.97 }}
+          whileInView={{ opacity: 1, y: 0, scale: 1 }}
+          viewport={viewport}
+          transition={spring}
+        >
+          <Card className="relative overflow-hidden bg-greyscale-900 p-10 dark:bg-greyscale-50">
+            <div className="pointer-events-none absolute inset-0 opacity-20 bg-[radial-gradient(ellipse_at_top_left,_rgba(255,222,89,1),_transparent_60%),radial-gradient(ellipse_at_bottom_right,_rgba(255,222,89,0.6),_transparent_55%)]" />
+            <div className="relative grid gap-8 lg:grid-cols-[1fr_auto] lg:items-center">
+              <div className="space-y-4">
+                <Lightbulb size={28} className="text-primary-yellow-500" />
+                <blockquote className="text-2xl font-black leading-tight tracking-tight text-greyscale-0 dark:text-greyscale-900 sm:text-3xl">
+                  "Quality should win — not branding, not speed, not speculation about which AI is currently hot."
+                </blockquote>
+                <p className="text-sm text-greyscale-400 dark:text-greyscale-600">
+                  The core promise that every LenserFight feature is built to deliver.
+                </p>
+              </div>
+              <div className="flex flex-col gap-3 lg:flex-shrink-0">
+                <Link to="/product">
+                  <Button variant="primary" size="lg" fullWidth>
+                    See the primitives <Sparkles size={15} />
+                  </Button>
+                </Link>
+                <Link to="/contact">
+                  <Button variant="ghost" size="lg" fullWidth className="text-greyscale-300 hover:bg-greyscale-800 hover:text-greyscale-0 dark:text-greyscale-600 dark:hover:bg-greyscale-100 dark:hover:text-greyscale-900">
+                    Talk to us
+                  </Button>
+                </Link>
+              </div>
+            </div>
+          </Card>
+        </motion.div>
+      </section>
+
+      {/* ── BRAND CINEMATICS ───────────────────────────────────────────── */}
+      <section className="mx-auto max-w-6xl px-4 pb-20 sm:px-6 lg:px-8 lg:pb-28">
+        <motion.div variants={fadeUp} initial="hidden" whileInView="visible" viewport={viewport}>
+          <Badge color="yellow" variant="outline">Brand Cinematics</Badge>
+          <h2 className="mt-3 text-2xl font-black tracking-tight text-greyscale-900 dark:text-greyscale-0">
+            Motion identity
+          </h2>
+          <p className="mt-2 max-w-xl text-sm leading-7 text-greyscale-600 dark:text-greyscale-400">
+            Cinematic benchmarks require cinematic identity. These motion assets define the look of the LenserFight experience.
+          </p>
+        </motion.div>
+        <div className="mt-8">
+          <React.Suspense fallback={<div className="h-[300px] w-full animate-pulse rounded-[2rem] bg-surface-raised" />}>
+            <BrandVideos />
+          </React.Suspense>
+        </div>
+      </section>
+
+      {/* ── AI LENSER FAMILY ───────────────────────────────────────────── */}
+      <AiLenserFamily className="mx-auto max-w-6xl px-4 pb-20 sm:px-6 lg:px-8 lg:pb-28" />
+
+      {/* ── SPONSORS ───────────────────────────────────────────────────── */}
+      <section className="mx-auto max-w-6xl px-4 pb-24 sm:px-6 lg:px-8 lg:pb-32">
+        <motion.div variants={fadeUp} initial="hidden" whileInView="visible" viewport={viewport}>
           <Badge color="yellow" variant="outline">Sponsors</Badge>
-          <h2 className="text-2xl font-black tracking-tight text-greyscale-900 dark:text-greyscale-0">
+          <h2 className="mt-3 text-2xl font-black tracking-tight text-greyscale-900 dark:text-greyscale-0">
             Backed by
           </h2>
-        </div>
-        <a
-          href={`${CHAINABIT_APP_URL}?utm_source=lenserfight_about`}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="group inline-flex"
+        </motion.div>
+        <motion.div
+          className="mt-6"
+          initial={{ opacity: 0, y: 16 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={viewport}
+          transition={spring}
         >
-          <Card className="flex items-center gap-5 p-5 transition-shadow group-hover:shadow-md">
-            <img
-              src="/chainabit/apple-icon.png"
-              width={56}
-              height={56}
-              alt="Chainabit"
-              className="rounded-2xl"
-            />
-            <div>
-              <p className="text-base font-bold text-greyscale-900 dark:text-greyscale-0">Chainabit</p>
-              <p className="mt-0.5 text-sm text-greyscale-500 dark:text-greyscale-400">
-                Execution credits for the LenserFight arena.
-              </p>
-            </div>
-            <ExternalLink size={14} className="ml-auto shrink-0 text-greyscale-400 group-hover:text-greyscale-700 dark:group-hover:text-greyscale-200 transition-colors" />
-          </Card>
-        </a>
+          <a
+            href={`${CHAINABIT_APP_URL}?utm_source=lenserfight_about`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="group inline-flex"
+          >
+            <Card className="flex items-center gap-5 p-5 transition-shadow group-hover:shadow-md">
+              <img
+                src="/chainabit/apple-icon.png"
+                width={56}
+                height={56}
+                alt="Chainabit"
+                className="rounded-2xl"
+              />
+              <div>
+                <p className="text-base font-bold text-greyscale-900 dark:text-greyscale-0">Chainabit</p>
+                <p className="mt-0.5 text-sm text-greyscale-500 dark:text-greyscale-400">
+                  Execution credits for the LenserFight arena.
+                </p>
+              </div>
+              <ExternalLink size={14} className="ml-auto shrink-0 text-greyscale-400 transition-colors group-hover:text-greyscale-700 dark:group-hover:text-greyscale-200" />
+            </Card>
+          </a>
+        </motion.div>
       </section>
     </div>
   )
