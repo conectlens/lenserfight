@@ -9,6 +9,8 @@ import { GamificationPreview } from '../components/GamificationPreview'
 import { HeroFightPreview } from '../components/HeroFightPreview'
 import { WaitlistForm } from '../components/WaitlistForm'
 
+const BrandVideos = React.lazy(() => import('../components/BrandVideos'))
+
 const ARENA_APP_URL = import.meta.env.VITE_ARENA_URL ?? 'https://run.lenserfight.com'
 
 // ── Shared animation variants ────────────────────────────────────────────────
@@ -214,6 +216,22 @@ export const LandHomePage: React.FC = () => {
             ))}
           </motion.div>
         </div>
+      </section>
+
+      {/* ─── 3.2: Brand Motion ──────────────────────────────────────── */}
+      <section className="mx-auto max-w-6xl px-4 pb-16 sm:px-6 lg:px-8 lg:pb-20">
+        <motion.div className="mb-10 space-y-2" variants={fadeLeft} initial="hidden" whileInView="visible" viewport={viewport}>
+          <Badge color="yellow" variant="outline">Motion Identity</Badge>
+          <h2 className="text-3xl font-black tracking-tight text-greyscale-900 dark:text-greyscale-0">
+            The visual pulse of the arena
+          </h2>
+          <p className="max-w-2xl text-sm leading-7 text-greyscale-600 dark:text-greyscale-400">
+            Our brand is defined by movement, speed, and precision. Explore the cinematic foundations of LenserFight.
+          </p>
+        </motion.div>
+        <React.Suspense fallback={<div className="h-[400px] w-full animate-pulse rounded-[2.5rem] bg-surface-raised" />}>
+          <BrandVideos />
+        </React.Suspense>
       </section>
 
       {/* ─── 3.5: AI Lenser Family ──────────────────────────────────── */}
