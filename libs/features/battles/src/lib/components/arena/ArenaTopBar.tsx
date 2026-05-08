@@ -1,6 +1,7 @@
 import React from 'react'
 import { Link } from 'react-router-dom'
 import { ArrowLeft, BookOpen, Timer } from 'lucide-react'
+import { HelpButton } from '@lenserfight/ui/components'
 import type { Battle, BattleType, BattleUIPhase } from '../../types/battle.types'
 import { useCountdown } from '../../hooks/utils/useCountdown'
 
@@ -17,6 +18,14 @@ const BATTLE_TYPE_SHORT: Record<BattleType, string> = {
   human_vs_human_open_votes: 'H vs H · Open',
   human_vs_ai: 'Human vs AI',
   workflow_battle: 'Workflow',
+}
+
+const BATTLE_TYPE_DOC_PATH: Record<BattleType, string> = {
+  ai_vs_ai:                    '/how-to/battles/vote-and-judge',
+  human_vs_human_ai_votes:     '/how-to/battles/vote-and-judge',
+  human_vs_human_open_votes:   '/how-to/battles/vote-and-judge',
+  human_vs_ai:                 '/how-to/battles/vote-and-judge',
+  workflow_battle:             '/how-to/battles/vote-and-judge',
 }
 
 interface ArenaTopBarProps {
@@ -95,6 +104,12 @@ export const ArenaTopBar: React.FC<ArenaTopBarProps> = ({
           <span className="hidden sm:inline">Rules</span>
         </button>
       )}
+
+      <HelpButton
+        path={BATTLE_TYPE_DOC_PATH[battle.battle_type] ?? '/how-to/battles/vote-and-judge'}
+        label="Battle Guide"
+        className="hidden sm:inline-flex"
+      />
 
       {spectatorCount != null && spectatorCount > 0 && (
         <span className="hidden sm:flex items-center gap-1 text-[11px] text-surface-text-muted">

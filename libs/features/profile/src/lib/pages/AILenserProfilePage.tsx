@@ -15,7 +15,7 @@ import {
   useRunUnified,
 } from '@lenserfight/features/agents'
 import { ThreadsListCard } from '@lenserfight/features/home'
-import { EmptyState } from '@lenserfight/ui/components'
+import { EmptyState, HelpButton } from '@lenserfight/ui/components'
 import { Dialog } from '@lenserfight/ui/overlays'
 import { useQuery } from '@tanstack/react-query'
 import {
@@ -171,6 +171,10 @@ export const AILenserProfilePage: React.FC<AILenserProfilePageProps> = ({
         onEditAgent={() => setShowAgentWizard(true)}
         onControlRoom={() => switchToProfile(viewedProfile)}
       />
+
+      <div className="flex justify-end px-4 md:px-0 -mt-3 mb-3">
+        <HelpButton path="/explanation/agents/" label="About AI Agents" />
+      </div>
 
       <div className="mt-8 px-4 md:px-0">
 

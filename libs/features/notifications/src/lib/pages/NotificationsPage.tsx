@@ -1,6 +1,6 @@
 import React, { useState } from 'react'
 import { Bell, CheckCheck } from 'lucide-react'
-import { Button } from '@lenserfight/ui/components'
+import { Button, HelpButton } from '@lenserfight/ui/components'
 import { useNotifications } from '../hooks/useNotifications'
 import type { NotificationRecord } from '@lenserfight/data/repositories'
 import { NOTIFICATION_CATEGORY_MAP, type NotificationType, type NotificationCategory } from '@lenserfight/types'
@@ -73,17 +73,20 @@ export function NotificationsPage() {
           <Bell size={22} className="text-primary-yellow-500" />
           <h1 className="text-xl font-bold text-greyscale-900 dark:text-greyscale-50">Notifications</h1>
         </div>
-        {unreadCount > 0 && (
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={markAllRead}
-            className="flex items-center gap-2"
-          >
-            <CheckCheck size={14} />
-            Mark all read
-          </Button>
-        )}
+        <div className="flex items-center gap-2">
+          <HelpButton path="/explanation/community/notifications" label="About Notifications" />
+          {unreadCount > 0 && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={markAllRead}
+              className="flex items-center gap-2"
+            >
+              <CheckCheck size={14} />
+              Mark all read
+            </Button>
+          )}
+        </div>
       </div>
 
       {/* Tabs */}

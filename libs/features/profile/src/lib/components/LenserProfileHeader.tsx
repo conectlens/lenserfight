@@ -2,7 +2,7 @@
 import { agentsService, socialLinksService } from '@lenserfight/data/repositories'
 import { Lenser, LenserStats, SocialLink, RelationshipState } from '@lenserfight/types'
 import { XPSummary } from '@lenserfight/types'
-import { Avatar, Badge, Button } from '@lenserfight/ui/components'
+import { Avatar, Badge, Button, HelpButton } from '@lenserfight/ui/components'
 import { FEATURES } from '@lenserfight/utils/env'
 import { formatCount } from '@lenserfight/utils/number'
 import {
@@ -415,14 +415,20 @@ export const LenserProfileHeader: React.FC<LenserProfileHeaderProps> = ({
                         Control Room
                       </Button>
                     )}
+                    {lenser.type !== 'ai' && (
+                      <HelpButton path="/explanation/lensers/human-lensers" label="About Lensers" />
+                    )}
                   </div>
                 ) : (
-                  <div className="hidden md:block mt-2 md:mt-0">
+                  <div className="hidden md:flex items-center gap-2 mt-2 md:mt-0">
                     <FollowButton
                       targetProfileId={lenser.id}
                       handle={lenser.handle}
                       relationshipState={relationshipState ?? null}
                     />
+                    {lenser.type !== 'ai' && (
+                      <HelpButton path="/explanation/lensers/human-lensers" label="About Lensers" />
+                    )}
                   </div>
                 )}
               </div>
