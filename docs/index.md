@@ -63,6 +63,27 @@ features:
 
 <div class="lf-home-section">
 
+## Beta Edition Boundaries
+
+The following surfaces require a feature flag or a hosted Supabase environment and are **not available out of the box** in a fresh Community Edition install:
+
+| Surface | Status | Flag / requirement |
+|---------|--------|--------------------|
+| CRON scheduling | Preview | `VITE_FEATURE_CRON_SCHEDULING=true` + Supabase |
+| Approval gates | Preview | Supabase (`agents.*` schema) |
+| SSE run event replay | Preview | Supabase (`lenses.workflow_run_events`) |
+| Marketplace (`/marketplace`) | Preview | Supabase |
+| Connector marketplace | Not yet implemented | — |
+| Local battles (CLI) | Preview | No flag required |
+| Cloud battles arena | Private Alpha | `VITE_FEATURE_PUBLIC_BATTLES=true` + hosted Supabase |
+| Billing | Not yet implemented | — |
+| Benchmark suite | Not yet implemented | — |
+| ELO leaderboard | Cloud only | `VITE_FEATURE_PUBLIC_BATTLES=true` |
+
+See the full [Known Preview Surfaces](/reference/known-preview-surfaces) reference for controlling flags and rollback instructions.
+
+---
+
 ## Start with the workflow loop
 
 <p class="lf-home-sub">Install the repo, create a lens, build a workflow, run it, and iterate. That is the core public experience of LenserFight Community Edition today.</p>
