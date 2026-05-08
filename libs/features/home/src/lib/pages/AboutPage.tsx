@@ -27,7 +27,7 @@ export const AboutPage: React.FC = () => {
             LenserFight is a community project. The platform, evaluation rubrics, and battle engine are all open source and available on GitHub.
           </p>
           <a
-            href="https://github.com/lenserfight-org"
+            href="https://github.com/conectlens/lenserfight"
             target="_blank"
             rel="noopener noreferrer"
             className="inline-flex items-center gap-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white transition-colors"

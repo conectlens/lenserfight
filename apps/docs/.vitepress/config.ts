@@ -21,6 +21,54 @@ function mermaidFencePlugin(md: any) {
   }
 }
 
+const REPO_BLOB_BASE = 'https://github.com/connectlens/lenserfight-web/blob/main'
+const CROSS_TREE_TOP_DIRS = ['libs', 'supabase', 'apps', 'tools', 'docs']
+
+/**
+ * Rewrites markdown links that walk out of the docs srcDir (e.g. `../../libs/...`,
+ * `../../../libs/...`, `../../supabase/...`) into absolute GitHub blob URLs so
+ * deep-links to source files work in the rendered docs site. The relative paths
+ * exist on disk but live outside VitePress's srcDir, so they would otherwise 404
+ * in the browser. Turns `#L42` into `#L42` (GitHub honours the same anchor).
+ */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function rewriteCrossTreeLinksPlugin(md: any) {
+  const defaultRender =
+    md.renderer.rules.link_open?.bind(md.renderer.rules) ??
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    ((tokens: any[], idx: number, options: any, _env: any, self: any) =>
+      self.renderToken(tokens, idx, options))
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  md.renderer.rules.link_open = (tokens: any[], idx: number, options: any, env: any, self: any) => {
+    const token = tokens[idx]
+    const hrefIndex = token.attrIndex('href')
+    if (hrefIndex >= 0) {
+      const href: string = token.attrs[hrefIndex][1]
+      const rewritten = rewriteCrossTreeHref(href)
+      if (rewritten) {
+        token.attrs[hrefIndex][1] = rewritten
+        if (token.attrIndex('target') < 0) token.attrPush(['target', '_blank'])
+        if (token.attrIndex('rel') < 0) token.attrPush(['rel', 'noreferrer'])
+      }
+    }
+    return defaultRender(tokens, idx, options, env, self)
+  }
+}
+
+function rewriteCrossTreeHref(href: string): string | null {
+  if (!href || /^[a-z]+:/i.test(href) || href.startsWith('/') || href.startsWith('#')) return null
+  if (!href.startsWith('../')) return null
+  // Strip leading `../` segments and verify the remaining path begins with a known top-level dir.
+  const cleaned = href.replace(/^(?:\.\.\/)+/, '')
+  // Lenserfight-platform repo is deprecated — drop the prefix and link into this repo's tree
+  // if the path happens to live here, otherwise fall through to a GitHub link anyway.
+  const withoutLegacy = cleaned.replace(/^lenserfight-platform\//, '')
+  const top = withoutLegacy.split('/')[0]
+  if (!CROSS_TREE_TOP_DIRS.includes(top)) return null
+  return `${REPO_BLOB_BASE}/${withoutLegacy}`
+}
+
 /**
  * Dev-server plugin: intercepts requests for *.md files and serves the raw
  * markdown source so that CopyPageButton's fetch() succeeds in dev mode.
@@ -157,7 +205,11 @@ export default defineConfig({
   },
 
   markdown: {
-    config: mermaidFencePlugin,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    config: (md: any) => {
+      mermaidFencePlugin(md)
+      rewriteCrossTreeLinksPlugin(md)
+    },
   },
 
   // ── i18n Locales ────────────────────────────────────────────────────────────
@@ -187,10 +239,11 @@ export default defineConfig({
           {
             text: 'Agentlar ve İş Akışları',
             items: [
-              { text: 'Genel Bakış', link: '/tr/connected-lenses/overview' },
-              { text: 'Etki Alanı Modeli', link: '/tr/connected-lenses/domain-model' },
-              { text: 'Agent Takımları', link: '/tr/connected-lenses/agent-teams' },
-              { text: 'İş Akışı Yürütme', link: '/tr/connected-lenses/workflow-execution' },
+              { text: 'Genel Bakış (EN)', link: '/connected-lenses/overview' },
+              { text: 'Etki Alanı Modeli (EN)', link: '/connected-lenses/domain-model' },
+              { text: 'Agent Takımları (EN)', link: '/connected-lenses/agent-teams' },
+              { text: 'İş Akışı Yürütme (EN)', link: '/connected-lenses/workflow-execution' },
+              { text: 'Onaylar (TR)', link: '/tr/connected-lenses/approvals' },
             ],
           },
           {
@@ -228,11 +281,11 @@ export default defineConfig({
             {
               text: 'ConnectedLenses',
               items: [
-                { text: 'Genel Bakış', link: '/tr/connected-lenses/overview' },
-                { text: 'Etki Alanı Modeli', link: '/tr/connected-lenses/domain-model' },
-                { text: 'Agent Takımları', link: '/tr/connected-lenses/agent-teams' },
-                { text: 'İş Akışı Yürütme', link: '/tr/connected-lenses/workflow-execution' },
-                { text: 'Onaylar', link: '/tr/connected-lenses/approvals' },
+                { text: 'Onaylar (TR)', link: '/tr/connected-lenses/approvals' },
+                { text: 'Genel Bakış (EN)', link: '/connected-lenses/overview' },
+                { text: 'Etki Alanı Modeli (EN)', link: '/connected-lenses/domain-model' },
+                { text: 'Agent Takımları (EN)', link: '/connected-lenses/agent-teams' },
+                { text: 'İş Akışı Yürütme (EN)', link: '/connected-lenses/workflow-execution' },
               ],
             },
           ],
@@ -715,6 +768,7 @@ export default defineConfig({
           text: 'ConnectedLenses',
           items: [
             { text: 'Overview', link: '/connected-lenses/overview' },
+            { text: 'Implementation Audit', link: '/connected-lenses/implementation-audit' },
             { text: 'Domain Model', link: '/connected-lenses/domain-model' },
             { text: 'Lens Instructions', link: '/connected-lenses/lens-instructions' },
             { text: 'Workflow Execution', link: '/connected-lenses/workflow-execution' },
