@@ -100,38 +100,8 @@ const BrandVideo: React.FC<BrandVideoProps> = ({ url, title, description, tag, i
                   {description}
                 </p>
               </div>
-
-              <div className="flex items-center gap-6 pt-4">
-                <div className="flex h-14 w-14 items-center justify-center rounded-full bg-white/5 backdrop-blur-2xl border border-white/10 transition-transform hover:scale-110">
-                  <Film className="text-white/80" size={24} />
-                </div>
-                <div className="flex flex-col">
-                  <span className="text-[10px] font-black uppercase tracking-[0.3em] text-primary-yellow-500/60">
-                    Asset Protocol
-                  </span>
-                  <span className="text-sm font-medium text-greyscale-400">
-                    LFR-VID-{index + 1} // 4K LOG
-                  </span>
-                </div>
-              </div>
             </div>
           </motion.div>
-
-          <div className="absolute right-12 top-12">
-            <Sparkles size={32} className="text-primary-yellow-500/20" />
-          </div>
-        </div>
-
-        <div className="flex items-center justify-between border-t border-white/5 bg-white/[0.02] px-8 py-4 backdrop-blur-md">
-          <div className="flex items-center gap-3">
-            <div className="h-1.5 w-1.5 animate-pulse rounded-full bg-status-green" />
-            <span className="text-[10px] font-bold uppercase tracking-widest text-greyscale-500">
-              Live Render Active
-            </span>
-          </div>
-          <div className="text-[10px] font-mono text-greyscale-600">
-            00:00:0{index + 1}:24 // IDENTITY_CORE
-          </div>
         </div>
       </div>
     </motion.div>
