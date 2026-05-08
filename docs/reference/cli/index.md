@@ -158,6 +158,29 @@ See [Run Commands](run.md), [Execution Subcommands](execution.md), and [Executio
 
 See [Automation CLI](automation.md).
 
+### Battles
+
+| Command | Description |
+|---------|-------------|
+| `lf battle <subcommand>` | Create, join, and manage battles (see [Battle Commands](battle.md)) |
+| `lf battle-moderation list/override` | Inspect and override moderation decisions on owned battles ([reference](battle-moderation.md)) |
+
+### Schedule, approvals & memory
+
+| Command | Description |
+|---------|-------------|
+| `lf schedule list/create/pause/resume/delete` | Manage workflow CRON schedules |
+| `lf schedule history <id> [--limit N]` | Show the most recent runs (1–50, default 10) dispatched by a schedule |
+| `lf schedule health` | Detect schedules that have missed their expected dispatch window |
+| `lf approval list [--status pending\|approved\|rejected\|timed_out]` | List approval queue entries |
+| `lf approval approve/reject <id>` | Resolve a pending approval |
+| `lf memory list-profiles` | List memory profiles for an agent |
+| `lf memory list-entries [--workflow <id>]` | List memory entries (filter by workflow) |
+| `lf memory search <query> [--profile <id>] [--limit N]` | Full-text search over memory content |
+| `lf memory write-entry/redact/summarize` | Write, redact, or summarize memory entries |
+
+See [Schedule Commands](schedule.md), [Approval Commands](approval.md), [Memory Commands](memory.md).
+
 ### Inspect
 
 | Command | Description |
