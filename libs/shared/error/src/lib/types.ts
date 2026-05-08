@@ -1,11 +1,12 @@
 export type ErrorKind =
-  | 'unauthorized'  // 401 — session missing / JWT expired
-  | 'forbidden'     // 403 / PG 42501 — authenticated but access denied
-  | 'not_found'     // 404
-  | 'server_error'  // 500 / 502 / 503 / 504
-  | 'rate_limit'    // 429
+  | 'unauthorized'        // 401 — session missing / JWT expired
+  | 'forbidden'           // 403 / PG 42501 — authenticated but access denied
+  | 'not_found'           // 404
+  | 'server_error'        // 500 / 502 / 503 / 504
+  | 'rate_limit'          // 429
   | 'network'
   | 'api'
+  | 'constraint_violation' // PG 23514/23505/23503 — data rule violated (user-correctable)
   | 'unknown'
 
 export interface AppError {
@@ -41,6 +42,11 @@ export interface NetworkError extends AppError {
 
 export interface ApiError extends AppError {
   kind: 'api'
+}
+
+export interface ConstraintViolationError extends AppError {
+  kind: 'constraint_violation'
+  constraintName?: string
 }
 
 export interface UnknownError extends AppError {

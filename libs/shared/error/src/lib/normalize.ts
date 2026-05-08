@@ -7,8 +7,10 @@ import type {
   RateLimitError,
   NetworkError,
   ApiError,
+  ConstraintViolationError,
   UnknownError,
 } from './types'
+import { CONSTRAINT_MESSAGES, DEFAULT_CONSTRAINT_MESSAGE } from './constraint-messages'
 
 function getStatus(error: unknown): number | undefined {
   if (!error || typeof error !== 'object') return undefined
@@ -35,6 +37,18 @@ function isNetworkError(error: unknown): boolean {
       error.message.toLowerCase().includes('network'))
   )
 }
+
+// Extracts the constraint name from a Postgres violation message.
+// Postgres always quotes the constraint name last: ...constraint "my_constraint_name"
+function extractConstraintName(error: unknown): string | undefined {
+  if (!error || typeof error !== 'object') return undefined
+  const raw = (error as Record<string, unknown>)['message']
+  if (typeof raw !== 'string') return undefined
+  const match = /"([^"]+)"[^"]*$/.exec(raw)
+  return match?.[1]
+}
+
+const CONSTRAINT_VIOLATION_CODES = new Set(['23514', '23505', '23503'])
 
 export function normalizeError(error: unknown): AppError {
   const status = getStatus(error)
@@ -118,6 +132,23 @@ export function normalizeError(error: unknown): AppError {
       message: 'A network error occurred. Please check your connection and try again.',
       originalError: error,
     } satisfies NetworkError
+  }
+
+  // ── PG constraint violations: 23514 (check), 23505 (unique), 23503 (FK) ──────
+  if (code && CONSTRAINT_VIOLATION_CODES.has(code)) {
+    const constraintName = extractConstraintName(error)
+    const userMessage =
+      (constraintName && CONSTRAINT_MESSAGES[constraintName]) ||
+      (constraintName?.endsWith('_format')
+        ? 'Invalid format — only lowercase letters, numbers, and hyphens allowed.'
+        : DEFAULT_CONSTRAINT_MESSAGE)
+    return {
+      kind: 'constraint_violation',
+      statusCode: status ?? 400,
+      message: userMessage,
+      constraintName,
+      originalError: error,
+    } satisfies ConstraintViolationError
   }
 
   // ── API business errors: { error: "..." } or { error: { message: "..." } } ─
