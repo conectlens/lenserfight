@@ -1,6 +1,7 @@
 import { queryKeys } from '@lenserfight/data/cache'
 import { workflowsService } from '@lenserfight/data/repositories'
 import { AlertDialog } from '@lenserfight/ui/overlays'
+import { FEATURES } from '@lenserfight/utils/env'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { CalendarClock, History, Pencil, Plus, Trash2 } from 'lucide-react'
 import React, { useState } from 'react'
@@ -61,6 +62,43 @@ export const SchedulesSection: React.FC = () => {
     onSuccess: (_, s) => { toast.success(s.is_active ? 'Schedule paused' : 'Schedule resumed'); invalidate() },
     onError: (e) => toast.error((e as Error).message),
   })
+
+  if (!FEATURES.CRON_SCHEDULING) {
+    return (
+      <SectionPage
+        eyebrow="Schedules"
+        title="CRON-driven workflow dispatch"
+        description="Workflow schedules dispatch manual, CRON-based, or team-assigned automation runs."
+      >
+        <div className="rounded-2xl border border-amber-200 bg-amber-50 p-6 dark:border-amber-800 dark:bg-amber-950/30">
+          <div className="flex items-start gap-3">
+            <CalendarClock size={20} className="mt-0.5 shrink-0 text-amber-600 dark:text-amber-400" />
+            <div>
+              <p className="font-semibold text-amber-900 dark:text-amber-200">
+                Scheduling is not enabled in this edition
+              </p>
+              <p className="mt-1 text-sm text-amber-800 dark:text-amber-300">
+                CRON-driven workflow dispatch requires a full Supabase instance and the{' '}
+                <code className="rounded bg-amber-100 px-1 text-xs dark:bg-amber-900">
+                  VITE_FEATURE_CRON_SCHEDULING=true
+                </code>{' '}
+                environment variable. See the{' '}
+                <a
+                  href="/reference/known-preview-surfaces"
+                  className="underline"
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  Known Preview Surfaces
+                </a>{' '}
+                guide for setup instructions and rollback steps.
+              </p>
+            </div>
+          </div>
+        </div>
+      </SectionPage>
+    )
+  }
 
   return (
     <SectionPage

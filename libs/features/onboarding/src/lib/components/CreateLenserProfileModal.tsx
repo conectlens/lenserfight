@@ -240,12 +240,25 @@ export const CreateLenserProfileModal: React.FC = () => {
     setSubmitError(null)
     try {
       await preferencesService.updatePreferences({ language: preferredLanguage, theme: selectedTheme })
-      goToStep(2)
     } catch (err: unknown) {
-      setSubmitError(getErrorMessage(err, 'Failed to save preferences. Please try again.'))
+      // "Profile not found" (P0001) means the profile row hasn't landed yet —
+      // preferences are non-critical during onboarding so proceed rather than
+      // blocking the user on an invisible timing gap.
+      const isProfileMissing =
+        err != null &&
+        typeof err === 'object' &&
+        'code' in err &&
+        (err as { code: string }).code === 'P0001'
+      if (!isProfileMissing) {
+        setSubmitError(getErrorMessage(err, 'Failed to save preferences. Please try again.'))
+        setIsCompletingStep1(false)
+        return
+      }
+      // P0001 — silently ignore, fall through to goToStep(2)
     } finally {
       setIsCompletingStep1(false)
     }
+    goToStep(2)
   }
 
   // ── Step 2 next: save AI config + advance to step 3 ─────────────────
@@ -327,7 +340,7 @@ export const CreateLenserProfileModal: React.FC = () => {
       {currentStep === 0 ? (
         /* ── Step 0: handle + display name ── */
         <div className="space-y-5">
-          <p className="text-sm text-gray-500 dark:text-gray-400">
+          <p className="text-sm text-greyscale-500 dark:text-greyscale-400">
             Claim your unique handle to join the community.
           </p>
 
@@ -343,7 +356,7 @@ export const CreateLenserProfileModal: React.FC = () => {
               />
               <div className="absolute right-3 top-[34px] pointer-events-none">
                 {isCheckingHandle ? (
-                  <Loader2 className="w-5 h-5 text-gray-400 animate-spin" />
+                  <Loader2 className="w-5 h-5 text-greyscale-400 animate-spin" />
                 ) : isHandleUnique ? (
                   <Check className="w-5 h-5 text-green-500" />
                 ) : handleError && handle.length > 0 ? (
@@ -354,14 +367,14 @@ export const CreateLenserProfileModal: React.FC = () => {
 
             {suggestions.length > 0 && (
               <div className="mt-2 animate-in slide-in-from-top-1 fade-in duration-200">
-                <p className="text-xs text-gray-500 mb-2">Suggestions:</p>
+                <p className="text-xs text-greyscale-500 mb-2">Suggestions:</p>
                 <div className="flex flex-wrap gap-2">
                   {suggestions.map((s) => (
                     <button
                       key={s}
                       type="button"
                       onClick={() => setHandle(s)}
-                      className="px-3 py-1 bg-gray-50 hover:bg-primary/20 hover:text-gray-900 border border-gray-200 rounded-full text-xs font-medium text-gray-600 transition-colors"
+                      className="px-3 py-1 bg-greyscale-25 hover:bg-primary/20 hover:text-greyscale-900 border border-surface-border rounded-full text-xs font-medium text-greyscale-600 transition-colors"
                     >
                       @{s}
                     </button>
@@ -371,7 +384,7 @@ export const CreateLenserProfileModal: React.FC = () => {
             )}
 
             {isCheckingHandle && !handleError && handle.length >= 4 && suggestions.length === 0 && (
-              <p className="mt-2 text-xs text-gray-400">Checking availability…</p>
+              <p className="mt-2 text-xs text-greyscale-400">Checking availability…</p>
             )}
           </div>
 
@@ -384,7 +397,7 @@ export const CreateLenserProfileModal: React.FC = () => {
           />
 
           {submitError && (
-            <div className="text-red-500 text-sm bg-red-50 dark:bg-red-900/20 p-3 rounded-lg">
+            <div className="text-[var(--cl-status-red)] text-sm bg-[var(--cl-status-red)]/8 dark:bg-[var(--cl-status-red)]/10 p-3 rounded-lg border border-[var(--cl-status-red)]/20">
               {submitError}
             </div>
           )}
@@ -393,10 +406,10 @@ export const CreateLenserProfileModal: React.FC = () => {
         /* ── Step 1: language + theme ── */
         <div className="space-y-5">
           <div>
-            <p className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+            <p className="text-sm font-medium text-greyscale-700 dark:text-greyscale-300 mb-1">
               Preferred Language
             </p>
-            <p className="text-xs text-gray-500 dark:text-gray-400 mb-3">
+            <p className="text-xs text-greyscale-500 dark:text-greyscale-400 mb-3">
               Choose the language for content and interface.
             </p>
             <LanguageSelectBox
@@ -408,10 +421,10 @@ export const CreateLenserProfileModal: React.FC = () => {
           </div>
 
           <div>
-            <p className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+            <p className="text-sm font-medium text-greyscale-700 dark:text-greyscale-300 mb-1">
               Theme
             </p>
-            <p className="text-xs text-gray-500 dark:text-gray-400 mb-3">
+            <p className="text-xs text-greyscale-500 dark:text-greyscale-400 mb-3">
               Choose your preferred colour scheme.
             </p>
             <div className="flex gap-3">
@@ -421,8 +434,8 @@ export const CreateLenserProfileModal: React.FC = () => {
                   type="button"
                   onClick={() => setSelectedTheme(opt.value)}
                   className={`flex-1 py-2.5 px-4 rounded-lg border text-sm font-medium transition-colors ${selectedTheme === opt.value
-                      ? 'border-primary bg-primary/10 text-gray-900 dark:text-white'
-                      : 'border-gray-200 dark:border-gray-700 text-gray-500 dark:text-gray-400 hover:border-gray-300 dark:hover:border-gray-600'
+                      ? 'border-primary bg-primary/10 text-greyscale-900 dark:text-greyscale-0'
+                      : 'border-surface-border text-greyscale-500 dark:text-greyscale-400 hover:border-greyscale-400 dark:hover:border-greyscale-500'
                     }`}
                 >
                   {opt.label}
@@ -432,7 +445,7 @@ export const CreateLenserProfileModal: React.FC = () => {
           </div>
 
           {submitError && (
-            <div className="text-red-500 text-sm bg-red-50 dark:bg-red-900/20 p-3 rounded-lg">
+            <div className="text-[var(--cl-status-red)] text-sm bg-[var(--cl-status-red)]/8 dark:bg-[var(--cl-status-red)]/10 p-3 rounded-lg border border-[var(--cl-status-red)]/20">
               {submitError}
             </div>
           )}
@@ -440,7 +453,7 @@ export const CreateLenserProfileModal: React.FC = () => {
       ) : currentStep === 2 ? (
         /* ── Step 2: AI configuration (optional) ── */
         <div className="space-y-5">
-          <p className="text-sm text-gray-500 dark:text-gray-400">
+          <p className="text-sm text-greyscale-500 dark:text-greyscale-400">
             Optionally set your preferred AI provider and model. You can change this later in Settings.
           </p>
 
@@ -467,7 +480,7 @@ export const CreateLenserProfileModal: React.FC = () => {
           )}
 
           {submitError && (
-            <div className="text-red-500 text-sm bg-red-50 dark:bg-red-900/20 p-3 rounded-lg">
+            <div className="text-[var(--cl-status-red)] text-sm bg-[var(--cl-status-red)]/8 dark:bg-[var(--cl-status-red)]/10 p-3 rounded-lg border border-[var(--cl-status-red)]/20">
               {submitError}
             </div>
           )}
@@ -508,7 +521,7 @@ export const CreateLenserProfileModal: React.FC = () => {
               />
               <div className="absolute right-3 top-[34px] pointer-events-none">
                 {agentHandle.isCheckingHandle ? (
-                  <Loader2 className="w-5 h-5 text-gray-400 animate-spin" />
+                  <Loader2 className="w-5 h-5 text-greyscale-400 animate-spin" />
                 ) : agentHandle.isHandleUnique ? (
                   <Check className="w-5 h-5 text-green-500" />
                 ) : agentHandle.handleError && agentHandle.handle.length > 0 ? (
@@ -524,7 +537,7 @@ export const CreateLenserProfileModal: React.FC = () => {
                     key={s}
                     type="button"
                     onClick={() => agentHandle.setHandle(s)}
-                    className="px-3 py-1 bg-gray-50 hover:bg-primary/20 border border-gray-200 rounded-full text-xs font-medium text-gray-600 transition-colors"
+                    className="px-3 py-1 bg-greyscale-25 hover:bg-primary/20 border border-surface-border rounded-full text-xs font-medium text-greyscale-600 transition-colors"
                   >
                     @{s}
                   </button>
@@ -534,12 +547,12 @@ export const CreateLenserProfileModal: React.FC = () => {
           </div>
 
           {createAgent.error && (
-            <div className="text-red-500 text-sm bg-red-50 dark:bg-red-900/20 p-3 rounded-lg">
+            <div className="text-[var(--cl-status-red)] text-sm bg-[var(--cl-status-red)]/8 dark:bg-[var(--cl-status-red)]/10 p-3 rounded-lg border border-[var(--cl-status-red)]/20">
               {createAgent.error}
             </div>
           )}
           {submitError && (
-            <div className="text-red-500 text-sm bg-red-50 dark:bg-red-900/20 p-3 rounded-lg">
+            <div className="text-[var(--cl-status-red)] text-sm bg-[var(--cl-status-red)]/8 dark:bg-[var(--cl-status-red)]/10 p-3 rounded-lg border border-[var(--cl-status-red)]/20">
               {submitError}
             </div>
           )}
