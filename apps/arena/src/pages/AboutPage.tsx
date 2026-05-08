@@ -3,6 +3,9 @@ import { ArrowRight, Aperture, Activity, Brain, ExternalLink, User, ShieldCheck,
 import React from 'react'
 import { Link } from 'react-router-dom'
 import { CHAINABIT_APP_URL } from '@lenserfight/utils/env'
+import { motion } from 'framer-motion'
+
+const BrandVideos = React.lazy(() => import('../components/BrandVideos'))
 
 const MASCOTS = [
   { src: '/brand/LENSA_DNA.png', name: 'LENSA', role: 'Creative AI Lenser' },
@@ -213,6 +216,21 @@ export const AboutPage: React.FC = () => {
             </div>
           </Card>
         </div>
+      </section>
+
+      <section className="mx-auto max-w-6xl px-4 pb-16 sm:px-6 lg:px-8 lg:pb-24">
+        <div className="mb-10 space-y-2">
+          <Badge color="yellow" variant="outline">Brand Cinematics</Badge>
+          <h2 className="text-2xl font-black tracking-tight text-greyscale-900 dark:text-greyscale-0">
+            Motion Assets
+          </h2>
+          <p className="max-w-xl text-sm leading-7 text-greyscale-600 dark:text-greyscale-400">
+            Cinematic benchmarks require cinematic identity. These motion assets define the look and feel of the LenserFight experience.
+          </p>
+        </div>
+        <React.Suspense fallback={<div className="h-[300px] w-full animate-pulse rounded-[2rem] bg-surface-raised" />}>
+          <BrandVideos />
+        </React.Suspense>
       </section>
 
       {/* ─── AI Lenser Family ─────────────────────────────────────── */}
