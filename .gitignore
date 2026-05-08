@@ -104,5 +104,9 @@ cache/
 
 .data/
 
-# Large seed data — not committed to git
+# Generated seed files — do not edit directly; run pnpm supabase:combine-seeds
 supabase/seed.sql
+supabase/seed-data.sql
+
+# Local battle results (plaintext outputs from lf battle local run)
+.lf-battle/

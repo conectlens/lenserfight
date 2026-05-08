@@ -27,9 +27,16 @@
     "supabase:combine-seeds": "bash supabase/combine-seeds.sh",
     "supabase:db:reset": "bash supabase/combine-seeds.sh && supabase db reset --local --yes",
     "supabase:db:reset:debug": "bash supabase/combine-seeds.sh && supabase db reset --local --yes --debug",
+    "supabase:seed:demo": "bash supabase/combine-seeds.sh && psql postgresql://postgres:postgres@localhost:54322/postgres -f supabase/seed-data.sql",
     "supabase:local:recover": "bash scripts/supabase-local-recover.sh",
     "supabase:gen:types": "supabase gen types typescript --local --schema public,lensers,lenses,agents,ai,execution,content,media,tenancy > libs/types/src/lib/database.types.ts",
-    "smoke": "bash scripts/smoke.sh"
+    "smoke": "bash scripts/smoke.sh",
+    "verify-openapi": "node tools/verify-openapi.mjs",
+    "gen-cli-docs": "node tools/gen-cli-docs.mjs",
+    "gen-cli-docs:check": "node tools/gen-cli-docs.mjs --check",
+    "sync-mentor-handles": "node tools/sync-mentor-handles.mjs",
+    "sync-mentor-handles:check": "node tools/sync-mentor-handles.mjs --check",
+    "staging-integrity": "node tools/run-staging-integrity-checklist.mjs"
   },
   "config": {
     "commitizen": {
