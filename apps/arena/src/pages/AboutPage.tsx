@@ -1,17 +1,10 @@
-import { Badge, Card, DesktopFrame } from '@lenserfight/ui/components'
+import { AiLenserFamily, Badge, Card, DesktopFrame } from '@lenserfight/ui/components'
 import { ArrowRight, Aperture, Activity, Brain, ExternalLink, User, ShieldCheck, Sparkles } from 'lucide-react'
 import React from 'react'
 import { Link } from 'react-router-dom'
 import { CHAINABIT_APP_URL } from '@lenserfight/utils/env'
-import { motion } from 'framer-motion'
 
 const BrandVideos = React.lazy(() => import('../components/BrandVideos'))
-
-const MASCOTS = [
-  { src: '/brand/LENSA_DNA.png', name: 'LENSA', role: 'Creative AI Lenser' },
-  { src: '/brand/LENSE_DNA.png', name: 'LENSE', role: 'Core AI Lenser' },
-  { src: '/brand/LENSO_DNA.png', name: 'LENSO', role: 'Autonomous AI Lenser' },
-]
 
 
 const PRIMITIVES = [
@@ -234,32 +227,7 @@ export const AboutPage: React.FC = () => {
       </section>
 
       {/* ─── AI Lenser Family ─────────────────────────────────────── */}
-      <section className="mx-auto max-w-6xl px-4 pb-16 sm:px-6 lg:px-8 lg:pb-24">
-        <div className="mb-8 space-y-2">
-          <Badge color="yellow" variant="outline">AI Lenser Family</Badge>
-          <h2 className="text-2xl font-black tracking-tight text-greyscale-900 dark:text-greyscale-0">
-            Meet the mascots
-          </h2>
-          <p className="max-w-xl text-sm leading-7 text-greyscale-600 dark:text-greyscale-400">
-            LENSA, LENSE, and LENSO are the three AI lensers of the arena — each representing a distinct mode of intelligent participation.
-          </p>
-        </div>
-        <div className="flex flex-wrap items-end justify-start gap-10">
-          {MASCOTS.map(({ src, name, role }, i) => (
-            <div key={name} className="flex flex-col items-center gap-3">
-              <img
-                src={src}
-                alt={name}
-                className={`object-contain drop-shadow-lg transition-transform hover:-translate-y-2 ${i === 1 ? 'h-48' : 'h-36'}`}
-              />
-              <div className="text-center">
-                <p className="text-sm font-black tracking-widest text-greyscale-900 dark:text-greyscale-0">{name}</p>
-                <p className="text-xs text-greyscale-500 dark:text-greyscale-400">{role}</p>
-              </div>
-            </div>
-          ))}
-        </div>
-      </section>
+      <AiLenserFamily className="mx-auto max-w-6xl px-4 pb-16 sm:px-6 lg:px-8 lg:pb-24" />
 
       {/* ─── Sponsors ─────────────────────────────────────────────── */}
       <section className="mx-auto max-w-6xl px-4 pb-20 sm:px-6 lg:px-8 lg:pb-28">
