@@ -21,7 +21,7 @@ function mermaidFencePlugin(md: any) {
   }
 }
 
-const REPO_BLOB_BASE = 'https://github.com/connectlens/lenserfight-web/blob/main'
+const REPO_BLOB_BASE = 'https://github.com/conectlens/lenserfight/blob/main'
 const CROSS_TREE_TOP_DIRS = ['libs', 'supabase', 'apps', 'tools', 'docs']
 
 /**
@@ -237,16 +237,6 @@ export default defineConfig({
             ],
           },
           {
-            text: 'Agentlar ve İş Akışları',
-            items: [
-              { text: 'Genel Bakış (EN)', link: '/connected-lenses/overview' },
-              { text: 'Etki Alanı Modeli (EN)', link: '/connected-lenses/domain-model' },
-              { text: 'Agent Takımları (EN)', link: '/connected-lenses/agent-teams' },
-              { text: 'İş Akışı Yürütme (EN)', link: '/connected-lenses/workflow-execution' },
-              { text: 'Onaylar (TR)', link: '/tr/connected-lenses/approvals' },
-            ],
-          },
-          {
             text: 'Nasıl Yapılır',
             items: [
               { text: 'Entegrasyonlar', link: '/tr/how-to/integrations/index' },
@@ -261,6 +251,7 @@ export default defineConfig({
               { text: 'Savaşlar', link: '/tr/reference/battles/index' },
               { text: 'Platform ve API', link: '/tr/reference/platform-api/api-overview' },
               { text: 'Veritabanı', link: '/tr/reference/database/schema-overview' },
+              { text: 'İç Referanslar', link: '/reference/internals/overview' },
             ],
           },
           {
@@ -276,16 +267,16 @@ export default defineConfig({
           },
         ],
         sidebar: {
-          // ── Agentlar ve İş Akışları ──────────────────────────────────────────
-          '/tr/connected-lenses/': [
+          // ── İç Referanslar ───────────────────────────────────────────────────
+          '/tr/reference/internals/': [
             {
-              text: 'ConnectedLenses',
+              text: 'İç Referanslar',
               items: [
-                { text: 'Onaylar (TR)', link: '/tr/connected-lenses/approvals' },
-                { text: 'Genel Bakış (EN)', link: '/connected-lenses/overview' },
-                { text: 'Etki Alanı Modeli (EN)', link: '/connected-lenses/domain-model' },
-                { text: 'Agent Takımları (EN)', link: '/connected-lenses/agent-teams' },
-                { text: 'İş Akışı Yürütme (EN)', link: '/connected-lenses/workflow-execution' },
+                { text: 'Onaylar (TR)', link: '/tr/reference/internals/approvals' },
+                { text: 'Genel Bakış (EN)', link: '/reference/internals/overview' },
+                { text: 'Etki Alanı Modeli (EN)', link: '/reference/internals/domain-model' },
+                { text: 'Agent Takımları (EN)', link: '/reference/internals/agent-teams' },
+                { text: 'İş Akışı Yürütme (EN)', link: '/reference/internals/workflow-execution' },
               ],
             },
           ],
@@ -700,7 +691,7 @@ export default defineConfig({
     },
 
     socialLinks: [
-      { icon: 'github', link: 'https://github.com/connectlens/lenserfight' },
+      { icon: 'github', link: 'https://github.com/conectlens/lenserfight' },
     ],
 
     nav: [
@@ -712,16 +703,6 @@ export default defineConfig({
           { text: 'Walkthroughs', link: '/tutorials/walkthroughs/using-the-web-app' },
           { text: 'Agents & Automation', link: '/tutorials/agent-walkthroughs/create-your-first-agent' },
           { text: 'Battle Walkthroughs', link: '/tutorials/battle-walkthroughs/your-first-battle' },
-        ],
-      },
-      {
-        text: 'Agents & Workflows',
-        items: [
-          { text: 'Overview', link: '/connected-lenses/overview' },
-          { text: 'Domain Model', link: '/connected-lenses/domain-model' },
-          { text: 'Agent Teams', link: '/connected-lenses/agent-teams' },
-          { text: 'Workflow Execution', link: '/connected-lenses/workflow-execution' },
-          { text: 'Scheduling', link: '/connected-lenses/scheduling' },
         ],
       },
       {
@@ -743,6 +724,7 @@ export default defineConfig({
           { text: 'Platform API', link: '/reference/platform-api/api-overview' },
           { text: 'Database', link: '/reference/database/schema-overview' },
           { text: 'Connectors', link: '/reference/connectors/index' },
+          { text: 'Internals', link: '/reference/internals/overview' },
         ],
       },
       {
@@ -762,27 +744,27 @@ export default defineConfig({
     outline: [2, 3],
 
     sidebar: {
-      // ── ConnectedLenses ────────────────────────────────────────────────────
-      '/connected-lenses/': [
+      // ── Internals (implementation specs, not user-facing docs) ────────────
+      '/reference/internals/': [
         {
-          text: 'ConnectedLenses',
+          text: 'Internals',
           items: [
-            { text: 'Overview', link: '/connected-lenses/overview' },
-            { text: 'Implementation Audit', link: '/connected-lenses/implementation-audit' },
-            { text: 'Domain Model', link: '/connected-lenses/domain-model' },
-            { text: 'Lens Instructions', link: '/connected-lenses/lens-instructions' },
-            { text: 'Workflow Execution', link: '/connected-lenses/workflow-execution' },
-            { text: 'Agent Teams', link: '/connected-lenses/agent-teams' },
-            { text: 'Scheduling', link: '/connected-lenses/scheduling' },
-            { text: 'Approvals', link: '/connected-lenses/approvals' },
-            { text: 'API Reference', link: '/connected-lenses/api-reference' },
-            { text: 'DTO Reference', link: '/connected-lenses/dto-reference' },
-            { text: 'CLI Reference', link: '/connected-lenses/cli-reference' },
-            { text: 'Evaluations', link: '/connected-lenses/evaluations' },
-            { text: 'Memory Per Agent', link: '/connected-lenses/memory-per-agent' },
-            { text: 'Tools', link: '/connected-lenses/tools' },
-            { text: 'Examples', link: '/connected-lenses/examples' },
-            { text: 'Frontend Integration', link: '/connected-lenses/frontend-integration' },
+            { text: 'Overview', link: '/reference/internals/overview' },
+            { text: 'Implementation Audit', link: '/reference/internals/implementation-audit' },
+            { text: 'Domain Model', link: '/reference/internals/domain-model' },
+            { text: 'Lens Instructions', link: '/reference/internals/lens-instructions' },
+            { text: 'Workflow Execution', link: '/reference/internals/workflow-execution' },
+            { text: 'Agent Teams', link: '/reference/internals/agent-teams' },
+            { text: 'Scheduling', link: '/reference/internals/scheduling' },
+            { text: 'Approvals', link: '/reference/internals/approvals' },
+            { text: 'API Reference', link: '/reference/internals/api-reference' },
+            { text: 'DTO Reference', link: '/reference/internals/dto-reference' },
+            { text: 'CLI Reference', link: '/reference/internals/cli-reference' },
+            { text: 'Evaluations', link: '/reference/internals/evaluations' },
+            { text: 'Memory Per Agent', link: '/reference/internals/memory-per-agent' },
+            { text: 'Tools', link: '/reference/internals/tools' },
+            { text: 'Examples', link: '/reference/internals/examples' },
+            { text: 'Frontend Integration', link: '/reference/internals/frontend-integration' },
           ],
         },
       ],
@@ -800,6 +782,7 @@ export default defineConfig({
             { text: 'CLI: Getting Started (A to Z)', link: '/tutorials/getting-started/cli-getting-started' },
             { text: 'Local File Storage', link: '/tutorials/getting-started/local-file-storage' },
             { text: 'Local Models (Ollama)', link: '/tutorials/getting-started/local-models' },
+            { text: 'Cloud Quickstart', link: '/tutorials/getting-started/cloud-quickstart' },
             { text: 'For Communities', link: '/tutorials/getting-started/for-communities' },
             { text: 'For Organizations', link: '/tutorials/getting-started/for-organizations' },
             { text: 'SaaS Integration', link: '/how-to/integrations/saas-quickstart' },
@@ -853,7 +836,8 @@ export default defineConfig({
           text: 'Battle Walkthroughs',
           items: [
             { text: 'Your First Battle', link: '/tutorials/battle-walkthroughs/your-first-battle' },
-            { text: 'Local Battle Quickstart', link: '/tutorials/battle-walkthroughs/local-battle-quickstart' },
+            { text: 'Battle Launch Guide', link: '/tutorials/battle-walkthroughs/battle-launch-guide' },
+            { text: 'Local Battle Quickstart (Ollama)', link: '/tutorials/battle-walkthroughs/local-battle-quickstart' },
             { text: 'BYOK Cloud Battle Streaming', link: '/tutorials/battle-walkthroughs/byok-cloud-battle' },
             { text: 'Execute a PRIVATE_BATTLE.md', link: '/tutorials/battle-walkthroughs/private-battle-execute' },
           ],
@@ -870,6 +854,7 @@ export default defineConfig({
             { text: 'CLI: Getting Started (A to Z)', link: '/tutorials/getting-started/cli-getting-started' },
             { text: 'Local File Storage', link: '/tutorials/getting-started/local-file-storage' },
             { text: 'Local Models (Ollama)', link: '/tutorials/getting-started/local-models' },
+            { text: 'Cloud Quickstart', link: '/tutorials/getting-started/cloud-quickstart' },
             { text: 'For Communities', link: '/tutorials/getting-started/for-communities' },
             { text: 'For Organizations', link: '/tutorials/getting-started/for-organizations' },
             { text: 'SaaS Integration', link: '/how-to/integrations/saas-quickstart' },
@@ -978,6 +963,16 @@ export default defineConfig({
           text: 'Operations',
           items: [
             { text: 'CLI TUI Dashboard', link: '/how-to/operations/cli-dashboard' },
+            { text: 'Dark Launch', link: '/how-to/dark-launch' },
+            { text: 'Kill Switch', link: '/how-to/kill-switch' },
+          ],
+        },
+      ],
+      '/how-to/automation/': [
+        {
+          text: 'Automation',
+          items: [
+            { text: 'Build Your First Trigger', link: '/how-to/automation/build-your-first-trigger' },
           ],
         },
       ],
@@ -991,11 +986,32 @@ export default defineConfig({
             { text: 'Coding Standards', link: '/how-to/contributors/coding-standards' },
             { text: 'Branching and Versioning', link: '/how-to/contributors/branching' },
             { text: 'Release Process', link: '/how-to/contributors/release-process' },
+            { text: 'Release Checklist', link: '/how-to/contributors/release-checklist' },
             { text: 'OSS Contribution Roadmap', link: '/how-to/contributors/wave-2-plan' },
+            { text: 'Triage Policy', link: '/how-to/contributors/triage-policy' },
+            { text: 'Mentor Rotation', link: '/how-to/contributors/mentor-rotation' },
+            { text: 'Community Pilot Plan', link: '/how-to/contributors/community-pilot-plan' },
             { text: 'Code of Conduct', link: '/how-to/contributors/code-of-conduct' },
             { text: 'Security Policy', link: '/how-to/contributors/security' },
             { text: 'Support', link: '/how-to/contributors/support' },
             { text: 'FAQ', link: '/how-to/contributors/faq' },
+          ],
+        },
+        {
+          text: 'Connector & Adapter Authors',
+          items: [
+            { text: 'Connector SDK Getting Started', link: '/how-to/contributors/connector-sdk-getting-started' },
+            { text: 'Adapter Contribution Guide', link: '/how-to/contributors/adapter-contribution-guide' },
+            { text: 'Adapter Mentorship', link: '/how-to/contributors/adapter-mentorship' },
+          ],
+        },
+        {
+          text: 'Plugin Authors',
+          items: [
+            { text: 'Scoring Plugin Getting Started', link: '/how-to/contributors/scoring-plugin-getting-started' },
+            { text: 'Workflow Template Getting Started', link: '/how-to/contributors/workflow-template-getting-started' },
+            { text: 'Workflow Template Guide', link: '/how-to/contributors/workflow-template-guide' },
+            { text: 'Task Schema Contribution Guide', link: '/how-to/contributors/task-schema-contribution-guide' },
           ],
         },
       ],
@@ -1013,8 +1029,22 @@ export default defineConfig({
             { text: 'Execution Platform', link: '/reference/platform-api/api-overview' },
             { text: 'Database', link: '/reference/database/schema-overview' },
             { text: 'Workflows', link: '/reference/workflows/execution-engine' },
+            { text: 'AI Providers', link: '/reference/ai-providers' },
+            { text: 'AI Models', link: '/reference/ai-models' },
             { text: 'Known Preview Surfaces', link: '/reference/known-preview-surfaces' },
             { text: 'Known Limitations', link: '/reference/known-limitations' },
+            { text: 'Internals', link: '/reference/internals/overview' },
+          ],
+        },
+      ],
+      '/rfcs/': [
+        {
+          text: 'RFCs',
+          items: [
+            { text: 'RFC Process', link: '/rfcs/rfc-process' },
+            { text: 'RFC Template', link: '/rfcs/RFC-TEMPLATE' },
+            { text: 'RFC-0001: Connector Interface', link: '/rfcs/RFC-0001-connector-interface' },
+            { text: 'RFC-0002: Scoring Plugin', link: '/rfcs/RFC-0002-scoring-plugin' },
           ],
         },
       ],
@@ -1051,6 +1081,7 @@ export default defineConfig({
             { text: 'Threads API', link: '/reference/community-api/threads' },
             { text: 'AI Lensers API', link: '/reference/community-api/ai-lensers' },
             { text: 'Providers and Execution', link: '/reference/community-api/providers-and-execution' },
+            { text: 'API Changelog', link: '/reference/community-api/api-changelog' },
           ],
         },
       ],
@@ -1108,7 +1139,11 @@ export default defineConfig({
           text: 'Execution & Runs',
           items: [
             { text: 'Run Commands', link: '/reference/cli/run' },
+            { text: 'Execution Reference', link: '/reference/cli/execution' },
             { text: 'Inspect Commands', link: '/reference/cli/inspect' },
+            { text: 'Schedule Commands', link: '/reference/cli/schedule' },
+            { text: 'Memory Commands', link: '/reference/cli/memory' },
+            { text: 'Approval Commands', link: '/reference/cli/approval' },
             { text: 'Automation CLI', link: '/reference/cli/automation' },
             { text: 'Automation Rules (lf automation)', link: '/reference/cli/automation-rules' },
           ],
@@ -1130,6 +1165,7 @@ export default defineConfig({
           text: 'Battles',
           items: [
             { text: 'Battle Commands', link: '/reference/cli/battle' },
+            { text: 'Battle Moderation', link: '/reference/cli/battle-moderation' },
           ],
         },
       ],
@@ -1156,6 +1192,9 @@ export default defineConfig({
             { text: 'URL Conventions', link: '/reference/platform-api/url-conventions' },
             { text: 'Beta Roadmap', link: '/reference/platform-api/beta-roadmap' },
             { text: 'Capability Mapper', link: '/reference/platform-api/capability-mapper' },
+            { text: 'CLI Reference', link: '/reference/platform-api/cli-reference' },
+            { text: 'Policy Engine', link: '/reference/platform-api/policy-engine' },
+            { text: 'Run Reports', link: '/reference/platform-api/run-reports' },
             { text: 'Security', link: '/reference/platform-api/security' },
           ],
         },
@@ -1206,6 +1245,7 @@ export default defineConfig({
             { text: 'Memory Architecture', link: '/explanation/agents/memory-architecture' },
             { text: 'Tool Sandboxing', link: '/explanation/agents/tool-sandboxing' },
             { text: 'Agent Ecosystem Positioning', link: '/explanation/agents/positioning' },
+            { text: 'Autonomous Agent OS', link: '/explanation/agents/autonomous-agent-os' },
           ],
         },
         {
@@ -1302,6 +1342,9 @@ export default defineConfig({
             { text: 'Workflow Concepts', link: '/explanation/workflows/workflow-concepts' },
             { text: 'Workflow Types', link: '/explanation/workflows/workflow-types' },
             { text: 'Open Source Workflows', link: '/explanation/workflows/open-source-workflows' },
+            { text: 'Workflow Engine Architecture', link: '/explanation/workflows/workflow-engine-architecture' },
+            { text: 'Execution Engine Internals', link: '/explanation/workflows/execution-engine-internals' },
+            { text: 'Code Walk: WorkflowExecutionService', link: '/explanation/workflows/code-walk-workflow-execution-service' },
           ],
         },
       ],
@@ -1320,6 +1363,7 @@ export default defineConfig({
             { text: 'Memory Architecture', link: '/explanation/agents/memory-architecture' },
             { text: 'Tool Sandboxing', link: '/explanation/agents/tool-sandboxing' },
             { text: 'Agent Ecosystem Positioning', link: '/explanation/agents/positioning' },
+            { text: 'Autonomous Agent OS', link: '/explanation/agents/autonomous-agent-os' },
           ],
         },
       ],
@@ -1344,6 +1388,9 @@ export default defineConfig({
             { text: 'Mobile Companion App', link: '/explanation/community/companion-app' },
             { text: 'Open Core Model', link: '/explanation/community/open-core-model' },
             { text: 'OSS Launch Scope', link: '/explanation/community/oss-launch-scope' },
+            { text: 'Governance', link: '/explanation/community/governance' },
+            { text: 'License', link: '/explanation/community/license' },
+            { text: 'Task Schema Governance', link: '/explanation/community/task-schema-governance' },
           ],
         },
       ],

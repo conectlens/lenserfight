@@ -191,6 +191,6 @@ lf execution events <team-run-id>
 
 - [What is an Agent?](/explanation/agents/what-is-an-agent) — Agent types and the adapter model
 - [Executions](/explanation/agents/executions) — How Workflow runs work end-to-end
-- [Connected Lenses: Agent Teams](/connected-lenses/agent-teams) — Full technical specification
-- [Connected Lenses: Approvals](/connected-lenses/approvals) — Approval gate details
+- [Connected Lenses: Agent Teams](/reference/internals/agent-teams) — Full technical specification
+- [Connected Lenses: Approvals](/reference/internals/approvals) — Approval gate details
 - [CLI: lf team](/reference/cli/agent) — Team management commands

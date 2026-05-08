@@ -212,6 +212,6 @@ WHERE source = '<run-id>';
 ## Related
 
 - [Agent Boundaries](/explanation/agents/agent-boundaries) — what gates produce these records
-- [Approvals Reference](/connected-lenses/approvals) — decision walkthrough
-- [Tools Reference](/connected-lenses/tools) — egress classes and invocation flow
-- [Memory Reference](/connected-lenses/memory-per-agent) — profiles, entries, and access logs
+- [Approvals Reference](/reference/internals/approvals) — decision walkthrough
+- [Tools Reference](/reference/internals/tools) — egress classes and invocation flow
+- [Memory Reference](/reference/internals/memory-per-agent) — profiles, entries, and access logs

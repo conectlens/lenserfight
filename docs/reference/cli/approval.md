@@ -7,7 +7,7 @@ description: CLI reference for the approval queue — list pending entries, appr
 
 Resolve approval gates that block autonomous agent runs. The queue is a projection of `agents.team_runs` with `approval_status='pending'`, materialized as `agents.approval_requests_v`.
 
-For the full data model, see [Approvals](/connected-lenses/approvals).
+For the full data model, see [Approvals](/reference/internals/approvals).
 
 ## `lf approval list`
 
@@ -26,7 +26,7 @@ lf approval list --ai-lenser <id> --json
 | `--json` | Output as JSON. |
 
 ::: tip Auto-timeout
-Pending approvals older than `app.approval_timeout_hours` (default 24) are auto-expired by the `expire-stale-approvals` pg_cron job to `approval_status='timed_out'`. See [Timeout behavior](/connected-lenses/approvals#timeout-behavior).
+Pending approvals older than `app.approval_timeout_hours` (default 24) are auto-expired by the `expire-stale-approvals` pg_cron job to `approval_status='timed_out'`. See [Timeout behavior](/reference/internals/approvals#timeout-behavior).
 :::
 
 ## `lf approval approve`
@@ -130,4 +130,4 @@ Before running the RPC, the CLI does a best-effort PostgREST count to preview ho
 
 ## Webhook (preview)
 
-Setting `app.approval_webhook_url` causes every newly-created pending approval to fire a best-effort POST with payload version `1`. See [Pending-approval webhook](/connected-lenses/approvals#pending-approval-webhook) for the payload contract and delivery semantics.
+Setting `app.approval_webhook_url` causes every newly-created pending approval to fire a best-effort POST with payload version `1`. See [Pending-approval webhook](/reference/internals/approvals#pending-approval-webhook) for the payload contract and delivery semantics.

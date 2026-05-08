@@ -261,4 +261,4 @@ The scratchpad resets between runs by default. To persist it, configure the memb
 - [Automation Rules](/tutorials/agent-walkthroughs/automation-rules) — Trigger workflows from events, not just manually
 - [Executions & Workflow Runs](/explanation/agents/executions) — How runs work end-to-end
 - [Agent Teams (explanation)](/explanation/agents/agent-teams) — Full concept reference
-- [Approvals (ConnectedLenses)](/connected-lenses/approvals) — Complete approval gate specification
+- [Approvals (ConnectedLenses)](/reference/internals/approvals) — Complete approval gate specification

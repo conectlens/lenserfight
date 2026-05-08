@@ -85,7 +85,7 @@ lenserfight run <subcommand>
 
 Source: [apps/cli/src/commands/run.ts](../../apps/cli/src/commands/run.ts). Subcommand surface roughly mirrors `workflowsService.startRun` and the run-state projection.
 
-The runner integration uses citty and is documented at [docs/reference/cli/run.md](../reference/cli/run).
+The runner integration uses citty and is documented at [docs/reference/cli/run.md](../cli/run).
 
 ## Inspect commands
 
@@ -101,7 +101,7 @@ Source: [apps/cli/src/commands/inspect.ts](../../apps/cli/src/commands/inspect.t
 lenserfight runner <subcommand>
 ```
 
-Source: [apps/cli/src/commands/runner.ts](../../apps/cli/src/commands/runner.ts). Documented at [docs/reference/cli/agent.md](../reference/cli/agent). Subcommands: `connect`, `list`, `view`, `enable`, `remove`, `test`, `types`.
+Source: [apps/cli/src/commands/runner.ts](../../apps/cli/src/commands/runner.ts). Documented at [docs/reference/cli/agent.md](../cli/agent). Subcommands: `connect`, `list`, `view`, `enable`, `remove`, `test`, `types`.
 
 These are agent **runner** commands — registering an external runner (e.g. local Ollama, a remote MCP server) for an Agent Lenser. They are **not** team management commands.
 
@@ -258,4 +258,4 @@ When adding a ConnectedLenses-related CLI command:
 - [API reference](./api-reference)
 - [DTO reference](./dto-reference)
 - [Workflow execution](./workflow-execution)
-- [Existing CLI docs index](../reference/cli/index)
+- [Existing CLI docs index](../cli/index)
