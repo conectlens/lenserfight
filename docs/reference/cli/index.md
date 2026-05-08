@@ -1,9 +1,10 @@
 # LenserFight CLI
 
-The `lenserfight` CLI, also available as `lf`, is the command hub for local setup, direct execution, community interactions, and platform integrations.
+The `lenserfight` CLI, also available as `lf`, is the command hub for onboarding, lens authoring, runners, battles, invites, and platform operations.
 
 ## Start here
 
+- [Developer Onboarding](/tutorials/getting-started/developer-onboarding) ← zero to first battle
 - [Installation](/tutorials/getting-started/installation)
 - [Quickstart](/tutorials/getting-started/quickstart)
 - [Local Database Setup](/reference/database/local-setup)
@@ -13,20 +14,24 @@ The `lenserfight` CLI, also available as `lf`, is the command hub for local setu
 
 ## Command reference
 
-### Environment & development
+### Onboarding and environment
 
 | Command | Description |
 |---------|-------------|
-| `lf init` | Initialise a local LenserFight environment |
-| `lf setup` | Run the deterministic onboarding wizard |
-| `lf doctor` | Check local setup health |
+| `lf setup` | Journey checklist (default) or env setup (`--mode local/cloud`) |
+| `lf setup --interactive` | Guided next-step prompt |
+| `lf status` | Auth, environment, and journey state |
+| `lf doctor` | Environment and auth health checks |
+| `lf doctor --check auth` | Token validity |
+| `lf doctor --check api` | API reachability |
+| `lf doctor --check journey` | Journey RPC availability |
+| `lf init` | Initialise a local project config |
 | `lf dev` | Start local services |
 | `lf seed` | Seed the local database |
 | `lf reset` | Reset the local database |
-| `lf status` | Show local environment status |
 | `lf config validate/export/import` | Validate or move safe config state |
 
-See [Development Commands](dev.md).
+See [lf setup](setup.md), [lf status](status.md), [Development Commands](dev.md).
 
 ### Authentication
 
@@ -66,7 +71,7 @@ See [Lens Commands](lens.md).
 
 See [Lens Discovery Commands](lenses-discovery.md).
 
-### Connect, connectors & invite
+### Connect and connectors
 
 | Command | Description |
 |---------|-------------|
@@ -78,10 +83,25 @@ See [Lens Discovery Commands](lenses-discovery.md).
 | `lf connectors rotate <slug>` | Rotate a connector's service token |
 | `lf connectors test <slug>` | Verify a connector |
 | `lf connectors remove <slug>` | Remove a connector |
-| `lf invite @username` | Invite a user to a community |
-| `lf invite list/revoke/status` | Manage invitations |
 
-See [Connectors & Invite Commands](connectors.md).
+See [Connectors Commands](connectors.md).
+
+### Battle invites and sharing
+
+| Command | Description |
+|---------|-------------|
+| `lf invite create --battle <id> --type public` | Public battle invite link |
+| `lf invite create --battle <id> --type qr` | QR invite |
+| `lf invite create --battle <id> --type private --target @alice` | Private invite |
+| `lf invite qr --battle <id>` | Render QR in terminal |
+| `lf invite stats --battle <id>` | Click / scan / accept stats |
+| `lf invite list --battle <id>` | List battle invites |
+| `lf invite send <target>` | Send a community invite |
+| `lf invite status <id>` | Check community invite status |
+| `lf invite revoke <id>` | Revoke a community invite |
+| `lf invite pending` | List pending community invites |
+
+See [lf invite](invite.md).
 
 ### Communities (browse and manage)
 
@@ -214,6 +234,9 @@ This is the recommended pattern for CI/CD, backend scripts, and SaaS integration
 ## Related
 
 - [CLI Overview](cli-reference.md)
+- [lf setup](setup.md)
+- [lf status](status.md)
+- [lf invite](invite.md)
+- [Developer Onboarding](/tutorials/getting-started/developer-onboarding)
 - [Token Reference](/reference/platform-api/tokens)
-- [SaaS Integration Quickstart](/how-to/integrations/saas-quickstart)
 - [Execution Modes](execution-modes.md)
