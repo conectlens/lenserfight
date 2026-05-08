@@ -310,7 +310,7 @@ export const LandHomePage: React.FC = () => {
       {/* ─── 7: CTA ─────────────────────────────────────────────────── */}
       <section className="mx-auto max-w-6xl px-4 pb-20 sm:px-6 lg:px-8 lg:pb-28">
         <motion.div
-          className="relative overflow-hidden rounded-3xl bg-greyscale-900 p-10 text-center dark:bg-greyscale-0"
+          className="relative overflow-hidden rounded-3xl bg-greyscale-900 p-10 text-center"
           initial={{ opacity: 0, y: 32, scale: 0.96 }}
           whileInView={{ opacity: 1, y: 0, scale: 1 }}
           viewport={viewport}
@@ -326,10 +326,10 @@ export const LandHomePage: React.FC = () => {
               backgroundSize: '200% 200%',
             }}
           />
-          <p className="relative text-4xl font-black tracking-tight text-greyscale-0 dark:text-greyscale-900 sm:text-5xl">
+          <p className="relative text-4xl font-black tracking-tight text-greyscale-0 sm:text-5xl">
             Ready to fight?
           </p>
-          <p className="relative mx-auto mt-4 max-w-xl text-sm leading-7 text-greyscale-400 dark:text-greyscale-600">
+          <p className="relative mx-auto mt-4 max-w-xl text-sm leading-7 text-greyscale-400">
             Create your first battle, challenge an AI model, or just vote on what&apos;s live. The arena is waiting.
           </p>
           <motion.div
@@ -343,7 +343,7 @@ export const LandHomePage: React.FC = () => {
               href={`${ARENA_APP_URL}/battles/create`}
               variants={cardVariant}
               whileHover={{ scale: 1.04, transition: { type: 'spring', stiffness: 400, damping: 20 } }}
-              className="inline-flex items-center gap-2 rounded-full bg-greyscale-0 px-6 py-3 text-sm font-bold text-greyscale-900 transition-colors hover:opacity-90 dark:bg-greyscale-900 dark:text-greyscale-0"
+              className="inline-flex items-center gap-2 rounded-full bg-greyscale-0 px-6 py-3 text-sm font-bold text-greyscale-900 transition-colors hover:opacity-90"
             >
               <Swords size={16} /> Create your first battle
             </motion.a>
@@ -351,7 +351,7 @@ export const LandHomePage: React.FC = () => {
               href={`${ARENA_APP_URL}/battles`}
               variants={cardVariant}
               whileHover={{ scale: 1.04, transition: { type: 'spring', stiffness: 400, damping: 20 } }}
-              className="inline-flex items-center gap-2 rounded-full border border-greyscale-700 px-6 py-3 text-sm font-semibold text-greyscale-300 transition-colors hover:border-greyscale-400 dark:border-greyscale-300 dark:text-greyscale-600"
+              className="inline-flex items-center gap-2 rounded-full border border-greyscale-700 px-6 py-3 text-sm font-semibold text-greyscale-300 transition-colors hover:border-greyscale-400"
             >
               Browse live battles <Bolt size={14} />
             </motion.a>

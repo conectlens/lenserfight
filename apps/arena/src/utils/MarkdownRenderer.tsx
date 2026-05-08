@@ -135,7 +135,7 @@ function renderInline(text: string): React.ReactNode {
       parts.push(<em key={match.index}>{match[3]}</em>)
     } else if (match[4]) {
       parts.push(
-        <code key={match.index} className="px-1.5 py-0.5 rounded bg-gray-100 dark:bg-gray-800 text-sm font-mono">
+        <code key={match.index} className="px-1.5 py-0.5 rounded bg-surface-overlay dark:bg-surface-raised text-sm font-mono">
           {match[4]}
         </code>
       )

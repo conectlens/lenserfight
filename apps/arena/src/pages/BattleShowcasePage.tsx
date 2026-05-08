@@ -122,7 +122,7 @@ export function BattleShowcasePage() {
           <div className="mt-6 flex flex-wrap justify-center gap-3">
             <a
               href={`${ARENA_APP_URL}/battles/create`}
-              className="inline-flex items-center gap-2 rounded-full bg-greyscale-900 px-5 py-3 text-sm font-bold text-greyscale-0 transition-colors hover:opacity-90 dark:bg-greyscale-0 dark:text-greyscale-900"
+              className="inline-flex items-center gap-2 rounded-full bg-greyscale-900 px-5 py-3 text-sm font-bold text-greyscale-0 transition-colors hover:opacity-90 dark:bg-surface-interactive dark:text-greyscale-0"
             >
               Create a battle <ArrowRight size={15} />
             </a>
