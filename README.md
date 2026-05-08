@@ -34,8 +34,8 @@ As of Phase 10 (alpha), the connector SDK is available under [`@lenserfight/adap
 Use `pnpm` as the canonical package manager for this repository.
 
 ```bash
-git clone https://github.com/connectlens/lenserfight-web.git
-cd lenserfight-web
+git clone https://github.com/conectlens/lenserfight.git
+cd lenserfight
 pnpm install --frozen-lockfile
 pnpm supabase start
 pnpm supabase:db:reset

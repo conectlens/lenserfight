@@ -164,7 +164,7 @@ export const seoService = {
       ? `${stats.promptsCount} lenses, ${stats.threadsCount} threads.`
       : 'Active Lenser community member.'
     const pageUrl = `${FORUM_HOST}/lenser/${lenser.handle}`
-    const desc = `Check out ${lenser.display_name}'s profile on LenserFight. ${role}. ${statText} Follow for top-tier AI lenses, LLM strategies, and ConnectLens ecosystem contributions.`
+    const desc = `Check out ${lenser.display_name}'s profile on LenserFight. ${role}. ${statText} Follow for top-tier AI lenses, LLM strategies, and ConectLens ecosystem contributions.`
 
     return {
       title: `${lenser.display_name} (@${lenser.handle}) - ${role} | ${SITE_NAME}`,

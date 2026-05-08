@@ -229,10 +229,10 @@ export const SettingsPage: React.FC = () => {
       render: (item) => (
         <span
           className={`inline-flex px-2 py-0.5 rounded-full text-xs font-medium border ${item.product_tag === 'bug'
-              ? 'bg-red-50 dark:bg-red-900/30 text-red-600 dark:text-red-400 border-red-100 dark:border-red-800'
-              : item.product_tag === 'feature'
-                ? 'bg-purple-50 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400 border-purple-100 dark:border-purple-800'
-                : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 border-gray-200 dark:border-gray-600'
+            ? 'bg-red-50 dark:bg-red-900/30 text-red-600 dark:text-red-400 border-red-100 dark:border-red-800'
+            : item.product_tag === 'feature'
+              ? 'bg-purple-50 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400 border-purple-100 dark:border-purple-800'
+              : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 border-gray-200 dark:border-gray-600'
             }`}
         >
           {getTagLabel(item.product_tag)}
@@ -284,8 +284,8 @@ export const SettingsPage: React.FC = () => {
               key={t}
               onClick={() => navigate(`/settings/${t}`)}
               className={`w-full text-left px-4 py-2.5 rounded-lg text-sm font-medium transition-colors ${activeTab === t
-                  ? 'bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-white'
-                  : 'text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-gray-200'
+                ? 'bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-white'
+                : 'text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-gray-200'
                 }`}
             >
               {tabLabel(t)}
@@ -325,7 +325,7 @@ export const SettingsPage: React.FC = () => {
           {activeTab === 'account' && (
             <div>
               <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-2">
-                ConnectLens Account
+                ConectLens Account
               </h2>
               <p className="text-sm text-gray-500 dark:text-gray-400 mb-8 border-b border-gray-100 dark:border-gray-800 pb-6">
                 Manage your account credentials and basic information.
@@ -378,7 +378,7 @@ export const SettingsPage: React.FC = () => {
                     className="w-full px-4 py-2.5 rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-gray-500 dark:text-gray-400"
                   />
                   <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">
-                    This is the name used for account recovery, access ConnectLens products and
+                    This is the name used for account recovery, access ConectLens products and
                     platforms, stored in identity provider.
                   </p>
                 </div>
@@ -559,17 +559,15 @@ export const SettingsPage: React.FC = () => {
                     <button
                       type="button"
                       onClick={() => setFormData((prev) => ({ ...prev, visibility: 'public' }))}
-                      className={`flex items-center gap-3 p-4 border rounded-xl transition-all ${
-                        formData.visibility === 'public'
+                      className={`flex items-center gap-3 p-4 border rounded-xl transition-all ${formData.visibility === 'public'
                           ? 'border-primary bg-primary/5 ring-1 ring-primary'
                           : 'border-gray-200 dark:border-gray-700'
-                      }`}
+                        }`}
                     >
-                      <div className={`p-2 rounded-full ${
-                        formData.visibility === 'public'
+                      <div className={`p-2 rounded-full ${formData.visibility === 'public'
                           ? 'bg-primary/20 text-gray-900'
                           : 'bg-gray-100 dark:bg-gray-700 text-gray-500'
-                      }`}>
+                        }`}>
                         <Eye size={20} />
                       </div>
                       <div className="text-left">
@@ -585,17 +583,15 @@ export const SettingsPage: React.FC = () => {
                     <button
                       type="button"
                       onClick={() => setFormData((prev) => ({ ...prev, visibility: 'private' }))}
-                      className={`flex items-center gap-3 p-4 border rounded-xl transition-all ${
-                        formData.visibility === 'private'
+                      className={`flex items-center gap-3 p-4 border rounded-xl transition-all ${formData.visibility === 'private'
                           ? 'border-primary bg-primary/5 ring-1 ring-primary'
                           : 'border-gray-200 dark:border-gray-700'
-                      }`}
+                        }`}
                     >
-                      <div className={`p-2 rounded-full ${
-                        formData.visibility === 'private'
+                      <div className={`p-2 rounded-full ${formData.visibility === 'private'
                           ? 'bg-primary/20 text-gray-900'
                           : 'bg-gray-100 dark:bg-gray-700 text-gray-500'
-                      }`}>
+                        }`}>
                         <Lock size={20} />
                       </div>
                       <div className="text-left">

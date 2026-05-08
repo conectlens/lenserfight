@@ -21,7 +21,7 @@ hero:
       link: /tutorials/getting-started/installation
     - theme: alt
       text: GitHub
-      link: https://github.com/connectlens/lenserfight
+      link: https://github.com/conectlens/lenserfight
 
 features:
   - title: Battle from your laptop

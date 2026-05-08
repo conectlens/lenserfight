@@ -1,5 +1,5 @@
 /**
- * ConnectLens Typography Tokens
+ * ConectLens Typography Tokens
  *
  * Based on Inter typeface with a 7-level type scale.
  */

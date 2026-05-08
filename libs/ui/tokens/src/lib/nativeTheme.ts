@@ -1,5 +1,5 @@
 /**
- * ConnectLens Native Theme Utilities
+ * ConectLens Native Theme Utilities
  *
  * Pure (non-React) resolver functions that map a color scheme to
  * the correct token objects. Consumed by NativeThemeContext.tsx.
@@ -28,42 +28,42 @@ import { fontSizeN, fontWeightN, fontFamilyN, lineHeightN } from './typographyNa
 export type ColorScheme = 'light' | 'dark'
 
 export interface NativeThemeTokens {
-  colorScheme:  ColorScheme
-  surface:      NativeSurface
-  status:       NativeStatus
-  colors:       typeof nativeColors
-  spacing:      typeof spacingN
-  radius:       typeof radiusN
-  fontSize:     typeof fontSizeN
-  fontWeight:   typeof fontWeightN
-  fontFamily:   typeof fontFamilyN
-  lineHeight:   typeof lineHeightN
-  elevation:    (level: NativeElevationLevel) => NativeElevationSpec
+  colorScheme: ColorScheme
+  surface: NativeSurface
+  status: NativeStatus
+  colors: typeof nativeColors
+  spacing: typeof spacingN
+  radius: typeof radiusN
+  fontSize: typeof fontSizeN
+  fontWeight: typeof fontWeightN
+  fontFamily: typeof fontFamilyN
+  lineHeight: typeof lineHeightN
+  elevation: (level: NativeElevationLevel) => NativeElevationSpec
   elevationInset: (level: NativeInsetElevationLevel) => NativeElevationSpec
-  gapN:         typeof gapN
+  gapN: typeof gapN
   /** Active color — navy in light mode, yellow in dark mode */
-  active:       string
+  active: string
 }
 
 export function resolveNativeTheme(colorScheme: ColorScheme): NativeThemeTokens {
-  const isLight  = colorScheme === 'light'
-  const elevMap  = isLight ? nativeElevationLight  : nativeElevationDark
+  const isLight = colorScheme === 'light'
+  const elevMap = isLight ? nativeElevationLight : nativeElevationDark
   const insetMap = isLight ? nativeElevationInsetLight : nativeElevationInsetDark
 
   return {
     colorScheme,
-    surface:      isLight ? semanticNativeSurfaceLight : semanticNativeSurfaceDark,
-    status:       semanticNativeStatus,
-    colors:       nativeColors,
-    spacing:      spacingN,
-    radius:       radiusN,
-    fontSize:     fontSizeN,
-    fontWeight:   fontWeightN,
-    fontFamily:   fontFamilyN,
-    lineHeight:   lineHeightN,
-    elevation:    (level) => elevMap[level],
+    surface: isLight ? semanticNativeSurfaceLight : semanticNativeSurfaceDark,
+    status: semanticNativeStatus,
+    colors: nativeColors,
+    spacing: spacingN,
+    radius: radiusN,
+    fontSize: fontSizeN,
+    fontWeight: fontWeightN,
+    fontFamily: fontFamilyN,
+    lineHeight: lineHeightN,
+    elevation: (level) => elevMap[level],
     elevationInset: (level) => insetMap[level],
     gapN,
-    active:       isLight ? nativeColors.primaryNavy : nativeColors.primaryYellow,
+    active: isLight ? nativeColors.primaryNavy : nativeColors.primaryYellow,
   }
 }

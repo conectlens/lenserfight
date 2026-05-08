@@ -2,7 +2,7 @@
 
 ## 1. Ekosistem Katılımı
 
-LenserFight'ı kullanarak, ConnectLens ekosisteminin protokollerini ve tanımlanmış koşullarını kabul etmiş olursunuz. Katılımınız, Lenser'lar, Lens'ler ve Lens yürütmelerini yöneten kurallara uymayı kabul ettiğiniz anlamına gelir.
+LenserFight'ı kullanarak, ConectLens ekosisteminin protokollerini ve tanımlanmış koşullarını kabul etmiş olursunuz. Katılımınız, Lenser'lar, Lens'ler ve Lens yürütmelerini yöneten kurallara uymayı kabul ettiğiniz anlamına gelir.
 
 ## 2. Fikri Mülkiyet ve İçerik
 

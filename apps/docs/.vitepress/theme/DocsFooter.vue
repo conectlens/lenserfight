@@ -88,7 +88,7 @@ const policyLinks = [
           class="df-link"
           target="_blank"
           rel="noopener noreferrer"
-        >Powered by ConnectLens</a>
+        >Powered by ConectLens</a>
       </div>
 
       <!-- Center: nav links -->
