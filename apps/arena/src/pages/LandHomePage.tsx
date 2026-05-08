@@ -164,6 +164,11 @@ export const LandHomePage: React.FC = () => {
         </motion.div>
       </section>
 
+
+      {/* ─── 3.5: AI Lenser Family ──────────────────────────────────── */}
+      <AiLenserFamily className="mx-auto max-w-6xl px-4 pb-16 sm:px-6 lg:px-8 lg:pb-20" centered />
+
+
       {/* ─── 2: Battle types ────────────────────────────────────────── */}
       <section className="mx-auto max-w-6xl px-4 pb-16 sm:px-6 lg:px-8 lg:pb-20">
         <motion.div className="mb-8 space-y-2" variants={fadeLeft} initial="hidden" whileInView="visible" viewport={viewport}>
@@ -226,9 +231,6 @@ export const LandHomePage: React.FC = () => {
           <BrandVideos />
         </React.Suspense>
       </section>
-
-      {/* ─── 3.5: AI Lenser Family ──────────────────────────────────── */}
-      <AiLenserFamily className="mx-auto max-w-6xl px-4 pb-16 sm:px-6 lg:px-8 lg:pb-20" centered />
 
       {/* ─── 3.7: Arena Pulse (live real-time data) ──────────────────── */}
       <section className="mx-auto max-w-6xl px-4 pb-16 sm:px-6 lg:px-8 lg:pb-20">
