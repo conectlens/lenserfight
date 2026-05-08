@@ -158,4 +158,4 @@ The two gates are independent. You can approve the run but reject a specific too
 
 - [Audit Trail Examples](/tutorials/agent-walkthroughs/audit-trail-examples) — full SQL patterns for both gate types
 - [Agent Boundaries](/explanation/agents/agent-boundaries) — what agents can and cannot do at each autonomy level
-- [Approvals Reference](/connected-lenses/approvals) — decision walkthrough with modify-and-approve
+- [Approvals Reference](/reference/internals/approvals) — decision walkthrough with modify-and-approve

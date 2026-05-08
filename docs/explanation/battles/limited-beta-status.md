@@ -96,4 +96,4 @@ Use this channel when an automated control fails to contain a real-world inciden
 - [Battle Integrity Checklist](/how-to/battles/battle-integrity-checklist) — required checks before enabling cloud battles.
 - [Known Preview Surfaces](/reference/known-preview-surfaces) — controlling flags, gates, and rollback per surface.
 - [OSS Launch Scope](/explanation/community/oss-launch-scope) — Limited Beta gates and how to participate.
-- [Approvals](/connected-lenses/approvals) — webhook payload shape and delivery semantics.
+- [Approvals](/reference/internals/approvals) — webhook payload shape and delivery semantics.

@@ -297,5 +297,5 @@ lf schedule update <schedule-id> \
 
 - [Automation Rules](/tutorials/agent-walkthroughs/automation-rules) — Trigger workflows from platform events, not just time
 - [Manage Agent Teams](/tutorials/agent-walkthroughs/manage-agent-teams) — Assign teams to scheduled workflows
-- [Scheduling (ConnectedLenses spec)](/connected-lenses/scheduling) — Full technical specification
-- [Approvals](/connected-lenses/approvals) — Approval gate mechanics
+- [Scheduling (ConnectedLenses spec)](/reference/internals/scheduling) — Full technical specification
+- [Approvals](/reference/internals/approvals) — Approval gate mechanics

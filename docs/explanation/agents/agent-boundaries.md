@@ -114,7 +114,7 @@ See [Kill Switch](/how-to/kill-switch) for the full reference.
 
 ## Related
 
-- [Approvals](/connected-lenses/approvals) — how approval decisions work
-- [Tools](/connected-lenses/tools) — egress classes and invocation gating
+- [Approvals](/reference/internals/approvals) — how approval decisions work
+- [Tools](/reference/internals/tools) — egress classes and invocation gating
 - [Kill Switch](/how-to/kill-switch) — per-agent and platform-level halt
 - [Audit Trail Examples](/tutorials/agent-walkthroughs/audit-trail-examples) — query the gate decisions after they happen
