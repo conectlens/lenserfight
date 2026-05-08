@@ -1,48 +1,72 @@
-# Shared seeds (relative to supabase/), then private cloud seeds.
-# Order matters. Run: pnpm supabase:combine-seeds
+# Phase T5: seed manifest (cold-boot required + opt-in demo data).
 #
-# core.languages MUST load before lensers.profiles (trigger creates preferences.language → FK).
-seeds/private/01_core_languages.sql
-seeds/02_auth_users.sql
-seeds/03_lenser_profiles.sql
+# This manifest produces seed.sql and is applied by `supabase db reset`.
+# The schema-required block MUST stay small enough to run cold in well under
+# 30 seconds. Demo / sample data is clearly marked below and is also included
+# in the combined seed.sql for convenience; skip those sections in CI if you
+# need a faster cold-boot target.
+#
+# Order matters. Run: pnpm supabase:combine-seeds
+
+# ── Lookups the runtime depends on ──────────────────────────────────────────
+# core.languages MUST load before lensers.profiles (preferences trigger FK).
+seeds/01_core_languages.sql
+seeds/01_currencies.sql
+
+# AI provider/model catalog — referenced by FKs from ai_lensers, ai bindings
+# and pricing-aware UI even when no demo lensers are loaded.
 seeds/04_ai_providers.sql
 seeds/04b_ai_models.sql
 seeds/04c_ai_model_pricing.sql
 seeds/07_ai_models.sql
+seeds/08_ai_model_pricing.sql
+
+# Lens type system + execution origin lookup
+seeds/15_lens_tools.sql
+seeds/16_origin_types.sql
+
+# ── System policy / flag rows ──────────────────────────────────────────────
+seeds/10_credit_valuation_policy.sql
+seeds/11_execution_margin_policies.sql
+seeds/12_store_products.sql
+seeds/17_xp_ruleset.sql
+
+# ── Demo accounts and profiles (opt-in) ───────────────────────────────────
+seeds/02_auth_users.sql
+seeds/03_lenser_profiles.sql
 seeds/07_ai_lensers.sql
 seeds/13_workspaces.sql
 seeds/14_media_objects.sql
-seeds/15_lens_tools.sql
-seeds/16_origin_types.sql
+
+# ── Lens / workflow demo content (opt-in) ─────────────────────────────────
 seeds/40_lens_chain_templates.sql
 seeds/41_developer_lens_templates.sql
 seeds/42_production_workflow_templates.sql
 seeds/43_ai_agent_lens_bindings.sql
 seeds/44_community_profiles.sql
 seeds/46_connectors.sql
-seeds/private/01_currencies.sql
-seeds/private/03_regions.sql
-seeds/private/04_subregions.sql
-seeds/private/05_battles.sql
-seeds/private/05_countries.sql
-seeds/private/05_organizations.sql
+seeds/48_workflow_templates.sql
+
+# ── Geo lookups (large; kept demo-only) ───────────────────────────────────
+seeds/03_regions.sql
+seeds/04_subregions.sql
+seeds/05_countries.sql
+seeds/05_organizations.sql
+seeds/06_states.sql
+seeds/07_cities_01.sql
+seeds/07_cities_02.sql
+seeds/07_cities_03.sql
+seeds/07_cities_04.sql
+seeds/07_cities_05.sql
+seeds/07_cities_06.sql
+seeds/07_cities_07.sql
+seeds/07_cities_08.sql
+seeds/07_cities_09.sql
+seeds/07_cities_10.sql
+
+# ── Demo battles / analytics / benchmark (opt-in) ─────────────────────────
+seeds/05_battles.sql
 seeds/49_analytics_phase15.sql
-seeds/private/06_analytics.sql
-seeds/private/06_states.sql
-seeds/private/07_cities_01.sql
-seeds/private/07_cities_02.sql
-seeds/private/07_cities_03.sql
-seeds/private/07_cities_04.sql
-seeds/private/07_cities_05.sql
-seeds/private/07_cities_06.sql
-seeds/private/07_cities_07.sql
-seeds/private/07_cities_08.sql
-seeds/private/07_cities_09.sql
-seeds/private/07_cities_10.sql
-seeds/private/08_ai_model_pricing.sql
-seeds/private/10_credit_valuation_policy.sql
-seeds/private/11_execution_margin_policies.sql
-seeds/private/12_store_products.sql
-seeds/private/17_xp_ruleset.sql
-seeds/private/30_scale_xp.sql
-seeds/private/40_benchmark.sql
+seeds/06_analytics.sql
+seeds/30_scale_xp.sql
+seeds/40_benchmark.sql
