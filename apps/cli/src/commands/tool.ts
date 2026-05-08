@@ -98,7 +98,7 @@ const register = defineCommand({
           p_permission_level: fm.permission_level ?? 'read',
           p_risk_level: fm.risk_level ?? 'safe',
           p_cost_level: fm.cost_level ?? 'low',
-          p_schema: fm.schema ?? {},
+          p_schema: fm.input_schema ?? {},
         },
         { requireAuth: true },
       )

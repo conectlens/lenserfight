@@ -86,7 +86,8 @@
     "recharts": "^3.8.1",
     "rehype-raw": "^7.0.0",
     "sonner": "^1.5.0",
-    "tslib": "^2.3.0"
+    "tslib": "^2.3.0",
+    "yaml": "^2.8.3"
   },
   "devDependencies": {
     "@babel/core": "^7.14.5",
