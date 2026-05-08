@@ -2,9 +2,9 @@ import React from 'react'
 import { Badge } from './Badge'
 
 const MASCOTS = [
+  { src: '/brand/LENSO_DNA.png', name: 'LENSO', role: 'Autonomous AI Lenser' },
   { src: '/brand/LENSA_DNA.png', name: 'LENSA', role: 'Creative AI Lenser' },
   { src: '/brand/LENSE_DNA.png', name: 'LENSE', role: 'Core AI Lenser' },
-  { src: '/brand/LENSO_DNA.png', name: 'LENSO', role: 'Autonomous AI Lenser' },
 ]
 
 export interface AiLenserFamilyProps {
@@ -21,7 +21,7 @@ export const AiLenserFamily: React.FC<AiLenserFamilyProps> = ({ className, cente
           Meet the mascots
         </h2>
         <p className={`${centered ? 'mx-auto ' : ''}max-w-xl text-sm leading-7 text-greyscale-600 dark:text-greyscale-400`}>
-          LENSA, LENSE, and LENSO are the AI lensers of the arena — your guides through every battle.
+          LENSO, LENSA, and LENSE are the AI lensers of the arena — your guides through every battle.
         </p>
       </div>
       <div className={`flex flex-wrap items-center ${centered ? 'justify-center' : 'justify-start'} gap-10`}>
