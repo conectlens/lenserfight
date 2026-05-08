@@ -1,6 +1,6 @@
 import { useAuth } from '@lenserfight/features/auth'
 import { useLensesFeed } from '@lenserfight/features/home'
-import { Button, PageHeader, SEOHead } from '@lenserfight/ui/components'
+import { Button, HelpButton, PageHeader, SEOHead } from '@lenserfight/ui/components'
 import { buildAuthReturnUrl } from '@lenserfight/utils/dom'
 import { AUTH_BASE_URL } from '@lenserfight/utils/env'
 import type { LensViewModel } from '@lenserfight/types'
@@ -168,14 +168,17 @@ export const LensesPage: React.FC = () => {
         description="Find, share, and remix the best AI lenses from the community."
         className="sm:mb-8 mt-2"
         actions={
-          <Button
-            onClick={handleCreateClick}
-            className="w-auto px-4 gap-2 flex items-center whitespace-nowrap"
-          >
-            <Plus size={18} />
-            <span className="hidden sm:inline">Create Lens</span>
-            <span className="sm:hidden">Create</span>
-          </Button>
+          <>
+            <HelpButton path="/tutorials/walkthroughs/create-a-lens" />
+            <Button
+              onClick={handleCreateClick}
+              className="w-auto px-4 gap-2 flex items-center whitespace-nowrap"
+            >
+              <Plus size={18} />
+              <span className="hidden sm:inline">Create Lens</span>
+              <span className="sm:hidden">Create</span>
+            </Button>
+          </>
         }
       />
 
