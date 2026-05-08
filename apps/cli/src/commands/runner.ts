@@ -34,6 +34,16 @@ const connect = defineCommand({
       description: 'JSON config string or path to config file',
       default: '{}',
     },
+    gateway: {
+      type: 'boolean',
+      description: 'Route this runner through the local gateway',
+      default: false,
+    },
+    device: {
+      type: 'string',
+      description: 'Device UUID to bind this runner to (requires an approved device)',
+      default: '',
+    },
   },
   async run({ args }) {
     if (!ADAPTER_TYPES.includes(args.type)) {
@@ -55,6 +65,10 @@ const connect = defineCommand({
       return;
     }
 
+    if (args.gateway) {
+      config = { ...config, gateway: true };
+    }
+
     try {
       const runnerId = await callRpc<string>('fn_runner_register', {
         p_name: args.name,
@@ -62,6 +76,15 @@ const connect = defineCommand({
         p_config: config,
       }, { requireAuth: true });
       consola.success('Runner registered: %s', runnerId);
+
+      if (args.device) {
+        await callRpc<string>('fn_runner_bind_device', {
+          p_runner_id: runnerId,
+          p_device_id: args.device,
+        }, { requireAuth: true });
+        consola.success('Runner bound to device: %s', args.device);
+        consola.info('Use `lf gateway status` to verify the binding.');
+      }
     } catch (err) {
       handleError(err);
     }

@@ -340,12 +340,125 @@ const toolUsage = defineCommand({
 })
 
 // ---------------------------------------------------------------------------
+// inspect submission — trust checklist for a battle submission
+// ---------------------------------------------------------------------------
+const submissionTrust = defineCommand({
+  meta: {
+    name: 'submission',
+    description: 'Show trust evaluation checklist for a battle submission.',
+  },
+  args: {
+    id: {
+      type: 'positional',
+      description: 'Submission UUID',
+      required: true,
+    },
+    json: {
+      type: 'boolean',
+      description: 'Output as JSON',
+      default: false,
+    },
+  },
+  async run({ args }) {
+    try {
+      const trust = await callRpc<{
+        submission_id: string;
+        trust_level: string;
+        factors: Record<string, boolean>;
+        attestation_id: string | null;
+        evaluated_at: string;
+      }>('fn_get_submission_trust', { p_submission_id: args.id });
+
+      if (!trust) {
+        consola.warn('No trust evaluation found for submission %s', args.id);
+        return;
+      }
+
+      if (args.json) { printJson(trust); return; }
+
+      consola.info('Trust Level: %s', trust.trust_level.toUpperCase());
+      consola.info('Evaluated:   %s', new Date(trust.evaluated_at).toLocaleString());
+      consola.info('');
+      consola.info('Checks:');
+      for (const [key, passed] of Object.entries(trust.factors ?? {})) {
+        consola.info('  %s %s', passed ? '[✓]' : '[✗]', key);
+      }
+    } catch (err) {
+      handleError(err);
+    }
+  },
+});
+
+// ---------------------------------------------------------------------------
+// inspect execution — attestation detail for an execution run
+// ---------------------------------------------------------------------------
+const executionDetail = defineCommand({
+  meta: {
+    name: 'execution',
+    description: 'Show attestation and trust metadata for an execution run.',
+  },
+  args: {
+    id: {
+      type: 'positional',
+      description: 'Execution run UUID',
+      required: true,
+    },
+    json: {
+      type: 'boolean',
+      description: 'Output as JSON',
+      default: false,
+    },
+  },
+  async run({ args }) {
+    try {
+      const attestation = await callRpc<{
+        id: string;
+        run_id: string;
+        device_id: string | null;
+        signed: boolean;
+        gateway_verified: boolean;
+        device_trusted: boolean;
+        policy_passed: boolean;
+        workflow_hash: string | null;
+        lens_hash: string | null;
+        agent_config_hash: string | null;
+        runner_version: string | null;
+        cli_version: string | null;
+        created_at: string;
+      }>('fn_execution_attestation_get', { p_run_id: args.id });
+
+      if (!attestation) {
+        consola.info('No attestation recorded for this execution run.');
+        consola.info('Tip: join a battle with --runner local to generate execution attestations.');
+        return;
+      }
+
+      if (args.json) { printJson(attestation); return; }
+
+      consola.info('Run ID:          %s', attestation.run_id);
+      consola.info('Device ID:       %s', attestation.device_id ?? '—');
+      consola.info('Signed:          %s', attestation.signed ? 'yes' : 'no');
+      consola.info('Gateway verified:%s', attestation.gateway_verified ? 'yes' : 'no');
+      consola.info('Device trusted:  %s', attestation.device_trusted ? 'yes' : 'no');
+      consola.info('Policy passed:   %s', attestation.policy_passed ? 'yes' : 'no');
+      consola.info('Workflow hash:   %s', attestation.workflow_hash ?? '—');
+      consola.info('Lens hash:       %s', attestation.lens_hash ?? '—');
+      consola.info('Runner version:  %s', attestation.runner_version ?? '—');
+      consola.info('CLI version:     %s', attestation.cli_version ?? '—');
+      consola.info('Recorded at:     %s', new Date(attestation.created_at).toLocaleString());
+    } catch (err) {
+      handleError(err);
+    }
+  },
+});
+
+// ---------------------------------------------------------------------------
 // Root command (also keeps backward-compatible flat mode)
 // ---------------------------------------------------------------------------
 export default defineCommand({
   meta: {
     name: 'inspect',
-    description: 'Inspect a battle: contenders, submissions, votes, scorecards, diff.',
+    description: 'Inspect battles, submissions, trust, and execution attestations.',
   },
   subCommands: {
     contenders,
@@ -354,5 +467,7 @@ export default defineCommand({
     scorecards,
     diff,
     'tool-usage': toolUsage,
+    submission: submissionTrust,
+    execution: executionDetail,
   },
 });
