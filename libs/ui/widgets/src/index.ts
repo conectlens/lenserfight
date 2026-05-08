@@ -13,3 +13,7 @@ export * from './lib/ScoreBar'
 export * from './lib/AnimatedOutput'
 export * from './lib/VSIndicator'
 export * from './lib/LeaderboardPreview'
+// Trusted local execution & device trust
+export * from './lib/DeviceTrustIndicator'
+export * from './lib/VerifiedLocalBadge'
+export * from './lib/TrustMetadataPanel'

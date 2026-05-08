@@ -54,6 +54,31 @@ export type XPRuleKey =
   | 'WORKFLOW_LIKE_RECEIVED'
   | 'WORKFLOW_SAVED'
   | 'WORKFLOW_SAVE_RECEIVED'
+  // Lens & Workflow Marketplace (existing DB rules missing from this type)
+  | 'LENS_CREATED'
+  | 'LENS_FORKED'
+  | 'LENS_FORK_RECEIVED'
+  | 'WORKFLOW_CREATED'
+  | 'FOLLOW_RECEIVED'
+  // Platform — Agents & Teams
+  | 'AGENT_CREATED'
+  | 'AGENT_TEAM_CREATED'
+  // Platform — Local Devices & Runners
+  | 'DEVICE_REGISTERED'
+  | 'DEVICE_VERIFIED'
+  | 'RUNNER_CONNECTED'
+  // Platform — Referrals
+  | 'INVITE_SENT'
+  | 'INVITE_ACCEPTED'
+  // Platform — Content Publishing
+  | 'WORKFLOW_PUBLISHED'
+  | 'AGENT_USED_BY_OTHER_USER'
+  // Battles — Execution Quality & Trust
+  | 'BATTLE_SUBMISSION_COMPLETED'
+  | 'VERIFIED_LOCAL_EXECUTION_COMPLETED'
+  | 'BATTLE_RANKED_TOP_3'
+  | 'BATTLE_RESULT_PUBLISHED'
+  | 'FAIR_EVALUATION_COMPLETED'
 
 export interface XPApp {
   id: string
