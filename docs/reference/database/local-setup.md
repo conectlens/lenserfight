@@ -42,14 +42,30 @@ The first `supabase start` pulls Docker images and may take a few minutes. Subse
 To drop the database, recreate it, run all migrations, and apply seed data:
 
 ```bash
-# Regenerate seed.sql from supabase/seed.manifest + supabase/seeds/*.sql
+# Regenerate seed.sql + seed-data.sql from the two manifests
 pnpm supabase:combine-seeds
 
 # Reset — runs all migrations then applies seed.sql (runs combine first)
 pnpm supabase:db:reset
 ```
 
-This runs every migration in `supabase/migrations/` in order, then `supabase/seed.sql`. Run `pnpm supabase:combine-seeds` whenever you add or rename a file under `supabase/seeds/` and update `supabase/seed.manifest` at the repo root.
+This runs every migration in `supabase/migrations/` in order, then `supabase/seed.sql`. Run `pnpm supabase:combine-seeds` whenever you add or rename a file under `supabase/seeds/` and update either manifest.
+
+### Seed split (Phase T5)
+
+Seeds are split into two files so a cold reset stays fast:
+
+| File | Manifest | Auto-applied? | Contents |
+|------|----------|---------------|----------|
+| `supabase/seed.sql` | `seed.manifest` | Yes (by `db reset`) | Schema-required lookups, AI catalog, system policies, default flags. Designed to run cold in well under 30 seconds. |
+| `supabase/seed-data.sql` | `seed-data.manifest` | No (opt-in) | Demo auth users, sample profiles, lens / workflow templates, geo cities, sample battles, analytics rollups, benchmark fixtures. |
+
+Apply demo data after a reset when you need it:
+
+```bash
+psql postgresql://postgres:postgres@127.0.0.1:54322/postgres \
+  -f supabase/seed-data.sql
+```
 
 ### Guard: private schemas must not appear in OSS migrations
 
