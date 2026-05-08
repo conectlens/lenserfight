@@ -1,0 +1,68 @@
+name: Adapter / Connector Bug
+description: Report a bug in an existing adapter or connector integration.
+labels: ["adapter-bug", "needs-triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Use this template for bugs specific to an adapter or connector implementation (e.g., `http-connector`, `chainabit`, a custom adapter). For general workflow execution failures, use the **Workflow Problem** template instead.
+
+  - type: input
+    id: adapter_name
+    attributes:
+      label: Adapter name
+      description: Which adapter or connector is affected?
+      placeholder: e.g. http-connector, chainabit-execution, my-custom-adapter
+    validations:
+      required: true
+
+  - type: dropdown
+    id: connector_scope
+    attributes:
+      label: Connector scope
+      description: Which part of the connector interface is failing?
+      options:
+        - Request transformation
+        - Response parsing
+        - Auth / key resolution
+        - Streaming / SSE parsing
+        - Scope validation
+        - Other
+    validations:
+      required: true
+
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Reproduction steps
+      description: Minimal steps to reproduce the bug.
+      placeholder: |
+        1. Configure the adapter with ...
+        2. Call lf run exec --byok ... --model ...
+        3. See error ...
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behaviour
+      description: What should happen?
+    validations:
+      required: true
+
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behaviour
+      description: What actually happens? Include error messages or stack traces.
+    validations:
+      required: true
+
+  - type: input
+    id: version
+    attributes:
+      label: LenserFight version / commit
+      placeholder: e.g. main@abc1234 or v0.3.1
+    validations:
+      required: false
