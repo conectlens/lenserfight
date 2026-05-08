@@ -96,4 +96,4 @@ Otomatik bir kontrol gerçek dünya olayını (saldırgan gönderim, bir prompt'
 - [Battle Integrity Checklist](/how-to/battles/battle-integrity-checklist) — bulut savaşları etkinleştirilmeden önce gereken kontroller.
 - [Bilinen Önizleme Yüzeyleri](/tr/reference/known-preview-surfaces) — yüzey başına denetim bayrakları, kapılar ve geri alma.
 - [OSS Lansman Kapsamı](/tr/explanation/community/oss-launch-scope) — Sınırlı Beta kapıları ve nasıl katılınır.
-- [Approvals](/connected-lenses/approvals) — webhook payload şekli ve teslim semantiği.
+- [Approvals](/reference/internals/approvals) — webhook payload şekli ve teslim semantiği.

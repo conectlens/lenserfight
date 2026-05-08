@@ -22,14 +22,14 @@ supabase/seeds/
   NN_your_templates.sql          ← your contribution goes here
 ```
 
-Naming convention: `NN_<topic>_workflow_templates.sql`.
+Naming convention: `NN_{topic}_workflow_templates.sql`.
 
 ## UUID convention
 
 Use a UUID block that doesn't collide with existing seeds. Pick a prefix different from `42000000-`, `48000000-`, etc.:
 
-```
-<prefix>-0001-WWWW-SSSS-000000000001
+```text
+{prefix}-0001-WWWW-SSSS-000000000001
   WWWW = workflow index within this file (0001, 0002, ...)
   SSSS = segment (0001=workflow, 0002=node, 0003=phase, 0004=task)
 ```
@@ -47,7 +47,7 @@ Each workflow row in `lenses.workflows` needs at minimum:
 | `title` | Short, noun-phrase format: "Daily Standup Drafter" |
 | `description` | One sentence: what it does, not how |
 | `is_template` | `true` |
-| `metadata` | JSON with at least `{ "category": "<category>", "difficulty": "beginner|intermediate" }` |
+| `metadata` | JSON with at least `{ "category": "{category}", "difficulty": "beginner|intermediate" }` |
 
 ## Testing locally
 

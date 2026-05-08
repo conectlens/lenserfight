@@ -5,14 +5,14 @@ description: Build, register, and verify a LenserFight scoring plugin against th
 
 # Scoring Plugin — Getting Started
 
-This guide walks through building a new scoring plugin against the `ScoringPluginV1` interface (RFC-0002). For the governance and security boundary, see [RFC-0002: Scoring Plugin](../rfcs/RFC-0002-scoring-plugin.md). For mentor pairings, see [Adapter Mentorship Paths](./adapter-mentorship.md) — the scoring area mentor is `@maintainer-scoring`.
+This guide walks through building a new scoring plugin against the `ScoringPluginV1` interface (RFC-0002). For the governance and security boundary, see [RFC-0002: Scoring Plugin](../../rfcs/RFC-0002-scoring-plugin.md). For mentor pairings, see [Adapter Mentorship Paths](./adapter-mentorship.md) — the scoring area mentor is `@maintainer-scoring`.
 
 ## Prerequisites
 
 - Node.js 22+
 - The monorepo checked out and installable (`pnpm install`).
 - Familiarity with TypeScript and async/await.
-- A read of [RFC-0002](../rfcs/RFC-0002-scoring-plugin.md) — particularly the **Sandboxing and security boundary** section.
+- A read of [RFC-0002](../../rfcs/RFC-0002-scoring-plugin.md) — particularly the **Sandboxing and security boundary** section.
 
 ## 1. Look at the reference plugin
 
@@ -115,6 +115,6 @@ Pin to the versioned symbol (`ScoringPluginV1`) so a future V2 cannot silently c
 
 ## Next steps
 
-- [RFC-0002 Scoring Plugin](../rfcs/RFC-0002-scoring-plugin.md) — interface governance, sandboxing, and the security boundary.
+- [RFC-0002 Scoring Plugin](../../rfcs/RFC-0002-scoring-plugin.md) — interface governance, sandboxing, and the security boundary.
 - [Adapter Mentorship Paths](./adapter-mentorship.md) — how to get a draft PR reviewed by `@maintainer-scoring`.
 - [Word Count plugin reference](../../../examples/scoring/word-count-plugin) — runnable canonical example.

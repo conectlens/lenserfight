@@ -272,7 +272,7 @@ Long-running nodes stream events in real-time via Server-Sent Events. The event 
 ## Related
 
 - [Workflows (concept)](/explanation/lenses/workflows) — What Workflows are and how they compose Lenses
-- [Connected Lenses: Workflow Execution](/connected-lenses/workflow-execution) — Full technical spec
+- [Connected Lenses: Workflow Execution](/reference/internals/workflow-execution) — Full technical spec
 - [Agent Teams](/explanation/agents/agent-teams) — How teams of agents execute workflows
 - [CLI: Execution Commands](/reference/cli/index#run--execution) — Full CLI reference
 - [CLI: Getting Started](/tutorials/getting-started/cli-getting-started) — End-to-end CLI walkthrough
