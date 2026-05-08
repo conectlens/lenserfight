@@ -9,6 +9,14 @@ LenserFight offers two battle execution modes. Choosing the right one depends on
 
 ---
 
+::: info Local battles are Preview
+`lf battle local` commands work without any cloud infrastructure. They are available as **Preview** in Community Edition.
+:::
+
+::: warning Cloud battles are Private Alpha
+Cloud battles, the public arena, BYOK streaming to the web UI, and the ELO leaderboard are **Private Alpha**. They require `VITE_FEATURE_PUBLIC_BATTLES=true` and an access grant. Do not enable this flag in a public environment without completing the [Battle Integrity Checklist](/how-to/battles/battle-integrity-checklist).
+:::
+
 ## The two modes at a glance
 
 | | Local battle | Cloud battle |
@@ -146,6 +154,28 @@ What stays local:
 - Votes
 
 After pushing, the cloud battle is in `draft` state. Use `lf battle open <cloud-id>` to accept contender submissions, then run `lf battle exec <cloud-id> --byok` to execute using your local keys.
+
+---
+
+## Abuse surface and mitigations
+
+Before cloud battles are opened to external users, four abuse categories must be addressed. These are described at the conceptual level here; the operational checklist is in [Battle Integrity Checklist](/how-to/battles/battle-integrity-checklist).
+
+### Spam battles
+
+Lenserrs creating battles with trivial or copy-pasted prompts to farm XP or arena visibility. Mitigation: minimum prompt length, per-lenser daily battle cap, content moderation on submission.
+
+### Vote manipulation
+
+A lenser voting multiple times or voting on their own battle. Mitigation: unique constraint on `(battle_id, lenser_id)` in `battles.votes`, server-side check that the voter is not a contender, IP-level rate limiting on the vote endpoint.
+
+### Prompt injection
+
+A contender embedding instructions in `task_prompt` or `personality_note` that attempt to override the system prompt, exfiltrate keys, or bias the AI judge. Mitigation: `task_prompt` is passed as user-role content only; `personality_note` is length-capped and sanitized; the AI judge receives contender outputs as structured data, not as instructions.
+
+### Provider key leakage
+
+A BYOK key stored in `ai.encrypted_api_keys` being exposed in an API response, log line, or error message. Mitigation: `fn_decrypt_api_key` is service-role only; decrypted keys never written to any DB table or error payload; only `byok_key_ref_id` UUIDs appear in public-facing tables.
 
 ---
 
