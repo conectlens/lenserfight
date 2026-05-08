@@ -1,5 +1,5 @@
 /**
- * ConnectLens Spacing Tokens
+ * ConectLens Spacing Tokens
  *
  * 4px base grid. Token N = N × 4px.
  * Token keys match the numeric scale used in the brand design system.

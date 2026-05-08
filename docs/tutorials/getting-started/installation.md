@@ -16,7 +16,7 @@ The fastest path. No database, no Docker, no environment variables. Data lives i
 ```bash
 # 1. Clone and install
 git clone <repo>
-cd lenserfight-web
+cd lenserfight
 pnpm install
 
 # 2. Create .env.local

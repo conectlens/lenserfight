@@ -1,5 +1,5 @@
 /**
- * ConnectLens Border Tokens
+ * ConectLens Border Tokens
  */
 
 export const borderWidth = {

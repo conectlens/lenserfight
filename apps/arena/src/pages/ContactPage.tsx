@@ -9,14 +9,14 @@ const SUPPORT_CHANNELS = [
     icon: LifeBuoy,
     title: 'General support',
     description: 'Use the community forum or open a question in GitHub Discussions for product help.',
-    href: 'https://github.com/connectlens/lenserfight/discussions',
+    href: 'https://github.com/conectlens/lenserfight/discussions',
     label: 'GitHub Discussions',
   },
   {
     icon: Bug,
     title: 'Bug reports',
     description: 'File a GitHub issue with the affected route, expected behavior, and screenshots.',
-    href: 'https://github.com/connectlens/lenserfight/issues',
+    href: 'https://github.com/conectlens/lenserfight/issues',
     label: 'GitHub Issues',
   },
   {

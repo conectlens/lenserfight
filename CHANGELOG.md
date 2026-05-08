@@ -49,13 +49,13 @@ First public OSS beta tag (Phase 9 — OSS Community Health Sprint).
 - **tooling**: pin Node 22 + pnpm 9 in `package.json` `engines` + `packageManager`; add `.nvmrc`; new `pnpm smoke` end-to-end gate script
 
 ## [Unreleased] - 2026-03-14
-- Merge pull request #19 from connectlens/development
+- Merge pull request #19 from conectlens/development
 - feat: add new Claude skills, agents, and teams, and update Claude configuration and documentation files.
 - docs: update changelog
-- Merge pull request #18 from connectlens/development
+- Merge pull request #18 from conectlens/development
 - feat: Add GitHub Actions workflows for automated changelog updates and Claude AI integration for code review and assistance.
-- Merge pull request #17 from connectlens/development
-- Merge pull request #16 from connectlens/refactor/database-and-app
+- Merge pull request #17 from conectlens/development
+- Merge pull request #16 from conectlens/refactor/database-and-app
 - Refactor: Migrate application features, components, and services into a new modular library structure.
 - feat: Migrate project structure to Nx monorepo, introducing new features like analytics, admin, leaderboard, and generations, while refactoring existing components and utilities.
 - feat: add nx apps/web.
@@ -87,11 +87,11 @@ First public OSS beta tag (Phase 9 — OSS Community Health Sprint).
 - feat: Add initial remote database schema migration.
 - feat: add initial Supabase configuration files and update gitignore rules.
 - chore: Remove mock implementations from various repositories and adapters.
-- Merge branch 'development' of https://github.com/connectlens/lenserfight-web into development
+- Merge branch 'development' of https://github.com/conectlens/lenserfight into development
 - refactor: Standardize AI model identification to use `ai_model_slug` instead of `ai_model_id` and update CDN URLs.
-- Merge pull request #14 from connectlens/development
+- Merge pull request #14 from conectlens/development
 - feat(waiting-list): add authoritative status check with loader and context integration.
-- Merge pull request #13 from connectlens/development
+- Merge pull request #13 from conectlens/development
 - docs(readme): update readme.md file
 - chore(package): add standard-version to the package.json
 - chore(.env): add .env example
@@ -105,9 +105,9 @@ First public OSS beta tag (Phase 9 — OSS Community Health Sprint).
 - fix(reactions): Fix reaction errors.
 - fix(sidebar): Fix compact profile errors.
 - fix(register): Remove preffered language.
-- Merge pull request #12 from connectlens/development
+- Merge pull request #12 from conectlens/development
 - fix(home): Fix react list unique key error.
-- Merge pull request #11 from connectlens/refactor/10-shared-links
+- Merge pull request #11 from conectlens/refactor/10-shared-links
 - refactor(shared-links): Remove Edge Functions and use RPC functions.
 - refactor(repository): Refactor all repositories by RPC functions to avoid data leaks and improve data security.
 - fix(xp): Remove xp award system completely.
@@ -117,7 +117,7 @@ First public OSS beta tag (Phase 9 — OSS Community Health Sprint).
 - fix(error): PSQL security updates  to SELECT are applied.
 - fix(error): PSQL security updates  to SELECT are applied.
 - refactor(database): Remove database.types.
-- Merge pull request #7 from connectlens/development
+- Merge pull request #7 from conectlens/development
 - fix(xp): Move xp system to the database to improve security and performance.
 - feat: implement strict route matching in Sidebar for improved navigation accuracy
 - feat: prevent app unmounting by avoiding isLoading state change during login and registration
@@ -132,9 +132,9 @@ First public OSS beta tag (Phase 9 — OSS Community Health Sprint).
 - fix(header): remove console.log for lenser in Header component
 - feat(admin): implement admin dashboard with analytics, user management, and feedback handling
 - fix(prompts): update savePrompt to use toggleReaction for saved state management
-- Merge pull request #6 from connectlens/development
+- Merge pull request #6 from conectlens/development
 - feat(auth): integrate captcha support for login, registration, and password reset flows
-- Merge pull request #5 from connectlens/development
+- Merge pull request #5 from conectlens/development
 - Refactor: Update Lenser context and service methods to use handles instead of IDs
 - feat(prompts): refactor usePromptDetailController and PromptDetailPage for improved analytics and state management
 - fix(prompts): update copyPrompt to use toggleReaction for recording reactions
@@ -150,14 +150,14 @@ First public OSS beta tag (Phase 9 — OSS Community Health Sprint).
 - refactor(grant_xp): Remove grant_xp function implementation
 - feat: Implement XP system with daily login rewards and profile updates
 - feat(shareService): Refactor link creation to support idempotency with createOrGetSharedLink
-- Merge pull request #4 from connectlens/development
+- Merge pull request #4 from conectlens/development
 - feat(theme): Enhance theme management and sidebar state persistence
 - feat(actionMenu): Implement dropdown positioning and portal rendering for action menu
 - feat(theme): Initialize dark theme completely.
-- Merge pull request #3 from connectlens/development
+- Merge pull request #3 from conectlens/development
 - feat(settings): Enhance user display name retrieval in settings page
 - feat(loginPage): Update OAuth button layout and functionality for Google and GitHub sign-in
-- Merge pull request #2 from connectlens/development
+- Merge pull request #2 from conectlens/development
 - feat(waitingList): Deprecate waiting list logic and integrate with Lenser profile
 - feat(threadInteraction): Optimize reaction fetching by batching user reactions and utilizing denormalized reaction totals
 - feat(home): Sort top prompts by usage count for better visibility fix(settings): Update account section header and improve metadata description refactor(sidebar): Remove unnecessary background color for sidebar items fix(auth): Rename raw_user_meta_data to user_metadata for consistency fix(threads): Enhance trending tags fetching with error handling and sorting
@@ -171,7 +171,7 @@ First public OSS beta tag (Phase 9 — OSS Community Health Sprint).
 - feat(app): Add Ecosystem, Legal, and Welcome pages with respective components and routing
 - feat(auth): Implement return URL mechanism for login navigation
 - feat(breadcrumbs): Improve display name formatting for better readability
-- Merge pull request #1 from connectlens/development
+- Merge pull request #1 from conectlens/development
 - feat(app): Enhance content moderation with new service and policies
 - feat(app): Integrate SEO strategy to update title and description by pages, fix other errors.
 - fix(footer): Change the wrong title of the link in the footer.
@@ -182,10 +182,10 @@ First public OSS beta tag (Phase 9 — OSS Community Health Sprint).
 - feat(initialize): Update LenserProfile page, Tag Cloud, add share link strategy and functions, update UI/UX components, fix the errors on the modals, add ai generations, ai models, or other required types for AI Generations component.
 - feat(init): Initialize version 2.
 - feat(init): Initialize first version.## [Unreleased] - 2026-03-14
-- Merge pull request #18 from connectlens/development
+- Merge pull request #18 from conectlens/development
 - feat: Add GitHub Actions workflows for automated changelog updates and Claude AI integration for code review and assistance.
-- Merge pull request #17 from connectlens/development
-- Merge pull request #16 from connectlens/refactor/database-and-app
+- Merge pull request #17 from conectlens/development
+- Merge pull request #16 from conectlens/refactor/database-and-app
 - Refactor: Migrate application features, components, and services into a new modular library structure.
 - feat: Migrate project structure to Nx monorepo, introducing new features like analytics, admin, leaderboard, and generations, while refactoring existing components and utilities.
 - feat: add nx apps/web.
@@ -217,11 +217,11 @@ First public OSS beta tag (Phase 9 — OSS Community Health Sprint).
 - feat: Add initial remote database schema migration.
 - feat: add initial Supabase configuration files and update gitignore rules.
 - chore: Remove mock implementations from various repositories and adapters.
-- Merge branch 'development' of https://github.com/connectlens/lenserfight-web into development
+- Merge branch 'development' of https://github.com/conectlens/lenserfight into development
 - refactor: Standardize AI model identification to use `ai_model_slug` instead of `ai_model_id` and update CDN URLs.
-- Merge pull request #14 from connectlens/development
+- Merge pull request #14 from conectlens/development
 - feat(waiting-list): add authoritative status check with loader and context integration.
-- Merge pull request #13 from connectlens/development
+- Merge pull request #13 from conectlens/development
 - docs(readme): update readme.md file
 - chore(package): add standard-version to the package.json
 - chore(.env): add .env example
@@ -235,9 +235,9 @@ First public OSS beta tag (Phase 9 — OSS Community Health Sprint).
 - fix(reactions): Fix reaction errors.
 - fix(sidebar): Fix compact profile errors.
 - fix(register): Remove preffered language.
-- Merge pull request #12 from connectlens/development
+- Merge pull request #12 from conectlens/development
 - fix(home): Fix react list unique key error.
-- Merge pull request #11 from connectlens/refactor/10-shared-links
+- Merge pull request #11 from conectlens/refactor/10-shared-links
 - refactor(shared-links): Remove Edge Functions and use RPC functions.
 - refactor(repository): Refactor all repositories by RPC functions to avoid data leaks and improve data security.
 - fix(xp): Remove xp award system completely.
@@ -247,7 +247,7 @@ First public OSS beta tag (Phase 9 — OSS Community Health Sprint).
 - fix(error): PSQL security updates  to SELECT are applied.
 - fix(error): PSQL security updates  to SELECT are applied.
 - refactor(database): Remove database.types.
-- Merge pull request #7 from connectlens/development
+- Merge pull request #7 from conectlens/development
 - fix(xp): Move xp system to the database to improve security and performance.
 - feat: implement strict route matching in Sidebar for improved navigation accuracy
 - feat: prevent app unmounting by avoiding isLoading state change during login and registration
@@ -262,9 +262,9 @@ First public OSS beta tag (Phase 9 — OSS Community Health Sprint).
 - fix(header): remove console.log for lenser in Header component
 - feat(admin): implement admin dashboard with analytics, user management, and feedback handling
 - fix(prompts): update savePrompt to use toggleReaction for saved state management
-- Merge pull request #6 from connectlens/development
+- Merge pull request #6 from conectlens/development
 - feat(auth): integrate captcha support for login, registration, and password reset flows
-- Merge pull request #5 from connectlens/development
+- Merge pull request #5 from conectlens/development
 - Refactor: Update Lenser context and service methods to use handles instead of IDs
 - feat(prompts): refactor usePromptDetailController and PromptDetailPage for improved analytics and state management
 - fix(prompts): update copyPrompt to use toggleReaction for recording reactions
@@ -280,14 +280,14 @@ First public OSS beta tag (Phase 9 — OSS Community Health Sprint).
 - refactor(grant_xp): Remove grant_xp function implementation
 - feat: Implement XP system with daily login rewards and profile updates
 - feat(shareService): Refactor link creation to support idempotency with createOrGetSharedLink
-- Merge pull request #4 from connectlens/development
+- Merge pull request #4 from conectlens/development
 - feat(theme): Enhance theme management and sidebar state persistence
 - feat(actionMenu): Implement dropdown positioning and portal rendering for action menu
 - feat(theme): Initialize dark theme completely.
-- Merge pull request #3 from connectlens/development
+- Merge pull request #3 from conectlens/development
 - feat(settings): Enhance user display name retrieval in settings page
 - feat(loginPage): Update OAuth button layout and functionality for Google and GitHub sign-in
-- Merge pull request #2 from connectlens/development
+- Merge pull request #2 from conectlens/development
 - feat(waitingList): Deprecate waiting list logic and integrate with Lenser profile
 - feat(threadInteraction): Optimize reaction fetching by batching user reactions and utilizing denormalized reaction totals
 - feat(home): Sort top prompts by usage count for better visibility fix(settings): Update account section header and improve metadata description refactor(sidebar): Remove unnecessary background color for sidebar items fix(auth): Rename raw_user_meta_data to user_metadata for consistency fix(threads): Enhance trending tags fetching with error handling and sorting
@@ -301,7 +301,7 @@ First public OSS beta tag (Phase 9 — OSS Community Health Sprint).
 - feat(app): Add Ecosystem, Legal, and Welcome pages with respective components and routing
 - feat(auth): Implement return URL mechanism for login navigation
 - feat(breadcrumbs): Improve display name formatting for better readability
-- Merge pull request #1 from connectlens/development
+- Merge pull request #1 from conectlens/development
 - feat(app): Enhance content moderation with new service and policies
 - feat(app): Integrate SEO strategy to update title and description by pages, fix other errors.
 - fix(footer): Change the wrong title of the link in the footer.
