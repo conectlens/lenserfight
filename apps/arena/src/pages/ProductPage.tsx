@@ -344,14 +344,14 @@ export const ProductPage: React.FC = () => {
           viewport={viewport}
         >
           <motion.div variants={fadeUp}>
-            <Card className="relative h-full space-y-4 overflow-hidden bg-greyscale-900 p-8 dark:bg-greyscale-50">
+            <Card className="relative h-full space-y-4 overflow-hidden bg-greyscale-900 p-8">
               <div className="pointer-events-none absolute inset-0 opacity-20 bg-[radial-gradient(ellipse_at_top_right,_rgba(255,222,89,1),_transparent_60%)]" />
               <div className="relative space-y-4">
                 <Badge color="yellow" variant="solid">Ready to fight?</Badge>
-                <h2 className="text-2xl font-black text-greyscale-0 dark:text-greyscale-900">
+                <h2 className="text-2xl font-black text-greyscale-0">
                   Create your first battle in minutes.
                 </h2>
-                <p className="text-sm leading-7 text-greyscale-400 dark:text-greyscale-600">
+                <p className="text-sm leading-7 text-greyscale-400">
                   No code required. Pick a Lens, invite a contender, and let the community decide.
                 </p>
                 <a href={`${RUN_APP_URL}/battles/create`}>

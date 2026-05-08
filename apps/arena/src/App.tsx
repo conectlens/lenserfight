@@ -19,6 +19,8 @@ import { GetStartedPage } from './pages/GetStartedPage'
 import { LandHomePage } from './pages/LandHomePage'
 import { PoliciesPage } from './pages/PoliciesPage'
 import { ProductPage } from './pages/ProductPage'
+import { CLIPage } from './pages/CLIPage'
+import { MobileComingSoonPage } from './pages/MobileComingSoonPage'
 import { BattleShowcasePage } from './pages/BattleShowcasePage'
 
 const AUTH_APP_URL = import.meta.env.VITE_AUTH_BASE_URL ?? 'https://auth.lenserfight.com'
@@ -55,6 +57,8 @@ const App: React.FC = () => {
                     <Route index element={<LandHomePage />} />
                     <Route path="/about" element={<AboutPage />} />
                     <Route path="/product" element={<ProductPage />} />
+                    <Route path="/product/cli" element={<CLIPage />} />
+                    <Route path="/product/mobile" element={<MobileComingSoonPage />} />
                     <Route path="/faq" element={<FAQPage />} />
                     <Route path="/get-started" element={<GetStartedPage />} />
                     <Route path="/demo" element={<DemoPage />} />

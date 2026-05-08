@@ -5,8 +5,6 @@ interface LogoProps {
   size?: number
   /** Show the wordmark next to the logo mark. Defaults to true. */
   showWordmark?: boolean
-  /** Show the Beta badge next to the logo. Defaults to false. */
-  showBeta?: boolean
   className?: string
 }
 
@@ -17,7 +15,6 @@ interface LogoProps {
 export const Logo: React.FC<LogoProps> = ({
   size = 28,
   showWordmark = true,
-  showBeta = false,
   className = '',
 }) => {
   return (
@@ -50,11 +47,7 @@ export const Logo: React.FC<LogoProps> = ({
         </span>
       )}
 
-      {showBeta && (
-        <span className="absolute -bottom-2.5 right-0 bg-primary text-gray-900 text-[9px] font-bold px-1.5 py-0.5 rounded border border-yellow-300 shadow-sm leading-none tracking-wide z-10">
-          BETA
-        </span>
-      )}
+
     </span>
   )
 }
