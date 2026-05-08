@@ -66,6 +66,7 @@ export interface LenserfightConfig {
   developerToken?: string;
   developerTokenExpiresAt?: string;
   defaultAdapterId?: string;
+  authBaseUrl?: string;
 }
 
 // ---------------------------------------------------------------------------
@@ -205,6 +206,7 @@ interface EnvValues {
   apiKey?: string;
   developerToken?: string;
   developerTokenExpiresAt?: string;
+  authBaseUrl?: string;
 }
 
 function parseEnvFile(filePath: string): Record<string, string> {
@@ -278,6 +280,10 @@ export function loadEnvConfig(cwd = process.cwd()): EnvValues {
     process.env['LENSERFIGHT_DEVELOPER_TOKEN_EXPIRES_AT'] ||
     file['LENSERFIGHT_DEVELOPER_TOKEN_EXPIRES_AT'];
 
+  const authBaseUrl =
+    process.env['VITE_AUTH_BASE_URL'] ||
+    file['VITE_AUTH_BASE_URL'];
+
   return {
     supabaseUrl: url || undefined,
     cloudApiUrl: cloudApiUrl || undefined,
@@ -291,6 +297,7 @@ export function loadEnvConfig(cwd = process.cwd()): EnvValues {
     apiKey: apiKey || undefined,
     developerToken: developerToken || undefined,
     developerTokenExpiresAt: developerTokenExpiresAt || undefined,
+    authBaseUrl: authBaseUrl || undefined,
   };
 }
 
@@ -342,6 +349,7 @@ export function resolveConfig(cwd = process.cwd()): LenserfightConfig {
       user.developerTokenExpiresAt,
     developerTokenId: user.developerTokenId,
     ollamaBaseUrl: env.ollamaBaseUrl,
+    authBaseUrl: env.authBaseUrl,
     dbPort: project.dbPort,
     apiPort: project.apiPort,
     authToken: user.authToken,
