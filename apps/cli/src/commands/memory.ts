@@ -23,6 +23,18 @@ interface MemoryEntryRow {
   is_redacted?: boolean
 }
 
+interface MemorySearchRow {
+  id: string
+  profile_id: string
+  ai_lenser_id: string
+  scope: string
+  source: string
+  content: string
+  confidence: number
+  created_at: string
+  rank: number
+}
+
 const listProfiles = defineCommand({
   meta: {
     name: 'list-profiles',
@@ -69,19 +81,61 @@ const listProfiles = defineCommand({
   },
 })
 
+interface MemoryWorkflowEntryRow extends MemoryEntryRow {
+  team_run_id: string | null
+}
+
 const listEntries = defineCommand({
   meta: {
     name: 'list-entries',
-    description: 'Read memory entries from a profile (logged as a read access).',
+    description: 'Read memory entries from a profile (or roll up across all runs of a workflow).',
   },
   args: {
-    profile: { type: 'string', description: 'Memory profile ID', required: true },
-    scope: { type: 'string', description: 'Scope filter', default: '' },
+    profile: { type: 'string', description: 'Memory profile ID', default: '' },
+    workflow: {
+      type: 'string',
+      description: 'Workflow UUID — show entries from any team_run of this workflow',
+      default: '',
+    },
+    scope: { type: 'string', description: 'Scope filter (only with --profile)', default: '' },
     limit: { type: 'string', description: 'Max entries', default: '20' },
     json: { type: 'boolean', description: 'Output as JSON', default: false },
   },
   async run({ args }) {
     try {
+      if (!args.profile && !args.workflow) {
+        consola.error('Provide one of --profile <id> or --workflow <id>.')
+        process.exitCode = 1
+        return
+      }
+
+      if (args.workflow) {
+        const limit = Math.max(1, Math.min(500, parseInt(args.limit, 10) || 100))
+        const rows = await callRpc<MemoryWorkflowEntryRow[]>(
+          'fn_get_memory_entries_by_workflow',
+          { p_workflow_id: args.workflow, p_limit: limit },
+          { requireAuth: true },
+        )
+        if (!rows || rows.length === 0) {
+          consola.info('No memory entries for workflow %s', args.workflow)
+          return
+        }
+        if (args.json) return printJson(rows)
+        printTable(
+          ['ID', 'Run', 'Scope', 'Source', 'Conf', 'Content', 'Created'],
+          rows.map((e) => [
+            e.id.slice(0, 8),
+            e.team_run_id ? e.team_run_id.slice(0, 8) : '—',
+            e.scope,
+            e.source,
+            e.confidence.toFixed(2),
+            truncate(e.content, 40),
+            new Date(e.created_at).toLocaleString(),
+          ]),
+        )
+        return
+      }
+
       const entries = await callRpc<MemoryEntryRow[]>(
         'fn_read_memory_entries',
         {
@@ -172,6 +226,51 @@ const redact = defineCommand({
   },
 })
 
+const search = defineCommand({
+  meta: {
+    name: 'search',
+    description: 'Full-text search over memory entries (Postgres english tsvector + GIN).',
+  },
+  args: {
+    query: { type: 'positional', description: 'Search query', required: true },
+    profile: { type: 'string', description: 'Restrict to a single memory profile', default: '' },
+    limit: { type: 'string', description: 'Max results (1-50)', default: '20' },
+    json: { type: 'boolean', description: 'Output as JSON', default: false },
+  },
+  async run({ args }) {
+    try {
+      const limit = Math.max(1, Math.min(50, parseInt(args.limit, 10) || 20))
+      const rows = await callRpc<MemorySearchRow[]>(
+        'fn_search_memory_entries',
+        {
+          p_query: args.query,
+          p_profile_id: args.profile || null,
+          p_limit: limit,
+        },
+        { requireAuth: true },
+      )
+      if (!rows || rows.length === 0) {
+        consola.info('No memory entries match "%s".', args.query)
+        return
+      }
+      if (args.json) return printJson(rows)
+      printTable(
+        ['ID', 'Scope', 'Source', 'Conf', 'Rank', 'Content'],
+        rows.map((r) => [
+          r.id.slice(0, 8),
+          r.scope,
+          r.source,
+          r.confidence.toFixed(2),
+          r.rank.toFixed(3),
+          truncate(r.content, 60),
+        ]),
+      )
+    } catch (err) {
+      handleError(err)
+    }
+  },
+})
+
 const summarize = defineCommand({
   meta: {
     name: 'summarize',
@@ -208,6 +307,7 @@ export default defineCommand({
     'list-profiles': listProfiles,
     'list-entries': listEntries,
     'write-entry': writeEntry,
+    search,
     redact,
     summarize,
   },

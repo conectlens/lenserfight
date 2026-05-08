@@ -1,4 +1,6 @@
 import { defineCommand } from 'citty'
+import localBattleKeyCommand from './config-local-battle-key'
+import webhookSecretCommand from './config-webhook-secret'
 import { readFileSync, writeFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 import Ajv from 'ajv'
@@ -151,5 +153,7 @@ export default defineCommand({
     validate,
     export: exportConfig,
     import: importConfig,
+    'local-battle-key': localBattleKeyCommand,
+    'webhook-secret': webhookSecretCommand,
   },
 })

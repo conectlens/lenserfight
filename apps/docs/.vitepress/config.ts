@@ -223,6 +223,20 @@ export default defineConfig({
           },
         ],
         sidebar: {
+          // ── Agentlar ve İş Akışları ──────────────────────────────────────────
+          '/tr/connected-lenses/': [
+            {
+              text: 'ConnectedLenses',
+              items: [
+                { text: 'Genel Bakış', link: '/tr/connected-lenses/overview' },
+                { text: 'Etki Alanı Modeli', link: '/tr/connected-lenses/domain-model' },
+                { text: 'Agent Takımları', link: '/tr/connected-lenses/agent-teams' },
+                { text: 'İş Akışı Yürütme', link: '/tr/connected-lenses/workflow-execution' },
+                { text: 'Onaylar', link: '/tr/connected-lenses/approvals' },
+              ],
+            },
+          ],
+
           // ── Eğitimler ────────────────────────────────────────────────────────
           '/tr/tutorials/': [
             {
@@ -394,6 +408,8 @@ export default defineConfig({
                 { text: 'Savaşlar', link: '/tr/reference/battles/index' },
                 { text: 'Platform ve API', link: '/tr/reference/platform-api/api-overview' },
                 { text: 'Veritabanı', link: '/tr/reference/database/schema-overview' },
+                { text: 'Bilinen Önizleme Yüzeyleri', link: '/tr/reference/known-preview-surfaces' },
+                { text: 'Bilinen Sınırlamalar', link: '/tr/reference/known-limitations' },
               ],
             },
           ],
@@ -518,6 +534,7 @@ export default defineConfig({
               items: [
                 { text: 'Yerel ve Bulut Savaşları', link: '/tr/explanation/battles/local-vs-cloud-battles' },
                 { text: 'Web Yayını Mimarisi', link: '/tr/explanation/battles/webstreaming-architecture' },
+                { text: 'Sınırlı Beta Durumu', link: '/tr/explanation/battles/limited-beta-status' },
               ],
             },
           ],
@@ -527,6 +544,7 @@ export default defineConfig({
               items: [
                 { text: 'Yerel ve Bulut Savaşları', link: '/tr/explanation/battles/local-vs-cloud-battles' },
                 { text: 'Web Yayını Mimarisi', link: '/tr/explanation/battles/webstreaming-architecture' },
+                { text: 'Sınırlı Beta Durumu', link: '/tr/explanation/battles/limited-beta-status' },
               ],
             },
           ],
@@ -595,6 +613,7 @@ export default defineConfig({
                 { text: 'İçerik Üretici Profilleri', link: '/tr/explanation/community/creator-profiles' },
                 { text: 'Mobil Yardımcı Uygulama', link: '/tr/explanation/community/companion-app' },
                 { text: 'Açık Çekirdek Modeli', link: '/tr/explanation/community/open-core-model' },
+                { text: 'OSS Lansman Kapsamı', link: '/tr/explanation/community/oss-launch-scope' },
               ],
             },
           ],
@@ -658,6 +677,7 @@ export default defineConfig({
           { text: 'Integrations', link: '/how-to/integrations/index' },
           { text: 'Workflow Guides', link: '/how-to/workflows/build-a-lens-chain' },
           { text: 'Battle Guides', link: '/how-to/battles/create-a-battle' },
+          { text: 'Operations', link: '/how-to/operations/cli-dashboard' },
           { text: 'Contributors', link: '/how-to/contributors/contributing' },
         ],
       },
@@ -758,6 +778,9 @@ export default defineConfig({
             { text: 'Create Your First Agent', link: '/tutorials/agent-walkthroughs/create-your-first-agent' },
             { text: 'Manage Agent Teams', link: '/tutorials/agent-walkthroughs/manage-agent-teams' },
             { text: 'CRON Scheduling', link: '/tutorials/agent-walkthroughs/cron-scheduling' },
+            { text: 'Daily Workflow with Approval', link: '/tutorials/agent-walkthroughs/daily-workflow-with-approval' },
+            { text: 'Agent Team + Gated Tool Schedule', link: '/tutorials/agent-walkthroughs/agent-team-scheduled-gated-tool' },
+            { text: 'Audit Trail Examples', link: '/tutorials/agent-walkthroughs/audit-trail-examples' },
             { text: 'Automation Rules', link: '/tutorials/agent-walkthroughs/automation-rules' },
             { text: 'Connectors', link: '/tutorials/agent-walkthroughs/connectors' },
             { text: 'Earning XP & Reputation', link: '/tutorials/agent-walkthroughs/earning-xp' },
@@ -828,6 +851,9 @@ export default defineConfig({
             { text: 'Create Your First Agent', link: '/tutorials/agent-walkthroughs/create-your-first-agent' },
             { text: 'Manage Agent Teams', link: '/tutorials/agent-walkthroughs/manage-agent-teams' },
             { text: 'CRON Scheduling', link: '/tutorials/agent-walkthroughs/cron-scheduling' },
+            { text: 'Daily Workflow with Approval', link: '/tutorials/agent-walkthroughs/daily-workflow-with-approval' },
+            { text: 'Agent Team + Gated Tool Schedule', link: '/tutorials/agent-walkthroughs/agent-team-scheduled-gated-tool' },
+            { text: 'Audit Trail Examples', link: '/tutorials/agent-walkthroughs/audit-trail-examples' },
             { text: 'Automation Rules', link: '/tutorials/agent-walkthroughs/automation-rules' },
             { text: 'Connectors', link: '/tutorials/agent-walkthroughs/connectors' },
             { text: 'Earning XP & Reputation', link: '/tutorials/agent-walkthroughs/earning-xp' },
@@ -843,7 +869,17 @@ export default defineConfig({
             { text: 'Integrations', link: '/how-to/integrations/index' },
             { text: 'Workflow Guides', link: '/how-to/workflows/build-a-lens-chain' },
             { text: 'Battle Guides', link: '/how-to/battles/create-a-battle' },
+            { text: 'Agents', link: '/how-to/agents/build-a-multi-agent-team' },
+            { text: 'Operations', link: '/how-to/operations/cli-dashboard' },
             { text: 'Contributors & Maintainers', link: '/how-to/contributors/contributing' },
+          ],
+        },
+      ],
+      '/how-to/agents/': [
+        {
+          text: 'Agents',
+          items: [
+            { text: 'Build a Multi-Agent Team', link: '/how-to/agents/build-a-multi-agent-team' },
           ],
         },
       ],
@@ -856,6 +892,8 @@ export default defineConfig({
             { text: 'Vote and Judge', link: '/how-to/battles/vote-and-judge' },
             { text: 'Run a Local Battle', link: '/how-to/battles/run-local-battle' },
             { text: 'BYOK Execution', link: '/how-to/battles/byok-execution' },
+            { text: 'Rematch and Series', link: '/how-to/battles/rematch-and-series' },
+            { text: 'Battle Integrity Checklist', link: '/how-to/battles/battle-integrity-checklist' },
           ],
         },
       ],
@@ -878,6 +916,14 @@ export default defineConfig({
           items: [
             { text: 'Build a Lens Chain', link: '/how-to/workflows/build-a-lens-chain' },
             { text: 'Create a Lens Kind', link: '/how-to/workflows/create-a-lens-kind' },
+          ],
+        },
+      ],
+      '/how-to/operations/': [
+        {
+          text: 'Operations',
+          items: [
+            { text: 'CLI TUI Dashboard', link: '/how-to/operations/cli-dashboard' },
           ],
         },
       ],
@@ -913,6 +959,8 @@ export default defineConfig({
             { text: 'Execution Platform', link: '/reference/platform-api/api-overview' },
             { text: 'Database', link: '/reference/database/schema-overview' },
             { text: 'Workflows', link: '/reference/workflows/execution-engine' },
+            { text: 'Known Preview Surfaces', link: '/reference/known-preview-surfaces' },
+            { text: 'Known Limitations', link: '/reference/known-limitations' },
           ],
         },
       ],
@@ -934,6 +982,7 @@ export default defineConfig({
           items: [
             { text: 'Markdown Object Formats', link: '/reference/automation/markdown-objects' },
             { text: 'Agent Exploration API', link: '/reference/automation/agent-exploration-api' },
+            { text: 'Trigger Rule Schema', link: '/reference/automation/trigger-rule-schema' },
           ],
         },
       ],
@@ -981,6 +1030,8 @@ export default defineConfig({
           text: 'Authentication',
           items: [
             { text: 'Auth Commands', link: '/reference/cli/auth' },
+            { text: 'Profile Commands', link: '/reference/cli/profile' },
+            { text: 'Shell Completion', link: '/reference/cli/completion' },
           ],
         },
         {
@@ -996,6 +1047,7 @@ export default defineConfig({
           items: [
             { text: 'Runner / Agent Commands', link: '/reference/cli/agent' },
             { text: 'Agent Lifecycle', link: '/reference/cli/agent-lifecycle' },
+            { text: 'Team Commands', link: '/reference/cli/team' },
           ],
         },
         {
@@ -1004,6 +1056,7 @@ export default defineConfig({
             { text: 'Run Commands', link: '/reference/cli/run' },
             { text: 'Inspect Commands', link: '/reference/cli/inspect' },
             { text: 'Automation CLI', link: '/reference/cli/automation' },
+            { text: 'Automation Rules (lf automation)', link: '/reference/cli/automation-rules' },
           ],
         },
         {
@@ -1032,6 +1085,7 @@ export default defineConfig({
           items: [
             { text: 'Concepts & Lifecycle', link: '/reference/battles/index' },
             { text: 'Schema Reference', link: '/reference/battles/schema' },
+            { text: 'Share-Card API', link: '/reference/battles/share-card-api' },
           ],
         },
       ],
@@ -1092,6 +1146,8 @@ export default defineConfig({
             { text: 'Connect an Agent', link: '/explanation/agents/connect-agent' },
             { text: 'Agent Lifecycle', link: '/explanation/agents/agent-lifecycle' },
             { text: 'Agent Teams', link: '/explanation/agents/agent-teams' },
+            { text: 'Team Coordination', link: '/explanation/agents/team-coordination' },
+            { text: 'Agent Boundaries', link: '/explanation/agents/agent-boundaries' },
             { text: 'Executions & Workflow Runs', link: '/explanation/agents/executions' },
             { text: 'Memory Architecture', link: '/explanation/agents/memory-architecture' },
             { text: 'Tool Sandboxing', link: '/explanation/agents/tool-sandboxing' },
@@ -1124,7 +1180,9 @@ export default defineConfig({
           items: [
             { text: 'Automation Workspace Overview', link: '/explanation/automation/index' },
             { text: 'Automation Triggers', link: '/explanation/automation/triggers' },
+            { text: 'Event Bus Architecture', link: '/explanation/automation/event-bus-architecture' },
             { text: 'Scheduling', link: '/explanation/automation/scheduling' },
+            { text: 'Scheduling v2', link: '/explanation/automation/scheduling-v2' },
           ],
         },
         {
@@ -1135,6 +1193,7 @@ export default defineConfig({
             { text: 'Creator Profiles', link: '/explanation/community/creator-profiles' },
             { text: 'Mobile Companion App', link: '/explanation/community/companion-app' },
             { text: 'Open Core Model', link: '/explanation/community/open-core-model' },
+            { text: 'OSS Launch Scope', link: '/explanation/community/oss-launch-scope' },
           ],
         },
         {
@@ -1143,6 +1202,8 @@ export default defineConfig({
           items: [
             { text: 'Local vs. Cloud Battles', link: '/explanation/battles/local-vs-cloud-battles' },
             { text: 'Webstreaming Architecture', link: '/explanation/battles/webstreaming-architecture' },
+            { text: 'Rematches, Replays, and Series', link: '/explanation/battles/rematches-and-series' },
+            { text: 'Limited Beta Status', link: '/explanation/battles/limited-beta-status' },
           ],
         },
       ],
@@ -1152,6 +1213,8 @@ export default defineConfig({
           items: [
             { text: 'Local vs. Cloud Battles', link: '/explanation/battles/local-vs-cloud-battles' },
             { text: 'Webstreaming Architecture', link: '/explanation/battles/webstreaming-architecture' },
+            { text: 'Rematches, Replays, and Series', link: '/explanation/battles/rematches-and-series' },
+            { text: 'Limited Beta Status', link: '/explanation/battles/limited-beta-status' },
           ],
         },
       ],
@@ -1172,7 +1235,9 @@ export default defineConfig({
           items: [
             { text: 'Automation Workspace Overview', link: '/explanation/automation/index' },
             { text: 'Automation Triggers', link: '/explanation/automation/triggers' },
+            { text: 'Event Bus Architecture', link: '/explanation/automation/event-bus-architecture' },
             { text: 'Scheduling', link: '/explanation/automation/scheduling' },
+            { text: 'Scheduling v2', link: '/explanation/automation/scheduling-v2' },
           ],
         },
       ],
@@ -1195,6 +1260,8 @@ export default defineConfig({
             { text: 'Connect an Agent', link: '/explanation/agents/connect-agent' },
             { text: 'Agent Lifecycle', link: '/explanation/agents/agent-lifecycle' },
             { text: 'Agent Teams', link: '/explanation/agents/agent-teams' },
+            { text: 'Team Coordination', link: '/explanation/agents/team-coordination' },
+            { text: 'Agent Boundaries', link: '/explanation/agents/agent-boundaries' },
             { text: 'Executions & Workflow Runs', link: '/explanation/agents/executions' },
             { text: 'Memory Architecture', link: '/explanation/agents/memory-architecture' },
             { text: 'Tool Sandboxing', link: '/explanation/agents/tool-sandboxing' },
@@ -1222,6 +1289,7 @@ export default defineConfig({
             { text: 'Creator Profiles', link: '/explanation/community/creator-profiles' },
             { text: 'Mobile Companion App', link: '/explanation/community/companion-app' },
             { text: 'Open Core Model', link: '/explanation/community/open-core-model' },
+            { text: 'OSS Launch Scope', link: '/explanation/community/oss-launch-scope' },
           ],
         },
       ],

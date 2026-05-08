@@ -8,6 +8,15 @@ const agentDeprecatedCommand = () =>
     return m.default;
   });
 
+// Default action: `lf` with no subcommand opens the interactive TUI dashboard.
+// citty parses --help before run() fires, so `lf --help` still prints help.
+async function defaultRun(ctx: { rawArgs?: string[] }) {
+  const raw = ctx.rawArgs ?? []
+  if (raw.length > 0) return // citty will hand off to a subcommand
+  const { runDashboard } = await import('./tui/dashboard')
+  await runDashboard()
+}
+
 const main = defineCommand({
   meta: {
     name: 'lenserfight',
@@ -15,6 +24,7 @@ const main = defineCommand({
     description:
       'LenserFight CLI — manage lenses, battles, agents, workflows, and local dev.',
   },
+  run: defaultRun,
   subCommands: {
     init: () => import('./commands/init').then((m) => m.default),
     doctor: () => import('./commands/doctor').then((m) => m.default),
@@ -32,6 +42,7 @@ const main = defineCommand({
     agent: agentDeprecatedCommand,
     inspect: () => import('./commands/inspect').then((m) => m.default),
     battle: () => import('./commands/battle').then((m) => m.default),
+    'battle-moderation': () => import('./commands/battle-moderation').then((m) => m.default),
     run: () => import('./commands/run').then((m) => m.default),
     workflow: () => import('./commands/workflow').then((m) => m.default),
     evaluate: () => import('./commands/evaluate').then((m) => m.default),
@@ -58,13 +69,22 @@ const main = defineCommand({
     report: () => import('./commands/report').then((m) => m.default),
     team: () => import('./commands/team').then((m) => m.default),
     schedule: () => import('./commands/schedule').then((m) => m.default),
+    automation: () => import('./commands/automation').then((m) => m.default),
     approval: () => import('./commands/approval').then((m) => m.default),
     execution: () => import('./commands/execution').then((m) => m.default),
     'kill-switch': () => import('./commands/kill-switch').then((m) => m.default),
     'dark-launch': () => import('./commands/dark-launch').then((m) => m.default),
     budget: () => import('./commands/budget').then((m) => m.default),
     policy: () => import('./commands/policy').then((m) => m.default),
+    completion: () => import('./commands/completion').then((m) => m.default),
+    profile: () => import('./commands/profile').then((m) => m.default),
   },
 });
 
 runMain(main);
+
+// TODO(Y5): `lf platform` subcommand and remote-control RPCs.
+// Blocked on the Supabase migration that adds the platform-control RPCs
+// (provisional names: platform.fn_*). When the migration ships, register a
+// `platform: () => import('./commands/platform').then((m) => m.default)` entry
+// above alongside the alphabetical placement and remove this TODO.

@@ -3,6 +3,33 @@ import consola from 'consola'
 import { callRest, callRpc, handleError } from '../utils/api'
 import { printJson, printTable, truncate } from '../utils/output'
 
+// ─── Phase X5 row types ────────────────────────────────────────────────────
+
+interface TeamConversationRow {
+  id: string
+  team_run_id: string
+  from_agent_id: string
+  to_agent_id: string | null
+  kind: string
+  payload: unknown
+  parent_message_id: string | null
+  occurred_at: string
+  depth: number
+}
+
+interface TeamRunScratchpadRow {
+  shared_scratchpad: unknown
+  shared_scratchpad_version: number
+}
+
+const VALID_TEAM_MEMBER_ROLES = new Set([
+  'leader',
+  'executor',
+  'reviewer',
+  'observer',
+  'operator',
+])
+
 // ─── Shared helpers ────────────────────────────────────────────────────────
 
 interface AgentTeamRow {
@@ -676,6 +703,194 @@ const teamInspect = defineCommand({
   },
 })
 
+// ─── team conversation (Phase X5) ──────────────────────────────────────────
+//
+// Reads `agents.v_team_run_conversation` (recursive thread + depth) for a
+// given team run and pretty-prints it as a tree. The view exposes parent
+// pointers so depth indentation makes thread structure visible at a glance.
+
+function previewPayload(payload: unknown): string {
+  if (payload === null || payload === undefined) return ''
+  if (typeof payload === 'string') return truncate(payload, 80)
+  try {
+    return truncate(JSON.stringify(payload), 80)
+  } catch {
+    return String(payload)
+  }
+}
+
+const teamConversation = defineCommand({
+  meta: {
+    name: 'conversation',
+    description: 'Show the threaded message conversation for a team run.',
+  },
+  args: {
+    'run-id': {
+      type: 'positional',
+      description: 'Team run UUID',
+      required: true,
+    },
+    limit: {
+      type: 'string',
+      description: 'Max rows (default 100)',
+      default: '100',
+    },
+    json: { type: 'boolean', description: 'Output as JSON', default: false },
+  },
+  async run({ args }) {
+    try {
+      const runId = args['run-id']
+      const rows = await callRest<TeamConversationRow[]>(
+        'agents',
+        'v_team_run_conversation',
+        'GET',
+        undefined,
+        {
+          requireAuth: true,
+          query: {
+            select:
+              'id,team_run_id,from_agent_id,to_agent_id,kind,payload,parent_message_id,occurred_at,depth',
+            team_run_id: `eq.${runId}`,
+            order: 'occurred_at.asc',
+            limit: args.limit,
+          },
+        }
+      )
+
+      if (!rows || rows.length === 0) {
+        consola.info('No messages found for team run %s.', runId)
+        return
+      }
+
+      if (args.json) {
+        printJson(rows)
+        return
+      }
+
+      for (const m of rows) {
+        const indent = '  '.repeat(Math.max(0, m.depth))
+        const time = new Date(m.occurred_at).toLocaleTimeString()
+        const from = m.from_agent_id.slice(0, 8)
+        const to = m.to_agent_id ? m.to_agent_id.slice(0, 8) : 'all'
+        const preview = previewPayload(m.payload)
+        consola.log(
+          `${indent}[${time}] ${from}→${to}: ${m.kind}${preview ? ` — ${preview}` : ''}`
+        )
+      }
+    } catch (err) {
+      handleError(err)
+    }
+  },
+})
+
+// ─── team scratchpad (Phase X5) ────────────────────────────────────────────
+
+const teamScratchpad = defineCommand({
+  meta: {
+    name: 'scratchpad',
+    description: 'Show the shared scratchpad and version for a team run.',
+  },
+  args: {
+    'run-id': {
+      type: 'positional',
+      description: 'Team run UUID',
+      required: true,
+    },
+    json: {
+      type: 'boolean',
+      description: 'Output the raw JSON document',
+      default: false,
+    },
+  },
+  async run({ args }) {
+    try {
+      const runId = args['run-id']
+      const rows = await callRest<TeamRunScratchpadRow[]>(
+        'agents',
+        'team_runs',
+        'GET',
+        undefined,
+        {
+          requireAuth: true,
+          query: {
+            select: 'shared_scratchpad,shared_scratchpad_version',
+            id: `eq.${runId}`,
+            limit: '1',
+          },
+        }
+      )
+
+      const row = Array.isArray(rows) ? rows[0] : undefined
+      if (!row) {
+        consola.error('Team run %s not found.', runId)
+        process.exitCode = 1
+        return
+      }
+
+      if (args.json) {
+        printJson(row.shared_scratchpad ?? null)
+        return
+      }
+
+      consola.info('Version: %d', row.shared_scratchpad_version)
+      consola.log('Scratchpad:')
+      printJson(row.shared_scratchpad ?? null)
+    } catch (err) {
+      handleError(err)
+    }
+  },
+})
+
+// ─── team set-role (Phase X5) ──────────────────────────────────────────────
+
+const teamSetRole = defineCommand({
+  meta: {
+    name: 'set-role',
+    description:
+      'Update a team member role (leader|executor|reviewer|observer|operator).',
+  },
+  args: {
+    'member-id': {
+      type: 'positional',
+      description: 'Team member UUID',
+      required: true,
+    },
+    role: {
+      type: 'positional',
+      description: 'New role',
+      required: true,
+    },
+  },
+  async run({ args }) {
+    const memberId = args['member-id']
+    const role = args.role
+    if (!VALID_TEAM_MEMBER_ROLES.has(role)) {
+      consola.error(
+        'Invalid role "%s". Allowed: %s',
+        role,
+        Array.from(VALID_TEAM_MEMBER_ROLES).join(', ')
+      )
+      process.exitCode = 1
+      return
+    }
+    try {
+      await callRest(
+        'agents',
+        'team_members',
+        'PATCH',
+        { role },
+        {
+          requireAuth: true,
+          query: { id: `eq.${memberId}` },
+        }
+      )
+      consola.success('Member %s role updated to %s.', memberId, role)
+    } catch (err) {
+      handleError(err)
+    }
+  },
+})
+
 // ─── parent ────────────────────────────────────────────────────────────────
 
 export default defineCommand({
@@ -690,11 +905,14 @@ export default defineCommand({
     members: teamMembers,
     'add-member': teamAddMember,
     'remove-member': teamRemoveMember,
+    'set-role': teamSetRole,
     edges: teamEdges,
     'add-edge': teamAddEdge,
     assign: teamAssign,
     dispatch: teamDispatch,
     run: teamDispatch,
     runs: teamRuns,
+    conversation: teamConversation,
+    scratchpad: teamScratchpad,
   },
 })
