@@ -174,6 +174,12 @@ export const AILenserProfilePage: React.FC<AILenserProfilePageProps> = ({
 
       <div className="mt-8 px-4 md:px-0">
 
+        <div className="mb-6 flex items-end justify-center gap-5 opacity-30 hover:opacity-60 transition-opacity duration-500 select-none pointer-events-none">
+          <img src="/brand/LENSA_DNA.png" alt="LENSA" className="h-10 object-contain -rotate-6" />
+          <img src="/brand/LENSE_DNA.png" alt="LENSE" className="h-14 object-contain" />
+          <img src="/brand/LENSO_DNA.png" alt="LENSO" className="h-10 object-contain rotate-6" />
+        </div>
+
         <LenserTabs activeTab={activeTab} onChange={handleTabChange} tabs={AI_TABS} />
 
         <div className="min-h-[300px]">
