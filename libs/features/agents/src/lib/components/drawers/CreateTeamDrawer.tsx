@@ -93,7 +93,7 @@ export const CreateTeamDrawer: React.FC<CreateTeamDrawerProps> = ({
         is_active: activationMode === 'active',
         initial_members: orderedIds.map((agentId, index) => ({
           agent_id: agentId,
-          role: index === 0 ? 'lead_operator' : 'specialist',
+          role: index === 0 ? 'leader' : 'executor',
           responsibility:
             index === 0
               ? purpose.trim() || 'Leads the autonomous crew and owns final delivery.'
