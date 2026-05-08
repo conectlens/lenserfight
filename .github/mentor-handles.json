@@ -1,0 +1,23 @@
+{
+  "$schema": "./mentor-handles.schema.json",
+  "_comment": "Source of truth for mentor handles substituted into mentor-rotation.md and CODEOWNERS by tools/sync-mentor-handles.mjs. Maintainers: edit this file, push, and the labels-sync workflow will rewrite the downstream files. Replace each placeholder with a real GitHub login (no @).",
+  "areas": {
+    "auth": {
+      "primary": "@maintainer-auth",
+      "secondary": "@maintainer-auth-2",
+      "owners": ["@maintainer-auth"]
+    },
+    "providers": {
+      "primary": "@maintainer-providers",
+      "secondary": "@maintainer-providers-2",
+      "owners": ["@maintainer-providers"]
+    },
+    "scoring": {
+      "primary": "@maintainer-scoring",
+      "secondary": "@maintainer-scoring-2",
+      "owners": ["@maintainer-scoring"]
+    }
+  },
+  "rotation_start_iso": "2026-05-12",
+  "rotation_weeks": 8
+}
