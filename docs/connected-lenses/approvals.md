@@ -104,11 +104,131 @@ Three decision types are supported:
 
 The modify path is how owners safely scope an over-broad request (e.g., reduce token budget, narrow audience, swap model).
 
+## Decision walkthrough
+
+### Approve
+
+```bash
+lf approval approve <approval-id>
+```
+
+What happens in the database:
+
+1. `agents.team_runs.approval_status` → `'approved'`
+2. `agents.team_runs.metadata` receives `decision_at`, `decision_by_lenser_id`
+3. `agents.agent_run_events` gets one row with `event_type='approval_granted'`
+4. The engine picks up the run on its next poll cycle (within seconds) and begins node execution
+
+The run proceeds with the **original dispatch inputs**.
+
+---
+
+### Reject
+
+```bash
+lf approval reject <approval-id> --reason "Holiday — skip today"
+```
+
+What happens in the database:
+
+1. `agents.team_runs.approval_status` → `'rejected'`
+2. `agents.team_runs.status` → `'failed'`
+3. `agents.team_runs.metadata` receives `decision_at`, `decision_by_lenser_id`, `decision_reason`
+4. `lenses.workflow_runs.status` → `'failed'`
+5. `agents.agent_run_events` gets one row with `event_type='approval_rejected'`
+
+The run terminates. No nodes execute. No memory is written.
+
+---
+
+### Modify and approve
+
+Use this when the dispatch inputs are correct in shape but wrong in value — for example, the scheduled run would use a stale topic or an overly broad audience.
+
+```bash
+lf approval approve <approval-id> \
+  --modifications '{"inputs": {"topic": "revised topic for today"}}'
+```
+
+What happens in the database:
+
+1. `agents.team_runs.approval_status` → `'approved'`
+2. `agents.team_runs.metadata` receives `decision_at`, `decision_by_lenser_id`, `decision_modifications` (the JSON diff)
+3. `agents.agent_run_events` gets one row with `event_type='approval_modified_and_approved'`
+4. The engine merges `decision_modifications` into the run's input payload before claiming the run — the original `inputs_template` from the schedule is overridden by the modification
+
+The run proceeds with the **merged inputs**. The override is recorded in the audit trail and is visible in the run's event log.
+
+---
+
 ## CRON-triggered runs
 
 A scheduled dispatch follows the same flow. The schedule's `approval_policy` is the source of truth — even if the team's default policy is `autonomous_with_gates`, a schedule with `requiresApproval=true` blocks on approval.
 
 This makes the rule **CRON cannot bypass approvals** mechanically true: the engine never reads the trigger source when deciding to gate.
+
+## Timeout behavior
+
+Approval timeout is enforced by the `expire-stale-approvals` pg_cron job, which runs every 5 minutes. Pending `team_runs` older than the configured threshold are atomically transitioned:
+
+- `agents.team_runs.approval_status` → `'timed_out'`
+- `agents.team_runs.status` → `'cancelled'`
+- `lenses.workflow_runs.status` → `'timed_out'` (when the run was created)
+- `agents.agent_run_events` row appended with `event_type='approval_timed_out'`
+- `agents.team_runs.metadata` receives `timed_out_at` and the effective `timeout_hours`
+
+The threshold is set via the `app.approval_timeout_hours` Postgres GUC. Default is 24 when unset:
+
+```sql
+ALTER DATABASE postgres SET app.approval_timeout_hours = 12;
+```
+
+No auto-approval mode is offered. Timeout means the run is abandoned, not self-approved.
+
+The expiry job uses `FOR UPDATE SKIP LOCKED` so concurrent firings cannot double-write the same row, and rows already in a terminal state are skipped on subsequent passes.
+
+To force-expire stale items between cron firings, an operator can call the function directly:
+
+```sql
+SELECT public.fn_expire_stale_approvals();
+```
+
+To reject a specific stale request manually before the timeout fires:
+
+```bash
+lf approval list --status pending
+lf approval reject <stale-request-id> --reason "Holiday — skip today"
+```
+
+## Pending-approval webhook
+
+When `app.approval_webhook_url` is configured, every newly-created pending approval fires a best-effort POST to that URL via `pg_net`. The payload version is `1`:
+
+```json
+{
+  "webhook_version": 1,
+  "event": "approval_pending",
+  "team_run_id": "…",
+  "ai_lenser_id": "…",
+  "team_id": "…",
+  "workflow_id": "…",
+  "workflow_run_id": "…",
+  "workflow_assignment_id": "…",
+  "gate_kind": "publish_output",
+  "requested_action": "…",
+  "pending_since": "2026-05-08T14:32:01Z"
+}
+```
+
+Headers: `Content-Type: application/json`, `X-Lenserfight-Webhook: approval_pending`, `X-Lenserfight-Version: 1`.
+
+Configure with:
+
+```sql
+ALTER DATABASE postgres SET app.approval_webhook_url = 'https://example.com/approvals';
+```
+
+**Delivery semantics:** Best-effort, single-attempt, fire-and-forget through `pg_net`. The authoritative state is the database; the webhook is a notification courtesy. Operators who need at-least-once delivery should poll `agents.approval_requests_v` and reconcile against their own state.
 
 ## What approvals do NOT cover today
 
@@ -153,5 +273,5 @@ The following are **Proposed (not yet implemented)**:
 
 - **Approval UI refinement** — the dedicated `/lenser/:handle/ag/approvals` section ships today, but still needs richer diffing, filtering, and queue analytics.
 - **Notification fan-out** — an `agents.agent_run_events` listener that pushes pending requests to the human owner via the notification service ([libs/data/repositories/src/lib/services/notificationService.ts](../../libs/data/repositories/src/lib/services/notificationService.ts)).
-- **Optional approval timeout** — `approval_policy.timeoutMinutes`. After the timeout, transition `team_run.status='timed_out'`. No auto-approval mode.
-- **Audit event for bypass attempts** — see [scheduling.md Future work](./scheduling#future-work).
+- **Per-schedule approval timeout override** — `approval_policy.timeoutMinutes` on a single workflow assignment to override the database-wide `app.approval_timeout_hours` GUC. The global timeout ships in Phase K1; per-assignment overrides remain proposed.
+- **Audit event for bypass attempts** — ✓ Shipped (Phase G). When `requiresApproval=false` is set on an active schedule, an `approval_bypass_attempted` row is inserted into `agents.action_logs`.
