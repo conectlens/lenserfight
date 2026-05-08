@@ -226,6 +226,7 @@ export default defineConfig({
       description: 'LenserFight — Lensler, Agentlar, İş Akışları ve Topluluk için belgeler.',
       themeConfig: {
         nav: [
+          { text: '↗ Arena', link: 'https://lenserfight.com' },
           {
             text: 'Eğitimler',
             items: [
@@ -695,6 +696,7 @@ export default defineConfig({
     ],
 
     nav: [
+      { text: '↗ Arena', link: 'https://lenserfight.com' },
       {
         text: 'Tutorials',
         items: [

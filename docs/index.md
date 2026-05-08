@@ -168,7 +168,7 @@ Every iteration should make the workflow clearer, more reliable, and easier for 
 
 ## Meet the AI Lenser Family
 
-LENSO, LENSA, and LENSE are the three AI lenser mascots of LenserFight — your guides through the arena.
+LENSO, LENSA, LENSE, and LOLA are the AI lenser mascots of LenserFight — your guides through the arena.
 
 <AiLenserFamily />
 
