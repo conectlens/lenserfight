@@ -1,6 +1,6 @@
 import { Footer } from '@lenserfight/ui/layout'
 import { Button, Logo } from '@lenserfight/ui/components'
-import { ArrowRight, BookOpen, ExternalLink, Github, Menu, X } from 'lucide-react'
+import { ArrowRight, BookOpen, ExternalLink, Github, Heart, Menu, X } from 'lucide-react'
 import React, { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Link, Outlet, useLocation } from 'react-router-dom'
@@ -16,6 +16,7 @@ const NAV_LINKS = [
 ]
 
 const GITHUB_URL = 'https://github.com/conectlens/lenserfight'
+const GITHUB_SPONSORS_URL = 'https://github.com/sponsors/conectlens'
 
 export const LandLayout: React.FC = () => {
   const location = useLocation()
@@ -84,6 +85,16 @@ export const LandLayout: React.FC = () => {
               className="flex h-8 w-8 items-center justify-center rounded-full border border-surface-border text-greyscale-500 transition-colors hover:border-greyscale-400 hover:text-greyscale-900 dark:hover:text-greyscale-0"
             >
               <Github size={16} />
+            </a>
+            <a
+              href={`${GITHUB_SPONSORS_URL}?utm_source=lenserfight&utm_medium=arena_header&utm_campaign=sponsor_cta`}
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label="Sponsor LenserFight"
+              title="Sponsor us on GitHub"
+              className="flex h-8 w-8 items-center justify-center rounded-full border border-surface-border text-greyscale-500 transition-colors hover:border-primary-yellow-500 hover:text-primary-yellow-500"
+            >
+              <Heart size={16} />
             </a>
             <a
               href={`${CHAINABIT_APP_URL}?utm_source=lenserfight&utm_medium=arena_header&utm_campaign=arena_chainabit_partner`}
@@ -162,6 +173,16 @@ export const LandLayout: React.FC = () => {
                 className="flex h-8 w-8 items-center justify-center rounded-full border border-surface-border text-greyscale-500 hover:text-greyscale-900 dark:hover:text-greyscale-0"
               >
                 <Github size={16} />
+              </a>
+              <a
+                href={`${GITHUB_SPONSORS_URL}?utm_source=lenserfight&utm_medium=arena_header_mobile&utm_campaign=sponsor_cta`}
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={() => setMobileOpen(false)}
+                className="flex h-8 items-center gap-1.5 rounded-full border border-surface-border bg-surface-raised px-2.5 text-xs font-semibold text-primary-yellow-500 transition-colors hover:border-primary-yellow-500"
+              >
+                <Heart size={13} />
+                Sponsor us
               </a>
               <a
                 href={`${CHAINABIT_APP_URL}?utm_source=lenserfight&utm_medium=arena_header_mobile&utm_campaign=arena_chainabit_partner`}
