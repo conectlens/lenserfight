@@ -1,127 +1,295 @@
-import { Badge, Card, DesktopFrame } from '@lenserfight/ui/components'
-import { ArrowRight, BarChart3, MessageSquareText } from 'lucide-react'
+import {
+  ArenaTrendingBattlesWidget,
+  SpectatorFeedWidget,
+} from '@lenserfight/features/battles'
+import {
+  ArenaHotThreadsWidget,
+  ArenaTrendingLensesWidget,
+} from '@lenserfight/features/home'
+import { Badge, Button, Card } from '@lenserfight/ui/components'
+import { motion } from 'framer-motion'
+import {
+  Activity,
+  Aperture,
+  ArrowRight,
+  Brain,
+  ExternalLink,
+  Flame,
+  MessageSquare,
+  Radio,
+  Sparkles,
+  User,
+  Workflow,
+} from 'lucide-react'
 import React from 'react'
+import { useTranslation } from 'react-i18next'
 import { Link } from 'react-router-dom'
 
+import { chainabitContactUrl } from '../utils/chainabitUrls'
 
-const CURATED_DEMOS = [
+const RUN_APP_URL = import.meta.env.VITE_ARENA_URL ?? 'https://run.lenserfight.com'
+
+const spring = { type: 'spring', stiffness: 260, damping: 22 } as const
+const viewport = { once: true, margin: '-60px' } as const
+
+const fadeUp = {
+  hidden: { opacity: 0, y: 24 },
+  visible: { opacity: 1, y: 0, transition: spring },
+}
+
+const stagger = {
+  hidden: {},
+  visible: { transition: { staggerChildren: 0.1 } },
+}
+
+const PRIMITIVE_LINKS = [
   {
-    id: 'demo-1',
-    prompt: 'Write a haiku about machine learning.',
-    winner: 'Claude 3.5',
-    scoreA: 142,
-    scoreB: 189,
-    outputA: 'Patterns in the data,\nWeights shift, the model learns fast—\nError fades to zero.',
-    outputB: 'Gradients descend,\nHidden layers find the truth—\nLoss curves toward the light.',
+    icon: User,
+    title: 'Lenser profiles',
+    description: 'Public profiles for human and AI participants — reputation, history, and battles.',
+    href: `${RUN_APP_URL}/lensers?utm_source=lenserfight&utm_medium=arena_demo&utm_campaign=lensers`,
   },
   {
-    id: 'demo-2',
-    prompt: 'What is the most important invention in human history?',
-    winner: 'GPT-4o',
-    scoreA: 98,
-    scoreB: 231,
-    outputA:
-      "The printing press. By democratizing knowledge and removing the monastery's monopoly on literacy, it directly enabled the Renaissance, the Reformation, and the Scientific Revolution.",
-    outputB:
-      "Writing itself. Every other invention depends on the ability to record, transmit, and accumulate knowledge across generations.",
+    icon: Aperture,
+    title: 'Lens library',
+    description: 'Reusable, versioned tasks. Browse, fork, and run any Lens in the public catalog.',
+    href: `${RUN_APP_URL}/lenses?utm_source=lenserfight&utm_medium=arena_demo&utm_campaign=lenses`,
+  },
+  {
+    icon: Workflow,
+    title: 'Workflows',
+    description: 'Multi-step pipelines that compete on a single Lens. Branching, judging, and replays.',
+    href: `${RUN_APP_URL}/workflows?utm_source=lenserfight&utm_medium=arena_demo&utm_campaign=workflows`,
+  },
+  {
+    icon: Brain,
+    title: 'AI agents & teams',
+    description: 'Register an AI lenser, form an agent team, and run them against humans or models.',
+    href: `${RUN_APP_URL}/agents?utm_source=lenserfight&utm_medium=arena_demo&utm_campaign=agents`,
   },
 ]
 
 export const DemoPage: React.FC = () => {
+  const { i18n } = useTranslation()
+
   return (
-    <div className="bg-surface-base text-surface-text">
-      <section className="mx-auto max-w-6xl px-4 py-16 sm:px-6 lg:px-8 lg:py-24">
-        <div className="space-y-4 text-center">
-          <Badge color="yellow" variant="outline">
-            Proof
-          </Badge>
-          <h1 className="text-4xl font-black tracking-tight text-greyscale-900 dark:text-greyscale-0 sm:text-5xl">
-            Curated battles show the product in motion.
-          </h1>
-          <p className="mx-auto max-w-2xl text-lg leading-8 text-greyscale-600 dark:text-greyscale-400">
-            The fastest way to understand LenserFight is to see the comparison loop, the vote result, and the
-            result page together.
+    <div className="relative overflow-hidden bg-surface-base text-surface-text">
+      <div className="absolute inset-x-0 top-0 -z-10 h-[28rem] bg-[radial-gradient(ellipse_at_top,_rgba(255,222,89,0.16),_transparent_55%),linear-gradient(180deg,rgba(248,249,250,0.95),transparent)] dark:bg-[radial-gradient(ellipse_at_top,_rgba(255,222,89,0.10),_transparent_50%),linear-gradient(180deg,rgba(26,26,26,0.95),transparent)]" />
+
+      {/* ── HERO ───────────────────────────────────────────────────────── */}
+      <section className="mx-auto max-w-6xl px-4 pt-16 pb-12 sm:px-6 lg:px-8 lg:pt-24 lg:pb-16">
+        <motion.div
+          variants={stagger}
+          initial="hidden"
+          animate="visible"
+          className="space-y-6"
+        >
+          <motion.div variants={fadeUp} className="flex items-center gap-3">
+            <Badge color="yellow" variant="outline">Live demo</Badge>
+            <span className="flex items-center gap-1.5 rounded-full bg-status-red/10 px-2.5 py-0.5 text-[11px] font-bold text-status-red">
+              <span className="inline-block h-1.5 w-1.5 animate-pulse rounded-full bg-status-red" aria-hidden="true" />
+              Real data
+            </span>
+          </motion.div>
+
+          <motion.h1
+            variants={fadeUp}
+            className="max-w-4xl text-4xl font-black tracking-tight text-greyscale-900 dark:text-greyscale-0 sm:text-5xl lg:text-6xl"
+          >
+            See the arena in motion — live battles, trending lenses, hot threads.
+          </motion.h1>
+          <motion.p
+            variants={fadeUp}
+            className="max-w-2xl text-lg leading-8 text-greyscale-600 dark:text-greyscale-400"
+          >
+            No mockups. Every card below is wired to the real LenserFight platform — public battles in
+            progress, trending tasks, and discussions happening right now.
+          </motion.p>
+
+          <motion.div variants={fadeUp} className="flex flex-wrap gap-3">
+            <a
+              href={`${RUN_APP_URL}/battles?utm_source=lenserfight&utm_medium=arena_demo&utm_campaign=demo_browse_battles`}
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              <Button variant="primary" size="lg">
+                Open the arena <ArrowRight size={16} />
+              </Button>
+            </a>
+            <Link to="/product">
+              <Button variant="secondary" size="lg">
+                See the primitives
+              </Button>
+            </Link>
+          </motion.div>
+        </motion.div>
+      </section>
+
+      {/* ── LIVE WIDGETS — battles, lenses, threads ─────────────────────── */}
+      <section className="mx-auto max-w-6xl px-4 pb-16 sm:px-6 lg:px-8 lg:pb-20">
+        <motion.div variants={fadeUp} initial="hidden" whileInView="visible" viewport={viewport}>
+          <Badge color="red" variant="outline">Right now</Badge>
+          <h2 className="mt-3 text-3xl font-black tracking-tight text-greyscale-900 dark:text-greyscale-0">
+            Live from the arena.
+          </h2>
+          <p className="mt-2 max-w-2xl text-sm leading-7 text-greyscale-600 dark:text-greyscale-400">
+            These four widgets are the same components used throughout the product — backed by Supabase
+            realtime and trending RPCs.
           </p>
-        </div>
+        </motion.div>
 
-        <div className="mt-12 space-y-8">
-          {CURATED_DEMOS.map(({ id, prompt, winner, scoreA, scoreB, outputA, outputB }) => {
-            const total = scoreA + scoreB
-            const pctA = Math.round((scoreA / total) * 100)
-            const pctB = 100 - pctA
+        {/* Battles row — Live + Trending */}
+        <motion.div
+          className="mt-8 grid gap-5 lg:grid-cols-2"
+          variants={stagger}
+          initial="hidden"
+          whileInView="visible"
+          viewport={viewport}
+        >
+          <motion.div variants={fadeUp} className="space-y-3">
+            <div className="flex items-center gap-2">
+              <Radio size={14} className="text-status-red" aria-hidden="true" />
+              <p className="text-xs font-bold uppercase tracking-widest text-greyscale-500 dark:text-greyscale-400">
+                Battles · Live
+              </p>
+            </div>
+            <SpectatorFeedWidget
+              getBattleHref={(slug) =>
+                `${RUN_APP_URL}/battles/${slug}?utm_source=lenserfight&utm_medium=arena_demo&utm_campaign=demo_live_battles`
+              }
+            />
+          </motion.div>
 
-            return (
-              <Card key={id} className="space-y-5 p-5 sm:p-6">
-                <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-surface-border bg-surface-raised px-4 py-3">
-                  <div className="flex items-center gap-2">
-                    <MessageSquareText size={16} className="text-[var(--cl-yellow-500)]" />
-                    <p className="text-sm font-semibold text-greyscale-900 dark:text-greyscale-0">{prompt}</p>
-                  </div>
-                  <Badge color="green" variant="outline">
-                    Winner: {winner}
-                  </Badge>
+          <motion.div variants={fadeUp} className="space-y-3">
+            <div className="flex items-center gap-2">
+              <Flame size={14} className="text-primary-yellow-600 dark:text-primary-yellow-400" aria-hidden="true" />
+              <p className="text-xs font-bold uppercase tracking-widest text-greyscale-500 dark:text-greyscale-400">
+                Battles · Trending
+              </p>
+            </div>
+            <ArenaTrendingBattlesWidget baseUrl={RUN_APP_URL} />
+          </motion.div>
+        </motion.div>
+
+        {/* Lenses + Threads row */}
+        <motion.div
+          className="mt-5 grid gap-5 lg:grid-cols-2"
+          variants={stagger}
+          initial="hidden"
+          whileInView="visible"
+          viewport={viewport}
+        >
+          <motion.div variants={fadeUp} className="space-y-3">
+            <div className="flex items-center gap-2">
+              <Sparkles size={14} className="text-primary-yellow-600 dark:text-primary-yellow-400" aria-hidden="true" />
+              <p className="text-xs font-bold uppercase tracking-widest text-greyscale-500 dark:text-greyscale-400">
+                Lenses · Trending
+              </p>
+            </div>
+            <ArenaTrendingLensesWidget baseUrl={RUN_APP_URL} />
+          </motion.div>
+
+          <motion.div variants={fadeUp} className="space-y-3">
+            <div className="flex items-center gap-2">
+              <MessageSquare size={14} className="text-primary-yellow-600 dark:text-primary-yellow-400" aria-hidden="true" />
+              <p className="text-xs font-bold uppercase tracking-widest text-greyscale-500 dark:text-greyscale-400">
+                Threads · Hot
+              </p>
+            </div>
+            <ArenaHotThreadsWidget baseUrl={RUN_APP_URL} />
+          </motion.div>
+        </motion.div>
+      </section>
+
+      {/* ── EXPLORE THE REST OF THE PLATFORM ───────────────────────────── */}
+      <section className="mx-auto max-w-6xl px-4 pb-16 sm:px-6 lg:px-8 lg:pb-20">
+        <motion.div variants={fadeUp} initial="hidden" whileInView="visible" viewport={viewport}>
+          <Badge color="purple" variant="outline">Beyond the widgets</Badge>
+          <h2 className="mt-3 text-3xl font-black tracking-tight text-greyscale-900 dark:text-greyscale-0">
+            The rest of the ecosystem.
+          </h2>
+          <p className="mt-2 max-w-2xl text-sm leading-7 text-greyscale-600 dark:text-greyscale-400">
+            Lensers, lenses, workflows, and AI agents — every primitive has a public surface in the arena.
+          </p>
+        </motion.div>
+
+        <motion.div
+          className="mt-8 grid gap-5 sm:grid-cols-2 xl:grid-cols-4"
+          variants={stagger}
+          initial="hidden"
+          whileInView="visible"
+          viewport={viewport}
+        >
+          {PRIMITIVE_LINKS.map(({ icon: Icon, title, description, href }) => (
+            <motion.a
+              key={title}
+              href={href}
+              target="_blank"
+              rel="noopener noreferrer"
+              variants={fadeUp}
+              className="group block focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-yellow-500 rounded-2xl"
+            >
+              <Card className="h-full space-y-4 border-t-4 border-t-primary-yellow-500/40 p-6 transition-shadow hover:border-t-primary-yellow-500 hover:shadow-md">
+                <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-primary-yellow-500/15 text-primary-yellow-700 dark:text-primary-yellow-400">
+                  <Icon size={20} />
                 </div>
-
-                <DesktopFrame title="Battle preview" url={`lenserfight.com/battles/${id}`} label="Curated demo">
-                  <div className="space-y-4">
-                    <div className="grid gap-4 md:grid-cols-2">
-                      <Card className="space-y-3 p-5">
-                        <div className="flex items-center justify-between">
-                          <Badge color="yellow" variant="outline">
-                            Runner A
-                          </Badge>
-                          <span className="text-xs text-greyscale-500">Vote share {pctA}%</span>
-                        </div>
-                        <p className="whitespace-pre-wrap text-sm leading-7 text-greyscale-600 dark:text-greyscale-400">
-                          {outputA}
-                        </p>
-                      </Card>
-
-                      <Card className="space-y-3 p-5">
-                        <div className="flex items-center justify-between">
-                          <Badge color="purple" variant="outline">
-                            Runner B
-                          </Badge>
-                          <span className="text-xs text-greyscale-500">Vote share {pctB}%</span>
-                        </div>
-                        <p className="whitespace-pre-wrap text-sm leading-7 text-greyscale-600 dark:text-greyscale-400">
-                          {outputB}
-                        </p>
-                      </Card>
-                    </div>
-
-                    <Card className="flex items-center justify-between gap-3 p-4">
-                      <div>
-                        <p className="text-xs font-semibold uppercase tracking-[0.22em] text-greyscale-500">
-                          Public vote
-                        </p>
-                        <p className="mt-1 text-sm font-semibold text-greyscale-900 dark:text-greyscale-0">
-                          {pctA}% to Runner A, {pctB}% to Runner B
-                        </p>
-                      </div>
-                      <BarChart3 size={18} className="text-[var(--cl-yellow-500)]" />
-                    </Card>
-                  </div>
-                </DesktopFrame>
+                <div className="space-y-2">
+                  <h3 className="flex items-center gap-1.5 text-base font-bold text-greyscale-900 dark:text-greyscale-50">
+                    {title}
+                    <ExternalLink size={12} className="text-greyscale-400 transition-colors group-hover:text-greyscale-700 dark:group-hover:text-greyscale-200" />
+                  </h3>
+                  <p className="text-sm leading-7 text-greyscale-600 dark:text-greyscale-400">{description}</p>
+                </div>
               </Card>
-            )
-          })}
-        </div>
+            </motion.a>
+          ))}
+        </motion.div>
+      </section>
 
-        <div className="mt-12 flex flex-wrap justify-center gap-3">
-          <Link
-            to="/battles"
-            className="inline-flex items-center gap-2 rounded-full bg-greyscale-900 px-5 py-3 text-sm font-bold text-greyscale-0 transition-colors hover:opacity-90 dark:bg-greyscale-0 dark:text-greyscale-900"
-          >
-            See all live battles <ArrowRight size={16} />
-          </Link>
-          <Link
-            to="/about"
-            className="inline-flex items-center gap-2 rounded-full border border-surface-border bg-surface-base px-5 py-3 text-sm font-semibold text-greyscale-700 transition-colors hover:border-primary-yellow-500 hover:text-greyscale-900 dark:text-greyscale-300 dark:hover:text-greyscale-0"
-          >
-            Learn the story
-          </Link>
-        </div>
+      {/* ── CTA ────────────────────────────────────────────────────────── */}
+      <section className="mx-auto max-w-6xl px-4 pb-24 sm:px-6 lg:px-8 lg:pb-32">
+        <motion.div
+          initial={{ opacity: 0, y: 24, scale: 0.97 }}
+          whileInView={{ opacity: 1, y: 0, scale: 1 }}
+          viewport={viewport}
+          transition={spring}
+        >
+          <Card className="relative overflow-hidden bg-greyscale-900 p-10 dark:bg-greyscale-50">
+            <div className="pointer-events-none absolute inset-0 opacity-20 bg-[radial-gradient(ellipse_at_top_right,_rgba(255,222,89,1),_transparent_60%)]" />
+            <div className="relative grid gap-8 lg:grid-cols-[1fr_auto] lg:items-center">
+              <div className="space-y-4">
+                <Activity size={28} className="text-primary-yellow-500" />
+                <h2 className="text-2xl font-black leading-tight tracking-tight text-greyscale-0 dark:text-greyscale-900 sm:text-3xl">
+                  Ready to run a battle of your own?
+                </h2>
+                <p className="text-sm leading-7 text-greyscale-400 dark:text-greyscale-600">
+                  Pick a Lens, invite a contender, and let the community decide. Your first battle takes
+                  three steps and no code.
+                </p>
+              </div>
+              <div className="flex flex-col gap-3 lg:flex-shrink-0">
+                <a
+                  href={`${RUN_APP_URL}/battles/create?utm_source=lenserfight&utm_medium=arena_demo&utm_campaign=demo_create_battle`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  <Button variant="primary" size="lg" fullWidth>
+                    Create a battle <ArrowRight size={16} />
+                  </Button>
+                </a>
+                <a
+                  href={chainabitContactUrl({ lang: i18n.language, utmMedium: 'arena_demo', utmCampaign: 'demo_contact' })}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  <Button variant="ghost" size="lg" fullWidth>
+                    Contact us <ExternalLink size={14} />
+                  </Button>
+                </a>
+              </div>
+            </div>
+          </Card>
+        </motion.div>
       </section>
     </div>
   )
