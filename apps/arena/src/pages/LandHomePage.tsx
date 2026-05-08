@@ -1,6 +1,6 @@
 import { AiLenserFamily, Badge, Card, DesktopFrame } from '@lenserfight/ui/components'
 import { motion, useScroll, useTransform } from 'framer-motion'
-import { ArrowRight, Bolt, CheckCircle, MessagesSquare, Shield, Star, Swords } from 'lucide-react'
+import { ArrowRight, Bolt, CheckCircle, Heart, MessagesSquare, Shield, Star, Swords } from 'lucide-react'
 import React, { useRef } from 'react'
 import { Link } from 'react-router-dom'
 
@@ -8,11 +8,13 @@ import { ArenaPulseSection } from '../components/ArenaPulseSection'
 import { BattleTypesShowcase } from '../components/BattleTypesShowcase'
 import { GamificationPreview } from '../components/GamificationPreview'
 import { HeroFightPreview } from '../components/HeroFightPreview'
+import { HotThreadsSection } from '../components/HotThreadsSection'
 import { WaitlistForm } from '../components/WaitlistForm'
 
 const BrandVideos = React.lazy(() => import('../components/BrandVideos'))
 
 const ARENA_APP_URL = import.meta.env.VITE_ARENA_URL ?? 'https://run.lenserfight.com'
+const GITHUB_SPONSORS_URL = 'https://github.com/sponsors/conectlens'
 
 // ── Shared animation variants ────────────────────────────────────────────────
 
@@ -59,23 +61,6 @@ const HOW_IT_WORKS = [
   { step: '03', icon: Star, title: 'Earn XP and rise', description: 'Every vote, win, and Lens you create earns XP toward your lenser level.' },
 ]
 
-const TESTIMONIALS = [
-  {
-    quote: 'The handicap system for Human vs AI is surprisingly fair. I beat Claude on a writing task. 65% community vote.',
-    name: 'atlas_lenser',
-    role: 'Beta creator',
-  },
-  {
-    quote: 'The AI Judge mode is underrated. Getting a structured rubric score on top of community votes makes the result feel credible.',
-    name: 'neon_oracle',
-    role: 'Prompt engineer',
-  },
-  {
-    quote: 'I created an AI lenser profile for GPT-4o and pitted it against Claude in an AI vs AI battle. The community loved it.',
-    name: 'lens_weaver',
-    role: 'AI researcher',
-  },
-]
 
 // ── Page ─────────────────────────────────────────────────────────────────────
 
@@ -258,41 +243,8 @@ export const LandHomePage: React.FC = () => {
         </motion.div>
       </section>
 
-      {/* ─── 5: Testimonials ────────────────────────────────────────── */}
-      <section className="mx-auto max-w-6xl px-4 pb-16 sm:px-6 lg:px-8 lg:pb-20">
-        <motion.div className="mb-8 space-y-2" variants={fadeRight} initial="hidden" whileInView="visible" viewport={viewport}>
-          <Badge color="purple" variant="outline">Beta voices</Badge>
-          <h2 className="text-3xl font-black tracking-tight text-greyscale-900 dark:text-greyscale-0">What lensers are saying</h2>
-        </motion.div>
-        <motion.div
-          className="grid gap-5 md:grid-cols-3"
-          variants={staggerContainer}
-          initial="hidden"
-          whileInView="visible"
-          viewport={viewport}
-        >
-          {TESTIMONIALS.map(({ quote, name, role }) => (
-            <motion.div
-              key={name}
-              variants={cardVariant}
-              whileHover={{ y: -4, transition: { type: 'spring', stiffness: 400, damping: 20 } }}
-            >
-              <Card className="h-full space-y-4 p-6 transition-shadow hover:shadow-md dark:hover:shadow-greyscale-900/40">
-                <p className="text-sm leading-7 text-greyscale-700 dark:text-greyscale-300">&ldquo;{quote}&rdquo;</p>
-                <div className="flex items-center gap-3 border-t border-surface-border pt-4">
-                  <div className="flex h-8 w-8 items-center justify-center rounded-full bg-surface-raised text-xs font-bold text-greyscale-500">
-                    {name[0].toUpperCase()}
-                  </div>
-                  <div>
-                    <p className="text-xs font-bold text-greyscale-900 dark:text-greyscale-0">@{name}</p>
-                    <p className="text-xs text-greyscale-500">{role}</p>
-                  </div>
-                </div>
-              </Card>
-            </motion.div>
-          ))}
-        </motion.div>
-      </section>
+      {/* ─── 5: Hot threads ─────────────────────────────────────────── */}
+      <HotThreadsSection />
 
       {/* ─── 6: AI fairness ─────────────────────────────────────────── */}
       <section className="mx-auto max-w-6xl px-4 pb-16 sm:px-6 lg:px-8 lg:pb-20">
@@ -324,6 +276,34 @@ export const LandHomePage: React.FC = () => {
               See a live demo
             </Link>
           </Card>
+        </motion.div>
+      </section>
+
+      {/* ─── Sponsor ────────────────────────────────────────────────── */}
+      <section className="mx-auto max-w-6xl px-4 pb-10 sm:px-6 lg:px-8">
+        <motion.div
+          className="flex flex-col items-center gap-4 rounded-2xl border border-surface-border bg-surface-raised px-8 py-8 text-center sm:flex-row sm:justify-between sm:text-left"
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={viewport}
+          transition={spring}
+        >
+          <div className="space-y-1">
+            <p className="text-base font-bold text-greyscale-900 dark:text-greyscale-0">
+              Help keep the arena running
+            </p>
+            <p className="text-sm text-greyscale-500 dark:text-greyscale-400">
+              LenserFight is open source. Your sponsorship funds infrastructure, AI credits, and new features.
+            </p>
+          </div>
+          <a
+            href={`${GITHUB_SPONSORS_URL}?utm_source=lenserfight&utm_medium=land_banner&utm_campaign=sponsor_cta`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex shrink-0 items-center gap-2 rounded-full bg-primary-yellow-500 px-6 py-2.5 text-sm font-bold text-greyscale-900 transition-all hover:bg-primary-yellow-400 hover:scale-105"
+          >
+            <Heart size={15} /> Sponsor Us
+          </a>
         </motion.div>
       </section>
 

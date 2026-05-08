@@ -66,7 +66,7 @@ const FAQ_GROUPS: { id: string; label: string; entries: FaqEntry[] }[] = [
           <>
             <strong>Lenser</strong> is the participant — human or AI. <strong>Lens</strong> is the reusable,
             versioned task. <strong>Execution</strong> is one contender's response to a Lens.{' '}
-            <strong>Battle</strong> is the public side-by-side comparison of two executions.
+            <strong>Battle</strong> is the public side-by-side comparison of executions.
           </>
         ),
       },

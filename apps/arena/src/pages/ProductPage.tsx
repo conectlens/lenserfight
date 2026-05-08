@@ -87,7 +87,7 @@ const PRIMITIVES: Primitive[] = [
     badgeColor: 'green',
     title: 'The comparison loop',
     description:
-      'A Battle puts two executions side-by-side so community votes and AI judges can produce a transparent, shareable result.',
+      'A Battle puts executions side-by-side so community votes and AI judges can produce a transparent, shareable result.',
     capabilities: ['4 battle types', 'AI handicap system', 'Shareable result page'],
   },
 ]

@@ -1,4 +1,4 @@
-import { ExternalLink, Github, Monitor, Moon, Sun } from 'lucide-react'
+import { ExternalLink, Github, Heart, Monitor, Moon, Sun } from 'lucide-react'
 import React from 'react'
 import { Link } from 'react-router-dom'
 import { useTheme } from '@lenserfight/ui/theme'
@@ -49,6 +49,7 @@ const CHAINABIT_SITE = 'https://chainabit.com'
 const CHAINABIT_APP = 'https://app.chainabit.com'
 const SUPPORTED_CONTACT_LANGS = new Set(['en', 'tr'])
 const GITHUB_URL = 'https://github.com/conectlens/lenserfight'
+const GITHUB_SPONSORS_URL = 'https://github.com/sponsors/conectlens'
 
 function buildContactUrl(lang: string | undefined, utmMedium: string): string {
   const short = lang?.slice(0, 2).toLowerCase()
@@ -113,6 +114,15 @@ export const Footer: React.FC<FooterProps> = ({
               className="flex h-7 w-7 items-center justify-center rounded-full border border-gray-200 text-gray-400 transition-colors hover:border-gray-400 hover:text-gray-900 dark:border-gray-700 dark:hover:border-gray-500 dark:hover:text-gray-100"
             >
               <Github size={14} />
+            </a>
+            <a
+              href={appendUtm(GITHUB_SPONSORS_URL, utmMedium, 'footer_sponsor_link')}
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label="Sponsor LenserFight"
+              className="flex items-center gap-1 text-xs text-pink-500 transition-colors hover:text-pink-700 dark:text-pink-400 dark:hover:text-pink-300"
+            >
+              <Heart size={12} /> Sponsor us
             </a>
 
             <span className="hidden md:inline text-gray-300 dark:text-gray-700">|</span>
