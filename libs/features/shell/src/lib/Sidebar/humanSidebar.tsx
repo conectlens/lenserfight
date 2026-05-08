@@ -54,9 +54,9 @@ export function buildHumanSidebarSections(
       items: [
         ...(FEATURES.PUBLIC_BATTLES
           ? [
-              { id: 'arena', label: 'Arena', path: '/battles', icon: <Swords size={20} /> },
-              { id: 'lenserboard', label: 'LenserBoard', path: '/lenserboard', icon: <Trophy size={20} /> },
-            ]
+            { id: 'arena', label: 'Arena', path: '/battles', icon: <Swords size={20} /> },
+            { id: 'lenserboard', label: 'LenserBoard', path: '/lenserboard', icon: <Trophy size={20} /> },
+          ]
           : []),
         { id: 'ray-cloud', label: 'Ray Cloud', path: '/ray', icon: <Cloud size={20} /> },
         { id: 'templates', label: 'Templates', externalHref: `${DOCS_BASE_URL}/reference/automation/markdown-objects#canonical-formats`, icon: <LayoutTemplate size={20} /> },

@@ -1,9 +1,9 @@
 import { Badge } from '@lenserfight/ui/components'
 import { motion, useScroll, useTransform } from 'framer-motion'
 import { Film, Sparkles } from 'lucide-react'
-import React, { useRef, useState, useEffect } from 'react'
+import React, { useRef } from 'react'
 
-const CDN = 'https://cdn.lenserfight.conectlens.com/brand/gifs'
+const CDN = 'https://cdn.lenserfight.com/brand/gifs'
 
 const BRAND_VIDEOS_DATA = [
   {
@@ -42,23 +42,6 @@ interface BrandVideoProps {
 
 const BrandVideo: React.FC<BrandVideoProps> = ({ url, title, description, tag, index }) => {
   const containerRef = useRef<HTMLDivElement>(null)
-  const [visible, setVisible] = useState(false)
-
-  useEffect(() => {
-    const el = containerRef.current
-    if (!el) return
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        if (entry.isIntersecting) {
-          setVisible(true)
-          observer.disconnect()
-        }
-      },
-      { rootMargin: '200px' },
-    )
-    observer.observe(el)
-    return () => observer.disconnect()
-  }, [])
 
   const { scrollYProgress } = useScroll({
     target: containerRef,
@@ -76,84 +59,82 @@ const BrandVideo: React.FC<BrandVideoProps> = ({ url, title, description, tag, i
       transition={{ duration: 0.5, ease: 'easeOut' }}
       className="relative w-full py-12 lg:py-20"
     >
-        <div className="relative mx-auto max-w-6xl overflow-hidden rounded-[2.5rem] bg-greyscale-950 shadow-[0_32px_120px_rgba(0,0,0,0.4)]">
-          <div className="relative aspect-[21/9] w-full overflow-hidden sm:aspect-video lg:aspect-[2.4/1]">
-            {visible && (
-              <img
-                src={url}
-                alt={title}
-                className="absolute inset-0 h-full w-full object-cover"
-                loading="lazy"
-                decoding="async"
-              />
-            )}
+      <div className="relative mx-auto max-w-6xl overflow-hidden rounded-[2.5rem] bg-greyscale-950 shadow-[0_32px_120px_rgba(0,0,0,0.4)]">
+        <div className="relative aspect-[21/9] w-full overflow-hidden sm:aspect-video lg:aspect-[2.4/1]">
+          <img
+            src={url}
+            alt={title}
+            className="absolute inset-0 h-full w-full object-cover"
+            loading="lazy"
+            decoding="async"
+          />
 
-            <div className="absolute inset-0 bg-gradient-to-r from-greyscale-950 via-greyscale-950/40 to-transparent opacity-80" />
-            <div className="absolute inset-0 bg-gradient-to-t from-greyscale-950 via-transparent to-transparent opacity-60" />
+          <div className="absolute inset-0 bg-gradient-to-r from-greyscale-950 via-greyscale-950/40 to-transparent opacity-80" />
+          <div className="absolute inset-0 bg-gradient-to-t from-greyscale-950 via-transparent to-transparent opacity-60" />
 
-            <motion.div
-              style={{ y: textY }}
-              className="absolute inset-0 flex flex-col justify-center px-8 sm:px-16 lg:px-24"
-            >
-              <div className="max-w-2xl space-y-6">
-                <motion.div
-                  initial={{ opacity: 0, x: -20 }}
-                  whileInView={{ opacity: 1, x: 0 }}
-                  viewport={{ once: true }}
-                  transition={{ delay: 0.2 }}
+          <motion.div
+            style={{ y: textY }}
+            className="absolute inset-0 flex flex-col justify-center px-8 sm:px-16 lg:px-24"
+          >
+            <div className="max-w-2xl space-y-6">
+              <motion.div
+                initial={{ opacity: 0, x: -20 }}
+                whileInView={{ opacity: 1, x: 0 }}
+                viewport={{ once: true }}
+                transition={{ delay: 0.2 }}
+              >
+                <Badge
+                  color="yellow"
+                  variant="solid"
+                  className="backdrop-blur-xl bg-primary-yellow-500/20 border-primary-yellow-500/30 text-primary-yellow-500 px-4 py-1.5 text-xs font-bold tracking-widest uppercase"
                 >
-                  <Badge
-                    color="yellow"
-                    variant="solid"
-                    className="backdrop-blur-xl bg-primary-yellow-500/20 border-primary-yellow-500/30 text-primary-yellow-500 px-4 py-1.5 text-xs font-bold tracking-widest uppercase"
-                  >
-                    {tag}
-                  </Badge>
-                </motion.div>
+                  {tag}
+                </Badge>
+              </motion.div>
 
-                <div className="space-y-4">
-                  <h3 className="text-4xl font-black tracking-tighter text-white sm:text-5xl lg:text-6xl">
-                    {title}
-                  </h3>
-                  <p className="max-w-lg text-lg leading-relaxed text-greyscale-300/90 sm:text-xl">
-                    {description}
-                  </p>
+              <div className="space-y-4">
+                <h3 className="text-4xl font-black tracking-tighter text-white sm:text-5xl lg:text-6xl">
+                  {title}
+                </h3>
+                <p className="max-w-lg text-lg leading-relaxed text-greyscale-300/90 sm:text-xl">
+                  {description}
+                </p>
+              </div>
+
+              <div className="flex items-center gap-6 pt-4">
+                <div className="flex h-14 w-14 items-center justify-center rounded-full bg-white/5 backdrop-blur-2xl border border-white/10 transition-transform hover:scale-110">
+                  <Film className="text-white/80" size={24} />
                 </div>
-
-                <div className="flex items-center gap-6 pt-4">
-                  <div className="flex h-14 w-14 items-center justify-center rounded-full bg-white/5 backdrop-blur-2xl border border-white/10 transition-transform hover:scale-110">
-                    <Film className="text-white/80" size={24} />
-                  </div>
-                  <div className="flex flex-col">
-                    <span className="text-[10px] font-black uppercase tracking-[0.3em] text-primary-yellow-500/60">
-                      Asset Protocol
-                    </span>
-                    <span className="text-sm font-medium text-greyscale-400">
-                      LFR-VID-{index + 1} // 4K LOG
-                    </span>
-                  </div>
+                <div className="flex flex-col">
+                  <span className="text-[10px] font-black uppercase tracking-[0.3em] text-primary-yellow-500/60">
+                    Asset Protocol
+                  </span>
+                  <span className="text-sm font-medium text-greyscale-400">
+                    LFR-VID-{index + 1} // 4K LOG
+                  </span>
                 </div>
               </div>
-            </motion.div>
+            </div>
+          </motion.div>
 
-            <div className="absolute right-12 top-12">
-              <Sparkles size={32} className="text-primary-yellow-500/20" />
-            </div>
-          </div>
-
-          <div className="flex items-center justify-between border-t border-white/5 bg-white/[0.02] px-8 py-4 backdrop-blur-md">
-            <div className="flex items-center gap-3">
-              <div className="h-1.5 w-1.5 animate-pulse rounded-full bg-status-green" />
-              <span className="text-[10px] font-bold uppercase tracking-widest text-greyscale-500">
-                Live Render Active
-              </span>
-            </div>
-            <div className="text-[10px] font-mono text-greyscale-600">
-              00:00:0{index + 1}:24 // IDENTITY_CORE
-            </div>
+          <div className="absolute right-12 top-12">
+            <Sparkles size={32} className="text-primary-yellow-500/20" />
           </div>
         </div>
-      </motion.div>
+
+        <div className="flex items-center justify-between border-t border-white/5 bg-white/[0.02] px-8 py-4 backdrop-blur-md">
+          <div className="flex items-center gap-3">
+            <div className="h-1.5 w-1.5 animate-pulse rounded-full bg-status-green" />
+            <span className="text-[10px] font-bold uppercase tracking-widest text-greyscale-500">
+              Live Render Active
+            </span>
+          </div>
+          <div className="text-[10px] font-mono text-greyscale-600">
+            00:00:0{index + 1}:24 // IDENTITY_CORE
+          </div>
+        </div>
+      </div>
+    </motion.div>
   )
 }
 
