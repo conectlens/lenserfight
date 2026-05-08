@@ -12,7 +12,11 @@ export function useToast() {
     const normalized = normalizeError(error)
     const message = options.fallbackMessage ?? normalized.message
 
-    toast.error(message)
+    if (normalized.kind === 'constraint_violation') {
+      toast.warning(message)
+    } else {
+      toast.error(message)
+    }
 
     if (normalized.kind === 'unauthorized' && options.redirectOnAuth && options.navigate) {
       const nav = options.navigate
