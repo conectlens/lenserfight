@@ -1,7 +1,10 @@
 import { defineCommand } from 'citty';
 import consola from 'consola';
+import { existsSync } from 'node:fs';
+import { resolve } from 'node:path';
 import { callRpc, handleError } from '../utils/api';
 import { printTable, printJson, truncate } from '../utils/output';
+import { parseAutomationDocument } from '../utils/automation-objects';
 
 // ---------------------------------------------------------------------------
 // template create
@@ -306,6 +309,68 @@ const listRecurring = defineCommand({
 });
 
 // ---------------------------------------------------------------------------
+// template submit — validate a community-contributed WORKFLOW.md template
+// and emit the gh CLI command the user should paste to open a PR.
+// ---------------------------------------------------------------------------
+const submit = defineCommand({
+  meta: {
+    name: 'submit',
+    description:
+      'Validate a WORKFLOW.md template file and print a gh pr create command to submit it.',
+  },
+  args: {
+    file: {
+      type: 'positional',
+      description: 'Path to the WORKFLOW.md template file',
+      required: true,
+    },
+  },
+  async run({ args }) {
+    const filePath = resolve(process.cwd(), args.file);
+    if (!existsSync(filePath)) {
+      consola.error('File not found: %s', filePath);
+      process.exitCode = 1;
+      return;
+    }
+
+    const result = parseAutomationDocument(filePath);
+    if (!result.ok) {
+      consola.error('Template validation failed for %s', filePath);
+      for (const issue of result.issues) {
+        consola.error('  · [%s] %s: %s', issue.severity, issue.path, issue.message);
+      }
+      process.exitCode = 1;
+      return;
+    }
+
+    const kind = result.document?.frontmatter.kind ?? 'workflow';
+    if (kind !== 'workflow') {
+      consola.warn(
+        'Expected a WORKFLOW.md (kind=workflow) but got kind="%s". Submitting anyway.',
+        kind
+      );
+    }
+
+    const name = String(result.document?.frontmatter.name ?? 'unnamed-template');
+
+    consola.success('Template %s passes validation.', filePath);
+    consola.info('');
+    consola.info('Open a pull request by running:');
+    consola.info('');
+    consola.info(
+      '  gh pr create --fill --title "feat(templates): submit %s"',
+      name
+    );
+    consola.info('');
+    consola.info(
+      'Stage the file first: git add %s && git commit -m "feat(templates): add %s"',
+      args.file,
+      name
+    );
+  },
+});
+
+// ---------------------------------------------------------------------------
 // Root command
 // ---------------------------------------------------------------------------
 export default defineCommand({
@@ -319,6 +384,7 @@ export default defineCommand({
     view,
     delete: deleteTemplate,
     apply,
+    submit,
     'set-recurrence': setRecurrence,
     'list-recurring': listRecurring,
   },

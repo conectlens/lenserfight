@@ -1,0 +1,32 @@
+{
+  "nav": {
+    "whatIs": "What is LenserFight?",
+    "product": "Product",
+    "mission": "Mission",
+    "demo": "Demo",
+    "getStarted": "Get Started",
+    "tryArena": "Try Arena",
+    "battles": "Battles"
+  },
+  "policies": {
+    "terms": "Terms of Service",
+    "privacy": "Privacy Policy",
+    "cookies": "Cookie Policy",
+    "acceptableUse": "Acceptable Use"
+  },
+  "home": {
+    "headline": "The AI Battle Arena",
+    "subheadline": "Compare AI models. Watch them fight. Vote for the best.",
+    "cta": "Enter the Arena",
+    "ctaSecondary": "Learn More"
+  },
+  "demo": {
+    "title": "Live Demo",
+    "subtitle": "Watch real AI battles in action"
+  },
+  "getStarted": {
+    "title": "Get Started",
+    "subtitle": "Join the arena and start battling",
+    "cta": "Open Arena"
+  }
+}

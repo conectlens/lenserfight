@@ -374,6 +374,171 @@ const executionEvents = defineCommand({
   },
 })
 
+// ─── execution wait ───────────────────────────────────────────────────────
+
+const TERMINAL_STATUSES = new Set(['completed', 'failed', 'cancelled', 'timed_out'])
+
+const executionWait = defineCommand({
+  meta: {
+    name: 'wait',
+    description: 'Poll a workflow run until it reaches a terminal status, then print the final node results.',
+  },
+  args: {
+    run: {
+      type: 'positional',
+      description: 'Workflow Run UUID (omit when using --workflow --any)',
+      required: false,
+    },
+    workflow: {
+      type: 'string',
+      description: 'Workflow UUID — pair with --any to wait for any run',
+      default: '',
+    },
+    any: {
+      type: 'boolean',
+      description: 'When set with --workflow, wait for any run of that workflow to reach terminal state',
+      default: false,
+    },
+    timeout: {
+      type: 'string',
+      description: 'Max wait time in seconds (default 300)',
+      default: '300',
+    },
+    interval: {
+      type: 'string',
+      description: 'Poll interval in seconds (default 2)',
+      default: '2',
+    },
+    json: { type: 'boolean', description: 'Output final state as JSON', default: false },
+  },
+  async run({ args }) {
+    const timeoutMs = parseInt(args.timeout, 10) * 1_000
+    const intervalMs = parseInt(args.interval, 10) * 1_000
+    const deadline = Date.now() + timeoutMs
+
+    // ── Mode A: --workflow --any → poll lenses.workflow_runs for the latest
+    // ── run on this workflow, exit 0 on success, 1 on terminal failure.
+    if (args.workflow && args.any) {
+      consola.start('Waiting for any run of workflow %s…', args.workflow)
+      try {
+        while (true) {
+          await new Promise<void>((resolve) => setTimeout(resolve, intervalMs))
+
+          const rows = await callRest<WorkflowRunRow[]>(
+            'lenses',
+            'workflow_runs',
+            'GET',
+            undefined,
+            {
+              requireAuth: true,
+              query: {
+                workflow_id: `eq.${args.workflow}`,
+                status: 'in.(completed,failed,cancelled,timed_out)',
+                order: 'created_at.desc',
+                limit: 1,
+                select: 'id,workflow_id,status,active_node_id,created_at,started_at,completed_at,parent_run_id',
+              },
+            },
+          )
+          const terminal = rows?.[0]
+          if (terminal) {
+            const ok = terminal.status === 'completed'
+            if (args.json) printJson(terminal)
+            else if (ok) consola.success('Run %s for workflow %s succeeded.', terminal.id, args.workflow)
+            else consola.warn('Run %s ended with status: %s', terminal.id, terminal.status)
+            process.exitCode = ok ? 0 : 1
+            return
+          }
+          if (Date.now() >= deadline) {
+            consola.error(
+              'Timed out waiting for any run of workflow %s (limit %ds).',
+              args.workflow,
+              Math.floor(timeoutMs / 1_000),
+            )
+            process.exitCode = 1
+            return
+          }
+        }
+      } catch (err) {
+        handleError(err)
+        return
+      }
+    }
+
+    if (!args.run) {
+      consola.error('A run UUID is required (or pass --workflow <id> --any).')
+      process.exitCode = 1
+      return
+    }
+
+    consola.start('Waiting for run %s…', args.run)
+
+    try {
+      while (true) {
+        await new Promise<void>((resolve) => setTimeout(resolve, intervalMs))
+
+        const state = await callRpc<WorkflowRunStateProjection | null>(
+          'fn_get_workflow_run_state',
+          { p_run_id: args.run },
+          { requireAuth: true },
+        )
+
+        if (!state) {
+          consola.error('Run %s not found.', args.run)
+          process.exitCode = 1
+          return
+        }
+
+        if (!args.json) {
+          consola.info(
+            'status=%s  pending=%d  in_flight=%d  executed=%d  failed=%d',
+            state.status,
+            state.pending_count,
+            state.in_flight_count,
+            state.executed_count,
+            state.failed_count,
+          )
+        }
+
+        if (TERMINAL_STATUSES.has(state.status)) {
+          if (args.json) {
+            printJson(state)
+          } else {
+            if (state.status === 'completed') consola.success('Run %s completed.', args.run)
+            else consola.warn('Run %s ended with status: %s', args.run, state.status)
+
+            if (state.node_results.length > 0) {
+              printTable(
+                ['Ord', 'Node', 'Label', 'Status', 'Dur (ms)'],
+                state.node_results.map((n) => [
+                  n.node_ordinal != null ? String(n.node_ordinal) : '—',
+                  n.node_id.slice(0, 8) + '…',
+                  truncate(n.node_label ?? '—', 24),
+                  n.status,
+                  n.duration_ms != null ? String(n.duration_ms) : '—',
+                ]),
+              )
+            }
+          }
+          return
+        }
+
+        if (Date.now() >= deadline) {
+          consola.error(
+            'Timed out waiting for run %s (limit %ds).',
+            args.run,
+            Math.floor(timeoutMs / 1_000),
+          )
+          process.exitCode = 1
+          return
+        }
+      }
+    } catch (err) {
+      handleError(err)
+    }
+  },
+})
+
 // ─── execution cancel ──────────────────────────────────────────────────────
 
 const executionCancel = defineCommand({
@@ -469,6 +634,7 @@ export default defineCommand({
   subCommands: {
     list: executionList,
     inspect: executionInspect,
+    wait: executionWait,
     provenance: executionProvenance,
     events: executionEvents,
     cancel: executionCancel,

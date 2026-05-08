@@ -1,7 +1,7 @@
 import { defineCommand } from 'citty';
 import consola from 'consola';
 import { callRpc, handleError } from '../utils/api';
-import { printTable, printJson } from '../utils/output';
+import { printTable, printJson, truncate } from '../utils/output';
 
 async function fetchBattle(id: string): Promise<Record<string, unknown> | null> {
   const battle = await callRpc<Record<string, unknown>>(
@@ -262,6 +262,84 @@ const diff = defineCommand({
 });
 
 // ---------------------------------------------------------------------------
+// inspect tool-usage — per-workflow tool invocation rollup for an AI lenser
+// ---------------------------------------------------------------------------
+interface ToolInvocationRollupRow {
+  workflow_id: string
+  workflow_title: string | null
+  tool_id: string
+  total_invocations: number
+  approved_count: number
+  rejected_count: number
+  last_invoked_at: string | null
+}
+
+const toolUsage = defineCommand({
+  meta: {
+    name: 'tool-usage',
+    description:
+      'Rollup of tool invocations grouped by workflow + tool for an AI lenser over the last N days.',
+  },
+  args: {
+    agent: {
+      type: 'string',
+      description: 'AI Lenser UUID',
+      required: true,
+    },
+    days: {
+      type: 'string',
+      description: 'Lookback window in days (default 7)',
+      default: '7',
+    },
+    json: {
+      type: 'boolean',
+      description: 'Output as JSON',
+      default: false,
+    },
+  },
+  async run({ args }) {
+    const days = Number.parseInt(args.days, 10)
+    if (!Number.isFinite(days) || days <= 0) {
+      consola.error('Invalid --days "%s" — must be a positive integer.', args.days)
+      process.exitCode = 1
+      return
+    }
+
+    try {
+      const rows = await callRpc<ToolInvocationRollupRow[]>(
+        'fn_get_tool_invocation_rollup',
+        { p_ai_lenser_id: args.agent, p_days: days },
+        { requireAuth: true }
+      )
+
+      if (!rows || rows.length === 0) {
+        consola.info('No tool invocations recorded in the last %d day(s).', days)
+        return
+      }
+
+      if (args.json) {
+        printJson(rows)
+        return
+      }
+
+      printTable(
+        ['Workflow', 'Tool', 'Total', 'Approved', 'Rejected', 'Last Invoked'],
+        rows.map((r) => [
+          truncate(r.workflow_title || r.workflow_id, 24),
+          truncate(r.tool_id, 24),
+          String(r.total_invocations ?? 0),
+          String(r.approved_count ?? 0),
+          String(r.rejected_count ?? 0),
+          r.last_invoked_at ? new Date(r.last_invoked_at).toLocaleString() : '—',
+        ])
+      )
+    } catch (err) {
+      handleError(err)
+    }
+  },
+})
+
+// ---------------------------------------------------------------------------
 // Root command (also keeps backward-compatible flat mode)
 // ---------------------------------------------------------------------------
 export default defineCommand({
@@ -275,5 +353,6 @@ export default defineCommand({
     votes,
     scorecards,
     diff,
+    'tool-usage': toolUsage,
   },
 });
