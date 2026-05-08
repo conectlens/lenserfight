@@ -93,7 +93,7 @@ async function renderFrame(): Promise<void> {
   ])
 
   const out = process.stdout
-  out.write(A.homeCursor + A.clearScreen)
+  out.write(A.clearScreen + A.homeCursor)
 
   // ── Header ────────────────────────────────────────────────────────────────
   const brand = `${A.brightMagenta}${A.bold}${sym.fight}  LenserFight${A.reset}`
@@ -165,7 +165,7 @@ export async function runDashboard(): Promise<void> {
   }
 
   const out = process.stdout
-  out.write(A.hideCursor)
+  out.write(A.altScreenOn + A.hideCursor)
 
   let timer: NodeJS.Timeout | null = null
   let inChild = false
@@ -175,8 +175,7 @@ export async function runDashboard(): Promise<void> {
     timer = null
     try { process.stdin.setRawMode(false) } catch { /* ignore */ }
     process.stdin.pause()
-    out.write(A.showCursor)
-    out.write('\n')
+    out.write(A.showCursor + A.altScreenOff)
   }
   restoreCleanup = cleanup
 

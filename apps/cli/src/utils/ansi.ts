@@ -38,6 +38,8 @@ export const A = {
   showCursor: '\x1b[?25h',
   clearScreen: '\x1b[2J',
   homeCursor: '\x1b[H',
+  altScreenOn:  '\x1b[?1049h',
+  altScreenOff: '\x1b[?1049l',
 } as const
 
 /** Semantic color wrappers — apply color around text and reset after. */
