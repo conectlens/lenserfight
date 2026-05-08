@@ -137,6 +137,13 @@ const KEY_BINDINGS: Record<string, string[]> = {
 
 let restoreCleanup = () => { /* installed in runDashboard */ }
 
+function waitForKey(): Promise<void> {
+  return new Promise((resolve) => {
+    try { process.stdin.setRawMode(true) } catch { /* ignore */ }
+    process.stdin.once('data', () => resolve())
+  })
+}
+
 function runChild(argv: string[]): Promise<void> {
   return new Promise((resolve) => {
     process.stdout.write(A.showCursor)
@@ -144,13 +151,13 @@ function runChild(argv: string[]): Promise<void> {
     process.stdout.write(`\n  ${A.bold}${A.brightCyan}${sym.run}  lf ${argv.join(' ')}${A.reset}\n\n`)
     const child = spawn('lf', argv, { stdio: 'inherit' })
     child.on('exit', () => {
-      process.stdout.write(`\n  ${A.gray}Press ${A.reset}${A.brightYellow}q${A.reset}${A.gray} to return to the dashboard…${A.reset}\n`)
-      resolve()
+      process.stdout.write(`\n  ${A.gray}Press any key to return to the dashboard…${A.reset}\n`)
+      void waitForKey().then(resolve)
     })
     child.on('error', () => {
       process.stdout.write(`\n  ${A.brightRed}${sym.fail}  could not spawn lf — is it on PATH?${A.reset}\n`)
-      process.stdout.write(`  ${A.gray}Press ${A.reset}${A.brightYellow}q${A.reset}${A.gray} to return.${A.reset}\n`)
-      resolve()
+      process.stdout.write(`  ${A.gray}Press any key to return.${A.reset}\n`)
+      void waitForKey().then(resolve)
     })
   })
 }
@@ -193,12 +200,12 @@ export async function runDashboard(): Promise<void> {
 
   process.stdin.on('data', async (data) => {
     const key = data.toString()
-    // Ctrl-C, q, Esc → exit
-    if (key === '' || key === 'q' || key === 'Q' || key === '') {
-      exit(0)
-      return
-    }
+    // Ctrl-C always exits, even while a subcommand is showing
+    if (key === '\x03') { exit(130); return }
+    // While a subcommand is active, let once('data') in waitForKey handle the keypress
     if (inChild) return
+    // q / Q / Esc → exit dashboard
+    if (key === 'q' || key === 'Q' || key === '\x1b') { exit(0); return }
     const binding = KEY_BINDINGS[key.toLowerCase()]
     if (binding) {
       inChild = true
