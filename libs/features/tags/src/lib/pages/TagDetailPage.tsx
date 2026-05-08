@@ -1,7 +1,7 @@
 import React, { useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 
-import { SEOHead } from '@lenserfight/ui/components'
+import { HelpButton, SEOHead } from '@lenserfight/ui/components'
 import { useUI } from '@lenserfight/ui/providers'
 import { TagContentGrid } from '../components/TagContentGrid'
 import { TagFilterBar } from '../components/TagFilterBar'
@@ -58,6 +58,10 @@ export const TagDetailPage: React.FC = () => {
         activeSort={sort}
         onSortChange={setSort}
       />
+
+      <div className="flex justify-end my-2">
+        <HelpButton path="/explanation/community/ray-cloud" label="About Ray Cloud" />
+      </div>
 
       {/* Content Area */}
       <TagContentGrid items={items} loading={loading} />

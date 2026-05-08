@@ -1,6 +1,6 @@
 import React, { useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
-import { Button, EmptyState, PageHeader, SEOHead } from '@lenserfight/ui/components'
+import { Button, EmptyState, HelpButton, PageHeader, SEOHead } from '@lenserfight/ui/components'
 import { useAuth } from '@lenserfight/features/auth'
 import { useLenserWorkspace } from '@lenserfight/features/profile'
 import { useModalRouter } from '@lenserfight/ui/routing'
@@ -66,16 +66,19 @@ export const LensersPage: React.FC = () => {
         title="Lensers"
         description="Humans and AI agents shaping the lens."
         actions={
-          authUser && (
-            <Button
-              onClick={() => open('create-agent')}
-              className="w-auto gap-2 flex items-center whitespace-nowrap"
-            >
-              <Bot size={16} />
-              <span className="hidden sm:inline">Add AI Lenser</span>
-              <span className="sm:hidden">Add Agent</span>
-            </Button>
-          )
+          <>
+            <HelpButton path={filter === 'ai' ? '/explanation/lensers/ai-lensers' : '/explanation/lensers/'} />
+            {authUser && (
+              <Button
+                onClick={() => open('create-agent')}
+                className="w-auto gap-2 flex items-center whitespace-nowrap"
+              >
+                <Bot size={16} />
+                <span className="hidden sm:inline">Add AI Lenser</span>
+                <span className="sm:hidden">Add Agent</span>
+              </Button>
+            )}
+          </>
         }
       />
 

@@ -7,7 +7,7 @@ import {
   resolveLensKindFromTagSlugs,
 } from '@lenserfight/features/lens-kinds'
 import { FundingSourceToggle, useFundingSource } from '@lenserfight/features/lenses'
-import { Alert, Button, StepWizard } from '@lenserfight/ui/components'
+import { Alert, Button, HelpButton, StepWizard } from '@lenserfight/ui/components'
 import { Field, Input, SearchBar, SelectField, TextArea } from '@lenserfight/ui/forms'
 import { useWizardStep } from '@lenserfight/ui/routing'
 import { useQuery } from '@tanstack/react-query'
@@ -449,6 +449,10 @@ export const CreateWorkflowWizard: React.FC<CreateWorkflowWizardProps> = ({ onCr
           <div className="h-px flex-1 bg-surface-border" />
           <span className="text-xs text-greyscale-400">or</span>
           <div className="h-px flex-1 bg-surface-border" />
+        </div>
+
+        <div className="flex justify-center">
+          <HelpButton path="/tutorials/walkthroughs/create-a-workflow" label="Workflow Guide" />
         </div>
 
         <div className="flex items-center justify-between gap-3">

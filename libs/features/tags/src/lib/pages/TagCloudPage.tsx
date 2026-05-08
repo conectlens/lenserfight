@@ -1,7 +1,7 @@
 import React, { useEffect, useRef } from 'react'
 import { useQuery } from '@tanstack/react-query'
 
-import { SEOHead } from '@lenserfight/ui/components'
+import { HelpButton, SEOHead } from '@lenserfight/ui/components'
 import { useTheme } from '@lenserfight/ui/theme'
 import { tagService } from '@lenserfight/data/repositories'
 import { TagCloud } from '../components/TagCloud'
@@ -110,6 +110,11 @@ export const TagCloudPage: React.FC = () => {
       <NodeGraphBackground theme={theme} />
 
       <div className="relative z-10 w-full max-w-7xl mx-auto px-4 py-12 flex flex-col items-center">
+        <div className="flex items-center justify-between w-full mb-6">
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Ray Cloud</h1>
+          <HelpButton path="/explanation/community/ray-cloud" label="About Ray Cloud" />
+        </div>
+
         {isLoading ? (
           <div className="flex gap-3 opacity-30 items-center justify-center h-64">
             <div className="w-4 h-4 bg-gray-400 rounded-full animate-bounce"></div>

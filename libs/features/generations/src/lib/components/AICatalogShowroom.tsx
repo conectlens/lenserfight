@@ -1,5 +1,5 @@
 import type { AIModelCatalogEntry } from '@lenserfight/types'
-import { Badge } from '@lenserfight/ui/components'
+import { Badge, HelpButton } from '@lenserfight/ui/components'
 import { Button } from '@lenserfight/ui/components'
 import { MetricCard } from '@lenserfight/ui/data-display'
 import { Input, SelectField } from '@lenserfight/ui/forms'
@@ -104,13 +104,19 @@ export const AICatalogShowroom: React.FC<AICatalogShowroomProps> = ({
           title={title}
           description="Compare providers, inspect model capabilities, and decide which runtime belongs in a workflow or an agent team."
           actions={
-            <MetricCard
-              className="!bg-transparent !shadow-none !p-0 gap-8"
-              stats={[
-                { label: 'Providers', value: String(providers.length), icon: <Layers size={14} /> },
-                { label: 'Models', value: String(filteredModels.length), icon: <Box size={14} /> },
-              ]}
-            />
+            <>
+              <HelpButton
+                path={focus === 'providers' ? '/reference/ai-providers' : '/reference/ai-models'}
+                label={focus === 'models' ? 'Models Docs' : focus === 'providers' ? 'Provider Docs' : 'AI Catalog'}
+              />
+              <MetricCard
+                className="!bg-transparent !shadow-none !p-0 gap-8"
+                stats={[
+                  { label: 'Providers', value: String(providers.length), icon: <Layers size={14} /> },
+                  { label: 'Models', value: String(filteredModels.length), icon: <Box size={14} /> },
+                ]}
+              />
+            </>
           }
         />
       )}
