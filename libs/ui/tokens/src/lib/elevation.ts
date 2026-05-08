@@ -1,5 +1,5 @@
 /**
- * ConnectLens Elevation Tokens — Neumorphic Shadow Pairs
+ * ConectLens Elevation Tokens — Neumorphic Shadow Pairs
  *
  * Each level defines a PAIR of shadows:
  *   - highlight: light, upper-left offset (creates the raised appearance)

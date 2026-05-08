@@ -46,6 +46,6 @@ The interface is marked `@experimental`. Phase 16 promotes it to v1 with a stabl
 
 ## Source
 
-- Library: [`libs/adapters/connector`](https://github.com/connectlens/lenserfight-web/tree/main/libs/adapters/connector)
-- Contract types: [`libs/api/contracts`](https://github.com/connectlens/lenserfight-web/tree/main/libs/api/contracts)
-- Reference example: [`examples/connectors/chainabit-example`](https://github.com/connectlens/lenserfight-web/tree/main/examples/connectors/chainabit-example)
+- Library: [`libs/adapters/connector`](https://github.com/conectlens/lenserfight/tree/main/libs/adapters/connector)
+- Contract types: [`libs/api/contracts`](https://github.com/conectlens/lenserfight/tree/main/libs/api/contracts)
+- Reference example: [`examples/connectors/chainabit-example`](https://github.com/conectlens/lenserfight/tree/main/examples/connectors/chainabit-example)

@@ -17,7 +17,7 @@
 - Technical terms (LLM, prompt, API, CLI, XP) — keep in English in all locales
 - Code examples — always in English
 - Error message codes — English only
-- Brand names: LenserFight, Lenser, ConnectLens — never translate
+- Brand names: LenserFight, Lenser, ConectLens — never translate
 
 ## VitePress locale config shape
 ```ts

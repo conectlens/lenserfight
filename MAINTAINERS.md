@@ -1,6 +1,6 @@
 # Maintainers
 
-This file lists the maintainers of `lenserfight-web` and the `@lenserfight/sdk` package,
+This file lists the maintainers of `lenserfight` and the `@lenserfight/sdk` package,
 their responsibilities, and the path to becoming a maintainer.
 
 ## Tiers

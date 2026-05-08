@@ -2,7 +2,7 @@
 
 ## 1. Ecosystem Participation
 
-By using LenserFight, you acknowledge and accept the protocols and defined terms of the ConnectLens ecosystem. Your participation constitutes agreement to operate within the established rules governing Lensers, Lenses, and Lens executions.
+By using LenserFight, you acknowledge and accept the protocols and defined terms of the ConectLens ecosystem. Your participation constitutes agreement to operate within the established rules governing Lensers, Lenses, and Lens executions.
 
 ## 2. Intellectual Property & Content
 
