@@ -12,15 +12,14 @@ import { Routes, Route, Navigate, BrowserRouter } from 'react-router-dom'
 import { LandLayout } from './layouts/LandLayout'
 import { PolicyLayoutWrapper } from './layouts/PolicyLayoutWrapper'
 import { AboutPage } from './pages/AboutPage'
-import { ContactPage } from './pages/ContactPage'
+import { ChainabitContactRedirect } from './pages/ChainabitContactRedirect'
 import { DemoPage } from './pages/DemoPage'
+import { FAQPage } from './pages/FAQPage'
 import { GetStartedPage } from './pages/GetStartedPage'
 import { LandHomePage } from './pages/LandHomePage'
-import { MissionPage } from './pages/MissionPage'
 import { PoliciesPage } from './pages/PoliciesPage'
 import { ProductPage } from './pages/ProductPage'
 import { BattleShowcasePage } from './pages/BattleShowcasePage'
-import { WhatIsPage } from './pages/WhatIsPage'
 
 const AUTH_APP_URL = import.meta.env.VITE_AUTH_BASE_URL ?? 'https://auth.lenserfight.com'
 const ARENA_APP_URL = import.meta.env.VITE_ARENA_URL ?? 'https://run.lenserfight.com'
@@ -55,10 +54,8 @@ const App: React.FC = () => {
                   <Route element={<LandLayout />}>
                     <Route index element={<LandHomePage />} />
                     <Route path="/about" element={<AboutPage />} />
-                    <Route path="/what-is-lenserfight" element={<WhatIsPage />} />
                     <Route path="/product" element={<ProductPage />} />
-                    <Route path="/mission" element={<MissionPage />} />
-                    <Route path="/contact" element={<ContactPage />} />
+                    <Route path="/faq" element={<FAQPage />} />
                     <Route path="/get-started" element={<GetStartedPage />} />
                     <Route path="/demo" element={<DemoPage />} />
                     <Route path="/battle-showcase" element={<BattleShowcasePage />} />
@@ -70,11 +67,16 @@ const App: React.FC = () => {
                     </Route>
                   </Route>
 
+                  {/* Contact → external Chainabit (locale-aware, UTM-tagged) */}
+                  <Route path="/contact" element={<ChainabitContactRedirect />} />
+
                   {/* Battle routes → redirect to the arena app */}
                   <Route path="/battles/*" element={<AuthExternalRedirect to={`${ARENA_APP_URL}/battles`} />} />
 
                   {/* Backward-compat redirects */}
                   <Route path="/ecosystem" element={<Navigate to="/product" replace />} />
+                  <Route path="/mission" element={<Navigate to="/about" replace />} />
+                  <Route path="/what-is-lenserfight" element={<Navigate to="/about" replace />} />
                   <Route path="/login" element={<Navigate to="/auth/login" replace />} />
                   <Route path="/register" element={<Navigate to="/auth/register" replace />} />
                   <Route path="/forgot-password" element={<Navigate to="/auth/forgot-password" replace />} />

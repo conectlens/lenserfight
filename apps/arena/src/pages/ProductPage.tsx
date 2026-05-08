@@ -11,12 +11,16 @@ import {
   ArrowRight,
   Brain,
   CheckCircle,
+  ExternalLink,
   Layers,
   User,
   Zap,
 } from 'lucide-react'
 import React from 'react'
+import { useTranslation } from 'react-i18next'
 import { Link } from 'react-router-dom'
+
+import { chainabitContactUrl } from '../utils/chainabitUrls'
 
 const RUN_APP_URL = import.meta.env.VITE_ARENA_URL ?? 'https://run.lenserfight.com'
 
@@ -113,6 +117,13 @@ const FLOW_STEPS = [
 ]
 
 export const ProductPage: React.FC = () => {
+  const { i18n } = useTranslation()
+  const contactUrl = chainabitContactUrl({
+    lang: i18n.language,
+    utmMedium: 'arena_product',
+    utmCampaign: 'arena_product_contact',
+  })
+
   return (
     <div className="relative overflow-hidden bg-surface-base text-surface-text">
       {/* Brand-yellow tinted gradient */}
@@ -367,11 +378,11 @@ export const ProductPage: React.FC = () => {
                     Browse battles
                   </Button>
                 </a>
-                <Link to="/contact">
+                <a href={contactUrl} target="_blank" rel="noopener noreferrer">
                   <Button variant="secondary" size="md">
-                    Talk to us
+                    Talk to us <ExternalLink size={14} />
                   </Button>
-                </Link>
+                </a>
               </div>
             </Card>
           </motion.div>
