@@ -6,7 +6,7 @@ title: Local Database Setup
 
 This guide sets up the **LenserFight Community Edition** PostgreSQL/Supabase stack for local development. The OSS database exposes only public schemas (`lensers`, `lenses`, `content`, `media`, `agents`, `ai`, `execution`, `tenancy`, etc.). It does **not** include private cloud schemas such as `battles`, `billing`, `xp`, `benchmark`, or `authz`.
 
-For the **full LenserFight Cloud / platform** database (all schemas and private seeds), use the private [lenserfight-platform](https://github.com/connectlens-org/lenserfight-platform) repository and its `DEVELOPMENT.md`.
+For the **full LenserFight Cloud / platform** database (all schemas and private seeds), use the private [lenserfight-platform](https://github.com/conectlens/lenserfight-platform) repository and its `DEVELOPMENT.md`.
 
 ## Prerequisites
 
