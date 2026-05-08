@@ -1,6 +1,7 @@
 import React from 'react'
 
 import { ThreadFeedItem } from '@lenserfight/types'
+import { HelpButton } from '@lenserfight/ui/components'
 
 import { ThreadsListCard } from './ThreadsListCard'
 
@@ -35,6 +36,11 @@ export const ThreadsList: React.FC<ThreadsListProps> = ({ threads, isLoading, on
 
   return (
     <div className="space-y-6">
+      {threads.length > 0 && (
+        <div className="flex justify-end">
+          <HelpButton path="/reference/community-api/threads" label="About Threads" />
+        </div>
+      )}
       {threads.map((thread) => (
         <ThreadsListCard key={thread.id} thread={thread} onOpen={onOpenThread} />
       ))}

@@ -17,7 +17,7 @@ import {
 } from '@lenserfight/features/home'
 import { useLenser } from '@lenserfight/features/profile'
 import { CreateThreadModal } from '@lenserfight/features/threads'
-import { Avatar, Button, Card, EmptyState, SEOHead, TagBadge } from '@lenserfight/ui/components'
+import { Avatar, Button, Card, EmptyState, HelpButton, SEOHead, TagBadge } from '@lenserfight/ui/components'
 import { buildAuthReturnUrl } from '@lenserfight/utils/dom'
 import { AUTH_BASE_URL } from '@lenserfight/utils/env'
 import {
@@ -220,6 +220,7 @@ export const HomePage: React.FC<HomePageProps> = ({ spectatorSlot }) => {
           )}
           {!isEmpty && (
             <div className="w-auto flex items-center gap-2">
+              <HelpButton path="/tutorials/getting-started/overview" />
               <Button
                 onClick={handleCreateWorkflowClick}
                 variant="outline"
