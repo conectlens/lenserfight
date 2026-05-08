@@ -1,20 +1,92 @@
+import { useLenserOptional } from '@lenserfight/features/profile'
+import { Button } from '@lenserfight/ui/components'
+import { Loader2, ShieldAlert, Swords } from 'lucide-react'
 import React from 'react'
-import { useParams } from 'react-router-dom'
+import { Link, useNavigate, useParams } from 'react-router-dom'
+
 
 import { ArenaView } from '../components/arena/ArenaView'
 import { BattleShareCard } from '../components/display/BattleShareCard'
 import { BattleStatusBadge } from '../components/display/BattleStatusBadge'
-import { ContenderSlot } from '../components/submission/ContenderSlot'
 import { ResultBanner } from '../components/scoring/ResultBanner'
 import { RubricPanel } from '../components/scoring/RubricPanel'
 import { VotePanel } from '../components/scoring/VotePanel'
+import { ContenderSlot } from '../components/submission/ContenderSlot'
+import { useCreateRematch } from '../hooks/mutations/useCreateRematch'
+import { useBattle } from '../hooks/query/useBattle'
+import { useModerationDecisions } from '../hooks/query/useModerationDecisions'
 
 import type { BattleStatus } from '../types/battle.types'
+
+function BattleAdminModerationLink({ slug }: { slug: string }) {
+  // Owner-scoped RPC — empty result if user has no moderation visibility for this battle.
+  const { data } = useModerationDecisions('all', 100)
+  const hasModeration = !!data?.some((d) => d.battle_slug === slug)
+  if (!hasModeration) return null
+
+  return (
+    <div className="mt-4 flex justify-end">
+      <Link
+        to="/admin/battles/moderation?status=flagged"
+        className="inline-flex items-center gap-1.5 text-xs font-medium text-greyscale-500 dark:text-greyscale-400 hover:text-primary-yellow-600 dark:hover:text-primary-yellow-400 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-yellow-500 rounded-sm"
+      >
+        <ShieldAlert size={14} aria-hidden="true" />
+        Open in admin
+      </Link>
+    </div>
+  )
+}
+
+// V1 — Rematch CTA visible only to the battle creator. Invokes the
+// `fn_battles_create_rematch` RPC, then navigates to the new draft battle.
+function RematchButton({ slug }: { slug: string }) {
+  const navigate = useNavigate()
+  const lenserCtx = useLenserOptional()
+  const currentLenserId = lenserCtx?.lenser?.id
+  const { data: battle } = useBattle(slug)
+  const { mutateAsync, isPending } = useCreateRematch()
+
+  const isCreator =
+    !!currentLenserId && !!battle?.creator_lenser_id && battle.creator_lenser_id === currentLenserId
+
+  if (!battle || !isCreator) return null
+
+  const handleClick = async () => {
+    if (isPending || !battle.id) return
+    try {
+      const result = await mutateAsync(battle.id)
+      navigate(`/battles/${result.slug}`)
+    } catch {
+      // useCreateRematch already toasts on error.
+    }
+  }
+
+  return (
+    <div className="mt-4 flex justify-end">
+      <Button
+        onClick={handleClick}
+        disabled={isPending}
+        variant="primary"
+        size="sm"
+        className="flex items-center gap-2"
+        aria-label="Create a rematch of this battle"
+      >
+        {isPending ? (
+          <Loader2 size={14} className="animate-spin" aria-hidden="true" />
+        ) : (
+          <Swords size={14} aria-hidden="true" />
+        )}
+        {isPending ? 'Creating rematch...' : 'Rematch'}
+      </Button>
+    </div>
+  )
+}
 
 export function BattleResultPage() {
   const { slug } = useParams<{ slug: string }>()
 
   return (
+    <>
     <ArenaView
       slug={slug ?? ''}
       forcePhase="result"
@@ -69,5 +141,8 @@ export function BattleResultPage() {
         <BattleStatusBadge status={props.status as BattleStatus} />
       )}
     />
+    {slug && <RematchButton slug={slug} />}
+    {slug && <BattleAdminModerationLink slug={slug} />}
+    </>
   )
 }

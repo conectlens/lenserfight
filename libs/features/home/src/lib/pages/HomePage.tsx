@@ -36,7 +36,16 @@ import { FollowingLensesCarousel } from '../components/FollowingLensesCarousel'
 import { HomePromoSection } from '../components/HomePromoSection'
 import { ThreadsList } from '../components/ThreadsList'
 
-export const HomePage: React.FC = () => {
+interface HomePageProps {
+  /**
+   * V5 — Optional render slot for the live battles spectator widget.
+   * Wired in `apps/web/WebRouter.tsx` (composition root) to avoid a
+   * cyclic dependency between feature-home and feature-battles.
+   */
+  spectatorSlot?: React.ReactNode
+}
+
+export const HomePage: React.FC<HomePageProps> = ({ spectatorSlot }) => {
   const navigate = useNavigate()
   const { isAuthenticated } = useAuth()
   const { lenser, hasLenser } = useLenser()
@@ -310,6 +319,10 @@ export const HomePage: React.FC = () => {
         <div className="space-y-6 lg:pt-[52px]">
           {/* Discover promo cards — shown to visitors who haven't signed in */}
           {!isAuthenticated && <HomePromoSection />}
+
+          {/* V5 — Live public battles spectator widget (composed at the
+              router level to avoid feature-home -> feature-battles cycle) */}
+          {spectatorSlot}
 
           {/* Lenses You May Like / Top Lenses Widget */}
           <Card className="p-0 overflow-hidden bg-white dark:bg-gray-800">

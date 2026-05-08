@@ -39,3 +39,4 @@ export * from './lib/components/WorkflowTaskCard'
 // Pages
 export * from './lib/pages/WorkflowsPage'
 export * from './lib/pages/WorkflowBuilderPage'
+export * from './lib/pages/WorkflowTemplateGalleryPage'

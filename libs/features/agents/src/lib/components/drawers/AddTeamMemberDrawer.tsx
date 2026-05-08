@@ -15,7 +15,7 @@ interface AddTeamMemberDrawerProps {
   onSaved?: () => void
 }
 
-const ROLES = ['lead_operator', 'specialist', 'reviewer', 'delegator', 'observer']
+const ROLES = ['leader', 'executor', 'reviewer', 'operator', 'observer']
 
 export const AddTeamMemberDrawer: React.FC<AddTeamMemberDrawerProps> = ({
   open,
@@ -28,7 +28,7 @@ export const AddTeamMemberDrawer: React.FC<AddTeamMemberDrawerProps> = ({
 }) => {
   const isEdit = !!initial
   const [agentId, setAgentId] = useState(initial?.agent_id ?? defaultAgentId)
-  const [role, setRole] = useState(initial?.role ?? 'lead_operator')
+  const [role, setRole] = useState(initial?.role ?? 'leader')
   const [responsibility, setResponsibility] = useState(initial?.responsibility ?? '')
   const [lane, setLane] = useState(initial?.lane ?? 1)
   const [sortOrder, setSortOrder] = useState(initial?.sort_order ?? 0)
@@ -38,7 +38,7 @@ export const AddTeamMemberDrawer: React.FC<AddTeamMemberDrawerProps> = ({
   useEffect(() => {
     if (!open) return
     setAgentId(initial?.agent_id ?? defaultAgentId)
-    setRole(initial?.role ?? 'lead_operator')
+    setRole(initial?.role ?? 'leader')
     setResponsibility(initial?.responsibility ?? '')
     setLane(initial?.lane ?? 1)
     setSortOrder(initial?.sort_order ?? 0)
