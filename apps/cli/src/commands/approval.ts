@@ -322,6 +322,294 @@ const approvalAudit = defineCommand({
   },
 })
 
+// ─── standing approvals ────────────────────────────────────────────────────
+//
+// A "standing" approval pre-authorises a workflow + gate kind for a bounded
+// time window so the agent can execute without producing per-run approval
+// requests. Backed by `agents.standing_approvals`. Owners must be able to
+// revoke immediately, so we surface list / revoke alongside grant.
+
+interface StandingApprovalRow {
+  id: string
+  workflow_id: string
+  gate_kind: string
+  granted_at: string
+  expires_at: string | null
+  revoked_at: string | null
+  granted_by: string | null
+}
+
+const approvalGrantStanding = defineCommand({
+  meta: {
+    name: 'grant-standing',
+    description:
+      'Grant a standing approval that pre-authorises a workflow gate for N hours.',
+  },
+  args: {
+    workflow: {
+      type: 'string',
+      description: 'Workflow UUID',
+      required: true,
+    },
+    gate: {
+      type: 'string',
+      description: 'Gate kind (e.g. tool, spending, model)',
+      required: true,
+    },
+    hours: {
+      type: 'string',
+      description: 'Validity window in hours (default 24)',
+      default: '24',
+    },
+  },
+  async run({ args }) {
+    const hours = Number.parseInt(args.hours, 10)
+    if (!Number.isFinite(hours) || hours <= 0) {
+      consola.error('Invalid --hours "%s" — must be a positive integer.', args.hours)
+      process.exitCode = 1
+      return
+    }
+
+    try {
+      const result = await callRpc<string>(
+        'fn_grant_standing_approval',
+        {
+          p_workflow_id: args.workflow,
+          p_gate_kind: args.gate,
+          p_hours: hours,
+        },
+        { requireAuth: true }
+      )
+      // Some RPCs return scalars wrapped in an array; normalize.
+      const id = Array.isArray(result) ? (result[0] as unknown as string) : result
+      consola.success('Standing approval granted: %s', id)
+      consola.info('Workflow: %s · Gate: %s · Valid: %dh', args.workflow, args.gate, hours)
+    } catch (err) {
+      handleError(err)
+    }
+  },
+})
+
+const approvalRevokeStanding = defineCommand({
+  meta: {
+    name: 'revoke-standing',
+    description: 'Revoke a previously granted standing approval immediately.',
+  },
+  args: {
+    'standing-id': {
+      type: 'positional',
+      description: 'Standing approval UUID',
+      required: true,
+    },
+  },
+  async run({ args }) {
+    try {
+      await callRpc(
+        'fn_revoke_standing_approval',
+        { p_id: args['standing-id'] },
+        { requireAuth: true }
+      )
+      consola.success('Standing approval %s revoked.', args['standing-id'])
+    } catch (err) {
+      handleError(err)
+    }
+  },
+})
+
+const approvalListStanding = defineCommand({
+  meta: {
+    name: 'list-standing',
+    description: 'List active (non-revoked) standing approvals.',
+  },
+  args: {
+    workflow: {
+      type: 'string',
+      description: 'Optional: filter to a single workflow UUID',
+      default: '',
+    },
+    json: { type: 'boolean', description: 'Output as JSON', default: false },
+  },
+  async run({ args }) {
+    try {
+      const query: Record<string, string | number | boolean | undefined> = {
+        revoked_at: 'is.null',
+        select: 'id,workflow_id,gate_kind,granted_at,expires_at,revoked_at,granted_by',
+        order: 'granted_at.desc',
+      }
+      if (args.workflow) query.workflow_id = `eq.${args.workflow}`
+
+      const rows = await callRest<StandingApprovalRow[]>(
+        'agents',
+        'standing_approvals',
+        'GET',
+        undefined,
+        { requireAuth: true, query }
+      )
+
+      if (!rows || rows.length === 0) {
+        consola.info('No active standing approvals.')
+        return
+      }
+
+      if (args.json) {
+        printJson(rows)
+        return
+      }
+
+      printTable(
+        ['ID', 'Workflow', 'Gate', 'Granted At', 'Expires At'],
+        rows.map((r) => [
+          r.id.slice(0, 8) + '…',
+          r.workflow_id.slice(0, 8) + '…',
+          truncate(r.gate_kind, 18),
+          new Date(r.granted_at).toLocaleString(),
+          r.expires_at ? new Date(r.expires_at).toLocaleString() : '—',
+        ])
+      )
+    } catch (err) {
+      handleError(err)
+    }
+  },
+})
+
+// ─── approval bulk-approve ─────────────────────────────────────────────────
+//
+// Approves a filtered set of pending approvals in a single round-trip via the
+// agents.fn_bulk_approve(p_filters jsonb) RPC. The RPC itself is delivered by
+// the SQL agent in a follow-up migration; the CLI is wired now so it ships
+// the moment the function exists.
+//
+// TODO(Y3): depends on SQL function `agents.fn_bulk_approve(p_filters jsonb)
+// RETURNS int`. Until that ships, this command will surface a clean RPC-not-
+// found error from PostgREST and exit non-zero.
+
+function parseSinceArg(value: string | undefined): string | null {
+  if (!value) return null
+  // Accept ISO 8601 directly OR shorthand "1h" / "30m" / "2d".
+  const shorthand = value.match(/^(\d+)(m|h|d)$/i)
+  if (shorthand) {
+    const n = parseInt(shorthand[1], 10)
+    const unit = shorthand[2].toLowerCase()
+    const ms = unit === 'm' ? n * 60_000 : unit === 'h' ? n * 3_600_000 : n * 86_400_000
+    return new Date(Date.now() - ms).toISOString()
+  }
+  const parsed = new Date(value)
+  if (!Number.isFinite(parsed.getTime())) {
+    throw new Error(`Invalid --since "${value}". Use ISO 8601 or shorthand like "1h", "30m", "2d".`)
+  }
+  return parsed.toISOString()
+}
+
+async function promptYesNo(message: string): Promise<boolean> {
+  process.stdout.write(message + ' ')
+  return new Promise((resolve) => {
+    const onData = (chunk: Buffer) => {
+      const ans = chunk.toString().trim().toLowerCase()
+      process.stdin.removeListener('data', onData)
+      process.stdin.pause()
+      resolve(ans === 'y' || ans === 'yes')
+    }
+    process.stdin.resume()
+    process.stdin.once('data', onData)
+  })
+}
+
+const approvalBulkApprove = defineCommand({
+  meta: {
+    name: 'bulk-approve',
+    description: 'Approve a filtered set of pending approvals in one RPC call.',
+  },
+  args: {
+    filter: {
+      type: 'string',
+      description: 'key=value filter, e.g. "status=pending" (default: status=pending)',
+      default: 'status=pending',
+    },
+    since: {
+      type: 'string',
+      description: 'Only approve requests created since X (ISO or "1h"/"30m"/"2d")',
+      default: '',
+    },
+    workflow: {
+      type: 'string',
+      description: 'Restrict to a single workflow UUID',
+      default: '',
+    },
+    force: {
+      type: 'boolean',
+      description: 'Skip the confirmation prompt',
+      default: false,
+    },
+  },
+  async run({ args }) {
+    try {
+      const filters: Record<string, unknown> = {}
+
+      // Parse --filter status=pending (extensible to other key=value pairs).
+      const eqIdx = args.filter.indexOf('=')
+      if (eqIdx > 0) {
+        const key = args.filter.slice(0, eqIdx).trim()
+        const value = args.filter.slice(eqIdx + 1).trim()
+        if (key && value) filters[key] = value
+      }
+
+      const since = parseSinceArg(args.since)
+      if (since) filters['since'] = since
+      if (args.workflow) filters['workflow_id'] = args.workflow
+
+      // Best-effort preview count via PostgREST. Falls back to "?" if unavailable.
+      let previewCount = '?'
+      try {
+        const query: Record<string, string> = {
+          select: 'id',
+          approval_status: `eq.${(filters['status'] as string) || 'pending'}`,
+        }
+        if (filters['workflow_id']) query['workflow_id'] = `eq.${filters['workflow_id']}`
+        if (since) query['created_at'] = `gte.${since}`
+        const rows = await callRest<TeamRunRow[]>(
+          'agents',
+          'team_runs',
+          'GET',
+          undefined,
+          { requireAuth: true, query },
+        )
+        previewCount = String((rows ?? []).length)
+      } catch {
+        /* preview is best-effort — never fails the bulk op */
+      }
+
+      if (!args.force) {
+        const ok = await promptYesNo(
+          `About to approve ${previewCount} pending runs. Proceed? [y/N]`,
+        )
+        if (!ok) {
+          consola.info('Aborted. No approvals were granted.')
+          return
+        }
+      }
+
+      const result = await callRpc<number | { approved: number } | Array<{ approved: number }>>(
+        'fn_bulk_approve',
+        { p_filters: filters },
+        { requireAuth: true },
+      )
+
+      // RPC may return a scalar int, an object, or [{ approved: N }] depending
+      // on how the SQL function is declared. Normalise.
+      let approved: number
+      if (typeof result === 'number') approved = result
+      else if (Array.isArray(result) && result[0]) approved = result[0].approved ?? 0
+      else if (result && typeof result === 'object' && 'approved' in result)
+        approved = (result as { approved: number }).approved
+      else approved = 0
+
+      consola.success('Bulk-approved %d run(s).', approved)
+    } catch (err) {
+      handleError(err)
+    }
+  },
+})
+
 // ─── parent ────────────────────────────────────────────────────────────────
 
 export default defineCommand({
@@ -335,5 +623,9 @@ export default defineCommand({
     approve: approvalApprove,
     reject: approvalReject,
     audit: approvalAudit,
+    'grant-standing': approvalGrantStanding,
+    'revoke-standing': approvalRevokeStanding,
+    'list-standing': approvalListStanding,
+    'bulk-approve': approvalBulkApprove,
   },
 })

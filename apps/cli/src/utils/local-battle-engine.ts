@@ -3,11 +3,12 @@
 //   LocalBattleStore  — Pure Fabrication + Information Expert: owns disk persistence
 //   LocalBattleRunner — Controller: receives "run battle" event, delegates to experts
 
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
+import { existsSync, mkdirSync } from 'node:fs'
 import { join, resolve } from 'node:path'
 import { randomUUID } from 'node:crypto'
 import { byokKeyResolver, getStreamAdapter } from '@lenserfight/providers'
 import type { ProviderMessage } from '@lenserfight/providers'
+import { readBattleFile, writeBattleFile } from './local-battle-storage'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -74,12 +75,12 @@ export class LocalBattleStore {
   load(id: string): LocalBattleState {
     const file = this.path(id)
     if (!existsSync(file)) throw new Error(`Local battle not found: ${id}`)
-    return JSON.parse(readFileSync(file, 'utf-8')) as LocalBattleState
+    return readBattleFile<LocalBattleState>(file)
   }
 
   save(state: LocalBattleState): void {
     this.ensureDir()
-    writeFileSync(this.path(state.id), JSON.stringify(state, null, 2), 'utf-8')
+    writeBattleFile(this.path(state.id), state)
   }
 
   list(): LocalBattleState[] {
@@ -88,7 +89,7 @@ export class LocalBattleStore {
     const { readdirSync } = require('node:fs') as typeof import('node:fs')
     return readdirSync(d)
       .filter((f: string) => f.endsWith('.json'))
-      .map((f: string) => JSON.parse(readFileSync(join(d, f), 'utf-8')) as LocalBattleState)
+      .map((f: string) => readBattleFile<LocalBattleState>(join(d, f)))
       .sort((a: LocalBattleState, b: LocalBattleState) => b.createdAt.localeCompare(a.createdAt))
   }
 

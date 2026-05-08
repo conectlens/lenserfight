@@ -60,6 +60,9 @@ const LazyLensLabPage = lazy(() =>
 const LazyMediaGalleryPage = lazy(() =>
   import('@lenserfight/features/lenses').then((module) => ({ default: module.MediaGalleryPage }))
 )
+const LazyMarketplacePage = lazy(() =>
+  import('@lenserfight/features/lenses').then((module) => ({ default: module.MarketplacePage }))
+)
 const LazySettingsPage = lazy(() =>
   import('@lenserfight/features/settings').then((module) => ({ default: module.SettingsPage }))
 )
@@ -103,6 +106,12 @@ const LazyBenchmarkSuiteDetailPage = lazy(() =>
 const LazyBattlesFeedPage = lazy(() =>
   import('@lenserfight/features/battles').then((module) => ({ default: module.BattlesFeedPage }))
 )
+const LazyArenaBattlesDiscoveryPage = lazy(() =>
+  import('@lenserfight/features/battles').then((module) => ({ default: module.ArenaBattlesDiscoveryPage }))
+)
+const LazySpectatorFeedWidget = lazy(() =>
+  import('@lenserfight/features/battles').then((module) => ({ default: module.SpectatorFeedWidget }))
+)
 const LazyCreateBattleWizard = lazy(() =>
   import('@lenserfight/features/battles').then((module) => ({ default: module.CreateBattleWizard }))
 )
@@ -112,11 +121,17 @@ const LazyBattleDetailPage = lazy(() =>
 const LazyBattleResultPage = lazy(() =>
   import('@lenserfight/features/battles').then((module) => ({ default: module.BattleResultPage }))
 )
+const LazyBattleReplayPage = lazy(() =>
+  import('@lenserfight/features/battles').then((module) => ({ default: module.BattleReplayPage }))
+)
 const LazyBattleLenserboardPage = lazy(() =>
   import('@lenserfight/features/battles').then((module) => ({ default: module.BattleLenserboardPage }))
 )
 const LazyNotificationsPage = lazy(() =>
   import('@lenserfight/features/notifications').then((module) => ({ default: module.NotificationsPage }))
+)
+const LazyAutomationsPage = lazy(() =>
+  import('@lenserfight/features/automation').then((module) => ({ default: module.AutomationsPage }))
 )
 const LazyTournamentPage = lazy(() =>
   import('@lenserfight/features/battles').then((module) => ({ default: module.TournamentPage }))
@@ -124,11 +139,17 @@ const LazyTournamentPage = lazy(() =>
 const LazyAdminDashboardPage = lazy(() =>
   import('@lenserfight/features/battles').then((module) => ({ default: module.AdminDashboardPage }))
 )
+const LazyAdminBattlesPanelPage = lazy(() =>
+  import('@lenserfight/features/battles').then((module) => ({ default: module.AdminBattlesPanelPage }))
+)
 const LazyWorkflowsPage = lazy(() =>
   import('@lenserfight/features/workflows').then((module) => ({ default: module.WorkflowsPage }))
 )
 const LazyWorkflowBuilderPage = lazy(() =>
   import('@lenserfight/features/workflows').then((module) => ({ default: module.WorkflowBuilderPage }))
+)
+const LazyWorkflowTemplateGalleryPage = lazy(() =>
+  import('@lenserfight/features/workflows').then((module) => ({ default: module.WorkflowTemplateGalleryPage }))
 )
 const LazyCreateWorkflowWizard = lazy(() =>
   import('@lenserfight/features/workflows').then((module) => ({ default: module.CreateWorkflowWizard }))
@@ -286,7 +307,15 @@ export const WebRouter: React.FC = () => {
           path="/"
           element={
             <DashboardFrame>
-              <LazyHomePage />
+              <LazyHomePage
+                spectatorSlot={
+                  FEATURES.PUBLIC_BATTLES ? (
+                    <Suspense fallback={null}>
+                      <LazySpectatorFeedWidget />
+                    </Suspense>
+                  ) : null
+                }
+              />
             </DashboardFrame>
           }
         />
@@ -323,6 +352,14 @@ export const WebRouter: React.FC = () => {
                 </DashboardFrame>
               }
             />
+            <Route
+              path="/battles/arena"
+              element={
+                <DashboardFrame>
+                  <LazyArenaBattlesDiscoveryPage />
+                </DashboardFrame>
+              }
+            />
             <Route path="/battles/lenserboard" element={<LazyBattleLenserboardPage />} />
             <Route
               path="/battles/create"
@@ -334,8 +371,24 @@ export const WebRouter: React.FC = () => {
             />
             <Route path="/tournaments/:slug" element={<LazyTournamentPage />} />
             <Route path="/admin" element={<LazyAdminDashboardPage />} />
+            <Route
+              path="/admin/battles/moderation"
+              element={
+                <DashboardFrame>
+                  <LazyAdminBattlesPanelPage />
+                </DashboardFrame>
+              }
+            />
             <Route path="/battles/:slug" element={<LazyBattleDetailPage />} />
             <Route path="/battles/:slug/result" element={<LazyBattleResultPage />} />
+            <Route
+              path="/battles/:slug/replay"
+              element={
+                <DashboardFrame>
+                  <LazyBattleReplayPage />
+                </DashboardFrame>
+              }
+            />
           </>
         )}
 
@@ -409,6 +462,15 @@ export const WebRouter: React.FC = () => {
           element={
             <DashboardFrame>
               <LazyLensLabPage />
+            </DashboardFrame>
+          }
+        />
+
+        <Route
+          path="/marketplace"
+          element={
+            <DashboardFrame>
+              <LazyMarketplacePage />
             </DashboardFrame>
           }
         />
@@ -558,6 +620,15 @@ export const WebRouter: React.FC = () => {
           }
         />
 
+        <Route
+          path="/automations"
+          element={
+            <DashboardFrame>
+              <LazyAutomationsPage />
+            </DashboardFrame>
+          }
+        />
+
         <Route path="/settings" element={<Navigate to="/settings/account" replace />} />
 
         <Route
@@ -593,6 +664,15 @@ export const WebRouter: React.FC = () => {
         >
           <Route path="manage" element={<CreateWorkflowModal />} />
         </Route>
+
+        <Route
+          path="/workflows/templates"
+          element={
+            <DashboardFrame>
+              <LazyWorkflowTemplateGalleryPage />
+            </DashboardFrame>
+          }
+        />
 
         <Route
           path="/workflows/:id"

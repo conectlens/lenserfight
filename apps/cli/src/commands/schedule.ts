@@ -1,5 +1,8 @@
+import { readFile } from 'node:fs/promises'
+
 import { defineCommand } from 'citty'
 import consola from 'consola'
+
 import { callRest, callRpc, handleError } from '../utils/api'
 import { printJson, printTable, truncate } from '../utils/output'
 
@@ -256,6 +259,11 @@ const scheduleCreate = defineCommand({
       consola.info('CRON:        %s (%s)', schedule.cron_expr, schedule.timezone)
       consola.info('Active:      %s', schedule.is_active ? 'yes' : 'no')
     } catch (err) {
+      if ((err as { code?: string }).code === '23514') {
+        consola.error('Approval-free schedules require a spending limit on the agent policy. Set one first: lf agent policy update --spending-limit <credits>.')
+        process.exitCode = 1
+        return
+      }
       handleError(err)
     }
   },
@@ -290,6 +298,11 @@ const scheduleUpdate = defineCommand({
       consola.success('Schedule updated.')
       consola.info('Schedule ID: %s', schedule.id)
     } catch (err) {
+      if ((err as { code?: string }).code === '23514') {
+        consola.error('Approval-free schedules require a spending limit on the agent policy. Set one first: lf agent policy update --spending-limit <credits>.')
+        process.exitCode = 1
+        return
+      }
       handleError(err)
     }
   },
@@ -396,15 +409,35 @@ const scheduleDelete = defineCommand({
 
 // ─── schedule history ──────────────────────────────────────────────────────
 //
-// Today the schedule row carries only the most-recent dispatch metadata
-// (last_run_at, last_dispatch_status, last_error_*, last_completed_at,
-// last_result). Full history requires joining workflow_runs filtered to this
-// schedule's workflow — surfaced as the most recent N runs.
+// Joins the schedule to its workflow_runs to surface the most recent N runs.
+// `--limit` is clamped to [1, 50]; default 10. The schedule row's last_*
+// fields remain the source of truth for the most-recent dispatch and are
+// rendered as the header above the runs table.
+
+interface WorkflowRunRow {
+  id: string
+  workflow_id: string
+  status: string
+  started_at: string | null
+  completed_at: string | null
+  created_at: string
+}
+
+function clampLimit(raw: number, fallback: number): number {
+  if (!Number.isFinite(raw) || raw <= 0) return fallback
+  return Math.min(50, Math.max(1, Math.floor(raw)))
+}
+
+function durationMs(started: string | null, completed: string | null): string {
+  if (!started || !completed) return '—'
+  const ms = new Date(completed).getTime() - new Date(started).getTime()
+  return Number.isFinite(ms) && ms >= 0 ? String(ms) : '—'
+}
 
 const scheduleHistory = defineCommand({
   meta: {
     name: 'history',
-    description: 'Show the most recent dispatch summary for a schedule.',
+    description: 'Show the most recent runs dispatched by a schedule.',
   },
   args: {
     schedule: {
@@ -412,6 +445,12 @@ const scheduleHistory = defineCommand({
       description: 'Schedule UUID',
       required: true,
     },
+    limit: {
+      type: 'string',
+      description: 'Max rows to return (1–50, default 10).',
+      default: '10',
+    },
+    json: { type: 'boolean', description: 'Output as JSON', default: false },
   },
   async run({ args }) {
     try {
@@ -426,18 +465,51 @@ const scheduleHistory = defineCommand({
         process.exitCode = 1
         return
       }
+
+      const limit = clampLimit(parseInt(args.limit, 10), 10)
+
+      const runs = await callRest<WorkflowRunRow[]>(
+        'lenses',
+        'workflow_runs',
+        'GET',
+        undefined,
+        {
+          requireAuth: true,
+          query: {
+            workflow_id: `eq.${match.workflow_id}`,
+            order: 'created_at.desc',
+            limit,
+            select: 'id,workflow_id,status,started_at,completed_at,created_at',
+          },
+        }
+      )
+
+      if (args.json) {
+        printJson({ schedule: match, runs: runs ?? [] })
+        return
+      }
+
       consola.info('Workflow:        %s', match.workflow_title || match.workflow_id)
       consola.info('CRON:            %s (%s)', match.cron_expr, match.timezone)
       consola.info('Active:          %s', match.is_active ? 'yes' : 'no')
-      consola.info('Last run at:     %s', match.last_run_at ?? '—')
-      consola.info('Last run id:     %s', match.last_run_id ?? '—')
-      consola.info('Last dispatch:   %s', match.last_dispatch_status ?? '—')
-      consola.info('Last error at:   %s', match.last_error_at ?? '—')
-      if (match.last_error_message) {
-        consola.info('Last error msg:  %s', match.last_error_message)
-      }
-      consola.info('Last completed:  %s', match.last_completed_at ?? '—')
       consola.info('Next run at:     %s', match.next_run_at ?? '—')
+      consola.info('')
+
+      if (!runs || runs.length === 0) {
+        consola.info('No runs dispatched by this schedule yet.')
+        return
+      }
+
+      printTable(
+        ['Run ID', 'Started', 'Completed', 'Status', 'Duration (ms)'],
+        runs.map((r) => [
+          r.id.slice(0, 8) + '…',
+          r.started_at ?? r.created_at,
+          r.completed_at ?? '—',
+          r.status,
+          durationMs(r.started_at, r.completed_at),
+        ])
+      )
     } catch (err) {
       handleError(err)
     }
@@ -560,9 +632,8 @@ const scheduleHealth = defineCommand({
 
       // ── Worker heartbeats ─────────────────────────────────────────────────
       try {
-        const { createClient } = await import('@supabase/supabase-js')
-        const { getEnv } = await import('../utils/env')
-        const svcClient = createClient(getEnv('SUPABASE_URL'), getEnv('SUPABASE_SERVICE_ROLE_KEY'))
+        const { createServiceClient } = await import('../utils/supabase-client')
+        const svcClient = await createServiceClient()
 
         const { data: workers } = await svcClient
           .schema('platform')
@@ -628,6 +699,655 @@ const scheduleHealth = defineCommand({
   },
 })
 
+// ─── schedule backfill ────────────────────────────────────────────────────
+//
+// Replays missed dispatches between a schedule's most recent run (or the
+// supplied --since timestamp) and "now", deferring to the database for the
+// actual cron tick enumeration. Dry-run mode previews the ticks without
+// dispatching, useful for reviewing the blast radius before applying.
+
+interface BackfillTick {
+  fire_at: string
+  status?: string
+}
+
+interface BackfillResult {
+  would_dispatch?: number
+  dispatched?: number
+  skipped_existing?: number
+  ticks?: BackfillTick[]
+}
+
+const scheduleBackfill = defineCommand({
+  meta: {
+    name: 'backfill',
+    description:
+      'Backfill missed dispatches for a schedule between --since and now (use --dry-run to preview).',
+  },
+  args: {
+    schedule: {
+      type: 'positional',
+      description: 'Schedule UUID',
+      required: true,
+    },
+    since: {
+      type: 'string',
+      description: 'ISO 8601 lower-bound timestamp (e.g. 2026-05-01T00:00:00Z)',
+      required: true,
+    },
+    'dry-run': {
+      type: 'boolean',
+      description: 'Preview the dispatches without enqueuing runs.',
+      default: false,
+    },
+    json: { type: 'boolean', description: 'Output raw RPC result as JSON', default: false },
+  },
+  async run({ args }) {
+    const since = new Date(args.since)
+    if (!Number.isFinite(since.getTime())) {
+      consola.error(
+        'Invalid --since "%s" — must be a parseable ISO 8601 timestamp.',
+        args.since
+      )
+      process.exitCode = 1
+      return
+    }
+
+    try {
+      const result = await callRpc<BackfillResult>(
+        'fn_backfill_schedule',
+        {
+          p_schedule_id: args.schedule,
+          p_since: since.toISOString(),
+          p_dry_run: args['dry-run'],
+        },
+        { requireAuth: true }
+      )
+
+      if (args.json) {
+        printJson(result ?? {})
+        return
+      }
+
+      if (args['dry-run']) {
+        const wouldDispatch = result?.would_dispatch ?? 0
+        consola.info('Would dispatch %d run(s).', wouldDispatch)
+        const ticks = result?.ticks ?? []
+        if (ticks.length > 0) {
+          printTable(
+            ['#', 'Fire At', 'Status'],
+            ticks.map((t, i) => [
+              String(i + 1),
+              t.fire_at,
+              t.status ?? '—',
+            ])
+          )
+        }
+        return
+      }
+
+      const dispatched = result?.dispatched ?? 0
+      const skipped = result?.skipped_existing ?? 0
+      consola.success(
+        'Dispatched %d run(s) (skipped %d already-backfilled).',
+        dispatched,
+        skipped
+      )
+    } catch (err) {
+      handleError(err)
+    }
+  },
+})
+
+// ─── Phase W4: calendar / condition / rotation / preview ──────────────────
+//
+// Phase W shipped three new dispatch guards on lenses.workflow_schedules:
+//   1. calendar_id          — skip / only-dates overlay
+//   2. pre_dispatch_condition — U-DSL filter against a snapshot context
+//   3. inputs_rotation      — rotated input payload (last_rotation_index)
+// plus the SECURITY DEFINER preview RPC `lenses.fn_preview_schedule_ticks`.
+//
+// The grammar for `pre_dispatch_condition` mirrors automation match_filter:
+// `{ "/json/pointer": { eq|neq|gt|lt|contains: <value> } }`. Validation is
+// duplicated locally so this command does not pull in the automation file.
+
+const CALENDAR_KINDS = ['skip_dates', 'only_dates'] as const
+type CalendarKind = (typeof CALENDAR_KINDS)[number]
+
+const CONDITION_OPS = ['eq', 'neq', 'gt', 'lt', 'contains'] as const
+type ConditionOp = (typeof CONDITION_OPS)[number]
+type ConditionClause = { [op in ConditionOp]?: unknown }
+type ConditionFilter = Record<string, ConditionClause>
+
+interface ScheduleCalendarRow {
+  id: string
+  name: string
+  kind: CalendarKind
+  dates: string[] | null
+  timezone: string
+  is_seed: boolean
+  created_at: string
+}
+
+interface PreviewTickRow {
+  tick_at: string
+  decision: string
+  reason: string
+  inputs: Record<string, unknown> | null
+}
+
+function isPlainJsonObject(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null && !Array.isArray(value)
+}
+
+const ISO_DATE_RE = /^\d{4}-\d{2}-\d{2}$/
+
+function parseDateList(raw: string): string[] {
+  const dates = raw
+    .split(',')
+    .map((s) => s.trim())
+    .filter((s) => s.length > 0)
+  if (dates.length === 0) {
+    throw new Error('--dates must contain at least one ISO date (YYYY-MM-DD).')
+  }
+  for (const d of dates) {
+    if (!ISO_DATE_RE.test(d) || Number.isNaN(new Date(d + 'T00:00:00Z').getTime())) {
+      throw new Error(`Invalid date "${d}" — expected ISO YYYY-MM-DD.`)
+    }
+  }
+  return dates
+}
+
+function validateConditionFilter(value: unknown): asserts value is ConditionFilter {
+  if (!isPlainJsonObject(value)) {
+    throw new Error('Condition file must contain a JSON object.')
+  }
+  for (const [pointer, clause] of Object.entries(value)) {
+    if (!isPlainJsonObject(clause)) {
+      throw new Error(
+        `condition["${pointer}"] must be an object like { "eq": <value> }.`,
+      )
+    }
+    const keys = Object.keys(clause)
+    if (keys.length !== 1) {
+      throw new Error(
+        `condition["${pointer}"] must have exactly one operator key (got ${keys.length}).`,
+      )
+    }
+    const op = keys[0]
+    if (!CONDITION_OPS.includes(op as ConditionOp)) {
+      throw new Error(
+        `condition["${pointer}"] uses unknown operator "${op}". Allowed: ${CONDITION_OPS.join(', ')}.`,
+      )
+    }
+  }
+}
+
+async function loadJsonFile(filePath: string): Promise<unknown> {
+  if (/\.(ya?ml)$/i.test(filePath)) {
+    throw new Error(
+      `YAML is not supported by the CLI. Convert "${filePath}" to JSON.`,
+    )
+  }
+  const raw = await readFile(filePath, 'utf-8')
+  try {
+    return JSON.parse(raw)
+  } catch (err) {
+    throw new Error(`Failed to parse "${filePath}" as JSON: ${(err as Error).message}`)
+  }
+}
+
+function clampPreviewN(raw: number, fallback: number): number {
+  if (!Number.isFinite(raw) || raw <= 0) return fallback
+  return Math.min(100, Math.max(1, Math.floor(raw)))
+}
+
+// ANSI colorizer — keep dependency-free; honors NO_COLOR / non-TTY.
+function colorize(value: string, color: 'green' | 'yellow'): string {
+  const noColor =
+    !process.stdout.isTTY ||
+    Boolean(process.env['NO_COLOR']) ||
+    process.env['TERM'] === 'dumb'
+  if (noColor) return value
+  const open = color === 'green' ? '[32m' : '[33m'
+  return `${open}${value}[0m`
+}
+
+// ─── schedule calendar create ─────────────────────────────────────────────
+
+const calendarCreate = defineCommand({
+  meta: {
+    name: 'create',
+    description: 'Create a calendar overlay (skip_dates or only_dates).',
+  },
+  args: {
+    name: { type: 'string', description: 'Display name', required: true },
+    kind: {
+      type: 'string',
+      description: `Calendar kind: ${CALENDAR_KINDS.join(' | ')}`,
+      required: true,
+    },
+    dates: {
+      type: 'string',
+      description: 'Comma-separated ISO dates (YYYY-MM-DD)',
+      required: true,
+    },
+    timezone: {
+      type: 'string',
+      description: 'IANA timezone (e.g. Europe/Istanbul)',
+      required: true,
+    },
+  },
+  async run({ args }) {
+    try {
+      if (!CALENDAR_KINDS.includes(args.kind as CalendarKind)) {
+        throw new Error(
+          `Invalid --kind "${args.kind}". Allowed: ${CALENDAR_KINDS.join(', ')}.`,
+        )
+      }
+      const dates = parseDateList(args.dates)
+
+      // RLS requires lenser_id = lensers.get_auth_lenser_id(); resolve it
+      // through the authenticated profile RPC the rest of the CLI uses.
+      const self = await callRpc<Record<string, unknown>>(
+        'fn_lensers_get_authenticated_profile',
+        {},
+        { requireAuth: true },
+      )
+      const selfId = self?.['id'] as string | undefined
+      if (!selfId) {
+        consola.error('No authenticated lenser profile. Run `lf auth login` first.')
+        process.exitCode = 1
+        return
+      }
+
+      const rows = await callRest<Array<{ id: string; name: string }>>(
+        'lenses',
+        'schedule_calendars',
+        'POST',
+        {
+          lenser_id: selfId,
+          name: args.name,
+          kind: args.kind,
+          dates,
+          timezone: args.timezone,
+          is_seed: false,
+        },
+        {
+          requireAuth: true,
+          prefer: 'return=representation',
+          query: { select: 'id,name' },
+        },
+      )
+
+      const created = Array.isArray(rows) ? rows[0] : undefined
+      if (!created) {
+        consola.warn('Calendar created but no row returned.')
+        return
+      }
+      printJson({ calendar_id: created.id, name: created.name })
+    } catch (err) {
+      handleError(err)
+    }
+  },
+})
+
+// ─── schedule calendar list ───────────────────────────────────────────────
+
+const calendarList = defineCommand({
+  meta: {
+    name: 'list',
+    description: 'List calendar overlays (your own + platform seeds).',
+  },
+  args: {
+    'seeds-only': {
+      type: 'boolean',
+      description: 'Show only platform seed calendars',
+      default: false,
+    },
+    'mine-only': {
+      type: 'boolean',
+      description: 'Show only calendars you own',
+      default: false,
+    },
+    json: { type: 'boolean', description: 'Output as JSON', default: false },
+  },
+  async run({ args }) {
+    try {
+      const query: Record<string, string | number | boolean | undefined> = {
+        select: 'id,name,kind,dates,timezone,is_seed,created_at',
+        order: 'created_at.desc',
+      }
+      if (args['seeds-only']) query['is_seed'] = 'eq.true'
+      if (args['mine-only']) query['is_seed'] = 'eq.false'
+
+      const rows = await callRest<ScheduleCalendarRow[]>(
+        'lenses',
+        'schedule_calendars',
+        'GET',
+        undefined,
+        { requireAuth: true, query },
+      )
+
+      if (!rows || rows.length === 0) {
+        consola.info('No calendars found.')
+        return
+      }
+
+      if (args.json) return printJson(rows)
+
+      printTable(
+        ['Calendar ID', 'Name', 'Kind', 'Dates', 'Timezone', 'Seed'],
+        rows.map((r) => [
+          r.id.slice(0, 8) + '…',
+          truncate(r.name, 32),
+          r.kind,
+          `${(r.dates ?? []).length} dates`,
+          r.timezone,
+          r.is_seed ? 'yes' : 'no',
+        ]),
+      )
+    } catch (err) {
+      handleError(err)
+    }
+  },
+})
+
+// ─── schedule calendar attach / detach ────────────────────────────────────
+
+const calendarAttach = defineCommand({
+  meta: {
+    name: 'attach',
+    description: 'Attach a calendar overlay to a schedule.',
+  },
+  args: {
+    schedule: { type: 'positional', description: 'Schedule UUID', required: true },
+    calendar: { type: 'positional', description: 'Calendar UUID', required: true },
+  },
+  async run({ args }) {
+    try {
+      await callRest(
+        'lenses',
+        'workflow_schedules',
+        'PATCH',
+        { calendar_id: args.calendar },
+        {
+          requireAuth: true,
+          query: { id: `eq.${args.schedule}` },
+        },
+      )
+      consola.success(
+        'Attached calendar %s to schedule %s.',
+        args.calendar,
+        args.schedule,
+      )
+    } catch (err) {
+      handleError(err)
+    }
+  },
+})
+
+const calendarDetach = defineCommand({
+  meta: {
+    name: 'detach',
+    description: 'Detach the calendar overlay from a schedule.',
+  },
+  args: {
+    schedule: { type: 'positional', description: 'Schedule UUID', required: true },
+  },
+  async run({ args }) {
+    try {
+      await callRest(
+        'lenses',
+        'workflow_schedules',
+        'PATCH',
+        { calendar_id: null },
+        {
+          requireAuth: true,
+          query: { id: `eq.${args.schedule}` },
+        },
+      )
+      consola.success('Detached calendar from schedule %s.', args.schedule)
+    } catch (err) {
+      handleError(err)
+    }
+  },
+})
+
+// ─── schedule condition set / clear ───────────────────────────────────────
+
+const conditionSet = defineCommand({
+  meta: {
+    name: 'set',
+    description: 'Set the pre-dispatch condition (U-DSL JSON filter) for a schedule.',
+  },
+  args: {
+    schedule: { type: 'positional', description: 'Schedule UUID', required: true },
+    file: {
+      type: 'string',
+      description: 'Path to a JSON file containing the condition filter.',
+      required: true,
+    },
+  },
+  async run({ args }) {
+    try {
+      const raw = await loadJsonFile(args.file)
+      validateConditionFilter(raw)
+
+      await callRest(
+        'lenses',
+        'workflow_schedules',
+        'PATCH',
+        { pre_dispatch_condition: raw },
+        {
+          requireAuth: true,
+          query: { id: `eq.${args.schedule}` },
+        },
+      )
+      consola.success('Pre-dispatch condition set on schedule %s.', args.schedule)
+      consola.info(
+        'Tip: dry-run the same grammar with `lf automation test --file <rule.json> --event <payload>`.',
+      )
+    } catch (err) {
+      handleError(err)
+    }
+  },
+})
+
+const conditionClear = defineCommand({
+  meta: {
+    name: 'clear',
+    description: 'Clear the pre-dispatch condition on a schedule.',
+  },
+  args: {
+    schedule: { type: 'positional', description: 'Schedule UUID', required: true },
+  },
+  async run({ args }) {
+    try {
+      await callRest(
+        'lenses',
+        'workflow_schedules',
+        'PATCH',
+        { pre_dispatch_condition: null },
+        {
+          requireAuth: true,
+          query: { id: `eq.${args.schedule}` },
+        },
+      )
+      consola.success('Pre-dispatch condition cleared on schedule %s.', args.schedule)
+    } catch (err) {
+      handleError(err)
+    }
+  },
+})
+
+// ─── schedule rotation set / clear ────────────────────────────────────────
+
+const rotationSet = defineCommand({
+  meta: {
+    name: 'set',
+    description: 'Set inputs rotation (JSON array) for a schedule. Resets the cursor.',
+  },
+  args: {
+    schedule: { type: 'positional', description: 'Schedule UUID', required: true },
+    file: {
+      type: 'string',
+      description: 'Path to a JSON file containing an array of input objects.',
+      required: true,
+    },
+  },
+  async run({ args }) {
+    try {
+      const raw = await loadJsonFile(args.file)
+      if (!Array.isArray(raw)) {
+        throw new Error('Rotation file must contain a JSON array of input objects.')
+      }
+      if (raw.length === 0) {
+        throw new Error('Rotation array must not be empty.')
+      }
+      for (const [i, entry] of raw.entries()) {
+        if (!isPlainJsonObject(entry)) {
+          throw new Error(`Rotation entry [${i}] must be a JSON object.`)
+        }
+      }
+
+      await callRest(
+        'lenses',
+        'workflow_schedules',
+        'PATCH',
+        { inputs_rotation: raw, last_rotation_index: 0 },
+        {
+          requireAuth: true,
+          query: { id: `eq.${args.schedule}` },
+        },
+      )
+      consola.success(
+        'Inputs rotation set on schedule %s (%d entries; cursor reset).',
+        args.schedule,
+        raw.length,
+      )
+    } catch (err) {
+      handleError(err)
+    }
+  },
+})
+
+const rotationClear = defineCommand({
+  meta: {
+    name: 'clear',
+    description: 'Clear inputs rotation on a schedule (also resets the cursor).',
+  },
+  args: {
+    schedule: { type: 'positional', description: 'Schedule UUID', required: true },
+  },
+  async run({ args }) {
+    try {
+      await callRest(
+        'lenses',
+        'workflow_schedules',
+        'PATCH',
+        { inputs_rotation: null, last_rotation_index: 0 },
+        {
+          requireAuth: true,
+          query: { id: `eq.${args.schedule}` },
+        },
+      )
+      consola.success('Inputs rotation cleared on schedule %s.', args.schedule)
+    } catch (err) {
+      handleError(err)
+    }
+  },
+})
+
+// ─── schedule preview ─────────────────────────────────────────────────────
+
+const schedulePreview = defineCommand({
+  meta: {
+    name: 'preview',
+    description: 'Preview the next N ticks for a schedule (calendar / condition / rotation applied).',
+  },
+  args: {
+    schedule: { type: 'positional', description: 'Schedule UUID', required: true },
+    next: {
+      type: 'string',
+      description: 'How many upcoming ticks to preview (1–100, default 10).',
+      default: '10',
+    },
+    json: { type: 'boolean', description: 'Output as JSON', default: false },
+  },
+  async run({ args }) {
+    try {
+      const n = clampPreviewN(parseInt(args.next, 10), 10)
+
+      // The RPC lives in the `lenses` schema. Pass the schema option so the
+      // request goes through PostgREST's Content-Profile route rather than
+      // resolving against `public`.
+      const rows = await callRpc<PreviewTickRow[]>(
+        'fn_preview_schedule_ticks',
+        { p_schedule_id: args.schedule, p_n: n },
+        { requireAuth: true, schema: 'lenses' },
+      )
+
+      if (!rows || rows.length === 0) {
+        consola.info('No upcoming ticks within the preview horizon.')
+        return
+      }
+
+      if (args.json) return printJson(rows)
+
+      printTable(
+        ['Tick At', 'Decision', 'Reason', 'Inputs (truncated)'],
+        rows.map((r) => {
+          const decisionLabel =
+            r.decision === 'dispatch'
+              ? colorize(r.decision, 'green')
+              : r.decision === 'skip'
+                ? colorize(r.decision, 'yellow')
+                : r.decision
+          const inputsRendered =
+            r.inputs == null ? '—' : truncate(JSON.stringify(r.inputs), 48)
+          return [
+            new Date(r.tick_at).toLocaleString(),
+            decisionLabel,
+            r.reason,
+            inputsRendered,
+          ]
+        }),
+      )
+    } catch (err) {
+      handleError(err)
+    }
+  },
+})
+
+// Nested parents — citty-friendly subcommand trees.
+
+const calendarParent = defineCommand({
+  meta: { name: 'calendar', description: 'Manage schedule calendar overlays.' },
+  subCommands: {
+    create: calendarCreate,
+    list: calendarList,
+    attach: calendarAttach,
+    detach: calendarDetach,
+  },
+})
+
+const conditionParent = defineCommand({
+  meta: { name: 'condition', description: 'Manage pre-dispatch conditions.' },
+  subCommands: {
+    set: conditionSet,
+    clear: conditionClear,
+  },
+})
+
+const rotationParent = defineCommand({
+  meta: { name: 'rotation', description: 'Manage inputs rotation for a schedule.' },
+  subCommands: {
+    set: rotationSet,
+    clear: rotationClear,
+  },
+})
+
 // ─── parent ────────────────────────────────────────────────────────────────
 
 export default defineCommand({
@@ -645,5 +1365,10 @@ export default defineCommand({
     delete: scheduleDelete,
     history: scheduleHistory,
     health: scheduleHealth,
+    backfill: scheduleBackfill,
+    calendar: calendarParent,
+    condition: conditionParent,
+    rotation: rotationParent,
+    preview: schedulePreview,
   },
 })

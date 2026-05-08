@@ -1,7 +1,7 @@
 import { defineCommand } from 'citty';
 import consola from 'consola';
 import { type PrivateBattleFrontmatter } from '@lenserfight/types';
-import { callRpc, handleError } from '../utils/api';
+import { callRpc, callRest, handleError } from '../utils/api';
 import {
   buildWorkflowSimulationReport,
   parseAutomationDocument,
@@ -1376,6 +1376,7 @@ const localRun = defineCommand({
   meta: { name: 'run', description: 'Execute both contenders locally using BYOK keys.' },
   args: {
     id:   { type: 'string',  description: 'Local battle ID (omit to use most recent)', default: '' },
+    yes:  { type: 'boolean', description: 'Skip cost confirmation prompt', default: false },
     json: { type: 'boolean', description: 'Output result as JSON', default: false },
   },
   async run({ args }) {
@@ -1391,6 +1392,24 @@ const localRun = defineCommand({
 
       const cA = state.contenders.find((c) => c.slot === 'A')!;
       const cB = state.contenders.find((c) => c.slot === 'B')!;
+
+      if (!args.yes && process.stdin.isTTY) {
+        const { createInterface } = await import('readline');
+        const rl = createInterface({ input: process.stdin, output: process.stdout });
+        const answer = await new Promise<string>((resolve) => {
+          rl.question(
+            `\n⚠  This will call ${cA.provider}/${cA.model} and ${cB.provider}/${cB.model} via your BYOK keys.\n` +
+            `   Charges apply to your API accounts, not LenserFight.\n` +
+            `   Continue? (y/n) `,
+            (a) => { rl.close(); resolve(a.trim().toLowerCase()); }
+          );
+        });
+        if (answer !== 'y' && answer !== 'yes') {
+          consola.info('Cancelled. Re-run with --yes to skip this prompt.');
+          process.exitCode = 1; return;
+        }
+      }
+
       consola.start('Running "%s"', state.name);
       consola.info('A: %s/%s  vs  B: %s/%s', cA.provider, cA.model, cB.provider, cB.model);
       consola.info('Task: %s', state.task);
@@ -1415,6 +1434,7 @@ const localRun = defineCommand({
       consola.success('Execution complete in %dms.', result.durationMs);
       consola.info('Tokens — A: %d  B: %d', result.tokensA, result.tokensB);
       consola.info('');
+      consola.warn('Results are stored in plaintext in your local battle state. Do not commit if they contain sensitive prompts or outputs.');
       consola.info('Next: lf battle local vote %s --slot A|B|draw', state.id.slice(0, 8));
     } catch (err) { handleError(err); }
   },
@@ -1537,10 +1557,12 @@ const localPush = defineCommand({
       );
 
       if (args.json) { printJson(battle); return; }
-      consola.success('Local battle "%s" pushed to cloud.', state.name);
+      consola.success('Local battle "%s" pushed to cloud as a draft.', state.name);
       consola.info('Cloud ID:  %s', battle['id']);
       consola.info('Status:    %s', battle['status']);
       consola.info('');
+      consola.warn('Note: pushing to cloud does not enable cloud battle execution or public arena access.');
+      consola.warn('Cloud battles require VITE_FEATURE_PUBLIC_BATTLES=true (Private Alpha — not publicly available).');
       consola.info('Continue: lf battle open %s', battle['id']);
     } catch (err) { handleError(err); }
   },
@@ -1582,6 +1604,7 @@ const exec = defineCommand({
     byok:           { type: 'boolean', description: 'Use local BYOK keys instead of cloud billing', default: false },
     'stream-to-web':{ type: 'boolean', description: 'Broadcast tokens to web UI via Supabase Realtime', default: false },
     slot:           { type: 'string',  description: 'Execute only one slot: A | B | both', default: 'both' },
+    yes:            { type: 'boolean', description: 'Skip BYOK cost confirmation prompt', default: false },
     json:           { type: 'boolean', description: 'Output summary as JSON', default: false },
   },
   async run({ args }) {
@@ -1620,6 +1643,23 @@ const exec = defineCommand({
 
       const task = String(battle['task_prompt'] ?? '');
       const messages: _ProviderMessage[] = [{ role: 'user', content: task }];
+
+      if (args.byok && !args.yes && process.stdin.isTTY) {
+        const { createInterface } = await import('readline');
+        const rl = createInterface({ input: process.stdin, output: process.stdout });
+        const answer = await new Promise<string>((resolve) => {
+          rl.question(
+            `\n⚠  This will call ${providerA}/${modelA} and ${providerB}/${modelB} via your BYOK keys.\n` +
+            `   Charges apply to your API accounts, not LenserFight.\n` +
+            `   Continue? (y/n) `,
+            (a) => { rl.close(); resolve(a.trim().toLowerCase()); }
+          );
+        });
+        if (answer !== 'y' && answer !== 'yes') {
+          consola.info('Cancelled. Re-run with --yes to skip this prompt.');
+          process.exitCode = 1; return;
+        }
+      }
 
       const RESET = '\x1b[0m', BLUE = '\x1b[34m', GREEN = '\x1b[32m';
 
@@ -1766,9 +1806,8 @@ const schedule = defineCommand({
         process.exit(1);
       }
 
-      const { createClient } = await import('@supabase/supabase-js');
-      const { getEnv } = await import('../utils/env');
-      const client = createClient(getEnv('SUPABASE_URL'), getEnv('SUPABASE_ANON_KEY'));
+      const { createClient: createSupabaseClient } = await import('../utils/supabase-client');
+      const client = await createSupabaseClient();
 
       const { error } = await client
         .schema('battles')
@@ -1821,9 +1860,8 @@ const jobs = defineCommand({
   },
   async run({ args }) {
     try {
-      const { createClient } = await import('@supabase/supabase-js');
-      const { getEnv } = await import('../utils/env');
-      const client = createClient(getEnv('SUPABASE_URL'), getEnv('SUPABASE_SERVICE_ROLE_KEY'));
+      const { createServiceClient } = await import('../utils/supabase-client');
+      const client = await createServiceClient();
 
       const { data, error } = await client
         .schema('battles')
@@ -1972,6 +2010,149 @@ const tournament = defineCommand({
 });
 
 // ---------------------------------------------------------------------------
+// battle stream-feed (Y3) — realtime tail of battles.battles
+// ---------------------------------------------------------------------------
+//
+// Subscribes to the Supabase realtime channel for INSERT/UPDATE on
+// battles.battles and prints one line per event. Realtime ships with the
+// Supabase JS client we already depend on, so no new dep is needed.
+
+const streamFeed = defineCommand({
+  meta: {
+    name: 'stream-feed',
+    description: 'Tail INSERT/UPDATE events on battles.battles via Supabase realtime.',
+  },
+  args: {},
+  async run() {
+    try {
+      const { createClient } = await import('../utils/supabase-client');
+      const client = await createClient();
+
+      const channel = client
+        .channel('lf-cli-battle-stream-feed')
+        .on(
+          // Cast through unknown — supabase-js typings vary across versions
+          // and we only need INSERT|UPDATE on battles.battles.
+          'postgres_changes' as unknown as 'system',
+          { event: '*', schema: 'battles', table: 'battles' } as Record<string, unknown>,
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          (payload: any) => {
+            if (!payload) return;
+            const evt = (payload.eventType ?? payload.type ?? 'event').toString().toLowerCase();
+            if (evt !== 'insert' && evt !== 'update') return;
+            const row = (payload.new ?? payload.record ?? {}) as Record<string, unknown>;
+            const slug = row['slug'] ?? row['id'] ?? '?';
+            const status = row['status'] ?? '?';
+            consola.log(`[${new Date().toISOString()}] battle ${slug}: ${status}`);
+          },
+        )
+        .subscribe();
+
+      consola.info('Subscribed to battles.battles. Press Ctrl-C to exit.');
+
+      const exit = async () => {
+        try { await client.removeChannel(channel); } catch { /* ignore */ }
+        process.exit(0);
+      };
+      process.on('SIGINT', () => { void exit(); });
+      process.on('SIGTERM', () => { void exit(); });
+
+      // Keep the event loop alive without busy-spinning.
+      await new Promise<void>(() => { /* never resolves; SIGINT exits */ });
+    } catch (err) {
+      handleError(err);
+    }
+  },
+});
+
+// ---------------------------------------------------------------------------
+// battle rematch
+// ---------------------------------------------------------------------------
+const rematch = defineCommand({
+  meta: {
+    name: 'rematch',
+    description: 'Create a rematch from an existing battle slug (V1).',
+  },
+  args: {
+    slug: {
+      type: 'positional',
+      description: 'Source battle slug',
+      required: true,
+    },
+    json: {
+      type: 'boolean',
+      description: 'Output result as JSON',
+      default: false,
+    },
+  },
+  async run({ args }) {
+    try {
+      // 1. Resolve slug → battle_id via PostgREST
+      const parents = await callRest<Array<{ id: string; slug: string; creator_lenser_id: string }>>(
+        'battles',
+        'battles',
+        'GET',
+        undefined,
+        {
+          requireAuth: true,
+          query: {
+            select: 'id,slug,creator_lenser_id',
+            slug: `eq.${args.slug}`,
+            limit: 1,
+          },
+        }
+      );
+
+      const parent = parents?.[0];
+      if (!parent) {
+        throw new Error(`No battle found for slug "${args.slug}".`);
+      }
+
+      // 2. Call fn_battles_create_rematch RPC (owner-checked, returns new battle id)
+      const newId = await callRpc<string>(
+        'fn_battles_create_rematch',
+        { p_parent_id: parent.id },
+        { requireAuth: true }
+      );
+
+      if (!newId) {
+        throw new Error('Rematch RPC returned no id.');
+      }
+
+      // 3. Resolve new id → new slug
+      const created = await callRest<Array<{ id: string; slug: string }>>(
+        'battles',
+        'battles',
+        'GET',
+        undefined,
+        {
+          requireAuth: true,
+          query: {
+            select: 'id,slug',
+            id: `eq.${newId}`,
+            limit: 1,
+          },
+        }
+      );
+
+      const newSlug = created?.[0]?.slug ?? null;
+      if (!newSlug) {
+        throw new Error(`Rematch created (id=${newId}) but slug could not be resolved.`);
+      }
+
+      if (args.json) {
+        printJson({ rematch_id: newId, slug: newSlug });
+        return;
+      }
+
+      consola.success('Created rematch: %s', newSlug);
+    } catch (err) {
+      handleError(err);
+    }
+  },
+});
+
+// ---------------------------------------------------------------------------
 // Root command
 // ---------------------------------------------------------------------------
 export default defineCommand({
@@ -2009,5 +2190,7 @@ export default defineCommand({
     schedule,
     jobs,
     tournament,
+    'stream-feed': streamFeed,
+    rematch,
   },
 });
