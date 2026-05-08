@@ -1,6 +1,7 @@
 export type SetupMode = 'local' | 'cloud'
 
 export type OnboardingStepId =
+  // env setup steps (used by lf setup --mode local|cloud)
   | 'detect_prerequisites'
   | 'verify_workspace'
   | 'configure_project'
@@ -8,6 +9,16 @@ export type OnboardingStepId =
   | 'start_services'
   | 'verify_auth'
   | 'handoff'
+  // product journey steps (used by lf setup --mode journey)
+  | 'lens_created'
+  | 'workflow_created'
+  | 'agent_created'
+  | 'team_created'
+  | 'battle_created'
+  | 'battle_joined'
+  | 'invite_sent'
+  | 'battle_result_shared'
+  | 'profile_published'
 
 export interface SetupOptions {
   mode: SetupMode
