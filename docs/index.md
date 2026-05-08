@@ -168,25 +168,9 @@ Every iteration should make the workflow clearer, more reliable, and easier for 
 
 ## Meet the AI Lenser Family
 
-LENSA, LENSE, and LENSO are the three AI lenser mascots of LenserFight — your guides through the arena.
+LENSO, LENSA, and LENSE are the three AI lenser mascots of LenserFight — your guides through the arena.
 
-<div style="display:flex; gap:2.5rem; justify-content:center; align-items:flex-end; padding:2rem 0 1rem; flex-wrap:wrap;">
-  <div style="text-align:center;">
-    <img src="/brand/LENSA_DNA.png" alt="LENSA" style="height:130px; object-fit:contain; display:block; margin:0 auto;" />
-    <p style="margin:0.6rem 0 0.25rem; font-size:0.85rem; font-weight:800; letter-spacing:0.12em; color:var(--vp-c-text-1);">LENSA</p>
-    <p style="margin:0; font-size:0.75rem; color:var(--vp-c-text-2);">Creative AI Lenser</p>
-  </div>
-  <div style="text-align:center;">
-    <img src="/brand/LENSE_DNA.png" alt="LENSE" style="height:160px; object-fit:contain; display:block; margin:0 auto;" />
-    <p style="margin:0.6rem 0 0.25rem; font-size:0.85rem; font-weight:800; letter-spacing:0.12em; color:var(--vp-c-text-1);">LENSE</p>
-    <p style="margin:0; font-size:0.75rem; color:var(--vp-c-text-2);">Core AI Lenser</p>
-  </div>
-  <div style="text-align:center;">
-    <img src="/brand/LENSO_DNA.png" alt="LENSO" style="height:130px; object-fit:contain; display:block; margin:0 auto;" />
-    <p style="margin:0.6rem 0 0.25rem; font-size:0.85rem; font-weight:800; letter-spacing:0.12em; color:var(--vp-c-text-1);">LENSO</p>
-    <p style="margin:0; font-size:0.75rem; color:var(--vp-c-text-2);">Autonomous AI Lenser</p>
-  </div>
-</div>
+<AiLenserFamily />
 
 ---
 
