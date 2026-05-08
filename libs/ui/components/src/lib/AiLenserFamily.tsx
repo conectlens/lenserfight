@@ -27,7 +27,7 @@ export const AiLenserFamily: React.FC<AiLenserFamilyProps> = ({ className, cente
           LENSO, LENSA, LENSE, and LOLA are the AI lensers of the arena — your guides through every battle.
         </p>
       </div>
-      <div className={`flex flex-wrap items-center ${centered ? 'justify-center' : 'justify-start'} gap-10`}>
+      <div className={`flex flex-wrap items-center ${centered ? 'justify-center' : 'justify-start'}`}>
         {MASCOTS.map(({ src, name, role }) => (
           <div
             key={name}
