@@ -1,13 +1,15 @@
+import { BookOpen } from 'lucide-react'
 import React from 'react'
 
 import { AGENT_NAV_ZONES, NAV_ITEMS, ZONE_LABELS } from '@lenserfight/features/agents'
+import { DOCS_BASE_URL } from '@lenserfight/utils/env'
 
 import type { SidebarNavSectionConfig } from './sidebarModes'
 
 export function buildAgentSidebarSections(handle: string): SidebarNavSectionConfig[] {
   const base = `/lenser/${handle}/ag`
 
-  return AGENT_NAV_ZONES.map((zone) => ({
+  const sections = AGENT_NAV_ZONES.map((zone) => ({
     id: zone,
     label: ZONE_LABELS[zone],
     items: NAV_ITEMS
@@ -22,4 +24,19 @@ export function buildAgentSidebarSections(handle: string): SidebarNavSectionConf
         }
       }),
   })).filter((section) => section.items.length > 0)
+
+  sections.push({
+    id: 'resources',
+    label: 'Resources',
+    items: [
+      {
+        id: 'getting-started',
+        label: 'Getting Started',
+        externalHref: `${DOCS_BASE_URL}/tutorials/agent-walkthroughs/create-your-first-agent`,
+        icon: <BookOpen size={20} />,
+      },
+    ],
+  })
+
+  return sections
 }
