@@ -78,8 +78,19 @@ export const OnboardingPage: React.FC = () => {
             )}
           </div>
           
-          <div className="mt-8 text-xs text-greyscale-400 dark:text-greyscale-500 z-10 animate-in fade-in duration-1000 delay-500">
-            Securely powered by LenserFight Identity
+          <div className="mt-8 z-10 animate-in fade-in duration-1000 delay-500 flex flex-col items-center gap-2">
+            <p className="text-xs text-greyscale-400 dark:text-greyscale-500">
+              Securely powered by LenserFight Identity
+            </p>
+            <a
+              href="https://app.chainabit.com?utm_source=lenserfight_onboarding"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center gap-1.5 text-xs text-orange-500 dark:text-orange-400 hover:text-orange-700 dark:hover:text-orange-300 transition-colors font-medium"
+            >
+              <img src="/chainabit/favicon-32x32.png" width={14} height={14} alt="" className="rounded" />
+              Sponsored by Chainabit
+            </a>
           </div>
         </div>
       </DialogFooterContext.Provider>
