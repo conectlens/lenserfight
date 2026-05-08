@@ -162,6 +162,18 @@ const LazyCreateLenserProfileModal = lazy(() =>
     default: module.CreateLenserProfileModal,
   }))
 )
+const LazyAccountDashboardPage = lazy(() =>
+  import('@lenserfight/features/account').then((module) => ({ default: module.AccountDashboardPage }))
+)
+const LazyDeviceListPage = lazy(() =>
+  import('@lenserfight/features/devices').then((module) => ({ default: module.DeviceListPage }))
+)
+const LazyDeviceDetailPage = lazy(() =>
+  import('@lenserfight/features/devices').then((module) => ({ default: module.DeviceDetailPage }))
+)
+const LazyJoinBattlePage = lazy(() =>
+  import('@lenserfight/features/battles').then((module) => ({ default: module.JoinBattlePage }))
+)
 
 const RouteFallback: React.FC = () => (
   <Loader variant="overlay" message="Loading forum..." />
@@ -379,6 +391,14 @@ export const WebRouter: React.FC = () => {
               element={
                 <DashboardFrame>
                   <LazyBattleReplayPage />
+                </DashboardFrame>
+              }
+            />
+            <Route
+              path="/battles/:slug/join"
+              element={
+                <DashboardFrame>
+                  <LazyJoinBattlePage />
                 </DashboardFrame>
               }
             />
@@ -629,6 +649,35 @@ export const WebRouter: React.FC = () => {
           element={
             <DashboardFrame>
               <LazySettingsPage />
+            </DashboardFrame>
+          }
+        />
+
+        <Route path="/account" element={<Navigate to="/account/dashboard" replace />} />
+
+        <Route
+          path="/account/dashboard"
+          element={
+            <DashboardFrame>
+              <LazyAccountDashboardPage />
+            </DashboardFrame>
+          }
+        />
+
+        <Route
+          path="/account/devices"
+          element={
+            <DashboardFrame>
+              <LazyDeviceListPage />
+            </DashboardFrame>
+          }
+        />
+
+        <Route
+          path="/account/devices/:id"
+          element={
+            <DashboardFrame>
+              <LazyDeviceDetailPage />
             </DashboardFrame>
           }
         />
