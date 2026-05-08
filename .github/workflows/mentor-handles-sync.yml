@@ -1,0 +1,64 @@
+name: Mentor Handles Sync
+
+# Runs on push to main when .github/mentor-handles.json changes. Rewrites
+# docs/how-to/contributors/mentor-rotation.md and CODEOWNERS, then opens a
+# PR if anything changed. On every PR, runs in --check mode and fails CI
+# when the downstream files drift from the JSON source.
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/mentor-handles.json'
+  pull_request:
+    paths:
+      - '.github/mentor-handles.json'
+      - 'docs/how-to/contributors/mentor-rotation.md'
+      - 'CODEOWNERS'
+      - 'tools/sync-mentor-handles.mjs'
+
+jobs:
+  check:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Verify mentor handles are in sync
+        run: node tools/sync-mentor-handles.mjs --check
+
+  apply:
+    if: github.event_name == 'push'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Run sync
+        run: node tools/sync-mentor-handles.mjs
+      - name: Open PR if changes
+        run: |
+          if [ -z "$(git status --porcelain)" ]; then
+            echo 'No mentor-handle drift to PR.'
+            exit 0
+          fi
+          git config user.name 'lenserfight-bot'
+          git config user.email 'bot@lenserfight.org'
+          BRANCH="mentor-handles-sync/$(date -u +%Y%m%d-%H%M%S)"
+          git checkout -b "$BRANCH"
+          git add docs/how-to/contributors/mentor-rotation.md CODEOWNERS
+          git commit -m "Sync mentor handles from .github/mentor-handles.json"
+          git push origin "$BRANCH"
+          gh pr create \
+            --base main \
+            --head "$BRANCH" \
+            --title "Sync mentor handles" \
+            --body "Auto-generated from \`.github/mentor-handles.json\`. See \`tools/sync-mentor-handles.mjs\`."
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

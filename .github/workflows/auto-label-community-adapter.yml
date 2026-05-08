@@ -1,0 +1,35 @@
+name: Auto-label community adapter PRs
+
+# Adds the `community-adapter` label to any PR that touches files under
+# `examples/connectors/**`. The label surfaces the PR in the maintainer triage
+# queue used by the rotation in docs/how-to/contributors/mentor-rotation.md.
+
+on:
+  pull_request_target:
+    types: [opened, synchronize, reopened, ready_for_review]
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  label:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Detect changed paths
+        id: changed
+        uses: dorny/paths-filter@v3
+        with:
+          filters: |
+            community_adapter:
+              - 'examples/connectors/**'
+
+      - name: Add community-adapter label
+        if: steps.changed.outputs.community_adapter == 'true'
+        uses: actions-ecosystem/action-add-labels@v1
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          labels: community-adapter
