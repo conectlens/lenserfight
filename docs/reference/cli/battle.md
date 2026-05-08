@@ -32,6 +32,7 @@ lf battle <subcommand> [options]
 | `archive` | yes | Hide battle from public feed (creator) |
 | `invite` | yes | Invite a participant by email (creator) |
 | `clone` | yes | Clone an existing battle |
+| `rematch` | yes | Create a draft rematch from a finalized battle (creator) |
 | `delete` | yes | Delete a draft battle (irreversible) |
 | `exec` | yes* | Execute a cloud battle with BYOK keys (no credits) |
 | `feed` | no | Cursor-based public battles feed |
@@ -49,6 +50,7 @@ lf battle <subcommand> [options]
 | `local status` | no | Show local battle state and vote tally |
 | `local list` | no | List all local battles |
 | `local push` | yes | Publish a local battle shell to LenserFight Cloud |
+| `stream-feed` | yes | Tail INSERT/UPDATE events on `battles.battles` via Supabase realtime |
 
 *`exec`: auth only required when using `--stream-to-web`
 
@@ -297,6 +299,44 @@ lf battle clone <id> --title <title> --slug <slug> [--json]
 | `--title` | yes | — | Title for the cloned battle |
 | `--slug` | yes | — | URL-safe slug for the cloned battle |
 | `--json` | no | false | Output result as JSON |
+
+---
+
+## `battle rematch`
+
+Create a draft rematch from a finalized parent battle. The caller must own the parent and the parent must be in a terminal status (`closed`, `published`, or `archived`). Structural fields are copied; vote totals, voter records, and contender comments are not. See [Rematches, Replays, and Series](/explanation/battles/rematches-and-series) for the full preservation contract.
+
+```
+lf battle rematch <slug> [--json]
+```
+
+| Arg / Flag | Required | Default | Description |
+|---|:---:|---|---|
+| `<slug>` | yes | — | Source battle slug |
+| `--json` | no | false | Output `{ rematch_id, slug }` as JSON |
+
+**Example:**
+```bash
+lf battle rematch csv-parser-2026
+# i Resolving battle: csv-parser-2026
+# ✔ Created rematch: csv-parser-2026-r3a7f2c
+
+lf battle rematch csv-parser-2026 --json
+# { "rematch_id": "9b2e4f1a-...", "slug": "csv-parser-2026-r3a7f2c" }
+```
+
+The new battle starts in `draft`. Run `lf battle open` (and the rest of the lifecycle) on it as you would any new battle.
+
+**Error cases:**
+
+| Error | Cause |
+|---|---|
+| Slug not found | The slug doesn't resolve via PostgREST. Check spelling; soft-deleted parents also surface as not-found. |
+| `parent_battle_not_terminal` | The parent battle is still `draft` / `open` / `voting` / `scoring`. Finalize and close it first. |
+| `not_battle_owner` | The signed-in lenser is not the parent's `creator_lenser_id`. Only the original creator can spawn a rematch. |
+| `authentication_required` | Run `lf auth login` (or `lf profile use`) before retrying. |
+
+For tournament-style chains where rematches are spawned automatically on a cron schedule, see [How to: rematch and series](/how-to/battles/rematch-and-series).
 
 ---
 
@@ -611,6 +651,32 @@ lf battle local push [<id>] --slug <slug> [--json]
 | `--json` | no | false | Output cloud battle record as JSON |
 
 Only the title and task are pushed. Contender configs, outputs, and votes stay local.
+
+---
+
+## `battle stream-feed`
+
+Subscribe to a Supabase realtime channel and print one line per `INSERT` or `UPDATE` on `battles.battles`. Use it as a live tail of the cloud arena while a battle is in flight.
+
+```
+lf battle stream-feed
+```
+
+The command takes no flags. It runs until interrupted with `Ctrl-C` (or `SIGTERM`), at which point it cleanly removes the realtime channel before exiting.
+
+**Output line format:**
+```
+[2026-05-08T13:42:11.812Z] battle <slug-or-id>: <status>
+```
+
+**Auth.** Subscribing to the `battles.battles` channel requires the active profile to have credentials with read access to that table. Sign in with `lf auth login` or attach an `access_token` to the active profile.
+
+**Filtering.** The subscription is unfiltered — every INSERT and UPDATE on `battles.battles` for which RLS allows you a row produces a line. To narrow output, pipe through `grep` on the slug or the status keyword.
+
+**Example — watch only voting transitions for one battle:**
+```bash
+lf battle stream-feed | grep "csv-parser-2026" | grep voting
+```
 
 ---
 
