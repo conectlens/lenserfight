@@ -19,6 +19,7 @@ It does **not** treat private platform workers, public battles, benchmarking, sc
 ## Start here
 
 - [Common Contracts](./common-contracts.md) for `ApiResponseEnvelope<T>`, pagination, auth modes, and filtering conventions
+- [OpenAPI 3.1 spec](/reference/platform-api/openapi.yaml) for the platform-api HTTP surface (`/v1/lenses/:id/execute`, `/v1/runs/:id`, `/v1/runs/:id/events`, `/v1/workflows/:id/run`, `/health`)
 - [Lenses API](./lenses.md) for discovery, creation, versioning, publishing, and cloning
 - [Workflows API](./workflows.md) for workflow listing, templates, builder bootstrap, runs, events, and versions
 - [Threads API](./threads.md) for public threads, replies, feeds, and thread creation
