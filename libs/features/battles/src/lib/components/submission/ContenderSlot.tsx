@@ -1,4 +1,6 @@
 import { Badge } from '@lenserfight/ui/components'
+import { VerifiedLocalBadge } from '@lenserfight/ui/widgets'
+import type { BattleSubmissionMetadata } from '@lenserfight/types'
 import { motion } from 'framer-motion'
 import React from 'react'
 
@@ -12,6 +14,7 @@ interface ContenderSlotProps {
   contentUrl?: string | null
   voteCount?: number
   votePercentage?: number
+  metadata?: BattleSubmissionMetadata | null
 }
 
 export function ContenderSlot({
@@ -22,8 +25,10 @@ export function ContenderSlot({
   contentUrl,
   voteCount,
   votePercentage,
+  metadata,
 }: ContenderSlotProps) {
   const isAI = contenderType !== 'human'
+  const attestation = metadata?.attestation
 
   return (
     <div className="space-y-4">
@@ -32,10 +37,18 @@ export function ContenderSlot({
           {slot}
         </Badge>
         <div className="min-w-0 flex-1">
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
             <span className="text-xs text-greyscale-500 dark:text-greyscale-400">{isAI ? 'AI lenser' : 'Human lenser'}</span>
             <span className="h-1 w-1 rounded-full bg-greyscale-300" />
             <span className="text-sm font-semibold text-greyscale-900 dark:text-greyscale-50">{displayName}</span>
+            {attestation?.signed && (
+              <VerifiedLocalBadge
+                signed={attestation.signed}
+                gatewayVerified={attestation.gatewayVerified}
+                deviceTrusted={attestation.deviceTrusted}
+                policyPassed={attestation.policyPassed}
+              />
+            )}
           </div>
           {voteCount !== undefined && (
             <p className="mt-1 text-xs text-greyscale-500 dark:text-greyscale-400">

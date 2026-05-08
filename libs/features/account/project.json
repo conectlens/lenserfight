@@ -1,0 +1,14 @@
+{
+  "name": "feature-account",
+  "$schema": "../../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "libs/features/account/src",
+  "projectType": "library",
+  "tags": [
+    "layer:feature",
+    "feature:account",
+    "scope:public",
+    "license:oss"
+  ],
+  "// targets": "to see all targets run: nx show project feature-account --web",
+  "targets": {}
+}
