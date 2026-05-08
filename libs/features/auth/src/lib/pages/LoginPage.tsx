@@ -293,7 +293,7 @@ export const LoginPage: React.FC = () => {
             to="/register"
             className="ml-1.5 text-gray-900 dark:text-white hover:text-primary-700 dark:hover:text-primary-400 font-bold hover:underline transition-colors"
           >
-            Join ConnectLens
+            Join ConectLens
           </Link>
         </div>
       </AuthCard>

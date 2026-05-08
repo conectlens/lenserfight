@@ -1,5 +1,5 @@
 /**
- * ConnectLens Brand Color Tokens
+ * ConectLens Brand Color Tokens
  *
  * Five palettes: Primary Yellow, Deep Lens Navy, Greyscale, Primary Dark, Status.
  * Each palette is a plain `const` object so values are narrowed to string literals

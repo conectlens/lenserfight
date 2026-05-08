@@ -132,7 +132,7 @@ moderation policy, append a new row — do not retrofit an existing one.
 
 ## Fixtures
 
-Shared test fixtures live under `lenserfight-web/libs/infra/execution/src/lib/__fixtures__/`:
+Shared test fixtures live under `lenserfight/libs/infra/execution/src/lib/__fixtures__/`:
 
 - `provider.mock.ts` — scriptable `IExecutionProvider` (returns queued outputs or throws queued errors).
 - `moderation.mock.ts` — scriptable `ModerationGateway`.
@@ -149,7 +149,7 @@ npx nx test infra-execution
 npx nx test feature-workflows --testNamePattern='execution'
 
 # E2E template smoke test (Playwright)
-pnpm -F lenserfight-web e2e --grep @workflows-templates
+pnpm -F lenserfight e2e --grep @workflows-templates
 ```
 
 Any new scenario MUST be added to this file in the same commit as the

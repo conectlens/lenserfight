@@ -1,5 +1,5 @@
 /**
- * ConnectLens Border Radius Tokens
+ * ConectLens Border Radius Tokens
  */
 export const borderRadius = {
   sm: '4px',

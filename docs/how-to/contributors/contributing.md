@@ -15,7 +15,7 @@ This page is the friendly starting point for contributors. It explains how to he
 
 If this is your first time contributing, start with a maintainer-tagged starter issue:
 
-- Browse [`good-first-issue` issues](https://github.com/connectlens/lenserfight-web/issues?q=is%3Aissue+is%3Aopen+label%3Agood-first-issue) — these are scoped, low-context, and have everything a new contributor needs to ship.
+- Browse [`good-first-issue` issues](https://github.com/conectlens/lenserfight/issues?q=is%3Aissue+is%3Aopen+label%3Agood-first-issue) — these are scoped, low-context, and have everything a new contributor needs to ship.
 - If something looks doable, comment on the issue to claim it before opening a PR — avoids two people working on the same thing.
 
 The full new-contributor walkthrough:
