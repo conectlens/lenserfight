@@ -1,5 +1,5 @@
 import { DialogHeaderContext, DialogFooterContext, ModalFooter } from '@lenserfight/ui/overlays'
-import React, { useCallback, useContext, useEffect, useMemo } from 'react'
+import React, { useCallback, useContext, useEffect, useMemo, useRef } from 'react'
 
 import { StepIndicator } from './StepIndicator'
 
@@ -62,14 +62,22 @@ export const StepWizard: React.FC<StepWizardProps> = ({
   const isLastStep = currentStep === steps.length - 1
   const current = steps[currentStep]
   const isPrimaryBlocked = isLastStep ? isCompleting : isNextLoading
+
+  // All callback props are held in a ref so callers passing inline arrows
+  // (the common case) don't invalidate handlePrimaryAction → footerNode →
+  // setFooter on every render and trigger a "Maximum update depth exceeded"
+  // loop with the parent that hoists the footer slot via state.
+  const callbacksRef = useRef({ onBack, onCancel, onNext, onComplete, skipButton })
+  callbacksRef.current = { onBack, onCancel, onNext, onComplete, skipButton }
+
   const handlePrimaryAction = useCallback(() => {
     if (isPrimaryBlocked || !canProceed) return
     if (isLastStep) {
-      onComplete()
+      callbacksRef.current.onComplete()
       return
     }
-    onNext()
-  }, [isPrimaryBlocked, canProceed, isLastStep, onComplete, onNext])
+    callbacksRef.current.onNext()
+  }, [isPrimaryBlocked, canProceed, isLastStep])
 
   // Push current step header into the parent Dialog's header slot (if inside one)
   const { setHeader, clearHeader } = useContext(DialogHeaderContext)
@@ -90,19 +98,27 @@ export const StepWizard: React.FC<StepWizardProps> = ({
     return () => window.removeEventListener('keydown', handler)
   }, [canProceed, handlePrimaryAction, isPrimaryBlocked])
 
-  // Build footer node and hoist it into Dialog's sticky footer slot
+  // Build footer node and hoist it into Dialog's sticky footer slot.
   const { setFooter, clearFooter } = useContext(DialogFooterContext)
+
+  const hasSkip = !!skipButton
+  const skipLabel = skipButton?.label
+
   const footerNode = useMemo(() => (
     <ModalFooter
       leftButton={{
         label: currentStep === 0 && onCancel ? 'Cancel' : '← Back',
-        onClick: currentStep === 0 && onCancel ? onCancel : onBack,
+        onClick: () => {
+          const { onBack: back, onCancel: cancel } = callbacksRef.current
+          if (currentStep === 0 && cancel) cancel()
+          else back()
+        },
         disabled: !onCancel && currentStep === 0,
         variant: 'ghost',
       }}
       rightButtons={
-        skipButton
-          ? [{ label: skipButton.label, onClick: skipButton.onClick, variant: 'ghost' }]
+        hasSkip
+          ? [{ label: skipLabel, onClick: () => callbacksRef.current.skipButton?.onClick(), variant: 'ghost' }]
           : undefined
       }
       primaryButton={
@@ -123,7 +139,8 @@ export const StepWizard: React.FC<StepWizardProps> = ({
             }
       }
     />
-  ), [currentStep, onCancel, onBack, skipButton, isLastStep, completeIcon, completeLabel,
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  ), [currentStep, onCancel, hasSkip, skipLabel, isLastStep, completeIcon, completeLabel,
       handlePrimaryAction, canProceed, isCompleting, nextLabel, isNextLoading])
 
   useEffect(() => {

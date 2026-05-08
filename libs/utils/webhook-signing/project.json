@@ -1,0 +1,13 @@
+{
+  "name": "webhook-signing",
+  "$schema": "../../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "libs/utils/webhook-signing/src",
+  "projectType": "library",
+  "tags": [
+    "layer:utils",
+    "util:webhook-signing",
+    "scope:shared",
+    "license:shared"
+  ],
+  "targets": {}
+}
