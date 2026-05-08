@@ -1,7 +1,58 @@
+import { existsSync, readFileSync } from 'node:fs'
+import os from 'node:os'
+import path from 'node:path'
 import consola from 'consola';
 import { toSnakeCaseKeys } from '@lenserfight/utils/text';
-import { resolveConfig, loadUserConfig, saveUserConfig, type LenserfightConfig } from '../config/project-config';
+import { resolveConfig as resolveBaseConfig, loadUserConfig, saveUserConfig, type LenserfightConfig } from '../config/project-config';
 import { reportCliError } from './error-reporter';
+
+// ─── Profile overlay (Y1) ────────────────────────────────────────────────────
+//
+// Profiles live at `~/.lenserfight/profiles/<name>.json` and overlay the
+// resolved config without touching the legacy env-based path. Read is
+// synchronous-and-cheap so it stays compatible with both `callRpc` and
+// `callRest` (which were originally synchronous resolvers).
+
+interface RawProfile {
+  name?: string
+  supabase_url?: string
+  supabase_anon_key?: string
+  access_token?: string
+  refresh_token?: string
+  default_workflow_id?: string
+}
+
+function readActiveProfileSync(): RawProfile | null {
+  try {
+    const dir = path.join(os.homedir(), '.lenserfight', 'profiles')
+    const activeFile = path.join(dir, '.active')
+    let name: string | undefined
+    if (existsSync(activeFile)) {
+      const raw = readFileSync(activeFile, 'utf-8').trim()
+      if (raw) name = raw
+    }
+    if (!name && process.env['LF_PROFILE']) name = process.env['LF_PROFILE']
+    if (!name) return null
+    const file = path.join(dir, `${name}.json`)
+    if (!existsSync(file)) return null
+    return JSON.parse(readFileSync(file, 'utf-8')) as RawProfile
+  } catch {
+    return null
+  }
+}
+
+function resolveConfig(cwd?: string): LenserfightConfig {
+  const base = resolveBaseConfig(cwd)
+  const profile = readActiveProfileSync()
+  if (!profile) return base
+  return {
+    ...base,
+    supabaseUrl: profile.supabase_url || base.supabaseUrl,
+    supabaseAnonKey: profile.supabase_anon_key || base.supabaseAnonKey,
+    authToken: profile.access_token ?? base.authToken,
+    authRefreshToken: profile.refresh_token ?? base.authRefreshToken,
+  }
+}
 
 export interface RpcOptions {
   requireAuth?: boolean;
@@ -9,6 +60,12 @@ export interface RpcOptions {
   useDeveloperToken?: boolean;
   /** Explicitly suppress any stored token — use for anon RPC calls. */
   noAuth?: boolean;
+  /**
+   * Non-public schema for the RPC (e.g. `lenses`). When set we route the
+   * request via PostgREST's `Content-Profile` header so the function is
+   * resolved against the named schema rather than `public`.
+   */
+  schema?: string;
 }
 
 export function resolveBearerToken(
@@ -99,6 +156,10 @@ export async function callRpc<T = unknown>(
     'Content-Type': 'application/json',
     apikey: config.supabaseAnonKey,
   };
+  if (options.schema) {
+    headers['Content-Profile'] = options.schema;
+    headers['Accept-Profile'] = options.schema;
+  }
 
   const bearerToken = resolveBearerToken(config, options);
 

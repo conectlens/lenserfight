@@ -114,6 +114,96 @@ describe('run replay --dry-run', () => {
   });
 });
 
+describe('run cancel', () => {
+  it('calls fn_cancel_run with the given run_id', async () => {
+    mockCallRpc.mockResolvedValueOnce(null);
+
+    const { default: runCmd } = await import('./run') as { default: AnyCmd };
+    const cancelCmd = await resolveSubCmd(runCmd, 'cancel');
+
+    await cancelCmd.run?.({
+      args: { run_id: 'run-abc', reason: '' },
+      cmd: {},
+      rawArgs: [],
+    });
+
+    expect(process.exitCode).toBe(0);
+    expect(mockCallRpc).toHaveBeenCalledWith(
+      'fn_cancel_run',
+      { p_team_run_id: 'run-abc' },
+      { requireAuth: true },
+    );
+  });
+
+  it('includes p_reason when a reason is provided', async () => {
+    mockCallRpc.mockResolvedValueOnce(null);
+
+    const { default: runCmd } = await import('./run') as { default: AnyCmd };
+    const cancelCmd = await resolveSubCmd(runCmd, 'cancel');
+
+    await cancelCmd.run?.({
+      args: { run_id: 'run-xyz', reason: 'manual stop' },
+      cmd: {},
+      rawArgs: [],
+    });
+
+    expect(mockCallRpc).toHaveBeenCalledWith(
+      'fn_cancel_run',
+      { p_team_run_id: 'run-xyz', p_reason: 'manual stop' },
+      { requireAuth: true },
+    );
+  });
+});
+
+describe('run full — error paths', () => {
+  it('exits 1 when battle is not found', async () => {
+    mockCallRpc.mockResolvedValueOnce(null);
+
+    const { default: runCmd } = await import('./run') as { default: AnyCmd };
+    const fullCmd = await resolveSubCmd(runCmd, 'full');
+
+    await fullCmd.run?.({
+      args: { id: 'missing-battle', adapter: '', 'dry-run': false },
+      cmd: {},
+      rawArgs: [],
+    });
+
+    expect(process.exitCode).toBe(1);
+  });
+
+  it('exits 1 when battle status is not open', async () => {
+    mockCallRpc.mockResolvedValueOnce({ status: 'voting', title: 'Test Battle', workflow_id: 'wf-1' });
+
+    const { default: runCmd } = await import('./run') as { default: AnyCmd };
+    const fullCmd = await resolveSubCmd(runCmd, 'full');
+
+    await fullCmd.run?.({
+      args: { id: 'battle-voting', adapter: '', 'dry-run': false },
+      cmd: {},
+      rawArgs: [],
+    });
+
+    expect(process.exitCode).toBe(1);
+  });
+
+  it('exits 1 when join returns no submission_id', async () => {
+    mockCallRpc
+      .mockResolvedValueOnce({ status: 'open', title: 'Test Battle', workflow_id: 'wf-1' })
+      .mockResolvedValueOnce({}); // fn_battles_join returns nothing useful
+
+    const { default: runCmd } = await import('./run') as { default: AnyCmd };
+    const fullCmd = await resolveSubCmd(runCmd, 'full');
+
+    await fullCmd.run?.({
+      args: { id: 'battle-open', adapter: '', 'dry-run': false },
+      cmd: {},
+      rawArgs: [],
+    });
+
+    expect(process.exitCode).toBe(1);
+  });
+});
+
 describe('run exec --dry-run', () => {
   it('exits 0 with no AI provider credentials in env', async () => {
     const originalEnv = { ...process.env };

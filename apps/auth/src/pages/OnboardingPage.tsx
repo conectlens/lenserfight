@@ -28,7 +28,7 @@ export const OnboardingPage: React.FC = () => {
   return (
     <DialogHeaderContext.Provider value={{ setHeader, clearHeader }}>
       <DialogFooterContext.Provider value={{ setFooter, clearFooter }}>
-        <div className="relative min-h-screen bg-gray-50 dark:bg-greyscale-900 flex flex-col items-center justify-center p-4 sm:p-6 overflow-hidden">
+        <div className="relative min-h-screen bg-greyscale-25 dark:bg-greyscale-900 flex flex-col items-center justify-center p-4 sm:p-6 overflow-hidden">
           <StarBackground />
           
           {/* Decorative background glow */}

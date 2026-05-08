@@ -1,4 +1,4 @@
-import { createServer } from 'node:http'
+import { createServer, type ServerResponse } from 'node:http'
 import { randomUUID } from 'node:crypto'
 import { nodeLogger } from '@lenserfight/utils/logger'
 import { partnerRegistry, ChainbitPartnerProvider } from '@lenserfight/infra/partner-provisioning'
@@ -6,11 +6,14 @@ import { PLATFORM_API_PORT, PLATFORM_API_CORS_ORIGIN } from '@lenserfight/utils/
 import { sendApiError } from '../lib/http'
 import { handleLensesExecuteRoute } from './routes/lenses-execute.route'
 import { handleRunsGetRoute } from './routes/runs-get.route'
+import { handleRunsSseRoute } from './routes/runs-sse.route'
 import { handleWorkflowRunRoute } from './routes/workflows-run.route'
 import { handlePartnersProvisionRoute } from './routes/partners-provision.route'
 import { handlePartnersBalanceRoute } from './routes/partners-balance.route'
 import { handlePartnersRefreshTokenRoute } from './routes/partners-refresh-token.route'
 import { handlePartnersSendClaimRoute } from './routes/partners-send-claim.route'
+import { handleHealthRoute } from './routes/health.route'
+import { handleBattleShareCardRoute } from './routes/battles-share-card.route'
 
 // Register partner providers — add new partners here, nothing else changes
 partnerRegistry.register(new ChainbitPartnerProvider())
@@ -46,8 +49,20 @@ const server = createServer(async (req, res) => {
     }
 
     const parts = parsePath(req.url)
+
+    // Health probe — unauthenticated, returns 200 ok / 503 degraded.
+    if (req.method === 'GET' && parts[0] === 'health' && parts.length === 1) {
+      await handleHealthRoute(req, res)
+      return
+    }
+
     if (req.method === 'POST' && parts[0] === 'v1' && parts[1] === 'lenses' && parts[3] === 'execute') {
       await handleLensesExecuteRoute(req, res, parts[2], requestId, startedAt)
+      return
+    }
+
+    if (req.method === 'GET' && parts[0] === 'v1' && parts[1] === 'runs' && parts[2] && parts[3] === 'events') {
+      await handleRunsSseRoute(req, res, parts[2])
       return
     }
 
@@ -58,6 +73,19 @@ const server = createServer(async (req, res) => {
 
     if (req.method === 'POST' && parts[0] === 'v1' && parts[1] === 'workflows' && parts[3] === 'run') {
       await handleWorkflowRunRoute(req, res, parts[2], requestId, startedAt)
+      return
+    }
+
+    // Battle share-card OG image — /v1/battles/:slug/share-card.<ext>
+    if (
+      req.method === 'GET' &&
+      parts[0] === 'v1' &&
+      parts[1] === 'battles' &&
+      parts[2] &&
+      typeof parts[3] === 'string' &&
+      parts[3].startsWith('share-card.')
+    ) {
+      await handleBattleShareCardRoute(req, res, parts)
       return
     }
 
@@ -90,6 +118,12 @@ const server = createServer(async (req, res) => {
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error)
     nodeLogger.error('platform-api request failed', { requestId, message, path: req.url, method: req.method })
+
+    if (message === 'battle_rate_limit_exceeded') {
+      sendApiError(res, 429, { code: 'BATTLE_RATE_LIMIT', message: 'You can create at most 5 battles per day.' }, requestId, startedAt)
+      return
+    }
+
     sendApiError(
       res,
       message.toLowerCase().includes('auth') || message.toLowerCase().includes('token') ? 401 : 400,

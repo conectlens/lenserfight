@@ -2,7 +2,10 @@ import { callProvider } from '@lenserfight/providers'
 import type { ProviderMessage } from '@lenserfight/providers'
 import { byokKeyResolver } from '@lenserfight/providers'
 import { nodeLogger } from '@lenserfight/utils/logger'
+import { chainabitExecutionRepository } from '@lenserfight/data/repositories'
 import { createServiceSupabaseClient } from '../lib/supabase'
+
+const CHAINABIT_EXECUTION_ENABLED = process.env['CHAINABIT_EXECUTION_ENABLED'] === 'true'
 
 interface ClaimedBattleJob {
   job_id: string
@@ -59,6 +62,11 @@ export async function processNextBattleJob(): Promise<boolean> {
 
   const job = (Array.isArray(data) ? data[0] : data) as ClaimedBattleJob | undefined
   if (!job) return false
+
+  // Delegate to Chainabit execution bridge when enabled
+  if (CHAINABIT_EXECUTION_ENABLED) {
+    return processNextBattleJobViaChainabit(serviceClient, job)
+  }
 
   const startedAt = Date.now()
 
@@ -154,6 +162,104 @@ export async function processNextBattleJob(): Promise<boolean> {
         battleId: job.battle_id,
         slot:     job.slot,
         message,
+      })
+    }
+    return true
+  }
+}
+
+async function processNextBattleJobViaChainabit(
+  serviceClient: ReturnType<typeof createServiceSupabaseClient>,
+  job: ClaimedBattleJob,
+): Promise<boolean> {
+  const startedAt = Date.now()
+  try {
+    const apiKey = await resolveApiKey(job)
+
+    let prompt = job.task_prompt
+    if (job.version_id) {
+      const { data: rendered, error: renderErr } = await serviceClient
+        .schema('lenses')
+        .rpc('fn_render_template', {
+          p_version_id: job.version_id,
+          p_inputs: { prompt: job.task_prompt },
+        })
+      if (renderErr || !rendered) {
+        throw new Error(renderErr?.message ?? 'Failed to render lens template')
+      }
+      prompt = rendered as string
+    }
+
+    let systemPrompt: string | undefined
+    if (job.personality_version_id) {
+      const { data: rendered, error: renderErr } = await serviceClient
+        .schema('lenses')
+        .rpc('fn_render_template', {
+          p_version_id: job.personality_version_id,
+          p_inputs: {},
+        })
+      if (!renderErr && rendered) systemPrompt = rendered as string
+    } else if (job.personality_note) {
+      systemPrompt = job.personality_note
+    }
+
+    const externalJobId = await chainabitExecutionRepository.submitBattleJob({
+      jobId: job.job_id,
+      battleId: job.battle_id,
+      slot: job.slot,
+      prompt,
+      systemPrompt,
+      providerKey: job.provider_key,
+      modelKey: job.model_key,
+      apiKey,
+      maxTokens: job.max_tokens,
+      temperature: job.temperature,
+    })
+
+    // Poll until terminal
+    const POLL_INTERVAL_MS = 2_000
+    const TIMEOUT_MS = 300_000
+    const deadline = Date.now() + TIMEOUT_MS
+    let result = await chainabitExecutionRepository.pollBattleJob(externalJobId)
+    while (result.status === 'pending' || result.status === 'running') {
+      if (Date.now() > deadline) throw new Error('Chainabit job polling timed out')
+      await new Promise((resolve) => setTimeout(resolve, POLL_INTERVAL_MS))
+      result = await chainabitExecutionRepository.pollBattleJob(externalJobId)
+    }
+
+    if (result.status === 'failed') {
+      throw new Error(result.errorMessage ?? 'Chainabit job failed')
+    }
+
+    await serviceClient
+      .schema('battles')
+      .rpc('fn_complete_battle_execution_job', {
+        p_job_id:      job.job_id,
+        p_status:      'completed',
+        p_output_text: result.outputText ?? '',
+        p_error:       null,
+      })
+
+    nodeLogger.info('battle job completed via Chainabit', {
+      jobId: job.job_id, battleId: job.battle_id, slot: job.slot,
+      durationMs: Date.now() - startedAt, externalJobId,
+    })
+    return true
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err)
+    if (job.retry_count < MAX_RETRIES - 1) {
+      await serviceClient.schema('battles').rpc('fn_requeue_battle_job_with_backoff', {
+        p_job_id: job.job_id, p_backoff_ms: backoffMs(job.retry_count), p_error: message,
+      })
+      nodeLogger.warn('Chainabit battle job failed — requeued', {
+        jobId: job.job_id, retryCount: job.retry_count + 1, message,
+      })
+    } else {
+      await serviceClient.schema('battles').rpc('fn_move_battle_job_to_dlq', {
+        p_job_id: job.job_id, p_error_code: 'chainabit.max_retries_exceeded', p_error_msg: message,
+      })
+      nodeLogger.error('Chainabit battle job moved to DLQ', {
+        jobId: job.job_id, battleId: job.battle_id, slot: job.slot, message,
       })
     }
     return true
