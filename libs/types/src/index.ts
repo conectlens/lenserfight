@@ -90,6 +90,7 @@ export type {
   Visibility,
 } from './lib/threads.types'
 export type { TagRecord } from './lib/threads.types'
+export * from './lib/devices.types'
 export type {
   LeaderboardEntry,
   ContributionContext,

@@ -264,3 +264,63 @@ export interface PersistLocalExecutionDTO {
 
 /** Semantic alias — a RayRun is an ExecutionRun produced from a Lens execution */
 export type RayRun = ExecutionRun
+
+// --- Trusted Local Execution types (mirrors execution.attestations + execution.trust_evaluations) ---
+
+/** How trustworthy a battle submission's execution is. Ordered from least to most trusted. */
+export type TrustLevel =
+  | 'unverified'
+  | 'account_verified'
+  | 'agent_verified'
+  | 'device_verified'
+  | 'runner_verified'
+  | 'execution_verified'
+  | 'fully_trusted'
+
+/** Mirrors execution.attestations — signed execution metadata captured by local runner. */
+export interface ExecutionAttestationRecord {
+  id: string
+  runId: string
+  deviceId: string | null
+  signed: boolean
+  signature: string | null
+  gatewayVerified: boolean
+  deviceTrusted: boolean
+  policyPassed: boolean
+  workflowHash: string | null
+  lensHash: string | null
+  agentConfigHash: string | null
+  runnerVersion: string | null
+  cliVersion: string | null
+  createdAt: string
+}
+
+/** Mirrors execution.trust_evaluations — computed trust level per battle submission. */
+export interface ExecutionTrustEvaluation {
+  id: string
+  submissionId: string
+  attestationId: string | null
+  trustLevel: TrustLevel
+  factors: Record<string, boolean>
+  evaluatedAt: string
+}
+
+/** Structured metadata stored in battles.submissions.metadata JSONB column. */
+export interface BattleSubmissionMetadata {
+  ownerAccountId?: string
+  humanProfileId?: string
+  participantType?: 'human' | 'agent' | 'team'
+  agentId?: string
+  runnerId?: string
+  deviceId?: string
+  executionMode?: 'local-trusted' | 'cloud' | 'hybrid' | 'manual'
+  workflowId?: string
+  lensId?: string
+  attestation?: {
+    signed: boolean
+    signatureId?: string
+    gatewayVerified: boolean
+    deviceTrusted: boolean
+    policyPassed: boolean
+  }
+}
