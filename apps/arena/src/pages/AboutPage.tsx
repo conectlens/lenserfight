@@ -61,16 +61,16 @@ const VALUES = [
 
 const TIMELINE = [
   {
-    year: '2024',
-    title: 'Idea born',
+    year: '2025',
+    title: 'Forum & Lenses',
     description:
-      'Frustrated by opaque AI benchmarks and closed model comparisons, we asked: what if the community could judge?',
+      'Started with a community forum and the Lens primitive — a reusable prompt format anyone could craft, share, and build on.',
   },
   {
     year: '2025',
-    title: 'First arena battles',
+    title: 'Arena battles',
     description:
-      'Beta launched with human vs AI battles. Community voted on over 10,000 battles in the first month.',
+      'Expanded into head-to-head AI battles built on top of Lenses. The community could finally run the test, inspect the result, and argue about the outcome.',
   },
   {
     year: '2026',
@@ -241,15 +241,15 @@ export const AboutPage: React.FC = () => {
           viewport={viewport}
           transition={spring}
         >
-          <Card className="relative overflow-hidden bg-greyscale-900 p-10 dark:bg-greyscale-50">
+          <Card className="relative overflow-hidden bg-greyscale-900 p-10">
             <div className="pointer-events-none absolute inset-0 opacity-20 bg-[radial-gradient(ellipse_at_top_left,_rgba(255,222,89,1),_transparent_60%),radial-gradient(ellipse_at_bottom_right,_rgba(255,222,89,0.6),_transparent_55%)]" />
             <div className="relative grid gap-8 lg:grid-cols-[1fr_auto] lg:items-center">
               <div className="space-y-4">
                 <Lightbulb size={28} className="text-primary-yellow-500" />
-                <blockquote className="text-2xl font-black leading-tight tracking-tight text-greyscale-0 dark:text-greyscale-900 sm:text-3xl">
+                <blockquote className="text-2xl font-black leading-tight tracking-tight text-greyscale-0 sm:text-3xl">
                   "Quality should win — not branding, not speed, not speculation about which AI is currently hot."
                 </blockquote>
-                <p className="text-sm text-greyscale-400 dark:text-greyscale-600">
+                <p className="text-sm text-greyscale-400">
                   The core promise that every LenserFight feature is built to deliver.
                 </p>
               </div>
@@ -264,7 +264,7 @@ export const AboutPage: React.FC = () => {
                     variant="ghost"
                     size="lg"
                     fullWidth
-                    className="text-greyscale-300 hover:bg-greyscale-800 hover:text-greyscale-0 dark:text-greyscale-600 dark:hover:bg-greyscale-100 dark:hover:text-greyscale-900"
+                    className="text-greyscale-300 hover:bg-greyscale-800 hover:text-greyscale-0"
                   >
                     Talk to us <ExternalLink size={14} />
                   </Button>

@@ -7,9 +7,13 @@ import {
   LeaderboardEntry,
   LeaderboardTimeframe,
   LeaderboardScope,
+  XPSeason,
+  SeasonLeaderboardEntry,
 } from '@lenserfight/types'
 import { createXPRepository } from '../factory'
+import { XP_APP_IDS } from '../repositories/xpRepository'
 
+export { XP_APP_IDS }
 
 const repo = createXPRepository()
 
@@ -41,5 +45,18 @@ export const xpService = {
 
   getContributions: async (lenserId: string): Promise<XPContribution[]> => {
     return repo.getContributions(lenserId)
+  },
+
+  getActiveSeason: async (appId = XP_APP_IDS.forum): Promise<XPSeason | null> => {
+    return repo.getActiveSeason(appId)
+  },
+
+  getSeasonLeaderboard: async (
+    appId = XP_APP_IDS.forum,
+    seasonId?: string,
+    limit = 20,
+    offset = 0
+  ): Promise<{ list: SeasonLeaderboardEntry[]; userEntry?: SeasonLeaderboardEntry | null }> => {
+    return repo.getSeasonLeaderboard(appId, seasonId, limit, offset)
   },
 }

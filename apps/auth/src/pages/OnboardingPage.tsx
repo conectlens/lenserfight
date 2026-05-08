@@ -36,7 +36,7 @@ export const OnboardingPage: React.FC = () => {
 
           {/* Logo / Brand Header */}
           <div className="mb-8 z-10 animate-in fade-in slide-in-from-top-4 duration-700">
-            <Logo size={32} showBeta />
+            <Logo size={32} />
           </div>
 
           <div className="relative z-10 w-full max-w-xl bg-surface-raised rounded-2xl border border-surface-border shadow-2xl overflow-hidden flex flex-col animate-in fade-in zoom-in-95 duration-500">
