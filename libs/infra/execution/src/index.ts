@@ -67,8 +67,12 @@ export { PdfExportProvider } from './lib/providers/pdf-export.provider'
 export { ResearchProvider } from './lib/providers/research.provider'
 export type { ResearchRetrievalBackend, ResearchRetrievalHit } from './lib/providers/research.provider'
 export { getExecutionProvider, registerExecutionProvider } from './lib/execution.registry'
+export { chainabitExecutionClient } from './lib/chainabitExecutionClient'
+export type { ChainbitSubmitPayload, ChainbitJobStatus } from './lib/chainabitExecutionClient'
 export {
   WorkflowExecutionService,
+  resolveDelegationPolicy,
+  assertDelegationAllowed,
 } from './lib/workflow-execution.service'
 export type {
   WorkflowNode,
@@ -86,4 +90,7 @@ export type {
   ModerationConfig,
   EngineEvent,
   EngineEventName,
+  MemoryWritePolicy,
+  MemoryFlushSink,
+  DelegationPolicy,
 } from './lib/workflow-execution.service'

@@ -51,12 +51,81 @@ export interface ModerationConfig {
   policy?: 'off' | 'input' | 'output' | 'both'
 }
 
+/**
+ * When buffered memory entries written during a node's execution are flushed
+ * to durable storage.
+ *
+ * - `on_success` (default) — entries are flushed only when the entire run
+ *   reaches `'completed'`. A failed run discards every buffered entry,
+ *   preserving the "memory only reflects successful work" invariant.
+ *
+ * - `checkpoint` — entries are flushed as soon as the writing node itself
+ *   completes. Memory survives downstream node failures. Use for
+ *   long-running orchestration workflows where intermediate findings should
+ *   not be lost when a later node errors out.
+ */
+export type MemoryWritePolicy = 'on_success' | 'checkpoint'
+
+/**
+ * Phase X2 — controls whether a node is allowed to delegate work to another
+ * agent (e.g. via `delegate_to_agent` workflow steps that spawn child
+ * `agents.team_runs`).
+ *
+ * - `auto` (default) — delegation runs immediately as part of the workflow.
+ * - `approval_required` — the delegation step is gated by the same approval
+ *   queue used for human-in-the-loop nodes. The runtime is expected to call
+ *   `agents.fn_node_requires_review` and pause the run until cleared.
+ * - `forbidden` — delegation is rejected outright. Useful for sensitive
+ *   workflows that must execute end-to-end on a single agent.
+ *
+ * NOTE: The Phase X message-bus + delegation runtime is partial; concrete
+ * `delegate_to_agent` action wiring lands in a follow-up. The policy field
+ * (and the helpers below) is the forward-declared contract that runtime will
+ * honor when it ships.
+ */
+export type DelegationPolicy = 'auto' | 'approval_required' | 'forbidden'
+
 export interface WorkflowNodeConfig {
   retry?: RetryConfig
   timeoutMs?: number
   onParentFailure?: OnParentFailurePolicy
   merge?: MergeStrategy
   moderation?: ModerationConfig['policy']
+  /** Phase N2 — controls when buffered memory writes are flushed. Default `on_success`. */
+  memoryWritePolicy?: MemoryWritePolicy
+  /** Phase X2 — controls delegation behavior for this node. Default `auto`. */
+  delegationPolicy?: DelegationPolicy
+}
+
+/**
+ * Phase X2 — resolve the effective delegation policy for a node config.
+ * Returns the configured policy or the supplied default (defaults to `'auto'`).
+ *
+ * The future delegation runtime will call this when it encounters a
+ * `delegate_to_agent` action to determine whether to dispatch immediately,
+ * route through the approval queue, or reject the delegation.
+ */
+export function resolveDelegationPolicy(
+  nodeConfig: WorkflowNodeConfig | undefined,
+  defaultPolicy: DelegationPolicy = 'auto'
+): DelegationPolicy {
+  return nodeConfig?.delegationPolicy ?? defaultPolicy
+}
+
+/**
+ * Phase X2 — throw if the node's delegation policy forbids delegation.
+ * The future delegation runtime is expected to call this at the moment a
+ * delegation action is encountered, before any side-effects.
+ */
+export function assertDelegationAllowed(
+  nodeConfig: WorkflowNodeConfig | undefined
+): void {
+  const policy = resolveDelegationPolicy(nodeConfig)
+  if (policy === 'forbidden') {
+    throw new Error(
+      'Delegation is forbidden by node configuration (delegationPolicy=forbidden).'
+    )
+  }
 }
 
 export interface WorkflowNode {
@@ -193,6 +262,29 @@ export interface WorkflowExecutionContext {
    * — provenance is best-effort observability.
    */
   onProvenance?(handoff: ProvenanceHandoff): void | Promise<void>
+  /**
+   * Phase N2 — optional sink for memory-flush events. The caller decides
+   * whether to maintain a buffer; the engine simply notifies the sink at the
+   * right moments and lets it act on the per-node policy.
+   *
+   * - `onNodeCompleted(nodeId, policy)` is called after each successful node
+   *   transition to `'completed'`. Implementations whose policy is
+   *   `'checkpoint'` should flush that node's buffered memory entries here.
+   *
+   * - `onRunCompleted(status)` is called when the run reaches a terminal
+   *   status. Implementations whose policy is `'on_success'` should flush the
+   *   remaining buffered memory entries when status === 'completed', or
+   *   discard them otherwise.
+   *
+   * Errors thrown by the sink are swallowed — memory flushing is
+   * observational, not load-bearing.
+   */
+  memory?: MemoryFlushSink
+}
+
+export interface MemoryFlushSink {
+  onNodeCompleted?(nodeId: string, policy: MemoryWritePolicy): void | Promise<void>
+  onRunCompleted?(status: 'completed' | 'failed' | 'cancelled'): void | Promise<void>
 }
 
 // ── Defaults ──────────────────────────────────────────────────────────────
@@ -328,12 +420,25 @@ export class WorkflowExecutionService {
       }),
     )
 
+    const notifyMemoryRunCompleted = async (
+      status: 'completed' | 'failed' | 'cancelled',
+    ) => {
+      if (!ctx.memory?.onRunCompleted) return
+      try {
+        await ctx.memory.onRunCompleted(status)
+      } catch {
+        // Memory flush is observational; never block the run.
+      }
+    }
+
     let wave = nodes.filter((n) => (inDegree.get(n.id) ?? 0) === 0).map((n) => n.id)
 
     while (wave.length > 0) {
       if (isAborted()) {
         await markRemainingCancelled()
-        return finish(ctx.runId, results, 'cancelled')
+        const cancelledResult = finish(ctx.runId, results, 'cancelled')
+        await notifyMemoryRunCompleted(cancelledResult.status)
+        return cancelledResult
       }
 
       await Promise.all(
@@ -702,12 +807,25 @@ export class WorkflowExecutionService {
             name: 'node_completed',
             metadata: { attempts: attempt },
           })
+
+          // Phase N2 — notify the memory sink so it can checkpoint-flush.
+          if (ctx.memory?.onNodeCompleted) {
+            const policy: MemoryWritePolicy =
+              node.config?.memoryWritePolicy ?? 'on_success'
+            try {
+              await ctx.memory.onNodeCompleted(nodeId, policy)
+            } catch {
+              // Memory flush is observational; never block the run.
+            }
+          }
         }),
       )
 
       if (isAborted()) {
         await markRemainingCancelled()
-        return finish(ctx.runId, results, 'cancelled')
+        const cancelledResult = finish(ctx.runId, results, 'cancelled')
+        await notifyMemoryRunCompleted(cancelledResult.status)
+        return cancelledResult
       }
 
       // Build next wave: decrement dependents only for edges whose condition holds.
@@ -722,7 +840,9 @@ export class WorkflowExecutionService {
       wave = nextWave
     }
 
-    return finish(ctx.runId, results)
+    const finalResult = finish(ctx.runId, results)
+    await notifyMemoryRunCompleted(finalResult.status)
+    return finalResult
   }
 }
 
