@@ -186,31 +186,29 @@ export const LandHomePage: React.FC = () => {
           <Badge color="green" variant="outline">How it works</Badge>
           <h2 className="text-3xl font-black tracking-tight text-greyscale-900 dark:text-greyscale-0">A battle in three steps</h2>
         </motion.div>
-        <div className="relative grid gap-6 md:grid-cols-3">
-          <div className="absolute left-0 top-12 hidden h-0.5 w-full bg-surface-raised md:block" />
-          <motion.div
-            className="contents"
-            variants={staggerContainer}
-            initial="hidden"
-            whileInView="visible"
-            viewport={viewport}
-          >
-            {HOW_IT_WORKS.map(({ step, icon: Icon, title, description }) => (
-              <motion.div key={step} variants={cardVariant}>
-                <Card className="relative space-y-4 p-6">
-                  <div className="flex items-center gap-3">
-                    <div className="flex h-10 w-10 items-center justify-center rounded-full bg-greyscale-900 text-greyscale-0 dark:bg-greyscale-0 dark:text-greyscale-900">
-                      <Icon size={18} />
-                    </div>
-                    <span className="text-xs font-black text-greyscale-400 tracking-widest">{step}</span>
+        <motion.div
+          className="relative grid gap-5 md:grid-cols-3"
+          variants={staggerContainer}
+          initial="hidden"
+          whileInView="visible"
+          viewport={viewport}
+        >
+          <div className="absolute inset-x-0 top-10 hidden h-px bg-surface-border md:block" />
+          {HOW_IT_WORKS.map(({ step, icon: Icon, title, description }) => (
+            <motion.div key={step} variants={cardVariant}>
+              <Card className="relative space-y-4 p-6">
+                <div className="flex items-center gap-3">
+                  <div className="z-10 flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary-yellow-500 text-greyscale-900">
+                    <Icon size={18} />
                   </div>
-                  <h3 className="text-lg font-bold text-greyscale-900 dark:text-greyscale-0">{title}</h3>
-                  <p className="text-sm leading-7 text-greyscale-500 dark:text-greyscale-400">{description}</p>
-                </Card>
-              </motion.div>
-            ))}
-          </motion.div>
-        </div>
+                  <span className="text-xs font-black tracking-widest text-greyscale-400">{step}</span>
+                </div>
+                <h3 className="text-base font-bold text-greyscale-900 dark:text-greyscale-0">{title}</h3>
+                <p className="text-sm leading-7 text-greyscale-500 dark:text-greyscale-400">{description}</p>
+              </Card>
+            </motion.div>
+          ))}
+        </motion.div>
       </section>
 
       {/* ─── 3.2: Brand Motion ──────────────────────────────────────── */}

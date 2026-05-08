@@ -11,8 +11,11 @@ import {
   Users,
 } from 'lucide-react'
 import React from 'react'
+import { useTranslation } from 'react-i18next'
 import { Link } from 'react-router-dom'
 import { CHAINABIT_APP_URL } from '@lenserfight/utils/env'
+
+import { chainabitContactUrl } from '../utils/chainabitUrls'
 
 const BrandVideos = React.lazy(() => import('../components/BrandVideos'))
 
@@ -78,6 +81,13 @@ const TIMELINE = [
 ]
 
 export const AboutPage: React.FC = () => {
+  const { i18n } = useTranslation()
+  const contactUrl = chainabitContactUrl({
+    lang: i18n.language,
+    utmMedium: 'arena_about',
+    utmCampaign: 'arena_about_contact',
+  })
+
   return (
     <div className="relative overflow-hidden bg-surface-base text-surface-text">
       {/* Brand-yellow tinted gradient — softer than Home */}
@@ -249,11 +259,16 @@ export const AboutPage: React.FC = () => {
                     See the primitives <Sparkles size={15} />
                   </Button>
                 </Link>
-                <Link to="/contact">
-                  <Button variant="ghost" size="lg" fullWidth className="text-greyscale-300 hover:bg-greyscale-800 hover:text-greyscale-0 dark:text-greyscale-600 dark:hover:bg-greyscale-100 dark:hover:text-greyscale-900">
-                    Talk to us
+                <a href={contactUrl} target="_blank" rel="noopener noreferrer">
+                  <Button
+                    variant="ghost"
+                    size="lg"
+                    fullWidth
+                    className="text-greyscale-300 hover:bg-greyscale-800 hover:text-greyscale-0 dark:text-greyscale-600 dark:hover:bg-greyscale-100 dark:hover:text-greyscale-900"
+                  >
+                    Talk to us <ExternalLink size={14} />
                   </Button>
-                </Link>
+                </a>
               </div>
             </div>
           </Card>
