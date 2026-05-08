@@ -1,8 +1,16 @@
 # @lenserfight/adapters-connector
 
-Public connector SDK alpha for LenserFight integrations. Defines the versioned `ConnectorAdapterV1` interface, the canonical token-scope grammar, and a default HTTP adapter for `kind: 'api'` connectors.
+Public connector SDK for LenserFight integrations. Defines the versioned `ConnectorAdapterV1` interface, the canonical token-scope grammar, and a default HTTP adapter for `kind: 'api'` connectors.
 
-This package is the foundation that Phase 16 promotes to `@lenserfight/sdk` v1. The interface is marked `@experimental` and may change before v1.
+## Stability
+
+`ConnectorAdapterV1` is **stable** as of Phase M (2026-05-08). The interface is governed by RFC-0001:
+
+- **Breaking changes** (renames, removals, semantic changes) require a new versioned interface (`ConnectorAdapterV2`) and a deprecation cycle for V1 with overlapping support.
+- **Additive, optional fields** may land in V1 minor releases.
+- **The token-scope grammar** in `CONNECTOR_SCOPES` is also stable; new scopes are additive only.
+
+Pin to the versioned symbol (`ConnectorAdapterV1`) rather than the unversioned alias (`ConnectorAdapter`) so a future V2 does not silently change the shape of long-lived adapters.
 
 ## Quick start
 
