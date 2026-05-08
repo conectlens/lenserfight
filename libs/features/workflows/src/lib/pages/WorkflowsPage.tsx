@@ -1,5 +1,5 @@
 import { useLenser } from '@lenserfight/features/profile'
-import { Button, EmptyState, InfiniteScrollSentinel, PageHeader } from '@lenserfight/ui/components'
+import { Button, EmptyState, HelpButton, InfiniteScrollSentinel, PageHeader } from '@lenserfight/ui/components'
 import { SearchBar, SelectField } from '@lenserfight/ui/forms'
 import { AnimatePresence, motion } from 'framer-motion'
 import { GitBranch, Plus, Search, Sparkles } from 'lucide-react'
@@ -96,9 +96,12 @@ export function WorkflowsPage({ onCreateWorkflow }: WorkflowsPageProps) {
         title="Connected Lenses"
         description="Chain lenses into multi-step workflows, run them, and iterate on the output path."
         action={
-          <Button onClick={onCreateWorkflow} className="gap-2 w-auto flex-shrink-0">
-            <Plus size={15} /> New Workflow
-          </Button>
+          <>
+            <HelpButton path="/tutorials/walkthroughs/create-a-workflow" />
+            <Button onClick={onCreateWorkflow} className="gap-2 w-auto flex-shrink-0">
+              <Plus size={15} /> New Workflow
+            </Button>
+          </>
         }
       />
 

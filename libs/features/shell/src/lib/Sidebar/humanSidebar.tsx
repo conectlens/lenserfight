@@ -7,6 +7,7 @@ import {
   Home,
   KeyRound,
   LayoutTemplate,
+  Library,
   ShoppingBag,
   Swords,
   Trophy,
@@ -54,7 +55,8 @@ export function buildHumanSidebarSections(
           : []),
         { id: 'ray-cloud', label: 'Ray Cloud', path: '/ray', icon: <Cloud size={20} /> },
         { id: 'templates', label: 'Templates', externalHref: `${DOCS_BASE_URL}/reference/automation/markdown-objects#canonical-formats`, icon: <LayoutTemplate size={20} /> },
-        { id: 'docs', label: 'Docs', externalHref: `${DOCS_BASE_URL}/explanation/automation/index`, icon: <BookOpen size={20} /> },
+        { id: 'getting-started', label: 'Getting Started', externalHref: `${DOCS_BASE_URL}/tutorials/getting-started/overview`, icon: <BookOpen size={20} /> },
+        { id: 'docs-home', label: 'Docs', externalHref: DOCS_BASE_URL, icon: <Library size={20} /> },
       ],
     },
     {

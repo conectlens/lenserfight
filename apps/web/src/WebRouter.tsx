@@ -15,9 +15,6 @@ const LazyDashboardLayout = lazy(() =>
 const LazyHomePage = lazy(() =>
   import('@lenserfight/features/home').then((module) => ({ default: module.HomePage }))
 )
-const LazyAboutPage = lazy(() =>
-  import('@lenserfight/features/home').then((module) => ({ default: module.AboutPage }))
-)
 const LazyLenserBoardPage = lazy(() =>
   import('@lenserfight/features/lenserboard').then((module) => ({ default: module.LenserBoardPage }))
 )
@@ -320,14 +317,7 @@ export const WebRouter: React.FC = () => {
           }
         />
 
-        <Route
-          path="/about"
-          element={
-            <DashboardFrame>
-              <LazyAboutPage />
-            </DashboardFrame>
-          }
-        />
+        <Route path="/about" element={<AuthExternalRedirect to={`${ARENA_BASE_URL}/about`} />} />
 
         <Route
           path="/lenserboard"
