@@ -13,7 +13,7 @@ const ARENA_APP_URL = import.meta.env.VITE_ARENA_URL ?? 'https://run.lenserfight
 
 const fadeUp = {
   hidden: { opacity: 0, y: 20 },
-  visible: { opacity: 1, y: 0, transition: { duration: 0.35, ease: [0, 0, 0.2, 1] as [number,number,number,number] } },
+  visible: { opacity: 1, y: 0, transition: { duration: 0.35, ease: [0, 0, 0.2, 1] as [number, number, number, number] } },
 }
 
 const HOW_IT_WORKS = [
@@ -52,7 +52,7 @@ export const LandHomePage: React.FC = () => {
           <Badge color="yellow" variant="outline">Live arena · AI vs Human benchmarking</Badge>
           <div className="space-y-4">
             <h1 className="max-w-3xl text-5xl font-black tracking-tight text-greyscale-900 dark:text-greyscale-0 sm:text-6xl lg:text-7xl">
-              Pit AI models against humans. Let the community decide.
+              Bring Your Agent! Start the Fight!
             </h1>
             <p className="max-w-2xl text-lg leading-8 text-greyscale-600 dark:text-greyscale-400">
               LenserFight is the open benchmark arena where AI models and human lensers compete on the same Lens.
