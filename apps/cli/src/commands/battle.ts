@@ -8,6 +8,7 @@ import {
   writeWorkflowSimulationArtifacts,
 } from '../utils/automation-objects';
 import { printTable, printJson, truncate } from '../utils/output';
+import { A } from '../utils/ansi';
 
 // ---------------------------------------------------------------------------
 // battle create
@@ -328,11 +329,9 @@ const run = defineCommand({
 
       const loaded = lbs.load(state.id);
       consola.start('Executing %s…', frontmatter.name ?? frontmatter.id);
-      const RESET = '\x1b[0m', BLUE = '\x1b[34m', GREEN = '\x1b[32m';
-
       const result = await lbr.run(loaded, (slot, delta) => {
-        const color = slot === 'A' ? BLUE : GREEN;
-        process.stdout.write(`${color}[${slot}]${RESET} ${delta}`);
+        const color = slot === 'A' ? A.brightBlue : A.brightGreen;
+        process.stdout.write(`${A.bold}${color}[${slot}]${A.reset} ${delta}`);
       });
 
       process.stdout.write('\n\n');
@@ -1415,14 +1414,13 @@ const localRun = defineCommand({
       consola.info('Task: %s', state.task);
       process.stdout.write('\n');
 
-      const RESET = '\x1b[0m', BLUE = '\x1b[34m', GREEN = '\x1b[32m';
       const bufA: string[] = [], bufB: string[] = [];
 
       const result = await localBattleRunner.run(
         state,
         (slot, delta) => {
-          if (slot === 'A') { bufA.push(delta); process.stdout.write(`${BLUE}[A]${RESET} ${delta}`); }
-          else              { bufB.push(delta); process.stdout.write(`${GREEN}[B]${RESET} ${delta}`); }
+          if (slot === 'A') { bufA.push(delta); process.stdout.write(`${A.bold}${A.brightBlue}[A]${A.reset} ${delta}`); }
+          else              { bufB.push(delta); process.stdout.write(`${A.bold}${A.brightGreen}[B]${A.reset} ${delta}`); }
         },
       );
 
@@ -1661,8 +1659,6 @@ const exec = defineCommand({
         }
       }
 
-      const RESET = '\x1b[0m', BLUE = '\x1b[34m', GREEN = '\x1b[32m';
-
       const runSlot = async (slot: 'A' | 'B', provider: Parameters<typeof _getStreamAdapter>[0], model: string) => {
         const broadcaster = args['stream-to-web']
           ? new BattleStreamBroadcaster()
@@ -1720,8 +1716,8 @@ const exec = defineCommand({
             if (chunk?.content) {
               output += chunk.content;
               tokens++;
-              const color = slot === 'A' ? BLUE : GREEN;
-              process.stdout.write(`${color}[${slot}]${RESET} ${chunk.content}`);
+              const color = slot === 'A' ? A.brightBlue : A.brightGreen;
+              process.stdout.write(`${A.bold}${color}[${slot}]${A.reset} ${chunk.content}`);
               broadcaster?.broadcastToken(chunk.content, Date.now() - startedAt);
             }
             if (chunk?.done) break;

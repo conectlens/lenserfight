@@ -1,4 +1,5 @@
 import consola from 'consola';
+import { A, sym } from './ansi';
 
 export type CheckStatus = 'pass' | 'warn' | 'fail' | 'skip'
 
@@ -13,11 +14,13 @@ export function printTable(
       Math.max(h.length, ...rows.map((r) => (r[i] || '').length))
     );
 
+  // Pad raw text first, then wrap in color so alignment is unaffected by escape codes.
   const header = headers
-    .map((h, i) => h.padEnd(widths[i]))
+    .map((h, i) => `${A.bold}${A.brightCyan}${h.padEnd(widths[i])}${A.reset}`)
     .join('  ');
 
-  const separator = widths.map((w) => '-'.repeat(w)).join('  ');
+  const totalWidth = widths.reduce((s, w) => s + w, 0) + 2 * (widths.length - 1);
+  const separator = `${A.gray}${'─'.repeat(totalWidth)}${A.reset}`;
 
   consola.log(header);
   consola.log(separator);
@@ -50,20 +53,36 @@ export function printSuccess(message: string, ...args: unknown[]): void {
   consola.success(message, ...args)
 }
 
+/** Format a doctor/health check result line. The symbol carries the status color; the
+ *  caller (doctor.ts) feeds this into printSuccess/printWarn/printError which adds consola
+ *  chrome. The icon here reinforces the status visually without being redundant. */
 export function formatCheck(status: CheckStatus, label: string, detail: string): string {
-  const badge = status === 'pass'
-    ? 'SUCCESS'
-    : status === 'warn'
-      ? 'WARNING'
-      : status === 'skip'
-        ? 'INFO'
-        : 'ERROR'
-  return `[${badge}] ${label}: ${detail}`
+  const icon =
+    status === 'pass' ? `${A.brightGreen}${sym.pass}${A.reset}` :
+    status === 'warn' ? `${A.brightYellow}${sym.warn}${A.reset}` :
+    status === 'skip' ? `${A.brightBlue}${sym.info}${A.reset}` :
+    `${A.brightRed}${sym.fail}${A.reset}`
+  return `${icon}  ${A.bold}${label}${A.reset}  ${A.gray}${detail}${A.reset}`
+}
+
+/** Print a bold section heading with a leading newline for visual breathing room. */
+export function printSection(title: string): void {
+  consola.log(`\n${A.bold}${A.brightCyan}${title}${A.reset}`)
+}
+
+/** Print a muted "next step" hint line, indented. */
+export function printHint(message: string): void {
+  consola.log(`  ${A.gray}${sym.arrow} ${message}${A.reset}`)
+}
+
+/** Print a horizontal divider. */
+export function printDivider(width = 48): void {
+  consola.log(`${A.gray}${'─'.repeat(width)}${A.reset}`)
 }
 
 export function truncate(str: string, maxLen: number): string {
   if (str.length <= maxLen) return str;
-  return str.slice(0, maxLen - 1) + '\u2026';
+  return str.slice(0, maxLen - 1) + '…';
 }
 
 /**

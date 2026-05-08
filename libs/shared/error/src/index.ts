@@ -8,8 +8,10 @@ export type {
   RateLimitError,
   NetworkError,
   ApiError,
+  ConstraintViolationError,
   UnknownError,
 } from './lib/types'
+export { CONSTRAINT_MESSAGES, DEFAULT_CONSTRAINT_MESSAGE } from './lib/constraint-messages'
 export { normalizeError } from './lib/normalize'
 export { ErrorProvider, useError } from './lib/error-context/ErrorContext'
 export { GlobalErrorRenderer } from './lib/error-boundary/GlobalErrorRenderer'
