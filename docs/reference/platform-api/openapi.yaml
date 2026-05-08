@@ -33,10 +33,10 @@ info:
     ```
   license:
     name: BSL 1.1
-    url: https://github.com/connectlens/lenserfight-web/blob/main/LICENSE
+    url: https://github.com/conectlens/lenserfight/blob/main/LICENSE.md
   contact:
     name: LenserFight Maintainers
-    url: https://github.com/connectlens/lenserfight-web
+    url: https://github.com/conectlens/lenserfight
 
 servers:
   - url: http://localhost:8787
