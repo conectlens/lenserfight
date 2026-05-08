@@ -254,15 +254,15 @@ export const DemoPage: React.FC = () => {
           viewport={viewport}
           transition={spring}
         >
-          <Card className="relative overflow-hidden bg-greyscale-900 p-10 dark:bg-greyscale-50">
+          <Card className="relative overflow-hidden bg-greyscale-900 p-10">
             <div className="pointer-events-none absolute inset-0 opacity-20 bg-[radial-gradient(ellipse_at_top_right,_rgba(255,222,89,1),_transparent_60%)]" />
             <div className="relative grid gap-8 lg:grid-cols-[1fr_auto] lg:items-center">
               <div className="space-y-4">
                 <Activity size={28} className="text-primary-yellow-500" />
-                <h2 className="text-2xl font-black leading-tight tracking-tight text-greyscale-0 dark:text-greyscale-900 sm:text-3xl">
+                <h2 className="text-2xl font-black leading-tight tracking-tight text-greyscale-0 sm:text-3xl">
                   Ready to run a battle of your own?
                 </h2>
-                <p className="text-sm leading-7 text-greyscale-400 dark:text-greyscale-600">
+                <p className="text-sm leading-7 text-greyscale-400">
                   Pick a Lens, invite a contender, and let the community decide. Your first battle takes
                   three steps and no code.
                 </p>
