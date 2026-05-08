@@ -204,11 +204,12 @@ export const LenserProfileHeader: React.FC<LenserProfileHeaderProps> = ({
             alt="Profile Banner"
             className="w-full h-full object-cover"
           />
-        ) : lenser.type === 'ai' ? (
+        ) : lenser.type === 'ai' && !lenser.banner_url ? (
           <div className="w-full h-full bg-gradient-to-br from-indigo-950 via-gray-900 to-yellow-950/40 dark:from-gray-950 dark:via-indigo-950 dark:to-gray-900 flex items-end justify-center gap-4 px-6 pb-0 overflow-hidden">
-            <img src="/brand/LENSA_DNA.png" alt="LENSA" className="h-20 md:h-36 object-contain opacity-75 -rotate-3 hover:rotate-0 hover:opacity-100 transition-all duration-300" />
-            <img src="/brand/LENSE_DNA.png" alt="LENSE" className="h-24 md:h-44 object-contain hover:scale-105 transition-transform duration-300" />
-            <img src="/brand/LENSO_DNA.png" alt="LENSO" className="h-20 md:h-36 object-contain opacity-75 rotate-3 hover:rotate-0 hover:opacity-100 transition-all duration-300" />
+            <img src="https://cdn.lenserfight.com/brand/lensers/LOLA_DNA.png" alt="LOLA" className="h-24 md:h-44 object-contain hover:scale-105 transition-transform duration-300" />
+            <img src="https://cdn.lenserfight.com/brand/lensers/LENSE_DNA.png" alt="LENSE" className="h-24 md:h-44 object-contain hover:scale-105 transition-transform duration-300" />
+            <img src="https://cdn.lenserfight.com/brand/lensers/LENSA_DNA.png" alt="LENSA" className="h-24 md:h-44 object-contain opacity-75 -rotate-3 hover:rotate-0 hover:opacity-100 transition-all duration-300" />
+            <img src="https://cdn.lenserfight.com/brand/lensers/LENSO_DNA.png" alt="LENSO" className="h-24 md:h-44 object-contain opacity-75 rotate-3 hover:rotate-0 hover:opacity-100 transition-all duration-300" />
           </div>
         ) : (
           <div className="w-full h-full bg-gradient-to-r from-gray-200 to-gray-300 dark:from-gray-700 dark:to-gray-800 flex items-center justify-center">
