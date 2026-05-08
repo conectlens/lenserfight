@@ -2,11 +2,22 @@ import { ModerationPolicy, ModerationError } from './moderation.types'
 
 import { DictionaryPolicy, RegexPolicy, SemanticPolicy } from './policies'
 
+// SemanticPolicy uses an AI call and is off by default for OSS self-hosted installs.
+// Set MODERATION_SEMANTIC_ENABLED=true (server) or VITE_MODERATION_SEMANTIC_ENABLED=true (browser)
+// to activate it alongside the always-on DictionaryPolicy and RegexPolicy.
+const semanticEnabled =
+  (typeof process !== 'undefined' && process.env?.['MODERATION_SEMANTIC_ENABLED'] === 'true') ||
+  (typeof import.meta !== 'undefined' && (import.meta as Record<string, Record<string, string>>).env?.['VITE_MODERATION_SEMANTIC_ENABLED'] === 'true')
+
 class ContentModerationService {
   private policies: ModerationPolicy[]
 
   constructor() {
-    this.policies = [new DictionaryPolicy(), new RegexPolicy(), new SemanticPolicy()]
+    this.policies = [
+      new DictionaryPolicy(),
+      new RegexPolicy(),
+      ...(semanticEnabled ? [new SemanticPolicy()] : []),
+    ]
   }
 
   /**
