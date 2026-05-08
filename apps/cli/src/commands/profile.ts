@@ -9,7 +9,7 @@ import {
   setActiveProfileName,
   type LenserfightProfile,
 } from '../utils/profiles'
-import { handleError } from '../utils/api'
+import { callRpc, handleError } from '../utils/api'
 import { printJson, printTable } from '../utils/output'
 
 // ─── profile list ────────────────────────────────────────────────────────────
@@ -169,6 +169,117 @@ const profileShow = defineCommand({
   },
 })
 
+// ─── profile xp ──────────────────────────────────────────────────────────────
+
+const profileXp = defineCommand({
+  meta: {
+    name: 'xp',
+    description: 'Show XP summary (total XP, level, rank) for your platform account.',
+  },
+  args: {
+    json: { type: 'boolean', description: 'Output as JSON', default: false },
+  },
+  async run({ args }) {
+    try {
+      const xp = await callRpc<{
+        total_xp: number;
+        current_level: number;
+        rank: number | null;
+      }>('fn_xp_get_summary', {}, { requireAuth: true })
+
+      if (!xp) {
+        consola.info('No XP data found. Join a battle to start earning XP.')
+        return
+      }
+
+      if (args.json) { printJson(xp); return }
+
+      consola.info('Total XP:  %s', xp.total_xp)
+      consola.info('Level:     %s', xp.current_level)
+      consola.info('Rank:      %s', xp.rank ?? '—')
+    } catch (err) {
+      handleError(err)
+    }
+  },
+})
+
+// ─── profile badges ──────────────────────────────────────────────────────────
+
+const profileBadges = defineCommand({
+  meta: {
+    name: 'badges',
+    description: 'List badges earned on your platform account.',
+  },
+  args: {
+    json: { type: 'boolean', description: 'Output as JSON', default: false },
+  },
+  async run({ args }) {
+    try {
+      const badges = await callRpc<Array<{
+        type: string;
+        label: string;
+        description: string | null;
+        awarded_at: string;
+      }>>('fn_lenser_badges', {}, { requireAuth: true })
+
+      if (!badges?.length) {
+        consola.info('No badges yet. Complete battles and verify your device to earn badges.')
+        return
+      }
+
+      if (args.json) { printJson(badges); return }
+
+      printTable(
+        ['Badge', 'Label', 'Awarded At'],
+        badges.map((b) => [b.type, b.label, new Date(b.awarded_at).toLocaleDateString()])
+      )
+    } catch (err) {
+      handleError(err)
+    }
+  },
+})
+
+// ─── profile trust ────────────────────────────────────────────────────────────
+
+const profileTrust = defineCommand({
+  meta: {
+    name: 'trust',
+    description: 'Show your platform trust score and contributing factors.',
+  },
+  args: {
+    json: { type: 'boolean', description: 'Output as JSON', default: false },
+  },
+  async run({ args }) {
+    try {
+      const trust = await callRpc<{
+        score: number;
+        score_type: string;
+        uncertainty: number | null;
+        factors: Record<string, unknown> | null;
+      }>('fn_lenser_trust_score', {}, { requireAuth: true })
+
+      if (!trust) {
+        consola.info('No trust score yet. Complete battles and register a device to build trust.')
+        return
+      }
+
+      if (args.json) { printJson(trust); return }
+
+      consola.info('Trust score:  %s', trust.score.toFixed(2))
+      consola.info('Uncertainty:  %s', trust.uncertainty?.toFixed(2) ?? '—')
+
+      if (trust.factors) {
+        consola.info('Factors:')
+        for (const [key, val] of Object.entries(trust.factors)) {
+          consola.info('  %s: %s', key, val)
+        }
+      }
+    } catch (err) {
+      handleError(err)
+    }
+  },
+})
+
 // ─── parent ──────────────────────────────────────────────────────────────────
 
 const profileCommand = defineCommand({
@@ -182,6 +293,9 @@ const profileCommand = defineCommand({
     use: profileUse,
     delete: profileDelete,
     show: profileShow,
+    xp: profileXp,
+    badges: profileBadges,
+    trust: profileTrust,
   },
 })
 
