@@ -6,7 +6,7 @@ import { InputField } from '@lenserfight/ui/forms'
 import { useWallet } from '@lenserfight/features/store'
 import { AvatarSelectionModal, useLenser } from '@lenserfight/features/profile'
 import { Feedback, ProductTag, FeedbackStatus } from '@lenserfight/types'
-import { Avatar, Button, Card, DangerZone, Table, Column } from '@lenserfight/ui/components'
+import { Avatar, Button, Card, DangerZone, HelpButton, Table, Column } from '@lenserfight/ui/components'
 import { ConfirmModal } from '@lenserfight/ui/modals'
 import { timeAgo } from '@lenserfight/utils/date'
 import { FEATURES, SURFACE, WEB_BASE_URL } from '@lenserfight/utils/env'
@@ -631,7 +631,14 @@ export const SettingsPage: React.FC = () => {
           )}
 
           {/* API KEYS TAB */}
-          {activeTab === 'api-keys' && <ApiKeysTab />}
+          {activeTab === 'api-keys' && (
+            <>
+              <div className="flex justify-end mb-4">
+                <HelpButton path="/reference/platform-api/tokens" label="API Keys Docs" />
+              </div>
+              <ApiKeysTab />
+            </>
+          )}
 
           {/* GENERAL TAB */}
           {activeTab === 'general' && <GeneralTab />}
@@ -649,15 +656,18 @@ export const SettingsPage: React.FC = () => {
             <div>
               <div className="flex items-center justify-between mb-2">
                 <h2 className="text-xl font-bold text-gray-900 dark:text-white">Notifications</h2>
-                {FEATURES.NOTIFICATIONS && notifications.some((n) => !n.read_at) && (
-                  <Button
-                    variant="ghost"
-                    onClick={markAllRead}
-                    className="flex items-center gap-1 w-auto whitespace-nowrap"
-                  >
-                    <Check size={16} /> Mark all read
-                  </Button>
-                )}
+                <div className="flex items-center gap-2">
+                  <HelpButton path="/explanation/community/notifications" label="About Notifications" />
+                  {FEATURES.NOTIFICATIONS && notifications.some((n) => !n.read_at) && (
+                    <Button
+                      variant="ghost"
+                      onClick={markAllRead}
+                      className="flex items-center gap-1 w-auto whitespace-nowrap"
+                    >
+                      <Check size={16} /> Mark all read
+                    </Button>
+                  )}
+                </div>
               </div>
               <p className="text-sm text-gray-500 dark:text-gray-400 mb-6 border-b border-gray-100 dark:border-gray-800 pb-6">
                 Manage your alerts and updates.

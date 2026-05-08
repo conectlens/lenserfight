@@ -1,4 +1,5 @@
 import { useLenserWorkspace } from '@lenserfight/features/profile'
+import { HelpButton } from '@lenserfight/ui/components'
 import { Field, Input } from '@lenserfight/ui/forms'
 import { ModalFooter } from '@lenserfight/ui/overlays'
 import { ArrowRight, Check, Loader2, X } from 'lucide-react'
@@ -76,6 +77,9 @@ export const CreateAgentContent: React.FC<CreateAgentContentProps> = ({ close })
 
   return (
     <div className="space-y-6">
+      <div className="flex justify-end">
+        <HelpButton path="/tutorials/agent-walkthroughs/create-your-first-agent" label="Agent Guide" />
+      </div>
       <div className="space-y-4">
         <Field
           id="agent-display-name"
