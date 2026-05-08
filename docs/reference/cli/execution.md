@@ -81,6 +81,53 @@ Only runs with status `running`, `streaming`, `queued`, or `pending` can be canc
 
 ---
 
+### `lf execution wait`
+
+Poll a workflow run until it reaches a terminal status, then print the final node results. Two modes:
+
+```bash
+# Mode 1: wait on a specific run
+lf execution wait <run-uuid> [--timeout <seconds>] [--interval <seconds>] [--json]
+
+# Mode 2: wait for any run of a workflow to terminate
+lf execution wait --workflow <workflow-uuid> --any [--timeout <seconds>] [--interval <seconds>] [--json]
+```
+
+| Flag | Type | Default | Description |
+|------|------|---------|-------------|
+| `<run-uuid>` | positional | — | Run to poll. Omit when using `--workflow --any`. |
+| `--workflow` | string | — | Workflow UUID. Pair with `--any`. |
+| `--any` | boolean | false | Wait for the most recent run of the given workflow to reach a terminal state. |
+| `--timeout` | seconds | 300 | Maximum wait time. |
+| `--interval` | seconds | 2 | Poll cadence. |
+| `--json` | boolean | false | Output the final run state (or terminal row) as JSON. |
+
+**Polling cadence.** Default 2 s; pass `--interval` to slow it down. Each tick calls `fn_get_workflow_run_state` (run mode) or queries `lenses.workflow_runs` filtered to terminal statuses (workflow + any mode).
+
+**Terminal statuses.** `completed`, `failed`, `cancelled`, `timed_out`.
+
+**Exit codes.**
+
+| Code | Meaning |
+|------|---------|
+| `0` | Run terminated with status `completed`. |
+| `1` | Run terminated in failure (`failed` / `cancelled` / `timed_out`), the run was not found, the deadline passed, or an API error was raised. |
+
+**Examples:**
+```bash
+# Wait up to 10 minutes for a specific run
+lf execution wait 8f3e4a12-0001-0002-0003-000000000001 --timeout 600
+
+# Use in a script — gate next step on success
+if lf execution wait --workflow $WF --any --timeout 120; then
+  lf battle finalize $BATTLE
+else
+  echo "workflow run did not complete"; exit 1
+fi
+```
+
+---
+
 ### `lf execution retry <run-id>`
 
 Re-queue a failed, cancelled, or timed-out workflow run. Sets the run status to `queued`; the recovery sweeper picks it up on its next pass (typically within 30–60 seconds on a local Supabase instance with `pg_cron` enabled).
