@@ -38,6 +38,10 @@
   description: Further information is requested
 
 # ── Status / housekeeping ──────────────────────────────────────────────────
+- name: first-week-triage
+  color: fbca04
+  description: Flagged for first-week maintainer curation — high signal, new OSS launch window
+
 - name: needs-triage
   color: fbca04
   description: Maintainer review pending
@@ -74,3 +78,36 @@
 - name: area:docs
   color: 0075ca
   description: docs site or contributor guides
+
+- name: area:schedules
+  color: 0e8a16
+  description: CRON scheduling, pg_cron, dispatch, missed-run
+
+- name: area:agents
+  color: 1d76db
+  description: Agent workspace, teams, autonomy, memory, approvals
+
+- name: area:battles
+  color: e4e669
+  description: Battle execution, voting, streaming, arena
+
+- name: area:security
+  color: b60205
+  description: RLS, permissions, key handling, audit, kill switch
+
+# ── Contribution opportunity labels ───────────────────────────────────────────
+- name: good-first-adapter
+  color: 7057ff
+  description: Suitable first adapter/connector contribution — interface documented, scope bounded
+
+- name: good-first-workflow-template
+  color: 7057ff
+  description: Suitable first workflow template contribution — schema documented, example available
+
+- name: schema-proposal
+  color: 3ecf8e
+  description: Proposes a database schema change or new migration
+
+- name: adapter-bug
+  color: d73a4a
+  description: Bug in an existing adapter or connector implementation
