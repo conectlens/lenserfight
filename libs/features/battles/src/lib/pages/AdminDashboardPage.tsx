@@ -9,6 +9,7 @@ import { DLQPanel } from '../components/display/DLQPanel'
 import { ExecutionQueuePanel } from '../components/display/ExecutionQueuePanel'
 import { StuckBattlesPanel } from '../components/display/StuckBattlesPanel'
 import { WorkerHealthPanel } from '../components/display/WorkerHealthPanel'
+import { TemplateManagementPanel } from '../components/TemplateManagementPanel'
 
 export function AdminDashboardPage() {
   const lenserCtx = useLenserOptional()
@@ -70,6 +71,8 @@ export function AdminDashboardPage() {
           <StuckBattlesPanel battles={stuckBattles} isLoading={stuckLoading} />
           <ExecutionQueuePanel jobs={[]} isLoading={false} />
         </div>
+
+        <TemplateManagementPanel />
       </div>
     </>
   )
