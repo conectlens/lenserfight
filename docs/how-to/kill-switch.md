@@ -173,9 +173,66 @@ flowchart TD
 
 ---
 
+---
+
+## Platform Kill Switch (autonomous dispatch)
+
+The per-lenser kill switch above stops runs for a single agent. To halt **all autonomous schedule dispatch** across every lenser — for example during an incident or platform maintenance — use the `platform.system_flags` table.
+
+### Disable autonomous dispatch
+
+Run as a Supabase superuser (service_role or postgres):
+
+```sql
+UPDATE platform.system_flags
+SET value = 'false'::jsonb, updated_at = now()
+WHERE key = 'autonomy_dispatch_enabled';
+```
+
+This causes `fn_dispatch_scheduled_workflows_with_approval()` (called by pg_cron every minute) to return 0 immediately without dispatching any schedules.
+
+Verify:
+
+```sql
+SELECT value FROM platform.system_flags
+WHERE key = 'autonomy_dispatch_enabled';
+-- returns: false
+```
+
+### Re-enable autonomous dispatch
+
+```sql
+UPDATE platform.system_flags
+SET value = 'true'::jsonb, updated_at = now()
+WHERE key = 'autonomy_dispatch_enabled';
+```
+
+The next pg_cron tick (within 60 seconds) will resume normal dispatch.
+
+### Disable CRON scheduling entirely (pg_cron)
+
+To remove the pg_cron job itself rather than using the flag:
+
+```sql
+SELECT cron.unschedule('dispatch-scheduled-workflows');
+```
+
+To re-enable it:
+
+```sql
+SELECT cron.schedule(
+  'dispatch-scheduled-workflows',
+  '*/1 * * * *',
+  $$SELECT public.fn_dispatch_scheduled_workflows_with_approval()$$
+);
+```
+
+---
+
 ## Related
 
 - [Autonomous Agent OS](/explanation/agents/autonomous-agent-os) — governance controls and run lifecycle
 - [Policy Engine](/reference/platform-api/policy-engine) — kill switch policy type and verdict definitions
 - [Run Reports & Incidents](/reference/platform-api/run-reports) — `killed` outcome and incident types
 - [Agent Lifecycle Commands (Phase 8)](/reference/cli/agent-lifecycle) — full CLI reference
+- [Known Preview Surfaces](/reference/known-preview-surfaces) — CRON scheduling status and rollback steps
