@@ -1,9 +1,12 @@
 import { useLenserOptional } from '@lenserfight/features/profile'
 import { Button } from '@lenserfight/ui/components'
+import { TrustMetadataPanel } from '@lenserfight/ui/widgets'
+import type { ExecutionTrustEvaluation } from '@lenserfight/types'
 import { Loader2, ShieldAlert, Swords } from 'lucide-react'
 import React from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
-
+import { useQuery } from '@tanstack/react-query'
+import { supabase } from '@lenserfight/data/supabase'
 
 import { ArenaView } from '../components/arena/ArenaView'
 import { BattleShareCard } from '../components/display/BattleShareCard'
@@ -17,6 +20,33 @@ import { useBattle } from '../hooks/query/useBattle'
 import { useModerationDecisions } from '../hooks/query/useModerationDecisions'
 
 import type { BattleStatus } from '../types/battle.types'
+
+function useTrustEvaluations(submissionIds: string[]) {
+  return useQuery<ExecutionTrustEvaluation[]>({
+    queryKey: ['trust-evaluations', submissionIds],
+    queryFn: async () => {
+      if (!submissionIds.length) return []
+      const results: ExecutionTrustEvaluation[] = []
+      for (const id of submissionIds) {
+        const { data } = await supabase.rpc('fn_get_submission_trust', { p_submission_id: id })
+        if (data) {
+          const row = data as Record<string, unknown>
+          results.push({
+            id: id,
+            submissionId: row['submission_id'] as string,
+            attestationId: (row['attestation_id'] as string) ?? null,
+            trustLevel: (row['trust_level'] as ExecutionTrustEvaluation['trustLevel']) ?? 'unverified',
+            factors: (row['factors'] as Record<string, boolean>) ?? {},
+            evaluatedAt: row['evaluated_at'] as string,
+          })
+        }
+      }
+      return results
+    },
+    enabled: submissionIds.length > 0,
+    staleTime: 1000 * 60 * 5,
+  })
+}
 
 function BattleAdminModerationLink({ slug }: { slug: string }) {
   // Owner-scoped RPC — empty result if user has no moderation visibility for this battle.
@@ -84,6 +114,14 @@ function RematchButton({ slug }: { slug: string }) {
 
 export function BattleResultPage() {
   const { slug } = useParams<{ slug: string }>()
+  const { data: battle } = useBattle(slug ?? '')
+
+  const submissionIds = (battle?.submissions as Array<{ id: string }> | undefined)
+    ?.map((s) => s.id) ?? []
+  const { data: trustEvaluations = [] } = useTrustEvaluations(submissionIds)
+  const verifiedSubmissions = trustEvaluations.filter(
+    (te) => te.trustLevel !== 'unverified'
+  )
 
   return (
     <>
@@ -143,6 +181,14 @@ export function BattleResultPage() {
     />
     {slug && <RematchButton slug={slug} />}
     {slug && <BattleAdminModerationLink slug={slug} />}
+    {verifiedSubmissions.length > 0 && (
+      <div className="mt-6 px-4 space-y-3 max-w-2xl mx-auto">
+        <h3 className="text-sm font-medium text-muted-foreground">Execution Trust</h3>
+        {verifiedSubmissions.map((te) => (
+          <TrustMetadataPanel key={te.submissionId} trustEvaluation={te} />
+        ))}
+      </div>
+    )}
     </>
   )
 }
