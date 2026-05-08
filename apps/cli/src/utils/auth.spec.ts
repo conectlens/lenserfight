@@ -66,9 +66,24 @@ describe('developer token CLI helpers', () => {
     expect(isDeveloperTokenActive()).toBe(false);
   });
 
-  it('builds auth app URLs from the resolved base URL', () => {
+  it('builds auth app URLs using the default base when authBaseUrl is not set', () => {
     expect(buildAuthAppUrl('/device-approval?code=ABCD-EFGH')).toBe(
       'https://auth.lenserfight.com/device-approval?code=ABCD-EFGH'
+    );
+  });
+
+  it('builds auth app URLs using VITE_AUTH_BASE_URL when set', () => {
+    mockResolveConfig.mockReturnValue({
+      mode: 'local',
+      supabaseUrl: 'http://127.0.0.1:54321',
+      cloudApiUrl: 'http://localhost:8786',
+      supabaseAnonKey: 'anon',
+      dbPort: 54322,
+      apiPort: 54321,
+      authBaseUrl: 'http://localhost:5173',
+    });
+    expect(buildAuthAppUrl('/device-approval?code=ABCD-EFGH')).toBe(
+      'http://localhost:5173/device-approval?code=ABCD-EFGH'
     );
   });
 });
