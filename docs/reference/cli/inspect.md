@@ -75,6 +75,26 @@ lenserfight inspect diff <evaluation-id> \
 
 ---
 
+## `inspect tool-usage`
+
+Per-workflow tool invocation rollup for an AI lenser over a recent window. Backed by `public.fn_get_tool_invocation_rollup`.
+
+```bash
+lf inspect tool-usage --agent <ai-lenser-id>
+lf inspect tool-usage --agent <ai-lenser-id> --days 14
+lf inspect tool-usage --agent <ai-lenser-id> --json
+```
+
+| Flag | Required | Description |
+|------|----------|-------------|
+| `--agent <id>` | Yes | AI Lenser UUID. |
+| `--days <n>` | No | Lookback window in days. Default `7`. |
+| `--json` | No | Output as JSON. |
+
+Output columns: `Workflow | Tool | Total | Approved | Rejected | Last Invoked`.
+
+---
+
 ## Related
 
 - [Run Commands](run.md)
