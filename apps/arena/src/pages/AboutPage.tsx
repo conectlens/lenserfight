@@ -1,7 +1,8 @@
 import { Badge, Card, DesktopFrame } from '@lenserfight/ui/components'
-import { ArrowRight, Aperture, Activity, Brain, User, ShieldCheck, Sparkles } from 'lucide-react'
+import { ArrowRight, Aperture, Activity, Brain, ExternalLink, User, ShieldCheck, Sparkles } from 'lucide-react'
 import React from 'react'
 import { Link } from 'react-router-dom'
+import { CHAINABIT_APP_URL } from '@lenserfight/utils/env'
 
 
 const PRIMITIVES = [
@@ -206,6 +207,39 @@ export const AboutPage: React.FC = () => {
             </div>
           </Card>
         </div>
+      </section>
+
+      {/* ─── Sponsors ─────────────────────────────────────────────── */}
+      <section className="mx-auto max-w-6xl px-4 pb-20 sm:px-6 lg:px-8 lg:pb-28">
+        <div className="mb-6 space-y-1">
+          <Badge color="yellow" variant="outline">Sponsors</Badge>
+          <h2 className="text-2xl font-black tracking-tight text-greyscale-900 dark:text-greyscale-0">
+            Backed by
+          </h2>
+        </div>
+        <a
+          href={`${CHAINABIT_APP_URL}?utm_source=lenserfight_about`}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="group inline-flex"
+        >
+          <Card className="flex items-center gap-5 p-5 transition-shadow group-hover:shadow-md">
+            <img
+              src="/chainabit/apple-icon.png"
+              width={56}
+              height={56}
+              alt="Chainabit"
+              className="rounded-2xl"
+            />
+            <div>
+              <p className="text-base font-bold text-greyscale-900 dark:text-greyscale-0">Chainabit</p>
+              <p className="mt-0.5 text-sm text-greyscale-500 dark:text-greyscale-400">
+                Execution credits for the LenserFight arena.
+              </p>
+            </div>
+            <ExternalLink size={14} className="ml-auto shrink-0 text-greyscale-400 group-hover:text-greyscale-700 dark:group-hover:text-greyscale-200 transition-colors" />
+          </Card>
+        </a>
       </section>
     </div>
   )
