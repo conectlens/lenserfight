@@ -14,8 +14,10 @@ import {
 } from '../lib/onboarding/detect'
 import { byokKeyResolver } from '@lenserfight/providers'
 import { formatCheck, printJson, printSuccess, printWarn, printError } from '../utils/output'
+import { isAuthenticated, getUserInfo } from '../utils/auth'
+import { callRpc } from '../utils/api'
 
-type DoctorCheckId = 'core' | 'api' | 'byok' | 'ollama'
+type DoctorCheckId = 'core' | 'api' | 'byok' | 'ollama' | 'auth' | 'journey'
 
 export default defineCommand({
   meta: {
@@ -34,7 +36,7 @@ export default defineCommand({
     },
     check: {
       type: 'string',
-      description: 'Run an additional targeted check: api, byok, ollama',
+      description: 'Run an additional targeted check: api, byok, ollama, auth, journey',
     },
   },
   async run({ args }) {
@@ -49,6 +51,7 @@ export default defineCommand({
       if (status === 'fail') hasError = true
     }
 
+    // ── Core checks (always run) ─────────────────────────────────────────
     const node = detectNode()
     push('node', node.ok ? 'pass' : 'fail', node.detail)
 
@@ -72,16 +75,56 @@ export default defineCommand({
       push('onboarding', onboarding.status === 'complete' ? 'pass' : 'warn', onboarding.status)
     }
 
-    if (requestedCheck === 'api') {
+    // ── Auth check ───────────────────────────────────────────────────────
+    if (requestedCheck === 'auth' || requestedCheck === 'core') {
+      if (!isAuthenticated()) {
+        push('auth', 'warn', 'Not authenticated. Run `lf auth login`.')
+      } else {
+        try {
+          const info = await getUserInfo()
+          if (info?.email) {
+            push('auth', 'pass', `Token valid — ${info.email}`)
+          } else {
+            push('auth', 'warn', 'Token stored but user info unavailable. Try `lf auth login`.')
+          }
+        } catch {
+          push('auth', 'fail', 'Token present but /auth/v1/user returned an error. Run `lf auth login`.')
+        }
+      }
+    }
+
+    // ── API reachability ─────────────────────────────────────────────────
+    if (requestedCheck === 'api' || requestedCheck === 'core') {
       const api = await detectCloudApi(resolved.cloudApiUrl)
       push('cloud_api', api.ok ? 'pass' : 'fail', api.detail)
     }
 
+    // ── Journey state readable ────────────────────────────────────────────
+    if (requestedCheck === 'journey') {
+      if (!isAuthenticated()) {
+        push('journey_state', 'warn', 'Not authenticated — cannot read journey state.')
+      } else {
+        try {
+          await callRpc('fn_journey_state_get', {}, { requireAuth: true })
+          push('journey_state', 'pass', 'fn_journey_state_get reachable')
+        } catch (err) {
+          const msg = err instanceof Error ? err.message : String(err)
+          push(
+            'journey_state',
+            'warn',
+            `fn_journey_state_get failed: ${msg}. Migration may not yet be applied.`,
+          )
+        }
+      }
+    }
+
+    // ── Ollama check ──────────────────────────────────────────────────────
     if (requestedCheck === 'ollama') {
       const ollama = await detectOllama(resolved.ollamaBaseUrl)
       push('ollama', ollama.ok ? 'pass' : 'fail', ollama.detail)
     }
 
+    // ── BYOK key checks ───────────────────────────────────────────────────
     if (requestedCheck === 'byok') {
       const providers = ['openai', 'anthropic', 'google', 'mistral'] as const
       for (const provider of providers) {
@@ -94,12 +137,9 @@ export default defineCommand({
       }
     }
 
+    // ── Output ────────────────────────────────────────────────────────────
     if (args.json) {
-      printJson({
-        mode,
-        status: hasError ? 'failed' : 'passed',
-        checks: results,
-      })
+      printJson({ mode, status: hasError ? 'failed' : 'passed', checks: results })
       process.exitCode = hasError ? 1 : 0
       return
     }
