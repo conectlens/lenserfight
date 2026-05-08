@@ -6,10 +6,15 @@ import type {
 } from './connector.types'
 
 /**
- * @experimental Phase 10 alpha. Stable interface promoted to v1 in Phase 16
- * via RFC-0001. Breaking changes go through the RFC process; additive changes
- * may land in minor releases. Implementations should use the versioned
- * `ConnectorAdapterV1` symbol to opt in to the alpha contract explicitly.
+ * @stable Promoted to V1 stable in Phase M (2026-05-08). Governed by RFC-0001.
+ *
+ * Breaking changes (renames, removals, behavior changes) require a new
+ * versioned interface (`ConnectorAdapterV2`) and a deprecation cycle on V1.
+ * Additive, optional fields may land in V1 minor releases.
+ *
+ * Implementations should pin to the versioned symbol (`ConnectorAdapterV1`),
+ * not the unversioned alias (`ConnectorAdapter`), so a future V2 release does
+ * not silently change the shape of long-lived adapters.
  */
 export interface ConnectorAdapterV1 {
   /** Stable identifier for the adapter — matches the registry key. */
