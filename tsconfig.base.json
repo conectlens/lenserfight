@@ -68,6 +68,8 @@
       "@lenserfight/features/shell": ["libs/features/shell/src/index.ts"],
       "@lenserfight/shared/error": ["libs/shared/error/src/index.ts"],
       "@lenserfight/features/lensers": ["libs/features/lensers/src/index.ts"],
+      "@lenserfight/features/devices": ["libs/features/devices/src/index.ts"],
+      "@lenserfight/features/account": ["libs/features/account/src/index.ts"],
       "@lenserfight/providers": ["libs/providers/src/index.ts"],
       "@lenserfight/ui/primitives": ["libs/ui/primitives/src/index.ts"],
       "@lenserfight/ui/feedback": ["libs/ui/feedback/src/index.ts"],
