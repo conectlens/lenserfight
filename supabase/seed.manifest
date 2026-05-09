@@ -70,3 +70,5 @@ seeds/49_analytics_phase15.sql
 seeds/06_analytics.sql
 seeds/30_scale_xp.sql
 seeds/40_benchmark.sql
+seeds/50_lenser_design_workflows.sql
+seeds/51_lenser_character_battles.sql
