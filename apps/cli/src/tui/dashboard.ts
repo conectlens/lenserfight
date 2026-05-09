@@ -103,7 +103,9 @@ export function getSuggestions(input: string, max = 5): Array<{ cmd: string; des
 // ─── Subcommand validation ────────────────────────────────────────────────────
 
 const REQUIRED_FLAGS: Record<string, string[]> = {
-  'approval list': ['--ai-lenser'],
+  'approval list':    ['--ai-lenser'],
+  'approval approve': [],
+  'approval reject':  [],
 }
 
 export function validateSubcommand(argv: string[]): string | null {
@@ -312,10 +314,9 @@ const SUB_DASHBOARDS: Record<string, SubDashboardDef> = {
   a: {
     title: 'Approvals',
     commands: [
-      { key: 'l', cmd:    ['approval', 'list', '--status=pending'],       label: 'list pending' },
-      { key: 'v', prompt: 'approval list --ai-lenser ',                   label: 'list by lenser  [--ai-lenser <UUID>]' },
-      { key: 'a', prompt: 'approval approve ',                            label: 'approve run     [<RUN-UUID>]' },
-      { key: 'r', prompt: 'approval reject ',                             label: 'reject run      [<RUN-UUID> --reason <text>]' },
+      { key: 'l', prompt: 'approval list --ai-lenser ',                             label: 'list approvals  [--ai-lenser <UUID> (--status=pending|approved|rejected)]' },
+      { key: 'a', prompt: 'approval approve ',                                      label: 'approve run     [<RUN-UUID>]' },
+      { key: 'r', prompt: 'approval reject ',                                       label: 'reject run      [<RUN-UUID> --reason <text>]' },
     ],
     exitKeys: ['q', 'Q', '\x1b'],
   },
