@@ -102,3 +102,39 @@ lf lens resource attach \
 - [Run Commands](run.md) — execute a lens via `run exec`
 - [Execution Modes](execution-modes.md) — Ollama, BYOK, and Cloud execution
 - [Community API: Lenses](/reference/community-api/lenses)
+
+<!-- AUTO-GEN-START -->
+
+# `lf lens`
+
+Manage lenses: versions, resources.
+
+## `lf lens list`
+
+List all versions for a lens.
+
+| Flag | Type | Required | Description |
+|---|---|---|---|
+| `<id>` | positional | yes | Lens UUID |
+| `--json` | boolean | no | Output as JSON |
+
+## `lf lens create`
+
+Create a new draft version for a lens.
+
+| Flag | Type | Required | Description |
+|---|---|---|---|
+| `<id>` | positional | yes | Lens UUID |
+| `--body` | string | yes | Template body (use {{variable}} for params) |
+| `--changelog` | string | no | Optional changelog message for this version |
+| `--parent-version` | string | no | Parent version UUID (for forked versions) |
+
+## `lf lens publish`
+
+Publish a draft lens version.
+
+| Flag | Type | Required | Description |
+|---|---|---|---|
+| `<id>` | positional | yes | Version UUID to publish |
+
+<!-- AUTO-GEN-END -->
