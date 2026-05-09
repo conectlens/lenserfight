@@ -94,15 +94,22 @@ Both contenders stream simultaneously to your terminal:
 [B] generics hold the world tight.
 ```
 
-When both finish:
+When both finish, the AI judge evaluates automatically:
 
 ```
 ✔ Execution complete in 5891ms.
 Results: ts-haiku-duel.result.md
 JSON:    ts-haiku-duel.result.json
 
-Vote: lf battle local vote --slot A|B|draw --id a1b2c3d
+AI judge evaluating… (~600 input + ~100 output tokens via ANTHROPIC_API_KEY)
+✔ Winner: Contender A
+  Rationale: Better 5-7-5 syllable structure with stronger technical metaphor.
+  Judge: anthropic/claude-haiku-4-5 (42 tokens)
+
+Override: lf battle local vote a1b2c3d --slot A|B|draw
 ```
+
+> The AI judge verdict is written to `ts-haiku-duel.result.md` under `## Judge Verdict`.
 
 ---
 
@@ -112,22 +119,26 @@ Vote: lf battle local vote --slot A|B|draw --id a1b2c3d
 cat ts-haiku-duel.result.md
 ```
 
-The file contains both outputs under `## Contender A` and `## Contender B` headers.
+The file contains both outputs under `## Contender A` and `## Contender B` headers, plus a `## Judge Verdict` section with the winner and rationale.
 
 The `.result.json` contains raw output, token counts, timing, and the battle ID.
 
 ---
 
-## Step 5 — Vote
+## Step 5 — Override the verdict (optional)
+
+The AI judge verdict stands unless you disagree. To override:
 
 ```bash
-lf battle local vote --slot A --rationale "Better 5-7-5 structure"
+lf battle local vote --slot B --rationale "Preferred the imagery in B"
 ```
 
-Or mark a draw:
+Human votes are always authoritative — they override the AI judge in `lf battle local status`.
+
+To skip the AI judge entirely:
 
 ```bash
-lf battle local vote --slot draw
+lf battle run PRIVATE_BATTLE.md --execute --no-judge
 ```
 
 ---
