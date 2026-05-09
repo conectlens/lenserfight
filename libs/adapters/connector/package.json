@@ -16,7 +16,7 @@
   "files": ["index.mjs", "index.cjs", "index.d.ts"],
   "repository": {
     "type": "git",
-    "url": "https://github.com/conectlens/lenserfight-web.git",
+    "url": "https://github.com/conectlens/lenserfight.git",
     "directory": "libs/adapters/connector"
   },
   "publishConfig": {

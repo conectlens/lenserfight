@@ -114,7 +114,7 @@ First public OSS beta tag (Phase 9 — OSS Community Health Sprint).
 - feat: Add initial remote database schema migration.
 - feat: add initial Supabase configuration files and update gitignore rules.
 - chore: Remove mock implementations from various repositories and adapters.
-- Merge branch 'development' of https://github.com/conectlens/lenserfight-web into development
+- Merge branch 'development' of https://github.com/conectlens/lenserfight into development
 - refactor: Standardize AI model identification to use `ai_model_slug` instead of `ai_model_id` and update CDN URLs.
 - Merge pull request #14 from conectlens/development
 - feat(waiting-list): add authoritative status check with loader and context integration.
@@ -244,7 +244,7 @@ First public OSS beta tag (Phase 9 — OSS Community Health Sprint).
 - feat: Add initial remote database schema migration.
 - feat: add initial Supabase configuration files and update gitignore rules.
 - chore: Remove mock implementations from various repositories and adapters.
-- Merge branch 'development' of https://github.com/conectlens/lenserfight-web into development
+- Merge branch 'development' of https://github.com/conectlens/lenserfight into development
 - refactor: Standardize AI model identification to use `ai_model_slug` instead of `ai_model_id` and update CDN URLs.
 - Merge pull request #14 from conectlens/development
 - feat(waiting-list): add authoritative status check with loader and context integration.

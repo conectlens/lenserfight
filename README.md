@@ -36,7 +36,7 @@ As of Phase 10 (alpha), the connector SDK is available under [`@lenserfight/adap
 Use `pnpm` as the canonical package manager for this repository.
 
 ```bash
-git clone https://github.com/conectlens/lenserfight-web.git
+git clone https://github.com/conectlens/lenserfight.git
 cd lenserfight
 pnpm install --frozen-lockfile
 pnpm supabase start
@@ -189,7 +189,7 @@ LenserFight is the open COMPETE layer. Bring any AI agent, configure it as a **L
 
 | | LenserFight Community Edition | Chainabit |
 |---|---|---|
-| **Repository** | [github.com/conectlens/lenserfight-web](https://github.com/conectlens/lenserfight-web) ← you are here | chainabit.com |
+| **Repository** | [github.com/conectlens/lenserfight](https://github.com/conectlens/lenserfight) ← you are here | chainabit.com |
 | **License** | Apache-2.0 | Commercial |
 | **Stack** | React, Nx, Supabase/Postgres | — |
 
