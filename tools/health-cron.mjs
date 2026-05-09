@@ -26,6 +26,18 @@ const REQUIRED_CRONS = [
   'expire-stale-approvals',
 ]
 
+// Pre-registered crons that AK–AT will land in subsequent migrations.
+// When present, they are checked for recency; when absent, no failure is
+// raised. This lets us monitor each cron from the moment its migration
+// merges, without breaking the gate on rollouts that have not reached it yet.
+const OPTIONAL_CRONS = [
+  'async-run-poller',          // AM
+  'timeout-stale-runs',        // AM
+  'team-run-claim',            // AL
+  'byok-key-expiry',           // AR
+  'media-expiry',              // AT
+]
+
 const MAX_LAG_MINUTES = 5
 
 // Accept VITE_SUPABASE_URL as a fallback (local dev .env.local convention)
@@ -117,6 +129,14 @@ for (const name of REQUIRED_CRONS) {
   }
 }
 
+for (const name of OPTIONAL_CRONS) {
+  if (scheduledNames.has(name)) {
+    ok(`Optional cron scheduled: ${name}`)
+  } else {
+    warn(`Optional cron not yet scheduled (pre-registered for future phase): ${name}`)
+  }
+}
+
 // ── 2. Check last-run timestamp is recent ──────────────────────────────────
 const cutoff = new Date(Date.now() - MAX_LAG_MINUTES * 60 * 1000).toISOString()
 try {
@@ -134,6 +154,16 @@ try {
     } else {
       fail(`Cron STALE — no run in last ${MAX_LAG_MINUTES} min: ${name}`)
       failures++
+    }
+  }
+
+  for (const name of OPTIONAL_CRONS) {
+    const job = scheduledJobs.find((j) => j.jobname === name)
+    if (!job?.jobid) continue   // not yet scheduled — silent
+    if (recentJobs.has(job.jobid)) {
+      ok(`Optional cron ran recently (< ${MAX_LAG_MINUTES} min): ${name}`)
+    } else {
+      warn(`Optional cron stale — no run in last ${MAX_LAG_MINUTES} min: ${name}`)
     }
   }
 } catch {
