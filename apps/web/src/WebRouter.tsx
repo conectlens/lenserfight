@@ -139,6 +139,9 @@ const LazyAdminDashboardPage = lazy(() =>
 const LazyAdminBattlesPanelPage = lazy(() =>
   import('@lenserfight/features/battles').then((module) => ({ default: module.AdminBattlesPanelPage }))
 )
+const LazyKillSwitchAdminPage = lazy(() =>
+  import('@lenserfight/features/battles').then((module) => ({ default: module.KillSwitchAdminPage }))
+)
 const LazyWorkflowsPage = lazy(() =>
   import('@lenserfight/features/workflows').then((module) => ({ default: module.WorkflowsPage }))
 )
@@ -381,6 +384,14 @@ export const WebRouter: React.FC = () => {
               element={
                 <DashboardFrame>
                   <LazyAdminBattlesPanelPage />
+                </DashboardFrame>
+              }
+            />
+            <Route
+              path="/admin/kill-switches"
+              element={
+                <DashboardFrame>
+                  <LazyKillSwitchAdminPage />
                 </DashboardFrame>
               }
             />
