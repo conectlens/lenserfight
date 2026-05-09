@@ -78,10 +78,13 @@ export type MemoryWritePolicy = 'on_success' | 'checkpoint'
  * - `forbidden` — delegation is rejected outright. Useful for sensitive
  *   workflows that must execute end-to-end on a single agent.
  *
- * NOTE: The Phase X message-bus + delegation runtime is partial; concrete
- * `delegate_to_agent` action wiring lands in a follow-up. The policy field
- * (and the helpers below) is the forward-declared contract that runtime will
- * honor when it ships.
+ * Phase AL — the delegation runtime is now wired. The engine consults
+ * `WorkflowExecutionContext.delegation` (an `IDelegationHandler`) when a
+ * node executes a delegate_to_agent action; the policy resolved here is
+ * passed through to `agents.fn_start_team_run` as `p_policy`, which enforces
+ * `forbidden` server-side. The helpers below remain the canonical entry
+ * points for engine code that needs to short-circuit a forbidden delegation
+ * before any RPC call.
  */
 export type DelegationPolicy = 'auto' | 'approval_required' | 'forbidden'
 
@@ -281,11 +284,38 @@ export interface WorkflowExecutionContext {
    * observational, not load-bearing.
    */
   memory?: MemoryFlushSink
+  /**
+   * Phase AL — delegation dispatcher. When set, the engine calls this on
+   * `delegate_to_agent` actions. When unset, delegation actions surface as
+   * a node failure with code `delegation_not_configured`.
+   */
+  delegation?: DelegationDispatcher
 }
 
 export interface MemoryFlushSink {
   onNodeCompleted?(nodeId: string, policy: MemoryWritePolicy): void | Promise<void>
   onRunCompleted?(status: 'completed' | 'failed' | 'cancelled'): void | Promise<void>
+}
+
+/**
+ * Phase AL — handler used by the engine when a node executes a
+ * `delegate_to_agent` action. Returns the spawned `agents.team_runs.id`.
+ * The concrete impls live in `delegation-handler.ts`:
+ *   - `SupabaseDelegationHandler` — production path; calls
+ *     `agents.fn_start_team_run`.
+ *   - `NullDelegationHandler` — tests/dry-run; throws
+ *     `delegation_not_configured`.
+ *
+ * Re-exported here as a structural type so consumers don't have to import
+ * from two places to wire up the engine.
+ */
+export interface DelegationDispatcher {
+  dispatchTeamRun(input: {
+    aiLenserId: string
+    workflowId: string
+    inputs: Record<string, unknown>
+    policy: DelegationPolicy
+  }): Promise<{ teamRunId: string }>
 }
 
 // ── Defaults ──────────────────────────────────────────────────────────────
