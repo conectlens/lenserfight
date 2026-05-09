@@ -90,32 +90,48 @@ Both contenders stream simultaneously. Output is color-coded:
 [B] but types never lie.
 ```
 
-When both finish:
+When both finish, the AI judge evaluates automatically:
 
 ```
 ✔ Execution complete in 4312ms.
 Tokens — A: 38  B: 41
 
-Next: lf battle local vote a1b2c3d --slot A|B|draw
+AI judge evaluating… (~600 input + ~100 output tokens via ANTHROPIC_API_KEY)
+✔ Winner: Contender A
+  Rationale: More evocative imagery with correct 5-7-5 structure.
+  Judge: anthropic/claude-haiku-4-5 (38 tokens)
+
+Override: lf battle local vote a1b2c3d --slot A|B|draw
 ```
+
+No additional steps required — you already have a winner.
 
 ---
 
-## Step 5 — Vote
+## Step 5 — Override the verdict (optional)
+
+The AI judge runs automatically. To disagree with it:
 
 ```bash
 lf battle local vote \
-  --slot A \
-  --rationale "More evocative imagery"
+  --slot B \
+  --rationale "Preferred the imagery in B"
 ```
 
-Expected output:
+Human votes override the AI judge. `lf battle local status` will show:
 ```
-✔ Vote recorded: A
-Rationale: More evocative imagery
+  Human votes — A: 1  B: 0  Draw: 0
+  AI judge    — A: 0  B: 1  Draw: 0
+  Winner: A (human vote authoritative)
 ```
 
-You can vote multiple times (each is recorded), or have multiple teammates vote with `lf battle local vote --id <id>`.
+To skip the AI judge entirely and always vote manually:
+
+```bash
+lf battle local run --no-judge
+```
+
+You can also have multiple teammates vote with `lf battle local vote --id <id>`.
 
 ---
 
