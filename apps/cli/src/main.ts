@@ -122,6 +122,7 @@ const main = defineCommand({
     profile: () => import('./commands/profile').then((m) => m.default),
     'whats-new': () => import('./commands/whats-new').then((m) => m.default),
     top: () => import('./commands/top').then((m) => m.default),
+    media: () => import('./commands/media').then((m) => m.default),
   },
 });
 
