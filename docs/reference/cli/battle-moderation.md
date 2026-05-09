@@ -54,3 +54,31 @@ Overrides do not delete the original decision — they are appended to the audit
 
 - [Battle Commands](battle.md)
 - [Approval Commands](approval.md)
+
+<!-- AUTO-GEN-START -->
+
+# `lf battle-moderation`
+
+Inspect and override moderation decisions on owned battles.
+
+## `lf battle-moderation list`
+
+List moderation decisions for battles owned by the active workspace.
+
+| Flag | Type | Required | Description |
+|---|---|---|---|
+| `--status` | string | no | Filter by decision_type (flagged | approved | rejected | removed | restored | warned). |
+| `--limit` | string | no | Max rows to return (default 50). |
+| `--json` | boolean | no | Output as JSON |
+
+## `lf battle-moderation override`
+
+Override a prior moderation decision (e.g. restore an AI-removed battle).
+
+| Flag | Type | Required | Description |
+|---|---|---|---|
+| `<decision-id>` | positional | yes | Moderation decision UUID to override |
+| `--decision` | string | yes | New decision type: approved | rejected | removed | restored |
+| `--reason` | string | yes | Reason for the override (audit trail) |
+
+<!-- AUTO-GEN-END -->
