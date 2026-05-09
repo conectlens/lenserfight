@@ -238,3 +238,81 @@ lf run replay 8f3e4a12-0001-0002-0003-000000000001
 - [Run Commands](run.md) — `lf run exec`, submit, vote
 - [Execution Modes](execution-modes.md) — local vs. cloud execution
 - [Inspect Commands](inspect.md) — `lf inspect run`
+
+<!-- AUTO-GEN-START -->
+
+# `lf execution`
+
+Inspect ConnectedLenses workflow run executions.
+
+## `lf execution list`
+
+List recent workflow runs.
+
+| Flag | Type | Required | Description |
+|---|---|---|---|
+| `--workflow` | string | no | Filter by workflow UUID |
+| `--status` | string | no | Filter by run status (running | completed | failed | …) |
+| `--limit` | string | no | Max rows (default 25) |
+| `--json` | boolean | no | Output as JSON |
+
+## `lf execution inspect`
+
+Show the n8n-style run state projection for a run.
+
+| Flag | Type | Required | Description |
+|---|---|---|---|
+| `<run>` | positional | yes | Workflow Run UUID |
+| `--json` | boolean | no | Output as JSON |
+
+## `lf execution wait`
+
+Poll a workflow run until it reaches a terminal status, then print the final node results.
+
+| Flag | Type | Required | Description |
+|---|---|---|---|
+| `<run>` | positional | no | Workflow Run UUID (omit when using --workflow --any) |
+| `--workflow` | string | no | Workflow UUID — pair with --any to wait for any run |
+| `--any` | boolean | no | When set with --workflow, wait for any run of that workflow to reach terminal state |
+| `--timeout` | string | no | Max wait time in seconds (default 300) |
+| `--interval` | string | no | Poll interval in seconds (default 2) |
+| `--json` | boolean | no | Output final state as JSON |
+
+## `lf execution provenance`
+
+Show field-level lineage edges for a run.
+
+| Flag | Type | Required | Description |
+|---|---|---|---|
+| `<run>` | positional | yes | Workflow Run UUID |
+| `--direction` | string | no | Filter by direction (upstream | downstream | all) |
+| `--json` | boolean | no | Output as JSON |
+
+## `lf execution events`
+
+List SSE events recorded for a run.
+
+| Flag | Type | Required | Description |
+|---|---|---|---|
+| `<run>` | positional | yes | Workflow Run UUID |
+| `--after` | string | no | Only show events with event_id strictly greater than this |
+| `--limit` | string | no | Max events (default 100) |
+| `--json` | boolean | no | Output as JSON |
+
+## `lf execution cancel`
+
+Cancel a running workflow run.
+
+| Flag | Type | Required | Description |
+|---|---|---|---|
+| `<run>` | positional | yes | Workflow Run UUID |
+
+## `lf execution retry`
+
+Re-queue a failed run for the recovery sweeper to pick up.
+
+| Flag | Type | Required | Description |
+|---|---|---|---|
+| `<run>` | positional | yes | Workflow Run UUID |
+
+<!-- AUTO-GEN-END -->
