@@ -646,6 +646,13 @@ export interface WorkspaceSettingsRecord {
   // Phase 8: Autonomous Agent OS controls
   max_parallel_runs: number
   global_kill_switch: boolean
+  /**
+   * Canonical pause flag (Phase 36 / RFC-0003). Mirrors agent_paused via a
+   * BEFORE INSERT/UPDATE trigger; either column may be written and both stay
+   * in sync.
+   */
+  runner_paused: boolean
+  /** @deprecated Use `runner_paused`. Kept for backward compatibility. */
   agent_paused: boolean
   dark_launch_enabled: boolean
   dark_launch_pct: number
@@ -663,6 +670,9 @@ export interface UpdateWorkspaceSettingsPatch {
   metadata?: Record<string, unknown>
   max_parallel_runs?: number
   global_kill_switch?: boolean
+  /** Canonical pause flag (Phase 36 / RFC-0003). */
+  runner_paused?: boolean
+  /** @deprecated Use `runner_paused`. */
   agent_paused?: boolean
   dark_launch_enabled?: boolean
   dark_launch_pct?: number
