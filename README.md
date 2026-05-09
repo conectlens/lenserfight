@@ -82,10 +82,19 @@ cd lenserfight
 pnpm install --frozen-lockfile
 pnpm supabase start
 pnpm supabase:db:reset
-pnpm nx run web:serve
 ```
 
-The web app is available at `http://localhost:4200`. Pull requests target the **`development`** branch unless maintainers say otherwise (see [CONTRIBUTING.md](CONTRIBUTING.md)).
+Then start the web and auth apps in two separate terminals:
+
+```bash
+# Terminal 1 — main web app
+pnpm nx run web:serve
+
+# Terminal 2 — auth app (required for login/signup)
+pnpm nx run auth:serve
+```
+
+The web app is available at `http://localhost:3000` and the auth app at `http://localhost:3004`. Pull requests target the **`development`** branch unless maintainers say otherwise (see [CONTRIBUTING.md](CONTRIBUTING.md)).
 
 To run the docs site locally:
 
@@ -100,9 +109,11 @@ For the full local database flow, see `docs/reference/database/local-setup.md`.
 | Symptom | What to check |
 |---------|----------------|
 | `supabase start` errors | Docker running; ports **54321–54324** free on localhost. |
-| `pnpm supabase:db:reset` fails | Run from repo root; Supabase CLI matches project `config.toml`. |
+| `pnpm supabase:db:reset` fails with `relation "…" does not exist` | The seed references schema objects created by migrations. Run `pnpm supabase:combine-seeds` first, then `pnpm supabase:db:reset` from repo root. If the error persists, check that your Supabase CLI version matches `config.toml`. |
+| Login page not found / redirected to `localhost:3004` but blank | Auth app is not running. Start it in a separate terminal: `pnpm nx run auth:serve`. |
 | Web app blank or API errors | Copy `.env.example` → `.env.local`; for full stack use `VITE_DATA_SOURCE=supabase` and keys from `supabase status`. |
-| Wrong port | `pnpm nx run web:serve` serves at **http://localhost:4200** by default; align `VITE_WEB_BASE_URL` in `.env.local` (see [environment variables](docs/reference/platform-api/environment-variables.md)). |
+| Node version warning (`wanted >=22 <23`) | The repo targets Node 22 LTS. Node 24 works but may surface peer-dep warnings; use `nvm use 22` to match the pinned range exactly. |
+| Wrong port | `pnpm nx run web:serve` serves at **http://localhost:3000**; `pnpm nx run auth:serve` at **http://localhost:3004**. Set `VITE_WEB_BASE_URL` and `VITE_AUTH_BASE_URL` accordingly in `.env.local` (see [environment variables](docs/reference/platform-api/environment-variables.md)). |
 
 Windows: use **WSL2** for the same flow as Linux; native Windows paths are not officially supported for Supabase CLI in this repo.
 
