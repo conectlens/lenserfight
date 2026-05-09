@@ -4,8 +4,12 @@ on:
   pull_request:
     paths:
       - 'apps/cli/**'
+      - 'apps/gateway/**'
       - 'libs/providers/**'
       - 'libs/utils/env/**'
+      - 'libs/utils/keychain/**'
+      - 'libs/utils/signing/**'
+      - 'libs/infra/gateway/**'
       - '.github/workflows/cli-smoke.yml'
       - 'package.json'
       - 'pnpm-lock.yaml'
@@ -15,8 +19,12 @@ on:
       - development
     paths:
       - 'apps/cli/**'
+      - 'apps/gateway/**'
       - 'libs/providers/**'
       - 'libs/utils/env/**'
+      - 'libs/utils/keychain/**'
+      - 'libs/utils/signing/**'
+      - 'libs/infra/gateway/**'
       - '.github/workflows/cli-smoke.yml'
 
 jobs:
@@ -56,3 +64,58 @@ jobs:
             --prompt "hello" \
             --model "gpt-4o-mini" \
             --dry-run
+
+  gateway-doctor:
+    name: lf gateway doctor (Trust Gateway preflight)
+    runs-on: ubuntu-latest
+    env:
+      # The doctor checks that we are NOT running with privileged credentials.
+      SUPABASE_SERVICE_ROLE_KEY: ''
+      # File-backed keychain (CI must not require a real OS keyring).
+      LF_GATEWAY_KEY_FILE_FALLBACK: '1'
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build CLI
+        run: pnpm nx build cli
+
+      - name: Build gateway daemon (lf-gatewayd)
+        run: pnpm nx run gateway:build
+
+      - name: Smoke: lf gateway doctor (offline checks only)
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL || 'https://example.supabase.co' }}
+          SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY || 'ci-anon-key-placeholder' }}
+        run: |
+          # Run only the offline-safe subset; ci does not have an Ed25519
+          # keypair or a Supabase session, so identity/sync/policy are
+          # expected to be skipped or fail. We assert the *daemon binary*
+          # check passes, which proves apps/gateway built successfully.
+          node dist/apps/cli/main.js gateway doctor \
+            --check daemon,transport \
+            --json | tee doctor-report.json
+          node -e "
+          const r = require('./doctor-report.json');
+          const required = ['daemon', 'transport'];
+          for (const id of required) {
+            const c = r.checks.find(x => x.id === id);
+            if (!c) { console.error('missing check:', id); process.exit(1); }
+            if (c.status !== 'pass') {
+              console.error('check failed:', id, c.message);
+              process.exit(2);
+            }
+          }
+          console.log('gateway doctor offline checks: ok');
+          "
