@@ -7,17 +7,61 @@ import type {
   ScratchpadRunRecord,
 } from '@lenserfight/types'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import type { Edge, Node } from '@xyflow/react'
-import { Bot, Brain, Cpu, Play, Sparkles } from 'lucide-react'
-import React, { useEffect, useMemo, useState } from 'react'
+import {
+  Background,
+  BackgroundVariant,
+  Controls,
+  MiniMap,
+  ReactFlow,
+  ReactFlowProvider,
+  useNodesState,
+  useEdgesState,
+  addEdge,
+  Handle,
+  Position,
+  type NodeProps,
+  type Connection,
+  type Edge,
+  type Node
+} from '@xyflow/react'
+import '@xyflow/react/dist/style.css'
+import { Bot, Brain, Cpu, Play, Sparkles, Terminal, History, ChevronRight, CheckCircle2, AlertCircle } from 'lucide-react'
+import React, { useCallback, useEffect, useMemo, useState } from 'react'
 
 import { useAgentWorkspace } from '../../context/AgentWorkspaceContext'
-import { AgentGraphShell } from '../AgentGraphShell'
-import { BootstrapStatusPanel } from '../BootstrapStatusPanel'
 import { EmptyPanel } from '../EmptyPanel'
 
-import { ProfileCard, formatDateTime } from './_shared'
+import { formatDateTime } from './_shared'
 import { SectionPage } from './SectionPage'
+
+// --- Custom Nodes ---
+
+const WorkbenchNode = ({ data, selected }: NodeProps) => {
+  const Icon = data.iconType === 'instruction' ? Sparkles :
+               data.iconType === 'model' ? Cpu : Bot;
+
+  return (
+    <div className={`px-4 py-3 shadow-xl rounded-xl border bg-white dark:bg-[#121212] transition-all min-w-[220px]
+      ${selected ? 'border-amber-500 ring-2 ring-amber-500/20' : 'border-gray-200 dark:border-gray-800 hover:border-gray-300 dark:hover:border-gray-700'}`}>
+      <Handle type="target" position={Position.Top} className="w-3 h-3 !bg-amber-500 !border-2 !border-white dark:!border-[#121212]" />
+      <div className="flex items-center gap-3">
+        <div className={`w-10 h-10 rounded-lg flex items-center justify-center 
+          ${data.iconType === 'agent' ? 'bg-amber-100 text-amber-600 dark:bg-amber-500/10 dark:text-amber-400' : 
+            data.iconType === 'instruction' ? 'bg-purple-100 text-purple-600 dark:bg-purple-500/10 dark:text-purple-400' :
+            'bg-blue-100 text-blue-600 dark:bg-blue-500/10 dark:text-blue-400'}`}>
+          <Icon size={20} />
+        </div>
+        <div>
+          <div className="text-[10px] font-bold tracking-widest text-gray-500 dark:text-gray-400 uppercase">{data.typeLabel as string}</div>
+          <div className="text-sm font-semibold text-gray-900 dark:text-gray-100 mt-0.5">{data.label as string}</div>
+        </div>
+      </div>
+      <Handle type="source" position={Position.Bottom} className="w-3 h-3 !bg-amber-500 !border-2 !border-white dark:!border-[#121212]" />
+    </div>
+  )
+}
+
+const nodeTypes = { workbench: WorkbenchNode }
 
 export const ScratchpadSection: React.FC = () => {
   const {
@@ -34,6 +78,7 @@ export const ScratchpadSection: React.FC = () => {
   const [error, setError] = useState<string | null>(null)
   const [pendingRunId, setPendingRunId] = useState<string | null>(null)
   const [selectedModelId, setSelectedModelId] = useState('')
+  const [activeTab, setActiveTab] = useState<'workbench' | 'history'>('workbench')
 
   const runs = useQuery<ScratchpadRunRecord[]>({
     queryKey: queryKeys.agents.scratchpadRuns(bootstrap?.ai_lenser_id ?? ''),
@@ -60,29 +105,36 @@ export const ScratchpadSection: React.FC = () => {
   const selectedModelProfile =
     modelProfiles.find((model) => model.model_id === selectedModelId) ?? null
 
-  const nodes = useMemo<Node[]>(
+  const initialNodes = useMemo<Node[]>(
     () =>
       [
         {
           id: 'agent',
-          position: { x: 0, y: 160 },
-          data: { label: profile.display_name || `@${profile.handle}` },
+          type: 'workbench',
+          position: { x: 250, y: 300 },
+          data: { label: profile.display_name || `@${profile.handle}`, typeLabel: 'Agent Node', iconType: 'agent' },
         },
         defaultInstructionBinding
           ? {
               id: 'instruction',
-              position: { x: -260, y: 20 },
+              type: 'workbench',
+              position: { x: 50, y: 50 },
               data: {
-                label: `Instruction lens ${defaultInstructionBinding.lens_id.slice(0, 8)}`,
+                label: `Lens ${defaultInstructionBinding.lens_id.slice(0, 8)}`,
+                typeLabel: 'Instruction Context',
+                iconType: 'instruction'
               },
             }
           : null,
         selectedModelProfile
           ? {
               id: 'model',
-              position: { x: 260, y: 20 },
+              type: 'workbench',
+              position: { x: 450, y: 50 },
               data: {
                 label: selectedModelProfile.name,
+                typeLabel: 'LLM Engine',
+                iconType: 'model'
               },
             }
           : null,
@@ -90,17 +142,30 @@ export const ScratchpadSection: React.FC = () => {
     [defaultInstructionBinding, profile.display_name, profile.handle, selectedModelProfile]
   )
 
-  const edges = useMemo<Edge[]>(
+  const initialEdges = useMemo<Edge[]>(
     () =>
       [
         defaultInstructionBinding
-          ? { id: 'instruction-agent', source: 'instruction', target: 'agent', animated: true }
+          ? { id: 'instruction-agent', source: 'instruction', target: 'agent', animated: true, style: { stroke: '#a855f7', strokeWidth: 2 } }
           : null,
         selectedModelProfile
-          ? { id: 'model-agent', source: 'model', target: 'agent' }
+          ? { id: 'model-agent', source: 'model', target: 'agent', animated: true, style: { stroke: '#3b82f6', strokeWidth: 2 } }
           : null,
       ].filter(Boolean) as Edge[],
     [defaultInstructionBinding, selectedModelProfile]
+  )
+
+  const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes)
+  const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges)
+
+  useEffect(() => {
+    setNodes(initialNodes)
+    setEdges(initialEdges)
+  }, [initialNodes, initialEdges, setNodes, setEdges])
+
+  const onConnect = useCallback(
+    (params: Connection) => setEdges((eds) => addEdge(params, eds)),
+    [setEdges],
   )
 
   const invalidateRuns = () =>
@@ -150,7 +215,7 @@ export const ScratchpadSection: React.FC = () => {
     mutationFn: (runId: string) =>
       agentWorkspaceService.completeScratchpadRun({
         run_id: runId,
-        output: null,
+        output: "Mock output for completion. The executor is not wired here.",
         status: 'completed',
       }),
     onSuccess: () => {
@@ -186,234 +251,259 @@ export const ScratchpadSection: React.FC = () => {
     )
   }
 
+  if (bootstrapState.kind === 'loading') {
+    return (
+      <SectionPage eyebrow="Drafts" title="Loading workbench...">
+         <div className="h-96 animate-pulse rounded-[24px] border border-gray-100 bg-gray-50 dark:border-gray-800 dark:bg-gray-950" />
+      </SectionPage>
+    )
+  }
+
   return (
-    <SectionPage
-      eyebrow="Drafts"
-      title={`${profile.display_name || `@${profile.handle}`} workbench`}
-      description="The drafts workbench is a private solo canvas. Use it to test prompts against the selected AI lenser, keep the default instruction source in view, and preserve each run with the lens-version metadata that shaped it."
-    >
-      <BootstrapStatusPanel state={bootstrapState} />
-
-      {bootstrapState.kind === 'loading' && (
-        <div className="space-y-4">
-          <div className="grid gap-4 xl:grid-cols-[1fr_360px]">
-            <div className="h-80 animate-pulse rounded-[24px] border border-gray-100 bg-gray-50 dark:border-gray-700 dark:bg-gray-900" />
-            <div className="space-y-4">
-              {[120, 96, 80].map((h, idx) => (
-                <div
-                  key={idx}
-                  style={{ height: h }}
-                  className="animate-pulse rounded-[24px] border border-gray-100 bg-gray-50 dark:border-gray-700 dark:bg-gray-900"
-                />
-              ))}
+    <div className="flex flex-col h-[calc(100vh-140px)] w-full rounded-2xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-[#0a0a0a] overflow-hidden shadow-sm font-sans">
+      
+      {/* Top Navbar */}
+      <div className="h-14 border-b border-gray-200 dark:border-gray-800 flex items-center justify-between px-4 bg-gray-50 dark:bg-[#111] shrink-0 z-10">
+         <div className="flex items-center gap-3">
+            <div className="w-8 h-8 rounded bg-amber-500/20 text-amber-600 flex items-center justify-center">
+              <Bot size={18}/>
             </div>
-          </div>
-        </div>
-      )}
-
-      {bootstrap && (
-        <AgentGraphShell
-          readOnly
-          nodes={nodes}
-          edges={edges}
-          emptyState={{
-            title: 'Scratchpad canvas is ready',
-            description:
-              'Bind an instruction lens and a model to give this solo workbench a stable execution context before you run prompts.',
-          }}
-          sidePanel={
-            <>
-              <ProfileCard
-                title="Run draft workbench"
-                subtitle="Prompt the selected AI lenser directly from the private automation workbench."
+            <div>
+               <h2 className="text-sm font-bold text-gray-900 dark:text-gray-100">Drafts Workbench</h2>
+               <p className="text-[10px] uppercase tracking-widest text-gray-500">Workspace / {profile.handle}</p>
+            </div>
+         </div>
+         <div className="flex items-center gap-3">
+            {pendingRunId && (
+              <button 
+                onClick={() => completeRun.mutate(pendingRunId)}
+                className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-gray-700 bg-white border border-gray-200 hover:bg-gray-50 dark:text-gray-200 dark:bg-gray-800 dark:border-gray-700 dark:hover:bg-gray-700 rounded-lg transition-colors shadow-sm"
               >
-                <div className="space-y-4">
-                  <label className="block">
-                    <span className="mb-1 block text-xs font-semibold uppercase tracking-[0.18em] text-gray-500 dark:text-gray-400">
-                      Bound model
-                    </span>
-                    <select
-                      value={selectedModelId}
-                      onChange={(event) => setSelectedModelId(event.target.value)}
-                      className={inputClass}
-                    >
-                      <option value="">Use workspace default</option>
-                      {modelProfiles.map((model) => (
-                        <option key={model.id} value={model.model_id ?? ''}>
-                          {model.name}
-                        </option>
-                      ))}
-                    </select>
-                  </label>
+                <CheckCircle2 size={14} className="text-green-500" />
+                Complete Run {pendingRunId.slice(0,6)}
+              </button>
+            )}
+            <button className="px-3 py-1.5 text-xs font-semibold bg-gray-200 hover:bg-gray-300 dark:bg-gray-800 dark:hover:bg-gray-700 text-gray-800 dark:text-gray-200 rounded-lg transition-colors">
+              Save Draft
+            </button>
+            <button 
+              onClick={() => startRun.mutate()} 
+              disabled={startRun.isPending || !prompt.trim()} 
+              className="flex items-center gap-2 px-4 py-1.5 text-xs font-bold bg-amber-500 hover:bg-amber-600 text-white rounded-lg transition-all disabled:opacity-50 disabled:hover:bg-amber-500 shadow-sm shadow-amber-500/20"
+            >
+              <Play size={14} className="fill-current" />
+              {startRun.isPending ? 'Executing...' : 'Run Workbench'}
+            </button>
+         </div>
+      </div>
 
-                  <textarea
-                    rows={6}
-                    value={prompt}
-                    onChange={(event) => setPrompt(event.target.value)}
-                    placeholder="Describe the prompt, test case, or tool call you want this agent to execute..."
-                    className={`${inputClass} resize-none`}
-                  />
+      {/* Main Content Area */}
+      <div className="flex-1 flex overflow-hidden">
+         {/* Left Toolbar */}
+         <div className="w-14 border-r border-gray-200 dark:border-gray-800 bg-white dark:bg-[#111] flex flex-col items-center py-4 gap-4 shrink-0 z-10 shadow-sm">
+            <button className="p-2 rounded-xl bg-gray-50 dark:bg-gray-800 shadow-sm border border-gray-200 dark:border-gray-700 text-amber-600 hover:ring-2 ring-amber-500/50 transition-all group relative">
+               <Bot size={20}/>
+               <span className="absolute left-full ml-3 px-2 py-1 bg-gray-900 text-white text-[10px] rounded opacity-0 group-hover:opacity-100 whitespace-nowrap z-50 pointer-events-none font-medium">Agent Node</span>
+            </button>
+            <button className="p-2 rounded-xl bg-gray-50 dark:bg-gray-800 shadow-sm border border-gray-200 dark:border-gray-700 text-purple-500 hover:text-purple-600 hover:ring-2 ring-purple-500/50 transition-all group relative">
+               <Sparkles size={20}/>
+               <span className="absolute left-full ml-3 px-2 py-1 bg-gray-900 text-white text-[10px] rounded opacity-0 group-hover:opacity-100 whitespace-nowrap z-50 pointer-events-none font-medium">Instruction Node</span>
+            </button>
+            <button className="p-2 rounded-xl bg-gray-50 dark:bg-gray-800 shadow-sm border border-gray-200 dark:border-gray-700 text-blue-500 hover:text-blue-600 hover:ring-2 ring-blue-500/50 transition-all group relative">
+               <Cpu size={20}/>
+               <span className="absolute left-full ml-3 px-2 py-1 bg-gray-900 text-white text-[10px] rounded opacity-0 group-hover:opacity-100 whitespace-nowrap z-50 pointer-events-none font-medium">Model Node</span>
+            </button>
+         </div>
 
-                  {error && (
-                    <p className="rounded-2xl border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700 dark:border-red-500/30 dark:bg-red-500/10 dark:text-red-200">
-                      {error}
-                    </p>
-                  )}
+         {/* Main Canvas */}
+         <div className="flex-1 relative bg-gray-50 dark:bg-[#0a0a0a]">
+           <ReactFlowProvider>
+             <ReactFlow
+               nodes={nodes}
+               edges={edges}
+               onNodesChange={onNodesChange}
+               onEdgesChange={onEdgesChange}
+               onConnect={onConnect}
+               nodeTypes={nodeTypes}
+               fitView
+               fitViewOptions={{ padding: 0.3 }}
+               className="bg-gray-50 dark:bg-[#0a0a0a]"
+               minZoom={0.5}
+               maxZoom={2}
+             >
+               <Background variant={BackgroundVariant.Dots} gap={24} size={2} color="rgba(148, 163, 184, 0.4)" />
+               <Controls className="dark:!bg-[#111] dark:!border-gray-800 dark:!text-gray-300 shadow-md" />
+               <MiniMap className="dark:!bg-[#111] dark:!border-gray-800 shadow-md rounded-xl overflow-hidden" maskColor="rgba(0,0,0,0.4)" />
+             </ReactFlow>
+           </ReactFlowProvider>
+         </div>
 
-                  <button
-                    type="button"
-                    onClick={() => startRun.mutate()}
-                    disabled={!prompt.trim() || startRun.isPending}
-                    className="inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-gray-900 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-amber-600 disabled:opacity-50 dark:bg-white dark:text-gray-900"
-                  >
-                    <Play size={15} />
-                    {startRun.isPending ? 'Queueing run...' : 'Run on scratchpad'}
-                  </button>
-                </div>
-              </ProfileCard>
-
-              <ProfileCard
-                title="Workbench context"
-                subtitle="This is the canonical context attached to new scratchpad runs."
-              >
-                <div className="space-y-3 text-sm text-gray-600 dark:text-gray-300">
-                  <WorkbenchRow
-                    icon={<Bot size={14} />}
-                    label="Instruction lens"
-                    value={
-                      defaultInstructionBinding
-                        ? defaultInstructionBinding.lens_id.slice(0, 8)
-                        : 'Not configured'
-                    }
-                  />
-                  <WorkbenchRow
-                    icon={<Sparkles size={14} />}
-                    label="Instruction version"
-                    value={
-                      defaultInstructionBinding?.version_id
-                        ? defaultInstructionBinding.version_id.slice(0, 8)
-                        : 'Latest published'
-                    }
-                  />
-                  <WorkbenchRow
-                    icon={<Cpu size={14} />}
-                    label="Model"
-                    value={selectedModelProfile?.name ?? 'Workspace default'}
-                  />
-                </div>
-              </ProfileCard>
-
-              {pendingRunId && (
-                <ProfileCard
-                  title="Queued run"
-                  subtitle="The executor is not wired here, so queued runs can be completed manually for now."
-                >
-                  <div className="space-y-3 text-sm text-gray-600 dark:text-gray-300">
-                    <p>Run {pendingRunId.slice(0, 8)} is waiting.</p>
-                    <button
-                      type="button"
-                      onClick={() => completeRun.mutate(pendingRunId)}
-                      disabled={completeRun.isPending}
-                      className="inline-flex items-center gap-2 rounded-2xl border border-gray-200 px-4 py-2 text-sm font-semibold text-gray-700 transition hover:border-amber-300 hover:text-amber-700 disabled:opacity-50 dark:border-gray-700 dark:text-gray-200"
-                    >
-                      Mark complete
-                    </button>
-                  </div>
-                </ProfileCard>
-              )}
-
-              <ProfileCard
-                title="Recent runs"
-                subtitle="The latest scratchpad history stays in a side rail so the canvas remains clear."
-              >
-                {runs.isLoading ? (
-                  <div className="space-y-3">
-                    {Array.from({ length: 3 }).map((_, idx) => (
-                      <div
-                        key={idx}
-                        className="h-24 animate-pulse rounded-2xl border border-gray-100 bg-gray-50 dark:border-gray-700 dark:bg-gray-950"
-                      />
-                    ))}
-                  </div>
-                ) : (runs.data ?? []).length === 0 ? (
-                  <EmptyPanel
-                    icon={<Sparkles size={20} />}
-                    title="No scratchpad runs yet"
-                    description="Run the first prompt from this workbench to seed a private execution history."
-                  />
-                ) : (
-                  <div className="space-y-3">
-                    {(runs.data ?? []).map((run) => (
-                      <div
-                        key={run.id}
-                        className="rounded-2xl border border-gray-200 bg-gray-50 p-4 dark:border-gray-700 dark:bg-gray-950"
-                      >
-                        <div className="flex items-start justify-between gap-3">
-                          <div className="min-w-0 flex-1">
-                            <p className="text-sm font-semibold text-gray-900 dark:text-white">
-                              Run {run.id.slice(0, 8)} · {run.status}
-                            </p>
-                            <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
-                              {formatDateTime(run.started_at)} · {run.cost_credits} credits
-                            </p>
-                            <p className="mt-2 text-xs leading-5 text-gray-600 dark:text-gray-300">
-                              {run.prompt.slice(0, 180)}
-                              {run.prompt.length > 180 ? '...' : ''}
-                            </p>
-                          </div>
+         {/* Right Inspector */}
+         <div className="w-[340px] border-l border-gray-200 dark:border-gray-800 bg-white dark:bg-[#111] flex flex-col shrink-0 overflow-hidden z-10 shadow-sm">
+            {/* Tabs */}
+            <div className="flex border-b border-gray-200 dark:border-gray-800 shrink-0 bg-gray-50 dark:bg-[#111]">
+               <button 
+                 className={`flex-1 py-3.5 text-[11px] font-bold uppercase tracking-wider border-b-2 transition-colors ${activeTab === 'workbench' ? 'border-amber-500 text-amber-600 dark:text-amber-500' : 'border-transparent text-gray-500 hover:text-gray-700 dark:hover:text-gray-300'}`} 
+                 onClick={() => setActiveTab('workbench')}
+               >
+                 <div className="flex items-center justify-center gap-2"><Terminal size={14}/> Inspector</div>
+               </button>
+               <button 
+                 className={`flex-1 py-3.5 text-[11px] font-bold uppercase tracking-wider border-b-2 transition-colors ${activeTab === 'history' ? 'border-amber-500 text-amber-600 dark:text-amber-500' : 'border-transparent text-gray-500 hover:text-gray-700 dark:hover:text-gray-300'}`} 
+                 onClick={() => setActiveTab('history')}
+               >
+                 <div className="flex items-center justify-center gap-2"><History size={14}/> History</div>
+               </button>
+            </div>
+            
+            {/* Tab Content */}
+            <div className="flex-1 overflow-y-auto p-5 space-y-6 scrollbar-hide">
+               {activeTab === 'workbench' && (
+                 <>
+                   {/* Context Metadata */}
+                   <div className="rounded-xl border border-gray-200 dark:border-gray-800 overflow-hidden shadow-sm">
+                     <div className="bg-gray-100 dark:bg-[#1a1a1a] px-3 py-2 text-[10px] font-bold uppercase tracking-widest text-gray-600 dark:text-gray-400 border-b border-gray-200 dark:border-gray-800 flex items-center justify-between">
+                       <span>Active Binding</span>
+                       <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse"/>
+                     </div>
+                     <div className="p-3 space-y-3 bg-white dark:bg-[#111]">
+                        <div className="flex justify-between items-center text-xs">
+                          <span className="text-gray-500 dark:text-gray-400 flex items-center gap-1.5"><Sparkles size={14} className="text-purple-500"/> Instruction Lens</span>
+                          <span className="font-semibold text-gray-900 dark:text-gray-100">{defaultInstructionBinding?.lens_id.slice(0,8) || 'None'}</span>
                         </div>
+                        <div className="flex justify-between items-center text-xs">
+                          <span className="text-gray-500 dark:text-gray-400 flex items-center gap-1.5"><Terminal size={14} className="text-gray-400"/> Version Hash</span>
+                          <span className="font-mono text-[10px] bg-gray-100 dark:bg-gray-800 px-1.5 py-0.5 rounded text-gray-600 dark:text-gray-300 border border-gray-200 dark:border-gray-700">
+                            {defaultInstructionBinding?.version_id.slice(0,8) || 'latest'}
+                          </span>
+                        </div>
+                     </div>
+                   </div>
 
-                        {run.output && (
-                          <pre className="mt-3 max-h-40 overflow-auto rounded-2xl bg-gray-950 p-3 text-xs leading-6 text-amber-100">
-                            {run.output}
-                          </pre>
-                        )}
+                   {/* Configuration Area */}
+                   <div className="space-y-2">
+                     <label className="text-[10px] font-bold uppercase tracking-widest text-gray-600 dark:text-gray-400 pl-1">Model Override</label>
+                     <div className="relative">
+                       <select
+                         value={selectedModelId}
+                         onChange={e => setSelectedModelId(e.target.value)}
+                         className="w-full bg-gray-50 dark:bg-[#0a0a0a] border border-gray-200 dark:border-gray-800 rounded-xl px-4 py-3 text-sm text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-amber-500/50 outline-none transition-all appearance-none cursor-pointer"
+                       >
+                         <option value="">Workspace Default</option>
+                         {modelProfiles.map(m => <option key={m.id} value={m.model_id ?? ''}>{m.name}</option>)}
+                       </select>
+                       <ChevronRight size={16} className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none rotate-90"/>
+                     </div>
+                   </div>
 
-                        {run.status === 'completed' && memoryProfiles.length > 0 && (
-                          <select
-                            onChange={(event) => {
-                              const memoryProfileId = event.target.value
-                              if (!memoryProfileId) return
-                              promote.mutate({ runId: run.id, memoryProfileId })
-                              event.currentTarget.value = ''
-                            }}
-                            defaultValue=""
-                            className="mt-3 w-full rounded-2xl border border-gray-200 bg-white px-3 py-2 text-xs text-gray-700 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200"
-                          >
-                            <option value="">Promote to memory profile...</option>
-                            {memoryProfiles.map((profileRecord) => (
-                              <option key={profileRecord.id} value={profileRecord.id}>
-                                {profileRecord.name}
-                              </option>
-                            ))}
-                          </select>
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </ProfileCard>
-            </>
-          }
-        />
-      )}
-    </SectionPage>
+                   {/* Prompt Area */}
+                   <div className="space-y-2">
+                     <label className="text-[10px] font-bold uppercase tracking-widest text-gray-600 dark:text-gray-400 pl-1">Test Prompt</label>
+                     <textarea
+                       rows={6}
+                       value={prompt}
+                       onChange={e => setPrompt(e.target.value)}
+                       className="w-full bg-gray-50 dark:bg-[#0a0a0a] border border-gray-200 dark:border-gray-800 rounded-xl p-4 text-sm text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-amber-500/50 outline-none resize-none transition-all placeholder:text-gray-400 dark:placeholder:text-gray-600 shadow-inner"
+                       placeholder="Describe the prompt, test case, or tool call you want this agent to execute..."
+                     />
+                   </div>
+
+                 </>
+               )}
+
+               {activeTab === 'history' && (
+                 <div className="space-y-3">
+                   {runs.isLoading ? (
+                     <div className="animate-pulse space-y-3">
+                       {[1,2,3].map(i => <div key={i} className="h-24 bg-gray-100 dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700"/>)}
+                     </div>
+                   ) : runs.data?.length ? (
+                     runs.data.map(run => (
+                       <div key={run.id} className="p-4 rounded-xl border border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-[#0a0a0a] hover:border-amber-500/50 dark:hover:border-amber-500/50 transition-colors group relative overflow-hidden">
+                         <div className="absolute top-0 left-0 w-1 h-full bg-gray-200 dark:bg-gray-800 group-hover:bg-amber-500 transition-colors"/>
+                         <div className="flex justify-between items-center mb-3">
+                           <span className="text-[10px] font-bold tracking-widest text-gray-500 dark:text-gray-400 uppercase">Run {run.id.slice(0,6)}</span>
+                           <span className={`text-[10px] px-2 py-0.5 rounded uppercase font-bold tracking-wider ${
+                             run.status === 'completed' ? 'bg-green-100 text-green-700 dark:bg-green-500/10 dark:text-green-400' : 
+                             run.status === 'failed' ? 'bg-red-100 text-red-700 dark:bg-red-500/10 dark:text-red-400' :
+                             'bg-amber-100 text-amber-700 dark:bg-amber-500/10 dark:text-amber-400'}`}>
+                             {run.status}
+                           </span>
+                         </div>
+                         <p className="text-xs text-gray-700 dark:text-gray-300 line-clamp-2 leading-relaxed">{run.prompt}</p>
+                         
+                         {run.status === 'completed' && memoryProfiles.length > 0 && (
+                            <div className="mt-4 pt-3 border-t border-gray-200 dark:border-gray-800">
+                              <select
+                                onChange={(event) => {
+                                  const memoryProfileId = event.target.value
+                                  if (!memoryProfileId) return
+                                  promote.mutate({ runId: run.id, memoryProfileId })
+                                  event.currentTarget.value = ''
+                                }}
+                                defaultValue=""
+                                className="w-full bg-white dark:bg-[#111] border border-gray-200 dark:border-gray-700 rounded-lg px-2 py-1.5 text-[11px] font-semibold text-gray-600 dark:text-gray-300 outline-none cursor-pointer"
+                              >
+                                <option value="">+ Promote to memory</option>
+                                {memoryProfiles.map((profileRecord) => (
+                                  <option key={profileRecord.id} value={profileRecord.id}>
+                                    {profileRecord.name}
+                                  </option>
+                                ))}
+                              </select>
+                            </div>
+                         )}
+                       </div>
+                     ))
+                   ) : (
+                     <EmptyPanel
+                       icon={<History size={20} />}
+                       title="No execution history"
+                       description="Run the first prompt from the workbench to seed a private history."
+                     />
+                   )}
+                 </div>
+               )}
+            </div>
+         </div>
+      </div>
+      
+      {/* Bottom Debug Console */}
+      <div className="h-[220px] border-t border-gray-200 dark:border-gray-800 bg-white dark:bg-[#050505] shrink-0 flex flex-col z-20 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)] dark:shadow-none">
+        <div className="h-10 border-b border-gray-200 dark:border-gray-800 flex items-center px-4 bg-gray-50 dark:bg-[#111] shrink-0">
+           <div className="flex items-center gap-2">
+             <Terminal size={14} className="text-gray-500" />
+             <span className="text-[11px] font-bold tracking-widest uppercase text-gray-600 dark:text-gray-400">Execution Console</span>
+           </div>
+        </div>
+        <div className="flex-1 overflow-y-auto p-4 font-mono text-xs text-gray-700 dark:text-gray-300 space-y-2">
+           <div className="text-gray-400 dark:text-gray-600">[{new Date().toLocaleTimeString()}] System: Workbench initialized and ready.</div>
+           
+           {error && (
+             <div className="flex gap-2 text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-500/10 p-2 rounded border border-red-200 dark:border-red-500/20">
+               <AlertCircle size={14} className="shrink-0 mt-0.5" />
+               <span>[{new Date().toLocaleTimeString()}] Error: {error}</span>
+             </div>
+           )}
+
+           {pendingRunId && (
+             <div className="flex items-center gap-2 text-amber-600 dark:text-amber-400">
+               <div className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse"/> 
+               <span>[{new Date().toLocaleTimeString()}] System: Executing run {pendingRunId.slice(0,8)}... Waiting for output stream.</span>
+             </div>
+           )}
+
+           {!pendingRunId && !error && (
+             <div className="text-gray-400 dark:text-gray-600">[{new Date().toLocaleTimeString()}] System: Waiting for input...</div>
+           )}
+           
+           {runs.data?.[0]?.status === 'completed' && (
+             <div className="text-green-600 dark:text-green-400">
+               [{new Date(runs.data[0].started_at).toLocaleTimeString()}] System: Run {runs.data[0].id.slice(0,8)} completed successfully.
+             </div>
+           )}
+        </div>
+      </div>
+    </div>
   )
 }
-
-const inputClass =
-  'w-full rounded-2xl border border-gray-200 bg-white px-4 py-2.5 text-sm text-gray-900 outline-none focus:border-amber-400 dark:border-gray-700 dark:bg-gray-900 dark:text-white'
-
-const WorkbenchRow: React.FC<{
-  icon: React.ReactNode
-  label: string
-  value: string
-}> = ({ icon, label, value }) => (
-  <div className="flex items-center justify-between gap-3">
-    <span className="inline-flex items-center gap-2">
-      {icon}
-      {label}
-    </span>
-    <span className="font-semibold text-gray-900 dark:text-white">{value}</span>
-  </div>
-)
