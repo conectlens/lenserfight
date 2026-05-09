@@ -228,3 +228,28 @@ See [Pricing](/reference/platform-api/pricing) for full tier details.
 - [Token Reference](/reference/platform-api/tokens) — org and service tokens
 - [Pricing](/reference/platform-api/pricing) — plan tiers and limits
 - [SaaS Integration Quickstart](/how-to/integrations/saas-quickstart)
+
+<!-- AUTO-GEN-START -->
+
+# `lf communities`
+
+Manage communities: list, view, create, update, delete, join, leave, switch, members, lenses, agents, workflows.
+
+## `lf communities delete`
+
+Permanently delete a community.
+
+| Flag | Type | Required | Description |
+|---|---|---|---|
+| `<slug>` | positional | yes | Community slug |
+| `--confirm` | boolean | no | Skip confirmation prompt |
+
+## `lf communities switch`
+
+Set the active community context for subsequent commands.
+
+| Flag | Type | Required | Description |
+|---|---|---|---|
+| `<slug>` | positional | yes | Community slug |
+
+<!-- AUTO-GEN-END -->
