@@ -263,6 +263,7 @@ export default defineConfig({
               { text: 'Lensler', link: '/tr/explanation/lenses/index' },
               { text: 'İş Akışları', link: '/tr/explanation/workflows/workflow-concepts' },
               { text: 'Otomasyon', link: '/tr/explanation/automation/index' },
+              { text: 'Trust Gateway', link: '/tr/explanation/gateway/index' },
               { text: 'Topluluk ve Kullanım', link: '/tr/explanation/community/community-hub' },
             ],
           },
@@ -564,6 +565,15 @@ export default defineConfig({
               ],
             },
             {
+              text: 'Trust Gateway (LTG)',
+              collapsed: true,
+              items: [
+                { text: 'Giriş (TR)', link: '/tr/explanation/gateway/index' },
+                { text: 'Overview (EN)', link: '/explanation/gateway/index' },
+                { text: 'CLI gateway (EN)', link: '/reference/cli/gateway' },
+              ],
+            },
+            {
               text: 'Topluluk ve Kullanım Senaryoları',
               collapsed: true,
               items: [
@@ -662,6 +672,18 @@ export default defineConfig({
               ],
             },
           ],
+          '/tr/explanation/gateway/': [
+            {
+              text: 'Trust Gateway (LTG)',
+              items: [
+                { text: 'Giriş (TR)', link: '/tr/explanation/gateway/index' },
+                { text: 'Overview (EN)', link: '/explanation/gateway/index' },
+                { text: 'Security review (EN)', link: '/explanation/gateway/security-review' },
+                { text: 'Release readiness (EN)', link: '/explanation/gateway/release-readiness' },
+                { text: 'RFC-0003 (EN)', link: '/rfcs/RFC-0003-trust-gateway' },
+              ],
+            },
+          ],
         },
       },
     },
@@ -737,9 +759,11 @@ export default defineConfig({
           { text: 'Lenses', link: '/explanation/lenses/index' },
           { text: 'Workflows', link: '/explanation/workflows/workflow-concepts' },
           { text: 'Automation', link: '/explanation/automation/index' },
+          { text: 'Trust Gateway', link: '/explanation/gateway/index' },
           { text: 'Community & Use Cases', link: '/explanation/community/community-hub' },
         ],
       },
+      { text: 'RFCs', link: '/rfcs/' },
     ],
 
     aside: true,
@@ -1067,6 +1091,7 @@ export default defineConfig({
             { text: 'RFC Template', link: '/rfcs/RFC-TEMPLATE' },
             { text: 'RFC-0001: Connector Interface', link: '/rfcs/RFC-0001-connector-interface' },
             { text: 'RFC-0002: Scoring Plugin', link: '/rfcs/RFC-0002-scoring-plugin' },
+            { text: 'RFC-0003: Trust Gateway', link: '/rfcs/RFC-0003-trust-gateway' },
           ],
         },
       ],
@@ -1124,6 +1149,7 @@ export default defineConfig({
             { text: 'CLI Hub', link: '/reference/cli/index' },
             { text: 'CLI Overview', link: '/reference/cli/cli-reference' },
             { text: 'Configuration', link: '/reference/cli/configuration' },
+            { text: 'Trust Gateway', link: '/reference/cli/gateway' },
           ],
         },
         {
@@ -1302,6 +1328,23 @@ export default defineConfig({
           ],
         },
         {
+          text: 'Trust Gateway',
+          collapsed: false,
+          items: [
+            { text: 'Overview', link: '/explanation/gateway/index' },
+            { text: 'Architecture', link: '/explanation/gateway/architecture' },
+            { text: 'Trust Model', link: '/explanation/gateway/trust-model' },
+            { text: 'Sync Model', link: '/explanation/gateway/sync' },
+            { text: 'Security Rules', link: '/explanation/gateway/security-rules' },
+            { text: 'Requirements', link: '/explanation/gateway/requirements' },
+            { text: 'Roadmap', link: '/explanation/gateway/roadmap' },
+            { text: 'Release Readiness', link: '/explanation/gateway/release-readiness' },
+            { text: 'Rollout & Rollback', link: '/explanation/gateway/rollout-rollback' },
+            { text: 'Security Review', link: '/explanation/gateway/security-review' },
+            { text: 'OSS Cutover', link: '/explanation/gateway/oss-cutover' },
+          ],
+        },
+        {
           text: 'Community & Use Cases',
           collapsed: true,
           items: [
@@ -1356,6 +1399,26 @@ export default defineConfig({
             { text: 'Event Bus Architecture', link: '/explanation/automation/event-bus-architecture' },
             { text: 'Scheduling', link: '/explanation/automation/scheduling' },
             { text: 'Scheduling v2', link: '/explanation/automation/scheduling-v2' },
+          ],
+        },
+      ],
+      '/explanation/gateway/': [
+        {
+          text: 'Trust Gateway',
+          items: [
+            { text: 'Overview', link: '/explanation/gateway/index' },
+            { text: 'Architecture', link: '/explanation/gateway/architecture' },
+            { text: 'Trust Model', link: '/explanation/gateway/trust-model' },
+            { text: 'Sync Model', link: '/explanation/gateway/sync' },
+            { text: 'Security Rules', link: '/explanation/gateway/security-rules' },
+            { text: 'Requirements', link: '/explanation/gateway/requirements' },
+            { text: 'Roadmap', link: '/explanation/gateway/roadmap' },
+            { text: 'Release Readiness', link: '/explanation/gateway/release-readiness' },
+            { text: 'Rollout & Rollback', link: '/explanation/gateway/rollout-rollback' },
+            { text: 'Security Review', link: '/explanation/gateway/security-review' },
+            { text: 'OSS Cutover', link: '/explanation/gateway/oss-cutover' },
+            { text: 'CLI Reference', link: '/reference/cli/gateway' },
+            { text: 'RFC-0003', link: '/rfcs/RFC-0003-trust-gateway' },
           ],
         },
       ],
