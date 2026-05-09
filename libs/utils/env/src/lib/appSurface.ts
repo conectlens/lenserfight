@@ -4,7 +4,7 @@
  * edition-gating (GRASP); keep routing/sidebar logic declarative.
  */
 
-export type ProductEdition = 'community' | 'cloud'
+export type ProductEdition = 'community' | 'cloud' | 'local'
 
 export type AppSurface = {
   readonly edition: ProductEdition
@@ -16,7 +16,7 @@ export type AppSurface = {
 
 function readEdition(): ProductEdition {
   const raw = import.meta.env.PRODUCT_EDITION
-  if (raw === 'cloud' || raw === 'community') {
+  if (raw === 'cloud' || raw === 'community' || raw === 'local') {
     return raw
   }
   return 'community'
