@@ -5,7 +5,7 @@ import { dirname, join, resolve } from 'path'
 import { fileURLToPath } from 'url'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
-const docsDir = resolve(__dirname, '../../docs')
+const docsDir = resolve(__dirname, '../../../docs')
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function mermaidFencePlugin(md: any) {
@@ -73,13 +73,33 @@ function rewriteCrossTreeHref(href: string): string | null {
  * Dev-server plugin: intercepts requests for *.md files and serves the raw
  * markdown source so that CopyPageButton's fetch() succeeds in dev mode.
  */
-const CHANGELOG_SRC = resolve(__dirname, '../../CHANGELOG.md')
+const CHANGELOG_SRC = resolve(__dirname, '../../../CHANGELOG.md')
 const CHANGELOG_DEST = resolve(docsDir, 'changelog.md')
+
+/**
+ * The root CHANGELOG.md is authored for GitHub, so its markdown links use
+ * repo-relative paths (`docs/foo/bar.md`, `BRAND.md`). Rewrite them so the
+ * VitePress build resolves them:
+ *   - `docs/<path>.md` → `/<path>` (in-tree docs link, drop `docs/` and `.md`)
+ *   - other root-relative paths (e.g. `BRAND.md`) → absolute GitHub blob URL
+ */
+function rewriteChangelogLinks(content: string): string {
+  return content.replace(/\]\(([^)]+)\)/g, (match, href: string) => {
+    if (/^[a-z]+:/i.test(href) || href.startsWith('#') || href.startsWith('/') || href.startsWith('./') || href.startsWith('../')) {
+      return match
+    }
+    if (href.startsWith('docs/')) {
+      const stripped = href.replace(/^docs\//, '/').replace(/\.md(?=#|$)/, '')
+      return `](${stripped})`
+    }
+    return `](${REPO_BLOB_BASE}/${href})`
+  })
+}
 
 function syncChangelogPlugin() {
   function sync() {
     if (!existsSync(CHANGELOG_SRC)) return
-    const content = readFileSync(CHANGELOG_SRC, 'utf-8')
+    const content = rewriteChangelogLinks(readFileSync(CHANGELOG_SRC, 'utf-8'))
     const page = `---\ntitle: Changelog\ndescription: Full release history for LenserFight — every version, every change.\nlayout: doc\n---\n\n${content}`
     writeFileSync(CHANGELOG_DEST, page, 'utf-8')
   }
@@ -149,6 +169,9 @@ export default defineConfig({
   // any link that walks out of the docs/ tree.
   ignoreDeadLinks: [
     /\.\.\/\.\.\//,
+    // Web-app routes referenced from docs (live at lenserfight.com, not in this docs site)
+    /^\/settings\//,
+    /^\/ray\//,
   ],
 
   title: 'LenserFight Docs',

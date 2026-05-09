@@ -34446,13 +34446,3 @@ with check ((bucket_id = 'user-media'::text));
   to anon, authenticated
 using ((bucket_id = 'public-assets'::text));
 
-
-
-
-
--- Community Edition: remove Chainabit-private schemas.
--- authz, billing, organizations, wallet are not part of the OSS schema.
-DROP SCHEMA IF EXISTS "authz"         CASCADE;
-DROP SCHEMA IF EXISTS "billing"       CASCADE;
-DROP SCHEMA IF EXISTS "organizations" CASCADE;
-DROP SCHEMA IF EXISTS "wallet"        CASCADE;
