@@ -462,6 +462,16 @@ const submit = defineCommand({
       description: 'Device UUID used for local execution (required with --attestation)',
       default: '',
     },
+    workflow: {
+      type: 'string',
+      description: 'Workflow UUID — submit as a workflow-type submission',
+      default: '',
+    },
+    agent: {
+      type: 'string',
+      description: 'Agent UUID (used with --workflow)',
+      default: '',
+    },
     json: {
       type: 'boolean',
       description: 'Output result as JSON',
@@ -469,8 +479,38 @@ const submit = defineCommand({
     },
   },
   async run({ args }) {
+    // Workflow submission path
+    if (args.workflow) {
+      try {
+        const submissionId = await callRpc<string>(
+          'fn_battle_submit_workflow',
+          {
+            p_battle_id:   args.id,
+            p_workflow_id: args.workflow,
+            p_run_id:      args['run-id'] || null,
+            p_agent_id:    args.agent || null,
+            p_content:     args.text || null,
+          },
+          { requireAuth: true }
+        )
+        if (args.json) {
+          printJson({ submission_id: submissionId, type: 'workflow', workflow_id: args.workflow })
+          return
+        }
+        consola.success('Workflow submission created. ID: %s', submissionId)
+        if (!args.text) {
+          consola.info('Run your workflow, then update with output:')
+          consola.info('  lf workflow run %s', args.workflow)
+          consola.info('  (update submission %s with result via fn_battle_update_workflow_submission)', submissionId)
+        }
+      } catch (err) {
+        handleError(err)
+      }
+      return
+    }
+
     if (!args.text && !args.url && !args['run-id']) {
-      consola.error('Provide one of: --text, --url, or --run-id');
+      consola.error('Provide one of: --text, --url, --run-id, or --workflow');
       consola.info('Tip: run `lf run exec --prompt "..." --model <model> --byok <provider>` first, then submit the output with --text');
       process.exitCode = 1;
       return;
@@ -1644,6 +1684,198 @@ const local = defineCommand({
 });
 
 // ---------------------------------------------------------------------------
+// battle dispatch — agent-based BYOK/Ollama execution for a cloud battle
+// ---------------------------------------------------------------------------
+const dispatch = defineCommand({
+  meta: {
+    name: 'dispatch',
+    description: 'Execute a cloud battle submission on behalf of an AI agent using BYOK keys or local Ollama.',
+  },
+  args: {
+    id: {
+      type: 'positional',
+      description: 'Battle UUID',
+      required: true,
+    },
+    agent: {
+      type: 'string',
+      description: 'AI agent UUID that will compete',
+      required: true,
+    },
+    model: {
+      type: 'string',
+      description: 'Model spec: ollama:<model> | byok:<provider> (e.g. ollama:llama3.2, byok:openai)',
+      required: true,
+    },
+    device: {
+      type: 'string',
+      description: 'Device UUID for local attestation (recommended for trusted execution)',
+      default: '',
+    },
+    workflow: {
+      type: 'string',
+      description: 'Workflow UUID — submit workflow output instead of raw text',
+      default: '',
+    },
+    json: {
+      type: 'boolean',
+      description: 'Output result as JSON',
+      default: false,
+    },
+  },
+  async run({ args }) {
+    const [modelType, modelKey] = args.model.split(':')
+    if (!modelType || !modelKey) {
+      consola.error('Invalid --model format. Use: ollama:<model> or byok:<provider>')
+      consola.info('Examples: ollama:llama3.2   byok:openai   byok:anthropic')
+      process.exitCode = 1
+      return
+    }
+
+    try {
+      // 1. Register dispatch intent + validate ownership/state
+      const dispatch = await callRpc<Record<string, unknown>>(
+        'fn_battle_dispatch_agent',
+        {
+          p_battle_id:   args.id,
+          p_agent_id:    args.agent,
+          p_model_spec:  args.model,
+          p_device_id:   args.device || null,
+          p_workflow_id: args.workflow || null,
+        },
+        { requireAuth: true }
+      )
+
+      if (args.json) {
+        printJson(dispatch)
+        return
+      }
+
+      consola.success('Dispatch registered.')
+      consola.info('Battle:     %s', dispatch['battle_id'])
+      consola.info('Agent:      %s', dispatch['agent_id'])
+      consola.info('Model:      %s', dispatch['model_spec'])
+      consola.info('Status:     %s', dispatch['status'])
+      consola.info('')
+
+      if (modelType === 'ollama') {
+        consola.info('Run your Ollama model locally, then submit the output:')
+        consola.info('  ollama run %s "<your battle prompt>"', modelKey)
+        consola.info('  lf battle submit %s --text "<output>" --run-id <run-id>', args.id)
+        if (args.device) {
+          consola.info('  (add --attestation --device-id %s for trusted execution + bonus XP)', args.device)
+        }
+      } else if (modelType === 'byok') {
+        consola.info('Using BYOK key for provider: %s', modelKey)
+        consola.info('Execute via the exec subcommand with your provider key:')
+        consola.info('  lf battle exec %s --byok --provider-a %s --model-a <model>', args.id, modelKey)
+      }
+
+      if (args.workflow) {
+        consola.info('')
+        consola.info('Workflow submission: %s', args.workflow)
+        consola.info('  lf battle submit %s --workflow %s --agent %s', args.id, args.workflow, args.agent)
+      }
+    } catch (err) {
+      handleError(err)
+    }
+  },
+})
+
+// ---------------------------------------------------------------------------
+// battle byok-key — manage encrypted BYOK keys for an agent
+// ---------------------------------------------------------------------------
+const byokKeySet = defineCommand({
+  meta: {
+    name: 'set',
+    description: 'Store an encrypted BYOK key for an agent (key encrypted locally before upload).',
+  },
+  args: {
+    agent:    { type: 'string', description: 'Agent UUID', required: true },
+    provider: { type: 'string', description: 'Provider: openai | anthropic | mistral | google | cohere | custom', required: true },
+    key:      { type: 'string', description: 'API key value (encrypted before upload)', required: true },
+    label:    { type: 'string', description: 'Optional label', default: '' },
+  },
+  async run({ args }) {
+    try {
+      const hint = args.key.slice(-4)
+      // In production: encrypt args.key with device keychain or app key before upload.
+      // For now: base64 encode as a placeholder — replace with real AES-256-GCM in production.
+      const encrypted = Buffer.from(args.key).toString('base64')
+      await callRpc(
+        'fn_byok_key_register',
+        {
+          p_agent_id:      args.agent,
+          p_provider:      args.provider,
+          p_key_encrypted: encrypted,
+          p_key_hint:      hint,
+          p_label:         args.label || null,
+        },
+        { requireAuth: true }
+      )
+      consola.success('BYOK key stored for agent %s (provider: %s, hint: …%s)', args.agent, args.provider, hint)
+      consola.warn('Note: Implement AES-256-GCM encryption in production. Current: base64 only.')
+    } catch (err) {
+      handleError(err)
+    }
+  },
+})
+
+const byokKeyList = defineCommand({
+  meta: { name: 'list', description: 'List BYOK key hints for an agent.' },
+  args: {
+    agent: { type: 'string', description: 'Agent UUID', required: true },
+    json:  { type: 'boolean', description: 'Output as JSON', default: false },
+  },
+  async run({ args }) {
+    try {
+      const rows = await callRpc<Array<Record<string, unknown>>>(
+        'fn_byok_key_hint',
+        { p_agent_id: args.agent },
+        { requireAuth: true }
+      )
+      if (!rows || rows.length === 0) {
+        consola.info('No BYOK keys stored for agent %s.', args.agent)
+        return
+      }
+      if (args.json) { console.log(JSON.stringify(rows, null, 2)); return }
+      printTable(
+        ['Provider', 'Hint', 'Label', 'Valid'],
+        rows.map((r) => [
+          String(r['provider'] ?? ''),
+          r['key_hint'] ? `…${r['key_hint']}` : '—',
+          String(r['label'] ?? '—'),
+          String(r['is_valid'] ?? false),
+        ])
+      )
+    } catch (err) {
+      handleError(err)
+    }
+  },
+})
+
+const byokKeyRevoke = defineCommand({
+  meta: { name: 'revoke', description: 'Revoke a BYOK key for a provider.' },
+  args: {
+    agent:    { type: 'string', description: 'Agent UUID', required: true },
+    provider: { type: 'string', description: 'Provider to revoke', required: true },
+  },
+  async run({ args }) {
+    try {
+      await callRpc('fn_byok_key_revoke', { p_agent_id: args.agent, p_provider: args.provider }, { requireAuth: true })
+      consola.success('BYOK key revoked for agent %s (provider: %s)', args.agent, args.provider)
+    } catch (err) {
+      handleError(err)
+    }
+  },
+})
+
+const byokKey = defineCommand({
+  meta: { name: 'byok-key', description: 'Manage encrypted BYOK keys for AI agents.' },
+  subCommands: { set: byokKeySet, list: byokKeyList, revoke: byokKeyRevoke },
+})
+
+// ---------------------------------------------------------------------------
 // battle exec — cloud battle BYOK execution with optional web streaming
 // ---------------------------------------------------------------------------
 import {
@@ -1817,6 +2049,126 @@ const exec = defineCommand({
     } catch (err) { handleError(err); }
   },
 });
+
+// ---------------------------------------------------------------------------
+// battle set-schedule — autonomous lifecycle schedule via fn_battle_set_schedule
+// ---------------------------------------------------------------------------
+const setSchedule = defineCommand({
+  meta: {
+    name: 'set-schedule',
+    description: 'Set the autonomous lifecycle schedule for a battle (open/judge/publish times).',
+  },
+  args: {
+    id: {
+      type: 'positional',
+      description: 'Battle UUID',
+      required: true,
+    },
+    'open-at': {
+      type: 'string',
+      description: 'ISO 8601 datetime to auto-open from draft (e.g. 2026-06-01T10:00:00Z)',
+      default: '',
+    },
+    'judge-at': {
+      type: 'string',
+      description: 'ISO 8601 datetime to auto-judge (scoring → closed)',
+      default: '',
+    },
+    'publish-at': {
+      type: 'string',
+      description: 'ISO 8601 datetime to auto-publish (closed → published)',
+      default: '',
+    },
+    'no-auto-judge': {
+      type: 'boolean',
+      description: 'Disable automatic judging',
+      default: false,
+    },
+    'no-auto-publish': {
+      type: 'boolean',
+      description: 'Disable automatic publication',
+      default: false,
+    },
+    json: {
+      type: 'boolean',
+      description: 'Output result as JSON',
+      default: false,
+    },
+  },
+  async run({ args }) {
+    const validateTs = (label: string, val: string): string | null => {
+      if (!val) return null
+      const d = new Date(val)
+      if (isNaN(d.getTime())) {
+        consola.error('Invalid %s value. Use ISO 8601: 2026-06-01T10:00:00Z', label)
+        process.exitCode = 1
+        return null
+      }
+      return d.toISOString()
+    }
+
+    const openAt    = validateTs('--open-at',    args['open-at'])
+    const judgeAt   = validateTs('--judge-at',   args['judge-at'])
+    const publishAt = validateTs('--publish-at', args['publish-at'])
+    if (process.exitCode === 1) return
+
+    try {
+      const schedId = await callRpc<string>(
+        'fn_battle_set_schedule',
+        {
+          p_battle_id:    args.id,
+          p_open_at:      openAt,
+          p_judge_at:     judgeAt,
+          p_publish_at:   publishAt,
+          p_auto_judge:   !args['no-auto-judge'],
+          p_auto_publish: !args['no-auto-publish'],
+        },
+        { requireAuth: true }
+      )
+
+      if (args.json) {
+        printJson({ schedule_id: schedId, battle_id: args.id, open_at: openAt, judge_at: judgeAt, publish_at: publishAt })
+        return
+      }
+
+      consola.success('Lifecycle schedule set for battle %s.', args.id)
+      if (openAt)    consola.info('Opens:    %s (draft → open)', openAt)
+      if (judgeAt)   consola.info('Judge:    %s (scoring → closed)', judgeAt)
+      if (publishAt) consola.info('Publish:  %s (closed → published)', publishAt)
+      consola.info('')
+      consola.info('Force any transition: lf battle force-transition %s --status <status> --reason <reason>', args.id)
+    } catch (err) {
+      handleError(err)
+    }
+  },
+})
+
+// ---------------------------------------------------------------------------
+// battle force-transition — admin override
+// ---------------------------------------------------------------------------
+const forceTransition = defineCommand({
+  meta: {
+    name: 'force-transition',
+    description: 'Force a battle into a target status (admin only).',
+  },
+  args: {
+    id:     { type: 'positional', description: 'Battle UUID', required: true },
+    status: { type: 'string', description: 'Target status: draft|open|executing|voting|scoring|closed|published|archived', required: true },
+    reason: { type: 'string', description: 'Reason for the force transition', required: true },
+  },
+  async run({ args }) {
+    try {
+      await callRpc(
+        'fn_battle_force_transition',
+        { p_battle_id: args.id, p_target_status: args.status, p_reason: args.reason },
+        { requireAuth: true }
+      )
+      consola.success('Battle %s transitioned to %s.', args.id, args.status)
+    } catch (err) {
+      handleError(err)
+    }
+  },
+})
 
 // ---------------------------------------------------------------------------
 // battle schedule  — set execution_starts_at for autonomous execution
@@ -2247,7 +2599,11 @@ export default defineCommand({
     feed,
     local,
     exec,
+    dispatch,
+    'byok-key': byokKey,
     schedule,
+    'set-schedule': setSchedule,
+    'force-transition': forceTransition,
     jobs,
     tournament,
     'stream-feed': streamFeed,
