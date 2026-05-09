@@ -28,7 +28,7 @@ The `lenserfight` CLI, also available as `lf`, is the command hub for onboarding
 | `lf init` | Initialise a local project config |
 | `lf dev` | Start local services |
 | `lf seed` | Seed the local database |
-| `lf reset` | Reset the local database |
+| `lf reset` | Reset local config, auth tokens, and database (typed confirmation or `--force`) |
 | `lf config validate/export/import` | Validate or move safe config state |
 
 See [lf setup](setup.md), [lf status](status.md), [Development Commands](dev.md).
@@ -158,7 +158,7 @@ See [Agent Commands](agent.md).
 | `lf execution list` | List recent workflow runs with status filter |
 | `lf execution inspect` | N8N-style run state projection (nodes, errors, timing) |
 | `lf execution retry` | Re-queue a failed or timed-out run |
-| `lf execution cancel` | Cancel a running or queued run |
+| `lf execution cancel` | Cancel a running or queued run (`--force` required) |
 | `lf execution provenance` | Cross-workflow data lineage for a run |
 | `lf execution events` | Full SSE event log for a run |
 
@@ -189,7 +189,7 @@ See [Automation CLI](automation.md).
 
 | Command | Description |
 |---------|-------------|
-| `lf schedule list/create/pause/resume/delete` | Manage workflow CRON schedules |
+| `lf schedule list/create/pause/resume/delete` | Manage workflow CRON schedules (`delete` requires `--force`) |
 | `lf schedule history <id> [--limit N]` | Show the most recent runs (1–50, default 10) dispatched by a schedule |
 | `lf schedule health` | Detect schedules that have missed their expected dispatch window |
 | `lf approval list [--status pending\|approved\|rejected\|timed_out]` | List approval queue entries |
@@ -200,6 +200,15 @@ See [Automation CLI](automation.md).
 | `lf memory write-entry/redact/summarize` | Write, redact, or summarize memory entries |
 
 See [Schedule Commands](schedule.md), [Approval Commands](approval.md), [Memory Commands](memory.md).
+
+### Safety and audit
+
+| Command | Description |
+|---------|-------------|
+| Safety gates | Confirmation system for destructive operations — FLAG, TYPED, COUNTDOWN policies |
+| `~/.lenserfight/audit.log` | JSONL audit log — every safety gate check appended here |
+
+See [Safety Gates](safety-gates.md).
 
 ### Inspect
 
