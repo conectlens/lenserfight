@@ -1,4 +1,5 @@
 export { AgentTeamSection } from './AgentTeamSection'
+export { BattlesSection } from './BattlesSection'
 export { AnalyticsSection } from './AnalyticsSection'
 export { ApprovalQueueSection } from './ApprovalQueueSection'
 export { ApprovalsSection } from './ApprovalsSection'
