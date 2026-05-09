@@ -459,7 +459,57 @@ const submit = defineCommand({
     },
     'device-id': {
       type: 'string',
-      description: 'Device UUID used for local execution (required with --attestation)',
+      description: 'Device UUID used for local execution (legacy display only; signed attestations use --envelope-kid)',
+      default: '',
+    },
+    'envelope-kid': {
+      type: 'string',
+      description: 'Device UUID (kid) for a signed execution attestation envelope',
+      default: '',
+    },
+    'envelope-iat': {
+      type: 'string',
+      description: 'Envelope issued-at timestamp (ISO timestamptz) for signed attestation',
+      default: '',
+    },
+    'envelope-nonce': {
+      type: 'string',
+      description: 'Envelope nonce for signed attestation replay protection',
+      default: '',
+    },
+    'canonical-jcs-b64url': {
+      type: 'string',
+      description: 'Base64url JCS canonical bytes for signed attestation',
+      default: '',
+    },
+    'signature-b64url': {
+      type: 'string',
+      description: 'Base64url Ed25519 signature for signed attestation',
+      default: '',
+    },
+    'workflow-hash': {
+      type: 'string',
+      description: 'Optional workflow content hash for attestation metadata (matches fn_record_signed_attestation)',
+      default: '',
+    },
+    'lens-hash': {
+      type: 'string',
+      description: 'Optional lens content hash for attestation metadata',
+      default: '',
+    },
+    'agent-config-hash': {
+      type: 'string',
+      description: 'Optional agent config hash for attestation metadata',
+      default: '',
+    },
+    'runner-version': {
+      type: 'string',
+      description: 'Optional runner/daemon version string for attestation metadata',
+      default: '',
+    },
+    'cli-version': {
+      type: 'string',
+      description: 'Optional lf CLI version string for attestation metadata',
       default: '',
     },
     workflow: {
@@ -542,13 +592,41 @@ const submit = defineCommand({
       if (args.attestation && args['run-id']) {
         const submissionId = result?.['id'] as string | undefined;
         if (submissionId) {
+          const missing = [
+            'envelope-kid',
+            'envelope-iat',
+            'envelope-nonce',
+            'canonical-jcs-b64url',
+            'signature-b64url',
+          ].filter((key) => !args[key]);
+
+          if (missing.length > 0) {
+            consola.error(
+              'Signed attestation required. Missing: %s',
+              missing.map((key) => `--${key}`).join(', ')
+            );
+            consola.info(
+              'Use the gateway daemon or runner to produce a signed execution envelope before submitting trust metadata.'
+            );
+            process.exitCode = 2;
+            return;
+          }
+
           await callRpc<void>(
-            'fn_record_execution_attestation',
+            'fn_record_signed_attestation',
             {
               p_run_id: args['run-id'],
-              p_device_id: args['device-id'] || null,
-              p_signed: true,
-              p_device_trusted: !!args['device-id'],
+              p_envelope_kid: args['envelope-kid'],
+              p_envelope_iat: args['envelope-iat'],
+              p_envelope_nonce: args['envelope-nonce'],
+              p_canonical_jcs_b64url: args['canonical-jcs-b64url'],
+              p_signature_b64url: args['signature-b64url'],
+              p_workflow_hash: args['workflow-hash'] || null,
+              p_lens_hash: args['lens-hash'] || null,
+              p_agent_config_hash: args['agent-config-hash'] || null,
+              p_runner_version: args['runner-version'] || null,
+              p_cli_version: args['cli-version'] || null,
+              p_policy_passed: true,
             },
             { requireAuth: true }
           );
