@@ -291,6 +291,16 @@ html.dark .lf-btn-outline {
   background: rgba(22, 163, 74, 0.06);
 }
 
+/* ─── Footer: break out of VitePress .VPContent column ─── */
+/*
+  layout-bottom renders inside .VPContent which is offset right by the sidebar.
+  We pull the footer back to the left edge of the viewport using position + margins.
+*/
+/* Footer positioning is now handled within the component to avoid breakout issues */
+.df-footer {
+  width: 100%;
+}
+
 /* ─── Home page logo hero ─── */
 .lf-home-logo-hero {
   display: flex;
