@@ -147,7 +147,7 @@ const approveDevice = defineCommand({
         { requireAuth: true }
       );
       consola.success(
-        'Device %s approved. Connect a runner with: lf runner connect --device %s',
+        'Device %s approved. Connect a lenser with: lf lenser connect --device %s',
         args.id,
         args.id
       );
@@ -180,12 +180,12 @@ const approveDevice = defineCommand({
 });
 
 // ---------------------------------------------------------------------------
-// gateway runners — list runners with their bound device info
+// gateway lensers — list lensers with their bound device info
 // ---------------------------------------------------------------------------
 const runners = defineCommand({
   meta: {
-    name: 'runners',
-    description: 'List runners and their bound trusted devices.',
+    name: 'lensers',
+    description: 'List lensers and their bound trusted devices.',
   },
   args: {
     json: { type: 'boolean', default: false, description: 'Output JSON' },
@@ -206,14 +206,14 @@ const runners = defineCommand({
       );
 
       if (!rows?.length) {
-        consola.info('No runner–device bindings. Connect a runner: lf runner connect --name <name> --type ollama --device <device-id>');
+        consola.info('No lenser–device bindings. Connect a lenser: lf lenser connect --name <name> --type ollama --device <device-id>');
         return;
       }
 
       if (args.json) { printJson(rows); return; }
 
       printTable(
-        ['Runner', 'Device', 'Trust', 'Status', 'Bound At'],
+        ['Lenser', 'Device', 'Trust', 'Status', 'Bound At'],
         rows.map((r) => [
           r.runner_id.substring(0, 8),
           r.device_name ?? r.device_id?.substring(0, 8) ?? '—',
@@ -234,7 +234,7 @@ const runners = defineCommand({
 const status = defineCommand({
   meta: {
     name: 'status',
-    description: 'Gateway health overview: device and runner counts.',
+    description: 'Gateway health overview: device and lenser counts.',
   },
   args: {
     json: { type: 'boolean', default: false, description: 'Output JSON' },
@@ -249,16 +249,16 @@ const status = defineCommand({
       const trusted = allDevices?.filter((d) => d.trust_level === 'trusted').length ?? 0;
       const approved = allDevices?.filter((d) => d.trust_level === 'approved').length ?? 0;
       const pending = allDevices?.filter((d) => d.trust_level === 'pending').length ?? 0;
-      const activeRunners = bindings?.filter((b) => b.binding_status === 'active').length ?? 0;
+      const activeLensers = bindings?.filter((b) => b.binding_status === 'active').length ?? 0;
 
-      const summary = { trusted_devices: trusted, approved_devices: approved, pending_devices: pending, active_runners: activeRunners };
+      const summary = { trusted_devices: trusted, approved_devices: approved, pending_devices: pending, active_lensers: activeLensers };
 
       if (args.json) { printJson(summary); return; }
 
       consola.info('Trusted devices:  %s', trusted);
       consola.info('Approved devices: %s', approved);
       consola.info('Pending devices:  %s', pending);
-      consola.info('Active runners:   %s', activeRunners);
+      consola.info('Active lensers:   %s', activeLensers);
     } catch (err) {
       handleError(err);
     }
@@ -584,10 +584,10 @@ const sync = defineCommand({
 });
 
 // ---------------------------------------------------------------------------
-// gateway policy — kill switch / runner_paused / budget snapshot
+// gateway policy — kill switch / lenser_paused / budget snapshot
 // ---------------------------------------------------------------------------
 const policy = defineCommand({
-  meta: { name: 'policy', description: 'Inspect kill switch / runner_paused / budget state.' },
+  meta: { name: 'policy', description: 'Inspect kill switch / lenser_paused / budget state.' },
   subCommands: {
     show: defineCommand({
       meta: { name: 'show', description: 'Show current policy snapshot.' },
@@ -625,7 +625,7 @@ const policy = defineCommand({
     }),
     test: defineCommand({
       meta: { name: 'test', description: 'Issue a noop call to confirm the policy gate is enforced.' },
-      args: { kind: { type: 'string', description: 'kill-switch | runner-paused', default: 'kill-switch' } },
+      args: { kind: { type: 'string', description: 'kill-switch | lenser-paused', default: 'kill-switch' } },
       async run({ args }) {
         consola.info('Policy gate test (%s): server-side enforcement runs at fn_evaluate_pre_run_policy.', args.kind);
       },
@@ -736,7 +736,7 @@ const consent = defineCommand({
 export default defineCommand({
   meta: {
     name: 'gateway',
-    description: 'Manage local devices, runners, daemon, identity, peers, sync, policy, and routing.',
+    description: 'Manage local devices, lensers, daemon, identity, peers, sync, policy, and routing.',
   },
   subCommands: {
     models,

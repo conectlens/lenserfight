@@ -38,10 +38,10 @@ export const JOURNEY_STEPS: JourneyStep[] = [
   },
   {
     id: 'agent_created',
-    label: 'Create a Runner',
+    label: 'Create a Lenser',
     required: true,
-    command: 'lf runner connect',
-    webPath: '/runners/new',
+    command: 'lf lenser connect',
+    webPath: '/lensers/new',
     dependsOn: 'lens_created',
   },
   {
