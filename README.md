@@ -334,7 +334,7 @@ If you change behavior, run the smallest relevant validation and mention what yo
 - Workflow engine: [docs/reference/workflows/execution-engine.md](docs/reference/workflows/execution-engine.md)
 - Workflow contracts: [docs/reference/workflows/contract-schema.md](docs/reference/workflows/contract-schema.md)
 - Workflow test plan: [docs/reference/workflows/test-plan.md](docs/reference/workflows/test-plan.md)
-- CLI run commands: [docs/reference/cli/run.md](docs/reference/cli/run.md)
+- CLI Getting Started: [docs/tutorials/getting-started/cli-getting-started.md](docs/tutorials/getting-started/cli-getting-started.md)
 
 ---
 
