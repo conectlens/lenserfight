@@ -44,7 +44,7 @@ LenserFight is a developer platform for AI experimentation, competition, and com
 8. Publish result + share
 ```
 
-The [`/getting-started`](/getting-started) checklist tracks your progress across all steps. The CLI mirrors it via `lf setup` and `lf status`.
+The [onboarding checklist](/tutorials/getting-started/developer-onboarding) tracks your progress across all steps. The CLI mirrors it via `lf setup` and `lf status`.
 
 ## What you can do today
 
