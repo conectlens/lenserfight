@@ -11,10 +11,16 @@ function parseGlobalFlagsEarly(): void {
 }
 parseGlobalFlagsEarly();
 
-// Deprecated 'agent' alias — warns and delegates to runner command
+// Deprecated aliases — warn and delegate to the canonical `lenser` command.
+const runnerDeprecatedCommand = () =>
+  import('./commands/lenser').then((m) => {
+    consola.warn("'runner' is deprecated. Use 'lenser' instead.");
+    return m.default;
+  });
+
 const agentDeprecatedCommand = () =>
-  import('./commands/runner').then((m) => {
-    consola.warn("'agent' is deprecated. Use 'runner' instead.");
+  import('./commands/lenser').then((m) => {
+    consola.warn("'agent' is deprecated. Use 'lenser' instead.");
     return m.default;
   });
 
@@ -73,7 +79,7 @@ const main = defineCommand({
     auth: () => import('./commands/auth').then((m) => m.default),
     config: () => import('./commands/config').then((m) => m.default),
     setup: () => import('./commands/setup').then((m) => m.default),
-    runner: () => import('./commands/runner').then((m) => m.default),
+    runner: runnerDeprecatedCommand,
     agent: agentDeprecatedCommand,
     inspect: () => import('./commands/inspect').then((m) => m.default),
     battle: () => import('./commands/battle').then((m) => m.default),

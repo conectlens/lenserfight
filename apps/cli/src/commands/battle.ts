@@ -97,14 +97,14 @@ const join = defineCommand({
       description: 'AI agent UUID to join as (omit for human participation)',
       default: '',
     },
-    runner: {
+    mode: {
       type: 'string',
       description: 'Execution mode: local | cloud | manual (default: cloud)',
       default: 'cloud',
     },
     device: {
       type: 'string',
-      description: 'Device UUID for local runner execution',
+      description: 'Device UUID for local execution',
       default: '',
     },
     json: {
@@ -114,8 +114,8 @@ const join = defineCommand({
     },
   },
   async run({ args }) {
-    if (args.runner === 'local' && !args.device) {
-      consola.warn('Local runner selected but no --device provided. Use `lf gateway devices` to find your device ID.');
+    if (args.mode === 'local' && !args.device) {
+      consola.warn('Local mode selected but no --device provided. Use `lf gateway devices` to find your device ID.');
     }
 
     try {
@@ -124,7 +124,7 @@ const join = defineCommand({
         {
           p_battle_id: args.id,
           p_agent_id: args.agent || null,
-          p_runner_mode: args.runner || 'cloud',
+          p_runner_mode: args.mode || 'cloud',
           p_device_id: args.device || null,
         },
         { requireAuth: true }
@@ -137,11 +137,11 @@ const join = defineCommand({
 
       consola.success('Joined battle %s.', args.id);
       if (args.agent) consola.info('Agent:  %s', args.agent);
-      if (args.runner !== 'cloud') consola.info('Runner: %s', args.runner);
+      if (args.mode !== 'cloud') consola.info('Mode:   %s', args.mode);
       if (args.device) consola.info('Device: %s', args.device);
       consola.info('');
       consola.info('Submit your entry:');
-      if (args.runner === 'local') {
+      if (args.mode === 'local') {
         consola.info('  lf battle submit %s --run-id <run-id> --attestation', args.id);
       } else {
         consola.info('  lf battle submit %s --text "your response"', args.id);
@@ -335,7 +335,7 @@ const run = defineCommand({
       }
 
       // Build a local battle state from the frontmatter and run it
-      const { localBattleStore: lbs, localBattleRunner: lbr } = await import('../utils/local-battle-engine');
+      const { localBattleStore: lbs, localBattleLenser: lbr } = await import('../utils/local-battle-engine');
       const state = lbs.create(
         frontmatter.name ?? frontmatter.id ?? 'PRIVATE_BATTLE',
         String((parsed.document as any).body ?? frontmatter.name ?? 'Complete the task.')
@@ -502,9 +502,9 @@ const submit = defineCommand({
       description: 'Optional agent config hash for attestation metadata',
       default: '',
     },
-    'runner-version': {
+    'lenser-version': {
       type: 'string',
-      description: 'Optional runner/daemon version string for attestation metadata',
+      description: 'Optional lenser/daemon version string for attestation metadata',
       default: '',
     },
     'cli-version': {
@@ -606,7 +606,7 @@ const submit = defineCommand({
               missing.map((key) => `--${key}`).join(', ')
             );
             consola.info(
-              'Use the gateway daemon or runner to produce a signed execution envelope before submitting trust metadata.'
+              'Use the gateway daemon or lenser to produce a signed execution envelope before submitting trust metadata.'
             );
             process.exitCode = 2;
             return;
@@ -624,7 +624,7 @@ const submit = defineCommand({
               p_workflow_hash: args['workflow-hash'] || null,
               p_lens_hash: args['lens-hash'] || null,
               p_agent_config_hash: args['agent-config-hash'] || null,
-              p_runner_version: args['runner-version'] || null,
+              p_runner_version: args['lenser-version'] || null,
               p_cli_version: args['cli-version'] || null,
               p_policy_passed: true,
             },
@@ -1572,7 +1572,7 @@ const feed = defineCommand({
 // ---------------------------------------------------------------------------
 import {
   localBattleStore,
-  localBattleRunner,
+  localBattleLenser,
   type LocalContenderConfig,
 } from '../utils/local-battle-engine';
 
@@ -1704,7 +1704,7 @@ const localRun = defineCommand({
 
       const bufA: string[] = [], bufB: string[] = [];
 
-      const result = await localBattleRunner.run(
+      const result = await localBattleLenser.run(
         state,
         (slot, delta) => {
           if (slot === 'A') { bufA.push(delta); process.stdout.write(`${A.bold}${A.brightBlue}[A]${A.reset} ${delta}`); }

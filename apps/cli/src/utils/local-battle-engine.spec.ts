@@ -141,7 +141,7 @@ describe('LocalBattleStore.recordVote', () => {
   })
 })
 
-describe('LocalBattleRunner.run', () => {
+describe('LocalBattleLenser.run', () => {
   it('calls both contenders and returns output with A, B, tokensA, tokensB, durationMs', async () => {
     const { getStreamAdapter } = await import('@lenserfight/providers') as unknown as { getStreamAdapter: jest.Mock }
 
@@ -177,15 +177,15 @@ describe('LocalBattleRunner.run', () => {
     global.fetch = jest.fn().mockResolvedValue(mockResponse)
 
     const store = new LocalBattleStore()
-    const battle = store.create('Runner Test', 'Summarise this text')
+    const battle = store.create('Lenser Test', 'Summarise this text')
     store.addContender(battle.id, { slot: 'A', label: 'GPT', provider: 'openai', model: 'gpt-4o-mini' })
     store.addContender(battle.id, { slot: 'B', label: 'Claude', provider: 'anthropic', model: 'claude-haiku-4-5' })
     const readyBattle = store.load(battle.id)
 
-    const { LocalBattleRunner } = await import('./local-battle-engine')
-    const runner = new LocalBattleRunner()
+    const { LocalBattleLenser } = await import('./local-battle-engine')
+    const lenser = new LocalBattleLenser()
     const tokens: string[] = []
-    const result = await runner.run(readyBattle, (slot, delta) => tokens.push(`${slot}:${delta}`))
+    const result = await lenser.run(readyBattle, (slot, delta) => tokens.push(`${slot}:${delta}`))
 
     expect(result).toMatchObject({
       A: expect.any(String),
