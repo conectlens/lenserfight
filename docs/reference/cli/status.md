@@ -113,3 +113,16 @@ Journey
 - [lf doctor](/reference/cli/index)
 - [lf auth](/reference/cli/auth)
 - [Developer Onboarding](/tutorials/getting-started/developer-onboarding)
+
+<!-- AUTO-GEN-START -->
+
+# `lf status`
+
+Show auth, environment, and developer journey status.
+
+| Flag | Type | Required | Description |
+|---|---|---|---|
+| `--journey` | boolean | no | Show developer journey checklist (requires auth) |
+| `--json` | boolean | no | Emit structured JSON |
+
+<!-- AUTO-GEN-END -->
