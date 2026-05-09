@@ -456,6 +456,131 @@ const lensImport = defineCommand({
 });
 
 // ---------------------------------------------------------------------------
+// AF-2: lf lens template — scaffold from a bundled lens template
+// ---------------------------------------------------------------------------
+const LENS_TEMPLATES: Record<string, { description: string; body: string }> = {
+  summarize: {
+    description: 'Summarise any text into bullet points.',
+    body: `---
+name: summarize
+version: "1.0"
+---
+Summarise the following text into 3–5 concise bullet points.
+Focus on the most important ideas. Use plain language.
+
+{{input}}`,
+  },
+  classify: {
+    description: 'Classify text into one of the provided categories.',
+    body: `---
+name: classify
+version: "1.0"
+---
+Classify the following text into one of these categories: {{categories}}.
+Return only the category name, nothing else.
+
+Text: {{input}}`,
+  },
+  'extract-json': {
+    description: 'Extract structured data from unstructured text as JSON.',
+    body: `---
+name: extract-json
+version: "1.0"
+---
+Extract the following fields from the text and return valid JSON only:
+{{fields}}
+
+Text: {{input}}`,
+  },
+  'judge-rubric': {
+    description: 'Score a piece of writing against a rubric.',
+    body: `---
+name: judge-rubric
+version: "1.0"
+---
+You are a fair and rigorous judge. Score the following submission against the rubric.
+Return a JSON object with one score (0–10) per criterion and a brief justification.
+
+Rubric: {{rubric}}
+Submission: {{submission}}`,
+  },
+  refactor: {
+    description: 'Refactor code with a specific goal in mind.',
+    body: `---
+name: refactor
+version: "1.0"
+---
+Refactor the following code. Goal: {{goal}}.
+Preserve the existing behaviour unless it conflicts with the goal.
+Return only the refactored code, no explanation.
+
+{{code}}`,
+  },
+  translate: {
+    description: 'Translate text to a target language.',
+    body: `---
+name: translate
+version: "1.0"
+---
+Translate the following text to {{target_language}}.
+Preserve tone and meaning. Do not add explanations.
+
+{{input}}`,
+  },
+}
+
+const lensTemplateList = defineCommand({
+  meta: { name: 'list', description: 'List available lens scaffold templates.' },
+  args: {
+    json: { type: 'boolean', description: 'Output as JSON', default: false },
+  },
+  async run({ args }) {
+    const rows = Object.entries(LENS_TEMPLATES).map(([id, t]) => ({
+      id,
+      description: t.description,
+    }))
+    if (args.json) { console.log(JSON.stringify(rows, null, 2)); return }
+    for (const { id, description } of rows) {
+      consola.log(`  ${id.padEnd(16)} ${description}`)
+    }
+    consola.info('\nUse: lf lens template use <id> [--output path/to/lens.md]')
+  },
+})
+
+const lensTemplateUse = defineCommand({
+  meta: { name: 'use', description: 'Scaffold a new lens from a template.' },
+  args: {
+    id:     { type: 'positional', description: 'Template ID (see: lf lens template list)', required: true },
+    output: { type: 'string',     description: 'Output file path (default: ./<id>.md)', default: '' },
+  },
+  async run({ args }) {
+    const tpl = LENS_TEMPLATES[args.id]
+    if (!tpl) {
+      consola.error('Unknown template: %s', args.id)
+      consola.info('Available: %s', Object.keys(LENS_TEMPLATES).join(', '))
+      process.exitCode = 1; return
+    }
+    const { writeFileSync, existsSync } = await import('node:fs')
+    const outPath = args.output || `./${args.id}.md`
+    if (existsSync(outPath)) {
+      consola.warn('%s already exists — skipping. Use --output to specify a different path.', outPath)
+      process.exitCode = 1; return
+    }
+    writeFileSync(outPath, tpl.body, 'utf-8')
+    consola.success('Lens scaffolded at %s', outPath)
+    consola.info('Edit the template, then: lf lens version create --lens <id> --body %s', outPath)
+  },
+})
+
+const lensTemplate = defineCommand({
+  meta: { name: 'template', description: 'Scaffold a new lens from a bundled template.' },
+  subCommands: {
+    list: lensTemplateList,
+    use:  lensTemplateUse,
+  },
+})
+
+// ---------------------------------------------------------------------------
 // Root command
 // ---------------------------------------------------------------------------
 export default defineCommand({
@@ -467,5 +592,6 @@ export default defineCommand({
     version,
     resource,
     import: lensImport,
+    template: lensTemplate,
   },
 });
