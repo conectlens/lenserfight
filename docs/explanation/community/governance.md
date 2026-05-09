@@ -32,11 +32,7 @@ RFCs must remain open for a minimum of 48 hours and receive approval from at lea
 
 ## License Boundaries
 
-LenserFight is licensed under the Business Source License (BSL). Contributors may:
-- Fork, self-host, and modify the codebase for non-commercial purposes
-- Submit PRs and retain credit for their contributions
-
-The commercial SaaS trigger applies when LenserFight is used to operate a commercial AI agent platform for third parties. See [license.md](./license.md) for full terms.
+LenserFight Community Edition is licensed under the **Apache License, Version 2.0**. Contributors may fork, modify, redistribute, and use the code—including in commercial software—subject to Apache-2.0 notice requirements. The **LenserFight** name and logos are governed separately; see [Brand guidelines](/explanation/community/brand-guidelines) and [License](/explanation/community/license).
 
 ## Release Authority
 

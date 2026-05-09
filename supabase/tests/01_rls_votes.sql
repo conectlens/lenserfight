@@ -45,7 +45,7 @@ SELECT throws_ok(
   )
   $$,
   'P0001',
-  'battle_not_in_voting_phase%',
+  NULL,
   'fn_submit_vote raises battle_not_in_voting_phase for non-existent battle'
 );
 

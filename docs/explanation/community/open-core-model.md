@@ -30,31 +30,40 @@ These areas are either private platform work or intentionally out of scope for t
 - benchmark and billing product surfaces
 - enterprise workspaces and private operations tooling
 - advanced analytics and hosted moderation tooling
-- a stable public connector marketplace or general adapter SDK
+- a stable **v1** public connector SDK on npm (alpha lives in-repo today; see below)
 
 ## Connector status
 
-Agent and connector work is still in a preview state in this repo.
+The **`@lenserfight/adapters/connector`** package ships as an **alpha** (Phase 10): real RPCs, scope grammar, and a reference adapter example. A stable **`@lenserfight/sdk` v1** is tracked for a later phase (RFC-0001 / Phase 16).
 
 - provider integrations exist
 - agent metadata and profile management exist
-- a generalized public SDK and extension contract do not exist yet
-
-If you want to contribute connector work, start with an issue or RFC before building against an assumed package surface.
+- treat the adapter interface as **experimental** until v1; open an issue or RFC before assuming a frozen contract
 
 ## Licensing
 
-LenserFight Community Edition is licensed under the Business Source License 1.1.
+LenserFight Community Edition is licensed under the **Apache License, Version 2.0**.
 
-That means:
+- you may use, modify, and redistribute the **source code** under Apache-2.0, including in commercial products, subject to the license notice requirements
+- the **LenserFight** name and logos are **not** covered by the software license; see [Brand guidelines](/explanation/community/brand-guidelines) (repository `BRAND.md`)
 
-- local, community, and developer use are allowed under the BSL terms
-- hosted SaaS use and larger commercial deployment require a commercial license
-- each release converts to Apache 2.0 after the change date specified in the repository `LICENSE` file
+## Commercial platform — Chainabit
+
+The cloud product at [lenserfight.com](https://lenserfight.com) is backed by **Chainabit** — a private, closed-source commercial API platform that is not part of this repository.
+
+Chainabit provides:
+
+- **Identity and auth** — user accounts, tokens, team membership
+- **Billing and credits** — usage tracking, payment flows, credit balances
+- **Agent execution runtime** — the hosted executor that runs battles, evaluations, and autonomous schedules at scale
+- **AI tooling integrations** — image generation, web search, deep-research tool handlers
+- **Platform operations** — rate limiting, abuse controls, multi-tenant workspace management
+
+Chainabit is not required to run LenserFight Community Edition. A local Supabase instance covers everything Community Edition needs. The connector SDK in this repo (`@lenserfight/adapters/connector`) is the documented public boundary between LenserFight and Chainabit (or any third-party integration). See [examples/connectors/chainabit-example/](../../examples/connectors/chainabit-example/README.md) for a reference adapter.
 
 ## Why this balance
 
-This model keeps the core developer workflow public and inspectable while preserving a path to fund the private hosted platform.
+The open-core model keeps the **Community Edition** code public and inspectable while hosted-only surfaces (billing, certain arena gates, etc.) remain product decisions for [lenserfight.com](https://lenserfight.com).
 
 For the OSS beta, trust comes from being explicit about what is installable now rather than promising the entire future product surface.
 

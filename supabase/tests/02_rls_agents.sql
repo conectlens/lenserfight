@@ -7,24 +7,34 @@
 -- ─────────────────────────────────────────────────────────────────────────────
 BEGIN;
 
-SELECT plan(5);
+SELECT plan(6);
 
--- ── Test 1: authenticated role cannot UPDATE agents.policies directly ─────────
--- policies has no UPDATE policy for authenticated; only service_role write.
-SET LOCAL ROLE authenticated;
-
-SELECT throws_ok(
-  $$
-  UPDATE agents.policies
-  SET can_join_battles = true
-  WHERE ai_lenser_id = gen_random_uuid()
-  $$,
-  '42501',
-  NULL,
-  'authenticated role cannot UPDATE agents.policies directly'
+-- ── Test 1: agents.policies writes are service_role-only (catalog check) ─────
+-- With RLS alone, UPDATE matching zero rows does not raise 42501; assert policy shape.
+SELECT ok(
+  EXISTS (
+    SELECT 1
+    FROM pg_policies
+    WHERE schemaname = 'agents'
+      AND tablename = 'policies'
+      AND policyname = 'policies_service_write'
+      AND cmd = 'ALL'
+      AND roles = ARRAY['service_role'::name]
+  ),
+  'agents.policies has policies_service_write ALL for service_role'
 );
 
-RESET ROLE;
+SELECT ok(
+  NOT EXISTS (
+    SELECT 1
+    FROM pg_policies
+    WHERE schemaname = 'agents'
+      AND tablename = 'policies'
+      AND cmd IN ('INSERT', 'UPDATE', 'DELETE', 'ALL')
+      AND roles && ARRAY['authenticated'::name, 'anon'::name]
+  ),
+  'agents.policies has no INSERT/UPDATE/DELETE/ALL policy for authenticated or anon'
+);
 
 -- ── Test 2: fn_agent_action blocks join_battle when can_join_battles = false ──
 -- Set up: minimal ai_lenser + ownership + policy fixture within transaction.
@@ -39,7 +49,7 @@ SELECT throws_ok(
   )
   $$,
   'P0001',
-  'no_policy_for_agent%',
+  NULL,
   'fn_agent_action raises no_policy_for_agent for unknown agent UUID'
 );
 

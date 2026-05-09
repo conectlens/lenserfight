@@ -9,7 +9,7 @@ This runbook covers the OSS release candidate of the LenserFight Trust Gateway (
 
 ## Rollout Order
 
-1. Apply migrations through `20270513000000_pre_oss_gateway_security_hardening.sql` on a disposable database.
+1. Apply migrations through `20270513000001_pre_oss_gateway_security_hardening.sql` on a disposable database.
 2. Run `supabase db test --db-url $LOCAL_DB_URL` and confirm gateway tests `07_gateway_security.sql` and `08_gateway_xp_audit.sql` pass.
 3. Build the binaries:
 

@@ -24,7 +24,29 @@ Version bumps are determined by Conventional Commits (see [Branching and Version
 ## Changelog
 
 - `CHANGELOG.md` is updated as part of the release process (when releases are published).
-- Do not manually add release entries unless maintainers request it.
+- For **pre-release / first-public** milestones, maintainers may add a dated entry when cutting a manual tag before automation is fully wired; keep entries aligned with root `package.json` `version`.
+
+## First public GitHub Release (paste template)
+
+Use when publishing **`v0.10.0-alpha.2`** (or the current `package.json` version) for the first Apache-2.0 Community Edition line:
+
+```markdown
+## LenserFight Community Edition
+
+**License:** Apache-2.0 — see the `LICENSE` file in this repository.
+
+**Trademarks:** The LenserFight name and logos are governed separately; see `BRAND.md` and [Brand guidelines](https://docs.lenserfight.com/explanation/community/brand-guidelines).
+
+**Docs:** https://docs.lenserfight.com
+
+**Security:** Report vulnerabilities privately via GitHub Security Advisories (see `SECURITY.md`).
+
+**Supported in this build:** lenses, workflows, local Supabase, `lf run exec`, connector adapter **alpha** (`@lenserfight/adapters/connector` in-repo). See README “Supported now / Not part of” for boundaries.
+
+**Validation:** From a clean clone: `pnpm install --frozen-lockfile`, `pnpm smoke`, `pnpm check:oss-migration` (maintainers run before tagging).
+```
+
+Dry-run: push a test tag on a fork or use GitHub “Draft release” before marking latest.
 
 See also:
 - [Branching and Versioning](/how-to/contributors/branching)

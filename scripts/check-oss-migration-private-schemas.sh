@@ -16,9 +16,26 @@ PRIVATE=(
   organizations reputation status wallet xp
 )
 
+# Migrations listed here are grandfathered: they predate strict OSS/platform split
+# automation. New migrations must not add CREATE SCHEMA for private-only namespaces.
+ALLOWLIST=(
+  "20260329120000_platform_private_schema.sql"
+)
+
 fail=0
 for f in "$MIG_DIR"/*.sql; do
   [[ -e "$f" ]] || continue
+  base="$(basename "$f")"
+  skip=0
+  for allowed in "${ALLOWLIST[@]}"; do
+    if [[ "$base" == "$allowed" ]]; then
+      skip=1
+      break
+    fi
+  done
+  if [[ "$skip" -eq 1 ]]; then
+    continue
+  fi
   for schema in "${PRIVATE[@]}"; do
     if grep -qF "CREATE SCHEMA IF NOT EXISTS \"${schema}\"" "$f" 2>/dev/null; then
       echo "ERROR: OSS migration $(basename "$f") creates private schema: ${schema}"

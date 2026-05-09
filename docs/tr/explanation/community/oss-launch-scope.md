@@ -44,12 +44,12 @@ Bu yüzeyler kod tabanında bulunur, ancak OSS lansmanı taahhüdüne dahil değ
 
 ## Kapsam dışı — henüz uygulanmadı
 
-Bunlar yol haritasında izleniyor ama henüz gönderilmedi. Kod yok. Lansmanda LenserFight yetenekleri olarak bunlardan söz etmeyin.
+Bunlar yol haritasında izleniyor ancak **henüz üretim için taahhüt edilen bir yüzey** yok. Lansmanda bunları stabil LenserFight yeteneği olarak göstermeyin.
 
 | Yüzey | Neden kapsam dışı |
 |-------|-------------------|
-| Konektör SDK | Arayüz RFC süreci devam ediyor; stabil adaptör sözleşmesi yok |
-| Konektör pazarı | Konektör SDK'sına bağımlı |
+| **Stabil** npm konektör SDK (`@lenserfight/sdk` v1) | Alfa adaptör kodu ve RFC repoda (Faz 10); v1 sözleşmesi ve npm yükseltmesi Faz 16 — bkz. [Konektörler](/tr/reference/connectors/index). |
+| Konektör pazarı | Stabil herkese açık SDK ve yönetişime bağlı |
 | Faturalama ve krediler | Ticari altyapı OSS'in parçası değil |
 | Kıyaslama paketi | Değerlendirme çerçevesi henüz birleştirilmedi |
 | Gelişmiş analitik | Önizlemedeki yaratıcı analitiğinin ötesinde |

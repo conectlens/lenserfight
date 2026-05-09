@@ -6,7 +6,7 @@ title: Local Database Setup
 
 This guide sets up the **LenserFight Community Edition** PostgreSQL/Supabase stack for local development. The OSS database exposes only public schemas (`lensers`, `lenses`, `content`, `media`, `agents`, `ai`, `execution`, `tenancy`, etc.). It does **not** include private cloud schemas such as `battles`, `billing`, `xp`, `benchmark`, or `authz`.
 
-For the **full LenserFight Cloud / platform** database (all schemas and private seeds), use the private [lenserfight-platform](https://github.com/conectlens/lenserfight-platform) repository and its `DEVELOPMENT.md`.
+For the **full LenserFight Cloud / platform** database (all schemas and private seeds, including `battles`, `billing`, `xp`, `benchmark`, `authz`), contact the maintainers — that schema is part of the private Chainabit backend and is not publicly available.
 
 ## Prerequisites
 
@@ -108,7 +108,7 @@ Reset duration depends on which seed files are included (scale data takes longer
 
 ### Login Credentials
 
-Use the same values as in [libs/utils/env/src/lib/runtimeConfig.ts](https://github.com/conectlens/lenserfight/blob/development/libs/utils/env/src/lib/runtimeConfig.ts) (`LOCAL_SEED_CREDENTIALS`) and your generated `seed.sql` (Alice is the primary dev user).
+Use the same values as in [libs/utils/env/src/lib/runtimeConfig.ts](https://github.com/connectlens/lenserfight-web/blob/development/libs/utils/env/src/lib/runtimeConfig.ts) (`LOCAL_SEED_CREDENTIALS`) and your generated `seed.sql` (Alice is the primary dev user).
 
 Example (verify against your current `02_auth_users.sql` / seed):
 

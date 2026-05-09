@@ -6,5 +6,5 @@
     "lenserfight": "./main.js",
     "lf": "./main.js"
   },
-  "license": "MIT"
+  "license": "Apache-2.0"
 }
