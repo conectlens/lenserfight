@@ -13,7 +13,7 @@ import { WaitlistForm } from '../components/WaitlistForm'
 
 const BrandVideos = React.lazy(() => import('../components/BrandVideos'))
 
-const ARENA_APP_URL = import.meta.env.ARENA_URL ?? 'https://moon.lenserfight.com'
+const ARENA_APP_URL = import.meta.env.WEB_BASE_URL ?? 'https://moon.lenserfight.com'
 const GITHUB_SPONSORS_URL = 'https://github.com/sponsors/conectlens'
 
 // ── Shared animation variants ────────────────────────────────────────────────
