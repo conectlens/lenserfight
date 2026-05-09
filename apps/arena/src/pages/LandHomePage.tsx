@@ -13,7 +13,7 @@ import { WaitlistForm } from '../components/WaitlistForm'
 
 const BrandVideos = React.lazy(() => import('../components/BrandVideos'))
 
-const ARENA_APP_URL = import.meta.env.VITE_ARENA_URL ?? 'https://run.lenserfight.com'
+const ARENA_APP_URL = import.meta.env.VITE_ARENA_URL ?? 'https://moon.lenserfight.com'
 const GITHUB_SPONSORS_URL = 'https://github.com/sponsors/conectlens'
 
 // ── Shared animation variants ────────────────────────────────────────────────
@@ -409,7 +409,7 @@ export const LandHomePage: React.FC = () => {
                 <p className="text-sm text-greyscale-500 dark:text-greyscale-400">By LenserMusic</p>
               </div>
             </div>
-            
+
             <motion.a
               href="https://www.youtube.com/@LenserMusic"
               target="_blank"
