@@ -105,18 +105,18 @@ export const TagCloudPage: React.FC = () => {
   })
 
   return (
-    <div className="relative w-full min-h-[80vh] flex flex-col items-center justify-center overflow-hidden bg-gray-50/30 dark:bg-gray-900 transition-colors duration-200">
+    <div className="relative w-full min-h-[80vh] flex flex-col overflow-hidden bg-gray-50/30 dark:bg-gray-900 transition-colors duration-200">
       <SEOHead type="tag-cloud" />
       <NodeGraphBackground theme={theme} />
 
-      <div className="relative z-10 w-full max-w-7xl mx-auto px-4 py-12 flex flex-col items-center">
+      <div className="relative z-10 w-full max-w-7xl mx-auto px-4 py-12 flex flex-col flex-1 items-center">
         <div className="flex items-center justify-between w-full mb-6">
           <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Ray Cloud</h1>
           <HelpButton path="/explanation/community/ray-cloud" label="About Ray Cloud" />
         </div>
 
         {isLoading ? (
-          <div className="flex gap-3 opacity-30 items-center justify-center h-64">
+          <div className="flex gap-3 opacity-30 items-center justify-center flex-1 min-h-[200px]">
             <div className="w-4 h-4 bg-gray-400 rounded-full animate-bounce"></div>
             <div className="w-4 h-4 bg-gray-400 rounded-full animate-bounce delay-75"></div>
             <div className="w-4 h-4 bg-gray-400 rounded-full animate-bounce delay-150"></div>
@@ -126,7 +126,7 @@ export const TagCloudPage: React.FC = () => {
             <TagCloud tags={tags} />
           </div>
         ) : (
-          <div className="text-gray-300 dark:text-gray-600 font-light text-sm tracking-widest uppercase mt-20">
+          <div className="flex-1 flex items-center justify-center text-gray-300 dark:text-gray-600 font-light text-sm tracking-widest uppercase">
             No topics found
           </div>
         )}
