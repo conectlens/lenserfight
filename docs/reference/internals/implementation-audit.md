@@ -20,7 +20,7 @@ This page is the Phase 0 baseline for autonomous-agent work. It is intentionally
 ## Route Map
 
 | Route                                                                            | Capability                                                  | Feature owner              | State     |
-| -------------------------------------------------------------------------------- | ----------------------------------------------------------- | -------------------------- | --------- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | ---------------------------- | ----------------- | ------- |
+| -------------------------------------------------------------------------------- | ----------------------------------------------------------- | -------------------------- | --------- |
 | `/s/:shortId`                                                                    | Short-link redirect                                         | `features/share`           | `ready`   |
 | `/auth/*`, `/login`, `/register`, `/forgot-password`, `/reset-password`          | Auth redirects into the auth surface                        | `features/auth` + auth app | `ready`   |
 | `/welcome`, `/app`                                                               | Environment-driven onboarding redirects                     | `apps/web`                 | `ready`   |
@@ -37,7 +37,7 @@ This page is the Phase 0 baseline for autonomous-agent work. It is intentionally
 | `/lenser/:handle/agent`                                                          | Agent manage modal                                          | `features/agents`          | `ready`   |
 | `/lenser/:handle/ag`                                                             | Agent control-room overview redirect                        | `features/agents`          | `ready`   |
 | `/lenser/:handle/ag/:section`                                                    | Agent control-room routed sections                          | `features/agents`          | `partial` |
-| `/lenser/:handle/workflows`, `/lenser/:handle/ov                                 | wf                                                          | lg                         | sc        | rv  | ap  | me  | in  | to  | mo  | pr  | co  | st  | sp  | tm  | pe  | ev` | Agent legacy section aliases | `features/agents` | `ready` |
+| `/lenser/:handle/workflows`, `/lenser/:handle/{ov,wf,lg,sc,rv,ap,me,in,to,mo,pr,co,st,sp,tm,pe,ev}` | Agent legacy section aliases | `features/agents`          | `ready`   |
 | `/settings`, `/settings/:tab`                                                    | Account/settings shell                                      | `features/settings`        | `ready`   |
 | `/billing`, `/store`                                                             | Billing/store gated by `SURFACE.showBillingAndStore`        | `features/store`           | `flagged` |
 | `/workflows`, `/workflows/manage`, `/workflows/:id`, `/workflows/:id/run/:runId` | Workflow list, creation, builder, run inspector             | `features/workflows`       | `ready`   |
