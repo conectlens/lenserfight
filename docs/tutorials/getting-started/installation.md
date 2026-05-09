@@ -26,7 +26,7 @@ echo 'VITE_DATA_SOURCE=file' > .env.local
 pnpm nx run web:serve
 ```
 
-Open `http://localhost:4200`. You are logged in automatically as **Local Dev** — no sign-up screen.
+Open `http://localhost:3000`. You are logged in automatically as **Local Dev** — no sign-up screen.
 
 - All data (lenses, workflows, agents) persists in browser IndexedDB across reloads.
 - File uploads are stored as blobs in IndexedDB; blob URLs are browser-session-scoped.
@@ -84,7 +84,7 @@ cp .env.example .env.local
 pnpm nx run web:serve
 ```
 
-The web app runs at `http://localhost:4200` by default.
+The web app runs at `http://localhost:3000` by default.
 
 ---
 

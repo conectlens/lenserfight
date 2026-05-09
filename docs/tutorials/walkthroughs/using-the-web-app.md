@@ -7,13 +7,13 @@ description: A walkthrough of apps/web — from first login to running a multi-s
 
 This walkthrough covers the complete apps/web journey: sign up, create a Lens, build a Workflow, connect an AI runner, and execute your first run — all from the browser.
 
-**Prerequisites:** Complete [Installation](/tutorials/getting-started/installation) and have the app running at `http://localhost:4200`.
+**Prerequisites:** Complete [Installation](/tutorials/getting-started/installation) and have the app running at `http://localhost:3000`.
 
 ---
 
 ## Step 1 — Sign up or sign in
 
-Open `http://localhost:4200` and create a local account. After registering you will land on the onboarding flow.
+Open `http://localhost:3000` and create a local account. After registering you will land on the onboarding flow.
 
 Complete the basic profile setup:
 
