@@ -21,10 +21,12 @@ The `lenserfight` CLI, also available as `lf`, is the command hub for onboarding
 | `lf setup` | Journey checklist (default) or env setup (`--mode local/cloud`) |
 | `lf setup --interactive` | Guided next-step prompt |
 | `lf status` | Auth, environment, and journey state |
-| `lf doctor` | Environment and auth health checks |
+| `lf doctor` | Point-in-time environment and auth health checks |
 | `lf doctor --check auth` | Token validity |
 | `lf doctor --check api` | API reachability |
 | `lf doctor --check journey` | Journey RPC availability |
+| `lf doctor --check ollama` | Ollama server reachability |
+| `lf doctor --check byok` | Which AI provider keys are configured |
 | `lf init` | Initialise a local project config |
 | `lf dev` | Start local services |
 | `lf seed` | Seed the local database |
@@ -32,6 +34,21 @@ The `lenserfight` CLI, also available as `lf`, is the command hub for onboarding
 | `lf config validate/export/import` | Validate or move safe config state |
 
 See [lf setup](setup.md), [lf status](status.md), [Development Commands](dev.md).
+
+### Runtime observability
+
+| Command | Description |
+|---------|-------------|
+| `lf top` | Live alt-screen dashboard — CPU, memory, GPU, services, battles |
+| `lf top --mode expanded` | All panels with per-core CPU breakdown and rolling graphs |
+| `lf top monitor` | Alias for expanded mode |
+| `lf top battle` | Battle operations center — load, Ollama, VRAM, queue |
+| `lf top graph` | Rolling 60-second CPU/memory sparkline graphs |
+| `lf top infra` | Infrastructure services — connectivity and host info |
+| `lf top stream` | Pipe-friendly scrolling telemetry (no alt screen) |
+| `lf top stream --interval 5000` | Low-frequency background stream |
+
+See [lf top](top.md).
 
 ### Authentication
 
