@@ -173,3 +173,26 @@ Error states: `unauthenticated` (run `lf auth login`), `unavailable` (API unreac
 - [lf doctor](/reference/cli/index)
 - [Developer Onboarding](/tutorials/getting-started/developer-onboarding)
 - [lf auth](/reference/cli/auth)
+
+<!-- AUTO-GEN-START -->
+
+# `lf setup`
+
+Onboarding wizard. Defaults to journey mode (product checklist) when authenticated; use --mode local|cloud for environment setup.
+
+| Flag | Type | Required | Description |
+|---|---|---|---|
+| `--mode` | string | no | Setup mode: journey (default when authenticated), local, or cloud |
+| `--interactive` | boolean | no | Guided step-by-step journey prompt (journey mode only) |
+| `--dry-run` | boolean | no | Preview actions without mutating the workspace (env modes only) |
+| `--non-interactive` | boolean | no | Disable prompts (env modes only) |
+| `--resume` | boolean | no | Resume from previous onboarding state (env modes only) |
+| `--skip-db` | boolean | no | Skip database startup (env modes only) |
+| `--skip-auth` | boolean | no | Skip auth guidance during handoff (env modes only) |
+| `--skip-open` | boolean | no | Do not open the web app after env setup |
+| `--ollama` | boolean | no | Require a reachable Ollama endpoint during env setup |
+| `--ollama-base-url` | string | no | Override the Ollama base URL |
+| `--json` | boolean | no | Emit JSON output |
+| `--verbose` | boolean | no | Print additional detail |
+
+<!-- AUTO-GEN-END -->
