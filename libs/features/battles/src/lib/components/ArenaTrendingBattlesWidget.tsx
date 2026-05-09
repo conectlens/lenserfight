@@ -12,7 +12,7 @@ const SkeletonCard = () => (
 )
 
 interface ArenaTrendingBattlesWidgetProps {
-  /** Base URL for battle links (e.g. 'https://run.lenserfight.com'). Empty string for in-app routing. */
+  /** Base URL for battle links (e.g. 'https://moon.lenserfight.com'). Empty string for in-app routing. */
   baseUrl?: string
 }
 
