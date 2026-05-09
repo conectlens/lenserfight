@@ -1963,7 +1963,7 @@ const localPush = defineCommand({
       consola.info('Status:    %s', battle['status']);
       consola.info('');
       consola.warn('Note: pushing to cloud does not enable cloud battle execution or public arena access.');
-      consola.warn('Cloud battles require VITE_FEATURE_PUBLIC_BATTLES=true (Private Alpha — not publicly available).');
+      consola.warn('Cloud battles require FEATURE_PUBLIC_BATTLES=true (Private Alpha — not publicly available).');
       consola.info('Continue: lf battle open %s', battle['id']);
     } catch (err) { handleError(err); }
   },

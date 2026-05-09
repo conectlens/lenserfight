@@ -91,8 +91,8 @@ export class SemanticPolicy implements ModerationPolicy {
   private resolveApiKey(): string | null {
     const viteEnv =
       typeof import.meta !== 'undefined' && import.meta.env
-        ? ((import.meta.env['VITE_GOOGLE_AI_API_KEY'] as string | undefined) ??
-          (import.meta.env['VITE_API_KEY'] as string | undefined))
+        ? ((import.meta.env['GOOGLE_AI_API_KEY'] as string | undefined) ??
+          (import.meta.env['API_KEY'] as string | undefined))
         : undefined
     if (typeof viteEnv === 'string' && viteEnv.trim() !== '') return viteEnv.trim()
 

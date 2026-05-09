@@ -37,7 +37,7 @@ export const CreatorAnalyticsSection: React.FC = () => {
       >
         <div className="rounded-2xl border border-amber-200 bg-amber-50 p-6 dark:border-amber-800 dark:bg-amber-950/30">
           <p className="font-semibold text-amber-900 dark:text-amber-200">
-            Creator analytics require <code className="rounded bg-amber-100 px-1 text-xs dark:bg-amber-900">VITE_FEATURE_AGENT_ANALYTICS=true</code>.
+            Creator analytics require <code className="rounded bg-amber-100 px-1 text-xs dark:bg-amber-900">FEATURE_AGENT_ANALYTICS=true</code>.
           </p>
         </div>
       </SectionPage>

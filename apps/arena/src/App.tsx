@@ -23,8 +23,8 @@ import { CLIPage } from './pages/CLIPage'
 import { MobileComingSoonPage } from './pages/MobileComingSoonPage'
 import { BattleShowcasePage } from './pages/BattleShowcasePage'
 
-const AUTH_APP_URL = import.meta.env.VITE_AUTH_BASE_URL ?? 'https://auth.lenserfight.com'
-const ARENA_APP_URL = import.meta.env.VITE_ARENA_URL ?? 'https://moon.lenserfight.com'
+const AUTH_APP_URL = import.meta.env.AUTH_BASE_URL ?? 'https://auth.lenserfight.com'
+const ARENA_APP_URL = import.meta.env.ARENA_URL ?? 'https://moon.lenserfight.com'
 
 const App: React.FC = () => {
   return (

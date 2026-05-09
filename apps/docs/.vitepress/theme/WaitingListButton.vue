@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 
-const forumUrl = import.meta.env.VITE_FORUM_URL ?? 'https://lenserfight.com'
+const forumUrl = import.meta.env.WEB_BASE_URL ?? 'https://lenserfight.com'
 const isOpen = ref(false)
 
 function openModal() {

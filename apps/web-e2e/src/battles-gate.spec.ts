@@ -1,7 +1,7 @@
 import { expect, test } from '@playwright/test'
 
 // Phase 9 acceptance criterion #3:
-// With VITE_PRODUCT_EDITION=community + VITE_FEATURE_PUBLIC_BATTLES=false,
+// With PRODUCT_EDITION=community + FEATURE_PUBLIC_BATTLES=false,
 // every arena/battle entrypoint must redirect to a safe page (/, /workflows)
 // or 404 — never render the live arena UI.
 //

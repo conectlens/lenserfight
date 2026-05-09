@@ -15,7 +15,7 @@ function resolveEnvBaseUrl(): string | undefined {
   if (nodeValue?.trim()) return nodeValue.trim().replace(/\/$/, '')
 
   const viteEnv = (import.meta as ImportMeta & { env?: Record<string, string | undefined> }).env
-  const viteValue = viteEnv?.['VITE_OLLAMA_BASE_URL']
+  const viteValue = viteEnv?.['OLLAMA_BASE_URL']
   if (viteValue?.trim()) return viteValue.trim().replace(/\/$/, '')
 
   return undefined

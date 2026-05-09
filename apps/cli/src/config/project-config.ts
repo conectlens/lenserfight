@@ -382,35 +382,31 @@ export function loadEnvConfig(cwd = process.cwd()): EnvValues {
   // process.env takes highest priority
   const url =
     process.env['SUPABASE_URL'] ||
-    process.env['VITE_SUPABASE_URL'] ||
-    file['SUPABASE_URL'] ||
-    file['VITE_SUPABASE_URL'];
+    file['SUPABASE_URL'];
 
   const cloudApiUrl =
     process.env['LENSERFIGHT_CLOUD_API_URL'] ||
-    process.env['VITE_API_URL'] ||
+    process.env['API_URL'] ||
     file['LENSERFIGHT_CLOUD_API_URL'] ||
-    file['VITE_API_URL'];
+    file['API_URL'];
 
   const anonKey =
     process.env['SUPABASE_ANON_KEY'] ||
-    process.env['VITE_SUPABASE_ANON_KEY'] ||
-    file['SUPABASE_ANON_KEY'] ||
-    file['VITE_SUPABASE_ANON_KEY'];
+    file['SUPABASE_ANON_KEY'];
 
   const serviceKey =
     process.env['SUPABASE_SERVICE_ROLE_KEY'] ||
     file['SUPABASE_SERVICE_ROLE_KEY'];
 
   const defaultStorageAdapterRaw =
-    process.env['VITE_DEFAULT_STORAGE_ADAPTER'] ||
-    file['VITE_DEFAULT_STORAGE_ADAPTER'];
+    process.env['DEFAULT_STORAGE_ADAPTER'] ||
+    file['DEFAULT_STORAGE_ADAPTER'];
 
   const ollamaBaseUrl =
     process.env['LENSERFIGHT_OLLAMA_BASE_URL'] ||
-    process.env['VITE_OLLAMA_BASE_URL'] ||
+    process.env['OLLAMA_BASE_URL'] ||
     file['LENSERFIGHT_OLLAMA_BASE_URL'] ||
-    file['VITE_OLLAMA_BASE_URL'];
+    file['OLLAMA_BASE_URL'];
 
   const apiKey =
     process.env['LENSERFIGHT_API_KEY'] ||
@@ -425,8 +421,8 @@ export function loadEnvConfig(cwd = process.cwd()): EnvValues {
     file['LENSERFIGHT_DEVELOPER_TOKEN_EXPIRES_AT'];
 
   const authBaseUrl =
-    process.env['VITE_AUTH_BASE_URL'] ||
-    file['VITE_AUTH_BASE_URL'];
+    process.env['AUTH_BASE_URL'] ||
+    file['AUTH_BASE_URL'];
 
   return {
     supabaseUrl: url || undefined,

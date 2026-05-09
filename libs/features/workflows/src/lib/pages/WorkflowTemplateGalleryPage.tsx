@@ -21,7 +21,7 @@ export function WorkflowTemplateGalleryPage() {
           Workflow templates require the Agents feature.
         </p>
         <p className="text-sm text-gray-500">
-          Enable <code className="rounded bg-gray-100 px-1 dark:bg-gray-800">VITE_FEATURE_AGENTS=true</code> to access templates.
+          Enable <code className="rounded bg-gray-100 px-1 dark:bg-gray-800">FEATURE_AGENTS=true</code> to access templates.
         </p>
       </div>
     )

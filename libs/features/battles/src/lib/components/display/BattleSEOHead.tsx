@@ -1,5 +1,5 @@
 import { SEOHead } from '@lenserfight/ui/components'
-import { VITE_API_BASE_URL } from '@lenserfight/utils/env'
+import { API_BASE_URL } from '@lenserfight/utils/env'
 import React from 'react'
 import { Helmet } from 'react-helmet-async'
 
@@ -15,7 +15,7 @@ interface BattleSEOHeadProps {
  * `apps/platform-api/src/http/routes/battles-share-card.route.ts`.
  */
 function buildShareCardUrl(slug: string): string {
-  const base = VITE_API_BASE_URL.replace(/\/$/, '')
+  const base = API_BASE_URL.replace(/\/$/, '')
   return `${base}/v1/battles/${encodeURIComponent(slug)}/share-card.svg`
 }
 

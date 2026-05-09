@@ -1,7 +1,7 @@
 import React, { useState } from 'react'
 import { ArrowRight, Loader2 } from 'lucide-react'
 
-const AUTH_APP_URL = import.meta.env.VITE_AUTH_BASE_URL ?? 'https://auth.lenserfight.com'
+const AUTH_APP_URL = import.meta.env.AUTH_BASE_URL ?? 'https://auth.lenserfight.com'
 
 interface WaitlistFormProps {
   className?: string

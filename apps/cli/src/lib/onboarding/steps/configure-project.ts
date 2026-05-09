@@ -28,13 +28,13 @@ export const configureProjectStep: OnboardingStep = {
     const envLocalPath = resolve(process.cwd(), '.env.local')
     if (!existsSync(envLocalPath) && options.mode === 'local') {
       const lines = [
-        `VITE_SUPABASE_URL=${LOCAL_SUPABASE_URL}`,
-        `VITE_SUPABASE_ANON_KEY=${LOCAL_ANON_KEY}`,
-        'VITE_API_URL=http://localhost:8786',
+        `SUPABASE_URL=${LOCAL_SUPABASE_URL}`,
+        `SUPABASE_ANON_KEY=${LOCAL_ANON_KEY}`,
+        'API_URL=http://localhost:8786',
       ]
       if (options.ollamaBaseUrl) {
         lines.push(`LENSERFIGHT_OLLAMA_BASE_URL=${options.ollamaBaseUrl}`)
-        lines.push(`VITE_OLLAMA_BASE_URL=${options.ollamaBaseUrl}`)
+        lines.push(`OLLAMA_BASE_URL=${options.ollamaBaseUrl}`)
       }
       if (!options.dryRun) {
         writeFileSync(envLocalPath, `${lines.join('\n')}\n`, 'utf-8')

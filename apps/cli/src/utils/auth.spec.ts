@@ -72,7 +72,7 @@ describe('developer token CLI helpers', () => {
     );
   });
 
-  it('builds auth app URLs using VITE_AUTH_BASE_URL when set', () => {
+  it('builds auth app URLs using AUTH_BASE_URL when set', () => {
     mockResolveConfig.mockReturnValue({
       mode: 'local',
       supabaseUrl: 'http://127.0.0.1:54321',
