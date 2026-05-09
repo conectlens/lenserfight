@@ -82,6 +82,9 @@ export * from './lib/components/creation/BattleRulesDrawer'
 export * from './lib/components/creation/JoinBattleWizard'
 export * from './lib/components/creation/DeviceSelectorStep'
 
+// ── Components — media (generative media result display) ─────────────────────
+export * from './lib/components/BattleMediaResult'
+
 // ── Components — display (presentational cards, badges, indicators) ───────────
 export * from './lib/components/display/BattleCard'
 export * from './lib/components/display/LiveBattleCard'
