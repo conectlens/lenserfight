@@ -1,5 +1,6 @@
 export * from './lib/ActionMenu'
 export * from './lib/Avatar'
+export * from './lib/LenserDnaAvatar'
 export * from './lib/Breadcrumbs'
 export * from './lib/Button'
 export * from './lib/Card'
