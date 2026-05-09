@@ -255,3 +255,11 @@ For the full integration walkthrough, see [SaaS Integration Quickstart](/how-to/
 - [Communities](communities.md) — create and manage community accounts
 - [Token Reference](/reference/platform-api/tokens) — all token types and scopes
 - [SaaS Integration Quickstart](/how-to/integrations/saas-quickstart)
+
+<!-- AUTO-GEN-START -->
+
+# `lf connectors`
+
+Manage service connectors and tokens: list, view, add, remove, rotate, test.
+
+<!-- AUTO-GEN-END -->
