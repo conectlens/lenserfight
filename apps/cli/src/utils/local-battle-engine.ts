@@ -1,7 +1,7 @@
 // ─── Local Battle Engine ───────────────────────────────────────────────────────
 // GRASP roles:
 //   LocalBattleStore  — Pure Fabrication + Information Expert: owns disk persistence
-//   LocalBattleRunner — Controller: receives "run battle" event, delegates to experts
+//   LocalBattleLenser — Controller: receives "run battle" event, delegates to experts
 
 import { existsSync, mkdirSync } from 'node:fs'
 import { join, resolve } from 'node:path'
@@ -134,7 +134,7 @@ export class LocalBattleStore {
 
 export const localBattleStore = new LocalBattleStore()
 
-// ─── LocalBattleRunner ────────────────────────────────────────────────────────
+// ─── LocalBattleLenser ────────────────────────────────────────────────────────
 
 export interface RunTokenCallback {
   (slot: 'A' | 'B', delta: string): void
@@ -148,7 +148,7 @@ export interface RunResult {
   durationMs: number
 }
 
-export class LocalBattleRunner {
+export class LocalBattleLenser {
   async run(
     state: LocalBattleState,
     onToken: RunTokenCallback,
@@ -228,4 +228,4 @@ export class LocalBattleRunner {
   }
 }
 
-export const localBattleRunner = new LocalBattleRunner()
+export const localBattleLenser = new LocalBattleLenser()
