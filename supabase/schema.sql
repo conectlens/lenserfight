@@ -13827,8 +13827,10 @@ BEGIN
   WHERE  p.user_id = auth.uid();
 
   IF NOT EXISTS (
-    SELECT 1 FROM agents.ai_lensers
-    WHERE  id = p_agent_id AND profile_id = v_lenser_id
+    SELECT 1 FROM agents.ownerships
+    WHERE  ai_lenser_id    = p_agent_id
+    AND    owner_lenser_id = v_lenser_id
+    AND    role IN ('owner', 'co_owner')
   ) THEN
     RAISE EXCEPTION 'subscribe_forbidden: agent not owned by caller';
   END IF;
@@ -13866,9 +13868,11 @@ BEGIN
   SET    active     = false,
          updated_at = now()
   FROM   agents.ai_lensers al
-  WHERE  bs.id       = p_subscription_id
-  AND    al.id       = bs.agent_id
-  AND    al.profile_id = v_lenser_id;
+  JOIN   agents.ownerships  o ON o.ai_lenser_id    = al.id
+                              AND o.owner_lenser_id = v_lenser_id
+                              AND o.role IN ('owner', 'co_owner')
+  WHERE  bs.id    = p_subscription_id
+  AND    al.id    = bs.agent_id;
 
   IF NOT FOUND THEN
     RAISE EXCEPTION 'unsubscribe_not_found_or_forbidden: %', p_subscription_id;
