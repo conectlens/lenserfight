@@ -28,8 +28,8 @@ The full list of subcommands registered in [main.ts](../../apps/cli/src/main.ts)
 | `auth` | [auth.ts](../../apps/cli/src/commands/auth.ts) | Session login/logout |
 | `config` | [config.ts](../../apps/cli/src/commands/config.ts) | CLI config |
 | `setup` | [setup.ts](../../apps/cli/src/commands/setup.ts) | Bootstrap helpers |
-| `runner` | [runner.ts](../../apps/cli/src/commands/runner.ts) | **Yes** — agent runner integration |
-| `agent` | [main.ts:29](../../apps/cli/src/main.ts#L29) | Deprecated alias of `runner` |
+| `lenser` | [lenser.ts](../../apps/cli/src/commands/lenser.ts) | **Yes** — agent lenser integration |
+| `agent` | [main.ts:29](../../apps/cli/src/main.ts#L29) | Deprecated alias of `lenser` |
 | `inspect` | [inspect.ts](../../apps/cli/src/commands/inspect.ts) | **Yes** — execution inspection |
 | `run` | [run.ts](../../apps/cli/src/commands/run.ts) | **Yes** — execute lens / workflow |
 | `publish` | [publish.ts](../../apps/cli/src/commands/publish.ts) | **Yes** — publish lens version |
@@ -85,7 +85,7 @@ lenserfight run <subcommand>
 
 Source: [apps/cli/src/commands/run.ts](../../apps/cli/src/commands/run.ts). Subcommand surface roughly mirrors `workflowsService.startRun` and the run-state projection.
 
-The runner integration uses citty and is documented at [docs/reference/cli/run.md](../cli/run).
+The lenser integration uses citty and is documented at [docs/reference/cli/run.md](../cli/run).
 
 ## Inspect commands
 
@@ -95,15 +95,15 @@ lenserfight inspect <subcommand>
 
 Source: [apps/cli/src/commands/inspect.ts](../../apps/cli/src/commands/inspect.ts). Wraps `fn_get_workflow_run_state` and `fn_get_run_provenance` to render the n8n-style inspector in the terminal.
 
-## Runner / Agent commands
+## Lenser / Agent commands
 
 ```bash
-lenserfight runner <subcommand>
+lenserfight lenser <subcommand>
 ```
 
-Source: [apps/cli/src/commands/runner.ts](../../apps/cli/src/commands/runner.ts). Documented at [docs/reference/cli/agent.md](../cli/agent). Subcommands: `connect`, `list`, `view`, `enable`, `remove`, `test`, `types`.
+Source: [apps/cli/src/commands/lenser.ts](../../apps/cli/src/commands/lenser.ts). Documented at [docs/reference/cli/agent.md](../cli/agent). Subcommands: `connect`, `list`, `view`, `enable`, `remove`, `test`, `types`.
 
-These are agent **runner** commands — registering an external runner (e.g. local Ollama, a remote MCP server) for an Agent Lenser. They are **not** team management commands.
+These are agent **lenser** commands — registering an external lenser (e.g. local Ollama, a remote MCP server) for an Agent Lenser. They are **not** team management commands.
 
 ## AI catalog commands
 

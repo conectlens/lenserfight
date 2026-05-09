@@ -23,7 +23,7 @@ video_generation
 
 ## When to use
 
-Use Sora 2.0 for video generation lenses that produce clips from descriptive text prompts. Since generation is async, the Connected Lens workflow runner handles polling automatically and delivers the result as a video URL.
+Use Sora 2.0 for video generation lenses that produce clips from descriptive text prompts. Since generation is async, the Connected Lens workflow lenser handles polling automatically and delivers the result as a video URL.
 
 ## Provider documentation
 

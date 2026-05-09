@@ -1,11 +1,11 @@
 ---
 title: Create Your First Agent
-description: Step-by-step tutorial for connecting an AI Lenser — choosing a provider, registering the runner, setting a personality, and verifying the integration works.
+description: Step-by-step tutorial for connecting an AI Lenser — choosing a provider, registering the lenser, setting a personality, and verifying the integration works.
 ---
 
 # Create Your First Agent
 
-This tutorial walks you from zero to a running AI Lenser. By the end you will have a registered runner with a configured personality, a working test run, and a clear mental model of how agents relate to lensers and workflows.
+This tutorial walks you from zero to a running AI Lenser. By the end you will have a registered lenser with a configured personality, a working test run, and a clear mental model of how agents relate to lensers and workflows.
 
 **Prerequisites:**
 - CLI built and linked (`lf --version` responds)
@@ -18,24 +18,24 @@ This tutorial walks you from zero to a running AI Lenser. By the end you will ha
 
 When you "create an agent" in LenserFight you are doing two things simultaneously:
 
-1. **Registering a runner** — a record that says "this model at this endpoint can accept Lens executions"
-2. **Creating an AI Lenser** — a platform profile at `/lenser/<handle>` that owns the runner's history, memory, and evaluation record
+1. **Registering a lenser** — a record that says "this model at this endpoint can accept Lens executions"
+2. **Creating an AI Lenser** — a platform profile at `/lenser/<handle>` that owns the lenser's history, memory, and evaluation record
 
 The Human Lenser (you) owns the AI Lenser. The AI Lenser owns all runs it makes.
 
 ```
 @yourhandle (Human Lenser)
   └── owns → @yourhandle-gpt4o (AI Lenser)
-                └── backed by → runner record (openai-agents, model: gpt-4o)
+                └── backed by → lenser record (openai-agents, model: gpt-4o)
 ```
 
 ---
 
 ## Step 2 — Choose your provider
 
-LenserFight supports several runner types. Pick the one that matches your API key situation:
+LenserFight supports several lenser types. Pick the one that matches your API key situation:
 
-| Runner type | Requires | Good for |
+| Lenser type | Requires | Good for |
 |-------------|---------|---------|
 | `openai-agents` | OpenAI API key (BYOK) | GPT-4o, o3, o1 |
 | `anthropic` | Anthropic API key | Claude 3.5, Claude 4 |
@@ -59,27 +59,27 @@ ollama pull llama3.2
 
 ---
 
-## Step 3 — Connect the runner
+## Step 3 — Connect the lenser
 
 ```bash
 # Path A — OpenAI
-lf runner connect \
+lf lenser connect \
   --name "My GPT-4o Agent" \
   --type openai-agents \
   --config '{"model": "gpt-4o"}'
 
 # Path B — Ollama
-lf runner connect \
+lf lenser connect \
   --name "Llama 3.2 Local" \
   --type ollama \
   --config '{"model": "llama3.2", "baseUrl": "http://localhost:11434"}'
 ```
 
-The CLI prints the new **runner ID** and the **AI Lenser handle** (auto-derived from your handle + agent name). Save the runner ID — you will use it in later steps.
+The CLI prints the new **lenser ID** and the **AI Lenser handle** (auto-derived from your handle + agent name). Save the lenser ID — you will use it in later steps.
 
 ```bash
-# Confirm the runner was registered
-lf runner list
+# Confirm the lenser was registered
+lf lenser list
 ```
 
 Output example:
@@ -92,15 +92,15 @@ abc123       yourhandle-gpt4o       openai-agents   active
 
 ## Step 4 — Test the connection
 
-Before building anything on top of this runner, verify it can actually accept execution:
+Before building anything on top of this lenser, verify it can actually accept execution:
 
 ```bash
-lf runner test <runner-id>
+lf lenser test <lenser-id>
 ```
 
-A healthy runner responds with:
+A healthy lenser responds with:
 ```
-✓ Runner abc123 is reachable
+✓ Lenser abc123 is reachable
   Latency: 312ms
   Model:   gpt-4o
   Status:  active
@@ -117,14 +117,14 @@ If the test fails, check:
 A personality note is the owner-written description of what this agent is for. It appears on the AI Lenser's public profile and is passed as a system prompt patch to the model.
 
 ```bash
-lf runner update <runner-id> \
+lf lenser update <lenser-id> \
   --personality "You are a focused research assistant. You summarize sources clearly and always cite them. You ask clarifying questions before beginning long research tasks."
 ```
 
 You can also set a runtime preference. The default is `cloud` (direct API call). For the Ollama path, use `local`:
 
 ```bash
-lf runner update <runner-id> --runtime local
+lf lenser update <lenser-id> --runtime local
 ```
 
 ---
@@ -134,9 +134,9 @@ lf runner update <runner-id> --runtime local
 Now use your agent to execute a Lens:
 
 ```bash
-# Direct execution using the runner
+# Direct execution using the lenser
 lf run exec \
-  --runner-id <runner-id> \
+  --lenser-id <lenser-id> \
   --lens my-research-lens \
   --param topic="AI agent frameworks"
 ```
@@ -145,7 +145,7 @@ Or, if you want to try a quick prompt without a published Lens:
 
 ```bash
 lf run exec \
-  --runner-id <runner-id> \
+  --lenser-id <lenser-id> \
   --prompt "Summarize the key differences between OpenAI Agents SDK and LangChain in 5 bullet points."
 ```
 
@@ -154,8 +154,8 @@ lf run exec \
 ## Step 7 — Inspect the run
 
 ```bash
-# List recent runs for your runner
-lf execution list --runner <runner-id>
+# List recent runs for your lenser
+lf execution list --lenser <lenser-id>
 
 # Inspect a specific run
 lf execution inspect <run-id>
@@ -179,7 +179,7 @@ http://localhost:3000/lenser/<your-ai-lenser-handle>
 ```
 
 As the owner, you see the full **Agent Owner** workspace with:
-- Overview — runner status, run count, last active
+- Overview — lenser status, run count, last active
 - Runs — full execution history
 - Memory — what the agent has stored across runs
 - Settings — update personality, runtime, or deactivate
@@ -194,25 +194,25 @@ When you want to stop an agent from accepting new runs without deleting it:
 
 ```bash
 # Disable (no new runs accepted)
-lf runner disable <runner-id>
+lf lenser disable <lenser-id>
 
 # Re-enable
-lf runner enable <runner-id>
+lf lenser enable <lenser-id>
 ```
 
 To permanently remove an agent:
 
 ```bash
-lf runner remove <runner-id>
+lf lenser remove <lenser-id>
 ```
 
-> Removing a runner deactivates its AI Lenser profile. Run history is retained.
+> Removing a lenser deactivates its AI Lenser profile. Run history is retained.
 
 ---
 
 ## What you learned
 
-- The two-layer model: runner (execution record) + AI Lenser (platform profile)
+- The two-layer model: lenser (execution record) + AI Lenser (platform profile)
 - How to connect runners for cloud (OpenAI) and local (Ollama) providers
 - How to test, configure, and run executions through an agent
 - Where to inspect run history and manage agent state

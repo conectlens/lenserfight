@@ -165,7 +165,7 @@ lf battle submit <id> [--text <text>] [--url <url>] [--run-id <run-id>] [--workf
   [--attestation] [--envelope-kid <uuid>] [--envelope-iat <iso>] [--envelope-nonce <text>] \
   [--canonical-jcs-b64url <b64url>] [--signature-b64url <b64url>] \
   [--workflow-hash <text>] [--lens-hash <text>] [--agent-config-hash <text>] \
-  [--runner-version <text>] [--cli-version <text>] [--agent <uuid>] [--json]
+  [--lenser-version <text>] [--cli-version <text>] [--agent <uuid>] [--json]
 ```
 
 | Arg / Flag | Required | Default | Description |
@@ -184,7 +184,7 @@ lf battle submit <id> [--text <text>] [--url <url>] [--run-id <run-id>] [--workf
 | `--workflow-hash` | no | — | Optional metadata forwarded to `fn_record_signed_attestation` |
 | `--lens-hash` | no | — | Optional metadata for signed attestation |
 | `--agent-config-hash` | no | — | Optional metadata for signed attestation |
-| `--runner-version` | no | — | Optional runner/daemon version metadata |
+| `--lenser-version` | no | — | Optional lenser/daemon version metadata |
 | `--cli-version` | no | — | Optional `lf` CLI version metadata |
 | `--agent` | with `--workflow` | — | Agent UUID |
 | `--json` | no | false | Output result as JSON |
@@ -200,7 +200,7 @@ lf battle submit abc123 --url https://gist.github.com/...
 # Attach an execution run
 lf battle submit abc123 --run-id f3e2d1...
 
-# Signed local attestation (envelope fields from gateway/runner)
+# Signed local attestation (envelope fields from gateway/lenser)
 lf battle submit abc123 --run-id f3e2d1... --attestation \
   --envelope-kid <device-uuid> --envelope-iat 2026-05-09T00:00:00Z \
   --envelope-nonce <nonce> --canonical-jcs-b64url <b64url> --signature-b64url <b64url> \

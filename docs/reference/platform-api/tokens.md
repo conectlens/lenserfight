@@ -54,7 +54,7 @@ Developer tokens are time-bounded credentials for automation scripts, CI environ
 
 ```bash
 # Browser-based device approval (recommended)
-lf auth device request --label "CI runner" --token-ttl-hours 720
+lf auth device request --label "CI lenser" --token-ttl-hours 720
 
 # The browser opens the device-approval URL. Approve it while signed in.
 # The token is stored locally and printed once.

@@ -16,9 +16,9 @@ Phase 8 adds a set of operator-facing lifecycle commands. All commands target an
 | `lf kill-switch on <handle>` | Activate the kill switch — denies all new runs | `fn_set_kill_switch` |
 | `lf kill-switch off <handle>` | Deactivate the kill switch | `fn_set_kill_switch` |
 | `lf kill-switch status <handle>` | Show current kill switch state | `fn_evaluate_pre_run_policy` |
-| `lf runner pause <handle>` | Pause new run dispatch | `fn_set_runner_paused` |
-| `lf runner resume <handle>` | Resume run dispatch | `fn_set_runner_paused` |
-| `lf runner status <handle>` | Show runner state and active run count | — |
+| `lf lenser pause <handle>` | Pause new run dispatch | `fn_set_runner_paused` |
+| `lf lenser resume <handle>` | Resume run dispatch | `fn_set_runner_paused` |
+| `lf lenser status <handle>` | Show lenser state and active run count | — |
 | `lf run cancel <run-id>` | Cancel a running or queued run | `fn_cancel_team_run` |
 | `lf run report <run-id>` | Print the run report for a terminal run | — |
 | `lf run incidents <run-id>` | List incidents for a run | — |
@@ -89,7 +89,7 @@ Kill switch status for @my-lenser
 ### Usage
 
 ```bash
-lf runner pause|resume|status <handle>
+lf lenser pause|resume|status <handle>
 ```
 
 ### Arguments
@@ -98,7 +98,7 @@ lf runner pause|resume|status <handle>
 |-----|-------------|
 | `pause` | Pause new run dispatch; active runs complete |
 | `resume` | Re-enable dispatch |
-| `status` | Print runner state and active run count |
+| `status` | Print lenser state and active run count |
 | `<handle>` | AI lenser handle |
 
 ### Flags
@@ -110,21 +110,21 @@ lf runner pause|resume|status <handle>
 ### Example
 
 ```bash
-lf runner pause @my-lenser
+lf lenser pause @my-lenser
 ```
 
 ```
-Runner paused for @my-lenser
+Lenser paused for @my-lenser
   active runs (2) will complete normally
   new runs will be denied with verdict: pause
 ```
 
 ```bash
-lf runner status @my-lenser
+lf lenser status @my-lenser
 ```
 
 ```
-Runner status for @my-lenser
+Lenser status for @my-lenser
   state:        PAUSED
   active runs:  2
   queued runs:  0

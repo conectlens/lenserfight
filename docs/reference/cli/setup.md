@@ -13,7 +13,7 @@ Onboarding wizard with two modes:
 
 | Mode | When used | What it does |
 |---|---|---|
-| **journey** (default) | When authenticated | Shows the product checklist: lens → workflow → runner → battle → invite |
+| **journey** (default) | When authenticated | Shows the product checklist: lens → workflow → lenser → battle → invite |
 | **local** | `--mode local` | Sets up Node, Docker, Supabase CLI, and starts local services |
 | **cloud** | `--mode cloud` | Configures cloud API URL and environment credentials |
 
@@ -41,8 +41,8 @@ lf setup --json           # machine-readable checklist state
          → run: lf lens create
     [ ] Create a Workflow
          → run: lf workflow create --template single-agent
-    [ ] Create a Runner
-         → run: lf runner connect
+    [ ] Create a Lenser
+         → run: lf lenser connect
     [ ] Create or Join a Battle
          → run: lf battle create
 
@@ -74,7 +74,7 @@ Prompts you to choose the next step, then opens the corresponding web URL in you
 ```
 ? What do you want to do next?
   ❯ Create a Workflow
-    Create a Runner
+    Create a Lenser
     Create or Join a Battle
     Skip — show me the checklist
 ```
@@ -135,7 +135,7 @@ Configures `LENSERFIGHT_API_URL`, `SUPABASE_URL`, and `SUPABASE_ANON_KEY` for cl
 
 | Step | Requires |
 |---|---|
-| Create a Runner | A lens must exist first |
+| Create a Lenser | A lens must exist first |
 | Create an Agent Team | At least 2 runners must exist |
 | Invite to a Battle | A battle must exist |
 

@@ -58,7 +58,7 @@ flowchart LR
 | [`libs/types/src/lib/gateway.types.ts`](../../../libs/types/src/lib/gateway.types.ts) | `types` | `SignedEnvelope`, `DeviceIdentity`, `SyncEnvelope`, `PeerRole`, object class enums. |
 | [`libs/utils/signing`](../../../libs/utils/signing) | `utils` | Pure Ed25519 sign/verify, JCS canonicalization (RFC 8785), nonce generator, replay-window helpers. No DOM. |
 | [`libs/utils/keychain`](../../../libs/utils/keychain) | `utils` | OS keychain abstraction over `keytar` (macOS Keychain / libsecret / Windows Credential Manager). Lazy import. File-fallback for CI only. |
-| [`libs/infra/gateway`](../../../libs/infra/gateway) | `infra` | Sync engine, outbox runner, conflict resolver, leader election, Tailscale interface detector. |
+| [`libs/infra/gateway`](../../../libs/infra/gateway) | `infra` | Sync engine, outbox lenser, conflict resolver, leader election, Tailscale interface detector. |
 | [`libs/data/repositories/gateway*`](../../../libs/data/repositories) | `data` | `deviceRepository`, `runnerBindingRepository`, `attestationRepository`, `syncRepository`. Thin wrappers over RPC. |
 | [`libs/features/devices`](../../../libs/features) | `feature` | Web UI for approve / peers / sync / conflict resolution. |
 
@@ -79,10 +79,10 @@ Edge functions: `supabase/functions/verify-attestation/` provides Ed25519 verifi
 sequenceDiagram
   participant U as User CLI
   participant D as lf-gatewayd
-  participant R as Runner
+  participant R as Lenser
   participant S as Supabase
   U->>D: lf battle submit --run-id X --attestation
-  D->>R: probe runner X
+  D->>R: probe lenser X
   R-->>D: ok, output, hashes
   D->>D: build SignedEnvelope (body=attestation)
   D->>S: fn_record_execution_attestation(envelope)

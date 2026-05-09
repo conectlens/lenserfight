@@ -22,7 +22,7 @@ This RFC promotes the existing `lf gateway` command into a documented, layered p
 - **trusted devices** reachable over a private network (typically Tailscale / WireGuard),
 - **LenserFight Cloud** (Supabase + Edge Functions + the platform-api).
 
-The LTG preserves the current **provider/model routing** behavior of `lf gateway models` (see [`apps/cli/src/commands/gateway.ts`](../../apps/cli/src/commands/gateway.ts)) and the current **device + runner trust** RPCs introduced in:
+The LTG preserves the current **provider/model routing** behavior of `lf gateway models` (see [`apps/cli/src/commands/gateway.ts`](../../apps/cli/src/commands/gateway.ts)) and the current **device + lenser trust** RPCs introduced in:
 
 - [`supabase/migrations/20270511200000_devices_schema.sql`](../../supabase/migrations/20270511200000_devices_schema.sql)
 - [`supabase/migrations/20270511300000_runner_device_bindings.sql`](../../supabase/migrations/20270511300000_runner_device_bindings.sql)
@@ -40,7 +40,7 @@ It adds three new things on top, and nothing else:
 Today the Gateway is a stateless CLI:
 
 - Provider/model routing is a presentation-only concern in [`gateway.ts`](../../apps/cli/src/commands/gateway.ts) (`classifyRoute`).
-- Device approval and runner binding are short bursts of REST calls against `devices.fn_device_*` and `execution.fn_runner_*`.
+- Device approval and lenser binding are short bursts of REST calls against `devices.fn_device_*` and `execution.fn_runner_*`.
 - Battle attestation booleans (`signed`, `gateway_verified`, `device_trusted`, `policy_passed`) are **self-reported by the client** in [`fn_compute_submission_trust`](../../supabase/migrations/20270511400000_execution_attestations_and_trust.sql).
 - There is no enforced separation between "transport" and "identity"; private-network trust (Tailscale, mDNS) does not exist as a first-class concept.
 - Sync between devices is implicit; the only durable client-side state is `~/.lenserfight/` and project-local `.lenserfight/` (see [`apps/cli/src/config/project-config.ts`](../../apps/cli/src/config/project-config.ts) and [`apps/cli/src/utils/automation-objects.ts`](../../apps/cli/src/utils/automation-objects.ts)).
@@ -79,7 +79,7 @@ We solve this without breaking the current CLI, by layering crypto, signed envel
 | **LTG** | LenserFight Trust Gateway. The named system this RFC defines. |
 | **Lenser** | A human account in `lensers.profiles`. |
 | **Device** | A row in `devices.registered_devices`. Has its own Ed25519 keypair once approved. |
-| **Runner** | A row in `execution.runners` (TBD migration); bound to a device via `execution.runner_device_bindings`. |
+| **Lenser** | A row in `execution.runners` (TBD migration); bound to a device via `execution.runner_device_bindings`. |
 | **Daemon** | The `apps/gateway/` long-running process. One instance per device. |
 | **Envelope** | A signed JSON object with `v, alg, kid, iat, nonce, body, sig`. |
 | **Attestation** | A `execution.attestations` row plus its corresponding signed envelope. |

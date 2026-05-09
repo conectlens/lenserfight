@@ -1,15 +1,15 @@
 ---
-title: lf runner
+title: lf lenser
 description: "Manage runners: connect, list, view, enable, remove, test, types, pause, resume, status."
 ---
 
 <!-- AUTO-GEN-START -->
 
-# `lf runner`
+# `lf lenser`
 
 Manage runners: connect, list, view, enable, remove, test, types, pause, resume, status.
 
-## `lf runner status`
+## `lf lenser status`
 
 Show workspace settings and active run count for an agent.
 
