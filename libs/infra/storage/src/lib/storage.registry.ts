@@ -11,7 +11,7 @@ const ADAPTERS: Record<StorageAdapterId, () => StorageAdapterPort> = {
   },
 }
 
-// Default to local adapter when VITE_DATA_SOURCE=file so no Supabase is needed.
+// Default to local adapter when DATA_SOURCE=file so no Supabase is needed.
 let defaultAdapterId: StorageAdapterId = isFileDataBackend ? 'local' : 'supabase'
 
 export function getStorageAdapter(id?: StorageAdapterId): StorageAdapterPort {

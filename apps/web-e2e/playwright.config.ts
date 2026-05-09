@@ -23,9 +23,9 @@ export default defineConfig({
       cwd: workspaceRoot,
       timeout: 120_000,
       env: {
-        VITE_PRODUCT_EDITION: 'community',
-        VITE_FEATURE_PUBLIC_BATTLES: 'false',
-        VITE_FEATURE_WAITING_LIST: 'false',
+        PRODUCT_EDITION: 'community',
+        FEATURE_PUBLIC_BATTLES: 'false',
+        FEATURE_WAITING_LIST: 'false',
       },
     },
   projects: [

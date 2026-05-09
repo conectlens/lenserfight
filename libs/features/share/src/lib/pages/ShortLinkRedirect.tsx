@@ -18,7 +18,7 @@ export const ShortLinkRedirect: React.FC = () => {
         const result = await shareService.resolveAndLog(shortId)
         if (result) {
           const safeTarget = resolveSafeRedirectTarget(result.url, {
-            allowedExternalHosts: (import.meta.env.VITE_ALLOWED_EXTERNAL_REDIRECT_HOSTS ?? '')
+            allowedExternalHosts: (import.meta.env.ALLOWED_EXTERNAL_REDIRECT_HOSTS ?? '')
               .split(',')
               .map((host) => host.trim())
               .filter(Boolean),

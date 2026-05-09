@@ -5,7 +5,7 @@ type RecordWithId = { id: string }
 /**
  * Generic IndexedDB-backed store for file-mode repositories.
  * Each instance owns one object store in its own IDB database.
- * Used by File*Repository implementations when VITE_DATA_SOURCE=file.
+ * Used by File*Repository implementations when DATA_SOURCE=file.
  */
 export class FileDataStore<T extends RecordWithId> {
   private dbPromise: Promise<IDBPDatabase> | null = null

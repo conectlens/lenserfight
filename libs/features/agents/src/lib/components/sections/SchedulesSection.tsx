@@ -80,7 +80,7 @@ export const SchedulesSection: React.FC = () => {
               <p className="mt-1 text-sm text-amber-800 dark:text-amber-300">
                 CRON-driven workflow dispatch requires a full Supabase instance and the{' '}
                 <code className="rounded bg-amber-100 px-1 text-xs dark:bg-amber-900">
-                  VITE_FEATURE_CRON_SCHEDULING=true
+                  FEATURE_CRON_SCHEDULING=true
                 </code>{' '}
                 environment variable. See the{' '}
                 <a

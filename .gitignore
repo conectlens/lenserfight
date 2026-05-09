@@ -25,11 +25,15 @@ dist-ssr
 *.sln
 *.sw?
 
-# Environment variables
+# Environment variables — root and per-app (actual values; examples are committed)
 .env
 .env.local
 .env.production
 .env.development
+apps/*/.env
+apps/*/.env.local
+apps/*/.env.production
+apps/*/.env.development
 
 # LenserFight CLI — machine-specific, never commit
 .lenserfight.json

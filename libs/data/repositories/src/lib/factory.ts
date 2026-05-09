@@ -1,7 +1,7 @@
 /**
  * Repository factory — the single switching point between Supabase and file-storage backends.
- * When VITE_DATA_SOURCE=file, returns IndexedDB-backed file implementations (or stubs).
- * When VITE_DATA_SOURCE=supabase (default), returns the existing Supabase implementations.
+ * When DATA_SOURCE=file, returns IndexedDB-backed file implementations (or stubs).
+ * When DATA_SOURCE=supabase (default), returns the existing Supabase implementations.
  * No caller above the service layer is aware of this switch.
  */
 import { isFileDataBackend } from '@lenserfight/utils/env'
