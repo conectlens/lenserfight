@@ -61,7 +61,6 @@ export function buildHumanSidebarSections(
         { id: 'ai-models', label: 'AI Models', path: '/ai/catalog/models', icon: <Cpu size={20} /> },
         { id: 'ray-cloud', label: 'Ray Cloud', path: '/ray', icon: <Cloud size={20} /> },
         { id: 'templates', label: 'Templates', externalHref: `${DOCS_BASE_URL}/reference/automation/markdown-objects#canonical-formats`, icon: <LayoutTemplate size={20} /> },
-        { id: 'getting-started', label: 'Getting Started', externalHref: `${DOCS_BASE_URL}/tutorials/getting-started/overview`, icon: <BookOpen size={20} /> },
         { id: 'docs-home', label: 'Docs', externalHref: DOCS_BASE_URL, icon: <Library size={20} /> },
         { id: 'arena-home', label: 'Arena', externalHref: ARENA_BASE_URL, icon: <ExternalLink size={20} /> },
       ],
