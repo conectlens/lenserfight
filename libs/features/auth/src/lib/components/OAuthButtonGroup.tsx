@@ -4,7 +4,7 @@ import { resolveProductEdition, isLocal as isDevMode } from '@lenserfight/utils/
 
 interface OAuthButtonGroupProps {
   onChainabit: () => void
-  onOAuth: (provider: 'google' | 'github' | 'azure') => void
+  onOAuth: (provider: 'google' | 'github') => void
   isLoading: boolean
   disabled: boolean
 }
@@ -60,7 +60,7 @@ export const OAuthButtonGroup: React.FC<OAuthButtonGroupProps> = ({
       )}
 
       {showOthers && (
-        <div className="grid grid-cols-3 gap-3">
+        <div className="grid grid-cols-2 gap-3">
           <Button
             type="button"
             onClick={() => onOAuth('google')}
@@ -86,21 +86,6 @@ export const OAuthButtonGroup: React.FC<OAuthButtonGroupProps> = ({
                 d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
                 fill="#EA4335"
               />
-            </svg>
-          </Button>
-          <Button
-            type="button"
-            onClick={() => onOAuth('azure')}
-            disabled={disabled || isLoading}
-            variant="secondary"
-            className="flex items-center justify-center py-2.5 border border-gray-200 dark:border-gray-700 rounded-xl bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
-            title="Sign in with Microsoft"
-          >
-            <svg className="w-5 h-5" viewBox="0 0 21 21">
-              <path fill="#f25022" d="M1 1h9v9H1z" />
-              <path fill="#00a4ef" d="M1 11h9v9H1z" />
-              <path fill="#7fba00" d="M11 1h9v9h-9z" />
-              <path fill="#ffb900" d="M11 11h9v9h-9z" />
             </svg>
           </Button>
           <Button
