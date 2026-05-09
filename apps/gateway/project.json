@@ -45,6 +45,7 @@
         "outputPath": "dist/apps/gateway",
         "format": ["cjs"],
         "bundle": true,
+        "deleteOutputPath": false,
         "main": "apps/gateway/src/init.ts",
         "tsConfig": "apps/gateway/tsconfig.app.json",
         "esbuildOptions": {
@@ -68,7 +69,11 @@
       }
     },
     "test": {
-      "options": { "passWithNoTests": true }
+      "executor": "@nx/vite:test",
+      "outputs": ["{options.reportsDirectory}"],
+      "options": {
+        "reportsDirectory": "../../coverage/apps/gateway"
+      }
     }
   }
 }

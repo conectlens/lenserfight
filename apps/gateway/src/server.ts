@@ -14,6 +14,12 @@ export interface StartServerOptions {
   daemonVersion: string
   onPeerLookup?: () => Promise<unknown[]>
   /**
+   * Primary bind host (from `config.bind`). Used so `/peers` stays on the
+   * primary listener only; extra binds (e.g. Tailscale) return an empty list.
+   * Transport is not identity — see Trust Gateway security review.
+   */
+  primaryBind: string
+  /**
    * Additional bind addresses (typically a single Tailscale CGNAT address).
    * The loopback bind from `config.bind` is always created. Each extra bind
    * gets its own `http.Server` so we can fail one without taking the rest
@@ -30,6 +36,10 @@ export interface StartServerOptions {
  * The loopback bind never resolves to 0.0.0.0; preconditions enforce that.
  * Extra binds (Tailscale) require explicit consent and must be plain CGNAT
  * IPv4 addresses — the daemon refuses public binds even when given one.
+ *
+ * `/peers` is answered only on the primary bind; on extra binds it returns an
+ * empty list so mesh listeners do not expose discovery data to whoever can
+ * reach that interface.
  */
 export async function startServer(
   config: GatewayConfig,
@@ -40,7 +50,10 @@ export async function startServer(
   const primary = http.createServer(handler)
   await listen(primary, config.port, config.bind)
 
-  const url = `http://${config.bind}:${config.port}`
+  const primaryAddress = primary.address()
+  const primaryPort =
+    typeof primaryAddress === 'object' && primaryAddress ? primaryAddress.port : config.port
+  const url = `http://${config.bind}:${primaryPort}`
   const extraServers: http.Server[] = []
   const extraUrls: string[] = []
 
@@ -50,9 +63,9 @@ export async function startServer(
     }
     const extra = http.createServer(handler)
     try {
-      await listen(extra, config.port, bind)
+      await listen(extra, primaryPort, bind)
       extraServers.push(extra)
-      extraUrls.push(`http://${bind}:${config.port}`)
+      extraUrls.push(`http://${bind}:${primaryPort}`)
     } catch (err) {
       try {
         await new Promise<void>((res) => primary.close(() => res()))
@@ -95,14 +108,32 @@ function makeHandler(options: StartServerOptions): http.RequestListener {
       return
     }
     if (req.url === '/peers') {
-      const peers = (await options.onPeerLookup?.()) ?? []
+      const local = normalizeLocalAddress(req.socket.localAddress)
+      const primary = normalizeLocalAddress(options.primaryBind)
+      const onExtraBind =
+        local != null &&
+        primary != null &&
+        local !== primary &&
+        (options.extraBinds ?? []).some((b) => normalizeLocalAddress(b) === local)
+      const peers = onExtraBind ? [] : (await options.onPeerLookup?.()) ?? []
       res.statusCode = 200
-      res.end(JSON.stringify({ peers }))
+      res.end(
+        JSON.stringify({
+          peers,
+          peer_discovery: onExtraBind ? 'primary_bind_only' : 'primary',
+        })
+      )
       return
     }
     res.statusCode = 404
     res.end(JSON.stringify({ error: 'not_found' }))
   }
+}
+
+function normalizeLocalAddress(addr: string | undefined): string | null {
+  if (!addr) return null
+  if (addr.startsWith('::ffff:')) return addr.slice('::ffff:'.length)
+  return addr
 }
 
 function listen(server: http.Server, port: number, host: string): Promise<void> {

@@ -1,6 +1,7 @@
 import { resolveGatewayConfig } from './config'
 import { scheduleLoop } from './loops'
 import { evaluatePreconditions, preconditionsAllPass } from './preconditions'
+import { createGatewayPreconditionProbes } from './probes'
 import { startServer } from './server'
 import { resolveTailscaleConsent } from './tailscale'
 
@@ -25,17 +26,7 @@ async function main(): Promise<void> {
 
   const preconditions = await evaluatePreconditions(
     { config },
-    {
-      // Stubs: in production these reach Supabase + the keychain. Phase D-2
-      // wires the real probes once the device identity bootstrap (init.ts)
-      // has run at least once.
-      checkClockSkew: async () => ({ ok: true, skewSeconds: 0 }),
-      checkKeychainPresent: async () => true,
-      checkIdentityPresent: async () => false,
-      checkSessionPresent: async () => Boolean(process.env['LENSERFIGHT_API_KEY']),
-      checkLenserActive: async () => true,
-      checkKillSwitch: async () => false,
-    }
+    createGatewayPreconditionProbes(config)
   )
 
   printPreconditions(preconditions)
@@ -60,6 +51,7 @@ async function main(): Promise<void> {
 
   const server = await startServer(config, {
     daemonVersion: config.daemonVersion,
+    primaryBind: config.bind,
     extraBinds,
   })
   process.stdout.write(`[lf-gatewayd] listening on ${server.url}\n`)
@@ -67,7 +59,10 @@ async function main(): Promise<void> {
     process.stdout.write(`[lf-gatewayd] also listening on ${url} (tailscale)\n`)
   }
 
-  // Loops — stubs in Phase D, wired through repos in subsequent phases.
+  // Release candidate behavior: loops are scheduled but intentionally no-op
+  // until the daemon has a registered cloud device_id and signing context.
+  // This keeps startup/shutdown stable while the sync and heartbeat writes
+  // remain owned by explicit CLI/RPC paths for the OSS preview.
   const heartbeat = scheduleLoop('heartbeat', config.heartbeatIntervalMs, async () => {
     // POST devices.fn_device_heartbeat once identity is loaded.
   })
