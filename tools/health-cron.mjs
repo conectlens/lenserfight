@@ -24,6 +24,7 @@ const REQUIRED_CRONS = [
   'series-rematch-dispatcher',
   'webhook-outbox-dispatcher',
   'expire-stale-approvals',
+  'async-run-poller',          // AM — promoted from OPTIONAL once migration applied
 ]
 
 // Pre-registered crons that AK–AT will land in subsequent migrations.
@@ -31,9 +32,8 @@ const REQUIRED_CRONS = [
 // raised. This lets us monitor each cron from the moment its migration
 // merges, without breaking the gate on rollouts that have not reached it yet.
 const OPTIONAL_CRONS = [
-  'async-run-poller',          // AM
-  'timeout-stale-runs',        // AM
-  'team-run-claim',            // AL
+  'timeout-stale-runs',        // AM (callable via async-run-poller's body)
+  'team-run-claim',            // AL — workers prefer NOTIFY over cron
   'byok-key-expiry',           // AR
   'media-expiry',              // AT
 ]
