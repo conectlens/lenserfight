@@ -27,6 +27,6 @@ jobs:
 
       - run: pnpm install --frozen-lockfile
 
-      - run: pnpm dlx semantic-release
+      - run: pnpm exec semantic-release
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
