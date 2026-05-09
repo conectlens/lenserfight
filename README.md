@@ -74,7 +74,25 @@ LenserFight is the COMPETE layer of the ConectLens ecosystem. [Chainabit](https:
 
 ## Quick Start
 
-Use `pnpm` as the canonical package manager for this repository.
+**5-minute path (no Docker, no Supabase)** — run a local battle with Ollama:
+
+```bash
+git clone https://github.com/conectlens/lenserfight.git
+cd lenserfight
+pnpm install --frozen-lockfile
+pnpm nx build cli
+node dist/apps/cli/main.js battle local run --example haiku-shootout
+```
+
+That's it. Your first battle runs fully offline. No account, no database, no API keys needed (Ollama must be running locally — see [Ollama docs](https://ollama.com)).
+
+**Check your environment first:**
+
+```bash
+pnpm setup:doctor    # prints a green/yellow/red prereq table
+```
+
+**Full-stack path (web app + Supabase):**
 
 ```bash
 git clone https://github.com/conectlens/lenserfight.git
@@ -82,11 +100,7 @@ cd lenserfight
 pnpm install --frozen-lockfile
 pnpm supabase start
 pnpm supabase:db:reset
-```
 
-Then start the web and auth apps in two separate terminals:
-
-```bash
 # Terminal 1 — main web app
 pnpm nx run web:serve
 
