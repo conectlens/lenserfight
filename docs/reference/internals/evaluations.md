@@ -14,8 +14,8 @@ Evaluations make every agent-facing primitive measurable. An evaluation suite de
 | **Evaluation** | A named suite targeting a `lens`, `workflow`, `agent`, or `team`. Carries `scoring_rules` (JSONB) and a set of cases. |
 | **Evaluation case** | A single input/expected pair with a `weight` and optional `tags`. Reusable across runs. |
 | **Rubric** | A versioned list of scoring criteria: `{name, weight, threshold, operator}`. Rubrics are immutable — saving a new version bumps `version` and marks the prior one `is_current=false`. |
-| **Evaluation run** | One execution of the suite. Scored by the runner against the active rubric. Records `status`, aggregate `score`, `started_at`, `completed_at`, and which `rubric_id` was active. |
-| **Case result** | Per-case outcome: `score`, `output`, `error`, `passed`. `passed` is set by the runner when a rubric's threshold/operator is evaluated. |
+| **Evaluation run** | One execution of the suite. Scored by the lenser against the active rubric. Records `status`, aggregate `score`, `started_at`, `completed_at`, and which `rubric_id` was active. |
+| **Case result** | Per-case outcome: `score`, `output`, `error`, `passed`. `passed` is set by the lenser when a rubric's threshold/operator is evaluated. |
 | **Baseline** | A single "golden run" snapshot per evaluation. Shows a dashed reference line on the regression chart; completed runs display a delta vs. baseline. |
 
 ## Creating an evaluation
@@ -37,13 +37,13 @@ Each criterion row has:
 - **Threshold** — numeric score boundary (0–1)
 - **Weight** — relative importance when computing the aggregate
 
-Click **Save as new version** to publish. The runner uses the rubric that was `is_current` at the moment the run was queued.
+Click **Save as new version** to publish. The lenser uses the rubric that was `is_current` at the moment the run was queued.
 
 ## Running evaluations
 
 ### Manual trigger
 
-Click **Run** on any evaluation card. This queues an `evaluation_run` with `status='queued'`. The runner backend picks it up and populates case results. The UI polls every 5 seconds and updates when results arrive.
+Click **Run** on any evaluation card. This queues an `evaluation_run` with `status='queued'`. The lenser backend picks it up and populates case results. The UI polls every 5 seconds and updates when results arrive.
 
 ### Post-workflow trigger
 
@@ -80,7 +80,7 @@ On any completed run row, click **Failures** to open the **Failed case drawer**.
 - Full **input** JSON (collapsible)
 - Full **expected** JSON (collapsible)
 - Actual **output** JSON (collapsible)
-- **Error** text if the runner threw
+- **Error** text if the lenser threw
 
 Use this to diagnose which specific cases are failing and why before editing the prompt or expected output.
 
@@ -143,7 +143,7 @@ Use this to diagnose which specific cases are failing and why before editing the
 | `score` | numeric | Per-case score |
 | `output` | jsonb | Actual model output |
 | `error` | text | Error message if case failed to execute |
-| `passed` | boolean | Set by runner based on rubric threshold/operator |
+| `passed` | boolean | Set by lenser based on rubric threshold/operator |
 
 ## RPC reference
 

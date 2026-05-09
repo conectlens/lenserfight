@@ -95,5 +95,5 @@ These rules must hold across every surface (route, RPC, CLI, UI):
 | Evaluations     | Production | Rubric builder (versioned), regression history chart, baseline tracking, post-run trigger, evaluator assignee role — see [evaluations.md](./evaluations.md) |
 | Memory Per Agent | Production | Per-profile entry store, read/write audit trail, dispatch injection, write-on-success gate, redaction — see [memory-per-agent.md](./memory-per-agent.md) |
 | Tools           | Production | Egress sandboxing (`none/read_only/write`), approval gate, invocation runtime traces, operator approval queue — see [tools.md](./tools.md) |
-| CLI             | Partial    | `lens`, `lenses`, `lenser`, `run`, `runner`, `models`, `providers`, `gateway`, `inspect`, `publish`, `memory`, `tool` (expanded) exist; `team`, `schedule`, `approval` proposed |
+| CLI             | Partial    | `lens`, `lenses`, `lenser`, `run`, `lenser`, `models`, `providers`, `gateway`, `inspect`, `publish`, `memory`, `tool` (expanded) exist; `team`, `schedule`, `approval` proposed |
 | Frontend        | Partial    | `AgentControlRoomPage` exists; human-overview tabs and public-agent overview not built                                                             |

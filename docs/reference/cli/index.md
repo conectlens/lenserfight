@@ -138,10 +138,10 @@ See [Community Commands](community.md).
 
 | Command | Description |
 |---------|-------------|
-| `lf runner connect` | Register a runner record |
-| `lf runner list/view/enable/remove` | Manage runner records |
-| `lf runner test` | Probe a registered runner |
-| `lf runner types` | List preview runner types |
+| `lf lenser connect` | Register a lenser record |
+| `lf lenser list/view/enable/remove` | Manage lenser records |
+| `lf lenser test` | Probe a registered lenser |
+| `lf lenser types` | List preview lenser types |
 
 `lf agent` remains a deprecated alias for one release cycle.
 

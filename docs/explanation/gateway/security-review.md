@@ -29,7 +29,7 @@ No critical or high findings remain open in the release candidate. Medium findin
 ## RLS and Grants
 
 - Gateway tables remain RLS-first.
-- Device, runner, sync, attestation, trust, and audit mutations go through `SECURITY DEFINER` functions.
+- Device, lenser, sync, attestation, trust, and audit mutations go through `SECURITY DEFINER` functions.
 - Direct client writes are not granted for `execution.attestation_verifications` or `audit.hash_chains`.
 - `xp.apply` remains service-role-only and is invoked through definer wrappers/triggers.
 

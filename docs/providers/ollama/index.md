@@ -12,7 +12,7 @@ Ollama enables running open-weight models entirely on your own machine. No data 
 
 ## How it works
 
-LenserFight's local runner connects to an Ollama instance running on your machine. The execution path is:
+LenserFight's local lenser connects to an Ollama instance running on your machine. The execution path is:
 
 1. You start `ollama serve` locally (default port `11434`).
 2. LenserFight CLI detects the local endpoint and routes lens executions there instead of the cloud.
