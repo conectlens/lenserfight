@@ -13,6 +13,41 @@ lf battle <subcommand> [options]
 
 ---
 
+## Running from source (monorepo contributors)
+
+The `lf` binary lives in [`apps/cli`](../../../../apps/cli) and is **not** published to npm during development. If you cloned the repo and tried to run `lf battle`, you may see:
+
+```
+bash: /home/<you>/.npm-global/bin/lf: Permission denied
+```
+
+This happens because the build output (`dist/apps/cli/main.js`) doesn't yet have the executable bit set. Fix it with the Nx targets:
+
+```bash
+# 1. Build the CLI
+pnpm nx run cli:build
+
+# 2. Set the executable bit on the output
+pnpm nx run cli:chmod
+
+# 3. Link it globally so `lf` resolves in your shell
+pnpm nx run cli:link
+```
+
+After `link`, `lf battle` works from any directory. Re-run `cli:build` (and `cli:chmod` if needed) whenever you change source files — or use the watch mode for continuous rebuilds:
+
+```bash
+pnpm nx run cli:serve
+```
+
+`cli:serve` rebuilds on every file change but does **not** re-link; the linked binary auto-picks up the new `dist/apps/cli/main.js` without relinking.
+
+::: tip Already linked but still getting Permission denied?
+Run `pnpm nx run cli:chmod` — the executable bit is sometimes lost after a clean build that regenerates `dist/apps/cli/main.js`.
+:::
+
+---
+
 ## Subcommand summary
 
 | Subcommand | Auth required | Description |
