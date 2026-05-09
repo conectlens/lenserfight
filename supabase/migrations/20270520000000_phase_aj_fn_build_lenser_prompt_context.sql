@@ -53,6 +53,8 @@ GRANT  EXECUTE ON FUNCTION agents.fn_build_lenser_prompt_context(uuid, text, int
 
 -- Phase AJ: extend fn_claim_scheduled_workflow_run to return ai_lenser_id so
 -- the scheduled-workflow-worker can inject memory context without a second query.
+-- DROP required because Postgres disallows CREATE OR REPLACE when the return type changes.
+DROP FUNCTION IF EXISTS lenses.fn_claim_scheduled_workflow_run(TEXT);
 CREATE OR REPLACE FUNCTION lenses.fn_claim_scheduled_workflow_run(p_worker_id TEXT)
 RETURNS TABLE (
   run_id          UUID,
