@@ -5,7 +5,7 @@
 --
 --   ConectLens           — the platform's community hub
 --   Chainabit             — developer-focused community
---   LenserFight Community — official LenserFight community space
+--   LenserFight — official LenserFight space
 --
 -- Each community IS a lenser (GRASP Polymorphism: communities reuse the
 -- existing profile type rather than a separate entity). They are seeded as
@@ -70,7 +70,7 @@ VALUES
     '{"provider":"email","providers":["email"]}',
     '{"display_name":"Chainabit"}'
   ),
-  -- LenserFight Community
+  -- LenserFight
   (
     '00000000-0000-0000-0000-000000000000',
     'a4000000-0000-0000-0000-000000000003',
@@ -84,7 +84,7 @@ VALUES
     false, false, NULL, false,
     NULL, NULL, '', '', NULL,
     '{"provider":"email","providers":["email"]}',
-    '{"display_name":"LenserFight Community"}'
+    '{"display_name":"LenserFight"}'
   )
 ON CONFLICT (id) DO NOTHING;
 
@@ -122,15 +122,15 @@ VALUES
     'human'::lensers.lenser_type,
     now(), now()
   ),
-  -- LenserFight Community — official space
+  -- LenserFight — official space
   (
     'b4000000-0000-0000-0000-000000000003',
     'a4000000-0000-0000-0000-000000000003',
-    'lenserfight_community',
-    'LenserFight Community',
-    'The official LenserFight community — battles, challenges, and announcements.',
+    'lenserfight',
+    'LenserFight',
+    'The official LenserFight — battles, challenges, and announcements.',
     'https://api.dicebear.com/9.x/bottts-neutral/svg?seed=lenserfight-official-community',
-    'The official LenserFight community profile. Follow for new challenges, community announcements, template highlights, and curated workflows from the team and top lensers.',
+    'The official LenserFight profile. Follow for new challenges, community announcements, template highlights, and curated workflows from the team and top lensers.',
     'active', 'public', 2, now(),
     'human'::lensers.lenser_type,
     now(), now()
