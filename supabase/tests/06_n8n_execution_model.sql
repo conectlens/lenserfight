@@ -21,9 +21,8 @@ BEGIN;
 
 SELECT plan(17);
 
--- ── Test 1: Single canonical fn_update_workflow_node_result overload ─────────
--- PGRST203 regression: PostgREST cannot dispatch when 5-arg AND 8-arg
--- overloads coexist. The migration drops the 5-arg legacy version.
+-- ── Test 1: fn_update_workflow_node_result public overloads (PGRST203) ─────────
+-- PostgREST dispatches by name + arity; keep overload count stable (legacy 8-arg + canonical 9-arg).
 SELECT is(
   (
     SELECT count(*)::int
@@ -31,8 +30,8 @@ SELECT is(
     WHERE pronamespace = 'public'::regnamespace
       AND proname      = 'fn_update_workflow_node_result'
   ),
-  1,
-  'fn_update_workflow_node_result has exactly one public overload (PGRST203 regression)'
+  2,
+  'fn_update_workflow_node_result has two public overloads (8-arg legacy + 9-arg canonical)'
 );
 
 -- ── Test 2: Canonical fn_update_workflow_node_result accepts waiting_reason ──
@@ -83,20 +82,11 @@ SELECT ok(
   'workflow_run_provenance_unique constraint exists'
 );
 
--- ── Fixture: minimal owner + workflow + run + nodes ────────────────────────
--- workflow_nodes.lens_id is nullable, so we don't need a lens row.
-INSERT INTO lensers.profiles (id, user_id, handle, display_name)
-VALUES (
-  '11111111-aaaa-bbbb-cccc-111111111111'::uuid,
-  '22222222-aaaa-bbbb-cccc-222222222222'::uuid,
-  'n8n.tester',
-  'N8N Tester'
-);
-
+-- ── Fixture: minimal owner + workflow + run + nodes (seeded Alice profile) ───
 INSERT INTO lenses.workflows (id, lenser_id, title, visibility)
 VALUES (
   '33333333-aaaa-bbbb-cccc-333333333333'::uuid,
-  '11111111-aaaa-bbbb-cccc-111111111111'::uuid,
+  'b2000000-0000-0000-0000-000000000001'::uuid,
   'N8N test workflow',
   'public'
 );
@@ -114,7 +104,7 @@ INSERT INTO lenses.workflow_runs (id, workflow_id, triggered_by, status, context
 VALUES (
   '66666666-aaaa-bbbb-cccc-666666666666'::uuid,
   '33333333-aaaa-bbbb-cccc-333333333333'::uuid,
-  '11111111-aaaa-bbbb-cccc-111111111111'::uuid,
+  'b2000000-0000-0000-0000-000000000001'::uuid,
   'running',
   '{}'::jsonb
 );
@@ -132,11 +122,11 @@ VALUES
 
 -- Simulate authenticated owner for SECURITY DEFINER guards.
 SET LOCAL ROLE authenticated;
-SELECT set_config('request.jwt.claim.sub', '22222222-aaaa-bbbb-cccc-222222222222', true);
+SELECT set_config('request.jwt.claim.sub', 'a1000000-0000-0000-0000-000000000001', true);
 SELECT set_config(
   'request.jwt.claims',
   json_build_object(
-    'sub', '22222222-aaaa-bbbb-cccc-222222222222',
+    'sub', 'a1000000-0000-0000-0000-000000000001',
     'role', 'authenticated'
   )::text,
   true
@@ -149,7 +139,8 @@ SELECT lives_ok(
   SELECT public.fn_update_workflow_node_result(
     '66666666-aaaa-bbbb-cccc-666666666666'::uuid,
     '55555555-aaaa-bbbb-cccc-555555555551'::uuid,
-    'running'
+    'running'::text,
+    NULL::jsonb, NULL::text, NULL::integer, NULL::integer, NULL::integer, NULL::text
   )
   $$,
   'fn_update_workflow_node_result(running) succeeds for owner'
@@ -168,9 +159,9 @@ SELECT lives_ok(
   SELECT public.fn_update_workflow_node_result(
     '66666666-aaaa-bbbb-cccc-666666666666'::uuid,
     '55555555-aaaa-bbbb-cccc-555555555552'::uuid,
-    'awaiting_dependency',
-    NULL, NULL, NULL, NULL, NULL,
-    'dependency'
+    'awaiting_dependency'::text,
+    NULL::jsonb, NULL::text, NULL::integer, NULL::integer, NULL::integer,
+    'dependency'::text
   )
   $$,
   'fn_update_workflow_node_result(awaiting_dependency, ..., ''dependency'') succeeds'
@@ -187,7 +178,8 @@ SELECT is(
 SELECT public.fn_update_workflow_node_result(
   '66666666-aaaa-bbbb-cccc-666666666666'::uuid,
   '55555555-aaaa-bbbb-cccc-555555555551'::uuid,
-  'completed'
+  'completed'::text,
+  NULL::jsonb, NULL::text, NULL::integer, NULL::integer, NULL::integer, NULL::text
 );
 
 SELECT is(
@@ -200,7 +192,8 @@ SELECT is(
 SELECT public.fn_update_workflow_node_result(
   '66666666-aaaa-bbbb-cccc-666666666666'::uuid,
   '55555555-aaaa-bbbb-cccc-555555555552'::uuid,
-  'completed'
+  'completed'::text,
+  NULL::jsonb, NULL::text, NULL::integer, NULL::integer, NULL::integer, NULL::text
 );
 
 SELECT is(
@@ -235,11 +228,11 @@ SELECT throws_ok(
 -- ── Test 11: fn_record_run_provenance is idempotent on (src,tgt,path) ───────
 RESET ROLE;
 SET LOCAL ROLE authenticated;
-SELECT set_config('request.jwt.claim.sub', '22222222-aaaa-bbbb-cccc-222222222222', true);
+SELECT set_config('request.jwt.claim.sub', 'a1000000-0000-0000-0000-000000000001', true);
 SELECT set_config(
   'request.jwt.claims',
   json_build_object(
-    'sub', '22222222-aaaa-bbbb-cccc-222222222222',
+    'sub', 'a1000000-0000-0000-0000-000000000001',
     'role', 'authenticated'
   )::text,
   true

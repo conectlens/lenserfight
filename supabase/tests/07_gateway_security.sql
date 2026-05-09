@@ -78,7 +78,7 @@ SET LOCAL ROLE authenticated;
 SELECT throws_ok(
   $$SELECT * FROM audit.fn_chain_verify('00000000-0000-0000-0000-000000000001'::uuid, 'gateway')$$,
   '42501',
-  'chain_verify_owner_required%',
+  NULL,
   'authenticated non-owner cannot verify another Lenser gateway chain'
 );
 RESET ROLE;

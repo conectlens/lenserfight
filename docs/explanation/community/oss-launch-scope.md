@@ -61,13 +61,13 @@ The cloud battles surface only enters Limited Beta after the following ship item
 
 ## Out of scope — not yet implemented
 
-These are tracked in the roadmap but not shipped. No code exists. Do not reference them as LenserFight capabilities at launch.
+These are tracked in the roadmap but **no production-ready surface** exists yet. Do not reference them as stable LenserFight capabilities at launch.
 
 | Surface | Why out of scope |
 |---------|-----------------|
-| Connector SDK | Interface RFC in progress; no stable adapter contract |
-| Connector marketplace | Depends on connector SDK |
-| Billing and credits | Commercial infrastructure not part of OSS |
+| **Stable** connector SDK on npm (`@lenserfight/sdk` v1) | Alpha adapter code and RFC exist in-repo (Phase 10); v1 contract and npm promotion are Phase 16 — see [Connectors](/reference/connectors/index). |
+| Connector marketplace | Depends on stable public SDK and governance |
+| Billing and credits | Handled by Chainabit (private commercial API) — not part of OSS |
 | Benchmark suite | Evaluation harness not yet merged |
 | Advanced analytics | Beyond creator analytics already in preview |
 | Fully autonomous schedules (no per-run approval) | Explicitly deferred until moderation and audit infrastructure matures |

@@ -83,7 +83,7 @@ Follow these steps in order before tagging any release.
 
 15. **Trust Gateway (run when the release includes LTG / gateway / attestation / related migrations)**
 
-    - Migration floor includes `supabase/migrations/20270513000000_pre_oss_gateway_security_hardening.sql` and any follow-up gateway migrations in the same tag.
+    - Migration floor includes `supabase/migrations/20270513000001_pre_oss_gateway_security_hardening.sql` and any follow-up gateway migrations in the same tag.
     - SQL tests: after `pnpm supabase:db:reset` (or equivalent), run `supabase db test --db-url $LOCAL_DB_URL` and confirm `supabase/tests/07_gateway_security.sql` and `08_gateway_xp_audit.sql` pass.
     - TypeScript: `pnpm nx run-many -t test -p gateway,infra-gateway,util-signing,util-keychain` (add `repositories`, `cli` if you touched attestation or battle submit paths).
     - Binaries: `pnpm nx run gateway:build`, `pnpm nx run gateway:build-init`, `pnpm nx build cli`.

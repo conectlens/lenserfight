@@ -32,11 +32,11 @@ info:
     }
     ```
   license:
-    name: BSL 1.1
-    url: https://github.com/conectlens/lenserfight/blob/main/LICENSE.md
+    name: Apache-2.0
+    url: https://github.com/connectlens/lenserfight-web/blob/main/LICENSE
   contact:
     name: LenserFight Maintainers
-    url: https://github.com/conectlens/lenserfight
+    url: https://github.com/connectlens/lenserfight-web
 
 servers:
   - url: http://localhost:8787

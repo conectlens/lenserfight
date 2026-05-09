@@ -9,26 +9,16 @@ BEGIN;
 
 SELECT plan(4);
 
--- ── Fixture: a profile tied to a known auth.uid() claim ─────────────────────
-INSERT INTO lensers.profiles (
-  id,
-  user_id,
-  handle,
-  display_name
-) VALUES (
-  '11111111-1111-1111-1111-111111111111'::uuid,
-  '22222222-2222-2222-2222-222222222222'::uuid,
-  'workflow.owner',
-  'Workflow Owner'
-);
+-- ── Fixture: use seeded Alice profile + auth user (02_auth_users / 03_lenser_profiles)
+-- profile id b2000000-…-0001, user_id a1000000-…-0001
 
 -- ── Test 1: authenticated owner can INSERT into lenses.workflows ───────────
 SET LOCAL ROLE authenticated;
-SELECT set_config('request.jwt.claim.sub', '22222222-2222-2222-2222-222222222222', true);
+SELECT set_config('request.jwt.claim.sub', 'a1000000-0000-0000-0000-000000000001', true);
 SELECT set_config(
   'request.jwt.claims',
   json_build_object(
-    'sub', '22222222-2222-2222-2222-222222222222',
+    'sub', 'a1000000-0000-0000-0000-000000000001',
     'role', 'authenticated'
   )::text,
   true
@@ -39,7 +29,7 @@ SELECT lives_ok(
   $$
   INSERT INTO lenses.workflows (lenser_id, title, description, visibility)
   VALUES (
-    '11111111-1111-1111-1111-111111111111'::uuid,
+    'b2000000-0000-0000-0000-000000000001'::uuid,
     'Owned workflow',
     'Created by the authenticated profile owner',
     'public'
@@ -53,7 +43,7 @@ SELECT throws_ok(
   $$
   INSERT INTO lenses.workflows (lenser_id, title, description, visibility)
   VALUES (
-    '33333333-3333-3333-3333-333333333333'::uuid,
+    'b2000000-0000-0000-0000-000000000002'::uuid,
     'Spoofed workflow',
     NULL,
     'public'
@@ -73,7 +63,7 @@ SELECT throws_ok(
   $$
   INSERT INTO lenses.workflows (lenser_id, title, description, visibility)
   VALUES (
-    '11111111-1111-1111-1111-111111111111'::uuid,
+    'b2000000-0000-0000-0000-000000000001'::uuid,
     'Anon workflow',
     NULL,
     'public'
