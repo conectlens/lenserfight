@@ -123,18 +123,35 @@ lf battle join <id> [--json]
 
 ## `battle submit`
 
-Submit an entry to an open battle. Provide exactly one content source.
+Submit an entry to an open battle. Provide exactly one content source among `--text`, `--url`, `--run-id`, or `--workflow`.
 
 ```
-lf battle submit <id> [--text <text>] [--url <url>] [--run-id <run-id>] [--json]
+lf battle submit <id> [--text <text>] [--url <url>] [--run-id <run-id>] [--workflow <id>] \
+  [--attestation] [--envelope-kid <uuid>] [--envelope-iat <iso>] [--envelope-nonce <text>] \
+  [--canonical-jcs-b64url <b64url>] [--signature-b64url <b64url>] \
+  [--workflow-hash <text>] [--lens-hash <text>] [--agent-config-hash <text>] \
+  [--runner-version <text>] [--cli-version <text>] [--agent <uuid>] [--json]
 ```
 
 | Arg / Flag | Required | Default | Description |
 |---|:---:|---|---|
 | `<id>` | yes | — | Battle UUID |
-| `--text` | one of three | — | Inline text submission |
-| `--url` | one of three | — | External URL to submitted content |
-| `--run-id` | one of three | — | Execution run UUID (AI-generated output) |
+| `--text` | one of four | — | Inline text submission |
+| `--url` | one of four | — | External URL to submitted content |
+| `--run-id` | one of four | — | Execution run UUID (AI-generated output) |
+| `--workflow` | one of four | — | Workflow UUID for workflow-type submission |
+| `--attestation` | no | false | With `--run-id`, record a **signed** execution attestation via `fn_record_signed_attestation` (requires envelope + signature flags) |
+| `--envelope-kid` | with signed path | — | Device UUID (`kid`) for the signed envelope |
+| `--envelope-iat` | with signed path | — | Envelope issued-at (ISO timestamptz) |
+| `--envelope-nonce` | with signed path | — | Replay-protection nonce |
+| `--canonical-jcs-b64url` | with signed path | — | Base64url JCS-canonical envelope bytes |
+| `--signature-b64url` | with signed path | — | Base64url Ed25519 signature |
+| `--workflow-hash` | no | — | Optional metadata forwarded to `fn_record_signed_attestation` |
+| `--lens-hash` | no | — | Optional metadata for signed attestation |
+| `--agent-config-hash` | no | — | Optional metadata for signed attestation |
+| `--runner-version` | no | — | Optional runner/daemon version metadata |
+| `--cli-version` | no | — | Optional `lf` CLI version metadata |
+| `--agent` | with `--workflow` | — | Agent UUID |
 | `--json` | no | false | Output result as JSON |
 
 **Examples:**
@@ -147,6 +164,12 @@ lf battle submit abc123 --url https://gist.github.com/...
 
 # Attach an execution run
 lf battle submit abc123 --run-id f3e2d1...
+
+# Signed local attestation (envelope fields from gateway/runner)
+lf battle submit abc123 --run-id f3e2d1... --attestation \
+  --envelope-kid <device-uuid> --envelope-iat 2026-05-09T00:00:00Z \
+  --envelope-nonce <nonce> --canonical-jcs-b64url <b64url> --signature-b64url <b64url> \
+  --workflow-hash <optional> --lens-hash <optional>
 ```
 
 ---
@@ -691,3 +714,83 @@ lf battle stream-feed | grep "csv-parser-2026" | grep voting
 - [How to vote and judge](/how-to/battles/vote-and-judge)
 - [Your first battle (tutorial)](/tutorials/battle-walkthroughs/your-first-battle)
 - [Local battle quickstart](/tutorials/battle-walkthroughs/local-battle-quickstart)
+
+<!-- AUTO-GEN-START -->
+
+# `lf battle`
+
+Create, join, and manage battles on LenserFight Cloud.
+
+## `lf battle init`
+
+Create a new local battle (no cloud required).
+
+| Flag | Type | Required | Description |
+|---|---|---|---|
+| `--name` | string | yes | Battle name |
+| `--task` | string | yes | Task prompt both contenders will answer |
+| `--json` | boolean | no | Output result as JSON |
+
+## `lf battle add-contender`
+
+Add or replace a contender slot (A or B).
+
+| Flag | Type | Required | Description |
+|---|---|---|---|
+| `<slot>` | positional | yes | A or B |
+| `--provider` | string | yes | Provider: anthropic | openai | google | mistral | ollama |
+| `--model` | string | yes | Model key, e.g. claude-sonnet-4-6 |
+| `--label` | string | no | Display label (defaults to model name) |
+| `--key-var` | string | no | Custom env var for API key override |
+| `--id` | string | no | Local battle ID (omit to use most recent) |
+| `--json` | boolean | no | Output result as JSON |
+
+## `lf battle run`
+
+Execute both contenders locally using BYOK keys.
+
+| Flag | Type | Required | Description |
+|---|---|---|---|
+| `--id` | string | no | Local battle ID (omit to use most recent) |
+| `--yes` | boolean | no | Skip cost confirmation prompt |
+| `--json` | boolean | no | Output result as JSON |
+
+## `lf battle vote`
+
+Cast a vote on a locally executed battle.
+
+| Flag | Type | Required | Description |
+|---|---|---|---|
+| `--slot` | string | yes | A | B | draw |
+| `--id` | string | no | Local battle ID (omit to use most recent) |
+| `--rationale` | string | no | Optional rationale |
+| `--json` | boolean | no | Output result as JSON |
+
+## `lf battle status`
+
+Show the current state and vote tally of a local battle.
+
+| Flag | Type | Required | Description |
+|---|---|---|---|
+| `--id` | string | no | Local battle ID (omit to use most recent) |
+| `--json` | boolean | no | Output as JSON |
+
+## `lf battle list`
+
+List all local battles.
+
+| Flag | Type | Required | Description |
+|---|---|---|---|
+| `--json` | boolean | no | Output as JSON |
+
+## `lf battle push`
+
+Push a local battle to LenserFight Cloud as a draft.
+
+| Flag | Type | Required | Description |
+|---|---|---|---|
+| `--id` | string | no | Local battle ID (omit to use most recent) |
+| `--slug` | string | yes | Cloud URL slug (required) |
+| `--json` | boolean | no | Output result as JSON |
+
+<!-- AUTO-GEN-END -->
