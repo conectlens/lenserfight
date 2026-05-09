@@ -1,4 +1,4 @@
-import { WorkflowExecutionService } from '@lenserfight/infra/execution'
+import { WorkflowExecutionService, SupabaseDelegationHandler } from '@lenserfight/infra/execution'
 import { getExecutionProvider } from '@lenserfight/infra/execution'
 import { nodeLogger } from '@lenserfight/utils/logger'
 import { createServiceSupabaseClient } from '../lib/supabase'
@@ -65,6 +65,16 @@ export async function processNextScheduledWorkflow(): Promise<boolean> {
   const { run_id, workflow_id } = claimed
   const startedAt = Date.now()
 
+  // Fetch workspace_id for media.objects rows created by media-producing nodes.
+  // fn_claim_scheduled_workflow_run doesn't include it, so we look it up once.
+  const { data: wfRunRow } = await serviceClient
+    .schema('lenses')
+    .from('workflow_runs')
+    .select('workspace_id')
+    .eq('id', run_id)
+    .maybeSingle()
+  const workspaceId = (wfRunRow as { workspace_id: string | null } | null)?.workspace_id ?? null
+
   try {
     // Load nodes and edges for the workflow
     const [nodesResult, edgesResult] = await Promise.all([
@@ -92,6 +102,9 @@ export async function processNextScheduledWorkflow(): Promise<boolean> {
     const ctx: WorkflowExecutionContext = {
       runId: run_id,
       rootInputs: claimed.context_inputs ?? {},
+
+      // AL-3: wire delegation so delegate_to_agent nodes dispatch real team runs
+      delegation: new SupabaseDelegationHandler(serviceClient),
 
       async resolveLensTemplate(lensId: string, versionId?: string | null): Promise<string> {
         const { data, error } = await serviceClient.schema('lenses').rpc('fn_render_template', {
@@ -128,6 +141,32 @@ export async function processNextScheduledWorkflow(): Promise<boolean> {
             },
             { onConflict: 'run_id,node_id', ignoreDuplicates: false },
           )
+
+        // AK-1: register media outputs so lf media list / MediaOutputCard can find them.
+        // Only fires when we have the ownership context (both may be null for anonymous runs).
+        if (result.status === 'completed' && workspaceId && claimed.ai_lenser_id) {
+          const od = result.outputData as Record<string, unknown> | undefined
+          const mediaType = od?.['mediaType'] as string | undefined
+          const url = od?.['url'] as string | undefined
+          if (mediaType && ['image', 'video', 'audio'].includes(mediaType) && url) {
+            const mimeType = (od?.['mimeType'] as string | undefined) ?? null
+            const ext = mimeType?.split('/')[1]?.split('+')[0] ?? mediaType
+            await serviceClient
+              .schema('media')
+              .from('objects')
+              .insert({
+                workspace_id:    workspaceId,
+                owner_lenser_id: claimed.ai_lenser_id,
+                external_url:    url,
+                mime_type:       mimeType,
+                media_type:      mediaType,
+                name:            `wf-${run_id.slice(0, 8)}-${nodeId.slice(0, 8)}.${ext}`,
+                visibility:      'private',
+                lifecycle_state: 'active',
+                metadata:        { workflow_run_id: run_id, node_id: nodeId },
+              })
+          }
+        }
       },
     }
 
