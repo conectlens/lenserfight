@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="docs/public/favicons/original/ms-icon-310x310.png" width="96" alt="LenserFight" />
+  <img src="apps/mobile/assets/mobile/ms-icon-310x310.png" width="96" alt="LenserFight" />
 </p>
 <h1 align="center">LenserFight Community Edition</h1>
 <p align="center">
