@@ -13,7 +13,7 @@ The v1 scope list is defined in three places, all kept in sync:
 
 | Location | What it owns |
 |---|---|
-| [`libs/adapters/connector/src/lib/scopes.ts`](https://github.com/conectlens/lenserfight-web/blob/main/libs/adapters/connector/src/lib/scopes.ts) | TypeScript constant `CONNECTOR_SCOPES` + `ConnectorScope` literal type |
+| [`libs/adapters/connector/src/lib/scopes.ts`](https://github.com/conectlens/lenserfight/blob/main/libs/adapters/connector/src/lib/scopes.ts) | TypeScript constant `CONNECTOR_SCOPES` + `ConnectorScope` literal type |
 | `connectors.fn_valid_scopes()` (Supabase) | Postgres allow-list rejected by `fn_connector_create` |
 | This page | Canonical human reference |
 
