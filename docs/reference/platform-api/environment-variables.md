@@ -14,7 +14,7 @@ All variables prefixed with `VITE_` are exposed to browser builds. Variables wit
 ```bash
 VITE_DATA_SOURCE=file
 VITE_PRODUCT_EDITION=community
-VITE_WEB_BASE_URL=http://localhost:4200
+VITE_WEB_BASE_URL=http://localhost:3000
 VITE_API_URL=http://localhost:8786
 ```
 
@@ -26,7 +26,7 @@ VITE_SUPABASE_ANON_KEY=<anon-key>
 SUPABASE_SERVICE_ROLE_KEY=<service-role-key>
 VITE_DATA_SOURCE=supabase
 VITE_PRODUCT_EDITION=community
-VITE_WEB_BASE_URL=http://localhost:4200
+VITE_WEB_BASE_URL=http://localhost:3000
 VITE_AUTH_BASE_URL=http://localhost:3004
 VITE_API_URL=http://localhost:8786
 ```
@@ -60,12 +60,12 @@ See [Storage Adapters](/reference/platform-api/storage-adapters) for the full ad
 
 | Variable | Default | Description |
 |----------|---------|-------------|
-| `VITE_WEB_BASE_URL` | `http://localhost:4200` | Root URL of the web app |
+| `VITE_WEB_BASE_URL` | `http://localhost:3000` | Root URL of the web app |
 | `VITE_AUTH_BASE_URL` | `http://localhost:3004` | Auth app base URL |
 | `VITE_API_URL` | `http://localhost:8786` | Execution platform API. Production: `https://api.lenserfight.com` |
 | `VITE_DOCS_BASE_URL` | `http://localhost:3002` | Docs site base URL |
 | `VITE_STATUS_BASE_URL` | `http://localhost:3003` | Status page base URL |
-| `VITE_ARENA_URL` | `http://localhost:4200` | Arena URL (same as web in community edition) |
+| `VITE_ARENA_URL` | `http://localhost:3000` | Arena URL (same as web in community edition) |
 | `LENSERFIGHT_CLOUD_API_URL` | `https://api.lenserfight.com` | CLI override for the cloud API base URL |
 | `LENSERFIGHT_OLLAMA_BASE_URL` | `http://localhost:11434` | Node/CLI/server override for the Ollama base URL |
 | `VITE_OLLAMA_BASE_URL` | `http://localhost:11434` | Browser-build override for the Ollama base URL |

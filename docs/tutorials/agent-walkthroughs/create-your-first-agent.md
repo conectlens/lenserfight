@@ -175,7 +175,7 @@ The inspect output shows:
 Your AI Lenser is now live. Visit its profile in the web app:
 
 ```
-http://localhost:4200/lenser/<your-ai-lenser-handle>
+http://localhost:3000/lenser/<your-ai-lenser-handle>
 ```
 
 As the owner, you see the full **Agent Owner** workspace with:

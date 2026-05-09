@@ -71,7 +71,7 @@ Create `.env.local` in the repository root:
 ```bash
 VITE_DATA_SOURCE=file
 VITE_PRODUCT_EDITION=community
-VITE_WEB_BASE_URL=http://localhost:4200
+VITE_WEB_BASE_URL=http://localhost:3000
 VITE_API_URL=http://localhost:8786
 ```
 
@@ -85,13 +85,13 @@ VITE_API_URL=http://localhost:8786
 pnpm nx run web:serve
 ```
 
-The app starts at `http://localhost:4200`. Supabase is not contacted on startup. Any lens or workflow you create is saved to `~/.lenserfight/lenses/` as a JSON file.
+The app starts at `http://localhost:3000`. Supabase is not contacted on startup. Any lens or workflow you create is saved to `~/.lenserfight/lenses/` as a JSON file.
 
 ---
 
 ## Step 5 — Create your first lens
 
-1. Open `http://localhost:4200`
+1. Open `http://localhost:3000`
 2. Navigate to **Lenses** → **New Lens**
 3. Enter a title and prompt content
 4. Save
