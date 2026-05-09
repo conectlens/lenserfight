@@ -7,6 +7,7 @@ import { resolveConfig as resolveBaseConfig, loadUserConfig, saveUserConfig, typ
 import { reportCliError } from './error-reporter';
 import { getExecContext } from '../lib/exec-context';
 import { redactHeaders, redactUrl } from '../lib/redact';
+import { attemptAuthRecovery } from './auth-recovery';
 
 // ─── Profile overlay (Y1) ────────────────────────────────────────────────────
 //
@@ -142,10 +143,11 @@ function warnIfProductionInLocalMode(config: LenserfightConfig): void {
     consola.warn(`--local active but cloudApiUrl points to production: ${config.cloudApiUrl}`);
 }
 
-export async function callRpc<T = unknown>(
+async function callRpcInner<T = unknown>(
   functionName: string,
-  params: Record<string, unknown> = {},
-  options: RpcOptions = {}
+  params: Record<string, unknown>,
+  options: RpcOptions,
+  retried: boolean
 ): Promise<T> {
   let config = resolveConfig();
 
@@ -184,14 +186,12 @@ export async function callRpc<T = unknown>(
     }
     headers['Authorization'] = `Bearer ${config.supabaseServiceRoleKey}`;
   } else if (bearerToken) {
-    if (options.requireAuth && !bearerToken) {
-      throw new Error(
-        'Authentication required. Run `lenserfight auth login` first.'
-      );
-    }
     headers['Authorization'] = `Bearer ${bearerToken}`;
   } else if (options.requireAuth) {
-    throw new Error('Authentication required. Run `lenserfight auth login` first.')
+    if (!retried && await attemptAuthRecovery()) {
+      return callRpcInner(functionName, params, options, true)
+    }
+    throw new Error('Authentication required. Run `lf auth login` to sign in.')
   }
 
   const url = `${config.supabaseUrl}/rest/v1/rpc/${functionName}`;
@@ -213,6 +213,9 @@ export async function callRpc<T = unknown>(
   if (isDebug) consola.debug(`[${ts()}] → ${res.status} in ${(performance.now() - t0).toFixed(1)}ms`);
 
   if (!res.ok) {
+    if (res.status === 401 && !retried && options.requireAuth && await attemptAuthRecovery()) {
+      return callRpcInner(functionName, params, options, true)
+    }
     const err = await res.json().catch(() => ({ message: res.statusText }));
     const httpError = Object.assign(
       new Error(err.message || err.error || res.statusText),
@@ -222,6 +225,14 @@ export async function callRpc<T = unknown>(
   }
 
   return res.json() as Promise<T>;
+}
+
+export async function callRpc<T = unknown>(
+  functionName: string,
+  params: Record<string, unknown> = {},
+  options: RpcOptions = {}
+): Promise<T> {
+  return callRpcInner(functionName, params, options, false)
 }
 
 export function handleError(err: unknown): void {
@@ -246,12 +257,13 @@ export interface RestOptions extends RpcOptions {
   prefer?: string
 }
 
-export async function callRest<T = unknown>(
+async function callRestInner<T = unknown>(
   schema: string,
   table: string,
   method: RestMethod,
-  body?: Record<string, unknown> | Array<Record<string, unknown>>,
-  options: RestOptions = {}
+  body: Record<string, unknown> | Array<Record<string, unknown>> | undefined,
+  options: RestOptions,
+  retried: boolean
 ): Promise<T> {
   let config = resolveConfig()
 
@@ -287,7 +299,10 @@ export async function callRest<T = unknown>(
   } else if (bearerToken) {
     headers['Authorization'] = `Bearer ${bearerToken}`
   } else if (options.requireAuth) {
-    throw new Error('Authentication required. Run `lenserfight auth login` first.')
+    if (!retried && await attemptAuthRecovery()) {
+      return callRestInner(schema, table, method, body, options, true)
+    }
+    throw new Error('Authentication required. Run `lf auth login` to sign in.')
   }
 
   const params = new URLSearchParams()
@@ -317,6 +332,9 @@ export async function callRest<T = unknown>(
   if (isDebug) consola.debug(`[${ts()}] → ${res.status} in ${(performance.now() - t0).toFixed(1)}ms`);
 
   if (!res.ok) {
+    if (res.status === 401 && !retried && options.requireAuth && await attemptAuthRecovery()) {
+      return callRestInner(schema, table, method, body, options, true)
+    }
     const err = await res.json().catch(() => ({ message: res.statusText }))
     throw Object.assign(
       new Error(err.message || err.error || res.statusText),
@@ -328,4 +346,14 @@ export async function callRest<T = unknown>(
   const text = await res.text()
   if (!text) return undefined as T
   return JSON.parse(text) as T
+}
+
+export async function callRest<T = unknown>(
+  schema: string,
+  table: string,
+  method: RestMethod,
+  body?: Record<string, unknown> | Array<Record<string, unknown>>,
+  options: RestOptions = {}
+): Promise<T> {
+  return callRestInner(schema, table, method, body, options, false)
 }
