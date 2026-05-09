@@ -72,6 +72,29 @@ describe('signEnvelope / verifyEnvelope', () => {
       reason: 'nonce_invalid',
     })
   })
+
+  it('rejects unknown public keys for otherwise well-formed envelopes', () => {
+    const { privateKey } = generateEd25519Keypair()
+    const { publicKey: otherPublicKey } = generateEd25519Keypair()
+    const env = signEnvelope(privateKey, 'd', { execution_run_id: 'run-1' })
+
+    expect(verifyEnvelope(otherPublicKey, env)).toEqual({
+      ok: false,
+      reason: 'signature_mismatch',
+    })
+  })
+
+  it('treats reused nonces as caller-managed replay state', () => {
+    const { publicKey, privateKey } = generateEd25519Keypair()
+    const nonce = generateNonce()
+    const first = signEnvelope(privateKey, 'd', { n: 1 }, { nonce })
+    const second = signEnvelope(privateKey, 'd', { n: 2 }, { nonce })
+
+    expect(verifyEnvelope(publicKey, first)).toEqual({ ok: true })
+    expect(verifyEnvelope(publicKey, second)).toEqual({ ok: true })
+    expect(first.nonce).toBe(second.nonce)
+    // Replay rejection is deliberately enforced by devices.nonce_cache in SQL.
+  })
 })
 
 describe('generateNonce', () => {

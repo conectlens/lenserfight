@@ -35,8 +35,8 @@ export function compareVectorClocks(
   for (const k of keys) {
     const av = a[k] ?? 0
     const bv = b[k] ?? 0
-    if (av > bv) bLessOrEqual = false
-    if (bv > av) aLessOrEqual = false
+    if (av > bv) aLessOrEqual = false
+    if (bv > av) bLessOrEqual = false
   }
   if (aLessOrEqual && bLessOrEqual) return 'equal'
   if (aLessOrEqual) return 'before'
