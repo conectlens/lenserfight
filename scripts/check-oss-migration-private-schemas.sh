@@ -10,16 +10,18 @@ if [[ ! -d "$MIG_DIR" ]]; then
   exit 1
 fi
 
-# Must match lenserfight-platform/scripts/oss-migration-workflow.sh (private list).
+# Private schemas belong to the Chainabit commercial backend and must not appear
+# in new Community Edition migrations. The initial base schema (community_base_schema)
+# is allowlisted because it was written before the OSS/private split was enforced
+# and still contains legacy private schema stubs pending a dedicated strip migration.
 PRIVATE=(
-  analytics audit authz battles benchmark billing core integrations
-  organizations reputation status wallet xp
+  authz battles benchmark billing organizations wallet xp
 )
 
-# Migrations listed here are grandfathered: they predate strict OSS/platform split
-# automation. New migrations must not add CREATE SCHEMA for private-only namespaces.
+# community_base_schema is allowlisted until a dedicated strip migration removes
+# the private schema stubs it contains. Do NOT add new files here.
 ALLOWLIST=(
-  "20260329120000_platform_private_schema.sql"
+  "20260329120000_community_base_schema.sql"
 )
 
 fail=0
@@ -50,7 +52,7 @@ done
 
 if [[ "$fail" -ne 0 ]]; then
   echo ""
-  echo "Private schemas belong in lenserfight-platform only."
+  echo "Private schemas belong in the Chainabit backend only, not Community Edition migrations."
   exit 1
 fi
 
