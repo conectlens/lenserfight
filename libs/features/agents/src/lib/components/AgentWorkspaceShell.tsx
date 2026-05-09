@@ -21,6 +21,7 @@ import {
   AgentTeamSection,
   AnalyticsSection,
   ApprovalsSection,
+  BattlesSection,
   CostSection,
   EvaluationsSection,
   LogsSection,
@@ -61,6 +62,7 @@ const VALID_SECTIONS: AgentSection[] = [
   'cost',
   'analytics',
   'settings',
+  'battles',
 ]
 
 function getSectionComponent(section: AgentSection): React.ComponentType {
@@ -84,6 +86,7 @@ function getSectionComponent(section: AgentSection): React.ComponentType {
     case 'cost': return CostSection
     case 'analytics': return AnalyticsSection
     case 'settings': return SettingsSection
+    case 'battles': return BattlesSection
   }
 }
 

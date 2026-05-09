@@ -109,9 +109,8 @@ export const NAV_ITEMS: AgentNavItem[] = [
     label: 'Battles',
     zone: 'operate',
     icon: Swords,
-    visibleIn: PUBLIC_VISIBLE,
+    visibleIn: OWNER_ONLY,
     enabled: FEATURES.PUBLIC_BATTLES,
-    path: '/battles',
   },
 ]
 
