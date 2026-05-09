@@ -183,3 +183,11 @@ Until the migration is applied, these subcommands will return an error. Run `lf 
 - [lf setup](/reference/cli/setup)
 - [Developer Onboarding — Step 7](/tutorials/getting-started/developer-onboarding#step-7----invite-friends-with-qr--link)
 - [Battle Reference](/reference/battles/index)
+
+<!-- AUTO-GEN-START -->
+
+# `lf invite`
+
+Manage invites. Use `lf invite create --battle <id>` for battle invites or `lf invite send <target>` for community invites.
+
+<!-- AUTO-GEN-END -->
