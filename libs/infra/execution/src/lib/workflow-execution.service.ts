@@ -191,6 +191,7 @@ export type EngineEventName =
   | 'node_blocked'
   | 'node_invalidated'
   | 'node_stream_delta'
+  | 'node_provenance'
 
 /**
  * Why a node is currently waiting. Mirrors the canonical taxonomy in

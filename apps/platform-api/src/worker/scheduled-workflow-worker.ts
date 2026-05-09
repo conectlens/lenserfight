@@ -14,6 +14,7 @@ interface ClaimedScheduledRun {
   triggered_by: string | null
   context_inputs: Record<string, unknown>
   global_model_id: string | null
+  ai_lenser_id: string | null
 }
 
 interface DbWorkflowNode {
@@ -98,7 +99,15 @@ export async function processNextScheduledWorkflow(): Promise<boolean> {
           p_inputs: {},
         })
         if (error || !data) throw new Error(error?.message ?? `Failed to resolve template for lens ${lensId}`)
-        return data as string
+        const baseTemplate = data as string
+
+        if (!claimed.ai_lenser_id) return baseTemplate
+
+        const { data: memCtx } = await serviceClient.rpc('fn_build_lenser_prompt_context', {
+          p_ai_lenser_id: claimed.ai_lenser_id,
+          p_limit: 20,
+        })
+        return memCtx ? `${memCtx}${baseTemplate}` : baseTemplate
       },
 
       async onNodeStatusChange(nodeId: string, result: NodeResult): Promise<void> {
