@@ -336,11 +336,10 @@ export const FundingSourceToggle: React.FC<FundingSourceToggleProps> = ({
           <button
             type="button"
             onClick={() => onFundingSourceChange('platform_credit')}
-            className={`flex items-center gap-2 p-3 border rounded-lg transition-all text-left ${
-              isCloud
+            className={`flex items-center gap-2 p-3 border rounded-lg transition-all text-left ${isCloud
                 ? 'border-orange-400 bg-orange-50 dark:bg-orange-900/20 ring-1 ring-orange-400'
                 : 'border-gray-200 dark:border-gray-600 hover:border-orange-300'
-            }`}
+              }`}
           >
             <ChainabitLogo size={16} />
             <div className="min-w-0">
@@ -356,11 +355,10 @@ export const FundingSourceToggle: React.FC<FundingSourceToggleProps> = ({
           type="button"
           onClick={handleMyKeyClick}
           disabled={!canSelectByok}
-          className={`flex items-center gap-2 p-3 border rounded-lg transition-all text-left ${
-            isByok
+          className={`flex items-center gap-2 p-3 border rounded-lg transition-all text-left ${isByok
               ? 'border-primary bg-primary/5 ring-1 ring-primary'
               : 'border-gray-200 dark:border-gray-600 hover:border-gray-300'
-          } ${!canSelectByok ? 'opacity-60 cursor-not-allowed hover:border-gray-200 dark:hover:border-gray-600' : ''}`}
+            } ${!canSelectByok ? 'opacity-60 cursor-not-allowed hover:border-gray-200 dark:hover:border-gray-600' : ''}`}
         >
           <KeyRound size={16} className={isByok ? 'text-gray-900 dark:text-white' : 'text-gray-400'} />
           <div className="min-w-0">
@@ -374,20 +372,19 @@ export const FundingSourceToggle: React.FC<FundingSourceToggleProps> = ({
         </button>
       </div>
 
-      {/* Row 2: Cloud Keys | Local Keys sub-mode (visible when isByok) */}
+      {/* Row 2: LF Cloud Keys | Local Keys sub-mode (visible when isByok) */}
       {isCloudEdition && (isByokCloud || (isByokLocal && localKeyEnabled)) && (
         <div className="grid grid-cols-2 gap-2">
           <button
             type="button"
             onClick={() => onFundingSourceChange('user_byok_cloud')}
-            className={`flex items-center gap-1.5 px-3 py-2 border rounded-lg text-xs transition-all ${
-              isByokCloud
+            className={`flex items-center gap-1.5 px-3 py-2 border rounded-lg text-xs transition-all ${isByokCloud
                 ? 'border-primary bg-primary/5 ring-1 ring-primary font-semibold text-gray-900 dark:text-gray-100'
                 : 'border-gray-200 dark:border-gray-600 text-gray-600 dark:text-gray-300 hover:border-gray-300'
-            }`}
+              }`}
           >
             <Globe size={12} />
-            Cloud Keys
+            LF Cloud Keys
             {availableKeys.length > 0 && (
               <span className="ml-auto text-[10px] text-gray-400">{availableKeys.length}</span>
             )}
@@ -397,11 +394,10 @@ export const FundingSourceToggle: React.FC<FundingSourceToggleProps> = ({
             <button
               type="button"
               onClick={() => onFundingSourceChange('user_byok_local')}
-              className={`flex items-center gap-1.5 px-3 py-2 border rounded-lg text-xs transition-all ${
-                isByokLocal
+              className={`flex items-center gap-1.5 px-3 py-2 border rounded-lg text-xs transition-all ${isByokLocal
                   ? 'border-primary bg-primary/5 ring-1 ring-primary font-semibold text-gray-900 dark:text-gray-100'
                   : 'border-gray-200 dark:border-gray-600 text-gray-600 dark:text-gray-300 hover:border-gray-300'
-              }`}
+                }`}
             >
               <HardDrive size={12} />
               Local Keys
@@ -524,7 +520,7 @@ export const FundingSourceToggle: React.FC<FundingSourceToggleProps> = ({
           isLoadingModels={isLoadingModels ?? false}
           selectedProviderKey={selectedProviderKey ?? ''}
           selectedModelKey={selectedModelKey ?? ''}
-          onProviderChange={onProviderChange ?? (() => {})}
+          onProviderChange={onProviderChange ?? (() => { })}
           onModelChange={onModelChange}
           onProviderDropdownOpen={onProviderDropdownOpen}
           isOllamaLocal={isOllamaLocal}
