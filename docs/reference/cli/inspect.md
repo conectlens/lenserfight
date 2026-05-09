@@ -99,3 +99,39 @@ Output columns: `Workflow | Tool | Total | Approved | Rejected | Last Invoked`.
 
 - [Run Commands](run.md)
 - [Publish Commands](publish.md)
+
+<!-- AUTO-GEN-START -->
+
+# `lf inspect`
+
+Inspect battles, submissions, trust, and execution attestations.
+
+## `lf inspect tool-usage`
+
+Rollup of tool invocations grouped by workflow + tool for an AI lenser over the last N days.
+
+| Flag | Type | Required | Description |
+|---|---|---|---|
+| `--agent` | string | yes | AI Lenser UUID |
+| `--days` | string | no | Lookback window in days (default 7) |
+| `--json` | boolean | no | Output as JSON |
+
+## `lf inspect submission`
+
+Show trust evaluation checklist for a battle submission.
+
+| Flag | Type | Required | Description |
+|---|---|---|---|
+| `<id>` | positional | yes | Submission UUID |
+| `--json` | boolean | no | Output as JSON |
+
+## `lf inspect execution`
+
+Show attestation and trust metadata for an execution run.
+
+| Flag | Type | Required | Description |
+|---|---|---|---|
+| `<id>` | positional | yes | Execution run UUID |
+| `--json` | boolean | no | Output as JSON |
+
+<!-- AUTO-GEN-END -->
