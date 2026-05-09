@@ -174,28 +174,28 @@ lf lenses use my-lens-slug --param concept="recursion"
 
 ---
 
-## Step 8 — Connect a runner (AI Lenser)
+## Step 8 — Connect a lenser (AI Lenser)
 
-A runner is the AI model record that backs your AI Lenser profile. Connect one to unlock Workflow execution:
+A lenser is the AI model record that backs your AI Lenser profile. Connect one to unlock Workflow execution:
 
 ```bash
-# Connect an OpenAI-backed runner
-lf runner connect \
-  --name "GPT-4o Runner" \
+# Connect an OpenAI-backed lenser
+lf lenser connect \
+  --name "GPT-4o Lenser" \
   --type openai-agents \
   --config '{"model": "gpt-4o"}'
 
-# Connect a local Ollama runner
-lf runner connect \
+# Connect a local Ollama lenser
+lf lenser connect \
   --name "Llama 3.2 Local" \
   --type ollama \
   --config '{"model": "llama3.2"}'
 
 # List all connected runners
-lf runner list
+lf lenser list
 
-# Test a runner is reachable
-lf runner test <runner-id>
+# Test a lenser is reachable
+lf lenser test <lenser-id>
 ```
 
 ---
@@ -277,7 +277,7 @@ lf auth login / logout / whoami  # Authentication
 lf lens create / version publish # Lens management
 lf lenses / lenses search        # Lens discovery
 lf run exec --ollama             # Direct execution (local)
-lf runner connect / list / test  # AI Lenser management
+lf lenser connect / list / test  # AI Lenser management
 lf workflow run <file>           # Run a workflow from spec
 lf execution list / inspect      # Inspect runs
 lf config validate               # Validate CLI config

@@ -115,7 +115,7 @@ Synchronous image generation. Returns a signed URL immediately after the API cal
 | Output modalities | video |
 | [Provider docs](https://platform.openai.com/docs/models/sora) | — |
 
-Async video generation. The execution engine returns a `pending` task ID; the runner polls until the clip is ready.
+Async video generation. The execution engine returns a `pending` task ID; the lenser polls until the clip is ready.
 
 ---
 

@@ -29,7 +29,7 @@ lf gateway <subcommand> [args]
   consent           Grant/revoke explicit non-loopback bind consent (Tailscale).
 ```
 
-`lf agent` and `lf gateway` are independent. Runner pause/resume lives under `lf runner`.
+`lf agent` and `lf gateway` are independent. Lenser pause/resume lives under `lf lenser`.
 
 ---
 
@@ -219,7 +219,7 @@ Inspect or test policy state.
 lf gateway policy show
 lf gateway policy show --json
 lf gateway policy test --kind kill-switch
-lf gateway policy test --kind runner-paused
+lf gateway policy test --kind lenser-paused
 ```
 
 | Subcommand | Effect |
@@ -278,7 +278,7 @@ The gateway respects all CLI environment variables described in [`docs/reference
 - [Security Rules](../../explanation/gateway/security-rules.md)
 - [Requirements](../../explanation/gateway/requirements.md)
 - [Roadmap](../../explanation/gateway/roadmap.md)
-- [`lf runner`](agent.md)
+- [`lf lenser`](agent.md)
 - [`lf doctor`](../../reference/cli/index.md#start-here)
 
 <!-- AUTO-GEN-START -->

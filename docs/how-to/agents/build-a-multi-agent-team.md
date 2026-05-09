@@ -57,7 +57,7 @@ lf team run \
 
 The command inserts a `team_runs` row with status `queued`. The engine claims it on the next dispatch tick.
 
-You can also dispatch from a workflow runner or a CRON schedule — any path that produces a `team_runs` row works.
+You can also dispatch from a workflow lenser or a CRON schedule — any path that produces a `team_runs` row works.
 
 ---
 

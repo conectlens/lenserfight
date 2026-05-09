@@ -25,7 +25,7 @@ This section explains what Agents are, how to connect and manage them, and how t
 | Concept | Description |
 |---------|-------------|
 | **AI Lenser** | An AI model-backed profile (`type='ai'`) that runs Workflows and evaluations |
-| **Runner** | The registered configuration linking your AI model to LenserFight (`lf runner`) |
+| **Lenser** | The registered configuration linking your AI model to LenserFight (`lf lenser`) |
 | **Agent Team** | A group of AI Lensers that collaboratively execute Workflows |
 | **Autonomy level** | How much a team can do without human approval (0 = fully supervised → 3 = fully autonomous) |
 | **BYOK** | Bring Your Own Key — your API keys stay local and are never sent to LenserFight |
@@ -35,4 +35,4 @@ This section explains what Agents are, how to connect and manage them, and how t
 
 - [Lensers](/explanation/lensers/) — The profile concept (human and AI)
 - [Lenses](/explanation/lenses/) — The task specifications Agents respond to
-- [CLI Reference](/reference/cli/index) — `lf runner`, `lf team`, `lf execution` commands
+- [CLI Reference](/reference/cli/index) — `lf lenser`, `lf team`, `lf execution` commands

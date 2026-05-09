@@ -1,6 +1,6 @@
 ---
 title: Requirements
-description: Sector-standard requirements checklist for device registration, runner heartbeats, attestation, sync, transports, config, secrets, doctor, audit, policy, kill-switch, replay, workflow trust, and anti-cheat.
+description: Sector-standard requirements checklist for device registration, lenser heartbeats, attestation, sync, transports, config, secrets, doctor, audit, policy, kill-switch, replay, workflow trust, and anti-cheat.
 ---
 
 # Requirements
@@ -37,14 +37,14 @@ This is the sector-standard requirements checklist that the LTG implements. Ever
 | DH-4 | Repeated signature failures within 1 h transition the device to `unhealthy`. | Cron sets `trust_level='unhealthy'`. |
 | DH-5 | Heartbeats MUST be idempotent (replays of in-window envelopes are rejected). | `nonce_cache` rejects replay. |
 
-## RH — Runner Heartbeats
+## RH — Lenser Heartbeats
 
 | ID | Requirement | Acceptance test |
 |----|-------------|-----------------|
-| RH-1 | A runner MUST be bound to exactly one device via `execution.runner_device_bindings(status='active')`. | Verified by `fn_runner_list_with_devices`. |
-| RH-2 | A runner heartbeat is reported as part of the device heartbeat envelope (`body.runners[]`). | Verified at write time. |
-| RH-3 | A runner whose bound device is `revoked/blocked/unhealthy` MUST refuse new executions. | Daemon refuses; server RPC also refuses. |
-| RH-4 | A runner-bound execution that lacks a corresponding heartbeat in the last 5 minutes degrades trust. | `agent_verified` ceiling for that submission. |
+| RH-1 | A lenser MUST be bound to exactly one device via `execution.runner_device_bindings(status='active')`. | Verified by `fn_runner_list_with_devices`. |
+| RH-2 | A lenser heartbeat is reported as part of the device heartbeat envelope (`body.runners[]`). | Verified at write time. |
+| RH-3 | A lenser whose bound device is `revoked/blocked/unhealthy` MUST refuse new executions. | Daemon refuses; server RPC also refuses. |
+| RH-4 | A lenser-bound execution that lacks a corresponding heartbeat in the last 5 minutes degrades trust. | `agent_verified` ceiling for that submission. |
 
 ## EA — Execution Attestations
 
@@ -179,5 +179,5 @@ This is the sector-standard requirements checklist that the LTG implements. Ever
 | ID | Requirement | Acceptance test |
 |----|-------------|-----------------|
 | NR-1 | The canonical workspace pause column name is **`runner_paused`**. Code that uses `agent_paused` MUST be renamed (or aliased with a deprecation comment) in Phase A. | Single column name across docs and code. |
-| NR-2 | The CLI flag and docs use **runner**, never **agent**, for execution-pause concepts. | Doc + code grep returns no `agent_paused` matches by end of Phase A. |
+| NR-2 | The CLI flag and docs use **lenser**, never **agent**, for execution-pause concepts. | Doc + code grep returns no `agent_paused` matches by end of Phase A. |
 | NR-3 | Where the legacy term must be retained (DB column already named `agent_paused`), the migration creates a generated column or view alias to expose the new name without breaking callers. | Migration test. |
