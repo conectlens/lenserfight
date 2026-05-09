@@ -58,22 +58,36 @@ CREATE TABLE IF NOT EXISTS "authz"."developer_tokens" (
 );
 ALTER TABLE "authz"."developer_tokens" OWNER TO "postgres";
 
--- Primary keys and unique constraints
-ALTER TABLE ONLY "authz"."device_approval_requests"
-    ADD CONSTRAINT "device_approval_requests_pkey" PRIMARY KEY ("id");
-ALTER TABLE ONLY "authz"."device_approval_requests"
-    ADD CONSTRAINT "device_approval_requests_user_code_key" UNIQUE ("user_code");
-ALTER TABLE ONLY "authz"."device_approval_requests"
-    ADD CONSTRAINT "device_approval_requests_request_secret_hash_key" UNIQUE ("request_secret_hash");
-ALTER TABLE ONLY "authz"."device_approval_requests"
-    ADD CONSTRAINT "device_approval_requests_developer_token_id_key" UNIQUE ("developer_token_id");
-
-ALTER TABLE ONLY "authz"."developer_tokens"
-    ADD CONSTRAINT "developer_tokens_pkey" PRIMARY KEY ("id");
-ALTER TABLE ONLY "authz"."developer_tokens"
-    ADD CONSTRAINT "developer_tokens_token_hash_key" UNIQUE ("token_hash");
-ALTER TABLE ONLY "authz"."developer_tokens"
-    ADD CONSTRAINT "developer_tokens_issued_from_request_id_key" UNIQUE ("issued_from_request_id");
+-- Primary keys and unique constraints (idempotent — the base migration may have already created these)
+DO $$
+DECLARE
+  c record;
+BEGIN
+  FOR c IN
+    SELECT *
+    FROM (VALUES
+      ('authz', 'device_approval_requests', 'device_approval_requests_pkey',                        'PRIMARY KEY ("id")'),
+      ('authz', 'device_approval_requests', 'device_approval_requests_user_code_key',               'UNIQUE ("user_code")'),
+      ('authz', 'device_approval_requests', 'device_approval_requests_request_secret_hash_key',     'UNIQUE ("request_secret_hash")'),
+      ('authz', 'device_approval_requests', 'device_approval_requests_developer_token_id_key',      'UNIQUE ("developer_token_id")'),
+      ('authz', 'developer_tokens',         'developer_tokens_pkey',                                'PRIMARY KEY ("id")'),
+      ('authz', 'developer_tokens',         'developer_tokens_token_hash_key',                      'UNIQUE ("token_hash")'),
+      ('authz', 'developer_tokens',         'developer_tokens_issued_from_request_id_key',          'UNIQUE ("issued_from_request_id")')
+    ) AS t(schema_name, table_name, constraint_name, constraint_def)
+  LOOP
+    IF NOT EXISTS (
+      SELECT 1 FROM pg_constraint con
+      JOIN pg_namespace n ON n.oid = con.connamespace
+      WHERE n.nspname = c.schema_name
+        AND con.conname = c.constraint_name
+    ) THEN
+      EXECUTE format(
+        'ALTER TABLE ONLY %I.%I ADD CONSTRAINT %I %s',
+        c.schema_name, c.table_name, c.constraint_name, c.constraint_def
+      );
+    END IF;
+  END LOOP;
+END $$;
 
 -- Indexes
 CREATE INDEX IF NOT EXISTS "idx_device_approval_requests_status_expires_at" ON "authz"."device_approval_requests" USING "btree" ("status", "expires_at");
@@ -83,15 +97,33 @@ CREATE INDEX IF NOT EXISTS "idx_developer_tokens_lenser_id_created_at" ON "authz
 CREATE INDEX IF NOT EXISTS "idx_developer_tokens_status_expires_at" ON "authz"."developer_tokens" USING "btree" ("status", "expires_at");
 CREATE INDEX IF NOT EXISTS "idx_developer_tokens_revoked_at" ON "authz"."developer_tokens" USING "btree" ("revoked_at");
 
--- Foreign keys
-ALTER TABLE ONLY "authz"."developer_tokens"
-    ADD CONSTRAINT "developer_tokens_issued_from_request_id_fkey" FOREIGN KEY ("issued_from_request_id") REFERENCES "authz"."device_approval_requests"("id") ON DELETE SET NULL;
-ALTER TABLE ONLY "authz"."developer_tokens"
-    ADD CONSTRAINT "developer_tokens_lenser_id_fkey" FOREIGN KEY ("lenser_id") REFERENCES "lensers"."profiles"("id") ON DELETE CASCADE;
-ALTER TABLE ONLY "authz"."device_approval_requests"
-    ADD CONSTRAINT "device_approval_requests_approved_by_lenser_id_fkey" FOREIGN KEY ("approved_by_lenser_id") REFERENCES "lensers"."profiles"("id") ON DELETE SET NULL;
-ALTER TABLE ONLY "authz"."device_approval_requests"
-    ADD CONSTRAINT "device_approval_requests_requested_by_lenser_id_fkey" FOREIGN KEY ("requested_by_lenser_id") REFERENCES "lensers"."profiles"("id") ON DELETE SET NULL;
+-- Foreign keys (idempotent)
+DO $$
+DECLARE
+  c record;
+BEGIN
+  FOR c IN
+    SELECT *
+    FROM (VALUES
+      ('authz', 'developer_tokens',         'developer_tokens_issued_from_request_id_fkey',          'FOREIGN KEY ("issued_from_request_id") REFERENCES "authz"."device_approval_requests"("id") ON DELETE SET NULL'),
+      ('authz', 'developer_tokens',         'developer_tokens_lenser_id_fkey',                       'FOREIGN KEY ("lenser_id") REFERENCES "lensers"."profiles"("id") ON DELETE CASCADE'),
+      ('authz', 'device_approval_requests', 'device_approval_requests_approved_by_lenser_id_fkey',   'FOREIGN KEY ("approved_by_lenser_id") REFERENCES "lensers"."profiles"("id") ON DELETE SET NULL'),
+      ('authz', 'device_approval_requests', 'device_approval_requests_requested_by_lenser_id_fkey',  'FOREIGN KEY ("requested_by_lenser_id") REFERENCES "lensers"."profiles"("id") ON DELETE SET NULL')
+    ) AS t(schema_name, table_name, constraint_name, constraint_def)
+  LOOP
+    IF NOT EXISTS (
+      SELECT 1 FROM pg_constraint con
+      JOIN pg_namespace n ON n.oid = con.connamespace
+      WHERE n.nspname = c.schema_name
+        AND con.conname = c.constraint_name
+    ) THEN
+      EXECUTE format(
+        'ALTER TABLE ONLY %I.%I ADD CONSTRAINT %I %s',
+        c.schema_name, c.table_name, c.constraint_name, c.constraint_def
+      );
+    END IF;
+  END LOOP;
+END $$;
 
 -- Private functions (authz schema — not exposed via PostgREST)
 
