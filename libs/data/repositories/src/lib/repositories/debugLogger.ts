@@ -1,5 +1,5 @@
 const isRepositoryDebugEnabled =
-  !!import.meta.env.DEV && import.meta.env.VITE_ENABLE_REPOSITORY_DEBUG === 'true'
+  !!import.meta.env.DEV && import.meta.env.ENABLE_REPOSITORY_DEBUG === 'true'
 
 export function debugRepositoryEvent(
   scope: string,

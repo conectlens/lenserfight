@@ -24,7 +24,7 @@ import { Link } from 'react-router-dom'
 
 import { chainabitContactUrl } from '../utils/chainabitUrls'
 
-const RUN_APP_URL = import.meta.env.VITE_ARENA_URL ?? 'https://moon.lenserfight.com'
+const RUN_APP_URL = import.meta.env.ARENA_URL ?? 'https://moon.lenserfight.com'
 
 const spring = { type: 'spring', stiffness: 260, damping: 22 } as const
 const viewport = { once: true, margin: '-60px' } as const

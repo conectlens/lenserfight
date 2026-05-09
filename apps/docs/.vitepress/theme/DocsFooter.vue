@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, ref, onMounted, onUnmounted } from 'vue'
 
-const webBaseUrl = import.meta.env.VITE_WEB_BASE_URL ?? 'https://lenserfight.com'
+const webBaseUrl = import.meta.env.WEB_BASE_URL ?? 'https://lenserfight.com'
 
 const currentYear = computed(() => new Date().getFullYear())
 
