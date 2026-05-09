@@ -1216,6 +1216,14 @@ export default defineConfig({
           ],
         },
         {
+          text: 'Observability',
+          items: [
+            { text: 'Runtime Telemetry (lf top)', link: '/reference/cli/top' },
+            { text: 'Doctor & Health Checks', link: '/reference/cli/doctor' },
+            { text: 'Status', link: '/reference/cli/status' },
+          ],
+        },
+        {
           text: 'Authentication',
           items: [
             { text: 'Auth Commands', link: '/reference/cli/auth' },
