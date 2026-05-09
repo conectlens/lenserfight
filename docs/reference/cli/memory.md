@@ -98,3 +98,44 @@ Summarize a memory profile — entry count, scope distribution, last write times
 lf memory summarize --profile <profile-id>
 lf memory summarize --profile <id> --json
 ```
+
+<!-- AUTO-GEN-START -->
+
+# `lf memory`
+
+Manage per-agent memory profiles and entries.
+
+## `lf memory list-profiles`
+
+List memory profiles for an agent.
+
+| Flag | Type | Required | Description |
+|---|---|---|---|
+| `--agent` | string | yes | AI lenser ID |
+| `--json` | boolean | no | Output as JSON |
+
+## `lf memory list-entries`
+
+Read memory entries from a profile (or roll up across all runs of a workflow).
+
+| Flag | Type | Required | Description |
+|---|---|---|---|
+| `--profile` | string | no | Memory profile ID |
+| `--workflow` | string | no | Workflow UUID — show entries from any team_run of this workflow |
+| `--scope` | string | no | Scope filter (only with --profile) |
+| `--limit` | string | no | Max entries |
+| `--json` | boolean | no | Output as JSON |
+
+## `lf memory write-entry`
+
+Write a manual memory entry (visible to the agent on the next run).
+
+| Flag | Type | Required | Description |
+|---|---|---|---|
+| `--profile` | string | yes | Memory profile ID |
+| `--scope` | string | no | Scope (project|conversation|global) |
+| `--source` | string | no | Source (manual|user|agent|tool|eval) |
+| `--content` | string | yes | Memory content |
+| `--confidence` | string | no | Confidence 0-1 |
+
+<!-- AUTO-GEN-END -->
