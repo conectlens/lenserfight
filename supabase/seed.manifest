@@ -11,7 +11,6 @@
 # ── Lookups the runtime depends on ──────────────────────────────────────────
 # core.languages MUST load before lensers.profiles (preferences trigger FK).
 seeds/01_core_languages.sql
-seeds/01_currencies.sql
 
 # AI provider/model catalog — referenced by FKs from ai_lensers, ai bindings
 # and pricing-aware UI even when no demo lensers are loaded.
@@ -26,9 +25,6 @@ seeds/15_lens_tools.sql
 seeds/16_origin_types.sql
 
 # ── System policy / flag rows ──────────────────────────────────────────────
-seeds/10_credit_valuation_policy.sql
-seeds/11_execution_margin_policies.sql
-seeds/12_store_products.sql
 seeds/17_xp_ruleset.sql
 
 # ── Demo accounts and profiles (opt-in) ───────────────────────────────────
@@ -47,22 +43,12 @@ seeds/44_community_profiles.sql
 seeds/46_connectors.sql
 seeds/48_workflow_templates.sql
 
-# ── Geo lookups (large; kept demo-only) ───────────────────────────────────
+# ── Geo lookups (countries only — community edition) ──────────────────────
 seeds/03_regions.sql
 seeds/04_subregions.sql
 seeds/05_countries.sql
 seeds/05_organizations.sql
 seeds/06_states.sql
-seeds/07_cities_01.sql
-seeds/07_cities_02.sql
-seeds/07_cities_03.sql
-seeds/07_cities_04.sql
-seeds/07_cities_05.sql
-seeds/07_cities_06.sql
-seeds/07_cities_07.sql
-seeds/07_cities_08.sql
-seeds/07_cities_09.sql
-seeds/07_cities_10.sql
 
 # ── Demo battles / analytics / benchmark (opt-in) ─────────────────────────
 seeds/05_battles.sql
