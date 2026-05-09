@@ -21,7 +21,7 @@ function mermaidFencePlugin(md: any) {
   }
 }
 
-const REPO_BLOB_BASE = 'https://github.com/conectlens/lenserfight-web/blob/main'
+const REPO_BLOB_BASE = 'https://github.com/conectlens/lenserfight/blob/main'
 const CROSS_TREE_TOP_DIRS = ['libs', 'supabase', 'apps', 'tools', 'docs']
 
 /**
@@ -717,7 +717,7 @@ export default defineConfig({
     },
 
     socialLinks: [
-      { icon: 'github', link: 'https://github.com/conectlens/lenserfight-web' },
+      { icon: 'github', link: 'https://github.com/conectlens/lenserfight' },
     ],
 
     nav: [
