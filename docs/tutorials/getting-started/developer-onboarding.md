@@ -44,7 +44,7 @@ lf auth token <PAT>                   # developer token for CI
 lf auth whoami                        # confirm session
 ```
 
-After login the web app shows the `/getting-started` checklist. The CLI shows it via `lf setup`.
+After login the web app shows the onboarding checklist. The CLI mirrors it via `lf setup` and `lf status`.
 
 ---
 
