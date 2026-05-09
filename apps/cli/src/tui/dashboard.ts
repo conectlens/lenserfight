@@ -137,10 +137,31 @@ const KEY_BINDINGS: Record<string, string[]> = {
 
 let restoreCleanup = () => { /* installed in runDashboard */ }
 
-function waitForKey(): Promise<void> {
+// Only these keys return to the dashboard. Other keystrokes are swallowed so
+// users can read the sub-page output without accidentally bouncing back.
+const RETURN_KEYS = new Set([
+  'q', 'Q',
+  '\x1b',   // Esc
+  '\r',     // Enter (CR)
+  '\n',     // Enter (LF)
+])
+
+function waitForReturnKey(): Promise<void> {
   return new Promise((resolve) => {
     try { process.stdin.setRawMode(true) } catch { /* ignore */ }
-    process.stdin.once('data', () => resolve())
+    const onData = (buf: Buffer | string) => {
+      const key = buf.toString()
+      if (key === '\x03') {
+        process.stdin.off('data', onData)
+        process.exit(130)
+      }
+      if (RETURN_KEYS.has(key)) {
+        process.stdin.off('data', onData)
+        resolve()
+      }
+      // Any other key: ignore — keep the sub-page visible.
+    }
+    process.stdin.on('data', onData)
   })
 }
 
@@ -151,13 +172,13 @@ function runChild(argv: string[]): Promise<void> {
     process.stdout.write(`\n  ${A.bold}${A.brightCyan}${sym.run}  lf ${argv.join(' ')}${A.reset}\n\n`)
     const child = spawn('lf', argv, { stdio: 'inherit' })
     child.on('exit', () => {
-      process.stdout.write(`\n  ${A.gray}Press any key to return to the dashboard…${A.reset}\n`)
-      void waitForKey().then(resolve)
+      process.stdout.write(`\n  ${A.gray}Press ${A.brightYellow}q${A.reset}${A.gray}, ${A.brightYellow}Esc${A.reset}${A.gray}, or ${A.brightYellow}Enter${A.reset}${A.gray} to return to the dashboard…${A.reset}\n`)
+      void waitForReturnKey().then(resolve)
     })
     child.on('error', () => {
       process.stdout.write(`\n  ${A.brightRed}${sym.fail}  could not spawn lf — is it on PATH?${A.reset}\n`)
-      process.stdout.write(`  ${A.gray}Press any key to return.${A.reset}\n`)
-      void waitForKey().then(resolve)
+      process.stdout.write(`  ${A.gray}Press ${A.brightYellow}q${A.reset}${A.gray}, ${A.brightYellow}Esc${A.reset}${A.gray}, or ${A.brightYellow}Enter${A.reset}${A.gray} to return.${A.reset}\n`)
+      void waitForReturnKey().then(resolve)
     })
   })
 }
