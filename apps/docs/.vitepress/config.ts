@@ -843,8 +843,6 @@ export default defineConfig({
           { text: 'Pardus', link: '/platform-setup/pardus' },
         ],
       },
-      { text: 'RFCs', link: '/rfcs/' },
-      { text: 'Changelog', link: '/changelog' },
     ],
 
     aside: true,
@@ -1140,6 +1138,8 @@ export default defineConfig({
             { text: 'Workflows', link: '/reference/workflows/execution-engine' },
             { text: 'AI Providers', link: '/reference/ai-providers' },
             { text: 'AI Models', link: '/reference/ai-models' },
+            { text: 'RFCs', link: '/rfcs/' },
+            { text: 'Changelog', link: '/changelog' },
             {
               text: 'Provider Pages',
               collapsed: true,

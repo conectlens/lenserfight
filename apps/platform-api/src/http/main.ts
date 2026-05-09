@@ -66,6 +66,12 @@ const server = createServer(async (req, res) => {
       return
     }
 
+    // Legacy path used by the web client: /execute/workflows/:runId/events
+    if (req.method === 'GET' && parts[0] === 'execute' && parts[1] === 'workflows' && parts[2] && parts[3] === 'events') {
+      await handleRunsSseRoute(req, res, parts[2])
+      return
+    }
+
     if (req.method === 'GET' && parts[0] === 'v1' && parts[1] === 'runs' && parts[2]) {
       await handleRunsGetRoute(req, res, parts[2], requestId, startedAt)
       return
