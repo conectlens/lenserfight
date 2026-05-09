@@ -98,10 +98,14 @@ lenserfight communities update chainabit \
 Permanently delete a community. This action is irreversible and removes all associated connectors, tokens, and member records.
 
 ```bash
-lenserfight communities delete my-test-community
+lenserfight communities delete my-test-community --confirm
 ```
 
-Requires owner role. The CLI prompts for confirmation before deleting.
+| Flag | Required | Description |
+|---|:---:|---|
+| `--confirm` | yes | Required: confirm deletion. The CLI shows an impact summary before proceeding. |
+
+Requires owner role. Every deletion is recorded in `~/.lenserfight/audit.log`.
 
 ---
 
@@ -242,7 +246,7 @@ Permanently delete a community.
 | Flag | Type | Required | Description |
 |---|---|---|---|
 | `<slug>` | positional | yes | Community slug |
-| `--confirm` | boolean | no | Skip confirmation prompt |
+| `--confirm` | boolean | no | Required: confirm deletion. The safety gate shows an impact summary before proceeding. |
 
 ## `lf communities switch`
 

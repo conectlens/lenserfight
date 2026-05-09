@@ -71,13 +71,17 @@ lf execution events <run-uuid> [--after <event-id>] [--limit <n>] [--json]
 
 ### `lf execution cancel <run-id>`
 
-Cancel a running or queued workflow run. Sets status to `cancelled`.
+Cancel a running or queued workflow run. Sets status to `cancelled`. Requires `--force` to confirm.
 
 ```bash
-lf execution cancel <run-uuid>
+lf execution cancel <run-uuid> --force
 ```
 
-Only runs with status `running`, `streaming`, `queued`, or `pending` can be cancelled.
+| Flag | Type | Default | Description |
+|------|------|---------|-------------|
+| `--force` | boolean | false | Required: confirm cancellation |
+
+Only runs with status `running`, `streaming`, `queued`, or `pending` can be cancelled. Any in-flight work will be interrupted. Cancelled runs can be retried: `lf execution retry <run>`.
 
 ---
 
@@ -301,11 +305,12 @@ List SSE events recorded for a run.
 
 ## `lf execution cancel`
 
-Cancel a running workflow run.
+Cancel a running workflow run. Requires `--force` to confirm.
 
 | Flag | Type | Required | Description |
 |---|---|---|---|
 | `<run>` | positional | yes | Workflow Run UUID |
+| `--force` | boolean | no | Required: confirm cancellation |
 
 ## `lf execution retry`
 
