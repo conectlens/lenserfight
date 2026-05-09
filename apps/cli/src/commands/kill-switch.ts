@@ -141,12 +141,12 @@ const ksStatus = defineCommand({
         consola.info('No workspace settings found for @%s.', args.handle)
         return
       }
-      const runnerPaused = settings['runner_paused'] ?? settings['agent_paused'] ?? false
+      const lenserPaused = settings['runner_paused'] ?? settings['agent_paused'] ?? false
       printTable(
         ['Setting', 'Value'],
         [
           ['global_kill_switch', String(settings['global_kill_switch'] ?? false)],
-          ['runner_paused', String(runnerPaused)],
+          ['lenser_paused',      String(lenserPaused)],
         ]
       )
     } catch (err) {
