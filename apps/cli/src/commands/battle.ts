@@ -778,13 +778,23 @@ const publish = defineCommand({
 const leaderboard = defineCommand({
   meta: {
     name: 'leaderboard',
-    description: 'Show the scoring leaderboard for a battle.',
+    description: 'Show the scoring leaderboard for a battle (cloud) or your local battles ranked by votes (--local).',
   },
   args: {
     id: {
       type: 'positional',
-      description: 'Battle UUID',
-      required: true,
+      description: 'Battle UUID (cloud mode only)',
+      required: false,
+    },
+    local: {
+      type: 'boolean',
+      description: 'Rank your local battles by vote totals — no cloud needed',
+      default: false,
+    },
+    limit: {
+      type: 'string',
+      description: 'Max rows to show in --local mode',
+      default: '20',
     },
     json: {
       type: 'boolean',
@@ -793,6 +803,76 @@ const leaderboard = defineCommand({
     },
   },
   async run({ args }) {
+    if (args.local) {
+      try {
+        const battles = localBattleStore.list();
+        if (!battles.length) {
+          consola.info('No local battles found. Run: lf battle local run --example haiku-shootout');
+          return;
+        }
+
+        const ranked = battles
+          .map((b) => {
+            const aWins = b.votes.filter((v) => v.slot === 'A').length;
+            const bWins = b.votes.filter((v) => v.slot === 'B').length;
+            const draws = b.votes.filter((v) => v.slot === 'draw').length;
+            const total = b.votes.length;
+            const contA = b.contenders.find((c) => c.slot === 'A');
+            const contB = b.contenders.find((c) => c.slot === 'B');
+            const winner =
+              total === 0
+                ? '—'
+                : aWins > bWins
+                ? contA?.label ?? 'A'
+                : bWins > aWins
+                ? contB?.label ?? 'B'
+                : 'Draw';
+            return { b, aWins, bWins, draws, total, winner };
+          })
+          .sort((x, y) => y.total - x.total || y.b.createdAt.localeCompare(x.b.createdAt))
+          .slice(0, parseInt(args.limit, 10));
+
+        if (args.json) {
+          printJson(
+            ranked.map(({ b, aWins, bWins, draws, total, winner }) => ({
+              id: b.id,
+              name: b.name,
+              status: b.status,
+              winner,
+              votes: { a: aWins, b: bWins, draw: draws, total },
+              createdAt: b.createdAt,
+            }))
+          );
+          return;
+        }
+
+        consola.info('Local Battle Leaderboard — ranked by vote count');
+        printTable(
+          ['#', 'Name', 'Status', 'Winner', 'A', 'B', 'Draw', 'Total', 'Date'],
+          ranked.map(({ b, aWins, bWins, draws, total, winner }, i) => [
+            String(i + 1),
+            truncate(b.name, 28),
+            b.status,
+            truncate(winner, 16),
+            String(aWins),
+            String(bWins),
+            String(draws),
+            String(total),
+            b.createdAt.slice(0, 10),
+          ])
+        );
+      } catch (err) {
+        handleError(err);
+      }
+      return;
+    }
+
+    if (!args.id) {
+      consola.error('Provide a battle UUID or use --local to show local battles.');
+      process.exitCode = 1;
+      return;
+    }
+
     try {
       const rows = await callRpc<Array<Record<string, unknown>>>(
         'fn_battles_leaderboard',
@@ -1556,13 +1636,39 @@ const localAddContender = defineCommand({
 const localRun = defineCommand({
   meta: { name: 'run', description: 'Execute both contenders locally using BYOK keys.' },
   args: {
-    id:   { type: 'string',  description: 'Local battle ID (omit to use most recent)', default: '' },
-    yes:  { type: 'boolean', description: 'Skip cost confirmation prompt', default: false },
-    json: { type: 'boolean', description: 'Output result as JSON', default: false },
+    id:      { type: 'string',  description: 'Local battle ID (omit to use most recent)', default: '' },
+    example: { type: 'string',  description: 'Load a bundled example spec by name (e.g. haiku-shootout) and run it immediately', default: '' },
+    yes:     { type: 'boolean', description: 'Skip cost confirmation prompt', default: false },
+    json:    { type: 'boolean', description: 'Output result as JSON', default: false },
   },
   async run({ args }) {
     try {
-      const state = args.id ? localBattleStore.resolve(args.id) : localBattleStore.list()[0];
+      let resolvedId: string | undefined
+      // --example: bootstrap a battle from a bundled spec and run it in one command
+      if (args.example) {
+        const { resolve, dirname } = await import('node:path')
+        const { fileURLToPath } = await import('node:url')
+        const { readFileSync, existsSync } = await import('node:fs')
+        const { parse } = await import('yaml')
+        const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), '../../../../..')
+        const specPath = resolve(repoRoot, 'examples/local-battle', args.example, 'spec.yaml')
+        if (!existsSync(specPath)) {
+          consola.error('Example not found: %s', specPath)
+          consola.info('Available examples: haiku-shootout')
+          process.exitCode = 1; return
+        }
+        const spec = parse(readFileSync(specPath, 'utf-8')) as {
+          name: string; task: string;
+          contenders: { A: { provider: string; model: string }; B: { provider: string; model: string } }
+        }
+        const created = localBattleStore.create(spec.name, spec.task)
+        localBattleStore.addContender(created.id, { slot: 'A', label: spec.contenders.A.model, ...spec.contenders.A })
+        localBattleStore.addContender(created.id, { slot: 'B', label: spec.contenders.B.model, ...spec.contenders.B })
+        consola.success('Loaded example "%s" (id: %s)', spec.name, created.id.slice(0, 8))
+        resolvedId = created.id
+      }
+
+      const state = resolvedId ? localBattleStore.resolve(resolvedId) : (args.id ? localBattleStore.resolve(args.id) : localBattleStore.list()[0]);
       if (!state) { consola.error('No local battles found. Run `lf battle local init` first.'); process.exitCode = 1; return; }
       if (state.status === 'draft') {
         consola.error('Add both contenders first:');
@@ -2643,6 +2749,116 @@ const rematch = defineCommand({
 });
 
 // ---------------------------------------------------------------------------
+// battle export
+// ---------------------------------------------------------------------------
+const battleExport = defineCommand({
+  meta: {
+    name: 'export',
+    description: 'Export a local battle as JSON or a readable Markdown digest (--as-md).',
+  },
+  args: {
+    id: {
+      type: 'positional',
+      description: 'Local battle UUID (or unique prefix)',
+      required: true,
+    },
+    'as-md': {
+      type: 'boolean',
+      description: 'Export as Markdown digest (task, contenders, outputs, vote summary)',
+      default: false,
+    },
+    out: {
+      type: 'string',
+      description: 'Write output to this file path instead of stdout',
+      default: '',
+    },
+  },
+  async run({ args }) {
+    let state;
+    try {
+      state = localBattleStore.resolve(args.id);
+    } catch (err) {
+      handleError(err);
+      return;
+    }
+
+    const output = args['as-md']
+      ? buildBattleMarkdown(state)
+      : JSON.stringify(state, null, 2);
+
+    if (args.out) {
+      const { writeFileSync } = await import('node:fs');
+      writeFileSync(args.out, output, 'utf-8');
+      consola.success('Written to %s', args.out);
+    } else {
+      process.stdout.write(output + '\n');
+    }
+  },
+});
+
+function buildBattleMarkdown(state: import('../utils/local-battle-engine').LocalBattleState): string {
+  const contA = state.contenders.find((c) => c.slot === 'A');
+  const contB = state.contenders.find((c) => c.slot === 'B');
+  const aWins = state.votes.filter((v) => v.slot === 'A').length;
+  const bWins = state.votes.filter((v) => v.slot === 'B').length;
+  const draws = state.votes.filter((v) => v.slot === 'draw').length;
+  const total = state.votes.length;
+
+  const winner =
+    total === 0
+      ? '_No votes recorded_'
+      : aWins > bWins
+      ? `**${contA?.label ?? 'Slot A'}** wins (${aWins}/${total})`
+      : bWins > aWins
+      ? `**${contB?.label ?? 'Slot B'}** wins (${bWins}/${total})`
+      : `Draw (${aWins}A / ${bWins}B / ${draws} draw)`;
+
+  const lines: string[] = [
+    `# ${state.name}`,
+    '',
+    `**Status:** ${state.status}  `,
+    `**Created:** ${state.createdAt.slice(0, 10)}  `,
+    state.executedAt ? `**Executed:** ${state.executedAt.slice(0, 10)}` : '',
+    '',
+    '## Task',
+    '',
+    state.task,
+    '',
+    '## Contenders',
+    '',
+    contA ? `- **Slot A — ${contA.label}**: \`${contA.provider}/${contA.model}\`` : '- Slot A: _not configured_',
+    contB ? `- **Slot B — ${contB.label}**: \`${contB.provider}/${contB.model}\`` : '- Slot B: _not configured_',
+    '',
+  ];
+
+  if (state.outputs.A || state.outputs.B) {
+    lines.push('## Outputs', '');
+    if (state.outputs.A) {
+      lines.push(`### Slot A — ${contA?.label ?? 'A'}`, '', state.outputs.A, '');
+    }
+    if (state.outputs.B) {
+      lines.push(`### Slot B — ${contB?.label ?? 'B'}`, '', state.outputs.B, '');
+    }
+  }
+
+  lines.push('## Vote Summary', '');
+  lines.push(`- Slot A wins: ${aWins}`);
+  lines.push(`- Slot B wins: ${bWins}`);
+  lines.push(`- Draws: ${draws}`);
+  lines.push(`- **Result: ${winner}**`);
+
+  if (state.votes.length > 0) {
+    lines.push('', '### Vote log', '');
+    for (const v of state.votes) {
+      const label = v.slot === 'A' ? contA?.label ?? 'A' : v.slot === 'B' ? contB?.label ?? 'B' : 'Draw';
+      lines.push(`- **${v.votedAt.slice(0, 10)}** → ${label}${v.rationale ? `: ${v.rationale}` : ''}`);
+    }
+  }
+
+  return lines.join('\n');
+}
+
+// ---------------------------------------------------------------------------
 // Root command
 // ---------------------------------------------------------------------------
 export default defineCommand({
@@ -2686,5 +2902,6 @@ export default defineCommand({
     tournament,
     'stream-feed': streamFeed,
     rematch,
+    export: battleExport,
   },
 });
