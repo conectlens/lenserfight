@@ -152,12 +152,12 @@ lf gateway doctor --json
 | `clock` | Skew < 5 min vs Supabase. |
 | `keychain` | Backend reachable; can read/write a smoke entry. |
 | `identity` | Ed25519 keypair present; not older than rotation policy. |
-| `daemon` | `lf-gatewayd` reachable on its bind address; healthy. |
-| `sync` | Outbox depth below threshold; watermarks fresh; no unresolved conflicts. |
+| `daemon` | `lf-gatewayd` bundle exists in `dist/apps/gateway/main.js` (offline-safe CI check). |
+| `sync` | Preview: skipped unless a signed identity-backed sync probe is available. |
 | `policy` | Reads `global_kill_switch`, `runner_paused`. |
 | `transport` | Reports current bind set; warns on accidental public bind. |
 
-Default (`--check` unspecified) runs all checks. CI uses `--check clock,identity,daemon`.
+Default (`--check` unspecified) runs all checks. CI uses `--check daemon,transport` because it is offline-safe and does not require an Ed25519 identity or Supabase session.
 
 ### `lf gateway identity`
 
@@ -173,7 +173,7 @@ lf gateway identity export-public --json
 | Subcommand | Effect |
 |------------|--------|
 | `show` | Show key id, fingerprint, age, algorithm. |
-| `rotate` | Generate a new keypair, register the new public key, mark the old as revoked. |
+| `rotate` | Generate a new keypair locally and print the new public key for cloud registration. |
 | `export-public` | Print the base64 public key (safe to share). |
 
 The private key NEVER leaves the OS keychain. `rotate` and `show` work without the daemon running.
@@ -206,8 +206,8 @@ lf gateway sync push --dry-run
 | Subcommand | Effect |
 |------------|--------|
 | `status` | Per-class watermarks, outbox depth, unresolved conflict count. `--conflicts` lists conflict rows. |
-| `pull` | One-shot pull from cloud across all conflict-aware classes. |
-| `push` | One-shot flush of the outbox. `--dry-run` validates without writing. |
+| `pull` | Preview stub in the OSS release candidate; continuous pull is daemon-owned. |
+| `push` | Preview stub in the OSS release candidate; signed one-shot push is deferred. |
 
 The daemon runs these loops automatically; the CLI is for manual reconciliation and CI.
 
@@ -225,7 +225,7 @@ lf gateway policy test --kind runner-paused
 | Subcommand | Effect |
 |------------|--------|
 | `show` | Current `global_kill_switch`, `runner_paused`, `budget_enforce`, `max_parallel_runs`, `dark_launch_enabled`, `dark_launch_pct`. |
-| `test` | Issue a noop signed envelope to confirm the policy gate is enforced. |
+| `test` | Preview stub that identifies the server-side policy gate used by executions. |
 
 ### `lf gateway consent`
 
@@ -280,3 +280,11 @@ The gateway respects all CLI environment variables described in [`docs/reference
 - [Roadmap](../../explanation/gateway/roadmap.md)
 - [`lf runner`](agent.md)
 - [`lf doctor`](../../reference/cli/index.md#start-here)
+
+<!-- AUTO-GEN-START -->
+
+# `lf gateway`
+
+Manage local devices, runners, daemon, identity, peers, sync, policy, and routing.
+
+<!-- AUTO-GEN-END -->
