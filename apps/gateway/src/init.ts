@@ -48,8 +48,9 @@ async function main(): Promise<void> {
     `[lf-gateway-init] generated Ed25519 keypair.\n` +
       `  public_key: ${publicKey}\n` +
       `  state_dir:  ${config.stateDir}\n` +
-      `Next step: register the device with the cloud:\n` +
-      `  lf gateway register-device --name "$(hostname)"\n`
+      `Next step: authenticate the CLI, then register this public key with the cloud via the device identity RPC.\n` +
+      `Until the registration command is promoted from preview, inspect the key with:\n` +
+      `  lf gateway identity export-public\n`
   )
 }
 
