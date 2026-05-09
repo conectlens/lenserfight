@@ -79,6 +79,7 @@ const main = defineCommand({
     auth: () => import('./commands/auth').then((m) => m.default),
     config: () => import('./commands/config').then((m) => m.default),
     setup: () => import('./commands/setup').then((m) => m.default),
+    onboard: () => import('./commands/onboard').then((m) => m.default),
     runner: runnerDeprecatedCommand,
     agent: agentDeprecatedCommand,
     inspect: () => import('./commands/inspect').then((m) => m.default),
