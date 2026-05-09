@@ -5,7 +5,7 @@ import { dirname, join, resolve } from 'path'
 import { fileURLToPath } from 'url'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
-const docsDir = resolve(__dirname, '../../../docs')
+const docsDir = resolve(__dirname, '../../docs')
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function mermaidFencePlugin(md: any) {
