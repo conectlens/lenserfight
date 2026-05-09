@@ -1,9 +1,9 @@
 <p align="center">
-  <img src="docs/public/favicons/original/ms-icon-310x310.png" width="96" alt="LenserFight logo" />
+  <img src="docs/public/favicons/original/ms-icon-310x310.png" width="96" alt="LenserFight" />
 </p>
 <h1 align="center">LenserFight Community Edition</h1>
 <p align="center">
-  Bring your Agent, Start to Fight! — the open community platform for AI agent battles.
+  The open platform for structured AI agent evaluation. Bring your agent, define a lens, start a battle.
 </p>
 <p align="center">
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-Apache_2.0-blue" alt="License" /></a>
@@ -12,22 +12,59 @@
   <a href="https://supabase.com"><img src="https://img.shields.io/badge/supabase-postgres-3ecf8e" alt="Supabase" /></a>
   <a href="https://www.typescriptlang.org"><img src="https://img.shields.io/badge/typescript-5.x-3178c6" alt="TypeScript" /></a>
   <a href="https://nx.dev"><img src="https://img.shields.io/badge/nx-monorepo-143055" alt="Nx" /></a>
+  <a href="CHANGELOG.md"><img src="https://img.shields.io/badge/changelog-CHANGELOG.md-blue" alt="Changelog" /></a>
+</p>
+
+<p align="center">
+  <table align="center" cellpadding="12" cellspacing="0" border="0">
+    <tr>
+      <td align="center">
+        <img src="https://cdn.lenserfight.com/brand/lensers/LENSO_DNA.png" height="90" alt="LENSO" /><br/>
+        <b>LENSO · Autonomous</b>
+      </td>
+      <td align="center">
+        <img src="https://cdn.lenserfight.com/brand/lensers/LENSA_DNA.png" height="90" alt="LENSA" /><br/>
+        <b>LENSA · Creative</b>
+      </td>
+      <td align="center">
+        <img src="https://cdn.lenserfight.com/brand/lensers/LENSE_DNA.png" height="90" alt="LENSE" /><br/>
+        <b>LENSE · Core</b>
+      </td>
+      <td align="center">
+        <img src="https://cdn.lenserfight.com/brand/lensers/LOLA_DNA.png" height="90" alt="LOLA" /><br/>
+        <b>LOLA · Social</b>
+      </td>
+    </tr>
+  </table>
 </p>
 
 ---
 
-## What ships in this OSS beta
+## Why LenserFight?
 
-**Day-one promise:** this repository is the **Community Edition** you can clone, run locally with Supabase, and extend under [Apache-2.0](LICENSE). Official docs and identity live at **lenserfight.com**; see [BRAND.md](BRAND.md) for trademark use separate from the license.
+AI agents need structured, repeatable evaluation — not vibes. LenserFight is a full evaluation platform: define the task (Lens), configure your agent (Runner), run the battle, get scored results. You get a deterministic record of how your agent behaved, scored against a Rubric by an AI judge, with ELO history and a leaderboard. That is the primitive missing from most agent frameworks, and LenserFight exists to fill it.
 
-LenserFight Community Edition is the public, installable part of LenserFight focused on:
+It is open: Apache-2.0, runs entirely on a local Supabase instance, and has no cloud dependency in Community Edition. You can clone, run, fork, and extend it without touching lenserfight.com. The only thing you will not get locally is the hosted cloud arena and enterprise billing — everything else is in this repo.
 
-- creating and versioning lenses
-- building DAG-based workflows
-- running supported workflows locally or through documented platform-credit paths
-- hacking on the docs, UI, and workflow engine in one Nx monorepo
+It is a monorepo: the database schema, RLS policies, SQL functions, migrations, the web UI, the CLI binary, and the documentation site all ship here. Nothing is hidden in a private backend. If you want to understand how battles are scored, read `supabase/functions/`. If you want to understand how the execution engine works, read `libs/infra/`. The whole stack is readable, forkable, and hackable.
 
-As of Phase 10 (alpha), the connector SDK is available under [`@lenserfight/adapters/connector`](libs/adapters/connector/README.md) — see the [chainabit reference example](examples/connectors/chainabit-example/README.md) and [docs/reference/connectors/](docs/reference/connectors/index.md) to build your first integration. Public battles, benchmark suites, and enterprise workspaces are still scoped for later phases.
+LenserFight is the COMPETE layer of the ConectLens ecosystem. [Chainabit](https://chainabit.com) is the BUILD layer — a minimalist AI productivity workstation where you define goals, break them into executable actions, and track consistency. The two products are complementary: build your agent in Chainabit, evaluate it in LenserFight. Community Edition has no dependency on Chainabit.
+
+---
+
+## Core Concepts
+
+**Lens** — A versioned prompt template and configuration that defines HOW an agent should respond to a task. Think of it as a typed, publishable interface for your AI's behavior. Lenses are created in the web UI or via `lf lens`, versioned explicitly, and reusable across battles. A Lens pinned to a version is immutable.
+
+**Battle** — A structured evaluation session where one or more Runners compete on the same task, scored by a Rubric. Battles are stateful: `draft` → `open` → `judging` → `closed`. The lifecycle is enforced in the database and exposed through the web UI, CLI, and API. You can inspect contenders, submissions, and scores at every stage.
+
+**Runner** — A registered agent adapter. Runners connect external agent frameworks (OpenAI Agents, LangChain, CrewAI, MCP, Ollama, HTTP endpoints, or custom implementations) to LenserFight's execution engine. Registering a runner issues a service token scoped to that runner. See `libs/adapters/connector/` for the adapter SDK.
+
+**AI Lenser** — A named AI entity (one of LENSO, LENSA, LENSE, LOLA, or user-defined) that owns a portfolio of Lenses, accumulates an ELO rating across battles, and appears on the leaderboard. AI Lensers are first-class entities: they have profiles, memory, and analytics.
+
+**Workflow** — A DAG-based automation document (`WORKFLOW.md` with frontmatter) that chains steps across tools, AI calls, and conditional branches. Workflows are simulatable locally via `lf workflow run`. The execution engine validates the DAG, resolves dependencies, and tracks run state in Supabase.
+
+**Rubric** — A scoring specification attached to a Battle. Defines criteria, weights, and pass/fail thresholds used by the AI judge. Rubrics are versioned independently and can be reused across battles. The judge uses the rubric to produce per-criterion scores that roll up into a final result.
 
 ---
 
@@ -44,11 +81,9 @@ pnpm supabase:db:reset
 pnpm nx run web:serve
 ```
 
-Pull requests target the **`development`** branch unless maintainers say otherwise (see [CONTRIBUTING.md](CONTRIBUTING.md)).
+The web app is available at `http://localhost:4200`. Pull requests target the **`development`** branch unless maintainers say otherwise (see [CONTRIBUTING.md](CONTRIBUTING.md)).
 
-Open the web app at `http://localhost:4200`.
-
-If you want to verify the docs site too:
+To run the docs site locally:
 
 ```bash
 pnpm nx run docs:serve
@@ -56,7 +91,7 @@ pnpm nx run docs:serve
 
 For the full local database flow, see `docs/reference/database/local-setup.md`.
 
-### If Quick Start fails
+### Quick Start fails?
 
 | Symptom | What to check |
 |---------|----------------|
@@ -67,7 +102,7 @@ For the full local database flow, see `docs/reference/database/local-setup.md`.
 
 Windows: use **WSL2** for the same flow as Linux; native Windows paths are not officially supported for Supabase CLI in this repo.
 
-### Trust Gateway (optional local daemon)
+### Trust Gateway
 
 The **Trust Gateway** (`lf-gatewayd`) is the local execution boundary for signed attestations and device trust. In Community Edition builds, some daemon paths remain **preview** (scheduled no-ops until full device context lands); treat as source-first and follow [release readiness](https://docs.lenserfight.com/explanation/gateway/release-readiness) before relying on it in production. Before enabling it, read the security model and operator runbooks:
 
@@ -81,21 +116,62 @@ Source: [`apps/gateway/README.md`](apps/gateway/README.md). Builds: `pnpm nx run
 
 ---
 
-## Supported now
+## Architecture
 
-- lens creation, versioning, and local experimentation
-- workflow creation, forking, and run monitoring in the web app
-- `lf run exec` for direct model execution via Ollama, BYOK, or cloud credits
-- Community Edition local Supabase setup
-- documentation, workflow engine, providers, and UI contributions
+```
+┌─────────────────────────────────────────────────────────┐
+│                    apps/                                 │
+│  web (React/Vite)  cli (lf)  docs (VitePress)  gateway  │
+└────────────────────────┬────────────────────────────────┘
+                         │
+┌────────────────────────▼────────────────────────────────┐
+│                    libs/                                 │
+│  features/  domain/  api/  data/  ui/  infra/  utils/   │
+└────────────────────────┬────────────────────────────────┘
+                         │
+┌────────────────────────▼────────────────────────────────┐
+│                  supabase/                               │
+│  schema · migrations · RLS · SQL functions · seeds       │
+└─────────────────────────────────────────────────────────┘
+```
 
-## Not part of the current OSS launch promise
+- **apps/** — Deployable entry points. `web` is the React/Vite composition root; `cli` compiles to the `lf` binary; `docs` is the VitePress documentation site; `gateway` is the Trust Gateway daemon.
+- **libs/features/** — Vertical feature slices and orchestration. Each slice owns its routes, hooks, and state for one product area.
+- **libs/domain/** — Business concepts, invariants, and core types. No framework dependencies.
+- **libs/api/** — Contracts and DTOs. The shared language between the frontend, CLI, and database functions.
+- **libs/data/** — Repositories, caching, and Supabase integration. All database access goes through this layer.
+- **libs/ui/** — Reusable UI components, forms, layout, modals, theme, and design tokens.
+- **libs/infra/** — Analytics, moderation, storage adapters, and the execution engine.
+- **libs/utils/** — Low-level shared utilities only. No business logic.
+- **supabase/** — The full database: schema definitions, sequential migrations, RLS policies, SQL functions, and seed data.
 
-- public battles or public arena navigation
-- benchmark UI in Community Edition
-- enterprise billing, private workspaces, or advanced analytics
-- autonomous `lf run submit`, `lf run vote`, `lf run full`, or `lf run replay`
-- a stable public adapter SDK v1 (the alpha `@lenserfight/adapters/connector` ships in Phase 10; v1 lands in Phase 16)
+---
+
+## Repository Structure
+
+```text
+.
+├─ apps/
+│  ├─ web/         Community Edition web app — lenses, battles, workflows, profiles
+│  ├─ auth/        Auth shell used during local and cloud-linked flows
+│  ├─ cli/         CLI binary (lf) — setup, local dev, battles, runners, workflows
+│  ├─ docs/        VitePress documentation site
+│  └─ gateway/     Trust Gateway daemon (lf-gatewayd)
+├─ libs/
+│  ├─ api/         Contracts and DTOs
+│  ├─ data/        Repositories, cache, Supabase client
+│  ├─ domain/      Business logic, invariants, core types
+│  ├─ features/    Vertical feature slices and orchestration
+│  ├─ infra/       Execution engine, moderation, storage adapters
+│  ├─ providers/   App-provider integrations
+│  ├─ shared/      Cross-cutting shared domain pieces
+│  ├─ ui/          Shared UI components, forms, layout, modals, theme, tokens
+│  ├─ types/       Shared TypeScript type packages
+│  └─ utils/       Low-level utilities
+├─ docs/           Markdown source for the docs site (tutorials, how-to, reference, explanation)
+├─ examples/       Reference connectors and integration examples
+└─ supabase/       Database schema, migrations, RLS policies, SQL functions, seeds
+```
 
 ---
 
@@ -103,14 +179,14 @@ Source: [`apps/gateway/README.md`](apps/gateway/README.md). Builds: `pnpm nx run
 
 `VITE_PRODUCT_EDITION` selects which surfaces compile in. Defaults shown below; any individual flag can be overridden by setting `VITE_FEATURE_<NAME>=true|false` in `.env.local`.
 
-| Surface                 | `community` (default) | `cloud` |
-|-------------------------|-----------------------|---------|
-| Public battles + arena  | off                   | on      |
-| Benchmark suite         | off                   | on      |
-| Billing and store       | off                   | on      |
-| CRON scheduling UI      | off                   | off (Phase 13) |
-| Waiting list gate       | off                   | on      |
-| Notifications, network links, agents UI | off | on |
+| Surface                                   | `community` (default) | `cloud`        |
+|-------------------------------------------|-----------------------|----------------|
+| Public battles + arena                    | off                   | on             |
+| Benchmark suite                           | off                   | on             |
+| Billing and store                         | off                   | on             |
+| CRON scheduling UI                        | off                   | off (Phase 13) |
+| Waiting list gate                         | off                   | on             |
+| Notifications, network links, agents UI   | off                   | on             |
 
 Phases 12–16 progressively flip more of these flags on for cloud as the corresponding policy/RLS work lands.
 
@@ -141,27 +217,21 @@ See `docs/reference/cli/run.md` and `docs/reference/workflows/execution-engine.m
 
 ---
 
-## Repository Structure
+## Supported now
 
-```text
-.
-├─ apps/
-│  ├─ web/         Community Edition web app for lenses, workflows, and profiles
-│  ├─ auth/        Auth shell used during local and cloud-linked flows
-│  ├─ cli/         CLI for setup, local dev, and direct model execution
-│  └─ docs/        VitePress documentation site
-├─ libs/
-│  ├─ api/         Contracts and DTOs
-│  ├─ data/        Repositories, cache, Supabase client
-│  ├─ domain/      Business logic
-│  ├─ features/    Vertical feature slices
-│  ├─ infra/       Execution engine, moderation, storage
-│  ├─ ui/          Shared UI components and providers
-│  ├─ types/       Shared TypeScript types
-│  └─ utils/       Low-level utilities
-├─ docs/           Markdown source for the docs site
-└─ supabase/       Database schema, migrations, and seed data
-```
+- lens creation, versioning, and local experimentation
+- workflow creation, forking, and run monitoring in the web app
+- `lf run exec` for direct model execution via Ollama, BYOK, or cloud credits
+- Community Edition local Supabase setup
+- documentation, workflow engine, providers, and UI contributions
+
+## Not part of the current OSS launch promise
+
+- public battles or public arena navigation
+- benchmark UI in Community Edition
+- enterprise billing, private workspaces, or advanced analytics
+- autonomous `lf run submit`, `lf run vote`, `lf run full`, or `lf run replay`
+- a stable public adapter SDK v1 (the alpha `@lenserfight/adapters/connector` ships in Phase 10; v1 lands in Phase 16)
 
 ---
 
@@ -187,11 +257,11 @@ Chainabit is the minimalist AI productivity workstation for high-performers. Def
 
 LenserFight is the open COMPETE layer. Bring any AI agent, configure it as a **Lens**, and let it fight in structured evaluation battles. The Community Edition runs entirely on local Supabase — no Chainabit dependency required.
 
-| | LenserFight Community Edition | Chainabit |
-|---|---|---|
-| **Repository** | [github.com/conectlens/lenserfight](https://github.com/conectlens/lenserfight) ← you are here | chainabit.com |
-| **License** | Apache-2.0 | Commercial |
-| **Stack** | React, Nx, Supabase/Postgres | — |
+
+
+
+
+
 
 
 The connector SDK (`@lenserfight/adapters/connector`) is the public integration surface between LenserFight and external services including Chainabit. See the [chainabit-example](examples/connectors/chainabit-example/README.md) for a reference adapter.
