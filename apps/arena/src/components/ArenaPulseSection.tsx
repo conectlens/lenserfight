@@ -4,8 +4,8 @@ import { motion } from 'framer-motion'
 import { Radio } from 'lucide-react'
 import React from 'react'
 
-// run.lenserfight.com — the functional arena app
-const RUN_APP_URL = import.meta.env.VITE_ARENA_URL ?? 'https://run.lenserfight.com'
+// moon.lenserfight.com — the functional arena app
+const RUN_APP_URL = import.meta.env.VITE_WEB_BASE_URL ?? 'https://app.lenserfight.com'
 
 const sectionVariants = {
   hidden: { opacity: 0, y: 24 },
