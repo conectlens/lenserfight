@@ -744,7 +744,7 @@ export class SupabaseWorkflowsRepository implements WorkflowsRepositoryPort {
       p_global_model_id: input.global_model_id ?? null,
       p_inputs_template: input.inputs_template ?? {},
       p_is_active: input.is_active ?? true,
-      p_assignee_type: input.assignee_type ?? 'agent',
+      p_description: input.description ?? null,
       p_assignee_id: input.assignee_id ?? null,
       p_workflow_assignment_id: input.workflow_assignment_id ?? null,
       p_approval_policy: input.approval_policy ?? { requiresApproval: true },
