@@ -13,7 +13,7 @@ For who is on rotation in any given week, see [Mentor Rotation](./mentor-rotatio
 
 This is the path for someone who has never opened a LenserFight PR. It is intentionally short — the goal is to get a draft PR up that a mentor can review, not to ship a finished adapter on the first attempt.
 
-1. **Open an exploratory issue.** Use the [adapter idea](https://github.com/conectlens/lenserfight-web/issues/new?template=adapter_idea.yml) template. Capture the target service, the auth model, the scopes you think you'll need, and whether you intend to implement it yourself.
+1. **Open an exploratory issue.** Use the [adapter idea](https://github.com/conectlens/lenserfight/issues/new?template=adapter_idea.yml) template. Capture the target service, the auth model, the scopes you think you'll need, and whether you intend to implement it yourself.
 2. **Wait for an "approved" reply from a mentor (≤5 business days).** The mentor confirms the slug isn't taken, the scope set is reasonable, and the auth model has a precedent. If it doesn't, they will name what new ground the adapter would break and whether that is in scope for the current release.
 3. **Fork and scaffold.** Follow [Connector SDK — Getting Started](./connector-sdk-getting-started.md) §1–§3. Stop at the first failing test rather than polishing the whole adapter; a draft PR with a scaffold and one passing `verify` test is enough to get review traction.
 4. **Open a draft PR.** Title: `[draft] adapter: <slug>`. Reference the exploratory issue with `Closes #N`. The PR body should answer (a) what the adapter does, (b) what is unverified, (c) what feedback you want.

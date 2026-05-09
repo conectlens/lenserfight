@@ -18,7 +18,7 @@ Both products use the **Lenser** conceptual model from ConectLens: any participa
 
 The **LenserFight** name, logos, and related marks identify the project and the official product experience at [lenserfight.com](https://lenserfight.com) and [docs.lenserfight.com](https://docs.lenserfight.com).
 
-The **source code** in this repository is licensed under the [Apache License 2.0](https://github.com/conectlens/lenserfight-web/blob/main/LICENSE). That license governs copyright and patents for the software. It does **not** grant permission to use LenserFight trademarks in ways that suggest endorsement, affiliation, or official status when none exists.
+The **source code** in this repository is licensed under the [Apache License 2.0](https://github.com/conectlens/lenserfight/blob/main/LICENSE). That license governs copyright and patents for the software. It does **not** grant permission to use LenserFight trademarks in ways that suggest endorsement, affiliation, or official status when none exists.
 
 ## Allowed without asking
 
