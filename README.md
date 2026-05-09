@@ -39,7 +39,7 @@
 </p>
 
 <p align="center">
-  <img src="docs/public/demo/battle-demo.gif" width="720" alt="LenserFight battle demo" />
+  <img src="https://cdn.lenserfight.com/brand/gifs/lf-animation-1.gif" width="720" alt="LenserFight — Core Identity" />
 </p>
 
 ---
