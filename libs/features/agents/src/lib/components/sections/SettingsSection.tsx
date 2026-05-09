@@ -88,7 +88,7 @@ export const SettingsSection: React.FC = () => {
     setWebhooksJson(JSON.stringify(settings.webhooks ?? [], null, 2))
     setMaxParallelRuns(settings.max_parallel_runs ?? 5)
     setGlobalKillSwitch(settings.global_kill_switch ?? false)
-    setAgentPaused(settings.agent_paused ?? false)
+    setAgentPaused(settings.runner_paused ?? settings.agent_paused ?? false)
     setDarkLaunchEnabled(settings.dark_launch_enabled ?? false)
     setDarkLaunchPct(settings.dark_launch_pct ?? 0)
     setBudgetEnforce(settings.budget_enforce ?? true)
@@ -155,7 +155,7 @@ export const SettingsSection: React.FC = () => {
       agentWorkspaceService.updateWorkspaceSettings(bootstrap!.ai_lenser_id, {
         max_parallel_runs: maxParallelRuns,
         global_kill_switch: globalKillSwitch,
-        agent_paused: agentPaused,
+        runner_paused: agentPaused,
         dark_launch_enabled: darkLaunchEnabled,
         dark_launch_pct: darkLaunchPct,
         budget_enforce: budgetEnforce,
