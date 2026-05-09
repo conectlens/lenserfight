@@ -91,6 +91,7 @@ export type {
 } from './lib/threads.types'
 export type { TagRecord } from './lib/threads.types'
 export * from './lib/devices.types'
+export * from './lib/gateway.types'
 export type {
   LeaderboardEntry,
   ContributionContext,
