@@ -10,16 +10,16 @@ if [[ ! -d "$MIG_DIR" ]]; then
   exit 1
 fi
 
-# Private schemas belong to the Chainabit commercial backend and must not appear
-# in new Community Edition migrations. The initial base schema (community_base_schema)
-# is allowlisted because it was written before the OSS/private split was enforced
-# and still contains legacy private schema stubs pending a dedicated strip migration.
+# Schemas that belong exclusively to the Chainabit commercial backend.
+# battles, xp, benchmark are Community Edition features and must NOT appear here.
 PRIVATE=(
-  authz battles benchmark billing organizations wallet xp
+  authz billing organizations wallet
 )
 
-# community_base_schema is allowlisted until a dedicated strip migration removes
-# the private schema stubs it contains. Do NOT add new files here.
+# community_base_schema is allowlisted because it is an already-deployed migration
+# that cannot be edited in place. 20260330000000_drop_private_schema_stubs.sql
+# drops all four private schemas immediately after on every db:reset.
+# Do NOT add any other file to this list.
 ALLOWLIST=(
   "20260329120000_community_base_schema.sql"
 )
