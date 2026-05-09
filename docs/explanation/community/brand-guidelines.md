@@ -5,9 +5,20 @@ description: How to use the LenserFight name and marks alongside Apache-2.0–li
 
 # LenserFight brand and trademark guidelines
 
+## The ConectLens Ecosystem
+
+**[ConectLens](https://conectlens.com)** is the parent ecosystem and umbrella brand — a product-focused environment built around clarity, structure, and long-term thinking. ConectLens builds two products:
+
+- **[Chainabit](https://chainabit.com)** — *"Chain a bit. Change a lot."* The AI productivity platform for high-performers. Define objectives as Chainies, execute them as Bits, guided by Chao AI. Closed-source commercial product.
+- **LenserFight** — *"Bring your Agent. Start to Fight."* The AI agent battle platform. Community Edition is Apache-2.0 open source (this repository).
+
+Both products use the **Lenser** conceptual model from ConectLens: any participant — human or AI — who contributes insight, execution, or perspective to the ecosystem.
+
+---
+
 The **LenserFight** name, logos, and related marks identify the project and the official product experience at [lenserfight.com](https://lenserfight.com) and [docs.lenserfight.com](https://docs.lenserfight.com).
 
-The **source code** in this repository is licensed under the [Apache License 2.0](https://github.com/connectlens/lenserfight-web/blob/main/LICENSE). That license governs copyright and patents for the software. It does **not** grant permission to use LenserFight trademarks in ways that suggest endorsement, affiliation, or official status when none exists.
+The **source code** in this repository is licensed under the [Apache License 2.0](https://github.com/conectlens/lenserfight-web/blob/main/LICENSE). That license governs copyright and patents for the software. It does **not** grant permission to use LenserFight trademarks in ways that suggest endorsement, affiliation, or official status when none exists.
 
 ## Allowed without asking
 
@@ -27,15 +38,15 @@ The **source code** in this repository is licensed under the [Apache License 2.0
 
 Canonical project information, downloads we endorse, and the hosted product are associated with **lenserfight.com** and this organization’s official repositories and release notes.
 
-## Chainabit
+## Chainabit and ConectLens marks
 
-**Chainabit** is a separate brand and product. It is the private commercial API platform that powers the cloud product at [lenserfight.com](https://lenserfight.com). Chainabit is not part of this repository and is not covered by the Apache-2.0 license in this repo.
+**Chainabit** and **ConectLens** are separate brands under the same parent ecosystem. Chainabit powers the cloud product at [lenserfight.com](https://lenserfight.com) but is not part of this repository and is not covered by the Apache-2.0 license here.
 
-- The **Chainabit** name and any Chainabit marks are governed separately and are not subject to LenserFight's trademark guidelines above.
+- The **Chainabit** and **ConectLens** names and marks are governed separately from LenserFight's trademark guidelines above.
 - Saying that a product "uses the LenserFight connector SDK to integrate with Chainabit" is a factual technical description and is allowed.
-- Do not use **Chainabit** marks in a way that implies affiliation, endorsement, or that you operate the Chainabit commercial platform.
+- Do not use **Chainabit** or **ConectLens** marks in a way that implies you operate those products or hold an official relationship with the ConectLens ecosystem.
 
-For questions about Chainabit branding or the commercial relationship between LenserFight and Chainabit, use [Support](/how-to/contributors/support).
+For questions about Chainabit or ConectLens branding, use [Support](/how-to/contributors/support).
 
 ## Questions
 
