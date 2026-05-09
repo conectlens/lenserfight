@@ -327,14 +327,14 @@ If you change behavior, run the smallest relevant validation and mention what yo
 ## Documentation
 
 - Trust Gateway: [docs/explanation/gateway/](docs/explanation/gateway/index.md) (or [docs.lenserfight.com/explanation/gateway/](https://docs.lenserfight.com/explanation/gateway/?utm_source=github&utm_medium=readme&utm_campaign=lenserfight))
-- Getting started: `docs/tutorials/getting-started/overview.md`
-- Installation: `docs/tutorials/getting-started/installation.md`
-- Local database setup: `docs/reference/database/local-setup.md`
-- Community API: `docs/reference/community-api/index.md`
-- Workflow engine: `docs/reference/workflows/execution-engine.md`
-- Workflow contracts: `docs/reference/workflows/contract-schema.md`
-- Workflow test plan: `docs/reference/workflows/test-plan.md`
-- CLI run commands: `docs/reference/cli/run.md`
+- Getting started: [docs/tutorials/getting-started/overview.md](docs/tutorials/getting-started/overview.md)
+- Installation: [docs/tutorials/getting-started/installation.md](docs/tutorials/getting-started/installation.md)
+- Local database setup: [docs/reference/database/local-setup.md](docs/reference/database/local-setup.md)
+- Community API: [docs/reference/community-api/index.md](docs/reference/community-api/index.md)
+- Workflow engine: [docs/reference/workflows/execution-engine.md](docs/reference/workflows/execution-engine.md)
+- Workflow contracts: [docs/reference/workflows/contract-schema.md](docs/reference/workflows/contract-schema.md)
+- Workflow test plan: [docs/reference/workflows/test-plan.md](docs/reference/workflows/test-plan.md)
+- CLI run commands: [docs/reference/cli/run.md](docs/reference/cli/run.md)
 
 ---
 
