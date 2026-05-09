@@ -3,13 +3,12 @@ import { nxCopyAssetsPlugin } from '@nx/vite/plugins/nx-copy-assets.plugin'
 import { nxViteTsPaths } from '@nx/vite/plugins/nx-tsconfig-paths.plugin'
 import tailwindcss from '@tailwindcss/vite'
 import react from '@vitejs/plugin-react'
-import { resolve } from 'node:path'
 import { defineConfig } from 'vite'
 
 export default defineConfig(() => ({
   root: import.meta.dirname,
-  // Load `.env*` from the monorepo root (not `apps/web`), matching Nx cwd and docs.
-  envDir: resolve(import.meta.dirname, '../..'),
+  envDir: import.meta.dirname,
+  envPrefix: ['SUPABASE_URL', 'SUPABASE_PUBLISHABLE_KEY', 'API_', 'CHAINABIT_API_URL', 'AUTH_', 'ARENA_', 'WEB_', 'DOCS_', 'STATUS_', 'OLLAMA_', 'POSTHOG_', 'CAPTCHA_', 'PRODUCT_', 'FEATURE_', 'MOCK', 'DATA_SOURCE', 'ENABLE_', 'ALLOWED_', 'GOOGLE_'],
   cacheDir: '../../node_modules/.vite/apps/web',
   server: {
     port: 3000,

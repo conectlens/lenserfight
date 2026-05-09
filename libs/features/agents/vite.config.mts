@@ -10,9 +10,9 @@ export default defineConfig(() => ({
   root: import.meta.dirname,
   cacheDir: '../../../node_modules/.vite/libs/features/agents',
   define: {
-    'import.meta.env.VITE_API_URL': JSON.stringify('http://127.0.0.1:8787'),
-    'import.meta.env.VITE_SUPABASE_URL': JSON.stringify('http://127.0.0.1:54321'),
-    'import.meta.env.VITE_SUPABASE_ANON_KEY': JSON.stringify('test-anon-key'),
+    'import.meta.env.API_URL': JSON.stringify('http://127.0.0.1:8787'),
+    'import.meta.env.SUPABASE_URL': JSON.stringify('http://127.0.0.1:54321'),
+    'import.meta.env.SUPABASE_ANON_KEY': JSON.stringify('test-anon-key'),
   },
   plugins: [
     react(),

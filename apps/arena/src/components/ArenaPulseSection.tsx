@@ -5,7 +5,7 @@ import { Radio } from 'lucide-react'
 import React from 'react'
 
 // moon.lenserfight.com — the functional arena app
-const RUN_APP_URL = import.meta.env.VITE_WEB_BASE_URL ?? 'https://moon.lenserfight.com'
+const RUN_APP_URL = import.meta.env.WEB_BASE_URL ?? 'https://moon.lenserfight.com'
 
 const sectionVariants = {
   hidden: { opacity: 0, y: 24 },

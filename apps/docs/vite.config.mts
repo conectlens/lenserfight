@@ -7,7 +7,8 @@ import { resolve } from 'node:path'
 
 export default defineConfig(() => ({
   root: import.meta.dirname,
-  envDir: resolve(import.meta.dirname, '../..'),
+  envDir: import.meta.dirname,
+  envPrefix: ['SUPABASE_URL', 'SUPABASE_PUBLISHABLE_KEY', 'WEB_', 'FORUM_'],
   cacheDir: '../../node_modules/.vite/apps/docs',
 
   server: {

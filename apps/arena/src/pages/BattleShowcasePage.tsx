@@ -5,7 +5,7 @@ import React from 'react'
 
 import { HeroFightPreview } from '../components/HeroFightPreview'
 
-const ARENA_APP_URL = import.meta.env.VITE_ARENA_URL ?? 'https://moon.lenserfight.com'
+const ARENA_APP_URL = import.meta.env.ARENA_URL ?? 'https://moon.lenserfight.com'
 
 const HANDICAP_DETAILS = [
   {

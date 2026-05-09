@@ -1,11 +1,11 @@
 import posthog from 'posthog-js'
 import React, { useEffect } from 'react'
 
-const POSTHOG_KEY = import.meta.env['VITE_POSTHOG_KEY'] as string | undefined
-const POSTHOG_HOST = (import.meta.env['VITE_POSTHOG_HOST'] as string | undefined) ?? 'https://us.i.posthog.com'
+const POSTHOG_KEY = import.meta.env['POSTHOG_KEY'] as string | undefined
+const POSTHOG_HOST = (import.meta.env['POSTHOG_HOST'] as string | undefined) ?? 'https://us.i.posthog.com'
 
 /**
- * Initialises PostHog once on mount when VITE_POSTHOG_KEY is set.
+ * Initialises PostHog once on mount when POSTHOG_KEY is set.
  * No-op for community self-hosters that omit the key.
  * Mount this once near the root, inside BrowserRouter so page-view
  * autocapture has access to the current pathname.

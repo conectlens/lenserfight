@@ -179,7 +179,7 @@ export interface RequestAttachment {
   attachedAt: string
 }
 
-// --- HTTP API DTOs (VITE_API_URL) ---
+// --- HTTP API DTOs (API_URL) ---
 
 /**
  * Parameters for generative media executions (image / video / audio).

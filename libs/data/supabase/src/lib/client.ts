@@ -3,9 +3,9 @@ import { cookieStorage } from './cookieStorage'
 
 // Fall back to placeholder values in file-storage mode so this module can be
 // imported without throwing — the supabase client is never actually called when
-// VITE_DATA_SOURCE=file (repositories go through the file-mode factory instead).
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'http://localhost:54321'
-const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY || 'placeholder-key-for-file-mode'
+// DATA_SOURCE=file (repositories go through the file-mode factory instead).
+const supabaseUrl = import.meta.env.SUPABASE_URL || 'http://localhost:54321'
+const supabaseKey = import.meta.env.SUPABASE_PUBLISHABLE_KEY || 'placeholder-key-for-file-mode'
 
 export const supabase = createClient(supabaseUrl, supabaseKey, {
   auth: {

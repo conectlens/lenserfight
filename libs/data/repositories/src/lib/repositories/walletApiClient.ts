@@ -16,9 +16,9 @@ import {
 } from '@lenserfight/types'
 import type { ApiResponseEnvelope } from '@lenserfight/api/contracts'
 import { apiFetch, unwrapEnvelope } from '../apiFetch'
-import { VITE_API_BASE_URL } from '@lenserfight/utils/env'
+import { API_BASE_URL } from '@lenserfight/utils/env'
 
-const API_BASE = VITE_API_BASE_URL
+const API_BASE = API_BASE_URL
 
 type WalletProductApi = Omit<WalletProduct, 'variantId'> & {
   variant_id: string
