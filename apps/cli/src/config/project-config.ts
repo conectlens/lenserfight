@@ -313,10 +313,13 @@ export function resolveConfig(cwd = process.cwd()): LenserfightConfig {
   const project = loadConfig(cwd);
   const user = loadUserConfig();
   const env = loadEnvConfig(cwd);
-  const isLocal = project.mode === 'local';
 
-  return {
-    mode: project.mode,
+  // --local global flag overrides project config mode for this invocation
+  const forcedLocal = process.env['LF_LOCAL'] === '1';
+  const isLocal = forcedLocal || project.mode === 'local';
+
+  const result: LenserfightConfig = {
+    mode: forcedLocal ? 'local' : project.mode,
     supabaseUrl:
       env.supabaseUrl ||
       project.supabaseUrl ||
@@ -357,6 +360,15 @@ export function resolveConfig(cwd = process.cwd()): LenserfightConfig {
     authExpiresAt: user.authExpiresAt,
     defaultAdapterId: user.defaultAdapterId,
   };
+
+  if (process.env['LF_DEBUG'] === '1') {
+    const ts = new Date().toISOString().slice(11, 23);
+    const loaded = ['.env', '.env.local'].filter((f) => existsSync(resolve(cwd, f)));
+    process.stderr.write(`[${ts}] config: mode=${result.mode} supabaseUrl=${result.supabaseUrl} cloudApiUrl=${result.cloudApiUrl}\n`);
+    process.stderr.write(`[${ts}] env files: ${loaded.length ? loaded.join(', ') : 'none'}\n`);
+  }
+
+  return result;
 }
 
 export function getWorkspaceKey(cwd = process.cwd()): string {

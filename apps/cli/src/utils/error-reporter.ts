@@ -1,3 +1,5 @@
+import { getExecContext } from '../lib/exec-context'
+
 // ANSI codes — no external deps required
 const RESET = '\x1b[0m'
 const BOLD = '\x1b[1m'
@@ -70,6 +72,14 @@ export function reportCliError(error: unknown): void {
   if (detail) {
     for (const line of detail.split('\n')) {
       process.stderr.write(`${DIM}  ${line}${RESET}\n`)
+    }
+  }
+
+  const { isDebug } = getExecContext()
+  if (isDebug && error instanceof Error && error.stack) {
+    process.stderr.write(`${DIM}  Stack trace:${RESET}\n`)
+    for (const line of error.stack.split('\n').slice(1)) {
+      process.stderr.write(`${GRAY}  ${line}${RESET}\n`)
     }
   }
 
