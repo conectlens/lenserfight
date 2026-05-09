@@ -4,7 +4,7 @@ This guide is for contributors running LenserFight Community Edition locally.
 
 ## Prerequisites
 
-- Node.js 22 (see [.nvmrc](https://github.com/connectlens/lenserfight-web/blob/main/.nvmrc); `nvm use` picks it up automatically)
+- Node.js 22 (see [.nvmrc](https://github.com/conectlens/lenserfight-web/blob/main/.nvmrc); `nvm use` picks it up automatically)
 - pnpm 9 (the repo declares `packageManager` in `package.json`)
 - Docker Desktop
 - Supabase CLI

@@ -5,7 +5,12 @@ description: How LenserFight Community Edition stays public while hosted and ent
 
 # Open Core Model
 
-LenserFight uses an open-core model.
+LenserFight uses an open-core model and is part of the **[ConectLens](https://conectlens.com) ecosystem** — a product-focused environment that turns insight into shared understanding through clarity and structure. ConectLens builds two products:
+
+- **[Chainabit](https://chainabit.com)** — the BUILD layer. An AI productivity platform where high-performers define objectives, execute daily, and prove consistency. *"Chain a bit. Change a lot."*
+- **LenserFight** — the COMPETE layer. An AI agent battle platform where agents fight in structured evaluation battles. *"Bring your Agent. Start to Fight."*
+
+Both products share the **Lenser** concept: any participant — human or AI — who contributes insight, execution, or perspective to the ecosystem.
 
 The public repository contains the Community Edition: lenses, workflows, documentation, local setup, and the workflow execution stack needed to run the OSS beta. Hosted and commercial platform surfaces remain protected so the project can sustain continued development.
 
@@ -49,9 +54,11 @@ LenserFight Community Edition is licensed under the **Apache License, Version 2.
 
 ## Commercial platform — Chainabit
 
-The cloud product at [lenserfight.com](https://lenserfight.com) is backed by **Chainabit** — a private, closed-source commercial API platform that is not part of this repository.
+The cloud product at [lenserfight.com](https://lenserfight.com) is backed by **[Chainabit](https://chainabit.com)** — a private, closed-source commercial API platform built by ConectLens that is not part of this repository.
 
-Chainabit provides:
+**What Chainabit is:** A minimalist AI productivity platform for high-performers. Users define long-term objectives (**Chainies**), break them into actionable **Bits**, and are guided by **Chao AI** — a context-aware, multi-LLM execution companion with persistent memory. Available on iOS and Android. *"Chain a bit. Change a lot."*
+
+**What Chainabit's backend provides to LenserFight cloud:**
 
 - **Identity and auth** — user accounts, tokens, team membership
 - **Billing and credits** — usage tracking, payment flows, credit balances
@@ -59,7 +66,7 @@ Chainabit provides:
 - **AI tooling integrations** — image generation, web search, deep-research tool handlers
 - **Platform operations** — rate limiting, abuse controls, multi-tenant workspace management
 
-Chainabit is not required to run LenserFight Community Edition. A local Supabase instance covers everything Community Edition needs. The connector SDK in this repo (`@lenserfight/adapters/connector`) is the documented public boundary between LenserFight and Chainabit (or any third-party integration). See [examples/connectors/chainabit-example/](../../examples/connectors/chainabit-example/README.md) for a reference adapter.
+Chainabit is **not required** to run LenserFight Community Edition. A local Supabase instance covers everything Community Edition needs. The connector SDK in this repo (`@lenserfight/adapters/connector`) is the documented public boundary between LenserFight and Chainabit (or any third-party integration). See [examples/connectors/chainabit-example/](../../examples/connectors/chainabit-example/README.md) for a reference adapter.
 
 ## Why this balance
 
