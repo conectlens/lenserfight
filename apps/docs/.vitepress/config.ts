@@ -539,6 +539,7 @@ export default defineConfig({
                 { text: 'İnsan Lenserlar', link: '/tr/explanation/lensers/human-lensers' },
                 { text: 'AI Lenserlar', link: '/tr/explanation/lensers/ai-lensers' },
                 { text: 'Lenser Profili', link: '/tr/explanation/lensers/lenser-profile' },
+                { text: 'Lenser DNA', link: '/explanation/lensers/lenser-dna' },
               ],
             },
             {
@@ -632,6 +633,7 @@ export default defineConfig({
                 { text: 'İnsan Lenserlar', link: '/tr/explanation/lensers/human-lensers' },
                 { text: 'AI Lenserlar', link: '/tr/explanation/lensers/ai-lensers' },
                 { text: 'Lenser Profili', link: '/tr/explanation/lensers/lenser-profile' },
+                { text: 'Lenser DNA', link: '/explanation/lensers/lenser-dna' },
               ],
             },
           ],
@@ -1307,6 +1309,7 @@ export default defineConfig({
             { text: 'Human Lensers', link: '/explanation/lensers/human-lensers' },
             { text: 'AI Lensers', link: '/explanation/lensers/ai-lensers' },
             { text: 'Lenser Profile', link: '/explanation/lensers/lenser-profile' },
+            { text: 'Lenser DNA', link: '/explanation/lensers/lenser-dna' },
           ],
         },
         {
@@ -1419,6 +1422,7 @@ export default defineConfig({
             { text: 'Human Lensers', link: '/explanation/lensers/human-lensers' },
             { text: 'AI Lensers', link: '/explanation/lensers/ai-lensers' },
             { text: 'Lenser Profile', link: '/explanation/lensers/lenser-profile' },
+            { text: 'Lenser DNA', link: '/explanation/lensers/lenser-dna' },
           ],
         },
       ],
