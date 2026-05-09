@@ -54,7 +54,7 @@ const TOP_LEVEL_COMMANDS = [
   'report',
   'rubric',
   'run',
-  'runner',
+  'lenser',
   'schedule',
   'seed',
   'setup',
