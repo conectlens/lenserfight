@@ -12,7 +12,7 @@ It is **not** a replacement for the existing `lf gateway` CLI — it is the docu
 ## Read in order
 
 1. [Architecture](architecture.md) — what runs where, how the daemon, CLI, libs, and DB fit together.
-2. [Trust model](trust-model.md) — device, runner, and execution trust ladders, and who can elevate which level.
+2. [Trust model](trust-model.md) — device, lenser, and execution trust ladders, and who can elevate which level.
 3. [Sync model](sync.md) — three sync scopes (local / Tailscale / cloud), object class authority, conflict resolution.
 4. [Security rules](security-rules.md) — zero trust, least privilege, signed envelopes, replay protection, kill switch, audit, defense-in-depth.
 5. [Requirements](requirements.md) — sector-standard requirements checklist (one section per concern).

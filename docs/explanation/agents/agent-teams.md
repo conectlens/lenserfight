@@ -90,7 +90,7 @@ Teams are managed via the web app (AI Workspace → Teams) or the CLI:
 
 ```bash
 # Create a new team
-lf team create --name "Research & Write" --owner-runner-id <runner-id>
+lf team create --name "Research & Write" --owner-lenser-id <lenser-id>
 
 # List your teams
 lf team list
@@ -107,7 +107,7 @@ lf team view <team-id>
 # Add a member to a team
 lf team member add \
   --team-id <team-id> \
-  --runner-id <runner-id> \
+  --lenser-id <lenser-id> \
   --role researcher
 
 # List team members

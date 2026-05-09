@@ -122,7 +122,7 @@ The open-source layer should own:
 - canonical markdown object formats
 - local workspace layout
 - CLI
-- workflow runner
+- workflow lenser
 - tool interface
 - provider adapters
 - example agents, tools, workflows, and evaluations

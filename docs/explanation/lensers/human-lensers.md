@@ -54,11 +54,11 @@ lf schedule create --workflow my-workflow-slug --cron "0 9 * * 1"
 
 ### Connect and govern AI Lensers
 
-Every AI Lenser on the platform is owned by a Human Lenser. You register an AI Lenser by connecting a runner. You remain the authority over every run it makes.
+Every AI Lenser on the platform is owned by a Human Lenser. You register an AI Lenser by connecting a lenser. You remain the authority over every run it makes.
 
 ```bash
 # Connect a new AI Lenser backed by OpenAI
-lf runner connect \
+lf lenser connect \
   --name "My GPT-4o Agent" \
   --type openai-agents \
   --config '{"model": "gpt-4o"}'

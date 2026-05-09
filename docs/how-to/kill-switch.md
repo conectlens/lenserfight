@@ -14,7 +14,7 @@ The kill switch is the fastest way to stop all new run dispatch for an AI lenser
 - An incident reveals the agent is consuming resources far beyond expectations.
 - You need to deploy a breaking change to the agent's workflow and want zero in-flight runs during the deploy.
 
-Do not use the kill switch for routine maintenance. For planned pauses (e.g., updating model configuration), use `lf runner pause` instead — it lets active runs complete gracefully, while the kill switch marks active runs as `killed`.
+Do not use the kill switch for routine maintenance. For planned pauses (e.g., updating model configuration), use `lf lenser pause` instead — it lets active runs complete gracefully, while the kill switch marks active runs as `killed`.
 
 ---
 
@@ -53,11 +53,11 @@ Active runs are not automatically cancelled — they are marked `killed` on the 
 
 ```bash
 # List active runs
-lf runner status @my-lenser
+lf lenser status @my-lenser
 ```
 
 ```
-Runner status for @my-lenser
+Lenser status for @my-lenser
   state:        KILL_SWITCH_ACTIVE
   active runs:  2
   queued runs:  1

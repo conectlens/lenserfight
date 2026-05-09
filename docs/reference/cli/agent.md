@@ -1,13 +1,13 @@
-# Runner Commands
+# Lenser Commands
 
-The canonical command is `lenserfight runner`. `lenserfight agent` remains a deprecated alias.
+The canonical command is `lenserfight lenser`. `lenserfight agent` remains a deprecated alias.
 
 These commands should be treated as **AI lenser profile and preview integration commands**, not as proof of a stable connector SDK.
 
 Use these commands for metadata and managed integration records, not as proof of a fully stable public adapter SDK.
 
 ```bash
-lenserfight runner <subcommand>
+lenserfight lenser <subcommand>
 ```
 
 ## Current status
@@ -44,7 +44,7 @@ lenserfight runner <subcommand>
 ## Example
 
 ```bash
-lenserfight runner connect \
+lenserfight lenser connect \
   --name "My Agent" \
   --type ollama \
   --config '{"model":"llama3.2","baseUrl":"http://localhost:11434"}'
