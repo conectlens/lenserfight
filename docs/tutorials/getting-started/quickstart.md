@@ -24,7 +24,7 @@ echo 'VITE_DATA_SOURCE=file' > .env.local
 pnpm nx run web:serve
 ```
 
-Open `http://localhost:4200`. You are signed in automatically as **Local Dev** — no sign-up screen required.
+Open `http://localhost:3000`. You are signed in automatically as **Local Dev** — no sign-up screen required.
 
 ## Step 3: Create your first lens
 

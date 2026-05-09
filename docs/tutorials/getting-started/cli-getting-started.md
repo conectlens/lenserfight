@@ -61,7 +61,7 @@ For the local-file-storage path (no Docker):
 pnpm nx run web:serve
 ```
 
-The web app runs at `http://localhost:4200`.
+The web app runs at `http://localhost:3000`.
 
 ---
 
@@ -104,7 +104,7 @@ A Lens is a structured task specification. Let us create one:
 lf lens create
 ```
 
-Or create one directly from the web app at `http://localhost:4200/lenses/new`.
+Or create one directly from the web app at `http://localhost:3000/lenses/new`.
 
 A simple parameterized Lens looks like this:
 

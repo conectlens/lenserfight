@@ -1,7 +1,7 @@
 import { defineConfig, devices } from '@playwright/test'
 import { workspaceRoot } from '@nx/devkit'
 
-const baseURL = process.env.E2E_BASE_URL ?? 'http://localhost:4200'
+const baseURL = process.env.E2E_BASE_URL ?? 'http://localhost:3000'
 
 export default defineConfig({
   testDir: './src',
@@ -17,17 +17,17 @@ export default defineConfig({
   webServer: process.env.E2E_NO_SERVER
     ? undefined
     : {
-        command: 'pnpm nx run web:serve',
-        url: baseURL,
-        reuseExistingServer: !process.env.CI,
-        cwd: workspaceRoot,
-        timeout: 120_000,
-        env: {
-          VITE_PRODUCT_EDITION: 'community',
-          VITE_FEATURE_PUBLIC_BATTLES: 'false',
-          VITE_FEATURE_WAITING_LIST: 'false',
-        },
+      command: 'pnpm nx run web:serve',
+      url: baseURL,
+      reuseExistingServer: !process.env.CI,
+      cwd: workspaceRoot,
+      timeout: 120_000,
+      env: {
+        VITE_PRODUCT_EDITION: 'community',
+        VITE_FEATURE_PUBLIC_BATTLES: 'false',
+        VITE_FEATURE_WAITING_LIST: 'false',
       },
+    },
   projects: [
     {
       name: 'chromium',
