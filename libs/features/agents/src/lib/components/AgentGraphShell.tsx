@@ -4,12 +4,12 @@ import {
   Background,
   BackgroundVariant,
   Controls,
-  MiniMap,
   ReactFlow,
   ReactFlowProvider,
   useReactFlow,
   type Connection,
   type Edge,
+  type EdgeMouseHandler,
   type Node,
   type NodeMouseHandler,
   type OnConnect,
@@ -19,8 +19,10 @@ import { useNavigate } from 'react-router-dom'
 
 import { AgentCanvasContextMenu } from './AgentCanvasContextMenu'
 import { AgentCanvasNode, type AgentNodeData } from './AgentCanvasNode'
+import { AgentEdgeLine } from './canvas/AgentEdgeLine'
 
 const nodeTypes = { agentNode: AgentCanvasNode }
+const edgeTypes = { agentEdge: AgentEdgeLine }
 
 interface ContextMenuState {
   x: number
@@ -45,6 +47,13 @@ interface AgentGraphShellProps {
   onNodeRemove?: (nodeId: string) => void
   onAddMember?: () => void
   onManageEdges?: () => void
+  /** Selection state (controlled from parent) */
+  selectedNodeId?: string | null
+  selectedEdgeId?: string | null
+  onNodeSelect?: (nodeId: string | null) => void
+  onEdgeSelect?: (edgeId: string | null) => void
+  /** Left palette overlay inside the canvas */
+  agentPaletteSlot?: React.ReactNode
 }
 
 const FlowCanvas: React.FC<AgentGraphShellProps> = ({
@@ -59,6 +68,9 @@ const FlowCanvas: React.FC<AgentGraphShellProps> = ({
   onNodeRemove,
   onAddMember,
   onManageEdges,
+  onNodeSelect,
+  onEdgeSelect,
+  agentPaletteSlot,
 }) => {
   const { screenToFlowPosition } = useReactFlow()
   const containerRef = useRef<HTMLDivElement>(null)
@@ -89,6 +101,28 @@ const FlowCanvas: React.FC<AgentGraphShellProps> = ({
     []
   )
 
+  const handleNodeClick: NodeMouseHandler = useCallback(
+    (_e, node) => {
+      onNodeSelect?.(node.id)
+      onEdgeSelect?.(null)
+    },
+    [onNodeSelect, onEdgeSelect]
+  )
+
+  const handleEdgeClick: EdgeMouseHandler = useCallback(
+    (_e, edge) => {
+      onEdgeSelect?.(edge.id)
+      onNodeSelect?.(null)
+    },
+    [onEdgeSelect, onNodeSelect]
+  )
+
+  const handlePaneClick = useCallback(() => {
+    setContextMenu(null)
+    onNodeSelect?.(null)
+    onEdgeSelect?.(null)
+  }, [onNodeSelect, onEdgeSelect])
+
   const handleDragOver = useCallback((e: React.DragEvent) => {
     e.preventDefault()
     e.dataTransfer.dropEffect = 'move'
@@ -108,18 +142,22 @@ const FlowCanvas: React.FC<AgentGraphShellProps> = ({
   const closeMenu = useCallback(() => setContextMenu(null), [])
 
   return (
-    <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_360px]">
+    <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_400px]">
       <div
         ref={containerRef}
         className="relative min-h-[560px] overflow-hidden rounded-[28px] border border-gray-200 bg-white shadow-sm dark:border-gray-800 dark:bg-gray-900"
         onDragOver={handleDragOver}
         onDrop={handleDrop}
       >
+        {/* Left palette overlay */}
+        {agentPaletteSlot}
+
         <ReactFlow
           nodes={nodes}
           edges={edges}
           onConnect={onConnect}
           nodeTypes={nodeTypes}
+          edgeTypes={edgeTypes}
           fitView
           fitViewOptions={{ padding: 0.2 }}
           panOnScroll
@@ -130,18 +168,15 @@ const FlowCanvas: React.FC<AgentGraphShellProps> = ({
           proOptions={{ hideAttribution: true }}
           onPaneContextMenu={handlePaneContextMenu}
           onNodeContextMenu={handleNodeContextMenu}
-          onPaneClick={closeMenu}
+          onNodeClick={handleNodeClick}
+          onEdgeClick={handleEdgeClick}
+          onPaneClick={handlePaneClick}
         >
           <Background
             variant={BackgroundVariant.Dots}
             gap={20}
             size={1.2}
             color="rgba(148, 163, 184, 0.35)"
-          />
-          <MiniMap
-            pannable
-            zoomable
-            className="!rounded-2xl !border !border-gray-200 !bg-white/90 dark:!border-gray-700 dark:!bg-gray-950/90"
           />
           <Controls className="!rounded-2xl !border !border-gray-200 !bg-white dark:!border-gray-700 dark:!bg-gray-950" />
         </ReactFlow>
