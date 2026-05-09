@@ -47,7 +47,7 @@ Compare how two frontier models write creative TypeScript-themed haiku.
 
 ## Evaluation
 
-Judged by brevity, syllable count, and technical accuracy. Human vote wins.
+Judged by brevity, syllable count, and technical accuracy. AI judge determines the winner automatically after execution.
 
 ## Report
 
