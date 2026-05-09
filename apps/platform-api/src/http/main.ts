@@ -14,6 +14,7 @@ import { handlePartnersRefreshTokenRoute } from './routes/partners-refresh-token
 import { handlePartnersSendClaimRoute } from './routes/partners-send-claim.route'
 import { handleHealthRoute } from './routes/health.route'
 import { handleBattleShareCardRoute } from './routes/battles-share-card.route'
+import { handleMediaProxyRoute } from './routes/media-proxy.route'
 
 // Register partner providers — add new partners here, nothing else changes
 partnerRegistry.register(new ChainbitPartnerProvider())
@@ -79,6 +80,12 @@ const server = createServer(async (req, res) => {
 
     if (req.method === 'POST' && parts[0] === 'v1' && parts[1] === 'workflows' && parts[3] === 'run') {
       await handleWorkflowRunRoute(req, res, parts[2], requestId, startedAt)
+      return
+    }
+
+    // Phase AK — GET /v1/media/:objectId — owner-only signed URL redirect.
+    if (req.method === 'GET' && parts[0] === 'v1' && parts[1] === 'media' && parts[2] && parts.length === 3) {
+      await handleMediaProxyRoute(req, res, parts[2], requestId, startedAt)
       return
     }
 
