@@ -1,10 +1,19 @@
 # CLI Configuration
 
-The CLI uses a **two-file model** to keep secrets out of your repository.
+The CLI uses a **two-layer config model** to keep secrets out of your repository.
 
-## Project config — `.lenserfight.json`
+## Project config — `.lenserfight/config.json`
 
-Stores non-secret, machine-specific settings. Safe to gitignore (added automatically). Created by `lenserfight init`.
+Stores non-secret settings for this project. Safe to commit. Created by `lenserfight init`.
+
+```
+your-project/
+└── .lenserfight/
+    ├── config.json            ← project config (this section)
+    ├── automation-registry.json
+    ├── runs/
+    └── reports/
+```
 
 | Field | Type | Default | Description |
 |-------|------|---------|-------------|
@@ -14,14 +23,28 @@ Stores non-secret, machine-specific settings. Safe to gitignore (added automatic
 | `cloudId` | string | — | Project identifier on LenserFight Cloud |
 | `dbPort` | number | `54322` | PostgreSQL port |
 | `apiPort` | number | `54321` | PostgREST API port |
-| `autoOpenBrowser` | boolean | — | Auto-open browser on `npm run dev` |
+| `autoOpenBrowser` | boolean | — | Auto-open browser on `dev` |
 | `enabledApps` | string[] | — | Apps to start (e.g. `["web", "docs"]`) |
 
-**Keys and tokens are never written here.**
+**Secrets and tokens are never written to this file.**
 
-## User config — `~/.lenserfight/config.json`
+### Legacy flat-file format
 
-Stores secrets and auth tokens globally per user. Created by `auth login`.
+Projects created before v0.2 used `.lenserfight.json` at the project root. The CLI still reads this file as a fallback but always writes to `.lenserfight/config.json`. Running `lenserfight init` on an existing project migrates to the directory format automatically.
+
+---
+
+## Device config — OS-aware path
+
+Stores secrets and auth tokens globally per machine. Created by `lenserfight auth login` or `lenserfight connect`.
+
+| Operating System | Path |
+|-----------------|------|
+| Windows | `%APPDATA%\lenserfight\config.json` |
+| macOS | `~/Library/Application Support/lenserfight/config.json` |
+| Linux | `$XDG_CONFIG_HOME/lenserfight/config.json` (default: `~/.config/lenserfight/`) |
+| Pardus | same as Linux (XDG-compliant) |
+| Legacy (all) | `~/.lenserfight/config.json` *(read fallback; written if the file already exists)* |
 
 | Field | Description |
 |-------|-------------|
@@ -32,34 +55,58 @@ Stores secrets and auth tokens globally per user. Created by `auth login`.
 | `developerToken` | Time-bounded developer token used for automation |
 | `developerTokenExpiresAt` | Developer token expiry (ISO 8601) |
 | `supabaseAnonKey` | Anon key (if stored explicitly) |
-| `supabaseServiceRoleKey` | Service role key (for admin ops like `finalize`) |
+| `supabaseServiceRoleKey` | Service role key (for admin ops) |
 | `defaultAdapterId` | Default Agent adapter UUID for `run` |
+| `workspaces` | Registry of project directories synced from project configs |
 
-## Resolution rules
+### Workspace registry (sync)
 
-The CLI resolves values per field. Environment variables win first, then `.env.local` / `.env`, then user config, then project config, then local defaults when `mode: local`.
+Each time a project config is saved, the CLI writes a `workspaces` entry to the device config so the TUI dashboard can discover all known projects without a filesystem scan:
 
-For API URLs and token overrides, the CLI understands:
+```json
+{
+  "workspaces": {
+    "/home/user/projects/my-project": {
+      "mode": "local",
+      "lastSeenAt": "2026-05-09T12:00:00.000Z",
+      "configPath": "/home/user/projects/my-project/.lenserfight/config.json"
+    }
+  }
+}
+```
 
-| Variable | Purpose |
-|----------|---------|
-| `LENSERFIGHT_CLOUD_API_URL` | Preferred Cloud API URL |
-| `VITE_API_URL` | Frontend-friendly API URL |
-| `LENSERFIGHT_DEVELOPER_TOKEN` | Override the stored developer token |
-| `LENSERFIGHT_DEVELOPER_TOKEN_EXPIRES_AT` | Override developer token expiry metadata |
+---
 
-## Key resolution order
+## Resolution order
 
-For each secret, the CLI checks sources in this order (first non-empty value wins):
+The CLI resolves each field independently. First non-empty value wins:
 
 | Priority | Source |
 |----------|--------|
-| 1 | `SUPABASE_ANON_KEY` / `VITE_SUPABASE_ANON_KEY` process env |
-| 2 | `.env.local` then `.env` in project root |
-| 3 | `~/.lenserfight/config.json` |
-| 4 | Well-known local Supabase defaults *(local mode only)* |
+| 1 | `process.env` environment variable |
+| 2 | `.env.local` in project root |
+| 3 | `.env` in project root |
+| 4 | Device config at OS-aware path |
+| 5 | Legacy `~/.lenserfight/config.json` |
+| 6 | Well-known local Supabase defaults *(local mode only)* |
 
-For `mode: local`, the anon key and service role key resolve automatically from Supabase local dev defaults — no configuration needed.
+### Key resolution table
+
+| Variable | Purpose |
+|----------|---------|
+| `SUPABASE_URL` / `VITE_SUPABASE_URL` | Supabase API URL |
+| `SUPABASE_ANON_KEY` / `VITE_SUPABASE_ANON_KEY` | Supabase anon key |
+| `SUPABASE_SERVICE_ROLE_KEY` | Service role key |
+| `LENSERFIGHT_CLOUD_API_URL` / `VITE_API_URL` | Cloud API URL |
+| `LENSERFIGHT_DEVELOPER_TOKEN` | Override stored developer token |
+| `LENSERFIGHT_DEVELOPER_TOKEN_EXPIRES_AT` | Override developer token expiry |
+| `LENSERFIGHT_OLLAMA_BASE_URL` / `VITE_OLLAMA_BASE_URL` | Ollama base URL |
+| `LENSERFIGHT_API_KEY` | Platform API key |
+| `VITE_AUTH_BASE_URL` | Auth service base URL |
+
+For `mode: local`, the anon key and service role key resolve automatically from Supabase local dev defaults — no manual configuration needed.
+
+---
 
 ## Cloud mode setup
 
@@ -69,7 +116,7 @@ Connect to LenserFight Cloud:
 lf connect
 ```
 
-This opens a browser for authentication, saves your cloud token, and writes `cloudApiUrl` and `cloudId` to `.lenserfight.json`.
+This opens a browser for authentication, saves your cloud token to the device config, and writes `cloudApiUrl` and `cloudId` to `.lenserfight/config.json`.
 
 Or manually:
 
@@ -85,7 +132,37 @@ Then initialise:
 lenserfight init --mode cloud --url https://your-project.supabase.co
 ```
 
+---
+
+## .gitignore recommendations
+
+```gitignore
+# Never commit — device config lives in the OS-specific path, not here
+.lenserfight.json
+
+# Runtime artifacts — not needed in version control
+.lenserfight/runs/
+.lenserfight/reports/
+.lenserfight/local-battles/
+
+# .lenserfight/config.json is safe to commit (no secrets)
+```
+
+---
+
+## Debug mode
+
+```bash
+LF_DEBUG=1 lf <command>
+```
+
+Prints the resolved `mode`, `supabaseUrl`, `cloudApiUrl`, device config path, and loaded `.env` files to stderr.
+
+---
+
 ## Related
 
-- [CLI Overview](index.md)
+- [Platform Setup by OS](/platform-setup/) — OS-specific install and config paths
 - [Environment Variables](/reference/platform-api/environment-variables)
+- [CLI Overview](/reference/cli/index)
+- [CLI Auth Commands](/reference/cli/auth)
