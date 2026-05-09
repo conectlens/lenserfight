@@ -52,6 +52,18 @@ pnpm nx run docs:serve
 
 For the full local database flow, see `docs/reference/database/local-setup.md`.
 
+### Trust Gateway (optional local daemon)
+
+The **Trust Gateway** (`lf-gatewayd`) is the local execution boundary for signed attestations and device trust. Before enabling it, read the security model and operator runbooks:
+
+- [Trust Gateway overview](https://docs.lenserfight.com/explanation/gateway/) (architecture, trust model, sync)
+- [OSS cutover checklist](https://docs.lenserfight.com/explanation/gateway/oss-cutover)
+- [Rollout and rollback](https://docs.lenserfight.com/explanation/gateway/rollout-rollback)
+- [Pre-OSS security review](https://docs.lenserfight.com/explanation/gateway/security-review)
+- [`lf gateway` CLI reference](https://docs.lenserfight.com/reference/cli/gateway)
+
+Source: [`apps/gateway/README.md`](apps/gateway/README.md). Builds: `pnpm nx run gateway:build` and `pnpm nx run gateway:build-init`.
+
 ---
 
 ## Supported now
@@ -160,6 +172,7 @@ If you change behavior, run the smallest relevant validation and mention what yo
 
 ## Documentation
 
+- Trust Gateway: [docs/explanation/gateway/](docs/explanation/gateway/index.md) (or [docs.lenserfight.com/explanation/gateway/](https://docs.lenserfight.com/explanation/gateway/))
 - Getting started: `docs/tutorials/getting-started/overview.md`
 - Installation: `docs/tutorials/getting-started/installation.md`
 - Local database setup: `docs/reference/database/local-setup.md`
