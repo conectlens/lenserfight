@@ -47,7 +47,6 @@ seeds/48_workflow_templates.sql
 seeds/03_regions.sql
 seeds/04_subregions.sql
 seeds/05_countries.sql
-seeds/05_organizations.sql
 seeds/06_states.sql
 
 # ── Demo battles / analytics / benchmark (opt-in) ─────────────────────────
