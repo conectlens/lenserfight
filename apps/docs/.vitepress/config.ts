@@ -793,10 +793,16 @@ export default defineConfig({
         text: 'Tutorials',
         items: [
           { text: 'Getting Started', link: '/tutorials/getting-started/overview' },
+          { text: 'Local Development', link: '/tutorials/local/installation' },
+          { text: 'Cloud Platform', link: '/tutorials/cloud/getting-started' },
           { text: 'Beginner Walkthroughs', link: '/tutorials/beginner-walkthroughs/what-is-lenserfight' },
           { text: 'Walkthroughs', link: '/tutorials/walkthroughs/using-the-web-app' },
           { text: 'Agents & Automation', link: '/tutorials/agent-walkthroughs/create-your-first-agent' },
           { text: 'Battle Walkthroughs', link: '/tutorials/battle-walkthroughs/your-first-battle' },
+          { text: 'Integrations', link: '/tutorials/integrations/openai' },
+          { text: 'Deployment', link: '/tutorials/deployment/docker' },
+          { text: 'Advanced', link: '/tutorials/advanced/agent-orchestration' },
+          { text: 'Troubleshooting', link: '/tutorials/troubleshooting/build-failures' },
         ],
       },
       {
@@ -895,8 +901,32 @@ export default defineConfig({
           ],
         },
         {
-          text: 'Beginner Walkthroughs',
+          text: 'Local Development',
           collapsed: false,
+          items: [
+            { text: 'Installation', link: '/tutorials/local/installation' },
+            { text: 'Development Workflow', link: '/tutorials/local/development-workflow' },
+            { text: 'Running AI Agents', link: '/tutorials/local/running-agents' },
+            { text: 'Workflow Builder', link: '/tutorials/local/workflow-builder' },
+            { text: 'Database & Storage', link: '/tutorials/local/database' },
+            { text: 'Authentication', link: '/tutorials/local/authentication' },
+          ],
+        },
+        {
+          text: 'Cloud Platform',
+          collapsed: false,
+          items: [
+            { text: 'Getting Started', link: '/tutorials/cloud/getting-started' },
+            { text: 'Creating AI Agents', link: '/tutorials/cloud/create-agent' },
+            { text: 'Building Workflows', link: '/tutorials/cloud/workflows' },
+            { text: 'Scratchpad', link: '/tutorials/cloud/scratchpad' },
+            { text: 'Team Collaboration', link: '/tutorials/cloud/collaboration' },
+            { text: 'Billing & Usage', link: '/tutorials/cloud/billing' },
+          ],
+        },
+        {
+          text: 'Beginner Walkthroughs',
+          collapsed: true,
           items: [
             { text: 'What is LenserFight?', link: '/tutorials/beginner-walkthroughs/what-is-lenserfight' },
             { text: 'Connect an OpenAI Agent', link: '/tutorials/beginner-walkthroughs/connect-openai-agent' },
@@ -906,7 +936,7 @@ export default defineConfig({
         },
         {
           text: 'Walkthroughs',
-          collapsed: false,
+          collapsed: true,
           items: [
             { text: 'Using the Web App', link: '/tutorials/walkthroughs/using-the-web-app' },
             { text: 'Create a Lens', link: '/tutorials/walkthroughs/create-a-lens' },
@@ -916,7 +946,7 @@ export default defineConfig({
         },
         {
           text: 'Agents & Automation',
-          collapsed: false,
+          collapsed: true,
           items: [
             { text: 'Create Your First Agent', link: '/tutorials/agent-walkthroughs/create-your-first-agent' },
             { text: 'Manage Agent Teams', link: '/tutorials/agent-walkthroughs/manage-agent-teams' },
@@ -931,9 +961,47 @@ export default defineConfig({
         },
         {
           text: 'Battle Walkthroughs',
-          collapsed: false,
+          collapsed: true,
           items: [
             { text: 'Your First Battle', link: '/tutorials/battle-walkthroughs/your-first-battle' },
+          ],
+        },
+        {
+          text: 'Integrations',
+          collapsed: true,
+          items: [
+            { text: 'OpenAI', link: '/tutorials/integrations/openai' },
+            { text: 'Anthropic', link: '/tutorials/integrations/anthropic' },
+            { text: 'Ollama', link: '/tutorials/integrations/ollama' },
+            { text: 'Supabase', link: '/tutorials/integrations/supabase' },
+            { text: 'Webhooks', link: '/tutorials/integrations/webhooks' },
+          ],
+        },
+        {
+          text: 'Deployment',
+          collapsed: true,
+          items: [
+            { text: 'Docker', link: '/tutorials/deployment/docker' },
+            { text: 'VPS', link: '/tutorials/deployment/vps' },
+            { text: 'Vercel', link: '/tutorials/deployment/vercel' },
+            { text: 'CI/CD', link: '/tutorials/deployment/ci-cd' },
+          ],
+        },
+        {
+          text: 'Advanced',
+          collapsed: true,
+          items: [
+            { text: 'Agent Orchestration', link: '/tutorials/advanced/agent-orchestration' },
+          ],
+        },
+        {
+          text: 'Troubleshooting',
+          collapsed: true,
+          items: [
+            { text: 'Build Failures', link: '/tutorials/troubleshooting/build-failures' },
+            { text: 'Auth Issues', link: '/tutorials/troubleshooting/auth-issues' },
+            { text: 'Database Issues', link: '/tutorials/troubleshooting/database-issues' },
+            { text: 'Workflow Issues', link: '/tutorials/troubleshooting/workflow-issues' },
           ],
         },
       ],
@@ -1003,6 +1071,75 @@ export default defineConfig({
             { text: 'Automation Rules', link: '/tutorials/agent-walkthroughs/automation-rules' },
             { text: 'Connectors', link: '/tutorials/agent-walkthroughs/connectors' },
             { text: 'Earning XP & Reputation', link: '/tutorials/agent-walkthroughs/earning-xp' },
+          ],
+        },
+      ],
+
+      '/tutorials/local/': [
+        {
+          text: 'Local Development',
+          items: [
+            { text: 'Installation', link: '/tutorials/local/installation' },
+            { text: 'Development Workflow', link: '/tutorials/local/development-workflow' },
+            { text: 'Running AI Agents', link: '/tutorials/local/running-agents' },
+            { text: 'Workflow Builder', link: '/tutorials/local/workflow-builder' },
+            { text: 'Database & Storage', link: '/tutorials/local/database' },
+            { text: 'Authentication', link: '/tutorials/local/authentication' },
+          ],
+        },
+      ],
+      '/tutorials/cloud/': [
+        {
+          text: 'Cloud Platform',
+          items: [
+            { text: 'Getting Started', link: '/tutorials/cloud/getting-started' },
+            { text: 'Creating AI Agents', link: '/tutorials/cloud/create-agent' },
+            { text: 'Building Workflows', link: '/tutorials/cloud/workflows' },
+            { text: 'Scratchpad', link: '/tutorials/cloud/scratchpad' },
+            { text: 'Team Collaboration', link: '/tutorials/cloud/collaboration' },
+            { text: 'Billing & Usage', link: '/tutorials/cloud/billing' },
+          ],
+        },
+      ],
+      '/tutorials/integrations/': [
+        {
+          text: 'Integrations',
+          items: [
+            { text: 'OpenAI', link: '/tutorials/integrations/openai' },
+            { text: 'Anthropic', link: '/tutorials/integrations/anthropic' },
+            { text: 'Ollama', link: '/tutorials/integrations/ollama' },
+            { text: 'Supabase', link: '/tutorials/integrations/supabase' },
+            { text: 'Webhooks', link: '/tutorials/integrations/webhooks' },
+          ],
+        },
+      ],
+      '/tutorials/deployment/': [
+        {
+          text: 'Deployment',
+          items: [
+            { text: 'Docker', link: '/tutorials/deployment/docker' },
+            { text: 'VPS', link: '/tutorials/deployment/vps' },
+            { text: 'Vercel', link: '/tutorials/deployment/vercel' },
+            { text: 'CI/CD', link: '/tutorials/deployment/ci-cd' },
+          ],
+        },
+      ],
+      '/tutorials/advanced/': [
+        {
+          text: 'Advanced',
+          items: [
+            { text: 'Agent Orchestration', link: '/tutorials/advanced/agent-orchestration' },
+          ],
+        },
+      ],
+      '/tutorials/troubleshooting/': [
+        {
+          text: 'Troubleshooting',
+          items: [
+            { text: 'Build Failures', link: '/tutorials/troubleshooting/build-failures' },
+            { text: 'Auth Issues', link: '/tutorials/troubleshooting/auth-issues' },
+            { text: 'Database Issues', link: '/tutorials/troubleshooting/database-issues' },
+            { text: 'Workflow Issues', link: '/tutorials/troubleshooting/workflow-issues' },
           ],
         },
       ],
