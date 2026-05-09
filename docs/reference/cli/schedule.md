@@ -180,3 +180,49 @@ lf schedule preview <schedule-id> --next 25 --json
 | `--json` | Output rows as JSON. |
 
 Output columns: `Tick At | Decision | Reason | Inputs`. The preview is read-only — it does not advance `last_rotation_index` and does not write to `agents.action_logs`.
+
+<!-- AUTO-GEN-START -->
+
+# `lf schedule`
+
+Manage CRON schedules for ConnectedLenses workflows.
+
+## `lf schedule create`
+
+Create a calendar overlay (skip_dates or only_dates).
+
+| Flag | Type | Required | Description |
+|---|---|---|---|
+| `--name` | string | yes | Display name |
+| `--kind` | string | yes |  |
+| `--dates` | string | yes | Comma-separated ISO dates (YYYY-MM-DD) |
+| `--timezone` | string | yes | IANA timezone (e.g. Europe/Istanbul) |
+
+## `lf schedule list`
+
+List calendar overlays (your own + platform seeds).
+
+| Flag | Type | Required | Description |
+|---|---|---|---|
+| `--seeds-only` | boolean | no | Show only platform seed calendars |
+| `--mine-only` | boolean | no | Show only calendars you own |
+| `--json` | boolean | no | Output as JSON |
+
+## `lf schedule attach`
+
+Attach a calendar overlay to a schedule.
+
+| Flag | Type | Required | Description |
+|---|---|---|---|
+| `<schedule>` | positional | yes | Schedule UUID |
+| `<calendar>` | positional | yes | Calendar UUID |
+
+## `lf schedule detach`
+
+Detach the calendar overlay from a schedule.
+
+| Flag | Type | Required | Description |
+|---|---|---|---|
+| `<schedule>` | positional | yes | Schedule UUID |
+
+<!-- AUTO-GEN-END -->
