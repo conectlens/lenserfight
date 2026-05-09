@@ -26,6 +26,7 @@ lf gateway <subcommand> [args]
   peers             List peer devices on the same Lenser account.
   sync              Inspect / pull / push outbox state.
   policy            Inspect kill switch / runner_paused / budget / dark-launch state.
+  consent           Grant/revoke explicit non-loopback bind consent (Tailscale).
 ```
 
 `lf agent` and `lf gateway` are independent. Runner pause/resume lives under `lf runner`.
@@ -123,7 +124,7 @@ lf gateway serve --tailscale
 |------|-------------|---------|
 | `--bind` | Interface to bind | `127.0.0.1` |
 | `--port` | Port | `38080` |
-| `--tailscale` | Also bind the detected Tailscale (CGNAT 100.64/10) interface | `false` |
+| `--tailscale` | Also bind the detected Tailscale (CGNAT 100.64/10) interface (requires consent — see `lf gateway consent grant tailscale`) | `false` |
 
 Daemon refuses to start if any of:
 
@@ -131,7 +132,9 @@ Daemon refuses to start if any of:
 - no Ed25519 key in keychain,
 - no Supabase session,
 - owner Lenser is paused,
-- workspace `global_kill_switch=true`.
+- workspace `global_kill_switch=true`,
+- `--tailscale` was passed without a matching consent file (precondition `tailscale_consent`),
+- `--bind 0.0.0.0` (precondition `bind_safe`).
 
 ### `lf gateway doctor`
 
@@ -223,6 +226,19 @@ lf gateway policy test --kind runner-paused
 |------------|--------|
 | `show` | Current `global_kill_switch`, `runner_paused`, `budget_enforce`, `max_parallel_runs`, `dark_launch_enabled`, `dark_launch_pct`. |
 | `test` | Issue a noop signed envelope to confirm the policy gate is enforced. |
+
+### `lf gateway consent`
+
+Grant or revoke explicit consent for the daemon to bind on a non-loopback interface. v1 supports `tailscale`; the consent file lives at `~/.lenserfight/gateway/tailscale-consent.json` and is the canonical source the daemon trusts.
+
+```bash
+lf gateway consent show
+lf gateway consent grant tailscale
+lf gateway consent grant tailscale --notes "alice macbook, home Tailnet"
+lf gateway consent revoke
+```
+
+Consent records pin the *interface fingerprint* (`name:cidr-or-address`). If the live interface no longer matches, the daemon refuses with `tailscale_consent: fingerprint_mismatch` until the user re-grants. This protects against silent IP/range changes from being treated as already-trusted exposure.
 
 ---
 

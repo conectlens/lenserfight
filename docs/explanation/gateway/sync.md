@@ -84,6 +84,28 @@ If raw cloud sync is ever attempted on these classes, the daemon refuses with `l
 | `non_secret_pref` | `lensers.preferences` | LWW per field |
 | `automation_registry_entry` | none (cloud mirror table TBD) | LWW per entry |
 
+### Source of truth
+
+Object class metadata is **declared once** in [`libs/infra/gateway/src/lib/object-classes.ts`](../../../libs/infra/gateway/src/lib/object-classes.ts). The TypeScript registry distinguishes:
+
+- `objectClassesByAuthority('cloud')` — read-only on edges; pushes rejected with `cloud_authoritative`.
+- `objectClassesByAuthority('local')` — never enters the outbox; pushes rejected with `local_only_class`.
+- `objectClassesByAuthority('conflict_aware')` — bidirectional sync.
+- `pushableObjectClasses()` — equals `conflict_aware`. Only these are eligible for the outbox.
+- `pullableObjectClasses()` — equals `cloud ∪ conflict_aware`. The set the daemon's pull loop iterates over.
+
+The same partitioning is enforced in [`devices.fn_sync_push`](../../../supabase/migrations/20270512600000_phase_c_sync_engine.sql) so that the database and the daemon agree on what is pushable.
+
+### Default merge function
+
+The default merge for conflict-aware classes lives in [`libs/infra/gateway/src/lib/conflict-resolver.ts`](../../../libs/infra/gateway/src/lib/conflict-resolver.ts) and behaves as follows:
+
+1. **Vector-clock causality wins.** If `A` happens-before `B` (every component of `A` ≤ corresponding component of `B`), take `B`. If `B` happens-before `A`, take `A`. Equal clocks → take `A` (deterministic).
+2. **Concurrent edits → sum-of-clock LWW with lexicographic tiebreak.** Sum each entry's vector clock values; the higher sum wins. Equal sums tiebreak by lexicographic device id.
+3. **Hard conflict → emit a conflict row.** Identical vector clocks AND identical device ids on differing payloads is a programmer error and should never happen in practice; the resolver returns `{ kind: 'conflict' }` and the daemon surfaces it.
+
+Per-class overrides may add structural merge (e.g. workflow step diffs) by registering an alternative merge function — track this through `object-classes.ts`. Defaults stay LWW + vector clock.
+
 Conflicts that the merge function cannot auto-resolve (e.g. structured conflict in workflow steps) are surfaced via:
 
 - `lf gateway sync status --conflicts`

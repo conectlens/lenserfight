@@ -13,6 +13,8 @@ These are the security rules that govern the LTG. They are enforced at multiple 
 - **R1.2** — Tailscale presence is not authentication.
 - **R1.3** — A Supabase JWT alone is insufficient for trust elevation; a signed envelope with a registered device public key is also required.
 - **R1.4** — The daemon refuses to accept signed envelopes whose `kid` is not a `devices.registered_devices.id` belonging to the JWT-authenticated Lenser.
+- **R1.5** — `0.0.0.0` and `::` binds are forbidden (precondition `bind_safe`).
+- **R1.6** — Non-loopback binds (Tailscale, WireGuard meshes) require an *explicit* on-disk consent record at `~/.lenserfight/gateway/tailscale-consent.json` granted via `lf gateway consent grant tailscale`. The consent pins the live interface fingerprint (`name:cidr-or-address`); a mismatch refuses startup with `tailscale_consent: fingerprint_mismatch`. CGNAT is detected as `100.64.0.0/10` per RFC 6598.
 
 ## R2 — Least privilege
 
