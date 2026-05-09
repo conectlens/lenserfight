@@ -37,7 +37,7 @@ function classify(error: unknown): CliError {
     return {
       kind: 'unauthorized',
       message: 'ACCESS DENIED',
-      detail: 'You do not have permission to access this resource.\nAuthenticate and try again.',
+      detail: 'Authentication required.\nRun `lf auth login` to sign in, then retry.',
     }
   }
 
