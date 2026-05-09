@@ -5,6 +5,8 @@ import consola from 'consola';
 import { toSnakeCaseKeys } from '@lenserfight/utils/text';
 import { resolveConfig as resolveBaseConfig, loadUserConfig, saveUserConfig, type LenserfightConfig } from '../config/project-config';
 import { reportCliError } from './error-reporter';
+import { getExecContext } from '../lib/exec-context';
+import { redactHeaders, redactUrl } from '../lib/redact';
 
 // ─── Profile overlay (Y1) ────────────────────────────────────────────────────
 //
@@ -131,12 +133,23 @@ async function tryRefreshToken(config: LenserfightConfig): Promise<void> {
   });
 }
 
+function warnIfProductionInLocalMode(config: LenserfightConfig): void {
+  const { isLocal } = getExecContext();
+  if (!isLocal) return;
+  if (config.supabaseUrl.includes('supabase.co'))
+    consola.warn(`--local active but supabaseUrl points to production: ${config.supabaseUrl}`);
+  if (config.cloudApiUrl.includes('lenserfight.com'))
+    consola.warn(`--local active but cloudApiUrl points to production: ${config.cloudApiUrl}`);
+}
+
 export async function callRpc<T = unknown>(
   functionName: string,
   params: Record<string, unknown> = {},
   options: RpcOptions = {}
 ): Promise<T> {
   let config = resolveConfig();
+
+  warnIfProductionInLocalMode(config);
 
   if (!config.supabaseAnonKey) {
     throw new Error(
@@ -183,11 +196,21 @@ export async function callRpc<T = unknown>(
 
   const url = `${config.supabaseUrl}/rest/v1/rpc/${functionName}`;
 
+  const { isDebug } = getExecContext();
+  const ts = () => new Date().toISOString().slice(11, 23);
+  const t0 = isDebug ? performance.now() : 0;
+  if (isDebug) {
+    consola.debug(`[${ts()}] RPC POST ${redactUrl(url)}`);
+    consola.debug(`[${ts()}] headers: ${JSON.stringify(redactHeaders({ ...headers }))}`);
+  }
+
   const res = await fetch(url, {
     method: 'POST',
     headers,
     body: JSON.stringify(toSnakeCaseKeys(params)),
   });
+
+  if (isDebug) consola.debug(`[${ts()}] → ${res.status} in ${(performance.now() - t0).toFixed(1)}ms`);
 
   if (!res.ok) {
     const err = await res.json().catch(() => ({ message: res.statusText }));
@@ -232,6 +255,8 @@ export async function callRest<T = unknown>(
 ): Promise<T> {
   let config = resolveConfig()
 
+  warnIfProductionInLocalMode(config);
+
   if (!config.supabaseAnonKey) {
     throw new Error(
       'Supabase anon key not found. Set SUPABASE_ANON_KEY in your environment or run `lenserfight init --mode cloud`.'
@@ -275,11 +300,21 @@ export async function callRest<T = unknown>(
   }
   const url = `${config.supabaseUrl}/rest/v1/${table}?${params.toString()}`
 
+  const { isDebug } = getExecContext();
+  const ts = () => new Date().toISOString().slice(11, 23);
+  const t0 = isDebug ? performance.now() : 0;
+  if (isDebug) {
+    consola.debug(`[${ts()}] REST ${method} ${redactUrl(url)}`);
+    consola.debug(`[${ts()}] headers: ${JSON.stringify(redactHeaders({ ...headers }))}`);
+  }
+
   const res = await fetch(url, {
     method,
     headers,
     body: body ? JSON.stringify(body) : undefined,
   })
+
+  if (isDebug) consola.debug(`[${ts()}] → ${res.status} in ${(performance.now() - t0).toFixed(1)}ms`);
 
   if (!res.ok) {
     const err = await res.json().catch(() => ({ message: res.statusText }))
