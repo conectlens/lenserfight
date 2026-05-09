@@ -34,7 +34,10 @@ export function printTable(
 }
 
 export function printJson(data: unknown): void {
-  consola.log(JSON.stringify(data, null, 2));
+  // Use stdout directly so the output is machine-parseable (no `[log]`
+  // prefix from consola). This matters for `--json` flows such as
+  // `lf gateway doctor --json` consumed by CI assertions.
+  process.stdout.write(JSON.stringify(data, null, 2) + '\n');
 }
 
 export function printInfo(message: string, ...args: unknown[]): void {

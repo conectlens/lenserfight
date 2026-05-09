@@ -423,12 +423,13 @@ const runnerStatus = defineCommand({
           requireAuth: true,
           query: {
             select:
-              'global_kill_switch,agent_paused,max_parallel_runs,budget_enforce,max_daily_credits,dark_launch_enabled,dark_launch_pct',
+              'global_kill_switch,runner_paused,agent_paused,max_parallel_runs,budget_enforce,max_daily_credits,dark_launch_enabled,dark_launch_pct',
             ai_lenser_id: `eq.${aiLenserId}`,
           },
         }
       )
       const settings = settingsRows?.[0] ?? {}
+      const runnerPaused = settings['runner_paused'] ?? settings['agent_paused'] ?? false
 
       const activeRuns = await callRest<Array<Record<string, unknown>>>(
         'agents',
@@ -455,7 +456,7 @@ const runnerStatus = defineCommand({
         ['Setting', 'Value'],
         [
           ['global_kill_switch', String(settings['global_kill_switch'] ?? false)],
-          ['agent_paused', String(settings['agent_paused'] ?? false)],
+          ['runner_paused', String(runnerPaused)],
           ['max_parallel_runs', String(settings['max_parallel_runs'] ?? '(unset)')],
           ['budget_enforce', String(settings['budget_enforce'] ?? false)],
           ['max_daily_credits', String(settings['max_daily_credits'] ?? '(unset)')],
