@@ -216,6 +216,13 @@ async function processNextBattleJobViaChainabit(
       temperature: job.temperature,
     })
 
+    nodeLogger.info('chainabit_job_submitted', {
+      jobId: job.job_id,
+      externalJobId,
+      battleId: job.battle_id,
+      slot: job.slot,
+    })
+
     // Poll until terminal
     const POLL_INTERVAL_MS = 2_000
     const TIMEOUT_MS = 300_000
