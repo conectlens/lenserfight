@@ -1,3 +1,30 @@
+## [0.10.0-alpha.2] - 2026-05-09
+
+Pre–first-public OSS publishing pass: permissive license, brand guidelines, docs truth, contributor gates, and release metadata alignment.
+
+### Added
+
+- **seed**: community profile handle for the hub account is `conectlens` (lowercase) so `tenancy.fn_create_personal_workspace` slug passes `workspaces_slug_format` (`44_community_profiles.sql`; re-run `pnpm supabase:combine-seeds`).
+- **seed**: AI lenser `handle` values trim trailing underscores and fall back to `model` when the slug body is empty (`07_ai_lensers.sql`; avoids `workspaces_slug_format` violations from `tenancy.fn_create_personal_workspace`).
+
+### Fixed
+
+- **db**: Drop Phase Z4 blanket hyphen-only `ck_*_*_format` slug constraints that conflicted with existing slug rules and seeds (`20270514000000_personal_workspace_slugify_handle.sql`); `tenancy.fn_create_personal_workspace` slugifies handles for workspace slugs.
+- **db**: `public.fn_get_agent_analytics_summary` honors `request.jwt.claim.role = service_role` for trusted/service callers; `GRANT EXECUTE` to `service_role` (`20270514000001_fn_get_agent_analytics_summary_service_role_bypass.sql`).
+- **db**: `GRANT USAGE ON SCHEMA reputation` plus `SELECT` on `reputation.lenser_scores` and `reputation.contender_ratings` for `anon` / `authenticated` so RLS-backed reads work (`20270514000002_reputation_schema_usage_grants.sql`).
+- **test**: pgTAP `throws_ok` uses exact `SQLERRM` (NULL pattern) where messages are not fixed literals; analytics Phase 15 tests emit TAP at top level and simulate service JWT; workflow tests use seeded Alice auth; n8n tests call the 9-arg `fn_update_workflow_node_result` explicitly; Phase F pg_cron assertion is non-fatal when jobs are absent locally.
+
+### Changed
+
+- **license**: Community Edition relicensed from **BSL 1.1** to **Apache-2.0** (`LICENSE`, root and app `package.json` SPDX fields, OpenAPI `info.license`).
+- **docs**: `open-core-model`, `license`, `governance`, `pricing`, `for-organizations` updated for Apache-2.0; new [Brand guidelines](docs/explanation/community/brand-guidelines.md) and root [`BRAND.md`](BRAND.md); VitePress sidebar link.
+- **readme**: Day-one scope paragraph, `development` branch note for PRs, Trust Gateway preview framing, Node `>=22` badge, Community links include brand guidelines.
+- **chore**: Root `package.json` `version` set to `0.10.0-alpha.2` to match changelog and future tags.
+
+### Historical note
+
+Releases **0.9.0-beta.1** and **0.10.0-alpha.1** were tagged under **BSL 1.1** with the change dates noted in their changelog entries. This release is the first Apache-2.0 line.
+
 ## [0.10.0-alpha.1] - 2026-06-12
 
 Phase 10 — Connector RFC + Public Adapter SDK Alpha. The CLI surface for `lf connectors` (shipped in Phase 9 wired to missing RPCs) is now backed by real schema, RPCs, and a stable interface integrators can build against.
@@ -87,7 +114,7 @@ First public OSS beta tag (Phase 9 — OSS Community Health Sprint).
 - feat: Add initial remote database schema migration.
 - feat: add initial Supabase configuration files and update gitignore rules.
 - chore: Remove mock implementations from various repositories and adapters.
-- Merge branch 'development' of https://github.com/conectlens/lenserfight into development
+- Merge branch 'development' of https://github.com/connectlens/lenserfight-web into development
 - refactor: Standardize AI model identification to use `ai_model_slug` instead of `ai_model_id` and update CDN URLs.
 - Merge pull request #14 from conectlens/development
 - feat(waiting-list): add authoritative status check with loader and context integration.
@@ -217,7 +244,7 @@ First public OSS beta tag (Phase 9 — OSS Community Health Sprint).
 - feat: Add initial remote database schema migration.
 - feat: add initial Supabase configuration files and update gitignore rules.
 - chore: Remove mock implementations from various repositories and adapters.
-- Merge branch 'development' of https://github.com/conectlens/lenserfight into development
+- Merge branch 'development' of https://github.com/connectlens/lenserfight-web into development
 - refactor: Standardize AI model identification to use `ai_model_slug` instead of `ai_model_id` and update CDN URLs.
 - Merge pull request #14 from conectlens/development
 - feat(waiting-list): add authoritative status check with loader and context integration.

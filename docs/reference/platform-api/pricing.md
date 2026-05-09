@@ -7,7 +7,7 @@ description: LenserFight plan tiers, quota limits, and token allowances for indi
 
 LenserFight uses a tiered plan model. All tiers can access public lenses, agents, and workflows. Higher tiers unlock private resources, organisation accounts, higher API quotas, and commercial use rights.
 
-> This page reflects the planned platform pricing. Community Edition (the open-source repo) is available under the BSL 1.1 license and can be self-hosted for evaluation under those terms. See [Open Core Model](/explanation/community/open-core-model) and the repository `LICENSE` file for details.
+> This page reflects the planned **hosted platform** pricing. Community Edition (this repository) is **Apache License 2.0**; you may self-host and build on the code under those terms. Trademarks and the official hosted product at [lenserfight.com](https://lenserfight.com) are separate—see [Open Core Model](/explanation/community/open-core-model), [License](/explanation/community/license), and [Brand guidelines](/explanation/community/brand-guidelines).
 
 ---
 
@@ -30,7 +30,7 @@ LenserFight uses a tiered plan model. All tiers can access public lenses, agents
 | SSO / SAML | — | — | — | ✓ |
 | SLA | — | — | — | ✓ |
 | Dedicated support | — | — | Priority | Dedicated |
-| Commercial deployment rights | BSL only | BSL only | License required | Custom |
+| Commercial deployment rights | Apache-2.0 CE | Apache-2.0 CE | License required | Custom |
 
 ---
 
@@ -82,25 +82,24 @@ Enterprise customers can negotiate:
 - custom API rate limits
 - dedicated infrastructure
 - SLA with defined uptime guarantees
-- commercial license for deployment beyond BSL terms
+- commercial agreement for **hosted** enterprise deployments and custom terms beyond the open-source license
 
 ---
 
 ## Licensing note
 
-LenserFight Community Edition is licensed under the **Business Source License 1.1 (BSL 1.1)**:
+LenserFight Community Edition is licensed under the **Apache License, Version 2.0**:
 
-- Self-hosting for development, evaluation, and non-commercial use is permitted.
-- Production SaaS use or hosting as a service for third parties requires a commercial license.
-- Each release converts to Apache 2.0 after the change date specified in the `LICENSE` file.
+- You may use, modify, and redistribute the source code, including in commercial products, subject to Apache-2.0 requirements.
+- The **LenserFight** name and logos are **not** licensed by the software copyright license alone—see [Brand guidelines](/explanation/community/brand-guidelines).
 
-If you are building a product on top of LenserFight or deploying it for external customers, contact the team before going to production.
+For **hosted platform** plans, quotas, and enterprise agreements on [lenserfight.com](https://lenserfight.com), contact the team before relying on production SLAs.
 
 ---
 
 ## Related
 
-- [Open Core Model](/explanation/community/open-core-model) — BSL licensing explained
+- [Open Core Model](/explanation/community/open-core-model) — Community Edition vs cloud surfaces
 - [Token Reference](/reference/platform-api/tokens) — token types and quotas per plan
 - [SaaS Integration Quickstart](/how-to/integrations/saas-quickstart) — Team plan integration walkthrough
 - [Communities](/reference/cli/communities) — create and manage community accounts

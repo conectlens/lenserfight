@@ -92,7 +92,7 @@ The `series-rematch-dispatcher` pg_cron job runs at `0 * * * *`. Sub-hourly cron
 ## API and docs
 
 **OpenAPI 3.1 spec is published but not auto-generated from route handlers.**
-The HTTP API surface is described in [`docs/reference/platform-api/openapi.yaml`](https://github.com/conectlens/lenserfight/blob/main/docs/reference/platform-api/openapi.yaml). The spec is hand-authored against the DTOs in `libs/api/contracts/`; CI lints it with `redocly` but does not yet diff it against the route handler signatures. Drift is possible.
+The HTTP API surface is described in [`docs/reference/platform-api/openapi.yaml`](https://github.com/connectlens/lenserfight-web/blob/main/docs/reference/platform-api/openapi.yaml). The spec is hand-authored against the DTOs in `libs/api/contracts/`; CI lints it with `redocly` but does not yet diff it against the route handler signatures. Drift is possible.
 
 **Turkish documentation lags English on niche pages.**
 High-traffic pages (Quickstart, OSS Launch Scope, Known Preview Surfaces) are translated. Deep-dive reference pages remain English-only and are not linked from the Turkish nav.
