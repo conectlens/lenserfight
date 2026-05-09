@@ -4,11 +4,11 @@ import react from '@vitejs/plugin-react'
 import { nxViteTsPaths } from '@nx/vite/plugins/nx-tsconfig-paths.plugin'
 import { nxCopyAssetsPlugin } from '@nx/vite/plugins/nx-copy-assets.plugin'
 import tailwindcss from '@tailwindcss/vite'
-import { resolve } from 'node:path'
 
 export default defineConfig(() => ({
   root: import.meta.dirname,
-  envDir: resolve(import.meta.dirname, '../..'),
+  envDir: import.meta.dirname,
+  envPrefix: ['SUPABASE_URL', 'SUPABASE_PUBLISHABLE_KEY', 'CAPTCHA_', 'AUTH_', 'WEB_', 'ARENA_', 'CHAINABIT_APP_URL', 'PRODUCT_', 'FEATURE_', 'MOCK', 'DATA_SOURCE'],
   cacheDir: '../../node_modules/.vite/apps/auth',
   server: {
     port: 3004,

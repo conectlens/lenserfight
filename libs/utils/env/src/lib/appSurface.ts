@@ -15,7 +15,7 @@ export type AppSurface = {
 }
 
 function readEdition(): ProductEdition {
-  const raw = import.meta.env.VITE_PRODUCT_EDITION
+  const raw = import.meta.env.PRODUCT_EDITION
   if (raw === 'cloud' || raw === 'community') {
     return raw
   }
@@ -27,7 +27,7 @@ function envForceTrue(key: string): boolean {
 }
 
 /**
- * Resolves product edition from `VITE_PRODUCT_EDITION` (default `community`).
+ * Resolves product edition from `PRODUCT_EDITION` (default `community`).
  */
 export function resolveProductEdition(): ProductEdition {
   return readEdition()
@@ -36,7 +36,7 @@ export function resolveProductEdition(): ProductEdition {
 /**
  * Resolves which cloud-shaped product areas are exposed in the SPA.
  * Cloud edition enables benchmark + billing surfaces unless explicitly forced off.
- * Community hides them unless `VITE_FEATURE_BENCHMARK_UI` / `VITE_FEATURE_BILLING_UI` is true.
+ * Community hides them unless `FEATURE_BENCHMARK_UI` / `FEATURE_BILLING_UI` is true.
  */
 export function resolveAppSurface(): AppSurface {
   const edition = readEdition()
@@ -44,8 +44,8 @@ export function resolveAppSurface(): AppSurface {
   // import.meta.env.PROD is false during `vite dev` — billing never leaks to local devs
   const isProd = import.meta.env.PROD
 
-  const showBenchmarkSuite = envForceTrue('VITE_FEATURE_BENCHMARK_UI') || isCloud
-  const showBillingAndStore = isProd && (envForceTrue('VITE_FEATURE_BILLING_UI') || isCloud)
+  const showBenchmarkSuite = envForceTrue('FEATURE_BENCHMARK_UI') || isCloud
+  const showBillingAndStore = isProd && (envForceTrue('FEATURE_BILLING_UI') || isCloud)
 
   return {
     edition,

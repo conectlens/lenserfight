@@ -760,6 +760,8 @@ export default defineConfig({
   },
 
   vite: {
+    envDir: resolve(__dirname, '..'),
+    envPrefix: ['SUPABASE_URL', 'SUPABASE_PUBLISHABLE_KEY', 'WEB_', 'FORUM_'],
     plugins: [tailwind(), syncChangelogPlugin(), rawMarkdownPlugin()],
     server: {
       host: '0.0.0.0',

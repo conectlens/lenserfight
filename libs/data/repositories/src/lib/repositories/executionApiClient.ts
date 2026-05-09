@@ -1,9 +1,9 @@
 import { supabase } from '@lenserfight/data/supabase'
 import { TriggerExecutionDTO, TriggerExecutionResponse } from '@lenserfight/types'
 import { apiFetch } from '../apiFetch'
-import { VITE_API_BASE_URL } from '@lenserfight/utils/env'
+import { API_BASE_URL } from '@lenserfight/utils/env'
 
-const API_BASE = VITE_API_BASE_URL
+const API_BASE = API_BASE_URL
 
 // --- Port ---
 
