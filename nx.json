@@ -82,7 +82,6 @@
       "projectChangelogs": true
     }
   },
-  "nxCloudId": "69b3fe457d4fe39d943e900b",
   "generators": {
     "@nx/react": {
       "application": {
