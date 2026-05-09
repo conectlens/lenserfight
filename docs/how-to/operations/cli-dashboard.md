@@ -53,9 +53,36 @@ When you trigger a binding, the dashboard pauses, hands the terminal to the spaw
 
 The dashboard is not built for long stares. It re-renders the entire frame every 2 seconds; staring at it for an hour will scroll your scrollback into oblivion. For long-running observation, prefer:
 
+- [`lf top`](/reference/cli/top) — dedicated real-time telemetry: CPU, memory, GPU, service health, battle load, and 60-second rolling graphs. Press `e` for the expanded view with per-core CPU.
 - `lf execution list --json | jq` for machine-readable run state.
 - Supabase Studio dashboards for SQL-level visibility.
 - The web app for human-readable history.
+
+## Runtime telemetry: `lf top`
+
+The `lf top` command opens a separate telemetry console focused on infrastructure health rather than agent activity. Use it alongside a `battle run` session, or during `lf dev` to watch local service load.
+
+```bash
+lf top              # compact alt-screen dashboard
+lf top monitor      # expanded — all panels + per-core CPU + graphs
+lf top battle       # battle ops center (Ollama, VRAM, queue)
+lf top stream       # pipe-friendly scrolling output
+```
+
+Key differences from the main `lf` dashboard:
+
+| Feature | `lf` (no subcommand) | `lf top` |
+|---|---|---|
+| Refresh cadence | 2 seconds | 1 second (configurable) |
+| CPU/memory bars | No | Yes |
+| GPU detection | No | Yes (NVIDIA via `nvidia-smi`) |
+| Service health probes | Supabase only | Ollama, Supabase, Cloud API, Docker |
+| Battle load | No | Yes (local battles) |
+| Scrolling stream mode | No | Yes (`lf top stream`) |
+| Agent action logs | Yes | No |
+| Keyboard sub-dashboards | Yes | No (mode toggle only) |
+
+The two tools are complementary: use `lf` for agent-level triage and approvals; use `lf top` for infrastructure-level monitoring.
 
 ## Troubleshooting
 
@@ -76,6 +103,7 @@ The active profile may not have credentials with read access to `agents.action_l
 
 ## Related
 
+- [`lf top`](/reference/cli/top) — runtime telemetry dashboard (CPU, GPU, services, battles).
 - [`lf profile`](/reference/cli/profile) — manage profiles the dashboard reads from.
 - [`lf completion`](/reference/cli/completion) — shell completion for the subcommands the dashboard launches.
 - [Using the Kill Switch](/how-to/kill-switch) — the same triage workflow without the TUI.

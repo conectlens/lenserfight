@@ -253,6 +253,12 @@ export const COMMAND_CATALOG: Array<{ cmd: string; desc: string }> = [
   { cmd: 'completion zsh',                desc: 'Generate zsh shell completions' },
   // ── standalone ────────────────────────────────────────────────────────────────
   { cmd: 'doctor',                        desc: 'Diagnose environment issues' },
+  { cmd: 'top',                           desc: 'Real-time runtime telemetry dashboard' },
+  { cmd: 'top monitor',                   desc: 'Expanded telemetry — all panels, per-core CPU, graphs' },
+  { cmd: 'top battle',                    desc: 'Battle operations center — load, agents, resource pressure' },
+  { cmd: 'top graph',                     desc: 'Rolling CPU/memory sparkline graphs' },
+  { cmd: 'top infra',                     desc: 'Infrastructure view — service connectivity' },
+  { cmd: 'top stream',                    desc: 'Pipe-friendly scrolling telemetry stream' },
   { cmd: 'status',                        desc: 'Show overall system status' },
   { cmd: 'feed',                          desc: 'Show the activity feed' },
   { cmd: 'leaderboard',                   desc: 'Show the global leaderboard' },
