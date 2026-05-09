@@ -1,5 +1,7 @@
-import type { GatewayConfig } from './config'
 import { resolveTailscaleConsent } from './tailscale'
+
+import type { GatewayConfig } from './config'
+import type { TailscaleInterface } from '@lenserfight/infra/gateway'
 
 export type PreconditionId =
   | 'clock_skew'
@@ -21,6 +23,8 @@ export interface PreconditionResult {
 export interface PreconditionsContext {
   config: GatewayConfig
   env?: NodeJS.ProcessEnv
+  /** Override CGNAT interface detection (tests; optional doctor parity). */
+  tailscaleDetector?: () => TailscaleInterface[]
 }
 
 /**
@@ -71,7 +75,7 @@ export async function evaluatePreconditions(
   results.push({
     id: 'clock_skew',
     ok: clock.ok,
-    message: `skew=${clock.skewSeconds}s (limit=${ctx.config.clockSkewLimitSeconds}s)`,
+    message: `skew=${clock.skewSeconds}s (limit=${ctx.config.clockSkewLimitSeconds}s; offline lower bound — use \`lf gateway doctor --check clock\` for online skew)`,
   })
 
   const keychain = await probes.checkKeychainPresent()
@@ -113,7 +117,10 @@ export async function evaluatePreconditions(
 
   // Tailscale bind consent — only when --tailscale was requested.
   if (ctx.config.tailscale) {
-    const ts = resolveTailscaleConsent({ stateDir: ctx.config.stateDir })
+    const ts = resolveTailscaleConsent({
+      stateDir: ctx.config.stateDir,
+      ...(ctx.tailscaleDetector ? { detector: ctx.tailscaleDetector } : {}),
+    })
     if (ts.ok && ts.matched) {
       results.push({
         id: 'tailscale_consent',
