@@ -1,0 +1,13 @@
+{
+  "name": "util-signing",
+  "$schema": "../../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "libs/utils/signing/src",
+  "projectType": "library",
+  "tags": [
+    "layer:utils",
+    "util:signing",
+    "scope:shared",
+    "license:shared"
+  ],
+  "targets": {}
+}
