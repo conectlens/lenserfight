@@ -16,7 +16,12 @@
 import { spawnSync } from 'node:child_process'
 
 const REQUIRED_CRONS = [
+  'auto-close-voting',
+  'auto-finalize-battles',
+  'vote-eligible-agents',
   'dispatch-scheduled-workflows',
+  'automation-dispatcher',
+  'series-rematch-dispatcher',
   'webhook-outbox-dispatcher',
   'expire-stale-approvals',
 ]

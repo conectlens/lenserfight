@@ -7,4 +7,7 @@ module.exports = {
   },
   moduleFileExtensions: ['ts', 'js', 'html'],
   coverageDirectory: '../../coverage/apps/cli',
+  moduleNameMapper: {
+    '^yaml$': require.resolve('yaml'),
+  },
 }
