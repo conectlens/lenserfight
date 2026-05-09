@@ -148,7 +148,7 @@ export const RegisterPage: React.FC = () => {
     }
   }
 
-  const handleOAuth = async (provider: 'google' | 'github' | 'azure') => {
+  const handleOAuth = async (provider: 'google' | 'github') => {
     setOauthLoading(true)
     setApiError(null)
     try {
