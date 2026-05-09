@@ -5,7 +5,7 @@ description: Start LenserFight without Supabase using local file storage in ~/.l
 
 # Local File Storage
 
-You can run LenserFight locally without installing Docker or setting up Supabase. The local file storage adapter writes all data to `~/.lenserfight/` on your machine.
+You can run LenserFight locally without installing Docker or setting up Supabase. In local mode the web app stores all data in the browser's IndexedDB — no filesystem setup required. The CLI writes auth tokens to `~/.lenserfight/config.json`, which it creates automatically on first use.
 
 Use this path to:
 - Try LenserFight before committing to a full deployment
@@ -35,68 +35,42 @@ Use this path to:
 
 - Node.js 20+
 - pnpm
-- The LenserFight repository cloned and dependencies installed
+- The LenserFight repository cloned
+
+---
+
+## Setup
+
+Two commands from the repository root — that's the full setup:
 
 ```bash
+# 1. Install dependencies
 pnpm install --frozen-lockfile
-```
 
----
-
-## Step 1 — Create the local directory
-
-```bash
-mkdir -p ~/.lenserfight/lenses ~/.lenserfight/media ~/.lenserfight/workflows ~/.lenserfight/agents ~/.lenserfight/lensers
-```
-
----
-
-## Step 2 — Create the config file
-
-```bash
-cat > ~/.lenserfight/config.json << 'EOF'
-{
-  "defaultAdapterId": "local",
-  "cloudApiUrl": "https://api.lenserfight.com"
-}
-EOF
-```
-
----
-
-## Step 3 — Set the data source
-
-Create `.env.local` in the repository root:
-
-```bash
+# 2. Create the env file and start the app
+cat > .env.local << 'EOF'
 VITE_DATA_SOURCE=file
 VITE_PRODUCT_EDITION=community
 VITE_WEB_BASE_URL=http://localhost:3000
 VITE_API_URL=http://localhost:8786
-```
-
-`.env.local` is gitignored — it won't be committed.
-
----
-
-## Step 4 — Start the app
-
-```bash
+EOF
 pnpm nx run web:serve
 ```
 
-The app starts at `http://localhost:3000`. Supabase is not contacted on startup. Any lens or workflow you create is saved to `~/.lenserfight/lenses/` as a JSON file.
+The app starts at `http://localhost:3000`. Supabase is not contacted. Lenses and workflows are stored in IndexedDB — no directories to create.
+
+> `.env.local` is gitignored — it won't be committed.
 
 ---
 
-## Step 5 — Create your first lens
+## Create your first lens
 
 1. Open `http://localhost:3000`
 2. Navigate to **Lenses** → **New Lens**
 3. Enter a title and prompt content
 4. Save
 
-The lens is stored at `~/.lenserfight/lenses/{id}.json`.
+The lens is persisted in IndexedDB in your browser.
 
 ---
 
@@ -129,24 +103,13 @@ When you're ready to use the full cloud stack:
 
 ---
 
-## Directory layout reference
+## Where data lives
 
-```
-~/.lenserfight/
-├── config.json          # Global config: adapter id, API URL, auth tokens
-├── lenses/              # Lens metadata and content
-│   └── {id}.json
-├── lensers/             # Lenser profile data
-│   └── {handle}.json
-├── media/               # File uploads, organised by bucket
-│   ├── {bucket}/
-│   │   └── {objectKey}
-│   └── objects.json     # Metadata index
-├── workflows/
-│   └── {id}.json
-└── agents/
-    └── {id}.json
-```
+| Layer | Storage |
+|-------|---------|
+| Lenses, workflows, agents (web app) | Browser IndexedDB — origin `http://localhost:3000` |
+| Auth tokens, developer tokens (CLI) | `~/.lenserfight/config.json` — created by `lf init` or `lf auth login` |
+| Keychain secrets (CLI, CI) | OS keychain, or `~/.lenserfight/gateway/keys/` when `LF_GATEWAY_KEY_FILE_FALLBACK=1` |
 
 ---
 
