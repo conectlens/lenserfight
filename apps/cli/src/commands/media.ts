@@ -3,6 +3,7 @@ import { defineCommand } from 'citty'
 import consola from 'consola'
 import { callRest, handleError } from '../utils/api'
 import { printJson, printTable } from '../utils/output'
+import { resolveConfig as resolveBaseConfig } from '../config/project-config'
 
 // Phase AK — `lf media` surface
 //
@@ -153,15 +154,32 @@ const mediaDownload = defineCommand({
         return
       }
 
-      // Internal bucket path: signed URL via storage REST.
-      // Phase AK only exposes `lf media download`; the media-proxy HTTP route
-      // (signed-URL redirect with bearer auth) lands alongside the platform-api
-      // worker work — until then we resolve the signed URL via the storage API
-      // directly, which honors the same RLS check on media.objects.
-      throw new Error(
-        `Media object ${args.id} is stored internally (bucket=${obj.bucket}). ` +
-          `Phase AK media-proxy is not yet wired in this CLI; download via the web UI for now.`,
-      )
+      // Internal bucket path: hit the platform-api media-proxy, which gates
+      // on RLS and 302s to a 1-hour signed URL. We use cloudApiUrl (the
+      // platform-api URL) + the user's bearer token.
+      const config = resolveBaseConfig()
+      const apiBase =
+        process.env['PLATFORM_API_URL'] ||
+        config.cloudApiUrl ||
+        config.supabaseUrl
+      if (!apiBase) {
+        throw new Error('platform-api URL not configured. Set PLATFORM_API_URL or run `lf init`.')
+      }
+      const proxyUrl = `${apiBase.replace(/\/+$/, '')}/v1/media/${encodeURIComponent(obj.id)}`
+      const headers: Record<string, string> = {}
+      if (config.authToken) headers['Authorization'] = `Bearer ${config.authToken}`
+
+      const proxied = await fetch(proxyUrl, { headers, redirect: 'follow' })
+      if (!proxied.ok) {
+        throw new Error(`media-proxy fetch failed: ${proxied.status} ${proxied.statusText}`)
+      }
+      const proxiedBytes = Buffer.from(await proxied.arrayBuffer())
+      if (args.out) {
+        writeFileSync(args.out, proxiedBytes)
+        consola.success(`Wrote ${proxiedBytes.length} bytes to ${args.out}`)
+      } else {
+        process.stdout.write(proxiedBytes)
+      }
     } catch (err) {
       handleError(err)
     }
