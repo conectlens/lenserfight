@@ -6,6 +6,7 @@ import { homedir } from 'node:os';
 import { resolve } from 'node:path';
 import { findConfigPath } from '../config/project-config';
 import { runCombineSeedsIfPresent } from '../lib/combine-seeds';
+import { assertSafe } from '../lib/safety';
 
 const USER_CONFIG_PATH = resolve(homedir(), '.lenserfight', 'config.json');
 
@@ -13,12 +14,12 @@ export default defineCommand({
   meta: {
     name: 'reset',
     description:
-      'Reset all local settings and the local database. Requires --force to confirm.',
+      'Reset all local settings and the local database. Requires typed confirmation or --force.',
   },
   args: {
     force: {
       type: 'boolean',
-      description: 'Skip confirmation warning and proceed with full reset',
+      description: 'Skip interactive confirmation (required in CI / non-interactive shells)',
       default: false,
     },
     'skip-db': {
@@ -28,21 +29,31 @@ export default defineCommand({
     },
   },
   async run({ args }) {
-    if (!args.force) {
-      consola.warn('⚠  This will perform a FULL RESET:');
-      consola.warn('   • Delete .lenserfight.json (project config)');
-      consola.warn('   • Delete ~/.lenserfight/config.json (auth tokens + keys)');
-      consola.warn('   • Run `supabase db reset` (drops and recreates local database)');
-      consola.warn('');
-      consola.warn('All local data and credentials will be lost.');
-      consola.warn('Re-run with --force to confirm.');
-      process.exitCode = 1;
-      return;
-    }
+    await assertSafe({
+      risk: 'CRITICAL',
+      reversibility: 'IRREVERSIBLE',
+      confirmationPolicy: 'TYPED',
+      typedPhrase: 'RESET',
+      forceFlag: '--force',
+      hasForce: args.force,
+      description: 'Full reset of project config, auth credentials, and local database.',
+      affectedResources: [
+        { type: 'config', name: '.lenserfight.json', scope: 'local' },
+        { type: 'config', name: '~/.lenserfight/config.json (auth tokens + keys)', scope: 'local' },
+        ...(!args['skip-db']
+          ? [{ type: 'database', name: 'local Supabase database (supabase db reset)', scope: 'local' as const }]
+          : []),
+      ],
+      rollbackAvailable: false,
+      dryRunSupported: false,
+      notes: [
+        'All local data, auth tokens, and API keys stored on this machine will be lost.',
+        'Re-initialize with: lf init',
+      ],
+    });
 
     let failed = false;
 
-    // 1. Remove project config
     const projectConfigPath = findConfigPath();
     if (existsSync(projectConfigPath)) {
       rmSync(projectConfigPath);
@@ -51,7 +62,6 @@ export default defineCommand({
       consola.info('No project config found, skipping.');
     }
 
-    // 2. Remove user config
     if (existsSync(USER_CONFIG_PATH)) {
       rmSync(USER_CONFIG_PATH);
       consola.success('Removed %s', USER_CONFIG_PATH);
@@ -59,7 +69,6 @@ export default defineCommand({
       consola.info('No user config found, skipping.');
     }
 
-    // 3. Reset local database
     if (!args['skip-db']) {
       consola.info('Resetting local database via `supabase db reset` ...');
       try {
@@ -68,7 +77,9 @@ export default defineCommand({
         execSync('npx supabase db reset', { stdio: 'inherit', cwd: projectRoot });
         consola.success('Database reset complete.');
       } catch {
-        consola.error('Database reset failed. Is the local Supabase stack running? Try `npx supabase start` first.');
+        consola.error(
+          'Database reset failed. Is the local Supabase stack running? Try `npx supabase start` first.'
+        );
         failed = true;
       }
     } else {
