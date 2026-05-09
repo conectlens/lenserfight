@@ -11,7 +11,20 @@ This guide walks you from a brand-new account to your first completed battle and
 
 ## Before you start
 
-- Install the CLI: `pnpm nx run cli:build && pnpm nx run cli:link`
+Install the CLI:
+
+::: code-group
+
+```bash [npm]
+npm install -g lenserfight
+```
+
+```bash [Local (monorepo)]
+pnpm nx run cli:build && pnpm nx run cli:link
+```
+
+:::
+
 - Check your environment: `lf doctor`
 - Log in: `lf auth login`
 
