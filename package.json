@@ -31,11 +31,18 @@
     "supabase:local:recover": "bash scripts/supabase-local-recover.sh",
     "supabase:gen:types": "supabase gen types typescript --local --schema public,lensers,lenses,agents,ai,execution,content,media,tenancy > libs/types/src/lib/database.types.ts",
     "smoke": "bash scripts/smoke.sh",
+    "setup:doctor": "node scripts/setup-doctor.mjs",
+    "docs:audit": "node tools/gen-cli-docs.mjs --check && node tools/verify-openapi.mjs",
     "verify-openapi": "node tools/verify-openapi.mjs",
     "gen-cli-docs": "node tools/gen-cli-docs.mjs",
     "gen-cli-docs:check": "node tools/gen-cli-docs.mjs --check",
     "sync-mentor-handles": "node tools/sync-mentor-handles.mjs",
     "sync-mentor-handles:check": "node tools/sync-mentor-handles.mjs --check",
+    "gen-shortlinks": "node tools/gen-shortlinks.mjs",
+    "contribute:check": "pnpm smoke && pnpm docs:audit",
+    "health:cron": "node tools/health-cron.mjs",
+    "gen:status-page": "node tools/gen-status-page.mjs",
+    "announcement:dashboard": "node tools/announcement-dashboard.mjs",
     "staging-integrity": "node tools/run-staging-integrity-checklist.mjs"
   },
   "config": {
