@@ -130,3 +130,170 @@ lf team scratchpad <run-id>
 - [Build a Multi-Agent Team](/how-to/agents/build-a-multi-agent-team) — end-to-end walkthrough
 - [Agent Teams](/explanation/agents/agent-teams) — team graph and profiles
 - [Known Limitations](/reference/known-limitations#agentic-teams) — caps and gaps
+
+<!-- AUTO-GEN-START -->
+
+# `lf team`
+
+Manage agent teams (ConnectedLenses team domain).
+
+## `lf team list`
+
+List teams owned by an AI workspace.
+
+| Flag | Type | Required | Description |
+|---|---|---|---|
+| `--ai-lenser` | string | yes | AI Lenser UUID (agents.ai_lensers.id) |
+| `--json` | boolean | no | Output as JSON |
+
+## `lf team create`
+
+Create a new team for an AI workspace.
+
+| Flag | Type | Required | Description |
+|---|---|---|---|
+| `--ai-lenser` | string | yes | AI Lenser UUID |
+| `--name` | string | yes | Team name |
+| `--description` | string | no | Team description |
+
+## `lf team inspect`
+
+Fetch the agent workspace bootstrap for a profile handle.
+
+| Flag | Type | Required | Description |
+|---|---|---|---|
+| `<handle>` | positional | yes | AI lenser handle |
+
+## `lf team members`
+
+List members of a team.
+
+| Flag | Type | Required | Description |
+|---|---|---|---|
+| `--team` | string | yes | Team UUID |
+| `--json` | boolean | no | Output as JSON |
+
+## `lf team add-member`
+
+Add an agent to a team.
+
+| Flag | Type | Required | Description |
+|---|---|---|---|
+| `--team` | string | yes | Team UUID |
+| `--agent` | string | yes | Agent (AI Lenser) UUID |
+| `--role` | string | no | Member role |
+| `--responsibility` | string | no | Responsibility text |
+| `--lane` | string | no | Parallel lane index |
+| `--sort-order` | string | no | Sort order within lane |
+| `--personality-profile` | string | no | Personality profile UUID |
+| `--memory-profile` | string | no | Memory profile UUID |
+| `--tool-profile` | string | no | Tool profile UUID |
+| `--model-profile` | string | no | Model profile UUID |
+
+## `lf team remove-member`
+
+Remove a member from a team.
+
+| Flag | Type | Required | Description |
+|---|---|---|---|
+| `--member` | string | yes | Team Member UUID |
+
+## `lf team set-role`
+
+Update a team member role (leader|executor|reviewer|observer|operator).
+
+| Flag | Type | Required | Description |
+|---|---|---|---|
+| `<member-id>` | positional | yes | Team member UUID |
+| `<role>` | positional | yes | New role |
+
+## `lf team edges`
+
+List edges of a team graph.
+
+| Flag | Type | Required | Description |
+|---|---|---|---|
+| `--team` | string | yes | Team UUID |
+| `--json` | boolean | no | Output as JSON |
+
+## `lf team add-edge`
+
+Add a typed edge between two team members.
+
+| Flag | Type | Required | Description |
+|---|---|---|---|
+| `--team` | string | yes | Team UUID |
+| `--source` | string | yes | Source team member UUID |
+| `--target` | string | yes | Target team member UUID |
+| `--type` | string | no | Edge type: delegates | reviews | reports_to | shares_context | handoff |
+| `--blocking` | boolean | no | Mark edge as blocking (source waits on target) |
+
+## `lf team assign`
+
+Bind a workflow to a team or agent (workflow_assignment).
+
+| Flag | Type | Required | Description |
+|---|---|---|---|
+| `--ai-lenser` | string | yes | AI Lenser UUID that owns the assignment |
+| `--workflow` | string | yes | Workflow UUID |
+| `--assignee-kind` | string | no | agent | team |
+| `--assignee-id` | string | yes | Agent or team UUID |
+| `--approval-policy` | string | no | JSON object |
+| `--retry-policy` | string | no | JSON object |
+| `--failure-policy` | string | no | JSON object |
+| `--queue-policy` | string | no | JSON object |
+
+## `lf team dispatch`
+
+Manually dispatch a workflow assignment as a team run.
+
+| Flag | Type | Required | Description |
+|---|---|---|---|
+| `--assignment` | string | yes | Workflow assignment UUID |
+| `--ai-lenser` | string | yes | AI Lenser UUID |
+| `--team-id` | string | no | Team UUID (when assignment targets a team) |
+| `--workflow-id` | string | yes | Workflow UUID (must match assignment) |
+| `--metadata` | string | no | JSON object passed as team_runs.metadata (e.g. inputs, gate context) |
+
+## `lf team dispatch`
+
+Manually dispatch a workflow assignment as a team run.
+
+| Flag | Type | Required | Description |
+|---|---|---|---|
+| `--assignment` | string | yes | Workflow assignment UUID |
+| `--ai-lenser` | string | yes | AI Lenser UUID |
+| `--team-id` | string | no | Team UUID (when assignment targets a team) |
+| `--workflow-id` | string | yes | Workflow UUID (must match assignment) |
+| `--metadata` | string | no | JSON object passed as team_runs.metadata (e.g. inputs, gate context) |
+
+## `lf team runs`
+
+List recent team runs for an AI workspace.
+
+| Flag | Type | Required | Description |
+|---|---|---|---|
+| `--ai-lenser` | string | yes | AI Lenser UUID |
+| `--limit` | string | no | Max rows (default 20) |
+| `--json` | boolean | no | Output as JSON |
+
+## `lf team conversation`
+
+Show the threaded message conversation for a team run.
+
+| Flag | Type | Required | Description |
+|---|---|---|---|
+| `<run-id>` | positional | yes | Team run UUID |
+| `--limit` | string | no | Max rows (default 100) |
+| `--json` | boolean | no | Output as JSON |
+
+## `lf team scratchpad`
+
+Show the shared scratchpad and version for a team run.
+
+| Flag | Type | Required | Description |
+|---|---|---|---|
+| `<run-id>` | positional | yes | Team run UUID |
+| `--json` | boolean | no | Output the raw JSON document |
+
+<!-- AUTO-GEN-END -->
