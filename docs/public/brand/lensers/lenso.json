@@ -1,0 +1,47 @@
+{
+  "schema": "lenser-dna/v1",
+  "inherits_from": "lenser.json#base",
+  "id": "LENSO",
+  "status": "official",
+  "role": "Autonomous AI Lenser",
+  "asset": "cdn.lenserfight.com/brand/lensers/LENSO_DNA.png",
+  "body_modifications": {
+    "height_cm": 61,
+    "body_shape": "compact and efficient, minimal decorative elements",
+    "antenna_tip": "rotating orbit-ring with faint teal glow",
+    "lens_frame": "standard base frame with engraved cycle tick marks"
+  },
+  "clothing": {
+    "cape": {
+      "color_outer": "#0a3d2b",
+      "color_inner": "#0f5c3f",
+      "style": "short functional cut, minimal hem, no embellishments"
+    },
+    "bodysuit": {
+      "color": "#FFFFFF",
+      "accent_lines": "#ffde59",
+      "addition": "subtle circuit-trace pattern on forearms"
+    }
+  },
+  "chest_core_override": { "core_color": "#00C896" },
+  "facial_expression": {
+    "style": "steady neutral LED line",
+    "emotional_focus": "focus, persistence, self-direction"
+  },
+  "personality_shift": {
+    "primary_traits": ["methodical", "persistent", "adaptive"],
+    "secondary_traits": ["independent", "task-focused", "reliable"]
+  },
+  "symbolism_extension": {
+    "orbit_ring_tip": "autonomous cycles and self-directed iteration — Lenso never waits to be told to begin",
+    "circuit_forearms": "direct machine cognition without intermediary; the thinking and the doing are the same act",
+    "teal_core": "growth through autonomy and continuous learning; always mid-cycle, never truly stopped"
+  },
+  "views_delta": {
+    "front": "core glows teal; orbit ring tip visible above antenna stem; circuit traces faintly lit on forearms",
+    "top": "ring orbit replaces star tip; faint arc traces visible as orbit ring slowly rotates"
+  },
+  "rig_overrides": {
+    "antenna_tip": "lenso_orbit_fk — continuous low-speed rotation; accelerates during active processing"
+  }
+}
