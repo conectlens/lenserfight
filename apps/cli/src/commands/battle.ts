@@ -300,6 +300,16 @@ const run = defineCommand({
       description: 'Output the generated battle summary as JSON',
       default: false,
     },
+    judge: {
+      type: 'string',
+      description: 'Verdict mode: ai (default) — auto-judge after execution | human — skip AI judge, vote manually',
+      default: 'ai',
+    },
+    'no-judge': {
+      type: 'boolean',
+      description: 'Skip AI auto-judge (alias for --judge human)',
+      default: false,
+    },
   },
   async run({ args }) {
     const filePath = args.file || 'PRIVATE_BATTLE.md'
@@ -369,21 +379,54 @@ const run = defineCommand({
       process.stdout.write('\n\n');
       lbs.markExecuted(state.id, result);
 
+      // Run AI judge (unless opted out)
+      const skipAiJudge = args['no-judge'] || args.judge === 'human';
+      let judgeSection = '';
+      if (!skipAiJudge) {
+        const judgeProvider = localAiJudge.resolveJudgeProvider();
+        if (judgeProvider) {
+          const keyHint = judgeProvider.provider === 'ollama'
+            ? 'Ollama (local, free)'
+            : `${judgeProvider.provider.toUpperCase()}_API_KEY`;
+          consola.info('AI judge evaluating… (~600 input + ~100 output tokens via %s)', keyHint);
+          try {
+            const loadedForJudge = lbs.load(state.id);
+            const verdict = await localAiJudge.judge(loadedForJudge);
+            const judgeVote: LocalVote = {
+              slot: verdict.winner,
+              source: 'ai',
+              rationale: verdict.rationale,
+              votedAt: new Date().toISOString(),
+            };
+            lbs.recordVote(state.id, judgeVote);
+            judgeSection = `\n\n---\n\n## Judge Verdict\n\n**Winner:** Contender ${verdict.winner === 'draw' ? '(Draw)' : verdict.winner}  \n**Rationale:** ${verdict.rationale}  \n**Judge model:** ${verdict.provider}/${verdict.model}\n`;
+            consola.success('Winner: %s', verdict.winner === 'draw' ? 'Draw' : `Contender ${verdict.winner}`);
+            consola.info('Rationale: %s', verdict.rationale);
+          } catch (judgeErr) {
+            consola.warn('AI judge failed: %s', judgeErr instanceof Error ? judgeErr.message : String(judgeErr));
+          }
+        } else {
+          consola.warn('AI judge skipped — no provider key found.');
+        }
+      }
+
       // Write result files alongside the source file
       const { writeFileSync: wfs } = require('node:fs') as typeof import('node:fs');
       const { resolve: res } = require('node:path') as typeof import('node:path');
       const base = (frontmatter.slug ?? frontmatter.id ?? 'battle').replace(/[^a-z0-9-]/gi, '-').toLowerCase();
       const resultMd = res(process.cwd(), `${base}.result.md`);
       const resultJson = res(process.cwd(), `${base}.result.json`);
-      wfs(resultMd, `# ${frontmatter.name ?? base} — Results\n\n## Contender A (${pA.provider}/${pA.model})\n\n${result.A}\n\n---\n\n## Contender B (${pB.provider}/${pB.model})\n\n${result.B}\n`, 'utf-8');
+      wfs(resultMd, `# ${frontmatter.name ?? base} — Results\n\n## Contender A (${pA.provider}/${pA.model})\n\n${result.A}\n\n---\n\n## Contender B (${pB.provider}/${pB.model})\n\n${result.B}\n${judgeSection}`, 'utf-8');
       wfs(resultJson, JSON.stringify({ ...result, battle: state }, null, 2), 'utf-8');
 
       if (args.json) { printJson({ ...result, resultMd, resultJson }); return; }
       consola.success('Execution complete in %dms.', result.durationMs);
       consola.info('Results: %s', resultMd);
       consola.info('JSON:    %s', resultJson);
-      consola.info('');
-      consola.info('Vote: lf battle local vote --slot A|B|draw --id %s', state.id.slice(0, 8));
+      if (skipAiJudge || !judgeSection) {
+        consola.info('');
+        consola.info('Vote: lf battle local vote --slot A|B|draw --id %s', state.id.slice(0, 8));
+      }
       return;
     }
 
@@ -1581,7 +1624,9 @@ const feed = defineCommand({
 import {
   localBattleStore,
   localBattleLenser,
+  localAiJudge,
   type LocalContenderConfig,
+  type LocalVote,
 } from '../utils/local-battle-engine';
 
 const localInit = defineCommand({
@@ -1644,10 +1689,12 @@ const localAddContender = defineCommand({
 const localRun = defineCommand({
   meta: { name: 'run', description: 'Execute both contenders locally using BYOK keys.' },
   args: {
-    id:      { type: 'string',  description: 'Local battle ID (omit to use most recent)', default: '' },
-    example: { type: 'string',  description: 'Load a bundled example spec by name (e.g. haiku-shootout) and run it immediately', default: '' },
-    yes:     { type: 'boolean', description: 'Skip cost confirmation prompt', default: false },
-    json:    { type: 'boolean', description: 'Output result as JSON', default: false },
+    id:         { type: 'string',  description: 'Local battle ID (omit to use most recent)', default: '' },
+    example:    { type: 'string',  description: 'Load a bundled example spec by name (e.g. haiku-shootout) and run it immediately', default: '' },
+    yes:        { type: 'boolean', description: 'Skip cost confirmation prompt', default: false },
+    json:       { type: 'boolean', description: 'Output result as JSON', default: false },
+    judge:      { type: 'string',  description: 'Verdict mode: ai (default) — auto-judge after execution | human — skip AI judge, vote manually', default: 'ai' },
+    'no-judge': { type: 'boolean', description: 'Skip AI auto-judge and prompt for manual vote (alias for --judge human)', default: false },
   },
   async run({ args }) {
     try {
@@ -1729,10 +1776,49 @@ const localRun = defineCommand({
       consola.info('Tokens — A: %d  B: %d', result.tokensA, result.tokensB);
       consola.info('');
       consola.warn('Results are stored in plaintext in your local battle state. Do not commit if they contain sensitive prompts or outputs.');
-      consola.info('Next: lf battle local vote %s --slot A|B|draw', state.id.slice(0, 8));
+
+      const skipAiJudge = args['no-judge'] || args.judge === 'human';
+      if (skipAiJudge) {
+        consola.info('Next: lf battle local vote %s --slot A|B|draw', updated.id.slice(0, 8));
+      } else {
+        await runLocalAiJudge(updated.id);
+      }
     } catch (err) { handleError(err); }
   },
 });
+
+async function runLocalAiJudge(battleId: string): Promise<void> {
+  const judgeProvider = localAiJudge.resolveJudgeProvider();
+  if (!judgeProvider) {
+    consola.warn('AI judge skipped — no provider key found (ANTHROPIC_API_KEY, OPENAI_API_KEY, or Ollama).');
+    consola.info('Run `lf battle local vote --slot A|B|draw` to judge manually.');
+    return;
+  }
+  const keyHint = judgeProvider.provider === 'ollama'
+    ? 'Ollama (local, free)'
+    : `${judgeProvider.provider.toUpperCase()}_API_KEY`;
+  consola.info('');
+  consola.info('AI judge evaluating… (~600 input + ~100 output tokens via %s)', keyHint);
+  try {
+    const state = localBattleStore.resolve(battleId);
+    const verdict = await localAiJudge.judge(state);
+    const judgeVote: LocalVote = {
+      slot: verdict.winner,
+      source: 'ai',
+      rationale: verdict.rationale,
+      votedAt: new Date().toISOString(),
+    };
+    localBattleStore.recordVote(battleId, judgeVote);
+    consola.success('Winner: %s', verdict.winner === 'draw' ? 'Draw' : `Contender ${verdict.winner}`);
+    consola.info('Rationale: %s', verdict.rationale);
+    consola.info('Judge: %s/%s (%d tokens)', verdict.provider, verdict.model, verdict.tokensUsed);
+    consola.info('');
+    consola.info('Override: lf battle local vote %s --slot A|B|draw', battleId.slice(0, 8));
+  } catch (judgeErr) {
+    consola.warn('AI judge failed: %s', judgeErr instanceof Error ? judgeErr.message : String(judgeErr));
+    consola.info('Run `lf battle local vote --slot A|B|draw` to judge manually.');
+  }
+}
 
 const localVote = defineCommand({
   meta: { name: 'vote', description: 'Cast a vote on a locally executed battle.' },
@@ -1753,8 +1839,9 @@ const localVote = defineCommand({
       if (state.status !== 'executed' && state.status !== 'voted') {
         consola.error('Run the battle first: lf battle local run'); process.exitCode = 1; return;
       }
-      const vote = {
+      const vote: LocalVote = {
         slot: (slot === 'a' ? 'A' : slot === 'b' ? 'B' : 'draw') as 'A' | 'B' | 'draw',
+        source: 'human',
         rationale: args.rationale || undefined,
         votedAt: new Date().toISOString(),
       };
@@ -1792,12 +1879,32 @@ const localStatus = defineCommand({
       }
 
       if (state.votes.length) {
-        const tally = { A: 0, B: 0, draw: 0 };
-        for (const v of state.votes) tally[v.slot]++;
+        const humanVotes = state.votes.filter((v) => (v.source ?? 'human') === 'human');
+        const aiVotes    = state.votes.filter((v) => v.source === 'ai');
+
+        const tally = (votes: typeof state.votes) => {
+          const t = { A: 0, B: 0, draw: 0 };
+          for (const v of votes) t[v.slot]++;
+          return t;
+        };
+
         consola.log('');
-        consola.log('  Votes — A: %d  B: %d  Draw: %d', tally.A, tally.B, tally.draw);
-        const winner = tally.A > tally.B ? 'A' : tally.B > tally.A ? 'B' : tally.draw > 0 ? 'Draw' : 'Tied';
-        consola.log('  Winner: %s', winner);
+        if (humanVotes.length) {
+          const t = tally(humanVotes);
+          consola.log('  Human votes — A: %d  B: %d  Draw: %d', t.A, t.B, t.draw);
+        }
+        if (aiVotes.length) {
+          const t = tally(aiVotes);
+          consola.log('  AI judge    — A: %d  B: %d  Draw: %d', t.A, t.B, t.draw);
+          if (aiVotes[0]?.rationale) consola.log('  Rationale:    %s', aiVotes[0].rationale);
+        }
+
+        // Human votes are authoritative; fall back to AI if no human votes exist
+        const decisiveVotes = humanVotes.length ? humanVotes : aiVotes;
+        const dt = tally(decisiveVotes);
+        const winner = dt.A > dt.B ? 'A' : dt.B > dt.A ? 'B' : dt.draw > 0 ? 'Draw' : 'Tied';
+        const source = humanVotes.length ? '' : ' (AI judge)';
+        consola.log('  Winner: %s%s', winner, source);
       }
       consola.log('');
     } catch (err) { handleError(err); }

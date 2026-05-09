@@ -9,7 +9,7 @@ const YELLOW = '\x1b[33m'
 const GRAY = '\x1b[90m'
 const BG_BLACK = '\x1b[40m'
 
-type CliErrorKind = 'unauthorized' | 'network' | 'unknown'
+type CliErrorKind = 'unauthorized' | 'network' | 'rate_limited' | 'unknown'
 
 interface CliError {
   kind: CliErrorKind
@@ -25,6 +25,15 @@ function classify(error: unknown): CliError {
   const e = error as Record<string, unknown>
   const msg = typeof e['message'] === 'string' ? e['message'] : ''
   const code = typeof e['code'] === 'string' ? e['code'] : ''
+
+  if (e['status'] === 429 || code === 'BATTLE_RATE_LIMIT') {
+    return {
+      kind: 'rate_limited',
+      message: 'RATE LIMITED',
+      detail: (typeof e['message'] === 'string' ? e['message'] : 'Too many requests.') +
+        '\nYou can create at most 5 battles per 24-hour window. Try again later.',
+    }
+  }
 
   if (
     e['status'] === 401 ||
@@ -63,7 +72,7 @@ function separator(): string {
 export function reportCliError(error: unknown): void {
   const { message, detail, kind } = classify(error)
 
-  const color = kind === 'unauthorized' ? RED : kind === 'network' ? YELLOW : GRAY
+  const color = kind === 'unauthorized' ? RED : (kind === 'network' || kind === 'rate_limited') ? YELLOW : GRAY
 
   process.stderr.write('\n')
   process.stderr.write(`${BG_BLACK}${color}${BOLD} ${message} ${RESET}\n`)

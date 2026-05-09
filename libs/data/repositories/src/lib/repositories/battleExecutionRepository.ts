@@ -76,6 +76,7 @@ export const battleExecutionRepository = {
     // Try contender-specific first, then battle-level default (contender_id IS NULL)
     if (contenderId) {
       const { data } = await supabase
+        .schema('battles')
         .from('execution_configs')
         .select('*')
         .eq('battle_id', battleId)
@@ -85,6 +86,7 @@ export const battleExecutionRepository = {
     }
     // Fallback to battle-level default
     const { data } = await supabase
+      .schema('battles')
       .from('execution_configs')
       .select('*')
       .eq('battle_id', battleId)
@@ -97,6 +99,7 @@ export const battleExecutionRepository = {
     input: UpsertExecutionConfigInput,
   ): Promise<ExecutionConfigRecord> {
     const { data, error } = await supabase
+      .schema('battles')
       .from('execution_configs')
       .upsert(
         {
