@@ -308,9 +308,32 @@ export default defineConfig({
               { text: 'Topluluk ve Kullanım', link: '/tr/explanation/community/community-hub' },
             ],
           },
+          {
+            text: 'Platform Kurulumu',
+            items: [
+              { text: 'Genel Bakış', link: '/tr/platform-setup/' },
+              { text: 'Pardus', link: '/tr/platform-setup/pardus' },
+              { text: 'Windows', link: '/tr/platform-setup/windows' },
+              { text: 'Linux', link: '/tr/platform-setup/linux' },
+              { text: 'macOS', link: '/tr/platform-setup/macos' },
+            ],
+          },
           { text: 'Değişiklik Günlüğü', link: '/changelog' },
         ],
         sidebar: {
+          // ── Platform Kurulumu ─────────────────────────────────────────────────
+          '/tr/platform-setup/': [
+            {
+              text: 'Platform Kurulumu',
+              items: [
+                { text: 'Genel Bakış', link: '/tr/platform-setup/' },
+                { text: 'Pardus', link: '/tr/platform-setup/pardus' },
+                { text: 'Windows', link: '/tr/platform-setup/windows' },
+                { text: 'Linux', link: '/tr/platform-setup/linux' },
+                { text: 'macOS', link: '/tr/platform-setup/macos' },
+              ],
+            },
+          ],
           // ── İç Referanslar ───────────────────────────────────────────────────
           '/tr/reference/internals/': [
             {
@@ -808,6 +831,16 @@ export default defineConfig({
           { text: 'Automation', link: '/explanation/automation/index' },
           { text: 'Trust Gateway', link: '/explanation/gateway/index' },
           { text: 'Community & Use Cases', link: '/explanation/community/community-hub' },
+        ],
+      },
+      {
+        text: 'Platform Setup',
+        items: [
+          { text: 'Overview', link: '/platform-setup/' },
+          { text: 'Windows', link: '/platform-setup/windows' },
+          { text: 'Linux', link: '/platform-setup/linux' },
+          { text: 'macOS', link: '/platform-setup/macos' },
+          { text: 'Pardus', link: '/platform-setup/pardus' },
         ],
       },
       { text: 'RFCs', link: '/rfcs/' },
@@ -1570,6 +1603,19 @@ export default defineConfig({
             { text: 'Perplexity', link: '/providers/perplexity/' },
             { text: 'xAI', link: '/providers/xai/' },
             { text: 'Midjourney', link: '/providers/midjourney/' },
+          ],
+        },
+      ],
+      // ── Platform Setup ─────────────────────────────────────────────────────
+      '/platform-setup/': [
+        {
+          text: 'Platform Setup',
+          items: [
+            { text: 'Overview', link: '/platform-setup/' },
+            { text: 'Windows', link: '/platform-setup/windows' },
+            { text: 'Linux', link: '/platform-setup/linux' },
+            { text: 'macOS', link: '/platform-setup/macos' },
+            { text: 'Pardus', link: '/platform-setup/pardus' },
           ],
         },
       ],
