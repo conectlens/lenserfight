@@ -1,0 +1,13 @@
+{
+  "name": "util-keychain",
+  "$schema": "../../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "libs/utils/keychain/src",
+  "projectType": "library",
+  "tags": [
+    "layer:utils",
+    "util:keychain",
+    "scope:shared",
+    "license:shared"
+  ],
+  "targets": {}
+}
