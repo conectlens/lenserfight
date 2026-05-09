@@ -43,6 +43,12 @@ let deviceKeyCache: CryptoKey | null = null
 async function getOrCreateDeviceKey(): Promise<CryptoKey> {
   if (deviceKeyCache) return deviceKeyCache
 
+  if (!crypto?.subtle) {
+    throw new Error(
+      'Web Crypto API is unavailable. Local key encryption requires a secure context (HTTPS or localhost).',
+    )
+  }
+
   const salt = getOrCreateSalt()
   const keyMaterial = await crypto.subtle.importKey(
     'raw',
