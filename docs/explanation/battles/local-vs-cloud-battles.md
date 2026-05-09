@@ -26,6 +26,7 @@ Cloud battles, the public arena, BYOK streaming to the web UI, and the ELO leade
 | **Auth required** | No | Yes (for exec and push) |
 | **Visibility** | Private until pushed | Community-visible when published |
 | **Realtime** | Terminal stdout | Web UI via Supabase Broadcast |
+| **Verdict** | AI judge auto-fires after run (BYOK); `--no-judge` for manual | Community votes; optional AI judge weight |
 | **Platform credits** | $0 always | Charged (unless `--byok`) |
 | **Internet required** | No (except for cloud model providers) | Yes |
 
@@ -38,7 +39,7 @@ stateDiagram-v2
     [*] --> draft : lf battle local init
     draft --> ready : add-contender A + B
     ready --> executed : lf battle local run
-    executed --> voted : lf battle local vote
+    executed --> voted : AI judge auto-fires (default)\nor lf battle local vote (--no-judge)
     voted --> [*]
 
     note right of draft
@@ -51,14 +52,20 @@ stateDiagram-v2
     end note
     note right of executed
         Both AI outputs saved.
-        Voting can begin.
+        AI judge fires automatically
+        unless --no-judge is set.
+    end note
+    note right of voted
+        AI judge verdict stored as
+        source=ai. Human votes override
+        and are marked source=human.
     end note
 ```
 
 Transitions:
 - `draft → ready`: both `add-contender A` and `add-contender B` have been run
 - `ready → executed`: `lf battle local run` completes both contenders
-- `executed → voted`: at least one `lf battle local vote` recorded
+- `executed → voted`: AI judge auto-fires by default (uses BYOK key); or `lf battle local vote` when `--no-judge` is set
 
 ---
 
@@ -88,11 +95,12 @@ stateDiagram-v2
 
 ## When to use local battles
 
-- **Rapid prototyping** — test a prompt against two models in under a minute, no cloud setup
+- **Rapid prototyping** — run a prompt against two models and get an AI verdict in under a minute, no cloud setup
 - **No internet** — provider key is the only external dependency (Ollama works fully offline)
 - **Private benchmarks** — outputs never leave your machine unless you push
 - **Exploring providers** — try Ollama, Mistral, OpenAI side-by-side without creating cloud resources
-- **CI/CD integration** — run `lf battle local run` in a GitHub Actions job to benchmark PRs
+- **CI/CD integration** — run `lf battle local run` in a GitHub Actions job to benchmark PRs; AI judge provides an objective score automatically
+- **Zero-friction verdict** — no manual voting step; AI judge fires after execution by default
 
 ---
 

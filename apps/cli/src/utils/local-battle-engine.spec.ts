@@ -3,7 +3,10 @@ import { join } from 'node:path'
 import { tmpdir } from 'node:os'
 
 jest.mock('@lenserfight/providers', () => ({
-  byokKeyResolver: { resolve: jest.fn().mockResolvedValue('test-key') },
+  byokKeyResolver: {
+    resolve: jest.fn().mockReturnValue('test-key'),
+    has: jest.fn().mockReturnValue(false),
+  },
   getStreamAdapter: jest.fn(),
 }))
 
@@ -138,6 +141,194 @@ describe('LocalBattleStore.recordVote', () => {
     store.recordVote(battle.id, { slot: 'A', rationale: 'better', votedAt: new Date().toISOString() })
     const after = store.recordVote(battle.id, { slot: 'B', votedAt: new Date().toISOString() })
     expect(after.votes).toHaveLength(2)
+  })
+})
+
+// ─── LocalAiJudge ────────────────────────────────────────────────────────────
+
+import { LocalAiJudge } from './local-battle-engine'
+
+const { byokKeyResolver: bkr, getStreamAdapter: gsa } = jest.requireMock('@lenserfight/providers') as {
+  byokKeyResolver: { resolve: jest.Mock; has: jest.Mock }
+  getStreamAdapter: jest.Mock
+}
+
+function makeBattleStateForJudge(): import('./local-battle-engine').LocalBattleState {
+  return {
+    id: 'judge-test-id',
+    name: 'Judge Test Battle',
+    task: 'Write a haiku about TypeScript',
+    status: 'executed',
+    contenders: [
+      { slot: 'A', label: 'claude', provider: 'anthropic', model: 'claude-haiku-4-5' },
+      { slot: 'B', label: 'gpt4o',  provider: 'openai',    model: 'gpt-4o-mini' },
+    ],
+    outputs: { A: 'Types guard each edge —', B: 'Semicolons fade at last.' },
+    votes: [],
+    createdAt: '2026-05-10T00:00:00.000Z',
+  }
+}
+
+/** Build a minimal SSE stream that emits one text chunk then signals done. */
+function makeJudgeSseResponse(text: string): Response {
+  const encoder = new TextEncoder()
+  const chunks = [
+    `event: content_block_delta\ndata: {"type":"content_block_delta","delta":{"type":"text_delta","text":${JSON.stringify(text)}}}\n\n`,
+    `event: message_stop\ndata: {"type":"message_stop"}\n\n`,
+  ]
+  let i = 0
+  const stream = new ReadableStream({
+    pull(controller) {
+      if (i < chunks.length) controller.enqueue(encoder.encode(chunks[i++]))
+      else controller.close()
+    },
+  })
+  return new Response(stream, { status: 200 })
+}
+
+function setupJudgeAdapter(responseText: string) {
+  gsa.mockReturnValue({
+    buildStreamRequest: jest.fn().mockReturnValue({
+      url: 'https://api.anthropic.com/v1/messages',
+      body: '{}',
+      headers: { 'content-type': 'application/json' },
+    }),
+    authHeader: jest.fn().mockReturnValue({ 'x-api-key': 'test-key' }),
+    parseStreamChunk: jest.fn().mockImplementation((line: string) => {
+      if (!line.startsWith('data: ')) return null
+      try {
+        const d = JSON.parse(line.slice(6))
+        if (d?.delta?.text) return { content: d.delta.text, done: false }
+        if (d?.type === 'message_stop') return { content: '', done: true }
+      } catch { /* ignore */ }
+      return null
+    }),
+  })
+  global.fetch = jest.fn().mockResolvedValue(makeJudgeSseResponse(responseText))
+}
+
+describe('LocalAiJudge.resolveJudgeProvider', () => {
+  beforeEach(() => jest.clearAllMocks())
+
+  it('returns anthropic when ANTHROPIC_API_KEY is available', () => {
+    bkr.has.mockImplementation((p: string) => p === 'anthropic')
+    expect(new LocalAiJudge().resolveJudgeProvider()).toEqual({ provider: 'anthropic', model: 'claude-haiku-4-5' })
+  })
+
+  it('falls back to openai when only OpenAI key is available', () => {
+    bkr.has.mockImplementation((p: string) => p === 'openai')
+    expect(new LocalAiJudge().resolveJudgeProvider()).toEqual({ provider: 'openai', model: 'gpt-4o-mini' })
+  })
+
+  it('falls back to ollama when only Ollama is available', () => {
+    bkr.has.mockImplementation((p: string) => p === 'ollama')
+    expect(new LocalAiJudge().resolveJudgeProvider()).toEqual({ provider: 'ollama', model: 'llama3.2' })
+  })
+
+  it('returns null when nothing is available', () => {
+    bkr.has.mockReturnValue(false)
+    expect(new LocalAiJudge().resolveJudgeProvider()).toBeNull()
+  })
+
+  it('prefers anthropic over openai when both are set', () => {
+    bkr.has.mockReturnValue(true)
+    expect(new LocalAiJudge().resolveJudgeProvider()?.provider).toBe('anthropic')
+  })
+})
+
+describe('LocalAiJudge.judge — happy paths', () => {
+  beforeEach(() => jest.clearAllMocks())
+
+  it('returns winner A with rationale', async () => {
+    bkr.has.mockImplementation((p: string) => p === 'anthropic')
+    bkr.resolve.mockReturnValue('sk-test')
+    setupJudgeAdapter(JSON.stringify({ winner: 'A', rationale: 'More precise haiku.' }))
+
+    const result = await new LocalAiJudge().judge(makeBattleStateForJudge())
+    expect(result.winner).toBe('A')
+    expect(result.rationale).toBe('More precise haiku.')
+    expect(result.provider).toBe('anthropic')
+    expect(result.model).toBe('claude-haiku-4-5')
+    expect(result.tokensUsed).toBeGreaterThan(0)
+  })
+
+  it('returns winner B', async () => {
+    bkr.has.mockImplementation((p: string) => p === 'anthropic')
+    bkr.resolve.mockReturnValue('sk-test')
+    setupJudgeAdapter(JSON.stringify({ winner: 'B', rationale: 'Better imagery.' }))
+    expect((await new LocalAiJudge().judge(makeBattleStateForJudge())).winner).toBe('B')
+  })
+
+  it('returns draw', async () => {
+    bkr.has.mockImplementation((p: string) => p === 'anthropic')
+    bkr.resolve.mockReturnValue('sk-test')
+    setupJudgeAdapter(JSON.stringify({ winner: 'draw', rationale: 'Both equally strong.' }))
+    expect((await new LocalAiJudge().judge(makeBattleStateForJudge())).winner).toBe('draw')
+  })
+
+  it('extracts JSON even when surrounded by prose', async () => {
+    bkr.has.mockImplementation((p: string) => p === 'anthropic')
+    bkr.resolve.mockReturnValue('sk-test')
+    setupJudgeAdapter('Here is my verdict: {"winner":"A","rationale":"Cleaner."} — done!')
+    expect((await new LocalAiJudge().judge(makeBattleStateForJudge())).winner).toBe('A')
+  })
+
+  it('caps rationale at 1000 chars', async () => {
+    bkr.has.mockImplementation((p: string) => p === 'anthropic')
+    bkr.resolve.mockReturnValue('sk-test')
+    setupJudgeAdapter(JSON.stringify({ winner: 'A', rationale: 'x'.repeat(2000) }))
+    const result = await new LocalAiJudge().judge(makeBattleStateForJudge())
+    expect(result.rationale.length).toBe(1000)
+  })
+})
+
+describe('LocalAiJudge.judge — error handling', () => {
+  beforeEach(() => jest.clearAllMocks())
+
+  it('throws when no provider is available', async () => {
+    bkr.has.mockReturnValue(false)
+    await expect(new LocalAiJudge().judge(makeBattleStateForJudge())).rejects.toThrow('No provider key available')
+  })
+
+  it('throws when provider returns non-200', async () => {
+    bkr.has.mockImplementation((p: string) => p === 'anthropic')
+    bkr.resolve.mockReturnValue('sk-test')
+    gsa.mockReturnValue({
+      buildStreamRequest: jest.fn().mockReturnValue({ url: 'https://api.anthropic.com/v1/messages', body: '{}', headers: {} }),
+      authHeader: jest.fn().mockReturnValue({}),
+      parseStreamChunk: jest.fn(),
+    })
+    global.fetch = jest.fn().mockResolvedValue(new Response('Unauthorized', { status: 401 }))
+    await expect(new LocalAiJudge().judge(makeBattleStateForJudge())).rejects.toThrow('error 401')
+  })
+
+  it('throws when response contains no JSON', async () => {
+    bkr.has.mockImplementation((p: string) => p === 'anthropic')
+    bkr.resolve.mockReturnValue('sk-test')
+    setupJudgeAdapter('Sorry, I cannot judge.')
+    await expect(new LocalAiJudge().judge(makeBattleStateForJudge())).rejects.toThrow('no parseable JSON')
+  })
+
+  it('throws when winner value is not A, B, or draw', async () => {
+    bkr.has.mockImplementation((p: string) => p === 'anthropic')
+    bkr.resolve.mockReturnValue('sk-test')
+    setupJudgeAdapter(JSON.stringify({ winner: 'C', rationale: 'Invalid.' }))
+    await expect(new LocalAiJudge().judge(makeBattleStateForJudge())).rejects.toThrow('unexpected winner')
+  })
+
+  it('does not expose API key in error messages', async () => {
+    const secretKey = 'SECRET_KEY_THAT_MUST_NOT_LEAK'
+    bkr.has.mockImplementation((p: string) => p === 'anthropic')
+    bkr.resolve.mockReturnValue(secretKey)
+    gsa.mockReturnValue({
+      buildStreamRequest: jest.fn().mockReturnValue({ url: 'https://api.anthropic.com/v1/messages', body: '{}', headers: {} }),
+      authHeader: jest.fn().mockReturnValue({ 'x-api-key': secretKey }),
+      parseStreamChunk: jest.fn(),
+    })
+    global.fetch = jest.fn().mockResolvedValue(new Response('Bad request', { status: 400 }))
+    let msg = ''
+    try { await new LocalAiJudge().judge(makeBattleStateForJudge()) } catch (e) { msg = String(e) }
+    expect(msg).not.toContain(secretKey)
   })
 })
 
