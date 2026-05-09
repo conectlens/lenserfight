@@ -115,16 +115,18 @@ flowchart LR
 
 | Item | Files |
 |------|-------|
-| `extensions.fn_verify_attestation_signature` (uses `pgsodium`) | `supabase/migrations/*_signed_attestation_verification.sql` |
-| Optional `supabase/functions/verify-attestation/` (Deno fallback) | `supabase/functions/verify-attestation/index.ts` |
-| Rewrite `fn_record_execution_attestation` to require envelope | same migration |
-| Rewrite `fn_compute_submission_trust` to ignore client booleans | same migration |
+| `execution.fn_verify_attestation_signature` (uses `pgsodium`) | [`supabase/migrations/20270512700000_phase_f_attestation_verification.sql`](../../../supabase/migrations/20270512700000_phase_f_attestation_verification.sql) |
+| `execution.fn_record_signed_attestation` + public wrapper | same migration |
+| Side table `execution.attestation_verifications` (append-only RLS) | same migration |
+| `fn_compute_submission_trust` requires `attestation_verifications.verified=true` for `execution_verified+` | same migration |
+| `gatewayAttestationRepository.recordSignedAttestation` port | [`libs/data/repositories/src/lib/repositories/gatewayAttestationRepository.ts`](../../../libs/data/repositories/src/lib/repositories/gatewayAttestationRepository.ts) |
 
 **Acceptance:**
 
-- An attestation with a forged signature is rejected.
-- An attestation with a stale `iat` is rejected.
-- A submission cannot reach `execution_verified` without server-set `gateway_verified=true`.
+- An attestation with a forged signature is rejected (verified=false, invalid_reason='signature_invalid').
+- A submission cannot reach `execution_verified` unless `attestation_verifications.verified = true`.
+- Existing pre-Phase-F attestations are conservatively backfilled as `unsigned_legacy_attestation`.
+- `pgsodium` absence yields `pgsodium_unavailable` and trust stays capped — never silently elevated.
 
 ## Phase G — XP + reputation wiring
 
@@ -132,15 +134,22 @@ flowchart LR
 
 | Item | Files |
 |------|-------|
-| Triggers / DEFINER RPCs invoking `xp.apply` | `supabase/migrations/*_xp_rules_invocation_triggers.sql` |
-| `VERIFIED_LOCAL_EXECUTION_COMPLETED` mint condition | trigger |
-| Reputation pipeline reads server-derived trust levels only | docs + verification |
+| `execution.fn_xp_apply_safe` wrapper (no rule -> NOTICE, never aborts) | [`supabase/migrations/20270512800000_phase_g_xp_triggers.sql`](../../../supabase/migrations/20270512800000_phase_g_xp_triggers.sql) |
+| Trigger `xp_on_device_registered` → `DEVICE_REGISTERED` | same migration |
+| Trigger `xp_on_device_trust_elevated` → `DEVICE_VERIFIED` | same migration |
+| Trigger `xp_on_runner_bound` → `RUNNER_CONNECTED` | same migration |
+| Trigger `xp_on_full_trust` → `VERIFIED_LOCAL_EXECUTION_COMPLETED` | same migration |
+| Trigger `xp_on_submission_evaluated` → `BATTLE_SUBMISSION_COMPLETED` | same migration |
+| `audit.hash_chains` extended with `chain_kind='gateway'` + per-Lenser sub-chain | [`supabase/migrations/20270512900000_phase_g_audit_hash_chain_gateway.sql`](../../../supabase/migrations/20270512900000_phase_g_audit_hash_chain_gateway.sql) |
+| `audit.fn_chain_verify(p_lenser_id, 'gateway')` for incident response | same migration |
 
 **Acceptance:**
 
-- `BATTLE_SUBMISSION_COMPLETED` mints on every submission.
-- `VERIFIED_LOCAL_EXECUTION_COMPLETED` mints only when submission's trust level is `execution_verified` or higher.
-- Reputation does not move on tampered submissions.
+- `BATTLE_SUBMISSION_COMPLETED` mints on the *first* trust evaluation per submission (not on re-evaluations).
+- `VERIFIED_LOCAL_EXECUTION_COMPLETED` mints only when `trust_level` transitions to `fully_trusted` (i.e. signature verified server-side).
+- Device registrations and trust elevations append to `audit.hash_chains` with `chain_kind='gateway'`.
+- `audit.fn_chain_verify` returns `ok=true` on a healthy chain and identifies the first break otherwise.
+- A failed `xp.apply` is logged via `RAISE NOTICE` and does NOT roll back the trust state mutation.
 
 ## Cross-cutting acceptance criteria
 
