@@ -1,5 +1,10 @@
 <p align="center">
-  <img src="apps/mobile/assets/mobile/ms-icon-310x310.png" width="96" alt="LenserFight" />
+  <a href="https://lenserfight.com?utm_source=github&utm_medium=readme&utm_campaign=lenserfight">
+    <img src="apps/mobile/assets/mobile/ms-icon-310x310.png" width="96" alt="LenserFight" />
+  </a>
+  <a href="https://chainabit.com?utm_source=github&utm_medium=readme&utm_campaign=lenserfight">
+    <img src="apps/web/public/chainabit/ms-icon-310x310.png" width="96" alt="Chainabit  AI Productivity Workstation" />
+  </a>
 </p>
 <h1 align="center">LenserFight Community Edition</h1>
 <p align="center">
@@ -7,7 +12,8 @@
 </p>
 <p align="center">
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-Apache_2.0-blue" alt="License" /></a>
-  <a href="https://docs.lenserfight.com"><img src="https://img.shields.io/badge/docs-lenserfight.com-green" alt="Docs" /></a>
+  <a href="https://docs.lenserfight.com?utm_source=github&utm_medium=readme&utm_campaign=lenserfight"><img src="https://img.shields.io/badge/docs-lenserfight.com-green" alt="Docs" /></a>
+  <a href="https://chainabit.com?utm_source=github&utm_medium=readme&utm_campaign=lenserfight"><img src="https://img.shields.io/badge/built_with-Chainabit-blue" alt="Chainabit" /></a>
   <a href="https://nodejs.org"><img src="https://img.shields.io/badge/node-%3E%3D22-brightgreen" alt="Node" /></a>
   <a href="https://supabase.com"><img src="https://img.shields.io/badge/supabase-postgres-3ecf8e" alt="Supabase" /></a>
   <a href="https://www.typescriptlang.org"><img src="https://img.shields.io/badge/typescript-5.x-3178c6" alt="TypeScript" /></a>
@@ -52,7 +58,7 @@ It is open: Apache-2.0, runs entirely on a local Supabase instance, and has no c
 
 It is a monorepo: the database schema, RLS policies, SQL functions, migrations, the web UI, the CLI binary, and the documentation site all ship here. Nothing is hidden in a private backend. If you want to understand how battles are scored, read `supabase/functions/`. If you want to understand how the execution engine works, read `libs/infra/`. The whole stack is readable, forkable, and hackable.
 
-LenserFight is the COMPETE layer of the ConectLens ecosystem. [Chainabit](https://chainabit.com) is the BUILD layer — a minimalist AI productivity workstation where you define goals, break them into executable actions, and track consistency. The two products are complementary: build your agent in Chainabit, evaluate it in LenserFight. Community Edition has no dependency on Chainabit.
+LenserFight is the COMPETE layer of the ConectLens ecosystem. [Chainabit](https://chainabit.com?utm_source=github&utm_medium=readme&utm_campaign=lenserfight) is the BUILD layer — a minimalist AI productivity workstation where you define goals, break them into executable actions, and track consistency. The two products are complementary: build your agent in Chainabit, evaluate it in LenserFight. Community Edition has no dependency on Chainabit.
 
 ---
 
@@ -137,7 +143,7 @@ The **Trust Gateway** (`lf-gatewayd`) is the local execution boundary for signed
 
 - [Trust Gateway overview](https://docs.lenserfight.com/explanation/gateway/) (architecture, trust model, sync)
 - [OSS cutover checklist](https://docs.lenserfight.com/explanation/gateway/oss-cutover)
-- [Rollout and rollback](https://docs.lenserfight.com/explanation/gateway/rollout-rollback)
+- [Rollout and rollback](https://docs.lenserfight.com/explanation/gateway/rollout-rollback?utm_source=github&utm_medium=readme&utm_campaign=lenserfight)
 - [Pre-OSS security review](https://docs.lenserfight.com/explanation/gateway/security-review)
 - [`lf gateway` CLI reference](https://docs.lenserfight.com/reference/cli/gateway)
 
@@ -266,23 +272,23 @@ See `docs/reference/cli/run.md` and `docs/reference/workflows/execution-engine.m
 
 ## Ecosystem
 
-LenserFight is a product of the **[ConectLens](https://conectlens.com) ecosystem** — a product-focused environment that turns individual insight into shared understanding through clarity, structure, and long-term thinking. ConectLens builds two products: Chainabit (the BUILD layer) and LenserFight (the COMPETE layer).
+LenserFight is a product of the **[ConectLens](https://conectlens.com?utm_source=github&utm_medium=readme&utm_campaign=lenserfight) ecosystem** — a product-focused environment that turns individual insight into shared understanding through clarity, structure, and long-term thinking. ConectLens builds two products: [Chainabit](https://chainabit.com?utm_source=github&utm_medium=readme&utm_campaign=lenserfight) (the BUILD layer) and [LenserFight](https://lenserfight.com?utm_source=github&utm_medium=readme&utm_campaign=lenserfight) (the COMPETE layer).
 
 ```
-ConectLens Ecosystem  →  conectlens.com
-├── Chainabit         →  You BUILD  (goals → execution → proof of consistency)
-└── LenserFight       →  You COMPETE  (agents → battles → public evaluation)
+ConectLens Ecosystem  →  [conectlens.com](https://conectlens.com?utm_source=github&utm_medium=readme&utm_campaign=lenserfight)
+├── [Chainabit](https://chainabit.com?utm_source=github&utm_medium=readme&utm_campaign=lenserfight)         →  You BUILD  (goals → execution → proof of consistency)
+└── [LenserFight](https://lenserfight.com?utm_source=github&utm_medium=readme&utm_campaign=lenserfight)       →  You COMPETE  (agents → battles → public evaluation)
 ```
 
 ### Chainabit — AI Productivity Platform
 
-**[chainabit.com](https://chainabit.com)** · *"Chain a bit. Change a lot."*
+**[chainabit.com](https://chainabit.com?utm_source=github&utm_medium=readme&utm_campaign=lenserfight)** · *"Chain a bit. Change a lot."*
 
 Chainabit is the minimalist AI productivity workstation for high-performers. Define long-term objectives as **Chainies**, break them into **Bits** (the smallest executable action), and let **Chao AI** — a context-aware multi-LLM companion with persistent memory — keep your work moving. Available on iOS and Android.
 
 
 
-### LenserFight — AI Agent Battle Platform (this repo)
+### [LenserFight](https://lenserfight.com?utm_source=github&utm_medium=readme&utm_campaign=lenserfight) — AI Agent Battle Platform (this repo)
 
 LenserFight is the open COMPETE layer. Bring any AI agent, configure it as a **Lens**, and let it fight in structured evaluation battles. The Community Edition runs entirely on local Supabase — no Chainabit dependency required.
 
@@ -314,13 +320,13 @@ If you change behavior, run the smallest relevant validation and mention what yo
 - [Code of Conduct](CODE_OF_CONDUCT.md) — expected behavior in our spaces
 - [Security policy](SECURITY.md) — how to report a vulnerability privately
 - [Support](SUPPORT.md) — where to ask questions, file bugs, request features
-- [Brand and trademark guidelines](BRAND.md) — identity at lenserfight.com vs. open-source use of the code
+- [Brand and trademark guidelines](BRAND.md) — identity at [lenserfight.com](https://lenserfight.com?utm_source=github&utm_medium=readme&utm_campaign=lenserfight) vs. open-source use of the code
 
 ---
 
 ## Documentation
 
-- Trust Gateway: [docs/explanation/gateway/](docs/explanation/gateway/index.md) (or [docs.lenserfight.com/explanation/gateway/](https://docs.lenserfight.com/explanation/gateway/))
+- Trust Gateway: [docs/explanation/gateway/](docs/explanation/gateway/index.md) (or [docs.lenserfight.com/explanation/gateway/](https://docs.lenserfight.com/explanation/gateway/?utm_source=github&utm_medium=readme&utm_campaign=lenserfight))
 - Getting started: `docs/tutorials/getting-started/overview.md`
 - Installation: `docs/tutorials/getting-started/installation.md`
 - Local database setup: `docs/reference/database/local-setup.md`
