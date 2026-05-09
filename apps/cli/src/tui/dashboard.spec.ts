@@ -13,7 +13,7 @@ jest.mock('../utils/output', () => ({
   truncate: (s: string, n: number) => (s.length > n ? s.slice(0, n) + '…' : s),
 }))
 
-import { formatActionLogRow, formatHealthStatus } from './dashboard'
+import { formatActionLogRow, formatHealthStatus, validateSubcommand } from './dashboard'
 
 describe('dashboard pure formatters', () => {
   it('formatHealthStatus(true) renders a green pill', () => {
@@ -45,5 +45,29 @@ describe('dashboard pure formatters', () => {
   it('formatActionLogRow handles missing fields gracefully', () => {
     const out = formatActionLogRow({})
     expect(out).toContain('—')
+  })
+})
+
+describe('validateSubcommand', () => {
+  it('returns null for unknown subcommands', () => {
+    expect(validateSubcommand(['battle', 'list'])).toBeNull()
+  })
+
+  it('returns null when all required flags are present (--flag value)', () => {
+    expect(validateSubcommand(['approval', 'list', '--ai-lenser', 'uuid-123'])).toBeNull()
+  })
+
+  it('returns null when required flag uses --flag=value form', () => {
+    expect(validateSubcommand(['approval', 'list', '--ai-lenser=uuid-123'])).toBeNull()
+  })
+
+  it('returns an error message when --ai-lenser is missing', () => {
+    const err = validateSubcommand(['approval', 'list', '--status=pending'])
+    expect(err).not.toBeNull()
+    expect(err).toContain('--ai-lenser')
+  })
+
+  it('returns null for bare subcommands with no required flags', () => {
+    expect(validateSubcommand(['memory'])).toBeNull()
   })
 })
