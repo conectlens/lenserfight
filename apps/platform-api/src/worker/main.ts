@@ -5,6 +5,7 @@ import { PLATFORM_API_WORKER_INTERVAL_MS, PLATFORM_API_WORKER_ONCE } from '@lens
 import { createServiceSupabaseClient } from '../lib/supabase'
 import { processNextBattleJob } from './battle-worker'
 import { processNextScheduledWorkflow } from './scheduled-workflow-worker'
+import { processNextTeamRun } from './team-run-worker'
 
 const WORKER_ID = process.env['BATTLE_WORKER_ID'] ?? `worker-${process.pid}`
 const HEARTBEAT_INTERVAL_MS = parseInt(process.env['WORKER_HEARTBEAT_INTERVAL_MS'] ?? '10000', 10)
@@ -158,6 +159,7 @@ async function runLoop(): Promise<void> {
   const once = PLATFORM_API_WORKER_ONCE()
   const battleWorkerEnabled = process.env['PLATFORM_API_BATTLE_WORKER_ENABLED'] === 'true'
   const scheduledWorkflowWorkerEnabled = process.env['PLATFORM_API_SCHEDULED_WORKFLOW_WORKER_ENABLED'] === 'true'
+  const teamRunWorkerEnabled = process.env['PLATFORM_API_TEAM_RUN_WORKER_ENABLED'] === 'true'
 
   // Start heartbeat timer (independent of main loop)
   let heartbeatTimer: ReturnType<typeof setInterval> | undefined
@@ -171,6 +173,7 @@ async function runLoop(): Promise<void> {
       processNextQueuedRun(),
       battleWorkerEnabled ? processNextBattleJob() : Promise.resolve(false),
       scheduledWorkflowWorkerEnabled ? processNextScheduledWorkflow() : Promise.resolve(false),
+      teamRunWorkerEnabled ? processNextTeamRun() : Promise.resolve(false),
     ])
 
     const processed = results.some((r) => r.status === 'fulfilled' && r.value === true)
