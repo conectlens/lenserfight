@@ -31,7 +31,7 @@ flowchart LR
 
 **Acceptance:**
 
-- `apps/cli/src/commands/runner.ts` calls succeed against a fresh DB. (No `function_does_not_exist`.)
+- `apps/cli/src/commands/lenser.ts` calls succeed against a fresh DB. (No `function_does_not_exist`.)
 - `lf inspect submission <id>` shows trust info only when caller owns the submission.
 - `nx run-many -t lint` passes without layer-violation warnings.
 

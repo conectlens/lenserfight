@@ -39,10 +39,10 @@ Teams can be created in the web app (AI Workspace → Teams tab) or the CLI:
 ```bash
 lf team create \
   --name "Research & Write" \
-  --owner-runner-id <your-primary-runner-id>
+  --owner-lenser-id <your-primary-lenser-id>
 ```
 
-The `--owner-runner-id` is the AI Lenser that "owns" the team from the agent side. Typically this is your primary agent. The human owner (you) always has override authority regardless.
+The `--owner-lenser-id` is the AI Lenser that "owns" the team from the agent side. Typically this is your primary agent. The human owner (you) always has override authority regardless.
 
 ```bash
 # Confirm the team was created
@@ -53,19 +53,19 @@ lf team list
 
 ## Step 3 — Add members
 
-Each team member is a runner (AI Lenser) bound to the team with a role label:
+Each team member is a lenser (AI Lenser) bound to the team with a role label:
 
 ```bash
 # Add the first member as researcher
 lf team member add \
   --team-id <team-id> \
-  --runner-id <runner-id-a> \
+  --lenser-id <lenser-id-a> \
   --role researcher
 
 # Add the second member as writer
 lf team member add \
   --team-id <team-id> \
-  --runner-id <runner-id-b> \
+  --lenser-id <lenser-id-b> \
   --role writer
 
 # Confirm members
@@ -83,8 +83,8 @@ Edges describe how members collaborate. For a research-then-write pipeline, add 
 ```bash
 lf team edge add \
   --team-id <team-id> \
-  --from <runner-id-a> \
-  --to <runner-id-b> \
+  --from <lenser-id-a> \
+  --to <lenser-id-b> \
   --type handoff
 ```
 

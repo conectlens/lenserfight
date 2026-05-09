@@ -61,7 +61,7 @@ flowchart TD
 When `fn_evaluate_pre_run_policy` is called, it walks conditions in this order and stops at the first match:
 
 1. **Kill switch active** → verdict `deny` (reason: `kill_switch_active`)
-2. **Runner paused** → verdict `pause` (reason: `runner_paused`)
+2. **Lenser paused** → verdict `pause` (reason: `runner_paused`)
 3. **Budget ceiling exceeded** — cumulative cost for the billing period exceeds `workspace_settings.budget_ceiling_usd` → verdict `deny` (reason: `budget_ceiling_exceeded`)
 4. **Max parallel runs exceeded** — active team run count ≥ `workspace_settings.max_parallel_runs` → verdict `deny` (reason: `max_parallel_runs_exceeded`)
 5. **Dark launch inactive for this workflow** — dark launch is enabled but `md5(workflow_id) % 100 >= dark_launch_percentage` → verdict `deny` (reason: `dark_launch_excluded`)

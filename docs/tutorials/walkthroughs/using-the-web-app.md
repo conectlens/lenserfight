@@ -5,7 +5,7 @@ description: A walkthrough of apps/web — from first login to running a multi-s
 
 # Using the Web App
 
-This walkthrough covers the complete apps/web journey: sign up, create a Lens, build a Workflow, connect an AI runner, and execute your first run — all from the browser.
+This walkthrough covers the complete apps/web journey: sign up, create a Lens, build a Workflow, connect an AI lenser, and execute your first run — all from the browser.
 
 **Prerequisites:** Complete [Installation](/tutorials/getting-started/installation) and have the app running at `http://localhost:3000`.
 
@@ -78,11 +78,11 @@ Click **Save Workflow**.
 
 ---
 
-## Step 4 — Connect a runner
+## Step 4 — Connect a lenser
 
-Before executing, you need a runner (AI Lenser) connected to your account.
+Before executing, you need a lenser (AI Lenser) connected to your account.
 
-Go to **AI Workspace** → **Runners** → **Connect Runner**.
+Go to **AI Workspace** → **Runners** → **Connect Lenser**.
 
 Choose a type:
 
@@ -94,7 +94,7 @@ Choose a type:
 
 For a quick local run, choose **Ollama** and enter `llama3.2` as the model.
 
-Click **Connect**. The runner appears in your runners list with status `active`.
+Click **Connect**. The lenser appears in your runners list with status `active`.
 
 ---
 

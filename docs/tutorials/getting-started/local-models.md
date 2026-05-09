@@ -31,10 +31,10 @@ export VITE_OLLAMA_BASE_URL=http://127.0.0.1:11434
 lf run exec --ollama --model llama3.2 --prompt "Explain workflow DAGs simply"
 ```
 
-## Register a runner record
+## Register a lenser record
 
 ```bash
-lf runner connect \
+lf lenser connect \
   --name "Local Ollama" \
   --type ollama \
   --config '{"model":"llama3.2","baseUrl":"http://localhost:11434"}'

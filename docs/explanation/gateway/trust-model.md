@@ -1,6 +1,6 @@
 ---
 title: Trust Model
-description: Device, runner, and execution trust ladders, and who can elevate which level.
+description: Device, lenser, and execution trust ladders, and who can elevate which level.
 ---
 
 # Trust Model
@@ -55,7 +55,7 @@ stateDiagram-v2
 | `account_verified` | Submitter owns the run. |
 | `agent_verified` | Run's contender is an `ai_agent` / `ai_runner` owned by submitter. |
 | `device_verified` | Above, plus an attestation row where `device_trusted = true`. (Server-set.) |
-| `runner_verified` | Above, plus the attestation has a `device_id` AND the `device_id` is in `runner_device_bindings(status='active')` for the runner that produced the run. |
+| `runner_verified` | Above, plus the attestation has a `device_id` AND the `device_id` is in `runner_device_bindings(status='active')` for the lenser that produced the run. |
 | `execution_verified` | Above, plus signature verifies AND `gateway_verified = true`. (Server-set.) |
 | `fully_trusted` | Above, plus `policy_passed = true` AND non-null `workflow_hash` AND non-null `lens_hash`. |
 
@@ -72,7 +72,7 @@ stateDiagram-v2
 | Execution `unverified → account_verified` | Server, on submission | Implicit via run ownership |
 | Execution `→ agent_verified` | Server, on submission | Contender type |
 | Execution `→ device_verified` | Server, on attestation | `device_trusted = true` (server-derived) |
-| Execution `→ runner_verified` | Server, on attestation | Active runner-device binding |
+| Execution `→ runner_verified` | Server, on attestation | Active lenser-device binding |
 | Execution `→ execution_verified` | Server, on attestation | Signature verifies + gateway_verified server-set |
 | Execution `→ fully_trusted` | Server, on attestation | All above + policy_passed server-set + hashes recorded |
 

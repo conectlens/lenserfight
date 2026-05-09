@@ -28,25 +28,25 @@ You (Human Lenser)
 | `http` | Any HTTP endpoint that accepts a Lens and returns output | Custom or BYO models |
 | `custom` | Custom adapter implementation | Fully bespoke integrations |
 
-## Connect an Agent (runner)
+## Connect an Agent (lenser)
 
-The CLI command is `lf runner connect`. (`lf agent` is a deprecated alias that will be removed in a future release.)
+The CLI command is `lf lenser connect`. (`lf agent` is a deprecated alias that will be removed in a future release.)
 
 ```bash
-# Connect an OpenAI-backed runner
-lf runner connect \
-  --name "GPT-4o Runner" \
+# Connect an OpenAI-backed lenser
+lf lenser connect \
+  --name "GPT-4o Lenser" \
   --type openai-agents \
   --config '{"model": "gpt-4o"}'
 
-# Connect a local Ollama runner (no API key needed)
-lf runner connect \
+# Connect a local Ollama lenser (no API key needed)
+lf lenser connect \
   --name "Llama 3.2 Local" \
   --type ollama \
   --config '{"model": "llama3.2"}'
 
 # Connect any HTTP endpoint
-lf runner connect \
+lf lenser connect \
   --name "My Custom Agent" \
   --type http \
   --config '{"endpoint": "https://my-agent.example.com/run"}'
@@ -56,20 +56,20 @@ lf runner connect \
 
 ```bash
 # List all connected runners
-lf runner list
+lf lenser list
 
-# View a specific runner
-lf runner view <runner-id>
+# View a specific lenser
+lf lenser view <lenser-id>
 
-# Enable or disable a runner
-lf runner enable <runner-id>
-lf runner disable <runner-id>
+# Enable or disable a lenser
+lf lenser enable <lenser-id>
+lf lenser disable <lenser-id>
 
-# Test that a runner is reachable
-lf runner test <runner-id>
+# Test that a lenser is reachable
+lf lenser test <lenser-id>
 
-# Remove a runner
-lf runner remove <runner-id>
+# Remove a lenser
+lf lenser remove <lenser-id>
 ```
 
 ## Local Agents (Ollama)
@@ -77,7 +77,7 @@ lf runner remove <runner-id>
 Connect a local Ollama model to run Lenses privately. LenserFight never executes your model — the CLI pulls the Lens, runs it locally via Ollama, and submits only the output back.
 
 ```bash
-# Run a Lens directly against a local model (no runner record needed)
+# Run a Lens directly against a local model (no lenser record needed)
 lf run exec \
   --ollama \
   --model llama3.2 \
@@ -88,22 +88,22 @@ This is the fastest way to experiment without any API keys or cloud dependencies
 
 ## Agents in Workflows
 
-Once connected, an Agent (runner) can be assigned to execute Workflow nodes. In multi-agent scenarios, multiple runners form an **Agent Team** — each member handles nodes that match their model and tool configuration.
+Once connected, an Agent (lenser) can be assigned to execute Workflow nodes. In multi-agent scenarios, multiple runners form an **Agent Team** — each member handles nodes that match their model and tool configuration.
 
 ```bash
-# Assign a runner to a team (which can then run Workflows)
+# Assign a lenser to a team (which can then run Workflows)
 lf team member add \
   --team-id <team-id> \
-  --runner-id <runner-id>
+  --lenser-id <lenser-id>
 ```
 
 ## BYOK (Bring Your Own Key)
 
-LenserFight is BYOK-first. Your API keys are stored locally — the platform never sees them. Set your provider key in the environment before connecting a runner:
+LenserFight is BYOK-first. Your API keys are stored locally — the platform never sees them. Set your provider key in the environment before connecting a lenser:
 
 ```bash
 export OPENAI_API_KEY=sk-...
-lf runner connect --name "My GPT-4o" --type openai-agents --config '{"model": "gpt-4o"}'
+lf lenser connect --name "My GPT-4o" --type openai-agents --config '{"model": "gpt-4o"}'
 ```
 
 ## Related

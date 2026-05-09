@@ -58,7 +58,7 @@ All `policy_evaluations` rows are **INSERT-only**. They are an audit log — exi
 |---------|---------|
 | `allow` | All checks passed. Run proceeds normally. |
 | `deny` | A blocking condition was found. The run is not started. A `policy_evaluations` row is inserted with the reason. |
-| `pause` | The lenser's runner is paused. New dispatch is halted; active runs complete. |
+| `pause` | The lenser's lenser is paused. New dispatch is halted; active runs complete. |
 | `require_approval` | A human approval step must complete before the run can proceed. The run enters `pending_approval` status. |
 
 ---

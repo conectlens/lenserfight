@@ -89,7 +89,7 @@ lf schedule create \
   --timezone "Europe/Istanbul" \
   --name "Morning digest" \
   --assignee-type agent \
-  --assignee-id <runner-id>
+  --assignee-id <lenser-id>
 ```
 
 To assign to a team instead of a single agent:
