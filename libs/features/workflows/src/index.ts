@@ -35,6 +35,7 @@ export * from './lib/components/WorkflowFinalOutputBanner'
 export * from './lib/components/WorkflowCronPanel'
 export * from './lib/components/WorkflowPhasesEditor'
 export * from './lib/components/WorkflowTaskCard'
+export * from './lib/components/MediaOutputCard'
 
 // Pages
 export * from './lib/pages/WorkflowsPage'
