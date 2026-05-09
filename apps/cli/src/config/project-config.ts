@@ -6,7 +6,7 @@ import { resolve } from 'node:path';
 // Interfaces
 // ---------------------------------------------------------------------------
 
-/** Project-level config (.lenserfight.json) — no secrets, safe to commit. */
+/** Project-level config (.lenserfight/config.json) — no secrets, safe to commit. */
 export interface ProjectConfig {
   mode: 'local' | 'cloud';
   supabaseUrl?: string;
@@ -19,7 +19,7 @@ export interface ProjectConfig {
   enabledApps?: string[];
 }
 
-/** User-level config (~/.lenserfight/config.json) — secrets + auth tokens. */
+/** Device-level config — secrets, auth tokens, and workspace registry. */
 export interface UserConfig {
   supabaseAnonKey?: string;
   supabaseServiceRoleKey?: string;
@@ -33,6 +33,8 @@ export interface UserConfig {
   /** Active community context set by `lenserfight communities switch`. */
   communitySlug?: string;
   onboarding?: Record<string, OnboardingStateSnapshot>;
+  /** Registry of project workspaces synced from project configs. */
+  workspaces?: Record<string, WorkspaceSnapshot>;
 }
 
 export interface OnboardingStateSnapshot {
@@ -42,6 +44,13 @@ export interface OnboardingStateSnapshot {
   skippedSteps: string[];
   lastError?: string;
   updatedAt: string;
+}
+
+/** One entry per project workspace, synced to device config on every project-config write. */
+export interface WorkspaceSnapshot {
+  mode: 'local' | 'cloud';
+  lastSeenAt: string;
+  configPath: string;
 }
 
 /** Merged, fully-resolved config used by all commands. */
@@ -84,10 +93,53 @@ const LOCAL_SERVICE_KEY =
   'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImV4cCI6MTk4MzgxMjk5Nn0.EGIM96RAZx35lJzdJsyH-qQwv8Hj04zWl196z2-SBc0';
 
 // ---------------------------------------------------------------------------
-// Project-level config (.lenserfight.json)
+// OS-aware device config directory
+//
+//   Windows : %APPDATA%\lenserfight\
+//   macOS   : ~/Library/Application Support/lenserfight/
+//   Linux   : $XDG_CONFIG_HOME/lenserfight/   (default: ~/.config/lenserfight/)
+//   Pardus  : same as Linux (XDG-compliant, Debian-based)
+//
+// The legacy ~/.lenserfight/ path is kept for backward compatibility:
+// reads fall back to it; writes mirror to it when the file already exists.
 // ---------------------------------------------------------------------------
 
-const PROJECT_CONFIG_FILE = '.lenserfight.json';
+export function getDeviceConfigDir(): string {
+  if (process.platform === 'win32') {
+    const appData =
+      process.env['APPDATA'] ?? resolve(homedir(), 'AppData', 'Roaming');
+    return resolve(appData, 'lenserfight');
+  }
+  if (process.platform === 'darwin') {
+    return resolve(homedir(), 'Library', 'Application Support', 'lenserfight');
+  }
+  // Linux, Pardus (TÜBİTAK), and other XDG-compliant systems
+  const xdgConfig =
+    process.env['XDG_CONFIG_HOME'] ?? resolve(homedir(), '.config');
+  return resolve(xdgConfig, 'lenserfight');
+}
+
+export function getDeviceConfigPath(): string {
+  return resolve(getDeviceConfigDir(), 'config.json');
+}
+
+// Legacy ~/.lenserfight — kept for backward compatibility
+const LEGACY_DEVICE_CONFIG_DIR = resolve(homedir(), '.lenserfight');
+const LEGACY_DEVICE_CONFIG_PATH = resolve(LEGACY_DEVICE_CONFIG_DIR, 'config.json');
+
+// ---------------------------------------------------------------------------
+// Project-level config
+//
+// Primary  : .lenserfight/config.json   (directory-based, new)
+// Legacy   : .lenserfight.json          (flat file, read-only for compat)
+//
+// `saveConfig` always writes to the directory-based path and creates the
+// .lenserfight/ directory if it does not yet exist.
+// ---------------------------------------------------------------------------
+
+const PROJECT_CONFIG_DIR_NAME = '.lenserfight';
+const PROJECT_CONFIG_FILE_IN_DIR = 'config.json';
+const PROJECT_CONFIG_LEGACY_FILE = '.lenserfight.json';
 
 const DEFAULT_PROJECT_CONFIG: ProjectConfig = {
   mode: 'local',
@@ -95,46 +147,28 @@ const DEFAULT_PROJECT_CONFIG: ProjectConfig = {
   apiPort: 54321,
 };
 
+/** Returns the .lenserfight/ directory path for the given project root. */
+export function findProjectConfigDir(cwd = process.cwd()): string {
+  return resolve(cwd, PROJECT_CONFIG_DIR_NAME);
+}
+
+/** Returns the canonical project config path (.lenserfight/config.json). */
 export function findConfigPath(cwd = process.cwd()): string {
-  return resolve(cwd, PROJECT_CONFIG_FILE);
+  return resolve(cwd, PROJECT_CONFIG_DIR_NAME, PROJECT_CONFIG_FILE_IN_DIR);
+}
+
+/** Returns the legacy flat-file project config path (.lenserfight.json). */
+export function findLegacyConfigPath(cwd = process.cwd()): string {
+  return resolve(cwd, PROJECT_CONFIG_LEGACY_FILE);
 }
 
 export function configExists(cwd = process.cwd()): boolean {
-  return existsSync(findConfigPath(cwd));
+  return (
+    existsSync(findConfigPath(cwd)) || existsSync(findLegacyConfigPath(cwd))
+  );
 }
 
-export function loadConfig(cwd = process.cwd()): ProjectConfig {
-  const path = findConfigPath(cwd);
-  if (!existsSync(path)) return { ...DEFAULT_PROJECT_CONFIG };
-  try {
-    const raw = JSON.parse(readFileSync(path, 'utf-8'));
-    // Drop legacy secret fields that may exist in old config files
-    const {
-      supabaseAnonKey: _a,
-      supabaseServiceRoleKey: _s,
-      authToken: _t,
-      authRefreshToken: _r,
-      authExpiresAt: _e,
-      developerTokenId: _dti,
-      developerToken: _dt,
-      developerTokenExpiresAt: _dte,
-      ...safe
-    } = raw;
-    return { ...DEFAULT_PROJECT_CONFIG, ...safe };
-  } catch {
-    return { ...DEFAULT_PROJECT_CONFIG };
-  }
-}
-
-export function saveConfig(
-  config: Partial<ProjectConfig>,
-  cwd = process.cwd()
-): void {
-  const path = findConfigPath(cwd);
-  const existing = existsSync(path)
-    ? (() => { try { return JSON.parse(readFileSync(path, 'utf-8')); } catch { return {}; } })()
-    : {};
-  // Strip secret fields — they must never be written to project config
+function stripSecrets(raw: Record<string, unknown>): Record<string, unknown> {
   const {
     supabaseAnonKey: _a,
     supabaseServiceRoleKey: _s,
@@ -145,40 +179,110 @@ export function saveConfig(
     developerToken: _dt,
     developerTokenExpiresAt: _dte,
     ...safe
-  } = { ...existing, ...config } as Record<string, unknown>;
-  writeFileSync(path, JSON.stringify(safe, null, 2) + '\n');
+  } = raw;
+  return safe;
+}
+
+export function loadConfig(cwd = process.cwd()): ProjectConfig {
+  const dirPath = findConfigPath(cwd);
+  const legacyPath = findLegacyConfigPath(cwd);
+
+  // Prefer directory-based config; fall back to legacy flat file
+  const activePath = existsSync(dirPath)
+    ? dirPath
+    : existsSync(legacyPath)
+    ? legacyPath
+    : null;
+
+  if (!activePath) return { ...DEFAULT_PROJECT_CONFIG };
+  try {
+    const raw = JSON.parse(readFileSync(activePath, 'utf-8'));
+    return { ...DEFAULT_PROJECT_CONFIG, ...stripSecrets(raw) } as ProjectConfig;
+  } catch {
+    return { ...DEFAULT_PROJECT_CONFIG };
+  }
+}
+
+export function saveConfig(
+  config: Partial<ProjectConfig>,
+  cwd = process.cwd()
+): void {
+  const configDir = findProjectConfigDir(cwd);
+  if (!existsSync(configDir)) {
+    mkdirSync(configDir, { recursive: true });
+  }
+
+  const dirPath = findConfigPath(cwd);
+  const legacyPath = findLegacyConfigPath(cwd);
+
+  // Seed from whichever source currently exists
+  const existing: Record<string, unknown> = (() => {
+    const src = existsSync(dirPath)
+      ? dirPath
+      : existsSync(legacyPath)
+      ? legacyPath
+      : null;
+    if (!src) return {};
+    try {
+      return JSON.parse(readFileSync(src, 'utf-8'));
+    } catch {
+      return {};
+    }
+  })();
+
+  const safe = stripSecrets({ ...existing, ...config } as Record<string, unknown>);
+  writeFileSync(dirPath, JSON.stringify(safe, null, 2) + '\n');
+
+  // Best-effort: register this workspace in the device config so the TUI
+  // and `lf config sync` can discover all known projects across devices.
+  try {
+    syncWorkspaceToDevice(
+      cwd,
+      ((config.mode ?? existing['mode'] ?? 'local') as 'local' | 'cloud'),
+      dirPath,
+    );
+  } catch {
+    // non-fatal — workspace sync does not block project config writes
+  }
 }
 
 // ---------------------------------------------------------------------------
-// User-level config (~/.lenserfight/config.json)
+// Device-level config
 // ---------------------------------------------------------------------------
 
-const USER_CONFIG_DIR = resolve(homedir(), '.lenserfight');
-const USER_CONFIG_PATH = resolve(USER_CONFIG_DIR, 'config.json');
-
 export function loadUserConfig(): UserConfig {
-  if (!existsSync(USER_CONFIG_PATH)) return {};
-  try {
-    return JSON.parse(readFileSync(USER_CONFIG_PATH, 'utf-8'));
-  } catch {
-    return {};
+  const primary = getDeviceConfigPath();
+  for (const path of [primary, LEGACY_DEVICE_CONFIG_PATH]) {
+    if (existsSync(path)) {
+      try {
+        return JSON.parse(readFileSync(path, 'utf-8'));
+      } catch {
+        // fall through to next candidate
+      }
+    }
   }
+  return {};
 }
 
 export function ensureUserConfigDir(): boolean {
-  if (!existsSync(USER_CONFIG_DIR)) {
-    mkdirSync(USER_CONFIG_DIR, { recursive: true });
+  const dir = getDeviceConfigDir();
+  let created = false;
+  if (!existsSync(dir)) {
+    mkdirSync(dir, { recursive: true });
+    created = true;
   }
-  if (!existsSync(USER_CONFIG_PATH)) {
-    writeFileSync(USER_CONFIG_PATH, '{}\n');
+  const path = getDeviceConfigPath();
+  if (!existsSync(path)) {
+    writeFileSync(path, '{}\n');
     return true;
   }
-  return false;
+  return created;
 }
 
 export function saveUserConfig(partial: Partial<UserConfig>): void {
-  if (!existsSync(USER_CONFIG_DIR)) {
-    mkdirSync(USER_CONFIG_DIR, { recursive: true });
+  const dir = getDeviceConfigDir();
+  if (!existsSync(dir)) {
+    mkdirSync(dir, { recursive: true });
   }
   const existing = loadUserConfig();
   const merged: Record<string, unknown> = { ...existing };
@@ -189,7 +293,47 @@ export function saveUserConfig(partial: Partial<UserConfig>): void {
       merged[k] = v;
     }
   }
-  writeFileSync(USER_CONFIG_PATH, JSON.stringify(merged, null, 2) + '\n');
+  const primary = getDeviceConfigPath();
+  writeFileSync(primary, JSON.stringify(merged, null, 2) + '\n');
+
+  // Mirror to legacy path if it already exists — avoids breaking tooling
+  // that was written before OS-aware paths were introduced.
+  if (existsSync(LEGACY_DEVICE_CONFIG_PATH)) {
+    try {
+      writeFileSync(
+        LEGACY_DEVICE_CONFIG_PATH,
+        JSON.stringify(merged, null, 2) + '\n',
+      );
+    } catch {
+      // non-fatal
+    }
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Workspace sync — project → device registry
+// ---------------------------------------------------------------------------
+
+function syncWorkspaceToDevice(
+  cwd: string,
+  mode: 'local' | 'cloud',
+  configPath: string,
+): void {
+  const existing = loadUserConfig();
+  const workspaces: Record<string, WorkspaceSnapshot> = {
+    ...(existing.workspaces ?? {}),
+    [resolve(cwd)]: {
+      mode,
+      lastSeenAt: new Date().toISOString(),
+      configPath,
+    },
+  };
+  saveUserConfig({ workspaces });
+}
+
+/** Returns all project workspaces registered in the device config. */
+export function listWorkspaces(): Record<string, WorkspaceSnapshot> {
+  return loadUserConfig().workspaces ?? {};
 }
 
 // ---------------------------------------------------------------------------
@@ -305,7 +449,7 @@ export function loadEnvConfig(cwd = process.cwd()): EnvValues {
 // Fully-resolved config — used by all commands
 // Resolution order (highest → lowest):
 //   1. process.env / .env.local / .env
-//   2. ~/.lenserfight/config.json  (user-level)
+//   2. Device config  (OS-aware path, legacy ~/.lenserfight/ fallback)
 //   3. Well-known local Supabase defaults (mode: local only)
 // ---------------------------------------------------------------------------
 
@@ -365,6 +509,7 @@ export function resolveConfig(cwd = process.cwd()): LenserfightConfig {
     const ts = new Date().toISOString().slice(11, 23);
     const loaded = ['.env', '.env.local'].filter((f) => existsSync(resolve(cwd, f)));
     process.stderr.write(`[${ts}] config: mode=${result.mode} supabaseUrl=${result.supabaseUrl} cloudApiUrl=${result.cloudApiUrl}\n`);
+    process.stderr.write(`[${ts}] device config: ${getDeviceConfigPath()}\n`);
     process.stderr.write(`[${ts}] env files: ${loaded.length ? loaded.join(', ') : 'none'}\n`);
   }
 
