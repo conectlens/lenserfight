@@ -162,3 +162,22 @@ lenserfight auth developer-token revoke <token-id>
 - [Configuration](configuration.md) - where tokens are stored
 - [Environment Variables](/reference/platform-api/environment-variables) - env precedence and auth URLs
 - [Community Commands](community.md) - follow lensers after logging in
+
+<!-- AUTO-GEN-START -->
+
+# `lf auth`
+
+Manage authentication, device approval, and developer tokens.
+
+## `lf auth request`
+
+Start a device approval request and wait for a developer token.
+
+| Flag | Type | Required | Description |
+|---|---|---|---|
+| `--label` | string | no | Optional label for the developer token |
+| `--request-ttl-minutes` | string | no | Device approval request lifetime in minutes |
+| `--token-ttl-hours` | string | no | Developer token lifetime in hours |
+| `--json` | boolean | no | Print the initial request as JSON |
+
+<!-- AUTO-GEN-END -->
