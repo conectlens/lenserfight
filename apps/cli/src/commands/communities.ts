@@ -3,6 +3,7 @@ import consola from 'consola';
 import { callRpc, handleError } from '../utils/api';
 import { printTable, printJson, truncate } from '../utils/output';
 import { loadUserConfig, saveUserConfig } from '../config/project-config';
+import { assertSafe } from '../lib/safety';
 
 const list = defineCommand({
   meta: {
@@ -258,11 +259,18 @@ const del = defineCommand({
     },
   },
   async run({ args }) {
-    if (!args.confirm) {
-      consola.warn('This will permanently delete community "%s" and all its data.', args.slug);
-      consola.info('Re-run with --confirm to proceed.');
-      return;
-    }
+    await assertSafe({
+      risk: 'HIGH',
+      reversibility: 'IRREVERSIBLE',
+      confirmationPolicy: 'FLAG',
+      forceFlag: '--confirm',
+      hasForce: args.confirm,
+      description: `Permanently delete community "${args.slug}" and all its data.`,
+      affectedResources: [
+        { type: 'community', name: args.slug, scope: 'remote' },
+      ],
+      rollbackAvailable: false,
+    });
 
     try {
       await callRpc('fn_community_delete', { p_slug: args.slug }, { requireAuth: true });

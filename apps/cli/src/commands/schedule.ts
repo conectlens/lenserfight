@@ -4,6 +4,7 @@ import { defineCommand } from 'citty'
 import consola from 'consola'
 
 import { callRest, callRpc, handleError } from '../utils/api'
+import { assertSafe } from '../lib/safety'
 import { printJson, printTable, truncate } from '../utils/output'
 
 // Mirrors libs/types/src/lib/workflows.types.ts WorkflowScheduleRecord —
@@ -379,7 +380,7 @@ const scheduleResume = defineCommand({
 const scheduleDelete = defineCommand({
   meta: {
     name: 'delete',
-    description: 'Delete a schedule.',
+    description: 'Delete a schedule. Requires --force to confirm.',
   },
   args: {
     schedule: {
@@ -387,8 +388,26 @@ const scheduleDelete = defineCommand({
       description: 'Schedule UUID',
       required: true,
     },
+    force: {
+      type: 'boolean',
+      description: 'Required: confirm deletion',
+      default: false,
+    },
   },
   async run({ args }) {
+    await assertSafe({
+      risk: 'MEDIUM',
+      reversibility: 'IRREVERSIBLE',
+      confirmationPolicy: 'FLAG',
+      forceFlag: '--force',
+      hasForce: args.force,
+      description: `Delete schedule ${args.schedule}. All future runs for this schedule will be cancelled.`,
+      affectedResources: [
+        { type: 'schedule', name: args.schedule, scope: 'remote' },
+      ],
+      rollbackAvailable: false,
+      notes: ['Active runs triggered before deletion are not affected.'],
+    });
     try {
       await callRest(
         'lenses',

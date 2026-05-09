@@ -2,6 +2,7 @@ import { defineCommand } from 'citty'
 import consola from 'consola'
 import { callRest, callRpc, handleError } from '../utils/api'
 import { printJson, printTable, truncate } from '../utils/output'
+import { assertSafe } from '../lib/safety'
 
 interface WorkflowRunRow {
   id: string
@@ -544,7 +545,7 @@ const executionWait = defineCommand({
 const executionCancel = defineCommand({
   meta: {
     name: 'cancel',
-    description: 'Cancel a running workflow run.',
+    description: 'Cancel a running workflow run. Requires --force to confirm.',
   },
   args: {
     run: {
@@ -552,8 +553,26 @@ const executionCancel = defineCommand({
       description: 'Workflow Run UUID',
       required: true,
     },
+    force: {
+      type: 'boolean',
+      description: 'Required: confirm cancellation',
+      default: false,
+    },
   },
   async run({ args }) {
+    await assertSafe({
+      risk: 'MEDIUM',
+      reversibility: 'PARTIAL',
+      confirmationPolicy: 'FLAG',
+      forceFlag: '--force',
+      hasForce: args.force,
+      description: `Cancel workflow run ${args.run}. Any in-flight work will be interrupted.`,
+      affectedResources: [
+        { type: 'execution', name: args.run, scope: 'remote' },
+      ],
+      rollbackAvailable: true,
+      notes: ['Failed or cancelled runs can be retried with: lf execution retry <run>'],
+    });
     try {
       await callRpc(
         'fn_update_workflow_run_status',

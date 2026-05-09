@@ -2,6 +2,7 @@ import { defineCommand } from 'citty';
 import consola from 'consola';
 import { type PrivateBattleFrontmatter } from '@lenserfight/types';
 import { callRpc, callRest, handleError } from '../utils/api';
+import { assertSafe } from '../lib/safety';
 import {
   buildWorkflowSimulationReport,
   parseAutomationDocument,
@@ -1011,11 +1012,18 @@ const deleteBattle = defineCommand({
     },
   },
   async run({ args }) {
-    if (!args.confirm) {
-      consola.warn('This will permanently delete battle %s.', args.id);
-      consola.info('Re-run with --confirm to proceed.');
-      return;
-    }
+    await assertSafe({
+      risk: 'HIGH',
+      reversibility: 'IRREVERSIBLE',
+      confirmationPolicy: 'FLAG',
+      forceFlag: '--confirm',
+      hasForce: args.confirm,
+      description: `Permanently delete battle ${args.id} (creator only).`,
+      affectedResources: [
+        { type: 'battle', name: args.id, scope: 'remote' },
+      ],
+      rollbackAvailable: false,
+    });
 
     try {
       await callRpc('fn_battles_delete', { p_battle_id: args.id }, { requireAuth: true });
@@ -2039,12 +2047,26 @@ const byokKeyList = defineCommand({
 })
 
 const byokKeyRevoke = defineCommand({
-  meta: { name: 'revoke', description: 'Revoke a BYOK key for a provider.' },
+  meta: { name: 'revoke', description: 'Revoke a BYOK key for a provider. Requires --force.' },
   args: {
     agent:    { type: 'string', description: 'Agent UUID', required: true },
     provider: { type: 'string', description: 'Provider to revoke', required: true },
+    force:    { type: 'boolean', description: 'Required: confirm key revocation', default: false },
   },
   async run({ args }) {
+    await assertSafe({
+      risk: 'HIGH',
+      reversibility: 'IRREVERSIBLE',
+      confirmationPolicy: 'FLAG',
+      forceFlag: '--force',
+      hasForce: args.force,
+      description: `Revoke the BYOK API key for agent ${args.agent} (provider: ${args.provider}). The key cannot be recovered.`,
+      affectedResources: [
+        { type: 'credential', name: `${args.provider} key for agent ${args.agent}`, scope: 'remote' },
+      ],
+      rollbackAvailable: false,
+      notes: ['Re-provision with: lf battle byok-key set --agent <uuid> --provider <name>'],
+    });
     try {
       await callRpc('fn_byok_key_revoke', { p_agent_id: args.agent, p_provider: args.provider }, { requireAuth: true })
       consola.success('BYOK key revoked for agent %s (provider: %s)', args.agent, args.provider)
@@ -2333,14 +2355,29 @@ const setSchedule = defineCommand({
 const forceTransition = defineCommand({
   meta: {
     name: 'force-transition',
-    description: 'Force a battle into a target status (admin only).',
+    description: 'Force a battle into a target status (admin only). Requires --force in CI.',
   },
   args: {
     id:     { type: 'positional', description: 'Battle UUID', required: true },
     status: { type: 'string', description: 'Target status: draft|open|executing|voting|scoring|closed|published|archived', required: true },
     reason: { type: 'string', description: 'Reason for the force transition', required: true },
+    force:  { type: 'boolean', description: 'Skip countdown (required in CI / non-interactive shells)', default: false },
   },
   async run({ args }) {
+    await assertSafe({
+      risk: 'HIGH',
+      reversibility: 'PARTIAL',
+      confirmationPolicy: 'COUNTDOWN',
+      countdownSeconds: 5,
+      forceFlag: '--force',
+      hasForce: args.force,
+      description: `Force battle ${args.id} into status "${args.status}" (admin override — bypasses normal lifecycle guards).`,
+      affectedResources: [
+        { type: 'battle', name: args.id, scope: 'remote' },
+      ],
+      rollbackAvailable: true,
+      notes: [`Reason: ${args.reason}`],
+    });
     try {
       await callRpc(
         'fn_battle_force_transition',
