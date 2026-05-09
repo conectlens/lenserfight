@@ -170,6 +170,42 @@ try {
   warn('cron_job_run_details not queryable via REST — skipping recency check.')
 }
 
+// ── 3. Check for stuck battle execution jobs (running > 10 min) ───────────────
+// Emits a warning (not a failure) so a single legitimately slow job doesn't
+// block CI. The Chainabit retry loop handles self-healing.
+try {
+  const stuckBattleCutoff = new Date(Date.now() - 10 * 60 * 1000).toISOString()
+  const stuckBattleJobs = await tableQuery(
+    'battles_execution_jobs',
+    `?select=job_id&status=eq.running&updated_at=lt.${stuckBattleCutoff}&limit=1`,
+  )
+  if (Array.isArray(stuckBattleJobs) && stuckBattleJobs.length > 0) {
+    warn(`Battle execution job(s) stuck in running state for > 10 min — check battle-worker logs`)
+  } else {
+    ok('No stuck battle execution jobs (> 10 min)')
+  }
+} catch {
+  warn('Could not query battles_execution_jobs for stuck-job check — skipping')
+}
+
+// ── 4. Check for stuck async media runs (running > 15 min) ────────────────────
+// Async runs that outlive 15 min likely have a stale provider task ID.
+// fn_timeout_stale_runs (optional pg_cron) is the recovery path.
+try {
+  const stuckAsyncCutoff = new Date(Date.now() - 15 * 60 * 1000).toISOString()
+  const stuckAsyncRuns = await tableQuery(
+    'execution_runs',
+    `?select=id&status=eq.running&is_async=eq.true&started_at=lt.${stuckAsyncCutoff}&limit=1`,
+  )
+  if (Array.isArray(stuckAsyncRuns) && stuckAsyncRuns.length > 0) {
+    warn(`Async media run(s) stuck in running state for > 15 min — fn_timeout_stale_runs may need to run`)
+  } else {
+    ok('No stuck async media runs (> 15 min)')
+  }
+} catch {
+  warn('Could not query execution_runs for stuck async-run check — skipping')
+}
+
 console.log()
 if (failures > 0) {
   console.error(`${RED}${failures} cron check(s) failed.${RESET}`)
