@@ -1,5 +1,15 @@
 import { defineCommand, runMain } from 'citty';
 import consola from 'consola';
+import { setExecContext, getExecContext } from './lib/exec-context';
+
+// Parse --local and --debug before citty takes over so they activate even
+// when placed after the subcommand name (e.g. `lf cmd --local`).
+function parseGlobalFlagsEarly(): void {
+  const argv = process.argv.slice(2);
+  if (argv.includes('--local')) process.env['LF_LOCAL'] = '1';
+  if (argv.includes('--debug')) process.env['LF_DEBUG'] = '1';
+}
+parseGlobalFlagsEarly();
 
 // Deprecated 'agent' alias — warns and delegates to runner command
 const agentDeprecatedCommand = () =>
@@ -24,7 +34,32 @@ const main = defineCommand({
     description:
       'LenserFight CLI — manage lenses, battles, agents, workflows, and local dev.',
   },
-  run: defaultRun,
+  args: {
+    local: {
+      type: 'boolean',
+      description: 'Override project config mode to local for this invocation',
+      default: false,
+    },
+    debug: {
+      type: 'boolean',
+      description: 'Enable verbose debug diagnostics on stderr',
+      default: false,
+    },
+  },
+  async run(ctx) {
+    // Also set env vars from citty-parsed root args (handles `lf --local cmd`)
+    if (ctx.args.local) process.env['LF_LOCAL'] = '1';
+    if (ctx.args.debug) process.env['LF_DEBUG'] = '1';
+
+    const isLocal = process.env['LF_LOCAL'] === '1';
+    const isDebug = process.env['LF_DEBUG'] === '1';
+    setExecContext({ isLocal, isDebug });
+
+    if (isDebug) consola.level = 4;
+    if (isLocal) process.stderr.write('local mode active\n');
+
+    await defaultRun(ctx);
+  },
   subCommands: {
     init: () => import('./commands/init').then((m) => m.default),
     doctor: () => import('./commands/doctor').then((m) => m.default),
@@ -78,10 +113,16 @@ const main = defineCommand({
     policy: () => import('./commands/policy').then((m) => m.default),
     completion: () => import('./commands/completion').then((m) => m.default),
     profile: () => import('./commands/profile').then((m) => m.default),
+    'whats-new': () => import('./commands/whats-new').then((m) => m.default),
   },
 });
 
 runMain(main);
+
+process.on('exit', () => {
+  const { isDebug, commandStartMs } = getExecContext();
+  if (isDebug) process.stderr.write(`done in ${Date.now() - commandStartMs}ms\n`);
+});
 
 // TODO(Y5): `lf platform` subcommand and remote-control RPCs.
 // Blocked on the Supabase migration that adds the platform-control RPCs
