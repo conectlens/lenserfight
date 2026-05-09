@@ -298,6 +298,43 @@ const summarize = defineCommand({
   },
 })
 
+const contextPreview = defineCommand({
+  meta: {
+    name: 'context-preview',
+    description: 'Preview the memory context block that will be prepended to lens templates at run time.',
+  },
+  args: {
+    lenser: {
+      type: 'string',
+      description: 'AI lenser UUID',
+      required: true,
+    },
+    scope: { type: 'string', description: 'Filter by scope', default: '' },
+    limit: { type: 'string', description: 'Max entries (1-50)', default: '20' },
+  },
+  async run({ args }) {
+    try {
+      const limit = Math.max(1, Math.min(50, parseInt(args.limit, 10) || 20))
+      const block = await callRpc<string | null>(
+        'fn_build_lenser_prompt_context',
+        {
+          p_ai_lenser_id: args.lenser,
+          p_scope: args.scope || null,
+          p_limit: limit,
+        },
+        { useServiceRole: true, schema: 'agents' },
+      )
+      if (!block) {
+        consola.info('No memory entries for lenser %s — nothing will be prepended.', args.lenser)
+        return
+      }
+      process.stdout.write(block)
+    } catch (err) {
+      handleError(err)
+    }
+  },
+})
+
 export default defineCommand({
   meta: {
     name: 'memory',
@@ -307,6 +344,7 @@ export default defineCommand({
     'list-profiles': listProfiles,
     'list-entries': listEntries,
     'write-entry': writeEntry,
+    'context-preview': contextPreview,
     search,
     redact,
     summarize,
