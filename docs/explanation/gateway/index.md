@@ -17,6 +17,10 @@ It is **not** a replacement for the existing `lf gateway` CLI — it is the docu
 4. [Security rules](security-rules.md) — zero trust, least privilege, signed envelopes, replay protection, kill switch, audit, defense-in-depth.
 5. [Requirements](requirements.md) — sector-standard requirements checklist (one section per concern).
 6. [Roadmap](roadmap.md) — phased delivery (A → G) with explicit acceptance criteria per phase.
+7. [Release readiness](release-readiness.md) — pre-OSS release gates, blockers, and go/no-go criteria.
+8. [Rollout and rollback](rollout-rollback.md) — operator runbook for staging, release, and emergency disablement.
+9. [Security review](security-review.md) — pre-OSS findings, least-privilege checks, and residual risk decisions.
+10. [OSS cutover](oss-cutover.md) — final release candidate checklist and go/no-go decision.
 
 ## Authoritative documents
 
