@@ -88,7 +88,8 @@ export default [
               sourceTag: 'layer:feature',
               onlyDependOnLibsWithTags: [
                 'layer:feature', 'layer:domain', 'layer:data', 'layer:api',
-                'layer:infra', 'layer:shared', 'layer:ui', 'layer:utils', 'layer:types',
+                'layer:infra', 'layer:providers', 'layer:shared', 'layer:ui',
+                'layer:utils', 'layer:types',
               ],
             },
             {
@@ -106,7 +107,21 @@ export default [
               sourceTag: 'layer:infra',
               onlyDependOnLibsWithTags: [
                 'layer:infra', 'layer:domain', 'layer:data', 'layer:api',
-                'layer:shared', 'layer:ui', 'layer:utils', 'layer:types',
+                'layer:providers', 'layer:shared', 'layer:ui',
+                'layer:utils', 'layer:types',
+              ],
+            },
+            {
+              sourceTag: 'layer:providers',
+              onlyDependOnLibsWithTags: [
+                'layer:providers', 'layer:shared', 'layer:utils', 'layer:types',
+              ],
+            },
+            {
+              sourceTag: 'layer:api',
+              onlyDependOnLibsWithTags: [
+                'layer:api', 'layer:domain', 'layer:shared', 'layer:utils',
+                'layer:types',
               ],
             },
             {
