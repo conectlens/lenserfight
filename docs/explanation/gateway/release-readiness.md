@@ -15,7 +15,7 @@ For security findings and RLS/definer posture, see [Pre-OSS Security Review](./s
 
 | Area | Status | Gate |
 |------|--------|------|
-| Schema and migrations | Gate | Gateway migrations apply in order on a clean database; migration floor through `20270513000000_pre_oss_gateway_security_hardening.sql`. |
+| Schema and migrations | Gate | Gateway migrations apply in order on a clean database; migration floor through `20270513000001_pre_oss_gateway_security_hardening.sql`. |
 | Runtime daemon | Gate + preview | `lf-gatewayd` starts after preconditions pass; heartbeat/outbox/pull loops are **scheduled no-ops** in the OSS preview until device/signing boot context lands (see [apps/gateway/src/main.ts](../../../apps/gateway/src/main.ts)). |
 | Attestation trust | Gate | Server-side signature verification covered by SQL tests; CLI uses signed envelope path for `--attestation`. |
 | XP and audit | Gate + operator | XP mint rules and audit chain checks covered by `08_gateway_xp_audit.sql`; operators inspect Postgres notices per security review. |
@@ -30,7 +30,7 @@ These were release blockers during earlier phases; they are **closed** in the cu
 | Was | Resolution |
 |-----|------------|
 | Stubbed daemon preconditions | Real probes in [`apps/gateway/src/probes.ts`](../../../apps/gateway/src/probes.ts) for keychain, identity, session, kill switch, owner pause env. |
-| `audit.fn_chain_verify` caller authorization | [`supabase/migrations/20270513000000_pre_oss_gateway_security_hardening.sql`](../../../supabase/migrations/20270513000000_pre_oss_gateway_security_hardening.sql) — owner-or-service-role. |
+| `audit.fn_chain_verify` caller authorization | [`supabase/migrations/20270513000001_pre_oss_gateway_security_hardening.sql`](../../../supabase/migrations/20270513000001_pre_oss_gateway_security_hardening.sql) — owner-or-service-role. |
 | `lf-gateway-init` / missing `register-device` | Bootstrap points to `lf gateway identity export-public` (see [`apps/gateway/src/init.ts`](../../../apps/gateway/src/init.ts), CLI). |
 | Gateway docs not in VitePress nav | Sidebar and nav in [`apps/docs/.vitepress/config.ts`](../../../apps/docs/.vitepress/config.ts). |
 | Missing negative-path SQL tests | [`supabase/tests/07_gateway_security.sql`](../../../supabase/tests/07_gateway_security.sql), [`08_gateway_xp_audit.sql`](../../../supabase/tests/08_gateway_xp_audit.sql). |
@@ -48,7 +48,7 @@ These were release blockers during earlier phases; they are **closed** in the cu
 An OSS release that includes LTG requires all migrations through:
 
 ```text
-supabase/migrations/20270513000000_pre_oss_gateway_security_hardening.sql
+supabase/migrations/20270513000001_pre_oss_gateway_security_hardening.sql
 ```
 
 Follow-up hardening migrations after that file are part of the release gate and must be included in the same release candidate.

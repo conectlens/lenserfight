@@ -17,7 +17,7 @@ hero:
       link: /tr/tutorials/beginner-walkthroughs/what-is-lenserfight
     - theme: alt
       text: GitHub
-      link: https://github.com/conectlens/lenserfight
+      link: https://github.com/connectlens/lenserfight-web
 
 features:
   - title: Lens Değerlendirmeleri

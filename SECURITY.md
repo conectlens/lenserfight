@@ -4,6 +4,8 @@ Do not report security vulnerabilities in public GitHub issues.
 
 This root file exists for GitHub community health features. The canonical security guide lives at `docs/how-to/contributors/security.md`.
 
+**Maintainers:** enable **private vulnerability reporting** (GitHub → Security → Code security) so reporters can use **Report a vulnerability** as described below.
+
 ## How to report privately
 
 Preferred: GitHub Security Advisories.

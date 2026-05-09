@@ -16,6 +16,7 @@ Canonical site (browse online): [https://docs.lenserfight.com](https://docs.lens
 - Code of conduct: [docs.lenserfight.com/how-to/contributors/code-of-conduct](https://docs.lenserfight.com/how-to/contributors/code-of-conduct) — `docs/how-to/contributors/code-of-conduct.md`
 - Support routing: [docs.lenserfight.com/how-to/contributors/support](https://docs.lenserfight.com/how-to/contributors/support) — `docs/how-to/contributors/support.md`
 - Security reporting: [docs.lenserfight.com/how-to/contributors/security](https://docs.lenserfight.com/how-to/contributors/security) — `docs/how-to/contributors/security.md`
+- Brand / trademark: [BRAND.md](BRAND.md) in the repo root (mirrored on the docs site as [Brand guidelines](https://docs.lenserfight.com/explanation/community/brand-guidelines))
 
 ## Quick contribution flow
 

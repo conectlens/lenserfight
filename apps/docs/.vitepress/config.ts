@@ -21,7 +21,7 @@ function mermaidFencePlugin(md: any) {
   }
 }
 
-const REPO_BLOB_BASE = 'https://github.com/conectlens/lenserfight/blob/main'
+const REPO_BLOB_BASE = 'https://github.com/connectlens/lenserfight-web/blob/main'
 const CROSS_TREE_TOP_DIRS = ['libs', 'supabase', 'apps', 'tools', 'docs']
 
 /**
@@ -581,6 +581,8 @@ export default defineConfig({
                 { text: 'İçerik Üretici Profilleri', link: '/tr/explanation/community/creator-profiles' },
                 { text: 'Mobil Yardımcı Uygulama', link: '/tr/explanation/community/companion-app' },
                 { text: 'Açık Çekirdek Modeli', link: '/tr/explanation/community/open-core-model' },
+                { text: 'OSS Lansman Kapsamı', link: '/tr/explanation/community/oss-launch-scope' },
+                { text: 'Marka yönergeleri', link: '/tr/explanation/community/brand-guidelines' },
               ],
             },
             {
@@ -669,6 +671,7 @@ export default defineConfig({
                 { text: 'Mobil Yardımcı Uygulama', link: '/tr/explanation/community/companion-app' },
                 { text: 'Açık Çekirdek Modeli', link: '/tr/explanation/community/open-core-model' },
                 { text: 'OSS Lansman Kapsamı', link: '/tr/explanation/community/oss-launch-scope' },
+                { text: 'Marka yönergeleri', link: '/tr/explanation/community/brand-guidelines' },
               ],
             },
           ],
@@ -714,7 +717,7 @@ export default defineConfig({
     },
 
     socialLinks: [
-      { icon: 'github', link: 'https://github.com/conectlens/lenserfight' },
+      { icon: 'github', link: 'https://github.com/connectlens/lenserfight-web' },
     ],
 
     nav: [
@@ -1353,6 +1356,7 @@ export default defineConfig({
             { text: 'Mobile Companion App', link: '/explanation/community/companion-app' },
             { text: 'Open Core Model', link: '/explanation/community/open-core-model' },
             { text: 'OSS Launch Scope', link: '/explanation/community/oss-launch-scope' },
+            { text: 'Brand guidelines', link: '/explanation/community/brand-guidelines' },
             { text: 'Notifications', link: '/explanation/community/notifications' },
             { text: 'Ray Cloud', link: '/explanation/community/ray-cloud' },
           ],
@@ -1477,6 +1481,7 @@ export default defineConfig({
             { text: 'OSS Launch Scope', link: '/explanation/community/oss-launch-scope' },
             { text: 'Governance', link: '/explanation/community/governance' },
             { text: 'License', link: '/explanation/community/license' },
+            { text: 'Brand guidelines', link: '/explanation/community/brand-guidelines' },
             { text: 'Task Schema Governance', link: '/explanation/community/task-schema-governance' },
             { text: 'Notifications', link: '/explanation/community/notifications' },
             { text: 'Ray Cloud', link: '/explanation/community/ray-cloud' },

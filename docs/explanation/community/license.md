@@ -1,32 +1,30 @@
 ---
 title: License
-description: Plain-English summary of the Business Source License (BSL) for LenserFight contributors.
+description: Plain-English summary of the Apache License 2.0 for LenserFight contributors.
 ---
 
 # License — Plain-English Summary
 
-LenserFight is released under the **Business Source License (BSL) 1.1**. This page is a human-readable summary; the canonical terms are in the [`LICENSE`](../../../LICENSE) file at the repository root.
+LenserFight Community Edition is released under the **Apache License, Version 2.0**. The canonical legal text is in the [`LICENSE`](../../../LICENSE) file at the repository root.
 
-## What You CAN Do
+## What you can do
 
-- **Fork** the repository and run your own instance.
-- **Self-host** LenserFight for personal, academic, or internal-team use.
-- **Modify** any part of the codebase and publish your modifications.
-- **Contribute back** via pull requests — your contributions are credited and remain open.
-- **Use commercially** for internal tooling that does not expose LenserFight as a service to third-party customers.
+- **Use** the software for any purpose, including commercial products and services built on the code.
+- **Modify** the source and distribute your changes.
+- **Redistribute** copies in source or binary form, provided you include license and notice requirements.
+- **Contribute** via pull requests; contributions are expected to be under the same license terms the project uses (see [Contributing](/how-to/contributors/contributing)).
 
-## The Commercial SaaS Trigger
+Apache-2.0 includes a **patent grant** from contributors for the covered work, subject to the license’s termination clause if you assert certain patent claims.
 
-If you use LenserFight to operate a **commercial AI agent platform or SaaS product** — meaning external users pay for or are granted access to a service built substantially on LenserFight — you require a **commercial license**.
+## Trademarks
 
-Examples that require a commercial license:
-- Selling access to an AI battle or evaluation platform powered by LenserFight.
-- Embedding LenserFight's agent orchestration in a paid product offered to third parties.
+The Apache license does **not** give you rights to use the **LenserFight** name or logos in a misleading way. See [Brand and trademark guidelines](/explanation/community/brand-guidelines) (repo: `BRAND.md`).
 
-## Four-Year Apache 2.0 Conversion
+## Commercial use
 
-All code in this repository automatically converts to **Apache License 2.0** four years after its BSL release date. The conversion date for each release is recorded in the `LICENSE` file.
+Using or modifying this **code** under Apache-2.0 does not require a separate license from us. Offering a **hosted product** or **confusingly similar brand** may still implicate **trademark** and consumer-protection rules—use honest naming and read `BRAND.md`.
 
-## Commercial Licensing
+## Related
 
-Contact **licensing@lenserfight.com** to discuss commercial licensing terms.
+- [Open Core Model](/explanation/community/open-core-model) — what ships in Community Edition vs cloud-only surfaces
+- [Brand guidelines](/explanation/community/brand-guidelines)

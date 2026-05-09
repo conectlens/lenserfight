@@ -19,7 +19,7 @@ No critical or high findings remain open in the release candidate. Medium findin
 
 | Severity | Finding | Status | Resolution |
 |----------|---------|--------|------------|
-| Critical | `audit.fn_chain_verify` could be called for arbitrary `p_lenser_id`. | Resolved | `20270513000000_pre_oss_gateway_security_hardening.sql` adds owner-or-service-role authorization. |
+| Critical | `audit.fn_chain_verify` could be called for arbitrary `p_lenser_id`. | Resolved | `20270513000001_pre_oss_gateway_security_hardening.sql` adds owner-or-service-role authorization. |
 | Critical | Daemon scaffold refused all starts because identity probe was hard-coded false. | Resolved | `apps/gateway/src/probes.ts` provides real keychain, identity, session, and policy probes. |
 | High | `lf-gateway-init` pointed users to missing `lf gateway register-device`. | Resolved | Bootstrap output now points to `lf gateway identity export-public` until registration is promoted. |
 | High | Signed attestation trust could be bypassed by legacy CLI metadata path. | Resolved | `lf battle submit --attestation` now requires signed envelope arguments and calls `fn_record_signed_attestation`. |

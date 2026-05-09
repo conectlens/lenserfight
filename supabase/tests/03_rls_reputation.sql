@@ -77,12 +77,10 @@ SELECT lives_ok(
 -- All inserts are rolled back with the outer transaction.
 DO $$
 DECLARE
-  v_lenser_a uuid := gen_random_uuid();
-  v_lenser_b uuid := gen_random_uuid();
+  v_lenser_a uuid := 'b2000000-0000-0000-0000-000000000001'::uuid;
+  v_lenser_b uuid := 'b2000000-0000-0000-0000-000000000002'::uuid;
 BEGIN
-  -- Insert into lensers.profiles is skipped — we insert directly into
-  -- lenser_scores using service_role (postgres session) to bypass FK for the
-  -- purpose of this ordering test. This is acceptable in a test transaction.
+  -- Use seeded human profiles (03_lenser_profiles.sql) so lenser_scores FK holds.
   INSERT INTO reputation.lenser_scores (lenser_id, score_type, score, uncertainty, computed_at)
   VALUES
     (v_lenser_a, 'elo', 1800, 50, now()),

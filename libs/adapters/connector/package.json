@@ -2,7 +2,7 @@
   "name": "@lenserfight/sdk",
   "version": "1.0.0",
   "description": "LenserFight Connector Adapter SDK — public stable v1",
-  "license": "MIT",
+  "license": "Apache-2.0",
   "main": "./index.cjs",
   "module": "./index.mjs",
   "types": "./index.d.ts",
@@ -16,7 +16,7 @@
   "files": ["index.mjs", "index.cjs", "index.d.ts"],
   "repository": {
     "type": "git",
-    "url": "https://github.com/conectlens/lenserfight.git",
+    "url": "https://github.com/connectlens/lenserfight-web.git",
     "directory": "libs/adapters/connector"
   },
   "publishConfig": {

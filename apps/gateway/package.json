@@ -6,5 +6,5 @@
     "lf-gatewayd": "./main.js",
     "lf-gateway-init": "./init.js"
   },
-  "license": "MIT"
+  "license": "Apache-2.0"
 }
