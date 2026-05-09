@@ -67,15 +67,28 @@ function AddLocalKeyForm({
   const [rawKey, setRawKey] = useState('')
   const [showKey, setShowKey] = useState(false)
   const [saving, setSaving] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
   const isOllama = provider === 'ollama'
 
   const handleSave = async () => {
     if (!provider) return
+    if (!rawKey && !isOllama) {
+      setError('Please enter an API key.')
+      return
+    }
     setSaving(true)
+    setError(null)
     try {
       await onAdd(provider, label || provider, rawKey)
       onCancel()
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : ''
+      setError(
+        msg.includes('secure context')
+          ? 'Encryption unavailable — local keys require HTTPS or localhost.'
+          : 'Failed to save key. Please try again.',
+      )
     } finally {
       setSaving(false)
     }
@@ -124,6 +137,8 @@ function AddLocalKeyForm({
           <a href="https://ollama.com" target="_blank" rel="noopener noreferrer" className="underline">ollama.com</a>.
         </p>
       )}
+
+      {error && <p className="text-xs text-red-500">{error}</p>}
 
       <div className="flex gap-2">
         <button
@@ -178,8 +193,13 @@ function EditLocalKeyModal({
     try {
       await onSave(keyMeta.id, rawKey, label || keyMeta.provider)
       onClose()
-    } catch {
-      setError('Failed to update key. Please try again.')
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : ''
+      setError(
+        msg.includes('secure context')
+          ? 'Encryption unavailable — local keys require HTTPS or localhost.'
+          : 'Failed to update key. Please try again.',
+      )
     } finally {
       setSaving(false)
     }
