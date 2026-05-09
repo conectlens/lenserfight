@@ -3,7 +3,10 @@ import { useSearchParams } from 'react-router-dom'
 import { useAuth } from '@lenserfight/features/auth'
 import { authService } from '@lenserfight/data/repositories'
 import { supabase } from '@lenserfight/data/supabase'
-import { replaceLocationSafely, sanitizeReturnUrl } from '../utils/validateReturnUrl'
+import { DEFAULT_RETURN_URL, replaceLocationSafely, sanitizeReturnUrl } from '../utils/validateReturnUrl'
+
+const LOGIN_REDIRECT_DELAY_MS = 800
+const APPROVE_REDIRECT_DELAY_MS = 1500
 
 async function storeDeviceLoginSession(userCode: string): Promise<void> {
   const {
@@ -67,19 +70,26 @@ export const DeviceApprovalPage: React.FC = () => {
       if (result.status === 'approved') {
         if (isLoginMode) {
           await storeDeviceLoginSession(userCode.trim().toUpperCase())
-          setMessage('Login approved. You can return to the terminal.')
-        } else {
-          setMessage(
-            result.label
-              ? `Device approved for ${result.label}. You can return to the CLI.`
-              : 'Device approved. You can return to the CLI.'
-          )
+          // Login mode always auto-redirects to the dashboard so the browser doesn't
+          // strand on an empty approval screen after the CLI has the tokens.
+          const target = returnUrl || DEFAULT_RETURN_URL
+          setMessage('Login approved. Redirecting to your dashboard…')
+          window.setTimeout(() => {
+            replaceLocationSafely(target)
+          }, LOGIN_REDIRECT_DELAY_MS)
+          return
         }
+
+        setMessage(
+          result.label
+            ? `Device approved for ${result.label}. You can return to the CLI.`
+            : 'Device approved. You can return to the CLI.'
+        )
 
         if (returnUrl) {
           window.setTimeout(() => {
             replaceLocationSafely(returnUrl)
-          }, 1500)
+          }, APPROVE_REDIRECT_DELAY_MS)
         }
         return
       }
