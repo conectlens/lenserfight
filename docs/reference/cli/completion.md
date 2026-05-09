@@ -79,3 +79,32 @@ The completion script is a static snapshot of the top-level command list at inst
 
 - Top-level subcommand completion only — per-subcommand flag completion (e.g. completing `--workflow` after `lf schedule create`) is intentionally out of scope.
 - The script binds completion to both `lf` and `lenserfight` so either entry point works.
+
+<!-- AUTO-GEN-START -->
+
+# `lf completion`
+
+Generate or install shell completion scripts for `lf`.
+
+## `lf completion bash`
+
+Print bash completion script to stdout.
+
+## `lf completion zsh`
+
+Print zsh completion script to stdout.
+
+## `lf completion fish`
+
+Print fish completion script to stdout.
+
+## `lf completion install`
+
+Install the completion script into the appropriate shell rc file (idempotent).
+
+| Flag | Type | Required | Description |
+|---|---|---|---|
+| `--shell` | string | no | auto | bash | zsh | fish |
+| `--force` | boolean | no | Re-install even if the sentinel comment is already present |
+
+<!-- AUTO-GEN-END -->
