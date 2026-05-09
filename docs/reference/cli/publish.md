@@ -185,3 +185,11 @@ lenserfight template apply <template-id> --title "My Evaluation" --slug "my-eval
 
 - [Inspect Commands](inspect.md)
 - [Run Commands](run.md)
+
+<!-- AUTO-GEN-START -->
+
+# `lf publish`
+
+Publish battle results and artifacts: battle, results, report.
+
+<!-- AUTO-GEN-END -->
