@@ -62,11 +62,17 @@ lf schedule resume <schedule-id>
 
 ## `lf schedule delete`
 
-Delete a schedule permanently.
+Delete a schedule permanently. Requires `--force` to confirm.
 
 ```bash
-lf schedule delete <schedule-id>
+lf schedule delete <schedule-id> --force
 ```
+
+| Flag | Description |
+|---|---|
+| `--force` | Required: confirm deletion |
+
+Active runs triggered before deletion are not affected. Only future dispatches are cancelled.
 
 ## `lf schedule history`
 
@@ -207,6 +213,15 @@ List calendar overlays (your own + platform seeds).
 | `--seeds-only` | boolean | no | Show only platform seed calendars |
 | `--mine-only` | boolean | no | Show only calendars you own |
 | `--json` | boolean | no | Output as JSON |
+
+## `lf schedule delete`
+
+Delete a schedule permanently. Requires `--force` to confirm.
+
+| Flag | Type | Required | Description |
+|---|---|---|---|
+| `<schedule>` | positional | yes | Schedule UUID |
+| `--force` | boolean | no | Required: confirm deletion |
 
 ## `lf schedule attach`
 

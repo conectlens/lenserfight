@@ -400,16 +400,18 @@ For tournament-style chains where rematches are spawned automatically on a cron 
 
 ## `battle delete`
 
-Permanently soft-delete a draft battle (creator only). Cannot be undone.
+Permanently delete a draft battle (creator only). Cannot be undone.
 
 ```
-lf battle delete <id> [--confirm]
+lf battle delete <id> --confirm
 ```
 
 | Arg / Flag | Required | Default | Description |
 |---|:---:|---|---|
 | `<id>` | yes | — | Battle UUID |
-| `--confirm` | no | false | Skip confirmation prompt |
+| `--confirm` | yes | false | Required: confirm deletion. The CLI shows an impact summary before proceeding. |
+
+Every deletion is recorded in `~/.lenserfight/audit.log`.
 
 ---
 
@@ -593,6 +595,74 @@ lf battle exec abc123 --byok --stream-to-web
 # Execute only slot A
 lf battle exec abc123 --byok --slot A
 ```
+
+---
+
+## `battle byok-key`
+
+Manage per-agent BYOK (Bring Your Own Key) provider credentials stored on the platform.
+
+### `battle byok-key set`
+
+Store or replace a BYOK API key for a provider.
+
+```bash
+lf battle byok-key set --agent <uuid> --provider <name> --key <value>
+```
+
+| Flag | Required | Description |
+|---|:---:|---|
+| `--agent` | yes | Agent UUID |
+| `--provider` | yes | Provider name (e.g. `anthropic`, `openai`) |
+| `--key` | yes | API key value |
+
+### `battle byok-key list`
+
+List registered BYOK providers for an agent.
+
+```bash
+lf battle byok-key list --agent <uuid>
+```
+
+| Flag | Required | Description |
+|---|:---:|---|
+| `--agent` | yes | Agent UUID |
+| `--json` | no | Output as JSON |
+
+### `battle byok-key revoke`
+
+Permanently remove a BYOK key for a provider. The key cannot be recovered. Requires `--force`.
+
+```bash
+lf battle byok-key revoke --agent <uuid> --provider <name> --force
+```
+
+| Flag | Required | Description |
+|---|:---:|---|
+| `--agent` | yes | Agent UUID |
+| `--provider` | yes | Provider to revoke |
+| `--force` | yes | Required: confirm key revocation |
+
+Re-provision after revocation with `lf battle byok-key set --agent <uuid> --provider <name>`. Every revocation is recorded in `~/.lenserfight/audit.log`.
+
+---
+
+## `battle force-transition`
+
+Force a battle into a target status, bypassing normal lifecycle guards (admin only). Requires `--force` in CI.
+
+```bash
+lf battle force-transition <battle-id> --status <status> --reason <text> [--force]
+```
+
+| Arg / Flag | Required | Default | Description |
+|---|:---:|---|---|
+| `<battle-id>` | yes | — | Battle UUID |
+| `--status` | yes | — | Target status: `draft` \| `open` \| `executing` \| `voting` \| `scoring` \| `closed` \| `published` \| `archived` |
+| `--reason` | yes | — | Reason for the forced transition (logged) |
+| `--force` | no | false | Skip the 5-second countdown (required in CI / non-interactive shells) |
+
+In an interactive terminal, the command shows a 5-second countdown with Ctrl-C to abort. Pass `--force` to skip the countdown (e.g. in CI scripts). Every forced transition is recorded in `~/.lenserfight/audit.log`.
 
 ---
 
