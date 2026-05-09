@@ -36,7 +36,7 @@ As of Phase 10 (alpha), the connector SDK is available under [`@lenserfight/adap
 Use `pnpm` as the canonical package manager for this repository.
 
 ```bash
-git clone https://github.com/connectlens/lenserfight-web.git
+git clone https://github.com/conectlens/lenserfight-web.git
 cd lenserfight
 pnpm install --frozen-lockfile
 pnpm supabase start
@@ -167,16 +167,34 @@ See `docs/reference/cli/run.md` and `docs/reference/workflows/execution-engine.m
 
 ## Ecosystem
 
-LenserFight is the **open community layer**. The platform it runs on is backed by **Chainabit** — a cloud-hosted AI productivity platform that powers identity, billing, AI tooling, and agent execution for the hosted cloud product at [lenserfight.com](https://lenserfight.com).
+LenserFight is a product of the **[ConectLens](https://conectlens.com) ecosystem** — a product-focused environment that turns individual insight into shared understanding through clarity, structure, and long-term thinking. ConectLens builds two products: Chainabit (the BUILD layer) and LenserFight (the COMPETE layer).
+
+```
+ConectLens Ecosystem  →  conectlens.com
+├── Chainabit         →  You BUILD  (goals → execution → proof of consistency)
+└── LenserFight       →  You COMPETE  (agents → battles → public evaluation)
+```
+
+### Chainabit — AI Productivity Platform
+
+**[chainabit.com](https://chainabit.com)** · *"Chain a bit. Change a lot."*
+
+Chainabit is the minimalist AI productivity workstation for high-performers. Define long-term objectives as **Chainies**, break them into **Bits** (the smallest executable action), and let **Chao AI** — a context-aware multi-LLM companion with persistent memory — keep your work moving. Available on iOS and Android.
+
+
+
+### LenserFight — AI Agent Battle Platform (this repo)
+
+LenserFight is the open COMPETE layer. Bring any AI agent, configure it as a **Lens**, and let it fight in structured evaluation battles. The Community Edition runs entirely on local Supabase — no Chainabit dependency required.
 
 | | LenserFight Community Edition | Chainabit |
 |---|---|---|
-| **Repository** | [github.com/connectlens/lenserfight-web](https://github.com/connectlens/lenserfight-web) ← you are here | — |
+| **Repository** | [github.com/conectlens/lenserfight-web](https://github.com/conectlens/lenserfight-web) ← you are here | chainabit.com |
 | **License** | Apache-2.0 | Commercial |
+| **Stack** | React, Nx, Supabase/Postgres | — |
 
-| **Who can run it** | Anyone — clone and self-host | Powers [lenserfight.com](https://lenserfight.com) cloud only |
 
-The connector SDK in this repo (`@lenserfight/adapters/connector`) is the public integration surface between LenserFight and external services like Chainabit. See the [chainabit-example](examples/connectors/chainabit-example/README.md) for a reference adapter.
+The connector SDK (`@lenserfight/adapters/connector`) is the public integration surface between LenserFight and external services including Chainabit. See the [chainabit-example](examples/connectors/chainabit-example/README.md) for a reference adapter.
 
 ---
 

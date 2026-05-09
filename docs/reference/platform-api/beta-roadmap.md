@@ -1,6 +1,6 @@
 # Beta Roadmap
 
-This page records the **Community Edition** public-repo direction. Historical milestones stay below for context; current work follows [CHANGELOG](https://github.com/connectlens/lenserfight-web/blob/main/CHANGELOG.md) and [OSS Launch Scope](/explanation/community/oss-launch-scope).
+This page records the **Community Edition** public-repo direction. Historical milestones stay below for context; current work follows [CHANGELOG](https://github.com/conectlens/lenserfight-web/blob/main/CHANGELOG.md) and [OSS Launch Scope](/explanation/community/oss-launch-scope).
 
 ## Current focus (2026)
 
