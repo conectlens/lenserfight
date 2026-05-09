@@ -91,3 +91,21 @@ Preview scaffold for a future replay/comparison flow.
 - [Execution Modes](execution-modes.md)
 - [Agent Commands](agent.md)
 - [Quickstart](/tutorials/getting-started/quickstart)
+
+<!-- AUTO-GEN-START -->
+
+# `lf run`
+
+Orchestrate battle execution and prompt execution.
+
+## `lf run policy-check`
+
+Evaluate pre-run policy for an agent.
+
+| Flag | Type | Required | Description |
+|---|---|---|---|
+| `<handle>` | positional | yes | Agent handle (without @) |
+| `--workflow-id` | string | no | Optional workflow UUID |
+| `--dry-run` | boolean | no | Skip RPC, just show current settings |
+
+<!-- AUTO-GEN-END -->
