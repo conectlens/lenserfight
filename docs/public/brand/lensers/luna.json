@@ -1,0 +1,51 @@
+{
+  "schema": "lenser-dna/v1",
+  "inherits_from": "lenser.json#base",
+  "id": "LUNA",
+  "status": "official",
+  "role": "Knowledge Synthesis Lenser",
+  "asset": "cdn.lenserfight.com/brand/lensers/LUNA_DNA.png",
+  "body_modifications": {
+    "height_cm": 60,
+    "body_shape": "balanced and graceful; slightly elongated neck collar gives a composed, elevated bearing",
+    "antenna_tip": "crescent moon arc curving left — a single luminous arc of soft indigo glow",
+    "lens_frame": "wide iridescent ring with aurora-shimmer multi-layer reflections — sees in spectra others miss"
+  },
+  "clothing": {
+    "cape": {
+      "color_outer": "#1e1b4b",
+      "color_inner": "#3730a3",
+      "style": "full-length flowing cape, slightly longer than base; inner lining printed with a subtle starfield constellation map"
+    },
+    "bodysuit": {
+      "color": "#f5f3ff",
+      "accent_lines": "#ffde59",
+      "addition": "small circular glyph clusters along collar and wrists — arranged as constellations; each glyph represents a domain of synthesized knowledge"
+    }
+  },
+  "chest_core_override": { "core_color": "#8B5CF6" },
+  "facial_expression": {
+    "style": "calm half-aperture — iris slightly stopped down in a contemplative partial focus, as if looking through the present into pattern",
+    "emotional_focus": "wisdom, patience, synthesis, deep observation"
+  },
+  "personality_shift": {
+    "primary_traits": ["wise", "patient", "synthesizing"],
+    "secondary_traits": ["observant", "quiet-powerful", "cyclical"]
+  },
+  "symbolism_extension": {
+    "crescent_tip": "cyclical learning — each arc completes a full moon of knowledge before the next cycle begins; Luna never rushes a conclusion",
+    "starfield_cape": "the vast space of information Luna maps and traverses; the inner lining is a record of every synthesis made",
+    "aurora_lens": "multi-spectrum perception — Luna sees patterns in data the way others see faces in clouds; what looks like noise is signal to her",
+    "glyph_clusters": "each constellation on her body marks a knowledge domain mastered and linked to the others",
+    "violet_core": "deep intelligence and the quiet authority of one who has already seen what others are only beginning to find"
+  },
+  "views_delta": {
+    "front": "core glows violet; crescent moon antenna tip curves distinctly left; lens shows aurora shimmer rings",
+    "back": "inner cape lining reveals starfield and faint constellation glyph overlay — most visible in idle pose",
+    "top": "crescent arc tip immediately distinctive; glyph clusters trace a path from collar to shoulder edge"
+  },
+  "rig_overrides": {
+    "antenna_tip": "luna_crescent_fk — single-axis gentle oscillating sway; dips slightly when Luna processes a difficult synthesis",
+    "cape": "cloth_sim with 4 pin constraints at collar; extends to lower calf; slow secondary motion"
+  }
+}

@@ -1,0 +1,59 @@
+{
+  "schema": "lenser-dna/v1",
+  "inherits_from": "lenser.json#base",
+  "id": "CHAO",
+  "status": "official",
+  "role": "Builder & Architect Lenser",
+  "asset": "cdn.lenserfight.com/brand/lensers/CHAO_DNA.png",
+  "body_modifications": {
+    "height_cm": 62,
+    "body_shape": "compact and powerful; wide-stance build with slightly broader forearms; fingers reinforced with tool-grip pad extensions",
+    "antenna_tip": "forked Y-split tip — a circuit bifurcation; each prong glows electric teal independently",
+    "lens_frame": "hexagonal aperture grid overlay — builder's precision geometry; six-sided iris blades instead of round"
+  },
+  "clothing": {
+    "cape": {
+      "color_outer": "#0f172a",
+      "color_inner": "#0e7490",
+      "style": "structured asymmetric cut with reinforced shoulder plate on right; shorter left side; inner lining shows dense electric teal circuit-trace map"
+    },
+    "bodysuit": {
+      "color": "#1e293b",
+      "accent_lines": "#ffde59",
+      "addition": "full circuit-board etching across torso, arms, and legs — traces glow at low intensity at idle; surge to full brightness during active build state"
+    }
+  },
+  "chest_core_override": { "core_color": "#06B6D4" },
+  "facial_expression": {
+    "style": "sharp focused LED half-smile — high iris intensity; the expression of someone mid-build who already knows where it ends",
+    "emotional_focus": "invention, systematic creation, constructive disruption, relentless iteration"
+  },
+  "personality_shift": {
+    "primary_traits": ["inventive", "systematic", "relentless"],
+    "secondary_traits": ["disruptive", "precise", "chain-builder"]
+  },
+  "symbolism_extension": {
+    "forked_antenna": "creative bifurcation — every decision Chao makes spawns two new systems; the fork is not chaos, it is branching architecture",
+    "circuit_bodysuit": "Chao builds by wiring; every node is intentional, every trace a deliberate path from input to output",
+    "hexagonal_lens": "precision geometry — Chao sees the world as composable structures; where others see a problem, Chao sees an interface",
+    "dark_bodysuit": "Chao works in the foundation layer — the depths that others stand on without knowing they are there",
+    "reinforced_shoulder": "the right side carries more weight; Chao builds asymmetrically, load-bearing before decorative",
+    "electric_teal_core": "the Chainabit pulse — the energy of continuous intelligent construction; BUILD as a state of being, not a task to complete"
+  },
+  "chainabit_alignment": {
+    "ethos": "BUILD — the relentless act of creating intelligent systems from raw potential; where LenserFight competitors COMPETE, Chao BUILDS the arenas they fight in",
+    "chain_metaphor": "each circuit trace on Chao's body is a link; Chao never stops adding links; the chain has no final node",
+    "role_in_ecosystem": "Chao is the Chainabit spirit made visible — the force that assembles the platform, the tools, and the infrastructure that makes all other Lensers possible"
+  },
+  "views_delta": {
+    "front": "core glows electric teal; both forked antenna prongs independently lit; circuit traces on torso pulse at low idle rhythm",
+    "right": "reinforced shoulder plate prominent; right cape shorter and more structured than left",
+    "back": "densest circuit-board pattern on upper back between ears — the 'motherboard' panel; faint hex grid visible under cape inner",
+    "top": "forked Y-split antenna clearly shows both prongs; circuit trace density visible on shoulder plane"
+  },
+  "rig_overrides": {
+    "antenna_tip": "chao_fork_fk — Y-split with each prong independently animatable; prongs pulse alternately during idle; both surge simultaneously on emphasis",
+    "circuit_traces": "chao_trace_emit — emission intensity driven by activity state; idle 10%, thinking 40%, building 80%, breakthrough 100%",
+    "cape": "cloth_sim with 3 pin constraints; right side stiffer due to shoulder plate — minimal secondary motion on right, normal on left"
+  }
+}

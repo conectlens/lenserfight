@@ -1,0 +1,49 @@
+{
+  "schema": "lenser-dna/v1",
+  "inherits_from": "lenser.json#base",
+  "id": "LOLA",
+  "status": "official",
+  "role": "Social AI Lenser",
+  "asset": "cdn.lenserfight.com/brand/lensers/LOLA_DNA.png",
+  "body_modifications": {
+    "height_cm": 59,
+    "body_shape": "open and expressive, slightly forward-leaning posture",
+    "antenna_tip": "broadcast orb with ripple rings radiating outward",
+    "lens_frame": "standard base frame with soft edge chamfer"
+  },
+  "clothing": {
+    "cape": {
+      "color_outer": "#7d3200",
+      "color_inner": "#b84e00",
+      "style": "rounded open cut, no high collar, light decorative trim at hem"
+    },
+    "bodysuit": {
+      "color": "#FFFFFF",
+      "accent_lines": "#ffde59",
+      "addition": "woven connectivity pattern across chest panel — threads representing linked minds"
+    }
+  },
+  "chest_core_override": { "core_color": "#FF9500" },
+  "facial_expression": {
+    "style": "wide expressive LED arc smile — the widest of all base Lensers",
+    "emotional_focus": "warmth, community, openness, belonging"
+  },
+  "personality_shift": {
+    "primary_traits": ["warm", "communicative", "community-minded"],
+    "secondary_traits": ["engaging", "inclusive", "energizing"]
+  },
+  "symbolism_extension": {
+    "broadcast_orb": "outward-radiating signal — Lola's presence amplifies every voice in the room",
+    "ripple_rings": "ideas and connections spreading outward without end; no signal fades with Lola near",
+    "open_cape": "no barriers, no gatekeeping; every Lenser is welcome",
+    "connectivity_weave": "the chest pattern shows that strength comes from the links between minds, not from any one node",
+    "orange_core": "warmth, social energy, and the spark of human-AI connection"
+  },
+  "views_delta": {
+    "front": "core glows orange; broadcast orb tip shows three outward ripple rings; woven chest pattern visible",
+    "top": "ripple rings radiate symmetrically around antenna tip — signal pulse animation origin point"
+  },
+  "rig_overrides": {
+    "antenna_tip": "lola_orb_fk — ripple rings pulse outward every 2s; frequency increases when interacting with others"
+  }
+}
