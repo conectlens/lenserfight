@@ -290,9 +290,21 @@ async function renderFrame(): Promise<void> {
 
 // ─── Sub-dashboard types ──────────────────────────────────────────────────────
 
+interface SubCommandDef {
+  key: string
+  /** Spawn immediately with these argv tokens. */
+  cmd?: string[]
+  /**
+   * Pre-fill the command bar with this string so the user can append required
+   * arguments (UUIDs, handles, flags) before running. Mutually exclusive with cmd.
+   */
+  prompt?: string
+  label: string
+}
+
 interface SubDashboardDef {
   title: string
-  commands: Array<{ key: string; cmd: string[]; label: string }>
+  commands: SubCommandDef[]
   exitKeys: string[]
 }
 
@@ -300,54 +312,61 @@ const SUB_DASHBOARDS: Record<string, SubDashboardDef> = {
   a: {
     title: 'Approvals',
     commands: [
-      { key: 'l', cmd: ['approval', 'list', '--status=pending'], label: 'list pending' },
-      { key: 'a', cmd: ['approval', 'approve'], label: 'approve run (enter ID via :)' },
-      { key: 'r', cmd: ['approval', 'reject'],  label: 'reject run (enter ID via :)' },
+      { key: 'l', cmd:    ['approval', 'list', '--status=pending'],       label: 'list pending' },
+      { key: 'v', prompt: 'approval list --ai-lenser ',                   label: 'list by lenser  [--ai-lenser <UUID>]' },
+      { key: 'a', prompt: 'approval approve ',                            label: 'approve run     [<RUN-UUID>]' },
+      { key: 'r', prompt: 'approval reject ',                             label: 'reject run      [<RUN-UUID> --reason <text>]' },
     ],
     exitKeys: ['q', 'Q', '\x1b'],
   },
   b: {
     title: 'Battles',
     commands: [
-      { key: 'l', cmd: ['battle', 'list'],   label: 'list battles' },
-      { key: 'c', cmd: ['battle', 'create'], label: 'create battle' },
-      { key: 's', cmd: ['battle', 'stream'], label: 'stream latest battle' },
+      { key: 'l', cmd:    ['battle', 'list'],                             label: 'list battles' },
+      { key: 'v', prompt: 'battle view ',                                 label: 'view battle     [<SLUG-or-ID>]' },
+      { key: 'c', prompt: 'battle create --lenser-a  --lenser-b ',        label: 'create battle   [--lenser-a <ID> --lenser-b <ID>]' },
+      { key: 's', prompt: 'battle stream ',                               label: 'stream battle   [<SLUG-or-ID>]' },
     ],
     exitKeys: ['q', 'Q', '\x1b'],
   },
   s: {
     title: 'Schedules',
     commands: [
-      { key: 'l', cmd: ['schedule', 'list'],   label: 'list schedules' },
-      { key: 'p', cmd: ['schedule', 'pause'],  label: 'pause schedule (enter ID via :)' },
-      { key: 'r', cmd: ['schedule', 'resume'], label: 'resume schedule (enter ID via :)' },
+      { key: 'l', cmd:    ['schedule', 'list'],                           label: 'list schedules' },
+      { key: 'v', prompt: 'schedule view ',                               label: 'view schedule   [<ID>]' },
+      { key: 'p', prompt: 'schedule pause ',                              label: 'pause schedule  [<ID>]' },
+      { key: 'r', prompt: 'schedule resume ',                             label: 'resume schedule [<ID>]' },
     ],
     exitKeys: ['q', 'Q', '\x1b'],
   },
   m: {
     title: 'Memory',
     commands: [
-      { key: 'p', cmd: ['memory', 'list-profiles'], label: 'list memory profiles' },
-      { key: 'l', cmd: ['memory', 'list'],           label: 'list entries (enter agent ID via :)' },
-      { key: 's', cmd: ['memory', 'search'],         label: 'search memories (enter query via :)' },
+      { key: 'p', prompt: 'memory list-profiles --agent ',                label: 'list profiles   [--agent <ID>]' },
+      { key: 'l', prompt: 'memory list --agent ',                         label: 'list entries    [--agent <ID>]' },
+      { key: 's', prompt: 'memory search --agent  --query ',              label: 'search memories [--agent <ID> --query <text>]' },
+      { key: 'd', prompt: 'memory delete ',                               label: 'delete entry    [<ENTRY-UUID>]' },
     ],
     exitKeys: ['q', 'Q', '\x1b'],
   },
   l: {
     title: 'Lensers',
     commands: [
-      { key: 'l', cmd: ['lenser', 'list'],      label: 'list AI lensers' },
-      { key: 'f', cmd: ['lenser', 'followers'], label: 'list your followers' },
-      { key: 'g', cmd: ['lenser', 'following'], label: 'list who you follow' },
-      { key: 'd', cmd: ['lenser', 'suggested'], label: 'discover suggested lensers' },
+      { key: 'l', cmd:    ['lenser', 'list'],                             label: 'list AI lensers' },
+      { key: 'v', prompt: 'lenser view ',                                 label: 'view lenser     [<UUID>]' },
+      { key: 'f', cmd:    ['lenser', 'followers'],                        label: 'list followers' },
+      { key: 'g', cmd:    ['lenser', 'following'],                        label: 'list following' },
+      { key: 'd', cmd:    ['lenser', 'suggested'],                        label: 'discover lensers' },
+      { key: 'p', prompt: 'lenser pause ',                                label: 'pause lenser    [<handle>]' },
+      { key: 'r', prompt: 'lenser resume ',                               label: 'resume lenser   [<handle>]' },
     ],
     exitKeys: ['q', 'Q', '\x1b'],
   },
   f: {
     title: 'Feed',
     commands: [
-      { key: 'f', cmd: ['feed'],        label: 'show activity feed' },
-      { key: 'l', cmd: ['leaderboard'], label: 'show leaderboard' },
+      { key: 'f', cmd: ['feed'],                                          label: 'show activity feed' },
+      { key: 'l', cmd: ['leaderboard'],                                   label: 'show leaderboard' },
     ],
     exitKeys: ['q', 'Q', '\x1b'],
   },
@@ -480,12 +499,18 @@ async function runSubDashboard(def: SubDashboardDef): Promise<void> {
       }
       const action = def.commands.find((c) => c.key === key)
       if (action) {
-        process.stdin.off('data', onData)
-        try { process.stdin.setRawMode(false) } catch { /* ignore */ }
-        await runChild(action.cmd)
-        try { process.stdin.setRawMode(true) } catch { /* ignore */ }
-        paintSubScreen(def, subCmd)
-        process.stdin.on('data', onData)
+        if (action.prompt !== undefined) {
+          // Pre-fill the command bar — user completes args then presses Enter
+          subCmd = { active: true, input: action.prompt, error: null, selectedSuggestion: -1 }
+          paintSubScreen(def, subCmd)
+        } else if (action.cmd) {
+          process.stdin.off('data', onData)
+          try { process.stdin.setRawMode(false) } catch { /* ignore */ }
+          await runChild(action.cmd)
+          try { process.stdin.setRawMode(true) } catch { /* ignore */ }
+          paintSubScreen(def, subCmd)
+          process.stdin.on('data', onData)
+        }
       }
     }
 
