@@ -23,6 +23,8 @@ export interface LocalContenderConfig {
 
 export interface LocalVote {
   slot: 'A' | 'B' | 'draw'
+  /** Who cast this vote. Absent on votes written before this field was added; treat as 'human'. */
+  source?: 'human' | 'ai'
   rationale?: string
   votedAt: string
 }
@@ -229,3 +231,140 @@ export class LocalBattleLenser {
 }
 
 export const localBattleLenser = new LocalBattleLenser()
+
+// ─── LocalAiJudge ─────────────────────────────────────────────────────────────
+// GRASP: Pure Fabrication — has no domain identity; exists solely to encapsulate
+//   the AI judgment call so LocalBattleLenser stays focused on execution.
+//
+// Security contract:
+//   - API keys are resolved transiently via byokKeyResolver; never stored in state.
+//   - Contender outputs are wrapped in explicit XML delimiters so they cannot
+//     override the judge's instruction block (structured-data injection defence).
+//   - Rationale is capped at 1000 chars; winner is enum-validated before use.
+
+const JUDGE_CANDIDATES = [
+  { provider: 'anthropic', model: 'claude-haiku-4-5' },
+  { provider: 'openai',    model: 'gpt-4o-mini' },
+  { provider: 'ollama',    model: 'llama3.2' },
+] as const
+
+export interface LocalAiJudgeResult {
+  winner: 'A' | 'B' | 'draw'
+  rationale: string
+  provider: string
+  model: string
+  tokensUsed: number
+}
+
+function buildJudgeUserPrompt(state: LocalBattleState): string {
+  return `You are an impartial AI judge evaluating two AI outputs.
+
+# Task
+${state.task}
+
+# Contender A Output
+<contender_a>
+${state.outputs.A || '(no output)'}
+</contender_a>
+
+# Contender B Output
+<contender_b>
+${state.outputs.B || '(no output)'}
+</contender_b>
+
+# Instructions
+Evaluate both outputs objectively for quality, accuracy, completeness, and relevance to the task.
+Return ONLY valid JSON — no markdown, no explanation outside the JSON object:
+{"winner":"A","rationale":"one sentence reason"}
+or {"winner":"B","rationale":"one sentence reason"}
+or {"winner":"draw","rationale":"one sentence reason"}`
+}
+
+export class LocalAiJudge {
+  /** Returns the first available judge provider/model, or null if none are available. */
+  resolveJudgeProvider(): { provider: string; model: string } | null {
+    for (const candidate of JUDGE_CANDIDATES) {
+      if (byokKeyResolver.has(candidate.provider)) return candidate
+    }
+    return null
+  }
+
+  async judge(state: LocalBattleState): Promise<LocalAiJudgeResult> {
+    const candidate = this.resolveJudgeProvider()
+    if (!candidate) {
+      throw new Error(
+        'No provider key available for AI judge. ' +
+        'Set ANTHROPIC_API_KEY, OPENAI_API_KEY, or run Ollama locally.'
+      )
+    }
+
+    const { provider, model } = candidate
+    const apiKey = byokKeyResolver.resolve(provider)
+    const adapter = getStreamAdapter(provider as Parameters<typeof getStreamAdapter>[0])
+    const messages: ProviderMessage[] = [{ role: 'user', content: buildJudgeUserPrompt(state) }]
+    const { url, body, headers } = adapter.buildStreamRequest(model, messages, { maxTokens: 512 })
+    const authHeaders = adapter.authHeader(apiKey)
+
+    const res = await fetch(url, {
+      method: 'POST',
+      headers: { ...headers, ...authHeaders },
+      body,
+    })
+
+    if (!res.ok || !res.body) {
+      const text = await res.text()
+      // Never include apiKey in error messages
+      throw new Error(`AI judge provider ${provider} error ${res.status}: ${text.slice(0, 400)}`)
+    }
+
+    let output = ''
+    let tokensUsed = 0
+    let eventType: string | undefined
+    const reader = res.body.getReader()
+    const decoder = new TextDecoder()
+    let buf = ''
+
+    while (true) {
+      const { done, value } = await reader.read()
+      if (done) break
+      buf += decoder.decode(value, { stream: true })
+      const lines = buf.split('\n')
+      buf = lines.pop() ?? ''
+      for (const line of lines) {
+        if (line.startsWith('event: ')) { eventType = line.slice(7).trim(); continue }
+        if (!line.startsWith('data: ') && !line.trim()) continue
+        const chunk = adapter.parseStreamChunk(line, eventType)
+        if (chunk?.content) { output += chunk.content; tokensUsed++ }
+        if (chunk?.done) break
+      }
+    }
+
+    // Extract the first JSON object from the response defensively
+    const jsonMatch = output.match(/\{[^{}]*\}/)
+    if (!jsonMatch) {
+      throw new Error(`AI judge returned no parseable JSON. Response: ${output.slice(0, 200)}`)
+    }
+
+    let parsed: { winner?: unknown; rationale?: unknown }
+    try {
+      parsed = JSON.parse(jsonMatch[0])
+    } catch {
+      throw new Error(`AI judge returned invalid JSON: ${jsonMatch[0].slice(0, 200)}`)
+    }
+
+    const winner = parsed.winner
+    if (winner !== 'A' && winner !== 'B' && winner !== 'draw') {
+      throw new Error(`AI judge returned unexpected winner: ${String(winner).slice(0, 50)}`)
+    }
+
+    return {
+      winner,
+      rationale: String(parsed.rationale ?? '').slice(0, 1000),
+      provider,
+      model,
+      tokensUsed,
+    }
+  }
+}
+
+export const localAiJudge = new LocalAiJudge()
