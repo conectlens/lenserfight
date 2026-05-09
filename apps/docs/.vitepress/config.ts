@@ -1,6 +1,6 @@
 import { defineConfig } from 'vitepress'
 import tailwind from '@tailwindcss/vite'
-import { copyFileSync, existsSync, mkdirSync, readdirSync, readFileSync, statSync } from 'fs'
+import { copyFileSync, existsSync, mkdirSync, readdirSync, readFileSync, statSync, writeFileSync } from 'fs'
 import { dirname, join, resolve } from 'path'
 import { fileURLToPath } from 'url'
 
@@ -73,6 +73,24 @@ function rewriteCrossTreeHref(href: string): string | null {
  * Dev-server plugin: intercepts requests for *.md files and serves the raw
  * markdown source so that CopyPageButton's fetch() succeeds in dev mode.
  */
+const CHANGELOG_SRC = resolve(__dirname, '../../CHANGELOG.md')
+const CHANGELOG_DEST = resolve(docsDir, 'changelog.md')
+
+function syncChangelogPlugin() {
+  function sync() {
+    if (!existsSync(CHANGELOG_SRC)) return
+    const content = readFileSync(CHANGELOG_SRC, 'utf-8')
+    const page = `---\ntitle: Changelog\ndescription: Full release history for LenserFight — every version, every change.\nlayout: doc\n---\n\n${content}`
+    writeFileSync(CHANGELOG_DEST, page, 'utf-8')
+  }
+  return {
+    name: 'lf-sync-changelog',
+    buildStart() { sync() },
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    configureServer(_server: any) { sync() },
+  }
+}
+
 function rawMarkdownPlugin() {
   return {
     name: 'lf-raw-markdown',
@@ -267,6 +285,7 @@ export default defineConfig({
               { text: 'Topluluk ve Kullanım', link: '/tr/explanation/community/community-hub' },
             ],
           },
+          { text: 'Değişiklik Günlüğü', link: '/changelog' },
         ],
         sidebar: {
           // ── İç Referanslar ───────────────────────────────────────────────────
@@ -693,7 +712,7 @@ export default defineConfig({
   },
 
   vite: {
-    plugins: [tailwind(), rawMarkdownPlugin()],
+    plugins: [tailwind(), syncChangelogPlugin(), rawMarkdownPlugin()],
     server: {
       host: '0.0.0.0',
     },
@@ -767,6 +786,7 @@ export default defineConfig({
         ],
       },
       { text: 'RFCs', link: '/rfcs/' },
+      { text: 'Changelog', link: '/changelog' },
     ],
 
     aside: true,
@@ -1095,6 +1115,14 @@ export default defineConfig({
             { text: 'RFC-0001: Connector Interface', link: '/rfcs/RFC-0001-connector-interface' },
             { text: 'RFC-0002: Scoring Plugin', link: '/rfcs/RFC-0002-scoring-plugin' },
             { text: 'RFC-0003: Trust Gateway', link: '/rfcs/RFC-0003-trust-gateway' },
+          ],
+        },
+      ],
+      '/changelog': [
+        {
+          text: 'Changelog',
+          items: [
+            { text: 'Full Changelog', link: '/changelog' },
           ],
         },
       ],
