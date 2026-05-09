@@ -131,3 +131,97 @@ Before running the RPC, the CLI does a best-effort PostgREST count to preview ho
 ## Webhook (preview)
 
 Setting `app.approval_webhook_url` causes every newly-created pending approval to fire a best-effort POST with payload version `1`. See [Pending-approval webhook](/reference/internals/approvals#pending-approval-webhook) for the payload contract and delivery semantics.
+
+<!-- AUTO-GEN-START -->
+
+# `lf approval`
+
+Manage approval requests for ConnectedLenses team runs.
+
+## `lf approval list`
+
+List pending approvals for an AI workspace.
+
+| Flag | Type | Required | Description |
+|---|---|---|---|
+| `--ai-lenser` | string | yes | AI Lenser UUID |
+| `--status` | string | no | Filter by approval_status (pending | approved | rejected | not_required) |
+| `--limit` | string | no | Max rows (default 50) |
+| `--json` | boolean | no | Output as JSON |
+
+## `lf approval inspect`
+
+Show the full team_run row backing an approval request.
+
+| Flag | Type | Required | Description |
+|---|---|---|---|
+| `<request>` | positional | yes | Team Run UUID (= request id) |
+
+## `lf approval approve`
+
+Approve a pending request.
+
+| Flag | Type | Required | Description |
+|---|---|---|---|
+| `<request>` | positional | yes | Team Run UUID |
+| `--reason` | string | no | Decision reason |
+| `--modifications` | string | no | JSON object: input modifications applied on resume. When set, decision becomes  |
+
+## `lf approval reject`
+
+Reject a pending request.
+
+| Flag | Type | Required | Description |
+|---|---|---|---|
+| `<request>` | positional | yes | Team Run UUID |
+| `--reason` | string | no | Decision reason |
+
+## `lf approval audit`
+
+Show agent_run_events history for an approval request.
+
+| Flag | Type | Required | Description |
+|---|---|---|---|
+| `<request>` | positional | yes | Team Run UUID |
+| `--limit` | string | no | Max events (default 50) |
+| `--json` | boolean | no | Output as JSON |
+
+## `lf approval grant-standing`
+
+Grant a standing approval that pre-authorises a workflow gate for N hours.
+
+| Flag | Type | Required | Description |
+|---|---|---|---|
+| `--workflow` | string | yes | Workflow UUID |
+| `--gate` | string | yes | Gate kind (e.g. tool, spending, model) |
+| `--hours` | string | no | Validity window in hours (default 24) |
+
+## `lf approval revoke-standing`
+
+Revoke a previously granted standing approval immediately.
+
+| Flag | Type | Required | Description |
+|---|---|---|---|
+| `<standing-id>` | positional | yes | Standing approval UUID |
+
+## `lf approval list-standing`
+
+List active (non-revoked) standing approvals.
+
+| Flag | Type | Required | Description |
+|---|---|---|---|
+| `--workflow` | string | no | Optional: filter to a single workflow UUID |
+| `--json` | boolean | no | Output as JSON |
+
+## `lf approval bulk-approve`
+
+Approve a filtered set of pending approvals in one RPC call.
+
+| Flag | Type | Required | Description |
+|---|---|---|---|
+| `--filter` | string | no | key=value filter, e.g.  |
+| `--since` | string | no | Only approve requests created since X (ISO or  |
+| `--workflow` | string | no | Restrict to a single workflow UUID |
+| `--force` | boolean | no | Skip the confirmation prompt |
+
+<!-- AUTO-GEN-END -->
