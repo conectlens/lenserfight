@@ -108,6 +108,10 @@
   color: 3ecf8e
   description: Proposes a database schema change or new migration
 
+- name: adapter-idea
+  color: a2eeef
+  description: Exploratory connector or adapter proposal before implementation
+
 - name: adapter-bug
   color: d73a4a
   description: Bug in an existing adapter or connector implementation
