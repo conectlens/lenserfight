@@ -1,0 +1,28 @@
+name: haiku-shootout
+task: |
+  Write a haiku about the sea. A haiku has three lines: 5 syllables, 7 syllables, 5 syllables.
+  Be evocative. Avoid clichés.
+
+contenders:
+  A:
+    provider: ollama
+    model: llama3
+  B:
+    provider: ollama
+    model: mistral
+
+rubric:
+  criteria:
+    - name: Syllable accuracy
+      weight: 3
+      description: Exactly 5-7-5 syllable structure across the three lines.
+    - name: Imagery
+      weight: 2
+      description: Concrete, sensory image of the sea — smell, sound, or texture.
+    - name: Originality
+      weight: 2
+      description: Avoids clichéd phrases (waves crash, salty breeze, etc.).
+    - name: Emotional resonance
+      weight: 1
+      description: The reader feels something — awe, melancholy, calm, or surprise.
+  pass_threshold: 0.6
