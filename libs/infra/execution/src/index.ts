@@ -93,4 +93,14 @@ export type {
   MemoryWritePolicy,
   MemoryFlushSink,
   DelegationPolicy,
+  DelegationDispatcher,
 } from './lib/workflow-execution.service'
+export {
+  SupabaseDelegationHandler,
+  NullDelegationHandler,
+} from './lib/delegation-handler'
+export type {
+  IDelegationHandler,
+  DelegationDispatchInput,
+  DelegationDispatchResult,
+} from './lib/delegation-handler'
