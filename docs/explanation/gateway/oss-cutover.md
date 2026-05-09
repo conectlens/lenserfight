@@ -12,7 +12,7 @@ This checklist is the final gate before publishing the Trust Gateway release can
 | Item | Value |
 |------|-------|
 | Release track | Trust Gateway pre-OSS release candidate |
-| Migration floor | `20270513000000_pre_oss_gateway_security_hardening.sql` |
+| Migration floor | `20270513000001_pre_oss_gateway_security_hardening.sql` |
 | Artifact policy | Source-first; no standalone daemon binaries promised |
 | Public CLI surface | `lf gateway *` |
 | Runtime binary | `lf-gatewayd` from `apps/gateway/src/main.ts` |

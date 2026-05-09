@@ -1,51 +1,47 @@
 # Beta Roadmap
 
-This page records the approved LenserFight Community Edition beta direction for the public repo.
+This page records the **Community Edition** public-repo direction. Historical milestones stay below for context; current work follows [CHANGELOG](https://github.com/connectlens/lenserfight-web/blob/main/CHANGELOG.md) and [OSS Launch Scope](/explanation/community/oss-launch-scope).
 
-## Release target
+## Current focus (2026)
 
-- public OSS beta window ending **May 7, 2026**
+- **First-public readiness** — docs truth, contributor CI gates (`pnpm smoke`), permissive **Apache-2.0** license, brand guidelines, Trust Gateway preview boundaries.
+- **Connector alpha** — in-repo `@lenserfight/adapters/connector` and RPCs; stable npm **v1** remains Phase 16 (RFC-0001).
+- **Trust Gateway** — source-first rollout; see [OSS cutover](/explanation/gateway/oss-cutover) and [release readiness](/explanation/gateway/release-readiness).
 
-## Scope now
+## Explicitly out of scope for Community Edition promises
 
-- developer-first Community Edition
-- local installability and truthful docs
-- lenses and workflow authoring
-- supported workflow execution paths
-- workflow retry, stop, and observability hardening
-- minimal OSS maintainer operations
-
-## Explicitly out of scope for this OSS beta
-
-- public battles
+- public battles as a default-on OSS promise
 - benchmark UI as a public promise
-- enterprise billing or private workspaces
-- advanced analytics
-- autonomous connector automation claims
+- enterprise billing or private workspaces in this repo
+- advanced analytics as a self-host guarantee
+- autonomous connector automation claims before implementation lands
 
 ## Scope later
 
-- connector RFC and first stable public connector example
+- stable public SDK on npm and governance for breaking changes
 - better workflow templates and recovery UX
-- contributor onboarding cleanup
-- community governance basics
+- community governance basics beyond lightweight maintainer model
 - sponsorships after support operations stabilize
 
-## Timeline
+---
+
+## Historical timeline (archived)
+
+The first public OSS beta window targeted **2026-05-07**. Subsequent releases (e.g. `0.10.0-alpha.x`) track connector and licensing milestones — see `CHANGELOG.md` for authoritative dates.
 
 ```mermaid
 gantt
-title LenserFight OSS Beta Roadmap
+title Historical OSS beta milestones
 dateFormat  YYYY-MM-DD
 
-section Scope Freeze
-Public scope and messaging freeze :done, a1, 2026-04-24, 2d
+section ScopeFreeze
+Public scope messaging freeze :done, a1, 2026-04-24, 2d
 
 section Readiness
-Install path hardening            :a2, 2026-04-27, 4d
-Workflow reliability hardening    :a3, 2026-04-27, 6d
-OSS maintainer scaffolding        :a4, 2026-05-01, 3d
+Install path hardening            :done, a2, 2026-04-27, 4d
+Workflow reliability hardening    :done, a3, 2026-04-27, 6d
+OSS maintainer scaffolding        :done, a4, 2026-05-01, 3d
 
 section Launch
-Public repo opening               :milestone, m1, 2026-05-07, 1d
+Public repo opening                 :done, m1, 2026-05-07, 1d
 ```

@@ -1,9 +1,9 @@
 {
   "name": "lenserfight",
   "private": true,
-  "version": "0.0.0",
+  "version": "0.10.0-alpha.2",
   "type": "module",
-  "license": "BUSL-1.1",
+  "license": "Apache-2.0",
   "engines": {
     "node": ">=22 <23",
     "pnpm": ">=9 <10"

@@ -114,9 +114,9 @@ An independent developer writes Python scripts that use LenserFight lenses for c
 
 ## Licensing
 
-LenserFight Community Edition is under the **Business Source License 1.1**. Self-hosting for local evaluation is permitted. **Building a production SaaS or hosted product on top of LenserFight requires a commercial license.**
+LenserFight Community Edition is under the **Apache License, Version 2.0**. You may self-host, modify, and ship products that include this codebase under Apache-2.0. Use of the **LenserFight** name and logos in a way that implies official endorsement is separate—see [Brand guidelines](/explanation/community/brand-guidelines).
 
-If you are shipping a product that uses LenserFight as a dependency or that re-hosts any LenserFight surface, contact the team before going to production. See [Open Core Model](/explanation/community/open-core-model) for details.
+If you depend on the **hosted** platform at [lenserfight.com](https://lenserfight.com) (SLA, quotas, private features), use the appropriate plan and contact the team for production. See [Open Core Model](/explanation/community/open-core-model) for scope.
 
 ---
 

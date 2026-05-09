@@ -49,9 +49,9 @@ Exit codes:
 
 | File | Purpose |
 |---|---|
-| [`src/adapter.ts`](https://github.com/conectlens/lenserfight/blob/main/examples/connectors/chainabit-example/src/adapter.ts) | Wraps `HttpConnectorAdapter` to produce a `ConnectorAdapterV1` |
-| [`src/index.ts`](https://github.com/conectlens/lenserfight/blob/main/examples/connectors/chainabit-example/src/index.ts) | Runnable demo flow |
-| [`.env.example`](https://github.com/conectlens/lenserfight/blob/main/examples/connectors/chainabit-example/.env.example) | Required env vars (token + endpoint) |
+| [`src/adapter.ts`](https://github.com/connectlens/lenserfight-web/blob/main/examples/connectors/chainabit-example/src/adapter.ts) | Wraps `HttpConnectorAdapter` to produce a `ConnectorAdapterV1` |
+| [`src/index.ts`](https://github.com/connectlens/lenserfight-web/blob/main/examples/connectors/chainabit-example/src/index.ts) | Runnable demo flow |
+| [`.env.example`](https://github.com/connectlens/lenserfight-web/blob/main/examples/connectors/chainabit-example/.env.example) | Required env vars (token + endpoint) |
 
 ## Token rotation
 
