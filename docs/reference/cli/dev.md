@@ -119,3 +119,15 @@ Outputs:
 
 - [Configuration](configuration.md)
 - [Execution Modes](execution-modes.md)
+
+<!-- AUTO-GEN-START -->
+
+# `lf dev`
+
+Start local Supabase stack, run migrations, and seed the database.
+
+| Flag | Type | Required | Description |
+|---|---|---|---|
+| `--reset` | boolean | no | Run db reset instead of start (drops and recreates) |
+
+<!-- AUTO-GEN-END -->
