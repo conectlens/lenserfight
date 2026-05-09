@@ -9,5 +9,13 @@
     "scope:shared",
     "license:shared"
   ],
-  "targets": {}
+  "targets": {
+    "test": {
+      "executor": "@nx/vite:test",
+      "outputs": ["{options.reportsDirectory}"],
+      "options": {
+        "reportsDirectory": "../../../coverage/libs/utils/keychain"
+      }
+    }
+  }
 }
