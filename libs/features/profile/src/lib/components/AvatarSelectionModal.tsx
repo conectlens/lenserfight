@@ -1,5 +1,10 @@
 import { micah, openPeeps, pixelArt, toonHead } from '@dicebear/collection'
 import { createAvatar } from '@dicebear/core'
+import {
+  LENSER_DNA_CHARACTERS,
+  LENSER_SKIN_TONES,
+  createLenserDnaAvatarUri,
+} from '@lenserfight/ui/components'
 import { Tabs, TabList, Tab, TabPanel } from '@lenserfight/ui/layout'
 import { Dialog, ModalFooter } from '@lenserfight/ui/overlays'
 import { Trash2 } from 'lucide-react'
@@ -11,6 +16,7 @@ interface AvatarSelectionModalProps {
   onSelect: (url: string | null) => void
   isLoading: boolean
   currentUrl?: string | null
+  lenserType?: 'ai' | 'human'
 }
 
 // 200 diverse seeds for rich variety
@@ -38,31 +44,125 @@ const ALL_SEEDS = [
 
 const PAGE_SIZE = 30
 
-const AVATAR_STYLES = [
+const DICEBEAR_STYLES = [
   { id: 'pixel-art',  label: 'Pixel Art',  collection: pixelArt },
   { id: 'open-peeps', label: 'Open Peeps', collection: openPeeps },
   { id: 'micah',      label: 'Micah',      collection: micah },
   { id: 'toon-head',  label: 'Toon Head',  collection: toonHead },
 ] as const
 
-type StyleId = (typeof AVATAR_STYLES)[number]['id']
+type DicebearStyleId = (typeof DICEBEAR_STYLES)[number]['id']
+type StyleId = 'lenser-dna' | DicebearStyleId
 
-function useInfiniteAvatars(styleId: StyleId) {
+// ── Lenser DNA avatar options ─────────────────────────────────────────────────
+
+const AI_CORE_COLORS = ['#00C896', '#FF63B8', '#2DA8FF', '#FF9500']
+
+function buildAiOptions(): string[] {
+  // First 4: official characters with exact DNA
+  const official = LENSER_DNA_CHARACTERS.map((c) =>
+    createLenserDnaAvatarUri({
+      type: 'ai',
+      coreColor: c.coreColor,
+      antennaTip: c.antennaTip,
+      smileStyle: c.smileStyle,
+      seed: c.id,
+    })
+  )
+  // 16 more variations from seed list
+  const variations = ALL_SEEDS.slice(0, 16).map((seed, i) =>
+    createLenserDnaAvatarUri({
+      type: 'ai',
+      coreColor: AI_CORE_COLORS[i % AI_CORE_COLORS.length],
+      seed,
+    })
+  )
+  return [...official, ...variations]
+}
+
+function buildHumanOptions(): string[] {
+  // 6 skin tones × 4 core colors = 24 options
+  return LENSER_SKIN_TONES.flatMap((skinTone, si) =>
+    AI_CORE_COLORS.map((coreColor, ci) =>
+      createLenserDnaAvatarUri({
+        type: 'human',
+        skinTone,
+        coreColor,
+        seed: `${si}-${ci}`,
+      })
+    )
+  )
+}
+
+// ── Lenser DNA panel ──────────────────────────────────────────────────────────
+
+const LenserDnaPanel: React.FC<{
+  lenserType: 'ai' | 'human'
+  selected: string | null
+  onSelect: (uri: string) => void
+}> = ({ lenserType, selected, onSelect }) => {
+  const uris = useMemo(
+    () => (lenserType === 'ai' ? buildAiOptions() : buildHumanOptions()),
+    [lenserType]
+  )
+
+  return (
+    <div className="space-y-3">
+      {lenserType === 'ai' && (
+        <p className="text-xs text-gray-500 dark:text-gray-400">
+          First four are the official AI Lensers — LENSO, LENSA, LENSE, LOLA.
+        </p>
+      )}
+      <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-4">
+        {uris.map((uri, i) => (
+          <button
+            key={i}
+            onClick={() => onSelect(uri)}
+            className={`
+              relative aspect-square rounded-full overflow-hidden border-2 transition-all p-1
+              ${selected === uri
+                ? 'border-primary ring-2 ring-primary/30'
+                : 'border-transparent hover:border-gray-200 dark:hover:border-gray-700'}
+            `}
+            title={lenserType === 'ai' && i < 4
+              ? ['LENSO', 'LENSA', 'LENSE', 'LOLA'][i]
+              : `Lenser DNA variant ${i + 1}`}
+          >
+            <img
+              src={uri}
+              alt={lenserType === 'ai' && i < 4
+                ? `${['LENSO', 'LENSA', 'LENSE', 'LOLA'][i]} AI Lenser`
+                : 'Lenser DNA avatar'}
+              className="w-full h-full object-cover rounded-full bg-gray-50 dark:bg-gray-700"
+            />
+            {lenserType === 'ai' && i < 4 && (
+              <span className="absolute bottom-0 left-0 right-0 text-center text-[8px] font-black tracking-widest bg-black/40 text-white py-0.5 rounded-b-full">
+                {['LENSO', 'LENSA', 'LENSE', 'LOLA'][i]}
+              </span>
+            )}
+          </button>
+        ))}
+      </div>
+    </div>
+  )
+}
+
+// ── Dicebear infinite scroll panel ───────────────────────────────────────────
+
+function useInfiniteAvatars(styleId: DicebearStyleId) {
   const collection = useMemo(
-    () => AVATAR_STYLES.find((s) => s.id === styleId)!.collection,
+    () => DICEBEAR_STYLES.find((s) => s.id === styleId)!.collection,
     [styleId]
   )
   const [page, setPage] = useState(1)
   const [uris, setUris] = useState<string[]>([])
   const sentinelRef = useRef<HTMLDivElement>(null)
 
-  // Reset when style changes
   useEffect(() => {
     setPage(1)
     setUris([])
   }, [styleId])
 
-  // Generate next page of data URIs (deferred so UI stays responsive)
   useEffect(() => {
     const start = (page - 1) * PAGE_SIZE
     const seeds = ALL_SEEDS.slice(start, start + PAGE_SIZE)
@@ -80,7 +180,6 @@ function useInfiniteAvatars(styleId: StyleId) {
 
   const hasMore = page * PAGE_SIZE < ALL_SEEDS.length
 
-  // IntersectionObserver sentinel
   useEffect(() => {
     if (!hasMore) return
     const el = sentinelRef.current
@@ -96,9 +195,8 @@ function useInfiniteAvatars(styleId: StyleId) {
   return { uris, hasMore, sentinelRef }
 }
 
-// Per-tab panel — isolated hook instance
-const AvatarPanel: React.FC<{
-  styleId: StyleId
+const DicebearAvatarPanel: React.FC<{
+  styleId: DicebearStyleId
   selected: string | null
   onSelect: (uri: string) => void
 }> = ({ styleId, selected, onSelect }) => {
@@ -134,15 +232,18 @@ const AvatarPanel: React.FC<{
   )
 }
 
+// ── Modal ─────────────────────────────────────────────────────────────────────
+
 export const AvatarSelectionModal: React.FC<AvatarSelectionModalProps> = ({
   isOpen,
   onClose,
   onSelect,
   isLoading,
   currentUrl,
+  lenserType = 'human',
 }) => {
   const [selected, setSelected] = useState<string | null>(null)
-  const [activeStyle, setActiveStyle] = useState<StyleId>('pixel-art')
+  const [activeStyle, setActiveStyle] = useState<StyleId>('lenser-dna')
 
   useEffect(() => {
     if (isOpen) setSelected(currentUrl || null)
@@ -170,14 +271,26 @@ export const AvatarSelectionModal: React.FC<AvatarSelectionModalProps> = ({
     >
       <Tabs value={activeStyle} onChange={(id) => setActiveStyle(id as StyleId)}>
         <TabList variant="pills" className="mb-4">
-          {AVATAR_STYLES.map(({ id, label }) => (
+          <Tab id="lenser-dna">Lenser DNA</Tab>
+          {DICEBEAR_STYLES.map(({ id, label }) => (
             <Tab key={id} id={id}>{label}</Tab>
           ))}
         </TabList>
-        {AVATAR_STYLES.map(({ id }) => (
+
+        <TabPanel id="lenser-dna">
+          <div className="max-h-[420px] overflow-y-auto pr-1">
+            <LenserDnaPanel
+              lenserType={lenserType}
+              selected={selected}
+              onSelect={setSelected}
+            />
+          </div>
+        </TabPanel>
+
+        {DICEBEAR_STYLES.map(({ id }) => (
           <TabPanel key={id} id={id}>
             <div className="max-h-[420px] overflow-y-auto pr-1">
-              <AvatarPanel styleId={id} selected={selected} onSelect={setSelected} />
+              <DicebearAvatarPanel styleId={id} selected={selected} onSelect={setSelected} />
             </div>
           </TabPanel>
         ))}

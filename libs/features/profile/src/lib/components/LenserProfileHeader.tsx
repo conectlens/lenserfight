@@ -502,6 +502,7 @@ export const LenserProfileHeader: React.FC<LenserProfileHeaderProps> = ({
             onSelect={(url) => handleUpdate({ avatar_url: url })}
             isLoading={isUpdating}
             currentUrl={lenser.avatar_url}
+            lenserType={lenser.type === 'ai' ? 'ai' : 'human'}
           />
           <BannerSelectionModal
             isOpen={showBannerModal}
