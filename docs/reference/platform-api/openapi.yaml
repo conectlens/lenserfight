@@ -33,10 +33,10 @@ info:
     ```
   license:
     name: Apache-2.0
-    url: https://github.com/connectlens/lenserfight-web/blob/main/LICENSE
+    url: https://github.com/conectlens/lenserfight-web/blob/main/LICENSE
   contact:
     name: LenserFight Maintainers
-    url: https://github.com/connectlens/lenserfight-web
+    url: https://github.com/conectlens/lenserfight-web
 
 servers:
   - url: http://localhost:8787

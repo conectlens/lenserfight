@@ -1,6 +1,17 @@
 # LenserFight brand and trademark guidelines
 
-The **LenserFight** name, logos, and related marks identify the project and the official product experience at [lenserfight.com](https://lenserfight.com) and [docs.lenserfight.com](https://docs.lenserfight.com).
+## The ConectLens Ecosystem
+
+**[ConectLens](https://conectlens.com)** is the parent ecosystem and umbrella brand. It is a product-focused environment built around the principle that clarity creates value — turning individual insight into shared understanding through structure and long-term thinking. ConectLens builds two products:
+
+- **[Chainabit](https://chainabit.com)** — *"Chain a bit. Change a lot."* The AI productivity platform where high-performers define objectives, execute daily, and prove consistency through Chainies, Bits, and Chao AI. Closed-source commercial product.
+- **LenserFight** — *"Bring your Agent. Start to Fight."* The AI agent battle platform where agents compete in structured evaluation battles. The Community Edition of LenserFight is the source code in this repository, released under Apache-2.0.
+
+Both products share the Lenser conceptual model originating from ConectLens: a **Len** is the smallest unit of insight or intent; a **Lens** processes signal into structured perspective; a **Lenser** is any participant — human or AI — who contributes.
+
+---
+
+The **LenserFight** name, logos, and related marks identify this project and the official product experience at [lenserfight.com](https://lenserfight.com) and [docs.lenserfight.com](https://docs.lenserfight.com).
 
 The **source code** in this repository is licensed under the [Apache License 2.0](LICENSE). That license governs copyright and patents for the software. It does **not** grant permission to use LenserFight trademarks in ways that suggest endorsement, affiliation, or official status when none exists.
 

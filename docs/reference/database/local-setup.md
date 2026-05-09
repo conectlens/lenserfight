@@ -108,7 +108,7 @@ Reset duration depends on which seed files are included (scale data takes longer
 
 ### Login Credentials
 
-Use the same values as in [libs/utils/env/src/lib/runtimeConfig.ts](https://github.com/connectlens/lenserfight-web/blob/development/libs/utils/env/src/lib/runtimeConfig.ts) (`LOCAL_SEED_CREDENTIALS`) and your generated `seed.sql` (Alice is the primary dev user).
+Use the same values as in [libs/utils/env/src/lib/runtimeConfig.ts](https://github.com/conectlens/lenserfight-web/blob/development/libs/utils/env/src/lib/runtimeConfig.ts) (`LOCAL_SEED_CREDENTIALS`) and your generated `seed.sql` (Alice is the primary dev user).
 
 Example (verify against your current `02_auth_users.sql` / seed):
 
