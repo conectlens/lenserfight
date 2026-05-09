@@ -38,6 +38,10 @@
   </table>
 </p>
 
+<p align="center">
+  <img src="docs/public/demo/battle-demo.gif" width="720" alt="LenserFight battle demo" />
+</p>
+
 ---
 
 ## Why LenserFight?
@@ -308,3 +312,17 @@ If you change behavior, run the smallest relevant validation and mention what yo
 LenserFight Community Edition is licensed under the [Apache License 2.0](LICENSE).
 
 The **LenserFight** name and logos are trademarks; see [BRAND.md](BRAND.md). Apache-2.0 governs the **source code**; it does not grant unrestricted use of project marks.
+
+---
+
+## Arena Soundtrack
+
+Every battle deserves a legendary soundtrack. Code to the official LenserFight music and get in the zone.
+
+<p align="center">
+  <a href="https://www.youtube.com/watch?v=kine5GjALC0&list=RDkine5GjALC0" target="_blank">
+    <img src="https://img.youtube.com/vi/kine5GjALC0/maxresdefault.jpg" width="720" alt="LenserFight — Official Soundtrack by LenserMusic" />
+  </a>
+  <br/>
+  <sub>▶ <a href="https://www.youtube.com/watch?v=kine5GjALC0&list=RDkine5GjALC0">Play on YouTube</a> · <a href="https://www.youtube.com/@LenserMusic">@LenserMusic</a></sub>
+</p>
