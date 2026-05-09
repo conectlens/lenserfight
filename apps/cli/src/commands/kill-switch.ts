@@ -2,6 +2,7 @@ import { defineCommand } from 'citty'
 import consola from 'consola'
 import { callRpc, callRest, handleError } from '../utils/api'
 import { printTable } from '../utils/output'
+import { assertSafe } from '../lib/safety'
 
 // ---------------------------------------------------------------------------
 // Shared: resolve ai_lenser_id from a @handle string
@@ -56,11 +57,19 @@ const ksOn = defineCommand({
     },
   },
   async run({ args }) {
-    if (!args.confirm) {
-      consola.error('--confirm is required to activate the kill switch.')
-      process.exitCode = 1
-      return
-    }
+    await assertSafe({
+      risk: 'HIGH',
+      reversibility: 'REVERSIBLE',
+      confirmationPolicy: 'FLAG',
+      forceFlag: '--confirm',
+      hasForce: args.confirm,
+      description: `Activate the global kill switch for agent @${args.handle}. All new runs will be blocked immediately.`,
+      affectedResources: [
+        { type: 'agent', name: `@${args.handle}`, scope: 'remote' },
+      ],
+      rollbackAvailable: true,
+      notes: ['Lift with: lf kill-switch off <handle>'],
+    })
     try {
       const aiLenserId = await resolveAiLenserId(args.handle)
       await callRpc(
@@ -185,18 +194,53 @@ const platformOn = defineCommand({
       description: 'ISO 8601 expiry (omit = permanent until lifted)',
       default: '',
     },
-    confirm: {
+    force: {
       type: 'boolean',
-      description: 'Required: confirm activation',
+      description: 'Skip interactive confirmation (required in CI)',
       default: false,
     },
   },
   async run({ args }) {
-    if (!args.confirm) {
-      consola.error('--confirm is required to activate a platform kill switch.')
-      process.exitCode = 1
-      return
+    const isSystemWide = args.scope === 'system'
+
+    if (isSystemWide) {
+      await assertSafe({
+        risk: 'CRITICAL',
+        reversibility: 'REVERSIBLE',
+        confirmationPolicy: 'TYPED',
+        typedPhrase: 'PLATFORM DOWN',
+        forceFlag: '--force',
+        hasForce: args.force,
+        description: 'Activate a SYSTEM-WIDE platform kill switch. All autonomous operations across the entire platform will halt immediately.',
+        affectedResources: [
+          { type: 'platform', name: 'All autonomous agents and runs', scope: 'production' },
+        ],
+        rollbackAvailable: true,
+        notes: [
+          `Reason recorded: ${args.reason}`,
+          'Lift with: lf kill-switch platform off <id>',
+        ],
+      })
+    } else {
+      await assertSafe({
+        risk: 'HIGH',
+        reversibility: 'REVERSIBLE',
+        confirmationPolicy: 'FLAG',
+        forceFlag: '--force',
+        hasForce: args.force,
+        description: `Activate a ${args.scope}-scoped platform kill switch${args.target ? ` for target ${args.target}` : ' (ALL)'}.`,
+        affectedResources: [
+          {
+            type: args.scope,
+            name: args.target || 'ALL',
+            scope: 'remote',
+          },
+        ],
+        rollbackAvailable: true,
+        notes: [`Reason recorded: ${args.reason}`],
+      })
     }
+
     try {
       const id = await callRpc<string>(
         'fn_kill_switch_activate',
