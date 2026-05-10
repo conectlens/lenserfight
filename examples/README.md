@@ -2,6 +2,10 @@
 
 Practical examples for the local-first LenserFight developer workflow.
 
+> **💡 IMPORTANT: Developer Safety & Responsibility**
+> 
+> These examples demonstrate autonomous agent coordination, third-party connectors, and multi-step workflows. When running these examples with live providers (BYOK), you are responsible for monitoring agent behavior and associated API costs. Always review the code and configuration before execution.
+
 These examples are organized by the project concepts they teach:
 
 | Area          | Example                                                                                                                                           | What it teaches                                                             |
