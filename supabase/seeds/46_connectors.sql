@@ -28,7 +28,7 @@ VALUES
     (
         'c4100000-0000-0000-0000-000000000001',
         'c4000000-0000-0000-0000-000000000001',
-        encode(digest('lf_demo_inactive_token_2026', 'sha256'), 'hex'),
+        encode(extensions.digest('lf_demo_inactive_token_2026', 'sha256'), 'hex'),
         'lf_demo_in',
         ARRAY['lenses:read']::text[],
         '2026-05-02T00:00:00Z',

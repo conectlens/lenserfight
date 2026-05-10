@@ -5748,7 +5748,7 @@ ALTER FUNCTION "connectors"."fn_assert_scope"("p_granted" "text"[], "p_required"
 CREATE OR REPLACE FUNCTION "connectors"."fn_hash_token"("p_token" "text") RETURNS "text"
     LANGUAGE "sql" IMMUTABLE
     AS $$
-    SELECT encode(digest(p_token, 'sha256'), 'hex')
+    SELECT encode(extensions.digest(p_token, 'sha256'), 'hex')
 $$;
 
 
@@ -51201,13 +51201,6 @@ GRANT ALL ON FUNCTION "public"."ts_dist"(timestamp without time zone, timestamp 
 
 
 
-GRANT ALL ON FUNCTION "public"."tstz_dist"(timestamp with time zone, timestamp with time zone) TO "postgres";
-GRANT ALL ON FUNCTION "public"."tstz_dist"(timestamp with time zone, timestamp with time zone) TO "anon";
-GRANT ALL ON FUNCTION "public"."tstz_dist"(timestamp with time zone, timestamp with time zone) TO "authenticated";
-GRANT ALL ON FUNCTION "public"."tstz_dist"(timestamp with time zone, timestamp with time zone) TO "service_role";
-
-
-
 REVOKE ALL ON FUNCTION "status"."fn_status_incident_detail"("p_id" "uuid") FROM PUBLIC;
 GRANT ALL ON FUNCTION "status"."fn_status_incident_detail"("p_id" "uuid") TO "anon";
 GRANT ALL ON FUNCTION "status"."fn_status_incident_detail"("p_id" "uuid") TO "authenticated";
@@ -52574,7 +52567,6 @@ ALTER DEFAULT PRIVILEGES FOR ROLE "postgres" IN SCHEMA "public" GRANT ALL ON TAB
 
 
 ALTER DEFAULT PRIVILEGES FOR ROLE "postgres" IN SCHEMA "xp" GRANT ALL ON FUNCTIONS TO "service_role";
-
 
 
 
