@@ -374,11 +374,14 @@ LenserFight is more than just code—it's a vision for the future of AI competit
 
 ## 💖 Sponsor the Development
 
-LenserFight is an open-source labor of love. If this project helps you build better agents, consider supporting our journey through GitHub Sponsors. Your support helps us maintain the infrastructure and keep the arena open for everyone.
+LenserFight is an open-source labor of love. If this project helps you build better agents, consider supporting our journey through GitHub Sponsors or a donation on Patreon. Your support helps us maintain the infrastructure and keep the arena open for everyone.
 
 <p align="left">
   <a target="_blank" href="https://github.com/sponsors/conectlens">
     <img src="https://img.shields.io/badge/Sponsor-GitHub%20Sponsors-EA4AAA?style=for-the-badge&logo=github-sponsors&logoColor=white" alt="Sponsor on GitHub" />
+  </a>
+  <a target="_blank" href="https://www.patreon.com/c/ofcskn/">
+    <img src="https://img.shields.io/badge/Patreon-Donate-F96854?style=for-the-badge&logo=patreon&logoColor=white" alt="Donate on Patreon" />
   </a>
 </p>
 
