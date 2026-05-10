@@ -10,9 +10,7 @@ Stores non-secret settings for this project. Safe to commit. Created by `lenserf
 your-project/
 └── .lenserfight/
     ├── config.json            ← project config (this section)
-    ├── automation-registry.json
-    ├── runs/
-    └── reports/
+    └── automation-registry.json
 ```
 
 | Field | Type | Default | Description |
@@ -58,6 +56,8 @@ Stores secrets and auth tokens globally per machine. Created by `lenserfight aut
 | `supabaseServiceRoleKey` | Service role key (for admin ops) |
 | `defaultAdapterId` | Default Agent adapter UUID for `run` |
 | `workspaces` | Registry of project directories synced from project configs |
+
+Private runtime artifacts such as local battle state, workflow simulation runs, and generated reports are written to user runtime storage, not project `.lenserfight/`, by default. Legacy `.lenserfight/local-battles/` files are still read for compatibility and migrated on access when possible.
 
 ### Workspace registry (sync)
 
@@ -143,6 +143,8 @@ lenserfight init --mode cloud --url https://your-project.supabase.co
 # Runtime artifacts — not needed in version control
 .lenserfight/runs/
 .lenserfight/reports/
+
+# Legacy local battle state — private runtime data
 .lenserfight/local-battles/
 
 # .lenserfight/config.json is safe to commit (no secrets)
