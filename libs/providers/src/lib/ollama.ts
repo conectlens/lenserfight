@@ -1,4 +1,9 @@
-import type { ProviderMessage, ProviderRequestOptions, ProviderResponse, StreamChunk } from './types';
+import type {
+  ProviderMessage,
+  ProviderRequestOptions,
+  ProviderResponse,
+  StreamChunk,
+} from './types'
 
 // ─── Ollama Adapter ───────────────────────────────────────────────────────────
 // Ollama REST API: http://localhost:11434/api/chat
@@ -7,16 +12,12 @@ import type { ProviderMessage, ProviderRequestOptions, ProviderResponse, StreamC
 // - Streaming: NDJSON (one JSON object per line, not SSE format)
 // - Base URL is configurable for non-standard local setups
 
-const FALLBACK_BASE_URL = 'http://localhost:11434';
+const FALLBACK_BASE_URL = 'http://localhost:11434'
 
 function resolveEnvBaseUrl(): string | undefined {
   const nodeValue =
     typeof process !== 'undefined' ? process.env['LENSERFIGHT_OLLAMA_BASE_URL'] : undefined
   if (nodeValue?.trim()) return nodeValue.trim().replace(/\/$/, '')
-
-  const viteEnv = (import.meta as ImportMeta & { env?: Record<string, string | undefined> }).env
-  const viteValue = viteEnv?.['OLLAMA_BASE_URL']
-  if (viteValue?.trim()) return viteValue.trim().replace(/\/$/, '')
 
   return undefined
 }
@@ -29,52 +30,53 @@ export function resolveOllamaBaseUrl(baseUrl?: string): string {
 // ─── Wire Types ───────────────────────────────────────────────────────────────
 
 interface OllamaMessage {
-  role: string;
-  content: string;
-  images?: string[]; // base64-encoded, no data URI prefix
+  role: string
+  content: string
+  images?: string[] // base64-encoded, no data URI prefix
 }
 
 interface OllamaRequest {
-  model: string;
-  messages: OllamaMessage[];
-  stream?: boolean;
-  options?: { num_predict?: number; temperature?: number };
+  model: string
+  messages: OllamaMessage[]
+  stream?: boolean
+  options?: { num_predict?: number; temperature?: number }
 }
 
 interface OllamaResponse {
-  message: { content: string };
-  prompt_eval_count?: number;
-  eval_count?: number;
-  done: boolean;
+  message: { content: string }
+  prompt_eval_count?: number
+  eval_count?: number
+  done: boolean
 }
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
 /** Fetches a URL and returns its content as a base64 string (for image parts). */
 async function urlToBase64(url: string): Promise<string> {
-  const res = await fetch(url);
-  const buffer = await res.arrayBuffer();
-  const bytes = new Uint8Array(buffer);
-  let binary = '';
-  for (const byte of bytes) binary += String.fromCharCode(byte);
-  return btoa(binary);
+  const res = await fetch(url)
+  const buffer = await res.arrayBuffer()
+  const bytes = new Uint8Array(buffer)
+  let binary = ''
+  for (const byte of bytes) binary += String.fromCharCode(byte)
+  return btoa(binary)
 }
 
 function toOllamaMessage(msg: ProviderMessage): OllamaMessage {
   if (typeof msg.content === 'string') {
-    return { role: msg.role, content: msg.content };
+    return { role: msg.role, content: msg.content }
   }
 
   const textParts = msg.content
     .filter((p): p is Extract<typeof p, { type: 'text' }> => p.type === 'text')
     .map((p) => p.text)
-    .join('\n');
+    .join('\n')
 
   // Images are passed as base64 via the images[] sibling field.
   // URLs require async fetch; for sync transformRequest we include a placeholder.
   // Use buildStreamRequest (async capable) for multimodal use.
-  const imageParts = msg.content
-    .filter((p): p is Extract<typeof p, { type: 'image' }> => p.type === 'image');
+  const imageParts = msg.content.filter(
+    (p): p is Extract<typeof p, { type: 'image' }> => p.type === 'image'
+  )
 
   return {
     role: msg.role,
@@ -82,7 +84,7 @@ function toOllamaMessage(msg: ProviderMessage): OllamaMessage {
     ...(imageParts.length > 0
       ? { images: imageParts.map((p) => p.url) } // Note: URLs; caller must base64-encode if needed
       : {}),
-  };
+  }
 }
 
 // ─── Adapter ──────────────────────────────────────────────────────────────────
@@ -105,13 +107,13 @@ export function transformRequest(
           },
         }
       : {}),
-  };
+  }
 
   return {
     url: `${resolveOllamaBaseUrl(baseUrl)}/api/chat`,
     body: JSON.stringify(body),
     headers: { 'Content-Type': 'application/json' },
-  };
+  }
 }
 
 export function transformResponse(data: OllamaResponse): ProviderResponse {
@@ -121,12 +123,12 @@ export function transformResponse(data: OllamaResponse): ProviderResponse {
       input_tokens: data.prompt_eval_count ?? 0,
       output_tokens: data.eval_count ?? 0,
     },
-  };
+  }
 }
 
 /** Ollama: no auth for local inference; Bearer token required for cloud models. */
 export function authHeader(apiKey: string): Record<string, string> {
-  return apiKey ? { Authorization: `Bearer ${apiKey}` } : {};
+  return apiKey ? { Authorization: `Bearer ${apiKey}` } : {}
 }
 
 // ─── Streaming ────────────────────────────────────────────────────────────────
@@ -149,13 +151,13 @@ export function buildStreamRequest(
           },
         }
       : {}),
-  };
+  }
 
   return {
     url: `${resolveOllamaBaseUrl(baseUrl)}/api/chat`,
     body: JSON.stringify(body),
     headers: { 'Content-Type': 'application/json' },
-  };
+  }
 }
 
 /**
@@ -164,11 +166,11 @@ export function buildStreamRequest(
  * `done: true` on the final line signals end of stream.
  */
 export function parseStreamChunk(line: string, _eventType?: string): StreamChunk | null {
-  const trimmed = line.trim();
-  if (!trimmed) return null;
+  const trimmed = line.trim()
+  if (!trimmed) return null
 
   try {
-    const parsed: OllamaResponse = JSON.parse(trimmed);
+    const parsed: OllamaResponse = JSON.parse(trimmed)
     if (parsed.done) {
       return {
         done: true,
@@ -176,14 +178,14 @@ export function parseStreamChunk(line: string, _eventType?: string): StreamChunk
           input_tokens: parsed.prompt_eval_count ?? 0,
           output_tokens: parsed.eval_count ?? 0,
         },
-      };
+      }
     }
     return {
       content: parsed.message?.content || undefined,
       done: false,
-    };
+    }
   } catch {
-    return null;
+    return null
   }
 }
 
