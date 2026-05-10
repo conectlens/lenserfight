@@ -235,10 +235,10 @@ importers:
         specifier: ^5.0.0
         version: 5.2.0(vite@7.3.1(@types/node@22.19.15)(jiti@2.4.2)(lightningcss@1.32.0)(terser@5.46.1)(yaml@2.8.3))
       '@vitest/coverage-v8':
-        specifier: ^4.0.0
+        specifier: 4.1.1
         version: 4.1.1(vitest@4.1.1(@opentelemetry/api@1.9.0)(@types/node@22.19.15)(@vitest/ui@4.1.1)(jsdom@22.1.0)(vite@7.3.1(@types/node@22.19.15)(jiti@2.4.2)(lightningcss@1.32.0)(terser@5.46.1)(yaml@2.8.3)))
       '@vitest/ui':
-        specifier: ^4.0.0
+        specifier: 4.1.1
         version: 4.1.1(vitest@4.1.1)
       ajv:
         specifier: ^8.0.0
@@ -352,7 +352,7 @@ importers:
         specifier: ^2.0.0-alpha.16
         version: 2.0.0-alpha.17(@types/node@22.19.15)(axios@1.13.6)(jiti@2.4.2)(lightningcss@1.32.0)(postcss@8.5.8)(terser@5.46.1)(typescript@5.8.3)(yaml@2.8.3)
       vitest:
-        specifier: ^4.0.0
+        specifier: 4.1.1
         version: 4.1.1(@opentelemetry/api@1.9.0)(@types/node@22.19.15)(@vitest/ui@4.1.1)(jsdom@22.1.0)(vite@7.3.1(@types/node@22.19.15)(jiti@2.4.2)(lightningcss@1.32.0)(terser@5.46.1)(yaml@2.8.3))
 
 packages:
