@@ -19,7 +19,7 @@ If Ollama is not running on the default host, set one or both of these:
 
 ```bash
 export LENSERFIGHT_OLLAMA_BASE_URL=http://127.0.0.1:11434
-export VITE_OLLAMA_BASE_URL=http://127.0.0.1:11434
+export OLLAMA_BASE_URL=http://127.0.0.1:11434
 ```
 
 `LENSERFIGHT_OLLAMA_BASE_URL` is used by the CLI and server-side tools.
@@ -42,7 +42,7 @@ lf lenser connect \
 
 ## Web app execution
 
-When the active provider is Ollama, the browser checks `${VITE_OLLAMA_BASE_URL}/api/version` and `${VITE_OLLAMA_BASE_URL}/api/tags`.
+When the active provider is Ollama, the browser checks `${OLLAMA_BASE_URL}/api/version` and `${OLLAMA_BASE_URL}/api/tags`.
 
 If the browser cannot connect:
 

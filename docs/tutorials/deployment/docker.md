@@ -99,8 +99,8 @@ services:
     ports:
       - "3000:80"
     environment:
-      - VITE_SUPABASE_URL=http://supabase:54321
-      - VITE_API_URL=http://api:8786
+      - SUPABASE_URL=http://supabase:54321
+      - API_URL=http://api:8786
     depends_on:
       - api
       - supabase
@@ -149,11 +149,11 @@ SUPABASE_ANON_KEY=<your-anon-key>
 SUPABASE_SERVICE_ROLE_KEY=<your-service-role-key>
 
 # App
-VITE_DATA_SOURCE=supabase
-VITE_SUPABASE_URL=https://your-supabase-project.supabase.co
-VITE_SUPABASE_ANON_KEY=<your-anon-key>
-VITE_WEB_BASE_URL=https://yourdomain.com
-VITE_API_URL=https://api.yourdomain.com
+DATA_SOURCE=supabase
+SUPABASE_URL=https://your-supabase-project.supabase.co
+SUPABASE_ANON_KEY=<your-anon-key>
+WEB_BASE_URL=https://yourdomain.com
+API_URL=https://api.yourdomain.com
 
 # Security
 CORS_ORIGIN=https://yourdomain.com

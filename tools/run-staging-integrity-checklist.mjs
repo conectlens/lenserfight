@@ -196,7 +196,7 @@ async function check_O2_arena_gating() {
     id: 'O2',
     name: 'arena page gating (advisory — build-time flag)',
     ok: true,
-    evidence: { advisory: 'Verify by deploying with VITE_FEATURE_PUBLIC_BATTLES=true and false in two preview builds.' },
+    evidence: { advisory: 'Verify by deploying with FEATURE_PUBLIC_BATTLES=true and false in two preview builds.' },
   }
 }
 

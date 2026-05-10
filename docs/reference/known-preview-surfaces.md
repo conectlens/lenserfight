@@ -57,7 +57,7 @@ This page lists every feature in LenserFight that is **not available by default*
 SELECT cron.unschedule('dispatch-scheduled-workflows');
 
 -- Step 2: Disable the UI (set this in your .env)
--- VITE_FEATURE_CRON_SCHEDULING=false
+-- FEATURE_CRON_SCHEDULING=false
 
 -- Step 3: Re-enable later (expression must match original migration)
 SELECT cron.schedule(

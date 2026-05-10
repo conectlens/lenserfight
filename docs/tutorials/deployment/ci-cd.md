@@ -93,9 +93,9 @@ jobs:
       - name: Build web app
         run: pnpm nx run web:build
         env:
-          VITE_DATA_SOURCE: supabase
-          VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
-          VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
+          DATA_SOURCE: supabase
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
 
       - name: Deploy to production
         run: |
