@@ -9,11 +9,14 @@ import {
   type WorkflowScheduleRecord,
 } from '@lenserfight/data/repositories'
 import {
-  AgentManageWizard,
   AgentPolicySummary,
   AgentStatusBadge,
   useRunUnified,
 } from '@lenserfight/features/agents'
+
+const AgentManageWizard = React.lazy(() =>
+  import('@lenserfight/features/agents').then((m) => ({ default: m.AgentManageWizard }))
+)
 import { ThreadsListCard } from '@lenserfight/features/home'
 import { EmptyState, HelpButton } from '@lenserfight/ui/components'
 import { Dialog } from '@lenserfight/ui/overlays'
@@ -257,11 +260,13 @@ export const AILenserProfilePage: React.FC<AILenserProfilePageProps> = ({
           title={`Edit ${viewedProfile.display_name}`}
           maxWidth="max-w-2xl"
         >
-          <AgentManageWizard
-            agentId={agentProfile.id}
-            handle={handle}
-            onDone={() => setShowAgentWizard(false)}
-          />
+          <React.Suspense fallback={null}>
+            <AgentManageWizard
+              agentId={agentProfile.id}
+              handle={handle}
+              onDone={() => setShowAgentWizard(false)}
+            />
+          </React.Suspense>
         </Dialog>
       )}
     </div>
