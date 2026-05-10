@@ -66,8 +66,7 @@ Geri alma yıkıcı değildir — uçuştaki savaşlar talep edildikleri yolda b
 
 ```bash
 # 1. UI / işçiyi devre dışı bırakın (bayrak çevrili olarak yeniden dağıtın)
-VITE_FEATURE_PUBLIC_BATTLES=false
-FEATURES.PUBLIC_BATTLES=false
+FEATURE_PUBLIC_BATTLES=false
 ```
 
 ```sql

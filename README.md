@@ -242,8 +242,8 @@ Phases 12–16 progressively flip more of these flags on for cloud as the corres
 For self-hosted/community installs, set these in `.env.local` to bypass cloud-only gates:
 
 ```env
-VITE_PRODUCT_EDITION=community
-VITE_FEATURE_PUBLIC_BATTLES=false # keep arena entrypoints hidden
+PRODUCT_EDITION=community
+FEATURE_PUBLIC_BATTLES=false # keep arena entrypoints hidden
 ```
 
 `.env.example` has the full list with comments.

@@ -75,7 +75,7 @@ pnpm supabase:local:recover
 ```bash
 # Copy the example and set the Supabase backend
 cp .env.example .env.local
-# Edit .env.local: set VITE_DATA_SOURCE=supabase and fill in VITE_SUPABASE_URL / VITE_SUPABASE_ANON_KEY
+# Edit .env.local: set DATA_SOURCE=supabase and fill in SUPABASE_URL / SUPABASE_ANON_KEY
 ```
 
 ### Run the web app

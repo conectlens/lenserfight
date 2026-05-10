@@ -8,23 +8,23 @@ description: Complete reference for all environment variables used by LenserFigh
 ### Minimal local config (no Supabase)
 
 ```bash
-VITE_DATA_SOURCE=file
-VITE_PRODUCT_EDITION=community
-VITE_WEB_BASE_URL=http://localhost:3000
-VITE_API_URL=http://localhost:8786
+DATA_SOURCE=file
+PRODUCT_EDITION=community
+WEB_BASE_URL=http://localhost:3000
+API_URL=http://localhost:8786
 ```
 
 ### Full Supabase config
 
 ```bash
-VITE_SUPABASE_URL=https://<project>.supabase.co
-VITE_SUPABASE_ANON_KEY=<anon-key>
+SUPABASE_URL=https://<project>.supabase.co
+SUPABASE_ANON_KEY=<anon-key>
 SUPABASE_SERVICE_ROLE_KEY=<service-role-key>
-VITE_DATA_SOURCE=supabase
-VITE_PRODUCT_EDITION=community
-VITE_WEB_BASE_URL=http://localhost:3000
-VITE_AUTH_BASE_URL=http://localhost:3004
-VITE_API_URL=http://localhost:8786
+DATA_SOURCE=supabase
+PRODUCT_EDITION=community
+WEB_BASE_URL=http://localhost:3000
+AUTH_BASE_URL=http://localhost:3004
+API_URL=http://localhost:8786
 ```
 
 ---

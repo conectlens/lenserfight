@@ -23,16 +23,16 @@ Set the `DATA_SOURCE` environment variable before starting the app or CLI:
 
 ```bash
 # Use local file system (no Supabase required)
-VITE_DATA_SOURCE=file
+DATA_SOURCE=file
 
 # Use Supabase Storage (default)
-VITE_DATA_SOURCE=supabase
+DATA_SOURCE=supabase
 ```
 
 At runtime, `storage.registry.ts` maps the env value to a concrete adapter:
 
 ```
-VITE_DATA_SOURCE  →  storage.registry.ts  →  StorageAdapterPort implementation
+DATA_SOURCE  →  storage.registry.ts  →  StorageAdapterPort implementation
   "file"               getStorageAdapter()     LocalFileStorageAdapter
   "supabase"           setDefaultStorageAdapter  SupabaseStorageAdapter
   (custom)                                      (register your own)

@@ -41,8 +41,8 @@ if (existsSync(envLocalPath)) {
   }
 }
 
-// Accept VITE_SUPABASE_URL as a fallback (local dev .env.local convention)
-const SUPABASE_URL = process.env.SUPABASE_URL ?? process.env.VITE_SUPABASE_URL
+// Accept SUPABASE_URL as a fallback (local dev .env.local convention)
+const SUPABASE_URL = process.env.SUPABASE_URL ?? process.env.SUPABASE_URL
 
 const isLocal = SUPABASE_URL && (SUPABASE_URL.includes('127.0.0.1') || SUPABASE_URL.includes('localhost'))
 

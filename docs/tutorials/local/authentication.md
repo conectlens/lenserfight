@@ -163,7 +163,7 @@ The web app redirects to the auth app for login/signup, and the auth app redirec
 
 ```bash
 # .env.local
-VITE_AUTH_BASE_URL=http://localhost:3004
+AUTH_BASE_URL=http://localhost:3004
 ```
 
 ---
