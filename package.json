@@ -5,8 +5,8 @@
   "type": "module",
   "license": "Apache-2.0",
   "engines": {
-    "node": ">=22 <23",
-    "pnpm": ">=9 <10"
+    "node": ">=22",
+    "pnpm": ">=9"
   },
   "packageManager": "pnpm@9.0.0",
   "scripts": {
@@ -129,8 +129,8 @@
     "@types/react": "^19.1.0",
     "@types/react-dom": "^19.0.0",
     "@vitejs/plugin-react": "^5.0.0",
-    "@vitest/coverage-v8": "^4.0.0",
-    "@vitest/ui": "^4.0.0",
+    "@vitest/coverage-v8": "4.1.1",
+    "@vitest/ui": "4.1.1",
     "ajv": "^8.0.0",
     "autoprefixer": "^10.4.27",
     "babel-jest": "^30.0.2",
@@ -168,7 +168,7 @@
     "vite": "^7.0.0",
     "vite-plugin-dts": "~4.5.0",
     "vitepress": "^2.0.0-alpha.16",
-    "vitest": "^4.0.0"
+    "vitest": "4.1.1"
   },
   "nx": {}
 }
