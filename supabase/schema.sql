@@ -26596,6 +26596,7 @@ DECLARE
   v_human_id          uuid;
   v_current_active_id uuid;
   v_from_ai_lenser_id uuid;
+  v_target_profile_id uuid;
   v_to_ai_lenser_id   uuid;
 BEGIN
   SELECT p.id INTO v_human_id
@@ -26614,7 +26615,6 @@ BEGIN
   WHERE pref.lenser_id = v_human_id
   LIMIT 1;
 
-  -- Resolve the current active AI lenser (NULL if currently on human workspace)
   SELECT al.id INTO v_from_ai_lenser_id
   FROM agents.ai_lensers al
   JOIN lensers.profiles ap ON ap.id = al.profile_id
@@ -26622,13 +26622,11 @@ BEGIN
   LIMIT 1;
 
   IF p_lenser_id = v_human_id THEN
-    -- Switching back to human workspace
     UPDATE lensers.preferences
     SET active_lenser_id = NULL,
         updated_at       = now()
     WHERE lenser_id = v_human_id;
 
-    -- Log the switch only when leaving an AI workspace
     IF v_from_ai_lenser_id IS NOT NULL THEN
       INSERT INTO agents.workspace_switches (human_lenser_id, from_ai_lenser_id, to_ai_lenser_id)
       VALUES (v_human_id, v_from_ai_lenser_id, NULL);
@@ -26637,30 +26635,25 @@ BEGIN
     RETURN;
   END IF;
 
-  IF NOT EXISTS (
-    SELECT 1
-    FROM agents.ownerships   o
-    JOIN agents.ai_lensers   al    ON al.id     = o.ai_lenser_id
-    JOIN lensers.profiles    ai_p  ON ai_p.id   = al.profile_id
-    WHERE o.owner_lenser_id = v_human_id
-      AND ai_p.id           = p_lenser_id
-      AND o.role            = 'owner'
-      AND o.revoked_at      IS NULL
-      AND ai_p.status       = 'active'
-  ) THEN
+  SELECT ai_p.id, al.id
+  INTO v_target_profile_id, v_to_ai_lenser_id
+  FROM agents.ownerships o
+  JOIN agents.ai_lensers al ON al.id = o.ai_lenser_id
+  JOIN lensers.profiles ai_p ON ai_p.id = al.profile_id
+  WHERE o.owner_lenser_id = v_human_id
+    AND (ai_p.id = p_lenser_id OR al.id = p_lenser_id)
+    AND o.role = 'owner'
+    AND o.revoked_at IS NULL
+    AND ai_p.status = 'active'
+  LIMIT 1;
+
+  IF v_target_profile_id IS NULL THEN
     RAISE EXCEPTION 'Cannot switch: profile not found or not owned'
       USING ERRCODE = '42501';
   END IF;
 
-  -- Resolve the target AI lenser id
-  SELECT al.id INTO v_to_ai_lenser_id
-  FROM agents.ai_lensers al
-  JOIN lensers.profiles ap ON ap.id = al.profile_id
-  WHERE ap.id = p_lenser_id
-  LIMIT 1;
-
   UPDATE lensers.preferences
-  SET active_lenser_id = p_lenser_id,
+  SET active_lenser_id = v_target_profile_id,
       updated_at       = now()
   WHERE lenser_id = v_human_id;
 
@@ -26673,10 +26666,7 @@ $$;
 ALTER FUNCTION "public"."fn_switch_active_lenser"("p_lenser_id" "uuid") OWNER TO "postgres";
 
 
-COMMENT ON FUNCTION "public"."fn_switch_active_lenser"("p_lenser_id" "uuid") IS 'Switches the authenticated user''s active workspace to the given lenser ID. Must be the
-   user''s own human profile (resets to default) or an AI lenser they own as primary owner.
-   Stores selection in lensers.preferences.active_lenser_id and appends a row to
-   agents.workspace_switches for the audit trail.';
+COMMENT ON FUNCTION "public"."fn_switch_active_lenser"("p_lenser_id" "uuid") IS 'Switches the authenticated user''s active workspace to the given lenser ID. Accepts the human profile id, an owned AI profile id, or that owned AI lenser runtime id. Stores AI selection in lensers.preferences.active_lenser_id as the profile id and appends agents.workspace_switches audit rows.';
 
 
 
@@ -52567,7 +52557,6 @@ ALTER DEFAULT PRIVILEGES FOR ROLE "postgres" IN SCHEMA "public" GRANT ALL ON TAB
 
 
 ALTER DEFAULT PRIVILEGES FOR ROLE "postgres" IN SCHEMA "xp" GRANT ALL ON FUNCTIONS TO "service_role";
-
 
 
 
