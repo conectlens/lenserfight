@@ -7,25 +7,126 @@ import { printTable, printJson, truncate } from '../utils/output';
 // Shared helpers
 // ---------------------------------------------------------------------------
 
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+const SHORT_ID_RE = /^[0-9a-f]{6,12}$/i;
+const USERNAME_RE = /^[a-z0-9][a-z0-9_-]{2,31}$/;
+
+type RunnerRow = {
+  id: string;
+  name: string;
+  handle?: string | null;
+  username?: string | null;
+  adapter_type: string;
+  is_active: boolean;
+  created_at: string;
+};
+
+function normalizeUsername(value: string): string {
+  return value.trim().replace(/^@/, '').toLowerCase();
+}
+
+function readIdentifier(args: { id?: string; handle?: string }, rawArgs?: string[]): string {
+  const rawTokens = (rawArgs ?? []).filter((token) => !token.startsWith('--'));
+  const raw = rawTokens.length > 0 ? rawTokens.join(' ') : args.id ?? args.handle ?? '';
+  return raw.trim();
+}
+
+function displayRunnerHandle(row: RunnerRow | Record<string, unknown>): string {
+  const handle = 'handle' in row ? row.handle : undefined;
+  const username = 'username' in row ? row.username : undefined;
+  const value = handle ?? username;
+  return typeof value === 'string' && value.length > 0 ? `@${normalizeUsername(value)}` : '-';
+}
+
+function extractProfileId(profile: unknown): string | null {
+  if (Array.isArray(profile)) return profile.length > 0 ? extractProfileId(profile[0]) : null;
+  if (profile && typeof profile === 'object' && 'id' in profile) {
+    const id = (profile as { id?: unknown }).id;
+    return typeof id === 'string' ? id : null;
+  }
+  return null;
+}
+
 async function resolveSelfId(): Promise<string | null> {
-  const self = await callRpc<Record<string, unknown>>(
-    'fn_lensers_get_authenticated_profile',
+  const self = await callRpc<unknown>(
+    'fn_lensers_get_active_profile',
     {},
     { requireAuth: true }
   );
-  return (self?.id as string) ?? null;
+  return extractProfileId(self);
+}
+
+async function resolveProfileId(identifier: string): Promise<string> {
+  const raw = identifier.trim();
+  if (UUID_RE.test(raw)) return raw;
+
+  const handle = normalizeUsername(raw);
+  const rows = await callRest<Array<{ id: string; handle: string; display_name: string | null }>>(
+    'lensers',
+    'profiles',
+    'GET',
+    undefined,
+    {
+      requireAuth: true,
+      query: {
+        select: 'id,handle,display_name',
+        handle: `eq.${handle}`,
+        limit: 2,
+      },
+    }
+  );
+
+  const profile = rows?.[0];
+  if (!profile) {
+    throw new Error(`No lenser profile found for "${identifier}". Use a UUID or username like @${handle}.`);
+  }
+  return profile.id;
+}
+
+async function listRunners(): Promise<RunnerRow[]> {
+  const rows = await callRpc<RunnerRow[]>('fn_runner_list', {}, { requireAuth: true });
+  return Array.isArray(rows) ? rows : [];
+}
+
+async function resolveRunnerId(identifier: string): Promise<string> {
+  const raw = identifier.trim();
+  if (UUID_RE.test(raw)) return raw;
+
+  const runners = await listRunners();
+  const normalized = normalizeUsername(raw);
+  const lower = raw.toLowerCase();
+
+  const matches = runners.filter((runner) => {
+    const handle = normalizeUsername(runner.handle ?? runner.username ?? '');
+    return (
+      (SHORT_ID_RE.test(raw) && runner.id.toLowerCase().startsWith(lower)) ||
+      (handle.length > 0 && handle === normalized) ||
+      runner.name.toLowerCase() === lower
+    );
+  });
+
+  if (matches.length === 1) return matches[0].id;
+  if (matches.length > 1) {
+    throw new Error(
+      `Identifier "${identifier}" matches multiple lensers. Use a longer ID or the exact username shown by \`lf lenser list\`.`
+    );
+  }
+  throw new Error(
+    `No registered AI lenser found for "${identifier}". Run \`lf lenser list\` and use the ID, username, or exact name.`
+  );
 }
 
 async function resolveAiLenserId(handle: string): Promise<string> {
+  const normalized = normalizeUsername(handle);
   const rows = await callRest<Array<{ id: string }>>(
     'lensers',
     'profiles',
     'GET',
     undefined,
-    { requireAuth: true, query: { select: 'id', handle: `eq.${handle}` } }
+    { requireAuth: true, query: { select: 'id', handle: `eq.${normalized}` } }
   );
   const profile = rows?.[0];
-  if (!profile) throw new Error(`No profile found for handle @${handle}`);
+  if (!profile) throw new Error(`No profile found for handle @${normalized}`);
 
   const agents = await callRest<Array<{ id: string }>>(
     'agents',
@@ -35,7 +136,7 @@ async function resolveAiLenserId(handle: string): Promise<string> {
     { requireAuth: true, query: { select: 'id', profile_id: `eq.${profile.id}` } }
   );
   const agent = agents?.[0];
-  if (!agent) throw new Error(`No AI lenser found for @${handle}`);
+  if (!agent) throw new Error(`No AI lenser found for @${normalized}`);
   return agent.id;
 }
 
@@ -44,27 +145,31 @@ async function resolveAiLenserId(handle: string): Promise<string> {
 // ---------------------------------------------------------------------------
 
 const follow = defineCommand({
-  meta: { name: 'follow', description: 'Follow a lenser by their UUID.' },
+  meta: { name: 'follow', description: 'Follow a lenser by UUID or username.' },
   args: {
-    id: { type: 'positional', description: 'Lenser UUID to follow.', required: true },
+    id: { type: 'positional', description: 'Lenser UUID or username to follow.', required: true },
   },
-  async run({ args }) {
+  async run({ args, rawArgs }) {
     try {
-      await callRpc('fn_lensers_follow', { p_following_id: args.id }, { requireAuth: true });
-      consola.success('Now following lenser: %s', args.id);
+      const identifier = readIdentifier(args, rawArgs);
+      const id = await resolveProfileId(identifier);
+      await callRpc('fn_lensers_follow', { p_following_id: id }, { requireAuth: true });
+      consola.success('Now following lenser: %s', identifier);
     } catch (err) { handleError(err); }
   },
 });
 
 const unfollow = defineCommand({
-  meta: { name: 'unfollow', description: 'Unfollow a lenser by their UUID.' },
+  meta: { name: 'unfollow', description: 'Unfollow a lenser by UUID or username.' },
   args: {
-    id: { type: 'positional', description: 'Lenser UUID to unfollow.', required: true },
+    id: { type: 'positional', description: 'Lenser UUID or username to unfollow.', required: true },
   },
-  async run({ args }) {
+  async run({ args, rawArgs }) {
     try {
-      await callRpc('fn_lensers_unfollow', { p_following_id: args.id }, { requireAuth: true });
-      consola.success('Unfollowed lenser: %s', args.id);
+      const identifier = readIdentifier(args, rawArgs);
+      const id = await resolveProfileId(identifier);
+      await callRpc('fn_lensers_unfollow', { p_following_id: id }, { requireAuth: true });
+      consola.success('Unfollowed lenser: %s', identifier);
     } catch (err) { handleError(err); }
   },
 });
@@ -171,12 +276,19 @@ const connect = defineCommand({
   meta: { name: 'connect', description: 'Register a new AI lenser.' },
   args: {
     name: { type: 'string', description: 'Lenser display name', required: true },
+    username: { type: 'string', description: 'Unique AI lenser username, without @', required: true },
     type: { type: 'string', description: `Lenser type: ${ADAPTER_TYPES.join(', ')}`, required: true },
     config: { type: 'string', description: 'JSON config string or path to config file', default: '{}' },
     gateway: { type: 'boolean', description: 'Route this lenser through the local gateway', default: false },
     device: { type: 'string', description: 'Device UUID to bind this lenser to (requires an approved device)', default: '' },
   },
   async run({ args }) {
+    const username = normalizeUsername(args.username);
+    if (!USERNAME_RE.test(username)) {
+      consola.error('Invalid username: %s. Use 3-32 lowercase letters, numbers, underscores, or hyphens.', args.username);
+      process.exitCode = 1;
+      return;
+    }
     if (!ADAPTER_TYPES.includes(args.type)) {
       consola.error('Invalid lenser type: %s. Must be one of: %s', args.type, ADAPTER_TYPES.join(', '));
       process.exitCode = 1;
@@ -186,6 +298,7 @@ const connect = defineCommand({
     try { config = JSON.parse(args.config); }
     catch { consola.error('Invalid JSON config: %s', args.config); process.exitCode = 1; return; }
 
+    config = { ...config, username, handle: username };
     if (args.gateway) config = { ...config, gateway: true };
 
     try {
@@ -194,7 +307,7 @@ const connect = defineCommand({
         p_adapter_type: args.type,
         p_config: config,
       }, { requireAuth: true });
-      consola.success('Lenser registered: %s', lenserId);
+      consola.success('Lenser registered: %s (@%s)', lenserId, username);
 
       if (args.device) {
         await callRpc<string>('fn_runner_bind_device', {
@@ -215,17 +328,16 @@ const list = defineCommand({
   },
   async run({ args }) {
     try {
-      const lensers = await callRpc<Array<{
-        id: string; name: string; adapter_type: string; is_active: boolean; created_at: string;
-      }>>('fn_runner_list', {}, { requireAuth: true });
+      const lensers = await listRunners();
 
       if (args.json) { printJson(lensers); return; }
       if (!Array.isArray(lensers) || lensers.length === 0) { consola.info('No AI lensers registered.'); return; }
 
       printTable(
-        ['ID', 'Name', 'Type', 'Active', 'Created'],
+        ['ID', 'Username', 'Name', 'Type', 'Active', 'Created'],
         lensers.map((a) => [
           a.id.substring(0, 8),
+          displayRunnerHandle(a),
           a.name,
           a.adapter_type,
           a.is_active ? 'yes' : 'no',
@@ -239,30 +351,45 @@ const list = defineCommand({
 const remove = defineCommand({
   meta: { name: 'remove', description: 'Deactivate an AI lenser.' },
   args: {
-    id: { type: 'positional', description: 'Lenser UUID', required: true },
+    id: { type: 'positional', description: 'Lenser ID, short ID, username, or exact name', required: true },
   },
-  async run({ args }) {
+  async run({ args, rawArgs }) {
     try {
-      await callRpc('fn_runner_remove', { p_adapter_id: args.id }, { requireAuth: true });
-      consola.success('Lenser deactivated: %s', args.id);
+      const identifier = readIdentifier(args, rawArgs);
+      const id = await resolveRunnerId(identifier);
+      await callRpc('fn_runner_remove', { p_adapter_id: id }, { requireAuth: true });
+      consola.success('Lenser deactivated: %s', identifier);
     } catch (err) { handleError(err); }
+  },
+});
+
+const disable = defineCommand({
+  meta: { name: 'disable', description: 'Deactivate an AI lenser. Alias for remove.' },
+  args: {
+    id: { type: 'positional', description: 'Lenser ID, short ID, username, or exact name', required: true },
+  },
+  async run(ctx) {
+    return remove.run?.(ctx);
   },
 });
 
 const view = defineCommand({
   meta: { name: 'view', description: 'Show full config and status for a registered AI lenser.' },
   args: {
-    id: { type: 'positional', description: 'Lenser UUID', required: true },
+    id: { type: 'positional', description: 'Lenser ID, short ID, username, or exact name', required: true },
     json: { type: 'boolean', description: 'Output as JSON', default: false },
   },
-  async run({ args }) {
+  async run({ args, rawArgs }) {
     try {
+      const identifier = readIdentifier(args, rawArgs);
+      const id = await resolveRunnerId(identifier);
       const lenser = await callRpc<Record<string, unknown>>(
-        'fn_runner_get', { p_adapter_id: args.id }, { requireAuth: true }
+        'fn_runner_get', { p_adapter_id: id }, { requireAuth: true }
       );
-      if (!lenser) { consola.warn('Lenser not found: %s', args.id); return; }
+      if (!lenser) { consola.warn('Lenser not found: %s', identifier); return; }
       if (args.json) { printJson(lenser); return; }
       consola.info('ID:      %s', lenser.id);
+      consola.info('Username:%s', displayRunnerHandle(lenser));
       consola.info('Name:    %s', lenser.name);
       consola.info('Type:    %s', lenser.adapter_type);
       consola.info('Active:  %s', lenser.is_active ? 'yes' : 'no');
@@ -275,12 +402,14 @@ const view = defineCommand({
 const enable = defineCommand({
   meta: { name: 'enable', description: 'Re-activate a previously deactivated AI lenser.' },
   args: {
-    id: { type: 'positional', description: 'Lenser UUID', required: true },
+    id: { type: 'positional', description: 'Lenser ID, short ID, username, or exact name', required: true },
   },
-  async run({ args }) {
+  async run({ args, rawArgs }) {
     try {
-      await callRpc('fn_runner_enable', { p_adapter_id: args.id }, { requireAuth: true });
-      consola.success('Lenser enabled: %s', args.id);
+      const identifier = readIdentifier(args, rawArgs);
+      const id = await resolveRunnerId(identifier);
+      await callRpc('fn_runner_enable', { p_adapter_id: id }, { requireAuth: true });
+      consola.success('Lenser enabled: %s', identifier);
     } catch (err) { handleError(err); }
   },
 });
@@ -288,15 +417,17 @@ const enable = defineCommand({
 const test = defineCommand({
   meta: { name: 'test', description: 'Send a probe to verify an AI lenser is reachable.' },
   args: {
-    id: { type: 'positional', description: 'Lenser UUID', required: true },
+    id: { type: 'positional', description: 'Lenser ID, short ID, username, or exact name', required: true },
     prompt: { type: 'string', description: 'Probe message to send', default: 'Hello, are you available?' },
   },
-  async run({ args }) {
+  async run({ args, rawArgs }) {
     try {
-      consola.start('Testing lenser %s...', args.id);
+      const identifier = readIdentifier(args, rawArgs);
+      const id = await resolveRunnerId(identifier);
+      consola.start('Testing lenser %s...', identifier);
       const result = await callRpc<Record<string, unknown>>(
         'fn_runner_probe',
-        { p_adapter_id: args.id, p_prompt: args.prompt },
+        { p_adapter_id: id, p_prompt: args.prompt },
         { requireAuth: true }
       );
       consola.success('Lenser responded successfully.');
