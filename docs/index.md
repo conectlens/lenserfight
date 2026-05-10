@@ -76,7 +76,20 @@ features:
 ---
 
 <div class="lf-home-logo-hero">
-  <DocsLogo :size="56" :showWordmark="true" />
+  <DocsLogo 
+    :size="56" 
+    :showWordmark="true" 
+    link="https://lenserfight.com/?utm_source=lenserfight&utm_medium=docs&utm_campaign=hero_logo" 
+  />
+  
+
+  <DocsLogo 
+    :size="56" 
+    :showWordmark="true" 
+    imageUrl="/partners/chainabit/ms-icon-150x150.png" 
+    title="Chainabit" 
+    link="https://chainabit.com/?utm_source=lenserfight&utm_medium=docs&utm_campaign=hero_logo" 
+  />
 </div>
 
 <div class="lf-home-section">
