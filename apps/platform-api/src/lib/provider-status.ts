@@ -117,9 +117,207 @@ async function falStatusChecker(input: CheckProviderStatusInput): Promise<Provid
 registerProviderStatusChecker('fal', falStatusChecker)
 registerProviderStatusChecker('fal-ai', falStatusChecker)
 
-// AN ships: openai-video, google-veo, kling
-// AO ships: suno, google-lyria
-// They register via registerProviderStatusChecker(...) at module-init time.
+// ── Phase AN: video provider checkers ────────────────────────────────────────
+
+async function openaiVideoStatusChecker(
+  input: CheckProviderStatusInput,
+): Promise<ProviderStatusResult> {
+  const apiKey = process.env['OPENAI_API_KEY'] ?? ''
+  const res = await fetch(`https://api.openai.com/v1/video/generations/${input.taskId}`, {
+    headers: { Authorization: `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
+  })
+  if (!res.ok) {
+    return {
+      state:        'failed',
+      errorCode:    `sora_poll_${res.status}`,
+      errorMessage: `Sora poll returned HTTP ${res.status}`,
+    }
+  }
+  const data = (await res.json()) as {
+    status: string
+    data?: Array<{ url: string; duration?: number }>
+  }
+  if (data.status === 'succeeded' && data.data?.length) {
+    const clip = data.data[0]
+    return {
+      state:           'completed',
+      mediaUrl:        clip.url,
+      mimeType:        'video/mp4',
+      durationSeconds: clip.duration ?? undefined,
+    }
+  }
+  if (data.status === 'failed') {
+    return { state: 'failed', errorCode: 'sora_failed', errorMessage: 'Sora generation failed' }
+  }
+  return { state: 'pending' }
+}
+
+async function googleVeoStatusChecker(
+  input: CheckProviderStatusInput,
+): Promise<ProviderStatusResult> {
+  const apiKey = process.env['GOOGLE_AI_API_KEY'] ?? ''
+  // taskId holds the full operation name returned by the Veo submission call.
+  const res = await fetch(
+    `https://us-central1-aiplatform.googleapis.com/v1/${input.taskId}`,
+    { headers: { Authorization: `Bearer ${apiKey}` } },
+  )
+  if (!res.ok) {
+    return {
+      state:        'failed',
+      errorCode:    `veo_poll_${res.status}`,
+      errorMessage: `Veo operation poll returned HTTP ${res.status}`,
+    }
+  }
+  const data = (await res.json()) as {
+    done?: boolean
+    error?: { message: string }
+    response?: {
+      generateVideoResponse?: {
+        generatedSamples?: Array<{ video?: { uri: string }; durationSeconds?: number }>
+      }
+    }
+  }
+  if (data.error) {
+    return { state: 'failed', errorCode: 'veo_error', errorMessage: data.error.message }
+  }
+  if (!data.done) return { state: 'pending' }
+
+  const samples = data.response?.generateVideoResponse?.generatedSamples ?? []
+  if (samples.length) {
+    const sample = samples[0]
+    return {
+      state:           'completed',
+      mediaUrl:        sample.video?.uri,
+      mimeType:        'video/mp4',
+      durationSeconds: sample.durationSeconds ?? undefined,
+    }
+  }
+  return { state: 'failed', errorCode: 'veo_no_samples', errorMessage: 'No video samples returned' }
+}
+
+async function klingStatusChecker(
+  input: CheckProviderStatusInput,
+): Promise<ProviderStatusResult> {
+  const apiKey = process.env['KLING_API_KEY'] ?? ''
+  const res = await fetch(`https://api.klingai.com/v1/videos/text2video/${input.taskId}`, {
+    headers: { Authorization: `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
+  })
+  if (!res.ok) {
+    return {
+      state:        'failed',
+      errorCode:    `kling_poll_${res.status}`,
+      errorMessage: `Kling poll returned HTTP ${res.status}`,
+    }
+  }
+  const data = (await res.json()) as {
+    data?: {
+      task_status: string
+      task_result?: { videos?: Array<{ url: string; duration?: string }> }
+    }
+  }
+  const task = data.data
+  if (!task) return { state: 'failed', errorCode: 'kling_no_data' }
+
+  if (task.task_status === 'succeed') {
+    const video = task.task_result?.videos?.[0]
+    return {
+      state:           'completed',
+      mediaUrl:        video?.url,
+      mimeType:        'video/mp4',
+      durationSeconds: video?.duration ? Number.parseFloat(video.duration) : undefined,
+    }
+  }
+  if (task.task_status === 'failed') {
+    return { state: 'failed', errorCode: 'kling_failed' }
+  }
+  return { state: 'pending' }
+}
+
+registerProviderStatusChecker('openai-video', openaiVideoStatusChecker)
+registerProviderStatusChecker('sora', openaiVideoStatusChecker)
+registerProviderStatusChecker('google-veo', googleVeoStatusChecker)
+registerProviderStatusChecker('veo', googleVeoStatusChecker)
+registerProviderStatusChecker('kling', klingStatusChecker)
+
+// ── Phase AO: audio provider checkers ────────────────────────────────────────
+
+async function sunoStatusChecker(
+  input: CheckProviderStatusInput,
+): Promise<ProviderStatusResult> {
+  const apiKey = process.env['SUNO_API_KEY'] ?? ''
+  const res = await fetch(
+    `https://api.sunoapi.org/api/get?ids=${encodeURIComponent(input.taskId)}`,
+    { headers: { Authorization: `Bearer ${apiKey}` } },
+  )
+  if (!res.ok) {
+    return {
+      state:        'failed',
+      errorCode:    `suno_poll_${res.status}`,
+      errorMessage: `Suno poll returned HTTP ${res.status}`,
+    }
+  }
+  const data = (await res.json()) as Array<{
+    status?: string
+    audio_url?: string
+    duration?: number
+  }>
+  const clip = data[0]
+  if (!clip) return { state: 'pending' }
+
+  if (clip.status === 'complete' && clip.audio_url) {
+    return {
+      state:           'completed',
+      mediaUrl:        clip.audio_url,
+      mimeType:        'audio/mpeg',
+      durationSeconds: clip.duration ?? undefined,
+    }
+  }
+  if (clip.status === 'error') {
+    return { state: 'failed', errorCode: 'suno_error' }
+  }
+  return { state: 'pending' }
+}
+
+async function googleLyriaStatusChecker(
+  input: CheckProviderStatusInput,
+): Promise<ProviderStatusResult> {
+  // Lyria uses the same Google Operations API as Veo — share the poll pattern.
+  const apiKey = process.env['GOOGLE_AI_API_KEY'] ?? ''
+  const res = await fetch(
+    `https://us-central1-aiplatform.googleapis.com/v1/${input.taskId}`,
+    { headers: { Authorization: `Bearer ${apiKey}` } },
+  )
+  if (!res.ok) {
+    return {
+      state:        'failed',
+      errorCode:    `lyria_poll_${res.status}`,
+      errorMessage: `Lyria operation poll returned HTTP ${res.status}`,
+    }
+  }
+  const data = (await res.json()) as {
+    done?: boolean
+    error?: { message: string }
+    response?: { audioContent?: string; durationSeconds?: number }
+  }
+  if (data.error) {
+    return { state: 'failed', errorCode: 'lyria_error', errorMessage: data.error.message }
+  }
+  if (!data.done) return { state: 'pending' }
+
+  if (data.response?.audioContent) {
+    return {
+      state:           'completed',
+      mediaUrl:        `data:audio/mpeg;base64,${data.response.audioContent}`,
+      mimeType:        'audio/mpeg',
+      durationSeconds: data.response.durationSeconds ?? undefined,
+    }
+  }
+  return { state: 'failed', errorCode: 'lyria_no_content' }
+}
+
+registerProviderStatusChecker('suno', sunoStatusChecker)
+registerProviderStatusChecker('google-lyria', googleLyriaStatusChecker)
+registerProviderStatusChecker('lyria', googleLyriaStatusChecker)
 
 export const __testing = {
   /** Test helper — replaces all registered checkers for a single test. */
