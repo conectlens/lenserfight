@@ -41,7 +41,7 @@ const OPTIONAL_CRONS = [
 const MAX_LAG_MINUTES = 5
 
 // Accept VITE_SUPABASE_URL as a fallback (local dev .env.local convention)
-const url = process.env['SUPABASE_URL'] ?? process.env['VITE_SUPABASE_URL']
+const url = process.env['SUPABASE_URL'] ?? process.env['SUPABASE_URL']
 const isLocal = url && (url.includes('127.0.0.1') || url.includes('localhost'))
 
 function resolveServiceRoleKey() {
@@ -70,9 +70,9 @@ if (!url || !key) {
 
 const REST = `${url}/rest/v1`
 const headers = {
-  apikey:          key,
-  Authorization:   `Bearer ${key}`,
-  'Content-Type':  'application/json',
+  apikey: key,
+  Authorization: `Bearer ${key}`,
+  'Content-Type': 'application/json',
 }
 
 async function rpcQuery(fn, params = {}) {
@@ -91,12 +91,12 @@ async function tableQuery(table, qs = '') {
   return res.json()
 }
 
-const GREEN  = '\x1b[32m'
-const RED    = '\x1b[31m'
+const GREEN = '\x1b[32m'
+const RED = '\x1b[31m'
 const YELLOW = '\x1b[33m'
-const RESET  = '\x1b[0m'
+const RESET = '\x1b[0m'
 
-const ok   = (msg) => console.log(`${GREEN}  ✔  ${RESET}${msg}`)
+const ok = (msg) => console.log(`${GREEN}  ✔  ${RESET}${msg}`)
 const fail = (msg) => console.error(`${RED}  ✘  ${RESET}${msg}`)
 const warn = (msg) => console.warn(`${YELLOW}  ⚠  ${RESET}${msg}`)
 

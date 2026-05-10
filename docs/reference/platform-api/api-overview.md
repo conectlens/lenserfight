@@ -30,7 +30,7 @@ Most integrations use both: the Community API to read lens and workflow definiti
 | Production (`NODE_ENV=production`) | `https://api.lenserfight.com` |
 | Development (`NODE_ENV=development`) | `http://localhost:8786` |
 
-Never hardcode the URL — always read it from the environment variable `VITE_API_URL` (frontend) or `NODE_ENV` (server-side).
+Never hardcode the URL — always read it from the environment variable `API_URL` (frontend) or `NODE_ENV` (server-side).
 :::
 
 ## Current HTTP surface

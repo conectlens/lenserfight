@@ -62,7 +62,7 @@ The following are high-signal, low-friction contributions:
 
 ## What to avoid
 
-- Do not add new `VITE_FEATURE_*` flags without a matching entry in `docs/reference/known-preview-surfaces.md`.
+- Do not add new `FEATURE_*` flags without a matching entry in `docs/reference/known-preview-surfaces.md`.
 - Do not touch `supabase/migrations/` without reading the [migration risk checklist](/how-to/contributors/release-checklist).
 - Do not claim a surface is "Stable" in docs if it requires a feature flag or a cloud environment.
 

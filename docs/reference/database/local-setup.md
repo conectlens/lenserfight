@@ -208,7 +208,7 @@ mkdir -p ~/.lenserfight/lenses ~/.lenserfight/media
 echo '{ "defaultAdapterId": "local" }' > ~/.lenserfight/config.json
 
 # Set data source
-echo 'VITE_DATA_SOURCE=file' >> .env.local
+echo 'DATA_SOURCE=file' >> .env.local
 
 # Start the app
 pnpm nx run web:serve
