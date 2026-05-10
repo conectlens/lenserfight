@@ -1,15 +1,15 @@
-import { defineCommand } from 'citty';
-import consola from 'consola';
-import { type PrivateBattleFrontmatter } from '@lenserfight/types';
-import { callRpc, callRest, handleError } from '../utils/api';
-import { assertSafe } from '../lib/safety';
+import { defineCommand } from 'citty'
+import consola from 'consola'
+import { type PrivateBattleFrontmatter } from '@lenserfight/types'
+import { callRpc, callRest, handleError } from '../utils/api'
+import { assertSafe } from '../lib/safety'
 import {
   buildWorkflowSimulationReport,
   parseAutomationDocument,
   writeWorkflowSimulationArtifacts,
-} from '../utils/automation-objects';
-import { printTable, printJson, truncate } from '../utils/output';
-import { A } from '../utils/ansi';
+} from '../utils/automation-objects'
+import { printTable, printJson, truncate } from '../utils/output'
+import { A } from '../utils/ansi'
 
 // ---------------------------------------------------------------------------
 // battle create
@@ -57,27 +57,27 @@ const create = defineCommand({
           p_rubric_id: args['rubric-id'] || null,
         },
         { requireAuth: true }
-      );
+      )
 
       if (args.json) {
-        printJson(battle);
-        return;
+        printJson(battle)
+        return
       }
 
-      consola.success('Battle created.');
-      consola.info('ID:     %s', battle['id']);
-      consola.info('Title:  %s', battle['title']);
-      consola.info('Status: %s', battle['status']);
-      consola.info('');
-      consola.info('Next steps:');
-      consola.info('  lf battle open %s         — open for entries', battle['id']);
-      consola.info('  lf battle invite %s --email <email>', battle['id']);
-      consola.info('  lf battle view %s', battle['id']);
+      consola.success('Battle created.')
+      consola.info('ID:     %s', battle['id'])
+      consola.info('Title:  %s', battle['title'])
+      consola.info('Status: %s', battle['status'])
+      consola.info('')
+      consola.info('Next steps:')
+      consola.info('  lf battle open %s         — open for entries', battle['id'])
+      consola.info('  lf battle invite %s --email <email>', battle['id'])
+      consola.info('  lf battle view %s', battle['id'])
     } catch (err) {
-      handleError(err);
+      handleError(err)
     }
   },
-});
+})
 
 // ---------------------------------------------------------------------------
 // battle join
@@ -115,8 +115,12 @@ const join = defineCommand({
     },
   },
   async run({ args }) {
-    if (args.mode === 'local' && !args.device) {
-      consola.warn('Local mode selected but no --device provided. Use `lf gateway devices` to find your device ID.');
+    const mode = args.mode || 'cloud'
+
+    if (mode === 'local' && !args.device) {
+      consola.warn(
+        'Local mode selected but no --device provided. Use `lf gateway devices` to find your device ID.'
+      )
     }
 
     try {
@@ -125,34 +129,36 @@ const join = defineCommand({
         {
           p_battle_id: args.id,
           p_agent_id: args.agent || null,
-          p_runner_mode: args.mode || 'cloud',
+          p_runner_mode: mode,
           p_device_id: args.device || null,
         },
         { requireAuth: true }
-      );
+      )
 
       if (args.json) {
-        printJson(result ?? { battle_id: args.id, joined: true });
-        return;
+        printJson(result ?? { battle_id: args.id, joined: true })
+        return
       }
 
-      consola.success('Joined battle %s.', args.id);
-      if (args.agent) consola.info('Agent:  %s', args.agent);
-      if (args.mode !== 'cloud') consola.info('Mode:   %s', args.mode);
-      if (args.device) consola.info('Device: %s', args.device);
-      consola.info('');
-      consola.info('Submit your entry:');
-      if (args.mode === 'local') {
-        consola.info('  lf battle submit %s --run-id <run-id> --attestation', args.id);
+      consola.success('Joined battle %s.', args.id)
+      if (args.agent) consola.info('Agent:  %s', args.agent)
+      if (mode !== 'cloud') consola.info('Mode:   %s', mode)
+      if (args.device) consola.info('Device: %s', args.device)
+      consola.info('')
+      consola.info('Submit your entry:')
+      if (mode === 'local') {
+        consola.info('  lf battle submit %s --run-id <run-id> --attestation', args.id)
       } else {
-        consola.info('  lf battle submit %s --text "your response"', args.id);
-        consola.info('  lf run exec --prompt "..." --model claude-sonnet-4-6 --byok anthropic  (then submit with --run-id)');
+        consola.info('  lf battle submit %s --text "your response"', args.id)
+        consola.info(
+          '  lf run exec --prompt "..." --model claude-sonnet-4-6 --byok anthropic  (then submit with --run-id)'
+        )
       }
     } catch (err) {
-      handleError(err);
+      handleError(err)
     }
   },
-});
+})
 
 // ---------------------------------------------------------------------------
 // battle list
@@ -186,26 +192,21 @@ const list = defineCommand({
   },
   async run({ args }) {
     try {
-      const battles = await callRpc<Array<Record<string, unknown>>>(
-        'fn_battles_list_public',
-        {
-          p_limit: parseInt(args.limit, 10),
-          p_offset: parseInt(args.offset, 10),
-        }
-      );
+      const battles = await callRpc<Array<Record<string, unknown>>>('fn_battles_list_public', {
+        p_limit: parseInt(args.limit, 10),
+        p_offset: parseInt(args.offset, 10),
+      })
 
       if (!Array.isArray(battles) || battles.length === 0) {
-        consola.info('No public battles found.');
-        return;
+        consola.info('No public battles found.')
+        return
       }
 
-      const filtered = args.status
-        ? battles.filter((b) => b['status'] === args.status)
-        : battles;
+      const filtered = args.status ? battles.filter((b) => b['status'] === args.status) : battles
 
       if (args.json) {
-        printJson(filtered);
-        return;
+        printJson(filtered)
+        return
       }
 
       printTable(
@@ -216,13 +217,13 @@ const list = defineCommand({
           String(b['status'] ?? ''),
           truncate(String(b['task_prompt'] ?? ''), 48),
         ])
-      );
-      consola.info('%d battle(s) shown.', filtered.length);
+      )
+      consola.info('%d battle(s) shown.', filtered.length)
     } catch (err) {
-      handleError(err);
+      handleError(err)
     }
   },
-});
+})
 
 // ---------------------------------------------------------------------------
 // battle view
@@ -246,35 +247,34 @@ const view = defineCommand({
   },
   async run({ args }) {
     try {
-      const battle = await callRpc<Record<string, unknown>>(
-        'fn_battles_get_public',
-        { p_battle_id: args.id }
-      );
+      const battle = await callRpc<Record<string, unknown>>('fn_battles_get_public', {
+        p_battle_id: args.id,
+      })
 
       if (!battle) {
-        consola.error('Battle not found or not public.');
-        process.exitCode = 1;
-        return;
+        consola.error('Battle not found or not public.')
+        process.exitCode = 1
+        return
       }
 
       if (args.json) {
-        printJson(battle);
-        return;
+        printJson(battle)
+        return
       }
 
-      consola.log('');
-      consola.log('  Title:   %s', battle['title']);
-      consola.log('  ID:      %s', battle['id']);
-      consola.log('  Status:  %s', battle['status']);
-      consola.log('  Task:    %s', battle['task_prompt']);
-      if (battle['voting_opens_at'])  consola.log('  Voting opens:  %s', battle['voting_opens_at']);
-      if (battle['voting_closes_at']) consola.log('  Voting closes: %s', battle['voting_closes_at']);
-      consola.log('');
+      consola.log('')
+      consola.log('  Title:   %s', battle['title'])
+      consola.log('  ID:      %s', battle['id'])
+      consola.log('  Status:  %s', battle['status'])
+      consola.log('  Task:    %s', battle['task_prompt'])
+      if (battle['voting_opens_at']) consola.log('  Voting opens:  %s', battle['voting_opens_at'])
+      if (battle['voting_closes_at']) consola.log('  Voting closes: %s', battle['voting_closes_at'])
+      consola.log('')
     } catch (err) {
-      handleError(err);
+      handleError(err)
     }
   },
-});
+})
 
 // ---------------------------------------------------------------------------
 // battle run (file-first private battle scaffold)
@@ -292,7 +292,8 @@ const run = defineCommand({
     },
     execute: {
       type: 'boolean',
-      description: 'Actually call AI providers and stream outputs (requires provider/model in participant frontmatter)',
+      description:
+        'Actually call AI providers and stream outputs (requires provider/model in participant frontmatter)',
       default: false,
     },
     json: {
@@ -302,7 +303,8 @@ const run = defineCommand({
     },
     judge: {
       type: 'string',
-      description: 'Verdict mode: ai (default) — auto-judge after execution | human — skip AI judge, vote manually',
+      description:
+        'Verdict mode: ai (default) — auto-judge after execution | human — skip AI judge, vote manually',
       default: 'ai',
     },
     'no-judge': {
@@ -324,110 +326,127 @@ const run = defineCommand({
     }
 
     const frontmatter = parsed.document.frontmatter as PrivateBattleFrontmatter
-    const participants = (frontmatter.participants ?? []).map((participant) => `${participant.type}:${participant.ref}`)
+    const participants = (frontmatter.participants ?? []).map(
+      (participant) => `${participant.type}:${participant.ref}`
+    )
 
     // ── Execution mode ───────────────────────────────────────────────────────
     if (args.execute) {
-      const execParticipants = (frontmatter.participants ?? []).filter(
-        (p) => p.provider && p.model
-      );
+      const execParticipants = (frontmatter.participants ?? []).filter((p) => p.provider && p.model)
       if (execParticipants.length < 2) {
         consola.error(
           'Execution requires at least 2 participants with `provider` and `model` set in frontmatter.'
-        );
-        consola.info('Example frontmatter:');
-        consola.info('  participants:');
-        consola.info('    - type: model');
-        consola.info('      ref: claude');
-        consola.info('      provider: anthropic');
-        consola.info('      model: claude-sonnet-4-6');
-        process.exitCode = 1;
-        return;
+        )
+        consola.info('Example frontmatter:')
+        consola.info('  participants:')
+        consola.info('    - type: model')
+        consola.info('      ref: claude')
+        consola.info('      provider: anthropic')
+        consola.info('      model: claude-sonnet-4-6')
+        process.exitCode = 1
+        return
       }
 
       // Build a local battle state from the frontmatter and run it
-      const { localBattleStore: lbs, localBattleLenser: lbr } = await import('../utils/local-battle-engine');
+      const { localBattleStore: lbs, localBattleLenser: lbr } =
+        await import('../utils/local-battle-engine')
       const state = lbs.create(
         frontmatter.name ?? frontmatter.id ?? 'PRIVATE_BATTLE',
         String((parsed.document as any).body ?? frontmatter.name ?? 'Complete the task.')
-      );
+      )
 
       // Add up to 2 contenders
-      const [pA, pB] = execParticipants;
+      const [pA, pB] = execParticipants
       lbs.addContender(state.id, {
         slot: 'A',
         label: pA.ref,
         provider: pA.provider!,
         model: pA.model!,
         keyVar: pA.key_var,
-      });
+      })
       lbs.addContender(state.id, {
         slot: 'B',
         label: pB.ref,
         provider: pB.provider!,
         model: pB.model!,
         keyVar: pB.key_var,
-      });
+      })
 
-      const loaded = lbs.load(state.id);
-      consola.start('Executing %s…', frontmatter.name ?? frontmatter.id);
+      const loaded = lbs.load(state.id)
+      consola.start('Executing %s…', frontmatter.name ?? frontmatter.id)
       const result = await lbr.run(loaded, (slot, delta) => {
-        const color = slot === 'A' ? A.brightBlue : A.brightGreen;
-        process.stdout.write(`${A.bold}${color}[${slot}]${A.reset} ${delta}`);
-      });
+        const color = slot === 'A' ? A.brightBlue : A.brightGreen
+        process.stdout.write(`${A.bold}${color}[${slot}]${A.reset} ${delta}`)
+      })
 
-      process.stdout.write('\n\n');
-      lbs.markExecuted(state.id, result);
+      process.stdout.write('\n\n')
+      lbs.markExecuted(state.id, result)
 
       // Run AI judge (unless opted out)
-      const skipAiJudge = args['no-judge'] || args.judge === 'human';
-      let judgeSection = '';
+      const skipAiJudge = args['no-judge'] || args.judge === 'human'
+      let judgeSection = ''
       if (!skipAiJudge) {
-        const judgeProvider = localAiJudge.resolveJudgeProvider();
+        const judgeProvider = localAiJudge.resolveJudgeProvider()
         if (judgeProvider) {
-          const keyHint = judgeProvider.provider === 'ollama'
-            ? 'Ollama (local, free)'
-            : `${judgeProvider.provider.toUpperCase()}_API_KEY`;
-          consola.info('AI judge evaluating… (~600 input + ~100 output tokens via %s)', keyHint);
+          const keyHint =
+            judgeProvider.provider === 'ollama'
+              ? 'Ollama (local, free)'
+              : `${judgeProvider.provider.toUpperCase()}_API_KEY`
+          consola.info('AI judge evaluating… (~600 input + ~100 output tokens via %s)', keyHint)
           try {
-            const loadedForJudge = lbs.load(state.id);
-            const verdict = await localAiJudge.judge(loadedForJudge);
+            const loadedForJudge = lbs.load(state.id)
+            const verdict = await localAiJudge.judge(loadedForJudge)
             const judgeVote: LocalVote = {
               slot: verdict.winner,
               source: 'ai',
               rationale: verdict.rationale,
               votedAt: new Date().toISOString(),
-            };
-            lbs.recordVote(state.id, judgeVote);
-            judgeSection = `\n\n---\n\n## Judge Verdict\n\n**Winner:** Contender ${verdict.winner === 'draw' ? '(Draw)' : verdict.winner}  \n**Rationale:** ${verdict.rationale}  \n**Judge model:** ${verdict.provider}/${verdict.model}\n`;
-            consola.success('Winner: %s', verdict.winner === 'draw' ? 'Draw' : `Contender ${verdict.winner}`);
-            consola.info('Rationale: %s', verdict.rationale);
+            }
+            lbs.recordVote(state.id, judgeVote)
+            judgeSection = `\n\n---\n\n## Judge Verdict\n\n**Winner:** Contender ${verdict.winner === 'draw' ? '(Draw)' : verdict.winner}  \n**Rationale:** ${verdict.rationale}  \n**Judge model:** ${verdict.provider}/${verdict.model}\n`
+            consola.success(
+              'Winner: %s',
+              verdict.winner === 'draw' ? 'Draw' : `Contender ${verdict.winner}`
+            )
+            consola.info('Rationale: %s', verdict.rationale)
           } catch (judgeErr) {
-            consola.warn('AI judge failed: %s', judgeErr instanceof Error ? judgeErr.message : String(judgeErr));
+            consola.warn(
+              'AI judge failed: %s',
+              judgeErr instanceof Error ? judgeErr.message : String(judgeErr)
+            )
           }
         } else {
-          consola.warn('AI judge skipped — no provider key found.');
+          consola.warn('AI judge skipped — no provider key found.')
         }
       }
 
       // Write result files alongside the source file
-      const { writeFileSync: wfs } = require('node:fs') as typeof import('node:fs');
-      const { resolve: res } = require('node:path') as typeof import('node:path');
-      const base = (frontmatter.slug ?? frontmatter.id ?? 'battle').replace(/[^a-z0-9-]/gi, '-').toLowerCase();
-      const resultMd = res(process.cwd(), `${base}.result.md`);
-      const resultJson = res(process.cwd(), `${base}.result.json`);
-      wfs(resultMd, `# ${frontmatter.name ?? base} — Results\n\n## Contender A (${pA.provider}/${pA.model})\n\n${result.A}\n\n---\n\n## Contender B (${pB.provider}/${pB.model})\n\n${result.B}\n${judgeSection}`, 'utf-8');
-      wfs(resultJson, JSON.stringify({ ...result, battle: state }, null, 2), 'utf-8');
+      const { writeFileSync: wfs } = require('node:fs') as typeof import('node:fs')
+      const { resolve: res } = require('node:path') as typeof import('node:path')
+      const base = (frontmatter.slug ?? frontmatter.id ?? 'battle')
+        .replace(/[^a-z0-9-]/gi, '-')
+        .toLowerCase()
+      const resultMd = res(process.cwd(), `${base}.result.md`)
+      const resultJson = res(process.cwd(), `${base}.result.json`)
+      wfs(
+        resultMd,
+        `# ${frontmatter.name ?? base} — Results\n\n## Contender A (${pA.provider}/${pA.model})\n\n${result.A}\n\n---\n\n## Contender B (${pB.provider}/${pB.model})\n\n${result.B}\n${judgeSection}`,
+        'utf-8'
+      )
+      wfs(resultJson, JSON.stringify({ ...result, battle: state }, null, 2), 'utf-8')
 
-      if (args.json) { printJson({ ...result, resultMd, resultJson }); return; }
-      consola.success('Execution complete in %dms.', result.durationMs);
-      consola.info('Results: %s', resultMd);
-      consola.info('JSON:    %s', resultJson);
-      if (skipAiJudge || !judgeSection) {
-        consola.info('');
-        consola.info('Vote: lf battle local vote --slot A|B|draw --id %s', state.id.slice(0, 8));
+      if (args.json) {
+        printJson({ ...result, resultMd, resultJson })
+        return
       }
-      return;
+      consola.success('Execution complete in %dms.', result.durationMs)
+      consola.info('Results: %s', resultMd)
+      consola.info('JSON:    %s', resultJson)
+      if (skipAiJudge || !judgeSection) {
+        consola.info('')
+        consola.info('Vote: lf battle local vote --slot A|B|draw --id %s', state.id.slice(0, 8))
+      }
+      return
     }
 
     // ── Simulation-only mode (original behaviour) ────────────────────────────
@@ -448,7 +467,11 @@ const run = defineCommand({
       participants.length >= 2 ? 'ready' : 'blocked',
       participants.length > 0 ? participants : ['No participants were declared in the battle spec.']
     )
-    const artifacts = writeWorkflowSimulationArtifacts(frontmatter.slug ?? frontmatter.id, summary, report)
+    const artifacts = writeWorkflowSimulationArtifacts(
+      frontmatter.slug ?? frontmatter.id,
+      summary,
+      report
+    )
 
     if (args.json) {
       printJson({ ...summary, artifacts })
@@ -459,9 +482,11 @@ const run = defineCommand({
     consola.info('Participants: %d', participants.length)
     consola.info('JSON report: %s', artifacts.jsonPath)
     consola.info('Markdown report: %s', artifacts.reportPath)
-    if (participants.some((_, i) => (frontmatter.participants?.[i]?.provider))) {
+    if (participants.some((_, i) => frontmatter.participants?.[i]?.provider)) {
       consola.info('')
-      consola.info('Tip: participants have provider/model set — run with --execute to actually call AI:')
+      consola.info(
+        'Tip: participants have provider/model set — run with --execute to actually call AI:'
+      )
       consola.info('  lf battle run %s --execute', filePath)
     }
   },
@@ -503,7 +528,8 @@ const submit = defineCommand({
     },
     'device-id': {
       type: 'string',
-      description: 'Device UUID used for local execution (legacy display only; signed attestations use --envelope-kid)',
+      description:
+        'Device UUID used for local execution (legacy display only; signed attestations use --envelope-kid)',
       default: '',
     },
     'envelope-kid': {
@@ -533,7 +559,8 @@ const submit = defineCommand({
     },
     'workflow-hash': {
       type: 'string',
-      description: 'Optional workflow content hash for attestation metadata (matches fn_record_signed_attestation)',
+      description:
+        'Optional workflow content hash for attestation metadata (matches fn_record_signed_attestation)',
       default: '',
     },
     'lens-hash': {
@@ -579,11 +606,11 @@ const submit = defineCommand({
         const submissionId = await callRpc<string>(
           'fn_battle_submit_workflow',
           {
-            p_battle_id:   args.id,
+            p_battle_id: args.id,
             p_workflow_id: args.workflow,
-            p_run_id:      args['run-id'] || null,
-            p_agent_id:    args.agent || null,
-            p_content:     args.text || null,
+            p_run_id: args['run-id'] || null,
+            p_agent_id: args.agent || null,
+            p_content: args.text || null,
           },
           { requireAuth: true }
         )
@@ -595,7 +622,10 @@ const submit = defineCommand({
         if (!args.text) {
           consola.info('Run your workflow, then update with output:')
           consola.info('  lf workflow run %s', args.workflow)
-          consola.info('  (update submission %s with result via fn_battle_update_workflow_submission)', submissionId)
+          consola.info(
+            '  (update submission %s with result via fn_battle_update_workflow_submission)',
+            submissionId
+          )
         }
       } catch (err) {
         handleError(err)
@@ -604,16 +634,18 @@ const submit = defineCommand({
     }
 
     if (!args.text && !args.url && !args['run-id']) {
-      consola.error('Provide one of: --text, --url, --run-id, or --workflow');
-      consola.info('Tip: run `lf run exec --prompt "..." --model <model> --byok <provider>` first, then submit the output with --text');
-      process.exitCode = 1;
-      return;
+      consola.error('Provide one of: --text, --url, --run-id, or --workflow')
+      consola.info(
+        'Tip: run `lf run exec --prompt "..." --model <model> --byok <provider>` first, then submit the output with --text'
+      )
+      process.exitCode = 1
+      return
     }
 
     if (args.text && args.url) {
-      consola.error('Provide only one of --text or --url, not both.');
-      process.exitCode = 1;
-      return;
+      consola.error('Provide only one of --text or --url, not both.')
+      process.exitCode = 1
+      return
     }
 
     try {
@@ -631,10 +663,10 @@ const submit = defineCommand({
           p_model_id: null,
         },
         { requireAuth: true }
-      );
+      )
 
       if (args.attestation && args['run-id']) {
-        const submissionId = result?.['id'] as string | undefined;
+        const submissionId = result?.['id'] as string | undefined
         if (submissionId) {
           const missing = [
             'envelope-kid',
@@ -642,18 +674,18 @@ const submit = defineCommand({
             'envelope-nonce',
             'canonical-jcs-b64url',
             'signature-b64url',
-          ].filter((key) => !args[key]);
+          ].filter((key) => !args[key])
 
           if (missing.length > 0) {
             consola.error(
               'Signed attestation required. Missing: %s',
               missing.map((key) => `--${key}`).join(', ')
-            );
+            )
             consola.info(
               'Use the gateway daemon or lenser to produce a signed execution envelope before submitting trust metadata.'
-            );
-            process.exitCode = 2;
-            return;
+            )
+            process.exitCode = 2
+            return
           }
 
           await callRpc<void>(
@@ -673,29 +705,33 @@ const submit = defineCommand({
               p_policy_passed: true,
             },
             { requireAuth: true }
-          );
+          )
           await callRpc<void>(
             'fn_compute_submission_trust',
             { p_submission_id: submissionId },
             { requireAuth: true }
-          );
-          consola.success('Execution attestation recorded.');
+          )
+          consola.success('Execution attestation recorded.')
         }
       }
 
       if (args.json) {
-        printJson(result ?? { battle_id: args.id, submitted: true });
-        return;
+        printJson(result ?? { battle_id: args.id, submitted: true })
+        return
       }
 
-      consola.success('Submission recorded for battle %s.', args.id);
-      if (result?.['id']) consola.info('Submission ID: %s', result['id']);
-      if (args.attestation) consola.info('Trust level computed. Use `lf inspect submission %s` to view.', result?.['id'] ?? args.id);
+      consola.success('Submission recorded for battle %s.', args.id)
+      if (result?.['id']) consola.info('Submission ID: %s', result['id'])
+      if (args.attestation)
+        consola.info(
+          'Trust level computed. Use `lf inspect submission %s` to view.',
+          result?.['id'] ?? args.id
+        )
     } catch (err) {
-      handleError(err);
+      handleError(err)
     }
   },
-});
+})
 
 // ---------------------------------------------------------------------------
 // battle open
@@ -714,15 +750,15 @@ const open = defineCommand({
   },
   async run({ args }) {
     try {
-      await callRpc('fn_battles_open', { p_battle_id: args.id }, { requireAuth: true });
-      consola.success('Battle %s is now open for entries.', args.id);
-      consola.info('Share the battle link or invite participants:');
-      consola.info('  lf battle invite %s --email <email>', args.id);
+      await callRpc('fn_battles_open', { p_battle_id: args.id }, { requireAuth: true })
+      consola.success('Battle %s is now open for entries.', args.id)
+      consola.info('Share the battle link or invite participants:')
+      consola.info('  lf battle invite %s --email <email>', args.id)
     } catch (err) {
-      handleError(err);
+      handleError(err)
     }
   },
-});
+})
 
 // ---------------------------------------------------------------------------
 // battle start-voting
@@ -745,11 +781,11 @@ const startVoting = defineCommand({
     },
   },
   async run({ args }) {
-    const closesAt = new Date(args['closes-at']);
+    const closesAt = new Date(args['closes-at'])
     if (isNaN(closesAt.getTime())) {
-      consola.error('Invalid --closes-at value. Use ISO 8601 format: 2026-05-10T18:00:00Z');
-      process.exitCode = 1;
-      return;
+      consola.error('Invalid --closes-at value. Use ISO 8601 format: 2026-05-10T18:00:00Z')
+      process.exitCode = 1
+      return
     }
 
     try {
@@ -757,13 +793,13 @@ const startVoting = defineCommand({
         'fn_battles_start_voting',
         { p_battle_id: args.id, p_voting_closes_at: closesAt.toISOString() },
         { requireAuth: true }
-      );
-      consola.success('Voting started. Closes at %s.', closesAt.toISOString());
+      )
+      consola.success('Voting started. Closes at %s.', closesAt.toISOString())
     } catch (err) {
-      handleError(err);
+      handleError(err)
     }
   },
-});
+})
 
 // ---------------------------------------------------------------------------
 // battle finalize
@@ -782,14 +818,14 @@ const finalize = defineCommand({
   },
   async run({ args }) {
     try {
-      await callRpc('fn_battles_finalize', { p_battle_id: args.id }, { requireAuth: true });
-      consola.success('Battle %s finalized.', args.id);
-      consola.info('View results: lf battle leaderboard %s', args.id);
+      await callRpc('fn_battles_finalize', { p_battle_id: args.id }, { requireAuth: true })
+      consola.success('Battle %s finalized.', args.id)
+      consola.info('View results: lf battle leaderboard %s', args.id)
     } catch (err) {
-      handleError(err);
+      handleError(err)
     }
   },
-});
+})
 
 // ---------------------------------------------------------------------------
 // battle publish
@@ -808,13 +844,13 @@ const publish = defineCommand({
   },
   async run({ args }) {
     try {
-      await callRpc('fn_battles_publish', { p_battle_id: args.id }, { requireAuth: true });
-      consola.success('Battle %s published.', args.id);
+      await callRpc('fn_battles_publish', { p_battle_id: args.id }, { requireAuth: true })
+      consola.success('Battle %s published.', args.id)
     } catch (err) {
-      handleError(err);
+      handleError(err)
     }
   },
-});
+})
 
 // ---------------------------------------------------------------------------
 // battle leaderboard
@@ -822,7 +858,8 @@ const publish = defineCommand({
 const leaderboard = defineCommand({
   meta: {
     name: 'leaderboard',
-    description: 'Show the scoring leaderboard for a battle (cloud) or your local battles ranked by votes (--local).',
+    description:
+      'Show the scoring leaderboard for a battle (cloud) or your local battles ranked by votes (--local).',
   },
   args: {
     id: {
@@ -849,32 +886,32 @@ const leaderboard = defineCommand({
   async run({ args }) {
     if (args.local) {
       try {
-        const battles = localBattleStore.list();
+        const battles = localBattleStore.list()
         if (!battles.length) {
-          consola.info('No local battles found. Run: lf battle local run --example haiku-shootout');
-          return;
+          consola.info('No local battles found. Run: lf battle local run --example haiku-shootout')
+          return
         }
 
         const ranked = battles
           .map((b) => {
-            const aWins = b.votes.filter((v) => v.slot === 'A').length;
-            const bWins = b.votes.filter((v) => v.slot === 'B').length;
-            const draws = b.votes.filter((v) => v.slot === 'draw').length;
-            const total = b.votes.length;
-            const contA = b.contenders.find((c) => c.slot === 'A');
-            const contB = b.contenders.find((c) => c.slot === 'B');
+            const aWins = b.votes.filter((v) => v.slot === 'A').length
+            const bWins = b.votes.filter((v) => v.slot === 'B').length
+            const draws = b.votes.filter((v) => v.slot === 'draw').length
+            const total = b.votes.length
+            const contA = b.contenders.find((c) => c.slot === 'A')
+            const contB = b.contenders.find((c) => c.slot === 'B')
             const winner =
               total === 0
                 ? '—'
                 : aWins > bWins
-                ? contA?.label ?? 'A'
-                : bWins > aWins
-                ? contB?.label ?? 'B'
-                : 'Draw';
-            return { b, aWins, bWins, draws, total, winner };
+                  ? (contA?.label ?? 'A')
+                  : bWins > aWins
+                    ? (contB?.label ?? 'B')
+                    : 'Draw'
+            return { b, aWins, bWins, draws, total, winner }
           })
           .sort((x, y) => y.total - x.total || y.b.createdAt.localeCompare(x.b.createdAt))
-          .slice(0, parseInt(args.limit, 10));
+          .slice(0, parseInt(args.limit, 10))
 
         if (args.json) {
           printJson(
@@ -886,11 +923,11 @@ const leaderboard = defineCommand({
               votes: { a: aWins, b: bWins, draw: draws, total },
               createdAt: b.createdAt,
             }))
-          );
-          return;
+          )
+          return
         }
 
-        consola.info('Local Battle Leaderboard — ranked by vote count');
+        consola.info('Local Battle Leaderboard — ranked by vote count')
         printTable(
           ['#', 'Name', 'Status', 'Winner', 'A', 'B', 'Draw', 'Total', 'Date'],
           ranked.map(({ b, aWins, bWins, draws, total, winner }, i) => [
@@ -904,33 +941,32 @@ const leaderboard = defineCommand({
             String(total),
             b.createdAt.slice(0, 10),
           ])
-        );
+        )
       } catch (err) {
-        handleError(err);
+        handleError(err)
       }
-      return;
+      return
     }
 
     if (!args.id) {
-      consola.error('Provide a battle UUID or use --local to show local battles.');
-      process.exitCode = 1;
-      return;
+      consola.error('Provide a battle UUID or use --local to show local battles.')
+      process.exitCode = 1
+      return
     }
 
     try {
-      const rows = await callRpc<Array<Record<string, unknown>>>(
-        'fn_battles_leaderboard',
-        { p_battle_id: args.id }
-      );
+      const rows = await callRpc<Array<Record<string, unknown>>>('fn_battles_leaderboard', {
+        p_battle_id: args.id,
+      })
 
       if (!Array.isArray(rows) || rows.length === 0) {
-        consola.info('No scores yet for battle %s.', args.id);
-        return;
+        consola.info('No scores yet for battle %s.', args.id)
+        return
       }
 
       if (args.json) {
-        printJson(rows);
-        return;
+        printJson(rows)
+        return
       }
 
       printTable(
@@ -941,12 +977,12 @@ const leaderboard = defineCommand({
           String(r['score'] ?? '—'),
           String(r['vote_count'] ?? '—'),
         ])
-      );
+      )
     } catch (err) {
-      handleError(err);
+      handleError(err)
     }
   },
-});
+})
 
 // ---------------------------------------------------------------------------
 // battle invite
@@ -974,13 +1010,13 @@ const invite = defineCommand({
         'fn_battles_invite',
         { p_battle_id: args.id, p_email: args.email },
         { requireAuth: true }
-      );
-      consola.success('Invitation sent to %s.', args.email);
+      )
+      consola.success('Invitation sent to %s.', args.email)
     } catch (err) {
-      handleError(err);
+      handleError(err)
     }
   },
-});
+})
 
 // ---------------------------------------------------------------------------
 // battle clone
@@ -1018,21 +1054,21 @@ const clone = defineCommand({
         'fn_battles_clone',
         { p_battle_id: args.id, p_title: args.title, p_slug: args.slug },
         { requireAuth: true }
-      );
+      )
 
       if (args.json) {
-        printJson(result);
-        return;
+        printJson(result)
+        return
       }
 
-      consola.success('Battle cloned.');
-      consola.info('New ID:  %s', result?.['id']);
-      consola.info('Title:   %s', result?.['title'] ?? args.title);
+      consola.success('Battle cloned.')
+      consola.info('New ID:  %s', result?.['id'])
+      consola.info('Title:   %s', result?.['title'] ?? args.title)
     } catch (err) {
-      handleError(err);
+      handleError(err)
     }
   },
-});
+})
 
 // ---------------------------------------------------------------------------
 // battle delete
@@ -1062,20 +1098,18 @@ const deleteBattle = defineCommand({
       forceFlag: '--confirm',
       hasForce: args.confirm,
       description: `Permanently delete battle ${args.id} (creator only).`,
-      affectedResources: [
-        { type: 'battle', name: args.id, scope: 'remote' },
-      ],
+      affectedResources: [{ type: 'battle', name: args.id, scope: 'remote' }],
       rollbackAvailable: false,
-    });
+    })
 
     try {
-      await callRpc('fn_battles_delete', { p_battle_id: args.id }, { requireAuth: true });
-      consola.success('Battle %s deleted.', args.id);
+      await callRpc('fn_battles_delete', { p_battle_id: args.id }, { requireAuth: true })
+      consola.success('Battle %s deleted.', args.id)
     } catch (err) {
-      handleError(err);
+      handleError(err)
     }
   },
-});
+})
 
 // ---------------------------------------------------------------------------
 // battle create-from-template
@@ -1117,22 +1151,22 @@ const createFromTemplate = defineCommand({
           p_slug: args.slug,
         },
         { requireAuth: true }
-      );
+      )
 
       if (args.json) {
-        printJson(result);
-        return;
+        printJson(result)
+        return
       }
 
-      consola.success('Battle created from template.');
-      consola.info('ID:     %s', result?.['id']);
-      consola.info('Title:  %s', result?.['title'] ?? args.title);
-      consola.info('Status: %s', result?.['status']);
+      consola.success('Battle created from template.')
+      consola.info('ID:     %s', result?.['id'])
+      consola.info('Title:  %s', result?.['title'] ?? args.title)
+      consola.info('Status: %s', result?.['status'])
     } catch (err) {
-      handleError(err);
+      handleError(err)
     }
   },
-});
+})
 
 // ---------------------------------------------------------------------------
 // battle vote
@@ -1175,13 +1209,11 @@ const vote = defineCommand({
     },
   },
   async run({ args }) {
-    const allowedValues = ['contender_a', 'contender_b', 'draw'];
+    const allowedValues = ['contender_a', 'contender_b', 'draw']
     if (!allowedValues.includes(args.value)) {
-      consola.error(
-        "Invalid --value. Use one of: 'contender_a', 'contender_b', 'draw'"
-      );
-      process.exitCode = 1;
-      return;
+      consola.error("Invalid --value. Use one of: 'contender_a', 'contender_b', 'draw'")
+      process.exitCode = 1
+      return
     }
 
     try {
@@ -1195,19 +1227,19 @@ const vote = defineCommand({
           p_rationale: args.rationale || null,
         },
         { requireAuth: true }
-      );
+      )
 
       if (args.json) {
-        printJson(result ?? { battle_id: args.id, voted: true });
-        return;
+        printJson(result ?? { battle_id: args.id, voted: true })
+        return
       }
 
-      consola.success('Vote submitted for battle %s.', args.id);
+      consola.success('Vote submitted for battle %s.', args.id)
     } catch (err) {
-      handleError(err);
+      handleError(err)
     }
   },
-});
+})
 
 // ---------------------------------------------------------------------------
 // battle close-voting
@@ -1215,8 +1247,7 @@ const vote = defineCommand({
 const closeVoting = defineCommand({
   meta: {
     name: 'close-voting',
-    description:
-      'Close the voting phase and transition battle to scoring (creator only).',
+    description: 'Close the voting phase and transition battle to scoring (creator only).',
   },
   args: {
     id: {
@@ -1227,21 +1258,14 @@ const closeVoting = defineCommand({
   },
   async run({ args }) {
     try {
-      await callRpc(
-        'fn_battle_close_voting',
-        { p_battle_id: args.id },
-        { requireAuth: true }
-      );
-      consola.success(
-        'Voting closed for battle %s. Now in scoring phase.',
-        args.id
-      );
-      consola.info('Next: lf battle finalize %s', args.id);
+      await callRpc('fn_battle_close_voting', { p_battle_id: args.id }, { requireAuth: true })
+      consola.success('Voting closed for battle %s. Now in scoring phase.', args.id)
+      consola.info('Next: lf battle finalize %s', args.id)
     } catch (err) {
-      handleError(err);
+      handleError(err)
     }
   },
-});
+})
 
 // ---------------------------------------------------------------------------
 // battle close
@@ -1249,8 +1273,7 @@ const closeVoting = defineCommand({
 const closeBattle = defineCommand({
   meta: {
     name: 'close',
-    description:
-      'Close a battle (alternate path — transitions to closed state).',
+    description: 'Close a battle (alternate path — transitions to closed state).',
   },
   args: {
     id: {
@@ -1261,17 +1284,13 @@ const closeBattle = defineCommand({
   },
   async run({ args }) {
     try {
-      await callRpc(
-        'fn_battles_close',
-        { p_battle_id: args.id },
-        { requireAuth: true }
-      );
-      consola.success('Battle %s closed.', args.id);
+      await callRpc('fn_battles_close', { p_battle_id: args.id }, { requireAuth: true })
+      consola.success('Battle %s closed.', args.id)
     } catch (err) {
-      handleError(err);
+      handleError(err)
     }
   },
-});
+})
 
 // ---------------------------------------------------------------------------
 // battle archive
@@ -1290,17 +1309,13 @@ const archive = defineCommand({
   },
   async run({ args }) {
     try {
-      await callRpc(
-        'fn_battles_archive',
-        { p_battle_id: args.id },
-        { requireAuth: true }
-      );
-      consola.success('Battle %s archived.', args.id);
+      await callRpc('fn_battles_archive', { p_battle_id: args.id }, { requireAuth: true })
+      consola.success('Battle %s archived.', args.id)
     } catch (err) {
-      handleError(err);
+      handleError(err)
     }
   },
-});
+})
 
 // ---------------------------------------------------------------------------
 // battle retract
@@ -1319,20 +1334,13 @@ const retract = defineCommand({
   },
   async run({ args }) {
     try {
-      await callRpc(
-        'fn_battles_retract',
-        { p_battle_id: args.id },
-        { requireAuth: true }
-      );
-      consola.success(
-        'Battle %s retracted and reverted to draft.',
-        args.id
-      );
+      await callRpc('fn_battles_retract', { p_battle_id: args.id }, { requireAuth: true })
+      consola.success('Battle %s retracted and reverted to draft.', args.id)
     } catch (err) {
-      handleError(err);
+      handleError(err)
     }
   },
-});
+})
 
 // ---------------------------------------------------------------------------
 // battle comments
@@ -1355,14 +1363,12 @@ const comments = defineCommand({
     },
     'before-ts': {
       type: 'string',
-      description:
-        'Pagination cursor: return comments before this ISO timestamp',
+      description: 'Pagination cursor: return comments before this ISO timestamp',
       default: '',
     },
     'before-id': {
       type: 'string',
-      description:
-        'Pagination cursor: return comments before this comment UUID',
+      description: 'Pagination cursor: return comments before this comment UUID',
       default: '',
     },
     json: {
@@ -1373,24 +1379,21 @@ const comments = defineCommand({
   },
   async run({ args }) {
     try {
-      const rows = await callRpc<Array<Record<string, unknown>>>(
-        'fn_get_battle_comments',
-        {
-          p_battle_id: args.id,
-          p_limit: parseInt(args.limit, 10),
-          p_before_ts: args['before-ts'] || null,
-          p_before_id: args['before-id'] || null,
-        }
-      );
+      const rows = await callRpc<Array<Record<string, unknown>>>('fn_get_battle_comments', {
+        p_battle_id: args.id,
+        p_limit: parseInt(args.limit, 10),
+        p_before_ts: args['before-ts'] || null,
+        p_before_id: args['before-id'] || null,
+      })
 
       if (!Array.isArray(rows) || rows.length === 0) {
-        consola.info('No comments found for battle %s.', args.id);
-        return;
+        consola.info('No comments found for battle %s.', args.id)
+        return
       }
 
       if (args.json) {
-        printJson(rows);
-        return;
+        printJson(rows)
+        return
       }
 
       printTable(
@@ -1401,13 +1404,13 @@ const comments = defineCommand({
           truncate(String(r['body'] ?? ''), 60),
           String(r['created_at'] ?? ''),
         ])
-      );
-      consola.info('%d comment(s) shown.', rows.length);
+      )
+      consola.info('%d comment(s) shown.', rows.length)
     } catch (err) {
-      handleError(err);
+      handleError(err)
     }
   },
-});
+})
 
 // ---------------------------------------------------------------------------
 // battle messages
@@ -1430,14 +1433,12 @@ const messages = defineCommand({
     },
     'before-ts': {
       type: 'string',
-      description:
-        'Pagination cursor: return messages before this ISO timestamp',
+      description: 'Pagination cursor: return messages before this ISO timestamp',
       default: '',
     },
     'before-id': {
       type: 'string',
-      description:
-        'Pagination cursor: return messages before this message UUID',
+      description: 'Pagination cursor: return messages before this message UUID',
       default: '',
     },
     json: {
@@ -1448,24 +1449,21 @@ const messages = defineCommand({
   },
   async run({ args }) {
     try {
-      const rows = await callRpc<Array<Record<string, unknown>>>(
-        'fn_get_global_messages',
-        {
-          p_battle_id: args.id,
-          p_limit: parseInt(args.limit, 10),
-          p_before_ts: args['before-ts'] || null,
-          p_before_id: args['before-id'] || null,
-        }
-      );
+      const rows = await callRpc<Array<Record<string, unknown>>>('fn_get_global_messages', {
+        p_battle_id: args.id,
+        p_limit: parseInt(args.limit, 10),
+        p_before_ts: args['before-ts'] || null,
+        p_before_id: args['before-id'] || null,
+      })
 
       if (!Array.isArray(rows) || rows.length === 0) {
-        consola.info('No messages found for battle %s.', args.id);
-        return;
+        consola.info('No messages found for battle %s.', args.id)
+        return
       }
 
       if (args.json) {
-        printJson(rows);
-        return;
+        printJson(rows)
+        return
       }
 
       printTable(
@@ -1477,13 +1475,13 @@ const messages = defineCommand({
           truncate(String(r['body'] ?? ''), 48),
           String(r['created_at'] ?? ''),
         ])
-      );
-      consola.info('%d message(s) shown.', rows.length);
+      )
+      consola.info('%d message(s) shown.', rows.length)
     } catch (err) {
-      handleError(err);
+      handleError(err)
     }
   },
-});
+})
 
 // ---------------------------------------------------------------------------
 // battle post-message
@@ -1526,13 +1524,13 @@ const postMessage = defineCommand({
           p_sender_role: args['sender-role'],
         },
         { requireAuth: true }
-      );
-      consola.success('Message posted to battle %s.', args.id);
+      )
+      consola.success('Message posted to battle %s.', args.id)
     } catch (err) {
-      handleError(err);
+      handleError(err)
     }
   },
-});
+})
 
 // ---------------------------------------------------------------------------
 // battle feed
@@ -1540,14 +1538,12 @@ const postMessage = defineCommand({
 const feed = defineCommand({
   meta: {
     name: 'feed',
-    description:
-      'Fetch the cursor-based public battles feed (replaces deprecated list).',
+    description: 'Fetch the cursor-based public battles feed (replaces deprecated list).',
   },
   args: {
     status: {
       type: 'string',
-      description:
-        'Filter by status: draft | open | voting | scoring | published',
+      description: 'Filter by status: draft | open | voting | scoring | published',
       default: '',
     },
     'battle-type': {
@@ -1573,29 +1569,30 @@ const feed = defineCommand({
   },
   async run({ args }) {
     try {
-      const result = await callRpc<
-        Array<Record<string, unknown>> | Record<string, unknown>
-      >('fn_get_battles_feed', {
-        p_status: args.status || null,
-        p_battle_type: args['battle-type'] || null,
-        p_limit: parseInt(args.limit, 10),
-        p_cursor: args.cursor || null,
-      });
+      const result = await callRpc<Array<Record<string, unknown>> | Record<string, unknown>>(
+        'fn_get_battles_feed',
+        {
+          p_status: args.status || null,
+          p_battle_type: args['battle-type'] || null,
+          p_limit: parseInt(args.limit, 10),
+          p_cursor: args.cursor || null,
+        }
+      )
 
       const battles = Array.isArray(result)
         ? result
-        : ((result as Record<string, unknown>)?.[
-            'data'
-          ] as Array<Record<string, unknown>> | undefined) ?? [];
+        : (((result as Record<string, unknown>)?.['data'] as
+            | Array<Record<string, unknown>>
+            | undefined) ?? [])
 
       if (battles.length === 0) {
-        consola.info('No battles in feed.');
-        return;
+        consola.info('No battles in feed.')
+        return
       }
 
       if (args.json) {
-        printJson(result);
-        return;
+        printJson(result)
+        return
       }
 
       printTable(
@@ -1606,17 +1603,17 @@ const feed = defineCommand({
           String(b['status'] ?? ''),
           String(b['battle_type'] ?? '—'),
         ])
-      );
+      )
 
-      const next = (result as Record<string, unknown>)?.['next_cursor'];
+      const next = (result as Record<string, unknown>)?.['next_cursor']
       if (next) {
-        consola.info('Next page: lf battle feed --cursor %s', next);
+        consola.info('Next page: lf battle feed --cursor %s', next)
       }
     } catch (err) {
-      handleError(err);
+      handleError(err)
     }
   },
-});
+})
 
 // ---------------------------------------------------------------------------
 // battle local — offline dev battle subcommand group
@@ -1627,74 +1624,114 @@ import {
   localAiJudge,
   type LocalContenderConfig,
   type LocalVote,
-} from '../utils/local-battle-engine';
+} from '../utils/local-battle-engine'
 
 const localInit = defineCommand({
   meta: { name: 'init', description: 'Create a new local battle (no cloud required).' },
   args: {
-    name:  { type: 'string', description: 'Battle name', required: true },
-    task:  { type: 'string', description: 'Task prompt both contenders will answer', required: true },
-    json:  { type: 'boolean', description: 'Output result as JSON', default: false },
+    name: { type: 'string', description: 'Battle name', required: true },
+    task: {
+      type: 'string',
+      description: 'Task prompt both contenders will answer',
+      required: true,
+    },
+    json: { type: 'boolean', description: 'Output result as JSON', default: false },
   },
   async run({ args }) {
     try {
-      const state = localBattleStore.create(args.name, args.task);
-      if (args.json) { printJson(state); return; }
-      consola.success('Local battle created.');
-      consola.info('ID:   %s', state.id);
-      consola.info('Name: %s', state.name);
-      consola.info('');
-      consola.info('Next steps:');
-      consola.info('  lf battle local add-contender A --provider anthropic --model claude-haiku-4-5');
-      consola.info('  lf battle local add-contender B --provider ollama    --model llama3');
-      consola.info('  lf battle local run %s', state.id.slice(0, 8));
-    } catch (err) { handleError(err); }
+      const state = localBattleStore.create(args.name, args.task)
+      if (args.json) {
+        printJson(state)
+        return
+      }
+      consola.success('Local battle created.')
+      consola.info('ID:   %s', state.id)
+      consola.info('Name: %s', state.name)
+      consola.info('')
+      consola.info('Next steps:')
+      consola.info(
+        '  lf battle local add-contender A --provider anthropic --model claude-haiku-4-5'
+      )
+      consola.info('  lf battle local add-contender B --provider ollama    --model llama3')
+      consola.info('  lf battle local run %s', state.id.slice(0, 8))
+    } catch (err) {
+      handleError(err)
+    }
   },
-});
+})
 
 const localAddContender = defineCommand({
   meta: { name: 'add-contender', description: 'Add or replace a contender slot (A or B).' },
   args: {
-    slot:     { type: 'positional', description: 'A or B', required: true },
-    provider: { type: 'string',     description: 'Provider: anthropic | openai | google | mistral | ollama', required: true },
-    model:    { type: 'string',     description: 'Model key, e.g. claude-sonnet-4-6', required: true },
-    label:    { type: 'string',     description: 'Display label (defaults to model name)', default: '' },
-    'key-var':{ type: 'string',     description: 'Custom env var for API key override', default: '' },
-    id:       { type: 'string',     description: 'Local battle ID (omit to use most recent)', default: '' },
-    json:     { type: 'boolean',    description: 'Output result as JSON', default: false },
+    slot: { type: 'positional', description: 'A or B', required: true },
+    provider: {
+      type: 'string',
+      description: 'Provider: anthropic | openai | google | mistral | ollama',
+      required: true,
+    },
+    model: { type: 'string', description: 'Model key, e.g. claude-sonnet-4-6', required: true },
+    label: { type: 'string', description: 'Display label (defaults to model name)', default: '' },
+    'key-var': { type: 'string', description: 'Custom env var for API key override', default: '' },
+    id: { type: 'string', description: 'Local battle ID (omit to use most recent)', default: '' },
+    json: { type: 'boolean', description: 'Output result as JSON', default: false },
   },
   async run({ args }) {
-    const slot = args.slot.toUpperCase() as 'A' | 'B';
+    const slot = args.slot.toUpperCase() as 'A' | 'B'
     if (slot !== 'A' && slot !== 'B') {
-      consola.error('Slot must be A or B'); process.exitCode = 1; return;
+      consola.error('Slot must be A or B')
+      process.exitCode = 1
+      return
     }
     try {
-      const state = args.id ? localBattleStore.load(args.id) : localBattleStore.list()[0];
-      if (!state) { consola.error('No local battles found. Run `lf battle local init` first.'); process.exitCode = 1; return; }
+      const state = args.id ? localBattleStore.load(args.id) : localBattleStore.list()[0]
+      if (!state) {
+        consola.error('No local battles found. Run `lf battle local init` first.')
+        process.exitCode = 1
+        return
+      }
       const cfg: LocalContenderConfig = {
         slot,
         label: args.label || args.model,
         provider: args.provider,
         model: args.model,
         keyVar: args['key-var'] || undefined,
-      };
-      const updated = localBattleStore.addContender(state.id, cfg);
-      if (args.json) { printJson(updated); return; }
-      consola.success('Contender %s set: %s/%s', slot, args.provider, args.model);
-      consola.info('Status: %s', updated.status);
-    } catch (err) { handleError(err); }
+      }
+      const updated = localBattleStore.addContender(state.id, cfg)
+      if (args.json) {
+        printJson(updated)
+        return
+      }
+      consola.success('Contender %s set: %s/%s', slot, args.provider, args.model)
+      consola.info('Status: %s', updated.status)
+    } catch (err) {
+      handleError(err)
+    }
   },
-});
+})
 
 const localRun = defineCommand({
   meta: { name: 'run', description: 'Execute both contenders locally using BYOK keys.' },
   args: {
-    id:         { type: 'string',  description: 'Local battle ID (omit to use most recent)', default: '' },
-    example:    { type: 'string',  description: 'Load a bundled example spec by name (e.g. haiku-shootout) and run it immediately', default: '' },
-    yes:        { type: 'boolean', description: 'Skip cost confirmation prompt', default: false },
-    json:       { type: 'boolean', description: 'Output result as JSON', default: false },
-    judge:      { type: 'string',  description: 'Verdict mode: ai (default) — auto-judge after execution | human — skip AI judge, vote manually', default: 'ai' },
-    'no-judge': { type: 'boolean', description: 'Skip AI auto-judge and prompt for manual vote (alias for --judge human)', default: false },
+    id: { type: 'string', description: 'Local battle ID (omit to use most recent)', default: '' },
+    example: {
+      type: 'string',
+      description:
+        'Load a bundled example spec by name (e.g. haiku-shootout) and run it immediately',
+      default: '',
+    },
+    yes: { type: 'boolean', description: 'Skip cost confirmation prompt', default: false },
+    json: { type: 'boolean', description: 'Output result as JSON', default: false },
+    judge: {
+      type: 'string',
+      description:
+        'Verdict mode: ai (default) — auto-judge after execution | human — skip AI judge, vote manually',
+      default: 'ai',
+    },
+    'no-judge': {
+      type: 'boolean',
+      description: 'Skip AI auto-judge and prompt for manual vote (alias for --judge human)',
+      default: false,
+    },
   },
   async run({ args }) {
     try {
@@ -1702,214 +1739,296 @@ const localRun = defineCommand({
       // --example: bootstrap a battle from a bundled spec and run it in one command
       if (args.example) {
         const { resolve, dirname } = await import('node:path')
-        const { fileURLToPath } = await import('node:url')
-        const { readFileSync, existsSync } = await import('node:fs')
+        const { readFileSync, existsSync, readdirSync } = await import('node:fs')
         const { parse } = await import('yaml')
-        const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), '../../../../..')
+        const cliDir = dirname(resolve(process.argv[1] ?? process.cwd()))
+        const repoRootCandidates = [
+          process.cwd(),
+          resolve(cliDir, '../../..'),
+          resolve(cliDir, '../../../..'),
+          resolve(cliDir, '../../../../..'),
+        ]
+        const repoRoot =
+          repoRootCandidates.find((candidate) =>
+            existsSync(resolve(candidate, 'examples/local-battle'))
+          ) ?? process.cwd()
         const specPath = resolve(repoRoot, 'examples/local-battle', args.example, 'spec.yaml')
         if (!existsSync(specPath)) {
           consola.error('Example not found: %s', specPath)
-          consola.info('Available examples: haiku-shootout')
-          process.exitCode = 1; return
+          const examplesDir = resolve(repoRoot, 'examples/local-battle')
+          const examples = existsSync(examplesDir)
+            ? readdirSync(examplesDir, { withFileTypes: true })
+                .filter((entry) => entry.isDirectory())
+                .map((entry) => entry.name)
+                .sort()
+            : []
+          consola.info('Available examples: %s', examples.join(', ') || 'none')
+          process.exitCode = 1
+          return
         }
         const spec = parse(readFileSync(specPath, 'utf-8')) as {
-          name: string; task: string;
-          contenders: { A: { provider: string; model: string }; B: { provider: string; model: string } }
+          name: string
+          task: string
+          contenders: {
+            A: { provider: string; model: string }
+            B: { provider: string; model: string }
+          }
         }
         const created = localBattleStore.create(spec.name, spec.task)
-        localBattleStore.addContender(created.id, { slot: 'A', label: spec.contenders.A.model, ...spec.contenders.A })
-        localBattleStore.addContender(created.id, { slot: 'B', label: spec.contenders.B.model, ...spec.contenders.B })
+        localBattleStore.addContender(created.id, {
+          slot: 'A',
+          label: spec.contenders.A.model,
+          ...spec.contenders.A,
+        })
+        localBattleStore.addContender(created.id, {
+          slot: 'B',
+          label: spec.contenders.B.model,
+          ...spec.contenders.B,
+        })
         consola.success('Loaded example "%s" (id: %s)', spec.name, created.id.slice(0, 8))
         resolvedId = created.id
       }
 
-      const state = resolvedId ? localBattleStore.resolve(resolvedId) : (args.id ? localBattleStore.resolve(args.id) : localBattleStore.list()[0]);
-      if (!state) { consola.error('No local battles found. Run `lf battle local init` first.'); process.exitCode = 1; return; }
+      const state = resolvedId
+        ? localBattleStore.resolve(resolvedId)
+        : args.id
+          ? localBattleStore.resolve(args.id)
+          : localBattleStore.list()[0]
+      if (!state) {
+        consola.error('No local battles found. Run `lf battle local init` first.')
+        process.exitCode = 1
+        return
+      }
       if (state.status === 'draft') {
-        consola.error('Add both contenders first:');
-        consola.info('  lf battle local add-contender A --provider <p> --model <m>');
-        consola.info('  lf battle local add-contender B --provider <p> --model <m>');
-        process.exitCode = 1; return;
+        consola.error('Add both contenders first:')
+        consola.info('  lf battle local add-contender A --provider <p> --model <m>')
+        consola.info('  lf battle local add-contender B --provider <p> --model <m>')
+        process.exitCode = 1
+        return
       }
 
-      const cA = state.contenders.find((c) => c.slot === 'A')!;
-      const cB = state.contenders.find((c) => c.slot === 'B')!;
+      const cA = state.contenders.find((c) => c.slot === 'A')!
+      const cB = state.contenders.find((c) => c.slot === 'B')!
 
       if (!args.yes && process.stdin.isTTY) {
-        const { createInterface } = await import('readline');
-        const rl = createInterface({ input: process.stdin, output: process.stdout });
+        const { createInterface } = await import('readline')
+        const rl = createInterface({ input: process.stdin, output: process.stdout })
         const answer = await new Promise<string>((resolve) => {
           rl.question(
             `\n⚠  This will call ${cA.provider}/${cA.model} and ${cB.provider}/${cB.model} via your BYOK keys.\n` +
-            `   Charges apply to your API accounts, not LenserFight.\n` +
-            `   Continue? (y/n) `,
-            (a) => { rl.close(); resolve(a.trim().toLowerCase()); }
-          );
-        });
+              `   Charges apply to your API accounts, not LenserFight.\n` +
+              `   Continue? (y/n) `,
+            (a) => {
+              rl.close()
+              resolve(a.trim().toLowerCase())
+            }
+          )
+        })
         if (answer !== 'y' && answer !== 'yes') {
-          consola.info('Cancelled. Re-run with --yes to skip this prompt.');
-          process.exitCode = 1; return;
+          consola.info('Cancelled. Re-run with --yes to skip this prompt.')
+          process.exitCode = 1
+          return
         }
       }
 
-      consola.start('Running "%s"', state.name);
-      consola.info('A: %s/%s  vs  B: %s/%s', cA.provider, cA.model, cB.provider, cB.model);
-      consola.info('Task: %s', state.task);
-      process.stdout.write('\n');
+      consola.start('Running "%s"', state.name)
+      consola.info('A: %s/%s  vs  B: %s/%s', cA.provider, cA.model, cB.provider, cB.model)
+      consola.info('Task: %s', state.task)
+      process.stdout.write('\n')
 
-      const bufA: string[] = [], bufB: string[] = [];
+      const bufA: string[] = [],
+        bufB: string[] = []
 
-      const result = await localBattleLenser.run(
-        state,
-        (slot, delta) => {
-          if (slot === 'A') { bufA.push(delta); process.stdout.write(`${A.bold}${A.brightBlue}[A]${A.reset} ${delta}`); }
-          else              { bufB.push(delta); process.stdout.write(`${A.bold}${A.brightGreen}[B]${A.reset} ${delta}`); }
-        },
-      );
+      const result = await localBattleLenser.run(state, (slot, delta) => {
+        if (slot === 'A') {
+          bufA.push(delta)
+          process.stdout.write(`${A.bold}${A.brightBlue}[A]${A.reset} ${delta}`)
+        } else {
+          bufB.push(delta)
+          process.stdout.write(`${A.bold}${A.brightGreen}[B]${A.reset} ${delta}`)
+        }
+      })
 
-      process.stdout.write('\n\n');
-      const updated = localBattleStore.markExecuted(state.id, result);
+      process.stdout.write('\n\n')
+      const updated = localBattleStore.markExecuted(state.id, result)
 
-      if (args.json) { printJson(updated); return; }
-
-      consola.success('Execution complete in %dms.', result.durationMs);
-      consola.info('Tokens — A: %d  B: %d', result.tokensA, result.tokensB);
-      consola.info('');
-      consola.warn('Results are stored in plaintext in your local battle state. Do not commit if they contain sensitive prompts or outputs.');
-
-      const skipAiJudge = args['no-judge'] || args.judge === 'human';
-      if (skipAiJudge) {
-        consola.info('Next: lf battle local vote %s --slot A|B|draw', updated.id.slice(0, 8));
-      } else {
-        await runLocalAiJudge(updated.id);
+      if (args.json) {
+        printJson(updated)
+        return
       }
-    } catch (err) { handleError(err); }
+
+      consola.success('Execution complete in %dms.', result.durationMs)
+      consola.info('Tokens — A: %d  B: %d', result.tokensA, result.tokensB)
+      consola.info('')
+      consola.warn(
+        'Results are stored in plaintext in your local battle state. Do not commit if they contain sensitive prompts or outputs.'
+      )
+
+      const skipAiJudge = args['no-judge'] || args.judge === 'human'
+      if (skipAiJudge) {
+        consola.info('Next: lf battle local vote %s --slot A|B|draw', updated.id.slice(0, 8))
+      } else {
+        await runLocalAiJudge(updated.id)
+      }
+    } catch (err) {
+      handleError(err)
+    }
   },
-});
+})
 
 async function runLocalAiJudge(battleId: string): Promise<void> {
-  const judgeProvider = localAiJudge.resolveJudgeProvider();
+  const judgeProvider = localAiJudge.resolveJudgeProvider()
   if (!judgeProvider) {
-    consola.warn('AI judge skipped — no provider key found (ANTHROPIC_API_KEY, OPENAI_API_KEY, or Ollama).');
-    consola.info('Run `lf battle local vote --slot A|B|draw` to judge manually.');
-    return;
+    consola.warn(
+      'AI judge skipped — no provider key found (ANTHROPIC_API_KEY, OPENAI_API_KEY, or Ollama).'
+    )
+    consola.info('Run `lf battle local vote --slot A|B|draw` to judge manually.')
+    return
   }
-  const keyHint = judgeProvider.provider === 'ollama'
-    ? 'Ollama (local, free)'
-    : `${judgeProvider.provider.toUpperCase()}_API_KEY`;
-  consola.info('');
-  consola.info('AI judge evaluating… (~600 input + ~100 output tokens via %s)', keyHint);
+  const keyHint =
+    judgeProvider.provider === 'ollama'
+      ? 'Ollama (local, free)'
+      : `${judgeProvider.provider.toUpperCase()}_API_KEY`
+  consola.info('')
+  consola.info('AI judge evaluating… (~600 input + ~100 output tokens via %s)', keyHint)
   try {
-    const state = localBattleStore.resolve(battleId);
-    const verdict = await localAiJudge.judge(state);
+    const state = localBattleStore.resolve(battleId)
+    const verdict = await localAiJudge.judge(state)
     const judgeVote: LocalVote = {
       slot: verdict.winner,
       source: 'ai',
       rationale: verdict.rationale,
       votedAt: new Date().toISOString(),
-    };
-    localBattleStore.recordVote(battleId, judgeVote);
-    consola.success('Winner: %s', verdict.winner === 'draw' ? 'Draw' : `Contender ${verdict.winner}`);
-    consola.info('Rationale: %s', verdict.rationale);
-    consola.info('Judge: %s/%s (%d tokens)', verdict.provider, verdict.model, verdict.tokensUsed);
-    consola.info('');
-    consola.info('Override: lf battle local vote %s --slot A|B|draw', battleId.slice(0, 8));
+    }
+    localBattleStore.recordVote(battleId, judgeVote)
+    consola.success(
+      'Winner: %s',
+      verdict.winner === 'draw' ? 'Draw' : `Contender ${verdict.winner}`
+    )
+    consola.info('Rationale: %s', verdict.rationale)
+    consola.info('Judge: %s/%s (%d tokens)', verdict.provider, verdict.model, verdict.tokensUsed)
+    consola.info('')
+    consola.info('Override: lf battle local vote %s --slot A|B|draw', battleId.slice(0, 8))
   } catch (judgeErr) {
-    consola.warn('AI judge failed: %s', judgeErr instanceof Error ? judgeErr.message : String(judgeErr));
-    consola.info('Run `lf battle local vote --slot A|B|draw` to judge manually.');
+    consola.warn(
+      'AI judge failed: %s',
+      judgeErr instanceof Error ? judgeErr.message : String(judgeErr)
+    )
+    consola.info('Run `lf battle local vote --slot A|B|draw` to judge manually.')
   }
 }
 
 const localVote = defineCommand({
   meta: { name: 'vote', description: 'Cast a vote on a locally executed battle.' },
   args: {
-    slot:      { type: 'string',  description: 'A | B | draw', required: true },
-    id:        { type: 'string',  description: 'Local battle ID (omit to use most recent)', default: '' },
-    rationale: { type: 'string',  description: 'Optional rationale', default: '' },
-    json:      { type: 'boolean', description: 'Output result as JSON', default: false },
+    slot: { type: 'string', description: 'A | B | draw', required: true },
+    id: { type: 'string', description: 'Local battle ID (omit to use most recent)', default: '' },
+    rationale: { type: 'string', description: 'Optional rationale', default: '' },
+    json: { type: 'boolean', description: 'Output result as JSON', default: false },
   },
   async run({ args }) {
-    const slot = args.slot.toLowerCase() as 'a' | 'b' | 'draw';
+    const slot = args.slot.toLowerCase() as 'a' | 'b' | 'draw'
     if (!['a', 'b', 'draw'].includes(slot)) {
-      consola.error('--slot must be A, B, or draw'); process.exitCode = 1; return;
+      consola.error('--slot must be A, B, or draw')
+      process.exitCode = 1
+      return
     }
     try {
-      const state = args.id ? localBattleStore.resolve(args.id) : localBattleStore.list()[0];
-      if (!state) { consola.error('No local battles found.'); process.exitCode = 1; return; }
+      const state = args.id ? localBattleStore.resolve(args.id) : localBattleStore.list()[0]
+      if (!state) {
+        consola.error('No local battles found.')
+        process.exitCode = 1
+        return
+      }
       if (state.status !== 'executed' && state.status !== 'voted') {
-        consola.error('Run the battle first: lf battle local run'); process.exitCode = 1; return;
+        consola.error('Run the battle first: lf battle local run')
+        process.exitCode = 1
+        return
       }
       const vote: LocalVote = {
         slot: (slot === 'a' ? 'A' : slot === 'b' ? 'B' : 'draw') as 'A' | 'B' | 'draw',
         source: 'human',
         rationale: args.rationale || undefined,
         votedAt: new Date().toISOString(),
-      };
-      const updated = localBattleStore.recordVote(state.id, vote);
-      if (args.json) { printJson(updated); return; }
-      consola.success('Vote recorded: %s', vote.slot);
-      if (args.rationale) consola.info('Rationale: %s', args.rationale);
-    } catch (err) { handleError(err); }
+      }
+      const updated = localBattleStore.recordVote(state.id, vote)
+      if (args.json) {
+        printJson(updated)
+        return
+      }
+      consola.success('Vote recorded: %s', vote.slot)
+      if (args.rationale) consola.info('Rationale: %s', args.rationale)
+    } catch (err) {
+      handleError(err)
+    }
   },
-});
+})
 
 const localStatus = defineCommand({
   meta: { name: 'status', description: 'Show the current state and vote tally of a local battle.' },
   args: {
-    id:   { type: 'string',  description: 'Local battle ID (omit to use most recent)', default: '' },
+    id: { type: 'string', description: 'Local battle ID (omit to use most recent)', default: '' },
     json: { type: 'boolean', description: 'Output as JSON', default: false },
   },
   async run({ args }) {
     try {
-      const state = args.id ? localBattleStore.resolve(args.id) : localBattleStore.list()[0];
-      if (!state) { consola.info('No local battles yet. Run `lf battle local init`.'); return; }
-      if (args.json) { printJson(state); return; }
+      const state = args.id ? localBattleStore.resolve(args.id) : localBattleStore.list()[0]
+      if (!state) {
+        consola.info('No local battles yet. Run `lf battle local init`.')
+        return
+      }
+      if (args.json) {
+        printJson(state)
+        return
+      }
 
-      consola.log('');
-      consola.log('  Name:   %s', state.name);
-      consola.log('  ID:     %s', state.id);
-      consola.log('  Status: %s', state.status);
-      consola.log('  Task:   %s', state.task);
+      consola.log('')
+      consola.log('  Name:   %s', state.name)
+      consola.log('  ID:     %s', state.id)
+      consola.log('  Status: %s', state.status)
+      consola.log('  Task:   %s', state.task)
 
       if (state.contenders.length) {
-        consola.log('');
+        consola.log('')
         for (const c of state.contenders) {
-          consola.log('  Contender %s: %s/%s', c.slot, c.provider, c.model);
+          consola.log('  Contender %s: %s/%s', c.slot, c.provider, c.model)
         }
       }
 
       if (state.votes.length) {
-        const humanVotes = state.votes.filter((v) => (v.source ?? 'human') === 'human');
-        const aiVotes    = state.votes.filter((v) => v.source === 'ai');
+        const humanVotes = state.votes.filter((v) => (v.source ?? 'human') === 'human')
+        const aiVotes = state.votes.filter((v) => v.source === 'ai')
 
         const tally = (votes: typeof state.votes) => {
-          const t = { A: 0, B: 0, draw: 0 };
-          for (const v of votes) t[v.slot]++;
-          return t;
-        };
+          const t = { A: 0, B: 0, draw: 0 }
+          for (const v of votes) t[v.slot]++
+          return t
+        }
 
-        consola.log('');
+        consola.log('')
         if (humanVotes.length) {
-          const t = tally(humanVotes);
-          consola.log('  Human votes — A: %d  B: %d  Draw: %d', t.A, t.B, t.draw);
+          const t = tally(humanVotes)
+          consola.log('  Human votes — A: %d  B: %d  Draw: %d', t.A, t.B, t.draw)
         }
         if (aiVotes.length) {
-          const t = tally(aiVotes);
-          consola.log('  AI judge    — A: %d  B: %d  Draw: %d', t.A, t.B, t.draw);
-          if (aiVotes[0]?.rationale) consola.log('  Rationale:    %s', aiVotes[0].rationale);
+          const t = tally(aiVotes)
+          consola.log('  AI judge    — A: %d  B: %d  Draw: %d', t.A, t.B, t.draw)
+          if (aiVotes[0]?.rationale) consola.log('  Rationale:    %s', aiVotes[0].rationale)
         }
 
         // Human votes are authoritative; fall back to AI if no human votes exist
-        const decisiveVotes = humanVotes.length ? humanVotes : aiVotes;
-        const dt = tally(decisiveVotes);
-        const winner = dt.A > dt.B ? 'A' : dt.B > dt.A ? 'B' : dt.draw > 0 ? 'Draw' : 'Tied';
-        const source = humanVotes.length ? '' : ' (AI judge)';
-        consola.log('  Winner: %s%s', winner, source);
+        const decisiveVotes = humanVotes.length ? humanVotes : aiVotes
+        const dt = tally(decisiveVotes)
+        const winner = dt.A > dt.B ? 'A' : dt.B > dt.A ? 'B' : dt.draw > 0 ? 'Draw' : 'Tied'
+        const source = humanVotes.length ? '' : ' (AI judge)'
+        consola.log('  Winner: %s%s', winner, source)
       }
-      consola.log('');
-    } catch (err) { handleError(err); }
+      consola.log('')
+    } catch (err) {
+      handleError(err)
+    }
   },
-});
+})
 
 const localList = defineCommand({
   meta: { name: 'list', description: 'List all local battles.' },
@@ -1918,9 +2037,15 @@ const localList = defineCommand({
   },
   async run({ args }) {
     try {
-      const all = localBattleStore.list();
-      if (!all.length) { consola.info('No local battles. Run `lf battle local init` to create one.'); return; }
-      if (args.json) { printJson(all); return; }
+      const all = localBattleStore.list()
+      if (!all.length) {
+        consola.info('No local battles. Run `lf battle local init` to create one.')
+        return
+      }
+      if (args.json) {
+        printJson(all)
+        return
+      }
       printTable(
         ['ID', 'Name', 'Status', 'Contenders'],
         all.map((s) => [
@@ -1929,22 +2054,28 @@ const localList = defineCommand({
           s.status,
           s.contenders.map((c) => `${c.slot}:${c.provider}/${c.model}`).join('  ') || '—',
         ])
-      );
-    } catch (err) { handleError(err); }
+      )
+    } catch (err) {
+      handleError(err)
+    }
   },
-});
+})
 
 const localPush = defineCommand({
   meta: { name: 'push', description: 'Push a local battle to LenserFight Cloud as a draft.' },
   args: {
-    id:    { type: 'string',  description: 'Local battle ID (omit to use most recent)', default: '' },
-    slug:  { type: 'string',  description: 'Cloud URL slug (required)', required: true },
-    json:  { type: 'boolean', description: 'Output result as JSON', default: false },
+    id: { type: 'string', description: 'Local battle ID (omit to use most recent)', default: '' },
+    slug: { type: 'string', description: 'Cloud URL slug (required)', required: true },
+    json: { type: 'boolean', description: 'Output result as JSON', default: false },
   },
   async run({ args }) {
     try {
-      const state = args.id ? localBattleStore.resolve(args.id) : localBattleStore.list()[0];
-      if (!state) { consola.error('No local battles found.'); process.exitCode = 1; return; }
+      const state = args.id ? localBattleStore.resolve(args.id) : localBattleStore.list()[0]
+      if (!state) {
+        consola.error('No local battles found.')
+        process.exitCode = 1
+        return
+      }
 
       const battle = await callRpc<Record<string, unknown>>(
         'fn_battles_create',
@@ -1955,19 +2086,28 @@ const localPush = defineCommand({
           p_rubric_id: null,
         },
         { requireAuth: true }
-      );
+      )
 
-      if (args.json) { printJson(battle); return; }
-      consola.success('Local battle "%s" pushed to cloud as a draft.', state.name);
-      consola.info('Cloud ID:  %s', battle['id']);
-      consola.info('Status:    %s', battle['status']);
-      consola.info('');
-      consola.warn('Note: pushing to cloud does not enable cloud battle execution or public arena access.');
-      consola.warn('Cloud battles require FEATURE_PUBLIC_BATTLES=true (Private Alpha — not publicly available).');
-      consola.info('Continue: lf battle open %s', battle['id']);
-    } catch (err) { handleError(err); }
+      if (args.json) {
+        printJson(battle)
+        return
+      }
+      consola.success('Local battle "%s" pushed to cloud as a draft.', state.name)
+      consola.info('Cloud ID:  %s', battle['id'])
+      consola.info('Status:    %s', battle['status'])
+      consola.info('')
+      consola.warn(
+        'Note: pushing to cloud does not enable cloud battle execution or public arena access.'
+      )
+      consola.warn(
+        'Cloud battles require FEATURE_PUBLIC_BATTLES=true (Private Alpha — not publicly available).'
+      )
+      consola.info('Continue: lf battle open %s', battle['id'])
+    } catch (err) {
+      handleError(err)
+    }
   },
-});
+})
 
 const local = defineCommand({
   meta: { name: 'local', description: 'Manage offline local battles (no cloud or auth required).' },
@@ -1980,7 +2120,7 @@ const local = defineCommand({
     list: localList,
     push: localPush,
   },
-});
+})
 
 // ---------------------------------------------------------------------------
 // battle dispatch — agent-based BYOK/Ollama execution for a cloud battle
@@ -1988,7 +2128,8 @@ const local = defineCommand({
 const dispatch = defineCommand({
   meta: {
     name: 'dispatch',
-    description: 'Execute a cloud battle submission on behalf of an AI agent using BYOK keys or local Ollama.',
+    description:
+      'Execute a cloud battle submission on behalf of an AI agent using BYOK keys or local Ollama.',
   },
   args: {
     id: {
@@ -2003,7 +2144,8 @@ const dispatch = defineCommand({
     },
     model: {
       type: 'string',
-      description: 'Model spec: ollama:<model> | byok:<provider> (e.g. ollama:llama3.2, byok:openai)',
+      description:
+        'Model spec: ollama:<model> | byok:<provider> (e.g. ollama:llama3.2, byok:openai)',
       required: true,
     },
     device: {
@@ -2036,10 +2178,10 @@ const dispatch = defineCommand({
       const dispatch = await callRpc<Record<string, unknown>>(
         'fn_battle_dispatch_agent',
         {
-          p_battle_id:   args.id,
-          p_agent_id:    args.agent,
-          p_model_spec:  args.model,
-          p_device_id:   args.device || null,
+          p_battle_id: args.id,
+          p_agent_id: args.agent,
+          p_model_spec: args.model,
+          p_device_id: args.device || null,
           p_workflow_id: args.workflow || null,
         },
         { requireAuth: true }
@@ -2062,18 +2204,30 @@ const dispatch = defineCommand({
         consola.info('  ollama run %s "<your battle prompt>"', modelKey)
         consola.info('  lf battle submit %s --text "<output>" --run-id <run-id>', args.id)
         if (args.device) {
-          consola.info('  (add --attestation --device-id %s for trusted execution + bonus XP)', args.device)
+          consola.info(
+            '  (add --attestation --device-id %s for trusted execution + bonus XP)',
+            args.device
+          )
         }
       } else if (modelType === 'byok') {
         consola.info('Using BYOK key for provider: %s', modelKey)
         consola.info('Execute via the exec subcommand with your provider key:')
-        consola.info('  lf battle exec %s --byok --provider-a %s --model-a <model>', args.id, modelKey)
+        consola.info(
+          '  lf battle exec %s --byok --provider-a %s --model-a <model>',
+          args.id,
+          modelKey
+        )
       }
 
       if (args.workflow) {
         consola.info('')
         consola.info('Workflow submission: %s', args.workflow)
-        consola.info('  lf battle submit %s --workflow %s --agent %s', args.id, args.workflow, args.agent)
+        consola.info(
+          '  lf battle submit %s --workflow %s --agent %s',
+          args.id,
+          args.workflow,
+          args.agent
+        )
       }
     } catch (err) {
       handleError(err)
@@ -2090,10 +2244,14 @@ const byokKeySet = defineCommand({
     description: 'Store an encrypted BYOK key for an agent (key encrypted locally before upload).',
   },
   args: {
-    agent:    { type: 'string', description: 'Agent UUID', required: true },
-    provider: { type: 'string', description: 'Provider: openai | anthropic | mistral | google | cohere | custom', required: true },
-    key:      { type: 'string', description: 'API key value (encrypted before upload)', required: true },
-    label:    { type: 'string', description: 'Optional label', default: '' },
+    agent: { type: 'string', description: 'Agent UUID', required: true },
+    provider: {
+      type: 'string',
+      description: 'Provider: openai | anthropic | mistral | google | cohere | custom',
+      required: true,
+    },
+    key: { type: 'string', description: 'API key value (encrypted before upload)', required: true },
+    label: { type: 'string', description: 'Optional label', default: '' },
   },
   async run({ args }) {
     try {
@@ -2104,15 +2262,20 @@ const byokKeySet = defineCommand({
       await callRpc(
         'fn_byok_key_register',
         {
-          p_agent_id:      args.agent,
-          p_provider:      args.provider,
+          p_agent_id: args.agent,
+          p_provider: args.provider,
           p_key_encrypted: encrypted,
-          p_key_hint:      hint,
-          p_label:         args.label || null,
+          p_key_hint: hint,
+          p_label: args.label || null,
         },
         { requireAuth: true }
       )
-      consola.success('BYOK key stored for agent %s (provider: %s, hint: …%s)', args.agent, args.provider, hint)
+      consola.success(
+        'BYOK key stored for agent %s (provider: %s, hint: …%s)',
+        args.agent,
+        args.provider,
+        hint
+      )
       consola.warn('Note: Implement AES-256-GCM encryption in production. Current: base64 only.')
     } catch (err) {
       handleError(err)
@@ -2124,7 +2287,7 @@ const byokKeyList = defineCommand({
   meta: { name: 'list', description: 'List BYOK key hints for an agent.' },
   args: {
     agent: { type: 'string', description: 'Agent UUID', required: true },
-    json:  { type: 'boolean', description: 'Output as JSON', default: false },
+    json: { type: 'boolean', description: 'Output as JSON', default: false },
   },
   async run({ args }) {
     try {
@@ -2137,7 +2300,10 @@ const byokKeyList = defineCommand({
         consola.info('No BYOK keys stored for agent %s.', args.agent)
         return
       }
-      if (args.json) { console.log(JSON.stringify(rows, null, 2)); return }
+      if (args.json) {
+        console.log(JSON.stringify(rows, null, 2))
+        return
+      }
       printTable(
         ['Provider', 'Hint', 'Label', 'Valid'],
         rows.map((r) => [
@@ -2156,9 +2322,9 @@ const byokKeyList = defineCommand({
 const byokKeyRevoke = defineCommand({
   meta: { name: 'revoke', description: 'Revoke a BYOK key for a provider. Requires --force.' },
   args: {
-    agent:    { type: 'string', description: 'Agent UUID', required: true },
+    agent: { type: 'string', description: 'Agent UUID', required: true },
     provider: { type: 'string', description: 'Provider to revoke', required: true },
-    force:    { type: 'boolean', description: 'Required: confirm key revocation', default: false },
+    force: { type: 'boolean', description: 'Required: confirm key revocation', default: false },
   },
   async run({ args }) {
     await assertSafe({
@@ -2169,13 +2335,21 @@ const byokKeyRevoke = defineCommand({
       hasForce: args.force,
       description: `Revoke the BYOK API key for agent ${args.agent} (provider: ${args.provider}). The key cannot be recovered.`,
       affectedResources: [
-        { type: 'credential', name: `${args.provider} key for agent ${args.agent}`, scope: 'remote' },
+        {
+          type: 'credential',
+          name: `${args.provider} key for agent ${args.agent}`,
+          scope: 'remote',
+        },
       ],
       rollbackAvailable: false,
       notes: ['Re-provision with: lf battle byok-key set --agent <uuid> --provider <name>'],
-    });
+    })
     try {
-      await callRpc('fn_byok_key_revoke', { p_agent_id: args.agent, p_provider: args.provider }, { requireAuth: true })
+      await callRpc(
+        'fn_byok_key_revoke',
+        { p_agent_id: args.agent, p_provider: args.provider },
+        { requireAuth: true }
+      )
       consola.success('BYOK key revoked for agent %s (provider: %s)', args.agent, args.provider)
     } catch (err) {
       handleError(err)
@@ -2191,177 +2365,209 @@ const byokKey = defineCommand({
 // ---------------------------------------------------------------------------
 // battle exec — cloud battle BYOK execution with optional web streaming
 // ---------------------------------------------------------------------------
-import {
-  byokKeyResolver,
-  getStreamAdapter as _getStreamAdapter,
-} from '@lenserfight/providers';
-import type { ProviderMessage as _ProviderMessage } from '@lenserfight/providers';
+import { byokKeyResolver, getStreamAdapter as _getStreamAdapter } from '@lenserfight/providers'
+import type { ProviderMessage as _ProviderMessage } from '@lenserfight/providers'
 
 const exec = defineCommand({
   meta: {
     name: 'exec',
-    description: 'Execute a cloud battle with your own API keys (BYOK), optionally streaming tokens to the web UI.',
+    description:
+      'Execute a cloud battle with your own API keys (BYOK), optionally streaming tokens to the web UI.',
   },
   args: {
-    id:             { type: 'positional', description: 'Battle UUID', required: true },
-    'provider-a':   { type: 'string',  description: 'Provider for slot A override', default: '' },
-    'model-a':      { type: 'string',  description: 'Model for slot A override', default: '' },
-    'provider-b':   { type: 'string',  description: 'Provider for slot B override', default: '' },
-    'model-b':      { type: 'string',  description: 'Model for slot B override', default: '' },
-    byok:           { type: 'boolean', description: 'Use local BYOK keys instead of cloud billing', default: false },
-    'stream-to-web':{ type: 'boolean', description: 'Broadcast tokens to web UI via Supabase Realtime', default: false },
-    slot:           { type: 'string',  description: 'Execute only one slot: A | B | both', default: 'both' },
-    yes:            { type: 'boolean', description: 'Skip BYOK cost confirmation prompt', default: false },
-    json:           { type: 'boolean', description: 'Output summary as JSON', default: false },
+    id: { type: 'positional', description: 'Battle UUID', required: true },
+    'provider-a': { type: 'string', description: 'Provider for slot A override', default: '' },
+    'model-a': { type: 'string', description: 'Model for slot A override', default: '' },
+    'provider-b': { type: 'string', description: 'Provider for slot B override', default: '' },
+    'model-b': { type: 'string', description: 'Model for slot B override', default: '' },
+    byok: {
+      type: 'boolean',
+      description: 'Use local BYOK keys instead of cloud billing',
+      default: false,
+    },
+    'stream-to-web': {
+      type: 'boolean',
+      description: 'Broadcast tokens to web UI via Supabase Realtime',
+      default: false,
+    },
+    slot: { type: 'string', description: 'Execute only one slot: A | B | both', default: 'both' },
+    yes: { type: 'boolean', description: 'Skip BYOK cost confirmation prompt', default: false },
+    json: { type: 'boolean', description: 'Output summary as JSON', default: false },
   },
   async run({ args }) {
-    const { BattleStreamBroadcaster } = await import('../utils/battle-stream-broadcaster');
+    const { BattleStreamBroadcaster } = await import('../utils/battle-stream-broadcaster')
 
     try {
       // 1. Fetch battle
-      const battle = await callRpc<Record<string, unknown>>(
-        'fn_battles_get_public',
-        { p_battle_id: args.id }
-      );
-      if (!battle) { consola.error('Battle not found or not public.'); process.exitCode = 1; return; }
+      const battle = await callRpc<Record<string, unknown>>('fn_battles_get_public', {
+        p_battle_id: args.id,
+      })
+      if (!battle) {
+        consola.error('Battle not found or not public.')
+        process.exitCode = 1
+        return
+      }
 
-      consola.start('Executing battle: %s', battle['title']);
-      consola.info('Task: %s', battle['task_prompt']);
+      consola.start('Executing battle: %s', battle['title'])
+      consola.info('Task: %s', battle['task_prompt'])
 
       // 2. Fetch contenders
-      const contenders = await callRpc<Array<Record<string, unknown>>>(
-        'fn_battles_get_public',
-        { p_battle_id: args.id }
-      );
+      const contenders = await callRpc<Array<Record<string, unknown>>>('fn_battles_get_public', {
+        p_battle_id: args.id,
+      })
 
       // 3. Fetch execution configs for each contender
       const configsRaw = await callRpc<Array<Record<string, unknown>>>(
         'fn_get_battle_execution_configs',
         { p_battle_id: args.id }
-      ).catch(() => [] as Array<Record<string, unknown>>);
+      ).catch(() => [] as Array<Record<string, unknown>>)
 
-      const cfgA = configsRaw.find((c) => c['slot'] === 'A') ?? {};
-      const cfgB = configsRaw.find((c) => c['slot'] === 'B') ?? {};
+      const cfgA = configsRaw.find((c) => c['slot'] === 'A') ?? {}
+      const cfgB = configsRaw.find((c) => c['slot'] === 'B') ?? {}
 
-      const providerA = (args['provider-a'] || String(cfgA['provider_key'] ?? 'anthropic')) as Parameters<typeof _getStreamAdapter>[0];
-      const modelA    = args['model-a']    || String(cfgA['model_key']    ?? 'claude-sonnet-4-6');
-      const providerB = (args['provider-b'] || String(cfgB['provider_key'] ?? 'anthropic')) as Parameters<typeof _getStreamAdapter>[0];
-      const modelB    = args['model-b']    || String(cfgB['model_key']    ?? 'claude-sonnet-4-6');
+      const providerA = (args['provider-a'] ||
+        String(cfgA['provider_key'] ?? 'anthropic')) as Parameters<typeof _getStreamAdapter>[0]
+      const modelA = args['model-a'] || String(cfgA['model_key'] ?? 'claude-sonnet-4-6')
+      const providerB = (args['provider-b'] ||
+        String(cfgB['provider_key'] ?? 'anthropic')) as Parameters<typeof _getStreamAdapter>[0]
+      const modelB = args['model-b'] || String(cfgB['model_key'] ?? 'claude-sonnet-4-6')
 
-      const task = String(battle['task_prompt'] ?? '');
-      const messages: _ProviderMessage[] = [{ role: 'user', content: task }];
+      const task = String(battle['task_prompt'] ?? '')
+      const messages: _ProviderMessage[] = [{ role: 'user', content: task }]
 
       if (args.byok && !args.yes && process.stdin.isTTY) {
-        const { createInterface } = await import('readline');
-        const rl = createInterface({ input: process.stdin, output: process.stdout });
+        const { createInterface } = await import('readline')
+        const rl = createInterface({ input: process.stdin, output: process.stdout })
         const answer = await new Promise<string>((resolve) => {
           rl.question(
             `\n⚠  This will call ${providerA}/${modelA} and ${providerB}/${modelB} via your BYOK keys.\n` +
-            `   Charges apply to your API accounts, not LenserFight.\n` +
-            `   Continue? (y/n) `,
-            (a) => { rl.close(); resolve(a.trim().toLowerCase()); }
-          );
-        });
+              `   Charges apply to your API accounts, not LenserFight.\n` +
+              `   Continue? (y/n) `,
+            (a) => {
+              rl.close()
+              resolve(a.trim().toLowerCase())
+            }
+          )
+        })
         if (answer !== 'y' && answer !== 'yes') {
-          consola.info('Cancelled. Re-run with --yes to skip this prompt.');
-          process.exitCode = 1; return;
+          consola.info('Cancelled. Re-run with --yes to skip this prompt.')
+          process.exitCode = 1
+          return
         }
       }
 
-      const runSlot = async (slot: 'A' | 'B', provider: Parameters<typeof _getStreamAdapter>[0], model: string) => {
-        const broadcaster = args['stream-to-web']
-          ? new BattleStreamBroadcaster()
-          : null;
+      const runSlot = async (
+        slot: 'A' | 'B',
+        provider: Parameters<typeof _getStreamAdapter>[0],
+        model: string
+      ) => {
+        const broadcaster = args['stream-to-web'] ? new BattleStreamBroadcaster() : null
 
-        if (broadcaster) await broadcaster.open(args.id, slot);
+        if (broadcaster) await broadcaster.open(args.id, slot)
 
-        const apiKey = args.byok
-          ? byokKeyResolver.resolve(provider)
-          : '';
+        const apiKey = args.byok ? byokKeyResolver.resolve(provider) : ''
 
         if (args.byok && !apiKey && provider !== 'ollama') {
-          consola.error('[%s] No API key found for provider %s. Set %s_API_KEY env var.', slot, provider, provider.toUpperCase());
-          return { slot, output: '', tokens: 0 };
+          consola.error(
+            '[%s] No API key found for provider %s. Set %s_API_KEY env var.',
+            slot,
+            provider,
+            provider.toUpperCase()
+          )
+          return { slot, output: '', tokens: 0 }
         }
 
-        const adapter = _getStreamAdapter(provider);
-        const { url, body, headers } = adapter.buildStreamRequest(model, messages, { maxTokens: 4096 });
-        const authHeaders = args.byok ? adapter.authHeader(apiKey) : {};
+        const adapter = _getStreamAdapter(provider)
+        const { url, body, headers } = adapter.buildStreamRequest(model, messages, {
+          maxTokens: 4096,
+        })
+        const authHeaders = args.byok ? adapter.authHeader(apiKey) : {}
 
-        consola.start('[%s] Streaming %s/%s…', slot, provider, model);
+        consola.start('[%s] Streaming %s/%s…', slot, provider, model)
 
         const res = await fetch(url, {
           method: 'POST',
           headers: { ...headers, ...authHeaders },
           body,
-        });
+        })
 
         if (!res.ok || !res.body) {
-          const text = await res.text();
-          consola.error('[%s] Provider error %d: %s', slot, res.status, text);
-          broadcaster?.broadcastError(`Provider error ${res.status}`);
-          await broadcaster?.close();
-          return { slot, output: '', tokens: 0 };
+          const text = await res.text()
+          consola.error('[%s] Provider error %d: %s', slot, res.status, text)
+          broadcaster?.broadcastError(`Provider error ${res.status}`)
+          await broadcaster?.close()
+          return { slot, output: '', tokens: 0 }
         }
 
-        let output = '';
-        let tokens = 0;
-        let eventType: string | undefined;
-        const reader = res.body.getReader();
-        const decoder = new TextDecoder();
-        let buf = '';
-        const startedAt = Date.now();
+        let output = ''
+        let tokens = 0
+        let eventType: string | undefined
+        const reader = res.body.getReader()
+        const decoder = new TextDecoder()
+        let buf = ''
+        const startedAt = Date.now()
 
         while (true) {
-          const { done, value } = await reader.read();
-          if (done) break;
-          buf += decoder.decode(value, { stream: true });
-          const lines = buf.split('\n');
-          buf = lines.pop() ?? '';
+          const { done, value } = await reader.read()
+          if (done) break
+          buf += decoder.decode(value, { stream: true })
+          const lines = buf.split('\n')
+          buf = lines.pop() ?? ''
           for (const line of lines) {
-            if (line.startsWith('event: ')) { eventType = line.slice(7).trim(); continue; }
-            if (!line.startsWith('data: ') && !line.trim()) continue;
-            const chunk = adapter.parseStreamChunk(line, eventType);
-            if (chunk?.content) {
-              output += chunk.content;
-              tokens++;
-              const color = slot === 'A' ? A.brightBlue : A.brightGreen;
-              process.stdout.write(`${A.bold}${color}[${slot}]${A.reset} ${chunk.content}`);
-              broadcaster?.broadcastToken(chunk.content, Date.now() - startedAt);
+            if (line.startsWith('event: ')) {
+              eventType = line.slice(7).trim()
+              continue
             }
-            if (chunk?.done) break;
+            if (!line.startsWith('data: ') && !line.trim()) continue
+            const chunk = adapter.parseStreamChunk(line, eventType)
+            if (chunk?.content) {
+              output += chunk.content
+              tokens++
+              const color = slot === 'A' ? A.brightBlue : A.brightGreen
+              process.stdout.write(`${A.bold}${color}[${slot}]${A.reset} ${chunk.content}`)
+              broadcaster?.broadcastToken(chunk.content, Date.now() - startedAt)
+            }
+            if (chunk?.done) break
           }
         }
 
-        broadcaster?.broadcastEnd({ input_tokens: 0, output_tokens: tokens });
-        await broadcaster?.close();
-        return { slot, output, tokens };
-      };
+        broadcaster?.broadcastEnd({ input_tokens: 0, output_tokens: tokens })
+        await broadcaster?.close()
+        return { slot, output, tokens }
+      }
 
-      const slotArg = args.slot.toUpperCase();
-      const slots: Array<['A' | 'B', Parameters<typeof _getStreamAdapter>[0], string]> = [];
-      if (slotArg === 'A' || slotArg === 'BOTH') slots.push(['A', providerA, modelA]);
-      if (slotArg === 'B' || slotArg === 'BOTH') slots.push(['B', providerB, modelB]);
+      const slotArg = args.slot.toUpperCase()
+      const slots: Array<['A' | 'B', Parameters<typeof _getStreamAdapter>[0], string]> = []
+      if (slotArg === 'A' || slotArg === 'BOTH') slots.push(['A', providerA, modelA])
+      if (slotArg === 'B' || slotArg === 'BOTH') slots.push(['B', providerB, modelB])
 
-      process.stdout.write('\n');
-      const results = await Promise.all(slots.map(([s, p, m]) => runSlot(s, p, m)));
-      process.stdout.write('\n');
+      process.stdout.write('\n')
+      const results = await Promise.all(slots.map(([s, p, m]) => runSlot(s, p, m)))
+      process.stdout.write('\n')
 
-      if (args.json) { printJson(results); return; }
+      if (args.json) {
+        printJson(results)
+        return
+      }
 
-      consola.success('Execution complete.');
+      consola.success('Execution complete.')
       printTable(
         ['Slot', 'Provider', 'Model', 'Tokens'],
         results.map((r) => {
-          const s = slots.find(([sl]) => sl === r.slot)!;
-          return [r.slot, s[1], s[2], String(r.tokens)];
+          const s = slots.find(([sl]) => sl === r.slot)!
+          return [r.slot, s[1], s[2], String(r.tokens)]
         })
-      );
-      consola.info('');
-      consola.info('If battle transitioned to voting: lf battle start-voting %s --closes-at <iso>', args.id);
-    } catch (err) { handleError(err); }
+      )
+      consola.info('')
+      consola.info(
+        'If battle transitioned to voting: lf battle start-voting %s --closes-at <iso>',
+        args.id
+      )
+    } catch (err) {
+      handleError(err)
+    }
   },
-});
+})
 
 // ---------------------------------------------------------------------------
 // battle set-schedule — autonomous lifecycle schedule via fn_battle_set_schedule
@@ -2420,8 +2626,8 @@ const setSchedule = defineCommand({
       return d.toISOString()
     }
 
-    const openAt    = validateTs('--open-at',    args['open-at'])
-    const judgeAt   = validateTs('--judge-at',   args['judge-at'])
+    const openAt = validateTs('--open-at', args['open-at'])
+    const judgeAt = validateTs('--judge-at', args['judge-at'])
     const publishAt = validateTs('--publish-at', args['publish-at'])
     if (process.exitCode === 1) return
 
@@ -2429,27 +2635,36 @@ const setSchedule = defineCommand({
       const schedId = await callRpc<string>(
         'fn_battle_set_schedule',
         {
-          p_battle_id:    args.id,
-          p_open_at:      openAt,
-          p_judge_at:     judgeAt,
-          p_publish_at:   publishAt,
-          p_auto_judge:   !args['no-auto-judge'],
+          p_battle_id: args.id,
+          p_open_at: openAt,
+          p_judge_at: judgeAt,
+          p_publish_at: publishAt,
+          p_auto_judge: !args['no-auto-judge'],
           p_auto_publish: !args['no-auto-publish'],
         },
         { requireAuth: true }
       )
 
       if (args.json) {
-        printJson({ schedule_id: schedId, battle_id: args.id, open_at: openAt, judge_at: judgeAt, publish_at: publishAt })
+        printJson({
+          schedule_id: schedId,
+          battle_id: args.id,
+          open_at: openAt,
+          judge_at: judgeAt,
+          publish_at: publishAt,
+        })
         return
       }
 
       consola.success('Lifecycle schedule set for battle %s.', args.id)
-      if (openAt)    consola.info('Opens:    %s (draft → open)', openAt)
-      if (judgeAt)   consola.info('Judge:    %s (scoring → closed)', judgeAt)
+      if (openAt) consola.info('Opens:    %s (draft → open)', openAt)
+      if (judgeAt) consola.info('Judge:    %s (scoring → closed)', judgeAt)
       if (publishAt) consola.info('Publish:  %s (closed → published)', publishAt)
       consola.info('')
-      consola.info('Force any transition: lf battle force-transition %s --status <status> --reason <reason>', args.id)
+      consola.info(
+        'Force any transition: lf battle force-transition %s --status <status> --reason <reason>',
+        args.id
+      )
     } catch (err) {
       handleError(err)
     }
@@ -2465,10 +2680,18 @@ const forceTransition = defineCommand({
     description: 'Force a battle into a target status (admin only). Requires --force in CI.',
   },
   args: {
-    id:     { type: 'positional', description: 'Battle UUID', required: true },
-    status: { type: 'string', description: 'Target status: draft|open|executing|voting|scoring|closed|published|archived', required: true },
+    id: { type: 'positional', description: 'Battle UUID', required: true },
+    status: {
+      type: 'string',
+      description: 'Target status: draft|open|executing|voting|scoring|closed|published|archived',
+      required: true,
+    },
     reason: { type: 'string', description: 'Reason for the force transition', required: true },
-    force:  { type: 'boolean', description: 'Skip countdown (required in CI / non-interactive shells)', default: false },
+    force: {
+      type: 'boolean',
+      description: 'Skip countdown (required in CI / non-interactive shells)',
+      default: false,
+    },
   },
   async run({ args }) {
     await assertSafe({
@@ -2479,12 +2702,10 @@ const forceTransition = defineCommand({
       forceFlag: '--force',
       hasForce: args.force,
       description: `Force battle ${args.id} into status "${args.status}" (admin override — bypasses normal lifecycle guards).`,
-      affectedResources: [
-        { type: 'battle', name: args.id, scope: 'remote' },
-      ],
+      affectedResources: [{ type: 'battle', name: args.id, scope: 'remote' }],
       rollbackAvailable: true,
       notes: [`Reason: ${args.reason}`],
-    });
+    })
     try {
       await callRpc(
         'fn_battle_force_transition',
@@ -2536,47 +2757,47 @@ const schedule = defineCommand({
   async run({ args }) {
     try {
       // Validate the datetime locally before round-tripping to the server
-      const startsAt = new Date(args['starts-at']);
+      const startsAt = new Date(args['starts-at'])
       if (isNaN(startsAt.getTime())) {
-        consola.error('Invalid --starts-at value. Use ISO 8601 format, e.g. 2026-10-15T14:00:00Z');
-        process.exit(1);
+        consola.error('Invalid --starts-at value. Use ISO 8601 format, e.g. 2026-10-15T14:00:00Z')
+        process.exit(1)
       }
       if (startsAt.getTime() <= Date.now()) {
-        consola.error('--starts-at must be in the future.');
-        process.exit(1);
+        consola.error('--starts-at must be in the future.')
+        process.exit(1)
       }
 
-      const { createClient: createSupabaseClient } = await import('../utils/supabase-client');
-      const client = await createSupabaseClient();
+      const { createClient: createSupabaseClient } = await import('../utils/supabase-client')
+      const client = await createSupabaseClient()
 
       const { error } = await client
         .schema('battles')
         .from('battles')
         .update({
-          execution_starts_at:   startsAt.toISOString(),
+          execution_starts_at: startsAt.toISOString(),
           voting_duration_hours: parseInt(args['voting-duration-hours'], 10),
-          auto_publish:          !args['no-auto-publish'],
+          auto_publish: !args['no-auto-publish'],
         })
-        .eq('id', args.id);
+        .eq('id', args.id)
 
-      if (error) throw error;
+      if (error) throw error
 
       if (args.json) {
-        printJson({ battle_id: args.id, execution_starts_at: startsAt.toISOString() });
-        return;
+        printJson({ battle_id: args.id, execution_starts_at: startsAt.toISOString() })
+        return
       }
 
-      consola.success('Battle %s scheduled.', args.id);
-      consola.info('Execution starts at: %s', startsAt.toLocaleString());
-      consola.info('Voting duration:     %sh', args['voting-duration-hours']);
-      consola.info('Auto-publish:        %s', args['no-auto-publish'] ? 'disabled' : 'enabled');
-      consola.info('');
-      consola.info('Track job status: lf battle jobs %s', args.id);
+      consola.success('Battle %s scheduled.', args.id)
+      consola.info('Execution starts at: %s', startsAt.toLocaleString())
+      consola.info('Voting duration:     %sh', args['voting-duration-hours'])
+      consola.info('Auto-publish:        %s', args['no-auto-publish'] ? 'disabled' : 'enabled')
+      consola.info('')
+      consola.info('Track job status: lf battle jobs %s', args.id)
     } catch (err) {
-      handleError(err);
+      handleError(err)
     }
   },
-});
+})
 
 // ---------------------------------------------------------------------------
 // battle jobs  — inspect execution job queue for a battle
@@ -2600,27 +2821,31 @@ const jobs = defineCommand({
   },
   async run({ args }) {
     try {
-      const { createServiceClient } = await import('../utils/supabase-client');
-      const client = await createServiceClient();
+      const { createServiceClient } = await import('../utils/supabase-client')
+      const client = await createServiceClient()
 
       const { data, error } = await client
         .schema('battles')
         .from('battle_execution_jobs')
-        .select('id, slot, status, worker_id, retry_count, max_retries, error_message, claimed_at, completed_at, created_at')
+        .select(
+          'id, slot, status, worker_id, retry_count, max_retries, error_message, claimed_at, completed_at, created_at'
+        )
         .eq('battle_id', args.id)
-        .order('slot');
+        .order('slot')
 
-      if (error) throw error;
+      if (error) throw error
 
       if (!data || data.length === 0) {
-        consola.info('No execution jobs found for battle %s.', args.id);
-        consola.info('If the battle is scheduled, jobs will appear after the execution_starts_at time.');
-        return;
+        consola.info('No execution jobs found for battle %s.', args.id)
+        consola.info(
+          'If the battle is scheduled, jobs will appear after the execution_starts_at time.'
+        )
+        return
       }
 
       if (args.json) {
-        printJson(data);
-        return;
+        printJson(data)
+        return
       }
 
       printTable(
@@ -2633,12 +2858,12 @@ const jobs = defineCommand({
           j['completed_at'] ? new Date(j['completed_at'] as string).toLocaleString() : '—',
           j['error_message'] ? truncate(String(j['error_message']), 40) : '—',
         ])
-      );
+      )
     } catch (err) {
-      handleError(err);
+      handleError(err)
     }
   },
-});
+})
 
 // ---------------------------------------------------------------------------
 // tournament subcommand (nested)
@@ -2646,34 +2871,43 @@ const jobs = defineCommand({
 const tournamentCreate = defineCommand({
   meta: { name: 'create', description: 'Create a new tournament.' },
   args: {
-    title:          { type: 'string', description: 'Tournament title', required: true },
-    format:         { type: 'string', description: 'single_elimination | round_robin | swiss', default: 'single_elimination' },
+    title: { type: 'string', description: 'Tournament title', required: true },
+    format: {
+      type: 'string',
+      description: 'single_elimination | round_robin | swiss',
+      default: 'single_elimination',
+    },
     'max-contenders': { type: 'string', description: 'Maximum number of contenders', default: '8' },
-    'battle-type':  { type: 'string', description: 'Battle type for matches', default: 'ai_vs_ai' },
-    'ai-judge':     { type: 'boolean', description: 'Enable AI judge', default: false },
-    json:           { type: 'boolean', description: 'Output as JSON', default: false },
+    'battle-type': { type: 'string', description: 'Battle type for matches', default: 'ai_vs_ai' },
+    'ai-judge': { type: 'boolean', description: 'Enable AI judge', default: false },
+    json: { type: 'boolean', description: 'Output as JSON', default: false },
   },
   async run({ args }) {
     try {
       const data = await callRpc<Record<string, unknown>>(
         'fn_create_tournament',
         {
-          p_title:             args.title,
-          p_format:            args.format,
-          p_max_contenders:    parseInt(args['max-contenders'] as string, 10),
-          p_battle_type:       args['battle-type'],
-          p_ai_judge_enabled:  args['ai-judge'],
+          p_title: args.title,
+          p_format: args.format,
+          p_max_contenders: parseInt(args['max-contenders'] as string, 10),
+          p_battle_type: args['battle-type'],
+          p_ai_judge_enabled: args['ai-judge'],
         },
         { requireAuth: true }
-      );
-      if (args.json) { printJson(data); return; }
-      consola.success('Tournament created.');
-      consola.info('ID:   %s', data['id']);
-      consola.info('Slug: %s', data['slug']);
-      consola.info('Next: lf battle tournament register %s', data['id']);
-    } catch (err) { handleError(err); }
+      )
+      if (args.json) {
+        printJson(data)
+        return
+      }
+      consola.success('Tournament created.')
+      consola.info('ID:   %s', data['id'])
+      consola.info('Slug: %s', data['slug'])
+      consola.info('Next: lf battle tournament register %s', data['id'])
+    } catch (err) {
+      handleError(err)
+    }
   },
-});
+})
 
 const tournamentRegister = defineCommand({
   meta: { name: 'register', description: 'Register yourself as a contender in a tournament.' },
@@ -2686,30 +2920,41 @@ const tournamentRegister = defineCommand({
         'fn_register_tournament_contender',
         { p_tournament_id: args.id },
         { requireAuth: true }
-      );
-      consola.success('Registered as contender in tournament %s.', args.id);
-      consola.info('Contender ID: %s', data['id']);
-    } catch (err) { handleError(err); }
+      )
+      consola.success('Registered as contender in tournament %s.', args.id)
+      consola.info('Contender ID: %s', data['id'])
+    } catch (err) {
+      handleError(err)
+    }
   },
-});
+})
 
 const tournamentStart = defineCommand({
-  meta: { name: 'start', description: 'Start the tournament — seeds bracket and creates round 1 battles.' },
+  meta: {
+    name: 'start',
+    description: 'Start the tournament — seeds bracket and creates round 1 battles.',
+  },
   args: {
     id: { type: 'positional', description: 'Tournament UUID', required: true },
   },
   async run({ args }) {
     try {
-      await callRpc<void>('fn_start_tournament', { p_tournament_id: args.id }, { requireAuth: true });
-      consola.success('Tournament %s started. Round 1 battles are being created.', args.id);
-    } catch (err) { handleError(err); }
+      await callRpc<void>(
+        'fn_start_tournament',
+        { p_tournament_id: args.id },
+        { requireAuth: true }
+      )
+      consola.success('Tournament %s started. Round 1 battles are being created.', args.id)
+    } catch (err) {
+      handleError(err)
+    }
   },
-});
+})
 
 const tournamentBracket = defineCommand({
   meta: { name: 'bracket', description: 'Show the tournament bracket.' },
   args: {
-    id:   { type: 'positional', description: 'Tournament UUID', required: true },
+    id: { type: 'positional', description: 'Tournament UUID', required: true },
     json: { type: 'boolean', description: 'Output as JSON', default: false },
   },
   async run({ args }) {
@@ -2718,11 +2963,14 @@ const tournamentBracket = defineCommand({
         'fn_get_tournament_bracket',
         { p_tournament_id: args.id },
         { requireAuth: false }
-      );
-      if (args.json) { printJson(data); return; }
+      )
+      if (args.json) {
+        printJson(data)
+        return
+      }
       if (!data || data.length === 0) {
-        consola.info('No bracket data yet — start the tournament first.');
-        return;
+        consola.info('No bracket data yet — start the tournament first.')
+        return
       }
       printTable(
         ['Round', 'Round Status', 'Battle Slug', 'A', 'B', 'Winner'],
@@ -2734,20 +2982,22 @@ const tournamentBracket = defineCommand({
           m['contender_b_lenser_id'] ? String(m['contender_b_lenser_id']).slice(0, 8) : '—',
           m['winner_lenser_id'] ? String(m['winner_lenser_id']).slice(0, 8) : '—',
         ])
-      );
-    } catch (err) { handleError(err); }
+      )
+    } catch (err) {
+      handleError(err)
+    }
   },
-});
+})
 
 const tournament = defineCommand({
   meta: { name: 'tournament', description: 'Manage LenserFight tournaments.' },
   subCommands: {
-    create:   tournamentCreate,
+    create: tournamentCreate,
     register: tournamentRegister,
-    start:    tournamentStart,
-    bracket:  tournamentBracket,
+    start: tournamentStart,
+    bracket: tournamentBracket,
   },
-});
+})
 
 // ---------------------------------------------------------------------------
 // battle stream-feed (Y3) — realtime tail of battles.battles
@@ -2765,8 +3015,8 @@ const streamFeed = defineCommand({
   args: {},
   async run() {
     try {
-      const { createClient } = await import('../utils/supabase-client');
-      const client = await createClient();
+      const { createClient } = await import('../utils/supabase-client')
+      const client = await createClient()
 
       const channel = client
         .channel('lf-cli-battle-stream-feed')
@@ -2777,33 +3027,43 @@ const streamFeed = defineCommand({
           { event: '*', schema: 'battles', table: 'battles' } as Record<string, unknown>,
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
           (payload: any) => {
-            if (!payload) return;
-            const evt = (payload.eventType ?? payload.type ?? 'event').toString().toLowerCase();
-            if (evt !== 'insert' && evt !== 'update') return;
-            const row = (payload.new ?? payload.record ?? {}) as Record<string, unknown>;
-            const slug = row['slug'] ?? row['id'] ?? '?';
-            const status = row['status'] ?? '?';
-            consola.log(`[${new Date().toISOString()}] battle ${slug}: ${status}`);
-          },
+            if (!payload) return
+            const evt = (payload.eventType ?? payload.type ?? 'event').toString().toLowerCase()
+            if (evt !== 'insert' && evt !== 'update') return
+            const row = (payload.new ?? payload.record ?? {}) as Record<string, unknown>
+            const slug = row['slug'] ?? row['id'] ?? '?'
+            const status = row['status'] ?? '?'
+            consola.log(`[${new Date().toISOString()}] battle ${slug}: ${status}`)
+          }
         )
-        .subscribe();
+        .subscribe()
 
-      consola.info('Subscribed to battles.battles. Press Ctrl-C to exit.');
+      consola.info('Subscribed to battles.battles. Press Ctrl-C to exit.')
 
       const exit = async () => {
-        try { await client.removeChannel(channel); } catch { /* ignore */ }
-        process.exit(0);
-      };
-      process.on('SIGINT', () => { void exit(); });
-      process.on('SIGTERM', () => { void exit(); });
+        try {
+          await client.removeChannel(channel)
+        } catch {
+          /* ignore */
+        }
+        process.exit(0)
+      }
+      process.on('SIGINT', () => {
+        void exit()
+      })
+      process.on('SIGTERM', () => {
+        void exit()
+      })
 
       // Keep the event loop alive without busy-spinning.
-      await new Promise<void>(() => { /* never resolves; SIGINT exits */ });
+      await new Promise<void>(() => {
+        /* never resolves; SIGINT exits */
+      })
     } catch (err) {
-      handleError(err);
+      handleError(err)
     }
   },
-});
+})
 
 // ---------------------------------------------------------------------------
 // battle rematch
@@ -2828,24 +3088,20 @@ const rematch = defineCommand({
   async run({ args }) {
     try {
       // 1. Resolve slug → battle_id via PostgREST
-      const parents = await callRest<Array<{ id: string; slug: string; creator_lenser_id: string }>>(
-        'battles',
-        'battles',
-        'GET',
-        undefined,
-        {
-          requireAuth: true,
-          query: {
-            select: 'id,slug,creator_lenser_id',
-            slug: `eq.${args.slug}`,
-            limit: 1,
-          },
-        }
-      );
+      const parents = await callRest<
+        Array<{ id: string; slug: string; creator_lenser_id: string }>
+      >('battles', 'battles', 'GET', undefined, {
+        requireAuth: true,
+        query: {
+          select: 'id,slug,creator_lenser_id',
+          slug: `eq.${args.slug}`,
+          limit: 1,
+        },
+      })
 
-      const parent = parents?.[0];
+      const parent = parents?.[0]
       if (!parent) {
-        throw new Error(`No battle found for slug "${args.slug}".`);
+        throw new Error(`No battle found for slug "${args.slug}".`)
       }
 
       // 2. Call fn_battles_create_rematch RPC (owner-checked, returns new battle id)
@@ -2853,10 +3109,10 @@ const rematch = defineCommand({
         'fn_battles_create_rematch',
         { p_parent_id: parent.id },
         { requireAuth: true }
-      );
+      )
 
       if (!newId) {
-        throw new Error('Rematch RPC returned no id.');
+        throw new Error('Rematch RPC returned no id.')
       }
 
       // 3. Resolve new id → new slug
@@ -2873,24 +3129,24 @@ const rematch = defineCommand({
             limit: 1,
           },
         }
-      );
+      )
 
-      const newSlug = created?.[0]?.slug ?? null;
+      const newSlug = created?.[0]?.slug ?? null
       if (!newSlug) {
-        throw new Error(`Rematch created (id=${newId}) but slug could not be resolved.`);
+        throw new Error(`Rematch created (id=${newId}) but slug could not be resolved.`)
       }
 
       if (args.json) {
-        printJson({ rematch_id: newId, slug: newSlug });
-        return;
+        printJson({ rematch_id: newId, slug: newSlug })
+        return
       }
 
-      consola.success('Created rematch: %s', newSlug);
+      consola.success('Created rematch: %s', newSlug)
     } catch (err) {
-      handleError(err);
+      handleError(err)
     }
   },
-});
+})
 
 // ---------------------------------------------------------------------------
 // battle export
@@ -2918,44 +3174,44 @@ const battleExport = defineCommand({
     },
   },
   async run({ args }) {
-    let state;
+    let state
     try {
-      state = localBattleStore.resolve(args.id);
+      state = localBattleStore.resolve(args.id)
     } catch (err) {
-      handleError(err);
-      return;
+      handleError(err)
+      return
     }
 
-    const output = args['as-md']
-      ? buildBattleMarkdown(state)
-      : JSON.stringify(state, null, 2);
+    const output = args['as-md'] ? buildBattleMarkdown(state) : JSON.stringify(state, null, 2)
 
     if (args.out) {
-      const { writeFileSync } = await import('node:fs');
-      writeFileSync(args.out, output, 'utf-8');
-      consola.success('Written to %s', args.out);
+      const { writeFileSync } = await import('node:fs')
+      writeFileSync(args.out, output, 'utf-8')
+      consola.success('Written to %s', args.out)
     } else {
-      process.stdout.write(output + '\n');
+      process.stdout.write(output + '\n')
     }
   },
-});
+})
 
-function buildBattleMarkdown(state: import('../utils/local-battle-engine').LocalBattleState): string {
-  const contA = state.contenders.find((c) => c.slot === 'A');
-  const contB = state.contenders.find((c) => c.slot === 'B');
-  const aWins = state.votes.filter((v) => v.slot === 'A').length;
-  const bWins = state.votes.filter((v) => v.slot === 'B').length;
-  const draws = state.votes.filter((v) => v.slot === 'draw').length;
-  const total = state.votes.length;
+function buildBattleMarkdown(
+  state: import('../utils/local-battle-engine').LocalBattleState
+): string {
+  const contA = state.contenders.find((c) => c.slot === 'A')
+  const contB = state.contenders.find((c) => c.slot === 'B')
+  const aWins = state.votes.filter((v) => v.slot === 'A').length
+  const bWins = state.votes.filter((v) => v.slot === 'B').length
+  const draws = state.votes.filter((v) => v.slot === 'draw').length
+  const total = state.votes.length
 
   const winner =
     total === 0
       ? '_No votes recorded_'
       : aWins > bWins
-      ? `**${contA?.label ?? 'Slot A'}** wins (${aWins}/${total})`
-      : bWins > aWins
-      ? `**${contB?.label ?? 'Slot B'}** wins (${bWins}/${total})`
-      : `Draw (${aWins}A / ${bWins}B / ${draws} draw)`;
+        ? `**${contA?.label ?? 'Slot A'}** wins (${aWins}/${total})`
+        : bWins > aWins
+          ? `**${contB?.label ?? 'Slot B'}** wins (${bWins}/${total})`
+          : `Draw (${aWins}A / ${bWins}B / ${draws} draw)`
 
   const lines: string[] = [
     `# ${state.name}`,
@@ -2970,36 +3226,43 @@ function buildBattleMarkdown(state: import('../utils/local-battle-engine').Local
     '',
     '## Contenders',
     '',
-    contA ? `- **Slot A — ${contA.label}**: \`${contA.provider}/${contA.model}\`` : '- Slot A: _not configured_',
-    contB ? `- **Slot B — ${contB.label}**: \`${contB.provider}/${contB.model}\`` : '- Slot B: _not configured_',
+    contA
+      ? `- **Slot A — ${contA.label}**: \`${contA.provider}/${contA.model}\``
+      : '- Slot A: _not configured_',
+    contB
+      ? `- **Slot B — ${contB.label}**: \`${contB.provider}/${contB.model}\``
+      : '- Slot B: _not configured_',
     '',
-  ];
+  ]
 
   if (state.outputs.A || state.outputs.B) {
-    lines.push('## Outputs', '');
+    lines.push('## Outputs', '')
     if (state.outputs.A) {
-      lines.push(`### Slot A — ${contA?.label ?? 'A'}`, '', state.outputs.A, '');
+      lines.push(`### Slot A — ${contA?.label ?? 'A'}`, '', state.outputs.A, '')
     }
     if (state.outputs.B) {
-      lines.push(`### Slot B — ${contB?.label ?? 'B'}`, '', state.outputs.B, '');
+      lines.push(`### Slot B — ${contB?.label ?? 'B'}`, '', state.outputs.B, '')
     }
   }
 
-  lines.push('## Vote Summary', '');
-  lines.push(`- Slot A wins: ${aWins}`);
-  lines.push(`- Slot B wins: ${bWins}`);
-  lines.push(`- Draws: ${draws}`);
-  lines.push(`- **Result: ${winner}**`);
+  lines.push('## Vote Summary', '')
+  lines.push(`- Slot A wins: ${aWins}`)
+  lines.push(`- Slot B wins: ${bWins}`)
+  lines.push(`- Draws: ${draws}`)
+  lines.push(`- **Result: ${winner}**`)
 
   if (state.votes.length > 0) {
-    lines.push('', '### Vote log', '');
+    lines.push('', '### Vote log', '')
     for (const v of state.votes) {
-      const label = v.slot === 'A' ? contA?.label ?? 'A' : v.slot === 'B' ? contB?.label ?? 'B' : 'Draw';
-      lines.push(`- **${v.votedAt.slice(0, 10)}** → ${label}${v.rationale ? `: ${v.rationale}` : ''}`);
+      const label =
+        v.slot === 'A' ? (contA?.label ?? 'A') : v.slot === 'B' ? (contB?.label ?? 'B') : 'Draw'
+      lines.push(
+        `- **${v.votedAt.slice(0, 10)}** → ${label}${v.rationale ? `: ${v.rationale}` : ''}`
+      )
     }
   }
 
-  return lines.join('\n');
+  return lines.join('\n')
 }
 
 // ---------------------------------------------------------------------------
@@ -3048,4 +3311,4 @@ export default defineCommand({
     rematch,
     export: battleExport,
   },
-});
+})
