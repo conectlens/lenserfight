@@ -21,7 +21,7 @@ Cloud battles, the public arena, BYOK streaming to the web UI, and the ELO leade
 
 | | Local battle | Cloud battle |
 |---|---|---|
-| **State location** | `.lenserfight/local-battles/{id}.json` | Supabase `battles` schema |
+| **State location** | user runtime storage under `local-battles/{id}.json` | Supabase `battles` schema |
 | **Execution** | Your machine, your keys | Platform keys (default) or your keys (`--byok`) |
 | **Auth required** | No | Yes (for exec and push) |
 | **Visibility** | Private until pushed | Community-visible when published |
@@ -138,7 +138,7 @@ lf battle exec <id> --byok            battles table (status: executing)
 ## Data persistence
 
 ### Local battles
-State lives at `.lenserfight/local-battles/{id}.json`. The directory is excluded from git by the standard `.gitignore` entry for `.lenserfight/`. State persists across machine restarts. Find all battles with `lf battle local list`.
+State lives in user runtime storage under `local-battles/{id}.json`. Legacy project-root `.lenserfight/local-battles/` files are still read for compatibility, but should not be committed. State persists across machine restarts. Find all battles with `lf battle local list`.
 
 ### Cloud battles
 State lives in the Supabase `battles` schema — battle rows, contender submissions, execution records, votes. Accessible from any machine with `lf auth login`.
