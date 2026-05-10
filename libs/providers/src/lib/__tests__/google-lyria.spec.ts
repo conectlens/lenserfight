@@ -1,5 +1,5 @@
 import { googleLyriaAdapter } from '../google-lyria'
-import { mockFetch, resetFetchMock } from '../../../../../../../infra/execution/src/lib/testing'
+import { mockFetch, resetFetchMock } from '../testing'
 
 const OPERATIONS_URL = /aiplatform\.googleapis\.com.*operations/
 const PREDICT_URL = /aiplatform\.googleapis\.com.*predictLongRunning/
