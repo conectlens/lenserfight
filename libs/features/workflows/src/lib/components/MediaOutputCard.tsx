@@ -27,9 +27,21 @@ export interface MediaOutputCardProps {
   name?: string | null
   /** Bytes label, formatted by the caller. */
   byteSize?: number | null
+  /** Duration in seconds for video/audio media (AN). */
+  durationSeconds?: number | null
   /** When true, hides the download button (e.g. share-card preview). */
   hideDownload?: boolean
   className?: string
+  /** AT: called when user confirms deletion of this media object. */
+  onDelete?: () => void
+  /** AT: called when user toggles visibility. */
+  onToggleVisibility?: (visibility: 'public' | 'private' | 'unlisted') => void
+}
+
+function formatDuration(seconds: number): string {
+  const m = Math.floor(seconds / 60)
+  const s = Math.floor(seconds % 60)
+  return `${m}:${s.toString().padStart(2, '0')}`
 }
 
 function formatBytes(n: number): string {
@@ -46,7 +58,10 @@ export function MediaOutputCard({
   contentText,
   name,
   byteSize,
+  durationSeconds,
   hideDownload = false,
+  onDelete,
+  onToggleVisibility,
   className,
 }: MediaOutputCardProps) {
   const proxyHref = `/v1/media/${objectId}`
@@ -78,19 +93,40 @@ export function MediaOutputCard({
             </span>
           ) : null}
           {byteSize != null ? <span>{formatBytes(byteSize)}</span> : null}
+          {durationSeconds != null ? <span>{formatDuration(durationSeconds)}</span> : null}
           {name ? <span className="truncate">{name}</span> : null}
         </div>
-        {!hideDownload ? (
-          <a
-            href={proxyHref}
-            className="inline-flex items-center px-2 py-1 rounded bg-greyscale-900 text-white hover:bg-greyscale-700 transition-colors text-xs font-medium"
-            // The proxy sets Content-Disposition when ?download is appended;
-            // adding `download` on the anchor is a UX hint for the browser.
-            download={name ?? `media-${objectId.slice(0, 8)}`}
-          >
-            Download
-          </a>
-        ) : null}
+        <div className="flex items-center gap-1">
+          {onToggleVisibility ? (
+            <button
+              type="button"
+              onClick={() => onToggleVisibility('public')}
+              className="px-2 py-1 rounded text-xs hover:bg-greyscale-100 dark:hover:bg-greyscale-800 transition-colors"
+              title="Toggle visibility"
+            >
+              Share
+            </button>
+          ) : null}
+          {onDelete ? (
+            <button
+              type="button"
+              onClick={onDelete}
+              className="px-2 py-1 rounded text-xs text-red-500 hover:bg-red-50 dark:hover:bg-red-950/30 transition-colors"
+              title="Delete media"
+            >
+              Delete
+            </button>
+          ) : null}
+          {!hideDownload ? (
+            <a
+              href={proxyHref}
+              className="inline-flex items-center px-2 py-1 rounded bg-greyscale-900 text-white hover:bg-greyscale-700 transition-colors text-xs font-medium"
+              download={name ?? `media-${objectId.slice(0, 8)}`}
+            >
+              Download
+            </a>
+          ) : null}
+        </div>
       </div>
     </div>
   )

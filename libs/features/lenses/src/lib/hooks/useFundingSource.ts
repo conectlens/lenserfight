@@ -10,7 +10,10 @@ import type { LocalKeyMeta } from '@lenserfight/types'
 
 const LS_FUNDING_KEY = 'lf-workflow-funding-source'
 
-export const useFundingSource = (selectedProviderKey: string) => {
+export const useFundingSource = (
+  selectedProviderKey: string,
+  outputModality: string = 'text',
+) => {
   const { isAuthenticated } = useAuth()
   const [fundingSource, setFundingSourceState] = useState<FundingSource>(() => {
     if (typeof window === 'undefined') return 'platform_credit'
@@ -87,6 +90,15 @@ export const useFundingSource = (selectedProviderKey: string) => {
     return false
   })()
 
+  // AN: video/audio modality warning — platform credit costs significantly more
+  // for media generation than for text. Surface this in the UI before dispatch.
+  const isMediaModality = outputModality === 'video' || outputModality === 'audio'
+  const modalityWarning: string | null = (() => {
+    if (!isMediaModality) return null
+    if (fundingSource !== 'platform_credit') return null
+    return `${outputModality === 'video' ? 'Video' : 'Audio'} generation uses platform credits (charged per second of output).`
+  })()
+
   return {
     fundingSource,
     setFundingSource,
@@ -104,6 +116,8 @@ export const useFundingSource = (selectedProviderKey: string) => {
     walletBalance,
     canUseBYOK,
     isReady,
+    isMediaModality,
+    modalityWarning,
   }
 }
 
