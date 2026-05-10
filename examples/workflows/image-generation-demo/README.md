@@ -17,13 +17,23 @@ Single-node workflow that produces an image via `fal-ai/flux/dev` and lands a
 
 ## Run it
 
+Validate and simulate the file-first object without calling FAL:
+
+```bash
+pnpm nx run cli:build
+node dist/apps/cli/main.js workflow run examples/workflows/image-generation-demo/WORKFLOW.md \
+  --inputs '{"prompt":"a dragonfly resting on a fern, studio lighting"}'
+```
+
+Run the full Supabase-backed media flow:
+
 ```bash
 # 1. Apply the seed
 psql "$LOCAL_SUPABASE_DB_URL" -f examples/workflows/image-generation-demo/seed.sql
 
-# 2. Trigger the workflow via CLI
-lf workflow run --workflow d10adea1-1eee-4eee-aeee-000000000ak1 \
-  --input prompt="a dragonfly resting on a fern, studio lighting"
+# 2. Trigger the workflow through the platform workflow runner
+lf run --workflow d10adea1-1eee-4eee-aeee-000000000ak1 \
+  --inputs '{"prompt":"a dragonfly resting on a fern, studio lighting"}'
 
 # 3. Inspect the resulting media object
 lf media list --run <run-id-from-step-2>
