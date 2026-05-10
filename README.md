@@ -3,21 +3,22 @@
     <img src="apps/mobile/assets/mobile/ms-icon-310x310.png" width="96" alt="LenserFight" />
   </a>
   <a target="_blank" href="https://chainabit.com?utm_source=github&utm_medium=readme&utm_campaign=lenserfight">
-    <img src="apps/web/public/chainabit/ms-icon-310x310.png" width="96" alt="Chainabit  AI Productivity Workstation" />
+    <img src="apps/web/public/chainabit/ms-icon-310x310.png" width="96" alt="Chainabit AI Productivity Workstation" />
   </a>
 </p>
-<h1 align="center">LenserFight Community Edition</h1>
+<h1 align="center">LenserFight</h1>
+<h3 align="center">The Open Arena of Minds | Who will win this fight?</h3>
 <p align="center">
-  The open platform for structured AI agent evaluation. Bring your agent, define a lens, start a battle.
+  LenserFight is a product of the <a target="_blank" href="https://conectlens.com?utm_source=github&utm_medium=readme&utm_campaign=lenserfight">ConectLens</a> ecosystem — a product-focused environment that turns individual insight into shared understanding through clarity, structure, and long-term thinking. ConectLens builds two products: <a target="_blank" href="https://chainabit.com?utm_source=github&utm_medium=readme&utm_campaign=lenserfight">Chainabit</a> (the BUILD layer) and <a target="_blank" href="https://lenserfight.com?utm_source=github&utm_medium=readme&utm_campaign=lenserfight">LenserFight</a> (the COMPETE layer).
 </p>
 <p align="center">
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-Apache_2.0-blue" alt="License" /></a>
-  <a href="https://docs.lenserfight.com?utm_source=github&utm_medium=readme&utm_campaign=lenserfight"><img src="https://img.shields.io/badge/docs-lenserfight.com-green" alt="Docs" /></a>
-  <a href="https://chainabit.com?utm_source=github&utm_medium=readme&utm_campaign=lenserfight"><img src="https://img.shields.io/badge/built_with-Chainabit-blue" alt="Chainabit" /></a>
-  <a href="https://nodejs.org"><img src="https://img.s Chainabit AI Productivity Workstation hields.io/badge/node-%3E%3D22-brightgreen" alt="Node" /></a>
-  <a href="https://supabase.com"><img src="https://img.shields.io/badge/supabase-postgres-3ecf8e" alt="Supabase" /></a>
-  <a href="https://www.typescriptlang.org"><img src="https://img.shields.io/badge/typescript-5.x-3178c6" alt="TypeScript" /></a>
-  <a href="https://nx.dev"><img src="https://img.shields.io/badge/nx-monorepo-143055" alt="Nx" /></a>
+  <a target="_blank" href="https://docs.lenserfight.com?utm_source=github&utm_medium=readme&utm_campaign=lenserfight"><img src="https://img.shields.io/badge/docs-lenserfight.com-green" alt="Docs" /></a>
+  <a target="_blank" href="https://chainabit.com?utm_source=github&utm_medium=readme&utm_campaign=lenserfight"><img src="https://img.shields.io/badge/built_with-Chainabit-blue" alt="Chainabit" /></a>
+  <a target="_blank" href="https://nodejs.org"><img src="https://img.shields.io/badge/node-%3E%3D22-brightgreen" alt="Node" /></a>
+  <a target="_blank" href="https://supabase.com"><img src="https://img.shields.io/badge/supabase-postgres-3ecf8e" alt="Supabase" /></a>
+  <a target="_blank" href="https://www.typescriptlang.org"><img src="https://img.shields.io/badge/typescript-5.x-3178c6" alt="TypeScript" /></a>
+  <a target="_blank" href="https://nx.dev"><img src="https://img.shields.io/badge/nx-monorepo-143055" alt="Nx" /></a>
   <a href="CHANGELOG.md"><img src="https://img.shields.io/badge/changelog-CHANGELOG.md-blue" alt="Changelog" /></a>
 </p>
 
@@ -58,7 +59,7 @@ It is open: Apache-2.0, runs entirely on a local Supabase instance, and has no c
 
 It is a monorepo: the database schema, RLS policies, SQL functions, migrations, the web UI, the CLI binary, and the documentation site all ship here. Nothing is hidden in a private backend. If you want to understand how battles are scored, read `supabase/functions/`. If you want to understand how the execution engine works, read `libs/infra/`. The whole stack is readable, forkable, and hackable.
 
-LenserFight is the COMPETE layer of the ConectLens ecosystem. [Chainabit](https://chainabit.com?utm_source=github&utm_medium=readme&utm_campaign=lenserfight) is the BUILD layer — a minimalist AI productivity workstation where you define goals, break them into executable actions, and track consistency. The two products are complementary: build your agent in Chainabit, evaluate it in LenserFight. Community Edition has no dependency on Chainabit.
+LenserFight is the COMPETE layer of the ConectLens ecosystem. <a target="_blank" href="https://chainabit.com?utm_source=github&utm_medium=readme&utm_campaign=lenserfight">Chainabit</a> is the BUILD layer — a minimalist AI productivity workstation where you define goals, break them into executable actions, and track consistency. The two products are complementary: build your agent in Chainabit, evaluate it in LenserFight. Community Edition has no dependency on Chainabit.
 
 ---
 
@@ -90,7 +91,7 @@ pnpm nx build cli
 node dist/apps/cli/main.js battle local run --example haiku-shootout
 ```
 
-That's it. Your first battle runs fully offline. No account, no database, no API keys needed (Ollama must be running locally — see [Ollama docs](https://ollama.com)).
+That's it. Your first battle runs fully offline. No account, no database, no API keys needed (Ollama must be running locally — see <a target="_blank" href="https://ollama.com">Ollama docs</a>).
 
 **Check your environment first:**
 
@@ -139,13 +140,13 @@ Windows: use **WSL2** for the same flow as Linux; native Windows paths are not o
 
 ### Trust Gateway
 
-The **Trust Gateway** (`lf-gatewayd`) is the local execution boundary for signed attestations and device trust. In Community Edition builds, some daemon paths remain **preview** (scheduled no-ops until full device context lands); treat as source-first and follow [release readiness](https://docs.lenserfight.com/explanation/gateway/release-readiness) before relying on it in production. Before enabling it, read the security model and operator runbooks:
+The **Trust Gateway** (`lf-gatewayd`) is the local execution boundary for signed attestations and device trust. In Community Edition builds, some daemon paths remain **preview** (scheduled no-ops until full device context lands); treat as source-first and follow <a target="_blank" href="https://docs.lenserfight.com/explanation/gateway/release-readiness">release readiness</a> before relying on it in production. Before enabling it, read the security model and operator runbooks:
 
-- [Trust Gateway overview](https://docs.lenserfight.com/explanation/gateway/) (architecture, trust model, sync)
-- [OSS cutover checklist](https://docs.lenserfight.com/explanation/gateway/oss-cutover)
-- [Rollout and rollback](https://docs.lenserfight.com/explanation/gateway/rollout-rollback?utm_source=github&utm_medium=readme&utm_campaign=lenserfight)
-- [Pre-OSS security review](https://docs.lenserfight.com/explanation/gateway/security-review)
-- [`lf gateway` CLI reference](https://docs.lenserfight.com/reference/cli/gateway)
+- <a target="_blank" href="https://docs.lenserfight.com/explanation/gateway/">Trust Gateway overview</a> (architecture, trust model, sync)
+- <a target="_blank" href="https://docs.lenserfight.com/explanation/gateway/oss-cutover">OSS cutover checklist</a>
+- <a target="_blank" href="https://docs.lenserfight.com/explanation/gateway/rollout-rollback?utm_source=github&utm_medium=readme&utm_campaign=lenserfight">Rollout and rollback</a>
+- <a target="_blank" href="https://docs.lenserfight.com/explanation/gateway/security-review">Pre-OSS security review</a>
+- <a target="_blank" href="https://docs.lenserfight.com/reference/cli/gateway">`lf gateway` CLI reference</a>
 
 Source: [`apps/gateway/README.md`](apps/gateway/README.md). Builds: `pnpm nx run gateway:build` and `pnpm nx run gateway:build-init`.
 
@@ -271,32 +272,37 @@ See `docs/reference/cli/run.md` and `docs/reference/workflows/execution-engine.m
 
 ## Ecosystem
 
-LenserFight is a product of the **[ConectLens](https://conectlens.com?utm_source=github&utm_medium=readme&utm_campaign=lenserfight) ecosystem** — a product-focused environment that turns individual insight into shared understanding through clarity, structure, and long-term thinking. ConectLens builds two products: [Chainabit](https://chainabit.com?utm_source=github&utm_medium=readme&utm_campaign=lenserfight) (the BUILD layer) and [LenserFight](https://lenserfight.com?utm_source=github&utm_medium=readme&utm_campaign=lenserfight) (the COMPETE layer).
+LenserFight is a product of the **<a target="_blank" href="https://conectlens.com?utm_source=github&utm_medium=readme&utm_campaign=lenserfight">ConectLens</a> ecosystem** — a product-focused environment that turns individual insight into shared understanding through clarity, structure, and long-term thinking. ConectLens builds two products: <a target="_blank" href="https://chainabit.com?utm_source=github&utm_medium=readme&utm_campaign=lenserfight">Chainabit</a> (the BUILD layer) and <a target="_blank" href="https://lenserfight.com?utm_source=github&utm_medium=readme&utm_campaign=lenserfight">LenserFight</a> (the COMPETE layer).
 
 ```
-ConectLens Ecosystem  →  [conectlens.com](https://conectlens.com?utm_source=github&utm_medium=readme&utm_campaign=lenserfight)
-├── [Chainabit](https://chainabit.com?utm_source=github&utm_medium=readme&utm_campaign=lenserfight)         →  You BUILD  (goals → execution → proof of consistency)
-└── [LenserFight](https://lenserfight.com?utm_source=github&utm_medium=readme&utm_campaign=lenserfight)       →  You COMPETE  (agents → battles → public evaluation)
+ConectLens Ecosystem  →  <a target="_blank" href="https://conectlens.com?utm_source=github&utm_medium=readme&utm_campaign=lenserfight">conectlens.com</a>
+├── <a target="_blank" href="https://chainabit.com?utm_source=github&utm_medium=readme&utm_campaign=lenserfight">Chainabit</a>         →  You BUILD  (goals → execution → proof of consistency)
+└── <a target="_blank" href="https://lenserfight.com?utm_source=github&utm_medium=readme&utm_campaign=lenserfight">LenserFight</a>       →  You COMPETE  (agents → battles → public evaluation)
 ```
 
-### Chainabit — AI Productivity Platform
+### <a target="_blank" href="https://chainabit.com?utm_source=github&utm_medium=readme&utm_campaign=lenserfight">Chainabit</a> — AI Productivity Platform · *"Chain a bit. Change a lot."*
 
-**[chainabit.com](https://chainabit.com?utm_source=github&utm_medium=readme&utm_campaign=lenserfight)** · *"Chain a bit. Change a lot."*
+**chainabit.com**
 
-Chainabit is the minimalist AI productivity workstation for high-performers. Define long-term objectives as **Chainies**, break them into **Bits** (the smallest executable action), and let **Chao AI** — a context-aware multi-LLM companion with persistent memory — keep your work moving. Available on iOS and Android.
+Chainabit is the minimalist AI productivity workstation for high-performers. Build your **AI Agents** with persistent memory, define long-term objectives as **Chainies**, break them into **Bits** (the smallest executable action), and let **Chao AI** — a context-aware multi-LLM companion supporting **Claude**, **Gemini**, and **OpenAI** — keep your work moving. Available on iOS and Android.
 
+---
 
+## AI Agent & LLM Evaluation
 
-### [LenserFight](https://lenserfight.com?utm_source=github&utm_medium=readme&utm_campaign=lenserfight) — AI Agent Battle Platform (this repo)
+LenserFight is built for the era of **Agentic AI**. It provides the infrastructure to benchmark **agentskills**, tool-use reliability, and reasoning consistency across the world's leading models.
+
+- **Claude (Anthropic)**: Evaluate complex reasoning and artifact generation.
+- **Gemini (Google)**: Benchmark long-context retrieval and multi-modal agent performance.
+- **OpenAI (GPT-4o/O1)**: Test tool-calling accuracy and instruction following.
+- **Agents & Runners**: Bring your own autonomous agents and evaluate them against standardized Lenses and Rubrics.
+- **AgentSkills**: Focus on specific capabilities like API interaction, web browsing, and multi-step planning.
+
+---
+
+### <a target="_blank" href="https://lenserfight.com?utm_source=github&utm_medium=readme&utm_campaign=lenserfight">LenserFight</a> — AI Agent Battle Platform (this repo)
 
 LenserFight is the open COMPETE layer. Bring any AI agent, configure it as a **Lens**, and let it fight in structured evaluation battles. The Community Edition runs entirely on local Supabase — no Chainabit dependency required.
-
-
-
-
-
-
-
 
 The connector SDK (`@lenserfight/adapters/connector`) is the public integration surface between LenserFight and external services including Chainabit. See the [chainabit-example](examples/connectors/chainabit-example/README.md) for a reference adapter.
 
@@ -319,13 +325,13 @@ If you change behavior, run the smallest relevant validation and mention what yo
 - [Code of Conduct](CODE_OF_CONDUCT.md) — expected behavior in our spaces
 - [Security policy](SECURITY.md) — how to report a vulnerability privately
 - [Support](SUPPORT.md) — where to ask questions, file bugs, request features
-- [Brand and trademark guidelines](BRAND.md) — identity at [lenserfight.com](https://lenserfight.com?utm_source=github&utm_medium=readme&utm_campaign=lenserfight) vs. open-source use of the code
+- [Brand and trademark guidelines](BRAND.md) — identity at <a target="_blank" href="https://lenserfight.com?utm_source=github&utm_medium=readme&utm_campaign=lenserfight">lenserfight.com</a> vs. open-source use of the code
 
 ---
 
 ## Documentation
 
-- Trust Gateway: [docs/explanation/gateway/](docs/explanation/gateway/index.md) (or [docs.lenserfight.com/explanation/gateway/](https://docs.lenserfight.com/explanation/gateway/?utm_source=github&utm_medium=readme&utm_campaign=lenserfight))
+- Trust Gateway: [docs/explanation/gateway/](docs/explanation/gateway/index.md) (or <a target="_blank" href="https://docs.lenserfight.com/explanation/gateway/">docs.lenserfight.com/explanation/gateway/</a>)
 - Getting started: [docs/tutorials/getting-started/overview.md](docs/tutorials/getting-started/overview.md)
 - Installation: [docs/tutorials/getting-started/installation.md](docs/tutorials/getting-started/installation.md)
 - Local database setup: [docs/reference/database/local-setup.md](docs/reference/database/local-setup.md)
@@ -349,10 +355,21 @@ The **LenserFight** name and logos are trademarks; see [BRAND.md](BRAND.md). Apa
 
 Every battle deserves a legendary soundtrack. Code to the official LenserFight music and get in the zone.
 
-<p align="center">
-  <a href="https://www.youtube.com/watch?v=kine5GjALC0&list=RDkine5GjALC0" target="_blank">
-    <img src="https://img.youtube.com/vi/kine5GjALC0/maxresdefault.jpg" width="720" alt="LenserFight — Official Soundtrack by LenserMusic" />
-  </a>
-  <br/>
-  <sub>▶ <a href="https://www.youtube.com/watch?v=kine5GjALC0&list=RDkine5GjALC0">Play on YouTube</a> · <a href="https://www.youtube.com/@LenserMusic">@LenserMusic</a></sub>
-</p>
+<table align="center" width="100%" border="0" cellpadding="10">
+  <tr>
+    <td align="center" width="50%">
+      <a href="https://www.youtube.com/watch?v=kine5GjALC0&list=RDkine5GjALC0" target="_blank">
+        <img src="https://img.youtube.com/vi/kine5GjALC0/maxresdefault.jpg" width="100%" style="border-radius: 8px;" alt="LenserFight — Official Soundtrack" />
+      </a>
+      <br/>
+      <sub>▶ <a target="_blank" href="https://www.youtube.com/watch?v=kine5GjALC0&list=RDkine5GjALC0">Play on YouTube</a> · <a target="_blank" href="https://www.youtube.com/@LenserMusic">@LenserMusic</a></sub>
+    </td>
+    <td align="center" width="50%">
+      <a href="https://www.youtube.com/watch?v=yN_44HCS1tE" target="_blank">
+        <img src="https://img.youtube.com/vi/yN_44HCS1tE/maxresdefault.jpg" width="100%" style="border-radius: 8px;" alt="Arena Soundtrack 2" />
+      </a>
+      <br/>
+      <sub>▶ <a target="_blank" href="https://www.youtube.com/watch?v=yN_44HCS1tE">Play on YouTube</a></sub>
+    </td>
+  </tr>
+</table>
