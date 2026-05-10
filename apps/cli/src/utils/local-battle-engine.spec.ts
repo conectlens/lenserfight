@@ -15,17 +15,21 @@ const TEST_DIR = join(tmpdir(), `lf-test-${Date.now()}`)
 // Patch process.cwd() so the store writes to our temp dir
 const originalCwd = process.cwd
 const originalKey = process.env.LENSERFIGHT_LOCAL_BATTLE_KEY
+const originalRuntimeDir = process.env.LENSERFIGHT_RUNTIME_DIR
 beforeAll(() => {
   mkdirSync(TEST_DIR, { recursive: true })
   jest.spyOn(process, 'cwd').mockReturnValue(TEST_DIR)
   // Set a deterministic encryption passphrase for round-trip writes/reads.
   process.env.LENSERFIGHT_LOCAL_BATTLE_KEY = 'test-key-for-local-battle-encryption'
+  process.env.LENSERFIGHT_RUNTIME_DIR = join(TEST_DIR, 'runtime')
 })
 
 afterAll(() => {
   process.cwd = originalCwd
   if (originalKey === undefined) delete process.env.LENSERFIGHT_LOCAL_BATTLE_KEY
   else process.env.LENSERFIGHT_LOCAL_BATTLE_KEY = originalKey
+  if (originalRuntimeDir === undefined) delete process.env.LENSERFIGHT_RUNTIME_DIR
+  else process.env.LENSERFIGHT_RUNTIME_DIR = originalRuntimeDir
   if (existsSync(TEST_DIR)) rmSync(TEST_DIR, { recursive: true, force: true })
 })
 
@@ -67,10 +71,17 @@ describe('LocalBattleStore.list', () => {
 
   it('returns empty list when directory does not exist', () => {
     const store = new LocalBattleStore()
-    // Point to a path that doesn't exist
-    jest.spyOn(process, 'cwd').mockReturnValueOnce('/nonexistent-path-xyz')
-    const list = store.list()
-    expect(list).toEqual([])
+    const previousRuntimeDir = process.env.LENSERFIGHT_RUNTIME_DIR
+    process.env.LENSERFIGHT_RUNTIME_DIR = join(TEST_DIR, 'missing-runtime')
+    try {
+      // Point both the primary runtime dir and legacy cwd path to locations with no battles.
+      jest.spyOn(process, 'cwd').mockReturnValueOnce('/nonexistent-path-xyz')
+      const list = store.list()
+      expect(list).toEqual([])
+    } finally {
+      if (previousRuntimeDir === undefined) delete process.env.LENSERFIGHT_RUNTIME_DIR
+      else process.env.LENSERFIGHT_RUNTIME_DIR = previousRuntimeDir
+    }
   })
 })
 
