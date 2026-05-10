@@ -1,4 +1,5 @@
 import React, { useState } from 'react'
+import { VideoPlayer, AudioPlayer } from '@lenserfight/ui/media'
 
 export interface MediaViewerProps {
   mediaType: 'image' | 'video' | 'audio' | 'document' | 'text' | 'unknown'
@@ -74,29 +75,11 @@ function ImageViewer({ url, name }: { url: string; name?: string | null }) {
 }
 
 function VideoViewer({ url, name }: { url: string; name?: string | null }) {
-  return (
-    <video
-      controls
-      className="w-full rounded-lg bg-black max-h-96"
-      preload="metadata"
-      aria-label={name ?? 'Video output'}
-    >
-      <source src={url} />
-      Your browser does not support the video element.
-    </video>
-  )
+  return <VideoPlayer src={url} name={name} />
 }
 
 function AudioViewer({ url, name }: { url: string; name?: string | null }) {
-  return (
-    <div className="flex flex-col gap-2 p-4 rounded-lg bg-greyscale-100 dark:bg-greyscale-900">
-      <p className="text-xs text-greyscale-500 truncate">{name ?? 'Audio output'}</p>
-      <audio controls className="w-full" preload="metadata" aria-label={name ?? 'Audio output'}>
-        <source src={url} />
-        Your browser does not support the audio element.
-      </audio>
-    </div>
-  )
+  return <AudioPlayer src={url} name={name} />
 }
 
 function DocumentViewer({ url, name }: { url: string; name?: string | null }) {
