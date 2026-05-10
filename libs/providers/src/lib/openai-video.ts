@@ -1,4 +1,4 @@
-import type { GenerativeMediaAdapter, AsyncGenerationResponse, GenerativeMediaResult, GenerativeMediaResponse } from './types';
+import type { GenerativeMediaAdapter, AsyncGenerationResponse, GenerativeMediaResponse } from './types';
 
 // ─── OpenAI Video Generation (Sora) ──────────────────────────────────────────
 // Async: POST /v1/video/generations → returns a task ID.
