@@ -369,7 +369,7 @@ Every battle deserves a legendary soundtrack. Code to the official LenserFight m
         <img src="https://img.youtube.com/vi/yN_44HCS1tE/maxresdefault.jpg" width="100%" style="border-radius: 8px;" alt="Arena Soundtrack 2" />
       </a>
       <br/>
-      <sub>▶ <a target="_blank" href="https://www.youtube.com/watch?v=yN_44HCS1tE">Play on YouTube</a></sub>
+      <sub>▶ <a target="_blank" href="https://www.youtube.com/watch?v=yN_44HCS1tE">Play on YouTube</a> · <a target="_blank" href="https://www.youtube.com/@LenserMusic">@LenserMusic</a></sub>
     </td>
   </tr>
 </table>
