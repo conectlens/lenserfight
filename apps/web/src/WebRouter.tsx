@@ -157,6 +157,9 @@ const LazyWorkflowTemplateGalleryPage = lazy(() =>
 const LazyCreateWorkflowWizard = lazy(() =>
   import('@lenserfight/features/workflows').then((module) => ({ default: module.CreateWorkflowWizard }))
 )
+const LazyWorkflowRunMediaPage = lazy(() =>
+  import('@lenserfight/features/workflows').then((module) => ({ default: module.WorkflowRunMediaPage }))
+)
 const LazyNotAuthorizedPage = lazy(() =>
   import('./NotAuthorizedPage').then((module) => ({ default: module.NotAuthorizedPage }))
 )
@@ -752,6 +755,15 @@ export const WebRouter: React.FC = () => {
           element={
             <DashboardFrame fullscreen>
               <WorkflowBuilderPageRoute />
+            </DashboardFrame>
+          }
+        />
+
+        <Route
+          path="/workflows/:workflowId/run/:runId/media"
+          element={
+            <DashboardFrame>
+              <LazyWorkflowRunMediaPage />
             </DashboardFrame>
           }
         />
