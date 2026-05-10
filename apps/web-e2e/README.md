@@ -17,8 +17,6 @@ pnpm exec playwright install --with-deps chromium
 pnpm nx run web-e2e:e2e
 ```
 
-The Playwright `webServer` config starts the dev server with `VITE_PRODUCT_EDITION=community` + `VITE_FEATURE_PUBLIC_BATTLES=false` + `VITE_FEATURE_WAITING_LIST=false`, so the spec validates the community-edition gate path even on developer machines configured for cloud.
-
 To skip the auto-started dev server (useful when one is already running on `:4200`):
 
 ```bash
