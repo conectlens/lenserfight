@@ -1,5 +1,5 @@
 import { googleVeoAdapter } from '../google-veo'
-import { mockFetch, resetFetchMock } from '../../../../../../../infra/execution/src/lib/testing'
+import { mockFetch, resetFetchMock } from '../testing'
 
 const PREDICT_URL = /aiplatform\.googleapis\.com.*predictLongRunning/
 const OPERATIONS_URL = /aiplatform\.googleapis\.com.*operations/
