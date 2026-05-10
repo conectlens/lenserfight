@@ -32957,13 +32957,6 @@ GRANT ALL ON FUNCTION "public"."ts_dist"(timestamp without time zone, timestamp 
 
 
 
-GRANT ALL ON FUNCTION "public"."tstz_dist"(timestamp with time zone, timestamp with time zone) TO "postgres";
-GRANT ALL ON FUNCTION "public"."tstz_dist"(timestamp with time zone, timestamp with time zone) TO "anon";
-GRANT ALL ON FUNCTION "public"."tstz_dist"(timestamp with time zone, timestamp with time zone) TO "authenticated";
-GRANT ALL ON FUNCTION "public"."tstz_dist"(timestamp with time zone, timestamp with time zone) TO "service_role";
-
-
-
 REVOKE ALL ON FUNCTION "status"."fn_status_incident_detail"("p_id" "uuid") FROM PUBLIC;
 GRANT ALL ON FUNCTION "status"."fn_status_incident_detail"("p_id" "uuid") TO "anon";
 GRANT ALL ON FUNCTION "status"."fn_status_incident_detail"("p_id" "uuid") TO "authenticated";
@@ -34445,4 +34438,3 @@ with check ((bucket_id = 'user-media'::text));
   for select
   to anon, authenticated
 using ((bucket_id = 'public-assets'::text));
-
