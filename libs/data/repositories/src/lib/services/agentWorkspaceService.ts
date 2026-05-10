@@ -29,9 +29,66 @@ import { type CreateAgentMemoryProfileInput,
 } from '../repositories/agentWorkspaceRepository'
 import type { EvaluationBaselineRecord, EvaluationRubricCriterion, EvaluationRubricRecord } from '@lenserfight/types'
 import { createAgentWorkspaceRepository } from '../factory'
-
+import { supabase } from '@lenserfight/data/supabase'
 
 const agentWorkspaceRepo = createAgentWorkspaceRepository()
+
+// ── AR: BYOK key management ──────────────────────────────────────────────────
+
+export interface ByokKeyHint {
+  provider: string
+  key_hint: string | null
+  label: string | null
+  is_valid: boolean
+}
+
+async function listByokKeyHints(agentId: string): Promise<ByokKeyHint[]> {
+  const { data, error } = await supabase.rpc('fn_byok_key_hint', { p_agent_id: agentId })
+  if (error) throw error
+  return (data ?? []) as ByokKeyHint[]
+}
+
+async function rotateByokKey(
+  agentId: string,
+  provider: string,
+  newKeyEncrypted: string,
+  newHint: string,
+): Promise<void> {
+  const { error } = await supabase.rpc('fn_byok_key_rotate', {
+    p_agent_id:      agentId,
+    p_provider:      provider,
+    p_new_encrypted: newKeyEncrypted,
+    p_new_hint:      newHint,
+  })
+  if (error) throw error
+}
+
+async function revokeByokKey(agentId: string, provider: string): Promise<void> {
+  const { error } = await supabase.rpc('fn_byok_key_revoke', {
+    p_agent_id: agentId,
+    p_provider:  provider,
+  })
+  if (error) throw error
+}
+
+async function registerByokKey(
+  agentId: string,
+  provider: string,
+  keyEncrypted: string,
+  keyHint: string,
+  label?: string,
+  expiresAt?: string | null,
+): Promise<void> {
+  const { error } = await supabase.rpc('fn_byok_key_register', {
+    p_agent_id:      agentId,
+    p_provider:      provider,
+    p_key_encrypted: keyEncrypted,
+    p_key_hint:      keyHint,
+    p_label:         label ?? null,
+    p_expires_at:    expiresAt ?? null,
+  })
+  if (error) throw error
+}
 
 export type {
   CreateAgentMemoryProfileInput,
@@ -204,4 +261,10 @@ export const agentWorkspaceService = {
 
   // Post-run evaluation trigger
   triggerPostRunEvaluations: agentWorkspaceRepo.triggerPostRunEvaluations.bind(agentWorkspaceRepo),
+
+  // AR: BYOK key management
+  listByokKeyHints,
+  rotateByokKey,
+  revokeByokKey,
+  registerByokKey,
 }

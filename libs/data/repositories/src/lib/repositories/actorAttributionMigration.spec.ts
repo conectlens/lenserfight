@@ -1,14 +1,23 @@
-import { readFileSync } from 'node:fs'
-import { join } from 'node:path'
+import { existsSync, readFileSync } from 'node:fs'
+import { join, resolve } from 'node:path'
 import { describe, expect, it } from 'vitest'
 
+const workspaceRoot = existsSync(join(process.cwd(), 'supabase'))
+  ? process.cwd()
+  : resolve(process.cwd(), '../../..')
+
 const migrationSql = readFileSync(
-  join(process.cwd(), 'supabase/migrations/20260501040000_actor_attribution.sql'),
+  join(workspaceRoot, 'supabase/migrations/20260501040000_actor_attribution.sql'),
   'utf8'
 )
 
 const manualRunSql = readFileSync(
-  join(process.cwd(), 'supabase/migrations/20260501050000_manual_run_attribution.sql'),
+  join(workspaceRoot, 'supabase/migrations/20260501050000_manual_run_attribution.sql'),
+  'utf8'
+)
+
+const switchIdentifierSql = readFileSync(
+  join(workspaceRoot, 'supabase/migrations/20270701000001_fix_switch_active_lenser_identifier.sql'),
   'utf8'
 )
 
@@ -76,5 +85,19 @@ describe('manual run attribution migration guard (20260501050000)', () => {
   it('grants execute on public wrapper to authenticated callers', () => {
     expect(manualRunSql).toContain('GRANT EXECUTE ON FUNCTION public.fn_start_workflow_run')
     expect(manualRunSql).toContain('authenticated')
+  })
+})
+
+describe('switch active lenser identifier hotfix (20270701000001)', () => {
+  it('accepts an owned AI profile id or runtime AI lenser id', () => {
+    expect(switchIdentifierSql).toContain('CREATE OR REPLACE FUNCTION public.fn_switch_active_lenser')
+    expect(switchIdentifierSql).toContain('(ai_p.id = p_lenser_id OR al.id = p_lenser_id)')
+    expect(switchIdentifierSql).toContain('o.owner_lenser_id = v_human_id')
+    expect(switchIdentifierSql).toContain("o.role = 'owner'")
+  })
+
+  it('stores the canonical AI profile id in preferences', () => {
+    expect(switchIdentifierSql).toContain('SET active_lenser_id = v_target_profile_id')
+    expect(switchIdentifierSql).toContain('VALUES (v_human_id, v_from_ai_lenser_id, v_to_ai_lenser_id)')
   })
 })
