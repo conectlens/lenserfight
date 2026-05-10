@@ -68,8 +68,8 @@ Expected output:
 ```
 ✔ Simulated private battle TypeScript Haiku Duel
 Participants: 2
-JSON report: .lenserfight/reports/ts-haiku-duel.json
-Markdown report: .lenserfight/reports/ts-haiku-duel.md
+JSON report: <user-runtime>/workspaces/<id>/runs/ts-haiku-duel.json
+Markdown report: <user-runtime>/workspaces/<id>/reports/ts-haiku-duel.md
 
 Tip: participants have provider/model set — run with --execute to actually call AI:
   lf battle run PRIVATE_BATTLE.md --execute
