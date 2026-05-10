@@ -1,12 +1,10 @@
-import { defineCommand } from 'citty'
+import setupCommand from './setup'
 
-export default defineCommand({
+export default {
+  ...setupCommand,
   meta: {
     name: 'onboard',
-    description: 'Enter the interactive onboarding labyrinth — an AI-driven terminal runtime.',
+    description:
+      'Guided onboarding for local setup, cloud setup, and the developer journey checklist.',
   },
-  async run() {
-    const { runLabyrinth } = await import('../tui/labyrinth')
-    await runLabyrinth()
-  },
-})
+}
