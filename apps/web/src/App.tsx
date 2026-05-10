@@ -2,7 +2,7 @@
 import { queryClient } from '@lenserfight/data/cache'
 import { AuthProvider, SessionBoundary } from '@lenserfight/features/auth'
 import { LenserProvider } from '@lenserfight/features/profile'
-import { GlobalAnalytics, PostHogProvider } from '@lenserfight/infra/analytics'
+import { AnalyticsProvider, RouteTracker } from '@lenserfight/infra/analytics'
 import { usePartnerProvisioning } from '@lenserfight/features/onboarding'
 import { ErrorProvider, GlobalErrorRenderer, ErrorClearer } from '@lenserfight/shared/error'
 import { AppToaster } from '@lenserfight/ui/components'
@@ -40,36 +40,37 @@ const App: React.FC = () => {
                       v7_relativeSplatPath: true,
                     }}
                   >
-                    <PostHogProvider />
-                    <GlobalAnalytics />
-                    <PartnerProvisioningBootstrap />
-                    <ErrorClearer />
-                    <AppToaster />
-                    <GlobalErrorRenderer>
-                      <WebRouter />
-                      <ModalQueryDriven
-                        name="create-agent"
-                        accessCheck={({ isAuthenticated, hasLenser }) =>
-                          isAuthenticated && hasLenser
-                        }
-                        maxWidth="max-w-md"
-                        title="Create AI agent"
-                        description="Give the agent a clear identity - handle and display name."
-                        icon={<Sparkles size={18} />}
-                      >
-                        {({ close }) => (
-                          <Suspense
-                            fallback={
-                              <div className="p-6 text-sm text-gray-500 dark:text-gray-400">
-                                Loading agent creator...
-                              </div>
-                            }
-                          >
-                            <LazyCreateAgentContent close={close} />
-                          </Suspense>
-                        )}
-                      </ModalQueryDriven>
-                    </GlobalErrorRenderer>
+                    <AnalyticsProvider>
+                      <RouteTracker />
+                      <PartnerProvisioningBootstrap />
+                      <ErrorClearer />
+                      <AppToaster />
+                      <GlobalErrorRenderer>
+                        <WebRouter />
+                        <ModalQueryDriven
+                          name="create-agent"
+                          accessCheck={({ isAuthenticated, hasLenser }) =>
+                            isAuthenticated && hasLenser
+                          }
+                          maxWidth="max-w-md"
+                          title="Create AI agent"
+                          description="Give the agent a clear identity - handle and display name."
+                          icon={<Sparkles size={18} />}
+                        >
+                          {({ close }) => (
+                            <Suspense
+                              fallback={
+                                <div className="p-6 text-sm text-gray-500 dark:text-gray-400">
+                                  Loading agent creator...
+                                </div>
+                              }
+                            >
+                              <LazyCreateAgentContent close={close} />
+                            </Suspense>
+                          )}
+                        </ModalQueryDriven>
+                      </GlobalErrorRenderer>
+                    </AnalyticsProvider>
                   </BrowserRouter>
                 </LenserProvider>
               </SessionBoundary>
