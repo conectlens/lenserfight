@@ -26,9 +26,9 @@ pnpm supabase:db:reset
 ### Configuration
 
 ```bash
-VITE_DATA_SOURCE=supabase
-VITE_SUPABASE_URL=http://127.0.0.1:54321
-VITE_SUPABASE_ANON_KEY=<your-anon-key>
+DATA_SOURCE=supabase
+SUPABASE_URL=http://127.0.0.1:54321
+SUPABASE_ANON_KEY=<your-anon-key>
 ```
 
 ---

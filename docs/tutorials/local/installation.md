@@ -151,16 +151,16 @@ Edit `.env.local`:
 
 ```bash
 # Required
-VITE_DATA_SOURCE=supabase
-VITE_SUPABASE_URL=http://127.0.0.1:54321
-VITE_SUPABASE_ANON_KEY=<your-anon-key-from-step-3>
+DATA_SOURCE=supabase
+SUPABASE_URL=http://127.0.0.1:54321
+SUPABASE_ANON_KEY=<your-anon-key-from-step-3>
 
 # URLs (defaults match local dev servers)
-VITE_WEB_BASE_URL=http://localhost:3000
-VITE_AUTH_BASE_URL=http://localhost:3004
-VITE_ARENA_URL=http://localhost:3001
-VITE_DOCS_BASE_URL=http://localhost:3002
-VITE_API_URL=http://localhost:8786
+WEB_BASE_URL=http://localhost:3000
+AUTH_BASE_URL=http://localhost:3004
+ARENA_URL=http://localhost:3001
+DOCS_BASE_URL=http://localhost:3002
+API_URL=http://localhost:8786
 ```
 
 ### 6. Start the web app
