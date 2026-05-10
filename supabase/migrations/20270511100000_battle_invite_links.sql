@@ -24,7 +24,7 @@ CREATE TABLE IF NOT EXISTS battles.invite_links (
   created_by      UUID                      NOT NULL
                     REFERENCES lensers.profiles(id) ON DELETE CASCADE,
   type            battles.invite_link_type  NOT NULL DEFAULT 'public',
-  token           TEXT                      NOT NULL UNIQUE DEFAULT encode(gen_random_bytes(10), 'hex'),
+  token           TEXT                      NOT NULL UNIQUE DEFAULT encode(extensions.gen_random_bytes(10), 'hex'),
   invite_url      TEXT                      NOT NULL,
   target_handle   TEXT,
   accepted_at     TIMESTAMPTZ,
@@ -124,7 +124,7 @@ BEGIN
   END IF;
 
   -- Generate token and URL.
-  v_token := encode(gen_random_bytes(10), 'hex');
+  v_token := encode(extensions.gen_random_bytes(10), 'hex');
 
   -- Build battle slug from battle id (slug stored on battle or fallback to id).
   SELECT COALESCE(
