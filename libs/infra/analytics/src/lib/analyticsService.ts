@@ -1,7 +1,13 @@
-import { SupabaseAnalyticsRepository } from '@lenserfight/data/repositories'
 import { AnalyticsTargetType, LogPageViewDTO } from '@lenserfight/types'
 
-const repo = new SupabaseAnalyticsRepository()
+let repo: any | null = null;
+async function getRepo() {
+  if (!repo) {
+    const { SupabaseAnalyticsRepository } = await import('@lenserfight/data/repositories');
+    repo = new SupabaseAnalyticsRepository();
+  }
+  return repo;
+}
 
 export const analyticsService = {
   trackView: async (
@@ -14,12 +20,13 @@ export const analyticsService = {
       userId: identity.userId,
       targetType: targetType,
       targetId: targetId,
-      path: window.location.pathname,
-      referrer: document.referrer || null,
-      userAgent: navigator.userAgent,
+      path: typeof window !== 'undefined' ? window.location.pathname : '',
+      referrer: typeof document !== 'undefined' ? document.referrer : null,
+      userAgent: typeof navigator !== 'undefined' ? navigator.userAgent : '',
       clientIp: null, // Backend usually handles this, or can be fetched via service
     }
 
-    return repo.logPageView(dto)
+    const repository = await getRepo();
+    return repository.logPageView(dto)
   },
 }
