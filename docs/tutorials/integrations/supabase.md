@@ -141,7 +141,7 @@ const { data } = supabase.storage
 |-------|-----|
 | `PGRST116` (no rows) | Check RLS policies |
 | `42501` (permission denied) | Check grants and RLS |
-| Realtime not connecting | Check `VITE_SUPABASE_URL` |
+| Realtime not connecting | Check `SUPABASE_URL` |
 | Storage upload fails | Check bucket policies |
 
 ---

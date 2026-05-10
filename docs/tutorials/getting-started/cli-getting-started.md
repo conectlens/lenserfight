@@ -264,7 +264,7 @@ lf execution retry <run-id>
 | Variable | Purpose |
 |----------|---------|
 | `LENSERFIGHT_API_KEY` | Developer, org, or service token for auth |
-| `VITE_DATA_SOURCE` | Set to `file` for local-only mode |
+| `DATA_SOURCE` | Set to `file` for local-only mode |
 | `OLLAMA_BASE_URL` | Override Ollama endpoint (default: `http://localhost:11434`) |
 
 ---

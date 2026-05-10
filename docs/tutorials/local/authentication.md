@@ -25,8 +25,8 @@ This tutorial covers the authentication layer in LenserFight. You will understan
 
 | Mode | Data source | Auth method | Use case |
 |------|------------|-------------|----------|
-| File mode | `VITE_DATA_SOURCE=file` | Auto-login as Local Dev | Solo development, no auth needed |
-| Supabase mode | `VITE_DATA_SOURCE=supabase` | Supabase Auth (GoTrue) | Full multi-user authentication |
+| File mode | `DATA_SOURCE=file` | Auto-login as Local Dev | Solo development, no auth needed |
+| Supabase mode | `DATA_SOURCE=supabase` | Supabase Auth (GoTrue) | Full multi-user authentication |
 
 ---
 
@@ -34,7 +34,7 @@ This tutorial covers the authentication layer in LenserFight. You will understan
 
 In file mode, authentication is bypassed entirely. The app creates a synthetic `Local Dev` user on startup. No login screen appears.
 
-This is controlled by the `VITE_DATA_SOURCE=file` environment variable.
+This is controlled by the `DATA_SOURCE=file` environment variable.
 
 ---
 
@@ -250,7 +250,7 @@ After `pnpm supabase:db:reset`, log in with seed accounts:
 
 ### Bypassing auth in development
 
-Set `VITE_MOCK=true` in `.env.local` to skip real auth calls in development.
+Set `MOCK=true` in `.env.local` to skip real auth calls in development.
 
 ### Inspecting tokens
 
@@ -267,7 +267,7 @@ Use [jwt.io](https://jwt.io) to decode and inspect JWT tokens from browser DevTo
 
 | Symptom | Cause | Fix |
 |---------|-------|-----|
-| Redirect loop on login | Auth URL mismatch | Verify `VITE_AUTH_BASE_URL` matches the auth app port |
+| Redirect loop on login | Auth URL mismatch | Verify `AUTH_BASE_URL` matches the auth app port |
 | `JWT expired` | Token not refreshing | Clear browser storage and re-login |
 | OAuth callback fails | Redirect URI mismatch | Update OAuth app redirect URI to match local Supabase |
 | `permission denied` on queries | RLS policy issue | Check `auth.uid()` and policy conditions |

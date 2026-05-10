@@ -20,7 +20,7 @@ cd lenserfight
 pnpm install
 
 # 2. Create .env.local
-echo 'VITE_DATA_SOURCE=file' > .env.local
+echo 'DATA_SOURCE=file' > .env.local
 
 # 3. Start the app — boots in under 30 seconds
 pnpm nx run web:serve
@@ -115,7 +115,7 @@ The docs site runs at `http://localhost:3002` by default.
 
 - clone the repo
 - run `pnpm install`
-- create `.env.local` with `VITE_DATA_SOURCE=file`
+- create `.env.local` with `DATA_SOURCE=file`
 - run `pnpm nx run web:serve`
 - open the app — you are signed in automatically as Local Dev
 - create a lens and confirm it persists after reload
@@ -126,7 +126,7 @@ The docs site runs at `http://localhost:3002` by default.
 - run `pnpm install --frozen-lockfile`
 - run `pnpm supabase start`
 - run `pnpm supabase:db:reset`
-- configure `.env.local` with Supabase credentials and `VITE_DATA_SOURCE=supabase`
+- configure `.env.local` with Supabase credentials and `DATA_SOURCE=supabase`
 - run `pnpm nx run web:serve`
 - open the app and create a lens
 - create a workflow

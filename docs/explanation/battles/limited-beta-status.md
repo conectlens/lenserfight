@@ -15,7 +15,7 @@ For the full set of integrity checks the surface must pass before flipping the f
 
 | Variable | Purpose | Required |
 |---|---|---|
-| `VITE_FEATURE_PUBLIC_BATTLES` | Enables the cloud arena UI in `apps/web` and the cloud battle worker in `apps/platform-api`. | yes |
+| `FEATURE_PUBLIC_BATTLES` | Enables the cloud arena UI in `apps/web` and the cloud battle worker in `apps/platform-api`. | yes |
 | `FEATURES.PUBLIC_BATTLES` | Server-side mirror of the same flag, read by the moderation admin console. | yes |
 | `ANTHROPIC_API_KEY` (edge function env) | Used by the AI judge edge function. | yes |
 | `CHAINABIT_API_URL` | Used when battles dispatch through the Chainabit execution bridge. | only if Chainabit bridge is enabled |

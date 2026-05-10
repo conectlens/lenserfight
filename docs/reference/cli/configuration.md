@@ -94,15 +94,15 @@ The CLI resolves each field independently. First non-empty value wins:
 
 | Variable | Purpose |
 |----------|---------|
-| `SUPABASE_URL` / `VITE_SUPABASE_URL` | Supabase API URL |
-| `SUPABASE_ANON_KEY` / `VITE_SUPABASE_ANON_KEY` | Supabase anon key |
+| `SUPABASE_URL` / `SUPABASE_URL` | Supabase API URL |
+| `SUPABASE_ANON_KEY` / `SUPABASE_ANON_KEY` | Supabase anon key |
 | `SUPABASE_SERVICE_ROLE_KEY` | Service role key |
-| `LENSERFIGHT_CLOUD_API_URL` / `VITE_API_URL` | Cloud API URL |
+| `LENSERFIGHT_CLOUD_API_URL` / `API_URL` | Cloud API URL |
 | `LENSERFIGHT_DEVELOPER_TOKEN` | Override stored developer token |
 | `LENSERFIGHT_DEVELOPER_TOKEN_EXPIRES_AT` | Override developer token expiry |
-| `LENSERFIGHT_OLLAMA_BASE_URL` / `VITE_OLLAMA_BASE_URL` | Ollama base URL |
+| `LENSERFIGHT_OLLAMA_BASE_URL` / `OLLAMA_BASE_URL` | Ollama base URL |
 | `LENSERFIGHT_API_KEY` | Platform API key |
-| `VITE_AUTH_BASE_URL` | Auth service base URL |
+| `AUTH_BASE_URL` | Auth service base URL |
 
 For `mode: local`, the anon key and service role key resolve automatically from Supabase local dev defaults — no manual configuration needed.
 
