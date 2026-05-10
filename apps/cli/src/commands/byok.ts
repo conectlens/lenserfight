@@ -23,7 +23,12 @@ const byokList = defineCommand({
   async run({ args }) {
     try {
       const rows = await callRpc<
-        Array<{ provider: string; key_hint: string | null; label: string | null; is_valid: boolean }>
+        Array<{
+          provider: string
+          key_hint: string | null
+          label: string | null
+          is_valid: boolean
+        }>
       >('fn_byok_key_hint', { p_agent_id: args.agent }, { requireAuth: true })
 
       if (args.json) {
@@ -37,14 +42,13 @@ const byokList = defineCommand({
       }
 
       printTable(
-        rows,
         ['provider', 'hint', 'label', 'valid'],
-        (row) => [
+        rows.map((row) => [
           row.provider,
           `···· ${row.key_hint ?? '????'}`,
           row.label ?? '—',
           row.is_valid ? 'yes' : 'no (expired/revoked)',
-        ],
+        ])
       )
     } catch (err) {
       handleError(err)
@@ -84,12 +88,12 @@ const byokRotate = defineCommand({
       await callRpc<void>(
         'fn_byok_key_rotate',
         {
-          p_agent_id:      args.agent,
-          p_provider:      args.provider,
+          p_agent_id: args.agent,
+          p_provider: args.provider,
           p_new_encrypted: newKey,
-          p_new_hint:      hint,
+          p_new_hint: hint,
         },
-        { requireAuth: true },
+        { requireAuth: true }
       )
 
       consola.success(`Rotated ${args.provider} key for agent ${args.agent}.`)
@@ -107,9 +111,9 @@ const byokRevoke = defineCommand({
     description: 'Revoke a BYOK key (irreversible without re-registering).',
   },
   args: {
-    agent:    { type: 'string',  description: 'agents.ai_lensers.id', required: true },
-    provider: { type: 'string',  description: 'Provider key', required: true },
-    force:    { type: 'boolean', description: 'Skip confirmation', default: false },
+    agent: { type: 'string', description: 'agents.ai_lensers.id', required: true },
+    provider: { type: 'string', description: 'Provider key', required: true },
+    force: { type: 'boolean', description: 'Skip confirmation', default: false },
   },
   async run({ args }) {
     try {
@@ -126,7 +130,7 @@ const byokRevoke = defineCommand({
       await callRpc<void>(
         'fn_byok_key_revoke',
         { p_agent_id: args.agent, p_provider: args.provider },
-        { requireAuth: true },
+        { requireAuth: true }
       )
 
       consola.success(`Revoked ${args.provider} key for agent ${args.agent}.`)
