@@ -1,5 +1,5 @@
 import { openaiImageAdapter } from '../openai-image'
-import { mockFetch, resetFetchMock } from '../../../../../../../infra/execution/src/lib/testing'
+import { mockFetch, resetFetchMock } from '../testing'
 
 describe('openaiImageAdapter', () => {
   let spy: jest.SpyInstance
