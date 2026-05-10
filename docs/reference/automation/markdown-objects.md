@@ -11,6 +11,8 @@ The canonical portable objects are markdown files with YAML frontmatter plus str
 
 ## Common frontmatter
 
+Native ConnectLens units may use the compact Agent Skills-style frontmatter with only `name` and `description`. Legacy strict objects keep the full schema below.
+
 ```yaml
 kind: <object_kind>
 schema_version: 1
@@ -29,7 +31,12 @@ tags: []
 
 | Format | Purpose | Required fields | Validation |
 |---|---|---|---|
-| `LENS.md` | Portable lens/task unit | `id`, `name`, prompt body, input/output schema | frontmatter + section checks |
+| `LENS.MD` | Native ConnectLens lens/task unit | `name`, `description`; parameterized files also need `parameters[].label` + `tool_id` | frontmatter + parameter + disclosure checks |
+| `LENSER.MD` | Native ConnectLens agent/LENSER definition | `name`, `description` | frontmatter + disclosure checks |
+| `COLENS.MD` | Native ConnectLens workflow/COLENS | `name`, `description` | frontmatter + disclosure checks |
+| `BATTLE.MD` | Native orchestration/comparison document | `name`, `description`, participants or orchestration references | frontmatter + battle reference checks |
+| `TEAM.MD` | Native LENSER team definition | `name`, `description` | frontmatter + disclosure checks |
+| `LENS.md` | Legacy portable lens/task unit | `id`, `name`, prompt body, input/output schema | frontmatter + section checks |
 | `AGENT.md` | Portable agent definition | metadata, instructions, permissions | frontmatter + section checks |
 | `AGENT_TEAM.md` | Portable team definition | members, purpose, collaboration rules | frontmatter + section checks |
 | `TOOL.md` | Portable tool contract | input/output schema, auth, risk | frontmatter + section checks |
@@ -47,6 +54,10 @@ The current CLI foundation supports:
 ```bash
 lenserfight validate ./automation
 lenserfight import ./automation
+lenserfight export lens --template --out .lenserfight/lenses/example/LENS.MD
+lenserfight export lenser --template --out .lenserfight/lensers/example/LENSER.MD
+lenserfight export colens --template --out .lenserfight/colenses/example/COLENS.MD
+lenserfight export battle --template --out .lenserfight/battles/example/BATTLE.MD
 lenserfight export agent --template --out ./AGENT.md
 lenserfight workflow run ./WORKFLOW.md
 lenserfight tool test ./TOOL.md
@@ -67,9 +78,12 @@ lenserfight battle run ./PRIVATE_BATTLE.md
 - hosted sync should project from files, not replace them
 - validation should fail fast on missing frontmatter or required sections
 - files should remain readable and reviewable in Git
+- native ConnectLens units use folder-based progressive disclosure with `references/`, `scripts/`, `assets/`, and `evals/`
+- private runtime state belongs in user runtime storage, not project-root `.lenserfight/`
 
 ## Related
 
+- [ConnectLens Agent Skills Ruleset](/reference/automation/connectlens-agent-skills)
 - [Automation Workspace Overview](/explanation/automation/index)
 - [Agent Exploration API](/reference/automation/agent-exploration-api)
 - [CLI Hub](/reference/cli/index)
