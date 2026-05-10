@@ -117,3 +117,6 @@ export type { AppSurface, ProductEdition } from './appSurface'
 export const CAPTCHA_SITE_KEY = import.meta.env.CAPTCHA_SITE_KEY || ''
 
 export const ENABLE_CAPTCHA = isProd && !isMock
+
+// Analytics
+export const GA_MEASUREMENT_ID = import.meta.env.GA_MEASUREMENT_ID || ''

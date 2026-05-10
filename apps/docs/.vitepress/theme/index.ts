@@ -10,6 +10,13 @@ import WaitingListButton from './WaitingListButton.vue'
 import DocsFooter from './DocsFooter.vue'
 import HotLenses from './HotLenses.vue'
 import AiLenserFamily from './AiLenserFamily.vue'
+import { globalAnalyticsController, GA4Provider } from '@lenserfight/infra/analytics'
+
+// Initialize analytics once
+globalAnalyticsController.registerProvider(new GA4Provider());
+if (typeof window !== 'undefined') {
+  globalAnalyticsController.init();
+}
 
 export default {
   ...DefaultTheme,
@@ -29,5 +36,11 @@ export default {
     ctx.app.component('DocsLogo', DocsLogo)
     ctx.app.component('HotLenses', HotLenses)
     ctx.app.component('AiLenserFamily', AiLenserFamily)
+
+    ctx.router.onAfterRouteChanged = (to) => {
+      if (typeof window !== 'undefined') {
+        globalAnalyticsController.trackPageView(to);
+      }
+    };
   },
 } satisfies Theme
