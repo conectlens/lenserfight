@@ -12,6 +12,7 @@ import {
   Cpu,
   FileStack,
   GitBranch,
+  KeyRound,
   Layers,
   ListChecks,
   Network,
@@ -42,6 +43,7 @@ export type AgentSection =
   | 'tools'
   | 'models'
   | 'providers'
+  | 'byok'
   | 'approvals'
   | 'cost'
   | 'analytics'
@@ -93,6 +95,7 @@ export const NAV_ITEMS: AgentNavItem[] = [
   { id: 'tools', label: 'Tools', zone: 'configure', icon: Wrench, visibleIn: OWNER_ONLY },
   { id: 'models', label: 'Models', zone: 'configure', icon: Cpu, visibleIn: OWNER_ONLY },
   { id: 'providers', label: 'Providers', zone: 'configure', icon: AlertTriangle, visibleIn: OWNER_ONLY },
+  { id: 'byok', label: 'API Keys', zone: 'configure', icon: KeyRound, visibleIn: AGENT_OWNER_ONLY },
   { id: 'approvals', label: 'Permissions', zone: 'configure', icon: ClipboardCheck, visibleIn: OWNER_ONLY },
   { id: 'cost', label: 'Cost', zone: 'configure', icon: Coins, visibleIn: OWNER_ONLY },
   {
