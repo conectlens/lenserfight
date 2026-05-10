@@ -14,7 +14,7 @@
 -- DROP FUNCTION public.fn_connector_rotate(text);
 -- DROP FUNCTION public.fn_connector_test(text);
 
-CREATE EXTENSION IF NOT EXISTS "pgcrypto";
+CREATE EXTENSION IF NOT EXISTS "pgcrypto" WITH SCHEMA "extensions";
 
 -- ── helpers ────────────────────────────────────────────────────────────────
 
@@ -77,7 +77,7 @@ RETURNS text
 LANGUAGE sql
 IMMUTABLE
 AS $$
-    SELECT encode(digest(p_token, 'sha256'), 'hex')
+    SELECT encode(extensions.digest(p_token, 'sha256'), 'hex')
 $$;
 
 -- ── public RPCs ────────────────────────────────────────────────────────────
