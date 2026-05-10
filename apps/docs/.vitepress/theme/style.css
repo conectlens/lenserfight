@@ -103,12 +103,12 @@ html:not(.dark) code {
   font-weight: 700;
 }
 
-.VPSidebarItem.is-active > .item .link .text {
+.VPSidebarItem.is-active>.item .link .text {
   color: var(--lf-deep) !important;
   font-weight: 600;
 }
 
-html.dark .VPSidebarItem.is-active > .item .link .text {
+html.dark .VPSidebarItem.is-active>.item .link .text {
   color: var(--lf-brand) !important;
 }
 
@@ -304,10 +304,33 @@ html.dark .lf-btn-outline {
 /* ─── Home page logo hero ─── */
 .lf-home-logo-hero {
   display: flex;
+  align-items: center;
   justify-content: center;
   padding: 2.5rem 0 1rem;
+  gap: 1.5rem;
 }
 
 .lf-home-logo-hero .docs-logo__wordmark {
   font-size: 2rem;
+}
+
+.partners-title {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--vp-c-text-3);
+  letter-spacing: 0.12em;
+  opacity: 0.7;
+}
+
+@media (max-width: 640px) {
+  .lf-home-logo-hero {
+    flex-direction: column;
+    gap: 1rem;
+    padding: 1.5rem 0 0.5rem;
+  }
+
+  .partners-title {
+    font-size: 0.9rem;
+    margin: 0.5rem 0;
+  }
 }
