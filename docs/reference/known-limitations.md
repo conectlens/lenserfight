@@ -75,8 +75,8 @@ The default `memory_write_policy='on_success'` discards buffered entries on fail
 **Cloud battles are Private Alpha and require an explicit access grant.**
 `FEATURE_PUBLIC_BATTLES=true` enables the cloud arena UI and worker, but the surface is not open for general use. The moderation system, voting integrity checks, and abuse mitigations must pass the [Battle Integrity Checklist](/how-to/battles/battle-integrity-checklist) before any public rollout.
 
-**Local battle outputs are not encrypted at rest.**
-Battle state persists in `.lenserfight/local-battles/{id}.json` on your local filesystem. The file contains AI output in plaintext. Do not store sensitive information in task prompts intended for local battles.
+**Local battle encryption depends on your local key.**
+New battle state is written to user runtime storage and encrypted with `LENSERFIGHT_LOCAL_BATTLE_KEY`. Legacy `.lenserfight/local-battles/{id}.json` files may still exist in project roots and can contain private prompts or outputs. Do not commit those files.
 
 **Rematch flow does not preserve vote totals or voter participation.**
 [`lf battle rematch`](/reference/cli/battle#battle-rematch) and the BattleResultPage rematch button clone structural fields only (task, rubric, contender slots) via [`fn_battles_create_rematch`](/explanation/battles/rematches-and-series). Vote totals, voter records, contender comments, and execution outputs are not carried forward. The rematch starts as `draft` and the owner must re-publish, re-execute, and run the lifecycle from scratch.
