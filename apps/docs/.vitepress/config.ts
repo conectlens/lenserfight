@@ -177,6 +177,8 @@ const SITE_JSON_LD = JSON.stringify({
   inLanguage: ['en', 'tr'],
 })
 
+import { nxViteTsPaths } from '@nx/vite/plugins/nx-tsconfig-paths.plugin'
+
 // https://vitepress.dev/reference/site-config
 export default defineConfig({
   srcDir: '../../docs',
@@ -1030,7 +1032,7 @@ export default defineConfig({
   vite: {
     envDir: resolve(__dirname, '..'),
     envPrefix: ['SUPABASE_URL', 'SUPABASE_PUBLISHABLE_KEY', 'WEB_', 'FORUM_'],
-    plugins: [tailwind(), syncChangelogPlugin(), rawMarkdownPlugin()],
+    plugins: [tailwind(), syncChangelogPlugin(), rawMarkdownPlugin(), nxViteTsPaths()],
     server: {
       host: '0.0.0.0',
     },
