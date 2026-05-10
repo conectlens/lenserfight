@@ -2,7 +2,7 @@ import { writeFileSync } from 'node:fs'
 import { execSync } from 'node:child_process'
 import { defineCommand } from 'citty'
 import consola from 'consola'
-import { callRest, handleError } from '../utils/api'
+import { callRpc, callRest, handleError } from '../utils/api'
 import { printJson, printTable } from '../utils/output'
 import { resolveConfig as resolveBaseConfig } from '../config/project-config'
 
@@ -297,6 +297,111 @@ const mediaPlay = defineCommand({
   },
 })
 
+// ─── lf media delete ────────────────────────────────────────────────────────
+
+const mediaDelete = defineCommand({
+  meta: {
+    name: 'delete',
+    description: 'Soft-delete a media object (sets lifecycle_state=deleted).',
+  },
+  args: {
+    id: { type: 'string', description: 'media.objects.id', required: true },
+    force: { type: 'boolean', description: 'Skip confirmation', default: false },
+  },
+  async run({ args }) {
+    try {
+      if (!args.force) {
+        consola.warn(`This will soft-delete media object ${args.id}. Pass --force to skip.`)
+        process.exit(1)
+      }
+      await callRpc<void>('fn_delete_media_object', { p_object_id: args.id }, { requireAuth: true })
+      consola.success(`Deleted media object ${args.id}.`)
+    } catch (err) {
+      handleError(err)
+    }
+  },
+})
+
+// ─── lf media set-visibility ────────────────────────────────────────────────
+
+const mediaSetVisibility = defineCommand({
+  meta: {
+    name: 'set-visibility',
+    description: 'Set visibility of a media object (public | private | unlisted).',
+  },
+  args: {
+    id: { type: 'string', description: 'media.objects.id', required: true },
+    visibility: { type: 'string', description: 'public | private | unlisted', required: true },
+  },
+  async run({ args }) {
+    try {
+      if (!['public', 'private', 'unlisted'].includes(args.visibility)) {
+        throw new Error(`Invalid visibility: ${args.visibility}. Must be public, private, or unlisted.`)
+      }
+      await callRpc<void>(
+        'fn_toggle_media_visibility',
+        { p_object_id: args.id, p_visibility: args.visibility },
+        { requireAuth: true },
+      )
+      consola.success(`Set visibility to "${args.visibility}" for media object ${args.id}.`)
+    } catch (err) {
+      handleError(err)
+    }
+  },
+})
+
+// ─── lf media cleanup ───────────────────────────────────────────────────────
+
+const mediaCleanup = defineCommand({
+  meta: {
+    name: 'cleanup',
+    description: 'Find and optionally delete orphaned pending media uploads before a date.',
+  },
+  args: {
+    before: { type: 'string', description: 'ISO 8601 date — find uploads created before this date', required: true },
+    'dry-run': { type: 'boolean', description: 'Print matched objects without deleting', default: true },
+  },
+  async run({ args }) {
+    try {
+      const rows = await callRest<MediaObjectRow[]>('media', 'objects', 'GET', undefined, {
+        query: {
+          select: 'id,mime_type,media_type,lifecycle_state,created_at',
+          lifecycle_state: 'eq.pending',
+          created_at: `lt.${args.before}`,
+          limit: 100,
+        },
+        requireAuth: true,
+      })
+
+      if (rows.length === 0) {
+        consola.info('No orphaned pending uploads found.')
+        return
+      }
+
+      consola.info(`Found ${rows.length} pending upload(s) before ${args.before}.`)
+
+      if (args['dry-run']) {
+        printTable(
+          rows,
+          ['id', 'media_type', 'mime_type', 'created_at'],
+          (r) => [r.id, r.media_type ?? '—', r.mime_type ?? '—', r.created_at],
+        )
+        consola.warn('Dry-run mode. Pass --no-dry-run to delete.')
+        return
+      }
+
+      let deleted = 0
+      for (const row of rows) {
+        await callRpc<void>('fn_delete_media_object', { p_object_id: row.id }, { requireAuth: true })
+        deleted++
+      }
+      consola.success(`Deleted ${deleted} orphaned media object(s).`)
+    } catch (err) {
+      handleError(err)
+    }
+  },
+})
+
 // ─── lf media manifest ──────────────────────────────────────────────────────
 
 const mediaManifest = defineCommand({
@@ -377,6 +482,9 @@ const mediaCommand = defineCommand({
     play: mediaPlay,
     info: mediaInfo,
     manifest: mediaManifest,
+    delete: mediaDelete,
+    'set-visibility': mediaSetVisibility,
+    cleanup: mediaCleanup,
   },
 })
 
