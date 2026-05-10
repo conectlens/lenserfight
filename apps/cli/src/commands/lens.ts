@@ -11,6 +11,124 @@ const VALID_VISIBILITY = ['public', 'community', 'private'] as const;
 type Visibility = (typeof VALID_VISIBILITY)[number];
 
 // ---------------------------------------------------------------------------
+// lens create
+// ---------------------------------------------------------------------------
+const lensCreate = defineCommand({
+  meta: {
+    name: 'create',
+    description: 'Create a new lens with its initial draft version.',
+  },
+  args: {
+    title: {
+      type: 'string',
+      description: 'Lens title',
+      required: true,
+    },
+    body: {
+      type: 'string',
+      description: 'Inline template body (mutually exclusive with --from-file)',
+      default: '',
+    },
+    'from-file': {
+      type: 'string',
+      description: 'Path to a file containing the template body',
+      default: '',
+    },
+    description: {
+      type: 'string',
+      description: 'Lens description',
+      default: '',
+    },
+    visibility: {
+      type: 'string',
+      description: `Visibility: ${VALID_VISIBILITY.join(' | ')}`,
+      default: 'public',
+    },
+    language: {
+      type: 'string',
+      description: 'Original language code (BCP-47, e.g. en, tr)',
+      default: 'en',
+    },
+    json: {
+      type: 'boolean',
+      description: 'Output the new lens ID as JSON',
+      default: false,
+    },
+  },
+  async run({ args }) {
+    if (!VALID_VISIBILITY.includes(args.visibility as Visibility)) {
+      consola.error(
+        'Invalid --visibility "%s". Must be one of: %s',
+        args.visibility,
+        VALID_VISIBILITY.join(', ')
+      );
+      process.exitCode = 1;
+      return;
+    }
+
+    if (args.body && args['from-file']) {
+      consola.error('Provide only one of --body or --from-file, not both.');
+      process.exitCode = 1;
+      return;
+    }
+
+    let templateBody = args.body;
+    if (args['from-file']) {
+      const filePath = resolve(args['from-file'].replace(/^~/, process.env['HOME'] ?? ''));
+      if (!existsSync(filePath)) {
+        consola.error('File not found: %s', filePath);
+        process.exitCode = 1;
+        return;
+      }
+      templateBody = readFileSync(filePath, 'utf-8');
+    }
+
+    if (!templateBody) {
+      consola.error('Provide a template body via --body <text> or --from-file <path>.');
+      process.exitCode = 1;
+      return;
+    }
+
+    if (templateBody.trim().length < MIN_TEMPLATE_LENGTH) {
+      consola.error(
+        'Template body must be at least %d characters (got %d).',
+        MIN_TEMPLATE_LENGTH,
+        templateBody.trim().length
+      );
+      process.exitCode = 1;
+      return;
+    }
+
+    try {
+      const lensId = await callRpc<string>(
+        'fn_create_lens',
+        {
+          p_visibility: args.visibility,
+          p_template_body: templateBody,
+          p_title: args.title,
+          p_description: args.description || null,
+          p_language_code: args.language,
+        },
+        { requireAuth: true }
+      );
+
+      await markJourneyStep('lens_created', true);
+
+      if (args.json) {
+        printJson({ id: lensId });
+        return;
+      }
+
+      consola.success('Lens created.');
+      consola.info('Lens ID: %s', lensId);
+      consola.info('\nNext: lf lens version list %s', lensId);
+    } catch (err) {
+      handleError(err);
+    }
+  },
+});
+
+// ---------------------------------------------------------------------------
 // lens version list
 // ---------------------------------------------------------------------------
 const versionList = defineCommand({
@@ -571,7 +689,7 @@ const lensTemplateUse = defineCommand({
     }
     writeFileSync(outPath, tpl.body, 'utf-8')
     consola.success('Lens scaffolded at %s', outPath)
-    consola.info('Edit the template, then: lf lens version create --lens <id> --body %s', outPath)
+    consola.info('Edit the template, then: lf lens create --title "<title>" --from-file %s', outPath)
   },
 })
 
@@ -589,9 +707,10 @@ const lensTemplate = defineCommand({
 export default defineCommand({
   meta: {
     name: 'lens',
-    description: 'Manage lenses: versions, resources.',
+    description: 'Manage lenses: create, versions, resources.',
   },
   subCommands: {
+    create: lensCreate,
     version,
     resource,
     import: lensImport,
