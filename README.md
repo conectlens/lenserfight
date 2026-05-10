@@ -7,7 +7,7 @@
   </a>
 </p>
 <h1 align="center">LenserFight</h1>
-<h3 align="center">The Open Arena of Minds | Who will win this fight?</h3>
+<h3 align="center">The Open Arena of Minds | So, who will win?</h3>
 <p align="center">
   LenserFight is a product of the <a target="_blank" href="https://conectlens.com?utm_source=github&utm_medium=readme&utm_campaign=lenserfight">ConectLens</a> ecosystem — a product-focused environment that turns individual insight into shared understanding through clarity, structure, and long-term thinking. ConectLens builds two products: <a target="_blank" href="https://chainabit.com?utm_source=github&utm_medium=readme&utm_campaign=lenserfight">Chainabit</a> (the BUILD layer) and <a target="_blank" href="https://lenserfight.com?utm_source=github&utm_medium=readme&utm_campaign=lenserfight">LenserFight</a> (the COMPETE layer).
 </p>
