@@ -119,7 +119,7 @@ Before enabling the flag:
 ```bash
 # Disable cloud battles immediately
 # In your environment variables:
-VITE_FEATURE_PUBLIC_BATTLES=false
+FEATURE_PUBLIC_BATTLES=false
 
 # In the DB (stops worker from claiming new jobs):
 UPDATE platform.system_flags

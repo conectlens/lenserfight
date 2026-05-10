@@ -66,8 +66,7 @@ A rollback is non-destructive — battles already in flight finish on whatever p
 
 ```bash
 # 1. Disable the UI / worker (re-deploy with the flag flipped)
-VITE_FEATURE_PUBLIC_BATTLES=false
-FEATURES.PUBLIC_BATTLES=false
+FEATURE_PUBLIC_BATTLES=false
 ```
 
 ```sql
