@@ -286,6 +286,8 @@ async function callRestInner<T = unknown>(
     'Content-Type': 'application/json',
     apikey: config.supabaseAnonKey,
   }
+  headers['Accept-Profile'] = schema
+  if (method !== 'GET') headers['Content-Profile'] = schema
   if (options.prefer) headers['Prefer'] = options.prefer
 
   const bearerToken = resolveBearerToken(config, options)
@@ -306,7 +308,6 @@ async function callRestInner<T = unknown>(
   }
 
   const params = new URLSearchParams()
-  params.set('schema', schema)
   if (options.query) {
     for (const [key, value] of Object.entries(options.query)) {
       if (value === undefined) continue
