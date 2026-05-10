@@ -55,7 +55,7 @@ Bu sayfa, kendi sunucusunda barındırılan bir Community Edition kurulumunda **
 SELECT cron.unschedule('dispatch-scheduled-workflows');
 
 -- Adım 2: UI'yı kapat (bunu .env dosyanıza ekleyin)
--- VITE_FEATURE_CRON_SCHEDULING=false
+-- FEATURE_CRON_SCHEDULING=false
 
 -- Adım 3: Daha sonra yeniden etkinleştir (ifade orijinal göçle aynı olmalı)
 SELECT cron.schedule(

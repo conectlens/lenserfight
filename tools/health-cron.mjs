@@ -40,7 +40,7 @@ const OPTIONAL_CRONS = [
 
 const MAX_LAG_MINUTES = 5
 
-// Accept VITE_SUPABASE_URL as a fallback (local dev .env.local convention)
+// Accept SUPABASE_URL as a fallback (local dev .env.local convention)
 const url = process.env['SUPABASE_URL'] ?? process.env['SUPABASE_URL']
 const isLocal = url && (url.includes('127.0.0.1') || url.includes('localhost'))
 
@@ -63,7 +63,7 @@ function resolveServiceRoleKey() {
 const key = resolveServiceRoleKey()
 
 if (!url || !key) {
-  console.error('[health:cron] Set SUPABASE_URL (or VITE_SUPABASE_URL) and SUPABASE_SERVICE_ROLE_KEY.')
+  console.error('[health:cron] Set SUPABASE_URL (or SUPABASE_URL) and SUPABASE_SERVICE_ROLE_KEY.')
   console.error('[health:cron] For local dev, start Supabase first: supabase start')
   process.exit(1)
 }

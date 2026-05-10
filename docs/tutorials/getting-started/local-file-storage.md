@@ -49,10 +49,10 @@ pnpm install --frozen-lockfile
 
 # 2. Create the env file and start the app
 cat > .env.local << 'EOF'
-VITE_DATA_SOURCE=file
-VITE_PRODUCT_EDITION=community
-VITE_WEB_BASE_URL=http://localhost:3000
-VITE_API_URL=http://localhost:8786
+DATA_SOURCE=file
+PRODUCT_EDITION=community
+WEB_BASE_URL=http://localhost:3000
+API_URL=http://localhost:8786
 EOF
 pnpm nx run web:serve
 ```
@@ -88,9 +88,9 @@ When you're ready to use the full cloud stack:
 2. Update `.env.local`:
 
    ```bash
-   VITE_DATA_SOURCE=supabase
-   VITE_SUPABASE_URL=http://127.0.0.1:54321
-   VITE_SUPABASE_ANON_KEY=<your-local-anon-key>
+   DATA_SOURCE=supabase
+   SUPABASE_URL=http://127.0.0.1:54321
+   SUPABASE_ANON_KEY=<your-local-anon-key>
    ```
 
 3. Import any local lenses using the CLI:
