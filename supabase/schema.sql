@@ -15200,7 +15200,7 @@ BEGIN
   END IF;
 
   -- Generate token and URL.
-  v_token := encode(gen_random_bytes(10), 'hex');
+  v_token := encode(extensions.gen_random_bytes(10), 'hex');
 
   -- Build battle slug from battle id (slug stored on battle or fallback to id).
   SELECT COALESCE(
@@ -52567,7 +52567,6 @@ ALTER DEFAULT PRIVILEGES FOR ROLE "postgres" IN SCHEMA "public" GRANT ALL ON TAB
 
 
 ALTER DEFAULT PRIVILEGES FOR ROLE "postgres" IN SCHEMA "xp" GRANT ALL ON FUNCTIONS TO "service_role";
-
 
 
 
