@@ -1,5 +1,5 @@
 import { klingI2vAdapter } from '../kling-i2v'
-import { mockFetch, resetFetchMock } from '../../../../../../../infra/execution/src/lib/testing'
+import { mockFetch, resetFetchMock } from '../testing'
 
 describe('klingI2vAdapter', () => {
   let spy: jest.SpyInstance
