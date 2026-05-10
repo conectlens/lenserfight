@@ -33,6 +33,7 @@
     "smoke": "bash scripts/smoke.sh",
     "smoke:media": "bash scripts/smoke-media.sh",
     "test:db": "bash scripts/run-pgtap.sh",
+    "test:rls": "bash scripts/run-pgtap.sh --filter rls",
     "setup:doctor": "node scripts/setup-doctor.mjs",
     "docs:audit": "node tools/gen-cli-docs.mjs --check && node tools/verify-openapi.mjs",
     "verify-openapi": "node tools/verify-openapi.mjs",
