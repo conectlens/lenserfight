@@ -158,8 +158,8 @@ export const ROOMS: Record<string, LabyrinthRoom> = {
         label: env.journeyState?.lens_created ? 'View Lenses' : 'Create Lens',
         sublabel: env.journeyState?.lens_created ? 'already created' : 'group your agents',
         action: env.journeyState?.lens_created
-          ? { type: 'execute', argv: ['lens', 'list'] }
-          : { type: 'prompt', prefill: 'lens create ' },
+          ? { type: 'execute', argv: ['lenses'] }
+          : { type: 'prompt', prefill: 'lens create --title ' },
         unlocked: env.authenticated,
       })
 
