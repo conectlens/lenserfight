@@ -1861,7 +1861,7 @@ const localRun = defineCommand({
       consola.info('Tokens — A: %d  B: %d', result.tokensA, result.tokensB)
       consola.info('')
       consola.warn(
-        'Results are stored in plaintext in your local battle state. Do not commit if they contain sensitive prompts or outputs.'
+        'Results are stored in encrypted user-runtime local battle state. Do not commit legacy project-root battle files if they contain sensitive prompts or outputs.'
       )
 
       const skipAiJudge = args['no-judge'] || args.judge === 'human'

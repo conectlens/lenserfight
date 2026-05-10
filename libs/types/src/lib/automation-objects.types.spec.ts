@@ -2,6 +2,11 @@ import { AUTOMATION_OBJECT_KINDS, PERMISSION_LEVELS } from './automation-objects
 
 describe('automation object types', () => {
   it('includes the canonical automation object kinds', () => {
+    expect(AUTOMATION_OBJECT_KINDS).toContain('lens')
+    expect(AUTOMATION_OBJECT_KINDS).toContain('lenser')
+    expect(AUTOMATION_OBJECT_KINDS).toContain('colens')
+    expect(AUTOMATION_OBJECT_KINDS).toContain('battle')
+    expect(AUTOMATION_OBJECT_KINDS).toContain('team')
     expect(AUTOMATION_OBJECT_KINDS).toContain('agent')
     expect(AUTOMATION_OBJECT_KINDS).toContain('workflow')
     expect(AUTOMATION_OBJECT_KINDS).toContain('private_battle')

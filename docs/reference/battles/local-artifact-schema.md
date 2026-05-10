@@ -5,7 +5,7 @@ description: JSON schema for local battle artifacts persisted by `lf battle loca
 
 # Local Battle Artifact Schema
 
-Local battles are stored as JSON files at `.lenserfight/local-battles/<uuid>.json` relative to the current working directory. If `LENSERFIGHT_LOCAL_BATTLE_KEY` is set, the file is wrapped in an AES-256-GCM encrypted envelope (see [Encryption envelope](#encryption-envelope)).
+Local battles are stored as JSON files in user runtime storage under `local-battles/<uuid>.json`. Legacy project-root `.lenserfight/local-battles/<uuid>.json` files are still read for compatibility. Files are wrapped in an AES-256-GCM encrypted envelope (see [Encryption envelope](#encryption-envelope)).
 
 ## Top-level fields
 
@@ -104,7 +104,7 @@ The encryption key is derived via `scrypt(passphrase, "lenserfight-local-battle-
 
 ## Storage location
 
-Local battles are always stored relative to the current working directory under `.lenserfight/local-battles/`. The directory is created automatically on first write. Add this path to `.gitignore` unless you want to commit battles:
+New local battles are stored in user runtime storage, outside the current working directory. The legacy project-root directory is still read for compatibility. Keep this path in `.gitignore`:
 
 ```
 .lenserfight/local-battles/

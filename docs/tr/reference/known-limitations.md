@@ -56,8 +56,8 @@ Varsayılan `memory_write_policy='on_success'` başarısızlık durumunda tampon
 **Bulut savaşları Sınırlı Beta'dadır ve açık bir erişim izni gerektirir.**
 `FEATURE_PUBLIC_BATTLES=true`, bulut arena UI'sını ve işçisini etkinleştirir, ancak yüzey genel kullanıma açık değildir. Herhangi bir herkese açık dağıtımdan önce moderasyon sistemi, oylama bütünlüğü kontrolleri ve kötüye kullanım azaltmaları [Battle Integrity Checklist](/how-to/battles/battle-integrity-checklist) listesini geçmelidir.
 
-**Yerel savaş çıktıları rest'te şifrelenmez.**
-Savaş durumu yerel dosya sisteminizdeki `.lenserfight/local-battles/{id}.json` içinde kalıcı olarak tutulur. Dosya AI çıktısını düz metin olarak içerir. Yerel savaşlar için tasarlanmış görev promptlarına hassas bilgi koymayın.
+**Yerel savaş şifrelemesi yerel anahtarınıza bağlıdır.**
+Yeni savaş durumu kullanıcı çalışma zamanı depolamasına yazılır ve `LENSERFIGHT_LOCAL_BATTLE_KEY` ile şifrelenir. Eski proje kökü `.lenserfight/local-battles/{id}.json` dosyaları hâlâ bulunabilir ve özel prompt veya çıktılar içerebilir. Bu dosyaları commit etmeyin.
 
 ---
 

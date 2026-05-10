@@ -213,22 +213,30 @@ let _battles: LocalBattleSummary = { running: 0, draft: 0, executed: 0, total: 0
 
 async function probeBattles(): Promise<void> {
   try {
-    const { readdir, readFile } = await import('node:fs/promises')
+    const { readdir } = await import('node:fs/promises')
     const { join } = await import('node:path')
-    const dir = join(process.cwd(), '.lenserfight', 'local-battles')
-    const files = await readdir(dir).catch(() => [] as string[])
-    const json = files.filter(f => f.endsWith('.json'))
+    const { readBattleFile } = await import('../utils/local-battle-storage')
+    const { getLocalBattleStorageDirs } = await import('../utils/local-battle-paths')
+    const dirs = getLocalBattleStorageDirs()
     let running = 0, draft = 0, executed = 0
-    for (const f of json) {
-      try {
-        const raw = await readFile(join(dir, f), 'utf-8')
-        const b = JSON.parse(raw) as { status?: string }
-        if (b.status === 'executed' || b.status === 'voted') executed++
-        else if (b.status === 'ready') running++
-        else draft++
-      } catch { /* skip corrupted */ }
+    let total = 0
+    const seen = new Set<string>()
+    for (const dir of [dirs.legacy, dirs.primary]) {
+      const files = await readdir(dir).catch(() => [] as string[])
+      for (const f of files.filter(file => file.endsWith('.json'))) {
+        try {
+          const b = readBattleFile<{ id?: string; status?: string }>(join(dir, f))
+          const key = b.id ?? f
+          if (seen.has(key)) continue
+          seen.add(key)
+          total++
+          if (b.status === 'executed' || b.status === 'voted') executed++
+          else if (b.status === 'ready') running++
+          else draft++
+        } catch { /* skip corrupted or locked encrypted files */ }
+      }
     }
-    _battles = { running, draft, executed, total: json.length }
+    _battles = { running, draft, executed, total }
   } catch { /* no battle dir */ }
 }
 
