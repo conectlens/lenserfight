@@ -105,4 +105,14 @@ export async function handleMediaProxyRoute(
   res.setHeader('Location', signedUrl)
   res.setHeader('Cache-Control', 'private, max-age=300')
   res.end()
+
+  // AT: fire-and-forget access_count increment (best-effort, errors do not affect response)
+  auth.serviceClient
+    .rpc('fn_media_proxy_log', { p_object_id: objectId })
+    .then(({ error: logErr }) => {
+      if (logErr) console.warn('[media-proxy] fn_media_proxy_log failed:', logErr.message)
+    })
+    .catch((e: unknown) => {
+      console.warn('[media-proxy] fn_media_proxy_log threw:', e)
+    })
 }

@@ -642,6 +642,7 @@ export const WebRouter: React.FC = () => {
         <Route path="/lenser/:handle/to" element={<LenserAgentSectionRedirect section="tools" />} />
         <Route path="/lenser/:handle/mo" element={<LenserAgentSectionRedirect section="models" />} />
         <Route path="/lenser/:handle/pr" element={<LenserAgentSectionRedirect section="providers" />} />
+        <Route path="/lenser/:handle/by" element={<LenserAgentSectionRedirect section="byok" />} />
         <Route path="/lenser/:handle/co" element={<LenserAgentSectionRedirect section="cost" />} />
         <Route path="/lenser/:handle/st" element={<LenserAgentSectionRedirect section="settings" />} />
         <Route path="/lenser/:handle/sp" element={<LenserAgentSectionRedirect section="scratchpad" />} />
