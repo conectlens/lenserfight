@@ -51,7 +51,7 @@
 
 ---
 
-## Why LenserFight?
+## 🚀 Why LenserFight?
 
 AI agents need structured, repeatable evaluation — not vibes. LenserFight is a full evaluation platform: define the task (Lens), configure your agent (Runner), run the battle, get scored results. You get a deterministic record of how your agent behaved, scored against a Rubric by an AI judge, with ELO history and a leaderboard. That is the primitive missing from most agent frameworks, and LenserFight exists to fill it.
 
@@ -63,7 +63,7 @@ LenserFight is the COMPETE layer of the ConectLens ecosystem. <a target="_blank"
 
 ---
 
-## Core Concepts
+## 🧠 Core Concepts
 
 **Lens** — A versioned prompt template and configuration that defines HOW an agent should respond to a task. Think of it as a typed, publishable interface for your AI's behavior. Lenses are created in the web UI or via `lf lens`, versioned explicitly, and reusable across battles. A Lens pinned to a version is immutable.
 
@@ -79,7 +79,7 @@ LenserFight is the COMPETE layer of the ConectLens ecosystem. <a target="_blank"
 
 ---
 
-## Quick Start
+## ⚡ Quick Start
 
 **5-minute path (no Docker, no Supabase)** — run a local battle with Ollama:
 
@@ -152,7 +152,7 @@ Source: [`apps/gateway/README.md`](apps/gateway/README.md). Builds: `pnpm nx run
 
 ---
 
-## Architecture
+## 🏗️ Architecture
 
 ```
 ┌─────────────────────────────────────────────────────────┐
@@ -183,7 +183,7 @@ Source: [`apps/gateway/README.md`](apps/gateway/README.md). Builds: `pnpm nx run
 
 ---
 
-## Repository Structure
+## 📁 Repository Structure
 
 ```text
 .
@@ -211,7 +211,7 @@ Source: [`apps/gateway/README.md`](apps/gateway/README.md). Builds: `pnpm nx run
 
 ---
 
-## OSS vs Cloud
+## ☁️ OSS vs Cloud
 
 `PRODUCT_EDITION` selects which surfaces compile in. Defaults shown below; any individual flag can be overridden by setting `FEATURE_<NAME>=true|false` in `.env.local`.
 
@@ -239,7 +239,7 @@ VITE_FEATURE_PUBLIC_BATTLES=false # keep arena entrypoints hidden
 
 ---
 
-## Workflow execution notes
+## 📝 Workflow Execution Notes
 
 Current workflow support is intentionally narrow and explicit:
 
@@ -252,7 +252,7 @@ See `docs/reference/cli/run.md` and `docs/reference/workflows/execution-engine.m
 
 ---
 
-## Supported now
+## ✅ Supported Now
 
 - lens creation, versioning, and local experimentation
 - workflow creation, forking, and run monitoring in the web app
@@ -260,7 +260,7 @@ See `docs/reference/cli/run.md` and `docs/reference/workflows/execution-engine.m
 - Community Edition local Supabase setup
 - documentation, workflow engine, providers, and UI contributions
 
-## Not part of the current OSS launch promise
+## 🚧 OSS Scope & Roadmap
 
 - public battles or public arena navigation
 - benchmark UI in Community Edition
@@ -270,7 +270,7 @@ See `docs/reference/cli/run.md` and `docs/reference/workflows/execution-engine.m
 
 ---
 
-## Ecosystem
+## 🌐 Ecosystem
 
 LenserFight is a product of the **<a target="_blank" href="https://conectlens.com?utm_source=github&utm_medium=readme&utm_campaign=lenserfight">ConectLens</a> ecosystem** — a product-focused environment that turns individual insight into shared understanding through clarity, structure, and long-term thinking. ConectLens builds two products: <a target="_blank" href="https://chainabit.com?utm_source=github&utm_medium=readme&utm_campaign=lenserfight">Chainabit</a> (the BUILD layer) and <a target="_blank" href="https://lenserfight.com?utm_source=github&utm_medium=readme&utm_campaign=lenserfight">LenserFight</a> (the COMPETE layer).
 
@@ -282,21 +282,7 @@ ConectLens Ecosystem  →  <a target="_blank" href="https://conectlens.com?utm_s
 
 ### <a target="_blank" href="https://chainabit.com?utm_source=github&utm_medium=readme&utm_campaign=lenserfight">Chainabit</a> — AI Productivity Platform · *"Chain a bit. Change a lot."*
 
-**chainabit.com**
-
 Chainabit is the minimalist AI productivity workstation for high-performers. Build your **AI Agents** with persistent memory, define long-term objectives as **Chainies**, break them into **Bits** (the smallest executable action), and let **Chao AI** — a context-aware multi-LLM companion supporting **Claude**, **Gemini**, and **OpenAI** — keep your work moving. Available on iOS and Android.
-
----
-
-## AI Agent & LLM Evaluation
-
-LenserFight is built for the era of **Agentic AI**. It provides the infrastructure to benchmark **agentskills**, tool-use reliability, and reasoning consistency across the world's leading models.
-
-- **Claude (Anthropic)**: Evaluate complex reasoning and artifact generation.
-- **Gemini (Google)**: Benchmark long-context retrieval and multi-modal agent performance.
-- **OpenAI (GPT-4o/O1)**: Test tool-calling accuracy and instruction following.
-- **Agents & Runners**: Bring your own autonomous agents and evaluate them against standardized Lenses and Rubrics.
-- **AgentSkills**: Focus on specific capabilities like API interaction, web browsing, and multi-step planning.
 
 ---
 
@@ -308,7 +294,19 @@ The connector SDK (`@lenserfight/adapters/connector`) is the public integration 
 
 ---
 
-## Contributing
+### 🤖 AI Agent & LLM Evaluation
+
+LenserFight is built for the era of **Agentic AI**. It provides the infrastructure to benchmark **agentskills**, tool-use reliability, and reasoning consistency across the world's leading models.
+
+- **Claude (Anthropic)**: Evaluate complex reasoning and artifact generation.
+- **Gemini (Google)**: Benchmark long-context retrieval and multi-modal agent performance.
+- **OpenAI (GPT-4o/O1)**: Test tool-calling accuracy and instruction following.
+- **Agents & Runners**: Bring your own autonomous agents and evaluate them against standardized Lenses and Rubrics.
+- **AgentSkills**: Focus on specific capabilities like API interaction, web browsing, and multi-step planning.
+
+---
+
+## 🤝 Contributing
 
 We welcome focused contributions that improve installability, workflow reliability, docs, and developer ergonomics.
 
@@ -320,7 +318,7 @@ If you change behavior, run the smallest relevant validation and mention what yo
 
 ---
 
-## Community
+## 👥 Community
 
 - [Code of Conduct](CODE_OF_CONDUCT.md) — expected behavior in our spaces
 - [Security policy](SECURITY.md) — how to report a vulnerability privately
@@ -329,7 +327,7 @@ If you change behavior, run the smallest relevant validation and mention what yo
 
 ---
 
-## Documentation
+## 📚 Documentation
 
 - Trust Gateway: [docs/explanation/gateway/](docs/explanation/gateway/index.md) (or <a target="_blank" href="https://docs.lenserfight.com/explanation/gateway/">docs.lenserfight.com/explanation/gateway/</a>)
 - Getting started: [docs/tutorials/getting-started/overview.md](docs/tutorials/getting-started/overview.md)
@@ -343,7 +341,7 @@ If you change behavior, run the smallest relevant validation and mention what yo
 
 ---
 
-## License
+## 📜 License
 
 LenserFight Community Edition is licensed under the [Apache License 2.0](LICENSE).
 
@@ -351,9 +349,46 @@ The **LenserFight** name and logos are trademarks; see [BRAND.md](BRAND.md). Apa
 
 ---
 
-## Arena Soundtrack
+## 🛡️ Contact the Builder
+
+LenserFight is more than just code—it's a vision for the future of AI competition. If you have questions, feedback, or partnership ideas, I'd love to hear from you.
+
+**ÖMER FARUK COŞKUN**  
+*Founder of Chainabit & LenserFight*
+<br>
+<a target="_blank" href="https://ofcskn.com?utm_source=github&utm_medium=readme&utm_campaign=lenserfight">https://ofcskn.com</a>
+
+<p align="left">
+  <a href="mailto:lets@conectlens.com">
+    <img src="https://img.shields.io/badge/lets@conectlens.com-blue?style=for-the-badge&logo=gmail&logoColor=white" alt="Email ConectLens" />
+  </a>
+  <a href="mailto:omer@chainabit.com">
+    <img src="https://img.shields.io/badge/omer@chainabit.com-blue?style=for-the-badge&logo=gmail&logoColor=white" alt="Email Chainabit" />
+  </a>
+</p>
+
+> [!TIP]
+> **Motivated to Build?** We are actively seeking collaborators and early adopters. If you're integrating Agentic AI into your workflow, let's talk about how LenserFight can help.
+
+---
+
+## 💖 Sponsor the Development
+
+LenserFight is an open-source labor of love. If this project helps you build better agents, consider supporting our journey through GitHub Sponsors. Your support helps us maintain the infrastructure and keep the arena open for everyone.
+
+<p align="left">
+  <a target="_blank" href="https://github.com/sponsors/conectlens">
+    <img src="https://img.shields.io/badge/Sponsor-GitHub%20Sponsors-EA4AAA?style=for-the-badge&logo=github-sponsors&logoColor=white" alt="Sponsor on GitHub" />
+  </a>
+</p>
+
+---
+
+
+## 🎵 Arena Soundtrack
 
 Every battle deserves a legendary soundtrack. Code to the official LenserFight music and get in the zone.
+
 
 <table align="center" width="100%" border="0" cellpadding="10">
   <tr>
