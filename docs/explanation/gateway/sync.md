@@ -65,7 +65,7 @@ Edges may not push these. Attempts to push are rejected at the daemon and at the
 | Class | Where it lives | Why local-only |
 |-------|----------------|----------------|
 | `byok_key` | OS keychain (via `libs/utils/keychain`) or env | Never written to DB; documented in [`libs/providers/src/lib/byok-key-resolver.ts`](../../../libs/providers/src/lib/byok-key-resolver.ts) |
-| `local_battle` | `.lenserfight/local-battles/*.json` (encrypted) | AES-256-GCM envelope; passphrase from env |
+| `local_battle` | user runtime `local-battles/*.json` (encrypted) | AES-256-GCM envelope; passphrase from env |
 | `scratchpad_draft` | Daemon process memory | Ephemeral |
 | `keychain_entry` | OS keychain | Never leaves the device |
 | `private_key` | OS keychain | Never leaves the device |
