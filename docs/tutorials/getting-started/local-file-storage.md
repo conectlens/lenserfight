@@ -117,5 +117,5 @@ When you're ready to use the full cloud stack:
 
 - [Storage Adapters Reference](/reference/platform-api/storage-adapters) — full adapter interface spec and design
 - [Installation](/tutorials/getting-started/installation) — full Supabase setup (Option A)
-- [Environment Variables](/reference/platform-api/environment-variables) — all `VITE_DATA_SOURCE` options
+- [Environment Variables](/reference/platform-api/environment-variables) — all `DATA_SOURCE` options
 - [Local Database Setup](/reference/database/local-setup) — Supabase local setup and schema

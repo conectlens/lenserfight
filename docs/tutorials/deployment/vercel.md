@@ -45,11 +45,11 @@ Add to Vercel project settings (**Settings → Environment Variables**):
 
 | Variable | Value |
 |----------|-------|
-| `VITE_DATA_SOURCE` | `supabase` |
-| `VITE_SUPABASE_URL` | Your Supabase project URL |
-| `VITE_SUPABASE_ANON_KEY` | Your Supabase anon key |
-| `VITE_WEB_BASE_URL` | Your Vercel domain |
-| `VITE_PRODUCT_EDITION` | `community` or `cloud` |
+| `DATA_SOURCE` | `supabase` |
+| `SUPABASE_URL` | Your Supabase project URL |
+| `SUPABASE_ANON_KEY` | Your Supabase anon key |
+| `WEB_BASE_URL` | Your Vercel domain |
+| `PRODUCT_EDITION` | `community` or `cloud` |
 
 ---
 

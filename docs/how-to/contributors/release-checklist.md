@@ -14,7 +14,7 @@ Follow these steps in order before tagging any release.
    Run `supabase db diff` and verify no untracked migrations are present.
 
 3. **Feature flags documented**
-   All `VITE_FEATURE_*` flags used in this release are listed in `docs/reference/known-preview-surfaces.md` with their intended stable target.
+   All `FEATURE_*` flags used in this release are listed in `docs/reference/known-preview-surfaces.md` with their intended stable target.
 
 4. **Docs RPCs verified**
    Every public function name referenced in docs matches an existing migration. Diff against `supabase/migrations/` to confirm.

@@ -50,9 +50,9 @@ Workflow schedules trigger autonomous agent runs on a CRON expression. The `lf s
 
 | Env var | Default (OSS) | Default (Cloud) | Purpose |
 |---------|--------------|-----------------|---------|
-| `VITE_FEATURE_CRON_SCHEDULING` | `false` | `true` | Enables the Schedules workspace section and CRON dispatch UI |
+| `FEATURE_CRON_SCHEDULING` | `false` | `true` | Enables the Schedules workspace section and CRON dispatch UI |
 
-Set `VITE_FEATURE_CRON_SCHEDULING=true` in your `.env` or `.env.local` to enable CRON scheduling on self-hosted instances. Requires `pg_cron` to be enabled in your Supabase project.
+Set `FEATURE_CRON_SCHEDULING=true` in your `.env` or `.env.local` to enable CRON scheduling on self-hosted instances. Requires `pg_cron` to be enabled in your Supabase project.
 
 ### Health detection algorithm
 

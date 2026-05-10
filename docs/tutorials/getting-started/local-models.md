@@ -23,7 +23,7 @@ export VITE_OLLAMA_BASE_URL=http://127.0.0.1:11434
 ```
 
 `LENSERFIGHT_OLLAMA_BASE_URL` is used by the CLI and server-side tools.
-`VITE_OLLAMA_BASE_URL` is used by browser builds.
+`OLLAMA_BASE_URL` is used by browser builds.
 
 ## CLI execution
 

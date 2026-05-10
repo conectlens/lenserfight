@@ -28,7 +28,6 @@ const __dirname = dirname(fileURLToPath(import.meta.url))
 const outDir = resolve(__dirname, '../docs/public/status')
 mkdirSync(outDir, { recursive: true })
 
-// Load .env.local from the repo root so VITE_* vars are available without pre-exporting
 const envLocalPath = resolve(__dirname, '../.env.local')
 if (existsSync(envLocalPath)) {
   for (const line of readFileSync(envLocalPath, 'utf-8').split('\n')) {
@@ -71,10 +70,10 @@ const STALE_CRON_MS = 5 * 60 * 1000 // 5 min
 
 const RPC_HEADERS = SUPABASE_URL && SERVICE_ROLE_KEY
   ? {
-      'Content-Type': 'application/json',
-      apikey: SERVICE_ROLE_KEY,
-      Authorization: `Bearer ${SERVICE_ROLE_KEY}`,
-    }
+    'Content-Type': 'application/json',
+    apikey: SERVICE_ROLE_KEY,
+    Authorization: `Bearer ${SERVICE_ROLE_KEY}`,
+  }
   : null
 
 async function rpc(name, params = {}) {
