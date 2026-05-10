@@ -1,0 +1,34 @@
+name: review-rubric-smoke
+task: |
+  You are reviewing a proposed scoring plugin for LenserFight.
+
+  The plugin emits `word_count`, `has_required_terms`, and `rubric_hits`.
+  It returns `ok: false` when `contentText` is empty.
+
+  Write a concise review with:
+  - one correctness risk
+  - one test that should be added
+  - one reason this plugin is or is not useful for battle scoring
+
+  Keep the answer under 80 words.
+
+contenders:
+  A:
+    provider: ollama
+    model: llama3.1
+  B:
+    provider: ollama
+    model: llama3.1
+
+rubric:
+  criteria:
+    - name: Correctness risk
+      weight: 3
+      description: Identifies a real failure mode in deterministic scoring or result interpretation.
+    - name: Test quality
+      weight: 2
+      description: Proposes a concrete test case that can be automated.
+    - name: Scoring relevance
+      weight: 2
+      description: Explains how the plugin signal helps or misleads battle evaluation.
+  pass_threshold: 0.65
