@@ -1,5 +1,5 @@
 import { falStableVideoAdapter } from '../fal-stable-video'
-import { mockFetch, resetFetchMock } from '../../../../../../../infra/execution/src/lib/testing'
+import { mockFetch, resetFetchMock } from '../testing'
 
 describe('falStableVideoAdapter', () => {
   let spy: jest.SpyInstance
