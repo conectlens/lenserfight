@@ -20,7 +20,7 @@ const generate = defineCommand({
     consola.info('  export %s=%s', ENV_VAR, key)
     consola.info('')
     consola.warn(
-      'Treat this as a secret. Anyone with this value can decrypt your .lenserfight/local-battles/*.json files.'
+      'Treat this as a secret. Anyone with this value can decrypt your local battle state files.'
     )
   },
 })
@@ -55,7 +55,7 @@ export default defineCommand({
   meta: {
     name: 'local-battle-key',
     description:
-      'Generate or verify the passphrase used to encrypt .lenserfight/local-battles/*.json files.',
+      'Generate or verify the passphrase used to encrypt local battle state files.',
   },
   subCommands: {
     generate,
