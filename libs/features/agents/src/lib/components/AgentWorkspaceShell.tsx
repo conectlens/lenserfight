@@ -27,6 +27,7 @@ import {
   LogsSection,
   MemorySection,
   ModelsSection,
+  ByokSection,
   OverviewSection,
   InstructionsSection,
   PersonalitySection,
@@ -58,6 +59,7 @@ const VALID_SECTIONS: AgentSection[] = [
   'tools',
   'models',
   'providers',
+  'byok',
   'approvals',
   'cost',
   'analytics',
@@ -82,6 +84,7 @@ function getSectionComponent(section: AgentSection): React.ComponentType {
     case 'tools': return ToolsSection
     case 'models': return ModelsSection
     case 'providers': return ProvidersSection
+    case 'byok': return ByokSection
     case 'approvals': return ApprovalsSection
     case 'cost': return CostSection
     case 'analytics': return AnalyticsSection
