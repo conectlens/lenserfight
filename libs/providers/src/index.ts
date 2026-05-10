@@ -1,3 +1,32 @@
+import * as anthropic from './lib/anthropic';
+import { elevenlabsAdapter } from './lib/elevenlabs';
+import { falStableVideoAdapter } from './lib/fal-stable-video';
+import * as google from './lib/google';
+import { googleImagenAdapter } from './lib/google-imagen';
+import { googleLyriaAdapter } from './lib/google-lyria';
+import { googleVeoAdapter } from './lib/google-veo';
+import { klingAdapter } from './lib/kling';
+import { klingI2vAdapter } from './lib/kling-i2v';
+import * as mistral from './lib/mistral';
+import * as ollama from './lib/ollama';
+import * as openai from './lib/openai';
+import { openaiImageAdapter } from './lib/openai-image';
+import { openaiVideoAdapter } from './lib/openai-video';
+import { stabilityAdapter } from './lib/stability';
+import { sunoAdapter } from './lib/suno';
+
+import type {
+  Provider,
+  GenerativeMediaProvider,
+  GenerativeMediaAdapter,
+  GenerativeMediaResponse,
+  ProviderAdapter,
+  StreamingProviderAdapter,
+  ProviderMessage,
+  ProviderRequestOptions,
+  ProviderResponse,
+} from './lib/types';
+
 // ─── Types & Contracts ────────────────────────────────────────────────────────
 export type {
   Provider,
@@ -59,24 +88,6 @@ export { falStableVideoAdapter } from './lib/fal-stable-video';
 export { OLLAMA_DEFAULT_BASE_URL } from './lib/ollama';
 
 // ─── Provider Registry ────────────────────────────────────────────────────────
-
-import type { Provider, GenerativeMediaProvider, GenerativeMediaAdapter, GenerativeMediaResponse, ProviderAdapter, StreamingProviderAdapter, ProviderMessage, ProviderRequestOptions, ProviderResponse } from './lib/types';
-import { openaiImageAdapter } from './lib/openai-image';
-import { openaiVideoAdapter } from './lib/openai-video';
-import { googleImagenAdapter } from './lib/google-imagen';
-import { googleVeoAdapter } from './lib/google-veo';
-import { googleLyriaAdapter } from './lib/google-lyria';
-import { stabilityAdapter } from './lib/stability';
-import { elevenlabsAdapter } from './lib/elevenlabs';
-import { klingAdapter } from './lib/kling';
-import { sunoAdapter } from './lib/suno';
-import { klingI2vAdapter } from './lib/kling-i2v';
-import { falStableVideoAdapter } from './lib/fal-stable-video';
-import * as openai from './lib/openai';
-import * as anthropic from './lib/anthropic';
-import * as google from './lib/google';
-import * as mistral from './lib/mistral';
-import * as ollama from './lib/ollama';
 
 type TextProvider = Exclude<Provider, 'fal'>;
 
@@ -166,12 +177,11 @@ export async function callProvider(
 
 // ─── Generative Media Registry ────────────────────────────────────────────────
 
-type ImageProvider = Extract<GenerativeMediaProvider, 'openai' | 'google' | 'stability' | 'fal' | 'midjourney'>;
 type VideoProvider = Extract<GenerativeMediaProvider, 'openai' | 'google' | 'kling'>;
 type AudioProvider = Extract<GenerativeMediaProvider, 'google' | 'elevenlabs' | 'suno'>;
 
 const GENERATIVE_ADAPTERS: Partial<Record<GenerativeMediaProvider, GenerativeMediaAdapter>> = {
-  openai: openaiImageAdapter as GenerativeMediaAdapter, // default: image; override per modality below
+  openai: openaiImageAdapter as GenerativeMediaAdapter,
   google: googleImagenAdapter as GenerativeMediaAdapter,
   stability: stabilityAdapter,
   elevenlabs: elevenlabsAdapter,
@@ -197,11 +207,6 @@ export const IMAGE_TO_VIDEO_ADAPTERS: Partial<Record<GenerativeMediaProvider, Ge
   fal: falStableVideoAdapter,
 };
 
-/**
- * Dispatch a generative media request to the appropriate adapter.
- * Returns synchronously for image providers; async video/audio providers return
- * { status: 'pending', taskId } — callers must poll via getGenerativeAdapter().pollTask().
- */
 export async function callGenerativeMedia(
   provider: GenerativeMediaProvider,
   modality: 'image' | 'video' | 'audio' | 'music',
@@ -227,7 +232,6 @@ export async function callGenerativeMedia(
   return adapter.generate(apiKey, model, prompt, params);
 }
 
-/** Retrieve the adapter for a provider so callers can poll async tasks. */
 export function getGenerativeAdapter(
   provider: GenerativeMediaProvider,
   modality: 'image' | 'video' | 'audio' | 'music'
