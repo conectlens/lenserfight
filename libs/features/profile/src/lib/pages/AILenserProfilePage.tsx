@@ -1,3 +1,4 @@
+import React from 'react'
 
 import { queryKeys } from '@lenserfight/data/cache'
 import {
@@ -13,12 +14,8 @@ import {
   AgentStatusBadge,
   useRunUnified,
 } from '@lenserfight/features/agents'
-
-const AgentManageWizard = React.lazy(() =>
-  import('@lenserfight/features/agents').then((m) => ({ default: m.AgentManageWizard }))
-)
 import { ThreadsListCard } from '@lenserfight/features/home'
-import { EmptyState, HelpButton } from '@lenserfight/ui/components'
+import { EmptyState } from '@lenserfight/ui/components'
 import { Dialog } from '@lenserfight/ui/overlays'
 import { useQuery } from '@tanstack/react-query'
 import {
@@ -30,7 +27,6 @@ import {
   MessageSquare,
   Network,
 } from 'lucide-react'
-import React from 'react'
 import { useNavigate } from 'react-router-dom'
 
 import { AILenserWorkflowPanel } from '../components/AILenserWorkflowPanel'
@@ -38,6 +34,10 @@ import { LenserActionsList } from '../components/LenserActionsList'
 import { LenserProfileHeader } from '../components/LenserProfileHeader'
 import { LenserTabs, type LenserTabDefinition, type LenserTabId } from '../components/LenserTabs'
 import { useWorkspaceSwitchController } from '../useWorkspaceSwitchController'
+
+const AgentManageWizard = React.lazy(() =>
+  import('@lenserfight/features/agents').then((m) => ({ default: m.AgentManageWizard }))
+)
 
 import type {
   ActivityFeedItem,
