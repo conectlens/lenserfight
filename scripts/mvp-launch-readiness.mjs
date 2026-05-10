@@ -18,14 +18,14 @@ function expect(name, predicate, helpText) {
   checks.push({ name, ok, value, helpText })
 }
 
-expect('VITE_FEATURE_PUBLIC_BATTLES', (v) => v === '' || v === 'false', 'must remain false for private-beta battle mode')
+expect('FEATURE_PUBLIC_BATTLES', (v) => v === '' || v === 'false', 'must remain false for private-beta battle mode')
 expect(
-  'VITE_FEATURE_SUPABASE_INTEGRATION',
+  'FEATURE_SUPABASE_INTEGRATION',
   (v) => v === '' || v === 'false',
   'must remain false until Supabase publication completes',
 )
 expect(
-  'VITE_API_URL',
+  'API_URL',
   (v) => v.length === 0 || /^https?:\/\//.test(v),
   'if set, must be a valid http(s) API origin used by workflow/feed health checks',
 )

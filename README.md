@@ -131,9 +131,9 @@ For the full local database flow, see `docs/reference/database/local-setup.md`.
 | `supabase start` errors | Docker running; ports **54321–54324** free on localhost. |
 | `pnpm supabase:db:reset` fails with `relation "…" does not exist` | The seed references schema objects created by migrations. Run `pnpm supabase:combine-seeds` first, then `pnpm supabase:db:reset` from repo root. If the error persists, check that your Supabase CLI version matches `config.toml`. |
 | Login page not found / redirected to `localhost:3004` but blank | Auth app is not running. Start it in a separate terminal: `pnpm nx run auth:serve`. |
-| Web app blank or API errors | Copy `.env.example` → `.env.local`; for full stack use `VITE_DATA_SOURCE=supabase` and keys from `supabase status`. |
+| Web app blank or API errors | Copy `.env.example` → `.env.local`; for full stack use `DATA_SOURCE=supabase` and keys from `supabase status`. |
 | Node version warning (`wanted >=22 <23`) | The repo targets Node 22 LTS. Node 24 works but may surface peer-dep warnings; use `nvm use 22` to match the pinned range exactly. |
-| Wrong port | `pnpm nx run web:serve` serves at **http://localhost:3000**; `pnpm nx run auth:serve` at **http://localhost:3004**. Set `VITE_WEB_BASE_URL` and `VITE_AUTH_BASE_URL` accordingly in `.env.local` (see [environment variables](docs/reference/platform-api/environment-variables.md)). |
+| Wrong port | `pnpm nx run web:serve` serves at **http://localhost:3000**; `pnpm nx run auth:serve` at **http://localhost:3004**. Set `WEB_BASE_URL` and `AUTH_BASE_URL` accordingly in `.env.local` (see [environment variables](docs/reference/platform-api/environment-variables.md)). |
 
 Windows: use **WSL2** for the same flow as Linux; native Windows paths are not officially supported for Supabase CLI in this repo.
 
@@ -212,7 +212,7 @@ Source: [`apps/gateway/README.md`](apps/gateway/README.md). Builds: `pnpm nx run
 
 ## OSS vs Cloud
 
-`VITE_PRODUCT_EDITION` selects which surfaces compile in. Defaults shown below; any individual flag can be overridden by setting `VITE_FEATURE_<NAME>=true|false` in `.env.local`.
+`PRODUCT_EDITION` selects which surfaces compile in. Defaults shown below; any individual flag can be overridden by setting `FEATURE_<NAME>=true|false` in `.env.local`.
 
 | Surface                                   | `community` (default) | `cloud`        |
 |-------------------------------------------|-----------------------|----------------|

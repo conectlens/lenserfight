@@ -19,7 +19,7 @@ LenserFight decouples file and media storage from application logic through a `S
 
 ### Selecting an adapter
 
-Set the `VITE_DATA_SOURCE` environment variable before starting the app or CLI:
+Set the `DATA_SOURCE` environment variable before starting the app or CLI:
 
 ```bash
 # Use local file system (no Supabase required)
@@ -120,7 +120,7 @@ All adapters integrate with the `media` database schema (or its local equivalent
 
 ## `~/.lenserfight/` directory layout (local adapter)
 
-When `VITE_DATA_SOURCE=file`, the local adapter reads and writes from the user's home directory:
+When `DATA_SOURCE=file`, the local adapter reads and writes from the user's home directory:
 
 ```
 ~/.lenserfight/
@@ -157,7 +157,7 @@ When `VITE_DATA_SOURCE=file`, the local adapter reads and writes from the user's
 | Limitation | Detail |
 |-----------|--------|
 | **Browser local adapter is in-memory** | `LocalFileStorageAdapter` uses an in-memory `Map` in the browser — data is lost on page reload. File-system backing (`~/.lenserfight/`) applies to CLI use only. |
-| **R2 adapter is a stub** | `CloudflareR2StorageAdapter` throws "not yet implemented" — do not set `VITE_DATA_SOURCE=r2` in production. |
+| **R2 adapter is a stub** | `CloudflareR2StorageAdapter` throws "not yet implemented" — do not set `DATA_SOURCE=r2` in production. |
 | **No auth in local mode** | The local adapter does not enforce RLS or access control. It is intended for single-developer local use only. |
 | **No multi-user in local mode** | `media.objects` workspace scoping is not enforced when running without Supabase. |
 
@@ -167,5 +167,5 @@ When `VITE_DATA_SOURCE=file`, the local adapter reads and writes from the user's
 
 - [Local File Storage Tutorial](/tutorials/getting-started/local-file-storage) — step-by-step: start without Supabase
 - [Local Database Setup](/reference/database/local-setup) — Supabase local setup and the no-Supabase alternative
-- [Environment Variables](/reference/platform-api/environment-variables) — `VITE_DATA_SOURCE` and adapter config
+- [Environment Variables](/reference/platform-api/environment-variables) — `DATA_SOURCE` and adapter config
 - [Database Schema: Media](/reference/database/schema-media) — `media.objects` and `media.attachments` table reference

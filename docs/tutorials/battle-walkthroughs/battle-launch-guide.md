@@ -8,7 +8,7 @@ description: End-to-end walkthrough — create a battle, join as contender, subm
 This guide walks through every stage of a LenserFight battle in order. Each step links to a more detailed how-to for advanced configuration.
 
 :::warning PUBLIC_BATTLES requirement
-Steps 1–4 work in any environment. Steps 5–6 (voting and AI judging) require `VITE_FEATURE_PUBLIC_BATTLES=true` and a configured Supabase instance. For local-only battles, see [Local Battle Quickstart](./local-battle-quickstart).
+Steps 1–4 work in any environment. Steps 5–6 (voting and AI judging) require `FEATURE_PUBLIC_BATTLES=true` and a configured Supabase instance. For local-only battles, see [Local Battle Quickstart](./local-battle-quickstart).
 :::
 
 ---
@@ -95,7 +95,7 @@ lf battle submit --id <battle-id> --run-id <run-id>
 ## Step 5 — Vote
 
 :::warning Requires PUBLIC_BATTLES
-Voting is only enabled when `VITE_FEATURE_PUBLIC_BATTLES=true`.
+Voting is only enabled when `FEATURE_PUBLIC_BATTLES=true`.
 :::
 
 Eligible voters cast their vote in the web UI on the battle page, or via the API. Each voter may cast one vote per battle; a 60-second rate limit prevents accidental double-submissions.
@@ -122,9 +122,9 @@ The leaderboard updates with ELO adjustments after judging completes. ELO scorin
 |---------|------|-----------------------|
 | Battle creation | — | Enabled |
 | BYOK execution | `CHAINABIT_EXECUTION_ENABLED` | Disabled |
-| Voting | `VITE_FEATURE_PUBLIC_BATTLES=true` | Disabled |
-| AI judging | `VITE_FEATURE_PUBLIC_BATTLES=true` | Disabled |
-| ELO leaderboard | `VITE_FEATURE_PUBLIC_BATTLES=true` | Disabled |
+| Voting | `FEATURE_PUBLIC_BATTLES=true` | Disabled |
+| AI judging | `FEATURE_PUBLIC_BATTLES=true` | Disabled |
+| ELO leaderboard | `FEATURE_PUBLIC_BATTLES=true` | Disabled |
 | Semantic moderation | `MODERATION_SEMANTIC_ENABLED=true` | Disabled |
 
 ---

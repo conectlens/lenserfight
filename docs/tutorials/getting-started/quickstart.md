@@ -15,7 +15,7 @@ Node.js 20+ and pnpm. Nothing else.
 
 ```bash
 pnpm install
-echo 'VITE_DATA_SOURCE=file' > .env.local
+echo 'DATA_SOURCE=file' > .env.local
 ```
 
 ## Step 2: Start the web app
@@ -58,17 +58,17 @@ lf run exec --ollama --model llama3.2 --prompt "Explain workflow DAGs simply"
 
 ## Known limitations in file-backend mode
 
-The following features require a full Supabase instance or a specific feature flag and are **not available** in `VITE_DATA_SOURCE=file` mode:
+The following features require a full Supabase instance or a specific feature flag and are **not available** in `DATA_SOURCE=file` mode:
 
 | Feature | Requirement |
 |---------|-------------|
-| CRON scheduling | Supabase + `VITE_FEATURE_CRON_SCHEDULING=true` |
+| CRON scheduling | Supabase + `FEATURE_CRON_SCHEDULING=true` |
 | Approval gates | Supabase (requires `agents.*` schema) |
 | SSE run event replay | Supabase (requires `lenses.workflow_run_events`) |
 | Marketplace (`/marketplace`) | Supabase (requires `lenses.lenses` with visibility) |
 | BYOK cloud execution | Supabase + `CHAINABIT_API_URL` env var |
 | Connector marketplace | Not yet implemented (preview) |
-| Battles arena | Supabase + `VITE_FEATURE_PUBLIC_BATTLES=true` |
+| Battles arena | Supabase + `FEATURE_PUBLIC_BATTLES=true` |
 
 See [Known Preview Surfaces](/reference/known-preview-surfaces) for the full list.
 

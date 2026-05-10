@@ -114,8 +114,8 @@ Required secrets in GitHub (**Settings → Secrets → Actions**):
 
 | Secret | Description |
 |--------|-------------|
-| `VITE_SUPABASE_URL` | Production Supabase URL |
-| `VITE_SUPABASE_ANON_KEY` | Production anon key |
+| `SUPABASE_URL` | Production Supabase URL |
+| `SUPABASE_ANON_KEY` | Production anon key |
 | `SUPABASE_SERVICE_ROLE_KEY` | Server-side key (for migrations) |
 | `VERCEL_TOKEN` | Vercel deployment token (if using Vercel) |
 | `DEPLOY_SSH_KEY` | SSH key for VPS deployment |

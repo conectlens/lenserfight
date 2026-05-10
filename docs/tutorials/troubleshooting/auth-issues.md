@@ -26,12 +26,12 @@ Diagnosis and resolution guide for authentication and authorization problems.
 Auth URL mismatch between the web app and auth app configuration.
 
 ### Diagnosis
-1. Check `VITE_AUTH_BASE_URL` in `.env.local`
+1. Check `AUTH_BASE_URL` in `.env.local`
 2. Verify the auth app is running on the expected port
 3. Check browser cookies/localStorage for stale tokens
 
 ### Fixes
-1. Ensure `VITE_AUTH_BASE_URL=http://localhost:3004` matches the running auth app
+1. Ensure `AUTH_BASE_URL=http://localhost:3004` matches the running auth app
 2. Clear browser storage: DevTools → Application → Clear site data
 3. Restart both web and auth apps
 
@@ -157,7 +157,7 @@ Wrong or missing Supabase anon key in the environment configuration.
 
 ### Fixes
 1. Run `pnpm supabase status` and copy the `anon key`
-2. Update `VITE_SUPABASE_ANON_KEY` in `.env.local`
+2. Update `SUPABASE_ANON_KEY` in `.env.local`
 3. Restart the dev server
 
 ### Prevention
