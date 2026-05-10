@@ -35,7 +35,7 @@ Next steps:
   lf battle local run a1b2c3d
 ```
 
-The battle state is saved to `.lenserfight/local-battles/<id>.json`. No network calls are made at this point.
+The battle state is saved to user runtime storage under `local-battles/<id>.json`. No network calls are made at this point.
 
 ---
 

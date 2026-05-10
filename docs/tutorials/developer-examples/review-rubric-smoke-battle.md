@@ -53,11 +53,11 @@ node dist/apps/cli/main.js battle local status
 
 ## Expected Output
 
-The run streams output from contender A and B, stores a local battle JSON file under `.lenserfight/local-battles/`, and prints the manual vote command.
+The run streams output from contender A and B, stores a local battle JSON file in user runtime storage, and prints the manual vote command.
 
 ## How the Example Works Internally
 
-The CLI loads `examples/local-battle/review-rubric-smoke/spec.yaml`, creates a local battle, adds contender A and B, calls the local battle runner, and stores plaintext outputs locally.
+The CLI loads `examples/local-battle/review-rubric-smoke/spec.yaml`, creates a local battle, adds contender A and B, calls the local battle runner, and stores outputs in encrypted local runtime state.
 
 ## Common Errors and Troubleshooting
 
