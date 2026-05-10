@@ -668,7 +668,7 @@ In an interactive terminal, the command shows a 5-second countdown with Ctrl-C t
 
 ## `battle local`
 
-Offline battle subcommand group. No Supabase connection, no auth, no platform credits. State persists in `.lenserfight/local-battles/{id}.json`.
+Offline battle subcommand group. No Supabase connection, no auth, no platform credits. State persists in user runtime storage under `local-battles/{id}.json`; legacy project-root files are read for compatibility.
 
 ```
 lf battle local <subcommand> [options]
