@@ -73,7 +73,7 @@ const mediaList = defineCommand({
           {
             query: { select: 'request_id', id: `eq.${args.run}`, limit: 1 },
             requireAuth: true,
-          },
+          }
         )
         if (runs.length === 0) {
           consola.warn(`No run found for id ${args.run} (or RLS denied access).`)
@@ -106,7 +106,7 @@ const mediaList = defineCommand({
           r.byte_size != null ? String(r.byte_size) : '—',
           r.visibility ?? '—',
           r.created_at.slice(0, 19).replace('T', ' '),
-        ]),
+        ])
       )
     } catch (err) {
       handleError(err)
@@ -164,10 +164,7 @@ const mediaDownload = defineCommand({
       // on RLS and 302s to a 1-hour signed URL. We use cloudApiUrl (the
       // platform-api URL) + the user's bearer token.
       const config = resolveBaseConfig()
-      const apiBase =
-        process.env['PLATFORM_API_URL'] ||
-        config.cloudApiUrl ||
-        config.supabaseUrl
+      const apiBase = process.env['PLATFORM_API_URL'] || config.cloudApiUrl || config.supabaseUrl
       if (!apiBase) {
         throw new Error('platform-api URL not configured. Set PLATFORM_API_URL or run `lf init`.')
       }
@@ -237,7 +234,7 @@ const mediaInfo = defineCommand({
           ['Visibility', obj.visibility ?? '—'],
           ['Lifecycle', obj.lifecycle_state ?? '—'],
           ['Created', obj.created_at.slice(0, 19).replace('T', ' ')],
-        ],
+        ]
       )
     } catch (err) {
       handleError(err)
@@ -275,8 +272,7 @@ const mediaPlay = defineCommand({
         url = obj.external_url
       } else {
         const config = resolveBaseConfig()
-        const apiBase =
-          process.env['PLATFORM_API_URL'] || config.cloudApiUrl || config.supabaseUrl
+        const apiBase = process.env['PLATFORM_API_URL'] || config.cloudApiUrl || config.supabaseUrl
         if (!apiBase) {
           throw new Error('platform-api URL not configured. Set PLATFORM_API_URL or run `lf init`.')
         }
@@ -336,12 +332,14 @@ const mediaSetVisibility = defineCommand({
   async run({ args }) {
     try {
       if (!['public', 'private', 'unlisted'].includes(args.visibility)) {
-        throw new Error(`Invalid visibility: ${args.visibility}. Must be public, private, or unlisted.`)
+        throw new Error(
+          `Invalid visibility: ${args.visibility}. Must be public, private, or unlisted.`
+        )
       }
       await callRpc<void>(
         'fn_toggle_media_visibility',
         { p_object_id: args.id, p_visibility: args.visibility },
-        { requireAuth: true },
+        { requireAuth: true }
       )
       consola.success(`Set visibility to "${args.visibility}" for media object ${args.id}.`)
     } catch (err) {
@@ -358,8 +356,16 @@ const mediaCleanup = defineCommand({
     description: 'Find and optionally delete orphaned pending media uploads before a date.',
   },
   args: {
-    before: { type: 'string', description: 'ISO 8601 date — find uploads created before this date', required: true },
-    'dry-run': { type: 'boolean', description: 'Print matched objects without deleting', default: true },
+    before: {
+      type: 'string',
+      description: 'ISO 8601 date — find uploads created before this date',
+      required: true,
+    },
+    'dry-run': {
+      type: 'boolean',
+      description: 'Print matched objects without deleting',
+      default: true,
+    },
   },
   async run({ args }) {
     try {
@@ -382,9 +388,8 @@ const mediaCleanup = defineCommand({
 
       if (args['dry-run']) {
         printTable(
-          rows,
           ['id', 'media_type', 'mime_type', 'created_at'],
-          (r) => [r.id, r.media_type ?? '—', r.mime_type ?? '—', r.created_at],
+          rows.map((r) => [r.id, r.media_type ?? '—', r.mime_type ?? '—', r.created_at])
         )
         consola.warn('Dry-run mode. Pass --no-dry-run to delete.')
         return
@@ -392,7 +397,11 @@ const mediaCleanup = defineCommand({
 
       let deleted = 0
       for (const row of rows) {
-        await callRpc<void>('fn_delete_media_object', { p_object_id: row.id }, { requireAuth: true })
+        await callRpc<void>(
+          'fn_delete_media_object',
+          { p_object_id: row.id },
+          { requireAuth: true }
+        )
         deleted++
       }
       consola.success(`Deleted ${deleted} orphaned media object(s).`)
@@ -427,7 +436,7 @@ const mediaManifest = defineCommand({
             limit: 1,
           },
           requireAuth: true,
-        },
+        }
       )
 
       if (rows.length === 0) {
@@ -443,7 +452,7 @@ const mediaManifest = defineCommand({
       }>
 
       if (!Array.isArray(manifest) || manifest.length === 0) {
-        consola.info('No media in this run\'s manifest.')
+        consola.info("No media in this run's manifest.")
         return
       }
 
@@ -453,15 +462,14 @@ const mediaManifest = defineCommand({
       }
 
       printTable(
-        manifest,
         ['object_id', 'media_type', 'mime_type', 'node_id', 'added_at'],
-        (row) => [
+        manifest.map((row) => [
           row.object_id,
           row.media_type,
           row.mime_type,
           row.node_id ?? '—',
           new Date(row.added_at).toLocaleString(),
-        ],
+        ])
       )
     } catch (err) {
       handleError(err)
