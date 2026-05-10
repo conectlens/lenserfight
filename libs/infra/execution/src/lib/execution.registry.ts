@@ -6,11 +6,14 @@ import { OllamaProvider } from './providers/ollama.provider'
 import { OpenAIProvider } from './providers/openai.provider'
 import { PdfExportProvider } from './providers/pdf-export.provider'
 import { ResearchProvider } from './providers/research.provider'
+import { EchoProvider } from './providers/echo.provider'
 
 import type { IExecutionProvider } from './execution.types'
 
 const PROVIDERS: Record<string, () => IExecutionProvider> = {
   'fal-ai': () => new FalAIProvider(),
+  // AS: echo provider for local dev (no API calls)
+  ...(process.env['USE_ECHO_PROVIDER'] === 'true' ? { echo: () => new EchoProvider() } : {}),
   // Canonical key matches @lenserfight/providers. `gemini` retained as a legacy alias.
   google: () => new GeminiProvider(),
   gemini: () => new GeminiProvider(),
