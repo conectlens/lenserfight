@@ -1,4 +1,5 @@
 import { writeFileSync } from 'node:fs'
+import { execSync } from 'node:child_process'
 import { defineCommand } from 'citty'
 import consola from 'consola'
 import { callRest, handleError } from '../utils/api'
@@ -25,6 +26,11 @@ interface MediaObjectRow {
   lifecycle_state: string | null
   created_at: string
   request_id: string | null
+  duration_seconds: number | null
+  video_width: number | null
+  video_height: number | null
+  audio_sample_rate: number | null
+  audio_channels: number | null
 }
 
 // ─── lf media list ──────────────────────────────────────────────────────────
@@ -186,6 +192,178 @@ const mediaDownload = defineCommand({
   },
 })
 
+// ─── lf media info (AO) ─────────────────────────────────────────────────────
+
+const mediaInfo = defineCommand({
+  meta: {
+    name: 'info',
+    description: 'Show metadata for a media object (MIME, size, duration, dimensions).',
+  },
+  args: {
+    id: { type: 'string', description: 'media.objects.id', required: true },
+    json: { type: 'boolean', description: 'Output as JSON', default: false },
+  },
+  async run({ args }) {
+    try {
+      const rows = await callRest<MediaObjectRow[]>('media', 'objects', 'GET', undefined, {
+        query: {
+          select:
+            'id,bucket,object_key,external_url,mime_type,media_type,byte_size,visibility,lifecycle_state,created_at,duration_seconds,video_width,video_height,audio_sample_rate,audio_channels',
+          id: `eq.${args.id}`,
+          limit: 1,
+        },
+        requireAuth: true,
+      })
+      if (rows.length === 0) {
+        throw new Error(`Media object ${args.id} not found (or RLS denied access).`)
+      }
+      const obj = rows[0]
+      if (args.json) {
+        printJson(obj)
+        return
+      }
+      printTable(
+        ['Field', 'Value'],
+        [
+          ['ID', obj.id],
+          ['MIME type', obj.mime_type ?? '—'],
+          ['Media type', obj.media_type ?? '—'],
+          ['Size (bytes)', obj.byte_size != null ? String(obj.byte_size) : '—'],
+          ['Duration (s)', obj.duration_seconds != null ? String(obj.duration_seconds) : '—'],
+          ['Width', obj.video_width != null ? String(obj.video_width) : '—'],
+          ['Height', obj.video_height != null ? String(obj.video_height) : '—'],
+          ['Sample rate', obj.audio_sample_rate != null ? String(obj.audio_sample_rate) : '—'],
+          ['Channels', obj.audio_channels != null ? String(obj.audio_channels) : '—'],
+          ['Visibility', obj.visibility ?? '—'],
+          ['Lifecycle', obj.lifecycle_state ?? '—'],
+          ['Created', obj.created_at.slice(0, 19).replace('T', ' ')],
+        ],
+      )
+    } catch (err) {
+      handleError(err)
+    }
+  },
+})
+
+// ─── lf media play (AN) ─────────────────────────────────────────────────────
+
+const mediaPlay = defineCommand({
+  meta: {
+    name: 'play',
+    description: 'Open a media object in the system default browser/player.',
+  },
+  args: {
+    id: { type: 'string', description: 'media.objects.id', required: true },
+  },
+  async run({ args }) {
+    try {
+      const rows = await callRest<MediaObjectRow[]>('media', 'objects', 'GET', undefined, {
+        query: {
+          select: 'id,bucket,object_key,external_url,mime_type',
+          id: `eq.${args.id}`,
+          limit: 1,
+        },
+        requireAuth: true,
+      })
+      if (rows.length === 0) {
+        throw new Error(`Media object ${args.id} not found (or RLS denied access).`)
+      }
+      const obj = rows[0]
+
+      let url: string
+      if (obj.external_url) {
+        url = obj.external_url
+      } else {
+        const config = resolveBaseConfig()
+        const apiBase =
+          process.env['PLATFORM_API_URL'] || config.cloudApiUrl || config.supabaseUrl
+        if (!apiBase) {
+          throw new Error('platform-api URL not configured. Set PLATFORM_API_URL or run `lf init`.')
+        }
+        url = `${apiBase.replace(/\/+$/, '')}/v1/media/${encodeURIComponent(obj.id)}`
+      }
+
+      const opener =
+        process.platform === 'darwin'
+          ? 'open'
+          : process.platform === 'win32'
+            ? 'start ""'
+            : 'xdg-open'
+      execSync(`${opener} "${url}"`)
+      consola.success(`Opened: ${url}`)
+    } catch (err) {
+      handleError(err)
+    }
+  },
+})
+
+// ─── lf media manifest ──────────────────────────────────────────────────────
+
+const mediaManifest = defineCommand({
+  meta: {
+    name: 'manifest',
+    description: 'Show the media manifest for a workflow run.',
+  },
+  args: {
+    run: { type: 'string', description: 'lenses.workflow_runs.id', required: true },
+    json: { type: 'boolean', description: 'Output raw JSON', default: false },
+  },
+  async run({ args }) {
+    try {
+      const rows = await callRest<Array<{ media_manifest: unknown }>>(
+        'lenses',
+        'workflow_runs',
+        'GET',
+        undefined,
+        {
+          query: {
+            select: 'media_manifest',
+            id: `eq.${args.run}`,
+            limit: 1,
+          },
+          requireAuth: true,
+        },
+      )
+
+      if (rows.length === 0) {
+        throw new Error(`Workflow run ${args.run} not found (or RLS denied access).`)
+      }
+
+      const manifest = rows[0].media_manifest as Array<{
+        object_id: string
+        media_type: string
+        mime_type: string
+        node_id?: string
+        added_at: string
+      }>
+
+      if (!Array.isArray(manifest) || manifest.length === 0) {
+        consola.info('No media in this run\'s manifest.')
+        return
+      }
+
+      if (args.json) {
+        printJson(manifest)
+        return
+      }
+
+      printTable(
+        manifest,
+        ['object_id', 'media_type', 'mime_type', 'node_id', 'added_at'],
+        (row) => [
+          row.object_id,
+          row.media_type,
+          row.mime_type,
+          row.node_id ?? '—',
+          new Date(row.added_at).toLocaleString(),
+        ],
+      )
+    } catch (err) {
+      handleError(err)
+    }
+  },
+})
+
 // ─── parent ─────────────────────────────────────────────────────────────────
 
 const mediaCommand = defineCommand({
@@ -196,6 +374,9 @@ const mediaCommand = defineCommand({
   subCommands: {
     list: mediaList,
     download: mediaDownload,
+    play: mediaPlay,
+    info: mediaInfo,
+    manifest: mediaManifest,
   },
 })
 
