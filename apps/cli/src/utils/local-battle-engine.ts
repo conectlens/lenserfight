@@ -4,11 +4,13 @@
 //   LocalBattleLenser — Controller: receives "run battle" event, delegates to experts
 
 import { existsSync, mkdirSync } from 'node:fs'
-import { join, resolve } from 'node:path'
+import { join } from 'node:path'
 import { randomUUID } from 'node:crypto'
+import consola from 'consola'
 import { byokKeyResolver, getStreamAdapter } from '@lenserfight/providers'
 import type { ProviderMessage } from '@lenserfight/providers'
 import { readBattleFile, writeBattleFile } from './local-battle-storage'
+import { getLocalBattleStorageDirs } from './local-battle-paths'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -43,20 +45,56 @@ export interface LocalBattleState {
 
 // ─── LocalBattleStore ─────────────────────────────────────────────────────────
 
-const BATTLES_DIR = '.lenserfight/local-battles'
-
 export class LocalBattleStore {
   private dir(root = process.cwd()): string {
-    return resolve(root, BATTLES_DIR)
+    return getLocalBattleStorageDirs(root).primary
+  }
+
+  private legacyDir(root = process.cwd()): string {
+    return getLocalBattleStorageDirs(root).legacy
   }
 
   private path(id: string, root?: string): string {
     return join(this.dir(root), `${id}.json`)
   }
 
+  private legacyPath(id: string, root?: string): string {
+    return join(this.legacyDir(root), `${id}.json`)
+  }
+
   private ensureDir(root?: string): void {
     const d = this.dir(root)
     if (!existsSync(d)) mkdirSync(d, { recursive: true })
+  }
+
+  private findPath(id: string, root?: string): { path: string; legacy: boolean } | null {
+    const primary = this.path(id, root)
+    if (existsSync(primary)) return { path: primary, legacy: false }
+
+    const legacy = this.legacyPath(id, root)
+    if (existsSync(legacy)) return { path: legacy, legacy: true }
+
+    return null
+  }
+
+  private migrateLegacyState(state: LocalBattleState, legacyPath: string): void {
+    const target = this.path(state.id)
+    if (target === legacyPath || existsSync(target)) return
+    try {
+      this.ensureDir()
+      writeBattleFile(target, state)
+      consola.warn(
+        'Migrated local battle %s from project .lenserfight/ to user runtime storage. The legacy file remains at %s.',
+        state.id.slice(0, 8),
+        legacyPath
+      )
+    } catch (err) {
+      consola.warn(
+        'Could not migrate local battle %s to user runtime storage: %s',
+        state.id.slice(0, 8),
+        (err as Error).message
+      )
+    }
   }
 
   create(name: string, task: string): LocalBattleState {
@@ -75,9 +113,11 @@ export class LocalBattleStore {
   }
 
   load(id: string): LocalBattleState {
-    const file = this.path(id)
-    if (!existsSync(file)) throw new Error(`Local battle not found: ${id}`)
-    return readBattleFile<LocalBattleState>(file)
+    const found = this.findPath(id)
+    if (!found) throw new Error(`Local battle not found: ${id}`)
+    const state = readBattleFile<LocalBattleState>(found.path)
+    if (found.legacy) this.migrateLegacyState(state, found.path)
+    return state
   }
 
   save(state: LocalBattleState): void {
@@ -86,12 +126,22 @@ export class LocalBattleStore {
   }
 
   list(): LocalBattleState[] {
-    const d = this.dir()
-    if (!existsSync(d)) return []
     const { readdirSync } = require('node:fs') as typeof import('node:fs')
-    return readdirSync(d)
-      .filter((f: string) => f.endsWith('.json'))
-      .map((f: string) => readBattleFile<LocalBattleState>(join(d, f)))
+    const byId = new Map<string, LocalBattleState>()
+
+    for (const d of [this.legacyDir(), this.dir()]) {
+      if (!existsSync(d)) continue
+      for (const f of readdirSync(d).filter((name: string) => name.endsWith('.json'))) {
+        try {
+          const state = readBattleFile<LocalBattleState>(join(d, f))
+          byId.set(state.id, state)
+        } catch {
+          // Skip corrupt or unreadable battle files so one bad legacy file does not break the dashboard.
+        }
+      }
+    }
+
+    return [...byId.values()]
       .sort((a: LocalBattleState, b: LocalBattleState) => b.createdAt.localeCompare(a.createdAt))
   }
 
