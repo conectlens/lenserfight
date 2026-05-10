@@ -22,6 +22,7 @@ i18n
     },
     fallbackLng: 'en',
     supportedLngs: ['en', 'tr'],
+    showSupportNotice: false,
     detection: {
       order: ['localStorage', 'navigator', 'htmlTag'],
       caches: ['localStorage'],

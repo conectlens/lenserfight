@@ -8,7 +8,7 @@ import { defineConfig } from 'vite'
 export default defineConfig(() => ({
   root: import.meta.dirname,
   envDir: import.meta.dirname,
-  envPrefix: ['ARENA_', 'AUTH_', 'WEB_'],
+  envPrefix: ['SUPABASE_URL', 'SUPABASE_PUBLISHABLE_KEY', 'ARENA_', 'AUTH_', 'WEB_', 'DATA_SOURCE'],
   cacheDir: '../../node_modules/.vite/apps/arena',
   server: {
     port: 3001,
