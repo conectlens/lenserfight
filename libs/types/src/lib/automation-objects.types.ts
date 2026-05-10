@@ -1,5 +1,9 @@
 export const AUTOMATION_OBJECT_KINDS = [
   'lens',
+  'lenser',
+  'colens',
+  'battle',
+  'team',
   'agent',
   'agent_team',
   'tool',
@@ -72,6 +76,18 @@ export interface AutomationObjectFrontmatter {
   version?: string
   tags?: string[]
   description?: string
+}
+
+export interface AutomationDisclosureRef {
+  path: string
+  description?: string
+}
+
+export interface AutomationUnitFrontmatter extends AutomationObjectFrontmatter {
+  references?: Array<string | AutomationDisclosureRef>
+  scripts?: Array<string | (AutomationDisclosureRef & { command?: string; interactive?: boolean })>
+  assets?: Array<string | AutomationDisclosureRef>
+  evals?: Array<string | AutomationDisclosureRef>
 }
 
 export interface AutomationMarkdownDocument<TFrontmatter = AutomationObjectFrontmatter> {
@@ -174,6 +190,20 @@ export interface AgentFrontmatter extends AutomationObjectFrontmatter {
   team_membership?: string[]
 }
 
+export interface LenserFrontmatter extends AutomationUnitFrontmatter {
+  kind: 'lenser'
+  role?: string
+  capabilities?: string[]
+  model_policy?: AgentModelPolicy
+  tool_policy?: AgentToolPolicy
+  memory_policy_ref?: string
+  workspace_permissions?: AgentWorkspacePermissions
+  allowed_actions?: PermissionLevel[]
+  evaluation_policy_ref?: string
+  safety_boundaries?: AgentSafetyBoundaries
+  team_membership?: string[]
+}
+
 export interface AgentTeamMemberDefinition {
   agent_id: string
   role: string
@@ -187,6 +217,18 @@ export interface AgentTeamFrontmatter extends AutomationObjectFrontmatter {
   members?: AgentTeamMemberDefinition[]
   shared_tools?: string[]
   shared_memory_policy_ref?: string
+  workflow_ownership?: string[]
+}
+
+export interface TeamFrontmatter extends AutomationUnitFrontmatter {
+  kind: 'team'
+  purpose?: string
+  team_lead_lenser?: string
+  team_lead_agent?: string
+  members?: Array<AgentTeamMemberDefinition & { lenser_id?: string }>
+  shared_tools?: string[]
+  shared_memory_policy_ref?: string
+  colens_ownership?: string[]
   workflow_ownership?: string[]
 }
 
@@ -226,6 +268,21 @@ export interface WorkflowFrontmatter extends AutomationObjectFrontmatter {
   logging?: Record<string, unknown>
 }
 
+export interface ColensFrontmatter extends AutomationUnitFrontmatter {
+  kind: 'colens'
+  colens_type?: WorkflowFrontmatter['workflow_type']
+  workflow_type?: WorkflowFrontmatter['workflow_type']
+  triggers?: Array<Record<string, unknown>>
+  inputs?: Record<string, unknown>
+  steps?: WorkflowStepDefinition[]
+  conditions?: Array<Record<string, unknown>>
+  approval_gates?: Array<Record<string, unknown> | string>
+  retry_policy?: Record<string, unknown>
+  evaluation?: Record<string, unknown>
+  outputs?: Record<string, unknown>
+  logging?: Record<string, unknown>
+}
+
 export interface PrivateBattleParticipant {
   type: 'agent' | 'workflow' | 'model' | 'prompt' | 'human'
   ref: string
@@ -244,6 +301,30 @@ export interface PrivateBattleFrontmatter extends AutomationObjectFrontmatter {
   evaluation_method?: string
   judge_agent_ref?: string
   human_judge_required?: boolean
+  rubric_ref?: string
+  metrics?: string[]
+}
+
+export interface BattleParticipantDefinition {
+  type: 'lens' | 'lenser' | 'colens' | 'team' | 'eval' | 'model' | 'prompt' | 'human'
+  ref: string
+  provider?: string
+  model?: string
+  key_var?: string
+}
+
+export interface BattleFrontmatter extends AutomationUnitFrontmatter {
+  kind: 'battle'
+  participants?: BattleParticipantDefinition[]
+  lenses?: string[]
+  colenses?: string[]
+  lensers?: string[]
+  teams?: string[]
+  evals?: Array<string | AutomationDisclosureRef>
+  scoring?: Record<string, unknown>
+  comparison?: Record<string, unknown>
+  runtime?: ExecutionRuntime
+  public_template?: boolean
   rubric_ref?: string
   metrics?: string[]
 }
@@ -286,11 +367,19 @@ export interface RunReportFrontmatter extends AutomationObjectFrontmatter {
   latency_ms?: number
 }
 
-export interface LensFrontmatter extends AutomationObjectFrontmatter {
+export interface LensVersionParameterDeclaration {
+  label: string
+  tool_id?: string
+  toolId?: string
+}
+
+export interface LensFrontmatter extends AutomationUnitFrontmatter {
   kind: 'lens'
   input_schema?: Record<string, unknown>
   output_schema?: Record<string, unknown>
   evaluation_refs?: string[]
+  /** Mirrors lenses.version_parameters: label + tool_id per prompt version. */
+  parameters?: LensVersionParameterDeclaration[]
 }
 
 export interface AutomationObjectSummary {
@@ -320,7 +409,7 @@ export interface WorkspaceObjectSearchResult {
 }
 
 export interface DraftCreationRequest {
-  kind: Extract<AutomationObjectKind, 'lens' | 'agent' | 'tool' | 'workflow' | 'private_battle'>
+  kind: Extract<AutomationObjectKind, 'lens' | 'lenser' | 'agent' | 'tool' | 'colens' | 'workflow' | 'battle' | 'private_battle'>
   goal: string
   inputs?: Record<string, unknown>
   tags?: string[]
