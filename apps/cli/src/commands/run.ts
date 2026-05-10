@@ -489,7 +489,11 @@ const exec = defineCommand({
         const res = await fetch(url, { method: 'POST', headers, body });
         if (!res.ok) {
           const text = await res.text();
-          throw new Error(`Ollama error ${res.status}: ${text}`);
+          const nextStep =
+            res.status === 404
+              ? `\n\nNext step: pull the model first with \`ollama pull ${args.model}\`, then retry this command. Use \`ollama list\` to see installed models.`
+              : '\n\nNext step: check that Ollama is running with `ollama serve` and verify the model name with `ollama list`.';
+          throw new Error(`Ollama error ${res.status}: ${text}${nextStep}`);
         }
         const data = await res.json() as Record<string, unknown>;
         const reply = (data.message as Record<string, unknown>)?.content ?? '';
