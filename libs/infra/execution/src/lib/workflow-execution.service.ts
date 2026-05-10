@@ -10,6 +10,7 @@ import type {
   ModerationGateway,
   ModerationPhase,
   PartialOutputSink,
+  WorkflowNodeType,
 } from './execution.types'
 import type {
   LensInputContract,
@@ -98,6 +99,8 @@ export interface WorkflowNodeConfig {
   memoryWritePolicy?: MemoryWritePolicy
   /** Phase X2 — controls delegation behavior for this node. Default `auto`. */
   delegationPolicy?: DelegationPolicy
+  /** AP: output modality for this node — checked against agents.policies.allowed_output_modalities. */
+  nodeType?: WorkflowNodeType
 }
 
 /**
@@ -290,6 +293,13 @@ export interface WorkflowExecutionContext {
    * a node failure with code `delegation_not_configured`.
    */
   delegation?: DelegationDispatcher
+  /**
+   * AP — optional modality guard. When set, the engine calls this before
+   * dispatching any non-text generative node. Implementations should call
+   * fn_assert_modality_allowed. If the modality is disallowed, throw with
+   * message 'modality_not_allowed'. The engine converts this to node_blocked.
+   */
+  modalityGuard?: (nodeId: string, modality: WorkflowNodeType) => Promise<void>
 }
 
 export interface MemoryFlushSink {
@@ -518,6 +528,39 @@ export class WorkflowExecutionService {
 
           await ctx.onNodeStatusChange(nodeId, { nodeId, status: 'running' })
           await emit(ctx, { runId: ctx.runId, nodeId, name: 'node_started' })
+
+          // AP: modality guard — block non-text nodes when agent policy disallows the modality
+          const nodeType = node.config?.nodeType
+          if (
+            ctx.modalityGuard &&
+            nodeType &&
+            nodeType !== 'text' &&
+            nodeType !== 'condition' &&
+            nodeType !== 'merge' &&
+            nodeType !== 'delegate'
+          ) {
+            try {
+              await ctx.modalityGuard(nodeId, nodeType)
+            } catch (err) {
+              const errMsg = err instanceof Error ? err.message : String(err)
+              const isModalityBlocked = errMsg.includes('modality_not_allowed')
+              const blocked: NodeResult = {
+                nodeId,
+                status: 'blocked',
+                error: isModalityBlocked ? 'modality_not_allowed' : `modality_guard_error: ${errMsg}`,
+                outputData: { modality: nodeType },
+              }
+              results.set(nodeId, blocked)
+              await ctx.onNodeStatusChange(nodeId, blocked)
+              await emit(ctx, {
+                runId: ctx.runId,
+                nodeId,
+                name: 'node_blocked',
+                metadata: { errorCode: 'modality_not_allowed', modality: nodeType },
+              })
+              return
+            }
+          }
 
           const attempts = Math.max(1, node.config?.retry?.attempts ?? DEFAULT_RETRY.attempts)
           const retryCfg: Required<RetryConfig> = {

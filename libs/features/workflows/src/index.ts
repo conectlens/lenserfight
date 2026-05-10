@@ -36,8 +36,10 @@ export * from './lib/components/WorkflowCronPanel'
 export * from './lib/components/WorkflowPhasesEditor'
 export * from './lib/components/WorkflowTaskCard'
 export * from './lib/components/MediaOutputCard'
+export * from './lib/components/MultimodalRunResult'
 
 // Pages
 export * from './lib/pages/WorkflowsPage'
 export * from './lib/pages/WorkflowBuilderPage'
 export * from './lib/pages/WorkflowTemplateGalleryPage'
+export * from './lib/pages/WorkflowRunMediaPage'

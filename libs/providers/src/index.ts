@@ -51,6 +51,9 @@ export { stabilityAdapter } from './lib/stability';
 export { elevenlabsAdapter } from './lib/elevenlabs';
 export { klingAdapter } from './lib/kling';
 export { sunoAdapter } from './lib/suno';
+// AP: Image-to-video adapters
+export { klingI2vAdapter } from './lib/kling-i2v';
+export { falStableVideoAdapter } from './lib/fal-stable-video';
 
 // ─── Ollama Constants ─────────────────────────────────────────────────────────
 export { OLLAMA_DEFAULT_BASE_URL } from './lib/ollama';
@@ -67,6 +70,8 @@ import { stabilityAdapter } from './lib/stability';
 import { elevenlabsAdapter } from './lib/elevenlabs';
 import { klingAdapter } from './lib/kling';
 import { sunoAdapter } from './lib/suno';
+import { klingI2vAdapter } from './lib/kling-i2v';
+import { falStableVideoAdapter } from './lib/fal-stable-video';
 import * as openai from './lib/openai';
 import * as anthropic from './lib/anthropic';
 import * as google from './lib/google';
@@ -184,6 +189,12 @@ const AUDIO_ADAPTERS: Partial<Record<AudioProvider, GenerativeMediaAdapter>> = {
   google: googleLyriaAdapter,
   elevenlabs: elevenlabsAdapter,
   suno: sunoAdapter,
+};
+
+// AP: Image-to-video adapters keyed by provider
+export const IMAGE_TO_VIDEO_ADAPTERS: Partial<Record<GenerativeMediaProvider, GenerativeMediaAdapter>> = {
+  kling: klingI2vAdapter,
+  fal: falStableVideoAdapter,
 };
 
 /**

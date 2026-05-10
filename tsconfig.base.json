@@ -81,7 +81,8 @@
       "@lenserfight/ui/overlays": ["libs/ui/overlays/src/index.ts"],
       "@lenserfight/ui/routing": ["libs/ui/routing/src/index.ts"],
       "@lenserfight/ui/providers": ["libs/ui/providers/src/index.ts"],
-      "@lenserfight/ui/widgets": ["libs/ui/widgets/src/index.ts"]
+      "@lenserfight/ui/widgets": ["libs/ui/widgets/src/index.ts"],
+      "@lenserfight/ui/media": ["libs/ui/media/src/index.ts"]
     }
   }
 }

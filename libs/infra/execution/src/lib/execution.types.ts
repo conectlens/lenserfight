@@ -2,6 +2,17 @@ import type { NodeOutputEnvelope } from '@lenserfight/types'
 
 export type MediaType = 'text' | 'image' | 'video' | 'audio' | 'pdf'
 
+// AP: Node type taxonomy — includes multimodal_chain for combined image→video workflows
+export type WorkflowNodeType =
+  | 'text'
+  | 'image'
+  | 'video'
+  | 'audio'
+  | 'multimodal_chain'
+  | 'delegate'
+  | 'condition'
+  | 'merge'
+
 export interface ExecutionInput {
   prompt: string
   params?: Record<string, unknown>
