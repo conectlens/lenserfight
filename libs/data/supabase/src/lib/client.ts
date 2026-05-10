@@ -1,11 +1,22 @@
 import { createClient } from '@supabase/supabase-js'
 import { cookieStorage } from './cookieStorage'
 
-// Fall back to placeholder values in file-storage mode so this module can be
-// imported without throwing — the supabase client is never actually called when
-// DATA_SOURCE=file (repositories go through the file-mode factory instead).
-const supabaseUrl = import.meta.env.SUPABASE_URL || 'http://localhost:54321'
-const supabaseKey = import.meta.env.SUPABASE_PUBLISHABLE_KEY || 'placeholder-key-for-file-mode'
+const shouldUsePlaceholderClient =
+  import.meta.env.DATA_SOURCE === 'file' || import.meta.env.DEV || import.meta.env.MODE === 'test'
+
+// Keep file/test/dev imports non-throwing, but never let a production bundle
+// silently talk to the local Supabase placeholder.
+const supabaseUrl =
+  import.meta.env.SUPABASE_URL || (shouldUsePlaceholderClient ? 'http://localhost:54321' : undefined)
+const supabaseKey =
+  import.meta.env.SUPABASE_PUBLISHABLE_KEY ||
+  (shouldUsePlaceholderClient ? 'placeholder-key-for-file-mode' : undefined)
+
+if (!supabaseUrl || !supabaseKey) {
+  throw new Error(
+    'Missing Supabase public env: set SUPABASE_URL and SUPABASE_PUBLISHABLE_KEY for this Vite app.'
+  )
+}
 
 export const supabase = createClient(supabaseUrl, supabaseKey, {
   auth: {
