@@ -7,6 +7,11 @@ description: Three end-to-end walkthroughs covering lens creation and binding, m
 
 These walkthroughs trace concrete request paths through the documented APIs and surface the contract between the schema, services, CLI, and frontend. Each example labels which steps are working today vs. **Proposed** behavior gated on the changes in [Future work](./agent-teams#future-work).
 
+For runnable local-first examples, see the repository examples index:
+
+- [`examples/README.md`](../../../examples/README.md)
+- [Developer Examples tutorials](../../tutorials/developer-examples/)
+
 ## Example 1 — Create a lens, bind it to an agent, run it
 
 **Goal**: An owner authors a Research lens, binds it as the default research lens for an Agent Lenser, and runs it once with a custom prompt.
@@ -85,7 +90,10 @@ flowchart LR
 2. **Build the workflow**:
 
    ```ts
-   const workflow = await workflowsService.createWorkflow({ title: 'Research → Publish', lenser_id })
+   const workflow = await workflowsService.createWorkflow({
+     title: 'Research → Publish',
+     lenser_id,
+   })
    const nodes = await workflowsService.upsertNodes(workflow.id, [
      { lens_version_id: researchV1, label: 'Research' },
      { lens_version_id: synthV1, label: 'Synthesize' },
@@ -117,7 +125,11 @@ flowchart LR
      workflow_id: workflow.id,
      assignee_kind: 'team',
      assignee_team_id: team.id,
-     approval_policy: { requiresApproval: true, mode: 'sensitive_actions', gates: ['publish_output'] },
+     approval_policy: {
+       requiresApproval: true,
+       mode: 'sensitive_actions',
+       gates: ['publish_output'],
+     },
      retry_policy: { maxRetries: 2, retryOn: ['rate_limit', 'provider_error'] },
    })
    ```

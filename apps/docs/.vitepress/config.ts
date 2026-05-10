@@ -1,6 +1,14 @@
 import { defineConfig } from 'vitepress'
 import tailwind from '@tailwindcss/vite'
-import { copyFileSync, existsSync, mkdirSync, readdirSync, readFileSync, statSync, writeFileSync } from 'fs'
+import {
+  copyFileSync,
+  existsSync,
+  mkdirSync,
+  readdirSync,
+  readFileSync,
+  statSync,
+  writeFileSync,
+} from 'fs'
 import { dirname, join, resolve } from 'path'
 import { fileURLToPath } from 'url'
 
@@ -22,7 +30,7 @@ function mermaidFencePlugin(md: any) {
 }
 
 const REPO_BLOB_BASE = 'https://github.com/conectlens/lenserfight/blob/main'
-const CROSS_TREE_TOP_DIRS = ['libs', 'supabase', 'apps', 'tools', 'docs']
+const CROSS_TREE_TOP_DIRS = ['libs', 'supabase', 'apps', 'tools', 'docs', 'examples']
 
 /**
  * Rewrites markdown links that walk out of the docs srcDir (e.g. `../../libs/...`,
@@ -85,7 +93,13 @@ const CHANGELOG_DEST = resolve(docsDir, 'changelog.md')
  */
 function rewriteChangelogLinks(content: string): string {
   return content.replace(/\]\(([^)]+)\)/g, (match, href: string) => {
-    if (/^[a-z]+:/i.test(href) || href.startsWith('#') || href.startsWith('/') || href.startsWith('./') || href.startsWith('../')) {
+    if (
+      /^[a-z]+:/i.test(href) ||
+      href.startsWith('#') ||
+      href.startsWith('/') ||
+      href.startsWith('./') ||
+      href.startsWith('../')
+    ) {
       return match
     }
     if (href.startsWith('docs/')) {
@@ -105,9 +119,13 @@ function syncChangelogPlugin() {
   }
   return {
     name: 'lf-sync-changelog',
-    buildStart() { sync() },
+    buildStart() {
+      sync()
+    },
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    configureServer(_server: any) { sync() },
+    configureServer(_server: any) {
+      sync()
+    },
   }
 }
 
@@ -145,7 +163,8 @@ const SITE_JSON_LD = JSON.stringify({
   '@type': 'WebSite',
   name: 'LenserFight Docs',
   url: DOCS_HOST,
-  description: 'User-first documentation for LenserFight — Lenses, Agents, Workflows, and Community.',
+  description:
+    'User-first documentation for LenserFight — Lenses, Agents, Workflows, and Community.',
   publisher: {
     '@type': 'Organization',
     name: 'LenserFight',
@@ -184,27 +203,115 @@ export default defineConfig({
 
   head: [
     // ── Favicons ────────────────────────────────────────────────────────────
-    ['link', { rel: 'apple-touch-icon', sizes: '57x57', href: '/favicons/original/apple-icon-57x57.png' }],
-    ['link', { rel: 'apple-touch-icon', sizes: '60x60', href: '/favicons/original/apple-icon-60x60.png' }],
-    ['link', { rel: 'apple-touch-icon', sizes: '72x72', href: '/favicons/original/apple-icon-72x72.png' }],
-    ['link', { rel: 'apple-touch-icon', sizes: '76x76', href: '/favicons/original/apple-icon-76x76.png' }],
-    ['link', { rel: 'apple-touch-icon', sizes: '114x114', href: '/favicons/original/apple-icon-114x114.png' }],
-    ['link', { rel: 'apple-touch-icon', sizes: '120x120', href: '/favicons/original/apple-icon-120x120.png' }],
-    ['link', { rel: 'apple-touch-icon', sizes: '144x144', href: '/favicons/original/apple-icon-144x144.png' }],
-    ['link', { rel: 'apple-touch-icon', sizes: '152x152', href: '/favicons/original/apple-icon-152x152.png' }],
-    ['link', { rel: 'apple-touch-icon', sizes: '180x180', href: '/favicons/original/apple-icon-180x180.png' }],
-    ['link', { rel: 'icon', type: 'image/png', sizes: '192x192', href: '/favicons/original/android-icon-192x192.png' }],
-    ['link', { rel: 'icon', type: 'image/png', sizes: '96x96', href: '/favicons/original/favicon-96x96.png' }],
-    ['link', { rel: 'icon', type: 'image/png', sizes: '32x32', href: '/favicons/original/favicon-32x32.png' }],
-    ['link', { rel: 'icon', type: 'image/png', sizes: '16x16', href: '/favicons/original/favicon-16x16.png' }],
+    [
+      'link',
+      { rel: 'apple-touch-icon', sizes: '57x57', href: '/favicons/original/apple-icon-57x57.png' },
+    ],
+    [
+      'link',
+      { rel: 'apple-touch-icon', sizes: '60x60', href: '/favicons/original/apple-icon-60x60.png' },
+    ],
+    [
+      'link',
+      { rel: 'apple-touch-icon', sizes: '72x72', href: '/favicons/original/apple-icon-72x72.png' },
+    ],
+    [
+      'link',
+      { rel: 'apple-touch-icon', sizes: '76x76', href: '/favicons/original/apple-icon-76x76.png' },
+    ],
+    [
+      'link',
+      {
+        rel: 'apple-touch-icon',
+        sizes: '114x114',
+        href: '/favicons/original/apple-icon-114x114.png',
+      },
+    ],
+    [
+      'link',
+      {
+        rel: 'apple-touch-icon',
+        sizes: '120x120',
+        href: '/favicons/original/apple-icon-120x120.png',
+      },
+    ],
+    [
+      'link',
+      {
+        rel: 'apple-touch-icon',
+        sizes: '144x144',
+        href: '/favicons/original/apple-icon-144x144.png',
+      },
+    ],
+    [
+      'link',
+      {
+        rel: 'apple-touch-icon',
+        sizes: '152x152',
+        href: '/favicons/original/apple-icon-152x152.png',
+      },
+    ],
+    [
+      'link',
+      {
+        rel: 'apple-touch-icon',
+        sizes: '180x180',
+        href: '/favicons/original/apple-icon-180x180.png',
+      },
+    ],
+    [
+      'link',
+      {
+        rel: 'icon',
+        type: 'image/png',
+        sizes: '192x192',
+        href: '/favicons/original/android-icon-192x192.png',
+      },
+    ],
+    [
+      'link',
+      {
+        rel: 'icon',
+        type: 'image/png',
+        sizes: '96x96',
+        href: '/favicons/original/favicon-96x96.png',
+      },
+    ],
+    [
+      'link',
+      {
+        rel: 'icon',
+        type: 'image/png',
+        sizes: '32x32',
+        href: '/favicons/original/favicon-32x32.png',
+      },
+    ],
+    [
+      'link',
+      {
+        rel: 'icon',
+        type: 'image/png',
+        sizes: '16x16',
+        href: '/favicons/original/favicon-16x16.png',
+      },
+    ],
     ['link', { rel: 'manifest', href: '/favicons/manifest.json' }],
     ['meta', { name: 'msapplication-TileColor', content: '#ffffff' }],
-    ['meta', { name: 'msapplication-TileImage', content: '/favicons/original/ms-icon-144x144.png' }],
+    [
+      'meta',
+      { name: 'msapplication-TileImage', content: '/favicons/original/ms-icon-144x144.png' },
+    ],
     ['meta', { name: 'theme-color', content: '#ffffff' }],
     // ── Fonts ────────────────────────────────────────────────────────────────
     ['link', { rel: 'preconnect', href: 'https://fonts.googleapis.com' }],
     ['link', { rel: 'preconnect', href: 'https://fonts.gstatic.com', crossorigin: '' }],
-    ['link', { rel: 'stylesheet', href: 'https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap' }],
+    [
+      'link',
+      {
+        rel: 'stylesheet',
+        href: 'https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap',
+      },
+    ],
     // ── Open Graph ──────────────────────────────────────────────────────────
     ['meta', { property: 'og:site_name', content: 'LenserFight Docs' }],
     ['meta', { property: 'og:type', content: 'website' }],
@@ -273,10 +380,19 @@ export default defineConfig({
             text: 'Eğitimler',
             items: [
               { text: 'Başlarken', link: '/tr/tutorials/getting-started/overview' },
-              { text: 'Yeni Başlayanlar İçin', link: '/tr/tutorials/beginner-walkthroughs/what-is-lenserfight' },
+              {
+                text: 'Yeni Başlayanlar İçin',
+                link: '/tr/tutorials/beginner-walkthroughs/what-is-lenserfight',
+              },
               { text: 'Rehberler', link: '/tr/tutorials/walkthroughs/using-the-web-app' },
-              { text: 'Agentlar ve Otomasyon', link: '/tr/tutorials/agent-walkthroughs/create-your-first-agent' },
-              { text: 'Savaş Rehberleri', link: '/tr/tutorials/battle-walkthroughs/your-first-battle' },
+              {
+                text: 'Agentlar ve Otomasyon',
+                link: '/tr/tutorials/agent-walkthroughs/create-your-first-agent',
+              },
+              {
+                text: 'Savaş Rehberleri',
+                link: '/tr/tutorials/battle-walkthroughs/your-first-battle',
+              },
             ],
           },
           {
@@ -359,9 +475,18 @@ export default defineConfig({
                 { text: 'Sözlük', link: '/tr/tutorials/getting-started/glossary' },
                 { text: 'Kurulum', link: '/tr/tutorials/getting-started/installation' },
                 { text: 'Hızlı Başlangıç (Web)', link: '/tr/tutorials/getting-started/quickstart' },
-                { text: 'CLI: Baştan Sona', link: '/tr/tutorials/getting-started/cli-getting-started' },
-                { text: 'Yerel Dosya Depolama', link: '/tr/tutorials/getting-started/local-file-storage' },
-                { text: 'Organizasyonlar İçin', link: '/tr/tutorials/getting-started/for-organizations' },
+                {
+                  text: 'CLI: Baştan Sona',
+                  link: '/tr/tutorials/getting-started/cli-getting-started',
+                },
+                {
+                  text: 'Yerel Dosya Depolama',
+                  link: '/tr/tutorials/getting-started/local-file-storage',
+                },
+                {
+                  text: 'Organizasyonlar İçin',
+                  link: '/tr/tutorials/getting-started/for-organizations',
+                },
                 { text: 'SaaS Entegrasyonu', link: '/tr/how-to/integrations/saas-quickstart' },
               ],
             },
@@ -369,9 +494,18 @@ export default defineConfig({
               text: 'Yeni Başlayanlar İçin',
               collapsed: false,
               items: [
-                { text: 'LenserFight Nedir?', link: '/tr/tutorials/beginner-walkthroughs/what-is-lenserfight' },
-                { text: "OpenAI Agent'ı Bağla", link: '/tr/tutorials/beginner-walkthroughs/connect-openai-agent' },
-                { text: 'Harika Lens Yazmak', link: '/tr/tutorials/beginner-walkthroughs/writing-great-prompts' },
+                {
+                  text: 'LenserFight Nedir?',
+                  link: '/tr/tutorials/beginner-walkthroughs/what-is-lenserfight',
+                },
+                {
+                  text: "OpenAI Agent'ı Bağla",
+                  link: '/tr/tutorials/beginner-walkthroughs/connect-openai-agent',
+                },
+                {
+                  text: 'Harika Lens Yazmak',
+                  link: '/tr/tutorials/beginner-walkthroughs/writing-great-prompts',
+                },
                 { text: 'İlk Agent', link: '/tr/tutorials/beginner-walkthroughs/first-agent' },
               ],
             },
@@ -379,29 +513,53 @@ export default defineConfig({
               text: 'Rehberler',
               collapsed: false,
               items: [
-                { text: 'Web Uygulamasını Kullanmak', link: '/tr/tutorials/walkthroughs/using-the-web-app' },
+                {
+                  text: 'Web Uygulamasını Kullanmak',
+                  link: '/tr/tutorials/walkthroughs/using-the-web-app',
+                },
                 { text: 'Lens Oluştur', link: '/tr/tutorials/walkthroughs/create-a-lens' },
                 { text: 'İş Akışı Oluştur', link: '/tr/tutorials/walkthroughs/create-a-workflow' },
-                { text: 'İş Akışları Nelerdir?', link: '/tr/tutorials/walkthroughs/what-are-workflows' },
+                {
+                  text: 'İş Akışları Nelerdir?',
+                  link: '/tr/tutorials/walkthroughs/what-are-workflows',
+                },
               ],
             },
             {
               text: 'Agentlar ve Otomasyon',
               collapsed: false,
               items: [
-                { text: 'İlk Agentını Oluştur', link: '/tr/tutorials/agent-walkthroughs/create-your-first-agent' },
-                { text: 'Agent Takımlarını Yönet', link: '/tr/tutorials/agent-walkthroughs/manage-agent-teams' },
-                { text: 'CRON Zamanlama', link: '/tr/tutorials/agent-walkthroughs/cron-scheduling' },
-                { text: 'Otomasyon Kuralları', link: '/tr/tutorials/agent-walkthroughs/automation-rules' },
+                {
+                  text: 'İlk Agentını Oluştur',
+                  link: '/tr/tutorials/agent-walkthroughs/create-your-first-agent',
+                },
+                {
+                  text: 'Agent Takımlarını Yönet',
+                  link: '/tr/tutorials/agent-walkthroughs/manage-agent-teams',
+                },
+                {
+                  text: 'CRON Zamanlama',
+                  link: '/tr/tutorials/agent-walkthroughs/cron-scheduling',
+                },
+                {
+                  text: 'Otomasyon Kuralları',
+                  link: '/tr/tutorials/agent-walkthroughs/automation-rules',
+                },
                 { text: 'Konektörler', link: '/tr/tutorials/agent-walkthroughs/connectors' },
-                { text: 'XP ve İtibar Kazanmak', link: '/tr/tutorials/agent-walkthroughs/earning-xp' },
+                {
+                  text: 'XP ve İtibar Kazanmak',
+                  link: '/tr/tutorials/agent-walkthroughs/earning-xp',
+                },
               ],
             },
             {
               text: 'Savaş Rehberleri',
               collapsed: false,
               items: [
-                { text: 'İlk Savaşınız', link: '/tr/tutorials/battle-walkthroughs/your-first-battle' },
+                {
+                  text: 'İlk Savaşınız',
+                  link: '/tr/tutorials/battle-walkthroughs/your-first-battle',
+                },
               ],
             },
           ],
@@ -409,10 +567,22 @@ export default defineConfig({
             {
               text: 'Savaş Rehberleri',
               items: [
-                { text: 'İlk Savaşınız', link: '/tr/tutorials/battle-walkthroughs/your-first-battle' },
-                { text: 'Yerel Savaş Hızlı Başlangıç', link: '/tr/tutorials/battle-walkthroughs/local-battle-quickstart' },
-                { text: 'BYOK Bulut Savaşı Yayını', link: '/tr/tutorials/battle-walkthroughs/byok-cloud-battle' },
-                { text: 'PRIVATE_BATTLE.md Çalıştır', link: '/tr/tutorials/battle-walkthroughs/private-battle-execute' },
+                {
+                  text: 'İlk Savaşınız',
+                  link: '/tr/tutorials/battle-walkthroughs/your-first-battle',
+                },
+                {
+                  text: 'Yerel Savaş Hızlı Başlangıç',
+                  link: '/tr/tutorials/battle-walkthroughs/local-battle-quickstart',
+                },
+                {
+                  text: 'BYOK Bulut Savaşı Yayını',
+                  link: '/tr/tutorials/battle-walkthroughs/byok-cloud-battle',
+                },
+                {
+                  text: 'PRIVATE_BATTLE.md Çalıştır',
+                  link: '/tr/tutorials/battle-walkthroughs/private-battle-execute',
+                },
               ],
             },
           ],
@@ -420,12 +590,27 @@ export default defineConfig({
             {
               text: 'Agentlar ve Otomasyon',
               items: [
-                { text: 'İlk Agentını Oluştur', link: '/tr/tutorials/agent-walkthroughs/create-your-first-agent' },
-                { text: 'Agent Takımlarını Yönet', link: '/tr/tutorials/agent-walkthroughs/manage-agent-teams' },
-                { text: 'CRON Zamanlama', link: '/tr/tutorials/agent-walkthroughs/cron-scheduling' },
-                { text: 'Otomasyon Kuralları', link: '/tr/tutorials/agent-walkthroughs/automation-rules' },
+                {
+                  text: 'İlk Agentını Oluştur',
+                  link: '/tr/tutorials/agent-walkthroughs/create-your-first-agent',
+                },
+                {
+                  text: 'Agent Takımlarını Yönet',
+                  link: '/tr/tutorials/agent-walkthroughs/manage-agent-teams',
+                },
+                {
+                  text: 'CRON Zamanlama',
+                  link: '/tr/tutorials/agent-walkthroughs/cron-scheduling',
+                },
+                {
+                  text: 'Otomasyon Kuralları',
+                  link: '/tr/tutorials/agent-walkthroughs/automation-rules',
+                },
                 { text: 'Konektörler', link: '/tr/tutorials/agent-walkthroughs/connectors' },
-                { text: 'XP ve İtibar Kazanmak', link: '/tr/tutorials/agent-walkthroughs/earning-xp' },
+                {
+                  text: 'XP ve İtibar Kazanmak',
+                  link: '/tr/tutorials/agent-walkthroughs/earning-xp',
+                },
               ],
             },
           ],
@@ -437,9 +622,18 @@ export default defineConfig({
                 { text: 'Sözlük', link: '/tr/tutorials/getting-started/glossary' },
                 { text: 'Kurulum', link: '/tr/tutorials/getting-started/installation' },
                 { text: 'Hızlı Başlangıç (Web)', link: '/tr/tutorials/getting-started/quickstart' },
-                { text: 'CLI: Baştan Sona', link: '/tr/tutorials/getting-started/cli-getting-started' },
-                { text: 'Yerel Dosya Depolama', link: '/tr/tutorials/getting-started/local-file-storage' },
-                { text: 'Organizasyonlar İçin', link: '/tr/tutorials/getting-started/for-organizations' },
+                {
+                  text: 'CLI: Baştan Sona',
+                  link: '/tr/tutorials/getting-started/cli-getting-started',
+                },
+                {
+                  text: 'Yerel Dosya Depolama',
+                  link: '/tr/tutorials/getting-started/local-file-storage',
+                },
+                {
+                  text: 'Organizasyonlar İçin',
+                  link: '/tr/tutorials/getting-started/for-organizations',
+                },
                 { text: 'SaaS Entegrasyonu', link: '/tr/how-to/integrations/saas-quickstart' },
               ],
             },
@@ -448,10 +642,16 @@ export default defineConfig({
             {
               text: 'Rehberler',
               items: [
-                { text: 'Web Uygulamasını Kullanmak', link: '/tr/tutorials/walkthroughs/using-the-web-app' },
+                {
+                  text: 'Web Uygulamasını Kullanmak',
+                  link: '/tr/tutorials/walkthroughs/using-the-web-app',
+                },
                 { text: 'Lens Oluştur', link: '/tr/tutorials/walkthroughs/create-a-lens' },
                 { text: 'İş Akışı Oluştur', link: '/tr/tutorials/walkthroughs/create-a-workflow' },
-                { text: 'İş Akışları Nelerdir?', link: '/tr/tutorials/walkthroughs/what-are-workflows' },
+                {
+                  text: 'İş Akışları Nelerdir?',
+                  link: '/tr/tutorials/walkthroughs/what-are-workflows',
+                },
               ],
             },
           ],
@@ -459,9 +659,18 @@ export default defineConfig({
             {
               text: 'Yeni Başlayanlar İçin',
               items: [
-                { text: 'LenserFight Nedir?', link: '/tr/tutorials/beginner-walkthroughs/what-is-lenserfight' },
-                { text: "OpenAI Agent'ı Bağla", link: '/tr/tutorials/beginner-walkthroughs/connect-openai-agent' },
-                { text: 'Harika Lens Yazmak', link: '/tr/tutorials/beginner-walkthroughs/writing-great-prompts' },
+                {
+                  text: 'LenserFight Nedir?',
+                  link: '/tr/tutorials/beginner-walkthroughs/what-is-lenserfight',
+                },
+                {
+                  text: "OpenAI Agent'ı Bağla",
+                  link: '/tr/tutorials/beginner-walkthroughs/connect-openai-agent',
+                },
+                {
+                  text: 'Harika Lens Yazmak',
+                  link: '/tr/tutorials/beginner-walkthroughs/writing-great-prompts',
+                },
                 { text: 'İlk Agent', link: '/tr/tutorials/beginner-walkthroughs/first-agent' },
               ],
             },
@@ -495,9 +704,18 @@ export default defineConfig({
               text: 'Entegrasyonlar',
               items: [
                 { text: 'Genel Bakış', link: '/tr/how-to/integrations/index' },
-                { text: 'AI Ajan Entegrasyonu', link: '/tr/how-to/integrations/ai-agent-integration' },
-                { text: 'SaaS Entegrasyon Hızlı Başlangıcı', link: '/tr/how-to/integrations/saas-quickstart' },
-                { text: 'Organizasyon Token Yönetimi', link: '/tr/how-to/integrations/manage-org-tokens' },
+                {
+                  text: 'AI Ajan Entegrasyonu',
+                  link: '/tr/how-to/integrations/ai-agent-integration',
+                },
+                {
+                  text: 'SaaS Entegrasyon Hızlı Başlangıcı',
+                  link: '/tr/how-to/integrations/saas-quickstart',
+                },
+                {
+                  text: 'Organizasyon Token Yönetimi',
+                  link: '/tr/how-to/integrations/manage-org-tokens',
+                },
               ],
             },
           ],
@@ -505,7 +723,10 @@ export default defineConfig({
             {
               text: 'Katkıda Bulunanlar',
               items: [
-                { text: 'Katkıda Bulunanlar 2. Dalga', link: '/tr/how-to/contributors/wave-2-plan' },
+                {
+                  text: 'Katkıda Bulunanlar 2. Dalga',
+                  link: '/tr/how-to/contributors/wave-2-plan',
+                },
                 { text: 'SSS', link: '/tr/how-to/contributors/faq' },
               ],
             },
@@ -520,7 +741,10 @@ export default defineConfig({
                 { text: 'Savaşlar', link: '/tr/reference/battles/index' },
                 { text: 'Platform ve API', link: '/tr/reference/platform-api/api-overview' },
                 { text: 'Veritabanı', link: '/tr/reference/database/schema-overview' },
-                { text: 'Bilinen Önizleme Yüzeyleri', link: '/tr/reference/known-preview-surfaces' },
+                {
+                  text: 'Bilinen Önizleme Yüzeyleri',
+                  link: '/tr/reference/known-preview-surfaces',
+                },
                 { text: 'Bilinen Sınırlamalar', link: '/tr/reference/known-limitations' },
               ],
             },
@@ -541,9 +765,7 @@ export default defineConfig({
           '/tr/reference/battles/': [
             {
               text: 'Savaşlar Referansı',
-              items: [
-                { text: 'Kavramlar ve Yaşam Döngüsü', link: '/tr/reference/battles/index' },
-              ],
+              items: [{ text: 'Kavramlar ve Yaşam Döngüsü', link: '/tr/reference/battles/index' }],
             },
           ],
           '/tr/reference/platform-api/': [
@@ -553,7 +775,10 @@ export default defineConfig({
                 { text: 'API Genel Bakış', link: '/tr/reference/platform-api/api-overview' },
                 { text: 'Yapılandırma', link: '/tr/reference/platform-api/configuration' },
                 { text: 'Token Referansı', link: '/tr/reference/platform-api/tokens' },
-                { text: 'Depolama Adaptörleri', link: '/tr/reference/platform-api/storage-adapters' },
+                {
+                  text: 'Depolama Adaptörleri',
+                  link: '/tr/reference/platform-api/storage-adapters',
+                },
                 { text: 'Fiyatlandırma ve Planlar', link: '/tr/reference/platform-api/pricing' },
                 { text: 'URL Kuralları', link: '/tr/reference/platform-api/url-conventions' },
                 { text: 'Beta Yol Haritası', link: '/tr/reference/platform-api/beta-roadmap' },
@@ -617,9 +842,15 @@ export default defineConfig({
               text: 'İş Akışları',
               collapsed: true,
               items: [
-                { text: 'İş Akışı Kavramları', link: '/tr/explanation/workflows/workflow-concepts' },
+                {
+                  text: 'İş Akışı Kavramları',
+                  link: '/tr/explanation/workflows/workflow-concepts',
+                },
                 { text: 'İş Akışı Türleri', link: '/tr/explanation/workflows/workflow-types' },
-                { text: 'Açık Kaynak İş Akışları', link: '/tr/explanation/workflows/open-source-workflows' },
+                {
+                  text: 'Açık Kaynak İş Akışları',
+                  link: '/tr/explanation/workflows/open-source-workflows',
+                },
               ],
             },
             {
@@ -645,8 +876,14 @@ export default defineConfig({
               collapsed: true,
               items: [
                 { text: 'Topluluk Merkezi', link: '/tr/explanation/community/community-hub' },
-                { text: 'İçerik Üretici Profilleri', link: '/tr/explanation/community/creator-profiles' },
-                { text: 'Mobil Yardımcı Uygulama', link: '/tr/explanation/community/companion-app' },
+                {
+                  text: 'İçerik Üretici Profilleri',
+                  link: '/tr/explanation/community/creator-profiles',
+                },
+                {
+                  text: 'Mobil Yardımcı Uygulama',
+                  link: '/tr/explanation/community/companion-app',
+                },
                 { text: 'Açık Çekirdek Modeli', link: '/tr/explanation/community/open-core-model' },
                 { text: 'OSS Lansman Kapsamı', link: '/tr/explanation/community/oss-launch-scope' },
                 { text: 'Marka yönergeleri', link: '/tr/explanation/community/brand-guidelines' },
@@ -656,9 +893,18 @@ export default defineConfig({
               text: 'Savaşlar',
               collapsed: true,
               items: [
-                { text: 'Yerel ve Bulut Savaşları', link: '/tr/explanation/battles/local-vs-cloud-battles' },
-                { text: 'Web Yayını Mimarisi', link: '/tr/explanation/battles/webstreaming-architecture' },
-                { text: 'Sınırlı Beta Durumu', link: '/tr/explanation/battles/limited-beta-status' },
+                {
+                  text: 'Yerel ve Bulut Savaşları',
+                  link: '/tr/explanation/battles/local-vs-cloud-battles',
+                },
+                {
+                  text: 'Web Yayını Mimarisi',
+                  link: '/tr/explanation/battles/webstreaming-architecture',
+                },
+                {
+                  text: 'Sınırlı Beta Durumu',
+                  link: '/tr/explanation/battles/limited-beta-status',
+                },
               ],
             },
           ],
@@ -666,9 +912,18 @@ export default defineConfig({
             {
               text: 'Savaşlar',
               items: [
-                { text: 'Yerel ve Bulut Savaşları', link: '/tr/explanation/battles/local-vs-cloud-battles' },
-                { text: 'Web Yayını Mimarisi', link: '/tr/explanation/battles/webstreaming-architecture' },
-                { text: 'Sınırlı Beta Durumu', link: '/tr/explanation/battles/limited-beta-status' },
+                {
+                  text: 'Yerel ve Bulut Savaşları',
+                  link: '/tr/explanation/battles/local-vs-cloud-battles',
+                },
+                {
+                  text: 'Web Yayını Mimarisi',
+                  link: '/tr/explanation/battles/webstreaming-architecture',
+                },
+                {
+                  text: 'Sınırlı Beta Durumu',
+                  link: '/tr/explanation/battles/limited-beta-status',
+                },
               ],
             },
           ],
@@ -702,9 +957,15 @@ export default defineConfig({
             {
               text: 'İş Akışları',
               items: [
-                { text: 'İş Akışı Kavramları', link: '/tr/explanation/workflows/workflow-concepts' },
+                {
+                  text: 'İş Akışı Kavramları',
+                  link: '/tr/explanation/workflows/workflow-concepts',
+                },
                 { text: 'İş Akışı Türleri', link: '/tr/explanation/workflows/workflow-types' },
-                { text: 'Açık Kaynak İş Akışları', link: '/tr/explanation/workflows/open-source-workflows' },
+                {
+                  text: 'Açık Kaynak İş Akışları',
+                  link: '/tr/explanation/workflows/open-source-workflows',
+                },
               ],
             },
           ],
@@ -735,8 +996,14 @@ export default defineConfig({
               text: 'Topluluk ve Kullanım Senaryoları',
               items: [
                 { text: 'Topluluk Merkezi', link: '/tr/explanation/community/community-hub' },
-                { text: 'İçerik Üretici Profilleri', link: '/tr/explanation/community/creator-profiles' },
-                { text: 'Mobil Yardımcı Uygulama', link: '/tr/explanation/community/companion-app' },
+                {
+                  text: 'İçerik Üretici Profilleri',
+                  link: '/tr/explanation/community/creator-profiles',
+                },
+                {
+                  text: 'Mobil Yardımcı Uygulama',
+                  link: '/tr/explanation/community/companion-app',
+                },
                 { text: 'Açık Çekirdek Modeli', link: '/tr/explanation/community/open-core-model' },
                 { text: 'OSS Lansman Kapsamı', link: '/tr/explanation/community/oss-launch-scope' },
                 { text: 'Marka yönergeleri', link: '/tr/explanation/community/brand-guidelines' },
@@ -786,9 +1053,7 @@ export default defineConfig({
       provider: 'local',
     },
 
-    socialLinks: [
-      { icon: 'github', link: 'https://github.com/conectlens/lenserfight' },
-    ],
+    socialLinks: [{ icon: 'github', link: 'https://github.com/conectlens/lenserfight' }],
 
     nav: [
       { text: '↗ Arena', link: 'https://lenserfight.com' },
@@ -798,10 +1063,17 @@ export default defineConfig({
           { text: 'Getting Started', link: '/tutorials/getting-started/overview' },
           { text: 'Local Development', link: '/tutorials/local/installation' },
           { text: 'Cloud Platform', link: '/tutorials/cloud/getting-started' },
-          { text: 'Beginner Walkthroughs', link: '/tutorials/beginner-walkthroughs/what-is-lenserfight' },
+          {
+            text: 'Beginner Walkthroughs',
+            link: '/tutorials/beginner-walkthroughs/what-is-lenserfight',
+          },
           { text: 'Walkthroughs', link: '/tutorials/walkthroughs/using-the-web-app' },
-          { text: 'Agents & Automation', link: '/tutorials/agent-walkthroughs/create-your-first-agent' },
+          {
+            text: 'Agents & Automation',
+            link: '/tutorials/agent-walkthroughs/create-your-first-agent',
+          },
           { text: 'Battle Walkthroughs', link: '/tutorials/battle-walkthroughs/your-first-battle' },
+          { text: 'Developer Examples', link: '/tutorials/developer-examples/' },
           { text: 'Integrations', link: '/tutorials/integrations/openai' },
           { text: 'Deployment', link: '/tutorials/deployment/docker' },
           { text: 'Advanced', link: '/tutorials/advanced/agent-orchestration' },
@@ -893,8 +1165,14 @@ export default defineConfig({
             { text: 'Glossary', link: '/tutorials/getting-started/glossary' },
             { text: 'Installation', link: '/tutorials/getting-started/installation' },
             { text: 'Quickstart (Web App)', link: '/tutorials/getting-started/quickstart' },
-            { text: 'Developer Onboarding', link: '/tutorials/getting-started/developer-onboarding' },
-            { text: 'CLI: Getting Started (A to Z)', link: '/tutorials/getting-started/cli-getting-started' },
+            {
+              text: 'Developer Onboarding',
+              link: '/tutorials/getting-started/developer-onboarding',
+            },
+            {
+              text: 'CLI: Getting Started (A to Z)',
+              link: '/tutorials/getting-started/cli-getting-started',
+            },
             { text: 'Local File Storage', link: '/tutorials/getting-started/local-file-storage' },
             { text: 'Local Models (Ollama)', link: '/tutorials/getting-started/local-models' },
             { text: 'Cloud Quickstart', link: '/tutorials/getting-started/cloud-quickstart' },
@@ -931,9 +1209,18 @@ export default defineConfig({
           text: 'Beginner Walkthroughs',
           collapsed: true,
           items: [
-            { text: 'What is LenserFight?', link: '/tutorials/beginner-walkthroughs/what-is-lenserfight' },
-            { text: 'Connect an OpenAI Agent', link: '/tutorials/beginner-walkthroughs/connect-openai-agent' },
-            { text: 'Writing Great Lenses', link: '/tutorials/beginner-walkthroughs/writing-great-prompts' },
+            {
+              text: 'What is LenserFight?',
+              link: '/tutorials/beginner-walkthroughs/what-is-lenserfight',
+            },
+            {
+              text: 'Connect an OpenAI Agent',
+              link: '/tutorials/beginner-walkthroughs/connect-openai-agent',
+            },
+            {
+              text: 'Writing Great Lenses',
+              link: '/tutorials/beginner-walkthroughs/writing-great-prompts',
+            },
             { text: 'First Agent', link: '/tutorials/beginner-walkthroughs/first-agent' },
           ],
         },
@@ -951,12 +1238,27 @@ export default defineConfig({
           text: 'Agents & Automation',
           collapsed: true,
           items: [
-            { text: 'Create Your First Agent', link: '/tutorials/agent-walkthroughs/create-your-first-agent' },
-            { text: 'Manage Agent Teams', link: '/tutorials/agent-walkthroughs/manage-agent-teams' },
+            {
+              text: 'Create Your First Agent',
+              link: '/tutorials/agent-walkthroughs/create-your-first-agent',
+            },
+            {
+              text: 'Manage Agent Teams',
+              link: '/tutorials/agent-walkthroughs/manage-agent-teams',
+            },
             { text: 'CRON Scheduling', link: '/tutorials/agent-walkthroughs/cron-scheduling' },
-            { text: 'Daily Workflow with Approval', link: '/tutorials/agent-walkthroughs/daily-workflow-with-approval' },
-            { text: 'Agent Team + Gated Tool Schedule', link: '/tutorials/agent-walkthroughs/agent-team-scheduled-gated-tool' },
-            { text: 'Audit Trail Examples', link: '/tutorials/agent-walkthroughs/audit-trail-examples' },
+            {
+              text: 'Daily Workflow with Approval',
+              link: '/tutorials/agent-walkthroughs/daily-workflow-with-approval',
+            },
+            {
+              text: 'Agent Team + Gated Tool Schedule',
+              link: '/tutorials/agent-walkthroughs/agent-team-scheduled-gated-tool',
+            },
+            {
+              text: 'Audit Trail Examples',
+              link: '/tutorials/agent-walkthroughs/audit-trail-examples',
+            },
             { text: 'Automation Rules', link: '/tutorials/agent-walkthroughs/automation-rules' },
             { text: 'Connectors', link: '/tutorials/agent-walkthroughs/connectors' },
             { text: 'Earning XP & Reputation', link: '/tutorials/agent-walkthroughs/earning-xp' },
@@ -967,6 +1269,39 @@ export default defineConfig({
           collapsed: true,
           items: [
             { text: 'Your First Battle', link: '/tutorials/battle-walkthroughs/your-first-battle' },
+          ],
+        },
+        {
+          text: 'Developer Examples',
+          collapsed: false,
+          items: [
+            { text: 'Overview', link: '/tutorials/developer-examples/' },
+            { text: 'Minimal Lens', link: '/tutorials/developer-examples/minimal-lens' },
+            {
+              text: 'Configured Review Lens',
+              link: '/tutorials/developer-examples/configured-review-lens',
+            },
+            {
+              text: 'Research to Rubric Workflow',
+              link: '/tutorials/developer-examples/research-to-rubric-workflow',
+            },
+            { text: 'Review Agent Team', link: '/tutorials/developer-examples/review-agent-team' },
+            {
+              text: 'Model Review Battle',
+              link: '/tutorials/developer-examples/model-review-battle',
+            },
+            {
+              text: 'Review Rubric Smoke Battle',
+              link: '/tutorials/developer-examples/review-rubric-smoke-battle',
+            },
+            {
+              text: 'Mock Review Connector',
+              link: '/tutorials/developer-examples/mock-review-connector',
+            },
+            {
+              text: 'Rubric Signal Plugin',
+              link: '/tutorials/developer-examples/rubric-signal-plugin',
+            },
           ],
         },
         {
@@ -993,9 +1328,7 @@ export default defineConfig({
         {
           text: 'Advanced',
           collapsed: true,
-          items: [
-            { text: 'Agent Orchestration', link: '/tutorials/advanced/agent-orchestration' },
-          ],
+          items: [{ text: 'Agent Orchestration', link: '/tutorials/advanced/agent-orchestration' }],
         },
         {
           text: 'Troubleshooting',
@@ -1013,10 +1346,56 @@ export default defineConfig({
           text: 'Battle Walkthroughs',
           items: [
             { text: 'Your First Battle', link: '/tutorials/battle-walkthroughs/your-first-battle' },
-            { text: 'Battle Launch Guide', link: '/tutorials/battle-walkthroughs/battle-launch-guide' },
-            { text: 'Local Battle Quickstart (Ollama)', link: '/tutorials/battle-walkthroughs/local-battle-quickstart' },
-            { text: 'BYOK Cloud Battle Streaming', link: '/tutorials/battle-walkthroughs/byok-cloud-battle' },
-            { text: 'Execute a PRIVATE_BATTLE.md', link: '/tutorials/battle-walkthroughs/private-battle-execute' },
+            {
+              text: 'Battle Launch Guide',
+              link: '/tutorials/battle-walkthroughs/battle-launch-guide',
+            },
+            {
+              text: 'Local Battle Quickstart (Ollama)',
+              link: '/tutorials/battle-walkthroughs/local-battle-quickstart',
+            },
+            {
+              text: 'BYOK Cloud Battle Streaming',
+              link: '/tutorials/battle-walkthroughs/byok-cloud-battle',
+            },
+            {
+              text: 'Execute a PRIVATE_BATTLE.md',
+              link: '/tutorials/battle-walkthroughs/private-battle-execute',
+            },
+          ],
+        },
+      ],
+      '/tutorials/developer-examples/': [
+        {
+          text: 'Developer Examples',
+          items: [
+            { text: 'Overview', link: '/tutorials/developer-examples/' },
+            { text: 'Minimal Lens', link: '/tutorials/developer-examples/minimal-lens' },
+            {
+              text: 'Configured Review Lens',
+              link: '/tutorials/developer-examples/configured-review-lens',
+            },
+            {
+              text: 'Research to Rubric Workflow',
+              link: '/tutorials/developer-examples/research-to-rubric-workflow',
+            },
+            { text: 'Review Agent Team', link: '/tutorials/developer-examples/review-agent-team' },
+            {
+              text: 'Model Review Battle',
+              link: '/tutorials/developer-examples/model-review-battle',
+            },
+            {
+              text: 'Review Rubric Smoke Battle',
+              link: '/tutorials/developer-examples/review-rubric-smoke-battle',
+            },
+            {
+              text: 'Mock Review Connector',
+              link: '/tutorials/developer-examples/mock-review-connector',
+            },
+            {
+              text: 'Rubric Signal Plugin',
+              link: '/tutorials/developer-examples/rubric-signal-plugin',
+            },
           ],
         },
       ],
@@ -1028,8 +1407,14 @@ export default defineConfig({
             { text: 'Glossary', link: '/tutorials/getting-started/glossary' },
             { text: 'Installation', link: '/tutorials/getting-started/installation' },
             { text: 'Quickstart (Web App)', link: '/tutorials/getting-started/quickstart' },
-            { text: 'Developer Onboarding', link: '/tutorials/getting-started/developer-onboarding' },
-            { text: 'CLI: Getting Started (A to Z)', link: '/tutorials/getting-started/cli-getting-started' },
+            {
+              text: 'Developer Onboarding',
+              link: '/tutorials/getting-started/developer-onboarding',
+            },
+            {
+              text: 'CLI: Getting Started (A to Z)',
+              link: '/tutorials/getting-started/cli-getting-started',
+            },
             { text: 'Local File Storage', link: '/tutorials/getting-started/local-file-storage' },
             { text: 'Local Models (Ollama)', link: '/tutorials/getting-started/local-models' },
             { text: 'Cloud Quickstart', link: '/tutorials/getting-started/cloud-quickstart' },
@@ -1054,9 +1439,18 @@ export default defineConfig({
         {
           text: 'Beginner Walkthroughs',
           items: [
-            { text: 'What is LenserFight?', link: '/tutorials/beginner-walkthroughs/what-is-lenserfight' },
-            { text: 'Connect an OpenAI Agent', link: '/tutorials/beginner-walkthroughs/connect-openai-agent' },
-            { text: 'Writing Great Lenses', link: '/tutorials/beginner-walkthroughs/writing-great-prompts' },
+            {
+              text: 'What is LenserFight?',
+              link: '/tutorials/beginner-walkthroughs/what-is-lenserfight',
+            },
+            {
+              text: 'Connect an OpenAI Agent',
+              link: '/tutorials/beginner-walkthroughs/connect-openai-agent',
+            },
+            {
+              text: 'Writing Great Lenses',
+              link: '/tutorials/beginner-walkthroughs/writing-great-prompts',
+            },
             { text: 'First Agent', link: '/tutorials/beginner-walkthroughs/first-agent' },
           ],
         },
@@ -1065,12 +1459,27 @@ export default defineConfig({
         {
           text: 'Agents & Automation',
           items: [
-            { text: 'Create Your First Agent', link: '/tutorials/agent-walkthroughs/create-your-first-agent' },
-            { text: 'Manage Agent Teams', link: '/tutorials/agent-walkthroughs/manage-agent-teams' },
+            {
+              text: 'Create Your First Agent',
+              link: '/tutorials/agent-walkthroughs/create-your-first-agent',
+            },
+            {
+              text: 'Manage Agent Teams',
+              link: '/tutorials/agent-walkthroughs/manage-agent-teams',
+            },
             { text: 'CRON Scheduling', link: '/tutorials/agent-walkthroughs/cron-scheduling' },
-            { text: 'Daily Workflow with Approval', link: '/tutorials/agent-walkthroughs/daily-workflow-with-approval' },
-            { text: 'Agent Team + Gated Tool Schedule', link: '/tutorials/agent-walkthroughs/agent-team-scheduled-gated-tool' },
-            { text: 'Audit Trail Examples', link: '/tutorials/agent-walkthroughs/audit-trail-examples' },
+            {
+              text: 'Daily Workflow with Approval',
+              link: '/tutorials/agent-walkthroughs/daily-workflow-with-approval',
+            },
+            {
+              text: 'Agent Team + Gated Tool Schedule',
+              link: '/tutorials/agent-walkthroughs/agent-team-scheduled-gated-tool',
+            },
+            {
+              text: 'Audit Trail Examples',
+              link: '/tutorials/agent-walkthroughs/audit-trail-examples',
+            },
             { text: 'Automation Rules', link: '/tutorials/agent-walkthroughs/automation-rules' },
             { text: 'Connectors', link: '/tutorials/agent-walkthroughs/connectors' },
             { text: 'Earning XP & Reputation', link: '/tutorials/agent-walkthroughs/earning-xp' },
@@ -1130,9 +1539,7 @@ export default defineConfig({
       '/tutorials/advanced/': [
         {
           text: 'Advanced',
-          items: [
-            { text: 'Agent Orchestration', link: '/tutorials/advanced/agent-orchestration' },
-          ],
+          items: [{ text: 'Agent Orchestration', link: '/tutorials/advanced/agent-orchestration' }],
         },
       ],
       '/tutorials/troubleshooting/': [
@@ -1179,7 +1586,10 @@ export default defineConfig({
             { text: 'Run a Local Battle', link: '/how-to/battles/run-local-battle' },
             { text: 'BYOK Execution', link: '/how-to/battles/byok-execution' },
             { text: 'Rematch and Series', link: '/how-to/battles/rematch-and-series' },
-            { text: 'Battle Integrity Checklist', link: '/how-to/battles/battle-integrity-checklist' },
+            {
+              text: 'Battle Integrity Checklist',
+              link: '/how-to/battles/battle-integrity-checklist',
+            },
           ],
         },
       ],
@@ -1219,7 +1629,10 @@ export default defineConfig({
         {
           text: 'Automation',
           items: [
-            { text: 'Build Your First Trigger', link: '/how-to/automation/build-your-first-trigger' },
+            {
+              text: 'Build Your First Trigger',
+              link: '/how-to/automation/build-your-first-trigger',
+            },
           ],
         },
       ],
@@ -1247,18 +1660,36 @@ export default defineConfig({
         {
           text: 'Connector & Adapter Authors',
           items: [
-            { text: 'Connector SDK Getting Started', link: '/how-to/contributors/connector-sdk-getting-started' },
-            { text: 'Adapter Contribution Guide', link: '/how-to/contributors/adapter-contribution-guide' },
+            {
+              text: 'Connector SDK Getting Started',
+              link: '/how-to/contributors/connector-sdk-getting-started',
+            },
+            {
+              text: 'Adapter Contribution Guide',
+              link: '/how-to/contributors/adapter-contribution-guide',
+            },
             { text: 'Adapter Mentorship', link: '/how-to/contributors/adapter-mentorship' },
           ],
         },
         {
           text: 'Plugin Authors',
           items: [
-            { text: 'Scoring Plugin Getting Started', link: '/how-to/contributors/scoring-plugin-getting-started' },
-            { text: 'Workflow Template Getting Started', link: '/how-to/contributors/workflow-template-getting-started' },
-            { text: 'Workflow Template Guide', link: '/how-to/contributors/workflow-template-guide' },
-            { text: 'Task Schema Contribution Guide', link: '/how-to/contributors/task-schema-contribution-guide' },
+            {
+              text: 'Scoring Plugin Getting Started',
+              link: '/how-to/contributors/scoring-plugin-getting-started',
+            },
+            {
+              text: 'Workflow Template Getting Started',
+              link: '/how-to/contributors/workflow-template-getting-started',
+            },
+            {
+              text: 'Workflow Template Guide',
+              link: '/how-to/contributors/workflow-template-guide',
+            },
+            {
+              text: 'Task Schema Contribution Guide',
+              link: '/how-to/contributors/task-schema-contribution-guide',
+            },
           ],
         },
       ],
@@ -1321,9 +1752,7 @@ export default defineConfig({
       '/changelog': [
         {
           text: 'Changelog',
-          items: [
-            { text: 'Full Changelog', link: '/changelog' },
-          ],
+          items: [{ text: 'Full Changelog', link: '/changelog' }],
         },
       ],
       '/reference/connectors/': [
@@ -1358,7 +1787,10 @@ export default defineConfig({
             { text: 'Workflows API', link: '/reference/community-api/workflows' },
             { text: 'Threads API', link: '/reference/community-api/threads' },
             { text: 'AI Lensers API', link: '/reference/community-api/ai-lensers' },
-            { text: 'Providers and Execution', link: '/reference/community-api/providers-and-execution' },
+            {
+              text: 'Providers and Execution',
+              link: '/reference/community-api/providers-and-execution',
+            },
             { text: 'API Changelog', link: '/reference/community-api/api-changelog' },
           ],
         },
@@ -1444,9 +1876,7 @@ export default defineConfig({
         },
         {
           text: 'Publishing',
-          items: [
-            { text: 'Publish, Rubric & Template', link: '/reference/cli/publish' },
-          ],
+          items: [{ text: 'Publish, Rubric & Template', link: '/reference/cli/publish' }],
         },
         {
           text: 'Battles',
@@ -1472,7 +1902,10 @@ export default defineConfig({
           items: [
             { text: 'Execution Overview', link: '/reference/platform-api/api-overview' },
             { text: 'Configuration', link: '/reference/platform-api/configuration' },
-            { text: 'Environment Variables', link: '/reference/platform-api/environment-variables' },
+            {
+              text: 'Environment Variables',
+              link: '/reference/platform-api/environment-variables',
+            },
             { text: 'Token Reference', link: '/reference/platform-api/tokens' },
             { text: 'Storage Adapters', link: '/reference/platform-api/storage-adapters' },
             { text: 'Pricing & Plans', link: '/reference/platform-api/pricing' },
@@ -1562,7 +1995,10 @@ export default defineConfig({
           items: [
             { text: 'Automation Workspace Overview', link: '/explanation/automation/index' },
             { text: 'Automation Triggers', link: '/explanation/automation/triggers' },
-            { text: 'Event Bus Architecture', link: '/explanation/automation/event-bus-architecture' },
+            {
+              text: 'Event Bus Architecture',
+              link: '/explanation/automation/event-bus-architecture',
+            },
             { text: 'Scheduling', link: '/explanation/automation/scheduling' },
             { text: 'Scheduling v2', link: '/explanation/automation/scheduling-v2' },
           ],
@@ -1602,9 +2038,18 @@ export default defineConfig({
           text: 'Battles',
           collapsed: true,
           items: [
-            { text: 'Local vs. Cloud Battles', link: '/explanation/battles/local-vs-cloud-battles' },
-            { text: 'Webstreaming Architecture', link: '/explanation/battles/webstreaming-architecture' },
-            { text: 'Rematches, Replays, and Series', link: '/explanation/battles/rematches-and-series' },
+            {
+              text: 'Local vs. Cloud Battles',
+              link: '/explanation/battles/local-vs-cloud-battles',
+            },
+            {
+              text: 'Webstreaming Architecture',
+              link: '/explanation/battles/webstreaming-architecture',
+            },
+            {
+              text: 'Rematches, Replays, and Series',
+              link: '/explanation/battles/rematches-and-series',
+            },
             { text: 'Limited Beta Status', link: '/explanation/battles/limited-beta-status' },
           ],
         },
@@ -1613,9 +2058,18 @@ export default defineConfig({
         {
           text: 'Battles',
           items: [
-            { text: 'Local vs. Cloud Battles', link: '/explanation/battles/local-vs-cloud-battles' },
-            { text: 'Webstreaming Architecture', link: '/explanation/battles/webstreaming-architecture' },
-            { text: 'Rematches, Replays, and Series', link: '/explanation/battles/rematches-and-series' },
+            {
+              text: 'Local vs. Cloud Battles',
+              link: '/explanation/battles/local-vs-cloud-battles',
+            },
+            {
+              text: 'Webstreaming Architecture',
+              link: '/explanation/battles/webstreaming-architecture',
+            },
+            {
+              text: 'Rematches, Replays, and Series',
+              link: '/explanation/battles/rematches-and-series',
+            },
             { text: 'Limited Beta Status', link: '/explanation/battles/limited-beta-status' },
           ],
         },
@@ -1638,7 +2092,10 @@ export default defineConfig({
           items: [
             { text: 'Automation Workspace Overview', link: '/explanation/automation/index' },
             { text: 'Automation Triggers', link: '/explanation/automation/triggers' },
-            { text: 'Event Bus Architecture', link: '/explanation/automation/event-bus-architecture' },
+            {
+              text: 'Event Bus Architecture',
+              link: '/explanation/automation/event-bus-architecture',
+            },
             { text: 'Scheduling', link: '/explanation/automation/scheduling' },
             { text: 'Scheduling v2', link: '/explanation/automation/scheduling-v2' },
           ],
@@ -1671,9 +2128,18 @@ export default defineConfig({
             { text: 'Workflow Concepts', link: '/explanation/workflows/workflow-concepts' },
             { text: 'Workflow Types', link: '/explanation/workflows/workflow-types' },
             { text: 'Open Source Workflows', link: '/explanation/workflows/open-source-workflows' },
-            { text: 'Workflow Engine Architecture', link: '/explanation/workflows/workflow-engine-architecture' },
-            { text: 'Execution Engine Internals', link: '/explanation/workflows/execution-engine-internals' },
-            { text: 'Code Walk: WorkflowExecutionService', link: '/explanation/workflows/code-walk-workflow-execution-service' },
+            {
+              text: 'Workflow Engine Architecture',
+              link: '/explanation/workflows/workflow-engine-architecture',
+            },
+            {
+              text: 'Execution Engine Internals',
+              link: '/explanation/workflows/execution-engine-internals',
+            },
+            {
+              text: 'Code Walk: WorkflowExecutionService',
+              link: '/explanation/workflows/code-walk-workflow-execution-service',
+            },
           ],
         },
       ],
@@ -1720,7 +2186,10 @@ export default defineConfig({
             { text: 'Governance', link: '/explanation/community/governance' },
             { text: 'License', link: '/explanation/community/license' },
             { text: 'Brand guidelines', link: '/explanation/community/brand-guidelines' },
-            { text: 'Task Schema Governance', link: '/explanation/community/task-schema-governance' },
+            {
+              text: 'Task Schema Governance',
+              link: '/explanation/community/task-schema-governance',
+            },
             { text: 'Notifications', link: '/explanation/community/notifications' },
             { text: 'Ray Cloud', link: '/explanation/community/ray-cloud' },
           ],
