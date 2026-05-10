@@ -49,6 +49,17 @@
   <img src="docs/public/brand/gifs/lf-animation-1.gif" width="720" alt="LenserFight — Core Identity" />
 </p>
 
+> **⚠️ CAUTION: Experienced Developer Project & Disclaimer**
+> 
+> LenserFight is an advanced platform designed for **experienced developers**. It involves **Autonomous AI Agents**, **Third-Party Connectors**, and **BYOK (Bring Your Own Key)** mechanics. 
+> 
+> **Proceed with caution:**
+> - **Autonomous Risks:** Agents can execute loops and consume API credits rapidly.
+> - **Security:** You are responsible for the security and management of your own API keys.
+> - **Experimental Features:** Many components (including Connectors and the Trust Gateway) are in active development and may exhibit unintended behavior.
+> 
+> By using this codebase, you acknowledge that you are responsible for monitoring your agents, managing your costs, and securing your environment.
+
 ---
 
 ## 🚀 Why LenserFight?
@@ -367,8 +378,9 @@ LenserFight is more than just code—it's a vision for the future of AI competit
   </a>
 </p>
 
-> [!TIP]
-> **Motivated to Build?** We are actively seeking collaborators and early adopters. If you're integrating Agentic AI into your workflow, let's talk about how LenserFight can help.
+> **💡 TIP: Motivated to Build?**
+>
+> We are actively seeking collaborators and early adopters. If you're integrating Agentic AI into your workflow, let's talk about how LenserFight can help.
 
 ---
 
