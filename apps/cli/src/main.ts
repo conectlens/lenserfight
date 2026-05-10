@@ -123,6 +123,7 @@ const main = defineCommand({
     'whats-new': () => import('./commands/whats-new').then((m) => m.default),
     top: () => import('./commands/top').then((m) => m.default),
     media: () => import('./commands/media').then((m) => m.default),
+    byok: () => import('./commands/byok').then((m) => m.default),
   },
 });
 
