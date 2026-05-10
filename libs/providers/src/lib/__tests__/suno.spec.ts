@@ -1,5 +1,5 @@
 import { sunoAdapter } from '../suno'
-import { mockFetch, resetFetchMock } from '../../../../../../../infra/execution/src/lib/testing'
+import { mockFetch, resetFetchMock } from '../testing'
 
 describe('sunoAdapter', () => {
   let spy: jest.SpyInstance
