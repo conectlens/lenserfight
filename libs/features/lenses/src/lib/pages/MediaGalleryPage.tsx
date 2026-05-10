@@ -3,6 +3,7 @@ import { Loader2, FileText, ImageIcon, Video, Music, File, Search } from 'lucide
 import React from 'react'
 
 import { useMediaGallery, type MediaTypeFilter } from '../hooks/useMediaGallery'
+import { useMediaActions } from '../hooks/useMediaActions'
 import type { MediaObject, UnifiedMediaType } from '@lenserfight/types'
 
 // ─── Media type icons ────────────────────────────────────────────────────────
@@ -118,6 +119,8 @@ function MediaGridCard({ item }: { item: MediaObject }) {
 
 export const MediaGalleryPage: React.FC = () => {
   const gallery = useMediaGallery()
+  // AT: media actions wired with empty lenserId — gallery hook provides the owner context
+  const mediaActions = useMediaActions('')
 
   return (
     <div className="space-y-6">
