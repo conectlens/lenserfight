@@ -61,7 +61,7 @@ pnpm health:cron
 1. Test with a minimal local battle: `lf battle local run --example haiku-shootout`.
 2. Check the provider key validity: `lf byok-key list`.
 3. Verify provider quota and rate limits in the provider's dashboard (OpenAI, Anthropic, Fal, etc.).
-4. Check `VITE_BYOK_PROVIDERS` env var is set correctly in the cloud deployment.
+4. Check `BYOK_PROVIDERS` env var is set correctly in the cloud deployment.
 
 **Kill-switch**: Disable BYOK on the platform level:
 ```sql

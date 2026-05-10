@@ -70,7 +70,7 @@ pnpm install
 ### 3. Configure environment
 
 ```bash
-echo 'VITE_DATA_SOURCE=file' > .env.local
+echo 'DATA_SOURCE=file' > .env.local
 ```
 
 ### 4. Start the web app
@@ -202,16 +202,16 @@ pnpm supabase status
 
 | Variable | Required | Default | Description |
 |----------|----------|---------|-------------|
-| `VITE_DATA_SOURCE` | Yes | `file` | `file` or `supabase` |
-| `VITE_SUPABASE_URL` | Supabase mode | — | Local: `http://127.0.0.1:54321` |
-| `VITE_SUPABASE_ANON_KEY` | Supabase mode | — | From `pnpm supabase start` output |
-| `VITE_PRODUCT_EDITION` | No | `community` | `community` or `cloud` |
-| `VITE_WEB_BASE_URL` | No | `http://localhost:3000` | Web app URL |
-| `VITE_AUTH_BASE_URL` | No | `http://localhost:3004` | Auth app URL |
-| `VITE_ARENA_URL` | No | `http://localhost:3001` | Arena app URL |
-| `VITE_API_URL` | No | `http://localhost:8786` | Platform API URL |
-| `VITE_MOCK` | No | `false` | Skip real auth in dev |
-| `VITE_FEATURE_AGENTS` | No | `false` | Enable AI workspace tabs |
+| `DATA_SOURCE` | Yes | `file` | `file` or `supabase` |
+| `SUPABASE_URL` | Supabase mode | — | Local: `http://127.0.0.1:54321` |
+| `SUPABASE_ANON_KEY` | Supabase mode | — | From `pnpm supabase start` output |
+| `PRODUCT_EDITION` | No | `community` | `community` or `cloud` |
+| `WEB_BASE_URL` | No | `http://localhost:3000` | Web app URL |
+| `AUTH_BASE_URL` | No | `http://localhost:3004` | Auth app URL |
+| `ARENA_URL` | No | `http://localhost:3001` | Arena app URL |
+| `API_URL` | No | `http://localhost:8786` | Platform API URL |
+| `MOCK` | No | `false` | Skip real auth in dev |
+| `FEATURE_AGENTS` | No | `false` | Enable AI workspace tabs |
 
 See `.env.example` for the full list with descriptions.
 

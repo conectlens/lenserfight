@@ -11,7 +11,7 @@ Cloud battles, the public arena, and the ELO leaderboard are **Private Alpha** s
 Local battles (`lf battle local`) do not require this checklist and are available as Preview.
 :::
 
-This checklist must be completed and reviewed by at least one core maintainer before enabling `VITE_FEATURE_PUBLIC_BATTLES=true` in any environment that accepts external users.
+This checklist must be completed and reviewed by at least one core maintainer before enabling `FEATURE_PUBLIC_BATTLES=true` in any environment that accepts external users.
 
 ---
 
@@ -19,7 +19,7 @@ This checklist must be completed and reviewed by at least one core maintainer be
 
 ### Infrastructure
 
-- [ ] `VITE_FEATURE_PUBLIC_BATTLES=true` is set only in a protected environment — not in a development or staging environment accessible to external users
+- [ ] `FEATURE_PUBLIC_BATTLES=true` is set only in a protected environment — not in a development or staging environment accessible to external users
 - [ ] BYOK key encryption verified: `fn_encrypt_api_key` stores ciphertext only; plaintext never written to any log table
 - [ ] Worker health endpoint (`/admin/worker-health`) is protected — not publicly accessible
 - [ ] DLQ entries for failed battle jobs are monitored and do not leak contender keys or outputs
@@ -34,7 +34,7 @@ This checklist must be completed and reviewed by at least one core maintainer be
 
 ### Rollback gate
 
-- [ ] Setting `VITE_FEATURE_PUBLIC_BATTLES=false` stops new battle creation and cloud execution immediately — verified in staging
+- [ ] Setting `FEATURE_PUBLIC_BATTLES=false` stops new battle creation and cloud execution immediately — verified in staging
 - [ ] Existing battles in `executing` or `voting` status are handled gracefully when the flag is toggled off (no orphaned jobs)
 
 ---
@@ -135,7 +135,7 @@ Before the Limited Beta launch, a maintainer must complete a full rollback drill
 
 **Steps:**
 
-1. Set `VITE_FEATURE_PUBLIC_BATTLES=false` in the environment and redeploy. Verify that new battle creation attempts return an appropriate disabled/unavailable response.
+1. Set `FEATURE_PUBLIC_BATTLES=false` in the environment and redeploy. Verify that new battle creation attempts return an appropriate disabled/unavailable response.
 2. Run the following in the Supabase SQL editor to stop worker dispatch:
    ```sql
    UPDATE platform.system_flags
@@ -148,7 +148,7 @@ Before the Limited Beta launch, a maintainer must complete a full rollback drill
 
 ### Phase O staging gate (added 2026-05-08)
 
-The maintainer additionally verifies the following items in a hosted staging Supabase environment before flipping `VITE_FEATURE_PUBLIC_BATTLES` for any operator:
+The maintainer additionally verifies the following items in a hosted staging Supabase environment before flipping `FEATURE_PUBLIC_BATTLES` for any operator:
 
 - [ ] **K4 — `/health` probe.** `curl -i $PLATFORM_API_URL/health` returns `200` with `{"status":"ok","db":true}`. After stopping the database, the same call returns `503` with `{"status":"degraded"}`.
 - [ ] **J1 — battle creation rate limit.** A user creating their 6th battle in a 24-hour window receives `HTTP 429` with `code='BATTLE_RATE_LIMIT'`.

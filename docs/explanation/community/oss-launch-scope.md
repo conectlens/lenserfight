@@ -18,7 +18,7 @@ These surfaces ship enabled (or preview-flagged) in Community Edition. A self-ho
 | CLI (`lf run exec`, `lf execution wait`) | **Stable** | Local and BYOK model experiments |
 | Social graph (follow / unfollow) | **Stable** | |
 | Notifications (bell, badge) | **Stable** | Requires Supabase |
-| CRON scheduling | **Preview** | Requires `VITE_FEATURE_CRON_SCHEDULING=true` + pg_cron. Default approval-gated. |
+| CRON scheduling | **Preview** | Requires `FEATURE_CRON_SCHEDULING=true` + pg_cron. Default approval-gated. |
 | Approval gates | **Preview** | Blocks scheduled runs and write-class tool calls until a human resolves |
 | Tool invocation (read-only and write-class) | **Preview** | Write-class tools always require approval |
 | Memory (profiles, entries, injection) | **Preview** | Write-on-success gate enforced |
@@ -34,7 +34,7 @@ These surfaces exist in the codebase and have passed the integrity checks needed
 
 | Surface | Gate |
 |---------|------|
-| Cloud battles arena | **Limited Beta** — `VITE_FEATURE_PUBLIC_BATTLES=true` + hosted Supabase + access grant |
+| Cloud battles arena | **Limited Beta** — `FEATURE_PUBLIC_BATTLES=true` + hosted Supabase + access grant |
 | Battle BYOK streaming | Cloud battles gate + BYOK key reference |
 | ELO leaderboard | Cloud battles gate |
 | Tournament scoring | Cloud battles gate |
@@ -56,7 +56,7 @@ The cloud battles surface only enters Limited Beta after the following ship item
 
 1. Read the [Limited Beta status runbook](/explanation/battles/limited-beta-status) and the [Battle Integrity Checklist](/how-to/battles/battle-integrity-checklist).
 2. Open a GitHub Discussion under the **"Limited Beta access"** category describing the deployment, scale, and contact email.
-3. The core team reviews requests within 5 business days. Approved operators receive the env vars and GUC values they need to wire `VITE_FEATURE_PUBLIC_BATTLES=true` plus the webhook outbox dispatcher.
+3. The core team reviews requests within 5 business days. Approved operators receive the env vars and GUC values they need to wire `FEATURE_PUBLIC_BATTLES=true` plus the webhook outbox dispatcher.
 4. Operators agree to surface bugs and incidents through GitHub Issues with the `limited-beta` label.
 
 ## Out of scope — not yet implemented

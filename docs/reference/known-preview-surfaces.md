@@ -26,7 +26,7 @@ This page lists every feature in LenserFight that is **not available by default*
 | Notification bell and badge | **Stable** | Supabase | — |
 | Wallet balance badge | **Stable** | Supabase + Chainabit | — |
 | Social graph (follow / unfollow) | **Stable** | Supabase | — |
-| CRON scheduling | **Preview** | `VITE_FEATURE_CRON_SCHEDULING=true` + Supabase | Set flag to `false`; run `SELECT cron.unschedule('dispatch-scheduled-workflows')` in psql |
+| CRON scheduling | **Preview** | `FEATURE_CRON_SCHEDULING=true` + Supabase | Set flag to `false`; run `SELECT cron.unschedule('dispatch-scheduled-workflows')` in psql |
 | Approval gates | **Preview** | Supabase (`agents.*` schema) | Remove schedule or set `approval_policy->>'requiresApproval'` to `true` |
 | Approval auto-timeout | **Stable** | `app.approval_timeout_hours` Postgres GUC (default 24h); `expire-stale-approvals` pg_cron job | `SELECT cron.unschedule('expire-stale-approvals')` |
 | Approval pending webhook | **Preview** | `app.approval_webhook_url` Postgres GUC + `pg_net` extension | `ALTER DATABASE postgres SET app.approval_webhook_url = ''` |
@@ -37,12 +37,12 @@ This page lists every feature in LenserFight that is **not available by default*
 | Tool invocation logs | **Preview** | Supabase (`platform.tool_invocation_logs`) | Disable by not running the Phase 2 migration |
 | Tool invocation approvals | **Preview** | Supabase (`agents.*` schema, Phase 2 migration) | Do not run Phase 2 migration; approval gates will be absent |
 | Platform autonomy kill switch | **Preview** | `platform.system_flags.autonomy_dispatch_enabled` | `UPDATE platform.system_flags SET value = 'false' WHERE key = 'autonomy_dispatch_enabled'` |
-| Chainabit execution bridge | **Preview** | `VITE_FEATURE_CHAINABIT_EXECUTION=true` + `CHAINABIT_API_URL` | Set flag to `false` |
+| Chainabit execution bridge | **Preview** | `FEATURE_CHAINABIT_EXECUTION=true` + `CHAINABIT_API_URL` | Set flag to `false` |
 | Local battles (CLI) | **Preview** | No flag required — `lf battle local` commands work without cloud infra | `n/a` |
-| Cloud battles arena | **Limited Beta** | `VITE_FEATURE_PUBLIC_BATTLES=true` + hosted Supabase + Limited Beta access grant + `app.webhook_signing_secret` GUC + `webhook-outbox-dispatcher` cron healthy. See [Limited Beta status](/explanation/battles/limited-beta-status). | Set `VITE_FEATURE_PUBLIC_BATTLES=false`; `SELECT cron.unschedule('webhook-outbox-dispatcher')`; local battles continue to work |
+| Cloud battles arena | **Limited Beta** | `FEATURE_PUBLIC_BATTLES=true` + hosted Supabase + Limited Beta access grant + `app.webhook_signing_secret` GUC + `webhook-outbox-dispatcher` cron healthy. See [Limited Beta status](/explanation/battles/limited-beta-status). | Set `FEATURE_PUBLIC_BATTLES=false`; `SELECT cron.unschedule('webhook-outbox-dispatcher')`; local battles continue to work |
 | Battle moderation admin console | **Limited Beta** | `FEATURES.PUBLIC_BATTLES=true` + admin-or-creator gating on the route. Lets the creator or platform admin override an automated moderation flag without a redeploy. | Set `FEATURES.PUBLIC_BATTLES=false`; the route returns 404 |
-| Battle BYOK streaming | **Private Alpha** | `VITE_FEATURE_PUBLIC_BATTLES=true` + BYOK key ref + hosted Supabase | Set flag to `false` |
-| ELO leaderboard | **Private Alpha** | `VITE_FEATURE_PUBLIC_BATTLES=true` + Supabase (`false` for self-hosted by default) | Set flag to `false` |
+| Battle BYOK streaming | **Private Alpha** | `FEATURE_PUBLIC_BATTLES=true` + BYOK key ref + hosted Supabase | Set flag to `false` |
+| ELO leaderboard | **Private Alpha** | `FEATURE_PUBLIC_BATTLES=true` + Supabase (`false` for self-hosted by default) | Set flag to `false` |
 | Connector marketplace | **Not yet implemented** | — | — |
 | Billing and credits | **Not yet implemented** | — | — |
 | Benchmark suite | **Not yet implemented** | — | — |

@@ -15,7 +15,7 @@ Yüzeyin bayrak çevrilmeden önce geçmesi gereken bütün bütünlük kontroll
 
 | Değişken | Amaç | Gerekli |
 |---|---|---|
-| `VITE_FEATURE_PUBLIC_BATTLES` | `apps/web` içindeki bulut arena UI'sını ve `apps/platform-api` içindeki bulut savaşı işçisini etkinleştirir. | evet |
+| `FEATURE_PUBLIC_BATTLES` | `apps/web` içindeki bulut arena UI'sını ve `apps/platform-api` içindeki bulut savaşı işçisini etkinleştirir. | evet |
 | `FEATURES.PUBLIC_BATTLES` | Aynı bayrağın sunucu tarafındaki yansıması; moderasyon yönetici konsolu tarafından okunur. | evet |
 | `ANTHROPIC_API_KEY` (edge function env) | AI hakem edge function tarafından kullanılır. | evet |
 | `CHAINABIT_API_URL` | Savaşlar Chainabit yürütme köprüsünden gönderildiğinde kullanılır. | yalnızca Chainabit köprüsü etkinse |

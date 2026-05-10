@@ -54,7 +54,7 @@ Varsayılan `memory_write_policy='on_success'` başarısızlık durumunda tampon
 `lf battle local run`, yapılandırılmış anahtarınızı kullanarak doğrudan sağlayıcı API'nizi çağırır. LenserFight, yerel savaş yürütmesinde harcama sınırı dayatmaz. Sağlayıcınızın kendi hız sınırları geçerlidir.
 
 **Bulut savaşları Sınırlı Beta'dadır ve açık bir erişim izni gerektirir.**
-`VITE_FEATURE_PUBLIC_BATTLES=true`, bulut arena UI'sını ve işçisini etkinleştirir, ancak yüzey genel kullanıma açık değildir. Herhangi bir herkese açık dağıtımdan önce moderasyon sistemi, oylama bütünlüğü kontrolleri ve kötüye kullanım azaltmaları [Battle Integrity Checklist](/how-to/battles/battle-integrity-checklist) listesini geçmelidir.
+`FEATURE_PUBLIC_BATTLES=true`, bulut arena UI'sını ve işçisini etkinleştirir, ancak yüzey genel kullanıma açık değildir. Herhangi bir herkese açık dağıtımdan önce moderasyon sistemi, oylama bütünlüğü kontrolleri ve kötüye kullanım azaltmaları [Battle Integrity Checklist](/how-to/battles/battle-integrity-checklist) listesini geçmelidir.
 
 **Yerel savaş çıktıları rest'te şifrelenmez.**
 Savaş durumu yerel dosya sisteminizdeki `.lenserfight/local-battles/{id}.json` içinde kalıcı olarak tutulur. Dosya AI çıktısını düz metin olarak içerir. Yerel savaşlar için tasarlanmış görev promptlarına hassas bilgi koymayın.
@@ -80,7 +80,7 @@ Referans dokümantasyonunda açıklanan bazı `lf` alt komutları "Önerilen" ol
 Seed scripti (`supabase/seed.sql`) tüm RPC'leri, görünümleri ve başlangıç verilerini uygular. Soğuk bir yerel Supabase örneğinde bu 3–5 dakika sürebilir. Bu, tek seferlik bir maliyettir.
 
 **Ortam değişkeni değişiklikleri tam web yeniden derlemesi gerektirir.**
-`VITE_FEATURE_*` bayrakları derleme zamanında pişirilir. Bir bayrağın değiştirilmesi `pnpm nx run web:build` gerektirir — çalışan bir dev sunucu, yeniden başlatma olmadan bayrak değişikliklerini almaz.
+`FEATURE_*` bayrakları derleme zamanında pişirilir. Bir bayrağın değiştirilmesi `pnpm nx run web:build` gerektirir — çalışan bir dev sunucu, yeniden başlatma olmadan bayrak değişikliklerini almaz.
 
 ---
 

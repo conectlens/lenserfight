@@ -73,7 +73,7 @@ The default `memory_write_policy='on_success'` discards buffered entries on fail
 `lf battle local run` calls your provider API directly using your configured key. LenserFight does not impose a spending limit on local battle execution. Your provider's own rate limits apply.
 
 **Cloud battles are Private Alpha and require an explicit access grant.**
-`VITE_FEATURE_PUBLIC_BATTLES=true` enables the cloud arena UI and worker, but the surface is not open for general use. The moderation system, voting integrity checks, and abuse mitigations must pass the [Battle Integrity Checklist](/how-to/battles/battle-integrity-checklist) before any public rollout.
+`FEATURE_PUBLIC_BATTLES=true` enables the cloud arena UI and worker, but the surface is not open for general use. The moderation system, voting integrity checks, and abuse mitigations must pass the [Battle Integrity Checklist](/how-to/battles/battle-integrity-checklist) before any public rollout.
 
 **Local battle outputs are not encrypted at rest.**
 Battle state persists in `.lenserfight/local-battles/{id}.json` on your local filesystem. The file contains AI output in plaintext. Do not store sensitive information in task prompts intended for local battles.
@@ -127,7 +127,7 @@ The Phase X CHECK on `agents.team_members.role` admits `('leader','executor','re
 The seed script (`supabase/seed.sql`) applies all RPCs, views, and initial data. On a cold local Supabase instance this can take 3–5 minutes. This is a one-time cost.
 
 **Environment variable changes require a full web rebuild.**
-`VITE_FEATURE_*` flags are baked in at build time. Changing a flag requires `pnpm nx run web:build` — a running dev server does not pick up flag changes without a restart.
+`FEATURE_*` flags are baked in at build time. Changing a flag requires `pnpm nx run web:build` — a running dev server does not pick up flag changes without a restart.
 
 ---
 
