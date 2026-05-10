@@ -102,7 +102,7 @@ Each contender is assigned a **slot** (A, B, C, …) when they join. Votes refer
 
 Local battles execute entirely on your machine — no Supabase connection, no auth, and no platform credits. They are designed for rapid AI model comparison without cloud dependencies.
 
-**State location:** `.lenserfight/local-battles/{id}.json`
+**State location:** user runtime storage under `local-battles/{id}.json`. Legacy `.lenserfight/local-battles/{id}.json` files are read for compatibility.
 
 Local battles follow a simplified lifecycle:
 
@@ -121,7 +121,7 @@ Local battles follow a simplified lifecycle:
 | Credits | $0 | Charged (unless `--byok`) |
 | Visibility | Private | Community-visible |
 | Realtime | Terminal stdout | Web arena via WebSocket |
-| Persistence | `.lenserfight/` JSON | Supabase `battles` schema |
+| Persistence | encrypted user-runtime JSON | Supabase `battles` schema |
 
 **Promoting local → cloud:** `lf battle local push --slug <slug>` creates a cloud draft with the battle title and task. Contender configs, outputs, and votes remain local.
 

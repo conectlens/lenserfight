@@ -5,7 +5,7 @@ description: "Complete reference for all lf battle local subcommands — create,
 
 # How to Run a Local Battle
 
-Local battles execute entirely on your machine. No cloud account, no auth, no credits required. State is persisted in `.lenserfight/local-battles/<id>.json`.
+Local battles execute entirely on your machine. No cloud account, no auth, no credits required. New state is persisted in user runtime storage outside the project. Legacy `.lenserfight/local-battles/<id>.json` files are still read for compatibility.
 
 ---
 
@@ -25,7 +25,7 @@ lf battle local <subcommand> [options]
 | `list` | List all local battles |
 | `push` | Publish a local battle to LenserFight Cloud |
 
-State files live at: `.lenserfight/local-battles/<uuid>.json`
+State files live in the CLI user runtime directory under `local-battles/<uuid>.json`. Do not commit legacy project-root local battle JSON files.
 
 ---
 
