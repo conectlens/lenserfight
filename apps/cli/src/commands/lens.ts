@@ -1,11 +1,14 @@
-import { readdirSync, readFileSync } from 'node:fs';
+import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { defineCommand } from 'citty';
 import consola from 'consola';
 import { callRpc, handleError } from '../utils/api';
+import { markJourneyStep } from '../lib/onboarding/journey';
 import { printTable, printJson, truncate } from '../utils/output';
 
 const MIN_TEMPLATE_LENGTH = 50;
+const VALID_VISIBILITY = ['public', 'community', 'private'] as const;
+type Visibility = (typeof VALID_VISIBILITY)[number];
 
 // ---------------------------------------------------------------------------
 // lens version list
