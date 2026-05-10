@@ -161,7 +161,7 @@ const SITE_JSON_LD = JSON.stringify({
 // https://vitepress.dev/reference/site-config
 export default defineConfig({
   srcDir: '../../docs',
-  outDir: '../../../dist/apps/docs',
+  outDir: '../../dist/apps/docs',
   cleanUrls: true,
 
   // ConnectedLenses specs deep-link to source files in the repo (libs/, supabase/,
