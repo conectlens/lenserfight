@@ -15,8 +15,20 @@ export default defineCommand({
       description: 'Run db reset instead of start (drops and recreates)',
       default: false,
     },
+    echo: {
+      type: 'boolean',
+      description: 'Set USE_ECHO_PROVIDER=true — no real API calls (local testing)',
+      default: false,
+    },
   },
   async run({ args }) {
+    if (args.echo) {
+      process.env['USE_ECHO_PROVIDER'] = 'true'
+      consola.warn(
+        '[ECHO MODE] USE_ECHO_PROVIDER=true — all generative nodes will mirror their prompt as output. No real API calls will be made.',
+      )
+    }
+
     if (args.reset) {
       consola.info('Resetting local database (drop + recreate + migrate + seed)...');
       try {
