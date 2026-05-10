@@ -37,7 +37,7 @@ examples/workflows/research-to-rubric/
 2. Inspect `workflow_type: evaluation`.
 3. Review the four steps: `lens_execution`, two `agent_task` steps, and an `approval_gate`.
 4. Pass a topic through `--inputs`.
-5. Inspect the generated `.lenserfight/reports/` and `.lenserfight/runs/` files.
+5. Inspect the generated runtime report paths printed by the CLI.
 
 ## How to Run the Example
 
@@ -52,8 +52,8 @@ node dist/apps/cli/main.js workflow run examples/workflows/research-to-rubric/WO
 Simulated workflow Research to Rubric Workflow
 Status: ready
 Steps: 4
-JSON report: .lenserfight/runs/...
-Markdown report: .lenserfight/reports/...
+JSON report: <user-runtime>/workspaces/<id>/runs/...
+Markdown report: <user-runtime>/workspaces/<id>/reports/...
 ```
 
 ## How the Example Works Internally

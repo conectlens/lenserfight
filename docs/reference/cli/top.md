@@ -104,7 +104,7 @@ Switching modes is instantaneous — the active mode badge in the title bar conf
 | **Supabase** | `GET /auth/v1/health` (2s timeout) | Reads `supabaseUrl` from project config. |
 | **Cloud API** | `GET /health` (2s timeout) | Reads `cloudApiUrl` from project config. |
 | **Docker** | `docker version` subprocess (2s timeout) | Reports client version string when up. |
-| **Battles** | `.lenserfight/local-battles/*.json` | Counts by status: running (ready), draft, executed/voted. |
+| **Battles** | user runtime `local-battles/*.json` plus legacy project-root files | Counts by status: running (ready), draft, executed/voted. |
 | **Heap** | `process.memoryUsage().heapUsed` | V8 heap of the `lf` process itself. |
 | **Uptime** | `process.uptime()` | Time since the `lf top` session started. |
 
