@@ -3,6 +3,17 @@ import consola from 'consola';
 import { callRpc, handleError } from '../utils/api';
 import { printTable, printJson, truncate } from '../utils/output';
 
+function extractProfileId(profile: unknown): string | undefined {
+  if (Array.isArray(profile)) {
+    return profile.length > 0 ? extractProfileId(profile[0]) : undefined;
+  }
+  if (profile && typeof profile === 'object' && 'id' in profile) {
+    const id = (profile as { id?: unknown }).id;
+    return typeof id === 'string' ? id : undefined;
+  }
+  return undefined;
+}
+
 export default defineCommand({
   meta: {
     name: 'feed',
@@ -36,11 +47,11 @@ export default defineCommand({
     try {
       // Resolve authenticated lenser ID
       const self = await callRpc<Record<string, unknown>>(
-        'fn_lensers_get_authenticated_profile',
+        'fn_lensers_get_active_profile',
         {},
         { requireAuth: true }
       );
-      const selfId = self?.id as string | undefined;
+      const selfId = extractProfileId(self);
       if (!selfId) {
         consola.warn('No lenser profile found. Create one at lenserfight.com before using feed.');
         return;
