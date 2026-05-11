@@ -136,9 +136,14 @@ DECLARE
 
 BEGIN
   -- ── Resolve dependencies ──────────────────────────────────────────────────
-  SELECT profile_id INTO v_author FROM agents.ai_lensers
-  ORDER BY (SELECT created_at FROM lensers.profiles WHERE id = profile_id) ASC
-  LIMIT 1;
+  -- Canonical author: @lenserfight (reserved production account).
+  SELECT id INTO v_author FROM lensers.profiles WHERE handle = 'lenserfight' LIMIT 1;
+
+  IF v_author IS NULL THEN
+    SELECT profile_id INTO v_author FROM agents.ai_lensers
+    ORDER BY (SELECT created_at FROM lensers.profiles WHERE id = profile_id) ASC
+    LIMIT 1;
+  END IF;
 
   IF v_author IS NULL THEN
     SELECT id INTO v_author FROM lensers.profiles ORDER BY created_at ASC LIMIT 1;
