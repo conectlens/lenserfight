@@ -33,7 +33,7 @@ describe('fn_upsert_workflow_schedule — CRUD invariants', () => {
 
   it('rejects callers who do not own the workflow', () => {
     expect(rpcSql).toContain('v_owner_id <> lensers.get_auth_lenser_id()')
-    expect(rpcSql).toMatch(/RAISE EXCEPTION.*not the owner/i)
+    expect(rpcSql).toMatch(/RAISE EXCEPTION.*not owned/i)
   })
 
   it('validates cron expression — expects exactly 5 fields', () => {
