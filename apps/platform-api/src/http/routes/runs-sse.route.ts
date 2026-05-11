@@ -43,20 +43,17 @@ export async function handleRunsSseRoute(
 
   try {
     while (!closed) {
-      const { data: events } = await userClient
-        .schema('lenses')
-        .from('workflow_run_events')
-        .select('event_id,type,timestamp,payload')
-        .eq('run_id', runId)
-        .gt('event_id', cursor)
-        .order('event_id', { ascending: true })
+      const { data: runData } = await userClient.rpc('fn_get_run_details', {
+        p_run_id: runId,
+      })
 
-      for (const ev of events ?? []) {
-        if (closed) break
+      const run = Array.isArray(runData) ? runData[0] : runData
+      if (run) {
+        const eventId = cursor + 1
         res.write(
-          `id: ${ev.event_id}\nevent: ${ev.type}\ndata: ${JSON.stringify({ ...ev.payload, timestamp: ev.timestamp })}\n\n`,
+          `id: ${eventId}\nevent: run_status\ndata: ${JSON.stringify({ status: run.status, runId, timestamp: run.created_at })}\n\n`,
         )
-        cursor = ev.event_id
+        cursor = eventId
       }
 
       if (closed) break
@@ -65,7 +62,7 @@ export async function handleRunsSseRoute(
         .rpc('fn_get_workflow_run_state', { p_run_id: runId })
 
       const state = Array.isArray(stateData) ? stateData[0] : stateData
-      const status = String(state?.status ?? '')
+      const status = String(state?.status ?? run?.status ?? '')
 
       if (TERMINAL_STATUSES.has(status)) {
         res.write(`event: done\ndata: ${JSON.stringify({ status, runId })}\n\n`)
