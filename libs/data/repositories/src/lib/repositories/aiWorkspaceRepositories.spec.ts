@@ -57,7 +57,7 @@ describe('AI workspace repository contracts', () => {
   })
 
   it('looks up AI profiles by workspace profile id instead of runtime id', async () => {
-    maybeSingleMock.mockResolvedValue({
+    rpcMock.mockResolvedValue({
       data: {
         id: 'ai-runtime-1',
         ai_lenser_id: 'ai-runtime-1',
@@ -71,9 +71,9 @@ describe('AI workspace repository contracts', () => {
     const repo = new SupabaseAgentsRepository()
     const agent = await repo.getAgentProfileByProfileId('ai-profile-1')
 
-    expect(schemaMock).toHaveBeenCalledWith('agents')
-    expect(fromMock).toHaveBeenCalledWith('v_agent_profile')
-    expect(eqMock).toHaveBeenCalledWith('profile_id', 'ai-profile-1')
+    expect(rpcMock).toHaveBeenCalledWith('fn_get_agent_profile_by_profile_id', {
+      p_profile_id: 'ai-profile-1',
+    })
     expect(agent?.profile_id).toBe('ai-profile-1')
   })
 
@@ -161,7 +161,7 @@ describe('AI workspace repository contracts', () => {
       p_global_model_id: 'model-1',
       p_inputs_template: { topic: 'security' },
       p_is_active: true,
-      p_assignee_type: 'agent',
+      p_description: null,
       p_assignee_id: null,
       p_workflow_assignment_id: null,
       p_approval_policy: { requiresApproval: true },
