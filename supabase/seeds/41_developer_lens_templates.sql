@@ -3,13 +3,13 @@
 -- =============================================================================
 -- Seeds 13 production-ready lens templates covering developer productivity
 -- (code review, testing, docs, SQL) and community engagement (threads,
--- challenges, email). All are tagged 'template' and a specific kind-* tag.
+-- challenges, email). All are tagged 'template' and a specific lens-kind tag.
 --
 -- UUID convention:  41000000-0001-LLLL-0001-… where LLLL = lens index (hex)
 -- Idempotent: every block is gated with IF NOT EXISTS.
 --
 -- Dependencies:
---   • migration 20260426020000_developer_kind_tags.sql  (kind-code etc. tags)
+--   • migration 20260426020000_developer_kind_tags.sql  (code, data, etc. tags)
 --   • migration 20260417150000_lens_chain_templates.sql (template tag + RPC)
 --   • 04_ai_providers.sql, 04b_ai_models.sql, 07_ai_lensers.sql (AI author)
 --   • 15_lens_tools.sql (text / textarea tools)
@@ -137,11 +137,11 @@ BEGIN
   END IF;
 
   SELECT id INTO v_tag_template      FROM content.tags WHERE slug = 'template';
-  SELECT id INTO v_tag_code          FROM content.tags WHERE slug = 'kind-code';
-  SELECT id INTO v_tag_data          FROM content.tags WHERE slug = 'kind-data';
-  SELECT id INTO v_tag_planning      FROM content.tags WHERE slug = 'kind-planning';
-  SELECT id INTO v_tag_community     FROM content.tags WHERE slug = 'kind-community';
-  SELECT id INTO v_tag_documentation FROM content.tags WHERE slug = 'kind-documentation';
+  SELECT id INTO v_tag_code          FROM content.tags WHERE slug = 'code';
+  SELECT id INTO v_tag_data          FROM content.tags WHERE slug = 'data';
+  SELECT id INTO v_tag_planning      FROM content.tags WHERE slug = 'planning';
+  SELECT id INTO v_tag_community     FROM content.tags WHERE slug = 'community';
+  SELECT id INTO v_tag_documentation FROM content.tags WHERE slug = 'documentation';
 
   IF v_tag_template IS NULL OR v_tag_code IS NULL THEN
     RAISE NOTICE '41_developer_lens_templates: required tags missing — run migration 20260426020000 first.';
