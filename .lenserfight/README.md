@@ -1,6 +1,6 @@
 ---
 name: .lenserfight portable assets
-description: Project-tracked, portable LenserFight assets — lenses, agents, workflows, battles, and rays. Sensitive runtime state lives under ~/.lenserfight/.
+description: Project-tracked, portable LenserFight assets — lenses, lensers, colenses, battles, and rays. Sensitive runtime state lives under ~/.lenserfight/.
 ---
 
 # `.lenserfight/` — Portable LenserFight Assets
@@ -8,6 +8,51 @@ description: Project-tracked, portable LenserFight assets — lenses, agents, wo
 This directory holds the **portable** half of LenserFight's two-tier filesystem. Everything here is safe to commit, share, and publish. Sensitive per-user state — secrets, sessions, local battle execution traces, machine config — lives under the **runtime** half at `~/.lenserfight/` and must never appear in a repository.
 
 > See [`docs/reference/storage-architecture.md`](../docs/reference/storage-architecture.md) for the full project-vs-runtime separation rules.
+
+## Current template pack
+
+The project pack now includes production-oriented lensers, lenses, colenses, battles, rays, and safe defaults in `.lenserfight/config.json`.
+
+Core relationships:
+
+- Lensers define reusable AI roles.
+- Lenses define reusable prompt perspectives or transformations.
+- Colenses compose lenses and lensers into repeatable processes.
+- Battles compare lenses, colenses, lensers, prompts, models, or outputs against explicit rubrics.
+- Rays group items into routeable categories such as `developer`, `creator`, `finance`, `legal`, `startup`, `productivity`, `ai-comparison`, `multimodal`, and `operations`.
+
+Use:
+
+```bash
+lf validate
+lf validate --no-global
+lf validate .lenserfight/colenses/pr-review/COLENS.MD
+```
+
+Override behavior, highest priority first:
+
+1. Runtime CLI flags and explicit command arguments.
+2. Item-level frontmatter.
+3. Nearest nested `.lenserfight`.
+4. Project-root `.lenserfight`.
+5. User-global `~/.lenserfight`.
+6. Built-in CLI defaults.
+
+When a user-global and project-local item share the same `kind:slug`, the project-local item wins. Keep private personal templates in `~/.lenserfight`; do not commit personal prompts, customer data, generated outputs, caches, tokens, or provider keys.
+
+Template coverage:
+
+- Developers: `code-reviewer`, `github-issue-triage`, `unit-test-generator`, `refactor-planner`, `architecture-decision-review`, `release-readiness`, `incident-postmortem`, `api-contract-reviewer`.
+- Creators: `blog-outline-generator`, `youtube-script-generator`, `video-storyboard-planner`, `thumbnail-prompt-generator`, `newsletter-writer`, `social-post-generator`, `youtube-content`.
+- Finance and business: `finance-report-explainer`, `budget-planner`, `kpi-reviewer`, `investor-update-drafter`, `revenue-experiment-planner`, `finance-report-review`.
+- Legal-adjacent: `legal-contract-reviewer`, `contract-summary`, `legal-risk-checklist`, `questions-for-lawyer`, `terms-of-service-review`, `policy-comparison`, `legal-document-review`.
+- Startup and productivity: `startup-roadmap-designer`, `go-to-market-planner`, `founder-weekly-review`, `customer-interview-analysis`, `launch-checklist`, `competitive-analysis`, `daily-productivity-planner`, `meeting-notes-summarizer`, `decision-memo`, `task-prioritization`.
+- AI comparison: `ai-output-comparator`, `reasoning-quality-comparison`, `ai-model-comparison`, `claude-vs-openai-pr-review`, `reasoning-quality-shootout`.
+- Multimodal: `ai-image-prompt-builder`, `video-storyboard-planner`, `screenshot-review`, `diagram-explainer`, `visual-content-plan`.
+
+Legal-adjacent outputs must state that they are not legal advice and must be reviewed by a qualified lawyer. Finance outputs must state that they are not financial advice.
+
+Full docs: [`docs/lenserfight-file-system.md`](../docs/lenserfight-file-system.md). Practical tutorials: [`docs/tutorials/file-based-cli-basics.md`](../docs/tutorials/file-based-cli-basics.md), [`docs/tutorials/file-based-cli-global-and-monorepo.md`](../docs/tutorials/file-based-cli-global-and-monorepo.md), [`docs/tutorials/file-based-cli-pr-and-content-workflows.md`](../docs/tutorials/file-based-cli-pr-and-content-workflows.md), and [`docs/tutorials/file-based-cli-legal-finance-startup.md`](../docs/tutorials/file-based-cli-legal-finance-startup.md).
 
 ## Directory layout
 
@@ -22,10 +67,10 @@ This directory holds the **portable** half of LenserFight's two-tier filesystem.
 │       ├── assets/         ← non-secret static assets
 │       ├── templates/      ← parameter placeholder examples
 │       └── scripts/        ← optional generator/test scripts
-├── agents/                 ← AGENT.MD per agent template
-│   └── <slug>/AGENT.MD
-├── workflows/              ← WORKFLOW.MD per workflow template
-│   └── <slug>/WORKFLOW.MD
+├── lensers/                ← LENSER.MD per lenser template
+│   └── <slug>/LENSER.MD
+├── colenses/               ← COLENS.MD per colens template
+│   └── <slug>/COLENS.MD
 ├── battles/                ← BATTLE.MD per battle template
 │   └── <slug>/BATTLE.MD
 └── rays/                   ← RAY.MD per canonical production ray
@@ -39,13 +84,12 @@ LenserFight is part of the **ConectLens** ecosystem. The platform uses native te
 | File         | Concept                                                      | DB table              |
 | ------------ | ------------------------------------------------------------ | --------------------- |
 | `LENS.MD`    | A reusable prompt asset — a single AI instruction unit       | `lenses.lenses`       |
-| `LENSER.MD` | (reserved) A person or AI profile that owns lenses           | `lensers.profiles`    |
-| `AGENT.MD`   | A configured AI lenser binding with personality/tools/models | `agents.ai_lensers`   |
-| `WORKFLOW.MD`| A DAG of lens nodes feeding outputs into each other          | `lenses.workflows`    |
+| `LENSER.MD` | A person or AI profile that owns lenses and execution policy | `lensers.profiles`, `agents.ai_lensers` |
+| `COLENS.MD` | A DAG of lens nodes feeding outputs into each other          | `lenses.workflows`    |
 | `BATTLE.MD`  | A scored competition between contenders                      | `battles.battles`     |
 | `RAY.MD`     | A discovery ray (`/ray/:slug` route)                         | `content.tags`        |
 
-`SKILL.MD` is supported as an industry-compatibility alias for `LENS.MD` — many OSS AI ecosystems use `SKILL.MD` for the same concept (cf. agentskills.io). When both files exist they MUST be byte-for-byte the same content or one is generated from the other.
+`SKILL.MD` is supported as an industry-compatibility alias for `LENS.MD` — many OSS AI ecosystems use `SKILL.MD` for the same concept. Legacy `agents/AGENT.MD` and `workflows/WORKFLOW.MD` are read for compatibility only; canonical files are `lensers/LENSER.MD` and `colenses/COLENS.MD`.
 
 ## What MUST NOT live here
 
