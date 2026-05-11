@@ -7,7 +7,7 @@ visibility: public
 forkable: true
 battle_type: workflow
 contenders:
-  - kind: workflow
+  - kind: colens
     workflow: blog-writer
     label: Blog Writer
   - kind: lens
