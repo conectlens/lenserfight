@@ -161,26 +161,27 @@ export const lensesService = {
     id: string,
     viewerLenserId?: string
   ): Promise<LensDetailViewModel | null> => {
+    // getById calls fn_get_lens_detail_bootstrap which returns all required data in one RPC.
     const record: any = await lensesRepo.getById(id, viewerLenserId)
     if (!record) return null
 
-    // DB RLS already enforces access — no redundant service-level visibility check needed.
-    // If the DB returned a record, the viewer is authorised to see it.
+    // Bootstrap data is embedded in the record by the repository layer.
+    const bootstrap = (record._bootstrap ?? {}) as Record<string, unknown>
+    const reactionTotals = (bootstrap['reaction_totals'] ?? {}) as Record<string, number>
+    const userReactions = (bootstrap['user_reactions'] ?? {}) as Record<string, boolean>
+    const latestPublishedVersion = (record._latestPublishedVersion ?? null) as LensVersion | null
 
     const [viewModel] = await mapToViewModels([record], viewerLenserId)
-    const summary = await reactionService.getReactionSummary('lens', id, viewerLenserId)
 
     const reactionCounts = {
-      like: summary.counts['like'] || 0,
-      love: summary.counts['love'] || 0,
-      clap: summary.counts['clap'] || 0,
-      saved: summary.counts['saved'] || 0,
-      copy: summary.counts['copy'] || 0,
+      like: reactionTotals['like'] || 0,
+      love: reactionTotals['love'] || 0,
+      clap: reactionTotals['clap'] || 0,
+      saved: reactionTotals['saved'] || 0,
+      copy: reactionTotals['copy'] || 0,
     }
 
-    const isSaved = summary.userReactions.includes('saved')
-
-    const latestVersionId = await lensesRepo.getLatestVersionId(id)
+    const isSaved = !!userReactions['saved']
 
     return {
       ...viewModel,
@@ -190,7 +191,8 @@ export const lensesService = {
       parentLensId: record.parent_lens_id ?? null,
       forkedFromExecutionId: record.forked_from_execution_id ?? null,
       params: record.params ?? [],
-      latestVersionId: latestVersionId ?? null,
+      latestVersionId: latestPublishedVersion?.id ?? null,
+      latestPublishedVersion,
     }
   },
 
