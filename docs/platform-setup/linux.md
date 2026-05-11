@@ -118,7 +118,7 @@ pnpm lenserfight validate ./automation
 
 > Create a template first if needed:
 > ```bash
-> pnpm lenserfight export agent --template --out ./AGENT.md
+> pnpm lenserfight export agent --template --out ./LENSER.MD
 > ```
 
 ## Run a local battle
