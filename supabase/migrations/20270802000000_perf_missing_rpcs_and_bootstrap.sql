@@ -241,14 +241,20 @@ BEGIN
   FROM lensers.profiles p
   WHERE p.id = v_lens.lenser_id;
 
-  -- Tags via content.tag_map + content.tags
+  -- Tags via content.tag_map + content.tags + content.tag_translations (en fallback -> slug)
   SELECT COALESCE(
-    jsonb_agg(jsonb_build_object('id', t.id, 'slug', t.slug, 'name', t.name)),
+    jsonb_agg(jsonb_build_object(
+      'id',   t.id,
+      'slug', t.slug,
+      'name', COALESCE(tt_en.name, t.slug)
+    )),
     '[]'::jsonb
   )
   INTO v_tags
   FROM content.tag_map tm
   JOIN content.tags t ON t.id = tm.tag_id
+  LEFT JOIN content.tag_translations tt_en
+    ON tt_en.tag_id = t.id AND tt_en.language_code = 'en'
   WHERE tm.entity_type::text = 'lens'
     AND tm.entity_id          = p_lens_id;
 
