@@ -79,18 +79,16 @@ export function SpectatorFeedWidget({ getBattleHref }: SpectatorFeedWidgetProps 
     let cancelled = false
     ;(async () => {
       try {
-        const { data, error } = await supabase
-          .schema('battles')
-          .from('battles')
-          .select('id, slug, title, status, total_vote_count, updated_at')
-          .eq('status', 'voting')
-          .is('deleted_at', null)
-          .order('updated_at', { ascending: false })
-          .limit(MAX_ITEMS)
+        const { data, error } = await supabase.rpc('fn_get_battles_feed', {
+          p_status: 'voting',
+          p_battle_type: null,
+          p_limit: MAX_ITEMS,
+          p_cursor: null,
+        })
         if (cancelled) return
         if (error) return
         const seed: SpectatorBattle[] = []
-        for (const row of data ?? []) {
+        for (const row of (Array.isArray(data) ? data : [])) {
           const n = normalize(row as RawBattleRow)
           if (n && isLiveSpectatorBattle(n)) seed.push(n)
         }
