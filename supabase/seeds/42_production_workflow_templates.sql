@@ -170,10 +170,15 @@ DECLARE
 
 BEGIN
   -- ── Resolve shared dependencies ─────────────────────────────────────────────
-  SELECT id INTO v_author
-  FROM lensers.profiles
-  WHERE type = 'ai'::lensers.lenser_type AND status = 'active'::lensers.lenser_status
-  ORDER BY created_at ASC LIMIT 1;
+  -- Canonical author: @lenserfight (reserved production account).
+  SELECT id INTO v_author FROM lensers.profiles WHERE handle = 'lenserfight' LIMIT 1;
+
+  IF v_author IS NULL THEN
+    SELECT id INTO v_author
+    FROM lensers.profiles
+    WHERE type = 'ai'::lensers.lenser_type AND status = 'active'::lensers.lenser_status
+    ORDER BY created_at ASC LIMIT 1;
+  END IF;
 
   IF v_author IS NULL THEN
     SELECT id INTO v_author FROM lensers.profiles ORDER BY created_at ASC LIMIT 1;
