@@ -36,8 +36,7 @@ async function resolveApiKey(job: ClaimedBattleJob): Promise<string> {
   if (job.byok_key_ref_id) {
     const serviceClient = createServiceSupabaseClient()
     const { data, error } = await serviceClient
-      .schema('ai')
-      .rpc('fn_decrypt_api_key', { p_key_id: job.byok_key_ref_id })
+      .rpc('fn_worker_decrypt_api_key', { p_key_id: job.byok_key_ref_id })
     if (error || !data) {
       throw new Error(error?.message ?? 'Failed to decrypt BYOK key')
     }
@@ -55,8 +54,7 @@ export async function processNextBattleJob(): Promise<boolean> {
   const serviceClient = createServiceSupabaseClient()
 
   const { data, error } = await serviceClient
-    .schema('battles')
-    .rpc('fn_claim_battle_execution_job', { p_worker_id: WORKER_ID })
+    .rpc('fn_worker_claim_battle_job', { p_worker_id: WORKER_ID })
 
   if (error) throw error
 
@@ -76,9 +74,8 @@ export async function processNextBattleJob(): Promise<boolean> {
     // If a lens version is assigned, render the template with the task_prompt as input
     if (job.version_id) {
       const { data: rendered, error: renderErr } = await serviceClient
-        .schema('lenses')
-        .rpc('fn_render_template', {
-          p_version_id: job.version_id,
+        .rpc('fn_worker_render_template', {
+          p_template_body: job.task_prompt,
           p_inputs: { prompt: job.task_prompt },
         })
       if (renderErr || !rendered) {
@@ -92,9 +89,8 @@ export async function processNextBattleJob(): Promise<boolean> {
     let systemPrompt: string | undefined
     if (job.personality_version_id) {
       const { data: rendered, error: renderErr } = await serviceClient
-        .schema('lenses')
-        .rpc('fn_render_template', {
-          p_version_id: job.personality_version_id,
+        .rpc('fn_worker_render_template', {
+          p_template_body: job.personality_note ?? '',
           p_inputs: {},
         })
       if (!renderErr && rendered) {
@@ -118,12 +114,20 @@ export async function processNextBattleJob(): Promise<boolean> {
     )
 
     await serviceClient
-      .schema('battles')
-      .rpc('fn_complete_battle_execution_job', {
-        p_job_id:      job.job_id,
-        p_status:      'completed',
-        p_output_text: response.content,
-        p_error:       null,
+      .rpc('fn_worker_upsert_battle_submission', {
+        p_battle_id:       job.battle_id,
+        p_contender_id:    job.contender_id,
+        p_content_text:    response.content,
+        p_execution_run_id: null,
+        p_artifact_id:     null,
+        p_is_final:        true,
+      })
+
+    await serviceClient
+      .rpc('fn_worker_complete_battle_job', {
+        p_job_id:        job.job_id,
+        p_status:        'completed',
+        p_error_message: null,
       })
 
     nodeLogger.info('battle job completed', {
@@ -139,7 +143,7 @@ export async function processNextBattleJob(): Promise<boolean> {
     const message = err instanceof Error ? err.message : String(err)
 
     if (job.retry_count < MAX_RETRIES - 1) {
-      await serviceClient.schema('battles').rpc('fn_requeue_battle_job_with_backoff', {
+      await serviceClient.rpc('fn_requeue_battle_job_with_backoff', {
         p_job_id:     job.job_id,
         p_backoff_ms: backoffMs(job.retry_count),
         p_error:      message,
@@ -151,8 +155,7 @@ export async function processNextBattleJob(): Promise<boolean> {
         message,
       })
     } else {
-      // Max retries exceeded — move to dead-letter queue
-      await serviceClient.schema('battles').rpc('fn_move_battle_job_to_dlq', {
+      await serviceClient.rpc('fn_move_battle_job_to_dlq', {
         p_job_id:     job.job_id,
         p_error_code: 'execute.max_retries_exceeded',
         p_error_msg:  message,
@@ -179,9 +182,8 @@ async function processNextBattleJobViaChainabit(
     let prompt = job.task_prompt
     if (job.version_id) {
       const { data: rendered, error: renderErr } = await serviceClient
-        .schema('lenses')
-        .rpc('fn_render_template', {
-          p_version_id: job.version_id,
+        .rpc('fn_worker_render_template', {
+          p_template_body: job.task_prompt,
           p_inputs: { prompt: job.task_prompt },
         })
       if (renderErr || !rendered) {
@@ -193,9 +195,8 @@ async function processNextBattleJobViaChainabit(
     let systemPrompt: string | undefined
     if (job.personality_version_id) {
       const { data: rendered, error: renderErr } = await serviceClient
-        .schema('lenses')
-        .rpc('fn_render_template', {
-          p_version_id: job.personality_version_id,
+        .rpc('fn_worker_render_template', {
+          p_template_body: job.personality_note ?? '',
           p_inputs: {},
         })
       if (!renderErr && rendered) systemPrompt = rendered as string
@@ -239,12 +240,20 @@ async function processNextBattleJobViaChainabit(
     }
 
     await serviceClient
-      .schema('battles')
-      .rpc('fn_complete_battle_execution_job', {
-        p_job_id:      job.job_id,
-        p_status:      'completed',
-        p_output_text: result.outputText ?? '',
-        p_error:       null,
+      .rpc('fn_worker_upsert_battle_submission', {
+        p_battle_id:       job.battle_id,
+        p_contender_id:    job.contender_id,
+        p_content_text:    result.outputText ?? '',
+        p_execution_run_id: null,
+        p_artifact_id:     null,
+        p_is_final:        true,
+      })
+
+    await serviceClient
+      .rpc('fn_worker_complete_battle_job', {
+        p_job_id:        job.job_id,
+        p_status:        'completed',
+        p_error_message: null,
       })
 
     nodeLogger.info('battle job completed via Chainabit', {
@@ -255,14 +264,14 @@ async function processNextBattleJobViaChainabit(
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err)
     if (job.retry_count < MAX_RETRIES - 1) {
-      await serviceClient.schema('battles').rpc('fn_requeue_battle_job_with_backoff', {
+      await serviceClient.rpc('fn_requeue_battle_job_with_backoff', {
         p_job_id: job.job_id, p_backoff_ms: backoffMs(job.retry_count), p_error: message,
       })
       nodeLogger.warn('Chainabit battle job failed — requeued', {
         jobId: job.job_id, retryCount: job.retry_count + 1, message,
       })
     } else {
-      await serviceClient.schema('battles').rpc('fn_move_battle_job_to_dlq', {
+      await serviceClient.rpc('fn_move_battle_job_to_dlq', {
         p_job_id: job.job_id, p_error_code: 'chainabit.max_retries_exceeded', p_error_msg: message,
       })
       nodeLogger.error('Chainabit battle job moved to DLQ', {
