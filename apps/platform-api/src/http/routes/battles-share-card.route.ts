@@ -9,29 +9,22 @@ import type { IncomingMessage, ServerResponse } from 'node:http'
 import { sendJson } from '../../lib/http'
 import { createServiceSupabaseClient } from '../../lib/supabase'
 
-interface BattleRow {
+interface BattleBySlugRow {
   id: string
   slug: string
   title: string | null
   status: string | null
-  finalized_at: string | null
-  winner_contender_id: string | null
   deleted_at: string | null
-  total_vote_count: number | null
 }
 
-interface ContenderRow {
+interface ShareCardRpcRow {
   id: string
-  slot: string
-  display_name: string | null
-}
-
-interface EloLogRow {
-  winner_score_before: number | null
-  winner_score_after: number | null
-  loser_score_before: number | null
-  loser_score_after: number | null
-  is_draw: boolean | null
+  title: string | null
+  task_prompt: string | null
+  status: string | null
+  contenders: Array<{ id: string; slot: string; display_name: string | null; is_winner?: boolean; elo_delta?: number | null }> | null
+  vote_summary: Record<string, unknown> | null
+  total_votes: number | null
 }
 
 interface CardData {
@@ -120,84 +113,47 @@ function renderShareCardSvg(data: CardData): string {
 async function fetchCardData(slug: string): Promise<CardData | null> {
   const client = createServiceSupabaseClient()
 
-  const { data: battleRows, error: battleErr } = await client
-    .schema('battles')
-    .from('battles')
-    .select('id,slug,title,status,finalized_at,winner_contender_id,deleted_at,total_vote_count')
-    .eq('slug', slug)
-    .limit(1)
+  const { data: slugRows, error: slugErr } = await client
+    .rpc('fn_get_battle_by_slug', { p_slug: slug })
 
-  if (battleErr) throw new Error(battleErr.message)
+  if (slugErr) throw new Error(slugErr.message)
 
-  const battle = (Array.isArray(battleRows) ? battleRows[0] : null) as BattleRow | null
+  const battle = (Array.isArray(slugRows) ? slugRows[0] : null) as BattleBySlugRow | null
   if (!battle) return null
 
-  // Visibility: drafts and soft-deleted battles are not publicly shareable.
   if (battle.deleted_at !== null) return null
   if (battle.status === 'draft') return null
 
-  const { data: contenderRows, error: contErr } = await client
-    .schema('battles')
-    .from('contenders')
-    .select('id,slot,display_name')
-    .eq('battle_id', battle.id)
-    .order('slot', { ascending: true })
+  const { data: cardRows, error: cardErr } = await client
+    .rpc('fn_get_battle_share_card', { p_battle_id: battle.id })
 
-  if (contErr) throw new Error(contErr.message)
+  if (cardErr) throw new Error(cardErr.message)
 
-  const contenders = (contenderRows ?? []) as ContenderRow[]
+  const card = (Array.isArray(cardRows) ? cardRows[0] : null) as ShareCardRpcRow | null
+  if (!card) return null
+
+  const contenders = (card.contenders ?? []) as Array<{ id: string; slot: string; display_name: string | null; is_winner?: boolean; elo_delta?: number | null }>
   const a = contenders.find((c) => c.slot === 'A') ?? contenders[0]
   const b = contenders.find((c) => c.slot === 'B') ?? contenders[1]
 
-  const finalized = !!battle.finalized_at
-  const winnerId = battle.winner_contender_id
-
-  let aDelta: number | null = null
-  let bDelta: number | null = null
-
-  if (finalized) {
-    const { data: eloRows } = await client
-      .schema('reputation')
-      .from('elo_battle_log')
-      .select('winner_score_before,winner_score_after,loser_score_before,loser_score_after,is_draw')
-      .eq('battle_id', battle.id)
-      .limit(1)
-
-    const elo = (Array.isArray(eloRows) ? eloRows[0] : null) as EloLogRow | null
-    if (elo && !elo.is_draw && elo.winner_score_before !== null && elo.winner_score_after !== null) {
-      const winnerDelta = Number(elo.winner_score_after) - Number(elo.winner_score_before)
-      const loserDelta =
-        elo.loser_score_before !== null && elo.loser_score_after !== null
-          ? Number(elo.loser_score_after) - Number(elo.loser_score_before)
-          : null
-      const aIsWinner = !!a && a.id === winnerId
-      const bIsWinner = !!b && b.id === winnerId
-      if (aIsWinner) {
-        aDelta = winnerDelta
-        bDelta = loserDelta
-      } else if (bIsWinner) {
-        bDelta = winnerDelta
-        aDelta = loserDelta
-      }
-    }
-  }
+  const finalized = card.status === 'published' || card.status === 'finalized'
 
   return {
-    slug: battle.slug,
-    title: battle.title ?? 'Untitled Battle',
-    status: battle.status ?? 'draft',
+    slug,
+    title: card.title ?? 'Untitled Battle',
+    status: card.status ?? 'draft',
     finalized,
     contenderA: {
       name: a?.display_name ?? 'Contender A',
-      isWinner: !!a && a.id === winnerId,
-      eloDelta: aDelta,
+      isWinner: a?.is_winner ?? false,
+      eloDelta: a?.elo_delta ?? null,
     },
     contenderB: {
       name: b?.display_name ?? 'Contender B',
-      isWinner: !!b && b.id === winnerId,
-      eloDelta: bDelta,
+      isWinner: b?.is_winner ?? false,
+      eloDelta: b?.elo_delta ?? null,
     },
-    totalVotes: battle.total_vote_count ?? 0,
+    totalVotes: card.total_votes ?? 0,
   }
 }
 
