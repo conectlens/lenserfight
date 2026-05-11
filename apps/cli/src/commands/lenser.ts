@@ -336,7 +336,7 @@ const list = defineCommand({
       printTable(
         ['ID', 'Username', 'Name', 'Type', 'Active', 'Created'],
         lensers.map((a) => [
-          a.id.substring(0, 8),
+          a.id,
           displayRunnerHandle(a),
           a.name,
           a.adapter_type,
@@ -383,9 +383,10 @@ const view = defineCommand({
     try {
       const identifier = readIdentifier(args, rawArgs);
       const id = await resolveRunnerId(identifier);
-      const lenser = await callRpc<Record<string, unknown>>(
+      const raw = await callRpc<RunnerRow | RunnerRow[]>(
         'fn_runner_get', { p_adapter_id: id }, { requireAuth: true }
       );
+      const lenser: RunnerRow | null = Array.isArray(raw) ? (raw[0] ?? null) : (raw ?? null);
       if (!lenser) { consola.warn('Lenser not found: %s', identifier); return; }
       if (args.json) { printJson(lenser); return; }
       consola.info('ID:      %s', lenser.id);
@@ -394,7 +395,8 @@ const view = defineCommand({
       consola.info('Type:    %s', lenser.adapter_type);
       consola.info('Active:  %s', lenser.is_active ? 'yes' : 'no');
       consola.info('Created: %s', lenser.created_at);
-      if (lenser.config) consola.info('Config:  %s', JSON.stringify(lenser.config, null, 2));
+      const config = (lenser as unknown as Record<string, unknown>).config;
+      if (config) consola.info('Config:  %s', JSON.stringify(config, null, 2));
     } catch (err) { handleError(err); }
   },
 });
