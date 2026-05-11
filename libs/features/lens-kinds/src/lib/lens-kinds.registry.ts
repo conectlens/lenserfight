@@ -12,7 +12,7 @@ import type {
  *   - suggested tools + modalities surfaced by the builder's kind picker
  *   - a prompt skeleton a contributor can tweak instead of starting from
  *     scratch
- *   - a `kind:*` tag slug used by `content.tag_map`
+ *   - a plain tag slug used by `content.tag_map` (e.g. `text`, `image`)
  *   - UI hints (badge colour, icon key, short description)
  *
  * Adding a new kind means:
@@ -22,7 +22,7 @@ import type {
  */
 export interface LensKindDefinition {
   kind: LensKind
-  tagSlug: `kind:${LensKind}`
+  tagSlug: LensKind
   label: string
   description: string
   /** lucide-ish icon key; UI maps this to a real icon. */
@@ -83,7 +83,7 @@ const PDF_OUTPUT_SCHEMA: Record<string, ContractFieldSchema> = {
 export const LENS_KIND_REGISTRY: Record<LensKind, LensKindDefinition> = {
   text: {
     kind: 'text',
-    tagSlug: 'kind:text',
+    tagSlug: 'text',
     label: 'Text',
     description: 'Long-form or structured text generation: articles, reports, posts, summaries.',
     icon: 'text',
@@ -110,7 +110,7 @@ export const LENS_KIND_REGISTRY: Record<LensKind, LensKindDefinition> = {
   },
   image: {
     kind: 'image',
-    tagSlug: 'kind:image',
+    tagSlug: 'image',
     label: 'Image',
     description: 'Concept art, thumbnails, product visuals, branding assets.',
     icon: 'image',
@@ -138,7 +138,7 @@ export const LENS_KIND_REGISTRY: Record<LensKind, LensKindDefinition> = {
   },
   video: {
     kind: 'video',
-    tagSlug: 'kind:video',
+    tagSlug: 'video',
     label: 'Video',
     description: 'Short-form videos, storyboards, scene sequences, cinematic prompts.',
     icon: 'video',
@@ -165,7 +165,7 @@ export const LENS_KIND_REGISTRY: Record<LensKind, LensKindDefinition> = {
   },
   research: {
     kind: 'research',
-    tagSlug: 'kind:research',
+    tagSlug: 'research',
     label: 'Research',
     description: 'Deep search + synthesis. Returns structured findings with sources.',
     icon: 'search',
@@ -192,7 +192,7 @@ export const LENS_KIND_REGISTRY: Record<LensKind, LensKindDefinition> = {
   },
   pdf: {
     kind: 'pdf',
-    tagSlug: 'kind:pdf',
+    tagSlug: 'pdf',
     label: 'PDF',
     description: 'Export lens. Renders text/research into a PDF uploaded to media.objects.',
     icon: 'file-text',
@@ -220,7 +220,7 @@ export const LENS_KIND_REGISTRY: Record<LensKind, LensKindDefinition> = {
   },
   transform: {
     kind: 'transform',
-    tagSlug: 'kind:transform',
+    tagSlug: 'transform',
     label: 'Transform',
     description: 'Reshape an envelope — text → prompt, research → slides, refine tone.',
     icon: 'shuffle',
@@ -245,7 +245,7 @@ export const LENS_KIND_REGISTRY: Record<LensKind, LensKindDefinition> = {
   },
   orchestration: {
     kind: 'orchestration',
-    tagSlug: 'kind:orchestration',
+    tagSlug: 'orchestration',
     label: 'Orchestration',
     description: 'Plans other lens calls, produces a JSON execution plan.',
     icon: 'network',
@@ -273,7 +273,7 @@ export const LENS_KIND_REGISTRY: Record<LensKind, LensKindDefinition> = {
   },
   validation: {
     kind: 'validation',
-    tagSlug: 'kind:validation',
+    tagSlug: 'validation',
     label: 'Validation',
     description: 'Scores an output against criteria; returns pass/fail + report.',
     icon: 'check-circle',
@@ -303,7 +303,7 @@ export const LENS_KIND_REGISTRY: Record<LensKind, LensKindDefinition> = {
   },
   routing: {
     kind: 'routing',
-    tagSlug: 'kind:routing',
+    tagSlug: 'routing',
     label: 'Routing',
     description: 'Classifies user intent and selects a downstream branch.',
     icon: 'git-branch',
@@ -332,7 +332,7 @@ export const LENS_KIND_REGISTRY: Record<LensKind, LensKindDefinition> = {
   },
   audio: {
     kind: 'audio',
-    tagSlug: 'kind:audio',
+    tagSlug: 'audio',
     label: 'Audio',
     description: 'Text-to-speech, voice cloning, and audio generation.',
     icon: 'mic',
@@ -360,7 +360,7 @@ export const LENS_KIND_REGISTRY: Record<LensKind, LensKindDefinition> = {
   },
   music: {
     kind: 'music',
-    tagSlug: 'kind:music',
+    tagSlug: 'music',
     label: 'Music',
     description: 'AI music and song generation from text prompts.',
     icon: 'music',
@@ -409,9 +409,7 @@ export function getLensKind(kind: LensKind): LensKindDefinition {
 export function resolveLensKindFromTagSlugs(slugs: string[] | null | undefined): LensKind | null {
   if (!slugs?.length) return null
   for (const slug of slugs) {
-    if (!slug.startsWith('kind:')) continue
-    const kind = slug.slice('kind:'.length) as LensKind
-    if (LENS_KIND_REGISTRY[kind]) return kind
+    if (LENS_KIND_REGISTRY[slug as LensKind]) return slug as LensKind
   }
   return null
 }
