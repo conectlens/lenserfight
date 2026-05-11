@@ -14,17 +14,13 @@ export function useToggleRule() {
 
   return useMutation({
     mutationFn: async ({ ruleId, isActive }: ToggleRuleInput) => {
-      const { data, error } = await supabase
-        .schema('automation')
-        .from('trigger_rules')
-        .update({ is_active: isActive })
-        .eq('id', ruleId)
-        .select('*')
-        .single()
+      const { error } = await supabase.rpc('fn_toggle_automation_rule', {
+        p_rule_id: ruleId,
+        p_is_active: isActive,
+      })
       if (error) throw error
-      return data as TriggerRuleRecord
+      return { id: ruleId, is_active: isActive } as Partial<TriggerRuleRecord>
     },
-    // Optimistic update so the toggle is instant.
     onMutate: async ({ ruleId, isActive }) => {
       await qc.cancelQueries({ queryKey: AUTOMATION_RULES_QUERY_KEY })
       const previous = qc.getQueryData<TriggerRuleRecord[]>(AUTOMATION_RULES_QUERY_KEY)
