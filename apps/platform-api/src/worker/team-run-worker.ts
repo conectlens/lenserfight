@@ -31,9 +31,7 @@ interface ClaimedTeamRun {
 export async function processNextTeamRun(): Promise<boolean> {
   const serviceClient = createServiceSupabaseClient()
 
-  const { data, error } = await serviceClient
-    .schema('agents')
-    .rpc('fn_claim_team_run', { p_worker_id: WORKER_ID })
+  const { data, error } = await serviceClient.rpc('fn_worker_claim_team_run')
 
   if (error) {
     nodeLogger.error('team-run-worker claim failed', { workerId: WORKER_ID, message: error.message })
@@ -58,33 +56,13 @@ export async function processNextTeamRun(): Promise<boolean> {
     // child workflow execution path lands alongside AP's modality-aware
     // engine — for AL we exercise the dispatch contract end-to-end without
     // duplicating the engine.
-    const { error: updateError } = await serviceClient
-      .schema('agents')
-      .from('team_runs')
-      .update({
-        status:       'completed',
-        completed_at: new Date().toISOString(),
-        metadata: {
-          ...claimed.metadata,
-          team_run_worker: {
-            id:          WORKER_ID,
-            duration_ms: Date.now() - startedAt,
-            note:        'AL stub — child workflow execution wires in AP',
-          },
-        },
-      })
-      .eq('id', claimed.id)
+    const { error: updateError } = await serviceClient.rpc('fn_worker_update_team_run_status', {
+      p_team_run_id: claimed.id,
+      p_status: 'completed',
+      p_error_message: null,
+    })
 
     if (updateError) throw updateError
-
-    await serviceClient
-      .schema('agents')
-      .from('agent_run_events')
-      .insert({
-        team_run_id: claimed.id,
-        event_type:  'dispatch_completed',
-        payload:     { worker_id: WORKER_ID, duration_ms: Date.now() - startedAt },
-      })
 
     return true
   } catch (err) {
@@ -95,18 +73,11 @@ export async function processNextTeamRun(): Promise<boolean> {
       message,
     })
 
-    await serviceClient
-      .schema('agents')
-      .from('team_runs')
-      .update({
-        status:       'failed',
-        completed_at: new Date().toISOString(),
-        metadata: {
-          ...claimed.metadata,
-          team_run_worker: { id: WORKER_ID, error: message },
-        },
-      })
-      .eq('id', claimed.id)
+    await serviceClient.rpc('fn_worker_update_team_run_status', {
+      p_team_run_id: claimed.id,
+      p_status: 'failed',
+      p_error_message: message,
+    })
 
     return true
   }
