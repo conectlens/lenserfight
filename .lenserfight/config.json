@@ -1,0 +1,42 @@
+{
+  "defaults": {
+    "author": "@lenserfight",
+    "provider": "openai",
+    "model": "openai:gpt-5",
+    "outputDirectory": ".lenserfight/outputs",
+    "cacheDirectory": ".lenserfight/cache",
+    "templateDirectories": [
+      "lensers",
+      "lenses",
+      "colenses",
+      "battles",
+      "rays"
+    ],
+    "rays": [
+      "developer",
+      "creator",
+      "business",
+      "startup",
+      "productivity"
+    ],
+    "locale": "en",
+    "license": "Apache-2.0",
+    "visibility": "public",
+    "forkable": true,
+    "safetyPolicy": "public-template-pack",
+    "legalDisclaimerRequired": true,
+    "financeDisclaimerRequired": true,
+    "workflowExecutionMode": "manual",
+    "battleJudge": "ai-judge",
+    "evaluationCriteria": [
+      "accuracy",
+      "usefulness",
+      "specificity",
+      "risk-awareness"
+    ],
+    "maxSteps": 8,
+    "timeoutMs": 120000,
+    "retryCount": 1,
+    "concurrencyLimit": 2
+  }
+}
