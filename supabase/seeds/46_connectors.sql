@@ -1,8 +1,8 @@
 -- =============================================================================
 -- 46. CONNECTORS (depends on 13_workspaces)
 -- =============================================================================
--- One inactive demo connector for Alice's personal workspace, so that
--- `lenserfight connectors list` returns non-empty output in dev. The
+-- One inactive demo connector for the @lenserfight personal workspace, so
+-- that `lenserfight connectors list` returns non-empty output in dev. The
 -- token_hash is sha256 of the literal string 'lf_demo_inactive_token_2026'
 -- (the connector is is_active=false so it cannot authenticate anything).
 
