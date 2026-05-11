@@ -185,6 +185,11 @@ export default defineConfig({
   outDir: '../../dist/apps/docs',
   cleanUrls: true,
 
+  redirects: {
+    '/product/cli': '/reference/cli/index',
+    '/tr/product/cli': '/tr/reference/cli/index',
+  },
+
   // ConnectedLenses specs deep-link to source files in the repo (libs/, supabase/,
   // apps/) for IDE click-through. Those paths exist on disk but live outside the
   // docs srcDir, so VitePress's dead-link checker flags them. Skip the check for
@@ -402,7 +407,7 @@ export default defineConfig({
             items: [
               { text: 'Entegrasyonlar', link: '/tr/how-to/integrations/index' },
               { text: 'Savaş Rehberleri', link: '/tr/how-to/battles/create-a-battle' },
-              { text: 'Katkıda Bulunanlar', link: '/tr/how-to/contributors/faq' },
+              { text: 'Katkıda Bulunanlar', link: '/tr/how-to/contributors/contributing' },
             ],
           },
           {
@@ -685,7 +690,7 @@ export default defineConfig({
               items: [
                 { text: 'Entegrasyonlar', link: '/tr/how-to/integrations/index' },
                 { text: 'Savaş Rehberleri', link: '/tr/how-to/battles/create-a-battle' },
-                { text: 'Katkıda Bulunanlar', link: '/tr/how-to/contributors/faq' },
+                { text: 'Katkıda Bulunanlar', link: '/tr/how-to/contributors/contributing' },
               ],
             },
           ],
@@ -725,11 +730,7 @@ export default defineConfig({
             {
               text: 'Katkıda Bulunanlar',
               items: [
-                {
-                  text: 'Katkıda Bulunanlar 2. Dalga',
-                  link: '/tr/how-to/contributors/wave-2-plan',
-                },
-                { text: 'SSS', link: '/tr/how-to/contributors/faq' },
+                { text: 'Katkıda Bulunma', link: '/tr/how-to/contributors/contributing' },
               ],
             },
           ],
@@ -781,7 +782,6 @@ export default defineConfig({
                   text: 'Depolama Adaptörleri',
                   link: '/tr/reference/platform-api/storage-adapters',
                 },
-                { text: 'Fiyatlandırma ve Planlar', link: '/tr/reference/platform-api/pricing' },
                 { text: 'URL Kuralları', link: '/tr/reference/platform-api/url-conventions' },
                 { text: 'Beta Yol Haritası', link: '/tr/reference/platform-api/beta-roadmap' },
                 { text: 'Güvenlik', link: '/tr/reference/platform-api/security' },
@@ -1649,14 +1649,12 @@ export default defineConfig({
             { text: 'Branching and Versioning', link: '/how-to/contributors/branching' },
             { text: 'Release Process', link: '/how-to/contributors/release-process' },
             { text: 'Release Checklist', link: '/how-to/contributors/release-checklist' },
-            { text: 'OSS Contribution Roadmap', link: '/how-to/contributors/wave-2-plan' },
             { text: 'Triage Policy', link: '/how-to/contributors/triage-policy' },
             { text: 'Mentor Rotation', link: '/how-to/contributors/mentor-rotation' },
             { text: 'Community Pilot Plan', link: '/how-to/contributors/community-pilot-plan' },
             { text: 'Code of Conduct', link: '/how-to/contributors/code-of-conduct' },
             { text: 'Security Policy', link: '/how-to/contributors/security' },
             { text: 'Support', link: '/how-to/contributors/support' },
-            { text: 'FAQ', link: '/how-to/contributors/faq' },
           ],
         },
         {
@@ -1910,7 +1908,6 @@ export default defineConfig({
             },
             { text: 'Token Reference', link: '/reference/platform-api/tokens' },
             { text: 'Storage Adapters', link: '/reference/platform-api/storage-adapters' },
-            { text: 'Pricing & Plans', link: '/reference/platform-api/pricing' },
             { text: 'URL Conventions', link: '/reference/platform-api/url-conventions' },
             { text: 'Beta Roadmap', link: '/reference/platform-api/beta-roadmap' },
             { text: 'Capability Mapper', link: '/reference/platform-api/capability-mapper' },
