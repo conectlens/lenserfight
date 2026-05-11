@@ -14,10 +14,10 @@ async function emitHeartbeat(): Promise<void> {
   if (process.env['FEATURE_WORKER_HEALTH_MONITORING'] !== 'true') return
   try {
     const serviceClient = createServiceSupabaseClient()
-    await serviceClient.schema('platform').rpc('fn_upsert_worker_heartbeat', {
-      p_worker_id:   WORKER_ID,
-      p_worker_type: 'combined',
-      p_metadata:    { pid: process.pid, uptime: process.uptime() },
+    await serviceClient.rpc('fn_worker_upsert_heartbeat', {
+      p_worker_id:    WORKER_ID,
+      p_worker_type:  'combined',
+      p_capabilities: [],
     })
   } catch {
     // Heartbeat failure must not crash the worker
@@ -48,8 +48,7 @@ async function resolveApiKey(claimedRun: ClaimedRun): Promise<string> {
     }
     const serviceClient = createServiceSupabaseClient()
     const { data, error } = await serviceClient
-      .schema('ai')
-      .rpc('fn_decrypt_api_key', { p_key_id: claimedRun.byok_key_ref_id })
+      .rpc('fn_worker_decrypt_api_key', { p_key_id: claimedRun.byok_key_ref_id })
     if (error || !data) {
       throw new Error(error?.message ?? 'Failed to decrypt BYOK key')
     }
@@ -65,10 +64,10 @@ async function resolveApiKey(claimedRun: ClaimedRun): Promise<string> {
 
 export async function processNextQueuedRun(): Promise<boolean> {
   const serviceClient = createServiceSupabaseClient()
-  const { data, error } = await serviceClient.schema('execution').rpc('fn_claim_queued_run')
+  const { data, error } = await serviceClient.rpc('fn_worker_claim_queued_run')
   if (error) throw error
 
-  const claimedRun = (Array.isArray(data) ? data[0] : data) as ClaimedRun | undefined
+  const claimedRun = (Array.isArray(data) ? data[0] : (data ? data : undefined)) as ClaimedRun | undefined
   if (!claimedRun) return false
 
   const startedAt = Date.now()
@@ -79,9 +78,8 @@ export async function processNextQueuedRun(): Promise<boolean> {
     }
 
     const { data: renderedPrompt, error: renderError } = await serviceClient
-      .schema('lenses')
-      .rpc('fn_render_template', {
-        p_version_id: claimedRun.version_id,
+      .rpc('fn_worker_render_template', {
+        p_template_body: String(claimedRun.input_snapshot?.['prompt'] ?? ''),
         p_inputs: claimedRun.input_snapshot,
       })
 
@@ -99,7 +97,7 @@ export async function processNextQueuedRun(): Promise<boolean> {
 
     const latencyMs = Date.now() - startedAt
 
-    await serviceClient.schema('execution').rpc('fn_complete_execution_run', {
+    await serviceClient.rpc('fn_worker_complete_execution_run', {
       p_run_id: claimedRun.run_id,
       p_status: 'succeeded',
       p_token_input: providerResponse.usage?.input_tokens ?? 0,
@@ -116,7 +114,7 @@ export async function processNextQueuedRun(): Promise<boolean> {
       p_latency_ms: latencyMs,
     })
 
-    await serviceClient.schema('execution').rpc('fn_persist_execution_artifacts', {
+    await serviceClient.rpc('fn_worker_persist_execution_artifacts', {
       p_run_id: claimedRun.run_id,
       p_lenser_id: claimedRun.requester_lenser_id,
       p_workspace_id: claimedRun.workspace_id,
@@ -137,7 +135,7 @@ export async function processNextQueuedRun(): Promise<boolean> {
     return true
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error)
-    await serviceClient.schema('execution').rpc('fn_complete_execution_run', {
+    await serviceClient.rpc('fn_worker_complete_execution_run', {
       p_run_id: claimedRun.run_id,
       p_status: 'failed',
       p_error_code: 'execute.provider_failed',
