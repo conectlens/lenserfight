@@ -187,7 +187,7 @@ export function WorkflowsPage({ onCreateWorkflow }: WorkflowsPageProps) {
                       key={k}
                       className="text-[10px] font-semibold rounded-full bg-surface-raised text-greyscale-500 px-1.5 py-0.5"
                     >
-                      {k.replace(/^kind-/, '')}
+                      {k}
                     </span>
                   ))}
                 </div>
