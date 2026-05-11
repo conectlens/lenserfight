@@ -35,14 +35,12 @@ export const useCreateRematch = () => {
         throw new Error('Rematch RPC returned no battle id')
       }
 
-      const { data: battleRow, error: lookupError } = await supabase
-        .schema('battles')
-        .from('battles')
-        .select('slug')
-        .eq('id', newId)
-        .single()
+      const { data: battleData, error: lookupError } = await supabase.rpc('fn_get_battle', {
+        p_battle_id: newId,
+      })
 
       if (lookupError) throw new Error(lookupError.message ?? 'Failed to resolve new battle slug')
+      const battleRow = Array.isArray(battleData) ? battleData[0] : battleData
       if (!battleRow?.slug) throw new Error('New battle has no slug')
 
       return { id: newId, slug: battleRow.slug as string }
