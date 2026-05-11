@@ -69,19 +69,14 @@ export class SupabaseWorkspaceControlsRepository
     aiLenserId: string,
     options: ListRunUnifiedOptions = {}
   ): Promise<RunUnifiedRow[]> {
-    let query = supabase
-      .schema('agents')
-      .from('v_run_unified')
-      .select('*')
-      .eq('ai_lenser_id', aiLenserId)
-      .order('started_at', { ascending: false, nullsFirst: false })
-
-    if (options.status) query = query.eq('status', options.status)
-    if (options.run_type) query = query.eq('run_type', options.run_type)
-    if (options.limit && options.limit > 0) query = query.limit(options.limit)
-
-    const { data, error } = await query
+    const { data, error } = await supabase.rpc('fn_get_workspace_controls', {
+      p_ai_lenser_id: aiLenserId,
+    })
     if (error) throw error
-    return (data ?? []) as RunUnifiedRow[]
+    let rows = (data ?? []) as RunUnifiedRow[]
+    if (options.status) rows = rows.filter((r) => (r as unknown as Record<string, unknown>)['status'] === options.status)
+    if (options.run_type) rows = rows.filter((r) => (r as unknown as Record<string, unknown>)['run_type'] === options.run_type)
+    if (options.limit && options.limit > 0) rows = rows.slice(0, options.limit)
+    return rows
   }
 }
