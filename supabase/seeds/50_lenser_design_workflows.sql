@@ -27,7 +27,7 @@
 --   • 15_lens_tools.sql (text / textarea tools)
 --   • 07_ai_lensers.sql (AI author profile)
 --   • migration 20260417150000_lens_chain_templates.sql (template tag + RPC)
---   • migration 20260426020000_developer_kind_tags.sql (kind-* tags)
+--   • migration 20260426020000_developer_kind_tags.sql (planning, community, etc. tags)
 -- =============================================================================
 
 DO $seed$
@@ -163,12 +163,12 @@ BEGIN
   END IF;
 
   SELECT id INTO v_tag_template   FROM content.tags WHERE slug = 'template';
-  SELECT id INTO v_tag_planning   FROM content.tags WHERE slug = 'kind-planning';
-  SELECT id INTO v_tag_image      FROM content.tags WHERE slug = 'kind-image';
-  SELECT id INTO v_tag_video      FROM content.tags WHERE slug = 'kind-video';
-  SELECT id INTO v_tag_validation FROM content.tags WHERE slug = 'kind-validation';
-  SELECT id INTO v_tag_text       FROM content.tags WHERE slug = 'kind-text';
-  SELECT id INTO v_tag_community  FROM content.tags WHERE slug = 'kind-community';
+  SELECT id INTO v_tag_planning   FROM content.tags WHERE slug = 'planning';
+  SELECT id INTO v_tag_image      FROM content.tags WHERE slug = 'image';
+  SELECT id INTO v_tag_video      FROM content.tags WHERE slug = 'video';
+  SELECT id INTO v_tag_validation FROM content.tags WHERE slug = 'validation';
+  SELECT id INTO v_tag_text       FROM content.tags WHERE slug = 'text';
+  SELECT id INTO v_tag_community  FROM content.tags WHERE slug = 'community';
 
   IF v_tag_template IS NULL THEN
     RAISE NOTICE '50_lenser_design_workflows: template tag missing — run migration 20260417150000 first.';
