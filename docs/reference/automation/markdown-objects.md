@@ -37,10 +37,10 @@ tags: []
 | `BATTLE.MD` | Native orchestration/comparison document | `name`, `description`, participants or orchestration references | frontmatter + battle reference checks |
 | `TEAM.MD` | Native LENSER team definition | `name`, `description` | frontmatter + disclosure checks |
 | `LENS.md` | Legacy portable lens/task unit | `id`, `name`, prompt body, input/output schema | frontmatter + section checks |
-| `AGENT.md` | Portable agent definition | metadata, instructions, permissions | frontmatter + section checks |
+| `LENSER.MD` | Legacy compatibility alias for a portable agent definition | metadata, instructions, permissions | frontmatter + section checks |
 | `AGENT_TEAM.md` | Portable team definition | members, purpose, collaboration rules | frontmatter + section checks |
 | `TOOL.md` | Portable tool contract | input/output schema, auth, risk | frontmatter + section checks |
-| `WORKFLOW.md` | Portable workflow | triggers, inputs, steps, outputs | frontmatter + section checks |
+| `COLENS.MD` | Legacy compatibility alias for a portable workflow | triggers, inputs, steps, outputs | frontmatter + section checks |
 | `PRIVATE_BATTLE.md` | Portable comparison spec | participants, evaluation, report | frontmatter + section checks |
 | `SKILL.md` | Portable reusable capability | purpose, when to use, workflow | frontmatter + section checks |
 | `MEMORY_POLICY.md` | Portable memory rules | scope, retention, promotion | frontmatter + section checks |
@@ -58,8 +58,9 @@ lenserfight export lens --template --out .lenserfight/lenses/example/LENS.MD
 lenserfight export lenser --template --out .lenserfight/lensers/example/LENSER.MD
 lenserfight export colens --template --out .lenserfight/colenses/example/COLENS.MD
 lenserfight export battle --template --out .lenserfight/battles/example/BATTLE.MD
-lenserfight export agent --template --out ./AGENT.md
-lenserfight workflow run ./WORKFLOW.md
+lenserfight migrate-terminology
+lenserfight migrate-terminology --apply
+lenserfight workflow run .lenserfight/colenses/example/COLENS.MD
 lenserfight tool test ./TOOL.md
 lenserfight evaluate ./EVALUATION.md
 lenserfight battle run ./PRIVATE_BATTLE.md
@@ -71,6 +72,7 @@ lenserfight battle run ./PRIVATE_BATTLE.md
 - `lenserfight import` indexes validated files into a local registry
 - `lenserfight export <kind> <id>` re-emits an imported object
 - `lenserfight export <kind> --template` writes a canonical starter template
+- legacy `agent` and `workflow` template requests write canonical `LENSER.MD` and `COLENS.MD` unless `--legacy` is passed
 
 ## Design rules
 
