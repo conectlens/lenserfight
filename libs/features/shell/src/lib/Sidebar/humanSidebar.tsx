@@ -48,7 +48,7 @@ export function buildHumanSidebarSections(
             { id: 'lenserboard', label: 'LenserBoard', path: '/lenserboard', icon: <Trophy size={20} /> },
           ]
           : []),
-        { id: 'agents', label: 'Agents', path: '/lensers?type=ai', icon: <Users size={20} /> },
+        { id: 'lensers', label: 'Lensers', path: '/lensers?type=ai', icon: <Users size={20} /> },
 
       ],
     },
