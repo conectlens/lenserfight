@@ -59,7 +59,7 @@ LenserFight loads environment variables in this order. Later sources override ea
 7. `~/.lenserfight/.env.tokens` (gitignored, secret-only)
 8. Process environment variables (highest precedence)
 
-Tokens live exclusively in layers 6, 7, and 8. Templates (`LENS.MD`, `WORKFLOW.MD`, `BATTLE.MD`, YAML, JSON) must never contain raw token values — they reference variable names only.
+Tokens live exclusively in layers 6, 7, and 8. Templates (`LENS.MD`, `COLENS.MD`, `BATTLE.MD`, YAML, JSON) must never contain raw token values — they reference variable names only.
 
 ## Battle storage separation
 
@@ -81,8 +81,8 @@ LenserFight belongs to the **ConectLens** ecosystem. The filesystem layout prese
 
 - `LENS.MD` — prompt asset (ConectLens-native)
 - `LENSER.MD` — owner profile (reserved, not yet exported)
-- `AGENT.MD` — configured AI lenser
-- `WORKFLOW.MD` — DAG of lenses
+- `LENSER.MD` — configured AI lenser
+- `COLENS.MD` — DAG of lenses
 - `BATTLE.MD` — scored competition
 - `RAY.MD` — discovery ray
 
@@ -95,8 +95,8 @@ Every public template in the database has a 1:1 sibling under `.lenserfight/` ke
 | DB table              | Mirrored at                          |
 | --------------------- | ------------------------------------ |
 | `lenses.lenses`       | `.lenserfight/lenses/<slug>/LENS.MD` |
-| `agents.ai_lensers`   | `.lenserfight/agents/<slug>/AGENT.MD` |
-| `lenses.workflows`    | `.lenserfight/workflows/<slug>/WORKFLOW.MD` |
+| `agents.ai_lensers`   | `.lenserfight/lensers/<slug>/LENSER.MD` |
+| `lenses.workflows`    | `.lenserfight/colenses/<slug>/COLENS.MD` |
 | `battles.battles`     | `.lenserfight/battles/<slug>/BATTLE.MD` |
 | `content.tags`        | `.lenserfight/rays/<slug>/RAY.MD`   |
 
