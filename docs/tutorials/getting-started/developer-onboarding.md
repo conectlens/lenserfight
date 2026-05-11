@@ -38,10 +38,16 @@ After login, run `lf setup` to see your current journey state.
 
 **CLI:**
 ```bash
-lf auth login                         # browser-based or email/password
-lf auth login --email you@example.com
-lf auth token <PAT>                   # developer token for CI
-lf auth whoami                        # confirm session
+lf auth login            # browser-based login (opens browser automatically)
+lf auth login --no-browser  # print the approval URL instead of opening browser
+lf auth login --email you@example.com --password yourpassword  # headless/scripted
+lf auth whoami           # confirm session
+```
+
+For CI/automation, use a developer token instead of your session token:
+```bash
+lf auth device request   # approve a device and mint a short-lived developer token
+lf auth developer-token current  # inspect the locally stored developer token
 ```
 
 After login the web app shows the onboarding checklist. The CLI mirrors it via `lf setup` and `lf status`.
@@ -64,10 +70,10 @@ Starter templates:
 **CLI:**
 ```bash
 lf lens create                                  # interactive
-lf lens create --name "Code Review" --template code-review
-lf lenses fork <public-lens-id>                 # fork a public lens
-lf import --type lens --file my-lens.md         # import from markdown
-lf validate --type lens --file my-lens.md       # validate before import
+lf lens create --title "Code Review"            # quick create (--title is required)
+lf lenses fork <slug-or-id>                     # fork a public lens by slug or UUID
+lf import my-lens.md                            # import from markdown file
+lf validate my-lens.md                          # validate before import
 ```
 
 > **Blocked?** You cannot create a lenser without a lens. The lenser creation form will show a redirect prompt.
@@ -90,12 +96,12 @@ Workflows define how a task runs: which lenses are chained, in what order, with 
 
 **CLI:**
 ```bash
-lf workflow create --name "My Pipeline" --template single-agent
-lf workflow list
-lf workflow validate --file workflow.yaml
-lf import --type workflow --file workflow.yaml
-lf export --workflow <id> --format yaml
-lf run --workflow <id> --dry-run
+lf workflow create --name "My Pipeline" --template single-agent  # create cloud workflow
+lf workflow list                                                  # list your workflows
+lf workflow validate my-workflow.md                              # validate a local workflow file
+lf import my-workflow.md                                         # import/register local workflow
+lf export workflow <id>                                          # export a registered workflow
+lf workflow run my-workflow.md                                   # simulate locally
 ```
 
 ---
@@ -112,16 +118,18 @@ Required: a lens must exist first.
 ```bash
 lf lenser connect \
   --name "My GPT-4o Lenser" \
+  --username my-gpt4o \
   --type openai-agents \
   --config '{"model":"gpt-4o"}'
 
 lf lenser connect \
   --name "Local Llama 3.2" \
+  --username local-llama \
   --type ollama \
   --config '{"model":"llama3.2"}'
 
 lf lenser list
-lf lenser view <id>
+lf lenser view <id-or-username>
 lf providers list
 lf models list --provider openai
 ```
@@ -129,9 +137,9 @@ lf models list --provider openai
 Advanced:
 ```bash
 lf tool list
-lf memory create --lenser <id>
-lf budget set --lenser <id> --max-tokens 100000
-lf policy set --lenser <id> --file policy.yaml
+lf memory list-profiles --agent <lenser-id>    # list memory profiles for an agent
+lf budget set <username> --daily-credits 100000 # set daily credit budget
+lf policy log <username>                        # view policy evaluation log
 ```
 
 ---
@@ -153,8 +161,8 @@ Team templates:
 
 **CLI:**
 ```bash
-lf team create --name "Research Squad" --template research-team
-lf team add-lenser <team-id> --lenser <lenser-id> --role researcher
+lf team create --name "Research Squad" --ai-lenser <lenser-id>
+lf team add-member --team <team-id> --agent <lenser-id> --role executor
 lf team list
 lf team inspect <id>
 ```
