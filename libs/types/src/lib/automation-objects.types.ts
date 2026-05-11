@@ -9,6 +9,7 @@ export const AUTOMATION_OBJECT_KINDS = [
   'tool',
   'workflow',
   'private_battle',
+  'ray',
   'skill',
   'memory_policy',
   'evaluation',
@@ -327,6 +328,14 @@ export interface BattleFrontmatter extends AutomationUnitFrontmatter {
   public_template?: boolean
   rubric_ref?: string
   metrics?: string[]
+}
+
+export interface RayFrontmatter extends AutomationObjectFrontmatter {
+  kind: 'ray'
+  route?: string
+  aliases?: string[]
+  related_item_types?: AutomationObjectKind[]
+  expected_url_mapping?: string
 }
 
 export interface SkillFrontmatter extends AutomationObjectFrontmatter {
