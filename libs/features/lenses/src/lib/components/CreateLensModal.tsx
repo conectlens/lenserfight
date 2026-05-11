@@ -1,4 +1,4 @@
-import { LensKindPicker, resolveLensKindFromTagSlugs } from '@lenserfight/features/lens-kinds'
+import { LensKindPicker, LENS_KIND_REGISTRY, resolveLensKindFromTagSlugs } from '@lenserfight/features/lens-kinds'
 import { CreateVersionParamInput, LensKind, VisibilityEnum } from '@lenserfight/types'
 import { FormError } from '@lenserfight/ui/components'
 import { SelectField, LensContentEditor, type LensContentEditorHandle } from '@lenserfight/ui/forms'
@@ -36,6 +36,17 @@ interface CreateLensModalProps {
   lensId?: string
 }
 
+const VALIDATION_RULES = {
+  title: [isRequired(), minLength(3, 'Title must be at least 3 characters')],
+  content: [isRequired(), minLength(50, 'Content must be at least 50 characters')],
+  tags: [],
+}
+
+const VISIBILITY_OPTIONS = [
+  { value: 'public', label: 'Public', icon: Globe },
+  { value: 'private', label: 'Private', icon: Lock },
+]
+
 export const CreateLensModal: React.FC<CreateLensModalProps> = ({
   isOpen,
   onClose,
@@ -54,17 +65,8 @@ export const CreateLensModal: React.FC<CreateLensModalProps> = ({
     [form.title, form.content, form.tags]
   )
 
-  const validationRulesRef = useRef({
-    title: [isRequired(), minLength(3, 'Title must be at least 3 characters')],
-    content: [isRequired(), minLength(50, 'Content must be at least 50 characters')],
-    tags: [],
-  })
+  const { errors, validate, clearError } = useFormValidation<typeof formValues>(VALIDATION_RULES)
 
-  const { errors, validate, clearError } = useFormValidation<typeof formValues>(
-    validationRulesRef.current
-  )
-
-  // Debounced param extraction (safety net — editor also manages params)
   useEffect(() => {
     const t = setTimeout(() => form.syncParamsFromContent(form.content), 400)
     return () => clearTimeout(t)
@@ -72,9 +74,7 @@ export const CreateLensModal: React.FC<CreateLensModalProps> = ({
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
-    if (validate(formValues)) {
-      onSubmit()
-    }
+    if (validate(formValues)) onSubmit()
   }
 
   const handleTitleChange = useCallback(
@@ -93,20 +93,14 @@ export const CreateLensModal: React.FC<CreateLensModalProps> = ({
     [form.setContent, clearError]
   )
 
-  const visibilityOptions = [
-    { value: 'public', label: 'Public', icon: Globe },
-    { value: 'private', label: 'Private', icon: Lock },
-  ]
-
   const selectedKind = useMemo<LensKind | null>(() => resolveLensKindFromTagSlugs(form.tags), [form.tags])
 
   const handleKindChange = useCallback(
     (kind: LensKind) => {
-      const slug = `kind:${kind}`
-      const withoutKind = form.tags.filter((t) => !t.startsWith('kind:'))
-      form.setTags([...withoutKind, slug])
+      const withoutKind = form.tags.filter((t) => !LENS_KIND_REGISTRY[t as LensKind])
+      form.setTags([...withoutKind, kind])
     },
-    [form.tags, form.setTags],
+    [form.tags, form.setTags]
   )
 
   return (
@@ -168,7 +162,7 @@ export const CreateLensModal: React.FC<CreateLensModalProps> = ({
               label="Visibility"
               value={form.visibility}
               onChange={(val) => form.setVisibility(val as VisibilityEnum)}
-              options={visibilityOptions}
+              options={VISIBILITY_OPTIONS}
               className="w-full"
             />
           </div>
