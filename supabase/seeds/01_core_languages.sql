@@ -13,6 +13,7 @@ VALUES
   ('ja', 'Japanese', '日本語', 'ltr', true),
   ('ko', 'Korean', '한국어', 'ltr', true),
   ('pt', 'Portuguese', 'Português', 'ltr', true),
+  ('ru', 'Russian', 'Русский', 'ltr', true),
   ('tr', 'Turkish', 'Türkçe', 'ltr', true),
   ('zh', 'Chinese', '中文', 'ltr', true),
   ('zh-CN', 'Chinese (Simplified)', '简体中文', 'ltr', true),
