@@ -22,12 +22,12 @@ function parseInputs(raw: string | undefined): Record<string, unknown> | undefin
 const run = defineCommand({
   meta: {
     name: 'run',
-    description: 'Simulate a file-first WORKFLOW.md locally and emit a run report.',
+    description: 'Simulate a file-first COLENS.MD locally and emit a run report.',
   },
   args: {
     file: {
       type: 'positional',
-      description: 'Path to WORKFLOW.md',
+      description: 'Path to COLENS.MD',
       required: true,
     },
     inputs: {
@@ -43,8 +43,8 @@ const run = defineCommand({
   },
   async run({ args }) {
     const parsed = parseAutomationDocument(args.file)
-    if (!parsed.ok || parsed.kind !== 'workflow' || !parsed.document) {
-      consola.error('Workflow validation failed for %s', args.file)
+    if (!parsed.ok || (parsed.kind !== 'colens' && parsed.kind !== 'workflow') || !parsed.document) {
+      consola.error('Colens validation failed for %s', args.file)
       for (const issue of parsed.issues) {
         consola.error('  - %s: %s', issue.path, issue.message)
       }
@@ -58,7 +58,7 @@ const run = defineCommand({
     const status = steps.length > 0 ? 'ready' : 'blocked'
     const summary = {
       source: {
-        kind: 'workflow',
+        kind: parsed.kind,
         id: frontmatter.id,
         name: frontmatter.name,
       },
@@ -76,7 +76,7 @@ const run = defineCommand({
       return
     }
 
-    consola.success('Simulated workflow %s', frontmatter.name ?? frontmatter.id)
+    consola.success('Simulated colens %s', frontmatter.name ?? frontmatter.id)
     consola.info('Status: %s', status)
     consola.info('Steps: %d', steps.length)
     consola.info('JSON report: %s', artifacts.jsonPath)
