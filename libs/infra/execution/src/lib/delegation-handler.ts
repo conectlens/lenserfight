@@ -43,7 +43,6 @@ export class SupabaseDelegationHandler implements IDelegationHandler {
 
   async dispatchTeamRun(input: DelegationDispatchInput): Promise<DelegationDispatchResult> {
     const { data, error } = await this.client
-      .schema('agents')
       .rpc('fn_start_team_run', {
         p_ai_lenser_id: input.aiLenserId,
         p_workflow_id:  input.workflowId,
