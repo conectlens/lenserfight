@@ -40,20 +40,24 @@ describe('SupabasePolicyEvaluationsRepository', () => {
   })
 
   describe('listPolicyLog', () => {
-    it('queries policy_evaluations by ai_lenser_id', async () => {
-      mockLimit.mockResolvedValue({ data: [], error: null })
+    it('calls fn_list_policy_evaluations with ai_lenser_id', async () => {
+      mockRpc.mockResolvedValue({ data: [], error: null })
       await repo.listPolicyLog('agent-1', { limit: 10 })
-      expect(mockSchema).toHaveBeenCalledWith('agents')
-      expect(mockFrom).toHaveBeenCalledWith('policy_evaluations')
-      expect(mockEq).toHaveBeenCalledWith('ai_lenser_id', 'agent-1')
-      expect(mockOrder).toHaveBeenCalledWith('evaluated_at', { ascending: false })
+      expect(mockRpc).toHaveBeenCalledWith('fn_list_policy_evaluations', {
+        p_ai_lenser_id: 'agent-1',
+        p_limit: 10,
+        p_cursor: null,
+      })
     })
 
-    it('filters by verdict when provided', async () => {
-      mockLimit.mockResolvedValue({ data: [], error: null })
-      await repo.listPolicyLog('agent-1', { verdict: 'deny', limit: 5 })
-      expect(mockEq).toHaveBeenCalledWith('verdict', 'deny')
-      expect(mockLimit).toHaveBeenCalledWith(5)
+    it('filters by verdict in JavaScript after RPC (via decision field)', async () => {
+      const rows = [
+        { decision: 'deny', policy_type: 'kill_switch' },
+        { decision: 'allow', policy_type: 'budget' },
+      ]
+      mockRpc.mockResolvedValue({ data: rows, error: null })
+      const result = await repo.listPolicyLog('agent-1', { verdict: 'deny', limit: 5 })
+      expect(result).toHaveLength(1)
     })
   })
 
