@@ -180,6 +180,17 @@ export const OverviewSection: React.FC = () => {
           label="Instruction"
           value={defaultInstructionBinding ? 'Bound' : 'Unset'}
           detail="Lens-version-backed instruction source."
+          action={
+            !defaultInstructionBinding ? (
+              <Link
+                to={`/lenser/${profile.handle}/ag/instructions`}
+                className="inline-flex items-center gap-1.5 rounded-xl border border-amber-300 px-3 py-1.5 text-xs font-semibold text-amber-700 transition hover:bg-amber-50 dark:border-amber-500/40 dark:text-amber-400 dark:hover:bg-amber-500/10"
+              >
+                <Sparkles size={11} />
+                Set instruction
+              </Link>
+            ) : undefined
+          }
         />
         <StatCard
           label="Builder"
