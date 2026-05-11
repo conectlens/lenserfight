@@ -1,7 +1,7 @@
 import { defineCommand } from 'citty'
 import consola from 'consola'
 import { type PrivateBattleFrontmatter } from '@lenserfight/types'
-import { callRpc, callRest, handleError } from '../utils/api'
+import { callRpc, handleError } from '../utils/api'
 import { assertSafe } from '../lib/safety'
 import {
   buildWorkflowSimulationReport,
@@ -2770,15 +2770,12 @@ const schedule = defineCommand({
       const { createClient: createSupabaseClient } = await import('../utils/supabase-client')
       const client = await createSupabaseClient()
 
-      const { error } = await client
-        .schema('battles')
-        .from('battles')
-        .update({
-          execution_starts_at: startsAt.toISOString(),
-          voting_duration_hours: parseInt(args['voting-duration-hours'], 10),
-          auto_publish: !args['no-auto-publish'],
-        })
-        .eq('id', args.id)
+      const { error } = await client.rpc('fn_update_battle_execution_settings', {
+        p_battle_id:             args.id,
+        p_execution_starts_at:   startsAt.toISOString(),
+        p_voting_duration_hours: parseInt(args['voting-duration-hours'], 10),
+        p_auto_publish:          !args['no-auto-publish'],
+      })
 
       if (error) throw error
 
@@ -2824,14 +2821,9 @@ const jobs = defineCommand({
       const { createServiceClient } = await import('../utils/supabase-client')
       const client = await createServiceClient()
 
-      const { data, error } = await client
-        .schema('battles')
-        .from('battle_execution_jobs')
-        .select(
-          'id, slot, status, worker_id, retry_count, max_retries, error_message, claimed_at, completed_at, created_at'
-        )
-        .eq('battle_id', args.id)
-        .order('slot')
+      const { data, error } = await client.rpc('fn_get_battle_execution_jobs', {
+        p_battle_id: args.id,
+      })
 
       if (error) throw error
 
@@ -3087,19 +3079,14 @@ const rematch = defineCommand({
   },
   async run({ args }) {
     try {
-      // 1. Resolve slug → battle_id via PostgREST
-      const parents = await callRest<
-        Array<{ id: string; slug: string; creator_lenser_id: string }>
-      >('battles', 'battles', 'GET', undefined, {
-        requireAuth: true,
-        query: {
-          select: 'id,slug,creator_lenser_id',
-          slug: `eq.${args.slug}`,
-          limit: 1,
-        },
-      })
+      // 1. Resolve slug → battle_id via RPC
+      const parentRows = await callRpc<Array<{ id: string; slug: string }>>(
+        'fn_get_battle_by_slug',
+        { p_slug: args.slug },
+        { requireAuth: true }
+      )
 
-      const parent = parents?.[0]
+      const parent = Array.isArray(parentRows) ? parentRows[0] : parentRows
       if (!parent) {
         throw new Error(`No battle found for slug "${args.slug}".`)
       }
@@ -3116,22 +3103,14 @@ const rematch = defineCommand({
       }
 
       // 3. Resolve new id → new slug
-      const created = await callRest<Array<{ id: string; slug: string }>>(
-        'battles',
-        'battles',
-        'GET',
-        undefined,
-        {
-          requireAuth: true,
-          query: {
-            select: 'id,slug',
-            id: `eq.${newId}`,
-            limit: 1,
-          },
-        }
+      const createdRows = await callRpc<Array<{ id: string; slug: string }>>(
+        'fn_get_battle',
+        { p_battle_id: newId },
+        { requireAuth: true }
       )
 
-      const newSlug = created?.[0]?.slug ?? null
+      const created = Array.isArray(createdRows) ? createdRows[0] : createdRows
+      const newSlug = created?.slug ?? null
       if (!newSlug) {
         throw new Error(`Rematch created (id=${newId}) but slug could not be resolved.`)
       }

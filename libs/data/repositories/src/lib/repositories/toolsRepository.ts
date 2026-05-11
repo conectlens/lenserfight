@@ -20,22 +20,17 @@ export class SupabaseToolsRepository implements ToolsRepository {
   async listInvocations(
     options: ListToolInvocationsOptions = {}
   ): Promise<ToolInvocationRecord[]> {
-    let query = supabase
-      .schema('agents')
-      .from('tool_invocations_v')
-      .select('*')
-      .order('created_at', { ascending: false })
-
-    if (options.ai_lenser_id) query = query.eq('ai_lenser_id', options.ai_lenser_id)
-    if (options.team_run_id) query = query.eq('team_run_id', options.team_run_id)
-    if (options.status) query = query.eq('status', options.status)
-    if (options.approval_status)
-      query = query.eq('approval_status', options.approval_status)
-    if (options.limit && options.limit > 0) query = query.limit(options.limit)
-
-    const { data, error } = await query
+    const { data, error } = await supabase.rpc('fn_list_agent_tools', {
+      p_ai_lenser_id: options.ai_lenser_id ?? '',
+      p_limit: options.limit && options.limit > 0 ? options.limit : 100,
+      p_cursor: null,
+    })
     if (error) throw error
-    return (data ?? []) as ToolInvocationRecord[]
+    let rows = (data ?? []) as ToolInvocationRecord[]
+    if (options.team_run_id) rows = rows.filter((r) => (r as unknown as Record<string, unknown>)['team_run_id'] === options.team_run_id)
+    if (options.status) rows = rows.filter((r) => (r as unknown as Record<string, unknown>)['status'] === options.status)
+    if (options.approval_status) rows = rows.filter((r) => (r as unknown as Record<string, unknown>)['approval_status'] === options.approval_status)
+    return rows
   }
 
   listPendingApprovals(aiLenserId: string): Promise<ToolInvocationRecord[]> {

@@ -76,17 +76,13 @@ export class SupabaseLensesRepository implements LensesRepositoryPort {
     'id, title, description, lenser_id, author_profile, tags, reaction_totals, visibility, created_at'
 
   private async getProfileByHandle(handle: string): Promise<AuthorProfile | null> {
-    const { data: profile, error } = await supabase
-      .schema('lensers')
-      .from('profiles')
-      .select('id, handle, display_name, avatar_url')
-      .eq('handle', handle)
-      .maybeSingle()
-
+    const { data, error } = await supabase.rpc('fn_get_lenser_profile_brief', {
+      p_handle: handle,
+    })
     if (error) this.handleError(error)
-    if (!profile) return null
-
-    return this.mapProfileToAuthor(profile as Partial<AuthorProfile>, profile.id)
+    const row = (Array.isArray(data) ? data[0] : null) as Partial<AuthorProfile> | null
+    if (!row) return null
+    return this.mapProfileToAuthor(row, (row as { id: string }).id)
   }
 
   private mapProfileToAuthor(profile: Partial<AuthorProfile> | null | undefined, fallbackId: string): AuthorProfile {
@@ -99,27 +95,22 @@ export class SupabaseLensesRepository implements LensesRepositoryPort {
   }
 
   private async getProfileById(lenserId: string): Promise<AuthorProfile> {
-    const { data: profile } = await supabase
-      .schema('lensers')
-      .from('profiles')
-      .select('id, handle, display_name, avatar_url')
-      .eq('id', lenserId)
-      .maybeSingle()
-
-    return this.mapProfileToAuthor(profile as Partial<AuthorProfile> | null, lenserId)
+    const { data } = await supabase.rpc('fn_get_lenser_profile_brief', {
+      p_lenser_id: lenserId,
+    })
+    const row = (Array.isArray(data) ? data[0] : null) as Partial<AuthorProfile> | null
+    return this.mapProfileToAuthor(row, lenserId)
   }
 
   private async getTagsForLens(lensId: string): Promise<TagRecord[]> {
-    const { data: tagMapRows, error: tagMapError } = await supabase
-      .schema('content')
-      .from('tag_map')
-      .select('tag_id')
-      .eq('entity_type', 'lens')
-      .eq('entity_id', lensId)
+    const { data: tagMapRows, error: tagMapError } = await supabase.rpc('fn_get_entity_tag_ids', {
+      p_entity_type: 'lens',
+      p_entity_id: lensId,
+    })
 
     if (tagMapError) this.handleError(tagMapError)
 
-    const tagIds = (tagMapRows ?? []).map((row) => row.tag_id).filter(Boolean)
+    const tagIds = ((tagMapRows ?? []) as { tag_id: string }[]).map((row) => row.tag_id).filter(Boolean)
     if (tagIds.length === 0) return []
 
     const { data: tags, error: tagsError } = await supabase
@@ -141,38 +132,30 @@ export class SupabaseLensesRepository implements LensesRepositoryPort {
   }
 
   private async getLensReactionTotals(lensId: string): Promise<Record<string, number>> {
-    const { data, error } = await supabase
-      .schema('content')
-      .from('reactions')
-      .select('reaction')
-      .eq('entity_type', 'lens')
-      .eq('entity_id', lensId)
-
+    const { data, error } = await supabase.rpc('fn_get_entity_reaction_counts', {
+      p_entity_type: 'lens',
+      p_entity_id: lensId,
+    })
     if (error) this.handleError(error)
-
-    return (data ?? []).reduce<Record<string, number>>((totals, row) => {
-      totals[row.reaction] = (totals[row.reaction] ?? 0) + 1
-      return totals
-    }, {})
+    return (data ?? {}) as Record<string, number>
   }
 
   private async buildOwnerLensRecord(
     baseLens: Pick<LensRecord, 'id' | 'lenser_id' | 'visibility' | 'created_at' | 'updated_at'>
   ): Promise<LensRecord> {
     const [translationResult, authorProfile, tags] = await Promise.all([
-      supabase
-        .schema('content')
-        .from('entity_translations')
-        .select('title, description, content')
-        .eq('entity_type', 'lens')
-        .eq('entity_id', baseLens.id)
-        .eq('is_original', true)
-        .maybeSingle(),
+      supabase.rpc('fn_get_entity_translation', {
+        p_entity_type: 'lens',
+        p_entity_id: baseLens.id,
+      }),
       this.getProfileById(baseLens.lenser_id),
       this.getTagsForLens(baseLens.id),
     ])
 
     if (translationResult.error) this.handleError(translationResult.error)
+    const translationRow = (Array.isArray(translationResult.data) ? translationResult.data[0] : null) as
+      | { title?: string; description?: string; content?: string }
+      | null
     const reactionTotals = await this.getLensReactionTotals(baseLens.id)
 
     return {
@@ -181,9 +164,9 @@ export class SupabaseLensesRepository implements LensesRepositoryPort {
       visibility: baseLens.visibility,
       created_at: baseLens.created_at,
       updated_at: baseLens.updated_at,
-      title: translationResult.data?.title || 'Untitled',
-      description: translationResult.data?.description ?? null,
-      content: translationResult.data?.content || '',
+      title: translationRow?.title || 'Untitled',
+      description: translationRow?.description ?? null,
+      content: translationRow?.content || '',
       author_profile: authorProfile,
       tags,
       reaction_totals: reactionTotals,
@@ -237,18 +220,16 @@ export class SupabaseLensesRepository implements LensesRepositoryPort {
 
     let privateResults: LensRecord[] = []
     if (ownerId) {
-      const { data: privData } = await supabase
-        .schema('lenses')
-        .from('lenses')
-        .select('id, title, description, lenser_id, visibility, created_at')
-        .eq('lenser_id', ownerId)
-        .neq('visibility', 'public')
-        .ilike('title', `%${query}%`)
-        .range(0, limit - 1)
+      const { data: privData } = await supabase.rpc('fn_list_my_private_lenses', {
+        p_limit: limit,
+        p_cursor: null,
+      })
 
       if (privData) {
+        const privateRows = (privData as unknown as Array<{ id: string; title?: string }>)
+          .filter((r) => (r as unknown as { title?: string }).title?.toLowerCase().includes(query.toLowerCase()))
         const publicIds = new Set(publicResults.map((r) => r.id))
-        privateResults = (privData as unknown as LensRecord[]).filter((r) => !publicIds.has(r.id))
+        privateResults = (privateRows as unknown as LensRecord[]).filter((r) => !publicIds.has(r.id))
       }
     }
 
@@ -470,16 +451,10 @@ export class SupabaseLensesRepository implements LensesRepositoryPort {
     includePrivate = false
   ): Promise<LensRecord[]> {
     if (includePrivate) {
-      const profile = await this.getProfileByHandle(handle)
-      if (!profile?.id) return []
-
-      const { data: baseLenses, error } = await supabase
-        .schema('lenses')
-        .from('lenses')
-        .select('id, lenser_id, visibility, created_at, updated_at')
-        .eq('lenser_id', profile.id)
-        .order('created_at', { ascending: false })
-        .range(offset, offset + limit - 1)
+      const { data: baseLenses, error } = await supabase.rpc('fn_list_my_private_lenses', {
+        p_limit: limit,
+        p_cursor: null,
+      })
 
       if (error) this.handleError(error)
       return this.hydrateLensRecords((baseLenses ?? []) as LensRecord[])
@@ -497,41 +472,43 @@ export class SupabaseLensesRepository implements LensesRepositoryPort {
   }
 
   async getById(id: string, viewerLenserId?: string): Promise<LensRecord | null> {
-    const { data: baseLens, error } = await supabase
-      .schema('lenses')
-      .from('lenses')
-      .select('id, lenser_id, visibility, created_at, updated_at, parent_lens_id, forked_from_execution_id')
-      .eq('id', id)
-      .maybeSingle()
+    const latestVersionId = await this.getLatestVersionId(id)
+    if (!latestVersionId) return null
+
+    const { data: versionData, error } = await supabase.rpc('fn_get_lens_version_detail', {
+      p_version_id: latestVersionId,
+    })
 
     if (error) this.handleError(error)
-    if (!baseLens) return null
+    const vRow = (Array.isArray(versionData) ? versionData[0] : versionData) as Record<string, unknown> | undefined
+    if (!vRow) return null
 
-    const { data: translation, error: translationError } = await supabase
-      .schema('content')
-      .from('entity_translations')
-      .select('title, description, content')
-      .eq('entity_type', 'lens')
-      .eq('entity_id', id)
-      .eq('is_original', true)
-      .maybeSingle()
+    const lensId = (vRow.lens_id as string | undefined) ?? id
+
+    const { data: translationRows, error: translationError } = await supabase.rpc('fn_get_entity_translation', {
+      p_entity_type: 'lens',
+      p_entity_id: lensId,
+    })
+    const translation = (Array.isArray(translationRows) ? translationRows[0] : null) as
+      | { title?: string; description?: string; content?: string }
+      | null
 
     if (translationError) this.handleError(translationError)
 
-    const authorProfile = await this.getProfileById(baseLens.lenser_id)
-    const tags = await this.getTagsForLens(baseLens.id)
+    const authorProfile = await this.getProfileById(lensId)
+    const tags = await this.getTagsForLens(lensId)
 
     return {
-      id: baseLens.id,
-      lenser_id: baseLens.lenser_id,
-      visibility: baseLens.visibility,
-      created_at: baseLens.created_at,
-      updated_at: baseLens.updated_at,
-      parent_lens_id: (baseLens as Record<string, unknown>).parent_lens_id as string | null ?? null,
-      forked_from_execution_id: (baseLens as Record<string, unknown>).forked_from_execution_id as string | null ?? null,
+      id: lensId,
+      lenser_id: lensId,
+      visibility: 'private',
+      created_at: vRow.created_at as string,
+      updated_at: vRow.created_at as string,
+      parent_lens_id: null,
+      forked_from_execution_id: null,
       title: translation?.title || 'Untitled',
       description: translation?.description ?? null,
-      content: translation?.content || '',
+      content: (vRow.template_body as string | null) || translation?.content || '',
       author_profile: authorProfile,
       reaction_totals: {},
       tags,
@@ -556,22 +533,14 @@ export class SupabaseLensesRepository implements LensesRepositoryPort {
   async createLens(input: CreateLensDTO): Promise<LensRecord> {
     // Resolve the content language from the authenticated user's profile.
     let languageCode = 'en'
-    const { data: { user } } = await supabase.auth.getUser()
-    if (user) {
-      const { data: profileData } = await supabase
-        .schema('lensers')
-        .from('profiles')
-        .select('preferences(language)')
-        .eq('user_id', user.id)
-        .maybeSingle()
-      const lang = (profileData?.preferences as { language?: string } | null)?.language
-      if (lang) {
-        languageCode = lang
-      }
+    const { data: profileData } = await supabase.rpc('fn_lensers_get_authenticated_profile', {})
+    const lang = (profileData as Record<string, unknown> | null)?.['language'] as string | undefined
+    if (lang) {
+      languageCode = lang
     }
 
     // Atomic RPC: creates lens + version 1 + version_parameters + translation + tags in one transaction
-    const { data: lensId, error: rpcError } = await supabase.schema('lenses').rpc('fn_create_lens', {
+    const { data: lensId, error: rpcError } = await supabase.rpc('fn_create_lens', {
       p_visibility: input.visibility,
       p_template_body: input.content,
       p_title: input.title,
@@ -619,7 +588,7 @@ export class SupabaseLensesRepository implements LensesRepositoryPort {
   async updateLens(id: string, input: Partial<CreateLensDTO>): Promise<LensRecord> {
     // Atomic RPC: updates visibility, template body (via version upsert),
     // version_parameters, translation, and tags in one transaction
-    const { error: rpcError } = await supabase.schema('lenses').rpc('fn_update_lens', {
+    const { error: rpcError } = await supabase.rpc('fn_update_lens', {
       p_lens_id: id,
       p_template_body: input.content ?? null,
       p_visibility: input.visibility ?? null,
@@ -656,7 +625,9 @@ export class SupabaseLensesRepository implements LensesRepositoryPort {
   }
 
   async deleteLens(id: string): Promise<void> {
-    const { error } = await supabase.schema('lenses').from('lenses').delete().eq('id', id)
+    const { error } = await supabase.rpc('fn_delete_lens', {
+      p_lens_id: id,
+    })
     if (error) this.handleError(error)
   }
 
@@ -716,19 +687,22 @@ export class SupabaseLensesRepository implements LensesRepositoryPort {
   }
 
   async getVersions(lensId: string): Promise<LensVersion[]> {
-    const { data, error } = await supabase
-      .schema('lenses')
-      .rpc('fn_list_versions', { p_lens_id: lensId })
+    const { data, error } = await supabase.rpc('fn_list_lens_versions', {
+      p_lens_id: lensId,
+      p_include_archived: false,
+    })
     if (error) this.handleError(error)
     return ((data ?? []) as Record<string, unknown>[]).map((row) => this.mapVersion(row))
   }
 
   async getVersionsPaginated(lensId: string, limit: number, offset: number): Promise<LensVersion[]> {
-    const { data, error } = await supabase
-      .schema('lenses')
-      .rpc('fn_list_lens_versions', { p_lens_id: lensId, p_limit: limit, p_offset: offset })
+    const { data, error } = await supabase.rpc('fn_list_lens_versions', {
+      p_lens_id: lensId,
+      p_include_archived: false,
+    })
     if (error) this.handleError(error)
-    return ((data ?? []) as Record<string, unknown>[]).map((row) => ({
+    const rows = ((data ?? []) as Record<string, unknown>[]).slice(offset, offset + limit)
+    return rows.map((row) => ({
       id: row.id as string,
       lensId: row.lens_id as string,
       versionNumber: row.version_number as number,
@@ -741,119 +715,96 @@ export class SupabaseLensesRepository implements LensesRepositoryPort {
   }
 
   async getVersionById(versionId: string): Promise<LensVersion | null> {
-    const { data: vRow, error: vError } = await supabase
-      .schema('lenses')
-      .from('versions')
-      .select('*')
-      .eq('id', versionId)
-      .maybeSingle()
+    const { data: versionData, error: vError } = await supabase.rpc('fn_get_lens_version_detail', {
+      p_version_id: versionId,
+    })
     if (vError) this.handleError(vError)
+    const vRow = (Array.isArray(versionData) ? versionData[0] : versionData) as Record<string, unknown> | undefined
     if (!vRow) return null
 
-    // Render template_body: replace [[:uuid]] tokens with [[label]] for display/editing
-    const { data: renderedBody } = await supabase
-      .schema('lenses')
-      .rpc('fn_render_version_body', { p_version_id: versionId })
-
-    // Fetch params enriched with tool details via RPC
-    const { data: paramsJson, error: pError } = await supabase
-      .schema('lenses')
-      .rpc('fn_get_version_params_with_tools', { p_version_id: versionId })
+    const { data: paramsJson, error: pError } = await supabase.rpc('fn_get_lens_version_parameters', {
+      p_version_id: versionId,
+    })
     if (pError) this.handleError(pError)
 
-    const version = this.mapVersion(vRow as Record<string, unknown>)
-    if (renderedBody) version.templateBody = renderedBody as string
-    version.parameters = ((paramsJson ?? []) as Record<string, unknown>[]).map((p) => this.mapVersionParam(p))
+    const version = this.mapVersion(vRow)
+    version.parameters = ((Array.isArray(paramsJson) ? paramsJson : []) as Record<string, unknown>[]).map((p) => this.mapVersionParam(p))
     return version
   }
 
   async getLatestVersionId(lensId: string): Promise<string | null> {
-    const { data } = await supabase
-      .schema('lenses')
-      .from('versions')
-      .select('id')
-      .eq('lens_id', lensId)
-      .neq('status', 'archived')
-      .order('version_number', { ascending: false })
-      .limit(1)
-      .maybeSingle()
-    return (data as { id: string } | null)?.id ?? null
+    const { data } = await supabase.rpc('fn_list_lens_versions', {
+      p_lens_id: lensId,
+      p_include_archived: false,
+    })
+    const rows = (data ?? []) as Array<{ id: string; version_number: number }>
+    if (rows.length === 0) return null
+    return rows.reduce((best, row) => row.version_number > best.version_number ? row : best, rows[0]).id
   }
 
   /** Returns the latest non-archived version regardless of publish status (draft OK). */
   async getLatestVersion(lensId: string): Promise<LensVersion | null> {
-    const { data, error } = await supabase
-      .schema('lenses')
-      .from('vw_lens_version_history')
-      .select('*')
-      .eq('lens_id', lensId)
-      .neq('status', 'archived')
-      .order('version_number', { ascending: false })
-      .limit(1)
-      .maybeSingle()
+    const { data, error } = await supabase.rpc('fn_list_lens_versions', {
+      p_lens_id: lensId,
+      p_include_archived: false,
+    })
     if (error) this.handleError(error)
-    if (!data) return null
-    const version = this.mapVersion(data as Record<string, unknown>)
-    const { data: paramsJson } = await supabase
-      .schema('lenses')
-      .rpc('fn_get_version_params_with_tools', { p_version_id: version.id })
-    version.parameters = ((paramsJson ?? []) as Record<string, unknown>[]).map((p) =>
+    const rows = (data ?? []) as Record<string, unknown>[]
+    if (rows.length === 0) return null
+    const latestRow = rows.reduce(
+      (best: Record<string, unknown>, row: Record<string, unknown>) =>
+        (row.version_number as number) > (best.version_number as number) ? row : best,
+      rows[0]
+    )
+    const version = this.mapVersion(latestRow)
+    const { data: paramsJson } = await supabase.rpc('fn_get_lens_version_parameters', {
+      p_version_id: version.id,
+    })
+    version.parameters = ((Array.isArray(paramsJson) ? paramsJson : []) as Record<string, unknown>[]).map((p) =>
       this.mapVersionParam(p)
     )
     return version
   }
 
   async getLatestPublishedVersion(lensId: string): Promise<LensVersion | null> {
-    const { data, error } = await supabase
-      .schema('lenses')
-      .from('vw_lens_version_history')
-      .select('*')
-      .eq('lens_id', lensId)
-      .eq('status', 'published')
-      .order('version_number', { ascending: false })
-      .limit(1)
-      .maybeSingle()
+    const { data, error } = await supabase.rpc('fn_list_lens_versions', {
+      p_lens_id: lensId,
+      p_include_archived: false,
+    })
     if (error) this.handleError(error)
-    if (!data) return null
-    const version = this.mapVersion(data as Record<string, unknown>)
-    const { data: paramsJson } = await supabase
-      .schema('lenses')
-      .rpc('fn_get_version_params_with_tools', { p_version_id: version.id })
-    version.parameters = ((paramsJson ?? []) as Record<string, unknown>[]).map((p) =>
+    const rows = ((data ?? []) as Record<string, unknown>[]).filter((r) => r.status === 'published')
+    if (rows.length === 0) return null
+    const latestRow = rows.reduce(
+      (best: Record<string, unknown>, row: Record<string, unknown>) =>
+        (row.version_number as number) > (best.version_number as number) ? row : best,
+      rows[0]
+    )
+    const version = this.mapVersion(latestRow)
+    const { data: paramsJson } = await supabase.rpc('fn_get_lens_version_parameters', {
+      p_version_id: version.id,
+    })
+    version.parameters = ((Array.isArray(paramsJson) ? paramsJson : []) as Record<string, unknown>[]).map((p) =>
       this.mapVersionParam(p)
     )
     return version
   }
 
   async createVersion(input: CreateLensVersionDTO): Promise<LensVersion> {
-    const { data: vRow, error: vError } = await supabase
-      .schema('lenses')
-      .rpc('fn_create_draft_version', {
-        p_lens_id: input.lensId,
-        p_template_body: input.templateBody,
-        p_changelog: input.changelog ?? null,
-        p_parent_version_id: input.parentVersionId ?? null,
-      })
+    const { data: vRow, error: vError } = await supabase.rpc('fn_create_draft_version', {
+      p_lens_id: input.lensId,
+      p_template_body: input.templateBody,
+      p_changelog: input.changelog ?? null,
+      p_parent_version_id: input.parentVersionId ?? null,
+    })
     if (vError) this.handleError(vError)
 
     const version = this.mapVersion(vRow as Record<string, unknown>)
 
     if (input.parameters?.length) {
-      const paramRows = input.parameters.map((p) => ({
-        version_id: version.id,
-        label: p.label,
-        tool_id: p.toolId,
-      }))
-      const { error: pError } = await supabase
-        .schema('lenses')
-        .from('version_parameters')
-        .insert(paramRows)
-      if (pError) this.handleError(pError)
-
-      const { data: paramsJson } = await supabase
-        .schema('lenses')
-        .rpc('fn_get_version_params_with_tools', { p_version_id: version.id })
-      version.parameters = ((paramsJson ?? []) as Record<string, unknown>[]).map((p) =>
+      const { data: paramsJson } = await supabase.rpc('fn_get_lens_version_parameters', {
+        p_version_id: version.id,
+      })
+      version.parameters = ((Array.isArray(paramsJson) ? paramsJson : []) as Record<string, unknown>[]).map((p) =>
         this.mapVersionParam(p)
       )
     }
@@ -862,51 +813,30 @@ export class SupabaseLensesRepository implements LensesRepositoryPort {
   }
 
   async publishVersion(versionId: string): Promise<void> {
-    const { error } = await supabase
-      .schema('lenses')
-      .rpc('fn_publish_version', { p_version_id: versionId })
+    const { error } = await supabase.rpc('fn_publish_version', { p_version_id: versionId })
     if (error) this.handleError(error)
   }
 
   /** Replace the parameter definitions for a lens version (full replace). */
   async updateVersionParams(versionId: string, params: Array<{ label: string; toolId: string }>): Promise<void> {
-    // Delete all existing params for this version
-    const { error: delError } = await supabase
-      .schema('lenses')
-      .from('version_parameters')
-      .delete()
-      .eq('version_id', versionId)
-    if (delError) this.handleError(delError)
-
-    if (params.length === 0) return
-
-    const rows = params.map((p) => ({
-      version_id: versionId,
-      label: p.label,
-      tool_id: p.toolId,
-    }))
-    const { error: insError } = await supabase
-      .schema('lenses')
-      .from('version_parameters')
-      .insert(rows)
-    if (insError) this.handleError(insError)
+    const { error } = await supabase.rpc('fn_update_lens_version_params', {
+      p_version_id: versionId,
+      p_params: params.map((p) => ({ label: p.label, tool_id: p.toolId })),
+    })
+    if (error) this.handleError(error)
   }
 
   async cloneLens(sourceLensId: string, versionId?: string | null): Promise<string> {
-    const { data, error } = await supabase
-      .schema('lenses')
-      .rpc('fn_clone_lens', {
-        p_source_lens_id: sourceLensId,
-        p_version_id: versionId ?? null,
-      })
+    const { data, error } = await supabase.rpc('fn_clone_lens', {
+      p_source_lens_id: sourceLensId,
+      p_version_id: versionId ?? null,
+    })
     if (error) this.handleError(error)
     return data as string
   }
 
   async getTools(category?: string): Promise<ToolRecord[]> {
-    const { data, error } = await supabase
-      .schema('lenses')
-      .rpc('fn_list_tools', { p_category: category ?? null })
+    const { data, error } = await supabase.rpc('fn_list_tools', { p_category: category ?? null })
     if (error) this.handleError(error)
     return ((data ?? []) as Record<string, unknown>[]).map((t) => ({
       id: t.id as string,
@@ -930,15 +860,12 @@ export class SupabaseLensesRepository implements LensesRepositoryPort {
   }
 
   async getForkTree(lensId: string, limit = 100): Promise<ForkNode[]> {
-    const { data, error } = await supabase
-      .schema('lenses')
-      .from('vw_fork_history')
-      .select('*')
-      .eq('lens_id', lensId)
-      .order('depth', { ascending: true })
-      .limit(limit)
+    const { data, error } = await supabase.rpc('fn_get_lens_fork_tree', {
+      p_lens_id: lensId,
+    })
     if (error) this.handleError(error)
-    return ((data ?? []) as Record<string, unknown>[]).map((row) => ({
+    const tree = (Array.isArray(data) ? data : [data]).filter(Boolean) as Record<string, unknown>[]
+    return tree.slice(0, limit).map((row) => ({
       lensId: row.lens_id as string,
       forkedFromLensId: row.forked_from_lens_id as string,
       forkedFromTitle: row.forked_from_title as string,

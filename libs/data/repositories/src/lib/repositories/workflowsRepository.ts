@@ -826,104 +826,85 @@ export class SupabaseWorkflowsRepository implements WorkflowsRepositoryPort {
   // ── Phases ──────────────────────────────────────────────────────────────────
 
   async listPhases(workflowId: string): Promise<WorkflowPhaseRecord[]> {
-    const { data, error } = await supabase
-      .schema('lenses')
-      .from('workflow_phases')
-      .select('*')
-      .eq('workflow_id', workflowId)
-      .order('ordinal', { ascending: true })
-
+    const { data, error } = await supabase.rpc('fn_list_workflow_phases', {
+      p_workflow_id: workflowId,
+    })
     if (error) this.handleError(error)
     return (data ?? []) as WorkflowPhaseRecord[]
   }
 
   async upsertPhase(phase: Partial<WorkflowPhaseRecord> & { workflow_id: string }): Promise<WorkflowPhaseRecord> {
-    const { data, error } = await supabase
-      .schema('lenses')
-      .from('workflow_phases')
-      .upsert(phase, { onConflict: 'id' })
-      .select()
-      .single()
-
+    const { data, error } = await supabase.rpc('fn_upsert_workflow_phase', {
+      p_workflow_id: phase.workflow_id,
+      p_title: phase.title ?? '',
+      p_description: phase.description ?? null,
+      p_ordinal: phase.ordinal ?? 0,
+      p_id: phase.id ?? null,
+    })
     if (error) this.handleError(error)
     return data as WorkflowPhaseRecord
   }
 
   async deletePhase(phaseId: string): Promise<void> {
-    const { error } = await supabase
-      .schema('lenses')
-      .from('workflow_phases')
-      .delete()
-      .eq('id', phaseId)
-
+    const { error } = await supabase.rpc('fn_delete_workflow_phase', {
+      p_phase_id: phaseId,
+    })
     if (error) this.handleError(error)
   }
 
   async reorderPhases(workflowId: string, orderedIds: string[]): Promise<void> {
-    const updates = orderedIds.map((id, index) => ({ id, workflow_id: workflowId, ordinal: index }))
-    const { error } = await supabase
-      .schema('lenses')
-      .from('workflow_phases')
-      .upsert(updates, { onConflict: 'id' })
-
+    const { error } = await supabase.rpc('fn_reorder_workflow_phases', {
+      p_workflow_id: workflowId,
+      p_ordered_ids: orderedIds,
+    })
     if (error) this.handleError(error)
   }
 
   // ── Tasks ───────────────────────────────────────────────────────────────────
 
   async listTasks(phaseId: string): Promise<WorkflowTaskRecord[]> {
-    const { data, error } = await supabase
-      .schema('lenses')
-      .from('workflow_tasks')
-      .select('*')
-      .eq('phase_id', phaseId)
-      .order('ordinal', { ascending: true })
-
+    const { data, error } = await supabase.rpc('fn_list_workflow_tasks', {
+      p_phase_id: phaseId,
+    })
     if (error) this.handleError(error)
     return (data ?? []) as WorkflowTaskRecord[]
   }
 
   async listTasksByWorkflow(workflowId: string): Promise<WorkflowTaskRecord[]> {
-    const { data, error } = await supabase
-      .schema('lenses')
-      .from('workflow_tasks')
-      .select('*')
-      .eq('workflow_id', workflowId)
-      .order('ordinal', { ascending: true })
-
+    const { data, error } = await supabase.rpc('fn_list_workflow_tasks_by_workflow', {
+      p_workflow_id: workflowId,
+    })
     if (error) this.handleError(error)
     return (data ?? []) as WorkflowTaskRecord[]
   }
 
   async upsertTask(task: Partial<WorkflowTaskRecord> & { phase_id: string; workflow_id: string }): Promise<WorkflowTaskRecord> {
-    const { data, error } = await supabase
-      .schema('lenses')
-      .from('workflow_tasks')
-      .upsert(task, { onConflict: 'id' })
-      .select()
-      .single()
-
+    const { data, error } = await supabase.rpc('fn_upsert_workflow_task', {
+      p_phase_id: task.phase_id,
+      p_workflow_id: task.workflow_id,
+      p_title: task.title ?? '',
+      p_prompt_text: task.prompt_text ?? null,
+      p_output_type: task.output_type ?? 'text',
+      p_model_hint: task.model_hint ?? null,
+      p_ordinal: task.ordinal ?? 0,
+      p_id: task.id ?? null,
+    })
     if (error) this.handleError(error)
     return data as WorkflowTaskRecord
   }
 
   async deleteTask(taskId: string): Promise<void> {
-    const { error } = await supabase
-      .schema('lenses')
-      .from('workflow_tasks')
-      .delete()
-      .eq('id', taskId)
-
+    const { error } = await supabase.rpc('fn_delete_workflow_task', {
+      p_task_id: taskId,
+    })
     if (error) this.handleError(error)
   }
 
   async reorderTasks(phaseId: string, orderedIds: string[]): Promise<void> {
-    const updates = orderedIds.map((id, index) => ({ id, phase_id: phaseId, ordinal: index }))
-    const { error } = await supabase
-      .schema('lenses')
-      .from('workflow_tasks')
-      .upsert(updates, { onConflict: 'id' })
-
+    const { error } = await supabase.rpc('fn_reorder_workflow_tasks', {
+      p_phase_id: phaseId,
+      p_ordered_ids: orderedIds,
+    })
     if (error) this.handleError(error)
   }
 }
