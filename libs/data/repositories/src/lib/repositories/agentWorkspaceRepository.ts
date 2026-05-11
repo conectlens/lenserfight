@@ -281,65 +281,38 @@ export class SupabaseAgentWorkspaceRepository implements AgentWorkspaceRepositor
   }
 
   async createTeam(input: CreateAgentTeamInput): Promise<AgentTeamRecord | null> {
-    const { data, error } = await supabase
-      .schema('agents')
-      .from('teams')
-      .insert({
-        ai_lenser_id: input.ai_lenser_id,
-        name: input.name,
-        description: input.description ?? null,
-        status: input.status ?? 'active',
-        is_active: input.is_active ?? true,
-      })
-      .select('*')
-      .single()
+    const { data, error } = await supabase.rpc('fn_create_agent_team', {
+      p_ai_lenser_id: input.ai_lenser_id,
+      p_name: input.name,
+      p_description: input.description ?? null,
+      p_initial_members: JSON.stringify(
+        (input.initial_members ?? []).map((member, index) => ({
+          agent_id: member.agent_id,
+          role: member.role,
+          responsibility: member.responsibility ?? null,
+          lane: member.lane ?? 0,
+          sort_order: member.sort_order ?? index,
+        }))
+      ),
+    })
 
     if (error) throw error
-
-    const team = data as AgentTeamRecord
-
-    if ((input.initial_members ?? []).length > 0) {
-      const { error: memberError } = await supabase
-        .schema('agents')
-        .from('team_members')
-        .insert(
-          (input.initial_members ?? []).map((member, index) => ({
-            team_id: team.id,
-            agent_id: member.agent_id,
-            role: member.role,
-            responsibility: member.responsibility ?? null,
-            lane: member.lane ?? 0,
-            sort_order: member.sort_order ?? index,
-            is_active: true,
-          }))
-        )
-
-      if (memberError) throw memberError
-    }
-
-    return team
+    return (data as AgentTeamRecord | null) ?? null
   }
 
   async listTeamMembers(teamId: string): Promise<AgentTeamMemberRecord[]> {
-    const { data, error } = await supabase
-      .schema('agents')
-      .from('team_members')
-      .select('*')
-      .eq('team_id', teamId)
-      .order('lane', { ascending: true })
-      .order('sort_order', { ascending: true })
+    const { data, error } = await supabase.rpc('fn_get_team_members', {
+      p_team_id: teamId,
+    })
 
     if (error) throw error
     return (data ?? []) as AgentTeamMemberRecord[]
   }
 
   async listTeamEdges(teamId: string): Promise<AgentTeamEdgeRecord[]> {
-    const { data, error } = await supabase
-      .schema('agents')
-      .from('team_edges')
-      .select('*')
-      .eq('team_id', teamId)
-      .order('created_at', { ascending: true })
+    const { data, error } = await supabase.rpc('fn_list_team_edges', {
+      p_team_id: teamId,
+    })
 
     if (error) throw error
     return (data ?? []) as AgentTeamEdgeRecord[]
@@ -348,15 +321,13 @@ export class SupabaseAgentWorkspaceRepository implements AgentWorkspaceRepositor
   async createPersonalityProfile(
     input: CreateAgentPersonalityProfileInput
   ): Promise<AgentPersonalityProfileRecord | null> {
-    const { data, error } = await supabase
-      .schema('agents')
-      .from('personality_profiles')
-      .insert({
+    const { data, error } = await supabase.rpc('fn_create_workspace_record', {
+      p_table_name: 'personality_profiles',
+      p_data: JSON.stringify({
         ...input,
         system_prompt_patch: input.system_prompt_patch ?? '',
-      })
-      .select('*')
-      .single()
+      }),
+    })
 
     if (error) throw error
     return (data as AgentPersonalityProfileRecord | null) ?? null
@@ -365,22 +336,19 @@ export class SupabaseAgentWorkspaceRepository implements AgentWorkspaceRepositor
   async createMemoryProfile(
     input: CreateAgentMemoryProfileInput
   ): Promise<AgentMemoryProfileRecord | null> {
-    const { data, error } = await supabase
-      .schema('agents')
-      .from('memory_profiles')
-      .insert(input)
-      .select('*')
-      .single()
+    const { data, error } = await supabase.rpc('fn_create_workspace_record', {
+      p_table_name: 'memory_profiles',
+      p_data: JSON.stringify(input),
+    })
 
     if (error) throw error
     return (data as AgentMemoryProfileRecord | null) ?? null
   }
 
   async createToolProfile(input: CreateAgentToolProfileInput): Promise<AgentToolProfileRecord | null> {
-    const { data, error } = await supabase
-      .schema('agents')
-      .from('tool_profiles')
-      .insert({
+    const { data, error } = await supabase.rpc('fn_create_workspace_record', {
+      p_table_name: 'tool_profiles',
+      p_data: JSON.stringify({
         ai_lenser_id: input.ai_lenser_id,
         name: input.name,
         allow_tools: input.allow_tools ?? [],
@@ -388,19 +356,17 @@ export class SupabaseAgentWorkspaceRepository implements AgentWorkspaceRepositor
         tool_groups: input.tool_groups ?? [],
         provider_overrides: input.provider_overrides ?? {},
         requires_approval: input.requires_approval ?? true,
-      })
-      .select('*')
-      .single()
+      }),
+    })
 
     if (error) throw error
     return (data as AgentToolProfileRecord | null) ?? null
   }
 
   async createModelProfile(input: CreateAgentModelProfileInput): Promise<AgentModelProfileRecord | null> {
-    const { data, error } = await supabase
-      .schema('agents')
-      .from('model_profiles')
-      .insert({
+    const { data, error } = await supabase.rpc('fn_create_workspace_record', {
+      p_table_name: 'model_profiles',
+      p_data: JSON.stringify({
         ai_lenser_id: input.ai_lenser_id,
         name: input.name,
         provider_key: input.provider_key ?? null,
@@ -408,9 +374,8 @@ export class SupabaseAgentWorkspaceRepository implements AgentWorkspaceRepositor
         model_key: input.model_key ?? null,
         support_level: input.support_level ?? 'runnable',
         params: input.params ?? {},
-      })
-      .select('*')
-      .single()
+      }),
+    })
 
     if (error) throw error
     return (data as AgentModelProfileRecord | null) ?? null
@@ -420,36 +385,23 @@ export class SupabaseAgentWorkspaceRepository implements AgentWorkspaceRepositor
     aiLenserId: string,
     options: ListApprovalRequestsOptions = {}
   ): Promise<ApprovalRequestView[]> {
-    let query = supabase
-      .schema('agents')
-      .from('approval_requests_v')
-      .select('*')
-      .eq('ai_lenser_id', aiLenserId)
-      .order('requested_at', { ascending: false })
+    const { data, error } = await supabase.rpc('fn_list_approval_requests', {
+      p_ai_lenser_id: aiLenserId,
+      p_status: options.status ?? 'pending',
+      p_limit: options.limit ?? 50,
+    })
 
-    if (options.status) {
-      query = query.eq('approval_status', options.status)
-    } else {
-      query = query.eq('approval_status', 'pending')
-    }
-
-    if (options.limit) query = query.limit(options.limit)
-
-    const { data, error } = await query
     if (error) throw error
     return (data ?? []) as ApprovalRequestView[]
   }
 
   async getApprovalRequest(requestId: string): Promise<ApprovalRequestView | null> {
-    const { data, error } = await supabase
-      .schema('agents')
-      .from('approval_requests_v')
-      .select('*')
-      .eq('request_id', requestId)
-      .maybeSingle()
+    const { data, error } = await supabase.rpc('fn_get_approval_request', {
+      p_request_id: requestId,
+    })
 
     if (error) throw error
-    return (data as ApprovalRequestView | null) ?? null
+    return (data?.[0] ?? null) as ApprovalRequestView | null
   }
 
   async decideApproval(input: ApprovalDecisionInput): Promise<ApprovalDecisionResult> {
@@ -482,56 +434,38 @@ export class SupabaseAgentWorkspaceRepository implements AgentWorkspaceRepositor
   }
 
   async getCostSummary(aiLenserId: string): Promise<CostSummary> {
-    const { data: snapshots, error } = await supabase
-      .schema('agents')
-      .from('quota_snapshots')
-      .select('period_date, credits_spent, battles_used, votes_used')
-      .eq('ai_lenser_id', aiLenserId)
-      .order('period_date', { ascending: false })
-      .limit(30)
+    const { data, error } = await supabase.rpc('fn_get_agent_cost_summary', {
+      p_ai_lenser_id: aiLenserId,
+    })
 
     if (error) throw error
 
-    const { data: policy, error: policyError } = await supabase
-      .schema('agents')
-      .from('policies')
-      .select('spending_limit_credits')
-      .eq('ai_lenser_id', aiLenserId)
-      .maybeSingle()
-
-    if (policyError) throw policyError
-
-    const today = new Date()
-    today.setUTCHours(0, 0, 0, 0)
-    const todayIso = today.toISOString().slice(0, 10)
-    const sevenDaysAgo = new Date(today.getTime() - 6 * 86400_000).toISOString().slice(0, 10)
-    const thirtyDaysAgo = new Date(today.getTime() - 29 * 86400_000).toISOString().slice(0, 10)
-
-    type Snapshot = {
-      period_date: string
-      credits_spent: number | string
-      battles_used: number
-      votes_used: number
+    type CostSummaryRpc = {
+      today_credits: number
+      seven_day_credits: number
+      thirty_day_credits: number
+      today_battles: number
+      today_votes: number
+      spending_limit_credits: number | null
+      daily: Array<{
+        period_date: string
+        credits_spent: number
+        battles_used: number
+        votes_used: number
+      }>
     }
-    const rows = (snapshots ?? []) as Snapshot[]
 
-    const sumCredits = (since: string) =>
-      rows
-        .filter((row) => row.period_date >= since)
-        .reduce((acc, row) => acc + Number(row.credits_spent ?? 0), 0)
-
-    const todayRow = rows.find((row) => row.period_date === todayIso)
+    const result = (data ?? {}) as CostSummaryRpc
 
     return {
       ai_lenser_id: aiLenserId,
-      today_credits: Number(todayRow?.credits_spent ?? 0),
-      seven_day_credits: sumCredits(sevenDaysAgo),
-      thirty_day_credits: sumCredits(thirtyDaysAgo),
-      today_battles: todayRow?.battles_used ?? 0,
-      today_votes: todayRow?.votes_used ?? 0,
-      spending_limit_credits:
-        (policy as { spending_limit_credits?: number } | null)?.spending_limit_credits ?? null,
-      daily: rows.map((row) => ({
+      today_credits: result.today_credits ?? 0,
+      seven_day_credits: result.seven_day_credits ?? 0,
+      thirty_day_credits: result.thirty_day_credits ?? 0,
+      today_battles: result.today_battles ?? 0,
+      today_votes: result.today_votes ?? 0,
+      spending_limit_credits: result.spending_limit_credits ?? null,
+      daily: (result.daily ?? []).map((row) => ({
         period_date: row.period_date,
         credits_spent: Number(row.credits_spent ?? 0),
         battles_used: row.battles_used,
@@ -574,13 +508,10 @@ export class SupabaseAgentWorkspaceRepository implements AgentWorkspaceRepositor
     aiLenserId: string,
     limit = 50
   ): Promise<ScratchpadRunRecord[]> {
-    const { data, error } = await supabase
-      .schema('agents')
-      .from('scratchpad_runs')
-      .select('*')
-      .eq('ai_lenser_id', aiLenserId)
-      .order('started_at', { ascending: false })
-      .limit(limit)
+    const { data, error } = await supabase.rpc('fn_list_scratchpad_runs', {
+      p_ai_lenser_id: aiLenserId,
+      p_limit: limit,
+    })
     if (error) throw error
     return (data ?? []) as ScratchpadRunRecord[]
   }
@@ -627,12 +558,9 @@ export class SupabaseAgentWorkspaceRepository implements AgentWorkspaceRepositor
   // ─── Evaluations ───────────────────────────────────────────────────────────
 
   async listEvaluations(ownerLenserId: string): Promise<EvaluationRecord[]> {
-    const { data, error } = await supabase
-      .schema('agents')
-      .from('evaluations')
-      .select('*')
-      .eq('owner_lenser_id', ownerLenserId)
-      .order('created_at', { ascending: false })
+    const { data, error } = await supabase.rpc('fn_list_evaluations', {
+      p_owner_lenser_id: ownerLenserId,
+    })
     if (error) throw error
     return (data ?? []) as EvaluationRecord[]
   }
@@ -640,38 +568,26 @@ export class SupabaseAgentWorkspaceRepository implements AgentWorkspaceRepositor
   async createEvaluation(
     input: CreateEvaluationInput
   ): Promise<EvaluationRecord> {
-    const { data, error } = await supabase
-      .schema('agents')
-      .from('evaluations')
-      .insert({
-        owner_lenser_id: input.owner_lenser_id,
-        ai_lenser_id: input.ai_lenser_id ?? null,
-        target_type: input.target_type,
-        target_id: input.target_id,
-        name: input.name,
-        description: input.description ?? null,
-        scoring_rules: input.scoring_rules ?? {},
-        dataset_uri: input.dataset_uri ?? null,
-      })
-      .select('*')
-      .single()
+    const cases = (input.cases ?? []).map((c) => ({
+      input: c.input,
+      expected: c.expected ?? null,
+      weight: c.weight ?? 1,
+      tags: c.tags ?? [],
+    }))
+
+    const { data, error } = await supabase.rpc('fn_create_evaluation_with_cases', {
+      p_owner_lenser_id: input.owner_lenser_id,
+      p_ai_lenser_id: input.ai_lenser_id ?? null,
+      p_target_type: input.target_type,
+      p_target_id: input.target_id,
+      p_name: input.name,
+      p_description: input.description ?? null,
+      p_scoring_rules: input.scoring_rules ?? {},
+      p_dataset_uri: input.dataset_uri ?? null,
+      p_cases: JSON.stringify(cases),
+    })
     if (error) throw error
-    const evalRow = data as EvaluationRecord
-    if (input.cases && input.cases.length > 0) {
-      const cases = input.cases.map((c) => ({
-        evaluation_id: evalRow.id,
-        input: c.input,
-        expected: c.expected ?? null,
-        weight: c.weight ?? 1,
-        tags: c.tags ?? [],
-      }))
-      const { error: casesError } = await supabase
-        .schema('agents')
-        .from('evaluation_cases')
-        .insert(cases)
-      if (casesError) throw casesError
-    }
-    return evalRow
+    return data as EvaluationRecord
   }
 
   async runEvaluation(
@@ -689,11 +605,9 @@ export class SupabaseAgentWorkspaceRepository implements AgentWorkspaceRepositor
   async getEvaluationResults(
     runId: string
   ): Promise<EvaluationCaseResultRow[]> {
-    const { data, error } = await supabase
-      .schema('agents')
-      .from('evaluation_results_v')
-      .select('*')
-      .eq('run_id', runId)
+    const { data, error } = await supabase.rpc('fn_get_evaluation_results', {
+      p_run_id: runId,
+    })
     if (error) throw error
     return (data ?? []) as EvaluationCaseResultRow[]
   }
@@ -701,12 +615,9 @@ export class SupabaseAgentWorkspaceRepository implements AgentWorkspaceRepositor
   async listEvaluationRuns(
     evaluationId: string
   ): Promise<EvaluationRunRecord[]> {
-    const { data, error } = await supabase
-      .schema('agents')
-      .from('evaluation_runs')
-      .select('*')
-      .eq('evaluation_id', evaluationId)
-      .order('started_at', { ascending: false })
+    const { data, error } = await supabase.rpc('fn_list_evaluation_runs', {
+      p_evaluation_id: evaluationId,
+    })
     if (error) throw error
     return (data ?? []) as EvaluationRunRecord[]
   }
@@ -716,12 +627,9 @@ export class SupabaseAgentWorkspaceRepository implements AgentWorkspaceRepositor
   async listToolRegistry(
     ownerLenserId: string
   ): Promise<ToolRegistryRecord[]> {
-    const { data, error } = await supabase
-      .schema('agents')
-      .from('tools_registry')
-      .select('*')
-      .eq('owner_lenser_id', ownerLenserId)
-      .order('name', { ascending: true })
+    const { data, error } = await supabase.rpc('fn_list_tools_registry', {
+      p_owner_lenser_id: ownerLenserId,
+    })
     if (error) throw error
     return (data ?? []) as ToolRegistryRecord[]
   }
@@ -764,11 +672,9 @@ export class SupabaseAgentWorkspaceRepository implements AgentWorkspaceRepositor
   async listToolAssignments(
     aiLenserId: string
   ): Promise<ToolAssignmentRecord[]> {
-    const { data, error } = await supabase
-      .schema('agents')
-      .from('tool_assignments')
-      .select('*')
-      .eq('ai_lenser_id', aiLenserId)
+    const { data, error } = await supabase.rpc('fn_list_tool_assignments', {
+      p_ai_lenser_id: aiLenserId,
+    })
     if (error) throw error
     return (data ?? []) as ToolAssignmentRecord[]
   }
@@ -776,12 +682,9 @@ export class SupabaseAgentWorkspaceRepository implements AgentWorkspaceRepositor
   // ─── Fleet aggregations ────────────────────────────────────────────────────
 
   async getFleetOverview(humanLenserId: string): Promise<FleetOverview | null> {
-    const { data, error } = await supabase
-      .schema('agents')
-      .from('v_human_fleet_overview')
-      .select('*')
-      .eq('human_lenser_id', humanLenserId)
-      .maybeSingle()
+    const { data, error } = await supabase.rpc('fn_get_fleet_overview', {
+      p_human_lenser_id: humanLenserId,
+    })
     if (error) throw error
     return (data as FleetOverview | null) ?? null
   }
@@ -893,12 +796,9 @@ export class SupabaseAgentWorkspaceRepository implements AgentWorkspaceRepositor
   async getWorkspaceSettings(
     aiLenserId: string
   ): Promise<WorkspaceSettingsRecord | null> {
-    const { data, error } = await supabase
-      .schema('agents')
-      .from('workspace_settings')
-      .select('*')
-      .eq('ai_lenser_id', aiLenserId)
-      .maybeSingle()
+    const { data, error } = await supabase.rpc('fn_get_workspace_settings', {
+      p_ai_lenser_id: aiLenserId,
+    })
     if (error) throw error
     return (data as WorkspaceSettingsRecord | null) ?? null
   }
@@ -944,33 +844,27 @@ export class SupabaseAgentWorkspaceRepository implements AgentWorkspaceRepositor
     id: string,
     patch: Partial<T>
   ): Promise<T> {
-    const { data, error } = await supabase
-      .schema('agents')
-      .from(table)
-      .update(patch as Record<string, unknown>)
-      .eq('id', id)
-      .select('*')
-      .single()
+    const { data, error } = await supabase.rpc('fn_upsert_workspace_item', {
+      p_table_name: table,
+      p_id: id,
+      p_patch: JSON.stringify(patch as Record<string, unknown>),
+    })
     if (error) throw error
     return data as T
   }
 
   private async deleteFromTable(table: string, id: string): Promise<void> {
-    const { error } = await supabase
-      .schema('agents')
-      .from(table)
-      .delete()
-      .eq('id', id)
+    const { error } = await supabase.rpc('fn_delete_workspace_item', {
+      p_table_name: table,
+      p_id: id,
+    })
     if (error) throw error
   }
 
   async listMemoryProfiles(aiLenserId: string): Promise<AgentMemoryProfileRecord[]> {
-    const { data, error } = await supabase
-      .schema('agents')
-      .from('memory_profiles')
-      .select('*')
-      .eq('ai_lenser_id', aiLenserId)
-      .order('created_at', { ascending: false })
+    const { data, error } = await supabase.rpc('fn_list_memory_profiles', {
+      p_ai_lenser_id: aiLenserId,
+    })
     if (error) throw error
     return (data ?? []) as AgentMemoryProfileRecord[]
   }
@@ -1036,10 +930,9 @@ export class SupabaseAgentWorkspaceRepository implements AgentWorkspaceRepositor
     lane?: number
     sort_order?: number
   }): Promise<AgentTeamMemberRecord> {
-    const { data, error } = await supabase
-      .schema('agents')
-      .from('team_members')
-      .insert({
+    const { data, error } = await supabase.rpc('fn_create_workspace_record', {
+      p_table_name: 'team_members',
+      p_data: JSON.stringify({
         team_id: input.team_id,
         agent_id: input.agent_id,
         role: input.role,
@@ -1047,9 +940,8 @@ export class SupabaseAgentWorkspaceRepository implements AgentWorkspaceRepositor
         lane: input.lane ?? 0,
         sort_order: input.sort_order ?? 0,
         is_active: true,
-      })
-      .select('*')
-      .single()
+      }),
+    })
     if (error) throw error
     return data as AgentTeamMemberRecord
   }
@@ -1068,18 +960,16 @@ export class SupabaseAgentWorkspaceRepository implements AgentWorkspaceRepositor
     edge_type: string
     is_blocking?: boolean
   }): Promise<AgentTeamEdgeRecord> {
-    const { data, error } = await supabase
-      .schema('agents')
-      .from('team_edges')
-      .insert({
+    const { data, error } = await supabase.rpc('fn_create_workspace_record', {
+      p_table_name: 'team_edges',
+      p_data: JSON.stringify({
         team_id: input.team_id,
         source_member_id: input.source_member_id,
         target_member_id: input.target_member_id,
         edge_type: input.edge_type,
         is_blocking: input.is_blocking ?? false,
-      })
-      .select('*')
-      .single()
+      }),
+    })
     if (error) throw error
     return data as AgentTeamEdgeRecord
   }
@@ -1089,23 +979,17 @@ export class SupabaseAgentWorkspaceRepository implements AgentWorkspaceRepositor
   }
 
   async listAgentRunSteps(aiLenserId: string, runId: string): Promise<AgentRunStepRecord[]> {
-    const { data, error } = await supabase
-      .schema('agents')
-      .from('agent_run_steps')
-      .select('*')
-      .eq('team_run_id', runId)
-      .order('started_at', { ascending: true })
+    const { data, error } = await supabase.rpc('fn_list_agent_run_steps', {
+      p_team_run_id: runId,
+    })
     if (error) throw error
     return (data ?? []) as AgentRunStepRecord[]
   }
 
   async cancelAgentRun(aiLenserId: string, runId: string): Promise<void> {
-    const { error } = await supabase
-      .schema('agents')
-      .from('team_runs')
-      .update({ status: 'cancelled' })
-      .eq('id', runId)
-      .eq('ai_lenser_id', aiLenserId)
+    const { error } = await supabase.rpc('fn_cancel_agent_run', {
+      p_team_run_id: runId,
+    })
     if (error) throw error
   }
 
@@ -1119,21 +1003,17 @@ export class SupabaseAgentWorkspaceRepository implements AgentWorkspaceRepositor
   }
 
   async listWorkflowAssignments(aiLenserId: string): Promise<AgentWorkflowAssignmentRecord[]> {
-    const { data, error } = await supabase
-      .schema('agents')
-      .from('workflow_assignments')
-      .select('*')
-      .eq('ai_lenser_id', aiLenserId)
-      .order('created_at', { ascending: false })
+    const { data, error } = await supabase.rpc('fn_list_workflow_assignments', {
+      p_ai_lenser_id: aiLenserId,
+    })
     if (error) throw error
     return (data ?? []) as AgentWorkflowAssignmentRecord[]
   }
 
   async createWorkflowAssignment(input: CreateWorkflowAssignmentInput): Promise<AgentWorkflowAssignmentRecord> {
-    const { data, error } = await supabase
-      .schema('agents')
-      .from('workflow_assignments')
-      .insert({
+    const { data, error } = await supabase.rpc('fn_create_workspace_record', {
+      p_table_name: 'workflow_assignments',
+      p_data: JSON.stringify({
         ai_lenser_id: input.ai_lenser_id,
         workflow_id: input.workflow_id,
         assignee_kind: input.assignee_kind,
@@ -1143,9 +1023,8 @@ export class SupabaseAgentWorkspaceRepository implements AgentWorkspaceRepositor
         retry_policy: input.retry_policy ?? {},
         failure_policy: input.failure_policy ?? {},
         is_active: input.is_active ?? true,
-      })
-      .select('*')
-      .single()
+      }),
+    })
     if (error) throw error
     return data as AgentWorkflowAssignmentRecord
   }
@@ -1159,123 +1038,72 @@ export class SupabaseAgentWorkspaceRepository implements AgentWorkspaceRepositor
   }
 
   async createTeamRun(input: CreateTeamRunInput): Promise<AgentTeamRunRecord> {
-    const { data, error } = await supabase
-      .schema('agents')
-      .from('team_runs')
-      .insert({
-        ai_lenser_id: input.ai_lenser_id,
-        workflow_id: input.workflow_id,
-        workflow_run_id: input.workflow_run_id,
-        workflow_assignment_id: input.workflow_assignment_id,
-        team_id: input.team_id ?? null,
-        status: 'running',
-        approval_status: input.approval_status,
-        started_at: new Date().toISOString(),
-      })
-      .select('*')
-      .single()
+    const { data, error } = await supabase.rpc('fn_create_team_run', {
+      p_ai_lenser_id: input.ai_lenser_id,
+      p_workflow_id: input.workflow_id,
+      p_workflow_run_id: input.workflow_run_id,
+      p_workflow_assignment_id: input.workflow_assignment_id,
+      p_team_id: input.team_id ?? null,
+      p_approval_status: input.approval_status,
+    })
     if (error) throw error
     return data as AgentTeamRunRecord
   }
 
   async updateTeamRunStatus(runId: string, status: string, completedAt?: string): Promise<void> {
-    const patch: Record<string, unknown> = { status }
-    if (completedAt) patch['completed_at'] = completedAt
-    const { error } = await supabase
-      .schema('agents')
-      .from('team_runs')
-      .update(patch)
-      .eq('id', runId)
+    const { error } = await supabase.rpc('fn_update_team_run_status', {
+      p_team_run_id: runId,
+      p_status: status,
+      p_completed_at: completedAt ?? null,
+    })
     if (error) throw error
   }
 
   async appendTeamRunEvent(teamRunId: string, eventType: string, payload: Record<string, unknown>): Promise<void> {
-    const { error } = await supabase
-      .schema('agents')
-      .from('agent_run_events')
-      .insert({
-        team_run_id: teamRunId,
-        event_type: eventType,
-        payload,
-        occurred_at: new Date().toISOString(),
-      })
+    const { error } = await supabase.rpc('fn_append_team_run_event', {
+      p_team_run_id: teamRunId,
+      p_event_type: eventType,
+      p_payload: payload,
+    })
     if (error) throw error
   }
 
   async upsertAgentRunStep(input: UpsertAgentRunStepInput): Promise<AgentRunStepRecord> {
-    const existing = await supabase
-      .schema('agents')
-      .from('agent_run_steps')
-      .select('id')
-      .eq('team_run_id', input.team_run_id)
-      .eq('workflow_node_id', input.workflow_node_id)
-      .maybeSingle()
-
-    if (existing.data) {
-      const patch: Record<string, unknown> = {
-        status: input.status,
-        title: input.title,
-      }
-      if (input.current_task !== undefined) patch['current_task'] = input.current_task
-      if (input.recent_output_summary !== undefined) patch['recent_output_summary'] = input.recent_output_summary
-      if (input.blocker_summary !== undefined) patch['blocker_summary'] = input.blocker_summary
-      if (input.completed_at) patch['completed_at'] = input.completed_at
-      const { data, error } = await supabase
-        .schema('agents')
-        .from('agent_run_steps')
-        .update(patch)
-        .eq('id', (existing.data as { id: string }).id)
-        .select('*')
-        .single()
-      if (error) throw error
-      return data as AgentRunStepRecord
-    }
-
-    const { data, error } = await supabase
-      .schema('agents')
-      .from('agent_run_steps')
-      .insert({
-        team_run_id: input.team_run_id,
-        workflow_node_id: input.workflow_node_id,
-        lane: input.lane,
-        title: input.title,
-        status: input.status,
-        current_task: input.current_task ?? null,
-        recent_output_summary: input.recent_output_summary ?? null,
-        blocker_summary: input.blocker_summary ?? null,
-        started_at: input.started_at ?? new Date().toISOString(),
-        completed_at: input.completed_at ?? null,
-      })
-      .select('*')
-      .single()
+    const { data, error } = await supabase.rpc('fn_upsert_agent_run_step', {
+      p_team_run_id: input.team_run_id,
+      p_workflow_node_id: input.workflow_node_id,
+      p_lane: input.lane,
+      p_title: input.title,
+      p_status: input.status,
+      p_current_task: input.current_task ?? null,
+      p_recent_output_summary: input.recent_output_summary ?? null,
+      p_blocker_summary: input.blocker_summary ?? null,
+      p_started_at: input.started_at ?? null,
+      p_completed_at: input.completed_at ?? null,
+    })
     if (error) throw error
     return data as AgentRunStepRecord
   }
 
   async listEvaluationCases(evaluationId: string): Promise<EvaluationCaseRecord[]> {
-    const { data, error } = await supabase
-      .schema('agents')
-      .from('evaluation_cases')
-      .select('*')
-      .eq('evaluation_id', evaluationId)
-      .order('created_at', { ascending: true })
+    const { data, error } = await supabase.rpc('fn_list_evaluation_cases', {
+      p_evaluation_id: evaluationId,
+    })
     if (error) throw error
     return (data ?? []) as EvaluationCaseRecord[]
   }
 
   async createEvaluationCase(input: CreateEvaluationCaseInput): Promise<EvaluationCaseRecord> {
-    const { data, error } = await supabase
-      .schema('agents')
-      .from('evaluation_cases')
-      .insert({
+    const { data, error } = await supabase.rpc('fn_create_workspace_record', {
+      p_table_name: 'evaluation_cases',
+      p_data: JSON.stringify({
         evaluation_id: input.evaluation_id,
         input: input.input,
         expected: input.expected ?? null,
         weight: input.weight ?? 1,
         tags: input.tags ?? [],
-      })
-      .select('*')
-      .single()
+      }),
+    })
     if (error) throw error
     return data as EvaluationCaseRecord
   }
@@ -1287,12 +1115,9 @@ export class SupabaseAgentWorkspaceRepository implements AgentWorkspaceRepositor
   // ─── Evaluation rubrics ────────────────────────────────────────────────────
 
   async listEvaluationRubrics(evaluationId: string): Promise<EvaluationRubricRecord[]> {
-    const { data, error } = await supabase
-      .schema('agents')
-      .from('evaluation_rubrics')
-      .select('*')
-      .eq('evaluation_id', evaluationId)
-      .order('version', { ascending: false })
+    const { data, error } = await supabase.rpc('fn_list_evaluation_rubrics', {
+      p_evaluation_id: evaluationId,
+    })
     if (error) throw error
     return (data ?? []) as EvaluationRubricRecord[]
   }
@@ -1301,30 +1126,10 @@ export class SupabaseAgentWorkspaceRepository implements AgentWorkspaceRepositor
     evaluationId: string,
     criteria: EvaluationRubricCriterion[]
   ): Promise<EvaluationRubricRecord> {
-    // Mark all existing rubrics for this evaluation as not current
-    await supabase
-      .schema('agents')
-      .from('evaluation_rubrics')
-      .update({ is_current: false })
-      .eq('evaluation_id', evaluationId)
-
-    // Determine next version number
-    const { data: existing } = await supabase
-      .schema('agents')
-      .from('evaluation_rubrics')
-      .select('version')
-      .eq('evaluation_id', evaluationId)
-      .order('version', { ascending: false })
-      .limit(1)
-      .maybeSingle()
-    const nextVersion = ((existing as { version: number } | null)?.version ?? 0) + 1
-
-    const { data, error } = await supabase
-      .schema('agents')
-      .from('evaluation_rubrics')
-      .insert({ evaluation_id: evaluationId, version: nextVersion, criteria, is_current: true })
-      .select('*')
-      .single()
+    const { data, error } = await supabase.rpc('fn_create_evaluation_rubric', {
+      p_evaluation_id: evaluationId,
+      p_criteria: JSON.stringify(criteria),
+    })
     if (error) throw error
     return data as EvaluationRubricRecord
   }
@@ -1332,12 +1137,9 @@ export class SupabaseAgentWorkspaceRepository implements AgentWorkspaceRepositor
   // ─── Evaluation baselines ──────────────────────────────────────────────────
 
   async getEvaluationBaseline(evaluationId: string): Promise<EvaluationBaselineRecord | null> {
-    const { data, error } = await supabase
-      .schema('agents')
-      .from('evaluation_baselines')
-      .select('*')
-      .eq('evaluation_id', evaluationId)
-      .maybeSingle()
+    const { data, error } = await supabase.rpc('fn_get_evaluation_baseline', {
+      p_evaluation_id: evaluationId,
+    })
     if (error) throw error
     return (data as EvaluationBaselineRecord | null) ?? null
   }
@@ -1346,25 +1148,10 @@ export class SupabaseAgentWorkspaceRepository implements AgentWorkspaceRepositor
     evaluationId: string,
     runId: string
   ): Promise<EvaluationBaselineRecord> {
-    // Fetch the run to capture its score
-    const { data: runData, error: runError } = await supabase
-      .schema('agents')
-      .from('evaluation_runs')
-      .select('score')
-      .eq('id', runId)
-      .single()
-    if (runError) throw runError
-    const score = (runData as { score: number | null }).score
-
-    const { data, error } = await supabase
-      .schema('agents')
-      .from('evaluation_baselines')
-      .upsert(
-        { evaluation_id: evaluationId, run_id: runId, score },
-        { onConflict: 'evaluation_id' }
-      )
-      .select('*')
-      .single()
+    const { data, error } = await supabase.rpc('fn_set_evaluation_baseline', {
+      p_evaluation_id: evaluationId,
+      p_run_id: runId,
+    })
     if (error) throw error
     return data as EvaluationBaselineRecord
   }
