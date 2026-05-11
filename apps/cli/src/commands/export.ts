@@ -1,7 +1,7 @@
 import { defineCommand } from 'citty'
 import consola from 'consola'
 
-import { exportAutomationObject, exportAutomationTemplate, isAutomationObjectKind } from '../utils/automation-objects'
+import { canonicalAutomationKind, exportAutomationObject, exportAutomationTemplate, isAutomationObjectKind } from '../utils/automation-objects'
 
 export default defineCommand({
   meta: {
@@ -11,7 +11,7 @@ export default defineCommand({
   args: {
     kind: {
       type: 'positional',
-      description: 'Object kind: lens | agent | agent_team | tool | workflow | private_battle | skill | memory_policy | evaluation | run_report',
+      description: 'Object kind: lens | lenser | colens | battle | ray | team | tool | skill | memory_policy | evaluation | run_report',
       required: true,
     },
     id: {
@@ -28,6 +28,11 @@ export default defineCommand({
       description: 'Generate the canonical template file instead of exporting a registered object',
       default: false,
     },
+    legacy: {
+      type: 'boolean',
+      description: 'Generate a legacy compatibility template for legacy kinds such as agent or workflow',
+      default: false,
+    },
   },
   async run({ args }) {
     if (!isAutomationObjectKind(args.kind)) {
@@ -37,8 +42,11 @@ export default defineCommand({
     }
 
     if (args.template || !args.id) {
-      const target = exportAutomationTemplate(args.kind, args.out || undefined)
-      consola.success('Wrote %s template to %s', args.kind, target)
+      if ((args.kind === 'agent' || args.kind === 'workflow') && !args.legacy) {
+        consola.warn('`%s` is legacy terminology; generating canonical `%s` instead.', args.kind, canonicalAutomationKind(args.kind))
+      }
+      const target = exportAutomationTemplate(args.kind, args.out || undefined, process.cwd(), { legacy: args.legacy })
+      consola.success('Wrote %s template to %s', args.legacy ? args.kind : canonicalAutomationKind(args.kind), target)
       return
     }
 
