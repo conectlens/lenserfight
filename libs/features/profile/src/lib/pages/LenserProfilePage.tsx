@@ -299,10 +299,13 @@ export const LenserProfilePage: React.FC = () => {
 
   useEffect(() => {
     if (!viewedProfile || !activeStandardTab) return
+    // AI profiles render AILenserProfilePage which owns its own data fetching.
+    // Skip standard-tab fetching here to avoid duplicate threads/lenses/actions calls.
+    if (viewedProfile.type === 'ai') return
     if (!tabCache[activeStandardTab].isLoaded) {
       fetchTabData(activeStandardTab, 0)
     }
-  }, [activeStandardTab, viewedProfile?.handle, activeWorkspace?.id])
+  }, [activeStandardTab, viewedProfile?.handle, viewedProfile?.type, activeWorkspace?.id])
 
   const lastElementRef = useCallback(
     (node: HTMLDivElement) => {
