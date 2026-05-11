@@ -16,7 +16,7 @@ Templates for long-form written content.
 
 ## Public workflows
 
-- [`blog-writer`](../../workflows/blog-writer/WORKFLOW.MD)
+- [`blog-writer`](../../colenses/blog-writer/COLENS.MD)
 
 ## Public battles
 
