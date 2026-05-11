@@ -43,43 +43,31 @@ export class SupabaseReputationRepository implements ReputationRepositoryPort {
   }
 
   async getLenserScores(lenserId: string): Promise<LenserScoreRecord[]> {
-    const { data, error } = await supabase
-      .schema('reputation')
-      .from('lenser_scores')
-      .select('id, lenser_id, score_type, score, uncertainty, computed_at')
-      .eq('lenser_id', lenserId)
-      .order('computed_at', { ascending: false })
+    const { data, error } = await supabase.rpc('fn_get_lenser_scores', {
+      p_lenser_id: lenserId,
+    })
 
     if (error) this.handleError(error)
     return (data ?? []) as LenserScoreRecord[]
   }
 
   async getContenderRating(lenserId: string, category?: string): Promise<ContenderRatingRecord | null> {
-    let query = supabase
-      .schema('reputation')
-      .from('contender_ratings')
-      .select('id, lenser_id, category, elo_rating, uncertainty, battles_played, wins, draws, losses, updated_at')
-      .eq('lenser_id', lenserId)
+    const { data, error } = await supabase.rpc('fn_get_contender_rating', {
+      p_lenser_id: lenserId,
+      p_category: category ?? null,
+    })
 
-    if (category) {
-      query = query.eq('category', category)
-    }
-
-    const { data, error } = await query.order('updated_at', { ascending: false }).limit(1).maybeSingle()
     if (error) this.handleError(error)
-    return data as ContenderRatingRecord | null
+    return (data?.[0] ?? null) as ContenderRatingRecord | null
   }
 
   async getJudgeCalibration(lenserId: string): Promise<JudgeCalibrationRecord | null> {
-    const { data, error } = await supabase
-      .schema('reputation')
-      .from('judge_calibrations')
-      .select('id, lenser_id, calibration_score, total_judgments, agreement_rate, kappa_score, updated_at')
-      .eq('lenser_id', lenserId)
-      .maybeSingle()
+    const { data, error } = await supabase.rpc('fn_get_judge_calibration', {
+      p_lenser_id: lenserId,
+    })
 
     if (error) this.handleError(error)
-    return data as JudgeCalibrationRecord | null
+    return (data?.[0] ?? null) as JudgeCalibrationRecord | null
   }
 
   async getEloLeaderboard(limit = 50, offset = 0): Promise<EloLeaderboardEntry[]> {

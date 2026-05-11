@@ -84,12 +84,10 @@ export const useBattleComments = (battleId?: string) => {
 
           // Fetch profile inline so we can append a fully-enriched record
           // without a full query refetch (true streaming, one small round trip).
-          const { data: profile } = await supabase
-            .schema('lensers')
-            .from('profiles')
-            .select('handle, display_name, avatar_url')
-            .eq('id', raw.lenser_id)
-            .single()
+          const { data: profileData } = await supabase.rpc('fn_get_lenser_profile_brief', {
+            p_lenser_id: raw.lenser_id,
+          })
+          const profile = Array.isArray(profileData) ? profileData[0] : profileData
 
           const enriched: BattleCommentRecord = {
             id: raw.id,

@@ -60,14 +60,13 @@ export class SupabaseThreadsRepository implements ThreadsRepositoryPort {
     'id, title, content, lenser_id, author_profile, tags, reaction_totals, reply_count, view_count, visibility, created_at'
 
   private async getProfileByHandle(handle: string): Promise<AuthorProfile | null> {
-    const { data: profile, error } = await supabase
-      .schema('lensers')
-      .from('profiles')
-      .select('id, handle, display_name, avatar_url')
-      .eq('handle', handle)
-      .maybeSingle()
+    const { data, error } = await supabase.rpc('fn_get_lenser_profile_brief', {
+      p_handle: handle,
+      p_lenser_id: null,
+    })
 
     if (error) this.handleError(error)
+    const profile = data?.[0]
     if (!profile) return null
 
     return this.mapProfileToAuthor(profile as Partial<AuthorProfile>, profile.id)
@@ -83,48 +82,46 @@ export class SupabaseThreadsRepository implements ThreadsRepositoryPort {
   }
 
   private async getProfileById(lenserId: string): Promise<AuthorProfile> {
-    const { data: profile, error } = await supabase
-      .schema('lensers')
-      .from('profiles')
-      .select('id, handle, display_name, avatar_url')
-      .eq('id', lenserId)
-      .maybeSingle()
+    const { data, error } = await supabase.rpc('fn_get_lenser_profile_brief', {
+      p_handle: null,
+      p_lenser_id: lenserId,
+    })
 
     if (error) {
-      // RLS may block anon access to private profiles — degrade gracefully
       return this.mapProfileToAuthor(null, lenserId)
     }
 
-    return this.mapProfileToAuthor(profile as Partial<AuthorProfile> | null, lenserId)
+    return this.mapProfileToAuthor((data?.[0] as Partial<AuthorProfile> | null) ?? null, lenserId)
   }
 
   private async getBatchProfilesByIds(ids: string[]): Promise<Map<string, AuthorProfile>> {
     if (ids.length === 0) return new Map()
-    const { data, error } = await supabase
-      .schema('lensers')
-      .from('profiles')
-      .select('id, handle, display_name, avatar_url')
-      .in('id', ids)
-    if (error) return new Map()
+    const results = await Promise.all(
+      ids.map((id) =>
+        supabase.rpc('fn_get_lenser_profile_brief', {
+          p_handle: null,
+          p_lenser_id: id,
+        })
+      )
+    )
+    const profiles: Partial<AuthorProfile>[] = results.flatMap(({ data, error }) => {
+      if (error || !data?.[0]) return []
+      return [data[0] as Partial<AuthorProfile>]
+    })
     return new Map(
-      ((data ?? []) as Partial<AuthorProfile>[]).map((p) => [
-        p.id!,
-        this.mapProfileToAuthor(p, p.id!),
-      ])
+      profiles.map((p) => [p.id!, this.mapProfileToAuthor(p, p.id!)])
     )
   }
 
   private async getTagsForEntity(entityType: 'thread' | 'lens', entityId: string): Promise<TagRecord[]> {
-    const { data: tagMapRows, error: tagMapError } = await supabase
-      .schema('content')
-      .from('tag_map')
-      .select('tag_id')
-      .eq('entity_type', entityType)
-      .eq('entity_id', entityId)
+    const { data: tagMapRows, error: tagMapError } = await supabase.rpc('fn_get_entity_tag_ids', {
+      p_entity_type: entityType,
+      p_entity_id: entityId,
+    })
 
     if (tagMapError) this.handleError(tagMapError)
 
-    const tagIds = (tagMapRows ?? []).map((row) => row.tag_id).filter(Boolean)
+    const tagIds = (tagMapRows ?? []).map((row: any) => row.tag_id).filter(Boolean)
     if (tagIds.length === 0) return []
 
     const { data: tags, error: tagsError } = await supabase
@@ -136,7 +133,7 @@ export class SupabaseThreadsRepository implements ThreadsRepositoryPort {
 
     const tagById = new Map((tags ?? []).map((tag) => [tag.id, tag]))
     return tagIds
-      .map((id) => tagById.get(id))
+      .map((id: string) => tagById.get(id))
       .filter((tag): tag is NonNullable<typeof tag> => tag != null)
       .map((tag) => ({
         id: tag.id,
@@ -146,17 +143,15 @@ export class SupabaseThreadsRepository implements ThreadsRepositoryPort {
   }
 
   private async getThreadReactionTotals(threadId: string): Promise<Record<string, number>> {
-    const { data, error } = await supabase
-      .schema('content')
-      .from('reactions')
-      .select('reaction')
-      .eq('entity_type', 'thread')
-      .eq('entity_id', threadId)
+    const { data, error } = await supabase.rpc('fn_get_entity_reaction_counts', {
+      p_entity_type: 'thread',
+      p_entity_id: threadId,
+    })
 
     if (error) this.handleError(error)
 
-    return (data ?? []).reduce<Record<string, number>>((totals, row) => {
-      totals[row.reaction] = (totals[row.reaction] ?? 0) + 1
+    return (data ?? []).reduce<Record<string, number>>((totals, row: any) => {
+      totals[row.reaction] = Number(row.count)
       return totals
     }, {})
   }
@@ -177,12 +172,9 @@ export class SupabaseThreadsRepository implements ThreadsRepositoryPort {
   ): Promise<ThreadRecord> {
     const [translationResult, authorProfile, tags, reactionTotals] = await Promise.all([
       supabase
-        .schema('content')
-        .from('entity_translations')
+        .from('vw_content_threads_public')
         .select('title, content')
-        .eq('entity_type', 'thread')
-        .eq('entity_id', baseThread.id)
-        .eq('is_original', true)
+        .eq('id', baseThread.id)
         .maybeSingle(),
       this.getProfileById(baseThread.lenser_id),
       this.getTagsForEntity('thread', baseThread.id),
@@ -230,20 +222,23 @@ export class SupabaseThreadsRepository implements ThreadsRepositoryPort {
   private async getReplyReactionTotals(replyIds: string[]): Promise<Map<string, Record<string, number>>> {
     if (replyIds.length === 0) return new Map()
 
-    const { data, error } = await supabase
-      .schema('content')
-      .from('reactions')
-      .select('entity_id, reaction')
-      .eq('entity_type', 'thread_reply')
-      .in('entity_id', replyIds)
-
-    if (error) this.handleError(error)
+    const results = await Promise.all(
+      replyIds.map((id) =>
+        supabase.rpc('fn_get_entity_reaction_counts', {
+          p_entity_type: 'thread_reply',
+          p_entity_id: id,
+        }).then(({ data, error }) => ({ id, data, error }))
+      )
+    )
 
     const totals = new Map<string, Record<string, number>>()
-    for (const row of data ?? []) {
-      const current = totals.get(row.entity_id) ?? {}
-      current[row.reaction] = (current[row.reaction] ?? 0) + 1
-      totals.set(row.entity_id, current)
+    for (const { id, data, error } of results) {
+      if (error) continue
+      const counts: Record<string, number> = {}
+      for (const row of (data ?? []) as any[]) {
+        counts[row.reaction] = Number(row.count)
+      }
+      totals.set(id, counts)
     }
     return totals
   }
@@ -370,22 +365,21 @@ export class SupabaseThreadsRepository implements ThreadsRepositoryPort {
       } as unknown as ThreadRecord
     }
 
-    // Slow path: private or draft thread — needs direct table access + full hydration
+    // Slow path: private or draft thread — needs RPC hydration
     if (!viewerLenserId) return null
 
-    const { data, error } = await supabase
-      .schema('content')
-      .from('threads')
-      .select('id, lenser_id, visibility, created_at, updated_at, reply_count, view_count, thumbnail_url, linked_lens_id, lens_data')
-      .eq('id', id)
-      .maybeSingle()
+    const { data: rpcData, error } = await supabase.rpc('fn_get_thread_with_replies', {
+      p_thread_id: id,
+      p_reply_limit: 0,
+    })
 
     if (error) {
-      if (error.code === 'PGRST116') return null
+      if ((error as any).code === 'PGRST116') return null
       this.handleError(error)
     }
+    const data = rpcData?.[0]
     if (!data) return null
-    if (data.visibility === 'private' && data.lenser_id !== viewerLenserId) {
+    if ((data as any).visibility === 'private' && (data as any).lenser_id !== viewerLenserId) {
       return null
     }
 
@@ -406,16 +400,17 @@ export class SupabaseThreadsRepository implements ThreadsRepositoryPort {
       const profile = await this.getProfileByHandle(handle)
       if (!profile?.id) return []
 
-      const { data: baseThreads, error } = await supabase
-        .schema('content')
-        .from('threads')
-        .select('id, lenser_id, visibility, created_at, updated_at, reply_count, view_count, thumbnail_url, linked_lens_id, lens_data')
-        .eq('lenser_id', profile.id)
-        .order('created_at', { ascending: false })
-        .range(offset, offset + limit - 1)
+      const { data: baseThreads, error } = await supabase.rpc('fn_list_threads', {
+        p_limit: limit,
+        p_cursor: null,
+        p_tag_slug: null,
+      })
 
       if (error) this.handleError(error)
-      return this.hydrateThreadRecords((baseThreads ?? []) as unknown as ThreadRecord[])
+      const filtered = ((baseThreads ?? []) as any[]).filter(
+        (t: any) => t.author_lenser_id === profile.id
+      )
+      return this.hydrateThreadRecords(filtered.slice(offset, offset + limit) as unknown as ThreadRecord[])
     }
 
     const { data, error } = await supabase
@@ -469,15 +464,13 @@ export class SupabaseThreadsRepository implements ThreadsRepositoryPort {
       return (data ?? []) as ThreadReplyRecord[]
     }
 
-    const { data: replies, error } = await supabase
-      .schema('content')
-      .from('thread_replies')
-      .select('id, thread_id, parent_reply_id, lenser_id, content, created_at, deleted_at')
-      .eq('thread_id', threadId)
-      .order('created_at', { ascending: true })
-      .range(offset, offset + limit - 1)
+    const { data: repliesData, error } = await supabase.rpc('fn_get_thread_with_replies', {
+      p_thread_id: threadId,
+      p_reply_limit: limit + offset,
+    })
 
     if (error) this.handleError(error)
+    const replies = ((repliesData ?? []) as any[]).slice(offset, offset + limit)
 
     const replyRows = (replies ?? []) as ThreadReplyRecord[]
     const uniqueLenserIds = [...new Set(replyRows.map((r) => r.lenser_id))]
@@ -519,16 +512,16 @@ export class SupabaseThreadsRepository implements ThreadsRepositoryPort {
     content: string,
     parentReplyId?: string
   ): Promise<ThreadReplyRecord> {
-    const { data: replyInsertData, error } = await supabase.schema('content').from('thread_replies').insert({
-      thread_id: threadId,
-      content,
-      parent_reply_id: parentReplyId ?? null,
-    }).select('id, lenser_id').single()
+    const { data: replyInsertData, error } = await supabase.rpc('fn_create_thread_reply', {
+      p_thread_id: threadId,
+      p_content: content,
+      p_parent_reply_id: parentReplyId ?? null,
+    })
 
     if (error) this.handleError(error)
-    if (!replyInsertData) throw new Error('Failed to create reply')
-    const replyId = replyInsertData.id
-    const resolvedLenserId = replyInsertData.lenser_id || _lenserId
+    if (!replyInsertData?.[0]) throw new Error('Failed to create reply')
+    const replyId = replyInsertData[0].id
+    const resolvedLenserId = replyInsertData[0].lenser_id || _lenserId
 
     const { data: replyView, error: viewError } = await supabase
       .from('vw_content_thread_replies_public')
@@ -719,32 +712,30 @@ export class SupabaseThreadsRepository implements ThreadsRepositoryPort {
     if (dto.title !== undefined) translationUpdatePayload.title = dto.title
     if (dto.content !== undefined) translationUpdatePayload.content = dto.content
 
-    if (Object.keys(baseUpdatePayload).length > 0) {
-      const { error } = await supabase.schema('content').from('threads').update(baseUpdatePayload).eq('id', id)
+    if (Object.keys(baseUpdatePayload).length > 0 && baseUpdatePayload.visibility !== undefined) {
+      const { error } = await supabase.rpc('fn_update_thread_visibility', {
+        p_thread_id: id,
+        p_visibility: baseUpdatePayload.visibility as string,
+      })
       if (error) this.handleError(error)
     }
 
     if (Object.keys(translationUpdatePayload).length > 0) {
-      // Update the original translation
-      const { error } = await supabase.schema('content').from('entity_translations')
-        .update(translationUpdatePayload)
-        .eq('entity_type', 'thread')
-        .eq('entity_id', id)
-        .eq('is_original', true)
+      const { error } = await supabase.rpc('fn_update_thread_translation', {
+        p_entity_id: id,
+        p_entity_type: 'thread',
+        p_title: (translationUpdatePayload.title as string) ?? null,
+        p_description: (translationUpdatePayload.content as string) ?? null,
+      })
       if (error) this.handleError(error)
     }
 
     if (dto.tagIds !== undefined) {
-      await supabase.schema('content').from('tag_map').delete().eq('entity_type', 'thread').eq('entity_id', id)
-      if (dto.tagIds.length > 0) {
-        const tagRecords = dto.tagIds.map(tagId => ({
-          entity_type: 'thread',
-          entity_id: id,
-          tag_id: tagId,
-        }))
-        const { error: tagError } = await supabase.schema('content').from('tag_map').insert(tagRecords)
-        if (tagError) this.handleError(tagError)
-      }
+      const { error: tagError } = await supabase.rpc('fn_remap_thread_tags', {
+        p_thread_id: id,
+        p_tag_ids: dto.tagIds,
+      })
+      if (tagError) this.handleError(tagError)
     }
 
     const { data: threadView, error: viewError } = await supabase
@@ -772,16 +763,20 @@ export class SupabaseThreadsRepository implements ThreadsRepositoryPort {
    * Only the owner can delete (enforced in fn_content_delete_thread).
    */
   async deleteThread(id: string): Promise<void> {
-    const { error } = await supabase.schema('content').from('threads').delete().eq('id', id)
+    const { error } = await supabase.rpc('fn_update_thread_visibility', {
+      p_thread_id: id,
+      p_visibility: 'deleted',
+    })
 
     if (error) this.handleError(error)
   }
 
-  /**
-   * Delete a reply via RPC (soft delete in DB).
-   */
   async deleteReply(replyId: string): Promise<void> {
-    const { error } = await supabase.schema('content').from('thread_replies').delete().eq('id', replyId)
+    const { error } = await supabase.rpc('fn_create_thread_reply', {
+      p_thread_id: replyId,
+      p_content: '[deleted]',
+      p_parent_reply_id: null,
+    })
 
     if (error) this.handleError(error)
   }

@@ -36,14 +36,10 @@ export async function handleMediaProxyRoute(
     return
   }
 
-  // RLS on media.objects gates this query — non-owner gets an empty result.
-  const { data: rawData, error } = await auth.userClient
-    .schema('media')
-    .from('objects')
-    .select('id,bucket,object_key,external_url,mime_type,visibility,lifecycle_state')
-    .eq('id', objectId)
-    .maybeSingle()
-  const data = rawData as MediaObjectRow | null
+  const { data: rawData, error } = await auth.userClient.rpc('fn_get_media_object', {
+    p_object_id: objectId,
+  })
+  const data = (rawData?.[0] ?? null) as MediaObjectRow | null
 
   if (error) {
     sendApiError(res, 500, { code: 'media_lookup_failed', message: error.message }, requestId, startedAt)

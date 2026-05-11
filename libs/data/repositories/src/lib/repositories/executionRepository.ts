@@ -94,7 +94,7 @@ export class SupabaseExecutionRepository implements ExecutionRepositoryPort {
     limit = 20,
     offset = 0,
   ): Promise<LensExecutionHistoryItem[]> {
-    const { data, error } = await supabase.schema('execution').rpc('fn_get_lens_execution_history', {
+    const { data, error } = await supabase.rpc('fn_get_lens_execution_history', {
       p_lens_id: lensId,
       p_limit: limit,
       p_offset: offset,
@@ -129,30 +129,20 @@ export class SupabaseExecutionRepository implements ExecutionRepositoryPort {
   }
 
   async getRunById(runId: string): Promise<ExecutionRun | null> {
-    const { data, error } = await supabase
-      .schema('execution')
-      .from('runs')
-      .select(
-        'id, request_id, status, model_id, provider_request_id, execution_hash, input_hash, output_hash, started_at, completed_at, latency_ms, cost_estimate, token_input, token_output, credit_cost, billing_status, error_code, error_message, created_at',
-      )
-      .eq('id', runId)
-      .maybeSingle()
+    const { data, error } = await supabase.rpc('fn_get_run_details', {
+      p_run_id: runId,
+    })
 
     if (error) this.handleError(error)
-    if (!data) return null
-    return this.mapRun(data as Record<string, unknown>)
+    const row = (Array.isArray(data) ? data[0] : data) as Record<string, unknown> | undefined
+    if (!row) return null
+    return this.mapRun(row)
   }
 
   async getArtifactsForRun(runId: string): Promise<ExecutionArtifact[]> {
-    const { data, error } = await supabase
-      .schema('execution')
-      .from('artifacts')
-      .select(
-        'id, run_id, artifact_kind, content_text, content_json, visibility, is_primary_output, media_object_id, resource_id, output_type, created_at',
-      )
-      .eq('run_id', runId)
-      .order('is_primary_output', { ascending: false })
-      .order('created_at', { ascending: true })
+    const { data, error } = await supabase.rpc('fn_get_execution_artifacts', {
+      p_run_id: runId,
+    })
 
     if (error) this.handleError(error)
     return ((data ?? []) as Record<string, unknown>[]).map((r) => this.mapArtifact(r))
@@ -161,17 +151,14 @@ export class SupabaseExecutionRepository implements ExecutionRepositoryPort {
   async pollRunStatus(
     runId: string,
   ): Promise<Pick<ExecutionRun, 'id' | 'status' | 'completedAt' | 'errorCode'>> {
-    const { data, error } = await supabase
-      .schema('execution')
-      .from('runs')
-      .select('id, status, completed_at, error_code')
-      .eq('id', runId)
-      .maybeSingle()
+    const { data, error } = await supabase.rpc('fn_get_run_details', {
+      p_run_id: runId,
+    })
 
     if (error) this.handleError(error)
-    if (!data) throw new Error(`Run ${runId} not found`)
+    const row = (Array.isArray(data) ? data[0] : data) as Record<string, unknown> | undefined
+    if (!row) throw new Error(`Run ${runId} not found`)
 
-    const row = data as Record<string, unknown>
     return {
       id: row.id as string,
       status: row.status as ExecutionRunStatus,
@@ -190,7 +177,7 @@ export class SupabaseExecutionRepository implements ExecutionRepositoryPort {
   }
 
   async persistLocalExecution(dto: PersistLocalExecutionDTO): Promise<string> {
-    const { data, error } = await supabase.schema('execution').rpc('fn_persist_local_execution', {
+    const { data, error } = await supabase.rpc('fn_persist_local_execution', {
       p_lens_id: dto.lensId,
       p_version_id: dto.versionId ?? null,
       p_provider: dto.provider,
