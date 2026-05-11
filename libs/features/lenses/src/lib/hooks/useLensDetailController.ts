@@ -3,6 +3,7 @@ import { useEffect, useRef, useMemo, useState } from 'react'
 
 import { useAuth } from '@lenserfight/features/auth'
 import { analyticsService } from '@lenserfight/infra/analytics'
+import { queryKeys } from '@lenserfight/data/cache'
 import { lensesService } from '@lenserfight/data/repositories'
 import { tagService } from '@lenserfight/data/repositories'
 import {
@@ -39,6 +40,15 @@ export const useLensDetailController = (
 
       const lensDetail = await lensesService.getLensDetail(lensId, lenser?.id)
       if (!lensDetail) throw new Error('404')
+
+      // Pre-seed dependent caches so useLatestPublishedVersion / useLensVersionDetail
+      // read from cache instead of refiring fn_get_lens_detail_bootstrap downstream.
+      const latest = lensDetail.latestPublishedVersion
+      if (latest?.id) {
+        queryClient.setQueryData(queryKeys.lensVersions.latestPublished(lensId), latest)
+        queryClient.setQueryData(queryKeys.lensVersions.detail(latest.id), latest)
+      }
+
       return lensDetail
     },
     enabled: !!lensId && !isAuthLoading && !isLenserLoading,
