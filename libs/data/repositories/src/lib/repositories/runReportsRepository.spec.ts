@@ -71,24 +71,29 @@ describe('SupabaseRunReportsRepository', () => {
   })
 
   describe('listRunReports', () => {
-    it('queries run_reports by ai_lenser_id ordered by created_at desc', async () => {
-      mockLimit.mockResolvedValue({ data: [], error: null })
+    it('calls fn_list_run_reports with ai_lenser_id and default limit 100', async () => {
+      mockRpc.mockResolvedValue({ data: [], error: null })
       await repo.listRunReports('agent-1', { limit: 10 })
-      expect(mockSchema).toHaveBeenCalledWith('agents')
-      expect(mockFrom).toHaveBeenCalledWith('run_reports')
-      expect(mockEq).toHaveBeenCalledWith('ai_lenser_id', 'agent-1')
-      expect(mockOrder).toHaveBeenCalledWith('created_at', { ascending: false })
-      expect(mockLimit).toHaveBeenCalledWith(10)
+      expect(mockRpc).toHaveBeenCalledWith('fn_list_run_reports', {
+        p_ai_lenser_id: 'agent-1',
+        p_limit: 10,
+        p_cursor: null,
+      })
     })
 
-    it('filters by outcome when provided', async () => {
-      mockLimit.mockResolvedValue({ data: [], error: null })
-      await repo.listRunReports('agent-1', { outcome: 'failed' })
-      expect(mockEq).toHaveBeenCalledWith('outcome', 'failed')
+    it('filters by outcome in JavaScript after RPC', async () => {
+      const rows = [
+        { outcome: 'failed', id: '1' },
+        { outcome: 'completed', id: '2' },
+      ]
+      mockRpc.mockResolvedValue({ data: rows, error: null })
+      const result = await repo.listRunReports('agent-1', { outcome: 'failed' })
+      expect(result).toHaveLength(1)
+      expect((result[0] as Record<string, unknown>)['outcome']).toBe('failed')
     })
 
     it('throws on supabase error', async () => {
-      mockOrder.mockResolvedValue({ data: null, error: new Error('db error') })
+      mockRpc.mockResolvedValue({ data: null, error: new Error('db error') })
       await expect(repo.listRunReports('agent-1')).rejects.toThrow('db error')
     })
   })
