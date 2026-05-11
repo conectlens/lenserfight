@@ -94,6 +94,8 @@ export interface LensDetailViewModel extends LensViewModel {
   params: LensParam[]
   /** ID of the latest (non-archived) version — used to fetch version params when editing. */
   latestVersionId?: string | null
+  /** Full latest published version (template + params) from the same bootstrap RPC. Avoids a follow-up fetch. */
+  latestPublishedVersion?: LensVersion | null
 }
 
 export interface CreateLensDTO {
