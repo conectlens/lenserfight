@@ -23,13 +23,11 @@ export function BattleReplayPage() {
     staleTime: 1000 * 60 * 5,
     queryFn: async () => {
       if (!slug) return null
-      const { data: row, error: lookupError } = await supabase
-        .schema('battles')
-        .from('battles')
-        .select('id, title')
-        .eq('slug', slug)
-        .single()
+      const { data, error: lookupError } = await supabase.rpc('fn_get_battle_by_slug', {
+        p_slug: slug,
+      })
       if (lookupError) throw new Error(lookupError.message)
+      const row = Array.isArray(data) ? data[0] : data
       return row ? { id: row.id as string, title: (row.title as string) ?? slug } : null
     },
   })
