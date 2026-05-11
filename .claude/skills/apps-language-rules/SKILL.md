@@ -14,10 +14,21 @@ description: Define i18n and internalization rules for forum (React/i18next) and
 - Reviewing React components for hardcoded strings that bypass i18next
 
 ## Supported languages
-| Code | Name    | Default? |
-|------|---------|----------|
-| `en` | English | ✅ Yes   |
-| `tr` | Türkçe  | No       |
+| Code | Name | Default? | App locale files | Docs status |
+|------|------|----------|-----------------|-------------|
+| `en` | English | ✅ Yes | `en.json` | Complete |
+| `tr` | Türkçe | No | `tr.json` | WIP |
+| `es` | Español | No | not yet | Stub |
+| `fr` | Français | No | not yet | Stub |
+| `de` | Deutsch | No | not yet | Stub |
+| `zh` | 中文 | No | not yet | Stub |
+| `ja` | 日本語 | No | not yet | Stub |
+| `ko` | 한국어 | No | not yet | Stub |
+| `ru` | Русский | No | not yet | Stub |
+| `pt` | Português | No | not yet | Stub |
+| `it` | Italiano | No | not yet | Stub |
+
+All codes are registered in `supabase/seeds/01_core_languages.sql` and configured as VitePress locales in `apps/docs/.vitepress/config.ts`. Adding app locale JSON files is the primary contribution needed.
 
 ---
 
@@ -96,11 +107,13 @@ Bu belge yakında Türkçe olarak tam içerikle güncellenecektir.
 
 ---
 
-## Adding a new locale (beyond en/tr)
+## Adding a new locale (beyond existing 11)
 
-1. **Forum**: Add new JSON file at `apps/web/src/locales/<code>.json`. Add `{ code, label, short }` to `LANGUAGES` array in `LanguageSwitcher.tsx`. Register resource in `i18n.ts`.
-2. **Docs**: Add `<code>` entry to `locales` in `config.ts`. Create `docs/<code>/` directory. Add `hreflang` to `head`.
-3. **SEO**: Add `<xhtml:link>` hreflang entries to `apps/web/public/sitemap.xml`.
+1. **Seed**: Add `('code', 'Name', 'NativeName', 'ltr', true)` to `supabase/seeds/01_core_languages.sql`.
+2. **Arena**: Add `apps/arena/src/locales/<code>.json` mirroring `en.json`. Register in `apps/arena/src/i18n.ts`.
+3. **Web**: Add `apps/web/src/locales/<code>.json` mirroring `en.json`. Register in `apps/web/src/i18n.ts`.
+4. **Docs**: Add `<code>` entry to `locales{}` in `config.ts`. Create `docs/<code>/index.md` and `docs/<code>/tutorials/getting-started/overview.md`. Add `hreflang` to `head[]`. Update `inLanguage` in JSON-LD.
+5. **Full step-by-step**: see `docs/how-to/contributors/i18n-guide.md` and `.claude/skills/language-integrator/SKILL.md`.
 
 ## Load only when needed
 - [i18n and hreflang reference](references/REFERENCE.md)
