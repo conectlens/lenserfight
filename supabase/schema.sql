@@ -24675,6 +24675,32 @@ COMMENT ON FUNCTION "public"."fn_get_lens_detail_bootstrap"("p_lens_id" "uuid") 
 
 
 
+CREATE OR REPLACE FUNCTION "public"."fn_get_lens_execution_history"("p_lens_id" "uuid", "p_limit" integer DEFAULT 20, "p_offset" integer DEFAULT 0) RETURNS TABLE("request_id" "uuid", "lens_id" "uuid", "version_id" "uuid", "version_number" integer, "model_id" "uuid", "model_key" "text", "provider_key" "text", "funding_source" "text", "run_id" "uuid", "run_status" "text", "latency_ms" integer, "token_input" integer, "token_output" integer, "credit_cost" bigint, "created_at" timestamp with time zone)
+    LANGUAGE "plpgsql" STABLE SECURITY DEFINER
+    SET "search_path" TO 'public', 'execution', 'lenses', 'ai', 'lensers', 'auth'
+    AS $$
+DECLARE
+  v_limit  integer := LEAST(GREATEST(COALESCE(p_limit,  20), 1), 100);
+  v_offset integer := GREATEST(COALESCE(p_offset, 0), 0);
+BEGIN
+  IF p_lens_id IS NULL THEN
+    RETURN;
+  END IF;
+
+  RETURN QUERY
+  SELECT *
+  FROM execution.fn_get_lens_execution_history(p_lens_id, v_limit, v_offset);
+END;
+$$;
+
+
+ALTER FUNCTION "public"."fn_get_lens_execution_history"("p_lens_id" "uuid", "p_limit" integer, "p_offset" integer) OWNER TO "postgres";
+
+
+COMMENT ON FUNCTION "public"."fn_get_lens_execution_history"("p_lens_id" "uuid", "p_limit" integer, "p_offset" integer) IS 'Public SECURITY DEFINER wrapper exposing execution.fn_get_lens_execution_history via PostgREST. Caps p_limit to 100, p_offset to >= 0. Returns empty set (not 404) for unknown lenses or unauthenticated callers — the inner function enforces auth.';
+
+
+
 CREATE OR REPLACE FUNCTION "public"."fn_get_lens_for_execution"("p_lens_id" "uuid") RETURNS TABLE("id" "uuid", "head_version_id" "uuid")
     LANGUAGE "sql" STABLE SECURITY DEFINER
     SET "search_path" TO 'public', 'lenses'
@@ -26371,6 +26397,46 @@ $$;
 
 
 ALTER FUNCTION "public"."fn_get_workflow_schedules"("p_workflow_id" "uuid") OWNER TO "postgres";
+
+
+CREATE OR REPLACE FUNCTION "public"."fn_get_workspace_controls"("p_ai_lenser_id" "uuid", "p_limit" integer DEFAULT 50) RETURNS TABLE("run_id" "uuid", "run_type" "text", "ai_lenser_id" "uuid", "status" "text", "approval_status" "text", "total_cost" numeric, "step_count" bigint, "memory_write_count" bigint, "latest_evaluation_score" numeric, "started_at" timestamp with time zone, "completed_at" timestamp with time zone, "duration_seconds" numeric)
+    LANGUAGE "plpgsql" STABLE SECURITY DEFINER
+    SET "search_path" TO 'public', 'agents', 'lenses', 'lensers', 'auth'
+    AS $$
+DECLARE
+  v_limit integer := LEAST(GREATEST(COALESCE(p_limit, 50), 1), 200);
+BEGIN
+  IF p_ai_lenser_id IS NULL THEN
+    RETURN;
+  END IF;
+
+  RETURN QUERY
+  SELECT
+    v.run_id,
+    v.run_type,
+    v.ai_lenser_id,
+    v.status,
+    v.approval_status,
+    v.total_cost,
+    v.step_count,
+    v.memory_write_count,
+    v.latest_evaluation_score,
+    v.started_at,
+    v.completed_at,
+    v.duration_seconds
+  FROM agents.v_run_unified v
+  WHERE v.ai_lenser_id = p_ai_lenser_id
+  ORDER BY v.started_at DESC NULLS LAST
+  LIMIT v_limit;
+END;
+$$;
+
+
+ALTER FUNCTION "public"."fn_get_workspace_controls"("p_ai_lenser_id" "uuid", "p_limit" integer) OWNER TO "postgres";
+
+
+COMMENT ON FUNCTION "public"."fn_get_workspace_controls"("p_ai_lenser_id" "uuid", "p_limit" integer) IS 'Public SECURITY DEFINER wrapper around agents.v_run_unified. Returns up to p_limit (max 200, default 50) unified runs for the given AI agent. RLS enforcement is via agents.can_manage_ai_lenser inside the view. Returns empty set instead of 404/500 for unknown or inaccessible agents.';
+
 
 
 CREATE OR REPLACE FUNCTION "public"."fn_get_workspace_settings"("p_ai_lenser_id" "uuid") RETURNS "jsonb"
@@ -57960,6 +58026,12 @@ GRANT ALL ON FUNCTION "public"."fn_get_lens_detail_bootstrap"("p_lens_id" "uuid"
 
 
 
+GRANT ALL ON FUNCTION "public"."fn_get_lens_execution_history"("p_lens_id" "uuid", "p_limit" integer, "p_offset" integer) TO "anon";
+GRANT ALL ON FUNCTION "public"."fn_get_lens_execution_history"("p_lens_id" "uuid", "p_limit" integer, "p_offset" integer) TO "authenticated";
+GRANT ALL ON FUNCTION "public"."fn_get_lens_execution_history"("p_lens_id" "uuid", "p_limit" integer, "p_offset" integer) TO "service_role";
+
+
+
 GRANT ALL ON FUNCTION "public"."fn_get_lens_for_execution"("p_lens_id" "uuid") TO "anon";
 GRANT ALL ON FUNCTION "public"."fn_get_lens_for_execution"("p_lens_id" "uuid") TO "authenticated";
 GRANT ALL ON FUNCTION "public"."fn_get_lens_for_execution"("p_lens_id" "uuid") TO "service_role";
@@ -58307,6 +58379,12 @@ GRANT ALL ON FUNCTION "public"."fn_get_workflow_schedule_history"("p_schedule_id
 GRANT ALL ON FUNCTION "public"."fn_get_workflow_schedules"("p_workflow_id" "uuid") TO "anon";
 GRANT ALL ON FUNCTION "public"."fn_get_workflow_schedules"("p_workflow_id" "uuid") TO "authenticated";
 GRANT ALL ON FUNCTION "public"."fn_get_workflow_schedules"("p_workflow_id" "uuid") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."fn_get_workspace_controls"("p_ai_lenser_id" "uuid", "p_limit" integer) TO "anon";
+GRANT ALL ON FUNCTION "public"."fn_get_workspace_controls"("p_ai_lenser_id" "uuid", "p_limit" integer) TO "authenticated";
+GRANT ALL ON FUNCTION "public"."fn_get_workspace_controls"("p_ai_lenser_id" "uuid", "p_limit" integer) TO "service_role";
 
 
 
