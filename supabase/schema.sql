@@ -43,6 +43,16 @@ CREATE SCHEMA IF NOT EXISTS "audit";
 ALTER SCHEMA "audit" OWNER TO "postgres";
 
 
+CREATE SCHEMA IF NOT EXISTS "authz";
+
+
+ALTER SCHEMA "authz" OWNER TO "postgres";
+
+
+COMMENT ON SCHEMA "authz" IS 'Private schema for device approval requests and time-bounded developer tokens. Not exposed via PostgREST; clients use public RPC wrappers only.';
+
+
+
 CREATE SCHEMA IF NOT EXISTS "automation";
 
 
@@ -63,6 +73,12 @@ CREATE SCHEMA IF NOT EXISTS "benchmark";
 
 
 ALTER SCHEMA "benchmark" OWNER TO "postgres";
+
+
+CREATE SCHEMA IF NOT EXISTS "billing";
+
+
+ALTER SCHEMA "billing" OWNER TO "postgres";
 
 
 CREATE SCHEMA IF NOT EXISTS "connectors";
@@ -143,6 +159,12 @@ CREATE EXTENSION IF NOT EXISTS "pg_net" WITH SCHEMA "extensions";
 
 
 
+CREATE SCHEMA IF NOT EXISTS "organizations";
+
+
+ALTER SCHEMA "organizations" OWNER TO "postgres";
+
+
 CREATE SCHEMA IF NOT EXISTS "platform";
 
 
@@ -173,6 +195,12 @@ ALTER SCHEMA "tenancy" OWNER TO "postgres";
 
 COMMENT ON SCHEMA "tenancy" IS 'Workspace tenancy: workspaces, members, roles. Every tenant-owned resource references a workspace_id.';
 
+
+
+CREATE SCHEMA IF NOT EXISTS "wallet";
+
+
+ALTER SCHEMA "wallet" OWNER TO "postgres";
 
 
 CREATE SCHEMA IF NOT EXISTS "xp";
@@ -390,6 +418,27 @@ COMMENT ON TYPE "audit"."security_event_type_enum" IS 'Known security event type
 
 
 
+CREATE TYPE "authz"."developer_token_status_enum" AS ENUM (
+    'active',
+    'revoked',
+    'expired'
+);
+
+
+ALTER TYPE "authz"."developer_token_status_enum" OWNER TO "postgres";
+
+
+CREATE TYPE "authz"."device_approval_request_status_enum" AS ENUM (
+    'pending',
+    'approved',
+    'exchanged',
+    'expired'
+);
+
+
+ALTER TYPE "authz"."device_approval_request_status_enum" OWNER TO "postgres";
+
+
 CREATE TYPE "battles"."battle_status_enum" AS ENUM (
     'draft',
     'open',
@@ -501,6 +550,29 @@ ALTER TYPE "battles"."voter_eligibility_enum" OWNER TO "postgres";
 
 COMMENT ON TYPE "battles"."voter_eligibility_enum" IS 'Who can cast votes in a battle. lenser_only: any lenser profile (not just verified). Syncs with the VotePanel frontend ELIGIBILITY_LABELS map.';
 
+
+
+CREATE TYPE "billing"."order_status_enum" AS ENUM (
+    'pending',
+    'failed',
+    'paid',
+    'refunded',
+    'partial_refund',
+    'fraudulent'
+);
+
+
+ALTER TYPE "billing"."order_status_enum" OWNER TO "postgres";
+
+
+CREATE TYPE "billing"."product_status_enum" AS ENUM (
+    'draft',
+    'published',
+    'archived'
+);
+
+
+ALTER TYPE "billing"."product_status_enum" OWNER TO "postgres";
 
 
 CREATE TYPE "content"."content_status" AS ENUM (
@@ -764,6 +836,51 @@ COMMENT ON TYPE "lensers"."wallet_mode_enum" IS 'Wallet/billing mode for a lense
 
 
 
+CREATE TYPE "organizations"."address_type_enum" AS ENUM (
+    'headquarters',
+    'billing',
+    'shipping',
+    'branch'
+);
+
+
+ALTER TYPE "organizations"."address_type_enum" OWNER TO "postgres";
+
+
+CREATE TYPE "organizations"."member_role_enum" AS ENUM (
+    'owner',
+    'admin',
+    'manager',
+    'billing',
+    'member',
+    'viewer'
+);
+
+
+ALTER TYPE "organizations"."member_role_enum" OWNER TO "postgres";
+
+
+CREATE TYPE "organizations"."org_type_enum" AS ENUM (
+    'commercial',
+    'nonprofit',
+    'educational'
+);
+
+
+ALTER TYPE "organizations"."org_type_enum" OWNER TO "postgres";
+
+
+CREATE TYPE "organizations"."status_enum" AS ENUM (
+    'active',
+    'inactive',
+    'suspended',
+    'closed'
+);
+
+
+ALTER TYPE "organizations"."status_enum" OWNER TO "postgres";
+
+
 CREATE TYPE "public"."page_view_target_enum" AS ENUM (
     'thread',
     'thread_reply',
@@ -832,6 +949,30 @@ CREATE TYPE "status"."status_window" AS ENUM (
 
 
 ALTER TYPE "status"."status_window" OWNER TO "postgres";
+
+
+CREATE TYPE "wallet"."charge_status_enum" AS ENUM (
+    'reserved',
+    'settled',
+    'released'
+);
+
+
+ALTER TYPE "wallet"."charge_status_enum" OWNER TO "postgres";
+
+
+CREATE TYPE "wallet"."transaction_type_enum" AS ENUM (
+    'deposit',
+    'spend',
+    'refund',
+    'sponsorship_deposit',
+    'sponsorship_payout',
+    'platform_fee',
+    'adjustment'
+);
+
+
+ALTER TYPE "wallet"."transaction_type_enum" OWNER TO "postgres";
 
 
 CREATE TYPE "xp"."contribution_context_enum" AS ENUM (
@@ -1066,6 +1207,47 @@ COMMENT ON FUNCTION "agents"."fn_apply_standing_approval"() IS 'Phase Q2: BEFORE
 
 
 
+CREATE OR REPLACE FUNCTION "agents"."fn_build_lenser_prompt_context"("p_ai_lenser_id" "uuid", "p_scope" "text" DEFAULT NULL::"text", "p_limit" integer DEFAULT 20) RETURNS "text"
+    LANGUAGE "plpgsql" SECURITY DEFINER
+    SET "search_path" TO 'agents', 'public'
+    AS $$
+DECLARE
+  v_limit  integer := LEAST(GREATEST(COALESCE(p_limit, 20), 1), 50);
+  v_rows   RECORD;
+  v_lines  text[]  := ARRAY[]::text[];
+BEGIN
+  FOR v_rows IN
+    SELECT scope, source, content
+    FROM   agents.memories
+    WHERE  ai_lenser_id = p_ai_lenser_id
+      AND  is_redacted  = FALSE
+      AND  (p_scope IS NULL OR scope = p_scope)
+      AND  (expires_at IS NULL OR expires_at > now())
+    ORDER  BY created_at DESC
+    LIMIT  v_limit
+  LOOP
+    v_lines := array_append(
+      v_lines,
+      format('- (%s/%s) %s', v_rows.scope, v_rows.source, v_rows.content)
+    );
+  END LOOP;
+
+  IF array_length(v_lines, 1) IS NULL THEN
+    RETURN NULL;
+  END IF;
+
+  RETURN '## Context Memory' || E'\n' || array_to_string(v_lines, E'\n') || E'\n\n';
+END;
+$$;
+
+
+ALTER FUNCTION "agents"."fn_build_lenser_prompt_context"("p_ai_lenser_id" "uuid", "p_scope" "text", "p_limit" integer) OWNER TO "postgres";
+
+
+COMMENT ON FUNCTION "agents"."fn_build_lenser_prompt_context"("p_ai_lenser_id" "uuid", "p_scope" "text", "p_limit" integer) IS 'Phase AJ: Returns a formatted memory context block prepended to lens templates during server-side workflow execution. Returns NULL when no eligible entries exist. SECURITY DEFINER — caller must ensure p_ai_lenser_id is authorized.';
+
+
+
 CREATE OR REPLACE FUNCTION "agents"."fn_bulk_approve"("p_filters" "jsonb" DEFAULT '{}'::"jsonb") RETURNS integer
     LANGUAGE "plpgsql" SECURITY DEFINER
     SET "search_path" TO 'agents', 'lenses', 'lensers', 'public'
@@ -1172,6 +1354,59 @@ ALTER FUNCTION "agents"."fn_bulk_approve"("p_filters" "jsonb") OWNER TO "postgre
 
 
 COMMENT ON FUNCTION "agents"."fn_bulk_approve"("p_filters" "jsonb") IS 'Phase Y3: bulk-approve pending team_runs owned by the caller, filtered by jsonb {status, since, workflow_id}. Returns the count of rows transitioned. Rows the caller does not own (per agents.can_manage_ai_lenser) are silently skipped. Idempotent: only approval_status=pending rows are flipped.';
+
+
+
+CREATE OR REPLACE FUNCTION "agents"."fn_claim_team_run"("p_worker_id" "text" DEFAULT NULL::"text") RETURNS TABLE("id" "uuid", "ai_lenser_id" "uuid", "workflow_id" "uuid", "workflow_run_id" "uuid", "metadata" "jsonb")
+    LANGUAGE "plpgsql" SECURITY DEFINER
+    SET "search_path" TO 'agents', 'public'
+    AS $$
+DECLARE
+  v_id UUID;
+BEGIN
+  -- Take ONE queued team run with SKIP LOCKED so concurrent workers don't
+  -- contend. This mirrors the pattern used by execution.fn_poll_async_run.
+  SELECT tr.id INTO v_id
+  FROM agents.team_runs tr
+  WHERE tr.status = 'queued'
+    AND tr.approval_status IN ('not_required', 'approved')
+  ORDER BY tr.created_at
+  FOR UPDATE SKIP LOCKED
+  LIMIT 1;
+
+  IF v_id IS NULL THEN
+    RETURN;
+  END IF;
+
+  UPDATE agents.team_runs
+  SET status     = 'running',
+      started_at = COALESCE(started_at, now()),
+      updated_at = now(),
+      metadata   = metadata || jsonb_build_object(
+        'claimed_by', COALESCE(p_worker_id, 'unknown'),
+        'claimed_at', now()
+      )
+  WHERE id = v_id;
+
+  INSERT INTO agents.agent_run_events (team_run_id, event_type, payload)
+  VALUES (
+    v_id,
+    'dispatch_started',
+    jsonb_build_object('worker_id', COALESCE(p_worker_id, 'unknown'))
+  );
+
+  RETURN QUERY
+    SELECT tr.id, tr.ai_lenser_id, tr.workflow_id, tr.workflow_run_id, tr.metadata
+    FROM agents.team_runs tr
+    WHERE tr.id = v_id;
+END;
+$$;
+
+
+ALTER FUNCTION "agents"."fn_claim_team_run"("p_worker_id" "text") OWNER TO "postgres";
+
+
+COMMENT ON FUNCTION "agents"."fn_claim_team_run"("p_worker_id" "text") IS 'Phase AL: claims one queued agents.team_runs row using FOR UPDATE SKIP LOCKED. Transitions status=running and returns the row. Concurrent workers do not double-claim. SECURITY DEFINER; service_role only.';
 
 
 
@@ -1564,6 +1799,88 @@ ALTER FUNCTION "agents"."fn_send_team_message"("p_team_run_id" "uuid", "p_from_a
 
 
 COMMENT ON FUNCTION "agents"."fn_send_team_message"("p_team_run_id" "uuid", "p_from_agent_id" "uuid", "p_kind" "text", "p_to_agent_id" "uuid", "p_payload" "jsonb", "p_parent_id" "uuid") IS 'Phase X1: append a message to the team-run bus. SECURITY INVOKER; RLS on agents.team_messages enforces ownership. Returns the inserted id.';
+
+
+
+CREATE OR REPLACE FUNCTION "agents"."fn_start_team_run"("p_ai_lenser_id" "uuid", "p_workflow_id" "uuid", "p_inputs" "jsonb" DEFAULT '{}'::"jsonb", "p_policy" "text" DEFAULT 'auto'::"text") RETURNS "uuid"
+    LANGUAGE "plpgsql" SECURITY DEFINER
+    SET "search_path" TO 'agents', 'public'
+    AS $$
+DECLARE
+  v_team_run_id     UUID;
+  v_status          TEXT;
+  v_approval_status TEXT;
+BEGIN
+  IF p_ai_lenser_id IS NULL THEN
+    RAISE EXCEPTION 'ai_lenser_id is required'
+      USING ERRCODE = 'check_violation';
+  END IF;
+
+  IF p_policy NOT IN ('auto', 'approval_required', 'forbidden') THEN
+    RAISE EXCEPTION 'Unknown delegation policy: %', p_policy
+      USING ERRCODE = 'check_violation';
+  END IF;
+
+  -- 'forbidden' raises BEFORE any side-effect — the workflow engine surfaces
+  -- this as a node failure. The AL pgTAP suite asserts this invariant.
+  IF p_policy = 'forbidden' THEN
+    RAISE EXCEPTION 'delegation_forbidden'
+      USING ERRCODE = 'P0001',
+            HINT    = 'Workflow node delegationPolicy=forbidden';
+  END IF;
+
+  -- Map policy → (status, approval_status). Mirrors the convention used by
+  -- lenses.fn_dispatch_scheduled_workflows so downstream UI / triggers don't
+  -- need to special-case runtime vs scheduled origins.
+  IF p_policy = 'approval_required' THEN
+    v_status          := 'blocked';
+    v_approval_status := 'pending';
+  ELSE
+    v_status          := 'queued';
+    v_approval_status := 'not_required';
+  END IF;
+
+  INSERT INTO agents.team_runs (
+    ai_lenser_id,
+    workflow_id,
+    status,
+    approval_status,
+    metadata
+  )
+  VALUES (
+    p_ai_lenser_id,
+    p_workflow_id,
+    v_status,
+    v_approval_status,
+    jsonb_build_object(
+      'inputs',         p_inputs,
+      'origin',         'delegate_to_agent',
+      'delegation_policy', p_policy
+    )
+  )
+  RETURNING id INTO v_team_run_id;
+
+  -- Emit a baseline lifecycle event so the realtime UI can pick it up.
+  INSERT INTO agents.agent_run_events (team_run_id, event_type, payload)
+  VALUES (
+    v_team_run_id,
+    CASE WHEN p_policy = 'approval_required' THEN 'approval_requested' ELSE 'dispatch_queued' END,
+    jsonb_build_object(
+      'workflow_id',       p_workflow_id,
+      'delegation_policy', p_policy,
+      'requires_approval', p_policy = 'approval_required'
+    )
+  );
+
+  RETURN v_team_run_id;
+END;
+$$;
+
+
+ALTER FUNCTION "agents"."fn_start_team_run"("p_ai_lenser_id" "uuid", "p_workflow_id" "uuid", "p_inputs" "jsonb", "p_policy" "text") OWNER TO "postgres";
+
+
+COMMENT ON FUNCTION "agents"."fn_start_team_run"("p_ai_lenser_id" "uuid", "p_workflow_id" "uuid", "p_inputs" "jsonb", "p_policy" "text") IS 'Phase AL: creates an agents.team_runs row when a workflow node executes a `delegate_to_agent` action. Status mapping: auto→queued/not_required, approval_required→blocked/pending, forbidden→RAISE. SECURITY DEFINER; service_role only.';
 
 
 
@@ -3183,6 +3500,528 @@ $$;
 
 
 ALTER FUNCTION "audit"."trg_workflow_run_lifecycle_fn"() OWNER TO "postgres";
+
+
+CREATE OR REPLACE FUNCTION "authz"."fn_approve_device_request"("p_user_code" "text") RETURNS "jsonb"
+    LANGUAGE "plpgsql" SECURITY DEFINER
+    SET "search_path" TO 'pg_catalog', 'authz', 'lensers', 'auth', 'public'
+    AS $$
+DECLARE
+  v_user_id uuid := auth.uid();
+  v_lenser_id uuid := lensers.get_auth_lenser_id();
+  v_request authz.device_approval_requests%ROWTYPE;
+  v_normalized_code text := upper(replace(trim(COALESCE(p_user_code, '')), '-', ''));
+BEGIN
+  IF v_user_id IS NULL THEN
+    RAISE EXCEPTION 'Authentication required';
+  END IF;
+
+  SELECT *
+  INTO v_request
+  FROM authz.device_approval_requests
+  WHERE replace(user_code, '-', '') = v_normalized_code
+  ORDER BY created_at DESC
+  LIMIT 1
+  FOR UPDATE;
+
+  IF NOT FOUND THEN
+    RETURN jsonb_build_object(
+      'requestId', NULL,
+      'status', 'not_found',
+      'approvedAt', NULL,
+      'expiresAt', NULL
+    );
+  END IF;
+
+  IF now() > v_request.expires_at THEN
+    UPDATE authz.device_approval_requests
+    SET status = 'expired'
+    WHERE id = v_request.id
+      AND status <> 'exchanged';
+
+    RETURN jsonb_build_object(
+      'requestId', v_request.id,
+      'status', 'expired',
+      'approvedAt', v_request.approved_at,
+      'expiresAt', v_request.expires_at,
+      'label', v_request.label
+    );
+  END IF;
+
+  IF v_request.status IN ('approved', 'exchanged') THEN
+    RETURN jsonb_build_object(
+      'requestId', v_request.id,
+      'status', 'approved',
+      'approvedAt', v_request.approved_at,
+      'expiresAt', v_request.expires_at,
+      'label', v_request.label
+    );
+  END IF;
+
+  UPDATE authz.device_approval_requests
+  SET status = 'approved',
+      approved_at = COALESCE(approved_at, now()),
+      approved_by_user_id = COALESCE(approved_by_user_id, v_user_id),
+      approved_by_lenser_id = COALESCE(approved_by_lenser_id, v_lenser_id)
+  WHERE id = v_request.id;
+
+  RETURN jsonb_build_object(
+    'requestId', v_request.id,
+    'status', 'approved',
+    'approvedAt', COALESCE(v_request.approved_at, now()),
+    'expiresAt', v_request.expires_at,
+    'label', v_request.label
+  );
+END;
+$$;
+
+
+ALTER FUNCTION "authz"."fn_approve_device_request"("p_user_code" "text") OWNER TO "postgres";
+
+
+CREATE OR REPLACE FUNCTION "authz"."fn_exchange_device_approval"("p_request_id" "uuid", "p_request_secret" "text") RETURNS "jsonb"
+    LANGUAGE "plpgsql" SECURITY DEFINER
+    SET "search_path" TO 'pg_catalog', 'authz', 'lensers', 'auth', 'extensions', 'public'
+    AS $$
+DECLARE
+  v_request authz.device_approval_requests%ROWTYPE;
+  v_expected_secret_hash text;
+  v_token_plain text;
+  v_token_hash text;
+  v_token_id uuid;
+  v_token_prefix text;
+  v_token_created_at timestamptz;
+  v_token_expires_at timestamptz;
+  v_poll_interval_seconds integer := 5;
+BEGIN
+  IF auth.uid() IS NULL THEN
+    RAISE EXCEPTION 'Authentication required';
+  END IF;
+
+  SELECT *
+  INTO v_request
+  FROM authz.device_approval_requests
+  WHERE id = p_request_id
+  FOR UPDATE;
+
+  IF NOT FOUND THEN
+    RETURN jsonb_build_object(
+      'requestId', p_request_id,
+      'status', 'invalid',
+      'pollIntervalSeconds', v_poll_interval_seconds,
+      'expiresAt', NULL
+    );
+  END IF;
+
+  v_expected_secret_hash := encode(digest(COALESCE(p_request_secret, ''), 'sha256'), 'hex');
+
+  IF v_expected_secret_hash IS DISTINCT FROM v_request.request_secret_hash THEN
+    RAISE EXCEPTION 'Invalid device approval request';
+  END IF;
+
+  IF now() > v_request.expires_at THEN
+    UPDATE authz.device_approval_requests
+    SET status = 'expired'
+    WHERE id = v_request.id
+      AND status <> 'exchanged';
+
+    RETURN jsonb_build_object(
+      'requestId', v_request.id,
+      'status', 'expired',
+      'pollIntervalSeconds', v_poll_interval_seconds,
+      'expiresAt', v_request.expires_at
+    );
+  END IF;
+
+  IF v_request.status = 'pending' THEN
+    RETURN jsonb_build_object(
+      'requestId', v_request.id,
+      'status', 'pending',
+      'pollIntervalSeconds', v_poll_interval_seconds,
+      'expiresAt', v_request.expires_at,
+      'approvedAt', v_request.approved_at,
+      'label', v_request.label
+    );
+  END IF;
+
+  v_token_plain := encode(digest(v_request.id::text || ':' || p_request_secret, 'sha256'), 'hex');
+  v_token_hash := encode(digest(v_token_plain, 'sha256'), 'hex');
+  v_token_prefix := left(v_token_plain, 8);
+  v_token_expires_at := now() + make_interval(hours => v_request.requested_token_ttl_hours);
+
+  SELECT id, created_at
+  INTO v_token_id, v_token_created_at
+  FROM authz.developer_tokens
+  WHERE issued_from_request_id = v_request.id
+  LIMIT 1;
+
+  IF v_token_id IS NULL THEN
+    INSERT INTO authz.developer_tokens (
+        lenser_id,
+        label,
+        token_hash,
+        token_prefix,
+        issued_from_request_id,
+        expires_at
+    ) VALUES (
+        COALESCE(v_request.approved_by_lenser_id, v_request.requested_by_lenser_id, lensers.get_auth_lenser_id()),
+        v_request.label,
+        v_token_hash,
+        v_token_prefix,
+        v_request.id,
+        v_token_expires_at
+    )
+    RETURNING id, created_at INTO v_token_id, v_token_created_at;
+
+    UPDATE authz.device_approval_requests
+    SET status = 'exchanged',
+        exchanged_at = now(),
+        developer_token_id = v_token_id
+    WHERE id = v_request.id;
+  ELSE
+    UPDATE authz.device_approval_requests
+    SET status = 'exchanged',
+        exchanged_at = COALESCE(exchanged_at, now()),
+        developer_token_id = COALESCE(developer_token_id, v_token_id)
+    WHERE id = v_request.id;
+  END IF;
+
+  RETURN jsonb_build_object(
+    'requestId', v_request.id,
+    'status', 'approved',
+    'pollIntervalSeconds', v_poll_interval_seconds,
+    'expiresAt', v_token_expires_at,
+    'approvedAt', v_request.approved_at,
+    'tokenId', v_token_id,
+    'token', v_token_plain,
+    'label', v_request.label,
+    'tokenPrefix', v_token_prefix,
+    'createdAt', v_token_created_at
+  );
+END;
+$$;
+
+
+ALTER FUNCTION "authz"."fn_exchange_device_approval"("p_request_id" "uuid", "p_request_secret" "text") OWNER TO "postgres";
+
+
+CREATE OR REPLACE FUNCTION "authz"."fn_exchange_device_login"("p_request_id" "uuid", "p_request_secret" "text") RETURNS "jsonb"
+    LANGUAGE "plpgsql" SECURITY DEFINER
+    SET "search_path" TO 'pg_catalog', 'authz', 'extensions', 'public'
+    AS $$
+DECLARE
+  v_request        authz.device_approval_requests%ROWTYPE;
+  v_expected_hash  text;
+  v_poll_interval  integer := 5;
+BEGIN
+  SELECT *
+  INTO v_request
+  FROM authz.device_approval_requests
+  WHERE id = p_request_id
+  FOR UPDATE;
+
+  IF NOT FOUND THEN
+    RETURN jsonb_build_object(
+      'status',              'invalid',
+      'pollIntervalSeconds', v_poll_interval
+    );
+  END IF;
+
+  v_expected_hash := encode(digest(COALESCE(p_request_secret, ''), 'sha256'), 'hex');
+  IF v_expected_hash IS DISTINCT FROM v_request.request_secret_hash THEN
+    RAISE EXCEPTION 'Invalid device login request';
+  END IF;
+
+  IF v_request.status = 'exchanged' THEN
+    RETURN jsonb_build_object(
+      'status',              'invalid',
+      'pollIntervalSeconds', v_poll_interval
+    );
+  END IF;
+
+  IF now() > v_request.expires_at THEN
+    UPDATE authz.device_approval_requests
+    SET status = 'expired'
+    WHERE id = v_request.id
+      AND status <> 'exchanged';
+
+    RETURN jsonb_build_object(
+      'status',              'expired',
+      'pollIntervalSeconds', v_poll_interval,
+      'expiresAt',           v_request.expires_at
+    );
+  END IF;
+
+  IF v_request.status = 'pending' OR v_request.login_access_token IS NULL THEN
+    RETURN jsonb_build_object(
+      'status',              'pending',
+      'pollIntervalSeconds', v_poll_interval,
+      'expiresAt',           v_request.expires_at
+    );
+  END IF;
+
+  UPDATE authz.device_approval_requests
+  SET status              = 'exchanged',
+      exchanged_at        = now(),
+      login_access_token  = NULL,
+      login_refresh_token = NULL
+  WHERE id = v_request.id;
+
+  RETURN jsonb_build_object(
+    'status',              'approved',
+    'accessToken',         v_request.login_access_token,
+    'refreshToken',        v_request.login_refresh_token,
+    'pollIntervalSeconds', v_poll_interval
+  );
+END;
+$$;
+
+
+ALTER FUNCTION "authz"."fn_exchange_device_login"("p_request_id" "uuid", "p_request_secret" "text") OWNER TO "postgres";
+
+
+CREATE OR REPLACE FUNCTION "authz"."fn_generate_user_code"() RETURNS "text"
+    LANGUAGE "plpgsql" SECURITY DEFINER
+    SET "search_path" TO 'pg_catalog', 'authz', 'extensions', 'public'
+    AS $$
+DECLARE
+  v_code text;
+BEGIN
+  v_code := upper(substr(md5(gen_random_uuid()::text), 1, 8));
+  RETURN substr(v_code, 1, 4) || '-' || substr(v_code, 5, 4);
+END;
+$$;
+
+
+ALTER FUNCTION "authz"."fn_generate_user_code"() OWNER TO "postgres";
+
+
+CREATE OR REPLACE FUNCTION "authz"."fn_list_developer_tokens"() RETURNS TABLE("id" "uuid", "label" "text", "tokenPrefix" "text", "status" "text", "expiresAt" timestamp with time zone, "createdAt" timestamp with time zone, "revokedAt" timestamp with time zone, "lastUsedAt" timestamp with time zone)
+    LANGUAGE "plpgsql" STABLE SECURITY DEFINER
+    SET "search_path" TO 'pg_catalog', 'authz', 'lensers', 'auth', 'public'
+    AS $$
+DECLARE
+  v_lenser_id uuid := lensers.get_auth_lenser_id();
+BEGIN
+  IF v_lenser_id IS NULL THEN
+    RAISE EXCEPTION 'Authentication required';
+  END IF;
+
+  RETURN QUERY
+  SELECT
+    t.id,
+    t.label,
+    t.token_prefix AS "tokenPrefix",
+    CASE
+      WHEN t.revoked_at IS NOT NULL THEN 'revoked'
+      WHEN t.expires_at <= now() THEN 'expired'
+      ELSE 'active'
+    END AS status,
+    t.expires_at AS "expiresAt",
+    t.created_at AS "createdAt",
+    t.revoked_at AS "revokedAt",
+    t.last_used_at AS "lastUsedAt"
+  FROM authz.developer_tokens t
+  WHERE t.lenser_id = v_lenser_id
+  ORDER BY t.created_at DESC;
+END;
+$$;
+
+
+ALTER FUNCTION "authz"."fn_list_developer_tokens"() OWNER TO "postgres";
+
+
+CREATE OR REPLACE FUNCTION "authz"."fn_list_developer_tokens_paged"("p_limit" integer DEFAULT 50, "p_offset" integer DEFAULT 0) RETURNS SETOF "jsonb"
+    LANGUAGE "sql" SECURITY DEFINER
+    SET "search_path" TO ''
+    AS $$
+  SELECT to_jsonb(t)
+  FROM authz.fn_list_developer_tokens() t
+  OFFSET GREATEST(COALESCE(p_offset, 0), 0)
+  LIMIT LEAST(GREATEST(COALESCE(p_limit, 50), 1), 100)
+$$;
+
+
+ALTER FUNCTION "authz"."fn_list_developer_tokens_paged"("p_limit" integer, "p_offset" integer) OWNER TO "postgres";
+
+
+CREATE OR REPLACE FUNCTION "authz"."fn_request_device_approval"("p_label" "text" DEFAULT NULL::"text", "p_request_ttl_minutes" integer DEFAULT 10, "p_token_ttl_hours" integer DEFAULT 24) RETURNS "jsonb"
+    LANGUAGE "plpgsql" SECURITY DEFINER
+    SET "search_path" TO 'pg_catalog', 'authz', 'lensers', 'auth', 'extensions', 'public'
+    AS $$
+DECLARE
+  v_request_id uuid := gen_random_uuid();
+  v_request_secret text := encode(gen_random_bytes(32), 'hex');
+  v_request_secret_hash text := encode(digest(v_request_secret, 'sha256'), 'hex');
+  v_user_code text := authz.fn_generate_user_code();
+  v_requested_by_user_id uuid := auth.uid();
+  v_requested_by_lenser_id uuid := lensers.get_auth_lenser_id();
+  v_request_ttl_minutes integer := LEAST(GREATEST(COALESCE(p_request_ttl_minutes, 10), 1), 10);
+  v_token_ttl_hours integer := LEAST(GREATEST(COALESCE(p_token_ttl_hours, 24), 1), 24);
+  v_expires_at timestamptz := now() + make_interval(mins => LEAST(GREATEST(COALESCE(p_request_ttl_minutes, 10), 1), 10));
+BEGIN
+  IF v_requested_by_user_id IS NULL THEN
+    RAISE EXCEPTION 'Authentication required';
+  END IF;
+
+  INSERT INTO authz.device_approval_requests (
+      id,
+      user_code,
+      request_secret_hash,
+      label,
+      requested_by_user_id,
+      requested_by_lenser_id,
+      requested_token_ttl_hours,
+      expires_at
+  ) VALUES (
+      v_request_id,
+      v_user_code,
+      v_request_secret_hash,
+      p_label,
+      v_requested_by_user_id,
+      v_requested_by_lenser_id,
+      v_token_ttl_hours,
+      v_expires_at
+  );
+
+  RETURN jsonb_build_object(
+    'requestId', v_request_id,
+    'requestSecret', v_request_secret,
+    'userCode', v_user_code,
+    'verificationUri', '/device-approval?code=' || v_user_code,
+    'verificationUriComplete', '/device-approval?code=' || v_user_code || '&request_id=' || v_request_id::text,
+    'pollIntervalSeconds', 5,
+    'expiresAt', v_expires_at,
+    'status', 'pending',
+    'label', p_label
+  );
+END;
+$$;
+
+
+ALTER FUNCTION "authz"."fn_request_device_approval"("p_label" "text", "p_request_ttl_minutes" integer, "p_token_ttl_hours" integer) OWNER TO "postgres";
+
+
+CREATE OR REPLACE FUNCTION "authz"."fn_request_device_login"("p_request_ttl_minutes" integer DEFAULT 10) RETURNS "jsonb"
+    LANGUAGE "plpgsql" SECURITY DEFINER
+    SET "search_path" TO 'pg_catalog', 'authz', 'extensions', 'public'
+    AS $$
+DECLARE
+  v_request_id          uuid        := gen_random_uuid();
+  v_request_secret      text        := encode(gen_random_bytes(32), 'hex');
+  v_request_secret_hash text        := encode(digest(v_request_secret, 'sha256'), 'hex');
+  v_user_code           text        := authz.fn_generate_user_code();
+  v_ttl                 integer     := LEAST(GREATEST(COALESCE(p_request_ttl_minutes, 10), 1), 10);
+  v_expires_at          timestamptz := now() + make_interval(mins => v_ttl);
+BEGIN
+  -- No auth.uid() check — this is the unauthenticated login initiation path.
+  INSERT INTO authz.device_approval_requests (
+      id,
+      user_code,
+      request_secret_hash,
+      label,
+      requested_by_user_id,
+      requested_by_lenser_id,
+      requested_token_ttl_hours,
+      expires_at
+  ) VALUES (
+      v_request_id,
+      v_user_code,
+      v_request_secret_hash,
+      'CLI Login',
+      NULL,
+      NULL,
+      0,
+      v_expires_at
+  );
+
+  RETURN jsonb_build_object(
+    'requestId',           v_request_id,
+    'requestSecret',       v_request_secret,
+    'userCode',            v_user_code,
+    'verificationUri',     '/device-approval?code=' || v_user_code || '&mode=login',
+    'pollIntervalSeconds', 5,
+    'expiresAt',           v_expires_at,
+    'status',              'pending'
+  );
+END;
+$$;
+
+
+ALTER FUNCTION "authz"."fn_request_device_login"("p_request_ttl_minutes" integer) OWNER TO "postgres";
+
+
+CREATE OR REPLACE FUNCTION "authz"."fn_revoke_developer_token"("p_token_id" "uuid") RETURNS "void"
+    LANGUAGE "plpgsql" SECURITY DEFINER
+    SET "search_path" TO 'pg_catalog', 'authz', 'lensers', 'auth', 'public'
+    AS $$
+DECLARE
+  v_lenser_id uuid := lensers.get_auth_lenser_id();
+  v_rows integer;
+BEGIN
+  IF v_lenser_id IS NULL THEN
+    RAISE EXCEPTION 'Authentication required';
+  END IF;
+
+  UPDATE authz.developer_tokens
+  SET revoked_at = COALESCE(revoked_at, now()),
+      status = 'revoked'
+  WHERE id = p_token_id
+    AND lenser_id = v_lenser_id
+    AND revoked_at IS NULL;
+
+  GET DIAGNOSTICS v_rows = ROW_COUNT;
+  IF v_rows = 0 THEN
+    RAISE EXCEPTION 'Developer token not found or already revoked';
+  END IF;
+END;
+$$;
+
+
+ALTER FUNCTION "authz"."fn_revoke_developer_token"("p_token_id" "uuid") OWNER TO "postgres";
+
+
+CREATE OR REPLACE FUNCTION "authz"."fn_store_device_login_session"("p_user_code" "text", "p_access_token" "text", "p_refresh_token" "text") RETURNS "jsonb"
+    LANGUAGE "plpgsql" SECURITY DEFINER
+    SET "search_path" TO 'pg_catalog', 'authz', 'auth', 'public'
+    AS $$
+DECLARE
+  v_user_id        uuid := auth.uid();
+  v_normalized     text := upper(replace(trim(COALESCE(p_user_code, '')), '-', ''));
+  v_request        authz.device_approval_requests%ROWTYPE;
+BEGIN
+  IF v_user_id IS NULL THEN
+    RAISE EXCEPTION 'Authentication required';
+  END IF;
+
+  SELECT *
+  INTO v_request
+  FROM authz.device_approval_requests
+  WHERE replace(user_code, '-', '') = v_normalized
+    AND status IN ('pending', 'approved')
+    AND expires_at > now()
+  ORDER BY created_at DESC
+  LIMIT 1
+  FOR UPDATE;
+
+  IF NOT FOUND THEN
+    RAISE EXCEPTION 'Device login request not found or expired';
+  END IF;
+
+  UPDATE authz.device_approval_requests
+  SET status               = 'approved',
+      approved_at          = COALESCE(approved_at, now()),
+      approved_by_user_id  = COALESCE(approved_by_user_id, v_user_id),
+      login_access_token   = p_access_token,
+      login_refresh_token  = p_refresh_token
+  WHERE id = v_request.id;
+
+  RETURN jsonb_build_object('status', 'stored');
+END;
+$$;
+
+
+ALTER FUNCTION "authz"."fn_store_device_login_session"("p_user_code" "text", "p_access_token" "text", "p_refresh_token" "text") OWNER TO "postgres";
 
 
 CREATE OR REPLACE FUNCTION "automation"."fn_check_filter_keys"("p_filter" "jsonb") RETURNS boolean
@@ -5689,6 +6528,119 @@ $$;
 ALTER FUNCTION "battles"."trg_submissions_validate_execution_link"() OWNER TO "postgres";
 
 
+CREATE OR REPLACE FUNCTION "billing"."calculate_credit_cost"("p_model_id" "uuid", "p_input_tokens" bigint DEFAULT 0, "p_output_tokens" bigint DEFAULT 0, "p_units" integer DEFAULT 1) RETURNS bigint
+    LANGUAGE "plpgsql" STABLE SECURITY DEFINER
+    SET "search_path" TO 'billing', 'ai', 'wallet'
+    AS $_$
+DECLARE
+    v_raw_usd           numeric;
+    v_markup_usd        numeric;
+    v_credits           bigint;
+    v_markup_percent    numeric;
+    v_fixed_fee_usd     numeric;
+    v_rounding_mode     text;
+    v_min_credits       integer;
+    v_max_credits       integer;
+    v_unit_type         text;
+    v_input_cost_1k     numeric;
+    v_output_cost_1k    numeric;
+    v_cost_per_unit     numeric;
+    v_credits_per_usd   numeric;
+BEGIN
+    -- Read dynamic credit valuation rate
+    SELECT cvp.baseline_credits_per_usd INTO v_credits_per_usd
+    FROM wallet.credit_valuation_policy cvp
+    WHERE cvp.singleton = true
+    LIMIT 1;
+
+    IF v_credits_per_usd IS NULL THEN
+        v_credits_per_usd := 100;  -- safe default: 1 credit = $0.01
+    END IF;
+
+    -- Get most recent pricing row for model
+    SELECT pt.unit_type, pt.input_cost_per_1k_tokens, pt.output_cost_per_1k_tokens, pt.cost_per_unit
+    INTO v_unit_type, v_input_cost_1k, v_output_cost_1k, v_cost_per_unit
+    FROM ai.model_pricing pt
+    WHERE pt.model_id = p_model_id
+        AND pt.effective_from <= now()
+        AND (pt.effective_to IS NULL OR pt.effective_to > now())
+    ORDER BY pt.effective_from DESC
+    LIMIT 1;
+
+    IF v_unit_type IS NULL THEN
+        RAISE EXCEPTION 'PRICING_NOT_FOUND: no pricing available for model %', p_model_id;
+    END IF;
+
+    -- Calculate raw USD based on unit type
+    IF v_unit_type = 'tokens' THEN
+        v_raw_usd := (p_input_tokens::numeric / 1000 * v_input_cost_1k) +
+                     (p_output_tokens::numeric / 1000 * v_output_cost_1k);
+    ELSIF v_unit_type IN ('image', 'video_second', 'audio_second') THEN
+        v_raw_usd := p_units::numeric * v_cost_per_unit;
+    ELSE
+        RAISE EXCEPTION 'INVALID_UNIT_TYPE: %', v_unit_type;
+    END IF;
+
+    -- Get margin policy: model-specific first, then global default (model_id IS NULL).
+    -- FIX: added (emp.model_id = p_model_id OR emp.model_id IS NULL) so only
+    -- applicable policies are considered. ORDER BY model_id NULLS LAST ensures
+    -- model-specific rows win over the global default row.
+    SELECT emp.markup_percent, emp.fixed_fee_usd, emp.rounding_mode,
+           emp.min_charge_credits, emp.max_charge_credits
+    INTO v_markup_percent, v_fixed_fee_usd, v_rounding_mode, v_min_credits, v_max_credits
+    FROM billing.execution_margin_policies emp
+    WHERE emp.is_active = true
+        AND (emp.model_id = p_model_id OR emp.model_id IS NULL)
+        AND emp.effective_from <= now()
+        AND (emp.effective_to IS NULL OR emp.effective_to > now())
+    ORDER BY emp.model_id NULLS LAST, emp.effective_from DESC
+    LIMIT 1;
+
+    IF v_markup_percent IS NULL THEN
+        v_markup_percent := 0;
+        v_fixed_fee_usd  := 0;
+        v_rounding_mode  := 'ceil';
+        v_min_credits    := 1;
+        v_max_credits    := NULL;
+    END IF;
+
+    -- Apply markup
+    v_markup_usd := v_raw_usd * (1 + v_markup_percent / 100) + v_fixed_fee_usd;
+
+    -- Convert to credits using dynamic rate
+    v_credits := v_markup_usd * v_credits_per_usd;
+
+    -- Apply rounding
+    IF v_rounding_mode = 'ceil' THEN
+        v_credits := ceil(v_credits)::bigint;
+    ELSIF v_rounding_mode = 'floor' THEN
+        v_credits := floor(v_credits)::bigint;
+    ELSIF v_rounding_mode = 'round' THEN
+        v_credits := round(v_credits)::bigint;
+    ELSE
+        v_credits := ceil(v_credits)::bigint;
+    END IF;
+
+    -- Clamp to min/max
+    IF v_min_credits IS NOT NULL THEN
+        v_credits := GREATEST(v_credits, v_min_credits::bigint);
+    END IF;
+    IF v_max_credits IS NOT NULL THEN
+        v_credits := LEAST(v_credits, v_max_credits::bigint);
+    END IF;
+
+    RETURN GREATEST(v_credits, 0);
+END;
+$_$;
+
+
+ALTER FUNCTION "billing"."calculate_credit_cost"("p_model_id" "uuid", "p_input_tokens" bigint, "p_output_tokens" bigint, "p_units" integer) OWNER TO "postgres";
+
+
+COMMENT ON FUNCTION "billing"."calculate_credit_cost"("p_model_id" "uuid", "p_input_tokens" bigint, "p_output_tokens" bigint, "p_units" integer) IS 'Pricing engine: convert raw model costs to credits with markup and rounding. Reads credit rate from wallet.credit_valuation_policy (default 100 credits/USD). Reads margin policy scoped to (model_id = p_model_id OR model_id IS NULL). Returns bigint credits. Raises: PRICING_NOT_FOUND, INVALID_UNIT_TYPE.';
+
+
+
 CREATE OR REPLACE FUNCTION "connectors"."fn_active_workspace_id"() RETURNS "uuid"
     LANGUAGE "sql" STABLE SECURITY DEFINER
     SET "search_path" TO 'public', 'tenancy', 'lensers'
@@ -7113,6 +8065,42 @@ $$;
 ALTER FUNCTION "devices"."fn_xp_on_device_trust_elevated"() OWNER TO "postgres";
 
 
+CREATE OR REPLACE FUNCTION "execution"."fn_async_run_idempotent_complete"("p_run_id" "uuid", "p_media_url" "text", "p_mime_type" "text", "p_bytes" bigint DEFAULT NULL::bigint, "p_width" integer DEFAULT NULL::integer, "p_height" integer DEFAULT NULL::integer, "p_duration_s" numeric DEFAULT NULL::numeric) RETURNS boolean
+    LANGUAGE "plpgsql" SECURITY DEFINER
+    SET "search_path" TO 'execution', 'public'
+    AS $$
+DECLARE
+  v_status TEXT;
+BEGIN
+  SELECT status INTO v_status
+  FROM execution.runs
+  WHERE id = p_run_id
+  FOR UPDATE;
+
+  IF v_status IS NULL THEN
+    RETURN FALSE;  -- run does not exist
+  END IF;
+
+  -- Already terminal — no-op success so the worker can ack.
+  IF v_status IN ('succeeded', 'failed', 'canceled', 'timed_out') THEN
+    RETURN FALSE;
+  END IF;
+
+  PERFORM execution.fn_complete_async_run(
+    p_run_id, p_media_url, p_mime_type, p_bytes, p_width, p_height, p_duration_s
+  );
+  RETURN TRUE;
+END;
+$$;
+
+
+ALTER FUNCTION "execution"."fn_async_run_idempotent_complete"("p_run_id" "uuid", "p_media_url" "text", "p_mime_type" "text", "p_bytes" bigint, "p_width" integer, "p_height" integer, "p_duration_s" numeric) OWNER TO "postgres";
+
+
+COMMENT ON FUNCTION "execution"."fn_async_run_idempotent_complete"("p_run_id" "uuid", "p_media_url" "text", "p_mime_type" "text", "p_bytes" bigint, "p_width" integer, "p_height" integer, "p_duration_s" numeric) IS 'Phase AM: idempotent wrapper around fn_complete_async_run. Returns TRUE when the run was transitioned, FALSE when the run is already terminal (no-op) or does not exist. Lets poll workers retry without producing duplicate media.objects rows.';
+
+
+
 CREATE OR REPLACE FUNCTION "execution"."fn_b64url_decode"("p_in" "text") RETURNS "bytea"
     LANGUAGE "plpgsql" IMMUTABLE
     SET "search_path" TO 'pg_catalog', 'public'
@@ -7284,7 +8272,7 @@ BEGIN
     v_credit_cost := CASE v_rate_unit
       WHEN 'per_image'    THEN v_rate
       WHEN 'per_second'   THEN v_rate * COALESCE(p_duration_s, 0)
-      WHEN 'per_1k_chars' THEN 0  -- not applicable for media
+      WHEN 'per_1k_chars' THEN 0
       WHEN 'per_request'  THEN v_rate
       ELSE 0
     END;
@@ -7298,7 +8286,7 @@ BEGIN
     ELSE 'binary'
   END;
 
-  -- Create media.objects row for the generated asset
+  -- Create media.objects row — AN: populate first-class dimension/duration columns
   INSERT INTO media.objects (
     bucket,
     object_key,
@@ -7309,7 +8297,10 @@ BEGIN
     visibility,
     lifecycle_state,
     metadata,
-    request_id
+    request_id,
+    duration_seconds,
+    video_width,
+    video_height
   )
   VALUES (
     'generated-media',
@@ -7321,11 +8312,14 @@ BEGIN
     'private',
     'active',
     jsonb_build_object(
-      'width', p_width,
-      'height', p_height,
+      'width',      p_width,
+      'height',     p_height,
       'duration_s', p_duration_s
     ),
-    v_request_id
+    v_request_id,
+    p_duration_s,
+    p_width,
+    p_height
   )
   RETURNING id INTO v_media_object_id;
 
@@ -7342,7 +8336,7 @@ BEGIN
   VALUES (
     p_run_id,
     COALESCE(v_output_modality, 'image')::TEXT,
-    p_media_url,          -- fallback content_text = external URL
+    p_media_url,
     'private',
     TRUE,
     v_media_object_id,
@@ -7352,10 +8346,10 @@ BEGIN
   -- Mark run succeeded
   UPDATE execution.runs
   SET
-    status        = 'succeeded',
-    completed_at  = now(),
-    latency_ms    = EXTRACT(EPOCH FROM (now() - started_at))::BIGINT * 1000,
-    credit_cost   = v_credit_cost,
+    status         = 'succeeded',
+    completed_at   = now(),
+    latency_ms     = EXTRACT(EPOCH FROM (now() - started_at))::BIGINT * 1000,
+    credit_cost    = v_credit_cost,
     billing_status = CASE WHEN v_credit_cost > 0 THEN 'pending' ELSE 'free' END
   WHERE id = p_run_id;
 END;
@@ -7363,6 +8357,10 @@ $$;
 
 
 ALTER FUNCTION "execution"."fn_complete_async_run"("p_run_id" "uuid", "p_media_url" "text", "p_mime_type" "text", "p_bytes" bigint, "p_width" integer, "p_height" integer, "p_duration_s" numeric) OWNER TO "postgres";
+
+
+COMMENT ON FUNCTION "execution"."fn_complete_async_run"("p_run_id" "uuid", "p_media_url" "text", "p_mime_type" "text", "p_bytes" bigint, "p_width" integer, "p_height" integer, "p_duration_s" numeric) IS 'AN: Updated to populate media.objects.duration_seconds, video_width, video_height. Called by poll-async-executions Edge Function when a video/audio provider signals done.';
+
 
 
 CREATE OR REPLACE FUNCTION "execution"."fn_complete_execution_run"("p_run_id" "uuid", "p_status" "text", "p_token_input" integer DEFAULT NULL::integer, "p_token_output" integer DEFAULT NULL::integer, "p_credit_cost" bigint DEFAULT NULL::bigint, "p_billing_status" "text" DEFAULT 'free'::"text", "p_response_text" "text" DEFAULT NULL::"text", "p_response_meta" "jsonb" DEFAULT '{}'::"jsonb", "p_error_code" "text" DEFAULT NULL::"text", "p_error_message" "text" DEFAULT NULL::"text", "p_latency_ms" integer DEFAULT NULL::integer) RETURNS "void"
@@ -7680,6 +8678,155 @@ COMMENT ON FUNCTION "execution"."fn_get_submission_trust"("p_submission_id" "uui
 
 
 
+CREATE OR REPLACE FUNCTION "execution"."fn_media_finalize_sync_upload"("p_run_id" "uuid", "p_object_key" "text", "p_mime_type" "text", "p_bytes" bigint DEFAULT NULL::bigint, "p_width" integer DEFAULT NULL::integer, "p_height" integer DEFAULT NULL::integer, "p_duration_s" numeric DEFAULT NULL::numeric) RETURNS "uuid"
+    LANGUAGE "plpgsql" SECURITY DEFINER
+    SET "search_path" TO 'execution', 'media', 'ai', 'public'
+    AS $$
+DECLARE
+  v_request_id      UUID;
+  v_model_id        UUID;
+  v_output_modality TEXT;
+  v_owner_lenser_id UUID;
+  v_workspace_id    UUID;
+  v_media_object_id UUID;
+  v_credit_cost     NUMERIC := 0;
+  v_rate            NUMERIC;
+  v_rate_unit       TEXT;
+  v_media_type      TEXT;
+BEGIN
+  -- Validate MIME type against the bucket's allowed list. We re-check at the
+  -- RPC layer because storage.objects-level enforcement happens at upload
+  -- time and a buggy worker might call this RPC with a mismatched type.
+  IF p_mime_type IS NULL OR NOT (
+    p_mime_type LIKE 'image/%' OR
+    p_mime_type LIKE 'video/%' OR
+    p_mime_type LIKE 'audio/%'
+  ) THEN
+    RAISE EXCEPTION 'Unsupported MIME type for sync media finalize: %', p_mime_type
+      USING ERRCODE = 'check_violation';
+  END IF;
+
+  IF p_object_key IS NULL OR length(p_object_key) = 0 THEN
+    RAISE EXCEPTION 'object_key is required'
+      USING ERRCODE = 'check_violation';
+  END IF;
+
+  -- Lock the running row. Sync runs are typically `is_async = FALSE` but we
+  -- accept both — the discriminator is `status = 'running'`.
+  SELECT request_id
+  INTO v_request_id
+  FROM execution.runs
+  WHERE id = p_run_id AND status = 'running'
+  FOR UPDATE;
+
+  IF NOT FOUND THEN
+    RAISE EXCEPTION 'Run % not found or not in running state', p_run_id;
+  END IF;
+
+  -- requester_lenser_id + workspace_id live on execution.requests (not runs).
+  SELECT model_id, output_modality, requester_lenser_id, workspace_id
+  INTO v_model_id, v_output_modality, v_owner_lenser_id, v_workspace_id
+  FROM execution.requests
+  WHERE id = v_request_id;
+
+  -- Credit cost lookup mirrors fn_complete_async_run exactly.
+  SELECT credit_rate, rate_unit
+  INTO v_rate, v_rate_unit
+  FROM ai.modality_pricing
+  WHERE model_id = v_model_id
+    AND output_modality = COALESCE(v_output_modality, 'image')
+    AND is_active = TRUE
+  LIMIT 1;
+
+  IF FOUND THEN
+    v_credit_cost := CASE v_rate_unit
+      WHEN 'per_image'    THEN v_rate
+      WHEN 'per_second'   THEN v_rate * COALESCE(p_duration_s, 0)
+      WHEN 'per_1k_chars' THEN 0
+      WHEN 'per_request'  THEN v_rate
+      ELSE 0
+    END;
+  END IF;
+
+  v_media_type := CASE
+    WHEN p_mime_type LIKE 'image/%' THEN 'image'
+    WHEN p_mime_type LIKE 'video/%' THEN 'video'
+    WHEN p_mime_type LIKE 'audio/%' THEN 'audio'
+    ELSE 'binary'
+  END;
+
+  INSERT INTO media.objects (
+    workspace_id,
+    owner_lenser_id,
+    bucket,
+    object_key,
+    mime_type,
+    media_type,
+    byte_size,
+    visibility,
+    lifecycle_state,
+    metadata,
+    request_id
+  )
+  VALUES (
+    v_workspace_id,
+    v_owner_lenser_id,
+    'generated-media',
+    p_object_key,
+    p_mime_type,
+    v_media_type,
+    p_bytes,
+    'private',
+    'active',
+    jsonb_build_object(
+      'width', p_width,
+      'height', p_height,
+      'duration_s', p_duration_s,
+      'finalize_path', 'sync'
+    ),
+    v_request_id
+  )
+  RETURNING id INTO v_media_object_id;
+
+  INSERT INTO execution.artifacts (
+    run_id,
+    artifact_kind,
+    content_text,
+    visibility,
+    is_primary_output,
+    media_object_id,
+    output_type
+  )
+  VALUES (
+    p_run_id,
+    COALESCE(v_output_modality, 'image')::TEXT,
+    NULL,                       -- sync uploads have no external_url
+    'private',
+    TRUE,
+    v_media_object_id,
+    COALESCE(v_output_modality, 'image')
+  );
+
+  UPDATE execution.runs
+  SET status         = 'succeeded',
+      completed_at   = now(),
+      latency_ms     = EXTRACT(EPOCH FROM (now() - started_at))::BIGINT * 1000,
+      credit_cost    = v_credit_cost,
+      billing_status = CASE WHEN v_credit_cost > 0 THEN 'pending' ELSE 'free' END
+  WHERE id = p_run_id;
+
+  RETURN v_media_object_id;
+END;
+$$;
+
+
+ALTER FUNCTION "execution"."fn_media_finalize_sync_upload"("p_run_id" "uuid", "p_object_key" "text", "p_mime_type" "text", "p_bytes" bigint, "p_width" integer, "p_height" integer, "p_duration_s" numeric) OWNER TO "postgres";
+
+
+COMMENT ON FUNCTION "execution"."fn_media_finalize_sync_upload"("p_run_id" "uuid", "p_object_key" "text", "p_mime_type" "text", "p_bytes" bigint, "p_width" integer, "p_height" integer, "p_duration_s" numeric) IS 'Phase AK: sync-provider counterpart to fn_complete_async_run. Called by the platform-api worker after uploading a synchronously-generated asset (TTS, sync image) to the generated-media bucket. Inserts media.objects + execution.artifacts, computes credit cost via ai.modality_pricing, and marks the run succeeded. service_role only.';
+
+
+
 CREATE OR REPLACE FUNCTION "execution"."fn_persist_execution_artifacts"("p_run_id" "uuid", "p_lenser_id" "uuid", "p_workspace_id" "uuid", "p_ai_model_id" "uuid", "p_kind" "text", "p_content_text" "text" DEFAULT NULL::"text", "p_content_json" "jsonb" DEFAULT NULL::"jsonb", "p_media_ids" "uuid"[] DEFAULT '{}'::"uuid"[]) RETURNS "uuid"
     LANGUAGE "plpgsql" SECURITY DEFINER
     SET "search_path" TO 'execution', 'public'
@@ -7821,31 +8968,65 @@ COMMENT ON FUNCTION "execution"."fn_persist_local_execution"("p_lens_id" "uuid",
 
 
 
-CREATE OR REPLACE FUNCTION "execution"."fn_poll_async_run"("p_stale_after_seconds" integer DEFAULT 30, "p_limit" integer DEFAULT 50) RETURNS TABLE("run_id" "uuid", "provider_task_id" "text", "model_key" "text", "provider_key" "text", "output_modality" "text", "started_at" timestamp with time zone)
-    LANGUAGE "sql" STABLE SECURITY DEFINER
+CREATE OR REPLACE FUNCTION "execution"."fn_poll_async_run"("p_stale_after_seconds" integer DEFAULT 30, "p_limit" integer DEFAULT 10) RETURNS TABLE("run_id" "uuid", "provider_task_id" "text", "model_key" "text", "provider_key" "text", "output_modality" "text", "started_at" timestamp with time zone)
+    LANGUAGE "plpgsql" SECURITY DEFINER
     SET "search_path" TO 'execution', 'ai', 'public'
     AS $$
-  SELECT
-    r.id                AS run_id,
-    r.provider_task_id,
-    m.key               AS model_key,
-    p.key               AS provider_key,
-    req.output_modality,
-    r.started_at
-  FROM execution.runs r
-  JOIN execution.requests req ON req.id = r.request_id
-  LEFT JOIN ai.models   m ON m.id = req.model_id
-  LEFT JOIN ai.providers p ON p.id = m.provider_id
-  WHERE r.is_async = TRUE
-    AND r.status   = 'running'
-    AND r.provider_task_id IS NOT NULL
-    AND r.started_at < now() - (p_stale_after_seconds || ' seconds')::INTERVAL
-  ORDER BY r.started_at
-  LIMIT p_limit;
+DECLARE
+  v_ids UUID[];
+BEGIN
+  -- 1. Claim a batch of due runs with SKIP LOCKED. Order by NULLS FIRST so
+  -- runs that have never been polled get priority over recently-polled ones.
+  WITH claimed AS (
+    SELECT r.id
+    FROM execution.runs r
+    WHERE r.is_async = TRUE
+      AND r.status   = 'running'
+      AND r.provider_task_id IS NOT NULL
+      AND (
+        r.last_polled_at IS NULL
+        OR r.last_polled_at < now() - (p_stale_after_seconds || ' seconds')::INTERVAL
+      )
+    ORDER BY r.last_polled_at NULLS FIRST, r.started_at
+    FOR UPDATE SKIP LOCKED
+    LIMIT GREATEST(1, LEAST(p_limit, 50))
+  )
+  SELECT array_agg(id) INTO v_ids FROM claimed;
+
+  IF v_ids IS NULL THEN
+    RETURN;  -- nothing to poll; quiet exit
+  END IF;
+
+  -- 2. Bump last_polled_at on the claimed rows so the next tick avoids them
+  -- until p_stale_after_seconds has elapsed.
+  UPDATE execution.runs
+  SET last_polled_at = now()
+  WHERE id = ANY(v_ids);
+
+  -- 3. Return the join shape the worker expects.
+  RETURN QUERY
+    SELECT
+      r.id              AS run_id,
+      r.provider_task_id,
+      m.key             AS model_key,
+      p.key             AS provider_key,
+      req.output_modality,
+      r.started_at
+    FROM execution.runs r
+    JOIN execution.requests req ON req.id = r.request_id
+    LEFT JOIN ai.models   m ON m.id = req.model_id
+    LEFT JOIN ai.providers p ON p.id = m.provider_id
+    WHERE r.id = ANY(v_ids)
+    ORDER BY r.started_at;
+END;
 $$;
 
 
 ALTER FUNCTION "execution"."fn_poll_async_run"("p_stale_after_seconds" integer, "p_limit" integer) OWNER TO "postgres";
+
+
+COMMENT ON FUNCTION "execution"."fn_poll_async_run"("p_stale_after_seconds" integer, "p_limit" integer) IS 'Phase AM: SKIP LOCKED batch-claims pending async runs and bumps last_polled_at. Concurrent workers do not double-poll. Caller queries the provider status endpoint and calls fn_complete_async_run on success or fn_async_run_idempotent_complete to handle retries. service_role only.';
+
 
 
 CREATE OR REPLACE FUNCTION "execution"."fn_record_execution_attestation"("p_run_id" "uuid", "p_device_id" "uuid" DEFAULT NULL::"uuid", "p_signed" boolean DEFAULT false, "p_signature" "text" DEFAULT NULL::"text", "p_gateway_verified" boolean DEFAULT false, "p_device_trusted" boolean DEFAULT false, "p_policy_passed" boolean DEFAULT false, "p_workflow_hash" "text" DEFAULT NULL::"text", "p_lens_hash" "text" DEFAULT NULL::"text", "p_agent_config_hash" "text" DEFAULT NULL::"text", "p_runner_version" "text" DEFAULT NULL::"text", "p_cli_version" "text" DEFAULT NULL::"text") RETURNS "uuid"
@@ -10320,7 +11501,7 @@ $$;
 ALTER FUNCTION "lenses"."fn_check_workflow_budget"("p_run_id" "uuid", "p_estimated_cost" integer) OWNER TO "postgres";
 
 
-CREATE OR REPLACE FUNCTION "lenses"."fn_claim_scheduled_workflow_run"("p_worker_id" "text") RETURNS TABLE("run_id" "uuid", "workflow_id" "uuid", "schedule_id" "uuid", "triggered_by" "uuid", "context_inputs" "jsonb", "global_model_id" "text")
+CREATE OR REPLACE FUNCTION "lenses"."fn_claim_scheduled_workflow_run"("p_worker_id" "text") RETURNS TABLE("run_id" "uuid", "workflow_id" "uuid", "schedule_id" "uuid", "triggered_by" "uuid", "context_inputs" "jsonb", "global_model_id" "text", "ai_lenser_id" "uuid")
     LANGUAGE "plpgsql" SECURITY DEFINER
     SET "search_path" TO 'lenses', 'public'
     AS $$
@@ -10330,7 +11511,7 @@ BEGIN
   SELECT *
   INTO v_run
   FROM lenses.workflow_runs
-  WHERE status = 'pending'
+  WHERE status       = 'pending'
     AND trigger_mode = 'schedule'
   ORDER BY created_at ASC
   LIMIT 1
@@ -10352,7 +11533,8 @@ BEGIN
     v_run.schedule_id,
     v_run.triggered_by,
     v_run.context_inputs,
-    v_run.global_model_id;
+    v_run.global_model_id,
+    v_run.ai_lenser_id;
 END;
 $$;
 
@@ -13334,6 +14516,337 @@ $$;
 ALTER FUNCTION "media"."set_updated_at"() OWNER TO "postgres";
 
 
+CREATE OR REPLACE FUNCTION "media"."trg_fn_audit_visibility"() RETURNS "trigger"
+    LANGUAGE "plpgsql" SECURITY DEFINER
+    SET "search_path" TO 'media', 'audit', 'public'
+    AS $$
+BEGIN
+  IF OLD.visibility IS DISTINCT FROM NEW.visibility THEN
+    INSERT INTO audit.events (event_type, actor_type, severity, payload)
+    VALUES (
+      'media.visibility_changed',
+      'user',
+      'info',
+      jsonb_build_object(
+        'object_id',      NEW.id,
+        'old_visibility', OLD.visibility,
+        'new_visibility', NEW.visibility,
+        'changed_at',     now()
+      )
+    );
+  END IF;
+  RETURN NEW;
+END;
+$$;
+
+
+ALTER FUNCTION "media"."trg_fn_audit_visibility"() OWNER TO "postgres";
+
+
+CREATE OR REPLACE FUNCTION "organizations"."fn_create_org_workspace"() RETURNS "trigger"
+    LANGUAGE "plpgsql" SECURITY DEFINER
+    SET "search_path" TO 'organizations', 'tenancy', 'lensers', 'public'
+    AS $$
+DECLARE
+    v_workspace_id uuid;
+    v_slug         text;
+    v_suffix       int := 0;
+BEGIN
+    -- Build a unique workspace slug
+    v_slug := NEW.slug || '-org';
+    WHILE EXISTS (SELECT 1 FROM tenancy.workspaces WHERE slug = v_slug) LOOP
+        v_suffix := v_suffix + 1;
+        v_slug   := NEW.slug || '-org-' || v_suffix;
+    END LOOP;
+
+    -- org row is now committed (AFTER trigger), org_id FK is safe
+    INSERT INTO tenancy.workspaces (slug, type, display_name, org_id)
+    VALUES (v_slug, 'organization', NEW.display_name, NEW.id)
+    RETURNING id INTO v_workspace_id;
+
+    -- Stamp workspace_id back onto the org row
+    UPDATE organizations.organizations
+    SET    workspace_id = v_workspace_id
+    WHERE  id = NEW.id;
+
+    RETURN NULL; -- AFTER trigger return value is ignored
+END;
+$$;
+
+
+ALTER FUNCTION "organizations"."fn_create_org_workspace"() OWNER TO "postgres";
+
+
+COMMENT ON FUNCTION "organizations"."fn_create_org_workspace"() IS 'AFTER INSERT trigger on organizations.organizations. Automatically creates an organization-type workspace in tenancy.workspaces and stamps workspace_id on the new org row. Must be AFTER INSERT so the org primary key exists before the workspaces_org_fkey FK is checked.';
+
+
+
+CREATE TABLE IF NOT EXISTS "organizations"."organizations" (
+    "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
+    "status" "organizations"."status_enum" DEFAULT 'active'::"organizations"."status_enum" NOT NULL,
+    "org_type" "organizations"."org_type_enum" DEFAULT 'commercial'::"organizations"."org_type_enum" NOT NULL,
+    "created_by" "uuid" NOT NULL,
+    "slug" character varying(64) NOT NULL,
+    "display_name" character varying(180) NOT NULL,
+    "legal_name" character varying(180),
+    "website" "text",
+    "industry" character varying(120),
+    "billing_email" "text",
+    "default_timezone" character varying(120) DEFAULT 'UTC'::character varying,
+    "avatar_url" "text",
+    "kill_switch_reason" "text",
+    "kill_switched_at" timestamp with time zone,
+    "kill_switched_by" "uuid",
+    "trial_expires_at" timestamp with time zone,
+    "trial_used" boolean DEFAULT false NOT NULL,
+    "trial_used_at" timestamp with time zone,
+    "created_at" timestamp with time zone DEFAULT "now"() NOT NULL,
+    "updated_at" timestamp with time zone DEFAULT "now"() NOT NULL,
+    "workspace_id" "uuid"
+);
+
+
+ALTER TABLE "organizations"."organizations" OWNER TO "postgres";
+
+
+COMMENT ON TABLE "organizations"."organizations" IS 'Top-level commercial / nonprofit / educational entity. One row per organization. Slug is globally unique.';
+
+
+
+COMMENT ON COLUMN "organizations"."organizations"."status" IS 'Lifecycle state: active, inactive, suspended, closed. suspended blocks all operations; closed is terminal.';
+
+
+
+COMMENT ON COLUMN "organizations"."organizations"."slug" IS 'URL-safe unique identifier. Used in routes like /org/<slug>. Format: 4-64 chars, lowercase alphanumeric with hyphens/underscores.';
+
+
+
+COMMENT ON COLUMN "organizations"."organizations"."kill_switch_reason" IS 'Admin-provided reason when an organization is force-suspended. NULL when not kill-switched.';
+
+
+
+COMMENT ON COLUMN "organizations"."organizations"."trial_expires_at" IS 'When the organization trial period ends. NULL if no trial or trial already used.';
+
+
+
+COMMENT ON COLUMN "organizations"."organizations"."workspace_id" IS 'The organization-type workspace that scopes all resources (keys, executions, media) belonging to this org. Created automatically on org creation.';
+
+
+
+CREATE OR REPLACE FUNCTION "organizations"."fn_create_organization"("p_display_name" character varying, "p_slug" character varying, "p_org_type" "text" DEFAULT 'commercial'::"text", "p_legal_name" character varying DEFAULT NULL::character varying, "p_website" "text" DEFAULT NULL::"text", "p_industry" character varying DEFAULT NULL::character varying, "p_billing_email" "text" DEFAULT NULL::"text") RETURNS "organizations"."organizations"
+    LANGUAGE "plpgsql" SECURITY DEFINER
+    SET "search_path" TO 'organizations', 'lensers'
+    AS $_$
+DECLARE
+    v_lenser_id uuid;
+    v_org organizations.organizations;
+BEGIN
+    v_lenser_id := lensers.get_auth_lenser_id();
+    IF v_lenser_id IS NULL THEN
+        RAISE EXCEPTION 'Authentication required';
+    END IF;
+
+    -- Validate org_type
+    IF p_org_type NOT IN ('commercial', 'nonprofit', 'educational') THEN
+        RAISE EXCEPTION 'Invalid org_type: %. Must be commercial, nonprofit, or educational.', p_org_type;
+    END IF;
+
+    -- Validate slug format
+    IF p_slug !~ '^[a-z0-9][a-z0-9_-]{2,62}[a-z0-9]$' THEN
+        RAISE EXCEPTION 'Invalid slug format. Must be 4-64 chars, lowercase alphanumeric with hyphens/underscores.';
+    END IF;
+
+    -- Create organization
+    INSERT INTO organizations.organizations (
+        display_name, slug, org_type, legal_name,
+        website, industry, billing_email, created_by
+    )
+    VALUES (
+        p_display_name, p_slug, p_org_type::organizations.org_type_enum, p_legal_name,
+        p_website, p_industry, p_billing_email, v_lenser_id
+    )
+    RETURNING * INTO v_org;
+
+    -- Auto-insert creator as owner
+    INSERT INTO organizations.members (org_id, lenser_id, role)
+    VALUES (v_org.id, v_lenser_id, 'owner');
+
+    -- Log creation
+    INSERT INTO organizations.audit_logs (org_id, lenser_id, action, metadata)
+    VALUES (v_org.id, v_lenser_id, 'created', jsonb_build_object(
+        'display_name', p_display_name,
+        'slug', p_slug,
+        'org_type', p_org_type
+    ));
+
+    RETURN v_org;
+END;
+$_$;
+
+
+ALTER FUNCTION "organizations"."fn_create_organization"("p_display_name" character varying, "p_slug" character varying, "p_org_type" "text", "p_legal_name" character varying, "p_website" "text", "p_industry" character varying, "p_billing_email" "text") OWNER TO "postgres";
+
+
+COMMENT ON FUNCTION "organizations"."fn_create_organization"("p_display_name" character varying, "p_slug" character varying, "p_org_type" "text", "p_legal_name" character varying, "p_website" "text", "p_industry" character varying, "p_billing_email" "text") IS 'SECURITY DEFINER helper to create an organization. Validates slug format and org_type, creates the org record, auto-inserts the caller as owner, and logs the creation event. Requires authentication via lensers.get_auth_lenser_id().';
+
+
+
+CREATE TABLE IF NOT EXISTS "organizations"."members" (
+    "org_id" "uuid" NOT NULL,
+    "lenser_id" "uuid" NOT NULL,
+    "role" "organizations"."member_role_enum" DEFAULT 'member'::"organizations"."member_role_enum" NOT NULL,
+    "invited_by" "uuid",
+    "joined_at" timestamp with time zone DEFAULT "now"() NOT NULL
+);
+
+
+ALTER TABLE "organizations"."members" OWNER TO "postgres";
+
+
+COMMENT ON TABLE "organizations"."members" IS 'Organization membership. Composite PK (org_id, lenser_id). Exactly one owner per org enforced by partial unique index.';
+
+
+
+COMMENT ON COLUMN "organizations"."members"."role" IS 'Member role within the org. owner has full control; admin can manage members; manager, billing, member, viewer have decreasing permissions. Exactly one owner per org enforced by partial unique index.';
+
+
+
+COMMENT ON COLUMN "organizations"."members"."invited_by" IS 'Profile that invited this member. NULL for the founding owner. ON DELETE SET NULL preserves membership even if inviter is deleted.';
+
+
+
+CREATE OR REPLACE FUNCTION "organizations"."fn_invite_member"("p_org_id" "uuid", "p_lenser_id" "uuid", "p_role" "text" DEFAULT 'member'::"text") RETURNS "organizations"."members"
+    LANGUAGE "plpgsql" SECURITY DEFINER
+    SET "search_path" TO 'organizations', 'lensers'
+    AS $$
+DECLARE
+    v_caller_id uuid;
+    v_caller_role text;
+    v_member organizations.members;
+BEGIN
+    v_caller_id := lensers.get_auth_lenser_id();
+    IF v_caller_id IS NULL THEN
+        RAISE EXCEPTION 'Authentication required';
+    END IF;
+
+    -- Check caller is owner or admin
+    SELECT role::text INTO v_caller_role
+    FROM organizations.members
+    WHERE org_id = p_org_id AND lenser_id = v_caller_id;
+
+    IF v_caller_role IS NULL OR v_caller_role NOT IN ('owner', 'admin') THEN
+        RAISE EXCEPTION 'Only org owners and admins can invite members';
+    END IF;
+
+    -- Validate role
+    IF p_role NOT IN ('admin', 'manager', 'billing', 'member', 'viewer') THEN
+        RAISE EXCEPTION 'Invalid role: %. Cannot assign owner role via invite.', p_role;
+    END IF;
+
+    -- Check target lenser exists
+    IF NOT EXISTS (SELECT 1 FROM lensers.profiles WHERE id = p_lenser_id) THEN
+        RAISE EXCEPTION 'Lenser not found: %', p_lenser_id;
+    END IF;
+
+    -- Check not already a member
+    IF EXISTS (SELECT 1 FROM organizations.members WHERE org_id = p_org_id AND lenser_id = p_lenser_id) THEN
+        RAISE EXCEPTION 'Lenser is already a member of this organization';
+    END IF;
+
+    -- Insert member
+    INSERT INTO organizations.members (org_id, lenser_id, role, invited_by)
+    VALUES (p_org_id, p_lenser_id, p_role::organizations.member_role_enum, v_caller_id)
+    RETURNING * INTO v_member;
+
+    -- Log invite
+    INSERT INTO organizations.audit_logs (org_id, lenser_id, action, entity_type, entity_id, metadata)
+    VALUES (p_org_id, v_caller_id, 'member_added', 'member', p_lenser_id, jsonb_build_object(
+        'invited_lenser_id', p_lenser_id,
+        'role', p_role
+    ));
+
+    RETURN v_member;
+END;
+$$;
+
+
+ALTER FUNCTION "organizations"."fn_invite_member"("p_org_id" "uuid", "p_lenser_id" "uuid", "p_role" "text") OWNER TO "postgres";
+
+
+COMMENT ON FUNCTION "organizations"."fn_invite_member"("p_org_id" "uuid", "p_lenser_id" "uuid", "p_role" "text") IS 'SECURITY DEFINER helper to invite a member to an organization. Validates caller is owner/admin, target lenser exists, and is not already a member. Cannot assign owner role via invite. Logs the invitation to audit_logs.';
+
+
+
+CREATE OR REPLACE FUNCTION "organizations"."trg_audit_logs_immutable"() RETURNS "trigger"
+    LANGUAGE "plpgsql"
+    SET "search_path" TO 'organizations'
+    AS $$
+BEGIN
+    IF TG_OP = 'DELETE' THEN
+        RAISE EXCEPTION 'Organization audit logs are immutable. Deletion is not permitted.';
+    ELSIF TG_OP = 'UPDATE' THEN
+        RAISE EXCEPTION 'Organization audit logs are immutable. Updates are not permitted.';
+    END IF;
+    RETURN NULL;
+END;
+$$;
+
+
+ALTER FUNCTION "organizations"."trg_audit_logs_immutable"() OWNER TO "postgres";
+
+
+COMMENT ON FUNCTION "organizations"."trg_audit_logs_immutable"() IS 'Defense-in-depth trigger preventing UPDATE/DELETE on organizations.audit_logs. Mirrors wallet.trg_transactions_immutable() pattern.';
+
+
+
+CREATE OR REPLACE FUNCTION "organizations"."trg_audit_membership"() RETURNS "trigger"
+    LANGUAGE "plpgsql" SECURITY DEFINER
+    SET "search_path" TO ''
+    AS $$
+BEGIN
+    PERFORM audit.log_event_v2(
+        TG_OP::text,                                            -- event_type
+        'lenser',                                                -- actor_type
+        COALESCE(NEW.lenser_id, OLD.lenser_id),                 -- actor_id
+        'organizations',                                         -- entity_schema
+        'members',                                               -- entity_table
+        COALESCE(NEW.org_id, OLD.org_id),                       -- entity_id
+        jsonb_build_object(
+            'lenser_id', COALESCE(NEW.lenser_id, OLD.lenser_id),
+            'role', COALESCE(NEW.role::text, OLD.role::text),
+            'operation', TG_OP
+        ),                                                       -- payload
+        'info'                                                   -- severity
+    );
+    RETURN COALESCE(NEW, OLD);
+END;
+$$;
+
+
+ALTER FUNCTION "organizations"."trg_audit_membership"() OWNER TO "postgres";
+
+
+CREATE OR REPLACE FUNCTION "platform"."fn_get_platform_system_flags"() RETURNS "jsonb"
+    LANGUAGE "sql" SECURITY DEFINER
+    SET "search_path" TO 'platform', 'public'
+    AS $$
+  SELECT jsonb_object_agg(key, (value::boolean))
+  FROM   platform.system_flags
+  WHERE  key IN (
+    'autonomy_dispatch_enabled',
+    'public_battles_enabled',
+    'webhook_outbox_enabled'
+  )
+$$;
+
+
+ALTER FUNCTION "platform"."fn_get_platform_system_flags"() OWNER TO "postgres";
+
+
+COMMENT ON FUNCTION "platform"."fn_get_platform_system_flags"() IS 'Return a jsonb map of the three core platform.system_flags as booleans. service_role only.';
+
+
+
 CREATE OR REPLACE FUNCTION "platform"."fn_get_worker_health"() RETURNS TABLE("worker_id" "text", "worker_type" "text", "last_seen_at" timestamp with time zone, "is_healthy" boolean, "seconds_since" numeric)
     LANGUAGE "sql" SECURITY DEFINER
     SET "search_path" TO 'platform'
@@ -13503,6 +15016,31 @@ COMMENT ON FUNCTION "platform"."fn_set_autonomy_dispatch_enabled"("p_enabled" bo
 
 
 
+CREATE OR REPLACE FUNCTION "platform"."fn_set_platform_flag"("p_key" "text", "p_enabled" boolean) RETURNS "void"
+    LANGUAGE "plpgsql" SECURITY DEFINER
+    SET "search_path" TO 'platform', 'public'
+    AS $$
+BEGIN
+  IF p_key NOT IN ('autonomy_dispatch_enabled', 'public_battles_enabled', 'webhook_outbox_enabled') THEN
+    RAISE EXCEPTION 'Unknown platform flag: %', p_key USING ERRCODE = 'invalid_parameter_value';
+  END IF;
+
+  INSERT INTO platform.system_flags (key, value, updated_at)
+  VALUES (p_key, p_enabled::text, now())
+  ON CONFLICT (key) DO UPDATE
+    SET value      = EXCLUDED.value,
+        updated_at = now();
+END;
+$$;
+
+
+ALTER FUNCTION "platform"."fn_set_platform_flag"("p_key" "text", "p_enabled" boolean) OWNER TO "postgres";
+
+
+COMMENT ON FUNCTION "platform"."fn_set_platform_flag"("p_key" "text", "p_enabled" boolean) IS 'Toggle one of the three core platform.system_flags. service_role only. Allowed keys: autonomy_dispatch_enabled, public_battles_enabled, webhook_outbox_enabled.';
+
+
+
 CREATE OR REPLACE FUNCTION "platform"."fn_upsert_worker_heartbeat"("p_worker_id" "text", "p_worker_type" "text" DEFAULT 'workflow'::"text", "p_metadata" "jsonb" DEFAULT '{}'::"jsonb") RETURNS "void"
     LANGUAGE "plpgsql" SECURITY DEFINER
     SET "search_path" TO 'platform'
@@ -13665,6 +15203,40 @@ $$;
 ALTER FUNCTION "public"."fn_admin_get_worker_health"() OWNER TO "postgres";
 
 
+CREATE OR REPLACE FUNCTION "public"."fn_admin_health"() RETURNS "jsonb"
+    LANGUAGE "plpgsql" SECURITY DEFINER
+    SET "search_path" TO 'cron', 'public'
+    AS $$
+DECLARE
+  v_crons jsonb;
+BEGIN
+  SELECT jsonb_agg(jsonb_build_object(
+    'name',      j.jobname,
+    'schedule',  j.schedule,
+    'active',    j.active,
+    'last_run',  (
+      SELECT start_time
+      FROM   cron.job_run_details d
+      WHERE  d.jobid = j.jobid
+      ORDER  BY start_time DESC
+      LIMIT  1
+    )
+  ))
+  INTO v_crons
+  FROM cron.job j;
+
+  RETURN jsonb_build_object('crons', COALESCE(v_crons, '[]'::jsonb));
+END;
+$$;
+
+
+ALTER FUNCTION "public"."fn_admin_health"() OWNER TO "postgres";
+
+
+COMMENT ON FUNCTION "public"."fn_admin_health"() IS 'Phase AI: returns pg_cron job list with last-run timestamps. Restricted to service_role. Used by health:cron gate script.';
+
+
+
 CREATE OR REPLACE FUNCTION "public"."fn_admin_retry_dlq"("p_dead_letter_id" "uuid") RETURNS "void"
     LANGUAGE "plpgsql" SECURITY DEFINER
     SET "search_path" TO 'battles', 'lensers', 'public'
@@ -13679,6 +15251,19 @@ $$;
 
 
 ALTER FUNCTION "public"."fn_admin_retry_dlq"("p_dead_letter_id" "uuid") OWNER TO "postgres";
+
+
+CREATE OR REPLACE FUNCTION "public"."fn_advance_tournament"("p_match_id" "uuid") RETURNS "void"
+    LANGUAGE "plpgsql" SECURITY DEFINER
+    SET "search_path" TO 'public', 'battles', 'lensers'
+    AS $$
+BEGIN
+  PERFORM battles.fn_advance_tournament(p_match_id);
+END;
+$$;
+
+
+ALTER FUNCTION "public"."fn_advance_tournament"("p_match_id" "uuid") OWNER TO "postgres";
 
 
 CREATE OR REPLACE FUNCTION "public"."fn_agent_adapters_register"("p_name" "text", "p_adapter_type" "text", "p_config" "jsonb" DEFAULT '{}'::"jsonb") RETURNS "uuid"
@@ -14478,6 +16063,18 @@ COMMENT ON FUNCTION "public"."fn_analytics_submit_feedback_public"("p_product_ta
 
 
 
+CREATE OR REPLACE FUNCTION "public"."fn_append_team_run_event"("p_team_run_id" "uuid", "p_event_type" "text", "p_payload" "jsonb") RETURNS "void"
+    LANGUAGE "sql" SECURITY DEFINER
+    SET "search_path" TO 'public', 'agents'
+    AS $$
+  INSERT INTO agents.agent_run_events (team_run_id, event_type, payload, occurred_at)
+  VALUES (p_team_run_id, p_event_type, p_payload, now());
+$$;
+
+
+ALTER FUNCTION "public"."fn_append_team_run_event"("p_team_run_id" "uuid", "p_event_type" "text", "p_payload" "jsonb") OWNER TO "postgres";
+
+
 CREATE OR REPLACE FUNCTION "public"."fn_append_workflow_run_event"("p_run_id" "uuid", "p_type" "text", "p_payload" "jsonb" DEFAULT '{}'::"jsonb") RETURNS TABLE("event_id" bigint, "created_at" timestamp with time zone)
     LANGUAGE "plpgsql" SECURITY DEFINER
     SET "search_path" TO 'public', 'lenses', 'lensers'
@@ -14525,6 +16122,31 @@ COMMENT ON FUNCTION "public"."fn_append_workflow_run_event"("p_run_id" "uuid", "
 
 
 
+CREATE OR REPLACE FUNCTION "public"."fn_append_workflow_run_media"("p_run_id" "uuid", "p_object_id" "uuid", "p_media_type" "text", "p_mime_type" "text", "p_node_id" "text" DEFAULT NULL::"text") RETURNS "void"
+    LANGUAGE "plpgsql" SECURITY DEFINER
+    SET "search_path" TO 'lenses', 'media', 'public'
+    AS $$
+BEGIN
+  UPDATE lenses.workflow_runs
+  SET media_manifest = media_manifest || jsonb_build_object(
+    'object_id',  p_object_id,
+    'media_type', p_media_type,
+    'mime_type',  p_mime_type,
+    'node_id',    p_node_id,
+    'added_at',   now()
+  )
+  WHERE id = p_run_id;
+END;
+$$;
+
+
+ALTER FUNCTION "public"."fn_append_workflow_run_media"("p_run_id" "uuid", "p_object_id" "uuid", "p_media_type" "text", "p_mime_type" "text", "p_node_id" "text") OWNER TO "postgres";
+
+
+COMMENT ON FUNCTION "public"."fn_append_workflow_run_media"("p_run_id" "uuid", "p_object_id" "uuid", "p_media_type" "text", "p_mime_type" "text", "p_node_id" "text") IS 'AP: Appends a media object entry to lenses.workflow_runs.media_manifest. Called by the WorkflowExecutionService after fn_complete_async_run succeeds. SECURITY DEFINER; service_role only.';
+
+
+
 CREATE OR REPLACE FUNCTION "public"."fn_approve_tool_invocation"("p_invocation_id" "uuid") RETURNS "void"
     LANGUAGE "plpgsql" SECURITY DEFINER
     SET "search_path" TO 'public', 'agents'
@@ -14554,6 +16176,48 @@ $$;
 
 
 ALTER FUNCTION "public"."fn_approve_tool_invocation"("p_invocation_id" "uuid") OWNER TO "postgres";
+
+
+CREATE OR REPLACE FUNCTION "public"."fn_assert_modality_allowed"("p_agent_id" "uuid", "p_modality" "text") RETURNS "void"
+    LANGUAGE "plpgsql" SECURITY DEFINER
+    SET "search_path" TO 'agents', 'public'
+    AS $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1
+    FROM agents.policies ap
+    WHERE ap.ai_lenser_id = p_agent_id
+      AND p_modality = ANY(ap.allowed_output_modalities)
+  ) THEN
+    RAISE EXCEPTION 'modality_not_allowed: agent % cannot produce % output. '
+      'Update agents.policies.allowed_output_modalities to unlock.', p_agent_id, p_modality
+    USING ERRCODE = 'P0001';
+  END IF;
+END;
+$$;
+
+
+ALTER FUNCTION "public"."fn_assert_modality_allowed"("p_agent_id" "uuid", "p_modality" "text") OWNER TO "postgres";
+
+
+COMMENT ON FUNCTION "public"."fn_assert_modality_allowed"("p_agent_id" "uuid", "p_modality" "text") IS 'AP: Raises modality_not_allowed if p_modality is not in agents.policies.allowed_output_modalities for p_agent_id. Called by WorkflowExecutionService before dispatching any non-text generative node. SECURITY DEFINER; service_role only.';
+
+
+
+CREATE OR REPLACE FUNCTION "public"."fn_assign_lens_to_contender"("p_contender_id" "uuid", "p_battle_id" "uuid", "p_lens_id" "uuid", "p_version_id" "uuid" DEFAULT NULL::"uuid") RETURNS TABLE("id" "uuid", "contender_id" "uuid", "battle_id" "uuid", "lens_id" "uuid", "version_id" "uuid", "assigned_at" timestamp with time zone)
+    LANGUAGE "sql" SECURITY DEFINER
+    SET "search_path" TO 'public', 'battles'
+    AS $$
+  INSERT INTO battles.contender_lens_assignments (contender_id, battle_id, lens_id, version_id)
+  VALUES (p_contender_id, p_battle_id, p_lens_id, p_version_id)
+  ON CONFLICT (contender_id) DO UPDATE
+    SET lens_id    = EXCLUDED.lens_id,
+        version_id = EXCLUDED.version_id
+  RETURNING id, contender_id, battle_id, lens_id, version_id, assigned_at;
+$$;
+
+
+ALTER FUNCTION "public"."fn_assign_lens_to_contender"("p_contender_id" "uuid", "p_battle_id" "uuid", "p_lens_id" "uuid", "p_version_id" "uuid") OWNER TO "postgres";
 
 
 CREATE TABLE IF NOT EXISTS "agents"."tool_assignments" (
@@ -16183,6 +17847,20 @@ $$;
 ALTER FUNCTION "public"."fn_battles_leaderboard"("p_battle_id" "uuid") OWNER TO "postgres";
 
 
+CREATE OR REPLACE FUNCTION "public"."fn_battles_link_forum_thread"("p_battle_id" "uuid", "p_forum_thread_id" "uuid") RETURNS "void"
+    LANGUAGE "sql" SECURITY DEFINER
+    SET "search_path" TO 'public', 'battles', 'lensers'
+    AS $$
+  UPDATE battles.battles
+  SET forum_thread_id = p_forum_thread_id
+  WHERE id = p_battle_id
+    AND creator_lenser_id = lensers.get_auth_lenser_id();
+$$;
+
+
+ALTER FUNCTION "public"."fn_battles_link_forum_thread"("p_battle_id" "uuid", "p_forum_thread_id" "uuid") OWNER TO "postgres";
+
+
 CREATE OR REPLACE FUNCTION "public"."fn_battles_list_public"("p_limit" integer DEFAULT 20, "p_offset" integer DEFAULT 0) RETURNS TABLE("id" "uuid", "title" "text", "slug" "text", "status" "text", "contender_count" bigint, "total_vote_count" integer, "creator_display_name" "text", "created_at" timestamp with time zone, "voting_opens_at" timestamp with time zone, "voting_closes_at" timestamp with time zone)
     LANGUAGE "plpgsql" SECURITY DEFINER
     SET "search_path" TO 'public', 'battles', 'lensers'
@@ -16845,6 +18523,45 @@ $$;
 ALTER FUNCTION "public"."fn_byok_key_register"("p_agent_id" "uuid", "p_provider" "text", "p_key_encrypted" "text", "p_key_hint" "text", "p_label" "text", "p_expires_at" timestamp with time zone) OWNER TO "postgres";
 
 
+CREATE OR REPLACE FUNCTION "public"."fn_byok_key_resolve"("p_agent_id" "uuid", "p_provider" "text", "p_model_id" "text" DEFAULT NULL::"text") RETURNS "text"
+    LANGUAGE "plpgsql" SECURITY DEFINER
+    SET "search_path" TO 'execution', 'public'
+    AS $$
+DECLARE
+  v_row execution.byok_keys%ROWTYPE;
+BEGIN
+  SELECT * INTO v_row
+  FROM execution.byok_keys
+  WHERE agent_id  = p_agent_id
+    AND provider  = p_provider
+    AND revoked_at IS NULL
+    AND (expires_at IS NULL OR expires_at > now());
+
+  IF NOT FOUND THEN
+    RETURN NULL;
+  END IF;
+
+  -- Model allowlist check
+  IF p_model_id IS NOT NULL
+    AND v_row.allowed_model_ids IS NOT NULL
+    AND NOT (p_model_id = ANY(v_row.allowed_model_ids))
+  THEN
+    RAISE EXCEPTION 'byok_key_resolve: model % is not in allowed_model_ids for provider %', p_model_id, p_provider
+      USING ERRCODE = 'P0001';
+  END IF;
+
+  RETURN v_row.key_encrypted;
+END;
+$$;
+
+
+ALTER FUNCTION "public"."fn_byok_key_resolve"("p_agent_id" "uuid", "p_provider" "text", "p_model_id" "text") OWNER TO "postgres";
+
+
+COMMENT ON FUNCTION "public"."fn_byok_key_resolve"("p_agent_id" "uuid", "p_provider" "text", "p_model_id" "text") IS 'AR: Returns key_encrypted when key is valid and not revoked/expired. Returns NULL when not found. Raises when model not in allowed_model_ids. SECURITY DEFINER; service_role only. Never exposed to authenticated clients.';
+
+
+
 CREATE OR REPLACE FUNCTION "public"."fn_byok_key_revoke"("p_agent_id" "uuid", "p_provider" "text") RETURNS "void"
     LANGUAGE "plpgsql" SECURITY DEFINER
     SET "search_path" TO 'execution', 'agents', 'lensers', 'public'
@@ -16871,6 +18588,71 @@ $$;
 
 
 ALTER FUNCTION "public"."fn_byok_key_revoke"("p_agent_id" "uuid", "p_provider" "text") OWNER TO "postgres";
+
+
+CREATE OR REPLACE FUNCTION "public"."fn_byok_key_rotate"("p_agent_id" "uuid", "p_provider" "text", "p_new_encrypted" "text", "p_new_hint" "text") RETURNS "void"
+    LANGUAGE "plpgsql" SECURITY DEFINER
+    SET "search_path" TO 'execution', 'audit', 'public'
+    AS $$
+DECLARE
+  v_actor_id UUID;
+  v_rows_updated INT;
+BEGIN
+  -- Caller must be authenticated
+  v_actor_id := auth.uid();
+  IF v_actor_id IS NULL THEN
+    RAISE EXCEPTION 'Authentication required' USING ERRCODE = 'P0001';
+  END IF;
+
+  -- Verify caller owns the agent
+  IF NOT EXISTS (
+    SELECT 1 FROM agents.ai_lensers al
+    JOIN lensers.profiles p ON p.id = al.profile_id
+    WHERE al.id = p_agent_id AND p.id = v_actor_id
+  ) THEN
+    RAISE EXCEPTION 'byok_key_rotate: caller does not own agent %', p_agent_id
+      USING ERRCODE = 'P0001';
+  END IF;
+
+  -- Atomic update: rotate key, clear revoked_at (re-activates if previously expired)
+  UPDATE execution.byok_keys
+  SET
+    key_encrypted = p_new_encrypted,
+    key_hint      = p_new_hint,
+    revoked_at    = NULL,
+    created_at    = now()
+  WHERE agent_id = p_agent_id
+    AND provider  = p_provider;
+
+  GET DIAGNOSTICS v_rows_updated = ROW_COUNT;
+  IF v_rows_updated = 0 THEN
+    RAISE EXCEPTION 'byok_key_rotate: no key found for agent % provider %', p_agent_id, p_provider
+      USING ERRCODE = 'P0001';
+  END IF;
+
+  -- Audit trail
+  INSERT INTO audit.events (event_type, actor_type, severity, payload)
+  VALUES (
+    'byok.key_rotated',
+    'user',
+    'info',
+    jsonb_build_object(
+      'agent_id',  p_agent_id,
+      'provider',  p_provider,
+      'key_hint',  p_new_hint,
+      'rotated_by', v_actor_id,
+      'rotated_at', now()
+    )
+  );
+END;
+$$;
+
+
+ALTER FUNCTION "public"."fn_byok_key_rotate"("p_agent_id" "uuid", "p_provider" "text", "p_new_encrypted" "text", "p_new_hint" "text") OWNER TO "postgres";
+
+
+COMMENT ON FUNCTION "public"."fn_byok_key_rotate"("p_agent_id" "uuid", "p_provider" "text", "p_new_encrypted" "text", "p_new_hint" "text") IS 'AR: Rotates an existing BYOK key. Requires the caller to be the agent owner. Atomic UPDATE + audit.events INSERT. SECURITY DEFINER; authenticated role allowed.';
+
 
 
 CREATE OR REPLACE FUNCTION "public"."fn_cancel_account_deletion_on_login"() RETURNS "jsonb"
@@ -16963,6 +18745,32 @@ $$;
 
 
 ALTER FUNCTION "public"."fn_cancel_account_deletion_on_login"() OWNER TO "postgres";
+
+
+CREATE OR REPLACE FUNCTION "public"."fn_cancel_agent_run"("p_team_run_id" "uuid", "p_ai_lenser_id" "uuid") RETURNS "void"
+    LANGUAGE "plpgsql" SECURITY DEFINER
+    SET "search_path" TO 'public', 'agents', 'lensers'
+    AS $$
+DECLARE
+  v_lenser_id uuid := lensers.get_auth_lenser_id();
+BEGIN
+  UPDATE agents.team_runs
+  SET status = 'cancelled'
+  WHERE id = p_team_run_id
+    AND ai_lenser_id = p_ai_lenser_id
+    AND (
+      EXISTS (
+        SELECT 1 FROM agents.ownerships o
+        WHERE o.ai_lenser_id = p_ai_lenser_id
+          AND o.owner_lenser_id = v_lenser_id
+          AND o.revoked_at IS NULL
+      ) OR public.is_admin()
+    );
+END;
+$$;
+
+
+ALTER FUNCTION "public"."fn_cancel_agent_run"("p_team_run_id" "uuid", "p_ai_lenser_id" "uuid") OWNER TO "postgres";
 
 
 CREATE OR REPLACE FUNCTION "public"."fn_cancel_run"("p_team_run_id" "uuid") RETURNS "void"
@@ -17132,6 +18940,41 @@ ALTER FUNCTION "public"."fn_cancel_workflow_run_over_budget"("p_run_id" "uuid", 
 
 COMMENT ON FUNCTION "public"."fn_cancel_workflow_run_over_budget"("p_run_id" "uuid", "p_pending_credits" integer) IS 'Phase 9 — cancels a run when spent_credits + pendingReservations exceed budget_credits. Cascades to node results and emits run.cancelled event. Invoked periodically by the worker heartbeat loop.';
 
+
+
+CREATE OR REPLACE FUNCTION "public"."fn_check_voter_eligibility"("p_battle_id" "uuid", "p_lenser_id" "uuid") RETURNS boolean
+    LANGUAGE "plpgsql" STABLE SECURITY DEFINER
+    SET "search_path" TO 'public', 'battles', 'lensers'
+    AS $$
+DECLARE
+  v_eligibility text;
+  v_type        text;
+  v_onboarding  text;
+BEGIN
+  SELECT voter_eligibility INTO v_eligibility
+  FROM battles.battles
+  WHERE id = p_battle_id;
+
+  IF NOT FOUND THEN RETURN false; END IF;
+  IF v_eligibility = 'open' THEN RETURN true; END IF;
+
+  SELECT type, onboarding_step INTO v_type, v_onboarding
+  FROM lensers.profiles
+  WHERE id = p_lenser_id;
+
+  IF NOT FOUND THEN RETURN false; END IF;
+
+  IF    v_eligibility = 'human_only'      THEN RETURN v_type = 'human';
+  ELSIF v_eligibility = 'ai_only'         THEN RETURN v_type = 'ai';
+  ELSIF v_eligibility = 'verified_lenser' THEN RETURN v_onboarding = 'completed';
+  END IF;
+
+  RETURN true;
+END;
+$$;
+
+
+ALTER FUNCTION "public"."fn_check_voter_eligibility"("p_battle_id" "uuid", "p_lenser_id" "uuid") OWNER TO "postgres";
 
 
 CREATE OR REPLACE FUNCTION "public"."fn_check_webhook_signing_secret"() RETURNS TABLE("is_set" boolean, "length_bytes" integer, "strict_mode" boolean)
@@ -18765,6 +20608,77 @@ $$;
 ALTER FUNCTION "public"."fn_core_languages_list"() OWNER TO "postgres";
 
 
+CREATE OR REPLACE FUNCTION "public"."fn_create_agent_team"("p_ai_lenser_id" "uuid", "p_name" "text", "p_description" "text" DEFAULT NULL::"text", "p_initial_members" "jsonb" DEFAULT '[]'::"jsonb") RETURNS "jsonb"
+    LANGUAGE "plpgsql" SECURITY DEFINER
+    SET "search_path" TO 'public', 'agents', 'lensers'
+    AS $$
+DECLARE
+  v_lenser_id uuid := lensers.get_auth_lenser_id();
+  v_team_id   uuid;
+  v_team      jsonb;
+  v_member    jsonb;
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM agents.ownerships o
+    WHERE o.ai_lenser_id = p_ai_lenser_id
+      AND o.owner_lenser_id = v_lenser_id
+      AND o.revoked_at IS NULL
+  ) THEN
+    RAISE EXCEPTION 'create_team_forbidden' USING ERRCODE = '42501';
+  END IF;
+
+  INSERT INTO agents.teams (ai_lenser_id, name, description, status, is_active)
+  VALUES (p_ai_lenser_id, p_name, p_description, 'active', true)
+  RETURNING id, to_jsonb(agents.teams.*) INTO v_team_id, v_team;
+
+  -- Batch insert initial members if provided
+  FOR v_member IN SELECT * FROM jsonb_array_elements(p_initial_members) LOOP
+    INSERT INTO agents.team_members (
+      team_id, agent_id, role, responsibility, lane, sort_order, is_active
+    ) VALUES (
+      v_team_id,
+      (v_member->>'agent_id')::uuid,
+      v_member->>'role',
+      v_member->>'responsibility',
+      v_member->>'lane',
+      COALESCE((v_member->>'sort_order')::integer, 0),
+      COALESCE((v_member->>'is_active')::boolean, true)
+    );
+  END LOOP;
+
+  RETURN v_team;
+END;
+$$;
+
+
+ALTER FUNCTION "public"."fn_create_agent_team"("p_ai_lenser_id" "uuid", "p_name" "text", "p_description" "text", "p_initial_members" "jsonb") OWNER TO "postgres";
+
+
+CREATE OR REPLACE FUNCTION "public"."fn_create_ai_lenser"("p_owner_lenser_id" "uuid", "p_handle" "text", "p_display_name" "text", "p_ai_model_id" "uuid" DEFAULT NULL::"uuid") RETURNS "jsonb"
+    LANGUAGE "plpgsql" SECURITY DEFINER
+    SET "search_path" TO 'public', 'agents', 'lensers', 'auth'
+    AS $$
+DECLARE
+  v_result jsonb;
+BEGIN
+  v_result := agents.fn_create_ai_lenser(
+    p_owner_lenser_id := p_owner_lenser_id,
+    p_handle          := p_handle,
+    p_display_name    := p_display_name,
+    p_ai_model_id     := p_ai_model_id
+  );
+  RETURN v_result;
+END;
+$$;
+
+
+ALTER FUNCTION "public"."fn_create_ai_lenser"("p_owner_lenser_id" "uuid", "p_handle" "text", "p_display_name" "text", "p_ai_model_id" "uuid") OWNER TO "postgres";
+
+
+COMMENT ON FUNCTION "public"."fn_create_ai_lenser"("p_owner_lenser_id" "uuid", "p_handle" "text", "p_display_name" "text", "p_ai_model_id" "uuid") IS 'Public wrapper for agents.fn_create_ai_lenser. Auth enforced by inner function. Fixes PGRST202 404 in agentsRepository.createAgent.';
+
+
+
 CREATE OR REPLACE FUNCTION "public"."fn_create_automation_notification"("p_lenser_id" "uuid", "p_title" "text", "p_body" "text", "p_payload" "jsonb" DEFAULT '{}'::"jsonb") RETURNS "uuid"
     LANGUAGE "plpgsql" SECURITY DEFINER
     SET "search_path" TO 'public', 'pg_catalog'
@@ -18786,6 +20700,245 @@ ALTER FUNCTION "public"."fn_create_automation_notification"("p_lenser_id" "uuid"
 
 
 COMMENT ON FUNCTION "public"."fn_create_automation_notification"("p_lenser_id" "uuid", "p_title" "text", "p_body" "text", "p_payload" "jsonb") IS 'Phase U2: thin wrapper around public.fn_insert_notification used by automation.fn_dispatch_action when action_kind=notify. Type is fixed to "automation_action" so users can filter automation-driven entries from human-driven ones in their feed.';
+
+
+
+CREATE OR REPLACE FUNCTION "public"."fn_create_battle"("p_title" "text", "p_task_prompt" "text", "p_battle_type" "text", "p_voter_eligibility" "text" DEFAULT 'open'::"text", "p_handicap_config" "jsonb" DEFAULT '{}'::"jsonb", "p_workflow_id" "uuid" DEFAULT NULL::"uuid", "p_lens_id" "uuid" DEFAULT NULL::"uuid") RETURNS TABLE("id" "uuid", "slug" "text", "title" "text", "task_prompt" "text", "status" "text", "total_vote_count" integer, "published_at" timestamp with time zone, "voting_opens_at" timestamp with time zone, "voting_closes_at" timestamp with time zone, "battle_type" "text", "voter_eligibility" "text", "handicap_config" "jsonb", "creator_lenser_id" "uuid", "forum_thread_id" "text", "workflow_id" "uuid", "lens_id" "uuid", "execution_starts_at" timestamp with time zone, "auto_publish" boolean, "voting_duration_hours" integer, "vote_velocity" numeric, "og_image_url" "text", "winner_contender_id" "uuid", "parent_battle_id" "uuid", "deleted_at" timestamp with time zone)
+    LANGUAGE "plpgsql" SECURITY DEFINER
+    SET "search_path" TO 'public', 'battles', 'lensers'
+    AS $$
+DECLARE
+  v_lenser_id uuid := lensers.get_auth_lenser_id();
+  v_slug      text;
+BEGIN
+  IF v_lenser_id IS NULL THEN
+    RAISE EXCEPTION 'Authentication required.' USING ERRCODE = '42501';
+  END IF;
+
+  v_slug := lower(regexp_replace(p_title, '[^a-z0-9\s-]', '', 'gi'));
+  v_slug := regexp_replace(v_slug, '\s+', '-', 'g');
+  v_slug := regexp_replace(v_slug, '-+', '-', 'g');
+  v_slug := left(v_slug, 80) || '-' || substr(md5(random()::text), 1, 6);
+
+  RETURN QUERY
+  INSERT INTO battles.battles (
+    title, task_prompt, battle_type, voter_eligibility,
+    handicap_config, creator_lenser_id, slug, status,
+    workflow_id, lens_id
+  ) VALUES (
+    p_title, p_task_prompt, p_battle_type, p_voter_eligibility,
+    COALESCE(p_handicap_config, '{}'::jsonb), v_lenser_id, v_slug, 'draft',
+    p_workflow_id, p_lens_id
+  )
+  RETURNING
+    id, slug, title, task_prompt, status, total_vote_count, published_at,
+    voting_opens_at, voting_closes_at, battle_type, voter_eligibility, handicap_config,
+    creator_lenser_id, forum_thread_id, workflow_id, lens_id,
+    execution_starts_at, auto_publish, voting_duration_hours, vote_velocity, og_image_url,
+    winner_contender_id, parent_battle_id, deleted_at;
+END;
+$$;
+
+
+ALTER FUNCTION "public"."fn_create_battle"("p_title" "text", "p_task_prompt" "text", "p_battle_type" "text", "p_voter_eligibility" "text", "p_handicap_config" "jsonb", "p_workflow_id" "uuid", "p_lens_id" "uuid") OWNER TO "postgres";
+
+
+CREATE OR REPLACE FUNCTION "public"."fn_create_benchmark_invalidation"("p_result_set_id" "uuid", "p_reason" "text") RETURNS TABLE("id" "uuid", "result_set_id" "uuid", "reason" "text", "invalidated_by" "uuid", "invalidated_at" timestamp with time zone)
+    LANGUAGE "sql" SECURITY DEFINER
+    SET "search_path" TO 'public', 'benchmark', 'lensers'
+    AS $$
+  INSERT INTO benchmark.invalidations
+    (result_set_id, reason, invalidated_by, invalidated_at)
+  VALUES
+    (p_result_set_id, p_reason, lensers.get_auth_lenser_id(), now())
+  RETURNING id, result_set_id, reason, invalidated_by, invalidated_at;
+$$;
+
+
+ALTER FUNCTION "public"."fn_create_benchmark_invalidation"("p_result_set_id" "uuid", "p_reason" "text") OWNER TO "postgres";
+
+
+COMMENT ON FUNCTION "public"."fn_create_benchmark_invalidation"("p_result_set_id" "uuid", "p_reason" "text") IS 'Security wrapper: record a benchmark result-set invalidation as the current user.';
+
+
+
+CREATE OR REPLACE FUNCTION "public"."fn_create_benchmark_suite"("p_title" "text", "p_description" "text" DEFAULT NULL::"text", "p_category" "text" DEFAULT NULL::"text", "p_version" "text" DEFAULT '1.0.0'::"text", "p_is_public" boolean DEFAULT false) RETURNS TABLE("id" "uuid", "title" "text", "description" "text", "creator_lenser_id" "uuid", "category" "text", "status" "text", "version" "text", "is_public" boolean, "created_at" timestamp with time zone, "updated_at" timestamp with time zone)
+    LANGUAGE "sql" SECURITY DEFINER
+    SET "search_path" TO 'public', 'benchmark', 'lensers'
+    AS $$
+  INSERT INTO benchmark.suites
+    (title, description, category, version, is_public, creator_lenser_id, status)
+  VALUES
+    (p_title, p_description, p_category, p_version, p_is_public,
+     lensers.get_auth_lenser_id(), 'draft')
+  RETURNING
+    id, title, description, creator_lenser_id, category,
+    status, version, is_public, created_at, updated_at;
+$$;
+
+
+ALTER FUNCTION "public"."fn_create_benchmark_suite"("p_title" "text", "p_description" "text", "p_category" "text", "p_version" "text", "p_is_public" boolean) OWNER TO "postgres";
+
+
+COMMENT ON FUNCTION "public"."fn_create_benchmark_suite"("p_title" "text", "p_description" "text", "p_category" "text", "p_version" "text", "p_is_public" boolean) IS 'Security wrapper: create a benchmark suite owned by the current user. Status is always "draft" on creation.';
+
+
+
+CREATE OR REPLACE FUNCTION "public"."fn_create_benchmark_task"("p_suite_id" "uuid", "p_title" "text", "p_prompt_template" "text", "p_evaluation_protocol" "jsonb" DEFAULT '{}'::"jsonb", "p_required_repetitions" integer DEFAULT 1, "p_ordinal" integer DEFAULT 0, "p_workflow_id" "uuid" DEFAULT NULL::"uuid") RETURNS TABLE("id" "uuid", "suite_id" "uuid", "title" "text", "prompt_template" "text", "evaluation_protocol" "jsonb", "required_repetitions" integer, "ordinal" integer, "workflow_id" "uuid", "created_at" timestamp with time zone)
+    LANGUAGE "plpgsql" SECURITY DEFINER
+    SET "search_path" TO 'public', 'benchmark', 'lensers'
+    AS $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM benchmark.suites
+    WHERE id = p_suite_id AND creator_lenser_id = lensers.get_auth_lenser_id()
+  ) THEN
+    RAISE EXCEPTION 'forbidden: suite % not owned by caller', p_suite_id;
+  END IF;
+
+  RETURN QUERY
+  INSERT INTO benchmark.tasks
+    (suite_id, title, prompt_template, evaluation_protocol,
+     required_repetitions, ordinal, workflow_id)
+  VALUES
+    (p_suite_id, p_title, p_prompt_template, p_evaluation_protocol,
+     p_required_repetitions, p_ordinal, p_workflow_id)
+  RETURNING
+    id, suite_id, title, prompt_template, evaluation_protocol,
+    required_repetitions, ordinal, workflow_id, created_at;
+END;
+$$;
+
+
+ALTER FUNCTION "public"."fn_create_benchmark_task"("p_suite_id" "uuid", "p_title" "text", "p_prompt_template" "text", "p_evaluation_protocol" "jsonb", "p_required_repetitions" integer, "p_ordinal" integer, "p_workflow_id" "uuid") OWNER TO "postgres";
+
+
+COMMENT ON FUNCTION "public"."fn_create_benchmark_task"("p_suite_id" "uuid", "p_title" "text", "p_prompt_template" "text", "p_evaluation_protocol" "jsonb", "p_required_repetitions" integer, "p_ordinal" integer, "p_workflow_id" "uuid") IS 'Security wrapper: create a task within a benchmark suite. Raises "forbidden" if the suite is not owned by the current user.';
+
+
+
+CREATE OR REPLACE FUNCTION "public"."fn_create_evaluation_rubric"("p_evaluation_id" "uuid", "p_criteria" "jsonb") RETURNS "jsonb"
+    LANGUAGE "plpgsql" SECURITY DEFINER
+    SET "search_path" TO 'public', 'agents', 'lensers'
+    AS $$
+DECLARE
+  v_next_version integer;
+  v_result       jsonb;
+BEGIN
+  -- Mark existing rubrics as not current
+  UPDATE agents.evaluation_rubrics
+  SET is_current = false
+  WHERE evaluation_id = p_evaluation_id;
+
+  -- Get next version
+  SELECT COALESCE(MAX(version), 0) + 1 INTO v_next_version
+  FROM agents.evaluation_rubrics
+  WHERE evaluation_id = p_evaluation_id;
+
+  INSERT INTO agents.evaluation_rubrics (evaluation_id, version, criteria, is_current)
+  VALUES (p_evaluation_id, v_next_version, p_criteria, true)
+  RETURNING to_jsonb(agents.evaluation_rubrics.*) INTO v_result;
+
+  RETURN v_result;
+END;
+$$;
+
+
+ALTER FUNCTION "public"."fn_create_evaluation_rubric"("p_evaluation_id" "uuid", "p_criteria" "jsonb") OWNER TO "postgres";
+
+
+CREATE OR REPLACE FUNCTION "public"."fn_create_evaluation_with_cases"("p_owner_lenser_id" "uuid", "p_ai_lenser_id" "uuid", "p_target_type" "text", "p_target_id" "uuid", "p_name" "text", "p_description" "text" DEFAULT NULL::"text", "p_scoring_rules" "jsonb" DEFAULT '{}'::"jsonb", "p_dataset_uri" "text" DEFAULT NULL::"text", "p_cases" "jsonb" DEFAULT '[]'::"jsonb") RETURNS "jsonb"
+    LANGUAGE "plpgsql" SECURITY DEFINER
+    SET "search_path" TO 'public', 'agents'
+    AS $$
+DECLARE
+  v_eval_id uuid;
+  v_case    jsonb;
+  v_result  jsonb;
+BEGIN
+  INSERT INTO agents.evaluations
+    (owner_lenser_id, ai_lenser_id, target_type, target_id, name, description, scoring_rules, dataset_uri)
+  VALUES
+    (p_owner_lenser_id, p_ai_lenser_id, p_target_type, p_target_id, p_name, p_description,
+     COALESCE(p_scoring_rules, '{}'), p_dataset_uri)
+  RETURNING id, to_jsonb(agents.evaluations.*) INTO v_eval_id, v_result;
+
+  IF jsonb_array_length(COALESCE(p_cases, '[]'::jsonb)) > 0 THEN
+    FOR v_case IN SELECT * FROM jsonb_array_elements(p_cases) LOOP
+      INSERT INTO agents.evaluation_cases
+        (evaluation_id, input, expected, weight, tags)
+      VALUES (
+        v_eval_id,
+        v_case->'input',
+        v_case->'expected',
+        COALESCE((v_case->>'weight')::integer, 1),
+        COALESCE(ARRAY(SELECT jsonb_array_elements_text(v_case->'tags')), '{}')
+      );
+    END LOOP;
+  END IF;
+
+  RETURN v_result;
+END;
+$$;
+
+
+ALTER FUNCTION "public"."fn_create_evaluation_with_cases"("p_owner_lenser_id" "uuid", "p_ai_lenser_id" "uuid", "p_target_type" "text", "p_target_id" "uuid", "p_name" "text", "p_description" "text", "p_scoring_rules" "jsonb", "p_dataset_uri" "text", "p_cases" "jsonb") OWNER TO "postgres";
+
+
+CREATE OR REPLACE FUNCTION "public"."fn_create_lens"("p_visibility" "text", "p_template_body" "text", "p_title" "text", "p_description" "text" DEFAULT NULL::"text", "p_language_code" "text" DEFAULT 'en'::"text", "p_params" "jsonb" DEFAULT '[]'::"jsonb", "p_tag_ids" "uuid"[] DEFAULT '{}'::"uuid"[], "p_parent_lens_id" "uuid" DEFAULT NULL::"uuid", "p_forked_from_execution_id" "uuid" DEFAULT NULL::"uuid") RETURNS "uuid"
+    LANGUAGE "plpgsql" SECURITY DEFINER
+    SET "search_path" TO 'public', 'lenses', 'content', 'lensers', 'auth'
+    AS $$
+DECLARE
+  v_id uuid;
+BEGIN
+  v_id := lenses.fn_create_lens(
+    p_visibility               := p_visibility::content.visibility_enum,
+    p_template_body            := p_template_body,
+    p_title                    := p_title,
+    p_description              := p_description,
+    p_language_code            := p_language_code,
+    p_params                   := p_params,
+    p_tag_ids                  := p_tag_ids,
+    p_parent_lens_id           := p_parent_lens_id,
+    p_forked_from_execution_id := p_forked_from_execution_id
+  );
+  RETURN v_id;
+END;
+$$;
+
+
+ALTER FUNCTION "public"."fn_create_lens"("p_visibility" "text", "p_template_body" "text", "p_title" "text", "p_description" "text", "p_language_code" "text", "p_params" "jsonb", "p_tag_ids" "uuid"[], "p_parent_lens_id" "uuid", "p_forked_from_execution_id" "uuid") OWNER TO "postgres";
+
+
+COMMENT ON FUNCTION "public"."fn_create_lens"("p_visibility" "text", "p_template_body" "text", "p_title" "text", "p_description" "text", "p_language_code" "text", "p_params" "jsonb", "p_tag_ids" "uuid"[], "p_parent_lens_id" "uuid", "p_forked_from_execution_id" "uuid") IS 'Public wrapper for lenses.fn_create_lens. Auth enforced by inner function. Fixes PGRST202 404 in lensesRepository.createLens.';
+
+
+
+CREATE OR REPLACE FUNCTION "public"."fn_create_media_object"("p_workspace_id" "uuid", "p_media_type" "text", "p_mime_type" "text", "p_name" "text", "p_content_text" "text" DEFAULT NULL::"text", "p_external_url" "text" DEFAULT NULL::"text") RETURNS TABLE("id" "uuid", "workspace_id" "uuid", "owner_lenser_id" "uuid", "bucket" "text", "object_key" "text", "external_url" "text", "mime_type" "text", "media_type" "text", "name" "text", "content_text" "text", "byte_size" bigint, "visibility" "text", "lifecycle_state" "text", "metadata" "jsonb", "created_at" timestamp with time zone, "updated_at" timestamp with time zone)
+    LANGUAGE "sql" SECURITY DEFINER
+    SET "search_path" TO 'public', 'media', 'lensers'
+    AS $$
+  INSERT INTO media.objects
+    (workspace_id, owner_lenser_id, media_type, mime_type, name,
+     content_text, external_url, lifecycle_state)
+  VALUES (
+    p_workspace_id, lensers.get_auth_lenser_id(), p_media_type, p_mime_type, p_name,
+    p_content_text, p_external_url,
+    CASE WHEN p_content_text IS NOT NULL OR p_external_url IS NOT NULL
+         THEN 'active' ELSE 'pending' END
+  )
+  RETURNING
+    id, workspace_id, owner_lenser_id, bucket, object_key, external_url,
+    mime_type, media_type, name, content_text, byte_size, visibility,
+    lifecycle_state, metadata, created_at, updated_at;
+$$;
+
+
+ALTER FUNCTION "public"."fn_create_media_object"("p_workspace_id" "uuid", "p_media_type" "text", "p_mime_type" "text", "p_name" "text", "p_content_text" "text", "p_external_url" "text") OWNER TO "postgres";
+
+
+COMMENT ON FUNCTION "public"."fn_create_media_object"("p_workspace_id" "uuid", "p_media_type" "text", "p_mime_type" "text", "p_name" "text", "p_content_text" "text", "p_external_url" "text") IS 'Security wrapper: insert a media.objects row for the current user. lifecycle_state is auto-set to "active" when content or URL is provided, else "pending".';
 
 
 
@@ -18959,6 +21112,25 @@ $$;
 ALTER FUNCTION "public"."fn_create_run_report"("p_team_run_id" "uuid") OWNER TO "postgres";
 
 
+CREATE OR REPLACE FUNCTION "public"."fn_create_schedule_calendar"("p_name" "text", "p_kind" "text", "p_dates" "date"[] DEFAULT ARRAY[]::"date"[], "p_timezone" "text" DEFAULT 'UTC'::"text") RETURNS "uuid"
+    LANGUAGE "sql" SECURITY DEFINER
+    SET "search_path" TO 'public', 'lenses', 'lensers'
+    AS $$
+  INSERT INTO lenses.schedule_calendars
+    (lenser_id, name, kind, dates, timezone, is_seed)
+  VALUES
+    (lensers.get_auth_lenser_id(), p_name, p_kind, p_dates, p_timezone, false)
+  RETURNING id;
+$$;
+
+
+ALTER FUNCTION "public"."fn_create_schedule_calendar"("p_name" "text", "p_kind" "text", "p_dates" "date"[], "p_timezone" "text") OWNER TO "postgres";
+
+
+COMMENT ON FUNCTION "public"."fn_create_schedule_calendar"("p_name" "text", "p_kind" "text", "p_dates" "date"[], "p_timezone" "text") IS 'Security wrapper: create a schedule calendar owned by the current user. lenser_id is derived from the session — callers cannot supply it.';
+
+
+
 CREATE OR REPLACE FUNCTION "public"."fn_create_scratchpad_run"("p_ai_lenser_id" "uuid", "p_prompt" "text", "p_model_id" "uuid" DEFAULT NULL::"uuid", "p_metadata" "jsonb" DEFAULT '{}'::"jsonb") RETURNS "agents"."scratchpad_runs"
     LANGUAGE "plpgsql" SECURITY DEFINER
     SET "search_path" TO 'public', 'agents'
@@ -19029,6 +21201,45 @@ $$;
 
 
 ALTER FUNCTION "public"."fn_create_tag"("p_name" "text", "p_slug" "text", "p_language_code" "text") OWNER TO "postgres";
+
+
+CREATE OR REPLACE FUNCTION "public"."fn_create_team_run"("p_ai_lenser_id" "uuid", "p_workflow_id" "uuid" DEFAULT NULL::"uuid", "p_workflow_run_id" "uuid" DEFAULT NULL::"uuid", "p_workflow_assignment_id" "uuid" DEFAULT NULL::"uuid", "p_team_id" "uuid" DEFAULT NULL::"uuid", "p_approval_status" "text" DEFAULT 'pending'::"text") RETURNS "jsonb"
+    LANGUAGE "plpgsql" SECURITY DEFINER
+    SET "search_path" TO 'public', 'agents'
+    AS $$
+DECLARE
+  v_result jsonb;
+BEGIN
+  INSERT INTO agents.team_runs
+    (ai_lenser_id, workflow_id, workflow_run_id, workflow_assignment_id,
+     team_id, status, approval_status, started_at)
+  VALUES
+    (p_ai_lenser_id, p_workflow_id, p_workflow_run_id, p_workflow_assignment_id,
+     p_team_id, 'running', p_approval_status, now())
+  RETURNING to_jsonb(agents.team_runs.*) INTO v_result;
+  RETURN v_result;
+END;
+$$;
+
+
+ALTER FUNCTION "public"."fn_create_team_run"("p_ai_lenser_id" "uuid", "p_workflow_id" "uuid", "p_workflow_run_id" "uuid", "p_workflow_assignment_id" "uuid", "p_team_id" "uuid", "p_approval_status" "text") OWNER TO "postgres";
+
+
+CREATE OR REPLACE FUNCTION "public"."fn_create_thread_reply"("p_thread_id" "uuid", "p_content" "text", "p_parent_reply_id" "uuid" DEFAULT NULL::"uuid") RETURNS TABLE("id" "uuid", "lenser_id" "uuid")
+    LANGUAGE "sql" SECURITY DEFINER
+    SET "search_path" TO 'public', 'content', 'lensers'
+    AS $$
+  INSERT INTO content.thread_replies (thread_id, lenser_id, content, parent_reply_id)
+  VALUES (p_thread_id, lensers.get_auth_lenser_id(), p_content, p_parent_reply_id)
+  RETURNING id, lenser_id;
+$$;
+
+
+ALTER FUNCTION "public"."fn_create_thread_reply"("p_thread_id" "uuid", "p_content" "text", "p_parent_reply_id" "uuid") OWNER TO "postgres";
+
+
+COMMENT ON FUNCTION "public"."fn_create_thread_reply"("p_thread_id" "uuid", "p_content" "text", "p_parent_reply_id" "uuid") IS 'Security wrapper: insert a reply into a thread as the current user. Returns the new reply id and lenser_id.';
+
 
 
 CREATE TABLE IF NOT EXISTS "battles"."tournaments" (
@@ -19108,6 +21319,37 @@ ALTER FUNCTION "public"."fn_create_workflow"("p_title" "text", "p_description" "
 
 COMMENT ON FUNCTION "public"."fn_create_workflow"("p_title" "text", "p_description" "text", "p_visibility" "text") IS 'Creates a workflow. Lenser identity is resolved from JWT via get_auth_lenser_id() — p_lenser_id was removed to prevent identity spoofing.';
 
+
+
+CREATE OR REPLACE FUNCTION "public"."fn_create_workspace_record"("p_table_name" "text", "p_data" "jsonb") RETURNS "jsonb"
+    LANGUAGE "plpgsql" SECURITY DEFINER
+    SET "search_path" TO 'public', 'agents', 'lensers'
+    AS $_$
+DECLARE
+  v_lenser_id uuid := lensers.get_auth_lenser_id();
+  v_result    jsonb;
+BEGIN
+  IF p_table_name NOT IN (
+    'personality_profiles', 'memory_profiles', 'tool_profiles', 'model_profiles',
+    'workflow_assignments', 'evaluation_cases', 'evaluation_rubrics',
+    'evaluation_baselines', 'tools_registry', 'evaluations',
+    'team_members', 'team_edges', 'agent_run_events', 'agent_run_steps'
+  ) THEN
+    RAISE EXCEPTION 'create_forbidden: table % not in allowlist', p_table_name
+      USING ERRCODE = '42501';
+  END IF;
+
+  EXECUTE format(
+    'INSERT INTO agents.%I SELECT * FROM jsonb_populate_record(null::agents.%I, $1) RETURNING to_jsonb(%I.*)',
+    p_table_name, p_table_name, p_table_name
+  ) USING p_data INTO v_result;
+
+  RETURN v_result;
+END;
+$_$;
+
+
+ALTER FUNCTION "public"."fn_create_workspace_record"("p_table_name" "text", "p_data" "jsonb") OWNER TO "postgres";
 
 
 CREATE OR REPLACE FUNCTION "public"."fn_deactivate_account"() RETURNS "jsonb"
@@ -19451,6 +21693,99 @@ COMMENT ON FUNCTION "public"."fn_decide_tool_invocation"("p_log_id" "uuid", "p_d
 
 
 
+CREATE OR REPLACE FUNCTION "public"."fn_delete_automation_rule"("p_rule_id" "uuid") RETURNS "void"
+    LANGUAGE "sql" SECURITY DEFINER
+    SET "search_path" TO 'public', 'automation'
+    AS $$
+  DELETE FROM automation.trigger_rules
+  WHERE  id        = p_rule_id
+    AND  lenser_id = auth.uid();
+$$;
+
+
+ALTER FUNCTION "public"."fn_delete_automation_rule"("p_rule_id" "uuid") OWNER TO "postgres";
+
+
+COMMENT ON FUNCTION "public"."fn_delete_automation_rule"("p_rule_id" "uuid") IS 'Security wrapper: delete a trigger rule owned by the current user. Silently no-ops if the rule does not belong to the caller.';
+
+
+
+CREATE OR REPLACE FUNCTION "public"."fn_delete_media_object"("p_object_id" "uuid") RETURNS "void"
+    LANGUAGE "plpgsql" SECURITY DEFINER
+    SET "search_path" TO 'media', 'audit', 'public'
+    AS $$
+DECLARE
+  v_owner_id UUID;
+BEGIN
+  SELECT owner_lenser_id INTO v_owner_id
+  FROM media.objects
+  WHERE id = p_object_id;
+
+  IF NOT FOUND THEN
+    RAISE EXCEPTION 'media_object_not_found: %', p_object_id USING ERRCODE = 'P0001';
+  END IF;
+
+  IF v_owner_id != auth.uid() THEN
+    RAISE EXCEPTION 'media_delete_forbidden: caller does not own object %', p_object_id
+      USING ERRCODE = 'P0001';
+  END IF;
+
+  UPDATE media.objects
+  SET lifecycle_state = 'deleted'
+  WHERE id = p_object_id;
+
+  INSERT INTO audit.events (event_type, actor_type, severity, payload)
+  VALUES (
+    'media.object_deleted',
+    'user',
+    'info',
+    jsonb_build_object('object_id', p_object_id, 'deleted_by', auth.uid(), 'deleted_at', now())
+  );
+END;
+$$;
+
+
+ALTER FUNCTION "public"."fn_delete_media_object"("p_object_id" "uuid") OWNER TO "postgres";
+
+
+COMMENT ON FUNCTION "public"."fn_delete_media_object"("p_object_id" "uuid") IS 'AT: Soft-deletes a media object (lifecycle_state=deleted). Owner only. Writes audit.events row. SECURITY DEFINER.';
+
+
+
+CREATE OR REPLACE FUNCTION "public"."fn_delete_thread"("p_thread_id" "uuid") RETURNS "void"
+    LANGUAGE "sql" SECURITY DEFINER
+    SET "search_path" TO 'public', 'content', 'lensers'
+    AS $$
+  DELETE FROM content.threads
+  WHERE id        = p_thread_id
+    AND lenser_id = lensers.get_auth_lenser_id();
+$$;
+
+
+ALTER FUNCTION "public"."fn_delete_thread"("p_thread_id" "uuid") OWNER TO "postgres";
+
+
+COMMENT ON FUNCTION "public"."fn_delete_thread"("p_thread_id" "uuid") IS 'Security wrapper: delete a thread owned by the current user. Silently no-ops if not owned.';
+
+
+
+CREATE OR REPLACE FUNCTION "public"."fn_delete_thread_reply"("p_reply_id" "uuid") RETURNS "void"
+    LANGUAGE "sql" SECURITY DEFINER
+    SET "search_path" TO 'public', 'content', 'lensers'
+    AS $$
+  DELETE FROM content.thread_replies
+  WHERE id        = p_reply_id
+    AND lenser_id = lensers.get_auth_lenser_id();
+$$;
+
+
+ALTER FUNCTION "public"."fn_delete_thread_reply"("p_reply_id" "uuid") OWNER TO "postgres";
+
+
+COMMENT ON FUNCTION "public"."fn_delete_thread_reply"("p_reply_id" "uuid") IS 'Security wrapper: delete a thread reply owned by the current user. Silently no-ops if not owned.';
+
+
+
 CREATE OR REPLACE FUNCTION "public"."fn_delete_workflow_edge"("p_edge_id" "uuid") RETURNS "void"
     LANGUAGE "plpgsql" SECURITY DEFINER
     SET "search_path" TO 'lenses', 'lensers', 'public'
@@ -19511,26 +21846,95 @@ COMMENT ON FUNCTION "public"."fn_delete_workflow_node"("p_node_id" "uuid") IS 'D
 
 
 
-CREATE OR REPLACE FUNCTION "public"."fn_delete_workflow_schedule"("p_schedule_id" "uuid") RETURNS "void"
-    LANGUAGE "plpgsql" SECURITY DEFINER
+CREATE OR REPLACE FUNCTION "public"."fn_delete_workflow_phase"("p_phase_id" "uuid") RETURNS "void"
+    LANGUAGE "sql" SECURITY DEFINER
     SET "search_path" TO 'public', 'lenses', 'lensers'
     AS $$
-BEGIN
-  DELETE FROM lenses.workflow_schedules s
+  DELETE FROM lenses.workflow_phases wp
   USING lenses.workflows w
-  WHERE s.id = p_schedule_id
-    AND w.id = s.workflow_id
+  WHERE wp.id = p_phase_id
+    AND wp.workflow_id = w.id
     AND w.lenser_id = lensers.get_auth_lenser_id();
+$$;
 
-  IF NOT FOUND THEN
-    RAISE EXCEPTION 'Schedule not found or not owned by the active workspace'
-      USING ERRCODE = '42501';
-  END IF;
-END;
+
+ALTER FUNCTION "public"."fn_delete_workflow_phase"("p_phase_id" "uuid") OWNER TO "postgres";
+
+
+CREATE OR REPLACE FUNCTION "public"."fn_delete_workflow_schedule"("p_schedule_id" "uuid") RETURNS "void"
+    LANGUAGE "sql" SECURITY DEFINER
+    SET "search_path" TO 'public', 'lenses', 'lensers'
+    AS $$
+  DELETE FROM lenses.workflow_schedules
+  WHERE id        = p_schedule_id
+    AND workflow_id IN (
+      SELECT w.id FROM lenses.workflows w
+      WHERE w.lenser_id = lensers.get_auth_lenser_id()
+    );
 $$;
 
 
 ALTER FUNCTION "public"."fn_delete_workflow_schedule"("p_schedule_id" "uuid") OWNER TO "postgres";
+
+
+COMMENT ON FUNCTION "public"."fn_delete_workflow_schedule"("p_schedule_id" "uuid") IS 'Security wrapper: delete a workflow schedule owned by the current user. Silently no-ops if not found or not owned by caller.';
+
+
+
+CREATE OR REPLACE FUNCTION "public"."fn_delete_workflow_task"("p_task_id" "uuid") RETURNS "void"
+    LANGUAGE "sql" SECURITY DEFINER
+    SET "search_path" TO 'public', 'lenses', 'lensers'
+    AS $$
+  DELETE FROM lenses.workflow_tasks wt
+  USING lenses.workflows w
+  WHERE wt.id = p_task_id
+    AND wt.workflow_id = w.id
+    AND w.lenser_id = lensers.get_auth_lenser_id();
+$$;
+
+
+ALTER FUNCTION "public"."fn_delete_workflow_task"("p_task_id" "uuid") OWNER TO "postgres";
+
+
+CREATE OR REPLACE FUNCTION "public"."fn_delete_workspace_item"("p_table_name" "text", "p_id" "uuid") RETURNS "void"
+    LANGUAGE "plpgsql" SECURITY DEFINER
+    SET "search_path" TO 'public', 'agents', 'lensers'
+    AS $_$
+DECLARE
+  v_lenser_id uuid := lensers.get_auth_lenser_id();
+BEGIN
+  IF p_table_name NOT IN (
+    'teams', 'team_members', 'team_edges', 'personality_profiles',
+    'memory_profiles', 'tool_profiles', 'model_profiles',
+    'workflow_assignments', 'evaluation_cases', 'evaluation_rubrics',
+    'tools_registry', 'tool_assignments', 'evaluations'
+  ) THEN
+    RAISE EXCEPTION 'delete_forbidden: table % not in allowlist', p_table_name
+      USING ERRCODE = '42501';
+  END IF;
+
+  EXECUTE format(
+    $q$
+    DELETE FROM agents.%I tbl
+    WHERE tbl.id = $1
+      AND (
+        tbl.ai_lenser_id = $2
+        OR tbl.owner_lenser_id = $2
+        OR EXISTS (
+          SELECT 1 FROM agents.teams t
+          JOIN agents.ownerships o ON o.ai_lenser_id = t.ai_lenser_id
+          WHERE t.id = tbl.team_id AND o.owner_lenser_id = $2 AND o.revoked_at IS NULL
+        )
+        OR public.is_admin()
+      )
+    $q$,
+    p_table_name
+  ) USING p_id, v_lenser_id;
+END;
+$_$;
+
+
+ALTER FUNCTION "public"."fn_delete_workspace_item"("p_table_name" "text", "p_id" "uuid") OWNER TO "postgres";
 
 
 CREATE OR REPLACE FUNCTION "public"."fn_deny_mutation"() RETURNS "trigger"
@@ -19866,6 +22270,78 @@ COMMENT ON FUNCTION "public"."fn_execution_persist_response"("p_lenser_id" "uuid
 
 
 
+CREATE OR REPLACE FUNCTION "public"."fn_expire_byok_keys"() RETURNS integer
+    LANGUAGE "plpgsql" SECURITY DEFINER
+    SET "search_path" TO 'execution', 'audit', 'public'
+    AS $$
+DECLARE
+  v_count INT;
+BEGIN
+  UPDATE execution.byok_keys
+  SET revoked_at = now()
+  WHERE expires_at < now()
+    AND revoked_at IS NULL;
+
+  GET DIAGNOSTICS v_count = ROW_COUNT;
+
+  IF v_count > 0 THEN
+    INSERT INTO audit.events (event_type, actor_type, severity, payload)
+    VALUES (
+      'byok.keys_expired',
+      'system',
+      'info',
+      jsonb_build_object('expired_count', v_count, 'expired_at', now())
+    );
+  END IF;
+
+  RETURN v_count;
+END;
+$$;
+
+
+ALTER FUNCTION "public"."fn_expire_byok_keys"() OWNER TO "postgres";
+
+
+COMMENT ON FUNCTION "public"."fn_expire_byok_keys"() IS 'AR: Soft-revokes all BYOK keys where expires_at < now(). Called by pg_cron every hour. Returns number of keys revoked. SECURITY DEFINER; service_role only.';
+
+
+
+CREATE OR REPLACE FUNCTION "public"."fn_expire_media_objects"() RETURNS integer
+    LANGUAGE "plpgsql" SECURITY DEFINER
+    SET "search_path" TO 'media', 'audit', 'public'
+    AS $$
+DECLARE
+  v_count INT;
+BEGIN
+  UPDATE media.objects
+  SET lifecycle_state = 'archived'
+  WHERE expires_at < now()
+    AND lifecycle_state NOT IN ('deleted', 'archived');
+
+  GET DIAGNOSTICS v_count = ROW_COUNT;
+
+  IF v_count > 0 THEN
+    INSERT INTO audit.events (event_type, actor_type, severity, payload)
+    VALUES (
+      'media.objects_expired',
+      'system',
+      'info',
+      jsonb_build_object('archived_count', v_count, 'archived_at', now())
+    );
+  END IF;
+
+  RETURN v_count;
+END;
+$$;
+
+
+ALTER FUNCTION "public"."fn_expire_media_objects"() OWNER TO "postgres";
+
+
+COMMENT ON FUNCTION "public"."fn_expire_media_objects"() IS 'AT: Sets lifecycle_state=archived for objects past expires_at. Called by pg_cron daily at 02:00. SECURITY DEFINER; service_role only.';
+
+
+
 CREATE OR REPLACE FUNCTION "public"."fn_expire_stale_approvals"() RETURNS integer
     LANGUAGE "plpgsql" SECURITY DEFINER
     SET "search_path" TO 'agents', 'lenses', 'public'
@@ -20180,6 +22656,90 @@ COMMENT ON FUNCTION "public"."fn_get_agent_automation_feed"("p_ai_lenser_id" "uu
 
 
 
+CREATE OR REPLACE FUNCTION "public"."fn_get_agent_cost_summary"("p_ai_lenser_id" "uuid") RETURNS TABLE("period_date" "date", "credits_spent" integer, "battles_used" integer, "votes_used" integer, "spending_limit" integer)
+    LANGUAGE "sql" STABLE SECURITY DEFINER
+    SET "search_path" TO 'public', 'agents', 'lensers'
+    AS $$
+  SELECT qs.period_date, qs.credits_spent, qs.battles_used, qs.votes_used,
+         pol.spending_limit_credits
+  FROM agents.quota_snapshots qs
+  LEFT JOIN agents.policies pol ON pol.ai_lenser_id = qs.ai_lenser_id
+  WHERE qs.ai_lenser_id = p_ai_lenser_id
+    AND (
+      EXISTS (
+        SELECT 1 FROM agents.ownerships o
+        WHERE o.ai_lenser_id = p_ai_lenser_id
+          AND o.owner_lenser_id = lensers.get_auth_lenser_id()
+          AND o.revoked_at IS NULL
+      ) OR public.is_admin()
+    )
+  ORDER BY qs.period_date DESC
+  LIMIT 30;
+$$;
+
+
+ALTER FUNCTION "public"."fn_get_agent_cost_summary"("p_ai_lenser_id" "uuid") OWNER TO "postgres";
+
+
+CREATE OR REPLACE FUNCTION "public"."fn_get_agent_profile"("p_ai_lenser_id" "uuid") RETURNS "jsonb"
+    LANGUAGE "sql" STABLE SECURITY DEFINER
+    SET "search_path" TO 'public', 'agents', 'lensers'
+    AS $$
+  SELECT to_jsonb(v.*)
+  FROM agents.v_agent_profile v
+  WHERE v.id = p_ai_lenser_id
+    AND (
+      -- Owner can read their own agent
+      v.owner_lenser_id = lensers.get_auth_lenser_id()
+      -- Admins can read any agent
+      OR public.is_admin()
+    )
+  LIMIT 1;
+$$;
+
+
+ALTER FUNCTION "public"."fn_get_agent_profile"("p_ai_lenser_id" "uuid") OWNER TO "postgres";
+
+
+CREATE OR REPLACE FUNCTION "public"."fn_get_agent_profile_by_profile_id"("p_profile_id" "uuid") RETURNS "jsonb"
+    LANGUAGE "sql" STABLE SECURITY DEFINER
+    SET "search_path" TO 'public', 'agents', 'lensers'
+    AS $$
+  SELECT to_jsonb(v.*)
+  FROM agents.v_agent_profile v
+  WHERE v.profile_id = p_profile_id
+    AND (v.owner_lenser_id = lensers.get_auth_lenser_id() OR public.is_admin())
+  LIMIT 1;
+$$;
+
+
+ALTER FUNCTION "public"."fn_get_agent_profile_by_profile_id"("p_profile_id" "uuid") OWNER TO "postgres";
+
+
+CREATE OR REPLACE FUNCTION "public"."fn_get_agent_quota_snapshot"("p_ai_lenser_id" "uuid", "p_period_date" "date" DEFAULT CURRENT_DATE) RETURNS TABLE("id" "uuid", "ai_lenser_id" "uuid", "period_date" "date", "battles_used" integer, "votes_used" integer, "credits_spent" integer, "updated_at" timestamp with time zone)
+    LANGUAGE "sql" STABLE SECURITY DEFINER
+    SET "search_path" TO 'public', 'agents', 'lensers'
+    AS $$
+  SELECT qs.id, qs.ai_lenser_id, qs.period_date, qs.battles_used,
+         qs.votes_used, qs.credits_spent, qs.updated_at
+  FROM agents.quota_snapshots qs
+  WHERE qs.ai_lenser_id = p_ai_lenser_id
+    AND qs.period_date  = p_period_date
+    AND (
+      EXISTS (
+        SELECT 1 FROM agents.ownerships o
+        WHERE o.ai_lenser_id = p_ai_lenser_id
+          AND o.owner_lenser_id = lensers.get_auth_lenser_id()
+          AND o.revoked_at IS NULL
+      ) OR public.is_admin()
+    )
+  LIMIT 1;
+$$;
+
+
+ALTER FUNCTION "public"."fn_get_agent_quota_snapshot"("p_ai_lenser_id" "uuid", "p_period_date" "date") OWNER TO "postgres";
+
+
 CREATE OR REPLACE FUNCTION "public"."fn_get_agent_workspace_bootstrap"("p_profile_handle" "text") RETURNS "jsonb"
     LANGUAGE "plpgsql" STABLE SECURITY DEFINER
     SET "search_path" TO 'public', 'agents', 'lensers', 'lenses'
@@ -20280,6 +22840,177 @@ $$;
 ALTER FUNCTION "public"."fn_get_agent_workspace_bootstrap"("p_profile_handle" "text") OWNER TO "postgres";
 
 
+CREATE OR REPLACE FUNCTION "public"."fn_get_ai_handicap_policy"("p_battle_id" "uuid") RETURNS TABLE("id" "uuid", "battle_id" "uuid", "max_tokens_per_second" integer, "injected_delay_ms" integer, "max_context_tokens" integer, "allowed_model_tier" "text", "time_budget_ms" integer)
+    LANGUAGE "sql" STABLE SECURITY DEFINER
+    SET "search_path" TO 'public', 'battles'
+    AS $$
+  SELECT hp.id, hp.battle_id, hp.max_tokens_per_second, hp.injected_delay_ms,
+         hp.max_context_tokens, hp.allowed_model_tier, hp.time_budget_ms
+  FROM battles.ai_handicap_policies hp
+  WHERE hp.battle_id = p_battle_id
+  LIMIT 1;
+$$;
+
+
+ALTER FUNCTION "public"."fn_get_ai_handicap_policy"("p_battle_id" "uuid") OWNER TO "postgres";
+
+
+CREATE OR REPLACE FUNCTION "public"."fn_get_ai_judge_verdicts"("p_battle_id" "uuid") RETURNS TABLE("id" "uuid", "contender_id" "uuid", "criterion_id" "uuid", "score" numeric, "rationale" "text", "model_key" "text", "run_id" "uuid", "created_at" timestamp with time zone)
+    LANGUAGE "sql" STABLE SECURITY DEFINER
+    SET "search_path" TO 'public', 'battles'
+    AS $$
+  SELECT id, contender_id, criterion_id, score, rationale, model_key, run_id, created_at
+  FROM battles.fn_get_ai_judge_verdicts(p_battle_id);
+$$;
+
+
+ALTER FUNCTION "public"."fn_get_ai_judge_verdicts"("p_battle_id" "uuid") OWNER TO "postgres";
+
+
+CREATE OR REPLACE FUNCTION "public"."fn_get_ai_model"("p_model_id" "uuid") RETURNS TABLE("id" "uuid", "key" "text", "name" "text", "provider_id" "uuid", "description" "text", "capabilities" "text"[], "temperature" numeric, "max_tokens" integer, "context_window_tokens" integer, "supports_tools" boolean, "supports_vision" boolean, "is_active" boolean, "input_modalities" "text"[], "output_modalities" "text"[], "created_at" timestamp with time zone)
+    LANGUAGE "sql" STABLE SECURITY DEFINER
+    SET "search_path" TO 'public', 'ai'
+    AS $$
+  SELECT
+    m.id, m.key, m.name, m.provider_id, m.description,
+    m.capabilities, m.temperature, m.max_tokens, m.context_window_tokens,
+    m.supports_tools, m.supports_vision,
+    m.is_active, m.input_modalities, m.output_modalities,
+    m.created_at
+  FROM ai.models m
+  WHERE m.id = p_model_id;
+$$;
+
+
+ALTER FUNCTION "public"."fn_get_ai_model"("p_model_id" "uuid") OWNER TO "postgres";
+
+
+COMMENT ON FUNCTION "public"."fn_get_ai_model"("p_model_id" "uuid") IS 'Security wrapper: fetch an AI model row by ID.';
+
+
+
+CREATE OR REPLACE FUNCTION "public"."fn_get_ai_provider"("p_provider_id" "uuid") RETURNS TABLE("id" "uuid", "key" "text", "display_name" "text")
+    LANGUAGE "sql" STABLE SECURITY DEFINER
+    SET "search_path" TO 'public', 'ai'
+    AS $$
+  SELECT p.id, p.key, p.display_name
+  FROM ai.providers p
+  WHERE p.id = p_provider_id;
+$$;
+
+
+ALTER FUNCTION "public"."fn_get_ai_provider"("p_provider_id" "uuid") OWNER TO "postgres";
+
+
+COMMENT ON FUNCTION "public"."fn_get_ai_provider"("p_provider_id" "uuid") IS 'Security wrapper: fetch AI provider id, key, and display_name by provider UUID.';
+
+
+
+CREATE OR REPLACE FUNCTION "public"."fn_get_approval_request"("p_request_id" "uuid") RETURNS "jsonb"
+    LANGUAGE "sql" STABLE SECURITY DEFINER
+    SET "search_path" TO 'public', 'agents', 'lensers'
+    AS $$
+  SELECT to_jsonb(ar.*)
+  FROM agents.approval_requests_v ar
+  WHERE ar.request_id = p_request_id
+    AND (
+      EXISTS (
+        SELECT 1 FROM agents.ownerships o
+        WHERE o.ai_lenser_id = ar.ai_lenser_id
+          AND o.owner_lenser_id = lensers.get_auth_lenser_id()
+          AND o.revoked_at IS NULL
+      ) OR public.is_admin()
+    )
+  LIMIT 1;
+$$;
+
+
+ALTER FUNCTION "public"."fn_get_approval_request"("p_request_id" "uuid") OWNER TO "postgres";
+
+
+CREATE OR REPLACE FUNCTION "public"."fn_get_auth_profile_gate"() RETURNS TABLE("status" "text", "deletion_requested_at" timestamp with time zone, "deletion_deadline_at" timestamp with time zone, "onboarding_step" "text")
+    LANGUAGE "sql" STABLE SECURITY DEFINER
+    SET "search_path" TO 'public', 'lensers'
+    AS $$
+  SELECT p.status, p.deletion_requested_at, p.deletion_deadline_at, p.onboarding_step
+  FROM lensers.profiles p
+  WHERE p.user_id = auth.uid()
+  LIMIT 1;
+$$;
+
+
+ALTER FUNCTION "public"."fn_get_auth_profile_gate"() OWNER TO "postgres";
+
+
+COMMENT ON FUNCTION "public"."fn_get_auth_profile_gate"() IS 'Security wrapper: return status/deletion/onboarding gate fields for the current user''s profile.';
+
+
+
+CREATE OR REPLACE FUNCTION "public"."fn_get_batch_entity_reactions"("p_entity_type" "text", "p_entity_ids" "uuid"[]) RETURNS TABLE("entity_id" "uuid", "lenser_id" "uuid", "reaction" "text", "created_at" timestamp with time zone)
+    LANGUAGE "sql" STABLE SECURITY DEFINER
+    SET "search_path" TO 'public', 'content'
+    AS $$
+  SELECT r.entity_id, r.lenser_id, r.reaction, r.created_at
+  FROM content.reactions r
+  WHERE r.entity_type::text = p_entity_type
+    AND r.entity_id   = ANY(p_entity_ids);
+$$;
+
+
+ALTER FUNCTION "public"."fn_get_batch_entity_reactions"("p_entity_type" "text", "p_entity_ids" "uuid"[]) OWNER TO "postgres";
+
+
+COMMENT ON FUNCTION "public"."fn_get_batch_entity_reactions"("p_entity_type" "text", "p_entity_ids" "uuid"[]) IS 'Security wrapper: return all reaction rows for an array of entity IDs (same type).';
+
+
+
+CREATE OR REPLACE FUNCTION "public"."fn_get_battle"("p_battle_id" "uuid" DEFAULT NULL::"uuid", "p_slug" "text" DEFAULT NULL::"text") RETURNS TABLE("id" "uuid", "slug" "text", "title" "text", "task_prompt" "text", "status" "text", "total_vote_count" integer, "published_at" timestamp with time zone, "voting_opens_at" timestamp with time zone, "voting_closes_at" timestamp with time zone, "finalized_at" timestamp with time zone, "battle_type" "text", "voter_eligibility" "text", "handicap_config" "jsonb", "creator_lenser_id" "uuid", "forum_thread_id" "text", "workflow_id" "uuid", "lens_id" "uuid", "execution_starts_at" timestamp with time zone, "auto_publish" boolean, "voting_duration_hours" integer, "vote_velocity" numeric, "og_image_url" "text", "winner_contender_id" "uuid", "parent_battle_id" "uuid", "deleted_at" timestamp with time zone)
+    LANGUAGE "sql" STABLE SECURITY DEFINER
+    SET "search_path" TO 'public', 'battles', 'lensers'
+    AS $$
+  SELECT
+    b.id, b.slug, b.title, b.task_prompt, b.status, b.total_vote_count,
+    b.published_at, b.voting_opens_at, b.voting_closes_at, b.finalized_at,
+    b.battle_type, b.voter_eligibility, b.handicap_config, b.creator_lenser_id,
+    b.forum_thread_id, b.workflow_id, b.lens_id, b.execution_starts_at,
+    b.auto_publish, b.voting_duration_hours, b.vote_velocity, b.og_image_url,
+    b.winner_contender_id, b.parent_battle_id, b.deleted_at
+  FROM battles.battles b
+  WHERE (p_battle_id IS NULL OR b.id   = p_battle_id)
+    AND (p_slug      IS NULL OR b.slug = p_slug)
+    AND b.deleted_at IS NULL
+    AND (
+      -- Non-draft battles are public
+      b.status <> 'draft'
+      -- Drafts are creator-only
+      OR b.creator_lenser_id = lensers.get_auth_lenser_id()
+    )
+  LIMIT 1;
+$$;
+
+
+ALTER FUNCTION "public"."fn_get_battle"("p_battle_id" "uuid", "p_slug" "text") OWNER TO "postgres";
+
+
+COMMENT ON FUNCTION "public"."fn_get_battle"("p_battle_id" "uuid", "p_slug" "text") IS 'Security wrapper: look up a battle by id or slug. Public battles are visible to everyone; drafts only to the creator. Returns NULL when not found or draft-and-not-creator.';
+
+
+
+CREATE OR REPLACE FUNCTION "public"."fn_get_battle_by_slug"("p_slug" "text") RETURNS TABLE("id" "uuid", "slug" "text", "title" "text", "task_prompt" "text", "status" "text", "total_vote_count" integer, "published_at" timestamp with time zone, "voting_opens_at" timestamp with time zone, "voting_closes_at" timestamp with time zone, "finalized_at" timestamp with time zone, "battle_type" "text", "voter_eligibility" "text", "handicap_config" "jsonb", "creator_lenser_id" "uuid", "forum_thread_id" "text", "workflow_id" "uuid", "lens_id" "uuid", "execution_starts_at" timestamp with time zone, "auto_publish" boolean, "voting_duration_hours" integer, "vote_velocity" numeric, "og_image_url" "text", "winner_contender_id" "uuid", "parent_battle_id" "uuid", "deleted_at" timestamp with time zone)
+    LANGUAGE "sql" STABLE SECURITY DEFINER
+    SET "search_path" TO 'public', 'battles', 'lensers'
+    AS $$
+  SELECT * FROM public.fn_get_battle(NULL::uuid, p_slug);
+$$;
+
+
+ALTER FUNCTION "public"."fn_get_battle_by_slug"("p_slug" "text") OWNER TO "postgres";
+
+
+COMMENT ON FUNCTION "public"."fn_get_battle_by_slug"("p_slug" "text") IS 'Alias for fn_get_battle(p_slug). Fixes PGRST202 404 in battlesRepository.getBattleBySlug.';
+
+
+
 CREATE OR REPLACE FUNCTION "public"."fn_get_battle_comments"("p_battle_id" "uuid", "p_limit" integer DEFAULT 100) RETURNS TABLE("id" "uuid", "battle_id" "uuid", "lenser_id" "uuid", "body" "text", "created_at" timestamp with time zone, "updated_at" timestamp with time zone, "lenser_handle" "text", "lenser_display_name" "text", "lenser_avatar_url" "text")
     LANGUAGE "sql" STABLE SECURITY DEFINER
     SET "search_path" TO 'battles', 'lensers', 'public'
@@ -20332,6 +23063,80 @@ $$;
 
 
 ALTER FUNCTION "public"."fn_get_battle_comments"("p_battle_id" "uuid", "p_limit" integer, "p_before_ts" timestamp with time zone, "p_before_id" "uuid") OWNER TO "postgres";
+
+
+CREATE OR REPLACE FUNCTION "public"."fn_get_battle_contenders"("p_battle_id" "uuid") RETURNS TABLE("id" "uuid", "battle_id" "uuid", "slot" "text", "contender_type" "text", "display_name" "text", "contender_ref_id" "uuid", "contender_status" "text", "entry_mode" "text", "joined_at" timestamp with time zone)
+    LANGUAGE "sql" STABLE SECURITY DEFINER
+    SET "search_path" TO 'public', 'battles'
+    AS $$
+  SELECT c.id, c.battle_id, c.slot::text, c.contender_type::text, c.display_name,
+         c.contender_ref_id, c.contender_status, c.entry_mode,
+         c.joined_at
+  FROM battles.contenders c
+  WHERE c.battle_id = p_battle_id
+  ORDER BY c.slot;
+$$;
+
+
+ALTER FUNCTION "public"."fn_get_battle_contenders"("p_battle_id" "uuid") OWNER TO "postgres";
+
+
+CREATE OR REPLACE FUNCTION "public"."fn_get_battle_elo_log"("p_battle_id" "uuid") RETURNS TABLE("battle_id" "uuid", "winner_lenser_id" "uuid", "loser_lenser_id" "uuid", "winner_score_before" numeric, "winner_score_after" numeric, "loser_score_before" numeric, "loser_score_after" numeric, "is_draw" boolean, "k_factor" integer, "computed_at" timestamp with time zone)
+    LANGUAGE "sql" STABLE SECURITY DEFINER
+    SET "search_path" TO 'public', 'reputation'
+    AS $$
+  SELECT
+    el.battle_id, el.winner_lenser_id, el.loser_lenser_id,
+    el.winner_score_before, el.winner_score_after,
+    el.loser_score_before,  el.loser_score_after,
+    el.is_draw, el.k_factor, el.computed_at
+  FROM reputation.elo_battle_log el
+  WHERE el.battle_id = p_battle_id;
+$$;
+
+
+ALTER FUNCTION "public"."fn_get_battle_elo_log"("p_battle_id" "uuid") OWNER TO "postgres";
+
+
+COMMENT ON FUNCTION "public"."fn_get_battle_elo_log"("p_battle_id" "uuid") IS 'Security wrapper: return ELO score change records for a specific battle.';
+
+
+
+CREATE OR REPLACE FUNCTION "public"."fn_get_battle_execution_config"("p_battle_id" "uuid") RETURNS SETOF "jsonb"
+    LANGUAGE "sql" STABLE SECURITY DEFINER
+    SET "search_path" TO 'public', 'battles', 'lensers'
+    AS $$
+  SELECT to_jsonb(ec.*)
+  FROM battles.execution_configs ec
+  WHERE ec.battle_id = p_battle_id
+    AND EXISTS (
+      SELECT 1 FROM battles.battles b
+      WHERE b.id = ec.battle_id
+        AND (b.creator_lenser_id = lensers.get_auth_lenser_id()
+             OR b.status::text IN ('published', 'closed'))
+    );
+$$;
+
+
+ALTER FUNCTION "public"."fn_get_battle_execution_config"("p_battle_id" "uuid") OWNER TO "postgres";
+
+
+CREATE OR REPLACE FUNCTION "public"."fn_get_battle_execution_jobs"("p_battle_id" "uuid") RETURNS TABLE("id" "uuid", "battle_id" "uuid", "contender_id" "uuid", "slot" "text", "status" "text", "worker_id" "text", "claimed_at" timestamp with time zone, "completed_at" timestamp with time zone, "retry_count" integer, "max_retries" integer, "error_message" "text", "created_at" timestamp with time zone)
+    LANGUAGE "sql" STABLE SECURITY DEFINER
+    SET "search_path" TO 'public', 'battles', 'lensers'
+    AS $$
+  SELECT j.id, j.battle_id, j.contender_id, j.slot, j.status, j.worker_id,
+         j.claimed_at, j.completed_at, j.retry_count, j.max_retries,
+         j.error_message, j.created_at
+  FROM battles.battle_execution_jobs j
+  JOIN battles.battles b ON b.id = j.battle_id
+  WHERE j.battle_id = p_battle_id
+    AND (b.creator_lenser_id = lensers.get_auth_lenser_id() OR public.is_admin())
+  ORDER BY j.slot;
+$$;
+
+
+ALTER FUNCTION "public"."fn_get_battle_execution_jobs"("p_battle_id" "uuid") OWNER TO "postgres";
 
 
 CREATE TABLE IF NOT EXISTS "battles"."battles" (
@@ -20609,6 +23414,20 @@ COMMENT ON FUNCTION "public"."fn_get_battle_full"("p_slug" "text") IS 'Returns f
 
 
 
+CREATE OR REPLACE FUNCTION "public"."fn_get_battle_public_execution_jobs"("p_battle_id" "uuid") RETURNS TABLE("id" "uuid", "battle_id" "uuid", "slot" "text", "status" "text", "claimed_at" timestamp with time zone, "completed_at" timestamp with time zone, "retry_count" integer, "created_at" timestamp with time zone)
+    LANGUAGE "sql" STABLE SECURITY DEFINER
+    SET "search_path" TO 'public', 'battles'
+    AS $$
+  SELECT id, battle_id, slot, status, claimed_at, completed_at, retry_count, created_at
+  FROM battles.v_execution_jobs_public
+  WHERE battle_id = p_battle_id
+  ORDER BY slot;
+$$;
+
+
+ALTER FUNCTION "public"."fn_get_battle_public_execution_jobs"("p_battle_id" "uuid") OWNER TO "postgres";
+
+
 CREATE OR REPLACE FUNCTION "public"."fn_get_battle_results"("p_battle_slug" "text") RETURNS "jsonb"
     LANGUAGE "plpgsql" SECURITY DEFINER
     SET "search_path" TO 'battles', 'public'
@@ -20705,6 +23524,75 @@ $$;
 ALTER FUNCTION "public"."fn_get_battle_results"("p_battle_slug" "text") OWNER TO "postgres";
 
 
+CREATE OR REPLACE FUNCTION "public"."fn_get_battle_scorecards"("p_battle_id" "uuid") RETURNS TABLE("id" "uuid", "battle_id" "uuid", "contender_id" "uuid", "rubric_criterion_id" "uuid", "result" "text", "explanation" "text")
+    LANGUAGE "sql" STABLE SECURITY DEFINER
+    SET "search_path" TO 'public', 'battles'
+    AS $$
+  SELECT sc.id, sc.battle_id, sc.contender_id, sc.rubric_criterion_id,
+         sc.result, sc.explanation
+  FROM battles.scorecards sc
+  WHERE sc.battle_id = p_battle_id;
+$$;
+
+
+ALTER FUNCTION "public"."fn_get_battle_scorecards"("p_battle_id" "uuid") OWNER TO "postgres";
+
+
+CREATE OR REPLACE FUNCTION "public"."fn_get_battle_share_card"("p_slug" "text") RETURNS TABLE("battle_id" "uuid", "slug" "text", "title" "text", "status" "text", "total_vote_count" integer, "finalized_at" timestamp with time zone, "winner_contender_id" "uuid", "deleted_at" timestamp with time zone, "contender_a_id" "uuid", "contender_a_name" "text", "contender_b_id" "uuid", "contender_b_name" "text", "elo_winner_before" numeric, "elo_winner_after" numeric, "elo_loser_before" numeric, "elo_loser_after" numeric, "elo_is_draw" boolean)
+    LANGUAGE "plpgsql" STABLE SECURITY DEFINER
+    SET "search_path" TO 'public', 'battles', 'reputation'
+    AS $$
+DECLARE
+  v_battle_id uuid;
+  v_status    text;
+  v_deleted   timestamptz;
+BEGIN
+  SELECT b.id, b.status, b.deleted_at
+  INTO v_battle_id, v_status, v_deleted
+  FROM battles.battles b
+  WHERE b.slug = p_slug
+  LIMIT 1;
+
+  IF NOT FOUND OR v_deleted IS NOT NULL OR v_status = 'draft' THEN
+    RETURN;
+  END IF;
+
+  RETURN QUERY
+  SELECT
+    b.id, b.slug, b.title, b.status, b.total_vote_count, b.finalized_at,
+    b.winner_contender_id, b.deleted_at,
+    a_c.id, a_c.display_name,
+    b_c.id, b_c.display_name,
+    el.winner_score_before, el.winner_score_after,
+    el.loser_score_before, el.loser_score_after,
+    el.is_draw
+  FROM battles.battles b
+  LEFT JOIN battles.contenders a_c ON a_c.battle_id = b.id AND a_c.slot = 'A'
+  LEFT JOIN battles.contenders b_c ON b_c.battle_id = b.id AND b_c.slot = 'B'
+  LEFT JOIN reputation.elo_battle_log el ON el.battle_id = b.id
+  WHERE b.id = v_battle_id
+  LIMIT 1;
+END;
+$$;
+
+
+ALTER FUNCTION "public"."fn_get_battle_share_card"("p_slug" "text") OWNER TO "postgres";
+
+
+CREATE OR REPLACE FUNCTION "public"."fn_get_battle_submissions"("p_battle_id" "uuid") RETURNS TABLE("id" "uuid", "battle_id" "uuid", "contender_id" "uuid", "content_text" "text", "content_url" "text", "status" "text", "submitted_at" timestamp with time zone, "execution_run_id" "uuid", "is_final" boolean)
+    LANGUAGE "sql" STABLE SECURITY DEFINER
+    SET "search_path" TO 'public', 'battles'
+    AS $$
+  SELECT s.id, s.battle_id, s.contender_id, s.content_text, s.content_url,
+         s.status::text, s.submitted_at, s.execution_run_id, s.is_final
+  FROM battles.submissions s
+  WHERE s.battle_id = p_battle_id;
+$$;
+
+
+ALTER FUNCTION "public"."fn_get_battle_submissions"("p_battle_id" "uuid") OWNER TO "postgres";
+
+
 CREATE OR REPLACE FUNCTION "public"."fn_get_battles_feed"("p_status" "text" DEFAULT NULL::"text", "p_battle_type" "text" DEFAULT NULL::"text", "p_limit" integer DEFAULT 20, "p_cursor" timestamp with time zone DEFAULT NULL::timestamp with time zone) RETURNS TABLE("id" "uuid", "slug" "text", "title" "text", "status" "text", "published_at" timestamp with time zone, "battle_type" "text", "voter_eligibility" "text", "total_vote_count" integer, "voting_opens_at" timestamp with time zone, "voting_closes_at" timestamp with time zone, "contender_a_id" "uuid", "contender_a_name" "text", "contender_a_type" "text", "contender_b_id" "uuid", "contender_b_name" "text", "contender_b_type" "text", "winner_slot" "text")
     LANGUAGE "sql" STABLE SECURITY DEFINER
     SET "search_path" TO 'battles', 'public'
@@ -20744,6 +23632,62 @@ ALTER FUNCTION "public"."fn_get_battles_feed"("p_status" "text", "p_battle_type"
 
 COMMENT ON FUNCTION "public"."fn_get_battles_feed"("p_status" "text", "p_battle_type" "text", "p_limit" integer, "p_cursor" timestamp with time zone) IS 'Paginated battle feed. Filters by status and battle_type (both optional text). Always excludes draft/open battles. Keyset pagination via p_cursor (published_at of last item). LIMIT capped at 100. SECURITY DEFINER.';
 
+
+
+CREATE OR REPLACE FUNCTION "public"."fn_get_benchmark_suite"("p_suite_id" "uuid") RETURNS TABLE("id" "uuid", "title" "text", "description" "text", "creator_lenser_id" "uuid", "category" "text", "status" "text", "version" "text", "is_public" boolean, "created_at" timestamp with time zone, "updated_at" timestamp with time zone)
+    LANGUAGE "sql" STABLE SECURITY DEFINER
+    SET "search_path" TO 'public', 'benchmark', 'lensers'
+    AS $$
+  SELECT s.id, s.title, s.description, s.creator_lenser_id, s.category,
+         s.status, s.version, s.is_public, s.created_at, s.updated_at
+  FROM benchmark.suites s
+  WHERE s.id = p_suite_id
+    AND (
+      s.is_public = true
+      OR s.creator_lenser_id = lensers.get_auth_lenser_id()
+    );
+$$;
+
+
+ALTER FUNCTION "public"."fn_get_benchmark_suite"("p_suite_id" "uuid") OWNER TO "postgres";
+
+
+COMMENT ON FUNCTION "public"."fn_get_benchmark_suite"("p_suite_id" "uuid") IS 'Security wrapper: fetch a benchmark suite by ID. Visible only if public or owned by the current user.';
+
+
+
+CREATE OR REPLACE FUNCTION "public"."fn_get_contender_rating"("p_lenser_id" "uuid", "p_category" "text" DEFAULT NULL::"text") RETURNS TABLE("id" "uuid", "lenser_id" "uuid", "category" "text", "elo_rating" numeric, "uncertainty" numeric, "battles_played" integer, "wins" integer, "draws" integer, "losses" integer, "updated_at" timestamp with time zone)
+    LANGUAGE "sql" STABLE SECURITY DEFINER
+    SET "search_path" TO 'public', 'reputation'
+    AS $$
+  SELECT cr.id, cr.lenser_id, cr.category, cr.elo_rating, cr.uncertainty,
+         cr.battles_played, cr.wins, cr.draws, cr.losses, cr.updated_at
+  FROM reputation.contender_ratings cr
+  WHERE cr.lenser_id = p_lenser_id
+    AND (p_category IS NULL OR cr.category = p_category)
+  ORDER BY cr.updated_at DESC
+  LIMIT 1;
+$$;
+
+
+ALTER FUNCTION "public"."fn_get_contender_rating"("p_lenser_id" "uuid", "p_category" "text") OWNER TO "postgres";
+
+
+COMMENT ON FUNCTION "public"."fn_get_contender_rating"("p_lenser_id" "uuid", "p_category" "text") IS 'Security wrapper: fetch the most recent ELO contender rating for a lenser, optionally filtered to a specific category.';
+
+
+
+CREATE OR REPLACE FUNCTION "public"."fn_get_contender_ratings"("p_lenser_id" "uuid", "p_limit" integer DEFAULT 20) RETURNS SETOF "jsonb"
+    LANGUAGE "sql" STABLE SECURITY DEFINER
+    SET "search_path" TO 'public', 'reputation'
+    AS $$
+  SELECT to_jsonb(r.*)
+  FROM public.fn_get_contender_rating(p_lenser_id) r
+  LIMIT LEAST(GREATEST(p_limit, 1), 100);
+$$;
+
+
+ALTER FUNCTION "public"."fn_get_contender_ratings"("p_lenser_id" "uuid", "p_limit" integer) OWNER TO "postgres";
 
 
 CREATE OR REPLACE FUNCTION "public"."fn_get_creator_timeseries"("p_lenser_id" "uuid", "p_days" integer DEFAULT 30) RETURNS TABLE("day" "date", "battles" bigint, "wins" bigint, "votes_received" bigint, "xp_earned" bigint)
@@ -20811,6 +23755,225 @@ COMMENT ON FUNCTION "public"."fn_get_creator_timeseries"("p_lenser_id" "uuid", "
 
 
 
+CREATE OR REPLACE FUNCTION "public"."fn_get_dlq_counts"() RETURNS "jsonb"
+    LANGUAGE "sql" STABLE SECURITY DEFINER
+    SET "search_path" TO 'public', 'battles', 'lenses'
+    AS $$
+  SELECT jsonb_build_object(
+    'battle_dlq_count',
+    (SELECT COUNT(*) FROM battles.battle_execution_dead_letters WHERE resolved_at IS NULL),
+    'workflow_dlq_count',
+    (SELECT COUNT(*) FROM lenses.workflow_run_dead_letters WHERE resolved_at IS NULL)
+  );
+$$;
+
+
+ALTER FUNCTION "public"."fn_get_dlq_counts"() OWNER TO "postgres";
+
+
+CREATE OR REPLACE FUNCTION "public"."fn_get_dlq_entries"("p_battle_id" "uuid" DEFAULT NULL::"uuid", "p_unresolved_only" boolean DEFAULT false, "p_limit" integer DEFAULT 50) RETURNS TABLE("id" "uuid", "job_id" "uuid", "battle_id" "uuid", "contender_id" "uuid", "slot" "text", "error_code" "text", "error_message" "text", "attempt_count" integer, "payload" "jsonb", "resolved_at" timestamp with time zone, "created_at" timestamp with time zone)
+    LANGUAGE "sql" STABLE SECURITY DEFINER
+    SET "search_path" TO 'public', 'battles'
+    AS $$
+  SELECT dl.id, dl.job_id, dl.battle_id, dl.contender_id, dl.slot,
+         dl.error_code, dl.error_message, dl.attempt_count, dl.payload,
+         dl.resolved_at, dl.created_at
+  FROM battles.battle_execution_dead_letters dl
+  WHERE (p_battle_id IS NULL       OR dl.battle_id = p_battle_id)
+    AND (NOT p_unresolved_only     OR dl.resolved_at IS NULL)
+  ORDER BY dl.created_at DESC
+  LIMIT LEAST(GREATEST(COALESCE(p_limit, 50), 1), 200);
+$$;
+
+
+ALTER FUNCTION "public"."fn_get_dlq_entries"("p_battle_id" "uuid", "p_unresolved_only" boolean, "p_limit" integer) OWNER TO "postgres";
+
+
+CREATE OR REPLACE FUNCTION "public"."fn_get_entity_media_attachments"("p_entity_type" "text", "p_entity_id" "uuid") RETURNS TABLE("attachment_id" "uuid", "object_id" "uuid", "entity_type" "text", "entity_id" "uuid", "binding_key" "text", "attached_at" timestamp with time zone, "bucket" "text", "object_key" "text", "external_url" "text", "mime_type" "text", "media_type" "text", "name" "text", "byte_size" bigint, "visibility" "text", "lifecycle_state" "text", "metadata" "jsonb")
+    LANGUAGE "sql" STABLE SECURITY DEFINER
+    SET "search_path" TO 'public', 'media'
+    AS $$
+  SELECT
+    a.id           AS attachment_id,
+    a.object_id,
+    a.entity_type,
+    a.entity_id,
+    a.binding_key,
+    a.attached_at,
+    o.bucket, o.object_key, o.external_url, o.mime_type, o.media_type,
+    o.name, o.byte_size, o.visibility, o.lifecycle_state, o.metadata
+  FROM media.attachments a
+  JOIN media.objects o ON o.id = a.object_id
+  WHERE a.entity_type = p_entity_type
+    AND a.entity_id   = p_entity_id;
+$$;
+
+
+ALTER FUNCTION "public"."fn_get_entity_media_attachments"("p_entity_type" "text", "p_entity_id" "uuid") OWNER TO "postgres";
+
+
+COMMENT ON FUNCTION "public"."fn_get_entity_media_attachments"("p_entity_type" "text", "p_entity_id" "uuid") IS 'Security wrapper: list media attachments for an entity with nested object metadata.';
+
+
+
+CREATE OR REPLACE FUNCTION "public"."fn_get_entity_reaction_counts"("p_entity_type" "text", "p_entity_id" "uuid") RETURNS "jsonb"
+    LANGUAGE "sql" STABLE SECURITY DEFINER
+    SET "search_path" TO 'public', 'content'
+    AS $$
+  SELECT COALESCE(
+    jsonb_object_agg(r.reaction, r.cnt),
+    '{}'::jsonb
+  )
+  FROM (
+    SELECT reaction, COUNT(*) AS cnt
+    FROM content.reactions
+    WHERE entity_type::text = p_entity_type
+      AND entity_id   = p_entity_id
+    GROUP BY reaction
+  ) r;
+$$;
+
+
+ALTER FUNCTION "public"."fn_get_entity_reaction_counts"("p_entity_type" "text", "p_entity_id" "uuid") OWNER TO "postgres";
+
+
+COMMENT ON FUNCTION "public"."fn_get_entity_reaction_counts"("p_entity_type" "text", "p_entity_id" "uuid") IS 'Security wrapper: return a jsonb map of reaction → count for a single entity.';
+
+
+
+CREATE OR REPLACE FUNCTION "public"."fn_get_entity_reaction_status"("p_entity_type" "text", "p_entity_id" "uuid") RETURNS TABLE("reaction" "text", "reacted" boolean)
+    LANGUAGE "sql" STABLE SECURITY DEFINER
+    SET "search_path" TO 'public', 'content', 'lensers'
+    AS $$
+  SELECT
+    rt.reaction::text,
+    EXISTS (
+      SELECT 1
+      FROM content.reactions r
+      WHERE r.entity_type::text = p_entity_type
+        AND r.entity_id         = p_entity_id
+        AND r.lenser_id         = lensers.get_auth_lenser_id()
+        AND r.reaction          = rt.reaction
+    ) AS reacted
+  FROM unnest(enum_range(NULL::content.reaction_enum)) rt(reaction);
+$$;
+
+
+ALTER FUNCTION "public"."fn_get_entity_reaction_status"("p_entity_type" "text", "p_entity_id" "uuid") OWNER TO "postgres";
+
+
+COMMENT ON FUNCTION "public"."fn_get_entity_reaction_status"("p_entity_type" "text", "p_entity_id" "uuid") IS 'Returns one row per reaction type with reacted=true if the current user reacted. Used by reactionRepository.ts getReactions(). Requires authentication.';
+
+
+
+CREATE OR REPLACE FUNCTION "public"."fn_get_entity_tag_ids"("p_entity_type" "text", "p_entity_id" "uuid") RETURNS TABLE("tag_id" "uuid")
+    LANGUAGE "sql" STABLE SECURITY DEFINER
+    SET "search_path" TO 'public', 'content'
+    AS $$
+  SELECT tm.tag_id
+  FROM content.tag_map tm
+  WHERE tm.entity_type::text = p_entity_type
+    AND tm.entity_id   = p_entity_id;
+$$;
+
+
+ALTER FUNCTION "public"."fn_get_entity_tag_ids"("p_entity_type" "text", "p_entity_id" "uuid") OWNER TO "postgres";
+
+
+COMMENT ON FUNCTION "public"."fn_get_entity_tag_ids"("p_entity_type" "text", "p_entity_id" "uuid") IS 'Security wrapper: return tag UUIDs mapped to an entity.';
+
+
+
+CREATE OR REPLACE FUNCTION "public"."fn_get_entity_translation"("p_entity_type" "text", "p_entity_id" "uuid") RETURNS TABLE("title" "text", "description" "text", "content" "text")
+    LANGUAGE "sql" STABLE SECURITY DEFINER
+    SET "search_path" TO 'public', 'content'
+    AS $$
+  SELECT et.title, et.description, et.content
+  FROM content.entity_translations et
+  WHERE et.entity_type::text = p_entity_type
+    AND et.entity_id   = p_entity_id
+    AND et.is_original = true
+  LIMIT 1;
+$$;
+
+
+ALTER FUNCTION "public"."fn_get_entity_translation"("p_entity_type" "text", "p_entity_id" "uuid") OWNER TO "postgres";
+
+
+COMMENT ON FUNCTION "public"."fn_get_entity_translation"("p_entity_type" "text", "p_entity_id" "uuid") IS 'Security wrapper: fetch the original (is_original=true) translation for any entity.';
+
+
+
+CREATE OR REPLACE FUNCTION "public"."fn_get_evaluation_baseline"("p_evaluation_id" "uuid") RETURNS "jsonb"
+    LANGUAGE "sql" STABLE SECURITY DEFINER
+    SET "search_path" TO 'public', 'agents', 'lensers'
+    AS $$
+  SELECT to_jsonb(eb.*)
+  FROM agents.evaluation_baselines eb
+  JOIN agents.evaluations ev ON ev.id = eb.evaluation_id
+  WHERE eb.evaluation_id = p_evaluation_id
+    AND (ev.owner_lenser_id = lensers.get_auth_lenser_id() OR public.is_admin())
+  LIMIT 1;
+$$;
+
+
+ALTER FUNCTION "public"."fn_get_evaluation_baseline"("p_evaluation_id" "uuid") OWNER TO "postgres";
+
+
+CREATE OR REPLACE FUNCTION "public"."fn_get_evaluation_results"("p_run_id" "uuid") RETURNS SETOF "jsonb"
+    LANGUAGE "sql" STABLE SECURITY DEFINER
+    SET "search_path" TO 'public', 'agents', 'lensers'
+    AS $$
+  SELECT to_jsonb(erv.*)
+  FROM agents.evaluation_results_v erv
+  JOIN agents.evaluation_runs er ON er.id = erv.run_id
+  JOIN agents.evaluations ev ON ev.id = er.evaluation_id
+  WHERE erv.run_id = p_run_id
+    AND (ev.owner_lenser_id = lensers.get_auth_lenser_id() OR public.is_admin());
+$$;
+
+
+ALTER FUNCTION "public"."fn_get_evaluation_results"("p_run_id" "uuid") OWNER TO "postgres";
+
+
+CREATE OR REPLACE FUNCTION "public"."fn_get_execution_artifacts"("p_run_id" "uuid") RETURNS TABLE("id" "uuid", "run_id" "uuid", "artifact_kind" "text", "content_text" "text", "content_json" "jsonb", "visibility" "text", "is_primary_output" boolean, "output_type" "text", "created_at" timestamp with time zone)
+    LANGUAGE "sql" STABLE SECURITY DEFINER
+    SET "search_path" TO 'public', 'execution', 'lensers'
+    AS $$
+  SELECT
+    a.id, a.run_id, a.artifact_kind, a.content_text, a.content_json,
+    a.visibility, a.is_primary_output, a.output_type, a.created_at
+  FROM execution.artifacts a
+  WHERE a.run_id = p_run_id
+    AND EXISTS (
+      SELECT 1 FROM execution.fn_get_run_details(p_run_id) LIMIT 1
+    )
+  ORDER BY a.is_primary_output DESC, a.created_at ASC;
+$$;
+
+
+ALTER FUNCTION "public"."fn_get_execution_artifacts"("p_run_id" "uuid") OWNER TO "postgres";
+
+
+COMMENT ON FUNCTION "public"."fn_get_execution_artifacts"("p_run_id" "uuid") IS 'Security wrapper: list artifacts for a run. Access gated via execution.fn_get_run_details — returns empty if caller cannot see the run.';
+
+
+
+CREATE OR REPLACE FUNCTION "public"."fn_get_fleet_overview"("p_human_lenser_id" "uuid") RETURNS "jsonb"
+    LANGUAGE "sql" STABLE SECURITY DEFINER
+    SET "search_path" TO 'public', 'agents', 'lensers'
+    AS $$
+  SELECT to_jsonb(fo.*)
+  FROM agents.v_human_fleet_overview fo
+  WHERE fo.human_lenser_id = p_human_lenser_id
+    AND (p_human_lenser_id = lensers.get_auth_lenser_id() OR public.is_admin())
+  LIMIT 1;
+$$;
+
+
+ALTER FUNCTION "public"."fn_get_fleet_overview"("p_human_lenser_id" "uuid") OWNER TO "postgres";
+
+
 CREATE OR REPLACE FUNCTION "public"."fn_get_follow_status"("p_target_profile_id" "uuid") RETURNS "text"
     LANGUAGE "sql" STABLE SECURITY DEFINER
     SET "search_path" TO 'public', 'lensers', 'auth'
@@ -20832,6 +23995,39 @@ $$;
 
 
 ALTER FUNCTION "public"."fn_get_follow_status"("p_target_profile_id" "uuid") OWNER TO "postgres";
+
+
+CREATE OR REPLACE FUNCTION "public"."fn_get_global_lenserboard"("p_limit" integer DEFAULT 50) RETURNS TABLE("lenser_id" "uuid", "handle" "text", "display_name" "text", "avatar_url" "text", "total_wins" bigint, "total_battles" bigint, "win_rate" numeric, "total_votes_received" bigint)
+    LANGUAGE "sql" STABLE SECURITY DEFINER
+    SET "search_path" TO 'public', 'battles', 'lensers', 'reputation'
+    AS $$
+  SELECT
+    lp.id                                                                  AS lenser_id,
+    lp.handle,
+    lp.display_name,
+    lp.avatar_url,
+    COUNT(c.id) FILTER (WHERE b.winner_contender_id = c.id)               AS total_wins,
+    COUNT(c.id)                                                            AS total_battles,
+    CASE WHEN COUNT(c.id) > 0
+         THEN ROUND(
+           COUNT(c.id) FILTER (WHERE b.winner_contender_id = c.id)::numeric
+           / COUNT(c.id)::numeric, 4)
+         ELSE 0::numeric
+    END                                                                    AS win_rate,
+    COALESCE(SUM(va.raw_vote_count), 0)                                    AS total_votes_received
+  FROM lensers.profiles lp
+  JOIN battles.contenders c ON c.contender_ref_id = lp.id
+  JOIN battles.battles b
+    ON b.id = c.battle_id AND b.status::text IN ('published', 'closed')
+  LEFT JOIN battles.vote_aggregates va ON va.contender_id = c.id
+  GROUP BY lp.id, lp.handle, lp.display_name, lp.avatar_url
+  HAVING COUNT(c.id) > 0
+  ORDER BY total_wins DESC, total_battles DESC
+  LIMIT LEAST(GREATEST(COALESCE(p_limit, 50), 1), 200);
+$$;
+
+
+ALTER FUNCTION "public"."fn_get_global_lenserboard"("p_limit" integer) OWNER TO "postgres";
 
 
 CREATE OR REPLACE FUNCTION "public"."fn_get_global_messages"("p_battle_id" "uuid", "p_limit" integer DEFAULT 50, "p_before_ts" timestamp with time zone DEFAULT NULL::timestamp with time zone, "p_before_id" "uuid" DEFAULT NULL::"uuid") RETURNS TABLE("id" "uuid", "battle_id" "uuid", "sender_id" "uuid", "sender_handle" "text", "sender_role" "text", "body" "text", "created_at" timestamp with time zone)
@@ -21053,6 +24249,42 @@ COMMENT ON FUNCTION "public"."fn_get_human_activity_feed"("p_human_lenser_id" "u
 
 
 
+CREATE OR REPLACE FUNCTION "public"."fn_get_judge_calibration"("p_lenser_id" "uuid") RETURNS TABLE("id" "uuid", "lenser_id" "uuid", "calibration_score" numeric, "total_judgments" integer, "agreement_rate" numeric, "kappa_score" numeric, "updated_at" timestamp with time zone)
+    LANGUAGE "sql" STABLE SECURITY DEFINER
+    SET "search_path" TO 'public', 'reputation'
+    AS $$
+  SELECT jc.id, jc.lenser_id, jc.calibration_score, jc.total_judgments,
+         jc.agreement_rate, jc.kappa_score, jc.updated_at
+  FROM reputation.judge_calibrations jc
+  WHERE jc.lenser_id = p_lenser_id
+  LIMIT 1;
+$$;
+
+
+ALTER FUNCTION "public"."fn_get_judge_calibration"("p_lenser_id" "uuid") OWNER TO "postgres";
+
+
+COMMENT ON FUNCTION "public"."fn_get_judge_calibration"("p_lenser_id" "uuid") IS 'Security wrapper: return the judge calibration record for a lenser.';
+
+
+
+CREATE OR REPLACE FUNCTION "public"."fn_get_latest_draft_battle_by_workflow"("p_workflow_id" "uuid") RETURNS "jsonb"
+    LANGUAGE "sql" STABLE SECURITY DEFINER
+    SET "search_path" TO 'public', 'battles', 'lensers'
+    AS $$
+  SELECT to_jsonb(b.*)
+  FROM battles.battles b
+  WHERE b.workflow_id = p_workflow_id
+    AND b.status::text = 'draft'
+    AND b.creator_lenser_id = lensers.get_auth_lenser_id()
+  ORDER BY b.created_at DESC
+  LIMIT 1;
+$$;
+
+
+ALTER FUNCTION "public"."fn_get_latest_draft_battle_by_workflow"("p_workflow_id" "uuid") OWNER TO "postgres";
+
+
 CREATE TABLE IF NOT EXISTS "lensers"."profiles" (
     "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
     "user_id" "uuid" DEFAULT "auth"."uid"(),
@@ -21243,6 +24475,369 @@ COMMENT ON FUNCTION "public"."fn_get_leaderboard"("p_order_by" "text", "p_limit"
 
 
 
+CREATE OR REPLACE FUNCTION "public"."fn_get_lens_assignment"("p_contender_id" "uuid") RETURNS TABLE("id" "uuid", "contender_id" "uuid", "battle_id" "uuid", "lens_id" "uuid", "version_id" "uuid", "assigned_at" timestamp with time zone)
+    LANGUAGE "sql" STABLE SECURITY DEFINER
+    SET "search_path" TO 'public', 'battles'
+    AS $$
+  SELECT la.id, la.contender_id, la.battle_id, la.lens_id, la.version_id, la.assigned_at
+  FROM battles.contender_lens_assignments la
+  WHERE la.contender_id = p_contender_id
+  LIMIT 1;
+$$;
+
+
+ALTER FUNCTION "public"."fn_get_lens_assignment"("p_contender_id" "uuid") OWNER TO "postgres";
+
+
+CREATE OR REPLACE FUNCTION "public"."fn_get_lens_detail_bootstrap"("p_lens_id" "uuid") RETURNS "jsonb"
+    LANGUAGE "plpgsql" STABLE SECURITY DEFINER
+    SET "search_path" TO 'public', 'lenses', 'content', 'lensers', 'auth'
+    AS $$
+DECLARE
+  v_viewer_id       uuid;
+  v_lens            RECORD;
+  v_translation     RECORD;
+  v_author          RECORD;
+  v_tags            jsonb;
+  v_reaction_totals jsonb;
+  v_user_reactions  jsonb;
+  v_latest_ver      RECORD;
+  v_params          jsonb;
+BEGIN
+  v_viewer_id := lensers.get_auth_lenser_id();
+
+  -- Core lens: visibility check (owner sees own, everyone sees public)
+  SELECT l.id, l.lenser_id, l.visibility::text, l.parent_lens_id,
+         l.forked_from_execution_id, l.head_version_id,
+         l.created_at, l.updated_at
+  INTO v_lens
+  FROM lenses.lenses l
+  WHERE l.id = p_lens_id
+    AND (
+      l.visibility = 'public'::content.visibility_enum
+      OR l.lenser_id = v_viewer_id
+    );
+
+  IF NOT FOUND THEN
+    RETURN jsonb_build_object('error', 'not_found');
+  END IF;
+
+  -- Translation: title, description, content (prefers original, then 'en')
+  SELECT et.title, et.description, et.content
+  INTO v_translation
+  FROM content.entity_translations et
+  WHERE et.entity_type = 'lens'::content.entity_type_enum
+    AND et.entity_id   = p_lens_id
+  ORDER BY et.is_original DESC, (et.language_code = 'en') DESC, et.created_at DESC
+  LIMIT 1;
+
+  -- Author profile
+  SELECT p.id, p.handle, p.display_name, p.avatar_url
+  INTO v_author
+  FROM lensers.profiles p
+  WHERE p.id = v_lens.lenser_id;
+
+  -- Tags via content.tag_map + content.tags
+  SELECT COALESCE(
+    jsonb_agg(jsonb_build_object('id', t.id, 'slug', t.slug, 'name', t.name)),
+    '[]'::jsonb
+  )
+  INTO v_tags
+  FROM content.tag_map tm
+  JOIN content.tags t ON t.id = tm.tag_id
+  WHERE tm.entity_type::text = 'lens'
+    AND tm.entity_id          = p_lens_id;
+
+  -- Reaction counts
+  SELECT COALESCE(
+    jsonb_object_agg(r.reaction::text, r.cnt),
+    '{}'::jsonb
+  )
+  INTO v_reaction_totals
+  FROM (
+    SELECT reaction, COUNT(*) AS cnt
+    FROM content.reactions
+    WHERE entity_type::text = 'lens'
+      AND entity_id          = p_lens_id
+    GROUP BY reaction
+  ) r;
+
+  -- Current user's own reactions (empty if not authenticated)
+  IF v_viewer_id IS NOT NULL THEN
+    SELECT COALESCE(
+      jsonb_object_agg(r.reaction::text, true),
+      '{}'::jsonb
+    )
+    INTO v_user_reactions
+    FROM content.reactions r
+    WHERE r.entity_type::text = 'lens'
+      AND r.entity_id          = p_lens_id
+      AND r.lenser_id          = v_viewer_id;
+  ELSE
+    v_user_reactions := '{}'::jsonb;
+  END IF;
+
+  -- Latest published version
+  SELECT v.id, v.version_number, v.template_body, v.status::text,
+         v.changelog, v.published_at, v.created_at
+  INTO v_latest_ver
+  FROM lenses.versions v
+  WHERE v.lens_id    = p_lens_id
+    AND v.status     = 'published'::content.content_status
+  ORDER BY v.version_number DESC
+  LIMIT 1;
+
+  -- Version parameters for latest published (empty array if no published version)
+  IF v_latest_ver.id IS NOT NULL THEN
+    SELECT COALESCE(
+      jsonb_agg(
+        jsonb_build_object(
+          'id',        vp.id,
+          'label',     vp.label,
+          'toolId',    vp.tool_id,
+          'versionId', vp.version_id,
+          'tool',      jsonb_build_object(
+            'id',               tk.id,
+            'key',              tk.key,
+            'label',            tk.label,
+            'description',      tk.description,
+            'category',         tk.category,
+            'type',             tk.type,
+            'required',         tk.required,
+            'min_length',       tk.min_length,
+            'max_length',       tk.max_length,
+            'placeholder',      tk.placeholder,
+            'help_text',        tk.help_text,
+            'validation_schema',tk.validation_schema,
+            'options',          tk.options,
+            'sort_order',       tk.sort_order,
+            'is_system',        tk.is_system,
+            'icon',             tk.icon,
+            'color',            tk.color
+          )
+        )
+        ORDER BY tk.sort_order, vp.id
+      ),
+      '[]'::jsonb
+    )
+    INTO v_params
+    FROM lenses.version_parameters vp
+    JOIN lenses.tools tk ON tk.id = vp.tool_id
+    WHERE vp.version_id = v_latest_ver.id;
+  ELSE
+    v_params := '[]'::jsonb;
+  END IF;
+
+  RETURN jsonb_build_object(
+    'id',                        v_lens.id,
+    'lenser_id',                 v_lens.lenser_id,
+    'visibility',                v_lens.visibility,
+    'parent_lens_id',            v_lens.parent_lens_id,
+    'forked_from_execution_id',  v_lens.forked_from_execution_id,
+    'head_version_id',           v_lens.head_version_id,
+    'created_at',                v_lens.created_at,
+    'updated_at',                v_lens.updated_at,
+    'title',                     COALESCE(v_translation.title, 'Untitled'),
+    'description',               v_translation.description,
+    'content',                   COALESCE(v_translation.content, ''),
+    'author_profile',            jsonb_build_object(
+                                   'id',           v_author.id,
+                                   'handle',       v_author.handle,
+                                   'display_name', v_author.display_name,
+                                   'avatar_url',   v_author.avatar_url
+                                 ),
+    'tags',                      COALESCE(v_tags, '[]'::jsonb),
+    'reaction_totals',           v_reaction_totals,
+    'user_reactions',            v_user_reactions,
+    'latest_published_version',  CASE
+      WHEN v_latest_ver.id IS NOT NULL THEN jsonb_build_object(
+        'id',             v_latest_ver.id,
+        'lens_id',        p_lens_id,
+        'version_number', v_latest_ver.version_number,
+        'template_body',  v_latest_ver.template_body,
+        'status',         v_latest_ver.status,
+        'changelog',      v_latest_ver.changelog,
+        'published_at',   v_latest_ver.published_at,
+        'created_at',     v_latest_ver.created_at,
+        'parameters',     COALESCE(v_params, '[]'::jsonb)
+      )
+      ELSE NULL
+    END
+  );
+END;
+$$;
+
+
+ALTER FUNCTION "public"."fn_get_lens_detail_bootstrap"("p_lens_id" "uuid") OWNER TO "postgres";
+
+
+COMMENT ON FUNCTION "public"."fn_get_lens_detail_bootstrap"("p_lens_id" "uuid") IS 'Single-call bootstrap for LensDetailPage. Replaces 9 sequential RPCs with one roundtrip. Returns full lens detail + author + tags + reaction counts + user reactions + latest published version. STABLE = cacheable. Returns {"error":"not_found"} for inaccessible lenses.';
+
+
+
+CREATE OR REPLACE FUNCTION "public"."fn_get_lens_for_execution"("p_lens_id" "uuid") RETURNS TABLE("id" "uuid", "head_version_id" "uuid")
+    LANGUAGE "sql" STABLE SECURITY DEFINER
+    SET "search_path" TO 'public', 'lenses'
+    AS $$
+  SELECT l.id, l.head_version_id
+  FROM lenses.lenses l
+  WHERE l.id = p_lens_id
+  LIMIT 1;
+$$;
+
+
+ALTER FUNCTION "public"."fn_get_lens_for_execution"("p_lens_id" "uuid") OWNER TO "postgres";
+
+
+COMMENT ON FUNCTION "public"."fn_get_lens_for_execution"("p_lens_id" "uuid") IS 'Security wrapper: fetch a lens by ID and return its head_version_id. Used by the execution pipeline before queuing a run.';
+
+
+
+CREATE OR REPLACE FUNCTION "public"."fn_get_lens_fork_tree"("p_lens_id" "uuid") RETURNS "jsonb"
+    LANGUAGE "sql" STABLE SECURITY DEFINER
+    SET "search_path" TO 'public', 'lenses'
+    AS $$
+  SELECT COALESCE(
+    jsonb_agg(to_jsonb(f.*) ORDER BY f.depth ASC),
+    '[]'::jsonb
+  )
+  FROM lenses.vw_fork_history f
+  WHERE f.lens_id = p_lens_id;
+$$;
+
+
+ALTER FUNCTION "public"."fn_get_lens_fork_tree"("p_lens_id" "uuid") OWNER TO "postgres";
+
+
+COMMENT ON FUNCTION "public"."fn_get_lens_fork_tree"("p_lens_id" "uuid") IS 'Security wrapper: return the fork ancestry chain for a lens as a jsonb array ordered by depth ascending.';
+
+
+
+CREATE OR REPLACE FUNCTION "public"."fn_get_lens_version_detail"("p_version_id" "uuid") RETURNS TABLE("id" "uuid", "lens_id" "uuid", "version_number" integer, "status" "text", "template_body" "text", "changelog" "text", "parent_version_id" "uuid", "published_at" timestamp with time zone, "created_at" timestamp with time zone)
+    LANGUAGE "sql" STABLE SECURITY DEFINER
+    SET "search_path" TO 'public', 'lenses', 'lensers'
+    AS $$
+  SELECT
+    v.id, v.lens_id, v.version_number, v.status::text,
+    v.template_body, v.changelog, v.parent_version_id,
+    v.published_at, v.created_at
+  FROM lenses.versions v
+  JOIN lenses.lenses l ON l.id = v.lens_id
+  WHERE v.id = p_version_id
+    AND (
+      l.lenser_id = lensers.get_auth_lenser_id()
+      OR (l.visibility = 'public' AND v.status = 'published')
+    );
+$$;
+
+
+ALTER FUNCTION "public"."fn_get_lens_version_detail"("p_version_id" "uuid") OWNER TO "postgres";
+
+
+COMMENT ON FUNCTION "public"."fn_get_lens_version_detail"("p_version_id" "uuid") IS 'Security wrapper: get a lens version. Owner sees any status; others see only published versions of public lenses.';
+
+
+
+CREATE OR REPLACE FUNCTION "public"."fn_get_lens_version_parameters"("p_version_id" "uuid") RETURNS "jsonb"
+    LANGUAGE "sql" STABLE SECURITY DEFINER
+    SET "search_path" TO 'public', 'lenses', 'lensers'
+    AS $$
+  SELECT COALESCE(
+    jsonb_agg(to_jsonb(vp.*) ORDER BY vp.label ASC),
+    '[]'::jsonb
+  )
+  FROM lenses.version_parameters vp
+  JOIN lenses.versions v   ON v.id = vp.version_id
+  JOIN lenses.lenses   l   ON l.id = v.lens_id
+  WHERE vp.version_id = p_version_id
+    AND (
+      l.lenser_id = lensers.get_auth_lenser_id()
+      OR (l.visibility = 'public' AND v.status = 'published')
+    );
+$$;
+
+
+ALTER FUNCTION "public"."fn_get_lens_version_parameters"("p_version_id" "uuid") OWNER TO "postgres";
+
+
+COMMENT ON FUNCTION "public"."fn_get_lens_version_parameters"("p_version_id" "uuid") IS 'Security wrapper: return the parameter definitions for a lens version as a jsonb array ordered by label.';
+
+
+
+CREATE OR REPLACE FUNCTION "public"."fn_get_lenser_badges"("p_lenser_id" "uuid") RETURNS "jsonb"
+    LANGUAGE "sql" STABLE SECURITY DEFINER
+    SET "search_path" TO 'public', 'lensers'
+    AS $$
+  SELECT COALESCE(jsonb_agg(to_jsonb(b.*) ORDER BY b.awarded_at DESC), '[]'::jsonb)
+  FROM lensers.badges b
+  WHERE b.lenser_id = p_lenser_id;
+$$;
+
+
+ALTER FUNCTION "public"."fn_get_lenser_badges"("p_lenser_id" "uuid") OWNER TO "postgres";
+
+
+COMMENT ON FUNCTION "public"."fn_get_lenser_badges"("p_lenser_id" "uuid") IS 'Security wrapper: return all badge rows for a lenser as a jsonb array ordered by awarded_at DESC.';
+
+
+
+CREATE OR REPLACE FUNCTION "public"."fn_get_lenser_by_id_full"("p_lenser_id" "uuid") RETURNS "jsonb"
+    LANGUAGE "sql" STABLE SECURITY DEFINER
+    SET "search_path" TO 'public', 'lensers'
+    AS $$
+  SELECT to_jsonb(p.*)
+  FROM lensers.profiles p
+  WHERE p.id = p_lenser_id
+  LIMIT 1;
+$$;
+
+
+ALTER FUNCTION "public"."fn_get_lenser_by_id_full"("p_lenser_id" "uuid") OWNER TO "postgres";
+
+
+COMMENT ON FUNCTION "public"."fn_get_lenser_by_id_full"("p_lenser_id" "uuid") IS 'Security wrapper: full lensers.profiles row as jsonb by lenser ID.';
+
+
+
+CREATE OR REPLACE FUNCTION "public"."fn_get_lenser_language_preference"() RETURNS "text"
+    LANGUAGE "sql" STABLE SECURITY DEFINER
+    SET "search_path" TO 'public', 'lensers'
+    AS $$
+  SELECT pr.language
+  FROM lensers.preferences pr
+  WHERE pr.lenser_id = lensers.get_auth_lenser_id()
+  LIMIT 1;
+$$;
+
+
+ALTER FUNCTION "public"."fn_get_lenser_language_preference"() OWNER TO "postgres";
+
+
+COMMENT ON FUNCTION "public"."fn_get_lenser_language_preference"() IS 'Security wrapper: return the preferred language from the current user''s profile preferences jsonb.';
+
+
+
+CREATE OR REPLACE FUNCTION "public"."fn_get_lenser_profile_brief"("p_handle" "text" DEFAULT NULL::"text", "p_lenser_id" "uuid" DEFAULT NULL::"uuid") RETURNS TABLE("id" "uuid", "handle" "text", "display_name" "text", "avatar_url" "text")
+    LANGUAGE "sql" STABLE SECURITY DEFINER
+    SET "search_path" TO 'public', 'lensers'
+    AS $$
+  SELECT p.id, p.handle, p.display_name, p.avatar_url
+  FROM lensers.profiles p
+  WHERE
+    (p_handle    IS NOT NULL AND p.handle = p_handle)
+    OR
+    (p_lenser_id IS NOT NULL AND p.id = p_lenser_id)
+  LIMIT 1;
+$$;
+
+
+ALTER FUNCTION "public"."fn_get_lenser_profile_brief"("p_handle" "text", "p_lenser_id" "uuid") OWNER TO "postgres";
+
+
+COMMENT ON FUNCTION "public"."fn_get_lenser_profile_brief"("p_handle" "text", "p_lenser_id" "uuid") IS 'Security wrapper: minimal profile (id, handle, display_name, avatar_url) by handle OR lenser_id. Pass exactly one parameter.';
+
+
+
 CREATE TABLE IF NOT EXISTS "analytics"."lenser_stats" (
     "lenser_id" "uuid" NOT NULL,
     "thread_count" integer DEFAULT 0 NOT NULL,
@@ -21325,6 +24920,109 @@ ALTER FUNCTION "public"."fn_get_lenser_profile_full"("p_handle" "text") OWNER TO
 
 
 COMMENT ON FUNCTION "public"."fn_get_lenser_profile_full"("p_handle" "text") IS 'Returns full lenser profile data for LenserProfilePage by handle. Case-insensitive lookup via lower(). Covers stats, XP, reputation, and battle aggregates in one call.';
+
+
+
+CREATE OR REPLACE FUNCTION "public"."fn_get_lenser_profiles_brief_batch"("p_lenser_ids" "uuid"[]) RETURNS TABLE("id" "uuid", "handle" "text", "display_name" "text", "avatar_url" "text")
+    LANGUAGE "sql" STABLE SECURITY DEFINER
+    SET "search_path" TO 'public', 'lensers'
+    AS $$
+  SELECT p.id, p.handle, p.display_name, p.avatar_url
+  FROM lensers.profiles p
+  WHERE p.id = ANY(p_lenser_ids);
+$$;
+
+
+ALTER FUNCTION "public"."fn_get_lenser_profiles_brief_batch"("p_lenser_ids" "uuid"[]) OWNER TO "postgres";
+
+
+COMMENT ON FUNCTION "public"."fn_get_lenser_profiles_brief_batch"("p_lenser_ids" "uuid"[]) IS 'Security wrapper: batch-fetch minimal profile tuples for an array of lenser IDs.';
+
+
+
+CREATE OR REPLACE FUNCTION "public"."fn_get_lenser_reaction_history"("p_lenser_id" "uuid", "p_limit" integer DEFAULT 20, "p_offset" integer DEFAULT 0) RETURNS TABLE("entity_id" "uuid", "entity_type" "text", "lenser_id" "uuid", "reaction" "text", "created_at" timestamp with time zone)
+    LANGUAGE "sql" STABLE SECURITY DEFINER
+    SET "search_path" TO 'public', 'content', 'lensers'
+    AS $$
+  SELECT r.entity_id, r.entity_type, r.lenser_id, r.reaction, r.created_at
+  FROM content.reactions r
+  WHERE r.lenser_id = p_lenser_id
+  ORDER BY r.created_at DESC
+  LIMIT  LEAST(GREATEST(COALESCE(p_limit, 20), 1), 100)
+  OFFSET GREATEST(COALESCE(p_offset, 0), 0);
+$$;
+
+
+ALTER FUNCTION "public"."fn_get_lenser_reaction_history"("p_lenser_id" "uuid", "p_limit" integer, "p_offset" integer) OWNER TO "postgres";
+
+
+COMMENT ON FUNCTION "public"."fn_get_lenser_reaction_history"("p_lenser_id" "uuid", "p_limit" integer, "p_offset" integer) IS 'Security wrapper: paginated reaction history for a lenser, ordered by created_at DESC.';
+
+
+
+CREATE OR REPLACE FUNCTION "public"."fn_get_lenser_scores"("p_lenser_id" "uuid") RETURNS TABLE("id" "uuid", "lenser_id" "uuid", "score_type" "text", "score" numeric, "uncertainty" numeric, "computed_at" timestamp with time zone)
+    LANGUAGE "sql" STABLE SECURITY DEFINER
+    SET "search_path" TO 'public', 'reputation'
+    AS $$
+  SELECT ls.id, ls.lenser_id, ls.score_type, ls.score, ls.uncertainty, ls.computed_at
+  FROM reputation.lenser_scores ls
+  WHERE ls.lenser_id = p_lenser_id
+  ORDER BY ls.computed_at DESC;
+$$;
+
+
+ALTER FUNCTION "public"."fn_get_lenser_scores"("p_lenser_id" "uuid") OWNER TO "postgres";
+
+
+COMMENT ON FUNCTION "public"."fn_get_lenser_scores"("p_lenser_id" "uuid") IS 'Security wrapper: return all reputation score rows for a lenser, ordered by computed_at DESC.';
+
+
+
+CREATE OR REPLACE FUNCTION "public"."fn_get_lenser_threads_private"("p_lenser_id" "uuid", "p_limit" integer DEFAULT 20, "p_offset" integer DEFAULT 0) RETURNS "jsonb"
+    LANGUAGE "sql" STABLE SECURITY DEFINER
+    SET "search_path" TO 'public', 'content', 'lensers'
+    AS $$
+  SELECT COALESCE(
+    jsonb_agg(to_jsonb(t.*) ORDER BY t.created_at DESC),
+    '[]'::jsonb
+  )
+  FROM content.threads t
+  WHERE t.lenser_id = p_lenser_id
+    AND t.lenser_id = lensers.get_auth_lenser_id()
+  LIMIT  LEAST(GREATEST(COALESCE(p_limit, 20), 1), 100)
+  OFFSET GREATEST(COALESCE(p_offset, 0), 0);
+$$;
+
+
+ALTER FUNCTION "public"."fn_get_lenser_threads_private"("p_lenser_id" "uuid", "p_limit" integer, "p_offset" integer) OWNER TO "postgres";
+
+
+COMMENT ON FUNCTION "public"."fn_get_lenser_threads_private"("p_lenser_id" "uuid", "p_limit" integer, "p_offset" integer) IS 'Security wrapper: paginated private thread list owned by the current user. Returns empty array if p_lenser_id != caller.';
+
+
+
+CREATE OR REPLACE FUNCTION "public"."fn_get_media_object"("p_object_id" "uuid") RETURNS TABLE("id" "uuid", "workspace_id" "uuid", "owner_lenser_id" "uuid", "bucket" "text", "object_key" "text", "external_url" "text", "mime_type" "text", "media_type" "text", "name" "text", "content_text" "text", "byte_size" bigint, "visibility" "text", "lifecycle_state" "text", "metadata" "jsonb", "created_at" timestamp with time zone, "updated_at" timestamp with time zone)
+    LANGUAGE "sql" STABLE SECURITY DEFINER
+    SET "search_path" TO 'public', 'media', 'lensers'
+    AS $$
+  SELECT
+    o.id, o.workspace_id, o.owner_lenser_id, o.bucket, o.object_key,
+    o.external_url, o.mime_type, o.media_type, o.name, o.content_text,
+    o.byte_size, o.visibility, o.lifecycle_state, o.metadata,
+    o.created_at, o.updated_at
+  FROM media.objects o
+  WHERE o.id = p_object_id
+    AND (
+      o.owner_lenser_id = lensers.get_auth_lenser_id()
+      OR o.visibility   = 'public'
+    );
+$$;
+
+
+ALTER FUNCTION "public"."fn_get_media_object"("p_object_id" "uuid") OWNER TO "postgres";
+
+
+COMMENT ON FUNCTION "public"."fn_get_media_object"("p_object_id" "uuid") IS 'Security wrapper: fetch a media object row by ID. Returns the row if the caller owns it OR it is public. Callers must check lifecycle_state and visibility themselves.';
 
 
 
@@ -21567,6 +25265,21 @@ COMMENT ON FUNCTION "public"."fn_get_my_lenses"("p_offset" integer, "p_limit" in
 
 
 
+CREATE OR REPLACE FUNCTION "public"."fn_get_my_vote"("p_battle_id" "uuid") RETURNS TABLE("vote_value" "text")
+    LANGUAGE "sql" STABLE SECURITY DEFINER
+    SET "search_path" TO 'public', 'battles', 'lensers'
+    AS $$
+  SELECT v.vote_value::text
+  FROM battles.votes v
+  WHERE v.battle_id       = p_battle_id
+    AND v.voter_lenser_id = lensers.get_auth_lenser_id()
+  LIMIT 1;
+$$;
+
+
+ALTER FUNCTION "public"."fn_get_my_vote"("p_battle_id" "uuid") OWNER TO "postgres";
+
+
 CREATE OR REPLACE FUNCTION "public"."fn_get_my_workflows"("p_lenser_id" "uuid", "p_offset" integer DEFAULT 0, "p_limit" integer DEFAULT 12, "p_visibility" "text" DEFAULT NULL::"text", "p_sort" "text" DEFAULT 'updated_at'::"text", "p_search" "text" DEFAULT NULL::"text") RETURNS TABLE("id" "uuid", "lenser_id" "uuid", "title" "text", "description" "text", "visibility" "text", "battle_count" integer, "node_count" bigint, "reaction_totals" "jsonb", "fork_count" integer, "parent_workflow_id" "uuid", "created_at" timestamp with time zone, "updated_at" timestamp with time zone)
     LANGUAGE "sql" STABLE SECURITY DEFINER
     SET "search_path" TO 'public', 'lenses'
@@ -21704,6 +25417,81 @@ COMMENT ON FUNCTION "public"."fn_get_provider_configs"("p_ai_lenser_id" "uuid") 
 
 
 
+CREATE OR REPLACE FUNCTION "public"."fn_get_recently_active_lensers"("p_limit" integer DEFAULT 20) RETURNS "jsonb"
+    LANGUAGE "sql" STABLE SECURITY DEFINER
+    SET "search_path" TO 'public', 'lensers'
+    AS $$
+  SELECT COALESCE(jsonb_agg(to_jsonb(p.*) ORDER BY p.last_active_at DESC), '[]'::jsonb)
+  FROM lensers.profiles p
+  WHERE p.status = 'active'
+    AND p.deletion_requested_at IS NULL
+  LIMIT LEAST(GREATEST(COALESCE(p_limit, 20), 1), 100);
+$$;
+
+
+ALTER FUNCTION "public"."fn_get_recently_active_lensers"("p_limit" integer) OWNER TO "postgres";
+
+
+COMMENT ON FUNCTION "public"."fn_get_recently_active_lensers"("p_limit" integer) IS 'Security wrapper: return recently active lensers as a jsonb array, max 100.';
+
+
+
+CREATE OR REPLACE FUNCTION "public"."fn_get_rubric_criteria"("p_criterion_ids" "uuid"[]) RETURNS TABLE("id" "uuid", "title" "text", "description" "text", "weight" numeric)
+    LANGUAGE "sql" STABLE SECURITY DEFINER
+    SET "search_path" TO 'public', 'battles'
+    AS $$
+  SELECT rc.id, rc.title, rc.description, rc.weight
+  FROM battles.rubric_criteria rc
+  WHERE rc.id = ANY(p_criterion_ids);
+$$;
+
+
+ALTER FUNCTION "public"."fn_get_rubric_criteria"("p_criterion_ids" "uuid"[]) OWNER TO "postgres";
+
+
+CREATE OR REPLACE FUNCTION "public"."fn_get_rule_dispatch_summary"("p_days" integer DEFAULT 30) RETURNS TABLE("rule_id" "uuid", "dispatched_count" bigint, "failed_count" bigint, "skipped_count" bigint, "queued_count" bigint, "last_attempted_at" timestamp with time zone)
+    LANGUAGE "sql" STABLE SECURITY DEFINER
+    SET "search_path" TO 'public', 'automation'
+    AS $$
+  SELECT
+    ed.rule_id,
+    COUNT(*) FILTER (WHERE ed.status = 'dispatched') AS dispatched_count,
+    COUNT(*) FILTER (WHERE ed.status = 'failed')     AS failed_count,
+    COUNT(*) FILTER (WHERE ed.status = 'skipped')    AS skipped_count,
+    COUNT(*) FILTER (WHERE ed.status = 'queued')     AS queued_count,
+    MAX(ed.attempted_at)                             AS last_attempted_at
+  FROM automation.event_dispatches ed
+  JOIN automation.trigger_rules tr ON tr.id = ed.rule_id
+  WHERE tr.lenser_id = auth.uid()
+    AND ed.attempted_at >= (now() - (COALESCE(p_days, 30) || ' days')::interval)
+  GROUP BY ed.rule_id;
+$$;
+
+
+ALTER FUNCTION "public"."fn_get_rule_dispatch_summary"("p_days" integer) OWNER TO "postgres";
+
+
+COMMENT ON FUNCTION "public"."fn_get_rule_dispatch_summary"("p_days" integer) IS 'Security wrapper: aggregate dispatch counts per rule for the current user over the last p_days days (default 30). Replaces client-side fan-out query.';
+
+
+
+CREATE OR REPLACE FUNCTION "public"."fn_get_run_details"("p_run_id" "uuid") RETURNS TABLE("id" "uuid", "request_id" "uuid", "status" "text", "model_id" "uuid", "model_key" "text", "provider_key" "text", "started_at" timestamp with time zone, "completed_at" timestamp with time zone, "latency_ms" integer, "token_input" integer, "token_output" integer, "credit_cost" bigint, "billing_status" "text", "error_code" "text", "error_message" "text", "artifacts" "jsonb")
+    LANGUAGE "plpgsql" STABLE SECURITY DEFINER
+    SET "search_path" TO 'public', 'execution', 'lensers'
+    AS $$
+BEGIN
+  RETURN QUERY SELECT * FROM execution.fn_get_run_details(p_run_id);
+END;
+$$;
+
+
+ALTER FUNCTION "public"."fn_get_run_details"("p_run_id" "uuid") OWNER TO "postgres";
+
+
+COMMENT ON FUNCTION "public"."fn_get_run_details"("p_run_id" "uuid") IS 'Security wrapper: get execution run details including aggregated artifacts. Delegates auth enforcement to execution.fn_get_run_details.';
+
+
+
 CREATE OR REPLACE FUNCTION "public"."fn_get_run_provenance"("p_run_id" "uuid") RETURNS TABLE("id" "uuid", "direction" "text", "source_run_id" "uuid", "source_workflow_id" "uuid", "source_node_id" "uuid", "source_output_path" "text", "target_run_id" "uuid", "target_workflow_id" "uuid", "target_node_id" "uuid", "target_input_path" "text", "transform" "jsonb", "created_at" timestamp with time zone)
     LANGUAGE "sql" STABLE SECURITY DEFINER
     SET "search_path" TO 'lenses', 'lensers', 'public'
@@ -21746,6 +25534,71 @@ COMMENT ON FUNCTION "public"."fn_get_run_provenance"("p_run_id" "uuid") IS 'Retu
 
 
 
+CREATE OR REPLACE FUNCTION "public"."fn_get_run_report"("p_report_id" "uuid") RETURNS "jsonb"
+    LANGUAGE "sql" STABLE SECURITY DEFINER
+    SET "search_path" TO 'public', 'agents', 'lensers'
+    AS $$
+  SELECT to_jsonb(rr.*)
+  FROM agents.run_reports rr
+  WHERE rr.id = p_report_id
+    AND (
+      rr.ai_lenser_id IN (
+        SELECT o.ai_lenser_id FROM agents.ownerships o
+        WHERE o.owner_lenser_id = lensers.get_auth_lenser_id()
+          AND o.revoked_at IS NULL
+      )
+      OR public.fn_is_super_admin()
+    )
+  LIMIT 1;
+$$;
+
+
+ALTER FUNCTION "public"."fn_get_run_report"("p_report_id" "uuid") OWNER TO "postgres";
+
+
+CREATE OR REPLACE FUNCTION "public"."fn_get_schedule_calendars"() RETURNS TABLE("id" "uuid", "lenser_id" "uuid", "name" "text", "kind" "text", "dates" "date"[], "timezone" "text", "is_seed" boolean, "created_at" timestamp with time zone)
+    LANGUAGE "sql" STABLE SECURITY DEFINER
+    SET "search_path" TO 'public', 'lenses', 'lensers'
+    AS $$
+  SELECT sc.id, sc.lenser_id, sc.name, sc.kind, sc.dates,
+         sc.timezone, sc.is_seed, sc.created_at
+  FROM lenses.schedule_calendars sc
+  WHERE sc.lenser_id = lensers.get_auth_lenser_id()
+  ORDER BY sc.created_at DESC;
+$$;
+
+
+ALTER FUNCTION "public"."fn_get_schedule_calendars"() OWNER TO "postgres";
+
+
+COMMENT ON FUNCTION "public"."fn_get_schedule_calendars"() IS 'Security wrapper: list all schedule calendars owned by the current user.';
+
+
+
+CREATE OR REPLACE FUNCTION "public"."fn_get_schedule_run_history"("p_workflow_id" "uuid", "p_limit" integer DEFAULT 20, "p_cursor" timestamp with time zone DEFAULT NULL::timestamp with time zone) RETURNS TABLE("id" "uuid", "workflow_id" "uuid", "schedule_id" "uuid", "status" "text", "started_at" timestamp with time zone, "completed_at" timestamp with time zone, "created_at" timestamp with time zone)
+    LANGUAGE "sql" STABLE SECURITY DEFINER
+    SET "search_path" TO 'public', 'lenses', 'lensers'
+    AS $$
+  SELECT
+    wr.id, wr.workflow_id, wr.schedule_id, wr.status,
+    wr.started_at, wr.completed_at, wr.created_at
+  FROM lenses.workflow_runs wr
+  JOIN lenses.lenses l ON l.id = wr.workflow_id
+  WHERE wr.workflow_id = p_workflow_id
+    AND l.lenser_id = lensers.get_auth_lenser_id()
+    AND (p_cursor IS NULL OR wr.created_at < p_cursor)
+  ORDER BY wr.created_at DESC
+  LIMIT LEAST(GREATEST(COALESCE(p_limit, 20), 1), 100);
+$$;
+
+
+ALTER FUNCTION "public"."fn_get_schedule_run_history"("p_workflow_id" "uuid", "p_limit" integer, "p_cursor" timestamp with time zone) OWNER TO "postgres";
+
+
+COMMENT ON FUNCTION "public"."fn_get_schedule_run_history"("p_workflow_id" "uuid", "p_limit" integer, "p_cursor" timestamp with time zone) IS 'Security wrapper: keyset-paginated run history for a workflow owned by the current user. Max 100 rows per call.';
+
+
+
 CREATE OR REPLACE FUNCTION "public"."fn_get_season_leaderboard"("p_app_id" "uuid" DEFAULT '00000000-0000-0000-0000-000000000001'::"uuid", "p_season_id" "uuid" DEFAULT NULL::"uuid", "p_limit" integer DEFAULT 20, "p_offset" integer DEFAULT 0) RETURNS TABLE("season_id" "uuid", "season_slug" "text", "app_id" "uuid", "rank" bigint, "lenser_id" "uuid", "total_xp" bigint, "user" "jsonb")
     LANGUAGE "sql" STABLE SECURITY DEFINER
     SET "search_path" TO 'public', 'xp', 'lensers', 'auth'
@@ -21768,6 +25621,48 @@ $$;
 
 
 ALTER FUNCTION "public"."fn_get_season_leaderboard"("p_app_id" "uuid", "p_season_id" "uuid", "p_limit" integer, "p_offset" integer) OWNER TO "postgres";
+
+
+CREATE OR REPLACE FUNCTION "public"."fn_get_team_members"("p_team_id" "uuid") RETURNS SETOF "jsonb"
+    LANGUAGE "sql" STABLE SECURITY DEFINER
+    SET "search_path" TO 'public', 'agents', 'lensers'
+    AS $$
+  SELECT to_jsonb(tm.*)
+  FROM agents.team_members tm
+  JOIN agents.teams t ON t.id = tm.team_id
+  WHERE tm.team_id = p_team_id
+    AND (
+      EXISTS (
+        SELECT 1 FROM agents.ownerships o
+        WHERE o.ai_lenser_id = t.ai_lenser_id
+          AND o.owner_lenser_id = lensers.get_auth_lenser_id()
+          AND o.revoked_at IS NULL
+      ) OR public.is_admin()
+    )
+  ORDER BY tm.lane, tm.sort_order;
+$$;
+
+
+ALTER FUNCTION "public"."fn_get_team_members"("p_team_id" "uuid") OWNER TO "postgres";
+
+
+CREATE OR REPLACE FUNCTION "public"."fn_get_thread_by_id_private"("p_thread_id" "uuid") RETURNS "jsonb"
+    LANGUAGE "sql" STABLE SECURITY DEFINER
+    SET "search_path" TO 'public', 'content', 'lensers'
+    AS $$
+  SELECT to_jsonb(t.*)
+  FROM content.threads t
+  WHERE t.id = p_thread_id
+    AND t.lenser_id = lensers.get_auth_lenser_id()
+  LIMIT 1;
+$$;
+
+
+ALTER FUNCTION "public"."fn_get_thread_by_id_private"("p_thread_id" "uuid") OWNER TO "postgres";
+
+
+COMMENT ON FUNCTION "public"."fn_get_thread_by_id_private"("p_thread_id" "uuid") IS 'Security wrapper: fetch a private/draft thread owned by the current user. Returns NULL if not found or not owned.';
+
 
 
 CREATE OR REPLACE FUNCTION "public"."fn_get_thread_replies_page"("p_thread_id" "uuid", "p_limit" integer DEFAULT 20, "p_offset" integer DEFAULT 0) RETURNS TABLE("id" "uuid", "thread_id" "uuid", "parent_reply_id" "uuid", "lenser_id" "uuid", "content" "text", "content_html" "text", "reaction_totals" "jsonb", "created_at" timestamp with time zone, "author_profile" "jsonb")
@@ -21819,6 +25714,29 @@ ALTER FUNCTION "public"."fn_get_thread_replies_page"("p_thread_id" "uuid", "p_li
 
 
 COMMENT ON FUNCTION "public"."fn_get_thread_replies_page"("p_thread_id" "uuid", "p_limit" integer, "p_offset" integer) IS 'Paginated thread replies. Paginates by root reply count (LIMIT/OFFSET on root-level entries), then recursively fetches all descendants of the selected roots. Hard cap: 50 root replies per call. Uses SECURITY INVOKER so RLS is enforced.';
+
+
+
+CREATE OR REPLACE FUNCTION "public"."fn_get_thread_replies_private"("p_thread_id" "uuid", "p_limit" integer DEFAULT 50, "p_offset" integer DEFAULT 0) RETURNS TABLE("id" "uuid", "thread_id" "uuid", "parent_reply_id" "uuid", "lenser_id" "uuid", "content" "text", "created_at" timestamp with time zone, "deleted_at" timestamp with time zone)
+    LANGUAGE "sql" STABLE SECURITY DEFINER
+    SET "search_path" TO 'public', 'content', 'lensers'
+    AS $$
+  SELECT r.id, r.thread_id, r.parent_reply_id, r.lenser_id,
+         r.content, r.created_at, r.deleted_at
+  FROM content.thread_replies r
+  JOIN content.threads t ON t.id = r.thread_id
+  WHERE r.thread_id = p_thread_id
+    AND t.lenser_id = lensers.get_auth_lenser_id()
+  ORDER BY r.created_at ASC
+  LIMIT  LEAST(GREATEST(COALESCE(p_limit, 50), 1), 200)
+  OFFSET GREATEST(COALESCE(p_offset, 0), 0);
+$$;
+
+
+ALTER FUNCTION "public"."fn_get_thread_replies_private"("p_thread_id" "uuid", "p_limit" integer, "p_offset" integer) OWNER TO "postgres";
+
+
+COMMENT ON FUNCTION "public"."fn_get_thread_replies_private"("p_thread_id" "uuid", "p_limit" integer, "p_offset" integer) IS 'Security wrapper: paginated replies for a private thread owned by the current user.';
 
 
 
@@ -21904,6 +25822,34 @@ $$;
 ALTER FUNCTION "public"."fn_get_tournament_bracket"("p_tournament_id" "uuid") OWNER TO "postgres";
 
 
+CREATE OR REPLACE FUNCTION "public"."fn_get_tournament_by_slug"("p_slug" "text") RETURNS "jsonb"
+    LANGUAGE "sql" STABLE SECURITY DEFINER
+    SET "search_path" TO 'public', 'battles'
+    AS $$
+  SELECT to_jsonb(t.*)
+  FROM battles.tournaments t
+  WHERE t.slug = p_slug
+  LIMIT 1;
+$$;
+
+
+ALTER FUNCTION "public"."fn_get_tournament_by_slug"("p_slug" "text") OWNER TO "postgres";
+
+
+CREATE OR REPLACE FUNCTION "public"."fn_get_tournament_contenders"("p_tournament_id" "uuid") RETURNS SETOF "jsonb"
+    LANGUAGE "sql" STABLE SECURITY DEFINER
+    SET "search_path" TO 'public', 'battles'
+    AS $$
+  SELECT to_jsonb(tc.*)
+  FROM battles.tournament_contenders tc
+  WHERE tc.tournament_id = p_tournament_id
+  ORDER BY tc.seed NULLS LAST, tc.created_at;
+$$;
+
+
+ALTER FUNCTION "public"."fn_get_tournament_contenders"("p_tournament_id" "uuid") OWNER TO "postgres";
+
+
 CREATE OR REPLACE FUNCTION "public"."fn_get_trending_battles"("p_limit" integer DEFAULT 20, "p_cursor" numeric DEFAULT NULL::numeric) RETURNS TABLE("id" "uuid", "slug" "text", "title" "text", "status" "text", "published_at" timestamp with time zone, "battle_type" "text", "total_vote_count" integer, "vote_velocity" numeric, "og_image_url" "text", "contender_a_name" "text", "contender_b_name" "text", "winner_slot" "text")
     LANGUAGE "sql" SECURITY DEFINER
     SET "search_path" TO 'battles', 'public'
@@ -21946,6 +25892,25 @@ $$;
 ALTER FUNCTION "public"."fn_get_unread_notification_count"() OWNER TO "postgres";
 
 
+CREATE OR REPLACE FUNCTION "public"."fn_get_user_entity_reaction"("p_entity_type" "text", "p_entity_id" "uuid") RETURNS TABLE("entity_id" "uuid", "reaction" "text", "created_at" timestamp with time zone)
+    LANGUAGE "sql" STABLE SECURITY DEFINER
+    SET "search_path" TO 'public', 'content', 'lensers'
+    AS $$
+  SELECT r.entity_id, r.reaction, r.created_at
+  FROM content.reactions r
+  WHERE r.entity_type::text = p_entity_type
+    AND r.entity_id   = p_entity_id
+    AND r.lenser_id   = lensers.get_auth_lenser_id();
+$$;
+
+
+ALTER FUNCTION "public"."fn_get_user_entity_reaction"("p_entity_type" "text", "p_entity_id" "uuid") OWNER TO "postgres";
+
+
+COMMENT ON FUNCTION "public"."fn_get_user_entity_reaction"("p_entity_type" "text", "p_entity_id" "uuid") IS 'Security wrapper: return the current user''s reaction row for a single entity.';
+
+
+
 CREATE OR REPLACE FUNCTION "public"."fn_get_version_contracts"("p_version_id" "uuid") RETURNS TABLE("version_id" "uuid", "input_contract" "jsonb", "output_contract" "jsonb")
     LANGUAGE "sql" STABLE SECURITY DEFINER
     SET "search_path" TO 'public', 'pg_temp'
@@ -21963,31 +25928,64 @@ COMMENT ON FUNCTION "public"."fn_get_version_contracts"("p_version_id" "uuid") I
 
 
 
-CREATE OR REPLACE FUNCTION "public"."fn_get_workflow_bootstrap"("p_workflow_id" "uuid") RETURNS TABLE("workflow" "jsonb", "nodes" "jsonb", "edges" "jsonb")
-    LANGUAGE "plpgsql" SECURITY DEFINER
-    SET "search_path" TO 'public', 'pg_temp'
+CREATE OR REPLACE FUNCTION "public"."fn_get_vote_aggregates"("p_battle_id" "uuid") RETURNS TABLE("battle_id" "uuid", "contender_id" "uuid", "raw_vote_count" integer, "weighted_vote_sum" numeric, "draw_count" integer, "rank_position" integer)
+    LANGUAGE "sql" STABLE SECURITY DEFINER
+    SET "search_path" TO 'public', 'battles'
     AS $$
-begin
-  return query
-  with wf as (
-    select * from public.fn_get_workflow_detail(p_workflow_id)
+  SELECT va.battle_id, va.contender_id, va.raw_vote_count,
+         va.weighted_vote_sum, va.draw_count, va.rank_position
+  FROM battles.vote_aggregates va
+  WHERE va.battle_id = p_battle_id;
+$$;
+
+
+ALTER FUNCTION "public"."fn_get_vote_aggregates"("p_battle_id" "uuid") OWNER TO "postgres";
+
+
+CREATE OR REPLACE FUNCTION "public"."fn_get_workflow_bootstrap"("p_workflow_id" "uuid") RETURNS TABLE("workflow" "jsonb", "nodes" "jsonb", "edges" "jsonb")
+    LANGUAGE "plpgsql" STABLE SECURITY DEFINER
+    SET "search_path" TO 'public', 'lenses', 'lensers', 'content', 'pg_temp'
+    AS $$
+DECLARE
+  v_viewer_id uuid;
+BEGIN
+  v_viewer_id := lensers.get_auth_lenser_id();
+
+  RETURN QUERY
+  WITH wf AS (
+    SELECT * FROM public.fn_get_workflow_detail(p_workflow_id)
+  ),
+  viewer_reacts AS (
+    SELECT
+      COALESCE(jsonb_object_agg(r.reaction::text, true), '{}'::jsonb) AS reactions
+    FROM content.reactions r
+    WHERE v_viewer_id IS NOT NULL
+      AND r.entity_type::text = 'workflow'
+      AND r.entity_id          = p_workflow_id
+      AND r.lenser_id          = v_viewer_id
   )
-  select
-    to_jsonb(wf.*) as workflow,
-    coalesce(
-      (select jsonb_agg(n) from public.fn_get_workflow_nodes(p_workflow_id) n),
+  SELECT
+    to_jsonb(wf.*) || jsonb_build_object(
+      'viewer_reactions', COALESCE((SELECT reactions FROM viewer_reacts), '{}'::jsonb)
+    ) AS workflow,
+    COALESCE(
+      (SELECT jsonb_agg(n) FROM public.fn_get_workflow_nodes(p_workflow_id) n),
       '[]'::jsonb
-    ) as nodes,
-    coalesce(
-      (select jsonb_agg(e) from public.fn_get_workflow_edges(p_workflow_id) e),
+    ) AS nodes,
+    COALESCE(
+      (SELECT jsonb_agg(e) FROM public.fn_get_workflow_edges(p_workflow_id) e),
       '[]'::jsonb
-    ) as edges
-  from wf;
-end;
+    ) AS edges
+  FROM wf;
+END;
 $$;
 
 
 ALTER FUNCTION "public"."fn_get_workflow_bootstrap"("p_workflow_id" "uuid") OWNER TO "postgres";
+
+
+COMMENT ON FUNCTION "public"."fn_get_workflow_bootstrap"("p_workflow_id" "uuid") IS 'Bootstrap for WorkflowBuilderPage. Returns (workflow, nodes, edges) in one call. The workflow jsonb additionally carries viewer_reactions={reaction:true,...} so the page avoids a separate fn_get_entity_reaction_counts + fn_get_entity_reaction_status round trip.';
+
 
 
 CREATE OR REPLACE FUNCTION "public"."fn_get_workflow_detail"("p_workflow_id" "uuid") RETURNS TABLE("id" "uuid", "lenser_id" "uuid", "title" "text", "description" "text", "visibility" "text", "battle_count" integer, "reaction_totals" "jsonb", "fork_count" integer, "parent_workflow_id" "uuid", "author_profile" "jsonb", "parent_workflow_title" "text", "parent_workflow_author_profile" "jsonb", "created_at" timestamp with time zone, "updated_at" timestamp with time zone)
@@ -22190,6 +26188,24 @@ COMMENT ON FUNCTION "public"."fn_get_workflow_run"("p_run_id" "uuid") IS 'Fetche
 
 
 
+CREATE OR REPLACE FUNCTION "public"."fn_get_workflow_run_media_manifest"("p_run_id" "uuid") RETURNS TABLE("media_manifest" "jsonb")
+    LANGUAGE "sql" STABLE SECURITY DEFINER
+    SET "search_path" TO 'public', 'lenses', 'lensers'
+    AS $$
+  SELECT wr.media_manifest
+  FROM lenses.workflow_runs wr
+  WHERE wr.id = p_run_id
+    AND wr.triggered_by = lensers.get_auth_lenser_id();
+$$;
+
+
+ALTER FUNCTION "public"."fn_get_workflow_run_media_manifest"("p_run_id" "uuid") OWNER TO "postgres";
+
+
+COMMENT ON FUNCTION "public"."fn_get_workflow_run_media_manifest"("p_run_id" "uuid") IS 'Security wrapper: get the media_manifest jsonb array for a workflow run owned by the current user.';
+
+
+
 CREATE OR REPLACE FUNCTION "public"."fn_get_workflow_run_state"("p_run_id" "uuid") RETURNS TABLE("run_id" "uuid", "workflow_id" "uuid", "status" "text", "active_node_id" "uuid", "pending_count" integer, "waiting_count" integer, "in_flight_count" integer, "executed_count" integer, "failed_count" integer, "is_running" boolean, "started_at" timestamp with time zone, "completed_at" timestamp with time zone, "parent_run_id" "uuid", "recursion_depth" integer, "node_results" "jsonb", "upstream_count" integer, "downstream_count" integer)
     LANGUAGE "sql" STABLE SECURITY DEFINER
     SET "search_path" TO 'lenses', 'lensers', 'public'
@@ -22355,6 +26371,28 @@ $$;
 
 
 ALTER FUNCTION "public"."fn_get_workflow_schedules"("p_workflow_id" "uuid") OWNER TO "postgres";
+
+
+CREATE OR REPLACE FUNCTION "public"."fn_get_workspace_settings"("p_ai_lenser_id" "uuid") RETURNS "jsonb"
+    LANGUAGE "sql" STABLE SECURITY DEFINER
+    SET "search_path" TO 'public', 'agents', 'lensers'
+    AS $$
+  SELECT to_jsonb(ws.*)
+  FROM agents.workspace_settings ws
+  WHERE ws.ai_lenser_id = p_ai_lenser_id
+    AND (
+      EXISTS (
+        SELECT 1 FROM agents.ownerships o
+        WHERE o.ai_lenser_id = p_ai_lenser_id
+          AND o.owner_lenser_id = lensers.get_auth_lenser_id()
+          AND o.revoked_at IS NULL
+      ) OR public.is_admin()
+    )
+  LIMIT 1;
+$$;
+
+
+ALTER FUNCTION "public"."fn_get_workspace_settings"("p_ai_lenser_id" "uuid") OWNER TO "postgres";
 
 
 CREATE OR REPLACE FUNCTION "public"."fn_grant_standing_approval"("p_ai_lenser_id" "uuid", "p_workflow_id" "uuid" DEFAULT NULL::"uuid", "p_gate_kind" "text" DEFAULT NULL::"text", "p_hours" integer DEFAULT 24) RETURNS "uuid"
@@ -22782,6 +26820,36 @@ ALTER FUNCTION "public"."fn_integrity_probe_moderation_webhook"("p_target_url" "
 
 COMMENT ON FUNCTION "public"."fn_integrity_probe_moderation_webhook"("p_target_url" "text") IS 'Phase P automation. Inserts a synthetic flagged decision with the listener URL set transiently, force-dispatches the outbox, cleans up. service_role only.';
 
+
+
+CREATE OR REPLACE FUNCTION "public"."fn_invite_battle_contender"("p_battle_id" "uuid", "p_slot" "text", "p_contender_type" "text", "p_contender_ref_id" "uuid", "p_display_name" "text") RETURNS TABLE("id" "uuid", "battle_id" "uuid", "slot" "text", "contender_type" "text", "display_name" "text", "contender_ref_id" "uuid")
+    LANGUAGE "plpgsql" SECURITY DEFINER
+    SET "search_path" TO 'public', 'battles', 'lensers'
+    AS $$
+DECLARE
+  v_lenser_id uuid := lensers.get_auth_lenser_id();
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM battles.battles
+    WHERE id = p_battle_id AND creator_lenser_id = v_lenser_id
+  ) THEN
+    RAISE EXCEPTION 'invite_contender_forbidden' USING ERRCODE = '42501';
+  END IF;
+
+  RETURN QUERY
+  INSERT INTO battles.contenders (
+    battle_id, slot, contender_type, contender_ref_id, display_name,
+    entry_mode, contender_status
+  ) VALUES (
+    p_battle_id, p_slot, p_contender_type, p_contender_ref_id, p_display_name,
+    'invited', 'pending'
+  )
+  RETURNING id, battle_id, slot, contender_type, display_name, contender_ref_id;
+END;
+$$;
+
+
+ALTER FUNCTION "public"."fn_invite_battle_contender"("p_battle_id" "uuid", "p_slot" "text", "p_contender_type" "text", "p_contender_ref_id" "uuid", "p_display_name" "text") OWNER TO "postgres";
 
 
 CREATE OR REPLACE FUNCTION "public"."fn_invoke_tool"("p_team_run_id" "uuid", "p_tool_id" "uuid", "p_ai_lenser_id" "uuid", "p_input" "jsonb", "p_agent_run_step_id" "uuid" DEFAULT NULL::"uuid") RETURNS "uuid"
@@ -24051,6 +28119,107 @@ $$;
 ALTER FUNCTION "public"."fn_lenses_publish_version"("p_version_id" "uuid") OWNER TO "postgres";
 
 
+CREATE OR REPLACE FUNCTION "public"."fn_list_agent_action_logs"("p_ai_lenser_id" "uuid", "p_limit" integer DEFAULT 50, "p_cursor" timestamp with time zone DEFAULT NULL::timestamp with time zone) RETURNS TABLE("id" "uuid", "ai_lenser_id" "uuid", "action_type" "text", "context_ref_type" "text", "context_ref_id" "uuid", "result" "text", "metadata" "jsonb", "occurred_at" timestamp with time zone)
+    LANGUAGE "sql" STABLE SECURITY DEFINER
+    SET "search_path" TO 'public', 'agents', 'lensers'
+    AS $$
+  SELECT al.id, al.ai_lenser_id, al.action_type, al.context_ref_type,
+         al.context_ref_id, al.result, al.metadata, al.occurred_at
+  FROM agents.action_logs al
+  WHERE al.ai_lenser_id = p_ai_lenser_id
+    AND (p_cursor IS NULL OR al.occurred_at < p_cursor)
+    AND (
+      EXISTS (
+        SELECT 1 FROM agents.ownerships o
+        WHERE o.ai_lenser_id = al.ai_lenser_id
+          AND o.owner_lenser_id = lensers.get_auth_lenser_id()
+          AND o.revoked_at IS NULL
+      ) OR public.is_admin()
+    )
+  ORDER BY al.occurred_at DESC
+  LIMIT LEAST(GREATEST(COALESCE(p_limit, 50), 1), 200);
+$$;
+
+
+ALTER FUNCTION "public"."fn_list_agent_action_logs"("p_ai_lenser_id" "uuid", "p_limit" integer, "p_cursor" timestamp with time zone) OWNER TO "postgres";
+
+
+CREATE OR REPLACE FUNCTION "public"."fn_list_agent_lens_bindings"("p_ai_lenser_id" "uuid", "p_limit" integer DEFAULT 50, "p_offset" integer DEFAULT 0) RETURNS TABLE("id" "uuid", "ai_lenser_id" "uuid", "lens_id" "uuid", "version_id" "uuid", "is_default" boolean, "category_tags" "text"[], "created_at" timestamp with time zone)
+    LANGUAGE "sql" STABLE SECURITY DEFINER
+    SET "search_path" TO 'public', 'agents', 'lensers'
+    AS $$
+  SELECT lb.id, lb.ai_lenser_id, lb.lens_id, lb.version_id,
+         lb.is_default, lb.category_tags, lb.created_at
+  FROM agents.lens_bindings lb
+  WHERE lb.ai_lenser_id = p_ai_lenser_id
+    AND (
+      EXISTS (
+        SELECT 1 FROM agents.ownerships o
+        WHERE o.ai_lenser_id = p_ai_lenser_id
+          AND o.owner_lenser_id = lensers.get_auth_lenser_id()
+          AND o.revoked_at IS NULL
+      ) OR public.is_admin()
+    )
+  ORDER BY lb.is_default DESC, lb.created_at DESC
+  LIMIT  LEAST(GREATEST(COALESCE(p_limit, 50), 1), 200)
+  OFFSET GREATEST(COALESCE(p_offset, 0), 0);
+$$;
+
+
+ALTER FUNCTION "public"."fn_list_agent_lens_bindings"("p_ai_lenser_id" "uuid", "p_limit" integer, "p_offset" integer) OWNER TO "postgres";
+
+
+CREATE OR REPLACE FUNCTION "public"."fn_list_agent_memories"("p_profile_id" "uuid", "p_scope" "text" DEFAULT NULL::"text", "p_limit" integer DEFAULT 50, "p_include_redacted" boolean DEFAULT false) RETURNS SETOF "jsonb"
+    LANGUAGE "sql" STABLE SECURITY DEFINER
+    SET "search_path" TO 'public', 'agents', 'lensers'
+    AS $$
+  SELECT to_jsonb(mv.*)
+  FROM agents.memories_v mv
+  WHERE mv.profile_id = p_profile_id
+    AND (p_scope IS NULL OR mv.scope = p_scope)
+    AND (p_include_redacted OR mv.is_redacted = false)
+    AND (
+      EXISTS (
+        SELECT 1 FROM agents.memory_profiles mp
+        JOIN agents.ownerships o ON o.ai_lenser_id = mp.ai_lenser_id
+        WHERE mp.id = p_profile_id
+          AND o.owner_lenser_id = lensers.get_auth_lenser_id()
+          AND o.revoked_at IS NULL
+      ) OR public.is_admin()
+    )
+  ORDER BY mv.created_at DESC
+  LIMIT LEAST(GREATEST(COALESCE(p_limit, 50), 1), 200);
+$$;
+
+
+ALTER FUNCTION "public"."fn_list_agent_memories"("p_profile_id" "uuid", "p_scope" "text", "p_limit" integer, "p_include_redacted" boolean) OWNER TO "postgres";
+
+
+CREATE OR REPLACE FUNCTION "public"."fn_list_agent_model_bindings"("p_ai_lenser_id" "uuid", "p_limit" integer DEFAULT 50, "p_offset" integer DEFAULT 0) RETURNS TABLE("id" "uuid", "ai_lenser_id" "uuid", "model_id" "uuid", "is_default" boolean, "category_tags" "text"[], "created_at" timestamp with time zone)
+    LANGUAGE "sql" STABLE SECURITY DEFINER
+    SET "search_path" TO 'public', 'agents', 'lensers'
+    AS $$
+  SELECT mb.id, mb.ai_lenser_id, mb.model_id, mb.is_default,
+         mb.category_tags, mb.created_at
+  FROM agents.model_bindings mb
+  WHERE mb.ai_lenser_id = p_ai_lenser_id
+    AND (
+      EXISTS (
+        SELECT 1 FROM agents.ownerships o
+        WHERE o.ai_lenser_id = p_ai_lenser_id
+          AND o.owner_lenser_id = lensers.get_auth_lenser_id()
+          AND o.revoked_at IS NULL
+      ) OR public.is_admin()
+    )
+  ORDER BY mb.is_default DESC, mb.created_at DESC
+  LIMIT  LEAST(GREATEST(COALESCE(p_limit, 50), 1), 200)
+  OFFSET GREATEST(COALESCE(p_offset, 0), 0);
+$$;
+
+
+ALTER FUNCTION "public"."fn_list_agent_model_bindings"("p_ai_lenser_id" "uuid", "p_limit" integer, "p_offset" integer) OWNER TO "postgres";
+
+
 CREATE OR REPLACE FUNCTION "public"."fn_list_agent_ownerships"("p_ai_lenser_id" "uuid") RETURNS TABLE("id" "uuid", "ai_lenser_id" "uuid", "owner_lenser_id" "uuid", "role" "text", "permission_scope" "text"[], "granted_at" timestamp with time zone, "revoked_at" timestamp with time zone, "owner_handle" "text", "owner_display_name" "text", "owner_avatar_url" "text")
     LANGUAGE "sql" STABLE SECURITY DEFINER
     SET "search_path" TO 'public', 'agents', 'lensers'
@@ -24086,6 +28255,526 @@ ALTER FUNCTION "public"."fn_list_agent_ownerships"("p_ai_lenser_id" "uuid") OWNE
 
 COMMENT ON FUNCTION "public"."fn_list_agent_ownerships"("p_ai_lenser_id" "uuid") IS 'Lists active human delegates for an AI Lenser, including the primary owner, co-owners, and scoped operators.';
 
+
+
+CREATE OR REPLACE FUNCTION "public"."fn_list_agent_run_steps"("p_team_run_id" "uuid") RETURNS SETOF "jsonb"
+    LANGUAGE "sql" STABLE SECURITY DEFINER
+    SET "search_path" TO 'public', 'agents', 'lensers'
+    AS $$
+  SELECT to_jsonb(ars.*)
+  FROM agents.agent_run_steps ars
+  JOIN agents.team_runs tr ON tr.id = ars.team_run_id
+  WHERE ars.team_run_id = p_team_run_id
+    AND (
+      EXISTS (
+        SELECT 1 FROM agents.ownerships o
+        WHERE o.ai_lenser_id = tr.ai_lenser_id
+          AND o.owner_lenser_id = lensers.get_auth_lenser_id()
+          AND o.revoked_at IS NULL
+      ) OR public.is_admin()
+    )
+  ORDER BY ars.started_at ASC;
+$$;
+
+
+ALTER FUNCTION "public"."fn_list_agent_run_steps"("p_team_run_id" "uuid") OWNER TO "postgres";
+
+
+CREATE OR REPLACE FUNCTION "public"."fn_list_agent_teams"("p_ai_lenser_id" "uuid", "p_limit" integer DEFAULT 50, "p_cursor" timestamp with time zone DEFAULT NULL::timestamp with time zone) RETURNS TABLE("id" "uuid", "ai_lenser_id" "uuid", "name" "text", "description" "text", "status" "text", "is_active" boolean, "created_at" timestamp with time zone, "updated_at" timestamp with time zone)
+    LANGUAGE "sql" STABLE SECURITY DEFINER
+    SET "search_path" TO 'public', 'agents', 'lensers'
+    AS $$
+  SELECT t.id, t.ai_lenser_id, t.name, t.description, t.status,
+         t.is_active, t.created_at, t.updated_at
+  FROM agents.teams t
+  WHERE t.ai_lenser_id = p_ai_lenser_id
+    AND (p_cursor IS NULL OR t.created_at < p_cursor)
+    AND (
+      EXISTS (
+        SELECT 1 FROM agents.ownerships o
+        WHERE o.ai_lenser_id = p_ai_lenser_id
+          AND o.owner_lenser_id = lensers.get_auth_lenser_id()
+          AND o.revoked_at IS NULL
+      ) OR public.is_admin()
+    )
+  ORDER BY t.created_at DESC
+  LIMIT LEAST(GREATEST(COALESCE(p_limit, 50), 1), 200);
+$$;
+
+
+ALTER FUNCTION "public"."fn_list_agent_teams"("p_ai_lenser_id" "uuid", "p_limit" integer, "p_cursor" timestamp with time zone) OWNER TO "postgres";
+
+
+CREATE OR REPLACE FUNCTION "public"."fn_list_agents_by_owner"("p_owner_lenser_id" "uuid") RETURNS SETOF "jsonb"
+    LANGUAGE "sql" STABLE SECURITY DEFINER
+    SET "search_path" TO 'public', 'agents', 'lensers'
+    AS $$
+  SELECT to_jsonb(v.*)
+  FROM agents.v_agent_profile v
+  WHERE v.owner_lenser_id = p_owner_lenser_id
+    AND (p_owner_lenser_id = lensers.get_auth_lenser_id() OR public.is_admin())
+  ORDER BY v.created_at DESC;
+$$;
+
+
+ALTER FUNCTION "public"."fn_list_agents_by_owner"("p_owner_lenser_id" "uuid") OWNER TO "postgres";
+
+
+CREATE OR REPLACE FUNCTION "public"."fn_list_approval_requests"("p_ai_lenser_id" "uuid", "p_approval_status" "text" DEFAULT NULL::"text", "p_limit" integer DEFAULT 50) RETURNS SETOF "jsonb"
+    LANGUAGE "sql" STABLE SECURITY DEFINER
+    SET "search_path" TO 'public', 'agents', 'lensers'
+    AS $$
+  SELECT to_jsonb(ar.*)
+  FROM agents.approval_requests_v ar
+  WHERE ar.ai_lenser_id = p_ai_lenser_id
+    AND (p_approval_status IS NULL OR ar.approval_status = p_approval_status)
+    AND (
+      EXISTS (
+        SELECT 1 FROM agents.ownerships o
+        WHERE o.ai_lenser_id = p_ai_lenser_id
+          AND o.owner_lenser_id = lensers.get_auth_lenser_id()
+          AND o.revoked_at IS NULL
+      ) OR public.is_admin()
+    )
+  ORDER BY ar.requested_at DESC
+  LIMIT LEAST(GREATEST(COALESCE(p_limit, 50), 1), 200);
+$$;
+
+
+ALTER FUNCTION "public"."fn_list_approval_requests"("p_ai_lenser_id" "uuid", "p_approval_status" "text", "p_limit" integer) OWNER TO "postgres";
+
+
+CREATE OR REPLACE FUNCTION "public"."fn_list_automation_rules"("p_limit" integer DEFAULT 100, "p_cursor" timestamp with time zone DEFAULT NULL::timestamp with time zone) RETURNS TABLE("id" "uuid", "lenser_id" "uuid", "name" "text", "match_event_type" "text", "match_filter" "jsonb", "action_kind" "text", "action_config" "jsonb", "is_active" boolean, "created_at" timestamp with time zone, "updated_at" timestamp with time zone)
+    LANGUAGE "sql" STABLE SECURITY DEFINER
+    SET "search_path" TO 'public', 'automation'
+    AS $$
+  SELECT
+    tr.id,
+    tr.lenser_id,
+    tr.name,
+    tr.match_event_type,
+    tr.match_filter,
+    tr.action_kind,
+    tr.action_config,
+    tr.is_active,
+    tr.created_at,
+    tr.updated_at
+  FROM automation.trigger_rules tr
+  WHERE tr.lenser_id = auth.uid()
+    AND (p_cursor IS NULL OR tr.created_at < p_cursor)
+  ORDER BY tr.created_at DESC
+  LIMIT LEAST(GREATEST(COALESCE(p_limit, 100), 1), 200);
+$$;
+
+
+ALTER FUNCTION "public"."fn_list_automation_rules"("p_limit" integer, "p_cursor" timestamp with time zone) OWNER TO "postgres";
+
+
+COMMENT ON FUNCTION "public"."fn_list_automation_rules"("p_limit" integer, "p_cursor" timestamp with time zone) IS 'Security wrapper: list automation trigger rules for the current user. Keyset-paginated by created_at DESC. Max 200 rows per call.';
+
+
+
+CREATE OR REPLACE FUNCTION "public"."fn_list_battle_templates"("p_limit" integer DEFAULT 50, "p_cursor" timestamp with time zone DEFAULT NULL::timestamp with time zone) RETURNS TABLE("id" "uuid", "title" "text", "description" "text", "task_prompt" "text", "is_public" boolean, "max_contenders" integer, "created_at" timestamp with time zone, "updated_at" timestamp with time zone)
+    LANGUAGE "sql" STABLE SECURITY DEFINER
+    SET "search_path" TO 'public', 'battles'
+    AS $$
+  SELECT t.id, t.title, t.description, t.task_prompt,
+         t.is_public, t.max_contenders, t.created_at, t.updated_at
+  FROM battles.templates t
+  WHERE t.deleted_at IS NULL
+    AND (p_cursor IS NULL OR t.created_at < p_cursor)
+  ORDER BY t.created_at DESC
+  LIMIT LEAST(GREATEST(COALESCE(p_limit, 50), 1), 200);
+$$;
+
+
+ALTER FUNCTION "public"."fn_list_battle_templates"("p_limit" integer, "p_cursor" timestamp with time zone) OWNER TO "postgres";
+
+
+CREATE OR REPLACE FUNCTION "public"."fn_list_benchmark_suites"("p_creator_lenser_id" "uuid" DEFAULT NULL::"uuid", "p_limit" integer DEFAULT 50, "p_cursor" timestamp with time zone DEFAULT NULL::timestamp with time zone) RETURNS TABLE("id" "uuid", "title" "text", "description" "text", "creator_lenser_id" "uuid", "category" "text", "status" "text", "version" "text", "is_public" boolean, "created_at" timestamp with time zone, "updated_at" timestamp with time zone)
+    LANGUAGE "sql" STABLE SECURITY DEFINER
+    SET "search_path" TO 'public', 'benchmark', 'lensers'
+    AS $$
+  SELECT s.id, s.title, s.description, s.creator_lenser_id, s.category,
+         s.status, s.version, s.is_public, s.created_at, s.updated_at
+  FROM benchmark.suites s
+  WHERE (
+    CASE
+      WHEN p_creator_lenser_id IS NOT NULL
+        THEN s.creator_lenser_id = p_creator_lenser_id
+      ELSE
+        s.creator_lenser_id = lensers.get_auth_lenser_id()
+        OR s.is_public = true
+    END
+  )
+  AND (p_cursor IS NULL OR s.created_at < p_cursor)
+  ORDER BY s.created_at DESC
+  LIMIT LEAST(GREATEST(COALESCE(p_limit, 50), 1), 200);
+$$;
+
+
+ALTER FUNCTION "public"."fn_list_benchmark_suites"("p_creator_lenser_id" "uuid", "p_limit" integer, "p_cursor" timestamp with time zone) OWNER TO "postgres";
+
+
+COMMENT ON FUNCTION "public"."fn_list_benchmark_suites"("p_creator_lenser_id" "uuid", "p_limit" integer, "p_cursor" timestamp with time zone) IS 'Security wrapper: list benchmark suites visible to the caller (own suites OR public suites). Keyset-paginated by created_at DESC.';
+
+
+
+CREATE OR REPLACE FUNCTION "public"."fn_list_benchmark_tasks"("p_suite_id" "uuid") RETURNS TABLE("id" "uuid", "suite_id" "uuid", "title" "text", "prompt_template" "text", "evaluation_protocol" "jsonb", "required_repetitions" integer, "ordinal" integer, "workflow_id" "uuid", "created_at" timestamp with time zone)
+    LANGUAGE "sql" STABLE SECURITY DEFINER
+    SET "search_path" TO 'public', 'benchmark', 'lensers'
+    AS $$
+  SELECT t.id, t.suite_id, t.title, t.prompt_template, t.evaluation_protocol,
+         t.required_repetitions, t.ordinal, t.workflow_id, t.created_at
+  FROM benchmark.tasks t
+  JOIN benchmark.suites s ON s.id = t.suite_id
+  WHERE t.suite_id = p_suite_id
+    AND (
+      s.is_public = true
+      OR s.creator_lenser_id = lensers.get_auth_lenser_id()
+    )
+  ORDER BY t.ordinal ASC;
+$$;
+
+
+ALTER FUNCTION "public"."fn_list_benchmark_tasks"("p_suite_id" "uuid") OWNER TO "postgres";
+
+
+COMMENT ON FUNCTION "public"."fn_list_benchmark_tasks"("p_suite_id" "uuid") IS 'Security wrapper: list benchmark tasks for a suite, ordered by ordinal ASC. Respects same visibility rules as fn_get_benchmark_suite.';
+
+
+
+CREATE OR REPLACE FUNCTION "public"."fn_list_evaluation_cases"("p_evaluation_id" "uuid") RETURNS SETOF "jsonb"
+    LANGUAGE "sql" STABLE SECURITY DEFINER
+    SET "search_path" TO 'public', 'agents', 'lensers'
+    AS $$
+  SELECT to_jsonb(ec.*)
+  FROM agents.evaluation_cases ec
+  JOIN agents.evaluations ev ON ev.id = ec.evaluation_id
+  WHERE ec.evaluation_id = p_evaluation_id
+    AND (ev.owner_lenser_id = lensers.get_auth_lenser_id() OR public.is_admin())
+  ORDER BY ec.created_at ASC;
+$$;
+
+
+ALTER FUNCTION "public"."fn_list_evaluation_cases"("p_evaluation_id" "uuid") OWNER TO "postgres";
+
+
+CREATE OR REPLACE FUNCTION "public"."fn_list_evaluation_rubrics"("p_evaluation_id" "uuid") RETURNS SETOF "jsonb"
+    LANGUAGE "sql" STABLE SECURITY DEFINER
+    SET "search_path" TO 'public', 'agents', 'lensers'
+    AS $$
+  SELECT to_jsonb(erub.*)
+  FROM agents.evaluation_rubrics erub
+  JOIN agents.evaluations ev ON ev.id = erub.evaluation_id
+  WHERE erub.evaluation_id = p_evaluation_id
+    AND (ev.owner_lenser_id = lensers.get_auth_lenser_id() OR public.is_admin())
+  ORDER BY erub.version DESC;
+$$;
+
+
+ALTER FUNCTION "public"."fn_list_evaluation_rubrics"("p_evaluation_id" "uuid") OWNER TO "postgres";
+
+
+CREATE OR REPLACE FUNCTION "public"."fn_list_evaluation_runs"("p_evaluation_id" "uuid") RETURNS SETOF "jsonb"
+    LANGUAGE "sql" STABLE SECURITY DEFINER
+    SET "search_path" TO 'public', 'agents', 'lensers'
+    AS $$
+  SELECT to_jsonb(er.*)
+  FROM agents.evaluation_runs er
+  JOIN agents.evaluations ev ON ev.id = er.evaluation_id
+  WHERE er.evaluation_id = p_evaluation_id
+    AND (ev.owner_lenser_id = lensers.get_auth_lenser_id() OR public.is_admin())
+  ORDER BY er.started_at DESC;
+$$;
+
+
+ALTER FUNCTION "public"."fn_list_evaluation_runs"("p_evaluation_id" "uuid") OWNER TO "postgres";
+
+
+CREATE OR REPLACE FUNCTION "public"."fn_list_evaluations"("p_owner_lenser_id" "uuid", "p_limit" integer DEFAULT 50, "p_cursor" timestamp with time zone DEFAULT NULL::timestamp with time zone) RETURNS SETOF "jsonb"
+    LANGUAGE "sql" STABLE SECURITY DEFINER
+    SET "search_path" TO 'public', 'agents', 'lensers'
+    AS $$
+  SELECT to_jsonb(ev.*)
+  FROM agents.evaluations ev
+  WHERE ev.owner_lenser_id = p_owner_lenser_id
+    AND (p_cursor IS NULL OR ev.created_at < p_cursor)
+    AND (p_owner_lenser_id = lensers.get_auth_lenser_id() OR public.is_admin())
+  ORDER BY ev.created_at DESC
+  LIMIT LEAST(GREATEST(COALESCE(p_limit, 50), 1), 200);
+$$;
+
+
+ALTER FUNCTION "public"."fn_list_evaluations"("p_owner_lenser_id" "uuid", "p_limit" integer, "p_cursor" timestamp with time zone) OWNER TO "postgres";
+
+
+CREATE OR REPLACE FUNCTION "public"."fn_list_lens_versions"("p_lens_id" "uuid", "p_include_archived" boolean DEFAULT false) RETURNS TABLE("id" "uuid", "lens_id" "uuid", "version_number" integer, "status" "text", "changelog" "text", "parameter_count" integer, "published_at" timestamp with time zone, "created_at" timestamp with time zone)
+    LANGUAGE "sql" STABLE SECURITY DEFINER
+    SET "search_path" TO 'public', 'lenses', 'lensers'
+    AS $$
+  SELECT
+    v.id, v.lens_id, v.version_number, v.status::text,
+    v.changelog, v.parameter_count, v.published_at, v.created_at
+  FROM lenses.vw_lens_version_history v
+  JOIN lenses.lenses l ON l.id = v.lens_id
+  WHERE v.lens_id = p_lens_id
+    AND (
+      l.lenser_id = lensers.get_auth_lenser_id()
+      OR (l.visibility = 'public' AND v.status = 'published')
+    )
+    AND (p_include_archived OR v.status <> 'archived')
+  ORDER BY v.version_number DESC;
+$$;
+
+
+ALTER FUNCTION "public"."fn_list_lens_versions"("p_lens_id" "uuid", "p_include_archived" boolean) OWNER TO "postgres";
+
+
+COMMENT ON FUNCTION "public"."fn_list_lens_versions"("p_lens_id" "uuid", "p_include_archived" boolean) IS 'Security wrapper: list versions for a lens. Owner sees all (optionally archived); others see published versions of public lenses only.';
+
+
+
+CREATE OR REPLACE FUNCTION "public"."fn_list_media_objects"("p_limit" integer DEFAULT 200, "p_cursor" timestamp with time zone DEFAULT NULL::timestamp with time zone) RETURNS TABLE("id" "uuid", "workspace_id" "uuid", "owner_lenser_id" "uuid", "bucket" "text", "object_key" "text", "external_url" "text", "mime_type" "text", "media_type" "text", "name" "text", "content_text" "text", "byte_size" bigint, "visibility" "text", "lifecycle_state" "text", "metadata" "jsonb", "created_at" timestamp with time zone, "updated_at" timestamp with time zone)
+    LANGUAGE "sql" STABLE SECURITY DEFINER
+    SET "search_path" TO 'public', 'media', 'lensers'
+    AS $$
+  SELECT
+    o.id, o.workspace_id, o.owner_lenser_id, o.bucket, o.object_key,
+    o.external_url, o.mime_type, o.media_type, o.name, o.content_text,
+    o.byte_size, o.visibility, o.lifecycle_state, o.metadata,
+    o.created_at, o.updated_at
+  FROM media.objects o
+  WHERE o.owner_lenser_id = lensers.get_auth_lenser_id()
+    AND o.lifecycle_state <> 'deleted'
+    AND (p_cursor IS NULL OR o.created_at < p_cursor)
+  ORDER BY o.created_at DESC
+  LIMIT LEAST(GREATEST(COALESCE(p_limit, 200), 1), 500);
+$$;
+
+
+ALTER FUNCTION "public"."fn_list_media_objects"("p_limit" integer, "p_cursor" timestamp with time zone) OWNER TO "postgres";
+
+
+COMMENT ON FUNCTION "public"."fn_list_media_objects"("p_limit" integer, "p_cursor" timestamp with time zone) IS 'Security wrapper: list non-deleted media objects owned by the current user. Keyset-paginated by created_at DESC. Max 500 rows per call.';
+
+
+
+CREATE OR REPLACE FUNCTION "public"."fn_list_memory_access_logs"("p_memory_id" "uuid", "p_limit" integer DEFAULT 50) RETURNS SETOF "jsonb"
+    LANGUAGE "sql" STABLE SECURITY DEFINER
+    SET "search_path" TO 'public', 'agents', 'lensers'
+    AS $$
+  SELECT to_jsonb(mal.*)
+  FROM agents.memory_access_logs mal
+  WHERE mal.memory_id = p_memory_id
+  ORDER BY mal.accessed_at DESC
+  LIMIT LEAST(GREATEST(COALESCE(p_limit, 50), 1), 200);
+$$;
+
+
+ALTER FUNCTION "public"."fn_list_memory_access_logs"("p_memory_id" "uuid", "p_limit" integer) OWNER TO "postgres";
+
+
+CREATE OR REPLACE FUNCTION "public"."fn_list_memory_profiles"("p_ai_lenser_id" "uuid") RETURNS SETOF "jsonb"
+    LANGUAGE "sql" STABLE SECURITY DEFINER
+    SET "search_path" TO 'public', 'agents', 'lensers'
+    AS $$
+  SELECT to_jsonb(mp.*)
+  FROM agents.memory_profiles mp
+  WHERE mp.ai_lenser_id = p_ai_lenser_id
+    AND (
+      p_ai_lenser_id IN (
+        SELECT o.ai_lenser_id FROM agents.ownerships o
+        WHERE o.owner_lenser_id = lensers.get_auth_lenser_id() AND o.revoked_at IS NULL
+      )
+      OR public.fn_is_super_admin()
+    )
+  ORDER BY mp.created_at DESC;
+$$;
+
+
+ALTER FUNCTION "public"."fn_list_memory_profiles"("p_ai_lenser_id" "uuid") OWNER TO "postgres";
+
+
+CREATE OR REPLACE FUNCTION "public"."fn_list_model_profiles"("p_ai_lenser_id" "uuid") RETURNS SETOF "jsonb"
+    LANGUAGE "sql" STABLE SECURITY DEFINER
+    SET "search_path" TO 'public', 'agents', 'lensers'
+    AS $$
+  SELECT to_jsonb(mop.*)
+  FROM agents.model_profiles mop
+  WHERE mop.ai_lenser_id = p_ai_lenser_id
+    AND (
+      p_ai_lenser_id IN (
+        SELECT o.ai_lenser_id FROM agents.ownerships o
+        WHERE o.owner_lenser_id = lensers.get_auth_lenser_id() AND o.revoked_at IS NULL
+      )
+      OR public.fn_is_super_admin()
+    )
+  ORDER BY mop.created_at DESC;
+$$;
+
+
+ALTER FUNCTION "public"."fn_list_model_profiles"("p_ai_lenser_id" "uuid") OWNER TO "postgres";
+
+
+CREATE OR REPLACE FUNCTION "public"."fn_list_my_private_lenses"("p_limit" integer DEFAULT 50, "p_cursor" timestamp with time zone DEFAULT NULL::timestamp with time zone) RETURNS TABLE("id" "uuid", "lenser_id" "uuid", "visibility" "text", "parent_lens_id" "uuid", "forked_from_execution_id" "uuid", "created_at" timestamp with time zone, "updated_at" timestamp with time zone)
+    LANGUAGE "sql" STABLE SECURITY DEFINER
+    SET "search_path" TO 'public', 'lenses', 'lensers'
+    AS $$
+  SELECT
+    l.id, l.lenser_id, l.visibility, l.parent_lens_id,
+    l.forked_from_execution_id, l.created_at, l.updated_at
+  FROM lenses.lenses l
+  WHERE l.lenser_id = lensers.get_auth_lenser_id()
+    AND l.visibility <> 'public'
+    AND (p_cursor IS NULL OR l.created_at < p_cursor)
+  ORDER BY l.created_at DESC
+  LIMIT LEAST(GREATEST(COALESCE(p_limit, 50), 1), 200);
+$$;
+
+
+ALTER FUNCTION "public"."fn_list_my_private_lenses"("p_limit" integer, "p_cursor" timestamp with time zone) OWNER TO "postgres";
+
+
+COMMENT ON FUNCTION "public"."fn_list_my_private_lenses"("p_limit" integer, "p_cursor" timestamp with time zone) IS 'Security wrapper: list the current user''s non-public lenses (private/draft). Keyset-paginated by created_at DESC. Max 200 rows per call.';
+
+
+
+CREATE OR REPLACE FUNCTION "public"."fn_list_personality_profiles"("p_ai_lenser_id" "uuid") RETURNS SETOF "jsonb"
+    LANGUAGE "sql" STABLE SECURITY DEFINER
+    SET "search_path" TO 'public', 'agents', 'lensers'
+    AS $$
+  SELECT to_jsonb(pp.*)
+  FROM agents.personality_profiles pp
+  WHERE pp.ai_lenser_id = p_ai_lenser_id
+    AND (
+      p_ai_lenser_id IN (
+        SELECT o.ai_lenser_id FROM agents.ownerships o
+        WHERE o.owner_lenser_id = lensers.get_auth_lenser_id() AND o.revoked_at IS NULL
+      )
+      OR public.fn_is_super_admin()
+    )
+  ORDER BY pp.created_at DESC;
+$$;
+
+
+ALTER FUNCTION "public"."fn_list_personality_profiles"("p_ai_lenser_id" "uuid") OWNER TO "postgres";
+
+
+CREATE OR REPLACE FUNCTION "public"."fn_list_recent_incidents"("p_ai_lenser_id" "uuid", "p_limit" integer DEFAULT 20, "p_cursor" timestamp with time zone DEFAULT NULL::timestamp with time zone) RETURNS SETOF "jsonb"
+    LANGUAGE "sql" STABLE SECURITY DEFINER
+    SET "search_path" TO 'public', 'agents', 'lensers'
+    AS $$
+  SELECT to_jsonb(al.*)
+  FROM agents.action_logs al
+  WHERE al.ai_lenser_id = p_ai_lenser_id
+    AND (p_cursor IS NULL OR al.occurred_at < p_cursor)
+    AND al.result = 'error'
+    AND (
+      EXISTS (
+        SELECT 1 FROM agents.ownerships o
+        WHERE o.ai_lenser_id = p_ai_lenser_id
+          AND o.owner_lenser_id = lensers.get_auth_lenser_id()
+          AND o.revoked_at IS NULL
+      ) OR public.is_admin()
+    )
+  ORDER BY al.occurred_at DESC
+  LIMIT LEAST(GREATEST(COALESCE(p_limit, 20), 1), 100);
+$$;
+
+
+ALTER FUNCTION "public"."fn_list_recent_incidents"("p_ai_lenser_id" "uuid", "p_limit" integer, "p_cursor" timestamp with time zone) OWNER TO "postgres";
+
+
+CREATE OR REPLACE FUNCTION "public"."fn_list_run_incidents"("p_run_report_id" "uuid", "p_severity" "text" DEFAULT NULL::"text", "p_resolved" boolean DEFAULT NULL::boolean, "p_limit" integer DEFAULT 100) RETURNS SETOF "jsonb"
+    LANGUAGE "sql" STABLE SECURITY DEFINER
+    SET "search_path" TO 'public', 'agents', 'lensers'
+    AS $$
+  SELECT to_jsonb(ri.*)
+  FROM agents.run_incidents ri
+  JOIN agents.run_reports rr ON rr.id = ri.run_report_id
+  WHERE ri.run_report_id = p_run_report_id
+    AND (p_severity IS NULL OR ri.severity::text = p_severity)
+    AND (p_resolved IS NULL
+         OR (p_resolved = true AND ri.resolved_at IS NOT NULL)
+         OR (p_resolved = false AND ri.resolved_at IS NULL))
+    AND (
+      rr.ai_lenser_id IN (
+        SELECT o.ai_lenser_id FROM agents.ownerships o
+        WHERE o.owner_lenser_id = lensers.get_auth_lenser_id()
+          AND o.revoked_at IS NULL
+      )
+      OR public.fn_is_super_admin()
+    )
+  ORDER BY ri.created_at DESC
+  LIMIT LEAST(GREATEST(COALESCE(p_limit, 100), 1), 500);
+$$;
+
+
+ALTER FUNCTION "public"."fn_list_run_incidents"("p_run_report_id" "uuid", "p_severity" "text", "p_resolved" boolean, "p_limit" integer) OWNER TO "postgres";
+
+
+CREATE OR REPLACE FUNCTION "public"."fn_list_run_reports"("p_ai_lenser_id" "uuid", "p_limit" integer DEFAULT 50, "p_cursor" timestamp with time zone DEFAULT NULL::timestamp with time zone) RETURNS SETOF "jsonb"
+    LANGUAGE "sql" STABLE SECURITY DEFINER
+    SET "search_path" TO 'public', 'agents'
+    AS $$
+  SELECT to_jsonb(rr.*)
+  FROM agents.run_reports rr
+  WHERE rr.ai_lenser_id = p_ai_lenser_id
+    AND (p_cursor IS NULL OR rr.created_at < p_cursor)
+  ORDER BY rr.created_at DESC
+  LIMIT LEAST(GREATEST(COALESCE(p_limit, 50), 1), 200);
+$$;
+
+
+ALTER FUNCTION "public"."fn_list_run_reports"("p_ai_lenser_id" "uuid", "p_limit" integer, "p_cursor" timestamp with time zone) OWNER TO "postgres";
+
+
+CREATE OR REPLACE FUNCTION "public"."fn_list_scratchpad_runs"("p_ai_lenser_id" "uuid", "p_limit" integer DEFAULT 20, "p_cursor" timestamp with time zone DEFAULT NULL::timestamp with time zone) RETURNS SETOF "jsonb"
+    LANGUAGE "sql" STABLE SECURITY DEFINER
+    SET "search_path" TO 'public', 'agents', 'lensers'
+    AS $$
+  SELECT to_jsonb(sr.*)
+  FROM agents.scratchpad_runs sr
+  WHERE sr.ai_lenser_id = p_ai_lenser_id
+    AND (p_cursor IS NULL OR sr.started_at < p_cursor)
+    AND (
+      EXISTS (
+        SELECT 1 FROM agents.ownerships o
+        WHERE o.ai_lenser_id = p_ai_lenser_id
+          AND o.owner_lenser_id = lensers.get_auth_lenser_id()
+          AND o.revoked_at IS NULL
+      ) OR public.is_admin()
+    )
+  ORDER BY sr.started_at DESC
+  LIMIT LEAST(GREATEST(COALESCE(p_limit, 20), 1), 100);
+$$;
+
+
+ALTER FUNCTION "public"."fn_list_scratchpad_runs"("p_ai_lenser_id" "uuid", "p_limit" integer, "p_cursor" timestamp with time zone) OWNER TO "postgres";
+
+
+CREATE OR REPLACE FUNCTION "public"."fn_list_team_edges"("p_team_id" "uuid") RETURNS SETOF "jsonb"
+    LANGUAGE "sql" STABLE SECURITY DEFINER
+    SET "search_path" TO 'public', 'agents', 'lensers'
+    AS $$
+  SELECT to_jsonb(te.*)
+  FROM agents.team_edges te
+  JOIN agents.teams t ON t.id = te.team_id
+  WHERE te.team_id = p_team_id
+    AND (
+      EXISTS (
+        SELECT 1 FROM agents.ownerships o
+        WHERE o.ai_lenser_id = t.ai_lenser_id
+          AND o.owner_lenser_id = lensers.get_auth_lenser_id()
+          AND o.revoked_at IS NULL
+      ) OR public.is_admin()
+    )
+  ORDER BY te.created_at;
+$$;
+
+
+ALTER FUNCTION "public"."fn_list_team_edges"("p_team_id" "uuid") OWNER TO "postgres";
 
 
 CREATE OR REPLACE FUNCTION "public"."fn_list_template_workflows"("p_limit" integer DEFAULT 12, "p_offset" integer DEFAULT 0) RETURNS TABLE("id" "uuid", "lenser_id" "uuid", "title" "text", "description" "text", "visibility" "text", "node_count" bigint, "reaction_totals" "jsonb", "fork_count" integer, "created_at" timestamp with time zone, "updated_at" timestamp with time zone, "author_handle" "text", "author_display_name" "text", "kinds" "text"[])
@@ -24140,6 +28829,118 @@ ALTER FUNCTION "public"."fn_list_template_workflows"("p_limit" integer, "p_offse
 
 COMMENT ON FUNCTION "public"."fn_list_template_workflows"("p_limit" integer, "p_offset" integer) IS 'Lists curated template workflows that power the "Start from template" strip on WorkflowsPage. A workflow is considered a template when it has a content.tag_map row linking it to the `template` tag.';
 
+
+
+CREATE OR REPLACE FUNCTION "public"."fn_list_tool_assignments"("p_ai_lenser_id" "uuid") RETURNS SETOF "jsonb"
+    LANGUAGE "sql" STABLE SECURITY DEFINER
+    SET "search_path" TO 'public', 'agents', 'lensers'
+    AS $$
+  SELECT to_jsonb(ta.*)
+  FROM agents.tool_assignments ta
+  WHERE ta.ai_lenser_id = p_ai_lenser_id
+    AND (
+      EXISTS (
+        SELECT 1 FROM agents.ownerships o
+        WHERE o.ai_lenser_id = p_ai_lenser_id
+          AND o.owner_lenser_id = lensers.get_auth_lenser_id()
+          AND o.revoked_at IS NULL
+      ) OR public.is_admin()
+    );
+$$;
+
+
+ALTER FUNCTION "public"."fn_list_tool_assignments"("p_ai_lenser_id" "uuid") OWNER TO "postgres";
+
+
+CREATE OR REPLACE FUNCTION "public"."fn_list_tool_profiles"("p_ai_lenser_id" "uuid") RETURNS SETOF "jsonb"
+    LANGUAGE "sql" STABLE SECURITY DEFINER
+    SET "search_path" TO 'public', 'agents', 'lensers'
+    AS $$
+  SELECT to_jsonb(tp.*)
+  FROM agents.tool_profiles tp
+  WHERE tp.ai_lenser_id = p_ai_lenser_id
+    AND (
+      p_ai_lenser_id IN (
+        SELECT o.ai_lenser_id FROM agents.ownerships o
+        WHERE o.owner_lenser_id = lensers.get_auth_lenser_id() AND o.revoked_at IS NULL
+      )
+      OR public.fn_is_super_admin()
+    )
+  ORDER BY tp.created_at DESC;
+$$;
+
+
+ALTER FUNCTION "public"."fn_list_tool_profiles"("p_ai_lenser_id" "uuid") OWNER TO "postgres";
+
+
+CREATE OR REPLACE FUNCTION "public"."fn_list_tools_registry"("p_owner_lenser_id" "uuid") RETURNS SETOF "jsonb"
+    LANGUAGE "sql" STABLE SECURITY DEFINER
+    SET "search_path" TO 'public', 'agents', 'lensers'
+    AS $$
+  SELECT to_jsonb(tr.*)
+  FROM agents.tools_registry tr
+  WHERE tr.owner_lenser_id = p_owner_lenser_id
+    AND (p_owner_lenser_id = lensers.get_auth_lenser_id() OR public.is_admin())
+  ORDER BY tr.name ASC;
+$$;
+
+
+ALTER FUNCTION "public"."fn_list_tools_registry"("p_owner_lenser_id" "uuid") OWNER TO "postgres";
+
+
+CREATE OR REPLACE FUNCTION "public"."fn_list_tournaments"("p_limit" integer DEFAULT 50, "p_cursor" timestamp with time zone DEFAULT NULL::timestamp with time zone) RETURNS SETOF "jsonb"
+    LANGUAGE "sql" STABLE SECURITY DEFINER
+    SET "search_path" TO 'public', 'battles'
+    AS $$
+  SELECT to_jsonb(t.*)
+  FROM battles.tournaments t
+  WHERE (p_cursor IS NULL OR t.created_at < p_cursor)
+  ORDER BY t.created_at DESC
+  LIMIT LEAST(GREATEST(COALESCE(p_limit, 50), 1), 200);
+$$;
+
+
+ALTER FUNCTION "public"."fn_list_tournaments"("p_limit" integer, "p_cursor" timestamp with time zone) OWNER TO "postgres";
+
+
+CREATE OR REPLACE FUNCTION "public"."fn_list_workflow_assignments"("p_ai_lenser_id" "uuid", "p_limit" integer DEFAULT 50, "p_cursor" timestamp with time zone DEFAULT NULL::timestamp with time zone) RETURNS SETOF "jsonb"
+    LANGUAGE "sql" STABLE SECURITY DEFINER
+    SET "search_path" TO 'public', 'agents', 'lensers'
+    AS $$
+  SELECT to_jsonb(wa.*)
+  FROM agents.workflow_assignments wa
+  WHERE wa.ai_lenser_id = p_ai_lenser_id
+    AND (p_cursor IS NULL OR wa.created_at < p_cursor)
+    AND (
+      EXISTS (
+        SELECT 1 FROM agents.ownerships o
+        WHERE o.ai_lenser_id = p_ai_lenser_id
+          AND o.owner_lenser_id = lensers.get_auth_lenser_id()
+          AND o.revoked_at IS NULL
+      ) OR public.is_admin()
+    )
+  ORDER BY wa.created_at DESC
+  LIMIT LEAST(GREATEST(COALESCE(p_limit, 50), 1), 200);
+$$;
+
+
+ALTER FUNCTION "public"."fn_list_workflow_assignments"("p_ai_lenser_id" "uuid", "p_limit" integer, "p_cursor" timestamp with time zone) OWNER TO "postgres";
+
+
+CREATE OR REPLACE FUNCTION "public"."fn_list_workflow_phases"("p_workflow_id" "uuid") RETURNS SETOF "jsonb"
+    LANGUAGE "sql" STABLE SECURITY DEFINER
+    SET "search_path" TO 'public', 'lenses', 'lensers'
+    AS $$
+  SELECT to_jsonb(wp.*)
+  FROM lenses.workflow_phases wp
+  JOIN lenses.workflows w ON w.id = wp.workflow_id
+  WHERE wp.workflow_id = p_workflow_id
+    AND w.lenser_id = lensers.get_auth_lenser_id()
+  ORDER BY wp.ordinal, wp.created_at;
+$$;
+
+
+ALTER FUNCTION "public"."fn_list_workflow_phases"("p_workflow_id" "uuid") OWNER TO "postgres";
 
 
 CREATE OR REPLACE FUNCTION "public"."fn_list_workflow_run_events"("p_run_id" "uuid", "p_after_event_id" bigint DEFAULT 0, "p_limit" integer DEFAULT 200) RETURNS TABLE("event_id" bigint, "type" "text", "run_id" "uuid", "occurred_at" timestamp with time zone, "payload" "jsonb")
@@ -24202,6 +29003,38 @@ ALTER FUNCTION "public"."fn_list_workflow_runs"("p_workflow_id" "uuid", "p_limit
 
 COMMENT ON FUNCTION "public"."fn_list_workflow_runs"("p_workflow_id" "uuid", "p_limit" integer, "p_offset" integer) IS 'Owner-only paginated list of workflow runs for a given workflow. Used by the workflow builder history tab.';
 
+
+
+CREATE OR REPLACE FUNCTION "public"."fn_list_workflow_tasks"("p_phase_id" "uuid") RETURNS SETOF "jsonb"
+    LANGUAGE "sql" STABLE SECURITY DEFINER
+    SET "search_path" TO 'public', 'lenses', 'lensers'
+    AS $$
+  SELECT to_jsonb(wt.*)
+  FROM lenses.workflow_tasks wt
+  JOIN lenses.workflows w ON w.id = wt.workflow_id
+  WHERE wt.phase_id = p_phase_id
+    AND w.lenser_id = lensers.get_auth_lenser_id()
+  ORDER BY wt.ordinal, wt.created_at;
+$$;
+
+
+ALTER FUNCTION "public"."fn_list_workflow_tasks"("p_phase_id" "uuid") OWNER TO "postgres";
+
+
+CREATE OR REPLACE FUNCTION "public"."fn_list_workflow_tasks_by_workflow"("p_workflow_id" "uuid") RETURNS SETOF "jsonb"
+    LANGUAGE "sql" STABLE SECURITY DEFINER
+    SET "search_path" TO 'public', 'lenses', 'lensers'
+    AS $$
+  SELECT to_jsonb(wt.*)
+  FROM lenses.workflow_tasks wt
+  JOIN lenses.workflows w ON w.id = wt.workflow_id
+  WHERE wt.workflow_id = p_workflow_id
+    AND w.lenser_id = lensers.get_auth_lenser_id()
+  ORDER BY wt.ordinal, wt.created_at;
+$$;
+
+
+ALTER FUNCTION "public"."fn_list_workflow_tasks_by_workflow"("p_workflow_id" "uuid") OWNER TO "postgres";
 
 
 CREATE OR REPLACE FUNCTION "public"."fn_log_page_view"("p_target_type" "public"."page_view_target_enum", "p_target_id" "text", "p_path" "text", "p_referrer" "text", "p_user_agent" "text", "p_client_ip" "inet") RETURNS "void"
@@ -24377,6 +29210,25 @@ COMMENT ON FUNCTION "public"."fn_media_finalize_upload"("p_object_id" "uuid", "p
 
 
 
+CREATE OR REPLACE FUNCTION "public"."fn_media_proxy_log"("p_object_id" "uuid") RETURNS "void"
+    LANGUAGE "plpgsql" SECURITY DEFINER
+    SET "search_path" TO 'media', 'public'
+    AS $$
+BEGIN
+  UPDATE media.objects
+  SET access_count = access_count + 1
+  WHERE id = p_object_id;
+END;
+$$;
+
+
+ALTER FUNCTION "public"."fn_media_proxy_log"("p_object_id" "uuid") OWNER TO "postgres";
+
+
+COMMENT ON FUNCTION "public"."fn_media_proxy_log"("p_object_id" "uuid") IS 'AT: Increments media.objects.access_count. Called by media-proxy route after successful signed URL generation. Fire-and-forget; errors do not affect the proxy response. SECURITY DEFINER; service_role only.';
+
+
+
 CREATE OR REPLACE FUNCTION "public"."fn_media_soft_delete"("p_object_id" "uuid") RETURNS "void"
     LANGUAGE "plpgsql" SECURITY DEFINER
     SET "search_path" TO 'media', 'lensers', 'public'
@@ -24424,6 +29276,23 @@ $$;
 
 
 ALTER FUNCTION "public"."fn_media_unbind_attachment"("p_entity_type" "text", "p_entity_id" "uuid", "p_binding_key" "text") OWNER TO "postgres";
+
+
+CREATE OR REPLACE FUNCTION "public"."fn_move_battle_job_to_dlq"("p_job_id" "uuid", "p_error_code" "text" DEFAULT NULL::"text", "p_error_msg" "text" DEFAULT NULL::"text") RETURNS "uuid"
+    LANGUAGE "plpgsql" SECURITY DEFINER
+    SET "search_path" TO 'public', 'battles'
+    AS $$
+DECLARE
+  v_dlq_id uuid;
+BEGIN
+  SELECT battles.fn_move_battle_job_to_dlq(p_job_id, p_error_code, p_error_msg)
+  INTO v_dlq_id;
+  RETURN v_dlq_id;
+END;
+$$;
+
+
+ALTER FUNCTION "public"."fn_move_battle_job_to_dlq"("p_job_id" "uuid", "p_error_code" "text", "p_error_msg" "text") OWNER TO "postgres";
 
 
 CREATE OR REPLACE FUNCTION "public"."fn_notify_battle_result"("p_battle_id" "uuid") RETURNS "void"
@@ -24621,6 +29490,28 @@ $$;
 
 
 ALTER FUNCTION "public"."fn_pause_agent"("p_ai_lenser_id" "uuid") OWNER TO "postgres";
+
+
+CREATE OR REPLACE FUNCTION "public"."fn_post_battle_comment"("p_battle_id" "uuid", "p_body" "text") RETURNS TABLE("id" "uuid", "battle_id" "uuid", "lenser_id" "uuid", "body" "text", "created_at" timestamp with time zone, "updated_at" timestamp with time zone)
+    LANGUAGE "plpgsql" SECURITY DEFINER
+    SET "search_path" TO 'public', 'battles', 'lensers'
+    AS $$
+DECLARE
+  v_lenser_id uuid := lensers.get_auth_lenser_id();
+BEGIN
+  IF v_lenser_id IS NULL THEN
+    RAISE EXCEPTION 'Authentication required.' USING ERRCODE = '42501';
+  END IF;
+
+  RETURN QUERY
+  INSERT INTO battles.comments (battle_id, lenser_id, body)
+  VALUES (p_battle_id, v_lenser_id, p_body)
+  RETURNING id, battle_id, lenser_id, body, created_at, updated_at;
+END;
+$$;
+
+
+ALTER FUNCTION "public"."fn_post_battle_comment"("p_battle_id" "uuid", "p_body" "text") OWNER TO "postgres";
 
 
 CREATE OR REPLACE FUNCTION "public"."fn_post_global_message"("p_battle_id" "uuid", "p_body" "text", "p_sender_handle" "text", "p_sender_role" "text" DEFAULT 'lenser'::"text") RETURNS TABLE("id" "uuid", "battle_id" "uuid", "sender_id" "uuid", "sender_handle" "text", "sender_role" "text", "body" "text", "created_at" timestamp with time zone)
@@ -25281,6 +30172,56 @@ $$;
 ALTER FUNCTION "public"."fn_reject_tool_invocation"("p_invocation_id" "uuid", "p_reason" "text") OWNER TO "postgres";
 
 
+CREATE OR REPLACE FUNCTION "public"."fn_remap_thread_tags"("p_thread_id" "uuid", "p_tag_ids" "uuid"[]) RETURNS "void"
+    LANGUAGE "plpgsql" SECURITY DEFINER
+    SET "search_path" TO 'public', 'content', 'lensers'
+    AS $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM content.threads
+    WHERE id = p_thread_id AND lenser_id = lensers.get_auth_lenser_id()
+  ) THEN
+    RETURN;
+  END IF;
+
+  DELETE FROM content.tag_map
+  WHERE entity_type::text = 'thread' AND entity_id = p_thread_id;
+
+  IF p_tag_ids IS NOT NULL AND array_length(p_tag_ids, 1) > 0 THEN
+    INSERT INTO content.tag_map (entity_type, entity_id, tag_id)
+    SELECT 'thread', p_thread_id, unnest(p_tag_ids)
+    ON CONFLICT DO NOTHING;
+  END IF;
+END;
+$$;
+
+
+ALTER FUNCTION "public"."fn_remap_thread_tags"("p_thread_id" "uuid", "p_tag_ids" "uuid"[]) OWNER TO "postgres";
+
+
+COMMENT ON FUNCTION "public"."fn_remap_thread_tags"("p_thread_id" "uuid", "p_tag_ids" "uuid"[]) IS 'Security wrapper: atomically replace all tag mappings for a thread owned by the current user.';
+
+
+
+CREATE OR REPLACE FUNCTION "public"."fn_remove_battle_contender"("p_contender_id" "uuid") RETURNS "void"
+    LANGUAGE "plpgsql" SECURITY DEFINER
+    SET "search_path" TO 'public', 'battles', 'lensers'
+    AS $$
+DECLARE
+  v_lenser_id uuid := lensers.get_auth_lenser_id();
+BEGIN
+  DELETE FROM battles.contenders c
+  USING battles.battles b
+  WHERE c.id = p_contender_id
+    AND c.battle_id = b.id
+    AND b.creator_lenser_id = v_lenser_id;
+END;
+$$;
+
+
+ALTER FUNCTION "public"."fn_remove_battle_contender"("p_contender_id" "uuid") OWNER TO "postgres";
+
+
 CREATE OR REPLACE FUNCTION "public"."fn_remove_follow"("p_target_profile_id" "uuid") RETURNS "jsonb"
     LANGUAGE "plpgsql" SECURITY DEFINER
     SET "search_path" TO 'public', 'lensers', 'auth'
@@ -25308,6 +30249,60 @@ $$;
 
 
 ALTER FUNCTION "public"."fn_remove_follow"("p_target_profile_id" "uuid") OWNER TO "postgres";
+
+
+CREATE OR REPLACE FUNCTION "public"."fn_reorder_workflow_phases"("p_workflow_id" "uuid", "p_ordered_ids" "uuid"[]) RETURNS "void"
+    LANGUAGE "plpgsql" SECURITY DEFINER
+    SET "search_path" TO 'public', 'lenses', 'lensers'
+    AS $$
+DECLARE
+  v_id   uuid;
+  v_idx  integer := 0;
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM lenses.workflows w
+    WHERE w.id = p_workflow_id AND w.lenser_id = lensers.get_auth_lenser_id()
+  ) THEN
+    RAISE EXCEPTION 'reorder_phases_forbidden' USING ERRCODE = '42501';
+  END IF;
+
+  FOREACH v_id IN ARRAY p_ordered_ids LOOP
+    UPDATE lenses.workflow_phases SET ordinal = v_idx WHERE id = v_id AND workflow_id = p_workflow_id;
+    v_idx := v_idx + 1;
+  END LOOP;
+END;
+$$;
+
+
+ALTER FUNCTION "public"."fn_reorder_workflow_phases"("p_workflow_id" "uuid", "p_ordered_ids" "uuid"[]) OWNER TO "postgres";
+
+
+CREATE OR REPLACE FUNCTION "public"."fn_reorder_workflow_tasks"("p_phase_id" "uuid", "p_ordered_ids" "uuid"[]) RETURNS "void"
+    LANGUAGE "plpgsql" SECURITY DEFINER
+    SET "search_path" TO 'public', 'lenses', 'lensers'
+    AS $$
+DECLARE
+  v_id   uuid;
+  v_idx  integer := 0;
+BEGIN
+  -- Verify ownership via phase → workflow
+  IF NOT EXISTS (
+    SELECT 1 FROM lenses.workflow_phases wp
+    JOIN lenses.workflows w ON w.id = wp.workflow_id
+    WHERE wp.id = p_phase_id AND w.lenser_id = lensers.get_auth_lenser_id()
+  ) THEN
+    RAISE EXCEPTION 'reorder_tasks_forbidden' USING ERRCODE = '42501';
+  END IF;
+
+  FOREACH v_id IN ARRAY p_ordered_ids LOOP
+    UPDATE lenses.workflow_tasks SET ordinal = v_idx WHERE id = v_id AND phase_id = p_phase_id;
+    v_idx := v_idx + 1;
+  END LOOP;
+END;
+$$;
+
+
+ALTER FUNCTION "public"."fn_reorder_workflow_tasks"("p_phase_id" "uuid", "p_ordered_ids" "uuid"[]) OWNER TO "postgres";
 
 
 CREATE OR REPLACE FUNCTION "public"."fn_request_follow"("p_target_profile_id" "uuid") RETURNS "jsonb"
@@ -25465,6 +30460,58 @@ $$;
 ALTER FUNCTION "public"."fn_request_workspace_deletion"("p_ai_lenser_id" "uuid", "p_reason" "text") OWNER TO "postgres";
 
 
+CREATE OR REPLACE FUNCTION "public"."fn_requeue_battle_job_with_backoff"("p_job_id" "uuid", "p_backoff_ms" integer, "p_error" "text" DEFAULT NULL::"text") RETURNS "void"
+    LANGUAGE "plpgsql" SECURITY DEFINER
+    SET "search_path" TO 'public', 'battles'
+    AS $$
+BEGIN
+  PERFORM battles.fn_requeue_battle_job_with_backoff(p_job_id, p_backoff_ms, p_error);
+END;
+$$;
+
+
+ALTER FUNCTION "public"."fn_requeue_battle_job_with_backoff"("p_job_id" "uuid", "p_backoff_ms" integer, "p_error" "text") OWNER TO "postgres";
+
+
+CREATE OR REPLACE FUNCTION "public"."fn_resolve_execution_model"("p_provider_override" "text" DEFAULT NULL::"text", "p_model_override" "text" DEFAULT NULL::"text") RETURNS TABLE("model_id" "uuid", "model_key" "text", "provider_id" "uuid", "provider_key" "text")
+    LANGUAGE "plpgsql" STABLE SECURITY DEFINER
+    SET "search_path" TO 'public', 'ai'
+    AS $$
+DECLARE
+  v_provider_id uuid;
+BEGIN
+  -- Resolve optional provider override to a provider_id
+  IF p_provider_override IS NOT NULL THEN
+    SELECT p.id INTO v_provider_id
+    FROM ai.providers p
+    WHERE p.key = p_provider_override
+    LIMIT 1;
+  END IF;
+
+  RETURN QUERY
+  SELECT m.id, m.key, m.provider_id,
+         (SELECT pr.key FROM ai.providers pr WHERE pr.id = m.provider_id LIMIT 1)
+  FROM ai.models m
+  WHERE m.is_active = true
+    AND (v_provider_id IS NULL OR m.provider_id = v_provider_id)
+    AND (
+      p_model_override IS NULL
+      OR m.id::text = p_model_override
+      OR m.key      = p_model_override
+    )
+  ORDER BY m.created_at ASC
+  LIMIT 1;
+END;
+$$;
+
+
+ALTER FUNCTION "public"."fn_resolve_execution_model"("p_provider_override" "text", "p_model_override" "text") OWNER TO "postgres";
+
+
+COMMENT ON FUNCTION "public"."fn_resolve_execution_model"("p_provider_override" "text", "p_model_override" "text") IS 'Security wrapper: resolve the best active AI model, optionally filtered by provider key and/or model key/id. Returns model_id, model_key, provider_id, provider_key.';
+
+
+
 CREATE OR REPLACE FUNCTION "public"."fn_resolve_mentions"("p_ids" "uuid"[]) RETURNS TABLE("id" "uuid", "title" "text", "link" "text")
     LANGUAGE "sql" STABLE SECURITY DEFINER
     SET "search_path" TO 'public', 'lenses', 'content', 'lensers', 'auth'
@@ -25491,6 +30538,26 @@ ALTER FUNCTION "public"."fn_resolve_mentions"("p_ids" "uuid"[]) OWNER TO "postgr
 
 COMMENT ON FUNCTION "public"."fn_resolve_mentions"("p_ids" "uuid"[]) IS 'Batch-resolves lens mention IDs to (id, title, link). Caller sees their own private lenses; other private lenses are excluded. Replaces N+1 getLensDetail calls in mentionService.';
 
+
+
+CREATE OR REPLACE FUNCTION "public"."fn_resolve_run_incident"("p_incident_id" "uuid", "p_resolution" "text") RETURNS "void"
+    LANGUAGE "sql" SECURITY DEFINER
+    SET "search_path" TO 'public', 'agents', 'lensers'
+    AS $$
+  UPDATE agents.run_incidents ri
+  SET resolved_at = now(), resolution = p_resolution
+  FROM agents.run_reports rr
+  WHERE ri.id = p_incident_id
+    AND ri.run_report_id = rr.id
+    AND rr.ai_lenser_id IN (
+      SELECT o.ai_lenser_id FROM agents.ownerships o
+      WHERE o.owner_lenser_id = lensers.get_auth_lenser_id()
+        AND o.revoked_at IS NULL
+    );
+$$;
+
+
+ALTER FUNCTION "public"."fn_resolve_run_incident"("p_incident_id" "uuid", "p_resolution" "text") OWNER TO "postgres";
 
 
 CREATE OR REPLACE FUNCTION "public"."fn_resume_agent"("p_ai_lenser_id" "uuid") RETURNS "void"
@@ -25587,6 +30654,19 @@ ALTER FUNCTION "public"."fn_retry_agent_run"("p_ai_lenser_id" "uuid", "p_run_id"
 
 COMMENT ON FUNCTION "public"."fn_retry_agent_run"("p_ai_lenser_id" "uuid", "p_run_id" "uuid") IS 'Clone a terminal (failed/cancelled/completed) team_run as a new queued run. Returns the new run id. Authorization via agents.can_manage_ai_lenser.';
 
+
+
+CREATE OR REPLACE FUNCTION "public"."fn_retry_dead_letter_battle_job"("p_dead_letter_id" "uuid") RETURNS "void"
+    LANGUAGE "plpgsql" SECURITY DEFINER
+    SET "search_path" TO 'public', 'battles'
+    AS $$
+BEGIN
+  PERFORM battles.fn_retry_dead_letter_battle_job(p_dead_letter_id);
+END;
+$$;
+
+
+ALTER FUNCTION "public"."fn_retry_dead_letter_battle_job"("p_dead_letter_id" "uuid") OWNER TO "postgres";
 
 
 CREATE OR REPLACE FUNCTION "public"."fn_revoke_agent_ownership"("p_ownership_id" "uuid") RETURNS "void"
@@ -25745,6 +30825,29 @@ $$;
 
 
 ALTER FUNCTION "public"."fn_run_evaluation"("p_evaluation_id" "uuid", "p_model_id" "uuid") OWNER TO "postgres";
+
+
+CREATE OR REPLACE FUNCTION "public"."fn_run_lens"("p_lens_id" "uuid", "p_version_id" "uuid", "p_model_id" "uuid", "p_inputs" "jsonb" DEFAULT '{}'::"jsonb", "p_funding_source" "text" DEFAULT 'platform_credit'::"text", "p_byok_key_id" "uuid" DEFAULT NULL::"uuid", "p_idempotency_key" "text" DEFAULT NULL::"text") RETURNS "uuid"
+    LANGUAGE "plpgsql" SECURITY DEFINER
+    SET "search_path" TO 'public', 'execution', 'lenses', 'lensers'
+    AS $$
+DECLARE
+  v_run_id uuid;
+BEGIN
+  SELECT execution.fn_run_lens_api(
+    p_lens_id, p_version_id, p_model_id, p_inputs,
+    p_funding_source, p_byok_key_id, p_idempotency_key
+  ) INTO v_run_id;
+  RETURN v_run_id;
+END;
+$$;
+
+
+ALTER FUNCTION "public"."fn_run_lens"("p_lens_id" "uuid", "p_version_id" "uuid", "p_model_id" "uuid", "p_inputs" "jsonb", "p_funding_source" "text", "p_byok_key_id" "uuid", "p_idempotency_key" "text") OWNER TO "postgres";
+
+
+COMMENT ON FUNCTION "public"."fn_run_lens"("p_lens_id" "uuid", "p_version_id" "uuid", "p_model_id" "uuid", "p_inputs" "jsonb", "p_funding_source" "text", "p_byok_key_id" "uuid", "p_idempotency_key" "text") IS 'Security wrapper: queue a lens execution. Delegates to execution.fn_run_lens_api.';
+
 
 
 CREATE OR REPLACE FUNCTION "public"."fn_runner_bind_device"("p_runner_id" "uuid", "p_device_id" "uuid") RETURNS "uuid"
@@ -26094,6 +31197,38 @@ $$;
 ALTER FUNCTION "public"."fn_schedule_account_deletion"() OWNER TO "postgres";
 
 
+CREATE OR REPLACE FUNCTION "public"."fn_schedule_battle"("p_battle_id" "uuid", "p_execution_starts_at" timestamp with time zone, "p_voting_duration_hours" integer DEFAULT 24, "p_auto_publish" boolean DEFAULT true) RETURNS TABLE("id" "uuid", "slug" "text", "title" "text", "task_prompt" "text", "status" "text", "total_vote_count" integer, "published_at" timestamp with time zone, "voting_opens_at" timestamp with time zone, "voting_closes_at" timestamp with time zone, "battle_type" "text", "voter_eligibility" "text", "handicap_config" "jsonb", "creator_lenser_id" "uuid", "forum_thread_id" "text", "workflow_id" "uuid", "lens_id" "uuid", "execution_starts_at" timestamp with time zone, "auto_publish" boolean, "voting_duration_hours" integer, "vote_velocity" numeric, "og_image_url" "text", "winner_contender_id" "uuid", "parent_battle_id" "uuid", "deleted_at" timestamp with time zone)
+    LANGUAGE "plpgsql" SECURITY DEFINER
+    SET "search_path" TO 'public', 'battles', 'lensers'
+    AS $$
+DECLARE
+  v_lenser_id uuid := lensers.get_auth_lenser_id();
+BEGIN
+  IF v_lenser_id IS NULL THEN
+    RAISE EXCEPTION 'Authentication required.' USING ERRCODE = '42501';
+  END IF;
+
+  RETURN QUERY
+  UPDATE battles.battles
+  SET
+    execution_starts_at   = p_execution_starts_at,
+    voting_duration_hours = COALESCE(p_voting_duration_hours, 24),
+    auto_publish          = COALESCE(p_auto_publish, true)
+  WHERE id = p_battle_id
+    AND creator_lenser_id = v_lenser_id
+  RETURNING
+    id, slug, title, task_prompt, status, total_vote_count, published_at,
+    voting_opens_at, voting_closes_at, battle_type, voter_eligibility, handicap_config,
+    creator_lenser_id, forum_thread_id, workflow_id, lens_id,
+    execution_starts_at, auto_publish, voting_duration_hours, vote_velocity, og_image_url,
+    winner_contender_id, parent_battle_id, deleted_at;
+END;
+$$;
+
+
+ALTER FUNCTION "public"."fn_schedule_battle"("p_battle_id" "uuid", "p_execution_starts_at" timestamp with time zone, "p_voting_duration_hours" integer, "p_auto_publish" boolean) OWNER TO "postgres";
+
+
 CREATE OR REPLACE FUNCTION "public"."fn_search_lensers"("p_query" "text", "p_limit" integer DEFAULT 8) RETURNS TABLE("id" "uuid", "handle" "text", "display_name" "text", "avatar_url" "text")
     LANGUAGE "sql" STABLE SECURITY DEFINER
     SET "search_path" TO 'lensers', 'public'
@@ -26201,6 +31336,30 @@ COMMENT ON FUNCTION "public"."fn_search_memory_entries"("p_query" "text", "p_pro
 
 
 
+CREATE OR REPLACE FUNCTION "public"."fn_set_evaluation_baseline"("p_evaluation_id" "uuid", "p_run_id" "uuid") RETURNS "jsonb"
+    LANGUAGE "plpgsql" SECURITY DEFINER
+    SET "search_path" TO 'public', 'agents'
+    AS $$
+DECLARE
+  v_score  numeric;
+  v_result jsonb;
+BEGIN
+  SELECT score INTO v_score FROM agents.evaluation_runs WHERE id = p_run_id;
+
+  INSERT INTO agents.evaluation_baselines (evaluation_id, run_id, score)
+  VALUES (p_evaluation_id, p_run_id, v_score)
+  ON CONFLICT (evaluation_id)
+  DO UPDATE SET run_id = EXCLUDED.run_id, score = EXCLUDED.score
+  RETURNING to_jsonb(agents.evaluation_baselines.*) INTO v_result;
+
+  RETURN v_result;
+END;
+$$;
+
+
+ALTER FUNCTION "public"."fn_set_evaluation_baseline"("p_evaluation_id" "uuid", "p_run_id" "uuid") OWNER TO "postgres";
+
+
 CREATE OR REPLACE FUNCTION "public"."fn_set_runner_paused"("p_ai_lenser_id" "uuid", "p_paused" boolean) RETURNS "void"
     LANGUAGE "plpgsql" SECURITY DEFINER
     SET "search_path" TO 'public', 'agents'
@@ -26244,6 +31403,69 @@ ALTER FUNCTION "public"."fn_set_runner_paused"("p_ai_lenser_id" "uuid", "p_pause
 
 
 COMMENT ON FUNCTION "public"."fn_set_runner_paused"("p_ai_lenser_id" "uuid", "p_paused" boolean) IS 'Canonical pause/resume RPC. Prefer over fn_pause_agent / fn_resume_agent.';
+
+
+
+CREATE OR REPLACE FUNCTION "public"."fn_set_schedule_calendar"("p_schedule_id" "uuid", "p_calendar_id" "uuid") RETURNS "void"
+    LANGUAGE "sql" SECURITY DEFINER
+    SET "search_path" TO 'public', 'lenses', 'lensers'
+    AS $$
+  UPDATE lenses.workflow_schedules
+  SET    calendar_id = p_calendar_id
+  WHERE  id        = p_schedule_id
+    AND  workflow_id IN (
+      SELECT w.id FROM lenses.workflows w
+      WHERE w.lenser_id = lensers.get_auth_lenser_id()
+    );
+$$;
+
+
+ALTER FUNCTION "public"."fn_set_schedule_calendar"("p_schedule_id" "uuid", "p_calendar_id" "uuid") OWNER TO "postgres";
+
+
+COMMENT ON FUNCTION "public"."fn_set_schedule_calendar"("p_schedule_id" "uuid", "p_calendar_id" "uuid") IS 'Security wrapper: assign a calendar to a workflow schedule owned by the current user.';
+
+
+
+CREATE OR REPLACE FUNCTION "public"."fn_set_schedule_condition"("p_schedule_id" "uuid", "p_condition" "jsonb") RETURNS "void"
+    LANGUAGE "sql" SECURITY DEFINER
+    SET "search_path" TO 'public', 'lenses', 'lensers'
+    AS $$
+  UPDATE lenses.workflow_schedules
+  SET    pre_dispatch_condition = p_condition
+  WHERE  id        = p_schedule_id
+    AND  workflow_id IN (
+      SELECT w.id FROM lenses.workflows w
+      WHERE w.lenser_id = lensers.get_auth_lenser_id()
+    );
+$$;
+
+
+ALTER FUNCTION "public"."fn_set_schedule_condition"("p_schedule_id" "uuid", "p_condition" "jsonb") OWNER TO "postgres";
+
+
+COMMENT ON FUNCTION "public"."fn_set_schedule_condition"("p_schedule_id" "uuid", "p_condition" "jsonb") IS 'Security wrapper: update pre_dispatch_condition on a workflow schedule.';
+
+
+
+CREATE OR REPLACE FUNCTION "public"."fn_set_schedule_inputs_rotation"("p_schedule_id" "uuid", "p_rotation" "jsonb") RETURNS "void"
+    LANGUAGE "sql" SECURITY DEFINER
+    SET "search_path" TO 'public', 'lenses', 'lensers'
+    AS $$
+  UPDATE lenses.workflow_schedules
+  SET    inputs_rotation = p_rotation
+  WHERE  id        = p_schedule_id
+    AND  workflow_id IN (
+      SELECT w.id FROM lenses.workflows w
+      WHERE w.lenser_id = lensers.get_auth_lenser_id()
+    );
+$$;
+
+
+ALTER FUNCTION "public"."fn_set_schedule_inputs_rotation"("p_schedule_id" "uuid", "p_rotation" "jsonb") OWNER TO "postgres";
+
+
+COMMENT ON FUNCTION "public"."fn_set_schedule_inputs_rotation"("p_schedule_id" "uuid", "p_rotation" "jsonb") IS 'Security wrapper: replace inputs_rotation on a workflow schedule.';
 
 
 
@@ -26413,6 +31635,19 @@ ALTER FUNCTION "public"."fn_store_api_key"("p_provider" "text", "p_label" "text"
 
 COMMENT ON FUNCTION "public"."fn_store_api_key"("p_provider" "text", "p_label" "text", "p_raw_key" "text") IS 'Public REST wrapper for ai.fn_store_api_key. Encrypts a BYOK API key via Vault and stores a reference row in ai.keys. The ai schema is not exposed in PostgREST — this wrapper is the only REST-callable entry point for key storage. Returns the key row UUID. Added in migration 000057.';
 
+
+
+CREATE OR REPLACE FUNCTION "public"."fn_submit_contender_entry"("p_battle_id" "uuid", "p_contender_id" "uuid", "p_content_text" "text") RETURNS TABLE("id" "uuid", "battle_id" "uuid", "contender_id" "uuid", "content_text" "text", "content_url" "text", "status" "text")
+    LANGUAGE "sql" SECURITY DEFINER
+    SET "search_path" TO 'public', 'battles'
+    AS $$
+  INSERT INTO battles.submissions (battle_id, contender_id, content_text, content_url, status)
+  VALUES (p_battle_id, p_contender_id, p_content_text, NULL, 'submitted')
+  RETURNING id, battle_id, contender_id, content_text, content_url, status;
+$$;
+
+
+ALTER FUNCTION "public"."fn_submit_contender_entry"("p_battle_id" "uuid", "p_contender_id" "uuid", "p_content_text" "text") OWNER TO "postgres";
 
 
 CREATE OR REPLACE FUNCTION "public"."fn_submit_vote"("p_battle_id" "uuid", "p_voted_contender_id" "uuid", "p_vote_value" "battles"."vote_value_enum", "p_is_draw" boolean DEFAULT false, "p_rationale" "text" DEFAULT NULL::"text") RETURNS "jsonb"
@@ -26829,6 +32064,57 @@ $$;
 ALTER FUNCTION "public"."fn_tags_search"("p_query" "text", "p_lang" "text", "p_limit" integer) OWNER TO "postgres";
 
 
+CREATE OR REPLACE FUNCTION "public"."fn_templates_set_recurrence"("p_template_id" "uuid", "p_recurrence_rule" "text", "p_next_run_at" timestamp with time zone DEFAULT NULL::timestamp with time zone, "p_auto_start_delay_hours" integer DEFAULT 1) RETURNS "void"
+    LANGUAGE "sql" SECURITY DEFINER
+    SET "search_path" TO 'public', 'battles', 'lensers'
+    AS $$
+  UPDATE battles.templates
+  SET recurrence_rule = p_recurrence_rule,
+      next_run_at     = COALESCE(p_next_run_at, now())
+  WHERE id = p_template_id
+    AND creator_lenser_id = lensers.get_auth_lenser_id();
+$$;
+
+
+ALTER FUNCTION "public"."fn_templates_set_recurrence"("p_template_id" "uuid", "p_recurrence_rule" "text", "p_next_run_at" timestamp with time zone, "p_auto_start_delay_hours" integer) OWNER TO "postgres";
+
+
+CREATE OR REPLACE FUNCTION "public"."fn_toggle_automation_rule"("p_rule_id" "uuid", "p_is_active" boolean) RETURNS TABLE("id" "uuid", "lenser_id" "uuid", "name" "text", "match_event_type" "text", "match_filter" "jsonb", "action_kind" "text", "action_config" "jsonb", "is_active" boolean, "created_at" timestamp with time zone, "updated_at" timestamp with time zone)
+    LANGUAGE "sql" SECURITY DEFINER
+    SET "search_path" TO 'public', 'automation'
+    AS $$
+  UPDATE automation.trigger_rules
+  SET    is_active  = p_is_active,
+         updated_at = now()
+  WHERE  id        = p_rule_id
+    AND  lenser_id = auth.uid()
+  RETURNING
+    id, lenser_id, name, match_event_type, match_filter,
+    action_kind, action_config, is_active, created_at, updated_at;
+$$;
+
+
+ALTER FUNCTION "public"."fn_toggle_automation_rule"("p_rule_id" "uuid", "p_is_active" boolean) OWNER TO "postgres";
+
+
+COMMENT ON FUNCTION "public"."fn_toggle_automation_rule"("p_rule_id" "uuid", "p_is_active" boolean) IS 'Security wrapper: set is_active on a trigger rule owned by the current user. Returns the updated row. No-ops silently if the rule does not belong to the caller.';
+
+
+
+CREATE OR REPLACE FUNCTION "public"."fn_toggle_battle_template_public"("p_template_id" "uuid", "p_is_public" boolean) RETURNS "void"
+    LANGUAGE "sql" SECURITY DEFINER
+    SET "search_path" TO 'public', 'battles'
+    AS $$
+  UPDATE battles.templates
+  SET is_public  = p_is_public,
+      updated_at = now()
+  WHERE id = p_template_id;
+$$;
+
+
+ALTER FUNCTION "public"."fn_toggle_battle_template_public"("p_template_id" "uuid", "p_is_public" boolean) OWNER TO "postgres";
+
+
 CREATE OR REPLACE FUNCTION "public"."fn_toggle_kill_switch"("p_ai_lenser_id" "uuid", "p_enabled" boolean) RETURNS "void"
     LANGUAGE "plpgsql" SECURITY DEFINER
     SET "search_path" TO 'public', 'agents'
@@ -26868,6 +32154,91 @@ $$;
 
 
 ALTER FUNCTION "public"."fn_toggle_kill_switch"("p_ai_lenser_id" "uuid", "p_enabled" boolean) OWNER TO "postgres";
+
+
+CREATE OR REPLACE FUNCTION "public"."fn_toggle_media_visibility"("p_object_id" "uuid", "p_visibility" "text") RETURNS "void"
+    LANGUAGE "plpgsql" SECURITY DEFINER
+    SET "search_path" TO 'media', 'audit', 'public'
+    AS $$
+DECLARE
+  v_owner_id UUID;
+BEGIN
+  IF p_visibility NOT IN ('public', 'private', 'unlisted') THEN
+    RAISE EXCEPTION 'Invalid visibility value: %. Must be public, private, or unlisted', p_visibility
+      USING ERRCODE = 'P0001';
+  END IF;
+
+  SELECT owner_lenser_id INTO v_owner_id
+  FROM media.objects
+  WHERE id = p_object_id;
+
+  IF NOT FOUND THEN
+    RAISE EXCEPTION 'media_object_not_found: %', p_object_id USING ERRCODE = 'P0001';
+  END IF;
+
+  IF v_owner_id != auth.uid() THEN
+    RAISE EXCEPTION 'media_visibility_forbidden: caller does not own object %', p_object_id
+      USING ERRCODE = 'P0001';
+  END IF;
+
+  UPDATE media.objects
+  SET visibility = p_visibility
+  WHERE id = p_object_id;
+
+  -- Audit row written by trg_media_audit_visibility trigger (see below)
+END;
+$$;
+
+
+ALTER FUNCTION "public"."fn_toggle_media_visibility"("p_object_id" "uuid", "p_visibility" "text") OWNER TO "postgres";
+
+
+COMMENT ON FUNCTION "public"."fn_toggle_media_visibility"("p_object_id" "uuid", "p_visibility" "text") IS 'AT: Toggles visibility of a media object. Owner only. The audit trigger writes audit.events. SECURITY DEFINER.';
+
+
+
+CREATE OR REPLACE FUNCTION "public"."fn_toggle_workflow_schedule"("p_schedule_id" "uuid", "p_is_active" boolean) RETURNS "void"
+    LANGUAGE "sql" SECURITY DEFINER
+    SET "search_path" TO 'public', 'lenses', 'lensers'
+    AS $$
+  UPDATE lenses.workflow_schedules
+  SET    is_active  = p_is_active
+  WHERE  id        = p_schedule_id
+    AND  workflow_id IN (
+      SELECT w.id FROM lenses.workflows w
+      WHERE w.lenser_id = lensers.get_auth_lenser_id()
+    );
+$$;
+
+
+ALTER FUNCTION "public"."fn_toggle_workflow_schedule"("p_schedule_id" "uuid", "p_is_active" boolean) OWNER TO "postgres";
+
+
+COMMENT ON FUNCTION "public"."fn_toggle_workflow_schedule"("p_schedule_id" "uuid", "p_is_active" boolean) IS 'Security wrapper: toggle is_active on a workflow schedule owned by the current user.';
+
+
+
+CREATE OR REPLACE FUNCTION "public"."fn_transfer_media_ownership"("p_object_id" "uuid", "p_new_owner_id" "uuid") RETURNS "void"
+    LANGUAGE "plpgsql" SECURITY DEFINER
+    SET "search_path" TO 'media', 'public'
+    AS $$
+BEGIN
+  UPDATE media.objects
+  SET owner_lenser_id = p_new_owner_id
+  WHERE id = p_object_id;
+
+  IF NOT FOUND THEN
+    RAISE EXCEPTION 'media_object_not_found: %', p_object_id USING ERRCODE = 'P0001';
+  END IF;
+END;
+$$;
+
+
+ALTER FUNCTION "public"."fn_transfer_media_ownership"("p_object_id" "uuid", "p_new_owner_id" "uuid") OWNER TO "postgres";
+
+
+COMMENT ON FUNCTION "public"."fn_transfer_media_ownership"("p_object_id" "uuid", "p_new_owner_id" "uuid") IS 'AT: Transfers media object ownership. Service_role only (used on agent deletion). SECURITY DEFINER.';
+
 
 
 CREATE OR REPLACE FUNCTION "public"."fn_unblock_profile"("p_target_profile_id" "uuid") RETURNS "jsonb"
@@ -26995,6 +32366,64 @@ COMMENT ON FUNCTION "public"."fn_update_agent_profile"("p_ai_lenser_id" "uuid", 
 
 
 
+CREATE OR REPLACE FUNCTION "public"."fn_update_battle"("p_battle_id" "uuid", "p_title" "text" DEFAULT NULL::"text", "p_task_prompt" "text" DEFAULT NULL::"text", "p_battle_type" "text" DEFAULT NULL::"text", "p_voter_eligibility" "text" DEFAULT NULL::"text", "p_handicap_config" "jsonb" DEFAULT NULL::"jsonb", "p_workflow_id" "uuid" DEFAULT NULL::"uuid", "p_lens_id" "uuid" DEFAULT NULL::"uuid", "p_forum_thread_id" "text" DEFAULT NULL::"text") RETURNS TABLE("id" "uuid", "slug" "text", "title" "text", "task_prompt" "text", "status" "text", "total_vote_count" integer, "published_at" timestamp with time zone, "voting_opens_at" timestamp with time zone, "voting_closes_at" timestamp with time zone, "battle_type" "text", "voter_eligibility" "text", "handicap_config" "jsonb", "creator_lenser_id" "uuid", "forum_thread_id" "text", "workflow_id" "uuid", "lens_id" "uuid", "execution_starts_at" timestamp with time zone, "auto_publish" boolean, "voting_duration_hours" integer, "vote_velocity" numeric, "og_image_url" "text", "winner_contender_id" "uuid", "parent_battle_id" "uuid", "deleted_at" timestamp with time zone)
+    LANGUAGE "plpgsql" SECURITY DEFINER
+    SET "search_path" TO 'public', 'battles', 'lensers'
+    AS $$
+DECLARE
+  v_lenser_id uuid := lensers.get_auth_lenser_id();
+BEGIN
+  IF v_lenser_id IS NULL THEN
+    RAISE EXCEPTION 'Authentication required.' USING ERRCODE = '42501';
+  END IF;
+
+  RETURN QUERY
+  UPDATE battles.battles
+  SET
+    title             = COALESCE(p_title,             title),
+    task_prompt       = COALESCE(p_task_prompt,       task_prompt),
+    battle_type       = COALESCE(p_battle_type,       battle_type),
+    voter_eligibility = COALESCE(p_voter_eligibility, voter_eligibility),
+    handicap_config   = COALESCE(p_handicap_config,   handicap_config),
+    workflow_id       = COALESCE(p_workflow_id,        workflow_id),
+    lens_id           = COALESCE(p_lens_id,            lens_id),
+    forum_thread_id   = COALESCE(p_forum_thread_id,   forum_thread_id)
+  WHERE id = p_battle_id
+    AND creator_lenser_id = v_lenser_id
+  RETURNING
+    id, slug, title, task_prompt, status, total_vote_count, published_at,
+    voting_opens_at, voting_closes_at, battle_type, voter_eligibility, handicap_config,
+    creator_lenser_id, forum_thread_id, workflow_id, lens_id,
+    execution_starts_at, auto_publish, voting_duration_hours, vote_velocity, og_image_url,
+    winner_contender_id, parent_battle_id, deleted_at;
+END;
+$$;
+
+
+ALTER FUNCTION "public"."fn_update_battle"("p_battle_id" "uuid", "p_title" "text", "p_task_prompt" "text", "p_battle_type" "text", "p_voter_eligibility" "text", "p_handicap_config" "jsonb", "p_workflow_id" "uuid", "p_lens_id" "uuid", "p_forum_thread_id" "text") OWNER TO "postgres";
+
+
+CREATE OR REPLACE FUNCTION "public"."fn_update_battle_execution_settings"("p_battle_id" "uuid", "p_execution_starts_at" timestamp with time zone, "p_voting_duration_hours" integer, "p_auto_publish" boolean) RETURNS "void"
+    LANGUAGE "sql" SECURITY DEFINER
+    SET "search_path" TO 'public', 'battles', 'lensers'
+    AS $$
+  UPDATE battles.battles
+  SET    execution_starts_at   = p_execution_starts_at,
+         voting_duration_hours = p_voting_duration_hours,
+         auto_publish          = p_auto_publish,
+         updated_at            = now()
+  WHERE  id = p_battle_id
+    AND  creator_lenser_id = lensers.get_auth_lenser_id();
+$$;
+
+
+ALTER FUNCTION "public"."fn_update_battle_execution_settings"("p_battle_id" "uuid", "p_execution_starts_at" timestamp with time zone, "p_voting_duration_hours" integer, "p_auto_publish" boolean) OWNER TO "postgres";
+
+
+COMMENT ON FUNCTION "public"."fn_update_battle_execution_settings"("p_battle_id" "uuid", "p_execution_starts_at" timestamp with time zone, "p_voting_duration_hours" integer, "p_auto_publish" boolean) IS 'Security wrapper: update execution scheduling fields on a battle owned by the current user.';
+
+
+
 CREATE OR REPLACE FUNCTION "public"."fn_update_team_member_role"("p_team_id" "uuid", "p_member_id" "uuid", "p_role" "text") RETURNS "void"
     LANGUAGE "plpgsql" SECURITY DEFINER
     SET "search_path" TO 'agents', 'lensers', 'public'
@@ -27046,6 +32475,66 @@ ALTER FUNCTION "public"."fn_update_team_member_role"("p_team_id" "uuid", "p_memb
 
 
 COMMENT ON FUNCTION "public"."fn_update_team_member_role"("p_team_id" "uuid", "p_member_id" "uuid", "p_role" "text") IS 'Updates a team member role. Caller must own the team. Only the role field is mutated — other member fields require direct RLS access.';
+
+
+
+CREATE OR REPLACE FUNCTION "public"."fn_update_team_run_status"("p_team_run_id" "uuid", "p_status" "text", "p_completed_at" timestamp with time zone DEFAULT NULL::timestamp with time zone) RETURNS "void"
+    LANGUAGE "sql" SECURITY DEFINER
+    SET "search_path" TO 'public', 'agents'
+    AS $$
+  SELECT public.fn_worker_update_team_run(p_team_run_id, p_status, p_completed_at);
+$$;
+
+
+ALTER FUNCTION "public"."fn_update_team_run_status"("p_team_run_id" "uuid", "p_status" "text", "p_completed_at" timestamp with time zone) OWNER TO "postgres";
+
+
+CREATE OR REPLACE FUNCTION "public"."fn_update_thread_translation"("p_thread_id" "uuid", "p_title" "text", "p_content" "text") RETURNS "void"
+    LANGUAGE "plpgsql" SECURITY DEFINER
+    SET "search_path" TO 'public', 'content', 'lensers'
+    AS $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM content.threads
+    WHERE id = p_thread_id AND lenser_id = lensers.get_auth_lenser_id()
+  ) THEN
+    RETURN;
+  END IF;
+
+  UPDATE content.entity_translations
+  SET    title      = p_title,
+         content    = p_content,
+         updated_at = now()
+  WHERE  entity_type::text = 'thread'
+    AND  entity_id   = p_thread_id
+    AND  is_original = true;
+END;
+$$;
+
+
+ALTER FUNCTION "public"."fn_update_thread_translation"("p_thread_id" "uuid", "p_title" "text", "p_content" "text") OWNER TO "postgres";
+
+
+COMMENT ON FUNCTION "public"."fn_update_thread_translation"("p_thread_id" "uuid", "p_title" "text", "p_content" "text") IS 'Security wrapper: update title and content of the original translation for a thread owned by the current user.';
+
+
+
+CREATE OR REPLACE FUNCTION "public"."fn_update_thread_visibility"("p_thread_id" "uuid", "p_visibility" "text") RETURNS "void"
+    LANGUAGE "sql" SECURITY DEFINER
+    SET "search_path" TO 'public', 'content', 'lensers'
+    AS $$
+  UPDATE content.threads
+  SET    visibility = p_visibility::content.visibility_enum,
+         updated_at = now()
+  WHERE  id        = p_thread_id
+    AND  lenser_id = lensers.get_auth_lenser_id();
+$$;
+
+
+ALTER FUNCTION "public"."fn_update_thread_visibility"("p_thread_id" "uuid", "p_visibility" "text") OWNER TO "postgres";
+
+
+COMMENT ON FUNCTION "public"."fn_update_thread_visibility"("p_thread_id" "uuid", "p_visibility" "text") IS 'Security wrapper: update visibility on a thread owned by the current user.';
 
 
 
@@ -27718,6 +33207,92 @@ COMMENT ON FUNCTION "public"."fn_upsert_agent_ownership"("p_ai_lenser_id" "uuid"
 
 
 
+CREATE OR REPLACE FUNCTION "public"."fn_upsert_agent_run_step"("p_team_run_id" "uuid", "p_workflow_node_id" "uuid", "p_lane" integer, "p_title" "text", "p_status" "text", "p_current_task" "text" DEFAULT NULL::"text", "p_recent_output_summary" "text" DEFAULT NULL::"text", "p_blocker_summary" "text" DEFAULT NULL::"text", "p_started_at" timestamp with time zone DEFAULT NULL::timestamp with time zone, "p_completed_at" timestamp with time zone DEFAULT NULL::timestamp with time zone) RETURNS "jsonb"
+    LANGUAGE "plpgsql" SECURITY DEFINER
+    SET "search_path" TO 'public', 'agents'
+    AS $$
+DECLARE
+  v_existing_id uuid;
+  v_result      jsonb;
+BEGIN
+  SELECT id INTO v_existing_id
+  FROM agents.agent_run_steps
+  WHERE team_run_id = p_team_run_id AND workflow_node_id = p_workflow_node_id
+  LIMIT 1;
+
+  IF v_existing_id IS NOT NULL THEN
+    UPDATE agents.agent_run_steps
+    SET status                = p_status,
+        title                 = p_title,
+        current_task          = COALESCE(p_current_task, current_task),
+        recent_output_summary = COALESCE(p_recent_output_summary, recent_output_summary),
+        blocker_summary       = COALESCE(p_blocker_summary, blocker_summary),
+        completed_at          = COALESCE(p_completed_at, completed_at),
+        updated_at            = now()
+    WHERE id = v_existing_id
+    RETURNING to_jsonb(agents.agent_run_steps.*) INTO v_result;
+  ELSE
+    INSERT INTO agents.agent_run_steps
+      (team_run_id, workflow_node_id, lane, title, status,
+       current_task, recent_output_summary, blocker_summary,
+       started_at, completed_at)
+    VALUES
+      (p_team_run_id, p_workflow_node_id, p_lane, p_title, p_status,
+       p_current_task, p_recent_output_summary, p_blocker_summary,
+       COALESCE(p_started_at, now()), p_completed_at)
+    RETURNING to_jsonb(agents.agent_run_steps.*) INTO v_result;
+  END IF;
+
+  RETURN v_result;
+END;
+$$;
+
+
+ALTER FUNCTION "public"."fn_upsert_agent_run_step"("p_team_run_id" "uuid", "p_workflow_node_id" "uuid", "p_lane" integer, "p_title" "text", "p_status" "text", "p_current_task" "text", "p_recent_output_summary" "text", "p_blocker_summary" "text", "p_started_at" timestamp with time zone, "p_completed_at" timestamp with time zone) OWNER TO "postgres";
+
+
+CREATE OR REPLACE FUNCTION "public"."fn_upsert_battle_execution_config"("p_battle_id" "uuid", "p_contender_id" "uuid", "p_provider_key" "text", "p_model_key" "text", "p_model_id" "uuid" DEFAULT NULL::"uuid", "p_funding_source" "text" DEFAULT 'platform_credit'::"text", "p_byok_key_ref_id" "uuid" DEFAULT NULL::"uuid", "p_max_tokens" integer DEFAULT 4096, "p_temperature" numeric DEFAULT 0.70) RETURNS "jsonb"
+    LANGUAGE "plpgsql" SECURITY DEFINER
+    SET "search_path" TO 'public', 'battles', 'lensers'
+    AS $$
+DECLARE
+  v_result jsonb;
+BEGIN
+  -- Ensure caller owns the battle
+  IF NOT EXISTS (
+    SELECT 1 FROM battles.battles b
+    WHERE b.id = p_battle_id
+      AND b.creator_lenser_id = lensers.get_auth_lenser_id()
+  ) THEN
+    RAISE EXCEPTION 'upsert_battle_execution_config_forbidden' USING ERRCODE = '42501';
+  END IF;
+
+  INSERT INTO battles.execution_configs
+    (battle_id, contender_id, provider_key, model_key, model_id, funding_source,
+     byok_key_ref_id, max_tokens, temperature)
+  VALUES
+    (p_battle_id, p_contender_id, p_provider_key, p_model_key, p_model_id,
+     p_funding_source, p_byok_key_ref_id, p_max_tokens, p_temperature)
+  ON CONFLICT (battle_id, contender_id)
+  DO UPDATE SET
+    provider_key   = EXCLUDED.provider_key,
+    model_key      = EXCLUDED.model_key,
+    model_id       = EXCLUDED.model_id,
+    funding_source = EXCLUDED.funding_source,
+    byok_key_ref_id = EXCLUDED.byok_key_ref_id,
+    max_tokens     = EXCLUDED.max_tokens,
+    temperature    = EXCLUDED.temperature,
+    updated_at     = now()
+  RETURNING to_jsonb(battles.execution_configs.*) INTO v_result;
+
+  RETURN v_result;
+END;
+$$;
+
+
+ALTER FUNCTION "public"."fn_upsert_battle_execution_config"("p_battle_id" "uuid", "p_contender_id" "uuid", "p_provider_key" "text", "p_model_key" "text", "p_model_id" "uuid", "p_funding_source" "text", "p_byok_key_ref_id" "uuid", "p_max_tokens" integer, "p_temperature" numeric) OWNER TO "postgres";
+
+
 CREATE OR REPLACE FUNCTION "public"."fn_upsert_profile_from_chainabit"("p_user_id" "uuid", "p_email" "text", "p_handle" "text" DEFAULT NULL::"text", "p_display_name" "text" DEFAULT NULL::"text", "p_avatar_url" "text" DEFAULT NULL::"text") RETURNS "uuid"
     LANGUAGE "plpgsql" SECURITY DEFINER
     SET "search_path" TO 'public', 'lensers'
@@ -27980,6 +33555,41 @@ COMMENT ON FUNCTION "public"."fn_upsert_workflow_nodes"("p_workflow_id" "uuid", 
 
 
 
+CREATE OR REPLACE FUNCTION "public"."fn_upsert_workflow_phase"("p_workflow_id" "uuid", "p_title" "text", "p_description" "text" DEFAULT NULL::"text", "p_ordinal" integer DEFAULT 0, "p_id" "uuid" DEFAULT NULL::"uuid") RETURNS "jsonb"
+    LANGUAGE "plpgsql" SECURITY DEFINER
+    SET "search_path" TO 'public', 'lenses', 'lensers'
+    AS $$
+DECLARE
+  v_result jsonb;
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM lenses.workflows w
+    WHERE w.id = p_workflow_id AND w.lenser_id = lensers.get_auth_lenser_id()
+  ) THEN
+    RAISE EXCEPTION 'upsert_workflow_phase_forbidden' USING ERRCODE = '42501';
+  END IF;
+
+  IF p_id IS NOT NULL THEN
+    UPDATE lenses.workflow_phases
+    SET title = p_title, description = p_description, ordinal = p_ordinal, updated_at = now()
+    WHERE id = p_id AND workflow_id = p_workflow_id
+    RETURNING to_jsonb(lenses.workflow_phases.*) INTO v_result;
+  END IF;
+
+  IF v_result IS NULL THEN
+    INSERT INTO lenses.workflow_phases (workflow_id, title, description, ordinal)
+    VALUES (p_workflow_id, p_title, p_description, p_ordinal)
+    RETURNING to_jsonb(lenses.workflow_phases.*) INTO v_result;
+  END IF;
+
+  RETURN v_result;
+END;
+$$;
+
+
+ALTER FUNCTION "public"."fn_upsert_workflow_phase"("p_workflow_id" "uuid", "p_title" "text", "p_description" "text", "p_ordinal" integer, "p_id" "uuid") OWNER TO "postgres";
+
+
 CREATE OR REPLACE FUNCTION "public"."fn_upsert_workflow_schedule"("p_workflow_id" "uuid", "p_schedule_id" "uuid" DEFAULT NULL::"uuid", "p_cron_expr" "text" DEFAULT '* * * * *'::"text", "p_timezone" "text" DEFAULT 'UTC'::"text", "p_description" "text" DEFAULT NULL::"text", "p_approval_policy" "jsonb" DEFAULT '{"requiresApproval": true}'::"jsonb", "p_is_active" boolean DEFAULT true, "p_global_model_id" "text" DEFAULT NULL::"text", "p_assignee_id" "uuid" DEFAULT NULL::"uuid", "p_workflow_assignment_id" "uuid" DEFAULT NULL::"uuid", "p_retry_policy" "jsonb" DEFAULT '{"maxRetries": 1}'::"jsonb", "p_failure_policy" "jsonb" DEFAULT '{"mode": "isolate"}'::"jsonb", "p_queue_policy" "jsonb" DEFAULT '{"mode": "parallel"}'::"jsonb", "p_inputs_template" "jsonb" DEFAULT '{}'::"jsonb") RETURNS TABLE("id" "uuid", "workflow_id" "uuid", "cron_expr" "text", "timezone" "text", "description" "text", "is_active" boolean, "assignee_type" "text", "assignee_id" "uuid", "workflow_assignment_id" "uuid", "approval_policy" "jsonb", "retry_policy" "jsonb", "failure_policy" "jsonb", "queue_policy" "jsonb", "inputs_template" "jsonb", "global_model_id" "text", "next_run_at" timestamp with time zone, "last_run_at" timestamp with time zone, "last_run_id" "uuid", "last_dispatch_status" "text", "last_error_at" timestamp with time zone, "last_error_message" "text", "last_completed_at" timestamp with time zone, "last_result" "jsonb", "created_at" timestamp with time zone)
     LANGUAGE "plpgsql" SECURITY DEFINER
     SET "search_path" TO 'lenses', 'agents', 'public'
@@ -28067,6 +33677,651 @@ $$;
 
 
 ALTER FUNCTION "public"."fn_upsert_workflow_schedule"("p_workflow_id" "uuid", "p_schedule_id" "uuid", "p_cron_expr" "text", "p_timezone" "text", "p_description" "text", "p_approval_policy" "jsonb", "p_is_active" boolean, "p_global_model_id" "text", "p_assignee_id" "uuid", "p_workflow_assignment_id" "uuid", "p_retry_policy" "jsonb", "p_failure_policy" "jsonb", "p_queue_policy" "jsonb", "p_inputs_template" "jsonb") OWNER TO "postgres";
+
+
+CREATE OR REPLACE FUNCTION "public"."fn_upsert_workflow_task"("p_phase_id" "uuid", "p_workflow_id" "uuid", "p_title" "text", "p_prompt_text" "text" DEFAULT NULL::"text", "p_output_type" "text" DEFAULT 'text'::"text", "p_model_hint" "text" DEFAULT NULL::"text", "p_ordinal" integer DEFAULT 0, "p_id" "uuid" DEFAULT NULL::"uuid") RETURNS "jsonb"
+    LANGUAGE "plpgsql" SECURITY DEFINER
+    SET "search_path" TO 'public', 'lenses', 'lensers'
+    AS $$
+DECLARE
+  v_result jsonb;
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM lenses.workflows w
+    WHERE w.id = p_workflow_id AND w.lenser_id = lensers.get_auth_lenser_id()
+  ) THEN
+    RAISE EXCEPTION 'upsert_workflow_task_forbidden' USING ERRCODE = '42501';
+  END IF;
+
+  IF p_id IS NOT NULL THEN
+    UPDATE lenses.workflow_tasks
+    SET title = p_title, prompt_text = p_prompt_text, output_type = p_output_type,
+        model_hint = p_model_hint, ordinal = p_ordinal, updated_at = now()
+    WHERE id = p_id AND phase_id = p_phase_id
+    RETURNING to_jsonb(lenses.workflow_tasks.*) INTO v_result;
+  END IF;
+
+  IF v_result IS NULL THEN
+    INSERT INTO lenses.workflow_tasks
+      (phase_id, workflow_id, title, prompt_text, output_type, model_hint, ordinal)
+    VALUES (p_phase_id, p_workflow_id, p_title, p_prompt_text, p_output_type, p_model_hint, p_ordinal)
+    RETURNING to_jsonb(lenses.workflow_tasks.*) INTO v_result;
+  END IF;
+
+  RETURN v_result;
+END;
+$$;
+
+
+ALTER FUNCTION "public"."fn_upsert_workflow_task"("p_phase_id" "uuid", "p_workflow_id" "uuid", "p_title" "text", "p_prompt_text" "text", "p_output_type" "text", "p_model_hint" "text", "p_ordinal" integer, "p_id" "uuid") OWNER TO "postgres";
+
+
+CREATE OR REPLACE FUNCTION "public"."fn_upsert_workspace_item"("p_table_name" "text", "p_id" "uuid", "p_patch" "jsonb") RETURNS "jsonb"
+    LANGUAGE "plpgsql" SECURITY DEFINER
+    SET "search_path" TO 'public', 'agents', 'lensers'
+    AS $_$
+DECLARE
+  v_lenser_id uuid := lensers.get_auth_lenser_id();
+  v_result    jsonb;
+BEGIN
+  IF p_table_name NOT IN (
+    'teams', 'team_members', 'team_edges', 'personality_profiles',
+    'memory_profiles', 'tool_profiles', 'model_profiles',
+    'workflow_assignments', 'scratchpad_runs', 'workspace_settings',
+    'evaluation_cases', 'evaluation_rubrics', 'evaluation_baselines',
+    'tools_registry', 'tool_assignments', 'evaluations'
+  ) THEN
+    RAISE EXCEPTION 'upsert_forbidden: table % not in allowlist', p_table_name
+      USING ERRCODE = '42501';
+  END IF;
+
+  -- Build and execute a safe UPDATE using jsonb_populate_record pattern.
+  -- Ownership is enforced per-table via separate policy checks below.
+  EXECUTE format(
+    $q$
+    UPDATE agents.%I tbl
+    SET updated_at = now()
+    WHERE tbl.id = $1
+      AND (
+        tbl.ai_lenser_id = $2
+        OR tbl.owner_lenser_id = $2
+        OR EXISTS (
+          SELECT 1 FROM agents.teams t
+          JOIN agents.ownerships o ON o.ai_lenser_id = t.ai_lenser_id
+          WHERE t.id = tbl.team_id AND o.owner_lenser_id = $2 AND o.revoked_at IS NULL
+        )
+        OR EXISTS (
+          SELECT 1 FROM agents.team_members tm
+          JOIN agents.teams t ON t.id = tm.team_id
+          JOIN agents.ownerships o ON o.ai_lenser_id = t.ai_lenser_id
+          WHERE tm.id = tbl.id AND o.owner_lenser_id = $2 AND o.revoked_at IS NULL
+        )
+        OR public.is_admin()
+      )
+    RETURNING to_jsonb(tbl.*)
+    $q$,
+    p_table_name
+  ) USING p_id, v_lenser_id INTO v_result;
+
+  IF v_result IS NULL THEN
+    RAISE EXCEPTION 'update_not_found_or_forbidden: record % in table % not found or not owned',
+      p_id, p_table_name USING ERRCODE = '42501';
+  END IF;
+
+  RETURN v_result;
+END;
+$_$;
+
+
+ALTER FUNCTION "public"."fn_upsert_workspace_item"("p_table_name" "text", "p_id" "uuid", "p_patch" "jsonb") OWNER TO "postgres";
+
+
+COMMENT ON FUNCTION "public"."fn_upsert_workspace_item"("p_table_name" "text", "p_id" "uuid", "p_patch" "jsonb") IS 'Security wrapper: update any agents workspace record by id. Table name is whitelisted to prevent unauthorized access. Ownership is enforced via ai_lenser_id or owner_lenser_id column. updated_at is always refreshed.';
+
+
+
+CREATE OR REPLACE FUNCTION "public"."fn_worker_battle_job_to_dlq"("p_job_id" "uuid", "p_error_code" "text", "p_error_msg" "text" DEFAULT NULL::"text") RETURNS "uuid"
+    LANGUAGE "plpgsql" SECURITY DEFINER
+    SET "search_path" TO 'public', 'battles'
+    AS $$
+BEGIN
+  RETURN battles.fn_move_battle_job_to_dlq(p_job_id, p_error_code, p_error_msg);
+END;
+$$;
+
+
+ALTER FUNCTION "public"."fn_worker_battle_job_to_dlq"("p_job_id" "uuid", "p_error_code" "text", "p_error_msg" "text") OWNER TO "postgres";
+
+
+CREATE OR REPLACE FUNCTION "public"."fn_worker_claim_battle_job"("p_worker_id" "text") RETURNS TABLE("job_id" "uuid", "battle_id" "uuid", "contender_id" "uuid", "slot" "text", "task_prompt" "text", "provider_key" "text", "model_key" "text", "byok_key_ref_id" "text", "lens_id" "uuid", "version_id" "uuid", "max_tokens" integer, "temperature" numeric, "retry_count" integer, "ai_lenser_id" "uuid", "personality_note" "text", "personality_version_id" "uuid")
+    LANGUAGE "plpgsql" SECURITY DEFINER
+    SET "search_path" TO 'public', 'battles'
+    AS $$
+BEGIN
+  RETURN QUERY SELECT * FROM battles.fn_claim_battle_execution_job(p_worker_id);
+END;
+$$;
+
+
+ALTER FUNCTION "public"."fn_worker_claim_battle_job"("p_worker_id" "text") OWNER TO "postgres";
+
+
+CREATE OR REPLACE FUNCTION "public"."fn_worker_claim_queued_run"() RETURNS "jsonb"
+    LANGUAGE "plpgsql" SECURITY DEFINER
+    SET "search_path" TO 'public', 'execution'
+    AS $$
+DECLARE
+  v_result jsonb;
+BEGIN
+  SELECT to_jsonb(r.*) INTO v_result
+  FROM execution.fn_claim_queued_run() r;
+  RETURN v_result;
+END;
+$$;
+
+
+ALTER FUNCTION "public"."fn_worker_claim_queued_run"() OWNER TO "postgres";
+
+
+COMMENT ON FUNCTION "public"."fn_worker_claim_queued_run"() IS 'Worker-only: claim the next queued execution run. Returns the claimed run as jsonb.';
+
+
+
+CREATE OR REPLACE FUNCTION "public"."fn_worker_claim_scheduled_workflow_run"("p_worker_id" "text") RETURNS TABLE("run_id" "uuid", "workflow_id" "uuid", "schedule_id" "uuid", "inputs" "jsonb", "model_id" "uuid", "ai_lenser_id" "uuid")
+    LANGUAGE "plpgsql" SECURITY DEFINER
+    SET "search_path" TO 'public', 'lenses'
+    AS $$
+BEGIN
+  RETURN QUERY SELECT * FROM lenses.fn_claim_scheduled_workflow_run(p_worker_id);
+END;
+$$;
+
+
+ALTER FUNCTION "public"."fn_worker_claim_scheduled_workflow_run"("p_worker_id" "text") OWNER TO "postgres";
+
+
+COMMENT ON FUNCTION "public"."fn_worker_claim_scheduled_workflow_run"("p_worker_id" "text") IS 'Worker-only: claim the next pending scheduled workflow run. Delegates to lenses.fn_claim_scheduled_workflow_run.';
+
+
+
+CREATE OR REPLACE FUNCTION "public"."fn_worker_claim_team_run"() RETURNS "jsonb"
+    LANGUAGE "plpgsql" SECURITY DEFINER
+    SET "search_path" TO 'public', 'agents'
+    AS $$
+DECLARE
+  v_run jsonb;
+BEGIN
+  UPDATE agents.team_runs
+  SET status     = 'running',
+      started_at = COALESCE(started_at, now()),
+      updated_at = now()
+  WHERE id = (
+    SELECT id FROM agents.team_runs
+    WHERE status = 'pending'
+    ORDER BY created_at
+    LIMIT 1
+    FOR UPDATE SKIP LOCKED
+  )
+  RETURNING to_jsonb(agents.team_runs.*) INTO v_run;
+
+  RETURN v_run;
+END;
+$$;
+
+
+ALTER FUNCTION "public"."fn_worker_claim_team_run"() OWNER TO "postgres";
+
+
+CREATE OR REPLACE FUNCTION "public"."fn_worker_complete_battle_job"("p_job_id" "uuid", "p_status" "text", "p_output_text" "text" DEFAULT NULL::"text", "p_error" "text" DEFAULT NULL::"text") RETURNS "void"
+    LANGUAGE "plpgsql" SECURITY DEFINER
+    SET "search_path" TO 'public', 'battles'
+    AS $$
+BEGIN
+  PERFORM battles.fn_complete_battle_execution_job(p_job_id, p_status, p_output_text, p_error);
+END;
+$$;
+
+
+ALTER FUNCTION "public"."fn_worker_complete_battle_job"("p_job_id" "uuid", "p_status" "text", "p_output_text" "text", "p_error" "text") OWNER TO "postgres";
+
+
+CREATE OR REPLACE FUNCTION "public"."fn_worker_complete_execution_run"("p_run_id" "uuid", "p_status" "text", "p_token_input" integer DEFAULT NULL::integer, "p_token_output" integer DEFAULT NULL::integer, "p_credit_cost" bigint DEFAULT NULL::bigint, "p_billing_status" "text" DEFAULT NULL::"text", "p_response_text" "text" DEFAULT NULL::"text", "p_response_meta" "jsonb" DEFAULT NULL::"jsonb", "p_error_code" "text" DEFAULT NULL::"text", "p_error_message" "text" DEFAULT NULL::"text", "p_latency_ms" integer DEFAULT NULL::integer) RETURNS "void"
+    LANGUAGE "plpgsql" SECURITY DEFINER
+    SET "search_path" TO 'public', 'execution'
+    AS $$
+BEGIN
+  PERFORM execution.fn_complete_execution_run(
+    p_run_id, p_status, p_token_input, p_token_output, p_credit_cost,
+    p_billing_status, p_response_text, p_response_meta,
+    p_error_code, p_error_message, p_latency_ms
+  );
+END;
+$$;
+
+
+ALTER FUNCTION "public"."fn_worker_complete_execution_run"("p_run_id" "uuid", "p_status" "text", "p_token_input" integer, "p_token_output" integer, "p_credit_cost" bigint, "p_billing_status" "text", "p_response_text" "text", "p_response_meta" "jsonb", "p_error_code" "text", "p_error_message" "text", "p_latency_ms" integer) OWNER TO "postgres";
+
+
+COMMENT ON FUNCTION "public"."fn_worker_complete_execution_run"("p_run_id" "uuid", "p_status" "text", "p_token_input" integer, "p_token_output" integer, "p_credit_cost" bigint, "p_billing_status" "text", "p_response_text" "text", "p_response_meta" "jsonb", "p_error_code" "text", "p_error_message" "text", "p_latency_ms" integer) IS 'Worker-only: mark an execution run terminal (completed or failed). Delegates to execution.fn_complete_execution_run.';
+
+
+
+CREATE OR REPLACE FUNCTION "public"."fn_worker_decrypt_api_key"("p_key_id" "uuid") RETURNS "text"
+    LANGUAGE "plpgsql" SECURITY DEFINER
+    SET "search_path" TO 'public', 'ai'
+    AS $$
+DECLARE
+  v_result text;
+BEGIN
+  SELECT ai.fn_decrypt_api_key(p_key_id) INTO v_result;
+  RETURN v_result;
+END;
+$$;
+
+
+ALTER FUNCTION "public"."fn_worker_decrypt_api_key"("p_key_id" "uuid") OWNER TO "postgres";
+
+
+COMMENT ON FUNCTION "public"."fn_worker_decrypt_api_key"("p_key_id" "uuid") IS 'Worker-only: decrypt a stored BYOK API key. Delegates to ai.fn_decrypt_api_key.';
+
+
+
+CREATE OR REPLACE FUNCTION "public"."fn_worker_fail_execution_run"("p_run_id" "uuid", "p_error_code" "text" DEFAULT 'provider_failed'::"text", "p_error_message" "text" DEFAULT 'Provider reported failure'::"text") RETURNS "void"
+    LANGUAGE "sql" SECURITY DEFINER
+    SET "search_path" TO 'public', 'execution'
+    AS $$
+  UPDATE execution.runs
+  SET    status        = 'failed',
+         completed_at  = now(),
+         error_code    = p_error_code,
+         error_message = p_error_message
+  WHERE  id = p_run_id;
+$$;
+
+
+ALTER FUNCTION "public"."fn_worker_fail_execution_run"("p_run_id" "uuid", "p_error_code" "text", "p_error_message" "text") OWNER TO "postgres";
+
+
+COMMENT ON FUNCTION "public"."fn_worker_fail_execution_run"("p_run_id" "uuid", "p_error_code" "text", "p_error_message" "text") IS 'Worker-only: mark an execution run as failed with an error code and message.';
+
+
+
+CREATE OR REPLACE FUNCTION "public"."fn_worker_get_ai_key_secret"("p_ai_key_id" "uuid") RETURNS "text"
+    LANGUAGE "sql" STABLE SECURITY DEFINER
+    SET "search_path" TO 'public', 'ai', 'vault'
+    AS $$
+  SELECT vs.decrypted_secret
+  FROM ai.keys k
+  JOIN vault.decrypted_secrets vs ON vs.id = k.encrypted_key_id
+  WHERE k.id = p_ai_key_id
+  LIMIT 1;
+$$;
+
+
+ALTER FUNCTION "public"."fn_worker_get_ai_key_secret"("p_ai_key_id" "uuid") OWNER TO "postgres";
+
+
+COMMENT ON FUNCTION "public"."fn_worker_get_ai_key_secret"("p_ai_key_id" "uuid") IS 'Worker-only: resolve and decrypt an API key from ai.keys via vault.decrypted_secrets. Single round-trip replacing the two-step lookup in test-provider edge function.';
+
+
+
+CREATE OR REPLACE FUNCTION "public"."fn_worker_get_battle_for_og"("p_battle_id" "uuid") RETURNS TABLE("id" "uuid", "slug" "text", "title" "text", "status" "text", "task_prompt" "text", "battle_type" "text", "total_vote_count" integer, "finalized_at" timestamp with time zone, "winner_contender_id" "uuid", "published_at" timestamp with time zone)
+    LANGUAGE "sql" STABLE SECURITY DEFINER
+    SET "search_path" TO 'public', 'battles'
+    AS $$
+  SELECT b.id, b.slug, b.title, b.status, b.task_prompt, b.battle_type,
+         b.total_vote_count, b.finalized_at, b.winner_contender_id, b.published_at
+  FROM battles.battles b
+  WHERE b.id = p_battle_id
+  LIMIT 1;
+$$;
+
+
+ALTER FUNCTION "public"."fn_worker_get_battle_for_og"("p_battle_id" "uuid") OWNER TO "postgres";
+
+
+CREATE OR REPLACE FUNCTION "public"."fn_worker_get_delegation_context"("p_team_run_id" "uuid") RETURNS "jsonb"
+    LANGUAGE "sql" STABLE SECURITY DEFINER
+    SET "search_path" TO 'public', 'agents'
+    AS $$
+  SELECT jsonb_build_object(
+    'team_run', to_jsonb(tr.*),
+    'team',     to_jsonb(t.*),
+    'members',  COALESCE((
+      SELECT jsonb_agg(to_jsonb(tm.*) ORDER BY tm.sort_order)
+      FROM agents.team_members tm WHERE tm.team_id = tr.team_id
+    ), '[]'::jsonb)
+  )
+  FROM agents.team_runs tr
+  LEFT JOIN agents.teams t ON t.id = tr.team_id
+  WHERE tr.id = p_team_run_id
+  LIMIT 1;
+$$;
+
+
+ALTER FUNCTION "public"."fn_worker_get_delegation_context"("p_team_run_id" "uuid") OWNER TO "postgres";
+
+
+CREATE OR REPLACE FUNCTION "public"."fn_worker_get_team_run"("p_team_run_id" "uuid") RETURNS "jsonb"
+    LANGUAGE "sql" STABLE SECURITY DEFINER
+    SET "search_path" TO 'public', 'agents'
+    AS $$
+  SELECT to_jsonb(tr.*)
+  FROM agents.team_runs tr
+  WHERE tr.id = p_team_run_id
+  LIMIT 1;
+$$;
+
+
+ALTER FUNCTION "public"."fn_worker_get_team_run"("p_team_run_id" "uuid") OWNER TO "postgres";
+
+
+CREATE OR REPLACE FUNCTION "public"."fn_worker_get_vote_risk_data"("p_battle_id" "uuid", "p_lenser_id" "uuid") RETURNS "jsonb"
+    LANGUAGE "sql" STABLE SECURITY DEFINER
+    SET "search_path" TO 'public', 'battles', 'reputation'
+    AS $$
+  SELECT jsonb_build_object(
+    'battle_status',  b.status,
+    'vote_count',     (
+      SELECT COUNT(*)
+      FROM battles.votes v
+      WHERE v.battle_id = p_battle_id
+    ),
+    'lenser_score',   (
+      SELECT ls.score
+      FROM reputation.lenser_scores ls
+      WHERE ls.lenser_id  = p_lenser_id
+        AND ls.score_type = 'composite'
+      ORDER BY ls.computed_at DESC
+      LIMIT 1
+    ),
+    'lenser_elo',     (
+      SELECT cr.elo_rating
+      FROM reputation.contender_ratings cr
+      WHERE cr.lenser_id = p_lenser_id
+      ORDER BY cr.updated_at DESC
+      LIMIT 1
+    )
+  )
+  FROM battles.battles b
+  WHERE b.id = p_battle_id;
+$$;
+
+
+ALTER FUNCTION "public"."fn_worker_get_vote_risk_data"("p_battle_id" "uuid", "p_lenser_id" "uuid") OWNER TO "postgres";
+
+
+COMMENT ON FUNCTION "public"."fn_worker_get_vote_risk_data"("p_battle_id" "uuid", "p_lenser_id" "uuid") IS 'Worker-only: return battle status, total vote count, and lenser scores as jsonb for the score-vote-risk edge function. Single round-trip.';
+
+
+
+CREATE OR REPLACE FUNCTION "public"."fn_worker_get_voter_stats"("p_voter_lenser_id" "uuid", "p_since_ts" timestamp with time zone) RETURNS TABLE("recent_count" bigint, "total_count" bigint, "draw_count" bigint)
+    LANGUAGE "sql" STABLE SECURITY DEFINER
+    SET "search_path" TO 'public', 'battles'
+    AS $$
+  SELECT
+    COUNT(*) FILTER (WHERE v.created_at >= p_since_ts) AS recent_count,
+    COUNT(*)                                            AS total_count,
+    COUNT(*) FILTER (WHERE v.is_draw = true)            AS draw_count
+  FROM battles.votes v
+  WHERE v.voter_lenser_id = p_voter_lenser_id;
+$$;
+
+
+ALTER FUNCTION "public"."fn_worker_get_voter_stats"("p_voter_lenser_id" "uuid", "p_since_ts" timestamp with time zone) OWNER TO "postgres";
+
+
+COMMENT ON FUNCTION "public"."fn_worker_get_voter_stats"("p_voter_lenser_id" "uuid", "p_since_ts" timestamp with time zone) IS 'Worker-only: return recent/total/draw vote counts for a voter in one query.';
+
+
+
+CREATE OR REPLACE FUNCTION "public"."fn_worker_get_workflow_context"("p_run_id" "uuid") RETURNS TABLE("workflow_id" "uuid", "triggered_by" "uuid")
+    LANGUAGE "sql" STABLE SECURITY DEFINER
+    SET "search_path" TO 'public', 'lenses'
+    AS $$
+  SELECT wr.workflow_id, wr.triggered_by
+  FROM lenses.workflow_runs wr
+  WHERE wr.id = p_run_id;
+$$;
+
+
+ALTER FUNCTION "public"."fn_worker_get_workflow_context"("p_run_id" "uuid") OWNER TO "postgres";
+
+
+COMMENT ON FUNCTION "public"."fn_worker_get_workflow_context"("p_run_id" "uuid") IS 'Worker-only: return workflow_id and triggered_by for a workflow run.';
+
+
+
+CREATE OR REPLACE FUNCTION "public"."fn_worker_get_workflow_graph"("p_workflow_id" "uuid") RETURNS "jsonb"
+    LANGUAGE "sql" STABLE SECURITY DEFINER
+    SET "search_path" TO 'public', 'lenses'
+    AS $$
+  SELECT jsonb_build_object(
+    'nodes', COALESCE(
+      (SELECT jsonb_agg(
+         jsonb_build_object(
+           'id',         n.id,
+           'lens_id',    n.lens_id,
+           'version_id', n.version_id,
+           'config',     n.config
+         ) ORDER BY n.ordinal
+       )
+       FROM lenses.workflow_nodes n
+       WHERE n.workflow_id = p_workflow_id
+      ), '[]'::jsonb
+    ),
+    'edges', COALESCE(
+      (SELECT jsonb_agg(
+         jsonb_build_object(
+           'id',                e.id,
+           'source_node_id',    e.source_node_id,
+           'target_node_id',    e.target_node_id,
+           'source_output_key', e.source_output_key,
+           'target_param_label',e.target_param_label
+         )
+       )
+       FROM lenses.workflow_edges e
+       WHERE e.workflow_id = p_workflow_id
+      ), '[]'::jsonb
+    )
+  );
+$$;
+
+
+ALTER FUNCTION "public"."fn_worker_get_workflow_graph"("p_workflow_id" "uuid") OWNER TO "postgres";
+
+
+COMMENT ON FUNCTION "public"."fn_worker_get_workflow_graph"("p_workflow_id" "uuid") IS 'Worker-only: return workflow nodes and edges as { nodes: [...], edges: [...] }. Reduces two round-trips to one.';
+
+
+
+CREATE OR REPLACE FUNCTION "public"."fn_worker_insert_workflow_media_object"("p_workspace_id" "uuid", "p_owner_lenser_id" "uuid", "p_run_id" "uuid", "p_node_id" "uuid", "p_external_url" "text", "p_mime_type" "text", "p_media_type" "text", "p_name" "text") RETURNS "uuid"
+    LANGUAGE "sql" SECURITY DEFINER
+    SET "search_path" TO 'public', 'media'
+    AS $$
+  INSERT INTO media.objects
+    (workspace_id, owner_lenser_id, external_url, mime_type, media_type,
+     name, visibility, lifecycle_state, metadata)
+  VALUES (
+    p_workspace_id, p_owner_lenser_id, p_external_url, p_mime_type, p_media_type,
+    p_name, 'private', 'active',
+    jsonb_build_object('workflow_run_id', p_run_id, 'node_id', p_node_id)
+  )
+  RETURNING id;
+$$;
+
+
+ALTER FUNCTION "public"."fn_worker_insert_workflow_media_object"("p_workspace_id" "uuid", "p_owner_lenser_id" "uuid", "p_run_id" "uuid", "p_node_id" "uuid", "p_external_url" "text", "p_mime_type" "text", "p_media_type" "text", "p_name" "text") OWNER TO "postgres";
+
+
+COMMENT ON FUNCTION "public"."fn_worker_insert_workflow_media_object"("p_workspace_id" "uuid", "p_owner_lenser_id" "uuid", "p_run_id" "uuid", "p_node_id" "uuid", "p_external_url" "text", "p_mime_type" "text", "p_media_type" "text", "p_name" "text") IS 'Worker-only: insert a media.objects row for output produced by a workflow node. Tags the object with workflow_run_id and node_id in metadata.';
+
+
+
+CREATE OR REPLACE FUNCTION "public"."fn_worker_persist_execution_artifacts"("p_run_id" "uuid", "p_lenser_id" "uuid", "p_workspace_id" "uuid", "p_ai_model_id" "uuid", "p_kind" "text", "p_content_text" "text" DEFAULT NULL::"text", "p_content_json" "jsonb" DEFAULT NULL::"jsonb", "p_media_ids" "uuid"[] DEFAULT NULL::"uuid"[]) RETURNS "void"
+    LANGUAGE "plpgsql" SECURITY DEFINER
+    SET "search_path" TO 'public', 'execution'
+    AS $$
+BEGIN
+  PERFORM execution.fn_persist_execution_artifacts(
+    p_run_id, p_lenser_id, p_workspace_id, p_ai_model_id,
+    p_kind, p_content_text, p_content_json, p_media_ids
+  );
+END;
+$$;
+
+
+ALTER FUNCTION "public"."fn_worker_persist_execution_artifacts"("p_run_id" "uuid", "p_lenser_id" "uuid", "p_workspace_id" "uuid", "p_ai_model_id" "uuid", "p_kind" "text", "p_content_text" "text", "p_content_json" "jsonb", "p_media_ids" "uuid"[]) OWNER TO "postgres";
+
+
+COMMENT ON FUNCTION "public"."fn_worker_persist_execution_artifacts"("p_run_id" "uuid", "p_lenser_id" "uuid", "p_workspace_id" "uuid", "p_ai_model_id" "uuid", "p_kind" "text", "p_content_text" "text", "p_content_json" "jsonb", "p_media_ids" "uuid"[]) IS 'Worker-only: persist execution artifacts to the DB. Delegates to execution.fn_persist_execution_artifacts.';
+
+
+
+CREATE OR REPLACE FUNCTION "public"."fn_worker_render_template"("p_version_id" "uuid", "p_inputs" "jsonb" DEFAULT '{}'::"jsonb") RETURNS "text"
+    LANGUAGE "plpgsql" SECURITY DEFINER
+    SET "search_path" TO 'public', 'lenses'
+    AS $$
+DECLARE
+  v_result text;
+BEGIN
+  SELECT lenses.fn_render_template(p_version_id, p_inputs) INTO v_result;
+  RETURN v_result;
+END;
+$$;
+
+
+ALTER FUNCTION "public"."fn_worker_render_template"("p_version_id" "uuid", "p_inputs" "jsonb") OWNER TO "postgres";
+
+
+COMMENT ON FUNCTION "public"."fn_worker_render_template"("p_version_id" "uuid", "p_inputs" "jsonb") IS 'Worker-only: render a lens version template with the supplied inputs. Delegates to lenses.fn_render_template.';
+
+
+
+CREATE OR REPLACE FUNCTION "public"."fn_worker_requeue_battle_job"("p_job_id" "uuid", "p_backoff_ms" integer, "p_error" "text" DEFAULT NULL::"text") RETURNS "void"
+    LANGUAGE "plpgsql" SECURITY DEFINER
+    SET "search_path" TO 'public', 'battles'
+    AS $$
+BEGIN
+  PERFORM battles.fn_requeue_battle_job_with_backoff(p_job_id, p_backoff_ms, p_error);
+END;
+$$;
+
+
+ALTER FUNCTION "public"."fn_worker_requeue_battle_job"("p_job_id" "uuid", "p_backoff_ms" integer, "p_error" "text") OWNER TO "postgres";
+
+
+CREATE OR REPLACE FUNCTION "public"."fn_worker_set_battle_og_image"("p_battle_id" "uuid", "p_og_image_url" "text") RETURNS "void"
+    LANGUAGE "sql" SECURITY DEFINER
+    SET "search_path" TO 'public', 'battles'
+    AS $$
+  UPDATE battles.battles
+  SET og_image_url = p_og_image_url
+  WHERE id = p_battle_id;
+$$;
+
+
+ALTER FUNCTION "public"."fn_worker_set_battle_og_image"("p_battle_id" "uuid", "p_og_image_url" "text") OWNER TO "postgres";
+
+
+COMMENT ON FUNCTION "public"."fn_worker_set_battle_og_image"("p_battle_id" "uuid", "p_og_image_url" "text") IS 'Worker-only: set og_image_url on a battle. Called by the generate-battle-og-image edge function.';
+
+
+
+CREATE OR REPLACE FUNCTION "public"."fn_worker_update_team_run"("p_team_run_id" "uuid", "p_status" "text", "p_completed_at" timestamp with time zone DEFAULT NULL::timestamp with time zone) RETURNS "void"
+    LANGUAGE "sql" SECURITY DEFINER
+    SET "search_path" TO 'public', 'agents'
+    AS $$
+  UPDATE agents.team_runs
+  SET status       = p_status,
+      completed_at = COALESCE(p_completed_at, CASE WHEN p_status IN ('completed','failed','cancelled') THEN now() ELSE NULL END),
+      updated_at   = now()
+  WHERE id = p_team_run_id;
+$$;
+
+
+ALTER FUNCTION "public"."fn_worker_update_team_run"("p_team_run_id" "uuid", "p_status" "text", "p_completed_at" timestamp with time zone) OWNER TO "postgres";
+
+
+CREATE OR REPLACE FUNCTION "public"."fn_worker_update_team_run_status"("p_team_run_id" "uuid", "p_status" "text", "p_completed_at" timestamp with time zone DEFAULT NULL::timestamp with time zone) RETURNS "void"
+    LANGUAGE "sql" SECURITY DEFINER
+    SET "search_path" TO 'public', 'agents'
+    AS $$
+  SELECT public.fn_worker_update_team_run(p_team_run_id, p_status, p_completed_at);
+$$;
+
+
+ALTER FUNCTION "public"."fn_worker_update_team_run_status"("p_team_run_id" "uuid", "p_status" "text", "p_completed_at" timestamp with time zone) OWNER TO "postgres";
+
+
+CREATE OR REPLACE FUNCTION "public"."fn_worker_update_vote_risk_score"("p_vote_id" "uuid", "p_risk_score" numeric, "p_risk_factors" "text"[], "p_review_status" "text") RETURNS "void"
+    LANGUAGE "sql" SECURITY DEFINER
+    SET "search_path" TO 'public', 'reputation'
+    AS $$
+  UPDATE reputation.vote_risk_scores
+  SET risk_score    = p_risk_score,
+      risk_factors  = p_risk_factors,
+      review_status = p_review_status
+  WHERE vote_id = p_vote_id;
+$$;
+
+
+ALTER FUNCTION "public"."fn_worker_update_vote_risk_score"("p_vote_id" "uuid", "p_risk_score" numeric, "p_risk_factors" "text"[], "p_review_status" "text") OWNER TO "postgres";
+
+
+COMMENT ON FUNCTION "public"."fn_worker_update_vote_risk_score"("p_vote_id" "uuid", "p_risk_score" numeric, "p_risk_factors" "text"[], "p_review_status" "text") IS 'Worker-only: update risk_score, risk_factors, and review_status on a vote_risk_scores row.';
+
+
+
+CREATE OR REPLACE FUNCTION "public"."fn_worker_upsert_heartbeat"("p_worker_id" "text", "p_worker_type" "text", "p_metadata" "jsonb" DEFAULT '{}'::"jsonb") RETURNS "void"
+    LANGUAGE "plpgsql" SECURITY DEFINER
+    SET "search_path" TO 'public', 'platform'
+    AS $$
+BEGIN
+  PERFORM platform.fn_upsert_worker_heartbeat(p_worker_id, p_worker_type, p_metadata);
+END;
+$$;
+
+
+ALTER FUNCTION "public"."fn_worker_upsert_heartbeat"("p_worker_id" "text", "p_worker_type" "text", "p_metadata" "jsonb") OWNER TO "postgres";
+
+
+COMMENT ON FUNCTION "public"."fn_worker_upsert_heartbeat"("p_worker_id" "text", "p_worker_type" "text", "p_metadata" "jsonb") IS 'Worker-only: upsert a worker heartbeat record. Delegates to platform.fn_upsert_worker_heartbeat.';
+
+
+
+CREATE OR REPLACE FUNCTION "public"."fn_worker_upsert_node_result"("p_run_id" "uuid", "p_node_id" "uuid", "p_status" "text", "p_output_data" "jsonb" DEFAULT NULL::"jsonb", "p_error_message" "text" DEFAULT NULL::"text") RETURNS "void"
+    LANGUAGE "plpgsql" SECURITY DEFINER
+    SET "search_path" TO 'public', 'lenses'
+    AS $$
+DECLARE
+  v_terminal text[] := ARRAY['completed', 'failed', 'timed_out', 'cancelled'];
+BEGIN
+  INSERT INTO lenses.workflow_node_results
+    (run_id, node_id, status, output_data, error_message, started_at, completed_at)
+  VALUES (
+    p_run_id, p_node_id, p_status, p_output_data, p_error_message,
+    CASE WHEN p_status = 'running' THEN now() ELSE NULL END,
+    CASE WHEN p_status = ANY(v_terminal) THEN now() ELSE NULL END
+  )
+  ON CONFLICT (run_id, node_id) DO UPDATE
+    SET status        = EXCLUDED.status,
+        output_data   = COALESCE(EXCLUDED.output_data,   lenses.workflow_node_results.output_data),
+        error_message = COALESCE(EXCLUDED.error_message, lenses.workflow_node_results.error_message),
+        started_at    = COALESCE(lenses.workflow_node_results.started_at, EXCLUDED.started_at),
+        completed_at  = CASE
+          WHEN EXCLUDED.status = ANY(v_terminal) THEN now()
+          ELSE lenses.workflow_node_results.completed_at
+        END;
+END;
+$$;
+
+
+ALTER FUNCTION "public"."fn_worker_upsert_node_result"("p_run_id" "uuid", "p_node_id" "uuid", "p_status" "text", "p_output_data" "jsonb", "p_error_message" "text") OWNER TO "postgres";
+
+
+COMMENT ON FUNCTION "public"."fn_worker_upsert_node_result"("p_run_id" "uuid", "p_node_id" "uuid", "p_status" "text", "p_output_data" "jsonb", "p_error_message" "text") IS 'Worker-only: upsert a workflow node execution result. Sets started_at on first "running" write; sets completed_at on terminal status. Preserves existing output_data/error_message if new value is NULL.';
+
 
 
 CREATE OR REPLACE FUNCTION "public"."fn_workflows_get_popular"("p_offset" integer DEFAULT 0, "p_limit" integer DEFAULT 12, "p_search" "text" DEFAULT NULL::"text") RETURNS TABLE("id" "uuid", "lenser_id" "uuid", "title" "text", "description" "text", "visibility" "text", "battle_count" integer, "node_count" bigint, "reaction_totals" "jsonb", "fork_count" integer, "parent_workflow_id" "uuid", "created_at" timestamp with time zone, "updated_at" timestamp with time zone, "hot_score" double precision)
@@ -29339,6 +35594,671 @@ $$;
 
 
 ALTER FUNCTION "tenancy"."set_updated_at"() OWNER TO "postgres";
+
+
+CREATE OR REPLACE FUNCTION "wallet"."credit_account"("p_lenser_id" "uuid", "p_amount" bigint, "p_tx_type" "wallet"."transaction_type_enum", "p_reference_type" "text" DEFAULT NULL::"text", "p_reference_id" "uuid" DEFAULT NULL::"uuid", "p_description" "text" DEFAULT NULL::"text", "p_metadata" "jsonb" DEFAULT '{}'::"jsonb") RETURNS "uuid"
+    LANGUAGE "plpgsql" SECURITY DEFINER
+    SET "search_path" TO 'wallet'
+    AS $$
+DECLARE
+    v_account_id  uuid;
+    v_new_balance bigint;
+    v_tx_id       uuid;
+BEGIN
+    -- Validate credit transaction types
+    IF p_tx_type NOT IN ('deposit', 'refund', 'sponsorship_payout', 'adjustment') THEN
+        RAISE EXCEPTION 'INVALID_CREDIT_TYPE: % is not a valid credit transaction type', p_tx_type;
+    END IF;
+
+    -- Validate amount
+    IF p_amount <= 0 THEN
+        RAISE EXCEPTION 'INVALID_AMOUNT: amount must be positive, got %', p_amount;
+    END IF;
+
+    -- Lock the account row (or create if first deposit)
+    SELECT "id" INTO v_account_id
+    FROM "wallet"."accounts"
+    WHERE "lenser_id" = p_lenser_id
+    FOR UPDATE;
+
+    IF v_account_id IS NULL THEN
+        -- Auto-create account on first deposit
+        INSERT INTO "wallet"."accounts" ("lenser_id", "balance", "lifetime_deposits")
+        VALUES (p_lenser_id, 0, 0)
+        RETURNING "id" INTO v_account_id;
+    ELSE
+        -- Check frozen status
+        IF (SELECT "frozen" FROM "wallet"."accounts" WHERE "id" = v_account_id) THEN
+            RAISE EXCEPTION 'ACCOUNT_FROZEN: wallet account for lenser % is frozen', p_lenser_id;
+        END IF;
+    END IF;
+
+    -- Update balance and lifetime deposits
+    UPDATE "wallet"."accounts"
+    SET "balance"           = "balance" + p_amount,
+        "lifetime_deposits" = "lifetime_deposits" + p_amount,
+        "updated_at"        = now()
+    WHERE "id" = v_account_id
+    RETURNING "balance" INTO v_new_balance;
+
+    -- Insert transaction record
+    INSERT INTO "wallet"."transactions" (
+        "account_id", "tx_type", "amount", "direction", "balance_after",
+        "reference_type", "reference_id", "description", "metadata"
+    )
+    VALUES (
+        v_account_id, p_tx_type, p_amount, 1, v_new_balance,
+        p_reference_type, p_reference_id, p_description, p_metadata
+    )
+    RETURNING "id" INTO v_tx_id;
+
+    RETURN v_tx_id;
+END;
+$$;
+
+
+ALTER FUNCTION "wallet"."credit_account"("p_lenser_id" "uuid", "p_amount" bigint, "p_tx_type" "wallet"."transaction_type_enum", "p_reference_type" "text", "p_reference_id" "uuid", "p_description" "text", "p_metadata" "jsonb") OWNER TO "postgres";
+
+
+COMMENT ON FUNCTION "wallet"."credit_account"("p_lenser_id" "uuid", "p_amount" bigint, "p_tx_type" "wallet"."transaction_type_enum", "p_reference_type" "text", "p_reference_id" "uuid", "p_description" "text", "p_metadata" "jsonb") IS 'Atomically credit a wallet account. Auto-creates account on first deposit. Validates credit types: deposit, refund, sponsorship_payout, adjustment.';
+
+
+
+CREATE OR REPLACE FUNCTION "wallet"."debit_account"("p_lenser_id" "uuid", "p_amount" bigint, "p_tx_type" "wallet"."transaction_type_enum", "p_reference_type" "text" DEFAULT NULL::"text", "p_reference_id" "uuid" DEFAULT NULL::"uuid", "p_description" "text" DEFAULT NULL::"text", "p_metadata" "jsonb" DEFAULT '{}'::"jsonb") RETURNS "uuid"
+    LANGUAGE "plpgsql" SECURITY DEFINER
+    SET "search_path" TO 'wallet'
+    AS $$
+DECLARE
+    v_account_id     uuid;
+    v_current_balance bigint;
+    v_frozen         boolean;
+    v_new_balance    bigint;
+    v_tx_id          uuid;
+    v_limit_rec      RECORD;
+BEGIN
+    -- Validate debit transaction types
+    IF p_tx_type NOT IN ('spend', 'sponsorship_deposit', 'platform_fee', 'adjustment') THEN
+        RAISE EXCEPTION 'INVALID_DEBIT_TYPE: % is not a valid debit transaction type', p_tx_type;
+    END IF;
+
+    -- Validate amount
+    IF p_amount <= 0 THEN
+        RAISE EXCEPTION 'INVALID_AMOUNT: amount must be positive, got %', p_amount;
+    END IF;
+
+    -- Lock the account row
+    SELECT "id", "balance", "frozen"
+    INTO v_account_id, v_current_balance, v_frozen
+    FROM "wallet"."accounts"
+    WHERE "lenser_id" = p_lenser_id
+    FOR UPDATE;
+
+    IF v_account_id IS NULL THEN
+        RAISE EXCEPTION 'WALLET_NOT_FOUND: no wallet account for lenser %', p_lenser_id;
+    END IF;
+
+    IF v_frozen THEN
+        RAISE EXCEPTION 'ACCOUNT_FROZEN: wallet account for lenser % is frozen', p_lenser_id;
+    END IF;
+
+    -- Check balance
+    IF v_current_balance < p_amount THEN
+        RAISE EXCEPTION 'INSUFFICIENT_BALANCE: balance=%, requested=%', v_current_balance, p_amount;
+    END IF;
+
+    -- Check spending limits (only for spend type — not for platform fees or adjustments)
+    IF p_tx_type = 'spend' THEN
+        FOR v_limit_rec IN
+            SELECT "id", "period", "limit_credits", "current_usage", "period_start"
+            FROM "wallet"."spending_limits"
+            WHERE "account_id" = v_account_id
+            FOR UPDATE
+        LOOP
+            -- Check if the period is still active
+            IF (v_limit_rec.period = 'daily' AND v_limit_rec.period_start > now() - interval '1 day')
+                OR (v_limit_rec.period = 'monthly' AND v_limit_rec.period_start > now() - interval '1 month')
+            THEN
+                IF v_limit_rec.current_usage + p_amount > v_limit_rec.limit_credits THEN
+                    RAISE EXCEPTION 'SPENDING_LIMIT_EXCEEDED: % limit=%, usage=%, requested=%',
+                        v_limit_rec.period, v_limit_rec.limit_credits, v_limit_rec.current_usage, p_amount;
+                END IF;
+
+                -- Update usage
+                UPDATE "wallet"."spending_limits"
+                SET "current_usage" = "current_usage" + p_amount,
+                    "updated_at"    = now()
+                WHERE "id" = v_limit_rec.id;
+            END IF;
+        END LOOP;
+    END IF;
+
+    -- Debit the account
+    UPDATE "wallet"."accounts"
+    SET "balance"        = "balance" - p_amount,
+        "lifetime_spent" = "lifetime_spent" + p_amount,
+        "updated_at"     = now()
+    WHERE "id" = v_account_id
+    RETURNING "balance" INTO v_new_balance;
+
+    -- Insert transaction record
+    INSERT INTO "wallet"."transactions" (
+        "account_id", "tx_type", "amount", "direction", "balance_after",
+        "reference_type", "reference_id", "description", "metadata"
+    )
+    VALUES (
+        v_account_id, p_tx_type, p_amount, -1, v_new_balance,
+        p_reference_type, p_reference_id, p_description, p_metadata
+    )
+    RETURNING "id" INTO v_tx_id;
+
+    RETURN v_tx_id;
+END;
+$$;
+
+
+ALTER FUNCTION "wallet"."debit_account"("p_lenser_id" "uuid", "p_amount" bigint, "p_tx_type" "wallet"."transaction_type_enum", "p_reference_type" "text", "p_reference_id" "uuid", "p_description" "text", "p_metadata" "jsonb") OWNER TO "postgres";
+
+
+COMMENT ON FUNCTION "wallet"."debit_account"("p_lenser_id" "uuid", "p_amount" bigint, "p_tx_type" "wallet"."transaction_type_enum", "p_reference_type" "text", "p_reference_id" "uuid", "p_description" "text", "p_metadata" "jsonb") IS 'Atomically debit a wallet account. Enforces balance >= 0 and spending limits. Validates debit types: spend, sponsorship_deposit, platform_fee, adjustment.';
+
+
+
+CREATE OR REPLACE FUNCTION "wallet"."get_balance"("p_lenser_id" "uuid") RETURNS bigint
+    LANGUAGE "sql" STABLE SECURITY DEFINER
+    SET "search_path" TO 'wallet'
+    AS $$
+  SELECT COALESCE(
+    (SELECT balance FROM wallet.accounts WHERE lenser_id = p_lenser_id),
+    0
+  );
+$$;
+
+
+ALTER FUNCTION "wallet"."get_balance"("p_lenser_id" "uuid") OWNER TO "postgres";
+
+
+COMMENT ON FUNCTION "wallet"."get_balance"("p_lenser_id" "uuid") IS 'Returns current credit balance for a lenser. Returns 0 if no wallet account exists.';
+
+
+
+CREATE OR REPLACE FUNCTION "wallet"."get_credits_per_usd"() RETURNS numeric
+    LANGUAGE "sql" STABLE SECURITY DEFINER
+    SET "search_path" TO 'wallet'
+    AS $$
+    SELECT COALESCE(
+        (SELECT baseline_credits_per_usd
+         FROM wallet.credit_valuation_policy
+         WHERE singleton = true
+         LIMIT 1),
+        100  -- safe default
+    );
+$$;
+
+
+ALTER FUNCTION "wallet"."get_credits_per_usd"() OWNER TO "postgres";
+
+
+COMMENT ON FUNCTION "wallet"."get_credits_per_usd"() IS 'Returns the current baseline credits-per-USD rate from wallet.credit_valuation_policy. Falls back to 100 if no policy row exists.';
+
+
+
+CREATE OR REPLACE FUNCTION "wallet"."get_wallet_summary"("p_lenser_id" "uuid") RETURNS TABLE("available_balance" bigint, "pending_reserved" bigint, "total_balance" bigint, "lifetime_deposits" bigint, "lifetime_spent" bigint, "remaining_pct" numeric)
+    LANGUAGE "sql" STABLE SECURITY DEFINER
+    SET "search_path" TO 'wallet'
+    AS $$
+    SELECT
+        a.balance                                                           AS available_balance,
+        COALESCE(SUM(pc.reserved_amount), 0)::bigint                       AS pending_reserved,
+        (a.balance + COALESCE(SUM(pc.reserved_amount), 0))::bigint         AS total_balance,
+        a.lifetime_deposits,
+        a.lifetime_spent,
+        CASE
+            WHEN a.lifetime_deposits = 0 THEN 100.00
+            ELSE ROUND((a.balance::numeric / a.lifetime_deposits::numeric) * 100, 2)
+        END                                                                 AS remaining_pct
+    FROM wallet.accounts a
+    LEFT JOIN wallet.pending_charges pc
+           ON pc.account_id = a.id
+          AND pc.status = 'reserved'
+    WHERE a.lenser_id = p_lenser_id
+    GROUP BY a.id, a.balance, a.lifetime_deposits, a.lifetime_spent;
+$$;
+
+
+ALTER FUNCTION "wallet"."get_wallet_summary"("p_lenser_id" "uuid") OWNER TO "postgres";
+
+
+COMMENT ON FUNCTION "wallet"."get_wallet_summary"("p_lenser_id" "uuid") IS 'Returns enriched wallet balance for a lenser: available_balance (spendable), pending_reserved (held), total_balance, lifetime_deposits, lifetime_spent, remaining_pct (available as % of deposits). Returns no rows if the lenser has no wallet account.';
+
+
+
+CREATE OR REPLACE FUNCTION "wallet"."release_reservation"("p_reservation_id" "uuid") RETURNS "void"
+    LANGUAGE "plpgsql" SECURITY DEFINER
+    SET "search_path" TO 'wallet'
+    AS $$
+DECLARE
+    v_charge      "wallet"."pending_charges"%ROWTYPE;
+    v_new_balance bigint;
+BEGIN
+    -- Lock and fetch pending charge
+    SELECT * INTO v_charge
+    FROM "wallet"."pending_charges"
+    WHERE "id" = p_reservation_id
+    FOR UPDATE;
+
+    IF v_charge.id IS NULL THEN
+        RAISE EXCEPTION 'RESERVATION_NOT_FOUND: reservation % does not exist', p_reservation_id;
+    END IF;
+
+    IF v_charge.status != 'reserved'::charge_status_enum THEN
+        RAISE EXCEPTION 'RESERVATION_ALREADY_FINALIZED: reservation % is already % (not reserved)',
+            p_reservation_id, v_charge.status;
+    END IF;
+
+    -- Full refund
+    UPDATE "wallet"."accounts"
+    SET "balance" = "balance" + v_charge.reserved_amount,
+        "updated_at" = now()
+    WHERE "id" = v_charge.account_id
+    RETURNING "balance" INTO v_new_balance;
+
+    -- Insert refund transaction
+    INSERT INTO "wallet"."transactions" (
+        "account_id", "tx_type", "amount", "direction", "balance_after",
+        "reference_type", "reference_id", "description"
+    )
+    VALUES (
+        v_charge.account_id, 'refund'::wallet.transaction_type_enum,
+        v_charge.reserved_amount, 1, v_new_balance,
+        'wallet.pending_charges'::text, p_reservation_id,
+        'Full refund on execution failure'
+    );
+
+    -- Mark charge as released
+    UPDATE "wallet"."pending_charges"
+    SET "status" = 'released'::charge_status_enum,
+        "settled_at" = now()
+    WHERE "id" = p_reservation_id;
+END;
+$$;
+
+
+ALTER FUNCTION "wallet"."release_reservation"("p_reservation_id" "uuid") OWNER TO "postgres";
+
+
+COMMENT ON FUNCTION "wallet"."release_reservation"("p_reservation_id" "uuid") IS 'Fully refund reservation on execution failure. Raises: RESERVATION_NOT_FOUND, RESERVATION_ALREADY_FINALIZED.';
+
+
+
+CREATE OR REPLACE FUNCTION "wallet"."release_reservation"("p_reservation_id" "uuid", "p_expected_lenser_id" "uuid" DEFAULT NULL::"uuid") RETURNS "void"
+    LANGUAGE "plpgsql" SECURITY DEFINER
+    SET "search_path" TO 'wallet'
+    AS $$
+DECLARE
+    v_charge      "wallet"."pending_charges"%ROWTYPE;
+    v_new_balance bigint;
+BEGIN
+    -- Lock and fetch pending charge
+    SELECT * INTO v_charge
+    FROM "wallet"."pending_charges"
+    WHERE "id" = p_reservation_id
+    FOR UPDATE;
+
+    IF v_charge.id IS NULL THEN
+        RAISE EXCEPTION 'RESERVATION_NOT_FOUND: reservation % does not exist', p_reservation_id;
+    END IF;
+
+    -- Ownership check (optional but enforced when caller supplies a lenser_id)
+    IF p_expected_lenser_id IS NOT NULL
+       AND v_charge.lenser_id IS DISTINCT FROM p_expected_lenser_id THEN
+        RAISE EXCEPTION 'UNAUTHORIZED_RELEASE: reservation % does not belong to lenser %',
+            p_reservation_id, p_expected_lenser_id;
+    END IF;
+
+    IF v_charge.status != 'reserved'::charge_status_enum THEN
+        RAISE EXCEPTION 'RESERVATION_ALREADY_FINALIZED: reservation % is already % (not reserved)',
+            p_reservation_id, v_charge.status;
+    END IF;
+
+    -- Full refund
+    UPDATE "wallet"."accounts"
+    SET "balance" = "balance" + v_charge.reserved_amount,
+        "updated_at" = now()
+    WHERE "id" = v_charge.account_id
+    RETURNING "balance" INTO v_new_balance;
+
+    -- Insert refund transaction
+    INSERT INTO "wallet"."transactions" (
+        "account_id", "tx_type", "amount", "direction", "balance_after",
+        "reference_type", "reference_id", "description"
+    )
+    VALUES (
+        v_charge.account_id, 'refund'::wallet.transaction_type_enum,
+        v_charge.reserved_amount, 1, v_new_balance,
+        'wallet.pending_charges'::text, p_reservation_id,
+        'Full refund on execution failure'
+    );
+
+    -- Mark charge as released
+    UPDATE "wallet"."pending_charges"
+    SET "status" = 'released'::charge_status_enum,
+        "settled_at" = now()
+    WHERE "id" = p_reservation_id;
+END;
+$$;
+
+
+ALTER FUNCTION "wallet"."release_reservation"("p_reservation_id" "uuid", "p_expected_lenser_id" "uuid") OWNER TO "postgres";
+
+
+COMMENT ON FUNCTION "wallet"."release_reservation"("p_reservation_id" "uuid", "p_expected_lenser_id" "uuid") IS 'Fully refund reservation on execution failure. p_expected_lenser_id: when supplied, raises UNAUTHORIZED_RELEASE if the reservation owner does not match — prevents cross-user refund manipulation with a leaked platform key. Raises: RESERVATION_NOT_FOUND, RESERVATION_ALREADY_FINALIZED, UNAUTHORIZED_RELEASE.';
+
+
+
+CREATE OR REPLACE FUNCTION "wallet"."reserve_credits"("p_lenser_id" "uuid", "p_amount" bigint, "p_reference_id" "uuid", "p_description" "text" DEFAULT NULL::"text") RETURNS "uuid"
+    LANGUAGE "plpgsql" SECURITY DEFINER
+    SET "search_path" TO 'wallet'
+    AS $$
+DECLARE
+    v_account_id     uuid;
+    v_reservation_id uuid;
+    v_new_balance    bigint;
+BEGIN
+    -- Validate amount
+    IF p_amount <= 0 THEN
+        RAISE EXCEPTION 'INVALID_AMOUNT: amount must be positive, got %', p_amount;
+    END IF;
+
+    -- Lock the account row (must exist)
+    SELECT "id" INTO v_account_id
+    FROM "wallet"."accounts"
+    WHERE "lenser_id" = p_lenser_id
+    FOR UPDATE;
+
+    IF v_account_id IS NULL THEN
+        RAISE EXCEPTION 'WALLET_NOT_FOUND: no wallet for lenser %', p_lenser_id;
+    END IF;
+
+    -- Check frozen status
+    IF (SELECT "frozen" FROM "wallet"."accounts" WHERE "id" = v_account_id) THEN
+        RAISE EXCEPTION 'ACCOUNT_FROZEN: wallet account for lenser % is frozen', p_lenser_id;
+    END IF;
+
+    -- Check sufficient balance
+    IF (SELECT "balance" FROM "wallet"."accounts" WHERE "id" = v_account_id) < p_amount THEN
+        RAISE EXCEPTION 'INSUFFICIENT_BALANCE: requested %, available %',
+            p_amount, (SELECT "balance" FROM "wallet"."accounts" WHERE "id" = v_account_id);
+    END IF;
+
+    -- Debit account
+    UPDATE "wallet"."accounts"
+    SET "balance" = "balance" - p_amount,
+        "updated_at" = now()
+    WHERE "id" = v_account_id
+    RETURNING "balance" INTO v_new_balance;
+
+    -- Insert transaction
+    INSERT INTO "wallet"."transactions" (
+        "account_id", "tx_type", "amount", "direction", "balance_after",
+        "reference_type", "reference_id", "description"
+    )
+    VALUES (
+        v_account_id, 'spend'::wallet.transaction_type_enum, p_amount, -1, v_new_balance,
+        'wallet.pending_charges'::text, p_reference_id, p_description
+    );
+
+    -- Insert pending charge (UNIQUE constraint prevents duplicate)
+    INSERT INTO "wallet"."pending_charges" (
+        "account_id", "lenser_id", "reserved_amount", "status",
+        "reference_id", "description"
+    )
+    VALUES (
+        v_account_id, p_lenser_id, p_amount, 'reserved'::charge_status_enum,
+        p_reference_id, p_description
+    )
+    RETURNING "id" INTO v_reservation_id;
+
+    RETURN v_reservation_id;
+END;
+$$;
+
+
+ALTER FUNCTION "wallet"."reserve_credits"("p_lenser_id" "uuid", "p_amount" bigint, "p_reference_id" "uuid", "p_description" "text") OWNER TO "postgres";
+
+
+COMMENT ON FUNCTION "wallet"."reserve_credits"("p_lenser_id" "uuid", "p_amount" bigint, "p_reference_id" "uuid", "p_description" "text") IS 'Atomically debit credits and create reservation. Returns reservation_id (UUID). Raises: WALLET_NOT_FOUND, ACCOUNT_FROZEN, INSUFFICIENT_BALANCE.';
+
+
+
+CREATE OR REPLACE FUNCTION "wallet"."reserve_credits_safe"("p_lenser_id" "uuid", "p_amount" bigint, "p_reference_id" "text", "p_description" "text" DEFAULT NULL::"text") RETURNS "uuid"
+    LANGUAGE "plpgsql" SECURITY DEFINER
+    SET "search_path" TO ''
+    AS $$
+declare
+  v_ref_uuid uuid;
+begin
+  begin
+    v_ref_uuid := p_reference_id::uuid;
+  exception when invalid_text_representation then
+    raise exception 'INVALID_REFERENCE_ID: reference_id must be a valid UUID, got: %', p_reference_id;
+  end;
+
+  return "wallet"."reserve_credits"(p_lenser_id, p_amount, v_ref_uuid, p_description);
+end;
+$$;
+
+
+ALTER FUNCTION "wallet"."reserve_credits_safe"("p_lenser_id" "uuid", "p_amount" bigint, "p_reference_id" "text", "p_description" "text") OWNER TO "postgres";
+
+
+COMMENT ON FUNCTION "wallet"."reserve_credits_safe"("p_lenser_id" "uuid", "p_amount" bigint, "p_reference_id" "text", "p_description" "text") IS 'Wrapper around reserve_credits that validates p_reference_id is a valid UUID before casting. Use this from application code to get a clear error on malformed reference IDs.';
+
+
+
+CREATE OR REPLACE FUNCTION "wallet"."reset_spending_period"("p_period" "text") RETURNS "void"
+    LANGUAGE "plpgsql" SECURITY DEFINER
+    SET "search_path" TO 'wallet'
+    AS $$
+BEGIN
+    IF p_period NOT IN ('daily', 'monthly') THEN
+        RAISE EXCEPTION 'INVALID_PERIOD: must be daily or monthly, got %', p_period;
+    END IF;
+
+    UPDATE "wallet"."spending_limits"
+    SET "current_usage" = 0,
+        "period_start"  = now(),
+        "updated_at"    = now()
+    WHERE "period" = p_period
+      AND (
+          (p_period = 'daily'   AND "period_start" <= now() - interval '1 day')
+          OR
+          (p_period = 'monthly' AND "period_start" <= now() - interval '1 month')
+      );
+END;
+$$;
+
+
+ALTER FUNCTION "wallet"."reset_spending_period"("p_period" "text") OWNER TO "postgres";
+
+
+COMMENT ON FUNCTION "wallet"."reset_spending_period"("p_period" "text") IS 'Resets current_usage to 0 for all spending limits where the period has elapsed. Called by pg_cron.';
+
+
+
+CREATE OR REPLACE FUNCTION "wallet"."settle_charge"("p_reservation_id" "uuid", "p_actual_amount" bigint) RETURNS "void"
+    LANGUAGE "plpgsql" SECURITY DEFINER
+    SET "search_path" TO 'wallet', 'execution'
+    AS $$
+DECLARE
+    v_charge       wallet.pending_charges%ROWTYPE;
+    v_delta        bigint;
+    v_new_balance  bigint;
+    v_overrun      bigint;
+BEGIN
+    -- Validate actual amount
+    IF p_actual_amount < 0 THEN
+        RAISE EXCEPTION 'INVALID_AMOUNT: actual amount must be non-negative, got %', p_actual_amount;
+    END IF;
+
+    -- Lock and fetch pending charge
+    SELECT * INTO v_charge
+    FROM wallet.pending_charges
+    WHERE id = p_reservation_id
+    FOR UPDATE;
+
+    IF v_charge.id IS NULL THEN
+        RAISE EXCEPTION 'RESERVATION_NOT_FOUND: reservation % does not exist', p_reservation_id;
+    END IF;
+
+    IF v_charge.status != 'reserved'::wallet.charge_status_enum THEN
+        RAISE EXCEPTION 'RESERVATION_ALREADY_FINALIZED: reservation % is already % (not reserved)',
+            p_reservation_id, v_charge.status;
+    END IF;
+
+    -- Detect cost overrun (actual > reserved) before capping.
+    -- This means the token estimation was too low — tag for monitoring.
+    v_overrun := p_actual_amount - v_charge.reserved_amount;
+    IF v_overrun > 0 THEN
+        RAISE WARNING 'COST_OVERRUN: reservation % actual=% reserved=% overrun=%',
+            p_reservation_id, p_actual_amount, v_charge.reserved_amount, v_overrun;
+
+        -- Tag the overrun run for monitoring (best-effort, non-blocking)
+        BEGIN
+            INSERT INTO execution.execution_tags (run_id, tag, severity, metadata)
+            VALUES (
+                p_reservation_id,
+                'cost_overrun',
+                'warn',
+                jsonb_build_object(
+                    'reserved_credits', v_charge.reserved_amount,
+                    'actual_credits',   p_actual_amount,
+                    'overrun_credits',  v_overrun
+                )
+            );
+        EXCEPTION WHEN OTHERS THEN
+            -- run_id FK may not match execution.runs; ignore silently
+            NULL;
+        END;
+    END IF;
+
+    -- Cap actual at reserved (user never pays more than they reserved)
+    p_actual_amount := LEAST(p_actual_amount, v_charge.reserved_amount);
+
+    -- Calculate refund delta
+    v_delta := v_charge.reserved_amount - p_actual_amount;
+
+    -- If refund needed, credit back to account
+    IF v_delta > 0 THEN
+        UPDATE wallet.accounts
+        SET balance    = balance + v_delta,
+            updated_at = now()
+        WHERE id = v_charge.account_id
+        RETURNING balance INTO v_new_balance;
+
+        -- Insert refund transaction
+        INSERT INTO wallet.transactions (
+            account_id, tx_type, amount, direction, balance_after,
+            reference_type, reference_id, description
+        )
+        VALUES (
+            v_charge.account_id, 'refund'::wallet.transaction_type_enum,
+            v_delta, 1, v_new_balance,
+            'wallet.pending_charges'::text, p_reservation_id,
+            'Refund from charge settlement'
+        );
+    END IF;
+
+    -- Update lifetime_spent with the amount actually charged (not the reserved amount)
+    UPDATE wallet.accounts
+    SET lifetime_spent = lifetime_spent + p_actual_amount,
+        updated_at     = now()
+    WHERE id = v_charge.account_id;
+
+    -- Mark charge as settled
+    UPDATE wallet.pending_charges
+    SET status         = 'settled'::wallet.charge_status_enum,
+        settled_amount = p_actual_amount,
+        settled_at     = now()
+    WHERE id = p_reservation_id;
+END;
+$$;
+
+
+ALTER FUNCTION "wallet"."settle_charge"("p_reservation_id" "uuid", "p_actual_amount" bigint) OWNER TO "postgres";
+
+
+COMMENT ON FUNCTION "wallet"."settle_charge"("p_reservation_id" "uuid", "p_actual_amount" bigint) IS 'Finalize charge with actual amount. Refunds delta if actual < reserved. Updates lifetime_spent on wallet.accounts with the settled amount. Logs a cost_overrun tag to execution.execution_tags if actual > reserved. Raises: RESERVATION_NOT_FOUND, RESERVATION_ALREADY_FINALIZED.';
+
+
+
+CREATE OR REPLACE FUNCTION "wallet"."trg_auto_create_account"() RETURNS "trigger"
+    LANGUAGE "plpgsql" SECURITY DEFINER
+    SET "search_path" TO 'wallet', 'lensers'
+    AS $$
+BEGIN
+  INSERT INTO wallet.accounts (lenser_id)
+  VALUES (NEW.id)
+  ON CONFLICT (lenser_id) DO NOTHING;
+  RETURN NEW;
+END;
+$$;
+
+
+ALTER FUNCTION "wallet"."trg_auto_create_account"() OWNER TO "postgres";
+
+
+CREATE OR REPLACE FUNCTION "wallet"."trg_transactions_immutable"() RETURNS "trigger"
+    LANGUAGE "plpgsql"
+    SET "search_path" TO 'wallet'
+    AS $$
+BEGIN
+    IF TG_OP = 'DELETE' THEN
+        RAISE EXCEPTION 'Wallet transactions are immutable. Deletion is not permitted.';
+    ELSIF TG_OP = 'UPDATE' THEN
+        RAISE EXCEPTION 'Wallet transactions are immutable. Updates are not permitted.';
+    END IF;
+    RETURN NULL;
+END;
+$$;
+
+
+ALTER FUNCTION "wallet"."trg_transactions_immutable"() OWNER TO "postgres";
+
+
+CREATE OR REPLACE FUNCTION "wallet"."trg_verify_balance_after"() RETURNS "trigger"
+    LANGUAGE "plpgsql" SECURITY DEFINER
+    SET "search_path" TO ''
+    AS $$
+DECLARE
+    v_current_balance bigint;
+    v_expected_balance bigint;
+BEGIN
+    -- Get the current account balance
+    SELECT balance INTO v_current_balance
+    FROM wallet.accounts
+    WHERE id = NEW.account_id
+    FOR UPDATE;  -- lock row to prevent concurrent corruption
+
+    IF v_current_balance IS NULL THEN
+        RAISE EXCEPTION 'WALLET_ACCOUNT_NOT_FOUND: No wallet account with id=%', NEW.account_id;
+    END IF;
+
+    -- Expected balance = current balance + (amount * direction)
+    -- Note: the wallet functions update the account balance BEFORE inserting the
+    -- transaction, so current balance should already reflect this transaction.
+    -- We verify balance_after matches the current (already-updated) balance.
+    IF NEW.balance_after <> v_current_balance THEN
+        RAISE EXCEPTION 'BALANCE_MISMATCH: balance_after (%) does not match account balance (%) for account_id=%. '
+            'This indicates a bug in the wallet function that inserted this transaction.',
+            NEW.balance_after, v_current_balance, NEW.account_id;
+    END IF;
+
+    RETURN NEW;
+END;
+$$;
+
+
+ALTER FUNCTION "wallet"."trg_verify_balance_after"() OWNER TO "postgres";
 
 
 CREATE OR REPLACE FUNCTION "xp"."apply"("p_lenser_id" "uuid", "p_rule_key" "text", "p_source" "xp"."source_enum", "p_source_ref_type" "text", "p_source_ref_id" "uuid", "p_app_id" "uuid" DEFAULT '00000000-0000-0000-0000-000000000000'::"uuid") RETURNS "void"
@@ -31635,6 +38555,7 @@ CREATE TABLE IF NOT EXISTS "lenses"."workflow_runs" (
     "scheduled_for" timestamp with time zone,
     "ai_lenser_id" "uuid",
     "metadata" "jsonb" DEFAULT '{}'::"jsonb" NOT NULL,
+    "media_manifest" "jsonb" DEFAULT '[]'::"jsonb" NOT NULL,
     CONSTRAINT "wf_runs_budget_nonneg" CHECK ((("budget_credits" IS NULL) OR ("budget_credits" >= 0))),
     CONSTRAINT "wf_runs_recursion_depth_cap" CHECK ((("recursion_depth" >= 0) AND ("recursion_depth" <= 8))),
     CONSTRAINT "wf_runs_spent_nonneg" CHECK (("spent_credits" >= 0)),
@@ -31709,6 +38630,10 @@ COMMENT ON COLUMN "lenses"."workflow_runs"."ai_lenser_id" IS 'The AI lenser acti
 
 
 COMMENT ON COLUMN "lenses"."workflow_runs"."metadata" IS 'Free-form per-run metadata. Reserved keys: backfill_id (for Phase Q1 replay dedup) and origin (e.g. ''backfill'', ''manual'').';
+
+
+
+COMMENT ON COLUMN "lenses"."workflow_runs"."media_manifest" IS 'AP: Ordered list of media produced by this run. Each entry: {object_id, media_type, mime_type, node_id, added_at}. Populated by fn_append_workflow_run_media via WorkflowExecutionService.';
 
 
 
@@ -32664,6 +39589,48 @@ COMMENT ON TABLE "audit"."webhook_outbox" IS 'Phase P3: durable webhook delivery
 
 
 
+CREATE TABLE IF NOT EXISTS "authz"."developer_tokens" (
+    "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
+    "lenser_id" "uuid" NOT NULL,
+    "label" "text",
+    "token_hash" "text" NOT NULL,
+    "token_prefix" "text" NOT NULL,
+    "status" "authz"."developer_token_status_enum" DEFAULT 'active'::"authz"."developer_token_status_enum" NOT NULL,
+    "issued_from_request_id" "uuid",
+    "expires_at" timestamp with time zone NOT NULL,
+    "revoked_at" timestamp with time zone,
+    "last_used_at" timestamp with time zone,
+    "created_at" timestamp with time zone DEFAULT "now"() NOT NULL
+);
+
+
+ALTER TABLE "authz"."developer_tokens" OWNER TO "postgres";
+
+
+CREATE TABLE IF NOT EXISTS "authz"."device_approval_requests" (
+    "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
+    "user_code" "text" NOT NULL,
+    "request_secret_hash" "text" NOT NULL,
+    "label" "text",
+    "requested_by_user_id" "uuid",
+    "requested_by_lenser_id" "uuid",
+    "requested_token_ttl_hours" integer DEFAULT 24 NOT NULL,
+    "status" "authz"."device_approval_request_status_enum" DEFAULT 'pending'::"authz"."device_approval_request_status_enum" NOT NULL,
+    "approved_at" timestamp with time zone,
+    "approved_by_user_id" "uuid",
+    "approved_by_lenser_id" "uuid",
+    "developer_token_id" "uuid",
+    "expires_at" timestamp with time zone NOT NULL,
+    "exchanged_at" timestamp with time zone,
+    "created_at" timestamp with time zone DEFAULT "now"() NOT NULL,
+    "login_access_token" "text",
+    "login_refresh_token" "text"
+);
+
+
+ALTER TABLE "authz"."device_approval_requests" OWNER TO "postgres";
+
+
 CREATE TABLE IF NOT EXISTS "automation"."cron_runs" (
     "id" bigint NOT NULL,
     "job_name" "text" NOT NULL,
@@ -33600,6 +40567,228 @@ COMMENT ON VIEW "benchmark"."v_workflow_result_sets" IS 'Benchmark result sets t
 
 
 
+CREATE TABLE IF NOT EXISTS "billing"."checkout_sessions" (
+    "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
+    "lenser_id" "uuid" NOT NULL,
+    "variant_id" "uuid" NOT NULL,
+    "ls_checkout_url" "text",
+    "custom_price_cents" bigint,
+    "status" "text" DEFAULT 'created'::"text" NOT NULL,
+    "expires_at" timestamp with time zone,
+    "test_mode" boolean DEFAULT false NOT NULL,
+    "created_at" timestamp with time zone DEFAULT "now"() NOT NULL,
+    "completed_at" timestamp with time zone,
+    CONSTRAINT "checkout_sessions_custom_price_check" CHECK ((("custom_price_cents" IS NULL) OR ("custom_price_cents" > 0))),
+    CONSTRAINT "checkout_sessions_status_check" CHECK (("status" = ANY (ARRAY['created'::"text", 'completed'::"text", 'expired'::"text", 'abandoned'::"text"])))
+);
+
+
+ALTER TABLE "billing"."checkout_sessions" OWNER TO "postgres";
+
+
+COMMENT ON TABLE "billing"."checkout_sessions" IS 'Tracks LemonSqueezy checkout creation. Maps lenser_id to checkout URL. Status updated when webhook confirms payment.';
+
+
+
+CREATE TABLE IF NOT EXISTS "billing"."execution_margin_policies" (
+    "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
+    "model_id" "uuid",
+    "markup_percent" numeric(5,2) DEFAULT 0 NOT NULL,
+    "fixed_fee_usd" numeric(12,8) DEFAULT 0 NOT NULL,
+    "rounding_mode" "text" DEFAULT 'ceil'::"text" NOT NULL,
+    "min_charge_credits" integer DEFAULT 1 NOT NULL,
+    "max_charge_credits" integer,
+    "effective_from" timestamp with time zone DEFAULT "now"() NOT NULL,
+    "effective_to" timestamp with time zone,
+    "is_active" boolean DEFAULT true NOT NULL,
+    "metadata" "jsonb" DEFAULT '{}'::"jsonb" NOT NULL,
+    "created_at" timestamp with time zone DEFAULT "now"() NOT NULL,
+    "updated_at" timestamp with time zone DEFAULT "now"() NOT NULL,
+    CONSTRAINT "billing_margin_policies_markup_nonneg" CHECK ((("markup_percent" >= (0)::numeric) AND ("fixed_fee_usd" >= (0)::numeric))),
+    CONSTRAINT "billing_margin_policies_max_gte_min" CHECK ((("max_charge_credits" IS NULL) OR ("max_charge_credits" >= "min_charge_credits"))),
+    CONSTRAINT "billing_margin_policies_min_credits_nonneg" CHECK (("min_charge_credits" >= 0)),
+    CONSTRAINT "billing_margin_policies_rounding_check" CHECK (("rounding_mode" = ANY (ARRAY['ceil'::"text", 'floor'::"text", 'round'::"text"])))
+);
+
+
+ALTER TABLE "billing"."execution_margin_policies" OWNER TO "postgres";
+
+
+COMMENT ON TABLE "billing"."execution_margin_policies" IS 'Platform markup policies applied on top of AI provider cost. model_id=NULL = global default policy. SERVICE_ROLE ONLY. Cross-schema FK to ai.models(id) — billing schema depends on ai schema for model identity.';
+
+
+
+CREATE TABLE IF NOT EXISTS "billing"."orders" (
+    "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
+    "ls_order_id" bigint NOT NULL,
+    "ls_identifier" "text" NOT NULL,
+    "webhook_event_id" "uuid" NOT NULL,
+    "store_id" bigint NOT NULL,
+    "ls_customer_id" bigint NOT NULL,
+    "lenser_id" "uuid" NOT NULL,
+    "order_number" integer NOT NULL,
+    "user_name" "text",
+    "user_email" "text" NOT NULL,
+    "currency" "text" DEFAULT 'USD'::"text" NOT NULL,
+    "currency_rate" numeric(10,6) DEFAULT 1.0 NOT NULL,
+    "status" "billing"."order_status_enum" DEFAULT 'pending'::"billing"."order_status_enum" NOT NULL,
+    "subtotal_cents" bigint NOT NULL,
+    "tax_cents" bigint DEFAULT 0 NOT NULL,
+    "total_cents" bigint NOT NULL,
+    "total_usd_cents" bigint NOT NULL,
+    "product_id" "uuid",
+    "variant_id" "uuid",
+    "product_name" "text" NOT NULL,
+    "variant_name" "text",
+    "credits_granted" bigint DEFAULT 0 NOT NULL,
+    "first_order" boolean DEFAULT false NOT NULL,
+    "test_mode" boolean DEFAULT false NOT NULL,
+    "refunded" boolean DEFAULT false NOT NULL,
+    "refunded_at" timestamp with time zone,
+    "created_at" timestamp with time zone DEFAULT "now"() NOT NULL,
+    "updated_at" timestamp with time zone DEFAULT "now"() NOT NULL,
+    CONSTRAINT "ck_billing_orders_total_cents_nonneg" CHECK ((("total_cents" IS NULL) OR ("total_cents" >= 0))),
+    CONSTRAINT "ck_billing_orders_total_usd_cents_nonneg" CHECK ((("total_usd_cents" IS NULL) OR ("total_usd_cents" >= 0)))
+);
+
+
+ALTER TABLE "billing"."orders" OWNER TO "postgres";
+
+
+COMMENT ON TABLE "billing"."orders" IS 'Processed LemonSqueezy orders mapped to lenser_id. lenser_id resolved from checkout_data.custom.user_id in webhook payload.';
+
+
+
+COMMENT ON COLUMN "billing"."orders"."ls_identifier" IS 'LemonSqueezy UUID identifier for the order. Useful as external reference.';
+
+
+
+COMMENT ON COLUMN "billing"."orders"."lenser_id" IS 'Resolved from checkout_data.custom.user_id. ON DELETE RESTRICT — cannot delete profile with paid orders.';
+
+
+
+COMMENT ON COLUMN "billing"."orders"."credits_granted" IS 'Credits credited to wallet from this order. Sourced from billing.products.credits_granted.';
+
+
+
+CREATE TABLE IF NOT EXISTS "billing"."products" (
+    "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
+    "ls_product_id" bigint NOT NULL,
+    "store_id" bigint NOT NULL,
+    "name" "text" NOT NULL,
+    "slug" "text" NOT NULL,
+    "status" "billing"."product_status_enum" DEFAULT 'draft'::"billing"."product_status_enum" NOT NULL,
+    "price_cents" bigint NOT NULL,
+    "credits_granted" bigint NOT NULL,
+    "pay_what_you_want" boolean DEFAULT false NOT NULL,
+    "buy_now_url" "text",
+    "description" "text",
+    "test_mode" boolean DEFAULT false NOT NULL,
+    "metadata" "jsonb" DEFAULT '{}'::"jsonb" NOT NULL,
+    "created_at" timestamp with time zone DEFAULT "now"() NOT NULL,
+    "updated_at" timestamp with time zone DEFAULT "now"() NOT NULL,
+    CONSTRAINT "products_credits_granted_check" CHECK (("credits_granted" > 0)),
+    CONSTRAINT "products_price_cents_check" CHECK (("price_cents" >= 0))
+);
+
+
+ALTER TABLE "billing"."products" OWNER TO "postgres";
+
+
+COMMENT ON TABLE "billing"."products" IS 'LemonSqueezy credit pack products. 1 credit = $0.01 USD (100 credits per USD).';
+
+
+
+COMMENT ON COLUMN "billing"."products"."ls_product_id" IS 'LemonSqueezy product ID (integer). Used to match webhook payloads.';
+
+
+
+COMMENT ON COLUMN "billing"."products"."credits_granted" IS 'Number of wallet credits granted when this product is purchased.';
+
+
+
+CREATE TABLE IF NOT EXISTS "billing"."variants" (
+    "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
+    "ls_variant_id" bigint NOT NULL,
+    "product_id" "uuid" NOT NULL,
+    "name" "text" NOT NULL,
+    "slug" "text" NOT NULL,
+    "status" "text" DEFAULT 'active'::"text" NOT NULL,
+    "has_license_keys" boolean DEFAULT false NOT NULL,
+    "test_mode" boolean DEFAULT false NOT NULL,
+    "metadata" "jsonb" DEFAULT '{}'::"jsonb" NOT NULL,
+    "created_at" timestamp with time zone DEFAULT "now"() NOT NULL,
+    "updated_at" timestamp with time zone DEFAULT "now"() NOT NULL,
+    CONSTRAINT "variants_status_check" CHECK (("status" = ANY (ARRAY['active'::"text", 'inactive'::"text"])))
+);
+
+
+ALTER TABLE "billing"."variants" OWNER TO "postgres";
+
+
+COMMENT ON TABLE "billing"."variants" IS 'Mirror of LemonSqueezy variants. Each product has at least one variant.';
+
+
+
+CREATE OR REPLACE VIEW "billing"."vw_products" AS
+ SELECT "p"."id",
+    "p"."ls_product_id",
+    "p"."name",
+    "p"."slug",
+    "p"."description",
+    "p"."price_cents",
+    "p"."credits_granted",
+    "p"."pay_what_you_want",
+    "p"."buy_now_url",
+    "p"."test_mode",
+    "p"."metadata",
+    "v"."id" AS "variant_id",
+    "v"."ls_variant_id",
+    "v"."name" AS "variant_name",
+    COALESCE("o"."order_count", (0)::bigint) AS "order_count"
+   FROM (("billing"."products" "p"
+     JOIN LATERAL ( SELECT "variants"."id",
+            "variants"."ls_variant_id",
+            "variants"."name"
+           FROM "billing"."variants"
+          WHERE (("variants"."product_id" = "p"."id") AND ("variants"."status" = 'active'::"text"))
+          ORDER BY "variants"."ls_variant_id"
+         LIMIT 1) "v" ON (true))
+     LEFT JOIN ( SELECT "orders"."product_id",
+            "count"(*) AS "order_count"
+           FROM "billing"."orders"
+          WHERE ("orders"."status" = 'paid'::"billing"."order_status_enum")
+          GROUP BY "orders"."product_id") "o" ON (("o"."product_id" = "p"."id")))
+  WHERE ("p"."status" = 'published'::"billing"."product_status_enum")
+  ORDER BY "p"."price_cents";
+
+
+ALTER VIEW "billing"."vw_products" OWNER TO "postgres";
+
+
+CREATE TABLE IF NOT EXISTS "billing"."webhook_events" (
+    "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
+    "ls_event_id" "text" NOT NULL,
+    "event_name" "text" NOT NULL,
+    "payload" "jsonb" NOT NULL,
+    "processed" boolean DEFAULT false NOT NULL,
+    "processed_at" timestamp with time zone,
+    "error_message" "text",
+    "created_at" timestamp with time zone DEFAULT "now"() NOT NULL
+);
+
+
+ALTER TABLE "billing"."webhook_events" OWNER TO "postgres";
+
+
+COMMENT ON TABLE "billing"."webhook_events" IS 'Raw LemonSqueezy webhook event log. ls_event_id is the idempotency key — duplicate webhooks are rejected by UNIQUE constraint.';
+
+
+
+COMMENT ON COLUMN "billing"."webhook_events"."payload" IS 'Full JSON:API envelope from LemonSqueezy webhook.';
+
+
+
 CREATE TABLE IF NOT EXISTS "connectors"."connector_tokens" (
     "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
     "connector_id" "uuid" NOT NULL,
@@ -34431,6 +41620,7 @@ CREATE TABLE IF NOT EXISTS "execution"."byok_keys" (
     "created_at" timestamp with time zone DEFAULT "now"() NOT NULL,
     "expires_at" timestamp with time zone,
     "revoked_at" timestamp with time zone,
+    "allowed_model_ids" "text"[],
     CONSTRAINT "byok_keys_provider_check" CHECK (("provider" = ANY (ARRAY['openai'::"text", 'anthropic'::"text", 'mistral'::"text", 'google'::"text", 'cohere'::"text", 'custom'::"text"])))
 );
 
@@ -34439,6 +41629,10 @@ ALTER TABLE "execution"."byok_keys" OWNER TO "postgres";
 
 
 COMMENT ON TABLE "execution"."byok_keys" IS 'Encrypted BYOK API keys for agent-based battle execution. RLS denies all authenticated reads. Accessed only via service_role in trusted workers.';
+
+
+
+COMMENT ON COLUMN "execution"."byok_keys"."allowed_model_ids" IS 'AR: Optional allowlist of ai.models.key values this key is permitted to use. NULL means unrestricted. Checked by fn_byok_key_resolve.';
 
 
 
@@ -34651,6 +41845,7 @@ CREATE TABLE IF NOT EXISTS "execution"."runs" (
     "injected_delay_ms" integer DEFAULT 0 NOT NULL,
     "is_async" boolean DEFAULT false NOT NULL,
     "provider_task_id" "text",
+    "last_polled_at" timestamp with time zone,
     CONSTRAINT "runs_billing_status_check" CHECK (("billing_status" = ANY (ARRAY['pending'::"text", 'charged'::"text", 'failed'::"text", 'free'::"text"]))),
     CONSTRAINT "runs_status_check" CHECK (("status" = ANY (ARRAY['queued'::"text", 'running'::"text", 'succeeded'::"text", 'failed'::"text", 'canceled'::"text", 'timed_out'::"text"]))),
     CONSTRAINT "runs_timestamp_order" CHECK ((("completed_at" IS NULL) OR ("started_at" IS NULL) OR ("completed_at" >= "started_at")))
@@ -34693,6 +41888,10 @@ COMMENT ON COLUMN "execution"."runs"."is_async" IS 'TRUE for video/audio provide
 
 
 COMMENT ON COLUMN "execution"."runs"."provider_task_id" IS 'Provider-specific task/job ID returned by async generation APIs (Sora, Veo, Kling, etc).';
+
+
+
+COMMENT ON COLUMN "execution"."runs"."last_polled_at" IS 'Set by the async-media-poll-worker each time the provider status endpoint is queried. NULL means the run has not been polled yet. Used for SKIP LOCKED ordering so concurrent workers do not double-poll the same run.';
 
 
 
@@ -35697,9 +42896,21 @@ CREATE TABLE IF NOT EXISTS "media"."objects" (
     "created_at" timestamp with time zone DEFAULT "now"() NOT NULL,
     "updated_at" timestamp with time zone DEFAULT "now"() NOT NULL,
     "request_id" "uuid",
+    "duration_seconds" numeric,
+    "video_width" integer,
+    "video_height" integer,
+    "audio_sample_rate" integer,
+    "audio_channels" smallint,
+    "expires_at" timestamp with time zone,
+    "access_count" integer DEFAULT 0 NOT NULL,
+    CONSTRAINT "objects_audio_channels_range" CHECK ((("audio_channels" IS NULL) OR (("audio_channels" >= 1) AND ("audio_channels" <= 8)))),
+    CONSTRAINT "objects_audio_sample_rate_positive" CHECK ((("audio_sample_rate" IS NULL) OR ("audio_sample_rate" > 0))),
+    CONSTRAINT "objects_duration_positive" CHECK ((("duration_seconds" IS NULL) OR (("duration_seconds" > (0)::numeric) AND ("duration_seconds" <= (300)::numeric)))),
     CONSTRAINT "objects_lifecycle_check" CHECK (("lifecycle_state" = ANY (ARRAY['pending'::"text", 'active'::"text", 'archived'::"text", 'deleted'::"text"]))),
     CONSTRAINT "objects_media_type_check" CHECK (("media_type" = ANY (ARRAY['text'::"text", 'image'::"text", 'audio'::"text", 'video'::"text", 'document'::"text", 'json'::"text", 'binary'::"text"]))),
     CONSTRAINT "objects_one_payload" CHECK (((("bucket" IS NOT NULL) AND ("object_key" IS NOT NULL) AND ("content_text" IS NULL) AND ("external_url" IS NULL)) OR (("content_text" IS NOT NULL) AND ("bucket" IS NULL) AND ("object_key" IS NULL) AND ("external_url" IS NULL)) OR (("external_url" IS NOT NULL) AND ("bucket" IS NULL) AND ("object_key" IS NULL) AND ("content_text" IS NULL)) OR (("bucket" IS NULL) AND ("object_key" IS NULL) AND ("content_text" IS NULL) AND ("external_url" IS NULL)))),
+    CONSTRAINT "objects_video_height_positive" CHECK ((("video_height" IS NULL) OR ("video_height" > 0))),
+    CONSTRAINT "objects_video_width_positive" CHECK ((("video_width" IS NULL) OR ("video_width" > 0))),
     CONSTRAINT "objects_visibility_check" CHECK (("visibility" = ANY (ARRAY['public'::"text", 'private'::"text", 'unlisted'::"text"])))
 );
 
@@ -35732,6 +42943,172 @@ COMMENT ON COLUMN "media"."objects"."checksum_sha256" IS 'SHA-256 hash of the fi
 
 
 COMMENT ON COLUMN "media"."objects"."lifecycle_state" IS 'pending: created but upload not finalized. active: ready for use. archived: soft-archived. deleted: soft-deleted.';
+
+
+
+COMMENT ON COLUMN "media"."objects"."duration_seconds" IS 'AN: Duration in seconds for video/audio media. NULL for images. Max 300 (5 min).';
+
+
+
+COMMENT ON COLUMN "media"."objects"."video_width" IS 'AN: Pixel width of video/image. NULL when unknown.';
+
+
+
+COMMENT ON COLUMN "media"."objects"."video_height" IS 'AN: Pixel height of video/image. NULL when unknown.';
+
+
+
+COMMENT ON COLUMN "media"."objects"."audio_sample_rate" IS 'AO: Sample rate in Hz (e.g. 44100, 48000). NULL for non-audio media.';
+
+
+
+COMMENT ON COLUMN "media"."objects"."audio_channels" IS 'AO: Number of audio channels (1=mono, 2=stereo). NULL for non-audio media.';
+
+
+
+COMMENT ON COLUMN "media"."objects"."expires_at" IS 'AT: When set, fn_expire_media_objects will archive this object after this timestamp.';
+
+
+
+COMMENT ON COLUMN "media"."objects"."access_count" IS 'AT: Running count of proxy-routed accesses. Incremented by fn_media_proxy_log.';
+
+
+
+CREATE TABLE IF NOT EXISTS "organizations"."activity_log" (
+    "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
+    "org_id" "uuid" NOT NULL,
+    "lenser_id" "uuid",
+    "device_id" "uuid",
+    "client_type" "text" DEFAULT 'web'::"text",
+    "action" "text" NOT NULL,
+    "resource_type" "text",
+    "resource_id" "uuid",
+    "payload" "jsonb" DEFAULT '{}'::"jsonb",
+    "created_at" timestamp with time zone DEFAULT "now"() NOT NULL,
+    CONSTRAINT "chk_activity_client_type" CHECK (("client_type" = ANY (ARRAY['web'::"text", 'mobile'::"text", 'api'::"text", 'cli'::"text"])))
+);
+
+
+ALTER TABLE "organizations"."activity_log" OWNER TO "postgres";
+
+
+COMMENT ON TABLE "organizations"."activity_log" IS 'Detailed activity feed for organization members. Tracks device, client type, and action payload.';
+
+
+
+COMMENT ON COLUMN "organizations"."activity_log"."client_type" IS 'Client that generated this activity. CHECK: web, mobile, api, cli.';
+
+
+
+CREATE TABLE IF NOT EXISTS "organizations"."addresses" (
+    "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
+    "company_id" "uuid" NOT NULL,
+    "address_type" "organizations"."address_type_enum" DEFAULT 'headquarters'::"organizations"."address_type_enum" NOT NULL,
+    "line1" "text" NOT NULL,
+    "line2" "text",
+    "postal_code" "text",
+    "country_iso2_code" character(2) NOT NULL,
+    "state_id" bigint,
+    "city_id" bigint,
+    "city_name" "text",
+    "is_default" boolean DEFAULT false NOT NULL,
+    "created_at" timestamp with time zone DEFAULT "now"() NOT NULL,
+    "updated_at" timestamp with time zone DEFAULT "now"() NOT NULL
+);
+
+
+ALTER TABLE "organizations"."addresses" OWNER TO "postgres";
+
+
+COMMENT ON TABLE "organizations"."addresses" IS 'Physical addresses for organization companies. One default per company enforced by partial unique index.';
+
+
+
+COMMENT ON COLUMN "organizations"."addresses"."is_default" IS 'Whether this is the default address for the company. At most one default per company enforced by partial unique index.';
+
+
+
+CREATE TABLE IF NOT EXISTS "organizations"."audit_logs" (
+    "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
+    "org_id" "uuid" NOT NULL,
+    "lenser_id" "uuid",
+    "action" "text" NOT NULL,
+    "entity_type" "text",
+    "entity_id" "uuid",
+    "metadata" "jsonb" DEFAULT '{}'::"jsonb",
+    "occurred_at" timestamp with time zone DEFAULT "now"() NOT NULL
+);
+
+
+ALTER TABLE "organizations"."audit_logs" OWNER TO "postgres";
+
+
+COMMENT ON TABLE "organizations"."audit_logs" IS 'Immutable audit trail for organization-level actions. UPDATE and DELETE are blocked by trigger.';
+
+
+
+COMMENT ON COLUMN "organizations"."audit_logs"."action" IS 'Machine-readable action identifier (e.g. created, member_added, settings_changed).';
+
+
+
+COMMENT ON COLUMN "organizations"."audit_logs"."entity_type" IS 'Type of entity affected (e.g. member, company, preference). Combined with entity_id for full reference.';
+
+
+
+CREATE TABLE IF NOT EXISTS "organizations"."companies" (
+    "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
+    "org_id" "uuid" NOT NULL,
+    "legal_name" character varying(180) NOT NULL,
+    "trade_name" character varying(180),
+    "website" "text",
+    "industry" character varying(120),
+    "tax_iso2_code" character(2),
+    "tax_number" "text",
+    "vat_id" "text",
+    "registration_number" "text",
+    "billing_contact_email" "text",
+    "sales_contact_email" "text",
+    "contact_email" "text",
+    "contact_phone" "text",
+    "created_at" timestamp with time zone DEFAULT "now"() NOT NULL,
+    "updated_at" timestamp with time zone DEFAULT "now"() NOT NULL
+);
+
+
+ALTER TABLE "organizations"."companies" OWNER TO "postgres";
+
+
+COMMENT ON TABLE "organizations"."companies" IS 'Legal entity details for an organization. One company per org (unique org_id).';
+
+
+
+COMMENT ON COLUMN "organizations"."companies"."tax_iso2_code" IS 'Country of tax registration. FK to core.countries(iso2).';
+
+
+
+COMMENT ON COLUMN "organizations"."companies"."vat_id" IS 'EU VAT identification number or equivalent. NULL if not applicable.';
+
+
+
+CREATE TABLE IF NOT EXISTS "organizations"."preferences" (
+    "org_id" "uuid" NOT NULL,
+    "iso2_code" character(2),
+    "timezone" character varying(120) DEFAULT 'UTC'::character varying,
+    "preferred_language" "text" DEFAULT 'en'::"text",
+    "created_at" timestamp with time zone DEFAULT "now"() NOT NULL,
+    "updated_at" timestamp with time zone DEFAULT "now"() NOT NULL,
+    CONSTRAINT "ck_organizations_preferences_preferred_language_bcp47" CHECK ("i18n"."fn_is_supported_language"("preferred_language"))
+);
+
+
+ALTER TABLE "organizations"."preferences" OWNER TO "postgres";
+
+
+COMMENT ON TABLE "organizations"."preferences" IS 'Per-org locale and regional preferences. One row per organization.';
+
+
+
+COMMENT ON COLUMN "organizations"."preferences"."iso2_code" IS 'Country code for regional defaults (date format, currency display). FK to core.countries(iso2).';
 
 
 
@@ -36927,6 +44304,192 @@ COMMENT ON TABLE "tenancy"."workspaces" IS 'Canonical tenant boundary. Every len
 
 
 
+CREATE TABLE IF NOT EXISTS "wallet"."accounts" (
+    "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
+    "lenser_id" "uuid" NOT NULL,
+    "balance" bigint DEFAULT 0 NOT NULL,
+    "lifetime_deposits" bigint DEFAULT 0 NOT NULL,
+    "lifetime_spent" bigint DEFAULT 0 NOT NULL,
+    "frozen" boolean DEFAULT false NOT NULL,
+    "created_at" timestamp with time zone DEFAULT "now"() NOT NULL,
+    "updated_at" timestamp with time zone DEFAULT "now"() NOT NULL,
+    CONSTRAINT "accounts_balance_non_negative" CHECK (("balance" >= 0))
+);
+
+
+ALTER TABLE "wallet"."accounts" OWNER TO "postgres";
+
+
+COMMENT ON TABLE "wallet"."accounts" IS 'Wallet account per lenser. balance >= 0 enforced at DB level. ON DELETE RESTRICT — close wallet before deleting profile.';
+
+
+
+COMMENT ON COLUMN "wallet"."accounts"."balance" IS 'Current credit balance. Always >= 0. Updated atomically by wallet functions.';
+
+
+
+COMMENT ON COLUMN "wallet"."accounts"."lifetime_deposits" IS 'Cumulative credits deposited (monotonically increasing).';
+
+
+
+COMMENT ON COLUMN "wallet"."accounts"."lifetime_spent" IS 'Cumulative credits spent (monotonically increasing).';
+
+
+
+COMMENT ON COLUMN "wallet"."accounts"."frozen" IS 'Admin suspension flag. Frozen accounts cannot transact.';
+
+
+
+CREATE TABLE IF NOT EXISTS "wallet"."credit_valuation_policy" (
+    "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
+    "singleton" boolean DEFAULT true NOT NULL,
+    "baseline_credits_per_usd" numeric(12,4) NOT NULL,
+    "tier_small_step" numeric(12,6),
+    "tier_large_threshold" numeric(12,6),
+    "tier_large_step" numeric(12,6),
+    "created_at" timestamp with time zone DEFAULT "now"() NOT NULL,
+    "updated_at" timestamp with time zone DEFAULT "now"() NOT NULL,
+    CONSTRAINT "credit_valuation_rate_positive" CHECK (("baseline_credits_per_usd" > (0)::numeric)),
+    CONSTRAINT "credit_valuation_singleton_true" CHECK (("singleton" = true))
+);
+
+
+ALTER TABLE "wallet"."credit_valuation_policy" OWNER TO "postgres";
+
+
+COMMENT ON TABLE "wallet"."credit_valuation_policy" IS 'Singleton table holding the global credit-to-USD conversion rate. 1 credit = 1 / baseline_credits_per_usd USD. With baseline_credits_per_usd = 100, 1 credit = $0.01.';
+
+
+
+CREATE TABLE IF NOT EXISTS "wallet"."organization_accounts" (
+    "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
+    "org_id" "uuid" NOT NULL,
+    "balance" bigint DEFAULT 0 NOT NULL,
+    "lifetime_deposits" bigint DEFAULT 0 NOT NULL,
+    "lifetime_spent" bigint DEFAULT 0 NOT NULL,
+    "frozen" boolean DEFAULT false NOT NULL,
+    "created_at" timestamp with time zone DEFAULT "now"() NOT NULL,
+    "updated_at" timestamp with time zone DEFAULT "now"() NOT NULL,
+    CONSTRAINT "org_accounts_balance_non_negative" CHECK (("balance" >= 0))
+);
+
+
+ALTER TABLE "wallet"."organization_accounts" OWNER TO "postgres";
+
+
+COMMENT ON TABLE "wallet"."organization_accounts" IS 'Wallet account per organization (team/community). Mirrors wallet.accounts structure. Functions deferred — table created for schema readiness.';
+
+
+
+COMMENT ON COLUMN "wallet"."organization_accounts"."org_id" IS 'FK to actors.organizations. ON DELETE RESTRICT — close wallet before deleting org.';
+
+
+
+CREATE TABLE IF NOT EXISTS "wallet"."pending_charges" (
+    "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
+    "account_id" "uuid" NOT NULL,
+    "lenser_id" "uuid" NOT NULL,
+    "reserved_amount" bigint NOT NULL,
+    "settled_amount" bigint,
+    "status" "wallet"."charge_status_enum" DEFAULT 'reserved'::"wallet"."charge_status_enum" NOT NULL,
+    "reference_id" "uuid" NOT NULL,
+    "description" "text",
+    "reserved_at" timestamp with time zone DEFAULT "now"() NOT NULL,
+    "settled_at" timestamp with time zone,
+    CONSTRAINT "pending_charges_reserved_positive" CHECK (("reserved_amount" > 0)),
+    CONSTRAINT "pending_charges_settled_non_negative" CHECK ((("settled_amount" IS NULL) OR ("settled_amount" >= 0)))
+);
+
+
+ALTER TABLE "wallet"."pending_charges" OWNER TO "postgres";
+
+
+COMMENT ON TABLE "wallet"."pending_charges" IS 'Pre-authorization ledger for execution runs. Tracks reserved → settled/released lifecycle. Enforces idempotency via reference_id UNIQUE constraint.';
+
+
+
+COMMENT ON COLUMN "wallet"."pending_charges"."reserved_amount" IS 'Credits debited from account when reservation created. Remains until charge settled or released.';
+
+
+
+COMMENT ON COLUMN "wallet"."pending_charges"."settled_amount" IS 'Actual credits charged after execution completes. NULL until settled. If NULL at release, full refund applied.';
+
+
+
+COMMENT ON COLUMN "wallet"."pending_charges"."reference_id" IS 'FK to execution.runs.id. UNIQUE constraint prevents double-charging on Worker retry.';
+
+
+
+CREATE TABLE IF NOT EXISTS "wallet"."spending_limits" (
+    "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
+    "account_id" "uuid" NOT NULL,
+    "period" "text" NOT NULL,
+    "limit_credits" bigint NOT NULL,
+    "current_usage" bigint DEFAULT 0 NOT NULL,
+    "period_start" timestamp with time zone DEFAULT "now"() NOT NULL,
+    "created_at" timestamp with time zone DEFAULT "now"() NOT NULL,
+    "updated_at" timestamp with time zone DEFAULT "now"() NOT NULL,
+    CONSTRAINT "spending_limits_limit_check" CHECK (("limit_credits" > 0)),
+    CONSTRAINT "spending_limits_period_check" CHECK (("period" = ANY (ARRAY['daily'::"text", 'monthly'::"text"])))
+);
+
+
+ALTER TABLE "wallet"."spending_limits" OWNER TO "postgres";
+
+
+COMMENT ON TABLE "wallet"."spending_limits" IS 'Optional per-account spending caps. current_usage reset to 0 by pg_cron at period boundaries.';
+
+
+
+CREATE TABLE IF NOT EXISTS "wallet"."transactions" (
+    "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
+    "account_id" "uuid" NOT NULL,
+    "tx_type" "wallet"."transaction_type_enum" NOT NULL,
+    "amount" bigint NOT NULL,
+    "direction" smallint NOT NULL,
+    "balance_after" bigint NOT NULL,
+    "reference_type" "text",
+    "reference_id" "uuid",
+    "description" "text",
+    "metadata" "jsonb" DEFAULT '{}'::"jsonb" NOT NULL,
+    "created_at" timestamp with time zone DEFAULT "now"() NOT NULL,
+    "idempotency_key" "text",
+    CONSTRAINT "transactions_amount_positive" CHECK (("amount" > 0)),
+    CONSTRAINT "transactions_direction_check" CHECK (("direction" = ANY (ARRAY[1, '-1'::integer])))
+);
+
+
+ALTER TABLE "wallet"."transactions" OWNER TO "postgres";
+
+
+COMMENT ON TABLE "wallet"."transactions" IS 'Append-only wallet transaction ledger. No UPDATE/DELETE allowed. balance_after enables audit verification: balance_after[n] = balance_after[n-1] + (amount * direction).';
+
+
+
+COMMENT ON COLUMN "wallet"."transactions"."amount" IS 'Always positive. Effective amount = amount * direction.';
+
+
+
+COMMENT ON COLUMN "wallet"."transactions"."direction" IS '+1 for credits (deposit, refund, sponsorship_payout), -1 for debits (spend, sponsorship_deposit, platform_fee).';
+
+
+
+COMMENT ON COLUMN "wallet"."transactions"."balance_after" IS 'Account balance after this transaction. Enables full audit trail verification.';
+
+
+
+COMMENT ON COLUMN "wallet"."transactions"."reference_type" IS 'Source entity type, e.g. billing.orders, execution.runs, battles.sponsorship_contributions.';
+
+
+
+COMMENT ON COLUMN "wallet"."transactions"."reference_id" IS 'Source entity UUID. Combined with reference_type for cross-schema tracing.';
+
+
+
+COMMENT ON COLUMN "wallet"."transactions"."idempotency_key" IS 'Optional idempotency key for dedup. When set, prevents duplicate transactions from retried API calls. SHA-256 hash of scope|actor|operation context.';
+
+
+
 CREATE TABLE IF NOT EXISTS "xp"."apps" (
     "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
     "slug" "text" NOT NULL,
@@ -37582,6 +45145,41 @@ ALTER TABLE ONLY "audit"."webhook_outbox"
 
 
 
+ALTER TABLE ONLY "authz"."developer_tokens"
+    ADD CONSTRAINT "developer_tokens_issued_from_request_id_key" UNIQUE ("issued_from_request_id");
+
+
+
+ALTER TABLE ONLY "authz"."developer_tokens"
+    ADD CONSTRAINT "developer_tokens_pkey" PRIMARY KEY ("id");
+
+
+
+ALTER TABLE ONLY "authz"."developer_tokens"
+    ADD CONSTRAINT "developer_tokens_token_hash_key" UNIQUE ("token_hash");
+
+
+
+ALTER TABLE ONLY "authz"."device_approval_requests"
+    ADD CONSTRAINT "device_approval_requests_developer_token_id_key" UNIQUE ("developer_token_id");
+
+
+
+ALTER TABLE ONLY "authz"."device_approval_requests"
+    ADD CONSTRAINT "device_approval_requests_pkey" PRIMARY KEY ("id");
+
+
+
+ALTER TABLE ONLY "authz"."device_approval_requests"
+    ADD CONSTRAINT "device_approval_requests_request_secret_hash_key" UNIQUE ("request_secret_hash");
+
+
+
+ALTER TABLE ONLY "authz"."device_approval_requests"
+    ADD CONSTRAINT "device_approval_requests_user_code_key" UNIQUE ("user_code");
+
+
+
 ALTER TABLE ONLY "automation"."cron_runs"
     ADD CONSTRAINT "cron_runs_pkey" PRIMARY KEY ("id");
 
@@ -37968,6 +45566,56 @@ ALTER TABLE ONLY "benchmark"."suites"
 
 ALTER TABLE ONLY "benchmark"."tasks"
     ADD CONSTRAINT "tasks_pkey" PRIMARY KEY ("id");
+
+
+
+ALTER TABLE ONLY "billing"."execution_margin_policies"
+    ADD CONSTRAINT "billing_execution_margin_policies_pkey" PRIMARY KEY ("id");
+
+
+
+ALTER TABLE ONLY "billing"."checkout_sessions"
+    ADD CONSTRAINT "checkout_sessions_pkey" PRIMARY KEY ("id");
+
+
+
+ALTER TABLE ONLY "billing"."orders"
+    ADD CONSTRAINT "orders_ls_order_id_key" UNIQUE ("ls_order_id");
+
+
+
+ALTER TABLE ONLY "billing"."orders"
+    ADD CONSTRAINT "orders_pkey" PRIMARY KEY ("id");
+
+
+
+ALTER TABLE ONLY "billing"."products"
+    ADD CONSTRAINT "products_ls_product_id_key" UNIQUE ("ls_product_id");
+
+
+
+ALTER TABLE ONLY "billing"."products"
+    ADD CONSTRAINT "products_pkey" PRIMARY KEY ("id");
+
+
+
+ALTER TABLE ONLY "billing"."variants"
+    ADD CONSTRAINT "variants_ls_variant_id_key" UNIQUE ("ls_variant_id");
+
+
+
+ALTER TABLE ONLY "billing"."variants"
+    ADD CONSTRAINT "variants_pkey" PRIMARY KEY ("id");
+
+
+
+ALTER TABLE ONLY "billing"."webhook_events"
+    ADD CONSTRAINT "webhook_events_ls_event_id_key" UNIQUE ("ls_event_id");
+
+
+
+ALTER TABLE ONLY "billing"."webhook_events"
+    ADD CONSTRAINT "webhook_events_pkey" PRIMARY KEY ("id");
 
 
 
@@ -38526,6 +46174,51 @@ ALTER TABLE ONLY "media"."objects"
 
 
 
+ALTER TABLE ONLY "organizations"."activity_log"
+    ADD CONSTRAINT "activity_log_pkey" PRIMARY KEY ("id");
+
+
+
+ALTER TABLE ONLY "organizations"."addresses"
+    ADD CONSTRAINT "addresses_pkey" PRIMARY KEY ("id");
+
+
+
+ALTER TABLE ONLY "organizations"."audit_logs"
+    ADD CONSTRAINT "audit_logs_pkey" PRIMARY KEY ("id");
+
+
+
+ALTER TABLE ONLY "organizations"."companies"
+    ADD CONSTRAINT "companies_pkey" PRIMARY KEY ("id");
+
+
+
+ALTER TABLE ONLY "organizations"."members"
+    ADD CONSTRAINT "members_pkey" PRIMARY KEY ("org_id", "lenser_id");
+
+
+
+ALTER TABLE ONLY "organizations"."organizations"
+    ADD CONSTRAINT "organizations_pkey" PRIMARY KEY ("id");
+
+
+
+ALTER TABLE ONLY "organizations"."preferences"
+    ADD CONSTRAINT "preferences_pkey" PRIMARY KEY ("org_id");
+
+
+
+ALTER TABLE ONLY "organizations"."companies"
+    ADD CONSTRAINT "uq_companies_org" UNIQUE ("org_id");
+
+
+
+ALTER TABLE ONLY "organizations"."organizations"
+    ADD CONSTRAINT "uq_organizations_slug" UNIQUE ("slug");
+
+
+
 ALTER TABLE ONLY "platform"."api_worker_heartbeats"
     ADD CONSTRAINT "api_worker_heartbeats_pkey" PRIMARY KEY ("worker_id");
 
@@ -38663,6 +46356,61 @@ ALTER TABLE ONLY "tenancy"."workspaces"
 
 ALTER TABLE ONLY "tenancy"."workspaces"
     ADD CONSTRAINT "workspaces_slug_unique" UNIQUE ("slug");
+
+
+
+ALTER TABLE ONLY "wallet"."accounts"
+    ADD CONSTRAINT "accounts_lenser_id_key" UNIQUE ("lenser_id");
+
+
+
+ALTER TABLE ONLY "wallet"."accounts"
+    ADD CONSTRAINT "accounts_pkey" PRIMARY KEY ("id");
+
+
+
+ALTER TABLE ONLY "wallet"."credit_valuation_policy"
+    ADD CONSTRAINT "credit_valuation_policy_pkey" PRIMARY KEY ("id");
+
+
+
+ALTER TABLE ONLY "wallet"."credit_valuation_policy"
+    ADD CONSTRAINT "credit_valuation_singleton" UNIQUE ("singleton");
+
+
+
+ALTER TABLE ONLY "wallet"."organization_accounts"
+    ADD CONSTRAINT "organization_accounts_org_id_key" UNIQUE ("org_id");
+
+
+
+ALTER TABLE ONLY "wallet"."organization_accounts"
+    ADD CONSTRAINT "organization_accounts_pkey" PRIMARY KEY ("id");
+
+
+
+ALTER TABLE ONLY "wallet"."pending_charges"
+    ADD CONSTRAINT "pending_charges_pkey" PRIMARY KEY ("id");
+
+
+
+ALTER TABLE ONLY "wallet"."pending_charges"
+    ADD CONSTRAINT "pending_charges_reference_unique" UNIQUE ("reference_id");
+
+
+
+ALTER TABLE ONLY "wallet"."spending_limits"
+    ADD CONSTRAINT "spending_limits_account_period_key" UNIQUE ("account_id", "period");
+
+
+
+ALTER TABLE ONLY "wallet"."spending_limits"
+    ADD CONSTRAINT "spending_limits_pkey" PRIMARY KEY ("id");
+
+
+
+ALTER TABLE ONLY "wallet"."transactions"
+    ADD CONSTRAINT "transactions_pkey" PRIMARY KEY ("id");
 
 
 
@@ -39245,6 +46993,30 @@ CREATE INDEX "idx_webhook_outbox_pending_due" ON "audit"."webhook_outbox" USING 
 
 
 
+CREATE INDEX "idx_developer_tokens_lenser_id_created_at" ON "authz"."developer_tokens" USING "btree" ("lenser_id", "created_at" DESC);
+
+
+
+CREATE INDEX "idx_developer_tokens_revoked_at" ON "authz"."developer_tokens" USING "btree" ("revoked_at");
+
+
+
+CREATE INDEX "idx_developer_tokens_status_expires_at" ON "authz"."developer_tokens" USING "btree" ("status", "expires_at");
+
+
+
+CREATE INDEX "idx_device_approval_requests_approved_by_user_id" ON "authz"."device_approval_requests" USING "btree" ("approved_by_user_id");
+
+
+
+CREATE INDEX "idx_device_approval_requests_requested_by_user_id" ON "authz"."device_approval_requests" USING "btree" ("requested_by_user_id");
+
+
+
+CREATE INDEX "idx_device_approval_requests_status_expires_at" ON "authz"."device_approval_requests" USING "btree" ("status", "expires_at");
+
+
+
 CREATE INDEX "idx_automation_events_source_id" ON "automation"."events" USING "btree" ("source_id") WHERE ("source_id" IS NOT NULL);
 
 
@@ -39685,6 +47457,74 @@ CREATE INDEX "idx_significance_tests_result" ON "benchmark"."significance_tests"
 
 
 
+CREATE INDEX "idx_billing_checkout_active" ON "billing"."checkout_sessions" USING "btree" ("status") WHERE ("status" = 'created'::"text");
+
+
+
+CREATE INDEX "idx_billing_checkout_lenser" ON "billing"."checkout_sessions" USING "btree" ("lenser_id", "created_at" DESC);
+
+
+
+CREATE INDEX "idx_billing_execution_margin_policies_active" ON "billing"."execution_margin_policies" USING "btree" ("model_id", "effective_from" DESC) WHERE (("is_active" = true) AND ("effective_to" IS NULL));
+
+
+
+CREATE INDEX "idx_billing_margin_policies_active" ON "billing"."execution_margin_policies" USING "btree" ("model_id", "is_active") WHERE (("is_active" = true) AND ("effective_to" IS NULL));
+
+
+
+CREATE INDEX "idx_billing_orders_lenser" ON "billing"."orders" USING "btree" ("lenser_id", "created_at" DESC);
+
+
+
+CREATE INDEX "idx_billing_orders_ls_id" ON "billing"."orders" USING "btree" ("ls_order_id");
+
+
+
+CREATE INDEX "idx_billing_orders_product_paid" ON "billing"."orders" USING "btree" ("product_id", "status") WHERE ("status" = 'paid'::"billing"."order_status_enum");
+
+
+
+CREATE INDEX "idx_billing_orders_status" ON "billing"."orders" USING "btree" ("status", "created_at" DESC);
+
+
+
+CREATE INDEX "idx_billing_orders_webhook" ON "billing"."orders" USING "btree" ("webhook_event_id");
+
+
+
+CREATE INDEX "idx_billing_products_ls_id" ON "billing"."products" USING "btree" ("ls_product_id");
+
+
+
+CREATE INDEX "idx_billing_products_status" ON "billing"."products" USING "btree" ("status") WHERE ("status" = 'published'::"billing"."product_status_enum");
+
+
+
+CREATE INDEX "idx_billing_variants_ls_id" ON "billing"."variants" USING "btree" ("ls_variant_id");
+
+
+
+CREATE INDEX "idx_billing_variants_product" ON "billing"."variants" USING "btree" ("product_id");
+
+
+
+CREATE INDEX "idx_billing_webhook_event_name" ON "billing"."webhook_events" USING "btree" ("event_name", "created_at" DESC);
+
+
+
+CREATE INDEX "idx_billing_webhook_unprocessed" ON "billing"."webhook_events" USING "btree" ("processed", "created_at") WHERE ("processed" = false);
+
+
+
+CREATE INDEX "idx_fk_checkout_sessions_variant_id" ON "billing"."checkout_sessions" USING "btree" ("variant_id");
+
+
+
+CREATE INDEX "idx_fk_orders_variant_id" ON "billing"."orders" USING "btree" ("variant_id");
+
+
+
 CREATE INDEX "connector_tokens_connector_active_idx" ON "connectors"."connector_tokens" USING "btree" ("connector_id") WHERE ("revoked_at" IS NULL);
 
 
@@ -39994,6 +47834,10 @@ CREATE INDEX "idx_execution_requests_is_active" ON "execution"."requests" USING 
 
 
 CREATE INDEX "idx_execution_runs_async_pending" ON "execution"."runs" USING "btree" ("is_async", "status", "started_at") WHERE (("is_async" = true) AND ("status" = 'running'::"text"));
+
+
+
+CREATE INDEX "idx_execution_runs_async_poll_order" ON "execution"."runs" USING "btree" ("is_async", "status", "last_polled_at" NULLS FIRST) WHERE (("is_async" = true) AND ("status" = 'running'::"text"));
 
 
 
@@ -40609,6 +48453,82 @@ CREATE INDEX "idx_objects_workspace" ON "media"."objects" USING "btree" ("worksp
 
 
 
+CREATE INDEX "idx_activity_org_created" ON "organizations"."activity_log" USING "btree" ("org_id", "created_at" DESC);
+
+
+
+CREATE INDEX "idx_addresses_company" ON "organizations"."addresses" USING "btree" ("company_id");
+
+
+
+CREATE INDEX "idx_addresses_country" ON "organizations"."addresses" USING "btree" ("country_iso2_code");
+
+
+
+CREATE INDEX "idx_audit_org_occurred" ON "organizations"."audit_logs" USING "btree" ("org_id", "occurred_at" DESC);
+
+
+
+CREATE INDEX "idx_fk_activity_log_lenser_id" ON "organizations"."activity_log" USING "btree" ("lenser_id");
+
+
+
+CREATE INDEX "idx_fk_addresses_city_id" ON "organizations"."addresses" USING "btree" ("city_id");
+
+
+
+CREATE INDEX "idx_fk_addresses_state_id" ON "organizations"."addresses" USING "btree" ("state_id");
+
+
+
+CREATE INDEX "idx_fk_companies_tax_iso2_code" ON "organizations"."companies" USING "btree" ("tax_iso2_code");
+
+
+
+CREATE INDEX "idx_fk_members_invited_by" ON "organizations"."members" USING "btree" ("invited_by");
+
+
+
+CREATE INDEX "idx_fk_org_audit_logs_lenser_id" ON "organizations"."audit_logs" USING "btree" ("lenser_id");
+
+
+
+CREATE INDEX "idx_fk_organizations_kill_switched_by" ON "organizations"."organizations" USING "btree" ("kill_switched_by");
+
+
+
+CREATE INDEX "idx_fk_organizations_workspace_id" ON "organizations"."organizations" USING "btree" ("workspace_id");
+
+
+
+CREATE INDEX "idx_members_lenser" ON "organizations"."members" USING "btree" ("lenser_id");
+
+
+
+CREATE INDEX "idx_members_org_role" ON "organizations"."members" USING "btree" ("org_id", "role");
+
+
+
+CREATE INDEX "idx_org_created_by" ON "organizations"."organizations" USING "btree" ("created_by");
+
+
+
+CREATE INDEX "idx_org_status_active" ON "organizations"."organizations" USING "btree" ("status") WHERE ("status" = 'active'::"organizations"."status_enum");
+
+
+
+CREATE INDEX "idx_prefs_country" ON "organizations"."preferences" USING "btree" ("iso2_code");
+
+
+
+CREATE UNIQUE INDEX "uq_addresses_one_default_per_company" ON "organizations"."addresses" USING "btree" ("company_id") WHERE ("is_default" = true);
+
+
+
+CREATE UNIQUE INDEX "uq_members_one_owner_per_org" ON "organizations"."members" USING "btree" ("org_id") WHERE ("role" = 'owner'::"organizations"."member_role_enum");
+
+
+
 CREATE INDEX "idx_tool_invocation_logs_lenser_time" ON "platform"."tool_invocation_logs" USING "btree" ("ai_lenser_id", "invoked_at" DESC);
 
 
@@ -40702,6 +48622,42 @@ CREATE INDEX "idx_workspaces_org" ON "tenancy"."workspaces" USING "btree" ("org_
 
 
 CREATE INDEX "idx_workspaces_owner" ON "tenancy"."workspaces" USING "btree" ("owner_lenser_id");
+
+
+
+CREATE INDEX "idx_pending_charges_account" ON "wallet"."pending_charges" USING "btree" ("account_id", "status");
+
+
+
+CREATE INDEX "idx_pending_charges_lenser" ON "wallet"."pending_charges" USING "btree" ("lenser_id", "reserved_at" DESC);
+
+
+
+CREATE INDEX "idx_pending_charges_status" ON "wallet"."pending_charges" USING "btree" ("status") WHERE ("status" = 'reserved'::"wallet"."charge_status_enum");
+
+
+
+CREATE INDEX "idx_transactions_account_time" ON "wallet"."transactions" USING "btree" ("account_id", "created_at" DESC);
+
+
+
+CREATE INDEX "idx_wallet_spending_account" ON "wallet"."spending_limits" USING "btree" ("account_id", "period");
+
+
+
+CREATE UNIQUE INDEX "idx_wallet_tx_idempotency" ON "wallet"."transactions" USING "btree" ("idempotency_key") WHERE ("idempotency_key" IS NOT NULL);
+
+
+
+CREATE INDEX "idx_wallet_tx_reference" ON "wallet"."transactions" USING "btree" ("reference_type", "reference_id") WHERE ("reference_id" IS NOT NULL);
+
+
+
+CREATE UNIQUE INDEX "idx_wallet_tx_reference_idempotency" ON "wallet"."transactions" USING "btree" ("reference_type", "reference_id") WHERE ("reference_id" IS NOT NULL);
+
+
+
+CREATE INDEX "idx_wallet_tx_type_created" ON "wallet"."transactions" USING "btree" ("tx_type", "created_at" DESC);
 
 
 
@@ -41102,6 +49058,14 @@ CREATE OR REPLACE TRIGGER "no_update_result_sets" BEFORE UPDATE ON "benchmark"."
 
 
 
+CREATE OR REPLACE TRIGGER "trg_billing_margin_policies_updated_at" BEFORE UPDATE ON "billing"."execution_margin_policies" FOR EACH ROW EXECUTE FUNCTION "public"."set_updated_at"();
+
+
+
+CREATE OR REPLACE TRIGGER "trg_billing_products_updated_at" BEFORE UPDATE ON "billing"."products" FOR EACH ROW EXECUTE FUNCTION "public"."set_updated_at"();
+
+
+
 CREATE OR REPLACE TRIGGER "thread_replies_after_delete" AFTER DELETE ON "content"."thread_replies" FOR EACH ROW EXECUTE FUNCTION "content"."thread_replies_after_delete_trigger"();
 
 
@@ -41243,6 +49207,10 @@ CREATE OR REPLACE TRIGGER "trg_audit_group_membership" AFTER INSERT OR DELETE OR
 
 
 CREATE OR REPLACE TRIGGER "trg_audit_lenser_profile" AFTER DELETE OR UPDATE ON "lensers"."profiles" FOR EACH ROW EXECUTE FUNCTION "audit"."trg_fn_audit_lenser_profile"();
+
+
+
+CREATE OR REPLACE TRIGGER "trg_auto_create_wallet_account" AFTER INSERT ON "lensers"."profiles" FOR EACH ROW EXECUTE FUNCTION "wallet"."trg_auto_create_account"();
 
 
 
@@ -41416,7 +49384,47 @@ ALTER TABLE "lenses"."workflows" DISABLE TRIGGER "trg_xp_workflow_visibility_cha
 
 
 
+CREATE OR REPLACE TRIGGER "trg_media_audit_visibility" AFTER UPDATE ON "media"."objects" FOR EACH ROW EXECUTE FUNCTION "media"."trg_fn_audit_visibility"();
+
+
+
+COMMENT ON TRIGGER "trg_media_audit_visibility" ON "media"."objects" IS 'AT: Writes audit.events row when visibility changes.';
+
+
+
 CREATE OR REPLACE TRIGGER "trg_objects_set_updated_at" BEFORE UPDATE ON "media"."objects" FOR EACH ROW EXECUTE FUNCTION "media"."set_updated_at"();
+
+
+
+CREATE OR REPLACE TRIGGER "trg_addresses_updated_at" BEFORE UPDATE ON "organizations"."addresses" FOR EACH ROW EXECUTE FUNCTION "public"."set_updated_at"();
+
+
+
+CREATE OR REPLACE TRIGGER "trg_audit_logs_no_delete" BEFORE DELETE ON "organizations"."audit_logs" FOR EACH ROW EXECUTE FUNCTION "organizations"."trg_audit_logs_immutable"();
+
+
+
+CREATE OR REPLACE TRIGGER "trg_audit_logs_no_update" BEFORE UPDATE ON "organizations"."audit_logs" FOR EACH ROW EXECUTE FUNCTION "organizations"."trg_audit_logs_immutable"();
+
+
+
+CREATE OR REPLACE TRIGGER "trg_audit_org_membership" AFTER INSERT OR DELETE OR UPDATE ON "organizations"."members" FOR EACH ROW EXECUTE FUNCTION "organizations"."trg_audit_membership"();
+
+
+
+CREATE OR REPLACE TRIGGER "trg_companies_updated_at" BEFORE UPDATE ON "organizations"."companies" FOR EACH ROW EXECUTE FUNCTION "public"."set_updated_at"();
+
+
+
+CREATE OR REPLACE TRIGGER "trg_organizations_create_workspace" AFTER INSERT ON "organizations"."organizations" FOR EACH ROW EXECUTE FUNCTION "organizations"."fn_create_org_workspace"();
+
+
+
+CREATE OR REPLACE TRIGGER "trg_organizations_updated_at" BEFORE UPDATE ON "organizations"."organizations" FOR EACH ROW EXECUTE FUNCTION "public"."set_updated_at"();
+
+
+
+CREATE OR REPLACE TRIGGER "trg_preferences_updated_at" BEFORE UPDATE ON "organizations"."preferences" FOR EACH ROW EXECUTE FUNCTION "public"."set_updated_at"();
 
 
 
@@ -41445,6 +49453,34 @@ CREATE OR REPLACE TRIGGER "trg_workspaces_guard_personal_status" BEFORE UPDATE O
 
 
 CREATE OR REPLACE TRIGGER "trg_workspaces_set_updated_at" BEFORE UPDATE ON "tenancy"."workspaces" FOR EACH ROW EXECUTE FUNCTION "tenancy"."set_updated_at"();
+
+
+
+CREATE OR REPLACE TRIGGER "trg_audit_wallet_account" AFTER UPDATE ON "wallet"."accounts" FOR EACH ROW EXECUTE FUNCTION "audit"."trg_fn_audit_wallet_account"();
+
+
+
+CREATE OR REPLACE TRIGGER "trg_org_accounts_updated_at" BEFORE UPDATE ON "wallet"."organization_accounts" FOR EACH ROW EXECUTE FUNCTION "public"."set_updated_at"();
+
+
+
+CREATE OR REPLACE TRIGGER "trg_transactions_no_delete" BEFORE DELETE ON "wallet"."transactions" FOR EACH ROW EXECUTE FUNCTION "wallet"."trg_transactions_immutable"();
+
+
+
+CREATE OR REPLACE TRIGGER "trg_transactions_no_update" BEFORE UPDATE ON "wallet"."transactions" FOR EACH ROW EXECUTE FUNCTION "wallet"."trg_transactions_immutable"();
+
+
+
+CREATE OR REPLACE TRIGGER "trg_verify_balance_after" BEFORE INSERT ON "wallet"."transactions" FOR EACH ROW EXECUTE FUNCTION "wallet"."trg_verify_balance_after"();
+
+
+
+CREATE OR REPLACE TRIGGER "trg_wallet_accounts_updated_at" BEFORE UPDATE ON "wallet"."accounts" FOR EACH ROW EXECUTE FUNCTION "public"."set_updated_at"();
+
+
+
+CREATE OR REPLACE TRIGGER "trg_wallet_spending_limits_updated_at" BEFORE UPDATE ON "wallet"."spending_limits" FOR EACH ROW EXECUTE FUNCTION "public"."set_updated_at"();
 
 
 
@@ -42040,6 +50076,26 @@ ALTER TABLE ONLY "audit"."hash_chains"
 
 
 
+ALTER TABLE ONLY "authz"."developer_tokens"
+    ADD CONSTRAINT "developer_tokens_issued_from_request_id_fkey" FOREIGN KEY ("issued_from_request_id") REFERENCES "authz"."device_approval_requests"("id") ON DELETE SET NULL;
+
+
+
+ALTER TABLE ONLY "authz"."developer_tokens"
+    ADD CONSTRAINT "developer_tokens_lenser_id_fkey" FOREIGN KEY ("lenser_id") REFERENCES "lensers"."profiles"("id") ON DELETE CASCADE;
+
+
+
+ALTER TABLE ONLY "authz"."device_approval_requests"
+    ADD CONSTRAINT "device_approval_requests_approved_by_lenser_id_fkey" FOREIGN KEY ("approved_by_lenser_id") REFERENCES "lensers"."profiles"("id") ON DELETE SET NULL;
+
+
+
+ALTER TABLE ONLY "authz"."device_approval_requests"
+    ADD CONSTRAINT "device_approval_requests_requested_by_lenser_id_fkey" FOREIGN KEY ("requested_by_lenser_id") REFERENCES "lensers"."profiles"("id") ON DELETE SET NULL;
+
+
+
 ALTER TABLE ONLY "automation"."event_dispatches"
     ADD CONSTRAINT "event_dispatches_event_id_fkey" FOREIGN KEY ("event_id") REFERENCES "automation"."events"("id") ON DELETE CASCADE;
 
@@ -42572,6 +50628,46 @@ ALTER TABLE ONLY "benchmark"."tasks"
 
 ALTER TABLE ONLY "benchmark"."tasks"
     ADD CONSTRAINT "tasks_workflow_id_fkey" FOREIGN KEY ("workflow_id") REFERENCES "lenses"."workflows"("id") ON DELETE SET NULL;
+
+
+
+ALTER TABLE ONLY "billing"."execution_margin_policies"
+    ADD CONSTRAINT "billing_margin_policies_model_fkey" FOREIGN KEY ("model_id") REFERENCES "ai"."models"("id") ON DELETE CASCADE;
+
+
+
+ALTER TABLE ONLY "billing"."checkout_sessions"
+    ADD CONSTRAINT "checkout_sessions_lenser_id_fkey" FOREIGN KEY ("lenser_id") REFERENCES "lensers"."profiles"("id") ON DELETE CASCADE;
+
+
+
+ALTER TABLE ONLY "billing"."checkout_sessions"
+    ADD CONSTRAINT "checkout_sessions_variant_id_fkey" FOREIGN KEY ("variant_id") REFERENCES "billing"."variants"("id") ON DELETE CASCADE;
+
+
+
+ALTER TABLE ONLY "billing"."orders"
+    ADD CONSTRAINT "orders_lenser_id_fkey" FOREIGN KEY ("lenser_id") REFERENCES "lensers"."profiles"("id") ON DELETE RESTRICT;
+
+
+
+ALTER TABLE ONLY "billing"."orders"
+    ADD CONSTRAINT "orders_product_id_fkey" FOREIGN KEY ("product_id") REFERENCES "billing"."products"("id") ON DELETE SET NULL;
+
+
+
+ALTER TABLE ONLY "billing"."orders"
+    ADD CONSTRAINT "orders_variant_id_fkey" FOREIGN KEY ("variant_id") REFERENCES "billing"."variants"("id") ON DELETE SET NULL;
+
+
+
+ALTER TABLE ONLY "billing"."orders"
+    ADD CONSTRAINT "orders_webhook_event_id_fkey" FOREIGN KEY ("webhook_event_id") REFERENCES "billing"."webhook_events"("id");
+
+
+
+ALTER TABLE ONLY "billing"."variants"
+    ADD CONSTRAINT "variants_product_id_fkey" FOREIGN KEY ("product_id") REFERENCES "billing"."products"("id") ON DELETE CASCADE;
 
 
 
@@ -43322,6 +51418,96 @@ ALTER TABLE ONLY "media"."objects"
 
 
 
+ALTER TABLE ONLY "organizations"."activity_log"
+    ADD CONSTRAINT "activity_log_lenser_id_fkey" FOREIGN KEY ("lenser_id") REFERENCES "lensers"."profiles"("id") ON DELETE SET NULL;
+
+
+
+ALTER TABLE ONLY "organizations"."activity_log"
+    ADD CONSTRAINT "activity_log_org_id_fkey" FOREIGN KEY ("org_id") REFERENCES "organizations"."organizations"("id") ON DELETE CASCADE;
+
+
+
+ALTER TABLE ONLY "organizations"."addresses"
+    ADD CONSTRAINT "addresses_city_id_fkey" FOREIGN KEY ("city_id") REFERENCES "core"."cities"("id") ON DELETE SET NULL;
+
+
+
+ALTER TABLE ONLY "organizations"."addresses"
+    ADD CONSTRAINT "addresses_company_id_fkey" FOREIGN KEY ("company_id") REFERENCES "organizations"."companies"("id") ON DELETE CASCADE;
+
+
+
+ALTER TABLE ONLY "organizations"."addresses"
+    ADD CONSTRAINT "addresses_country_iso2_code_fkey" FOREIGN KEY ("country_iso2_code") REFERENCES "core"."countries"("iso2") ON DELETE RESTRICT;
+
+
+
+ALTER TABLE ONLY "organizations"."addresses"
+    ADD CONSTRAINT "addresses_state_id_fkey" FOREIGN KEY ("state_id") REFERENCES "core"."states"("id") ON DELETE SET NULL;
+
+
+
+ALTER TABLE ONLY "organizations"."audit_logs"
+    ADD CONSTRAINT "audit_logs_lenser_id_fkey" FOREIGN KEY ("lenser_id") REFERENCES "lensers"."profiles"("id") ON DELETE SET NULL;
+
+
+
+ALTER TABLE ONLY "organizations"."audit_logs"
+    ADD CONSTRAINT "audit_logs_org_id_fkey" FOREIGN KEY ("org_id") REFERENCES "organizations"."organizations"("id") ON DELETE CASCADE;
+
+
+
+ALTER TABLE ONLY "organizations"."companies"
+    ADD CONSTRAINT "companies_org_id_fkey" FOREIGN KEY ("org_id") REFERENCES "organizations"."organizations"("id") ON DELETE CASCADE;
+
+
+
+ALTER TABLE ONLY "organizations"."companies"
+    ADD CONSTRAINT "companies_tax_iso2_code_fkey" FOREIGN KEY ("tax_iso2_code") REFERENCES "core"."countries"("iso2");
+
+
+
+ALTER TABLE ONLY "organizations"."members"
+    ADD CONSTRAINT "members_invited_by_fkey" FOREIGN KEY ("invited_by") REFERENCES "lensers"."profiles"("id") ON DELETE SET NULL;
+
+
+
+ALTER TABLE ONLY "organizations"."members"
+    ADD CONSTRAINT "members_lenser_id_fkey" FOREIGN KEY ("lenser_id") REFERENCES "lensers"."profiles"("id") ON DELETE CASCADE;
+
+
+
+ALTER TABLE ONLY "organizations"."members"
+    ADD CONSTRAINT "members_org_id_fkey" FOREIGN KEY ("org_id") REFERENCES "organizations"."organizations"("id") ON DELETE CASCADE;
+
+
+
+ALTER TABLE ONLY "organizations"."organizations"
+    ADD CONSTRAINT "organizations_created_by_fkey" FOREIGN KEY ("created_by") REFERENCES "lensers"."profiles"("id") ON DELETE RESTRICT;
+
+
+
+ALTER TABLE ONLY "organizations"."organizations"
+    ADD CONSTRAINT "organizations_kill_switched_by_fkey" FOREIGN KEY ("kill_switched_by") REFERENCES "lensers"."profiles"("id") ON DELETE SET NULL;
+
+
+
+ALTER TABLE ONLY "organizations"."organizations"
+    ADD CONSTRAINT "organizations_workspace_id_fkey" FOREIGN KEY ("workspace_id") REFERENCES "tenancy"."workspaces"("id") ON DELETE SET NULL;
+
+
+
+ALTER TABLE ONLY "organizations"."preferences"
+    ADD CONSTRAINT "preferences_iso2_code_fkey" FOREIGN KEY ("iso2_code") REFERENCES "core"."countries"("iso2");
+
+
+
+ALTER TABLE ONLY "organizations"."preferences"
+    ADD CONSTRAINT "preferences_org_id_fkey" FOREIGN KEY ("org_id") REFERENCES "organizations"."organizations"("id") ON DELETE CASCADE;
+
+
+
 ALTER TABLE ONLY "platform"."system_flags"
     ADD CONSTRAINT "system_flags_updated_by_fkey" FOREIGN KEY ("updated_by") REFERENCES "lensers"."profiles"("id") ON DELETE SET NULL;
 
@@ -43403,7 +51589,42 @@ ALTER TABLE ONLY "tenancy"."workspace_members"
 
 
 ALTER TABLE ONLY "tenancy"."workspaces"
+    ADD CONSTRAINT "workspaces_org_fkey" FOREIGN KEY ("org_id") REFERENCES "organizations"."organizations"("id") ON DELETE SET NULL;
+
+
+
+ALTER TABLE ONLY "tenancy"."workspaces"
     ADD CONSTRAINT "workspaces_owner_fkey" FOREIGN KEY ("owner_lenser_id") REFERENCES "lensers"."profiles"("id") ON DELETE SET NULL;
+
+
+
+ALTER TABLE ONLY "wallet"."accounts"
+    ADD CONSTRAINT "accounts_lenser_id_fkey" FOREIGN KEY ("lenser_id") REFERENCES "lensers"."profiles"("id") ON DELETE RESTRICT;
+
+
+
+ALTER TABLE ONLY "wallet"."organization_accounts"
+    ADD CONSTRAINT "organization_accounts_org_id_fkey" FOREIGN KEY ("org_id") REFERENCES "organizations"."organizations"("id") ON DELETE RESTRICT;
+
+
+
+ALTER TABLE ONLY "wallet"."pending_charges"
+    ADD CONSTRAINT "pending_charges_account_fkey" FOREIGN KEY ("account_id") REFERENCES "wallet"."accounts"("id") ON DELETE RESTRICT;
+
+
+
+ALTER TABLE ONLY "wallet"."pending_charges"
+    ADD CONSTRAINT "pending_charges_lenser_fkey" FOREIGN KEY ("lenser_id") REFERENCES "lensers"."profiles"("id") ON DELETE RESTRICT;
+
+
+
+ALTER TABLE ONLY "wallet"."spending_limits"
+    ADD CONSTRAINT "spending_limits_account_id_fkey" FOREIGN KEY ("account_id") REFERENCES "wallet"."accounts"("id") ON DELETE CASCADE;
+
+
+
+ALTER TABLE ONLY "wallet"."transactions"
+    ADD CONSTRAINT "transactions_account_id_fkey" FOREIGN KEY ("account_id") REFERENCES "wallet"."accounts"("id") ON DELETE RESTRICT;
 
 
 
@@ -44902,6 +53123,48 @@ CREATE POLICY "tasks_service_write" ON "benchmark"."tasks" TO "service_role" USI
 
 
 
+CREATE POLICY "billing_margin_policies_service_all" ON "billing"."execution_margin_policies" TO "service_role" USING (true) WITH CHECK (true);
+
+
+
+ALTER TABLE "billing"."checkout_sessions" ENABLE ROW LEVEL SECURITY;
+
+
+CREATE POLICY "checkout_sessions_service_all" ON "billing"."checkout_sessions" TO "service_role" USING (true) WITH CHECK (true);
+
+
+
+ALTER TABLE "billing"."execution_margin_policies" ENABLE ROW LEVEL SECURITY;
+
+
+ALTER TABLE "billing"."orders" ENABLE ROW LEVEL SECURITY;
+
+
+CREATE POLICY "orders_service_all" ON "billing"."orders" TO "service_role" USING (true) WITH CHECK (true);
+
+
+
+ALTER TABLE "billing"."products" ENABLE ROW LEVEL SECURITY;
+
+
+CREATE POLICY "products_service_all" ON "billing"."products" TO "service_role" USING (true) WITH CHECK (true);
+
+
+
+ALTER TABLE "billing"."variants" ENABLE ROW LEVEL SECURITY;
+
+
+CREATE POLICY "variants_service_all" ON "billing"."variants" TO "service_role" USING (true) WITH CHECK (true);
+
+
+
+ALTER TABLE "billing"."webhook_events" ENABLE ROW LEVEL SECURITY;
+
+
+CREATE POLICY "webhook_events_service_all" ON "billing"."webhook_events" TO "service_role" USING (true) WITH CHECK (true);
+
+
+
 ALTER TABLE "connectors"."connector_tokens" ENABLE ROW LEVEL SECURITY;
 
 
@@ -46134,6 +54397,184 @@ CREATE POLICY "authenticated_update_own" ON "media"."objects" FOR UPDATE TO "aut
 ALTER TABLE "media"."objects" ENABLE ROW LEVEL SECURITY;
 
 
+ALTER TABLE "organizations"."activity_log" ENABLE ROW LEVEL SECURITY;
+
+
+CREATE POLICY "activity_log_insert_admin" ON "organizations"."activity_log" FOR INSERT TO "authenticated" WITH CHECK ((EXISTS ( SELECT 1
+   FROM "organizations"."members" "m"
+  WHERE (("m"."org_id" = "activity_log"."org_id") AND ("m"."lenser_id" = "lensers"."get_auth_lenser_id"()) AND ("m"."role" = ANY (ARRAY['owner'::"organizations"."member_role_enum", 'admin'::"organizations"."member_role_enum"]))))));
+
+
+
+CREATE POLICY "activity_log_select_member" ON "organizations"."activity_log" FOR SELECT TO "authenticated" USING ((EXISTS ( SELECT 1
+   FROM "organizations"."members" "m"
+  WHERE (("m"."org_id" = "activity_log"."org_id") AND ("m"."lenser_id" = "lensers"."get_auth_lenser_id"())))));
+
+
+
+CREATE POLICY "activity_log_service_all" ON "organizations"."activity_log" TO "service_role" USING (true) WITH CHECK (true);
+
+
+
+CREATE POLICY "activity_log_update_admin" ON "organizations"."activity_log" FOR UPDATE TO "authenticated" USING ((EXISTS ( SELECT 1
+   FROM "organizations"."members" "m"
+  WHERE (("m"."org_id" = "activity_log"."org_id") AND ("m"."lenser_id" = "lensers"."get_auth_lenser_id"()) AND ("m"."role" = ANY (ARRAY['owner'::"organizations"."member_role_enum", 'admin'::"organizations"."member_role_enum"]))))));
+
+
+
+ALTER TABLE "organizations"."addresses" ENABLE ROW LEVEL SECURITY;
+
+
+CREATE POLICY "addresses_insert_admin" ON "organizations"."addresses" FOR INSERT TO "authenticated" WITH CHECK ((EXISTS ( SELECT 1
+   FROM ("organizations"."companies" "c"
+     JOIN "organizations"."members" "m" ON (("m"."org_id" = "c"."org_id")))
+  WHERE (("c"."id" = "addresses"."company_id") AND ("m"."lenser_id" = "lensers"."get_auth_lenser_id"()) AND ("m"."role" = ANY (ARRAY['owner'::"organizations"."member_role_enum", 'admin'::"organizations"."member_role_enum"]))))));
+
+
+
+CREATE POLICY "addresses_select_member" ON "organizations"."addresses" FOR SELECT TO "authenticated" USING ((EXISTS ( SELECT 1
+   FROM ("organizations"."companies" "c"
+     JOIN "organizations"."members" "m" ON (("m"."org_id" = "c"."org_id")))
+  WHERE (("c"."id" = "addresses"."company_id") AND ("m"."lenser_id" = "lensers"."get_auth_lenser_id"())))));
+
+
+
+CREATE POLICY "addresses_service_all" ON "organizations"."addresses" TO "service_role" USING (true) WITH CHECK (true);
+
+
+
+CREATE POLICY "addresses_update_admin" ON "organizations"."addresses" FOR UPDATE TO "authenticated" USING ((EXISTS ( SELECT 1
+   FROM ("organizations"."companies" "c"
+     JOIN "organizations"."members" "m" ON (("m"."org_id" = "c"."org_id")))
+  WHERE (("c"."id" = "addresses"."company_id") AND ("m"."lenser_id" = "lensers"."get_auth_lenser_id"()) AND ("m"."role" = ANY (ARRAY['owner'::"organizations"."member_role_enum", 'admin'::"organizations"."member_role_enum"]))))));
+
+
+
+ALTER TABLE "organizations"."audit_logs" ENABLE ROW LEVEL SECURITY;
+
+
+CREATE POLICY "audit_logs_insert_admin" ON "organizations"."audit_logs" FOR INSERT TO "authenticated" WITH CHECK ((EXISTS ( SELECT 1
+   FROM "organizations"."members" "m"
+  WHERE (("m"."org_id" = "audit_logs"."org_id") AND ("m"."lenser_id" = "lensers"."get_auth_lenser_id"()) AND ("m"."role" = ANY (ARRAY['owner'::"organizations"."member_role_enum", 'admin'::"organizations"."member_role_enum"]))))));
+
+
+
+CREATE POLICY "audit_logs_select_member" ON "organizations"."audit_logs" FOR SELECT TO "authenticated" USING ((EXISTS ( SELECT 1
+   FROM "organizations"."members" "m"
+  WHERE (("m"."org_id" = "audit_logs"."org_id") AND ("m"."lenser_id" = "lensers"."get_auth_lenser_id"())))));
+
+
+
+CREATE POLICY "audit_logs_service_all" ON "organizations"."audit_logs" TO "service_role" USING (true) WITH CHECK (true);
+
+
+
+ALTER TABLE "organizations"."companies" ENABLE ROW LEVEL SECURITY;
+
+
+CREATE POLICY "companies_insert_admin" ON "organizations"."companies" FOR INSERT TO "authenticated" WITH CHECK ((EXISTS ( SELECT 1
+   FROM "organizations"."members" "m"
+  WHERE (("m"."org_id" = "companies"."org_id") AND ("m"."lenser_id" = "lensers"."get_auth_lenser_id"()) AND ("m"."role" = ANY (ARRAY['owner'::"organizations"."member_role_enum", 'admin'::"organizations"."member_role_enum"]))))));
+
+
+
+CREATE POLICY "companies_select_member" ON "organizations"."companies" FOR SELECT TO "authenticated" USING ((EXISTS ( SELECT 1
+   FROM "organizations"."members" "m"
+  WHERE (("m"."org_id" = "companies"."org_id") AND ("m"."lenser_id" = "lensers"."get_auth_lenser_id"())))));
+
+
+
+CREATE POLICY "companies_service_all" ON "organizations"."companies" TO "service_role" USING (true) WITH CHECK (true);
+
+
+
+CREATE POLICY "companies_update_admin" ON "organizations"."companies" FOR UPDATE TO "authenticated" USING ((EXISTS ( SELECT 1
+   FROM "organizations"."members" "m"
+  WHERE (("m"."org_id" = "companies"."org_id") AND ("m"."lenser_id" = "lensers"."get_auth_lenser_id"()) AND ("m"."role" = ANY (ARRAY['owner'::"organizations"."member_role_enum", 'admin'::"organizations"."member_role_enum"]))))));
+
+
+
+ALTER TABLE "organizations"."members" ENABLE ROW LEVEL SECURITY;
+
+
+CREATE POLICY "members_manage_delete" ON "organizations"."members" FOR DELETE TO "authenticated" USING ((EXISTS ( SELECT 1
+   FROM "organizations"."members" "m"
+  WHERE (("m"."org_id" = "members"."org_id") AND ("m"."lenser_id" = "lensers"."get_auth_lenser_id"()) AND ("m"."role" = ANY (ARRAY['owner'::"organizations"."member_role_enum", 'admin'::"organizations"."member_role_enum"]))))));
+
+
+
+CREATE POLICY "members_manage_insert" ON "organizations"."members" FOR INSERT TO "authenticated" WITH CHECK ((EXISTS ( SELECT 1
+   FROM "organizations"."members" "m"
+  WHERE (("m"."org_id" = "members"."org_id") AND ("m"."lenser_id" = "lensers"."get_auth_lenser_id"()) AND ("m"."role" = ANY (ARRAY['owner'::"organizations"."member_role_enum", 'admin'::"organizations"."member_role_enum"]))))));
+
+
+
+CREATE POLICY "members_manage_update" ON "organizations"."members" FOR UPDATE TO "authenticated" USING ((EXISTS ( SELECT 1
+   FROM "organizations"."members" "m"
+  WHERE (("m"."org_id" = "members"."org_id") AND ("m"."lenser_id" = "lensers"."get_auth_lenser_id"()) AND ("m"."role" = ANY (ARRAY['owner'::"organizations"."member_role_enum", 'admin'::"organizations"."member_role_enum"])))))) WITH CHECK ((EXISTS ( SELECT 1
+   FROM "organizations"."members" "m"
+  WHERE (("m"."org_id" = "members"."org_id") AND ("m"."lenser_id" = "lensers"."get_auth_lenser_id"()) AND ("m"."role" = ANY (ARRAY['owner'::"organizations"."member_role_enum", 'admin'::"organizations"."member_role_enum"]))))));
+
+
+
+CREATE POLICY "members_select_member" ON "organizations"."members" FOR SELECT TO "authenticated" USING ((EXISTS ( SELECT 1
+   FROM "organizations"."members" "m"
+  WHERE (("m"."org_id" = "members"."org_id") AND ("m"."lenser_id" = "lensers"."get_auth_lenser_id"())))));
+
+
+
+CREATE POLICY "members_service_all" ON "organizations"."members" TO "service_role" USING (true) WITH CHECK (true);
+
+
+
+ALTER TABLE "organizations"."organizations" ENABLE ROW LEVEL SECURITY;
+
+
+CREATE POLICY "organizations_insert_own" ON "organizations"."organizations" FOR INSERT TO "authenticated" WITH CHECK (("created_by" = "lensers"."get_auth_lenser_id"()));
+
+
+
+CREATE POLICY "organizations_select_member" ON "organizations"."organizations" FOR SELECT TO "authenticated" USING ((EXISTS ( SELECT 1
+   FROM "organizations"."members" "m"
+  WHERE (("m"."org_id" = "organizations"."id") AND ("m"."lenser_id" = "lensers"."get_auth_lenser_id"())))));
+
+
+
+CREATE POLICY "organizations_service_all" ON "organizations"."organizations" TO "service_role" USING (true) WITH CHECK (true);
+
+
+
+CREATE POLICY "organizations_update_admin" ON "organizations"."organizations" FOR UPDATE TO "authenticated" USING ((EXISTS ( SELECT 1
+   FROM "organizations"."members" "m"
+  WHERE (("m"."org_id" = "organizations"."id") AND ("m"."lenser_id" = "lensers"."get_auth_lenser_id"()) AND ("m"."role" = ANY (ARRAY['owner'::"organizations"."member_role_enum", 'admin'::"organizations"."member_role_enum"]))))));
+
+
+
+ALTER TABLE "organizations"."preferences" ENABLE ROW LEVEL SECURITY;
+
+
+CREATE POLICY "preferences_insert_admin" ON "organizations"."preferences" FOR INSERT TO "authenticated" WITH CHECK ((EXISTS ( SELECT 1
+   FROM "organizations"."members" "m"
+  WHERE (("m"."org_id" = "preferences"."org_id") AND ("m"."lenser_id" = "lensers"."get_auth_lenser_id"()) AND ("m"."role" = ANY (ARRAY['owner'::"organizations"."member_role_enum", 'admin'::"organizations"."member_role_enum"]))))));
+
+
+
+CREATE POLICY "preferences_select_member" ON "organizations"."preferences" FOR SELECT TO "authenticated" USING ((EXISTS ( SELECT 1
+   FROM "organizations"."members" "m"
+  WHERE (("m"."org_id" = "preferences"."org_id") AND ("m"."lenser_id" = "lensers"."get_auth_lenser_id"())))));
+
+
+
+CREATE POLICY "preferences_service_all" ON "organizations"."preferences" TO "service_role" USING (true) WITH CHECK (true);
+
+
+
+CREATE POLICY "preferences_update_admin" ON "organizations"."preferences" FOR UPDATE TO "authenticated" USING ((EXISTS ( SELECT 1
+   FROM "organizations"."members" "m"
+  WHERE (("m"."org_id" = "preferences"."org_id") AND ("m"."lenser_id" = "lensers"."get_auth_lenser_id"()) AND ("m"."role" = ANY (ARRAY['owner'::"organizations"."member_role_enum", 'admin'::"organizations"."member_role_enum"]))))));
+
+
+
 ALTER TABLE "platform"."api_worker_heartbeats" ENABLE ROW LEVEL SECURITY;
 
 
@@ -46347,6 +54788,58 @@ ALTER TABLE "tenancy"."workspace_members" ENABLE ROW LEVEL SECURITY;
 ALTER TABLE "tenancy"."workspaces" ENABLE ROW LEVEL SECURITY;
 
 
+ALTER TABLE "wallet"."accounts" ENABLE ROW LEVEL SECURITY;
+
+
+CREATE POLICY "accounts_service_all" ON "wallet"."accounts" TO "service_role" USING (true) WITH CHECK (true);
+
+
+
+ALTER TABLE "wallet"."credit_valuation_policy" ENABLE ROW LEVEL SECURITY;
+
+
+CREATE POLICY "credit_valuation_service_all" ON "wallet"."credit_valuation_policy" TO "service_role" USING (true) WITH CHECK (true);
+
+
+
+CREATE POLICY "org_accounts_select_member" ON "wallet"."organization_accounts" FOR SELECT TO "authenticated" USING ((EXISTS ( SELECT 1
+   FROM "organizations"."members" "om"
+  WHERE (("om"."org_id" = "organization_accounts"."org_id") AND ("om"."lenser_id" = "lensers"."get_auth_lenser_id"())))));
+
+
+
+CREATE POLICY "org_accounts_service_all" ON "wallet"."organization_accounts" TO "service_role" USING (true) WITH CHECK (true);
+
+
+
+ALTER TABLE "wallet"."organization_accounts" ENABLE ROW LEVEL SECURITY;
+
+
+ALTER TABLE "wallet"."pending_charges" ENABLE ROW LEVEL SECURITY;
+
+
+CREATE POLICY "pending_charges_service_all" ON "wallet"."pending_charges" TO "service_role" USING (true) WITH CHECK (true);
+
+
+
+ALTER TABLE "wallet"."spending_limits" ENABLE ROW LEVEL SECURITY;
+
+
+CREATE POLICY "spending_limits_service_all" ON "wallet"."spending_limits" TO "service_role" USING (true) WITH CHECK (true);
+
+
+
+ALTER TABLE "wallet"."transactions" ENABLE ROW LEVEL SECURITY;
+
+
+CREATE POLICY "transactions_service_insert" ON "wallet"."transactions" FOR INSERT TO "service_role" WITH CHECK (true);
+
+
+
+CREATE POLICY "transactions_service_select" ON "wallet"."transactions" FOR SELECT TO "service_role" USING (true);
+
+
+
 CREATE POLICY "Authenticated can read xp levels" ON "xp"."levels" FOR SELECT TO "authenticated" USING (true);
 
 
@@ -46540,6 +55033,10 @@ GRANT USAGE ON SCHEMA "battles" TO "service_role";
 
 
 
+GRANT USAGE ON SCHEMA "billing" TO "service_role";
+
+
+
 GRANT USAGE ON SCHEMA "connectors" TO "authenticated";
 GRANT USAGE ON SCHEMA "connectors" TO "service_role";
 
@@ -46596,6 +55093,12 @@ GRANT USAGE ON SCHEMA "media" TO "service_role";
 
 
 
+GRANT USAGE ON SCHEMA "organizations" TO "anon";
+GRANT USAGE ON SCHEMA "organizations" TO "authenticated";
+GRANT USAGE ON SCHEMA "organizations" TO "service_role";
+
+
+
 GRANT USAGE ON SCHEMA "public" TO "postgres";
 GRANT USAGE ON SCHEMA "public" TO "anon";
 GRANT USAGE ON SCHEMA "public" TO "authenticated";
@@ -46618,6 +55121,10 @@ GRANT USAGE ON SCHEMA "status" TO "service_role";
 GRANT USAGE ON SCHEMA "tenancy" TO "anon";
 GRANT USAGE ON SCHEMA "tenancy" TO "authenticated";
 GRANT USAGE ON SCHEMA "tenancy" TO "service_role";
+
+
+
+GRANT USAGE ON SCHEMA "wallet" TO "service_role";
 
 
 
@@ -46745,9 +55252,19 @@ GRANT ALL ON FUNCTION "agents"."fn_agent_action"("p_ai_lenser_id" "uuid", "p_act
 
 
 
+REVOKE ALL ON FUNCTION "agents"."fn_build_lenser_prompt_context"("p_ai_lenser_id" "uuid", "p_scope" "text", "p_limit" integer) FROM PUBLIC;
+GRANT ALL ON FUNCTION "agents"."fn_build_lenser_prompt_context"("p_ai_lenser_id" "uuid", "p_scope" "text", "p_limit" integer) TO "service_role";
+
+
+
 REVOKE ALL ON FUNCTION "agents"."fn_bulk_approve"("p_filters" "jsonb") FROM PUBLIC;
 GRANT ALL ON FUNCTION "agents"."fn_bulk_approve"("p_filters" "jsonb") TO "authenticated";
 GRANT ALL ON FUNCTION "agents"."fn_bulk_approve"("p_filters" "jsonb") TO "service_role";
+
+
+
+REVOKE ALL ON FUNCTION "agents"."fn_claim_team_run"("p_worker_id" "text") FROM PUBLIC;
+GRANT ALL ON FUNCTION "agents"."fn_claim_team_run"("p_worker_id" "text") TO "service_role";
 
 
 
@@ -46779,6 +55296,11 @@ GRANT ALL ON FUNCTION "agents"."fn_node_requires_review"("p_team_run_id" "uuid")
 
 REVOKE ALL ON FUNCTION "agents"."fn_send_team_message"("p_team_run_id" "uuid", "p_from_agent_id" "uuid", "p_kind" "text", "p_to_agent_id" "uuid", "p_payload" "jsonb", "p_parent_id" "uuid") FROM PUBLIC;
 GRANT ALL ON FUNCTION "agents"."fn_send_team_message"("p_team_run_id" "uuid", "p_from_agent_id" "uuid", "p_kind" "text", "p_to_agent_id" "uuid", "p_payload" "jsonb", "p_parent_id" "uuid") TO "authenticated";
+
+
+
+REVOKE ALL ON FUNCTION "agents"."fn_start_team_run"("p_ai_lenser_id" "uuid", "p_workflow_id" "uuid", "p_inputs" "jsonb", "p_policy" "text") FROM PUBLIC;
+GRANT ALL ON FUNCTION "agents"."fn_start_team_run"("p_ai_lenser_id" "uuid", "p_workflow_id" "uuid", "p_inputs" "jsonb", "p_policy" "text") TO "service_role";
 
 
 
@@ -46877,6 +55399,42 @@ GRANT ALL ON FUNCTION "audit"."log_event"("p_event_type" "text", "p_entity_schem
 REVOKE ALL ON FUNCTION "audit"."log_event_v2"("p_event_type" "text", "p_actor_type" "text", "p_actor_id" "uuid", "p_entity_schema" "text", "p_entity_table" "text", "p_entity_id" "uuid", "p_payload" "jsonb", "p_severity" "text", "p_ip_hash" "text", "p_user_agent_hash" "text") FROM PUBLIC;
 GRANT ALL ON FUNCTION "audit"."log_event_v2"("p_event_type" "text", "p_actor_type" "text", "p_actor_id" "uuid", "p_entity_schema" "text", "p_entity_table" "text", "p_entity_id" "uuid", "p_payload" "jsonb", "p_severity" "text", "p_ip_hash" "text", "p_user_agent_hash" "text") TO "service_role";
 GRANT ALL ON FUNCTION "audit"."log_event_v2"("p_event_type" "text", "p_actor_type" "text", "p_actor_id" "uuid", "p_entity_schema" "text", "p_entity_table" "text", "p_entity_id" "uuid", "p_payload" "jsonb", "p_severity" "text", "p_ip_hash" "text", "p_user_agent_hash" "text") TO "authenticated";
+
+
+
+REVOKE ALL ON FUNCTION "authz"."fn_approve_device_request"("p_user_code" "text") FROM PUBLIC;
+
+
+
+REVOKE ALL ON FUNCTION "authz"."fn_exchange_device_approval"("p_request_id" "uuid", "p_request_secret" "text") FROM PUBLIC;
+
+
+
+REVOKE ALL ON FUNCTION "authz"."fn_exchange_device_login"("p_request_id" "uuid", "p_request_secret" "text") FROM PUBLIC;
+
+
+
+REVOKE ALL ON FUNCTION "authz"."fn_generate_user_code"() FROM PUBLIC;
+
+
+
+REVOKE ALL ON FUNCTION "authz"."fn_list_developer_tokens"() FROM PUBLIC;
+
+
+
+REVOKE ALL ON FUNCTION "authz"."fn_request_device_approval"("p_label" "text", "p_request_ttl_minutes" integer, "p_token_ttl_hours" integer) FROM PUBLIC;
+
+
+
+REVOKE ALL ON FUNCTION "authz"."fn_request_device_login"("p_request_ttl_minutes" integer) FROM PUBLIC;
+
+
+
+REVOKE ALL ON FUNCTION "authz"."fn_revoke_developer_token"("p_token_id" "uuid") FROM PUBLIC;
+
+
+
+REVOKE ALL ON FUNCTION "authz"."fn_store_device_login_session"("p_user_code" "text", "p_access_token" "text", "p_refresh_token" "text") FROM PUBLIC;
 
 
 
@@ -47096,6 +55654,11 @@ GRANT ALL ON FUNCTION "battles"."trg_submissions_validate_execution_link"() TO "
 
 
 
+REVOKE ALL ON FUNCTION "billing"."calculate_credit_cost"("p_model_id" "uuid", "p_input_tokens" bigint, "p_output_tokens" bigint, "p_units" integer) FROM PUBLIC;
+GRANT ALL ON FUNCTION "billing"."calculate_credit_cost"("p_model_id" "uuid", "p_input_tokens" bigint, "p_output_tokens" bigint, "p_units" integer) TO "service_role";
+
+
+
 GRANT ALL ON FUNCTION "content"."ensure_public_tag"() TO "anon";
 GRANT ALL ON FUNCTION "content"."ensure_public_tag"() TO "authenticated";
 GRANT ALL ON FUNCTION "content"."ensure_public_tag"() TO "service_role";
@@ -47245,6 +55808,11 @@ GRANT ALL ON FUNCTION "devices"."fn_sync_status"("p_device_id" "uuid") TO "authe
 
 
 
+REVOKE ALL ON FUNCTION "execution"."fn_async_run_idempotent_complete"("p_run_id" "uuid", "p_media_url" "text", "p_mime_type" "text", "p_bytes" bigint, "p_width" integer, "p_height" integer, "p_duration_s" numeric) FROM PUBLIC;
+GRANT ALL ON FUNCTION "execution"."fn_async_run_idempotent_complete"("p_run_id" "uuid", "p_media_url" "text", "p_mime_type" "text", "p_bytes" bigint, "p_width" integer, "p_height" integer, "p_duration_s" numeric) TO "service_role";
+
+
+
 REVOKE ALL ON FUNCTION "execution"."fn_b64url_decode"("p_in" "text") FROM PUBLIC;
 GRANT ALL ON FUNCTION "execution"."fn_b64url_decode"("p_in" "text") TO "authenticated";
 GRANT ALL ON FUNCTION "execution"."fn_b64url_decode"("p_in" "text") TO "service_role";
@@ -47278,6 +55846,11 @@ GRANT ALL ON FUNCTION "execution"."fn_get_run_details"("p_run_id" "uuid") TO "se
 
 GRANT ALL ON FUNCTION "execution"."fn_get_submission_trust"("p_submission_id" "uuid") TO "authenticated";
 GRANT ALL ON FUNCTION "execution"."fn_get_submission_trust"("p_submission_id" "uuid") TO "anon";
+
+
+
+REVOKE ALL ON FUNCTION "execution"."fn_media_finalize_sync_upload"("p_run_id" "uuid", "p_object_key" "text", "p_mime_type" "text", "p_bytes" bigint, "p_width" integer, "p_height" integer, "p_duration_s" numeric) FROM PUBLIC;
+GRANT ALL ON FUNCTION "execution"."fn_media_finalize_sync_upload"("p_run_id" "uuid", "p_object_key" "text", "p_mime_type" "text", "p_bytes" bigint, "p_width" integer, "p_height" integer, "p_duration_s" numeric) TO "service_role";
 
 
 
@@ -47338,6 +55911,21 @@ GRANT ALL ON FUNCTION "execution"."fn_verify_attestation_signature"("p_kid" "uui
 
 REVOKE ALL ON FUNCTION "execution"."fn_xp_apply_safe"("p_lenser_id" "uuid", "p_rule_key" "text", "p_source" "xp"."source_enum", "p_source_ref_type" "text", "p_source_ref_id" "uuid", "p_app_id" "uuid") FROM PUBLIC;
 GRANT ALL ON FUNCTION "execution"."fn_xp_apply_safe"("p_lenser_id" "uuid", "p_rule_key" "text", "p_source" "xp"."source_enum", "p_source_ref_type" "text", "p_source_ref_id" "uuid", "p_app_id" "uuid") TO "service_role";
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -47823,6 +56411,33 @@ GRANT ALL ON FUNCTION "media"."set_updated_at"() TO "service_role";
 
 
 
+GRANT ALL ON TABLE "organizations"."organizations" TO "anon";
+GRANT ALL ON TABLE "organizations"."organizations" TO "authenticated";
+GRANT ALL ON TABLE "organizations"."organizations" TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "organizations"."fn_create_organization"("p_display_name" character varying, "p_slug" character varying, "p_org_type" "text", "p_legal_name" character varying, "p_website" "text", "p_industry" character varying, "p_billing_email" "text") TO "authenticated";
+GRANT ALL ON FUNCTION "organizations"."fn_create_organization"("p_display_name" character varying, "p_slug" character varying, "p_org_type" "text", "p_legal_name" character varying, "p_website" "text", "p_industry" character varying, "p_billing_email" "text") TO "service_role";
+
+
+
+GRANT ALL ON TABLE "organizations"."members" TO "anon";
+GRANT ALL ON TABLE "organizations"."members" TO "authenticated";
+GRANT ALL ON TABLE "organizations"."members" TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "organizations"."fn_invite_member"("p_org_id" "uuid", "p_lenser_id" "uuid", "p_role" "text") TO "authenticated";
+GRANT ALL ON FUNCTION "organizations"."fn_invite_member"("p_org_id" "uuid", "p_lenser_id" "uuid", "p_role" "text") TO "service_role";
+
+
+
+REVOKE ALL ON FUNCTION "platform"."fn_get_platform_system_flags"() FROM PUBLIC;
+GRANT ALL ON FUNCTION "platform"."fn_get_platform_system_flags"() TO "service_role";
+
+
+
 REVOKE ALL ON FUNCTION "platform"."fn_queue_stats"() FROM PUBLIC;
 GRANT ALL ON FUNCTION "platform"."fn_queue_stats"() TO "service_role";
 
@@ -47835,6 +56450,11 @@ GRANT ALL ON FUNCTION "platform"."fn_recent_audit_events"("p_since" interval) TO
 
 REVOKE ALL ON FUNCTION "platform"."fn_set_autonomy_dispatch_enabled"("p_enabled" boolean) FROM PUBLIC;
 GRANT ALL ON FUNCTION "platform"."fn_set_autonomy_dispatch_enabled"("p_enabled" boolean) TO "service_role";
+
+
+
+REVOKE ALL ON FUNCTION "platform"."fn_set_platform_flag"("p_key" "text", "p_enabled" boolean) FROM PUBLIC;
+GRANT ALL ON FUNCTION "platform"."fn_set_platform_flag"("p_key" "text", "p_enabled" boolean) TO "service_role";
 
 
 
@@ -47907,10 +56527,22 @@ GRANT ALL ON FUNCTION "public"."fn_admin_get_worker_health"() TO "service_role";
 
 
 
+REVOKE ALL ON FUNCTION "public"."fn_admin_health"() FROM PUBLIC;
+GRANT ALL ON FUNCTION "public"."fn_admin_health"() TO "service_role";
+
+
+
 REVOKE ALL ON FUNCTION "public"."fn_admin_retry_dlq"("p_dead_letter_id" "uuid") FROM PUBLIC;
 GRANT ALL ON FUNCTION "public"."fn_admin_retry_dlq"("p_dead_letter_id" "uuid") TO "anon";
 GRANT ALL ON FUNCTION "public"."fn_admin_retry_dlq"("p_dead_letter_id" "uuid") TO "authenticated";
 GRANT ALL ON FUNCTION "public"."fn_admin_retry_dlq"("p_dead_letter_id" "uuid") TO "service_role";
+
+
+
+REVOKE ALL ON FUNCTION "public"."fn_advance_tournament"("p_match_id" "uuid") FROM PUBLIC;
+GRANT ALL ON FUNCTION "public"."fn_advance_tournament"("p_match_id" "uuid") TO "anon";
+GRANT ALL ON FUNCTION "public"."fn_advance_tournament"("p_match_id" "uuid") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."fn_advance_tournament"("p_match_id" "uuid") TO "service_role";
 
 
 
@@ -48026,15 +56658,42 @@ GRANT ALL ON FUNCTION "public"."fn_analytics_submit_feedback_public"("p_product_
 
 
 
+REVOKE ALL ON FUNCTION "public"."fn_append_team_run_event"("p_team_run_id" "uuid", "p_event_type" "text", "p_payload" "jsonb") FROM PUBLIC;
+GRANT ALL ON FUNCTION "public"."fn_append_team_run_event"("p_team_run_id" "uuid", "p_event_type" "text", "p_payload" "jsonb") TO "anon";
+GRANT ALL ON FUNCTION "public"."fn_append_team_run_event"("p_team_run_id" "uuid", "p_event_type" "text", "p_payload" "jsonb") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."fn_append_team_run_event"("p_team_run_id" "uuid", "p_event_type" "text", "p_payload" "jsonb") TO "service_role";
+
+
+
 GRANT ALL ON FUNCTION "public"."fn_append_workflow_run_event"("p_run_id" "uuid", "p_type" "text", "p_payload" "jsonb") TO "anon";
 GRANT ALL ON FUNCTION "public"."fn_append_workflow_run_event"("p_run_id" "uuid", "p_type" "text", "p_payload" "jsonb") TO "authenticated";
 GRANT ALL ON FUNCTION "public"."fn_append_workflow_run_event"("p_run_id" "uuid", "p_type" "text", "p_payload" "jsonb") TO "service_role";
 
 
 
+REVOKE ALL ON FUNCTION "public"."fn_append_workflow_run_media"("p_run_id" "uuid", "p_object_id" "uuid", "p_media_type" "text", "p_mime_type" "text", "p_node_id" "text") FROM PUBLIC;
+GRANT ALL ON FUNCTION "public"."fn_append_workflow_run_media"("p_run_id" "uuid", "p_object_id" "uuid", "p_media_type" "text", "p_mime_type" "text", "p_node_id" "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."fn_append_workflow_run_media"("p_run_id" "uuid", "p_object_id" "uuid", "p_media_type" "text", "p_mime_type" "text", "p_node_id" "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."fn_append_workflow_run_media"("p_run_id" "uuid", "p_object_id" "uuid", "p_media_type" "text", "p_mime_type" "text", "p_node_id" "text") TO "service_role";
+
+
+
 GRANT ALL ON FUNCTION "public"."fn_approve_tool_invocation"("p_invocation_id" "uuid") TO "anon";
 GRANT ALL ON FUNCTION "public"."fn_approve_tool_invocation"("p_invocation_id" "uuid") TO "authenticated";
 GRANT ALL ON FUNCTION "public"."fn_approve_tool_invocation"("p_invocation_id" "uuid") TO "service_role";
+
+
+
+REVOKE ALL ON FUNCTION "public"."fn_assert_modality_allowed"("p_agent_id" "uuid", "p_modality" "text") FROM PUBLIC;
+GRANT ALL ON FUNCTION "public"."fn_assert_modality_allowed"("p_agent_id" "uuid", "p_modality" "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."fn_assert_modality_allowed"("p_agent_id" "uuid", "p_modality" "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."fn_assert_modality_allowed"("p_agent_id" "uuid", "p_modality" "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."fn_assign_lens_to_contender"("p_contender_id" "uuid", "p_battle_id" "uuid", "p_lens_id" "uuid", "p_version_id" "uuid") TO "anon";
+GRANT ALL ON FUNCTION "public"."fn_assign_lens_to_contender"("p_contender_id" "uuid", "p_battle_id" "uuid", "p_lens_id" "uuid", "p_version_id" "uuid") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."fn_assign_lens_to_contender"("p_contender_id" "uuid", "p_battle_id" "uuid", "p_lens_id" "uuid", "p_version_id" "uuid") TO "service_role";
 
 
 
@@ -48260,6 +56919,12 @@ GRANT ALL ON FUNCTION "public"."fn_battles_leaderboard"("p_battle_id" "uuid") TO
 
 
 
+GRANT ALL ON FUNCTION "public"."fn_battles_link_forum_thread"("p_battle_id" "uuid", "p_forum_thread_id" "uuid") TO "anon";
+GRANT ALL ON FUNCTION "public"."fn_battles_link_forum_thread"("p_battle_id" "uuid", "p_forum_thread_id" "uuid") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."fn_battles_link_forum_thread"("p_battle_id" "uuid", "p_forum_thread_id" "uuid") TO "service_role";
+
+
+
 GRANT ALL ON FUNCTION "public"."fn_battles_list_public"("p_limit" integer, "p_offset" integer) TO "anon";
 GRANT ALL ON FUNCTION "public"."fn_battles_list_public"("p_limit" integer, "p_offset" integer) TO "authenticated";
 GRANT ALL ON FUNCTION "public"."fn_battles_list_public"("p_limit" integer, "p_offset" integer) TO "service_role";
@@ -48339,15 +57004,35 @@ GRANT ALL ON FUNCTION "public"."fn_byok_key_register"("p_agent_id" "uuid", "p_pr
 
 
 
+REVOKE ALL ON FUNCTION "public"."fn_byok_key_resolve"("p_agent_id" "uuid", "p_provider" "text", "p_model_id" "text") FROM PUBLIC;
+GRANT ALL ON FUNCTION "public"."fn_byok_key_resolve"("p_agent_id" "uuid", "p_provider" "text", "p_model_id" "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."fn_byok_key_resolve"("p_agent_id" "uuid", "p_provider" "text", "p_model_id" "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."fn_byok_key_resolve"("p_agent_id" "uuid", "p_provider" "text", "p_model_id" "text") TO "service_role";
+
+
+
 GRANT ALL ON FUNCTION "public"."fn_byok_key_revoke"("p_agent_id" "uuid", "p_provider" "text") TO "anon";
 GRANT ALL ON FUNCTION "public"."fn_byok_key_revoke"("p_agent_id" "uuid", "p_provider" "text") TO "authenticated";
 GRANT ALL ON FUNCTION "public"."fn_byok_key_revoke"("p_agent_id" "uuid", "p_provider" "text") TO "service_role";
 
 
 
+REVOKE ALL ON FUNCTION "public"."fn_byok_key_rotate"("p_agent_id" "uuid", "p_provider" "text", "p_new_encrypted" "text", "p_new_hint" "text") FROM PUBLIC;
+GRANT ALL ON FUNCTION "public"."fn_byok_key_rotate"("p_agent_id" "uuid", "p_provider" "text", "p_new_encrypted" "text", "p_new_hint" "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."fn_byok_key_rotate"("p_agent_id" "uuid", "p_provider" "text", "p_new_encrypted" "text", "p_new_hint" "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."fn_byok_key_rotate"("p_agent_id" "uuid", "p_provider" "text", "p_new_encrypted" "text", "p_new_hint" "text") TO "service_role";
+
+
+
 GRANT ALL ON FUNCTION "public"."fn_cancel_account_deletion_on_login"() TO "anon";
 GRANT ALL ON FUNCTION "public"."fn_cancel_account_deletion_on_login"() TO "authenticated";
 GRANT ALL ON FUNCTION "public"."fn_cancel_account_deletion_on_login"() TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."fn_cancel_agent_run"("p_team_run_id" "uuid", "p_ai_lenser_id" "uuid") TO "anon";
+GRANT ALL ON FUNCTION "public"."fn_cancel_agent_run"("p_team_run_id" "uuid", "p_ai_lenser_id" "uuid") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."fn_cancel_agent_run"("p_team_run_id" "uuid", "p_ai_lenser_id" "uuid") TO "service_role";
 
 
 
@@ -48360,6 +57045,12 @@ GRANT ALL ON FUNCTION "public"."fn_cancel_run"("p_team_run_id" "uuid") TO "servi
 GRANT ALL ON FUNCTION "public"."fn_cancel_workflow_run_over_budget"("p_run_id" "uuid", "p_pending_credits" integer) TO "anon";
 GRANT ALL ON FUNCTION "public"."fn_cancel_workflow_run_over_budget"("p_run_id" "uuid", "p_pending_credits" integer) TO "authenticated";
 GRANT ALL ON FUNCTION "public"."fn_cancel_workflow_run_over_budget"("p_run_id" "uuid", "p_pending_credits" integer) TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."fn_check_voter_eligibility"("p_battle_id" "uuid", "p_lenser_id" "uuid") TO "anon";
+GRANT ALL ON FUNCTION "public"."fn_check_voter_eligibility"("p_battle_id" "uuid", "p_lenser_id" "uuid") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."fn_check_voter_eligibility"("p_battle_id" "uuid", "p_lenser_id" "uuid") TO "service_role";
 
 
 
@@ -48580,6 +57271,18 @@ GRANT ALL ON FUNCTION "public"."fn_core_languages_list"() TO "service_role";
 
 
 
+GRANT ALL ON FUNCTION "public"."fn_create_agent_team"("p_ai_lenser_id" "uuid", "p_name" "text", "p_description" "text", "p_initial_members" "jsonb") TO "anon";
+GRANT ALL ON FUNCTION "public"."fn_create_agent_team"("p_ai_lenser_id" "uuid", "p_name" "text", "p_description" "text", "p_initial_members" "jsonb") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."fn_create_agent_team"("p_ai_lenser_id" "uuid", "p_name" "text", "p_description" "text", "p_initial_members" "jsonb") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."fn_create_ai_lenser"("p_owner_lenser_id" "uuid", "p_handle" "text", "p_display_name" "text", "p_ai_model_id" "uuid") TO "anon";
+GRANT ALL ON FUNCTION "public"."fn_create_ai_lenser"("p_owner_lenser_id" "uuid", "p_handle" "text", "p_display_name" "text", "p_ai_model_id" "uuid") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."fn_create_ai_lenser"("p_owner_lenser_id" "uuid", "p_handle" "text", "p_display_name" "text", "p_ai_model_id" "uuid") TO "service_role";
+
+
+
 REVOKE ALL ON FUNCTION "public"."fn_create_automation_notification"("p_lenser_id" "uuid", "p_title" "text", "p_body" "text", "p_payload" "jsonb") FROM PUBLIC;
 GRANT ALL ON FUNCTION "public"."fn_create_automation_notification"("p_lenser_id" "uuid", "p_title" "text", "p_body" "text", "p_payload" "jsonb") TO "anon";
 GRANT ALL ON FUNCTION "public"."fn_create_automation_notification"("p_lenser_id" "uuid", "p_title" "text", "p_body" "text", "p_payload" "jsonb") TO "authenticated";
@@ -48587,9 +57290,63 @@ GRANT ALL ON FUNCTION "public"."fn_create_automation_notification"("p_lenser_id"
 
 
 
+GRANT ALL ON FUNCTION "public"."fn_create_battle"("p_title" "text", "p_task_prompt" "text", "p_battle_type" "text", "p_voter_eligibility" "text", "p_handicap_config" "jsonb", "p_workflow_id" "uuid", "p_lens_id" "uuid") TO "anon";
+GRANT ALL ON FUNCTION "public"."fn_create_battle"("p_title" "text", "p_task_prompt" "text", "p_battle_type" "text", "p_voter_eligibility" "text", "p_handicap_config" "jsonb", "p_workflow_id" "uuid", "p_lens_id" "uuid") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."fn_create_battle"("p_title" "text", "p_task_prompt" "text", "p_battle_type" "text", "p_voter_eligibility" "text", "p_handicap_config" "jsonb", "p_workflow_id" "uuid", "p_lens_id" "uuid") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."fn_create_benchmark_invalidation"("p_result_set_id" "uuid", "p_reason" "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."fn_create_benchmark_invalidation"("p_result_set_id" "uuid", "p_reason" "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."fn_create_benchmark_invalidation"("p_result_set_id" "uuid", "p_reason" "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."fn_create_benchmark_suite"("p_title" "text", "p_description" "text", "p_category" "text", "p_version" "text", "p_is_public" boolean) TO "anon";
+GRANT ALL ON FUNCTION "public"."fn_create_benchmark_suite"("p_title" "text", "p_description" "text", "p_category" "text", "p_version" "text", "p_is_public" boolean) TO "authenticated";
+GRANT ALL ON FUNCTION "public"."fn_create_benchmark_suite"("p_title" "text", "p_description" "text", "p_category" "text", "p_version" "text", "p_is_public" boolean) TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."fn_create_benchmark_task"("p_suite_id" "uuid", "p_title" "text", "p_prompt_template" "text", "p_evaluation_protocol" "jsonb", "p_required_repetitions" integer, "p_ordinal" integer, "p_workflow_id" "uuid") TO "anon";
+GRANT ALL ON FUNCTION "public"."fn_create_benchmark_task"("p_suite_id" "uuid", "p_title" "text", "p_prompt_template" "text", "p_evaluation_protocol" "jsonb", "p_required_repetitions" integer, "p_ordinal" integer, "p_workflow_id" "uuid") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."fn_create_benchmark_task"("p_suite_id" "uuid", "p_title" "text", "p_prompt_template" "text", "p_evaluation_protocol" "jsonb", "p_required_repetitions" integer, "p_ordinal" integer, "p_workflow_id" "uuid") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."fn_create_evaluation_rubric"("p_evaluation_id" "uuid", "p_criteria" "jsonb") TO "anon";
+GRANT ALL ON FUNCTION "public"."fn_create_evaluation_rubric"("p_evaluation_id" "uuid", "p_criteria" "jsonb") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."fn_create_evaluation_rubric"("p_evaluation_id" "uuid", "p_criteria" "jsonb") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."fn_create_evaluation_with_cases"("p_owner_lenser_id" "uuid", "p_ai_lenser_id" "uuid", "p_target_type" "text", "p_target_id" "uuid", "p_name" "text", "p_description" "text", "p_scoring_rules" "jsonb", "p_dataset_uri" "text", "p_cases" "jsonb") TO "anon";
+GRANT ALL ON FUNCTION "public"."fn_create_evaluation_with_cases"("p_owner_lenser_id" "uuid", "p_ai_lenser_id" "uuid", "p_target_type" "text", "p_target_id" "uuid", "p_name" "text", "p_description" "text", "p_scoring_rules" "jsonb", "p_dataset_uri" "text", "p_cases" "jsonb") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."fn_create_evaluation_with_cases"("p_owner_lenser_id" "uuid", "p_ai_lenser_id" "uuid", "p_target_type" "text", "p_target_id" "uuid", "p_name" "text", "p_description" "text", "p_scoring_rules" "jsonb", "p_dataset_uri" "text", "p_cases" "jsonb") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."fn_create_lens"("p_visibility" "text", "p_template_body" "text", "p_title" "text", "p_description" "text", "p_language_code" "text", "p_params" "jsonb", "p_tag_ids" "uuid"[], "p_parent_lens_id" "uuid", "p_forked_from_execution_id" "uuid") TO "anon";
+GRANT ALL ON FUNCTION "public"."fn_create_lens"("p_visibility" "text", "p_template_body" "text", "p_title" "text", "p_description" "text", "p_language_code" "text", "p_params" "jsonb", "p_tag_ids" "uuid"[], "p_parent_lens_id" "uuid", "p_forked_from_execution_id" "uuid") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."fn_create_lens"("p_visibility" "text", "p_template_body" "text", "p_title" "text", "p_description" "text", "p_language_code" "text", "p_params" "jsonb", "p_tag_ids" "uuid"[], "p_parent_lens_id" "uuid", "p_forked_from_execution_id" "uuid") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."fn_create_media_object"("p_workspace_id" "uuid", "p_media_type" "text", "p_mime_type" "text", "p_name" "text", "p_content_text" "text", "p_external_url" "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."fn_create_media_object"("p_workspace_id" "uuid", "p_media_type" "text", "p_mime_type" "text", "p_name" "text", "p_content_text" "text", "p_external_url" "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."fn_create_media_object"("p_workspace_id" "uuid", "p_media_type" "text", "p_mime_type" "text", "p_name" "text", "p_content_text" "text", "p_external_url" "text") TO "service_role";
+
+
+
 GRANT ALL ON FUNCTION "public"."fn_create_run_report"("p_team_run_id" "uuid") TO "anon";
 GRANT ALL ON FUNCTION "public"."fn_create_run_report"("p_team_run_id" "uuid") TO "authenticated";
 GRANT ALL ON FUNCTION "public"."fn_create_run_report"("p_team_run_id" "uuid") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."fn_create_schedule_calendar"("p_name" "text", "p_kind" "text", "p_dates" "date"[], "p_timezone" "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."fn_create_schedule_calendar"("p_name" "text", "p_kind" "text", "p_dates" "date"[], "p_timezone" "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."fn_create_schedule_calendar"("p_name" "text", "p_kind" "text", "p_dates" "date"[], "p_timezone" "text") TO "service_role";
 
 
 
@@ -48603,6 +57360,19 @@ REVOKE ALL ON FUNCTION "public"."fn_create_tag"("p_name" "text", "p_slug" "text"
 GRANT ALL ON FUNCTION "public"."fn_create_tag"("p_name" "text", "p_slug" "text", "p_language_code" "text") TO "anon";
 GRANT ALL ON FUNCTION "public"."fn_create_tag"("p_name" "text", "p_slug" "text", "p_language_code" "text") TO "authenticated";
 GRANT ALL ON FUNCTION "public"."fn_create_tag"("p_name" "text", "p_slug" "text", "p_language_code" "text") TO "service_role";
+
+
+
+REVOKE ALL ON FUNCTION "public"."fn_create_team_run"("p_ai_lenser_id" "uuid", "p_workflow_id" "uuid", "p_workflow_run_id" "uuid", "p_workflow_assignment_id" "uuid", "p_team_id" "uuid", "p_approval_status" "text") FROM PUBLIC;
+GRANT ALL ON FUNCTION "public"."fn_create_team_run"("p_ai_lenser_id" "uuid", "p_workflow_id" "uuid", "p_workflow_run_id" "uuid", "p_workflow_assignment_id" "uuid", "p_team_id" "uuid", "p_approval_status" "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."fn_create_team_run"("p_ai_lenser_id" "uuid", "p_workflow_id" "uuid", "p_workflow_run_id" "uuid", "p_workflow_assignment_id" "uuid", "p_team_id" "uuid", "p_approval_status" "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."fn_create_team_run"("p_ai_lenser_id" "uuid", "p_workflow_id" "uuid", "p_workflow_run_id" "uuid", "p_workflow_assignment_id" "uuid", "p_team_id" "uuid", "p_approval_status" "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."fn_create_thread_reply"("p_thread_id" "uuid", "p_content" "text", "p_parent_reply_id" "uuid") TO "anon";
+GRANT ALL ON FUNCTION "public"."fn_create_thread_reply"("p_thread_id" "uuid", "p_content" "text", "p_parent_reply_id" "uuid") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."fn_create_thread_reply"("p_thread_id" "uuid", "p_content" "text", "p_parent_reply_id" "uuid") TO "service_role";
 
 
 
@@ -48621,6 +57391,12 @@ GRANT ALL ON FUNCTION "public"."fn_create_tournament"("p_title" "text", "p_forma
 GRANT ALL ON FUNCTION "public"."fn_create_workflow"("p_title" "text", "p_description" "text", "p_visibility" "text") TO "anon";
 GRANT ALL ON FUNCTION "public"."fn_create_workflow"("p_title" "text", "p_description" "text", "p_visibility" "text") TO "authenticated";
 GRANT ALL ON FUNCTION "public"."fn_create_workflow"("p_title" "text", "p_description" "text", "p_visibility" "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."fn_create_workspace_record"("p_table_name" "text", "p_data" "jsonb") TO "anon";
+GRANT ALL ON FUNCTION "public"."fn_create_workspace_record"("p_table_name" "text", "p_data" "jsonb") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."fn_create_workspace_record"("p_table_name" "text", "p_data" "jsonb") TO "service_role";
 
 
 
@@ -48648,6 +57424,31 @@ GRANT ALL ON FUNCTION "public"."fn_decide_tool_invocation"("p_log_id" "uuid", "p
 
 
 
+GRANT ALL ON FUNCTION "public"."fn_delete_automation_rule"("p_rule_id" "uuid") TO "anon";
+GRANT ALL ON FUNCTION "public"."fn_delete_automation_rule"("p_rule_id" "uuid") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."fn_delete_automation_rule"("p_rule_id" "uuid") TO "service_role";
+
+
+
+REVOKE ALL ON FUNCTION "public"."fn_delete_media_object"("p_object_id" "uuid") FROM PUBLIC;
+GRANT ALL ON FUNCTION "public"."fn_delete_media_object"("p_object_id" "uuid") TO "anon";
+GRANT ALL ON FUNCTION "public"."fn_delete_media_object"("p_object_id" "uuid") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."fn_delete_media_object"("p_object_id" "uuid") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."fn_delete_thread"("p_thread_id" "uuid") TO "anon";
+GRANT ALL ON FUNCTION "public"."fn_delete_thread"("p_thread_id" "uuid") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."fn_delete_thread"("p_thread_id" "uuid") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."fn_delete_thread_reply"("p_reply_id" "uuid") TO "anon";
+GRANT ALL ON FUNCTION "public"."fn_delete_thread_reply"("p_reply_id" "uuid") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."fn_delete_thread_reply"("p_reply_id" "uuid") TO "service_role";
+
+
+
 GRANT ALL ON FUNCTION "public"."fn_delete_workflow_edge"("p_edge_id" "uuid") TO "anon";
 GRANT ALL ON FUNCTION "public"."fn_delete_workflow_edge"("p_edge_id" "uuid") TO "authenticated";
 GRANT ALL ON FUNCTION "public"."fn_delete_workflow_edge"("p_edge_id" "uuid") TO "service_role";
@@ -48660,9 +57461,27 @@ GRANT ALL ON FUNCTION "public"."fn_delete_workflow_node"("p_node_id" "uuid") TO 
 
 
 
+GRANT ALL ON FUNCTION "public"."fn_delete_workflow_phase"("p_phase_id" "uuid") TO "anon";
+GRANT ALL ON FUNCTION "public"."fn_delete_workflow_phase"("p_phase_id" "uuid") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."fn_delete_workflow_phase"("p_phase_id" "uuid") TO "service_role";
+
+
+
 GRANT ALL ON FUNCTION "public"."fn_delete_workflow_schedule"("p_schedule_id" "uuid") TO "anon";
 GRANT ALL ON FUNCTION "public"."fn_delete_workflow_schedule"("p_schedule_id" "uuid") TO "authenticated";
 GRANT ALL ON FUNCTION "public"."fn_delete_workflow_schedule"("p_schedule_id" "uuid") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."fn_delete_workflow_task"("p_task_id" "uuid") TO "anon";
+GRANT ALL ON FUNCTION "public"."fn_delete_workflow_task"("p_task_id" "uuid") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."fn_delete_workflow_task"("p_task_id" "uuid") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."fn_delete_workspace_item"("p_table_name" "text", "p_id" "uuid") TO "anon";
+GRANT ALL ON FUNCTION "public"."fn_delete_workspace_item"("p_table_name" "text", "p_id" "uuid") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."fn_delete_workspace_item"("p_table_name" "text", "p_id" "uuid") TO "service_role";
 
 
 
@@ -48714,6 +57533,20 @@ GRANT ALL ON FUNCTION "public"."fn_execution_persist_response"("p_lenser_id" "uu
 
 
 
+REVOKE ALL ON FUNCTION "public"."fn_expire_byok_keys"() FROM PUBLIC;
+GRANT ALL ON FUNCTION "public"."fn_expire_byok_keys"() TO "anon";
+GRANT ALL ON FUNCTION "public"."fn_expire_byok_keys"() TO "authenticated";
+GRANT ALL ON FUNCTION "public"."fn_expire_byok_keys"() TO "service_role";
+
+
+
+REVOKE ALL ON FUNCTION "public"."fn_expire_media_objects"() FROM PUBLIC;
+GRANT ALL ON FUNCTION "public"."fn_expire_media_objects"() TO "anon";
+GRANT ALL ON FUNCTION "public"."fn_expire_media_objects"() TO "authenticated";
+GRANT ALL ON FUNCTION "public"."fn_expire_media_objects"() TO "service_role";
+
+
+
 GRANT ALL ON FUNCTION "public"."fn_expire_stale_approvals"() TO "anon";
 GRANT ALL ON FUNCTION "public"."fn_expire_stale_approvals"() TO "authenticated";
 GRANT ALL ON FUNCTION "public"."fn_expire_stale_approvals"() TO "service_role";
@@ -48745,9 +57578,87 @@ GRANT ALL ON FUNCTION "public"."fn_get_agent_automation_feed"("p_ai_lenser_id" "
 
 
 
+GRANT ALL ON FUNCTION "public"."fn_get_agent_cost_summary"("p_ai_lenser_id" "uuid") TO "anon";
+GRANT ALL ON FUNCTION "public"."fn_get_agent_cost_summary"("p_ai_lenser_id" "uuid") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."fn_get_agent_cost_summary"("p_ai_lenser_id" "uuid") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."fn_get_agent_profile"("p_ai_lenser_id" "uuid") TO "anon";
+GRANT ALL ON FUNCTION "public"."fn_get_agent_profile"("p_ai_lenser_id" "uuid") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."fn_get_agent_profile"("p_ai_lenser_id" "uuid") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."fn_get_agent_profile_by_profile_id"("p_profile_id" "uuid") TO "anon";
+GRANT ALL ON FUNCTION "public"."fn_get_agent_profile_by_profile_id"("p_profile_id" "uuid") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."fn_get_agent_profile_by_profile_id"("p_profile_id" "uuid") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."fn_get_agent_quota_snapshot"("p_ai_lenser_id" "uuid", "p_period_date" "date") TO "anon";
+GRANT ALL ON FUNCTION "public"."fn_get_agent_quota_snapshot"("p_ai_lenser_id" "uuid", "p_period_date" "date") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."fn_get_agent_quota_snapshot"("p_ai_lenser_id" "uuid", "p_period_date" "date") TO "service_role";
+
+
+
 GRANT ALL ON FUNCTION "public"."fn_get_agent_workspace_bootstrap"("p_profile_handle" "text") TO "anon";
 GRANT ALL ON FUNCTION "public"."fn_get_agent_workspace_bootstrap"("p_profile_handle" "text") TO "authenticated";
 GRANT ALL ON FUNCTION "public"."fn_get_agent_workspace_bootstrap"("p_profile_handle" "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."fn_get_ai_handicap_policy"("p_battle_id" "uuid") TO "anon";
+GRANT ALL ON FUNCTION "public"."fn_get_ai_handicap_policy"("p_battle_id" "uuid") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."fn_get_ai_handicap_policy"("p_battle_id" "uuid") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."fn_get_ai_judge_verdicts"("p_battle_id" "uuid") TO "anon";
+GRANT ALL ON FUNCTION "public"."fn_get_ai_judge_verdicts"("p_battle_id" "uuid") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."fn_get_ai_judge_verdicts"("p_battle_id" "uuid") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."fn_get_ai_model"("p_model_id" "uuid") TO "anon";
+GRANT ALL ON FUNCTION "public"."fn_get_ai_model"("p_model_id" "uuid") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."fn_get_ai_model"("p_model_id" "uuid") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."fn_get_ai_provider"("p_provider_id" "uuid") TO "anon";
+GRANT ALL ON FUNCTION "public"."fn_get_ai_provider"("p_provider_id" "uuid") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."fn_get_ai_provider"("p_provider_id" "uuid") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."fn_get_approval_request"("p_request_id" "uuid") TO "anon";
+GRANT ALL ON FUNCTION "public"."fn_get_approval_request"("p_request_id" "uuid") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."fn_get_approval_request"("p_request_id" "uuid") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."fn_get_auth_profile_gate"() TO "anon";
+GRANT ALL ON FUNCTION "public"."fn_get_auth_profile_gate"() TO "authenticated";
+GRANT ALL ON FUNCTION "public"."fn_get_auth_profile_gate"() TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."fn_get_batch_entity_reactions"("p_entity_type" "text", "p_entity_ids" "uuid"[]) TO "anon";
+GRANT ALL ON FUNCTION "public"."fn_get_batch_entity_reactions"("p_entity_type" "text", "p_entity_ids" "uuid"[]) TO "authenticated";
+GRANT ALL ON FUNCTION "public"."fn_get_batch_entity_reactions"("p_entity_type" "text", "p_entity_ids" "uuid"[]) TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."fn_get_battle"("p_battle_id" "uuid", "p_slug" "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."fn_get_battle"("p_battle_id" "uuid", "p_slug" "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."fn_get_battle"("p_battle_id" "uuid", "p_slug" "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."fn_get_battle_by_slug"("p_slug" "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."fn_get_battle_by_slug"("p_slug" "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."fn_get_battle_by_slug"("p_slug" "text") TO "service_role";
 
 
 
@@ -48760,6 +57671,30 @@ GRANT ALL ON FUNCTION "public"."fn_get_battle_comments"("p_battle_id" "uuid", "p
 GRANT ALL ON FUNCTION "public"."fn_get_battle_comments"("p_battle_id" "uuid", "p_limit" integer, "p_before_ts" timestamp with time zone, "p_before_id" "uuid") TO "anon";
 GRANT ALL ON FUNCTION "public"."fn_get_battle_comments"("p_battle_id" "uuid", "p_limit" integer, "p_before_ts" timestamp with time zone, "p_before_id" "uuid") TO "authenticated";
 GRANT ALL ON FUNCTION "public"."fn_get_battle_comments"("p_battle_id" "uuid", "p_limit" integer, "p_before_ts" timestamp with time zone, "p_before_id" "uuid") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."fn_get_battle_contenders"("p_battle_id" "uuid") TO "anon";
+GRANT ALL ON FUNCTION "public"."fn_get_battle_contenders"("p_battle_id" "uuid") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."fn_get_battle_contenders"("p_battle_id" "uuid") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."fn_get_battle_elo_log"("p_battle_id" "uuid") TO "anon";
+GRANT ALL ON FUNCTION "public"."fn_get_battle_elo_log"("p_battle_id" "uuid") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."fn_get_battle_elo_log"("p_battle_id" "uuid") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."fn_get_battle_execution_config"("p_battle_id" "uuid") TO "anon";
+GRANT ALL ON FUNCTION "public"."fn_get_battle_execution_config"("p_battle_id" "uuid") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."fn_get_battle_execution_config"("p_battle_id" "uuid") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."fn_get_battle_execution_jobs"("p_battle_id" "uuid") TO "anon";
+GRANT ALL ON FUNCTION "public"."fn_get_battle_execution_jobs"("p_battle_id" "uuid") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."fn_get_battle_execution_jobs"("p_battle_id" "uuid") TO "service_role";
 
 
 
@@ -48811,10 +57746,35 @@ GRANT ALL ON FUNCTION "public"."fn_get_battle_full"("p_slug" "text") TO "service
 
 
 
+GRANT ALL ON FUNCTION "public"."fn_get_battle_public_execution_jobs"("p_battle_id" "uuid") TO "anon";
+GRANT ALL ON FUNCTION "public"."fn_get_battle_public_execution_jobs"("p_battle_id" "uuid") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."fn_get_battle_public_execution_jobs"("p_battle_id" "uuid") TO "service_role";
+
+
+
 REVOKE ALL ON FUNCTION "public"."fn_get_battle_results"("p_battle_slug" "text") FROM PUBLIC;
 GRANT ALL ON FUNCTION "public"."fn_get_battle_results"("p_battle_slug" "text") TO "anon";
 GRANT ALL ON FUNCTION "public"."fn_get_battle_results"("p_battle_slug" "text") TO "authenticated";
 GRANT ALL ON FUNCTION "public"."fn_get_battle_results"("p_battle_slug" "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."fn_get_battle_scorecards"("p_battle_id" "uuid") TO "anon";
+GRANT ALL ON FUNCTION "public"."fn_get_battle_scorecards"("p_battle_id" "uuid") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."fn_get_battle_scorecards"("p_battle_id" "uuid") TO "service_role";
+
+
+
+REVOKE ALL ON FUNCTION "public"."fn_get_battle_share_card"("p_slug" "text") FROM PUBLIC;
+GRANT ALL ON FUNCTION "public"."fn_get_battle_share_card"("p_slug" "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."fn_get_battle_share_card"("p_slug" "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."fn_get_battle_share_card"("p_slug" "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."fn_get_battle_submissions"("p_battle_id" "uuid") TO "anon";
+GRANT ALL ON FUNCTION "public"."fn_get_battle_submissions"("p_battle_id" "uuid") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."fn_get_battle_submissions"("p_battle_id" "uuid") TO "service_role";
 
 
 
@@ -48824,9 +57784,94 @@ GRANT ALL ON FUNCTION "public"."fn_get_battles_feed"("p_status" "text", "p_battl
 
 
 
+GRANT ALL ON FUNCTION "public"."fn_get_benchmark_suite"("p_suite_id" "uuid") TO "anon";
+GRANT ALL ON FUNCTION "public"."fn_get_benchmark_suite"("p_suite_id" "uuid") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."fn_get_benchmark_suite"("p_suite_id" "uuid") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."fn_get_contender_rating"("p_lenser_id" "uuid", "p_category" "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."fn_get_contender_rating"("p_lenser_id" "uuid", "p_category" "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."fn_get_contender_rating"("p_lenser_id" "uuid", "p_category" "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."fn_get_contender_ratings"("p_lenser_id" "uuid", "p_limit" integer) TO "anon";
+GRANT ALL ON FUNCTION "public"."fn_get_contender_ratings"("p_lenser_id" "uuid", "p_limit" integer) TO "authenticated";
+GRANT ALL ON FUNCTION "public"."fn_get_contender_ratings"("p_lenser_id" "uuid", "p_limit" integer) TO "service_role";
+
+
+
 GRANT ALL ON FUNCTION "public"."fn_get_creator_timeseries"("p_lenser_id" "uuid", "p_days" integer) TO "anon";
 GRANT ALL ON FUNCTION "public"."fn_get_creator_timeseries"("p_lenser_id" "uuid", "p_days" integer) TO "authenticated";
 GRANT ALL ON FUNCTION "public"."fn_get_creator_timeseries"("p_lenser_id" "uuid", "p_days" integer) TO "service_role";
+
+
+
+REVOKE ALL ON FUNCTION "public"."fn_get_dlq_counts"() FROM PUBLIC;
+GRANT ALL ON FUNCTION "public"."fn_get_dlq_counts"() TO "anon";
+GRANT ALL ON FUNCTION "public"."fn_get_dlq_counts"() TO "authenticated";
+GRANT ALL ON FUNCTION "public"."fn_get_dlq_counts"() TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."fn_get_dlq_entries"("p_battle_id" "uuid", "p_unresolved_only" boolean, "p_limit" integer) TO "anon";
+GRANT ALL ON FUNCTION "public"."fn_get_dlq_entries"("p_battle_id" "uuid", "p_unresolved_only" boolean, "p_limit" integer) TO "authenticated";
+GRANT ALL ON FUNCTION "public"."fn_get_dlq_entries"("p_battle_id" "uuid", "p_unresolved_only" boolean, "p_limit" integer) TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."fn_get_entity_media_attachments"("p_entity_type" "text", "p_entity_id" "uuid") TO "anon";
+GRANT ALL ON FUNCTION "public"."fn_get_entity_media_attachments"("p_entity_type" "text", "p_entity_id" "uuid") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."fn_get_entity_media_attachments"("p_entity_type" "text", "p_entity_id" "uuid") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."fn_get_entity_reaction_counts"("p_entity_type" "text", "p_entity_id" "uuid") TO "anon";
+GRANT ALL ON FUNCTION "public"."fn_get_entity_reaction_counts"("p_entity_type" "text", "p_entity_id" "uuid") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."fn_get_entity_reaction_counts"("p_entity_type" "text", "p_entity_id" "uuid") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."fn_get_entity_reaction_status"("p_entity_type" "text", "p_entity_id" "uuid") TO "anon";
+GRANT ALL ON FUNCTION "public"."fn_get_entity_reaction_status"("p_entity_type" "text", "p_entity_id" "uuid") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."fn_get_entity_reaction_status"("p_entity_type" "text", "p_entity_id" "uuid") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."fn_get_entity_tag_ids"("p_entity_type" "text", "p_entity_id" "uuid") TO "anon";
+GRANT ALL ON FUNCTION "public"."fn_get_entity_tag_ids"("p_entity_type" "text", "p_entity_id" "uuid") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."fn_get_entity_tag_ids"("p_entity_type" "text", "p_entity_id" "uuid") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."fn_get_entity_translation"("p_entity_type" "text", "p_entity_id" "uuid") TO "anon";
+GRANT ALL ON FUNCTION "public"."fn_get_entity_translation"("p_entity_type" "text", "p_entity_id" "uuid") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."fn_get_entity_translation"("p_entity_type" "text", "p_entity_id" "uuid") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."fn_get_evaluation_baseline"("p_evaluation_id" "uuid") TO "anon";
+GRANT ALL ON FUNCTION "public"."fn_get_evaluation_baseline"("p_evaluation_id" "uuid") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."fn_get_evaluation_baseline"("p_evaluation_id" "uuid") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."fn_get_evaluation_results"("p_run_id" "uuid") TO "anon";
+GRANT ALL ON FUNCTION "public"."fn_get_evaluation_results"("p_run_id" "uuid") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."fn_get_evaluation_results"("p_run_id" "uuid") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."fn_get_execution_artifacts"("p_run_id" "uuid") TO "anon";
+GRANT ALL ON FUNCTION "public"."fn_get_execution_artifacts"("p_run_id" "uuid") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."fn_get_execution_artifacts"("p_run_id" "uuid") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."fn_get_fleet_overview"("p_human_lenser_id" "uuid") TO "anon";
+GRANT ALL ON FUNCTION "public"."fn_get_fleet_overview"("p_human_lenser_id" "uuid") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."fn_get_fleet_overview"("p_human_lenser_id" "uuid") TO "service_role";
 
 
 
@@ -48834,6 +57879,12 @@ REVOKE ALL ON FUNCTION "public"."fn_get_follow_status"("p_target_profile_id" "uu
 GRANT ALL ON FUNCTION "public"."fn_get_follow_status"("p_target_profile_id" "uuid") TO "anon";
 GRANT ALL ON FUNCTION "public"."fn_get_follow_status"("p_target_profile_id" "uuid") TO "authenticated";
 GRANT ALL ON FUNCTION "public"."fn_get_follow_status"("p_target_profile_id" "uuid") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."fn_get_global_lenserboard"("p_limit" integer) TO "anon";
+GRANT ALL ON FUNCTION "public"."fn_get_global_lenserboard"("p_limit" integer) TO "authenticated";
+GRANT ALL ON FUNCTION "public"."fn_get_global_lenserboard"("p_limit" integer) TO "service_role";
 
 
 
@@ -48852,6 +57903,18 @@ GRANT ALL ON FUNCTION "public"."fn_get_head_to_head"("p_lenser_a" "uuid", "p_len
 GRANT ALL ON FUNCTION "public"."fn_get_human_activity_feed"("p_human_lenser_id" "uuid", "p_limit" integer, "p_offset" integer) TO "anon";
 GRANT ALL ON FUNCTION "public"."fn_get_human_activity_feed"("p_human_lenser_id" "uuid", "p_limit" integer, "p_offset" integer) TO "authenticated";
 GRANT ALL ON FUNCTION "public"."fn_get_human_activity_feed"("p_human_lenser_id" "uuid", "p_limit" integer, "p_offset" integer) TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."fn_get_judge_calibration"("p_lenser_id" "uuid") TO "anon";
+GRANT ALL ON FUNCTION "public"."fn_get_judge_calibration"("p_lenser_id" "uuid") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."fn_get_judge_calibration"("p_lenser_id" "uuid") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."fn_get_latest_draft_battle_by_workflow"("p_workflow_id" "uuid") TO "anon";
+GRANT ALL ON FUNCTION "public"."fn_get_latest_draft_battle_by_workflow"("p_workflow_id" "uuid") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."fn_get_latest_draft_battle_by_workflow"("p_workflow_id" "uuid") TO "service_role";
 
 
 
@@ -48885,6 +57948,66 @@ GRANT ALL ON FUNCTION "public"."fn_get_leaderboard"("p_order_by" "text", "p_limi
 
 
 
+GRANT ALL ON FUNCTION "public"."fn_get_lens_assignment"("p_contender_id" "uuid") TO "anon";
+GRANT ALL ON FUNCTION "public"."fn_get_lens_assignment"("p_contender_id" "uuid") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."fn_get_lens_assignment"("p_contender_id" "uuid") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."fn_get_lens_detail_bootstrap"("p_lens_id" "uuid") TO "anon";
+GRANT ALL ON FUNCTION "public"."fn_get_lens_detail_bootstrap"("p_lens_id" "uuid") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."fn_get_lens_detail_bootstrap"("p_lens_id" "uuid") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."fn_get_lens_for_execution"("p_lens_id" "uuid") TO "anon";
+GRANT ALL ON FUNCTION "public"."fn_get_lens_for_execution"("p_lens_id" "uuid") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."fn_get_lens_for_execution"("p_lens_id" "uuid") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."fn_get_lens_fork_tree"("p_lens_id" "uuid") TO "anon";
+GRANT ALL ON FUNCTION "public"."fn_get_lens_fork_tree"("p_lens_id" "uuid") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."fn_get_lens_fork_tree"("p_lens_id" "uuid") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."fn_get_lens_version_detail"("p_version_id" "uuid") TO "anon";
+GRANT ALL ON FUNCTION "public"."fn_get_lens_version_detail"("p_version_id" "uuid") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."fn_get_lens_version_detail"("p_version_id" "uuid") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."fn_get_lens_version_parameters"("p_version_id" "uuid") TO "anon";
+GRANT ALL ON FUNCTION "public"."fn_get_lens_version_parameters"("p_version_id" "uuid") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."fn_get_lens_version_parameters"("p_version_id" "uuid") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."fn_get_lenser_badges"("p_lenser_id" "uuid") TO "anon";
+GRANT ALL ON FUNCTION "public"."fn_get_lenser_badges"("p_lenser_id" "uuid") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."fn_get_lenser_badges"("p_lenser_id" "uuid") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."fn_get_lenser_by_id_full"("p_lenser_id" "uuid") TO "anon";
+GRANT ALL ON FUNCTION "public"."fn_get_lenser_by_id_full"("p_lenser_id" "uuid") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."fn_get_lenser_by_id_full"("p_lenser_id" "uuid") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."fn_get_lenser_language_preference"() TO "anon";
+GRANT ALL ON FUNCTION "public"."fn_get_lenser_language_preference"() TO "authenticated";
+GRANT ALL ON FUNCTION "public"."fn_get_lenser_language_preference"() TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."fn_get_lenser_profile_brief"("p_handle" "text", "p_lenser_id" "uuid") TO "anon";
+GRANT ALL ON FUNCTION "public"."fn_get_lenser_profile_brief"("p_handle" "text", "p_lenser_id" "uuid") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."fn_get_lenser_profile_brief"("p_handle" "text", "p_lenser_id" "uuid") TO "service_role";
+
+
+
 GRANT ALL ON TABLE "analytics"."lenser_stats" TO "service_role";
 GRANT SELECT ON TABLE "analytics"."lenser_stats" TO "anon";
 GRANT SELECT ON TABLE "analytics"."lenser_stats" TO "authenticated";
@@ -48894,6 +58017,36 @@ GRANT SELECT ON TABLE "analytics"."lenser_stats" TO "authenticated";
 GRANT ALL ON FUNCTION "public"."fn_get_lenser_profile_full"("p_handle" "text") TO "anon";
 GRANT ALL ON FUNCTION "public"."fn_get_lenser_profile_full"("p_handle" "text") TO "authenticated";
 GRANT ALL ON FUNCTION "public"."fn_get_lenser_profile_full"("p_handle" "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."fn_get_lenser_profiles_brief_batch"("p_lenser_ids" "uuid"[]) TO "anon";
+GRANT ALL ON FUNCTION "public"."fn_get_lenser_profiles_brief_batch"("p_lenser_ids" "uuid"[]) TO "authenticated";
+GRANT ALL ON FUNCTION "public"."fn_get_lenser_profiles_brief_batch"("p_lenser_ids" "uuid"[]) TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."fn_get_lenser_reaction_history"("p_lenser_id" "uuid", "p_limit" integer, "p_offset" integer) TO "anon";
+GRANT ALL ON FUNCTION "public"."fn_get_lenser_reaction_history"("p_lenser_id" "uuid", "p_limit" integer, "p_offset" integer) TO "authenticated";
+GRANT ALL ON FUNCTION "public"."fn_get_lenser_reaction_history"("p_lenser_id" "uuid", "p_limit" integer, "p_offset" integer) TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."fn_get_lenser_scores"("p_lenser_id" "uuid") TO "anon";
+GRANT ALL ON FUNCTION "public"."fn_get_lenser_scores"("p_lenser_id" "uuid") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."fn_get_lenser_scores"("p_lenser_id" "uuid") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."fn_get_lenser_threads_private"("p_lenser_id" "uuid", "p_limit" integer, "p_offset" integer) TO "anon";
+GRANT ALL ON FUNCTION "public"."fn_get_lenser_threads_private"("p_lenser_id" "uuid", "p_limit" integer, "p_offset" integer) TO "authenticated";
+GRANT ALL ON FUNCTION "public"."fn_get_lenser_threads_private"("p_lenser_id" "uuid", "p_limit" integer, "p_offset" integer) TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."fn_get_media_object"("p_object_id" "uuid") TO "anon";
+GRANT ALL ON FUNCTION "public"."fn_get_media_object"("p_object_id" "uuid") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."fn_get_media_object"("p_object_id" "uuid") TO "service_role";
 
 
 
@@ -48928,6 +58081,12 @@ GRANT ALL ON FUNCTION "public"."fn_get_my_lenses"("p_offset" integer, "p_limit" 
 
 
 
+GRANT ALL ON FUNCTION "public"."fn_get_my_vote"("p_battle_id" "uuid") TO "anon";
+GRANT ALL ON FUNCTION "public"."fn_get_my_vote"("p_battle_id" "uuid") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."fn_get_my_vote"("p_battle_id" "uuid") TO "service_role";
+
+
+
 GRANT ALL ON FUNCTION "public"."fn_get_my_workflows"("p_lenser_id" "uuid", "p_offset" integer, "p_limit" integer, "p_visibility" "text", "p_sort" "text", "p_search" "text") TO "anon";
 GRANT ALL ON FUNCTION "public"."fn_get_my_workflows"("p_lenser_id" "uuid", "p_offset" integer, "p_limit" integer, "p_visibility" "text", "p_sort" "text", "p_search" "text") TO "authenticated";
 GRANT ALL ON FUNCTION "public"."fn_get_my_workflows"("p_lenser_id" "uuid", "p_offset" integer, "p_limit" integer, "p_visibility" "text", "p_sort" "text", "p_search" "text") TO "service_role";
@@ -48957,9 +58116,51 @@ GRANT ALL ON FUNCTION "public"."fn_get_provider_configs"("p_ai_lenser_id" "uuid"
 
 
 
+GRANT ALL ON FUNCTION "public"."fn_get_recently_active_lensers"("p_limit" integer) TO "anon";
+GRANT ALL ON FUNCTION "public"."fn_get_recently_active_lensers"("p_limit" integer) TO "authenticated";
+GRANT ALL ON FUNCTION "public"."fn_get_recently_active_lensers"("p_limit" integer) TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."fn_get_rubric_criteria"("p_criterion_ids" "uuid"[]) TO "anon";
+GRANT ALL ON FUNCTION "public"."fn_get_rubric_criteria"("p_criterion_ids" "uuid"[]) TO "authenticated";
+GRANT ALL ON FUNCTION "public"."fn_get_rubric_criteria"("p_criterion_ids" "uuid"[]) TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."fn_get_rule_dispatch_summary"("p_days" integer) TO "anon";
+GRANT ALL ON FUNCTION "public"."fn_get_rule_dispatch_summary"("p_days" integer) TO "authenticated";
+GRANT ALL ON FUNCTION "public"."fn_get_rule_dispatch_summary"("p_days" integer) TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."fn_get_run_details"("p_run_id" "uuid") TO "anon";
+GRANT ALL ON FUNCTION "public"."fn_get_run_details"("p_run_id" "uuid") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."fn_get_run_details"("p_run_id" "uuid") TO "service_role";
+
+
+
 GRANT ALL ON FUNCTION "public"."fn_get_run_provenance"("p_run_id" "uuid") TO "anon";
 GRANT ALL ON FUNCTION "public"."fn_get_run_provenance"("p_run_id" "uuid") TO "authenticated";
 GRANT ALL ON FUNCTION "public"."fn_get_run_provenance"("p_run_id" "uuid") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."fn_get_run_report"("p_report_id" "uuid") TO "anon";
+GRANT ALL ON FUNCTION "public"."fn_get_run_report"("p_report_id" "uuid") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."fn_get_run_report"("p_report_id" "uuid") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."fn_get_schedule_calendars"() TO "anon";
+GRANT ALL ON FUNCTION "public"."fn_get_schedule_calendars"() TO "authenticated";
+GRANT ALL ON FUNCTION "public"."fn_get_schedule_calendars"() TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."fn_get_schedule_run_history"("p_workflow_id" "uuid", "p_limit" integer, "p_cursor" timestamp with time zone) TO "anon";
+GRANT ALL ON FUNCTION "public"."fn_get_schedule_run_history"("p_workflow_id" "uuid", "p_limit" integer, "p_cursor" timestamp with time zone) TO "authenticated";
+GRANT ALL ON FUNCTION "public"."fn_get_schedule_run_history"("p_workflow_id" "uuid", "p_limit" integer, "p_cursor" timestamp with time zone) TO "service_role";
 
 
 
@@ -48970,9 +58171,27 @@ GRANT ALL ON FUNCTION "public"."fn_get_season_leaderboard"("p_app_id" "uuid", "p
 
 
 
+GRANT ALL ON FUNCTION "public"."fn_get_team_members"("p_team_id" "uuid") TO "anon";
+GRANT ALL ON FUNCTION "public"."fn_get_team_members"("p_team_id" "uuid") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."fn_get_team_members"("p_team_id" "uuid") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."fn_get_thread_by_id_private"("p_thread_id" "uuid") TO "anon";
+GRANT ALL ON FUNCTION "public"."fn_get_thread_by_id_private"("p_thread_id" "uuid") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."fn_get_thread_by_id_private"("p_thread_id" "uuid") TO "service_role";
+
+
+
 GRANT ALL ON FUNCTION "public"."fn_get_thread_replies_page"("p_thread_id" "uuid", "p_limit" integer, "p_offset" integer) TO "anon";
 GRANT ALL ON FUNCTION "public"."fn_get_thread_replies_page"("p_thread_id" "uuid", "p_limit" integer, "p_offset" integer) TO "authenticated";
 GRANT ALL ON FUNCTION "public"."fn_get_thread_replies_page"("p_thread_id" "uuid", "p_limit" integer, "p_offset" integer) TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."fn_get_thread_replies_private"("p_thread_id" "uuid", "p_limit" integer, "p_offset" integer) TO "anon";
+GRANT ALL ON FUNCTION "public"."fn_get_thread_replies_private"("p_thread_id" "uuid", "p_limit" integer, "p_offset" integer) TO "authenticated";
+GRANT ALL ON FUNCTION "public"."fn_get_thread_replies_private"("p_thread_id" "uuid", "p_limit" integer, "p_offset" integer) TO "service_role";
 
 
 
@@ -48988,6 +58207,18 @@ GRANT ALL ON FUNCTION "public"."fn_get_tournament_bracket"("p_tournament_id" "uu
 
 
 
+GRANT ALL ON FUNCTION "public"."fn_get_tournament_by_slug"("p_slug" "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."fn_get_tournament_by_slug"("p_slug" "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."fn_get_tournament_by_slug"("p_slug" "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."fn_get_tournament_contenders"("p_tournament_id" "uuid") TO "anon";
+GRANT ALL ON FUNCTION "public"."fn_get_tournament_contenders"("p_tournament_id" "uuid") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."fn_get_tournament_contenders"("p_tournament_id" "uuid") TO "service_role";
+
+
+
 GRANT ALL ON FUNCTION "public"."fn_get_trending_battles"("p_limit" integer, "p_cursor" numeric) TO "anon";
 GRANT ALL ON FUNCTION "public"."fn_get_trending_battles"("p_limit" integer, "p_cursor" numeric) TO "authenticated";
 GRANT ALL ON FUNCTION "public"."fn_get_trending_battles"("p_limit" integer, "p_cursor" numeric) TO "service_role";
@@ -49000,9 +58231,21 @@ GRANT ALL ON FUNCTION "public"."fn_get_unread_notification_count"() TO "service_
 
 
 
+GRANT ALL ON FUNCTION "public"."fn_get_user_entity_reaction"("p_entity_type" "text", "p_entity_id" "uuid") TO "anon";
+GRANT ALL ON FUNCTION "public"."fn_get_user_entity_reaction"("p_entity_type" "text", "p_entity_id" "uuid") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."fn_get_user_entity_reaction"("p_entity_type" "text", "p_entity_id" "uuid") TO "service_role";
+
+
+
 GRANT ALL ON FUNCTION "public"."fn_get_version_contracts"("p_version_id" "uuid") TO "anon";
 GRANT ALL ON FUNCTION "public"."fn_get_version_contracts"("p_version_id" "uuid") TO "authenticated";
 GRANT ALL ON FUNCTION "public"."fn_get_version_contracts"("p_version_id" "uuid") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."fn_get_vote_aggregates"("p_battle_id" "uuid") TO "anon";
+GRANT ALL ON FUNCTION "public"."fn_get_vote_aggregates"("p_battle_id" "uuid") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."fn_get_vote_aggregates"("p_battle_id" "uuid") TO "service_role";
 
 
 
@@ -49043,6 +58286,12 @@ GRANT ALL ON FUNCTION "public"."fn_get_workflow_run"("p_run_id" "uuid") TO "serv
 
 
 
+GRANT ALL ON FUNCTION "public"."fn_get_workflow_run_media_manifest"("p_run_id" "uuid") TO "anon";
+GRANT ALL ON FUNCTION "public"."fn_get_workflow_run_media_manifest"("p_run_id" "uuid") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."fn_get_workflow_run_media_manifest"("p_run_id" "uuid") TO "service_role";
+
+
+
 GRANT ALL ON FUNCTION "public"."fn_get_workflow_run_state"("p_run_id" "uuid") TO "anon";
 GRANT ALL ON FUNCTION "public"."fn_get_workflow_run_state"("p_run_id" "uuid") TO "authenticated";
 GRANT ALL ON FUNCTION "public"."fn_get_workflow_run_state"("p_run_id" "uuid") TO "service_role";
@@ -49058,6 +58307,12 @@ GRANT ALL ON FUNCTION "public"."fn_get_workflow_schedule_history"("p_schedule_id
 GRANT ALL ON FUNCTION "public"."fn_get_workflow_schedules"("p_workflow_id" "uuid") TO "anon";
 GRANT ALL ON FUNCTION "public"."fn_get_workflow_schedules"("p_workflow_id" "uuid") TO "authenticated";
 GRANT ALL ON FUNCTION "public"."fn_get_workflow_schedules"("p_workflow_id" "uuid") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."fn_get_workspace_settings"("p_ai_lenser_id" "uuid") TO "anon";
+GRANT ALL ON FUNCTION "public"."fn_get_workspace_settings"("p_ai_lenser_id" "uuid") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."fn_get_workspace_settings"("p_ai_lenser_id" "uuid") TO "service_role";
 
 
 
@@ -49144,6 +58399,12 @@ REVOKE ALL ON FUNCTION "public"."fn_integrity_probe_moderation_webhook"("p_targe
 GRANT ALL ON FUNCTION "public"."fn_integrity_probe_moderation_webhook"("p_target_url" "text") TO "anon";
 GRANT ALL ON FUNCTION "public"."fn_integrity_probe_moderation_webhook"("p_target_url" "text") TO "authenticated";
 GRANT ALL ON FUNCTION "public"."fn_integrity_probe_moderation_webhook"("p_target_url" "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."fn_invite_battle_contender"("p_battle_id" "uuid", "p_slot" "text", "p_contender_type" "text", "p_contender_ref_id" "uuid", "p_display_name" "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."fn_invite_battle_contender"("p_battle_id" "uuid", "p_slot" "text", "p_contender_type" "text", "p_contender_ref_id" "uuid", "p_display_name" "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."fn_invite_battle_contender"("p_battle_id" "uuid", "p_slot" "text", "p_contender_type" "text", "p_contender_ref_id" "uuid", "p_display_name" "text") TO "service_role";
 
 
 
@@ -49354,15 +58615,219 @@ GRANT ALL ON FUNCTION "public"."fn_lenses_publish_version"("p_version_id" "uuid"
 
 
 
+GRANT ALL ON FUNCTION "public"."fn_list_agent_action_logs"("p_ai_lenser_id" "uuid", "p_limit" integer, "p_cursor" timestamp with time zone) TO "anon";
+GRANT ALL ON FUNCTION "public"."fn_list_agent_action_logs"("p_ai_lenser_id" "uuid", "p_limit" integer, "p_cursor" timestamp with time zone) TO "authenticated";
+GRANT ALL ON FUNCTION "public"."fn_list_agent_action_logs"("p_ai_lenser_id" "uuid", "p_limit" integer, "p_cursor" timestamp with time zone) TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."fn_list_agent_lens_bindings"("p_ai_lenser_id" "uuid", "p_limit" integer, "p_offset" integer) TO "anon";
+GRANT ALL ON FUNCTION "public"."fn_list_agent_lens_bindings"("p_ai_lenser_id" "uuid", "p_limit" integer, "p_offset" integer) TO "authenticated";
+GRANT ALL ON FUNCTION "public"."fn_list_agent_lens_bindings"("p_ai_lenser_id" "uuid", "p_limit" integer, "p_offset" integer) TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."fn_list_agent_memories"("p_profile_id" "uuid", "p_scope" "text", "p_limit" integer, "p_include_redacted" boolean) TO "anon";
+GRANT ALL ON FUNCTION "public"."fn_list_agent_memories"("p_profile_id" "uuid", "p_scope" "text", "p_limit" integer, "p_include_redacted" boolean) TO "authenticated";
+GRANT ALL ON FUNCTION "public"."fn_list_agent_memories"("p_profile_id" "uuid", "p_scope" "text", "p_limit" integer, "p_include_redacted" boolean) TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."fn_list_agent_model_bindings"("p_ai_lenser_id" "uuid", "p_limit" integer, "p_offset" integer) TO "anon";
+GRANT ALL ON FUNCTION "public"."fn_list_agent_model_bindings"("p_ai_lenser_id" "uuid", "p_limit" integer, "p_offset" integer) TO "authenticated";
+GRANT ALL ON FUNCTION "public"."fn_list_agent_model_bindings"("p_ai_lenser_id" "uuid", "p_limit" integer, "p_offset" integer) TO "service_role";
+
+
+
 GRANT ALL ON FUNCTION "public"."fn_list_agent_ownerships"("p_ai_lenser_id" "uuid") TO "anon";
 GRANT ALL ON FUNCTION "public"."fn_list_agent_ownerships"("p_ai_lenser_id" "uuid") TO "authenticated";
 GRANT ALL ON FUNCTION "public"."fn_list_agent_ownerships"("p_ai_lenser_id" "uuid") TO "service_role";
 
 
 
+GRANT ALL ON FUNCTION "public"."fn_list_agent_run_steps"("p_team_run_id" "uuid") TO "anon";
+GRANT ALL ON FUNCTION "public"."fn_list_agent_run_steps"("p_team_run_id" "uuid") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."fn_list_agent_run_steps"("p_team_run_id" "uuid") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."fn_list_agent_teams"("p_ai_lenser_id" "uuid", "p_limit" integer, "p_cursor" timestamp with time zone) TO "anon";
+GRANT ALL ON FUNCTION "public"."fn_list_agent_teams"("p_ai_lenser_id" "uuid", "p_limit" integer, "p_cursor" timestamp with time zone) TO "authenticated";
+GRANT ALL ON FUNCTION "public"."fn_list_agent_teams"("p_ai_lenser_id" "uuid", "p_limit" integer, "p_cursor" timestamp with time zone) TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."fn_list_agents_by_owner"("p_owner_lenser_id" "uuid") TO "anon";
+GRANT ALL ON FUNCTION "public"."fn_list_agents_by_owner"("p_owner_lenser_id" "uuid") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."fn_list_agents_by_owner"("p_owner_lenser_id" "uuid") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."fn_list_approval_requests"("p_ai_lenser_id" "uuid", "p_approval_status" "text", "p_limit" integer) TO "anon";
+GRANT ALL ON FUNCTION "public"."fn_list_approval_requests"("p_ai_lenser_id" "uuid", "p_approval_status" "text", "p_limit" integer) TO "authenticated";
+GRANT ALL ON FUNCTION "public"."fn_list_approval_requests"("p_ai_lenser_id" "uuid", "p_approval_status" "text", "p_limit" integer) TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."fn_list_automation_rules"("p_limit" integer, "p_cursor" timestamp with time zone) TO "anon";
+GRANT ALL ON FUNCTION "public"."fn_list_automation_rules"("p_limit" integer, "p_cursor" timestamp with time zone) TO "authenticated";
+GRANT ALL ON FUNCTION "public"."fn_list_automation_rules"("p_limit" integer, "p_cursor" timestamp with time zone) TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."fn_list_battle_templates"("p_limit" integer, "p_cursor" timestamp with time zone) TO "anon";
+GRANT ALL ON FUNCTION "public"."fn_list_battle_templates"("p_limit" integer, "p_cursor" timestamp with time zone) TO "authenticated";
+GRANT ALL ON FUNCTION "public"."fn_list_battle_templates"("p_limit" integer, "p_cursor" timestamp with time zone) TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."fn_list_benchmark_suites"("p_creator_lenser_id" "uuid", "p_limit" integer, "p_cursor" timestamp with time zone) TO "anon";
+GRANT ALL ON FUNCTION "public"."fn_list_benchmark_suites"("p_creator_lenser_id" "uuid", "p_limit" integer, "p_cursor" timestamp with time zone) TO "authenticated";
+GRANT ALL ON FUNCTION "public"."fn_list_benchmark_suites"("p_creator_lenser_id" "uuid", "p_limit" integer, "p_cursor" timestamp with time zone) TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."fn_list_benchmark_tasks"("p_suite_id" "uuid") TO "anon";
+GRANT ALL ON FUNCTION "public"."fn_list_benchmark_tasks"("p_suite_id" "uuid") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."fn_list_benchmark_tasks"("p_suite_id" "uuid") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."fn_list_evaluation_cases"("p_evaluation_id" "uuid") TO "anon";
+GRANT ALL ON FUNCTION "public"."fn_list_evaluation_cases"("p_evaluation_id" "uuid") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."fn_list_evaluation_cases"("p_evaluation_id" "uuid") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."fn_list_evaluation_rubrics"("p_evaluation_id" "uuid") TO "anon";
+GRANT ALL ON FUNCTION "public"."fn_list_evaluation_rubrics"("p_evaluation_id" "uuid") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."fn_list_evaluation_rubrics"("p_evaluation_id" "uuid") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."fn_list_evaluation_runs"("p_evaluation_id" "uuid") TO "anon";
+GRANT ALL ON FUNCTION "public"."fn_list_evaluation_runs"("p_evaluation_id" "uuid") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."fn_list_evaluation_runs"("p_evaluation_id" "uuid") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."fn_list_evaluations"("p_owner_lenser_id" "uuid", "p_limit" integer, "p_cursor" timestamp with time zone) TO "anon";
+GRANT ALL ON FUNCTION "public"."fn_list_evaluations"("p_owner_lenser_id" "uuid", "p_limit" integer, "p_cursor" timestamp with time zone) TO "authenticated";
+GRANT ALL ON FUNCTION "public"."fn_list_evaluations"("p_owner_lenser_id" "uuid", "p_limit" integer, "p_cursor" timestamp with time zone) TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."fn_list_lens_versions"("p_lens_id" "uuid", "p_include_archived" boolean) TO "anon";
+GRANT ALL ON FUNCTION "public"."fn_list_lens_versions"("p_lens_id" "uuid", "p_include_archived" boolean) TO "authenticated";
+GRANT ALL ON FUNCTION "public"."fn_list_lens_versions"("p_lens_id" "uuid", "p_include_archived" boolean) TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."fn_list_media_objects"("p_limit" integer, "p_cursor" timestamp with time zone) TO "anon";
+GRANT ALL ON FUNCTION "public"."fn_list_media_objects"("p_limit" integer, "p_cursor" timestamp with time zone) TO "authenticated";
+GRANT ALL ON FUNCTION "public"."fn_list_media_objects"("p_limit" integer, "p_cursor" timestamp with time zone) TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."fn_list_memory_access_logs"("p_memory_id" "uuid", "p_limit" integer) TO "anon";
+GRANT ALL ON FUNCTION "public"."fn_list_memory_access_logs"("p_memory_id" "uuid", "p_limit" integer) TO "authenticated";
+GRANT ALL ON FUNCTION "public"."fn_list_memory_access_logs"("p_memory_id" "uuid", "p_limit" integer) TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."fn_list_memory_profiles"("p_ai_lenser_id" "uuid") TO "anon";
+GRANT ALL ON FUNCTION "public"."fn_list_memory_profiles"("p_ai_lenser_id" "uuid") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."fn_list_memory_profiles"("p_ai_lenser_id" "uuid") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."fn_list_model_profiles"("p_ai_lenser_id" "uuid") TO "anon";
+GRANT ALL ON FUNCTION "public"."fn_list_model_profiles"("p_ai_lenser_id" "uuid") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."fn_list_model_profiles"("p_ai_lenser_id" "uuid") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."fn_list_my_private_lenses"("p_limit" integer, "p_cursor" timestamp with time zone) TO "anon";
+GRANT ALL ON FUNCTION "public"."fn_list_my_private_lenses"("p_limit" integer, "p_cursor" timestamp with time zone) TO "authenticated";
+GRANT ALL ON FUNCTION "public"."fn_list_my_private_lenses"("p_limit" integer, "p_cursor" timestamp with time zone) TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."fn_list_personality_profiles"("p_ai_lenser_id" "uuid") TO "anon";
+GRANT ALL ON FUNCTION "public"."fn_list_personality_profiles"("p_ai_lenser_id" "uuid") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."fn_list_personality_profiles"("p_ai_lenser_id" "uuid") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."fn_list_recent_incidents"("p_ai_lenser_id" "uuid", "p_limit" integer, "p_cursor" timestamp with time zone) TO "anon";
+GRANT ALL ON FUNCTION "public"."fn_list_recent_incidents"("p_ai_lenser_id" "uuid", "p_limit" integer, "p_cursor" timestamp with time zone) TO "authenticated";
+GRANT ALL ON FUNCTION "public"."fn_list_recent_incidents"("p_ai_lenser_id" "uuid", "p_limit" integer, "p_cursor" timestamp with time zone) TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."fn_list_run_incidents"("p_run_report_id" "uuid", "p_severity" "text", "p_resolved" boolean, "p_limit" integer) TO "anon";
+GRANT ALL ON FUNCTION "public"."fn_list_run_incidents"("p_run_report_id" "uuid", "p_severity" "text", "p_resolved" boolean, "p_limit" integer) TO "authenticated";
+GRANT ALL ON FUNCTION "public"."fn_list_run_incidents"("p_run_report_id" "uuid", "p_severity" "text", "p_resolved" boolean, "p_limit" integer) TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."fn_list_run_reports"("p_ai_lenser_id" "uuid", "p_limit" integer, "p_cursor" timestamp with time zone) TO "anon";
+GRANT ALL ON FUNCTION "public"."fn_list_run_reports"("p_ai_lenser_id" "uuid", "p_limit" integer, "p_cursor" timestamp with time zone) TO "authenticated";
+GRANT ALL ON FUNCTION "public"."fn_list_run_reports"("p_ai_lenser_id" "uuid", "p_limit" integer, "p_cursor" timestamp with time zone) TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."fn_list_scratchpad_runs"("p_ai_lenser_id" "uuid", "p_limit" integer, "p_cursor" timestamp with time zone) TO "anon";
+GRANT ALL ON FUNCTION "public"."fn_list_scratchpad_runs"("p_ai_lenser_id" "uuid", "p_limit" integer, "p_cursor" timestamp with time zone) TO "authenticated";
+GRANT ALL ON FUNCTION "public"."fn_list_scratchpad_runs"("p_ai_lenser_id" "uuid", "p_limit" integer, "p_cursor" timestamp with time zone) TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."fn_list_team_edges"("p_team_id" "uuid") TO "anon";
+GRANT ALL ON FUNCTION "public"."fn_list_team_edges"("p_team_id" "uuid") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."fn_list_team_edges"("p_team_id" "uuid") TO "service_role";
+
+
+
 GRANT ALL ON FUNCTION "public"."fn_list_template_workflows"("p_limit" integer, "p_offset" integer) TO "anon";
 GRANT ALL ON FUNCTION "public"."fn_list_template_workflows"("p_limit" integer, "p_offset" integer) TO "authenticated";
 GRANT ALL ON FUNCTION "public"."fn_list_template_workflows"("p_limit" integer, "p_offset" integer) TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."fn_list_tool_assignments"("p_ai_lenser_id" "uuid") TO "anon";
+GRANT ALL ON FUNCTION "public"."fn_list_tool_assignments"("p_ai_lenser_id" "uuid") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."fn_list_tool_assignments"("p_ai_lenser_id" "uuid") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."fn_list_tool_profiles"("p_ai_lenser_id" "uuid") TO "anon";
+GRANT ALL ON FUNCTION "public"."fn_list_tool_profiles"("p_ai_lenser_id" "uuid") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."fn_list_tool_profiles"("p_ai_lenser_id" "uuid") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."fn_list_tools_registry"("p_owner_lenser_id" "uuid") TO "anon";
+GRANT ALL ON FUNCTION "public"."fn_list_tools_registry"("p_owner_lenser_id" "uuid") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."fn_list_tools_registry"("p_owner_lenser_id" "uuid") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."fn_list_tournaments"("p_limit" integer, "p_cursor" timestamp with time zone) TO "anon";
+GRANT ALL ON FUNCTION "public"."fn_list_tournaments"("p_limit" integer, "p_cursor" timestamp with time zone) TO "authenticated";
+GRANT ALL ON FUNCTION "public"."fn_list_tournaments"("p_limit" integer, "p_cursor" timestamp with time zone) TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."fn_list_workflow_assignments"("p_ai_lenser_id" "uuid", "p_limit" integer, "p_cursor" timestamp with time zone) TO "anon";
+GRANT ALL ON FUNCTION "public"."fn_list_workflow_assignments"("p_ai_lenser_id" "uuid", "p_limit" integer, "p_cursor" timestamp with time zone) TO "authenticated";
+GRANT ALL ON FUNCTION "public"."fn_list_workflow_assignments"("p_ai_lenser_id" "uuid", "p_limit" integer, "p_cursor" timestamp with time zone) TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."fn_list_workflow_phases"("p_workflow_id" "uuid") TO "anon";
+GRANT ALL ON FUNCTION "public"."fn_list_workflow_phases"("p_workflow_id" "uuid") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."fn_list_workflow_phases"("p_workflow_id" "uuid") TO "service_role";
 
 
 
@@ -49375,6 +58840,18 @@ GRANT ALL ON FUNCTION "public"."fn_list_workflow_run_events"("p_run_id" "uuid", 
 GRANT ALL ON FUNCTION "public"."fn_list_workflow_runs"("p_workflow_id" "uuid", "p_limit" integer, "p_offset" integer) TO "anon";
 GRANT ALL ON FUNCTION "public"."fn_list_workflow_runs"("p_workflow_id" "uuid", "p_limit" integer, "p_offset" integer) TO "authenticated";
 GRANT ALL ON FUNCTION "public"."fn_list_workflow_runs"("p_workflow_id" "uuid", "p_limit" integer, "p_offset" integer) TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."fn_list_workflow_tasks"("p_phase_id" "uuid") TO "anon";
+GRANT ALL ON FUNCTION "public"."fn_list_workflow_tasks"("p_phase_id" "uuid") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."fn_list_workflow_tasks"("p_phase_id" "uuid") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."fn_list_workflow_tasks_by_workflow"("p_workflow_id" "uuid") TO "anon";
+GRANT ALL ON FUNCTION "public"."fn_list_workflow_tasks_by_workflow"("p_workflow_id" "uuid") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."fn_list_workflow_tasks_by_workflow"("p_workflow_id" "uuid") TO "service_role";
 
 
 
@@ -49402,6 +58879,13 @@ GRANT ALL ON FUNCTION "public"."fn_media_finalize_upload"("p_object_id" "uuid", 
 
 
 
+REVOKE ALL ON FUNCTION "public"."fn_media_proxy_log"("p_object_id" "uuid") FROM PUBLIC;
+GRANT ALL ON FUNCTION "public"."fn_media_proxy_log"("p_object_id" "uuid") TO "anon";
+GRANT ALL ON FUNCTION "public"."fn_media_proxy_log"("p_object_id" "uuid") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."fn_media_proxy_log"("p_object_id" "uuid") TO "service_role";
+
+
+
 GRANT ALL ON FUNCTION "public"."fn_media_soft_delete"("p_object_id" "uuid") TO "anon";
 GRANT ALL ON FUNCTION "public"."fn_media_soft_delete"("p_object_id" "uuid") TO "authenticated";
 GRANT ALL ON FUNCTION "public"."fn_media_soft_delete"("p_object_id" "uuid") TO "service_role";
@@ -49411,6 +58895,13 @@ GRANT ALL ON FUNCTION "public"."fn_media_soft_delete"("p_object_id" "uuid") TO "
 GRANT ALL ON FUNCTION "public"."fn_media_unbind_attachment"("p_entity_type" "text", "p_entity_id" "uuid", "p_binding_key" "text") TO "anon";
 GRANT ALL ON FUNCTION "public"."fn_media_unbind_attachment"("p_entity_type" "text", "p_entity_id" "uuid", "p_binding_key" "text") TO "authenticated";
 GRANT ALL ON FUNCTION "public"."fn_media_unbind_attachment"("p_entity_type" "text", "p_entity_id" "uuid", "p_binding_key" "text") TO "service_role";
+
+
+
+REVOKE ALL ON FUNCTION "public"."fn_move_battle_job_to_dlq"("p_job_id" "uuid", "p_error_code" "text", "p_error_msg" "text") FROM PUBLIC;
+GRANT ALL ON FUNCTION "public"."fn_move_battle_job_to_dlq"("p_job_id" "uuid", "p_error_code" "text", "p_error_msg" "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."fn_move_battle_job_to_dlq"("p_job_id" "uuid", "p_error_code" "text", "p_error_msg" "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."fn_move_battle_job_to_dlq"("p_job_id" "uuid", "p_error_code" "text", "p_error_msg" "text") TO "service_role";
 
 
 
@@ -49429,6 +58920,12 @@ GRANT ALL ON FUNCTION "public"."fn_ops_submit_contact"("p_name" "text", "p_email
 GRANT ALL ON FUNCTION "public"."fn_pause_agent"("p_ai_lenser_id" "uuid") TO "anon";
 GRANT ALL ON FUNCTION "public"."fn_pause_agent"("p_ai_lenser_id" "uuid") TO "authenticated";
 GRANT ALL ON FUNCTION "public"."fn_pause_agent"("p_ai_lenser_id" "uuid") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."fn_post_battle_comment"("p_battle_id" "uuid", "p_body" "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."fn_post_battle_comment"("p_battle_id" "uuid", "p_body" "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."fn_post_battle_comment"("p_battle_id" "uuid", "p_body" "text") TO "service_role";
 
 
 
@@ -49538,9 +59035,33 @@ GRANT ALL ON FUNCTION "public"."fn_reject_tool_invocation"("p_invocation_id" "uu
 
 
 
+GRANT ALL ON FUNCTION "public"."fn_remap_thread_tags"("p_thread_id" "uuid", "p_tag_ids" "uuid"[]) TO "anon";
+GRANT ALL ON FUNCTION "public"."fn_remap_thread_tags"("p_thread_id" "uuid", "p_tag_ids" "uuid"[]) TO "authenticated";
+GRANT ALL ON FUNCTION "public"."fn_remap_thread_tags"("p_thread_id" "uuid", "p_tag_ids" "uuid"[]) TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."fn_remove_battle_contender"("p_contender_id" "uuid") TO "anon";
+GRANT ALL ON FUNCTION "public"."fn_remove_battle_contender"("p_contender_id" "uuid") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."fn_remove_battle_contender"("p_contender_id" "uuid") TO "service_role";
+
+
+
 GRANT ALL ON FUNCTION "public"."fn_remove_follow"("p_target_profile_id" "uuid") TO "anon";
 GRANT ALL ON FUNCTION "public"."fn_remove_follow"("p_target_profile_id" "uuid") TO "authenticated";
 GRANT ALL ON FUNCTION "public"."fn_remove_follow"("p_target_profile_id" "uuid") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."fn_reorder_workflow_phases"("p_workflow_id" "uuid", "p_ordered_ids" "uuid"[]) TO "anon";
+GRANT ALL ON FUNCTION "public"."fn_reorder_workflow_phases"("p_workflow_id" "uuid", "p_ordered_ids" "uuid"[]) TO "authenticated";
+GRANT ALL ON FUNCTION "public"."fn_reorder_workflow_phases"("p_workflow_id" "uuid", "p_ordered_ids" "uuid"[]) TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."fn_reorder_workflow_tasks"("p_phase_id" "uuid", "p_ordered_ids" "uuid"[]) TO "anon";
+GRANT ALL ON FUNCTION "public"."fn_reorder_workflow_tasks"("p_phase_id" "uuid", "p_ordered_ids" "uuid"[]) TO "authenticated";
+GRANT ALL ON FUNCTION "public"."fn_reorder_workflow_tasks"("p_phase_id" "uuid", "p_ordered_ids" "uuid"[]) TO "service_role";
 
 
 
@@ -49561,9 +59082,28 @@ GRANT ALL ON FUNCTION "public"."fn_request_workspace_deletion"("p_ai_lenser_id" 
 
 
 
+REVOKE ALL ON FUNCTION "public"."fn_requeue_battle_job_with_backoff"("p_job_id" "uuid", "p_backoff_ms" integer, "p_error" "text") FROM PUBLIC;
+GRANT ALL ON FUNCTION "public"."fn_requeue_battle_job_with_backoff"("p_job_id" "uuid", "p_backoff_ms" integer, "p_error" "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."fn_requeue_battle_job_with_backoff"("p_job_id" "uuid", "p_backoff_ms" integer, "p_error" "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."fn_requeue_battle_job_with_backoff"("p_job_id" "uuid", "p_backoff_ms" integer, "p_error" "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."fn_resolve_execution_model"("p_provider_override" "text", "p_model_override" "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."fn_resolve_execution_model"("p_provider_override" "text", "p_model_override" "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."fn_resolve_execution_model"("p_provider_override" "text", "p_model_override" "text") TO "service_role";
+
+
+
 GRANT ALL ON FUNCTION "public"."fn_resolve_mentions"("p_ids" "uuid"[]) TO "anon";
 GRANT ALL ON FUNCTION "public"."fn_resolve_mentions"("p_ids" "uuid"[]) TO "authenticated";
 GRANT ALL ON FUNCTION "public"."fn_resolve_mentions"("p_ids" "uuid"[]) TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."fn_resolve_run_incident"("p_incident_id" "uuid", "p_resolution" "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."fn_resolve_run_incident"("p_incident_id" "uuid", "p_resolution" "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."fn_resolve_run_incident"("p_incident_id" "uuid", "p_resolution" "text") TO "service_role";
 
 
 
@@ -49576,6 +59116,13 @@ GRANT ALL ON FUNCTION "public"."fn_resume_agent"("p_ai_lenser_id" "uuid") TO "se
 GRANT ALL ON FUNCTION "public"."fn_retry_agent_run"("p_ai_lenser_id" "uuid", "p_run_id" "uuid") TO "anon";
 GRANT ALL ON FUNCTION "public"."fn_retry_agent_run"("p_ai_lenser_id" "uuid", "p_run_id" "uuid") TO "authenticated";
 GRANT ALL ON FUNCTION "public"."fn_retry_agent_run"("p_ai_lenser_id" "uuid", "p_run_id" "uuid") TO "service_role";
+
+
+
+REVOKE ALL ON FUNCTION "public"."fn_retry_dead_letter_battle_job"("p_dead_letter_id" "uuid") FROM PUBLIC;
+GRANT ALL ON FUNCTION "public"."fn_retry_dead_letter_battle_job"("p_dead_letter_id" "uuid") TO "anon";
+GRANT ALL ON FUNCTION "public"."fn_retry_dead_letter_battle_job"("p_dead_letter_id" "uuid") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."fn_retry_dead_letter_battle_job"("p_dead_letter_id" "uuid") TO "service_role";
 
 
 
@@ -49607,6 +59154,12 @@ GRANT ALL ON FUNCTION "public"."fn_revoke_tool"("p_ai_lenser_id" "uuid", "p_tool
 GRANT ALL ON FUNCTION "public"."fn_run_evaluation"("p_evaluation_id" "uuid", "p_model_id" "uuid") TO "anon";
 GRANT ALL ON FUNCTION "public"."fn_run_evaluation"("p_evaluation_id" "uuid", "p_model_id" "uuid") TO "authenticated";
 GRANT ALL ON FUNCTION "public"."fn_run_evaluation"("p_evaluation_id" "uuid", "p_model_id" "uuid") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."fn_run_lens"("p_lens_id" "uuid", "p_version_id" "uuid", "p_model_id" "uuid", "p_inputs" "jsonb", "p_funding_source" "text", "p_byok_key_id" "uuid", "p_idempotency_key" "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."fn_run_lens"("p_lens_id" "uuid", "p_version_id" "uuid", "p_model_id" "uuid", "p_inputs" "jsonb", "p_funding_source" "text", "p_byok_key_id" "uuid", "p_idempotency_key" "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."fn_run_lens"("p_lens_id" "uuid", "p_version_id" "uuid", "p_model_id" "uuid", "p_inputs" "jsonb", "p_funding_source" "text", "p_byok_key_id" "uuid", "p_idempotency_key" "text") TO "service_role";
 
 
 
@@ -49664,6 +59217,12 @@ GRANT ALL ON FUNCTION "public"."fn_schedule_account_deletion"() TO "service_role
 
 
 
+GRANT ALL ON FUNCTION "public"."fn_schedule_battle"("p_battle_id" "uuid", "p_execution_starts_at" timestamp with time zone, "p_voting_duration_hours" integer, "p_auto_publish" boolean) TO "anon";
+GRANT ALL ON FUNCTION "public"."fn_schedule_battle"("p_battle_id" "uuid", "p_execution_starts_at" timestamp with time zone, "p_voting_duration_hours" integer, "p_auto_publish" boolean) TO "authenticated";
+GRANT ALL ON FUNCTION "public"."fn_schedule_battle"("p_battle_id" "uuid", "p_execution_starts_at" timestamp with time zone, "p_voting_duration_hours" integer, "p_auto_publish" boolean) TO "service_role";
+
+
+
 GRANT ALL ON FUNCTION "public"."fn_search_lensers"("p_query" "text", "p_limit" integer) TO "anon";
 GRANT ALL ON FUNCTION "public"."fn_search_lensers"("p_query" "text", "p_limit" integer) TO "authenticated";
 GRANT ALL ON FUNCTION "public"."fn_search_lensers"("p_query" "text", "p_limit" integer) TO "service_role";
@@ -49676,9 +59235,33 @@ GRANT ALL ON FUNCTION "public"."fn_search_memory_entries"("p_query" "text", "p_p
 
 
 
+GRANT ALL ON FUNCTION "public"."fn_set_evaluation_baseline"("p_evaluation_id" "uuid", "p_run_id" "uuid") TO "anon";
+GRANT ALL ON FUNCTION "public"."fn_set_evaluation_baseline"("p_evaluation_id" "uuid", "p_run_id" "uuid") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."fn_set_evaluation_baseline"("p_evaluation_id" "uuid", "p_run_id" "uuid") TO "service_role";
+
+
+
 GRANT ALL ON FUNCTION "public"."fn_set_runner_paused"("p_ai_lenser_id" "uuid", "p_paused" boolean) TO "anon";
 GRANT ALL ON FUNCTION "public"."fn_set_runner_paused"("p_ai_lenser_id" "uuid", "p_paused" boolean) TO "authenticated";
 GRANT ALL ON FUNCTION "public"."fn_set_runner_paused"("p_ai_lenser_id" "uuid", "p_paused" boolean) TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."fn_set_schedule_calendar"("p_schedule_id" "uuid", "p_calendar_id" "uuid") TO "anon";
+GRANT ALL ON FUNCTION "public"."fn_set_schedule_calendar"("p_schedule_id" "uuid", "p_calendar_id" "uuid") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."fn_set_schedule_calendar"("p_schedule_id" "uuid", "p_calendar_id" "uuid") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."fn_set_schedule_condition"("p_schedule_id" "uuid", "p_condition" "jsonb") TO "anon";
+GRANT ALL ON FUNCTION "public"."fn_set_schedule_condition"("p_schedule_id" "uuid", "p_condition" "jsonb") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."fn_set_schedule_condition"("p_schedule_id" "uuid", "p_condition" "jsonb") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."fn_set_schedule_inputs_rotation"("p_schedule_id" "uuid", "p_rotation" "jsonb") TO "anon";
+GRANT ALL ON FUNCTION "public"."fn_set_schedule_inputs_rotation"("p_schedule_id" "uuid", "p_rotation" "jsonb") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."fn_set_schedule_inputs_rotation"("p_schedule_id" "uuid", "p_rotation" "jsonb") TO "service_role";
 
 
 
@@ -49712,6 +59295,12 @@ REVOKE ALL ON FUNCTION "public"."fn_store_api_key"("p_provider" "text", "p_label
 GRANT ALL ON FUNCTION "public"."fn_store_api_key"("p_provider" "text", "p_label" "text", "p_raw_key" "text") TO "anon";
 GRANT ALL ON FUNCTION "public"."fn_store_api_key"("p_provider" "text", "p_label" "text", "p_raw_key" "text") TO "authenticated";
 GRANT ALL ON FUNCTION "public"."fn_store_api_key"("p_provider" "text", "p_label" "text", "p_raw_key" "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."fn_submit_contender_entry"("p_battle_id" "uuid", "p_contender_id" "uuid", "p_content_text" "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."fn_submit_contender_entry"("p_battle_id" "uuid", "p_contender_id" "uuid", "p_content_text" "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."fn_submit_contender_entry"("p_battle_id" "uuid", "p_contender_id" "uuid", "p_content_text" "text") TO "service_role";
 
 
 
@@ -49781,9 +59370,47 @@ GRANT ALL ON FUNCTION "public"."fn_tags_search"("p_query" "text", "p_lang" "text
 
 
 
+GRANT ALL ON FUNCTION "public"."fn_templates_set_recurrence"("p_template_id" "uuid", "p_recurrence_rule" "text", "p_next_run_at" timestamp with time zone, "p_auto_start_delay_hours" integer) TO "anon";
+GRANT ALL ON FUNCTION "public"."fn_templates_set_recurrence"("p_template_id" "uuid", "p_recurrence_rule" "text", "p_next_run_at" timestamp with time zone, "p_auto_start_delay_hours" integer) TO "authenticated";
+GRANT ALL ON FUNCTION "public"."fn_templates_set_recurrence"("p_template_id" "uuid", "p_recurrence_rule" "text", "p_next_run_at" timestamp with time zone, "p_auto_start_delay_hours" integer) TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."fn_toggle_automation_rule"("p_rule_id" "uuid", "p_is_active" boolean) TO "anon";
+GRANT ALL ON FUNCTION "public"."fn_toggle_automation_rule"("p_rule_id" "uuid", "p_is_active" boolean) TO "authenticated";
+GRANT ALL ON FUNCTION "public"."fn_toggle_automation_rule"("p_rule_id" "uuid", "p_is_active" boolean) TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."fn_toggle_battle_template_public"("p_template_id" "uuid", "p_is_public" boolean) TO "anon";
+GRANT ALL ON FUNCTION "public"."fn_toggle_battle_template_public"("p_template_id" "uuid", "p_is_public" boolean) TO "authenticated";
+GRANT ALL ON FUNCTION "public"."fn_toggle_battle_template_public"("p_template_id" "uuid", "p_is_public" boolean) TO "service_role";
+
+
+
 GRANT ALL ON FUNCTION "public"."fn_toggle_kill_switch"("p_ai_lenser_id" "uuid", "p_enabled" boolean) TO "anon";
 GRANT ALL ON FUNCTION "public"."fn_toggle_kill_switch"("p_ai_lenser_id" "uuid", "p_enabled" boolean) TO "authenticated";
 GRANT ALL ON FUNCTION "public"."fn_toggle_kill_switch"("p_ai_lenser_id" "uuid", "p_enabled" boolean) TO "service_role";
+
+
+
+REVOKE ALL ON FUNCTION "public"."fn_toggle_media_visibility"("p_object_id" "uuid", "p_visibility" "text") FROM PUBLIC;
+GRANT ALL ON FUNCTION "public"."fn_toggle_media_visibility"("p_object_id" "uuid", "p_visibility" "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."fn_toggle_media_visibility"("p_object_id" "uuid", "p_visibility" "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."fn_toggle_media_visibility"("p_object_id" "uuid", "p_visibility" "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."fn_toggle_workflow_schedule"("p_schedule_id" "uuid", "p_is_active" boolean) TO "anon";
+GRANT ALL ON FUNCTION "public"."fn_toggle_workflow_schedule"("p_schedule_id" "uuid", "p_is_active" boolean) TO "authenticated";
+GRANT ALL ON FUNCTION "public"."fn_toggle_workflow_schedule"("p_schedule_id" "uuid", "p_is_active" boolean) TO "service_role";
+
+
+
+REVOKE ALL ON FUNCTION "public"."fn_transfer_media_ownership"("p_object_id" "uuid", "p_new_owner_id" "uuid") FROM PUBLIC;
+GRANT ALL ON FUNCTION "public"."fn_transfer_media_ownership"("p_object_id" "uuid", "p_new_owner_id" "uuid") TO "anon";
+GRANT ALL ON FUNCTION "public"."fn_transfer_media_ownership"("p_object_id" "uuid", "p_new_owner_id" "uuid") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."fn_transfer_media_ownership"("p_object_id" "uuid", "p_new_owner_id" "uuid") TO "service_role";
 
 
 
@@ -49811,9 +59438,39 @@ GRANT ALL ON FUNCTION "public"."fn_update_agent_profile"("p_ai_lenser_id" "uuid"
 
 
 
+GRANT ALL ON FUNCTION "public"."fn_update_battle"("p_battle_id" "uuid", "p_title" "text", "p_task_prompt" "text", "p_battle_type" "text", "p_voter_eligibility" "text", "p_handicap_config" "jsonb", "p_workflow_id" "uuid", "p_lens_id" "uuid", "p_forum_thread_id" "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."fn_update_battle"("p_battle_id" "uuid", "p_title" "text", "p_task_prompt" "text", "p_battle_type" "text", "p_voter_eligibility" "text", "p_handicap_config" "jsonb", "p_workflow_id" "uuid", "p_lens_id" "uuid", "p_forum_thread_id" "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."fn_update_battle"("p_battle_id" "uuid", "p_title" "text", "p_task_prompt" "text", "p_battle_type" "text", "p_voter_eligibility" "text", "p_handicap_config" "jsonb", "p_workflow_id" "uuid", "p_lens_id" "uuid", "p_forum_thread_id" "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."fn_update_battle_execution_settings"("p_battle_id" "uuid", "p_execution_starts_at" timestamp with time zone, "p_voting_duration_hours" integer, "p_auto_publish" boolean) TO "anon";
+GRANT ALL ON FUNCTION "public"."fn_update_battle_execution_settings"("p_battle_id" "uuid", "p_execution_starts_at" timestamp with time zone, "p_voting_duration_hours" integer, "p_auto_publish" boolean) TO "authenticated";
+GRANT ALL ON FUNCTION "public"."fn_update_battle_execution_settings"("p_battle_id" "uuid", "p_execution_starts_at" timestamp with time zone, "p_voting_duration_hours" integer, "p_auto_publish" boolean) TO "service_role";
+
+
+
 GRANT ALL ON FUNCTION "public"."fn_update_team_member_role"("p_team_id" "uuid", "p_member_id" "uuid", "p_role" "text") TO "anon";
 GRANT ALL ON FUNCTION "public"."fn_update_team_member_role"("p_team_id" "uuid", "p_member_id" "uuid", "p_role" "text") TO "authenticated";
 GRANT ALL ON FUNCTION "public"."fn_update_team_member_role"("p_team_id" "uuid", "p_member_id" "uuid", "p_role" "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."fn_update_team_run_status"("p_team_run_id" "uuid", "p_status" "text", "p_completed_at" timestamp with time zone) TO "anon";
+GRANT ALL ON FUNCTION "public"."fn_update_team_run_status"("p_team_run_id" "uuid", "p_status" "text", "p_completed_at" timestamp with time zone) TO "authenticated";
+GRANT ALL ON FUNCTION "public"."fn_update_team_run_status"("p_team_run_id" "uuid", "p_status" "text", "p_completed_at" timestamp with time zone) TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."fn_update_thread_translation"("p_thread_id" "uuid", "p_title" "text", "p_content" "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."fn_update_thread_translation"("p_thread_id" "uuid", "p_title" "text", "p_content" "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."fn_update_thread_translation"("p_thread_id" "uuid", "p_title" "text", "p_content" "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."fn_update_thread_visibility"("p_thread_id" "uuid", "p_visibility" "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."fn_update_thread_visibility"("p_thread_id" "uuid", "p_visibility" "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."fn_update_thread_visibility"("p_thread_id" "uuid", "p_visibility" "text") TO "service_role";
 
 
 
@@ -49883,6 +59540,19 @@ GRANT ALL ON FUNCTION "public"."fn_upsert_agent_ownership"("p_ai_lenser_id" "uui
 
 
 
+REVOKE ALL ON FUNCTION "public"."fn_upsert_agent_run_step"("p_team_run_id" "uuid", "p_workflow_node_id" "uuid", "p_lane" integer, "p_title" "text", "p_status" "text", "p_current_task" "text", "p_recent_output_summary" "text", "p_blocker_summary" "text", "p_started_at" timestamp with time zone, "p_completed_at" timestamp with time zone) FROM PUBLIC;
+GRANT ALL ON FUNCTION "public"."fn_upsert_agent_run_step"("p_team_run_id" "uuid", "p_workflow_node_id" "uuid", "p_lane" integer, "p_title" "text", "p_status" "text", "p_current_task" "text", "p_recent_output_summary" "text", "p_blocker_summary" "text", "p_started_at" timestamp with time zone, "p_completed_at" timestamp with time zone) TO "anon";
+GRANT ALL ON FUNCTION "public"."fn_upsert_agent_run_step"("p_team_run_id" "uuid", "p_workflow_node_id" "uuid", "p_lane" integer, "p_title" "text", "p_status" "text", "p_current_task" "text", "p_recent_output_summary" "text", "p_blocker_summary" "text", "p_started_at" timestamp with time zone, "p_completed_at" timestamp with time zone) TO "authenticated";
+GRANT ALL ON FUNCTION "public"."fn_upsert_agent_run_step"("p_team_run_id" "uuid", "p_workflow_node_id" "uuid", "p_lane" integer, "p_title" "text", "p_status" "text", "p_current_task" "text", "p_recent_output_summary" "text", "p_blocker_summary" "text", "p_started_at" timestamp with time zone, "p_completed_at" timestamp with time zone) TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."fn_upsert_battle_execution_config"("p_battle_id" "uuid", "p_contender_id" "uuid", "p_provider_key" "text", "p_model_key" "text", "p_model_id" "uuid", "p_funding_source" "text", "p_byok_key_ref_id" "uuid", "p_max_tokens" integer, "p_temperature" numeric) TO "anon";
+GRANT ALL ON FUNCTION "public"."fn_upsert_battle_execution_config"("p_battle_id" "uuid", "p_contender_id" "uuid", "p_provider_key" "text", "p_model_key" "text", "p_model_id" "uuid", "p_funding_source" "text", "p_byok_key_ref_id" "uuid", "p_max_tokens" integer, "p_temperature" numeric) TO "authenticated";
+GRANT ALL ON FUNCTION "public"."fn_upsert_battle_execution_config"("p_battle_id" "uuid", "p_contender_id" "uuid", "p_provider_key" "text", "p_model_key" "text", "p_model_id" "uuid", "p_funding_source" "text", "p_byok_key_ref_id" "uuid", "p_max_tokens" integer, "p_temperature" numeric) TO "service_role";
+
+
+
 REVOKE ALL ON FUNCTION "public"."fn_upsert_profile_from_chainabit"("p_user_id" "uuid", "p_email" "text", "p_handle" "text", "p_display_name" "text", "p_avatar_url" "text") FROM PUBLIC;
 GRANT ALL ON FUNCTION "public"."fn_upsert_profile_from_chainabit"("p_user_id" "uuid", "p_email" "text", "p_handle" "text", "p_display_name" "text", "p_avatar_url" "text") TO "anon";
 GRANT ALL ON FUNCTION "public"."fn_upsert_profile_from_chainabit"("p_user_id" "uuid", "p_email" "text", "p_handle" "text", "p_display_name" "text", "p_avatar_url" "text") TO "authenticated";
@@ -49908,9 +59578,216 @@ GRANT ALL ON FUNCTION "public"."fn_upsert_workflow_nodes"("p_workflow_id" "uuid"
 
 
 
+GRANT ALL ON FUNCTION "public"."fn_upsert_workflow_phase"("p_workflow_id" "uuid", "p_title" "text", "p_description" "text", "p_ordinal" integer, "p_id" "uuid") TO "anon";
+GRANT ALL ON FUNCTION "public"."fn_upsert_workflow_phase"("p_workflow_id" "uuid", "p_title" "text", "p_description" "text", "p_ordinal" integer, "p_id" "uuid") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."fn_upsert_workflow_phase"("p_workflow_id" "uuid", "p_title" "text", "p_description" "text", "p_ordinal" integer, "p_id" "uuid") TO "service_role";
+
+
+
 GRANT ALL ON FUNCTION "public"."fn_upsert_workflow_schedule"("p_workflow_id" "uuid", "p_schedule_id" "uuid", "p_cron_expr" "text", "p_timezone" "text", "p_description" "text", "p_approval_policy" "jsonb", "p_is_active" boolean, "p_global_model_id" "text", "p_assignee_id" "uuid", "p_workflow_assignment_id" "uuid", "p_retry_policy" "jsonb", "p_failure_policy" "jsonb", "p_queue_policy" "jsonb", "p_inputs_template" "jsonb") TO "anon";
 GRANT ALL ON FUNCTION "public"."fn_upsert_workflow_schedule"("p_workflow_id" "uuid", "p_schedule_id" "uuid", "p_cron_expr" "text", "p_timezone" "text", "p_description" "text", "p_approval_policy" "jsonb", "p_is_active" boolean, "p_global_model_id" "text", "p_assignee_id" "uuid", "p_workflow_assignment_id" "uuid", "p_retry_policy" "jsonb", "p_failure_policy" "jsonb", "p_queue_policy" "jsonb", "p_inputs_template" "jsonb") TO "authenticated";
 GRANT ALL ON FUNCTION "public"."fn_upsert_workflow_schedule"("p_workflow_id" "uuid", "p_schedule_id" "uuid", "p_cron_expr" "text", "p_timezone" "text", "p_description" "text", "p_approval_policy" "jsonb", "p_is_active" boolean, "p_global_model_id" "text", "p_assignee_id" "uuid", "p_workflow_assignment_id" "uuid", "p_retry_policy" "jsonb", "p_failure_policy" "jsonb", "p_queue_policy" "jsonb", "p_inputs_template" "jsonb") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."fn_upsert_workflow_task"("p_phase_id" "uuid", "p_workflow_id" "uuid", "p_title" "text", "p_prompt_text" "text", "p_output_type" "text", "p_model_hint" "text", "p_ordinal" integer, "p_id" "uuid") TO "anon";
+GRANT ALL ON FUNCTION "public"."fn_upsert_workflow_task"("p_phase_id" "uuid", "p_workflow_id" "uuid", "p_title" "text", "p_prompt_text" "text", "p_output_type" "text", "p_model_hint" "text", "p_ordinal" integer, "p_id" "uuid") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."fn_upsert_workflow_task"("p_phase_id" "uuid", "p_workflow_id" "uuid", "p_title" "text", "p_prompt_text" "text", "p_output_type" "text", "p_model_hint" "text", "p_ordinal" integer, "p_id" "uuid") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."fn_upsert_workspace_item"("p_table_name" "text", "p_id" "uuid", "p_patch" "jsonb") TO "anon";
+GRANT ALL ON FUNCTION "public"."fn_upsert_workspace_item"("p_table_name" "text", "p_id" "uuid", "p_patch" "jsonb") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."fn_upsert_workspace_item"("p_table_name" "text", "p_id" "uuid", "p_patch" "jsonb") TO "service_role";
+
+
+
+REVOKE ALL ON FUNCTION "public"."fn_worker_battle_job_to_dlq"("p_job_id" "uuid", "p_error_code" "text", "p_error_msg" "text") FROM PUBLIC;
+GRANT ALL ON FUNCTION "public"."fn_worker_battle_job_to_dlq"("p_job_id" "uuid", "p_error_code" "text", "p_error_msg" "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."fn_worker_battle_job_to_dlq"("p_job_id" "uuid", "p_error_code" "text", "p_error_msg" "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."fn_worker_battle_job_to_dlq"("p_job_id" "uuid", "p_error_code" "text", "p_error_msg" "text") TO "service_role";
+
+
+
+REVOKE ALL ON FUNCTION "public"."fn_worker_claim_battle_job"("p_worker_id" "text") FROM PUBLIC;
+GRANT ALL ON FUNCTION "public"."fn_worker_claim_battle_job"("p_worker_id" "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."fn_worker_claim_battle_job"("p_worker_id" "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."fn_worker_claim_battle_job"("p_worker_id" "text") TO "service_role";
+
+
+
+REVOKE ALL ON FUNCTION "public"."fn_worker_claim_queued_run"() FROM PUBLIC;
+GRANT ALL ON FUNCTION "public"."fn_worker_claim_queued_run"() TO "anon";
+GRANT ALL ON FUNCTION "public"."fn_worker_claim_queued_run"() TO "authenticated";
+GRANT ALL ON FUNCTION "public"."fn_worker_claim_queued_run"() TO "service_role";
+
+
+
+REVOKE ALL ON FUNCTION "public"."fn_worker_claim_scheduled_workflow_run"("p_worker_id" "text") FROM PUBLIC;
+GRANT ALL ON FUNCTION "public"."fn_worker_claim_scheduled_workflow_run"("p_worker_id" "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."fn_worker_claim_scheduled_workflow_run"("p_worker_id" "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."fn_worker_claim_scheduled_workflow_run"("p_worker_id" "text") TO "service_role";
+
+
+
+REVOKE ALL ON FUNCTION "public"."fn_worker_claim_team_run"() FROM PUBLIC;
+GRANT ALL ON FUNCTION "public"."fn_worker_claim_team_run"() TO "anon";
+GRANT ALL ON FUNCTION "public"."fn_worker_claim_team_run"() TO "authenticated";
+GRANT ALL ON FUNCTION "public"."fn_worker_claim_team_run"() TO "service_role";
+
+
+
+REVOKE ALL ON FUNCTION "public"."fn_worker_complete_battle_job"("p_job_id" "uuid", "p_status" "text", "p_output_text" "text", "p_error" "text") FROM PUBLIC;
+GRANT ALL ON FUNCTION "public"."fn_worker_complete_battle_job"("p_job_id" "uuid", "p_status" "text", "p_output_text" "text", "p_error" "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."fn_worker_complete_battle_job"("p_job_id" "uuid", "p_status" "text", "p_output_text" "text", "p_error" "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."fn_worker_complete_battle_job"("p_job_id" "uuid", "p_status" "text", "p_output_text" "text", "p_error" "text") TO "service_role";
+
+
+
+REVOKE ALL ON FUNCTION "public"."fn_worker_complete_execution_run"("p_run_id" "uuid", "p_status" "text", "p_token_input" integer, "p_token_output" integer, "p_credit_cost" bigint, "p_billing_status" "text", "p_response_text" "text", "p_response_meta" "jsonb", "p_error_code" "text", "p_error_message" "text", "p_latency_ms" integer) FROM PUBLIC;
+GRANT ALL ON FUNCTION "public"."fn_worker_complete_execution_run"("p_run_id" "uuid", "p_status" "text", "p_token_input" integer, "p_token_output" integer, "p_credit_cost" bigint, "p_billing_status" "text", "p_response_text" "text", "p_response_meta" "jsonb", "p_error_code" "text", "p_error_message" "text", "p_latency_ms" integer) TO "anon";
+GRANT ALL ON FUNCTION "public"."fn_worker_complete_execution_run"("p_run_id" "uuid", "p_status" "text", "p_token_input" integer, "p_token_output" integer, "p_credit_cost" bigint, "p_billing_status" "text", "p_response_text" "text", "p_response_meta" "jsonb", "p_error_code" "text", "p_error_message" "text", "p_latency_ms" integer) TO "authenticated";
+GRANT ALL ON FUNCTION "public"."fn_worker_complete_execution_run"("p_run_id" "uuid", "p_status" "text", "p_token_input" integer, "p_token_output" integer, "p_credit_cost" bigint, "p_billing_status" "text", "p_response_text" "text", "p_response_meta" "jsonb", "p_error_code" "text", "p_error_message" "text", "p_latency_ms" integer) TO "service_role";
+
+
+
+REVOKE ALL ON FUNCTION "public"."fn_worker_decrypt_api_key"("p_key_id" "uuid") FROM PUBLIC;
+GRANT ALL ON FUNCTION "public"."fn_worker_decrypt_api_key"("p_key_id" "uuid") TO "anon";
+GRANT ALL ON FUNCTION "public"."fn_worker_decrypt_api_key"("p_key_id" "uuid") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."fn_worker_decrypt_api_key"("p_key_id" "uuid") TO "service_role";
+
+
+
+REVOKE ALL ON FUNCTION "public"."fn_worker_fail_execution_run"("p_run_id" "uuid", "p_error_code" "text", "p_error_message" "text") FROM PUBLIC;
+GRANT ALL ON FUNCTION "public"."fn_worker_fail_execution_run"("p_run_id" "uuid", "p_error_code" "text", "p_error_message" "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."fn_worker_fail_execution_run"("p_run_id" "uuid", "p_error_code" "text", "p_error_message" "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."fn_worker_fail_execution_run"("p_run_id" "uuid", "p_error_code" "text", "p_error_message" "text") TO "service_role";
+
+
+
+REVOKE ALL ON FUNCTION "public"."fn_worker_get_ai_key_secret"("p_ai_key_id" "uuid") FROM PUBLIC;
+GRANT ALL ON FUNCTION "public"."fn_worker_get_ai_key_secret"("p_ai_key_id" "uuid") TO "anon";
+GRANT ALL ON FUNCTION "public"."fn_worker_get_ai_key_secret"("p_ai_key_id" "uuid") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."fn_worker_get_ai_key_secret"("p_ai_key_id" "uuid") TO "service_role";
+
+
+
+REVOKE ALL ON FUNCTION "public"."fn_worker_get_battle_for_og"("p_battle_id" "uuid") FROM PUBLIC;
+GRANT ALL ON FUNCTION "public"."fn_worker_get_battle_for_og"("p_battle_id" "uuid") TO "anon";
+GRANT ALL ON FUNCTION "public"."fn_worker_get_battle_for_og"("p_battle_id" "uuid") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."fn_worker_get_battle_for_og"("p_battle_id" "uuid") TO "service_role";
+
+
+
+REVOKE ALL ON FUNCTION "public"."fn_worker_get_delegation_context"("p_team_run_id" "uuid") FROM PUBLIC;
+GRANT ALL ON FUNCTION "public"."fn_worker_get_delegation_context"("p_team_run_id" "uuid") TO "anon";
+GRANT ALL ON FUNCTION "public"."fn_worker_get_delegation_context"("p_team_run_id" "uuid") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."fn_worker_get_delegation_context"("p_team_run_id" "uuid") TO "service_role";
+
+
+
+REVOKE ALL ON FUNCTION "public"."fn_worker_get_team_run"("p_team_run_id" "uuid") FROM PUBLIC;
+GRANT ALL ON FUNCTION "public"."fn_worker_get_team_run"("p_team_run_id" "uuid") TO "anon";
+GRANT ALL ON FUNCTION "public"."fn_worker_get_team_run"("p_team_run_id" "uuid") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."fn_worker_get_team_run"("p_team_run_id" "uuid") TO "service_role";
+
+
+
+REVOKE ALL ON FUNCTION "public"."fn_worker_get_vote_risk_data"("p_battle_id" "uuid", "p_lenser_id" "uuid") FROM PUBLIC;
+GRANT ALL ON FUNCTION "public"."fn_worker_get_vote_risk_data"("p_battle_id" "uuid", "p_lenser_id" "uuid") TO "anon";
+GRANT ALL ON FUNCTION "public"."fn_worker_get_vote_risk_data"("p_battle_id" "uuid", "p_lenser_id" "uuid") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."fn_worker_get_vote_risk_data"("p_battle_id" "uuid", "p_lenser_id" "uuid") TO "service_role";
+
+
+
+REVOKE ALL ON FUNCTION "public"."fn_worker_get_voter_stats"("p_voter_lenser_id" "uuid", "p_since_ts" timestamp with time zone) FROM PUBLIC;
+GRANT ALL ON FUNCTION "public"."fn_worker_get_voter_stats"("p_voter_lenser_id" "uuid", "p_since_ts" timestamp with time zone) TO "anon";
+GRANT ALL ON FUNCTION "public"."fn_worker_get_voter_stats"("p_voter_lenser_id" "uuid", "p_since_ts" timestamp with time zone) TO "authenticated";
+GRANT ALL ON FUNCTION "public"."fn_worker_get_voter_stats"("p_voter_lenser_id" "uuid", "p_since_ts" timestamp with time zone) TO "service_role";
+
+
+
+REVOKE ALL ON FUNCTION "public"."fn_worker_get_workflow_context"("p_run_id" "uuid") FROM PUBLIC;
+GRANT ALL ON FUNCTION "public"."fn_worker_get_workflow_context"("p_run_id" "uuid") TO "anon";
+GRANT ALL ON FUNCTION "public"."fn_worker_get_workflow_context"("p_run_id" "uuid") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."fn_worker_get_workflow_context"("p_run_id" "uuid") TO "service_role";
+
+
+
+REVOKE ALL ON FUNCTION "public"."fn_worker_get_workflow_graph"("p_workflow_id" "uuid") FROM PUBLIC;
+GRANT ALL ON FUNCTION "public"."fn_worker_get_workflow_graph"("p_workflow_id" "uuid") TO "anon";
+GRANT ALL ON FUNCTION "public"."fn_worker_get_workflow_graph"("p_workflow_id" "uuid") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."fn_worker_get_workflow_graph"("p_workflow_id" "uuid") TO "service_role";
+
+
+
+REVOKE ALL ON FUNCTION "public"."fn_worker_insert_workflow_media_object"("p_workspace_id" "uuid", "p_owner_lenser_id" "uuid", "p_run_id" "uuid", "p_node_id" "uuid", "p_external_url" "text", "p_mime_type" "text", "p_media_type" "text", "p_name" "text") FROM PUBLIC;
+GRANT ALL ON FUNCTION "public"."fn_worker_insert_workflow_media_object"("p_workspace_id" "uuid", "p_owner_lenser_id" "uuid", "p_run_id" "uuid", "p_node_id" "uuid", "p_external_url" "text", "p_mime_type" "text", "p_media_type" "text", "p_name" "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."fn_worker_insert_workflow_media_object"("p_workspace_id" "uuid", "p_owner_lenser_id" "uuid", "p_run_id" "uuid", "p_node_id" "uuid", "p_external_url" "text", "p_mime_type" "text", "p_media_type" "text", "p_name" "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."fn_worker_insert_workflow_media_object"("p_workspace_id" "uuid", "p_owner_lenser_id" "uuid", "p_run_id" "uuid", "p_node_id" "uuid", "p_external_url" "text", "p_mime_type" "text", "p_media_type" "text", "p_name" "text") TO "service_role";
+
+
+
+REVOKE ALL ON FUNCTION "public"."fn_worker_persist_execution_artifacts"("p_run_id" "uuid", "p_lenser_id" "uuid", "p_workspace_id" "uuid", "p_ai_model_id" "uuid", "p_kind" "text", "p_content_text" "text", "p_content_json" "jsonb", "p_media_ids" "uuid"[]) FROM PUBLIC;
+GRANT ALL ON FUNCTION "public"."fn_worker_persist_execution_artifacts"("p_run_id" "uuid", "p_lenser_id" "uuid", "p_workspace_id" "uuid", "p_ai_model_id" "uuid", "p_kind" "text", "p_content_text" "text", "p_content_json" "jsonb", "p_media_ids" "uuid"[]) TO "anon";
+GRANT ALL ON FUNCTION "public"."fn_worker_persist_execution_artifacts"("p_run_id" "uuid", "p_lenser_id" "uuid", "p_workspace_id" "uuid", "p_ai_model_id" "uuid", "p_kind" "text", "p_content_text" "text", "p_content_json" "jsonb", "p_media_ids" "uuid"[]) TO "authenticated";
+GRANT ALL ON FUNCTION "public"."fn_worker_persist_execution_artifacts"("p_run_id" "uuid", "p_lenser_id" "uuid", "p_workspace_id" "uuid", "p_ai_model_id" "uuid", "p_kind" "text", "p_content_text" "text", "p_content_json" "jsonb", "p_media_ids" "uuid"[]) TO "service_role";
+
+
+
+REVOKE ALL ON FUNCTION "public"."fn_worker_render_template"("p_version_id" "uuid", "p_inputs" "jsonb") FROM PUBLIC;
+GRANT ALL ON FUNCTION "public"."fn_worker_render_template"("p_version_id" "uuid", "p_inputs" "jsonb") TO "anon";
+GRANT ALL ON FUNCTION "public"."fn_worker_render_template"("p_version_id" "uuid", "p_inputs" "jsonb") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."fn_worker_render_template"("p_version_id" "uuid", "p_inputs" "jsonb") TO "service_role";
+
+
+
+REVOKE ALL ON FUNCTION "public"."fn_worker_requeue_battle_job"("p_job_id" "uuid", "p_backoff_ms" integer, "p_error" "text") FROM PUBLIC;
+GRANT ALL ON FUNCTION "public"."fn_worker_requeue_battle_job"("p_job_id" "uuid", "p_backoff_ms" integer, "p_error" "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."fn_worker_requeue_battle_job"("p_job_id" "uuid", "p_backoff_ms" integer, "p_error" "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."fn_worker_requeue_battle_job"("p_job_id" "uuid", "p_backoff_ms" integer, "p_error" "text") TO "service_role";
+
+
+
+REVOKE ALL ON FUNCTION "public"."fn_worker_set_battle_og_image"("p_battle_id" "uuid", "p_og_image_url" "text") FROM PUBLIC;
+GRANT ALL ON FUNCTION "public"."fn_worker_set_battle_og_image"("p_battle_id" "uuid", "p_og_image_url" "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."fn_worker_set_battle_og_image"("p_battle_id" "uuid", "p_og_image_url" "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."fn_worker_set_battle_og_image"("p_battle_id" "uuid", "p_og_image_url" "text") TO "service_role";
+
+
+
+REVOKE ALL ON FUNCTION "public"."fn_worker_update_team_run"("p_team_run_id" "uuid", "p_status" "text", "p_completed_at" timestamp with time zone) FROM PUBLIC;
+GRANT ALL ON FUNCTION "public"."fn_worker_update_team_run"("p_team_run_id" "uuid", "p_status" "text", "p_completed_at" timestamp with time zone) TO "anon";
+GRANT ALL ON FUNCTION "public"."fn_worker_update_team_run"("p_team_run_id" "uuid", "p_status" "text", "p_completed_at" timestamp with time zone) TO "authenticated";
+GRANT ALL ON FUNCTION "public"."fn_worker_update_team_run"("p_team_run_id" "uuid", "p_status" "text", "p_completed_at" timestamp with time zone) TO "service_role";
+
+
+
+REVOKE ALL ON FUNCTION "public"."fn_worker_update_team_run_status"("p_team_run_id" "uuid", "p_status" "text", "p_completed_at" timestamp with time zone) FROM PUBLIC;
+GRANT ALL ON FUNCTION "public"."fn_worker_update_team_run_status"("p_team_run_id" "uuid", "p_status" "text", "p_completed_at" timestamp with time zone) TO "anon";
+GRANT ALL ON FUNCTION "public"."fn_worker_update_team_run_status"("p_team_run_id" "uuid", "p_status" "text", "p_completed_at" timestamp with time zone) TO "authenticated";
+GRANT ALL ON FUNCTION "public"."fn_worker_update_team_run_status"("p_team_run_id" "uuid", "p_status" "text", "p_completed_at" timestamp with time zone) TO "service_role";
+
+
+
+REVOKE ALL ON FUNCTION "public"."fn_worker_update_vote_risk_score"("p_vote_id" "uuid", "p_risk_score" numeric, "p_risk_factors" "text"[], "p_review_status" "text") FROM PUBLIC;
+GRANT ALL ON FUNCTION "public"."fn_worker_update_vote_risk_score"("p_vote_id" "uuid", "p_risk_score" numeric, "p_risk_factors" "text"[], "p_review_status" "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."fn_worker_update_vote_risk_score"("p_vote_id" "uuid", "p_risk_score" numeric, "p_risk_factors" "text"[], "p_review_status" "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."fn_worker_update_vote_risk_score"("p_vote_id" "uuid", "p_risk_score" numeric, "p_risk_factors" "text"[], "p_review_status" "text") TO "service_role";
+
+
+
+REVOKE ALL ON FUNCTION "public"."fn_worker_upsert_heartbeat"("p_worker_id" "text", "p_worker_type" "text", "p_metadata" "jsonb") FROM PUBLIC;
+GRANT ALL ON FUNCTION "public"."fn_worker_upsert_heartbeat"("p_worker_id" "text", "p_worker_type" "text", "p_metadata" "jsonb") TO "anon";
+GRANT ALL ON FUNCTION "public"."fn_worker_upsert_heartbeat"("p_worker_id" "text", "p_worker_type" "text", "p_metadata" "jsonb") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."fn_worker_upsert_heartbeat"("p_worker_id" "text", "p_worker_type" "text", "p_metadata" "jsonb") TO "service_role";
+
+
+
+REVOKE ALL ON FUNCTION "public"."fn_worker_upsert_node_result"("p_run_id" "uuid", "p_node_id" "uuid", "p_status" "text", "p_output_data" "jsonb", "p_error_message" "text") FROM PUBLIC;
+GRANT ALL ON FUNCTION "public"."fn_worker_upsert_node_result"("p_run_id" "uuid", "p_node_id" "uuid", "p_status" "text", "p_output_data" "jsonb", "p_error_message" "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."fn_worker_upsert_node_result"("p_run_id" "uuid", "p_node_id" "uuid", "p_status" "text", "p_output_data" "jsonb", "p_error_message" "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."fn_worker_upsert_node_result"("p_run_id" "uuid", "p_node_id" "uuid", "p_status" "text", "p_output_data" "jsonb", "p_error_message" "text") TO "service_role";
 
 
 
@@ -51191,6 +61068,13 @@ GRANT ALL ON FUNCTION "public"."ts_dist"(timestamp without time zone, timestamp 
 
 
 
+GRANT ALL ON FUNCTION "public"."tstz_dist"(timestamp with time zone, timestamp with time zone) TO "postgres";
+GRANT ALL ON FUNCTION "public"."tstz_dist"(timestamp with time zone, timestamp with time zone) TO "anon";
+GRANT ALL ON FUNCTION "public"."tstz_dist"(timestamp with time zone, timestamp with time zone) TO "authenticated";
+GRANT ALL ON FUNCTION "public"."tstz_dist"(timestamp with time zone, timestamp with time zone) TO "service_role";
+
+
+
 REVOKE ALL ON FUNCTION "status"."fn_status_incident_detail"("p_id" "uuid") FROM PUBLIC;
 GRANT ALL ON FUNCTION "status"."fn_status_incident_detail"("p_id" "uuid") TO "anon";
 GRANT ALL ON FUNCTION "status"."fn_status_incident_detail"("p_id" "uuid") TO "authenticated";
@@ -51251,6 +61135,56 @@ GRANT ALL ON FUNCTION "tenancy"."set_updated_at"() TO "service_role";
 
 
 
+
+
+
+REVOKE ALL ON FUNCTION "wallet"."credit_account"("p_lenser_id" "uuid", "p_amount" bigint, "p_tx_type" "wallet"."transaction_type_enum", "p_reference_type" "text", "p_reference_id" "uuid", "p_description" "text", "p_metadata" "jsonb") FROM PUBLIC;
+GRANT ALL ON FUNCTION "wallet"."credit_account"("p_lenser_id" "uuid", "p_amount" bigint, "p_tx_type" "wallet"."transaction_type_enum", "p_reference_type" "text", "p_reference_id" "uuid", "p_description" "text", "p_metadata" "jsonb") TO "service_role";
+
+
+
+REVOKE ALL ON FUNCTION "wallet"."debit_account"("p_lenser_id" "uuid", "p_amount" bigint, "p_tx_type" "wallet"."transaction_type_enum", "p_reference_type" "text", "p_reference_id" "uuid", "p_description" "text", "p_metadata" "jsonb") FROM PUBLIC;
+GRANT ALL ON FUNCTION "wallet"."debit_account"("p_lenser_id" "uuid", "p_amount" bigint, "p_tx_type" "wallet"."transaction_type_enum", "p_reference_type" "text", "p_reference_id" "uuid", "p_description" "text", "p_metadata" "jsonb") TO "service_role";
+
+
+
+REVOKE ALL ON FUNCTION "wallet"."get_balance"("p_lenser_id" "uuid") FROM PUBLIC;
+GRANT ALL ON FUNCTION "wallet"."get_balance"("p_lenser_id" "uuid") TO "service_role";
+
+
+
+REVOKE ALL ON FUNCTION "wallet"."get_wallet_summary"("p_lenser_id" "uuid") FROM PUBLIC;
+GRANT ALL ON FUNCTION "wallet"."get_wallet_summary"("p_lenser_id" "uuid") TO "service_role";
+
+
+
+REVOKE ALL ON FUNCTION "wallet"."release_reservation"("p_reservation_id" "uuid") FROM PUBLIC;
+GRANT ALL ON FUNCTION "wallet"."release_reservation"("p_reservation_id" "uuid") TO "service_role";
+
+
+
+REVOKE ALL ON FUNCTION "wallet"."release_reservation"("p_reservation_id" "uuid", "p_expected_lenser_id" "uuid") FROM PUBLIC;
+GRANT ALL ON FUNCTION "wallet"."release_reservation"("p_reservation_id" "uuid", "p_expected_lenser_id" "uuid") TO "service_role";
+
+
+
+REVOKE ALL ON FUNCTION "wallet"."reserve_credits"("p_lenser_id" "uuid", "p_amount" bigint, "p_reference_id" "uuid", "p_description" "text") FROM PUBLIC;
+GRANT ALL ON FUNCTION "wallet"."reserve_credits"("p_lenser_id" "uuid", "p_amount" bigint, "p_reference_id" "uuid", "p_description" "text") TO "service_role";
+
+
+
+REVOKE ALL ON FUNCTION "wallet"."reserve_credits_safe"("p_lenser_id" "uuid", "p_amount" bigint, "p_reference_id" "text", "p_description" "text") FROM PUBLIC;
+GRANT ALL ON FUNCTION "wallet"."reserve_credits_safe"("p_lenser_id" "uuid", "p_amount" bigint, "p_reference_id" "text", "p_description" "text") TO "service_role";
+
+
+
+REVOKE ALL ON FUNCTION "wallet"."reset_spending_period"("p_period" "text") FROM PUBLIC;
+GRANT ALL ON FUNCTION "wallet"."reset_spending_period"("p_period" "text") TO "service_role";
+
+
+
+REVOKE ALL ON FUNCTION "wallet"."settle_charge"("p_reservation_id" "uuid", "p_actual_amount" bigint) FROM PUBLIC;
+GRANT ALL ON FUNCTION "wallet"."settle_charge"("p_reservation_id" "uuid", "p_actual_amount" bigint) TO "service_role";
 
 
 
@@ -51885,6 +61819,36 @@ GRANT SELECT ON TABLE "benchmark"."v_workflow_result_sets" TO "service_role";
 
 
 
+GRANT ALL ON TABLE "billing"."checkout_sessions" TO "service_role";
+
+
+
+GRANT ALL ON TABLE "billing"."execution_margin_policies" TO "service_role";
+
+
+
+GRANT ALL ON TABLE "billing"."orders" TO "service_role";
+
+
+
+GRANT ALL ON TABLE "billing"."products" TO "service_role";
+
+
+
+GRANT ALL ON TABLE "billing"."variants" TO "service_role";
+
+
+
+GRANT SELECT ON TABLE "billing"."vw_products" TO "service_role";
+GRANT SELECT ON TABLE "billing"."vw_products" TO "authenticated";
+GRANT SELECT ON TABLE "billing"."vw_products" TO "anon";
+
+
+
+GRANT ALL ON TABLE "billing"."webhook_events" TO "service_role";
+
+
+
 GRANT SELECT,INSERT,DELETE,UPDATE ON TABLE "connectors"."connector_tokens" TO "service_role";
 
 
@@ -52080,6 +62044,9 @@ GRANT SELECT ON TABLE "execution"."vw_workflow_run_timeline" TO "service_role";
 
 
 
+
+
+
 GRANT ALL ON TABLE "integrations"."tool_allowlist" TO "service_role";
 GRANT SELECT ON TABLE "integrations"."tool_allowlist" TO "authenticated";
 
@@ -52225,6 +62192,36 @@ GRANT ALL ON TABLE "media"."attachments" TO "service_role";
 GRANT ALL ON TABLE "media"."objects" TO "anon";
 GRANT ALL ON TABLE "media"."objects" TO "authenticated";
 GRANT ALL ON TABLE "media"."objects" TO "service_role";
+
+
+
+GRANT ALL ON TABLE "organizations"."activity_log" TO "anon";
+GRANT ALL ON TABLE "organizations"."activity_log" TO "authenticated";
+GRANT ALL ON TABLE "organizations"."activity_log" TO "service_role";
+
+
+
+GRANT ALL ON TABLE "organizations"."addresses" TO "anon";
+GRANT ALL ON TABLE "organizations"."addresses" TO "authenticated";
+GRANT ALL ON TABLE "organizations"."addresses" TO "service_role";
+
+
+
+GRANT ALL ON TABLE "organizations"."audit_logs" TO "anon";
+GRANT ALL ON TABLE "organizations"."audit_logs" TO "authenticated";
+GRANT ALL ON TABLE "organizations"."audit_logs" TO "service_role";
+
+
+
+GRANT ALL ON TABLE "organizations"."companies" TO "anon";
+GRANT ALL ON TABLE "organizations"."companies" TO "authenticated";
+GRANT ALL ON TABLE "organizations"."companies" TO "service_role";
+
+
+
+GRANT ALL ON TABLE "organizations"."preferences" TO "anon";
+GRANT ALL ON TABLE "organizations"."preferences" TO "authenticated";
+GRANT ALL ON TABLE "organizations"."preferences" TO "service_role";
 
 
 
@@ -52451,6 +62448,28 @@ GRANT ALL ON TABLE "tenancy"."workspaces" TO "service_role";
 
 
 
+GRANT ALL ON TABLE "wallet"."accounts" TO "service_role";
+
+
+
+GRANT ALL ON TABLE "wallet"."organization_accounts" TO "anon";
+GRANT ALL ON TABLE "wallet"."organization_accounts" TO "authenticated";
+GRANT ALL ON TABLE "wallet"."organization_accounts" TO "service_role";
+
+
+
+GRANT ALL ON TABLE "wallet"."pending_charges" TO "service_role";
+
+
+
+GRANT ALL ON TABLE "wallet"."spending_limits" TO "service_role";
+
+
+
+GRANT ALL ON TABLE "wallet"."transactions" TO "service_role";
+
+
+
 GRANT SELECT ON TABLE "xp"."apps" TO "authenticated";
 GRANT ALL ON TABLE "xp"."apps" TO "service_role";
 
@@ -52557,6 +62576,9 @@ ALTER DEFAULT PRIVILEGES FOR ROLE "postgres" IN SCHEMA "public" GRANT ALL ON TAB
 
 
 ALTER DEFAULT PRIVILEGES FOR ROLE "postgres" IN SCHEMA "xp" GRANT ALL ON FUNCTIONS TO "service_role";
+
+
+
 
 
 
