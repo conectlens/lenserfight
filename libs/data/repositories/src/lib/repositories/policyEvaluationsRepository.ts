@@ -31,22 +31,16 @@ export class SupabasePolicyEvaluationsRepository
     aiLenserId: string,
     options: ListPolicyLogOptions = {}
   ): Promise<PolicyEvaluationRecord[]> {
-    let query = supabase
-      .schema('agents')
-      .from('policy_evaluations')
-      .select('*')
-      .eq('ai_lenser_id', aiLenserId)
-      .order('evaluated_at', { ascending: false })
-
-    if (options.verdict) query = query.eq('verdict', options.verdict)
-    if (options.policy_type) query = query.eq('policy_type', options.policy_type)
-    if (options.evaluation_point)
-      query = query.eq('evaluation_point', options.evaluation_point)
-    if (options.limit && options.limit > 0) query = query.limit(options.limit)
-
-    const { data, error } = await query
+    const { data, error } = await supabase.rpc('fn_list_policy_evaluations', {
+      p_ai_lenser_id: aiLenserId,
+      p_limit: options.limit && options.limit > 0 ? options.limit : 100,
+      p_cursor: null,
+    })
     if (error) throw error
-    return (data ?? []) as PolicyEvaluationRecord[]
+    let rows = (data ?? []) as PolicyEvaluationRecord[]
+    if (options.verdict) rows = rows.filter((r) => r.decision === options.verdict)
+    if (options.policy_type) rows = rows.filter((r) => r.policy_type === options.policy_type)
+    return rows
   }
 
   async evaluatePreRunPolicy(
