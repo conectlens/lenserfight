@@ -44,15 +44,14 @@ export class SupabaseReactionRepository implements ReactionRepositoryPort {
   }
 
   async getReactionsFor(targetType: TargetType, targetId: string): Promise<ReactionRecord[]> {
-    const { data, error } = await supabase
-      .schema('content')
-      .from('reactions')
-      .select('*')
-      .eq('entity_type', targetType)
-      .eq('entity_id', targetId)
+    const { data, error } = await supabase.rpc('fn_get_entity_reactions_by_lenser', {
+      p_entity_type: targetType,
+      p_entity_id: targetId,
+      p_lenser_id: null,
+    })
 
     if (error) throw error
-    return (data ?? []).map((r) => this.mapToRecord(r))
+    return (data ?? []).map((r: any) => this.mapToRecord(r))
   }
 
   async getUserReaction(
@@ -65,16 +64,22 @@ export class SupabaseReactionRepository implements ReactionRepositoryPort {
     } = await supabase.auth.getUser()
     if (!user) return []
 
-    const { data, error } = await supabase
-      .schema('content')
-      .from('reactions')
-      .select('*')
-      .eq('entity_type', targetType)
-      .eq('entity_id', targetId)
-      .eq('lenser_id', user.id)
+    const { data, error } = await supabase.rpc('fn_get_entity_reaction_status', {
+      p_entity_type: targetType,
+      p_entity_id: targetId,
+    })
 
     if (error) throw error
-    return (data ?? []).map((r) => this.mapToRecord(r))
+    return (data ?? [])
+      .filter((r: any) => r.reacted)
+      .map((r: any) => ({
+        id: '',
+        lenser_id: user.id,
+        target_type: targetType,
+        target_id: targetId,
+        reaction: r.reaction,
+        created_at: '',
+      }))
   }
 
   async toggleReaction(
@@ -127,66 +132,61 @@ export class SupabaseReactionRepository implements ReactionRepositoryPort {
     } = await supabase.auth.getUser()
     if (!user) return []
 
-    const { data, error } = await supabase
-      .schema('content')
-      .from('reactions')
-      .select('*')
-      .eq('entity_type', targetType)
-      .eq('lenser_id', user.id)
-      .in('entity_id', targetIds)
+    const results = await Promise.all(
+      targetIds.map((id) =>
+        supabase.rpc('fn_get_entity_reactions_by_lenser', {
+          p_entity_type: targetType,
+          p_entity_id: id,
+          p_lenser_id: user.id,
+        })
+      )
+    )
 
-    if (error) throw error
-    return (data ?? []).map((r) => this.mapToRecord(r))
+    return results.flatMap(({ data, error }) => {
+      if (error) return []
+      return (data ?? []).map((r: any) => this.mapToRecord(r))
+    })
   }
 
   async countReactions(targetType: TargetType, targetId: string): Promise<ReactionCount[]> {
-    const { data, error } = await supabase
-      .schema('content')
-      .from('reactions')
-      .select('reaction')
-      .eq('entity_type', targetType)
-      .eq('entity_id', targetId)
+    const { data, error } = await supabase.rpc('fn_get_entity_reaction_counts', {
+      p_entity_type: targetType,
+      p_entity_id: targetId,
+    })
 
     if (error) throw error
 
-    const counts: Record<string, number> = {}
-    data?.forEach((r: any) => {
-      counts[r.reaction] = (counts[r.reaction] || 0) + 1
-    })
-
-    return Object.entries(counts).map(([reaction, count]) => ({
-      reaction: reaction as ReactionType,
-      count: count as number,
+    return (data ?? []).map((r: any) => ({
+      reaction: r.reaction as ReactionType,
+      count: Number(r.count),
     }))
   }
 
   async getLenserHistory(handle: string, offset = 0, limit = 20): Promise<ApiResponseEnvelope<ReactionRecord[]>> {
     const start = Date.now()
 
-    const { data: profile, error: profileError } = await supabase
-      .schema('lensers')
-      .from('profiles')
-      .select('id')
-      .eq('handle', handle)
-      .single()
+    const { data: profileData, error: profileError } = await supabase.rpc('fn_get_lenser_profile_brief', {
+      p_handle: handle,
+      p_lenser_id: null,
+    })
 
-    if (profileError || !profile) {
+    if (profileError || !profileData?.[0]) {
       return paginatedResponse([], { limit, offset, total: 0, hasNextPage: false }, { durationMs: Date.now() - start })
     }
 
-    const { data, error } = await supabase
-      .schema('content')
-      .from('reactions')
-      .select('*')
-      .eq('lenser_id', profile.id)
-      .order('created_at', { ascending: false })
-      .range(offset, offset + limit - 1)
+    const profile = profileData[0]
+
+    const { data, error } = await supabase.rpc('fn_get_entity_reactions_by_lenser', {
+      p_entity_type: 'thread',
+      p_entity_id: null,
+      p_lenser_id: profile.id,
+    })
 
     if (error) throw error
 
-    const records = (data ?? []).map((r) => this.mapToRecord(r))
-    const hasNextPage = records.length === limit
-    const page = records
+    const allRecords = (data ?? []).map((r: any) => this.mapToRecord(r))
+    const page = allRecords.slice(offset, offset + limit)
+    const hasNextPage = page.length === limit
 
     return paginatedResponse(
       page,

@@ -9,11 +9,7 @@ export function useDeleteRule() {
 
   return useMutation({
     mutationFn: async (ruleId: string) => {
-      const { error } = await supabase
-        .schema('automation')
-        .from('trigger_rules')
-        .delete()
-        .eq('id', ruleId)
+      const { error } = await supabase.rpc('fn_delete_automation_rule', { p_rule_id: ruleId })
       if (error) throw error
       return ruleId
     },

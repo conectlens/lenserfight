@@ -207,15 +207,10 @@ export class SupabaseLenserRepository implements LenserRepositoryPort {
     const user = session?.user
     if (!user) return { kind: 'new' }
 
-    const { data, error } = await supabase
-      .schema('lensers')
-      .from('profiles')
-      .select('status, deletion_requested_at, deletion_deadline_at, onboarding_step')
-      .eq('user_id', user.id)
-      .maybeSingle()
+    const { data, error } = await supabase.rpc('fn_get_auth_profile_gate')
 
     if (error) throw error
-    return mapProfileToAuthProfileGate((data as AuthProfileGateRow | null) ?? null)
+    return mapProfileToAuthProfileGate((data?.[0] as AuthProfileGateRow | null) ?? null)
   }
 
   async createLenser(data: CreateLenserDTO): Promise<Lenser> {
@@ -255,16 +250,12 @@ export class SupabaseLenserRepository implements LenserRepositoryPort {
   }
 
   async getRecentlyActive(limit: number): Promise<Lenser[]> {
-    const { data, error } = await supabase
-      .schema('lensers')
-      .from('profiles')
-      .select('*')
-      .eq('status', 'active')
-      .is('deletion_requested_at', null)
-      .order('last_active_at', { ascending: false })
-      .limit(limit)
+    const { data, error } = await supabase.rpc('fn_get_lenser_profile_brief', {
+      p_handle: null,
+      p_lenser_id: null,
+    })
     if (error) throw error
-    return data as Lenser[]
+    return ((data ?? []) as Lenser[]).slice(0, limit)
   }
 
   async getLatestJoined(): Promise<Lenser[]> {
@@ -328,14 +319,12 @@ export class SupabaseLenserRepository implements LenserRepositoryPort {
     return []
   }
   async getLenserById(id: string): Promise<Lenser | null> {
-    const { data, error } = await supabase
-      .schema('lensers')
-      .from('profiles')
-      .select('*')
-      .eq('id', id)
-      .maybeSingle()
+    const { data, error } = await supabase.rpc('fn_get_lenser_profile_brief', {
+      p_handle: null,
+      p_lenser_id: id,
+    })
     if (error) return null
-    return data as Lenser
+    return (data?.[0] ?? null) as Lenser | null
   }
 
   async getLanguages(): Promise<Language[]> {

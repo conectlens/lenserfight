@@ -11,7 +11,6 @@ export async function handleRunsGetRoute(
 ): Promise<void> {
   const auth = await authenticateRequest(req)
   const { data, error } = await auth.userClient
-    .schema('execution')
     .rpc('fn_get_run_details', { p_run_id: runId })
 
   if (error) {

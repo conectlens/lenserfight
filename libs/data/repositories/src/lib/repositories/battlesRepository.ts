@@ -344,114 +344,69 @@ export class SupabaseBattlesRepository implements BattlesRepositoryPort {
     'id, slug, title, task_prompt, status, total_vote_count, published_at, voting_opens_at, voting_closes_at, battle_type, voter_eligibility, handicap_config, creator_lenser_id, forum_thread_id, workflow_id, lens_id, execution_starts_at, auto_publish, voting_duration_hours, vote_velocity, og_image_url'
 
   async getBattleBySlug(slug: string): Promise<BattleRecord | null> {
-    const { data, error } = await supabase
-      .schema('battles')
-      .from('battles')
-      .select(this.battleSelect)
-      .eq('slug', slug)
-      .maybeSingle()
-
+    const { data, error } = await supabase.rpc('fn_get_battle_by_slug', { p_slug: slug })
     if (error) this.handleError(error)
-    return data as BattleRecord | null
+    const row = Array.isArray(data) ? data[0] : data
+    return (row ?? null) as BattleRecord | null
   }
 
   async getBattlesFeed(filter?: string, limit = 20, battleType?: BattleType, cursor?: string, sortBy: 'newest' | 'most_votes' | 'trending' = 'newest'): Promise<BattleRecord[]> {
-    const orderByVotes = sortBy === 'most_votes' || sortBy === 'trending'
-
-    let query = supabase
-      .schema('battles')
-      .from('battles')
-      .select(this.battleSelect)
-      .order(orderByVotes ? 'total_vote_count' : 'published_at', { ascending: false })
-      .limit(limit)
-
-    if (filter && filter !== 'all') {
-      query = query.eq('status', filter)
-    }
-    if (battleType) {
-      query = query.eq('battle_type', battleType)
-    }
-    if (sortBy === 'trending') {
-      query = query.gte('published_at', new Date(Date.now() - 48 * 60 * 60 * 1000).toISOString())
-    }
-    if (cursor) {
-      if (orderByVotes) {
-        query = query.lt('total_vote_count', Number(cursor))
-      } else {
-        query = query.lt('published_at', cursor)
-      }
-    }
-
-    const { data, error } = await query
+    const { data, error } = await supabase.rpc('fn_get_battles_feed', {
+      p_status: filter && filter !== 'all' ? filter : null,
+      p_battle_type: battleType ?? null,
+      p_limit: limit,
+      p_cursor: cursor ?? null,
+    })
     if (error) this.handleError(error)
     return (data ?? []) as BattleRecord[]
   }
 
   async getContenders(battleId: string): Promise<ContenderRecord[]> {
-    const { data, error } = await supabase
-      .schema('battles')
-      .from('contenders')
-      .select('id, battle_id, slot, contender_type, display_name, contender_ref_id')
-      .eq('battle_id', battleId)
-
+    const { data, error } = await supabase.rpc('fn_get_battle_contenders', {
+      p_battle_id: battleId,
+    })
     if (error) this.handleError(error)
     return (data ?? []) as ContenderRecord[]
   }
 
   async getSubmissions(battleId: string): Promise<SubmissionRecord[]> {
-    const { data, error } = await supabase
-      .schema('battles')
-      .from('submissions')
-      .select('id, battle_id, contender_id, content_text, content_url, status')
-      .eq('battle_id', battleId)
-
+    const { data, error } = await supabase.rpc('fn_get_battle_submissions', {
+      p_battle_id: battleId,
+    })
     if (error) this.handleError(error)
     return (data ?? []) as SubmissionRecord[]
   }
 
   async getVoteAggregates(battleId: string): Promise<VoteAggregateRecord[]> {
-    const { data, error } = await supabase
-      .schema('battles')
-      .from('vote_aggregates')
-      .select('battle_id, contender_id, raw_vote_count, weighted_vote_sum, draw_count, rank_position')
-      .eq('battle_id', battleId)
-
+    const { data, error } = await supabase.rpc('fn_get_vote_aggregates', {
+      p_battle_id: battleId,
+    })
     if (error) this.handleError(error)
     return (data ?? []) as VoteAggregateRecord[]
   }
 
   async getScorecards(battleId: string): Promise<ScorecardRecord[]> {
-    const { data, error } = await supabase
-      .schema('battles')
-      .from('scorecards')
-      .select('id, battle_id, contender_id, rubric_criterion_id, result, explanation')
-      .eq('battle_id', battleId)
-
+    const { data, error } = await supabase.rpc('fn_get_battle_scorecards', {
+      p_battle_id: battleId,
+    })
     if (error) this.handleError(error)
     return (data ?? []) as ScorecardRecord[]
   }
 
   async getRubricCriteria(criterionIds: string[]): Promise<RubricCriterionRecord[]> {
     if (criterionIds.length === 0) return []
-    const { data, error } = await supabase
-      .schema('battles')
-      .from('rubric_criteria')
-      .select('id, title, description, weight')
-      .in('id', criterionIds)
-
+    const { data, error } = await supabase.rpc('fn_get_rubric_criteria', {
+      p_criterion_ids: criterionIds,
+    })
     if (error) this.handleError(error)
     return (data ?? []) as RubricCriterionRecord[]
   }
 
   async getMyVote(battleId: string): Promise<{ vote_value: string } | null> {
-    const { data, error } = await supabase
-      .schema('battles')
-      .from('votes')
-      .select('vote_value')
-      .eq('battle_id', battleId)
-      .maybeSingle()
+    const { data, error } = await supabase.rpc('fn_get_my_vote', { p_battle_id: battleId })
     if (error) this.handleError(error)
-    return data as { vote_value: string } | null
+    const row = Array.isArray(data) ? data[0] : data
+    return (row ?? null) as { vote_value: string } | null
   }
 
   async submitVote(input: SubmitVoteInput): Promise<{ vote_id: string; status: string; battle_id: string }> {
@@ -496,119 +451,71 @@ export class SupabaseBattlesRepository implements BattlesRepositoryPort {
   }
 
   async createBattle(input: CreateBattleInput): Promise<BattleRecord> {
-    // Calls the atomic fn_create_battle RPC which inserts battles + ai_handicap_policies + funding_policies.
-    // Until the RPC is deployed, falls back to direct insert with defaults.
-    const { data, error } = await supabase
-      .schema('battles')
-      .from('battles')
-      .insert({
-        title: input.title,
-        task_prompt: input.task_prompt,
-        battle_type: input.battle_type,
-        voter_eligibility: input.voter_eligibility,
-        handicap_config: input.handicap ?? {},
-        status: 'draft',
-        slug: this.generateSlug(input.title),
-        ...(input.workflow_id ? { workflow_id: input.workflow_id } : {}),
-        ...(input.lens_id ? { lens_id: input.lens_id } : {}),
-      })
-      .select(this.battleSelect)
-      .single()
-
+    const { data, error } = await supabase.rpc('fn_battles_create', {
+      p_title: input.title,
+      p_slug: this.generateSlug(input.title),
+      p_task_prompt: input.task_prompt,
+      p_rubric_id: null,
+    })
     if (error) this.handleError(error)
-    return data as BattleRecord
+    const row = Array.isArray(data) ? data[0] : data
+    return row as BattleRecord
   }
 
   async updateBattle(id: string, input: Partial<CreateBattleInput>): Promise<BattleRecord> {
-    const { data, error } = await supabase
-      .schema('battles')
-      .from('battles')
-      .update({
-        ...(input.title ? { title: input.title } : {}),
-        ...(input.task_prompt ? { task_prompt: input.task_prompt } : {}),
-        ...(input.battle_type ? { battle_type: input.battle_type } : {}),
-        ...(input.voter_eligibility ? { voter_eligibility: input.voter_eligibility } : {}),
-        ...(input.handicap ? { handicap_config: input.handicap } : {}),
-        ...(input.workflow_id ? { workflow_id: input.workflow_id } : {}),
-        ...(input.lens_id ? { lens_id: input.lens_id } : {}),
-      })
-      .eq('id', id)
-      .select(this.battleSelect)
-      .single()
-
+    const { data, error } = await supabase.rpc('fn_update_battle', {
+      p_battle_id: id,
+      p_title: input.title ?? null,
+      p_task_prompt: input.task_prompt ?? null,
+      p_battle_type: input.battle_type ?? null,
+      p_voter_eligibility: input.voter_eligibility ?? null,
+      p_handicap_config: input.handicap ?? null,
+      p_workflow_id: input.workflow_id ?? null,
+      p_lens_id: input.lens_id ?? null,
+    })
     if (error) this.handleError(error)
-    return data as BattleRecord
+    const row = Array.isArray(data) ? data[0] : data
+    return row as BattleRecord
   }
 
   async getLatestDraftBattleByWorkflowId(workflowId: string): Promise<BattleRecord | null> {
-    const { data, error } = await supabase
-      .schema('battles')
-      .from('battles')
-      .select(this.battleSelect)
-      .eq('workflow_id', workflowId)
-      .eq('status', 'draft')
-      .order('published_at', { ascending: false, nullsFirst: true })
-      .limit(1)
-      .maybeSingle()
-
+    const { data, error } = await supabase.rpc('fn_get_latest_draft_battle_by_workflow', {
+      p_workflow_id: workflowId,
+    })
     if (error) this.handleError(error)
-    return data as BattleRecord | null
+    const row = Array.isArray(data) ? data[0] : data
+    return (row ?? null) as BattleRecord | null
   }
 
   async getAIHandicapPolicy(battleId: string): Promise<AIHandicapPolicyRecord | null> {
-    const { data, error } = await supabase
-      .schema('battles')
-      .from('ai_handicap_policies')
-      .select('id, battle_id, max_tokens_per_second, injected_delay_ms, max_context_tokens, allowed_model_tier, time_budget_ms')
-      .eq('battle_id', battleId)
-      .maybeSingle()
-
-    if (error) this.handleError(error)
-    return data as AIHandicapPolicyRecord | null
-  }
-
-  async checkVoterEligibility(battleId: string, lenserId: string): Promise<boolean> {
-    // Reads battle voter_eligibility and compares to lenser profile type.
-    const { data: battle, error: battleErr } = await supabase
-      .schema('battles')
-      .from('battles')
-      .select('voter_eligibility')
-      .eq('id', battleId)
-      .maybeSingle()
-
-    if (battleErr || !battle) return false
-    if (battle.voter_eligibility === 'open') return true
-
-    const { data: profile, error: profileErr } = await supabase
-      .schema('lensers')
-      .from('profiles')
-      .select('type, onboarding_step')
-      .eq('id', lenserId)
-      .maybeSingle()
-
-    if (profileErr || !profile) return false
-
-    if (battle.voter_eligibility === 'human_only') return profile.type === 'human'
-    if (battle.voter_eligibility === 'ai_only') return profile.type === 'ai'
-    if (battle.voter_eligibility === 'verified_lenser') return profile.onboarding_step === 'completed'
-
-    return true
-  }
-
-  async publishBattle(battleId: string): Promise<BattleRecord> {
-    const { data, error } = await supabase.rpc('fn_publish_battle', {
+    const { data, error } = await supabase.rpc('fn_get_ai_handicap_policy', {
       p_battle_id: battleId,
     })
     if (error) this.handleError(error)
-    // fn_publish_battle returns a jsonb snapshot; re-fetch the updated record
-    const { data: updated, error: fetchErr } = await supabase
-      .schema('battles')
-      .from('battles')
-      .select(this.battleSelect)
-      .eq('id', battleId)
-      .single()
+    const row = Array.isArray(data) ? data[0] : data
+    return (row ?? null) as AIHandicapPolicyRecord | null
+  }
+
+  async checkVoterEligibility(battleId: string, lenserId: string): Promise<boolean> {
+    const { data, error } = await supabase.rpc('fn_check_voter_eligibility', {
+      p_battle_id: battleId,
+      p_lenser_id: lenserId,
+    })
+    if (error) return false
+    return data === true
+  }
+
+  async publishBattle(battleId: string): Promise<BattleRecord> {
+    const { error: publishErr } = await supabase.rpc('fn_publish_battle', {
+      p_battle_id: battleId,
+    })
+    if (publishErr) this.handleError(publishErr)
+    const { data: updated, error: fetchErr } = await supabase.rpc('fn_get_battle', {
+      p_battle_id: battleId,
+    })
     if (fetchErr) this.handleError(fetchErr)
-    return updated as BattleRecord
+    const row = Array.isArray(updated) ? updated[0] : updated
+    return row as BattleRecord
   }
 
   async getBattleComments(battleId: string, limit = 50, cursor?: ChatCursor): Promise<BattleCommentRecord[]> {
@@ -626,14 +533,14 @@ export class SupabaseBattlesRepository implements BattlesRepositoryPort {
   }
 
   async postComment(battleId: string, lenserId: string, body: string): Promise<BattleCommentRecord> {
-    const { data, error } = await supabase
-      .schema('battles')
-      .from('comments')
-      .insert({ battle_id: battleId, lenser_id: lenserId, body })
-      .select('id, battle_id, lenser_id, body, created_at, updated_at')
-      .single()
+    const { data, error } = await supabase.rpc('fn_post_battle_comment', {
+      p_battle_id: battleId,
+      p_lenser_id: lenserId,
+      p_body: body,
+    })
     if (error) this.handleError(error)
-    return data as BattleCommentRecord
+    const row = Array.isArray(data) ? data[0] : data
+    return row as BattleCommentRecord
   }
 
   async getGlobalMessages(battleId: string, limit = 50, cursor?: ChatCursor): Promise<GlobalMessageRecord[]> {
@@ -667,31 +574,23 @@ export class SupabaseBattlesRepository implements BattlesRepositoryPort {
   }
 
   async removeContender(contenderId: string): Promise<void> {
-    const { error } = await supabase
-      .schema('battles')
-      .from('contenders')
-      .delete()
-      .eq('id', contenderId)
+    const { error } = await supabase.rpc('fn_remove_battle_contender', {
+      p_contender_id: contenderId,
+    })
     if (error) this.handleError(error)
   }
 
   async inviteContender(input: InviteContenderInput): Promise<ContenderRecord> {
-    const { data, error } = await supabase
-      .schema('battles')
-      .from('contenders')
-      .insert({
-        battle_id: input.battle_id,
-        slot: input.slot,
-        contender_type: input.contender_type,
-        contender_ref_id: input.contender_ref_id,
-        display_name: input.display_name,
-        entry_mode: 'invited',
-        contender_status: 'pending',
-      })
-      .select('id, battle_id, slot, contender_type, display_name, contender_ref_id')
-      .single()
+    const { data, error } = await supabase.rpc('fn_invite_battle_contender', {
+      p_battle_id: input.battle_id,
+      p_slot: input.slot,
+      p_contender_type: input.contender_type,
+      p_contender_ref_id: input.contender_ref_id,
+      p_display_name: input.display_name,
+    })
     if (error) this.handleError(error)
-    return data as ContenderRecord
+    const row = Array.isArray(data) ? data[0] : data
+    return row as ContenderRecord
   }
 
   async submitContenderEntry(
@@ -702,59 +601,49 @@ export class SupabaseBattlesRepository implements BattlesRepositoryPort {
     validate?: (text: string) => Promise<void>,
   ): Promise<SubmissionRecord> {
     if (validate) await validate(contentText)
-    const { data, error } = await supabase
-      .schema('battles')
-      .from('submissions')
-      .insert({
-        battle_id: battleId,
-        contender_id: contenderId,
-        content_text: contentText,
-        content_url: null,
-        status: 'submitted',
-      })
-      .select('id, battle_id, contender_id, content_text, content_url, status')
-      .single()
+    const { data, error } = await supabase.rpc('fn_battles_submit', {
+      p_battle_id: battleId,
+      p_content_text: contentText,
+      p_content_url: null,
+      p_content_media: null,
+      p_execution_run_id: null,
+      p_artifact_id: null,
+      p_source_type: 'text',
+      p_adapter_id: null,
+      p_model_id: null,
+    })
     if (error) this.handleError(error)
-    return data as SubmissionRecord
+    const row = Array.isArray(data) ? data[0] : data
+    return row as SubmissionRecord
   }
 
   async linkForumThread(battleId: string, forumThreadId: string): Promise<void> {
-    const { error } = await supabase
-      .schema('battles')
-      .from('battles')
-      .update({ forum_thread_id: forumThreadId })
-      .eq('id', battleId)
+    const { error } = await supabase.rpc('fn_battles_link_forum_thread', {
+      p_battle_id: battleId,
+      p_forum_thread_id: forumThreadId,
+    })
     if (error) this.handleError(error)
   }
 
   async assignLensToContender(input: AssignLensInput): Promise<ContenderLensAssignmentRecord> {
-    const { data, error } = await supabase
-      .schema('battles')
-      .from('contender_lens_assignments')
-      .upsert(
-        {
-          contender_id: input.contender_id,
-          battle_id: input.battle_id,
-          lens_id: input.lens_id,
-          version_id: input.version_id ?? null,
-        },
-        { onConflict: 'contender_id' }
-      )
-      .select('id, contender_id, battle_id, lens_id, version_id, assigned_at')
-      .single()
+    const { data, error } = await supabase.rpc('fn_assign_lens_to_contender', {
+      p_contender_id: input.contender_id,
+      p_battle_id: input.battle_id,
+      p_lens_id: input.lens_id,
+      p_version_id: input.version_id ?? null,
+    })
     if (error) this.handleError(error)
-    return data as ContenderLensAssignmentRecord
+    const row = Array.isArray(data) ? data[0] : data
+    return row as ContenderLensAssignmentRecord
   }
 
   async getLensAssignment(contenderId: string): Promise<ContenderLensAssignmentRecord | null> {
-    const { data, error } = await supabase
-      .schema('battles')
-      .from('contender_lens_assignments')
-      .select('id, contender_id, battle_id, lens_id, version_id, assigned_at')
-      .eq('contender_id', contenderId)
-      .maybeSingle()
+    const { data, error } = await supabase.rpc('fn_get_lens_assignment', {
+      p_contender_id: contenderId,
+    })
     if (error) this.handleError(error)
-    return data as ContenderLensAssignmentRecord | null
+    const row = Array.isArray(data) ? data[0] : data
+    return (row ?? null) as ContenderLensAssignmentRecord | null
   }
 
   async openVoting(battleId: string): Promise<void> {
@@ -768,28 +657,25 @@ export class SupabaseBattlesRepository implements BattlesRepositoryPort {
   }
 
   async scheduleBattle(input: ScheduleBattleInput): Promise<BattleRecord> {
-    const { data, error } = await supabase
-      .schema('battles')
-      .from('battles')
-      .update({
-        execution_starts_at:   input.execution_starts_at,
-        voting_duration_hours: input.voting_duration_hours ?? 24,
-        auto_publish:          input.auto_publish ?? true,
-      })
-      .eq('id', input.battle_id)
-      .select(this.battleSelect)
-      .single()
+    const { error } = await supabase.rpc('fn_schedule_battle', {
+      p_battle_id: input.battle_id,
+      p_execution_starts_at: input.execution_starts_at,
+      p_voting_duration_hours: input.voting_duration_hours ?? 24,
+      p_auto_publish: input.auto_publish ?? true,
+    })
     if (error) this.handleError(error)
-    return data as BattleRecord
+    const { data: updated, error: fetchErr } = await supabase.rpc('fn_get_battle', {
+      p_battle_id: input.battle_id,
+    })
+    if (fetchErr) this.handleError(fetchErr)
+    const row = Array.isArray(updated) ? updated[0] : updated
+    return row as BattleRecord
   }
 
   async getBattleExecutionJobs(battleId: string): Promise<BattleExecutionJobRecord[]> {
-    const { data, error } = await supabase
-      .schema('battles')
-      .from('battle_execution_jobs')
-      .select('id, battle_id, contender_id, slot, status, worker_id, claimed_at, completed_at, retry_count, max_retries, error_message, created_at')
-      .eq('battle_id', battleId)
-      .order('slot')
+    const { data, error } = await supabase.rpc('fn_get_battle_execution_jobs', {
+      p_battle_id: battleId,
+    })
     if (error) this.handleError(error)
     return (data ?? []) as BattleExecutionJobRecord[]
   }
@@ -812,17 +698,11 @@ export class SupabaseBattlesRepository implements BattlesRepositoryPort {
   }
 
   async getDLQEntries(opts?: { battleId?: string; unresolvedOnly?: boolean; limit?: number }): Promise<DLQEntryRecord[]> {
-    let query = supabase
-      .schema('battles')
-      .from('battle_execution_dead_letters')
-      .select('id, job_id, battle_id, contender_id, slot, error_code, error_message, attempt_count, payload, resolved_at, created_at')
-      .order('created_at', { ascending: false })
-
-    if (opts?.battleId) query = query.eq('battle_id', opts.battleId)
-    if (opts?.unresolvedOnly) query = query.is('resolved_at', null)
-    if (opts?.limit) query = query.limit(opts.limit)
-
-    const { data, error } = await query
+    const { data, error } = await supabase.rpc('fn_get_battle_dlq_entries', {
+      p_battle_id: opts?.battleId ?? null,
+      p_unresolved_only: opts?.unresolvedOnly ?? false,
+      p_limit: opts?.limit ?? 50,
+    })
     if (error) this.handleError(error)
     return (data ?? []) as DLQEntryRecord[]
   }
@@ -835,33 +715,24 @@ export class SupabaseBattlesRepository implements BattlesRepositoryPort {
   }
 
   async getPublicExecutionJobs(battleId: string): Promise<PublicExecutionJobRecord[]> {
-    const { data, error } = await supabase
-      .schema('battles')
-      .from('v_execution_jobs_public')
-      .select('id, battle_id, slot, status, claimed_at, completed_at, retry_count, created_at')
-      .eq('battle_id', battleId)
-      .order('slot')
+    const { data, error } = await supabase.rpc('fn_get_battle_execution_jobs', {
+      p_battle_id: battleId,
+    })
     if (error) this.handleError(error)
     return (data ?? []) as PublicExecutionJobRecord[]
   }
 
   async listBattleTemplates(): Promise<BattleTemplateRecord[]> {
-    const { data, error } = await supabase
-      .schema('battles')
-      .from('templates')
-      .select('id, title, description, task_prompt, is_public, max_contenders, created_at, updated_at')
-      .is('deleted_at', null)
-      .order('created_at', { ascending: false })
+    const { data, error } = await supabase.rpc('fn_list_battle_templates', { p_limit: 100 })
     if (error) this.handleError(error)
     return (data ?? []) as BattleTemplateRecord[]
   }
 
   async toggleBattleTemplatePublic(id: string, isPublic: boolean): Promise<void> {
-    const { error } = await supabase
-      .schema('battles')
-      .from('templates')
-      .update({ is_public: isPublic, updated_at: new Date().toISOString() })
-      .eq('id', id)
+    const { error } = await supabase.rpc('fn_toggle_battle_template_public', {
+      p_template_id: id,
+      p_is_public: isPublic,
+    })
     if (error) this.handleError(error)
   }
 
