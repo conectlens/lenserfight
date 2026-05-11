@@ -323,10 +323,10 @@ export class SupabaseAgentWorkspaceRepository implements AgentWorkspaceRepositor
   ): Promise<AgentPersonalityProfileRecord | null> {
     const { data, error } = await supabase.rpc('fn_create_workspace_record', {
       p_table_name: 'personality_profiles',
-      p_data: JSON.stringify({
+      p_data: {
         ...input,
         system_prompt_patch: input.system_prompt_patch ?? '',
-      }),
+      },
     })
 
     if (error) throw error
@@ -338,7 +338,7 @@ export class SupabaseAgentWorkspaceRepository implements AgentWorkspaceRepositor
   ): Promise<AgentMemoryProfileRecord | null> {
     const { data, error } = await supabase.rpc('fn_create_workspace_record', {
       p_table_name: 'memory_profiles',
-      p_data: JSON.stringify(input),
+      p_data: input,
     })
 
     if (error) throw error
@@ -348,7 +348,7 @@ export class SupabaseAgentWorkspaceRepository implements AgentWorkspaceRepositor
   async createToolProfile(input: CreateAgentToolProfileInput): Promise<AgentToolProfileRecord | null> {
     const { data, error } = await supabase.rpc('fn_create_workspace_record', {
       p_table_name: 'tool_profiles',
-      p_data: JSON.stringify({
+      p_data: {
         ai_lenser_id: input.ai_lenser_id,
         name: input.name,
         allow_tools: input.allow_tools ?? [],
@@ -356,7 +356,7 @@ export class SupabaseAgentWorkspaceRepository implements AgentWorkspaceRepositor
         tool_groups: input.tool_groups ?? [],
         provider_overrides: input.provider_overrides ?? {},
         requires_approval: input.requires_approval ?? true,
-      }),
+      },
     })
 
     if (error) throw error
@@ -366,7 +366,7 @@ export class SupabaseAgentWorkspaceRepository implements AgentWorkspaceRepositor
   async createModelProfile(input: CreateAgentModelProfileInput): Promise<AgentModelProfileRecord | null> {
     const { data, error } = await supabase.rpc('fn_create_workspace_record', {
       p_table_name: 'model_profiles',
-      p_data: JSON.stringify({
+      p_data: {
         ai_lenser_id: input.ai_lenser_id,
         name: input.name,
         provider_key: input.provider_key ?? null,
@@ -374,7 +374,7 @@ export class SupabaseAgentWorkspaceRepository implements AgentWorkspaceRepositor
         model_key: input.model_key ?? null,
         support_level: input.support_level ?? 'runnable',
         params: input.params ?? {},
-      }),
+      },
     })
 
     if (error) throw error
@@ -387,7 +387,7 @@ export class SupabaseAgentWorkspaceRepository implements AgentWorkspaceRepositor
   ): Promise<ApprovalRequestView[]> {
     const { data, error } = await supabase.rpc('fn_list_approval_requests', {
       p_ai_lenser_id: aiLenserId,
-      p_status: options.status ?? 'pending',
+      p_approval_status: options.status ?? null,
       p_limit: options.limit ?? 50,
     })
 
@@ -932,7 +932,7 @@ export class SupabaseAgentWorkspaceRepository implements AgentWorkspaceRepositor
   }): Promise<AgentTeamMemberRecord> {
     const { data, error } = await supabase.rpc('fn_create_workspace_record', {
       p_table_name: 'team_members',
-      p_data: JSON.stringify({
+      p_data: {
         team_id: input.team_id,
         agent_id: input.agent_id,
         role: input.role,
@@ -940,7 +940,7 @@ export class SupabaseAgentWorkspaceRepository implements AgentWorkspaceRepositor
         lane: input.lane ?? 0,
         sort_order: input.sort_order ?? 0,
         is_active: true,
-      }),
+      },
     })
     if (error) throw error
     return data as AgentTeamMemberRecord
@@ -962,13 +962,13 @@ export class SupabaseAgentWorkspaceRepository implements AgentWorkspaceRepositor
   }): Promise<AgentTeamEdgeRecord> {
     const { data, error } = await supabase.rpc('fn_create_workspace_record', {
       p_table_name: 'team_edges',
-      p_data: JSON.stringify({
+      p_data: {
         team_id: input.team_id,
         source_member_id: input.source_member_id,
         target_member_id: input.target_member_id,
         edge_type: input.edge_type,
         is_blocking: input.is_blocking ?? false,
-      }),
+      },
     })
     if (error) throw error
     return data as AgentTeamEdgeRecord
@@ -1013,7 +1013,7 @@ export class SupabaseAgentWorkspaceRepository implements AgentWorkspaceRepositor
   async createWorkflowAssignment(input: CreateWorkflowAssignmentInput): Promise<AgentWorkflowAssignmentRecord> {
     const { data, error } = await supabase.rpc('fn_create_workspace_record', {
       p_table_name: 'workflow_assignments',
-      p_data: JSON.stringify({
+      p_data: {
         ai_lenser_id: input.ai_lenser_id,
         workflow_id: input.workflow_id,
         assignee_kind: input.assignee_kind,
@@ -1023,7 +1023,7 @@ export class SupabaseAgentWorkspaceRepository implements AgentWorkspaceRepositor
         retry_policy: input.retry_policy ?? {},
         failure_policy: input.failure_policy ?? {},
         is_active: input.is_active ?? true,
-      }),
+      },
     })
     if (error) throw error
     return data as AgentWorkflowAssignmentRecord
@@ -1096,13 +1096,13 @@ export class SupabaseAgentWorkspaceRepository implements AgentWorkspaceRepositor
   async createEvaluationCase(input: CreateEvaluationCaseInput): Promise<EvaluationCaseRecord> {
     const { data, error } = await supabase.rpc('fn_create_workspace_record', {
       p_table_name: 'evaluation_cases',
-      p_data: JSON.stringify({
+      p_data: {
         evaluation_id: input.evaluation_id,
         input: input.input,
         expected: input.expected ?? null,
         weight: input.weight ?? 1,
         tags: input.tags ?? [],
-      }),
+      },
     })
     if (error) throw error
     return data as EvaluationCaseRecord
