@@ -115,7 +115,7 @@ INSERT INTO battles.contenders (id, battle_id, slot, contender_type, contender_r
     entry_mode, contender_status, joined_at)
 VALUES
     ('f7000000-0000-0000-0000-000000000001', 'f6000000-0000-0000-0000-000000000001', 'A',
-     'human', 'b2000000-0000-0000-0000-000000000002', 'Bob Builder',
+     'human', 'b2000000-0000-0000-0000-000000000002', 'Chainabit',
      'direct', 'active', '2026-03-10 09:30:00+00'),
     ('f7000000-0000-0000-0000-000000000002', 'f6000000-0000-0000-0000-000000000001', 'B',
      'ai_model', 'c3000000-0000-0000-0000-000000000001', 'GPT-4o',
@@ -367,7 +367,7 @@ VALUES
         'fe400000-0000-0000-0000-000000000001',
         'f6000000-0000-0000-0000-000000000001',
         'b2000000-0000-0000-0000-000000000001',
-        'bob@lenserfight.local',
+        'bit@chainabit.com',
         'b2000000-0000-0000-0000-000000000002',
         'accepted',
         '2026-03-10 09:00:00+00'
@@ -376,7 +376,7 @@ VALUES
         'fe400000-0000-0000-0000-000000000002',
         'f6000000-0000-0000-0000-000000000002',
         'b2000000-0000-0000-0000-000000000001',
-        'carol@lenserfight.local',
+        'lets@conectlens.com',
         'b2000000-0000-0000-0000-000000000003',
         'pending',
         NULL
@@ -390,7 +390,7 @@ ON CONFLICT (id) DO NOTHING;
 
 INSERT INTO battles.vote_aggregates (battle_id, contender_id, raw_vote_count, weighted_vote_sum, draw_count, rank_position)
 VALUES
-    -- Battle 1: Contender A (Bob) — 2 votes, winner
+    -- Battle 1: Contender A (Chainabit) — 2 votes, winner
     ('f6000000-0000-0000-0000-000000000001', 'f7000000-0000-0000-0000-000000000001', 2, 2.0, 0, 1),
     -- Battle 1: Contender B (GPT-4o) — 1 vote
     ('f6000000-0000-0000-0000-000000000001', 'f7000000-0000-0000-0000-000000000002', 1, 1.0, 0, 2),
@@ -429,7 +429,7 @@ ON CONFLICT (id) DO NOTHING;
 -- =============================================================================
 -- 5.11  Battle 3: Human vs AI — "SQL Puzzle Challenge" (voting)
 --        battle_type: human_vs_ai | voter_eligibility: open
---        Alice Arena (human) vs Claude Sonnet 4.6 (ai_model)
+--        LenserFight (human) vs Claude Sonnet 4.6 (ai_model)
 -- =============================================================================
 
 INSERT INTO battles.battles (
@@ -460,7 +460,7 @@ INSERT INTO battles.contenders (id, battle_id, slot, contender_type, contender_r
     entry_mode, contender_status, joined_at)
 VALUES
     ('f7000000-0000-0000-0000-000000000005', 'f6000000-0000-0000-0000-000000000003', 'A',
-     'human', 'b2000000-0000-0000-0000-000000000001', 'Alice Arena',
+     'human', 'b2000000-0000-0000-0000-000000000001', 'LenserFight',
      'direct', 'active', '2026-03-21 14:00:00+00'),
     ('f7000000-0000-0000-0000-000000000006', 'f6000000-0000-0000-0000-000000000003', 'B',
      'ai_model', 'c3000000-0000-0000-0000-000000000002', 'Claude Sonnet 4.6',
@@ -492,7 +492,7 @@ VALUES
      'f6000000-0000-0000-0000-000000000003',
      'b2000000-0000-0000-0000-000000000003',
      'contender_a',
-     'Alice''s window function approach is more idiomatic PostgreSQL and handles NULLs explicitly.',
+     'The window function approach is more idiomatic PostgreSQL and handles NULLs explicitly.',
      'f7000000-0000-0000-0000-000000000005', false, 1.0, false),
     ('f9000000-0000-0000-0000-000000000005',
      'f6000000-0000-0000-0000-000000000003',
@@ -557,7 +557,7 @@ VALUES
     ('fe400000-0000-0000-0000-000000000003',
      'f6000000-0000-0000-0000-000000000003',
      'b2000000-0000-0000-0000-000000000001',
-     'alice@lenserfight.local',
+     'hey@lenserfight.com',
      'b2000000-0000-0000-0000-000000000001',
      'accepted',
      '2026-03-21 14:00:00+00')
@@ -573,7 +573,7 @@ ON CONFLICT (battle_id, contender_id) DO NOTHING;
 -- =============================================================================
 -- 5.12  Battle 4: Human vs Human (AI judges) — "Prompt Engineering Duel" (scoring)
 --        battle_type: human_vs_human_ai_votes | voter_eligibility: ai_only
---        Bob Builder (human) vs Carol Voter (human)
+--        Chainabit (human) vs ConectLens (human)
 -- =============================================================================
 
 INSERT INTO battles.battles (
@@ -602,10 +602,10 @@ INSERT INTO battles.contenders (id, battle_id, slot, contender_type, contender_r
     entry_mode, contender_status, joined_at)
 VALUES
     ('f7000000-0000-0000-0000-000000000007', 'f6000000-0000-0000-0000-000000000004', 'A',
-     'human', 'b2000000-0000-0000-0000-000000000002', 'Bob Builder',
+     'human', 'b2000000-0000-0000-0000-000000000002', 'Chainabit',
      'direct', 'active', '2026-03-23 09:00:00+00'),
     ('f7000000-0000-0000-0000-000000000008', 'f6000000-0000-0000-0000-000000000004', 'B',
-     'human', 'b2000000-0000-0000-0000-000000000003', 'Carol Voter',
+     'human', 'b2000000-0000-0000-0000-000000000003', 'ConectLens',
      'invited', 'active', '2026-03-23 10:00:00+00')
 ON CONFLICT (id) DO NOTHING;
 
@@ -684,7 +684,7 @@ VALUES
     ('fe400000-0000-0000-0000-000000000004',
      'f6000000-0000-0000-0000-000000000004',
      'b2000000-0000-0000-0000-000000000001',
-     'bob@lenserfight.local',
+     'bit@chainabit.com',
      'b2000000-0000-0000-0000-000000000002',
      'accepted',
      '2026-03-23 09:00:00+00')
@@ -890,7 +890,7 @@ ON CONFLICT (id) DO NOTHING;
 -- =============================================================================
 -- 5.15  Battle 7: Workflow Battle — "Research & Summarize" (open)
 --        battle_type: workflow_battle | voter_eligibility: lenser_only
---        Alice Arena (human) vs Bob Builder (human) — workflows not yet executed
+--        LenserFight (human) vs Chainabit (human) — workflows not yet executed
 -- =============================================================================
 
 INSERT INTO battles.battles (
@@ -919,10 +919,10 @@ INSERT INTO battles.contenders (id, battle_id, slot, contender_type, contender_r
     entry_mode, contender_status, joined_at)
 VALUES
     ('f7000000-0000-0000-0000-00000000000b', 'f6000000-0000-0000-0000-000000000007', 'A',
-     'human', 'b2000000-0000-0000-0000-000000000001', 'Alice Arena',
+     'human', 'b2000000-0000-0000-0000-000000000001', 'LenserFight',
      'direct', 'active', '2026-03-25 10:00:00+00'),
     ('f7000000-0000-0000-0000-00000000000c', 'f6000000-0000-0000-0000-000000000007', 'B',
-     'human', 'b2000000-0000-0000-0000-000000000002', 'Bob Builder',
+     'human', 'b2000000-0000-0000-0000-000000000002', 'Chainabit',
      'invited', 'active', '2026-03-25 11:00:00+00')
 ON CONFLICT (id) DO NOTHING;
 
@@ -958,7 +958,7 @@ VALUES
     ('fe400000-0000-0000-0000-000000000005',
      'f6000000-0000-0000-0000-000000000007',
      'b2000000-0000-0000-0000-000000000001',
-     'bob@lenserfight.local',
+     'bit@chainabit.com',
      'b2000000-0000-0000-0000-000000000002',
      'accepted',
      '2026-03-25 11:00:00+00')
