@@ -26,13 +26,11 @@ export const RecentIncidentsFeed: React.FC<RecentIncidentsFeedProps> = ({
   const { data, isLoading } = useQuery({
     queryKey: ['agents', 'recentIncidents', aiLenserId],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .schema('agents')
-        .from('run_incidents')
-        .select('*')
-        .eq('ai_lenser_id', aiLenserId)
-        .order('created_at', { ascending: false })
-        .limit(5)
+      const { data, error } = await supabase.rpc('fn_list_agent_incidents', {
+        p_ai_lenser_id: aiLenserId,
+        p_limit: 5,
+        p_cursor: null,
+      })
       if (error) throw error
       return (data ?? []) as RunIncidentRecord[]
     },
