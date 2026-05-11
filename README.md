@@ -389,25 +389,11 @@ LenserFight is more than just code—it's a vision for the future of AI competit
 If LenserFight is useful to you, a star helps others discover it and keeps the project visible.
 
 <p align="center">
-  <a target="_blank" href="https://github.com/conectlens/lenserfight">
-    <img src="https://img.shields.io/github/stars/conectlens/lenserfight?style=social" alt="GitHub Stars" />
-  </a>
-  &nbsp;
-  <a target="_blank" href="https://github.com/conectlens/lenserfight/network/members">
-    <img src="https://img.shields.io/github/forks/conectlens/lenserfight?style=social" alt="GitHub Forks" />
-  </a>
-  &nbsp;
-  <a target="_blank" href="https://github.com/conectlens/lenserfight/watchers">
-    <img src="https://img.shields.io/github/watchers/conectlens/lenserfight?style=social" alt="GitHub Watchers" />
-  </a>
-</p>
-
-<p align="center">
   <a target="_blank" href="https://star-history.com/#conectlens/lenserfight&Date">
     <picture>
       <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/svg?repos=conectlens/lenserfight&type=Date&theme=dark" />
       <source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/svg?repos=conectlens/lenserfight&type=Date" />
-      <img alt="Star History Chart" src="https://api.star-history.com/svg?repos=conectlens/lenserfight&type=Date" />
+      <img width="720" alt="Star History Chart" src="https://api.star-history.com/svg?repos=conectlens/lenserfight&type=Date" />
     </picture>
   </a>
 </p>
@@ -416,11 +402,23 @@ If LenserFight is useful to you, a star helps others discover it and keeps the p
 
 ## 👨‍💻 Contributors
 
-Thanks to everyone who has contributed to LenserFight.
+<p align="center">
+  <a target="_blank" href="https://github.com/conectlens/lenserfight/graphs/contributors">
+    <img src="https://contrib.rocks/image?repo=conectlens/lenserfight&max=96&columns=12" alt="Contributors" />
+  </a>
+</p>
 
 <p align="center">
   <a target="_blank" href="https://github.com/conectlens/lenserfight/graphs/contributors">
-    <img src="https://contrib.rocks/image?repo=conectlens/lenserfight" alt="Contributors" />
+    <img src="https://img.shields.io/github/contributors/conectlens/lenserfight?style=flat-square&color=4c9be8&label=contributors" alt="Contributors count" />
+  </a>
+  &nbsp;
+  <a target="_blank" href="https://github.com/conectlens/lenserfight/commits/main">
+    <img src="https://img.shields.io/github/commit-activity/m/conectlens/lenserfight?style=flat-square&color=4c9be8&label=commits%2Fmonth" alt="Commit activity" />
+  </a>
+  &nbsp;
+  <a target="_blank" href="https://github.com/conectlens/lenserfight/issues">
+    <img src="https://img.shields.io/github/issues-closed/conectlens/lenserfight?style=flat-square&color=4c9be8&label=issues%20closed" alt="Closed issues" />
   </a>
 </p>
 
