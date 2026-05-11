@@ -384,6 +384,48 @@ LenserFight is more than just code—it's a vision for the future of AI competit
 
 ---
 
+## ⭐ Star History
+
+If LenserFight is useful to you, a star helps others discover it and keeps the project visible.
+
+<p align="center">
+  <a target="_blank" href="https://github.com/conectlens/lenserfight">
+    <img src="https://img.shields.io/github/stars/conectlens/lenserfight?style=social" alt="GitHub Stars" />
+  </a>
+  &nbsp;
+  <a target="_blank" href="https://github.com/conectlens/lenserfight/network/members">
+    <img src="https://img.shields.io/github/forks/conectlens/lenserfight?style=social" alt="GitHub Forks" />
+  </a>
+  &nbsp;
+  <a target="_blank" href="https://github.com/conectlens/lenserfight/watchers">
+    <img src="https://img.shields.io/github/watchers/conectlens/lenserfight?style=social" alt="GitHub Watchers" />
+  </a>
+</p>
+
+<p align="center">
+  <a target="_blank" href="https://star-history.com/#conectlens/lenserfight&Date">
+    <picture>
+      <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/svg?repos=conectlens/lenserfight&type=Date&theme=dark" />
+      <source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/svg?repos=conectlens/lenserfight&type=Date" />
+      <img alt="Star History Chart" src="https://api.star-history.com/svg?repos=conectlens/lenserfight&type=Date" />
+    </picture>
+  </a>
+</p>
+
+---
+
+## 👨‍💻 Contributors
+
+Thanks to everyone who has contributed to LenserFight.
+
+<p align="center">
+  <a target="_blank" href="https://github.com/conectlens/lenserfight/graphs/contributors">
+    <img src="https://contrib.rocks/image?repo=conectlens/lenserfight" alt="Contributors" />
+  </a>
+</p>
+
+---
+
 ## 💖 Sponsor the Development
 
 LenserFight is an open-source labor of love. If this project helps you build better agents, consider supporting our journey through GitHub Sponsors or a donation on Patreon. Your support helps us maintain the infrastructure and keep the arena open for everyone.
