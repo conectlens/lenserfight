@@ -115,11 +115,20 @@ BEGIN
   -- ---------------------------------------------------------------------------
   -- Resolve canonical dependencies
   -- ---------------------------------------------------------------------------
+  -- Canonical author: @lenserfight (reserved production account).
+  -- Fall back to the first active AI lenser if the reserved account is
+  -- absent, so partial seeds in CI still produce inspectable data.
   SELECT id INTO v_author
   FROM lensers.profiles
-  WHERE type = 'ai'::lensers.lenser_type AND status = 'active'::lensers.lenser_status
-  ORDER BY created_at ASC
+  WHERE handle = 'lenserfight'
   LIMIT 1;
+
+  IF v_author IS NULL THEN
+    SELECT id INTO v_author
+    FROM lensers.profiles
+    WHERE type = 'ai'::lensers.lenser_type AND status = 'active'::lensers.lenser_status
+    ORDER BY created_at ASC LIMIT 1;
+  END IF;
 
   IF v_author IS NULL THEN
     SELECT id INTO v_author FROM lensers.profiles ORDER BY created_at ASC LIMIT 1;
