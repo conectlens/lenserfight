@@ -59,38 +59,21 @@ serve(async (req: Request): Promise<Response> => {
   )
 
   try {
-    // ── Signal 1: Burst votes ─────────────────────────────────────────────────
-    // Voter cast more than 10 votes in the last 60 minutes.
+    // ── Signals 1 & 2: Burst votes + Draw-rate anomaly ───────────────────────
     const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000).toISOString()
-    const { count: recentCount } = await supabase
-      .schema('battles')
-      .from('votes')
-      .select('id', { count: 'exact', head: true })
-      .eq('voter_lenser_id', voter_id)
-      .gte('created_at', oneHourAgo)
+    const { data: voterStats, error: statsErr } = await supabase.rpc('fn_worker_get_voter_stats', {
+      p_voter_lenser_id: voter_id,
+      p_since_ts: oneHourAgo,
+    })
+    if (statsErr) throw statsErr
 
-    const burstSignal = (recentCount ?? 0) > 10
+    const stats = voterStats?.[0]
+    const recentCount = Number(stats?.recent_count ?? 0)
+    const totalVotes = Number(stats?.total_count ?? 0)
+    const totalDraws = Number(stats?.draw_count ?? 0)
 
-    // ── Signal 2: Draw-rate anomaly ───────────────────────────────────────────
-    // Only evaluate once the voter has cast at least 5 votes to avoid
-    // false positives on new voters.
-    const { count: totalVotes } = await supabase
-      .schema('battles')
-      .from('votes')
-      .select('id', { count: 'exact', head: true })
-      .eq('voter_lenser_id', voter_id)
-
-    const { count: totalDraws } = await supabase
-      .schema('battles')
-      .from('votes')
-      .select('id', { count: 'exact', head: true })
-      .eq('voter_lenser_id', voter_id)
-      .eq('is_draw', true)
-
-    const drawRate =
-      (totalVotes ?? 0) >= 5
-        ? (totalDraws ?? 0) / Math.max(totalVotes ?? 1, 1)
-        : 0
+    const burstSignal = recentCount > 10
+    const drawRate = totalVotes >= 5 ? totalDraws / Math.max(totalVotes, 1) : 0
     const drawAnomalySignal = drawRate > 0.5
 
     // ── Signal 3: New account ─────────────────────────────────────────────────
@@ -130,15 +113,12 @@ serve(async (req: Request): Promise<Response> => {
       riskScore >= 0.7 ? 'excluded' : riskScore >= 0.3 ? 'flagged' : 'cleared'
 
     // ── Persist results ───────────────────────────────────────────────────────
-    const { error: updateError } = await supabase
-      .schema('reputation')
-      .from('vote_risk_scores')
-      .update({
-        risk_score: riskScore,
-        risk_factors: riskFactors,
-        review_status: reviewStatus,
-      })
-      .eq('vote_id', vote_id)
+    const { error: updateError } = await supabase.rpc('fn_worker_update_vote_risk_score', {
+      p_vote_id: vote_id,
+      p_risk_score: riskScore,
+      p_risk_factors: riskFactors,
+      p_review_status: reviewStatus,
+    })
 
     if (updateError) {
       throw updateError
