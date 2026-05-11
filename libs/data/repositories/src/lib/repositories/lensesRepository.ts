@@ -471,48 +471,57 @@ export class SupabaseLensesRepository implements LensesRepositoryPort {
     return (data ?? []) as unknown as LensRecord[]
   }
 
-  async getById(id: string, viewerLenserId?: string): Promise<LensRecord | null> {
-    const latestVersionId = await this.getLatestVersionId(id)
-    if (!latestVersionId) return null
-
-    const { data: versionData, error } = await supabase.rpc('fn_get_lens_version_detail', {
-      p_version_id: latestVersionId,
+  async getById(id: string, _viewerLenserId?: string): Promise<LensRecord | null> {
+    const { data, error } = await supabase.rpc('fn_get_lens_detail_bootstrap', {
+      p_lens_id: id,
     })
-
     if (error) this.handleError(error)
-    const vRow = (Array.isArray(versionData) ? versionData[0] : versionData) as Record<string, unknown> | undefined
-    if (!vRow) return null
 
-    const lensId = (vRow.lens_id as string | undefined) ?? id
+    const row = (typeof data === 'object' && data !== null ? data : null) as Record<string, unknown> | null
+    if (!row || row['error'] === 'not_found') return null
 
-    const { data: translationRows, error: translationError } = await supabase.rpc('fn_get_entity_translation', {
-      p_entity_type: 'lens',
-      p_entity_id: lensId,
-    })
-    const translation = (Array.isArray(translationRows) ? translationRows[0] : null) as
-      | { title?: string; description?: string; content?: string }
-      | null
+    const authorRaw = (row['author_profile'] as Record<string, string | null>) ?? {}
+    const authorProfile: AuthorProfile = {
+      id: authorRaw['id'] ?? id,
+      handle: authorRaw['handle'] ?? 'unknown',
+      display_name: authorRaw['display_name'] ?? 'Unknown',
+      avatar_url: authorRaw['avatar_url'] ?? null,
+    }
 
-    if (translationError) this.handleError(translationError)
-
-    const authorProfile = await this.getProfileById(lensId)
-    const tags = await this.getTagsForLens(lensId)
+    const latestVersionRaw = row['latest_published_version'] as Record<string, unknown> | null
+    const latestVersion = latestVersionRaw
+      ? this.mapBootstrapVersion(latestVersionRaw, row['id'] as string)
+      : null
 
     return {
-      id: lensId,
-      lenser_id: lensId,
-      visibility: 'private',
-      created_at: vRow.created_at as string,
-      updated_at: vRow.created_at as string,
-      parent_lens_id: null,
-      forked_from_execution_id: null,
-      title: translation?.title || 'Untitled',
-      description: translation?.description ?? null,
-      content: (vRow.template_body as string | null) || translation?.content || '',
+      id: row['id'] as string,
+      lenser_id: row['lenser_id'] as string,
+      visibility: row['visibility'] as string,
+      created_at: row['created_at'] as string,
+      updated_at: row['updated_at'] as string,
+      parent_lens_id: (row['parent_lens_id'] as string | null) ?? null,
+      forked_from_execution_id: (row['forked_from_execution_id'] as string | null) ?? null,
+      head_version_id: (row['head_version_id'] as string | null) ?? null,
+      title: row['title'] as string,
+      description: (row['description'] as string | null) ?? null,
+      content: latestVersionRaw
+        ? (latestVersionRaw['template_body'] as string) ?? (row['content'] as string) ?? ''
+        : (row['content'] as string) ?? '',
       author_profile: authorProfile,
-      reaction_totals: {},
-      tags,
+      tags: (row['tags'] as TagRecord[]) ?? [],
+      reaction_totals: (row['reaction_totals'] as Record<string, number>) ?? {},
+      // Carry bootstrap-derived data for the service layer to consume
+      _bootstrap: row,
+      _latestPublishedVersion: latestVersion,
     } as unknown as LensRecord
+  }
+
+  private mapBootstrapVersion(versionRaw: Record<string, unknown>, lensId: string): LensVersion {
+    const version = this.mapVersion({ ...versionRaw, lens_id: lensId })
+    version.parameters = ((versionRaw['parameters'] ?? []) as Record<string, unknown>[]).map((p) =>
+      this.mapVersionParam(p),
+    )
+    return version
   }
 
   async getTags(templateId: string): Promise<TagRecord[]> {
@@ -767,23 +776,23 @@ export class SupabaseLensesRepository implements LensesRepositoryPort {
   }
 
   async getLatestPublishedVersion(lensId: string): Promise<LensVersion | null> {
-    const { data, error } = await supabase.rpc('fn_list_lens_versions', {
+    // Use the bootstrap RPC to get the latest published version + params in one call.
+    const { data, error } = await supabase.rpc('fn_get_lens_detail_bootstrap', {
       p_lens_id: lensId,
-      p_include_archived: false,
     })
     if (error) this.handleError(error)
-    const rows = ((data ?? []) as Record<string, unknown>[]).filter((r) => r.status === 'published')
-    if (rows.length === 0) return null
-    const latestRow = rows.reduce(
-      (best: Record<string, unknown>, row: Record<string, unknown>) =>
-        (row.version_number as number) > (best.version_number as number) ? row : best,
-      rows[0]
-    )
-    const version = this.mapVersion(latestRow)
-    const { data: paramsJson } = await supabase.rpc('fn_get_lens_version_parameters', {
-      p_version_id: version.id,
+
+    const row = (typeof data === 'object' && data !== null ? data : null) as Record<string, unknown> | null
+    if (!row || row['error'] === 'not_found') return null
+
+    const latestVersion = row['latest_published_version'] as Record<string, unknown> | null
+    if (!latestVersion) return null
+
+    const version = this.mapVersion({
+      ...latestVersion,
+      lens_id: lensId,
     })
-    version.parameters = ((Array.isArray(paramsJson) ? paramsJson : []) as Record<string, unknown>[]).map((p) =>
+    version.parameters = ((latestVersion['parameters'] ?? []) as Record<string, unknown>[]).map((p) =>
       this.mapVersionParam(p)
     )
     return version
