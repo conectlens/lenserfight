@@ -63,23 +63,14 @@ export interface TournamentRepositoryPort {
 
 export class SupabaseTournamentRepository implements TournamentRepositoryPort {
   async getTournament(slug: string): Promise<TournamentRecord | null> {
-    const { data, error } = await supabase
-      .schema('battles')
-      .from('tournaments')
-      .select('*')
-      .eq('slug', slug)
-      .maybeSingle()
+    const { data, error } = await supabase.rpc('fn_get_tournament_by_slug', { p_slug: slug })
     if (error) throw error
-    return data as TournamentRecord | null
+    const row = Array.isArray(data) ? data[0] : data
+    return (row ?? null) as TournamentRecord | null
   }
 
   async listTournaments(limit = 20): Promise<TournamentRecord[]> {
-    const { data, error } = await supabase
-      .schema('battles')
-      .from('tournaments')
-      .select('*')
-      .order('created_at', { ascending: false })
-      .limit(limit)
+    const { data, error } = await supabase.rpc('fn_list_tournaments', { p_limit: limit })
     if (error) throw error
     return (data ?? []) as TournamentRecord[]
   }
@@ -93,12 +84,9 @@ export class SupabaseTournamentRepository implements TournamentRepositoryPort {
   }
 
   async getTournamentContenders(tournamentId: string): Promise<TournamentContenderRecord[]> {
-    const { data, error } = await supabase
-      .schema('battles')
-      .from('tournament_contenders')
-      .select('id, tournament_id, lenser_id, seed, status, created_at')
-      .eq('tournament_id', tournamentId)
-      .order('seed', { ascending: true, nullsFirst: false })
+    const { data, error } = await supabase.rpc('fn_get_tournament_contenders', {
+      p_tournament_id: tournamentId,
+    })
     if (error) throw error
     return (data ?? []) as TournamentContenderRecord[]
   }
