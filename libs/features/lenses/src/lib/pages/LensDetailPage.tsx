@@ -108,7 +108,12 @@ export const LensDetailPage: React.FC = () => {
   const { data: previewVersion, isLoading: isLoadingPreview } = useLensVersionDetail(previewVersionId)
 
   const shouldLoadLatestVersionDetail = showRunPanel || showVersionPicker || !!previewVersionId
-  const { data: latestPublished } = useLatestPublishedVersion(id ?? '', { staleTime: 120_000 })
+  // Only fetch latestPublished once the main lens query has settled; the main query pre-seeds
+  // this cache on success, so most of the time this fires 0 extra network requests.
+  const { data: latestPublished } = useLatestPublishedVersion(id ?? '', {
+    enabled: !!lens,
+    staleTime: 120_000,
+  })
   const { data: latestPublishedDetail, isLoading: isLoadingLatestDetail } = useLensVersionDetail(
     latestPublished?.id,
     { enabled: shouldLoadLatestVersionDetail, staleTime: 120_000 }
