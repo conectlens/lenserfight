@@ -108,6 +108,10 @@ const lensCreate = defineCommand({
           p_title: args.title,
           p_description: args.description || null,
           p_language_code: args.language,
+          p_params: [],
+          p_tag_ids: [],
+          p_parent_lens_id: null,
+          p_forked_from_execution_id: null,
         },
         { requireAuth: true }
       );
