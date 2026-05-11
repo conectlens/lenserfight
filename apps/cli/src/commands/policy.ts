@@ -1,6 +1,7 @@
+import { readFileSync, existsSync } from 'node:fs'
 import { defineCommand } from 'citty'
 import consola from 'consola'
-import { callRest, handleError } from '../utils/api'
+import { callRest, callRpc, handleError } from '../utils/api'
 import { printJson, printTable, truncate } from '../utils/output'
 
 // ---------------------------------------------------------------------------
@@ -190,14 +191,97 @@ const policyStats = defineCommand({
 })
 
 // ---------------------------------------------------------------------------
+// policy set
+// ---------------------------------------------------------------------------
+
+const policySet = defineCommand({
+  meta: {
+    name: 'set',
+    description: 'Upload or update the policy config for an agent.',
+  },
+  args: {
+    handle: {
+      type: 'positional',
+      description: 'Agent handle (without @)',
+      required: true,
+    },
+    file: {
+      type: 'string',
+      description: 'Path to a JSON or YAML policy file',
+      default: '',
+    },
+    'policy-type': {
+      type: 'string',
+      description: 'Policy type: content | budget | rate_limit | capability (default: content)',
+      default: 'content',
+    },
+    'max-daily-runs': {
+      type: 'string',
+      description: 'Max daily run count (rate_limit policy)',
+      default: '',
+    },
+    json: {
+      type: 'boolean',
+      description: 'Output result as JSON',
+      default: false,
+    },
+  },
+  async run({ args }) {
+    let policyConfig: Record<string, unknown> = {}
+
+    if (args.file) {
+      if (!existsSync(args.file)) {
+        consola.error('Policy file not found: %s', args.file)
+        process.exitCode = 1
+        return
+      }
+      try {
+        const raw = readFileSync(args.file, 'utf-8')
+        policyConfig = JSON.parse(raw) as Record<string, unknown>
+      } catch {
+        consola.error('Failed to parse policy file: %s. Ensure it is valid JSON.', args.file)
+        process.exitCode = 1
+        return
+      }
+    }
+
+    if (args['max-daily-runs']) {
+      policyConfig['max_daily_runs'] = parseInt(args['max-daily-runs'], 10)
+    }
+
+    try {
+      const aiLenserId = await resolveAiLenserId(args.handle)
+      await callRpc(
+        'fn_set_agent_policy',
+        {
+          p_ai_lenser_id: aiLenserId,
+          p_policy_type: args['policy-type'],
+          p_config: policyConfig,
+        },
+        { requireAuth: true }
+      )
+      if (args.json) {
+        printJson({ handle: args.handle, policy_type: args['policy-type'], config: policyConfig })
+        return
+      }
+      consola.success('Policy "%s" set for @%s.', args['policy-type'], args.handle)
+      consola.info('View evaluations: lf policy log %s', args.handle)
+    } catch (err) {
+      handleError(err)
+    }
+  },
+})
+
+// ---------------------------------------------------------------------------
 // Root command
 // ---------------------------------------------------------------------------
 export default defineCommand({
   meta: {
     name: 'policy',
-    description: 'Inspect agent policy evaluations.',
+    description: 'Inspect and manage agent policy evaluations.',
   },
   subCommands: {
+    set: policySet,
     log: policyLog,
     stats: policyStats,
   },
