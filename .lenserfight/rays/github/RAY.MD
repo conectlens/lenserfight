@@ -18,7 +18,7 @@ Templates that operate on GitHub artifacts — pull requests, issues, commits, r
 
 ## Public workflows
 
-- [`pr-review`](../../workflows/pr-review/WORKFLOW.MD)
+- [`pr-review`](../../colenses/pr-review/COLENS.MD)
 
 ## Public battles
 
