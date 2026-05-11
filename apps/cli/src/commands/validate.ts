@@ -1,7 +1,7 @@
 import { defineCommand } from 'citty'
 import consola from 'consola'
 
-import { findAutomationFiles, parseAutomationDocument } from '../utils/automation-objects'
+import { discoverLenserfightWorkspace, findAutomationFiles, parseAutomationDocument } from '../utils/automation-objects'
 import { printJson, printTable } from '../utils/output'
 
 export default defineCommand({
@@ -20,35 +20,72 @@ export default defineCommand({
       description: 'Output full validation results as JSON',
       default: false,
     },
+    'no-global': {
+      type: 'boolean',
+      description: 'Do not include ~/.lenserfight templates in workspace validation',
+      default: false,
+    },
+    'no-recursive': {
+      type: 'boolean',
+      description: 'Do not recursively discover nested .lenserfight directories',
+      default: false,
+    },
   },
   async run({ args }) {
-    const files = findAutomationFiles(args.path || '.')
-    if (files.length === 0) {
+    const useWorkspaceDiscovery = !args.path || args.path === '.'
+    const workspace = useWorkspaceDiscovery
+      ? discoverLenserfightWorkspace({
+          includeGlobal: !args['no-global'],
+          recursive: !args['no-recursive'],
+        })
+      : null
+
+    const files = workspace ? [] : findAutomationFiles(args.path || '.')
+    const results = workspace
+      ? workspace.winners.map((object) => ({
+          filePath: object.filePath,
+          source: object.sourceScope,
+          result: object.result,
+        }))
+      : files.map((filePath) => ({
+          filePath,
+          source: 'path',
+          result: parseAutomationDocument(filePath),
+        }))
+
+    if (results.length === 0) {
       consola.warn('No automation markdown files found under %s.', args.path || '.')
       process.exitCode = 1
       return
     }
 
-    const results = files.map((filePath) => ({
-      filePath,
-      result: parseAutomationDocument(filePath),
-    }))
-
     if (args.json) {
-      printJson(results)
+      printJson(workspace ? { ...workspace, results } : results)
       if (results.some(({ result }) => !result.ok)) process.exitCode = 1
       return
     }
 
     printTable(
-      ['File', 'Kind', 'Status', 'Issues'],
-      results.map(({ filePath, result }) => [
+      ['File', 'Source', 'Kind', 'Status', 'Issues'],
+      results.map(({ filePath, source, result }) => [
         filePath,
+        source,
         result.kind ?? '-',
         result.ok ? 'valid' : 'invalid',
         result.issues.map((issue) => `${issue.path}: ${issue.message}`).join(' | ') || '-',
       ])
     )
+
+    if (workspace?.conflicts.length) {
+      consola.warn('%d duplicate slug conflict(s) resolved by precedence.', workspace.conflicts.length)
+      for (const conflict of workspace.conflicts) {
+        consola.warn('  %s -> %s', conflict.key, conflict.winner)
+      }
+    }
+
+    for (const warning of workspace?.warnings ?? []) {
+      consola.warn(warning)
+    }
 
     const invalidCount = results.filter(({ result }) => !result.ok).length
     if (invalidCount > 0) {
