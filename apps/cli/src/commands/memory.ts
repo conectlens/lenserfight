@@ -335,12 +335,68 @@ const contextPreview = defineCommand({
   },
 })
 
+const createProfile = defineCommand({
+  meta: {
+    name: 'create',
+    description: 'Create a new memory profile for an AI lenser.',
+  },
+  args: {
+    lenser: {
+      type: 'string',
+      description: 'AI lenser UUID',
+      required: true,
+    },
+    name: { type: 'string', description: 'Profile name', default: 'default' },
+    scope: {
+      type: 'string',
+      description: 'Scope type: project | conversation | global',
+      default: 'project',
+    },
+    isolation: {
+      type: 'string',
+      description: 'Isolation mode: shared | isolated',
+      default: 'isolated',
+    },
+    'retention-days': {
+      type: 'string',
+      description: 'Retention period in days (default 90)',
+      default: '90',
+    },
+    json: { type: 'boolean', description: 'Output result as JSON', default: false },
+  },
+  async run({ args }) {
+    try {
+      const profile = await callRpc<Record<string, unknown>>(
+        'fn_create_memory_profile',
+        {
+          p_ai_lenser_id: args.lenser,
+          p_name: args.name,
+          p_scope_type: args.scope,
+          p_isolation_mode: args.isolation,
+          p_retention_days: parseInt(args['retention-days'], 10),
+        },
+        { requireAuth: true },
+      )
+      if (args.json) return printJson(profile)
+      consola.success('Memory profile created.')
+      consola.info('Profile ID: %s', profile['id'])
+      consola.info('Name:       %s', profile['name'])
+      consola.info('Scope:      %s', profile['scope_type'])
+      consola.info('')
+      consola.info('Write an entry:  lf memory write-entry --profile %s --content "..."', profile['id'])
+    } catch (err) {
+      handleError(err)
+    }
+  },
+})
+
 export default defineCommand({
   meta: {
     name: 'memory',
     description: 'Manage per-agent memory profiles and entries.',
   },
   subCommands: {
+    create: createProfile,
     'list-profiles': listProfiles,
     'list-entries': listEntries,
     'write-entry': writeEntry,
