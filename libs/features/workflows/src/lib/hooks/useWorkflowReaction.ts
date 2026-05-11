@@ -12,23 +12,28 @@ interface WorkflowReactionState {
 
 export function useWorkflowReaction(
   workflowId: string,
-  initialCounts?: Record<string, number> | null
+  initialCounts?: Record<string, number> | null,
+  initialViewerReactions?: Record<string, boolean> | null,
 ) {
   const { user } = useAuth()
   const queryClient = useQueryClient()
 
   const [state, setState] = useState<WorkflowReactionState>({
-    liked: false,
-    saved: false,
+    liked: !!initialViewerReactions?.like,
+    saved: !!initialViewerReactions?.saved,
     likeCount: initialCounts?.like ?? 0,
     savedCount: initialCounts?.saved ?? 0,
   })
   const [isPending, setIsPending] = useState(false)
 
+  // If bootstrap already supplied viewer_reactions, skip the redundant
+  // fn_get_entity_reaction_counts + fn_get_entity_reaction_status round trip.
+  const hasBootstrapReactions = initialViewerReactions !== undefined && initialViewerReactions !== null
+
   const { data: summary } = useQuery({
     queryKey: ['workflow-reaction-summary', workflowId, user?.id],
     queryFn: () => reactionService.getReactionSummary('workflow', workflowId, user?.id ?? ''),
-    enabled: !!user?.id && !!workflowId,
+    enabled: !!user?.id && !!workflowId && !hasBootstrapReactions,
     staleTime: 1000 * 60,
   })
 
