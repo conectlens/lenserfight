@@ -40,9 +40,19 @@ const login = defineCommand({
       description: 'Account password (optional — omit to use browser login)',
       alias: 'p',
     },
+    'no-browser': {
+      type: 'boolean',
+      description: 'Print the approval URL instead of opening the browser automatically',
+      default: false,
+    },
   },
   async run({ args }) {
     try {
+      if (isAuthenticated()) {
+        consola.warn('You are already signed in. Run `lf auth whoami` to check your session or `lf auth logout` to sign out.');
+        return;
+      }
+
       if (args.email && args.password) {
         // Headless / scripted path — email + password
         const tokens = await loginWithEmail(args.email, args.password);
@@ -55,8 +65,12 @@ const login = defineCommand({
       const request = await requestDeviceLogin();
       const approvalUrl = buildAuthAppUrl(request.verificationUri);
 
-      openBrowser(approvalUrl);
-      consola.info('Opening browser:  %s', approvalUrl);
+      if (args['no-browser']) {
+        consola.info('Approval URL:     %s', approvalUrl);
+      } else {
+        openBrowser(approvalUrl);
+        consola.info('Opening browser:  %s', approvalUrl);
+      }
       consola.info('Approval code:    %s', request.userCode);
       consola.info('If the browser did not open, visit the URL above manually.');
 
