@@ -327,17 +327,17 @@ LenserFight is a global arena. The core platform is English-first, and every sur
 
 | Language | Code | Status | Getting Started |
 | :--- | :---: | :--- | :--- |
-| 🇺🇸 **English** | `en` | ✅ Complete | <a target="_blank" href="https://docs.lenserfight.com/tutorials/getting-started/overview">docs.lenserfight.com</a> |
-| 🇹🇷 **Turkish** | `tr` | 🚧 WIP | <a target="_blank" href="https://docs.lenserfight.com/tr/tutorials/getting-started/overview">docs.lenserfight.com/tr/</a> |
-| 🇪🇸 **Spanish** | `es` | 🟡 Stub | <a target="_blank" href="https://docs.lenserfight.com/es/tutorials/getting-started/overview">docs.lenserfight.com/es/</a> |
-| 🇫🇷 **French** | `fr` | 🟡 Stub | <a target="_blank" href="https://docs.lenserfight.com/fr/tutorials/getting-started/overview">docs.lenserfight.com/fr/</a> |
-| 🇩🇪 **German** | `de` | 🟡 Stub | <a target="_blank" href="https://docs.lenserfight.com/de/tutorials/getting-started/overview">docs.lenserfight.com/de/</a> |
-| 🇨🇳 **Chinese** | `zh` | 🟡 Stub | <a target="_blank" href="https://docs.lenserfight.com/zh/tutorials/getting-started/overview">docs.lenserfight.com/zh/</a> |
-| 🇯🇵 **Japanese** | `ja` | 🟡 Stub | <a target="_blank" href="https://docs.lenserfight.com/ja/tutorials/getting-started/overview">docs.lenserfight.com/ja/</a> |
-| 🇰🇷 **Korean** | `ko` | 🟡 Stub | <a target="_blank" href="https://docs.lenserfight.com/ko/tutorials/getting-started/overview">docs.lenserfight.com/ko/</a> |
-| 🇷🇺 **Russian** | `ru` | 🟡 Stub | <a target="_blank" href="https://docs.lenserfight.com/ru/tutorials/getting-started/overview">docs.lenserfight.com/ru/</a> |
-| 🇧🇷 **Portuguese** | `pt` | 🟡 Stub | <a target="_blank" href="https://docs.lenserfight.com/pt/tutorials/getting-started/overview">docs.lenserfight.com/pt/</a> |
-| 🇮🇹 **Italian** | `it` | 🟡 Stub | <a target="_blank" href="https://docs.lenserfight.com/it/tutorials/getting-started/overview">docs.lenserfight.com/it/</a> |
+| 🇺🇸 **English** | `en` | ✅ Complete | [docs/index.md](docs/index.md) |
+| 🇹🇷 **Turkish** | `tr` | 🚧 WIP | [docs/tr/index.md](docs/tr/index.md) |
+| 🇪🇸 **Spanish** | `es` | 🟡 Stub | [docs/es/index.md](docs/es/index.md) |
+| 🇫🇷 **French** | `fr` | 🟡 Stub | [docs/fr/index.md](docs/fr/index.md) |
+| 🇩🇪 **German** | `de` | 🟡 Stub | [docs/de/index.md](docs/de/index.md) |
+| 🇨🇳 **Chinese** | `zh` | 🟡 Stub | [docs/zh/index.md](docs/zh/index.md) |
+| 🇯🇵 **Japanese** | `ja` | 🟡 Stub | [docs/ja/index.md](docs/ja/index.md) |
+| 🇰🇷 **Korean** | `ko` | 🟡 Stub | [docs/ko/index.md](docs/ko/index.md) |
+| 🇷🇺 **Russian** | `ru` | 🟡 Stub | [docs/ru/index.md](docs/ru/index.md) |
+| 🇧🇷 **Portuguese** | `pt` | 🟡 Stub | [docs/pt/index.md](docs/pt/index.md) |
+| 🇮🇹 **Italian** | `it` | 🟡 Stub | [docs/it/index.md](docs/it/index.md) |
 
 **Status key:** ✅ Complete — ready to use · 🚧 WIP — in progress · 🟡 Stub — framework in place, content needed
 
