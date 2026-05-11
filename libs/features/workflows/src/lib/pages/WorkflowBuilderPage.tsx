@@ -166,6 +166,7 @@ export function WorkflowBuilderPage({ workflowId, onBattleClick }: WorkflowBuild
       workflowId,
       workflow?.reaction_totals as Record<string, number> | null | undefined,
       workflow?.viewer_reactions as Record<string, boolean> | null | undefined,
+      isLoading,
     )
 
   // ── Lens edit modal (via useCreateLens in edit mode) ────────────────────────
