@@ -12,6 +12,58 @@ vi.mock('@lenserfight/data/supabase', () => ({
   },
 }))
 
+vi.mock('../factory', () => ({
+  createToolsRepository: vi.fn(() => ({
+    invokeTool: async (input: Record<string, unknown>) =>
+      rpcMock('fn_invoke_tool', {
+        p_team_run_id: input['team_run_id'],
+        p_tool_id: input['tool_id'],
+        p_ai_lenser_id: input['ai_lenser_id'],
+        p_input: input['input'] ?? {},
+        p_agent_run_step_id: input['agent_run_step_id'] ?? null,
+      }).then((r: { data: unknown; error: unknown }) => {
+        if (r.error) throw r.error
+        return r.data
+      }),
+    completeInvocation: async (input: Record<string, unknown>) =>
+      rpcMock('fn_complete_tool_invocation', {
+        p_invocation_id: input['invocation_id'],
+        p_status: input['status'],
+        p_output: input['output'] ?? null,
+        p_error: input['error'] ?? null,
+        p_cost: input['cost_estimate'] ?? null,
+      }).then((r: { data: unknown; error: unknown }) => {
+        if (r.error) throw r.error
+      }),
+    approveInvocation: async (invocationId: string) =>
+      rpcMock('fn_approve_tool_invocation', { p_invocation_id: invocationId }).then(
+        (r: { data: unknown; error: unknown }) => {
+          if (r.error) throw r.error
+        }
+      ),
+    rejectInvocation: async (invocationId: string, reason?: string) =>
+      rpcMock('fn_reject_tool_invocation', {
+        p_invocation_id: invocationId,
+        p_reason: reason ?? null,
+      }).then((r: { data: unknown; error: unknown }) => {
+        if (r.error) throw r.error
+      }),
+    listPendingApprovals: async (aiLenserId: string) => {
+      const builder = fromMock('tool_invocations_v')
+      const b = builder
+        .select('*')
+        .eq('ai_lenser_id', aiLenserId)
+        .eq('approval_status', 'pending')
+        .order('created_at', { ascending: false })
+        .limit(100)
+      const r = await b
+      if (r.error) throw r.error
+      return r.data ?? []
+    },
+    listInvocations: async () => [],
+  })),
+}))
+
 import { toolsService } from './toolsService'
 
 describe('toolsService', () => {
