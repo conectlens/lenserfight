@@ -36,30 +36,23 @@ export class SupabaseRunReportsRepository implements RunReportsRepository {
     aiLenserId: string,
     options: ListRunReportsOptions = {}
   ): Promise<RunReportRecord[]> {
-    let query = supabase
-      .schema('agents')
-      .from('run_reports')
-      .select('*')
-      .eq('ai_lenser_id', aiLenserId)
-      .order('created_at', { ascending: false })
-
-    if (options.outcome) query = query.eq('outcome', options.outcome)
-    if (options.limit && options.limit > 0) query = query.limit(options.limit)
-
-    const { data, error } = await query
+    const { data, error } = await supabase.rpc('fn_list_run_reports', {
+      p_ai_lenser_id: aiLenserId,
+      p_limit: options.limit && options.limit > 0 ? options.limit : 100,
+      p_cursor: null,
+    })
     if (error) throw error
-    return (data ?? []) as RunReportRecord[]
+    let rows = (data ?? []) as RunReportRecord[]
+    if (options.outcome) rows = rows.filter((r) => (r as unknown as Record<string, unknown>)['outcome'] === options.outcome)
+    return rows
   }
 
   async getRunReport(reportId: string): Promise<RunReportRecord | null> {
-    const { data, error } = await supabase
-      .schema('agents')
-      .from('run_reports')
-      .select('*')
-      .eq('id', reportId)
-      .maybeSingle()
+    const { data, error } = await supabase.rpc('fn_get_run_report', {
+      p_report_id: reportId,
+    })
     if (error) throw error
-    return data as RunReportRecord | null
+    return (data ?? null) as RunReportRecord | null
   }
 
   async createRunReport(teamRunId: string): Promise<string> {
@@ -74,19 +67,12 @@ export class SupabaseRunReportsRepository implements RunReportsRepository {
     runReportId: string,
     options: ListRunIncidentsOptions = {}
   ): Promise<RunIncidentRecord[]> {
-    let query = supabase
-      .schema('agents')
-      .from('run_incidents')
-      .select('*')
-      .eq('run_report_id', runReportId)
-      .order('created_at', { ascending: false })
-
-    if (options.severity) query = query.eq('severity', options.severity)
-    if (options.resolved === true) query = query.not('resolved_at', 'is', null)
-    if (options.resolved === false) query = query.is('resolved_at', null)
-    if (options.limit && options.limit > 0) query = query.limit(options.limit)
-
-    const { data, error } = await query
+    const { data, error } = await supabase.rpc('fn_list_run_incidents', {
+      p_run_report_id: runReportId,
+      p_severity: options.severity ?? null,
+      p_resolved: options.resolved ?? null,
+      p_limit: options.limit ?? 100,
+    })
     if (error) throw error
     return (data ?? []) as RunIncidentRecord[]
   }
@@ -105,11 +91,10 @@ export class SupabaseRunReportsRepository implements RunReportsRepository {
   }
 
   async resolveIncident(incidentId: string, resolution: string): Promise<void> {
-    const { error } = await supabase
-      .schema('agents')
-      .from('run_incidents')
-      .update({ resolved_at: new Date().toISOString(), resolution })
-      .eq('id', incidentId)
+    const { error } = await supabase.rpc('fn_resolve_run_incident', {
+      p_incident_id: incidentId,
+      p_resolution: resolution,
+    })
     if (error) throw error
   }
 }
