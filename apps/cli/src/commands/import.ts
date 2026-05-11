@@ -25,6 +25,15 @@ export default defineCommand({
     const files = findAutomationFiles(args.path)
     if (files.length === 0) {
       consola.warn('No automation markdown files found under %s.', args.path)
+      consola.info('')
+      consola.info('Usage: lf import <file-or-directory>')
+      consola.info('  lf import my-lens.md')
+      consola.info('  lf import my-workflow.md')
+      consola.info('  lf import .lenserfight/')
+      consola.info('')
+      consola.info('Generate a template first:')
+      consola.info('  lf export lens --template --out LENS.MD')
+      consola.info('  lf export colens --template --out WORKFLOW.MD')
       process.exitCode = 1
       return
     }
