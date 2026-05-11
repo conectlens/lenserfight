@@ -155,6 +155,8 @@ const teamList = defineCommand({
 
 // ─── team create ───────────────────────────────────────────────────────────
 
+const TEAM_TEMPLATES = ['research-team', 'code-review-team', 'marketing-team', 'prompt-engineering', 'youtube-content'] as const
+
 const teamCreate = defineCommand({
   meta: {
     name: 'create',
@@ -163,13 +165,23 @@ const teamCreate = defineCommand({
   args: {
     'ai-lenser': {
       type: 'string',
-      description: 'AI Lenser UUID',
+      description: 'AI Lenser UUID (owner of the team)',
       required: true,
     },
     name: { type: 'string', description: 'Team name', required: true },
     description: { type: 'string', description: 'Team description', default: '' },
+    template: {
+      type: 'string',
+      description: `Starter template: ${TEAM_TEMPLATES.join(' | ')}`,
+      default: '',
+    },
   },
   async run({ args }) {
+    if (args.template && !(TEAM_TEMPLATES as readonly string[]).includes(args.template)) {
+      consola.error('Invalid template: %s. Available: %s', args.template, TEAM_TEMPLATES.join(', '))
+      process.exitCode = 1
+      return
+    }
     try {
       const rows = await callRest<AgentTeamRow[]>(
         'agents',
@@ -178,7 +190,7 @@ const teamCreate = defineCommand({
         {
           ai_lenser_id: args['ai-lenser'],
           name: args.name,
-          description: args.description || null,
+          description: args.description || (args.template ? `Created from template: ${args.template}` : null),
         },
         { requireAuth: true, prefer: 'return=representation' }
       )
@@ -187,6 +199,9 @@ const teamCreate = defineCommand({
       consola.success('Team created.')
       consola.info('Team ID: %s', team.id)
       consola.info('Name:    %s', team.name)
+      if (args.template) consola.info('Template: %s', args.template)
+      consola.info('')
+      consola.info('Add members:  lf team add-member --team %s --agent <lenser-id> --role executor', team.id)
     } catch (err) {
       handleError(err)
     }
