@@ -16,10 +16,12 @@ export function StatCard({
   label,
   value,
   detail,
+  action,
 }: {
   label: string
   value: string
   detail: string
+  action?: React.ReactNode
 }) {
   return (
     <div className="rounded-[24px] border border-gray-200 bg-white p-5 shadow-sm dark:border-gray-800 dark:bg-gray-900">
@@ -30,6 +32,7 @@ export function StatCard({
         {value}
       </p>
       <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">{detail}</p>
+      {action && <div className="mt-3">{action}</div>}
     </div>
   )
 }
