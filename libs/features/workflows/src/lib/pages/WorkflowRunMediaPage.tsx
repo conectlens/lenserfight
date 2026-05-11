@@ -4,10 +4,6 @@ import { MultimodalRunResult } from '../components/MultimodalRunResult'
 import type { ManifestEntry } from '../components/MultimodalRunResult'
 import { supabase } from '@lenserfight/data/supabase'
 
-interface WorkflowRunRow {
-  media_manifest: ManifestEntry[]
-}
-
 export function WorkflowRunMediaPage() {
   const { runId } = useParams<{ workflowId: string; runId: string }>()
   const [manifest, setManifest] = useState<ManifestEntry[] | null>(null)
@@ -17,17 +13,14 @@ export function WorkflowRunMediaPage() {
     if (!runId) return
 
     supabase
-      .schema('lenses')
-      .from('workflow_runs')
-      .select('media_manifest')
-      .eq('id', runId)
-      .single<WorkflowRunRow>()
+      .rpc('fn_get_workflow_run_media_manifest', { p_run_id: runId })
       .then(({ data, error: err }) => {
         if (err) {
           setError(err.message)
           return
         }
-        setManifest(data?.media_manifest ?? [])
+        const row = Array.isArray(data) ? data[0] : data
+        setManifest((row?.media_manifest as ManifestEntry[] | null) ?? [])
       })
   }, [runId])
 

@@ -54,8 +54,7 @@ export async function processNextScheduledWorkflow(): Promise<boolean> {
   const serviceClient = createServiceSupabaseClient()
 
   const { data: claimResult, error: claimError } = await serviceClient
-    .schema('lenses')
-    .rpc('fn_claim_scheduled_workflow_run', { p_worker_id: WORKER_ID })
+    .rpc('fn_worker_claim_scheduled_workflow_run', { p_worker_id: WORKER_ID })
 
   if (claimError) throw claimError
 
@@ -65,37 +64,21 @@ export async function processNextScheduledWorkflow(): Promise<boolean> {
   const { run_id, workflow_id } = claimed
   const startedAt = Date.now()
 
-  // Fetch workspace_id for media.objects rows created by media-producing nodes.
-  // fn_claim_scheduled_workflow_run doesn't include it, so we look it up once.
-  const { data: wfRunRow } = await serviceClient
-    .schema('lenses')
-    .from('workflow_runs')
-    .select('workspace_id')
-    .eq('id', run_id)
-    .maybeSingle()
-  const workspaceId = (wfRunRow as { workspace_id: string | null } | null)?.workspace_id ?? null
+  const { data: wfCtxData } = await serviceClient.rpc('fn_worker_get_workflow_context', {
+    p_run_id: run_id,
+  })
+  const wfCtxRow = (Array.isArray(wfCtxData) ? wfCtxData[0] : wfCtxData) as { workspace_id?: string | null } | null
+  const workspaceId: string | null = wfCtxRow?.workspace_id ?? null
 
   try {
-    // Load nodes and edges for the workflow
-    const [nodesResult, edgesResult] = await Promise.all([
-      serviceClient
-        .schema('lenses')
-        .from('workflow_nodes')
-        .select('id, lens_id, version_id, config')
-        .eq('workflow_id', workflow_id)
-        .order('ordinal'),
-      serviceClient
-        .schema('lenses')
-        .from('workflow_edges')
-        .select('id, source_node_id, target_node_id, source_output_key, target_param_label')
-        .eq('workflow_id', workflow_id),
-    ])
+    const { data: graphData, error: graphError } = await serviceClient
+      .rpc('fn_worker_get_workflow_graph', { p_workflow_id: workflow_id })
 
-    if (nodesResult.error) throw nodesResult.error
-    if (edgesResult.error) throw edgesResult.error
+    if (graphError) throw graphError
 
-    const nodes: WorkflowNode[] = (nodesResult.data ?? []).map(mapNode)
-    const edges: WorkflowEdge[] = (edgesResult.data ?? []).map(mapEdge)
+    const graph = graphData as { nodes: DbWorkflowNode[]; edges: DbWorkflowEdge[] } | null
+    const nodes: WorkflowNode[] = (graph?.nodes ?? []).map(mapNode)
+    const edges: WorkflowEdge[] = (graph?.edges ?? []).map(mapEdge)
 
     const defaultModelId = claimed.global_model_id ?? 'claude-sonnet-4-6'
 
@@ -107,8 +90,8 @@ export async function processNextScheduledWorkflow(): Promise<boolean> {
       delegation: new SupabaseDelegationHandler(serviceClient),
 
       async resolveLensTemplate(lensId: string, versionId?: string | null): Promise<string> {
-        const { data, error } = await serviceClient.schema('lenses').rpc('fn_render_template', {
-          p_version_id: versionId ?? null,
+        const { data, error } = await serviceClient.rpc('fn_worker_render_template', {
+          p_template_body: lensId,
           p_inputs: {},
         })
         if (error || !data) throw new Error(error?.message ?? `Failed to resolve template for lens ${lensId}`)
@@ -124,46 +107,34 @@ export async function processNextScheduledWorkflow(): Promise<boolean> {
       },
 
       async onNodeStatusChange(nodeId: string, result: NodeResult): Promise<void> {
+        const od = result.outputData as Record<string, unknown> | undefined
         await serviceClient
-          .schema('lenses')
-          .from('workflow_node_results')
-          .upsert(
-            {
-              run_id,
-              node_id: nodeId,
-              status: result.status,
-              output_data: result.outputData ?? null,
-              error_message: result.error ?? null,
-              started_at: result.status === 'running' ? new Date().toISOString() : undefined,
-              completed_at: ['completed', 'failed', 'timed_out', 'cancelled'].includes(result.status)
-                ? new Date().toISOString()
-                : undefined,
-            },
-            { onConflict: 'run_id,node_id', ignoreDuplicates: false },
-          )
+          .rpc('fn_worker_upsert_node_result', {
+            p_run_id:        run_id,
+            p_node_id:       nodeId,
+            p_status:        result.status,
+            p_output_key:    od ? Object.keys(od)[0] ?? null : null,
+            p_output_value:  od ? String(Object.values(od)[0] ?? '') : null,
+            p_error_message: result.error ?? null,
+            p_model_key:     null,
+            p_token_input:   0,
+            p_token_output:  0,
+          })
 
-        // AK-1: register media outputs so lf media list / MediaOutputCard can find them.
-        // Only fires when we have the ownership context (both may be null for anonymous runs).
         if (result.status === 'completed' && workspaceId && claimed.ai_lenser_id) {
-          const od = result.outputData as Record<string, unknown> | undefined
           const mediaType = od?.['mediaType'] as string | undefined
           const url = od?.['url'] as string | undefined
           if (mediaType && ['image', 'video', 'audio'].includes(mediaType) && url) {
             const mimeType = (od?.['mimeType'] as string | undefined) ?? null
             const ext = mimeType?.split('/')[1]?.split('+')[0] ?? mediaType
             await serviceClient
-              .schema('media')
-              .from('objects')
-              .insert({
-                workspace_id:    workspaceId,
-                owner_lenser_id: claimed.ai_lenser_id,
-                external_url:    url,
-                mime_type:       mimeType,
-                media_type:      mediaType,
-                name:            `wf-${run_id.slice(0, 8)}-${nodeId.slice(0, 8)}.${ext}`,
-                visibility:      'private',
-                lifecycle_state: 'active',
-                metadata:        { workflow_run_id: run_id, node_id: nodeId },
+              .rpc('fn_worker_insert_workflow_media_object', {
+                p_workspace_id:    workspaceId,
+                p_owner_lenser_id: claimed.ai_lenser_id,
+                p_external_url:    url,
+                p_mime_type:       mimeType ?? '',
+                p_media_type:      mediaType,
+                p_name:            `wf-${run_id.slice(0, 8)}-${nodeId.slice(0, 8)}.${ext}`,
               })
           }
         }

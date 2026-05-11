@@ -190,37 +190,20 @@ serve(async (req: Request): Promise<Response> => {
     Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
   )
 
-  // Get the vault secret id from ai.keys
-  const { data: keyRow, error: keyErr } = await serviceClient
-    .schema('ai')
-    .from('keys')
-    .select('encrypted_key_id')
-    .eq('id', config.ai_key_id)
-    .maybeSingle<AiKeyRow>()
+  // Resolve and decrypt the API key in one RPC call
+  const { data: keyRows, error: keyErr } = await serviceClient.rpc('fn_worker_get_ai_key_secret', {
+    p_ai_key_id: config.ai_key_id,
+  })
 
-  if (keyErr || !keyRow?.encrypted_key_id) {
-    console.error('ai.keys lookup failed', keyErr)
+  if (keyErr || !keyRows?.[0]?.decrypted_secret) {
+    console.error('key resolution failed', keyErr)
     return new Response(
-      JSON.stringify({ status: 'error', message: 'Failed to locate key reference.' }),
+      JSON.stringify({ status: 'error', message: 'Failed to locate or decrypt key.' }),
       { status: 200, headers: JSON_HEADERS }
     )
   }
 
-  // Decrypt via vault.decrypted_secrets view (service role only)
-  const { data: secret, error: vaultErr } = await serviceClient
-    .schema('vault')
-    .from('decrypted_secrets')
-    .select('decrypted_secret')
-    .eq('id', keyRow.encrypted_key_id)
-    .maybeSingle<DecryptedSecretRow>()
-
-  if (vaultErr || !secret?.decrypted_secret) {
-    console.error('vault decryption failed', vaultErr)
-    return new Response(
-      JSON.stringify({ status: 'error', message: 'Failed to decrypt stored key.' }),
-      { status: 200, headers: JSON_HEADERS }
-    )
-  }
+  const secret = { decrypted_secret: keyRows[0].decrypted_secret }
 
   // ── Step 6: Live provider probe ─────────────────────────────────────────────
   const result = await probeProvider(

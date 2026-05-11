@@ -155,35 +155,29 @@ export class SupabaseGenerationRepository implements GenerationRepositoryPort {
   }
 
   async getModelById(modelId: string): Promise<AIModel | null> {
-    const { data, error } = await supabase
-      .schema('ai')
-      .from('models')
-      .select('id, key, name, provider_id, description, capabilities, temperature, max_tokens, pricing_tier, is_public, is_active, input_modalities, output_modalities, created_at')
-      .eq('id', modelId)
-      .maybeSingle()
+    const { data, error } = await supabase.rpc('fn_get_ai_model', {
+      p_model_id: modelId,
+    })
 
     if (error) {
       console.warn('getModelById failed', error)
       return null
     }
-    if (!data) return null
+    if (!data?.[0]) return null
 
-    const row = data as Record<string, unknown>
+    const row = data[0] as Record<string, unknown>
     const providerId = (row.provider_id as string | undefined) ?? null
     let providerKey: AIModel['provider'] = 'other'
     let providerDisplayName = 'Unknown'
 
     if (providerId) {
-      const { data: providerRow, error: providerError } = await supabase
-        .schema('ai')
-        .from('providers')
-        .select('key, display_name')
-        .eq('id', providerId)
-        .maybeSingle()
+      const { data: providerData, error: providerError } = await supabase.rpc('fn_get_ai_provider', {
+        p_provider_id: providerId,
+      })
 
-      if (!providerError && providerRow) {
-        providerKey = (providerRow.key as AIModel['provider']) ?? 'other'
-        providerDisplayName = (providerRow.display_name as string) ?? providerDisplayName
+      if (!providerError && providerData?.[0]) {
+        providerKey = (providerData[0].key as AIModel['provider']) ?? 'other'
+        providerDisplayName = (providerData[0].display_name as string) ?? providerDisplayName
       }
     }
 
@@ -200,8 +194,8 @@ export class SupabaseGenerationRepository implements GenerationRepositoryPort {
       capabilities: (row.capabilities as AIModel['capabilities']) ?? [],
       temperature: (row.temperature as number) ?? 0,
       max_tokens: (row.max_tokens as number) ?? 0,
-      pricing_tier: (row.pricing_tier as AIModel['pricing_tier']) ?? null,
-      is_public: (row.is_public as boolean) ?? true,
+      pricing_tier: null,
+      is_public: true,
       is_active: (row.is_active as boolean) ?? false,
       input_modalities: (row.input_modalities as string[]) ?? ['text'],
       output_modalities: (row.output_modalities as string[]) ?? ['text'],

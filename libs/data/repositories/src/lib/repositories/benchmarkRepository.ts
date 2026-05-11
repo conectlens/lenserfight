@@ -30,101 +30,84 @@ export class SupabaseBenchmarkRepository implements BenchmarkRepositoryPort {
   }
 
   async listSuites(creatorLenserId?: string): Promise<BenchmarkSuiteRecord[]> {
-    let query = supabase
-      .schema('benchmark')
-      .from('suites')
-      .select('id, title, description, creator_lenser_id, category, status, version, is_public, created_at, updated_at')
-      .order('created_at', { ascending: false })
+    const { data, error } = await supabase.rpc('fn_list_benchmark_suites', {
+      p_creator_lenser_id: creatorLenserId ?? null,
+      p_limit: 100,
+      p_cursor: null,
+    })
 
-    if (creatorLenserId) {
-      query = query.eq('creator_lenser_id', creatorLenserId)
-    } else {
-      query = query.eq('is_public', true)
-    }
-
-    const { data, error } = await query
     if (error) this.handleError(error)
     return (data ?? []) as BenchmarkSuiteRecord[]
   }
 
   async getSuite(suiteId: string): Promise<BenchmarkSuiteRecord | null> {
-    const { data, error } = await supabase
-      .schema('benchmark')
-      .from('suites')
-      .select('id, title, description, creator_lenser_id, category, status, version, is_public, created_at, updated_at')
-      .eq('id', suiteId)
-      .maybeSingle()
+    const { data, error } = await supabase.rpc('fn_get_benchmark_suite', {
+      p_suite_id: suiteId,
+    })
 
     if (error) this.handleError(error)
-    return data as BenchmarkSuiteRecord | null
+    return (data?.[0] ?? null) as BenchmarkSuiteRecord | null
   }
 
   async getTasksBySuite(suiteId: string): Promise<BenchmarkTaskRecord[]> {
-    const { data, error } = await supabase
-      .schema('benchmark')
-      .from('tasks')
-      .select('id, suite_id, title, prompt_template, evaluation_protocol, required_repetitions, ordinal, created_at')
-      .eq('suite_id', suiteId)
-      .order('ordinal', { ascending: true })
+    const { data, error } = await supabase.rpc('fn_list_benchmark_tasks', {
+      p_suite_id: suiteId,
+    })
 
     if (error) this.handleError(error)
     return (data ?? []) as BenchmarkTaskRecord[]
   }
 
-  async createSuite(input: CreateBenchmarkSuiteInput, creatorLenserId: string): Promise<BenchmarkSuiteRecord> {
-    const { data, error } = await supabase
-      .schema('benchmark')
-      .from('suites')
-      .insert({
-        title: input.title,
-        description: input.description ?? null,
-        category: input.category ?? null,
-        version: input.version ?? '1.0.0',
-        is_public: input.is_public ?? false,
-        creator_lenser_id: creatorLenserId,
-        status: 'draft',
-      })
-      .select('id, title, description, creator_lenser_id, category, status, version, is_public, created_at, updated_at')
-      .single()
+  async createSuite(input: CreateBenchmarkSuiteInput, _creatorLenserId: string): Promise<BenchmarkSuiteRecord> {
+    const { data: suiteId, error } = await supabase.rpc('fn_create_benchmark_suite', {
+      p_title: input.title,
+      p_description: input.description ?? null,
+      p_category: input.category ?? null,
+      p_is_public: input.is_public ?? false,
+    })
 
     if (error) this.handleError(error)
-    return data as BenchmarkSuiteRecord
+    if (!suiteId) throw new Error('Failed to create benchmark suite')
+
+    const suite = await this.getSuite(suiteId as string)
+    if (!suite) throw new Error('Failed to retrieve created benchmark suite')
+    return suite
   }
 
   async createTask(input: CreateBenchmarkTaskInput): Promise<BenchmarkTaskRecord> {
-    const { data, error } = await supabase
-      .schema('benchmark')
-      .from('tasks')
-      .insert({
-        suite_id: input.suite_id,
-        title: input.title,
-        prompt_template: input.prompt_template,
-        evaluation_protocol: input.evaluation_protocol ?? {},
-        required_repetitions: input.required_repetitions ?? 1,
-        ordinal: input.ordinal ?? 0,
-        workflow_id: input.workflow_id ?? null,
-      })
-      .select('id, suite_id, title, prompt_template, evaluation_protocol, required_repetitions, ordinal, workflow_id, created_at')
-      .single()
+    const { data: taskId, error } = await supabase.rpc('fn_create_benchmark_task', {
+      p_suite_id: input.suite_id,
+      p_title: input.title,
+      p_prompt_template: input.prompt_template,
+      p_evaluation_protocol: input.evaluation_protocol ?? {},
+      p_required_repetitions: input.required_repetitions ?? 1,
+      p_ordinal: input.ordinal ?? 0,
+    })
 
     if (error) this.handleError(error)
-    return data as BenchmarkTaskRecord
+    if (!taskId) throw new Error('Failed to create benchmark task')
+
+    const tasks = await this.getTasksBySuite(input.suite_id)
+    const task = tasks.find((t) => t.id === taskId)
+    if (!task) throw new Error('Failed to retrieve created benchmark task')
+    return task
   }
 
-  async invalidateResult(input: InvalidateResultInput, invalidatedBy: string): Promise<InvalidationRecord> {
-    const { data, error } = await supabase
-      .schema('benchmark')
-      .from('invalidations')
-      .insert({
-        result_set_id: input.result_set_id,
-        reason: input.reason,
-        invalidated_by: invalidatedBy,
-        invalidated_at: new Date().toISOString(),
-      })
-      .select('id, result_set_id, reason, invalidated_by, invalidated_at')
-      .single()
+  async invalidateResult(input: InvalidateResultInput, _invalidatedBy: string): Promise<InvalidationRecord> {
+    const { data: invalidationId, error } = await supabase.rpc('fn_create_benchmark_invalidation', {
+      p_result_set_id: input.result_set_id,
+      p_reason: input.reason,
+    })
 
     if (error) this.handleError(error)
-    return data as InvalidationRecord
+    if (!invalidationId) throw new Error('Failed to create benchmark invalidation')
+
+    return {
+      id: invalidationId as string,
+      result_set_id: input.result_set_id,
+      reason: input.reason,
+      invalidated_by: _invalidatedBy,
+      invalidated_at: new Date().toISOString(),
+    } as InvalidationRecord
   }
 }

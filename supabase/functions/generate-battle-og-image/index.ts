@@ -355,11 +355,10 @@ Deno.serve(async (req: Request) => {
 
     const ogImageUrl = publicUrlData.publicUrl
 
-    const { error: updateError } = await supabase
-      .schema('battles')
-      .from('battles')
-      .update({ og_image_url: ogImageUrl })
-      .eq('id', battle_id)
+    const { error: updateError } = await supabase.rpc('fn_worker_set_battle_og_image', {
+      p_battle_id: battle_id,
+      p_og_image_url: ogImageUrl,
+    })
 
     if (updateError) {
       console.error('DB update error:', updateError.message)
