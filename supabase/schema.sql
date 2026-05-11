@@ -25586,6 +25586,51 @@ COMMENT ON FUNCTION "public"."fn_get_thread_by_id_private"("p_thread_id" "uuid")
 
 
 
+CREATE OR REPLACE FUNCTION "public"."fn_list_threads"("p_cursor" "uuid" DEFAULT NULL::"uuid", "p_limit" integer DEFAULT 20, "p_tag_slug" "text" DEFAULT NULL::"text") RETURNS TABLE("id" "uuid", "author_lenser_id" "uuid", "lenser_id" "uuid", "visibility" "text", "created_at" timestamp with time zone, "updated_at" timestamp with time zone, "reply_count" integer, "view_count" integer, "thumbnail_url" "text", "linked_lens_id" "uuid", "lens_data" "jsonb")
+    LANGUAGE "sql" STABLE SECURITY DEFINER
+    SET "search_path" TO 'public', 'content', 'lensers'
+    AS $$
+  SELECT
+    t.id,
+    t.lenser_id  AS author_lenser_id,
+    t.lenser_id,
+    t.visibility::text,
+    t.created_at,
+    t.updated_at,
+    t.reply_count,
+    t.view_count,
+    t.thumbnail_url,
+    t.linked_lens_id,
+    t.lens_data
+  FROM content.threads t
+  WHERE t.lenser_id = lensers.get_auth_lenser_id()
+    AND (
+      p_cursor IS NULL
+      OR t.created_at < (SELECT ct.created_at FROM content.threads ct WHERE ct.id = p_cursor)
+    )
+    AND (
+      p_tag_slug IS NULL
+      OR EXISTS (
+        SELECT 1
+        FROM content.tag_map tm
+        JOIN content.tags tg ON tg.id = tm.tag_id
+        WHERE tm.entity_id  = t.id
+          AND tm.entity_type::text = 'thread'
+          AND tg.slug = p_tag_slug
+      )
+    )
+  ORDER BY t.created_at DESC
+  LIMIT p_limit;
+$$;
+
+
+ALTER FUNCTION "public"."fn_list_threads"("p_cursor" "uuid", "p_limit" integer, "p_tag_slug" "text") OWNER TO "postgres";
+
+
+COMMENT ON FUNCTION "public"."fn_list_threads"("p_cursor" "uuid", "p_limit" integer, "p_tag_slug" "text") IS 'Lists threads owned by the current authenticated user (all visibilities). Used by threadsRepository.getByLenser(includePrivate=true) when the viewer is the profile owner. Supports cursor pagination and optional tag-slug filtering.';
+
+
+
 CREATE OR REPLACE FUNCTION "public"."fn_get_thread_replies_page"("p_thread_id" "uuid", "p_limit" integer DEFAULT 20, "p_offset" integer DEFAULT 0) RETURNS TABLE("id" "uuid", "thread_id" "uuid", "parent_reply_id" "uuid", "lenser_id" "uuid", "content" "text", "content_html" "text", "reaction_totals" "jsonb", "created_at" timestamp with time zone, "author_profile" "jsonb")
     LANGUAGE "sql" STABLE
     SET "search_path" TO 'public', 'content', 'lensers', 'auth'
@@ -60823,6 +60868,11 @@ GRANT ALL ON FUNCTION "public"."fn_get_team_members"("p_team_id" "uuid") TO "ser
 GRANT ALL ON FUNCTION "public"."fn_get_thread_by_id_private"("p_thread_id" "uuid") TO "anon";
 GRANT ALL ON FUNCTION "public"."fn_get_thread_by_id_private"("p_thread_id" "uuid") TO "authenticated";
 GRANT ALL ON FUNCTION "public"."fn_get_thread_by_id_private"("p_thread_id" "uuid") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."fn_list_threads"("p_cursor" "uuid", "p_limit" integer, "p_tag_slug" "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."fn_list_threads"("p_cursor" "uuid", "p_limit" integer, "p_tag_slug" "text") TO "service_role";
 
 
 
