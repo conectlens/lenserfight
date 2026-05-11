@@ -74,6 +74,7 @@ const main = defineCommand({
     reset: () => import('./commands/reset').then((m) => m.default),
     status: () => import('./commands/status').then((m) => m.default),
     validate: () => import('./commands/validate').then((m) => m.default),
+    'migrate-terminology': () => import('./commands/migrate-terminology').then((m) => m.default),
     import: () => import('./commands/import').then((m) => m.default),
     export: () => import('./commands/export').then((m) => m.default),
     auth: () => import('./commands/auth').then((m) => m.default),
